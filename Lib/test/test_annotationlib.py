@@ -121,6 +121,28 @@ class TestForwardRefFormat(unittest.TestCase):
         self.assertIsInstance(gamma_anno, ForwardRef)
         self.assertEqual(gamma_anno, support.EqualToForwardRef("some < obj", owner=f))
 
+    def test_partially_nonexistent_union(self):
+        # Test unions with '|' syntax equal unions with typing.Union[] with some forwardrefs
+        class UnionForwardrefs:
+            pipe: str | undefined
+            union: Union[str, undefined]
+
+        annos = get_annotations(UnionForwardrefs, format=Format.FORWARDREF)
+
+        pipe = annos["pipe"]
+        self.assertIsInstance(pipe, ForwardRef)
+        self.assertEqual(
+            pipe.evaluate(globals={"undefined": int}),
+            str | int,
+        )
+        union = annos["union"]
+        self.assertIsInstance(union, Union)
+        arg1, arg2 = typing.get_args(union)
+        self.assertIs(arg1, str)
+        self.assertEqual(
+            arg2, support.EqualToForwardRef("undefined", is_class=True, owner=UnionForwardrefs)
+        )
+
 
 class TestStringFormat(unittest.TestCase):
     def test_closure(self):
@@ -251,6 +273,89 @@ class TestStringFormat(unittest.TestCase):
             },
         )
 
+    def test_getitem(self):
+        def f(x: undef1[str, undef2]):
+            pass
+        anno = annotationlib.get_annotations(f, format=Format.STRING)
+        self.assertEqual(anno, {"x": "undef1[str, undef2]"})
+
+        anno = annotationlib.get_annotations(f, format=Format.FORWARDREF)
+        fwdref = anno["x"]
+        self.assertIsInstance(fwdref, ForwardRef)
+        self.assertEqual(
+            fwdref.evaluate(globals={"undef1": dict, "undef2": float}), dict[str, float]
+        )
+
+    def test_slice(self):
+        def f(x: a[b:c]):
+            pass
+        anno = annotationlib.get_annotations(f, format=Format.STRING)
+        self.assertEqual(anno, {"x": "a[b:c]"})
+
+        def f(x: a[b:c, d:e]):
+            pass
+        anno = annotationlib.get_annotations(f, format=Format.STRING)
+        self.assertEqual(anno, {"x": "a[b:c, d:e]"})
+
+        obj = slice(1, 1, 1)
+        def f(x: obj):
+            pass
+        anno = annotationlib.get_annotations(f, format=Format.STRING)
+        self.assertEqual(anno, {"x": "obj"})
+
+    def test_literals(self):
+        def f(
+            a: 1,
+            b: 1.0,
+            c: "hello",
+            d: b"hello",
+            e: True,
+            f: None,
+            g: ...,
+            h: 1j,
+        ):
+            pass
+
+        anno = annotationlib.get_annotations(f, format=Format.STRING)
+        self.assertEqual(
+            anno,
+            {
+                "a": "1",
+                "b": "1.0",
+                "c": 'hello',
+                "d": "b'hello'",
+                "e": "True",
+                "f": "None",
+                "g": "...",
+                "h": "1j",
+            },
+        )
+
+    def test_displays(self):
+        # Simple case first
+        def f(x: a[[int, str], float]):
+            pass
+        anno = annotationlib.get_annotations(f, format=Format.STRING)
+        self.assertEqual(anno, {"x": "a[[int, str], float]"})
+
+        def g(
+            w: a[[int, str], float],
+            x: a[{int, str}, 3],
+            y: a[{int: str}, 4],
+            z: a[(int, str), 5],
+        ):
+            pass
+        anno = annotationlib.get_annotations(g, format=Format.STRING)
+        self.assertEqual(
+            anno,
+            {
+                "w": "a[[int, str], float]",
+                "x": "a[{int, str}, 3]",
+                "y": "a[{int: str}, 4]",
+                "z": "a[(int, str), 5]",
+            },
+        )
+
     def test_nested_expressions(self):
         def f(
             nested: list[Annotated[set[int], "set of ints", 4j]],
@@ -295,6 +400,17 @@ class TestStringFormat(unittest.TestCase):
 
         with self.assertRaisesRegex(TypeError, format_msg):
             get_annotations(f, format=Format.STRING)
+
+    def test_shenanigans(self):
+        # In cases like this we can't reconstruct the source; test that we do something
+        # halfway reasonable.
+        def f(x: x | (1).__class__, y: (1).__class__):
+            pass
+
+        self.assertEqual(
+            get_annotations(f, format=Format.STRING),
+            {"x": "x | <class 'int'>", "y": "<class 'int'>"},
+        )
 
 
 class TestGetAnnotations(unittest.TestCase):
