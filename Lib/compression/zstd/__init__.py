@@ -62,17 +62,17 @@ class FrameInfo:
 def get_frame_info(frame_buffer):
     """Get zstd frame information from a frame header.
 
-    *frame_buffer* is a bytes-like object. It should starts from the beginning of
-    a frame, and needs to include at least the frame header (6 to 18 bytes).
+    *frame_buffer* is a bytes-like object. It should starts from the beginning
+    of a frame, and needs to include at least the frame header (6 to 18 bytes).
 
     Return a FrameInfo dataclass, which currently has two attributes
 
     'decompressed_size' is the size in bytes of the data in the frame when
     decompressed, or None when the decompressed size is unknown.
 
-    'dictionary_id' is a 32-bit unsigned integer value. 0 means dictionary ID was
-    not recorded in the frame header, the frame may or may not need a dictionary
-    to be decoded, and the ID of such a dictionary is not specified.
+    'dictionary_id' is a 32-bit unsigned integer value. 0 means dictionary ID
+    was not recorded in the frame header, the frame may or may not need a
+    dictionary to be decoded, and the ID of such a dictionary is not specified.
     """
     return FrameInfo(*_zstd._get_frame_info(frame_buffer))
 
@@ -138,7 +138,8 @@ def finalize_dict(zstd_dict, samples, dict_size, level):
     chunks = b''.join(samples)
     chunk_sizes = tuple(_nbytes(sample) for sample in samples)
     if not chunks:
-        raise ValueError("The samples are empty content, can't finalize dictionary.")
+        raise ValueError("The samples are empty content, can't finalize"
+                         "dictionary.")
     dict_content = _finalize_dict(zstd_dict.dict_content,
                                   chunks, chunk_sizes,
                                   dict_size, level)
