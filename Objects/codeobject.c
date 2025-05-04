@@ -1730,6 +1730,8 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
     assert(counts == NULL || counts->total == 0);
     struct co_unbound_counts unbound = {0};
     Py_ssize_t len = Py_SIZE(co);
+fprintf(stderr, "\n");
+fprintf(stderr, "%s\n", PyUnicode_AsUTF8(co->co_name));
     for (int i = 0; i < len; i++) {
 fprintf(stderr, "%d\n", i);
 fflush(stderr);
