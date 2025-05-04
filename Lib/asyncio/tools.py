@@ -1,4 +1,4 @@
-"""Tool to analyze tasks running in a asyncio script."""
+"""Tools to analyze tasks running in asyncio programs."""
 
 from dataclasses import dataclass
 from collections import defaultdict
