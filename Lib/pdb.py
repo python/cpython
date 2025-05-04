@@ -3272,10 +3272,13 @@ To let the script run up to a given line X in the debugged file, use
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(usage="%(prog)s [-h] [-c command] (-m module | -p pid | pyfile) [args ...]",
-                                     description=_usage,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter,
-                                     allow_abbrev=False)
+    parser = argparse.ArgumentParser(
+        usage="%(prog)s [-h] [-c command] (-m module | -p pid | pyfile) [args ...]",
+        description=_usage,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        allow_abbrev=False,
+        color=True,
+    )
 
     # We need to maunally get the script from args, because the first positional
     # arguments could be either the script we need to debug, or the argument
