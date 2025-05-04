@@ -8077,6 +8077,7 @@ PY_STDLIB_MOD([_gdbm],
  PY_STDLIB_MOD([readline],
   [], [test "$with_readline" != "no"],
   [$READLINE_CFLAGS], [$READLINE_LIBS])
+PY_STDLIB_MOD([_remotedebugging], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_sqlite3],
   [test "$have_sqlite3" = "yes"],
   [test "$have_supported_sqlite3" = "yes"],
@@ -8119,7 +8120,6 @@ PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_testsinglephase], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
-PY_STDLIB_MOD([_remotedebugging], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([xxsubtype], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_ctypes_test],
