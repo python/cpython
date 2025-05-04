@@ -301,7 +301,7 @@ class CompressorTestCase(unittest.TestCase):
         b = THIS_FILE_BYTES * (size // len(THIS_FILE_BYTES))
 
         options = {CParameter.compression_level : 4,
-                  CParameter.nb_workers : 2}
+                   CParameter.nb_workers : 2}
 
         # compress()
         dat1 = compress(b, options=options)
@@ -317,8 +317,7 @@ class CompressorTestCase(unittest.TestCase):
         self.assertEqual(dat4, b * 3)
 
         # ZstdFile
-        with ZstdFile(io.BytesIO(), 'w',
-                      options=options) as f:
+        with ZstdFile(io.BytesIO(), 'w', options=options) as f:
             f.write(b)
 
     def test_compress_flushblock(self):
@@ -331,7 +330,7 @@ class CompressorTestCase(unittest.TestCase):
         dat1 += c.compress(THIS_FILE_BYTES[point:], c.FLUSH_BLOCK)
         self.assertEqual(c.last_mode, c.FLUSH_BLOCK)
         dat2 = c.flush()
-        pattern = r"Compressed data ended before the end-of-stream marker"
+        pattern = "Compressed data ended before the end-of-stream marker"
         with self.assertRaisesRegex(ZstdError, pattern):
             decompress(dat1)
 
