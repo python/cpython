@@ -297,7 +297,7 @@ class CmdTestReadline(unittest.TestCase):
                     return ["hello"]
 
                 def default(self, line):
-                    if line == "! hello":
+                    if line.replace(" ", "") == "!hello":
                         print('tab completion success')
                     else:
                         print('tab completion failure')
@@ -306,13 +306,12 @@ class CmdTestReadline(unittest.TestCase):
             simplecmd().cmdloop()
         """)
 
-        # '! h' and complete 'ello' to '! hello'
-        input = b"! h\t\n"
-
-        output = run_pty(script, input)
-
-        self.assertIn(b'ello', output)
-        self.assertIn(b'tab completion success', output)
+        # '! h' or '!h' and complete 'ello' to 'hello'
+        for input in [b"! h\t\n", b"!h\t\n"]:
+            with self.subTest(input=input):
+                output = run_pty(script, input)
+                self.assertIn(b'hello', output)
+                self.assertIn(b'tab completion success', output)
 
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())
