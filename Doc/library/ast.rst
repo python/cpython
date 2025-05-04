@@ -2578,14 +2578,12 @@ The following options are accepted:
 
    .. versionadded:: next
 
-
 .. option:: -o <level>
             --optimize <level>
 
    Optimization level for parser.
 
    .. versionadded:: next
-
 
 .. option:: --show-empty
 
