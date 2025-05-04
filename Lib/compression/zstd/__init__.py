@@ -240,5 +240,3 @@ class Strategy(enum.IntEnum):
 
 # Set CParameter/DParameter types for validity check
 _zstd._set_parameter_types(CParameter, DParameter)
-
-zstd_support_multithread = CParameter.nb_workers.bounds() != (0, 0)

@@ -37,7 +37,6 @@ from compression.zstd import (
     DParameter,
     Strategy,
     ZstdFile,
-    zstd_support_multithread,
 )
 
 _1K = 1024
@@ -65,8 +64,11 @@ SAMPLES = None
 
 TRAINED_DICT = None
 
+SUPPORT_MULTITHREADING = False
 
 def setUpModule():
+    global SUPPORT_MULTITHREADING
+    SUPPORT_MULTITHREADING = CParameter.nb_workers.bounds() != (0, 0)
     # uncompressed size 130KB, more than a zstd block.
     # with a frame epilogue, 4 bytes checksum.
     global DAT_130K_D
@@ -247,9 +249,9 @@ class CompressorTestCase(unittest.TestCase):
              CParameter.checksum_flag : 1,
              CParameter.dict_id_flag : 0,
 
-             CParameter.nb_workers : 2 if zstd_support_multithread else 0,
-             CParameter.job_size : 5*_1M if zstd_support_multithread else 0,
-             CParameter.overlap_log : 9 if zstd_support_multithread else 0,
+             CParameter.nb_workers : 2 if SUPPORT_MULTITHREADING else 0,
+             CParameter.job_size : 5*_1M if SUPPORT_MULTITHREADING else 0,
+             CParameter.overlap_log : 9 if SUPPORT_MULTITHREADING else 0,
              }
         ZstdCompressor(options=d)
 
@@ -267,7 +269,7 @@ class CompressorTestCase(unittest.TestCase):
         compress(b'', {CParameter.compression_level:level_min-1})
 
         # zstd lib doesn't support MT compression
-        if not zstd_support_multithread:
+        if not SUPPORT_MULTITHREADING:
             with self.assertRaises(ZstdError):
                 ZstdCompressor({CParameter.nb_workers:4})
             with self.assertRaises(ZstdError):
@@ -292,7 +294,7 @@ class CompressorTestCase(unittest.TestCase):
         with self.assertRaisesRegex(ZstdError, pattern):
             ZstdCompressor(option)
 
-    @unittest.skipIf(True,#not zstd_support_multithread,
+    @unittest.skipIf(not SUPPORT_MULTITHREADING,
                      "zstd build doesn't support multi-threaded compression")
     def test_zstd_multithread_compress(self):
         size = 40*_1M
