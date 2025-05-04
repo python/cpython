@@ -1,5 +1,7 @@
+import argparse
 import ast
 import asyncio
+import asyncio.tools
 import concurrent.futures
 import contextvars
 import inspect
@@ -140,6 +142,36 @@ class REPLThread(threading.Thread):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        prog="python3 -m asyncio",
+        description="Interactive asyncio shell and CLI tools",
+    )
+    subparsers = parser.add_subparsers(help="sub-commands", dest="command")
+    ps = subparsers.add_parser(
+        "ps", help="Display a table of all pending tasks in a process"
+    )
+    ps.add_argument("pid", type=int, help="Process ID to inspect")
+    pstree = subparsers.add_parser(
+        "pstree", help="Display a tree of all pending tasks in a process"
+    )
+    pstree.add_argument("pid", type=int, help="Process ID to inspect")
+    args = parser.parse_args()
+    match args.command:
+        case "ps":
+            asyncio.tools.display_awaited_by_tasks_table(args.pid)
+            sys.exit(0)
+        case "pstree":
+            asyncio.tools.display_awaited_by_tasks_tree(args.pid)
+            sys.exit(0)
+        case None:
+            pass  # continue to the interactive shell
+        case _:
+            # shouldn't happen as an invalid command-line wouldn't parse
+            # but let's keep it for the next person adding a command
+            print(f"error: unhandled command {args.command}", file=sys.stderr)
+            parser.print_usage(file=sys.stderr)
+            sys.exit(1)
+
     sys.audit("cpython.run_stdin")
 
     if os.getenv('PYTHON_BASIC_REPL'):

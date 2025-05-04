@@ -34,7 +34,7 @@ IGNORE = {
     '_testlimitedcapi',
     '_testmultiphase',
     '_testsinglephase',
-    '_testexternalinspection',
+    '_remotedebugging',
     '_xxtestfuzz',
     'idlelib.idle_test',
     'test',

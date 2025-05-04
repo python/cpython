@@ -1907,6 +1907,9 @@
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
                 }
+            }
+            // _CHECK_RECURSION_REMAINING
+            {
                 if (tstate->py_recursion_remaining <= 1) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
@@ -2022,6 +2025,14 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // flush
+            // _CHECK_RECURSION_REMAINING
+            {
+                if (tstate->py_recursion_remaining <= 1) {
+                    UPDATE_MISS_STATS(CALL);
+                    assert(_PyOpcode_Deopt[opcode] == (CALL));
+                    JUMP_TO_PREDICTED(CALL);
+                }
+            }
             // _PY_FRAME_GENERAL
             {
                 args = &stack_pointer[-oparg];
@@ -4168,6 +4179,9 @@
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
                 }
+            }
+            // _CHECK_RECURSION_REMAINING
+            {
                 if (tstate->py_recursion_remaining <= 1) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
@@ -4249,6 +4263,14 @@
                 }
                 PyFunctionObject *func = (PyFunctionObject *)callable_o;
                 if (func->func_version != func_version) {
+                    UPDATE_MISS_STATS(CALL);
+                    assert(_PyOpcode_Deopt[opcode] == (CALL));
+                    JUMP_TO_PREDICTED(CALL);
+                }
+            }
+            // _CHECK_RECURSION_REMAINING
+            {
+                if (tstate->py_recursion_remaining <= 1) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
