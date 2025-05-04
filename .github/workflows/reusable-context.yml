@@ -67,6 +67,13 @@ jobs:
             || ''
           }}
 
+    - run: git remote -vvv
+    - run: echo ${{ github.ref }}
+    - run: echo ${{ github.repository }}
+    - run: echo ${{ github.repository }}
+    - run: echo ${{ github.event.pull_request.head.sha }}
+    - run: echo ${{ env.GITHUB_HEAD_REF }}
+
     # Adapted from https://github.com/actions/checkout/issues/520#issuecomment-1167205721
     - name: Fetch commits to get branch diff
       if: github.event_name == 'pull_request'
