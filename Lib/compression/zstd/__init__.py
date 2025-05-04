@@ -43,22 +43,8 @@ _train_dict = _zstd._train_dict
 _finalize_dict = _zstd._finalize_dict
 
 
-class _CLValues:
-    __slots__ = 'default', 'min', 'max'
+COMPRESSION_LEVEL_DEFAULT = _zstd._compressionLevel_values[0]
 
-    def __init__(self, default, min, max):
-        super().__setattr__('default', default)
-        super().__setattr__('min', min)
-        super().__setattr__('max', max)
-
-    def __repr__(self):
-        return (f'compression_level_values(default={self.default}, '
-                f'min={self.min}, max={self.max})')
-
-    def __setattr__(self, name, _):
-        raise AttributeError(f"can't set attribute {name!r}")
-
-compressionLevel_values = _CLValues(*_zstd._compressionLevel_values)
 
 class FrameInfo:
     """Information about a Zstandard frame."""

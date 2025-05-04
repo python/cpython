@@ -28,7 +28,7 @@ from compression.zstd import (
     ZstdError,
     zstd_version,
     zstd_version_info,
-    compressionLevel_values,
+    COMPRESSION_LEVEL_DEFAULT,
     get_frame_info,
     get_frame_size,
     finalize_dict,
@@ -131,10 +131,11 @@ class FunctionsTestCase(unittest.TestCase):
         self.assertEqual(s, zstd_version)
 
     def test_compressionLevel_values(self):
-        self.assertIs(type(compressionLevel_values.default), int)
-        self.assertIs(type(compressionLevel_values.min), int)
-        self.assertIs(type(compressionLevel_values.max), int)
-        self.assertLess(compressionLevel_values.min, compressionLevel_values.max)
+        min, max = CParameter.compressionLevel.bounds()
+        self.assertIs(type(COMPRESSION_LEVEL_DEFAULT), int)
+        self.assertIs(type(min), int)
+        self.assertIs(type(max), int)
+        self.assertLess(min, max)
 
     def test_roundtrip_default(self):
         raw_dat = THIS_FILE_BYTES[: len(THIS_FILE_BYTES) // 6]
@@ -144,10 +145,9 @@ class FunctionsTestCase(unittest.TestCase):
 
     def test_roundtrip_level(self):
         raw_dat = THIS_FILE_BYTES[: len(THIS_FILE_BYTES) // 6]
-        minv = compressionLevel_values.min
-        maxv = compressionLevel_values.max
+        level_min, level_max = CParameter.compressionLevel.bounds()
 
-        for level in range(max(-20, minv), maxv + 1):
+        for level in range(max(-20, level_min), level_max + 1):
             dat1 = compress(raw_dat, level)
             dat2 = decompress(dat1)
             self.assertEqual(dat2, raw_dat)
@@ -259,11 +259,12 @@ class CompressorTestCase(unittest.TestCase):
         self.assertRaises(ValueError, ZstdCompressor, d1)
 
         # clamp compressionLevel
-        compress(b'', compressionLevel_values.max+1)
-        compress(b'', compressionLevel_values.min-1)
+        level_min, level_max = CParameter.compressionLevel.bounds()
+        compress(b'', level_max+1)
+        compress(b'', level_min-1)
 
-        compress(b'', {CParameter.compressionLevel:compressionLevel_values.max+1})
-        compress(b'', {CParameter.compressionLevel:compressionLevel_values.min-1})
+        compress(b'', {CParameter.compressionLevel:level_max+1})
+        compress(b'', {CParameter.compressionLevel:level_min-1})
 
         # zstd lib doesn't support MT compression
         if not zstd_support_multithread:
