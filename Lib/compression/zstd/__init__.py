@@ -4,7 +4,7 @@ similar to Python's bz2/lzma/zlib modules.
 
 __all__ = (
     # compression.zstd
-    "compressionLevel_values",
+    "COMPRESSION_LEVEL_DEFAULT",
     "compress",
     "CParameter",
     "decompress",
