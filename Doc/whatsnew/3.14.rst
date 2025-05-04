@@ -1991,6 +1991,10 @@ ast
   Use :attr:`!ast.Constant.value` instead.
   (Contributed by Alex Waygood in :gh:`119562`.)
 
+* Added new ``--feature-version``, ``--optimize``, ``--show-empty`` options to
+  command-line interface.
+  (Contributed by Semyon Moroz in :gh:`133367`.)
+
 asyncio
 -------
 

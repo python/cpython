@@ -29,7 +29,7 @@ compiled into a Python code object using the built-in :func:`compile` function.
 
 .. _abstract-grammar:
 
-Abstract Grammar
+Abstract grammar
 ----------------
 
 The abstract grammar is currently defined as follows:
@@ -2159,7 +2159,7 @@ Async and await
    occurrences of the same value (e.g. :class:`ast.Add`).
 
 
-:mod:`ast` Helpers
+:mod:`ast` helpers
 ------------------
 
 Apart from the node classes, the :mod:`ast` module defines these utility functions
@@ -2484,7 +2484,7 @@ and classes for traversing abstract syntax trees:
 
 .. _ast-compiler-flags:
 
-Compiler Flags
+Compiler flags
 --------------
 
 The following flags may be passed to :func:`compile` in order to change
@@ -2533,7 +2533,7 @@ effects on the compilation of a program:
 
 .. _ast-cli:
 
-Command-Line Usage
+Command-line usage
 ------------------
 
 .. versionadded:: 3.9
@@ -2571,6 +2571,19 @@ The following options are accepted:
             --indent <indent>
 
    Indentation of nodes in AST (number of spaces).
+
+.. option:: --feature-version <version>
+
+   Minor version (int) or 3.x tuple (e.g., 3.10).
+
+.. option:: -o <level>
+            --optimize <level>
+
+   Optimization level for parser.
+
+.. option:: --show-empty
+
+   Show empty lists and fields in dump output.
 
 If :file:`infile` is specified its contents are parsed to AST and dumped
 to stdout.  Otherwise, the content is read from stdin.
