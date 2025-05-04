@@ -3370,7 +3370,6 @@ class TestDateTime(TestDate):
         BST = timezone(timedelta(hours=1), 'BST')
         EST = timezone(timedelta(hours=-5), 'EST')
         EDT = timezone(timedelta(hours=-4), 'EDT')
-        PARSE_NS = 'Pure' in self.__class__.__name__
 
         examples = [
             ('2025-01-02', self.theclass(2025, 1, 2, 0, 0)),
@@ -3398,7 +3397,7 @@ class TestDateTime(TestDate):
             ('2009-04-19T03:15:45.2345',
              self.theclass(2009, 4, 19, 3, 15, 45, 234500)),
             ('2009-04-19T03:15:45.1234567',
-             self.theclass(2009, 4, 19, 3, 15, 45, 123456, nanosecond=(700 if PARSE_NS else 0))),
+             self.theclass(2009, 4, 19, 3, 15, 45, 123456, nanosecond=700)),
             ('2025-01-02T03:04:05,678',
              self.theclass(2025, 1, 2, 3, 4, 5, 678000)),
             ('20250102', self.theclass(2025, 1, 2, 0, 0)),
@@ -4656,7 +4655,6 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
                         self.assertEqual(t, t_rt)
 
     def test_fromisoformat_fractions(self):
-        PARSE_NS = 'Pure' in self.__class__.__name__
         strs = [
             ('12:30:45.1', (12, 30, 45, 100000)),
             ('12:30:45.12', (12, 30, 45, 120000)),
@@ -4664,8 +4662,8 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             ('12:30:45.1234', (12, 30, 45, 123400)),
             ('12:30:45.12345', (12, 30, 45, 123450)),
             ('12:30:45.123456', (12, 30, 45, 123456)),
-            ('12:30:45.1234567', ((12, 30, 45, 123456), 700 if PARSE_NS else 0)),
-            ('12:30:45.12345678', ((12, 30, 45, 123456), 780 if PARSE_NS else 0)),
+            ('12:30:45.1234567', ((12, 30, 45, 123456), 700)),
+            ('12:30:45.12345678', ((12, 30, 45, 123456), 780)),
         ]
 
         for time_str, time_comps in strs:

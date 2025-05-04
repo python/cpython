@@ -1073,9 +1073,8 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
     }
 
     // Parse fractional components
-    size_t len_remains = p_end - p;
-    size_t to_parse = len_remains;
-    if (len_remains >= 6) {
+    size_t to_parse = p_end - p;
+    if (to_parse >= 6) {
         to_parse = 6;
     }
 
@@ -1092,27 +1091,24 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
         *microsecond *= microsecond_correction[to_parse-1];
     }
 
-    len_remains = p_end - p + 1;
-    to_parse = len_remains;
+    to_parse = p_end - p;
+    if (to_parse > 0 && is_digit(*p)) {
+        if (to_parse >= 3) {
+            to_parse = 3;
+        }
 
-    if (len_remains >= 3) {
-        to_parse = 3;
-    }
+        p = parse_digits(p, nanosecond, to_parse);
+        if (NULL == p) {
+            return -3;
+        }
 
-    // printf("Line: %d | to_parse: %zu\n", __LINE__, to_parse);
-    // if (to_parse > 0) {
-    //     p = parse_digits(p, nanosecond, to_parse);
-    //     if (NULL == p) {
-    //         return -3;
-    //     }
-    // }
-    *nanosecond = 0; // BUG
-    static const int nanosecond_correction[] = {
-        100, 10
-    };
+        static const int nanosecond_correction[] = {
+            100, 10
+        };
 
-    if (to_parse < 3) {
-        *nanosecond *= nanosecond_correction[to_parse-1];
+        if (to_parse < 3) {
+            *nanosecond *= nanosecond_correction[to_parse-1];
+        }
     }
 
     while (is_digit(*p)){
