@@ -170,7 +170,7 @@ def compress(data, level=None, options=None, zstd_dict=None):
     For incremental compression, use an ZstdCompressor instead.
     """
     comp = ZstdCompressor(level=level, options=options, zstd_dict=zstd_dict)
-    return comp.compress(data, ZstdCompressor.FLUSH_FRAME)
+    return comp.compress(data, mode=ZstdCompressor.FLUSH_FRAME)
 
 def decompress(data, zstd_dict=None, options=None):
     """Decompress one or more frames of data.
@@ -221,8 +221,7 @@ class CParameter(enum.IntEnum):
 
     def bounds(self):
         """Return lower and upper bounds of a compression parameter, both inclusive."""
-        # 1 means compression parameter
-        return _zstd._get_param_bounds(1, self.value)
+        return _zstd._get_param_bounds(is_compress=True, parameter=self.value)
 
 
 class DParameter(enum.IntEnum):
@@ -232,8 +231,7 @@ class DParameter(enum.IntEnum):
 
     def bounds(self):
         """Return lower and upper bounds of a decompression parameter, both inclusive."""
-        # 0 means decompression parameter
-        return _zstd._get_param_bounds(0, self.value)
+        return _zstd._get_param_bounds(is_compress=False, parameter=self.value)
 
 
 class Strategy(enum.IntEnum):
