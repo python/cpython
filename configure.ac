@@ -7755,7 +7755,7 @@ AS_CASE([$ac_sys_system],
     dnl (see Modules/Setup.stdlib.in).
     PY_STDLIB_MOD_SET_NA(
       [_ctypes_test],
-      [_remotedebugging],
+      [_remote_debugging],
       [_testimportmultiple],
       [_testmultiphase],
       [_testsinglephase],
@@ -7849,6 +7849,7 @@ PY_STDLIB_MOD_SIMPLE([_pickle])
 PY_STDLIB_MOD_SIMPLE([_posixsubprocess])
 PY_STDLIB_MOD_SIMPLE([_queue])
 PY_STDLIB_MOD_SIMPLE([_random])
+PY_STDLIB_MOD_SIMPLE([_remote_debugging])
 PY_STDLIB_MOD_SIMPLE([select])
 PY_STDLIB_MOD_SIMPLE([_struct])
 PY_STDLIB_MOD_SIMPLE([_types])
@@ -8077,7 +8078,6 @@ PY_STDLIB_MOD([_gdbm],
  PY_STDLIB_MOD([readline],
   [], [test "$with_readline" != "no"],
   [$READLINE_CFLAGS], [$READLINE_LIBS])
-PY_STDLIB_MOD([_remotedebugging], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_sqlite3],
   [test "$have_sqlite3" = "yes"],
   [test "$have_supported_sqlite3" = "yes"],

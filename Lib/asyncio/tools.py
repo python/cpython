@@ -5,7 +5,7 @@ from collections import defaultdict
 from itertools import count
 from enum import Enum
 import sys
-from _remotedebugging import get_all_awaited_by
+from _remote_debugging import get_all_awaited_by
 
 
 class NodeType(Enum):
