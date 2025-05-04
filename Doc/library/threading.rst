@@ -448,6 +448,14 @@ since it is impossible to detect the termination of alien threads.
       an error to :meth:`~Thread.join` a thread before it has been started
       and attempts to do so raise the same exception.
 
+      If an attempt is made to join a running daemonic thread in in late stages
+      of :term:`Python finalization <interpreter shutdown>` :meth:`!join`
+      raises a :exc:`PythonFinalizationError`.
+
+      .. versionchanged:: next
+
+         May raise :exc:`PythonFinalizationError`.
+
    .. attribute:: name
 
       A string used for identification purposes only. It has no semantics.

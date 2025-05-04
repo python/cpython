@@ -270,7 +270,10 @@ a file or file-like object.
    *fileobj* must be a file-like object opened for reading in binary mode.
    It accepts file objects from  builtin :func:`open`, :class:`~io.BytesIO`
    instances, SocketIO objects from :meth:`socket.socket.makefile`, and
-   similar. The function may bypass Python's I/O and use the file descriptor
+   similar. *fileobj* must be opened in blocking mode, otherwise a
+   :exc:`BlockingIOError` may be raised.
+
+   The function may bypass Python's I/O and use the file descriptor
    from :meth:`~io.IOBase.fileno` directly. *fileobj* must be assumed to be
    in an unknown state after this function returns or raises. It is up to
    the caller to close *fileobj*.
@@ -298,6 +301,10 @@ a file or file-like object.
       True
 
    .. versionadded:: 3.11
+
+   .. versionchanged:: next
+      Now raises a :exc:`BlockingIOError` if the file is opened in blocking
+      mode. Previously, spurious null bytes were added to the digest.
 
 
 Key derivation

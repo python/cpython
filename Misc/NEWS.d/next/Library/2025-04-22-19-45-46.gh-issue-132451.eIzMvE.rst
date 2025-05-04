@@ -1,0 +1,3 @@
+The CLI for the PDB debugger now accepts a ``-p PID`` argument to allow
+attaching to a running process. The process must be running the same version
+of Python as the one running PDB.

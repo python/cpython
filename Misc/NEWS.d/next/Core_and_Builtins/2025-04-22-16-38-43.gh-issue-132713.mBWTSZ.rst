@@ -1,0 +1,2 @@
+Fix ``repr(list)`` race condition: hold a strong reference to the item while
+calling ``repr(item)``. Patch by Victor Stinner.
