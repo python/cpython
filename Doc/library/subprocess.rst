@@ -1528,21 +1528,21 @@ Notes
 .. _subprocess-timeout-behavior:
 
 Timeout Behavior
-----------------
+^^^^^^^^^^^^^^^^
 
 When using the ``timeout`` parameter in functions like :func:`run`,
 :meth:`Popen.wait`, or :meth:`Popen.communicate`,
 users should be aware of the following behaviors:
 
 Process Creation Delay
-~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^
 
 The initial process creation itself cannot be interrupted on many platform APIs.
 This means that even when specifying a timeout, you are not guaranteed to see a timeout exception
 until at least after however long process creation takes.
 
 Extremely Small Timeout Values
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Setting very small timeout values (such as a few milliseconds) may result
 in almost immediate :exc:`TimeoutExpired` exceptions because
