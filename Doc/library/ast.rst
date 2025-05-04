@@ -2574,9 +2574,10 @@ The following options are accepted:
 
 .. option:: --feature-version <version>
 
-   Python version in the format 3.x (e.g., 3.10).
+   Python version in the format 3.x (for example, 3.10).
 
    .. versionadded:: next
+
 
 .. option:: -o <level>
             --optimize <level>
@@ -2585,11 +2586,13 @@ The following options are accepted:
 
    .. versionadded:: next
 
+
 .. option:: --show-empty
 
    Show empty lists and fields that are ``None``.
 
    .. versionadded:: next
+
 
 If :file:`infile` is specified its contents are parsed to AST and dumped
 to stdout.  Otherwise, the content is read from stdin.
