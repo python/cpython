@@ -74,33 +74,33 @@ typedef struct {
 
 static const ParameterInfo cp_list[] =
 {
-    {ZSTD_c_compressionLevel, "compressionLevel"},
-    {ZSTD_c_windowLog,        "windowLog"},
-    {ZSTD_c_hashLog,          "hashLog"},
-    {ZSTD_c_chainLog,         "chainLog"},
-    {ZSTD_c_searchLog,        "searchLog"},
-    {ZSTD_c_minMatch,         "minMatch"},
-    {ZSTD_c_targetLength,     "targetLength"},
+    {ZSTD_c_compressionLevel, "compression_level"},
+    {ZSTD_c_windowLog,        "window_log"},
+    {ZSTD_c_hashLog,          "hash_log"},
+    {ZSTD_c_chainLog,         "chain_log"},
+    {ZSTD_c_searchLog,        "search_log"},
+    {ZSTD_c_minMatch,         "min_match"},
+    {ZSTD_c_targetLength,     "target_length"},
     {ZSTD_c_strategy,         "strategy"},
 
-    {ZSTD_c_enableLongDistanceMatching, "enableLongDistanceMatching"},
-    {ZSTD_c_ldmHashLog,       "ldmHashLog"},
-    {ZSTD_c_ldmMinMatch,      "ldmMinMatch"},
-    {ZSTD_c_ldmBucketSizeLog, "ldmBucketSizeLog"},
-    {ZSTD_c_ldmHashRateLog,   "ldmHashRateLog"},
+    {ZSTD_c_enableLongDistanceMatching, "enable_long_distance_matching"},
+    {ZSTD_c_ldmHashLog,       "ldm_hash_log"},
+    {ZSTD_c_ldmMinMatch,      "ldm_min_match"},
+    {ZSTD_c_ldmBucketSizeLog, "ldm_bucket_size_log"},
+    {ZSTD_c_ldmHashRateLog,   "ldm_hash_rate_log"},
 
-    {ZSTD_c_contentSizeFlag,  "contentSizeFlag"},
-    {ZSTD_c_checksumFlag,     "checksumFlag"},
-    {ZSTD_c_dictIDFlag,       "dictIDFlag"},
+    {ZSTD_c_contentSizeFlag,  "content_size_flag"},
+    {ZSTD_c_checksumFlag,     "checksum_flag"},
+    {ZSTD_c_dictIDFlag,       "dict_id_flag"},
 
-    {ZSTD_c_nbWorkers,        "nbWorkers"},
-    {ZSTD_c_jobSize,          "jobSize"},
-    {ZSTD_c_overlapLog,       "overlapLog"}
+    {ZSTD_c_nbWorkers,        "nb_workers"},
+    {ZSTD_c_jobSize,          "job_size"},
+    {ZSTD_c_overlapLog,       "overlap_log"}
 };
 
 static const ParameterInfo dp_list[] =
 {
-    {ZSTD_d_windowLogMax, "windowLogMax"}
+    {ZSTD_d_windowLogMax, "window_log_max"}
 };
 
 void
