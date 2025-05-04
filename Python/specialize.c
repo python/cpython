@@ -2534,7 +2534,7 @@ LONG_FLOAT_ACTION(compactlong_float_multiply, *)
 LONG_FLOAT_ACTION(compactlong_float_true_div, /)
 #undef LONG_FLOAT_ACTION
 
-static _PyBinaryOpSpecializationDescr binaryop_extend_builtins[] = {
+static const _PyBinaryOpSpecializationDescr binaryop_extend_builtins[] = {
     /* long-long arithmetic */
     {NB_OR, compactlongs_guard, compactlongs_or},
     {NB_AND, compactlongs_guard, compactlongs_and},
