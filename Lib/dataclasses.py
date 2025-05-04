@@ -1614,6 +1614,10 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
         seen.add(name)
         annotations[name] = tp
 
+    # We initially block the VALUE format, because inside dataclass() we'll
+    # call get_annotations(), which will try the VALUE format first. If we don't
+    # block, that means we'd always end up eagerly importing typing here, which
+    # is what we're trying to avoid.
     value_blocked = True
 
     def annotate_method(format):
@@ -1672,6 +1676,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
                     unsafe_hash=unsafe_hash, frozen=frozen,
                     match_args=match_args, kw_only=kw_only, slots=slots,
                     weakref_slot=weakref_slot)
+    # Now that the class is ready, allow the VALUE format.
     value_blocked = False
     return cls
 
