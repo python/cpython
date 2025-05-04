@@ -1614,6 +1614,8 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
         seen.add(name)
         annotations[name] = tp
 
+    value_blocked = True
+
     def annotate_method(format):
         def get_any():
             match format:
@@ -1626,6 +1628,8 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
                     else:
                         return typing.Any
                 case annotationlib.Format.VALUE:
+                    if value_blocked:
+                        raise NotImplementedError
                     from typing import Any
                     return Any
                 case _:
@@ -1641,13 +1645,14 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
 
     # Update 'ns' with the user-supplied namespace plus our calculated values.
     def exec_body_callback(ns):
-        ns['__annotate__'] = annotate_method
         ns.update(namespace)
         ns.update(defaults)
 
     # We use `types.new_class()` instead of simply `type()` to allow dynamic creation
     # of generic dataclasses.
     cls = types.new_class(cls_name, bases, {}, exec_body_callback)
+    # For now, set annotations including the _ANY_MARKER.
+    cls.__annotate__ = annotate_method
 
     # For pickling to work, the __module__ variable needs to be set to the frame
     # where the dataclass is created.
@@ -1663,10 +1668,12 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
         cls.__module__ = module
 
     # Apply the normal provided decorator.
-    return decorator(cls, init=init, repr=repr, eq=eq, order=order,
-                     unsafe_hash=unsafe_hash, frozen=frozen,
-                     match_args=match_args, kw_only=kw_only, slots=slots,
-                     weakref_slot=weakref_slot)
+    cls = decorator(cls, init=init, repr=repr, eq=eq, order=order,
+                    unsafe_hash=unsafe_hash, frozen=frozen,
+                    match_args=match_args, kw_only=kw_only, slots=slots,
+                    weakref_slot=weakref_slot)
+    value_blocked = False
+    return cls
 
 
 def replace(obj, /, **changes):

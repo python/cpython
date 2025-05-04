@@ -788,7 +788,7 @@ def get_annotations(
             # For FORWARDREF, we use __annotations__ if it exists
             try:
                 ann = _get_dunder_annotations(obj)
-            except NameError:
+            except Exception:
                 pass
             else:
                 if ann is not None:

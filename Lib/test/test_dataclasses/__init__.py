@@ -4277,6 +4277,28 @@ class TestMakeDataclass(unittest.TestCase):
             {'x': 'typing.Any', 'y': 'int', 'z': 'typing.Any'},
         )
 
+    def test_no_types_no_typing_import(self):
+        with import_helper.CleanImport('typing'):
+            self.assertNotIn('typing', sys.modules)
+            C = make_dataclass('C', ['x', ('y', int)])
+
+            self.assertNotIn('typing', sys.modules)
+            self.assertEqual(
+                C.__annotate__(annotationlib.Format.FORWARDREF),
+                {
+                    'x': annotationlib.ForwardRef('Any', module='typing'),
+                    'y': int,
+                },
+            )
+            self.assertNotIn('typing', sys.modules)
+
+            for field in fields(C):
+                if field.name == "x":
+                    self.assertEqual(field.type, annotationlib.ForwardRef('Any', module='typing'))
+                else:
+                    self.assertEqual(field.name, "y")
+                    self.assertIs(field.type, int)
+
     def test_module_attr(self):
         self.assertEqual(ByMakeDataClass.__module__, __name__)
         self.assertEqual(ByMakeDataClass(1).__module__, __name__)
