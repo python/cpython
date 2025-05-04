@@ -1,3 +1,5 @@
+"""Tool to analyze tasks running in a asyncio script."""
+
 from dataclasses import dataclass
 from collections import defaultdict
 from itertools import count
@@ -46,10 +48,6 @@ def _build_tree(id2name, awaits):
         bucket[frame_name] = node_key
         return node_key
 
-    # touch every task so it’s present even if it awaits nobody
-    for tid in id2name:
-        children[(NodeType.TASK, tid)]
-
     # lay down parent ➜ …frames… ➜ child paths
     for parent_id, stack, child_id in awaits:
         cur = (NodeType.TASK, parent_id)
@@ -69,7 +67,6 @@ def _roots(id2label, children):
 # ─── detect cycles in the task-to-task graph ───────────────────────
 def _task_graph(awaits):
     """Return {parent_task_id: {child_task_id, …}, …}."""
-    from collections import defaultdict
     g = defaultdict(set)
     for parent_id, _stack, child_id in awaits:
         g[parent_id].add(child_id)
@@ -106,7 +103,7 @@ def _find_cycles(graph):
 
 
 # ─── PRINT TREE FUNCTION ───────────────────────────────────────
-def build_async_tree(result, task_emoji="(T)", cor_emoji="", printer=print):
+def build_async_tree(result, task_emoji="(T)", cor_emoji=""):
     """
     Build a list of strings for pretty-print a async call tree.
 
@@ -134,10 +131,7 @@ def build_async_tree(result, task_emoji="(T)", cor_emoji="", printer=print):
             render(kid, new_pref, i == len(kids) - 1, buf)
         return buf
 
-    result = []
-    for r, root in enumerate(_roots(labels, children)):
-        result.append(render(root))
-    return result
+    return [render(root) for root in _roots(labels, children)]
 
 
 def build_task_table(result):
@@ -209,7 +203,7 @@ def display_awaited_by_tasks_tree(pid: int) -> None:
 
     tasks = _get_awaited_by_tasks(pid)
     try:
-        result = print_async_tree(tasks)
+        result = build_async_tree(tasks)
     except CycleFoundException as e:
         _print_cycle_exception(e)
         sys.exit(1)
