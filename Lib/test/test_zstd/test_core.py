@@ -258,7 +258,7 @@ class CompressorTestCase(unittest.TestCase):
         # larger than signed int, ValueError
         d1 = d.copy()
         d1[CParameter.ldm_bucket_size_log] = 2**31
-        self.assertRaises(ValueError, ZstdCompressor, d1)
+        self.assertRaises(ValueError, ZstdCompressor, options=d1)
 
         # clamp compressionLevel
         level_min, level_max = CParameter.compression_level.bounds()
@@ -283,7 +283,7 @@ class CompressorTestCase(unittest.TestCase):
                 (r'Error when setting zstd compression parameter "window_log", '
                  r'it should \d+ <= value <= \d+, provided value is 100\. '
                  r'\(zstd v\d\.\d\.\d, (?:32|64)-bit build\)')):
-            compress(b'', option)
+            compress(b'', options=option)
 
     def test_unknown_compression_parameter(self):
         KEY = 100001234
@@ -292,7 +292,7 @@ class CompressorTestCase(unittest.TestCase):
         pattern = r'Zstd compression parameter.*?"unknown parameter \(key %d\)"' \
                   % KEY
         with self.assertRaisesRegex(ZstdError, pattern):
-            ZstdCompressor(option)
+            ZstdCompressor(options=option)
 
     @unittest.skipIf(not SUPPORT_MULTITHREADING,
                      "zstd build doesn't support multi-threaded compression")
@@ -665,7 +665,7 @@ class DecompressorFlagsTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         options = {CParameter.checksum_flag:1}
-        c = ZstdCompressor(options)
+        c = ZstdCompressor(options=options)
 
         cls.DECOMPRESSED_42 = b'a'*42
         cls.FRAME_42 = c.compress(cls.DECOMPRESSED_42, c.FLUSH_FRAME)
