@@ -51,15 +51,14 @@ class ZstdFile(_streams.BaseStream):
         creating exclusively, or "a" for appending. These can equivalently be
         given as "rb", "wb", "xb" and "ab" respectively.
 
-        
-       *level* is an int specifying the compression level to use, defaulting to
-       COMPRESSION_LEVEL_DEFAULT
+        level is an int specifying the compression level to use, defaulting to
+        COMPRESSION_LEVEL_DEFAULT
 
-       *options* is a dict object that contains advanced compression
-       parameters. See CParameter or DParameter for more on options.
+        options is a dict object that contains advanced compression
+        parameters. See CParameter or DParameter for more on options.
 
-       *zstd_dict* is a ZstdDict object, a pre-trained Zstandard dictionary.
-       See the function train_dict for how to train a ZstdDict on sample data.
+        zstd_dict is a ZstdDict object, a pre-trained Zstandard dictionary.
+        See the function train_dict for how to train a ZstdDict on sample data.
         """
         self._fp = None
         self._closefp = False
