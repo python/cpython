@@ -2246,6 +2246,12 @@ Done:
 }
 
 static PyObject *
+delta_to_nanoseconds(PyDateTime_Delta *self)
+{
+    PyObject *result = delta_to_microseconds(self);
+    return PyNumber_Add(PyNumber_Multiply(result, PyLong_FromLong(1000)), PyLong_FromLong(GET_TD_NANOSECONDS(self)));
+}
+static PyObject *
 checked_divmod(PyObject *a, PyObject *b)
 {
     PyObject *result = PyNumber_Divmod(a, b);
@@ -2340,13 +2346,19 @@ BadDivmod:
     microseconds_to_delta_ex(pymicros, DELTA_TYPE(NO_STATE))
 
 static PyObject *
+nanoseconds_to_delta(PyObject *pyns)
+{
+    return new_delta(0, 0, 0, PyLong_AsLong(pyns), 1, DELTA_TYPE(NO_STATE));
+}
+
+static PyObject *
 multiply_int_timedelta(PyObject *intobj, PyDateTime_Delta *delta)
 {
     PyObject *pyus_in;
     PyObject *pyus_out;
     PyObject *result;
 
-    pyus_in = delta_to_microseconds(delta);
+    pyus_in = delta_to_nanoseconds(delta);
     if (pyus_in == NULL)
         return NULL;
 
@@ -2355,7 +2367,7 @@ multiply_int_timedelta(PyObject *intobj, PyDateTime_Delta *delta)
     if (pyus_out == NULL)
         return NULL;
 
-    result = microseconds_to_delta(pyus_out);
+    result = nanoseconds_to_delta(pyus_out);
     Py_DECREF(pyus_out);
     return result;
 }
@@ -2395,7 +2407,7 @@ multiply_truedivide_timedelta_float(PyDateTime_Delta *delta, PyObject *floatobj,
     PyObject *pyus_in = NULL, *temp, *pyus_out;
     PyObject *ratio = NULL;
 
-    pyus_in = delta_to_microseconds(delta);
+    pyus_in = delta_to_nanoseconds(delta);
     if (pyus_in == NULL)
         return NULL;
     ratio = get_float_as_integer_ratio(floatobj);
@@ -2410,7 +2422,7 @@ multiply_truedivide_timedelta_float(PyDateTime_Delta *delta, PyObject *floatobj,
     Py_DECREF(temp);
     if (pyus_out == NULL)
         goto error;
-    result = microseconds_to_delta(pyus_out);
+    result = nanoseconds_to_delta(pyus_out);
     Py_DECREF(pyus_out);
  error:
     Py_XDECREF(pyus_in);
@@ -2426,7 +2438,7 @@ divide_timedelta_int(PyDateTime_Delta *delta, PyObject *intobj)
     PyObject *pyus_out;
     PyObject *result;
 
-    pyus_in = delta_to_microseconds(delta);
+    pyus_in = delta_to_nanoseconds(delta);
     if (pyus_in == NULL)
         return NULL;
 
@@ -2435,7 +2447,7 @@ divide_timedelta_int(PyDateTime_Delta *delta, PyObject *intobj)
     if (pyus_out == NULL)
         return NULL;
 
-    result = microseconds_to_delta(pyus_out);
+    result = nanoseconds_to_delta(pyus_out);
     Py_DECREF(pyus_out);
     return result;
 }
@@ -2447,11 +2459,11 @@ divide_timedelta_timedelta(PyDateTime_Delta *left, PyDateTime_Delta *right)
     PyObject *pyus_right;
     PyObject *result;
 
-    pyus_left = delta_to_microseconds(left);
+    pyus_left = delta_to_nanoseconds(left);
     if (pyus_left == NULL)
         return NULL;
 
-    pyus_right = delta_to_microseconds(right);
+    pyus_right = delta_to_nanoseconds(right);
     if (pyus_right == NULL)     {
         Py_DECREF(pyus_left);
         return NULL;
@@ -2470,11 +2482,11 @@ truedivide_timedelta_timedelta(PyDateTime_Delta *left, PyDateTime_Delta *right)
     PyObject *pyus_right;
     PyObject *result;
 
-    pyus_left = delta_to_microseconds(left);
+    pyus_left = delta_to_nanoseconds(left);
     if (pyus_left == NULL)
         return NULL;
 
-    pyus_right = delta_to_microseconds(right);
+    pyus_right = delta_to_nanoseconds(right);
     if (pyus_right == NULL)     {
         Py_DECREF(pyus_left);
         return NULL;
@@ -2491,14 +2503,14 @@ truedivide_timedelta_int(PyDateTime_Delta *delta, PyObject *i)
 {
     PyObject *result;
     PyObject *pyus_in, *pyus_out;
-    pyus_in = delta_to_microseconds(delta);
+    pyus_in = delta_to_nanoseconds(delta);
     if (pyus_in == NULL)
         return NULL;
     pyus_out = divide_nearest(pyus_in, i);
     Py_DECREF(pyus_in);
     if (pyus_out == NULL)
         return NULL;
-    result = microseconds_to_delta(pyus_out);
+    result = nanoseconds_to_delta(pyus_out);
     Py_DECREF(pyus_out);
 
     return result;
@@ -2718,11 +2730,11 @@ delta_remainder(PyObject *left, PyObject *right)
     if (!PyDelta_Check(left) || !PyDelta_Check(right))
         Py_RETURN_NOTIMPLEMENTED;
 
-    pyus_left = delta_to_microseconds((PyDateTime_Delta *)left);
+    pyus_left = delta_to_nanoseconds((PyDateTime_Delta *)left);
     if (pyus_left == NULL)
         return NULL;
 
-    pyus_right = delta_to_microseconds((PyDateTime_Delta *)right);
+    pyus_right = delta_to_nanoseconds((PyDateTime_Delta *)right);
     if (pyus_right == NULL) {
         Py_DECREF(pyus_left);
         return NULL;
@@ -2734,7 +2746,7 @@ delta_remainder(PyObject *left, PyObject *right)
     if (pyus_remainder == NULL)
         return NULL;
 
-    remainder = microseconds_to_delta(pyus_remainder);
+    remainder = nanoseconds_to_delta(pyus_remainder);
     Py_DECREF(pyus_remainder);
     if (remainder == NULL)
         return NULL;

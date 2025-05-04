@@ -899,10 +899,9 @@ class timedelta:
                              self._microseconds * other,
                              self._nanoseconds * other)
         if isinstance(other, float):
-            nanosecond = round(self._nanoseconds * other)
             nsec = self._to_nanoseconds()
             a, b = other.as_integer_ratio()
-            return timedelta(0, 0, _divide_and_round(nsec * a, b), nanosecond)
+            return timedelta(0, 0, 0, _divide_and_round(nsec * a, b))
         return NotImplemented
 
     __rmul__ = __mul__
@@ -921,7 +920,7 @@ class timedelta:
         if isinstance(other, timedelta):
             return nsec // (other._to_nanoseconds())
         if isinstance(other, int):
-            return timedelta(0, 0, nsec // other)
+            return timedelta(0, 0, 0, nsec // other)
 
     def __truediv__(self, other):
         if not isinstance(other, (int, float, timedelta)):
@@ -930,22 +929,22 @@ class timedelta:
         if isinstance(other, timedelta):
             return nsec / other._to_nanoseconds()
         if isinstance(other, int):
-            return timedelta(0, 0, _divide_and_round(nsec, other))
+            return timedelta(0, 0, 0, _divide_and_round(nsec, other))
         if isinstance(other, float):
             a, b = other.as_integer_ratio()
-            return timedelta(0, 0, _divide_and_round(b * nsec, a))
+            return timedelta(0, 0, 0, _divide_and_round(b * nsec, a))
 
     def __mod__(self, other):
         if isinstance(other, timedelta):
             r = self._to_nanoseconds() % other._to_nanoseconds()
-            return timedelta(0, 0, r)
+            return timedelta(0, 0, 0, r)
         return NotImplemented
 
     def __divmod__(self, other):
         if isinstance(other, timedelta):
             q, r = divmod(self._to_nanoseconds(),
                           other._to_nanoseconds())
-            return q, timedelta(0, 0, r)
+            return q, timedelta(0, 0, 0, r)
         return NotImplemented
 
     # Comparisons of timedelta objects with other.
@@ -2830,3 +2829,6 @@ _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 # small dst() may get within its bounds; and it doesn't even matter if some
 # perverse time zone returns a negative dst()).  So a breaking case must be
 # pretty bizarre, and a tzinfo subclass can override fromutc() if it is.
+print(timedelta(microseconds=0.5))
+print(timedelta(microseconds=1))
+print(timedelta(nanoseconds=1))
