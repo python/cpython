@@ -1,0 +1,1 @@
+Add a C implementation of :class:``types._GeneratorWrapper``.
