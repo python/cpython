@@ -15,6 +15,7 @@ set IncludeSSLSrc=false
 if "%~1"=="--no-tkinter" (set IncludeTkinter=false) & shift & goto CheckOpts
 if "%~1"=="--no-openssl" (set IncludeSSL=false) & shift & goto CheckOpts
 if "%~1"=="--no-libffi" (set IncludeLibffi=false) & shift & goto CheckOpts
+if "%~1"=="--no-llvm" (set IncludeLLVM=false) & shift & goto CheckOpts
 if "%~1"=="--tkinter-src" (set IncludeTkinterSrc=true) & shift & goto CheckOpts
 if "%~1"=="--openssl-src" (set IncludeSSLSrc=true) & shift & goto CheckOpts
 if "%~1"=="--libffi-src" (set IncludeLibffiSrc=true) & shift & goto CheckOpts
@@ -80,6 +81,7 @@ if NOT "%IncludeLibffi%"=="false"  set binaries=%binaries% libffi-3.4.4
 if NOT "%IncludeSSL%"=="false"     set binaries=%binaries% openssl-bin-3.0.16.2
 if NOT "%IncludeTkinter%"=="false" set binaries=%binaries% tcltk-8.6.15.0
 if NOT "%IncludeSSLSrc%"=="false"  set binaries=%binaries% nasm-2.11.06
+if NOT "%IncludeLLVM%"=="false"    set binaries=%binaries% llvm-19.1.7.0
 
 for %%b in (%binaries%) do (
     if exist "%EXTERNALS_DIR%\%%b" (
@@ -98,7 +100,7 @@ goto end
 
 :usage
 echo.Valid options: -c, --clean, --clean-only, --organization, --python,
-echo.--no-tkinter, --no-openssl
+echo.--no-tkinter, --no-openssl, --no-llvm
 echo.
 echo.Pull all sources and binaries necessary for compiling optional extension
 echo.modules that rely on external libraries.

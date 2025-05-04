@@ -3,6 +3,7 @@ import collections.abc
 import gc
 import pickle
 import random
+import re
 import string
 import sys
 import unittest
@@ -264,6 +265,31 @@ class DictTest(unittest.TestCase):
         self.assertRaises(Exc, {}.update, badseq())
 
         self.assertRaises(ValueError, {}.update, [(1, 2, 3)])
+
+    def test_update_type_error(self):
+        with self.assertRaises(TypeError) as cm:
+            {}.update([object() for _ in range(3)])
+
+        self.assertEqual(str(cm.exception), "object is not iterable")
+        self.assertEqual(
+            cm.exception.__notes__,
+            ['Cannot convert dictionary update sequence element #0 to a sequence'],
+        )
+
+        def badgen():
+            yield "key"
+            raise TypeError("oops")
+            yield "value"
+
+        with self.assertRaises(TypeError) as cm:
+            dict([badgen() for _ in range(3)])
+
+        self.assertEqual(str(cm.exception), "oops")
+        self.assertEqual(
+            cm.exception.__notes__,
+            ['Cannot convert dictionary update sequence element #0 to a sequence'],
+        )
+
 
     def test_fromkeys(self):
         self.assertEqual(dict.fromkeys('abc'), {'a':None, 'b':None, 'c':None})
@@ -1486,6 +1512,47 @@ class DictTest(unittest.TestCase):
                 eq_count = 0
                 self.assertEqual(d.get(key3_3), 44)
                 self.assertGreaterEqual(eq_count, 1)
+
+    def test_unhashable_key(self):
+        d = {'a': 1}
+        key = [1, 2, 3]
+
+        def check_unhashable_key():
+            msg = "cannot use 'list' as a dict key (unhashable type: 'list')"
+            return self.assertRaisesRegex(TypeError, re.escape(msg))
+
+        with check_unhashable_key():
+            key in d
+        with check_unhashable_key():
+            d[key]
+        with check_unhashable_key():
+            d[key] = 2
+        with check_unhashable_key():
+            d.setdefault(key, 2)
+        with check_unhashable_key():
+            d.pop(key)
+        with check_unhashable_key():
+            d.get(key)
+
+        # Only TypeError exception is overriden,
+        # other exceptions are left unchanged.
+        class HashError:
+            def __hash__(self):
+                raise KeyError('error')
+
+        key2 = HashError()
+        with self.assertRaises(KeyError):
+            key2 in d
+        with self.assertRaises(KeyError):
+            d[key2]
+        with self.assertRaises(KeyError):
+            d[key2] = 2
+        with self.assertRaises(KeyError):
+            d.setdefault(key2, 2)
+        with self.assertRaises(KeyError):
+            d.pop(key2)
+        with self.assertRaises(KeyError):
+            d.get(key2)
 
 
 class CAPITest(unittest.TestCase):

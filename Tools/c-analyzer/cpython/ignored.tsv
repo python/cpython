@@ -748,6 +748,7 @@ Modules/expat/xmlrole.c	-	error	-
 ## other
 Modules/_io/_iomodule.c	-	_PyIO_Module	-
 Modules/_sqlite/module.c	-	_sqlite3module	-
+Modules/_zstd/_zstdmodule.c	-	_zstdmodule	-
 Modules/clinic/md5module.c.h	_md5_md5	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrgid	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrnam	_keywords	-
