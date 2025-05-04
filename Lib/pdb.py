@@ -3196,13 +3196,17 @@ class _PdbClient:
                 self.process_payload(payload)
 
     def send_interrupt(self):
-        # Write to a socket that the PDB server listens on. This triggers
-        # the remote to raise a SIGINT for itself. We do this because
-        # Windows doesn't allow triggering SIGINT remotely.
-        # See https://stackoverflow.com/a/35792192 for many more details.
-        # We could directly send SIGINT to the remote process on Unix, but
-        # doing the same thing on all platforms simplifies maintenance.
-        self.interrupt_sock.sendall(signal.SIGINT.to_bytes())
+        if self.interrupt_sock is not None:
+            # Write to a socket that the PDB server listens on. This triggers
+            # the remote to raise a SIGINT for itself. We do this because
+            # Windows doesn't allow triggering SIGINT remotely.
+            # See https://stackoverflow.com/a/35792192 for many more details.
+            self.interrupt_sock.sendall(signal.SIGINT.to_bytes())
+        else:
+            # On Unix we can just send a SIGINT to the remote process.
+            # This is preferable to using the signal thread approach that we
+            # use on Windows because it can interrupt IO in the main thread.
+            os.kill(self.pid, signal.SIGINT)
 
     def process_payload(self, payload):
         match payload:
@@ -3293,9 +3297,8 @@ def _connect(*, host, port, frame, commands, version, signal_raising_thread):
     with closing(socket.create_connection((host, port))) as conn:
         sockfile = conn.makefile("rwb")
 
-    # Starting a signal raising thread is optional to allow us the flexibility
-    # to switch to sending signals directly on Unix platforms in the future
-    # without breaking backwards compatibility. This also makes tests simpler.
+    # The client requests this thread on Windows but not on Unix.
+    # Most tests don't request this thread, to keep them simpler.
     if signal_raising_thread:
         signal_server = (host, port)
     else:
@@ -3332,6 +3335,8 @@ def attach(pid, commands=()):
             tempfile.NamedTemporaryFile("w", delete_on_close=False)
         )
 
+        use_signal_thread = sys.platform == "win32"
+
         connect_script.write(
             textwrap.dedent(
                 f"""
@@ -3342,7 +3347,7 @@ def attach(pid, commands=()):
                     frame=sys._getframe(1),
                     commands={json.dumps("\n".join(commands))},
                     version={_PdbServer.protocol_version()},
-                    signal_raising_thread=True,
+                    signal_raising_thread={use_signal_thread!r},
                 )
                 """
             )
@@ -3354,9 +3359,12 @@ def attach(pid, commands=()):
         client_sock, _ = server.accept()
         stack.enter_context(closing(client_sock))
 
-        interrupt_sock, _ = server.accept()
-        stack.enter_context(closing(interrupt_sock))
-        interrupt_sock.setblocking(False)
+        if use_signal_thread:
+            interrupt_sock, _ = server.accept()
+            stack.enter_context(closing(interrupt_sock))
+            interrupt_sock.setblocking(False)
+        else:
+            interrupt_sock = None
 
         _PdbClient(pid, client_sock, interrupt_sock).cmdloop()
 

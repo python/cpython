@@ -88,6 +88,7 @@ class PdbClientTestCase(unittest.TestCase):
         incoming,
         simulate_send_failure=False,
         simulate_sigint_during_stdout_write=False,
+        use_interrupt_socket=False,
         expected_outgoing=None,
         expected_outgoing_signals=None,
         expected_completions=None,
@@ -175,9 +176,17 @@ class PdbClientTestCase(unittest.TestCase):
             )
             stack.enter_context(redirect_stdout(stdout))
 
-            interrupt_sock = unittest.mock.Mock(spec=socket.socket)
+            if use_interrupt_socket:
+                interrupt_sock = unittest.mock.Mock(spec=socket.socket)
+                mock_kill = None
+            else:
+                interrupt_sock = None
+                mock_kill = stack.enter_context(
+                    unittest.mock.patch("os.kill", spec=os.kill)
+                )
+
             client = _PdbClient(
-                pid=0,
+                pid=12345,
                 server_socket=server_sock,
                 interrupt_sock=interrupt_sock,
             )
@@ -204,10 +213,18 @@ class PdbClientTestCase(unittest.TestCase):
         actual_state = {k: getattr(client, k) for k in expected_state}
         self.assertEqual(actual_state, expected_state)
 
-        outgoing_signals = [
-            signal.Signals(int.from_bytes(call.args[0]))
-            for call in interrupt_sock.sendall.call_args_list
-        ]
+        if use_interrupt_socket:
+            outgoing_signals = [
+                signal.Signals(int.from_bytes(call.args[0]))
+                for call in interrupt_sock.sendall.call_args_list
+            ]
+        else:
+            assert mock_kill is not None
+            outgoing_signals = []
+            for call in mock_kill.call_args_list:
+                pid, signum = call.args
+                self.assertEqual(pid, 12345)
+                outgoing_signals.append(signal.Signals(signum))
         self.assertEqual(outgoing_signals, expected_outgoing_signals)
 
     def test_remote_immediately_closing_the_connection(self):
@@ -450,13 +467,16 @@ class PdbClientTestCase(unittest.TestCase):
         incoming = [
             ("server", {"message": "Some message or other\n", "type": "info"}),
         ]
-        self.do_test(
-            incoming=incoming,
-            simulate_sigint_during_stdout_write=True,
-            expected_outgoing=[],
-            expected_outgoing_signals=[signal.SIGINT],
-            expected_stdout="Some message or other\n",
-        )
+        for use_interrupt_socket in [False, True]:
+            with self.subTest(use_interrupt_socket=use_interrupt_socket):
+                self.do_test(
+                    incoming=incoming,
+                    simulate_sigint_during_stdout_write=True,
+                    use_interrupt_socket=use_interrupt_socket,
+                    expected_outgoing=[],
+                    expected_outgoing_signals=[signal.SIGINT],
+                    expected_stdout="Some message or other\n",
+                )
 
     def test_eof_at_prompt(self):
         """Test signaling when a prompt gets an EOFError."""
