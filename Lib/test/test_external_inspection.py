@@ -534,10 +534,10 @@ class TestGetStackTrace(unittest.TestCase):
                 self.assertGreaterEqual(len(tasks_with_stack), 1000)
 
                 # the final task will have some random number, but it should for
-                 # sure be one of the echo client spam horde (In windows this is not true
-                 # for some reason)
-                 if sys.platform != "win32":
-                     self.assertEqual([[['_aexit', '__aexit__', 'echo_client_spam'], ANY]], entries[-1][2])```
+                # sure be one of the echo client spam horde (In windows this is not true
+                # for some reason)
+                if sys.platform != "win32":
+                    self.assertEqual([[['_aexit', '__aexit__', 'echo_client_spam'], ANY]], entries[-1][2])
             except PermissionError:
                 self.skipTest(
                     "Insufficient permissions to read the stack trace")
