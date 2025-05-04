@@ -508,7 +508,7 @@ class TestErrorHandling:
         with self.assertRaises((IndexError, RuntimeError)):
             self.module.heappop_max(heap)
 
-    def test_comparison_operator_modifiying_heap(self):
+    def test_comparison_operator_modifying_heap(self):
         # See bpo-39421: Strong references need to be taken
         # when comparing objects as they can alter the heap
         class EvilClass(int):
@@ -526,7 +526,7 @@ class TestErrorHandling:
         self.module.heappush_max(heap, EvilClass(1))
         self.assertRaises(IndexError, self.module.heappushpop_max, heap, 0)
 
-    def test_comparison_operator_modifiying_heap_two_heaps(self):
+    def test_comparison_operator_modifying_heap_two_heaps(self):
 
         class h(int):
             def __lt__(self, o):
@@ -553,8 +553,8 @@ class TestErrorHandling:
         self.module.heappush_max(list1, g(1))
         self.module.heappush_max(list2, h(1))
 
-        TestHeap.check_max_invariant(self, list1)
-        TestHeap.check_max_invariant(self, list2)
+        self.assertRaises((IndexError, RuntimeError), self.module.heappush_max, list1, g(1))
+        self.assertRaises((IndexError, RuntimeError), self.module.heappush_max, list2, h(1))
 
 
 class TestErrorHandlingPython(TestErrorHandling, TestCase):
