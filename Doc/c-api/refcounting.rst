@@ -30,6 +30,8 @@ of Python objects.
       access by other threads. Use :c:func:`PyUnstable_Object_IsUniquelyReferenced`
       for that instead.
 
+      See also the function :c:func:`PyUnstable_Object_IsUniqueReferencedTemporary()`.
+
    .. versionchanged:: 3.10
       :c:func:`Py_REFCNT()` is changed to the inline static function.
 

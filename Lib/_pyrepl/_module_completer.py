@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pkgutil
 import sys
+import token
 import tokenize
 from io import StringIO
 from contextlib import contextmanager
@@ -180,8 +181,8 @@ class ImportParser:
     when parsing multiple statements.
     """
     _ignored_tokens = {
-        tokenize.INDENT, tokenize.DEDENT, tokenize.COMMENT,
-        tokenize.NL, tokenize.NEWLINE, tokenize.ENDMARKER
+        token.INDENT, token.DEDENT, token.COMMENT,
+        token.NL, token.NEWLINE, token.ENDMARKER
     }
     _keywords = {'import', 'from', 'as'}
 
@@ -350,11 +351,11 @@ class TokenQueue:
     def peek_name(self) -> bool:
         if not (tok := self.peek()):
             return False
-        return tok.type == tokenize.NAME
+        return tok.type == token.NAME
 
     def pop_name(self) -> str:
         tok = self.pop()
-        if tok.type != tokenize.NAME:
+        if tok.type != token.NAME:
             raise ParseError('pop_name')
         return tok.string
 

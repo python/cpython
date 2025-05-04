@@ -685,6 +685,30 @@ class StructureTestCase(unittest.TestCase, StructCheckMixin):
         self.assertEqual(ctx.exception.args[0], 'item 1 in _argtypes_ passes '
                          'a union by value, which is unsupported.')
 
+    def test_do_not_share_pointer_type_cache_via_stginfo_clone(self):
+        # This test case calls PyCStgInfo_clone()
+        # for the Mid and Vector class definitions
+        # and checks that pointer_type cache not shared
+        # between subclasses.
+        class Base(Structure):
+            _fields_ = [('y', c_double),
+                        ('x', c_double)]
+        base_ptr = POINTER(Base)
+
+        class Mid(Base):
+            pass
+        Mid._fields_ = []
+        mid_ptr = POINTER(Mid)
+
+        class Vector(Mid):
+            pass
+
+        vector_ptr = POINTER(Vector)
+
+        self.assertIsNot(base_ptr, mid_ptr)
+        self.assertIsNot(base_ptr, vector_ptr)
+        self.assertIsNot(mid_ptr, vector_ptr)
+
 
 if __name__ == '__main__':
     unittest.main()
