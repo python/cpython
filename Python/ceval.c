@@ -459,7 +459,7 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
         // Thread sanitizer crashes if we use a bit more than half the stack.
         _tstate->c_stack_soft_limit = base + (stack_size / 2);
 #else
-        _tstate->c_stack_soft_limit = base + PYOS_STACK_MARGIN_BYTES * 2;
+        _tstate->c_stack_soft_limit = base + PYOS_STACK_MARGIN_BYTES * 4;
 #endif
         _tstate->c_stack_hard_limit = base + PYOS_STACK_MARGIN_BYTES;
         assert(_tstate->c_stack_soft_limit < here_addr);
