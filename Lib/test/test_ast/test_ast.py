@@ -3203,11 +3203,10 @@ class CommandLineTests(unittest.TestCase):
         return stdout.getvalue().strip()
 
     def check_output(self, source, expect, *flags):
-        with self.subTest(source=source, flags=flags):
-            self.set_source(source)
-            res = self.invoke_ast(*flags)
-            expect = self.text_normalize(expect)
-            self.assertEqual(res, expect)
+        self.set_source(source)
+        res = self.invoke_ast(*flags)
+        expect = self.text_normalize(expect)
+        self.assertEqual(res, expect)
 
     def test_invocation(self):
         # test various combinations of parameters
