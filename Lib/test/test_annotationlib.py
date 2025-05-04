@@ -1,5 +1,6 @@
 """Tests for the annotations module."""
 
+import textwrap
 import annotationlib
 import builtins
 import collections
@@ -12,7 +13,6 @@ from annotationlib import (
     Format,
     ForwardRef,
     get_annotations,
-    get_annotate_function,
     annotations_to_string,
     type_repr,
 )
@@ -120,6 +120,28 @@ class TestForwardRefFormat(unittest.TestCase):
         gamma_anno = anno["gamma"]
         self.assertIsInstance(gamma_anno, ForwardRef)
         self.assertEqual(gamma_anno, support.EqualToForwardRef("some < obj", owner=f))
+
+    def test_partially_nonexistent_union(self):
+        # Test unions with '|' syntax equal unions with typing.Union[] with some forwardrefs
+        class UnionForwardrefs:
+            pipe: str | undefined
+            union: Union[str, undefined]
+
+        annos = get_annotations(UnionForwardrefs, format=Format.FORWARDREF)
+
+        pipe = annos["pipe"]
+        self.assertIsInstance(pipe, ForwardRef)
+        self.assertEqual(
+            pipe.evaluate(globals={"undefined": int}),
+            str | int,
+        )
+        union = annos["union"]
+        self.assertIsInstance(union, Union)
+        arg1, arg2 = typing.get_args(union)
+        self.assertIs(arg1, str)
+        self.assertEqual(
+            arg2, support.EqualToForwardRef("undefined", is_class=True, owner=UnionForwardrefs)
+        )
 
 
 class TestStringFormat(unittest.TestCase):
@@ -251,6 +273,89 @@ class TestStringFormat(unittest.TestCase):
             },
         )
 
+    def test_getitem(self):
+        def f(x: undef1[str, undef2]):
+            pass
+        anno = annotationlib.get_annotations(f, format=Format.STRING)
+        self.assertEqual(anno, {"x": "undef1[str, undef2]"})
+
+        anno = annotationlib.get_annotations(f, format=Format.FORWARDREF)
+        fwdref = anno["x"]
+        self.assertIsInstance(fwdref, ForwardRef)
+        self.assertEqual(
+            fwdref.evaluate(globals={"undef1": dict, "undef2": float}), dict[str, float]
+        )
+
+    def test_slice(self):
+        def f(x: a[b:c]):
+            pass
+        anno = annotationlib.get_annotations(f, format=Format.STRING)
+        self.assertEqual(anno, {"x": "a[b:c]"})
+
+        def f(x: a[b:c, d:e]):
+            pass
+        anno = annotationlib.get_annotations(f, format=Format.STRING)
+        self.assertEqual(anno, {"x": "a[b:c, d:e]"})
+
+        obj = slice(1, 1, 1)
+        def f(x: obj):
+            pass
+        anno = annotationlib.get_annotations(f, format=Format.STRING)
+        self.assertEqual(anno, {"x": "obj"})
+
+    def test_literals(self):
+        def f(
+            a: 1,
+            b: 1.0,
+            c: "hello",
+            d: b"hello",
+            e: True,
+            f: None,
+            g: ...,
+            h: 1j,
+        ):
+            pass
+
+        anno = annotationlib.get_annotations(f, format=Format.STRING)
+        self.assertEqual(
+            anno,
+            {
+                "a": "1",
+                "b": "1.0",
+                "c": 'hello',
+                "d": "b'hello'",
+                "e": "True",
+                "f": "None",
+                "g": "...",
+                "h": "1j",
+            },
+        )
+
+    def test_displays(self):
+        # Simple case first
+        def f(x: a[[int, str], float]):
+            pass
+        anno = annotationlib.get_annotations(f, format=Format.STRING)
+        self.assertEqual(anno, {"x": "a[[int, str], float]"})
+
+        def g(
+            w: a[[int, str], float],
+            x: a[{int, str}, 3],
+            y: a[{int: str}, 4],
+            z: a[(int, str), 5],
+        ):
+            pass
+        anno = annotationlib.get_annotations(g, format=Format.STRING)
+        self.assertEqual(
+            anno,
+            {
+                "w": "a[[int, str], float]",
+                "x": "a[{int, str}, 3]",
+                "y": "a[{int: str}, 4]",
+                "z": "a[(int, str), 5]",
+            },
+        )
+
     def test_nested_expressions(self):
         def f(
             nested: list[Annotated[set[int], "set of ints", 4j]],
@@ -295,6 +400,17 @@ class TestStringFormat(unittest.TestCase):
 
         with self.assertRaisesRegex(TypeError, format_msg):
             get_annotations(f, format=Format.STRING)
+
+    def test_shenanigans(self):
+        # In cases like this we can't reconstruct the source; test that we do something
+        # halfway reasonable.
+        def f(x: x | (1).__class__, y: (1).__class__):
+            pass
+
+        self.assertEqual(
+            get_annotations(f, format=Format.STRING),
+            {"x": "x | <class 'int'>", "y": "<class 'int'>"},
+        )
 
 
 class TestGetAnnotations(unittest.TestCase):
@@ -933,13 +1049,13 @@ class MetaclassTests(unittest.TestCase):
             b: float
 
         self.assertEqual(get_annotations(Meta), {"a": int})
-        self.assertEqual(get_annotate_function(Meta)(Format.VALUE), {"a": int})
+        self.assertEqual(Meta.__annotate__(Format.VALUE), {"a": int})
 
         self.assertEqual(get_annotations(X), {})
-        self.assertIs(get_annotate_function(X), None)
+        self.assertIs(X.__annotate__, None)
 
         self.assertEqual(get_annotations(Y), {"b": float})
-        self.assertEqual(get_annotate_function(Y)(Format.VALUE), {"b": float})
+        self.assertEqual(Y.__annotate__(Format.VALUE), {"b": float})
 
     def test_unannotated_meta(self):
         class Meta(type):
@@ -952,13 +1068,13 @@ class MetaclassTests(unittest.TestCase):
             pass
 
         self.assertEqual(get_annotations(Meta), {})
-        self.assertIs(get_annotate_function(Meta), None)
+        self.assertIs(Meta.__annotate__, None)
 
         self.assertEqual(get_annotations(Y), {})
-        self.assertIs(get_annotate_function(Y), None)
+        self.assertIs(Y.__annotate__, None)
 
         self.assertEqual(get_annotations(X), {"a": str})
-        self.assertEqual(get_annotate_function(X)(Format.VALUE), {"a": str})
+        self.assertEqual(X.__annotate__(Format.VALUE), {"a": str})
 
     def test_ordering(self):
         # Based on a sample by David Ellis
@@ -996,7 +1112,7 @@ class MetaclassTests(unittest.TestCase):
                 for c in classes:
                     with self.subTest(c=c):
                         self.assertEqual(get_annotations(c), c.expected_annotations)
-                        annotate_func = get_annotate_function(c)
+                        annotate_func = getattr(c, "__annotate__", None)
                         if c.expected_annotations:
                             self.assertEqual(
                                 annotate_func(Format.VALUE), c.expected_annotations
@@ -1005,25 +1121,39 @@ class MetaclassTests(unittest.TestCase):
                             self.assertIs(annotate_func, None)
 
 
-class TestGetAnnotateFunction(unittest.TestCase):
-    def test_static_class(self):
-        self.assertIsNone(get_annotate_function(object))
-        self.assertIsNone(get_annotate_function(int))
+class TestGetAnnotateFromClassNamespace(unittest.TestCase):
+    def test_with_metaclass(self):
+        class Meta(type):
+            def __new__(mcls, name, bases, ns):
+                annotate = annotationlib.get_annotate_from_class_namespace(ns)
+                expected = ns["expected_annotate"]
+                with self.subTest(name=name):
+                    if expected:
+                        self.assertIsNotNone(annotate)
+                    else:
+                        self.assertIsNone(annotate)
+                return super().__new__(mcls, name, bases, ns)
 
-    def test_unannotated_class(self):
-        class C:
-            pass
-
-        self.assertIsNone(get_annotate_function(C))
-
-        D = type("D", (), {})
-        self.assertIsNone(get_annotate_function(D))
-
-    def test_annotated_class(self):
-        class C:
+        class HasAnnotations(metaclass=Meta):
+            expected_annotate = True
             a: int
 
-        self.assertEqual(get_annotate_function(C)(Format.VALUE), {"a": int})
+        class NoAnnotations(metaclass=Meta):
+            expected_annotate = False
+
+        class CustomAnnotate(metaclass=Meta):
+            expected_annotate = True
+            def __annotate__(format):
+                return {}
+
+        code = """
+            from __future__ import annotations
+
+            class HasFutureAnnotations(metaclass=Meta):
+                expected_annotate = False
+                a: int
+        """
+        exec(textwrap.dedent(code), {"Meta": Meta})
 
 
 class TestTypeRepr(unittest.TestCase):

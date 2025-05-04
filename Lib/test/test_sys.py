@@ -1960,7 +1960,7 @@ def _supports_remote_attaching():
     PROCESS_VM_READV_SUPPORTED = False
 
     try:
-        from _testexternalinspection import PROCESS_VM_READV_SUPPORTED
+        from _remotedebuggingmodule import PROCESS_VM_READV_SUPPORTED
     except ImportError:
         pass
 

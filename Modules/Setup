@@ -200,6 +200,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_dbm _dbmmodule.c -lgdbm_compat -DUSE_GDBM_COMPAT
 #_gdbm _gdbmmodule.c -lgdbm
 #_lzma _lzmamodule.c -llzma
+#_zstd _zstd/_zstdmodule.c -lzstd -I$(srcdir)/Modules/_zstd
 #_uuid _uuidmodule.c -luuid
 #zlib  zlibmodule.c -lz
 
@@ -286,7 +287,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_testcapi _testcapimodule.c
 #_testimportmultiple _testimportmultiple.c
 #_testmultiphase _testmultiphase.c
-#_testexternalinspection _testexternalinspection.c
+#_remotedebugging _remotedebuggingmodule.c
 #_testsinglephase _testsinglephase.c
 
 # ---

@@ -565,57 +565,6 @@ extern int _Py_ClearUnusedTLBC(PyInterpreterState *interp);
 #endif
 
 
-typedef struct {
-    int total;
-    struct co_locals_counts {
-        int total;
-        struct {
-            int total;
-            int numposonly;
-            int numposorkw;
-            int numkwonly;
-            int varargs;
-            int varkwargs;
-        } args;
-        int numpure;
-        struct {
-            int total;
-            // numargs does not contribute to locals.total.
-            int numargs;
-            int numothers;
-        } cells;
-        struct {
-            int total;
-            int numpure;
-            int numcells;
-        } hidden;
-    } locals;
-    int numfree;  // nonlocal
-    struct co_unbound_counts {
-        int total;
-        struct {
-            int total;
-            int numglobal;
-            int numbuiltin;
-            int numunknown;
-        } globals;
-        int numattrs;
-        int numunknown;
-    } unbound;
-} _PyCode_var_counts_t;
-
-PyAPI_FUNC(void) _PyCode_GetVarCounts(
-        PyCodeObject *,
-        _PyCode_var_counts_t *);
-PyAPI_FUNC(int) _PyCode_SetUnboundVarCounts(
-        PyThreadState *,
-        PyCodeObject *,
-        _PyCode_var_counts_t *,
-        PyObject *globalnames,
-        PyObject *attrnames,
-        PyObject *globalsns,
-        PyObject *builtinsns);
-
 PyAPI_FUNC(int) _PyCode_ReturnsOnlyNone(PyCodeObject *);
 
 

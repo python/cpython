@@ -1,4 +1,4 @@
-/* AST Optimizer */
+/* AST pre-processing */
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #include "pycore_c_array.h"       // _Py_CArray_EnsureCapacity()
@@ -22,7 +22,7 @@ typedef struct {
 
     _Py_c_array_t cf_finally;       /* context for PEP 765 check */
     int cf_finally_used;
-} _PyASTOptimizeState;
+} _PyASTPreprocessState;
 
 #define ENTER_RECURSIVE() \
 if (Py_EnterRecursiveCall(" during compilation")) { \
@@ -32,14 +32,14 @@ if (Py_EnterRecursiveCall(" during compilation")) { \
 #define LEAVE_RECURSIVE() Py_LeaveRecursiveCall();
 
 static ControlFlowInFinallyContext*
-get_cf_finally_top(_PyASTOptimizeState *state)
+get_cf_finally_top(_PyASTPreprocessState *state)
 {
     int idx = state->cf_finally_used;
     return ((ControlFlowInFinallyContext*)state->cf_finally.array) + idx;
 }
 
 static int
-push_cf_context(_PyASTOptimizeState *state, stmt_ty node, bool finally, bool funcdef, bool loop)
+push_cf_context(_PyASTPreprocessState *state, stmt_ty node, bool finally, bool funcdef, bool loop)
 {
     if (_Py_CArray_EnsureCapacity(&state->cf_finally, state->cf_finally_used+1) < 0) {
         return 0;
@@ -55,14 +55,14 @@ push_cf_context(_PyASTOptimizeState *state, stmt_ty node, bool finally, bool fun
 }
 
 static void
-pop_cf_context(_PyASTOptimizeState *state)
+pop_cf_context(_PyASTPreprocessState *state)
 {
     assert(state->cf_finally_used > 0);
     state->cf_finally_used--;
 }
 
 static int
-control_flow_in_finally_warning(const char *kw, stmt_ty n, _PyASTOptimizeState *state)
+control_flow_in_finally_warning(const char *kw, stmt_ty n, _PyASTPreprocessState *state)
 {
     PyObject *msg = PyUnicode_FromFormat("'%s' in a 'finally' block", kw);
     if (msg == NULL) {
@@ -76,7 +76,7 @@ control_flow_in_finally_warning(const char *kw, stmt_ty n, _PyASTOptimizeState *
 }
 
 static int
-before_return(_PyASTOptimizeState *state, stmt_ty node_)
+before_return(_PyASTPreprocessState *state, stmt_ty node_)
 {
     if (state->cf_finally_used > 0) {
         ControlFlowInFinallyContext *ctx = get_cf_finally_top(state);
@@ -90,7 +90,7 @@ before_return(_PyASTOptimizeState *state, stmt_ty node_)
 }
 
 static int
-before_loop_exit(_PyASTOptimizeState *state, stmt_ty node_, const char *kw)
+before_loop_exit(_PyASTPreprocessState *state, stmt_ty node_, const char *kw)
 {
     if (state->cf_finally_used > 0) {
         ControlFlowInFinallyContext *ctx = get_cf_finally_top(state);
@@ -365,7 +365,7 @@ optimize_format(expr_ty node, PyObject *fmt, asdl_expr_seq *elts, PyArena *arena
 }
 
 static int
-fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
+fold_binop(expr_ty node, PyArena *arena, _PyASTPreprocessState *state)
 {
     if (state->syntax_check_only) {
         return 1;
@@ -389,18 +389,18 @@ fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
     return 1;
 }
 
-static int astfold_mod(mod_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
-static int astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
-static int astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
-static int astfold_arguments(arguments_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
-static int astfold_comprehension(comprehension_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
-static int astfold_keyword(keyword_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
-static int astfold_arg(arg_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
-static int astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
-static int astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
-static int astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
-static int astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
-static int astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
+static int astfold_mod(mod_ty node_, PyArena *ctx_, _PyASTPreprocessState *state);
+static int astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTPreprocessState *state);
+static int astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTPreprocessState *state);
+static int astfold_arguments(arguments_ty node_, PyArena *ctx_, _PyASTPreprocessState *state);
+static int astfold_comprehension(comprehension_ty node_, PyArena *ctx_, _PyASTPreprocessState *state);
+static int astfold_keyword(keyword_ty node_, PyArena *ctx_, _PyASTPreprocessState *state);
+static int astfold_arg(arg_ty node_, PyArena *ctx_, _PyASTPreprocessState *state);
+static int astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTPreprocessState *state);
+static int astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, _PyASTPreprocessState *state);
+static int astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTPreprocessState *state);
+static int astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTPreprocessState *state);
+static int astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTPreprocessState *state);
 
 #define CALL(FUNC, TYPE, ARG) \
     if (!FUNC((ARG), ctx_, state)) \
@@ -436,7 +436,7 @@ stmt_seq_remove_item(asdl_stmt_seq *stmts, Py_ssize_t idx)
 }
 
 static int
-astfold_body(asdl_stmt_seq *stmts, PyArena *ctx_, _PyASTOptimizeState *state)
+astfold_body(asdl_stmt_seq *stmts, PyArena *ctx_, _PyASTPreprocessState *state)
 {
     int docstring = _PyAST_GetDocString(stmts) != NULL;
     if (docstring && (state->optimize >= 2)) {
@@ -466,7 +466,7 @@ astfold_body(asdl_stmt_seq *stmts, PyArena *ctx_, _PyASTOptimizeState *state)
 }
 
 static int
-astfold_mod(mod_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+astfold_mod(mod_ty node_, PyArena *ctx_, _PyASTPreprocessState *state)
 {
     switch (node_->kind) {
     case Module_kind:
@@ -488,7 +488,7 @@ astfold_mod(mod_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 }
 
 static int
-astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTPreprocessState *state)
 {
     ENTER_RECURSIVE();
     switch (node_->kind) {
@@ -613,14 +613,14 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 }
 
 static int
-astfold_keyword(keyword_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+astfold_keyword(keyword_ty node_, PyArena *ctx_, _PyASTPreprocessState *state)
 {
     CALL(astfold_expr, expr_ty, node_->value);
     return 1;
 }
 
 static int
-astfold_comprehension(comprehension_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+astfold_comprehension(comprehension_ty node_, PyArena *ctx_, _PyASTPreprocessState *state)
 {
     CALL(astfold_expr, expr_ty, node_->target);
     CALL(astfold_expr, expr_ty, node_->iter);
@@ -629,7 +629,7 @@ astfold_comprehension(comprehension_ty node_, PyArena *ctx_, _PyASTOptimizeState
 }
 
 static int
-astfold_arguments(arguments_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+astfold_arguments(arguments_ty node_, PyArena *ctx_, _PyASTPreprocessState *state)
 {
     CALL_SEQ(astfold_arg, arg, node_->posonlyargs);
     CALL_SEQ(astfold_arg, arg, node_->args);
@@ -642,7 +642,7 @@ astfold_arguments(arguments_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 }
 
 static int
-astfold_arg(arg_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+astfold_arg(arg_ty node_, PyArena *ctx_, _PyASTPreprocessState *state)
 {
     if (!(state->ff_features & CO_FUTURE_ANNOTATIONS)) {
         CALL_OPT(astfold_expr, expr_ty, node_->annotation);
@@ -651,7 +651,7 @@ astfold_arg(arg_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 }
 
 static int
-astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTPreprocessState *state)
 {
     ENTER_RECURSIVE();
     switch (node_->kind) {
@@ -806,7 +806,7 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 }
 
 static int
-astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, _PyASTPreprocessState *state)
 {
     switch (node_->kind) {
     case ExceptHandler_kind:
@@ -820,7 +820,7 @@ astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, _PyASTOptimizeState
 }
 
 static int
-astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTPreprocessState *state)
 {
     CALL(astfold_expr, expr_ty, node_->context_expr);
     CALL_OPT(astfold_expr, expr_ty, node_->optional_vars);
@@ -828,7 +828,7 @@ astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 }
 
 static int
-fold_const_match_patterns(expr_ty node, PyArena *ctx_, _PyASTOptimizeState *state)
+fold_const_match_patterns(expr_ty node, PyArena *ctx_, _PyASTPreprocessState *state)
 {
     if (state->syntax_check_only) {
         return 1;
@@ -869,7 +869,7 @@ fold_const_match_patterns(expr_ty node, PyArena *ctx_, _PyASTOptimizeState *stat
 }
 
 static int
-astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTPreprocessState *state)
 {
     // Currently, this is really only used to form complex/negative numeric
     // constants in MatchValue and MatchMapping nodes
@@ -911,7 +911,7 @@ astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 }
 
 static int
-astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTPreprocessState *state)
 {
     CALL(astfold_pattern, expr_ty, node_->pattern);
     CALL_OPT(astfold_expr, expr_ty, node_->guard);
@@ -920,7 +920,7 @@ astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
 }
 
 static int
-astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTPreprocessState *state)
 {
     switch (node_->kind) {
         case TypeVar_kind:
@@ -942,11 +942,11 @@ astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
 #undef CALL_SEQ
 
 int
-_PyAST_Optimize(mod_ty mod, PyArena *arena, PyObject *filename, int optimize,
-                int ff_features, int syntax_check_only)
+_PyAST_Preprocess(mod_ty mod, PyArena *arena, PyObject *filename, int optimize,
+                  int ff_features, int syntax_check_only)
 {
-    _PyASTOptimizeState state;
-    memset(&state, 0, sizeof(_PyASTOptimizeState));
+    _PyASTPreprocessState state;
+    memset(&state, 0, sizeof(_PyASTPreprocessState));
     state.filename = filename;
     state.optimize = optimize;
     state.ff_features = ff_features;
