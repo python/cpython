@@ -11,7 +11,6 @@ __all__ = (
     "get_frame_info",
     "Strategy",
     "train_dict",
-    "zstd_support_multithread",
 
     # compression.zstd._zstdfile
     "open",
