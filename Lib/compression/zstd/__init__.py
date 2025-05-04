@@ -210,7 +210,11 @@ class CParameter(enum.IntEnum):
     overlap_log = _zstd._ZSTD_c_overlapLog
 
     def bounds(self):
-        """Return lower and upper bounds of a compression parameter, both inclusive."""
+        """Returns a tuple of ints (lower, upper), representing the bounds of a
+        compression parameter.
+
+        Both lower and upper bounds are inclusive.
+        """
         return _zstd._get_param_bounds(is_compress=True, parameter=self.value)
 
 
@@ -220,7 +224,11 @@ class DParameter(enum.IntEnum):
     window_log_max = _zstd._ZSTD_d_windowLogMax
 
     def bounds(self):
-        """Return lower and upper bounds of a decompression parameter, both inclusive."""
+        """Returns a tuple of ints (lower, upper) representing the bounds of a
+        decompression parameter.
+
+        Both lower and upper bounds are inclusive.
+        """
         return _zstd._get_param_bounds(is_compress=False, parameter=self.value)
 
 
