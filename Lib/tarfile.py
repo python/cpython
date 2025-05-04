@@ -2053,7 +2053,7 @@ class TarFile(object):
             if mode == 'r':
                 raise ReadError("not a zstd file") from e
             raise
-        except:
+        except Exception:
             fileobj.close()
             raise
         t._extfileobj = False
