@@ -7,7 +7,22 @@ COLORIZE = True
 
 # types
 if False:
-    from typing import IO
+    from typing import IO, Literal
+
+    type ColorTag = Literal[
+        "PROMPT",
+        "KEYWORD",
+        "BUILTIN",
+        "COMMENT",
+        "STRING",
+        "NUMBER",
+        "OP",
+        "DEFINITION",
+        "SOFT_KEYWORD",
+        "RESET",
+    ]
+
+    theme: dict[ColorTag, str]
 
 
 class ANSIColors:
@@ -17,11 +32,13 @@ class ANSIColors:
     BLUE = "\x1b[34m"
     CYAN = "\x1b[36m"
     GREEN = "\x1b[32m"
+    GREY = "\x1b[90m"
     MAGENTA = "\x1b[35m"
     RED = "\x1b[31m"
     WHITE = "\x1b[37m"  # more like LIGHT GRAY
     YELLOW = "\x1b[33m"
 
+    BOLD = "\x1b[1m"
     BOLD_BLACK = "\x1b[1;30m"  # DARK GRAY
     BOLD_BLUE = "\x1b[1;34m"
     BOLD_CYAN = "\x1b[1;36m"
@@ -60,10 +77,12 @@ class ANSIColors:
     INTENSE_BACKGROUND_YELLOW = "\x1b[103m"
 
 
+ColorCodes = set()
 NoColors = ANSIColors()
 
-for attr in dir(NoColors):
+for attr, code in ANSIColors.__dict__.items():
     if not attr.startswith("__"):
+        ColorCodes.add(code)
         setattr(NoColors, attr, "")
 
 
@@ -74,6 +93,13 @@ def get_colors(
         return ANSIColors()
     else:
         return NoColors
+
+
+def decolor(text: str) -> str:
+    """Remove ANSI color codes from a string."""
+    for code in ColorCodes:
+        text = text.replace(code, "")
+    return text
 
 
 def can_colorize(*, file: IO[str] | IO[bytes] | None = None) -> bool:
@@ -110,3 +136,28 @@ def can_colorize(*, file: IO[str] | IO[bytes] | None = None) -> bool:
         return os.isatty(file.fileno())
     except io.UnsupportedOperation:
         return hasattr(file, "isatty") and file.isatty()
+
+
+def set_theme(t: dict[ColorTag, str] | None = None) -> None:
+    global theme
+
+    if t:
+        theme = t
+        return
+
+    colors = get_colors()
+    theme = {
+        "PROMPT": colors.BOLD_MAGENTA,
+        "KEYWORD": colors.BOLD_BLUE,
+        "BUILTIN": colors.CYAN,
+        "COMMENT": colors.RED,
+        "STRING": colors.GREEN,
+        "NUMBER": colors.YELLOW,
+        "OP": colors.RESET,
+        "DEFINITION": colors.BOLD,
+        "SOFT_KEYWORD": colors.BOLD_BLUE,
+        "RESET": colors.RESET,
+    }
+
+
+set_theme()

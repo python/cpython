@@ -5,7 +5,6 @@
 #include "pycore_format.h"        // F_LJUST
 #include "pycore_runtime.h"       // _Py_STR()
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
-#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 
 /* See PEP 765 */
@@ -559,8 +558,15 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL(astfold_expr, expr_ty, node_->v.FormattedValue.value);
         CALL_OPT(astfold_expr, expr_ty, node_->v.FormattedValue.format_spec);
         break;
+    case Interpolation_kind:
+        CALL(astfold_expr, expr_ty, node_->v.Interpolation.value);
+        CALL_OPT(astfold_expr, expr_ty, node_->v.Interpolation.format_spec);
+        break;
     case JoinedStr_kind:
         CALL_SEQ(astfold_expr, expr, node_->v.JoinedStr.values);
+        break;
+    case TemplateStr_kind:
+        CALL_SEQ(astfold_expr, expr, node_->v.TemplateStr.values);
         break;
     case Attribute_kind:
         CALL(astfold_expr, expr_ty, node_->v.Attribute.value);

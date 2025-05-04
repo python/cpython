@@ -751,7 +751,6 @@ class TestCurses(unittest.TestCase):
         curses.nl(False)
         curses.nl()
 
-
     def test_input_options(self):
         stdscr = self.stdscr
 
@@ -943,9 +942,6 @@ class TestCurses(unittest.TestCase):
 
     @requires_colors
     def test_pair_content(self):
-        if not hasattr(curses, 'use_default_colors'):
-            self.assertEqual(curses.pair_content(0),
-                             (curses.COLOR_WHITE, curses.COLOR_BLACK))
         curses.pair_content(0)
         maxpair = self.get_pair_limit() - 1
         if maxpair > 0:
@@ -990,13 +986,27 @@ class TestCurses(unittest.TestCase):
     @requires_curses_func('use_default_colors')
     @requires_colors
     def test_use_default_colors(self):
-        old = curses.pair_content(0)
         try:
             curses.use_default_colors()
         except curses.error:
             self.skipTest('cannot change color (use_default_colors() failed)')
         self.assertEqual(curses.pair_content(0), (-1, -1))
-        self.assertIn(old, [(curses.COLOR_WHITE, curses.COLOR_BLACK), (-1, -1), (0, 0)])
+
+    @requires_curses_func('assume_default_colors')
+    @requires_colors
+    def test_assume_default_colors(self):
+        try:
+            curses.assume_default_colors(-1, -1)
+        except curses.error:
+            self.skipTest('cannot change color (assume_default_colors() failed)')
+        self.assertEqual(curses.pair_content(0), (-1, -1))
+        curses.assume_default_colors(curses.COLOR_YELLOW, curses.COLOR_BLUE)
+        self.assertEqual(curses.pair_content(0), (curses.COLOR_YELLOW, curses.COLOR_BLUE))
+        curses.assume_default_colors(curses.COLOR_RED, -1)
+        self.assertEqual(curses.pair_content(0), (curses.COLOR_RED, -1))
+        curses.assume_default_colors(-1, curses.COLOR_GREEN)
+        self.assertEqual(curses.pair_content(0), (-1, curses.COLOR_GREEN))
+        curses.assume_default_colors(-1, -1)
 
     def test_keyname(self):
         # TODO: key_name()

@@ -1779,7 +1779,8 @@ in :mod:`!ctypes`) which inherits from the private :class:`_CFuncPtr` class:
 
 .. audit-event:: ctypes.call_function func_pointer,arguments foreign-functions
 
-   Some ways to invoke foreign function calls may raise an auditing event
+   Some ways to invoke foreign function calls as well as some of the
+   functions in this module may raise an auditing event
    ``ctypes.call_function`` with arguments ``function pointer`` and ``arguments``.
 
 .. _ctypes-function-prototypes:
@@ -2171,9 +2172,19 @@ Utility functions
 
 .. function:: POINTER(type, /)
 
-   Create and return a new ctypes pointer type. Pointer types are cached and
+   Create or return a ctypes pointer type. Pointer types are cached and
    reused internally, so calling this function repeatedly is cheap.
    *type* must be a ctypes type.
+
+   .. impl-detail::
+
+      The resulting pointer type is cached in the ``__pointer_type__``
+      attribute of *type*.
+      It is possible to set this attribute before the first call to
+      ``POINTER`` in order to set a custom pointer type.
+      However, doing this is discouraged: manually creating a suitable
+      pointer type is difficult without relying on implementation
+      details that may change in future Python versions.
 
 
 .. function:: pointer(obj, /)
@@ -2338,6 +2349,16 @@ Data types
       This method returns a ctypes type instance exported by a shared
       library. *name* is the name of the symbol that exports the data, *library*
       is the loaded shared library.
+
+   Common class variables of ctypes data types:
+
+   .. attribute:: __pointer_type__
+
+      The pointer type that was created by calling
+      :func:`POINTER` for corresponding ctypes data type. If a pointer type
+      was not yet created, the attribute is missing.
+
+      .. versionadded:: next
 
    Common instance variables of ctypes data types:
 

@@ -3281,6 +3281,37 @@ class ConfigDictTest(BaseTest):
         }
     }
 
+    # Remove when deprecation ends.
+    class DeprecatedStrmHandler(logging.StreamHandler):
+        def __init__(self, strm=None):
+            super().__init__(stream=strm)
+
+    config_custom_handler_with_deprecated_strm_arg = {
+        "version": 1,
+        "formatters": {
+            "form1": {
+                "format": "%(levelname)s ++ %(message)s",
+            },
+        },
+        "handlers": {
+            "hand1": {
+                "class": DeprecatedStrmHandler,
+                "formatter": "form1",
+                "level": "NOTSET",
+                "stream": "ext://sys.stdout",
+            },
+        },
+        "loggers": {
+            "compiler.parser": {
+                "level": "DEBUG",
+                "handlers": ["hand1"],
+            },
+        },
+        "root": {
+            "level": "WARNING",
+        },
+    }
+
     def apply_config(self, conf):
         logging.config.dictConfig(conf)
 
@@ -3369,6 +3400,15 @@ class ConfigDictTest(BaseTest):
     def test_config5_ok(self):
         self.test_config1_ok(config=self.config5)
         self.check_handler('hand1', CustomHandler)
+
+    def test_deprecation_warning_custom_handler_with_strm_arg(self):
+        msg = (
+            "Support for custom logging handlers with the 'strm' argument "
+            "is deprecated and scheduled for removal in Python 3.16. "
+            "Define handlers with the 'stream' argument instead."
+        )
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            self.test_config1_ok(config=self.config_custom_handler_with_deprecated_strm_arg)
 
     def test_config6_failure(self):
         self.assertRaises(Exception, self.apply_config, self.config6)
@@ -4355,6 +4395,17 @@ class QueueHandlerTest(BaseTest):
         # doesn't hurt to call stop() more than once.
         listener.stop()
         self.assertIsNone(listener._thread)
+
+    def test_queue_listener_multi_start(self):
+        handler = TestHandler(support.Matcher())
+        with logging.handlers.QueueListener(self.queue, handler) as listener:
+            self.assertRaises(RuntimeError, listener.start)
+
+        with listener:
+            self.assertRaises(RuntimeError, listener.start)
+
+        listener.start()
+        listener.stop()
 
     def test_queue_listener_with_StreamHandler(self):
         # Test that traceback and stack-info only appends once (bpo-34334, bpo-46755).
@@ -6689,7 +6740,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             rotator = rotators[i]
             candidates = rotator.getFilesToDelete()
             self.assertEqual(len(candidates), n_files - backupCount, candidates)
-            matcher = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\Z")
+            matcher = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\z")
             for c in candidates:
                 d, fn = os.path.split(c)
                 self.assertStartsWith(fn, prefix+'.')
