@@ -1,1 +1,2 @@
-Add option for extension modules to specialised `BINARY_OP` instructions. Applied to `array` objects.
+Add option for extension modules to specialised ``BINARY_OP`` instructions.
+Applied to ``array`` objects.
