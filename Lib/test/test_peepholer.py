@@ -2472,6 +2472,13 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
         ]
         self.check(insts, insts)
 
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("DELETE_FAST", 0, 2),
+            ("POP_TOP", None, 3),
+        ]
+        self.check(insts, insts)
+
     def test_unoptimized_if_aliased(self):
         insts = [
             ("LOAD_FAST", 0, 1),
