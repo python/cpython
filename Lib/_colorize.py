@@ -154,16 +154,19 @@ class Theme:
         *,
         repl: REPL | None = None,
         traceback: Traceback | None = None,
+        unittest: Unittest | None = None,
     ) -> Self:
         return type(self)(
             repl=repl or self.repl,
             traceback=traceback or self.traceback,
+            unittest=unittest or self.unittest,
         )
 
     def no_colors(self) -> Self:
         return type(self)(
             repl=self.repl.no_colors(),
             traceback=self.traceback.no_colors(),
+            unittest=self.unittest.no_colors(),
         )
 
 
