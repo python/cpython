@@ -4,13 +4,15 @@ import json
 import struct
 import sys
 import unittest
+from contextlib import redirect_stderr
 from gettext import GNUTranslations
+from io import StringIO
 from pathlib import Path
+from textwrap import dedent
 
 from test.support.os_helper import temp_cwd
 from test.support.script_helper import assert_python_failure, assert_python_ok
 from test.test_tools import imports_under_tool, skip_if_missing, toolsdir
-from textwrap import dedent
 
 
 skip_if_missing('i18n')
@@ -320,9 +322,10 @@ class POParserTest(unittest.TestCase):
                     Path('messages.po').write_text(invalid_po)
                     # Reset the global MESSAGES dictionary
                     msgfmt.MESSAGES.clear()
-                    with self.assertRaises((SystemExit, UnboundLocalError,
-                                            IndexError, SyntaxError)):
-                        msgfmt.make('messages.po', 'messages.mo')
+                    with redirect_stderr(StringIO()) as output:
+                        with self.assertRaises((SystemExit, UnboundLocalError,
+                                                IndexError, SyntaxError)):
+                            msgfmt.make('messages.po', 'messages.mo')
 
     def test_semantic_errors(self):
         invalid_po_files = (
@@ -394,8 +397,9 @@ class POParserTest(unittest.TestCase):
                     Path('messages.po').write_text(invalid_po)
                     # Reset the global MESSAGES dictionary
                     msgfmt.MESSAGES.clear()
-                    with self.assertRaises((SystemExit, UnboundLocalError)):
-                        msgfmt.make('messages.po', 'messages.mo')
+                    with redirect_stderr(StringIO()) as output:
+                        with self.assertRaises((SystemExit, UnboundLocalError)):
+                            msgfmt.make('messages.po', 'messages.mo')
 
     def test_msgstr_invalid_indices(self):
         invalid_po_files = (
@@ -412,8 +416,9 @@ class POParserTest(unittest.TestCase):
                     Path('messages.po').write_text(invalid_po)
                     # Reset the global MESSAGES dictionary
                     msgfmt.MESSAGES.clear()
-                    with self.assertRaises(SystemExit):
-                        msgfmt.make('messages.po', 'messages.mo')
+                    with redirect_stderr(StringIO()) as output:
+                        with self.assertRaises(SystemExit):
+                            msgfmt.make('messages.po', 'messages.mo')
 
 
 class CLITest(unittest.TestCase):
