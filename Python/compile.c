@@ -135,7 +135,7 @@ compiler_setup(compiler *c, mod_ty mod, PyObject *filename,
     c->c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c->c_save_nested_seqs = false;
 
-    if (!_PyAST_Optimize(mod, arena, filename, c->c_optimize, merged, 0)) {
+    if (!_PyAST_Preprocess(mod, arena, filename, c->c_optimize, merged, 0)) {
         return ERROR;
     }
     c->c_st = _PySymtable_Build(mod, filename, &c->c_future);
@@ -1481,8 +1481,8 @@ _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
 }
 
 int
-_PyCompile_AstOptimize(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
-                       int optimize, PyArena *arena, int no_const_folding)
+_PyCompile_AstPreprocess(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
+                         int optimize, PyArena *arena, int no_const_folding)
 {
     _PyFutureFeatures future;
     if (!_PyFuture_FromAST(mod, filename, &future)) {
@@ -1492,7 +1492,7 @@ _PyCompile_AstOptimize(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
     if (optimize == -1) {
         optimize = _Py_GetConfig()->optimization_level;
     }
-    if (!_PyAST_Optimize(mod, arena, filename, optimize, flags, no_const_folding)) {
+    if (!_PyAST_Preprocess(mod, arena, filename, optimize, flags, no_const_folding)) {
         return -1;
     }
     return 0;

@@ -1,0 +1,3 @@
+Add a *format* parameter to :meth:`annotationlib.ForwardRef.evaluate`.
+Evaluating annotations in the ``FORWARDREF`` format now succeeds in more
+cases that would previously have raised an exception.

@@ -188,7 +188,7 @@ Include/internal/pycore_time.h  @pganssle @abalkin
 
 # AST
 Python/ast.c                  @isidentical @JelleZijlstra @eclips4
-Python/ast_opt.c              @isidentical @eclips4
+Python/ast_preprocess.c       @isidentical @eclips4
 Parser/asdl.py                @isidentical @JelleZijlstra @eclips4
 Parser/asdl_c.py              @isidentical @JelleZijlstra @eclips4
 Lib/ast.py                    @isidentical @JelleZijlstra @eclips4

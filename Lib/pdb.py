@@ -2933,6 +2933,7 @@ class _PdbClient:
         self.completion_matches = []
         self.state = "dumb"
         self.write_failed = False
+        self.multiline_block = False
 
     def _ensure_valid_message(self, msg):
         # Ensure the message conforms to our protocol.
@@ -2979,6 +2980,7 @@ class _PdbClient:
             self.write_failed = True
 
     def read_command(self, prompt):
+        self.multiline_block = False
         reply = input(prompt)
 
         if self.state == "dumb":
@@ -3003,6 +3005,7 @@ class _PdbClient:
             return prefix + reply
 
         # Otherwise, valid first line of a multi-line statement
+        self.multiline_block = True
         continue_prompt = "...".ljust(len(prompt))
         while codeop.compile_command(reply, "<stdin>", "single") is None:
             reply += "\n" + input(continue_prompt)
@@ -3105,9 +3108,13 @@ class _PdbClient:
 
             origline = readline.get_line_buffer()
             line = origline.lstrip()
-            stripped = len(origline) - len(line)
-            begidx = readline.get_begidx() - stripped
-            endidx = readline.get_endidx() - stripped
+            if self.multiline_block:
+                # We're completing a line contained in a multi-line block.
+                # Force the remote to treat it as a Python expression.
+                line = "! " + line
+            offset = len(origline) - len(line)
+            begidx = readline.get_begidx() - offset
+            endidx = readline.get_endidx() - offset
 
             msg = {
                 "complete": {
