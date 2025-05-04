@@ -1615,22 +1615,29 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
         annotations[name] = tp
 
     def annotate_method(format):
-        typing = sys.modules.get("typing")
-        if typing is None and format == annotationlib.Format.FORWARDREF:
-            typing_any = annotationlib.ForwardRef("Any", module="typing")
-            return {
-                ann: typing_any if t is _ANY_MARKER else t
-                for ann, t in annotations.items()
-            }
-
-        from typing import Any
-        ann_dict = {
-            ann: Any if t is _ANY_MARKER else t
+        def get_any():
+            match format:
+                case annotationlib.Format.STRING:
+                    return 'typing.Any'
+                case annotationlib.Format.FORWARDREF:
+                    typing = sys.modules.get("typing")
+                    if typing is None:
+                        return annotationlib.ForwardRef("Any", module="typing")
+                    else:
+                        return typing.Any
+                case annotationlib.Format.VALUE:
+                    from typing import Any
+                    return Any
+                case _:
+                    raise NotImplementedError
+        annos = {
+            ann: get_any() if t is _ANY_MARKER else t
             for ann, t in annotations.items()
         }
         if format == annotationlib.Format.STRING:
-            return annotationlib.annotations_to_string(ann_dict)
-        return ann_dict
+            return annotationlib.annotations_to_string(annos)
+        else:
+            return annos
 
     # Update 'ns' with the user-supplied namespace plus our calculated values.
     def exec_body_callback(ns):
