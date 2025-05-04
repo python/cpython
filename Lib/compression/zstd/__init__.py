@@ -30,7 +30,6 @@ __all__ = (
 )
 
 import enum
-import functools
 
 from compression.zstd.zstdfile import ZstdFile, open
 from _zstd import *
@@ -193,17 +192,6 @@ def decompress(data, zstd_dict=None, options=None):
             break
     return b"".join(results)
 
-class _UnsupportedCParameter:
-    def __set_name__(self, _, name):
-        self.name = name
-
-    def __get__(self, *_, **__):
-        msg = ("%s CParameter not available, zstd version is %s.") % (
-            self.name,
-            zstd_version,
-        )
-        raise NotImplementedError(msg)
-
 
 class CParameter(enum.IntEnum):
     """Compression parameters"""
@@ -216,8 +204,6 @@ class CParameter(enum.IntEnum):
     minMatch = _zstd._ZSTD_c_minMatch
     targetLength = _zstd._ZSTD_c_targetLength
     strategy = _zstd._ZSTD_c_strategy
-
-    targetCBlockSize = _UnsupportedCParameter()
 
     enableLongDistanceMatching = _zstd._ZSTD_c_enableLongDistanceMatching
     ldmHashLog = _zstd._ZSTD_c_ldmHashLog
@@ -233,7 +219,6 @@ class CParameter(enum.IntEnum):
     jobSize = _zstd._ZSTD_c_jobSize
     overlapLog = _zstd._ZSTD_c_overlapLog
 
-    @functools.lru_cache(maxsize=None)
     def bounds(self):
         """Return lower and upper bounds of a compression parameter, both inclusive."""
         # 1 means compression parameter
@@ -245,7 +230,6 @@ class DParameter(enum.IntEnum):
 
     windowLogMax = _zstd._ZSTD_d_windowLogMax
 
-    @functools.lru_cache(maxsize=None)
     def bounds(self):
         """Return lower and upper bounds of a decompression parameter, both inclusive."""
         # 0 means decompression parameter
