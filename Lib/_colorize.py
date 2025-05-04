@@ -75,7 +75,34 @@ for attr, code in ANSIColors.__dict__.items():
         setattr(NoColors, attr, "")
 
 
+#
+# Experimental theming support (see gh-133346)
+#
+
+# - create a theme by copying an existing `Theme` with one or more sections
+#   replaced, using `default_theme.copy_with()`;
+# - create a theme section by copying an existing `ThemeSection` with one or
+#   more colors replaced, using for example `default_theme.repl.copy_with()`;
+# - create a theme from scratch by instantiating a `Theme` data class with
+#   the required sections (with are also dataclass instances).
+#
+# Then call `_colorize.set_theme(your_theme)` to set it.
+#
+# Put your theme configuration in $PYTHONSTARTUP for the interactive shell,
+# or sitecustomize.py in your virtual environment or Python installation for
+# other uses.  Your applications can call `_colorize.set_theme()` too.
+#
+# Note that thanks to the dataclasses providing default values for all fields,
+# creating a new theme or theme section from scratch is possible without
+# specifying all keys.
+
+
 class ThemeSection(Mapping[str, str]):
+    """A mixin/base class for theme sections.
+
+    It enables dictionary access to a section, as well as implements convenience
+    methods.
+    """
     __dataclass_fields__: ClassVar[dict[str, Field[str]]]
     _name_to_value: Callable[[str], str]
 
@@ -145,6 +172,11 @@ class Unittest(ThemeSection):
 
 @dataclass(frozen=True)
 class Theme:
+    """A suite of themes for all sections of Python.
+    
+    When adding a new one, remember to also modify `copy_with` and `no_colors`
+    below.
+    """
     repl: REPL = field(default_factory=REPL)
     traceback: Traceback = field(default_factory=Traceback)
     unittest: Unittest = field(default_factory=Unittest)
@@ -156,6 +188,11 @@ class Theme:
         traceback: Traceback | None = None,
         unittest: Unittest | None = None,
     ) -> Self:
+        """Return a new Theme based on this instance with some sections replaced.
+
+        Themes are immutable to protect against accidental modifications that
+        could lead to invalid terminal states.
+        """
         return type(self)(
             repl=repl or self.repl,
             traceback=traceback or self.traceback,
@@ -163,6 +200,12 @@ class Theme:
         )
 
     def no_colors(self) -> Self:
+        """Return a new Theme where colors in all sections are empty strings.
+
+        This allows writing user code as if colors are always used. The color
+        fields will be ANSI color code strings when colorization is desired
+        and possible, and empty strings otherwise.
+        """
         return type(self)(
             repl=self.repl.no_colors(),
             traceback=self.traceback.no_colors(),
@@ -232,6 +275,18 @@ def get_theme(
     force_color: bool = False,
     force_no_color: bool = False,
 ) -> Theme:
+    """Returns the currently set theme, potentially in a zero-color variant.
+
+    In cases where colorizing is not possible (see `can_colorize`), the returned
+    theme contains all empty strings in all color definitions.
+    See `Theme.no_colors()` for more information.
+
+    It is recommended not to cache the result of this function for extended
+    periods of time because the user might influence theme selection by
+    the interactive shell, a debugger, or application-specific code. The
+    environment (including environment variable state and console configuration
+    on Windows) can also change in the course of the application life cycle.
+    """
     if force_color or (not force_no_color and can_colorize(file=tty_file)):
         return _theme
     return theme_no_color
