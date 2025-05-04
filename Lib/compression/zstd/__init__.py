@@ -221,8 +221,9 @@ class DParameter(enum.IntEnum):
 class Strategy(enum.IntEnum):
     """Compression strategies, listed from fastest to strongest.
 
-    Note : new strategies _might_ be added in the future, only the order
-    (from fast to strong) is guaranteed.
+    Note that new strategies might be added in the future.
+    Only the order (from fast to strong) is guaranteed,
+    the numeric value might change.
     """
 
     fast = _zstd._ZSTD_fast
