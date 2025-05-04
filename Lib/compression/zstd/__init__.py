@@ -89,6 +89,7 @@ def train_dict(samples, dict_size):
 
     *samples* is an iterable of samples, where a sample is a bytes-like
     object representing a file.
+
     *dict_size* is the dictionary's maximum size, in bytes.
     """
     if not isinstance(dict_size, int):
@@ -150,8 +151,10 @@ def compress(data, level=None, options=None, zstd_dict=None):
 
     *level* is an int specifying the compression level to use, defaulting to
     COMPRESSION_LEVEL_DEFAULT
+
     *options* is a dict object that contains advanced compression
     parameters. See CParameter for more on options.
+
     *zstd_dict* is a ZstdDict object, a pre-trained Zstandard dictionary. See
     the function train_dict for how to train a ZstdDict on sample data.
 
@@ -165,6 +168,7 @@ def decompress(data, zstd_dict=None, options=None):
 
     *zstd_dict* is a ZstdDict object, a pre-trained Zstandard dictionary. See
     the function train_dict for how to train a ZstdDict on sample data.
+
     *options* is a dict object that contains advanced compression
     parameters. See DParameter for more on options.
 

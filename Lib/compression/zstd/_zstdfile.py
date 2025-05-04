@@ -3,7 +3,8 @@ import io
 
 from os import PathLike
 
-from _zstd import ZstdCompressor, ZstdDecompressor, _ZSTD_DStreamSizes, ZstdError
+from _zstd import (ZstdCompressor, ZstdDecompressor, _ZSTD_DStreamSizes,
+                   ZstdError)
 from compression._common import _streams
 
 __all__ = ("ZstdFile", "open")
@@ -50,13 +51,15 @@ class ZstdFile(_streams.BaseStream):
         creating exclusively, or "a" for appending. These can equivalently be
         given as "rb", "wb", "xb" and "ab" respectively.
 
-        Parameters
-        level: The compression level to use, defaults to ZSTD_CLEVEL_DEFAULT. Note,
-            in read mode (decompression), compression level is not supported.
-        options: A dict object, containing advanced compression
-            parameters.
-        zstd_dict: A ZstdDict object, pre-trained dictionary for compression /
-            decompression.
+        
+       *level* is an int specifying the compression level to use, defaulting to
+       COMPRESSION_LEVEL_DEFAULT
+
+       *options* is a dict object that contains advanced compression
+       parameters. See CParameter or DParameter for more on options.
+
+       *zstd_dict* is a ZstdDict object, a pre-trained Zstandard dictionary.
+       See the function train_dict for how to train a ZstdDict on sample data.
         """
         self._fp = None
         self._closefp = False
@@ -68,12 +71,13 @@ class ZstdFile(_streams.BaseStream):
                 raise TypeError(
                     (
                         "In read mode (decompression), options argument "
-                        "should be a dict object, that represents decompression "
-                        "options."
+                        "should be a dict object, that represents "
+                        "decompression options."
                     )
                 )
             if level is not None:
-                raise TypeError("level argument should only be passed when writing.")
+                raise TypeError("level argument should only be passed when "
+                                "writing.")
             mode_code = _MODE_READ
         elif mode in ("w", "wb", "a", "ab", "x", "xb"):
             if not isinstance(level, (type(None), int)):
@@ -97,7 +101,8 @@ class ZstdFile(_streams.BaseStream):
         elif hasattr(filename, "read") or hasattr(filename, "write"):
             self._fp = filename
         else:
-            raise TypeError("filename must be a str, bytes, file or PathLike object")
+            raise TypeError("filename must be a str, bytes, file or PathLike "
+                            "object")
         self._mode = mode_code
 
         if self._mode == _MODE_READ:
@@ -137,7 +142,7 @@ class ZstdFile(_streams.BaseStream):
                 self._closefp = False
 
     def write(self, data):
-        """Write a bytes-like object to the file.
+        """Write a bytes-like object *data* to the file.
 
         Returns the number of uncompressed bytes written, which is
         always the length of data in bytes. Note that due to buffering,
@@ -160,7 +165,7 @@ class ZstdFile(_streams.BaseStream):
     def flush(self, mode=FLUSH_BLOCK):
         """Flush remaining data to the underlying stream.
 
-        The mode argument can be ZstdFile.FLUSH_BLOCK, ZstdFile.FLUSH_FRAME.
+        The mode argument can be ZstdFile.FLUSH_BLOCK or ZstdFile.FLUSH_FRAME.
         Abuse of this method will reduce compression ratio, use it only when
         necessary.
 
