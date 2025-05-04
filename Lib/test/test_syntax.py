@@ -419,7 +419,7 @@ SyntaxError: invalid syntax
 >>> def foo(/,a,b=,c):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: at least one argument must precede /
+SyntaxError: at least one parameter must precede /
 
 >>> def foo(a,/,/,b,c):
 ...    pass
@@ -538,7 +538,7 @@ SyntaxError: expected default value expression
 
 >>> lambda /,a,b,c: None
 Traceback (most recent call last):
-SyntaxError: at least one argument must precede /
+SyntaxError: at least one parameter must precede /
 
 >>> lambda a,/,/,b,c: None
 Traceback (most recent call last):

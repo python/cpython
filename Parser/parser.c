@@ -22190,7 +22190,7 @@ invalid_parameters_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_parameters[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"/\" ','"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "at least one argument must precede /" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "at least one parameter must precede /" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -22781,7 +22781,7 @@ invalid_lambda_parameters_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_lambda_parameters[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"/\" ','"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "at least one argument must precede /" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "at least one parameter must precede /" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
