@@ -68,7 +68,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4D7C112F-3083-4D9E-9754-9341C14D9B39}</ProjectGuid>
-    <RootNamespace>_testexternalinspection</RootNamespace>
+    <RootNamespace>_remotedebugging</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <SupportPGO>false</SupportPGO>
   </PropertyGroup>
@@ -93,7 +93,7 @@
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
   </PropertyGroup>
   <ItemGroup>
-    <ClCompile Include="..\Modules\_testexternalinspection.c" />
+    <ClCompile Include="..\Modules\_remotedebuggingmodule.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />

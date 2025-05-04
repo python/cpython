@@ -4,7 +4,8 @@ import textwrap
 import importlib
 import sys
 import socket
-from test.support import os_helper, SHORT_TIMEOUT, busy_retry
+from unittest.mock import ANY
+from test.support import os_helper, SHORT_TIMEOUT, busy_retry, requires_gil_enabled
 from test.support.script_helper import make_script
 from test.support.socket_helper import find_unused_port
 
@@ -13,13 +14,13 @@ import subprocess
 PROCESS_VM_READV_SUPPORTED = False
 
 try:
-    from _testexternalinspection import PROCESS_VM_READV_SUPPORTED
-    from _testexternalinspection import get_stack_trace
-    from _testexternalinspection import get_async_stack_trace
-    from _testexternalinspection import get_all_awaited_by
+    from _remotedebugging import PROCESS_VM_READV_SUPPORTED
+    from _remotedebugging import get_stack_trace
+    from _remotedebugging import get_async_stack_trace
+    from _remotedebugging import get_all_awaited_by
 except ImportError:
     raise unittest.SkipTest(
-        "Test only runs when _testexternalinspection is available")
+        "Test only runs when _remotedebuggingmodule is available")
 
 def _make_test_script(script_dir, script_basename, source):
     to_return = make_script(script_dir, script_basename, source)
@@ -184,13 +185,13 @@ class TestGetStackTrace(unittest.TestCase):
 
                 root_task = "Task-1"
                 expected_stack_trace = [
-                    ["c5", "c4", "c3", "c2"],
-                    "c2_root",
+                    ['c5', 'c4', 'c3', 'c2'],
+                    'c2_root',
                     [
-                        [["main"], root_task, []],
-                        [["c1"], "sub_main_1", [[["main"], root_task, []]]],
-                        [["c1"], "sub_main_2", [[["main"], root_task, []]]],
-                    ],
+                        [['_aexit', '__aexit__', 'main'], root_task, []],
+                        [['c1'], 'sub_main_1', [[['_aexit', '__aexit__', 'main'], root_task, []]]],
+                        [['c1'], 'sub_main_2', [[['_aexit', '__aexit__', 'main'], root_task, []]]],
+                    ]
                 ]
                 self.assertEqual(stack_trace, expected_stack_trace)
 
@@ -397,12 +398,15 @@ class TestGetStackTrace(unittest.TestCase):
             # sets are unordered, so we want to sort "awaited_by"s
             stack_trace[2].sort(key=lambda x: x[1])
 
-            expected_stack_trace =  [
-                ['deep', 'c1', 'run_one_coro'], 'Task-2', [[['main'], 'Task-1', []]]
+            expected_stack_trace = [
+                ['deep', 'c1', 'run_one_coro'],
+                    'Task-2',
+                    [[['staggered_race', 'main'], 'Task-1', []]]
             ]
             self.assertEqual(stack_trace, expected_stack_trace)
 
     @skip_if_not_supported
+    @requires_gil_enabled("gh-133359: occasionally flaky on AMD64")
     @unittest.skipIf(sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
                      "Test only runs on Linux with process_vm_readv support")
     def test_async_global_awaited_by(self):
@@ -516,19 +520,19 @@ class TestGetStackTrace(unittest.TestCase):
                 # expected: at least 1000 pending tasks
                 self.assertGreaterEqual(len(entries), 1000)
                 # the first three tasks stem from the code structure
-                self.assertIn(('Task-1', []), entries)
-                self.assertIn(('server task', [[['main'], 'Task-1', []]]), entries)
-                self.assertIn(('echo client spam', [[['main'], 'Task-1', []]]), entries)
+                self.assertIn((ANY, 'Task-1', []), entries)
+                self.assertIn((ANY, 'server task', [[['_aexit', '__aexit__', 'main'], ANY]]), entries)
+                self.assertIn((ANY, 'echo client spam', [[['_aexit', '__aexit__', 'main'], ANY]]), entries)
 
-                expected_stack = [[['echo_client_spam'], 'echo client spam', [[['main'], 'Task-1', []]]]]
-                tasks_with_stack = [task for task in entries if task[1] == expected_stack]
+                expected_stack = [[['_aexit', '__aexit__', 'echo_client_spam'], ANY]]
+                tasks_with_stack = [task for task in entries if task[2] == expected_stack]
                 self.assertGreaterEqual(len(tasks_with_stack), 1000)
 
                 # the final task will have some random number, but it should for
                 # sure be one of the echo client spam horde (In windows this is not true
                 # for some reason)
                 if sys.platform != "win32":
-                    self.assertEqual([[['echo_client_spam'], 'echo client spam', [[['main'], 'Task-1', []]]]], entries[-1][1])
+                    self.assertEqual([[['_aexit', '__aexit__', 'echo_client_spam'], ANY]], entries[-1][2])
             except PermissionError:
                 self.skipTest(
                     "Insufficient permissions to read the stack trace")
@@ -544,7 +548,6 @@ class TestGetStackTrace(unittest.TestCase):
                      "Test only runs on Linux with process_vm_readv support")
     def test_self_trace(self):
         stack_trace = get_stack_trace(os.getpid())
-        print(stack_trace)
         self.assertEqual(stack_trace[0], "test_self_trace")
 
 if __name__ == "__main__":

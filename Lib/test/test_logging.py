@@ -6740,7 +6740,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             rotator = rotators[i]
             candidates = rotator.getFilesToDelete()
             self.assertEqual(len(candidates), n_files - backupCount, candidates)
-            matcher = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\Z")
+            matcher = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\z")
             for c in candidates:
                 d, fn = os.path.split(c)
                 self.assertStartsWith(fn, prefix+'.')

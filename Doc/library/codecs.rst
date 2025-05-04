@@ -208,6 +208,10 @@ wider range of codecs when working with binary files:
    .. versionchanged:: 3.11
       The ``'U'`` mode has been removed.
 
+   .. deprecated:: next
+
+      :func:`codecs.open` has been superseded by :func:`open`.
+
 
 .. function:: EncodedFile(file, data_encoding, file_encoding=None, errors='strict')
 
