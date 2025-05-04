@@ -2,7 +2,6 @@ import array
 import gc
 import io
 import pathlib
-import pickle
 import random
 import builtins
 import re
@@ -11,17 +10,16 @@ import unittest
 import tempfile
 import threading
 
-from compression._common import _streams
-
 from test.support.import_helper import import_module
 from test.support import threading_helper
 from test.support import _1M
 from test.support import Py_GIL_DISABLED
 
-zstd = import_module("compression.zstd")
 _zstd = import_module("_zstd")
+zstd = import_module("compression.zstd")
+
 from compression.zstd import (
-    zstdfile,
+    open,
     compress,
     decompress,
     ZstdCompressor,
@@ -41,7 +39,6 @@ from compression.zstd import (
     ZstdFile,
     zstd_support_multithread,
 )
-from compression.zstd.zstdfile import open
 
 _1K = 1024
 _130_1K = 130 * _1K
