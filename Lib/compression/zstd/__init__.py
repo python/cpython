@@ -27,9 +27,9 @@ __all__ = (
     "ZstdFile",
 )
 
-from collections import namedtuple
-from enum import IntEnum
-from functools import lru_cache
+import enum
+import functools
+import dataclasses
 
 from compression.zstd.zstdfile import ZstdFile, open
 from _zstd import *
@@ -43,14 +43,19 @@ _train_dict = _zstd._train_dict
 _finalize_dict = _zstd._finalize_dict
 
 
-# TODO(emmatyping): these should be dataclasses or some other class, not namedtuples
+@dataclasses.dataclass(frozen=True)
+class _CompressionLevelValues:
+    default: int
+    min: int
+    max: int
 
-# compressionLevel_values
-_nt_values = namedtuple("values", ["default", "min", "max"])
-compressionLevel_values = _nt_values(*_zstd._compressionLevel_values)
+compressionLevel_values = _CompressionLevelValues(*_zstd._compressionLevel_values)
 
-
-_nt_frame_info = namedtuple("frame_info", ["decompressed_size", "dictionary_id"])
+@dataclasses.dataclass(frozen=True)
+class FrameInfo:
+    """A dataclass storing information about a Zstandard frame."""
+    decompressed_size: int
+    dictionary_id: int
 
 
 def get_frame_info(frame_buffer):
@@ -61,18 +66,20 @@ def get_frame_info(frame_buffer):
                   a frame, and needs to include at least the frame header (6 to
                   18 bytes).
 
-    Return a two-items namedtuple: (decompressed_size, dictionary_id)
+    Return a FrameInfo dataclass, which currently has two attributes
+
+    'decompressed_size' is the size in bytes of the data in the frame when
+    decompressed.
 
     If decompressed_size is None, decompressed size is unknown.
 
-    dictionary_id is a 32-bit unsigned integer value. 0 means dictionary ID was
+    'dictionary_id' is a 32-bit unsigned integer value. 0 means dictionary ID was
     not recorded in the frame header, the frame may or may not need a dictionary
     to be decoded, and the ID of such a dictionary is not specified.
-
-    It's possible to append more items to the namedtuple in the future."""
+    """
 
     ret_tuple = _zstd._get_frame_info(frame_buffer)
-    return _nt_frame_info(*ret_tuple)
+    return FrameInfo(*ret_tuple)
 
 
 def _nbytes(dat):
@@ -215,7 +222,7 @@ class _UnsupportedCParameter:
         raise NotImplementedError(msg)
 
 
-class CParameter(IntEnum):
+class CParameter(enum.IntEnum):
     """Compression parameters"""
 
     compressionLevel = _zstd._ZSTD_c_compressionLevel
@@ -243,26 +250,26 @@ class CParameter(IntEnum):
     jobSize = _zstd._ZSTD_c_jobSize
     overlapLog = _zstd._ZSTD_c_overlapLog
 
-    @lru_cache(maxsize=None)
+    @functools.lru_cache(maxsize=None)
     def bounds(self):
         """Return lower and upper bounds of a compression parameter, both inclusive."""
         # 1 means compression parameter
         return _zstd._get_param_bounds(1, self.value)
 
 
-class DParameter(IntEnum):
+class DParameter(enum.IntEnum):
     """Decompression parameters"""
 
     windowLogMax = _zstd._ZSTD_d_windowLogMax
 
-    @lru_cache(maxsize=None)
+    @functools.lru_cache(maxsize=None)
     def bounds(self):
         """Return lower and upper bounds of a decompression parameter, both inclusive."""
         # 0 means decompression parameter
         return _zstd._get_param_bounds(0, self.value)
 
 
-class Strategy(IntEnum):
+class Strategy(enum.IntEnum):
     """Compression strategies, listed from fastest to strongest.
 
     Note : new strategies _might_ be added in the future, only the order

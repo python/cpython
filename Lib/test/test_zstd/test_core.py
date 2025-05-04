@@ -149,7 +149,8 @@ class FunctionsTestCase(unittest.TestCase):
 
     def test_roundtrip_level(self):
         raw_dat = THIS_FILE_BYTES[: len(THIS_FILE_BYTES) // 6]
-        _default, minv, maxv = compressionLevel_values
+        minv = compressionLevel_values.min
+        maxv = compressionLevel_values.max
 
         for level in range(max(-20, minv), maxv + 1):
             dat1 = compress(raw_dat, level)
