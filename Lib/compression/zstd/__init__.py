@@ -15,7 +15,7 @@ __all__ = (
     "train_dict",
     "zstd_support_multithread",
 
-    # compression.zstd.zstdfile
+    # compression.zstd._zstdfile
     "open",
     "ZstdFile",
 
@@ -31,7 +31,7 @@ __all__ = (
 
 import enum
 
-from compression.zstd.zstdfile import ZstdFile, open
+from compression.zstd._zstdfile import ZstdFile, open
 from _zstd import *
 
 import _zstd
