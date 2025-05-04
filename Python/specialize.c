@@ -2563,7 +2563,7 @@ binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
     typedef _PyBinaryOpSpecializationDescr descr_type;
     size_t size = sizeof(binaryop_extend_builtins)/sizeof(descr_type);
     for (size_t i = 0; i < size; i++) {
-        descr_type *d = &binaryop_extend_builtins[i];
+        descr_type *d = (descr_type *)&binaryop_extend_builtins[i];
         assert(d != NULL);
         assert(d->guard != NULL);
         if (d->oparg == oparg && d->guard(lhs, rhs)) {
