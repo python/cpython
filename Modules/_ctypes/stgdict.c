@@ -25,15 +25,13 @@ PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
 {
     Py_ssize_t size;
 
-    ctype_clear_stginfo(dst_info);
-    PyMem_Free(dst_info->ffi_type_pointer.elements);
-    PyMem_Free(dst_info->format);
-    dst_info->format = NULL;
-    PyMem_Free(dst_info->shape);
-    dst_info->shape = NULL;
-    dst_info->ffi_type_pointer.elements = NULL;
+    ctype_free_stginfo_members(dst_info);
 
     memcpy(dst_info, src_info, sizeof(StgInfo));
+#ifdef Py_GIL_DISABLED
+    dst_info->mutex = (PyMutex){0};
+#endif
+    dst_info->dict_final = 0;
 
     Py_XINCREF(dst_info->proto);
     Py_XINCREF(dst_info->argtypes);
@@ -41,6 +39,7 @@ PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
     Py_XINCREF(dst_info->restype);
     Py_XINCREF(dst_info->checker);
     Py_XINCREF(dst_info->module);
+    dst_info->pointer_type = NULL;  // the cache cannot be shared
 
     if (src_info->format) {
         dst_info->format = PyMem_Malloc(strlen(src_info->format) + 1);
@@ -248,23 +247,23 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
     StgInfo *stginfo;
     if (PyStgInfo_FromType(st, type, &stginfo) < 0) {
-        goto error;
+        return -1;
     }
     if (!stginfo) {
         PyErr_SetString(PyExc_TypeError,
                         "ctypes state is not initialized");
-        goto error;
+        return -1;
     }
     PyObject *base = (PyObject *)((PyTypeObject *)type)->tp_base;
     StgInfo *baseinfo;
     if (PyStgInfo_FromType(st, base, &baseinfo) < 0) {
-        goto error;
+        return -1;
     }
 
+    STGINFO_LOCK(stginfo);
     /* If this structure/union is already marked final we cannot assign
        _fields_ anymore. */
-
-    if (stginfo->flags & DICTFLAG_FINAL) {/* is final ? */
+    if (stginfo_get_dict_final(stginfo) == 1) {/* is final ? */
         PyErr_SetString(PyExc_AttributeError,
                         "_fields_ is final");
         goto error;
@@ -422,12 +421,13 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             goto error;
         }
         assert(info);
-
+        STGINFO_LOCK(info);
         stginfo->ffi_type_pointer.elements[ffi_ofs + i] = &info->ffi_type_pointer;
         if (info->flags & (TYPEFLAG_ISPOINTER | TYPEFLAG_HASPOINTER))
             stginfo->flags |= TYPEFLAG_HASPOINTER;
-        info->flags |= DICTFLAG_FINAL; /* mark field type final */
 
+        stginfo_set_dict_final_lock_held(info); /* mark field type final */
+        STGINFO_UNLOCK();
         if (-1 == PyObject_SetAttr(type, prop->name, prop_obj)) {
             goto error;
         }
@@ -461,15 +461,15 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
     /* We did check that this flag was NOT set above, it must not
        have been set until now. */
-    if (stginfo->flags & DICTFLAG_FINAL) {
+    if (stginfo_get_dict_final(stginfo) == 1) {
         PyErr_SetString(PyExc_AttributeError,
                         "Structure or union cannot contain itself");
         goto error;
     }
-    stginfo->flags |= DICTFLAG_FINAL;
+    stginfo_set_dict_final_lock_held(stginfo);
 
     retval = MakeAnonFields(type);
-error:
+error:;
     Py_XDECREF(layout_func);
     Py_XDECREF(kwnames);
     Py_XDECREF(align_obj);
@@ -478,6 +478,7 @@ error:
     Py_XDECREF(layout_fields);
     Py_XDECREF(layout);
     Py_XDECREF(format_spec_obj);
+    STGINFO_UNLOCK();
     return retval;
 }
 

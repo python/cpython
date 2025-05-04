@@ -155,7 +155,8 @@ if is_ubuntu():
         for ctx in ctxs:
             if (
                 hasattr(ctx, "minimum_version") and
-                ctx.minimum_version <= ssl.TLSVersion.TLSv1_1
+                ctx.minimum_version <= ssl.TLSVersion.TLSv1_1 and
+                ctx.security_level > 1
             ):
                 ctx.set_ciphers("@SECLEVEL=1:ALL")
 else:
@@ -985,7 +986,7 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(0, ctx.options & ~ssl.OP_NO_SSLv3)
 
         # invalid options
-        with self.assertRaises(OverflowError):
+        with self.assertRaises(ValueError):
             ctx.options = -1
         with self.assertRaises(OverflowError):
             ctx.options = 2 ** 100

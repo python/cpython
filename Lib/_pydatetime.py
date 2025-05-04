@@ -1050,8 +1050,12 @@ class date:
     @classmethod
     def fromisoformat(cls, date_string):
         """Construct a date from a string in ISO 8601 format."""
+
         if not isinstance(date_string, str):
-            raise TypeError('fromisoformat: argument must be str')
+            raise TypeError('Argument must be a str')
+
+        if not date_string.isascii():
+            raise ValueError('Argument must be an ASCII str')
 
         if len(date_string) not in (7, 8, 10):
             raise ValueError(f'Invalid isoformat string: {date_string!r}')

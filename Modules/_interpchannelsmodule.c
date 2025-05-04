@@ -1754,16 +1754,9 @@ static int
 channel_send(_channels *channels, int64_t cid, PyObject *obj,
              _waiting_t *waiting, int unboundop)
 {
-    PyInterpreterState *interp = _get_current_interp();
-    if (interp == NULL) {
-        return -1;
-    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyInterpreterState *interp = tstate->interp;
     int64_t interpid = PyInterpreterState_GetID(interp);
-
-    _PyXIData_lookup_context_t ctx;
-    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
-        return -1;
-    }
 
     // Look up the channel.
     PyThread_type_lock mutex = NULL;
@@ -1781,12 +1774,12 @@ channel_send(_channels *channels, int64_t cid, PyObject *obj,
     }
 
     // Convert the object to cross-interpreter data.
-    _PyXIData_t *data = GLOBAL_MALLOC(_PyXIData_t);
+    _PyXIData_t *data = _PyXIData_New();
     if (data == NULL) {
         PyThread_release_lock(mutex);
         return -1;
     }
-    if (_PyObject_GetXIData(&ctx, obj, data) != 0) {
+    if (_PyObject_GetXIData(tstate, obj, data) != 0) {
         PyThread_release_lock(mutex);
         GLOBAL_FREE(data);
         return -1;
@@ -3595,7 +3588,7 @@ static struct PyModuleDef moduledef = {
     .m_slots = module_slots,
     .m_traverse = module_traverse,
     .m_clear = module_clear,
-    .m_free = (freefunc)module_free,
+    .m_free = module_free,
 };
 
 PyMODINIT_FUNC

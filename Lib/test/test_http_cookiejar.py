@@ -285,11 +285,21 @@ Got:          '%s'
             ("foo=bar;bar=baz", "foo=bar; bar=baz"),
             ('foo bar baz', "foo; bar; baz"),
             (r'foo="\"" bar="\\"', r'foo="\""; bar="\\"'),
+            ("föo=bär", 'föo="bär"'),
             ('foo,,,bar', 'foo, bar'),
             ('foo=bar,bar=baz', 'foo=bar, bar=baz'),
+            ("foo=\n", 'foo=""'),
+            ('foo="\n"', 'foo="\n"'),
+            ('foo=bar\n', 'foo=bar'),
+            ('foo="bar\n"', 'foo="bar\n"'),
+            ('foo=bar\nbaz', 'foo=bar; baz'),
+            ('foo="bar\nbaz"', 'foo="bar\nbaz"'),
 
             ('text/html; charset=iso-8859-1',
-             'text/html; charset="iso-8859-1"'),
+             'text/html; charset=iso-8859-1'),
+
+            ('text/html; charset="iso-8859/1"',
+             'text/html; charset="iso-8859/1"'),
 
             ('foo="bar"; port="80,81"; discard, bar=baz',
              'foo=bar; port="80,81"; discard, bar=baz'),
@@ -297,8 +307,8 @@ Got:          '%s'
             (r'Basic realm="\"foo\\\\bar\""',
              r'Basic; realm="\"foo\\\\bar\""'),
 
-            ('n; foo="foo;_", bar=foo!_',
-             'n; foo="foo;_", bar="foo!_"'),
+            ('n; foo="foo;_", bar="foo,_"',
+             'n; foo="foo;_", bar="foo,_"'),
             ]
 
         for arg, expect in tests:
@@ -553,7 +563,7 @@ class CookieTests(unittest.TestCase):
         self.assertIsNone(cookie.value)
         self.assertEqual(cookie.name, '"spam"')
         self.assertEqual(lwp_cookie_str(cookie), (
-            r'"spam"; path="/foo/"; domain="www.acme.com"; '
+            r'"spam"; path="/foo/"; domain=www.acme.com; '
             'path_spec; discard; version=0'))
         old_str = repr(c)
         c.save(ignore_expires=True, ignore_discard=True)
@@ -1527,7 +1537,7 @@ class LWPCookieTests(unittest.TestCase):
         h = req.get_header("Cookie")
         self.assertIn("PART_NUMBER=ROCKET_LAUNCHER_0001", h)
         self.assertIn("CUSTOMER=WILE_E_COYOTE", h)
-        self.assertTrue(h.startswith("SHIPPING=FEDEX;"))
+        self.assertStartsWith(h, "SHIPPING=FEDEX;")
 
     def test_netscape_example_2(self):
         # Second Example transaction sequence:

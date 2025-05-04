@@ -3413,6 +3413,19 @@ class Unrepresentable:
     def __repr__(self) -> str:
         raise Exception("Unrepresentable")
 
+
+# Used in test_dont_swallow_cause_or_context_of_falsey_exception and
+# test_dont_swallow_subexceptions_of_falsey_exceptiongroup.
+class FalseyException(Exception):
+    def __bool__(self):
+        return False
+
+
+class FalseyExceptionGroup(ExceptionGroup):
+    def __bool__(self):
+        return False
+
+
 class TestTracebackException(unittest.TestCase):
     def do_test_smoke(self, exc, expected_type_str):
         try:
@@ -3598,6 +3611,7 @@ class TestTracebackException(unittest.TestCase):
             self.assertIsNone(te.exc_type)
 
     def test_no_refs_to_exception_and_traceback_objects(self):
+        exc_obj = None
         try:
             1/0
         except Exception as e:
@@ -3757,6 +3771,24 @@ class TestTracebackException(unittest.TestCase):
              '    x = 12',
              'ZeroDivisionError: division by zero',
              ''])
+
+    def test_dont_swallow_cause_or_context_of_falsey_exception(self):
+        # see gh-132308: Ensure that __cause__ or __context__ attributes of exceptions
+        # that evaluate as falsey are included in the output. For falsey term,
+        # see https://docs.python.org/3/library/stdtypes.html#truth-value-testing.
+
+        try:
+            raise FalseyException from KeyError
+        except FalseyException as e:
+            self.assertIn(cause_message, traceback.format_exception(e))
+
+        try:
+            try:
+                1/0
+            except ZeroDivisionError:
+                raise FalseyException
+        except FalseyException as e:
+            self.assertIn(context_message, traceback.format_exception(e))
 
 
 class TestTracebackException_ExceptionGroups(unittest.TestCase):
@@ -3958,6 +3990,26 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
         self.assertNotEqual(exc, ne)
         self.assertNotEqual(exc, object())
         self.assertEqual(exc, ALWAYS_EQ)
+
+    def test_dont_swallow_subexceptions_of_falsey_exceptiongroup(self):
+        # see gh-132308: Ensure that subexceptions of exception groups
+        # that evaluate as falsey are displayed in the output. For falsey term,
+        # see https://docs.python.org/3/library/stdtypes.html#truth-value-testing.
+
+        try:
+            raise FalseyExceptionGroup("Gih", (KeyError(), NameError()))
+        except Exception as ee:
+            str_exc = ''.join(traceback.format_exception(ee))
+            self.assertIn('+---------------- 1 ----------------', str_exc)
+            self.assertIn('+---------------- 2 ----------------', str_exc)
+
+        # Test with a falsey exception, in last position, as sub-exceptions.
+        msg = 'bool'
+        try:
+            raise FalseyExceptionGroup("Gah", (KeyError(), FalseyException(msg)))
+        except Exception as ee:
+            str_exc = traceback.format_exception(ee)
+            self.assertIn(f'{FalseyException.__name__}: {msg}', str_exc[-2])
 
 
 global_for_suggestions = None
@@ -4503,6 +4555,28 @@ class SuggestionFormattingTestBase:
         actual = self.get_suggestion(instance.foo)
         self.assertNotIn("self.blech", actual)
 
+    def test_unbound_local_error_with_side_effect(self):
+        # gh-132385
+        class A:
+            def __getattr__(self, key):
+                if key == 'foo':
+                    raise AttributeError('foo')
+                if key == 'spam':
+                    raise ValueError('spam')
+
+            def bar(self):
+                foo
+            def baz(self):
+                spam
+
+        suggestion = self.get_suggestion(A().bar)
+        self.assertNotIn('self.', suggestion)
+        self.assertIn("'foo'", suggestion)
+
+        suggestion = self.get_suggestion(A().baz)
+        self.assertNotIn('self.', suggestion)
+        self.assertIn("'spam'", suggestion)
+
     def test_unbound_local_error_does_not_match(self):
         def func():
             something = 3
@@ -4619,7 +4693,31 @@ class MiscTest(unittest.TestCase):
     @cpython_only
     def test_suggestions_extension(self):
         # Check that the C extension is available
-        import _suggestions  # noqa: F401
+        import _suggestions
+
+        self.assertEqual(
+            _suggestions._generate_suggestions(
+                ["hello", "world"],
+                "hell"
+            ),
+            "hello"
+        )
+        self.assertEqual(
+            _suggestions._generate_suggestions(
+                ["hovercraft"],
+                "eels"
+            ),
+            None
+        )
+
+        # gh-131936: _generate_suggestions() doesn't accept list subclasses
+        class MyList(list):
+            pass
+
+        with self.assertRaises(TypeError):
+            _suggestions._generate_suggestions(MyList(), "")
+
+
 
 
 class TestColorizedTraceback(unittest.TestCase):
