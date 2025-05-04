@@ -289,6 +289,31 @@ class CmdTestReadline(unittest.TestCase):
         self.assertIn(b'ab_completion_test', output)
         self.assertIn(b'tab completion success', output)
 
+    def test_bang_completion_without_do_shell(self):
+        script = textwrap.dedent("""
+            import cmd
+            class simplecmd(cmd.Cmd):
+                def completedefault(self, text, line, begidx, endidx):
+                    return ["hello"]
+
+                def default(self, line):
+                    if line == "! hello":
+                        print('tab completion success')
+                    else:
+                        print('tab completion failure')
+                    return True
+
+            simplecmd().cmdloop()
+        """)
+
+        # '! h' and complete 'ello' to '! hello'
+        input = b"! h\t\n"
+
+        output = run_pty(script, input)
+
+        self.assertIn(b'ello', output)
+        self.assertIn(b'tab completion success', output)
+
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())
     return tests
