@@ -1206,13 +1206,6 @@ verify_stateless_code(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_RETURN_NONE;
 }
 
-
-static PyObject *
-jit_enabled(PyObject *self, PyObject *arg)
-{
-    return PyBool_FromLong(_PyInterpreterState_GET()->jit);
-}
-
 #ifdef _Py_TIER2
 
 static PyObject *
@@ -2337,7 +2330,6 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, NULL},
     {"verify_stateless_code", _PyCFunction_CAST(verify_stateless_code),
      METH_VARARGS | METH_KEYWORDS, NULL},
-    {"jit_enabled", jit_enabled,  METH_NOARGS, NULL},
 #ifdef _Py_TIER2
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
     {"invalidate_executors", invalidate_executors, METH_O, NULL},

@@ -2648,13 +2648,9 @@ skip_on_s390x = unittest.skipIf(is_s390x, 'skipped on s390x')
 
 Py_TRACE_REFS = hasattr(sys, 'getobjects')
 
-try:
-    from _testinternalcapi import jit_enabled
-except ImportError:
-    requires_jit_enabled = requires_jit_disabled = unittest.skip("requires _testinternalcapi")
-else:
-    requires_jit_enabled = unittest.skipUnless(jit_enabled(), "requires JIT enabled")
-    requires_jit_disabled = unittest.skipIf(jit_enabled(), "requires JIT disabled")
+_JIT_ENABLED = sys._jit.is_enabled()
+requires_jit_enabled = unittest.skipUnless(_JIT_ENABLED, "requires JIT enabled")
+requires_jit_disabled = unittest.skipIf(_JIT_ENABLED, "requires JIT disabled")
 
 
 _BASE_COPY_SRC_DIR_IGNORED_NAMES = frozenset({
