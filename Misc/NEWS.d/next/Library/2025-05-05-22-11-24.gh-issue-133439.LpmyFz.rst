@@ -1,0 +1,2 @@
+fix dot commands with trailing spaces are mistaken for multi-line sqlite
+statements in the sqlite3 command-line interface
