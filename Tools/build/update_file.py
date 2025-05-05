@@ -12,9 +12,10 @@ import contextlib
 import os
 import os.path
 import sys
-import typing
 
-if typing.TYPE_CHECKING:
+TYPE_CHECKING = False
+if TYPE_CHECKING:
+    import typing
     from collections.abc import Iterator
     from io import TextIOWrapper
 
