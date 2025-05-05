@@ -2076,7 +2076,7 @@ code_returns_only_none(PyCodeObject *co)
     if (!_PyCode_CheckPureFunction(co, NULL)) {
         return 0;
     }
-    Py_ssize_t len = Py_SIZE(co);
+    int len = (int)Py_SIZE(co);
     assert(len > 0);
 
     // The last instruction either returns or raises.  We can take advantage
