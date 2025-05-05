@@ -934,7 +934,7 @@ class MiscTestCase(unittest.TestCase):
 
     @cpython_only
     def test_lazy_import(self):
-        ensure_lazy_imports("gettext", {"re"})
+        ensure_lazy_imports("gettext", {"re", "warnings", "locale"})
 
 
 if __name__ == '__main__':

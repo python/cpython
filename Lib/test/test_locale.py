@@ -11,7 +11,7 @@ import codecs
 class LazyImportTest(unittest.TestCase):
     @cpython_only
     def test_lazy_import(self):
-        ensure_lazy_imports("locale", {"re"})
+        ensure_lazy_imports("locale", {"re", "warnings"})
 
 
 class BaseLocalizedTest(unittest.TestCase):

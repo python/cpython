@@ -51,7 +51,7 @@ def ast_repr_update_snapshots() -> None:
 class LazyImportTest(unittest.TestCase):
     @support.cpython_only
     def test_lazy_import(self):
-        ensure_lazy_imports("ast", {"contextlib", "enum"})
+        ensure_lazy_imports("ast", {"contextlib", "enum", "inspect", "re", "collections", "argparse"})
 
 
 class AST_Tests(unittest.TestCase):
