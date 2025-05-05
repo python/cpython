@@ -805,6 +805,11 @@ Other language changes
   :keyword:`async with`).
   (Contributed by Bénédikt Tran in :gh:`128398`.)
 
+* :option:`!-J` is no longer a reserved flag for Jython_,
+  and now has no special meaning.
+  (Contributed by Adam Turner in :gh:`133336`.)
+
+  .. _Jython: https://www.jython.org/
 
 .. _whatsnew314-pep765:
 
@@ -1107,6 +1112,18 @@ graphlib
 * Allow :meth:`graphlib.TopologicalSorter.prepare` to be called more than once
   as long as sorting has not started.
   (Contributed by Daniel Pope in :gh:`130914`)
+
+
+heapq
+-----
+
+* Add functions for working with max-heaps:
+
+  * :func:`heapq.heapify_max`,
+  * :func:`heapq.heappush_max`,
+  * :func:`heapq.heappop_max`,
+  * :func:`heapq.heapreplace_max`
+  * :func:`heapq.heappushpop_max`
 
 
 hmac
@@ -1435,6 +1452,11 @@ pdb
   coroutines. :keyword:`await` statements are supported with this
   function.
   (Contributed by Tian Gao in :gh:`132576`.)
+
+* Source code displayed in :mod:`pdb` will be syntax-highlighted. This feature
+  can be controlled using the same methods as PyREPL, in addition to the newly
+  added ``colorize`` argument of :class:`pdb.Pdb`.
+  (Contributed by Tian Gao in :gh:`133355`.)
 
 
 pickle
@@ -1870,6 +1892,12 @@ Deprecated
   (Contributed by Inada Naoki in :gh:`133036`.)
 
 * :mod:`ctypes`:
+  On non-Windows platforms, setting :attr:`.Structure._pack_` to use a
+  MSVC-compatible default memory layout is deprecated in favor of setting
+  :attr:`.Structure._layout_` to ``'ms'``.
+  (Contributed by Petr Viktorin in :gh:`131747`.)
+
+* :mod:`ctypes`:
   Calling :func:`ctypes.POINTER` on a string is deprecated.
   Use :ref:`ctypes-incomplete-types` for self-referential structures.
   Also, the internal ``ctypes._pointer_type_cache`` is deprecated.
@@ -1942,6 +1970,8 @@ Deprecated
 .. include:: ../deprecations/pending-removal-in-3.16.rst
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.19.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
 

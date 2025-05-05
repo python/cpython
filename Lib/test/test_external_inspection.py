@@ -15,13 +15,12 @@ import subprocess
 PROCESS_VM_READV_SUPPORTED = False
 
 try:
-    from _remotedebugging import PROCESS_VM_READV_SUPPORTED
-    from _remotedebugging import get_stack_trace
-    from _remotedebugging import get_async_stack_trace
-    from _remotedebugging import get_all_awaited_by
+    from _remote_debugging import PROCESS_VM_READV_SUPPORTED
+    from _remote_debugging import get_stack_trace
+    from _remote_debugging import get_async_stack_trace
+    from _remote_debugging import get_all_awaited_by
 except ImportError:
-    raise unittest.SkipTest("Test only runs when _remotedebuggingmodule is available")
-
+    raise unittest.SkipTest("Test only runs when _remote_debugging is available")
 
 def _make_test_script(script_dir, script_basename, source):
     to_return = make_script(script_dir, script_basename, source)
@@ -60,8 +59,7 @@ class TestGetStackTrace(unittest.TestCase):
                 foo()
 
             def foo():
-                sock.sendall(b"ready")
-                time.sleep(1000)
+                sock.sendall(b"ready"); time.sleep(10_000)  # same line number
 
             bar()
             """
@@ -97,10 +95,10 @@ class TestGetStackTrace(unittest.TestCase):
                 p.wait(timeout=SHORT_TIMEOUT)
 
             expected_stack_trace = [
-                ("foo", script_name, 15),
+                ("foo", script_name, 14),
                 ("baz", script_name, 11),
                 ("bar", script_name, 9),
-                ("<module>", script_name, 17),
+                ("<module>", script_name, 16),
             ]
             self.assertEqual(stack_trace, expected_stack_trace)
 
@@ -123,8 +121,7 @@ class TestGetStackTrace(unittest.TestCase):
             sock.connect(('localhost', {port}))
 
             def c5():
-                sock.sendall(b"ready")
-                time.sleep(10000)
+                sock.sendall(b"ready"); time.sleep(10_000)  # same line number
 
             async def c4():
                 await asyncio.sleep(0)
@@ -196,10 +193,10 @@ class TestGetStackTrace(unittest.TestCase):
                 root_task = "Task-1"
                 expected_stack_trace = [
                     [
-                        ("c5", script_name, 11),
-                        ("c4", script_name, 15),
-                        ("c3", script_name, 18),
-                        ("c2", script_name, 21),
+                        ("c5", script_name, 10),
+                        ("c4", script_name, 14),
+                        ("c3", script_name, 17),
+                        ("c2", script_name, 20),
                     ],
                     "c2_root",
                     [
@@ -215,13 +212,13 @@ class TestGetStackTrace(unittest.TestCase):
                                     taskgroups.__file__,
                                     ANY,
                                 ),
-                                ("main", script_name, 27),
+                                ("main", script_name, 26),
                             ],
                             "Task-1",
                             [],
                         ],
                         [
-                            [("c1", script_name, 24)],
+                            [("c1", script_name, 23)],
                             "sub_main_1",
                             [
                                 [
@@ -236,7 +233,7 @@ class TestGetStackTrace(unittest.TestCase):
                                             taskgroups.__file__,
                                             ANY,
                                         ),
-                                        ("main", script_name, 27),
+                                        ("main", script_name, 26),
                                     ],
                                     "Task-1",
                                     [],
@@ -244,7 +241,7 @@ class TestGetStackTrace(unittest.TestCase):
                             ],
                         ],
                         [
-                            [("c1", script_name, 24)],
+                            [("c1", script_name, 23)],
                             "sub_main_2",
                             [
                                 [
@@ -259,7 +256,7 @@ class TestGetStackTrace(unittest.TestCase):
                                             taskgroups.__file__,
                                             ANY,
                                         ),
-                                        ("main", script_name, 27),
+                                        ("main", script_name, 26),
                                     ],
                                     "Task-1",
                                     [],
@@ -289,8 +286,7 @@ class TestGetStackTrace(unittest.TestCase):
             sock.connect(('localhost', {port}))
 
             async def gen_nested_call():
-                sock.sendall(b"ready")
-                time.sleep(10000)
+                sock.sendall(b"ready"); time.sleep(10_000)  # same line number
 
             async def gen():
                 for num in range(2):
@@ -338,9 +334,9 @@ class TestGetStackTrace(unittest.TestCase):
 
             expected_stack_trace = [
                 [
-                    ("gen_nested_call", script_name, 11),
-                    ("gen", script_name, 17),
-                    ("main", script_name, 20),
+                    ("gen_nested_call", script_name, 10),
+                    ("gen", script_name, 16),
+                    ("main", script_name, 19),
                 ],
                 "Task-1",
                 [],
@@ -367,8 +363,7 @@ class TestGetStackTrace(unittest.TestCase):
 
             async def deep():
                 await asyncio.sleep(0)
-                sock.sendall(b"ready")
-                time.sleep(10000)
+                sock.sendall(b"ready"); time.sleep(10_000)  # same line number
 
             async def c1():
                 await asyncio.sleep(0)
@@ -415,9 +410,9 @@ class TestGetStackTrace(unittest.TestCase):
             stack_trace[2].sort(key=lambda x: x[1])
 
             expected_stack_trace = [
-                [("deep", script_name, ANY), ("c1", script_name, 16)],
+                [("deep", script_name, 11), ("c1", script_name, 15)],
                 "Task-2",
-                [[[("main", script_name, 22)], "Task-1", []]],
+                [[[("main", script_name, 21)], "Task-1", []]],
             ]
             self.assertEqual(stack_trace, expected_stack_trace)
 
@@ -441,15 +436,14 @@ class TestGetStackTrace(unittest.TestCase):
 
             async def deep():
                 await asyncio.sleep(0)
-                sock.sendall(b"ready")
-                time.sleep(10000)
+                sock.sendall(b"ready"); time.sleep(10_000)  # same line number
 
             async def c1():
                 await asyncio.sleep(0)
                 await deep()
 
             async def c2():
-                await asyncio.sleep(10000)
+                await asyncio.sleep(10_000)
 
             async def main():
                 await asyncio.staggered.staggered_race(
@@ -492,8 +486,8 @@ class TestGetStackTrace(unittest.TestCase):
             stack_trace[2].sort(key=lambda x: x[1])
             expected_stack_trace = [
                 [
-                    ("deep", script_name, ANY),
-                    ("c1", script_name, 16),
+                    ("deep", script_name, 11),
+                    ("c1", script_name, 15),
                     ("staggered_race.<locals>.run_one_coro", staggered.__file__, ANY),
                 ],
                 "Task-2",
@@ -501,7 +495,7 @@ class TestGetStackTrace(unittest.TestCase):
                     [
                         [
                             ("staggered_race", staggered.__file__, ANY),
-                            ("main", script_name, 22),
+                            ("main", script_name, 21),
                         ],
                         "Task-1",
                         [],

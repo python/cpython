@@ -1053,6 +1053,21 @@ class TestGetAnnotations(unittest.TestCase):
             },
         )
 
+    def test_partial_evaluation_error(self):
+        def f(x: range[1]):
+            pass
+        with self.assertRaisesRegex(
+            TypeError, "type 'range' is not subscriptable"
+        ):
+            f.__annotations__
+
+        self.assertEqual(
+            get_annotations(f, format=Format.FORWARDREF),
+            {
+                "x": support.EqualToForwardRef("range[1]", owner=f),
+            },
+        )
+
     def test_partial_evaluation_cell(self):
         obj = object()
 

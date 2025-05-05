@@ -1,7 +1,9 @@
 # A test suite for pdb; not very comprehensive at the moment.
 
+import _colorize
 import doctest
 import gc
+import io
 import os
 import pdb
 import sys
@@ -3446,6 +3448,7 @@ def test_pdb_issue_gh_65052():
     """
 
 
+@support.force_not_colorized_test_class
 @support.requires_subprocess()
 class PdbTestCase(unittest.TestCase):
     def tearDown(self):
@@ -4686,6 +4689,40 @@ class PdbTestInline(unittest.TestCase):
         """
         stdout, _ = self._run_script(script, commands)
         self.assertIn("42", stdout)
+
+
+@unittest.skipUnless(_colorize.can_colorize(), "Test requires colorize")
+class PdbTestColorize(unittest.TestCase):
+    def setUp(self):
+        self._original_can_colorize = _colorize.can_colorize
+        # Force colorize to be enabled because we are sending data
+        # to a StringIO
+        _colorize.can_colorize = lambda *args, **kwargs: True
+
+    def tearDown(self):
+        _colorize.can_colorize = self._original_can_colorize
+
+    def test_code_display(self):
+        output = io.StringIO()
+        p = pdb.Pdb(stdout=output, colorize=True)
+        p.set_trace(commands=['ll', 'c'])
+        self.assertIn("\x1b", output.getvalue())
+
+        output = io.StringIO()
+        p = pdb.Pdb(stdout=output, colorize=False)
+        p.set_trace(commands=['ll', 'c'])
+        self.assertNotIn("\x1b", output.getvalue())
+
+        output = io.StringIO()
+        p = pdb.Pdb(stdout=output)
+        p.set_trace(commands=['ll', 'c'])
+        self.assertNotIn("\x1b", output.getvalue())
+
+    def test_stack_entry(self):
+        output = io.StringIO()
+        p = pdb.Pdb(stdout=output, colorize=True)
+        p.set_trace(commands=['w', 'c'])
+        self.assertIn("\x1b", output.getvalue())
 
 
 @support.force_not_colorized_test_class
