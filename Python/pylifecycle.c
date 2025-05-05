@@ -1449,19 +1449,12 @@ Py_InitializeFromConfig(const PyConfig *config)
 void
 Py_InitializeEx(int install_sigs)
 {
-    PyStatus status;
-
-    status = _PyRuntime_Initialize();
-    if (_PyStatus_EXCEPTION(status)) {
-        Py_ExitStatusException(status);
-    }
-    _PyRuntimeState *runtime = &_PyRuntime;
-
-    if (runtime->initialized) {
+    if (Py_IsInitialized() != 0) {
         /* bpo-33932: Calling Py_Initialize() twice does nothing. */
         return;
     }
 
+    PyStatus status;
     PyConfig config;
     _PyConfig_InitCompatConfig(&config);
 
