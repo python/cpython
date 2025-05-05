@@ -580,7 +580,7 @@ _heapq_heappushpop_max_impl(PyObject *module, PyObject *heap, PyObject *item)
 
     PyObject *top = PyList_GET_ITEM(heap, 0);
     Py_INCREF(top);
-    cmp = PyObject_RichCompareBool(top, item, Py_GT);
+    cmp = PyObject_RichCompareBool(item, top, Py_LT);
     Py_DECREF(top);
     if (cmp < 0) {
         return NULL;
