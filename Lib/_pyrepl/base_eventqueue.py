@@ -75,7 +75,7 @@ class BaseEventQueue:
         """
         assert isinstance(char, (int, bytes))
         ord_char = char if isinstance(char, int) else ord(char)
-        char = bytes((ord_char,))
+        char = ord_char.to_bytes()
         self.buf.append(ord_char)
 
         if char in self.keymap:
