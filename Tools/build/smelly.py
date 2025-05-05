@@ -6,7 +6,6 @@ import subprocess
 import sys
 import sysconfig
 
-
 ALLOWED_PREFIXES = ('Py', '_Py')
 if sys.platform == 'darwin':
     ALLOWED_PREFIXES += ('__Py',)
@@ -52,8 +51,8 @@ def get_exported_symbols(library, dynamic=False):
     if dynamic:
         args.append('--dynamic')
     args.append(library)
-    print("+ %s" % ' '.join(args))
-    proc = subprocess.run(args, stdout=subprocess.PIPE, universal_newlines=True)
+    print(f"+ {' '.join(args)}")
+    proc = subprocess.run(args, stdout=subprocess.PIPE, encoding='utf-8')
     if proc.returncode:
         sys.stdout.write(proc.stdout)
         sys.exit(proc.returncode)
@@ -80,7 +79,7 @@ def get_smelly_symbols(stdout, dynamic=False):
 
         symtype = parts[1].strip()
         symbol = parts[-1]
-        result = '%s (type: %s)' % (symbol, symtype)
+        result = f'{symbol} (type: {symtype})'
 
         if (symbol.startswith(ALLOWED_PREFIXES) or
             symbol in EXCEPTIONS or
@@ -111,10 +110,10 @@ def check_library(library, dynamic=False):
     print()
     smelly_symbols.sort()
     for symbol in smelly_symbols:
-        print("Smelly symbol: %s" % symbol)
+        print(f"Smelly symbol: {symbol}")
 
     print()
-    print("ERROR: Found %s smelly symbols!" % len(smelly_symbols))
+    print(f"ERROR: Found {len(smelly_symbols)} smelly symbols!")
     return len(smelly_symbols)
 
 

@@ -69,7 +69,7 @@ typedef struct {
 typedef struct {
     uint32_t target;
     _Py_BackoffCounter temperature;
-    const struct _PyExecutorObject *executor;
+    struct _PyExecutorObject *executor;
 } _PyExitData;
 
 typedef struct _PyExecutorObject {
@@ -84,6 +84,10 @@ typedef struct _PyExecutorObject {
     _PyExitData exits[1];
 } _PyExecutorObject;
 
+/* If pending deletion list gets large enough, then scan,
+ * and free any executors that aren't executing
+ * i.e. any that aren't a thread's current_executor. */
+#define EXECUTOR_DELETE_LIST_MAX 100
 
 // Export for '_opcode' shared extension (JIT compiler).
 PyAPI_FUNC(_PyExecutorObject*) _Py_GetExecutor(PyCodeObject *code, int offset);
@@ -304,6 +308,9 @@ static inline int is_terminator(const _PyUOpInstruction *uop)
 }
 
 PyAPI_FUNC(int) _PyDumpExecutors(FILE *out);
+#ifdef _Py_TIER2
+extern void _Py_ClearExecutorDeletionList(PyInterpreterState *interp);
+#endif
 
 #ifdef __cplusplus
 }

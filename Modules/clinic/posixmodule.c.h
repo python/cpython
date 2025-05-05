@@ -840,7 +840,7 @@ os_chflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     if (!path_converter(args[0], &path)) {
         goto exit;
     }
-    if (!PyLong_Check(args[1])) {
+    if (!PyIndex_Check(args[1])) {
         _PyArg_BadArgument("chflags", "argument 'flags'", "int", args[1]);
         goto exit;
     }
@@ -924,7 +924,7 @@ os_lchflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (!path_converter(args[0], &path)) {
         goto exit;
     }
-    if (!PyLong_Check(args[1])) {
+    if (!PyIndex_Check(args[1])) {
         _PyArg_BadArgument("lchflags", "argument 'flags'", "int", args[1]);
         goto exit;
     }
@@ -1471,7 +1471,7 @@ os_getcwdb(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 PyDoc_STRVAR(os_link__doc__,
 "link($module, /, src, dst, *, src_dir_fd=None, dst_dir_fd=None,\n"
-"     follow_symlinks=True)\n"
+"     follow_symlinks=(os.name != \'nt\'))\n"
 "--\n"
 "\n"
 "Create a hard link to a file.\n"
@@ -1530,7 +1530,7 @@ os_link(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     path_t dst = PATH_T_INITIALIZE_P("link", "dst", 0, 0, 0, 0);
     int src_dir_fd = DEFAULT_DIR_FD;
     int dst_dir_fd = DEFAULT_DIR_FD;
-    int follow_symlinks = 1;
+    int follow_symlinks = -1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -13398,4 +13398,4 @@ os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__EMSCRIPTEN_DEBUGGER_METHODDEF
     #define OS__EMSCRIPTEN_DEBUGGER_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_DEBUGGER_METHODDEF) */
-/*[clinic end generated code: output=35dd8edb53b50537 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f7b5635e0b948be4 input=a9049054013a1b77]*/

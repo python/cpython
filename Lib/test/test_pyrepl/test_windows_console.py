@@ -12,6 +12,7 @@ from unittest import TestCase
 from unittest.mock import MagicMock, call
 
 from .support import handle_all_events, code_to_events
+from .support import reader_no_colors as default_prepare_reader
 
 try:
     from _pyrepl.console import Event, Console
@@ -31,6 +32,7 @@ class WindowsConsoleTests(TestCase):
     def console(self, events, **kwargs) -> Console:
         console = WindowsConsole()
         console.get_event = MagicMock(side_effect=events)
+        console.wait = MagicMock()
         console._scroll = MagicMock()
         console._hide_cursor = MagicMock()
         console._show_cursor = MagicMock()
@@ -46,14 +48,22 @@ class WindowsConsoleTests(TestCase):
             setattr(console, key, val)
         return console
 
-    def handle_events(self, events: Iterable[Event], **kwargs):
-        return handle_all_events(events, partial(self.console, **kwargs))
+    def handle_events(
+        self,
+        events: Iterable[Event],
+        prepare_console=None,
+        prepare_reader=None,
+        **kwargs,
+    ):
+        prepare_console = prepare_console or partial(self.console, **kwargs)
+        prepare_reader = prepare_reader or default_prepare_reader
+        return handle_all_events(events, prepare_console, prepare_reader)
 
     def handle_events_narrow(self, events):
         return self.handle_events(events, width=5)
 
-    def handle_events_short(self, events):
-        return self.handle_events(events, height=1)
+    def handle_events_short(self, events, **kwargs):
+        return self.handle_events(events, height=1, **kwargs)
 
     def handle_events_height_3(self, events):
         return self.handle_events(events, height=3)
