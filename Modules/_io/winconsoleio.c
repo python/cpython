@@ -647,9 +647,7 @@ read_console_w(HANDLE handle, DWORD maxlen, DWORD *readlen) {
             if (WaitForSingleObjectEx(hInterruptEvent, 100, FALSE)
                     == WAIT_OBJECT_0) {
                 ResetEvent(hInterruptEvent);
-                Py_BLOCK_THREADS
                 sig = PyErr_CheckSignals();
-                Py_UNBLOCK_THREADS
                 if (sig < 0)
                     break;
             }

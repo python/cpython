@@ -1175,12 +1175,12 @@ signal_sigwaitinfo_impl(PyObject *module, sigset_t sigset)
     int err;
     int async_err = 0;
 
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
         err = sigwaitinfo(&sigset, &si);
-        Py_END_ALLOW_THREADS
     } while (err == -1
              && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
     if (err == -1)
         return (!async_err) ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
 
