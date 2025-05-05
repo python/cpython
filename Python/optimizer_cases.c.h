@@ -554,9 +554,7 @@
             break;
         }
 
-        case _GUARD_BINARY_OP_EXTEND: {
-            break;
-        }
+        /* _GUARD_BINARY_OP_EXTEND is not a viable micro-op for tier 2 */
 
         case _BINARY_OP_EXTEND: {
             JitOptSymbol *res;
@@ -1841,6 +1839,10 @@
         case _CHECK_STACK_SPACE: {
             assert(corresponding_check_stack == NULL);
             corresponding_check_stack = this_instr;
+            break;
+        }
+
+        case _CHECK_RECURSION_REMAINING: {
             break;
         }
 
