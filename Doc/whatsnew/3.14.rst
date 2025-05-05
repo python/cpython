@@ -1114,6 +1114,18 @@ graphlib
   (Contributed by Daniel Pope in :gh:`130914`)
 
 
+heapq
+-----
+
+* Add functions for working with max-heaps:
+
+  * :func:`heapq.heapify_max`,
+  * :func:`heapq.heappush_max`,
+  * :func:`heapq.heappop_max`,
+  * :func:`heapq.heapreplace_max`
+  * :func:`heapq.heappushpop_max`
+
+
 hmac
 ----
 
