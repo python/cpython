@@ -58,8 +58,6 @@ digraph "Life Events" {
 
    "start" -> "tp_new" [
      label=<    type call  >
-     labeltooltip="start to tp_new: type call"
-     tooltip="start to tp_new: type call"
    ]
    "tp_new" -> "tp_alloc" [
      label=<  direct call  > arrowhead=empty

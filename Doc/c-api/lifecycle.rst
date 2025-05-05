@@ -82,7 +82,7 @@ that must be true for *B* to occur after *A*.
         desired.
 
    * After :c:member:`!tp_init` completes, the object is ready to use.
-   * After the last reference to an object is removed:
+   * Some time after the last reference to an object is removed:
 
      #. If an object is not marked as *finalized*, it might be finalized by
         marking it as *finalized* and calling its
@@ -156,7 +156,7 @@ Cyclic Isolate Destruction
 
 Listed below are the stages of life of a hypothetical :term:`cyclic isolate`
 that continues to exist after each member object is finalized or cleared.  It
-is a bug if a cyclic isolate progresses through all of these stages; it should
+is a memory leak if a cyclic isolate progresses through all of these stages; it should
 vanish once all objects are cleared, if not sooner.  A cyclic isolate can
 vanish either because the reference cycle is broken or because the objects are
 no longer isolated due to finalizer resurrection (see

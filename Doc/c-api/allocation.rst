@@ -21,7 +21,7 @@ Allocating Objects on the Heap
    slot).  Specifically, this function does **not** call the object's
    :meth:`!__init__` method.
 
-   .. warning::
+   .. note::
 
       This function only initializes some of the object's memory.  It does not
       zero the rest.
@@ -125,7 +125,7 @@ Allocating Objects on the Heap
       initialization by :c:member:`~PyTypeObject.tp_init`.  To construct a
       fully initialized object, call *typeobj* instead.  For example::
 
-         PyObject *foo = PyObject_CallNoArgs((PyObject *)&PyFoo_Type);
+         PyObject *list_instance = PyObject_CallNoArgs((PyObject *)&PyList_Type);
 
    .. seealso::
 

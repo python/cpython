@@ -358,7 +358,7 @@ Glossary
    cyclic isolate
       A subgroup of one or more objects that reference each other in a reference
       cycle, but are not referenced by objects outside the group.  The goal of
-      the garbage collector is to identify these groups and break the reference
+      the :term:`cyclic garbage collector <garbage collection>` is to identify these groups and break the reference
       cycles so that the memory can be reclaimed.
 
    decorator
