@@ -45,12 +45,8 @@ class WorkerContext(_thread.WorkerContext):
                 # XXX Circle back to this later.
                 raise TypeError('scripts not supported')
             else:
-                # Functions defined in the __main__ module can't be pickled,
-                # so they can't be used here.  In the future, we could possibly
-                # borrow from multiprocessing to work around this.
                 task = (fn, args, kwargs)
-                data = pickle.dumps(task)
-            return data
+            return task
 
         if initializer is not None:
             try:
@@ -65,35 +61,6 @@ class WorkerContext(_thread.WorkerContext):
             return cls(initdata, shared)
         return create_context, resolve_task
 
-    @classmethod
-    @contextlib.contextmanager
-    def _capture_exc(cls, resultsid):
-        try:
-            yield
-        except BaseException as exc:
-            # Send the captured exception out on the results queue,
-            # but still leave it unhandled for the interpreter to handle.
-            _interpqueues.put(resultsid, (None, exc))
-            raise  # re-raise
-
-    @classmethod
-    def _send_script_result(cls, resultsid):
-        _interpqueues.put(resultsid, (None, None))
-
-    @classmethod
-    def _call(cls, func, args, kwargs, resultsid):
-        with cls._capture_exc(resultsid):
-            res = func(*args or (), **kwargs or {})
-        # Send the result back.
-        with cls._capture_exc(resultsid):
-            _interpqueues.put(resultsid, (res, None))
-
-    @classmethod
-    def _call_pickled(cls, pickled, resultsid):
-        with cls._capture_exc(resultsid):
-            fn, args, kwargs = pickle.loads(pickled)
-        cls._call(fn, args, kwargs, resultsid)
-
     def __init__(self, initdata, shared=None):
         self.initdata = initdata
         self.shared = dict(shared) if shared else None
@@ -104,11 +71,56 @@ class WorkerContext(_thread.WorkerContext):
         if self.interpid is not None:
             self.finalize()
 
-    def _exec(self, script):
-        assert self.interpid is not None
-        excinfo = _interpreters.exec(self.interpid, script, restrict=True)
+    def _call(self, fn, args, kwargs):
+        def do_call(resultsid, func, *args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except BaseException as exc:
+                # Avoid relying on globals.
+                import _interpreters
+                import _interpqueues
+                # Send the captured exception out on the results queue,
+                # but still leave it unhandled for the interpreter to handle.
+                try:
+                    _interpqueues.put(resultsid, exc)
+                except _interpreters.NotShareableError:
+                    # The exception is not shareable.
+                    import sys
+                    import traceback
+                    print('exception is not shareable:', file=sys.stderr)
+                    traceback.print_exception(exc)
+                    _interpqueues.put(resultsid, None)
+                raise  # re-raise
+
+        args = (self.resultsid, fn, *args)
+        res, excinfo = _interpreters.call(self.interpid, do_call, args, kwargs)
         if excinfo is not None:
             raise ExecutionFailed(excinfo)
+        return res
+
+    def _get_exception(self):
+        # Wait for the exception data to show up.
+        while True:
+            try:
+                excdata = _interpqueues.get(self.resultsid)
+            except _interpqueues.QueueNotFoundError:
+                raise  # re-raise
+            except _interpqueues.QueueError as exc:
+                if exc.__cause__ is not None or exc.__context__ is not None:
+                    raise  # re-raise
+                if str(exc).endswith(' is empty'):
+                    continue
+                else:
+                    raise  # re-raise
+            except ModuleNotFoundError:
+                # interpreters.queues doesn't exist, which means
+                # QueueEmpty doesn't.  Act as though it does.
+                continue
+            else:
+                break
+        exc, unboundop = excdata
+        assert unboundop is None, unboundop
+        return exc
 
     def initialize(self):
         assert self.interpid is None, self.interpid
@@ -118,8 +130,6 @@ class WorkerContext(_thread.WorkerContext):
 
             maxsize = 0
             self.resultsid = _interpqueues.create(maxsize)
-
-            self._exec(f'from {__name__} import WorkerContext')
 
             if self.shared:
                 _interpreters.set___main___attrs(
@@ -148,37 +158,15 @@ class WorkerContext(_thread.WorkerContext):
                 pass
 
     def run(self, task):
-        data = task
-        script = f'WorkerContext._call_pickled({data!r}, {self.resultsid})'
-
+        fn, args, kwargs = task
         try:
-            self._exec(script)
-        except ExecutionFailed as exc:
-            exc_wrapper = exc
-        else:
-            exc_wrapper = None
-
-        # Return the result, or raise the exception.
-        while True:
-            try:
-                obj = _interpqueues.get(self.resultsid)
-            except _interpqueues.QueueNotFoundError:
+            return self._call(fn, args, kwargs)
+        except ExecutionFailed as wrapper:
+            exc = self._get_exception()
+            if exc is None:
+                # The exception must have been not shareable.
                 raise  # re-raise
-            except _interpqueues.QueueError:
-                continue
-            except ModuleNotFoundError:
-                # interpreters.queues doesn't exist, which means
-                # QueueEmpty doesn't.  Act as though it does.
-                continue
-            else:
-                break
-        (res, exc), unboundop = obj
-        assert unboundop is None, unboundop
-        if exc is not None:
-            assert res is None, res
-            assert exc_wrapper is not None
-            raise exc from exc_wrapper
-        return res
+            raise exc from wrapper
 
 
 class BrokenInterpreterPool(_thread.BrokenThreadPool):
