@@ -28,7 +28,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
 
 from . import commands, console, input
-from .utils import wlen, unbracket, disp_str, gen_colors
+from .utils import wlen, unbracket, disp_str, gen_colors, THEME
 from .trace import trace
 
 
@@ -491,11 +491,8 @@ class Reader:
             prompt = self.ps1
 
         if self.can_colorize:
-            prompt = (
-                f"{_colorize.theme["PROMPT"]}"
-                f"{prompt}"
-                f"{_colorize.theme["RESET"]}"
-            )
+            t = THEME()
+            prompt = f"{t.prompt}{prompt}{t.reset}"
         return prompt
 
     def push_input_trans(self, itrans: input.KeymapTranslator) -> None:

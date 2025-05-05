@@ -355,7 +355,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self._wait_for_mainpyfile = False
         self.tb_lineno = {}
         self.mode = mode
-        self.colorize = _colorize.can_colorize(file=stdout or sys.stdout) and colorize
+        self.colorize = colorize and _colorize.can_colorize(file=stdout or sys.stdout)
         # Try to load readline if it exists
         try:
             import readline
