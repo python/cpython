@@ -26,8 +26,6 @@ class ZstdFile(_streams.BaseStream):
     supports the Buffer Protocol.
     """
 
-    _READER_CLASS = _streams.DecompressReader
-
     FLUSH_BLOCK = ZstdCompressor.FLUSH_BLOCK
     FLUSH_FRAME = ZstdCompressor.FLUSH_FRAME
 
@@ -104,7 +102,7 @@ class ZstdFile(_streams.BaseStream):
         self._mode = mode_code
 
         if self._mode == _MODE_READ:
-            raw = self._READER_CLASS(
+            raw = _streams.DecompressReader(
                 self._fp,
                 ZstdDecompressor,
                 trailing_error=ZstdError,
