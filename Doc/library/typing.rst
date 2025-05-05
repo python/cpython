@@ -1244,7 +1244,7 @@ These can be used as types in annotations. They all support subscription using
 
    * Redundant arguments are skipped, e.g.::
 
-      assert Union[1, 2, 1] == Union[1, 2]
+      assert Literal[1, 2, 1] == Literal[1, 2]
 
    * When comparing literals, the argument order is ignored, e.g.::
 
