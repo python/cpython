@@ -891,7 +891,9 @@ class SysModuleTest(unittest.TestCase):
 
     @test.support.cpython_only
     def test_clear_type_cache(self):
-        sys._clear_type_cache()
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"sys\._clear_type_cache\(\) is deprecated.*"):
+            sys._clear_type_cache()
 
     @force_not_colorized
     @support.requires_subprocess()
@@ -1958,7 +1960,7 @@ def _supports_remote_attaching():
     PROCESS_VM_READV_SUPPORTED = False
 
     try:
-        from _testexternalinspection import PROCESS_VM_READV_SUPPORTED
+        from _remote_debugging import PROCESS_VM_READV_SUPPORTED
     except ImportError:
         pass
 
@@ -2099,7 +2101,7 @@ print("Remote script executed successfully!")
         prologue = '''\
 import sys
 def audit_hook(event, arg):
-    print(f"Audit event: {event}, arg: {arg}")
+    print(f"Audit event: {event}, arg: {arg}".encode("ascii", errors="replace"))
 sys.addaudithook(audit_hook)
 '''
         script = '''
@@ -2124,6 +2126,19 @@ raise Exception("Remote script exception")
         self.assertEqual(returncode, 0)
         self.assertIn(b"Remote script exception", stderr)
         self.assertEqual(stdout.strip(), b"Target process running...")
+
+    def test_new_namespace_for_each_remote_exec(self):
+        """Test that each remote_exec call gets its own namespace."""
+        script = textwrap.dedent(
+            """
+            assert globals() is not __import__("__main__").__dict__
+            print("Remote script executed successfully!")
+            """
+        )
+        returncode, stdout, stderr = self._run_remote_exec_test(script)
+        self.assertEqual(returncode, 0)
+        self.assertEqual(stderr, b"")
+        self.assertIn(b"Remote script executed successfully", stdout)
 
     def test_remote_exec_disabled_by_env(self):
         """Test remote exec is disabled when PYTHON_DISABLE_REMOTE_DEBUG is set"""

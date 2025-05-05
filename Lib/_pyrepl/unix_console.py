@@ -150,8 +150,6 @@ class UnixConsole(Console):
 
         self.pollob = poll()
         self.pollob.register(self.input_fd, select.POLLIN)
-        self.input_buffer = b""
-        self.input_buffer_pos = 0
         curses.setupterm(term or None, self.output_fd)
         self.term = term
 
@@ -199,22 +197,8 @@ class UnixConsole(Console):
         self.event_queue = EventQueue(self.input_fd, self.encoding)
         self.cursor_visible = 1
 
-    def more_in_buffer(self) -> bool:
-        return bool(
-            self.input_buffer
-            and self.input_buffer_pos < len(self.input_buffer)
-        )
-
     def __read(self, n: int) -> bytes:
-        if not self.more_in_buffer():
-            self.input_buffer = os.read(self.input_fd, 10000)
-
-        ret = self.input_buffer[self.input_buffer_pos : self.input_buffer_pos + n]
-        self.input_buffer_pos += len(ret)
-        if self.input_buffer_pos >= len(self.input_buffer):
-            self.input_buffer = b""
-            self.input_buffer_pos = 0
-        return ret
+        return os.read(self.input_fd, n)
 
 
     def change_encoding(self, encoding: str) -> None:
@@ -422,7 +406,6 @@ class UnixConsole(Console):
         """
         return (
             not self.event_queue.empty()
-            or self.more_in_buffer()
             or bool(self.pollob.poll(timeout))
         )
 
@@ -525,6 +508,7 @@ class UnixConsole(Console):
                 e.raw += e.raw
 
             amount = struct.unpack("i", ioctl(self.input_fd, FIONREAD, b"\0\0\0\0"))[0]
+            trace("getpending({a})", a=amount)
             raw = self.__read(amount)
             data = str(raw, self.encoding, "replace")
             e.data += data

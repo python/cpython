@@ -203,25 +203,28 @@ PyLzma_Free(void *opaque, void *ptr)
       to be strictly correct, we need to define two separate converters.
  */
 
-#define INT_TYPE_CONVERTER_FUNC(TYPE, FUNCNAME) \
-    static int \
-    FUNCNAME(PyObject *obj, void *ptr) \
-    { \
-        unsigned long long val; \
-        \
-        val = PyLong_AsUnsignedLongLong(obj); \
-        if (PyErr_Occurred()) \
-            return 0; \
-        if ((unsigned long long)(TYPE)val != val) { \
-            PyErr_SetString(PyExc_OverflowError, \
-                            "Value too large for " #TYPE " type"); \
-            return 0; \
-        } \
-        *(TYPE *)ptr = (TYPE)val; \
-        return 1; \
-    }
+#define INT_TYPE_CONVERTER_FUNC(TYPE, FUNCNAME)                     \
+static int                                                          \
+FUNCNAME(PyObject *obj, void *ptr)                                  \
+{                                                                   \
+    Py_ssize_t bytes = PyLong_AsNativeBytes(obj, ptr, sizeof(TYPE), \
+            Py_ASNATIVEBYTES_NATIVE_ENDIAN |                        \
+            Py_ASNATIVEBYTES_ALLOW_INDEX |                          \
+            Py_ASNATIVEBYTES_REJECT_NEGATIVE |                      \
+            Py_ASNATIVEBYTES_UNSIGNED_BUFFER);                      \
+    if (bytes < 0) {                                                \
+        return 0;                                                   \
+    }                                                               \
+    if ((size_t)bytes > sizeof(TYPE)) {                             \
+        PyErr_SetString(PyExc_OverflowError,                        \
+                        "Python int too large for C "#TYPE);        \
+        return 0;                                                   \
+    }                                                               \
+    return 1;                                                       \
+}
 
 INT_TYPE_CONVERTER_FUNC(uint32_t, uint32_converter)
+INT_TYPE_CONVERTER_FUNC(uint64_t, uint64_converter)
 INT_TYPE_CONVERTER_FUNC(lzma_vli, lzma_vli_converter)
 INT_TYPE_CONVERTER_FUNC(lzma_mode, lzma_mode_converter)
 INT_TYPE_CONVERTER_FUNC(lzma_match_finder, lzma_mf_converter)
@@ -355,11 +358,13 @@ lzma_filter_converter(_lzma_state *state, PyObject *spec, void *ptr)
                         "Filter specifier must have an \"id\" entry");
         return 0;
     }
-    f->id = PyLong_AsUnsignedLongLong(id_obj);
-    Py_DECREF(id_obj);
-    if (PyErr_Occurred()) {
+    lzma_vli id;
+    if (!lzma_vli_converter(id_obj, &id)) {
+        Py_DECREF(id_obj);
         return 0;
     }
+    Py_DECREF(id_obj);
+    f->id = id;
 
     switch (f->id) {
         case LZMA_FILTER_LZMA1:
@@ -1221,8 +1226,7 @@ _lzma_LZMADecompressor_impl(PyTypeObject *type, int format,
                             "Cannot specify memory limit with FORMAT_RAW");
             return NULL;
         }
-        memlimit_ = PyLong_AsUnsignedLongLong(memlimit);
-        if (PyErr_Occurred()) {
+        if (!uint64_converter(memlimit, &memlimit_)) {
             return NULL;
         }
     }
