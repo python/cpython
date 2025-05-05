@@ -2263,7 +2263,7 @@ Others
   of module attributes is not currently supported.
   (Contributed by Tomas Roun in :gh:`69605`.)
 
-CPython Bytecode Changes
+CPython bytecode changes
 ========================
 
 * Replaced the opcode ``BINARY_SUBSCR`` by :opcode:`BINARY_OP` with oparg ``NB_SUBSCR``.
