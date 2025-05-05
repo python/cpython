@@ -1,2 +1,0 @@
-Delay deprecated :meth:`zipimport.zipimporter.load_module` removal
-time to 3.15. Use :meth:`zipimport.zipimporter.exec_module` instead.

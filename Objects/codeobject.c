@@ -2,23 +2,25 @@
 #include "opcode.h"
 
 #include "pycore_code.h"          // _PyCodeConstructor
-#include "pycore_frame.h"         // FRAME_SPECIALS_SIZE
+#include "pycore_function.h"      // _PyFunction_ClearCodeByVersion()
 #include "pycore_hashtable.h"     // _Py_hashtable_t
-#include "pycore_index_pool.h"     // _PyIndexPool
+#include "pycore_index_pool.h"    // _PyIndexPool_Fini()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
-#include "pycore_object.h"        // _PyObject_SetDeferredRefcount
-#include "pycore_object_stack.h"
-#include "pycore_opcode_metadata.h" // _PyOpcode_Deopt, _PyOpcode_Caches
+#include "pycore_interpframe.h"   // FRAME_SPECIALS_SIZE
+#include "pycore_opcode_metadata.h" // _PyOpcode_Caches
 #include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
-#include "pycore_pymem.h"         // _PyMem_FreeDelayed
+#include "pycore_optimizer.h"     // _Py_ExecutorDetach
+#include "pycore_pymem.h"         // _PyMem_FreeDelayed()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
 #include "pycore_uniqueid.h"      // _PyObject_AssignUniqueId()
-#include "clinic/codeobject.c.h"
 
+#include "clinic/codeobject.c.h"
 #include <stdbool.h>
+
 
 #define INITIAL_SPECIALIZED_CODE_SIZE 16
 
@@ -135,6 +137,44 @@ should_intern_string(PyObject *o)
 
 #ifdef Py_GIL_DISABLED
 static PyObject *intern_one_constant(PyObject *op);
+
+// gh-130851: In the free threading build, we intern and immortalize most
+// constants, except code objects. However, users can generate code objects
+// with arbitrary co_consts. We don't want to immortalize or intern unexpected
+// constants or tuples/sets containing unexpected constants.
+static int
+should_immortalize_constant(PyObject *v)
+{
+    // Only immortalize containers if we've already immortalized all their
+    // elements.
+    if (PyTuple_CheckExact(v)) {
+        for (Py_ssize_t i = PyTuple_GET_SIZE(v); --i >= 0; ) {
+            if (!_Py_IsImmortal(PyTuple_GET_ITEM(v, i))) {
+                return 0;
+            }
+        }
+        return 1;
+    }
+    else if (PyFrozenSet_CheckExact(v)) {
+        PyObject *item;
+        Py_hash_t hash;
+        Py_ssize_t pos = 0;
+        while (_PySet_NextEntry(v, &pos, &item, &hash)) {
+            if (!_Py_IsImmortal(item)) {
+                return 0;
+            }
+        }
+        return 1;
+    }
+    else if (PySlice_Check(v)) {
+        PySliceObject *slice = (PySliceObject *)v;
+        return (_Py_IsImmortal(slice->start) &&
+                _Py_IsImmortal(slice->stop) &&
+                _Py_IsImmortal(slice->step));
+    }
+    return (PyLong_CheckExact(v) || PyFloat_CheckExact(v) ||
+            PyComplex_Check(v) || PyBytes_CheckExact(v));
+}
 #endif
 
 static int
@@ -241,8 +281,9 @@ intern_constants(PyObject *tuple, int *modified)
 
         // Intern non-string constants in the free-threaded build
         _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
-        if (!_Py_IsImmortal(v) && !PyCode_Check(v) &&
-            !PyUnicode_CheckExact(v) && !tstate->suppress_co_const_immortalization)
+        if (!_Py_IsImmortal(v) && !PyUnicode_CheckExact(v) &&
+            should_immortalize_constant(v) &&
+            !tstate->suppress_co_const_immortalization)
         {
             PyObject *interned = intern_one_constant(v);
             if (interned == NULL) {
@@ -1322,7 +1363,8 @@ lineiter_dealloc(PyObject *self)
 }
 
 static PyObject *
-_source_offset_converter(int *value) {
+_source_offset_converter(void *arg) {
+    int *value = (int*)arg;
     if (*value == -1) {
         Py_RETURN_NONE;
     }
@@ -1646,6 +1688,49 @@ PyCode_GetFreevars(PyCodeObject *code)
 {
     return _PyCode_GetFreevars(code);
 }
+
+
+/* Here "value" means a non-None value, since a bare return is identical
+ * to returning None explicitly.  Likewise a missing return statement
+ * at the end of the function is turned into "return None". */
+int
+_PyCode_ReturnsOnlyNone(PyCodeObject *co)
+{
+    // Look up None in co_consts.
+    Py_ssize_t nconsts = PyTuple_Size(co->co_consts);
+    int none_index = 0;
+    for (; none_index < nconsts; none_index++) {
+        if (PyTuple_GET_ITEM(co->co_consts, none_index) == Py_None) {
+            break;
+        }
+    }
+    if (none_index == nconsts) {
+        // None wasn't there, which means there was no implicit return,
+        // "return", or "return None".  That means there must be
+        // an explicit return (non-None).
+        return 0;
+    }
+
+    // Walk the bytecode, looking for RETURN_VALUE.
+    Py_ssize_t len = Py_SIZE(co);
+    for (int i = 0; i < len; i++) {
+        _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
+        if (IS_RETURN_OPCODE(inst.op.code)) {
+            assert(i != 0);
+            // Ignore it if it returns None.
+            _Py_CODEUNIT prev = _Py_GetBaseCodeUnit(co, i-1);
+            if (prev.op.code == LOAD_CONST) {
+                // We don't worry about EXTENDED_ARG for now.
+                if (prev.op.arg == none_index) {
+                    continue;
+                }
+            }
+            return 0;
+        }
+    }
+    return 1;
+}
+
 
 #ifdef _Py_TIER2
 
@@ -2954,8 +3039,9 @@ is_bytecode_unused(_PyCodeArray *tlbc, Py_ssize_t idx,
 }
 
 static int
-get_code_with_unused_tlbc(PyObject *obj, struct get_code_args *args)
+get_code_with_unused_tlbc(PyObject *obj, void *data)
 {
+    struct get_code_args *args = (struct get_code_args *) data;
     if (!PyCode_Check(obj)) {
         return 1;
     }
@@ -3004,7 +3090,7 @@ _Py_ClearUnusedTLBC(PyInterpreterState *interp)
     }
     // Collect code objects that have bytecode not in use by any thread
     _PyGC_VisitObjectsWorldStopped(
-        interp, (gcvisitobjects_t)get_code_with_unused_tlbc, &args);
+        interp, get_code_with_unused_tlbc, &args);
     if (args.err < 0) {
         goto err;
     }

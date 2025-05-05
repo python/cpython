@@ -9,8 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_bytesobject.h"   // _PyBytesWriter
-#include "pycore_global_objects.h"// _PY_NSMALLNEGINTS
-#include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_runtime.h"       // _Py_SINGLETON()
 
 /*
  * Default int base conversion size limitation: Denial of Service prevention.

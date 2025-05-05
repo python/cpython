@@ -1,4 +1,5 @@
 import abc
+from annotationlib import Format, get_annotations
 import builtins
 import collections
 import collections.abc
@@ -22,6 +23,7 @@ from inspect import Signature
 
 from test.support import import_helper
 from test.support import threading_helper
+from test.support import EqualToForwardRef
 
 import functools
 
@@ -1934,8 +1936,7 @@ class TestLRU:
             time.sleep(.01)
             return 3 * x
         def test(i, x):
-            with self.subTest(thread=i):
-                self.assertEqual(f(x), 3 * x, i)
+            self.assertEqual(f(x), 3 * x, i)
         threads = [threading.Thread(target=test, args=(i, v))
                    for i, v in enumerate([1, 2, 2, 3, 2])]
         with threading_helper.start_threads(threads):
@@ -2076,9 +2077,37 @@ class TestLRU:
         self.assertEqual(str(Signature.from_callable(lru.cache_info)), '()')
         self.assertEqual(str(Signature.from_callable(lru.cache_clear)), '()')
 
+    def test_get_annotations(self):
+        def orig(a: int) -> str: ...
+        lru = self.module.lru_cache(1)(orig)
+
+        self.assertEqual(
+            get_annotations(orig), {"a": int, "return": str},
+        )
+        self.assertEqual(
+            get_annotations(lru), {"a": int, "return": str},
+        )
+
+    def test_get_annotations_with_forwardref(self):
+        def orig(a: int) -> nonexistent: ...
+        lru = self.module.lru_cache(1)(orig)
+
+        self.assertEqual(
+            get_annotations(orig, format=Format.FORWARDREF),
+            {"a": int, "return": EqualToForwardRef('nonexistent', owner=orig)},
+        )
+        self.assertEqual(
+            get_annotations(lru, format=Format.FORWARDREF),
+            {"a": int, "return": EqualToForwardRef('nonexistent', owner=lru)},
+        )
+        with self.assertRaises(NameError):
+            get_annotations(orig, format=Format.VALUE)
+        with self.assertRaises(NameError):
+            get_annotations(lru, format=Format.VALUE)
+
     @support.skip_on_s390x
     @unittest.skipIf(support.is_wasi, "WASI has limited C stack")
-    @support.skip_if_sanitizer("requires deep stack", thread=True)
+    @support.skip_if_sanitizer("requires deep stack", ub=True, thread=True)
     @support.skip_emscripten_stack_overflow()
     def test_lru_recursion(self):
 
@@ -2923,7 +2952,7 @@ class TestSingleDispatch(unittest.TestCase):
                 self.assertEqual(meth.__qualname__, prefix + meth.__name__)
                 self.assertEqual(meth.__doc__,
                                  ('My function docstring'
-                                  if support.HAVE_DOCSTRINGS
+                                  if support.HAVE_PY_DOCSTRINGS
                                   else None))
                 self.assertEqual(meth.__annotations__['arg'], int)
 
@@ -3011,7 +3040,8 @@ class TestSingleDispatch(unittest.TestCase):
                 try:
                     yield str(arg)
                 finally:
-                    return 'Done'
+                    pass
+                return 'Done'
 
             @classmethod_friendly_decorator
             @classmethod
@@ -3027,7 +3057,8 @@ class TestSingleDispatch(unittest.TestCase):
                 try:
                     yield str(arg)
                 finally:
-                    return 'Done'
+                    pass
+                return 'Done'
 
             @functools.singledispatchmethod
             @classmethod_friendly_decorator
@@ -3076,7 +3107,7 @@ class TestSingleDispatch(unittest.TestCase):
             with self.subTest(meth=meth):
                 self.assertEqual(meth.__doc__,
                                  ('My function docstring'
-                                  if support.HAVE_DOCSTRINGS
+                                  if support.HAVE_PY_DOCSTRINGS
                                   else None))
                 self.assertEqual(meth.__annotations__['arg'], int)
 
@@ -3553,7 +3584,7 @@ class TestCachedProperty(unittest.TestCase):
     def test_doc(self):
         self.assertEqual(CachedCostItem.cost.__doc__,
                          ("The cost of the item."
-                          if support.HAVE_DOCSTRINGS
+                          if support.HAVE_PY_DOCSTRINGS
                           else None))
 
     def test_module(self):

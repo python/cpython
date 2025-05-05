@@ -422,8 +422,7 @@ class ParseArgsTestCase(unittest.TestCase):
         # which has an unclear API
         with os_helper.EnvironmentVarGuard() as env:
             # Ignore SOURCE_DATE_EPOCH env var if it's set
-            if 'SOURCE_DATE_EPOCH' in env:
-                del env['SOURCE_DATE_EPOCH']
+            del env['SOURCE_DATE_EPOCH']
 
             regrtest = main.Regrtest(ns)
 
@@ -2547,4 +2546,5 @@ class TestColorized(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    setup.setup_process()
     unittest.main()
