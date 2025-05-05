@@ -12,7 +12,7 @@ from test.support.import_helper import ensure_lazy_imports
 class LazyImportTest(unittest.TestCase):
     @cpython_only
     def test_lazy_import(self):
-        ensure_lazy_imports("base64", {"re"})
+        ensure_lazy_imports("base64", {"re", "getopt"})
 
 
 class LegacyBase64TestCase(unittest.TestCase):

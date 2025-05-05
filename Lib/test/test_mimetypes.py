@@ -438,7 +438,7 @@ class MiscTestCase(unittest.TestCase):
 
     @cpython_only
     def test_lazy_import(self):
-        ensure_lazy_imports("mimetypes", {"os", "posixpath", "urllib.parse"})
+        ensure_lazy_imports("mimetypes", {"os", "posixpath", "urllib.parse", "argparse"})
 
 
 class CommandLineTest(unittest.TestCase):
