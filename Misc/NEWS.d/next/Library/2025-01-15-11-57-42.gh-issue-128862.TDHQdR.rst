@@ -1,1 +1,1 @@
-Use ``importlib.resources`` to acquire test files in ``doctest``
+Use :mod:`importlib.resources` to acquire test files in :mod:`doctest`.
