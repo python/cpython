@@ -79,7 +79,8 @@ that must be true for *B* to occur after *A*.
         object.
      #. :c:member:`~PyTypeObject.tp_init` initializes the newly created object.
         :c:member:`!tp_init` can be called again to re-initialize an object, if
-        desired.
+        desired. The :c:member:`!tp_init` call can also be skipped entirely,
+        for example by Python code calling :py:meth:`~object.__new__`.
 
    * After :c:member:`!tp_init` completes, the object is ready to use.
    * Some time after the last reference to an object is removed:
