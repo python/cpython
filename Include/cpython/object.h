@@ -238,7 +238,7 @@ struct _typeobject {
     /* bitset of which type-watchers care about this type */
     unsigned char tp_watched;
 
-    /* callback that may specialize BINARY_OP */
+    /* callback that may specialize BINARY_OP -- Experimental API */
     binop_specialize_func tp_binop_specialize;
 
     /* Number of tp_version_tag values used.
