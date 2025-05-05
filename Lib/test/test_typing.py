@@ -10732,62 +10732,107 @@ class UnionGenericAliasTests(BaseTestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertNotEqual(int, typing._UnionGenericAlias)
 
+# Define MyType
 class MyType:
     pass
 
 class TestGenericAliasHandling(BaseTestCase):
+
     def test_forward_ref(self):
         fwd_ref = ForwardRef('MyType')
-        result = _eval_type(fwd_ref, globals(), locals())
-        self.assertIs(result, MyType, f"Expected MyType, got {result}")
+        
+        def func(arg: fwd_ref):
+            pass
+        
+        result = get_type_hints(func)
+        self.assertEqual(result['arg'], MyType, f"Expected MyType, got {result['arg']}")
 
     def test_generic_alias(self):
         fwd_ref = ForwardRef('MyType')
         generic_list = List[fwd_ref]
-        result = _eval_type(generic_list, globals(), locals())
-        self.assertEqual(result, List[MyType], f"Expected List[MyType], got {result}")
+        
+        def func(arg: generic_list):
+            pass
+        
+        result = get_type_hints(func)
+        self.assertEqual(result['arg'], List[MyType], f"Expected List[MyType], got {result['arg']}")
 
     def test_union(self):
         fwd_ref_1 = ForwardRef('MyType')
         fwd_ref_2 = ForwardRef('int')
         union_type = Union[fwd_ref_1, fwd_ref_2]
-        result = _eval_type(union_type, globals(), locals())
-        self.assertEqual(result, Union[MyType, int], f"Expected Union[MyType, int], got {result}")
+        
+        def func(arg: union_type):
+            pass
+        
+        result = get_type_hints(func)
+        self.assertEqual(result['arg'], Union[MyType, int], f"Expected Union[MyType, int], got {result['arg']}")
 
     def test_recursive_forward_ref(self):
         recursive_ref = ForwardRef('RecursiveType')
         globals()['RecursiveType'] = recursive_ref
         recursive_type = Dict[str, List[recursive_ref]]
-        result = _eval_type(recursive_type, globals(), locals(), recursive_guard={recursive_ref})
-        self.assertEqual(result, Dict[str, List[recursive_ref]], f"Expected Dict[str, List[RecursiveType]], got {result}")
+        
+        def func(arg: recursive_type):
+            pass
+        
+        result = get_type_hints(func)
+        self.assertEqual(result['arg'], Dict[str, List[recursive_ref]], f"Expected Dict[str, List[RecursiveType]], got {result['arg']}")
 
     def test_callable_unpacking(self):
         fwd_ref = ForwardRef('MyType')
         callable_type = Callable[[fwd_ref, int], str]
-        result = _eval_type(callable_type, globals(), locals())
-        self.assertEqual(result, Callable[[MyType, int], str], f"Expected Callable[[MyType, int], str], got {result}")
+        
+        def func(arg1: fwd_ref, arg2: int) -> str:
+            return "test"
+        
+        result = get_type_hints(func)
+        self.assertEqual(result['arg1'], MyType, f"Expected MyType for arg1, got {result['arg1']}")
+        self.assertEqual(result['arg2'], int, f"Expected int for arg2, got {result['arg2']}")
+        self.assertEqual(result['return'], str, f"Expected str for return, got {result['return']}")
 
     def test_unpacked_generic(self):
         fwd_ref = ForwardRef('MyType')
         generic_type = Tuple[fwd_ref, int]
-        result = _eval_type(generic_type, globals(), locals())
-        self.assertEqual(result, Tuple[MyType, int], f"Expected Tuple[MyType, int], got {result}")
+        
+        def func(arg: generic_type):
+            pass
+        
+        result = get_type_hints(func)
+        self.assertEqual(result['arg'], Tuple[MyType, int], f"Expected Tuple[MyType, int], got {result['arg']}")
 
     def test_preservation_of_type(self):
         fwd_ref_1 = ForwardRef('MyType')
         fwd_ref_2 = ForwardRef('int')
         complex_type = Dict[str, Union[fwd_ref_1, fwd_ref_2]]
-        result = _eval_type(complex_type, globals(), locals())
-        self.assertEqual(result, Dict[str, Union[MyType, int]], f"Expected Dict[str, Union[MyType, int]], got {result}")
+        
+        def func(arg: complex_type):
+            pass
+        
+        result = get_type_hints(func)
+        self.assertEqual(result['arg'], Dict[str, Union[MyType, int]], f"Expected Dict[str, Union[MyType, int]], got {result['arg']}")
 
     def test_callable_unflattening(self):
         callable_type = Callable[[int, str], bool]
-        result = _eval_type(callable_type, globals(), locals(), type_params=())
-        self.assertEqual(result, Callable[[int, str], bool], f"Expected Callable[[int, str], bool], got {result}")
+        
+        def func(arg1: int, arg2: str) -> bool:
+            return True
+        
+        result = get_type_hints(func)
+        self.assertEqual(result['arg1'], int, f"Expected int for arg1, got {result['arg1']}")
+        self.assertEqual(result['arg2'], str, f"Expected str for arg2, got {result['arg2']}")
+        self.assertEqual(result['return'], bool, f"Expected bool for return, got {result['return']}")
 
         callable_type_packed = Callable[[int, str], bool]  # Correct format for callable
-        result = _eval_type(callable_type_packed, globals(), locals(), type_params=())
-        self.assertEqual(result, Callable[[int, str], bool], f"Expected Callable[[int, str], bool], got {result}")
+        
+        def func_packed(arg1: int, arg2: str) -> bool:
+            return True
+        
+        result = get_type_hints(func_packed)
+        self.assertEqual(result['arg1'], int, f"Expected int for arg1, got {result['arg1']}")
+        self.assertEqual(result['arg2'], str, f"Expected str for arg2, got {result['arg2']}")
+        self.assertEqual(result['return'], bool, f"Expected bool for return, got {result['return']}")
+
 
 def load_tests(loader, tests, pattern):
     import doctest
