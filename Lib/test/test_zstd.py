@@ -1421,11 +1421,11 @@ class FileTestCase(unittest.TestCase):
             ZstdFile(io.BytesIO(COMPRESSED_100_PLUS_32KB), "rw")
 
         with self.assertRaisesRegex(TypeError, r"NOT be CompressionParameter"):
-            ZstdFile(io.BytesIO(), 'rb', 
+            ZstdFile(io.BytesIO(), 'rb',
                      options={CompressionParameter.compression_level:5})
         with self.assertRaisesRegex(TypeError,
                                     r"NOT be DecompressionParameter"):
-            ZstdFile(io.BytesIO(), 'wb', 
+            ZstdFile(io.BytesIO(), 'wb',
                      options={DecompressionParameter.window_log_max:21})
 
         with self.assertRaises(TypeError):
