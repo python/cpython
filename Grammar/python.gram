@@ -1351,7 +1351,7 @@ invalid_lambda_star_etc:
     | '*' (':' | ',' (':' | '**')) { RAISE_SYNTAX_ERROR("named parameters must follow bare *") }
     | '*' lambda_param a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "var-positional argument cannot have default value") }
     | '*' (lambda_param_no_default | ',') lambda_param_maybe_default* a='*' (lambda_param_no_default | ',') {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "* argument may appear only once") }
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "* marker may appear only once") }
 invalid_lambda_kwds:
     | '**' lambda_param a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "var-keyword argument cannot have default value") }
     | '**' lambda_param ',' a=lambda_param { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "arguments cannot follow var-keyword argument") }

@@ -23131,7 +23131,7 @@ invalid_lambda_star_etc_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_lambda_star_etc[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*' (lambda_param_no_default | ',') lambda_param_maybe_default* '*' (lambda_param_no_default | ',')"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "* argument may appear only once" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "* marker may appear only once" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
