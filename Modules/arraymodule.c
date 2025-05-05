@@ -3024,6 +3024,14 @@ array_subscr_action(PyObject *lhs, PyObject *rhs)
     return array_subscr(lhs, rhs);
 }
 
+static void
+array_subscr_free(_PyBinaryOpSpecializationDescr* descr)
+{
+    if (descr != NULL) {
+        PyMem_Free(descr);
+    }
+}
+
 static int
 array_binop_specialize(PyObject *v, PyObject *w, int oparg,
                        _PyBinaryOpSpecializationDescr **descr)
@@ -3048,6 +3056,7 @@ array_binop_specialize(PyObject *v, PyObject *w, int oparg,
                     .oparg = oparg,
                     .guard = array_subscr_guard,
                     .action = array_subscr_action,
+                    .free = array_subscr_free,
                 };
                 return 1;
             }

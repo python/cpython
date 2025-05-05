@@ -805,7 +805,12 @@ dummy_func(
             assert(d->guard);
             int res = d->guard(left_o, right_o);
             ERROR_IF(res < 0);
-            DEOPT_IF(res == 0);
+            if (res == 0) {
+                if (d->free) {
+                    d->free(d);
+                }
+                DEOPT_IF(true);
+            }
         }
 
         pure op(_BINARY_OP_EXTEND, (descr/4, left, right -- res)) {

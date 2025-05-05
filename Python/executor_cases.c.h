@@ -1166,8 +1166,15 @@
                 JUMP_TO_ERROR();
             }
             if (res == 0) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
+                if (d->free) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    d->free(d);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                }
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    JUMP_TO_JUMP_TARGET();
+                }
             }
             break;
         }

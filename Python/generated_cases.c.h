@@ -292,9 +292,16 @@
                     JUMP_TO_LABEL(error);
                 }
                 if (res == 0) {
-                    UPDATE_MISS_STATS(BINARY_OP);
-                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    if (d->free) {
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        d->free(d);
+                        stack_pointer = _PyFrame_GetStackPointer(frame);
+                    }
+                    if (true) {
+                        UPDATE_MISS_STATS(BINARY_OP);
+                        assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
+                        JUMP_TO_PREDICTED(BINARY_OP);
+                    }
                 }
             }
             /* Skip -4 cache entry */
