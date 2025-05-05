@@ -146,22 +146,22 @@ exit:
 }
 
 PyDoc_STRVAR(_zstd__get_param_bounds__doc__,
-"_get_param_bounds($module, /, is_compress, parameter)\n"
+"_get_param_bounds($module, /, parameter, is_compress)\n"
 "--\n"
 "\n"
 "Internal function, get CompressionParameter/DecompressionParameter bounds.\n"
 "\n"
-"  is_compress\n"
-"    True for CompressionParameter, False for DecompressionParameter.\n"
 "  parameter\n"
-"    The parameter to get bounds.");
+"    The parameter to get bounds.\n"
+"  is_compress\n"
+"    True for CompressionParameter, False for DecompressionParameter.");
 
 #define _ZSTD__GET_PARAM_BOUNDS_METHODDEF    \
     {"_get_param_bounds", _PyCFunction_CAST(_zstd__get_param_bounds), METH_FASTCALL|METH_KEYWORDS, _zstd__get_param_bounds__doc__},
 
 static PyObject *
-_zstd__get_param_bounds_impl(PyObject *module, int is_compress,
-                             int parameter);
+_zstd__get_param_bounds_impl(PyObject *module, int parameter,
+                             int is_compress);
 
 static PyObject *
 _zstd__get_param_bounds(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -178,7 +178,7 @@ _zstd__get_param_bounds(PyObject *module, PyObject *const *args, Py_ssize_t narg
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(is_compress), &_Py_ID(parameter), },
+        .ob_item = { &_Py_ID(parameter), &_Py_ID(is_compress), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -187,7 +187,7 @@ _zstd__get_param_bounds(PyObject *module, PyObject *const *args, Py_ssize_t narg
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"is_compress", "parameter", NULL};
+    static const char * const _keywords[] = {"parameter", "is_compress", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "_get_param_bounds",
@@ -195,23 +195,23 @@ _zstd__get_param_bounds(PyObject *module, PyObject *const *args, Py_ssize_t narg
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
-    int is_compress;
     int parameter;
+    int is_compress;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    is_compress = PyObject_IsTrue(args[0]);
-    if (is_compress < 0) {
-        goto exit;
-    }
-    parameter = PyLong_AsInt(args[1]);
+    parameter = PyLong_AsInt(args[0]);
     if (parameter == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = _zstd__get_param_bounds_impl(module, is_compress, parameter);
+    is_compress = PyObject_IsTrue(args[1]);
+    if (is_compress < 0) {
+        goto exit;
+    }
+    return_value = _zstd__get_param_bounds_impl(module, parameter, is_compress);
 
 exit:
     return return_value;
@@ -429,4 +429,4 @@ _zstd__set_parameter_types(PyObject *module, PyObject *const *args, Py_ssize_t n
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=af9311ffc4321e98 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=189c462236a7096c input=a9049054013a1b77]*/

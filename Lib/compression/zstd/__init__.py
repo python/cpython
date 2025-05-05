@@ -212,7 +212,7 @@ class CompressionParameter(enum.IntEnum):
 
         Both lower and upper bounds are inclusive.
         """
-        return _zstd._get_param_bounds(is_compress=True, parameter=self.value)
+        return _zstd._get_param_bounds(self.value, is_compress=True)
 
 
 class DecompressionParameter(enum.IntEnum):
@@ -226,7 +226,7 @@ class DecompressionParameter(enum.IntEnum):
 
         Both lower and upper bounds are inclusive.
         """
-        return _zstd._get_param_bounds(is_compress=False, parameter=self.value)
+        return _zstd._get_param_bounds(self.value, is_compress=False)
 
 
 class Strategy(enum.IntEnum):

@@ -401,18 +401,18 @@ success:
 /*[clinic input]
 _zstd._get_param_bounds
 
-    is_compress: bool
-        True for CompressionParameter, False for DecompressionParameter.
     parameter: int
         The parameter to get bounds.
+    is_compress: bool
+        True for CompressionParameter, False for DecompressionParameter.
 
 Internal function, get CompressionParameter/DecompressionParameter bounds.
 [clinic start generated code]*/
 
 static PyObject *
-_zstd__get_param_bounds_impl(PyObject *module, int is_compress,
-                             int parameter)
-/*[clinic end generated code: output=b751dc710f89ef55 input=1aae4fcf8faf4e0f]*/
+_zstd__get_param_bounds_impl(PyObject *module, int parameter,
+                             int is_compress)
+/*[clinic end generated code: output=9892cd822f937e79 input=884cd1a01125267d]*/
 {
     ZSTD_bounds bound;
     if (is_compress) {
