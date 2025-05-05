@@ -1932,10 +1932,12 @@ _PyCode_SetUnboundVarCounts(PyThreadState *tstate,
 
     // Fill in unbound.globals and unbound.numattrs.
     struct co_unbound_counts unbound = {0};
-    if (identify_unbound_names(
+    Py_BEGIN_CRITICAL_SECTION(co);
+    res = identify_unbound_names(
             tstate, co, globalnames, attrnames, globalsns, builtinsns,
-            &unbound) < 0)
-    {
+            &unbound);
+    Py_END_CRITICAL_SECTION();
+    if (res < 0) {
         goto finally;
     }
     assert(unbound.numunknown == 0);
@@ -1956,8 +1958,8 @@ finally:
 /* Here "value" means a non-None value, since a bare return is identical
  * to returning None explicitly.  Likewise a missing return statement
  * at the end of the function is turned into "return None". */
-int
-_PyCode_ReturnsOnlyNone(PyCodeObject *co)
+static int
+code_returns_only_none(PyCodeObject *co)
 {
     // Look up None in co_consts.
     Py_ssize_t nconsts = PyTuple_Size(co->co_consts);
@@ -1992,6 +1994,16 @@ _PyCode_ReturnsOnlyNone(PyCodeObject *co)
         }
     }
     return 1;
+}
+
+int
+_PyCode_ReturnsOnlyNone(PyCodeObject *co)
+{
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(co);
+    res = code_returns_only_none(co);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 
