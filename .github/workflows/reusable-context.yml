@@ -97,6 +97,8 @@ jobs:
       run: python Tools/build/compute-changes.py
       env:
         GITHUB_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        CCF_TARGET_REF: ${{ github.base_ref || github.event.repository.default_branch }}
+        CCF_HEAD_REF: ${{ github.event.pull_request.head.sha || github.sha }}
 
     - name: Compute hash for config cache key
       id: config-hash
