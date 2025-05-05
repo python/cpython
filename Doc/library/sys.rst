@@ -1317,7 +1317,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       .. note::
 
          This function is intended for testing and debugging the JIT itself.
-         Most users will never need it.
+         It should be avoided for any other purpose.
+
+      .. note::
 
          Due to the nature of tracing JIT compilers, repeated calls to this
          function may give surprising results. For example, branching on its
