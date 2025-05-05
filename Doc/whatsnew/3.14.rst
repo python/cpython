@@ -997,7 +997,7 @@ ctypes
   :class:`~ctypes.c_double_complex` and :class:`~ctypes.c_longdouble_complex`,
   are now available if both the compiler and the ``libffi`` library support
   complex C types.
-  (Contributed by Sergey B Kirpichev in :gh:`61103`).
+  (Contributed by Sergey B Kirpichev in :gh:`61103`.)
 
 * Add :func:`ctypes.util.dllist` for listing the shared libraries
   loaded by the current process.
@@ -1007,7 +1007,7 @@ ctypes
   (``_pointer_type_cache``) to the :attr:`ctypes._CData.__pointer_type__`
   attribute of the corresponding :mod:`ctypes` types.
   This will stop the cache from growing without limits in some situations.
-  (Contributed by Sergey Miryanov in :gh:`100926`).
+  (Contributed by Sergey Miryanov in :gh:`100926`.)
 
 * The :class:`ctypes.py_object` type now supports subscription,
   making it a :term:`generic type`.
@@ -1129,7 +1129,7 @@ graphlib
 
 * Allow :meth:`graphlib.TopologicalSorter.prepare` to be called more than once
   as long as sorting has not started.
-  (Contributed by Daniel Pope in :gh:`130914`)
+  (Contributed by Daniel Pope in :gh:`130914`.)
 
 
 heapq
