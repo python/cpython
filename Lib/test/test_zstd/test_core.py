@@ -3,7 +3,6 @@ import gc
 import io
 import pathlib
 import random
-import builtins
 import re
 import os
 import unittest
@@ -95,7 +94,7 @@ def setUpModule():
                       b'a' * (32*_1K)
 
     global THIS_FILE_BYTES, THIS_FILE_STR
-    with builtins.open(os.path.abspath(__file__), 'rb') as f:
+    with io.open(os.path.abspath(__file__), 'rb') as f:
         THIS_FILE_BYTES = f.read()
         THIS_FILE_BYTES = re.sub(rb'\r?\n', rb'\n', THIS_FILE_BYTES)
         THIS_FILE_STR = THIS_FILE_BYTES.decode('utf-8')

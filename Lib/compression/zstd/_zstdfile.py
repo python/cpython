@@ -1,4 +1,3 @@
-import builtins
 import io
 
 from os import PathLike
@@ -95,7 +94,7 @@ class ZstdFile(_streams.BaseStream):
         if isinstance(filename, (str, bytes, PathLike)):
             if "b" not in mode:
                 mode += "b"
-            self._fp = builtins.open(filename, mode)
+            self._fp = io.open(filename, mode)
             self._closefp = True
         elif hasattr(filename, "read") or hasattr(filename, "write"):
             self._fp = filename
