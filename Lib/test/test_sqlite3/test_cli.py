@@ -4,7 +4,12 @@ import unittest
 
 from sqlite3.__main__ import main as cli
 from test.support.os_helper import TESTFN, unlink
-from test.support import captured_stdout, captured_stderr, captured_stdin
+from test.support import (
+    captured_stdout,
+    captured_stderr,
+    captured_stdin,
+    force_not_colorized,
+)
 
 
 class CommandLineInterface(unittest.TestCase):
@@ -32,6 +37,7 @@ class CommandLineInterface(unittest.TestCase):
         self.assertEqual(out, "")
         return err
 
+    @force_not_colorized
     def test_cli_help(self):
         out = self.expect_success("-h")
         self.assertIn("usage: ", out)

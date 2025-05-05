@@ -624,7 +624,9 @@ def main(args=None):
                                             'created, you may wish to '
                                             'activate it, e.g. by '
                                             'sourcing an activate script '
-                                            'in its bin directory.')
+                                            'in its bin directory.',
+                                     color=True,
+                                     )
     parser.add_argument('dirs', metavar='ENV_DIR', nargs='+',
                         help='A directory to create the environment in.')
     parser.add_argument('--system-site-packages', default=False,

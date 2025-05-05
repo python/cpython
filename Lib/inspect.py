@@ -3343,7 +3343,7 @@ def _main():
     import argparse
     import importlib
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     parser.add_argument(
         'object',
          help="The object to be analysed. "

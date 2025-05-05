@@ -719,7 +719,9 @@ if sys.platform == "ios":
 
 def parse_args(arg_list: list[str] | None):
     import argparse
-    parser = argparse.ArgumentParser(description="Open URL in a web browser.")
+    parser = argparse.ArgumentParser(
+        description="Open URL in a web browser.", color=True,
+    )
     parser.add_argument("url", help="URL to open")
 
     group = parser.add_mutually_exclusive_group()
