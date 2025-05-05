@@ -15,7 +15,7 @@ from _colorize import default_theme
 
 
 overrides = {"reset": "z", "soft_keyword": "K"}
-colors = {overrides.get(k, k[0].lower()): v for k, v in default_theme.repl.items()}
+colors = {overrides.get(k, k[0].lower()): v for k, v in default_theme.syntax.items()}
 
 
 @force_not_colorized_test_class

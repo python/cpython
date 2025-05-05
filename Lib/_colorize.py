@@ -82,7 +82,7 @@ for attr, code in ANSIColors.__dict__.items():
 # - Create a theme by copying an existing `Theme` with one or more sections
 #   replaced, using `default_theme.copy_with()`;
 # - create a theme section by copying an existing `ThemeSection` with one or
-#   more colors replaced, using for example `default_theme.repl.copy_with()`;
+#   more colors replaced, using for example `default_theme.syntax.copy_with()`;
 # - create a theme from scratch by instantiating a `Theme` data class with
 #   the required sections (which are also dataclass instances).
 #
@@ -153,7 +153,7 @@ class Argparse(ThemeSection):
 
 
 @dataclass(frozen=True)
-class REPL(ThemeSection):
+class Syntax(ThemeSection):
     prompt: str = ANSIColors.BOLD_MAGENTA
     keyword: str = ANSIColors.BOLD_BLUE
     builtin: str = ANSIColors.CYAN
@@ -195,7 +195,7 @@ class Theme:
     below.
     """
     argparse: Argparse = field(default_factory=Argparse)
-    repl: REPL = field(default_factory=REPL)
+    syntax: Syntax = field(default_factory=Syntax)
     traceback: Traceback = field(default_factory=Traceback)
     unittest: Unittest = field(default_factory=Unittest)
 
@@ -203,7 +203,7 @@ class Theme:
         self,
         *,
         argparse: Argparse | None = None,
-        repl: REPL | None = None,
+        syntax: Syntax | None = None,
         traceback: Traceback | None = None,
         unittest: Unittest | None = None,
     ) -> Self:
@@ -214,7 +214,7 @@ class Theme:
         """
         return type(self)(
             argparse=argparse or self.argparse,
-            repl=repl or self.repl,
+            syntax=syntax or self.syntax,
             traceback=traceback or self.traceback,
             unittest=unittest or self.unittest,
         )
@@ -228,7 +228,7 @@ class Theme:
         """
         return type(self)(
             argparse=self.argparse.no_colors(),
-            repl=self.repl.no_colors(),
+            syntax=self.syntax.no_colors(),
             traceback=self.traceback.no_colors(),
             unittest=self.unittest.no_colors(),
         )

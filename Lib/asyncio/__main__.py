@@ -104,7 +104,7 @@ class REPLThread(threading.Thread):
 
             ps1 = getattr(sys, "ps1", ">>> ")
             if CAN_USE_PYREPL:
-                theme = get_theme().repl
+                theme = get_theme().syntax
                 ps1 = f"{theme.prompt}{ps1}{theme.reset}"
             console.write(f"{ps1}import asyncio\n")
 

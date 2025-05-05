@@ -25,7 +25,7 @@ BUILTINS = {str(name) for name in dir(builtins) if not name.startswith('_')}
 
 def THEME():
     # Not cached: the user can modify the theme inside the interactive session.
-    return _colorize.get_theme().repl
+    return _colorize.get_theme().syntax
 
 
 class Span(NamedTuple):
