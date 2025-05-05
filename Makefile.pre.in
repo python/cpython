@@ -2677,7 +2677,6 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_zipfile/_path \
 		test/test_zoneinfo \
 		test/test_zoneinfo/data \
-		test/test_zstd \
 		test/tkinterdata \
 		test/tokenizedata \
 		test/tracedmodules \
