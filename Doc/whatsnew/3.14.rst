@@ -1875,6 +1875,12 @@ Deprecated
   (Contributed by Inada Naoki in :gh:`133036`.)
 
 * :mod:`ctypes`:
+  On non-Windows platforms, setting :attr:`.Structure._pack_` to use a
+  MSVC-compatible default memory layout is deprecated in favor of setting
+  :attr:`.Structure._layout_` to ``'ms'``.
+  (Contributed by Petr Viktorin in :gh:`131747`.)
+
+* :mod:`ctypes`:
   Calling :func:`ctypes.POINTER` on a string is deprecated.
   Use :ref:`ctypes-incomplete-types` for self-referential structures.
   Also, the internal ``ctypes._pointer_type_cache`` is deprecated.
@@ -1947,6 +1953,8 @@ Deprecated
 .. include:: ../deprecations/pending-removal-in-3.16.rst
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.19.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
 
