@@ -146,6 +146,7 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
      * even though we don't specialize them yet. */
     fprintf(out, "opcode[BINARY_SLICE].specializable : 1\n");
     fprintf(out, "opcode[STORE_SLICE].specializable : 1\n");
+    fprintf(out, "opcode[GET_ITER].specializable : 1\n");
     for (int i = 0; i < 256; i++) {
         if (_PyOpcode_Caches[i]) {
             /* Ignore jumps as they cannot be specialized */
@@ -439,7 +440,9 @@ _Py_PrintSpecializationStats(int to_file)
 #define SPECIALIZATION_FAIL(opcode, kind) \
 do { \
     if (_Py_stats) { \
-        _Py_stats->opcode_stats[opcode].specialization.failure_kinds[kind]++; \
+        int _kind = (kind); \
+        assert(_kind < SPECIALIZATION_FAILURE_KINDS); \
+        _Py_stats->opcode_stats[opcode].specialization.failure_kinds[_kind]++; \
     } \
 } while (0)
 
@@ -668,6 +671,7 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
 #define SPEC_FAIL_ITER_CALLABLE 28
 #define SPEC_FAIL_ITER_ASCII_STRING 29
 #define SPEC_FAIL_ITER_ASYNC_GENERATOR_SEND 30
+#define SPEC_FAIL_ITER_SELF 31
 
 // UNPACK_SEQUENCE
 
@@ -2530,7 +2534,7 @@ LONG_FLOAT_ACTION(compactlong_float_multiply, *)
 LONG_FLOAT_ACTION(compactlong_float_true_div, /)
 #undef LONG_FLOAT_ACTION
 
-static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
+static const _PyBinaryOpSpecializationDescr binaryop_extend_builtins[] = {
     /* long-long arithmetic */
     {NB_OR, compactlongs_guard, compactlongs_or},
     {NB_AND, compactlongs_guard, compactlongs_and},
@@ -2556,13 +2560,40 @@ static int
 binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
                                   _PyBinaryOpSpecializationDescr **descr)
 {
-    size_t n = sizeof(binaryop_extend_descrs)/sizeof(_PyBinaryOpSpecializationDescr);
-    for (size_t i = 0; i < n; i++) {
-        _PyBinaryOpSpecializationDescr *d = &binaryop_extend_descrs[i];
+    /* We are currently using this only for NB_SUBSCR, which is not
+     * commutative. Will need to revisit this function when we use
+     * this for operators which are.
+     */
+
+    typedef _PyBinaryOpSpecializationDescr descr_type;
+    size_t size = Py_ARRAY_LENGTH(binaryop_extend_builtins);
+    for (size_t i = 0; i < size; i++) {
+        descr_type *d = (descr_type *)&binaryop_extend_builtins[i];
+        assert(d != NULL);
+        assert(d->guard != NULL);
         if (d->oparg == oparg && d->guard(lhs, rhs)) {
             *descr = d;
             return 1;
         }
+    }
+
+    PyTypeObject *lhs_type = Py_TYPE(lhs);
+    if (lhs_type->tp_binop_specialize != NULL) {
+        int ret = lhs_type->tp_binop_specialize(lhs, rhs, oparg, descr);
+        if (ret < 0) {
+            return -1;
+        }
+        if (ret == 1) {
+            if (*descr == NULL) {
+                PyErr_Format(
+                    PyExc_ValueError,
+                    "tp_binop_specialize of '%T' returned 1 with *descr == NULL",
+                    lhs);
+                return -1;
+            }
+            (*descr)->oparg = oparg;
+        }
+        return ret;
     }
     return 0;
 }
@@ -2651,6 +2682,10 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
             }
             if (PyDict_CheckExact(lhs)) {
                 specialize(instr, BINARY_OP_SUBSCR_DICT);
+                return;
+            }
+            if (PyList_CheckExact(lhs) && PySlice_Check(rhs)) {
+                specialize(instr, BINARY_OP_SUBSCR_LIST_SLICE);
                 return;
             }
             unsigned int tp_version;
@@ -3114,6 +3149,53 @@ _Py_Specialize_ContainsOp(_PyStackRef value_st, _Py_CODEUNIT *instr)
     unspecialize(instr);
     return;
 }
+
+#ifdef Py_STATS
+void
+_Py_GatherStats_GetIter(_PyStackRef iterable)
+{
+    PyTypeObject *tp = PyStackRef_TYPE(iterable);
+    int kind = SPEC_FAIL_OTHER;
+    if (tp == &PyTuple_Type) {
+        kind = SPEC_FAIL_ITER_TUPLE;
+    }
+    else if (tp == &PyList_Type) {
+        kind = SPEC_FAIL_ITER_LIST;
+    }
+    else if (tp == &PyDict_Type) {
+        kind = SPEC_FAIL_ITER_DICT_KEYS;
+    }
+    else if (tp == &PySet_Type) {
+        kind = SPEC_FAIL_ITER_SET;
+    }
+    else if (tp == &PyBytes_Type) {
+        kind = SPEC_FAIL_ITER_BYTES;
+    }
+    else if (tp == &PyEnum_Type) {
+        kind = SPEC_FAIL_ITER_ENUMERATE;
+    }
+    else if (tp == &PyUnicode_Type) {
+        kind = SPEC_FAIL_ITER_STRING;
+    }
+    else if (tp == &PyGen_Type) {
+        kind = SPEC_FAIL_ITER_GENERATOR;
+    }
+    else if (tp == &PyCoro_Type) {
+        kind = SPEC_FAIL_ITER_COROUTINE;
+    }
+    else if (tp == &PyAsyncGen_Type) {
+        kind = SPEC_FAIL_ITER_ASYNC_GENERATOR;
+    }
+    else if (tp == &_PyAsyncGenASend_Type) {
+        kind = SPEC_FAIL_ITER_ASYNC_GENERATOR_SEND;
+    }
+    else if (tp->tp_iter == PyObject_SelfIter) {
+        kind = SPEC_FAIL_ITER_SELF;
+    }
+    SPECIALIZATION_FAIL(GET_ITER, kind);
+}
+#endif
+
 
 /* Code init cleanup.
  * CALL_ALLOC_AND_ENTER_INIT will set up
