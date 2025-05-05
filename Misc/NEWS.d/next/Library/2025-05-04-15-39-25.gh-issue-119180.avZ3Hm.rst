@@ -1,0 +1,3 @@
+Make :func:`annotationlib.get_annotations` succeed with the ``FORWARDREF``
+format if evaluating the annotations throws an exception other than
+:exc:`NameError` or :exc:`AttributeError`.

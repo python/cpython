@@ -269,6 +269,7 @@ class Test(unittest.TestCase, StructCheckMixin):
 
         class S(base):
             _pack_ = 1
+            _layout_ = "ms"
             _fields_ = [("b", c_byte),
                         ("h", c_short),
 
@@ -296,6 +297,7 @@ class Test(unittest.TestCase, StructCheckMixin):
 
         class S(Structure):
             _pack_ = 1
+            _layout_ = "ms"
             _fields_ = [("b", c_byte),
 
                         ("h", c_short),

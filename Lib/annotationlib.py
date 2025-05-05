@@ -92,11 +92,28 @@ class ForwardRef:
     def __init_subclass__(cls, /, *args, **kwds):
         raise TypeError("Cannot subclass ForwardRef")
 
-    def evaluate(self, *, globals=None, locals=None, type_params=None, owner=None):
+    def evaluate(
+        self,
+        *,
+        globals=None,
+        locals=None,
+        type_params=None,
+        owner=None,
+        format=Format.VALUE,
+    ):
         """Evaluate the forward reference and return the value.
 
         If the forward reference cannot be evaluated, raise an exception.
         """
+        match format:
+            case Format.STRING:
+                return self.__forward_arg__
+            case Format.VALUE:
+                is_forwardref_format = False
+            case Format.FORWARDREF:
+                is_forwardref_format = True
+            case _:
+                raise NotImplementedError(format)
         if self.__cell__ is not None:
             try:
                 return self.__cell__.cell_contents
@@ -159,17 +176,36 @@ class ForwardRef:
         arg = self.__forward_arg__
         if arg.isidentifier() and not keyword.iskeyword(arg):
             if arg in locals:
-                value = locals[arg]
+                return locals[arg]
             elif arg in globals:
-                value = globals[arg]
+                return globals[arg]
             elif hasattr(builtins, arg):
                 return getattr(builtins, arg)
+            elif is_forwardref_format:
+                return self
             else:
                 raise NameError(arg)
         else:
             code = self.__forward_code__
-            value = eval(code, globals=globals, locals=locals)
-        return value
+            try:
+                return eval(code, globals=globals, locals=locals)
+            except Exception:
+                if not is_forwardref_format:
+                    raise
+            new_locals = _StringifierDict(
+                {**builtins.__dict__, **locals},
+                globals=globals,
+                owner=owner,
+                is_class=self.__forward_is_class__,
+                format=format,
+            )
+            try:
+                result = eval(code, globals=globals, locals=new_locals)
+            except Exception:
+                return self
+            else:
+                new_locals.transmogrify()
+                return result
 
     def _evaluate(self, globalns, localns, type_params=_sentinel, *, recursive_guard):
         import typing
@@ -546,6 +582,14 @@ class _StringifierDict(dict):
         self.stringifiers.append(fwdref)
         return fwdref
 
+    def transmogrify(self):
+        for obj in self.stringifiers:
+            obj.__class__ = ForwardRef
+            obj.__stringifier_dict__ = None  # not needed for ForwardRef
+            if isinstance(obj.__ast_node__, str):
+                obj.__arg__ = obj.__ast_node__
+                obj.__ast_node__ = None
+
     def create_unique_name(self):
         name = f"__annotationlib_name_{self.next_id}__"
         self.next_id += 1
@@ -595,19 +639,10 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         # convert each of those into a string to get an approximation of the
         # original source.
         globals = _StringifierDict({}, format=format)
-        if annotate.__closure__:
-            freevars = annotate.__code__.co_freevars
-            new_closure = []
-            for i, cell in enumerate(annotate.__closure__):
-                if i < len(freevars):
-                    name = freevars[i]
-                else:
-                    name = "__cell__"
-                fwdref = _Stringifier(name, stringifier_dict=globals)
-                new_closure.append(types.CellType(fwdref))
-            closure = tuple(new_closure)
-        else:
-            closure = None
+        is_class = isinstance(owner, type)
+        closure = _build_closure(
+            annotate, owner, is_class, globals, allow_evaluation=False
+        )
         func = types.FunctionType(
             annotate.__code__,
             globals,
@@ -649,32 +684,36 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             is_class=is_class,
             format=format,
         )
-        if annotate.__closure__:
-            freevars = annotate.__code__.co_freevars
-            new_closure = []
-            for i, cell in enumerate(annotate.__closure__):
-                try:
-                    cell.cell_contents
-                except ValueError:
-                    if i < len(freevars):
-                        name = freevars[i]
-                    else:
-                        name = "__cell__"
-                    fwdref = _Stringifier(
-                        name,
-                        cell=cell,
-                        owner=owner,
-                        globals=annotate.__globals__,
-                        is_class=is_class,
-                        stringifier_dict=globals,
-                    )
-                    globals.stringifiers.append(fwdref)
-                    new_closure.append(types.CellType(fwdref))
-                else:
-                    new_closure.append(cell)
-            closure = tuple(new_closure)
+        closure = _build_closure(
+            annotate, owner, is_class, globals, allow_evaluation=True
+        )
+        func = types.FunctionType(
+            annotate.__code__,
+            globals,
+            closure=closure,
+            argdefs=annotate.__defaults__,
+            kwdefaults=annotate.__kwdefaults__,
+        )
+        try:
+            result = func(Format.VALUE_WITH_FAKE_GLOBALS)
+        except Exception:
+            pass
         else:
-            closure = None
+            globals.transmogrify()
+            return result
+
+        # Try again, but do not provide any globals. This allows us to return
+        # a value in certain cases where an exception gets raised during evaluation.
+        globals = _StringifierDict(
+            {},
+            globals=annotate.__globals__,
+            owner=owner,
+            is_class=is_class,
+            format=format,
+        )
+        closure = _build_closure(
+            annotate, owner, is_class, globals, allow_evaluation=False
+        )
         func = types.FunctionType(
             annotate.__code__,
             globals,
@@ -683,19 +722,60 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             kwdefaults=annotate.__kwdefaults__,
         )
         result = func(Format.VALUE_WITH_FAKE_GLOBALS)
-        for obj in globals.stringifiers:
-            obj.__class__ = ForwardRef
-            obj.__stringifier_dict__ = None  # not needed for ForwardRef
-            if isinstance(obj.__ast_node__, str):
-                obj.__arg__ = obj.__ast_node__
-                obj.__ast_node__ = None
-        return result
+        globals.transmogrify()
+        if _is_evaluate:
+            if isinstance(result, ForwardRef):
+                return result.evaluate(format=Format.FORWARDREF)
+            else:
+                return result
+        else:
+            return {
+                key: (
+                    val.evaluate(format=Format.FORWARDREF)
+                    if isinstance(val, ForwardRef)
+                    else val
+                )
+                for key, val in result.items()
+            }
     elif format == Format.VALUE:
         # Should be impossible because __annotate__ functions must not raise
         # NotImplementedError for this format.
         raise RuntimeError("annotate function does not support VALUE format")
     else:
         raise ValueError(f"Invalid format: {format!r}")
+
+
+def _build_closure(annotate, owner, is_class, stringifier_dict, *, allow_evaluation):
+    if not annotate.__closure__:
+        return None
+    freevars = annotate.__code__.co_freevars
+    new_closure = []
+    for i, cell in enumerate(annotate.__closure__):
+        if i < len(freevars):
+            name = freevars[i]
+        else:
+            name = "__cell__"
+        new_cell = None
+        if allow_evaluation:
+            try:
+                cell.cell_contents
+            except ValueError:
+                pass
+            else:
+                new_cell = cell
+        if new_cell is None:
+            fwdref = _Stringifier(
+                name,
+                cell=cell,
+                owner=owner,
+                globals=annotate.__globals__,
+                is_class=is_class,
+                stringifier_dict=stringifier_dict,
+            )
+            stringifier_dict.stringifiers.append(fwdref)
+            new_cell = types.CellType(fwdref)
+        new_closure.append(new_cell)
+    return tuple(new_closure)
 
 
 def _stringify_single(anno):
@@ -788,7 +868,7 @@ def get_annotations(
             # For FORWARDREF, we use __annotations__ if it exists
             try:
                 ann = _get_dunder_annotations(obj)
-            except NameError:
+            except Exception:
                 pass
             else:
                 if ann is not None:
@@ -809,7 +889,7 @@ def get_annotations(
             # But if we didn't get it, we use __annotations__ instead.
             ann = _get_dunder_annotations(obj)
             if ann is not None:
-                 return annotations_to_string(ann)
+                return annotations_to_string(ann)
         case Format.VALUE_WITH_FAKE_GLOBALS:
             raise ValueError("The VALUE_WITH_FAKE_GLOBALS format is for internal use only")
         case _:

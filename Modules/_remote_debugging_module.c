@@ -80,37 +80,6 @@ _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
     return address;
 }
 
-static int
-read_string(
-    proc_handle_t *handle,
-    _Py_DebugOffsets* debug_offsets,
-    uintptr_t address,
-    char* buffer,
-    Py_ssize_t size
-) {
-    Py_ssize_t len;
-    int result = _Py_RemoteDebug_ReadRemoteMemory(
-        handle,
-        address + debug_offsets->unicode_object.length,
-        sizeof(Py_ssize_t),
-        &len
-    );
-    if (result < 0) {
-        return -1;
-    }
-    if (len >= size) {
-        PyErr_SetString(PyExc_RuntimeError, "Buffer too small");
-        return -1;
-    }
-    size_t offset = debug_offsets->unicode_object.asciiobject_size;
-    result = _Py_RemoteDebug_ReadRemoteMemory(handle, address + offset, len, buffer);
-    if (result < 0) {
-        return -1;
-    }
-    buffer[len] = '\0';
-    return 0;
-}
-
 static inline int
 read_ptr(proc_handle_t *handle, uintptr_t address, uintptr_t *ptr_addr)
 {
@@ -188,20 +157,34 @@ read_py_str(
     uintptr_t address,
     Py_ssize_t max_len
 ) {
-    assert(max_len > 0);
-
     PyObject *result = NULL;
+    char *buf = NULL;
 
-    char *buf = (char *)PyMem_RawMalloc(max_len);
+    Py_ssize_t len;
+    int res = _Py_RemoteDebug_ReadRemoteMemory(
+        handle,
+        address + debug_offsets->unicode_object.length,
+        sizeof(Py_ssize_t),
+        &len
+    );
+    if (res < 0) {
+        goto err;
+    }
+
+    buf = (char *)PyMem_RawMalloc(len+1);
     if (buf == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    if (read_string(handle, debug_offsets, address, buf, max_len)) {
+
+    size_t offset = debug_offsets->unicode_object.asciiobject_size;
+    res = _Py_RemoteDebug_ReadRemoteMemory(handle, address + offset, len, buf);
+    if (res < 0) {
         goto err;
     }
+    buf[len] = '\0';
 
-    result = PyUnicode_FromString(buf);
+    result = PyUnicode_FromStringAndSize(buf, len);
     if (result == NULL) {
         goto err;
     }
@@ -211,9 +194,62 @@ read_py_str(
     return result;
 
 err:
-    PyMem_RawFree(buf);
+    if (buf != NULL) {
+        PyMem_RawFree(buf);
+    }
     return NULL;
 }
+
+static PyObject *
+read_py_bytes(
+    proc_handle_t *handle,
+    _Py_DebugOffsets* debug_offsets,
+    uintptr_t address
+) {
+    PyObject *result = NULL;
+    char *buf = NULL;
+
+    Py_ssize_t len;
+    int res = _Py_RemoteDebug_ReadRemoteMemory(
+        handle,
+        address + debug_offsets->bytes_object.ob_size,
+        sizeof(Py_ssize_t),
+        &len
+    );
+    if (res < 0) {
+        goto err;
+    }
+
+    buf = (char *)PyMem_RawMalloc(len+1);
+    if (buf == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    size_t offset = debug_offsets->bytes_object.ob_sval;
+    res = _Py_RemoteDebug_ReadRemoteMemory(handle, address + offset, len, buf);
+    if (res < 0) {
+        goto err;
+    }
+    buf[len] = '\0';
+
+    result = PyBytes_FromStringAndSize(buf, len);
+    if (result == NULL) {
+        goto err;
+    }
+
+    PyMem_RawFree(buf);
+    assert(result != NULL);
+    return result;
+
+err:
+    if (buf != NULL) {
+        PyMem_RawFree(buf);
+    }
+    return NULL;
+}
+
+
 
 static long
 read_py_long(proc_handle_t *handle, _Py_DebugOffsets* offsets, uintptr_t address)
@@ -333,6 +369,15 @@ parse_task_name(
 }
 
 static int
+parse_frame_object(
+    proc_handle_t *handle,
+    PyObject** result,
+    struct _Py_DebugOffsets* offsets,
+    uintptr_t address,
+    uintptr_t* previous_frame
+);
+
+static int
 parse_coro_chain(
     proc_handle_t *handle,
     struct _Py_DebugOffsets* offsets,
@@ -351,22 +396,16 @@ parse_coro_chain(
         return -1;
     }
 
-    uintptr_t gen_name_addr;
-    err = read_py_ptr(
-        handle,
-        coro_address + offsets->gen_object.gi_name,
-        &gen_name_addr);
-    if (err) {
-        return -1;
-    }
-
-    PyObject *name = read_py_str(
-        handle,
-        offsets,
-        gen_name_addr,
-        255
-    );
-    if (name == NULL) {
+    PyObject* name = NULL;
+    uintptr_t prev_frame;
+    if (parse_frame_object(
+                handle,
+                &name,
+                offsets,
+                coro_address + offsets->gen_object.gi_iframe,
+                &prev_frame)
+        < 0)
+    {
         return -1;
     }
 
@@ -743,49 +782,204 @@ parse_task_awaited_by(
     return 0;
 }
 
+typedef struct
+{
+    int lineno;
+    int end_lineno;
+    int column;
+    int end_column;
+} LocationInfo;
+
 static int
-parse_code_object(
-    proc_handle_t *handle,
-    PyObject* result,
-    struct _Py_DebugOffsets* offsets,
-    uintptr_t address,
-    uintptr_t* previous_frame
-) {
-    uintptr_t address_of_function_name;
-    int bytes_read = _Py_RemoteDebug_ReadRemoteMemory(
-        handle,
-        address + offsets->code_object.name,
-        sizeof(void*),
-        &address_of_function_name
-    );
+scan_varint(const uint8_t **ptr)
+{
+    unsigned int read = **ptr;
+    *ptr = *ptr + 1;
+    unsigned int val = read & 63;
+    unsigned int shift = 0;
+    while (read & 64) {
+        read = **ptr;
+        *ptr = *ptr + 1;
+        shift += 6;
+        val |= (read & 63) << shift;
+    }
+    return val;
+}
+
+static int
+scan_signed_varint(const uint8_t **ptr)
+{
+    unsigned int uval = scan_varint(ptr);
+    if (uval & 1) {
+        return -(int)(uval >> 1);
+    }
+    else {
+        return uval >> 1;
+    }
+}
+
+
+static bool
+parse_linetable(const uintptr_t addrq, const char* linetable, int firstlineno, LocationInfo* info)
+{
+    const uint8_t* ptr = (const uint8_t*)(linetable);
+    uint64_t addr = 0;
+    info->lineno = firstlineno;
+
+    while (*ptr != '\0') {
+        // See InternalDocs/code_objects.md for where these magic numbers are from
+        // and for the decoding algorithm.
+        uint8_t first_byte = *(ptr++);
+        uint8_t code = (first_byte >> 3) & 15;
+        size_t length = (first_byte & 7) + 1;
+        uintptr_t end_addr = addr + length;
+        switch (code) {
+            case PY_CODE_LOCATION_INFO_NONE: {
+                break;
+            }
+            case PY_CODE_LOCATION_INFO_LONG: {
+                int line_delta = scan_signed_varint(&ptr);
+                info->lineno += line_delta;
+                info->end_lineno = info->lineno + scan_varint(&ptr);
+                info->column = scan_varint(&ptr) - 1;
+                info->end_column = scan_varint(&ptr) - 1;
+                break;
+            }
+            case PY_CODE_LOCATION_INFO_NO_COLUMNS: {
+                int line_delta = scan_signed_varint(&ptr);
+                info->lineno += line_delta;
+                info->column = info->end_column = -1;
+                break;
+            }
+            case PY_CODE_LOCATION_INFO_ONE_LINE0:
+            case PY_CODE_LOCATION_INFO_ONE_LINE1:
+            case PY_CODE_LOCATION_INFO_ONE_LINE2: {
+                int line_delta = code - 10;
+                info->lineno += line_delta;
+                info->end_lineno = info->lineno;
+                info->column = *(ptr++);
+                info->end_column = *(ptr++);
+                break;
+            }
+            default: {
+                uint8_t second_byte = *(ptr++);
+                assert((second_byte & 128) == 0);
+                info->column = code << 3 | (second_byte >> 4);
+                info->end_column = info->column + (second_byte & 15);
+                break;
+            }
+        }
+        if (addr <= addrq && end_addr > addrq) {
+            return true;
+        }
+        addr = end_addr;
+    }
+    return false;
+}
+
+static int
+read_remote_pointer(proc_handle_t *handle, uintptr_t address, uintptr_t *out_ptr, const char *error_message)
+{
+    int bytes_read = _Py_RemoteDebug_ReadRemoteMemory(handle, address, sizeof(void *), out_ptr);
     if (bytes_read < 0) {
         return -1;
     }
 
-    if ((void*)address_of_function_name == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "No function name found");
+    if ((void *)(*out_ptr) == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, error_message);
         return -1;
     }
 
-    PyObject* py_function_name = read_py_str(
-        handle, offsets, address_of_function_name, 256);
-    if (py_function_name == NULL) {
+    return 0;
+}
+
+static int
+read_instruction_ptr(proc_handle_t *handle, struct _Py_DebugOffsets *offsets,
+                     uintptr_t current_frame, uintptr_t *instruction_ptr)
+{
+    return read_remote_pointer(
+        handle,
+        current_frame + offsets->interpreter_frame.instr_ptr,
+        instruction_ptr,
+        "No instruction ptr found"
+    );
+}
+
+static int
+parse_code_object(proc_handle_t *handle,
+                  PyObject **result,
+                  struct _Py_DebugOffsets *offsets,
+                  uintptr_t address,
+                  uintptr_t current_frame,
+                  uintptr_t *previous_frame)
+{
+    uintptr_t addr_func_name, addr_file_name, addr_linetable, instruction_ptr;
+
+    if (read_remote_pointer(handle, address + offsets->code_object.qualname, &addr_func_name, "No function name found") < 0 ||
+        read_remote_pointer(handle, address + offsets->code_object.filename, &addr_file_name, "No file name found") < 0 ||
+        read_remote_pointer(handle, address + offsets->code_object.linetable, &addr_linetable, "No linetable found") < 0 ||
+        read_instruction_ptr(handle, offsets, current_frame, &instruction_ptr) < 0) {
         return -1;
     }
 
-    if (PyList_Append(result, py_function_name) == -1) {
-        Py_DECREF(py_function_name);
+    int firstlineno;
+    if (_Py_RemoteDebug_ReadRemoteMemory(handle,
+                                         address + offsets->code_object.firstlineno,
+                                         sizeof(int),
+                                         &firstlineno) < 0) {
         return -1;
     }
-    Py_DECREF(py_function_name);
 
+    PyObject *py_linetable = read_py_bytes(handle, offsets, addr_linetable);
+    if (!py_linetable) {
+        return -1;
+    }
+
+    uintptr_t addr_code_adaptive = address + offsets->code_object.co_code_adaptive;
+    ptrdiff_t addrq = (uint16_t *)instruction_ptr - (uint16_t *)addr_code_adaptive;
+
+    LocationInfo info;
+    parse_linetable(addrq, PyBytes_AS_STRING(py_linetable), firstlineno, &info);
+    Py_DECREF(py_linetable);  // Done with linetable
+
+    PyObject *py_line = PyLong_FromLong(info.lineno);
+    if (!py_line) {
+        return -1;
+    }
+
+    PyObject *py_func_name = read_py_str(handle, offsets, addr_func_name, 256);
+    if (!py_func_name) {
+        Py_DECREF(py_line);
+        return -1;
+    }
+
+    PyObject *py_file_name = read_py_str(handle, offsets, addr_file_name, 256);
+    if (!py_file_name) {
+        Py_DECREF(py_line);
+        Py_DECREF(py_func_name);
+        return -1;
+    }
+
+    PyObject *result_tuple = PyTuple_New(3);
+    if (!result_tuple) {
+        Py_DECREF(py_line);
+        Py_DECREF(py_func_name);
+        Py_DECREF(py_file_name);
+        return -1;
+    }
+
+    PyTuple_SET_ITEM(result_tuple, 0, py_func_name);  // steals ref
+    PyTuple_SET_ITEM(result_tuple, 1, py_file_name);  // steals ref
+    PyTuple_SET_ITEM(result_tuple, 2, py_line);       // steals ref
+
+    *result = result_tuple;
     return 0;
 }
 
 static int
 parse_frame_object(
     proc_handle_t *handle,
-    PyObject* result,
+    PyObject** result,
     struct _Py_DebugOffsets* offsets,
     uintptr_t address,
     uintptr_t* previous_frame
@@ -826,13 +1020,13 @@ parse_frame_object(
     }
 
     return parse_code_object(
-        handle, result, offsets, address_of_code_object, previous_frame);
+        handle, result, offsets, address_of_code_object, address, previous_frame);
 }
 
 static int
 parse_async_frame_object(
     proc_handle_t *handle,
-    PyObject* result,
+    PyObject** result,
     struct _Py_DebugOffsets* offsets,
     uintptr_t address,
     uintptr_t* previous_frame,
@@ -882,7 +1076,7 @@ parse_async_frame_object(
     }
 
     if (parse_code_object(
-        handle, result, offsets, *code_object, previous_frame)) {
+        handle, result, offsets, *code_object, address, previous_frame)) {
         return -1;
     }
 
@@ -1353,9 +1547,10 @@ get_stack_trace(PyObject* self, PyObject* args)
     }
 
     while ((void*)address_of_current_frame != NULL) {
+        PyObject* frame_info = NULL;
         if (parse_frame_object(
                     handle,
-                    result,
+                    &frame_info,
                     &local_debug_offsets,
                     address_of_current_frame,
                     &address_of_current_frame)
@@ -1364,6 +1559,19 @@ get_stack_trace(PyObject* self, PyObject* args)
             Py_DECREF(result);
             goto result_err;
         }
+
+        if (!frame_info) {
+            continue;
+        }
+
+        if (PyList_Append(result, frame_info) == -1) {
+            Py_DECREF(result);
+            goto result_err;
+        }
+
+        Py_DECREF(frame_info);
+        frame_info = NULL;
+
     }
 
 result_err:
@@ -1485,9 +1693,10 @@ get_async_stack_trace(PyObject* self, PyObject* args)
 
     uintptr_t address_of_code_object;
     while ((void*)address_of_current_frame != NULL) {
+        PyObject* frame_info = NULL;
         int res = parse_async_frame_object(
             handle,
-            calls,
+            &frame_info,
             &local_debug_offsets,
             address_of_current_frame,
             &address_of_current_frame,
@@ -1498,6 +1707,18 @@ get_async_stack_trace(PyObject* self, PyObject* args)
             chain_exceptions(PyExc_RuntimeError, "Failed to parse async frame object");
             goto result_err;
         }
+
+        if (!frame_info) {
+            continue;
+        }
+
+        if (PyList_Append(calls, frame_info) == -1) {
+            Py_DECREF(calls);
+            goto result_err;
+        }
+
+        Py_DECREF(frame_info);
+        frame_info = NULL;
 
         if (address_of_code_object == address_of_running_task_code_obj) {
             break;
@@ -1554,13 +1775,13 @@ static PyMethodDef methods[] = {
 
 static struct PyModuleDef module = {
     .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = "_remotedebugging",
+    .m_name = "_remote_debugging",
     .m_size = -1,
     .m_methods = methods,
 };
 
 PyMODINIT_FUNC
-PyInit__remotedebugging(void)
+PyInit__remote_debugging(void)
 {
     PyObject* mod = PyModule_Create(&module);
     if (mod == NULL) {

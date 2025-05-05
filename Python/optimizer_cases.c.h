@@ -554,9 +554,7 @@
             break;
         }
 
-        case _GUARD_BINARY_OP_EXTEND: {
-            break;
-        }
+        /* _GUARD_BINARY_OP_EXTEND is not a viable micro-op for tier 2 */
 
         case _BINARY_OP_EXTEND: {
             JitOptSymbol *res;

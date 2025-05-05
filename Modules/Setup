@@ -284,10 +284,10 @@ PYTHONPATH=$(COREPYTHONPATH)
 
 #*shared*
 #_ctypes_test _ctypes/_ctypes_test.c
+#_remote_debugging _remote_debugging_module.c
 #_testcapi _testcapimodule.c
 #_testimportmultiple _testimportmultiple.c
 #_testmultiphase _testmultiphase.c
-#_remotedebugging _remotedebuggingmodule.c
 #_testsinglephase _testsinglephase.c
 
 # ---

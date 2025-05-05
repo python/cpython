@@ -805,6 +805,11 @@ Other language changes
   :keyword:`async with`).
   (Contributed by Bénédikt Tran in :gh:`128398`.)
 
+* :option:`!-J` is no longer a reserved flag for Jython_,
+  and now has no special meaning.
+  (Contributed by Adam Turner in :gh:`133336`.)
+
+  .. _Jython: https://www.jython.org/
 
 .. _whatsnew314-pep765:
 
@@ -869,6 +874,11 @@ ast
 * :func:`ast.parse`, when called with an AST as input, now always verifies
   that the root node type is appropriate.
   (Contributed by Irit Katriel in :gh:`130139`.)
+
+* Add new ``--feature-version``, ``--optimize``, ``--show-empty`` options to
+  command-line interface.
+  (Contributed by Semyon Moroz in :gh:`133367`.)
+
 
 bdb
 ---
@@ -1107,6 +1117,18 @@ graphlib
 * Allow :meth:`graphlib.TopologicalSorter.prepare` to be called more than once
   as long as sorting has not started.
   (Contributed by Daniel Pope in :gh:`130914`)
+
+
+heapq
+-----
+
+* Add functions for working with max-heaps:
+
+  * :func:`heapq.heapify_max`,
+  * :func:`heapq.heappush_max`,
+  * :func:`heapq.heappop_max`,
+  * :func:`heapq.heapreplace_max`
+  * :func:`heapq.heappushpop_max`
 
 
 hmac
@@ -1421,6 +1443,11 @@ pdb
   fill in a 4-space indentation now, instead of inserting a ``\t`` character.
   (Contributed by Tian Gao in :gh:`130471`.)
 
+* Auto-indent is introduced in :mod:`pdb` multi-line input. It will either
+  keep the indentation of the last line or insert a 4-space indentation when
+  it detects a new code block.
+  (Contributed by Tian Gao in :gh:`133350`.)
+
 * ``$_asynctask`` is added to access the current asyncio task if applicable.
   (Contributed by Tian Gao in :gh:`124367`.)
 
@@ -1435,6 +1462,11 @@ pdb
   coroutines. :keyword:`await` statements are supported with this
   function.
   (Contributed by Tian Gao in :gh:`132576`.)
+
+* Source code displayed in :mod:`pdb` will be syntax-highlighted. This feature
+  can be controlled using the same methods as PyREPL, in addition to the newly
+  added ``colorize`` argument of :class:`pdb.Pdb`.
+  (Contributed by Tian Gao in :gh:`133355`.)
 
 
 pickle
@@ -1681,9 +1713,11 @@ urllib
 
   - Accept a complete URL when the new *require_scheme* argument is set to
     true.
-  - Discard URL authorities that resolve to a local IP address.
-  - Raise :exc:`~urllib.error.URLError` if a URL authority doesn't resolve
-    to a local IP address, except on Windows where we return a UNC path.
+  - Discard URL authority if it matches the local hostname.
+  - Discard URL authority if it resolves to a local IP address when the new
+    *resolve_host* argument is set to true.
+  - Raise :exc:`~urllib.error.URLError` if a URL authority isn't local,
+    except on Windows where we return a UNC path as before.
 
   In :func:`urllib.request.pathname2url`:
 
@@ -1870,6 +1904,12 @@ Deprecated
   (Contributed by Inada Naoki in :gh:`133036`.)
 
 * :mod:`ctypes`:
+  On non-Windows platforms, setting :attr:`.Structure._pack_` to use a
+  MSVC-compatible default memory layout is deprecated in favor of setting
+  :attr:`.Structure._layout_` to ``'ms'``.
+  (Contributed by Petr Viktorin in :gh:`131747`.)
+
+* :mod:`ctypes`:
   Calling :func:`ctypes.POINTER` on a string is deprecated.
   Use :ref:`ctypes-incomplete-types` for self-referential structures.
   Also, the internal ``ctypes._pointer_type_cache`` is deprecated.
@@ -1942,6 +1982,8 @@ Deprecated
 .. include:: ../deprecations/pending-removal-in-3.16.rst
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.19.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
 
@@ -2426,6 +2468,10 @@ New features
   is a unique temporary object on the interpreter's operand stack. This can
   be used in some cases as a replacement for checking if :c:func:`Py_REFCNT`
   is ``1`` for Python objects passed as arguments to C API functions.
+
+* Add :c:func:`PyUnstable_Object_IsUniquelyReferenced` as a replacement for
+  ``Py_REFCNT(op) == 1`` on :term:`free threaded <free threading>` builds.
+  (Contributed by Peter Bierma in :gh:`133140`.)
 
 
 Limited C API changes
