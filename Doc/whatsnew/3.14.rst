@@ -1597,8 +1597,8 @@ threading
 tkinter
 -------
 
-* Make tkinter widget methods :meth:`!after` and :meth:`!after_idle` accept
-  arguments passed by keyword.
+* Make :mod:`tkinter` widget methods :meth:`!after` and :meth:`!after_idle`
+  accept arguments passed by keyword.
   (Contributed by Zhikang Yan in :gh:`126899`.)
 
 * Add ability to specify name for :class:`!tkinter.OptionMenu` and
