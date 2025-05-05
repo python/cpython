@@ -144,17 +144,18 @@ type_lock_prevent_release(void)
     PyThreadState *tstate = _PyThreadState_GET();
     uintptr_t *tagptr = &tstate->critical_section;
     PyCriticalSection *c = (PyCriticalSection *)(*tagptr & ~_Py_CRITICAL_SECTION_MASK);
-    if (c->_cs_mutex == TYPE_LOCK) {
+    if (!(*tagptr & _Py_CRITICAL_SECTION_TWO_MUTEXES)) {
+        assert(c->_cs_mutex == TYPE_LOCK);
         c->_cs_mutex = NULL;
     }
     else {
-        assert(*tagptr & _Py_CRITICAL_SECTION_TWO_MUTEXES);
         PyCriticalSection2 *c2 = (PyCriticalSection2 *)c;
-        if (c2->_cs_mutex2 == TYPE_LOCK) {
-                c2->_cs_mutex2 = NULL;
-        }
-        else {
-            assert(0); // TYPE_LOCK must be one of the mutexes
+        if (c->_cs_mutex == TYPE_LOCK) {
+            c->_cs_mutex = c2->_cs_mutex2;
+            c2->_cs_mutex2 = NULL;
+        } else {
+            assert(c2->_cs_mutex2 == TYPE_LOCK);
+            c2->_cs_mutex2 = NULL;
         }
     }
 }
@@ -165,18 +166,14 @@ type_lock_allow_release(void)
     PyThreadState *tstate = _PyThreadState_GET();
     uintptr_t *tagptr = &tstate->critical_section;
     PyCriticalSection *c = (PyCriticalSection *)(*tagptr & ~_Py_CRITICAL_SECTION_MASK);
-    if (c->_cs_mutex == NULL) {
+    if (!(*tagptr & _Py_CRITICAL_SECTION_TWO_MUTEXES)) {
+        assert(c->_cs_mutex == NULL);
         c->_cs_mutex = TYPE_LOCK;
     }
     else {
-        assert(*tagptr & _Py_CRITICAL_SECTION_TWO_MUTEXES);
         PyCriticalSection2 *c2 = (PyCriticalSection2 *)c;
-        if (c2->_cs_mutex2 == NULL) {
-                c2->_cs_mutex2 = TYPE_LOCK;
-        }
-        else {
-            assert(0);
-        }
+        assert(c2->_cs_mutex2 == NULL);
+        c2->_cs_mutex2 = TYPE_LOCK;
     }
 }
 
