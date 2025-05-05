@@ -2213,6 +2213,12 @@ Others
   integer must implement either :meth:`~object.__int__` or
   :meth:`~object.__index__`. (Contributed by Mark Dickinson in :gh:`119743`.)
 
+* The default :term:`interactive` shell now supports import autocompletion.
+  This means that typing ``import foo`` and pressing ``<tab>`` will suggest
+  modules starting with ``foo``. Similarly, typing ``from foo import b`` will
+  suggest submodules of ``foo`` starting with ``b``. Note that autocompletion
+  of module attributes is not currently supported.
+  (Contributed by Tomas Roun in :gh:`69605`.)
 
 CPython Bytecode Changes
 ========================

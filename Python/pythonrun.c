@@ -1498,7 +1498,7 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
     }
     if (flags && (flags->cf_flags & PyCF_ONLY_AST)) {
         int syntax_check_only = ((flags->cf_flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST); /* unoptiomized AST */
-        if (_PyCompile_AstOptimize(mod, filename, flags, optimize, arena, syntax_check_only) < 0) {
+        if (_PyCompile_AstPreprocess(mod, filename, flags, optimize, arena, syntax_check_only) < 0) {
             _PyArena_Free(arena);
             return NULL;
         }

@@ -426,7 +426,7 @@ PYTHON_OBJS=	\
 		Python/asdl.o \
 		Python/assemble.o \
 		Python/ast.o \
-		Python/ast_opt.o \
+		Python/ast_preprocess.o \
 		Python/ast_unparse.o \
 		Python/bltinmodule.o \
 		Python/brc.o \
@@ -1948,7 +1948,7 @@ regen-pegen:
 		$(srcdir)/Grammar/python.gram \
 		$(srcdir)/Grammar/Tokens \
 		-o $(srcdir)/Parser/parser.c.new
-	$(UPDATE_FILE) $(srcdir)/Parser/parser.c $(srcdir)/Parser/parser.c.new
+	$(UPDATE_FILE) --create $(srcdir)/Parser/parser.c $(srcdir)/Parser/parser.c.new
 
 .PHONY: regen-ast
 regen-ast:
