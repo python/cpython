@@ -499,22 +499,22 @@ SyntaxError: arguments cannot follow var-keyword argument
 >>> def foo(*b,*d):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: * argument may appear only once
+SyntaxError: * marker may appear only once
 
 >>> def foo(a,*b,c,*d,*e,c):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: * argument may appear only once
+SyntaxError: * marker may appear only once
 
 >>> def foo(a,b,/,c,*b,c,*d,*e,c):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: * argument may appear only once
+SyntaxError: * marker may appear only once
 
 >>> def foo(a,b,/,c,*b,c,*d,**e):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: * argument may appear only once
+SyntaxError: * marker may appear only once
 
 >>> def foo(a=1,/*,b,c):
 ...    pass
@@ -598,19 +598,19 @@ SyntaxError: arguments cannot follow var-keyword argument
 
 >>> lambda *b,*d: None
 Traceback (most recent call last):
-SyntaxError: * argument may appear only once
+SyntaxError: * marker may appear only once
 
 >>> lambda a,*b,c,*d,*e,c: None
 Traceback (most recent call last):
-SyntaxError: * argument may appear only once
+SyntaxError: * marker may appear only once
 
 >>> lambda a,b,/,c,*b,c,*d,*e,c: None
 Traceback (most recent call last):
-SyntaxError: * argument may appear only once
+SyntaxError: * marker may appear only once
 
 >>> lambda a,b,/,c,*b,c,*d,**e: None
 Traceback (most recent call last):
-SyntaxError: * argument may appear only once
+SyntaxError: * marker may appear only once
 
 >>> lambda a=1,d=,c: None
 Traceback (most recent call last):
@@ -2178,7 +2178,7 @@ Corner-cases that used to fail to raise the correct error:
 
     >>> with (lambda *:0): pass
     Traceback (most recent call last):
-    SyntaxError: named arguments must follow bare *
+    SyntaxError: named parameters must follow bare *
 
 Corner-cases that used to crash:
 
