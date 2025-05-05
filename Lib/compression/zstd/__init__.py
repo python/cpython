@@ -38,6 +38,7 @@ _finalize_dict = _zstd._finalize_dict
 
 
 COMPRESSION_LEVEL_DEFAULT = _zstd._compressionLevel_values[0]
+"""The default compression level for Zstandard, currently '3'."""
 
 
 class FrameInfo:
@@ -57,25 +58,24 @@ class FrameInfo:
 
 
 def get_frame_info(frame_buffer):
-    """Get zstd frame information from a frame header.
+    """Get Zstandard frame information from a frame header.
 
-    *frame_buffer* is a bytes-like object. It should starts from the beginning
+    *frame_buffer* is a bytes-like object. It should start from the beginning
     of a frame, and needs to include at least the frame header (6 to 18 bytes).
 
-    Return a FrameInfo dataclass, which currently has two attributes
-
+    The returned FrameInfo object has two attributes.
     'decompressed_size' is the size in bytes of the data in the frame when
     decompressed, or None when the decompressed size is unknown.
-
-    'dictionary_id' is a 32-bit unsigned integer value. 0 means dictionary ID
-    was not recorded in the frame header, the frame may or may not need a
-    dictionary to be decoded, and the ID of such a dictionary is not specified.
+    'dictionary_id' is an int in the range (0, 2**32). The special value 0
+    means that the dictionary ID was not recorded in the frame header,
+    the frame may or may not need a dictionary to be decoded,
+    and the ID of such a dictionary is not specified.
     """
     return FrameInfo(*_zstd._get_frame_info(frame_buffer))
 
 
 def train_dict(samples, dict_size):
-    """Train a zstd dictionary, return a ZstdDict object.
+    """Return a ZstdDict representing a trained Zstandard dictionary.
 
     *samples* is an iterable of samples, where a sample is a bytes-like
     object representing a file.
@@ -97,24 +97,22 @@ def train_dict(samples, dict_size):
 
 
 def finalize_dict(zstd_dict, samples, dict_size, level):
-    """Finalize a zstd dictionary, return a ZstdDict object.
+    """Return a ZstdDict representing a finalized Zstandard dictionary.
 
     Given a custom content as a basis for dictionary, and a set of samples,
-    finalize dictionary by adding headers and statistics according to the zstd
-    dictionary format.
+    finalize *zstd_dict* by adding headers and statistics according to the
+    Zstandard dictionary format.
 
     You may compose an effective dictionary content by hand, which is used as
     basis dictionary, and use some samples to finalize a dictionary. The basis
-    dictionary can be a "raw content" dictionary, see is_raw parameter in
-    ZstdDict.__init__ method.
+    dictionary may be a "raw content" dictionary. See *is_raw* in ZstdDict.
 
-    *zstd_dict* is a ZstdDict object, the basis dictionary.
-    *samples* is an iterable of samples, a sample is a bytes-like object
+    *samples* is an iterable of samples, where a sample is a bytes-like object
     representing a file.
     *dict_size* is the dictionary's maximum size, in bytes.
-    *level* is the compression level expected to use in production. The
-    statistics for each compression level differ, so tuning the
-    dictionary for the compression level can help quite a bit.
+    *level* is the expected compression level. The statistics for each
+    compression level differ, so tuning the dictionary to the compression level
+    can provide improvements.
     """
 
     # Check arguments' type
@@ -140,11 +138,9 @@ def compress(data, level=None, options=None, zstd_dict=None):
     """Return Zstandard compressed *data* as bytes.
 
     *level* is an int specifying the compression level to use, defaulting to
-    COMPRESSION_LEVEL_DEFAULT
-
+    COMPRESSION_LEVEL_DEFAULT ('3').
     *options* is a dict object that contains advanced compression
     parameters. See CompressionParameter for more on options.
-
     *zstd_dict* is a ZstdDict object, a pre-trained Zstandard dictionary. See
     the function train_dict for how to train a ZstdDict on sample data.
 
@@ -158,7 +154,6 @@ def decompress(data, zstd_dict=None, options=None):
 
     *zstd_dict* is a ZstdDict object, a pre-trained Zstandard dictionary. See
     the function train_dict for how to train a ZstdDict on sample data.
-
     *options* is a dict object that contains advanced compression
     parameters. See DecompressionParameter for more on options.
 
@@ -178,7 +173,7 @@ def decompress(data, zstd_dict=None, options=None):
 
 
 class CompressionParameter(enum.IntEnum):
-    """Compression parameters"""
+    """Compression parameters."""
 
     compression_level = _zstd._ZSTD_c_compressionLevel
     window_log = _zstd._ZSTD_c_windowLog
@@ -204,24 +199,22 @@ class CompressionParameter(enum.IntEnum):
     overlap_log = _zstd._ZSTD_c_overlapLog
 
     def bounds(self):
-        """Returns a tuple of ints (lower, upper), representing the bounds of a
-        compression parameter.
+        """Return the (lower, upper) int bounds of a compression parameter.
 
-        Both lower and upper bounds are inclusive.
+        Both the lower and upper bounds are inclusive.
         """
         return _zstd._get_param_bounds(self.value, is_compress=True)
 
 
 class DecompressionParameter(enum.IntEnum):
-    """Decompression parameters"""
+    """Decompression parameters."""
 
     window_log_max = _zstd._ZSTD_d_windowLogMax
 
     def bounds(self):
-        """Returns a tuple of ints (lower, upper) representing the bounds of a
-        decompression parameter.
+        """Return the (lower, upper) int bounds of a decompression parameter.
 
-        Both lower and upper bounds are inclusive.
+        Both the lower and upper bounds are inclusive.
         """
         return _zstd._get_param_bounds(self.value, is_compress=False)
 
@@ -245,5 +238,5 @@ class Strategy(enum.IntEnum):
     btultra2 = _zstd._ZSTD_btultra2
 
 
-# Set CompressionParameter/DecompressionParameter types for validity check
+# Check validity of the CompressionParameter & DecompressionParameter types
 _zstd._set_parameter_types(CompressionParameter, DecompressionParameter)

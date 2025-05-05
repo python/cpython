@@ -21,14 +21,13 @@ def _nbytes(dat):
 
 
 class ZstdFile(_streams.BaseStream):
-    """A file object providing transparent zstd (de)compression.
+    """A file-like object providing transparent Zstandard (de)compression.
 
     A ZstdFile can act as a wrapper for an existing file object, or refer
     directly to a named file on disk.
 
-    Note that ZstdFile provides a *binary* file interface - data read is
-    returned as bytes, and data to be written should be an object that
-    supports the Buffer Protocol.
+    ZstdFile provides a *binary* file interface. Data is read and returned as
+    bytes, and may only be written to objects that support the Buffer Protocol.
     """
 
     FLUSH_BLOCK = ZstdCompressor.FLUSH_BLOCK
@@ -44,25 +43,23 @@ class ZstdFile(_streams.BaseStream):
         options=None,
         zstd_dict=None,
     ):
-        """Open a zstd compressed file in binary mode.
+        """Open a Zstandard compressed file in binary mode.
 
-        file can be either an actual file name (given as a str, bytes, or
-        PathLike object), in which case the named file is opened, or it can be
-        an existing file object to read from or write to.
+        *file* can be either an file-like object, or a file name to open.
 
-        mode can be "r" for reading (default), "w" for (over)writing, "x" for
+        *mode* can be "r" for reading (default), "w" for (over)writing, "x" for
         creating exclusively, or "a" for appending. These can equivalently be
         given as "rb", "wb", "xb" and "ab" respectively.
 
-        level is an int specifying the compression level to use, defaulting to
-        COMPRESSION_LEVEL_DEFAULT
+        *level* is an optional int specifying the compression level to use,
+        or COMPRESSION_LEVEL_DEFAULT if not given.
 
-        options is a dict object that contains advanced compression
-        parameters. See CompressionParameter or DecompressionParameter for more
-        information on options.
+        *options* is an optional dict for advanced compression parameters.
+        See CompressionParameter and DecompressionParameter for the possible
+        options.
 
-        zstd_dict is a ZstdDict object, a pre-trained Zstandard dictionary.
-        See the function train_dict for how to train a ZstdDict on sample data.
+        *zstd_dict* is an optional ZstdDict object, a pre-trained Zstandard
+        dictionary. See train_dict() to train ZstdDict on sample data.
         """
         self._fp = None
         self._close_fp = False
@@ -323,7 +320,7 @@ def open(
     errors=None,
     newline=None,
 ):
-    """Open a zstd compressed file in binary or text mode.
+    """Open a Zstandard compressed file in binary or text mode.
 
     file can be either a file name (given as a str, bytes, or PathLike object),
     in which case the named file is opened, or it can be an existing file object
