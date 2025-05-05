@@ -297,6 +297,11 @@
                         d->free(d);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                     }
+                    _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(this_instr+1);
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    write_ptr(cache->external_cache, NULL);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    this_instr->op.code = BINARY_OP;
                     if (true) {
                         UPDATE_MISS_STATS(BINARY_OP);
                         assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));

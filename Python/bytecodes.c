@@ -809,6 +809,9 @@ dummy_func(
                 if (d->free) {
                     d->free(d);
                 }
+                _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(this_instr+1);
+                write_ptr(cache->external_cache, NULL);
+                this_instr->op.code = BINARY_OP;
                 DEOPT_IF(true);
             }
         }
