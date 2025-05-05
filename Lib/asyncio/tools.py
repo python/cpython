@@ -5,7 +5,7 @@ from collections import defaultdict
 from itertools import count
 from enum import Enum
 import sys
-from _remotedebugging import get_all_awaited_by
+from _remote_debugging import get_all_awaited_by
 
 
 class NodeType(Enum):
@@ -27,6 +27,7 @@ def _index(result):
         for tid, tname, awaited in tasks:
             id2name[tid] = tname
             for stack, parent_id in awaited:
+                stack = [elem[0] if isinstance(elem, tuple) else elem for elem in stack]
                 awaits.append((parent_id, stack, tid))
     return id2name, awaits
 
@@ -151,6 +152,7 @@ def build_task_table(result):
                     ]
                 )
             for stack, awaiter_id in awaited:
+                stack = [elem[0] if isinstance(elem, tuple) else elem for elem in stack]
                 coroutine_chain = " -> ".join(stack)
                 awaiter_name = id2name.get(awaiter_id, "Unknown")
                 table.append(

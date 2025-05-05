@@ -81,8 +81,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_testclinic", "_testclinic.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_testinternalcapi", "_testinternalcapi.vcxproj", "{900342D7-516A-4469-B1AD-59A66E49A25F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_remotedebugging", "_remotedebugging.vcxproj", "{4D7C112F-3083-4D9E-9754-9341C14D9B39}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_testimportmultiple", "_testimportmultiple.vcxproj", "{36D0C52C-DF4E-45D0-8BC7-E294C3ABC781}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_tkinter", "_tkinter.vcxproj", "{4946ECAC-2E69-4BF8-A90A-F5136F5094DF}"
@@ -164,6 +162,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_testlimitedcapi", "_testlimitedcapi.vcxproj", "{7467D86C-1CEB-4CB9-B65E-E9A54ABDC933}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlib-ng", "zlib-ng.vcxproj", "{FB91C8B2-6FBC-3A01-B644-1637111F902D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_remote_debugging", "_remote_debugging.vcxproj", "{4D7C112F-3083-4D9E-9754-9341C14D9B39}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

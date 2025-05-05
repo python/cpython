@@ -1,16 +1,20 @@
 import _ast_unparse
 import ast
 import builtins
+import contextlib
 import copy
 import dis
 import enum
+import itertools
 import os
 import re
 import sys
+import tempfile
 import textwrap
 import types
 import unittest
 import weakref
+from io import StringIO
 from pathlib import Path
 from textwrap import dedent
 try:
@@ -19,7 +23,7 @@ except ImportError:
     _testinternalcapi = None
 
 from test import support
-from test.support import os_helper, script_helper
+from test.support import os_helper
 from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow
 from test.support.ast_helper import ASTTestMixin
 from test.test_ast.utils import to_tuple
@@ -3232,23 +3236,169 @@ class ModuleStateTests(unittest.TestCase):
         self.assertEqual(res, 0)
 
 
-class ASTMainTests(unittest.TestCase):
-    # Tests `ast.main()` function.
+class CommandLineTests(unittest.TestCase):
+    def setUp(self):
+        self.filename = tempfile.mktemp()
+        self.addCleanup(os_helper.unlink, self.filename)
 
-    def test_cli_file_input(self):
-        code = "print(1, 2, 3)"
-        expected = ast.dump(ast.parse(code), indent=3)
+    @staticmethod
+    def text_normalize(string):
+        return textwrap.dedent(string).strip()
 
-        with os_helper.temp_dir() as tmp_dir:
-            filename = os.path.join(tmp_dir, "test_module.py")
-            with open(filename, 'w', encoding='utf-8') as f:
-                f.write(code)
-            res, _ = script_helper.run_python_until_end("-m", "ast", filename)
+    def set_source(self, content):
+        Path(self.filename).write_text(self.text_normalize(content))
 
-        self.assertEqual(res.err, b"")
-        self.assertEqual(expected.splitlines(),
-                         res.out.decode("utf8").splitlines())
-        self.assertEqual(res.rc, 0)
+    def invoke_ast(self, *flags):
+        stderr = StringIO()
+        stdout = StringIO()
+        with (
+            contextlib.redirect_stdout(stdout),
+            contextlib.redirect_stderr(stderr),
+        ):
+            ast.main(args=[*flags, self.filename])
+        self.assertEqual(stderr.getvalue(), '')
+        return stdout.getvalue().strip()
+
+    def check_output(self, source, expect, *flags):
+        self.set_source(source)
+        res = self.invoke_ast(*flags)
+        expect = self.text_normalize(expect)
+        self.assertEqual(res, expect)
+
+    def test_invocation(self):
+        # test various combinations of parameters
+        base_flags = (
+            ('-m=exec', '--mode=exec'),
+            ('--no-type-comments', '--no-type-comments'),
+            ('-a', '--include-attributes'),
+            ('-i=4', '--indent=4'),
+        )
+        self.set_source('''
+            print(1, 2, 3)
+            def f(x: int) -> int:
+                x -= 1
+                return x
+        ''')
+
+        for r in range(1, len(base_flags) + 1):
+            for choices in itertools.combinations(base_flags, r=r):
+                for args in itertools.product(*choices):
+                    with self.subTest(flags=args):
+                        self.invoke_ast(*args)
+
+    def test_help_message(self):
+        for flag in ('-h', '--help', '--unknown'):
+            with self.subTest(flag=flag):
+                output = StringIO()
+                with self.assertRaises(SystemExit):
+                    with contextlib.redirect_stderr(output):
+                        ast.main(args=flag)
+                self.assertStartsWith(output.getvalue(), 'usage: ')
+
+    def test_exec_mode_flag(self):
+        # test 'python -m ast -m/--mode exec'
+        source = 'x: bool = 1 # type: ignore[assignment]'
+        expect = '''
+            Module(
+               body=[
+                  AnnAssign(
+                     target=Name(id='x', ctx=Store()),
+                     annotation=Name(id='bool', ctx=Load()),
+                     value=Constant(value=1),
+                     simple=1)],
+               type_ignores=[
+                  TypeIgnore(lineno=1, tag='[assignment]')])
+        '''
+        for flag in ('-m=exec', '--mode=exec'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_single_mode_flag(self):
+        # test 'python -m ast -m/--mode single'
+        source = 'pass'
+        expect = '''
+            Interactive(
+               body=[
+                  Pass()])
+        '''
+        for flag in ('-m=single', '--mode=single'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_eval_mode_flag(self):
+        # test 'python -m ast -m/--mode eval'
+        source = 'print(1, 2, 3)'
+        expect = '''
+            Expression(
+               body=Call(
+                  func=Name(id='print', ctx=Load()),
+                  args=[
+                     Constant(value=1),
+                     Constant(value=2),
+                     Constant(value=3)]))
+        '''
+        for flag in ('-m=eval', '--mode=eval'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_func_type_mode_flag(self):
+        # test 'python -m ast -m/--mode func_type'
+        source = '(int, str) -> list[int]'
+        expect = '''
+            FunctionType(
+               argtypes=[
+                  Name(id='int', ctx=Load()),
+                  Name(id='str', ctx=Load())],
+               returns=Subscript(
+                  value=Name(id='list', ctx=Load()),
+                  slice=Name(id='int', ctx=Load()),
+                  ctx=Load()))
+        '''
+        for flag in ('-m=func_type', '--mode=func_type'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_no_type_comments_flag(self):
+        # test 'python -m ast --no-type-comments'
+        source = 'x: bool = 1 # type: ignore[assignment]'
+        expect = '''
+            Module(
+               body=[
+                  AnnAssign(
+                     target=Name(id='x', ctx=Store()),
+                     annotation=Name(id='bool', ctx=Load()),
+                     value=Constant(value=1),
+                     simple=1)])
+        '''
+        self.check_output(source, expect, '--no-type-comments')
+
+    def test_include_attributes_flag(self):
+        # test 'python -m ast -a/--include-attributes'
+        source = 'pass'
+        expect = '''
+            Module(
+               body=[
+                  Pass(
+                     lineno=1,
+                     col_offset=0,
+                     end_lineno=1,
+                     end_col_offset=4)])
+        '''
+        for flag in ('-a', '--include-attributes'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_indent_flag(self):
+        # test 'python -m ast -i/--indent'
+        source = 'pass'
+        expect = '''
+            Module(
+            body=[
+            Pass()])
+        '''
+        for flag in ('-i=0', '--indent=0'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
 
 
 class ASTOptimiziationTests(unittest.TestCase):

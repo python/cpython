@@ -1436,6 +1436,11 @@ pdb
   function.
   (Contributed by Tian Gao in :gh:`132576`.)
 
+* Source code displayed in :mod:`pdb` will be syntax-highlighted. This feature
+  can be controlled using the same methods as PyREPL, in addition to the newly
+  added ``colorize`` argument of :class:`pdb.Pdb`.
+  (Contributed by Tian Gao in :gh:`133355`.)
+
 
 pickle
 ------
@@ -1870,6 +1875,12 @@ Deprecated
   (Contributed by Inada Naoki in :gh:`133036`.)
 
 * :mod:`ctypes`:
+  On non-Windows platforms, setting :attr:`.Structure._pack_` to use a
+  MSVC-compatible default memory layout is deprecated in favor of setting
+  :attr:`.Structure._layout_` to ``'ms'``.
+  (Contributed by Petr Viktorin in :gh:`131747`.)
+
+* :mod:`ctypes`:
   Calling :func:`ctypes.POINTER` on a string is deprecated.
   Use :ref:`ctypes-incomplete-types` for self-referential structures.
   Also, the internal ``ctypes._pointer_type_cache`` is deprecated.
@@ -1942,6 +1953,8 @@ Deprecated
 .. include:: ../deprecations/pending-removal-in-3.16.rst
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.19.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
 
@@ -2213,6 +2226,12 @@ Others
   integer must implement either :meth:`~object.__int__` or
   :meth:`~object.__index__`. (Contributed by Mark Dickinson in :gh:`119743`.)
 
+* The default :term:`interactive` shell now supports import autocompletion.
+  This means that typing ``import foo`` and pressing ``<tab>`` will suggest
+  modules starting with ``foo``. Similarly, typing ``from foo import b`` will
+  suggest submodules of ``foo`` starting with ``b``. Note that autocompletion
+  of module attributes is not currently supported.
+  (Contributed by Tomas Roun in :gh:`69605`.)
 
 CPython Bytecode Changes
 ========================
