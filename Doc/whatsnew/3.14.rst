@@ -738,6 +738,13 @@ in the :envvar:`PYTHONSTARTUP` script.
 Other language changes
 ======================
 
+* The default :term:`interactive` shell now supports import autocompletion.
+  This means that typing ``import foo`` and pressing ``<tab>`` will suggest
+  modules starting with ``foo``. Similarly, typing ``from foo import b`` will
+  suggest submodules of ``foo`` starting with ``b``. Note that autocompletion
+  of module attributes is not currently supported.
+  (Contributed by Tomas Roun in :gh:`69605`.)
+
 * The :func:`map` built-in now has an optional keyword-only *strict* flag
   like :func:`zip` to check that all the iterables are of equal length.
   (Contributed by Wannes Boeykens in :gh:`119793`.)
@@ -2256,12 +2263,6 @@ Others
   integer must implement either :meth:`~object.__int__` or
   :meth:`~object.__index__`. (Contributed by Mark Dickinson in :gh:`119743`.)
 
-* The default :term:`interactive` shell now supports import autocompletion.
-  This means that typing ``import foo`` and pressing ``<tab>`` will suggest
-  modules starting with ``foo``. Similarly, typing ``from foo import b`` will
-  suggest submodules of ``foo`` starting with ``b``. Note that autocompletion
-  of module attributes is not currently supported.
-  (Contributed by Tomas Roun in :gh:`69605`.)
 
 CPython bytecode changes
 ========================
