@@ -159,7 +159,7 @@ def run_multiline_interactive_console(
             console.write("\nMemoryError\n")
             console.resetbuffer()
         except SystemExit:
-            break
+            raise
         except:
             console.showtraceback()
             console.resetbuffer()
