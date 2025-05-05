@@ -2572,8 +2572,9 @@ binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
         }
     }
 
-    if (Py_TYPE(lhs)->tp_binop_specialize != NULL) {
-        int ret = Py_TYPE(lhs)->tp_binop_specialize(lhs, rhs, oparg, descr);
+    PyTypeObject *lhs_type = Py_TYPE(lhs);
+    if (lhs_type->tp_binop_specialize != NULL) {
+        int ret = lhs_type->tp_binop_specialize(lhs, rhs, oparg, descr);
         if (ret < 0) {
             return -1;
         }
@@ -2581,8 +2582,8 @@ binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
             if (*descr == NULL) {
                 PyErr_Format(
                     PyExc_ValueError,
-                    "tp_binop_specialize of '%.200s' returned 1 with *descr == NULL",
-                    Py_TYPE(lhs)->tp_name);
+                    "tp_binop_specialize of '%T' returned 1 with *descr == NULL",
+                    lhs_type->tp_name);
                 return -1;
             }
             (*descr)->oparg = oparg;

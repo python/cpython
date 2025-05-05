@@ -3324,6 +3324,7 @@ array_modexec(PyObject *m)
     if (PyModule_Add(m, "typecodes", typecodes) < 0) {
         return -1;
     }
+
     return 0;
 }
 
