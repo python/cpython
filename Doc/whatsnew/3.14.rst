@@ -805,7 +805,7 @@ Other language changes
   The testbed can also be used to run the test suite of projects other than
   CPython itself. (Contributed by Russell Keith-Magee in :gh:`127592`.)
 
-* Three-argument :func:`pow` now tries calling :meth:`~object.__rpow__` if.
+* Three-argument :func:`pow` now tries calling :meth:`~object.__rpow__` if
   necessary. Previously it was only called in two-argument :func:`!pow` and the
   binary power operator.
   (Contributed by Serhiy Storchaka in :gh:`130104`.)
@@ -1385,7 +1385,7 @@ multiprocessing
 
 * Add :func:`multiprocessing.Process.interrupt` which terminates the child
   process by sending :py:const:`~signal.SIGINT`. This enables
-  :keyword:`finally` clauses allowing to print a stack trace for the terminated
+  :keyword:`finally` clauses to print a stack trace for the terminated
   process. (Contributed by Artem Pulkin in :gh:`131913`.)
 
 operator
