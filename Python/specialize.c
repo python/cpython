@@ -2583,7 +2583,7 @@ binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
                 PyErr_Format(
                     PyExc_ValueError,
                     "tp_binop_specialize of '%T' returned 1 with *descr == NULL",
-                    lhs_type->tp_name);
+                    lhs);
                 return -1;
             }
             (*descr)->oparg = oparg;
