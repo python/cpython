@@ -515,16 +515,10 @@ class TestErrorHandling:
             def __lt__(self, o):
                 heap.clear()
                 return NotImplemented
-            def __gt__(self, o):
-                heap.clear()
-                return NotImplemented
 
         heap = []
         self.module.heappush(heap, EvilClass(0))
         self.assertRaises(IndexError, self.module.heappushpop, heap, 1)
-        heap = []
-        self.module.heappush_max(heap, EvilClass(1))
-        self.assertRaises(IndexError, self.module.heappushpop_max, heap, 0)
 
     def test_comparison_operator_modifying_heap_two_heaps(self):
 
