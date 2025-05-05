@@ -626,12 +626,12 @@ Other language changes
   of HMAC is not available.
   (Contributed by Bénédikt Tran in :gh:`99108`.)
 
-* :option:`-X importtime <-X>` now accepts value ``2``, which indicates that
-  an ``importtime`` entry should also be printed if an imported module has
-  already been loaded. The ``self`` and ``cumulative`` times for such entries
+* The import time flag can now track modules that are already loaded ('cached'),
+  via the new :option:`-X importtime=2 <-X>`.
+  When such a module is imported, the ``self`` and ``cumulative`` times
   are replaced by the string ``cached``.
-  Values above ``2`` are now reserved for future use.
-  (Contributed by Noah Kim in :gh:`118655`.)
+  Values above ``2`` for ``-X importtime`` are now reserved for future use.
+  (Contributed by Noah Kim and Adam Turner in :gh:`118655`.)
 
 * When subclassing from a pure C type, the C slots for the new type are no
   longer replaced with a wrapped version on class creation if they are not
