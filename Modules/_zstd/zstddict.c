@@ -136,7 +136,7 @@ _zstd_ZstdDict___init___impl(ZstdDict *self, PyObject *dict_content,
 }
 
 #define clinic_state() (get_zstd_state(type))
-#include "clinic/zdict.c.h"
+#include "clinic/zstddict.c.h"
 #undef clinic_state
 
 PyDoc_STRVAR(ZstdDict_dictid_doc,

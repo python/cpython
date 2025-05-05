@@ -7119,9 +7119,9 @@ SRCDIRS="\
   Modules/_testinternalcapi \
   Modules/_testlimitedcapi \
   Modules/_xxtestfuzz \
+  Modules/_zstd \
   Modules/cjkcodecs \
   Modules/expat \
-  Modules/_zstd \
   Objects \
   Objects/mimalloc \
   Objects/mimalloc/prim \
