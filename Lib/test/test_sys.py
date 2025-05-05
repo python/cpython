@@ -2101,7 +2101,7 @@ print("Remote script executed successfully!")
         prologue = '''\
 import sys
 def audit_hook(event, arg):
-    print(f"Audit event: {event}, arg: {arg}")
+    print(f"Audit event: {event}, arg: {arg}".encode("ascii", errors="replace"))
 sys.addaudithook(audit_hook)
 '''
         script = '''
