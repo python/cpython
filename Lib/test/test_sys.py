@@ -2214,8 +2214,8 @@ class TestSysJIT(unittest.TestCase):
         available = sys._jit.is_available()
         script = textwrap.dedent(
             """
+            import _testcapi
             import _testinternalcapi
-            import operator
             import sys
 
             def frame_0_interpreter() -> None:
@@ -2230,7 +2230,7 @@ class TestSysJIT(unittest.TestCase):
                 # Inlined into the last loop of frame_3_jit:
                 assert sys._jit.is_active() is expected
                 # Insert C frame:
-                operator.call(frame_1_interpreter)
+                _testcapi.pyobject_vectorcall(frame_1_interpreter, None, None)
                 assert sys._jit.is_active() is expected
 
             def frame_3_jit() -> None:
