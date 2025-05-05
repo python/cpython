@@ -245,6 +245,16 @@ struct _gc_runtime_state {
 
     /* True if gc.freeze() has been used. */
     int freeze_active;
+
+    /* Resident set size (RSS) of the process after last GC. */
+    Py_ssize_t last_rss;
+
+    /* This accumulates the new object count whenever collection is deferred
+       due to the RSS increase condition not being meet.  Reset on collection. */
+    Py_ssize_t deferred_count;
+
+    /* Mutex held for gc_should_collect_rss(). */
+    PyMutex mutex;
 #endif
 };
 

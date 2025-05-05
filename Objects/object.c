@@ -2940,20 +2940,29 @@ pointer_to_safe_refcount(void *ptr)
 {
     uintptr_t full = (uintptr_t)ptr;
     assert((full & 3) == 0);
+#if SIZEOF_VOID_P > 4
     uint32_t refcnt = (uint32_t)full;
     if (refcnt >= (uint32_t)_Py_IMMORTAL_MINIMUM_REFCNT) {
         full = full - ((uintptr_t)_Py_IMMORTAL_MINIMUM_REFCNT) + 1;
     }
     return full + 2;
+#else
+    // Make the top two bits 0, so it appears mortal.
+    return (full >> 2) + 1;
+#endif
 }
 
 static void *
 safe_refcount_to_pointer(uintptr_t refcnt)
 {
+#if SIZEOF_VOID_P > 4
     if (refcnt & 1) {
         refcnt += _Py_IMMORTAL_MINIMUM_REFCNT - 1;
     }
     return (void *)(refcnt - 2);
+#else
+    return (void *)((refcnt -1) << 2);
+#endif
 }
 #endif
 
@@ -3274,4 +3283,12 @@ PyUnstable_IsImmortal(PyObject *op)
     _Py_AssertHoldsTstate();
     assert(op != NULL);
     return _Py_IsImmortal(op);
+}
+
+int
+PyUnstable_Object_IsUniquelyReferenced(PyObject *op)
+{
+    _Py_AssertHoldsTstate();
+    assert(op != NULL);
+    return _PyObject_IsUniquelyReferenced(op);
 }
