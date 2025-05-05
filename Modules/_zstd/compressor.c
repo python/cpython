@@ -67,14 +67,6 @@ _PyZstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
         Py_ssize_t pos = 0;
 
         while (PyDict_Next(level_or_options, &pos, &key, &value)) {
-            /* Check key type */
-            if (Py_TYPE(key) == mod_state->DParameter_type) {
-                PyErr_SetString(PyExc_TypeError,
-                                "Key of compression option dict should "
-                                "NOT be DecompressionParameter.");
-                return -1;
-            }
-
             int key_v = PyLong_AsInt(key);
             if (key_v == -1 && PyErr_Occurred()) {
                 PyErr_SetString(PyExc_ValueError,

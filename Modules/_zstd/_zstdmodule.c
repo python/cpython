@@ -510,49 +510,12 @@ _zstd__get_frame_info_impl(PyObject *module, Py_buffer *frame_buffer)
     return Py_BuildValue("KI", decompressed_size, dict_id);
 }
 
-/*[clinic input]
-_zstd._set_parameter_types
-
-    c_parameter_type: object(subclass_of='&PyType_Type')
-        CompressionParameter IntEnum type object
-    d_parameter_type: object(subclass_of='&PyType_Type')
-        DecompressionParameter IntEnum type object
-
-Internal function, set CompressionParameter/DecompressionParameter types for validity check.
-[clinic start generated code]*/
-
-static PyObject *
-_zstd__set_parameter_types_impl(PyObject *module, PyObject *c_parameter_type,
-                                PyObject *d_parameter_type)
-/*[clinic end generated code: output=a13d4890ccbd2873 input=4535545d903853d3]*/
-{
-    _zstd_state* const mod_state = get_zstd_state(module);
-
-    if (!PyType_Check(c_parameter_type) || !PyType_Check(d_parameter_type)) {
-        PyErr_SetString(PyExc_ValueError,
-                        "The two arguments should be CompressionParameter and "
-                        "DecompressionParameter types.");
-        return NULL;
-    }
-
-    Py_XDECREF(mod_state->CParameter_type);
-    Py_INCREF(c_parameter_type);
-    mod_state->CParameter_type = (PyTypeObject*)c_parameter_type;
-
-    Py_XDECREF(mod_state->DParameter_type);
-    Py_INCREF(d_parameter_type);
-    mod_state->DParameter_type = (PyTypeObject*)d_parameter_type;
-
-    Py_RETURN_NONE;
-}
-
 static PyMethodDef _zstd_methods[] = {
     _ZSTD__TRAIN_DICT_METHODDEF
     _ZSTD__FINALIZE_DICT_METHODDEF
     _ZSTD__GET_PARAM_BOUNDS_METHODDEF
     _ZSTD_GET_FRAME_SIZE_METHODDEF
     _ZSTD__GET_FRAME_INFO_METHODDEF
-    _ZSTD__SET_PARAMETER_TYPES_METHODDEF
 
     {0}
 };
@@ -766,9 +729,6 @@ static int _zstd_exec(PyObject *module) {
     ADD_STR_TO_STATE_MACRO(write);
     ADD_STR_TO_STATE_MACRO(flush);
 
-    mod_state->CParameter_type = NULL;
-    mod_state->DParameter_type = NULL;
-
     /* Add variables to module */
     if (add_vars_to_module(module) < 0) {
         return -1;
@@ -852,9 +812,6 @@ _zstd_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(mod_state->ZstdDecompressor_type);
 
     Py_VISIT(mod_state->ZstdError);
-
-    Py_VISIT(mod_state->CParameter_type);
-    Py_VISIT(mod_state->DParameter_type);
     return 0;
 }
 
@@ -876,9 +833,6 @@ _zstd_clear(PyObject *module)
     Py_CLEAR(mod_state->ZstdDecompressor_type);
 
     Py_CLEAR(mod_state->ZstdError);
-
-    Py_CLEAR(mod_state->CParameter_type);
-    Py_CLEAR(mod_state->DParameter_type);
     return 0;
 }
 
