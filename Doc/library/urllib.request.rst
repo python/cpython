@@ -172,7 +172,7 @@ The :mod:`urllib.request` module defines the following functions:
       the URL ``///etc/hosts``.
 
    .. versionchanged:: next
-      The *add_scheme* argument was added.
+      The *add_scheme* parameter was added.
 
 
 .. function:: url2pathname(url, *, require_scheme=False, resolve_host=False)
@@ -211,7 +211,7 @@ The :mod:`urllib.request` module defines the following functions:
       :exc:`~urllib.error.URLError` is raised.
 
    .. versionchanged:: next
-      The *require_scheme* and *resolve_host* arguments were added.
+      The *require_scheme* and *resolve_host* parameters were added.
 
 
 .. function:: getproxies()
