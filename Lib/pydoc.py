@@ -1837,7 +1837,7 @@ class Helper:
         'continue': ('continue', 'while for'),
         'def': ('function', ''),
         'del': ('del', 'BASICMETHODS'),
-        'elif': ('if', 'if else match'),
+        'elif': 'if',
         'else': ('else', 'if elif match while for'),
         'except': 'try',
         'finally': 'try',
