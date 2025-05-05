@@ -2438,6 +2438,14 @@ case(34)
             lineno=3
         )
 
+    def test_carret_location_invalid_star_expr(self):
+        with self.assertRaises(SyntaxError) as cm:
+            compile("A[*]", "<string>", "exec")
+        e = cm.exception
+        self.assertEqual(e.msg, "invalid star expression")
+        self.assertEqual(e.text.strip(), "A[*]")
+        self.assertEqual(e.offset, 3)
+
     @support.cpython_only
     def test_syntax_error_on_deeply_nested_blocks(self):
         # This raises a SyntaxError, it used to raise a SystemError. Context
