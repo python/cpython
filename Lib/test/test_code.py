@@ -966,9 +966,6 @@ class CodeTest(unittest.TestCase):
             return callable(mod2), tuple(mods), list(mods), checks
 
         func = func_with_globals_and_builtins
-        dis.dis(func)
-        for i, instr in enumerate(dis.get_instructions(func)):
-            print(i, instr, end='')
         with self.subTest(f'{func} code'):
             expected = new_var_counts(
                 purelocals=4,
