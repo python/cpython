@@ -2,7 +2,7 @@
   What's new in Python 3.14
 ****************************
 
-:Editor: TBD
+:Editor: Hugo van Kemenade
 
 .. Rules for maintenance:
 
@@ -378,7 +378,7 @@ Improved error messages
   feature helps programmers quickly identify and fix common typing mistakes. For
   example:
 
-  .. code-block:: python
+  .. code-block:: pycon
 
      >>> whille True:
      ...     pass
@@ -419,7 +419,7 @@ Improved error messages
   error message prints the received number of values in more cases than before.
   (Contributed by Tushar Sadhwani in :gh:`122239`.)
 
-  .. code-block:: python
+  .. code-block:: pycon
 
      >>> x, y, z = 1, 2, 3, 4
      Traceback (most recent call last):
@@ -473,7 +473,7 @@ Improved error messages
   that the string may be intended to be part of the string. (Contributed by
   Pablo Galindo in :gh:`88535`.)
 
-  .. code-block:: python
+  .. code-block:: pycon
 
     >>> "The interesting object "The important object" is very important"
     Traceback (most recent call last):
