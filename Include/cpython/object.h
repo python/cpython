@@ -143,7 +143,7 @@ typedef struct {
  * backwards-compatibility */
 typedef Py_ssize_t printfunc;
 
-/* Specialize a binary by setting the descriptor pointer */
+/* Specialize a binary op by setting the descriptor pointer */
 struct _PyBinopSpecializationDescr;
 typedef int (*binop_specialize_func)(PyObject *v, PyObject *w, int oparg,
                                     struct _PyBinopSpecializationDescr **descr);
