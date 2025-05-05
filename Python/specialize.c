@@ -2560,6 +2560,11 @@ static int
 binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
                                   _PyBinaryOpSpecializationDescr **descr)
 {
+    /* We are currently using this only for NB_SUBSCR, which is not
+     * commutative. Will need to revisit this function when we use
+     * this for operators which are.
+     */
+
     typedef _PyBinaryOpSpecializationDescr descr_type;
     size_t size = Py_ARRAY_LENGTH(binaryop_extend_builtins);
     for (size_t i = 0; i < size; i++) {
