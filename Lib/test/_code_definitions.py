@@ -12,6 +12,40 @@ def spam_minimal():
     return
 
 
+def spam_with_builtins():
+    x = 42
+    values = (42,)
+    checks = tuple(callable(v) for v in values)
+    res = callable(values), tuple(values), list(values), checks
+    print(res)
+
+
+def spam_with_globals_and_builtins():
+    func1 = spam
+    func2 = spam_minimal
+    funcs = (func1, func2)
+    checks = tuple(callable(f) for f in funcs)
+    res = callable(funcs), tuple(funcs), list(funcs), checks
+    print(res)
+
+
+def spam_returns_arg(x):
+    return x
+
+
+def spam_with_inner_not_closure():
+    def eggs():
+        pass
+    eggs()
+
+
+def spam_with_inner_closure():
+    x = 42
+    def eggs():
+        print(x)
+    eggs()
+
+
 def spam_full(a, b, /, c, d:int=1, *args, e, f:object=None, **kwargs) -> tuple:
     # arg defaults, kwarg defaults
     # annotations
@@ -98,6 +132,11 @@ ham_C_closure, *_ = eggs_closure_C(2)
 TOP_FUNCTIONS = [
     # shallow
     spam_minimal,
+    spam_with_builtins,
+    spam_with_globals_and_builtins,
+    spam_returns_arg,
+    spam_with_inner_not_closure,
+    spam_with_inner_closure,
     spam_full,
     spam,
     # outer func
@@ -125,6 +164,30 @@ NESTED_FUNCTIONS = [
 FUNCTIONS = [
     *TOP_FUNCTIONS,
     *NESTED_FUNCTIONS,
+]
+
+STATELESS_FUNCTIONS = [
+    spam,
+    spam_minimal,
+    spam_with_builtins,
+    spam_returns_arg,
+    spam_with_inner_not_closure,
+    spam_with_inner_closure,
+    spam_N,
+    spam_C,
+    spam_NN,
+    spam_NC,
+    spam_CN,
+    spam_CC,
+    eggs_nested,
+    eggs_nested_N,
+    ham_nested,
+    ham_C_nested
+]
+STATELESS_CODE = [
+    *STATELESS_FUNCTIONS,
+    spam_with_globals_and_builtins,
+    spam_full,
 ]
 
 
