@@ -31,12 +31,6 @@ import enum
 from _zstd import *
 from compression.zstd._zstdfile import ZstdFile, open, _nbytes
 
-_ZSTD_CStreamSizes = _zstd._ZSTD_CStreamSizes
-_ZSTD_DStreamSizes = _zstd._ZSTD_DStreamSizes
-_train_dict = _zstd._train_dict
-_finalize_dict = _zstd._finalize_dict
-
-
 COMPRESSION_LEVEL_DEFAULT = _zstd._compressionLevel_values[0]
 """The default compression level for Zstandard, currently '3'."""
 
@@ -91,8 +85,7 @@ def train_dict(samples, dict_size):
     chunk_sizes = tuple(_nbytes(sample) for sample in samples)
     if not chunks:
         raise ValueError("samples contained no data; can't train dictionary.")
-    dict_content = _train_dict(chunks, chunk_sizes, dict_size)
-
+    dict_content = _zstd._train_dict(chunks, chunk_sizes, dict_size)
     return ZstdDict(dict_content)
 
 
@@ -128,9 +121,9 @@ def finalize_dict(zstd_dict, samples, dict_size, level):
     if not chunks:
         raise ValueError("The samples are empty content, can't finalize"
                          "dictionary.")
-    dict_content = _finalize_dict(zstd_dict.dict_content,
-                                  chunks, chunk_sizes,
-                                  dict_size, level)
+    dict_content = _zstd._finalize_dict(zstd_dict.dict_content,
+                                        chunks, chunk_sizes,
+                                        dict_size, level)
     return ZstdDict(dict_content)
 
 def compress(data, level=None, options=None, zstd_dict=None):
