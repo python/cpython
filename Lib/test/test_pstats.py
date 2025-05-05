@@ -7,8 +7,17 @@ from enum import StrEnum, _test_simple_enum
 
 import os
 import pstats
+import re
 import tempfile
 import cProfile
+
+_CALLERS_LINE = re.compile(r'''
+        (?P<ncalls>\d+) \s+
+        (?P<tottime>\d+(?:[.]\d+)?) \s+
+        (?P<cumtime>\d+(?:[.]\d+)?) \s+
+        (?P<name>(?P<filename>\w+[.]\w+):(?P<line>\d+)\((?P<func>\w+)\)
+         | \{built-in method (?P<builtin>\w+)\})$
+    ''', re.M|re.X)
 
 class AddCallersTestCase(unittest.TestCase):
     """Tests for pstats.add_callers helper."""
@@ -30,8 +39,8 @@ class AddCallersTestCase(unittest.TestCase):
 
 class StatsTestCase(unittest.TestCase):
     def setUp(self):
-        stats_file = support.findfile('pstats.pck')
-        self.stats = pstats.Stats(stats_file)
+        self.stats_file = support.findfile('pstats.pck')
+        self.stats = pstats.Stats(self.stats_file)
 
     def test_add(self):
         stream = StringIO()
@@ -64,6 +73,35 @@ class StatsTestCase(unittest.TestCase):
         stats = pstats.Stats()
         with self.assertRaises(TypeError):
             stats.load_stats(42)
+
+    def test_print_callers_sorted(self):
+        stream = StringIO()
+        stats = pstats.Stats(self.stats_file, stream=stream)
+        stats.strip_dirs()
+        stats.sort_stats('ncalls')
+        # Sorted filtered callers
+        stats.print_callers(1, callers_sort_key='ncalls', callers_filter=5)
+        res = stream.getvalue()
+        lines = list(_CALLERS_LINE.finditer(res))
+        calls = [int(line.group('ncalls')) for line in lines]
+        self.assertLessEqual(len(lines), 5)
+        self.assertEqual(calls, sorted(calls, reverse=True))
+
+    def test_print_callers_unsorted(self):
+        stream = StringIO()
+        stats = pstats.Stats(self.stats_file, stream=stream)
+        stats.strip_dirs()
+        stats.sort_stats('ncalls')
+        # Unsorted unfiltered callers
+        stats.print_callers(1)
+        res = stream.getvalue()
+        lines = list(_CALLERS_LINE.finditer(res))
+        max_calls = max(int(line.group('ncalls')) for line in lines)
+        filenames = [line.group('filename') for line in lines]
+        # line numbers are sorted as ints, so just compare filenames
+        self.assertSequenceEqual(filenames, sorted(filenames))
+        self.assertGreater(len(lines), 5)
+        self.assertLess(int(lines[0].group('ncalls')), max_calls)
 
     def test_sort_stats_int(self):
         valid_args = {-1: 'stdname',
