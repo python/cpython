@@ -2121,10 +2121,9 @@ class FileTestCase(unittest.TestCase):
             def read(self, size):
                 return b'a' * size
 
-        with self.assertRaises(AttributeError): # on close
+        with self.assertRaises(TypeError): # on creation
             with ZstdFile(T(), 'w') as f:
-                with self.assertRaises(AttributeError): # on write
-                    f.write(b'1234')
+                pass
 
         # 3
         with ZstdFile(io.BytesIO(), 'w') as f:

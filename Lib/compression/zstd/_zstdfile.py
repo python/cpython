@@ -31,7 +31,8 @@ class ZstdFile(_streams.BaseStream):
 
     def __init__(
         self,
-        filename,
+        file,
+        /,
         mode="r",
         *,
         level=None,
@@ -40,7 +41,7 @@ class ZstdFile(_streams.BaseStream):
     ):
         """Open a zstd compressed file in binary mode.
 
-        filename can be either an actual file name (given as a str, bytes, or
+        file can be either an actual file name (given as a str, bytes, or
         PathLike object), in which case the named file is opened, or it can be
         an existing file object to read from or write to.
 
@@ -58,29 +59,23 @@ class ZstdFile(_streams.BaseStream):
         See the function train_dict for how to train a ZstdDict on sample data.
         """
         self._fp = None
-        self._closefp = False
+        self._close_fp = False
         self._mode = _MODE_CLOSED
 
+        if not isinstance(mode, str):
+            raise ValueError("mode must be a str")
         # Read or write mode
-        if mode in ("r", "rb"):
-            if not isinstance(options, (type(None), dict)):
-                raise TypeError(
-                    (
-                        "In read mode (decompression), options argument "
-                        "should be a dict object, that represents "
-                        "decompression options."
-                    )
-                )
+        if options is not None and not isinstance(options, dict):
+            raise TypeError("options must be a dict or None")
+        mode = mode.removesuffix("b")  # handle rb, wb, xb, ab
+        if mode == "r":
             if level is not None:
-                raise TypeError("level argument should only be passed when "
-                                "writing.")
-            mode_code = _MODE_READ
-        elif mode in ("w", "wb", "a", "ab", "x", "xb"):
-            if not isinstance(level, (type(None), int)):
-                raise TypeError("level argument should be an int object.")
-            if not isinstance(options, (type(None), dict)):
-                raise TypeError("options argument should be an dict object.")
-            mode_code = _MODE_WRITE
+                raise TypeError("level is illegal in read mode")
+            self._mode = _MODE_READ
+        elif mode in {"w", "a", "x"}:
+            if level is not None and not isinstance(level, int):
+                raise TypeError("level must be int or None")
+            self._mode = _MODE_WRITE
             self._compressor = ZstdCompressor(
                 level=level, options=options, zstd_dict=zstd_dict
             )
@@ -89,17 +84,15 @@ class ZstdFile(_streams.BaseStream):
             raise ValueError(f"Invalid mode: {mode!r}")
 
         # File object
-        if isinstance(filename, (str, bytes, PathLike)):
-            if "b" not in mode:
-                mode += "b"
-            self._fp = io.open(filename, mode)
-            self._closefp = True
-        elif hasattr(filename, "read") or hasattr(filename, "write"):
-            self._fp = filename
+        if isinstance(file, (str, bytes, PathLike)):
+            self._fp = io.open(file, f'{mode}b')
+            self._close_fp = True
+        elif ((mode == 'r' and hasattr(file, "read"))
+                or (mode != 'r' and hasattr(file, "write"))):
+            self._fp = file
         else:
-            raise TypeError("filename must be a str, bytes, file or PathLike "
-                            "object")
-        self._mode = mode_code
+            raise TypeError("file must be a file-like object "
+                            "or a str, bytes, or PathLike object")
 
         if self._mode == _MODE_READ:
             raw = _streams.DecompressReader(
@@ -114,15 +107,14 @@ class ZstdFile(_streams.BaseStream):
     def close(self):
         """Flush and close the file.
 
-        May be called more than once without error. Once the file is
-        closed, any other operation on it will raise a ValueError.
+        May be called multiple times. Once the file has been closed,
+        any other operation on it will raise ValueError.
         """
-        # Nop if already closed
         if self._fp is None:
             return
         try:
             if self._mode == _MODE_READ:
-                if hasattr(self, "_buffer") and self._buffer:
+                if getattr(self, '_buffer', None):
                     self._buffer.close()
                     self._buffer = None
             elif self._mode == _MODE_WRITE:
@@ -131,11 +123,11 @@ class ZstdFile(_streams.BaseStream):
         finally:
             self._mode = _MODE_CLOSED
             try:
-                if self._closefp:
+                if self._close_fp:
                     self._fp.close()
             finally:
                 self._fp = None
-                self._closefp = False
+                self._close_fp = False
 
     def write(self, data):
         """Write a bytes-like object *data* to the file.
@@ -161,9 +153,8 @@ class ZstdFile(_streams.BaseStream):
     def flush(self, mode=FLUSH_BLOCK):
         """Flush remaining data to the underlying stream.
 
-        The mode argument can be ZstdFile.FLUSH_BLOCK or ZstdFile.FLUSH_FRAME.
-        Abuse of this method will reduce compression ratio, use it only when
-        necessary.
+        The mode argument can be FLUSH_BLOCK or FLUSH_FRAME. Abuse of this
+        method will reduce compression ratio, use it only when necessary.
 
         If the program is interrupted afterwards, all data can be recovered.
         To ensure saving to disk, also need to use os.fsync(fd).
@@ -173,10 +164,10 @@ class ZstdFile(_streams.BaseStream):
         if self._mode == _MODE_READ:
             return
         self._check_not_closed()
-        if mode not in (self.FLUSH_BLOCK, self.FLUSH_FRAME):
-            raise ValueError("mode argument wrong value, it should be "
-                             "ZstdCompressor.FLUSH_FRAME or "
-                             "ZstdCompressor.FLUSH_BLOCK.")
+        if mode not in {self.FLUSH_BLOCK, self.FLUSH_FRAME}:
+            raise ValueError("Invalid mode argument, expected either "
+                             "ZstdFile.FLUSH_FRAME or "
+                             "ZstdFile.FLUSH_BLOCK")
         if self._compressor.last_mode == mode:
             return
         # Flush zstd block/frame, and write.
@@ -270,8 +261,7 @@ class ZstdFile(_streams.BaseStream):
         return self._buffer.peek(size)
 
     def __next__(self):
-        ret = self._buffer.readline()
-        if ret:
+        if ret := self._buffer.readline():
             return ret
         raise StopIteration
 
@@ -319,7 +309,8 @@ class ZstdFile(_streams.BaseStream):
 
 # Copied from lzma module
 def open(
-    filename,
+    file,
+    /,
     mode="rb",
     *,
     level=None,
@@ -331,9 +322,9 @@ def open(
 ):
     """Open a zstd compressed file in binary or text mode.
 
-    filename can be either an actual file name (given as a str, bytes, or
-    PathLike object), in which case the named file is opened, or it can be an
-    existing file object to read from or write to.
+    file can be either a file name (given as a str, bytes, or PathLike object),
+    in which case the named file is opened, or it can be an existing file object
+    to read from or write to.
 
     The mode parameter can be "r", "rb" (default), "w", "wb", "x", "xb", "a",
     "ab" for binary mode, or "rt", "wt", "xt", "at" for text mode.
@@ -370,7 +361,7 @@ def open(
 
     zstd_mode = mode.replace("t", "")
     binary_file = ZstdFile(
-        filename, zstd_mode, level=level, options=options, zstd_dict=zstd_dict
+        file, zstd_mode, level=level, options=options, zstd_dict=zstd_dict
     )
 
     if "t" in mode:
