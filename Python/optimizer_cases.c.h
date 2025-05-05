@@ -554,9 +554,7 @@
             break;
         }
 
-        case _GUARD_BINARY_OP_EXTEND: {
-            break;
-        }
+        /* _GUARD_BINARY_OP_EXTEND is not a viable micro-op for tier 2 */
 
         case _BINARY_OP_EXTEND: {
             JitOptSymbol *res;
@@ -1844,6 +1842,10 @@
             break;
         }
 
+        case _CHECK_RECURSION_REMAINING: {
+            break;
+        }
+
         case _INIT_CALL_PY_EXACT_ARGS: {
             JitOptSymbol **args;
             JitOptSymbol *self_or_null;
@@ -2063,11 +2065,22 @@
             break;
         }
 
+        case _GUARD_CALLABLE_LEN: {
+            JitOptSymbol *callable;
+            callable = stack_pointer[-3];
+            PyObject *len = _PyInterpreterState_GET()->callable_cache.len;
+            if (sym_get_const(ctx, callable) == len) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_const(callable, len);
+            break;
+        }
+
         case _CALL_LEN: {
             JitOptSymbol *res;
             res = sym_new_type(ctx, &PyLong_Type);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
+            stack_pointer[-3] = res;
+            stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }

@@ -560,6 +560,13 @@ class TestCallCache(TestBase):
         with self.assertRaises(TypeError):
             instantiate()
 
+    def test_recursion_check_for_general_calls(self):
+        def test(default=None):
+            return test()
+
+        with self.assertRaises(RecursionError):
+            test()
+
 
 def make_deferred_ref_count_obj():
     """Create an object that uses deferred reference counting.

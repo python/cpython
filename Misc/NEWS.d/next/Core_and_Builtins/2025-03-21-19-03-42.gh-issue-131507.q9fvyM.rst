@@ -1,0 +1,1 @@
+PyREPL now supports syntax highlighing. Contributed by Łukasz Langa.
