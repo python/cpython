@@ -1500,7 +1500,10 @@ invalid_kvpair:
 invalid_starred_expression_unpacking:
     | a='*' expression '=' b=expression { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to iterable argument unpacking") }
 invalid_starred_expression:
-    | '*' { RAISE_SYNTAX_ERROR("Invalid star expression") }
+    | a='*' { 
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+            a, 
+            "invalid star expression") } 
 
 invalid_fstring_replacement_field:
     | '{' a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "f-string: valid expression required before '='") }

@@ -26067,13 +26067,13 @@ invalid_starred_expression_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_starred_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'*'"));
-        Token * _literal;
+        Token * a;
         if (
-            (_literal = _PyPegen_expect_token(p, 16))  // token='*'
+            (a = _PyPegen_expect_token(p, 16))  // token='*'
         )
         {
             D(fprintf(stderr, "%*c+ invalid_starred_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*'"));
-            _res = RAISE_SYNTAX_ERROR ( "Invalid star expression" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "invalid star expression" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
