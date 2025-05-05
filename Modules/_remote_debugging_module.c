@@ -1775,13 +1775,13 @@ static PyMethodDef methods[] = {
 
 static struct PyModuleDef module = {
     .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = "_remotedebugging",
+    .m_name = "_remote_debugging",
     .m_size = -1,
     .m_methods = methods,
 };
 
 PyMODINIT_FUNC
-PyInit__remotedebugging(void)
+PyInit__remote_debugging(void)
 {
     PyObject* mod = PyModule_Create(&module);
     if (mod == NULL) {
