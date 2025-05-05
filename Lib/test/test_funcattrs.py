@@ -3,6 +3,7 @@ import types
 import typing
 import unittest
 import warnings
+from test import support
 
 
 def global_function():
@@ -477,6 +478,33 @@ class BuiltinFunctionPropertiesTest(unittest.TestCase):
         # builtin bound instance method:
         self.assertEqual([1, 2, 3].append.__qualname__, 'list.append')
         self.assertEqual({'foo': 'bar'}.pop.__qualname__, 'dict.pop')
+
+    @support.cpython_only
+    def test_builtin__self__(self):
+        # See https://github.com/python/cpython/issues/58211.
+        import builtins
+        import time
+
+        # builtin function:
+        self.assertIs(len.__self__, builtins)
+        self.assertIs(time.sleep.__self__, time)
+
+        # builtin classmethod:
+        self.assertIs(dict.fromkeys.__self__, dict)
+        self.assertIs(float.__getformat__.__self__, float)
+
+        # builtin staticmethod:
+        self.assertIsNone(str.maketrans.__self__)
+        self.assertIsNone(bytes.maketrans.__self__)
+
+        # builtin bound instance method:
+        l = [1, 2, 3]
+        self.assertIs(l.append.__self__, l)
+
+        d = {'foo': 'bar'}
+        self.assertEqual(d.pop.__self__, d)
+
+        self.assertIsNone(None.__repr__.__self__)
 
 
 if __name__ == "__main__":

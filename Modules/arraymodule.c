@@ -14,6 +14,8 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 
+#include "opcode.h"               // binary op opargs (NB_*)
+
 #include <stddef.h>               // offsetof()
 #include <stdbool.h>
 
@@ -848,6 +850,10 @@ array_richcompare(PyObject *v, PyObject *w, int op)
     return res;
 }
 
+static int
+array_binop_specialize(PyObject *v, PyObject *w, int oparg,
+                       _PyBinaryOpSpecializationDescr **descr);
+
 static Py_ssize_t
 array_length(PyObject *op)
 {
@@ -929,8 +935,8 @@ Return a copy of the array.
 [clinic start generated code]*/
 
 static PyObject *
-array_array___deepcopy__(arrayobject *self, PyObject *unused)
-/*[clinic end generated code: output=1ec748d8e14a9faa input=2405ecb4933748c4]*/
+array_array___deepcopy___impl(arrayobject *self, PyObject *unused)
+/*[clinic end generated code: output=703b4c412feaaf31 input=2405ecb4933748c4]*/
 {
     return array_array___copy___impl(self);
 }
@@ -1174,8 +1180,8 @@ Return number of occurrences of v in the array.
 [clinic start generated code]*/
 
 static PyObject *
-array_array_count(arrayobject *self, PyObject *v)
-/*[clinic end generated code: output=3dd3624bf7135a3a input=d9bce9d65e39d1f5]*/
+array_array_count_impl(arrayobject *self, PyObject *v)
+/*[clinic end generated code: output=93ead26a2affb739 input=d9bce9d65e39d1f5]*/
 {
     Py_ssize_t count = 0;
     Py_ssize_t i;
@@ -1272,8 +1278,8 @@ Remove the first occurrence of v in the array.
 [clinic start generated code]*/
 
 static PyObject *
-array_array_remove(arrayobject *self, PyObject *v)
-/*[clinic end generated code: output=bef06be9fdf9dceb input=0b1e5aed25590027]*/
+array_array_remove_impl(arrayobject *self, PyObject *v)
+/*[clinic end generated code: output=f2a24e288ecb2a35 input=0b1e5aed25590027]*/
 {
     Py_ssize_t i;
 
@@ -1420,8 +1426,8 @@ Append new value v to the end of the array.
 [clinic start generated code]*/
 
 static PyObject *
-array_array_append(arrayobject *self, PyObject *v)
-/*[clinic end generated code: output=745a0669bf8db0e2 input=0b98d9d78e78f0fa]*/
+array_array_append_impl(arrayobject *self, PyObject *v)
+/*[clinic end generated code: output=2f1e8cbad70c2a8b input=0b98d9d78e78f0fa]*/
 {
     return ins(self, Py_SIZE(self), v);
 }
@@ -1642,8 +1648,8 @@ Append items to array from list.
 [clinic start generated code]*/
 
 static PyObject *
-array_array_fromlist(arrayobject *self, PyObject *list)
-/*[clinic end generated code: output=26411c2d228a3e3f input=be2605a96c49680f]*/
+array_array_fromlist_impl(arrayobject *self, PyObject *list)
+/*[clinic end generated code: output=6c23733a68dd68df input=be2605a96c49680f]*/
 {
     Py_ssize_t n;
 
@@ -2873,7 +2879,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
     PyErr_SetString(PyExc_ValueError,
-        "bad typecode (must be b, B, u, h, H, i, I, l, L, q, Q, f or d)");
+        "bad typecode (must be b, B, u, w, h, H, i, I, l, L, q, Q, f or d)");
     return NULL;
 }
 
@@ -2963,6 +2969,8 @@ static PyType_Slot array_slots[] = {
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, array_new},
     {Py_tp_traverse, array_tp_traverse},
+    {Py_tp_token, Py_TP_USE_SPEC},
+    {Py_tp_binop_specialize, array_binop_specialize},
 
     /* as sequence */
     {Py_sq_length, array_length},
@@ -2994,6 +3002,70 @@ static PyType_Spec array_spec = {
               Py_TPFLAGS_SEQUENCE),
     .slots = array_slots,
 };
+
+static inline int
+array_subscr_guard(PyObject *lhs, PyObject *rhs)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    int ret = PyType_GetBaseByToken(Py_TYPE(lhs), &array_spec, NULL);
+    if (ret < 0) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_Clear();
+            ret = 0;
+        }
+    }
+    _PyErr_ChainExceptions1(exc);
+    return ret;
+}
+
+static PyObject *
+array_subscr_action(PyObject *lhs, PyObject *rhs)
+{
+    return array_subscr(lhs, rhs);
+}
+
+static void
+array_subscr_free(_PyBinaryOpSpecializationDescr* descr)
+{
+    if (descr != NULL) {
+        PyMem_Free(descr);
+    }
+}
+
+static int
+array_binop_specialize(PyObject *v, PyObject *w, int oparg,
+                       _PyBinaryOpSpecializationDescr **descr)
+{
+    array_state *state = find_array_state_by_type(Py_TYPE(v));
+
+    if (!array_Check(v, state)) {
+        return 0;
+    }
+
+    *descr = NULL;
+    switch(oparg) {
+        case NB_SUBSCR:
+            if (array_subscr_guard(v, w)) {
+                *descr = (_PyBinaryOpSpecializationDescr*)PyMem_Malloc(
+                             sizeof(_PyBinaryOpSpecializationDescr));
+                if (*descr == NULL) {
+                    PyErr_NoMemory();
+                    return -1;
+                }
+                **descr = (_PyBinaryOpSpecializationDescr) {
+                    .oparg = oparg,
+                    .guard = array_subscr_guard,
+                    .action = array_subscr_action,
+                    .free = array_subscr_free,
+                };
+                return 1;
+            }
+            break;
+    }
+
+    return 0;
+}
+
 
 /*********************** Array Iterator **************************/
 
@@ -3102,8 +3174,8 @@ Set state information for unpickling.
 [clinic start generated code]*/
 
 static PyObject *
-array_arrayiterator___setstate__(arrayiterobject *self, PyObject *state)
-/*[clinic end generated code: output=397da9904e443cbe input=f47d5ceda19e787b]*/
+array_arrayiterator___setstate___impl(arrayiterobject *self, PyObject *state)
+/*[clinic end generated code: output=d7837ae4ac1fd8b9 input=f47d5ceda19e787b]*/
 {
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
