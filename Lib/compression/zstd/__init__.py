@@ -115,7 +115,6 @@ def finalize_dict(zstd_dict, samples, dict_size, level):
     can provide improvements.
     """
 
-    # Check arguments' type
     if not isinstance(zstd_dict, ZstdDict):
         raise TypeError('zstd_dict argument should be a ZstdDict object.')
     if not isinstance(dict_size, int):

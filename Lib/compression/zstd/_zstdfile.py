@@ -68,7 +68,6 @@ class ZstdFile(_streams.BaseStream):
 
         if not isinstance(mode, str):
             raise ValueError("mode must be a str")
-        # Read or write mode
         if options is not None and not isinstance(options, dict):
             raise TypeError("options must be a dict or None")
         mode = mode.removesuffix("b")  # handle rb, wb, xb, ab
@@ -87,7 +86,6 @@ class ZstdFile(_streams.BaseStream):
         else:
             raise ValueError(f"Invalid mode: {mode!r}")
 
-        # File object
         if isinstance(file, (str, bytes, PathLike)):
             self._fp = io.open(file, f'{mode}b')
             self._close_fp = True
