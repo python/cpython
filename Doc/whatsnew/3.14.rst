@@ -805,6 +805,11 @@ Other language changes
   :keyword:`async with`).
   (Contributed by Bénédikt Tran in :gh:`128398`.)
 
+* :option:`-J` is no longer a reserved flag for Jython_,
+  and now has no special meaning.
+  (Contributed by Adam Turner in :gh:`133336`.)
+
+  .. _Jython: https://www.jython.org/
 
 .. _whatsnew314-pep765:
 

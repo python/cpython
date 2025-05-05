@@ -133,13 +133,6 @@ int _PyOS_GetOpt(Py_ssize_t argc, wchar_t * const *argv, int *longindex)
         return opt->val;
     }
 
-    if (option == 'J') {
-        if (_PyOS_opterr) {
-            fprintf(stderr, "-J is reserved for Jython\n");
-        }
-        return '_';
-    }
-
     if ((ptr = wcschr(SHORT_OPTS, option)) == NULL) {
         if (_PyOS_opterr) {
             fprintf(stderr, "Unknown option: -%c\n", (char)option);
