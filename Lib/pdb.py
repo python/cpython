@@ -93,6 +93,7 @@ import itertools
 import traceback
 import linecache
 import _colorize
+import _pyrepl.utils
 
 from contextlib import closing
 from contextlib import contextmanager
@@ -339,7 +340,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     _last_pdb_instance = None
 
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
-                 nosigint=False, readrc=True, mode=None, backend=None):
+                 nosigint=False, readrc=True, mode=None, backend=None, colorize=False):
         bdb.Bdb.__init__(self, skip=skip, backend=backend if backend else get_default_backend())
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
         sys.audit("pdb.Pdb")
@@ -352,6 +353,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self._wait_for_mainpyfile = False
         self.tb_lineno = {}
         self.mode = mode
+        self.colorize = _colorize.can_colorize(file=stdout or sys.stdout) and colorize
         # Try to load readline if it exists
         try:
             import readline
@@ -1035,6 +1037,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if func.__name__ in self.commands_resuming:
             return True
         return False
+
+    def _colorize_code(self, code):
+        if self.colorize:
+            colors = list(_pyrepl.utils.gen_colors(code))
+            chars, _ = _pyrepl.utils.disp_str(code, colors=colors)
+            code = "".join(chars)
+        return code
 
     # interface abstraction functions
 
@@ -2166,6 +2175,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 s += '->'
             elif lineno == exc_lineno:
                 s += '>>'
+            if self.colorize:
+                line = self._colorize_code(line)
             self.message(s + '\t' + line.rstrip())
 
     def do_whatis(self, arg):
@@ -2365,8 +2376,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             prefix = '> '
         else:
             prefix = '  '
-        self.message(prefix +
-                     self.format_stack_entry(frame_lineno, prompt_prefix))
+        stack_entry = self.format_stack_entry(frame_lineno, prompt_prefix)
+        if self.colorize:
+            lines = stack_entry.split(prompt_prefix, 1)
+            if len(lines) > 1:
+                # We have some code to display
+                lines[1] = self._colorize_code(lines[1])
+                stack_entry = prompt_prefix.join(lines)
+        self.message(prefix + stack_entry)
 
     # Provide help
 
@@ -2604,7 +2621,7 @@ def set_trace(*, header=None, commands=None):
     if Pdb._last_pdb_instance is not None:
         pdb = Pdb._last_pdb_instance
     else:
-        pdb = Pdb(mode='inline', backend='monitoring')
+        pdb = Pdb(mode='inline', backend='monitoring', colorize=True)
     if header is not None:
         pdb.message(header)
     pdb.set_trace(sys._getframe().f_back, commands=commands)
@@ -2619,7 +2636,7 @@ async def set_trace_async(*, header=None, commands=None):
     if Pdb._last_pdb_instance is not None:
         pdb = Pdb._last_pdb_instance
     else:
-        pdb = Pdb(mode='inline', backend='monitoring')
+        pdb = Pdb(mode='inline', backend='monitoring', colorize=True)
     if header is not None:
         pdb.message(header)
     await pdb.set_trace_async(sys._getframe().f_back, commands=commands)
@@ -2633,7 +2650,7 @@ class _PdbServer(Pdb):
         self._sockfile = sockfile
         self._command_name_cache = []
         self._write_failed = False
-        super().__init__(**kwargs)
+        super().__init__(colorize=False, **kwargs)
 
     @staticmethod
     def protocol_version():
@@ -3345,7 +3362,7 @@ def main():
     # modified by the script being debugged. It's a bad idea when it was
     # changed by the user from the command line. There is a "restart" command
     # which allows explicit specification of command line arguments.
-    pdb = Pdb(mode='cli', backend='monitoring')
+    pdb = Pdb(mode='cli', backend='monitoring', colorize=True)
     pdb.rcLines.extend(opts.commands)
     while True:
         try:
