@@ -720,26 +720,23 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    If the type is heap allocated (:c:macro:`Py_TPFLAGS_HEAPTYPE`), the
    deallocator should release the owned reference to its type object (via
    :c:func:`Py_DECREF`) after calling the type deallocator.  See the example
-   code below.
+   code below.::
 
-     static void
-     foo_dealloc(PyObject *op)
-     {
+      static void
+      foo_dealloc(PyObject *op)
+      {
          foo_object *self = (foo_object *) op;
          PyObject_GC_UnTrack(self);
          Py_CLEAR(self->ref);
          Py_TYPE(self)->tp_free(self);
-     }
+      }
 
    :c:member:`!tp_dealloc` must leave the exception status unchanged.  If it
    needs to call something that might raise an exception, the exception state
    must be backed up first and restored later (after logging any exceptions
    with :c:func:`PyErr_WriteUnraisable`).
 
-   Example:
-
-   .. code-block:: c
-
+   Example::
 
       static void
       foo_dealloc(PyObject *self)
@@ -780,16 +777,16 @@ and :c:data:`PyType_Type` effectively act as defaults.)
           PyErr_SetRaisedException(exc);
       }
 
-    In a garbage collected Python, :c:member:`!tp_dealloc` may be called from
-    any Python thread, not just the thread which created the object (if the
-    object becomes part of a refcount cycle, that cycle might be collected by
-    a garbage collection on any thread).  This is not a problem for Python
-    API calls, since the thread on which :c:member:`!tp_dealloc` is called
-    with an :term:`attached thread state`.  However, if the object being
-    destroyed in turn destroys objects from some other C or C++ library, care
-    should be taken to ensure that destroying those objects on the thread
-    which called :c:member:`!tp_dealloc` will not violate any assumptions of
-    the library.
+   In a garbage collected Python, :c:member:`!tp_dealloc` may be called from
+   any Python thread, not just the thread which created the object (if the
+   object becomes part of a refcount cycle, that cycle might be collected by
+   a garbage collection on any thread).  This is not a problem for Python
+   API calls, since the thread on which :c:member:`!tp_dealloc` is called
+   with an :term:`attached thread state`.  However, if the object being
+   destroyed in turn destroys objects from some other C or C++ library, care
+   should be taken to ensure that destroying those objects on the thread
+   which called :c:member:`!tp_dealloc` will not violate any assumptions of
+   the library.
 
 
    **Inheritance:**
