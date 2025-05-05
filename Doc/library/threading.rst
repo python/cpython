@@ -261,7 +261,7 @@ Thread-Local Data
 -----------------
 
 Thread-local data is data whose values are thread specific. If you
-have data that you want to be local to a thread, simply create a
+have data that you want to be local to a thread, create a
 :class:`local` object and use its attributes::
 
    >>> mydata = local()

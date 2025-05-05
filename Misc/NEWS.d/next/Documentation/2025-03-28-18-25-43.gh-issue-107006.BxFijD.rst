@@ -1,2 +1,2 @@
 Move documentation and example code for :class:`threading.local` from its
-docstring to the official docs
+docstring to the official docs.
