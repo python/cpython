@@ -59,9 +59,7 @@ def compute_changes() -> None:
     target_branch, head_branch = git_branches()
     if target_branch and head_branch:
         # Getting changed files only makes sense on a pull request
-        files = get_changed_files(
-            f"origin/{target_branch}", f"origin/{head_branch}"
-        )
+        files = get_changed_files(target_branch, head_branch)
         outputs = process_changed_files(files)
     else:
         # Otherwise, just run the tests
@@ -90,14 +88,14 @@ def compute_changes() -> None:
 
 
 def git_branches() -> tuple[str, str]:
-    target_branch = os.environ.get("GITHUB_BASE_REF", "")
-    target_branch = target_branch.removeprefix("refs/heads/")
-    print(f"target branch: {target_branch!r}")
+    target_ref = os.environ.get("CCF_TARGET_REF", "")
+    target_ref = target_ref.removeprefix("refs/heads/")
+    print(f"target ref: {target_ref!r}")
 
-    head_branch = os.environ.get("GITHUB_HEAD_REF", "")
-    head_branch = head_branch.removeprefix("refs/heads/")
-    print(f"head branch: {head_branch!r}")
-    return target_branch, head_branch
+    head_ref = os.environ.get("CCF_HEAD_REF", "")
+    head_ref = head_ref.removeprefix("refs/heads/")
+    print(f"head ref: {head_ref!r}")
+    return f"origin/{target_ref}", head_ref
 
 
 def get_changed_files(
