@@ -5415,6 +5415,40 @@ PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
   ])
 ])
 
+have_libzstd=no
+AC_DEFUN([TEST_ZSTD_VERSION],[
+  AC_MSG_CHECKING([if libzstd is new enough])
+
+  dnl TODO(emmatyping): check if we can set a C define for the minimum version
+  dnl to re-use here and in the header compile check
+
+  dnl This is checked when both a package is found and we do fallback searches
+  dnl If you update the minimum version here, you should update the compile
+  dnl check in Modules/_zstd/_zstdmodule.h
+  AC_RUN_IFELSE([AC_LANG_PROGRAM([@%:@include "zstd.h"], [
+      #if ZSTD_VERSION_NUMBER < 10405
+          exit(1);
+      #endif
+    ])], [py__zstd_too_old=no], [py__zstd_too_old=yes])
+  dnl Important to record that we have libzstd
+  have_libzstd=yes
+])
+
+PKG_CHECK_MODULES([LIBZSTD], [libzstd], [TEST_ZSTD_VERSION()], [
+  WITH_SAVE_ENV([
+    CPPFLAGS="$CPPFLAGS $LIBZSTD_CFLAGS"
+    LIBS="$LIBS $LIBZSTD_LIBS"
+    AC_CHECK_HEADERS([zstd.h zdict.h], [
+      AC_CHECK_LIB([zstd], [ZDICT_finalizeDictionary],
+       [TEST_ZSTD_VERSION()], [have_libzstd=no])
+    ], [have_libzstd=no])
+    AS_VAR_IF([have_libzstd], [yes], [
+      LIBZSTD_CFLAGS=${LIBZSTD_CFLAGS-""}
+      LIBZSTD_LIBS=${LIBZSTD_LIBS-"-lzstd"}
+    ])
+  ])
+])
+
 dnl PY_CHECK_NETDB_FUNC(FUNCTION)
 AC_DEFUN([PY_CHECK_NETDB_FUNC], [PY_CHECK_FUNC([$1], [@%:@include <netdb.h>])])
 
@@ -7116,6 +7150,7 @@ SRCDIRS="\
   Modules/_xxtestfuzz \
   Modules/cjkcodecs \
   Modules/expat \
+  Modules/_zstd \
   Objects \
   Objects/mimalloc \
   Objects/mimalloc/prim \
@@ -7720,7 +7755,7 @@ AS_CASE([$ac_sys_system],
     dnl (see Modules/Setup.stdlib.in).
     PY_STDLIB_MOD_SET_NA(
       [_ctypes_test],
-      [_testexternalinspection],
+      [_remote_debugging],
       [_testimportmultiple],
       [_testmultiphase],
       [_testsinglephase],
@@ -7814,6 +7849,7 @@ PY_STDLIB_MOD_SIMPLE([_pickle])
 PY_STDLIB_MOD_SIMPLE([_posixsubprocess])
 PY_STDLIB_MOD_SIMPLE([_queue])
 PY_STDLIB_MOD_SIMPLE([_random])
+PY_STDLIB_MOD_SIMPLE([_remote_debugging])
 PY_STDLIB_MOD_SIMPLE([select])
 PY_STDLIB_MOD_SIMPLE([_struct])
 PY_STDLIB_MOD_SIMPLE([_types])
@@ -8016,7 +8052,10 @@ PY_HACL_CREATE_MODULE([BLAKE2], [_blake2], [test "$with_builtin_blake2" = yes])
 dnl HMAC builtin library does not need OpenSSL for now. In the future
 dnl we might want to rely on OpenSSL EVP/NID interface or implement
 dnl our own for algorithm resolution.
-PY_HACL_CREATE_MODULE([HMAC], [_hmac], [])
+dnl
+dnl For Emscripten, we disable HACL* HMAC as it is tricky to make it work.
+dnl See https://github.com/python/cpython/issues/133042.
+PY_HACL_CREATE_MODULE([HMAC], [_hmac], [test "$ac_sys_system" != "Emscripten"])
 ### end(cryptographic primitives)
 
 PY_STDLIB_MOD([_ctypes],
@@ -8062,6 +8101,8 @@ PY_STDLIB_MOD([_bz2], [], [test "$have_bzip2" = yes],
   [$BZIP2_CFLAGS], [$BZIP2_LIBS])
 PY_STDLIB_MOD([_lzma], [], [test "$have_liblzma" = yes],
   [$LIBLZMA_CFLAGS], [$LIBLZMA_LIBS])
+PY_STDLIB_MOD([_zstd], [test "$py__zstd_too_old" = no], [test "$have_libzstd" = yes],
+  [$LIBZSTD_CFLAGS], [$LIBZSTD_LIBS])
 
 dnl OpenSSL bindings
 PY_STDLIB_MOD([_ssl], [], [test "$ac_cv_working_openssl_ssl" = yes],
@@ -8082,7 +8123,6 @@ PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_testsinglephase], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
-PY_STDLIB_MOD([_testexternalinspection], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([xxsubtype], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_ctypes_test],

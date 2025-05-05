@@ -1,0 +1,1 @@
+Add ``eager_start`` keyword argument to :meth:`asyncio.loop.create_task`
