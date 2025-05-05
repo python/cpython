@@ -13,7 +13,7 @@ _MODE_READ = 1
 _MODE_WRITE = 2
 
 
-def _nbytes(dat):
+def _nbytes(dat, /):
     if isinstance(dat, (bytes, bytearray)):
         return len(dat)
     with memoryview(dat) as mv:
@@ -33,16 +33,8 @@ class ZstdFile(_streams.BaseStream):
     FLUSH_BLOCK = ZstdCompressor.FLUSH_BLOCK
     FLUSH_FRAME = ZstdCompressor.FLUSH_FRAME
 
-    def __init__(
-        self,
-        file,
-        /,
-        mode="r",
-        *,
-        level=None,
-        options=None,
-        zstd_dict=None,
-    ):
+    def __init__(self, file, /, mode="r", *,
+                 level=None, options=None, zstd_dict=None):
         """Open a Zstandard compressed file in binary mode.
 
         *file* can be either an file-like object, or a file name to open.
@@ -79,9 +71,8 @@ class ZstdFile(_streams.BaseStream):
             if level is not None and not isinstance(level, int):
                 raise TypeError("level must be int or None")
             self._mode = _MODE_WRITE
-            self._compressor = ZstdCompressor(
-                level=level, options=options, zstd_dict=zstd_dict
-            )
+            self._compressor = ZstdCompressor(level=level, options=options,
+                                              zstd_dict=zstd_dict)
             self._pos = 0
         else:
             raise ValueError(f"Invalid mode: {mode!r}")
@@ -131,7 +122,7 @@ class ZstdFile(_streams.BaseStream):
                 self._fp = None
                 self._close_fp = False
 
-    def write(self, data):
+    def write(self, data, /):
         """Write a bytes-like object *data* to the file.
 
         Returns the number of uncompressed bytes written, which is
@@ -305,19 +296,8 @@ class ZstdFile(_streams.BaseStream):
         return self._mode == _MODE_WRITE
 
 
-# Copied from lzma module
-def open(
-    file,
-    /,
-    mode="rb",
-    *,
-    level=None,
-    options=None,
-    zstd_dict=None,
-    encoding=None,
-    errors=None,
-    newline=None,
-):
+def open(file, /, mode="rb", *, level=None, options=None, zstd_dict=None,
+         encoding=None, errors=None, newline=None):
     """Open a Zstandard compressed file in binary or text mode.
 
     file can be either a file name (given as a str, bytes, or PathLike object),
@@ -346,7 +326,10 @@ def open(
     behavior, and line ending(s).
     """
 
-    if "t" in mode:
+    text_mode = "t" in mode
+    mode = mode.replace("t", "")
+
+    if text_mode:
         if "b" in mode:
             raise ValueError(f"Invalid mode: {mode!r}")
     else:
@@ -357,12 +340,10 @@ def open(
         if newline is not None:
             raise ValueError("Argument 'newline' not supported in binary mode")
 
-    zstd_mode = mode.replace("t", "")
-    binary_file = ZstdFile(
-        file, zstd_mode, level=level, options=options, zstd_dict=zstd_dict
-    )
+    binary_file = ZstdFile(file, mode, level=level, options=options,
+                           zstd_dict=zstd_dict)
 
-    if "t" in mode:
+    if text_mode:
         return io.TextIOWrapper(binary_file, encoding, errors, newline)
     else:
         return binary_file

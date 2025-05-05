@@ -89,7 +89,7 @@ def train_dict(samples, dict_size):
     return ZstdDict(dict_content)
 
 
-def finalize_dict(zstd_dict, samples, dict_size, level):
+def finalize_dict(zstd_dict, /, samples, dict_size, level):
     """Return a ZstdDict representing a finalized Zstandard dictionary.
 
     Given a custom content as a basis for dictionary, and a set of samples,
@@ -119,7 +119,7 @@ def finalize_dict(zstd_dict, samples, dict_size, level):
     chunks = b''.join(samples)
     chunk_sizes = tuple(_nbytes(sample) for sample in samples)
     if not chunks:
-        raise ValueError("The samples are empty content, can't finalize"
+        raise ValueError("The samples are empty content, can't finalize the"
                          "dictionary.")
     dict_content = _zstd._finalize_dict(zstd_dict.dict_content,
                                         chunks, chunk_sizes,
