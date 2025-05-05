@@ -745,6 +745,7 @@ class CommandLineTest(unittest.TestCase):
             expect = self.text_normalize(expect)
             self.assertListEqual(res.splitlines(), expect.splitlines())
 
+    @support.force_not_colorized
     def test_unknown_flag(self):
         stderr = io.StringIO()
         with self.assertRaises(SystemExit):

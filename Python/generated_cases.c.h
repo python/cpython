@@ -283,14 +283,30 @@
                 PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
                 _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr*)descr;
                 assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
-                assert(d && d->guard);
+                assert(d);
+                assert(d->guard);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 int res = d->guard(left_o, right_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (!res) {
-                    UPDATE_MISS_STATS(BINARY_OP);
-                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                if (res < 0) {
+                    JUMP_TO_LABEL(error);
+                }
+                if (res == 0) {
+                    if (d->free) {
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        d->free(d);
+                        stack_pointer = _PyFrame_GetStackPointer(frame);
+                    }
+                    _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(this_instr+1);
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    write_ptr(cache->external_cache, NULL);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    this_instr->op.code = BINARY_OP;
+                    if (true) {
+                        UPDATE_MISS_STATS(BINARY_OP);
+                        assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
+                        JUMP_TO_PREDICTED(BINARY_OP);
+                    }
                 }
             }
             /* Skip -4 cache entry */
@@ -315,6 +331,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
+                if (res_o == NULL) {
+                    JUMP_TO_LABEL(error);
+                }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[0] = res;

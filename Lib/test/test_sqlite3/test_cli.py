@@ -8,6 +8,7 @@ from test.support import (
     captured_stdout,
     captured_stderr,
     captured_stdin,
+    force_not_colorized,
     force_not_colorized_test_class,
 )
 
@@ -37,6 +38,7 @@ class CommandLineInterface(unittest.TestCase):
         self.assertEqual(out, "")
         return err
 
+    @force_not_colorized
     def test_cli_help(self):
         out = self.expect_success("-h")
         self.assertIn("usage: ", out)

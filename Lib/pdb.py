@@ -745,12 +745,34 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.message(repr(obj))
 
     @contextmanager
-    def _enable_multiline_completion(self):
+    def _enable_multiline_input(self):
+        try:
+            import readline
+        except ImportError:
+            yield
+            return
+
+        def input_auto_indent():
+            last_index = readline.get_current_history_length()
+            last_line = readline.get_history_item(last_index)
+            if last_line:
+                if last_line.isspace():
+                    # If the last line is empty, we don't need to indent
+                    return
+
+                last_line = last_line.rstrip('\r\n')
+                indent = len(last_line) - len(last_line.lstrip())
+                if last_line.endswith(":"):
+                    indent += 4
+                readline.insert_text(' ' * indent)
+
         completenames = self.completenames
         try:
             self.completenames = self.complete_multiline_names
+            readline.set_startup_hook(input_auto_indent)
             yield
         finally:
+            readline.set_startup_hook()
             self.completenames = completenames
         return
 
@@ -859,7 +881,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         try:
             if (code := codeop.compile_command(line + '\n', '<stdin>', 'single')) is None:
                 # Multi-line mode
-                with self._enable_multiline_completion():
+                with self._enable_multiline_input():
                     buffer = line
                     continue_prompt = "...   "
                     while (code := codeop.compile_command(buffer, '<stdin>', 'single')) is None:
@@ -881,7 +903,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                                 return None, None, False
                             else:
                                 line = line.rstrip('\r\n')
-                        buffer += '\n' + line
+                        if line.isspace():
+                            # empty line, just continue
+                            buffer += '\n'
+                        else:
+                            buffer += '\n' + line
                     self.lastcmd = buffer
         except SyntaxError as e:
             # Maybe it's an await expression/statement
@@ -3296,10 +3322,13 @@ To let the script run up to a given line X in the debugged file, use
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(usage="%(prog)s [-h] [-c command] (-m module | -p pid | pyfile) [args ...]",
-                                     description=_usage,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter,
-                                     allow_abbrev=False)
+    parser = argparse.ArgumentParser(
+        usage="%(prog)s [-h] [-c command] (-m module | -p pid | pyfile) [args ...]",
+        description=_usage,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        allow_abbrev=False,
+        color=True,
+    )
 
     # We need to maunally get the script from args, because the first positional
     # arguments could be either the script we need to debug, or the argument
