@@ -119,11 +119,12 @@ class ThemeSection(Mapping[str, str]):
         color_state.update(kwargs)
         return type(self)(**color_state)
 
-    def no_colors(self) -> Self:
+    @classmethod
+    def no_colors(cls) -> Self:
         color_state: dict[str, str] = {}
-        for color_name in self.__dataclass_fields__:
+        for color_name in cls.__dataclass_fields__:
             color_state[color_name] = ""
-        return type(self)(**color_state)
+        return cls(**color_state)
 
     def __getitem__(self, key: str) -> str:
         return self._name_to_value(key)
@@ -219,18 +220,19 @@ class Theme:
             unittest=unittest or self.unittest,
         )
 
-    def no_colors(self) -> Self:
+    @classmethod
+    def no_colors(cls) -> Self:
         """Return a new Theme where colors in all sections are empty strings.
 
         This allows writing user code as if colors are always used. The color
         fields will be ANSI color code strings when colorization is desired
         and possible, and empty strings otherwise.
         """
-        return type(self)(
-            argparse=self.argparse.no_colors(),
-            syntax=self.syntax.no_colors(),
-            traceback=self.traceback.no_colors(),
-            unittest=self.unittest.no_colors(),
+        return cls(
+            argparse=Argparse.no_colors(),
+            syntax=Syntax.no_colors(),
+            traceback=Traceback.no_colors(),
+            unittest=Unittest.no_colors(),
         )
 
 
