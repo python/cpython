@@ -2561,7 +2561,7 @@ binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
                                   _PyBinaryOpSpecializationDescr **descr)
 {
     typedef _PyBinaryOpSpecializationDescr descr_type;
-    size_t size = sizeof(binaryop_extend_builtins)/sizeof(descr_type);
+    size_t size = Py_ARRAY_LENGTH(binaryop_extend_builtins);
     for (size_t i = 0; i < size; i++) {
         descr_type *d = (descr_type *)&binaryop_extend_builtins[i];
         assert(d != NULL);
