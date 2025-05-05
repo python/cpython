@@ -270,7 +270,7 @@ attaching to a remote process that is blocked in a system call or waiting for
 I/O will only work once the next bytecode instruction is executed or when the
 process receives a signal.
 
-This feature leverages :pep:`768` and the :func:`sys.remote_exec` function
+This feature uses :pep:`768` and the :func:`sys.remote_exec` function
 to attach to the remote process and send the PDB commands to it.
 
 
@@ -814,7 +814,7 @@ Other language changes
   explicitly overridden in the subclass.
   (Contributed by Tomasz Pytel in :gh:`132329`.)
 
-* The command line option :option:`-c` now automatically dedents its code
+* The command-line option :option:`-c` now automatically dedents its code
   argument before execution. The auto-dedentation behavior mirrors
   :func:`textwrap.dedent`.
   (Contributed by Jon Crall and Steven Sun in :gh:`103998`.)
