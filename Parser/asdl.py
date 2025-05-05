@@ -91,17 +91,21 @@ class Field(AST):
         return "{}{} {}".format(self.type, extra, self.name)
 
     def __repr__(self):
-        extra = ""
-        for mod in self.quantifiers:
-            if mod is Quantifier.SEQUENCE:
-                extra += ", SEQUENCE"
-            elif mod is Quantifier.OPTIONAL:
-                extra += ", OPTIONAL"
+        if self.quantifiers:
+            texts = []
+            for mod in self.quantifiers:
+                if mod is Quantifier.SEQUENCE:
+                    texts.append("SEQUENCE")
+                elif mod is Quantifier.OPTIONAL:
+                    texts.append("OPTIONAL")
+            extra = ", quantifiers=[{}]".format(", ".join(texts))
+        else:
+            extra = ""
 
         if self.name is None:
-            return 'Field({0.type}, quantifiers=[{1}])'.format(self, extra)
+            return 'Field({0.type}{1})'.format(self, extra)
         else:
-            return 'Field({0.type}, {0.name}, quantifiers=[{1}])'.format(self, extra)
+            return 'Field({0.type}, {0.name}{1})'.format(self, extra)
 
 class Sum(AST):
     def __init__(self, types, attributes=None):
