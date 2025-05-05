@@ -877,7 +877,8 @@ argparse
 * Introduced the optional *color* parameter to
   :class:`argparse.ArgumentParser`, enabling color for help text.
   This can be controlled by :ref:`environment variables
-  <using-on-controlling-color>`.
+  <using-on-controlling-color>`. Color has also been enabled for help in the
+  :ref:`stdlib CLIs <library-cmdline>` which use :mod:`!argparse`.
   (Contributed by Hugo van Kemenade in :gh:`130645`.)
 
 
