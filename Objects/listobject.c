@@ -12,7 +12,9 @@
 #include "pycore_long.h"          // _PyLong_DigitCount
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
+#include "pycore_stackref.h"      // _Py_TryIncrefCompareStackRef()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_typeobject.h"    // _Py_TYPE_VERSION_LIST
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include <stddef.h>
 
@@ -415,6 +417,32 @@ _PyList_GetItemRef(PyListObject *list, Py_ssize_t i)
     return list_get_item_ref(list, i);
 }
 
+#ifdef Py_GIL_DISABLED
+int
+_PyList_GetItemRefNoLock(PyListObject *list, Py_ssize_t i, _PyStackRef *result)
+{
+    assert(_Py_IsOwnedByCurrentThread((PyObject *)list) ||
+           _PyObject_GC_IS_SHARED(list));
+    if (!valid_index(i, PyList_GET_SIZE(list))) {
+        return 0;
+    }
+    PyObject **ob_item = _Py_atomic_load_ptr(&list->ob_item);
+    if (ob_item == NULL) {
+        return 0;
+    }
+    Py_ssize_t cap = list_capacity(ob_item);
+    assert(cap != -1);
+    if (!valid_index(i, cap)) {
+        return 0;
+    }
+    PyObject *obj = _Py_atomic_load_ptr(&ob_item[i]);
+    if (obj == NULL || !_Py_TryIncrefCompareStackRef(&ob_item[i], obj, result)) {
+        return -1;
+    }
+    return 1;
+}
+#endif
+
 int
 PyList_SetItem(PyObject *op, Py_ssize_t i,
                PyObject *newitem)
@@ -522,7 +550,6 @@ list_dealloc(PyObject *self)
     PyListObject *op = (PyListObject *)self;
     Py_ssize_t i;
     PyObject_GC_UnTrack(op);
-    Py_TRASHCAN_BEGIN(op, list_dealloc)
     if (op->ob_item != NULL) {
         /* Do it backwards, for Christian Tismer.
            There's a simple test case where somehow this reduces
@@ -541,7 +568,6 @@ list_dealloc(PyObject *self)
     else {
         PyObject_GC_Del(op);
     }
-    Py_TRASHCAN_END
 }
 
 static PyObject *
@@ -555,6 +581,7 @@ list_repr_impl(PyListObject *v)
     /* "[" + "1" + ", 2" * (len - 1) + "]" */
     Py_ssize_t prealloc = 1 + 1 + (2 + 1) * (Py_SIZE(v) - 1) + 1;
     PyUnicodeWriter *writer = PyUnicodeWriter_Create(prealloc);
+    PyObject *item = NULL;
     if (writer == NULL) {
         goto error;
     }
@@ -566,6 +593,9 @@ list_repr_impl(PyListObject *v)
     /* Do repr() on each element.  Note that this may mutate the list,
        so must refetch the list size on each iteration. */
     for (Py_ssize_t i = 0; i < Py_SIZE(v); ++i) {
+        /* Hold a strong reference since repr(item) can mutate the list */
+        item = Py_NewRef(v->ob_item[i]);
+
         if (i > 0) {
             if (PyUnicodeWriter_WriteChar(writer, ',') < 0) {
                 goto error;
@@ -575,9 +605,10 @@ list_repr_impl(PyListObject *v)
             }
         }
 
-        if (PyUnicodeWriter_WriteRepr(writer, v->ob_item[i]) < 0) {
+        if (PyUnicodeWriter_WriteRepr(writer, item) < 0) {
             goto error;
         }
+        Py_CLEAR(item);
     }
 
     if (PyUnicodeWriter_WriteChar(writer, ']') < 0) {
@@ -588,6 +619,7 @@ list_repr_impl(PyListObject *v)
     return PyUnicodeWriter_Finish(writer);
 
 error:
+    Py_XDECREF(item);
     PyUnicodeWriter_Discard(writer);
     Py_ReprLeave((PyObject *)v);
     return NULL;
@@ -1281,9 +1313,15 @@ list_extend_set(PyListObject *self, PySetObject *other)
 {
     Py_ssize_t m = Py_SIZE(self);
     Py_ssize_t n = PySet_GET_SIZE(other);
-    if (list_resize(self, m + n) < 0) {
+    Py_ssize_t r = m + n;
+    if (r == 0) {
+        return 0;
+    }
+    if (list_resize(self, r) < 0) {
         return -1;
     }
+
+    assert(self->ob_item != NULL);
     /* populate the end of self with iterable's items */
     Py_ssize_t setpos = 0;
     Py_hash_t hash;
@@ -1293,7 +1331,7 @@ list_extend_set(PyListObject *self, PySetObject *other)
         FT_ATOMIC_STORE_PTR_RELEASE(*dest, key);
         dest++;
     }
-    Py_SET_SIZE(self, m + n);
+    Py_SET_SIZE(self, r);
     return 0;
 }
 
@@ -1303,10 +1341,15 @@ list_extend_dict(PyListObject *self, PyDictObject *dict, int which_item)
     // which_item: 0 for keys and 1 for values
     Py_ssize_t m = Py_SIZE(self);
     Py_ssize_t n = PyDict_GET_SIZE(dict);
-    if (list_resize(self, m + n) < 0) {
+    Py_ssize_t r = m + n;
+    if (r == 0) {
+        return 0;
+    }
+    if (list_resize(self, r) < 0) {
         return -1;
     }
 
+    assert(self->ob_item != NULL);
     PyObject **dest = self->ob_item + m;
     Py_ssize_t pos = 0;
     PyObject *keyvalue[2];
@@ -1317,7 +1360,7 @@ list_extend_dict(PyListObject *self, PyDictObject *dict, int which_item)
         dest++;
     }
 
-    Py_SET_SIZE(self, m + n);
+    Py_SET_SIZE(self, r);
     return 0;
 }
 
@@ -1326,10 +1369,15 @@ list_extend_dictitems(PyListObject *self, PyDictObject *dict)
 {
     Py_ssize_t m = Py_SIZE(self);
     Py_ssize_t n = PyDict_GET_SIZE(dict);
-    if (list_resize(self, m + n) < 0) {
+    Py_ssize_t r = m + n;
+    if (r == 0) {
+        return 0;
+    }
+    if (list_resize(self, r) < 0) {
         return -1;
     }
 
+    assert(self->ob_item != NULL);
     PyObject **dest = self->ob_item + m;
     Py_ssize_t pos = 0;
     Py_ssize_t i = 0;
@@ -1345,7 +1393,7 @@ list_extend_dictitems(PyListObject *self, PyDictObject *dict)
         i++;
     }
 
-    Py_SET_SIZE(self, m + n);
+    Py_SET_SIZE(self, r);
     return 0;
 }
 
@@ -1416,8 +1464,8 @@ Extend list by appending elements from the iterable.
 [clinic start generated code]*/
 
 static PyObject *
-list_extend(PyListObject *self, PyObject *iterable)
-/*[clinic end generated code: output=630fb3bca0c8e789 input=979da7597a515791]*/
+list_extend_impl(PyListObject *self, PyObject *iterable)
+/*[clinic end generated code: output=b0eba9e0b186d5ce input=979da7597a515791]*/
 {
     if (_list_extend(self, iterable) < 0) {
         return NULL;
@@ -1428,7 +1476,7 @@ list_extend(PyListObject *self, PyObject *iterable)
 PyObject *
 _PyList_Extend(PyListObject *self, PyObject *iterable)
 {
-    return list_extend(self, iterable);
+    return list_extend((PyObject*)self, iterable);
 }
 
 int
@@ -3272,8 +3320,8 @@ Return number of occurrences of value.
 [clinic start generated code]*/
 
 static PyObject *
-list_count(PyListObject *self, PyObject *value)
-/*[clinic end generated code: output=b1f5d284205ae714 input=3bdc3a5e6f749565]*/
+list_count_impl(PyListObject *self, PyObject *value)
+/*[clinic end generated code: output=eff66f14aef2df86 input=3bdc3a5e6f749565]*/
 {
     Py_ssize_t count = 0;
     for (Py_ssize_t i = 0; ; i++) {
@@ -3569,6 +3617,24 @@ list_slice_wrap(PyListObject *aa, Py_ssize_t start, Py_ssize_t stop, Py_ssize_t 
     return res;
 }
 
+static inline PyObject*
+list_slice_subscript(PyObject* self, PyObject* item)
+{
+    assert(PyList_Check(self));
+    assert(PySlice_Check(item));
+    Py_ssize_t start, stop, step;
+    if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
+        return NULL;
+    }
+    return list_slice_wrap((PyListObject *)self, start, stop, step);
+}
+
+PyObject *
+_PyList_SliceSubscript(PyObject* _self, PyObject* item)
+{
+    return list_slice_subscript(_self, item);
+}
+
 static PyObject *
 list_subscript(PyObject* _self, PyObject* item)
 {
@@ -3583,11 +3649,7 @@ list_subscript(PyObject* _self, PyObject* item)
         return list_item((PyObject *)self, i);
     }
     else if (PySlice_Check(item)) {
-        Py_ssize_t start, stop, step;
-        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
-            return NULL;
-        }
-        return list_slice_wrap(self, start, stop, step);
+        return list_slice_subscript(_self, item);
     }
     else {
         PyErr_Format(PyExc_TypeError,
@@ -3845,7 +3907,7 @@ PyTypeObject PyList_Type = {
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
-    (initproc)list___init__,                    /* tp_init */
+    list___init__,                              /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     PyType_GenericNew,                          /* tp_new */
     PyObject_GC_Del,                            /* tp_free */

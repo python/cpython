@@ -576,7 +576,7 @@ def _check_date_fields(year, month, day):
         raise ValueError(f"month must be in 1..12, not {month}")
     dim = _days_in_month(year, month)
     if not 1 <= day <= dim:
-        raise ValueError(f"day must be in 1..{dim}, not {day}")
+        raise ValueError(f"day {day} must be in range 1..{dim} for month {month} in year {year}")
     return year, month, day
 
 def _check_time_fields(hour, minute, second, microsecond, fold):
@@ -1050,8 +1050,12 @@ class date:
     @classmethod
     def fromisoformat(cls, date_string):
         """Construct a date from a string in ISO 8601 format."""
+
         if not isinstance(date_string, str):
-            raise TypeError('fromisoformat: argument must be str')
+            raise TypeError('Argument must be a str')
+
+        if not date_string.isascii():
+            raise ValueError('Argument must be an ASCII str')
 
         if len(date_string) not in (7, 8, 10):
             raise ValueError(f'Invalid isoformat string: {date_string!r}')

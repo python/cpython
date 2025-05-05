@@ -459,7 +459,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         return futures.Future(loop=self)
 
     def create_task(self, coro, **kwargs):
-        """Schedule a coroutine object.
+        """Schedule or begin executing a coroutine object.
 
         Return a task object.
         """
@@ -1295,8 +1295,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                 read = await self.run_in_executor(None, file.readinto, view)
                 if not read:
                     return total_sent  # EOF
-                await proto.drain()
                 transp.write(view[:read])
+                await proto.drain()
                 total_sent += read
         finally:
             if total_sent > 0 and hasattr(file, 'seek'):
@@ -1666,8 +1666,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise ValueError(
                 'ssl_shutdown_timeout is only meaningful with ssl')
 
-        if sock is not None:
-            _check_ssl_socket(sock)
+        _check_ssl_socket(sock)
 
         transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, '', server_side=True,
@@ -1880,6 +1879,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         - 'protocol' (optional): Protocol instance;
         - 'transport' (optional): Transport instance;
         - 'socket' (optional): Socket instance;
+        - 'source_traceback' (optional): Traceback of the source;
+        - 'handle_traceback' (optional): Traceback of the handle;
         - 'asyncgen' (optional): Asynchronous generator that caused
                                  the exception.
 

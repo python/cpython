@@ -1,12 +1,13 @@
-
 /* Function object implementation */
 
 #include "Python.h"
-#include "pycore_dict.h"                // _Py_INCREF_DICT()
-#include "pycore_long.h"                // _PyLong_GetOne()
-#include "pycore_modsupport.h"          // _PyArg_NoKeywords()
-#include "pycore_object.h"              // _PyObject_GC_UNTRACK()
-#include "pycore_pyerrors.h"            // _PyErr_Occurred()
+#include "pycore_dict.h"          // _Py_INCREF_DICT()
+#include "pycore_function.h"      // _PyFunction_Vectorcall
+#include "pycore_long.h"          // _PyLong_GetOne()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"      // _PyErr_Occurred()
+#include "pycore_stats.h"
 
 
 static const char *
@@ -1483,6 +1484,11 @@ static PyGetSetDef cm_getsetlist[] = {
     {NULL} /* Sentinel */
 };
 
+static PyMethodDef cm_methodlist[] = {
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, NULL},
+    {NULL} /* Sentinel */
+};
+
 static PyObject*
 cm_repr(PyObject *self)
 {
@@ -1541,7 +1547,7 @@ PyTypeObject PyClassMethod_Type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
+    cm_methodlist,                              /* tp_methods */
     cm_memberlist,                              /* tp_members */
     cm_getsetlist,                              /* tp_getset */
     0,                                          /* tp_base */
@@ -1715,6 +1721,11 @@ static PyGetSetDef sm_getsetlist[] = {
     {NULL} /* Sentinel */
 };
 
+static PyMethodDef sm_methodlist[] = {
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, NULL},
+    {NULL} /* Sentinel */
+};
+
 static PyObject*
 sm_repr(PyObject *self)
 {
@@ -1771,7 +1782,7 @@ PyTypeObject PyStaticMethod_Type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
+    sm_methodlist,                              /* tp_methods */
     sm_memberlist,                              /* tp_members */
     sm_getsetlist,                              /* tp_getset */
     0,                                          /* tp_base */

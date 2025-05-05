@@ -9,7 +9,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyNumber_Index()
-#include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_interp.h"        // _PyInterpreterState_GetConfig()
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -661,6 +661,11 @@ iomodule_exec(PyObject *m)
         "UnsupportedOperation", PyExc_OSError, PyExc_ValueError);
     if (state->unsupported_operation == NULL)
         return -1;
+    if (PyObject_SetAttrString(state->unsupported_operation,
+                               "__module__", &_Py_ID(io)) < 0)
+    {
+        return -1;
+    }
     if (PyModule_AddObjectRef(m, "UnsupportedOperation",
                               state->unsupported_operation) < 0)
     {

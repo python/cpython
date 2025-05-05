@@ -965,7 +965,8 @@ Text I/O
    :class:`TextIOBase`.
 
    *encoding* gives the name of the encoding that the stream will be decoded or
-   encoded with.  It defaults to :func:`locale.getencoding`.
+   encoded with.  In :ref:`UTF-8 Mode <utf8-mode>`, this defaults to UTF-8.
+   Otherwise, it defaults to :func:`locale.getencoding`.
    ``encoding="locale"`` can be used to specify the current locale's encoding
    explicitly. See :ref:`io-text-encoding` for more information.
 
@@ -1160,7 +1161,7 @@ with :deco:`typing.runtime_checkable`.
    usually be :class:`str` or :class:`bytes`, but can be any type that is
    read from the stream.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
    .. method:: read()
                read(size, /)
@@ -1181,7 +1182,7 @@ with :deco:`typing.runtime_checkable`.
    usually be :class:`str` or :class:`bytes`, but can be any type that can be
    written to the stream.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
    .. method:: write(data, /)
 

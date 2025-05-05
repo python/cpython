@@ -1262,8 +1262,7 @@ static PyMethodDef fileio_methods[] = {
     _IO_FILEIO_ISATTY_METHODDEF
     {"_isatty_open_only", _io_FileIO_isatty_open_only, METH_NOARGS},
     {"_dealloc_warn", fileio_dealloc_warn, METH_O, NULL},
-    {"__reduce__", _PyIOBase_cannot_pickle, METH_NOARGS},
-    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_O},
+    {"__getstate__", _PyIOBase_cannot_pickle, METH_NOARGS},
     {NULL,           NULL}             /* sentinel */
 };
 
@@ -1293,8 +1292,8 @@ fileio_get_mode(PyObject *op, void *closure)
 static PyObject *
 fileio_get_blksize(PyObject *op, void *closure)
 {
-    fileio *self = PyFileIO_CAST(op);
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
+    fileio *self = PyFileIO_CAST(op);
     if (self->stat_atopen != NULL && self->stat_atopen->st_blksize > 1) {
         return PyLong_FromLong(self->stat_atopen->st_blksize);
     }

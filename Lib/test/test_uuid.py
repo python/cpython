@@ -913,6 +913,7 @@ class BaseTestUUID:
                 equal(self.uuid._last_counter_v7, counter)
 
                 unix_ts_ms = timestamp_ms & 0xffff_ffff_ffff
+                equal(u.time, unix_ts_ms)
                 equal((u.int >> 80) & 0xffff_ffff_ffff, unix_ts_ms)
 
                 equal((u.int >> 75) & 1, 0)  # check that the MSB is 0
@@ -966,6 +967,7 @@ class BaseTestUUID:
                 urand.assert_called_once_with(10)
                 equal(self.uuid._last_timestamp_v7, timestamp_ms)
                 equal(self.uuid._last_counter_v7, counter)
+                equal(u1.time, timestamp_ms)
                 equal((u1.int >> 64) & 0xfff, counter_hi)
                 equal((u1.int >> 32) & 0x3fff_ffff, counter_lo)
                 equal(u1.int & 0xffff_ffff, tail)
@@ -988,6 +990,7 @@ class BaseTestUUID:
                 equal(self.uuid._last_timestamp_v7, timestamp_ms)
                 # 42-bit counter advanced by 1
                 equal(self.uuid._last_counter_v7, counter + 1)
+                equal(u2.time, timestamp_ms)
                 equal((u2.int >> 64) & 0xfff, counter_hi)
                 equal((u2.int >> 32) & 0x3fff_ffff, counter_lo + 1)
                 equal(u2.int & 0xffff_ffff, next_fail)
@@ -1025,6 +1028,7 @@ class BaseTestUUID:
             equal(u.version, 7)
             equal(self.uuid._last_timestamp_v7, fake_last_timestamp_v7 + 1)
             unix_ts_ms = (fake_last_timestamp_v7 + 1) & 0xffff_ffff_ffff
+            equal(u.time, unix_ts_ms)
             equal((u.int >> 80) & 0xffff_ffff_ffff, unix_ts_ms)
             # 42-bit counter advanced by 1
             equal(self.uuid._last_counter_v7, counter + 1)
@@ -1064,6 +1068,7 @@ class BaseTestUUID:
             # timestamp advanced due to overflow
             equal(self.uuid._last_timestamp_v7, timestamp_ms + 1)
             unix_ts_ms = (timestamp_ms + 1) & 0xffff_ffff_ffff
+            equal(u.time, unix_ts_ms)
             equal((u.int >> 80) & 0xffff_ffff_ffff, unix_ts_ms)
             # counter overflowed, so we picked a new one
             equal(self.uuid._last_counter_v7, new_counter)
@@ -1165,6 +1170,20 @@ class BaseTestUUID:
         # Output uuid should be in the format of uuid4
         self.assertEqual(output, str(uuid_output))
         self.assertEqual(uuid_output.version, 4)
+
+    @mock.patch.object(sys, "argv", ["", "-C", "3"])
+    def test_cli_uuid4_outputted_with_count(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip().splitlines()
+
+        # Check that 3 UUIDs in the format of uuid4 have been generated
+        self.assertEqual(len(output), 3)
+        for o in output:
+            uuid_output = self.uuid.UUID(o)
+            self.assertEqual(uuid_output.version, 4)
 
     @mock.patch.object(sys, "argv",
                        ["", "-u", "uuid3", "-n", "@dns", "-N", "python.org"])

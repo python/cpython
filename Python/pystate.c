@@ -4,25 +4,27 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_audit.h"         // _Py_AuditHookEntry
-#include "pycore_ceval.h"
-#include "pycore_code.h"          // stats
-#include "pycore_critical_section.h"       // _PyCriticalSection_Resume()
+#include "pycore_ceval.h"         // _PyEval_AcquireLock()
+#include "pycore_codecs.h"        // _PyCodec_Fini()
+#include "pycore_critical_section.h" // _PyCriticalSection_Resume()
 #include "pycore_dtoa.h"          // _dtoa_state_INIT()
-#include "pycore_emscripten_trampoline.h"  // _Py_EmscriptenTrampoline_Init()
-#include "pycore_frame.h"
+#include "pycore_emscripten_trampoline.h" // _Py_EmscriptenTrampoline_Init()
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_interpframe.h"   // _PyThreadState_HasStackSpace()
 #include "pycore_object.h"        // _PyType_InitCache()
+#include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
+#include "pycore_optimizer.h"     // JIT_CLEANUP_THRESHOLD
 #include "pycore_parking_lot.h"   // _PyParkingLot_AfterFork()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
 #include "pycore_pylifecycle.h"   // _PyAST_Fini()
 #include "pycore_pymem.h"         // _PyMem_DebugEnabled()
-#include "pycore_pystate.h"
+#include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_stackref.h"      // Py_STACKREF_DEBUG
 #include "pycore_time.h"          // _PyTime_Init()
-#include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
 #include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
+
 
 /* --------------------------------------------------------------------------
 CAUTION
@@ -567,11 +569,19 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
     return _PyStatus_OK();
 }
 
-
 static PyInterpreterState *
 alloc_interpreter(void)
 {
-    return PyMem_RawCalloc(1, sizeof(PyInterpreterState));
+    size_t alignment = _Alignof(PyInterpreterState);
+    size_t allocsize = sizeof(PyInterpreterState) + alignment - 1;
+    void *mem = PyMem_RawCalloc(1, allocsize);
+    if (mem == NULL) {
+        return NULL;
+    }
+    PyInterpreterState *interp = _Py_ALIGN_UP(mem, alignment);
+    assert(_Py_IS_ALIGNED(interp, alignment));
+    interp->_malloced = mem;
+    return interp;
 }
 
 static void
@@ -585,12 +595,15 @@ free_interpreter(PyInterpreterState *interp)
             PyMem_RawFree(interp->obmalloc);
             interp->obmalloc = NULL;
         }
-        PyMem_RawFree(interp);
+        assert(_Py_IS_ALIGNED(interp, _Alignof(PyInterpreterState)));
+        PyMem_RawFree(interp->_malloced);
     }
 }
+
 #ifndef NDEBUG
 static inline int check_interpreter_whence(long);
 #endif
+
 /* Get the interpreter state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
    All fields not initialized here are expected to be zeroed out,
@@ -665,13 +678,15 @@ init_interpreter(PyInterpreterState *interp,
     interp->sys_trace_initialized = false;
     interp->jit = false;
     interp->executor_list_head = NULL;
+    interp->executor_deletion_list_head = NULL;
+    interp->executor_deletion_list_remaining_capacity = 0;
     interp->trace_run_counter = JIT_CLEANUP_THRESHOLD;
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
     }
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
-    interp->next_stackref = 1;
+    interp->next_stackref = INITIAL_STACKREF_INDEX;
     _Py_hashtable_allocator_t alloc = {
         .malloc = malloc,
         .free = free,
@@ -889,6 +904,10 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->after_forkers_child);
 #endif
 
+
+#ifdef _Py_TIER2
+    _Py_ClearExecutorDeletionList(interp);
+#endif
     _PyAST_Fini(interp);
     _PyWarnings_Fini(interp);
     _PyAtExit_Fini(interp);
@@ -1197,14 +1216,40 @@ _PyInterpreterState_SetWhence(PyInterpreterState *interp, long whence)
 
 
 PyObject *
-PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *interp)
+_Py_GetMainModule(PyThreadState *tstate)
 {
-    PyObject *modules = _PyImport_GetModules(interp);
-    if (modules == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "interpreter not initialized");
-        return NULL;
+    // We return None to indicate "not found" or "bogus".
+    PyObject *modules = _PyImport_GetModulesRef(tstate->interp);
+    if (modules == Py_None) {
+        return modules;
     }
-    return PyMapping_GetItemString(modules, "__main__");
+    PyObject *module = NULL;
+    (void)PyMapping_GetOptionalItem(modules, &_Py_ID(__main__), &module);
+    Py_DECREF(modules);
+    if (module == NULL && !PyErr_Occurred()) {
+        Py_RETURN_NONE;
+    }
+    return module;
+}
+
+int
+_Py_CheckMainModule(PyObject *module)
+{
+    if (module == NULL || module == Py_None) {
+        if (!PyErr_Occurred()) {
+            (void)_PyErr_SetModuleNotFoundError(&_Py_ID(__main__));
+        }
+        return -1;
+    }
+    if (!Py_IS_TYPE(module, &PyModule_Type)) {
+        /* The __main__ module has been tampered with. */
+        PyObject *msg = PyUnicode_FromString("invalid __main__ module");
+        if (msg != NULL) {
+            (void)PyErr_SetImportError(msg, &_Py_ID(__main__), NULL);
+        }
+        return -1;
+    }
+    return 0;
 }
 
 
@@ -1520,7 +1565,6 @@ init_threadstate(_PyThreadStateImpl *_tstate,
 
     tstate->py_recursion_limit = interp->ceval.recursion_limit;
     tstate->py_recursion_remaining = interp->ceval.recursion_limit;
-    tstate->c_recursion_remaining = 2;
     tstate->exc_info = &tstate->exc_state;
 
     // PyGILState_Release must not try to delete this thread state.
@@ -1532,7 +1576,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->datastack_top = NULL;
     tstate->datastack_limit = NULL;
     tstate->what_event = -1;
-    tstate->previous_executor = NULL;
+    tstate->current_executor = NULL;
     tstate->dict_global_version = 0;
 
     _tstate->c_stack_soft_limit = UINTPTR_MAX;
@@ -2130,7 +2174,10 @@ _PyThreadState_Attach(PyThreadState *tstate)
     if (current_fast_get() != NULL) {
         Py_FatalError("non-NULL old thread state");
     }
-
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    if (_tstate->c_stack_hard_limit == 0) {
+        _Py_InitializeRecursionLimits(tstate);
+    }
 
     while (1) {
         _PyEval_AcquireLock(tstate);
@@ -3133,4 +3180,42 @@ _PyThreadState_ClearMimallocHeaps(PyThreadState *tstate)
         _mi_heap_collect_abandon(&tstate_impl->mimalloc.heaps[i]);
     }
 #endif
+}
+
+
+int
+_Py_IsMainThread(void)
+{
+    unsigned long thread = PyThread_get_thread_ident();
+    return (thread == _PyRuntime.main_thread);
+}
+
+
+PyInterpreterState *
+_PyInterpreterState_Main(void)
+{
+    return _PyRuntime.interpreters.main;
+}
+
+
+int
+_Py_IsMainInterpreterFinalizing(PyInterpreterState *interp)
+{
+    /* bpo-39877: Access _PyRuntime directly rather than using
+       tstate->interp->runtime to support calls from Python daemon threads.
+       After Py_Finalize() has been called, tstate can be a dangling pointer:
+       point to PyThreadState freed memory. */
+    return (_PyRuntimeState_GetFinalizing(&_PyRuntime) != NULL &&
+            interp == &_PyRuntime._main_interpreter);
+}
+
+
+const PyConfig *
+_Py_GetMainConfig(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_Main();
+    if (interp == NULL) {
+        return NULL;
+    }
+    return _PyInterpreterState_GetConfig(interp);
 }

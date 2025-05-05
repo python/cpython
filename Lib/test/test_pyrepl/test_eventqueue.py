@@ -1,6 +1,5 @@
 import tempfile
 import unittest
-import sys
 from unittest.mock import patch
 from test import support
 
