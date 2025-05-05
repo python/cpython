@@ -73,6 +73,9 @@ source.
 
    .. audit-event:: cpython.run_command command cmdoption-c
 
+   .. versionchanged:: next
+      *command* is automatically dedented before execution.
+
 .. option:: -m <module-name>
 
    Search :data:`sys.path` for the named module and execute its contents as
@@ -603,6 +606,17 @@ Miscellaneous options
 
      .. versionadded:: 3.13
 
+   * ``-X disable_remote_debug`` disables the remote debugging support as described
+     in :pep:`768`.  This includes both the functionality to schedule code for
+     execution in another process and the functionality to receive code for
+     execution in the current process.
+
+     This option is only available on some platforms and will do nothing
+     if is not supported on the current system. See also
+     :envvar:`PYTHON_DISABLE_REMOTE_DEBUG` and :pep:`768`.
+
+     .. versionadded:: 3.14
+
    * :samp:`-X cpu_count={n}` overrides :func:`os.cpu_count`,
      :func:`os.process_cpu_count`, and :func:`multiprocessing.cpu_count`.
      *n* must be greater than or equal to 1.
@@ -628,6 +642,23 @@ Miscellaneous options
 
      .. versionadded:: 3.13
 
+   * :samp:`-X thread_inherit_context={0,1}` causes :class:`~threading.Thread`
+     to, by default, use a copy of context of of the caller of
+     ``Thread.start()`` when starting.  Otherwise, threads will start
+     with an empty context.  If unset, the value of this option defaults
+     to ``1`` on free-threaded builds and to ``0`` otherwise.  See also
+     :envvar:`PYTHON_THREAD_INHERIT_CONTEXT`.
+
+     .. versionadded:: 3.14
+
+   * :samp:`-X context_aware_warnings={0,1}` causes the
+     :class:`warnings.catch_warnings` context manager to use a
+     :class:`~contextvars.ContextVar` to store warnings filter state.  If
+     unset, the value of this option defaults to ``1`` on free-threaded builds
+     and to ``0`` otherwise.  See also :envvar:`PYTHON_CONTEXT_AWARE_WARNINGS`.
+
+     .. versionadded:: 3.14
+
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
 
@@ -638,6 +669,13 @@ Miscellaneous options
 
    .. versionchanged:: 3.10
       Removed the ``-X oldparser`` option.
+
+.. versionremoved:: next
+
+   :option:`!-J` is no longer reserved for use by Jython_,
+   and now has no special meaning.
+
+   .. _Jython: https://www.jython.org/
 
 .. _using-on-controlling-color:
 
@@ -662,15 +700,6 @@ output. To control the color output only in the Python interpreter, the
 :envvar:`PYTHON_COLORS` environment variable can be used. This variable takes
 precedence over ``NO_COLOR``, which in turn takes precedence over
 ``FORCE_COLOR``.
-
-Options you shouldn't use
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. option:: -J
-
-   Reserved for use by Jython_.
-
-.. _Jython: https://www.jython.org/
 
 
 .. _using-on-envvars:
@@ -1160,7 +1189,16 @@ conflict.
 
    .. versionadded:: 3.13
 
+.. envvar:: PYTHON_DISABLE_REMOTE_DEBUG
 
+   If this variable is set to a non-empty string, it disables the remote
+   debugging feature described in :pep:`768`. This includes both the functionality
+   to schedule code for execution in another process and the functionality to
+   receive code for execution in the current process.
+
+   See also the :option:`-X disable_remote_debug` command-line option.
+
+   .. versionadded:: 3.14
 
 .. envvar:: PYTHON_CPU_COUNT
 
@@ -1220,6 +1258,26 @@ conflict.
    precedence over this variable, and :ref:`whatsnew313-free-threaded-cpython`.
 
    .. versionadded:: 3.13
+
+.. envvar:: PYTHON_THREAD_INHERIT_CONTEXT
+
+   If this variable is set to ``1`` then :class:`~threading.Thread` will,
+   by default, use a copy of context of of the caller of ``Thread.start()``
+   when starting.  Otherwise, new threads will start with an empty context.
+   If unset, this variable defaults to ``1`` on free-threaded builds and to
+   ``0`` otherwise.  See also :option:`-X thread_inherit_context<-X>`.
+
+   .. versionadded:: 3.14
+
+.. envvar:: PYTHON_CONTEXT_AWARE_WARNINGS
+
+   If set to ``1`` then the :class:`warnings.catch_warnings` context
+   manager will use a :class:`~contextvars.ContextVar` to store warnings
+   filter state.  If unset, this variable defaults to ``1`` on
+   free-threaded builds and to ``0`` otherwise.  See :option:`-X
+   context_aware_warnings<-X>`.
+
+   .. versionadded:: 3.14
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

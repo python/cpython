@@ -13,10 +13,11 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"      // struct _PyErr_SetRaisedException
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #include "osdefs.h"               // SEP
-
 #include "clinic/exceptions.c.h"
+
 
 /*[clinic input]
 class BaseException "PyBaseExceptionObject *" "&PyExc_BaseException"
@@ -149,10 +150,8 @@ BaseException_dealloc(PyObject *op)
     // bpo-44348: The trashcan mechanism prevents stack overflow when deleting
     // long chains of exceptions. For example, exceptions can be chained
     // through the __context__ attributes or the __traceback__ attribute.
-    Py_TRASHCAN_BEGIN(self, BaseException_dealloc)
     (void)BaseException_clear(op);
     Py_TYPE(self)->tp_free(self);
-    Py_TRASHCAN_END
 }
 
 static int
@@ -2667,10 +2666,10 @@ SyntaxError_init(PyObject *op, PyObject *args, PyObject *kwds)
 
         self->end_lineno = NULL;
         self->end_offset = NULL;
-        if (!PyArg_ParseTuple(info, "OOOO|OO",
+        if (!PyArg_ParseTuple(info, "OOOO|OOO",
                               &self->filename, &self->lineno,
                               &self->offset, &self->text,
-                              &self->end_lineno, &self->end_offset)) {
+                              &self->end_lineno, &self->end_offset, &self->metadata)) {
             Py_DECREF(info);
             return -1;
         }
@@ -2681,6 +2680,7 @@ SyntaxError_init(PyObject *op, PyObject *args, PyObject *kwds)
         Py_INCREF(self->text);
         Py_XINCREF(self->end_lineno);
         Py_XINCREF(self->end_offset);
+        Py_XINCREF(self->metadata);
         Py_DECREF(info);
 
         if (self->end_lineno != NULL && self->end_offset == NULL) {
@@ -2703,6 +2703,7 @@ SyntaxError_clear(PyObject *op)
     Py_CLEAR(self->end_offset);
     Py_CLEAR(self->text);
     Py_CLEAR(self->print_file_and_line);
+    Py_CLEAR(self->metadata);
     return BaseException_clear(op);
 }
 
@@ -2726,6 +2727,7 @@ SyntaxError_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(self->end_offset);
     Py_VISIT(self->text);
     Py_VISIT(self->print_file_and_line);
+    Py_VISIT(self->metadata);
     return BaseException_traverse(op, visit, arg);
 }
 
@@ -2821,6 +2823,8 @@ static PyMemberDef SyntaxError_members[] = {
     {"print_file_and_line", _Py_T_OBJECT,
         offsetof(PySyntaxErrorObject, print_file_and_line), 0,
         PyDoc_STR("exception print_file_and_line")},
+    {"_metadata", _Py_T_OBJECT, offsetof(PySyntaxErrorObject, metadata), 0,
+                   PyDoc_STR("exception private metadata")},
     {NULL}  /* Sentinel */
 };
 

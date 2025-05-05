@@ -3,7 +3,9 @@
    Nick Mathewson
 '''
 
+import importlib.machinery
 import sys
+from contextlib import contextmanager
 from textwrap import dedent
 from types import FunctionType, MethodType, BuiltinFunctionType
 import pyclbr
@@ -21,6 +23,29 @@ ClassMethodType = type(classmethod(lambda c: None))
 # of pyclbr with the introspected members of a module.  Because pyclbr
 # is imperfect (as designed), testModule is called with a set of
 # members to ignore.
+
+
+@contextmanager
+def temporary_main_spec():
+    """
+    A context manager that temporarily sets the `__spec__` attribute
+    of the `__main__` module if it's missing.
+    """
+    main_mod = sys.modules.get("__main__")
+    if main_mod is None:
+        yield  # Do nothing if __main__ is not present
+        return
+
+    original_spec = getattr(main_mod, "__spec__", None)
+    if original_spec is None:
+        main_mod.__spec__ = importlib.machinery.ModuleSpec(
+            name="__main__", loader=None, origin="built-in"
+        )
+    try:
+        yield
+    finally:
+        main_mod.__spec__ = original_spec
+
 
 class PyclbrTest(TestCase):
 
@@ -145,8 +170,9 @@ class PyclbrTest(TestCase):
         self.checkModule('pyclbr')
         # XXX: Metaclasses are not supported
         # self.checkModule('ast')
-        self.checkModule('doctest', ignore=("TestResults", "_SpoofOut",
-                                            "DocTestCase", '_DocTestSuite'))
+        with temporary_main_spec():
+            self.checkModule('doctest', ignore=("TestResults", "_SpoofOut",
+                                                "DocTestCase", '_DocTestSuite'))
         self.checkModule('difflib', ignore=("Match",))
 
     def test_cases(self):
@@ -223,12 +249,14 @@ class PyclbrTest(TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', DeprecationWarning)
             cm('sre_parse', ignore=('dump', 'groups', 'pos')) # from sre_constants import *; property
-        cm(
-            'pdb',
-            # pyclbr does not handle elegantly `typing` or properties
-            ignore=('Union', '_ModuleTarget', '_ScriptTarget', '_ZipTarget', 'curframe_locals'),
-        )
-        cm('pydoc', ignore=('input', 'output',)) # properties
+        with temporary_main_spec():
+            cm(
+                'pdb',
+                # pyclbr does not handle elegantly `typing` or properties
+                ignore=('Union', '_ModuleTarget', '_ScriptTarget', '_ZipTarget', 'curframe_locals',
+                        '_InteractState'),
+            )
+        cm('pydoc', ignore=('input', 'output',))  # properties
 
         # Tests for modules inside packages
         cm('email.parser')

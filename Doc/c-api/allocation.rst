@@ -35,6 +35,10 @@ Allocating Objects on the Heap
    The size of the memory allocation is determined from the
    :c:member:`~PyTypeObject.tp_basicsize` field of the type object.
 
+   Note that this function is unsuitable if *typeobj* has
+   :c:macro:`Py_TPFLAGS_HAVE_GC` set. For such objects,
+   use :c:func:`PyObject_GC_New` instead.
+
 
 .. c:macro:: PyObject_NewVar(TYPE, typeobj, size)
 
@@ -48,6 +52,10 @@ Allocating Objects on the Heap
    able to determine their size at construction time.  Embedding the array of
    fields into the same allocation decreases the number of allocations,
    improving the memory management efficiency.
+
+   Note that this function is unsuitable if *typeobj* has
+   :c:macro:`Py_TPFLAGS_HAVE_GC` set. For such objects,
+   use :c:func:`PyObject_GC_NewVar` instead.
 
 
 .. c:function:: void PyObject_Del(void *op)

@@ -297,7 +297,7 @@ To add Python to an iOS Xcode project:
    * Writing bytecode (:c:member:`PyConfig.write_bytecode`) is *disabled*;
    * Signal handlers (:c:member:`PyConfig.install_signal_handlers`) are *enabled*;
    * System logging (:c:member:`PyConfig.use_system_logger`) is *enabled*
-     (optional, but strongly recommended);
+     (optional, but strongly recommended; this is enabled by default);
    * ``PYTHONHOME`` for the interpreter is configured to point at the
      ``python`` subfolder of your app's bundle; and
    * The ``PYTHONPATH`` for the interpreter includes:

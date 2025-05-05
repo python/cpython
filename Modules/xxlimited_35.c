@@ -100,7 +100,7 @@ Xxo_getattro(PyObject *op, PyObject *name)
 }
 
 static int
-Xxo_setattr(PyObject *op, const char *name, PyObject *v)
+Xxo_setattr(PyObject *op, char *name, PyObject *v)
 {
     XxoObject *self = XxoObject_CAST(op);
     if (self->x_attr == NULL) {

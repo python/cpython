@@ -18,8 +18,9 @@ from datetime import date, datetime, time, timedelta, timezone
 from functools import cached_property
 
 from test.support import MISSING_C_DOCSTRINGS
+from test.support.os_helper import EnvironmentVarGuard
 from test.test_zoneinfo import _support as test_support
-from test.test_zoneinfo._support import OS_ENV_LOCK, TZPATH_TEST_LOCK, ZoneInfoTestBase
+from test.test_zoneinfo._support import TZPATH_TEST_LOCK, ZoneInfoTestBase
 from test.support.import_helper import import_module, CleanImport
 
 lzma = import_module('lzma')
@@ -222,6 +223,7 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
             "America.Los_Angeles",
             "🇨🇦",  # Non-ascii
             "America/New\ud800York",  # Contains surrogate character
+            "Europe",  # Is a directory, see issue gh-85702
         ]
 
         for bad_key in bad_keys:
@@ -1657,24 +1659,9 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
     @staticmethod
     @contextlib.contextmanager
     def python_tzpath_context(value):
-        path_var = "PYTHONTZPATH"
-        unset_env_sentinel = object()
-        old_env = unset_env_sentinel
-        try:
-            with OS_ENV_LOCK:
-                old_env = os.environ.get(path_var, None)
-                os.environ[path_var] = value
-                yield
-        finally:
-            if old_env is unset_env_sentinel:
-                # In this case, `old_env` was never retrieved from the
-                # environment for whatever reason, so there's no need to
-                # reset the environment TZPATH.
-                pass
-            elif old_env is None:
-                del os.environ[path_var]
-            else:
-                os.environ[path_var] = old_env  # pragma: nocover
+        with EnvironmentVarGuard() as env:
+            env["PYTHONTZPATH"] = value
+            yield
 
     def test_env_variable(self):
         """Tests that the environment variable works with reset_tzpath."""

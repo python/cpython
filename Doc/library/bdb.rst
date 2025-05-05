@@ -118,7 +118,7 @@ The :mod:`bdb` module also defines two classes:
 
       Count of the number of times a :class:`Breakpoint` has been hit.
 
-.. class:: Bdb(skip=None)
+.. class:: Bdb(skip=None, backend='settrace')
 
    The :class:`Bdb` class acts as a generic Python debugger base class.
 
@@ -132,8 +132,21 @@ The :mod:`bdb` module also defines two classes:
    frame is considered to originate in a certain module is determined
    by the ``__name__`` in the frame globals.
 
+   The *backend* argument specifies the backend to use for :class:`Bdb`. It
+   can be either ``'settrace'`` or ``'monitoring'``. ``'settrace'`` uses
+   :func:`sys.settrace` which has the best backward compatibility. The
+   ``'monitoring'`` backend uses the new :mod:`sys.monitoring` that was
+   introduced in Python 3.12, which can be much more efficient because it
+   can disable unused events. We are trying to keep the exact interfaces
+   for both backends, but there are some differences. The debugger developers
+   are encouraged to use the ``'monitoring'`` backend to achieve better
+   performance.
+
    .. versionchanged:: 3.1
       Added the *skip* parameter.
+
+   .. versionchanged:: 3.14
+      Added the *backend* parameter.
 
    The following methods of :class:`Bdb` normally don't need to be overridden.
 
@@ -145,6 +158,20 @@ The :mod:`bdb` module also defines two classes:
       :func:`case-normalized <os.path.normcase>` :func:`absolute path
       <os.path.abspath>`. A *filename* with angle brackets, such as ``"<stdin>"``
       generated in interactive mode, is returned unchanged.
+
+   .. method:: start_trace(self)
+
+      Start tracing. For ``'settrace'`` backend, this method is equivalent to
+      ``sys.settrace(self.trace_dispatch)``
+
+      .. versionadded:: 3.14
+
+   .. method:: stop_trace(self)
+
+      Stop tracing. For ``'settrace'`` backend, this method is equivalent to
+      ``sys.settrace(None)``
+
+      .. versionadded:: 3.14
 
    .. method:: reset()
 
@@ -362,6 +389,28 @@ The :mod:`bdb` module also defines two classes:
    .. method:: get_all_breaks()
 
       Return all breakpoints that are set.
+
+
+   Derived classes and clients can call the following methods to disable and
+   restart events to achieve better performance. These methods only work
+   when using the ``'monitoring'`` backend.
+
+   .. method:: disable_current_event()
+
+      Disable the current event until the next time :func:`restart_events` is
+      called. This is helpful when the debugger is not interested in the current
+      line.
+
+      .. versionadded:: 3.14
+
+   .. method:: restart_events()
+
+      Restart all the disabled events. This function is automatically called in
+      ``dispatch_*`` methods after ``user_*`` methods are called. If the
+      ``dispatch_*`` methods are not overridden, the disabled events will be
+      restarted after each user interaction.
+
+      .. versionadded:: 3.14
 
 
    Derived classes and clients can call the following methods to get a data
