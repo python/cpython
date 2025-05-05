@@ -1371,9 +1371,9 @@ multiprocessing
   (Contributed by Mingyu Park in :gh:`129949`.)
 
 * Add :func:`multiprocessing.Process.interrupt` which terminates the child
-  process by sending :py:const:`~signal.SIGINT`. This enables "finally" clauses
-  and printing stack trace for the terminated process.
-  (Contributed by Artem Pulkin in :gh:`131913`.)
+  process by sending :py:const:`~signal.SIGINT`. This enables
+  :keyword:`finally` clauses allowing to print a stack trace for the terminated
+  process. (Contributed by Artem Pulkin in :gh:`131913`.)
 
 operator
 --------
