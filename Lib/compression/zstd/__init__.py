@@ -28,7 +28,7 @@ __all__ = (
 
 import enum
 
-from compression.zstd._zstdfile import ZstdFile, open
+from compression.zstd._zstdfile import ZstdFile, open, _nbytes
 from _zstd import *
 
 import _zstd
@@ -75,13 +75,6 @@ def get_frame_info(frame_buffer):
     dictionary to be decoded, and the ID of such a dictionary is not specified.
     """
     return FrameInfo(*_zstd._get_frame_info(frame_buffer))
-
-
-def _nbytes(dat):
-    if isinstance(dat, (bytes, bytearray)):
-        return len(dat)
-    with memoryview(dat) as mv:
-        return mv.nbytes
 
 
 def train_dict(samples, dict_size):

@@ -15,6 +15,13 @@ _MODE_READ = 1
 _MODE_WRITE = 2
 
 
+def _nbytes(dat):
+    if isinstance(dat, (bytes, bytearray)):
+        return len(dat)
+    with memoryview(dat) as mv:
+        return mv.nbytes
+
+
 class ZstdFile(_streams.BaseStream):
     """A file object providing transparent zstd (de)compression.
 
@@ -139,12 +146,8 @@ class ZstdFile(_streams.BaseStream):
         or .close() is called.
         """
         self._check_can_write()
-        if isinstance(data, (bytes, bytearray)):
-            length = len(data)
-        else:
-            # accept any data that supports the buffer protocol
-            data = memoryview(data)
-            length = data.nbytes
+
+        length = _nbytes(data)
 
         compressed = self._compressor.compress(data)
         self._fp.write(compressed)
