@@ -1,0 +1,2 @@
+Fix ``STORE_ATTR_WITH_HINT`` bytecode: deoptimize if the dictionary is a
+dict subclass. Patch by Victor Stinner.

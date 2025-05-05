@@ -2149,7 +2149,8 @@ dummy_func(
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictObject *dict = _PyObject_GetManagedDict(owner);
             DEOPT_IF(dict == NULL);
-            assert(PyDict_CheckExact((PyObject *)dict));
+            DEOPT_IF(!PyDict_CheckExact((PyObject *)dict));
+
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries);
             PyObject *old_value;
