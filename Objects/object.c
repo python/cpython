@@ -2930,6 +2930,7 @@ finally:
 
 /* Trashcan support. */
 
+#ifndef Py_GIL_DISABLED
 /* We need to store a pointer in the refcount field of
  * an object. It is important that we never store 0 (NULL).
 * It is also important to not make the object appear immortal,
@@ -2954,6 +2955,7 @@ safe_refcount_to_pointer(uintptr_t refcnt)
     }
     return (void *)(refcnt - 2);
 }
+#endif
 
 /* Add op to the gcstate->trash_delete_later list.  Called when the current
  * call-stack depth gets large.  op must be a currently untracked gc'ed
