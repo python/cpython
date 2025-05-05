@@ -3,9 +3,13 @@ import sqlite3
 import unittest
 
 from sqlite3.__main__ import main as cli
-from test.support.os_helper import TESTFN, unlink, EnvironmentVarGuard
-from test.support import (captured_stdout, captured_stderr, captured_stdin,
-                          force_not_colorized_test_class)
+from test.support.os_helper import TESTFN, unlink
+from test.support import (
+    captured_stdout,
+    captured_stderr,
+    captured_stdin,
+    force_not_colorized_test_class,
+)
 
 
 class CommandLineInterface(unittest.TestCase):
