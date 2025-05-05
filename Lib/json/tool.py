@@ -44,7 +44,7 @@ def _colorize_json(json_str):
 def main():
     description = ('A simple command line interface for json module '
                    'to validate and pretty-print JSON objects.')
-    parser = argparse.ArgumentParser(description=description)
+    parser = argparse.ArgumentParser(description=description, color=True)
     parser.add_argument('infile', nargs='?',
                         help='a JSON file to be validated or pretty-printed',
                         default='-')

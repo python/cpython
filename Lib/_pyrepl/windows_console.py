@@ -464,7 +464,7 @@ class WindowsConsole(Console):
 
             if key == "\r":
                 # Make enter unix-like
-                return Event(evt="key", data="\n", raw=b"\n")
+                return Event(evt="key", data="\n")
             elif key_event.wVirtualKeyCode == 8:
                 # Turn backspace directly into the command
                 key = "backspace"
@@ -476,24 +476,29 @@ class WindowsConsole(Console):
                         key = f"ctrl {key}"
                     elif key_event.dwControlKeyState & ALT_ACTIVE:
                         # queue the key, return the meta command
-                        self.event_queue.insert(Event(evt="key", data=key, raw=key))
+                        self.event_queue.insert(Event(evt="key", data=key))
                         return Event(evt="key", data="\033")  # keymap.py uses this for meta
-                    return Event(evt="key", data=key, raw=key)
+                    return Event(evt="key", data=key)
                 if block:
                     continue
 
                 return None
             elif self.__vt_support:
                 # If virtual terminal is enabled, scanning VT sequences
-                self.event_queue.push(rec.Event.KeyEvent.uChar.UnicodeChar)
+                for char in raw_key.encode(self.event_queue.encoding, "replace"):
+                    self.event_queue.push(char)
                 continue
 
             if key_event.dwControlKeyState & ALT_ACTIVE:
-                # queue the key, return the meta command
-                self.event_queue.insert(Event(evt="key", data=key, raw=raw_key))
-                return Event(evt="key", data="\033")  # keymap.py uses this for meta
+                # Do not swallow characters that have been entered via AltGr:
+                # Windows internally converts AltGr to CTRL+ALT, see
+                # https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-vkkeyscanw
+                if not key_event.dwControlKeyState & CTRL_ACTIVE:
+                    # queue the key, return the meta command
+                    self.event_queue.insert(Event(evt="key", data=key))
+                    return Event(evt="key", data="\033")  # keymap.py uses this for meta
 
-            return Event(evt="key", data=key, raw=raw_key)
+            return Event(evt="key", data=key)
         return self.event_queue.get()
 
     def push_char(self, char: int | bytes) -> None:

@@ -3838,35 +3838,6 @@ dnl The AIX_BUILDDATE is obtained from the kernel fileset - bos.mp64
 	*) ;;
 esac
 
-# check for _Complex C type
-#
-# Note that despite most compilers define __STDC_IEC_559_COMPLEX__ - almost
-# none properly support C11+ Annex G (where pure imaginary types
-# represented by _Imaginary are mandatory).  This is a bug (see e.g.
-# llvm/llvm-project#60269), so we don't rely on presence
-# of __STDC_IEC_559_COMPLEX__.
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <complex.h>
-#define test(type, out)                                \
-{                                                      \
-    type complex z = 1 + 2*I; z = z*z;                 \
-    (out) = (out) || creal(z) != -3 || cimag(z) != 4;  \
-}
-int main(void)
-{
-   int res = 0;
-   test(float, res);
-   test(double, res);
-   test(long double, res);
-   return res;
-}]])], [ac_cv_c_complex_supported=yes],
-[ac_cv_c_complex_supported=no],
-[ac_cv_c_complex_supported=no])
-if test "$ac_cv_c_complex_supported" = "yes"; then
-    AC_DEFINE([Py_HAVE_C_COMPLEX], [1],
-              [Defined if _Complex C type is available.])
-fi
-
 # check for systems that require aligned memory access
 AC_CACHE_CHECK([aligned memory access is required], [ac_cv_aligned_required],
 [AC_RUN_IFELSE([AC_LANG_SOURCE([[

@@ -1,0 +1,1 @@
+Introduced auto-indent in :mod:`pdb` multi-line input.

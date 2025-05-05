@@ -1147,26 +1147,7 @@
             break;
         }
 
-        case _GUARD_BINARY_OP_EXTEND: {
-            _PyStackRef right;
-            _PyStackRef left;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            PyObject *descr = (PyObject *)CURRENT_OPERAND0();
-            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr*)descr;
-            assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
-            assert(d && d->guard);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            int res = d->guard(left_o, right_o);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (!res) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            break;
-        }
+        /* _GUARD_BINARY_OP_EXTEND is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _BINARY_OP_EXTEND: {
             _PyStackRef right;
@@ -1193,6 +1174,9 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
+            if (res_o == NULL) {
+                JUMP_TO_ERROR();
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[0] = res;
             stack_pointer += 1;

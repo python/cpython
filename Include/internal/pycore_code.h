@@ -482,13 +482,18 @@ adaptive_counter_backoff(_Py_BackoffCounter counter) {
 /* Specialization Extensions */
 
 /* callbacks for an external specialization */
-typedef int (*binaryopguardfunc)(PyObject *lhs, PyObject *rhs);
-typedef PyObject *(*binaryopactionfunc)(PyObject *lhs, PyObject *rhs);
 
-typedef struct {
+struct _PyBinopSpecializationDescr;
+
+typedef int (*binaryopguardfunc)(PyObject *lhs, PyObject *rhs);
+typedef PyObject* (*binaryopactionfunc)(PyObject *lhs, PyObject *rhs);
+typedef void (*binaryopfreefunc)(struct _PyBinopSpecializationDescr *descr);
+
+typedef struct _PyBinopSpecializationDescr {
     int oparg;
     binaryopguardfunc guard;
     binaryopactionfunc action;
+    binaryopfreefunc free;
 } _PyBinaryOpSpecializationDescr;
 
 /* Comparison bit masks. */

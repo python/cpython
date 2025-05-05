@@ -1747,7 +1747,7 @@ Interpreter Changes
 -------------------------------
 
 Two command-line options have been reserved for use by other Python
-implementations.  The :option:`-J` switch has been reserved for use by
+implementations.  The :option:`!-J` switch has been reserved for use by
 Jython for Jython-specific options, such as switches that are passed to
 the underlying JVM.  :option:`-X` has been reserved for options
 specific to a particular implementation of Python such as CPython,
