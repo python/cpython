@@ -89,7 +89,9 @@ that must be true for *B* to occur after *A*.
         marking it as *finalized* and calling its
         :c:member:`~PyTypeObject.tp_finalize` function.  Python currently does
         not finalize an object when the last reference to it is deleted, but
-        this may change in the future.
+        this may change in the future. Use
+        :c:func:`PyObject_CallFinalizerFromDealloc` to ensure that
+        :c:member:`~PyTypeObject.tp_finalize` is always called.
      #. If the object is marked as finalized,
         :c:member:`~PyTypeObject.tp_clear` might be called to clear references
         held by the object.  Python currently does not clear an object in
