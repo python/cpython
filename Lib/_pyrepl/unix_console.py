@@ -199,6 +199,12 @@ class UnixConsole(Console):
         self.event_queue = EventQueue(self.input_fd, self.encoding)
         self.cursor_visible = 1
 
+        signal.signal(signal.SIGCONT, self._sigcont_handler)
+
+    def _sigcont_handler(self, signum, frame):
+        self.restore()
+        self.prepare()
+
     def more_in_buffer(self) -> bool:
         return bool(
             self.input_buffer
