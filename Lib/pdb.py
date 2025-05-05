@@ -93,6 +93,7 @@ import itertools
 import traceback
 import linecache
 import _colorize
+import _pyrepl.utils
 
 from contextlib import closing
 from contextlib import contextmanager
@@ -339,7 +340,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     _last_pdb_instance = None
 
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
-                 nosigint=False, readrc=True, mode=None, backend=None):
+                 nosigint=False, readrc=True, mode=None, backend=None, colorize=False):
         bdb.Bdb.__init__(self, skip=skip, backend=backend if backend else get_default_backend())
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
         sys.audit("pdb.Pdb")
@@ -352,6 +353,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self._wait_for_mainpyfile = False
         self.tb_lineno = {}
         self.mode = mode
+        self.colorize = _colorize.can_colorize(file=stdout or sys.stdout) and colorize
         # Try to load readline if it exists
         try:
             import readline
@@ -385,6 +387,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.commands_bnum = None # The breakpoint number for which we are
                                   # defining a list
 
+        self.async_shim_frame = None
+        self.async_awaitable = None
+
         self._chained_exceptions = tuple()
         self._chained_exception_index = 0
 
@@ -399,6 +404,57 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.rcLines.extend(commands)
 
         super().set_trace(frame)
+
+    async def set_trace_async(self, frame=None, *, commands=None):
+        if self.async_awaitable is not None:
+            # We are already in a set_trace_async call, do not mess with it
+            return
+
+        if frame is None:
+            frame = sys._getframe().f_back
+
+        # We need set_trace to set up the basics, however, this will call
+        # set_stepinstr() will we need to compensate for, because we don't
+        # want to trigger on calls
+        self.set_trace(frame, commands=commands)
+        # Changing the stopframe will disable trace dispatch on calls
+        self.stopframe = frame
+        # We need to stop tracing because we don't have the privilege to avoid
+        # triggering tracing functions as normal, as we are not already in
+        # tracing functions
+        self.stop_trace()
+
+        self.async_shim_frame = sys._getframe()
+        self.async_awaitable = None
+
+        while True:
+            self.async_awaitable = None
+            # Simulate a trace event
+            # This should bring up pdb and make pdb believe it's debugging the
+            # caller frame
+            self.trace_dispatch(frame, "opcode", None)
+            if self.async_awaitable is not None:
+                try:
+                    if self.breaks:
+                        with self.set_enterframe(frame):
+                            # set_continue requires enterframe to work
+                            self.set_continue()
+                        self.start_trace()
+                    await self.async_awaitable
+                except Exception:
+                    self._error_exc()
+            else:
+                break
+
+        self.async_shim_frame = None
+
+        # start the trace (the actual command is already set by set_* calls)
+        if self.returnframe is None and self.stoplineno == -1 and not self.breaks:
+            # This means we did a continue without any breakpoints, we should not
+            # start the trace
+            return
+
+        self.start_trace()
 
     def sigint_handler(self, signum, frame):
         if self.allow_kbdint:
@@ -782,12 +838,25 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         return True
 
-    def default(self, line):
-        if line[:1] == '!': line = line[1:].strip()
-        locals = self.curframe.f_locals
-        globals = self.curframe.f_globals
+    def _exec_await(self, source, globals, locals):
+        """ Run source code that contains await by playing with async shim frame"""
+        # Put the source in an async function
+        source_async = (
+            "async def __pdb_await():\n" +
+            textwrap.indent(source, "    ") + '\n' +
+            "    __pdb_locals.update(locals())"
+        )
+        ns = globals | locals
+        # We use __pdb_locals to do write back
+        ns["__pdb_locals"] = locals
+        exec(source_async, ns)
+        self.async_awaitable = ns["__pdb_await"]()
+
+    def _read_code(self, line):
+        buffer = line
+        is_await_code = False
+        code = None
         try:
-            buffer = line
             if (code := codeop.compile_command(line + '\n', '<stdin>', 'single')) is None:
                 # Multi-line mode
                 with self._enable_multiline_completion():
@@ -800,7 +869,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                             except (EOFError, KeyboardInterrupt):
                                 self.lastcmd = ""
                                 print('\n')
-                                return
+                                return None, None, False
                         else:
                             self.stdout.write(continue_prompt)
                             self.stdout.flush()
@@ -809,11 +878,31 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                                 self.lastcmd = ""
                                 self.stdout.write('\n')
                                 self.stdout.flush()
-                                return
+                                return None, None, False
                             else:
                                 line = line.rstrip('\r\n')
                         buffer += '\n' + line
                     self.lastcmd = buffer
+        except SyntaxError as e:
+            # Maybe it's an await expression/statement
+            if (
+                self.async_shim_frame is not None
+                and e.msg == "'await' outside function"
+            ):
+                is_await_code = True
+            else:
+                raise
+
+        return code, buffer, is_await_code
+
+    def default(self, line):
+        if line[:1] == '!': line = line[1:].strip()
+        locals = self.curframe.f_locals
+        globals = self.curframe.f_globals
+        try:
+            code, buffer, is_await_code = self._read_code(line)
+            if buffer is None:
+                return
             save_stdout = sys.stdout
             save_stdin = sys.stdin
             save_displayhook = sys.displayhook
@@ -821,8 +910,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 sys.stdin = self.stdin
                 sys.stdout = self.stdout
                 sys.displayhook = self.displayhook
-                if not self._exec_in_closure(buffer, globals, locals):
-                    exec(code, globals, locals)
+                if is_await_code:
+                    self._exec_await(buffer, globals, locals)
+                    return True
+                else:
+                    if not self._exec_in_closure(buffer, globals, locals):
+                        exec(code, globals, locals)
             finally:
                 sys.stdout = save_stdout
                 sys.stdin = save_stdin
@@ -945,6 +1038,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return True
         return False
 
+    def _colorize_code(self, code):
+        if self.colorize:
+            colors = list(_pyrepl.utils.gen_colors(code))
+            chars, _ = _pyrepl.utils.disp_str(code, colors=colors)
+            code = "".join(chars)
+        return code
+
     # interface abstraction functions
 
     def message(self, msg, end='\n'):
@@ -1065,6 +1165,22 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             matches.append(match)
             state += 1
         return matches
+
+    @contextmanager
+    def _enable_rlcompleter(self, ns):
+        try:
+            import readline
+        except ImportError:
+            yield
+            return
+
+        try:
+            old_completer = readline.get_completer()
+            completer = Completer(ns)
+            readline.set_completer(completer.complete)
+            yield
+        finally:
+            readline.set_completer(old_completer)
 
     # Pdb meta commands, only intended to be used internally by pdb
 
@@ -2059,6 +2175,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 s += '->'
             elif lineno == exc_lineno:
                 s += '>>'
+            if self.colorize:
+                line = self._colorize_code(line)
             self.message(s + '\t' + line.rstrip())
 
     def do_whatis(self, arg):
@@ -2151,9 +2269,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         contains all the (global and local) names found in the current scope.
         """
         ns = {**self.curframe.f_globals, **self.curframe.f_locals}
-        console = _PdbInteractiveConsole(ns, message=self.message)
-        console.interact(banner="*pdb interact start*",
-                         exitmsg="*exit from pdb interact command*")
+        with self._enable_rlcompleter(ns):
+            console = _PdbInteractiveConsole(ns, message=self.message)
+            console.interact(banner="*pdb interact start*",
+                             exitmsg="*exit from pdb interact command*")
 
     def do_alias(self, arg):
         """alias [name [command]]
@@ -2257,8 +2376,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             prefix = '> '
         else:
             prefix = '  '
-        self.message(prefix +
-                     self.format_stack_entry(frame_lineno, prompt_prefix))
+        stack_entry = self.format_stack_entry(frame_lineno, prompt_prefix)
+        if self.colorize:
+            lines = stack_entry.split(prompt_prefix, 1)
+            if len(lines) > 1:
+                # We have some code to display
+                lines[1] = self._colorize_code(lines[1])
+                stack_entry = prompt_prefix.join(lines)
+        self.message(prefix + stack_entry)
 
     # Provide help
 
@@ -2496,10 +2621,25 @@ def set_trace(*, header=None, commands=None):
     if Pdb._last_pdb_instance is not None:
         pdb = Pdb._last_pdb_instance
     else:
-        pdb = Pdb(mode='inline', backend='monitoring')
+        pdb = Pdb(mode='inline', backend='monitoring', colorize=True)
     if header is not None:
         pdb.message(header)
     pdb.set_trace(sys._getframe().f_back, commands=commands)
+
+async def set_trace_async(*, header=None, commands=None):
+    """Enter the debugger at the calling stack frame, but in async mode.
+
+    This should be used as await pdb.set_trace_async(). Users can do await
+    if they enter the debugger with this function. Otherwise it's the same
+    as set_trace().
+    """
+    if Pdb._last_pdb_instance is not None:
+        pdb = Pdb._last_pdb_instance
+    else:
+        pdb = Pdb(mode='inline', backend='monitoring', colorize=True)
+    if header is not None:
+        pdb.message(header)
+    await pdb.set_trace_async(sys._getframe().f_back, commands=commands)
 
 # Remote PDB
 
@@ -2510,7 +2650,7 @@ class _PdbServer(Pdb):
         self._sockfile = sockfile
         self._command_name_cache = []
         self._write_failed = False
-        super().__init__(**kwargs)
+        super().__init__(colorize=False, **kwargs)
 
     @staticmethod
     def protocol_version():
@@ -2610,7 +2750,7 @@ class _PdbServer(Pdb):
             try:
                 payload = json.loads(msg)
             except json.JSONDecodeError:
-                self.error(f"Disconnecting: client sent invalid JSON {msg}")
+                self.error(f"Disconnecting: client sent invalid JSON {msg!r}")
                 raise EOFError
 
             match payload:
@@ -2643,14 +2783,18 @@ class _PdbServer(Pdb):
             self.error(f"Ignoring invalid message from client: {msg}")
 
     def _complete_any(self, text, line, begidx, endidx):
-        if begidx == 0:
-            return self.completenames(text, line, begidx, endidx)
-
-        cmd = self.parseline(line)[0]
-        if cmd:
-            compfunc = getattr(self, "complete_" + cmd, self.completedefault)
-        else:
+        # If we're in 'interact' mode, we need to use the default completer
+        if self._interact_state:
             compfunc = self.completedefault
+        else:
+            if begidx == 0:
+                return self.completenames(text, line, begidx, endidx)
+
+            cmd = self.parseline(line)[0]
+            if cmd:
+                compfunc = getattr(self, "complete_" + cmd, self.completedefault)
+            else:
+                compfunc = self.completedefault
         return compfunc(text, line, begidx, endidx)
 
     def cmdloop(self, intro=None):
@@ -2806,6 +2950,7 @@ class _PdbClient:
         self.completion_matches = []
         self.state = "dumb"
         self.write_failed = False
+        self.multiline_block = False
 
     def _ensure_valid_message(self, msg):
         # Ensure the message conforms to our protocol.
@@ -2852,6 +2997,7 @@ class _PdbClient:
             self.write_failed = True
 
     def read_command(self, prompt):
+        self.multiline_block = False
         reply = input(prompt)
 
         if self.state == "dumb":
@@ -2876,6 +3022,7 @@ class _PdbClient:
             return prefix + reply
 
         # Otherwise, valid first line of a multi-line statement
+        self.multiline_block = True
         continue_prompt = "...".ljust(len(prompt))
         while codeop.compile_command(reply, "<stdin>", "single") is None:
             reply += "\n" + input(continue_prompt)
@@ -2917,7 +3064,7 @@ class _PdbClient:
                     payload = json.loads(payload_bytes)
                 except json.JSONDecodeError:
                     print(
-                        f"*** Invalid JSON from remote: {payload_bytes}",
+                        f"*** Invalid JSON from remote: {payload_bytes!r}",
                         flush=True,
                     )
                     continue
@@ -2978,9 +3125,13 @@ class _PdbClient:
 
             origline = readline.get_line_buffer()
             line = origline.lstrip()
-            stripped = len(origline) - len(line)
-            begidx = readline.get_begidx() - stripped
-            endidx = readline.get_endidx() - stripped
+            if self.multiline_block:
+                # We're completing a line contained in a multi-line block.
+                # Force the remote to treat it as a Python expression.
+                line = "! " + line
+            offset = len(origline) - len(line)
+            begidx = readline.get_begidx() - offset
+            endidx = readline.get_endidx() - offset
 
             msg = {
                 "complete": {
@@ -3211,7 +3362,7 @@ def main():
     # modified by the script being debugged. It's a bad idea when it was
     # changed by the user from the command line. There is a "restart" command
     # which allows explicit specification of command line arguments.
-    pdb = Pdb(mode='cli', backend='monitoring')
+    pdb = Pdb(mode='cli', backend='monitoring', colorize=True)
     pdb.rcLines.extend(opts.commands)
     while True:
         try:
