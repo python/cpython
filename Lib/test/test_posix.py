@@ -1522,6 +1522,7 @@ class PosixTester(unittest.TestCase):
         os.close(os.pidfd_open(os.getpid(), 0))
 
     @unittest.skipUnless(hasattr(os, "link"), "test needs os.link()")
+    @support.skip_android_selinux('hard links to symbolic links')
     def test_link_follow_symlinks(self):
         default_follow = sys.platform.startswith(
             ('darwin', 'freebsd', 'netbsd', 'openbsd', 'dragonfly', 'sunos5'))
