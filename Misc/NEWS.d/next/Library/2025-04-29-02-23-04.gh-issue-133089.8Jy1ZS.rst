@@ -1,2 +1,4 @@
-Use origional timeout value for :exc:`subprocess.TimeoutExpired`
+Use original timeout value for :exc:`subprocess.TimeoutExpired`
 when the func :meth:`subprocess.run` is called with a timeout
+instead of sometimes a confusing partial remaining time out value
+used internally on the final ``wait()``.
