@@ -2081,7 +2081,7 @@ asyncio
 
     asyncio.run(main())
 
-  If you need to start something, e.g. a server listening on a socket
+  If you need to start something, for example, a server listening on a socket
   and then run forever, use :func:`asyncio.run` and an
   :class:`asyncio.Event`.
 
