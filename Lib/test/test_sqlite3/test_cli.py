@@ -165,6 +165,9 @@ class InteractiveSession(unittest.TestCase):
             out, err = self.run_cli(commands="\n")
             self.assertIn("\x1b[1;35msqlite> \x1b[0m", out)
             self.assertIn("\x1b[1;35m    ... \x1b[0m\x1b", out)
+            out, err = self.run_cli(commands=("sel;",))
+            self.assertIn('\x1b[1;35mOperationalError (SQLITE_ERROR)\x1b[0m: '
+                          '\x1b[35mnear "sel": syntax error\x1b[0m', err)
 
 if __name__ == "__main__":
     unittest.main()

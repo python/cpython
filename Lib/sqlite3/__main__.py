@@ -12,8 +12,16 @@ from code import InteractiveConsole
 from textwrap import dedent
 import _colorize as colorize
 
+BOLD_MAGENTA = colorize.ANSIColors.BOLD_MAGENTA
+MAGENTA =colorize.ANSIColors.MAGENTA
+RESET = colorize.ANSIColors.RESET
 
-def execute(c, sql, suppress_errors=True):
+def color(color, use_color):
+    if use_color:
+        return color
+    return ''
+
+def execute(c, sql, suppress_errors=True, use_color=False):
     """Helper that wraps execution of SQL code.
 
     This is used both by the REPL and by direct execution from the CLI.
@@ -28,9 +36,12 @@ def execute(c, sql, suppress_errors=True):
     except sqlite3.Error as e:
         tp = type(e).__name__
         try:
-            print(f"{tp} ({e.sqlite_errorname}): {e}", file=sys.stderr)
+            print(f"{color(BOLD_MAGENTA, use_color)}{tp} ({e.sqlite_errorname})"
+                  f"{color(RESET, use_color)}: "
+                  f"{color(MAGENTA, use_color)}{e}{color(RESET, use_color)}", file=sys.stderr)
         except AttributeError:
-            print(f"{tp}: {e}", file=sys.stderr)
+            print(f"{color(BOLD_MAGENTA, use_color)}{tp}{color(RESET, use_color)}: "
+                  f"{color(MAGENTA, use_color)}{e}{color(RESET, use_color)}", file=sys.stderr)
         if not suppress_errors:
             sys.exit(1)
 
@@ -38,10 +49,11 @@ def execute(c, sql, suppress_errors=True):
 class SqliteInteractiveConsole(InteractiveConsole):
     """A simple SQLite REPL."""
 
-    def __init__(self, connection):
+    def __init__(self, connection, use_color=False):
         super().__init__()
         self._con = connection
         self._cur = connection.cursor()
+        self._use_color = use_color
 
     def runsource(self, source, filename="<input>", symbol="single"):
         """Override runsource, the core of the InteractiveConsole REPL.
@@ -59,7 +71,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
             case _:
                 if not sqlite3.complete_statement(source):
                     return True
-                execute(self._cur, source)
+                execute(self._cur, source, use_color=self._use_color)
         return False
 
 
@@ -109,11 +121,8 @@ def main(*args):
 
     use_color = colorize.can_colorize()
 
-    bold_magenta = colorize.ANSIColors.BOLD_MAGENTA if use_color else ""
-    reset = colorize.ANSIColors.RESET if use_color else ""
-
-    sys.ps1 = f"{bold_magenta}sqlite> {reset}"
-    sys.ps2 = f"{bold_magenta}    ... {reset}"
+    sys.ps1 = f"{color(BOLD_MAGENTA, use_color)}sqlite> {color(RESET, use_color)}"
+    sys.ps2 = f"{color(BOLD_MAGENTA, use_color)}    ... {color(RESET, use_color)}"
 
     con = sqlite3.connect(args.filename, isolation_level=None)
     try:
@@ -122,7 +131,7 @@ def main(*args):
             execute(con, args.sql, suppress_errors=False)
         else:
             # No SQL provided; start the REPL.
-            console = SqliteInteractiveConsole(con)
+            console = SqliteInteractiveConsole(con, use_color)
             try:
                 import readline  # noqa: F401
             except ImportError:
