@@ -27,7 +27,7 @@
     <ClCompile Include="..\Modules\_zstd\decompressor.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_zstd\zdict.c">
+    <ClCompile Include="..\Modules\_zstd\zstddict.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="$(zstdDir)common\debug.c">

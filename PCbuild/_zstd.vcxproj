@@ -102,7 +102,7 @@
     <ClCompile Include="..\Modules\_zstd\_zstdmodule.c" />
     <ClCompile Include="..\Modules\_zstd\compressor.c" />
     <ClCompile Include="..\Modules\_zstd\decompressor.c" />
-    <ClCompile Include="..\Modules\_zstd\zdict.c" />
+    <ClCompile Include="..\Modules\_zstd\zstddict.c" />
     <ClCompile Include="$(zstdDir)common\debug.c" />
     <ClCompile Include="$(zstdDir)common\entropy_common.c" />
     <ClCompile Include="$(zstdDir)common\error_private.c" />
