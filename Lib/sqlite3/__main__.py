@@ -10,6 +10,7 @@ import sys
 from argparse import ArgumentParser
 from code import InteractiveConsole
 from textwrap import dedent
+import _colorize as colorize
 
 
 def execute(c, sql, suppress_errors=True):
@@ -104,8 +105,14 @@ def main(*args):
         Each command will be run using execute() on the cursor.
         Type ".help" for more information; type ".quit" or {eofkey} to quit.
     """).strip()
-    sys.ps1 = "sqlite> "
-    sys.ps2 = "    ... "
+
+    use_color = colorize.can_colorize()
+
+    bold_magenta = colorize.ANSIColors.BOLD_MAGENTA if use_color else ""
+    reset = colorize.ANSIColors.RESET if use_color else ""
+
+    sys.ps1 = f"{bold_magenta}sqlite> {reset}"
+    sys.ps2 = f"{bold_magenta}    ... {reset}"
 
     con = sqlite3.connect(args.filename, isolation_level=None)
     try:

@@ -3,8 +3,9 @@ import sqlite3
 import unittest
 
 from sqlite3.__main__ import main as cli
-from test.support.os_helper import TESTFN, unlink
-from test.support import captured_stdout, captured_stderr, captured_stdin
+from test.support.os_helper import TESTFN, unlink, EnvironmentVarGuard
+from test.support import (captured_stdout, captured_stderr, captured_stdin,
+                          force_not_colorized_test_class)
 
 
 class CommandLineInterface(unittest.TestCase):
@@ -63,6 +64,7 @@ class CommandLineInterface(unittest.TestCase):
         self.assertIn("(0,)", out)
 
 
+@force_not_colorized_test_class
 class InteractiveSession(unittest.TestCase):
     MEMORY_DB_MSG = "Connected to a transient in-memory database"
     PS1 = "sqlite> "
@@ -152,6 +154,11 @@ class InteractiveSession(unittest.TestCase):
         out, _ = self.run_cli(TESTFN, commands=("SELECT count(t) FROM t;",))
         self.assertIn("(0,)\n", out)
 
+    def test_color(self):
+        with unittest.mock.patch("_colorize.can_colorize", return_value=True):
+            out, err = self.run_cli(commands="\n")
+            self.assertIn("\x1b[1;35msqlite> \x1b[0m", out)
+            self.assertIn("\x1b[1;35m    ... \x1b[0m\x1b", out)
 
 if __name__ == "__main__":
     unittest.main()
