@@ -1730,7 +1730,7 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
     assert(counts == NULL || counts->total == 0);
     struct co_unbound_counts unbound = {0};
     Py_ssize_t len = Py_SIZE(co);
-    for (int i = 0; i < len; i++) {
+    for (int i = 0; i < len; i += _PyInstruction_GetLength(co, i)) {
         _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
         if (inst.op.code == LOAD_ATTR) {
             int oparg = GET_OPARG(co, i, inst.op.arg);
@@ -1976,7 +1976,7 @@ _PyCode_ReturnsOnlyNone(PyCodeObject *co)
 
     // Walk the bytecode, looking for RETURN_VALUE.
     Py_ssize_t len = Py_SIZE(co);
-    for (int i = 0; i < len; i++) {
+    for (int i = 0; i < len; i += _PyInstruction_GetLength(co, i)) {
         _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
         if (IS_RETURN_OPCODE(inst.op.code)) {
             assert(i != 0);
