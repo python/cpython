@@ -432,43 +432,43 @@ class WindowsConsoleGetEventTests(TestCase):
 
     def test_enter(self):
         ir = self.get_input_record("\r", self.VK_RETURN)
-        self.assertEqual(self.get_event([ir]), Event("key", "\n", b"\n"))
+        self.assertEqual(self.get_event([ir]), Event("key", "\n"))
         self.assertEqual(self.mock.call_count, 1)
 
     def test_backspace(self):
         ir = self.get_input_record("\x08", self.VK_BACK)
         self.assertEqual(
-            self.get_event([ir]), Event("key", "backspace", "\x08"))
+            self.get_event([ir]), Event("key", "backspace"))
         self.assertEqual(self.mock.call_count, 1)
 
     def test_m(self):
         ir = self.get_input_record("m", self.VK_M)
-        self.assertEqual(self.get_event([ir]), Event("key", "m", "m"))
+        self.assertEqual(self.get_event([ir]), Event("key", "m"))
         self.assertEqual(self.mock.call_count, 1)
 
     def test_M(self):
         ir = self.get_input_record("M", self.VK_M, self.SHIFT_PRESSED)
-        self.assertEqual(self.get_event([ir]), Event("key", "M", "M"))
+        self.assertEqual(self.get_event([ir]), Event("key", "M"))
         self.assertEqual(self.mock.call_count, 1)
 
     def test_left(self):
         # VK_LEFT is sent as ENHANCED_KEY
         ir = self.get_input_record("\x00", self.VK_LEFT, self.ENHANCED_KEY)
-        self.assertEqual(self.get_event([ir]), Event("key", "left", "\x00"))
+        self.assertEqual(self.get_event([ir]), Event("key", "left"))
         self.assertEqual(self.mock.call_count, 1)
 
     def test_left_RIGHT_CTRL_PRESSED(self):
         ir = self.get_input_record(
             "\x00", self.VK_LEFT, self.RIGHT_CTRL_PRESSED | self.ENHANCED_KEY)
         self.assertEqual(
-            self.get_event([ir]), Event("key", "ctrl left", "\x00"))
+            self.get_event([ir]), Event("key", "ctrl left"))
         self.assertEqual(self.mock.call_count, 1)
 
     def test_left_LEFT_CTRL_PRESSED(self):
         ir = self.get_input_record(
             "\x00", self.VK_LEFT, self.LEFT_CTRL_PRESSED | self.ENHANCED_KEY)
         self.assertEqual(
-            self.get_event([ir]), Event("key", "ctrl left", "\x00"))
+            self.get_event([ir]), Event("key", "ctrl left"))
         self.assertEqual(self.mock.call_count, 1)
 
     def test_left_RIGHT_ALT_PRESSED(self):
@@ -476,7 +476,7 @@ class WindowsConsoleGetEventTests(TestCase):
             "\x00", self.VK_LEFT, self.RIGHT_ALT_PRESSED | self.ENHANCED_KEY)
         self.assertEqual(self.get_event([ir]), Event(evt="key", data="\033"))
         self.assertEqual(
-            self.console.get_event(), Event("key", "left", "\x00"))
+            self.console.get_event(), Event("key", "left"))
         # self.mock is not called again, since the second time we read from the
         # command queue
         self.assertEqual(self.mock.call_count, 1)
@@ -486,7 +486,7 @@ class WindowsConsoleGetEventTests(TestCase):
             "\x00", self.VK_LEFT, self.LEFT_ALT_PRESSED | self.ENHANCED_KEY)
         self.assertEqual(self.get_event([ir]), Event(evt="key", data="\033"))
         self.assertEqual(
-            self.console.get_event(), Event("key", "left", "\x00"))
+            self.console.get_event(), Event("key", "left"))
         self.assertEqual(self.mock.call_count, 1)
 
     def test_m_LEFT_ALT_PRESSED_and_LEFT_CTRL_PRESSED(self):
@@ -505,14 +505,14 @@ class WindowsConsoleGetEventTests(TestCase):
         ir = self.get_input_record(
             "m", vcode=self.VK_M, control=self.LEFT_ALT_PRESSED)
         self.assertEqual(self.get_event([ir]), Event(evt="key", data="\033"))
-        self.assertEqual(self.console.get_event(), Event("key", "m", "m"))
+        self.assertEqual(self.console.get_event(), Event("key", "m"))
         self.assertEqual(self.mock.call_count, 1)
 
     def test_m_RIGHT_ALT_PRESSED(self):
         ir = self.get_input_record(
             "m", vcode=self.VK_M, control=self.RIGHT_ALT_PRESSED)
         self.assertEqual(self.get_event([ir]), Event(evt="key", data="\033"))
-        self.assertEqual(self.console.get_event(), Event("key", "m", "m"))
+        self.assertEqual(self.console.get_event(), Event("key", "m"))
         self.assertEqual(self.mock.call_count, 1)
 
     def test_AltGr_7(self):
@@ -528,7 +528,7 @@ class WindowsConsoleGetEventTests(TestCase):
         ir = self.get_input_record(
             "{", vcode=self.VK_7,
             control=self.RIGHT_ALT_PRESSED | self.LEFT_CTRL_PRESSED)
-        self.assertEqual(self.get_event([ir]), Event("key", "{", "{"))
+        self.assertEqual(self.get_event([ir]), Event("key", "{"))
         self.assertEqual(self.mock.call_count, 1)
 
     def test_AltGr_m(self):
@@ -537,12 +537,12 @@ class WindowsConsoleGetEventTests(TestCase):
         # time, to cover that, too. See above in test_AltGr_7.
         ir = self.get_input_record(
             "µ", vcode=self.VK_M, control=self.LEFT_ALT_PRESSED | self.RIGHT_CTRL_PRESSED)
-        self.assertEqual(self.get_event([ir]), Event("key", "µ", "µ"))
+        self.assertEqual(self.get_event([ir]), Event("key", "µ"))
         self.assertEqual(self.mock.call_count, 1)
 
     def test_umlaut_a_german(self):
         ir = self.get_input_record("ä", self.VK_OEM_7)
-        self.assertEqual(self.get_event([ir]), Event("key", "ä", "ä"))
+        self.assertEqual(self.get_event([ir]), Event("key", "ä"))
         self.assertEqual(self.mock.call_count, 1)
 
     # virtual terminal tests
@@ -557,7 +557,7 @@ class WindowsConsoleGetEventTests(TestCase):
     def test_enter_vt(self):
         ir = self.get_input_record("\r")
         self.assertEqual(self.get_event([ir], vt_support=True),
-                         Event("key", "\n", b"\n"))
+                         Event("key", "\n"))
         self.assertEqual(self.mock.call_count, 1)
 
     def test_backspace_vt(self):
