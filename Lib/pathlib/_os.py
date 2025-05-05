@@ -210,6 +210,25 @@ def magic_open(path, mode='r', buffering=-1, encoding=None, errors=None,
     raise TypeError(f"{cls.__name__} can't be opened with mode {mode!r}")
 
 
+def vfspath(path):
+    """
+    Return the string representation of a virtual path object.
+    """
+    try:
+        return os.fspath(path)
+    except TypeError:
+        pass
+    cls = type(path)
+    try:
+        attr = cls.__vfspath__
+    except AttributeError:
+        pass
+    else:
+        return attr(path)
+
+    raise TypeError(f"{cls.__name__} can't be converted to a path")
+
+
 def ensure_distinct_paths(source, target):
     """
     Raise OSError(EINVAL) if the other path is within this path.
@@ -225,8 +244,8 @@ def ensure_distinct_paths(source, target):
         err = OSError(EINVAL, "Source path is a parent of target path")
     else:
         return
-    err.filename = str(source)
-    err.filename2 = str(target)
+    err.filename = vfspath(source)
+    err.filename2 = vfspath(target)
     raise err
 
 
@@ -247,8 +266,8 @@ def ensure_different_files(source, target):
         except (OSError, ValueError):
             return
     err = OSError(EINVAL, "Source and target are the same file")
-    err.filename = str(source)
-    err.filename2 = str(target)
+    err.filename = vfspath(source)
+    err.filename2 = vfspath(target)
     raise err
 
 
@@ -315,7 +334,7 @@ class _PathInfoBase:
     __slots__ = ('_path', '_stat_result', '_lstat_result')
 
     def __init__(self, path):
-        self._path = str(path)
+        self._path = os.fspath(path)
 
     def __repr__(self):
         path_type = "WindowsPath" if os.name == "nt" else "PosixPath"
