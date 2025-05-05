@@ -392,9 +392,7 @@ def create_task(coro, **kwargs):
     Return a Task object.
     """
     loop = events.get_running_loop()
-    task = loop.create_task(coro, **kwargs)
-
-    return task
+    return loop.create_task(coro, **kwargs)
 
 
 # wait() and as_completed() similar to those in PEP 3148.
