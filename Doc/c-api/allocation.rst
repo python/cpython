@@ -49,7 +49,7 @@ Allocating Objects on the Heap
    :c:func:`PyObject_Init`.  The caller will own the only reference to the
    object (i.e. its reference count will be one).
 
-   Do not call this directly to allocate memory for an object; call the type's
+   Avoid calling this directly to allocate memory for an object; call the type's
    :c:member:`~PyTypeObject.tp_alloc` slot instead.
 
    When populating a type's :c:member:`~PyTypeObject.tp_alloc` slot,
@@ -102,7 +102,7 @@ Allocating Objects on the Heap
    into the same allocation decreases the number of allocations, improving the
    memory management efficiency.
 
-   Do not call this directly to allocate memory for an object; call the type's
+   Avoid calling this directly to allocate memory for an object; call the type's
    :c:member:`~PyTypeObject.tp_alloc` slot instead.
 
    When populating a type's :c:member:`~PyTypeObject.tp_alloc` slot,
