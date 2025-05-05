@@ -29,6 +29,12 @@ def spam_with_globals_and_builtins():
     print(res)
 
 
+def spam_args_attrs_and_builtins(a, b, /, c, d, *args, e, f, **kwargs):
+    if args.__len__() > 2:
+        return None
+    return a, b, c, d, e, f, args, kwargs
+
+
 def spam_returns_arg(x):
     return x
 
@@ -44,6 +50,10 @@ def spam_with_inner_closure():
     def eggs():
         print(x)
     eggs()
+
+
+def spam_annotated(a: int, b: str, c: object) -> tuple:
+    return a, b, c
 
 
 def spam_full(a, b, /, c, d:int=1, *args, e, f:object=None, **kwargs) -> tuple:
@@ -134,9 +144,11 @@ TOP_FUNCTIONS = [
     spam_minimal,
     spam_with_builtins,
     spam_with_globals_and_builtins,
+    spam_args_attrs_and_builtins,
     spam_returns_arg,
     spam_with_inner_not_closure,
     spam_with_inner_closure,
+    spam_annotated,
     spam_full,
     spam,
     # outer func
@@ -170,7 +182,9 @@ STATELESS_FUNCTIONS = [
     spam,
     spam_minimal,
     spam_with_builtins,
+    spam_args_attrs_and_builtins,
     spam_returns_arg,
+    spam_annotated,
     spam_with_inner_not_closure,
     spam_with_inner_closure,
     spam_N,
