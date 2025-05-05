@@ -1948,7 +1948,7 @@ regen-pegen:
 		$(srcdir)/Grammar/python.gram \
 		$(srcdir)/Grammar/Tokens \
 		-o $(srcdir)/Parser/parser.c.new
-	$(UPDATE_FILE) $(srcdir)/Parser/parser.c $(srcdir)/Parser/parser.c.new
+	$(UPDATE_FILE) --create $(srcdir)/Parser/parser.c $(srcdir)/Parser/parser.c.new
 
 .PHONY: regen-ast
 regen-ast:
@@ -3313,7 +3313,7 @@ MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_PYEXPAT_DEPS=@LIBEXPAT_INTERNAL@
 MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/unicodename_db.h
-MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h $(srcdir)/Modules/_complex.h
+MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h
 MODULE__CTYPES_TEST_DEPS=$(srcdir)/Modules/_ctypes/_ctypes_test_generated.c.h
 MODULE__CTYPES_MALLOC_CLOSURE=@MODULE__CTYPES_MALLOC_CLOSURE@
 MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h @LIBMPDEC_INTERNAL@

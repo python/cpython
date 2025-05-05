@@ -6362,7 +6362,7 @@ init_types(void *arg)
         "     | UnaryOp(unaryop op, expr operand)\n"
         "     | Lambda(arguments args, expr body)\n"
         "     | IfExp(expr test, expr body, expr orelse)\n"
-        "     | Dict(expr* keys, expr* values)\n"
+        "     | Dict(expr?* keys, expr* values)\n"
         "     | Set(expr* elts)\n"
         "     | ListComp(expr elt, comprehension* generators)\n"
         "     | SetComp(expr elt, comprehension* generators)\n"
@@ -6419,7 +6419,7 @@ init_types(void *arg)
     if (!state->IfExp_type) return -1;
     state->Dict_type = make_type(state, "Dict", state->expr_type, Dict_fields,
                                  2,
-        "Dict(expr* keys, expr* values)");
+        "Dict(expr?* keys, expr* values)");
     if (!state->Dict_type) return -1;
     state->Set_type = make_type(state, "Set", state->expr_type, Set_fields, 1,
         "Set(expr* elts)");

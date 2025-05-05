@@ -654,8 +654,6 @@ MODULE__XXTESTFUZZ_FALSE
 MODULE__XXTESTFUZZ_TRUE
 MODULE_XXSUBTYPE_FALSE
 MODULE_XXSUBTYPE_TRUE
-MODULE__REMOTEDEBUGGING_FALSE
-MODULE__REMOTEDEBUGGING_TRUE
 MODULE__TESTSINGLEPHASE_FALSE
 MODULE__TESTSINGLEPHASE_TRUE
 MODULE__TESTMULTIPHASE_FALSE
@@ -793,6 +791,8 @@ MODULE__STRUCT_FALSE
 MODULE__STRUCT_TRUE
 MODULE_SELECT_FALSE
 MODULE_SELECT_TRUE
+MODULE__REMOTE_DEBUGGING_FALSE
+MODULE__REMOTE_DEBUGGING_TRUE
 MODULE__RANDOM_FALSE
 MODULE__RANDOM_TRUE
 MODULE__QUEUE_FALSE
@@ -31072,7 +31072,7 @@ case $ac_sys_system in #(
 
 
     py_cv_module__ctypes_test=n/a
-    py_cv_module__remotedebugging=n/a
+    py_cv_module__remote_debugging=n/a
     py_cv_module__testimportmultiple=n/a
     py_cv_module__testmultiphase=n/a
     py_cv_module__testsinglephase=n/a
@@ -31389,6 +31389,28 @@ fi
 
   as_fn_append MODULE_BLOCK "MODULE__RANDOM_STATE=$py_cv_module__random$as_nl"
   if test "x$py_cv_module__random" = xyes
+then :
+
+
+
+
+fi
+
+
+        if test "$py_cv_module__remote_debugging" != "n/a"
+then :
+  py_cv_module__remote_debugging=yes
+fi
+   if test "$py_cv_module__remote_debugging" = yes; then
+  MODULE__REMOTE_DEBUGGING_TRUE=
+  MODULE__REMOTE_DEBUGGING_FALSE='#'
+else
+  MODULE__REMOTE_DEBUGGING_TRUE='#'
+  MODULE__REMOTE_DEBUGGING_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE__REMOTE_DEBUGGING_STATE=$py_cv_module__remote_debugging$as_nl"
+  if test "x$py_cv_module__remote_debugging" = xyes
 then :
 
 
@@ -32811,7 +32833,7 @@ printf %s "checking for stdlib extension module _hmac... " >&6; }
         if test "$py_cv_module__hmac" != "n/a"
 then :
 
-    if true
+    if test "$ac_sys_system" != "Emscripten"
 then :
   if true
 then :
@@ -33877,46 +33899,6 @@ fi
 printf "%s\n" "$py_cv_module__testsinglephase" >&6; }
 
 
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _remotedebugging" >&5
-printf %s "checking for stdlib extension module _remotedebugging... " >&6; }
-        if test "$py_cv_module__remotedebugging" != "n/a"
-then :
-
-    if test "$TEST_MODULES" = yes
-then :
-  if true
-then :
-  py_cv_module__remotedebugging=yes
-else case e in #(
-  e) py_cv_module__remotedebugging=missing ;;
-esac
-fi
-else case e in #(
-  e) py_cv_module__remotedebugging=disabled ;;
-esac
-fi
-
-fi
-  as_fn_append MODULE_BLOCK "MODULE__REMOTEDEBUGGING_STATE=$py_cv_module__remotedebugging$as_nl"
-  if test "x$py_cv_module__remotedebugging" = xyes
-then :
-
-
-
-
-fi
-   if test "$py_cv_module__remotedebugging" = yes; then
-  MODULE__REMOTEDEBUGGING_TRUE=
-  MODULE__REMOTEDEBUGGING_FALSE='#'
-else
-  MODULE__REMOTEDEBUGGING_TRUE='#'
-  MODULE__REMOTEDEBUGGING_FALSE=
-fi
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__remotedebugging" >&5
-printf "%s\n" "$py_cv_module__remotedebugging" >&6; }
-
-
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module xxsubtype" >&5
 printf %s "checking for stdlib extension module xxsubtype... " >&6; }
         if test "$py_cv_module_xxsubtype" != "n/a"
@@ -34291,6 +34273,10 @@ if test -z "${MODULE__RANDOM_TRUE}" && test -z "${MODULE__RANDOM_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__RANDOM\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE__REMOTE_DEBUGGING_TRUE}" && test -z "${MODULE__REMOTE_DEBUGGING_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__REMOTE_DEBUGGING\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE_SELECT_TRUE}" && test -z "${MODULE_SELECT_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_SELECT\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -34549,10 +34535,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTSINGLEPHASE_TRUE}" && test -z "${MODULE__TESTSINGLEPHASE_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TESTSINGLEPHASE\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__REMOTEDEBUGGING_TRUE}" && test -z "${MODULE__REMOTEDEBUGGING_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__REMOTEDEBUGGING\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_XXSUBTYPE_TRUE}" && test -z "${MODULE_XXSUBTYPE_FALSE}"; then
