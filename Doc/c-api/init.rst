@@ -1097,7 +1097,7 @@ API.
 
 In particular, you must store the interpreter state from the calling
 function and pass it to :c:func:`PyThreadState_New`, which will ensure that
-the :term:`thread state` is targeting the correct interpreter.::
+the :term:`thread state` is targeting the correct interpreter::
 
    /* The return value of PyInterpreterState_Get() from the
       function that created this thread. */
