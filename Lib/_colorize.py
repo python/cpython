@@ -95,7 +95,23 @@ for attr, code in ANSIColors.__dict__.items():
 # Note that thanks to the dataclasses providing default values for all fields,
 # creating a new theme or theme section from scratch is possible without
 # specifying all keys.
-
+#
+# For example, here's a theme that makes punctuation and operators less prominent:
+#
+#   try:
+#       from _colorize import set_theme, default_theme, Syntax, ANSIColors
+#   except ImportError:
+#       pass
+#   else:
+#       theme_with_dim_operators = default_theme.copy_with(
+#           syntax=Syntax(op=ANSIColors.INTENSE_BLACK),
+#       )
+#       set_theme(theme_with_dim_operators)
+#       del set_theme, default_theme, Syntax, ANSIColors, theme_with_dim_operators
+#
+# Guarding the import ensures that your .pythonstartup file will still work in
+# Python 3.13 and older. Deleting the variables ensures they don't remain in your
+# interactive shell's global scope.
 
 class ThemeSection(Mapping[str, str]):
     """A mixin/base class for theme sections.
@@ -103,6 +119,9 @@ class ThemeSection(Mapping[str, str]):
     It enables dictionary access to a section, as well as implements convenience
     methods.
     """
+
+    # The two types below are just that: types to inform the type checker that the
+    # mixin will work in context of those fields existing
     __dataclass_fields__: ClassVar[dict[str, Field[str]]]
     _name_to_value: Callable[[str], str]
 
@@ -317,6 +336,9 @@ def get_theme(
 
 def set_theme(t: Theme) -> None:
     global _theme
+
+    if not isinstance(t, Theme):
+        raise ValueError(f"Expected Theme object, found {t}")
 
     _theme = t
 
