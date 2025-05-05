@@ -14654,53 +14654,6 @@ printf "%s\n" "$AIX_BUILDDATE" >&6; }
 	*) ;;
 esac
 
-# check for _Complex C type
-#
-# Note that despite most compilers define __STDC_IEC_559_COMPLEX__ - almost
-# none properly support C11+ Annex G (where pure imaginary types
-# represented by _Imaginary are mandatory).  This is a bug (see e.g.
-# llvm/llvm-project#60269), so we don't rely on presence
-# of __STDC_IEC_559_COMPLEX__.
-if test "$cross_compiling" = yes
-then :
-  ac_cv_c_complex_supported=no
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <complex.h>
-#define test(type, out)                                \
-{                                                      \
-    type complex z = 1 + 2*I; z = z*z;                 \
-    (out) = (out) || creal(z) != -3 || cimag(z) != 4;  \
-}
-int main(void)
-{
-   int res = 0;
-   test(float, res);
-   test(double, res);
-   test(long double, res);
-   return res;
-}
-_ACEOF
-if ac_fn_c_try_run "$LINENO"
-then :
-  ac_cv_c_complex_supported=yes
-else case e in #(
-  e) ac_cv_c_complex_supported=no ;;
-esac
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
-esac
-fi
-
-if test "$ac_cv_c_complex_supported" = "yes"; then
-
-printf "%s\n" "#define Py_HAVE_C_COMPLEX 1" >>confdefs.h
-
-fi
-
 # check for systems that require aligned memory access
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking aligned memory access is required" >&5
 printf %s "checking aligned memory access is required... " >&6; }
