@@ -670,6 +670,13 @@ Miscellaneous options
    .. versionchanged:: 3.10
       Removed the ``-X oldparser`` option.
 
+.. versionremoved:: next
+
+   :option:`!-J` is no longer reserved for use by Jython_,
+   and now has no special meaning.
+
+   .. _Jython: https://www.jython.org/
+
 .. _using-on-controlling-color:
 
 Controlling color
@@ -693,15 +700,6 @@ output. To control the color output only in the Python interpreter, the
 :envvar:`PYTHON_COLORS` environment variable can be used. This variable takes
 precedence over ``NO_COLOR``, which in turn takes precedence over
 ``FORCE_COLOR``.
-
-Options you shouldn't use
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. option:: -J
-
-   Reserved for use by Jython_.
-
-.. _Jython: https://www.jython.org/
 
 
 .. _using-on-envvars:

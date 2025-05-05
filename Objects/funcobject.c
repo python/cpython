@@ -1484,6 +1484,11 @@ static PyGetSetDef cm_getsetlist[] = {
     {NULL} /* Sentinel */
 };
 
+static PyMethodDef cm_methodlist[] = {
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, NULL},
+    {NULL} /* Sentinel */
+};
+
 static PyObject*
 cm_repr(PyObject *self)
 {
@@ -1542,7 +1547,7 @@ PyTypeObject PyClassMethod_Type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
+    cm_methodlist,                              /* tp_methods */
     cm_memberlist,                              /* tp_members */
     cm_getsetlist,                              /* tp_getset */
     0,                                          /* tp_base */
@@ -1716,6 +1721,11 @@ static PyGetSetDef sm_getsetlist[] = {
     {NULL} /* Sentinel */
 };
 
+static PyMethodDef sm_methodlist[] = {
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, NULL},
+    {NULL} /* Sentinel */
+};
+
 static PyObject*
 sm_repr(PyObject *self)
 {
@@ -1772,7 +1782,7 @@ PyTypeObject PyStaticMethod_Type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
+    sm_methodlist,                              /* tp_methods */
     sm_memberlist,                              /* tp_members */
     sm_getsetlist,                              /* tp_getset */
     0,                                          /* tp_base */

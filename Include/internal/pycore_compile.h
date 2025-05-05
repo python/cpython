@@ -34,8 +34,8 @@ PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
     int optimize,
     struct _arena *arena);
 
-/* AST optimizations */
-extern int _PyCompile_AstOptimize(
+/* AST preprocessing */
+extern int _PyCompile_AstPreprocess(
     struct _mod *mod,
     PyObject *filename,
     PyCompilerFlags *flags,
@@ -43,7 +43,7 @@ extern int _PyCompile_AstOptimize(
     struct _arena *arena,
     int syntax_check_only);
 
-extern int _PyAST_Optimize(
+extern int _PyAST_Preprocess(
     struct _mod *,
     struct _arena *arena,
     PyObject *filename,
