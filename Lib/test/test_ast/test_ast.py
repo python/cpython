@@ -3286,6 +3286,7 @@ class CommandLineTests(unittest.TestCase):
                     with self.subTest(flags=args):
                         self.invoke_ast(*args)
 
+    @support.force_not_colorized
     def test_help_message(self):
         for flag in ('-h', '--help', '--unknown'):
             with self.subTest(flag=flag):
