@@ -1933,10 +1933,10 @@ _PyCode_CheckNoInternalState(PyCodeObject *co, const char **p_errmsg)
         errmsg = "only basic code objects are supported";
     }
     else if (co->_co_monitoring != NULL) {
-        *p_errmsg = "only basic code objects are supported";
+        errmsg = "only basic code objects are supported";
     }
     else if (co->co_extra != NULL) {
-        *p_errmsg = "only basic code objects are supported";
+        errmsg = "only basic code objects are supported";
     }
 
     if (errmsg != NULL) {
