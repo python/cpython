@@ -1743,33 +1743,81 @@ class CommandLineTestCase(unittest.TestCase):
         res = urllib.request.urlopen(req, context=context)
         return res.read()
 
+    def parse_cli_output(self, output: str) -> tuple[str, str, int]:
+        matches = re.search(r'\((https?)://([^/:]+):(\d+)/?\)', output)
+        return matches.group(1), matches.group(2), int(matches.group(3))
+
     def test_http_client(self):
         port = find_unused_port()
         bind = '127.0.0.1'
-        proc = subprocess.Popen([sys.executable, '-m', 'http.server',
+        proc = subprocess.Popen([sys.executable, '-u', '-m', 'http.server',
                                  str(port), '-b', bind],
-                                 stdout=subprocess.DEVNULL,
-                                 stderr=subprocess.DEVNULL)
-        time.sleep(0.5) # Wait for the server to start.
-        # TODO: Find a better way to wait for the server to start.
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT,
+                                 bufsize=1,
+                                 text=True)
+        max_tries = 50
+        while True:
+            # Wait for the server to start.
+            if max_tries <= 0:
+                self.fail('Server did not start')
+            line = proc.stdout.readline()
+            if not line:
+                if proc.poll() is not None:
+                    break
+                time.sleep(0.1)
+                max_tries -= 1
+                continue
+            _protocol, _host, _port = self.parse_cli_output(line)
+            if not _protocol or not _host or not _port:
+                time.sleep(0.1)
+                max_tries -= 1
+                continue
+            self.assertEqual(_protocol, 'http')
+            self.assertEqual(_host, bind)
+            self.assertEqual(_port, port)
+            break
         res = self.fetch_file(f'http://{bind}:{port}/{self.random_file_name}')
         self.assertEqual(res, self.random_data)
+        proc.stdout.close()
         proc.kill()
         proc.wait()
 
     def test_https_client(self):
         port = find_unused_port()
         bind = '127.0.0.1'
-        proc = subprocess.Popen([sys.executable, '-m', 'http.server',
+        proc = subprocess.Popen([sys.executable, '-u', '-m', 'http.server',
                                  str(port), '-b', bind,
                                  '--tls-cert', self.tls_cert,
                                  '--tls-key', self.tls_key,
                                  '--tls-password-file', self.tls_password_file],
-                                stdout=subprocess.DEVNULL,
-                                stderr=subprocess.DEVNULL)
-        time.sleep(0.5)
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT,
+                                 bufsize=1,
+                                 text=True)
+        max_tries = 50
+        while True:
+            if max_tries <= 0:
+                self.fail('Server did not start')
+            line = proc.stdout.readline()
+            if not line:
+                if proc.poll() is not None:
+                    break
+                time.sleep(0.1)
+                max_tries -= 1
+                continue
+            _protocol, _host, _port = self.parse_cli_output(line)
+            if not _protocol or not _host or not _port:
+                time.sleep(0.1)
+                max_tries -= 1
+                continue
+            self.assertEqual(_protocol, 'https')
+            self.assertEqual(_host, bind)
+            self.assertEqual(_port, port)
+            break
         res = self.fetch_file(f'https://{bind}:{port}/{self.random_file_name}')
         self.assertEqual(res, self.random_data)
+        proc.stdout.close()
         proc.kill()
         proc.wait()
 
