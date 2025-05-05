@@ -59,8 +59,7 @@ class TestGetStackTrace(unittest.TestCase):
                 foo()
 
             def foo():
-                sock.sendall(b"ready")
-                time.sleep(1000)
+                sock.sendall(b"ready"); time.sleep(1000)  # same line number
 
             bar()
             """
@@ -96,10 +95,10 @@ class TestGetStackTrace(unittest.TestCase):
                 p.wait(timeout=SHORT_TIMEOUT)
 
             expected_stack_trace = [
-                ("foo", script_name, 15),
+                ("foo", script_name, 14),
                 ("baz", script_name, 11),
                 ("bar", script_name, 9),
-                ("<module>", script_name, 17),
+                ("<module>", script_name, 16),
             ]
             self.assertEqual(stack_trace, expected_stack_trace)
 
