@@ -87,17 +87,18 @@ that must be true for *B* to occur after *A*.
 
      #. If an object is not marked as *finalized*, it might be finalized by
         marking it as *finalized* and calling its
-        :c:member:`~PyTypeObject.tp_finalize` function.  Python currently does
-        not finalize an object when the last reference to it is deleted, but
-        this may change in the future. Use
+        :c:member:`~PyTypeObject.tp_finalize` function.  Python does
+        *not* finalize an object when the last reference to it is deleted; use
         :c:func:`PyObject_CallFinalizerFromDealloc` to ensure that
         :c:member:`~PyTypeObject.tp_finalize` is always called.
      #. If the object is marked as finalized,
-        :c:member:`~PyTypeObject.tp_clear` might be called to clear references
-        held by the object.  Python currently does not clear an object in
-        response to the deletion of the last reference, but this may change in
-        the future.
+        :c:member:`~PyTypeObject.tp_clear` might be called by the garbage collector
+        to clear references held by the object.  It is *not* called when the
+        object's reference count reaches zero.
      #. :c:member:`~PyTypeObject.tp_dealloc` is called to destroy the object.
+        To avoid code duplication, :c:member:`~PyTypeObject.tp_dealloc` typically
+        calls into :c:member:`~PyTypeObject.tp_clear` to free up the object's
+        references.
      #. When :c:member:`~PyTypeObject.tp_dealloc` finishes object destruction,
         it directly calls :c:member:`~PyTypeObject.tp_free` (usually set to
         :c:func:`PyObject_Free` or :c:func:`PyObject_GC_Del` automatically as
@@ -108,7 +109,8 @@ that must be true for *B* to occur after *A*.
      *resurrected*, preventing its pending destruction.  (Only
      :c:member:`!tp_finalize` is allowed to resurrect an object;
      :c:member:`~PyTypeObject.tp_clear` and
-     :c:member:`~PyTypeObject.tp_dealloc` cannot.)  Resurrecting an object may
+     :c:member:`~PyTypeObject.tp_dealloc` cannot without calling into
+     :c:member:`!tp_finalize`.)  Resurrecting an object may
      or may not cause the object's *finalized* mark to be removed.  Currently,
      Python does not remove the *finalized* mark from a resurrected object if
      it supports garbage collection (i.e., the :c:macro:`Py_TPFLAGS_HAVE_GC`
