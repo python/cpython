@@ -2469,6 +2469,10 @@ New features
   be used in some cases as a replacement for checking if :c:func:`Py_REFCNT`
   is ``1`` for Python objects passed as arguments to C API functions.
 
+* Add :c:func:`PyUnstable_Object_IsUniquelyReferenced` as a replacement for
+  ``Py_REFCNT(op) == 1`` on :term:`free threaded <free threading>` builds.
+  (Contributed by Peter Bierma in :gh:`133140`.)
+
 
 Limited C API changes
 ---------------------
