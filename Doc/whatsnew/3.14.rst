@@ -833,8 +833,8 @@ Other language changes
 
 .. _whatsnew314-pep765:
 
-PEP 765: Disallow return/break/continue that exit a finally block
------------------------------------------------------------------
+PEP 765: Disallow ``return``/``break``/``continue`` that exit a ``finally`` block
+---------------------------------------------------------------------------------
 
 The compiler emits a :exc:`SyntaxWarning` when a :keyword:`return`, :keyword:`break` or
 :keyword:`continue` statements appears where it exits a :keyword:`finally` block.
