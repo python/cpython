@@ -2387,9 +2387,6 @@ sqlite3
   it will now raise a :exc:`sqlite3.ProgrammingError`.
   (Contributed by Erlend E. Aasland in :gh:`118928` and :gh:`101693`.)
 
-* Support keyword completion in the :mod:`sqlite3` command-line interface.
-  (Contributed by Long Tan in :gh:`133393`.)
-
 typing
 ------
 
