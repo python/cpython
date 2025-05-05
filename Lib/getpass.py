@@ -80,11 +80,9 @@ def unix_getpass(prompt='Password: ', stream=None, *, echochar=None):
                     tcsetattr_flags |= termios.TCSASOFT
                 try:
                     termios.tcsetattr(fd, tcsetattr_flags, new)
-                    if echochar:
-                        passwd = _input_with_echochar(prompt, stream, input,
-                                                      echochar)
-                    else:
-                        passwd = _raw_input(prompt, stream, input=input)
+                    passwd = _raw_input(prompt, stream, input=input,
+                                        echochar=echochar)
+
                 finally:
                     termios.tcsetattr(fd, tcsetattr_flags, old)
                     stream.flush()  # issue7208
@@ -151,7 +149,7 @@ def _check_echochar(echochar):
                          f"got: {echochar!r}")
 
 
-def _raw_input(prompt="", stream=None, input=None):
+def _raw_input(prompt="", stream=None, input=None, echochar=None):
     # This doesn't save the string in the GNU readline history.
     if not stream:
         stream = sys.stderr
@@ -168,6 +166,8 @@ def _raw_input(prompt="", stream=None, input=None):
             stream.write(prompt)
         stream.flush()
     # NOTE: The Python C API calls flockfile() (and unlock) during readline.
+    if echochar:
+        return _readline_with_echochar(stream, input, echochar)
     line = input.readline()
     if not line:
         raise EOFError
@@ -176,14 +176,7 @@ def _raw_input(prompt="", stream=None, input=None):
     return line
 
 
-def _input_with_echochar(prompt, stream, input, echochar):
-    if not stream:
-        stream = sys.stderr
-    if not input:
-        input = sys.stdin
-    prompt = str(prompt)
-    stream.write(prompt)
-    stream.flush()
+def _readline_with_echochar(stream, input, echochar):
     passwd = ""
     eof_pressed = False
     while True:
