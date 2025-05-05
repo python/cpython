@@ -1905,17 +1905,17 @@ Deprecated
   (Contributed by Inada Naoki in :gh:`133036`.)
 
 * :mod:`ctypes`:
-  On non-Windows platforms, setting :attr:`.Structure._pack_` to use a
-  MSVC-compatible default memory layout is deprecated in favor of setting
-  :attr:`.Structure._layout_` to ``'ms'``.
-  (Contributed by Petr Viktorin in :gh:`131747`.)
 
-* :mod:`ctypes`:
-  Calling :func:`ctypes.POINTER` on a string is deprecated.
-  Use :ref:`ctypes-incomplete-types` for self-referential structures.
-  Also, the internal ``ctypes._pointer_type_cache`` is deprecated.
-  See :func:`ctypes.POINTER` for updated implementation details.
-  (Contributed by Sergey Myrianov in :gh:`100926`.)
+  * On non-Windows platforms, setting :attr:`.Structure._pack_` to use a
+    MSVC-compatible default memory layout is deprecated in favor of setting
+    :attr:`.Structure._layout_` to ``'ms'``.
+    (Contributed by Petr Viktorin in :gh:`131747`.)
+
+  * Calling :func:`ctypes.POINTER` on a string is deprecated.
+    Use :ref:`ctypes-incomplete-types` for self-referential structures.
+    Also, the internal ``ctypes._pointer_type_cache`` is deprecated.
+    See :func:`ctypes.POINTER` for updated implementation details.
+    (Contributed by Sergey Myrianov in :gh:`100926`.)
 
 * :mod:`functools`:
   Calling the Python implementation of :func:`functools.reduce` with *function*
