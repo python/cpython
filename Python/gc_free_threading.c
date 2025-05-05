@@ -2055,27 +2055,29 @@ gc_should_collect_mem_usage(GCState *gcstate)
     int threshold = gcstate->young.threshold;
     Py_ssize_t deferred = _Py_atomic_load_ssize_relaxed(&gcstate->deferred_count);
     if (deferred > threshold * 40) {
-        // Too many new container objects since last GC, even though RSS
+        // Too many new container objects since last GC, even though memory use
         // might not have increased much.  This is intended to avoid resource
         // exhaustion if some objects consume resources but don't result in a
-        // RSS increase.  We use 40x as the factor here because older versions
-        // of Python would do full collections after roughly every 70,000 new
-        // container objects.
+        // memory usage increase.  We use 40x as the factor here because older
+        // versions of Python would do full collections after roughly every
+        // 70,000 new container objects.
         return true;
     }
     Py_ssize_t last_mem = gcstate->last_mem;
     Py_ssize_t mem_threshold = Py_MAX(last_mem / 10, 128);
     if ((mem - last_mem) > mem_threshold) {
-        // The RSS has increased too much, do a collection.
+        // The process memory usage has increased too much, do a collection.
         return true;
     }
     else {
-        // The RSS has not increased enough, defer the collection and clear
-        // the young object count so we don't check RSS again on the next call
-        // to gc_should_collect().
+        // The memory usage has not increased enough, defer the collection and
+        // clear the young object count so we don't check memory usage again
+        // on the next call to gc_should_collect().
         PyMutex_Lock(&gcstate->mutex);
-        gcstate->deferred_count += gcstate->young.count;
-        gcstate->young.count = 0;
+        _Py_atomic_store_ssize_relaxed(&gcstate->deferred_count,
+                                       gcstate->deferred_count +
+                                           gcstate->young.count);
+        _Py_atomic_store_int(&gcstate->young.count, 0);
         PyMutex_Unlock(&gcstate->mutex);
         return false;
     }
