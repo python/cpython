@@ -2939,28 +2939,20 @@ pointer_to_safe_refcount(void *ptr)
 {
     uintptr_t full = (uintptr_t)ptr;
     assert((full & 3) == 0);
-#if defined(Py_GIL_DISABLED)
-    return full + 1;
-#else
     uint32_t refcnt = (uint32_t)full;
     if (refcnt >= (uint32_t)_Py_IMMORTAL_MINIMUM_REFCNT) {
         full = full - ((uintptr_t)_Py_IMMORTAL_MINIMUM_REFCNT) + 1;
     }
     return full + 2;
-#endif
 }
 
 static void *
 safe_refcount_to_pointer(uintptr_t refcnt)
 {
-#if defined(Py_GIL_DISABLED)
-    return (void *)(refcnt - 1);
-#else
     if (refcnt & 1) {
         refcnt += _Py_IMMORTAL_MINIMUM_REFCNT - 1;
     }
     return (void *)(refcnt - 2);
-#endif
 }
 
 /* Add op to the gcstate->trash_delete_later list.  Called when the current
