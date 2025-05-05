@@ -4848,14 +4848,35 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn(b'I love Python', output)
 
+    def test_multiline_auto_indent(self):
+        script = textwrap.dedent("""
+            import pdb; pdb.Pdb().set_trace()
+        """)
+
+        input = b"def f(x):\n"
+        input += b"if x > 0:\n"
+        input += b"x += 1\n"
+        input += b"return x\n"
+        # We need to do backspaces to remove the auto-indentation
+        input += b"\x08\x08\x08\x08else:\n"
+        input += b"return -x\n"
+        input += b"\n"
+        input += b"f(-21-21)\n"
+        input += b"c\n"
+
+        output = run_pty(script, input)
+
+        self.assertIn(b'42', output)
+
     def test_multiline_completion(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()
         """)
 
         input = b"def func():\n"
-        # Complete: \treturn 40 + 2
-        input += b"\tret\t 40 + 2\n"
+        # Auto-indent
+        # Complete: return 40 + 2
+        input += b"ret\t 40 + 2\n"
         input += b"\n"
         # Complete: func()
         input += b"fun\t()\n"
@@ -4875,12 +4896,13 @@ class PdbTestReadline(unittest.TestCase):
         # if the completion is not working as expected
         input = textwrap.dedent("""\
             def func():
-            \ta = 1
-             \ta += 1
-              \ta += 1
-               \tif a > 0:
-                    a += 1
-            \t\treturn a
+            a = 1
+            \x08\ta += 1
+            \x08\x08\ta += 1
+            \x08\x08\x08\ta += 1
+            \x08\x08\x08\x08\tif a > 0:
+            a += 1
+            \x08\x08\x08\x08return a
 
             func()
             c
@@ -4888,7 +4910,7 @@ class PdbTestReadline(unittest.TestCase):
 
         output = run_pty(script, input)
 
-        self.assertIn(b'4', output)
+        self.assertIn(b'5', output)
         self.assertNotIn(b'Error', output)
 
     def test_interact_completion(self):

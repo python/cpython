@@ -630,7 +630,7 @@ def main(args=None):
     import argparse
     import sys
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     parser.add_argument('infile', nargs='?', default='-',
                         help='the file to parse; defaults to stdin')
     parser.add_argument('-m', '--mode', default='exec',
@@ -643,6 +643,15 @@ def main(args=None):
                              'column offsets')
     parser.add_argument('-i', '--indent', type=int, default=3,
                         help='indentation of nodes (number of spaces)')
+    parser.add_argument('--feature-version',
+                        type=str, default=None, metavar='VERSION',
+                        help='Python version in the format 3.x '
+                             '(for example, 3.10)')
+    parser.add_argument('-O', '--optimize',
+                        type=int, default=-1, metavar='LEVEL',
+                        help='optimization level for parser (default -1)')
+    parser.add_argument('--show-empty', default=False, action='store_true',
+                        help='show empty lists and fields in dump output')
     args = parser.parse_args(args)
 
     if args.infile == '-':
@@ -652,8 +661,22 @@ def main(args=None):
         name = args.infile
         with open(args.infile, 'rb') as infile:
             source = infile.read()
-    tree = parse(source, name, args.mode, type_comments=args.no_type_comments)
-    print(dump(tree, include_attributes=args.include_attributes, indent=args.indent))
+
+    # Process feature_version
+    feature_version = None
+    if args.feature_version:
+        try:
+            major, minor = map(int, args.feature_version.split('.', 1))
+        except ValueError:
+            parser.error('Invalid format for --feature-version; '
+                         'expected format 3.x (for example, 3.10)')
+
+        feature_version = (major, minor)
+
+    tree = parse(source, name, args.mode, type_comments=args.no_type_comments,
+                 feature_version=feature_version, optimize=args.optimize)
+    print(dump(tree, include_attributes=args.include_attributes,
+               indent=args.indent, show_empty=args.show_empty))
 
 if __name__ == '__main__':
     main()

@@ -162,3 +162,8 @@ def run_multiline_interactive_console(
         except MemoryError:
             console.write("\nMemoryError\n")
             console.resetbuffer()
+        except SystemExit:
+            raise
+        except:
+            console.showtraceback()
+            console.resetbuffer()

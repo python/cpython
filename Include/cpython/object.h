@@ -143,6 +143,11 @@ typedef struct {
  * backwards-compatibility */
 typedef Py_ssize_t printfunc;
 
+/* Specialize a binary op by setting the descriptor pointer */
+struct _PyBinopSpecializationDescr;
+typedef int (*binop_specialize_func)(PyObject *v, PyObject *w, int oparg,
+                                    struct _PyBinopSpecializationDescr **descr);
+
 // If this structure is modified, Doc/includes/typestruct.h should be updated
 // as well.
 struct _typeobject {
@@ -232,6 +237,13 @@ struct _typeobject {
 
     /* bitset of which type-watchers care about this type */
     unsigned char tp_watched;
+
+    /* callback that may specialize BINARY_OP
+     * this is an experimental API based on the ideas in the paper
+     * Cross Module Quickening - The Curious Case of C Extensions
+     * by Felix Berlakovich and Stefan Brunthaler.
+     */
+    binop_specialize_func tp_binop_specialize;
 
     /* Number of tp_version_tag values used.
      * Set to _Py_ATTR_CACHE_UNUSED if the attribute cache is
@@ -489,3 +501,5 @@ PyAPI_FUNC(int) PyUnstable_IsImmortal(PyObject *);
 // before calling this function in order to avoid spurious failures.
 PyAPI_FUNC(int) PyUnstable_TryIncRef(PyObject *);
 PyAPI_FUNC(void) PyUnstable_EnableTryIncRef(PyObject *);
+
+PyAPI_FUNC(int) PyUnstable_Object_IsUniquelyReferenced(PyObject *);
