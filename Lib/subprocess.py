@@ -1237,8 +1237,9 @@ class Popen:
                 self._communication_started = True
             try:
                 sts = self.wait(timeout=self._remaining_time(endtime))
-            except TimeoutExpired:
-                raise TimeoutExpired(self.args, timeout)
+            except TimeoutExpired as exc:
+                exc.timeout = timeout
+                raise
 
         return (stdout, stderr)
 
@@ -2149,8 +2150,9 @@ class Popen:
                             self._fileobj2output[key.fileobj].append(data)
             try:
                 self.wait(timeout=self._remaining_time(endtime))
-            except TimeoutExpired:
-                raise TimeoutExpired(self.args, orig_timeout)
+            except TimeoutExpired as exc:
+                exc.timeout = orig_timeout
+                raise
 
             # All data exchanged.  Translate lists into strings.
             if stdout is not None:
