@@ -6,7 +6,7 @@ import sys
 import unittest.mock
 from platform import win32_edition
 from test import support
-from test.support import cpython_only, os_helper
+from test.support import cpython_only, force_not_colorized, os_helper
 from test.support.import_helper import ensure_lazy_imports
 
 try:
@@ -442,6 +442,7 @@ class MiscTestCase(unittest.TestCase):
 
 
 class CommandLineTest(unittest.TestCase):
+    @force_not_colorized
     def test_parse_args(self):
         args, help_text = mimetypes._parse_args("-h")
         self.assertTrue(help_text.startswith("usage: "))

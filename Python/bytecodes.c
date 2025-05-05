@@ -801,9 +801,19 @@ dummy_func(
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr*)descr;
             assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
-            assert(d && d->guard);
+            assert(d);
+            assert(d->guard);
             int res = d->guard(left_o, right_o);
-            DEOPT_IF(!res);
+            ERROR_IF(res < 0);
+            if (res == 0) {
+                if (d->free) {
+                    d->free(d);
+                }
+                _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(this_instr+1);
+                write_ptr(cache->external_cache, NULL);
+                this_instr->op.code = BINARY_OP;
+                DEOPT_IF(true);
+            }
         }
 
         pure op(_BINARY_OP_EXTEND, (descr/4, left, right -- res)) {
@@ -816,6 +826,7 @@ dummy_func(
 
             PyObject *res_o = d->action(left_o, right_o);
             DECREF_INPUTS();
+            ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
