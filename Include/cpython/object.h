@@ -238,7 +238,11 @@ struct _typeobject {
     /* bitset of which type-watchers care about this type */
     unsigned char tp_watched;
 
-    /* callback that may specialize BINARY_OP -- Experimental API */
+    /* callback that may specialize BINARY_OP
+     * this is an experimental API based on the ideas in the paper
+     * Cross Module Quickening - The Curious Case of C Extensions
+     * by Felix Berlakovich and Stefan Brunthaler.
+     */
     binop_specialize_func tp_binop_specialize;
 
     /* Number of tp_version_tag values used.
