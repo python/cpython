@@ -1919,8 +1919,8 @@ get_current_rss(void)
     if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc))) {
         // pmc.WorkingSetSize is in bytes. Convert to KB.
         return (Py_ssize_t)(pmc.WorkingSetSize / 1024);
-    } else {
-        CloseHandle(hProcess);
+    }
+    else {
         return -1;
     }
 
@@ -1943,6 +1943,11 @@ get_current_rss(void)
         return -1;
     }
     fclose(fp);
+
+    // Sanity check
+    if (rss_pages < 0 || rss_pages > 1000000000) {
+        return -1;
+    }
 
     // Convert unit to KB
     return (Py_ssize_t)rss_pages * (page_size_bytes / 1024);
@@ -1989,7 +1994,8 @@ get_current_rss(void)
         // kp[0] contains the info for our process
         // ki_rssize is in pages. Convert to KB.
         rss_kb = (Py_ssize_t)kp->ki_rssize * page_size_kb;
-    } else {
+    }
+    else {
         // Process with PID not found, shouldn't happen for self.
         rss_kb = -1;
     }
@@ -2021,7 +2027,8 @@ get_current_rss(void)
     if (len > 0) {
         // p_vm_rssize is in pages on OpenBSD. Convert to KB.
         return (Py_ssize_t)kp.p_vm_rssize * page_size_kb;
-    } else {
+    }
+    else {
         // Process info not returned
         return -1;
     }
@@ -2060,10 +2067,10 @@ gc_should_collect_rss(GCState *gcstate)
         // The RSS has not increased enough, defer the collection and clear
         // the young object count so we don't check RSS again on the next call
         // to gc_should_collect().
-        Py_BEGIN_CRITICAL_SECTION_MUT(&gcstate->mutex);
+        PyMutex_Lock(&gcstate->mutex);
         gcstate->deferred_count += gcstate->young.count;
         gcstate->young.count = 0;
-        Py_END_CRITICAL_SECTION();
+        PyMutex_Unlock(&gcstate->mutex);
         return false;
     }
 }
