@@ -1,4 +1,4 @@
-:mod:`!ast` --- Abstract Syntax Trees
+:mod:`!ast` --- Abstract syntax trees
 =====================================
 
 .. module:: ast
@@ -2156,7 +2156,7 @@ Async and await
    of :class:`ast.operator`, :class:`ast.unaryop`, :class:`ast.cmpop`,
    :class:`ast.boolop` and :class:`ast.expr_context`) on the returned tree
    will be singletons. Changes to one will be reflected in all other
-   occurrences of the same value (e.g. :class:`ast.Add`).
+   occurrences of the same value (for example, :class:`ast.Add`).
 
 
 :mod:`ast` helpers

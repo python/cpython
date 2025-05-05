@@ -645,7 +645,8 @@ def main(args=None):
                         help='indentation of nodes (number of spaces)')
     parser.add_argument('--feature-version',
                         type=str, default=None, metavar='VERSION',
-                        help='python version in the format 3.x (e.g., 3.10)')
+                        help='Python version in the format 3.x '
+                             '(for example, 3.10)')
     parser.add_argument('-O', '--optimize',
                         type=int, default=-1, metavar='LEVEL',
                         help='optimization level for parser (default -1)')
@@ -668,7 +669,7 @@ def main(args=None):
             major, minor = map(int, args.feature_version.split('.', 1))
         except ValueError:
             parser.error('Invalid format for --feature-version; '
-                         'expected format 3.x (e.g., 3.10)')
+                         'expected format 3.x (for example, 3.10)')
 
         feature_version = (major, minor)
 
