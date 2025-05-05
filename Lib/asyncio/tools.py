@@ -21,13 +21,21 @@ class CycleFoundException(Exception):
 
 
 # ─── indexing helpers ───────────────────────────────────────────
+def _format_stack_entry(elem: tuple[str, str, int] | str) -> str:
+    if isinstance(elem, tuple):
+        fqname, path, line_no = elem
+        return f"{fqname} {path}:{line_no}"
+
+    return elem
+
+
 def _index(result):
     id2name, awaits = {}, []
     for _thr_id, tasks in result:
         for tid, tname, awaited in tasks:
             id2name[tid] = tname
             for stack, parent_id in awaited:
-                stack = [elem[0] if isinstance(elem, tuple) else elem for elem in stack]
+                stack = [_format_stack_entry(elem) for elem in stack]
                 awaits.append((parent_id, stack, tid))
     return id2name, awaits
 

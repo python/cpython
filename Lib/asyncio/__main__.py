@@ -146,6 +146,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         prog="python3 -m asyncio",
         description="Interactive asyncio shell and CLI tools",
+        color=True,
     )
     subparsers = parser.add_subparsers(help="sub-commands", dest="command")
     ps = subparsers.add_parser(
