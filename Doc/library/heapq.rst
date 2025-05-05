@@ -50,7 +50,7 @@ for comparisons, for both min-heaps and max-heaps.
 
 In the API below, and in this documentation, the unqalified term *heap*
 generally refers to a min-heap.
-API for max-heaps is named using a ``_max``  suffix.
+The API for max-heaps is named using a ``_max``  suffix.
 
 To create a heap, use a list initialized to ``[]``, or you can transform a
 populated list into a heap via function :func:`heapify`.

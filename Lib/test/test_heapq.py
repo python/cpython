@@ -304,10 +304,10 @@ class TestHeap:
         for trial in range(100):
             size = random.randrange(50)
             data = [random.randrange(25) for i in range(size)]
-            if trial & 1:     # Half of the time, use heapify
+            if trial & 1:     # Half of the time, use heapify_max
                 heap = data[:]
                 self.module.heapify_max(heap)
-            else:             # The rest of the time, use heappush
+            else:             # The rest of the time, use heappush_max
                 heap = []
                 for item in data:
                     self.module.heappush_max(heap, item)
