@@ -26,11 +26,7 @@ the compared elements exist.  Elements are counted from zero.  The interesting
 property of a min-heap is that its smallest element is always the root,
 ``heap[0]``.
 
-These two make it possible to view the heap as a regular Python list without
-surprises: ``heap[0]`` is the smallest item, and ``heap.sort()`` maintains the
-heap invariant!
-
-Max-heaps satisfy the reverse invariant: every parent node node has a value
+Max-heaps satisfy the reverse invariant: every parent node has a value
 *greater* than any of its children.  These are implemented as lists for which
 ``maxheap[2*k+1] <= maxheap[k]`` and ``maxheap[2*k+2] <= maxheap[k]`` for all
 *k* for which the compared elements exist.
@@ -42,18 +38,22 @@ We use zero-based indexing.  This makes the relationship between the index for
 a node and the indexes for its children slightly less obvious, but is more
 suitable since Python uses zero-based indexing. (b) Textbooks often focus on
 max-heaps, due to their suitability for in-place sorting. Our implementation
-favors min-heaps as they better correspond to Python lists: :meth:`list.sort`
-maintains the *min*-heap invariant.
+favors min-heaps as they better correspond to Python :class:`lists <list>`.
+
+These two aspects make it possible to view the heap as a regular Python list
+without surprises: ``heap[0]`` is the smallest item, and ``heap.sort()``
+maintains the heap invariant!
 
 Like :meth:`list.sort`, this implementation uses only the ``<`` operator
 for comparisons, for both min-heaps and max-heaps.
 
-In the API below, and in this documentation, the unqalified term *heap*
+In the API below, and in this documentation, the unqualified term *heap*
 generally refers to a min-heap.
 The API for max-heaps is named using a ``_max``  suffix.
 
-To create a heap, use a list initialized to ``[]``, or you can transform a
-populated list into a heap via function :func:`heapify`.
+To create a heap, use a list initialized as ``[]``, or transform an existing list
+into a min-heap or max-heap using the :func:`heapify` or :func:`heapify_max`
+functions, respectively.
 
 The following functions are provided for min-heaps:
 
