@@ -15,13 +15,12 @@ import subprocess
 PROCESS_VM_READV_SUPPORTED = False
 
 try:
-    from _remotedebugging import PROCESS_VM_READV_SUPPORTED
-    from _remotedebugging import get_stack_trace
-    from _remotedebugging import get_async_stack_trace
-    from _remotedebugging import get_all_awaited_by
+    from _remote_debugging import PROCESS_VM_READV_SUPPORTED
+    from _remote_debugging import get_stack_trace
+    from _remote_debugging import get_async_stack_trace
+    from _remote_debugging import get_all_awaited_by
 except ImportError:
-    raise unittest.SkipTest("Test only runs when _remotedebuggingmodule is available")
-
+    raise unittest.SkipTest("Test only runs when _remote_debugging is available")
 
 def _make_test_script(script_dir, script_basename, source):
     to_return = make_script(script_dir, script_basename, source)
