@@ -2934,7 +2934,7 @@ finally:
  * an object. It is important that we never store 0 (NULL).
 * It is also important to not make the object appear immortal,
 * or it might be untracked by the cycle GC. */
-uintptr_t
+static uintptr_t
 pointer_to_safe_refcount(void *ptr)
 {
     uintptr_t full = (uintptr_t)ptr;
@@ -2950,7 +2950,7 @@ pointer_to_safe_refcount(void *ptr)
 #endif
 }
 
-void *
+static void *
 safe_refcount_to_pointer(uintptr_t refcnt)
 {
 #if defined(Py_GIL_DISABLED)
