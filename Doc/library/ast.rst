@@ -2574,20 +2574,22 @@ The following options are accepted:
 
 .. option:: --feature-version <version>
 
-   Python version in the format 3.x (for example, 3.10).
+   Python version in the format 3.x (for example, 3.10). Defaults to the
+   current version of the interpreter.
 
    .. versionadded:: next
 
 .. option:: -O <level>
             --optimize <level>
 
-   Optimization level for parser.
+   Optimization level for parser. Defaults to no optimization.
 
    .. versionadded:: next
 
 .. option:: --show-empty
 
-   Show empty lists and fields that are ``None``.
+   Show empty lists and fields that are ``None``. Defaults to showing empty
+   objects.
 
    .. versionadded:: next
 
