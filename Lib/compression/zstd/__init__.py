@@ -26,13 +26,10 @@ __all__ = (
     "ZstdError",
 )
 
-import enum
-
-from compression.zstd._zstdfile import ZstdFile, open, _nbytes
-from _zstd import *
-
 import _zstd
-
+import enum
+from _zstd import *
+from compression.zstd._zstdfile import ZstdFile, open, _nbytes
 
 _ZSTD_CStreamSizes = _zstd._ZSTD_CStreamSizes
 _ZSTD_DStreamSizes = _zstd._ZSTD_DStreamSizes

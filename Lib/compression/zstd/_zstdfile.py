@@ -1,7 +1,5 @@
 import io
-
 from os import PathLike
-
 from _zstd import (ZstdCompressor, ZstdDecompressor, _ZSTD_DStreamSizes,
                    ZstdError)
 from compression._common import _streams
