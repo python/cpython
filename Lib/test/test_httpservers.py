@@ -11,6 +11,7 @@ from http import server, HTTPStatus
 import contextlib
 import os
 import socket
+import subprocess
 import sys
 import re
 import base64
@@ -22,6 +23,7 @@ import email.utils
 import html
 import http, http.client
 import urllib.parse
+import urllib.request
 import tempfile
 import time
 import datetime
@@ -34,6 +36,7 @@ from test import support
 from test.support import (
     is_apple, import_helper, os_helper, requires_subprocess, threading_helper
 )
+from test.support.socket_helper import find_unused_port
 
 try:
     import ssl
@@ -1555,6 +1558,8 @@ class CommandLineTestCase(unittest.TestCase):
         'tls_key': None,
         'tls_password': None,
     }
+    random_data = os.urandom(1024)
+    random_file_name = 'random.bin'
 
     def setUp(self):
         super().setUp()
@@ -1562,6 +1567,9 @@ class CommandLineTestCase(unittest.TestCase):
         with open(self.tls_password_file, 'wb') as f:
             f.write(self.tls_password.encode())
         self.addCleanup(os_helper.unlink, self.tls_password_file)
+        with open(self.random_file_name, 'wb') as f:
+            f.write(self.random_data)
+        self.addCleanup(os_helper.unlink, self.random_file_name)
 
     def invoke_httpd(self, *args):
         output = StringIO()
@@ -1726,6 +1734,44 @@ class CommandLineTestCase(unittest.TestCase):
             output = self.invoke_httpd('--unknown-flag')
             self.assertStartsWith(output, 'usage: ')
 
+    def fetch_file(self, path, allow_self_signed_cert=True) -> bytes:
+        context = ssl.create_default_context()
+        if allow_self_signed_cert:
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+        req = urllib.request.Request(path, method='GET')
+        res = urllib.request.urlopen(req, context=context)
+        return res.read()
+
+    def test_http_client(self):
+        port = find_unused_port()
+        bind = '127.0.0.1'
+        proc = subprocess.Popen([sys.executable, '-m', 'http.server',
+                                 str(port), '-b', bind],
+                                 stdout=subprocess.DEVNULL,
+                                 stderr=subprocess.DEVNULL)
+        time.sleep(0.5) # Wait for the server to start.
+        # TODO: Find a better way to wait for the server to start.
+        res = self.fetch_file(f'http://{bind}:{port}/{self.random_file_name}')
+        self.assertEqual(res, self.random_data)
+        proc.kill()
+        proc.wait()
+
+    def test_https_client(self):
+        port = find_unused_port()
+        bind = '127.0.0.1'
+        proc = subprocess.Popen([sys.executable, '-m', 'http.server',
+                                 str(port), '-b', bind,
+                                 '--tls-cert', self.tls_cert,
+                                 '--tls-key', self.tls_key,
+                                 '--tls-password-file', self.tls_password_file],
+                                stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL)
+        time.sleep(0.5)
+        res = self.fetch_file(f'https://{bind}:{port}/{self.random_file_name}')
+        self.assertEqual(res, self.random_data)
+        proc.kill()
+        proc.wait()
 
 def setUpModule():
     unittest.addModuleCleanup(os.chdir, os.getcwd())
