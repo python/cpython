@@ -916,7 +916,7 @@ concurrent.futures
 ------------------
 
 * Add :class:`~concurrent.futures.InterpreterPoolExecutor`,
-  which exposes "subinterpreters (multiple Python interpreters in the
+  which exposes "subinterpreters" (multiple Python interpreters in the
   same process) to Python code.  This is separate from the proposed API
   in :pep:`734`.
   (Contributed by Eric Snow in :gh:`124548`.)
@@ -1359,9 +1359,9 @@ multiprocessing
 * The :ref:`multiprocessing proxy objects <multiprocessing-proxy_objects>`
   for *list* and *dict* types gain previously overlooked missing methods:
 
-   * :meth:`!clear` and :meth:`!copy` for proxies of :class:`list`.
+   * :meth:`!clear` and :meth:`!copy` for proxies of :class:`list`
    * :meth:`~dict.fromkeys`, ``reversed(d)``, ``d | {}``, ``{} | d``,
-     ``d |= {'b': 2}`` for proxies of :class:`dict`.
+     ``d |= {'b': 2}`` for proxies of :class:`dict`
 
   (Contributed by Roy Hyunjin Han for :gh:`103134`.)
 
@@ -1518,7 +1518,7 @@ socket
     :const:`~socket.BTPROTO_HCI` on Linux.
     (Contributed by Serhiy Storchaka in :gh:`70145`.)
   * Accept an integer as the address for
-    :const:`~socket.BTPROTO_HCI` on Linux
+    :const:`~socket.BTPROTO_HCI` on Linux.
     (Contributed by Serhiy Storchaka in :gh:`132099`.)
   * Return *cid* in :meth:`~socket.socket.getsockname` for
     :const:`~socket.BTPROTO_L2CAP`.
@@ -2404,12 +2404,12 @@ New features
 
 * Add a new import and export API for Python :class:`int` objects (:pep:`757`):
 
-  * :c:func:`PyLong_GetNativeLayout`;
-  * :c:func:`PyLong_Export`;
-  * :c:func:`PyLong_FreeExport`;
-  * :c:func:`PyLongWriter_Create`;
-  * :c:func:`PyLongWriter_Finish`;
-  * :c:func:`PyLongWriter_Discard`.
+  * :c:func:`PyLong_GetNativeLayout`
+  * :c:func:`PyLong_Export`
+  * :c:func:`PyLong_FreeExport`
+  * :c:func:`PyLongWriter_Create`
+  * :c:func:`PyLongWriter_Finish`
+  * :c:func:`PyLongWriter_Discard`
 
   (Contributed by Sergey B Kirpichev and Victor Stinner in :gh:`102471`.)
 
@@ -2517,24 +2517,24 @@ Porting to Python 3.14
 
 * Private functions promoted to public C APIs:
 
-  * ``_PyBytes_Join()``: :c:func:`PyBytes_Join`.
-  * ``_PyLong_IsNegative()``: :c:func:`PyLong_IsNegative`.
-  * ``_PyLong_IsPositive()``: :c:func:`PyLong_IsPositive`.
-  * ``_PyLong_IsZero()``: :c:func:`PyLong_IsZero`.
-  * ``_PyLong_Sign()``: :c:func:`PyLong_GetSign`.
-  * ``_PyUnicodeWriter_Dealloc()``: :c:func:`PyUnicodeWriter_Discard`.
-  * ``_PyUnicodeWriter_Finish()``: :c:func:`PyUnicodeWriter_Finish`.
-  * ``_PyUnicodeWriter_Init()``: use :c:func:`PyUnicodeWriter_Create`.
-  * ``_PyUnicodeWriter_Prepare()``: (no replacement).
-  * ``_PyUnicodeWriter_PrepareKind()``: (no replacement).
-  * ``_PyUnicodeWriter_WriteChar()``: :c:func:`PyUnicodeWriter_WriteChar`.
-  * ``_PyUnicodeWriter_WriteStr()``: :c:func:`PyUnicodeWriter_WriteStr`.
-  * ``_PyUnicodeWriter_WriteSubstring()``: :c:func:`PyUnicodeWriter_WriteSubstring`.
-  * ``_PyUnicode_EQ()``: :c:func:`PyUnicode_Equal`.
-  * ``_PyUnicode_Equal()``: :c:func:`PyUnicode_Equal`.
-  * ``_Py_GetConfig()``: :c:func:`PyConfig_Get` and :c:func:`PyConfig_GetInt`.
-  * ``_Py_HashBytes()``: :c:func:`Py_HashBuffer`.
-  * ``_Py_fopen_obj()``: :c:func:`Py_fopen`.
+  * ``_PyBytes_Join()``: :c:func:`PyBytes_Join`
+  * ``_PyLong_IsNegative()``: :c:func:`PyLong_IsNegative`
+  * ``_PyLong_IsPositive()``: :c:func:`PyLong_IsPositive`
+  * ``_PyLong_IsZero()``: :c:func:`PyLong_IsZero`
+  * ``_PyLong_Sign()``: :c:func:`PyLong_GetSign`
+  * ``_PyUnicodeWriter_Dealloc()``: :c:func:`PyUnicodeWriter_Discard`
+  * ``_PyUnicodeWriter_Finish()``: :c:func:`PyUnicodeWriter_Finish`
+  * ``_PyUnicodeWriter_Init()``: use :c:func:`PyUnicodeWriter_Create`
+  * ``_PyUnicodeWriter_Prepare()``: (no replacement)
+  * ``_PyUnicodeWriter_PrepareKind()``: (no replacement)
+  * ``_PyUnicodeWriter_WriteChar()``: :c:func:`PyUnicodeWriter_WriteChar`
+  * ``_PyUnicodeWriter_WriteStr()``: :c:func:`PyUnicodeWriter_WriteStr`
+  * ``_PyUnicodeWriter_WriteSubstring()``: :c:func:`PyUnicodeWriter_WriteSubstring`
+  * ``_PyUnicode_EQ()``: :c:func:`PyUnicode_Equal`
+  * ``_PyUnicode_Equal()``: :c:func:`PyUnicode_Equal`
+  * ``_Py_GetConfig()``: :c:func:`PyConfig_Get` and :c:func:`PyConfig_GetInt`
+  * ``_Py_HashBytes()``: :c:func:`Py_HashBuffer`
+  * ``_Py_fopen_obj()``: :c:func:`Py_fopen`
 
   The `pythoncapi-compat project`_ can be used to get most of these new
   functions on Python 3.13 and older.
