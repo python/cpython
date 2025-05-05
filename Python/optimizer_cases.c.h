@@ -215,6 +215,10 @@
             break;
         }
 
+        case _GUARD_TOS_SLICE: {
+            break;
+        }
+
         case _TO_BOOL_LIST: {
             JitOptSymbol *value;
             JitOptSymbol *res;
@@ -550,9 +554,7 @@
             break;
         }
 
-        case _GUARD_BINARY_OP_EXTEND: {
-            break;
-        }
+        /* _GUARD_BINARY_OP_EXTEND is not a viable micro-op for tier 2 */
 
         case _BINARY_OP_EXTEND: {
             JitOptSymbol *res;
@@ -579,6 +581,15 @@
         }
 
         case _BINARY_OP_SUBSCR_LIST_INT: {
+            JitOptSymbol *res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _BINARY_OP_SUBSCR_LIST_SLICE: {
             JitOptSymbol *res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
@@ -1828,6 +1839,10 @@
         case _CHECK_STACK_SPACE: {
             assert(corresponding_check_stack == NULL);
             corresponding_check_stack = this_instr;
+            break;
+        }
+
+        case _CHECK_RECURSION_REMAINING: {
             break;
         }
 

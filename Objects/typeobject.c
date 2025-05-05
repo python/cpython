@@ -5399,7 +5399,7 @@ PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // type_ready_mro() ensures that no heap type is
         // contained in a static type MRO.
-        return NULL;
+        goto error;
     }
     else {
         PyHeapTypeObject *ht = (PyHeapTypeObject*)type;
@@ -5439,13 +5439,15 @@ PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
     }
     END_TYPE_LOCK();
 
-    if (res == NULL) {
-        PyErr_Format(
-            PyExc_TypeError,
-            "PyType_GetModuleByDef: No superclass of '%s' has the given module",
-            type->tp_name);
+    if (res != NULL) {
+        return res;
     }
-    return res;
+error:
+    PyErr_Format(
+        PyExc_TypeError,
+        "PyType_GetModuleByDef: No superclass of '%s' has the given module",
+        type->tp_name);
+    return NULL;
 }
 
 

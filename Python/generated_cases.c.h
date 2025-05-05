@@ -283,14 +283,30 @@
                 PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
                 _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr*)descr;
                 assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
-                assert(d && d->guard);
+                assert(d);
+                assert(d->guard);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 int res = d->guard(left_o, right_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (!res) {
-                    UPDATE_MISS_STATS(BINARY_OP);
-                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                if (res < 0) {
+                    JUMP_TO_LABEL(error);
+                }
+                if (res == 0) {
+                    if (d->free) {
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        d->free(d);
+                        stack_pointer = _PyFrame_GetStackPointer(frame);
+                    }
+                    _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(this_instr+1);
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    write_ptr(cache->external_cache, NULL);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    this_instr->op.code = BINARY_OP;
+                    if (true) {
+                        UPDATE_MISS_STATS(BINARY_OP);
+                        assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
+                        JUMP_TO_PREDICTED(BINARY_OP);
+                    }
                 }
             }
             /* Skip -4 cache entry */
@@ -315,6 +331,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
+                if (res_o == NULL) {
+                    JUMP_TO_LABEL(error);
+                }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[0] = res;
@@ -760,6 +779,78 @@
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
             }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_OP_SUBSCR_LIST_SLICE) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = BINARY_OP_SUBSCR_LIST_SLICE;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 6;
+            INSTRUCTION_STATS(BINARY_OP_SUBSCR_LIST_SLICE);
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
+            _PyStackRef tos;
+            _PyStackRef nos;
+            _PyStackRef list_st;
+            _PyStackRef sub_st;
+            _PyStackRef res;
+            // _GUARD_TOS_SLICE
+            {
+                tos = stack_pointer[-1];
+                PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
+                if (!PySlice_Check(o)) {
+                    UPDATE_MISS_STATS(BINARY_OP);
+                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
+                    JUMP_TO_PREDICTED(BINARY_OP);
+                }
+            }
+            // _GUARD_NOS_LIST
+            {
+                nos = stack_pointer[-2];
+                PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
+                if (!PyList_CheckExact(o)) {
+                    UPDATE_MISS_STATS(BINARY_OP);
+                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
+                    JUMP_TO_PREDICTED(BINARY_OP);
+                }
+            }
+            /* Skip 5 cache entries */
+            // _BINARY_OP_SUBSCR_LIST_SLICE
+            {
+                sub_st = tos;
+                list_st = nos;
+                PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
+                PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
+                assert(PySlice_Check(sub));
+                assert(PyList_CheckExact(list));
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyObject *res_o = _PyList_SliceSubscript(list, sub);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                STAT_INC(BINARY_OP, hit);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyStackRef tmp = sub_st;
+                sub_st = PyStackRef_NULL;
+                stack_pointer[-1] = sub_st;
+                PyStackRef_CLOSE(tmp);
+                tmp = list_st;
+                list_st = PyStackRef_NULL;
+                stack_pointer[-2] = list_st;
+                PyStackRef_CLOSE(tmp);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -2;
+                assert(WITHIN_STACK_BOUNDS());
+                if (res_o == NULL) {
+                    JUMP_TO_LABEL(error);
+                }
+                res = PyStackRef_FromPyObjectSteal(res_o);
+            }
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 
@@ -1835,6 +1926,9 @@
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
                 }
+            }
+            // _CHECK_RECURSION_REMAINING
+            {
                 if (tstate->py_recursion_remaining <= 1) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
@@ -1950,6 +2044,14 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // flush
+            // _CHECK_RECURSION_REMAINING
+            {
+                if (tstate->py_recursion_remaining <= 1) {
+                    UPDATE_MISS_STATS(CALL);
+                    assert(_PyOpcode_Deopt[opcode] == (CALL));
+                    JUMP_TO_PREDICTED(CALL);
+                }
+            }
             // _PY_FRAME_GENERAL
             {
                 args = &stack_pointer[-oparg];
@@ -4096,6 +4198,9 @@
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
                 }
+            }
+            // _CHECK_RECURSION_REMAINING
+            {
                 if (tstate->py_recursion_remaining <= 1) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
@@ -4177,6 +4282,14 @@
                 }
                 PyFunctionObject *func = (PyFunctionObject *)callable_o;
                 if (func->func_version != func_version) {
+                    UPDATE_MISS_STATS(CALL);
+                    assert(_PyOpcode_Deopt[opcode] == (CALL));
+                    JUMP_TO_PREDICTED(CALL);
+                }
+            }
+            // _CHECK_RECURSION_REMAINING
+            {
+                if (tstate->py_recursion_remaining <= 1) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
@@ -5463,7 +5576,7 @@
             assert(executor->vm_data.index == INSTR_OFFSET() - 1);
             assert(executor->vm_data.code == code);
             assert(executor->vm_data.valid);
-            assert(tstate->previous_executor == NULL);
+            assert(tstate->current_executor == NULL);
             if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
                 opcode = executor->vm_data.opcode;
                 oparg = (oparg & ~255) | executor->vm_data.oparg;
@@ -5473,8 +5586,6 @@
                 }
                 DISPATCH_GOTO();
             }
-            tstate->previous_executor = Py_None;
-            Py_INCREF(executor);
             GOTO_TIER_TWO(executor);
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");
@@ -7558,6 +7669,22 @@
             tstate->current_frame = frame->previous;
             assert(!_PyErr_Occurred(tstate));
             PyObject *result = PyStackRef_AsPyObjectSteal(retval);
+            #if !Py_TAIL_CALL_INTERP
+            assert(frame == &entry.frame);
+            #endif
+            #ifdef _Py_TIER2
+            _PyStackRef executor = frame->localsplus[0];
+            assert(tstate->current_executor == NULL);
+            if (!PyStackRef_IsNull(executor)) {
+                tstate->current_executor = PyStackRef_AsPyObjectBorrow(executor);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_CLOSE(executor);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += 1;
+            }
+            #endif
             LLTRACE_RESUME_FRAME();
             return result;
         }
@@ -7692,8 +7819,7 @@
                         _PyFrame_SetStackPointer(frame, stack_pointer);
                         this_instr[1].counter = initial_jump_backoff_counter();
                         stack_pointer = _PyFrame_GetStackPointer(frame);
-                        assert(tstate->previous_executor == NULL);
-                        tstate->previous_executor = Py_None;
+                        assert(tstate->current_executor == NULL);
                         GOTO_TIER_TWO(executor);
                     }
                 }
@@ -12230,20 +12356,6 @@ JUMP_TO_LABEL(error);
 #endif /* Py_TAIL_CALL_INTERP */
         /* BEGIN LABELS */
 
-        LABEL(pop_4_error)
-        {
-            stack_pointer -= 4;
-            assert(WITHIN_STACK_BOUNDS());
-            JUMP_TO_LABEL(error);
-        }
-
-        LABEL(pop_3_error)
-        {
-            stack_pointer -= 3;
-            assert(WITHIN_STACK_BOUNDS());
-            JUMP_TO_LABEL(error);
-        }
-
         LABEL(pop_2_error)
         {
             stack_pointer -= 2;
@@ -12344,6 +12456,17 @@ JUMP_TO_LABEL(error);
             frame->return_offset = 0;
             if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
                 tstate->current_frame = frame->previous;
+                #if !Py_TAIL_CALL_INTERP
+                assert(frame == &entry.frame);
+                #endif
+                #ifdef _Py_TIER2
+                _PyStackRef executor = frame->localsplus[0];
+                assert(tstate->current_executor == NULL);
+                if (!PyStackRef_IsNull(executor)) {
+                    tstate->current_executor = PyStackRef_AsPyObjectBorrow(executor);
+                    PyStackRef_CLOSE(executor);
+                }
+                #endif
                 return NULL;
             }
             next_instr = frame->instr_ptr;

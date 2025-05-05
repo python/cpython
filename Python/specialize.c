@@ -440,7 +440,9 @@ _Py_PrintSpecializationStats(int to_file)
 #define SPECIALIZATION_FAIL(opcode, kind) \
 do { \
     if (_Py_stats) { \
-        _Py_stats->opcode_stats[opcode].specialization.failure_kinds[kind]++; \
+        int _kind = (kind); \
+        assert(_kind < SPECIALIZATION_FAILURE_KINDS); \
+        _Py_stats->opcode_stats[opcode].specialization.failure_kinds[_kind]++; \
     } \
 } while (0)
 
@@ -2532,7 +2534,7 @@ LONG_FLOAT_ACTION(compactlong_float_multiply, *)
 LONG_FLOAT_ACTION(compactlong_float_true_div, /)
 #undef LONG_FLOAT_ACTION
 
-static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
+static const _PyBinaryOpSpecializationDescr binaryop_extend_builtins[] = {
     /* long-long arithmetic */
     {NB_OR, compactlongs_guard, compactlongs_or},
     {NB_AND, compactlongs_guard, compactlongs_and},
@@ -2558,13 +2560,40 @@ static int
 binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
                                   _PyBinaryOpSpecializationDescr **descr)
 {
-    size_t n = sizeof(binaryop_extend_descrs)/sizeof(_PyBinaryOpSpecializationDescr);
-    for (size_t i = 0; i < n; i++) {
-        _PyBinaryOpSpecializationDescr *d = &binaryop_extend_descrs[i];
+    /* We are currently using this only for NB_SUBSCR, which is not
+     * commutative. Will need to revisit this function when we use
+     * this for operators which are.
+     */
+
+    typedef _PyBinaryOpSpecializationDescr descr_type;
+    size_t size = Py_ARRAY_LENGTH(binaryop_extend_builtins);
+    for (size_t i = 0; i < size; i++) {
+        descr_type *d = (descr_type *)&binaryop_extend_builtins[i];
+        assert(d != NULL);
+        assert(d->guard != NULL);
         if (d->oparg == oparg && d->guard(lhs, rhs)) {
             *descr = d;
             return 1;
         }
+    }
+
+    PyTypeObject *lhs_type = Py_TYPE(lhs);
+    if (lhs_type->tp_binop_specialize != NULL) {
+        int ret = lhs_type->tp_binop_specialize(lhs, rhs, oparg, descr);
+        if (ret < 0) {
+            return -1;
+        }
+        if (ret == 1) {
+            if (*descr == NULL) {
+                PyErr_Format(
+                    PyExc_ValueError,
+                    "tp_binop_specialize of '%T' returned 1 with *descr == NULL",
+                    lhs);
+                return -1;
+            }
+            (*descr)->oparg = oparg;
+        }
+        return ret;
     }
     return 0;
 }
@@ -2653,6 +2682,10 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
             }
             if (PyDict_CheckExact(lhs)) {
                 specialize(instr, BINARY_OP_SUBSCR_DICT);
+                return;
+            }
+            if (PyList_CheckExact(lhs) && PySlice_Check(rhs)) {
+                specialize(instr, BINARY_OP_SUBSCR_LIST_SLICE);
                 return;
             }
             unsigned int tp_version;
