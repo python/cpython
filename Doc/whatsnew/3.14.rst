@@ -184,11 +184,13 @@ With this in place, developers can write template systems to sanitize SQL, make
 safe shell operations, improve logging, tackle modern ideas in web development
 (HTML, CSS, and so on), and implement lightweight, custom business DSLs.
 
-See :pep:`750` for more details.
-
 (Contributed by Jim Baker, Guido van Rossum, Paul Everitt, Koudai Aono,
 Lysandros Nikolaou, Dave Peck, Adam Turner, Jelle Zijlstra, Bénédikt Tran,
 and Pablo Galindo Salgado in :gh:`132661`.)
+
+.. seealso::
+   :pep:`750`.
+
 
 .. _whatsnew314-pep768:
 
