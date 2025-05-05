@@ -1498,7 +1498,7 @@ def _is_local_authority(authority, resolve):
         return False
     try:
         address = socket.gethostbyname(authority)
-    except (socket.gaierror, AttributeError):
+    except (socket.gaierror, AttributeError, UnicodeEncodeError):
         return False
     return address in FileHandler().get_names()
 
