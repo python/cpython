@@ -5,7 +5,7 @@ import parser
 import re
 from typing import Optional, Callable
 
-from parser import Stmt, SimpleStmt, BlockStmt, IfStmt, WhileStmt
+from parser import Stmt, SimpleStmt, BlockStmt, IfStmt, WhileStmt, StackAttribute
 
 @dataclass
 class EscapingCall:
@@ -137,13 +137,14 @@ class StackItem:
     name: str
     type: str | None
     size: str
+    attributes: list[StackAttribute]
     peek: bool = False
     used: bool = False
 
     def __str__(self) -> str:
         size = f"[{self.size}]" if self.size else ""
         type = "" if self.type is None else f"{self.type} "
-        return f"{type}{self.name}{size} {self.peek}"
+        return f"{self.attributes} {type}{self.name}{size} {self.peek}"
 
     def is_array(self) -> bool:
         return self.size != ""
@@ -345,7 +346,7 @@ def override_error(
 def convert_stack_item(
     item: parser.StackEffect, replace_op_arg_1: str | None
 ) -> StackItem:
-    return StackItem(item.name, item.type, item.size)
+    return StackItem(item.name, item.type, item.size, item.attributes)
 
 def check_unused(stack: list[StackItem], input_names: dict[str, lexer.Token]) -> None:
     "Unused items cannot be on the stack above used, non-peek items"
