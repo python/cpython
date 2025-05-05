@@ -1611,8 +1611,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
      references to the object being cleared.  Because of this,
      :c:member:`!tp_clear` must not deallocate the object's own memory
      (:c:member:`~PyTypeObject.tp_free`).  The destructor, on the other hand,
-     is only called when no (strong) references exist, and is thus able to
-     safely destroy the object itself.
+     is only called when no (strong) references exist, and as such, must
+     safely destroy the object itself by deallocating it.
    * :c:member:`!tp_clear` might never be automatically called.  An object's
      destructor, on the other hand, will be automatically called some time
      after the object becomes unreachable (i.e., either there are no references
