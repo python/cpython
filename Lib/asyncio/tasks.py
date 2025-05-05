@@ -392,7 +392,7 @@ def create_task(coro, **kwargs):
     Return a Task object.
     """
     loop = events.get_running_loop()
-    task = loop.create_task(coro, name=name, context=context)
+    task = loop.create_task(coro, **kwargs)
 
     return task
 
