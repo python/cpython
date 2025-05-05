@@ -276,6 +276,7 @@ Known values:
     Python 3.14a7 3621 (Optimize LOAD_FAST opcodes into LOAD_FAST_BORROW)
     Python 3.14a7 3622 (Store annotations in different class dict keys)
     Python 3.14a7 3623 (Add BUILD_INTERPOLATION & BUILD_TEMPLATE opcodes)
+    Python 3.14b1 3624 (Don't optimize LOAD_FAST when local is killed by DELETE_FAST)
 
     Python 3.15 will start with 3650
 
@@ -288,7 +289,7 @@ PC/launcher.c must also be updated.
 
 */
 
-#define PYC_MAGIC_NUMBER 3623
+#define PYC_MAGIC_NUMBER 3624
 /* This is equivalent to converting PYC_MAGIC_NUMBER to 2 bytes
    (little-endian) and then appending b'\r\n'. */
 #define PYC_MAGIC_NUMBER_TOKEN \
