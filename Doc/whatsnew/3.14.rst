@@ -71,7 +71,12 @@ Summary -- release highlights
 * :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
 * :ref:`PEP 765: Disallow return/break/continue that exit a finally block <whatsnew314-pep765>`
 * :ref:`PEP 768: Safe external debugger interface for CPython <whatsnew314-pep768>`
-* :ref:`A new type of interpreter  <whatsnew314-tail-call>`
+* :ref:`A new type of interpreter <whatsnew314-tail-call>`
+* :ref:`Syntax highlighting in PyREPL <whatsnew314-pyrepl-highlighting>`,
+  and color output in :ref:`unittest <whatsnew314-color-unittest>`,
+  :ref:`argparse <whatsnew314-color-argparse>`,
+  :ref:`json <whatsnew314-color-json>` and
+  :ref:`calendar <whatsnew314-color-calendar>` CLIs
 
 
 Incompatible changes
@@ -474,6 +479,36 @@ Improved error messages
     Traceback (most recent call last):
     SyntaxError: invalid syntax. Is this intended to be part of the string?
 
+* When strings have incompatible prefixes, the error now shows
+  which prefixes are incompatible. (Contributed by
+  Nikita Sobolev in :gh:`133197`.)
+
+  .. code-block:: pycon
+
+    >>> ub'abc'
+      File "<python-input-0>", line 1
+        ub'abc'
+        ^^
+    SyntaxError: 'u' and 'b' prefixes are incompatible
+
+* Improved error messages when using ``as`` with incompatible targets in:
+
+  - Imports: ``import ... as ...``
+  - From imports: ``from ... import ... as ...``
+  - Except handlers: ``except ... as ...``
+  - Pattern-match cases: ``case ... as ...``
+
+  (Contributed by Nikita Sobolev in :gh:`123539`,
+  :gh:`123562`, and :gh:`123440`.)
+
+  .. code-block:: pycon
+
+   >>> import ast as arr[0]
+     File "<python-input-1>", line 1
+       import ast as arr[0]
+                     ^^^^^^
+   SyntaxError: cannot use subscript as import target
+
 
 .. _whatsnew314-pep741:
 
@@ -507,6 +542,105 @@ configuration mechanisms).
 
 .. seealso::
    :pep:`741`.
+
+.. _whatsnew314-asyncio-introspection:
+
+Asyncio introspection capabilities
+----------------------------------
+
+Added a new command-line interface to inspect running Python processes using
+asynchronous tasks, available via:
+
+.. code-block:: bash
+
+  python -m asyncio ps PID
+
+This tool inspects the given process ID (PID) and displays information about
+currently running asyncio tasks.  It outputs a task table: a flat
+listing of all tasks, their names, their coroutine stacks, and which tasks are
+awaiting them.
+
+.. code-block:: bash
+
+  python -m asyncio pstree PID
+
+This tool fetches the same information, but renders a visual async call tree,
+showing coroutine relationships in a hierarchical format.  This command is
+particularly useful for debugging long-running or stuck asynchronous programs.
+It can help developers quickly identify where a program is blocked, what tasks
+are pending, and how coroutines are chained together.
+
+For example given this code:
+
+.. code-block:: python
+
+  import asyncio
+
+  async def play(track):
+      await asyncio.sleep(5)
+      print(f"🎵 Finished: {track}")
+
+  async def album(name, tracks):
+      async with asyncio.TaskGroup() as tg:
+          for track in tracks:
+              tg.create_task(play(track), name=track)
+
+  async def main():
+      async with asyncio.TaskGroup() as tg:
+          tg.create_task(
+            album("Sundowning", ["TNDNBTG", "Levitate"]), name="Sundowning")
+          tg.create_task(
+            album("TMBTE", ["DYWTYLM", "Aqua Regia"]), name="TMBTE")
+
+  if __name__ == "__main__":
+      asyncio.run(main())
+
+Executing the new tool on the running process will yield a table like this:
+
+.. code-block:: bash
+
+  python -m asyncio ps 12345
+
+  tid        task id              task name            coroutine chain                                    awaiter name         awaiter id
+  ---------------------------------------------------------------------------------------------------------------------------------------
+  8138752    0x564bd3d0210        Task-1                                                                                       0x0
+  8138752    0x564bd3d0410        Sundowning           _aexit -> __aexit__ -> main                        Task-1               0x564bd3d0210
+  8138752    0x564bd3d0610        TMBTE                _aexit -> __aexit__ -> main                        Task-1               0x564bd3d0210
+  8138752    0x564bd3d0810        TNDNBTG              _aexit -> __aexit__ -> album                       Sundowning           0x564bd3d0410
+  8138752    0x564bd3d0a10        Levitate             _aexit -> __aexit__ -> album                       Sundowning           0x564bd3d0410
+  8138752    0x564bd3e0550        DYWTYLM              _aexit -> __aexit__ -> album                       TMBTE                 0x564bd3d0610
+  8138752    0x564bd3e0710        Aqua Regia           _aexit -> __aexit__ -> album                       TMBTE                 0x564bd3d0610
+
+
+or:
+
+.. code-block:: bash
+
+  python -m asyncio pstree 12345
+
+  └── (T) Task-1
+      └──  main
+          └──  __aexit__
+              └──  _aexit
+                  ├── (T) Sundowning
+                  │   └──  album
+                  │       └──  __aexit__
+                  │           └──  _aexit
+                  │               ├── (T) TNDNBTG
+                  │               └── (T) Levitate
+                  └── (T) TMBTE
+                      └──  album
+                          └──  __aexit__
+                              └──  _aexit
+                                  ├── (T) DYWTYLM
+                                  └── (T) Aqua Regia
+
+If a cycle is detected in the async await graph (which could indicate a
+programming issue), the tool raises an error and lists the cycle paths that
+prevent tree construction.
+
+(Contributed by Pablo Galindo, Łukasz Langa, Yury Selivanov, and Marta
+Gomez Macias in :gh:`91048`.)
 
 .. _whatsnew314-tail-call:
 
@@ -561,6 +695,26 @@ For further information on how to build Python, see
 in CPython by Mark Shannon, Garrett Gu, Haoran Xu, and Josh Haberman.)
 
 
+.. _whatsnew314-pyrepl-highlighting:
+
+Syntax highlighting in PyREPL
+-----------------------------
+
+The default :term:`interactive` shell now highlights Python syntax as you
+type.  The feature is enabled by default unless the
+:envvar:`PYTHON_BASIC_REPL` environment is set or any color-disabling
+environment variables are used. See :ref:`using-on-controlling-color` for
+details.
+
+The default color theme for syntax highlighting strives for good contrast
+and uses exclusively the 4-bit VGA standard ANSI color codes for maximum
+compatibility. The theme can be customized using an experimental API
+``_colorize.set_theme()``.  This can be called interactively, as well as
+in the :envvar:`PYTHONSTARTUP` script.
+
+(Contributed by Łukasz Langa in :gh:`131507`.)
+
+
 Other language changes
 ======================
 
@@ -606,6 +760,11 @@ Other language changes
 * The :func:`bytes.fromhex` and :func:`bytearray.fromhex` methods now accept
   ASCII :class:`bytes` and :term:`bytes-like objects <bytes-like object>`.
   (Contributed by Daniel Pope in :gh:`129349`.)
+
+* Support ``\z`` as a synonym for ``\Z`` in :mod:`regular expressions <re>`.
+  It is interpreted unambiguously in many other regular expression engines,
+  unlike ``\Z``, which has subtly different behavior.
+  (Contributed by Serhiy Storchaka in :gh:`133306`.)
 
 * ``\B`` in :mod:`regular expression <re>` now matches empty input string.
   Now it is always the opposite of ``\b``.
@@ -681,6 +840,17 @@ argparse
   and subparser names if mistyped by the user.
   (Contributed by Savannah Ostrowski in :gh:`124456`.)
 
+  .. _whatsnew314-color-argparse:
+
+* Introduced the optional *color* parameter to
+  :class:`argparse.ArgumentParser`, enabling color for help text.
+  This can be controlled via the :envvar:`PYTHON_COLORS` environment
+  variable as well as the canonical |NO_COLOR|_
+  and |FORCE_COLOR|_ environment variables.
+  See also :ref:`using-on-controlling-color`.
+  (Contributed by Hugo van Kemenade in :gh:`130645`.)
+
+
 ast
 ---
 
@@ -705,6 +875,9 @@ bdb
 
 * The :mod:`bdb` module now supports the :mod:`sys.monitoring` backend.
   (Contributed by Tian Gao in :gh:`124533`.)
+
+
+  .. _whatsnew314-color-calendar:
 
 calendar
 --------
@@ -807,10 +980,23 @@ ctypes
   loaded by the current process.
   (Contributed by Brian Ward in :gh:`119349`.)
 
+* Move :func:`ctypes.POINTER` types cache from a global internal cache
+  (``_pointer_type_cache``) to the :attr:`ctypes._CData.__pointer_type__`
+  attribute of the corresponding :mod:`ctypes` types.
+  This will stop the cache from growing without limits in some situations.
+  (Contributed by Sergey Miryanov in :gh:`100926`).
+
 * The :class:`ctypes.py_object` type now supports subscription,
   making it a :term:`generic type`.
   (Contributed by Brian Schubert in :gh:`132168`.)
 
+curses
+------
+
+* Add the :func:`~curses.assume_default_colors` function,
+  a refinement of the :func:`~curses.use_default_colors` function which
+  allows to change the color pair ``0``.
+  (Contributed by Serhiy Storchaka in :gh:`133139`.)
 
 datetime
 --------
@@ -998,6 +1184,8 @@ json
   switch: :program:`python -m json`.
   See the :ref:`JSON command-line interface <json-commandline>` documentation.
   (Contributed by Trey Hunner in :gh:`122873`.)
+
+  .. _whatsnew314-color-json:
 
 * By default, the output of the :ref:`JSON command-line interface <json-commandline>`
   is highlighted in color. This can be controlled via the
@@ -1248,6 +1436,11 @@ pdb
   function.
   (Contributed by Tian Gao in :gh:`132576`.)
 
+* Source code displayed in :mod:`pdb` will be syntax-highlighted. This feature
+  can be controlled using the same methods as PyREPL, in addition to the newly
+  added ``colorize`` argument of :class:`pdb.Pdb`.
+  (Contributed by Tian Gao in :gh:`133355`.)
+
 
 pickle
 ------
@@ -1313,8 +1506,8 @@ struct
 ------
 
 * Support the :c:expr:`float complex` and :c:expr:`double complex` C types in
-  the :mod:`struct` module (formatting characters ``'F'`` and ``'D'``,
-  respectively) if the compiler has C11 complex arithmetic.
+  the :mod:`struct` module (formatting characters ``'F'`` and ``'D'``
+  respectively).
   (Contributed by Sergey B Kirpichev in :gh:`121249`.)
 
 
@@ -1444,6 +1637,8 @@ unicodedata
 
 * The Unicode database has been updated to Unicode 16.0.0.
 
+
+.. _whatsnew314-color-unittest:
 
 unittest
 --------
@@ -1679,6 +1874,19 @@ Deprecated
   :func:`codecs.open` is now deprecated. Use :func:`open` instead.
   (Contributed by Inada Naoki in :gh:`133036`.)
 
+* :mod:`ctypes`:
+  On non-Windows platforms, setting :attr:`.Structure._pack_` to use a
+  MSVC-compatible default memory layout is deprecated in favor of setting
+  :attr:`.Structure._layout_` to ``'ms'``.
+  (Contributed by Petr Viktorin in :gh:`131747`.)
+
+* :mod:`ctypes`:
+  Calling :func:`ctypes.POINTER` on a string is deprecated.
+  Use :ref:`ctypes-incomplete-types` for self-referential structures.
+  Also, the internal ``ctypes._pointer_type_cache`` is deprecated.
+  See :func:`ctypes.POINTER` for updated implementation details.
+  (Contributed by Sergey Myrianov in :gh:`100926`.)
+
 * :mod:`functools`:
   Calling the Python implementation of :func:`functools.reduce` with *function*
   or *sequence* as keyword arguments is now deprecated.
@@ -1745,6 +1953,8 @@ Deprecated
 .. include:: ../deprecations/pending-removal-in-3.16.rst
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.19.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
 
@@ -2016,6 +2226,12 @@ Others
   integer must implement either :meth:`~object.__int__` or
   :meth:`~object.__index__`. (Contributed by Mark Dickinson in :gh:`119743`.)
 
+* The default :term:`interactive` shell now supports import autocompletion.
+  This means that typing ``import foo`` and pressing ``<tab>`` will suggest
+  modules starting with ``foo``. Similarly, typing ``from foo import b`` will
+  suggest submodules of ``foo`` starting with ``b``. Note that autocompletion
+  of module attributes is not currently supported.
+  (Contributed by Tomas Roun in :gh:`69605`.)
 
 CPython Bytecode Changes
 ========================
