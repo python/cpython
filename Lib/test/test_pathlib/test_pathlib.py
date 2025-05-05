@@ -81,7 +81,7 @@ class UnsupportedOperationTest(unittest.TestCase):
         self.assertTrue(isinstance(pathlib.UnsupportedOperation(), NotImplementedError))
 
 
-class TestImportTime(unittest.TestCase):
+class LazyImportTest(unittest.TestCase):
     @cpython_only
     def test_lazy_import(self):
         import_helper.ensure_lazy_imports("pathlib", {"shutil"})
