@@ -65,6 +65,20 @@ Summary -- release highlights
 .. This section singles out the most important changes in Python 3.14.
    Brevity is key.
 
+Python 3.14 beta is the pre-release of the next version of the Python
+programming language, with a mix of changes to the language, the
+implementation and the standard library.
+
+The biggest changes to the implementation include template strings (:pep:`750`)
+deferred evaluation of annotations (:pep:`649`),
+and a new type of interpreter that uses tail calls.
+
+The library changes include the addition of a new :mod:`!annotationlib` module
+for introspecting and wrapping annotations (:pep:`649`),
+a new :mod:`!compression.zstd` module for Zstandard support (:pep:`784`),
+plus syntax highlighting in the REPL,
+as well as the usual deprecations and removals,
+and improvements in user-friendliness and correctness.
 
 .. PEP-sized items next.
 
