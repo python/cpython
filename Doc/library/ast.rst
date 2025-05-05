@@ -2588,7 +2588,7 @@ The following options are accepted:
 
 .. option:: --show-empty
 
-   Show empty lists and fields that are ``None``. Defaults to showing empty
+   Show empty lists and fields that are ``None``. Defaults to not showing empty
    objects.
 
    .. versionadded:: next
