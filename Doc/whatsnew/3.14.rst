@@ -826,10 +826,10 @@ Other language changes
   :func:`textwrap.dedent`.
   (Contributed by Jon Crall and Steven Sun in :gh:`103998`.)
 
-* Improve error message when an object supporting the synchronous (resp.
-  asynchronous) context manager protocol is entered using :keyword:`async
-  with` (resp. :keyword:`with`) instead of :keyword:`with` (resp.
-  :keyword:`async with`).
+* Improve error message when an object supporting the synchronous
+  context manager protocol is entered using :keyword:`async
+  with` instead of :keyword:`with`.
+  And vice versa with the asynchronous context manager protocol.
   (Contributed by Bénédikt Tran in :gh:`128398`.)
 
 * :option:`!-J` is no longer a reserved flag for Jython_,
