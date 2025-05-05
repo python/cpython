@@ -61,6 +61,7 @@ class ZstdFile(_streams.BaseStream):
         self._fp = None
         self._close_fp = False
         self._mode = _MODE_CLOSED
+        self._buffer = None
 
         if not isinstance(mode, str):
             raise ValueError("mode must be a str")
