@@ -2577,7 +2577,16 @@ binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
         if (ret < 0) {
             return -1;
         }
-
+        if (ret == 1) {
+            if (*descr == NULL) {
+                PyErr_Format(
+                    PyExc_ValueError,
+                    "tp_binop_specialize of '%.200s' returned 1 with *descr == NULL",
+                    Py_TYPE(lhs)->tp_name);
+                return -1;
+            }
+            (*descr)->oparg = oparg;
+        }
         return ret;
     }
     return 0;
