@@ -21,10 +21,13 @@ Allocating Objects on the Heap
    slot).  Specifically, this function does **not** call the object's
    :meth:`!__init__` method.
 
+   In general, consider this function to be a low-level routine. Use
+   :c:member:`~PyTypeObject.tp_alloc` where possible.
+
    .. note::
 
-      This function only initializes some of the object's memory.  It does not
-      zero the rest.
+      This function only initializes the object's memory corresponding to the
+      initial :c:type:`PyObject` structure.  It does not zero the rest.
 
 
 .. c:function:: PyVarObject* PyObject_InitVar(PyVarObject *op, PyTypeObject *type, Py_ssize_t size)
