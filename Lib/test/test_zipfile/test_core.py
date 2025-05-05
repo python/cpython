@@ -24,10 +24,12 @@ from test.support import script_helper, os_helper
 from test.support import (
     findfile, requires_zlib, requires_bz2, requires_lzma,
     captured_stdout, captured_stderr, requires_subprocess,
+    cpython_only
 )
 from test.support.os_helper import (
     TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath
 )
+from test.support.import_helper import ensure_lazy_imports
 
 
 TESTFN2 = TESTFN + "2"
@@ -48,6 +50,13 @@ def get_files(test):
     with io.BytesIO() as f:
         yield f
         test.assertFalse(f.closed)
+
+
+class LazyImportTest(unittest.TestCase):
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("zipfile", {"typing"})
+
 
 class AbstractTestsWithSourceFile:
     @classmethod
