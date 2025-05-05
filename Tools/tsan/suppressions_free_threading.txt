@@ -42,5 +42,5 @@ race:list_inplace_repeat_lock_held
 # with non-locking reads. See #132070
 race:PyObject_Realloc
 
-# This function writes to the tp_getattr slot in an unsafe way.
+# This function writes to the tp_getattr slot in an unsafe way, see #133467.
 race:_Py_slot_tp_getattr_hook
