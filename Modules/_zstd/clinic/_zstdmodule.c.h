@@ -149,10 +149,10 @@ PyDoc_STRVAR(_zstd__get_param_bounds__doc__,
 "_get_param_bounds($module, /, is_compress, parameter)\n"
 "--\n"
 "\n"
-"Internal function, get CParameter/DParameter bounds.\n"
+"Internal function, get CompressionParameter/DecompressionParameter bounds.\n"
 "\n"
 "  is_compress\n"
-"    True for CParameter, False for DParameter.\n"
+"    True for CompressionParameter, False for DecompressionParameter.\n"
 "  parameter\n"
 "    The parameter to get bounds.");
 
@@ -360,12 +360,12 @@ PyDoc_STRVAR(_zstd__set_parameter_types__doc__,
 "_set_parameter_types($module, /, c_parameter_type, d_parameter_type)\n"
 "--\n"
 "\n"
-"Internal function, set CParameter/DParameter types for validity check.\n"
+"Internal function, set CompressionParameter/DecompressionParameter types for validity check.\n"
 "\n"
 "  c_parameter_type\n"
-"    CParameter IntEnum type object\n"
+"    CompressionParameter IntEnum type object\n"
 "  d_parameter_type\n"
-"    DParameter IntEnum type object");
+"    DecompressionParameter IntEnum type object");
 
 #define _ZSTD__SET_PARAMETER_TYPES_METHODDEF    \
     {"_set_parameter_types", _PyCFunction_CAST(_zstd__set_parameter_types), METH_FASTCALL|METH_KEYWORDS, _zstd__set_parameter_types__doc__},
@@ -429,4 +429,4 @@ _zstd__set_parameter_types(PyObject *module, PyObject *const *args, Py_ssize_t n
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f4530f3e3439cbe7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=af9311ffc4321e98 input=a9049054013a1b77]*/

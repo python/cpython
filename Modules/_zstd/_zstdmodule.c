@@ -412,7 +412,7 @@ Internal function, get CompressionParameter/DecompressionParameter bounds.
 static PyObject *
 _zstd__get_param_bounds_impl(PyObject *module, int is_compress,
                              int parameter)
-/*[clinic end generated code: output=b751dc710f89ef55 input=fb21ff96aff65df1]*/
+/*[clinic end generated code: output=b751dc710f89ef55 input=1aae4fcf8faf4e0f]*/
 {
     ZSTD_bounds bound;
     if (is_compress) {
@@ -524,7 +524,7 @@ Internal function, set CompressionParameter/DecompressionParameter types for val
 static PyObject *
 _zstd__set_parameter_types_impl(PyObject *module, PyObject *c_parameter_type,
                                 PyObject *d_parameter_type)
-/*[clinic end generated code: output=a13d4890ccbd2873 input=3e7d0d37c3a1045a]*/
+/*[clinic end generated code: output=a13d4890ccbd2873 input=4535545d903853d3]*/
 {
     _zstd_state* const mod_state = get_zstd_state(module);
 
