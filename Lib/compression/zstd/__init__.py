@@ -4,9 +4,9 @@ __all__ = (
     # compression.zstd
     "COMPRESSION_LEVEL_DEFAULT",
     "compress",
-    "CParameter",
+    "CompressionParameter",
     "decompress",
-    "DParameter",
+    "DecompressionParameter",
     "finalize_dict",
     "get_frame_info",
     "Strategy",
@@ -146,7 +146,7 @@ def compress(data, level=None, options=None, zstd_dict=None):
     COMPRESSION_LEVEL_DEFAULT
 
     *options* is a dict object that contains advanced compression
-    parameters. See CParameter for more on options.
+    parameters. See CompressionParameter for more on options.
 
     *zstd_dict* is a ZstdDict object, a pre-trained Zstandard dictionary. See
     the function train_dict for how to train a ZstdDict on sample data.
@@ -163,7 +163,7 @@ def decompress(data, zstd_dict=None, options=None):
     the function train_dict for how to train a ZstdDict on sample data.
 
     *options* is a dict object that contains advanced compression
-    parameters. See DParameter for more on options.
+    parameters. See DecompressionParameter for more on options.
 
     For incremental decompression, use a ZstdDecompressor instead.
     """
@@ -180,7 +180,7 @@ def decompress(data, zstd_dict=None, options=None):
     return b"".join(results)
 
 
-class CParameter(enum.IntEnum):
+class CompressionParameter(enum.IntEnum):
     """Compression parameters"""
 
     compression_level = _zstd._ZSTD_c_compressionLevel
@@ -215,7 +215,7 @@ class CParameter(enum.IntEnum):
         return _zstd._get_param_bounds(is_compress=True, parameter=self.value)
 
 
-class DParameter(enum.IntEnum):
+class DecompressionParameter(enum.IntEnum):
     """Decompression parameters"""
 
     window_log_max = _zstd._ZSTD_d_windowLogMax
@@ -248,5 +248,5 @@ class Strategy(enum.IntEnum):
     btultra2 = _zstd._ZSTD_btultra2
 
 
-# Set CParameter/DParameter types for validity check
-_zstd._set_parameter_types(CParameter, DParameter)
+# Set CompressionParameter/DecompressionParameter types for validity check
+_zstd._set_parameter_types(CompressionParameter, DecompressionParameter)

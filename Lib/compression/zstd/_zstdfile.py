@@ -60,7 +60,8 @@ class ZstdFile(_streams.BaseStream):
         COMPRESSION_LEVEL_DEFAULT
 
         options is a dict object that contains advanced compression
-        parameters. See CParameter or DParameter for more on options.
+        parameters. See CompressionParameter or DecompressionParameter for more
+        information on options.
 
         zstd_dict is a ZstdDict object, a pre-trained Zstandard dictionary.
         See the function train_dict for how to train a ZstdDict on sample data.

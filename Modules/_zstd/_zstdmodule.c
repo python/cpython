@@ -402,11 +402,11 @@ success:
 _zstd._get_param_bounds
 
     is_compress: bool
-        True for CParameter, False for DParameter.
+        True for CompressionParameter, False for DecompressionParameter.
     parameter: int
         The parameter to get bounds.
 
-Internal function, get CParameter/DParameter bounds.
+Internal function, get CompressionParameter/DecompressionParameter bounds.
 [clinic start generated code]*/
 
 static PyObject *
@@ -514,11 +514,11 @@ _zstd__get_frame_info_impl(PyObject *module, Py_buffer *frame_buffer)
 _zstd._set_parameter_types
 
     c_parameter_type: object(subclass_of='&PyType_Type')
-        CParameter IntEnum type object
+        CompressionParameter IntEnum type object
     d_parameter_type: object(subclass_of='&PyType_Type')
-        DParameter IntEnum type object
+        DecompressionParameter IntEnum type object
 
-Internal function, set CParameter/DParameter types for validity check.
+Internal function, set CompressionParameter/DecompressionParameter types for validity check.
 [clinic start generated code]*/
 
 static PyObject *
@@ -530,8 +530,8 @@ _zstd__set_parameter_types_impl(PyObject *module, PyObject *c_parameter_type,
 
     if (!PyType_Check(c_parameter_type) || !PyType_Check(d_parameter_type)) {
         PyErr_SetString(PyExc_ValueError,
-                        "The two arguments should be CParameter and "
-                        "DParameter types.");
+                        "The two arguments should be CompressionParameter and "
+                        "DecompressionParameter types.");
         return NULL;
     }
 
