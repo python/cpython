@@ -151,10 +151,7 @@ class TestHeap:
 
     def test_nbest(self):
         # Less-naive "N-best" algorithm, much faster (if len(data) is big
-        # enough <wink>) than sorting all of data.  However, if we had a max
-        # heap instead of a min heap, it could go faster still via
-        # heapify'ing all of data (linear time), then doing 10 heappops
-        # (10 log-time steps).
+        # enough <wink>) than sorting all of data.
         data = [random.randrange(2000) for i in range(1000)]
         heap = data[:10]
         self.module.heapify(heap)
@@ -167,6 +164,17 @@ class TestHeap:
         self.assertRaises(TypeError, self.module.heapreplace, None, None)
         self.assertRaises(IndexError, self.module.heapreplace, [], None)
 
+    def test_nbest_maxheap(self):
+        # With a max heap instead of a min heap, the "N-best" algorithm can
+        # go even faster still via heapify'ing all of data (linear time), then
+        # doing 10 heappops (10 log-time steps).
+        data = [random.randrange(2000) for i in range(1000)]
+        heap = data[:]
+        self.module.heapify_max(heap)
+        result = [self.module.heappop_max(heap) for _ in range(10)]
+        result.reverse()
+        self.assertEqual(result, sorted(data)[-10:])
+
     def test_nbest_with_pushpop(self):
         data = [random.randrange(2000) for i in range(1000)]
         heap = data[:10]
@@ -175,6 +183,62 @@ class TestHeap:
             self.module.heappushpop(heap, item)
         self.assertEqual(list(self.heapiter(heap)), sorted(data)[-10:])
         self.assertEqual(self.module.heappushpop([], 'x'), 'x')
+
+    def test_naive_nworst(self):
+        # Max-heap variant of "test_naive_nbest"
+        data = [random.randrange(2000) for i in range(1000)]
+        heap = []
+        for item in data:
+            self.module.heappush_max(heap, item)
+            if len(heap) > 10:
+                self.module.heappop_max(heap)
+        heap.sort()
+        expected = sorted(data)[:10]
+        self.assertEqual(heap, expected)
+
+    def heapiter_max(self, heap):
+        # An iterator returning a max-heap's elements, largest-first.
+        try:
+            while 1:
+                yield self.module.heappop_max(heap)
+        except IndexError:
+            pass
+
+    def test_nworst(self):
+        # Max-heap variant of "test_nbest"
+        data = [random.randrange(2000) for i in range(1000)]
+        heap = data[:10]
+        self.module.heapify_max(heap)
+        for item in data[10:]:
+            if item < heap[0]:  # this gets rarer the longer we run
+                self.module.heapreplace_max(heap, item)
+        expected = sorted(data, reverse=True)[-10:]
+        self.assertEqual(list(self.heapiter_max(heap)), expected)
+
+        self.assertRaises(TypeError, self.module.heapreplace_max, None)
+        self.assertRaises(TypeError, self.module.heapreplace_max, None, None)
+        self.assertRaises(IndexError, self.module.heapreplace_max, [], None)
+
+    def test_nworst_minheap(self):
+        # Min-heap variant of "test_nbest_maxheap"
+        data = [random.randrange(2000) for i in range(1000)]
+        heap = data[:]
+        self.module.heapify(heap)
+        result = [self.module.heappop(heap) for _ in range(10)]
+        result.reverse()
+        expected = sorted(data, reverse=True)[-10:]
+        self.assertEqual(result, expected)
+
+    def test_nworst_with_pushpop(self):
+        # Max-heap variant of "test_nbest_with_pushpop"
+        data = [random.randrange(2000) for i in range(1000)]
+        heap = data[:10]
+        self.module.heapify_max(heap)
+        for item in data[10:]:
+            self.module.heappushpop_max(heap, item)
+        expected = sorted(data, reverse=True)[-10:]
+        self.assertEqual(list(self.heapiter_max(heap)), expected)
+        self.assertEqual(self.module.heappushpop_max([], 'x'), 'x')
 
     def test_heappushpop(self):
         h = []
@@ -235,6 +299,20 @@ class TestHeap:
                     self.module.heappush(heap, item)
             heap_sorted = [self.module.heappop(heap) for i in range(size)]
             self.assertEqual(heap_sorted, sorted(data))
+
+    def test_heapsort_max(self):
+        for trial in range(100):
+            size = random.randrange(50)
+            data = [random.randrange(25) for i in range(size)]
+            if trial & 1:     # Half of the time, use heapify_max
+                heap = data[:]
+                self.module.heapify_max(heap)
+            else:             # The rest of the time, use heappush_max
+                heap = []
+                for item in data:
+                    self.module.heappush_max(heap, item)
+            heap_sorted = [self.module.heappop_max(heap) for i in range(size)]
+            self.assertEqual(heap_sorted, sorted(data, reverse=True))
 
     def test_merge(self):
         inputs = []
