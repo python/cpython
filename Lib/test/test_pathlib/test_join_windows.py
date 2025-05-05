@@ -8,7 +8,6 @@ import unittest
 from .support import is_pypi
 from .support.lexical_path import LexicalWindowsPath
 
-
 if is_pypi:
     from pathlib_abc import vfspath
 else:

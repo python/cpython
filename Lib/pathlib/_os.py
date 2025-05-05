@@ -215,18 +215,25 @@ def vfspath(path):
     Return the string representation of a virtual path object.
     """
     try:
-        return os.fspath(path)
+        path_str = os.fspath(path)
     except TypeError:
         pass
-    cls = type(path)
-    try:
-        attr = cls.__vfspath__
-    except AttributeError:
-        pass
     else:
-        return attr(path)
+        if isinstance(path_str, str):
+            return path_str
 
-    raise TypeError(f"{cls.__name__} can't be converted to a path")
+    path_type = type(path)
+    try:
+        path_str = path_type.__vfspath__(path)
+    except AttributeError:
+        if hasattr(path_type, '__fspath__'):
+            raise
+    else:
+        if isinstance(path_str, str):
+            return path_str
+
+    raise TypeError("expected str, os.PathLike[str] or JoinablePath "
+                    "object, not " + path_type.__name__)
 
 
 def ensure_distinct_paths(source, target):
@@ -334,7 +341,7 @@ class _PathInfoBase:
     __slots__ = ('_path', '_stat_result', '_lstat_result')
 
     def __init__(self, path):
-        self._path = os.fspath(path)
+        self._path = str(path)
 
     def __repr__(self):
         path_type = "WindowsPath" if os.name == "nt" else "PosixPath"
