@@ -56,10 +56,10 @@ class Outputs:
 
 
 def compute_changes() -> None:
-    target_branch, head_branch = git_branches()
-    if target_branch and head_branch:
+    target_branch, head_ref = git_refs()
+    if target_branch and head_ref:
         # Getting changed files only makes sense on a pull request
-        files = get_changed_files(target_branch, head_branch)
+        files = get_changed_files(target_branch, head_ref)
         outputs = process_changed_files(files)
     else:
         # Otherwise, just run the tests
@@ -87,7 +87,7 @@ def compute_changes() -> None:
     write_github_output(outputs)
 
 
-def git_branches() -> tuple[str, str]:
+def git_refs() -> tuple[str, str]:
     target_ref = os.environ.get("CCF_TARGET_REF", "")
     target_ref = target_ref.removeprefix("refs/heads/")
     print(f"target ref: {target_ref!r}")
