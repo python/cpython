@@ -249,9 +249,11 @@ A key implementation detail is that the interface piggybacks on the interpreter'
 loop and safe points, ensuring zero overhead during normal execution while providing a reliable way
 for external processes to coordinate debugging operations.
 
-See :pep:`768` for more details.
-
 (Contributed by Pablo Galindo Salgado, Matt Wozniski, and Ivona Stojanovic in :gh:`131591`.)
+
+.. seealso::
+   :pep:`768`.
+
 
 .. _whatsnew314-pep784:
 
@@ -296,7 +298,7 @@ As can be seen, the API is similar to the APIs of the :mod:`!lzma` and
 Victor Stinner, and Rogdham in :gh:`132983`)
 
 .. seealso::
-   :pep:`768`.
+   :pep:`784`.
 
 
 .. _whatsnew314-remote-pdb:
@@ -322,6 +324,9 @@ to attach to the remote process and send the PDB commands to it.
 
 
 (Contributed by Matt Wozniski and Pablo Galindo in :gh:`131591`.)
+
+.. seealso::
+   :pep:`768`.
 
 
 .. _whatsnew314-pep758:
@@ -349,6 +354,9 @@ For example the following expressions are now valid:
 Check :pep:`758` for more details.
 
 (Contributed by Pablo Galindo and Brett Cannon in :gh:`131831`.)
+
+.. seealso::
+   :pep:`758`.
 
 
 .. _whatsnew314-pep649:
@@ -575,6 +583,9 @@ Improved error messages
        import ast as arr[0]
                      ^^^^^^
    SyntaxError: cannot use subscript as import target
+
+.. seealso::
+   :pep:`649`.
 
 
 .. _whatsnew314-pep741:
