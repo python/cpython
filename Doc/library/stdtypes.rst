@@ -4860,7 +4860,6 @@ can be used interchangeably to index the same dictionary entry.
       Dictionary order is guaranteed to be insertion order.  This behavior was
       an implementation detail of CPython from 3.6.
 
-
    These are the operations that dictionaries support (and therefore, custom
    mapping types should support too):
 
