@@ -161,7 +161,7 @@ class UnixGetpassTest(unittest.TestCase):
             self.assertIn('Warning', stderr.getvalue())
             self.assertIn('Password:', stderr.getvalue())
 
-    def test_echochar_replaces_input_with_asterisks(self):
+    def test_echo_char_replaces_input_with_asterisks(self):
         mock_result = '*************'
         with mock.patch('os.open') as os_open, \
                 mock.patch('io.FileIO'), \
@@ -177,7 +177,7 @@ class UnixGetpassTest(unittest.TestCase):
                                                input=textio(), echo_char='*')
             self.assertEqual(result, mock_result)
 
-    def test_raw_input_with_echochar(self):
+    def test_raw_input_with_echo_char(self):
         passwd = 'my1pa$$word!'
         mock_input = StringIO(f'{passwd}\n')
         mock_output = StringIO()
@@ -188,7 +188,7 @@ class UnixGetpassTest(unittest.TestCase):
         self.assertEqual(result, passwd)
         self.assertEqual('Password: ************', mock_output.getvalue())
 
-    def test_control_chars_with_echochar(self):
+    def test_control_chars_with_echo_char(self):
         passwd = 'pass\twd\b'
         expect_result = 'pass\tw'
         mock_input = StringIO(f'{passwd}\n')
