@@ -138,7 +138,7 @@ Tools/unicode/data/
 # hendrikmuhs/ccache-action@v1
 /.ccache
 /cross-build/
-/jit_stencils.h
+/jit_stencils*.h
 /platform
 /profile-clean-stamp
 /profile-run-stamp
