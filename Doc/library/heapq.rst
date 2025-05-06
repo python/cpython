@@ -311,9 +311,10 @@ elements are considered to be infinite.  The interesting property of a heap is
 that ``a[0]`` is always its smallest element. Max-heaps are the reverse.
 
 The strange invariant above is meant to be an efficient memory representation
-for a tournament.  The numbers below are *k*, not ``a[k]``::
+for a tournament.  The numbers below are *k*, not ``a[k]``:
 
 .. figure:: heapq-binary-tree.png
+   :align: center
    :alt: Example (min-heap) binary tree.
 
 In the tree above, each cell *k* is topping ``2*k+1`` and ``2*k+2``. In a usual
