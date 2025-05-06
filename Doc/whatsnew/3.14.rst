@@ -77,6 +77,7 @@ Summary -- release highlights
   :ref:`argparse <whatsnew314-color-argparse>`,
   :ref:`json <whatsnew314-color-json>` and
   :ref:`calendar <whatsnew314-color-calendar>` CLIs
+* :ref:`An experimental just-in-time compiler <whatsnew314-jit-compiler>`
 
 
 Incompatible changes
@@ -713,6 +714,33 @@ compatibility. The theme can be customized using an experimental API
 in the :envvar:`PYTHONSTARTUP` script.
 
 (Contributed by Łukasz Langa in :gh:`131507`.)
+
+
+.. _whatsnew314-jit-compiler:
+
+An experimental just-in-time compiler
+-------------------------------------
+
+Official macOS and Windows release binaries now include an *experimental* JIT
+compiler. Although it is **not** recommended for production use, it can be
+enabled by setting the :envvar:`PYTHON_JIT` environment variable. Downstream
+source builds can be configured with :option:`--enable-experimental-jit=yes-off`
+for similar behavior.
+
+This is still early, foundational work; the performance impact of enabling the
+JIT typically ranges from 10% slower to 20% faster, depending on workload. The
+most significant missing functionality at this time is the inability for native
+debuggers and profilers like ``gdb`` and ``perf``  to unwind through JIT frames
+(Python debuggers and profilers, like :mod:`pdb` or :mod:`profile`, work without
+modification). Free-threaded builds do not support JIT compilation.
+
+:func:`sys._jit.is_available` can be used to determine if your Python executable
+supports JIT compilation. To tell if JIT compilation has been enabled for the
+current process, use :func:`sys._jit.is_enabled`.
+
+Please report any bugs or major performance regressions that you encounter!
+
+.. seealso:: :pep:`744`
 
 
 Other language changes
