@@ -26,8 +26,8 @@ class _zstd.ZstdCompressor "ZstdCompressor *" "clinic_state()->ZstdCompressor_ty
 #define ZstdCompressor_CAST(op) ((ZstdCompressor *)op)
 
 int
-_PyZstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
-                         const char *arg_name, const char* arg_type)
+_zstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
+                       const char *arg_name, const char* arg_type)
 {
     size_t zstd_ret;
     _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
@@ -198,7 +198,7 @@ success:
 }
 
 int
-_PyZstd_load_c_dict(ZstdCompressor *self, PyObject *dict) {
+_zstd_load_c_dict(ZstdCompressor *self, PyObject *dict) {
 
     size_t zstd_ret;
     _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
@@ -385,20 +385,20 @@ _zstd_ZstdCompressor___init___impl(ZstdCompressor *self, PyObject *level,
 
     /* Set compressLevel/options to compression context */
     if (level != Py_None) {
-        if (_PyZstd_set_c_parameters(self, level, "level", "int") < 0) {
+        if (_zstd_set_c_parameters(self, level, "level", "int") < 0) {
             return -1;
         }
     }
 
     if (options != Py_None) {
-        if (_PyZstd_set_c_parameters(self, options, "options", "dict") < 0) {
+        if (_zstd_set_c_parameters(self, options, "options", "dict") < 0) {
             return -1;
         }
     }
 
     /* Load dictionary to compression context */
     if (zstd_dict != Py_None) {
-        if (_PyZstd_load_c_dict(self, zstd_dict) < 0) {
+        if (_zstd_load_c_dict(self, zstd_dict) < 0) {
             return -1;
         }
 
