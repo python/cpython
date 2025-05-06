@@ -20,13 +20,13 @@ ENSURE_PIP_INIT_PY_TEXT = (ENSURE_PIP_ROOT / "__init__.py").read_text(encoding="
 GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
 
 
-def print_notice(file_path: Path, message: str) -> None:
+def print_notice(file_path: str | Path, message: str) -> None:
     if GITHUB_ACTIONS:
         message = f"::notice file={file_path}::{message}"
     print(message, end="\n\n")
 
 
-def print_error(file_path: Path, message: str) -> None:
+def print_error(file_path: str | Path, message: str) -> None:
     if GITHUB_ACTIONS:
         message = f"::error file={file_path}::{message}"
     print(message, end="\n\n")
@@ -40,7 +40,7 @@ def verify_wheel(package_name: str) -> bool:
             for p in package_paths:
                 print_error(p, f"Found more than one wheel for package {package_name}.")
         else:
-            print_error(Path(), f"Could not find a {package_name} wheel on disk.")
+            print_error("", f"Could not find a {package_name} wheel on disk.")
         return False
 
     package_path = package_paths[0]
