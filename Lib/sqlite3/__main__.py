@@ -12,11 +12,11 @@ from code import InteractiveConsole
 from textwrap import dedent
 import _colorize as colorize
 
-BOLD_MAGENTA = colorize.ANSIColors.BOLD_MAGENTA
-MAGENTA =colorize.ANSIColors.MAGENTA
+SYNTAX = colorize.Syntax
+TRACEBACK=colorize.Traceback
 RESET = colorize.ANSIColors.RESET
 
-def color(color, use_color):
+def _clr(color, use_color):
     if use_color:
         return color
     return ''
@@ -36,12 +36,12 @@ def execute(c, sql, suppress_errors=True, use_color=False):
     except sqlite3.Error as e:
         tp = type(e).__name__
         try:
-            print(f"{color(BOLD_MAGENTA, use_color)}{tp} ({e.sqlite_errorname})"
-                  f"{color(RESET, use_color)}: "
-                  f"{color(MAGENTA, use_color)}{e}{color(RESET, use_color)}", file=sys.stderr)
+            print(f"{_clr(TRACEBACK.type, use_color)}{tp} ({e.sqlite_errorname})"
+                  f"{_clr(RESET, use_color)}: "
+                  f"{_clr(TRACEBACK.message, use_color)}{e}{_clr(RESET, use_color)}", file=sys.stderr)
         except AttributeError:
-            print(f"{color(BOLD_MAGENTA, use_color)}{tp}{color(RESET, use_color)}: "
-                  f"{color(MAGENTA, use_color)}{e}{color(RESET, use_color)}", file=sys.stderr)
+            print(f"{_clr(TRACEBACK.type, use_color)}{tp}{_clr(RESET, use_color)}: "
+                  f"{_clr(TRACEBACK.message, use_color)}{e}{_clr(RESET, use_color)}", file=sys.stderr)
         if not suppress_errors:
             sys.exit(1)
 
@@ -121,8 +121,8 @@ def main(*args):
 
     use_color = colorize.can_colorize()
 
-    sys.ps1 = f"{color(BOLD_MAGENTA, use_color)}sqlite> {color(RESET, use_color)}"
-    sys.ps2 = f"{color(BOLD_MAGENTA, use_color)}    ... {color(RESET, use_color)}"
+    sys.ps1 = f"{_clr(SYNTAX.prompt, use_color)}sqlite> {_clr(RESET, use_color)}"
+    sys.ps2 = f"{_clr(SYNTAX.prompt, use_color)}    ... {_clr(RESET, use_color)}"
 
     con = sqlite3.connect(args.filename, isolation_level=None)
     try:
