@@ -805,7 +805,6 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
 {
     Py_ssize_t i;
     ElementObject* element;
-    PyObject* tmp;
     PyObject* tag;
     PyObject* attrib;
     PyObject* text;
@@ -814,16 +813,14 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
 
     PyTypeObject *tp = Py_TYPE(self);
     elementtreestate *st = get_elementtree_state_by_type(tp);
-    tmp = Py_NewRef(self->tag);
-    tag = deepcopy(st, tmp, memo);
-    Py_CLEAR(tmp);
+    // The deepcopy() helper takes care of incrementing the refcount
+    // of the object to copy so to avoid use-after-frees.
+    tag = deepcopy(st, self->tag, memo);
     if (!tag)
         return NULL;
 
     if (self->extra && self->extra->attrib) {
-        tmp = Py_NewRef(self->extra->attrib);
-        attrib = deepcopy(st, tmp, memo);
-        Py_CLEAR(tmp);
+        attrib = deepcopy(st, self->extra->attrib, memo);
         if (!attrib) {
             Py_DECREF(tag);
             return NULL;
@@ -840,16 +837,12 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
     if (!element)
         return NULL;
 
-    tmp = Py_NewRef(JOIN_OBJ(self->text));
-    text = deepcopy(st, tmp, memo);
-    Py_CLEAR(tmp);
+    text = deepcopy(st, JOIN_OBJ(self->text), memo);
     if (!text)
         goto error;
     _set_joined_ptr(&element->text, JOIN_SET(text, JOIN_GET(self->text)));
 
-    tmp = Py_NewRef(JOIN_OBJ(self->tail));
-    tail = deepcopy(st, tmp, memo);
-    Py_CLEAR(tmp);
+    tail = deepcopy(st, JOIN_OBJ(self->tail), memo);
     if (!tail)
         goto error;
     _set_joined_ptr(&element->tail, JOIN_SET(tail, JOIN_GET(self->tail)));
@@ -860,9 +853,7 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
             goto error;
 
         for (i = 0; self->extra && i < self->extra->length; i++) {
-            tmp = Py_NewRef(self->extra->children[i]);
-            PyObject* child = deepcopy(st, tmp, memo);
-            Py_CLEAR(tmp);
+            PyObject* child = deepcopy(st, self->extra->children[i], memo);
             if (!child || !Element_Check(st, child)) {
                 if (child) {
                     raise_type_error(child);
@@ -877,7 +868,7 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
         assert(!element->extra->length);
         /*
          * The original 'self->extra' may be gone at this point if deepcopy()
-         * had side-effects. However, 'i' is the number of copied items that
+         * has side-effects. However, 'i' is the number of copied items that
          * we were able to successfully copy.
          */
         element->extra->length = i;
@@ -914,6 +905,8 @@ deepcopy(elementtreestate *st, PyObject *object, PyObject *memo)
 
     if (Py_REFCNT(object) == 1) {
         if (PyDict_CheckExact(object)) {
+            // Exact dictionaries do not execute arbitrary code as it's
+            // impossible to override their __iter__() method.
             PyObject *key, *value;
             Py_ssize_t pos = 0;
             int simple = 1;
@@ -923,13 +916,20 @@ deepcopy(elementtreestate *st, PyObject *object, PyObject *memo)
                     break;
                 }
             }
-            if (simple)
+            if (simple) {
+                // This does not call object.__copy__(), so it's still safe.
                 return PyDict_Copy(object);
+            }
             /* Fall through to general case */
         }
         else if (Element_CheckExact(st, object)) {
-            return _elementtree_Element___deepcopy___impl(
-                (ElementObject *)object, memo);
+            // The __deepcopy__() call may call arbitrary code even if the
+            // object to copy is a built-in XML element (one of its children
+            // may mutate 'object' in its own __deepcopy__() implementation).
+            ElementObject *tmp = (ElementObject *)Py_NewRef(object);
+            PyObject *res = _elementtree_Element___deepcopy___impl(tmp, memo);
+            Py_DECREF(tmp);
+            return res;
         }
     }
 
@@ -940,8 +940,10 @@ deepcopy(elementtreestate *st, PyObject *object, PyObject *memo)
         return NULL;
     }
 
-    PyObject *args[2] = {object, memo};
-    return PyObject_Vectorcall(st->deepcopy_obj, args, 2, NULL);
+    PyObject *args[2] = {Py_NewRef(object), memo};
+    PyObject *res = PyObject_Vectorcall(st->deepcopy_obj, args, 2, NULL);
+    Py_DECREF(args[0]);
+    return res;
 }
 
 
