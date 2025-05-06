@@ -553,7 +553,7 @@ _PyPegen_new_identifier(Parser *p, const char *n)
         _PyUnicode_EqualToASCIIString(id, "True") ||
         _PyUnicode_EqualToASCIIString(id, "False"))
     {
-        PyErr_SetString(PyExc_ValueError, "identifier must not be None, True or False after NFKC normalization");
+        PyErr_SetString(PyExc_ValueError, "identifier must not be None, True or False after Unicode normalization (NKFC)");
         Py_DECREF(id);
         goto error;
     }

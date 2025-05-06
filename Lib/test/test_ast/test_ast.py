@@ -823,8 +823,8 @@ class AST_Tests(unittest.TestCase):
 
     def test_constant_as_unicode_name(self):
         for constant in b"Tru\xe1\xb5\x89", b"Fal\xc5\xbfe", b"N\xc2\xbane":
-            with self.assertRaises(ValueError,
-                msg="identifier must not be None, True or False after NFKC normalization"):
+            with self.assertRaisesRegex(ValueError,
+                "identifier must not be None, True or False after Unicode normalization \\(NKFC\\)"):
                 ast.parse(constant, mode="eval")
 
     def test_precedence_enum(self):
