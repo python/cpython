@@ -1683,7 +1683,7 @@ os_listdrives(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
 
-#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
+#if (defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
 
 PyDoc_STRVAR(os_listvolumes__doc__,
 "listvolumes($module, /)\n"
