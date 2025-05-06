@@ -257,7 +257,7 @@ def disp_str(
     buffer: str,
     colors: list[ColorSpan] | None = None,
     start_index: int = 0,
-    force_color=False,
+    force_color: bool = False,
 ) -> tuple[CharBuffer, CharWidths]:
     r"""Decompose the input buffer into a printable variant with applied colors.
 
