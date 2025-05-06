@@ -1526,6 +1526,17 @@ class PdbAttachTestCase(unittest.TestCase):
         stdout, stderr = attach_process.communicate(client_stdin, timeout=5)
         process.wait()
 
+        client_stdout = process.stdout.read()
+        client_stderr = process.stderr.read(),
+
+        if process.returncode != 0:
+            print("server failed:")
+            print(stderr)
+
+        if attach_process.returncode != 0:
+            print("client failed:")
+            print(client_stderr)
+
         self.assertEqual(process.returncode, 0)
         self.assertEqual(attach_process.returncode, 0)
 
@@ -1535,8 +1546,8 @@ class PdbAttachTestCase(unittest.TestCase):
                 "stderr": stderr,
             },
             "server": {
-                "stdout": process.stdout.read(),
-                "stderr": process.stderr.read(),
+                "stdout": client_stdout,
+                "stderr": client_stderr,
             },
         }
 
