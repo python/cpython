@@ -12,10 +12,6 @@ from code import InteractiveConsole
 from textwrap import dedent
 import _colorize as colorize
 
-SYNTAX = colorize.Syntax
-TRACEBACK=colorize.Traceback
-RESET = colorize.ANSIColors.RESET
-
 def _clr(color, use_color):
     if use_color:
         return color
@@ -34,14 +30,15 @@ def execute(c, sql, suppress_errors=True, use_color=False):
         for row in c.execute(sql):
             print(row)
     except sqlite3.Error as e:
+        theme = colorize.get_theme(force_color=True).traceback
         tp = type(e).__name__
         try:
-            print(f"{_clr(TRACEBACK.type, use_color)}{tp} ({e.sqlite_errorname})"
-                  f"{_clr(RESET, use_color)}: "
-                  f"{_clr(TRACEBACK.message, use_color)}{e}{_clr(RESET, use_color)}", file=sys.stderr)
+            print(f"{_clr(theme.type, use_color)}{tp} ({e.sqlite_errorname})"
+                  f"{_clr(theme.reset, use_color)}: "
+                  f"{_clr(theme.message, use_color)}{e}{_clr(theme.RESET, use_color)}", file=sys.stderr)
         except AttributeError:
-            print(f"{_clr(TRACEBACK.type, use_color)}{tp}{_clr(RESET, use_color)}: "
-                  f"{_clr(TRACEBACK.message, use_color)}{e}{_clr(RESET, use_color)}", file=sys.stderr)
+            print(f"{_clr(theme.type, use_color)}{tp}{_clr(theme.RESET, use_color)}: "
+                  f"{_clr(theme.message, use_color)}{e}{_clr(theme.RESET, use_color)}", file=sys.stderr)
         if not suppress_errors:
             sys.exit(1)
 
@@ -120,9 +117,10 @@ def main(*args):
     """).strip()
 
     use_color = colorize.can_colorize()
+    theme = colorize.get_theme(force_color=True).syntax
 
-    sys.ps1 = f"{_clr(SYNTAX.prompt, use_color)}sqlite> {_clr(RESET, use_color)}"
-    sys.ps2 = f"{_clr(SYNTAX.prompt, use_color)}    ... {_clr(RESET, use_color)}"
+    sys.ps1 = f"{_clr(theme.prompt, use_color)}sqlite> {_clr(theme.RESET, use_color)}"
+    sys.ps2 = f"{_clr(theme.prompt, use_color)}    ... {_clr(theme.RESET, use_color)}"
 
     con = sqlite3.connect(args.filename, isolation_level=None)
     try:
