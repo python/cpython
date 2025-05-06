@@ -16865,12 +16865,16 @@ static PyObject *
 os__supports_virtual_terminal_impl(PyObject *module)
 /*[clinic end generated code: output=bd0556a6d9d99fe6 input=0752c98e5d321542]*/
 {
+#ifdef HAVE_WINDOWS_CONSOLE_IO
     DWORD mode = 0;
     HANDLE handle = GetStdHandle(STD_ERROR_HANDLE);
     if (!GetConsoleMode(handle, &mode)) {
         Py_RETURN_FALSE;
     }
     return PyBool_FromLong(mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+#else
+    Py_RETURN_FALSE;
+#endif /* HAVE_WINDOWS_CONSOLE_IO */
 }
 #endif
 
