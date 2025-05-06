@@ -13,7 +13,7 @@ import textwrap
 import threading
 import unittest
 import unittest.mock
-from contextlib import closing, contextmanager, redirect_stdout, ExitStack
+from contextlib import closing, contextmanager, redirect_stdout, redirect_stderr, ExitStack
 from pathlib import Path
 from test.support import is_wasi, cpython_only, force_color, requires_subprocess, SHORT_TIMEOUT
 from test.support.os_helper import temp_dir, TESTFN, unlink
@@ -1515,44 +1515,36 @@ class PdbAttachTestCase(unittest.TestCase):
         conn, _ = self.sock.accept()
         conn.close()
 
-        attach_process = subprocess.Popen(
-            [sys.executable, "-m", "pdb", "-p", str(process.pid)],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            stdin=subprocess.PIPE,
-            text=True,
-            env=os.environ,
-        )
-        stdout, stderr = attach_process.communicate(client_stdin, timeout=5)
-        process.wait()
+        client_stdin = io.StringIO(client_stdin)
+        client_stdout = io.StringIO()
+        client_stderr = io.StringIO()
 
-        client_stdout = process.stdout.read()
-        client_stderr = process.stderr.read(),
+        with (
+            unittest.mock.patch("sys.stdin", client_stdin),
+            redirect_stdout(client_stdout),
+            redirect_stderr(client_stderr),
+            unittest.mock.patch("sys.argv", ["pdb", "-p", str(process.pid)]),
+        ):
+            pdb.main()
+
+        process.wait()
+        server_stdout = process.stdout.read()
+        server_stderr = process.stderr.read()
 
         if process.returncode != 0:
             print("server failed")
-
-        if attach_process.returncode != 0:
-            print("client failed")
-
-        if process.returncode != 0 or attach_process.returncode != 0:
-            print(f"server stdout:\n{stdout}")
-            print(f"server stderr:\n{stderr}")
-
-            print(f"client stdout:\n{client_stdout}")
-            print(f"client stderr:\n{client_stderr}")
+            print(f"server stdout:\n{server_stdout}")
+            print(f"server stderr:\n{server_stderr}")
 
         self.assertEqual(process.returncode, 0)
-        self.assertEqual(attach_process.returncode, 0)
-
         return {
             "client": {
-                "stdout": stdout,
-                "stderr": stderr,
+                "stdout": client_stdout.getvalue(),
+                "stderr": client_stderr.getvalue(),
             },
             "server": {
-                "stdout": client_stdout,
-                "stderr": client_stderr,
+                "stdout": server_stdout,
+                "stderr": server_stderr,
             },
         }
 
