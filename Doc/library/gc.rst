@@ -128,8 +128,8 @@ The :mod:`gc` module provides the following functions:
    starts. For each collection, all the objects in the young generation and some
    fraction of the old generation is collected.
 
-   In the free-threaded build, the increase in process resident set size (RSS)
-   is also checked before running the collector.  If the RSS has not increased
+   In the free-threaded build, the increase in process memory usage is also
+   checked before running the collector.  If the memory usage has not increased
    by 10% since the last collection and the net number of object allocations
    has not exceeded 40 times *threshold0*, the collection is not run.
 

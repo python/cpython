@@ -1521,8 +1521,8 @@ class PosixTester(unittest.TestCase):
         self.assertEqual(cm.exception.errno, errno.EINVAL)
         os.close(os.pidfd_open(os.getpid(), 0))
 
-    @unittest.skipUnless(hasattr(os, "link"), "test needs os.link()")
-    @support.skip_android_selinux('hard links to symbolic links')
+    @os_helper.skip_unless_hardlink
+    @os_helper.skip_unless_symlink
     def test_link_follow_symlinks(self):
         default_follow = sys.platform.startswith(
             ('darwin', 'freebsd', 'netbsd', 'openbsd', 'dragonfly', 'sunos5'))

@@ -1165,12 +1165,6 @@ error:
     return NULL;
 }
 
-static PyObject *
-jit_enabled(PyObject *self, PyObject *arg)
-{
-    return PyBool_FromLong(_PyInterpreterState_GET()->jit);
-}
-
 #ifdef _Py_TIER2
 
 static PyObject *
@@ -1949,6 +1943,11 @@ get_crossinterp_data(PyObject *self, PyObject *args, PyObject *kwargs)
             goto error;
         }
     }
+    else if (strcmp(mode, "code") == 0) {
+        if (_PyCode_GetXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
     else {
         PyErr_Format(PyExc_ValueError, "unsupported mode %R", modeobj);
         goto error;
@@ -2293,7 +2292,6 @@ static PyMethodDef module_functions[] = {
     {"get_co_localskinds", get_co_localskinds, METH_O, NULL},
     {"get_code_var_counts", _PyCFunction_CAST(get_code_var_counts),
      METH_VARARGS | METH_KEYWORDS, NULL},
-    {"jit_enabled", jit_enabled,  METH_NOARGS, NULL},
 #ifdef _Py_TIER2
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
     {"invalidate_executors", invalidate_executors, METH_O, NULL},

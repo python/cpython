@@ -801,19 +801,9 @@ dummy_func(
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr*)descr;
             assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
-            assert(d);
-            assert(d->guard);
+            assert(d && d->guard);
             int res = d->guard(left_o, right_o);
-            ERROR_IF(res < 0);
-            if (res == 0) {
-                if (d->free) {
-                    d->free(d);
-                }
-                _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(this_instr+1);
-                write_ptr(cache->external_cache, NULL);
-                this_instr->op.code = BINARY_OP;
-                DEOPT_IF(true);
-            }
+            DEOPT_IF(!res);
         }
 
         pure op(_BINARY_OP_EXTEND, (descr/4, left, right -- res)) {
@@ -826,7 +816,6 @@ dummy_func(
 
             PyObject *res_o = d->action(left_o, right_o);
             DECREF_INPUTS();
-            ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
@@ -4337,22 +4326,25 @@ dummy_func(
             _CALL_BUILTIN_FAST_WITH_KEYWORDS +
             _CHECK_PERIODIC;
 
-        inst(CALL_LEN, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
-            /* len(o) */
-            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+        macro(CALL_LEN) =
+            unused/1 +
+            unused/2 +
+            _GUARD_NOS_NULL +
+            _GUARD_CALLABLE_LEN +
+            _CALL_LEN;
 
-            int total_args = oparg;
-            if (!PyStackRef_IsNull(self_or_null)) {
-                args--;
-                total_args++;
-            }
-            DEOPT_IF(total_args != 1);
+        op(_GUARD_CALLABLE_LEN, (callable, unused, unused -- callable, unused, unused)){
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable_o != interp->callable_cache.len);
+        }
+
+        op(_CALL_LEN, (callable, null, arg -- res)) {
+            /* len(o) */
+            (void)null;
             STAT_INC(CALL, hit);
-            _PyStackRef arg_stackref = args[0];
-            PyObject *arg = PyStackRef_AsPyObjectBorrow(arg_stackref);
-            Py_ssize_t len_i = PyObject_Length(arg);
+            PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
+            Py_ssize_t len_i = PyObject_Length(arg_o);
             if (len_i < 0) {
                 ERROR_NO_POP();
             }
@@ -4361,9 +4353,8 @@ dummy_func(
             if (res_o == NULL) {
                 ERROR_NO_POP();
             }
-            PyStackRef_CLOSE(arg_stackref);
-            DEAD(args);
-            DEAD(self_or_null);
+            PyStackRef_CLOSE(arg);
+            DEAD(null);
             PyStackRef_CLOSE(callable);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }

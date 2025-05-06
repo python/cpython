@@ -434,8 +434,6 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
  * On a specialization failure, the backoff counter is restarted.
  */
 
-#include "pycore_backoff.h"
-
 // A value of 1 means that we attempt to specialize the *second* time each
 // instruction is executed. Executing twice is a much better indicator of
 // "hotness" than executing once, but additional warmup delays only prevent
@@ -482,18 +480,13 @@ adaptive_counter_backoff(_Py_BackoffCounter counter) {
 /* Specialization Extensions */
 
 /* callbacks for an external specialization */
-
-struct _PyBinopSpecializationDescr;
-
 typedef int (*binaryopguardfunc)(PyObject *lhs, PyObject *rhs);
-typedef PyObject* (*binaryopactionfunc)(PyObject *lhs, PyObject *rhs);
-typedef void (*binaryopfreefunc)(struct _PyBinopSpecializationDescr *descr);
+typedef PyObject *(*binaryopactionfunc)(PyObject *lhs, PyObject *rhs);
 
-typedef struct _PyBinopSpecializationDescr {
+typedef struct {
     int oparg;
     binaryopguardfunc guard;
     binaryopactionfunc action;
-    binaryopfreefunc free;
 } _PyBinaryOpSpecializationDescr;
 
 /* Comparison bit masks. */

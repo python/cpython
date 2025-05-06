@@ -355,7 +355,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self._wait_for_mainpyfile = False
         self.tb_lineno = {}
         self.mode = mode
-        self.colorize = _colorize.can_colorize(file=stdout or sys.stdout) and colorize
+        self.colorize = colorize and _colorize.can_colorize(file=stdout or sys.stdout)
         # Try to load readline if it exists
         try:
             import readline
@@ -1069,7 +1069,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def _colorize_code(self, code):
         if self.colorize:
             colors = list(_pyrepl.utils.gen_colors(code))
-            chars, _ = _pyrepl.utils.disp_str(code, colors=colors)
+            chars, _ = _pyrepl.utils.disp_str(code, colors=colors, force_color=True)
             code = "".join(chars)
         return code
 
@@ -2677,6 +2677,7 @@ class _PdbServer(Pdb):
         sockfile,
         signal_server=None,
         owns_sockfile=True,
+        colorize=False,
         **kwargs,
     ):
         self._owns_sockfile = owns_sockfile
@@ -2687,7 +2688,10 @@ class _PdbServer(Pdb):
         if signal_server:
             # Only started by the top level _PdbServer, not recursive ones.
             self._start_signal_listener(signal_server)
+        # Override the `colorize` attribute set by the parent constructor,
+        # because it checks the server's stdout, rather than the client's.
         super().__init__(colorize=False, **kwargs)
+        self.colorize = colorize
 
     @staticmethod
     def protocol_version():
@@ -2975,7 +2979,11 @@ class _PdbServer(Pdb):
 
     @typing.override
     def _create_recursive_debugger(self):
-        return _PdbServer(self._sockfile, owns_sockfile=False)
+        return _PdbServer(
+            self._sockfile,
+            owns_sockfile=False,
+            colorize=self.colorize,
+        )
 
     @typing.override
     def _prompt_for_confirmation(self, prompt, default):
@@ -3336,7 +3344,16 @@ class _PdbClient:
             return None
 
 
-def _connect(*, host, port, frame, commands, version, signal_raising_thread):
+def _connect(
+    *,
+    host,
+    port,
+    frame,
+    commands,
+    version,
+    signal_raising_thread,
+    colorize,
+):
     with closing(socket.create_connection((host, port))) as conn:
         sockfile = conn.makefile("rwb")
 
@@ -3347,7 +3364,11 @@ def _connect(*, host, port, frame, commands, version, signal_raising_thread):
     else:
         signal_server = None
 
-    remote_pdb = _PdbServer(sockfile, signal_server=signal_server)
+    remote_pdb = _PdbServer(
+        sockfile,
+        signal_server=signal_server,
+        colorize=colorize,
+    )
     weakref.finalize(remote_pdb, sockfile.close)
 
     if Pdb._last_pdb_instance is not None:
@@ -3379,6 +3400,7 @@ def attach(pid, commands=()):
         )
 
         use_signal_thread = sys.platform == "win32"
+        colorize = _colorize.can_colorize()
 
         connect_script.write(
             textwrap.dedent(
@@ -3391,6 +3413,7 @@ def attach(pid, commands=()):
                     commands={json.dumps("\n".join(commands))},
                     version={_PdbServer.protocol_version()},
                     signal_raising_thread={use_signal_thread!r},
+                    colorize={colorize!r},
                 )
                 """
             )

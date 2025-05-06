@@ -19,7 +19,8 @@ from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
 from test.support import ALWAYS_EQ, REPO_ROOT
-from test.support import threading_helper
+from test.support import threading_helper, cpython_only
+from test.support.import_helper import ensure_lazy_imports
 from datetime import timedelta
 
 python_version = sys.version_info[:2]
@@ -5287,6 +5288,10 @@ class MiscTestCase(unittest.TestCase):
 
     def test__all__(self):
         support.check__all__(self, enum, not_exported={'bin', 'show_flag_values'})
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("enum", {"functools", "warnings", "inspect", "re"})
 
     def test_doc_1(self):
         class Single(Enum):

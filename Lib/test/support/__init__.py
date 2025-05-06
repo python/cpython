@@ -33,7 +33,7 @@ __all__ = [
     "is_resource_enabled", "requires", "requires_freebsd_version",
     "requires_gil_enabled", "requires_linux_version", "requires_mac_ver",
     "check_syntax_error",
-    "requires_gzip", "requires_bz2", "requires_lzma",
+    "requires_gzip", "requires_bz2", "requires_lzma", "requires_zstd",
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "requires_zlib",
     "has_fork_support", "requires_fork",
@@ -526,6 +526,13 @@ def requires_lzma(reason='requires lzma'):
     except ImportError:
         lzma = None
     return unittest.skipUnless(lzma, reason)
+
+def requires_zstd(reason='requires zstd'):
+    try:
+        from compression import zstd
+    except ImportError:
+        zstd = None
+    return unittest.skipUnless(zstd, reason)
 
 def has_no_debug_ranges():
     try:
@@ -2648,13 +2655,9 @@ skip_on_s390x = unittest.skipIf(is_s390x, 'skipped on s390x')
 
 Py_TRACE_REFS = hasattr(sys, 'getobjects')
 
-try:
-    from _testinternalcapi import jit_enabled
-except ImportError:
-    requires_jit_enabled = requires_jit_disabled = unittest.skip("requires _testinternalcapi")
-else:
-    requires_jit_enabled = unittest.skipUnless(jit_enabled(), "requires JIT enabled")
-    requires_jit_disabled = unittest.skipIf(jit_enabled(), "requires JIT disabled")
+_JIT_ENABLED = sys._jit.is_enabled()
+requires_jit_enabled = unittest.skipUnless(_JIT_ENABLED, "requires JIT enabled")
+requires_jit_disabled = unittest.skipIf(_JIT_ENABLED, "requires JIT disabled")
 
 
 _BASE_COPY_SRC_DIR_IGNORED_NAMES = frozenset({
@@ -2855,36 +2858,59 @@ def iter_slot_wrappers(cls):
 
 
 @contextlib.contextmanager
-def no_color():
+def force_color(color: bool):
     import _colorize
     from .os_helper import EnvironmentVarGuard
 
     with (
-        swap_attr(_colorize, "can_colorize", lambda file=None: False),
+        swap_attr(_colorize, "can_colorize", lambda file=None: color),
         EnvironmentVarGuard() as env,
     ):
         env.unset("FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS")
-        env.set("NO_COLOR", "1")
+        env.set("FORCE_COLOR" if color else "NO_COLOR", "1")
         yield
 
 
-def force_not_colorized(func):
-    """Force the terminal not to be colorized."""
+def force_colorized(func):
+    """Force the terminal to be colorized."""
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        with no_color():
+        with force_color(True):
             return func(*args, **kwargs)
     return wrapper
 
 
-def force_not_colorized_test_class(cls):
-    """Force the terminal not to be colorized for the entire test class."""
+def force_not_colorized(func):
+    """Force the terminal NOT to be colorized."""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        with force_color(False):
+            return func(*args, **kwargs)
+    return wrapper
+
+
+def force_colorized_test_class(cls):
+    """Force the terminal to be colorized for the entire test class."""
     original_setUpClass = cls.setUpClass
 
     @classmethod
     @functools.wraps(cls.setUpClass)
     def new_setUpClass(cls):
-        cls.enterClassContext(no_color())
+        cls.enterClassContext(force_color(True))
+        original_setUpClass()
+
+    cls.setUpClass = new_setUpClass
+    return cls
+
+
+def force_not_colorized_test_class(cls):
+    """Force the terminal NOT to be colorized for the entire test class."""
+    original_setUpClass = cls.setUpClass
+
+    @classmethod
+    @functools.wraps(cls.setUpClass)
+    def new_setUpClass(cls):
+        cls.enterClassContext(force_color(False))
         original_setUpClass()
 
     cls.setUpClass = new_setUpClass

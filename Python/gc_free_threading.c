@@ -17,7 +17,7 @@
 
 #include "pydtrace.h"
 
-// Platform-specific includes for get_current_rss().
+// Platform-specific includes for get_process_mem_usage().
 #ifdef _WIN32
     #include <windows.h>
     #include <psapi.h> // For GetProcessMemoryInfo
@@ -25,6 +25,7 @@
     #include <unistd.h> // For sysconf, getpid
 #elif defined(__APPLE__)
     #include <mach/mach.h>
+    #include <mach/task.h> // Required for TASK_VM_INFO
     #include <unistd.h> // For sysconf, getpid
 #elif defined(__FreeBSD__)
     #include <sys/types.h>
@@ -1901,13 +1902,14 @@ cleanup_worklist(struct worklist *worklist)
     }
 }
 
-// Return the current resident set size (RSS) of the process, in units of KB.
-// Returns -1 if this operation is not supported or on failure.
+// Return the memory usage (typically RSS + swap) of the process, in units of
+// KB.  Returns -1 if this operation is not supported or on failure.
 static Py_ssize_t
-get_current_rss(void)
+get_process_mem_usage(void)
 {
 #ifdef _WIN32
     // Windows implementation using GetProcessMemoryInfo
+    // Returns WorkingSetSize + PagefileUsage
     PROCESS_MEMORY_COUNTERS pmc;
     HANDLE hProcess = GetCurrentProcess();
     if (NULL == hProcess) {
@@ -1917,55 +1919,58 @@ get_current_rss(void)
 
     // GetProcessMemoryInfo returns non-zero on success
     if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc))) {
-        // pmc.WorkingSetSize is in bytes. Convert to KB.
-        return (Py_ssize_t)(pmc.WorkingSetSize / 1024);
+        // Values are in bytes, convert to KB.
+        return (Py_ssize_t)((pmc.WorkingSetSize + pmc.PagefileUsage) / 1024);
     }
     else {
         return -1;
     }
 
 #elif __linux__
-    // Linux implementation using /proc/self/statm
-    long page_size_bytes = sysconf(_SC_PAGE_SIZE);
-    if (page_size_bytes <= 0) {
-        return -1;
-    }
-
-    FILE *fp = fopen("/proc/self/statm", "r");
+    // Linux, use smaps_rollup (Kernel >= 4.4) for RSS + Swap
+    FILE* fp = fopen("/proc/self/smaps_rollup", "r");
     if (fp == NULL) {
         return -1;
     }
 
-    // Second number is resident size in pages
-    long rss_pages;
-    if (fscanf(fp, "%*d %ld", &rss_pages) != 1) {
-        fclose(fp);
-        return -1;
+    char line_buffer[256];
+    long long rss_kb = -1;
+    long long swap_kb = -1;
+
+    while (fgets(line_buffer, sizeof(line_buffer), fp) != NULL) {
+        if (rss_kb == -1 && strncmp(line_buffer, "Rss:", 4) == 0) {
+            sscanf(line_buffer + 4, "%lld", &rss_kb);
+        }
+        else if (swap_kb == -1 && strncmp(line_buffer, "Swap:", 5) == 0) {
+            sscanf(line_buffer + 5, "%lld", &swap_kb);
+        }
+        if (rss_kb != -1 && swap_kb != -1) {
+            break; // Found both
+        }
     }
     fclose(fp);
 
-    // Sanity check
-    if (rss_pages < 0 || rss_pages > 1000000000) {
-        return -1;
+    if (rss_kb != -1 && swap_kb != -1) {
+        return (Py_ssize_t)(rss_kb + swap_kb);
     }
-
-    // Convert unit to KB
-    return (Py_ssize_t)rss_pages * (page_size_bytes / 1024);
+    return -1;
 
 #elif defined(__APPLE__)
     // --- MacOS (Darwin) ---
-    mach_msg_type_number_t count = MACH_TASK_BASIC_INFO_COUNT;
-    mach_task_basic_info_data_t info;
+    // Returns phys_footprint (RAM + compressed memory)
+    task_vm_info_data_t vm_info;
+    mach_msg_type_number_t count = TASK_VM_INFO_COUNT;
     kern_return_t kerr;
 
-    kerr = task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t)&info, &count);
+    kerr = task_info(mach_task_self(), TASK_VM_INFO, (task_info_t)&vm_info, &count);
     if (kerr != KERN_SUCCESS) {
         return -1;
     }
-    // info.resident_size is in bytes. Convert to KB.
-    return (Py_ssize_t)(info.resident_size / 1024);
+    // phys_footprint is in bytes. Convert to KB.
+    return (Py_ssize_t)(vm_info.phys_footprint / 1024);
 
 #elif defined(__FreeBSD__)
+    // NOTE: Returns RSS only. Per-process swap usage isn't readily available
     long page_size_kb = sysconf(_SC_PAGESIZE) / 1024;
     if (page_size_kb <= 0) {
         return -1;
@@ -2004,6 +2009,7 @@ get_current_rss(void)
     return rss_kb;
 
 #elif defined(__OpenBSD__)
+    // NOTE: Returns RSS only. Per-process swap usage isn't readily available
     long page_size_kb = sysconf(_SC_PAGESIZE) / 1024;
     if (page_size_kb <= 0) {
         return -1;
@@ -2039,37 +2045,38 @@ get_current_rss(void)
 }
 
 static bool
-gc_should_collect_rss(GCState *gcstate)
+gc_should_collect_mem_usage(GCState *gcstate)
 {
-    Py_ssize_t rss = get_current_rss();
-    if (rss < 0) {
-        // Reading RSS is not support or failed.
+    Py_ssize_t mem = get_process_mem_usage();
+    if (mem < 0) {
+        // Reading process memory usage is not support or failed.
         return true;
     }
     int threshold = gcstate->young.threshold;
     Py_ssize_t deferred = _Py_atomic_load_ssize_relaxed(&gcstate->deferred_count);
     if (deferred > threshold * 40) {
-        // Too many new container objects since last GC, even though RSS
+        // Too many new container objects since last GC, even though memory use
         // might not have increased much.  This is intended to avoid resource
         // exhaustion if some objects consume resources but don't result in a
-        // RSS increase.  We use 40x as the factor here because older versions
-        // of Python would do full collections after roughly every 70,000 new
-        // container objects.
+        // memory usage increase.  We use 40x as the factor here because older
+        // versions of Python would do full collections after roughly every
+        // 70,000 new container objects.
         return true;
     }
-    Py_ssize_t last_rss = gcstate->last_rss;
-    Py_ssize_t rss_threshold = Py_MAX(last_rss / 10, 128);
-    if ((rss - last_rss) > rss_threshold) {
-        // The RSS has increased too much, do a collection.
+    Py_ssize_t last_mem = gcstate->last_mem;
+    Py_ssize_t mem_threshold = Py_MAX(last_mem / 10, 128);
+    if ((mem - last_mem) > mem_threshold) {
+        // The process memory usage has increased too much, do a collection.
         return true;
     }
     else {
-        // The RSS has not increased enough, defer the collection and clear
-        // the young object count so we don't check RSS again on the next call
-        // to gc_should_collect().
+        // The memory usage has not increased enough, defer the collection and
+        // clear the young object count so we don't check memory usage again
+        // on the next call to gc_should_collect().
         PyMutex_Lock(&gcstate->mutex);
-        gcstate->deferred_count += gcstate->young.count;
-        gcstate->young.count = 0;
+        int young_count = _Py_atomic_exchange_int(&gcstate->young.count, 0);
+        _Py_atomic_store_ssize_relaxed(&gcstate->deferred_count,
+                                       gcstate->deferred_count + young_count);
         PyMutex_Unlock(&gcstate->mutex);
         return false;
     }
@@ -2094,7 +2101,7 @@ gc_should_collect(GCState *gcstate)
         // objects.
         return false;
     }
-    return gc_should_collect_rss(gcstate);
+    return gc_should_collect_mem_usage(gcstate);
 }
 
 static void
@@ -2237,8 +2244,9 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     // to be freed.
     delete_garbage(state);
 
-    // Store the current RSS, possibly smaller now that we deleted garbage.
-    state->gcstate->last_rss = get_current_rss();
+    // Store the current memory usage, can be smaller now if breaking cycles
+    // freed some memory.
+    state->gcstate->last_mem = get_process_mem_usage();
 
     // Append objects with legacy finalizers to the "gc.garbage" list.
     handle_legacy_finalizers(state);
