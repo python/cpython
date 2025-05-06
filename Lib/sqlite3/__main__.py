@@ -113,7 +113,8 @@ def main(*args):
         Type ".help" for more information; type ".quit" or {eofkey} to quit.
     """).strip()
 
-    s = get_theme().syntax
+    theme = get_theme()
+    s = theme.syntax
 
     sys.ps1 = f"{s.prompt}sqlite> {s.reset}"
     sys.ps2 = f"{s.prompt}    ... {s.reset}"
@@ -122,7 +123,7 @@ def main(*args):
     try:
         if args.sql:
             # SQL statement provided on the command-line; execute it directly.
-            execute(con, args.sql, suppress_errors=False)
+            execute(con, args.sql, suppress_errors=False, theme=theme)
         else:
             # No SQL provided; start the REPL.
             console = SqliteInteractiveConsole(con, use_color=True)
