@@ -22392,24 +22392,21 @@ printf "%s\n" "yes" >&6; }
         have_liblzma=yes
 fi
 
-have_libzstd=no
-
-
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libzstd" >&5
-printf %s "checking for libzstd... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libzstd >= 1.4.5" >&5
+printf %s "checking for libzstd >= 1.4.5... " >&6; }
 
 if test -n "$LIBZSTD_CFLAGS"; then
     pkg_cv_LIBZSTD_CFLAGS="$LIBZSTD_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libzstd\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libzstd") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libzstd >= 1.4.5\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libzstd >= 1.4.5") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LIBZSTD_CFLAGS=`$PKG_CONFIG --cflags "libzstd" 2>/dev/null`
+  pkg_cv_LIBZSTD_CFLAGS=`$PKG_CONFIG --cflags "libzstd >= 1.4.5" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -22421,12 +22418,12 @@ if test -n "$LIBZSTD_LIBS"; then
     pkg_cv_LIBZSTD_LIBS="$LIBZSTD_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libzstd\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libzstd") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libzstd >= 1.4.5\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libzstd >= 1.4.5") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LIBZSTD_LIBS=`$PKG_CONFIG --libs "libzstd" 2>/dev/null`
+  pkg_cv_LIBZSTD_LIBS=`$PKG_CONFIG --libs "libzstd >= 1.4.5" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -22447,326 +22444,24 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-                LIBZSTD_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libzstd" 2>&1`
+                LIBZSTD_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libzstd >= 1.4.5" 2>&1`
         else
-                LIBZSTD_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libzstd" 2>&1`
+                LIBZSTD_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libzstd >= 1.4.5" 2>&1`
         fi
         # Put the nasty error message in config.log where it belongs
         echo "$LIBZSTD_PKG_ERRORS" >&5
 
-
-  save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-    CPPFLAGS="$CPPFLAGS $LIBZSTD_CFLAGS"
-    LIBS="$LIBS $LIBZSTD_LIBS"
-           for ac_header in zstd.h zdict.h
-do :
-  as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | sed "$as_sed_sh"`
-ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
-if eval test \"x\$"$as_ac_Header"\" = x"yes"
-then :
-  cat >>confdefs.h <<_ACEOF
-#define `printf "%s\n" "HAVE_$ac_header" | sed "$as_sed_cpp"` 1
-_ACEOF
-
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ZDICT_finalizeDictionary in -lzstd" >&5
-printf %s "checking for ZDICT_finalizeDictionary in -lzstd... " >&6; }
-if test ${ac_cv_lib_zstd_ZDICT_finalizeDictionary+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lzstd  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.
-   The 'extern "C"' is for builds by C++ compilers;
-   although this is not generally supported in C code supporting it here
-   has little cost and some practical benefit (sr 110532).  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char ZDICT_finalizeDictionary (void);
-int
-main (void)
-{
-return ZDICT_finalizeDictionary ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_zstd_ZDICT_finalizeDictionary=yes
-else case e in #(
-  e) ac_cv_lib_zstd_ZDICT_finalizeDictionary=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_zstd_ZDICT_finalizeDictionary" >&5
-printf "%s\n" "$ac_cv_lib_zstd_ZDICT_finalizeDictionary" >&6; }
-if test "x$ac_cv_lib_zstd_ZDICT_finalizeDictionary" = xyes
-then :
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if libzstd is new enough" >&5
-printf %s "checking if libzstd is new enough... " >&6; }
-
-
-        if test "$cross_compiling" = yes
-then :
-  { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
-printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
-as_fn_error $? "cannot run test program while cross compiling
-See 'config.log' for more details" "$LINENO" 5; }
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include "zstd.h"
-int
-main (void)
-{
-
-      #if ZSTD_VERSION_NUMBER < 10405
-          exit(1);
-      #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_run "$LINENO"
-then :
-  py__zstd_too_old=no
-else case e in #(
-  e) py__zstd_too_old=yes ;;
-esac
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
-esac
-fi
-
-    have_libzstd=yes
-
-else case e in #(
-  e) have_libzstd=no ;;
-esac
-fi
-
-
-else case e in #(
-  e) have_libzstd=no ;;
-esac
-fi
-
-done
-    if test "x$have_libzstd" = xyes
-then :
-
-      LIBZSTD_CFLAGS=${LIBZSTD_CFLAGS-""}
-      LIBZSTD_LIBS=${LIBZSTD_LIBS-"-lzstd"}
-
-fi
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
-
-
+        have_libzstd=no
 elif test $pkg_failed = untried; then
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-
-  save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-    CPPFLAGS="$CPPFLAGS $LIBZSTD_CFLAGS"
-    LIBS="$LIBS $LIBZSTD_LIBS"
-           for ac_header in zstd.h zdict.h
-do :
-  as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | sed "$as_sed_sh"`
-ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
-if eval test \"x\$"$as_ac_Header"\" = x"yes"
-then :
-  cat >>confdefs.h <<_ACEOF
-#define `printf "%s\n" "HAVE_$ac_header" | sed "$as_sed_cpp"` 1
-_ACEOF
-
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ZDICT_finalizeDictionary in -lzstd" >&5
-printf %s "checking for ZDICT_finalizeDictionary in -lzstd... " >&6; }
-if test ${ac_cv_lib_zstd_ZDICT_finalizeDictionary+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lzstd  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.
-   The 'extern "C"' is for builds by C++ compilers;
-   although this is not generally supported in C code supporting it here
-   has little cost and some practical benefit (sr 110532).  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char ZDICT_finalizeDictionary (void);
-int
-main (void)
-{
-return ZDICT_finalizeDictionary ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_zstd_ZDICT_finalizeDictionary=yes
-else case e in #(
-  e) ac_cv_lib_zstd_ZDICT_finalizeDictionary=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_zstd_ZDICT_finalizeDictionary" >&5
-printf "%s\n" "$ac_cv_lib_zstd_ZDICT_finalizeDictionary" >&6; }
-if test "x$ac_cv_lib_zstd_ZDICT_finalizeDictionary" = xyes
-then :
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if libzstd is new enough" >&5
-printf %s "checking if libzstd is new enough... " >&6; }
-
-
-        if test "$cross_compiling" = yes
-then :
-  { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
-printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
-as_fn_error $? "cannot run test program while cross compiling
-See 'config.log' for more details" "$LINENO" 5; }
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include "zstd.h"
-int
-main (void)
-{
-
-      #if ZSTD_VERSION_NUMBER < 10405
-          exit(1);
-      #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_run "$LINENO"
-then :
-  py__zstd_too_old=no
-else case e in #(
-  e) py__zstd_too_old=yes ;;
-esac
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
-esac
-fi
-
-    have_libzstd=yes
-
-else case e in #(
-  e) have_libzstd=no ;;
-esac
-fi
-
-
-else case e in #(
-  e) have_libzstd=no ;;
-esac
-fi
-
-done
-    if test "x$have_libzstd" = xyes
-then :
-
-      LIBZSTD_CFLAGS=${LIBZSTD_CFLAGS-""}
-      LIBZSTD_LIBS=${LIBZSTD_LIBS-"-lzstd"}
-
-fi
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
-
-
+        have_libzstd=no
 else
         LIBZSTD_CFLAGS=$pkg_cv_LIBZSTD_CFLAGS
         LIBZSTD_LIBS=$pkg_cv_LIBZSTD_LIBS
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if libzstd is new enough" >&5
-printf %s "checking if libzstd is new enough... " >&6; }
-
-
-        if test "$cross_compiling" = yes
-then :
-  { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
-printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
-as_fn_error $? "cannot run test program while cross compiling
-See 'config.log' for more details" "$LINENO" 5; }
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include "zstd.h"
-int
-main (void)
-{
-
-      #if ZSTD_VERSION_NUMBER < 10405
-          exit(1);
-      #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_run "$LINENO"
-then :
-  py__zstd_too_old=no
-else case e in #(
-  e) py__zstd_too_old=yes ;;
-esac
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
-esac
-fi
-
-    have_libzstd=yes
-
+        have_libzstd=yes
 fi
 
 
@@ -29769,9 +29464,9 @@ SRCDIRS="\
   Modules/_testinternalcapi \
   Modules/_testlimitedcapi \
   Modules/_xxtestfuzz \
+  Modules/_zstd \
   Modules/cjkcodecs \
   Modules/expat \
-  Modules/_zstd \
   Objects \
   Objects/mimalloc \
   Objects/mimalloc/prim \
@@ -33375,7 +33070,7 @@ printf %s "checking for stdlib extension module _zstd... " >&6; }
         if test "$py_cv_module__zstd" != "n/a"
 then :
 
-    if test "$py__zstd_too_old" = no
+    if true
 then :
   if test "$have_libzstd" = yes
 then :

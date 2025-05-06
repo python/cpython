@@ -23,6 +23,7 @@ from inspect import Signature
 
 from test.support import import_helper
 from test.support import threading_helper
+from test.support import cpython_only
 from test.support import EqualToForwardRef
 
 import functools
@@ -62,6 +63,14 @@ class BadTuple(tuple):
 
 class MyDict(dict):
     pass
+
+class TestImportTime(unittest.TestCase):
+
+    @cpython_only
+    def test_lazy_import(self):
+        import_helper.ensure_lazy_imports(
+            "functools", {"os", "weakref", "typing", "annotationlib", "warnings"}
+        )
 
 
 class TestPartial:

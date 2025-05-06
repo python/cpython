@@ -5386,39 +5386,8 @@ PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
   ])
 ])
 
-have_libzstd=no
-AC_DEFUN([TEST_ZSTD_VERSION],[
-  AC_MSG_CHECKING([if libzstd is new enough])
-
-  dnl TODO(emmatyping): check if we can set a C define for the minimum version
-  dnl to re-use here and in the header compile check
-
-  dnl This is checked when both a package is found and we do fallback searches
-  dnl If you update the minimum version here, you should update the compile
-  dnl check in Modules/_zstd/_zstdmodule.h
-  AC_RUN_IFELSE([AC_LANG_PROGRAM([@%:@include "zstd.h"], [
-      #if ZSTD_VERSION_NUMBER < 10405
-          exit(1);
-      #endif
-    ])], [py__zstd_too_old=no], [py__zstd_too_old=yes])
-  dnl Important to record that we have libzstd
-  have_libzstd=yes
-])
-
-PKG_CHECK_MODULES([LIBZSTD], [libzstd], [TEST_ZSTD_VERSION()], [
-  WITH_SAVE_ENV([
-    CPPFLAGS="$CPPFLAGS $LIBZSTD_CFLAGS"
-    LIBS="$LIBS $LIBZSTD_LIBS"
-    AC_CHECK_HEADERS([zstd.h zdict.h], [
-      AC_CHECK_LIB([zstd], [ZDICT_finalizeDictionary],
-       [TEST_ZSTD_VERSION()], [have_libzstd=no])
-    ], [have_libzstd=no])
-    AS_VAR_IF([have_libzstd], [yes], [
-      LIBZSTD_CFLAGS=${LIBZSTD_CFLAGS-""}
-      LIBZSTD_LIBS=${LIBZSTD_LIBS-"-lzstd"}
-    ])
-  ])
-])
+dnl zstd 1.4.5 stabilised ZDICT_finalizeDictionary
+PKG_CHECK_MODULES([LIBZSTD], [libzstd >= 1.4.5], [have_libzstd=yes], [have_libzstd=no])
 
 dnl PY_CHECK_NETDB_FUNC(FUNCTION)
 AC_DEFUN([PY_CHECK_NETDB_FUNC], [PY_CHECK_FUNC([$1], [@%:@include <netdb.h>])])
@@ -7119,9 +7088,9 @@ SRCDIRS="\
   Modules/_testinternalcapi \
   Modules/_testlimitedcapi \
   Modules/_xxtestfuzz \
+  Modules/_zstd \
   Modules/cjkcodecs \
   Modules/expat \
-  Modules/_zstd \
   Objects \
   Objects/mimalloc \
   Objects/mimalloc/prim \
@@ -8072,7 +8041,7 @@ PY_STDLIB_MOD([_bz2], [], [test "$have_bzip2" = yes],
   [$BZIP2_CFLAGS], [$BZIP2_LIBS])
 PY_STDLIB_MOD([_lzma], [], [test "$have_liblzma" = yes],
   [$LIBLZMA_CFLAGS], [$LIBLZMA_LIBS])
-PY_STDLIB_MOD([_zstd], [test "$py__zstd_too_old" = no], [test "$have_libzstd" = yes],
+PY_STDLIB_MOD([_zstd], [], [test "$have_libzstd" = yes],
   [$LIBZSTD_CFLAGS], [$LIBZSTD_LIBS])
 
 dnl OpenSSL bindings

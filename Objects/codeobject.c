@@ -1690,11 +1690,276 @@ PyCode_GetFreevars(PyCodeObject *code)
 }
 
 
+#define GET_OPARG(co, i, initial) (initial)
+// We may want to move these macros to pycore_opcode_utils.h
+// and use them in Python/bytecodes.c.
+#define LOAD_GLOBAL_NAME_INDEX(oparg) ((oparg)>>1)
+#define LOAD_ATTR_NAME_INDEX(oparg) ((oparg)>>1)
+
+#ifndef Py_DEBUG
+#define GETITEM(v, i) PyTuple_GET_ITEM((v), (i))
+#else
+static inline PyObject *
+GETITEM(PyObject *v, Py_ssize_t i)
+{
+    assert(PyTuple_Check(v));
+    assert(i >= 0);
+    assert(i < PyTuple_GET_SIZE(v));
+    assert(PyTuple_GET_ITEM(v, i) != NULL);
+    return PyTuple_GET_ITEM(v, i);
+}
+#endif
+
+static int
+identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
+                       PyObject *globalnames, PyObject *attrnames,
+                       PyObject *globalsns, PyObject *builtinsns,
+                       struct co_unbound_counts *counts)
+{
+    // This function is inspired by inspect.getclosurevars().
+    // It would be nicer if we had something similar to co_localspluskinds,
+    // but for co_names.
+    assert(globalnames != NULL);
+    assert(PySet_Check(globalnames));
+    assert(PySet_GET_SIZE(globalnames) == 0 || counts != NULL);
+    assert(attrnames != NULL);
+    assert(PySet_Check(attrnames));
+    assert(PySet_GET_SIZE(attrnames) == 0 || counts != NULL);
+    assert(globalsns == NULL || PyDict_Check(globalsns));
+    assert(builtinsns == NULL || PyDict_Check(builtinsns));
+    assert(counts == NULL || counts->total == 0);
+    struct co_unbound_counts unbound = {0};
+    Py_ssize_t len = Py_SIZE(co);
+    for (int i = 0; i < len; i += _PyInstruction_GetLength(co, i)) {
+        _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
+        if (inst.op.code == LOAD_ATTR) {
+            int oparg = GET_OPARG(co, i, inst.op.arg);
+            int index = LOAD_ATTR_NAME_INDEX(oparg);
+            PyObject *name = GETITEM(co->co_names, index);
+            if (PySet_Contains(attrnames, name)) {
+                if (_PyErr_Occurred(tstate)) {
+                    return -1;
+                }
+                continue;
+            }
+            unbound.total += 1;
+            unbound.numattrs += 1;
+            if (PySet_Add(attrnames, name) < 0) {
+                return -1;
+            }
+        }
+        else if (inst.op.code == LOAD_GLOBAL) {
+            int oparg = GET_OPARG(co, i, inst.op.arg);
+            int index = LOAD_ATTR_NAME_INDEX(oparg);
+            PyObject *name = GETITEM(co->co_names, index);
+            if (PySet_Contains(globalnames, name)) {
+                if (_PyErr_Occurred(tstate)) {
+                    return -1;
+                }
+                continue;
+            }
+            unbound.total += 1;
+            unbound.globals.total += 1;
+            if (globalsns != NULL && PyDict_Contains(globalsns, name)) {
+                if (_PyErr_Occurred(tstate)) {
+                    return -1;
+                }
+                unbound.globals.numglobal += 1;
+            }
+            else if (builtinsns != NULL && PyDict_Contains(builtinsns, name)) {
+                if (_PyErr_Occurred(tstate)) {
+                    return -1;
+                }
+                unbound.globals.numbuiltin += 1;
+            }
+            else {
+                unbound.globals.numunknown += 1;
+            }
+            if (PySet_Add(globalnames, name) < 0) {
+                return -1;
+            }
+        }
+    }
+    if (counts != NULL) {
+        *counts = unbound;
+    }
+    return 0;
+}
+
+
+void
+_PyCode_GetVarCounts(PyCodeObject *co, _PyCode_var_counts_t *counts)
+{
+    assert(counts != NULL);
+
+    // Count the locals, cells, and free vars.
+    struct co_locals_counts locals = {0};
+    int numfree = 0;
+    PyObject *kinds = co->co_localspluskinds;
+    Py_ssize_t numlocalplusfree = PyBytes_GET_SIZE(kinds);
+    for (int i = 0; i < numlocalplusfree; i++) {
+        _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
+        if (kind & CO_FAST_FREE) {
+            assert(!(kind & CO_FAST_LOCAL));
+            assert(!(kind & CO_FAST_HIDDEN));
+            assert(!(kind & CO_FAST_ARG));
+            numfree += 1;
+        }
+        else {
+            // Apparently not all non-free vars a CO_FAST_LOCAL.
+            assert(kind);
+            locals.total += 1;
+            if (kind & CO_FAST_ARG) {
+                locals.args.total += 1;
+                if (kind & CO_FAST_ARG_VAR) {
+                    if (kind & CO_FAST_ARG_POS) {
+                        assert(!(kind & CO_FAST_ARG_KW));
+                        assert(!locals.args.varargs);
+                        locals.args.varargs = 1;
+                    }
+                    else {
+                        assert(kind & CO_FAST_ARG_KW);
+                        assert(!locals.args.varkwargs);
+                        locals.args.varkwargs = 1;
+                    }
+                }
+                else if (kind & CO_FAST_ARG_POS) {
+                    if (kind & CO_FAST_ARG_KW) {
+                        locals.args.numposorkw += 1;
+                    }
+                    else {
+                        locals.args.numposonly += 1;
+                    }
+                }
+                else {
+                    assert(kind & CO_FAST_ARG_KW);
+                    locals.args.numkwonly += 1;
+                }
+                if (kind & CO_FAST_CELL) {
+                    locals.cells.total += 1;
+                    locals.cells.numargs += 1;
+                }
+                // Args are never hidden currently.
+                assert(!(kind & CO_FAST_HIDDEN));
+            }
+            else {
+                if (kind & CO_FAST_CELL) {
+                    locals.cells.total += 1;
+                    locals.cells.numothers += 1;
+                    if (kind & CO_FAST_HIDDEN) {
+                        locals.hidden.total += 1;
+                        locals.hidden.numcells += 1;
+                    }
+                }
+                else {
+                    locals.numpure += 1;
+                    if (kind & CO_FAST_HIDDEN) {
+                        locals.hidden.total += 1;
+                        locals.hidden.numpure += 1;
+                    }
+                }
+            }
+        }
+    }
+    assert(locals.args.total == (
+            co->co_argcount + co->co_kwonlyargcount
+            + !!(co->co_flags & CO_VARARGS)
+            + !!(co->co_flags & CO_VARKEYWORDS)));
+    assert(locals.args.numposonly == co->co_posonlyargcount);
+    assert(locals.args.numposonly + locals.args.numposorkw == co->co_argcount);
+    assert(locals.args.numkwonly == co->co_kwonlyargcount);
+    assert(locals.cells.total == co->co_ncellvars);
+    assert(locals.args.total + locals.numpure == co->co_nlocals);
+    assert(locals.total + locals.cells.numargs == co->co_nlocals + co->co_ncellvars);
+    assert(locals.total + numfree == co->co_nlocalsplus);
+    assert(numfree == co->co_nfreevars);
+
+    // Get the unbound counts.
+    assert(PyTuple_GET_SIZE(co->co_names) >= 0);
+    assert(PyTuple_GET_SIZE(co->co_names) < INT_MAX);
+    int numunbound = (int)PyTuple_GET_SIZE(co->co_names);
+    struct co_unbound_counts unbound = {
+        .total = numunbound,
+        // numglobal and numattrs can be set later
+        // with _PyCode_SetUnboundVarCounts().
+        .numunknown = numunbound,
+    };
+
+    // "Return" the result.
+    *counts = (_PyCode_var_counts_t){
+        .total = locals.total + numfree + unbound.total,
+        .locals = locals,
+        .numfree = numfree,
+        .unbound = unbound,
+    };
+}
+
+int
+_PyCode_SetUnboundVarCounts(PyThreadState *tstate,
+                            PyCodeObject *co, _PyCode_var_counts_t *counts,
+                            PyObject *globalnames, PyObject *attrnames,
+                            PyObject *globalsns, PyObject *builtinsns)
+{
+    int res = -1;
+    PyObject *globalnames_owned = NULL;
+    PyObject *attrnames_owned = NULL;
+
+    // Prep the name sets.
+    if (globalnames == NULL) {
+        globalnames_owned = PySet_New(NULL);
+        if (globalnames_owned == NULL) {
+            goto finally;
+        }
+        globalnames = globalnames_owned;
+    }
+    else if (!PySet_Check(globalnames)) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                     "expected a set for \"globalnames\", got %R", globalnames);
+        goto finally;
+    }
+    if (attrnames == NULL) {
+        attrnames_owned = PySet_New(NULL);
+        if (attrnames_owned == NULL) {
+            goto finally;
+        }
+        attrnames = attrnames_owned;
+    }
+    else if (!PySet_Check(attrnames)) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                     "expected a set for \"attrnames\", got %R", attrnames);
+        goto finally;
+    }
+
+    // Fill in unbound.globals and unbound.numattrs.
+    struct co_unbound_counts unbound = {0};
+    Py_BEGIN_CRITICAL_SECTION(co);
+    res = identify_unbound_names(
+            tstate, co, globalnames, attrnames, globalsns, builtinsns,
+            &unbound);
+    Py_END_CRITICAL_SECTION();
+    if (res < 0) {
+        goto finally;
+    }
+    assert(unbound.numunknown == 0);
+    assert(unbound.total <= counts->unbound.total);
+    assert(counts->unbound.numunknown == counts->unbound.total);
+    unbound.numunknown = counts->unbound.total - unbound.total;
+    unbound.total = counts->unbound.total;
+    counts->unbound = unbound;
+    res = 0;
+
+finally:
+    Py_XDECREF(globalnames_owned);
+    Py_XDECREF(attrnames_owned);
+    return res;
+}
+
+
 /* Here "value" means a non-None value, since a bare return is identical
  * to returning None explicitly.  Likewise a missing return statement
  * at the end of the function is turned into "return None". */
-int
-_PyCode_ReturnsOnlyNone(PyCodeObject *co)
+static int
+code_returns_only_none(PyCodeObject *co)
 {
     // Look up None in co_consts.
     Py_ssize_t nconsts = PyTuple_Size(co->co_consts);
@@ -1713,7 +1978,7 @@ _PyCode_ReturnsOnlyNone(PyCodeObject *co)
 
     // Walk the bytecode, looking for RETURN_VALUE.
     Py_ssize_t len = Py_SIZE(co);
-    for (int i = 0; i < len; i++) {
+    for (int i = 0; i < len; i += _PyInstruction_GetLength(co, i)) {
         _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
         if (IS_RETURN_OPCODE(inst.op.code)) {
             assert(i != 0);
@@ -1729,6 +1994,16 @@ _PyCode_ReturnsOnlyNone(PyCodeObject *co)
         }
     }
     return 1;
+}
+
+int
+_PyCode_ReturnsOnlyNone(PyCodeObject *co)
+{
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(co);
+    res = code_returns_only_none(co);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 

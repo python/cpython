@@ -539,10 +539,20 @@ Miscellaneous options
    * ``-X importtime`` to show how long each import takes. It shows module
      name, cumulative time (including nested imports) and self time (excluding
      nested imports).  Note that its output may be broken in multi-threaded
-     application.  Typical usage is ``python3 -X importtime -c 'import
-     asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
+     application.  Typical usage is ``python -X importtime -c 'import asyncio'``.
+
+     ``-X importtime=2`` enables additional output that indicates when an
+     imported module has already been loaded.  In such cases, the string
+     ``cached`` will be printed in both time columns.
+
+     See also :envvar:`PYTHONPROFILEIMPORTTIME`.
 
      .. versionadded:: 3.7
+
+     .. versionchanged:: next
+
+         Added ``-X importtime=2`` to also trace imports of loaded modules,
+         and reserved values other than ``1`` and ``2`` for future use.
 
    * ``-X dev``: enable :ref:`Python Development Mode <devmode>`, introducing
      additional runtime checks that are too expensive to be enabled by
@@ -982,11 +992,16 @@ conflict.
 
 .. envvar:: PYTHONPROFILEIMPORTTIME
 
-   If this environment variable is set to a non-empty string, Python will
-   show how long each import takes.
+   If this environment variable is set to ``1``, Python will show
+   how long each import takes. If set to ``2``, Python will include output for
+   imported modules that have already been loaded.
    This is equivalent to setting the :option:`-X` ``importtime`` option.
 
    .. versionadded:: 3.7
+
+   .. versionchanged:: next
+
+      Added ``PYTHONPROFILEIMPORTTIME=2`` to also trace imports of loaded modules.
 
 
 .. envvar:: PYTHONASYNCIODEBUG
@@ -1278,6 +1293,14 @@ conflict.
    context_aware_warnings<-X>`.
 
    .. versionadded:: 3.14
+
+.. envvar:: PYTHON_JIT
+
+   On builds where experimental just-in-time compilation is available, this
+   variable can force the JIT to be disabled (``0``) or enabled (``1``) at
+   interpreter startup.
+
+   .. versionadded:: 3.13
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

@@ -23,6 +23,11 @@ IDENTIFIERS_AFTER = {"def", "class"}
 BUILTINS = {str(name) for name in dir(builtins) if not name.startswith('_')}
 
 
+def THEME(**kwargs):
+    # Not cached: the user can modify the theme inside the interactive session.
+    return _colorize.get_theme(**kwargs).syntax
+
+
 class Span(NamedTuple):
     """Span indexing that's inclusive on both ends."""
 
@@ -44,7 +49,7 @@ class Span(NamedTuple):
 
 class ColorSpan(NamedTuple):
     span: Span
-    tag: _colorize.ColorTag
+    tag: str
 
 
 @functools.cache
@@ -135,7 +140,7 @@ def recover_unterminated_string(
 
         span = Span(start, end)
         trace("yielding span {a} -> {b}", a=span.start, b=span.end)
-        yield ColorSpan(span, "STRING")
+        yield ColorSpan(span, "string")
     else:
         trace(
             "unhandled token error({buffer}) = {te}",
@@ -164,28 +169,28 @@ def gen_colors_from_token_stream(
                 | T.TSTRING_START | T.TSTRING_MIDDLE | T.TSTRING_END
             ):
                 span = Span.from_token(token, line_lengths)
-                yield ColorSpan(span, "STRING")
+                yield ColorSpan(span, "string")
             case T.COMMENT:
                 span = Span.from_token(token, line_lengths)
-                yield ColorSpan(span, "COMMENT")
+                yield ColorSpan(span, "comment")
             case T.NUMBER:
                 span = Span.from_token(token, line_lengths)
-                yield ColorSpan(span, "NUMBER")
+                yield ColorSpan(span, "number")
             case T.OP:
                 if token.string in "([{":
                     bracket_level += 1
                 elif token.string in ")]}":
                     bracket_level -= 1
                 span = Span.from_token(token, line_lengths)
-                yield ColorSpan(span, "OP")
+                yield ColorSpan(span, "op")
             case T.NAME:
                 if is_def_name:
                     is_def_name = False
                     span = Span.from_token(token, line_lengths)
-                    yield ColorSpan(span, "DEFINITION")
+                    yield ColorSpan(span, "definition")
                 elif keyword.iskeyword(token.string):
                     span = Span.from_token(token, line_lengths)
-                    yield ColorSpan(span, "KEYWORD")
+                    yield ColorSpan(span, "keyword")
                     if token.string in IDENTIFIERS_AFTER:
                         is_def_name = True
                 elif (
@@ -194,10 +199,10 @@ def gen_colors_from_token_stream(
                     and is_soft_keyword_used(prev_token, token, next_token)
                 ):
                     span = Span.from_token(token, line_lengths)
-                    yield ColorSpan(span, "SOFT_KEYWORD")
+                    yield ColorSpan(span, "soft_keyword")
                 elif token.string in BUILTINS:
                     span = Span.from_token(token, line_lengths)
-                    yield ColorSpan(span, "BUILTIN")
+                    yield ColorSpan(span, "builtin")
 
 
 keyword_first_sets_match = {"False", "None", "True", "await", "lambda", "not"}
@@ -249,7 +254,10 @@ def is_soft_keyword_used(*tokens: TI | None) -> bool:
 
 
 def disp_str(
-    buffer: str, colors: list[ColorSpan] | None = None, start_index: int = 0
+    buffer: str,
+    colors: list[ColorSpan] | None = None,
+    start_index: int = 0,
+    force_color: bool = False,
 ) -> tuple[CharBuffer, CharWidths]:
     r"""Decompose the input buffer into a printable variant with applied colors.
 
@@ -290,15 +298,16 @@ def disp_str(
         # move past irrelevant spans
         colors.pop(0)
 
+    theme = THEME(force_color=force_color)
     pre_color = ""
     post_color = ""
     if colors and colors[0].span.start < start_index:
         # looks like we're continuing a previous color (e.g. a multiline str)
-        pre_color = _colorize.theme[colors[0].tag]
+        pre_color = theme[colors[0].tag]
 
     for i, c in enumerate(buffer, start_index):
         if colors and colors[0].span.start == i:  # new color starts now
-            pre_color = _colorize.theme[colors[0].tag]
+            pre_color = theme[colors[0].tag]
 
         if c == "\x1a":  # CTRL-Z on Windows
             chars.append(c)
@@ -315,7 +324,7 @@ def disp_str(
             char_widths.append(str_width(c))
 
         if colors and colors[0].span.end == i:  # current color ends now
-            post_color = _colorize.theme["RESET"]
+            post_color = theme.reset
             colors.pop(0)
 
         chars[-1] = pre_color + chars[-1] + post_color
@@ -325,7 +334,7 @@ def disp_str(
     if colors and colors[0].span.start < i and colors[0].span.end > i:
         # even though the current color should be continued, reset it for now.
         # the next call to `disp_str()` will revive it.
-        chars[-1] += _colorize.theme["RESET"]
+        chars[-1] += theme.reset
 
     return chars, char_widths
 
