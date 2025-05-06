@@ -1,1 +1,2 @@
-Remove :func:`os.listdrives` in non windows desktop builds since they don't support this feature
+Remove :func:`os.listdrives` and :func:`os.listvolumes` in non windows desktop builds
+since the underlying functionality
