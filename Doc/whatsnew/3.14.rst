@@ -276,7 +276,7 @@ As can be seen, the API is similar to the APIs of the :mod:`!lzma` and
 Victor Stinner, and Rogdham in :gh:`132983`)
 
 .. seealso::
-   :pep:`768`.
+   :pep:`784`.
 
 
 .. _whatsnew314-remote-pdb:
