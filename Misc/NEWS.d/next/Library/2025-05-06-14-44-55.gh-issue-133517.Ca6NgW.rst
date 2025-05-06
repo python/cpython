@@ -1,0 +1,1 @@
+Remove :func:`os.listdrives` in non windows desktop builds since they don't support this feature
