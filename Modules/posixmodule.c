@@ -4698,7 +4698,7 @@ os_listdir_impl(PyObject *module, path_t *path)
 }
 
 
-#if defined(MS_WINDOWS_DESKTOP) || defined(WINAPI_PARTITION_SYSTEM)
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
 /*[clinic input]
 os.listdrives
@@ -4747,7 +4747,7 @@ os_listdrives_impl(PyObject *module)
     return result;
 }
 
-#endif /* MS_WINDOWS_DESKTOP || WINAPI_PARTITION_SYSTEM */
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
 
 #ifdef MS_WINDOWS
 

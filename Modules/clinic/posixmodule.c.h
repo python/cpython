@@ -1659,7 +1659,7 @@ exit:
     return return_value;
 }
 
-#if defined(MS_WINDOWS_DESKTOP) || defined(WINAPI_PARTITION_SYSTEM)
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
 PyDoc_STRVAR(os_listdrives__doc__,
 "listdrives($module, /)\n"
@@ -1681,7 +1681,7 @@ os_listdrives(PyObject *module, PyObject *Py_UNUSED(ignored))
     return os_listdrives_impl(module);
 }
 
-#endif /* defined(MS_WINDOWS_DESKTOP) || defined(WINAPI_PARTITION_SYSTEM) */
+#endif /* defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) */
 
 #if defined(MS_WINDOWS)
 
