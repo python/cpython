@@ -3,7 +3,7 @@ import inspect
 import textwrap
 import types
 import unittest
-from test.support import run_code, check_syntax_error, cpython_only
+from test.support import run_code, check_syntax_error, import_helper, cpython_only
 from test.test_inspect import inspect_stringized_annotations
 
 
@@ -150,6 +150,14 @@ class TypeAnnotationTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del D.__annotations__
         self.assertEqual(D.__annotations__, {})
+
+    def test_partially_executed_module(self):
+        partialexe = import_helper.import_fresh_module("test.typinganndata.partialexecution")
+        self.assertEqual(
+            partialexe.a.__annotations__,
+            {"v1": int, "v2": int},
+        )
+        self.assertEqual(partialexe.b.annos, {"v1": int})
 
     @cpython_only
     def test_no_cell(self):
@@ -318,6 +326,25 @@ class AnnotateTests(unittest.TestCase):
         # Setting f.__annotations__ also clears __annotate__
         f.__annotations__ = {"z": 43}
         self.assertIs(f.__annotate__, None)
+
+    def test_user_defined_annotate(self):
+        class X:
+            a: int
+
+            def __annotate__(format):
+                return {"a": str}
+        self.assertEqual(X.__annotate__(annotationlib.Format.VALUE), {"a": str})
+        self.assertEqual(annotationlib.get_annotations(X), {"a": str})
+
+        mod = build_module(
+            """
+            a: int
+            def __annotate__(format):
+                return {"a": str}
+            """
+        )
+        self.assertEqual(mod.__annotate__(annotationlib.Format.VALUE), {"a": str})
+        self.assertEqual(annotationlib.get_annotations(mod), {"a": str})
 
 
 class DeferredEvaluationTests(unittest.TestCase):

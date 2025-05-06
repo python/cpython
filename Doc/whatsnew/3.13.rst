@@ -2009,6 +2009,8 @@ New Deprecations
 
 .. include:: ../deprecations/pending-removal-in-3.16.rst
 
+.. include:: ../deprecations/pending-removal-in-3.17.rst
+
 .. include:: ../deprecations/pending-removal-in-future.rst
 
 CPython Bytecode Changes
@@ -2528,6 +2530,8 @@ Deprecated C APIs
 .. include:: ../deprecations/c-api-pending-removal-in-3.14.rst
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
 
 .. include:: ../deprecations/c-api-pending-removal-in-future.rst
 

@@ -2906,7 +2906,7 @@ class NamedTupleMeta(type):
             types = ns["__annotations__"]
             field_names = list(types)
             annotate = _make_eager_annotate(types)
-        elif (original_annotate := _lazy_annotationlib.get_annotate_function(ns)) is not None:
+        elif (original_annotate := _lazy_annotationlib.get_annotate_from_class_namespace(ns)) is not None:
             types = _lazy_annotationlib.call_annotate_function(
                 original_annotate, _lazy_annotationlib.Format.FORWARDREF)
             field_names = list(types)
@@ -3092,7 +3092,7 @@ class _TypedDictMeta(type):
         if "__annotations__" in ns:
             own_annotate = None
             own_annotations = ns["__annotations__"]
-        elif (own_annotate := _lazy_annotationlib.get_annotate_function(ns)) is not None:
+        elif (own_annotate := _lazy_annotationlib.get_annotate_from_class_namespace(ns)) is not None:
             own_annotations = _lazy_annotationlib.call_annotate_function(
                 own_annotate, _lazy_annotationlib.Format.FORWARDREF, owner=tp_dict
             )
@@ -3477,7 +3477,7 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def readlines(self, hint: int = -1) -> List[AnyStr]:
+    def readlines(self, hint: int = -1) -> list[AnyStr]:
         pass
 
     @abstractmethod
@@ -3493,7 +3493,7 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def truncate(self, size: int = None) -> int:
+    def truncate(self, size: int | None = None) -> int:
         pass
 
     @abstractmethod
@@ -3505,11 +3505,11 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def writelines(self, lines: List[AnyStr]) -> None:
+    def writelines(self, lines: list[AnyStr]) -> None:
         pass
 
     @abstractmethod
-    def __enter__(self) -> 'IO[AnyStr]':
+    def __enter__(self) -> IO[AnyStr]:
         pass
 
     @abstractmethod
@@ -3523,11 +3523,11 @@ class BinaryIO(IO[bytes]):
     __slots__ = ()
 
     @abstractmethod
-    def write(self, s: Union[bytes, bytearray]) -> int:
+    def write(self, s: bytes | bytearray) -> int:
         pass
 
     @abstractmethod
-    def __enter__(self) -> 'BinaryIO':
+    def __enter__(self) -> BinaryIO:
         pass
 
 
@@ -3548,7 +3548,7 @@ class TextIO(IO[str]):
 
     @property
     @abstractmethod
-    def errors(self) -> Optional[str]:
+    def errors(self) -> str | None:
         pass
 
     @property
@@ -3562,7 +3562,7 @@ class TextIO(IO[str]):
         pass
 
     @abstractmethod
-    def __enter__(self) -> 'TextIO':
+    def __enter__(self) -> TextIO:
         pass
 
 

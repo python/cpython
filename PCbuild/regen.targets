@@ -30,7 +30,11 @@
     <_KeywordOutputs Include="$(PySourcePath)Lib\keyword.py" />
     <!-- Taken from _Target._compute_digest in Tools\jit\_targets.py: -->
     <_JITSources Include="$(PySourcePath)Python\executor_cases.c.h;$(GeneratedPyConfigDir)pyconfig.h;$(PySourcePath)Tools\jit\**"/>
+    <!-- Need to explicitly enumerate these, since globbing doesn't work for missing outputs: -->
     <_JITOutputs Include="$(GeneratedPyConfigDir)jit_stencils.h"/>
+    <_JITOutputs Include="$(GeneratedPyConfigDir)jit_stencils-aarch64-pc-windows-msvc.h" Condition="$(Platform) == 'ARM64'"/>
+    <_JITOutputs Include="$(GeneratedPyConfigDir)jit_stencils-i686-pc-windows-msvc.h" Condition="$(Platform) == 'Win32'"/>
+    <_JITOutputs Include="$(GeneratedPyConfigDir)jit_stencils-x86_64-pc-windows-msvc.h" Condition="$(Platform) == 'x64'"/>
     <_CasesSources Include="$(PySourcePath)Python\bytecodes.c;$(PySourcePath)Python\optimizer_bytecodes.c;"/>
     <_CasesOutputs Include="$(PySourcePath)Python\generated_cases.c.h;$(PySourcePath)Include\opcode_ids.h;$(PySourcePath)Include\internal\pycore_uop_ids.h;$(PySourcePath)Python\opcode_targets.h;$(PySourcePath)Include\internal\pycore_opcode_metadata.h;$(PySourcePath)Include\internal\pycore_uop_metadata.h;$(PySourcePath)Python\optimizer_cases.c.h;$(PySourcePath)Lib\_opcode_metadata.py"/>
     <_SbomSources Include="$(PySourcePath)PCbuild\get_externals.bat" />
@@ -124,6 +128,9 @@
     <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" $(JITArgs)'
           WorkingDirectory="$(GeneratedPyConfigDir)"/>
   </Target>
+  <Target Name="_CleanJIT" AfterTargets="Clean">
+    <Delete Files="@(_JITOutputs)"/>
+  </Target>
 
   <Target Name="_RegenNoPGUpdate"
           Condition="$(Configuration) != 'PGUpdate'"
@@ -150,7 +157,8 @@
     <_LicenseSources Include="$(PySourcePath)LICENSE;
                               $(PySourcePath)PC\crtlicense.txt;
                               $(bz2Dir)LICENSE;
-                              $(libffiDir)LICENSE;" />
+                              $(libffiDir)LICENSE;
+                              $(zstdDir)\LICENSE;" />
     <_LicenseSources Include="$(opensslOutDir)LICENSE.txt" Condition="Exists('$(opensslOutDir)LICENSE.txt')" />
     <_LicenseSources Include="$(opensslOutDir)LICENSE" Condition="!Exists('$(opensslOutDir)LICENSE.txt')" />
     <_LicenseSources Include="$(tcltkDir)tcllicense.terms;

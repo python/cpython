@@ -2,8 +2,9 @@ import unittest
 from unittest import mock
 from test import support
 from test.support import (
-    is_apple, os_helper, refleak_helper, socket_helper, threading_helper
+    cpython_only, is_apple, os_helper, refleak_helper, socket_helper, threading_helper
 )
+from test.support.import_helper import ensure_lazy_imports
 import _thread as thread
 import array
 import contextlib
@@ -256,6 +257,12 @@ HAVE_SOCKET_HYPERV = _have_socket_hyperv()
 
 # Size in bytes of the int type
 SIZEOF_INT = array.array("i").itemsize
+
+class TestLazyImport(unittest.TestCase):
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("socket", {"array", "selectors"})
+
 
 class SocketTCPTest(unittest.TestCase):
 
@@ -1169,7 +1176,7 @@ class GeneralModuleTests(unittest.TestCase):
     @support.skip_android_selinux('if_indextoname')
     def testInvalidInterfaceIndexToName(self):
         self.assertRaises(OSError, socket.if_indextoname, 0)
-        self.assertRaises(OverflowError, socket.if_indextoname, -1)
+        self.assertRaises(ValueError, socket.if_indextoname, -1)
         self.assertRaises(OverflowError, socket.if_indextoname, 2**1000)
         self.assertRaises(TypeError, socket.if_indextoname, '_DEADBEEF')
         if hasattr(socket, 'if_nameindex'):
@@ -1225,24 +1232,23 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertEqual(swapped & mask, mask)
             self.assertRaises(OverflowError, func, 1<<34)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def testNtoHErrors(self):
-        import _testcapi
         s_good_values = [0, 1, 2, 0xffff]
         l_good_values = s_good_values + [0xffffffff]
-        l_bad_values = [-1, -2, 1<<32, 1<<1000]
-        s_bad_values = (
-            l_bad_values +
-            [_testcapi.INT_MIN-1, _testcapi.INT_MAX+1] +
-            [1 << 16, _testcapi.INT_MAX]
-        )
+        neg_values = [-1, -2, -(1<<15)-1, -(1<<31)-1, -(1<<63)-1, -1<<1000]
+        l_bad_values = [1<<32, 1<<1000]
+        s_bad_values = l_bad_values + [1 << 16, (1<<31)-1, 1<<31]
         for k in s_good_values:
             socket.ntohs(k)
             socket.htons(k)
         for k in l_good_values:
             socket.ntohl(k)
             socket.htonl(k)
+        for k in neg_values:
+            self.assertRaises(ValueError, socket.ntohs, k)
+            self.assertRaises(ValueError, socket.htons, k)
+            self.assertRaises(ValueError, socket.ntohl, k)
+            self.assertRaises(ValueError, socket.htonl, k)
         for k in s_bad_values:
             self.assertRaises(OverflowError, socket.ntohs, k)
             self.assertRaises(OverflowError, socket.htons, k)
