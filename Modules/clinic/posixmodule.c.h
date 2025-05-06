@@ -1659,7 +1659,7 @@ exit:
     return return_value;
 }
 
-#if defined(MS_WINDOWS)
+#if defined(MS_WINDOWS_DESKTOP)
 
 PyDoc_STRVAR(os_listdrives__doc__,
 "listdrives($module, /)\n"

@@ -4698,7 +4698,7 @@ os_listdir_impl(PyObject *module, path_t *path)
 }
 
 
-#ifdef MS_WINDOWS
+#ifdef MS_WINDOWS_DESKTOP
 
 /*[clinic input]
 os.listdrives
