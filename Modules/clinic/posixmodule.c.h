@@ -13398,4 +13398,4 @@ os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__EMSCRIPTEN_DEBUGGER_METHODDEF
     #define OS__EMSCRIPTEN_DEBUGGER_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_DEBUGGER_METHODDEF) */
-/*[clinic end generated code: output=b2f101ce2b2cf700 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ae64df0389746258 input=a9049054013a1b77]*/
