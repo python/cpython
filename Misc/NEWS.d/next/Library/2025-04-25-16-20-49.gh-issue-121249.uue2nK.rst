@@ -1,0 +1,2 @@
+Always support the :c:expr:`float complex` and :c:expr:`double complex` C types in
+the :mod:`struct` module.  Patch by Sergey B Kirpichev.

@@ -1,0 +1,2 @@
+Since free-threaded builds do not support the experimental JIT compiler,
+prevent these configurations from being combined.

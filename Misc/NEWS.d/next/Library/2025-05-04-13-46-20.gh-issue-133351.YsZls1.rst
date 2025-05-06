@@ -1,0 +1,3 @@
+Fix remote PDB to correctly request tab completions for Python expressions
+from the server when completing a continuation line of a multi-line Python
+block.

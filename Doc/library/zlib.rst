@@ -353,3 +353,8 @@ the following constants:
    http://www.zlib.net/manual.html
       The zlib manual explains  the semantics and usage of the library's many
       functions.
+
+   In case gzip (de)compression is a bottleneck, the `python-isal`_
+   package speeds up (de)compression with a mostly compatible API.
+
+   .. _python-isal: https://github.com/pycompression/python-isal
