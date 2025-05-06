@@ -2074,10 +2074,9 @@ gc_should_collect_mem_usage(GCState *gcstate)
         // clear the young object count so we don't check memory usage again
         // on the next call to gc_should_collect().
         PyMutex_Lock(&gcstate->mutex);
+        int young_count = _Py_atomic_exchange_int(&gcstate->young.count, 0);
         _Py_atomic_store_ssize_relaxed(&gcstate->deferred_count,
-                                       gcstate->deferred_count +
-                                           gcstate->young.count);
-        _Py_atomic_store_int(&gcstate->young.count, 0);
+                                       gcstate->deferred_count + young_count);
         PyMutex_Unlock(&gcstate->mutex);
         return false;
     }
