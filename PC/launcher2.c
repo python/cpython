@@ -1058,7 +1058,7 @@ checkShebang(SearchInfo *search)
         debug(L"# Failed to open %s for shebang parsing (0x%08X)\n",
               scriptFile, GetLastError());
         free(scriptFile);
-        return 0;
+        return RC_NO_SCRIPT;
     }
 
     DWORD bytesRead = 0;
@@ -2664,6 +2664,21 @@ performSearch(SearchInfo *search, EnvironmentInfo **envs)
     case 0:
     case RC_NO_SHEBANG:
     case RC_RECURSIVE_SHEBANG:
+        break;
+    case RC_NO_SCRIPT:
+        if (!_comparePath(search->scriptFile, search->scriptFileLength, L"install", -1) ||
+            !_comparePath(search->scriptFile, search->scriptFileLength, L"uninstall", -1) ||
+            !_comparePath(search->scriptFile, search->scriptFileLength, L"list", -1) ||
+            !_comparePath(search->scriptFile, search->scriptFileLength, L"help", -1)) {
+            fprintf(
+                stderr,
+                "WARNING: The '%.*ls' command is unavailable because this is the legacy py.exe command.\n"
+                "If you have already installed the Python install manager, open Installed Apps and "
+                "remove 'Python Launcher' to enable the new py.exe command.\n",
+                search->scriptFileLength,
+                search->scriptFile
+            );
+        }
         break;
     default:
         return exitCode;
