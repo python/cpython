@@ -172,9 +172,9 @@ class UnixGetpassTest(unittest.TestCase):
             os_open.return_value = 3
             mock_input.return_value = mock_result
 
-            result = getpass.unix_getpass(echochar='*')
+            result = getpass.unix_getpass(echo_char='*')
             mock_input.assert_called_once_with('Password: ', textio(),
-                                               input=textio(), echochar='*')
+                                               input=textio(), echo_char='*')
             self.assertEqual(result, mock_result)
 
     def test_raw_input_with_echochar(self):

@@ -1,6 +1,6 @@
 """Utilities to get a password and/or the current user name.
 
-getpass(prompt[, stream[, echochar]]) - Prompt for a password, with echo
+getpass(prompt[, stream[, echo_char]]) - Prompt for a password, with echo
 turned off and optional keyboard feedback.
 getuser() - Get the user name from the environment or password database.
 
@@ -26,14 +26,14 @@ __all__ = ["getpass","getuser","GetPassWarning"]
 class GetPassWarning(UserWarning): pass
 
 
-def unix_getpass(prompt='Password: ', stream=None, *, echochar=None):
+def unix_getpass(prompt='Password: ', stream=None, *, echo_char=None):
     """Prompt for a password, with echo turned off.
 
     Args:
       prompt: Written on stream to ask for the input.  Default: 'Password: '
       stream: A writable file object to display the prompt.  Defaults to
               the tty.  If no tty is available defaults to sys.stderr.
-      echochar: A string used to mask input (e.g., '*').  If None, input is
+      echo_char: A string used to mask input (e.g., '*').  If None, input is
                 hidden.
     Returns:
       The seKr3t input.
@@ -43,7 +43,7 @@ def unix_getpass(prompt='Password: ', stream=None, *, echochar=None):
 
     Always restores terminal settings before returning.
     """
-    _check_echochar(echochar)
+    _check_echo_char(echo_char)
 
     passwd = None
     with contextlib.ExitStack() as stack:
@@ -73,7 +73,7 @@ def unix_getpass(prompt='Password: ', stream=None, *, echochar=None):
                 old = termios.tcgetattr(fd)     # a copy to save
                 new = old[:]
                 new[3] &= ~termios.ECHO  # 3 == 'lflags'
-                if echochar:
+                if echo_char:
                     new[3] &= ~termios.ICANON
                 tcsetattr_flags = termios.TCSAFLUSH
                 if hasattr(termios, 'TCSASOFT'):
@@ -81,7 +81,7 @@ def unix_getpass(prompt='Password: ', stream=None, *, echochar=None):
                 try:
                     termios.tcsetattr(fd, tcsetattr_flags, new)
                     passwd = _raw_input(prompt, stream, input=input,
-                                        echochar=echochar)
+                                        echo_char=echo_char)
 
                 finally:
                     termios.tcsetattr(fd, tcsetattr_flags, old)
@@ -102,11 +102,11 @@ def unix_getpass(prompt='Password: ', stream=None, *, echochar=None):
         return passwd
 
 
-def win_getpass(prompt='Password: ', stream=None, *, echochar=None):
+def win_getpass(prompt='Password: ', stream=None, *, echo_char=None):
     """Prompt for password with echo off, using Windows getwch()."""
     if sys.stdin is not sys.__stdin__:
         return fallback_getpass(prompt, stream)
-    _check_echochar(echochar)
+    _check_echo_char(echo_char)
 
     for c in prompt:
         msvcrt.putwch(c)
@@ -118,15 +118,15 @@ def win_getpass(prompt='Password: ', stream=None, *, echochar=None):
         if c == '\003':
             raise KeyboardInterrupt
         if c == '\b':
-            if echochar and pw:
+            if echo_char and pw:
                 msvcrt.putch('\b')
                 msvcrt.putch(' ')
                 msvcrt.putch('\b')
             pw = pw[:-1]
         else:
             pw = pw + c
-            if echochar:
-                msvcrt.putwch(echochar)
+            if echo_char:
+                msvcrt.putwch(echo_char)
     msvcrt.putwch('\r')
     msvcrt.putwch('\n')
     return pw
@@ -142,14 +142,14 @@ def fallback_getpass(prompt='Password: ', stream=None):
     return _raw_input(prompt, stream)
 
 
-def _check_echochar(echochar):
+def _check_echo_char(echo_char):
     # ASCII excluding control characters
-    if echochar and not (echochar.isprintable() and echochar.isascii()):
-        raise ValueError("'echochar' must be a printable ASCII string, "
-                         f"got: {echochar!r}")
+    if echo_char and not (echo_char.isprintable() and echo_char.isascii()):
+        raise ValueError("'echo_char' must be a printable ASCII string, "
+                         f"got: {echo_char!r}")
 
 
-def _raw_input(prompt="", stream=None, input=None, echochar=None):
+def _raw_input(prompt="", stream=None, input=None, echo_char=None):
     # This doesn't save the string in the GNU readline history.
     if not stream:
         stream = sys.stderr
@@ -166,8 +166,8 @@ def _raw_input(prompt="", stream=None, input=None, echochar=None):
             stream.write(prompt)
         stream.flush()
     # NOTE: The Python C API calls flockfile() (and unlock) during readline.
-    if echochar:
-        return _readline_with_echochar(stream, input, echochar)
+    if echo_char:
+        return _readline_with_echo_char(stream, input, echo_char)
     line = input.readline()
     if not line:
         raise EOFError
@@ -176,7 +176,7 @@ def _raw_input(prompt="", stream=None, input=None, echochar=None):
     return line
 
 
-def _readline_with_echochar(stream, input, echochar):
+def _readline_with_echo_char(stream, input, echo_char):
     passwd = ""
     eof_pressed = False
     while True:
@@ -199,7 +199,7 @@ def _readline_with_echochar(stream, input, echochar):
             continue
         else:
             passwd += char
-            stream.write(echochar)
+            stream.write(echo_char)
             stream.flush()
             eof_pressed = False
     return passwd
