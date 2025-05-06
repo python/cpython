@@ -12,11 +12,10 @@
 
 */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_moduleobject.h"
-#include "structmember.h"         // PyMemberDef
+
 #include <windows.h>
 
 #if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)
@@ -31,8 +30,6 @@ static BOOL PyHKEY_AsHKEY(winreg_state *st, PyObject *ob, HKEY *pRes, BOOL bNone
 static BOOL clinic_HKEY_converter(winreg_state *st, PyObject *ob, void *p);
 static PyObject *PyHKEY_FromHKEY(winreg_state *st, HKEY h);
 static BOOL PyHKEY_Close(winreg_state *st, PyObject *obHandle);
-
-static char errNotAHandle[] = "Object is not a handle";
 
 /* The win32api module reports the function name that failed,
    but this concept is not in the Python core.
@@ -160,7 +157,7 @@ PyHKEY_deallocFunc(PyObject *ob)
 }
 
 static int
-PyHKEY_traverseFunc(PyHKEYObject *self, visitproc visit, void *arg)
+PyHKEY_traverseFunc(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;
@@ -201,7 +198,7 @@ PyHKEY_hashFunc(PyObject *ob)
     /* Just use the address.
        XXX - should we use the handle value?
     */
-    return _Py_HashPointer(ob);
+    return PyObject_GenericHash(ob);
 }
 
 
@@ -221,14 +218,17 @@ class DWORD_converter(unsigned_long_converter):
 class HKEY_converter(CConverter):
     type = 'HKEY'
     converter = 'clinic_HKEY_converter'
+    broken_limited_capi = True
 
-    def parse_arg(self, argname, displayname):
-        return """
-        if (!{converter}(_PyModule_GetState(module), {argname}, &{paramname})) {{{{
-            goto exit;
-        }}}}
-        """.format(argname=argname, paramname=self.parser_name,
-                   converter=self.converter)
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        assert not limited_capi
+        return self.format_code("""
+            if (!{converter}(_PyModule_GetState(module), {argname}, &{paramname})) {{{{
+                goto exit;
+            }}}}
+            """,
+            argname=argname,
+            converter=self.converter)
 
 class HKEY_return_converter(CReturnConverter):
     type = 'HKEY'
@@ -250,7 +250,7 @@ class self_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = (PyObject *)_return_value;\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=17e645060c7b8ae1]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=4979f33998ffb6f8]*/
 
 #include "clinic/winreg.c.h"
 
@@ -324,12 +324,14 @@ winreg.HKEYType.__exit__
     exc_type: object
     exc_value: object
     traceback: object
+    /
+
 [clinic start generated code]*/
 
 static PyObject *
 winreg_HKEYType___exit___impl(PyHKEYObject *self, PyObject *exc_type,
                               PyObject *exc_value, PyObject *traceback)
-/*[clinic end generated code: output=923ebe7389e6a263 input=fb32489ee92403c7]*/
+/*[clinic end generated code: output=923ebe7389e6a263 input=1eac83cd06962689]*/
 {
     winreg_state *st = _PyType_GetModuleState(Py_TYPE(self));
     assert(st != NULL);
@@ -353,7 +355,7 @@ static struct PyMethodDef PyHKEY_methods[] = {
 
 #define OFF(e) offsetof(PyHKEYObject, e)
 static PyMemberDef PyHKEY_memberlist[] = {
-    {"handle",      T_INT,      OFF(hkey), READONLY},
+    {"handle",      Py_T_INT,      OFF(hkey), Py_READONLY},
     {NULL}    /* Sentinel */
 };
 
@@ -2070,7 +2072,7 @@ static struct PyMethodDef winreg_methods[] = {
     WINREG_SAVEKEY_METHODDEF
     WINREG_SETVALUE_METHODDEF
     WINREG_SETVALUEEX_METHODDEF
-    NULL,
+    {NULL},
 };
 
 #define ADD_INT(VAL) do {                               \
@@ -2080,15 +2082,9 @@ static struct PyMethodDef winreg_methods[] = {
 } while (0)
 
 static int
-inskey(PyObject *mod, char *name, HKEY key)
+inskey(PyObject *mod, const char *name, HKEY key)
 {
-    PyObject *v = PyLong_FromVoidPtr(key);
-    if (v == NULL) {
-        return -1;
-    }
-    int rc = PyModule_AddObjectRef(mod, name, v);
-    Py_DECREF(v);
-    return rc;
+    return PyModule_Add(mod, name, PyLong_FromVoidPtr(key));
 }
 
 #define ADD_KEY(VAL) do {           \
@@ -2181,6 +2177,7 @@ exec_module(PyObject *m)
 static PyModuleDef_Slot winreg_slots[] = {
     {Py_mod_exec, exec_module},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

@@ -5,10 +5,12 @@
 
 */
 
-#define PY_SSIZE_T_CLEAN
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
+
 
 #include <stdlib.h>               // free()
 #include <string.h>
@@ -124,6 +126,9 @@ typedef struct {
     PyThread_type_lock lock;
 } Decompressor;
 
+#define Compressor_CAST(op)     ((Compressor *)(op))
+#define Decompressor_CAST(op)   ((Decompressor *)(op))
+
 /* Helper functions. */
 
 static int
@@ -198,25 +203,28 @@ PyLzma_Free(void *opaque, void *ptr)
       to be strictly correct, we need to define two separate converters.
  */
 
-#define INT_TYPE_CONVERTER_FUNC(TYPE, FUNCNAME) \
-    static int \
-    FUNCNAME(PyObject *obj, void *ptr) \
-    { \
-        unsigned long long val; \
-        \
-        val = PyLong_AsUnsignedLongLong(obj); \
-        if (PyErr_Occurred()) \
-            return 0; \
-        if ((unsigned long long)(TYPE)val != val) { \
-            PyErr_SetString(PyExc_OverflowError, \
-                            "Value too large for " #TYPE " type"); \
-            return 0; \
-        } \
-        *(TYPE *)ptr = (TYPE)val; \
-        return 1; \
-    }
+#define INT_TYPE_CONVERTER_FUNC(TYPE, FUNCNAME)                     \
+static int                                                          \
+FUNCNAME(PyObject *obj, void *ptr)                                  \
+{                                                                   \
+    Py_ssize_t bytes = PyLong_AsNativeBytes(obj, ptr, sizeof(TYPE), \
+            Py_ASNATIVEBYTES_NATIVE_ENDIAN |                        \
+            Py_ASNATIVEBYTES_ALLOW_INDEX |                          \
+            Py_ASNATIVEBYTES_REJECT_NEGATIVE |                      \
+            Py_ASNATIVEBYTES_UNSIGNED_BUFFER);                      \
+    if (bytes < 0) {                                                \
+        return 0;                                                   \
+    }                                                               \
+    if ((size_t)bytes > sizeof(TYPE)) {                             \
+        PyErr_SetString(PyExc_OverflowError,                        \
+                        "Python int too large for C "#TYPE);        \
+        return 0;                                                   \
+    }                                                               \
+    return 1;                                                       \
+}
 
 INT_TYPE_CONVERTER_FUNC(uint32_t, uint32_converter)
+INT_TYPE_CONVERTER_FUNC(uint64_t, uint64_converter)
 INT_TYPE_CONVERTER_FUNC(lzma_vli, lzma_vli_converter)
 INT_TYPE_CONVERTER_FUNC(lzma_mode, lzma_mode_converter)
 INT_TYPE_CONVERTER_FUNC(lzma_match_finder, lzma_mf_converter)
@@ -242,15 +250,10 @@ parse_filter_spec_lzma(_lzma_state *state, PyObject *spec)
     /* First, fill in default values for all the options using a preset.
        Then, override the defaults with any values given by the caller. */
 
-    preset_obj = PyMapping_GetItemString(spec, "preset");
-    if (preset_obj == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_KeyError)) {
-            PyErr_Clear();
-        }
-        else {
-            return NULL;
-        }
-    } else {
+    if (PyMapping_GetOptionalItemString(spec, "preset", &preset_obj) < 0) {
+        return NULL;
+    }
+    if (preset_obj != NULL) {
         int ok = uint32_converter(preset_obj, &preset);
         Py_DECREF(preset_obj);
         if (!ok) {
@@ -347,18 +350,21 @@ lzma_filter_converter(_lzma_state *state, PyObject *spec, void *ptr)
                         "Filter specifier must be a dict or dict-like object");
         return 0;
     }
-    id_obj = PyMapping_GetItemString(spec, "id");
+    if (PyMapping_GetOptionalItemString(spec, "id", &id_obj) < 0) {
+        return 0;
+    }
     if (id_obj == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_KeyError))
-            PyErr_SetString(PyExc_ValueError,
-                            "Filter specifier must have an \"id\" entry");
+        PyErr_SetString(PyExc_ValueError,
+                        "Filter specifier must have an \"id\" entry");
         return 0;
     }
-    f->id = PyLong_AsUnsignedLongLong(id_obj);
+    lzma_vli id;
+    if (!lzma_vli_converter(id_obj, &id)) {
+        Py_DECREF(id_obj);
+        return 0;
+    }
     Py_DECREF(id_obj);
-    if (PyErr_Occurred()) {
-        return 0;
-    }
+    f->id = id;
 
     switch (f->id) {
         case LZMA_FILTER_LZMA1:
@@ -494,7 +500,9 @@ build_filter_spec(const lzma_filter *f)
         case LZMA_FILTER_ARMTHUMB:
         case LZMA_FILTER_SPARC: {
             lzma_options_bcj *options = f->options;
-            ADD_FIELD(options, start_offset);
+            if (options) {
+                ADD_FIELD(options, start_offset);
+            }
             break;
         }
         default:
@@ -857,14 +865,15 @@ error:
 }
 
 static void
-Compressor_dealloc(Compressor *self)
+Compressor_dealloc(PyObject *op)
 {
+    Compressor *self = Compressor_CAST(op);
     lzma_end(&self->lzs);
     if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
     }
     PyTypeObject *tp = Py_TYPE(self);
-    tp->tp_free((PyObject *)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -875,7 +884,7 @@ static PyMethodDef Compressor_methods[] = {
 };
 
 static int
-Compressor_traverse(Compressor *self, visitproc visit, void *arg)
+Compressor_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;
@@ -1217,8 +1226,7 @@ _lzma_LZMADecompressor_impl(PyTypeObject *type, int format,
                             "Cannot specify memory limit with FORMAT_RAW");
             return NULL;
         }
-        memlimit_ = PyLong_AsUnsignedLongLong(memlimit);
-        if (PyErr_Occurred()) {
+        if (!uint64_converter(memlimit, &memlimit_)) {
             return NULL;
         }
     }
@@ -1304,8 +1312,9 @@ error:
 }
 
 static void
-Decompressor_dealloc(Decompressor *self)
+Decompressor_dealloc(PyObject *op)
 {
+    Decompressor *self = Decompressor_CAST(op);
     if(self->input_buffer != NULL)
         PyMem_Free(self->input_buffer);
 
@@ -1315,12 +1324,12 @@ Decompressor_dealloc(Decompressor *self)
         PyThread_free_lock(self->lock);
     }
     PyTypeObject *tp = Py_TYPE(self);
-    tp->tp_free((PyObject *)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
 static int
-Decompressor_traverse(Decompressor *self, visitproc visit, void *arg)
+Decompressor_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;
@@ -1344,13 +1353,13 @@ PyDoc_STRVAR(Decompressor_unused_data_doc,
 "Data found after the end of the compressed stream.");
 
 static PyMemberDef Decompressor_members[] = {
-    {"check", T_INT, offsetof(Decompressor, check), READONLY,
+    {"check", Py_T_INT, offsetof(Decompressor, check), Py_READONLY,
      Decompressor_check_doc},
-    {"eof", T_BOOL, offsetof(Decompressor, eof), READONLY,
+    {"eof", Py_T_BOOL, offsetof(Decompressor, eof), Py_READONLY,
      Decompressor_eof_doc},
-    {"needs_input", T_BOOL, offsetof(Decompressor, needs_input), READONLY,
+    {"needs_input", Py_T_BOOL, offsetof(Decompressor, needs_input), Py_READONLY,
      Decompressor_needs_input_doc},
-    {"unused_data", T_OBJECT_EX, offsetof(Decompressor, unused_data), READONLY,
+    {"unused_data", Py_T_OBJECT_EX, offsetof(Decompressor, unused_data), Py_READONLY,
      Decompressor_unused_data_doc},
     {NULL}
 };
@@ -1405,7 +1414,7 @@ PyDoc_STRVAR(_lzma__encode_filter_properties__doc__,
 "The result does not include the filter ID itself, only the options.");
 
 #define _LZMA__ENCODE_FILTER_PROPERTIES_METHODDEF    \
-    {"_encode_filter_properties", (PyCFunction)_lzma__encode_filter_properties, METH_O, _lzma__encode_filter_properties__doc__},
+    {"_encode_filter_properties", _lzma__encode_filter_properties, METH_O, _lzma__encode_filter_properties__doc__},
 
 static PyObject *
 _lzma__encode_filter_properties_impl(PyObject *module, lzma_filter filter);
@@ -1504,15 +1513,7 @@ _lzma__decode_filter_properties_impl(PyObject *module, lzma_vli filter_id,
 static int
 module_add_int_constant(PyObject *m, const char *name, long long value)
 {
-    PyObject *o = PyLong_FromLongLong(value);
-    if (o == NULL) {
-        return -1;
-    }
-    if (PyModule_AddObject(m, name, o) == 0) {
-        return 0;
-    }
-    Py_DECREF(o);
-    return -1;
+    return PyModule_Add(m, name, PyLong_FromLongLong(value));
 }
 
 static int
@@ -1612,6 +1613,7 @@ static PyMethodDef lzma_methods[] = {
 static PyModuleDef_Slot lzma_slots[] = {
     {Py_mod_exec, lzma_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 
@@ -1640,7 +1642,7 @@ lzma_clear(PyObject *module)
 static void
 lzma_free(void *module)
 {
-    lzma_clear((PyObject *)module);
+    (void)lzma_clear((PyObject *)module);
 }
 
 static PyModuleDef _lzmamodule = {

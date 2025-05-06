@@ -3,12 +3,13 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
-
-PyDoc_STRVAR(Struct__doc__,
+PyDoc_STRVAR(Struct___init____doc__,
 "Struct(format)\n"
 "--\n"
 "\n"
@@ -19,22 +20,24 @@ PyDoc_STRVAR(Struct__doc__,
 "\n"
 "See help(struct) for more on format strings.");
 
-static PyObject *
-Struct_impl(PyTypeObject *type, PyObject *format);
+static int
+Struct___init___impl(PyStructObject *self, PyObject *format);
 
-static PyObject *
-Struct(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+static int
+Struct___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    PyObject *return_value = NULL;
+    int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     #define NUM_KEYWORDS 1
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(format), },
     };
     #undef NUM_KEYWORDS
@@ -56,12 +59,13 @@ Struct(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *format;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
     format = fastargs[0];
-    return_value = Struct_impl(type, format);
+    return_value = Struct___init___impl((PyStructObject *)self, format);
 
 exit:
     return return_value;
@@ -85,7 +89,7 @@ static PyObject *
 Struct_unpack_impl(PyStructObject *self, Py_buffer *buffer);
 
 static PyObject *
-Struct_unpack(PyStructObject *self, PyObject *arg)
+Struct_unpack(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
@@ -93,11 +97,7 @@ Struct_unpack(PyStructObject *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("unpack", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
-    return_value = Struct_unpack_impl(self, &buffer);
+    return_value = Struct_unpack_impl((PyStructObject *)self, &buffer);
 
 exit:
     /* Cleanup for buffer */
@@ -129,7 +129,7 @@ Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
                         Py_ssize_t offset);
 
 static PyObject *
-Struct_unpack_from(PyStructObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+Struct_unpack_from(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -138,9 +138,11 @@ Struct_unpack_from(PyStructObject *self, PyObject *const *args, Py_ssize_t nargs
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(buffer), &_Py_ID(offset), },
     };
     #undef NUM_KEYWORDS
@@ -162,15 +164,12 @@ Struct_unpack_from(PyStructObject *self, PyObject *const *args, Py_ssize_t nargs
     Py_buffer buffer = {NULL, NULL};
     Py_ssize_t offset = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &buffer, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("unpack_from", "argument 'buffer'", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
@@ -189,7 +188,7 @@ Struct_unpack_from(PyStructObject *self, PyObject *const *args, Py_ssize_t nargs
         offset = ival;
     }
 skip_optional_pos:
-    return_value = Struct_unpack_from_impl(self, &buffer, offset);
+    return_value = Struct_unpack_from_impl((PyStructObject *)self, &buffer, offset);
 
 exit:
     /* Cleanup for buffer */
@@ -213,6 +212,19 @@ PyDoc_STRVAR(Struct_iter_unpack__doc__,
 
 #define STRUCT_ITER_UNPACK_METHODDEF    \
     {"iter_unpack", (PyCFunction)Struct_iter_unpack, METH_O, Struct_iter_unpack__doc__},
+
+static PyObject *
+Struct_iter_unpack_impl(PyStructObject *self, PyObject *buffer);
+
+static PyObject *
+Struct_iter_unpack(PyObject *self, PyObject *buffer)
+{
+    PyObject *return_value = NULL;
+
+    return_value = Struct_iter_unpack_impl((PyStructObject *)self, buffer);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_clearcache__doc__,
 "_clearcache($module, /)\n"
@@ -299,10 +311,6 @@ unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("unpack", "argument 2", "contiguous buffer", args[1]);
-        goto exit;
-    }
     return_value = unpack_impl(module, s_object, &buffer);
 
 exit:
@@ -343,9 +351,11 @@ unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(buffer), &_Py_ID(offset), },
     };
     #undef NUM_KEYWORDS
@@ -368,7 +378,8 @@ unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     Py_buffer buffer = {NULL, NULL};
     Py_ssize_t offset = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -376,10 +387,6 @@ unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         goto exit;
     }
     if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("unpack_from", "argument 'buffer'", "contiguous buffer", args[1]);
         goto exit;
     }
     if (!noptargs) {
@@ -451,4 +458,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=f3d6e06f80368998 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=caa7f36443e91cb9 input=a9049054013a1b77]*/

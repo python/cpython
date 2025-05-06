@@ -7,7 +7,6 @@ import sysconfig
 
 from check_extension_modules import ModuleChecker
 
-
 SCRIPT_NAME = 'Tools/build/generate_stdlib_module_names.py'
 
 SRC_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -28,13 +27,13 @@ IGNORE = {
     '_testbuffer',
     '_testcapi',
     '_testclinic',
+    '_testclinic_limited',
     '_testconsole',
     '_testimportmultiple',
     '_testinternalcapi',
+    '_testlimitedcapi',
     '_testmultiphase',
     '_testsinglephase',
-    '_xxsubinterpreters',
-    '_xxinterpchannels',
     '_xxtestfuzz',
     'idlelib.idle_test',
     'test',

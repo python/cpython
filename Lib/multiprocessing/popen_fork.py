@@ -1,3 +1,4 @@
+import atexit
 import os
 import signal
 
@@ -53,6 +54,9 @@ class Popen(object):
                 if self.wait(timeout=0.1) is None:
                     raise
 
+    def interrupt(self):
+        self._send_signal(signal.SIGINT)
+
     def terminate(self):
         self._send_signal(signal.SIGTERM)
 
@@ -66,10 +70,13 @@ class Popen(object):
         self.pid = os.fork()
         if self.pid == 0:
             try:
+                atexit._clear()
+                atexit.register(util._exit_function)
                 os.close(parent_r)
                 os.close(parent_w)
                 code = process_obj._bootstrap(parent_sentinel=child_r)
             finally:
+                atexit._run_exitfuncs()
                 os._exit(code)
         else:
             os.close(child_w)

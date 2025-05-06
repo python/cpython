@@ -1,0 +1,2 @@
+Improve :exc:`SyntaxError` message for using ``import ... as``
+and ``from ... import ... as`` with not a name.

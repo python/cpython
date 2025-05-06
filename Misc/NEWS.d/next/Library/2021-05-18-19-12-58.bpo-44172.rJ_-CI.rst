@@ -1,0 +1,2 @@
+Keep a reference to original :mod:`curses` windows in subwindows so
+that the original window does not get deleted before subwindows.

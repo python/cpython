@@ -1,0 +1,1 @@
+Do not complete :mod:`pdb` commands in ``interact`` mode of :mod:`pdb`.

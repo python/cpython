@@ -10,6 +10,7 @@ from test.support import (
 
 
 if check_sanitizer(address=True, memory=True):
+    # See gh-90791 for details
     raise unittest.SkipTest("Tests involving libX11 can SEGFAULT on ASAN/MSAN builds")
 
 # Skip test if _tkinter wasn't built.
