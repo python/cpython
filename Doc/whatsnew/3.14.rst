@@ -89,12 +89,14 @@ and improvements in user-friendliness and correctness.
 * :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
 * :ref:`PEP 765: Disallow return/break/continue that exit a finally block <whatsnew314-pep765>`
 * :ref:`PEP 768: Safe external debugger interface for CPython <whatsnew314-pep768>`
+* :ref:`PEP 784: Adding Zstandard to the standard library <whatsnew314-pep784>`
 * :ref:`A new type of interpreter <whatsnew314-tail-call>`
 * :ref:`Syntax highlighting in PyREPL <whatsnew314-pyrepl-highlighting>`,
   and color output in :ref:`unittest <whatsnew314-color-unittest>`,
   :ref:`argparse <whatsnew314-color-argparse>`,
   :ref:`json <whatsnew314-color-json>` and
   :ref:`calendar <whatsnew314-color-calendar>` CLIs
+* :ref:`Binary releases for the experimental just-in-time compiler <whatsnew314-jit-compiler>`
 
 
 Incompatible changes
@@ -250,6 +252,51 @@ for external processes to coordinate debugging operations.
 See :pep:`768` for more details.
 
 (Contributed by Pablo Galindo Salgado, Matt Wozniski, and Ivona Stojanovic in :gh:`131591`.)
+
+.. _whatsnew314-pep784:
+
+PEP 784: Adding Zstandard to the standard library
+-------------------------------------------------
+
+The new ``compression`` package contains modules :mod:`!compression.lzma`,
+:mod:`!compression.bz2`, :mod:`!compression.gzip` and :mod:`!compression.zlib`
+which re-export the :mod:`lzma`, :mod:`bz2`, :mod:`gzip` and :mod:`zlib`
+modules respectively. The new import names under ``compression`` are the
+canonical names for importing these compression modules going forward. However,
+the existing modules names have not been deprecated. Any deprecation or removal
+of the existing compression modules will occur no sooner than five years after
+the release of 3.14.
+
+The new :mod:`!compression.zstd` module provides compression and decompression
+APIs for the Zstandard format via bindings to `Meta's zstd library
+<https://facebook.github.io/zstd/>`__. Zstandard is a widely adopted, highly
+efficient, and fast compression format. In addition to the APIs introduced in
+:mod:`!compression.zstd`, support for reading and writing Zstandard compressed
+archives has been added to the :mod:`tarfile`, :mod:`zipfile`, and
+:mod:`shutil` modules.
+
+Here's an example of using the new module to compress some data:
+
+.. code-block:: python
+
+    from compression import zstd
+    import math
+
+    data = str(math.pi).encode() * 20
+
+    compressed = zstd.compress(data)
+
+    ratio = len(compressed) / len(data)
+    print(f"Achieved compression ratio of {ratio}")
+
+As can be seen, the API is similar to the APIs of the :mod:`!lzma` and
+:mod:`!bz2` modules.
+
+(Contributed by Emma Harper Smith, Adam Turner, Gregory P. Smith, Tomas Roun,
+Victor Stinner, and Rogdham in :gh:`132983`)
+
+.. seealso::
+   :pep:`768`.
 
 
 .. _whatsnew314-remote-pdb:
@@ -735,6 +782,36 @@ in the :envvar:`PYTHONSTARTUP` script.
 (Contributed by Łukasz Langa in :gh:`131507`.)
 
 
+.. _whatsnew314-jit-compiler:
+
+Binary releases for the experimental just-in-time compiler
+----------------------------------------------------------
+
+The official macOS and Windows release binaries now include an *experimental*
+just-in-time (JIT) compiler. Although it is **not** recommended for production
+use, it can be tested by setting :envvar:`PYTHON_JIT=1 <PYTHON_JIT>` as an
+environment variable. Downstream source builds and redistributors can use the
+:option:`--enable-experimental-jit=yes-off` configuration option for similar
+behavior.
+
+The JIT is at an early stage and still in active development. As such, the
+typical performance impact of enabling it can range from 10% slower to 20%
+faster, depending on workload. To aid in testing and evaluation, a set of
+introspection functions has been provided in the :data:`sys._jit` namespace.
+:func:`sys._jit.is_available` can be used to determine if the current executable
+supports JIT compilation, while :func:`sys._jit.is_enabled` can be used to tell
+if JIT compilation has been enabled for the current process.
+
+Currently, the most significant missing functionality is that native debuggers
+and profilers like ``gdb`` and ``perf`` are unable to unwind through JIT frames
+(Python debuggers and profilers, like :mod:`pdb` or :mod:`profile`, continue to
+work without modification). Free-threaded builds do not support JIT compilation.
+
+Please report any bugs or major performance regressions that you encounter!
+
+.. seealso:: :pep:`744`
+
+
 Other language changes
 ======================
 
@@ -816,6 +893,13 @@ Other language changes
   of HMAC is not available.
   (Contributed by Bénédikt Tran in :gh:`99108`.)
 
+* The import time flag can now track modules that are already loaded ('cached'),
+  via the new :option:`-X importtime=2 <-X>`.
+  When such a module is imported, the ``self`` and ``cumulative`` times
+  are replaced by the string ``cached``.
+  Values above ``2`` for ``-X importtime`` are now reserved for future use.
+  (Contributed by Noah Kim and Adam Turner in :gh:`118655`.)
+
 * When subclassing from a pure C type, the C slots for the new type are no
   longer replaced with a wrapped version on class creation if they are not
   explicitly overridden in the subclass.
@@ -895,7 +979,7 @@ ast
   (Contributed by Irit Katriel in :gh:`123958`.)
 
 * The ``repr()`` output for AST nodes now includes more information.
-  (Contributed by Tomas R in :gh:`116022`.)
+  (Contributed by Tomas Roun in :gh:`116022`.)
 
 * :func:`ast.parse`, when called with an AST as input, now always verifies
   that the root node type is appropriate.
@@ -1489,7 +1573,7 @@ pdb
 * Source code displayed in :mod:`pdb` will be syntax-highlighted. This feature
   can be controlled using the same methods as PyREPL, in addition to the newly
   added ``colorize`` argument of :class:`pdb.Pdb`.
-  (Contributed by Tian Gao in :gh:`133355`.)
+  (Contributed by Tian Gao and Łukasz Langa in :gh:`133355`.)
 
 
 pickle
