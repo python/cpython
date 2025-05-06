@@ -60,9 +60,10 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         self._pending_write = 0
         self._conn_lost = 0
         self._closing = False  # Set when close() called.
+        self._called_connection_lost = False
         self._eof_written = False
         if self._server is not None:
-            self._server._attach()
+            self._server._attach(self)
         self._loop.call_soon(self._protocol.connection_made, self)
         if waiter is not None:
             # only wake up the waiter when connection_made() has been called
@@ -136,7 +137,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
                 self._empty_waiter.set_result(None)
             else:
                 self._empty_waiter.set_exception(exc)
-        if self._closing:
+        if self._closing and self._called_connection_lost:
             return
         self._closing = True
         self._conn_lost += 1
@@ -151,6 +152,8 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         self._loop.call_soon(self._call_connection_lost, exc)
 
     def _call_connection_lost(self, exc):
+        if self._called_connection_lost:
+            return
         try:
             self._protocol.connection_lost(exc)
         finally:
@@ -164,8 +167,9 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             self._sock = None
             server = self._server
             if server is not None:
-                server._detach()
+                server._detach(self)
                 self._server = None
+            self._called_connection_lost = True
 
     def get_write_buffer_size(self):
         size = self._pending_write
@@ -284,7 +288,8 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
                         # we got end-of-file so no need to reschedule a new read
                         return
 
-                    data = self._data[:length]
+                    # It's a new slice so make it immutable so protocols upstream don't have problems
+                    data = bytes(memoryview(self._data)[:length])
                 else:
                     # the future will be replaced by next proactor.recv call
                     fut.cancel()
@@ -482,9 +487,6 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
             raise TypeError('data argument must be bytes-like object (%r)',
                             type(data))
 
-        if not data:
-            return
-
         if self._address is not None and addr not in (None, self._address):
             raise ValueError(
                 f'Invalid address: must be None or {self._address}')
@@ -497,7 +499,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
 
         # Ensure that what we buffer is immutable.
         self._buffer.append((bytes(data), addr))
-        self._buffer_size += len(data)
+        self._buffer_size += len(data) + 8  # include header bytes
 
         if self._write_fut is None:
             # No current write operations are active, kick one off
@@ -719,6 +721,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         return await self._proactor.sendto(sock, data, 0, address)
 
     async def sock_connect(self, sock, address):
+        if self._debug and sock.gettimeout() != 0:
+            raise ValueError("the socket must be non-blocking")
         return await self._proactor.connect(sock, address)
 
     async def sock_accept(self, sock):

@@ -1,16 +1,17 @@
+import collections.abc
+import copy
+import gc
+import itertools
+import operator
+import pickle
+import re
 import unittest
+import warnings
+import weakref
+from random import randrange, shuffle
 from test import support
 from test.support import warnings_helper
-import gc
-import weakref
-import operator
-import copy
-import pickle
-from random import randrange, shuffle
-import warnings
-import collections
-import collections.abc
-import itertools
+
 
 class PassThru(Exception):
     pass
@@ -427,7 +428,7 @@ class TestSet(TestJointOps, unittest.TestCase):
         self.assertRaises(KeyError, self.s.remove, self.thetype(self.word))
 
     def test_remove_keyerror_unpacking(self):
-        # bug:  www.python.org/sf/1576657
+        # https://bugs.python.org/issue1576657
         for v1 in ['Q', (1,)]:
             try:
                 self.s.remove(v1)
@@ -635,10 +636,45 @@ class TestSet(TestJointOps, unittest.TestCase):
         myset >= myobj
         self.assertTrue(myobj.le_called)
 
-    @unittest.skipUnless(hasattr(set, "test_c_api"),
-                         'C API test only available in a debug build')
-    def test_c_api(self):
-        self.assertEqual(set().test_c_api(), True)
+    def test_set_membership(self):
+        myfrozenset = frozenset(range(3))
+        myset = {myfrozenset, "abc", 1}
+        self.assertIn(set(range(3)), myset)
+        self.assertNotIn(set(range(1)), myset)
+        myset.discard(set(range(3)))
+        self.assertEqual(myset, {"abc", 1})
+        self.assertRaises(KeyError, myset.remove, set(range(1)))
+        self.assertRaises(KeyError, myset.remove, set(range(3)))
+
+    def test_unhashable_element(self):
+        myset = {'a'}
+        elem = [1, 2, 3]
+
+        def check_unhashable_element():
+            msg = "cannot use 'list' as a set element (unhashable type: 'list')"
+            return self.assertRaisesRegex(TypeError, re.escape(msg))
+
+        with check_unhashable_element():
+            elem in myset
+        with check_unhashable_element():
+            myset.add(elem)
+        with check_unhashable_element():
+            myset.discard(elem)
+
+        # Only TypeError exception is overriden,
+        # other exceptions are left unchanged.
+        class HashError:
+            def __hash__(self):
+                raise KeyError('error')
+
+        elem2 = HashError()
+        with self.assertRaises(KeyError):
+            elem2 in myset
+        with self.assertRaises(KeyError):
+            myset.add(elem2)
+        with self.assertRaises(KeyError):
+            myset.discard(elem2)
+
 
 class SetSubclass(set):
     pass

@@ -12,7 +12,7 @@ conditions that must be applied when parsing C code:
 
 * ...
 
-(see: http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf)
+(see: https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf)
 
 We have taken advantage of the elements of the C grammar that are used
 only in a few limited contexts, mostly as delimiters.  They allow us to
@@ -164,7 +164,7 @@ def _parse(srclines, anon_name, **srckwargs):
 # We use defaults that cover most files.  Files with bigger declarations
 # are covered elsewhere (MAX_SIZES in cpython/_parser.py).
 
-def _iter_source(lines, *, maxtext=10_000, maxlines=200, showtext=False):
+def _iter_source(lines, *, maxtext=11_000, maxlines=200, showtext=False):
     maxtext = maxtext if maxtext and maxtext > 0 else None
     maxlines = maxlines if maxlines and maxlines > 0 else None
     filestack = []
