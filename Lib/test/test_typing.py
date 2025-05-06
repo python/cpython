@@ -5638,6 +5638,21 @@ class GenericTests(BaseTestCase):
 
         foo(42)
 
+    def test_genericalias_isclass(self):
+        T = TypeVar('T')
+
+        class Node(Generic[T]):
+            def __init__(self, label: T,
+                         left: 'Node[T] | None' = None,
+                         right: 'Node[T] | None' = None):
+                self.label = label
+                self.left = left
+                self.right = right
+
+        self.assertTrue(inspect.isclass(Node))
+        self.assertFalse(inspect.isclass(Node[int]))
+        self.assertFalse(inspect.isclass(Node[str]))
+
     def test_implicit_any(self):
         T = TypeVar('T')
 
