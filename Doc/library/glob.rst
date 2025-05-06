@@ -134,7 +134,7 @@ The :mod:`glob` module defines the following functions:
       >>>
       >>> regex = glob.translate('**/*.txt', recursive=True, include_hidden=True)
       >>> regex
-      '(?s:(?:.+/)?[^/]*\\.txt)\\Z'
+      '(?s:(?:.+/)?[^/]*\\.txt)\\z'
       >>> reobj = re.compile(regex)
       >>> reobj.match('foo/bar/baz.txt')
       <re.Match object; span=(0, 15), match='foo/bar/baz.txt'>

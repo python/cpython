@@ -1001,7 +1001,7 @@ from not_a_module import symbol
 
                 expected_error = error + (
                     rb" \(consider renaming '.*numpy.py' if it has the "
-                    rb"same name as a library you intended to import\)\s+\Z"
+                    rb"same name as a library you intended to import\)\s+\z"
                 )
 
                 popen = script_helper.spawn_python(os.path.join(tmp, "numpy.py"))
@@ -1022,14 +1022,14 @@ from not_a_module import symbol
                 f.write("this_script_does_not_attempt_to_import_numpy = True")
 
             expected_error = (
-                rb"AttributeError: module 'numpy' has no attribute 'attr'\s+\Z"
+                rb"AttributeError: module 'numpy' has no attribute 'attr'\s+\z"
             )
             popen = script_helper.spawn_python('-c', 'import numpy; numpy.attr', cwd=tmp)
             stdout, stderr = popen.communicate()
             self.assertRegex(stdout, expected_error)
 
             expected_error = (
-                rb"ImportError: cannot import name 'attr' from 'numpy' \(.*\)\s+\Z"
+                rb"ImportError: cannot import name 'attr' from 'numpy' \(.*\)\s+\z"
             )
             popen = script_helper.spawn_python('-c', 'from numpy import attr', cwd=tmp)
             stdout, stderr = popen.communicate()

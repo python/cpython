@@ -1,0 +1,3 @@
+Add new utilities of observing JIT compilation:
+:func:`sys._jit.is_available`, :func:`sys._jit.is_enabled`, and
+:func:`sys._jit.is_active`.

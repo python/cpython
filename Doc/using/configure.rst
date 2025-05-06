@@ -302,14 +302,21 @@ General Options
 
 .. option:: --enable-experimental-jit=[no|yes|yes-off|interpreter]
 
-   Indicate how to integrate the :ref:`JIT compiler <whatsnew313-jit-compiler>`.
+   Indicate how to integrate the :ref:`experimental just-in-time compiler <whatsnew314-jit-compiler>`.
 
-   * ``no`` - build the interpreter without the JIT.
-   * ``yes`` - build the interpreter with the JIT.
-   * ``yes-off`` - build the interpreter with the JIT but disable it by default.
-   * ``interpreter`` - build the interpreter without the JIT, but with the tier 2 enabled interpreter.
+   * ``no``: Don't build the JIT.
+   * ``yes``: Enable the JIT. To disable it at runtime, set the environment
+     variable :envvar:`PYTHON_JIT=0 <PYTHON_JIT>`.
+   * ``yes-off``: Build the JIT, but disable it by default. To enable it at
+     runtime, set the environment variable :envvar:`PYTHON_JIT=1 <PYTHON_JIT>`.
+   * ``interpreter``: Enable the "JIT interpreter" (only useful for those
+     debugging the JIT itself). To disable it at runtime, set the environment
+     variable :envvar:`PYTHON_JIT=0 <PYTHON_JIT>`.
 
-   By convention, ``--enable-experimental-jit`` is a shorthand for ``--enable-experimental-jit=yes``.
+   ``--enable-experimental-jit=no`` is the default behavior if the option is not
+   provided, and ``--enable-experimental-jit`` is shorthand for
+   ``--enable-experimental-jit=yes``.  See :file:`Tools/jit/README.md` for more
+   information, including how to install the necessary build-time dependencies.
 
    .. note::
 
