@@ -243,7 +243,7 @@ The new ``compression`` package contains modules :mod:`!compression.lzma`, :mod:
 :mod:`gzip` and :mod:`zlib` modules respectively. The new import names under ``compression`` are
 the canonical names for importing these compression modules going forward. However, the existing
 modules names have not been deprecated. Any deprecation or removal of the existing compression modules
-will occur no sooner than 5 years after the release of 3.14.
+will occur no sooner than five years after the release of 3.14.
 
 The new :mod:`!compression.zstd` module provides compression and decompression APIs for the
 Zstandard format via bindings to `Meta's zstd library <https://facebook.github.io/zstd/>`__.
