@@ -2575,7 +2575,6 @@ subtype_dealloc(PyObject *self)
     /* UnTrack and re-Track around the trashcan macro, alas */
     /* See explanation at end of function for full disclosure */
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_BEGIN(self, subtype_dealloc);
 
     /* Find the nearest base with a different tp_dealloc */
     base = type;
@@ -2590,7 +2589,7 @@ subtype_dealloc(PyObject *self)
         _PyObject_GC_TRACK(self);
         if (PyObject_CallFinalizerFromDealloc(self) < 0) {
             /* Resurrected */
-            goto endlabel;
+            return;
         }
         _PyObject_GC_UNTRACK(self);
     }
@@ -2612,7 +2611,7 @@ subtype_dealloc(PyObject *self)
         type->tp_del(self);
         if (Py_REFCNT(self) > 0) {
             /* Resurrected */
-            goto endlabel;
+            return;
         }
         _PyObject_GC_UNTRACK(self);
     }
@@ -2675,46 +2674,6 @@ subtype_dealloc(PyObject *self)
     if (type_needs_decref) {
         _Py_DECREF_TYPE(type);
     }
-
-  endlabel:
-    Py_TRASHCAN_END
-
-    /* Explanation of the weirdness around the trashcan macros:
-
-       Q. What do the trashcan macros do?
-
-       A. Read the comment titled "Trashcan mechanism" in object.h.
-          For one, this explains why there must be a call to GC-untrack
-          before the trashcan begin macro.      Without understanding the
-          trashcan code, the answers to the following questions don't make
-          sense.
-
-       Q. Why do we GC-untrack before the trashcan and then immediately
-          GC-track again afterward?
-
-       A. In the case that the base class is GC-aware, the base class
-          probably GC-untracks the object.      If it does that using the
-          UNTRACK macro, this will crash when the object is already
-          untracked.  Because we don't know what the base class does, the
-          only safe thing is to make sure the object is tracked when we
-          call the base class dealloc.  But...  The trashcan begin macro
-          requires that the object is *untracked* before it is called.  So
-          the dance becomes:
-
-         GC untrack
-         trashcan begin
-         GC track
-
-       Q. Why did the last question say "immediately GC-track again"?
-          It's nowhere near immediately.
-
-       A. Because the code *used* to re-track immediately.      Bad Idea.
-          self has a refcount of 0, and if gc ever gets its hands on it
-          (which can happen if any weakref callback gets invoked), it
-          looks like trash to gc too, and gc also tries to delete self
-          then.  But we're already deleting self.  Double deallocation is
-          a subtle disaster.
-    */
 }
 
 static PyTypeObject *solid_base(PyTypeObject *type);
@@ -2794,32 +2753,37 @@ _PyObject_LookupSpecial(PyObject *self, PyObject *attr)
     return res;
 }
 
-/* Steals a reference to self */
-PyObject *
-_PyObject_LookupSpecialMethod(PyObject *self, PyObject *attr, PyObject **self_or_null)
+// Lookup the method name `attr` on `self`. On entry, `method_and_self[0]`
+// is null and `method_and_self[1]` is `self`. On exit, `method_and_self[0]`
+// is the method object and `method_and_self[1]` is `self` if the method is
+// not bound.
+// Return 1 on success, -1 on error, and 0 if the method is missing.
+int
+_PyObject_LookupSpecialMethod(PyObject *attr, _PyStackRef *method_and_self)
 {
-    PyObject *res;
-
-    res = _PyType_LookupRef(Py_TYPE(self), attr);
-    if (res == NULL) {
-        Py_DECREF(self);
-        *self_or_null = NULL;
-        return NULL;
+    PyObject *self = PyStackRef_AsPyObjectBorrow(method_and_self[1]);
+    _PyType_LookupStackRefAndVersion(Py_TYPE(self), attr, &method_and_self[0]);
+    PyObject *method_o = PyStackRef_AsPyObjectBorrow(method_and_self[0]);
+    if (method_o == NULL) {
+        return 0;
     }
 
-    if (_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+    if (_PyType_HasFeature(Py_TYPE(method_o), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
         /* Avoid temporary PyMethodObject */
-        *self_or_null = self;
+        return 1;
     }
-    else {
-        descrgetfunc f = Py_TYPE(res)->tp_descr_get;
-        if (f != NULL) {
-            Py_SETREF(res, f(res, self, (PyObject *)(Py_TYPE(self))));
+
+    descrgetfunc f = Py_TYPE(method_o)->tp_descr_get;
+    if (f != NULL) {
+        PyObject *func = f(method_o, self, (PyObject *)(Py_TYPE(self)));
+        if (func == NULL) {
+            return -1;
         }
-        *self_or_null = NULL;
-        Py_DECREF(self);
+        PyStackRef_CLEAR(method_and_self[0]); // clear method
+        method_and_self[0] = PyStackRef_FromPyObjectSteal(func);
     }
-    return res;
+    PyStackRef_CLEAR(method_and_self[1]); // clear self
+    return 1;
 }
 
 static int
@@ -5435,7 +5399,7 @@ PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // type_ready_mro() ensures that no heap type is
         // contained in a static type MRO.
-        return NULL;
+        goto error;
     }
     else {
         PyHeapTypeObject *ht = (PyHeapTypeObject*)type;
@@ -5475,13 +5439,15 @@ PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
     }
     END_TYPE_LOCK();
 
-    if (res == NULL) {
-        PyErr_Format(
-            PyExc_TypeError,
-            "PyType_GetModuleByDef: No superclass of '%s' has the given module",
-            type->tp_name);
+    if (res != NULL) {
+        return res;
     }
-    return res;
+error:
+    PyErr_Format(
+        PyExc_TypeError,
+        "PyType_GetModuleByDef: No superclass of '%s' has the given module",
+        type->tp_name);
+    return NULL;
 }
 
 
@@ -5673,7 +5639,6 @@ is_dunder_name(PyObject *name)
 static PyObject *
 update_cache(struct type_cache_entry *entry, PyObject *name, unsigned int version_tag, PyObject *value)
 {
-    _Py_atomic_store_uint32_relaxed(&entry->version, version_tag);
     _Py_atomic_store_ptr_relaxed(&entry->value, value); /* borrowed */
     assert(_PyASCIIObject_CAST(name)->hash != -1);
     OBJECT_STAT_INC_COND(type_cache_collisions, entry->name != Py_None && entry->name != name);
@@ -5681,6 +5646,12 @@ update_cache(struct type_cache_entry *entry, PyObject *name, unsigned int versio
     // exact unicode object or Py_None so it's safe to do so.
     PyObject *old_name = entry->name;
     _Py_atomic_store_ptr_relaxed(&entry->name, Py_NewRef(name));
+    // We must write the version last to avoid _Py_TryXGetStackRef()
+    // operating on an invalid (already deallocated) value inside
+    // _PyType_LookupRefAndVersion().  If we write the version first then a
+    // reader could pass the "entry_version == type_version" check but could
+    // be using the old entry value.
+    _Py_atomic_store_uint32_release(&entry->version, version_tag);
     return old_name;
 }
 
@@ -5757,7 +5728,7 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
     // synchronize-with other writing threads by doing an acquire load on the sequence
     while (1) {
         uint32_t sequence = _PySeqLock_BeginRead(&entry->sequence);
-        uint32_t entry_version = _Py_atomic_load_uint32_relaxed(&entry->version);
+        uint32_t entry_version = _Py_atomic_load_uint32_acquire(&entry->version);
         uint32_t type_version = _Py_atomic_load_uint32_acquire(&type->tp_version_tag);
         if (entry_version == type_version &&
             _Py_atomic_load_ptr_relaxed(&entry->name) == name) {
@@ -5804,11 +5775,14 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
     int has_version = 0;
     unsigned int assigned_version = 0;
     BEGIN_TYPE_LOCK();
-    res = find_name_in_mro(type, name, &error);
+    // We must assign the version before doing the lookup.  If
+    // find_name_in_mro() blocks and releases the critical section
+    // then the type version can change.
     if (MCACHE_CACHEABLE_NAME(name)) {
         has_version = assign_version_tag(interp, type);
         assigned_version = type->tp_version_tag;
     }
+    res = find_name_in_mro(type, name, &error);
     END_TYPE_LOCK();
 
     /* Only put NULL results into cache if there was no error. */

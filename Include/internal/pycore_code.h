@@ -177,12 +177,14 @@ typedef struct {
  */
 
 // Note that these all fit within a byte, as do combinations.
-// Later, we will use the smaller numbers to differentiate the different
-// kinds of locals (e.g. pos-only arg, varkwargs, local-only).
-#define CO_FAST_HIDDEN  0x10
-#define CO_FAST_LOCAL   0x20
-#define CO_FAST_CELL    0x40
-#define CO_FAST_FREE    0x80
+#define CO_FAST_ARG_POS (0x02)  // pos-only, pos-or-kw, varargs
+#define CO_FAST_ARG_KW  (0x04)  // kw-only, pos-or-kw, varkwargs
+#define CO_FAST_ARG_VAR (0x08)  // varargs, varkwargs
+#define CO_FAST_ARG     (CO_FAST_ARG_POS | CO_FAST_ARG_KW | CO_FAST_ARG_VAR)
+#define CO_FAST_HIDDEN  (0x10)
+#define CO_FAST_LOCAL   (0x20)
+#define CO_FAST_CELL    (0x40)
+#define CO_FAST_FREE    (0x80)
 
 typedef unsigned char _PyLocals_Kind;
 
@@ -315,6 +317,7 @@ extern void _Py_Specialize_ForIter(_PyStackRef iter, _Py_CODEUNIT *instr, int op
 extern void _Py_Specialize_Send(_PyStackRef receiver, _Py_CODEUNIT *instr);
 extern void _Py_Specialize_ToBool(_PyStackRef value, _Py_CODEUNIT *instr);
 extern void _Py_Specialize_ContainsOp(_PyStackRef value, _Py_CODEUNIT *instr);
+extern void _Py_GatherStats_GetIter(_PyStackRef iterable);
 
 // Utility functions for reading/writing 32/64-bit values in the inline caches.
 // Great care should be taken to ensure that these functions remain correct and
@@ -430,8 +433,6 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
  * See pycore_backoff.h for more details.
  * On a specialization failure, the backoff counter is restarted.
  */
-
-#include "pycore_backoff.h"
 
 // A value of 1 means that we attempt to specialize the *second* time each
 // instruction is executed. Executing twice is a much better indicator of
@@ -560,6 +561,61 @@ extern void _Py_ClearTLBCIndex(_PyThreadStateImpl *tstate);
 // Returns 0 on success or -1 on error.
 extern int _Py_ClearUnusedTLBC(PyInterpreterState *interp);
 #endif
+
+
+typedef struct {
+    int total;
+    struct co_locals_counts {
+        int total;
+        struct {
+            int total;
+            int numposonly;
+            int numposorkw;
+            int numkwonly;
+            int varargs;
+            int varkwargs;
+        } args;
+        int numpure;
+        struct {
+            int total;
+            // numargs does not contribute to locals.total.
+            int numargs;
+            int numothers;
+        } cells;
+        struct {
+            int total;
+            int numpure;
+            int numcells;
+        } hidden;
+    } locals;
+    int numfree;  // nonlocal
+    struct co_unbound_counts {
+        int total;
+        struct {
+            int total;
+            int numglobal;
+            int numbuiltin;
+            int numunknown;
+        } globals;
+        int numattrs;
+        int numunknown;
+    } unbound;
+} _PyCode_var_counts_t;
+
+PyAPI_FUNC(void) _PyCode_GetVarCounts(
+        PyCodeObject *,
+        _PyCode_var_counts_t *);
+PyAPI_FUNC(int) _PyCode_SetUnboundVarCounts(
+        PyThreadState *,
+        PyCodeObject *,
+        _PyCode_var_counts_t *,
+        PyObject *globalnames,
+        PyObject *attrnames,
+        PyObject *globalsns,
+        PyObject *builtinsns);
+
+PyAPI_FUNC(int) _PyCode_ReturnsOnlyNone(PyCodeObject *);
+
 
 #ifdef __cplusplus
 }
