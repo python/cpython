@@ -35,10 +35,10 @@ def execute(c, sql, suppress_errors=True, use_color=False):
         try:
             print(f"{_clr(theme.type, use_color)}{tp} ({e.sqlite_errorname})"
                   f"{_clr(theme.reset, use_color)}: "
-                  f"{_clr(theme.message, use_color)}{e}{_clr(theme.RESET, use_color)}", file=sys.stderr)
+                  f"{_clr(theme.message, use_color)}{e}{_clr(theme.reset, use_color)}", file=sys.stderr)
         except AttributeError:
-            print(f"{_clr(theme.type, use_color)}{tp}{_clr(theme.RESET, use_color)}: "
-                  f"{_clr(theme.message, use_color)}{e}{_clr(theme.RESET, use_color)}", file=sys.stderr)
+            print(f"{_clr(theme.type, use_color)}{tp}{_clr(theme.reset, use_color)}: "
+                  f"{_clr(theme.message, use_color)}{e}{_clr(theme.reset, use_color)}", file=sys.stderr)
         if not suppress_errors:
             sys.exit(1)
 
@@ -119,8 +119,8 @@ def main(*args):
     use_color = colorize.can_colorize()
     theme = colorize.get_theme(force_color=True).syntax
 
-    sys.ps1 = f"{_clr(theme.prompt, use_color)}sqlite> {_clr(theme.RESET, use_color)}"
-    sys.ps2 = f"{_clr(theme.prompt, use_color)}    ... {_clr(theme.RESET, use_color)}"
+    sys.ps1 = f"{_clr(theme.prompt, use_color)}sqlite> {_clr(theme.reset, use_color)}"
+    sys.ps2 = f"{_clr(theme.prompt, use_color)}    ... {_clr(theme.reset, use_color)}"
 
     con = sqlite3.connect(args.filename, isolation_level=None)
     try:
