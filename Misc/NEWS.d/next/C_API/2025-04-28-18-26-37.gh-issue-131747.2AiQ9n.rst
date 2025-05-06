@@ -1,0 +1,4 @@
+On non-Windows platforms, deprecate using :attr:`ctypes.Structure._pack_` to
+use a Windows-compatible layout on non-Windows platforms. The layout should
+be specified explicitly by setting :attr:`ctypes.Structure._layout_` to
+``'ms'``.
