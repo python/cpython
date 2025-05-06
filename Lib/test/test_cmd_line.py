@@ -975,6 +975,7 @@ class CmdLineTest(unittest.TestCase):
         code = "import sys; print(sys.stdin.encoding, sys.stdout.encoding, file=sys.stderr)"
         env = os.environ.copy()
         env['PYTHONLEGACYWINDOWSSTDIO'] = '1'
+        # Use Popen directly to ensure stdin/out are console handles
         p = subprocess.Popen([sys.executable, '-c', code],
                               stderr=subprocess.PIPE, env=env)
         out = p.stderr.read()
