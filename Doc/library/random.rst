@@ -113,7 +113,10 @@ Functions for bytes
 
 .. function:: randbytes(n)
 
-   Generate *n* random bytes where *n* is ``0 <= n < 2 ** 28``.
+   Generate *n* random bytes.
+
+   *n* must be greater or equal to ``0``. The upper bound depends
+   on platform integer size.
 
    This method should not be used for generating security tokens.
    Use :func:`secrets.token_bytes` instead.
