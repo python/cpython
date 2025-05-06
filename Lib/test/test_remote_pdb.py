@@ -1040,6 +1040,7 @@ class PdbConnectTestCase(unittest.TestCase):
                             commands="",
                             version=pdb._PdbServer.protocol_version(),
                             signal_raising_thread=False,
+                            colorize=False,
                         )
                         return x  # This line won't be reached in debugging
 
@@ -1210,6 +1211,7 @@ class PdbConnectTestCase(unittest.TestCase):
                     commands="",
                     version=pdb._PdbServer.protocol_version(),
                     signal_raising_thread=True,
+                    colorize=False,
                 )
                 print("Connected to debugger")
                 iterations = 50
@@ -1301,6 +1303,7 @@ class PdbConnectTestCase(unittest.TestCase):
                     commands="",
                     version=fake_version,
                     signal_raising_thread=False,
+                    colorize=False,
                 )
 
                 # This should print if the debugger detaches correctly
