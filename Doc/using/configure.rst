@@ -828,7 +828,7 @@ Linker options
    The default (when ``-enable-shared`` is used) is to link the Python
    interpreter against the built shared library.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 
 Libraries options
