@@ -1,0 +1,2 @@
+:func:`help` now shows the documentation for the ``match`` and ``case``
+statements.
