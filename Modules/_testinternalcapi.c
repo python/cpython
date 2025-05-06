@@ -1206,6 +1206,58 @@ verify_stateless_code(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+code_set_co_extra(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    PyObject *codearg;
+    Py_ssize_t index;
+    PyObject *value = NULL;
+    PyObject *expected = NULL;
+    PyObject *notset = Py_None;
+    static char *kwlist[] =
+            {"code", "index", "value", "expect", "notset", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                    "O!n|OOO:code_set_co_extra", kwlist,
+                    &PyCode_Type, &codearg, &index, &value, &expected, &notset))
+    {
+        return NULL;
+    }
+
+    void *extra;
+    if (PyUnstable_Code_GetExtra(codearg, index, &extra) < 0) {
+        return NULL;
+    }
+
+    PyObject *old;
+    if (extra == NULL) {
+        old = Py_NewRef(notset);
+    }
+    else if (extra == expected) {
+        old = Py_NewRef(expected);
+    }
+    else if (extra == value) {
+        old = Py_NewRef(value);
+    }
+    else {
+        if (expected == NULL) {
+            PyErr_SetString(PyExc_ValueError,
+                            "expected existing co_extra to be NULL");
+        }
+        else {
+            PyErr_Format(PyExc_ValueError,
+                         "expected existing co_extra to be %R", expected);
+        }
+        return NULL;
+    }
+
+    if (PyUnstable_Code_SetExtra(codearg, index, value) < 0) {
+        Py_DECREF(old);
+        return NULL;
+    }
+
+    return old;
+}
+
 #ifdef _Py_TIER2
 
 static PyObject *
@@ -2334,6 +2386,8 @@ static PyMethodDef module_functions[] = {
     {"get_code_var_counts", _PyCFunction_CAST(get_code_var_counts),
      METH_VARARGS | METH_KEYWORDS, NULL},
     {"verify_stateless_code", _PyCFunction_CAST(verify_stateless_code),
+     METH_VARARGS | METH_KEYWORDS, NULL},
+    {"code_set_co_extra", _PyCFunction_CAST(code_set_co_extra),
      METH_VARARGS | METH_KEYWORDS, NULL},
 #ifdef _Py_TIER2
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},

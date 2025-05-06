@@ -1088,6 +1088,18 @@ class CodeTest(unittest.TestCase):
                     with self.assertRaises(Exception):
                         _testinternalcapi.verify_stateless_code(func)
 
+        def spam():
+            pass
+
+        with self.subTest('with co_extra'):
+            _testinternalcapi.verify_stateless_code(spam)
+            extra = 'spam'
+            _testinternalcapi.code_set_co_extra(spam.__code__, 0, extra)
+            with self.assertRaises(ValueError):
+                _testinternalcapi.verify_stateless_code(spam)
+            _testinternalcapi.code_set_co_extra(spam.__code__, 0, expect=extra)
+            _testinternalcapi.verify_stateless_code(spam)
+
 
 def isinterned(s):
     return s is sys.intern(('_' + s + '_')[1:-1])
