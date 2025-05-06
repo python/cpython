@@ -1532,7 +1532,10 @@ class PdbAttachTestCase(unittest.TestCase):
             redirect_stderr(client_stderr),
             unittest.mock.patch("sys.argv", ["pdb", "-p", str(process.pid)]),
         ):
-            pdb.main()
+            try:
+                pdb.main()
+            except PermissionError:
+                self.skipTest("Insufficient permissions for remote execution")
 
         process.wait()
         server_stdout = process.stdout.read()
