@@ -30,14 +30,12 @@ class IncrementalGCTests(unittest.TestCase):
             return head
 
         head = make_ll(1000)
-        count = 1000
 
         assert(gc.isenabled())
         olds = []
         initial_heap_size = _testinternalcapi.get_tracked_heap_size()
         for i in range(20_000):
             newhead = make_ll(20)
-            count += 20
             newhead.surprise = head
             olds.append(newhead)
             if len(olds) == 20:
