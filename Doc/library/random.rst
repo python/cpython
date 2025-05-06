@@ -113,7 +113,7 @@ Functions for bytes
 
 .. function:: randbytes(n)
 
-   Generate *n* random bytes.
+   Generate *n* random bytes where *n* is ``0 <= n < 2 ** 28``.
 
    This method should not be used for generating security tokens.
    Use :func:`secrets.token_bytes` instead.
