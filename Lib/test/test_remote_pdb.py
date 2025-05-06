@@ -1509,6 +1509,8 @@ class PdbAttachTestCase(unittest.TestCase):
             stderr=subprocess.PIPE,
             text=True
         )
+        self.addCleanup(process.stdout.close)
+        self.addCleanup(process.stderr.close)
 
         # Wait for the process to reach our attachment point
         self.sock.settimeout(10)
@@ -1518,6 +1520,11 @@ class PdbAttachTestCase(unittest.TestCase):
         client_stdin = io.StringIO(client_stdin)
         client_stdout = io.StringIO()
         client_stderr = io.StringIO()
+
+        self.addCleanup(client_stdin.close)
+        self.addCleanup(client_stdout.close)
+        self.addCleanup(client_stderr.close)
+        self.addCleanup(process.wait)
 
         with (
             unittest.mock.patch("sys.stdin", client_stdin),
