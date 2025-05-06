@@ -10,14 +10,9 @@ import sys
 from argparse import ArgumentParser
 from code import InteractiveConsole
 from textwrap import dedent
-import _colorize as colorize
+from _colorize import get_theme, theme_no_color
 
-def _clr(color, use_color):
-    if use_color:
-        return color
-    return ''
-
-def execute(c, sql, suppress_errors=True, use_color=False):
+def execute(c, sql, suppress_errors=True, theme=theme_no_color):
     """Helper that wraps execution of SQL code.
 
     This is used both by the REPL and by direct execution from the CLI.
@@ -30,15 +25,16 @@ def execute(c, sql, suppress_errors=True, use_color=False):
         for row in c.execute(sql):
             print(row)
     except sqlite3.Error as e:
-        theme = colorize.get_theme(force_color=True).traceback
+        t = theme.traceback
         tp = type(e).__name__
         try:
-            print(f"{_clr(theme.type, use_color)}{tp} ({e.sqlite_errorname})"
-                  f"{_clr(theme.reset, use_color)}: "
-                  f"{_clr(theme.message, use_color)}{e}{_clr(theme.reset, use_color)}", file=sys.stderr)
+            tp += f" ({e.sqlite_errorname})"
         except AttributeError:
-            print(f"{_clr(theme.type, use_color)}{tp}{_clr(theme.reset, use_color)}: "
-                  f"{_clr(theme.message, use_color)}{e}{_clr(theme.reset, use_color)}", file=sys.stderr)
+            pass
+        print(
+            f"{t.type}{tp}{t.reset}: {t.message}{e}{t.reset}",
+            file=sys.stderr,
+        )
         if not suppress_errors:
             sys.exit(1)
 
@@ -68,7 +64,8 @@ class SqliteInteractiveConsole(InteractiveConsole):
             case _:
                 if not sqlite3.complete_statement(source):
                     return True
-                execute(self._cur, source, use_color=self._use_color)
+                theme = get_theme(force_no_color=not self._use_color)
+                execute(self._cur, source, theme=theme)
         return False
 
 
@@ -116,11 +113,10 @@ def main(*args):
         Type ".help" for more information; type ".quit" or {eofkey} to quit.
     """).strip()
 
-    use_color = colorize.can_colorize()
-    theme = colorize.get_theme(force_color=True).syntax
+    s = get_theme().syntax
 
-    sys.ps1 = f"{_clr(theme.prompt, use_color)}sqlite> {_clr(theme.reset, use_color)}"
-    sys.ps2 = f"{_clr(theme.prompt, use_color)}    ... {_clr(theme.reset, use_color)}"
+    sys.ps1 = f"{s.prompt}sqlite> {s.reset}"
+    sys.ps2 = f"{s.prompt}    ... {s.reset}"
 
     con = sqlite3.connect(args.filename, isolation_level=None)
     try:
@@ -129,7 +125,7 @@ def main(*args):
             execute(con, args.sql, suppress_errors=False)
         else:
             # No SQL provided; start the REPL.
-            console = SqliteInteractiveConsole(con, use_color)
+            console = SqliteInteractiveConsole(con, use_color=True)
             try:
                 import readline  # noqa: F401
             except ImportError:
