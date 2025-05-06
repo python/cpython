@@ -549,6 +549,14 @@ _PyPegen_new_identifier(Parser *p, const char *n)
         }
         id = id2;
     }
+    if (_PyUnicode_EqualToASCIIString(id, "None") ||
+        _PyUnicode_EqualToASCIIString(id, "True") ||
+        _PyUnicode_EqualToASCIIString(id, "False"))
+    {
+        PyErr_SetString(PyExc_ValueError, "identifier must not be None, True or False after NFKC normalization");
+        Py_DECREF(id);
+        goto error;
+    }
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyUnicode_InternImmortal(interp, &id);
     if (_PyArena_AddPyObject(p->arena, id) < 0)

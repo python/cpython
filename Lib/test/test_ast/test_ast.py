@@ -821,6 +821,12 @@ class AST_Tests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, f"identifier field can't represent '{constant}' constant"):
                 compile(expr, "<test>", "eval")
 
+    def test_constant_as_unicode_name(self):
+        for constant in b"Tru\xe1\xb5\x89", b"Fal\xc5\xbfe", b"N\xc2\xbane":
+            with self.assertRaises(ValueError,
+                msg="identifier must not be None, True or False after NFKC normalization"):
+                ast.parse(constant, mode="eval")
+
     def test_precedence_enum(self):
         class _Precedence(enum.IntEnum):
             """Precedence table that originated from python grammar."""
