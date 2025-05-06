@@ -84,7 +84,7 @@ and improvements in user-friendliness and correctness.
 
 * :ref:`PEP 649: deferred evaluation of annotations <whatsnew314-pep649>`
 * :ref:`PEP 741: Python Configuration C API <whatsnew314-pep741>`
-* :ref:`PEP 750: Template Strings <whatsnew314-pep750>`
+* :ref:`PEP 750: Template strings <whatsnew314-pep750>`
 * :ref:`PEP 758: Allow except and except* expressions without parentheses <whatsnew314-pep758>`
 * :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
 * :ref:`PEP 765: Disallow return/break/continue that exit a finally block <whatsnew314-pep765>`
@@ -122,7 +122,7 @@ New features
 
 .. _whatsnew314-pep750:
 
-PEP 750: Template Strings
+PEP 750: Template strings
 -------------------------
 
 Template string literals (t-strings) are a generalization of f-strings,
