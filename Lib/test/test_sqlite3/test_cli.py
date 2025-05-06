@@ -13,6 +13,7 @@ from test.support import (
 )
 
 
+@force_not_colorized_test_class
 class CommandLineInterface(unittest.TestCase):
 
     def _do_test(self, *args, expect_success=True):
