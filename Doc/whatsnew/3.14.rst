@@ -238,17 +238,17 @@ See :pep:`768` for more details.
 PEP 784: Adding Zstandard to the standard library
 -------------------------------------------------
 
-The new ``compression`` package contains modules ``compression.lzma``, ``compression.bz2``,
-``compression.gzip`` and ``compression.zlib`` which re-export the :mod:`lzma`, :mod:`bz2`,
+The new ``compression`` package contains modules :mod:`!compression.lzma`, :mod:`!compression.bz2`,
+:mod:`!compression.gzip` and :mod:`!compression.zlib` which re-export the :mod:`lzma`, :mod:`bz2`,
 :mod:`gzip` and :mod:`zlib` modules respectively. The new import names under ``compression`` are
 the canonical names for importing these compression modules going forward. However, the existing
 modules names have not been deprecated. Any deprecation or removal of the existing compression modules
 will occur no sooner than 5 years after the release of 3.14.
 
-The new ``compression.zstd`` module provides compression and decompression APIs for the
+The new :mod:`!compression.zstd` module provides compression and decompression APIs for the
 Zstandard format via bindings to `Meta's zstd library <https://facebook.github.io/zstd/>`__.
 Zstandard is a widely adopted, highly efficient, and fast compression format. In addition to the APIs
-introduced in ``compression.zstd``, support for reading and writing Zstandard compressed archives
+introduced in :mod:`!compression.zstd`, support for reading and writing Zstandard compressed archives
 has been added to the :mod:`tarfile`, :mod:`zipfile`, and :mod:`shutil` modules.
 
 Here's an example of using the new module to compress some data:
