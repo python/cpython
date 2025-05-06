@@ -32,8 +32,7 @@ def execute(c, sql, suppress_errors=True, theme=theme_no_color):
         except AttributeError:
             pass
         print(
-            f"{t.type}{tp}{t.reset}: {t.message}{e}{t.reset}",
-            file=sys.stderr,
+            f"{t.type}{tp}{t.reset}: {t.message}{e}{t.reset}", file=sys.stderr
         )
         if not suppress_errors:
             sys.exit(1)
