@@ -275,7 +275,7 @@ within a namespace, with a ``match ... case`` statement, like this::
        case _:  # The "_" is a wildcard here.
            print("invaild command")
 
-See  :pep:`634` (specification) and :pep:`636` (tutorial) for details about the ``match`` statement.
+See :pep:`634` (specification) and :pep:`636` (tutorial) for details about the ``match`` statement.
 
 An older alternative is a sequence of ``if... elif... elif... else``.
 
