@@ -24,6 +24,7 @@ incomplete = re.compile('&[a-zA-Z#]')
 
 entityref = re.compile('&([a-zA-Z][-.a-zA-Z0-9]*)[^a-zA-Z0-9]')
 charref = re.compile('&#(?:[0-9]+|[xX][0-9a-fA-F]+)[^0-9a-fA-F]')
+attr_charref = re.compile(r'&(#[0-9]+|#[xX][0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*)[;=]?')
 
 starttagopen = re.compile('<[a-zA-Z]')
 piclose = re.compile('>')
@@ -60,8 +61,6 @@ endtagfind = re.compile(r'</\s*([a-zA-Z][-.a-zA-Z0-9:_]*)\s*>')
 
 # Character reference processing logic specific to attribute values
 # See: https://html.spec.whatwg.org/multipage/parsing.html#named-character-reference-state
-attr_charref = re.compile(r'&(#[0-9]+|#[xX][0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*)[;=]?')
-
 def _replace_attr_charref(match):
     ref = match.group(0)
     # Numeric / hex char refs must always be unescaped
@@ -69,9 +68,7 @@ def _replace_attr_charref(match):
         return unescape(ref)
     # Named character / entity references must only be unescaped
     # if they are an exact match, and they are not followed by an equals sign
-    terminates_with_equals = ref.endswith('=')
-    exact_match = ref.lstrip('&').rstrip('=') in html5_entities
-    if exact_match and not terminates_with_equals:
+    if not ref.endswith('=') and ref[1:] in html5_entities:
         return unescape(ref)
     # Otherwise do not unescape
     return ref
