@@ -5638,7 +5638,8 @@ class GenericTests(BaseTestCase):
 
         foo(42)
 
-    def test_genericalias_isclass(self):
+    def test_genericalias_instance_isclass(self):
+        # test against user-defined generic classes
         T = TypeVar('T')
 
         class Node(Generic[T]):
@@ -5652,6 +5653,11 @@ class GenericTests(BaseTestCase):
         self.assertTrue(inspect.isclass(Node))
         self.assertFalse(inspect.isclass(Node[int]))
         self.assertFalse(inspect.isclass(Node[str]))
+
+        # test against standard generic classes
+        self.assertFalse(inspect.isclass(set[int]))
+        self.assertFalse(inspect.isclass(list[bytes]))
+        self.assertFalse(inspect.isclass(dict[str, str]))
 
     def test_implicit_any(self):
         T = TypeVar('T')
