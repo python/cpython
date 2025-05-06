@@ -568,8 +568,10 @@
         }
 
         case _BINARY_SLICE: {
+            JitOptSymbol *container;
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            container = stack_pointer[-3];
+            res = sym_new_type(ctx, sym_get_type(container));
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());

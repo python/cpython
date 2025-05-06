@@ -155,6 +155,10 @@ dummy_func(void) {
         sym_set_type(nos, &PyFloat_Type);
     }
 
+    op(_BINARY_SLICE, (container, end, start -- res)) {
+        res = sym_new_type(ctx, sym_get_type(container));
+    }
+
     op(_BINARY_OP, (left, right -- res)) {
         bool lhs_int = sym_matches_type(left, &PyLong_Type);
         bool rhs_int = sym_matches_type(right, &PyLong_Type);

@@ -1942,6 +1942,23 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_COMPARE_OP_INT", uops)
         self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
 
+    def test_binary_slice(self):
+        def testfunc(n):
+            a = [1, 2, 3, 4]
+            x = 1
+            y = 3
+            for _ in range(n):
+                b = a[x: y]
+                assert b == [2, 3]
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        # self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        print("-------")
+        for uop in uops:
+            print(uop)
+
+
 
 def global_identity(x):
     return x
