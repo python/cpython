@@ -1531,11 +1531,13 @@ class PdbAttachTestCase(unittest.TestCase):
 
         if process.returncode != 0:
             print("server failed:")
-            print(stderr)
+            print(f"stdout:\n{stdout}")
+            print(f"stderr:\n{stderr}")
 
         if attach_process.returncode != 0:
             print("client failed:")
-            print(client_stderr)
+            print(f"stdout:\n{client_stdout}")
+            print(f"stderr:\n{client_stderr}")
 
         self.assertEqual(process.returncode, 0)
         self.assertEqual(attach_process.returncode, 0)
