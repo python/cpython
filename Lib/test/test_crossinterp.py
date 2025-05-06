@@ -725,6 +725,39 @@ class MarshalTests(_GetXIDataTests):
         ])
 
 
+class CodeTests(_GetXIDataTests):
+
+    MODE = 'code'
+
+    def test_function_code(self):
+        self.assert_roundtrip_equal_not_identical([
+            *(f.__code__ for f in defs.FUNCTIONS),
+            *(f.__code__ for f in defs.FUNCTION_LIKE),
+        ])
+
+    def test_functions(self):
+        self.assert_not_shareable([
+            *defs.FUNCTIONS,
+            *defs.FUNCTION_LIKE,
+        ])
+
+    def test_other_objects(self):
+        self.assert_not_shareable([
+            None,
+            True,
+            False,
+            Ellipsis,
+            NotImplemented,
+            9999,
+            'spam',
+            b'spam',
+            (),
+            [],
+            {},
+            object(),
+        ])
+
+
 class ShareableTypeTests(_GetXIDataTests):
 
     MODE = 'xidata'
@@ -815,6 +848,13 @@ class ShareableTypeTests(_GetXIDataTests):
     def test_object(self):
         self.assert_not_shareable([
             object(),
+        ])
+
+    def test_code(self):
+        # types.CodeType
+        self.assert_not_shareable([
+            *(f.__code__ for f in defs.FUNCTIONS),
+            *(f.__code__ for f in defs.FUNCTION_LIKE),
         ])
 
     def test_function_object(self):
@@ -935,12 +975,6 @@ class ShareableTypeTests(_GetXIDataTests):
         self.assert_not_shareable([
             types.MappingProxyType({}),
             types.SimpleNamespace(),
-            # types.CodeType
-            defs.spam_minimal.__code__,
-            defs.spam_full.__code__,
-            defs.spam_CC.__code__,
-            defs.eggs_closure_C.__code__,
-            defs.ham_C_closure.__code__,
             # types.CellType
             types.CellType(),
             # types.FrameType

@@ -512,9 +512,12 @@ _unpickle_context_set_module(struct _unpickle_context *ctx,
     struct sync_module_result res = {0};
     struct sync_module_result *cached = NULL;
     const char *filename = NULL;
+    const char *run_modname = modname;
     if (strcmp(modname, "__main__") == 0) {
         cached = &ctx->main.cached;
         filename = ctx->main.filename;
+        // We don't want to trigger "if __name__ == '__main__':".
+        run_modname = "<fake __main__>";
     }
     else {
         res.failed = PyExc_NotImplementedError;
@@ -533,7 +536,7 @@ _unpickle_context_set_module(struct _unpickle_context *ctx,
         res.failed = PyExc_NotImplementedError;
         goto finally;
     }
-    res.loaded = runpy_run_path(filename, modname);
+    res.loaded = runpy_run_path(filename, run_modname);
     if (res.loaded == NULL) {
         Py_CLEAR(res.module);
         res.failed = _PyErr_GetRaisedException(ctx->tstate);

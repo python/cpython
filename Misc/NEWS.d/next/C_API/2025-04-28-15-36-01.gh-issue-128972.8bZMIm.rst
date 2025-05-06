@@ -1,0 +1,3 @@
+For non-free-threaded builds, the memory layout of :c:struct:`PyASCIIObject`
+is reverted to match Python 3.13. (Note that the structure is not part of
+stable ABI and so its memory layout is *guaranteed* to remain stable.)

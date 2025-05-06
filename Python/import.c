@@ -103,6 +103,15 @@ static struct _inittab *inittab_copy = NULL;
 #define FIND_AND_LOAD(interp) \
     (interp)->imports.find_and_load
 
+#define _IMPORT_TIME_HEADER(interp)                                           \
+    do {                                                                      \
+        if (FIND_AND_LOAD((interp)).header) {                                 \
+            fputs("import time: self [us] | cumulative | imported package\n", \
+                  stderr);                                                    \
+            FIND_AND_LOAD((interp)).header = 0;                               \
+        }                                                                     \
+    } while (0)
+
 
 /*******************/
 /* the import lock */
@@ -246,9 +255,13 @@ import_ensure_initialized(PyInterpreterState *interp, PyObject *mod, PyObject *n
         rc = _PyModuleSpec_IsInitializing(spec);
         Py_DECREF(spec);
     }
-    if (rc <= 0) {
+    if (rc == 0) {
+        goto done;
+    }
+    else if (rc < 0) {
         return rc;
     }
+
     /* Wait until module is done importing. */
     PyObject *value = PyObject_CallMethodOneArg(
         IMPORTLIB(interp), &_Py_ID(_lock_unlock_module), name);
@@ -256,6 +269,19 @@ import_ensure_initialized(PyInterpreterState *interp, PyObject *mod, PyObject *n
         return -1;
     }
     Py_DECREF(value);
+
+done:
+    /* When -X importtime=2, print an import time entry even if an
+       imported module has already been loaded.
+     */
+    if (_PyInterpreterState_GetConfig(interp)->import_time == 2) {
+        _IMPORT_TIME_HEADER(interp);
+#define import_level FIND_AND_LOAD(interp).import_level
+        fprintf(stderr, "import time: cached    | cached     | %*s\n",
+                import_level*2, PyUnicode_AsUTF8(name));
+#undef import_level
+    }
+
     return 0;
 }
 
@@ -3686,13 +3712,7 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
      * _PyDict_GetItemIdWithError().
      */
     if (import_time) {
-#define header FIND_AND_LOAD(interp).header
-        if (header) {
-            fputs("import time: self [us] | cumulative | imported package\n",
-                  stderr);
-            header = 0;
-        }
-#undef header
+        _IMPORT_TIME_HEADER(interp);
 
         import_level++;
         // ignore error: don't block import if reading the clock fails
