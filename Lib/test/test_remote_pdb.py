@@ -3,6 +3,7 @@ import time
 import itertools
 import json
 import os
+import re
 import signal
 import socket
 import subprocess
@@ -14,7 +15,7 @@ import unittest
 import unittest.mock
 from contextlib import closing, contextmanager, redirect_stdout, ExitStack
 from pathlib import Path
-from test.support import is_wasi, os_helper, requires_subprocess, SHORT_TIMEOUT
+from test.support import is_wasi, cpython_only, force_color, requires_subprocess, SHORT_TIMEOUT
 from test.support.os_helper import temp_dir, TESTFN, unlink
 from typing import Dict, List, Optional, Tuple, Union, Any
 
@@ -1430,6 +1431,135 @@ class PdbConnectTestCase(unittest.TestCase):
             stdout, stderr = process.communicate(timeout=SHORT_TIMEOUT)
             self.assertIn("Function returned: 42", stdout)
             self.assertEqual(process.returncode, 0)
+
+
+def _supports_remote_attaching():
+    from contextlib import suppress
+    PROCESS_VM_READV_SUPPORTED = False
+
+    try:
+        from _remote_debugging import PROCESS_VM_READV_SUPPORTED
+    except ImportError:
+        pass
+
+    return PROCESS_VM_READV_SUPPORTED
+
+
+@unittest.skipIf(not sys.is_remote_debug_enabled(), "Remote debugging is not enabled")
+@unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux" and sys.platform != "win32",
+                    "Test only runs on Linux, Windows and MacOS")
+@unittest.skipIf(sys.platform == "linux" and not _supports_remote_attaching(),
+                    "Testing on Linux requires process_vm_readv support")
+@cpython_only
+@requires_subprocess()
+class PdbAttachTestCase(unittest.TestCase):
+    def setUp(self):
+        # Create a server socket that will wait for the debugger to connect
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.bind(('127.0.0.1', 0))  # Let OS assign port
+        self.sock.listen(1)
+        self.port = self.sock.getsockname()[1]
+        self._create_script()
+
+    def _create_script(self, script=None):
+        # Create a file for subprocess script
+        script = textwrap.dedent(
+            f"""
+            import socket
+            import time
+
+            def foo():
+                return bar()
+
+            def bar():
+                return baz()
+
+            def baz():
+                x = 1
+                # Trigger attach
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.connect(('127.0.0.1', {self.port}))
+                sock.close()
+                count = 0
+                while x == 1 and count < 100:
+                    count += 1
+                    time.sleep(0.1)
+                return x
+
+            result = foo()
+            print(f"Function returned: {{result}}")
+            """
+        )
+
+        self.script_path = TESTFN + "_connect_test.py"
+        with open(self.script_path, 'w') as f:
+            f.write(script)
+
+    def tearDown(self):
+        self.sock.close()
+        try:
+            unlink(self.script_path)
+        except OSError:
+            pass
+
+    def do_integration_test(self, client_stdin):
+        process = subprocess.Popen(
+            [sys.executable, self.script_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        # Wait for the process to reach our attachment point
+        self.sock.settimeout(10)
+        conn, _ = self.sock.accept()
+        conn.close()
+
+        attach_process = subprocess.Popen(
+            [sys.executable, "-m", "pdb", "-p", str(process.pid)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            stdin=subprocess.PIPE,
+            text=True,
+            env=os.environ,
+        )
+        stdout, stderr = attach_process.communicate(client_stdin, timeout=5)
+        process.wait()
+
+        self.assertEqual(process.returncode, 0)
+        self.assertEqual(attach_process.returncode, 0)
+
+        return {
+            "client": {
+                "stdout": stdout,
+                "stderr": stderr,
+            },
+            "server": {
+                "stdout": process.stdout.read(),
+                "stderr": process.stderr.read(),
+            },
+        }
+
+    def test_attach_to_process_without_colors(self):
+        with force_color(False):
+            output = self.do_integration_test("ll\nx=42\n")
+        self.assertEqual(output["client"]["stderr"], "")
+        self.assertEqual(output["server"]["stderr"], "")
+
+        self.assertEqual(output["server"]["stdout"], "Function returned: 42\n")
+        self.assertIn("while x == 1", output["client"]["stdout"])
+        self.assertNotIn("\x1b", output["client"]["stdout"])
+
+    def test_attach_to_process_with_colors(self):
+        with force_color(True):
+            output = self.do_integration_test("ll\nx=42\n")
+        self.assertEqual(output["client"]["stderr"], "")
+        self.assertEqual(output["server"]["stderr"], "")
+
+        self.assertEqual(output["server"]["stdout"], "Function returned: 42\n")
+        self.assertIn("\x1b", output["client"]["stdout"])
+        self.assertNotIn("while x == 1", output["client"]["stdout"])
+        self.assertIn("while x == 1", re.sub("\x1b[^m]*m", "", output["client"]["stdout"]))
 
 if __name__ == "__main__":
     unittest.main()
