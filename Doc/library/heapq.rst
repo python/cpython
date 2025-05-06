@@ -17,8 +17,7 @@ This module provides an implementation of the heap queue algorithm, also known
 as the priority queue algorithm.
 
 Min-heaps are binary trees for which every parent node has a value less than
-or equal to any of its children.
-We refer to this condition as the heap invariant.
+or equal to any of its children. We refer to this condition as the heap invariant.
 
 For min-heaps, this implementation uses lists for which
 ``heap[k] <= heap[2*k+1]`` and ``heap[k] <= heap[2*k+2]`` for all *k* for which
@@ -170,7 +169,7 @@ The module also offers three general purpose functions based on heaps.
    *reverse* is a boolean value.  If set to ``True``, then the input elements
    are merged as if each comparison were reversed. To achieve behavior similar
    to ``sorted(itertools.chain(*iterables), reverse=True)``, all iterables must
-   be sorted from largest to smallest.
+   be sorted from largest to smallest, like for example, a max-heap.
 
    .. versionchanged:: 3.5
       Added the optional *key* and *reverse* parameters.
@@ -306,23 +305,16 @@ entry as removed and add a new entry with the revised priority::
 Theory
 ------
 
-Heaps are arrays for which ``a[k] <= a[2*k+1]`` and ``a[k] <= a[2*k+2]`` for all
-*k*, counting elements from 0.  For the sake of comparison, non-existing
+Min-heaps are arrays for which ``a[k] <= a[2*k+1]`` and ``a[k] <= a[2*k+2]`` for
+all *k*, counting elements from 0.  For the sake of comparison, non-existing
 elements are considered to be infinite.  The interesting property of a heap is
-that ``a[0]`` is always its smallest element.
+that ``a[0]`` is always its smallest element. Max-heaps are the reverse.
 
 The strange invariant above is meant to be an efficient memory representation
 for a tournament.  The numbers below are *k*, not ``a[k]``::
 
-                                  0
-
-                 1                                 2
-
-         3               4                5               6
-
-     7       8       9       10      11      12      13      14
-
-   15 16   17 18   19 20   21 22   23 24   25 26   27 28   29 30
+.. figure:: heapq-binary-tree.png
+   :alt: Example (min-heap) binary tree.
 
 In the tree above, each cell *k* is topping ``2*k+1`` and ``2*k+2``. In a usual
 binary tournament we see in sports, each cell is the winner over the two cells
@@ -346,8 +338,7 @@ last 0'th element you extracted.  This is especially useful in simulation
 contexts, where the tree holds all incoming events, and the "win" condition
 means the smallest scheduled time.  When an event schedules other events for
 execution, they are scheduled into the future, so they can easily go into the
-heap.  So, a heap is a good structure for implementing schedulers (this is what
-I used for my MIDI sequencer :-).
+heap. So, a heap is a suitable structure for implementing schedulers.
 
 Various structures for implementing schedulers have been extensively studied,
 and heaps are good for this, as they are reasonably speedy, the speed is almost
@@ -355,10 +346,10 @@ constant, and the worst case is not much different than the average case.
 However, there are other representations which are more efficient overall, yet
 the worst cases might be terrible.
 
-Heaps are also very useful in big disk sorts.  You most probably all know that a
-big sort implies producing "runs" (which are pre-sorted sequences, whose size is
+Heaps are also very useful in big disk sorts.  A
+big sort implies producing "runs" (pre-sorted sequences, whose size is
 usually related to the amount of CPU memory), followed by a merging passes for
-these runs, which merging is often very cleverly organised [#]_. It is very
+these runs, which merging is often very cleverly organised. It is very
 important that the initial sort produces the longest runs possible.  Tournaments
 are a good way to achieve that.  If, using all the memory available to hold a
 tournament, you replace and percolate items that happen to fit the current run,
@@ -370,20 +361,4 @@ in the current tournament (because the value "wins" over the last output value),
 it cannot fit in the heap, so the size of the heap decreases.  The freed memory
 could be cleverly reused immediately for progressively building a second heap,
 which grows at exactly the same rate the first heap is melting.  When the first
-heap completely vanishes, you switch heaps and start a new run.  Clever and
-quite effective!
-
-In a word, heaps are useful memory structures to know.  I use them in a few
-applications, and I think it is good to keep a 'heap' module around. :-)
-
-.. rubric:: Footnotes
-
-.. [#] The disk balancing algorithms which are current, nowadays, are more annoying
-   than clever, and this is a consequence of the seeking capabilities of the disks.
-   On devices which cannot seek, like big tape drives, the story was quite
-   different, and one had to be very clever to ensure (far in advance) that each
-   tape movement will be the most effective possible (that is, will best
-   participate at "progressing" the merge).  Some tapes were even able to read
-   backwards, and this was also used to avoid the rewinding time. Believe me, real
-   good tape sorts were quite spectacular to watch! From all times, sorting has
-   always been a Great Art! :-)
+heap completely vanishes, you switch heaps and start a new run.
