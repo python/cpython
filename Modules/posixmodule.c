@@ -4814,7 +4814,7 @@ os_listvolumes_impl(PyObject *module)
 
 #endif /* MS_WINDOWS_APP || MS_WINDOWS_SYSTEM */
 
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
 /*[clinic input]
 os.listmounts
@@ -4895,6 +4895,9 @@ exit:
     return result;
 }
 
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
+
+#ifdef MS_WINDOWS
 
 /*[clinic input]
 os._path_isdevdrive

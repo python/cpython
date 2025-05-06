@@ -1707,7 +1707,7 @@ os_listvolumes(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* (defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)) */
 
-#if defined(MS_WINDOWS)
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
 
 PyDoc_STRVAR(os_listmounts__doc__,
 "listmounts($module, /, volume)\n"
@@ -1774,7 +1774,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
 
 #if defined(MS_WINDOWS)
 
