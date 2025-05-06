@@ -54,6 +54,9 @@ struct _zstd_state {
     PyTypeObject *ZstdCompressor_type;
     PyTypeObject *ZstdDecompressor_type;
     PyObject *ZstdError;
+
+    PyTypeObject *CParameter_type;
+    PyTypeObject *DParameter_type;
 };
 
 typedef struct {

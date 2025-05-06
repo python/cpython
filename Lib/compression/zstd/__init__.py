@@ -228,3 +228,7 @@ class Strategy(enum.IntEnum):
     btopt = _zstd._ZSTD_btopt
     btultra = _zstd._ZSTD_btultra
     btultra2 = _zstd._ZSTD_btultra2
+
+
+# Check validity of the CompressionParameter & DecompressionParameter types
+_zstd._set_parameter_types(CompressionParameter, DecompressionParameter)
