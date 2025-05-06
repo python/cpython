@@ -272,7 +272,7 @@ Here's an example of using the new module to compress some data:
 As can be seen, the API is similar to the APIs of the :mod:`!lzma` and
 :mod:`!bz2` modules.
 
-(Contributed by Emma Harper Smith, Adam Turner, Gregory P. Smith, Tomas R.,
+(Contributed by Emma Harper Smith, Adam Turner, Gregory P. Smith, Tomas Roun,
 Victor Stinner, and Rogdham in :gh:`132983`)
 
 .. seealso::
@@ -953,7 +953,7 @@ ast
   (Contributed by Irit Katriel in :gh:`123958`.)
 
 * The ``repr()`` output for AST nodes now includes more information.
-  (Contributed by Tomas R in :gh:`116022`.)
+  (Contributed by Tomas Roun in :gh:`116022`.)
 
 * :func:`ast.parse`, when called with an AST as input, now always verifies
   that the root node type is appropriate.
