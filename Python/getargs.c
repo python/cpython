@@ -839,10 +839,13 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         unsigned long *p = va_arg(*p_va, unsigned long *);
         HANDLE_NULLABLE;
         unsigned long ival;
-        if (PyLong_Check(arg))
-            ival = PyLong_AsUnsignedLongMask(arg);
-        else
+        if (!PyIndex_Check(arg)) {
             return converterr(nullable, "int", arg, msgbuf, bufsize);
+        }
+        ival = PyLong_AsUnsignedLongMask(arg);
+        if (ival == (unsigned long)(long)-1 && PyErr_Occurred()) {
+            RETURN_ERR_OCCURRED;
+        }
         *p = ival;
         break;
     }
@@ -862,10 +865,13 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         unsigned long long *p = va_arg(*p_va, unsigned long long *);
         HANDLE_NULLABLE;
         unsigned long long ival;
-        if (PyLong_Check(arg))
-            ival = PyLong_AsUnsignedLongLongMask(arg);
-        else
+        if (!PyIndex_Check(arg)) {
             return converterr(nullable, "int", arg, msgbuf, bufsize);
+        }
+        ival = PyLong_AsUnsignedLongLongMask(arg);
+        if (ival == (unsigned long long)(long long)-1 && PyErr_Occurred()) {
+            RETURN_ERR_OCCURRED;
+        }
         *p = ival;
         break;
     }

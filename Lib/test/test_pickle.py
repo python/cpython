@@ -15,7 +15,8 @@ from textwrap import dedent
 import doctest
 import unittest
 from test import support
-from test.support import import_helper, os_helper
+from test.support import cpython_only, import_helper, os_helper
+from test.support.import_helper import ensure_lazy_imports
 
 from test.pickletester import AbstractHookTests
 from test.pickletester import AbstractUnpickleTests
@@ -34,6 +35,12 @@ try:
     has_c_implementation = True
 except ImportError:
     has_c_implementation = False
+
+
+class LazyImportTest(unittest.TestCase):
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("pickle", {"re"})
 
 
 class PyPickleTests(AbstractPickleModuleTests, unittest.TestCase):
@@ -745,6 +752,7 @@ class CommandLineTest(unittest.TestCase):
             expect = self.text_normalize(expect)
             self.assertListEqual(res.splitlines(), expect.splitlines())
 
+    @support.force_not_colorized
     def test_unknown_flag(self):
         stderr = io.StringIO()
         with self.assertRaises(SystemExit):

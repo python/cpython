@@ -293,6 +293,27 @@ dummy_func(void) {
         res = sym_new_type(ctx, &PyUnicode_Type);
     }
 
+    op(_BINARY_OP_SUBSCR_TUPLE_INT, (tuple_st, sub_st -- res)) {
+        assert(sym_matches_type(tuple_st, &PyTuple_Type));
+        if (sym_is_const(ctx, sub_st)) {
+            assert(PyLong_CheckExact(sym_get_const(ctx, sub_st)));
+            long index = PyLong_AsLong(sym_get_const(ctx, sub_st));
+            assert(index >= 0);
+            int tuple_length = sym_tuple_length(tuple_st);
+            if (tuple_length == -1) {
+                // Unknown length
+                res = sym_new_not_null(ctx);
+            }
+            else {
+                assert(index < tuple_length);
+                res = sym_tuple_getitem(ctx, tuple_st, index);
+            }
+        }
+        else {
+            res = sym_new_not_null(ctx);
+        }
+    }
+
     op(_TO_BOOL, (value -- res)) {
         int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
         if (!already_bool) {
@@ -879,6 +900,14 @@ dummy_func(void) {
         map = sym_new_type(ctx, &PyDict_Type);
     }
 
+    op(_BUILD_STRING, (values[oparg] -- str)) {
+        str = sym_new_type(ctx, &PyUnicode_Type);
+    }
+
+    op(_BUILD_SET, (values[oparg] -- set)) {
+        set = sym_new_type(ctx, &PySet_Type);
+    }
+
     op(_UNPACK_SEQUENCE_TWO_TUPLE, (seq -- val1, val0)) {
         val0 = sym_tuple_getitem(ctx, seq, 0);
         val1 = sym_tuple_getitem(ctx, seq, 1);
@@ -976,6 +1005,18 @@ dummy_func(void) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
         sym_set_const(callable, (PyObject *)&PyUnicode_Type);
+    }
+
+    op(_CALL_LEN, (unused, unused, unused -- res)) {
+        res = sym_new_type(ctx, &PyLong_Type);
+    }
+
+    op(_GUARD_CALLABLE_LEN, (callable, unused, unused -- callable, unused, unused)) {
+        PyObject *len = _PyInterpreterState_GET()->callable_cache.len;
+        if (sym_get_const(ctx, callable) == len) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_const(callable, len);
     }
 
 // END BYTECODES //

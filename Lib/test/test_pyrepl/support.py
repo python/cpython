@@ -113,9 +113,6 @@ handle_events_narrow_console = partial(
     prepare_console=partial(prepare_console, width=10),
 )
 
-reader_no_colors = partial(prepare_reader, can_colorize=False)
-reader_force_colors = partial(prepare_reader, can_colorize=True)
-
 
 class FakeConsole(Console):
     def __init__(self, events, encoding="utf-8") -> None:

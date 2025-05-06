@@ -1,0 +1,1 @@
+Highlight syntax on source code in :mod:`pdb`.

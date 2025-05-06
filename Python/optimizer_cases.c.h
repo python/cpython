@@ -229,6 +229,10 @@
             break;
         }
 
+        case _GUARD_TOS_SLICE: {
+            break;
+        }
+
         case _TO_BOOL_LIST: {
             JitOptSymbol *value;
             JitOptSymbol *res;
@@ -704,6 +708,15 @@
             break;
         }
 
+        case _BINARY_OP_SUBSCR_LIST_SLICE: {
+            JitOptSymbol *res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _BINARY_OP_SUBSCR_STR_INT: {
             JitOptSymbol *res;
             res = sym_new_type(ctx, &PyUnicode_Type);
@@ -734,8 +747,28 @@
         }
 
         case _BINARY_OP_SUBSCR_TUPLE_INT: {
+            JitOptSymbol *sub_st;
+            JitOptSymbol *tuple_st;
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            sub_st = stack_pointer[-1];
+            tuple_st = stack_pointer[-2];
+            assert(sym_matches_type(tuple_st, &PyTuple_Type));
+            if (sym_is_const(ctx, sub_st)) {
+                assert(PyLong_CheckExact(sym_get_const(ctx, sub_st)));
+                long index = PyLong_AsLong(sym_get_const(ctx, sub_st));
+                assert(index >= 0);
+                int tuple_length = sym_tuple_length(tuple_st);
+                if (tuple_length == -1) {
+                    res = sym_new_not_null(ctx);
+                }
+                else {
+                    assert(index < tuple_length);
+                    res = sym_tuple_getitem(ctx, tuple_st, index);
+                }
+            }
+            else {
+                res = sym_new_not_null(ctx);
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1129,9 +1162,27 @@
 
         case _BUILD_STRING: {
             JitOptSymbol *str;
-            str = sym_new_not_null(ctx);
+            str = sym_new_type(ctx, &PyUnicode_Type);
             stack_pointer[-oparg] = str;
             stack_pointer += 1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _BUILD_INTERPOLATION: {
+            JitOptSymbol *interpolation;
+            interpolation = sym_new_not_null(ctx);
+            stack_pointer[-2 - (oparg & 1)] = interpolation;
+            stack_pointer += -1 - (oparg & 1);
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _BUILD_TEMPLATE: {
+            JitOptSymbol *template;
+            template = sym_new_not_null(ctx);
+            stack_pointer[-2] = template;
+            stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -1170,7 +1221,7 @@
 
         case _BUILD_SET: {
             JitOptSymbol *set;
-            set = sym_new_not_null(ctx);
+            set = sym_new_type(ctx, &PySet_Type);
             stack_pointer[-oparg] = set;
             stack_pointer += 1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1907,6 +1958,10 @@
             break;
         }
 
+        case _CHECK_RECURSION_REMAINING: {
+            break;
+        }
+
         case _INIT_CALL_PY_EXACT_ARGS: {
             JitOptSymbol **args;
             JitOptSymbol *self_or_null;
@@ -2126,11 +2181,22 @@
             break;
         }
 
+        case _GUARD_CALLABLE_LEN: {
+            JitOptSymbol *callable;
+            callable = stack_pointer[-3];
+            PyObject *len = _PyInterpreterState_GET()->callable_cache.len;
+            if (sym_get_const(ctx, callable) == len) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_const(callable, len);
+            break;
+        }
+
         case _CALL_LEN: {
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
+            res = sym_new_type(ctx, &PyLong_Type);
+            stack_pointer[-3] = res;
+            stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
