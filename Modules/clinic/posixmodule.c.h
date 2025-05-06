@@ -1681,7 +1681,7 @@ os_listdrives(PyObject *module, PyObject *Py_UNUSED(ignored))
     return os_listdrives_impl(module);
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* defined(MS_WINDOWS_DESKTOP) */
 
 #if defined(MS_WINDOWS)
 
