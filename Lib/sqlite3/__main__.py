@@ -48,7 +48,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
         Return True if more input is needed; buffering is done automatically.
         Return False if input is a complete statement ready for execution.
         """
-        source = source.strip()
+        source = source.rstrip()
         match source:
             case ".version":
                 print(f"{sqlite3.sqlite_version}")

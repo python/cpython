@@ -117,7 +117,7 @@ class InteractiveSession(unittest.TestCase):
         self.assertIn(sqlite3.sqlite_version, out)
 
     def test_interact_whitespace_stripping(self):
-        out, err = self.run_cli(commands=(" " + ".version" + " ",))
+        out, err = self.run_cli(commands=(".version" + " ",))
         self.assertIn(self.MEMORY_DB_MSG, err)
         self.assertIn(sqlite3.sqlite_version + "\n", out)
         self.assertEndsWith(out, self.PS1)
