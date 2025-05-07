@@ -25,7 +25,7 @@ class _zstd.ZstdCompressor "ZstdCompressor *" "clinic_state()->ZstdCompressor_ty
 
 #define ZstdCompressor_CAST(op) ((ZstdCompressor *)op)
 
-int
+static int
 _zstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
                        const char *arg_name, const char* arg_type)
 {
@@ -197,7 +197,7 @@ success:
     return cdict;
 }
 
-int
+static int
 _zstd_load_c_dict(ZstdCompressor *self, PyObject *dict) {
 
     size_t zstd_ret;

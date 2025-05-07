@@ -61,7 +61,7 @@ _get_DDict(ZstdDict *self)
 }
 
 /* Set decompression parameters to decompression context */
-int
+static int
 _zstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
 {
     size_t zstd_ret;
@@ -120,7 +120,7 @@ _zstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
 }
 
 /* Load dictionary or prefix to decompression context */
-int
+static int
 _zstd_load_d_dict(ZstdDecompressor *self, PyObject *dict)
 {
     size_t zstd_ret;
