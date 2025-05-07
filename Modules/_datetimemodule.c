@@ -3788,12 +3788,8 @@ date_isocalendar(PyObject *self, PyObject *Py_UNUSED(dummy))
         week = 0;
     }
 
-    PyObject *current_mod = NULL;
-    datetime_state *st = GET_CURRENT_STATE(current_mod);
-
     PyObject *v = iso_calendar_date_new_impl(&PyDateTime_IsoCalendarDateType,
                                              year, week + 1, day + 1);
-    RELEASE_CURRENT_STATE(st, current_mod);
     if (v == NULL) {
         return NULL;
     }
