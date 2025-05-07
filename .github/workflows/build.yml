@@ -49,6 +49,53 @@ jobs:
     if: fromJSON(needs.build-context.outputs.run-docs)
     uses: ./.github/workflows/reusable-docs.yml
 
+  check-abi:
+    name: 'Check if the ABI has changed'
+    runs-on: ubuntu-22.04  # 24.04 causes spurious errors
+    needs: build-context
+    if: needs.build-context.outputs.run-tests == 'true'
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: |
+            sudo ./.github/workflows/posix-deps-apt.sh
+            sudo apt-get install -yq --no-install-recommends abigail-tools
+      - name: Build CPython
+        env:
+          CFLAGS: -g3 -O0
+        run: |
+          # Build Python with the libpython dynamic library
+          ./configure --enable-shared
+          make -j4
+      - name: Check for changes in the ABI
+        id: check
+        run: |
+          if ! make check-abidump; then
+            echo "Generated ABI file is not up to date."
+            echo "Please add the release manager of this branch as a reviewer of this PR."
+            echo ""
+            echo "The up to date ABI file should be attached to this build as an artifact."
+            echo ""
+            echo "To learn more about this check: https://devguide.python.org/getting-started/setup-building/index.html#regenerate-the-abi-dump"
+            echo ""
+            exit 1
+          fi
+      - name: Generate updated ABI files
+        if: ${{ failure() && steps.check.conclusion == 'failure' }}
+        run: |
+          make regen-abidump
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        name: Publish updated ABI files
+        if: ${{ failure() && steps.check.conclusion == 'failure' }}
+        with:
+          name: abi-data
+          path: ./Doc/data/*.abi
+
   check-autoconf-regen:
     name: 'Check if Autoconf files are up to date'
     # Don't use ubuntu-latest but a specific version to make the job
