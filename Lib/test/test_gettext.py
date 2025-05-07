@@ -664,6 +664,22 @@ class GNUTranslationParsingTest(GettextBaseTest):
             t = gettext.GNUTranslations(fp)
             self.assertEqual(t.info()["plural-forms"], "nplurals=2; plural=(n != 1);")
 
+    def test_raise_descriptive_error_for_incorrect_plural_forms(self):
+        with open(MOFILE, 'wb') as fp:
+            # below is msgfmt run on such a PO file:
+            # msgid ""
+            # msgstr ""
+            # "Content-Type: text/plain; charset=UTF-8\n"
+            # "Plural-Forms: \n"
+            fp.write(
+                b'\xde\x12\x04\x95\x00\x00\x00\x00\x01\x00\x00\x00\x1c\x00\x00\x00$\x00\x00\x00\x03\x00\x00\x00,\x00'
+                b'\x00\x00\x00\x00\x00\x008\x00\x00\x007\x00\x00\x009\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00Content-Type: text/plain; charset=UTF-8\nPlural-Forms: \n\x00'
+            )
+        with self.assertRaisesRegex(ValueError, "invalid plural forms syntax"):
+            with open(MOFILE, 'rb') as fp:
+                gettext.GNUTranslations(fp)
+
 
 class UnicodeTranslationsTest(GettextBaseTest):
     def setUp(self):
