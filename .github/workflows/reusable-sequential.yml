@@ -1,0 +1,56 @@
+name: Reusable sequential
+
+on:
+  workflow_call:
+    inputs:
+      config_hash:
+        required: true
+        type: string
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  build-sequential:
+    name: test sequential (ubuntu-24.04)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      OPENSSL_VER: 3.0.15
+      PYTHONSTRICTEXTENSIONBUILD: 1
+      TERM: linux
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+    - name: Runner image version
+      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
+    - name: Restore config.cache
+      uses: actions/cache@v4
+      with:
+        path: config.cache
+        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ inputs.config_hash }}
+    - name: Install dependencies
+      run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Add ccache to PATH
+      run: |
+        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
+    - name: Configure ccache action
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        save: ${{ github.event_name == 'push' }}
+        max-size: "200M"
+    - name: Configure CPython
+      run: >-
+        ./configure
+          --config-cache
+          --with-pydebug
+          --enable-slower-safety
+          --enable-safety
+          --prefix=/opt/python-dev
+    - name: Build CPython
+      run: make all --jobs 4
+    - name: Display build info
+      run: make pythoninfo
+    - name: Tests
+      run: ./python -m test --single-process --timeout 4500 --verbose2 --verbose3
