@@ -206,7 +206,7 @@ def configure_wasi_python(context, working_dir):
                         "https://github.com/WebAssembly/wasi-sdk and/or "
                         "specify via $WASI_SDK_PATH or --wasi-sdk")
 
-    config_site = os.fsdecode(CHECKOUT / "Tools" / "wasm" / "config.site-wasm32-wasi")
+    config_site = os.fsdecode(CHECKOUT / "Tools" / "wasm" / "wasi" / "config.site-wasm32-wasi")
 
     wasi_build_dir = working_dir.relative_to(CHECKOUT)
 
