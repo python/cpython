@@ -2,6 +2,7 @@
 # Most tests are executed with environment variables ignored
 # See test_cmd_line_script.py for testing of script execution
 
+import io
 import os
 import subprocess
 import sys
@@ -971,6 +972,8 @@ class CmdLineTest(unittest.TestCase):
         self.assertIn(expected.encode(), out)
 
     @unittest.skipUnless(support.MS_WINDOWS, 'Test only applicable on Windows')
+    @unittest.skipUnless(type(sys.stdin.buffer.raw) == io._WindowsConsoleIO,
+                         'Requires real console handles')
     def test_python_legacy_windows_stdio(self):
         code = "import sys; print(sys.stdin.encoding, sys.stdout.encoding, file=sys.stderr)"
         env = os.environ.copy()
