@@ -1744,8 +1744,29 @@ class CommandLineTestCase(unittest.TestCase):
         return res.read()
 
     def parse_cli_output(self, output: str) -> tuple[str, str, int]:
-        matches = re.search(r'\((https?)://([^/:]+):(\d+)/?\)', output)
-        return matches.group(1), matches.group(2), int(matches.group(3))
+        try:
+            matches = re.search(r'\((https?)://([^/:]+):(\d+)/?\)', output)
+            return matches.group(1), matches.group(2), int(matches.group(3))
+        except:
+            return None, None, None
+
+    def wait_for_server(self, proc, protocol, port, bind, timeout=50) -> bool:
+        while timeout > 0:
+            line = proc.stdout.readline()
+            if not line:
+                time.sleep(0.1)
+                timeout -= 1
+                continue
+            _protocol, _host, _port = self.parse_cli_output(line)
+            if not _protocol or not _host or not _port:
+                time.sleep(0.1)
+                timeout -= 1
+                continue
+            if _protocol == protocol and _host == bind and _port == port:
+                return True
+            else:
+                break
+        return False
 
     def test_http_client(self):
         port = find_unused_port()
@@ -1756,27 +1777,7 @@ class CommandLineTestCase(unittest.TestCase):
                                  stderr=subprocess.STDOUT,
                                  bufsize=1,
                                  text=True)
-        max_tries = 50
-        while True:
-            # Wait for the server to start.
-            if max_tries <= 0:
-                self.fail('Server did not start')
-            line = proc.stdout.readline()
-            if not line:
-                if proc.poll() is not None:
-                    break
-                time.sleep(0.1)
-                max_tries -= 1
-                continue
-            _protocol, _host, _port = self.parse_cli_output(line)
-            if not _protocol or not _host or not _port:
-                time.sleep(0.1)
-                max_tries -= 1
-                continue
-            self.assertEqual(_protocol, 'http')
-            self.assertEqual(_host, bind)
-            self.assertEqual(_port, port)
-            break
+        self.assertTrue(self.wait_for_server(proc, 'http', port, bind))
         res = self.fetch_file(f'http://{bind}:{port}/{self.random_file_name}')
         self.assertEqual(res, self.random_data)
         proc.stdout.close()
@@ -1795,26 +1796,7 @@ class CommandLineTestCase(unittest.TestCase):
                                  stderr=subprocess.STDOUT,
                                  bufsize=1,
                                  text=True)
-        max_tries = 50
-        while True:
-            if max_tries <= 0:
-                self.fail('Server did not start')
-            line = proc.stdout.readline()
-            if not line:
-                if proc.poll() is not None:
-                    break
-                time.sleep(0.1)
-                max_tries -= 1
-                continue
-            _protocol, _host, _port = self.parse_cli_output(line)
-            if not _protocol or not _host or not _port:
-                time.sleep(0.1)
-                max_tries -= 1
-                continue
-            self.assertEqual(_protocol, 'https')
-            self.assertEqual(_host, bind)
-            self.assertEqual(_port, port)
-            break
+        self.assertTrue(self.wait_for_server(proc, 'https', port, bind))
         res = self.fetch_file(f'https://{bind}:{port}/{self.random_file_name}')
         self.assertEqual(res, self.random_data)
         proc.stdout.close()
