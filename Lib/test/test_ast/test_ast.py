@@ -822,10 +822,15 @@ class AST_Tests(unittest.TestCase):
                 compile(expr, "<test>", "eval")
 
     def test_constant_as_unicode_name(self):
-        for constant in b"Tru\xe1\xb5\x89", b"Fal\xc5\xbfe", b"N\xc2\xbane":
+        constants = [
+            ("True", b"Tru\xe1\xb5\x89"),
+            ("False", b"Fal\xc5\xbfe"),
+            ("None", b"N\xc2\xbane"),
+        ]
+        for constant in constants:
             with self.assertRaisesRegex(ValueError,
-                "identifier must not be None, True or False after Unicode normalization \\(NKFC\\)"):
-                ast.parse(constant, mode="eval")
+                f"identifier field can't represent '{constant[0]}' constant"):
+                ast.parse(constant[1], mode="eval")
 
     def test_precedence_enum(self):
         class _Precedence(enum.IntEnum):
