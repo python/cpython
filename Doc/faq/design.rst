@@ -264,7 +264,8 @@ when an expression has a particular value or set of values.
 
 Since Python 3.10 one can easily match literal values, or constants
 within a namespace, with a ``match ... case`` statement.
-See :pep:`634` (specification) and :pep:`636` (tutorial) for details about the ``match`` statement.
+See :pep:`634` (specification) and :pep:`636` (tutorial) for details about
+the :keyword:`match` statement.
 
 An older alternative is a sequence of ``if... elif... elif... else``.
 
