@@ -561,7 +561,7 @@ since it is impossible to detect the termination of alien threads.
       of :term:`Python finalization <interpreter shutdown>` :meth:`!join`
       raises a :exc:`PythonFinalizationError`.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.14
 
          May raise :exc:`PythonFinalizationError`.
 
