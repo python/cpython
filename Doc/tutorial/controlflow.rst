@@ -451,9 +451,13 @@ Several other key features of this statement:
               print("Grass is green")
           case Color.BLUE:
               print("I'm feeling the blues :(")
-
-For a more detailed explanation and additional examples, you can look into
-:pep:`636` which is written in a tutorial format.
+Resources
+---------
+For more detailed explanation and additional examples, you can look into the
+following resources, which are written in tutorial format:
+- :pep:`636`
+- `W3Schools <https://www.w3schools.com/python/python_match.asp>`_
+- `Real Python <https://realpython.com/structural-pattern-matching/>`_
 
 .. _tut-functions:
 
