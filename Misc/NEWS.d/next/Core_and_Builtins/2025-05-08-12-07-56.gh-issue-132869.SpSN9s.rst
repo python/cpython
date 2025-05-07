@@ -1,0 +1,2 @@
+Fixed a crash from concurrent reads and writes to a dictionary under
+free-threading.

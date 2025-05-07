@@ -168,8 +168,8 @@ ASSERT_DICT_LOCKED(PyObject *op)
 
 #define IS_DICT_SHARED(mp) _PyObject_GC_IS_SHARED(mp)
 #define SET_DICT_SHARED(mp) _PyObject_GC_SET_SHARED(mp)
-#define LOAD_INDEX(keys, size, idx) _Py_atomic_load_int##size##_relaxed(&((const int##size##_t*)keys->dk_indices)[idx]);
-#define STORE_INDEX(keys, size, idx, value) _Py_atomic_store_int##size##_relaxed(&((int##size##_t*)keys->dk_indices)[idx], (int##size##_t)value);
+#define LOAD_INDEX(keys, size, idx) _Py_atomic_load_int##size(&((const int##size##_t*)keys->dk_indices)[idx]);
+#define STORE_INDEX(keys, size, idx, value) _Py_atomic_store_int##size(&((int##size##_t*)keys->dk_indices)[idx], (int##size##_t)value);
 #define ASSERT_OWNED_OR_SHARED(mp) \
     assert(_Py_IsOwnedByCurrentThread((PyObject *)mp) || IS_DICT_SHARED(mp));
 
@@ -1734,8 +1734,6 @@ insert_combined_dict(PyInterpreterState *interp, PyDictObject *mp,
     FT_ATOMIC_STORE_UINT32_RELAXED(mp->ma_keys->dk_version, 0);
 
     Py_ssize_t hashpos = find_empty_slot(mp->ma_keys, hash);
-    dictkeys_set_index(mp->ma_keys, hashpos, mp->ma_keys->dk_nentries);
-
     if (DK_IS_UNICODE(mp->ma_keys)) {
         PyDictUnicodeEntry *ep;
         ep = &DK_UNICODE_ENTRIES(mp->ma_keys)[mp->ma_keys->dk_nentries];
@@ -1749,6 +1747,7 @@ insert_combined_dict(PyInterpreterState *interp, PyDictObject *mp,
         STORE_VALUE(ep, value);
         STORE_HASH(ep, hash);
     }
+    dictkeys_set_index(mp->ma_keys, hashpos, mp->ma_keys->dk_nentries);
     STORE_KEYS_USABLE(mp->ma_keys, mp->ma_keys->dk_usable - 1);
     STORE_KEYS_NENTRIES(mp->ma_keys, mp->ma_keys->dk_nentries + 1);
     assert(mp->ma_keys->dk_usable >= 0);
@@ -1776,9 +1775,9 @@ insert_split_key(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
         FT_ATOMIC_STORE_UINT32_RELAXED(keys->dk_version, 0);
         Py_ssize_t hashpos = find_empty_slot(keys, hash);
         ix = keys->dk_nentries;
-        dictkeys_set_index(keys, hashpos, ix);
         PyDictUnicodeEntry *ep = &DK_UNICODE_ENTRIES(keys)[ix];
         STORE_SHARED_KEY(ep->me_key, Py_NewRef(key));
+        dictkeys_set_index(keys, hashpos, ix);
         split_keys_entry_added(keys);
     }
     assert (ix < SHARED_KEYS_MAX_SIZE);
@@ -1906,7 +1905,6 @@ insert_to_emptydict(PyInterpreterState *interp, PyDictObject *mp,
     assert(mp->ma_values == NULL);
 
     size_t hashpos = (size_t)hash & (PyDict_MINSIZE-1);
-    dictkeys_set_index(newkeys, hashpos, 0);
     if (unicode) {
         PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(newkeys);
         ep->me_key = key;
@@ -1918,6 +1916,7 @@ insert_to_emptydict(PyInterpreterState *interp, PyDictObject *mp,
         ep->me_hash = hash;
         STORE_VALUE(ep, value);
     }
+    dictkeys_set_index(newkeys, hashpos, 0);
     STORE_USED(mp, mp->ma_used + 1);
     newkeys->dk_usable--;
     newkeys->dk_nentries++;
@@ -2736,7 +2735,6 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
     }
     else {
         FT_ATOMIC_STORE_UINT32_RELAXED(mp->ma_keys->dk_version, 0);
-        dictkeys_set_index(mp->ma_keys, hashpos, DKIX_DUMMY);
         if (DK_IS_UNICODE(mp->ma_keys)) {
             PyDictUnicodeEntry *ep = &DK_UNICODE_ENTRIES(mp->ma_keys)[ix];
             old_key = ep->me_key;
@@ -2750,6 +2748,7 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
             STORE_VALUE(ep, NULL);
             STORE_HASH(ep, 0);
         }
+        dictkeys_set_index(mp->ma_keys, hashpos, DKIX_DUMMY);
         Py_DECREF(old_key);
     }
     Py_DECREF(old_value);
