@@ -305,7 +305,7 @@ class ForwardRef:
         return f"ForwardRef({self.__forward_arg__!r}{''.join(extra)})"
 
 
-_Template = type(t"{1}")
+_Template = type(t"")
 
 
 class _Stringifier:
@@ -575,7 +575,11 @@ def _template_to_ast(template):
                 interp = ast.Interpolation(
                     value=ast.parse(part.expression),
                     conversion=ord(part.conversion) if part.conversion is not None else -1,
-                    format_spec=ast.Constant(value=part.format_spec) if part.format_spec != "" else None,
+                    format_spec=(
+                        ast.Constant(value=part.format_spec)
+                        if part.format_spec != ""
+                        else None
+                    ),
                 )
                 values.append(interp)
     return ast.TemplateStr(values=values)
