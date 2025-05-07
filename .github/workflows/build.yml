@@ -53,6 +53,8 @@ jobs:
         with:
           persist-credentials: false
       - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
       - name: Install dependencies
         run: |
             sudo ./.github/workflows/posix-deps-apt.sh
