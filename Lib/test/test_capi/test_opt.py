@@ -458,7 +458,6 @@ class TestUopsOptimization(unittest.TestCase):
         ex = get_first_executor(testfunc)
         return res, ex
 
-
     def test_int_type_propagation(self):
         def testfunc(loops):
             num = 0
@@ -1655,13 +1654,11 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CONTAINS_OP_DICT", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
 
-
     def test_remove_guard_for_known_type_str(self):
         def f(n):
             for i in range(n):
                 false = i == TIER2_THRESHOLD
                 empty = "X"[:false]
-                empty += ""  # Make JIT realize this is a string.
                 if empty:
                     return 1
             return 0
