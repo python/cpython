@@ -338,13 +338,14 @@ Even more formally, names are described by the following lexical definitions:
                   in (`id_continue`*)">
    identifier:   <`NAME`, except keywords>
 
-A non-normative text file listing all valid identifier characters for Unicode
-16.0.0 can be found at
-https://www.unicode.org/Public/16.0.0/ucd/DerivedCoreProperties.txt
+A non-normative listing of all valid identifier characters as defined by
+Unicode is available in the `DerivedCoreProperties.txt`_ file in the Unicode
+Character Database.
 
 
 .. _UAX-31: https://www.unicode.org/reports/tr31/
 .. _PropList.txt: https://www.unicode.org/Public/16.0.0/ucd/PropList.txt
+.. _DerivedCoreProperties.txt: https://www.unicode.org/Public/16.0.0/ucd/DerivedCoreProperties.txt
 .. _normalization form: https://www.unicode.org/reports/tr15/#Norm_Forms
 
 
