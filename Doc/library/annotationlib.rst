@@ -579,7 +579,7 @@ evaluated using the :attr:`~Format.FORWARDREF` format.
 
 Below are a few examples of the behavior with unsupported expressions:
 
-.. pycon::
+.. code-block:: pycon
 
    >>> from annotationlib import get_annotations, Format
    >>> def zerodiv(x: 1 / 0): ...
