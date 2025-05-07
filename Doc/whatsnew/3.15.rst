@@ -154,3 +154,14 @@ Deprecated C APIs
 Removed C APIs
 --------------
 
+* :c:func:`!PyUnicode_AsDecodedObject`:
+  Use :c:func:`PyCodec_Decode` instead.
+* :c:func:`!PyUnicode_AsDecodedUnicode`:
+  Use :c:func:`PyCodec_Decode` instead; Note that some codecs (for example, "base64")
+  may return a type other than :class:`str`, such as :class:`bytes`.
+* :c:func:`!PyUnicode_AsEncodedObject`:
+  Use :c:func:`PyCodec_Encode` instead.
+* :c:func:`!PyUnicode_AsEncodedUnicode`:
+  Use :c:func:`PyCodec_Encode` instead; Note that some codecs (for example, "base64")
+  may return a type other than :class:`bytes`, such as :class:`str`.
+
