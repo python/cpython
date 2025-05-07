@@ -262,6 +262,10 @@ zlib-ng
 
     Sources for zlib-ng are imported unmodified into our source
     repository at https://github.com/python/cpython-source-deps.
+_zstd
+    Python wrapper for version 1.5.7 of the Zstandard compression library
+    Homepage:
+        https://facebook.github.io/zstd/
 
 
 Getting External Sources

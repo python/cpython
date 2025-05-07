@@ -434,8 +434,6 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
  * On a specialization failure, the backoff counter is restarted.
  */
 
-#include "pycore_backoff.h"
-
 // A value of 1 means that we attempt to specialize the *second* time each
 // instruction is executed. Executing twice is a much better indicator of
 // "hotness" than executing once, but additional warmup delays only prevent
