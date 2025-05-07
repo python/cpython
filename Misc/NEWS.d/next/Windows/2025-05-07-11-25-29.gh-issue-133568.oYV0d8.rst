@@ -1,1 +1,1 @@
-only set ``HAVE_AF_HYPERV`` for WinAPI partitions that support the rpc runtime library
+Fix compile error when using a WinAPI partition that doesn't support the RPC runtime library.
