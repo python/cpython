@@ -1486,7 +1486,7 @@ PyConfig
 
       Default: ``0``.
 
-     .. versionchanged:: next
+     .. versionchanged:: 3.14
 
         Added support for ``import_time = 2``
 

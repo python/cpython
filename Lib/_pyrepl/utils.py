@@ -23,9 +23,9 @@ IDENTIFIERS_AFTER = {"def", "class"}
 BUILTINS = {str(name) for name in dir(builtins) if not name.startswith('_')}
 
 
-def THEME():
+def THEME(**kwargs):
     # Not cached: the user can modify the theme inside the interactive session.
-    return _colorize.get_theme().syntax
+    return _colorize.get_theme(**kwargs).syntax
 
 
 class Span(NamedTuple):
@@ -254,7 +254,10 @@ def is_soft_keyword_used(*tokens: TI | None) -> bool:
 
 
 def disp_str(
-    buffer: str, colors: list[ColorSpan] | None = None, start_index: int = 0
+    buffer: str,
+    colors: list[ColorSpan] | None = None,
+    start_index: int = 0,
+    force_color: bool = False,
 ) -> tuple[CharBuffer, CharWidths]:
     r"""Decompose the input buffer into a printable variant with applied colors.
 
@@ -295,7 +298,7 @@ def disp_str(
         # move past irrelevant spans
         colors.pop(0)
 
-    theme = THEME()
+    theme = THEME(force_color=force_color)
     pre_color = ""
     post_color = ""
     if colors and colors[0].span.start < start_index:
