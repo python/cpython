@@ -1,0 +1,2402 @@
+.. date: 2023-05-02-17-56-32
+.. gh-issue: 99889
+.. nonce: l664SU
+.. release date: 2023-05-22
+.. section: Security
+
+Fixed a security in flaw in :func:`!uu.decode` that could allow for directory
+traversal based on the input if no ``out_file`` was specified.
+
+..
+
+.. date: 2023-05-01-15-03-25
+.. gh-issue: 104049
+.. nonce: b01Y3g
+.. section: Security
+
+Do not expose the local on-disk location in directory indexes produced by
+:class:`http.client.SimpleHTTPRequestHandler`.
+
+..
+
+.. date: 2023-04-17-14-38-12
+.. gh-issue: 99108
+.. nonce: 720lG8
+.. section: Security
+
+Upgrade built-in :mod:`hashlib` SHA3 implementation to a verified
+implementation from the ``HACL*`` project.  Used when OpenSSL is not present
+or lacks SHA3.
+
+..
+
+.. date: 2023-03-07-20-59-17
+.. gh-issue: 102153
+.. nonce: 14CLSZ
+.. section: Security
+
+:func:`urllib.parse.urlsplit` now strips leading C0 control and space
+characters following the specification for URLs defined by WHATWG in
+response to :cve:`2023-24329`. Patch by Illia Volochii.
+
+..
+
+.. date: 2023-05-20-23-08-48
+.. gh-issue: 102856
+.. nonce: Knv9WT
+.. section: Core and Builtins
+
+Implement PEP 701 changes in the :mod:`tokenize` module. Patch by Marta
+Gómez Macías and Pablo Galindo Salgado
+
+..
+
+.. date: 2023-05-18-13-00-21
+.. gh-issue: 104615
+.. nonce: h_rtw2
+.. section: Core and Builtins
+
+Fix wrong ordering of assignments in code like ``a, a = x, y``. Contributed
+by Carl Meyer.
+
+..
+
+.. date: 2023-05-16-19-17-48
+.. gh-issue: 104572
+.. nonce: eBZQYS
+.. section: Core and Builtins
+
+Improve syntax error message for invalid constructs in :pep:`695` contexts
+and in annotations when ``from __future__ import annotations`` is active.
+
+..
+
+.. date: 2023-05-14-18-56-54
+.. gh-issue: 104482
+.. nonce: yaQsv8
+.. section: Core and Builtins
+
+Fix three error handling bugs in ast.c's validation of pattern matching
+statements.
+
+..
+
+.. date: 2023-05-12-13-30-04
+.. gh-issue: 102818
+.. nonce: rnv1mH
+.. section: Core and Builtins
+
+Do not add a frame to the traceback in the ``sys.setprofile`` and
+``sys.settrace`` trampoline functions. This ensures that frames are not
+duplicated if an exception is raised in the callback function, and ensures
+that frames are not omitted if a C callback is used and that does not add
+the frame.
+
+..
+
+.. date: 2023-05-11-15-56-07
+.. gh-issue: 104405
+.. nonce: tXV5fn
+.. section: Core and Builtins
+
+Fix an issue where some :term:`bytecode` instructions could ignore
+:pep:`523` when "inlining" calls.
+
+..
+
+.. date: 2023-05-10-20-52-29
+.. gh-issue: 103082
+.. nonce: y3LG5Q
+.. section: Core and Builtins
+
+Change behavior of ``sys.monitoring.events.LINE`` events in
+``sys.monitoring``: Line events now occur when a new line is reached
+dynamically, instead of using a static approximation, as before. This makes
+the behavior very similar to that of "line" events in ``sys.settrace``. This
+should ease porting of tools from 3.11 to 3.12.
+
+..
+
+.. date: 2023-05-08-10-34-55
+.. gh-issue: 104263
+.. nonce: ctHWI8
+.. section: Core and Builtins
+
+Fix ``float("nan")`` to produce a quiet NaN on platforms (like MIPS) where
+the meaning of the signalling / quiet bit is inverted from its usual
+meaning. Also introduce a new macro ``Py_INFINITY`` matching C99's
+``INFINITY``, and refactor internals to rely on C99's ``NAN`` and
+``INFINITY`` macros instead of hard-coding bit patterns for infinities and
+NaNs. Thanks Sebastian Berg.
+
+..
+
+.. date: 2023-05-05-13-18-56
+.. gh-issue: 99113
+.. nonce: hT1ajK
+.. section: Core and Builtins
+
+Multi-phase init extension modules may now indicate that they support
+running in subinterpreters that have their own GIL.  This is done by using
+``Py_MOD_PER_INTERPRETER_GIL_SUPPORTED`` as the value for the
+``Py_mod_multiple_interpreters`` module def slot.  Otherwise the module, by
+default, cannot be imported in such subinterpreters.  (This does not affect
+the main interpreter or subinterpreters that do not have their own GIL.)  In
+addition to the isolation that multi-phase init already normally requires,
+support for per-interpreter GIL involves one additional constraint:
+thread-safety.  If the module has external (linked) dependencies and those
+libraries have any state that isn't thread-safe then the module must do the
+additional work to add thread-safety.  This should be an uncommon case.
+
+..
+
+.. date: 2023-05-05-12-14-47
+.. gh-issue: 99113
+.. nonce: -RAdnv
+.. section: Core and Builtins
+
+The GIL is now (optionally) per-interpreter.  This is the fundamental change
+for PEP 684.  This is all made possible by virtue of the isolated state of
+each interpreter in the process.  The behavior of the main interpreter
+remains unchanged.  Likewise, interpreters created using
+``Py_NewInterpreter()`` are not affected.  To get an interpreter with its
+own GIL, call ``Py_NewInterpreterFromConfig()``.
+
+..
+
+.. date: 2023-05-03-17-46-47
+.. gh-issue: 104108
+.. nonce: GOxAYt
+.. section: Core and Builtins
+
+Multi-phase init extension modules may now indicate whether or not they
+actually support multiple interpreters.  By default such modules are
+expected to support use in multiple interpreters.  In the uncommon case that
+one does not, it may use the new ``Py_mod_multiple_interpreters`` module def
+slot.  A value of ``0`` means the module does not support them. ``1`` means
+it does.  The default is ``1``.
+
+..
+
+.. date: 2023-05-02-18-29-49
+.. gh-issue: 104142
+.. nonce: _5Et6I
+.. section: Core and Builtins
+
+Fix an issue where :class:`list` or :class:`tuple` repetition could fail to
+respect :pep:`683`.
+
+..
+
+.. date: 2023-05-01-21-05-47
+.. gh-issue: 104078
+.. nonce: vRaBsU
+.. section: Core and Builtins
+
+Improve the performance of :c:func:`PyObject_HasAttrString`
+
+..
+
+.. date: 2023-05-01-14-48-29
+.. gh-issue: 104066
+.. nonce: pzoUZQ
+.. section: Core and Builtins
+
+Improve the performance of :func:`hasattr` for module objects with a missing
+attribute.
+
+..
+
+.. date: 2023-05-01-14-10-38
+.. gh-issue: 104028
+.. nonce: dxfh13
+.. section: Core and Builtins
+
+Reduce object creation while calling callback function from gc. Patch by
+Donghee Na.
+
+..
+
+.. date: 2023-05-01-12-03-52
+.. gh-issue: 104018
+.. nonce: PFxGS4
+.. section: Core and Builtins
+
+Disallow the "z" format specifier in %-format of bytes objects.
+
+..
+
+.. date: 2023-05-01-08-08-05
+.. gh-issue: 102213
+.. nonce: nfH-4C
+.. section: Core and Builtins
+
+Fix performance loss when accessing an object's attributes with
+``__getattr__``  defined.
+
+..
+
+.. date: 2023-04-26-17-56-18
+.. gh-issue: 103895
+.. nonce: ESB6tn
+.. section: Core and Builtins
+
+Improve handling of edge cases in showing ``Exception.__notes__``. Ensures
+that the messages always end with a newline and that string/bytes are not
+exploded over multiple lines. Patch by Carey Metcalfe.
+
+..
+
+.. date: 2023-04-26-16-26-35
+.. gh-issue: 103907
+.. nonce: kiONZQ
+.. section: Core and Builtins
+
+Don't modify the refcounts of known immortal objects (:const:`True`,
+:const:`False`, and :const:`None`) in the main interpreter loop.
+
+..
+
+.. date: 2023-04-26-15-14-23
+.. gh-issue: 103899
+.. nonce: 1pqKPF
+.. section: Core and Builtins
+
+Provide a helpful hint in the :exc:`TypeError` message when accidentally
+calling a :term:`module` object that has a callable attribute of the same
+name (such as :func:`dis.dis` or :class:`datetime.datetime`).
+
+..
+
+.. date: 2023-04-25-20-56-01
+.. gh-issue: 103845
+.. nonce: V7NYFn
+.. section: Core and Builtins
+
+Remove both line and instruction instrumentation before adding new ones for
+monitoring, to avoid newly added instrumentation being removed immediately.
+
+..
+
+.. date: 2023-04-25-08-43-11
+.. gh-issue: 103763
+.. nonce: ZLBZk1
+.. section: Core and Builtins
+
+Implement :pep:`695`, adding syntactic support for generic classes, generic
+functions, and type aliases.
+
+A new ``type X = ...`` syntax is added for type aliases, which resolves at
+runtime to an instance of the new class ``typing.TypeAliasType``. The value
+is lazily evaluated and is accessible through the ``.__value__`` attribute.
+This is implemented as a new AST node ``ast.TypeAlias``.
+
+New syntax (``class X[T]: ...``, ``def func[T](): ...``) is added for
+defining generic functions and classes. This is implemented as a new
+``type_params`` attribute on the AST nodes for classes and functions. This
+node holds instances of the new AST classes ``ast.TypeVar``,
+``ast.ParamSpec``, and ``ast.TypeVarTuple``.
+
+``typing.TypeVar``, ``typing.ParamSpec``, ``typing.ParamSpecArgs``,
+``typing.ParamSpecKwargs``, ``typing.TypeVarTuple``, and ``typing.Generic``
+are now implemented in C rather than Python.
+
+There are new bytecode instructions ``LOAD_LOCALS``,
+``LOAD_CLASSDICT_OR_GLOBAL``, and ``LOAD_CLASSDICT_OR_DEREF`` to support
+correct resolution of names in class namespaces.
+
+Patch by Eric Traut, Larry Hastings, and Jelle Zijlstra.
+
+..
+
+.. date: 2023-04-24-21-47-38
+.. gh-issue: 103801
+.. nonce: WaBanq
+.. section: Core and Builtins
+
+Adds three minor linting fixes to the wasm module caught that were caught by
+ruff.
+
+..
+
+.. date: 2023-04-24-14-38-16
+.. gh-issue: 103793
+.. nonce: kqoH6Q
+.. section: Core and Builtins
+
+Optimized asyncio Task creation by deferring expensive string formatting
+(task name generation) from Task creation to the first time ``get_name`` is
+called. This makes asyncio benchmarks up to 5% faster.
+
+..
+
+.. date: 2023-04-21-17-03-14
+.. gh-issue: 102310
+.. nonce: anLjDx
+.. section: Core and Builtins
+
+Change the error range for invalid bytes literals.
+
+..
+
+.. date: 2023-04-21-16-12-41
+.. gh-issue: 103590
+.. nonce: 7DHDOE
+.. section: Core and Builtins
+
+Do not wrap a single exception raised from a ``try-except*`` construct in an
+:exc:`ExceptionGroup`.
+
+..
+
+.. date: 2023-04-20-16-17-51
+.. gh-issue: 103650
+.. nonce: K1MFXR
+.. section: Core and Builtins
+
+Change the perf map format to remove the '0x' prefix from the addresses
+
+..
+
+.. date: 2023-04-17-16-00-32
+.. gh-issue: 102856
+.. nonce: UunJ7y
+.. section: Core and Builtins
+
+Implement the required C tokenizer changes for PEP 701. Patch by Pablo
+Galindo Salgado, Lysandros Nikolaou, Batuhan Taskaya, Marta Gómez Macías and
+sunmy2019.
+
+..
+
+.. date: 2023-04-16-14-38-39
+.. gh-issue: 100530
+.. nonce: OR6-sn
+.. section: Core and Builtins
+
+Clarify the error message raised when the called part of a class pattern
+isn't actually a class.
+
+..
+
+.. date: 2023-04-14-22-35-23
+.. gh-issue: 101517
+.. nonce: 5EqM-S
+.. section: Core and Builtins
+
+Fix bug in line numbers of instructions emitted for :keyword:`except*
+<except_star>`.
+
+..
+
+.. date: 2023-04-13-00-58-55
+.. gh-issue: 103492
+.. nonce: P4k0Ay
+.. section: Core and Builtins
+
+Clarify :exc:`SyntaxWarning` with literal ``is`` comparison by specifying
+which literal is problematic, since comparisons using ``is`` with e.g. ``None``
+and bool literals are idiomatic.
+
+..
+
+.. date: 2023-04-12-20-22-03
+.. gh-issue: 87729
+.. nonce: 99A7UO
+.. section: Core and Builtins
+
+Add :opcode:`LOAD_SUPER_ATTR` (and a specialization for
+``super().method()``) to speed up ``super().method()`` and ``super().attr``.
+This makes ``super().method()`` roughly 2.3x faster and brings it within 20%
+of the performance of a simple method call. Patch by Vladimir Matveev and
+Carl Meyer.
+
+..
+
+.. date: 2023-04-12-20-18-51
+.. gh-issue: 103488
+.. nonce: vYvlHD
+.. section: Core and Builtins
+
+Change the internal offset distinguishing yield and return target addresses,
+so that the instruction pointer is correct for exception handling and other
+stack unwinding.
+
+..
+
+.. date: 2023-04-12-19-55-24
+.. gh-issue: 82012
+.. nonce: FlcJAh
+.. section: Core and Builtins
+
+The bitwise inversion operator (``~``) on bool is deprecated. It returns the
+bitwise inversion of the underlying ``int`` representation such that
+``bool(~True) == True``, which can be confusing. Use ``not`` for logical
+negation of bools. In the rare case that you really need the bitwise
+inversion of the underlying ``int``, convert to int explicitly ``~int(x)``.
+
+..
+
+.. date: 2023-04-09-22-21-57
+.. gh-issue: 77757
+.. nonce: _Ow-u2
+.. section: Core and Builtins
+
+Exceptions raised in a typeobject's ``__set_name__`` method are no longer
+wrapped by a :exc:`RuntimeError`. Context information is added to the
+exception as a :pep:`678` note.
+
+..
+
+.. date: 2023-04-09-04-30-02
+.. gh-issue: 103333
+.. nonce: gKOetS
+.. section: Core and Builtins
+
+:exc:`AttributeError` now retains the ``name`` attribute when pickled and
+unpickled.
+
+..
+
+.. date: 2023-04-08-17-13-07
+.. gh-issue: 103242
+.. nonce: ysI1b3
+.. section: Core and Builtins
+
+Migrate :meth:`~ssl.SSLContext.set_ecdh_curve` method not to use deprecated
+OpenSSL APIs. Patch by Donghee Na.
+
+..
+
+.. date: 2023-04-07-12-18-41
+.. gh-issue: 103323
+.. nonce: 9802br
+.. section: Core and Builtins
+
+We've replaced our use of ``_PyRuntime.tstate_current`` with a thread-local
+variable.  This is a fairly low-level implementation detail, and there
+should be no change in behavior.
+
+..
+
+.. date: 2023-04-02-22-14-57
+.. gh-issue: 84436
+.. nonce: hvMgwF
+.. section: Core and Builtins
+
+The implementation of PEP-683 which adds Immortal Objects by using a fixed
+reference count that skips reference counting to make objects truly
+immutable.
+
+..
+
+.. date: 2023-04-01-00-46-31
+.. gh-issue: 102700
+.. nonce: 493NB4
+.. section: Core and Builtins
+
+Allow built-in modules to be submodules. This allows submodules to be
+statically linked into a CPython binary.
+
+..
+
+.. date: 2023-03-31-17-24-03
+.. gh-issue: 103082
+.. nonce: isRUcV
+.. section: Core and Builtins
+
+Implement :pep:`669` Low Impact Monitoring for CPython.
+
+..
+
+.. date: 2023-03-25-23-24-38
+.. gh-issue: 88691
+.. nonce: 2SWBd1
+.. section: Core and Builtins
+
+Reduce the number of inline :opcode:`CACHE` entries for :opcode:`CALL`.
+
+..
+
+.. date: 2023-03-07-17-37-00
+.. gh-issue: 102500
+.. nonce: RUSQhz
+.. section: Core and Builtins
+
+Make the buffer protocol accessible in Python code using the new
+``__buffer__`` and ``__release_buffer__`` magic methods. See :pep:`688` for
+details. Patch by Jelle Zijlstra.
+
+..
+
+.. date: 2023-01-30-15-40-29
+.. gh-issue: 97933
+.. nonce: nUlp3r
+.. section: Core and Builtins
+
+:pep:`709`: inline list, dict and set comprehensions to improve performance
+and reduce bytecode size.
+
+..
+
+.. date: 2022-11-08-12-36-25
+.. gh-issue: 99184
+.. nonce: KIaqzz
+.. section: Core and Builtins
+
+Bypass instance attribute access of ``__name__`` in ``repr`` of
+:class:`weakref.ref`.
+
+..
+
+.. date: 2022-10-06-23-32-11
+.. gh-issue: 98003
+.. nonce: xWE0Yu
+.. section: Core and Builtins
+
+Complex function calls are now faster and consume no C stack space.
+
+..
+
+.. bpo: 39610
+.. date: 2020-02-11-15-54-40
+.. nonce: fvgsCl
+.. section: Core and Builtins
+
+``len()`` for 0-dimensional :class:`memoryview` objects (such as
+``memoryview(ctypes.c_uint8(42))``) now raises a :exc:`TypeError`.
+Previously this returned ``1``, which was not consistent with ``mem_0d[0]``
+raising an :exc:`IndexError`.
+
+..
+
+.. bpo: 31821
+.. date: 2019-12-01-12-58-31
+.. nonce: 1FNmwk
+.. section: Core and Builtins
+
+Fix :func:`!pause_reading` to work when called from :func:`!connection_made`
+in :mod:`asyncio`.
+
+..
+
+.. date: 2023-05-17-21-01-48
+.. gh-issue: 104600
+.. nonce: E6CK35
+.. section: Library
+
+:func:`functools.update_wrapper` now sets the ``__type_params__`` attribute
+(added by :pep:`695`).
+
+..
+
+.. date: 2023-05-17-20-03-01
+.. gh-issue: 104340
+.. nonce: kp_XmX
+.. section: Library
+
+When an ``asyncio`` pipe protocol loses its connection due to an error, and
+the caller doesn't await ``wait_closed()`` on the corresponding
+``StreamWriter``, don't log a warning about an exception that was never
+retrieved. After all, according to the ``StreamWriter.close()`` docs, the
+``wait_closed()`` call is optional ("not mandatory").
+
+..
+
+.. date: 2023-05-17-16-58-23
+.. gh-issue: 104555
+.. nonce: 5rb5oM
+.. section: Library
+
+Fix issue where an :func:`issubclass` check comparing a class ``X`` against
+a :func:`runtime-checkable protocol <typing.runtime_checkable>` ``Y`` with
+non-callable members would not cause :exc:`TypeError` to be raised if an
+:func:`isinstance` call had previously been made comparing an instance of
+``X`` to ``Y``. This issue was present in edge cases on Python 3.11, but
+became more prominent in 3.12 due to some unrelated changes that were made
+to runtime-checkable protocols. Patch by Alex Waygood.
+
+..
+
+.. date: 2023-05-17-08-01-36
+.. gh-issue: 104372
+.. nonce: jpoWs6
+.. section: Library
+
+Refactored the ``_posixsubprocess`` internals to avoid Python C API usage
+between fork and exec when marking ``pass_fds=`` file descriptors
+inheritable.
+
+..
+
+.. date: 2023-05-17-03-14-07
+.. gh-issue: 104484
+.. nonce: y6KxL6
+.. section: Library
+
+Added *case_sensitive* argument to :meth:`pathlib.PurePath.match`
+
+..
+
+.. date: 2023-05-16-11-02-44
+.. gh-issue: 75367
+.. nonce: qLWR35
+.. section: Library
+
+Fix data descriptor detection in  :func:`inspect.getattr_static`.
+
+..
+
+.. date: 2023-05-16-10-07-16
+.. gh-issue: 104536
+.. nonce: hFWD8f
+.. section: Library
+
+Fix a race condition in the internal :mod:`multiprocessing.process` cleanup
+logic that could manifest as an unintended ``AttributeError`` when calling
+``process.close()``.
+
+..
+
+.. date: 2023-05-12-19-29-28
+.. gh-issue: 103857
+.. nonce: 0IzSxr
+.. section: Library
+
+Update datetime deprecations' stracktrace to point to the calling line
+
+..
+
+.. date: 2023-05-11-21-32-18
+.. gh-issue: 101520
+.. nonce: l9MjRE
+.. section: Library
+
+Move the core functionality of the ``tracemalloc`` module in the ``Python/``
+folder, leaving just the module wrapper in ``Modules/``.
+
+..
+
+.. date: 2023-05-11-07-50-00
+.. gh-issue: 104392
+.. nonce: YSllzt
+.. section: Library
+
+Remove undocumented and unused ``_paramspec_tvars`` attribute from some
+classes in :mod:`typing`.
+
+..
+
+.. date: 2023-05-11-01-07-42
+.. gh-issue: 102613
+.. nonce: uMsokt
+.. section: Library
+
+Fix issue where :meth:`pathlib.Path.glob` raised :exc:`RecursionError` when
+walking deep directory trees.
+
+..
+
+.. date: 2023-05-10-19-33-36
+.. gh-issue: 103000
+.. nonce: j0KSfD
+.. section: Library
+
+Improve performance of :func:`dataclasses.asdict` for the common case where
+*dict_factory* is ``dict``. Patch by David C Ellis.
+
+..
+
+.. date: 2023-05-09-18-46-24
+.. gh-issue: 104301
+.. nonce: gNnbId
+.. section: Library
+
+Allow leading whitespace in disambiguated statements in :mod:`pdb`.
+
+..
+
+.. date: 2023-05-08-23-01-59
+.. gh-issue: 104139
+.. nonce: 83Tnt-
+.. section: Library
+
+Teach :func:`urllib.parse.unsplit` to retain the ``"//"`` when assembling
+``itms-services://?action=generate-bugs`` style `Apple Platform Deployment
+<https://support.apple.com/en-gb/guide/deployment/depce7cefc4d/web>`_ URLs.
+
+..
+
+.. date: 2023-05-08-20-57-17
+.. gh-issue: 104307
+.. nonce: DSB93G
+.. section: Library
+
+:func:`socket.getnameinfo` now releases the GIL while contacting the DNS
+server
+
+..
+
+.. date: 2023-05-08-15-50-59
+.. gh-issue: 104310
+.. nonce: fXVSPY
+.. section: Library
+
+Users may now use ``importlib.util.allowing_all_extensions()`` (a context
+manager) to temporarily disable the strict compatibility checks for
+importing extension modules in subinterpreters.
+
+..
+
+.. date: 2023-05-08-15-39-00
+.. gh-issue: 87695
+.. nonce: f6iO7v
+.. section: Library
+
+Fix issue where :meth:`pathlib.Path.glob` raised :exc:`OSError` when it
+encountered a symlink to an overly long path.
+
+..
+
+.. date: 2023-05-07-19-56-45
+.. gh-issue: 104265
+.. nonce: fVblry
+.. section: Library
+
+Prevent possible crash by disallowing instantiation of the
+:class:`!_csv.Reader` and :class:`!_csv.Writer` types. The regression was
+introduced in 3.10.0a4 with PR 23224 (:issue:`14935`). Patch by Radislav
+Chugunov.
+
+..
+
+.. date: 2023-05-06-20-37-46
+.. gh-issue: 102613
+.. nonce: QZG9iX
+.. section: Library
+
+Improve performance of :meth:`pathlib.Path.glob` when expanding recursive
+wildcards ("``**``") by merging adjacent wildcards and de-duplicating
+results only when necessary.
+
+..
+
+.. date: 2023-05-05-18-52-22
+.. gh-issue: 65772
+.. nonce: w5P5Wv
+.. section: Library
+
+Remove unneeded comments and code in turtle.py.
+
+..
+
+.. date: 2023-05-03-19-22-24
+.. gh-issue: 90208
+.. nonce: tI00da
+.. section: Library
+
+Fixed issue where :meth:`pathlib.Path.glob` returned incomplete results when
+it encountered a :exc:`PermissionError`. This method now suppresses all
+:exc:`OSError` exceptions, except those raised from calling
+:meth:`~pathlib.Path.is_dir` on the top-level path.
+
+..
+
+.. date: 2023-05-03-16-51-53
+.. gh-issue: 104144
+.. nonce: 653Q0P
+.. section: Library
+
+Optimize :class:`asyncio.TaskGroup` when using
+:func:`asyncio.eager_task_factory`. Skip scheduling a done callback if a
+TaskGroup task completes eagerly.
+
+..
+
+.. date: 2023-05-03-16-50-24
+.. gh-issue: 104144
+.. nonce: yNkjL8
+.. section: Library
+
+Optimize :func:`asyncio.gather` when using
+:func:`asyncio.eager_task_factory` to complete eagerly if all fututres
+completed eagerly. Avoid scheduling done callbacks for futures that complete
+eagerly.
+
+..
+
+.. date: 2023-05-03-03-14-33
+.. gh-issue: 104114
+.. nonce: RG26RD
+.. section: Library
+
+Fix issue where :meth:`pathlib.Path.glob` returns paths using the case of
+non-wildcard segments for corresponding path segments, rather than the real
+filesystem case.
+
+..
+
+.. date: 2023-05-02-21-05-30
+.. gh-issue: 104104
+.. nonce: 9tjplT
+.. section: Library
+
+Improve performance of :meth:`pathlib.Path.glob` by using
+:const:`re.IGNORECASE` to implement case-insensitive matching.
+
+..
+
+.. date: 2023-05-02-20-43-03
+.. gh-issue: 104102
+.. nonce: vgSdEJ
+.. section: Library
+
+Improve performance of :meth:`pathlib.Path.glob` when evaluating patterns
+that contain ``'../'`` segments.
+
+..
+
+.. date: 2023-05-02-04-49-45
+.. gh-issue: 103822
+.. nonce: m0QdAO
+.. section: Library
+
+Update the return type of ``weekday`` to the newly added Day attribute
+
+..
+
+.. date: 2023-05-01-19-10-05
+.. gh-issue: 103629
+.. nonce: 81bpZz
+.. section: Library
+
+Update the ``repr`` of :class:`typing.Unpack` according to :pep:`692`.
+
+..
+
+.. date: 2023-05-01-17-58-28
+.. gh-issue: 103963
+.. nonce: XWlHx7
+.. section: Library
+
+Make :mod:`dis` display the names of the args for
+:opcode:`!CALL_INTRINSIC_*`.
+
+..
+
+.. date: 2023-05-01-16-43-28
+.. gh-issue: 104035
+.. nonce: MrJBw8
+.. section: Library
+
+Do not ignore user-defined ``__getstate__`` and ``__setstate__`` methods for
+slotted frozen dataclasses.
+
+..
+
+.. date: 2023-04-29-18-23-16
+.. gh-issue: 103987
+.. nonce: sRgALL
+.. section: Library
+
+In :mod:`mmap`, fix several bugs that could lead to access to memory-mapped
+files after they have been invalidated.
+
+..
+
+.. date: 2023-04-28-19-08-50
+.. gh-issue: 103977
+.. nonce: msF70A
+.. section: Library
+
+Improve import time of :mod:`platform` module.
+
+..
+
+.. date: 2023-04-28-18-04-23
+.. gh-issue: 88773
+.. nonce: xXCNJw
+.. section: Library
+
+Added :func:`turtle.teleport` to the :mod:`turtle` module to move a turtle
+to a new point without tracing a line, visible or invisible.  Patch by Liam
+Gersten.
+
+..
+
+.. date: 2023-04-27-20-03-08
+.. gh-issue: 103935
+.. nonce: Uaf2M0
+.. section: Library
+
+Use :func:`io.open_code` for files to be executed instead of raw
+:func:`open`
+
+..
+
+.. date: 2023-04-27-18-46-31
+.. gh-issue: 68968
+.. nonce: E3tnhy
+.. section: Library
+
+Fixed garbled output of :meth:`~unittest.TestCase.assertEqual` when an input
+lacks final newline.
+
+..
+
+.. date: 2023-04-27-00-45-41
+.. gh-issue: 100370
+.. nonce: MgZ3KY
+.. section: Library
+
+Fix potential :exc:`OverflowError` in :meth:`sqlite3.Connection.blobopen`
+for 32-bit builds. Patch by Erlend E. Aasland.
+
+..
+
+.. date: 2023-04-27-00-05-32
+.. gh-issue: 102628
+.. nonce: X230E-
+.. section: Library
+
+Substitute CTRL-D with CTRL-Z in :mod:`sqlite3` CLI banner when running on
+Windows.
+
+..
+
+.. date: 2023-04-26-18-12-13
+.. gh-issue: 103636
+.. nonce: -KvCgO
+.. section: Library
+
+Module-level attributes ``January`` and ``February`` are deprecated from
+:mod:`calendar`.
+
+..
+
+.. date: 2023-04-26-15-14-36
+.. gh-issue: 103583
+.. nonce: iCMDFt
+.. section: Library
+
+Isolate :mod:`!_multibytecodec` and codecs extension modules. Patches by
+Erlend E. Aasland.
+
+..
+
+.. date: 2023-04-26-09-54-25
+.. gh-issue: 103848
+.. nonce: aDSnpR
+.. section: Library
+
+Add checks to ensure that ``[`` bracketed ``]`` hosts found by
+:func:`urllib.parse.urlsplit` are of IPv6 or IPvFuture format.
+
+..
+
+.. date: 2023-04-26-09-38-47
+.. gh-issue: 103872
+.. nonce: 8LBsDz
+.. section: Library
+
+Update the bundled copy of pip to version 23.1.2.
+
+..
+
+.. date: 2023-04-25-22-59-06
+.. gh-issue: 99944
+.. nonce: pst8iT
+.. section: Library
+
+Make :mod:`dis` display the value of oparg of :opcode:`!KW_NAMES`.
+
+..
+
+.. date: 2023-04-25-22-06-00
+.. gh-issue: 74940
+.. nonce: TOacQ9
+.. section: Library
+
+The C.UTF-8 locale is no longer converted to en_US.UTF-8, enabling the use
+of UTF-8 encoding on systems which have no locales installed.
+
+..
+
+.. date: 2023-04-25-19-58-13
+.. gh-issue: 103861
+.. nonce: JeozgD
+.. section: Library
+
+Fix ``zipfile.Zipfile`` creating invalid zip files when ``force_zip64`` was
+used to add files to them. Patch by Carey Metcalfe.
+
+..
+
+.. date: 2023-04-25-17-03-18
+.. gh-issue: 103857
+.. nonce: Mr2Cak
+.. section: Library
+
+Deprecated :meth:`datetime.datetime.utcnow` and
+:meth:`datetime.datetime.utcfromtimestamp`. (Patch by Paul Ganssle)
+
+..
+
+.. date: 2023-04-25-16-31-00
+.. gh-issue: 103839
+.. nonce: tpyLhI
+.. section: Library
+
+Avoid compilation error due to tommath.h not being found when building
+Tkinter against Tcl 8.7 built with bundled libtommath.
+
+..
+
+.. date: 2023-04-24-23-07-56
+.. gh-issue: 103791
+.. nonce: bBPWdS
+.. section: Library
+
+:class:`contextlib.suppress` now supports suppressing exceptions raised as
+part of an :exc:`ExceptionGroup`. If other exceptions exist on the group,
+they are re-raised in a group that does not contain the suppressed
+exceptions.
+
+..
+
+.. date: 2023-04-24-16-00-28
+.. gh-issue: 90750
+.. nonce: da0Xi8
+.. section: Library
+
+Use :meth:`datetime.datetime.fromisocalendar` in the implementation of
+:meth:`datetime.datetime.strptime`, which should now accept only valid ISO
+dates. (Patch by Paul Ganssle)
+
+..
+
+.. date: 2023-04-24-00-34-23
+.. gh-issue: 103685
+.. nonce: U14jBM
+.. section: Library
+
+Prepare :meth:`tkinter.Menu.index` for Tk 8.7 so that it does not raise
+``TclError: expected integer but got ""`` when it should return ``None``.
+
+..
+
+.. date: 2023-04-23-15-39-17
+.. gh-issue: 81403
+.. nonce: zVz9Td
+.. section: Library
+
+:class:`urllib.request.CacheFTPHandler` no longer raises :class:`URLError`
+if a cached FTP instance is reused. ftplib's endtransfer method calls
+voidresp to drain the connection to handle FTP instance reuse properly.
+
+..
+
+.. date: 2023-04-22-22-37-39
+.. gh-issue: 103699
+.. nonce: NizCjc
+.. section: Library
+
+Add ``__orig_bases__`` to non-generic TypedDicts, call-based TypedDicts, and
+call-based NamedTuples. Other TypedDicts and NamedTuples already had the
+attribute.
+
+..
+
+.. date: 2023-04-22-21-34-13
+.. gh-issue: 103693
+.. nonce: SBtuLQ
+.. section: Library
+
+Add convenience variable feature to :mod:`pdb`
+
+..
+
+.. date: 2023-04-22-12-30-10
+.. gh-issue: 92248
+.. nonce: NcVTKR
+.. section: Library
+
+Deprecate ``type``, ``choices``, and ``metavar`` parameters of
+``argparse.BooleanOptionalAction``.
+
+..
+
+.. date: 2023-04-22-11-20-27
+.. gh-issue: 89415
+.. nonce: YHk760
+.. section: Library
+
+Add :mod:`socket` constants for source-specific multicast. Patch by Reese
+Hyde.
+
+..
+
+.. date: 2023-04-22-02-41-06
+.. gh-issue: 103673
+.. nonce: oE7S_k
+.. section: Library
+
+:mod:`socketserver` gains ``ForkingUnixStreamServer`` and
+``ForkingUnixDatagramServer`` classes. Patch by Jay Berry.
+
+..
+
+.. date: 2023-04-21-10-25-39
+.. gh-issue: 103636
+.. nonce: YK6NEa
+.. section: Library
+
+Added Enum for months and days in the calendar module.
+
+..
+
+.. date: 2023-04-19-16-08-53
+.. gh-issue: 84976
+.. nonce: HwbzlD
+.. section: Library
+
+Create a new ``Lib/_pydatetime.py`` file that defines the Python version of
+the ``datetime`` module, and make ``datetime`` import the contents of the
+new library only if the C implementation is missing. Currently, the full
+Python implementation is defined and then deleted if the C implementation is
+not available, slowing down ``import datetime`` unnecessarily.
+
+..
+
+.. date: 2023-04-17-14-47-28
+.. gh-issue: 103596
+.. nonce: ME1y3_
+.. section: Library
+
+Attributes/methods are no longer shadowed by same-named enum members,
+although they may be shadowed by enum.property's.
+
+..
+
+.. date: 2023-04-16-19-48-21
+.. gh-issue: 103584
+.. nonce: 3mBTuM
+.. section: Library
+
+Updated ``importlib.metadata`` with changes from ``importlib_metadata`` 5.2
+through 6.5.0, including: Support ``installed-files.txt`` for
+``Distribution.files`` when present. ``PackageMetadata`` now stipulates an
+additional ``get`` method allowing for easy querying of metadata keys that
+may not be present. ``packages_distributions`` now honors packages and
+modules with Python modules that not ``.py`` sources (e.g. ``.pyc``,
+``.so``). Expand protocol for ``PackageMetadata.get_all`` to match the
+upstream implementation of ``email.message.Message.get_all`` in
+python/typeshed#9620. Deprecated use of ``Distribution`` without defining
+abstract methods. Deprecated expectation that
+``PackageMetadata.__getitem__`` will return ``None`` for missing keys. In
+the future, it will raise a ``KeyError``.
+
+..
+
+.. date: 2023-04-16-18-29-04
+.. gh-issue: 103578
+.. nonce: fly1wc
+.. section: Library
+
+Fixed a bug where :mod:`pdb` crashes when reading source file with different
+encoding by replacing :func:`io.open` with :func:`io.open_code`. The new
+method would also call into the hook set by :c:func:`PyFile_SetOpenCodeHook`.
+
+..
+
+.. date: 2023-04-15-12-19-14
+.. gh-issue: 103556
+.. nonce: TEf-2m
+.. section: Library
+
+Now creating :class:`inspect.Signature` objects with positional-only
+parameter with a default followed by a positional-or-keyword parameter
+without one is impossible.
+
+..
+
+.. date: 2023-04-15-11-21-38
+.. gh-issue: 103559
+.. nonce: a9rYHG
+.. section: Library
+
+Update the bundled copy of pip to version 23.1.1.
+
+..
+
+.. date: 2023-04-14-21-16-05
+.. gh-issue: 103548
+.. nonce: lagdpp
+.. section: Library
+
+Improve performance of :meth:`pathlib.Path.absolute` and
+:meth:`~pathlib.Path.cwd` by joining paths only when necessary. Also improve
+performance of :meth:`pathlib.PurePath.is_absolute` on Posix by skipping
+path parsing and normalization.
+
+..
+
+.. date: 2023-04-14-21-12-32
+.. gh-issue: 103538
+.. nonce: M4FK_v
+.. section: Library
+
+Remove ``_tkinter`` module code guarded by definition of the ``TK_AQUA``
+macro which was only needed for Tk 8.4.7 or earlier and was never actually
+defined by any build system or documented for manual use.
+
+..
+
+.. date: 2023-04-14-06-32-54
+.. gh-issue: 103533
+.. nonce: n_AfcS
+.. section: Library
+
+Update :mod:`cProfile` to use PEP 669 API
+
+..
+
+.. date: 2023-04-13-19-43-15
+.. gh-issue: 103525
+.. nonce: uY4VYg
+.. section: Library
+
+Fix misleading exception message when mixed ``str`` and ``bytes`` arguments
+are supplied to :class:`pathlib.PurePath` and :class:`~pathlib.Path`.
+
+..
+
+.. date: 2023-04-13-13-17-47
+.. gh-issue: 103489
+.. nonce: ZSZgmu
+.. section: Library
+
+Add :meth:`~sqlite3.Connection.getconfig` and
+:meth:`~sqlite3.Connection.setconfig` to :class:`~sqlite3.Connection` to
+make configuration changes to a database connection. Patch by Erlend E.
+Aasland.
+
+..
+
+.. date: 2023-04-12-17-59-55
+.. gh-issue: 103365
+.. nonce: UBEE0U
+.. section: Library
+
+Set default Flag boundary to ``STRICT`` and fix bitwise operations.
+
+..
+
+.. date: 2023-04-12-13-04-16
+.. gh-issue: 103472
+.. nonce: C6bOHv
+.. section: Library
+
+Avoid a potential :exc:`ResourceWarning` in
+:class:`http.client.HTTPConnection` by closing the proxy / tunnel's CONNECT
+response explicitly.
+
+..
+
+.. date: 2023-04-12-06-00-02
+.. gh-issue: 103462
+.. nonce: w6yBlM
+.. section: Library
+
+Fixed an issue with using :meth:`~asyncio.WriteTransport.writelines` in
+:mod:`asyncio` to send very large payloads that exceed the amount of data
+that can be written in one call to :meth:`socket.socket.send` or
+:meth:`socket.socket.sendmsg`, resulting in the remaining buffer being left
+unwritten.
+
+..
+
+.. date: 2023-04-11-21-38-39
+.. gh-issue: 103449
+.. nonce: -nxmhb
+.. section: Library
+
+Fix a bug in doc string generation in :func:`dataclasses.dataclass`.
+
+..
+
+.. date: 2023-04-09-06-59-36
+.. gh-issue: 103092
+.. nonce: vskbro
+.. section: Library
+
+Isolate :mod:`!_collections` (apply :pep:`687`). Patch by Erlend E. Aasland.
+
+..
+
+.. date: 2023-04-08-01-33-12
+.. gh-issue: 103357
+.. nonce: vjin28
+.. section: Library
+
+Added support for :class:`logging.Formatter` ``defaults`` parameter to
+:func:`logging.config.dictConfig` and :func:`logging.config.fileConfig`.
+Patch by Bar Harel.
+
+..
+
+.. date: 2023-04-08-00-48-40
+.. gh-issue: 103092
+.. nonce: 5EFts0
+.. section: Library
+
+Adapt the :mod:`winreg` extension module to :pep:`687`.
+
+..
+
+.. date: 2023-04-07-15-15-40
+.. gh-issue: 74690
+.. nonce: un84hh
+.. section: Library
+
+The performance of :func:`isinstance` checks against
+:func:`runtime-checkable protocols <typing.runtime_checkable>` has been
+considerably improved for protocols that only have a few members. To achieve
+this improvement, several internal implementation details of the
+:mod:`typing` module have been refactored, including
+``typing._ProtocolMeta.__instancecheck__``,
+``typing._is_callable_members_only``, and ``typing._get_protocol_attrs``.
+Patches by Alex Waygood.
+
+..
+
+.. date: 2023-04-07-15-09-26
+.. gh-issue: 74690
+.. nonce: 0f886b
+.. section: Library
+
+The members of a runtime-checkable protocol are now considered "frozen" at
+runtime as soon as the class has been created. See :ref:`"What's new in
+Python 3.12" <whatsnew-typing-py312>` for more details.
+
+..
+
+.. date: 2023-04-06-17-28-36
+.. gh-issue: 103256
+.. nonce: 1syxfs
+.. section: Library
+
+Fixed a bug that caused :mod:`hmac` to raise an exception when the requested
+hash algorithm was not available in OpenSSL despite being available
+separately as part of ``hashlib`` itself.  It now falls back properly to the
+built-in. This could happen when, for example, your OpenSSL does not include
+SHA3 support and you want to compute ``hmac.digest(b'K', b'M',
+'sha3_256')``.
+
+..
+
+.. date: 2023-04-06-16-55-51
+.. gh-issue: 102778
+.. nonce: BWeAmE
+.. section: Library
+
+Support ``sys.last_exc`` in :mod:`idlelib`.
+
+..
+
+.. date: 2023-04-06-04-35-59
+.. gh-issue: 103285
+.. nonce: rCZ9-G
+.. section: Library
+
+Improve performance of :func:`ast.get_source_segment`.
+
+..
+
+.. date: 2023-04-05-01-28-53
+.. gh-issue: 103225
+.. nonce: QD3JVU
+.. section: Library
+
+Fix a bug in :mod:`pdb` when displaying line numbers of module-level source
+code.
+
+..
+
+.. date: 2023-04-04-21-44-25
+.. gh-issue: 103092
+.. nonce: Dz0_Xn
+.. section: Library
+
+Adapt the :mod:`msvcrt` extension module to :pep:`687`.
+
+..
+
+.. date: 2023-04-04-21-27-51
+.. gh-issue: 103092
+.. nonce: 7s7Bzf
+.. section: Library
+
+Adapt the :mod:`winsound` extension module to :pep:`687`.
+
+..
+
+.. date: 2023-04-04-12-43-38
+.. gh-issue: 93910
+.. nonce: jurMzv
+.. section: Library
+
+Remove deprecation of enum ``member.member`` access.
+
+..
+
+.. date: 2023-04-03-23-44-34
+.. gh-issue: 102978
+.. nonce: gy9eVk
+.. section: Library
+
+Fixes :func:`unittest.mock.patch` not enforcing function signatures for
+methods decorated with ``@classmethod`` or ``@staticmethod`` when patch is
+called with ``autospec=True``.
+
+..
+
+.. date: 2023-04-03-23-43-12
+.. gh-issue: 103092
+.. nonce: 3xqk4y
+.. section: Library
+
+Isolate :mod:`!_socket` (apply :pep:`687`). Patch by Erlend E. Aasland.
+
+..
+
+.. date: 2023-04-03-22-02-35
+.. gh-issue: 100479
+.. nonce: kNBjQm
+.. section: Library
+
+Add :meth:`pathlib.PurePath.with_segments`, which creates a path object from
+arguments. This method is called whenever a derivative path is created, such
+as from :attr:`pathlib.PurePath.parent`. Subclasses may override this method
+to share information between path objects.
+
+..
+
+.. date: 2023-04-03-21-08-53
+.. gh-issue: 103220
+.. nonce: OW_Bj5
+.. section: Library
+
+Fix issue where :func:`os.path.join` added a slash when joining onto an
+incomplete UNC drive with a trailing slash on Windows.
+
+..
+
+.. date: 2023-04-02-23-05-22
+.. gh-issue: 103204
+.. nonce: bbDmu0
+.. section: Library
+
+Fixes :mod:`http.server` accepting HTTP requests with HTTP version numbers
+preceded by '+', or '-', or with digit-separating '_' characters.  The
+length of the version numbers is also constrained.
+
+..
+
+.. date: 2023-04-02-22-04-26
+.. gh-issue: 75586
+.. nonce: 526iJm
+.. section: Library
+
+Fix various Windows-specific issues with ``shutil.which``.
+
+..
+
+.. date: 2023-04-02-17-51-08
+.. gh-issue: 103193
+.. nonce: xrZbM1
+.. section: Library
+
+Improve performance of :func:`inspect.getattr_static`. Patch by Alex
+Waygood.
+
+..
+
+.. date: 2023-04-01-23-01-31
+.. gh-issue: 103176
+.. nonce: FBsdxa
+.. section: Library
+
+:func:`sys._current_exceptions` now returns a mapping from thread-id to an
+exception instance, rather than to a ``(typ, exc, tb)`` tuple.
+
+..
+
+.. date: 2023-03-31-01-13-00
+.. gh-issue: 103143
+.. nonce: 6eMluy
+.. section: Library
+
+Polish the help messages and docstrings of :mod:`pdb`.
+
+..
+
+.. date: 2023-03-28-09-13-31
+.. gh-issue: 103015
+.. nonce: ETTfNf
+.. section: Library
+
+Add *entrypoint* keyword-only parameter to
+:meth:`sqlite3.Connection.load_extension`, for overriding the SQLite
+extension entry point. Patch by Erlend E. Aasland.
+
+..
+
+.. date: 2023-03-24-20-49-48
+.. gh-issue: 103000
+.. nonce: 6eVNZI
+.. section: Library
+
+Improve performance of :func:`dataclasses.astuple` and
+:func:`dataclasses.asdict` in cases where the contents are common Python
+types.
+
+..
+
+.. date: 2023-03-23-15-24-38
+.. gh-issue: 102953
+.. nonce: YR4KaK
+.. section: Library
+
+The extraction methods in :mod:`tarfile`, and :func:`shutil.unpack_archive`,
+have a new a *filter* argument that allows limiting tar features than may be
+surprising or dangerous, such as creating files outside the destination
+directory. See :ref:`tarfile-extraction-filter` for details.
+
+..
+
+.. date: 2023-03-15-12-18-07
+.. gh-issue: 97696
+.. nonce: DtnpIC
+.. section: Library
+
+Implemented an eager task factory in asyncio. When used as a task factory on
+an event loop, it performs eager execution of coroutines. Coroutines that
+are able to complete synchronously (e.g. return or raise without blocking)
+are returned immediately as a finished task, and the task is never scheduled
+to the event loop. If the coroutine blocks, the (pending) task is scheduled
+and returned.
+
+..
+
+.. date: 2023-03-15-00-37-43
+.. gh-issue: 81079
+.. nonce: heTAod
+.. section: Library
+
+Add *case_sensitive* keyword-only argument to :meth:`pathlib.Path.glob` and
+:meth:`~pathlib.Path.rglob`.
+
+..
+
+.. date: 2023-03-14-11-20-19
+.. gh-issue: 101819
+.. nonce: 0-h0it
+.. section: Library
+
+Isolate the :mod:`io` extension module by applying :pep:`687`. Patch by
+Kumar Aditya, Victor Stinner, and Erlend E. Aasland.
+
+..
+
+.. date: 2023-03-08-02-45-46
+.. gh-issue: 91896
+.. nonce: kgON_a
+.. section: Library
+
+Deprecate :class:`collections.abc.ByteString`
+
+..
+
+.. date: 2023-03-06-18-49-57
+.. gh-issue: 101362
+.. nonce: eSSy6L
+.. section: Library
+
+Speed up :class:`pathlib.Path` construction by omitting the path anchor from
+the internal list of path parts.
+
+..
+
+.. date: 2023-02-21-14-57-34
+.. gh-issue: 102114
+.. nonce: uUDQzb
+.. section: Library
+
+Functions in the :mod:`dis` module that accept a source code string as
+argument now print a more concise traceback when the string contains a
+syntax or indentation error.
+
+..
+
+.. date: 2023-02-19-12-37-08
+.. gh-issue: 62432
+.. nonce: GnBFIB
+.. section: Library
+
+The :mod:`unittest` runner will now exit with status code 5 if no tests were
+run. It is common for test runner misconfiguration to fail to find any
+tests, this should be an error.
+
+..
+
+.. date: 2023-02-17-21-14-40
+.. gh-issue: 78079
+.. nonce: z3Szr6
+.. section: Library
+
+Fix incorrect normalization of UNC device path roots, and partial UNC share
+path roots, in :class:`pathlib.PurePath`. Pathlib no longer appends a
+trailing slash to such paths.
+
+..
+
+.. date: 2023-02-11-21-18-10
+.. gh-issue: 85984
+.. nonce: nvzOD0
+.. section: Library
+
+Add :func:`tty.cfmakeraw` and :func:`tty.cfmakecbreak` to :mod:`tty` and
+modernize, the behavior of :func:`tty.setraw` and :func:`tty.setcbreak` to
+use POSIX.1-2017 Chapter 11 "General Terminal Interface" flag masks by
+default.
+
+..
+
+.. date: 2023-02-11-15-01-32
+.. gh-issue: 101688
+.. nonce: kwXmfM
+.. section: Library
+
+Implement :func:`types.get_original_bases` to provide further introspection
+for types.
+
+..
+
+.. date: 2023-02-09-22-24-34
+.. gh-issue: 101640
+.. nonce: oFuEpB
+.. section: Library
+
+:class:`argparse.ArgumentParser` now catches errors when writing messages,
+such as when :data:`sys.stderr` is ``None``. Patch by Oleg Iarygin.
+
+..
+
+.. date: 2023-02-06-16-45-18
+.. gh-issue: 83861
+.. nonce: mMbIU3
+.. section: Library
+
+Fix datetime.astimezone method return value when invoked on a naive datetime
+instance that represents local time falling in a timezone transition gap.
+PEP 495 requires that instances with fold=1 produce earlier times than those
+with fold=0 in this case.
+
+..
+
+.. date: 2023-01-22-14-53-12
+.. gh-issue: 89550
+.. nonce: c1U23f
+.. section: Library
+
+Decrease execution time of some :mod:`gzip` file writes by 15% by adding
+more appropriate buffering.
+
+..
+
+.. date: 2023-01-14-17-54-56
+.. gh-issue: 95299
+.. nonce: vUhpKz
+.. section: Library
+
+Remove the bundled setuptools wheel from ``ensurepip``, and stop installing
+setuptools in environments created by ``venv``.
+
+..
+
+.. date: 2022-11-10-16-26-47
+.. gh-issue: 99353
+.. nonce: DQFjnt
+.. section: Library
+
+Respect the :class:`http.client.HTTPConnection` ``.debuglevel`` flag in
+:class:`urllib.request.AbstractHTTPHandler` when its constructor parameter
+``debuglevel`` is not set. And do the same for ``*HTTPS*``.
+
+..
+
+.. date: 2022-10-21-17-20-57
+.. gh-issue: 98040
+.. nonce: 3btbmA
+.. section: Library
+
+Remove the long-deprecated ``imp`` module.
+
+..
+
+.. date: 2022-10-21-16-23-31
+.. gh-issue: 97850
+.. nonce: N46coo
+.. section: Library
+
+Deprecate :func:`!pkgutil.find_loader` and :func:`!pkgutil.get_loader` in
+favor of :func:`importlib.util.find_spec`.
+
+..
+
+.. date: 2022-10-20-14-03-58
+.. gh-issue: 94473
+.. nonce: pzGX73
+.. section: Library
+
+Flatten arguments in :meth:`tkinter.Canvas.coords`. It now accepts not only
+``x1, y1, x2, y2, ...`` and ``[x1, y1, x2, y2, ...]``, but also ``(x1, y1),
+(x2, y2), ...`` and ``[(x1, y1), (x2, y2), ...]``.
+
+..
+
+.. date: 2022-10-09-14-47-42
+.. gh-issue: 98040
+.. nonce: IN3qab
+.. section: Library
+
+Remove more deprecated importlib APIs: ``find_loader()``, ``find_module()``,
+``importlib.abc.Finder``, ``pkgutil.ImpImporter``, ``pkgutil.ImpLoader``.
+
+..
+
+.. date: 2022-09-07-09-32-07
+.. gh-issue: 96522
+.. nonce: t73oqp
+.. section: Library
+
+Fix potential deadlock in pty.spawn()
+
+..
+
+.. date: 2022-09-03-09-24-02
+.. gh-issue: 96534
+.. nonce: EU4Oxv
+.. section: Library
+
+Support divert(4) added in FreeBSD 14.
+
+..
+
+.. date: 2022-08-27-21-41-41
+.. gh-issue: 87474
+.. nonce: 9X-kxt
+.. section: Library
+
+Fix potential file descriptor leaks in :class:`subprocess.Popen`.
+
+..
+
+.. date: 2022-07-16-17-15-29
+.. gh-issue: 94906
+.. nonce: C4G8DG
+.. section: Library
+
+Support multiple steps in :func:`math.nextafter`. Patch by Shantanu Jain and
+Matthias Gorgens.
+
+..
+
+.. date: 2022-07-06-11-10-37
+.. gh-issue: 51574
+.. nonce: sveUeD
+.. section: Library
+
+Make :func:`tempfile.mkdtemp` return absolute paths when its *dir* parameter
+is relative.
+
+..
+
+.. date: 2022-07-03-23-13-28
+.. gh-issue: 94518
+.. nonce: 511Tbh
+.. section: Library
+
+Convert private :meth:`!_posixsubprocess.fork_exec` to use Argument Clinic.
+
+..
+
+.. date: 2022-05-02-16-21-05
+.. gh-issue: 92184
+.. nonce: hneGVW
+.. section: Library
+
+When creating zip files using :mod:`zipfile`, ``os.altsep``, if not
+``None``, will always be treated as a path separator even when it is not
+``/``. Patch by Carey Metcalfe.
+
+..
+
+.. bpo: 46797
+.. date: 2022-02-19-14-19-34
+.. nonce: 6BXZX4
+.. section: Library
+
+Deprecation warnings are now emitted for :class:`!ast.Num`,
+:class:`!ast.Bytes`, :class:`!ast.Str`, :class:`!ast.NameConstant` and
+:class:`!ast.Ellipsis`. These have been documented as deprecated since
+Python 3.8, and will be removed in Python 3.14.
+
+..
+
+.. bpo: 44844
+.. date: 2021-12-03-23-00-56
+.. nonce: tvg2VY
+.. section: Library
+
+Enables :mod:`webbrowser` to detect and launch Microsoft Edge browser.
+
+..
+
+.. bpo: 45606
+.. date: 2021-11-19-23-37-18
+.. nonce: UW5XE1
+.. section: Library
+
+Fixed the bug in :meth:`pathlib.Path.glob` -- previously a dangling symlink
+would not be found by this method when the pattern is an exact match, but
+would be found when the pattern contains a wildcard or the recursive
+wildcard (``**``). With this change, a dangling symlink will be found in
+both cases.
+
+..
+
+.. bpo: 23041
+.. date: 2021-11-07-15-31-25
+.. nonce: 564i32
+.. section: Library
+
+Add :const:`~csv.QUOTE_STRINGS` and :const:`~csv.QUOTE_NOTNULL` to the suite
+of :mod:`csv` module quoting styles.
+
+..
+
+.. bpo: 24964
+.. date: 2021-05-16-14-28-30
+.. nonce: Oa5Ie_
+.. section: Library
+
+Added :meth:`http.client.HTTPConnection.get_proxy_response_headers` that
+provides access to the HTTP headers on a proxy server response to the
+``CONNECT`` request.
+
+..
+
+.. bpo: 17258
+.. date: 2020-05-25-12-42-36
+.. nonce: lf2554
+.. section: Library
+
+:mod:`multiprocessing` now supports stronger HMAC algorithms for
+inter-process connection authentication rather than only HMAC-MD5.
+
+..
+
+.. bpo: 39744
+.. date: 2020-02-25-00-43-22
+.. nonce: hgK689
+.. section: Library
+
+Make :func:`asyncio.subprocess.Process.communicate` close the subprocess's
+stdin even when called with ``input=None``.
+
+..
+
+.. bpo: 22708
+.. date: 2018-07-16-14-10-29
+.. nonce: 592iRR
+.. section: Library
+
+http.client CONNECT method tunnel improvements: Use HTTP 1.1 protocol; send
+a matching Host: header with CONNECT, if one is not provided; convert IDN
+domain names to Punycode. Patch by Michael Handler.
+
+..
+
+.. date: 2023-05-14-12-11-28
+.. gh-issue: 67056
+.. nonce: nVC2Rf
+.. section: Documentation
+
+Document that the effect of registering or unregistering an :mod:`atexit`
+cleanup function from within a registered cleanup function is undefined.
+
+..
+
+.. date: 2023-04-26-23-55-31
+.. gh-issue: 103629
+.. nonce: -0reqn
+.. section: Documentation
+
+Mention the new way of typing ``**kwargs`` with ``Unpack`` and ``TypedDict``
+introduced in :pep:`692`.
+
+..
+
+.. date: 2023-04-25-22-58-08
+.. gh-issue: 48241
+.. nonce: l1Gxxh
+.. section: Documentation
+
+Clarifying documentation about the url parameter to urllib.request.urlopen
+and urllib.request.Request needing to be encoded properly.
+
+..
+
+.. date: 2023-03-10-04-59-35
+.. gh-issue: 86094
+.. nonce: zOYdy8
+.. section: Documentation
+
+Add support for Unicode Path Extra Field in ZipFile. Patch by Yeojin Kim and
+Andrea Giudiceandrea
+
+..
+
+.. date: 2023-03-07-23-30-29
+.. gh-issue: 99202
+.. nonce: hhiAJF
+.. section: Documentation
+
+Fix extension type from documentation for compiling in C++20 mode
+
+..
+
+.. date: 2023-05-15-02-22-44
+.. gh-issue: 104494
+.. nonce: Bkrbfn
+.. section: Tests
+
+Update ``test_pack_configure_in`` and ``test_place_configure_in`` for
+changes to error message formatting in Tk 8.7.
+
+..
+
+.. date: 2023-05-14-03-00-00
+.. gh-issue: 104461
+.. nonce: Rmex11
+.. section: Tests
+
+Run test_configure_screen on X11 only, since the ``DISPLAY`` environment
+variable and ``-screen`` option for toplevels are not useful on Tk for Win32
+or Aqua.
+
+..
+
+.. date: 2023-04-25-12-19-37
+.. gh-issue: 86275
+.. nonce: -RoLIt
+.. section: Tests
+
+Added property-based tests to the :mod:`zoneinfo` tests, along with stubs
+for the ``hypothesis`` interface. (Patch by Paul Ganssle)
+
+..
+
+.. date: 2023-04-08-00-50-23
+.. gh-issue: 103329
+.. nonce: M38tqF
+.. section: Tests
+
+Regression tests for the behaviour of ``unittest.mock.PropertyMock`` were
+added.
+
+..
+
+.. date: 2023-03-17-22-00-47
+.. gh-issue: 102795
+.. nonce: z21EoC
+.. section: Tests
+
+fix use of poll in test_epoll's test_control_and_wait
+
+..
+
+.. date: 2022-11-06-18-42-38
+.. gh-issue: 75729
+.. nonce: uGYJrv
+.. section: Tests
+
+Fix the :func:`os.spawn* <os.spawnl>` tests failing on Windows when the
+working directory or interpreter path contains spaces.
+
+..
+
+.. date: 2023-05-20-16-09-59
+.. gh-issue: 101282
+.. nonce: FvRARb
+.. section: Build
+
+BOLT optimization is now applied to the libpython shared library if building
+a shared library. BOLT instrumentation and application settings can now be
+influenced via the ``BOLT_INSTRUMENT_FLAGS`` and ``BOLT_APPLY_FLAGS``
+configure variables.
+
+..
+
+.. date: 2023-05-15-09-34-08
+.. gh-issue: 99017
+.. nonce: nToOQu
+.. section: Build
+
+``PYTHON_FOR_REGEN`` now require Python 3.10 or newer.
+
+..
+
+.. date: 2023-05-14-19-00-19
+.. gh-issue: 104490
+.. nonce: 1tA4AF
+.. section: Build
+
+Define ``.PHONY`` / virtual make targets consistently and properly.
+
+..
+
+.. date: 2023-05-04-10-56-14
+.. gh-issue: 104106
+.. nonce: -W9BJS
+.. section: Build
+
+Add gcc fallback of mkfifoat/mknodat for macOS. Patch by Donghee Na.
+
+..
+
+.. date: 2023-04-14-10-24-37
+.. gh-issue: 103532
+.. nonce: H1djkd
+.. section: Build
+
+The ``TKINTER_PROTECT_LOADTK`` macro is no longer defined or used in the
+``_tkinter`` module.  It was previously only defined when building against
+Tk 8.4.13 and older, but Tk older than 8.5.12 has been unsupported since
+gh-issue-91152.
+
+..
+
+.. date: 2023-02-11-05-31-05
+.. gh-issue: 99069
+.. nonce: X4LDvY
+.. section: Build
+
+Extended workaround defining ``static_assert`` when missing from the libc
+headers to all clang and gcc builds. In particular, this fixes building on
+macOS <= 10.10.
+
+..
+
+.. date: 2022-12-18-07-24-44
+.. gh-issue: 100220
+.. nonce: BgSV7C
+.. section: Build
+
+Changed the default value of the ``SHELL`` Makefile variable from
+``/bin/sh`` to ``/bin/sh -e`` to ensure that complex recipes correctly fail
+after an error. Previously, ``make install`` could fail to install some
+files and yet return a successful result.
+
+..
+
+.. date: 2022-06-20-15-15-11
+.. gh-issue: 90656
+.. nonce: kFBbKe
+.. section: Build
+
+Add platform triplets for 64-bit LoongArch:
+
+* loongarch64-linux-gnusf
+* loongarch64-linux-gnuf32
+* loongarch64-linux-gnu
+
+Patch by Zhang Na.
+
+..
+
+.. date: 2023-05-18-22-46-03
+.. gh-issue: 104623
+.. nonce: HJZhm1
+.. section: Windows
+
+Update Windows installer to use SQLite 3.42.0.
+
+..
+
+.. date: 2023-04-24-15-51-11
+.. gh-issue: 82814
+.. nonce: GI3UkZ
+.. section: Windows
+
+Fix a potential ``[Errno 13] Permission denied`` when using
+:func:`shutil.copystat` within Windows Subsystem for Linux (WSL) on a
+mounted filesystem by adding ``errno.EACCES`` to the list of ignored errors
+within the internal implementation.
+
+..
+
+.. date: 2023-04-12-10-49-21
+.. gh-issue: 103088
+.. nonce: Yjj-qJ
+.. section: Windows
+
+Fix virtual environment :file:`activate` script having incorrect line
+endings for Cygwin.
+
+..
+
+.. date: 2023-04-11-09-22-22
+.. gh-issue: 103088
+.. nonce: 6AJEuR
+.. section: Windows
+
+Fixes venvs not working in bash on Windows across different disks
+
+..
+
+.. date: 2023-03-24-11-25-28
+.. gh-issue: 102997
+.. nonce: dredy2
+.. section: Windows
+
+Update Windows installer to use SQLite 3.41.2.
+
+..
+
+.. date: 2023-03-18-21-38-00
+.. gh-issue: 88013
+.. nonce: Z3loxC
+.. section: Windows
+
+Fixed a bug where :exc:`TypeError` was raised when calling
+:func:`ntpath.realpath` with a bytes parameter in some cases.
+
+..
+
+.. date: 2023-05-21-23-54-52
+.. gh-issue: 99834
+.. nonce: 6ANPts
+.. section: macOS
+
+Update macOS installer to Tcl/Tk 8.6.13.
+
+..
+
+.. date: 2023-05-18-22-31-49
+.. gh-issue: 104623
+.. nonce: 6h7Xfx
+.. section: macOS
+
+Update macOS installer to SQLite 3.42.0.
+
+..
+
+.. date: 2023-05-18-08-52-04
+.. gh-issue: 103545
+.. nonce: pi5k2N
+.. section: macOS
+
+Add ``os.PRIO_DARWIN_THREAD``, ``os.PRIO_DARWIN_PROCESS``,
+``os.PRIO_DARWIN_BG`` and ``os.PRIO_DARWIN_NONUI``. These can be used with
+``os.setpriority`` to run the process at a lower priority and make use of
+the efficiency cores on Apple Silicon systems.
+
+..
+
+.. date: 2023-05-04-21-47-59
+.. gh-issue: 104180
+.. nonce: lEJCwd
+.. section: macOS
+
+Support reading SOCKS proxy configuration from macOS System Configuration.
+Patch by Sam Schott.
+
+..
+
+.. date: 2023-04-24-18-37-48
+.. gh-issue: 60436
+.. nonce: in-IyF
+.. section: macOS
+
+update curses textbox to additionally handle backspace using the
+``curses.ascii.DEL`` key press.
+
+..
+
+.. date: 2023-03-24-11-20-47
+.. gh-issue: 102997
+.. nonce: ZgQkbq
+.. section: macOS
+
+Update macOS installer to SQLite 3.41.2.
+
+..
+
+.. date: 2023-05-17-17-32-21
+.. gh-issue: 104499
+.. nonce: hNeqV4
+.. section: IDLE
+
+Fix completions for Tk Aqua 8.7 (currently blank).
+
+..
+
+.. date: 2023-05-17-15-11-11
+.. gh-issue: 104496
+.. nonce: wjav-y
+.. section: IDLE
+
+About prints both tcl and tk versions if different (expected someday).
+
+..
+
+.. date: 2023-04-30-20-01-18
+.. gh-issue: 88496
+.. nonce: y65vUb
+.. section: IDLE
+
+Fix IDLE test hang on macOS.
+
+..
+
+.. date: 2023-05-11-15-12-11
+.. gh-issue: 104389
+.. nonce: EiOhB3
+.. section: Tools/Demos
+
+Argument Clinic C converters now accept the ``unused`` keyword, for wrapping
+a parameter with :c:macro:`Py_UNUSED`. Patch by Erlend E. Aasland.
+
+..
+
+.. date: 2023-05-18-20-53-05
+.. gh-issue: 101291
+.. nonce: ZBh9aR
+.. section: C API
+
+Added unstable C API for extracting the value of "compact" integers:
+:c:func:`PyUnstable_Long_IsCompact` and
+:c:func:`PyUnstable_Long_CompactValue`.
+
+..
+
+.. date: 2023-05-02-21-05-54
+.. gh-issue: 104109
+.. nonce: 0tnDZV
+.. section: C API
+
+We've added ``Py_NewInterpreterFromConfig()`` and ``PyInterpreterConfig`` to
+the public C-API (but not the stable ABI; not yet at least).  The new
+function may be used to create a new interpreter with various features
+configured.  The function was added to support PEP 684 (per-interpreter
+GIL).
+
+..
+
+.. date: 2023-04-28-18-04-38
+.. gh-issue: 103968
+.. nonce: EnVvOx
+.. section: C API
+
+:c:func:`PyType_FromSpec` and its variants now allow creating classes whose
+metaclass overrides :c:member:`~PyTypeObject.tp_new`. The ``tp_new`` is
+ignored. This behavior is deprecated and will be disallowed in 3.14+. The
+new :c:func:`PyType_FromMetaclass` already disallows it.
+
+..
+
+.. date: 2023-04-24-10-31-59
+.. gh-issue: 103743
+.. nonce: 2xYA1K
+.. section: C API
+
+Add :c:func:`PyUnstable_Object_GC_NewWithExtraData` function that can be
+used to allocate additional memory after an object for data not managed by
+Python.
+
+..
+
+.. date: 2023-04-14-23-05-52
+.. gh-issue: 103295
+.. nonce: GRHY1Z
+.. section: C API
+
+Introduced :c:func:`PyUnstable_WritePerfMapEntry`,
+:c:func:`PyUnstable_PerfMapState_Init` and
+:c:func:`PyUnstable_PerfMapState_Fini`. These allow extension modules (JIT
+compilers in particular) to write to perf-map files in a thread safe manner.
+The :doc:`../howto/perf_profiling` also uses these APIs to write entries in
+the perf-map file.
+
+..
+
+.. date: 2023-04-13-16-54-00
+.. gh-issue: 103509
+.. nonce: A26Qu8
+.. section: C API
+
+Added C API for extending types whose instance memory layout is opaque:
+:c:member:`PyType_Spec.basicsize` can now be zero or negative,
+:c:func:`PyObject_GetTypeData` can be used to get subclass-specific data,
+and :c:macro:`Py_TPFLAGS_ITEMS_AT_END` can be used to safely extend
+variable-size objects. See :pep:`697` for details.
+
+..
+
+.. date: 2023-03-28-12-31-51
+.. gh-issue: 103091
+.. nonce: CzZyaZ
+.. section: C API
+
+Add a new C-API function to eagerly assign a version tag to a PyTypeObject:
+``PyUnstable_Type_AssignVersionTag()``.
+
+..
+
+.. date: 2023-02-09-23-09-29
+.. gh-issue: 101408
+.. nonce: _paFIF
+.. section: C API
+
+:c:macro:`PyObject_GC_Resize` should calculate preheader size if needed.
+Patch by Donghee Na.
+
+..
+
+.. date: 2022-10-29-10-13-20
+.. gh-issue: 98836
+.. nonce: Cy5h_z
+.. section: C API
+
+Add support of more formatting options (left aligning, octals, uppercase
+hexadecimals, :c:type:`intmax_t`, :c:type:`ptrdiff_t`, :c:type:`wchar_t` C
+strings, variable width and precision) in :c:func:`PyUnicode_FromFormat` and
+:c:func:`PyUnicode_FromFormatV`.
+
+..
+
+.. date: 2022-09-15-15-21-34
+.. gh-issue: 96803
+.. nonce: ynBKIS
+.. section: C API
+
+Add unstable C-API functions to get the code object, lasti and line number
+from the internal ``_PyInterpreterFrame`` in the limited API. The functions
+are:
+
+* ``PyCodeObject * PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame)``
+* ``int PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame)``
+* ``int PyUnstable_InterpreterFrame_GetLine(struct _PyInterpreterFrame *frame)``

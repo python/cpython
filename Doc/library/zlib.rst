@@ -1,5 +1,5 @@
-:mod:`zlib` --- Compression compatible with :program:`gzip`
-===========================================================
+:mod:`!zlib` --- Compression compatible with :program:`gzip`
+============================================================
 
 .. module:: zlib
    :synopsis: Low-level interface to compression and decompression routines
@@ -43,8 +43,6 @@ The available exception and functions in this module are:
 
    .. versionchanged:: 3.0
       The result is always unsigned.
-      To generate the same numeric value when using Python 2 or earlier,
-      use ``adler32(data) & 0xffffffff``.
 
 .. function:: compress(data, /, level=-1, wbits=MAX_WBITS)
 
@@ -137,8 +135,6 @@ The available exception and functions in this module are:
 
    .. versionchanged:: 3.0
       The result is always unsigned.
-      To generate the same numeric value when using Python 2 or earlier,
-      use ``crc32(data) & 0xffffffff``.
 
 .. function:: decompress(data, /, wbits=MAX_WBITS, bufsize=DEF_BUF_SIZE)
 
@@ -269,7 +265,7 @@ Decompression objects support the following methods and attributes:
    A boolean indicating whether the end of the compressed data stream has been
    reached.
 
-   This makes it possible to distinguish between a properly-formed compressed
+   This makes it possible to distinguish between a properly formed compressed
    stream, and an incomplete or truncated one.
 
    .. versionadded:: 3.3
@@ -334,6 +330,18 @@ the following constants:
    .. versionadded:: 3.3
 
 
+.. data:: ZLIBNG_VERSION
+
+   The version string of the zlib-ng library that was used for building the
+   module if zlib-ng was used. When present, the :data:`ZLIB_VERSION` and
+   :data:`ZLIB_RUNTIME_VERSION` constants reflect the version of the zlib API
+   provided by zlib-ng.
+
+   If zlib-ng was not used to build the module, this constant will be absent.
+
+   .. versionadded:: 3.14
+
+
 .. seealso::
 
    Module :mod:`gzip`
@@ -345,3 +353,8 @@ the following constants:
    http://www.zlib.net/manual.html
       The zlib manual explains  the semantics and usage of the library's many
       functions.
+
+   In case gzip (de)compression is a bottleneck, the `python-isal`_
+   package speeds up (de)compression with a mostly compatible API.
+
+   .. _python-isal: https://github.com/pycompression/python-isal

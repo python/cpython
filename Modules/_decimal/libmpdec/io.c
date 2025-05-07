@@ -48,6 +48,7 @@
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER) && __GNUC__ >= 7
   #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
   #pragma GCC diagnostic ignored "-Wmisleading-indentation"
+  #pragma GCC diagnostic ignored "-Warray-bounds"
 #endif
 
 
@@ -346,6 +347,10 @@ mpd_qset_string_exact(mpd_t *dec, const char *s, uint32_t *status)
    or the location of a decimal point. */
 #define EXTRACT_DIGIT(s, x, d, dot) \
         if (s == dot) *s++ = '.'; *s++ = '0' + (char)(x / d); x %= d
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER) && __GNUC__ >= 12
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
 static inline char *
 word_to_string(char *s, mpd_uint_t x, int n, char *dot)
 {
@@ -377,6 +382,9 @@ word_to_string(char *s, mpd_uint_t x, int n, char *dot)
     *s = '\0';
     return s;
 }
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER) && __GNUC__ >= 12
+  #pragma GCC diagnostic pop
+#endif
 
 /* Print exponent x to string s. Undefined for MPD_SSIZE_MIN. */
 static inline char *

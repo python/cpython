@@ -245,6 +245,9 @@ You can omit either *m* or *n*; in that case, a reasonable value is assumed for
 the missing value.  Omitting *m* is interpreted as a lower limit of 0, while
 omitting *n* results in an upper bound of infinity.
 
+The simplest case ``{m}`` matches the preceding item exactly *m* times.
+For example, ``a/{2}b`` will only match ``'a//b'``.
+
 Readers of a reductionist bent may notice that the three other quantifiers can
 all be expressed using this notation.  ``{0,}`` is the same as ``*``, ``{1,}``
 is equivalent to ``+``, and ``{0,1}`` is the same as ``?``.  It's better to use
@@ -378,11 +381,7 @@ containing information about the match: where it starts and ends, the substring
 it matched, and more.
 
 You can learn about this by interactively experimenting with the :mod:`re`
-module.  If you have :mod:`tkinter` available, you may also want to look at
-:source:`Tools/demo/redemo.py`, a demonstration program included with the
-Python distribution.  It allows you to enter REs and strings, and displays
-whether the RE matches or fails. :file:`redemo.py` can be quite useful when
-trying to debug a complicated RE.
+module.
 
 This HOWTO uses the standard Python interpreter for its examples. First, run the
 Python interpreter, import the :mod:`re` module, and compile a RE::
@@ -521,6 +520,8 @@ cache.
 
 Compilation Flags
 -----------------
+
+.. currentmodule:: re
 
 Compilation flags let you modify some aspects of how regular expressions work.
 Flags are available in the :mod:`re` module under two names, a long name such as
@@ -737,8 +738,11 @@ given location, they can obviously be matched an infinite number of times.
    different: ``\A`` still matches only at the beginning of the string, but ``^``
    may match at any location inside the string that follows a newline character.
 
-``\Z``
+``\z``
    Matches only at the end of the string.
+
+``\Z``
+   The same as ``\z``.  For compatibility with old Python versions.
 
 ``\b``
    Word boundary.  This is a zero-width assertion that matches only at the
@@ -949,7 +953,7 @@ Additionally, you can retrieve named groups as a dictionary with
    >>> m.groupdict()
    {'first': 'Jane', 'last': 'Doe'}
 
-Named groups are handy because they let you use easily-remembered names, instead
+Named groups are handy because they let you use easily remembered names, instead
 of having to remember numbers.  Here's an example RE from the :mod:`imaplib`
 module::
 

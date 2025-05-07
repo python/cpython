@@ -1,0 +1,1 @@
+Add specialisation for ``BINARY_OP/SUBSCR`` on list and slice.
