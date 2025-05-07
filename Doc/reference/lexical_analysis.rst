@@ -922,13 +922,23 @@ Numeric literals
    floating-point literal, hexadecimal literal
    octal literal, binary literal, decimal literal, imaginary literal, complex literal
 
-There are three types of numeric literals: integers, floating-point numbers, and
-imaginary numbers.  There are no complex literals (complex numbers can be formed
-by adding a real number and an imaginary number).
+:token:`NUMBER` tokens represent numeric literals, of which there are three
+types: integers, floating-point numbers, and imaginary numbers.
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   NUMBER: integer | floatnumber | imagnumber
+
 
 Note that numeric literals do not include a sign; a phrase like ``-1`` is
 actually an expression composed of the unary operator '``-``' and the literal
 ``1``.
+
+Similarly, there are no complex literals; a phrase like ``1+2j`` is an
+expression composed by the :ref:`integer literal <integers>` ``1``,
+the :ref:`operator <operators>` '``+``',
+and the :ref:`imaginary literal <imaginary>` ``2j``.
 
 
 .. index::
@@ -942,36 +952,67 @@ actually an expression composed of the unary operator '``-``' and the literal
 Integer literals
 ----------------
 
-Integer literals are described by the following lexical definitions:
+Integer literals denote whole numbers. For example::
 
-.. productionlist:: python-grammar
-   integer: `decinteger` | `bininteger` | `octinteger` | `hexinteger`
-   decinteger: `nonzerodigit` (["_"] `digit`)* | "0"+ (["_"] "0")*
-   bininteger: "0" ("b" | "B") (["_"] `bindigit`)+
-   octinteger: "0" ("o" | "O") (["_"] `octdigit`)+
-   hexinteger: "0" ("x" | "X") (["_"] `hexdigit`)+
-   nonzerodigit: "1"..."9"
-   digit: "0"..."9"
-   bindigit: "0" | "1"
-   octdigit: "0"..."7"
-   hexdigit: `digit` | "a"..."f" | "A"..."F"
+   7
+   3
+   2147483647
 
 There is no limit for the length of integer literals apart from what can be
-stored in available memory.
+stored in available memory::
 
-Underscores are ignored for determining the numeric value of the literal.  They
-can be used to group digits for enhanced readability.  One underscore can occur
-between digits, and after base specifiers like ``0x``.
+   7922816251426433759354395033679228162514264337593543950336
 
-Note that leading zeros in a non-zero decimal number are not allowed. This is
-for disambiguation with C-style octal literals, which Python used before version
-3.0.
+Underscores can be used to group digits for enhanced readability,
+and are ignored for determining the numeric value of the literal.
+For example, the following literals are equivalent:
 
-Some examples of integer literals::
+   100_000_000_000
+   100000000000
+   1_00_00_00_00_000
 
-   7     2147483647                        0o177    0b100110111
-   3     79228162514264337593543950336     0o377    0xdeadbeef
-         100_000_000_000                   0b_1110_0101
+Underscores can only occur between digits.
+For example, ``_123``, ``321_``, and ``123__321`` are *not* valid literals.
+
+Integers can be specified in binary (base 2), octal (base 2), or hexadecimal
+(base 16) using the prefixes ``0b``, ``0o`` and ``0x``, respectively.
+Hexadecimal digits 10 through 15 are represented by letters ``A``-``F``,
+case-insensitive.  For example::
+
+   0b100110111
+   0b_1110_0101
+   0o177
+   0o377
+   0xdeadbeef
+   0xDead_Beef
+
+Underscores can occur between digits or after the base specifier, but not
+within it.
+
+For example, ``0x_1f`` is a valid literal, but ``0_x1f`` is not.
+
+Note that leading zeros in a non-zero decimal number are not allowed.
+For example, ``0123`` is not a valid literal.
+This is for disambiguation with C-style octal literals, which Python used
+before version 3.0.
+
+Formally, integer literals are described by the following lexical definitions:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   integer:      `decinteger` | `bininteger` | `octinteger` |
+                 `hexinteger` | `zerointeger`
+   decinteger:   `nonzerodigit` (["_"] `digit`)*
+   bininteger:   "0" ("b" | "B") (["_"] `bindigit`)+
+   octinteger:   "0" ("o" | "O") (["_"] `octdigit`)+
+   hexinteger:   "0" ("x" | "X") (["_"] `hexdigit`)+
+   zerointeger:  "0"+ (["_"] "0")*
+   nonzerodigit: "1"..."9"
+   digit:        "0"..."9"
+   bindigit:     "0" | "1"
+   octdigit:     "0"..."7"
+   hexdigit:     `digit` | "a"..."f" | "A"..."F"
 
 .. versionchanged:: 3.6
    Underscores are now allowed for grouping purposes in literals.
