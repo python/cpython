@@ -573,6 +573,7 @@ def _template_to_ast(template):
                 values.append(ast.Constant(value=part))
             case _:  # Interpolation, but we don't want to import the string module
                 interp = ast.Interpolation(
+                    str=part.expression,
                     value=ast.parse(part.expression),
                     conversion=ord(part.conversion) if part.conversion is not None else -1,
                     format_spec=(

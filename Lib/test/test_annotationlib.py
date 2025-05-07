@@ -281,6 +281,7 @@ class TestStringFormat(unittest.TestCase):
             z: t"{a:b} {c!r} {d!s:t}",
             a: t"a{b}c{d}e{f}g",
             b: t"{a:{1}}",
+            c: t"{a | b * c}",
         ): pass
 
         annos = get_annotations(f, format=Format.STRING)
@@ -291,6 +292,7 @@ class TestStringFormat(unittest.TestCase):
             "a": "t'a{b}c{d}e{f}g'",
             # interpolations in the format spec are eagerly evaluated so we can't recover the source
             "b": "t'{a:1}'",
+            "c": "t'{a | b * c}'",
         })
 
         def g(
