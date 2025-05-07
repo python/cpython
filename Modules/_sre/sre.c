@@ -2637,6 +2637,82 @@ _sre_SRE_Match_span_impl(MatchObject *self, PyObject *group)
     return _pair(self->mark[index*2], self->mark[index*2+1]);
 }
 
+/*[clinic input]
+_sre.SRE_Match.index
+
+    value: object
+    start: slice_index(accept={int}) = 0
+    stop: slice_index(accept={int}, c_default="PY_SSIZE_T_MAX") = sys.maxsize
+    /
+
+Return the index of the first occurrence of the value among the matched groups.
+
+Raises ValueError if the value is not present.
+[clinic start generated code]*/
+
+static PyObject *
+_sre_SRE_Match_index_impl(MatchObject *self, PyObject *value,
+                          Py_ssize_t start, Py_ssize_t stop)
+/*[clinic end generated code: output=846597f6f96f829c input=7f41b5a99e0ad88e]*/
+{
+    Py_ssize_t i;
+
+    if (start < 0) {
+        start += self->groups;
+        if (start < 0)
+            start = 0;
+    }
+    if (stop < 0) {
+        stop += self->groups;
+    }
+    else if (stop > self->groups) {
+        stop = self->groups;
+    }
+    for (i = start; i < stop; i++) {
+        PyObject* group = match_getslice_by_index(self, i, Py_None);
+        if (group == NULL)
+            return NULL;
+        int cmp = PyObject_RichCompareBool(group, value, Py_EQ);
+        Py_DECREF(group);
+        if (cmp > 0)
+            return PyLong_FromSsize_t(i);
+        else if (cmp < 0)
+            return NULL;
+    }
+    PyErr_SetString(PyExc_ValueError, "match.index(x): x not in match");
+    return NULL;
+}
+
+/*[clinic input]
+_sre.SRE_Match.count
+
+     value: object
+     /
+
+Return the number of occurrences of the value among the matched groups.
+[clinic start generated code]*/
+
+static PyObject *
+_sre_SRE_Match_count_impl(MatchObject *self, PyObject *value)
+/*[clinic end generated code: output=c0b81bdce5872620 input=b1f3372cfb4b8c74]*/
+{
+    Py_ssize_t count = 0;
+    Py_ssize_t i;
+
+    for (i = 0; i < self->groups; i++) {
+        PyObject* group = match_getslice_by_index(self, i, Py_None);
+        if (group == NULL)
+            return NULL;
+        int cmp = PyObject_RichCompareBool(group, value, Py_EQ);
+        Py_DECREF(group);
+        if (cmp > 0)
+            count++;
+        else if (cmp < 0)
+            return NULL;
+    }
+    return PyLong_FromSsize_t(count);
+}
+
 static PyObject*
 match_regs(MatchObject* self)
 {
@@ -3247,6 +3323,8 @@ static PyMethodDef match_methods[] = {
     _SRE_SRE_MATCH_START_METHODDEF
     _SRE_SRE_MATCH_END_METHODDEF
     _SRE_SRE_MATCH_SPAN_METHODDEF
+    _SRE_SRE_MATCH_INDEX_METHODDEF
+    _SRE_SRE_MATCH_COUNT_METHODDEF
     _SRE_SRE_MATCH_GROUPS_METHODDEF
     _SRE_SRE_MATCH_GROUPDICT_METHODDEF
     _SRE_SRE_MATCH_EXPAND_METHODDEF

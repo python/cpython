@@ -621,6 +621,26 @@ class ReTests(unittest.TestCase):
         self.assertEqual(b, "b")
         self.assertEqual(c, "c")
 
+        self.assertIn("abc", m)
+        self.assertIn("a", m)
+        self.assertIn("b", m)
+        self.assertIn("c", m)
+        self.assertNotIn("123", m)
+
+        self.assertEqual(list(reversed(m)), ["c", "b", "a", "abc"])
+
+        self.assertEqual(m.index("abc"), 0)
+        self.assertEqual(m.index("a"), 1)
+        self.assertEqual(m.index("b"), 2)
+        self.assertEqual(m.index("c"), 3)
+        self.assertRaises(ValueError, m.index, "123")
+
+        self.assertEqual(m.count("abc"), 1)
+        self.assertEqual(m.count("a"), 1)
+        self.assertEqual(m.count("b"), 1)
+        self.assertEqual(m.count("c"), 1)
+        self.assertEqual(m.count("123"), 0)
+
         match m:
             case [_, "a", "b", "c"]:
                 pass
@@ -634,6 +654,11 @@ class ReTests(unittest.TestCase):
                 self.assertEqual(day, "07")
             case _:
                 self.fail()
+
+        for s, k, v in re.finditer(r"(\w+):(\w+)", "abc:123"):
+            self.assertEqual(s, "abc:123")
+            self.assertEqual(k, "abc")
+            self.assertEqual(v, "123")
 
     def test_re_fullmatch(self):
         # Issue 16203: Proposal: add re.fullmatch() method.
