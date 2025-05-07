@@ -139,6 +139,7 @@ New features
 ------------
 
 * TODO
+
 Porting to Python 3.15
 ----------------------
 
