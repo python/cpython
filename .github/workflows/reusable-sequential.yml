@@ -43,14 +43,14 @@ jobs:
     - name: Configure CPython
       run: >-
         ./configure
-          --config-cache
-          --with-pydebug
-          --enable-slower-safety
-          --enable-safety
-          --prefix=/opt/python-dev
+        --config-cache
+        --prefix=/opt/python-dev
     - name: Build CPython
-      run: make all --jobs 4
+      run: make --jobs 4
+    - name: Install
+      run: make install --jobs 4
     - name: Display build info
       run: make pythoninfo
     - name: Tests
-      run: ./python -m test --single-process --timeout 4500 --verbose2 --verbose3
+      run: ./bin/python3 -m test -uall
+      working-directory: /opt/python-dev
