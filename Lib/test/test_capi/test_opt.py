@@ -458,6 +458,7 @@ class TestUopsOptimization(unittest.TestCase):
         ex = get_first_executor(testfunc)
         return res, ex
 
+
     def test_int_type_propagation(self):
         def testfunc(loops):
             num = 0
