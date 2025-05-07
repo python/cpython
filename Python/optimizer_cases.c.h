@@ -562,8 +562,15 @@
         }
 
         case _BINARY_SLICE: {
+            JitOptSymbol *container;
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            container = stack_pointer[-3];
+            PyTypeObject *type = sym_get_type(container);
+            if (type == &PyUnicode_Type) {
+                res = sym_new_type(ctx, type);
+            } else {
+                res = sym_new_not_null(ctx);
+            }
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());

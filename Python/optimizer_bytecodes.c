@@ -1216,6 +1216,18 @@ dummy_func(void) {
         sym_set_const(callable, list_append);
     }
 
+    op(_BINARY_SLICE, (container, start, stop -- res)) {
+        // Slicing a string always returns a string.
+        // TODO: We can apply this to lists and tuples as well.
+        //       We'll start with string to simplify the process.
+        PyTypeObject *type = sym_get_type(container);
+        if (type == &PyUnicode_Type) {
+            res = sym_new_type(ctx, type);
+        } else {
+            res = sym_new_not_null(ctx);
+        }
+    }
+
 // END BYTECODES //
 
 }
