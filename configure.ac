@@ -5387,7 +5387,27 @@ PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
 ])
 
 dnl zstd 1.4.5 stabilised ZDICT_finalizeDictionary
-PKG_CHECK_MODULES([LIBZSTD], [libzstd >= 1.4.5], [have_libzstd=yes], [have_libzstd=no])
+PKG_CHECK_MODULES([LIBZSTD], [libzstd >= 1.4.5], [have_libzstd=yes], [
+  WITH_SAVE_ENV([
+    CPPFLAGS="$CPPFLAGS $LIBZSTD_CFLAGS"
+    CFLAGS="$CFLAGS $LIBZSTD_CFLAGS"
+    LIBS="$LIBS $LIBZSTD_LIBS"
+    AC_CHECK_HEADERS([zstd.h zdict.h], [
+      PY_CHECK_LIB([zstd], [ZDICT_finalizeDictionary], [
+        AC_RUN_IFELSE([AC_LANG_PROGRAM([@%:@include "zstd.h"], [
+          #if ZSTD_VERSION_NUMBER < 10405
+            exit(1);
+          #endif
+          ])
+        ], [have_libzstd=yes], [have_libzstd=no])             
+      ], [have_libzstd=no])
+    ], [have_libzstd=no])
+    AS_VAR_IF([have_libzstd], [yes], [
+      LIBZSTD_CFLAGS=${LIBZSTD_CFLAGS-""}
+      LIBZSTD_LIBS=${LIBZSTD_LIBS-"-lzstd"}
+    ])
+  ])
+])
 
 dnl PY_CHECK_NETDB_FUNC(FUNCTION)
 AC_DEFUN([PY_CHECK_NETDB_FUNC], [PY_CHECK_FUNC([$1], [@%:@include <netdb.h>])])
