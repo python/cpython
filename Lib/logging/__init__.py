@@ -2071,7 +2071,7 @@ def basicConfig(**kwargs):
     .. versionchanged:: 3.9
        Added the ``encoding`` and ``errors`` parameters.
 
-    .. versionchanged:: 3.14
+    .. versionchanged:: 3.15
        Added the ``formatter`` parameter.
     """
     # Add thread safety in case someone mistakenly calls
