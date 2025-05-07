@@ -939,7 +939,7 @@ Constants
    Whether the OpenSSL library has built-in support for External PSKs in TLS
    1.3 as described in :rfc:`9258`.
 
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
 .. data:: HAS_PHA
 
