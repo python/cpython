@@ -153,8 +153,8 @@ As another example, generating HTML attributes from data:
 .. code-block:: python
 
    attributes = {"src": "shrubbery.jpg", "alt": "looks nice"}
-   template = t"<img {attributes} />"
-   assert html(template) == '<img src="shrubbery.jpg" alt="looks nice" class="looks-nice" />'
+   template = t"<img {attributes}>"
+   assert html(template) == '<img src="shrubbery.jpg" alt="looks nice" class="looks-nice">'
 
 Unlike f-strings, the ``html`` function has access to template attributes
 containing the original information: static strings, interpolations, and values
