@@ -5394,12 +5394,19 @@ PKG_CHECK_MODULES([LIBZSTD], [libzstd >= 1.4.5], [have_libzstd=yes], [
     LIBS="$LIBS $LIBZSTD_LIBS"
     AC_CHECK_HEADERS([zstd.h zdict.h], [
       PY_CHECK_LIB([zstd], [ZDICT_finalizeDictionary], [
-        AC_RUN_IFELSE([AC_LANG_PROGRAM([@%:@include "zstd.h"], [
+        AC_MSG_CHECKING([ZSTD_VERSION_NUMBER >= 1.4.5])
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([@%:@include "zstd.h"], [
           #if ZSTD_VERSION_NUMBER < 10405
             exit(1);
           #endif
           ])
-        ], [have_libzstd=yes], [have_libzstd=no])             
+        ], [
+            AC_MSG_RESULT([yes])
+            have_libzstd=yes
+        ], [
+            AC_MSG_RESULT([no])
+            have_libzstd=no
+        ])
       ], [have_libzstd=no])
     ], [have_libzstd=no])
     AS_VAR_IF([have_libzstd], [yes], [
