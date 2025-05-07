@@ -12,6 +12,7 @@ from code import InteractiveConsole
 from textwrap import dedent
 from _colorize import get_theme, theme_no_color
 
+
 def execute(c, sql, suppress_errors=True, theme=theme_no_color):
     """Helper that wraps execution of SQL code.
 
