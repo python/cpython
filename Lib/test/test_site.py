@@ -15,6 +15,7 @@ from test.support import captured_stderr
 from test.support.os_helper import TESTFN, EnvironmentVarGuard
 import ast
 import builtins
+import fnmatch
 import glob
 import io
 import os
@@ -25,6 +26,7 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
+from textwrap import dedent
 import urllib.error
 import urllib.request
 from unittest import mock
@@ -803,6 +805,98 @@ class _pthFileTests(unittest.TestCase):
                 os.path.join(sys_prefix, 'from-env'),
             )], env=env)
         self.assertTrue(rc, "sys.path is incorrect")
+
+
+class CommandLineTests(unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        if sys.path[0] != os.getcwd():
+            sys.path.remove(sys.path[0])
+            sys.path.insert(0, os.getcwd())
+
+    def get_excepted_output(self, *args):
+        if len(args) == 0:
+            user_base = site.getuserbase()
+            user_site = site.getusersitepackages()
+            output = "sys.path = [\n"
+            for dir in sys.path:
+                output += "    %r,\n" % (dir,)
+            output += "]\n"
+            def exists(path):
+                if path is not None and os.path.isdir(path):
+                    return "exists"
+                else:
+                    return "doesn't exist"
+            output += f"USER_BASE: {user_base!r} ({exists(user_base)})\n"
+            output += f"USER_SITE: {user_site!r} ({exists(user_site)})\n"
+            output += f"ENABLE_USER_SITE: {site.ENABLE_USER_SITE!r}\n"
+            return 0, dedent(output).strip()
+
+        buffer = []
+        if '--user-base' in args:
+            buffer.append(site.getuserbase())
+        if '--user-site' in args:
+            buffer.append(site.getusersitepackages())
+
+        if buffer:
+            return_code = 3
+            if site.ENABLE_USER_SITE:
+                return_code = 0
+            elif site.ENABLE_USER_SITE is False:
+                return_code = 1
+            elif site.ENABLE_USER_SITE is None:
+                return_code = 2
+            output = os.pathsep.join(buffer)
+            return return_code, dedent(output).strip()
+        else:
+            return 10, None
+
+    def invoke_command_line(self, *args):
+        args = [sys.executable, "-m", "site", *args]
+        proc = subprocess.Popen(args,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,)
+        proc.wait()
+        output = proc.stdout.read().decode()
+        return_code = proc.returncode
+        proc.stdout.close()
+        return return_code, dedent(output).strip()
+
+    def test_no_args(self):
+        return_code, output = self.invoke_command_line()
+        excepted_return_code, excepted_output = self.get_excepted_output()
+        self.assertEqual(return_code, excepted_return_code)
+        self.assertEqual(output, excepted_output)
+        # self.assertTrue(fnmatch.fnmatch(output, excepted_output))
+
+    def test_unknown_args(self):
+        return_code, output = self.invoke_command_line("--unknown-arg")
+        excepted_return_code, _ = self.get_excepted_output("--unknown-arg")
+        self.assertEqual(return_code, excepted_return_code)
+        self.assertIn('[--user-base] [--user-site]', output)
+
+    def test_base_arg(self):
+        return_code, output = self.invoke_command_line("--user-base")
+        excepted = self.get_excepted_output("--user-base")
+        excepted_return_code, excepted_output = excepted
+        self.assertEqual(return_code, excepted_return_code)
+        self.assertEqual(output, excepted_output)
+        self.assertTrue(fnmatch.fnmatch(output, excepted_output))
+
+    def test_site_arg(self):
+        return_code, output = self.invoke_command_line("--user-site")
+        excepted = self.get_excepted_output("--user-site")
+        excepted_return_code, excepted_output = excepted
+        self.assertEqual(return_code, excepted_return_code)
+        self.assertTrue(fnmatch.fnmatch(output, excepted_output))
+
+    def test_both_args(self):
+        return_code, output = self.invoke_command_line("--user-base",
+                                                       "--user-site")
+        excepted = self.get_excepted_output("--user-base", "--user-site")
+        excepted_return_code, excepted_output = excepted
+        self.assertEqual(return_code, excepted_return_code)
+        self.assertTrue(fnmatch.fnmatch(output, excepted_output))
 
 
 if __name__ == "__main__":
