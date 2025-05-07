@@ -4823,15 +4823,13 @@ can be used interchangeably to index the same dictionary entry.
    being added is already present, the value from the keyword argument
    replaces the value from the positional argument.
 
-<<<<<<< HEAD
    Providing keyword arguments as in the first example only works for keys that
    are valid Python identifiers.  Otherwise, any valid keys can be used.
    
-   To illustrate dictionary creation and equality,
+   Dictionaries compare equal if and only if they have the same ``(key,
+   value)`` pairs (regardless of ordering). Order comparisons ('<', '<=', '>=', '>') raise
+   :exc:`TypeError`.  To illustrate dictionary creation and equality,
    the following examples all return a dictionary equal to
-=======
-   To illustrate, the following examples all return a dictionary equal to
->>>>>>> parent of 0600d30567e (reposition the explanation)
    ``{"one": 1, "two": 2, "three": 3}``::
 
       >>> a = dict(one=1, two=2, three=3)
@@ -5036,10 +5034,6 @@ can be used interchangeably to index the same dictionary entry.
       values of *other* take priority when *d* and *other* share keys.
 
       .. versionadded:: 3.9
-
-   Dictionaries compare equal if and only if they have the same ``(key,
-   value)`` pairs (regardless of ordering). Order comparisons ('<', '<=', '>=', '>') raise
-   :exc:`TypeError`.
 
    Dictionaries and dictionary views are reversible. ::
 
