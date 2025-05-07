@@ -37,15 +37,16 @@ COMPRESSION_LEVEL_DEFAULT = _zstd._compressionLevel_values[0]
 
 class FrameInfo:
     """Information about a Zstandard frame."""
-    __slots__ = 'decompressed_size', 'dictionary_id'
+
+    __slots__ = "decompressed_size", "dictionary_id"
 
     def __init__(self, decompressed_size, dictionary_id):
-        super().__setattr__('decompressed_size', decompressed_size)
-        super().__setattr__('dictionary_id', dictionary_id)
+        super().__setattr__("decompressed_size", decompressed_size)
+        super().__setattr__("dictionary_id", dictionary_id)
 
     def __repr__(self):
-        return (f'FrameInfo(decompressed_size={self.decompressed_size}, '
-                f'dictionary_id={self.dictionary_id})')
+        return (f"FrameInfo(decompressed_size={self.decompressed_size}, "
+                f"dictionary_id={self.dictionary_id})")
 
     def __setattr__(self, name, _):
         raise AttributeError(f"can't set attribute {name!r}")
@@ -78,10 +79,10 @@ def train_dict(samples, dict_size):
     """
     if not isinstance(dict_size, int):
         ds_cls = type(dict_size).__qualname__
-        raise TypeError(f'dict_size must be an int object, not {ds_cls!r}.')
+        raise TypeError(f"dict_size must be an int object, not {ds_cls!r}.")
 
     samples = tuple(samples)
-    chunks = b''.join(samples)
+    chunks = b"".join(samples)
     chunk_sizes = tuple(_nbytes(sample) for sample in samples)
     if not chunks:
         raise ValueError("samples contained no data; can't train dictionary.")
@@ -109,22 +110,22 @@ def finalize_dict(zstd_dict, /, samples, dict_size, level):
     """
 
     if not isinstance(zstd_dict, ZstdDict):
-        raise TypeError('zstd_dict argument should be a ZstdDict object.')
+        raise TypeError("zstd_dict argument should be a ZstdDict object.")
     if not isinstance(dict_size, int):
-        raise TypeError('dict_size argument should be an int object.')
+        raise TypeError("dict_size argument should be an int object.")
     if not isinstance(level, int):
-        raise TypeError('level argument should be an int object.')
+        raise TypeError("level argument should be an int object.")
 
     samples = tuple(samples)
-    chunks = b''.join(samples)
+    chunks = b"".join(samples)
     chunk_sizes = tuple(_nbytes(sample) for sample in samples)
     if not chunks:
-        raise ValueError("The samples are empty content, can't finalize the"
+        raise ValueError("The samples are empty content, can't finalize the "
                          "dictionary.")
-    dict_content = _zstd._finalize_dict(zstd_dict.dict_content,
-                                        chunks, chunk_sizes,
-                                        dict_size, level)
+    dict_content = _zstd._finalize_dict(zstd_dict.dict_content, chunks,
+                                        chunk_sizes, dict_size, level)
     return ZstdDict(dict_content)
+
 
 def compress(data, level=None, options=None, zstd_dict=None):
     """Return Zstandard compressed *data* as bytes.
@@ -140,6 +141,7 @@ def compress(data, level=None, options=None, zstd_dict=None):
     """
     comp = ZstdCompressor(level=level, options=options, zstd_dict=zstd_dict)
     return comp.compress(data, mode=ZstdCompressor.FLUSH_FRAME)
+
 
 def decompress(data, zstd_dict=None, options=None):
     """Decompress one or more frames of Zstandard compressed *data*.

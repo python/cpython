@@ -78,10 +78,10 @@ class ZstdFile(_streams.BaseStream):
             raise ValueError(f"Invalid mode: {mode!r}")
 
         if isinstance(file, (str, bytes, PathLike)):
-            self._fp = io.open(file, f'{mode}b')
+            self._fp = io.open(file, f"{mode}b")
             self._close_fp = True
-        elif ((mode == 'r' and hasattr(file, "read"))
-                or (mode != 'r' and hasattr(file, "write"))):
+        elif ((mode == "r" and hasattr(file, "read"))
+                or (mode != "r" and hasattr(file, "write"))):
             self._fp = file
         else:
             raise TypeError("file must be a file-like object "
@@ -107,7 +107,7 @@ class ZstdFile(_streams.BaseStream):
             return
         try:
             if self._mode == _MODE_READ:
-                if getattr(self, '_buffer', None):
+                if getattr(self, "_buffer", None):
                     self._buffer.close()
                     self._buffer = None
             elif self._mode == _MODE_WRITE:
@@ -274,7 +274,7 @@ class ZstdFile(_streams.BaseStream):
 
     @property
     def mode(self):
-        return 'wb' if self._mode == _MODE_WRITE else 'rb'
+        return "wb" if self._mode == _MODE_WRITE else "rb"
 
     @property
     def closed(self):
