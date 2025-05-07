@@ -634,7 +634,7 @@ PyAPI_FUNC(int) _PyCode_SetUnboundVarCounts(
  * Stateless code that takes no arguments and doesn't return anything
  * may be treated like a script.
  *
- * We consider stateless code to be "portable" if it does not return any
+ * We consider stateless code to be "portable" if it does not return
  * any object that holds a reference to any of the code's locals.  Thus
  * generators and coroutines are not portable.  Likewise a function
  * that returns a closure is not portable.  The concept of
