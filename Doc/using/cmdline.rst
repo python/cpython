@@ -285,7 +285,7 @@ Miscellaneous options
 
 .. option:: -E
 
-   Ignore all ``PYTHON*`` environment variables (except :envvar:`PYTHONEXECUTABLE), e.g.
+   Ignore all ``PYTHON*`` environment variables (except :envvar:`PYTHONEXECUTABLE`), e.g.
    :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that might be set.
 
    See also the :option:`-P` and :option:`-I` (isolated) options.
