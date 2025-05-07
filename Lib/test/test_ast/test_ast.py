@@ -821,6 +821,17 @@ class AST_Tests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, f"identifier field can't represent '{constant}' constant"):
                 compile(expr, "<test>", "eval")
 
+    def test_constant_as_unicode_name(self):
+        constants = [
+            ("True", b"Tru\xe1\xb5\x89"),
+            ("False", b"Fal\xc5\xbfe"),
+            ("None", b"N\xc2\xbane"),
+        ]
+        for constant in constants:
+            with self.assertRaisesRegex(ValueError,
+                f"identifier field can't represent '{constant[0]}' constant"):
+                ast.parse(constant[1], mode="eval")
+
     def test_precedence_enum(self):
         class _Precedence(enum.IntEnum):
             """Precedence table that originated from python grammar."""
