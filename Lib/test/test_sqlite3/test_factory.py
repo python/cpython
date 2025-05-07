@@ -72,7 +72,7 @@ class ConnectionFactoryTests(unittest.TestCase):
                 super(Factory, self).__init__(*args, **kwargs)
 
         with self.assertRaisesRegex(TypeError,
-                'takes exactly 1 positional argument'):
+                r'connect\(\) takes at most 1 positional arguments'):
             memory_database(5.0, 0, None, True, Factory)
 
 

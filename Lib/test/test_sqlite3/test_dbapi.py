@@ -551,7 +551,7 @@ class ConnectionTests(unittest.TestCase):
 
     def test_connect_positional_arguments(self):
         with self.assertRaisesRegex(TypeError,
-                'takes exactly 1 positional argument'):
+                r'connect\(\) takes at most 1 positional arguments'):
             sqlite.connect(":memory:", 1.0)
 
     def test_connection_resource_warning(self):
