@@ -4283,18 +4283,6 @@ because it returned length of Py_UNICODE.
 But this function is part of stable abi, because it doesn't
 include Py_UNICODE in signature and it was not excluded from
 stable ABI in PEP 384.
-
-
-
-
-
-
-
-
-
-
-
-
 */
 PyAPI_FUNC(Py_ssize_t)
 PyUnicode_GetSize(PyObject *unicode)
