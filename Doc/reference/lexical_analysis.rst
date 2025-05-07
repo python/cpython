@@ -922,13 +922,13 @@ Numeric literals
    floating-point literal, hexadecimal literal
    octal literal, binary literal, decimal literal, imaginary literal, complex literal
 
-:token:`NUMBER` tokens represent numeric literals, of which there are three
-types: integers, floating-point numbers, and imaginary numbers.
+:data:`~token.NUMBER` tokens represent numeric literals, of which there are
+three types: integers, floating-point numbers, and imaginary numbers.
 
 .. grammar-snippet::
    :group: python-grammar
 
-   NUMBER: integer | floatnumber | imagnumber
+   NUMBER: `integer` | `floatnumber` | `imagnumber`
 
 
 Note that numeric literals do not include a sign; a phrase like ``-1`` is
@@ -965,7 +965,7 @@ stored in available memory::
 
 Underscores can be used to group digits for enhanced readability,
 and are ignored for determining the numeric value of the literal.
-For example, the following literals are equivalent:
+For example, the following literals are equivalent::
 
    100_000_000_000
    100000000000
@@ -974,7 +974,7 @@ For example, the following literals are equivalent:
 Underscores can only occur between digits.
 For example, ``_123``, ``321_``, and ``123__321`` are *not* valid literals.
 
-Integers can be specified in binary (base 2), octal (base 2), or hexadecimal
+Integers can be specified in binary (base 2), octal (base 8), or hexadecimal
 (base 16) using the prefixes ``0b``, ``0o`` and ``0x``, respectively.
 Hexadecimal digits 10 through 15 are represented by letters ``A``-``F``,
 case-insensitive.  For example::
@@ -988,7 +988,6 @@ case-insensitive.  For example::
 
 Underscores can occur between digits or after the base specifier, but not
 within it.
-
 For example, ``0x_1f`` is a valid literal, but ``0_x1f`` is not.
 
 Note that leading zeros in a non-zero decimal number are not allowed.
@@ -1001,8 +1000,7 @@ Formally, integer literals are described by the following lexical definitions:
 .. grammar-snippet::
    :group: python-grammar
 
-   integer:      `decinteger` | `bininteger` | `octinteger` |
-                 `hexinteger` | `zerointeger`
+   integer:      `decinteger` | `bininteger` | `octinteger` | `hexinteger` | `zerointeger`
    decinteger:   `nonzerodigit` (["_"] `digit`)*
    bininteger:   "0" ("b" | "B") (["_"] `bindigit`)+
    octinteger:   "0" ("o" | "O") (["_"] `octdigit`)+
