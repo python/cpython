@@ -1,0 +1,3 @@
+Fix bug where the cycle GC could untrack objects in the trashcan because
+they looked like they were immortal. When objects are added to the trashcan,
+we take care to ensure they keep a mortal reference count.

@@ -891,7 +891,9 @@ class SysModuleTest(unittest.TestCase):
 
     @test.support.cpython_only
     def test_clear_type_cache(self):
-        sys._clear_type_cache()
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"sys\._clear_type_cache\(\) is deprecated.*"):
+            sys._clear_type_cache()
 
     @force_not_colorized
     @support.requires_subprocess()
@@ -1958,7 +1960,7 @@ def _supports_remote_attaching():
     PROCESS_VM_READV_SUPPORTED = False
 
     try:
-        from _testexternalinspection import PROCESS_VM_READV_SUPPORTED
+        from _remote_debugging import PROCESS_VM_READV_SUPPORTED
     except ImportError:
         pass
 
@@ -2099,7 +2101,7 @@ print("Remote script executed successfully!")
         prologue = '''\
 import sys
 def audit_hook(event, arg):
-    print(f"Audit event: {event}, arg: {arg}")
+    print(f"Audit event: {event}, arg: {arg}".encode("ascii", errors="replace"))
 sys.addaudithook(audit_hook)
 '''
         script = '''
@@ -2124,6 +2126,19 @@ raise Exception("Remote script exception")
         self.assertEqual(returncode, 0)
         self.assertIn(b"Remote script exception", stderr)
         self.assertEqual(stdout.strip(), b"Target process running...")
+
+    def test_new_namespace_for_each_remote_exec(self):
+        """Test that each remote_exec call gets its own namespace."""
+        script = textwrap.dedent(
+            """
+            assert globals() is not __import__("__main__").__dict__
+            print("Remote script executed successfully!")
+            """
+        )
+        returncode, stdout, stderr = self._run_remote_exec_test(script)
+        self.assertEqual(returncode, 0)
+        self.assertEqual(stderr, b"")
+        self.assertIn(b"Remote script executed successfully", stdout)
 
     def test_remote_exec_disabled_by_env(self):
         """Test remote exec is disabled when PYTHON_DISABLE_REMOTE_DEBUG is set"""
@@ -2181,6 +2196,64 @@ this is invalid python code
         self.assertIn(b"Remote debugging is not enabled", err)
         self.assertEqual(out, b"")
 
+class TestSysJIT(unittest.TestCase):
+
+    def test_jit_is_available(self):
+        available = sys._jit.is_available()
+        script = f"import sys; assert sys._jit.is_available() is {available}"
+        assert_python_ok("-c", script, PYTHON_JIT="0")
+        assert_python_ok("-c", script, PYTHON_JIT="1")
+
+    def test_jit_is_enabled(self):
+        available = sys._jit.is_available()
+        script = "import sys; assert sys._jit.is_enabled() is {enabled}"
+        assert_python_ok("-c", script.format(enabled=False), PYTHON_JIT="0")
+        assert_python_ok("-c", script.format(enabled=available), PYTHON_JIT="1")
+
+    def test_jit_is_active(self):
+        available = sys._jit.is_available()
+        script = textwrap.dedent(
+            """
+            import _testcapi
+            import _testinternalcapi
+            import sys
+
+            def frame_0_interpreter() -> None:
+                assert sys._jit.is_active() is False
+
+            def frame_1_interpreter() -> None:
+                assert sys._jit.is_active() is False
+                frame_0_interpreter()
+                assert sys._jit.is_active() is False
+
+            def frame_2_jit(expected: bool) -> None:
+                # Inlined into the last loop of frame_3_jit:
+                assert sys._jit.is_active() is expected
+                # Insert C frame:
+                _testcapi.pyobject_vectorcall(frame_1_interpreter, None, None)
+                assert sys._jit.is_active() is expected
+
+            def frame_3_jit() -> None:
+                # JITs just before the last loop:
+                for i in range(_testinternalcapi.TIER2_THRESHOLD + 1):
+                    # Careful, doing this in the reverse order breaks tracing:
+                    expected = {enabled} and i == _testinternalcapi.TIER2_THRESHOLD
+                    assert sys._jit.is_active() is expected
+                    frame_2_jit(expected)
+                    assert sys._jit.is_active() is expected
+
+            def frame_4_interpreter() -> None:
+                assert sys._jit.is_active() is False
+                frame_3_jit()
+                assert sys._jit.is_active() is False
+
+            assert sys._jit.is_active() is False
+            frame_4_interpreter()
+            assert sys._jit.is_active() is False
+            """
+        )
+        assert_python_ok("-c", script.format(enabled=False), PYTHON_JIT="0")
+        assert_python_ok("-c", script.format(enabled=available), PYTHON_JIT="1")
 
 
 if __name__ == "__main__":
