@@ -281,8 +281,8 @@ Names (identifiers and keywords)
 *soft keywords*.
 
 Within the ASCII range (U+0001..U+007F), the valid characters for names
-include the uppercase and lowercase letters (``A`` through ``Z`` and ``a`` to
-``z``), the underscore ``_`` and, except for the first character, the digits
+include the uppercase and lowercase letters (``A-Z`` and ``a-z``),
+the underscore ``_`` and, except for the first character, the digits
 ``0`` through ``9``.
 
 Names must contain at least one character, but have no upper length limit.
