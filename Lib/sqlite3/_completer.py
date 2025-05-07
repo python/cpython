@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 
 
-_keywords = ["ABORT", "ACTION", "ADD", "AFTER", "ALL", "ALTER", "ALWAYS",
+_keywords = ("ABORT", "ACTION", "ADD", "AFTER", "ALL", "ALTER", "ALWAYS",
             "ANALYZE", "AND", "AS", "ASC", "ATTACH", "AUTOINCREMENT",
             "BEFORE", "BEGIN", "BETWEEN", "BY", "CASCADE", "CASE", "CAST",
             "CHECK", "COLLATE", "COLUMN", "COMMIT", "CONFLICT",
@@ -25,13 +25,16 @@ _keywords = ["ABORT", "ACTION", "ADD", "AFTER", "ALL", "ALTER", "ALWAYS",
             "TABLE", "TEMP", "TEMPORARY", "THEN", "TIES", "TO",
             "TRANSACTION", "TRIGGER", "UNBOUNDED", "UNION", "UNIQUE",
             "UPDATE", "USING", "VACUUM", "VALUES", "VIEW", "VIRTUAL",
-            "WHEN", "WHERE", "WINDOW", "WITH", "WITHOUT"]
+            "WHEN", "WHERE", "WINDOW", "WITH", "WITHOUT")
 
+_completion_matches = []
 
 def _complete(text, state):
-    options = [c + " " for c in _keywords if c.startswith(text.upper())]
+    global _completion_matches
+    if state == 0:
+        _completion_matches = [c + " " for c in _keywords if c.startswith(text.upper())]
     try:
-        return options[state]
+        return _completion_matches[state]
     except IndexError:
         return None
 
