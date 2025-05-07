@@ -324,7 +324,7 @@ correct char (note: these 3 references are all equivalent to ``'>'``):
 
 .. doctest::
 
-   >>> parser = MyHTMLParser(convert_charrefs=True)
+   >>> parser = MyHTMLParser()
    >>> parser.feed('&gt;&#62;&#x3E;')
    Data     : >>>
 
