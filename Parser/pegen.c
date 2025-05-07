@@ -549,11 +549,13 @@ _PyPegen_new_identifier(Parser *p, const char *n)
         }
         id = id2;
     }
-    if (_PyUnicode_EqualToASCIIString(id, "None") ||
-        _PyUnicode_EqualToASCIIString(id, "True") ||
-        _PyUnicode_EqualToASCIIString(id, "False"))
+    if (_PyUnicode_EqualToASCIIString(id, "None")
+        || _PyUnicode_EqualToASCIIString(id, "True")
+        || _PyUnicode_EqualToASCIIString(id, "False"))
     {
-        PyErr_SetString(PyExc_ValueError, "identifier must not be None, True or False after Unicode normalization (NKFC)");
+        PyErr_SetString(PyExc_ValueError,
+                        "identifier must not be None, True or False "
+                        "after Unicode normalization (NKFC)");
         Py_DECREF(id);
         goto error;
     }
