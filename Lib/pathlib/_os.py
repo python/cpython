@@ -215,24 +215,18 @@ def vfspath(path):
     Return the string representation of a virtual path object.
     """
     try:
-        path_str = os.fspath(path)
+        return os.fsdecode(path)
     except TypeError:
         pass
-    else:
-        if isinstance(path_str, str):
-            return path_str
 
     path_type = type(path)
     try:
-        path_str = path_type.__vfspath__(path)
+        return path_type.__vfspath__(path)
     except AttributeError:
-        if hasattr(path_type, '__fspath__'):
+        if hasattr(path_type, '__vfspath__'):
             raise
-    else:
-        if isinstance(path_str, str):
-            return path_str
 
-    raise TypeError("expected str, os.PathLike[str] or JoinablePath "
+    raise TypeError("expected str, bytes, os.PathLike or JoinablePath "
                     "object, not " + path_type.__name__)
 
 
