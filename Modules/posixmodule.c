@@ -5726,6 +5726,8 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
 
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
+    // For API sets that don't support these APIs, we have no choice
+    // but to silently create a directory with default ACL.
 #if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
     if (mode == 0700 /* 0o700 */) {
         ULONG sdSize;
