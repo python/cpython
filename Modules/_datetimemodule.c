@@ -35,11 +35,6 @@ static PyTypeObject PyDateTime_TimeZoneType;
 
 
 typedef struct {
-    /* Extra reference to the interpreter's dict that will be decref'ed
-     * last at shutdown. We keep the current module in it, but don't rely
-     * on PyInterpreterState_GetDict() at the module's final phase. */
-    PyObject *interp_dict;
-
     /* Module heap types. */
     PyTypeObject *isocalendar_date_type;
 
@@ -138,13 +133,18 @@ get_current_module(PyInterpreterState *interp, int *p_reloading)
     if (dict == NULL) {
         goto error;
     }
-    if (PyDict_GetItemRef(dict, INTERP_KEY, &mod) < 0) {
+    PyObject *ref = NULL;
+    if (PyDict_GetItemRef(dict, INTERP_KEY, &ref) < 0) {
         goto error;
     }
-    if (mod != NULL) {
+    if (ref != NULL) {
         reloading = 1;
-        if (mod == Py_None) {
-            mod = NULL;
+        if (ref != Py_None) {
+            (void)PyWeakref_GetRef(ref, &mod);
+            if (mod == Py_None) {
+                Py_CLEAR(mod);
+            }
+            Py_DECREF(ref);
         }
     }
     if (p_reloading != NULL) {
@@ -187,35 +187,49 @@ _get_current_state(PyObject **p_mod)
     Py_DECREF(MOD_VAR)
 
 static int
-set_current_module(datetime_state *st, PyObject *mod)
+set_current_module(PyInterpreterState *interp, PyObject *mod)
 {
     assert(mod != NULL);
-    PyObject *dict = st->interp_dict;
+    PyObject *dict = PyInterpreterState_GetDict(interp);
     if (dict == NULL) {
         return -1;
     }
-    return PyDict_SetItem(dict, INTERP_KEY, mod);
+    PyObject *ref = PyWeakref_NewRef(mod, NULL);
+    if (ref == NULL) {
+        return -1;
+    }
+    int rc = PyDict_SetItem(dict, INTERP_KEY, ref);
+    Py_DECREF(ref);
+    return rc;
 }
 
 static void
-clear_current_module(datetime_state *st, PyObject *expected)
+clear_current_module(PyInterpreterState *interp, PyObject *expected)
 {
-    PyObject *dict = st->interp_dict;
-    if (dict == NULL) {
-        return;  /* Already cleared */
-    }
-
     PyObject *exc = PyErr_GetRaisedException();
 
+    PyObject *dict = PyInterpreterState_GetDict(interp);
+    if (dict == NULL) {
+        goto error;
+    }
+
     if (expected != NULL) {
-        PyObject *current;
-        if (PyDict_GetItemRef(dict, INTERP_KEY, &current) < 0) {
+        PyObject *ref = NULL;
+        if (PyDict_GetItemRef(dict, INTERP_KEY, &ref) < 0) {
             goto error;
         }
-        /* We only need "current" for pointer comparison. */
-        Py_XDECREF(current);
-        if (current != expected) {
-            goto finally;
+        if (ref != NULL) {
+            PyObject *current = NULL;
+            int rc = PyWeakref_GetRef(ref, &current);
+            /* We only need "current" for pointer comparison. */
+            Py_XDECREF(current);
+            Py_DECREF(ref);
+            if (rc < 0) {
+                goto error;
+            }
+            if (current != expected) {
+                goto finally;
+            }
         }
     }
 
@@ -2095,9 +2109,6 @@ delta_to_microseconds(PyDateTime_Delta *self)
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
-    if (current_mod == NULL) {
-        return NULL;
-    }
 
     x1 = PyLong_FromLong(GET_TD_DAYS(self));
     if (x1 == NULL)
@@ -2177,9 +2188,6 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
-    if (current_mod == NULL) {
-        return NULL;
-    }
 
     tuple = checked_divmod(pyus, CONST_US_PER_SECOND(st));
     if (tuple == NULL) {
@@ -2765,9 +2773,6 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
-    if (current_mod == NULL) {
-        return NULL;
-    }
 
     /* Argument objects. */
     PyObject *day = NULL;
@@ -2987,9 +2992,6 @@ delta_total_seconds(PyObject *op, PyObject *Py_UNUSED(dummy))
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
-    if (current_mod == NULL) {
-        return NULL;
-    }
 
     total_seconds = PyNumber_TrueDivide(total_microseconds, CONST_US_PER_SECOND(st));
 
@@ -3773,9 +3775,6 @@ date_isocalendar(PyObject *self, PyObject *Py_UNUSED(dummy))
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
-    if (current_mod == NULL) {
-        return NULL;
-    }
 
     PyObject *v = iso_calendar_date_new_impl(ISOCALENDAR_DATE_TYPE(st),
                                              year, week + 1, day + 1);
@@ -6601,9 +6600,6 @@ local_timezone(PyDateTime_DateTime *utc_time)
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
-    if (current_mod == NULL) {
-        return NULL;
-    }
 
     delta = datetime_subtract((PyObject *)utc_time, CONST_EPOCH(st));
     RELEASE_CURRENT_STATE(st, current_mod);
@@ -6848,9 +6844,6 @@ datetime_timestamp(PyObject *op, PyObject *Py_UNUSED(dummy))
     if (HASTZINFO(self) && self->tzinfo != Py_None) {
         PyObject *current_mod = NULL;
         datetime_state *st = GET_CURRENT_STATE(current_mod);
-        if (current_mod == NULL) {
-            return NULL;
-        }
 
         PyObject *delta;
         delta = datetime_subtract(op, CONST_EPOCH(st));
@@ -7221,13 +7214,6 @@ create_timezone_from_delta(int days, int sec, int ms, int normalize)
 static int
 init_state(datetime_state *st, PyObject *module, PyObject *old_module)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    PyObject *dict = PyInterpreterState_GetDict(interp);
-    if (dict == NULL) {
-        return -1;
-    }
-    st->interp_dict = Py_NewRef(dict);
-
     /* Each module gets its own heap types. */
 #define ADD_TYPE(FIELD, SPEC, BASE)                 \
     do {                                            \
@@ -7246,7 +7232,6 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
         assert(old_module != module);
         datetime_state *st_old = get_module_state(old_module);
         *st = (datetime_state){
-            .interp_dict = st->interp_dict,
             .isocalendar_date_type = st->isocalendar_date_type,
             .us_per_ms = Py_NewRef(st_old->us_per_ms),
             .us_per_second = Py_NewRef(st_old->us_per_second),
@@ -7306,8 +7291,9 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
 static int
 traverse_state(datetime_state *st, visitproc visit, void *arg)
 {
+    /* heap types */
     Py_VISIT(st->isocalendar_date_type);
-    Py_VISIT(st->interp_dict);
+
     return 0;
 }
 
@@ -7323,7 +7309,6 @@ clear_state(datetime_state *st)
     Py_CLEAR(st->us_per_week);
     Py_CLEAR(st->seconds_per_day);
     Py_CLEAR(st->epoch);
-    Py_CLEAR(st->interp_dict);
     return 0;
 }
 
@@ -7497,7 +7482,7 @@ _datetime_exec(PyObject *module)
     static_assert(DI100Y == 25 * DI4Y - 1, "DI100Y");
     assert(DI100Y == days_before_year(100+1));
 
-    if (set_current_module(st, module) < 0) {
+    if (set_current_module(interp, module) < 0) {
         goto error;
     }
 
@@ -7531,8 +7516,10 @@ static int
 module_clear(PyObject *mod)
 {
     datetime_state *st = get_module_state(mod);
-    clear_current_module(st, mod);
     clear_state(st);
+
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    clear_current_module(interp, mod);
 
     // The runtime takes care of the static types for us.
     // See _PyTypes_FiniExtTypes()..

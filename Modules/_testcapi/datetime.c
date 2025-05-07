@@ -35,29 +35,6 @@ test_datetime_capi(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject *
-test_datetime_capi_newinterp(PyObject *self, PyObject *args)
-{
-    // Call PyDateTime_IMPORT at least once in each interpreter's life
-    if (PyDateTimeAPI != NULL && test_run_counter == 0) {
-        PyErr_SetString(PyExc_AssertionError,
-                        "PyDateTime_CAPI somehow initialized");
-        return NULL;
-    }
-    test_run_counter++;
-    PyDateTime_IMPORT;
-
-    if (PyDateTimeAPI == NULL) {
-        return NULL;
-    }
-    assert(!PyType_HasFeature(PyDateTimeAPI->DateType, Py_TPFLAGS_HEAPTYPE));
-    assert(!PyType_HasFeature(PyDateTimeAPI->TimeType, Py_TPFLAGS_HEAPTYPE));
-    assert(!PyType_HasFeature(PyDateTimeAPI->DateTimeType, Py_TPFLAGS_HEAPTYPE));
-    assert(!PyType_HasFeature(PyDateTimeAPI->DeltaType, Py_TPFLAGS_HEAPTYPE));
-    assert(!PyType_HasFeature(PyDateTimeAPI->TZInfoType, Py_TPFLAGS_HEAPTYPE));
-    Py_RETURN_NONE;
-}
-
 /* Functions exposing the C API type checking for testing */
 #define MAKE_DATETIME_CHECK_FUNC(check_method, exact_method)    \
 do {                                                            \
@@ -476,37 +453,6 @@ test_PyDateTime_DELTA_GET(PyObject *self, PyObject *obj)
     return Py_BuildValue("(iii)", days, seconds, microseconds);
 }
 
-static PyObject *
-get_capi_types(PyObject *self, PyObject *args)
-{
-    if (PyDateTimeAPI == NULL) {
-        Py_RETURN_NONE;
-    }
-    PyObject *dict = PyDict_New();
-    if (dict == NULL) {
-        return NULL;
-    }
-    if (PyDict_SetItemString(dict, "date", (PyObject *)PyDateTimeAPI->DateType) < 0) {
-        goto error;
-    }
-    if (PyDict_SetItemString(dict, "time", (PyObject *)PyDateTimeAPI->TimeType) < 0) {
-        goto error;
-    }
-    if (PyDict_SetItemString(dict, "datetime", (PyObject *)PyDateTimeAPI->DateTimeType) < 0) {
-        goto error;
-    }
-    if (PyDict_SetItemString(dict, "timedelta", (PyObject *)PyDateTimeAPI->DeltaType) < 0) {
-        goto error;
-    }
-    if (PyDict_SetItemString(dict, "tzinfo", (PyObject *)PyDateTimeAPI->TZInfoType) < 0) {
-        goto error;
-    }
-    return dict;
-error:
-    Py_DECREF(dict);
-    return NULL;
-}
-
 static PyMethodDef test_methods[] = {
     {"PyDateTime_DATE_GET",         test_PyDateTime_DATE_GET,       METH_O},
     {"PyDateTime_DELTA_GET",        test_PyDateTime_DELTA_GET,      METH_O},
@@ -527,10 +473,8 @@ static PyMethodDef test_methods[] = {
     {"get_time_fromtimeandfold",    get_time_fromtimeandfold,       METH_VARARGS},
     {"get_timezone_utc_capi",       get_timezone_utc_capi,          METH_VARARGS},
     {"get_timezones_offset_zero",   get_timezones_offset_zero,      METH_NOARGS},
-    {"get_capi_types",              get_capi_types,                 METH_NOARGS},
     {"make_timezones_capi",         make_timezones_capi,            METH_NOARGS},
     {"test_datetime_capi",          test_datetime_capi,             METH_NOARGS},
-    {"test_datetime_capi_newinterp",test_datetime_capi_newinterp,   METH_NOARGS},
     {NULL},
 };
 
@@ -551,7 +495,9 @@ _PyTestCapi_Init_DateTime(PyObject *mod)
 static int
 _testcapi_datetime_exec(PyObject *mod)
 {
-    // The execution does not invoke PyDateTime_IMPORT
+    if (test_datetime_capi(NULL, NULL) == NULL)  {
+        return -1;
+    }
     return 0;
 }
 
