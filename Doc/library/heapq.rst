@@ -170,7 +170,7 @@ The module also offers three general purpose functions based on heaps.
    *reverse* is a boolean value.  If set to ``True``, then the input elements
    are merged as if each comparison were reversed. To achieve behavior similar
    to ``sorted(itertools.chain(*iterables), reverse=True)``, all iterables must
-   be sorted from largest to smallest.
+   be sorted from largest to smallest, like for example, a max-heap.
 
    .. versionchanged:: 3.5
       Added the optional *key* and *reverse* parameters.
@@ -306,12 +306,12 @@ entry as removed and add a new entry with the revised priority::
 Theory
 ------
 
-Heaps are arrays for which ``a[k] <= a[2*k+1]`` and ``a[k] <= a[2*k+2]`` for all
+Min-heaps are arrays for which ``a[k] <= a[2*k+1]`` and ``a[k] <= a[2*k+2]`` for all
 *k*, counting elements from 0.  For the sake of comparison, non-existing
-elements are considered to be infinite.  The interesting property of a heap is
-that ``a[0]`` is always its smallest element.
+elements are considered to be infinite.  The interesting property of a min-heap is
+that ``a[0]`` is always its smallest element. Max-heaps satisfy the reverse invariant.
 
-The strange invariant above is meant to be an efficient memory representation
+The strange min-heap invariant is meant to be an efficient memory representation
 for a tournament.  The numbers below are *k*, not ``a[k]``::
 
                                   0
