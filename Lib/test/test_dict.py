@@ -989,6 +989,18 @@ class DictTest(unittest.TestCase):
             pass
         self._tracked(MyDict())
 
+    @support.cpython_only
+    def test_track_lazy_instance_dicts(self):
+        class C:
+            pass
+        o = C()
+        d = o.__dict__
+        self._not_tracked(d)
+        o.untracked = 42
+        self._not_tracked(d)
+        o.tracked = []
+        self._tracked(d)
+
     def make_shared_key_dict(self, n):
         class C:
             pass
