@@ -17,7 +17,8 @@ This module provides an implementation of the heap queue algorithm, also known
 as the priority queue algorithm.
 
 Min-heaps are binary trees for which every parent node has a value less than
-or equal to any of its children. We refer to this condition as the heap invariant.
+or equal to any of its children.
+We refer to this condition as the heap invariant.
 
 For min-heaps, this implementation uses lists for which
 ``heap[k] <= heap[2*k+1]`` and ``heap[k] <= heap[2*k+2]`` for all *k* for which
