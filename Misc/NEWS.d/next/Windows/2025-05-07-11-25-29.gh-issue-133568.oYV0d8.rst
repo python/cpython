@@ -1,0 +1,1 @@
+only set ``HAVE_AF_HYPERV`` for WinAPI partitions that support the rpc runtime library
