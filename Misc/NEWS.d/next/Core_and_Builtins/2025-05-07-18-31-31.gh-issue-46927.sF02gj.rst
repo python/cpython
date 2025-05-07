@@ -1,0 +1,2 @@
+Prevent readline from overriding COLUMNS and LINES environment variables, as
+values are not updated on terminal resize.
