@@ -587,6 +587,24 @@ Improved error messages
                      ^^^^^^
    SyntaxError: cannot use subscript as import target
 
+* Improved error message when trying to add an instance of an unhashable type
+  to a :class:`dict` or :class:`set`:
+
+  (Contributed by Victor Stinner in :gh:`426449d`.)
+
+  .. code-block:: pycon
+
+     >>> s = set()
+     >>> s.add({'pages': 12, 'grade': 'A'})
+     Traceback (most recent call last):
+       File "<stdin>", line 1, in <module>
+     TypeError: Cannot use 'dict' as a set element (unhashable type).
+     >>> d = {}
+     >>> l = [1, 2, 3]
+     >>> d[l] = 12
+     Traceback (most recent call last):
+       File "<stdin>", line 1, in <module>
+     TypeError: Cannot use 'list' as a dict key (unhashable type).
 
 
 .. _whatsnew314-pep741:
