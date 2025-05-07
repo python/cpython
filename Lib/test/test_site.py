@@ -867,7 +867,6 @@ class CommandLineTests(unittest.TestCase):
         excepted_return_code, excepted_output = self.get_excepted_output()
         self.assertEqual(return_code, excepted_return_code)
         self.assertEqual(output, excepted_output)
-        # self.assertTrue(fnmatch.fnmatch(output, excepted_output))
 
     def test_unknown_args(self):
         return_code, output = self.invoke_command_line("--unknown-arg")
@@ -881,14 +880,13 @@ class CommandLineTests(unittest.TestCase):
         excepted_return_code, excepted_output = excepted
         self.assertEqual(return_code, excepted_return_code)
         self.assertEqual(output, excepted_output)
-        self.assertTrue(fnmatch.fnmatch(output, excepted_output))
 
     def test_site_arg(self):
         return_code, output = self.invoke_command_line("--user-site")
         excepted = self.get_excepted_output("--user-site")
         excepted_return_code, excepted_output = excepted
         self.assertEqual(return_code, excepted_return_code)
-        self.assertTrue(fnmatch.fnmatch(output, excepted_output))
+        self.assertEqual(output, excepted_output)
 
     def test_both_args(self):
         return_code, output = self.invoke_command_line("--user-base",
@@ -896,7 +894,7 @@ class CommandLineTests(unittest.TestCase):
         excepted = self.get_excepted_output("--user-base", "--user-site")
         excepted_return_code, excepted_output = excepted
         self.assertEqual(return_code, excepted_return_code)
-        self.assertTrue(fnmatch.fnmatch(output, excepted_output))
+        self.assertEqual(output, excepted_output)
 
 
 if __name__ == "__main__":
