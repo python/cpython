@@ -292,7 +292,7 @@ filter_page_exception_method(mmap_object *self, EXCEPTION_POINTERS *ptrs,
 }
 #endif
 
-#if defined(MS_WINDOWS) && !defined(DONT_USE_SEH)
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) && !defined(DONT_USE_SEH)
 #define HANDLE_INVALID_MEM(sourcecode)                                     \
 do {                                                                       \
     EXCEPTION_RECORD record;                                               \
@@ -320,7 +320,7 @@ do {                                                                       \
 } while (0)
 #endif
 
-#if defined(MS_WINDOWS) && !defined(DONT_USE_SEH)
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) && !defined(DONT_USE_SEH)
 #define HANDLE_INVALID_MEM_METHOD(self, sourcecode)                           \
 do {                                                                          \
     EXCEPTION_RECORD record;                                                  \
