@@ -938,7 +938,7 @@ conflict.
 
 .. envvar:: PYTHONEXECUTABLE
 
-   If this environment variable is set, ``sys.argv[0]`` will be set to its
+   If this environment variable is set, ``sys.executable`` will be set to its
    value instead of the value got through the C runtime. This environment
    variable isn't ignored by the :option:`-E` and :option:`-I` options.
 
