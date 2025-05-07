@@ -26,6 +26,7 @@ from test import support
 from test.support import os_helper
 from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow
 from test.support.ast_helper import ASTTestMixin
+from test.support.import_helper import ensure_lazy_imports
 from test.test_ast.utils import to_tuple
 from test.test_ast.snippets import (
     eval_tests, eval_results, exec_tests, exec_results, single_tests, single_results
@@ -45,6 +46,12 @@ def ast_repr_get_test_cases() -> list[str]:
 def ast_repr_update_snapshots() -> None:
     data = [repr(ast.parse(test)) for test in ast_repr_get_test_cases()]
     AST_REPR_DATA_FILE.write_text("\n".join(data))
+
+
+class LazyImportTest(unittest.TestCase):
+    @support.cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("ast", {"contextlib", "enum", "inspect", "re", "collections", "argparse"})
 
 
 class AST_Tests(unittest.TestCase):
@@ -3272,6 +3279,9 @@ class CommandLineTests(unittest.TestCase):
             ('--no-type-comments', '--no-type-comments'),
             ('-a', '--include-attributes'),
             ('-i=4', '--indent=4'),
+            ('--feature-version=3.13', '--feature-version=3.13'),
+            ('-O=-1', '--optimize=-1'),
+            ('--show-empty', '--show-empty'),
         )
         self.set_source('''
             print(1, 2, 3)
@@ -3286,6 +3296,7 @@ class CommandLineTests(unittest.TestCase):
                     with self.subTest(flags=args):
                         self.invoke_ast(*args)
 
+    @support.force_not_colorized
     def test_help_message(self):
         for flag in ('-h', '--help', '--unknown'):
             with self.subTest(flag=flag):
@@ -3389,7 +3400,7 @@ class CommandLineTests(unittest.TestCase):
                 self.check_output(source, expect, flag)
 
     def test_indent_flag(self):
-        # test 'python -m ast -i/--indent'
+        # test 'python -m ast -i/--indent 0'
         source = 'pass'
         expect = '''
             Module(
@@ -3399,6 +3410,96 @@ class CommandLineTests(unittest.TestCase):
         for flag in ('-i=0', '--indent=0'):
             with self.subTest(flag=flag):
                 self.check_output(source, expect, flag)
+
+    def test_feature_version_flag(self):
+        # test 'python -m ast --feature-version 3.9/3.10'
+        source = '''
+            match x:
+                case 1:
+                    pass
+        '''
+        expect = '''
+            Module(
+               body=[
+                  Match(
+                     subject=Name(id='x', ctx=Load()),
+                     cases=[
+                        match_case(
+                           pattern=MatchValue(
+                              value=Constant(value=1)),
+                           body=[
+                              Pass()])])])
+        '''
+        self.check_output(source, expect, '--feature-version=3.10')
+        with self.assertRaises(SyntaxError):
+            self.invoke_ast('--feature-version=3.9')
+
+    def test_no_optimize_flag(self):
+        # test 'python -m ast -O/--optimize -1/0'
+        source = '''
+            match a:
+                case 1+2j:
+                    pass
+        '''
+        expect = '''
+            Module(
+               body=[
+                  Match(
+                     subject=Name(id='a', ctx=Load()),
+                     cases=[
+                        match_case(
+                           pattern=MatchValue(
+                              value=BinOp(
+                                 left=Constant(value=1),
+                                 op=Add(),
+                                 right=Constant(value=2j))),
+                           body=[
+                              Pass()])])])
+        '''
+        for flag in ('-O=-1', '--optimize=-1', '-O=0', '--optimize=0'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_optimize_flag(self):
+        # test 'python -m ast -O/--optimize 1/2'
+        source = '''
+            match a:
+                case 1+2j:
+                    pass
+        '''
+        expect = '''
+            Module(
+               body=[
+                  Match(
+                     subject=Name(id='a', ctx=Load()),
+                     cases=[
+                        match_case(
+                           pattern=MatchValue(
+                              value=Constant(value=(1+2j))),
+                           body=[
+                              Pass()])])])
+        '''
+        for flag in ('-O=1', '--optimize=1', '-O=2', '--optimize=2'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_show_empty_flag(self):
+        # test 'python -m ast --show-empty'
+        source = 'print(1, 2, 3)'
+        expect = '''
+            Module(
+               body=[
+                  Expr(
+                     value=Call(
+                        func=Name(id='print', ctx=Load()),
+                        args=[
+                           Constant(value=1),
+                           Constant(value=2),
+                           Constant(value=3)],
+                        keywords=[]))],
+               type_ignores=[])
+        '''
+        self.check_output(source, expect, '--show-empty')
 
 
 class ASTOptimiziationTests(unittest.TestCase):

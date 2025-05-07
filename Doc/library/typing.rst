@@ -1098,6 +1098,12 @@ These can be used as types in annotations. They all support subscription using
 
        Union[Union[int, str], float] == Union[int, str, float]
 
+     However, this does not apply to unions referenced through a type
+     alias, to avoid forcing evaluation of the underlying :class:`TypeAliasType`::
+
+       type A = Union[int, str]
+       Union[A, float] != Union[int, str, float]
+
    * Unions of a single argument vanish, e.g.::
 
        Union[int] == int  # The constructor actually returns int
@@ -1229,6 +1235,32 @@ These can be used as types in annotations. They all support subscription using
    ``Literal[...]`` cannot be subclassed. At runtime, an arbitrary value
    is allowed as type argument to ``Literal[...]``, but type checkers may
    impose restrictions. See :pep:`586` for more details about literal types.
+
+   Additional details:
+
+   * The arguments must be literal values and there must be at least one.
+
+   * Nested ``Literal`` types are flattened, e.g.::
+
+      assert Literal[Literal[1, 2], 3] == Literal[1, 2, 3]
+
+     However, this does not apply to ``Literal`` types referenced through a type
+     alias, to avoid forcing evaluation of the underlying :class:`TypeAliasType`::
+
+      type A = Literal[1, 2]
+      assert Literal[A, 3] != Literal[1, 2, 3]
+
+   * Redundant arguments are skipped, e.g.::
+
+      assert Literal[1, 2, 1] == Literal[1, 2]
+
+   * When comparing literals, the argument order is ignored, e.g.::
+
+      assert Literal[1, 2] == Literal[2, 1]
+
+   * You cannot subclass or instantiate a ``Literal``.
+
+   * You cannot write ``Literal[X][Y]``.
 
    .. versionadded:: 3.8
 
@@ -1398,6 +1430,14 @@ These can be used as types in annotations. They all support subscription using
 
       assert Annotated[Annotated[int, ValueRange(3, 10)], ctype("char")] == Annotated[
           int, ValueRange(3, 10), ctype("char")
+      ]
+
+   However, this does not apply to ``Annotated`` types referenced through a type
+   alias, to avoid forcing evaluation of the underlying :class:`TypeAliasType`::
+
+      type From3To10[T] = Annotated[T, ValueRange(3, 10)]
+      assert Annotated[From3To10[int], ctype("char")] != Annotated[
+         int, ValueRange(3, 10), ctype("char")
       ]
 
    Duplicated metadata elements are not removed::

@@ -16,6 +16,7 @@ from unittest import mock
 from urllib.request import pathname2url
 
 from test.support import import_helper
+from test.support import cpython_only
 from test.support import is_emscripten, is_wasi
 from test.support import infinite_recursion
 from test.support import os_helper
@@ -78,6 +79,12 @@ class UnsupportedOperationTest(unittest.TestCase):
     def test_is_notimplemented(self):
         self.assertTrue(issubclass(pathlib.UnsupportedOperation, NotImplementedError))
         self.assertTrue(isinstance(pathlib.UnsupportedOperation(), NotImplementedError))
+
+
+class LazyImportTest(unittest.TestCase):
+    @cpython_only
+    def test_lazy_import(self):
+        import_helper.ensure_lazy_imports("pathlib", {"shutil"})
 
 
 #
@@ -3290,7 +3297,6 @@ class PathTest(PurePathTest):
         self.assertEqual(P.from_uri('file:////foo/bar'), P('//foo/bar'))
         self.assertEqual(P.from_uri('file://localhost/foo/bar'), P('/foo/bar'))
         if not is_wasi:
-            self.assertEqual(P.from_uri('file://127.0.0.1/foo/bar'), P('/foo/bar'))
             self.assertEqual(P.from_uri(f'file://{socket.gethostname()}/foo/bar'),
                              P('/foo/bar'))
         self.assertRaises(ValueError, P.from_uri, 'foo/bar')

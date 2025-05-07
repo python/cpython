@@ -794,6 +794,7 @@ class CommandLineTest(unittest.TestCase):
                     self.invoke_platform(*flags)
                     obj.assert_called_once_with(aliased, terse)
 
+    @support.force_not_colorized
     def test_help(self):
         output = io.StringIO()
 

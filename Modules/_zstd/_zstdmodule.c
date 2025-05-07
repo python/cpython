@@ -74,33 +74,33 @@ typedef struct {
 
 static const ParameterInfo cp_list[] =
 {
-    {ZSTD_c_compressionLevel, "compressionLevel"},
-    {ZSTD_c_windowLog,        "windowLog"},
-    {ZSTD_c_hashLog,          "hashLog"},
-    {ZSTD_c_chainLog,         "chainLog"},
-    {ZSTD_c_searchLog,        "searchLog"},
-    {ZSTD_c_minMatch,         "minMatch"},
-    {ZSTD_c_targetLength,     "targetLength"},
+    {ZSTD_c_compressionLevel, "compression_level"},
+    {ZSTD_c_windowLog,        "window_log"},
+    {ZSTD_c_hashLog,          "hash_log"},
+    {ZSTD_c_chainLog,         "chain_log"},
+    {ZSTD_c_searchLog,        "search_log"},
+    {ZSTD_c_minMatch,         "min_match"},
+    {ZSTD_c_targetLength,     "target_length"},
     {ZSTD_c_strategy,         "strategy"},
 
-    {ZSTD_c_enableLongDistanceMatching, "enableLongDistanceMatching"},
-    {ZSTD_c_ldmHashLog,       "ldmHashLog"},
-    {ZSTD_c_ldmMinMatch,      "ldmMinMatch"},
-    {ZSTD_c_ldmBucketSizeLog, "ldmBucketSizeLog"},
-    {ZSTD_c_ldmHashRateLog,   "ldmHashRateLog"},
+    {ZSTD_c_enableLongDistanceMatching, "enable_long_distance_matching"},
+    {ZSTD_c_ldmHashLog,       "ldm_hash_log"},
+    {ZSTD_c_ldmMinMatch,      "ldm_min_match"},
+    {ZSTD_c_ldmBucketSizeLog, "ldm_bucket_size_log"},
+    {ZSTD_c_ldmHashRateLog,   "ldm_hash_rate_log"},
 
-    {ZSTD_c_contentSizeFlag,  "contentSizeFlag"},
-    {ZSTD_c_checksumFlag,     "checksumFlag"},
-    {ZSTD_c_dictIDFlag,       "dictIDFlag"},
+    {ZSTD_c_contentSizeFlag,  "content_size_flag"},
+    {ZSTD_c_checksumFlag,     "checksum_flag"},
+    {ZSTD_c_dictIDFlag,       "dict_id_flag"},
 
-    {ZSTD_c_nbWorkers,        "nbWorkers"},
-    {ZSTD_c_jobSize,          "jobSize"},
-    {ZSTD_c_overlapLog,       "overlapLog"}
+    {ZSTD_c_nbWorkers,        "nb_workers"},
+    {ZSTD_c_jobSize,          "job_size"},
+    {ZSTD_c_overlapLog,       "overlap_log"}
 };
 
 static const ParameterInfo dp_list[] =
 {
-    {ZSTD_d_windowLogMax, "windowLogMax"}
+    {ZSTD_d_windowLogMax, "window_log_max"}
 };
 
 void
@@ -180,8 +180,8 @@ _zstd._train_dict
 
     samples_bytes: PyBytesObject
         Concatenation of samples.
-    samples_size_list: object(subclass_of='&PyList_Type')
-        List of samples' sizes.
+    samples_sizes: object(subclass_of='&PyTuple_Type')
+        Tuple of samples' sizes.
     dict_size: Py_ssize_t
         The size of the dictionary.
     /
@@ -191,8 +191,8 @@ Internal function, train a zstd dictionary on sample data.
 
 static PyObject *
 _zstd__train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
-                       PyObject *samples_size_list, Py_ssize_t dict_size)
-/*[clinic end generated code: output=ee53c34c8f77886b input=b21d092c695a3a81]*/
+                       PyObject *samples_sizes, Py_ssize_t dict_size)
+/*[clinic end generated code: output=b5b4f36347c0addd input=2dce5b57d63923e2]*/
 {
     // TODO(emmatyping): The preamble and suffix to this function and _finalize_dict
     // are pretty similar. We should see if we can refactor them to share that code.
@@ -209,7 +209,7 @@ _zstd__train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
         return NULL;
     }
 
-    chunks_number = Py_SIZE(samples_size_list);
+    chunks_number = Py_SIZE(samples_sizes);
     if ((size_t) chunks_number > UINT32_MAX) {
         PyErr_Format(PyExc_ValueError,
                         "The number of samples should be <= %u.", UINT32_MAX);
@@ -225,12 +225,11 @@ _zstd__train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
 
     sizes_sum = 0;
     for (i = 0; i < chunks_number; i++) {
-        PyObject *size = PyList_GetItemRef(samples_size_list, i);
+        PyObject *size = PyTuple_GetItem(samples_sizes, i);
         chunk_sizes[i] = PyLong_AsSize_t(size);
-        Py_DECREF(size);
         if (chunk_sizes[i] == (size_t)-1 && PyErr_Occurred()) {
             PyErr_Format(PyExc_ValueError,
-                            "Items in samples_size_list should be an int "
+                            "Items in samples_sizes should be an int "
                             "object, with a value between 0 and %u.", SIZE_MAX);
             goto error;
         }
@@ -239,7 +238,7 @@ _zstd__train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
 
     if (sizes_sum != Py_SIZE(samples_bytes)) {
         PyErr_SetString(PyExc_ValueError,
-                        "The samples size list doesn't match the concatenation's size.");
+                        "The samples size tuple doesn't match the concatenation's size.");
         goto error;
     }
 
@@ -287,8 +286,8 @@ _zstd._finalize_dict
         Custom dictionary content.
     samples_bytes: PyBytesObject
         Concatenation of samples.
-    samples_size_list: object(subclass_of='&PyList_Type')
-        List of samples' sizes.
+    samples_sizes: object(subclass_of='&PyTuple_Type')
+        Tuple of samples' sizes.
     dict_size: Py_ssize_t
         The size of the dictionary.
     compression_level: int
@@ -301,9 +300,9 @@ Internal function, finalize a zstd dictionary.
 static PyObject *
 _zstd__finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
                           PyBytesObject *samples_bytes,
-                          PyObject *samples_size_list, Py_ssize_t dict_size,
+                          PyObject *samples_sizes, Py_ssize_t dict_size,
                           int compression_level)
-/*[clinic end generated code: output=9c2a7d8c845cee93 input=08531a803d87c56f]*/
+/*[clinic end generated code: output=5dc5b520fddba37f input=8afd42a249078460]*/
 {
     Py_ssize_t chunks_number;
     size_t *chunk_sizes = NULL;
@@ -319,7 +318,7 @@ _zstd__finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
         return NULL;
     }
 
-    chunks_number = Py_SIZE(samples_size_list);
+    chunks_number = Py_SIZE(samples_sizes);
     if ((size_t) chunks_number > UINT32_MAX) {
         PyErr_Format(PyExc_ValueError,
                         "The number of samples should be <= %u.", UINT32_MAX);
@@ -335,11 +334,11 @@ _zstd__finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
 
     sizes_sum = 0;
     for (i = 0; i < chunks_number; i++) {
-        PyObject *size = PyList_GET_ITEM(samples_size_list, i);
+        PyObject *size = PyTuple_GetItem(samples_sizes, i);
         chunk_sizes[i] = PyLong_AsSize_t(size);
         if (chunk_sizes[i] == (size_t)-1 && PyErr_Occurred()) {
             PyErr_Format(PyExc_ValueError,
-                            "Items in samples_size_list should be an int "
+                            "Items in samples_sizes should be an int "
                             "object, with a value between 0 and %u.", SIZE_MAX);
             goto error;
         }
@@ -348,7 +347,7 @@ _zstd__finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
 
     if (sizes_sum != Py_SIZE(samples_bytes)) {
         PyErr_SetString(PyExc_ValueError,
-                        "The samples size list doesn't match the concatenation's size.");
+                        "The samples size tuple doesn't match the concatenation's size.");
         goto error;
     }
 
@@ -402,18 +401,18 @@ success:
 /*[clinic input]
 _zstd._get_param_bounds
 
-    is_compress: bool
-        True for CParameter, False for DParameter.
     parameter: int
         The parameter to get bounds.
+    is_compress: bool
+        True for CompressionParameter, False for DecompressionParameter.
 
-Internal function, get CParameter/DParameter bounds.
+Internal function, get CompressionParameter/DecompressionParameter bounds.
 [clinic start generated code]*/
 
 static PyObject *
-_zstd__get_param_bounds_impl(PyObject *module, int is_compress,
-                             int parameter)
-/*[clinic end generated code: output=b751dc710f89ef55 input=fb21ff96aff65df1]*/
+_zstd__get_param_bounds_impl(PyObject *module, int parameter,
+                             int is_compress)
+/*[clinic end generated code: output=9892cd822f937e79 input=884cd1a01125267d]*/
 {
     ZSTD_bounds bound;
     if (is_compress) {
@@ -515,30 +514,30 @@ _zstd__get_frame_info_impl(PyObject *module, Py_buffer *frame_buffer)
 _zstd._set_parameter_types
 
     c_parameter_type: object(subclass_of='&PyType_Type')
-        CParameter IntEnum type object
+        CompressionParameter IntEnum type object
     d_parameter_type: object(subclass_of='&PyType_Type')
-        DParameter IntEnum type object
+        DecompressionParameter IntEnum type object
 
-Internal function, set CParameter/DParameter types for validity check.
+Internal function, set CompressionParameter/DecompressionParameter types for validity check.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd__set_parameter_types_impl(PyObject *module, PyObject *c_parameter_type,
                                 PyObject *d_parameter_type)
-/*[clinic end generated code: output=a13d4890ccbd2873 input=3e7d0d37c3a1045a]*/
+/*[clinic end generated code: output=a13d4890ccbd2873 input=4535545d903853d3]*/
 {
     _zstd_state* const mod_state = get_zstd_state(module);
 
     if (!PyType_Check(c_parameter_type) || !PyType_Check(d_parameter_type)) {
         PyErr_SetString(PyExc_ValueError,
-                        "The two arguments should be CParameter and "
-                        "DParameter types.");
+                        "The two arguments should be CompressionParameter and "
+                        "DecompressionParameter types.");
         return NULL;
     }
 
     Py_XDECREF(mod_state->CParameter_type);
     Py_INCREF(c_parameter_type);
-    mod_state->CParameter_type = (PyTypeObject*) c_parameter_type;
+    mod_state->CParameter_type = (PyTypeObject*)c_parameter_type;
 
     Py_XDECREF(mod_state->DParameter_type);
     Py_INCREF(d_parameter_type);

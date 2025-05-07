@@ -1,0 +1,2 @@
+Fix :exc:`NameError` when calling :func:`typing.get_type_hints` on a :func:`dataclasses.dataclass` created by
+:func:`dataclasses.make_dataclass` with un-annotated fields.
