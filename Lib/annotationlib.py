@@ -571,11 +571,16 @@ def _template_to_ast(template):
         match part:
             case str():
                 values.append(ast.Constant(value=part))
-            case _:  # Interpolation, but we don't want to import the string module
+            # Interpolation, but we don't want to import the string module
+            case _:
                 interp = ast.Interpolation(
                     str=part.expression,
                     value=ast.parse(part.expression),
-                    conversion=ord(part.conversion) if part.conversion is not None else -1,
+                    conversion=(
+                        ord(part.conversion)
+                        if part.conversion is not None
+                        else -1
+                    ),
                     format_spec=(
                         ast.Constant(value=part.format_spec)
                         if part.format_spec != ""
