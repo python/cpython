@@ -4824,7 +4824,9 @@ can be used interchangeably to index the same dictionary entry.
    replaces the value from the positional argument.
 
    Providing keyword arguments as in the first example only works for keys that
-   are valid Python identifiers.  Otherwise, any valid keys can be used.  To illustrate dictionary creation and equality,
+   are valid Python identifiers.  Otherwise, any valid keys can be used.
+   
+   To illustrate dictionary creation and equality,
    the following examples all return a dictionary equal to
    ``{"one": 1, "two": 2, "three": 3}``::
 
