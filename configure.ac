@@ -2456,7 +2456,11 @@ then
 fi
 
 AS_VAR_IF([ac_cv_gcc_compat], [yes], [
-    CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
+    AX_CHECK_COMPILE_FLAG([-std=c11],[
+      AS_VAR_APPEND([CFLAGS_NODIST], [" -std=c11"])
+    ], [
+      AC_MSG_ERROR([Python requires -std=c11 on gcc])
+    ], [-Werror])
 
     PY_CHECK_CC_WARNING([enable], [extra], [if we can add -Wextra])
     AS_VAR_IF([ac_cv_enable_extra_warning], [yes],
