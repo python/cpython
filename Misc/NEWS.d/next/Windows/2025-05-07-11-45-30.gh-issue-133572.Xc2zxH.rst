@@ -1,0 +1,1 @@
+Disable error reporting for invalid memory access on unsupported WinAPI partitions.
