@@ -156,7 +156,7 @@ As another example, generating HTML attributes from data:
    template = t"<img {attributes}>"
    assert html(template) == '<img src="shrubbery.jpg" alt="looks nice" class="looks-nice">'
 
-Unlike f-strings, the ``html`` function has access to template attributes
+Compared to using an f-string, the ``html`` function has access to template attributes
 containing the original information: static strings, interpolations, and values
 from the original scope. Unlike existing templating approaches, t-strings build
 from the well-known f-string syntax and rules. Template systems thus benefit
