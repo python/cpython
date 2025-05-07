@@ -82,7 +82,7 @@ class RuleCheckingVisitor(GrammarVisitor):
             self.tokens.add("FSTRING_END")
             self.tokens.add("FSTRING_MIDDLE")
         # If python < 3.14 add the virtual tstring tokens
-        if sys.version_info < (3, 14):
+        if sys.version_info < (3, 14, 0, 'beta', 1):
             self.tokens.add("TSTRING_START")
             self.tokens.add("TSTRING_END")
             self.tokens.add("TSTRING_MIDDLE")
