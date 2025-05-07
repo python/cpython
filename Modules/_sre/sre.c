@@ -2431,8 +2431,31 @@ match_group(PyObject *op, PyObject* args)
     return result;
 }
 
+static Py_ssize_t
+match_length(PyObject *op)
+{
+    MatchObject *self = _MatchObject_CAST(op);
+    return self->groups;
+}
+
 static PyObject*
-match_getitem(PyObject *op, PyObject* name)
+match_item(PyObject *op, Py_ssize_t index)
+{
+    MatchObject *self = _MatchObject_CAST(op);
+
+    if (index < 0 || index >= self->groups) {
+        /* raise IndexError if we were given a bad group number */
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_IndexError, "no such group");
+        }
+        return NULL;
+    }
+
+    return match_getslice_by_index(self, index, Py_None);
+}
+
+static PyObject*
+match_subscript(PyObject *op, PyObject* name)
 {
     MatchObject *self = _MatchObject_CAST(op);
     return match_getslice(self, name, Py_None);
@@ -3268,12 +3291,12 @@ static PyType_Slot match_slots[] = {
     {Py_tp_traverse, match_traverse},
     {Py_tp_clear, match_clear},
 
-    /* As mapping.
-     *
-     * Match objects do not support length or assignment, but do support
-     * __getitem__.
-     */
-    {Py_mp_subscript, match_getitem},
+    // Sequence protocol
+    {Py_sq_length, match_length},
+    {Py_sq_item, match_item},
+
+    // Support group names provided as subscripts
+    {Py_mp_subscript, match_subscript},
 
     {0, NULL},
 };
@@ -3282,7 +3305,7 @@ static PyType_Spec match_spec = {
     .name = "re.Match",
     .basicsize = sizeof(MatchObject),
     .itemsize = sizeof(Py_ssize_t),
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_SEQUENCE | Py_TPFLAGS_IMMUTABLETYPE |
               Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_HAVE_GC),
     .slots = match_slots,
 };

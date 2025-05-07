@@ -125,6 +125,7 @@ backward compatibility.
 import enum
 from . import _compiler, _parser
 import functools
+import _collections_abc
 import _sre
 
 
@@ -314,6 +315,8 @@ def escape(pattern):
 
 Pattern = type(_compiler.compile('', 0))
 Match = type(_compiler.compile('', 0).match(''))
+
+_collections_abc.Sequence.register(Match)
 
 # --------------------------------------------------------------------
 # internals
