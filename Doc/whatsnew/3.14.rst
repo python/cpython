@@ -443,6 +443,9 @@ Python without deferred evaluation of annotations, reaches its end of life in 20
 In Python 3.14, the behavior of code using ``from __future__ import annotations``
 is unchanged.
 
+.. seealso::
+   :pep:`649`.
+
 
 Improved error messages
 -----------------------
@@ -584,8 +587,6 @@ Improved error messages
                      ^^^^^^
    SyntaxError: cannot use subscript as import target
 
-.. seealso::
-   :pep:`649`.
 
 
 .. _whatsnew314-pep741:
