@@ -317,6 +317,16 @@ text
                                 ("endtag", element_lower)],
                             collector=Collector(convert_charrefs=False))
 
+    def test_EOF_in_cdata(self):
+        content = """<!-- not a comment --> &not-an-entity-ref;
+                  <a href="" /> </p><p> <span></span></style>
+                  '</script' + '>'"""
+        s = f'<script>{content}'
+        self._run_check(s, [
+            ("starttag", 'script', []),
+            ("data", content)
+        ])
+
     def test_comments(self):
         html = ("<!-- I'm a valid comment -->"
                 '<!--me too!-->'
