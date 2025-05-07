@@ -32,12 +32,10 @@ static PyTypeObject PyDateTime_TimeType;
 static PyTypeObject PyDateTime_DeltaType;
 static PyTypeObject PyDateTime_TZInfoType;
 static PyTypeObject PyDateTime_TimeZoneType;
+static PyTypeObject PyDateTime_IsoCalendarDateType;
 
 
 typedef struct {
-    /* Module heap types. */
-    PyTypeObject *isocalendar_date_type;
-
     /* Conversion factors. */
     PyObject *us_per_ms;       // 1_000
     PyObject *us_per_second;   // 1_000_000
@@ -75,7 +73,7 @@ typedef struct {
 #define DELTA_TYPE(st) &PyDateTime_DeltaType
 #define TZINFO_TYPE(st) &PyDateTime_TZInfoType
 #define TIMEZONE_TYPE(st) &PyDateTime_TimeZoneType
-#define ISOCALENDAR_DATE_TYPE(st) st->isocalendar_date_type
+#define ISOCALENDAR_DATE_TYPE(st) &PyDateTime_IsoCalendarDateType
 
 #define PyDate_CAST(op) ((PyDateTime_Date *)(op))
 #define PyDate_Check(op) PyObject_TypeCheck(op, DATE_TYPE(NO_STATE))
@@ -102,15 +100,52 @@ typedef struct {
 
 #define PyIsoCalendarDate_CAST(op) ((PyDateTime_IsoCalendarDate *)(op))
 
-#define CONST_US_PER_MS(st) st->us_per_ms
-#define CONST_US_PER_SECOND(st) st->us_per_second
-#define CONST_US_PER_MINUTE(st) st->us_per_minute
-#define CONST_US_PER_HOUR(st) st->us_per_hour
-#define CONST_US_PER_DAY(st) st->us_per_day
-#define CONST_US_PER_WEEK(st) st->us_per_week
-#define CONST_SEC_PER_DAY(st) st->seconds_per_day
-#define CONST_EPOCH(st) st->epoch
+static inline PyObject *
+get_const_us_per_ms(datetime_state *st) {
+    return st ? st->us_per_ms : PyLong_FromLong(1000);
+}
+
+static inline PyObject *
+get_const_us_per_second(datetime_state *st) {
+    return st ? st->us_per_second : PyLong_FromLong(1000000);
+}
+
+static inline PyObject *
+get_const_us_per_minute(datetime_state *st) {
+    return st ? st->us_per_minute : PyLong_FromLong(60000000);
+}
+
+static inline PyObject *
+get_const_us_per_hour(datetime_state *st) {
+    return st ? st->us_per_hour : PyLong_FromDouble(3600000000.0);
+}
+
+static inline PyObject *
+get_const_us_per_day(datetime_state *st) {
+    return st ? st->us_per_day : PyLong_FromDouble(86400000000.0);
+}
+
+static inline PyObject *
+get_const_us_per_week(datetime_state *st) {
+    return st ? st->us_per_week : PyLong_FromDouble(604800000000.0);
+}
+
+static inline PyObject *
+get_const_sec_per_day(datetime_state *st) {
+    return st ? st->seconds_per_day : PyLong_FromLong(24 * 3600);
+}
+
+#define CONST_US_PER_MS(st) get_const_us_per_ms(st)
+#define CONST_US_PER_SECOND(st) get_const_us_per_second(st)
+#define CONST_US_PER_MINUTE(st) get_const_us_per_minute(st)
+#define CONST_US_PER_HOUR(st) get_const_us_per_hour(st)
+#define CONST_US_PER_DAY(st) get_const_us_per_day(st)
+#define CONST_US_PER_WEEK(st) get_const_us_per_week(st)
+#define CONST_SEC_PER_DAY(st) get_const_sec_per_day(st)
 #define CONST_UTC(st) ((PyObject *)&utc_timezone)
+#define CONST_EPOCH(st) \
+    (st ? ((datetime_state *)st)->epoch \
+        : new_datetime(1970, 1, 1, 0, 0, 0, 0, (PyObject *)&utc_timezone, 0))
 
 static datetime_state *
 get_module_state(PyObject *module)
@@ -173,6 +208,7 @@ _get_current_state(PyObject **p_mod)
          * so we must re-import the module. */
         mod = PyImport_ImportModule("_datetime");
         if (mod == NULL) {
+            PyErr_Clear();
             return NULL;
         }
     }
@@ -184,7 +220,7 @@ _get_current_state(PyObject **p_mod)
 #define GET_CURRENT_STATE(MOD_VAR)  \
     _get_current_state(&MOD_VAR)
 #define RELEASE_CURRENT_STATE(ST_VAR, MOD_VAR)  \
-    Py_DECREF(MOD_VAR)
+    Py_XDECREF(MOD_VAR)
 
 static int
 set_current_module(PyInterpreterState *interp, PyObject *mod)
@@ -3691,40 +3727,19 @@ static PyMethodDef iso_calendar_date_methods[] = {
     {NULL, NULL},
 };
 
-static int
-iso_calendar_date_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return PyTuple_Type.tp_traverse(self, visit, arg);
-}
-
-static void
-iso_calendar_date_dealloc(PyObject *self)
-{
-    PyTypeObject *tp = Py_TYPE(self);
-    PyTuple_Type.tp_dealloc(self);  // delegate GC-untrack as well
-    Py_DECREF(tp);
-}
-
-static PyType_Slot isocal_slots[] = {
-    {Py_tp_repr, iso_calendar_date_repr},
-    {Py_tp_doc, (void *)iso_calendar_date__doc__},
-    {Py_tp_methods, iso_calendar_date_methods},
-    {Py_tp_getset, iso_calendar_date_getset},
-    {Py_tp_new, iso_calendar_date_new},
-    {Py_tp_dealloc, iso_calendar_date_dealloc},
-    {Py_tp_traverse, iso_calendar_date_traverse},
-    {0, NULL},
+static PyTypeObject PyDateTime_IsoCalendarDateType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "datetime.IsoCalendarDate",
+    .tp_basicsize = sizeof(PyDateTime_IsoCalendarDate),
+    .tp_repr = (reprfunc) iso_calendar_date_repr,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_doc = iso_calendar_date__doc__,
+    .tp_methods = iso_calendar_date_methods,
+    .tp_getset = iso_calendar_date_getset,
+    // .tp_base = &PyTuple_Type,  // filled in PyInit__datetime
+    .tp_new = iso_calendar_date_new,
 };
 
-static PyType_Spec isocal_spec = {
-    .name = "datetime.IsoCalendarDate",
-    .basicsize = sizeof(PyDateTime_IsoCalendarDate),
-    .flags = (Py_TPFLAGS_DEFAULT |
-              Py_TPFLAGS_HAVE_GC |
-              Py_TPFLAGS_IMMUTABLETYPE),
-    .slots = isocal_slots,
-};
 
 /*[clinic input]
 @classmethod
@@ -3776,7 +3791,7 @@ date_isocalendar(PyObject *self, PyObject *Py_UNUSED(dummy))
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
 
-    PyObject *v = iso_calendar_date_new_impl(ISOCALENDAR_DATE_TYPE(st),
+    PyObject *v = iso_calendar_date_new_impl(&PyDateTime_IsoCalendarDateType,
                                              year, week + 1, day + 1);
     RELEASE_CURRENT_STATE(st, current_mod);
     if (v == NULL) {
@@ -7155,6 +7170,8 @@ static PyTypeObject * const capi_types[] = {
     &PyDateTime_TZInfoType,
     /* Indirectly, via the utc object. */
     &PyDateTime_TimeZoneType,
+    /* Not exposed */
+    &PyDateTime_IsoCalendarDateType,
 };
 
 /* The C-API is process-global.  This violates interpreter isolation
@@ -7214,25 +7231,10 @@ create_timezone_from_delta(int days, int sec, int ms, int normalize)
 static int
 init_state(datetime_state *st, PyObject *module, PyObject *old_module)
 {
-    /* Each module gets its own heap types. */
-#define ADD_TYPE(FIELD, SPEC, BASE)                 \
-    do {                                            \
-        PyObject *cls = PyType_FromModuleAndSpec(   \
-                module, SPEC, (PyObject *)BASE);    \
-        if (cls == NULL) {                          \
-            return -1;                              \
-        }                                           \
-        st->FIELD = (PyTypeObject *)cls;            \
-    } while (0)
-
-    ADD_TYPE(isocalendar_date_type, &isocal_spec, &PyTuple_Type);
-#undef ADD_TYPE
-
     if (old_module != NULL) {
         assert(old_module != module);
         datetime_state *st_old = get_module_state(old_module);
         *st = (datetime_state){
-            .isocalendar_date_type = st->isocalendar_date_type,
             .us_per_ms = Py_NewRef(st_old->us_per_ms),
             .us_per_second = Py_NewRef(st_old->us_per_second),
             .us_per_minute = Py_NewRef(st_old->us_per_minute),
@@ -7245,19 +7247,19 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
         return 0;
     }
 
-    st->us_per_ms = PyLong_FromLong(1000);
+    st->us_per_ms = CONST_US_PER_MS(NULL);
     if (st->us_per_ms == NULL) {
         return -1;
     }
-    st->us_per_second = PyLong_FromLong(1000000);
+    st->us_per_second = CONST_US_PER_SECOND(NULL);
     if (st->us_per_second == NULL) {
         return -1;
     }
-    st->us_per_minute = PyLong_FromLong(60000000);
+    st->us_per_minute = CONST_US_PER_MINUTE(NULL);
     if (st->us_per_minute == NULL) {
         return -1;
     }
-    st->seconds_per_day = PyLong_FromLong(24 * 3600);
+    st->seconds_per_day = CONST_SEC_PER_DAY(NULL);
     if (st->seconds_per_day == NULL) {
         return -1;
     }
@@ -7265,22 +7267,21 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
     /* The rest are too big for 32-bit ints, but even
      * us_per_week fits in 40 bits, so doubles should be exact.
      */
-    st->us_per_hour = PyLong_FromDouble(3600000000.0);
+    st->us_per_hour = CONST_US_PER_HOUR(NULL);
     if (st->us_per_hour == NULL) {
         return -1;
     }
-    st->us_per_day = PyLong_FromDouble(86400000000.0);
+    st->us_per_day = CONST_US_PER_DAY(NULL);
     if (st->us_per_day == NULL) {
         return -1;
     }
-    st->us_per_week = PyLong_FromDouble(604800000000.0);
+    st->us_per_week = CONST_US_PER_WEEK(NULL);
     if (st->us_per_week == NULL) {
         return -1;
     }
 
     /* Init Unix epoch */
-    st->epoch = new_datetime(
-            1970, 1, 1, 0, 0, 0, 0, (PyObject *)&utc_timezone, 0);
+    st->epoch = CONST_EPOCH(NULL);
     if (st->epoch == NULL) {
         return -1;
     }
@@ -7291,16 +7292,12 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
 static int
 traverse_state(datetime_state *st, visitproc visit, void *arg)
 {
-    /* heap types */
-    Py_VISIT(st->isocalendar_date_type);
-
     return 0;
 }
 
 static int
 clear_state(datetime_state *st)
 {
-    Py_CLEAR(st->isocalendar_date_type);
     Py_CLEAR(st->us_per_ms);
     Py_CLEAR(st->us_per_second);
     Py_CLEAR(st->us_per_minute);
@@ -7323,6 +7320,7 @@ init_static_types(PyInterpreterState *interp, int reloading)
     // `&...` is not a constant expression according to a strict reading
     // of C standards. Fill tp_base at run-time rather than statically.
     // See https://bugs.python.org/issue40777
+    PyDateTime_IsoCalendarDateType.tp_base = &PyTuple_Type;
     PyDateTime_TimeZoneType.tp_base = &PyDateTime_TZInfoType;
     PyDateTime_DateTimeType.tp_base = &PyDateTime_DateType;
 
@@ -7369,6 +7367,9 @@ _datetime_exec(PyObject *module)
 
     for (size_t i = 0; i < Py_ARRAY_LENGTH(capi_types); i++) {
         PyTypeObject *type = capi_types[i];
+        if (type == &PyDateTime_IsoCalendarDateType) {
+            continue;
+        }
         const char *name = _PyType_Name(type);
         assert(name != NULL);
         if (PyModule_AddObjectRef(module, name, (PyObject *)type) < 0) {

@@ -7270,7 +7270,59 @@ class ExtensionModuleTests(unittest.TestCase):
                 assert isinstance(_datetime.timezone.utc, _datetime.tzinfo)
                 del sys.modules['_datetime']
             """)
+        res = script_helper.assert_python_ok('-c', script)
+        self.assertFalse(res.err)
+
+    def test_module_free(self):
+        script = textwrap.dedent("""
+            import sys
+            import gc
+            import weakref
+            ws = weakref.WeakSet()
+            for _ in range(3):
+                import _datetime
+                timedelta = _datetime.timedelta  # static type
+                ws.add(_datetime)
+                del sys.modules['_datetime']
+                del _datetime
+                gc.collect()
+                assert len(ws) == 0
+            """)
         script_helper.assert_python_ok('-c', script)
+
+    @unittest.skipIf(not support.Py_DEBUG, "Debug builds only")
+    def test_no_leak(self):
+        script = textwrap.dedent("""
+            import datetime
+            datetime.datetime.strptime('20000101', '%Y%m%d').strftime('%Y%m%d')
+            """)
+        res = script_helper.assert_python_ok('-X', 'showrefcount', '-c', script)
+        self.assertIn(b'[0 refs, 0 blocks]', res.err)
+
+    def test_static_type_at_shutdown(self):
+        # gh-132413
+        script = textwrap.dedent("""
+            import sys
+            import _datetime
+            timedelta = _datetime.timedelta
+
+            def gen():
+                try:
+                    yield
+                finally:
+                    # Exceptions are ignored here
+                    assert not sys.modules
+                    td = _datetime.timedelta(days=1)
+                    assert td.days == 1
+                    td = timedelta(days=1)
+                    assert td.days == 1
+                    assert not sys.modules
+
+            it = gen()
+            next(it)
+            """)
+        res = script_helper.assert_python_ok('-c', script)
+        self.assertFalse(res.err)
 
 
 def load_tests(loader, standard_tests, pattern):
