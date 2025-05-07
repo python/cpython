@@ -986,11 +986,11 @@ case-insensitive.  For example::
    0xdeadbeef
    0xDead_Beef
 
-Underscores can occur between digits or after the base specifier, but not
-within it.
-For example, ``0x_1f`` is a valid literal, but ``0_x1f`` is not.
+An underscore can follow the base specifier.
+For example, ``0x_1f`` is a valid literal, but ``0_x1f`` and ``0x__1f`` are
+not.
 
-Note that leading zeros in a non-zero decimal number are not allowed.
+Leading zeros in a non-zero decimal number are not allowed.
 For example, ``0123`` is not a valid literal.
 This is for disambiguation with C-style octal literals, which Python used
 before version 3.0.
