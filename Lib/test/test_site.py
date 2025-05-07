@@ -15,7 +15,6 @@ from test.support import captured_stderr
 from test.support.os_helper import TESTFN, EnvironmentVarGuard
 import ast
 import builtins
-import fnmatch
 import glob
 import io
 import os
