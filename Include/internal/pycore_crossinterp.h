@@ -351,6 +351,7 @@ PyAPI_FUNC(_PyXI_session *) _PyXI_NewSession(void);
 PyAPI_FUNC(void) _PyXI_FreeSession(_PyXI_session *);
 
 typedef struct {
+    PyObject *preserved;
     PyObject *excinfo;
 } _PyXI_session_result;
 
@@ -362,6 +363,9 @@ PyAPI_FUNC(int) _PyXI_Enter(
 PyAPI_FUNC(int) _PyXI_Exit(_PyXI_session *, _PyXI_session_result *);
 
 PyAPI_FUNC(PyObject *) _PyXI_GetMainNamespace(_PyXI_session *);
+
+PyAPI_FUNC(int) _PyXI_Preserve(_PyXI_session *, const char *, PyObject *);
+PyAPI_FUNC(PyObject *) _PyXI_GetPreserved(_PyXI_session_result *, const char *);
 
 
 /*************/
