@@ -2207,7 +2207,8 @@ test_macros(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject *
 test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
-    extern PyObject *PyWeakref_GetObject(PyObject *);
+    // Get the function from the stable ABI.
+    PyAPI_FUNC(PyObject *) PyWeakref_GetObject(PyObject *);
 
     // Create a new heap type, create an instance of this type, and delete the
     // type. This object supports weak references.
