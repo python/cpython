@@ -3043,7 +3043,7 @@ Changes to Python's build process and to the C API include:
 
 * Importing modules simultaneously in two different threads no longer
   deadlocks; it will now raise an :exc:`ImportError`.  A new API
-  function, :c:func:`PyImport_ImportModuleNoBlock`, will look for a
+  function, :c:func:`!PyImport_ImportModuleNoBlock`, will look for a
   module in ``sys.modules`` first, then try to import it after
   acquiring an import lock.  If the import lock is held by another
   thread, an :exc:`ImportError` is raised.

@@ -32,7 +32,7 @@ get_zstd_state_from_type(PyTypeObject *type) {
 
 extern PyType_Spec zstddict_type_spec;
 extern PyType_Spec zstdcompressor_type_spec;
-extern PyType_Spec ZstdDecompressor_type_spec;
+extern PyType_Spec zstddecompressor_type_spec;
 
 struct _zstd_state {
     PyObject *empty_bytes;
@@ -171,19 +171,6 @@ set_parameter_error(const _zstd_state* const state, int is_compress,
                     int key_v, int value_v);
 
 static const char init_twice_msg[] = "__init__ method is called twice.";
-
-extern int
-_PyZstd_load_c_dict(ZstdCompressor *self, PyObject *dict);
-
-extern int
-_PyZstd_load_d_dict(ZstdDecompressor *self, PyObject *dict);
-
-extern int
-_PyZstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
-                         const char *arg_name, const char *arg_type);
-
-extern int
-_PyZstd_set_d_parameters(ZstdDecompressor *self, PyObject *options);
 
 extern PyObject *
 decompress_impl(ZstdDecompressor *self, ZSTD_inBuffer *in,

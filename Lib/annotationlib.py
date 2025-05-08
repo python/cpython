@@ -305,6 +305,9 @@ class ForwardRef:
         return f"ForwardRef({self.__forward_arg__!r}{''.join(extra)})"
 
 
+_Template = type(t"")
+
+
 class _Stringifier:
     # Must match the slots on ForwardRef, so we can turn an instance of one into an
     # instance of the other in place.
@@ -341,6 +344,8 @@ class _Stringifier:
             if isinstance(other.__ast_node__, str):
                 return ast.Name(id=other.__ast_node__), other.__extra_names__
             return other.__ast_node__, other.__extra_names__
+        elif type(other) is _Template:
+            return _template_to_ast(other), None
         elif (
             # In STRING format we don't bother with the create_unique_name() dance;
             # it's better to emit the repr() of the object instead of an opaque name.
@@ -558,6 +563,32 @@ class _Stringifier:
     __neg__ = _make_unary_op(ast.USub())
 
     del _make_unary_op
+
+
+def _template_to_ast(template):
+    values = []
+    for part in template:
+        match part:
+            case str():
+                values.append(ast.Constant(value=part))
+            # Interpolation, but we don't want to import the string module
+            case _:
+                interp = ast.Interpolation(
+                    str=part.expression,
+                    value=ast.parse(part.expression),
+                    conversion=(
+                        ord(part.conversion)
+                        if part.conversion is not None
+                        else -1
+                    ),
+                    format_spec=(
+                        ast.Constant(value=part.format_spec)
+                        if part.format_spec != ""
+                        else None
+                    ),
+                )
+                values.append(interp)
+    return ast.TemplateStr(values=values)
 
 
 class _StringifierDict(dict):
@@ -784,6 +815,8 @@ def _stringify_single(anno):
     # We have to handle str specially to support PEP 563 stringified annotations.
     elif isinstance(anno, str):
         return anno
+    elif isinstance(anno, _Template):
+        return ast.unparse(_template_to_ast(anno))
     else:
         return repr(anno)
 
@@ -976,6 +1009,9 @@ def type_repr(value):
         if value.__module__ == "builtins":
             return value.__qualname__
         return f"{value.__module__}.{value.__qualname__}"
+    elif isinstance(value, _Template):
+        tree = _template_to_ast(value)
+        return ast.unparse(tree)
     if value is ...:
         return "..."
     return repr(value)
