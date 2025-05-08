@@ -112,18 +112,6 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. deprecated-removed:: 3.12 3.15
 
-.. c:var:: int Py_FrozenFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.pathconfig_warnings` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Suppress error messages when calculating the module search path in
-   :c:func:`Py_GetPath`.
-
-   Private flag used by ``_freeze_module`` and ``frozenmain`` programs.
-
-   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_HashRandomizationFlag
 

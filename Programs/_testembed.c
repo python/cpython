@@ -589,8 +589,6 @@ static int test_init_global_config(void)
     putenv("PYTHONUNBUFFERED=");
     Py_UnbufferedStdioFlag = 1;
 
-    Py_FrozenFlag = 1;
-
     /* FIXME: test Py_LegacyWindowsFSEncodingFlag */
     /* FIXME: test Py_LegacyWindowsStdioFlag */
 
@@ -733,7 +731,6 @@ static int test_init_from_config(void)
 
     config_set_string(&config, &config.check_hash_pycs_mode, L"always");
 
-    Py_FrozenFlag = 0;
     config.pathconfig_warnings = 0;
 
     config.safe_path = 1;
@@ -1039,7 +1036,6 @@ static void set_all_global_config_variables(void)
     Py_IsolatedFlag = 0;
     Py_IgnoreEnvironmentFlag = 0;
     Py_InteractiveFlag = 1;
-    Py_FrozenFlag = 0;
     Py_UnbufferedStdioFlag = 1;
     Py_DontWriteBytecodeFlag = 1;
     Py_NoUserSiteDirectory = 1;
@@ -1108,7 +1104,6 @@ static int check_init_python_config(int preinit)
     set_all_global_config_variables();
     Py_IsolatedFlag = 1;
     Py_IgnoreEnvironmentFlag = 1;
-    Py_FrozenFlag = 1;
     Py_UnbufferedStdioFlag = 1;
     Py_DontWriteBytecodeFlag = 1;
     Py_NoUserSiteDirectory = 1;

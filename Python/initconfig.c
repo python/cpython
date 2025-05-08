@@ -463,7 +463,6 @@ static const char usage_envvars[] =
    stdin and stdout error handler to "surrogateescape". */
 int Py_UTF8Mode = 0;
 int Py_InteractiveFlag = 0; /* Previously, was used by Py_FdIsInteractive() */
-int Py_FrozenFlag = 0; /* Needed by getpath.c */
 int Py_IgnoreEnvironmentFlag = 0; /* e.g. PYTHONPATH, PYTHONHOME */
 int Py_DontWriteBytecodeFlag = 0; /* Suppress writing bytecode files (*.pyc) */
 int Py_NoUserSiteDirectory = 0; /* for -s and site.py */
@@ -517,7 +516,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     SET_ITEM_INT(Py_UTF8Mode);
     SET_ITEM_INT(Py_InteractiveFlag);
 
-    SET_ITEM_INT(Py_FrozenFlag);
     SET_ITEM_INT(Py_IgnoreEnvironmentFlag);
     SET_ITEM_INT(Py_DontWriteBytecodeFlag);
     SET_ITEM_INT(Py_NoUserSiteDirectory);
@@ -1018,7 +1016,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->buffered_stdio = -1;
     config->_install_importlib = 1;
     config->check_hash_pycs_mode = NULL;
-    config->pathconfig_warnings = -1;
+    config->pathconfig_warnings = 1;
     config->_init_main = 1;
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = -1;
@@ -1664,7 +1662,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
 #endif
-    COPY_NOT_FLAG(pathconfig_warnings, Py_FrozenFlag);
 
     COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
     COPY_NOT_FLAG(write_bytecode, Py_DontWriteBytecodeFlag);
@@ -1697,7 +1694,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
 #endif
-    COPY_NOT_FLAG(pathconfig_warnings, Py_FrozenFlag);
 
     COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
     COPY_NOT_FLAG(write_bytecode, Py_DontWriteBytecodeFlag);
