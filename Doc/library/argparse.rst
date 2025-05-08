@@ -74,7 +74,7 @@ ArgumentParser objects
                           prefix_chars='-', fromfile_prefix_chars=None, \
                           argument_default=None, conflict_handler='error', \
                           add_help=True, allow_abbrev=True, exit_on_error=True, \
-                          suggest_on_error=False, color=False)
+                          *, suggest_on_error=False, color=False)
 
    Create a new :class:`ArgumentParser` object. All parameters should be passed
    as keyword arguments. Each parameter has its own more detailed description
@@ -641,7 +641,7 @@ keyword argument::
    >>> parser = argparse.ArgumentParser(description='Process some integers.')
    >>> parser.color = True
 
-.. versionadded:: next
+.. versionadded:: 3.14
 
 
 The add_argument() method

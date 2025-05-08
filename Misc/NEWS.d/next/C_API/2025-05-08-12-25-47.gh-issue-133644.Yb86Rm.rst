@@ -1,0 +1,2 @@
+Remove deprecated alias :c:func:`!PyImport_ImportModuleNoBlock` of
+:c:func:`PyImport_ImportModule`. Patch by Bénédikt Tran.

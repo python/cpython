@@ -1,16 +1,20 @@
 import _ast_unparse
 import ast
 import builtins
+import contextlib
 import copy
 import dis
 import enum
+import itertools
 import os
 import re
 import sys
+import tempfile
 import textwrap
 import types
 import unittest
 import weakref
+from io import StringIO
 from pathlib import Path
 from textwrap import dedent
 try:
@@ -19,9 +23,10 @@ except ImportError:
     _testinternalcapi = None
 
 from test import support
-from test.support import os_helper, script_helper
+from test.support import os_helper
 from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow
 from test.support.ast_helper import ASTTestMixin
+from test.support.import_helper import ensure_lazy_imports
 from test.test_ast.utils import to_tuple
 from test.test_ast.snippets import (
     eval_tests, eval_results, exec_tests, exec_results, single_tests, single_results
@@ -41,6 +46,12 @@ def ast_repr_get_test_cases() -> list[str]:
 def ast_repr_update_snapshots() -> None:
     data = [repr(ast.parse(test)) for test in ast_repr_get_test_cases()]
     AST_REPR_DATA_FILE.write_text("\n".join(data))
+
+
+class LazyImportTest(unittest.TestCase):
+    @support.cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("ast", {"contextlib", "enum", "inspect", "re", "collections", "argparse"})
 
 
 class AST_Tests(unittest.TestCase):
@@ -692,6 +703,63 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             ast.parse(code, feature_version=(3, 13))
 
+    def test_pep758_except_with_single_expr(self):
+        single_expr = textwrap.dedent("""
+            try:
+                ...
+            except{0} TypeError:
+                ...
+        """)
+
+        single_expr_with_as = textwrap.dedent("""
+            try:
+                ...
+            except{0} TypeError as exc:
+                ...
+        """)
+
+        single_tuple_expr = textwrap.dedent("""
+            try:
+                ...
+            except{0} (TypeError,):
+                ...
+        """)
+
+        single_tuple_expr_with_as = textwrap.dedent("""
+            try:
+                ...
+            except{0} (TypeError,) as exc:
+                ...
+        """)
+
+        single_parens_expr = textwrap.dedent("""
+            try:
+                ...
+            except{0} (TypeError):
+                ...
+        """)
+
+        single_parens_expr_with_as = textwrap.dedent("""
+            try:
+                ...
+            except{0} (TypeError) as exc:
+                ...
+        """)
+
+        for code in [
+            single_expr,
+            single_expr_with_as,
+            single_tuple_expr,
+            single_tuple_expr_with_as,
+            single_parens_expr,
+            single_parens_expr_with_as,
+        ]:
+            for star in [True, False]:
+                code = code.format('*' if star else '')
+                with self.subTest(code=code, star=star):
+                    ast.parse(code, feature_version=(3, 14))
+                    ast.parse(code, feature_version=(3, 13))
+
     def test_pep758_except_star_without_parens(self):
         code = textwrap.dedent("""
             try:
@@ -752,6 +820,17 @@ class AST_Tests(unittest.TestCase):
             ast.fix_missing_locations(expr)
             with self.assertRaisesRegex(ValueError, f"identifier field can't represent '{constant}' constant"):
                 compile(expr, "<test>", "eval")
+
+    def test_constant_as_unicode_name(self):
+        constants = [
+            ("True", b"Tru\xe1\xb5\x89"),
+            ("False", b"Fal\xc5\xbfe"),
+            ("None", b"N\xc2\xbane"),
+        ]
+        for constant in constants:
+            with self.assertRaisesRegex(ValueError,
+                f"identifier field can't represent '{constant[0]}' constant"):
+                ast.parse(constant[1], mode="eval")
 
     def test_precedence_enum(self):
         class _Precedence(enum.IntEnum):
@@ -3175,23 +3254,263 @@ class ModuleStateTests(unittest.TestCase):
         self.assertEqual(res, 0)
 
 
-class ASTMainTests(unittest.TestCase):
-    # Tests `ast.main()` function.
+class CommandLineTests(unittest.TestCase):
+    def setUp(self):
+        self.filename = tempfile.mktemp()
+        self.addCleanup(os_helper.unlink, self.filename)
 
-    def test_cli_file_input(self):
-        code = "print(1, 2, 3)"
-        expected = ast.dump(ast.parse(code), indent=3)
+    @staticmethod
+    def text_normalize(string):
+        return textwrap.dedent(string).strip()
 
-        with os_helper.temp_dir() as tmp_dir:
-            filename = os.path.join(tmp_dir, "test_module.py")
-            with open(filename, 'w', encoding='utf-8') as f:
-                f.write(code)
-            res, _ = script_helper.run_python_until_end("-m", "ast", filename)
+    def set_source(self, content):
+        Path(self.filename).write_text(self.text_normalize(content))
 
-        self.assertEqual(res.err, b"")
-        self.assertEqual(expected.splitlines(),
-                         res.out.decode("utf8").splitlines())
-        self.assertEqual(res.rc, 0)
+    def invoke_ast(self, *flags):
+        stderr = StringIO()
+        stdout = StringIO()
+        with (
+            contextlib.redirect_stdout(stdout),
+            contextlib.redirect_stderr(stderr),
+        ):
+            ast.main(args=[*flags, self.filename])
+        self.assertEqual(stderr.getvalue(), '')
+        return stdout.getvalue().strip()
+
+    def check_output(self, source, expect, *flags):
+        self.set_source(source)
+        res = self.invoke_ast(*flags)
+        expect = self.text_normalize(expect)
+        self.assertEqual(res, expect)
+
+    def test_invocation(self):
+        # test various combinations of parameters
+        base_flags = (
+            ('-m=exec', '--mode=exec'),
+            ('--no-type-comments', '--no-type-comments'),
+            ('-a', '--include-attributes'),
+            ('-i=4', '--indent=4'),
+            ('--feature-version=3.13', '--feature-version=3.13'),
+            ('-O=-1', '--optimize=-1'),
+            ('--show-empty', '--show-empty'),
+        )
+        self.set_source('''
+            print(1, 2, 3)
+            def f(x: int) -> int:
+                x -= 1
+                return x
+        ''')
+
+        for r in range(1, len(base_flags) + 1):
+            for choices in itertools.combinations(base_flags, r=r):
+                for args in itertools.product(*choices):
+                    with self.subTest(flags=args):
+                        self.invoke_ast(*args)
+
+    @support.force_not_colorized
+    def test_help_message(self):
+        for flag in ('-h', '--help', '--unknown'):
+            with self.subTest(flag=flag):
+                output = StringIO()
+                with self.assertRaises(SystemExit):
+                    with contextlib.redirect_stderr(output):
+                        ast.main(args=flag)
+                self.assertStartsWith(output.getvalue(), 'usage: ')
+
+    def test_exec_mode_flag(self):
+        # test 'python -m ast -m/--mode exec'
+        source = 'x: bool = 1 # type: ignore[assignment]'
+        expect = '''
+            Module(
+               body=[
+                  AnnAssign(
+                     target=Name(id='x', ctx=Store()),
+                     annotation=Name(id='bool', ctx=Load()),
+                     value=Constant(value=1),
+                     simple=1)],
+               type_ignores=[
+                  TypeIgnore(lineno=1, tag='[assignment]')])
+        '''
+        for flag in ('-m=exec', '--mode=exec'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_single_mode_flag(self):
+        # test 'python -m ast -m/--mode single'
+        source = 'pass'
+        expect = '''
+            Interactive(
+               body=[
+                  Pass()])
+        '''
+        for flag in ('-m=single', '--mode=single'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_eval_mode_flag(self):
+        # test 'python -m ast -m/--mode eval'
+        source = 'print(1, 2, 3)'
+        expect = '''
+            Expression(
+               body=Call(
+                  func=Name(id='print', ctx=Load()),
+                  args=[
+                     Constant(value=1),
+                     Constant(value=2),
+                     Constant(value=3)]))
+        '''
+        for flag in ('-m=eval', '--mode=eval'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_func_type_mode_flag(self):
+        # test 'python -m ast -m/--mode func_type'
+        source = '(int, str) -> list[int]'
+        expect = '''
+            FunctionType(
+               argtypes=[
+                  Name(id='int', ctx=Load()),
+                  Name(id='str', ctx=Load())],
+               returns=Subscript(
+                  value=Name(id='list', ctx=Load()),
+                  slice=Name(id='int', ctx=Load()),
+                  ctx=Load()))
+        '''
+        for flag in ('-m=func_type', '--mode=func_type'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_no_type_comments_flag(self):
+        # test 'python -m ast --no-type-comments'
+        source = 'x: bool = 1 # type: ignore[assignment]'
+        expect = '''
+            Module(
+               body=[
+                  AnnAssign(
+                     target=Name(id='x', ctx=Store()),
+                     annotation=Name(id='bool', ctx=Load()),
+                     value=Constant(value=1),
+                     simple=1)])
+        '''
+        self.check_output(source, expect, '--no-type-comments')
+
+    def test_include_attributes_flag(self):
+        # test 'python -m ast -a/--include-attributes'
+        source = 'pass'
+        expect = '''
+            Module(
+               body=[
+                  Pass(
+                     lineno=1,
+                     col_offset=0,
+                     end_lineno=1,
+                     end_col_offset=4)])
+        '''
+        for flag in ('-a', '--include-attributes'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_indent_flag(self):
+        # test 'python -m ast -i/--indent 0'
+        source = 'pass'
+        expect = '''
+            Module(
+            body=[
+            Pass()])
+        '''
+        for flag in ('-i=0', '--indent=0'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_feature_version_flag(self):
+        # test 'python -m ast --feature-version 3.9/3.10'
+        source = '''
+            match x:
+                case 1:
+                    pass
+        '''
+        expect = '''
+            Module(
+               body=[
+                  Match(
+                     subject=Name(id='x', ctx=Load()),
+                     cases=[
+                        match_case(
+                           pattern=MatchValue(
+                              value=Constant(value=1)),
+                           body=[
+                              Pass()])])])
+        '''
+        self.check_output(source, expect, '--feature-version=3.10')
+        with self.assertRaises(SyntaxError):
+            self.invoke_ast('--feature-version=3.9')
+
+    def test_no_optimize_flag(self):
+        # test 'python -m ast -O/--optimize -1/0'
+        source = '''
+            match a:
+                case 1+2j:
+                    pass
+        '''
+        expect = '''
+            Module(
+               body=[
+                  Match(
+                     subject=Name(id='a', ctx=Load()),
+                     cases=[
+                        match_case(
+                           pattern=MatchValue(
+                              value=BinOp(
+                                 left=Constant(value=1),
+                                 op=Add(),
+                                 right=Constant(value=2j))),
+                           body=[
+                              Pass()])])])
+        '''
+        for flag in ('-O=-1', '--optimize=-1', '-O=0', '--optimize=0'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_optimize_flag(self):
+        # test 'python -m ast -O/--optimize 1/2'
+        source = '''
+            match a:
+                case 1+2j:
+                    pass
+        '''
+        expect = '''
+            Module(
+               body=[
+                  Match(
+                     subject=Name(id='a', ctx=Load()),
+                     cases=[
+                        match_case(
+                           pattern=MatchValue(
+                              value=Constant(value=(1+2j))),
+                           body=[
+                              Pass()])])])
+        '''
+        for flag in ('-O=1', '--optimize=1', '-O=2', '--optimize=2'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_show_empty_flag(self):
+        # test 'python -m ast --show-empty'
+        source = 'print(1, 2, 3)'
+        expect = '''
+            Module(
+               body=[
+                  Expr(
+                     value=Call(
+                        func=Name(id='print', ctx=Load()),
+                        args=[
+                           Constant(value=1),
+                           Constant(value=2),
+                           Constant(value=3)],
+                        keywords=[]))],
+               type_ignores=[])
+        '''
+        self.check_output(source, expect, '--show-empty')
 
 
 class ASTOptimiziationTests(unittest.TestCase):
