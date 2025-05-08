@@ -1,7 +1,7 @@
 import unittest
 
 from asyncio import tools
-
+import locale
 
 # mock output of get_all_awaited_by function.
 TEST_INPUTS_TREE = [
