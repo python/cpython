@@ -254,19 +254,37 @@ def _should_auto_indent(buffer: list[str], pos: int) -> bool:
     # check if last character before "pos" is a colon, ignoring
     # whitespaces and comments.
     last_char = None
-    while pos > 0:
-        pos -= 1
-        if last_char is None:
-            if buffer[pos] not in " \t\n#":  # ignore whitespaces and comments
-                last_char = buffer[pos]
-        else:
-            # even if we found a non-whitespace character before
-            # original pos, we keep going back until newline is reached
-            # to make sure we ignore comments
-            if buffer[pos] == "\n":
-                break
-            if buffer[pos] == "#":
-                last_char = None
+    # A stack to keep track of string delimiters (quotes). Push a quote when
+    # entering a string, and pop it when the string ends. When the stack is
+    # empty, we're not inside a string. If encounter a '#' while not inside a
+    # string, it's a comment start; otherwise, it's just a '#' character within
+    # a string.
+    in_string: list[str] = []
+    in_comment = False
+    i = -1
+    while i < pos - 1:
+        i += 1
+        char = buffer[i]
+
+        # update last_char
+        if char == "#":
+            if in_string:
+                last_char = char # '#' inside a string is just a character
+            else:
+                in_comment = True
+        elif char == "\n":
+            # newline ends a comment
+            in_comment = False
+        elif char not in " \t" and not in_comment and not in_string:
+            # update last_char with non-whitespace chars outside comments and strings
+            last_char = char
+
+        # update stack
+        if char in "\"'" and (i == 0 or buffer[i - 1] != "\\"):
+            if in_string and in_string[-1] == char:
+                in_string.pop()
+            else:
+                in_string.append(char)
     return last_char == ":"
 
 
