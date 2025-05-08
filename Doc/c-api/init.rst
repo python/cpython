@@ -94,8 +94,8 @@ and options. By default, these flags are controlled by :ref:`command line
 options <using-on-interface-options>`.
 
 When a flag is set by an option, the value of the flag is the number of times
-that the option was set. For example, ``-b`` sets :c:attr:`PyConfig.bytes_warning`
-to 1 and ``-bb`` sets :c:attr:`PyConfig.bytes_warning` to 2.
+that the option was set. For example, ``-b`` sets :c:member:`PyConfig.bytes_warning`
+to 1 and ``-bb`` sets :c:member:`PyConfig.bytes_warning` to 2.
 
 
 .. c:var:: int Py_InteractiveFlag
