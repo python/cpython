@@ -5,6 +5,7 @@ import itertools
 import sys
 import types
 import unittest
+import warnings
 
 from test.support import import_helper
 
@@ -16,13 +17,280 @@ from test import _code_definitions as code_defs
 from test import _crossinterp_definitions as defs
 
 
-BUILTIN_TYPES = [o for _, o in __builtins__.items()
-                 if isinstance(o, type)]
-EXCEPTION_TYPES = [cls for cls in BUILTIN_TYPES
+@contextlib.contextmanager
+def ignore_byteswarning():
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=BytesWarning)
+        yield
+
+
+# builtin types
+
+BUILTINS_TYPES = [o for _, o in __builtins__.items() if isinstance(o, type)]
+EXCEPTION_TYPES = [cls for cls in BUILTINS_TYPES
                    if issubclass(cls, BaseException)]
 OTHER_TYPES = [o for n, o in vars(types).items()
                if (isinstance(o, type) and
-                  n not in ('DynamicClassAttribute', '_GeneratorWrapper'))]
+                   n not in ('DynamicClassAttribute', '_GeneratorWrapper'))]
+BUILTIN_TYPES = [
+    *BUILTINS_TYPES,
+    *OTHER_TYPES,
+]
+
+# builtin exceptions
+
+try:
+    raise Exception
+except Exception as exc:
+    CAUGHT = exc
+EXCEPTIONS_WITH_SPECIAL_SIG = {
+    BaseExceptionGroup: (lambda msg: (msg, [CAUGHT])),
+    ExceptionGroup: (lambda msg: (msg, [CAUGHT])),
+    UnicodeError: (lambda msg: (None, msg, None, None, None)),
+    UnicodeEncodeError: (lambda msg: ('utf-8', '', 1, 3, msg)),
+    UnicodeDecodeError: (lambda msg: ('utf-8', b'', 1, 3, msg)),
+    UnicodeTranslateError: (lambda msg: ('', 1, 3, msg)),
+}
+BUILTIN_EXCEPTIONS = [
+    *(cls(*sig('error!')) for cls, sig in EXCEPTIONS_WITH_SPECIAL_SIG.items()),
+    *(cls('error!') for cls in EXCEPTION_TYPES
+      if cls not in EXCEPTIONS_WITH_SPECIAL_SIG),
+]
+
+# other builtin objects
+
+METHOD = defs.SpamOkay().okay
+BUILTIN_METHOD = [].append
+METHOD_DESCRIPTOR_WRAPPER = str.join
+METHOD_WRAPPER = object().__str__
+WRAPPER_DESCRIPTOR = object.__init__
+BUILTIN_WRAPPERS = {
+    METHOD: types.MethodType,
+    BUILTIN_METHOD: types.BuiltinMethodType,
+    dict.__dict__['fromkeys']: types.ClassMethodDescriptorType,
+    types.FunctionType.__code__: types.GetSetDescriptorType,
+    types.FunctionType.__globals__: types.MemberDescriptorType,
+    METHOD_DESCRIPTOR_WRAPPER: types.MethodDescriptorType,
+    METHOD_WRAPPER: types.MethodWrapperType,
+    WRAPPER_DESCRIPTOR: types.WrapperDescriptorType,
+    staticmethod(defs.SpamOkay.okay): None,
+    classmethod(defs.SpamOkay.okay): None,
+    property(defs.SpamOkay.okay): None,
+}
+BUILTIN_FUNCTIONS = [
+    # types.BuiltinFunctionType
+    len,
+    sys.is_finalizing,
+    sys.exit,
+    _testinternalcapi.get_crossinterp_data,
+]
+assert 'emptymod' not in sys.modules
+with import_helper.ready_to_import('emptymod', ''):
+    import emptymod as EMPTYMOD
+MODULES = [
+    sys,
+    defs,
+    unittest,
+    EMPTYMOD,
+]
+OBJECT = object()
+EXCEPTION = Exception()
+LAMBDA = (lambda: None)
+BUILTIN_SIMPLE = [
+    OBJECT,
+    # singletons
+    None,
+    True,
+    False,
+    Ellipsis,
+    NotImplemented,
+    # bytes
+    *(i.to_bytes(2, 'little', signed=True)
+      for i in range(-1, 258)),
+    # str
+    'hello world',
+    '你好世界',
+    '',
+    # int
+    sys.maxsize + 1,
+    sys.maxsize,
+    -sys.maxsize - 1,
+    -sys.maxsize - 2,
+    *range(-1, 258),
+    2**1000,
+    # float
+    0.0,
+    1.1,
+    -1.0,
+    0.12345678,
+    -0.12345678,
+]
+TUPLE_EXCEPTION = (0, 1.0, EXCEPTION)
+TUPLE_OBJECT = (0, 1.0, OBJECT)
+TUPLE_NESTED_EXCEPTION = (0, 1.0, (EXCEPTION,))
+TUPLE_NESTED_OBJECT = (0, 1.0, (OBJECT,))
+MEMORYVIEW_EMPTY = memoryview(b'')
+MEMORYVIEW_NOT_EMPTY = memoryview(b'spam'*42)
+MAPPING_PROXY_EMPTY = types.MappingProxyType({})
+BUILTIN_CONTAINERS = [
+    # tuple (flat)
+    (),
+    (1,),
+    ("hello", "world", ),
+    (1, True, "hello"),
+    TUPLE_EXCEPTION,
+    TUPLE_OBJECT,
+    # tuple (nested)
+    ((1,),),
+    ((1, 2), (3, 4)),
+    ((1, 2), (3, 4), (5, 6)),
+    TUPLE_NESTED_EXCEPTION,
+    TUPLE_NESTED_OBJECT,
+    # buffer
+    MEMORYVIEW_EMPTY,
+    MEMORYVIEW_NOT_EMPTY,
+    # list
+    [],
+    [1, 2, 3],
+    [[1], (2,), {3: 4}],
+    # dict
+    {},
+    {1: 7, 2: 8, 3: 9},
+    {1: [1], 2: (2,), 3: {3: 4}},
+    # set
+    set(),
+    {1, 2, 3},
+    {frozenset({1}), (2,)},
+    # frozenset
+    frozenset([]),
+    frozenset({frozenset({1}), (2,)}),
+    # bytearray
+    bytearray(b''),
+    # other
+    MAPPING_PROXY_EMPTY,
+    types.SimpleNamespace(),
+]
+ns = {}
+exec("""
+try:
+    raise Exception
+except Exception as exc:
+    TRACEBACK = exc.__traceback__
+    FRAME = TRACEBACK.tb_frame
+""", ns, ns)
+BUILTIN_OTHER = [
+    # types.CellType
+    types.CellType(),
+    # types.FrameType
+    ns['FRAME'],
+    # types.TracebackType
+    ns['TRACEBACK'],
+]
+del ns
+
+# user-defined objects
+
+USER_TOP_INSTANCES = [c(*a) for c, a in defs.TOP_CLASSES.items()]
+USER_NESTED_INSTANCES = [c(*a) for c, a in defs.NESTED_CLASSES.items()]
+USER_INSTANCES = [
+    *USER_TOP_INSTANCES,
+    *USER_NESTED_INSTANCES,
+]
+USER_EXCEPTIONS = [
+    defs.MimimalError('error!'),
+]
+
+# shareable objects
+
+TUPLES_WITHOUT_EQUALITY = [
+    TUPLE_EXCEPTION,
+    TUPLE_OBJECT,
+    TUPLE_NESTED_EXCEPTION,
+    TUPLE_NESTED_OBJECT,
+]
+_UNSHAREABLE_SIMPLE = [
+    Ellipsis,
+    NotImplemented,
+    OBJECT,
+    sys.maxsize + 1,
+    -sys.maxsize - 2,
+    2**1000,
+]
+with ignore_byteswarning():
+    _SHAREABLE_SIMPLE = [o for o in BUILTIN_SIMPLE
+                         if o not in _UNSHAREABLE_SIMPLE]
+    _SHAREABLE_CONTAINERS = [
+        *(o for o in BUILTIN_CONTAINERS if type(o) is memoryview),
+        *(o for o in BUILTIN_CONTAINERS
+          if type(o) is tuple and o not in TUPLES_WITHOUT_EQUALITY),
+    ]
+    _UNSHAREABLE_CONTAINERS = [o for o in BUILTIN_CONTAINERS
+                               if o not in _SHAREABLE_CONTAINERS]
+SHAREABLE = [
+    *_SHAREABLE_SIMPLE,
+    *_SHAREABLE_CONTAINERS,
+]
+NOT_SHAREABLE = [
+    *_UNSHAREABLE_SIMPLE,
+    *_UNSHAREABLE_CONTAINERS,
+    *BUILTIN_TYPES,
+    *BUILTIN_WRAPPERS,
+    *BUILTIN_EXCEPTIONS,
+    *BUILTIN_FUNCTIONS,
+    *MODULES,
+    *BUILTIN_OTHER,
+    # types.CodeType
+    *(f.__code__ for f in defs.FUNCTIONS),
+    *(f.__code__ for f in defs.FUNCTION_LIKE),
+    # types.FunctionType
+    *defs.FUNCTIONS,
+    defs.SpamOkay.okay,
+    LAMBDA,
+    *defs.FUNCTION_LIKE,
+    # coroutines and generators
+    *defs.FUNCTION_LIKE_APPLIED,
+    # user classes
+    *defs.CLASSES,
+    *USER_INSTANCES,
+    # user exceptions
+    *USER_EXCEPTIONS,
+]
+
+# pickleable objects
+
+PICKLEABLE = [
+    *BUILTIN_SIMPLE,
+    *(o for o in BUILTIN_CONTAINERS if o not in [
+        MEMORYVIEW_EMPTY,
+        MEMORYVIEW_NOT_EMPTY,
+        MAPPING_PROXY_EMPTY,
+    ] or type(o) is dict),
+    *BUILTINS_TYPES,
+    *BUILTIN_EXCEPTIONS,
+    *BUILTIN_FUNCTIONS,
+    *defs.TOP_FUNCTIONS,
+    defs.SpamOkay.okay,
+    *defs.FUNCTION_LIKE,
+    *defs.TOP_CLASSES,
+    *USER_TOP_INSTANCES,
+    *USER_EXCEPTIONS,
+    # from OTHER_TYPES
+    types.NoneType,
+    types.EllipsisType,
+    types.NotImplementedType,
+    types.GenericAlias,
+    types.UnionType,
+    types.SimpleNamespace,
+    # from BUILTIN_WRAPPERS
+    METHOD,
+    BUILTIN_METHOD,
+    METHOD_DESCRIPTOR_WRAPPER,
+    METHOD_WRAPPER,
+    WRAPPER_DESCRIPTOR,
+]
+
+
+# helpers
 
 DEFS = defs
 with open(code_defs.__file__) as infile:
@@ -126,14 +394,14 @@ class _GetXIDataTests(unittest.TestCase):
     def assert_roundtrip_identical(self, values, *, mode=None):
         mode = self._resolve_mode(mode)
         for obj in values:
-            with self.subTest(obj):
+            with self.subTest(repr(obj)):
                 got = self._get_roundtrip(obj, mode)
                 self.assertIs(got, obj)
 
     def assert_roundtrip_equal(self, values, *, mode=None, expecttype=None):
         mode = self._resolve_mode(mode)
         for obj in values:
-            with self.subTest(obj):
+            with self.subTest(repr(obj)):
                 got = self._get_roundtrip(obj, mode)
                 self.assertEqual(got, obj)
                 self.assertIs(type(got),
@@ -143,7 +411,7 @@ class _GetXIDataTests(unittest.TestCase):
                                              mode=None, expecttype=None):
         mode = self._resolve_mode(mode)
         for obj in values:
-            with self.subTest(obj):
+            with self.subTest(repr(obj)):
                 got = self._get_roundtrip(obj, mode)
                 self.assertIsNot(got, obj)
                 self.assertIs(type(got),
@@ -154,7 +422,7 @@ class _GetXIDataTests(unittest.TestCase):
                                    mode=None, expecttype=None):
         mode = self._resolve_mode(mode)
         for obj in values:
-            with self.subTest(obj):
+            with self.subTest(repr(obj)):
                 got = self._get_roundtrip(obj, mode)
                 self.assertIsNot(got, obj)
                 self.assertIs(type(got),
@@ -164,7 +432,7 @@ class _GetXIDataTests(unittest.TestCase):
     def assert_not_shareable(self, values, exctype=None, *, mode=None):
         mode = self._resolve_mode(mode)
         for obj in values:
-            with self.subTest(obj):
+            with self.subTest(repr(obj)):
                 with self.assertRaises(NotShareableError) as cm:
                     _testinternalcapi.get_crossinterp_data(obj, mode)
                 if exctype is not None:
@@ -182,49 +450,26 @@ class PickleTests(_GetXIDataTests):
     MODE = 'pickle'
 
     def test_shareable(self):
-        self.assert_roundtrip_equal([
-            # singletons
-            None,
-            True,
-            False,
-            # bytes
-            *(i.to_bytes(2, 'little', signed=True)
-              for i in range(-1, 258)),
-            # str
-            'hello world',
-            '你好世界',
-            '',
-            # int
-            sys.maxsize,
-            -sys.maxsize - 1,
-            *range(-1, 258),
-            # float
-            0.0,
-            1.1,
-            -1.0,
-            0.12345678,
-            -0.12345678,
-            # tuple
-            (),
-            (1,),
-            ("hello", "world", ),
-            (1, True, "hello"),
-            ((1,),),
-            ((1, 2), (3, 4)),
-            ((1, 2), (3, 4), (5, 6)),
-        ])
-        # not shareable using xidata
-        self.assert_roundtrip_equal([
-            # int
-            sys.maxsize + 1,
-            -sys.maxsize - 2,
-            2**1000,
-            # tuple
-            (0, 1.0, []),
-            (0, 1.0, {}),
-            (0, 1.0, ([],)),
-            (0, 1.0, ({},)),
-        ])
+        with ignore_byteswarning():
+            for obj in SHAREABLE:
+                if obj in PICKLEABLE:
+                    self.assert_roundtrip_equal([obj])
+                else:
+                    self.assert_not_shareable([obj])
+
+    def test_not_shareable(self):
+        with ignore_byteswarning():
+            for obj in NOT_SHAREABLE:
+                if type(obj) is types.MappingProxyType:
+                    self.assert_not_shareable([obj])
+                elif obj in PICKLEABLE:
+                    with self.subTest(repr(obj)):
+                        # We don't worry about checking the actual value.
+                        # The other tests should cover that well enough.
+                        got = self.get_roundtrip(obj)
+                        self.assertIs(type(got), type(obj))
+                else:
+                    self.assert_not_shareable([obj])
 
     def test_list(self):
         self.assert_roundtrip_equal_not_identical([
@@ -286,7 +531,7 @@ class PickleTests(_GetXIDataTests):
 
         instances = []
         for cls, args in defs.TOP_CLASSES.items():
-            with self.subTest(cls):
+            with self.subTest(repr(cls)):
                 setattr(mod, cls.__name__, cls)
                 xid = self.get_xidata(cls)
                 inst = cls(*args)
@@ -295,7 +540,7 @@ class PickleTests(_GetXIDataTests):
                         (cls, xid, inst, instxid))
 
         for cls, xid, inst, instxid in instances:
-            with self.subTest(cls):
+            with self.subTest(repr(cls)):
                 delattr(mod, cls.__name__)
                 if fail:
                     with self.assertRaises(NotShareableError):
@@ -576,7 +821,7 @@ class MarshalTests(_GetXIDataTests):
             '',
         ])
         self.assert_not_shareable([
-            object(),
+            OBJECT,
             types.SimpleNamespace(),
         ])
 
@@ -647,10 +892,7 @@ class MarshalTests(_GetXIDataTests):
         shareable = [
             StopIteration,
         ]
-        types = [
-            *BUILTIN_TYPES,
-            *OTHER_TYPES,
-        ]
+        types = BUILTIN_TYPES
         self.assert_not_shareable(cls for cls in types
                                   if cls not in shareable)
         self.assert_roundtrip_identical(cls for cls in types
@@ -758,9 +1000,182 @@ class CodeTests(_GetXIDataTests):
         ])
 
 
+class ShareableFuncTests(_GetXIDataTests):
+
+    MODE = 'func'
+
+    def test_stateless(self):
+        self.assert_roundtrip_not_equal([
+            *defs.STATELESS_FUNCTIONS,
+            # Generators can be stateless too.
+            *defs.FUNCTION_LIKE,
+        ])
+
+    def test_not_stateless(self):
+        self.assert_not_shareable([
+            *(f for f in defs.FUNCTIONS
+              if f not in defs.STATELESS_FUNCTIONS),
+        ])
+
+    def test_other_objects(self):
+        self.assert_not_shareable([
+            None,
+            True,
+            False,
+            Ellipsis,
+            NotImplemented,
+            9999,
+            'spam',
+            b'spam',
+            (),
+            [],
+            {},
+            object(),
+        ])
+
+
+class PureShareableScriptTests(_GetXIDataTests):
+
+    MODE = 'script-pure'
+
+    VALID_SCRIPTS = [
+        '',
+        'spam',
+        '# a comment',
+        'print("spam")',
+        'raise Exception("spam")',
+        """if True:
+            do_something()
+            """,
+        """if True:
+            def spam(x):
+                return x
+            class Spam:
+                def eggs(self):
+                    return 42
+            x = Spam().eggs()
+            raise ValueError(spam(x))
+            """,
+    ]
+    INVALID_SCRIPTS = [
+        '    pass',
+        '----',
+        """if True:
+            # do something
+            """,
+    ]
+
+    def test_valid_str(self):
+        self.assert_roundtrip_not_equal([
+            *self.VALID_SCRIPTS,
+        ], expecttype=types.CodeType)
+
+    def test_invalid_str(self):
+        self.assert_not_shareable([
+            *self.INVALID_SCRIPTS,
+        ])
+
+    def test_valid_bytes(self):
+        self.assert_roundtrip_not_equal([
+            *(s.encode('utf8') for s in self.VALID_SCRIPTS),
+        ], expecttype=types.CodeType)
+
+    def test_invalid_bytes(self):
+        self.assert_not_shareable([
+            *(s.encode('utf8') for s in self.INVALID_SCRIPTS),
+        ])
+
+    def test_pure_script_code(self):
+        self.assert_roundtrip_equal_not_identical([
+            *(f.__code__ for f in defs.PURE_SCRIPT_FUNCTIONS),
+        ])
+
+    def test_impure_script_code(self):
+        self.assert_not_shareable([
+            *(f.__code__ for f in defs.SCRIPT_FUNCTIONS
+              if f not in defs.PURE_SCRIPT_FUNCTIONS),
+        ])
+
+    def test_other_code(self):
+        self.assert_not_shareable([
+            *(f.__code__ for f in defs.FUNCTIONS
+              if f not in defs.SCRIPT_FUNCTIONS),
+            *(f.__code__ for f in defs.FUNCTION_LIKE),
+        ])
+
+    def test_pure_script_function(self):
+        self.assert_roundtrip_not_equal([
+            *defs.PURE_SCRIPT_FUNCTIONS,
+        ], expecttype=types.CodeType)
+
+    def test_impure_script_function(self):
+        self.assert_not_shareable([
+            *(f for f in defs.SCRIPT_FUNCTIONS
+              if f not in defs.PURE_SCRIPT_FUNCTIONS),
+        ])
+
+    def test_other_function(self):
+        self.assert_not_shareable([
+            *(f for f in defs.FUNCTIONS
+              if f not in defs.SCRIPT_FUNCTIONS),
+            *defs.FUNCTION_LIKE,
+        ])
+
+    def test_other_objects(self):
+        self.assert_not_shareable([
+            None,
+            True,
+            False,
+            Ellipsis,
+            NotImplemented,
+            (),
+            [],
+            {},
+            object(),
+        ])
+
+
+class ShareableScriptTests(PureShareableScriptTests):
+
+    MODE = 'script'
+
+    def test_impure_script_code(self):
+        self.assert_roundtrip_equal_not_identical([
+            *(f.__code__ for f in defs.SCRIPT_FUNCTIONS
+              if f not in defs.PURE_SCRIPT_FUNCTIONS),
+        ])
+
+    def test_impure_script_function(self):
+        self.assert_roundtrip_not_equal([
+            *(f for f in defs.SCRIPT_FUNCTIONS
+              if f not in defs.PURE_SCRIPT_FUNCTIONS),
+        ], expecttype=types.CodeType)
+
+
+class ShareableFallbackTests(_GetXIDataTests):
+
+    MODE = 'fallback'
+
+    def test_shareable(self):
+        return
+        self.assert_roundtrip_equal(SHAREABLE)
+
+    def test_not_shareable(self):
+        return
+        self.assert_roundtrip_equal([
+            *(o for o in NOT_SHAREABLE if o in PICKLEABLE),
+        ])
+        self.assert_not_shareable([
+            *(o for o in NOT_SHAREABLE if o not in PICKLEABLE),
+        ])
+
+
 class ShareableTypeTests(_GetXIDataTests):
 
     MODE = 'xidata'
+
+    def test_shareable(self):
+        self.assert_roundtrip_equal(SHAREABLE)
 
     def test_singletons(self):
         self.assert_roundtrip_identical([
@@ -829,8 +1244,8 @@ class ShareableTypeTests(_GetXIDataTests):
 
     def test_tuples_containing_non_shareable_types(self):
         non_shareables = [
-                Exception(),
-                object(),
+                EXCEPTION,
+                OBJECT,
         ]
         for s in non_shareables:
             value = tuple([0, 1.0, s])
@@ -844,6 +1259,9 @@ class ShareableTypeTests(_GetXIDataTests):
                     self.get_xidata(value)
 
     # The rest are not shareable.
+
+    def test_not_shareable(self):
+        self.assert_not_shareable(NOT_SHAREABLE)
 
     def test_object(self):
         self.assert_not_shareable([
@@ -861,12 +1279,12 @@ class ShareableTypeTests(_GetXIDataTests):
         for func in defs.FUNCTIONS:
             assert type(func) is types.FunctionType, func
         assert type(defs.SpamOkay.okay) is types.FunctionType, func
-        assert type(lambda: None) is types.LambdaType
+        assert type(LAMBDA) is types.LambdaType
 
         self.assert_not_shareable([
             *defs.FUNCTIONS,
             defs.SpamOkay.okay,
-            (lambda: None),
+            LAMBDA,
         ])
 
     def test_builtin_function(self):
@@ -931,10 +1349,7 @@ class ShareableTypeTests(_GetXIDataTests):
         self.assert_not_shareable(instances)
 
     def test_builtin_type(self):
-        self.assert_not_shareable([
-            *BUILTIN_TYPES,
-            *OTHER_TYPES,
-        ])
+        self.assert_not_shareable(BUILTIN_TYPES)
 
     def test_exception(self):
         self.assert_not_shareable([

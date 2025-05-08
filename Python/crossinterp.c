@@ -6,8 +6,11 @@
 #include "osdefs.h"               // MAXPATHLEN
 #include "pycore_ceval.h"         // _Py_simple_func
 #include "pycore_crossinterp.h"   // _PyXIData_t
+#include "pycore_function.h"      // _PyFunction_VerifyStateless()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_namespace.h"     // _PyNamespace_New()
+#include "pycore_pythonrun.h"     // _Py_SourceAsString()
+#include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_typeobject.h"    // _PyStaticType_InitBuiltin()
 
 
@@ -207,16 +210,16 @@ _Py_CallInInterpreterAndRawFree(PyInterpreterState *interp,
 /* cross-interpreter data */
 /**************************/
 
-/* registry of {type -> xidatafunc} */
+/* registry of {type -> _PyXIData_getdata_t} */
 
-/* For now we use a global registry of shareable classes.  An
-   alternative would be to add a tp_* slot for a class's
-   xidatafunc. It would be simpler and more efficient. */
+/* For now we use a global registry of shareable classes.
+   An alternative would be to add a tp_* slot for a class's
+   _PyXIData_getdata_t.  It would be simpler and more efficient. */
 
 static void xid_lookup_init(_PyXIData_lookup_t *);
 static void xid_lookup_fini(_PyXIData_lookup_t *);
 struct _dlcontext;
-static xidatafunc lookup_getdata(struct _dlcontext *, PyObject *);
+static _PyXIData_getdata_t lookup_getdata(struct _dlcontext *, PyObject *);
 #include "crossinterp_data_lookup.h"
 
 
@@ -340,7 +343,7 @@ _set_xid_lookup_failure(PyThreadState *tstate, PyObject *obj, const char *msg,
         set_notshareableerror(tstate, cause, 0, msg);
     }
     else {
-        msg = "%S does not support cross-interpreter data";
+        msg = "%R does not support cross-interpreter data";
         format_notshareableerror(tstate, cause, 0, msg, obj);
     }
 }
@@ -353,8 +356,8 @@ _PyObject_CheckXIData(PyThreadState *tstate, PyObject *obj)
     if (get_lookup_context(tstate, &ctx) < 0) {
         return -1;
     }
-    xidatafunc getdata = lookup_getdata(&ctx, obj);
-    if (getdata == NULL) {
+    _PyXIData_getdata_t getdata = lookup_getdata(&ctx, obj);
+    if (getdata.basic == NULL && getdata.fallback == NULL) {
         if (!_PyErr_Occurred(tstate)) {
             _set_xid_lookup_failure(tstate, obj, NULL, NULL);
         }
@@ -385,9 +388,9 @@ _check_xidata(PyThreadState *tstate, _PyXIData_t *xidata)
     return 0;
 }
 
-int
-_PyObject_GetXIData(PyThreadState *tstate,
-                    PyObject *obj, _PyXIData_t *xidata)
+static int
+_get_xidata(PyThreadState *tstate,
+            PyObject *obj, xidata_fallback_t fallback, _PyXIData_t *xidata)
 {
     PyInterpreterState *interp = tstate->interp;
 
@@ -395,6 +398,7 @@ _PyObject_GetXIData(PyThreadState *tstate,
     assert(xidata->obj == NULL);
     if (xidata->data != NULL || xidata->obj != NULL) {
         _PyErr_SetString(tstate, PyExc_ValueError, "xidata not cleared");
+        return -1;
     }
 
     // Call the "getdata" func for the object.
@@ -403,8 +407,8 @@ _PyObject_GetXIData(PyThreadState *tstate,
         return -1;
     }
     Py_INCREF(obj);
-    xidatafunc getdata = lookup_getdata(&ctx, obj);
-    if (getdata == NULL) {
+    _PyXIData_getdata_t getdata = lookup_getdata(&ctx, obj);
+    if (getdata.basic == NULL && getdata.fallback == NULL) {
         if (PyErr_Occurred()) {
             Py_DECREF(obj);
             return -1;
@@ -416,7 +420,9 @@ _PyObject_GetXIData(PyThreadState *tstate,
         }
         return -1;
     }
-    int res = getdata(tstate, obj, xidata);
+    int res = getdata.basic != NULL
+        ? getdata.basic(tstate, obj, xidata)
+        : getdata.fallback(tstate, obj, fallback, xidata);
     Py_DECREF(obj);
     if (res != 0) {
         PyObject *cause = _PyErr_GetRaisedException(tstate);
@@ -434,6 +440,51 @@ _PyObject_GetXIData(PyThreadState *tstate,
     }
 
     return 0;
+}
+
+int
+_PyObject_GetXIData(PyThreadState *tstate,
+                    PyObject *obj, _PyXIData_t *xidata)
+{
+    return _get_xidata(tstate, obj, _PyXIDATA_XIDATA_ONLY, xidata);
+}
+
+int
+_PyObject_GetXIDataWithFallback(PyThreadState *tstate,
+                                PyObject *obj, xidata_fallback_t fallback,
+                                _PyXIData_t *xidata)
+{
+    switch (fallback) {
+        case _PyXIDATA_XIDATA_ONLY:
+            return _get_xidata(tstate, obj, fallback, xidata);
+        case _PyXIDATA_FULL_FALLBACK:
+            if (_get_xidata(tstate, obj, fallback, xidata) == 0) {
+                return 0;
+            }
+            PyObject *exc = _PyErr_GetRaisedException(tstate);
+            if (PyFunction_Check(obj)) {
+                if (_PyFunction_GetXIData(tstate, obj, xidata) == 0) {
+                    Py_DECREF(exc);
+                    return 0;
+                }
+                _PyErr_Clear(tstate);
+            }
+            // We could try _PyMarshal_GetXIData() but we won't for now.
+            if (_PyPickle_GetXIData(tstate, obj, xidata) == 0) {
+                Py_DECREF(exc);
+                return 0;
+            }
+            // Raise the original exception.
+            _PyErr_SetRaisedException(tstate, exc);
+            return -1;
+        default:
+#ifdef Py_DEBUG
+            Py_UNREACHABLE();
+#endif
+            _PyErr_SetString(tstate, PyExc_SystemError,
+                             "unknown xidata fallback");
+            return -1;
+    }
 }
 
 
@@ -781,6 +832,129 @@ _PyMarshal_GetXIData(PyThreadState *tstate, PyObject *obj, _PyXIData_t *xidata)
         return -1;
     }
     return 0;
+}
+
+
+/* script wrapper */
+
+static int
+verify_script(PyThreadState *tstate, PyCodeObject *co, int checked, int pure)
+{
+    // Make sure it isn't a closure and (optionally) doesn't use globals.
+    PyObject *builtins = NULL;
+    if (pure) {
+        builtins = _PyEval_GetBuiltins(tstate);
+        assert(builtins != NULL);
+    }
+    if (checked) {
+        assert(_PyCode_VerifyStateless(tstate, co, NULL, NULL, builtins) == 0);
+    }
+    else if (_PyCode_VerifyStateless(tstate, co, NULL, NULL, builtins) < 0) {
+        return -1;
+    }
+    // Make sure it doesn't have args.
+    if (co->co_argcount > 0
+        || co->co_posonlyargcount > 0
+        || co->co_kwonlyargcount > 0
+        || co->co_flags & (CO_VARARGS | CO_VARKEYWORDS))
+    {
+        _PyErr_SetString(tstate, PyExc_ValueError,
+                         "code with args not supported");
+        return -1;
+    }
+    // Make sure it doesn't return anything.
+    if (!_PyCode_ReturnsOnlyNone(co)) {
+        _PyErr_SetString(tstate, PyExc_ValueError,
+                         "code that returns a value is not a script");
+        return -1;
+    }
+    return 0;
+}
+
+static int
+get_script_xidata(PyThreadState *tstate, PyObject *obj, int pure,
+                  _PyXIData_t *xidata)
+{
+    // Get the corresponding code object.
+    PyObject *code = NULL;
+    int checked = 0;
+    if (PyCode_Check(obj)) {
+        code = obj;
+        Py_INCREF(code);
+    }
+    else if (PyFunction_Check(obj)) {
+        code = PyFunction_GET_CODE(obj);
+        assert(code != NULL);
+        Py_INCREF(code);
+        if (pure) {
+            if (_PyFunction_VerifyStateless(tstate, obj) < 0) {
+                goto error;
+            }
+            checked = 1;
+        }
+    }
+    else {
+        const char *filename = "<script>";
+        PyCompilerFlags cf = _PyCompilerFlags_INIT;
+        cf.cf_flags = PyCF_SOURCE_IS_UTF8;
+        PyObject *ref = NULL;
+        const char *script = _Py_SourceAsString(obj, "???", "???", &cf, &ref);
+        if (script == NULL) {
+            if (!PyBytes_Check(obj) && !PyUnicode_Check(obj)
+                && !PyByteArray_Check(obj) && !PyObject_CheckBuffer(obj))
+            {
+                // We discard the raised exception.
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "unsupported script %R", obj);
+            }
+            goto error;
+        }
+        code = Py_CompileStringExFlags(script, filename, Py_file_input, &cf, 0);
+        Py_XDECREF(ref);
+        if (code == NULL) {
+            goto error;
+        }
+        if (!pure) {
+            // It can't be a closure.
+            checked = 1;
+        }
+    }
+
+    // Make sure it's actually a script.
+    if (verify_script(tstate, (PyCodeObject *)code, checked, pure) < 0) {
+        goto error;
+    }
+
+    // Convert the code object.
+    int res = _PyCode_GetXIData(tstate, code, xidata);
+    Py_DECREF(code);
+    if (res < 0) {
+        return -1;
+    }
+    return 0;
+
+error:
+    Py_XDECREF(code);
+    PyObject *cause = _PyErr_GetRaisedException(tstate);
+    assert(cause != NULL);
+    _set_xid_lookup_failure(
+                tstate, NULL, "object not a valid script", cause);
+    Py_DECREF(cause);
+    return -1;
+}
+
+int
+_PyCode_GetScriptXIData(PyThreadState *tstate,
+                        PyObject *obj, _PyXIData_t *xidata)
+{
+    return get_script_xidata(tstate, obj, 0, xidata);
+}
+
+int
+_PyCode_GetPureScriptXIData(PyThreadState *tstate,
+                            PyObject *obj, _PyXIData_t *xidata)
+{
+    return get_script_xidata(tstate, obj, 1, xidata);
 }
 
 
