@@ -1,0 +1,2 @@
+For free-threaded build, allow non-interned strings to be cached in the type
+lookup cache.  This helps lock contention by reducing cache misses.
