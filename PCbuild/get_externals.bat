@@ -61,6 +61,7 @@ if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tcl-core-8.6.15.
 if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tk-8.6.15.0
 set libraries=%libraries%                                       xz-5.2.5
 set libraries=%libraries%                                       zlib-ng-2.2.4
+set libraries=%libraries%                                       zstd-1.5.7
 
 for %%e in (%libraries%) do (
     if exist "%EXTERNALS_DIR%\%%e" (

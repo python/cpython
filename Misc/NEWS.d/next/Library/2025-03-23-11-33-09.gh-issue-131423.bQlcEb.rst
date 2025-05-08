@@ -1,2 +1,0 @@
-:mod:`ssl` can show descriptions for errors added in OpenSSL 3.4.1.
-Patch by Bénédikt Tran.

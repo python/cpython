@@ -1,3 +1,0 @@
-The :class:`cmd.Cmd` class has been fixed to reliably call the ``completedefault``
-method whenever the ``do_shell`` method is not defined and tab completion is
-requested for a line beginning with ``!``.
