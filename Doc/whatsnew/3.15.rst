@@ -75,6 +75,10 @@ New features
 Other language changes
 ======================
 
+* Python UTF-8 mode is now enabled by default.
+  It may be disabled with by setting :envvar:`PYTHONUTF8=0 <PYTHONUTF8>` as
+  an environment variable or by using the :option:`-X utf8=0 <-X>` flag.
+  See :pep:`686` for further details.
 
 
 New modules
