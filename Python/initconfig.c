@@ -462,7 +462,6 @@ static const char usage_envvars[] =
 /* UTF-8 mode (PEP 540): if equals to 1, use the UTF-8 encoding, and change
    stdin and stdout error handler to "surrogateescape". */
 int Py_UTF8Mode = 0;
-int Py_DebugFlag = 0; /* Needed by parser.c */
 int Py_VerboseFlag = 0; /* Needed by import.c */
 int Py_QuietFlag = 0; /* Needed by sysmodule.c */
 int Py_InteractiveFlag = 0; /* Previously, was used by Py_FdIsInteractive() */
@@ -521,7 +520,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     SET_ITEM_INT(_Py_HasFileSystemDefaultEncodeErrors);
 
     SET_ITEM_INT(Py_UTF8Mode);
-    SET_ITEM_INT(Py_DebugFlag);
     SET_ITEM_INT(Py_VerboseFlag);
     SET_ITEM_INT(Py_QuietFlag);
     SET_ITEM_INT(Py_InteractiveFlag);
@@ -1675,7 +1673,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     COPY_FLAG(inspect, Py_InspectFlag);
     COPY_FLAG(interactive, Py_InteractiveFlag);
     COPY_FLAG(optimization_level, Py_OptimizeFlag);
-    COPY_FLAG(parser_debug, Py_DebugFlag);
     COPY_FLAG(verbose, Py_VerboseFlag);
     COPY_FLAG(quiet, Py_QuietFlag);
 #ifdef MS_WINDOWS
@@ -1714,7 +1711,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     COPY_FLAG(inspect, Py_InspectFlag);
     COPY_FLAG(interactive, Py_InteractiveFlag);
     COPY_FLAG(optimization_level, Py_OptimizeFlag);
-    COPY_FLAG(parser_debug, Py_DebugFlag);
     COPY_FLAG(verbose, Py_VerboseFlag);
     COPY_FLAG(quiet, Py_QuietFlag);
 #ifdef MS_WINDOWS

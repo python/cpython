@@ -700,7 +700,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     COPY_GLOBAL_CONFIG = [
         # Copy core config to global config for expected values
         # True means that the core config value is inverted (0 => 1 and 1 => 0)
-        ('Py_DebugFlag', 'parser_debug'),
         ('Py_DontWriteBytecodeFlag', 'write_bytecode', True),
         ('Py_FileSystemDefaultEncodeErrors', 'filesystem_errors'),
         ('Py_FileSystemDefaultEncoding', 'filesystem_encoding'),

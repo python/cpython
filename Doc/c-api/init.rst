@@ -97,19 +97,6 @@ When a flag is set by an option, the value of the flag is the number of times
 that the option was set. For example, ``-b`` sets :c:data:`Py_BytesWarningFlag`
 to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
-.. c:var:: int Py_DebugFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.parser_debug` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Turn on parser debugging output (for expert only, depending on compilation
-   options).
-
-   Set by the :option:`-d` option and the :envvar:`PYTHONDEBUG` environment
-   variable.
-
-   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_DontWriteBytecodeFlag
 

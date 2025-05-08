@@ -584,8 +584,6 @@ static int test_init_global_config(void)
     putenv("PYTHONDEBUG=0");
     Py_OptimizeFlag = 2;
 
-    /* Py_DebugFlag is not tested */
-
     putenv("PYTHONDONTWRITEBYTECODE=");
     Py_DontWriteBytecodeFlag = 1;
 
@@ -1055,7 +1053,6 @@ static void set_all_global_config_variables(void)
     Py_InspectFlag = 1;
     Py_InteractiveFlag = 1;
     Py_OptimizeFlag = 1;
-    Py_DebugFlag = 1;
     Py_VerboseFlag = 1;
     Py_QuietFlag = 1;
     Py_FrozenFlag = 0;
