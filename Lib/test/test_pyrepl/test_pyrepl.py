@@ -452,6 +452,11 @@ class TestPyReplAutoindent(TestCase):
         )
         # fmt: on
 
+        events = code_to_events(input_code)
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
     def test_auto_indent_continuation(self):
         # auto indenting according to previous user indentation
         # fmt: off
