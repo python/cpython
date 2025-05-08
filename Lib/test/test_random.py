@@ -811,18 +811,20 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
                          97904845777343510404718956115)
 
     def test_getrandbits_2G_bits(self):
+        size = 2**31
         self.gen.seed(1234567)
-        x = self.gen.getrandbits(2**31)
-        self.assertEqual(x.bit_length(), 2**31)
-        self.assertEqual(x >> (2**31-100), 1226514312032729439655761284440)
+        x = self.gen.getrandbits(size)
+        self.assertEqual(x.bit_length(), size)
         self.assertEqual(x & (2**100-1), 890186470919986886340158459475)
+        self.assertEqual(x >> (size-100), 1226514312032729439655761284440)
 
-    def test_getrandbits_4G_bits(self):
+    @support.bigmemtest(size=2**32, memuse=1/8+2/15, dry_run=False)
+    def test_getrandbits_4G_bits(self, size):
         self.gen.seed(1234568)
-        x = self.gen.getrandbits(2**32)
-        self.assertEqual(x.bit_length(), 2**32)
-        self.assertEqual(x >> (2**32-100), 739728759900339699429794460738)
+        x = self.gen.getrandbits(size)
+        self.assertEqual(x.bit_length(), size)
         self.assertEqual(x & (2**100-1), 287241425661104632871036099814)
+        self.assertEqual(x >> (size-100), 739728759900339699429794460738)
 
     def test_randrange_uses_getrandbits(self):
         # Verify use of getrandbits by randrange
@@ -980,10 +982,11 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
             self.assertEqual(self.gen.randbytes(n),
                              gen2.getrandbits(n * 8).to_bytes(n, 'little'))
 
-    def test_randbytes_256M(self):
+    @support.bigmemtest(size=2**29, memuse=1+16/15, dry_run=False)
+    def test_randbytes_256M(self, size):
         self.gen.seed(2849427419)
-        x = self.gen.randbytes(2**29)
-        self.assertEqual(len(x), 2**29)
+        x = self.gen.randbytes(size)
+        self.assertEqual(len(x), size)
         self.assertEqual(x[:12].hex(), 'f6fd9ae63855ab91ea238b4f')
         self.assertEqual(x[-12:].hex(), '0e7af69a84ee99bf4a11becc')
 
