@@ -612,37 +612,25 @@ add_parameters(PyObject *module)
     return 0;
 }
 
-static inline PyObject *
-get_zstd_version_info(void)
-{
-    uint32_t ver = ZSTD_versionNumber();
-    uint32_t major, minor, release;
-
-    major = ver / 10000;
-    minor = (ver / 100) % 100;
-    release = ver % 100;
-
-    return Py_BuildValue("III", major, minor, release);
-}
-
 static inline int
 add_vars_to_module(PyObject *module)
 {
     PyObject *obj;
 
-    /* zstd_version, a str. */
+    /* zstd_version, str */
     if (PyModule_AddStringConstant(module, "zstd_version",
                                    ZSTD_versionString()) < 0) {
         return -1;
     }
 
-    /* zstd_version_info, a tuple. */
-    obj = get_zstd_version_info();
-    if (PyModule_AddObjectRef(module, "zstd_version_info", obj) < 0) {
-        Py_XDECREF(obj);
+    /* zstd_version_info, tuple of (int, int, int) */
+    PyObject *vi = Py_BuildValue("BBB", ZSTD_VERSION_MAJOR, ZSTD_VERSION_MINOR,
+                                 ZSTD_VERSION_RELEASE);
+    if (PyModule_AddObjectRef(module, "zstd_version_info", vi) < 0) {
+        Py_XDECREF(vi);
         return -1;
     }
-    Py_DECREF(obj);
+    Py_DECREF(vi);
 
     /* Add zstd parameters */
     if (add_parameters(module) < 0) {
