@@ -1,4 +1,32 @@
 
+def simple_script():
+    assert True
+
+
+def complex_script():
+    obj = 'a string'
+    pickle = __import__('pickle')
+    def spam_minimal():
+        pass
+    spam_minimal()
+    data = pickle.dumps(obj)
+    res = pickle.loads(data)
+    assert res == obj, (res, obj)
+
+
+def script_with_globals():
+    obj1, obj2 = spam(42)
+    assert obj1 == 42
+    assert obj2 is None
+
+
+def script_with_explicit_empty_return():
+    return None
+
+
+def script_with_return():
+    return True
+
 
 def spam_minimal():
     # no arg defaults or kwarg defaults
@@ -141,6 +169,11 @@ ham_C_closure, *_ = eggs_closure_C(2)
 
 TOP_FUNCTIONS = [
     # shallow
+    simple_script,
+    complex_script,
+    script_with_globals,
+    script_with_explicit_empty_return,
+    script_with_return,
     spam_minimal,
     spam_with_builtins,
     spam_with_globals_and_builtins,
@@ -179,6 +212,10 @@ FUNCTIONS = [
 ]
 
 STATELESS_FUNCTIONS = [
+    simple_script,
+    complex_script,
+    script_with_explicit_empty_return,
+    script_with_return,
     spam,
     spam_minimal,
     spam_with_builtins,
@@ -200,8 +237,24 @@ STATELESS_FUNCTIONS = [
 ]
 STATELESS_CODE = [
     *STATELESS_FUNCTIONS,
+    script_with_globals,
     spam_with_globals_and_builtins,
     spam_full,
+]
+
+PURE_SCRIPT_FUNCTIONS = [
+    simple_script,
+    complex_script,
+    script_with_explicit_empty_return,
+    spam_minimal,
+    spam_with_builtins,
+    spam_with_inner_not_closure,
+    spam_with_inner_closure,
+]
+SCRIPT_FUNCTIONS = [
+    *PURE_SCRIPT_FUNCTIONS,
+    script_with_globals,
+    spam_with_globals_and_builtins,
 ]
 
 
