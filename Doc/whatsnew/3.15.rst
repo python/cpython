@@ -165,6 +165,7 @@ Removed C APIs
 --------------
 
 *
+
   * :c:func:`!PyUnicode_AsDecodedObject`:
     Use :c:func:`PyCodec_Decode` instead.
   * :c:func:`!PyUnicode_AsDecodedUnicode`:
@@ -175,6 +176,7 @@ Removed C APIs
   * :c:func:`!PyUnicode_AsEncodedUnicode`:
     Use :c:func:`PyCodec_Encode` instead; Note that some codecs (for example, "base64")
     may return a type other than :class:`bytes`, such as :class:`str`.
+
   (Contributed by Stan Ulbrych in :gh:`133612`)
 
 * :c:func:`!PyImport_ImportModuleNoBlock`: deprecated alias
