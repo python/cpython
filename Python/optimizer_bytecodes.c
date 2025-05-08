@@ -1088,8 +1088,16 @@ dummy_func(void) {
         res = sym_new_type(ctx, &PyLong_Type);
     }
 
-    op(_GET_LEN, (-- len)) {
-        len = sym_new_type(ctx, &PyLong_Type);
+    op(_GET_LEN, (obj -- obj, len)) {
+        int tuple_length = sym_tuple_length(obj);
+        if (tuple_length == -1) {
+            // Unknown length
+            len = sym_new_type(ctx, &PyLong_Type);
+        }
+        else {
+            assert(tuple_length >= 0);
+            len = sym_new_const(ctx, PyLong_FromLong(tuple_length));
+        }
     }
 
     op(_GUARD_CALLABLE_LEN, (callable, unused, unused -- callable, unused, unused)) {

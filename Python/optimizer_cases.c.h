@@ -1469,8 +1469,17 @@
         }
 
         case _GET_LEN: {
+            JitOptSymbol *obj;
             JitOptSymbol *len;
-            len = sym_new_type(ctx, &PyLong_Type);
+            obj = stack_pointer[-1];
+            int tuple_length = sym_tuple_length(obj);
+            if (tuple_length == -1) {
+                len = sym_new_type(ctx, &PyLong_Type);
+            }
+            else {
+                assert(tuple_length >= 0);
+                len = sym_new_const(ctx, PyLong_FromLong(tuple_length));
+            }
             stack_pointer[0] = len;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
