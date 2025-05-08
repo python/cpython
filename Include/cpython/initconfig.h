@@ -91,8 +91,7 @@ typedef struct PyPreConfig {
        encoding for the filesystem encoding.
 
        Set to 1 if the PYTHONLEGACYWINDOWSFSENCODING environment variable is
-       set to a non-empty string. If set to -1 (default), inherit
-       Py_LegacyWindowsFSEncodingFlag value.
+       set to a non-empty string.
 
        See PEP 529 for more details. */
     int legacy_windows_fs_encoding;

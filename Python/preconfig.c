@@ -484,9 +484,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     if (Py_UTF8Mode > 0) {
         config->utf8_mode = Py_UTF8Mode;
     }
-#ifdef MS_WINDOWS
-    COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
-#endif
 _Py_COMP_DIAG_POP
 
 #undef COPY_FLAG
@@ -508,9 +505,6 @@ preconfig_set_global_vars(const PyPreConfig *config)
 
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-#ifdef MS_WINDOWS
-    COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
-#endif
     COPY_FLAG(utf8_mode, Py_UTF8Mode);
 _Py_COMP_DIAG_POP
 

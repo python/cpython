@@ -704,9 +704,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         ('Py_InteractiveFlag', 'interactive'),
     ]
     if MS_WINDOWS:
-        COPY_GLOBAL_PRE_CONFIG.extend((
-            ('Py_LegacyWindowsFSEncodingFlag', 'legacy_windows_fs_encoding'),
-        ))
         COPY_GLOBAL_CONFIG.extend((
             ('Py_LegacyWindowsStdioFlag', 'legacy_windows_stdio'),
         ))

@@ -464,7 +464,6 @@ static const char usage_envvars[] =
 int Py_UTF8Mode = 0;
 int Py_InteractiveFlag = 0; /* Previously, was used by Py_FdIsInteractive() */
 #ifdef MS_WINDOWS
-int Py_LegacyWindowsFSEncodingFlag = 0; /* Uses mbcs instead of utf-8 */
 int Py_LegacyWindowsStdioFlag = 0; /* Uses FileIO instead of WindowsConsoleIO */
 #endif
 
@@ -511,7 +510,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     SET_ITEM_INT(Py_InteractiveFlag);
 
 #ifdef MS_WINDOWS
-    SET_ITEM_INT(Py_LegacyWindowsFSEncodingFlag);
     SET_ITEM_INT(Py_LegacyWindowsStdioFlag);
 #endif
 

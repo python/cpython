@@ -109,25 +109,6 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    .. deprecated:: 3.12
 
 
-.. c:var:: int Py_LegacyWindowsFSEncodingFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyPreConfig.legacy_windows_fs_encoding` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   If the flag is non-zero, use the ``mbcs`` encoding with ``replace`` error
-   handler, instead of the UTF-8 encoding with ``surrogatepass`` error handler,
-   for the :term:`filesystem encoding and error handler`.
-
-   Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment
-   variable is set to a non-empty string.
-
-   See :pep:`529` for more details.
-
-   .. availability:: Windows.
-
-   .. deprecated-removed:: 3.12 3.15
-
 .. c:var:: int Py_LegacyWindowsStdioFlag
 
    This API is kept for backward compatibility: setting

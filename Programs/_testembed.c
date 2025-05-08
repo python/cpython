@@ -583,7 +583,6 @@ static int test_init_global_config(void)
 
     putenv("PYTHONUNBUFFERED=");
 
-    /* FIXME: test Py_LegacyWindowsFSEncodingFlag */
     /* FIXME: test Py_LegacyWindowsStdioFlag */
 
     Py_Initialize();

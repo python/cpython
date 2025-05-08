@@ -71,9 +71,6 @@ Pending removal in Python 3.15
   * :c:var:`Py_InteractiveFlag`:
     Use :c:member:`PyConfig.interactive` or
     :c:func:`PyConfig_Get("interactive") <PyConfig_Get>` instead.
-  * :c:var:`Py_LegacyWindowsFSEncodingFlag`:
-    Use :c:member:`PyPreConfig.legacy_windows_fs_encoding` or
-    :c:func:`PyConfig_Get("legacy_windows_fs_encoding") <PyConfig_Get>` instead.
   * :c:var:`Py_LegacyWindowsStdioFlag`:
     Use :c:member:`PyConfig.legacy_windows_stdio` or
     :c:func:`PyConfig_Get("legacy_windows_stdio") <PyConfig_Get>` instead.

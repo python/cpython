@@ -8,7 +8,6 @@ extern "C" {
 Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_InteractiveFlag;
 
 #ifdef MS_WINDOWS
-Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_LegacyWindowsFSEncodingFlag;
 Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_LegacyWindowsStdioFlag;
 #endif
 
