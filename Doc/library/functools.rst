@@ -403,8 +403,7 @@ The :mod:`functools` module defines the following functions:
       >>> remove_first_dear(message)
       'Hello, dear world!'
 
-   :data:`!Placeholder` has no special treatment when used in a keyword
-   argument to :func:`!partial`.
+   :data:`!Placeholder` cannot be passed to :func:`!partial` as a keyword argument.
 
    .. versionchanged:: 3.14
       Added support for :data:`Placeholder` in positional arguments.
