@@ -1724,9 +1724,6 @@
    SipHash13: 3, externally defined: 0 */
 #undef Py_HASH_ALGORITHM
 
-/* Defined if _Complex C type is available. */
-#undef Py_HAVE_C_COMPLEX
-
 /* Define if year with century should be normalized for strftime. */
 #undef Py_NORMALIZE_CENTURY
 

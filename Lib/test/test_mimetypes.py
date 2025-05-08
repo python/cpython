@@ -6,7 +6,8 @@ import sys
 import unittest.mock
 from platform import win32_edition
 from test import support
-from test.support import os_helper
+from test.support import cpython_only, force_not_colorized, os_helper
+from test.support.import_helper import ensure_lazy_imports
 
 try:
     import _winapi
@@ -435,8 +436,13 @@ class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         support.check__all__(self, mimetypes)
 
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("mimetypes", {"os", "posixpath", "urllib.parse", "argparse"})
+
 
 class CommandLineTest(unittest.TestCase):
+    @force_not_colorized
     def test_parse_args(self):
         args, help_text = mimetypes._parse_args("-h")
         self.assertTrue(help_text.startswith("usage: "))
