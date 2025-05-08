@@ -2517,7 +2517,7 @@ number of other issues). Some known details affected:
   over the default filters set by the interpreter
 
 Due to changes in the way the default warnings filters are configured,
-setting :c:data:`Py_BytesWarningFlag` to a value greater than one is no longer
+setting :c:data:`!Py_BytesWarningFlag` to a value greater than one is no longer
 sufficient to both emit :exc:`BytesWarning` messages and have them converted
 to exceptions.  Instead, the flag must be set (to cause the warnings to be
 emitted in the first place), and an explicit ``error::BytesWarning``
@@ -2540,7 +2540,7 @@ Starting in 3.7.1, :c:func:`Py_Initialize` now consistently reads and respects
 all of the same environment settings as :c:func:`Py_Main` (in earlier Python
 versions, it respected an ill-defined subset of those environment variables,
 while in Python 3.7.0 it didn't read any of them due to :issue:`34247`). If
-this behavior is unwanted, set :c:data:`Py_IgnoreEnvironmentFlag` to 1 before
+this behavior is unwanted, set :c:data:`!Py_IgnoreEnvironmentFlag` to 1 before
 calling :c:func:`Py_Initialize`.
 
 In 3.7.1 the C API for Context Variables
