@@ -550,17 +550,9 @@ class ConnectionTests(unittest.TestCase):
                 cx.execute("insert into u values(0)")
 
     def test_connect_positional_arguments(self):
-        regex = (
-            r"Passing more than 1 positional argument to sqlite3.connect\(\)"
-            " is deprecated. Parameters 'timeout', 'detect_types', "
-            "'isolation_level', 'check_same_thread', 'factory', "
-            "'cached_statements' and 'uri' will become keyword-only "
-            "parameters in Python 3.15."
-        )
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            cx = sqlite.connect(":memory:", 1.0)
-            cx.close()
-        self.assertEqual(cm.filename, __file__)
+        with self.assertRaisesRegex(TypeError,
+                r'connect\(\) takes at most 1 positional arguments'):
+            sqlite.connect(":memory:", 1.0)
 
     def test_connection_resource_warning(self):
         with self.assertWarns(ResourceWarning):
