@@ -90,7 +90,7 @@ datetime_check_tzinfo(PyObject *self, PyObject *args)
 static PyObject *
 make_timezones_capi(PyObject *self, PyObject *args)
 {
-    PyObject *offset = PyDelta_FromDSU(0, -18000, 0);
+    PyObject *offset = PyDelta_FromDSU(0, -18000, 0, 0);
     PyObject *name = PyUnicode_FromString("EST");
     if (offset == NULL || name == NULL) {
         Py_XDECREF(offset);
@@ -128,7 +128,7 @@ error:
 static PyObject *
 get_timezones_offset_zero(PyObject *self, PyObject *args)
 {
-    PyObject *offset = PyDelta_FromDSU(0, 0, 0);
+    PyObject *offset = PyDelta_FromDSU(0, 0, 0, 0);
     PyObject *name = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     if (offset == NULL || name == NULL) {
         Py_XDECREF(offset);
@@ -237,13 +237,13 @@ get_datetime_fromdateandtimeandfold(PyObject *self, PyObject *args)
     PyObject *rv = NULL;
     int macro;
     int year, month, day;
-    int hour, minute, second, microsecond, fold;
+    int hour, minute, second, microsecond, nanosecond, fold;
 
-    if (!PyArg_ParseTuple(args, "piiiiiiii",
+    if (!PyArg_ParseTuple(args, "piiiiiiiii",
                           &macro,
                           &year, &month, &day,
                           &hour, &minute, &second, &microsecond,
-                          &fold)) {
+                          &fold, &nanosecond)) {
         return NULL;
     }
 
@@ -251,14 +251,14 @@ get_datetime_fromdateandtimeandfold(PyObject *self, PyObject *args)
         rv = PyDateTime_FromDateAndTimeAndFold(
                 year, month, day,
                 hour, minute, second, microsecond,
-                fold);
+                fold, nanosecond);
     }
     else {
         rv = PyDateTimeAPI->DateTime_FromDateAndTimeAndFold(
                 year, month, day,
                 hour, minute, second, microsecond,
                 Py_None,
-                fold,
+                fold, nanosecond,
                 PyDateTimeAPI->DateTimeType);
     }
     return rv;
@@ -295,23 +295,23 @@ get_time_fromtimeandfold(PyObject *self, PyObject *args)
 {
     PyObject *rv = NULL;
     int macro;
-    int hour, minute, second, microsecond, fold;
+    int hour, minute, second, microsecond, nanosecond, fold;
 
-    if (!PyArg_ParseTuple(args, "piiiii",
+    if (!PyArg_ParseTuple(args, "piiiiii",
                           &macro,
                           &hour, &minute, &second, &microsecond,
-                          &fold)) {
+                          &fold, &nanosecond)) {
         return NULL;
     }
 
     if (macro) {
-        rv = PyTime_FromTimeAndFold(hour, minute, second, microsecond, fold);
+        rv = PyTime_FromTimeAndFold(hour, minute, second, microsecond, fold, nanosecond);
     }
     else {
         rv = PyDateTimeAPI->Time_FromTimeAndFold(
                 hour, minute, second, microsecond,
                 Py_None,
-                fold,
+                fold, nanosecond,
                 PyDateTimeAPI->TimeType);
     }
     return rv;
@@ -322,20 +322,20 @@ get_delta_fromdsu(PyObject *self, PyObject *args)
 {
     PyObject *rv = NULL;
     int macro;
-    int days, seconds, microseconds;
+    int days, seconds, microseconds, nanoseconds;
 
-    if (!PyArg_ParseTuple(args, "piii",
+    if (!PyArg_ParseTuple(args, "piiii",
                           &macro,
-                          &days, &seconds, &microseconds)) {
+                          &days, &seconds, &microseconds, &nanoseconds)) {
         return NULL;
     }
 
     if (macro) {
-        rv = PyDelta_FromDSU(days, seconds, microseconds);
+        rv = PyDelta_FromDSU(days, seconds, microseconds, nanoseconds);
     }
     else {
         rv = PyDateTimeAPI->Delta_FromDelta(
-                days, seconds, microseconds, 1,
+                days, seconds, microseconds, nanoseconds, 1,
                 PyDateTimeAPI->DeltaType);
     }
 
@@ -426,9 +426,10 @@ test_PyDateTime_DATE_GET(PyObject *self, PyObject *obj)
     int minute = PyDateTime_DATE_GET_MINUTE(obj);
     int second = PyDateTime_DATE_GET_SECOND(obj);
     int microsecond = PyDateTime_DATE_GET_MICROSECOND(obj);
+    int nanosecond = PyDateTime_DATE_GET_NANOSECOND(obj);
     PyObject *tzinfo = PyDateTime_DATE_GET_TZINFO(obj);
 
-    return Py_BuildValue("(iiiiO)", hour, minute, second, microsecond, tzinfo);
+    return Py_BuildValue("(iiiiOi)", hour, minute, second, microsecond, tzinfo, nanosecond);
 }
 
 static PyObject *
@@ -438,9 +439,10 @@ test_PyDateTime_TIME_GET(PyObject *self, PyObject *obj)
     int minute = PyDateTime_TIME_GET_MINUTE(obj);
     int second = PyDateTime_TIME_GET_SECOND(obj);
     int microsecond = PyDateTime_TIME_GET_MICROSECOND(obj);
+    int nanosecond = PyDateTime_TIME_GET_NANOSECOND(obj);
     PyObject *tzinfo = PyDateTime_TIME_GET_TZINFO(obj);
 
-    return Py_BuildValue("(iiiiO)", hour, minute, second, microsecond, tzinfo);
+    return Py_BuildValue("(iiiiOi)", hour, minute, second, microsecond, tzinfo, nanosecond);
 }
 
 static PyObject *
@@ -449,8 +451,9 @@ test_PyDateTime_DELTA_GET(PyObject *self, PyObject *obj)
     int days = PyDateTime_DELTA_GET_DAYS(obj);
     int seconds = PyDateTime_DELTA_GET_SECONDS(obj);
     int microseconds = PyDateTime_DELTA_GET_MICROSECONDS(obj);
+    int nanoseconds = PyDateTime_DELTA_GET_NANOSECONDS(obj);
 
-    return Py_BuildValue("(iii)", days, seconds, microseconds);
+    return Py_BuildValue("(iiii)", days, seconds, microseconds, nanoseconds);
 }
 
 static PyMethodDef test_methods[] = {
