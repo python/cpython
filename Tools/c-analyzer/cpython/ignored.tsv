@@ -102,8 +102,6 @@ Python/initconfig.c	-	PYPRECONFIG_SPEC	-
 ## public C-API
 
 ## deprecated
-Python/preconfig.c	-	Py_FileSystemDefaultEncoding	-
-Python/preconfig.c	-	Py_HasFileSystemDefaultEncoding	-
 Python/preconfig.c	-	Py_FileSystemDefaultEncodeErrors	-
 Python/preconfig.c	-	_Py_HasFileSystemDefaultEncodeErrors	-
 

@@ -71,9 +71,6 @@ Pending removal in Python 3.15
   * :c:var:`Py_InteractiveFlag`:
     Use :c:member:`PyConfig.interactive` or
     :c:func:`PyConfig_Get("interactive") <PyConfig_Get>` instead.
-  * :c:var:`!Py_FileSystemDefaultEncoding`, :c:var:`!Py_HasFileSystemDefaultEncoding`:
-    Use :c:member:`PyConfig.filesystem_encoding` or
-    :c:func:`PyConfig_Get("filesystem_encoding") <PyConfig_Get>` instead.
   * :c:var:`!Py_FileSystemDefaultEncodeErrors`:
     Use :c:member:`PyConfig.filesystem_errors` or
     :c:func:`PyConfig_Get("filesystem_errors") <PyConfig_Get>` instead.

@@ -498,8 +498,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 #define SET_ITEM_STR(VAR) \
     SET_ITEM(#VAR, FROM_STRING(VAR))
 
-    SET_ITEM_STR(Py_FileSystemDefaultEncoding);
-    SET_ITEM_INT(Py_HasFileSystemDefaultEncoding);
     SET_ITEM_STR(Py_FileSystemDefaultEncodeErrors);
     SET_ITEM_INT(_Py_HasFileSystemDefaultEncodeErrors);
 

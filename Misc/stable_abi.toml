@@ -1620,8 +1620,6 @@
     added = '3.2'
 [function.Py_FatalError]
     added = '3.2'
-[data.Py_FileSystemDefaultEncoding]
-    added = '3.2'
 [function.Py_Finalize]
     added = '3.2'
 [function.Py_GetBuildInfo]
@@ -1647,8 +1645,6 @@
 [function.Py_GetRecursionLimit]
     added = '3.2'
 [function.Py_GetVersion]
-    added = '3.2'
-[data.Py_HasFileSystemDefaultEncoding]
     added = '3.2'
 [function.Py_IncRef]
     added = '3.2'

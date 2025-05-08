@@ -690,7 +690,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     # global config
     DEFAULT_GLOBAL_CONFIG = {
-        'Py_HasFileSystemDefaultEncoding': 0,
         '_Py_HasFileSystemDefaultEncodeErrors': 0,
     }
     COPY_GLOBAL_PRE_CONFIG = [
@@ -700,7 +699,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # Copy core config to global config for expected values
         # True means that the core config value is inverted (0 => 1 and 1 => 0)
         ('Py_FileSystemDefaultEncodeErrors', 'filesystem_errors'),
-        ('Py_FileSystemDefaultEncoding', 'filesystem_encoding'),
         ('Py_InteractiveFlag', 'interactive'),
     ]
 
