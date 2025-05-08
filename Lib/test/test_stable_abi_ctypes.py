@@ -885,7 +885,6 @@ SYMBOL_NAMES = (
     "Py_GetPlatform",
     "Py_GetPrefix",
     "Py_GetProgramFullPath",
-    "Py_GetProgramName",
     "Py_GetPythonHome",
     "Py_GetRecursionLimit",
     "Py_GetVersion",

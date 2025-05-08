@@ -3017,8 +3017,6 @@ Py_GetPrefix:wchar_t*:::
 
 Py_GetProgramFullPath:wchar_t*:::
 
-Py_GetProgramName:wchar_t*:::
-
 Py_GetVersion:const char*:::
 
 Py_INCREF:void:::

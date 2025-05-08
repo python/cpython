@@ -155,3 +155,7 @@ Deprecated C APIs
 Removed C APIs
 --------------
 
+* :c:func:`!Py_GetProgramName`:
+  use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
+  (:data:`sys.executable`) instead.
+

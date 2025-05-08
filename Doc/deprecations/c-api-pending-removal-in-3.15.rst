@@ -39,9 +39,6 @@ Pending removal in Python 3.15
   * :c:func:`Py_GetProgramFullPath`:
     Use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
     (:data:`sys.executable`) instead.
-  * :c:func:`Py_GetProgramName`:
-    Use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
-    (:data:`sys.executable`) instead.
   * :c:func:`Py_GetPythonHome`:
     Use :c:func:`PyConfig_Get("home") <PyConfig_Get>` or the
     :envvar:`PYTHONHOME` environment variable instead.

@@ -79,8 +79,7 @@ The following functions can be safely called before Python is initialized:
    the following functions **should not be called** before the interpreter has
    been initialized: :c:func:`Py_EncodeLocale`, :c:func:`Py_GetPath`,
    :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`,
-   :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome`,
-   :c:func:`Py_GetProgramName`, :c:func:`PyEval_InitThreads`, and
+   :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome`, :c:func:`PyEval_InitThreads`, and
    :c:func:`Py_RunMain`.
 
 
@@ -607,23 +606,6 @@ Process-wide parameters
    :c:expr:`wchar_t*` string.
 
    .. deprecated-removed:: 3.11 3.15
-
-
-.. c:function:: wchar_t* Py_GetProgramName()
-
-   Return the program name set with :c:member:`PyConfig.program_name`, or the default.
-   The returned string points into static storage; the caller should not modify its
-   value.
-
-   This function should not be called before :c:func:`Py_Initialize`, otherwise
-   it returns ``NULL``.
-
-   .. versionchanged:: 3.10
-      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
-
-   .. deprecated-removed:: 3.13 3.15
-      Use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
-      (:data:`sys.executable`) instead.
 
 
 .. c:function:: wchar_t* Py_GetPrefix()

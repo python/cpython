@@ -1712,7 +1712,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # - Py_GetPath()
         # - Py_GetPrefix()
         # - Py_GetProgramFullPath()
-        # - Py_GetProgramName()
         # - Py_GetPythonHome()
         #
         # The global path configuration (_Py_path_config) must be a copy
@@ -1728,7 +1727,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         Py_GetPath = get_func('Py_GetPath')
         Py_GetPrefix = get_func('Py_GetPrefix')
         Py_GetExecPrefix = get_func('Py_GetExecPrefix')
-        Py_GetProgramName = get_func('Py_GetProgramName')
         Py_GetProgramFullPath = get_func('Py_GetProgramFullPath')
         Py_GetPythonHome = get_func('Py_GetPythonHome')
 
@@ -1738,7 +1736,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                          config['module_search_paths'])
         self.assertEqual(Py_GetPrefix(), config['prefix'])
         self.assertEqual(Py_GetExecPrefix(), config['exec_prefix'])
-        self.assertEqual(Py_GetProgramName(), config['program_name'])
         self.assertEqual(Py_GetProgramFullPath(), config['executable'])
         self.assertEqual(Py_GetPythonHome(), config['home'])
 

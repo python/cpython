@@ -323,14 +323,6 @@ Py_GetPythonHome(void)
 }
 
 
-wchar_t *
-Py_GetProgramName(void)
-{
-    return _Py_path_config.program_name;
-}
-
-
-
 /* Compute module search path from argv[0] or the current working
    directory ("-m module" case) which will be prepended to sys.argv:
    sys.path[0].
