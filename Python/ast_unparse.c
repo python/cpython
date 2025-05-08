@@ -702,6 +702,13 @@ append_templatestr(PyUnicodeWriter *writer, expr_ty e)
 
     Py_ssize_t last_idx = 0;
     Py_ssize_t len = asdl_seq_LEN(e->v.TemplateStr.values);
+    if (len == 0) {
+        int result = _write_values_subarray(writer, e->v.TemplateStr.values,
+                0, len - 1, 't', arena);
+        _PyArena_Free(arena);
+        return result;
+    }
+
     for (Py_ssize_t i = 0; i < len; i++) {
         expr_ty value = asdl_seq_GET(e->v.TemplateStr.values, i);
 
