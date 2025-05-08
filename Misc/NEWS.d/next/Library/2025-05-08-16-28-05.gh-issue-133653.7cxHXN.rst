@@ -1,0 +1,1 @@
+Fix subclassing :meth:`argparse.HelpFormatter`. Patch by Hugo van Kemenade.

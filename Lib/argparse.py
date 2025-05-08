@@ -2723,15 +2723,13 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         return formatter.format_help()
 
     def _get_formatter(self):
-        if isinstance(self.formatter_class, type) and issubclass(
-            self.formatter_class, HelpFormatter
-        ):
+        try:
             return self.formatter_class(
                 prog=self.prog,
                 prefix_chars=self.prefix_chars,
                 color=self.color,
             )
-        else:
+        except TypeError:
             return self.formatter_class(prog=self.prog)
 
     # =====================
