@@ -7,6 +7,7 @@ import collections
 import functools
 import itertools
 import pickle
+from string.templatelib import Interpolation, Template
 import typing
 import unittest
 from annotationlib import (
@@ -272,6 +273,43 @@ class TestStringFormat(unittest.TestCase):
                 "rpow": "1 ** a",
             },
         )
+
+    def test_template_str(self):
+        def f(
+            x: t"{a}",
+            y: list[t"{a}"],
+            z: t"{a:b} {c!r} {d!s:t}",
+            a: t"a{b}c{d}e{f}g",
+            b: t"{a:{1}}",
+            c: t"{a | b * c}",
+        ): pass
+
+        annos = get_annotations(f, format=Format.STRING)
+        self.assertEqual(annos, {
+            "x": "t'{a}'",
+            "y": "list[t'{a}']",
+            "z": "t'{a:b} {c!r} {d!s:t}'",
+            "a": "t'a{b}c{d}e{f}g'",
+            # interpolations in the format spec are eagerly evaluated so we can't recover the source
+            "b": "t'{a:1}'",
+            "c": "t'{a | b * c}'",
+        })
+
+        def g(
+            x: t"{a}",
+        ): ...
+
+        annos = get_annotations(g, format=Format.FORWARDREF)
+        templ = annos["x"]
+        # Template and Interpolation don't have __eq__ so we have to compare manually
+        self.assertIsInstance(templ, Template)
+        self.assertEqual(templ.strings, ("", ""))
+        self.assertEqual(len(templ.interpolations), 1)
+        interp = templ.interpolations[0]
+        self.assertEqual(interp.value, support.EqualToForwardRef("a", owner=g))
+        self.assertEqual(interp.expression, "a")
+        self.assertIsNone(interp.conversion)
+        self.assertEqual(interp.format_spec, "")
 
     def test_getitem(self):
         def f(x: undef1[str, undef2]):

@@ -19,7 +19,6 @@ on:
       - "Tools/jit/**"
       - "Tools/peg_generator/**"
       - "Tools/requirements-dev.txt"
-      - "Tools/wasm/**"
   workflow_dispatch:
 
 permissions:
@@ -51,7 +50,6 @@ jobs:
           "Tools/clinic",
           "Tools/jit",
           "Tools/peg_generator",
-          "Tools/wasm",
         ]
     steps:
       - uses: actions/checkout@v4

@@ -1955,12 +1955,130 @@ finally:
 }
 
 
+int
+_PyCode_CheckNoInternalState(PyCodeObject *co, const char **p_errmsg)
+{
+    const char *errmsg = NULL;
+    // We don't worry about co_executors, co_instrumentation,
+    // or co_monitoring.  They are essentially ephemeral.
+    if (co->co_extra != NULL) {
+        errmsg = "only basic code objects are supported";
+    }
+
+    if (errmsg != NULL) {
+        if (p_errmsg != NULL) {
+            *p_errmsg = errmsg;
+        }
+        return 0;
+    }
+    return 1;
+}
+
+int
+_PyCode_CheckNoExternalState(PyCodeObject *co, _PyCode_var_counts_t *counts,
+                             const char **p_errmsg)
+{
+    const char *errmsg = NULL;
+    assert(counts->locals.hidden.total == 0);
+    if (counts->numfree > 0) {  // It's a closure.
+        errmsg = "closures not supported";
+    }
+    else if (counts->unbound.globals.numglobal > 0) {
+        errmsg = "globals not supported";
+    }
+    else if (counts->unbound.globals.numbuiltin > 0
+             && counts->unbound.globals.numunknown > 0)
+    {
+        errmsg = "globals not supported";
+    }
+    // Otherwise we don't check counts.unbound.globals.numunknown since we can't
+    // distinguish beween globals and builtins here.
+
+    if (errmsg != NULL) {
+        if (p_errmsg != NULL) {
+            *p_errmsg = errmsg;
+        }
+        return 0;
+    }
+    return 1;
+}
+
+int
+_PyCode_VerifyStateless(PyThreadState *tstate,
+                        PyCodeObject *co, PyObject *globalnames,
+                        PyObject *globalsns, PyObject *builtinsns)
+{
+    const char *errmsg;
+   _PyCode_var_counts_t counts = {0};
+    _PyCode_GetVarCounts(co, &counts);
+    if (_PyCode_SetUnboundVarCounts(
+                            tstate, co, &counts, globalnames, NULL,
+                            globalsns, builtinsns) < 0)
+    {
+        return -1;
+    }
+    // We may consider relaxing the internal state constraints
+    // if it becomes a problem.
+    if (!_PyCode_CheckNoInternalState(co, &errmsg)) {
+        _PyErr_SetString(tstate, PyExc_ValueError, errmsg);
+        return -1;
+    }
+    if (builtinsns != NULL) {
+        // Make sure the next check will fail for globals,
+        // even if there aren't any builtins.
+        counts.unbound.globals.numbuiltin += 1;
+    }
+    if (!_PyCode_CheckNoExternalState(co, &counts, &errmsg)) {
+        _PyErr_SetString(tstate, PyExc_ValueError, errmsg);
+        return -1;
+    }
+    // Note that we don't check co->co_flags & CO_NESTED for anything here.
+    return 0;
+}
+
+
+int
+_PyCode_CheckPureFunction(PyCodeObject *co, const char **p_errmsg)
+{
+    const char *errmsg = NULL;
+    if (co->co_flags & CO_GENERATOR) {
+        errmsg = "generators not supported";
+    }
+    else if (co->co_flags & CO_COROUTINE) {
+        errmsg = "coroutines not supported";
+    }
+    else if (co->co_flags & CO_ITERABLE_COROUTINE) {
+        errmsg = "coroutines not supported";
+    }
+    else if (co->co_flags & CO_ASYNC_GENERATOR) {
+        errmsg = "generators not supported";
+    }
+
+    if (errmsg != NULL) {
+        if (p_errmsg != NULL) {
+            *p_errmsg = errmsg;
+        }
+        return 0;
+    }
+    return 1;
+}
+
 /* Here "value" means a non-None value, since a bare return is identical
  * to returning None explicitly.  Likewise a missing return statement
  * at the end of the function is turned into "return None". */
 static int
 code_returns_only_none(PyCodeObject *co)
 {
+    if (!_PyCode_CheckPureFunction(co, NULL)) {
+        return 0;
+    }
+    int len = (int)Py_SIZE(co);
+    assert(len > 0);
+
+    // The last instruction either returns or raises.  We can take advantage
+    // of that for a quick exit.
+    _Py_CODEUNIT final = _Py_GetBaseCodeUnit(co, len-1);
+
     // Look up None in co_consts.
     Py_ssize_t nconsts = PyTuple_Size(co->co_consts);
     int none_index = 0;
@@ -1971,26 +2089,42 @@ code_returns_only_none(PyCodeObject *co)
     }
     if (none_index == nconsts) {
         // None wasn't there, which means there was no implicit return,
-        // "return", or "return None".  That means there must be
-        // an explicit return (non-None).
-        return 0;
-    }
+        // "return", or "return None".
 
-    // Walk the bytecode, looking for RETURN_VALUE.
-    Py_ssize_t len = Py_SIZE(co);
-    for (int i = 0; i < len; i += _PyInstruction_GetLength(co, i)) {
-        _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
-        if (IS_RETURN_OPCODE(inst.op.code)) {
-            assert(i != 0);
-            // Ignore it if it returns None.
-            _Py_CODEUNIT prev = _Py_GetBaseCodeUnit(co, i-1);
-            if (prev.op.code == LOAD_CONST) {
-                // We don't worry about EXTENDED_ARG for now.
-                if (prev.op.arg == none_index) {
-                    continue;
-                }
-            }
+        // That means there must be
+        // an explicit return (non-None), or it only raises.
+        if (IS_RETURN_OPCODE(final.op.code)) {
+            // It was an explicit return (non-None).
             return 0;
+        }
+        // It must end with a raise then.  We still have to walk the
+        // bytecode to see if there's any explicit return (non-None).
+        assert(IS_RAISE_OPCODE(final.op.code));
+        for (int i = 0; i < len; i += _PyInstruction_GetLength(co, i)) {
+            _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
+            if (IS_RETURN_OPCODE(inst.op.code)) {
+                // We alraedy know it isn't returning None.
+                return 0;
+            }
+        }
+        // It must only raise.
+    }
+    else {
+        // Walk the bytecode, looking for RETURN_VALUE.
+        for (int i = 0; i < len; i += _PyInstruction_GetLength(co, i)) {
+            _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
+            if (IS_RETURN_OPCODE(inst.op.code)) {
+                assert(i != 0);
+                // Ignore it if it returns None.
+                _Py_CODEUNIT prev = _Py_GetBaseCodeUnit(co, i-1);
+                if (prev.op.code == LOAD_CONST) {
+                    // We don't worry about EXTENDED_ARG for now.
+                    if (prev.op.arg == none_index) {
+                        continue;
+                    }
+                }
+                return 0;
+            }
         }
     }
     return 1;

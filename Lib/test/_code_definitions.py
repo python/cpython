@@ -178,6 +178,32 @@ FUNCTIONS = [
     *NESTED_FUNCTIONS,
 ]
 
+STATELESS_FUNCTIONS = [
+    spam,
+    spam_minimal,
+    spam_with_builtins,
+    spam_args_attrs_and_builtins,
+    spam_returns_arg,
+    spam_annotated,
+    spam_with_inner_not_closure,
+    spam_with_inner_closure,
+    spam_N,
+    spam_C,
+    spam_NN,
+    spam_NC,
+    spam_CN,
+    spam_CC,
+    eggs_nested,
+    eggs_nested_N,
+    ham_nested,
+    ham_C_nested
+]
+STATELESS_CODE = [
+    *STATELESS_FUNCTIONS,
+    spam_with_globals_and_builtins,
+    spam_full,
+]
+
 
 # generators
 

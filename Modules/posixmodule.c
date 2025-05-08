@@ -4698,7 +4698,7 @@ os_listdir_impl(PyObject *module, path_t *path)
 }
 
 
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
 /*[clinic input]
 os.listdrives
@@ -4746,6 +4746,10 @@ os_listdrives_impl(PyObject *module)
     }
     return result;
 }
+
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
+
+#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
 
 /*[clinic input]
 os.listvolumes
@@ -4808,6 +4812,9 @@ os_listvolumes_impl(PyObject *module)
     return result;
 }
 
+#endif /* MS_WINDOWS_APP || MS_WINDOWS_SYSTEM */
+
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
 /*[clinic input]
 os.listmounts
@@ -4888,6 +4895,9 @@ exit:
     return result;
 }
 
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
+
+#ifdef MS_WINDOWS
 
 /*[clinic input]
 os._path_isdevdrive
@@ -16865,12 +16875,16 @@ static PyObject *
 os__supports_virtual_terminal_impl(PyObject *module)
 /*[clinic end generated code: output=bd0556a6d9d99fe6 input=0752c98e5d321542]*/
 {
+#ifdef HAVE_WINDOWS_CONSOLE_IO
     DWORD mode = 0;
     HANDLE handle = GetStdHandle(STD_ERROR_HANDLE);
     if (!GetConsoleMode(handle, &mode)) {
         Py_RETURN_FALSE;
     }
     return PyBool_FromLong(mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+#else
+    Py_RETURN_FALSE;
+#endif /* HAVE_WINDOWS_CONSOLE_IO */
 }
 #endif
 

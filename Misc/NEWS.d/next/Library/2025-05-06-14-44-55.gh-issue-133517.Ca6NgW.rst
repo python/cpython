@@ -1,0 +1,2 @@
+Remove :func:`os.listdrives`, :func:`os.listvolumes` and :func:`os.listmounts`
+in non Windows desktop builds since the underlying functionality is missing.

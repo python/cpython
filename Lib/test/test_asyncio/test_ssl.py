@@ -195,9 +195,10 @@ class TestSSL(test_utils.TestCase):
         except (BrokenPipeError, ConnectionError):
             pass
 
-    def test_create_server_ssl_1(self):
+    @support.bigmemtest(size=25, memuse=90*2**20, dry_run=False)
+    def test_create_server_ssl_1(self, size):
         CNT = 0           # number of clients that were successful
-        TOTAL_CNT = 25    # total number of clients that test will create
+        TOTAL_CNT = size  # total number of clients that test will create
         TIMEOUT = support.LONG_TIMEOUT  # timeout for this test
 
         A_DATA = b'A' * 1024 * BUF_MULTIPLIER
@@ -1038,9 +1039,10 @@ class TestSSL(test_utils.TestCase):
 
         self.loop.run_until_complete(run_main())
 
-    def test_create_server_ssl_over_ssl(self):
+    @support.bigmemtest(size=25, memuse=90*2**20, dry_run=False)
+    def test_create_server_ssl_over_ssl(self, size):
         CNT = 0           # number of clients that were successful
-        TOTAL_CNT = 25    # total number of clients that test will create
+        TOTAL_CNT = size  # total number of clients that test will create
         TIMEOUT = support.LONG_TIMEOUT  # timeout for this test
 
         A_DATA = b'A' * 1024 * BUF_MULTIPLIER
