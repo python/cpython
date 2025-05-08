@@ -2577,21 +2577,21 @@ The following options are accepted:
    Python version in the format 3.x (for example, 3.10). Defaults to the
    current version of the interpreter.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. option:: -O <level>
             --optimize <level>
 
    Optimization level for parser. Defaults to no optimization.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. option:: --show-empty
 
    Show empty lists and fields that are ``None``. Defaults to not showing empty
    objects.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 If :file:`infile` is specified its contents are parsed to AST and dumped
