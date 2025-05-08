@@ -851,7 +851,7 @@ Disassembly of <code object <genexpr> at 0x..., file "%s", line %d>:
 %4d           RETURN_GENERATOR
                POP_TOP
        L1:     RESUME                   0
-               LOAD_FAST_BORROW         0 (.0)
+               LOAD_FAST                0 (.0)
                GET_ITER
        L2:     FOR_ITER                14 (to L3)
                STORE_FAST               1 (z)
