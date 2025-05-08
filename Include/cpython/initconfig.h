@@ -54,11 +54,13 @@ typedef struct PyPreConfig {
     /* If greater than 0, enable isolated mode: sys.path contains
        neither the script's directory nor the user's site-packages directory.
 
-       Set to 1 by the -I command line option. */
+       Set to 1 by the -I command line option. If set to -1 (default), inherit
+       Py_IsolatedFlag value. */
     int isolated;
 
     /* If greater than 0: use environment variables.
-       Set to 0 by -E command line option. */
+       Set to 0 by -E command line option. If set to -1 (default), it is
+       set to !Py_IgnoreEnvironmentFlag. */
     int use_environment;
 
     /* Set the LC_CTYPE locale to the user preferred locale? If equals to 0,
@@ -91,7 +93,8 @@ typedef struct PyPreConfig {
        encoding for the filesystem encoding.
 
        Set to 1 if the PYTHONLEGACYWINDOWSFSENCODING environment variable is
-       set to a non-empty string.
+       set to a non-empty string. If set to -1 (default), inherit
+       Py_LegacyWindowsFSEncodingFlag value.
 
        See PEP 529 for more details. */
     int legacy_windows_fs_encoding;

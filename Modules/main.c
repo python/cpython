@@ -523,6 +523,10 @@ static void
 pymain_set_inspect(PyConfig *config, int inspect)
 {
     config->inspect = inspect;
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    Py_InspectFlag = inspect;
+_Py_COMP_DIAG_POP
 }
 
 

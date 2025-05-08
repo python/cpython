@@ -237,7 +237,7 @@ class UTF8ModeTests(unittest.TestCase):
                 check('utf8=0', [c_arg], LC_ALL=loc)
 
     def test_optim_level(self):
-        # CPython: check that Py_Main() doesn't increment PyConfig.optimize
+        # CPython: check that Py_Main() doesn't increment Py_OptimizeFlag
         # twice when -X utf8 requires to parse the configuration twice (when
         # the encoding changes after reading the configuration, the
         # configuration is read again with the new encoding).

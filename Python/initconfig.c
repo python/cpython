@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "pycore_fileutils.h"     // _Py_GetLocaleEncoding()
+#include "pycore_fileutils.h"     // _Py_HasFileSystemDefaultEncodeErrors
 #include "pycore_getopt.h"        // _PyOS_GetOpt()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // _PyInterpreterState.runtime
@@ -462,7 +462,25 @@ static const char usage_envvars[] =
 /* UTF-8 mode (PEP 540): if equals to 1, use the UTF-8 encoding, and change
    stdin and stdout error handler to "surrogateescape". */
 int Py_UTF8Mode = 0;
+int Py_DebugFlag = 0; /* Needed by parser.c */
+int Py_VerboseFlag = 0; /* Needed by import.c */
+int Py_QuietFlag = 0; /* Needed by sysmodule.c */
 int Py_InteractiveFlag = 0; /* Previously, was used by Py_FdIsInteractive() */
+int Py_InspectFlag = 0; /* Needed to determine whether to exit at SystemExit */
+int Py_OptimizeFlag = 0; /* Needed by compile.c */
+int Py_NoSiteFlag = 0; /* Suppress 'import site' */
+int Py_BytesWarningFlag = 0; /* Warn on str(bytes) and str(buffer) */
+int Py_FrozenFlag = 0; /* Needed by getpath.c */
+int Py_IgnoreEnvironmentFlag = 0; /* e.g. PYTHONPATH, PYTHONHOME */
+int Py_DontWriteBytecodeFlag = 0; /* Suppress writing bytecode files (*.pyc) */
+int Py_NoUserSiteDirectory = 0; /* for -s and site.py */
+int Py_UnbufferedStdioFlag = 0; /* Unbuffered binary std{in,out,err} */
+int Py_HashRandomizationFlag = 0; /* for -R and PYTHONHASHSEED */
+int Py_IsolatedFlag = 0; /* for -I, isolate from user's env */
+#ifdef MS_WINDOWS
+int Py_LegacyWindowsFSEncodingFlag = 0; /* Uses mbcs instead of utf-8 */
+int Py_LegacyWindowsStdioFlag = 0; /* Uses FileIO instead of WindowsConsoleIO */
+#endif
 
 
 static PyObject *
@@ -498,8 +516,33 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 #define SET_ITEM_STR(VAR) \
     SET_ITEM(#VAR, FROM_STRING(VAR))
 
+    SET_ITEM_STR(Py_FileSystemDefaultEncoding);
+    SET_ITEM_INT(Py_HasFileSystemDefaultEncoding);
+    SET_ITEM_STR(Py_FileSystemDefaultEncodeErrors);
+    SET_ITEM_INT(_Py_HasFileSystemDefaultEncodeErrors);
+
     SET_ITEM_INT(Py_UTF8Mode);
+    SET_ITEM_INT(Py_DebugFlag);
+    SET_ITEM_INT(Py_VerboseFlag);
+    SET_ITEM_INT(Py_QuietFlag);
     SET_ITEM_INT(Py_InteractiveFlag);
+    SET_ITEM_INT(Py_InspectFlag);
+
+    SET_ITEM_INT(Py_OptimizeFlag);
+    SET_ITEM_INT(Py_NoSiteFlag);
+    SET_ITEM_INT(Py_BytesWarningFlag);
+    SET_ITEM_INT(Py_FrozenFlag);
+    SET_ITEM_INT(Py_IgnoreEnvironmentFlag);
+    SET_ITEM_INT(Py_DontWriteBytecodeFlag);
+    SET_ITEM_INT(Py_NoUserSiteDirectory);
+    SET_ITEM_INT(Py_UnbufferedStdioFlag);
+    SET_ITEM_INT(Py_HashRandomizationFlag);
+    SET_ITEM_INT(Py_IsolatedFlag);
+
+#ifdef MS_WINDOWS
+    SET_ITEM_INT(Py_LegacyWindowsFSEncodingFlag);
+    SET_ITEM_INT(Py_LegacyWindowsStdioFlag);
+#endif
 
     return dict;
 
@@ -517,22 +560,13 @@ _Py_COMP_DIAG_POP
 char*
 Py_GETENV(const char *name)
 {
-    if (!_PyRuntime.core_initialized) {
-        // During pre-initialization, we cannot hold the GIL so we directly
-        // read from '_PyRuntime.preconfig' instead as it's not yet possible
-        // to change the 'use_environment' field.
-        return _PyRuntime.preconfig.use_environment ? getenv(name) : NULL;
-    }
-    PyGILState_STATE state = PyGILState_Ensure();
-    PyObject *p_use_environment = PyConfig_Get("use_environment");
-    PyGILState_Release(state);
-    if (p_use_environment == NULL) {
-        PyErr_Clear();
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    if (Py_IgnoreEnvironmentFlag) {
         return NULL;
     }
-    bool use_environment = Py_IsTrue(p_use_environment);
-    Py_DECREF(p_use_environment);
-    return use_environment ? getenv(name) : NULL;
+    return getenv(name);
+_Py_COMP_DIAG_POP
 }
 
 /* --- PyStatus ----------------------------------------------- */
@@ -973,7 +1007,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->_config_init = (int)_PyConfig_INIT_COMPAT;
     config->import_time = -1;
     config->isolated = -1;
-    config->use_environment = 1;
+    config->use_environment = -1;
     config->dev_mode = -1;
     config->install_signal_handlers = 1;
     config->use_hash_seed = -1;
@@ -983,25 +1017,25 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->remote_debug = -1;
     config->module_search_paths_set = 0;
     config->parse_argv = 0;
-    config->site_import = 1;
-    config->bytes_warning = 0;
+    config->site_import = -1;
+    config->bytes_warning = -1;
     config->warn_default_encoding = 0;
-    config->inspect = 0;
+    config->inspect = -1;
     config->interactive = -1;
-    config->optimization_level = 0;
-    config->parser_debug = 0;
-    config->write_bytecode = 1;
-    config->verbose = 0;
-    config->quiet = 0;
-    config->user_site_directory = 1;
+    config->optimization_level = -1;
+    config->parser_debug= -1;
+    config->write_bytecode = -1;
+    config->verbose = -1;
+    config->quiet = -1;
+    config->user_site_directory = -1;
     config->configure_c_stdio = 0;
-    config->buffered_stdio = 1;
+    config->buffered_stdio = -1;
     config->_install_importlib = 1;
     config->check_hash_pycs_mode = NULL;
-    config->pathconfig_warnings = 1;
+    config->pathconfig_warnings = -1;
     config->_init_main = 1;
 #ifdef MS_WINDOWS
-    config->legacy_windows_stdio = 0;
+    config->legacy_windows_stdio = -1;
 #endif
 #ifdef Py_DEBUG
     config->use_frozen_modules = 0;
@@ -1638,7 +1672,24 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
             config->ATTR = !(VALUE); \
         }
 
+    COPY_FLAG(isolated, Py_IsolatedFlag);
+    COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
+    COPY_FLAG(bytes_warning, Py_BytesWarningFlag);
+    COPY_FLAG(inspect, Py_InspectFlag);
     COPY_FLAG(interactive, Py_InteractiveFlag);
+    COPY_FLAG(optimization_level, Py_OptimizeFlag);
+    COPY_FLAG(parser_debug, Py_DebugFlag);
+    COPY_FLAG(verbose, Py_VerboseFlag);
+    COPY_FLAG(quiet, Py_QuietFlag);
+#ifdef MS_WINDOWS
+    COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
+#endif
+    COPY_NOT_FLAG(pathconfig_warnings, Py_FrozenFlag);
+
+    COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
+    COPY_NOT_FLAG(site_import, Py_NoSiteFlag);
+    COPY_NOT_FLAG(write_bytecode, Py_DontWriteBytecodeFlag);
+    COPY_NOT_FLAG(user_site_directory, Py_NoUserSiteDirectory);
 
 #undef COPY_FLAG
 #undef COPY_NOT_FLAG
@@ -1661,7 +1712,28 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
             VAR = !config->ATTR; \
         }
 
+    COPY_FLAG(isolated, Py_IsolatedFlag);
+    COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
+    COPY_FLAG(bytes_warning, Py_BytesWarningFlag);
+    COPY_FLAG(inspect, Py_InspectFlag);
     COPY_FLAG(interactive, Py_InteractiveFlag);
+    COPY_FLAG(optimization_level, Py_OptimizeFlag);
+    COPY_FLAG(parser_debug, Py_DebugFlag);
+    COPY_FLAG(verbose, Py_VerboseFlag);
+    COPY_FLAG(quiet, Py_QuietFlag);
+#ifdef MS_WINDOWS
+    COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
+#endif
+    COPY_NOT_FLAG(pathconfig_warnings, Py_FrozenFlag);
+
+    COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
+    COPY_NOT_FLAG(site_import, Py_NoSiteFlag);
+    COPY_NOT_FLAG(write_bytecode, Py_DontWriteBytecodeFlag);
+    COPY_NOT_FLAG(user_site_directory, Py_NoUserSiteDirectory);
+
+    /* Random or non-zero hash seed */
+    Py_HashRandomizationFlag = (config->use_hash_seed == 0 ||
+                                config->hash_seed != 0);
 
 #undef COPY_FLAG
 #undef COPY_NOT_FLAG

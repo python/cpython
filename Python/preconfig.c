@@ -15,6 +15,63 @@ static void
 preconfig_copy(PyPreConfig *config, const PyPreConfig *config2);
 
 
+/* --- File system encoding/errors -------------------------------- */
+
+const char *Py_FileSystemDefaultEncoding = NULL;
+int Py_HasFileSystemDefaultEncoding = 0;
+const char *Py_FileSystemDefaultEncodeErrors = NULL;
+int _Py_HasFileSystemDefaultEncodeErrors = 0;
+
+void
+_Py_ClearFileSystemEncoding(void)
+{
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    if (!Py_HasFileSystemDefaultEncoding && Py_FileSystemDefaultEncoding) {
+        PyMem_RawFree((char*)Py_FileSystemDefaultEncoding);
+        Py_FileSystemDefaultEncoding = NULL;
+    }
+    if (!_Py_HasFileSystemDefaultEncodeErrors && Py_FileSystemDefaultEncodeErrors) {
+        PyMem_RawFree((char*)Py_FileSystemDefaultEncodeErrors);
+        Py_FileSystemDefaultEncodeErrors = NULL;
+    }
+_Py_COMP_DIAG_POP
+}
+
+
+/* Set Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors
+   global configuration variables to PyConfig.filesystem_encoding and
+   PyConfig.filesystem_errors (encoded to UTF-8).
+
+   Function called by _PyUnicode_InitEncodings(). */
+int
+_Py_SetFileSystemEncoding(const char *encoding, const char *errors)
+{
+    char *encoding2 = _PyMem_RawStrdup(encoding);
+    if (encoding2 == NULL) {
+        return -1;
+    }
+
+    char *errors2 = _PyMem_RawStrdup(errors);
+    if (errors2 == NULL) {
+        PyMem_RawFree(encoding2);
+        return -1;
+    }
+
+    _Py_ClearFileSystemEncoding();
+
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    Py_FileSystemDefaultEncoding = encoding2;
+    Py_HasFileSystemDefaultEncoding = 0;
+
+    Py_FileSystemDefaultEncodeErrors = errors2;
+    _Py_HasFileSystemDefaultEncodeErrors = 0;
+_Py_COMP_DIAG_POP
+    return 0;
+}
+
+
 /* --- _PyArgv ---------------------------------------------------- */
 
 /* Decode bytes_argv using Py_DecodeLocale() */
@@ -230,7 +287,7 @@ _PyPreConfig_InitCompatConfig(PyPreConfig *config)
 
     config->_config_init = (int)_PyConfig_INIT_COMPAT;
     config->parse_argv = 0;
-    config->isolated = 0;
+    config->isolated = -1;
     config->use_environment = -1;
     config->configure_locale = 1;
 
@@ -424,9 +481,14 @@ preconfig_get_global_vars(PyPreConfig *config)
 
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    COPY_FLAG(isolated, Py_IsolatedFlag);
+    COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
     if (Py_UTF8Mode > 0) {
         config->utf8_mode = Py_UTF8Mode;
     }
+#ifdef MS_WINDOWS
+    COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
+#endif
 _Py_COMP_DIAG_POP
 
 #undef COPY_FLAG
@@ -448,6 +510,11 @@ preconfig_set_global_vars(const PyPreConfig *config)
 
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    COPY_FLAG(isolated, Py_IsolatedFlag);
+    COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
+#ifdef MS_WINDOWS
+    COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
+#endif
     COPY_FLAG(utf8_mode, Py_UTF8Mode);
 _Py_COMP_DIAG_POP
 

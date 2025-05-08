@@ -14,18 +14,19 @@ trailer = """\
 };
 """
 
-# if __debug__ == 0 (i.e. -O option given), set PyConfig.optimize in frozen app.
+# if __debug__ == 0 (i.e. -O option given), set Py_OptimizeFlag in frozen app.
 default_entry_point = """
 int
 main(int argc, char **argv)
 {
         extern int Py_FrozenMain(int, char **);
 """ + ((not __debug__ and """
-        putenv("PYTHONOPTIMIZE", "1");
+        Py_OptimizeFlag++;
 """) or "")  + """
         PyImport_FrozenModules = _PyImport_FrozenModules;
         return Py_FrozenMain(argc, argv);
 }
+
 """
 
 def makefreeze(base, dict, debug=0, entry_point=None, fail_import=()):

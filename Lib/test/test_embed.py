@@ -689,14 +689,41 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         CONFIG_ISOLATED['legacy_windows_stdio'] = False
 
     # global config
+    DEFAULT_GLOBAL_CONFIG = {
+        'Py_HasFileSystemDefaultEncoding': 0,
+        'Py_HashRandomizationFlag': 1,
+        '_Py_HasFileSystemDefaultEncodeErrors': 0,
+    }
     COPY_GLOBAL_PRE_CONFIG = [
         ('Py_UTF8Mode', 'utf8_mode'),
     ]
     COPY_GLOBAL_CONFIG = [
         # Copy core config to global config for expected values
         # True means that the core config value is inverted (0 => 1 and 1 => 0)
+        ('Py_BytesWarningFlag', 'bytes_warning'),
+        ('Py_DebugFlag', 'parser_debug'),
+        ('Py_DontWriteBytecodeFlag', 'write_bytecode', True),
+        ('Py_FileSystemDefaultEncodeErrors', 'filesystem_errors'),
+        ('Py_FileSystemDefaultEncoding', 'filesystem_encoding'),
+        ('Py_FrozenFlag', 'pathconfig_warnings', True),
+        ('Py_IgnoreEnvironmentFlag', 'use_environment', True),
+        ('Py_InspectFlag', 'inspect'),
         ('Py_InteractiveFlag', 'interactive'),
+        ('Py_IsolatedFlag', 'isolated'),
+        ('Py_NoSiteFlag', 'site_import', True),
+        ('Py_NoUserSiteDirectory', 'user_site_directory', True),
+        ('Py_OptimizeFlag', 'optimization_level'),
+        ('Py_QuietFlag', 'quiet'),
+        ('Py_UnbufferedStdioFlag', 'buffered_stdio', True),
+        ('Py_VerboseFlag', 'verbose'),
     ]
+    if MS_WINDOWS:
+        COPY_GLOBAL_PRE_CONFIG.extend((
+            ('Py_LegacyWindowsFSEncodingFlag', 'legacy_windows_fs_encoding'),
+        ))
+        COPY_GLOBAL_CONFIG.extend((
+            ('Py_LegacyWindowsStdioFlag', 'legacy_windows_stdio'),
+        ))
 
     EXPECTED_CONFIG = None
 
@@ -831,7 +858,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if value is self.IGNORE_CONFIG:
                 pre_config.pop(key, None)
                 del expected[key]
-        self.assertDictEqual(pre_config, expected)
+        self.assertEqual(pre_config, expected)
 
     def check_config(self, configs, expected):
         config = dict(configs['config'])
@@ -855,7 +882,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         pre_config = configs['pre_config']
         config = configs['config']
 
-        expected = {}
+        expected = dict(self.DEFAULT_GLOBAL_CONFIG)
         for item in self.COPY_GLOBAL_CONFIG:
             if len(item) == 3:
                 global_key, core_key, opposite = item
@@ -943,7 +970,19 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         config = {
             'program_name': './globalvar',
+            'site_import': False,
+            'bytes_warning': True,
+            'warnoptions': ['default::BytesWarning'],
+            'inspect': True,
             'interactive': True,
+            'optimization_level': 2,
+            'write_bytecode': False,
+            'verbose': True,
+            'quiet': True,
+            'buffered_stdio': False,
+            'remote_debug': True,
+            'user_site_directory': False,
+            'pathconfig_warnings': False,
         }
         self.check_all_configs("test_init_global_config", config, preconfig,
                                api=API_COMPAT)

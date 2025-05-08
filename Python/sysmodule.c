@@ -4266,19 +4266,9 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
 void
 PySys_SetArgv(int argc, wchar_t **argv)
 {
-    PyGILState_STATE state = PyGILState_Ensure();
-    PyObject *isolated = PyConfig_Get("isolated");
-    PyGILState_Release(state);
-    if (isolated == NULL) {
-        PyErr_Clear();
-        Py_FatalError("cannot retrieve PyConfig.isolated");
-        return;
-    }
-    bool updatepath = Py_IsFalse(isolated);
-    Py_DECREF(isolated);
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    PySys_SetArgvEx(argc, argv, updatepath);
+    PySys_SetArgvEx(argc, argv, Py_IsolatedFlag == 0);
 _Py_COMP_DIAG_POP
 }
 
