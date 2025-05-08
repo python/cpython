@@ -718,7 +718,7 @@ default).
    "
    "``pip`` gives me a ""command not found"" error when I type it in my
    terminal.","Have you activated a virtual environment? Run the
-   ``.venv\\Scripts\\activate`` script in your terminal to activate.
+   ``.venv\Scripts\activate`` script in your terminal to activate.
    "
    "","The package may be available but missing the generated executable.
    We recommend using the ``python -m pip`` command instead, or alternatively
