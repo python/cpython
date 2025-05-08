@@ -2842,7 +2842,9 @@ __test__ = {'disassembler_test': _dis_test,
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(
-        description='disassemble one or more pickle files')
+        description='disassemble one or more pickle files',
+        color=True,
+    )
     parser.add_argument(
         'pickle_file',
         nargs='+', help='the pickle file')

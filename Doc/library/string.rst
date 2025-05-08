@@ -131,16 +131,18 @@ implementation as the built-in :meth:`~str.format` method.
       (which can happen if two replacement fields occur consecutively), then
       *literal_text* will be a zero-length string.  If there is no replacement
       field, then the values of *field_name*, *format_spec* and *conversion*
-      will be ``None``.
+      will be ``None``. The value of *field_name* is unmodified and
+      auto-numbering of non-numbered positional fields is done by :meth:`vformat`.
 
    .. method:: get_field(field_name, args, kwargs)
 
-      Given *field_name* as returned by :meth:`parse` (see above), convert it to
-      an object to be formatted.  Returns a tuple (obj, used_key).  The default
-      version takes strings of the form defined in :pep:`3101`, such as
-      "0[name]" or "label.title".  *args* and *kwargs* are as passed in to
-      :meth:`vformat`.  The return value *used_key* has the same meaning as the
-      *key* parameter to :meth:`get_value`.
+      Given *field_name*, convert it to an object to be formatted.
+      Auto-numbering of *field_name* returned from :meth:`parse` is done by
+      :meth:`vformat` before calling this method.  Returns a tuple (obj, used_key).
+      The default version takes strings of the form defined in :pep:`3101`,
+      such as "0[name]" or "label.title". *args* and *kwargs* are as passed in to
+      :meth:`vformat`. The return value *used_key* has the same meaning
+      as the *key* parameter to :meth:`get_value`.
 
    .. method:: get_value(key, args, kwargs)
 

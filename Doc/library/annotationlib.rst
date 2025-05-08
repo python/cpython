@@ -40,7 +40,7 @@ The :func:`get_annotations` function is the main entry point for
 retrieving annotations. Given a function, class, or module, it returns
 an annotations dictionary in the requested format. This module also provides
 functionality for working directly with the :term:`annotate function`
-that is used to evaluate annotations, such as :func:`get_annotate_function`
+that is used to evaluate annotations, such as :func:`get_annotate_from_class_namespace`
 and :func:`call_annotate_function`, as well as the
 :func:`call_evaluate_function` function for working with
 :term:`evaluate functions <evaluate function>`.
@@ -132,7 +132,7 @@ Classes
 
       Values are real annotation values (as per :attr:`Format.VALUE` format)
       for defined values, and :class:`ForwardRef` proxies for undefined
-      values. Real objects may contain references to, :class:`ForwardRef`
+      values. Real objects may contain references to :class:`ForwardRef`
       proxy objects.
 
    .. attribute:: STRING
@@ -172,14 +172,21 @@ Classes
       :class:`~ForwardRef`. The string may not be exactly equivalent
       to the original source.
 
-   .. method:: evaluate(*, owner=None, globals=None, locals=None, type_params=None)
+   .. method:: evaluate(*, owner=None, globals=None, locals=None, type_params=None, format=Format.VALUE)
 
       Evaluate the forward reference, returning its value.
 
-      This may throw an exception, such as :exc:`NameError`, if the forward
+      If the *format* argument is :attr:`~Format.VALUE` (the default),
+      this method may throw an exception, such as :exc:`NameError`, if the forward
       reference refers to a name that cannot be resolved. The arguments to this
       method can be used to provide bindings for names that would otherwise
-      be undefined.
+      be undefined. If the *format* argument is :attr:`~Format.FORWARDREF`,
+      the method will never throw an exception, but may return a :class:`~ForwardRef`
+      instance. For example, if the forward reference object contains the code
+      ``list[undefined]``, where ``undefined`` is a name that is not defined,
+      evaluating it with the :attr:`~Format.FORWARDREF` format will return
+      ``list[ForwardRef('undefined')]``. If the *format* argument is
+      :attr:`~Format.STRING`, the method will return :attr:`~ForwardRef.__forward_arg__`.
 
       The *owner* parameter provides the preferred mechanism for passing scope
       information to this method. The owner of a :class:`~ForwardRef` is the
@@ -300,15 +307,13 @@ Functions
 
    .. versionadded:: 3.14
 
-.. function:: get_annotate_function(obj)
+.. function:: get_annotate_from_class_namespace(namespace)
 
-   Retrieve the :term:`annotate function` for *obj*. Return :const:`!None`
-   if *obj* does not have an annotate function. *obj* may be a class, function,
-   module, or a namespace dictionary for a class. The last case is useful during
-   class creation, e.g. in the ``__new__`` method of a metaclass.
-
-   This is usually equivalent to accessing the :attr:`~object.__annotate__`
-   attribute of *obj*, but access through this public function is preferred.
+   Retrieve the :term:`annotate function` from a class namespace dictionary *namespace*.
+   Return :const:`!None` if the namespace does not contain an annotate function.
+   This is primarily useful before the class has been fully created (e.g., in a metaclass);
+   after the class exists, the annotate function can be retrieved with ``cls.__annotate__``.
+   See :ref:`below <annotationlib-metaclass>` for an example using this function in a metaclass.
 
    .. versionadded:: 3.14
 
@@ -406,4 +411,77 @@ Functions
    objects that contain values that are commonly encountered in annotations.
 
    .. versionadded:: 3.14
+
+
+Recipes
+-------
+
+.. _annotationlib-metaclass:
+
+Using annotations in a metaclass
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A :ref:`metaclass <metaclasses>` may want to inspect or even modify the annotations
+in a class body during class creation. Doing so requires retrieving annotations
+from the class namespace dictionary. For classes created with
+``from __future__ import annotations``, the annotations will be in the ``__annotations__``
+key of the dictionary. For other classes with annotations,
+:func:`get_annotate_from_class_namespace` can be used to get the
+annotate function, and :func:`call_annotate_function` can be used to call it and
+retrieve the annotations. Using the :attr:`~Format.FORWARDREF` format will usually
+be best, because this allows the annotations to refer to names that cannot yet be
+resolved when the class is created.
+
+To modify the annotations, it is best to create a wrapper annotate function
+that calls the original annotate function, makes any necessary adjustments, and
+returns the result.
+
+Below is an example of a metaclass that filters out all :class:`typing.ClassVar`
+annotations from the class and puts them in a separate attribute:
+
+.. code-block:: python
+
+   import annotationlib
+   import typing
+
+   class ClassVarSeparator(type):
+      def __new__(mcls, name, bases, ns):
+         if "__annotations__" in ns:  # from __future__ import annotations
+            annotations = ns["__annotations__"]
+            classvar_keys = {
+               key for key, value in annotations.items()
+               # Use string comparison for simplicity; a more robust solution
+               # could use annotationlib.ForwardRef.evaluate
+               if value.startswith("ClassVar")
+            }
+            classvars = {key: annotations[key] for key in classvar_keys}
+            ns["__annotations__"] = {
+               key: value for key, value in annotations.items()
+               if key not in classvar_keys
+            }
+            wrapped_annotate = None
+         elif annotate := annotationlib.get_annotate_from_class_namespace(ns):
+            annotations = annotationlib.call_annotate_function(
+               annotate, format=annotationlib.Format.FORWARDREF
+            )
+            classvar_keys = {
+               key for key, value in annotations.items()
+               if typing.get_origin(value) is typing.ClassVar
+            }
+            classvars = {key: annotations[key] for key in classvar_keys}
+
+            def wrapped_annotate(format):
+               annos = annotationlib.call_annotate_function(annotate, format, owner=typ)
+               return {key: value for key, value in annos.items() if key not in classvar_keys}
+
+         else:  # no annotations
+            classvars = {}
+            wrapped_annotate = None
+         typ = super().__new__(mcls, name, bases, ns)
+
+         if wrapped_annotate is not None:
+            # Wrap the original __annotate__ with a wrapper that removes ClassVars
+            typ.__annotate__ = wrapped_annotate
+         typ.classvars = classvars  # Store the ClassVars in a separate attribute
+         return typ
 

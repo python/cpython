@@ -47,7 +47,7 @@ PyCF_DONT_IMPLY_DEDENT = 0x200
 PyCF_ONLY_AST = 0x400
 PyCF_ALLOW_INCOMPLETE_INPUT = 0x4000
 
-def _maybe_compile(compiler, source, filename, symbol):
+def _maybe_compile(compiler, source, filename, symbol, flags):
     # Check for source consisting of only blank lines and comments.
     for line in source.split("\n"):
         line = line.strip()
@@ -61,10 +61,10 @@ def _maybe_compile(compiler, source, filename, symbol):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", (SyntaxWarning, DeprecationWarning))
         try:
-            compiler(source, filename, symbol)
+            compiler(source, filename, symbol, flags=flags)
         except SyntaxError:  # Let other compile() errors propagate.
             try:
-                compiler(source + "\n", filename, symbol)
+                compiler(source + "\n", filename, symbol, flags=flags)
                 return None
             except _IncompleteInputError as e:
                 return None
@@ -74,14 +74,13 @@ def _maybe_compile(compiler, source, filename, symbol):
 
     return compiler(source, filename, symbol, incomplete_input=False)
 
-def _compile(source, filename, symbol, incomplete_input=True):
-    flags = 0
+def _compile(source, filename, symbol, incomplete_input=True, *, flags=0):
     if incomplete_input:
         flags |= PyCF_ALLOW_INCOMPLETE_INPUT
         flags |= PyCF_DONT_IMPLY_DEDENT
     return compile(source, filename, symbol, flags)
 
-def compile_command(source, filename="<input>", symbol="single"):
+def compile_command(source, filename="<input>", symbol="single", flags=0):
     r"""Compile a command and determine whether it is incomplete.
 
     Arguments:
@@ -100,7 +99,7 @@ def compile_command(source, filename="<input>", symbol="single"):
       syntax error (OverflowError and ValueError can be produced by
       malformed literals).
     """
-    return _maybe_compile(_compile, source, filename, symbol)
+    return _maybe_compile(_compile, source, filename, symbol, flags)
 
 class Compile:
     """Instances of this class behave much like the built-in compile
@@ -152,4 +151,4 @@ class CommandCompiler:
           syntax error (OverflowError and ValueError can be produced by
           malformed literals).
         """
-        return _maybe_compile(self.compiler, source, filename, symbol)
+        return _maybe_compile(self.compiler, source, filename, symbol, flags=self.compiler.flags)
