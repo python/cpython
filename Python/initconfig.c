@@ -463,7 +463,6 @@ static const char usage_envvars[] =
    stdin and stdout error handler to "surrogateescape". */
 int Py_UTF8Mode = 0;
 int Py_InteractiveFlag = 0; /* Previously, was used by Py_FdIsInteractive() */
-int Py_IsolatedFlag = 0; /* for -I, isolate from user's env */
 #ifdef MS_WINDOWS
 int Py_LegacyWindowsFSEncodingFlag = 0; /* Uses mbcs instead of utf-8 */
 int Py_LegacyWindowsStdioFlag = 0; /* Uses FileIO instead of WindowsConsoleIO */
@@ -510,8 +509,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 
     SET_ITEM_INT(Py_UTF8Mode);
     SET_ITEM_INT(Py_InteractiveFlag);
-
-    SET_ITEM_INT(Py_IsolatedFlag);
 
 #ifdef MS_WINDOWS
     SET_ITEM_INT(Py_LegacyWindowsFSEncodingFlag);
@@ -1655,7 +1652,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
             config->ATTR = !(VALUE); \
         }
 
-    COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_FLAG(interactive, Py_InteractiveFlag);
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
@@ -1682,7 +1678,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
             VAR = !config->ATTR; \
         }
 
-    COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_FLAG(interactive, Py_InteractiveFlag);
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);

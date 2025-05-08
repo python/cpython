@@ -287,7 +287,7 @@ _PyPreConfig_InitCompatConfig(PyPreConfig *config)
 
     config->_config_init = (int)_PyConfig_INIT_COMPAT;
     config->parse_argv = 0;
-    config->isolated = -1;
+    config->isolated = 0;
     config->use_environment = -1;
     config->configure_locale = 1;
 
@@ -481,7 +481,6 @@ preconfig_get_global_vars(PyPreConfig *config)
 
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    COPY_FLAG(isolated, Py_IsolatedFlag);
     if (Py_UTF8Mode > 0) {
         config->utf8_mode = Py_UTF8Mode;
     }
@@ -509,7 +508,6 @@ preconfig_set_global_vars(const PyPreConfig *config)
 
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    COPY_FLAG(isolated, Py_IsolatedFlag);
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
 #endif

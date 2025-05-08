@@ -110,7 +110,6 @@ Python/preconfig.c	-	_Py_HasFileSystemDefaultEncodeErrors	-
 ## legacy config flags
 Python/initconfig.c	-	Py_UTF8Mode	-
 Python/initconfig.c	-	Py_InteractiveFlag	-
-Python/initconfig.c	-	Py_IsolatedFlag	-
 Python/initconfig.c	-	Py_LegacyWindowsFSEncodingFlag	-
 Python/initconfig.c	-	Py_LegacyWindowsStdioFlag	-
 

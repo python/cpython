@@ -888,7 +888,6 @@ static int test_init_isolated_flag(void)
     PyConfig config;
     PyConfig_InitPythonConfig(&config);
 
-    Py_IsolatedFlag = 0;
     config.isolated = 1;
     // These options are set to 1 by isolated=1
     config.safe_path = 0;
@@ -948,7 +947,6 @@ static int test_preinit_isolated2(void)
     PyConfig config;
     _PyConfig_InitCompatConfig(&config);
 
-    Py_IsolatedFlag = 0;
     config.isolated = 1;
 
     config_set_program_name(&config);
@@ -1021,7 +1019,6 @@ static int test_preinit_parse_argv(void)
 
 static void set_all_global_config_variables(void)
 {
-    Py_IsolatedFlag = 0;
     Py_InteractiveFlag = 1;
 #ifdef MS_WINDOWS
     Py_LegacyWindowsStdioFlag = 1;
@@ -1086,7 +1083,6 @@ static int check_init_python_config(int preinit)
 {
     /* global configuration variables must be ignored */
     set_all_global_config_variables();
-    Py_IsolatedFlag = 1;
 #ifdef MS_WINDOWS
     Py_LegacyWindowsStdioFlag = 1;
 #endif

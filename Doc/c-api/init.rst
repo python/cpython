@@ -108,20 +108,6 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. deprecated:: 3.12
 
-.. c:var:: int Py_IsolatedFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.isolated` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Run Python in isolated mode. In isolated mode :data:`sys.path` contains
-   neither the script's directory nor the user's site-packages directory.
-
-   Set by the :option:`-I` option.
-
-   .. versionadded:: 3.4
-
-   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_LegacyWindowsFSEncodingFlag
 

@@ -54,8 +54,7 @@ typedef struct PyPreConfig {
     /* If greater than 0, enable isolated mode: sys.path contains
        neither the script's directory nor the user's site-packages directory.
 
-       Set to 1 by the -I command line option. If set to -1 (default), inherit
-       Py_IsolatedFlag value. */
+       Set to 1 by the -I command line option. */
     int isolated;
 
     /* If greater than 0: use environment variables.

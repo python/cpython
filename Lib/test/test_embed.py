@@ -702,7 +702,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         ('Py_FileSystemDefaultEncodeErrors', 'filesystem_errors'),
         ('Py_FileSystemDefaultEncoding', 'filesystem_encoding'),
         ('Py_InteractiveFlag', 'interactive'),
-        ('Py_IsolatedFlag', 'isolated'),
     ]
     if MS_WINDOWS:
         COPY_GLOBAL_PRE_CONFIG.extend((
