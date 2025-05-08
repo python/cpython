@@ -22,10 +22,6 @@ Pending removal in Python 3.15
   may return a type other than :class:`bytes`, such as :class:`str`.
 * Python initialization functions, deprecated in Python 3.13:
 
-  * :c:func:`Py_GetPythonHome`:
-    Use :c:func:`PyConfig_Get("home") <PyConfig_Get>` or the
-    :envvar:`PYTHONHOME` environment variable instead.
-
   The `pythoncapi-compat project
   <https://github.com/python/pythoncapi-compat/>`__ can be used to get
   :c:func:`PyConfig_Get` on Python 3.13 and older.

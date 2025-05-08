@@ -882,7 +882,6 @@ SYMBOL_NAMES = (
     "Py_GetCopyright",
     "Py_GetPlatform",
     "Py_GetProgramFullPath",
-    "Py_GetPythonHome",
     "Py_GetRecursionLimit",
     "Py_GetVersion",
     "Py_HasFileSystemDefaultEncoding",

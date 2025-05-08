@@ -77,7 +77,7 @@ The following functions can be safely called before Python is initialized:
 
    Despite their apparent similarity to some of the functions listed above,
    the following functions **should not be called** before the interpreter has
-   been initialized: :c:func:`Py_EncodeLocale`, :c:func:`Py_GetPythonHome`, :c:func:`PyEval_InitThreads`, and
+   been initialized: :c:func:`Py_EncodeLocale`, :c:func:`PyEval_InitThreads`, and
    :c:func:`Py_RunMain`.
 
 
@@ -770,23 +770,6 @@ Process-wide parameters
    :c:expr:`wchar_t*` string.
 
    .. deprecated-removed:: 3.11 3.15
-
-
-.. c:function:: wchar_t* Py_GetPythonHome()
-
-   Return the default "home", that is, the value set by
-   :c:member:`PyConfig.home`, or the value of the :envvar:`PYTHONHOME`
-   environment variable if it is set.
-
-   This function should not be called before :c:func:`Py_Initialize`, otherwise
-   it returns ``NULL``.
-
-   .. versionchanged:: 3.10
-      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
-
-   .. deprecated-removed:: 3.13 3.15
-      Use :c:func:`PyConfig_Get("home") <PyConfig_Get>` or the
-      :envvar:`PYTHONHOME` environment variable instead.
 
 
 .. _threads:

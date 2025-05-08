@@ -2487,7 +2487,7 @@ Deprecated C APIs
     Get :data:`sys.executable` instead.
   * :c:func:`!Py_GetProgramName`:
     Get :data:`sys.executable` instead.
-  * :c:func:`Py_GetPythonHome`:
+  * :c:func:`!Py_GetPythonHome`:
     Get :c:member:`PyConfig.home`
     or the :envvar:`PYTHONHOME` environment variable instead.
 

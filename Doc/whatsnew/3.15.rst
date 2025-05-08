@@ -176,3 +176,7 @@ Removed C APIs
 * :c:func:`!Py_GetProgramName`:
   use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
   (:data:`sys.executable`) instead.
+* :c:func:`!Py_GetPythonHome`:
+  use :c:func:`PyConfig_Get("home") <PyConfig_Get>` or the
+  :envvar:`PYTHONHOME` environment variable instead.
+
