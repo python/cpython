@@ -111,7 +111,6 @@ Local naming conventions:
 #include "pycore_moduleobject.h"  // _PyModule_GetState
 #include "pycore_time.h"          // _PyTime_AsMilliseconds()
 #include "pycore_pystate.h"       // _Py_AssertHoldsTstate()
-#include "pycore_pyatomic_ft_wrappers.h"
 
 #ifdef _Py_MEMORY_SANITIZER
 #  include <sanitizer/msan_interface.h>
@@ -565,7 +564,6 @@ static int sock_cloexec_works = -1;
 static inline void
 set_sock_fd(PySocketSockObject *s, SOCKET_T fd)
 {
-#ifdef Py_GIL_DISABLED
 #if SIZEOF_SOCKET_T == SIZEOF_INT
     _Py_atomic_store_int_relaxed((int *)&s->sock_fd, (int)fd);
 #elif SIZEOF_SOCKET_T == SIZEOF_LONG
@@ -575,15 +573,11 @@ set_sock_fd(PySocketSockObject *s, SOCKET_T fd)
 #else
     #error "Unsupported SIZEOF_SOCKET_T"
 #endif
-#else
-    s->sock_fd = fd;
-#endif
 }
 
 static inline SOCKET_T
 get_sock_fd(PySocketSockObject *s)
 {
-#ifdef Py_GIL_DISABLED
 #if SIZEOF_SOCKET_T == SIZEOF_INT
     return (SOCKET_T)_Py_atomic_load_int_relaxed((int *)&s->sock_fd);
 #elif SIZEOF_SOCKET_T == SIZEOF_LONG
@@ -592,9 +586,6 @@ get_sock_fd(PySocketSockObject *s)
     return (SOCKET_T)_Py_atomic_load_llong_relaxed((long long *)&s->sock_fd);
 #else
     #error "Unsupported SIZEOF_SOCKET_T"
-#endif
-#else
-    return s->sock_fd;
 #endif
 }
 

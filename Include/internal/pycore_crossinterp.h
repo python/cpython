@@ -191,6 +191,14 @@ PyAPI_FUNC(int) _PyCode_GetXIData(
         PyThreadState *,
         PyObject *,
         _PyXIData_t *);
+PyAPI_FUNC(int) _PyCode_GetScriptXIData(
+        PyThreadState *,
+        PyObject *,
+        _PyXIData_t *);
+PyAPI_FUNC(int) _PyCode_GetPureScriptXIData(
+        PyThreadState *,
+        PyObject *,
+        _PyXIData_t *);
 
 
 /* using cross-interpreter data */
