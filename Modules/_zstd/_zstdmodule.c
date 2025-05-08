@@ -152,8 +152,8 @@ set_parameter_error(const _zstd_state* const state, int is_compress,
     }
     if (ZSTD_isError(bounds.error)) {
         PyErr_Format(state->ZstdError,
-                     "Zstd %s parameter \"%s\" is invalid. (zstd v%s)",
-                     type, name, ZSTD_versionString());
+                     "Zstd %s parameter \"%s\" is invalid.",
+                     type, name);
         return;
     }
 
@@ -161,10 +161,10 @@ set_parameter_error(const _zstd_state* const state, int is_compress,
     PyErr_Format(state->ZstdError,
                  "Error when setting zstd %s parameter \"%s\", it "
                  "should %d <= value <= %d, provided value is %d. "
-                 "(zstd v%s, %d-bit build)",
+                 "(%d-bit build)",
                  type, name,
                  bounds.lowerBound, bounds.upperBound, value_v,
-                 ZSTD_versionString(), 8*(int)sizeof(Py_ssize_t));
+                 8*(int)sizeof(Py_ssize_t));
 }
 
 static inline _zstd_state*
