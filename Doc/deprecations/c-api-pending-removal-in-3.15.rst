@@ -2,6 +2,8 @@ Pending removal in Python 3.15
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * The bundled copy of ``libmpdecimal``.
+* The :c:func:`!PyImport_ImportModuleNoBlock`:
+  Use :c:func:`PyImport_ImportModule` instead.
 * :c:func:`PyWeakref_GetObject` and :c:func:`PyWeakref_GET_OBJECT`:
   Use :c:func:`PyWeakref_GetRef` instead. The `pythoncapi-compat project
   <https://github.com/python/pythoncapi-compat/>`__ can be used to get
