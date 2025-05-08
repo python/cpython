@@ -95,6 +95,9 @@ as ``python3.14.exe``) to be available. The directory will be
 administrator. Click Start and search for "Edit environment variables for your
 account" for the system settings page to add the path.
 
+Each Python runtime you install will have its own directory for scripts. These
+also need to be added to :envvar:`PATH` if you want to use them.
+
 The Python install manager will be automatically updated to new releases. This
 does not affect any installs of Python runtimes. Uninstalling the Python install
 manager does not uninstall any Python runtimes.
@@ -712,6 +715,16 @@ default).
    ``py``","Click Start, open ""Manage app execution aliases"", and check that
    your ``pythonw.exe`` and ``pyw.exe`` aliases are consistent with your
    others.
+   "
+   "``pip`` gives me a ""command not found"" error when I type it in my
+   terminal.","Have you activated a virtual environment? Run the
+   ``.venv\Scripts\activate`` script in your terminal to activate.
+   "
+   "","The package may be available but missing the generated executable.
+   We recommend using the ``python -m pip`` command instead, or alternatively
+   the ``python -m pip install --force pip`` command will recreate the
+   executables and show you the path to add to :envvar:`PATH`. These scripts are
+   separated for each runtime, and so you may need to add multiple paths.
    "
 
 
