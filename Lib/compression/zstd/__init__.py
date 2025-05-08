@@ -32,7 +32,7 @@ from _zstd import (get_frame_size, zstd_version, zstd_version_info,
                    ZstdCompressor, ZstdDecompressor, ZstdDict, ZstdError)
 from compression.zstd._zstdfile import ZstdFile, open, _nbytes
 
-COMPRESSION_LEVEL_DEFAULT = _zstd._compressionLevel_values[0]
+COMPRESSION_LEVEL_DEFAULT = _zstd.ZSTD_CLEVEL_DEFAULT
 """The default compression level for Zstandard, currently '3'."""
 
 
