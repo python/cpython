@@ -774,30 +774,35 @@ append_joinedstr(PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
 }
 
 static int
-append_interpolation_value(PyUnicodeWriter *writer, expr_ty e)
+append_interpolation_str(PyUnicodeWriter *writer, PyObject *str)
 {
     const char *outer_brace = "{";
+    if (PyUnicode_Find(str, _Py_LATIN1_CHR('{'), 0, 1, 1) == 0) {
+        /* Expression starts with a brace, split it with a space from the outer
+           one. */
+        outer_brace = "{ ";
+    }
+    if (-1 == append_charp(writer, outer_brace)) {
+        return -1;
+    }
+    if (-1 == PyUnicodeWriter_WriteStr(writer, str)) {
+        return -1;
+    }
+    return 0;
+}
+
+static int
+append_interpolation_value(PyUnicodeWriter *writer, expr_ty e)
+{
     /* Grammar allows PR_TUPLE, but use >PR_TEST for adding parenthesis
        around a lambda with ':' */
     PyObject *temp_fv_str = expr_as_unicode(e, PR_TEST + 1);
     if (!temp_fv_str) {
         return -1;
     }
-    if (PyUnicode_Find(temp_fv_str, _Py_LATIN1_CHR('{'), 0, 1, 1) == 0) {
-        /* Expression starts with a brace, split it with a space from the outer
-           one. */
-        outer_brace = "{ ";
-    }
-    if (-1 == append_charp(writer, outer_brace)) {
-        Py_DECREF(temp_fv_str);
-        return -1;
-    }
-    if (-1 == PyUnicodeWriter_WriteStr(writer, temp_fv_str)) {
-        Py_DECREF(temp_fv_str);
-        return -1;
-    }
+    int result = append_interpolation_str(writer, temp_fv_str);
     Py_DECREF(temp_fv_str);
-    return 0;
+    return result;
 }
 
 static int
@@ -843,7 +848,7 @@ append_interpolation_format_spec(PyUnicodeWriter *writer, expr_ty e)
 static int
 append_interpolation(PyUnicodeWriter *writer, expr_ty e)
 {
-    if (-1 == append_interpolation_value(writer, e->v.Interpolation.value)) {
+    if (-1 == append_interpolation_str(writer, e->v.Interpolation.str)) {
         return -1;
     }
 
