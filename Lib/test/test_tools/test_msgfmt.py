@@ -270,6 +270,17 @@ class CLITest(unittest.TestCase):
     def test_nonexistent_file(self):
         assert_python_failure(msgfmt_py, 'nonexistent.po')
 
+    def test_statistics(self):
+        with temp_cwd():
+            res = assert_python_ok(msgfmt, '--statistics', data_dir / "general.po")
+            out = res.out.decode('utf-8').strip()
+            self.assertEqual('8 translated messages, 1 untranslated message.', out)
+            # Multiple input files
+            res = assert_python_ok(msgfmt, '--statistics', '-o', 'temp.mo', data_dir / "general.po", data_dir / "fuzzy.po")
+            out = res.out.decode('utf-8').strip()
+            self.assertIn('general.po: 8 translated messages, 1 untranslated message.', out)
+            self.assertIn('fuzzy.po: 0 translated messages.', out)
+
 
 def update_catalog_snapshots():
     for po_file in data_dir.glob('*.po'):
