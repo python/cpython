@@ -1093,9 +1093,6 @@ PyImport_ImportModuleLevelObject:PyObject*:locals:0:???
 PyImport_ImportModuleLevelObject:PyObject*:fromlist:0:???
 PyImport_ImportModuleLevelObject:int:level::
 
-PyImport_ImportModuleNoBlock:PyObject*::+1:
-PyImport_ImportModuleNoBlock:const char*:name::
-
 PyImport_ReloadModule:PyObject*::+1:
 PyImport_ReloadModule:PyObject*:m:0:
 
