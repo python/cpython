@@ -4,6 +4,7 @@ import contextlib
 import importlib.util
 import io
 import itertools
+import locale
 import os
 import posixpath
 import stat
@@ -30,7 +31,6 @@ from test.support.os_helper import (
     TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath
 )
 from test.support.import_helper import ensure_lazy_imports
-
 
 TESTFN2 = TESTFN + "2"
 TESTFNDIR = TESTFN + "d"
