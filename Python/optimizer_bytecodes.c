@@ -1067,6 +1067,13 @@ dummy_func(void) {
         sym_set_null(null);
     }
 
+    op(_GUARD_THIRD_NULL, (null, unused, unused -- null, unused, unused)) {
+        if (sym_is_null(null)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_null(null);
+    }
+
     op(_GUARD_CALLABLE_TYPE_1, (callable, unused, unused -- callable, unused, unused)) {
         if (sym_get_const(ctx, callable) == (PyObject *)&PyType_Type) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
@@ -1098,6 +1105,14 @@ dummy_func(void) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
         sym_set_const(callable, len);
+    }
+
+    op(_GUARD_CALLABLE_ISINSTANCE, (callable, unused, unused, unused -- callable, unused, unused, unused)) {
+        PyObject *isinstance = _PyInterpreterState_GET()->callable_cache.isinstance;
+        if (sym_get_const(ctx, callable) == isinstance) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_const(callable, isinstance);
     }
 
 // END BYTECODES //
