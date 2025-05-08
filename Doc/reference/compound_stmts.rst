@@ -1898,7 +1898,6 @@ all annotations are instead stored as strings::
    >>> f.__annotations__
    {'param': 'annotation'}
 
-
 This future statement will be deprecated and removed in a future version of Python,
 but not before Python 3.13 reaches its end of life (see :pep:`749`).
 When it is used, introspection tools like

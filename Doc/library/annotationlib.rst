@@ -486,8 +486,8 @@ annotations from the class and puts them in a separate attribute:
          return typ
 
 
-Limitations of the ``STRING`` and ``FORWARDREF`` formats
---------------------------------------------------------
+Limitations of the ``STRING`` format
+------------------------------------
 
 The :attr:`~Format.STRING` format is meant to approximate the source code
 of the annotation, but the implementation strategy used means that it is not
@@ -511,8 +511,9 @@ code execution even with no access to any globals or builtins. For example:
   Hello world
   {'x': 'None'}
 
-(This particular example works as of the time of writing, but it relies on implementation details
-and is not guaranteed to work in the future.)
+.. note::
+   This particular example works as of the time of writing, but it relies on
+   implementation details and is not guaranteed to work in the future.
 
 Among the different kinds of expressions that exist in Python,
 as represented by the :mod:`ast` module, some expressions are supported,
@@ -569,6 +570,10 @@ The following are disallowed in annotation scopes and therefore not relevant:
 * :class:`ast.Await`
 * :class:`ast.Yield`
 * :class:`ast.YieldFrom`
+
+
+Limitations of the ``FORWARDREF`` format
+----------------------------------------
 
 The :attr:`~Format.FORWARDREF` format aims to produce real values as much
 as possible, with anything that cannot be resolved replaced with
