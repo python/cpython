@@ -605,6 +605,43 @@ class TestPyReplAutoindent(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, output_code)
 
+    def test_auto_indent_noncomment_hash(self):
+        # fmt: off
+        events = code_to_events(
+            "if ' ' == '#':\n"
+                "pass\n\n"
+        )
+
+        output_code = (
+            "if ' ' == '#':\n"
+            "    pass\n"
+            "    "
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
+    def test_auto_indent_multiline_string(self):
+        # fmt: off
+        events = code_to_events(
+            "s = '''\n"
+            "Note:\n"
+            "'''\n\n"
+        )
+
+        output_code = (
+            "s = '''\n"
+            "Note:\n"
+            "'''"
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
 
 class TestPyReplOutput(ScreenEqualMixin, TestCase):
     def prepare_reader(self, events):
