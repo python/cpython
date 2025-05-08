@@ -47,6 +47,8 @@ although there is currently no date scheduled for their removal.
   :data:`calendar.FEBRUARY`.
   (Contributed by Prince Roshan in :gh:`103636`.)
 
+* :mod:`codecs`: use :func:`open` instead of :func:`codecs.open`. (:gh:`133038`)
+
 * :attr:`codeobject.co_lnotab`: use the :meth:`codeobject.co_lines` method
   instead.
 
