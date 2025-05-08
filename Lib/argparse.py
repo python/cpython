@@ -2723,13 +2723,23 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         return formatter.format_help()
 
     def _get_formatter(self):
-        try:
+        import inspect
+        if len(
+            [v.kind for (k, v) in
+             inspect.signature(self.formatter_class).parameters.items()
+             if k in ('prefix_chars', 'color')
+                and v.kind in (
+                        inspect._ParameterKind.POSITIONAL_OR_KEYWORD,
+                        inspect._ParameterKind.KEYWORD_ONLY,
+                )
+             ]
+        ) == 2:
             return self.formatter_class(
                 prog=self.prog,
                 prefix_chars=self.prefix_chars,
                 color=self.color,
             )
-        except TypeError:
+        else:
             return self.formatter_class(prog=self.prog)
 
     # =====================
