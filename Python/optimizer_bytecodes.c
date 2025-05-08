@@ -21,7 +21,6 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_matches_type _Py_uop_sym_matches_type
 #define sym_matches_type_version _Py_uop_sym_matches_type_version
 #define sym_get_type _Py_uop_sym_get_type
-#define sym_has_type _Py_uop_sym_has_type
 #define sym_set_null(SYM) _Py_uop_sym_set_null(ctx, SYM)
 #define sym_set_non_null(SYM) _Py_uop_sym_set_non_null(ctx, SYM)
 #define sym_set_type(SYM, TYPE) _Py_uop_sym_set_type(ctx, SYM, TYPE)
@@ -872,8 +871,9 @@ dummy_func(void) {
     }
 
     op(_CALL_TYPE_1, (unused, unused, arg -- res)) {
-        if (sym_has_type(arg)) {
-            res = sym_new_const(ctx, (PyObject *)sym_get_type(arg));
+        PyObject *type = (PyObject *)sym_get_type(arg);
+        if (type) {
+            res = sym_new_const(ctx, type);
         }
         else {
             res = sym_new_not_null(ctx);
@@ -914,7 +914,7 @@ dummy_func(void) {
             assert(value != NULL);
             eliminate_pop_guard(this_instr, !Py_IsNone(value));
         }
-        else if (sym_has_type(val)) {
+        else if (sym_get_type(val)) {
             assert(!sym_matches_type(val, &_PyNone_Type));
             eliminate_pop_guard(this_instr, true);
         }
@@ -927,7 +927,7 @@ dummy_func(void) {
             assert(value != NULL);
             eliminate_pop_guard(this_instr, Py_IsNone(value));
         }
-        else if (sym_has_type(val)) {
+        else if (sym_get_type(val)) {
             assert(!sym_matches_type(val, &_PyNone_Type));
             eliminate_pop_guard(this_instr, false);
         }

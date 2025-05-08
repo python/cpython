@@ -440,26 +440,6 @@ _Py_uop_sym_get_type_version(JitOptSymbol *sym)
 }
 
 bool
-_Py_uop_sym_has_type(JitOptSymbol *sym)
-{
-    JitSymType tag = sym->tag;
-    switch(tag) {
-        case JIT_SYM_NULL_TAG:
-        case JIT_SYM_TYPE_VERSION_TAG:
-        case JIT_SYM_BOTTOM_TAG:
-        case JIT_SYM_NON_NULL_TAG:
-        case JIT_SYM_UNKNOWN_TAG:
-            return false;
-        case JIT_SYM_KNOWN_CLASS_TAG:
-        case JIT_SYM_KNOWN_VALUE_TAG:
-        case JIT_SYM_TUPLE_TAG:
-        case JIT_SYM_TRUTHINESS_TAG:
-            return true;
-    }
-    Py_UNREACHABLE();
-}
-
-bool
 _Py_uop_sym_matches_type(JitOptSymbol *sym, PyTypeObject *typ)
 {
     assert(typ != NULL && PyType_Check(typ));

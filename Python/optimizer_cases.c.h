@@ -1959,8 +1959,9 @@
             JitOptSymbol *arg;
             JitOptSymbol *res;
             arg = stack_pointer[-1];
-            if (sym_has_type(arg)) {
-                res = sym_new_const(ctx, (PyObject *)sym_get_type(arg));
+            PyObject *type = (PyObject *)sym_get_type(arg);
+            if (type) {
+                res = sym_new_const(ctx, type);
             }
             else {
                 res = sym_new_not_null(ctx);
@@ -2418,8 +2419,8 @@
                 assert(value != NULL);
                 eliminate_pop_guard(this_instr, !Py_IsNone(value));
             }
-            else if (sym_has_type(val)) {
-                assert(!sym_matches_type(val, &_PyNone_Type));
+            else if (sym_get_type(flag)) {
+                assert(!sym_matches_type(flag, &_PyNone_Type));
                 eliminate_pop_guard(this_instr, true);
             }
             sym_set_const(val, Py_None);
@@ -2436,8 +2437,8 @@
                 assert(value != NULL);
                 eliminate_pop_guard(this_instr, Py_IsNone(value));
             }
-            else if (sym_has_type(val)) {
-                assert(!sym_matches_type(val, &_PyNone_Type));
+            else if (sym_get_type(flag)) {
+                assert(!sym_matches_type(flag, &_PyNone_Type));
                 eliminate_pop_guard(this_instr, false);
             }
             stack_pointer += -1;
