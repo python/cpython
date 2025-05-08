@@ -806,6 +806,20 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         self.assertEqual(self.gen.getrandbits(100),
                          97904845777343510404718956115)
 
+    def test_getrandbits_2G_bits(self):
+        self.gen.seed(1234567)
+        x = self.gen.getrandbits(2**31)
+        self.assertEqual(x.bit_length(), 2**31)
+        self.assertEqual(x >> (2**31-100), 1226514312032729439655761284440)
+        self.assertEqual(x & (2**100-1), 890186470919986886340158459475)
+
+    def test_getrandbits_4G_bits(self):
+        self.gen.seed(1234568)
+        x = self.gen.getrandbits(2**32)
+        self.assertEqual(x.bit_length(), 2**32)
+        self.assertEqual(x >> (2**32-100), 739728759900339699429794460738)
+        self.assertEqual(x & (2**100-1), 287241425661104632871036099814)
+
     def test_randrange_uses_getrandbits(self):
         # Verify use of getrandbits by randrange
         # Use same seed as in the cross-platform repeatability test
