@@ -87,6 +87,7 @@
     <nasmDir Condition="$(nasmDir) == ''">$(ExternalsDir)\nasm-2.11.06\</nasmDir>
     <zlibDir Condition="$(zlibDir) == ''">$(ExternalsDir)\zlib-1.3.1\</zlibDir>
     <zlibNgDir Condition="$(zlibNgDir) == ''">$(ExternalsDir)\zlib-ng-2.2.4\</zlibNgDir>
+    <zstdDir Condition="$(zstdDir) == ''">$(ExternalsDir)\zstd-1.5.7\</zstdDir>
   </PropertyGroup>
 
   <PropertyGroup>

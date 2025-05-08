@@ -77,6 +77,7 @@ import glob
 import json
 import token
 import types
+import atexit
 import codeop
 import pprint
 import signal
@@ -92,10 +93,12 @@ import tokenize
 import itertools
 import traceback
 import linecache
+import selectors
+import threading
 import _colorize
+import _pyrepl.utils
 
-from contextlib import closing
-from contextlib import contextmanager
+from contextlib import ExitStack, closing, contextmanager
 from rlcompleter import Completer
 from types import CodeType
 from warnings import deprecated
@@ -339,7 +342,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     _last_pdb_instance = None
 
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
-                 nosigint=False, readrc=True, mode=None, backend=None):
+                 nosigint=False, readrc=True, mode=None, backend=None, colorize=False):
         bdb.Bdb.__init__(self, skip=skip, backend=backend if backend else get_default_backend())
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
         sys.audit("pdb.Pdb")
@@ -352,6 +355,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self._wait_for_mainpyfile = False
         self.tb_lineno = {}
         self.mode = mode
+        self.colorize = colorize and _colorize.can_colorize(file=stdout or sys.stdout)
         # Try to load readline if it exists
         try:
             import readline
@@ -743,12 +747,34 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.message(repr(obj))
 
     @contextmanager
-    def _enable_multiline_completion(self):
+    def _enable_multiline_input(self):
+        try:
+            import readline
+        except ImportError:
+            yield
+            return
+
+        def input_auto_indent():
+            last_index = readline.get_current_history_length()
+            last_line = readline.get_history_item(last_index)
+            if last_line:
+                if last_line.isspace():
+                    # If the last line is empty, we don't need to indent
+                    return
+
+                last_line = last_line.rstrip('\r\n')
+                indent = len(last_line) - len(last_line.lstrip())
+                if last_line.endswith(":"):
+                    indent += 4
+                readline.insert_text(' ' * indent)
+
         completenames = self.completenames
         try:
             self.completenames = self.complete_multiline_names
+            readline.set_startup_hook(input_auto_indent)
             yield
         finally:
+            readline.set_startup_hook()
             self.completenames = completenames
         return
 
@@ -857,7 +883,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         try:
             if (code := codeop.compile_command(line + '\n', '<stdin>', 'single')) is None:
                 # Multi-line mode
-                with self._enable_multiline_completion():
+                with self._enable_multiline_input():
                     buffer = line
                     continue_prompt = "...   "
                     while (code := codeop.compile_command(buffer, '<stdin>', 'single')) is None:
@@ -879,7 +905,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                                 return None, None, False
                             else:
                                 line = line.rstrip('\r\n')
-                        buffer += '\n' + line
+                        if line.isspace():
+                            # empty line, just continue
+                            buffer += '\n'
+                        else:
+                            buffer += '\n' + line
                     self.lastcmd = buffer
         except SyntaxError as e:
             # Maybe it's an await expression/statement
@@ -1035,6 +1065,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if func.__name__ in self.commands_resuming:
             return True
         return False
+
+    def _colorize_code(self, code):
+        if self.colorize:
+            colors = list(_pyrepl.utils.gen_colors(code))
+            chars, _ = _pyrepl.utils.disp_str(code, colors=colors, force_color=True)
+            code = "".join(chars)
+        return code
 
     # interface abstraction functions
 
@@ -2166,6 +2203,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 s += '->'
             elif lineno == exc_lineno:
                 s += '>>'
+            if self.colorize:
+                line = self._colorize_code(line)
             self.message(s + '\t' + line.rstrip())
 
     def do_whatis(self, arg):
@@ -2365,8 +2404,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             prefix = '> '
         else:
             prefix = '  '
-        self.message(prefix +
-                     self.format_stack_entry(frame_lineno, prompt_prefix))
+        stack_entry = self.format_stack_entry(frame_lineno, prompt_prefix)
+        if self.colorize:
+            lines = stack_entry.split(prompt_prefix, 1)
+            if len(lines) > 1:
+                # We have some code to display
+                lines[1] = self._colorize_code(lines[1])
+                stack_entry = prompt_prefix.join(lines)
+        self.message(prefix + stack_entry)
 
     # Provide help
 
@@ -2604,7 +2649,7 @@ def set_trace(*, header=None, commands=None):
     if Pdb._last_pdb_instance is not None:
         pdb = Pdb._last_pdb_instance
     else:
-        pdb = Pdb(mode='inline', backend='monitoring')
+        pdb = Pdb(mode='inline', backend='monitoring', colorize=True)
     if header is not None:
         pdb.message(header)
     pdb.set_trace(sys._getframe().f_back, commands=commands)
@@ -2619,7 +2664,7 @@ async def set_trace_async(*, header=None, commands=None):
     if Pdb._last_pdb_instance is not None:
         pdb = Pdb._last_pdb_instance
     else:
-        pdb = Pdb(mode='inline', backend='monitoring')
+        pdb = Pdb(mode='inline', backend='monitoring', colorize=True)
     if header is not None:
         pdb.message(header)
     await pdb.set_trace_async(sys._getframe().f_back, commands=commands)
@@ -2627,13 +2672,26 @@ async def set_trace_async(*, header=None, commands=None):
 # Remote PDB
 
 class _PdbServer(Pdb):
-    def __init__(self, sockfile, owns_sockfile=True, **kwargs):
+    def __init__(
+        self,
+        sockfile,
+        signal_server=None,
+        owns_sockfile=True,
+        colorize=False,
+        **kwargs,
+    ):
         self._owns_sockfile = owns_sockfile
         self._interact_state = None
         self._sockfile = sockfile
         self._command_name_cache = []
         self._write_failed = False
-        super().__init__(**kwargs)
+        if signal_server:
+            # Only started by the top level _PdbServer, not recursive ones.
+            self._start_signal_listener(signal_server)
+        # Override the `colorize` attribute set by the parent constructor,
+        # because it checks the server's stdout, rather than the client's.
+        super().__init__(colorize=False, **kwargs)
+        self.colorize = colorize
 
     @staticmethod
     def protocol_version():
@@ -2688,15 +2746,49 @@ class _PdbServer(Pdb):
                     f"PDB message doesn't follow the schema! {msg}"
                 )
 
+    @classmethod
+    def _start_signal_listener(cls, address):
+        def listener(sock):
+            with closing(sock):
+                # Check if the interpreter is finalizing every quarter of a second.
+                # Clean up and exit if so.
+                sock.settimeout(0.25)
+                sock.shutdown(socket.SHUT_WR)
+                while not shut_down.is_set():
+                    try:
+                        data = sock.recv(1024)
+                    except socket.timeout:
+                        continue
+                    if data == b"":
+                        return  # EOF
+                    signal.raise_signal(signal.SIGINT)
+
+        def stop_thread():
+            shut_down.set()
+            thread.join()
+
+        # Use a daemon thread so that we don't detach until after all non-daemon
+        # threads are done. Use an atexit handler to stop gracefully at that point,
+        # so that our thread is stopped before the interpreter is torn down.
+        shut_down = threading.Event()
+        thread = threading.Thread(
+            target=listener,
+            args=[socket.create_connection(address, timeout=5)],
+            daemon=True,
+        )
+        atexit.register(stop_thread)
+        thread.start()
+
     def _send(self, **kwargs):
         self._ensure_valid_message(kwargs)
         json_payload = json.dumps(kwargs)
         try:
             self._sockfile.write(json_payload.encode() + b"\n")
             self._sockfile.flush()
-        except OSError:
-            # This means that the client has abruptly disconnected, but we'll
-            # handle that the next time we try to read from the client instead
+        except (OSError, ValueError):
+            # We get an OSError if the network connection has dropped, and a
+            # ValueError if detach() if the sockfile has been closed. We'll
+            # handle this the next time we try to read from the client instead
             # of trying to handle it from everywhere _send() may be called.
             # Track this with a flag rather than assuming readline() will ever
             # return an empty string because the socket may be half-closed.
@@ -2887,7 +2979,11 @@ class _PdbServer(Pdb):
 
     @typing.override
     def _create_recursive_debugger(self):
-        return _PdbServer(self._sockfile, owns_sockfile=False)
+        return _PdbServer(
+            self._sockfile,
+            owns_sockfile=False,
+            colorize=self.colorize,
+        )
 
     @typing.override
     def _prompt_for_confirmation(self, prompt, default):
@@ -2924,15 +3020,21 @@ class _PdbServer(Pdb):
 
 
 class _PdbClient:
-    def __init__(self, pid, sockfile, interrupt_script):
+    def __init__(self, pid, server_socket, interrupt_sock):
         self.pid = pid
-        self.sockfile = sockfile
-        self.interrupt_script = interrupt_script
+        self.read_buf = b""
+        self.signal_read = None
+        self.signal_write = None
+        self.sigint_received = False
+        self.raise_on_sigint = False
+        self.server_socket = server_socket
+        self.interrupt_sock = interrupt_sock
         self.pdb_instance = Pdb()
         self.pdb_commands = set()
         self.completion_matches = []
         self.state = "dumb"
         self.write_failed = False
+        self.multiline_block = False
 
     def _ensure_valid_message(self, msg):
         # Ensure the message conforms to our protocol.
@@ -2968,8 +3070,7 @@ class _PdbClient:
         self._ensure_valid_message(kwargs)
         json_payload = json.dumps(kwargs)
         try:
-            self.sockfile.write(json_payload.encode() + b"\n")
-            self.sockfile.flush()
+            self.server_socket.sendall(json_payload.encode() + b"\n")
         except OSError:
             # This means that the client has abruptly disconnected, but we'll
             # handle that the next time we try to read from the client instead
@@ -2978,9 +3079,44 @@ class _PdbClient:
             # return an empty string because the socket may be half-closed.
             self.write_failed = True
 
-    def read_command(self, prompt):
-        reply = input(prompt)
+    def _readline(self):
+        if self.sigint_received:
+            # There's a pending unhandled SIGINT. Handle it now.
+            self.sigint_received = False
+            raise KeyboardInterrupt
 
+        # Wait for either a SIGINT or a line or EOF from the PDB server.
+        selector = selectors.DefaultSelector()
+        selector.register(self.signal_read, selectors.EVENT_READ)
+        selector.register(self.server_socket, selectors.EVENT_READ)
+
+        while b"\n" not in self.read_buf:
+            for key, _ in selector.select():
+                if key.fileobj == self.signal_read:
+                    self.signal_read.recv(1024)
+                    if self.sigint_received:
+                        # If not, we're reading wakeup events for sigints that
+                        # we've previously handled, and can ignore them.
+                        self.sigint_received = False
+                        raise KeyboardInterrupt
+                elif key.fileobj == self.server_socket:
+                    data = self.server_socket.recv(16 * 1024)
+                    self.read_buf += data
+                    if not data and b"\n" not in self.read_buf:
+                        # EOF without a full final line. Drop the partial line.
+                        self.read_buf = b""
+                        return b""
+
+        ret, sep, self.read_buf = self.read_buf.partition(b"\n")
+        return ret + sep
+
+    def read_input(self, prompt, multiline_block):
+        self.multiline_block = multiline_block
+        with self._sigint_raises_keyboard_interrupt():
+            return input(prompt)
+
+    def read_command(self, prompt):
+        reply = self.read_input(prompt, multiline_block=False)
         if self.state == "dumb":
             # No logic applied whatsoever, just pass the raw reply back.
             return reply
@@ -3003,9 +3139,9 @@ class _PdbClient:
             return prefix + reply
 
         # Otherwise, valid first line of a multi-line statement
-        continue_prompt = "...".ljust(len(prompt))
+        more_prompt = "...".ljust(len(prompt))
         while codeop.compile_command(reply, "<stdin>", "single") is None:
-            reply += "\n" + input(continue_prompt)
+            reply += "\n" + self.read_input(more_prompt, multiline_block=True)
 
         return prefix + reply
 
@@ -3030,11 +3166,70 @@ class _PdbClient:
         finally:
             readline.set_completer(old_completer)
 
+    @contextmanager
+    def _sigint_handler(self):
+        # Signal handling strategy:
+        # - When we call input() we want a SIGINT to raise KeyboardInterrupt
+        # - Otherwise we want to write to the wakeup FD and set a flag.
+        #   We'll break out of select() when the wakeup FD is written to,
+        #   and we'll check the flag whenever we're about to accept input.
+        def handler(signum, frame):
+            self.sigint_received = True
+            if self.raise_on_sigint:
+                # One-shot; don't raise again until the flag is set again.
+                self.raise_on_sigint = False
+                self.sigint_received = False
+                raise KeyboardInterrupt
+
+        sentinel = object()
+        old_handler = sentinel
+        old_wakeup_fd = sentinel
+
+        self.signal_read, self.signal_write = socket.socketpair()
+        with (closing(self.signal_read), closing(self.signal_write)):
+            self.signal_read.setblocking(False)
+            self.signal_write.setblocking(False)
+
+            try:
+                old_handler = signal.signal(signal.SIGINT, handler)
+
+                try:
+                    old_wakeup_fd = signal.set_wakeup_fd(
+                        self.signal_write.fileno(),
+                        warn_on_full_buffer=False,
+                    )
+                    yield
+                finally:
+                    # Restore the old wakeup fd if we installed a new one
+                    if old_wakeup_fd is not sentinel:
+                        signal.set_wakeup_fd(old_wakeup_fd)
+            finally:
+                self.signal_read = self.signal_write = None
+                if old_handler is not sentinel:
+                    # Restore the old handler if we installed a new one
+                    signal.signal(signal.SIGINT, old_handler)
+
+    @contextmanager
+    def _sigint_raises_keyboard_interrupt(self):
+        if self.sigint_received:
+            # There's a pending unhandled SIGINT. Handle it now.
+            self.sigint_received = False
+            raise KeyboardInterrupt
+
+        try:
+            self.raise_on_sigint = True
+            yield
+        finally:
+            self.raise_on_sigint = False
+
     def cmdloop(self):
-        with self.readline_completion(self.complete):
+        with (
+            self._sigint_handler(),
+            self.readline_completion(self.complete),
+        ):
             while not self.write_failed:
                 try:
-                    if not (payload_bytes := self.sockfile.readline()):
+                    if not (payload_bytes := self._readline()):
                         break
                 except KeyboardInterrupt:
                     self.send_interrupt()
@@ -3052,11 +3247,17 @@ class _PdbClient:
                 self.process_payload(payload)
 
     def send_interrupt(self):
-        print(
-            "\n*** Program will stop at the next bytecode instruction."
-            " (Use 'cont' to resume)."
-        )
-        sys.remote_exec(self.pid, self.interrupt_script)
+        if self.interrupt_sock is not None:
+            # Write to a socket that the PDB server listens on. This triggers
+            # the remote to raise a SIGINT for itself. We do this because
+            # Windows doesn't allow triggering SIGINT remotely.
+            # See https://stackoverflow.com/a/35792192 for many more details.
+            self.interrupt_sock.sendall(signal.SIGINT.to_bytes())
+        else:
+            # On Unix we can just send a SIGINT to the remote process.
+            # This is preferable to using the signal thread approach that we
+            # use on Windows because it can interrupt IO in the main thread.
+            os.kill(self.pid, signal.SIGINT)
 
     def process_payload(self, payload):
         match payload:
@@ -3105,9 +3306,13 @@ class _PdbClient:
 
             origline = readline.get_line_buffer()
             line = origline.lstrip()
-            stripped = len(origline) - len(line)
-            begidx = readline.get_begidx() - stripped
-            endidx = readline.get_endidx() - stripped
+            if self.multiline_block:
+                # We're completing a line contained in a multi-line block.
+                # Force the remote to treat it as a Python expression.
+                line = "! " + line
+            offset = len(origline) - len(line)
+            begidx = readline.get_begidx() - offset
+            endidx = readline.get_endidx() - offset
 
             msg = {
                 "complete": {
@@ -3122,7 +3327,7 @@ class _PdbClient:
             if self.write_failed:
                 return None
 
-            payload = self.sockfile.readline()
+            payload = self._readline()
             if not payload:
                 return None
 
@@ -3139,11 +3344,31 @@ class _PdbClient:
             return None
 
 
-def _connect(host, port, frame, commands, version):
+def _connect(
+    *,
+    host,
+    port,
+    frame,
+    commands,
+    version,
+    signal_raising_thread,
+    colorize,
+):
     with closing(socket.create_connection((host, port))) as conn:
         sockfile = conn.makefile("rwb")
 
-    remote_pdb = _PdbServer(sockfile)
+    # The client requests this thread on Windows but not on Unix.
+    # Most tests don't request this thread, to keep them simpler.
+    if signal_raising_thread:
+        signal_server = (host, port)
+    else:
+        signal_server = None
+
+    remote_pdb = _PdbServer(
+        sockfile,
+        signal_server=signal_server,
+        colorize=colorize,
+    )
     weakref.finalize(remote_pdb, sockfile.close)
 
     if Pdb._last_pdb_instance is not None:
@@ -3164,43 +3389,50 @@ def _connect(host, port, frame, commands, version):
 
 def attach(pid, commands=()):
     """Attach to a running process with the given PID."""
-    with closing(socket.create_server(("localhost", 0))) as server:
+    with ExitStack() as stack:
+        server = stack.enter_context(
+            closing(socket.create_server(("localhost", 0)))
+        )
         port = server.getsockname()[1]
 
-        with tempfile.NamedTemporaryFile("w", delete_on_close=False) as connect_script:
-            connect_script.write(
-                textwrap.dedent(
-                    f"""
-                    import pdb, sys
-                    pdb._connect(
-                        host="localhost",
-                        port={port},
-                        frame=sys._getframe(1),
-                        commands={json.dumps("\n".join(commands))},
-                        version={_PdbServer.protocol_version()},
-                    )
-                    """
+        connect_script = stack.enter_context(
+            tempfile.NamedTemporaryFile("w", delete_on_close=False)
+        )
+
+        use_signal_thread = sys.platform == "win32"
+        colorize = _colorize.can_colorize()
+
+        connect_script.write(
+            textwrap.dedent(
+                f"""
+                import pdb, sys
+                pdb._connect(
+                    host="localhost",
+                    port={port},
+                    frame=sys._getframe(1),
+                    commands={json.dumps("\n".join(commands))},
+                    version={_PdbServer.protocol_version()},
+                    signal_raising_thread={use_signal_thread!r},
+                    colorize={colorize!r},
                 )
+                """
             )
-            connect_script.close()
-            sys.remote_exec(pid, connect_script.name)
+        )
+        connect_script.close()
+        sys.remote_exec(pid, connect_script.name)
 
-            # TODO Add a timeout? Or don't bother since the user can ^C?
-            client_sock, _ = server.accept()
+        # TODO Add a timeout? Or don't bother since the user can ^C?
+        client_sock, _ = server.accept()
+        stack.enter_context(closing(client_sock))
 
-            with closing(client_sock):
-                sockfile = client_sock.makefile("rwb")
+        if use_signal_thread:
+            interrupt_sock, _ = server.accept()
+            stack.enter_context(closing(interrupt_sock))
+            interrupt_sock.setblocking(False)
+        else:
+            interrupt_sock = None
 
-            with closing(sockfile):
-                with tempfile.NamedTemporaryFile("w", delete_on_close=False) as interrupt_script:
-                    interrupt_script.write(
-                        'import pdb, sys\n'
-                        'if inst := pdb.Pdb._last_pdb_instance:\n'
-                        '    inst.set_trace(sys._getframe(1))\n'
-                    )
-                    interrupt_script.close()
-
-                    _PdbClient(pid, sockfile, interrupt_script.name).cmdloop()
+        _PdbClient(pid, client_sock, interrupt_sock).cmdloop()
 
 
 # Post-Mortem interface
@@ -3272,10 +3504,13 @@ To let the script run up to a given line X in the debugged file, use
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(usage="%(prog)s [-h] [-c command] (-m module | -p pid | pyfile) [args ...]",
-                                     description=_usage,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter,
-                                     allow_abbrev=False)
+    parser = argparse.ArgumentParser(
+        usage="%(prog)s [-h] [-c command] (-m module | -p pid | pyfile) [args ...]",
+        description=_usage,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        allow_abbrev=False,
+        color=True,
+    )
 
     # We need to maunally get the script from args, because the first positional
     # arguments could be either the script we need to debug, or the argument
@@ -3338,7 +3573,7 @@ def main():
     # modified by the script being debugged. It's a bad idea when it was
     # changed by the user from the command line. There is a "restart" command
     # which allows explicit specification of command line arguments.
-    pdb = Pdb(mode='cli', backend='monitoring')
+    pdb = Pdb(mode='cli', backend='monitoring', colorize=True)
     pdb.rcLines.extend(opts.commands)
     while True:
         try:

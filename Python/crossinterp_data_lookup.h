@@ -654,6 +654,30 @@ error:
     return -1;
 }
 
+// code
+
+PyObject *
+_PyCode_FromXIData(_PyXIData_t *xidata)
+{
+    return _PyMarshal_ReadObjectFromXIData(xidata);
+}
+
+int
+_PyCode_GetXIData(PyThreadState *tstate, PyObject *obj, _PyXIData_t *xidata)
+{
+    if (!PyCode_Check(obj)) {
+        _PyXIData_FormatNotShareableError(tstate, "expected code, got %R", obj);
+        return -1;
+    }
+    if (_PyMarshal_GetXIData(tstate, obj, xidata) < 0) {
+        return -1;
+    }
+    assert(_PyXIData_CHECK_NEW_OBJECT(xidata, _PyMarshal_ReadObjectFromXIData));
+    _PyXIData_SET_NEW_OBJECT(xidata, _PyCode_FromXIData);
+    return 0;
+}
+
+
 // registration
 
 static void
