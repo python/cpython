@@ -1,2 +1,2 @@
-Remove deprecated getter functions ``Py_Get*`` slated for removal in 3.15.
+Remove deprecated Python initialization getter functions ``Py_Get*``.
 Patch by Bénédikt Tran.
