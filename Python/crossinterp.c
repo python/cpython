@@ -851,9 +851,7 @@ get_script_xidata(PyThreadState *tstate, PyObject *obj, int pure,
         PyObject *ref = NULL;
         const char *script = _Py_SourceAsString(obj, "???", "???", &cf, &ref);
         if (script == NULL) {
-            if (!PyBytes_Check(obj) && !PyUnicode_Check(obj)
-                && !PyByteArray_Check(obj) && !PyObject_CheckBuffer(obj))
-            {
+            if (!_PyObject_SupportedAsScript(obj)) {
                 // We discard the raised exception.
                 _PyErr_Format(tstate, PyExc_TypeError,
                               "unsupported script %R", obj);
