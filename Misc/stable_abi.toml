@@ -1632,8 +1632,6 @@
     added = '3.2'
 [function.Py_GetPlatform]
     added = '3.2'
-[function.Py_GetPrefix]
-    added = '3.2'
 [function.Py_GetProgramFullPath]
     added = '3.2'
 [function.Py_GetPythonHome]

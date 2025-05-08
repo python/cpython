@@ -22,11 +22,6 @@ Pending removal in Python 3.15
   may return a type other than :class:`bytes`, such as :class:`str`.
 * Python initialization functions, deprecated in Python 3.13:
 
-  * :c:func:`Py_GetPrefix`:
-    Use :c:func:`PyConfig_Get("base_prefix") <PyConfig_Get>`
-    (:data:`sys.base_prefix`) instead. Use :c:func:`PyConfig_Get("prefix")
-    <PyConfig_Get>` (:data:`sys.prefix`) if :ref:`virtual environments
-    <venv-def>` need to be handled.
   * :c:func:`Py_GetProgramFullPath`:
     Use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
     (:data:`sys.executable`) instead.

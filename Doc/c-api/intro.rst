@@ -780,7 +780,6 @@ environment variable :envvar:`PYTHONHOME`, or insert additional directories in
 front of the standard path by setting :envvar:`PYTHONPATH`.
 
 .. index::
-   single: Py_GetPrefix (C function)
    single: Py_GetProgramFullPath (C function)
 
 The embedding application can steer the search by setting
@@ -788,8 +787,8 @@ The embedding application can steer the search by setting
 :c:func:`Py_InitializeFromConfig`. Note that
 :envvar:`PYTHONHOME` still overrides this and :envvar:`PYTHONPATH` is still
 inserted in front of the standard path.  An application that requires total
-control has to provide its own implementation of :c:func:`Py_GetPrefix`, and
-:c:func:`Py_GetProgramFullPath` (all defined in :file:`Modules/getpath.c`).
+control has to provide its own implementation of :c:func:`Py_GetProgramFullPath`
+(defined in :file:`Modules/getpath.c`).
 
 .. index:: single: Py_IsInitialized (C function)
 

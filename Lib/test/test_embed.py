@@ -1708,7 +1708,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_global_pathconfig(self):
         # Test C API functions getting the path configuration:
         #
-        # - Py_GetPrefix()
         # - Py_GetProgramFullPath()
         # - Py_GetPythonHome()
         #
@@ -1722,13 +1721,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             func.restype = ctypes.c_wchar_p
             return func
 
-        Py_GetPrefix = get_func('Py_GetPrefix')
         Py_GetProgramFullPath = get_func('Py_GetProgramFullPath')
         Py_GetPythonHome = get_func('Py_GetPythonHome')
 
         config = _testinternalcapi.get_configs()['config']
 
-        self.assertEqual(Py_GetPrefix(), config['prefix'])
         self.assertEqual(Py_GetProgramFullPath(), config['executable'])
         self.assertEqual(Py_GetPythonHome(), config['home'])
 

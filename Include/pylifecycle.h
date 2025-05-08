@@ -40,7 +40,6 @@ Py_DEPRECATED(3.11) PyAPI_FUNC(void) Py_SetPythonHome(const wchar_t *);
 Py_DEPRECATED(3.13) PyAPI_FUNC(wchar_t *) Py_GetPythonHome(void);
 
 Py_DEPRECATED(3.13) PyAPI_FUNC(wchar_t *) Py_GetProgramFullPath(void);
-Py_DEPRECATED(3.13) PyAPI_FUNC(wchar_t *) Py_GetPrefix(void);
 #ifdef MS_WINDOWS
 int _Py_CheckPython3(void);
 #endif

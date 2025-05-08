@@ -2481,7 +2481,7 @@ Deprecated C APIs
     Get :data:`sys.exec_prefix` instead.
   * :c:func:`!Py_GetPath`:
     Get :data:`sys.path` instead.
-  * :c:func:`Py_GetPrefix`:
+  * :c:func:`!Py_GetPrefix`:
     Get :data:`sys.prefix` instead.
   * :c:func:`Py_GetProgramFullPath`:
     Get :data:`sys.executable` instead.

@@ -77,7 +77,7 @@ The following functions can be safely called before Python is initialized:
 
    Despite their apparent similarity to some of the functions listed above,
    the following functions **should not be called** before the interpreter has
-   been initialized: :c:func:`Py_EncodeLocale`, :c:func:`Py_GetPrefix`, :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome`, :c:func:`PyEval_InitThreads`, and
+   been initialized: :c:func:`Py_EncodeLocale`, :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome`, :c:func:`PyEval_InitThreads`, and
    :c:func:`Py_RunMain`.
 
 
@@ -600,31 +600,6 @@ Process-wide parameters
    :c:expr:`wchar_t*` string.
 
    .. deprecated-removed:: 3.11 3.15
-
-
-.. c:function:: wchar_t* Py_GetPrefix()
-
-   Return the *prefix* for installed platform-independent files. This is derived
-   through a number of complicated rules from the program name set with
-   :c:member:`PyConfig.program_name` and some environment variables; for example, if the
-   program name is ``'/usr/local/bin/python'``, the prefix is ``'/usr/local'``. The
-   returned string points into static storage; the caller should not modify its
-   value.  This corresponds to the :makevar:`prefix` variable in the top-level
-   :file:`Makefile` and the :option:`--prefix` argument to the :program:`configure`
-   script at build time.  The value is available to Python code as ``sys.base_prefix``.
-   It is only useful on Unix.  See also the next function.
-
-   This function should not be called before :c:func:`Py_Initialize`, otherwise
-   it returns ``NULL``.
-
-   .. versionchanged:: 3.10
-      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
-
-   .. deprecated-removed:: 3.13 3.15
-      Use :c:func:`PyConfig_Get("base_prefix") <PyConfig_Get>`
-      (:data:`sys.base_prefix`) instead. Use :c:func:`PyConfig_Get("prefix")
-      <PyConfig_Get>` (:data:`sys.prefix`) if :ref:`virtual environments
-      <venv-def>` need to be handled.
 
 
 .. c:function:: wchar_t* Py_GetProgramFullPath()
