@@ -2012,15 +2012,11 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_call_isinstance_unknown_object(self):
         def testfunc(n):
-            class Foo:
-                bar = 42
-
             x = 0
             for _ in range(n):
-                # we only know bar (LOAD_ATTR) is not null (set via sym_new_not_null)
-                bar = Foo.bar
-                # This will only narrow to bool and not to True due to 'bar' having
-                # unknown (non-null) type
+                # The optimizer doesn't know the return type here:
+                bar = eval("42")
+                # This will only narrow to bool:
                 y = isinstance(bar, int)
                 if y:
                     x += 1
