@@ -2477,7 +2477,7 @@ Deprecated C APIs
 
   * :c:func:`PySys_ResetWarnOptions`:
     Clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
-  * :c:func:`Py_GetExecPrefix`:
+  * :c:func:`!Py_GetExecPrefix`:
     Get :data:`sys.exec_prefix` instead.
   * :c:func:`Py_GetPath`:
     Get :data:`sys.path` instead.

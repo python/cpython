@@ -30,12 +30,6 @@ Pending removal in Python 3.15
     (:data:`sys.base_prefix`) instead. Use :c:func:`PyConfig_Get("prefix")
     <PyConfig_Get>` (:data:`sys.prefix`) if :ref:`virtual environments
     <venv-def>` need to be handled.
-  * :c:func:`Py_GetExecPrefix`:
-    Use :c:func:`PyConfig_Get("base_exec_prefix") <PyConfig_Get>`
-    (:data:`sys.base_exec_prefix`) instead. Use
-    :c:func:`PyConfig_Get("exec_prefix") <PyConfig_Get>`
-    (:data:`sys.exec_prefix`) if :ref:`virtual environments <venv-def>` need to
-    be handled.
   * :c:func:`Py_GetProgramFullPath`:
     Use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
     (:data:`sys.executable`) instead.

@@ -303,13 +303,6 @@ Py_GetPrefix(void)
 
 
 wchar_t *
-Py_GetExecPrefix(void)
-{
-    return _Py_path_config.exec_prefix;
-}
-
-
-wchar_t *
 Py_GetProgramFullPath(void)
 {
     return _Py_path_config.program_full_path;

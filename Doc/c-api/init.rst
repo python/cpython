@@ -78,8 +78,7 @@ The following functions can be safely called before Python is initialized:
    Despite their apparent similarity to some of the functions listed above,
    the following functions **should not be called** before the interpreter has
    been initialized: :c:func:`Py_EncodeLocale`, :c:func:`Py_GetPath`,
-   :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`,
-   :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome`, :c:func:`PyEval_InitThreads`, and
+   :c:func:`Py_GetPrefix`, :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome`, :c:func:`PyEval_InitThreads`, and
    :c:func:`Py_RunMain`.
 
 
@@ -632,54 +631,6 @@ Process-wide parameters
       <PyConfig_Get>` (:data:`sys.prefix`) if :ref:`virtual environments
       <venv-def>` need to be handled.
 
-
-.. c:function:: wchar_t* Py_GetExecPrefix()
-
-   Return the *exec-prefix* for installed platform-*dependent* files.  This is
-   derived through a number of complicated rules from the program name set with
-   :c:member:`PyConfig.program_name` and some environment variables; for example, if the
-   program name is ``'/usr/local/bin/python'``, the exec-prefix is
-   ``'/usr/local'``.  The returned string points into static storage; the caller
-   should not modify its value.  This corresponds to the :makevar:`exec_prefix`
-   variable in the top-level :file:`Makefile` and the ``--exec-prefix``
-   argument to the :program:`configure` script at build  time.  The value is
-   available to Python code as ``sys.base_exec_prefix``.  It is only useful on
-   Unix.
-
-   Background: The exec-prefix differs from the prefix when platform dependent
-   files (such as executables and shared libraries) are installed in a different
-   directory tree.  In a typical installation, platform dependent files may be
-   installed in the :file:`/usr/local/plat` subtree while platform independent may
-   be installed in :file:`/usr/local`.
-
-   Generally speaking, a platform is a combination of hardware and software
-   families, e.g.  Sparc machines running the Solaris 2.x operating system are
-   considered the same platform, but Intel machines running Solaris 2.x are another
-   platform, and Intel machines running Linux are yet another platform.  Different
-   major revisions of the same operating system generally also form different
-   platforms.  Non-Unix operating systems are a different story; the installation
-   strategies on those systems are so different that the prefix and exec-prefix are
-   meaningless, and set to the empty string. Note that compiled Python bytecode
-   files are platform independent (but not independent from the Python version by
-   which they were compiled!).
-
-   System administrators will know how to configure the :program:`mount` or
-   :program:`automount` programs to share :file:`/usr/local` between platforms
-   while having :file:`/usr/local/plat` be a different filesystem for each
-   platform.
-
-   This function should not be called before :c:func:`Py_Initialize`, otherwise
-   it returns ``NULL``.
-
-   .. versionchanged:: 3.10
-      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
-
-   .. deprecated-removed:: 3.13 3.15
-      Use :c:func:`PyConfig_Get("base_exec_prefix") <PyConfig_Get>`
-      (:data:`sys.base_exec_prefix`) instead. Use
-      :c:func:`PyConfig_Get("exec_prefix") <PyConfig_Get>`
-      (:data:`sys.exec_prefix`) if :ref:`virtual environments <venv-def>` need
-      to be handled.
 
 .. c:function:: wchar_t* Py_GetProgramFullPath()
 

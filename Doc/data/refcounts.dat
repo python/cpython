@@ -3007,8 +3007,6 @@ Py_GetCompiler:const char*:::
 
 Py_GetCopyright:const char*:::
 
-Py_GetExecPrefix:wchar_t*:::
-
 Py_GetPath:wchar_t*:::
 
 Py_GetPlatform:const char*:::
