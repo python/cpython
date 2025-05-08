@@ -5881,16 +5881,16 @@
 
         case _CALL_ISINSTANCE: {
             _PyStackRef cls;
-            _PyStackRef inst_;
+            _PyStackRef instance;
             _PyStackRef null;
             _PyStackRef callable;
             _PyStackRef res;
             cls = stack_pointer[-1];
-            inst_ = stack_pointer[-2];
+            instance = stack_pointer[-2];
             null = stack_pointer[-3];
             callable = stack_pointer[-4];
             STAT_INC(CALL, hit);
-            PyObject *inst_o = PyStackRef_AsPyObjectBorrow(inst_);
+            PyObject *inst_o = PyStackRef_AsPyObjectBorrow(instance);
             PyObject *cls_o = PyStackRef_AsPyObjectBorrow(cls);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int retval = PyObject_IsInstance(inst_o, cls_o);
@@ -5907,7 +5907,7 @@
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(inst_);
+            PyStackRef_CLOSE(instance);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());

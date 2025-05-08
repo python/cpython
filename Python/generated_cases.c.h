@@ -2779,7 +2779,7 @@
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef null;
             _PyStackRef callable;
-            _PyStackRef inst_;
+            _PyStackRef instance;
             _PyStackRef cls;
             _PyStackRef res;
             /* Skip 1 cache entry */
@@ -2807,9 +2807,9 @@
             // _CALL_ISINSTANCE
             {
                 cls = stack_pointer[-1];
-                inst_ = stack_pointer[-2];
+                instance = stack_pointer[-2];
                 STAT_INC(CALL, hit);
-                PyObject *inst_o = PyStackRef_AsPyObjectBorrow(inst_);
+                PyObject *inst_o = PyStackRef_AsPyObjectBorrow(instance);
                 PyObject *cls_o = PyStackRef_AsPyObjectBorrow(cls);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 int retval = PyObject_IsInstance(inst_o, cls_o);
@@ -2826,7 +2826,7 @@
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(inst_);
+                PyStackRef_CLOSE(instance);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());

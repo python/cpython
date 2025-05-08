@@ -4359,10 +4359,10 @@ dummy_func(
             DEOPT_IF(callable_o != interp->callable_cache.isinstance);
         }
 
-        op(_CALL_ISINSTANCE, (callable, null, inst_, cls -- res)) {
+        op(_CALL_ISINSTANCE, (callable, null, instance, cls -- res)) {
             /* isinstance(o, o2) */
             STAT_INC(CALL, hit);
-            PyObject *inst_o = PyStackRef_AsPyObjectBorrow(inst_);
+            PyObject *inst_o = PyStackRef_AsPyObjectBorrow(instance);
             PyObject *cls_o = PyStackRef_AsPyObjectBorrow(cls);
             int retval = PyObject_IsInstance(inst_o, cls_o);
             if (retval < 0) {
@@ -4370,7 +4370,7 @@ dummy_func(
             }
             (void)null; // Silence compiler warnings about unused variables
             PyStackRef_CLOSE(cls);
-            PyStackRef_CLOSE(inst_);
+            PyStackRef_CLOSE(instance);
             DEAD(null);
             PyStackRef_CLOSE(callable);
             res = retval ? PyStackRef_True : PyStackRef_False;
