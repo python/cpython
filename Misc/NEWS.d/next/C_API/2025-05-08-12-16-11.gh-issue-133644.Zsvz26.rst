@@ -1,0 +1,2 @@
+Remove deprecated global configuration variables slated for removal in
+Python 3.15. Patch by Bénédikt Tran
