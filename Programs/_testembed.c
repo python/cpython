@@ -578,7 +578,6 @@ static int test_init_global_config(void)
     putenv("PYTHONDEBUG=0");
 
     putenv("PYTHONDONTWRITEBYTECODE=");
-    Py_DontWriteBytecodeFlag = 1;
 
     putenv("PYTHONVERBOSE=0");
 
@@ -708,7 +707,6 @@ static int test_init_from_config(void)
     /* FIXME: test parser_debug */
 
     putenv("PYTHONDONTWRITEBYTECODE=");
-    Py_DontWriteBytecodeFlag = 0;
     config.write_bytecode = 0;
 
     config.quiet = 1;
@@ -1031,7 +1029,6 @@ static void set_all_global_config_variables(void)
     Py_IsolatedFlag = 0;
     Py_InteractiveFlag = 1;
     Py_UnbufferedStdioFlag = 1;
-    Py_DontWriteBytecodeFlag = 1;
     Py_NoUserSiteDirectory = 1;
 #ifdef MS_WINDOWS
     Py_LegacyWindowsStdioFlag = 1;
@@ -1098,7 +1095,6 @@ static int check_init_python_config(int preinit)
     set_all_global_config_variables();
     Py_IsolatedFlag = 1;
     Py_UnbufferedStdioFlag = 1;
-    Py_DontWriteBytecodeFlag = 1;
     Py_NoUserSiteDirectory = 1;
 #ifdef MS_WINDOWS
     Py_LegacyWindowsStdioFlag = 1;

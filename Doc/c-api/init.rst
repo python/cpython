@@ -98,21 +98,6 @@ that the option was set. For example, ``-b`` sets :c:data:`Py_BytesWarningFlag`
 to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
 
-.. c:var:: int Py_DontWriteBytecodeFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.write_bytecode` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   If set to non-zero, Python won't try to write ``.pyc`` files on the
-   import of source modules.
-
-   Set by the :option:`-B` option and the :envvar:`PYTHONDONTWRITEBYTECODE`
-   environment variable.
-
-   .. deprecated-removed:: 3.12 3.15
-
-
 .. c:var:: int Py_HashRandomizationFlag
 
    This API is kept for backward compatibility: setting
