@@ -262,6 +262,11 @@ _tkinter
     into the current output directory, which should ensure that Tkinter
     is able to load Tcl/Tk without having to change your PATH.
 
+_zstd
+    Python wrapper for version 1.5.7 of the zstd compression library
+    Homepage:
+        https://facebook.github.io/zstd/
+
 zlib-ng
     Compiles zlib-ng as a static library, which is later included by
     pythoncore.vcxproj. This was generated using CMake against zlib-ng
