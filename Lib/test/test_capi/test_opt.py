@@ -1954,7 +1954,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_CALL_ISINSTANCE", uops)
-        self.assertNotIn("_GUARD_CALLABLE_ISINSTANCE_NULL", uops)
+        self.assertNotIn("_GUARD_THIRD_NULL", uops)
         self.assertNotIn("_GUARD_CALLABLE_ISINSTANCE", uops)
 
 
