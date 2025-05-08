@@ -155,5 +155,5 @@ Deprecated C APIs
 Removed C APIs
 --------------
 
-* :c:func:`!PyImport_ImportModuleNoBlock`: use :c:func:`PyImport_ImportModule`
-  instead.
+* :c:func:`!PyImport_ImportModuleNoBlock`: deprecated alias
+  of :c:func:`PyImport_ImportModule`.
