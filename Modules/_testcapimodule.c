@@ -2305,8 +2305,6 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_DECREF(weakref);
 
     Py_RETURN_NONE;
-
-    _Py_COMP_DIAG_POP
 }
 
 struct simpletracer_data {
