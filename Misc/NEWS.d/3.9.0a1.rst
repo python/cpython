@@ -5536,7 +5536,7 @@ Tyler Kieft.
 .. section: C API
 
 :c:func:`!Py_SetPath` now sets :data:`sys.executable` to the program full
-path (:c:func:`Py_GetProgramFullPath`) rather than to the program name
+path (:c:func:`!Py_GetProgramFullPath`) rather than to the program name
 (:c:func:`!Py_GetProgramName`).
 
 ..

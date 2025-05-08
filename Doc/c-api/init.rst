@@ -77,7 +77,7 @@ The following functions can be safely called before Python is initialized:
 
    Despite their apparent similarity to some of the functions listed above,
    the following functions **should not be called** before the interpreter has
-   been initialized: :c:func:`Py_EncodeLocale`, :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome`, :c:func:`PyEval_InitThreads`, and
+   been initialized: :c:func:`Py_EncodeLocale`, :c:func:`Py_GetPythonHome`, :c:func:`PyEval_InitThreads`, and
    :c:func:`Py_RunMain`.
 
 
@@ -600,28 +600,6 @@ Process-wide parameters
    :c:expr:`wchar_t*` string.
 
    .. deprecated-removed:: 3.11 3.15
-
-
-.. c:function:: wchar_t* Py_GetProgramFullPath()
-
-   .. index::
-      single: executable (in module sys)
-
-   Return the full program name of the Python executable; this is  computed as a
-   side-effect of deriving the default module search path  from the program name
-   (set by :c:member:`PyConfig.program_name`). The returned string points into
-   static storage; the caller should not modify its value.  The value is available
-   to Python code as ``sys.executable``.
-
-   This function should not be called before :c:func:`Py_Initialize`, otherwise
-   it returns ``NULL``.
-
-   .. versionchanged:: 3.10
-      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
-
-   .. deprecated-removed:: 3.13 3.15
-      Use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
-      (:data:`sys.executable`) instead.
 
 
 .. c:function:: const char* Py_GetVersion()

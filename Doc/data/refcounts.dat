@@ -3009,8 +3009,6 @@ Py_GetCopyright:const char*:::
 
 Py_GetPlatform:const char*:::
 
-Py_GetProgramFullPath:wchar_t*:::
-
 Py_GetVersion:const char*:::
 
 Py_INCREF:void:::

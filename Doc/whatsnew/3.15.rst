@@ -170,6 +170,9 @@ Removed C APIs
    Use :c:func:`PyConfig_Get("prefix") <PyConfig_Get>`
    (:data:`sys.prefix`) if :ref:`virtual environments <venv-def>`
    need to be handled.
+* :c:func:`!Py_GetProgramFullPath`:
+   use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
+   (:data:`sys.executable`) instead.
 * :c:func:`!Py_GetProgramName`:
   use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
   (:data:`sys.executable`) instead.

@@ -283,13 +283,6 @@ _Py_GetStdlibDir(void)
 }
 
 
-wchar_t *
-Py_GetProgramFullPath(void)
-{
-    return _Py_path_config.program_full_path;
-}
-
-
 wchar_t*
 Py_GetPythonHome(void)
 {
