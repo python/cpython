@@ -463,7 +463,6 @@ static const char usage_envvars[] =
    stdin and stdout error handler to "surrogateescape". */
 int Py_UTF8Mode = 0;
 int Py_InteractiveFlag = 0; /* Previously, was used by Py_FdIsInteractive() */
-int Py_IgnoreEnvironmentFlag = 0; /* e.g. PYTHONPATH, PYTHONHOME */
 int Py_DontWriteBytecodeFlag = 0; /* Suppress writing bytecode files (*.pyc) */
 int Py_NoUserSiteDirectory = 0; /* for -s and site.py */
 int Py_UnbufferedStdioFlag = 0; /* Unbuffered binary std{in,out,err} */
@@ -516,7 +515,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     SET_ITEM_INT(Py_UTF8Mode);
     SET_ITEM_INT(Py_InteractiveFlag);
 
-    SET_ITEM_INT(Py_IgnoreEnvironmentFlag);
     SET_ITEM_INT(Py_DontWriteBytecodeFlag);
     SET_ITEM_INT(Py_NoUserSiteDirectory);
     SET_ITEM_INT(Py_UnbufferedStdioFlag);
@@ -544,13 +542,22 @@ _Py_COMP_DIAG_POP
 char*
 Py_GETENV(const char *name)
 {
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    if (Py_IgnoreEnvironmentFlag) {
+    if (!_PyRuntime.core_initialized) {
+        // During pre-initialization, we cannot hold the GIL so we directly
+        // read from '_PyRuntime.preconfig' instead as it's not yet possible
+        // to change the 'use_environment' field.
+        return _PyRuntime.preconfig.use_environment ? getenv(name) : NULL;
+    }
+    PyGILState_STATE state = PyGILState_Ensure();
+    PyObject *p_use_environment = PyConfig_Get("use_environment");
+    PyGILState_Release(state);
+    if (p_use_environment == NULL) {
+        PyErr_Clear();
         return NULL;
     }
-    return getenv(name);
-_Py_COMP_DIAG_POP
+    bool use_environment = Py_IsTrue(p_use_environment);
+    Py_DECREF(p_use_environment);
+    return use_environment ? getenv(name) : NULL;
 }
 
 /* --- PyStatus ----------------------------------------------- */
@@ -991,7 +998,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->_config_init = (int)_PyConfig_INIT_COMPAT;
     config->import_time = -1;
     config->isolated = -1;
-    config->use_environment = -1;
+    config->use_environment = 1;
     config->dev_mode = -1;
     config->install_signal_handlers = 1;
     config->use_hash_seed = -1;
@@ -1657,7 +1664,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
         }
 
     COPY_FLAG(isolated, Py_IsolatedFlag);
-    COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
     COPY_FLAG(interactive, Py_InteractiveFlag);
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
@@ -1689,7 +1695,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
         }
 
     COPY_FLAG(isolated, Py_IsolatedFlag);
-    COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
     COPY_FLAG(interactive, Py_InteractiveFlag);
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);

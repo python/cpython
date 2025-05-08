@@ -6,7 +6,6 @@ extern "C" {
 #endif
 
 Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_InteractiveFlag;
-Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_IgnoreEnvironmentFlag;
 Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_DontWriteBytecodeFlag;
 Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_NoUserSiteDirectory;
 Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_UnbufferedStdioFlag;
@@ -19,7 +18,7 @@ Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_LegacyWindowsStdioFlag;
 #endif
 
 /* this is a wrapper around getenv() that pays attention to
-   Py_IgnoreEnvironmentFlag.  It should be used for getting variables like
+   PyConfig.use_environment.  It should be used for getting variables like
    PYTHONPATH and PYTHONHOME from the environment */
 PyAPI_FUNC(char*) Py_GETENV(const char *name);
 

@@ -703,7 +703,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         ('Py_DontWriteBytecodeFlag', 'write_bytecode', True),
         ('Py_FileSystemDefaultEncodeErrors', 'filesystem_errors'),
         ('Py_FileSystemDefaultEncoding', 'filesystem_encoding'),
-        ('Py_IgnoreEnvironmentFlag', 'use_environment', True),
         ('Py_InteractiveFlag', 'interactive'),
         ('Py_IsolatedFlag', 'isolated'),
         ('Py_NoUserSiteDirectory', 'user_site_directory', True),

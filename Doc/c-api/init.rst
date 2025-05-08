@@ -128,19 +128,6 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. deprecated-removed:: 3.12 3.15
 
-.. c:var:: int Py_IgnoreEnvironmentFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.use_environment` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Ignore all :envvar:`!PYTHON*` environment variables, e.g.
-   :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that might be set.
-
-   Set by the :option:`-E` and :option:`-I` options.
-
-   .. deprecated-removed:: 3.12 3.15
-
 
 .. c:var:: int Py_InteractiveFlag
 

@@ -59,8 +59,7 @@ typedef struct PyPreConfig {
     int isolated;
 
     /* If greater than 0: use environment variables.
-       Set to 0 by -E command line option. If set to -1 (default), it is
-       set to !Py_IgnoreEnvironmentFlag. */
+       Set to 0 by -E command line option. */
     int use_environment;
 
     /* Set the LC_CTYPE locale to the user preferred locale? If equals to 0,

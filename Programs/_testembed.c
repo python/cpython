@@ -564,8 +564,6 @@ static int test_init_compat_config(void)
 
 static int test_init_global_config(void)
 {
-    /* FIXME: test Py_IgnoreEnvironmentFlag */
-
     putenv("PYTHONUTF8=0");
     Py_UTF8Mode = 1;
 
@@ -832,7 +830,6 @@ static void set_all_env_vars(void)
 static int test_init_compat_env(void)
 {
     /* Test initialization from environment variables */
-    Py_IgnoreEnvironmentFlag = 0;
     set_all_env_vars();
     _testembed_Py_InitializeFromConfig();
     dump_config();
@@ -868,7 +865,6 @@ static void set_all_env_vars_dev_mode(void)
 static int test_init_env_dev_mode(void)
 {
     /* Test initialization from environment variables */
-    Py_IgnoreEnvironmentFlag = 0;
     set_all_env_vars_dev_mode();
     _testembed_Py_InitializeFromConfig();
     dump_config();
@@ -880,7 +876,6 @@ static int test_init_env_dev_mode(void)
 static int test_init_env_dev_mode_alloc(void)
 {
     /* Test initialization from environment variables */
-    Py_IgnoreEnvironmentFlag = 0;
     set_all_env_vars_dev_mode();
 #ifndef Py_GIL_DISABLED
     putenv("PYTHONMALLOC=malloc");
@@ -1034,7 +1029,6 @@ static int test_preinit_parse_argv(void)
 static void set_all_global_config_variables(void)
 {
     Py_IsolatedFlag = 0;
-    Py_IgnoreEnvironmentFlag = 0;
     Py_InteractiveFlag = 1;
     Py_UnbufferedStdioFlag = 1;
     Py_DontWriteBytecodeFlag = 1;
@@ -1103,7 +1097,6 @@ static int check_init_python_config(int preinit)
     /* global configuration variables must be ignored */
     set_all_global_config_variables();
     Py_IsolatedFlag = 1;
-    Py_IgnoreEnvironmentFlag = 1;
     Py_UnbufferedStdioFlag = 1;
     Py_DontWriteBytecodeFlag = 1;
     Py_NoUserSiteDirectory = 1;
@@ -1216,7 +1209,6 @@ static int test_open_code_hook(void)
         return 2;
     }
 
-    Py_IgnoreEnvironmentFlag = 0;
     _testembed_Py_InitializeFromConfig();
     result = 0;
 
@@ -1279,7 +1271,6 @@ static int _test_audit(Py_ssize_t setValue)
 {
     Py_ssize_t sawSet = 0;
 
-    Py_IgnoreEnvironmentFlag = 0;
     PySys_AddAuditHook(_audit_hook, &sawSet);
     _testembed_Py_InitializeFromConfig();
 
@@ -1391,7 +1382,6 @@ static int _audit_subinterpreter_hook(const char *event, PyObject *args, void *u
 
 static int test_audit_subinterpreter(void)
 {
-    Py_IgnoreEnvironmentFlag = 0;
     PySys_AddAuditHook(_audit_subinterpreter_hook, NULL);
     _testembed_Py_InitializeFromConfig();
 
@@ -1438,7 +1428,6 @@ static int test_audit_run_command(void)
     AuditRunCommandTest test = {"cpython.run_command"};
     wchar_t *argv[] = {PROGRAM_NAME, L"-c", L"pass"};
 
-    Py_IgnoreEnvironmentFlag = 0;
     PySys_AddAuditHook(_audit_hook_run, (void*)&test);
 
     return Py_Main(Py_ARRAY_LENGTH(argv), argv);
@@ -1449,7 +1438,6 @@ static int test_audit_run_file(void)
     AuditRunCommandTest test = {"cpython.run_file"};
     wchar_t *argv[] = {PROGRAM_NAME, L"filename.py"};
 
-    Py_IgnoreEnvironmentFlag = 0;
     PySys_AddAuditHook(_audit_hook_run, (void*)&test);
 
     return Py_Main(Py_ARRAY_LENGTH(argv), argv);

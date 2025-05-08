@@ -71,9 +71,6 @@ Pending removal in Python 3.15
   * :c:var:`Py_InteractiveFlag`:
     Use :c:member:`PyConfig.interactive` or
     :c:func:`PyConfig_Get("interactive") <PyConfig_Get>` instead.
-  * :c:var:`Py_IgnoreEnvironmentFlag`:
-    Use :c:member:`PyConfig.use_environment` or
-    :c:func:`PyConfig_Get("use_environment") <PyConfig_Get>` instead.
   * :c:var:`Py_DontWriteBytecodeFlag`:
     Use :c:member:`PyConfig.write_bytecode` or
     :c:func:`PyConfig_Get("write_bytecode") <PyConfig_Get>` instead.
