@@ -2499,7 +2499,7 @@ Deprecated C APIs
   which return a :term:`borrowed reference`.
   (Soft deprecated as part of :pep:`667`.)
 
-* Deprecate the :c:func:`PyImport_ImportModuleNoBlock` function,
+* Deprecate the :c:func:`!PyImport_ImportModuleNoBlock` function,
   which is just an alias to :c:func:`PyImport_ImportModule` since Python 3.3.
   (Contributed by Victor Stinner in :gh:`105396`.)
 
