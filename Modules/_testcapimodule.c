@@ -2249,24 +2249,11 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     ref = PyWeakref_GetObject(weakref);  // borrowed ref
     assert(ref == obj);
 
-    // test PyWeakref_GET_OBJECT(), reference is alive
-    _Py_COMP_DIAG_PUSH
-    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    ref = PyWeakref_GET_OBJECT(weakref);  // borrowed ref
-    _Py_COMP_DIAG_POP
-    assert(ref == obj);
-
     // delete the referenced object: clear the weakref
     assert(Py_REFCNT(obj) == 1);
     Py_DECREF(obj);
 
     assert(PyWeakref_IsDead(weakref));
-
-    // test PyWeakref_GET_OBJECT(), reference is dead
-    _Py_COMP_DIAG_PUSH
-    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    assert(PyWeakref_GET_OBJECT(weakref) == Py_None);
-    _Py_COMP_DIAG_POP
 
     // test PyWeakref_GetRef(), reference is dead
     ref = UNINITIALIZED_PTR;
