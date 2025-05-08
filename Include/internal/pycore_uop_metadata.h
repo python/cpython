@@ -303,7 +303,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_POP_TOP_LOAD_CONST_INLINE_BORROW] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
     [_POP_TWO_LOAD_CONST_INLINE_BORROW] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
     [_CHECK_FUNCTION] = HAS_DEOPT_FLAG,
-    [_START_EXECUTOR] = HAS_ESCAPES_FLAG,
+    [_START_EXECUTOR] = 0,
     [_MAKE_WARM] = 0,
     [_FATAL_ERROR] = 0,
     [_DEOPT] = 0,
@@ -1098,6 +1098,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 2 + oparg;
         case _CALL_BUILTIN_FAST_WITH_KEYWORDS:
             return 2 + oparg;
+        case _GUARD_CALLABLE_LEN:
+            return 0;
         case _CALL_LEN:
             return 2 + oparg;
         case _GUARD_CALLABLE_ISINSTANCE:

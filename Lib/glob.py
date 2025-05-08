@@ -316,7 +316,7 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
             if idx < last_part_idx:
                 results.append(any_sep)
     res = ''.join(results)
-    return fr'(?s:{res})\Z'
+    return fr'(?s:{res})\z'
 
 
 @functools.lru_cache(maxsize=512)

@@ -4,20 +4,21 @@ import rlcompleter
 from textwrap import dedent
 from unittest import TestCase
 from unittest.mock import MagicMock
+from test.support import force_colorized_test_class, force_not_colorized_test_class
 
 from .support import handle_all_events, handle_events_narrow_console
 from .support import ScreenEqualMixin, code_to_events
-from .support import prepare_console, reader_force_colors
-from .support import reader_no_colors as prepare_reader
+from .support import prepare_reader, prepare_console
 from _pyrepl.console import Event
 from _pyrepl.reader import Reader
-from _colorize import theme
+from _colorize import default_theme
 
 
-overrides = {"RESET": "z", "SOFT_KEYWORD": "K"}
-colors = {overrides.get(k, k[0].lower()): v for k, v in theme.items()}
+overrides = {"reset": "z", "soft_keyword": "K"}
+colors = {overrides.get(k, k[0].lower()): v for k, v in default_theme.syntax.items()}
 
 
+@force_not_colorized_test_class
 class TestReader(ScreenEqualMixin, TestCase):
     def test_calc_screen_wrap_simple(self):
         events = code_to_events(10 * "a")
@@ -126,13 +127,6 @@ class TestReader(ScreenEqualMixin, TestCase):
         reader, _ = handle_all_events(events)
         reader.setpos_from_xy(0, 0)
         self.assertEqual(reader.pos, 0)
-
-    def test_control_characters(self):
-        code = 'flag = "🏳️‍🌈"'
-        events = code_to_events(code)
-        reader, _ = handle_all_events(events, prepare_reader=reader_force_colors)
-        self.assert_screen_equal(reader, 'flag = "🏳️\\u200d🌈"', clean=True)
-        self.assert_screen_equal(reader, 'flag {o}={z} {s}"🏳️\\u200d🌈"{z}'.format(**colors))
 
     def test_setpos_from_xy_multiple_lines(self):
         # fmt: off
@@ -364,6 +358,8 @@ class TestReader(ScreenEqualMixin, TestCase):
         reader.setpos_from_xy(8, 0)
         self.assertEqual(reader.pos, 7)
 
+@force_colorized_test_class
+class TestReaderInColor(ScreenEqualMixin, TestCase):
     def test_syntax_highlighting_basic(self):
         code = dedent(
             """\
@@ -403,7 +399,7 @@ class TestReader(ScreenEqualMixin, TestCase):
         )
         expected_sync = expected.format(a="", **colors)
         events = code_to_events(code)
-        reader, _ = handle_all_events(events, prepare_reader=reader_force_colors)
+        reader, _ = handle_all_events(events)
         self.assert_screen_equal(reader, code, clean=True)
         self.assert_screen_equal(reader, expected_sync)
         self.assertEqual(reader.pos, 2**7 + 2**8)
@@ -416,7 +412,7 @@ class TestReader(ScreenEqualMixin, TestCase):
             [Event(evt="key", data="up", raw=bytearray(b"\x1bOA"))] * 13,
             code_to_events("async "),
         )
-        reader, _ = handle_all_events(more_events, prepare_reader=reader_force_colors)
+        reader, _ = handle_all_events(more_events)
         self.assert_screen_equal(reader, expected_async)
         self.assertEqual(reader.pos, 21)
         self.assertEqual(reader.cxy, (6, 1))
@@ -433,7 +429,7 @@ class TestReader(ScreenEqualMixin, TestCase):
             """
         ).format(**colors)
         events = code_to_events(code)
-        reader, _ = handle_all_events(events, prepare_reader=reader_force_colors)
+        reader, _ = handle_all_events(events)
         self.assert_screen_equal(reader, code, clean=True)
         self.assert_screen_equal(reader, expected)
 
@@ -451,7 +447,7 @@ class TestReader(ScreenEqualMixin, TestCase):
             """
         ).format(**colors)
         events = code_to_events(code)
-        reader, _ = handle_all_events(events, prepare_reader=reader_force_colors)
+        reader, _ = handle_all_events(events)
         self.assert_screen_equal(reader, code, clean=True)
         self.assert_screen_equal(reader, expected)
 
@@ -471,7 +467,7 @@ class TestReader(ScreenEqualMixin, TestCase):
             """
         ).format(**colors)
         events = code_to_events(code)
-        reader, _ = handle_all_events(events, prepare_reader=reader_force_colors)
+        reader, _ = handle_all_events(events)
         self.assert_screen_equal(reader, code, clean=True)
         self.assert_screen_equal(reader, expected)
 
@@ -497,6 +493,13 @@ class TestReader(ScreenEqualMixin, TestCase):
             """
         ).format(OB="{", CB="}", **colors)
         events = code_to_events(code)
-        reader, _ = handle_all_events(events, prepare_reader=reader_force_colors)
+        reader, _ = handle_all_events(events)
         self.assert_screen_equal(reader, code, clean=True)
         self.assert_screen_equal(reader, expected)
+
+    def test_control_characters(self):
+        code = 'flag = "🏳️‍🌈"'
+        events = code_to_events(code)
+        reader, _ = handle_all_events(events)
+        self.assert_screen_equal(reader, 'flag = "🏳️\\u200d🌈"', clean=True)
+        self.assert_screen_equal(reader, 'flag {o}={z} {s}"🏳️\\u200d🌈"{z}'.format(**colors))

@@ -29,6 +29,7 @@ import signal
 import struct
 import termios
 import time
+import types
 import platform
 from fcntl import ioctl
 
@@ -39,6 +40,12 @@ from .trace import trace
 from .unix_eventqueue import EventQueue
 from .utils import wlen
 
+# declare posix optional to allow None assignment on other platforms
+posix: types.ModuleType | None
+try:
+    import posix
+except ImportError:
+    posix = None
 
 TYPE_CHECKING = False
 
@@ -196,6 +203,12 @@ class UnixConsole(Console):
 
         self.event_queue = EventQueue(self.input_fd, self.encoding)
         self.cursor_visible = 1
+
+        signal.signal(signal.SIGCONT, self._sigcont_handler)
+
+    def _sigcont_handler(self, signum, frame):
+        self.restore()
+        self.prepare()
 
     def __read(self, n: int) -> bytes:
         return os.read(self.input_fd, n)
@@ -550,11 +563,9 @@ class UnixConsole(Console):
 
     @property
     def input_hook(self):
-        try:
-            import posix
-        except ImportError:
-            return None
-        if posix._is_inputhook_installed():
+        # avoid inline imports here so the repl doesn't get flooded
+        # with import logging from -X importtime=2
+        if posix is not None and posix._is_inputhook_installed():
             return posix._inputhook
 
     def __enable_bracketed_paste(self) -> None:

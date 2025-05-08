@@ -817,6 +817,15 @@ class CosmeticTestCase(ASTTestCase):
         self.check_ast_roundtrip("def f[T: int = int, **P = int, *Ts = *int]():\n    pass")
         self.check_ast_roundtrip("class C[T: int = int, **P = int, *Ts = *int]():\n    pass")
 
+    def test_tstr(self):
+        self.check_ast_roundtrip("t'{a +    b}'")
+        self.check_ast_roundtrip("t'{a +    b:x}'")
+        self.check_ast_roundtrip("t'{a +    b!s}'")
+        self.check_ast_roundtrip("t'{ {a}}'")
+        self.check_ast_roundtrip("t'{ {a}=}'")
+        self.check_ast_roundtrip("t'{{a}}'")
+        self.check_ast_roundtrip("t''")
+
 
 class ManualASTCreationTestCase(unittest.TestCase):
     """Test that AST nodes created without a type_params field unparse correctly."""

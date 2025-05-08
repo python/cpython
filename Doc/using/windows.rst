@@ -529,6 +529,25 @@ depending on whether it was installed from python.org or through the Windows
 Store. Attempting to run the executable directly from Program Files is not
 recommended.
 
+To programmatically install or uninstall the MSIX without using your
+distribution platform's native support, the `Add-AppxPackage
+<https://learn.microsoft.com/powershell/module/appx/add-appxpackage>`_ and
+`Remove-AppxPackage <https://learn.microsoft.com/powershell/module/appx/remove-appxpackage>`_
+PowerShell cmdlets are simplest to use:
+
+.. code::
+
+   $> Add-AppxPackage C:\Downloads\python-manager-25.0.msix
+   ...
+   $> Get-AppxPackage PythonSoftwareFoundation.PythonManager | Remove-AppxPackage
+
+The native APIs for package management may be found on the Windows
+`PackageManager <https://learn.microsoft.com/uwp/api/windows.management.deployment.packagemanager>`_
+class. The :func:`!AddPackageAsync` method installs for the current user, or use
+:func:`!StagePackageAsync` followed by :func:`!ProvisionPackageForAllUsersAsync`
+to install the Python install manager for all users from the MSIX package. Users
+will still need to install their own copies of Python itself, as there is no way
+to trigger those installs without being a logged in user.
 
 .. _pymanager-admin-config:
 

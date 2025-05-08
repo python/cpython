@@ -1919,9 +1919,11 @@ class TestUopsOptimization(unittest.TestCase):
 
         _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         uops = get_opnames(ex)
+        self.assertNotIn("_GUARD_NOS_NULL", uops)
+        self.assertNotIn("_GUARD_CALLABLE_LEN", uops)
+        self.assertIn("_CALL_LEN", uops)
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertNotIn("_GUARD_TOS_INT", uops)
-        self.assertIn("_CALL_LEN", uops)
 
     def test_binary_op_subscr_tuple_int(self):
         def testfunc(n):

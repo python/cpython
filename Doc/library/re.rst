@@ -667,7 +667,7 @@ character ``'$'``.
 ``\z``
    Matches only at the end of the string.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 ``\Z``
    The same as ``\z``.  For compatibility with old Python versions.
