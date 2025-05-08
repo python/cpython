@@ -323,7 +323,6 @@ func,PyImport_ImportFrozenModuleObject,3.7,,
 func,PyImport_ImportModule,3.2,,
 func,PyImport_ImportModuleLevel,3.2,,
 func,PyImport_ImportModuleLevelObject,3.7,,
-func,PyImport_ImportModuleNoBlock,3.2,,
 func,PyImport_ReloadModule,3.2,,
 func,PyIndex_Check,3.8,,
 type,PyInterpreterState,3.2,,opaque

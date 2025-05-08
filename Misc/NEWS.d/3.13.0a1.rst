@@ -6538,7 +6538,7 @@ to hide implementation details. Patch by Victor Stinner.
 .. nonce: FQJG5B
 .. section: C API
 
-Deprecate the :c:func:`PyImport_ImportModuleNoBlock` function which is just
+Deprecate the :c:func:`!PyImport_ImportModuleNoBlock` function which is just
 an alias to :c:func:`PyImport_ImportModule` since Python 3.3. Patch by
 Victor Stinner.
 

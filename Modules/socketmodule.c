@@ -638,33 +638,22 @@ _PyLong_##NAME##_Converter(PyObject *obj, void *ptr)                \
     return 1;                                                       \
 }
 
-UNSIGNED_INT_CONVERTER(UInt16, uint16_t)
-UNSIGNED_INT_CONVERTER(UInt32, uint32_t)
-
 #if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
 # ifdef MS_WINDOWS
     UNSIGNED_INT_CONVERTER(NetIfindex, NET_IFINDEX)
 # else
-    UNSIGNED_INT_CONVERTER(NetIfindex, unsigned int)
+#   define _PyLong_NetIfindex_Converter _PyLong_UnsignedInt_Converter
 #   define NET_IFINDEX unsigned int
 # endif
 #endif // defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
 
 /*[python input]
-class uint16_converter(CConverter):
-    type = "uint16_t"
-    converter = '_PyLong_UInt16_Converter'
-
-class uint32_converter(CConverter):
-    type = "uint32_t"
-    converter = '_PyLong_UInt32_Converter'
-
 class NET_IFINDEX_converter(CConverter):
     type = "NET_IFINDEX"
     converter = '_PyLong_NetIfindex_Converter'
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=3de2e4a03fbf83b8]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=1cf809c40a407c34]*/
 
 /*[clinic input]
 module _socket

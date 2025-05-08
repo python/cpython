@@ -1524,6 +1524,26 @@ Py_CompileStringExFlags(const char *str, const char *filename_str, int start,
     return co;
 }
 
+int
+_PyObject_SupportedAsScript(PyObject *cmd)
+{
+    if (PyUnicode_Check(cmd)) {
+        return 1;
+    }
+    else if (PyBytes_Check(cmd)) {
+        return 1;
+    }
+    else if (PyByteArray_Check(cmd)) {
+        return 1;
+    }
+    else if (PyObject_CheckBuffer(cmd)) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
 const char *
 _Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyCompilerFlags *cf, PyObject **cmd_copy)
 {

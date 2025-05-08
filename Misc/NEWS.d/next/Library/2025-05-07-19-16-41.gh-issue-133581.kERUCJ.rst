@@ -1,0 +1,4 @@
+Improve unparsing of t-strings in :func:`ast.unparse` and ``from __future__
+import annotations``. Empty t-strings now round-trip correctly and
+formatting in interpolations is preserved.
+Patch by Jelle Zijlstra.
