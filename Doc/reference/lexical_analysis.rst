@@ -257,8 +257,8 @@ Except at the beginning of a logical line or in string literals, the whitespace
 characters space, tab and formfeed can be used interchangeably to separate
 tokens.  Whitespace is needed between two tokens only if their concatenation
 could otherwise be interpreted as a different token. For example, ``ab`` is one
-token, but ``a b`` is two tokens. For another example, ``+a`` is two tokens,
-and is equivalent to ``+ a``.
+token, but ``a b`` is two tokens. However, ``+a`` and ``+ a`` both produce
+two tokens, ``a`` and ``b``, as ``+a`` is not a valid token.
 
 
 .. _endmarker-token:
