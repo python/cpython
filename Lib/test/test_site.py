@@ -807,11 +807,11 @@ class _pthFileTests(unittest.TestCase):
 
 
 class CommandLineTests(unittest.TestCase):
-    def setUp(self):
-        super().setUp()
-        if sys.path[0] != os.getcwd():
-            sys.path.remove(sys.path[0])
-            sys.path.insert(0, os.getcwd())
+    def exists(self, path):
+            if path is not None and os.path.isdir(path):
+                return "exists"
+            else:
+                return "doesn't exist"
 
     def get_excepted_output(self, *args):
         if len(args) == 0:
@@ -821,13 +821,8 @@ class CommandLineTests(unittest.TestCase):
             for dir in sys.path:
                 output += "    %r,\n" % (dir,)
             output += "]\n"
-            def exists(path):
-                if path is not None and os.path.isdir(path):
-                    return "exists"
-                else:
-                    return "doesn't exist"
-            output += f"USER_BASE: {user_base!r} ({exists(user_base)})\n"
-            output += f"USER_SITE: {user_site!r} ({exists(user_site)})\n"
+            output += f"USER_BASE: {user_base!r} ({self.exists(user_base)})\n"
+            output += f"USER_SITE: {user_site!r} ({self.exists(user_site)})\n"
             output += f"ENABLE_USER_SITE: {site.ENABLE_USER_SITE!r}\n"
             return 0, dedent(output).strip()
 
@@ -854,25 +849,40 @@ class CommandLineTests(unittest.TestCase):
         args = [sys.executable, "-m", "site", *args]
         proc = subprocess.Popen(args,
                                 stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT,)
+                                stderr=subprocess.STDOUT,
+                                text=True)
         proc.wait()
-        output = proc.stdout.read().decode()
+        output = proc.stdout.read()
         return_code = proc.returncode
         proc.stdout.close()
         return return_code, dedent(output).strip()
 
+    @unittest.skipIf(sys.platform == 'wasi', "Popen not supported on WASI")
     def test_no_args(self):
         return_code, output = self.invoke_command_line()
-        excepted_return_code, excepted_output = self.get_excepted_output()
+        excepted_return_code, _ = self.get_excepted_output()
         self.assertEqual(return_code, excepted_return_code)
-        self.assertEqual(output, excepted_output)
+        lines = output.splitlines()
+        self.assertEqual(lines[0], "sys.path = [")
+        self.assertEqual(lines[-4], "]")
+        excepted_base = f"USER_BASE: '{site.getuserbase()}'" +\
+            f" ({self.exists(site.getuserbase())})"
+        print(excepted_base)
+        self.assertEqual(lines[-3], excepted_base)
+        excepted_site = f"USER_SITE: '{site.getusersitepackages()}'" +\
+            f" ({self.exists(site.getusersitepackages())})"
+        self.assertEqual(lines[-2], excepted_site)
+        self.assertEqual(lines[-1], f"ENABLE_USER_SITE: {site.ENABLE_USER_SITE}")
+        
 
+    @unittest.skipIf(sys.platform == 'wasi', "Popen not supported on WASI")
     def test_unknown_args(self):
         return_code, output = self.invoke_command_line("--unknown-arg")
         excepted_return_code, _ = self.get_excepted_output("--unknown-arg")
         self.assertEqual(return_code, excepted_return_code)
         self.assertIn('[--user-base] [--user-site]', output)
 
+    @unittest.skipIf(sys.platform == 'wasi', "Popen not supported on WASI")
     def test_base_arg(self):
         return_code, output = self.invoke_command_line("--user-base")
         excepted = self.get_excepted_output("--user-base")
@@ -880,6 +890,7 @@ class CommandLineTests(unittest.TestCase):
         self.assertEqual(return_code, excepted_return_code)
         self.assertEqual(output, excepted_output)
 
+    @unittest.skipIf(sys.platform == 'wasi', "Popen not supported on WASI")
     def test_site_arg(self):
         return_code, output = self.invoke_command_line("--user-site")
         excepted = self.get_excepted_output("--user-site")
@@ -887,6 +898,7 @@ class CommandLineTests(unittest.TestCase):
         self.assertEqual(return_code, excepted_return_code)
         self.assertEqual(output, excepted_output)
 
+    @unittest.skipIf(sys.platform == 'wasi', "Popen not supported on WASI")
     def test_both_args(self):
         return_code, output = self.invoke_command_line("--user-base",
                                                        "--user-site")
