@@ -1690,6 +1690,26 @@ PyCode_GetFreevars(PyCodeObject *code)
 }
 
 
+#define GET_OPARG(co, i, initial) (initial)
+// We may want to move these macros to pycore_opcode_utils.h
+// and use them in Python/bytecodes.c.
+#define LOAD_GLOBAL_NAME_INDEX(oparg) ((oparg)>>1)
+#define LOAD_ATTR_NAME_INDEX(oparg) ((oparg)>>1)
+
+#ifndef Py_DEBUG
+#define GETITEM(v, i) PyTuple_GET_ITEM((v), (i))
+#else
+static inline PyObject *
+GETITEM(PyObject *v, Py_ssize_t i)
+{
+    assert(PyTuple_Check(v));
+    assert(i >= 0);
+    assert(i < PyTuple_GET_SIZE(v));
+    assert(PyTuple_GET_ITEM(v, i) != NULL);
+    return PyTuple_GET_ITEM(v, i);
+}
+#endif
+
 static int
 identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
                        PyObject *globalnames, PyObject *attrnames,
@@ -1708,56 +1728,60 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
     assert(globalsns == NULL || PyDict_Check(globalsns));
     assert(builtinsns == NULL || PyDict_Check(builtinsns));
     assert(counts == NULL || counts->total == 0);
+    struct co_unbound_counts unbound = {0};
     Py_ssize_t len = Py_SIZE(co);
-    for (int i = 0; i < len; i++) {
+    for (int i = 0; i < len; i += _PyInstruction_GetLength(co, i)) {
         _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
         if (inst.op.code == LOAD_ATTR) {
-            PyObject *name = PyTuple_GET_ITEM(co->co_names, inst.op.arg>>1);
-            if (counts != NULL) {
-                if (PySet_Contains(attrnames, name)) {
-                    if (_PyErr_Occurred(tstate)) {
-                        return -1;
-                    }
-                    continue;
+            int oparg = GET_OPARG(co, i, inst.op.arg);
+            int index = LOAD_ATTR_NAME_INDEX(oparg);
+            PyObject *name = GETITEM(co->co_names, index);
+            if (PySet_Contains(attrnames, name)) {
+                if (_PyErr_Occurred(tstate)) {
+                    return -1;
                 }
-                counts->total += 1;
-                counts->numattrs += 1;
+                continue;
             }
+            unbound.total += 1;
+            unbound.numattrs += 1;
             if (PySet_Add(attrnames, name) < 0) {
                 return -1;
             }
         }
         else if (inst.op.code == LOAD_GLOBAL) {
-            PyObject *name = PyTuple_GET_ITEM(co->co_names, inst.op.arg>>1);
-            if (counts != NULL) {
-                if (PySet_Contains(globalnames, name)) {
-                    if (_PyErr_Occurred(tstate)) {
-                        return -1;
-                    }
-                    continue;
+            int oparg = GET_OPARG(co, i, inst.op.arg);
+            int index = LOAD_ATTR_NAME_INDEX(oparg);
+            PyObject *name = GETITEM(co->co_names, index);
+            if (PySet_Contains(globalnames, name)) {
+                if (_PyErr_Occurred(tstate)) {
+                    return -1;
                 }
-                counts->total += 1;
-                counts->globals.total += 1;
-                counts->globals.numunknown += 1;
-                if (globalsns != NULL && PyDict_Contains(globalsns, name)) {
-                    if (_PyErr_Occurred(tstate)) {
-                        return -1;
-                    }
-                    counts->globals.numglobal += 1;
-                    counts->globals.numunknown -= 1;
+                continue;
+            }
+            unbound.total += 1;
+            unbound.globals.total += 1;
+            if (globalsns != NULL && PyDict_Contains(globalsns, name)) {
+                if (_PyErr_Occurred(tstate)) {
+                    return -1;
                 }
-                if (builtinsns != NULL && PyDict_Contains(builtinsns, name)) {
-                    if (_PyErr_Occurred(tstate)) {
-                        return -1;
-                    }
-                    counts->globals.numbuiltin += 1;
-                    counts->globals.numunknown -= 1;
+                unbound.globals.numglobal += 1;
+            }
+            else if (builtinsns != NULL && PyDict_Contains(builtinsns, name)) {
+                if (_PyErr_Occurred(tstate)) {
+                    return -1;
                 }
+                unbound.globals.numbuiltin += 1;
+            }
+            else {
+                unbound.globals.numunknown += 1;
             }
             if (PySet_Add(globalnames, name) < 0) {
                 return -1;
             }
         }
+    }
+    if (counts != NULL) {
+        *counts = unbound;
     }
     return 0;
 }
@@ -1766,6 +1790,8 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
 void
 _PyCode_GetVarCounts(PyCodeObject *co, _PyCode_var_counts_t *counts)
 {
+    assert(counts != NULL);
+
     // Count the locals, cells, and free vars.
     struct co_locals_counts locals = {0};
     int numfree = 0;
@@ -1850,11 +1876,13 @@ _PyCode_GetVarCounts(PyCodeObject *co, _PyCode_var_counts_t *counts)
 
     // Get the unbound counts.
     assert(PyTuple_GET_SIZE(co->co_names) >= 0);
+    assert(PyTuple_GET_SIZE(co->co_names) < INT_MAX);
+    int numunbound = (int)PyTuple_GET_SIZE(co->co_names);
     struct co_unbound_counts unbound = {
-        .total = (int)PyTuple_GET_SIZE(co->co_names),
+        .total = numunbound,
         // numglobal and numattrs can be set later
         // with _PyCode_SetUnboundVarCounts().
-        .numunknown = (int)PyTuple_GET_SIZE(co->co_names),
+        .numunknown = numunbound,
     };
 
     // "Return" the result.
@@ -1904,10 +1932,12 @@ _PyCode_SetUnboundVarCounts(PyThreadState *tstate,
 
     // Fill in unbound.globals and unbound.numattrs.
     struct co_unbound_counts unbound = {0};
-    if (identify_unbound_names(
+    Py_BEGIN_CRITICAL_SECTION(co);
+    res = identify_unbound_names(
             tstate, co, globalnames, attrnames, globalsns, builtinsns,
-            &unbound) < 0)
-    {
+            &unbound);
+    Py_END_CRITICAL_SECTION();
+    if (res < 0) {
         goto finally;
     }
     assert(unbound.numunknown == 0);
@@ -1925,12 +1955,130 @@ finally:
 }
 
 
+int
+_PyCode_CheckNoInternalState(PyCodeObject *co, const char **p_errmsg)
+{
+    const char *errmsg = NULL;
+    // We don't worry about co_executors, co_instrumentation,
+    // or co_monitoring.  They are essentially ephemeral.
+    if (co->co_extra != NULL) {
+        errmsg = "only basic code objects are supported";
+    }
+
+    if (errmsg != NULL) {
+        if (p_errmsg != NULL) {
+            *p_errmsg = errmsg;
+        }
+        return 0;
+    }
+    return 1;
+}
+
+int
+_PyCode_CheckNoExternalState(PyCodeObject *co, _PyCode_var_counts_t *counts,
+                             const char **p_errmsg)
+{
+    const char *errmsg = NULL;
+    assert(counts->locals.hidden.total == 0);
+    if (counts->numfree > 0) {  // It's a closure.
+        errmsg = "closures not supported";
+    }
+    else if (counts->unbound.globals.numglobal > 0) {
+        errmsg = "globals not supported";
+    }
+    else if (counts->unbound.globals.numbuiltin > 0
+             && counts->unbound.globals.numunknown > 0)
+    {
+        errmsg = "globals not supported";
+    }
+    // Otherwise we don't check counts.unbound.globals.numunknown since we can't
+    // distinguish beween globals and builtins here.
+
+    if (errmsg != NULL) {
+        if (p_errmsg != NULL) {
+            *p_errmsg = errmsg;
+        }
+        return 0;
+    }
+    return 1;
+}
+
+int
+_PyCode_VerifyStateless(PyThreadState *tstate,
+                        PyCodeObject *co, PyObject *globalnames,
+                        PyObject *globalsns, PyObject *builtinsns)
+{
+    const char *errmsg;
+   _PyCode_var_counts_t counts = {0};
+    _PyCode_GetVarCounts(co, &counts);
+    if (_PyCode_SetUnboundVarCounts(
+                            tstate, co, &counts, globalnames, NULL,
+                            globalsns, builtinsns) < 0)
+    {
+        return -1;
+    }
+    // We may consider relaxing the internal state constraints
+    // if it becomes a problem.
+    if (!_PyCode_CheckNoInternalState(co, &errmsg)) {
+        _PyErr_SetString(tstate, PyExc_ValueError, errmsg);
+        return -1;
+    }
+    if (builtinsns != NULL) {
+        // Make sure the next check will fail for globals,
+        // even if there aren't any builtins.
+        counts.unbound.globals.numbuiltin += 1;
+    }
+    if (!_PyCode_CheckNoExternalState(co, &counts, &errmsg)) {
+        _PyErr_SetString(tstate, PyExc_ValueError, errmsg);
+        return -1;
+    }
+    // Note that we don't check co->co_flags & CO_NESTED for anything here.
+    return 0;
+}
+
+
+int
+_PyCode_CheckPureFunction(PyCodeObject *co, const char **p_errmsg)
+{
+    const char *errmsg = NULL;
+    if (co->co_flags & CO_GENERATOR) {
+        errmsg = "generators not supported";
+    }
+    else if (co->co_flags & CO_COROUTINE) {
+        errmsg = "coroutines not supported";
+    }
+    else if (co->co_flags & CO_ITERABLE_COROUTINE) {
+        errmsg = "coroutines not supported";
+    }
+    else if (co->co_flags & CO_ASYNC_GENERATOR) {
+        errmsg = "generators not supported";
+    }
+
+    if (errmsg != NULL) {
+        if (p_errmsg != NULL) {
+            *p_errmsg = errmsg;
+        }
+        return 0;
+    }
+    return 1;
+}
+
 /* Here "value" means a non-None value, since a bare return is identical
  * to returning None explicitly.  Likewise a missing return statement
  * at the end of the function is turned into "return None". */
-int
-_PyCode_ReturnsOnlyNone(PyCodeObject *co)
+static int
+code_returns_only_none(PyCodeObject *co)
 {
+    if (!_PyCode_CheckPureFunction(co, NULL)) {
+        return 0;
+    }
+    int len = (int)Py_SIZE(co);
+    assert(len > 0);
+
+    // The last instruction either returns or raises.  We can take advantage
+    // of that for a quick exit.
+    _Py_CODEUNIT final = _Py_GetBaseCodeUnit(co, len-1);
+
     // Look up None in co_consts.
     Py_ssize_t nconsts = PyTuple_Size(co->co_consts);
     int none_index = 0;
@@ -1941,29 +2089,55 @@ _PyCode_ReturnsOnlyNone(PyCodeObject *co)
     }
     if (none_index == nconsts) {
         // None wasn't there, which means there was no implicit return,
-        // "return", or "return None".  That means there must be
-        // an explicit return (non-None).
-        return 0;
-    }
+        // "return", or "return None".
 
-    // Walk the bytecode, looking for RETURN_VALUE.
-    Py_ssize_t len = Py_SIZE(co);
-    for (int i = 0; i < len; i++) {
-        _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
-        if (IS_RETURN_OPCODE(inst.op.code)) {
-            assert(i != 0);
-            // Ignore it if it returns None.
-            _Py_CODEUNIT prev = _Py_GetBaseCodeUnit(co, i-1);
-            if (prev.op.code == LOAD_CONST) {
-                // We don't worry about EXTENDED_ARG for now.
-                if (prev.op.arg == none_index) {
-                    continue;
-                }
-            }
+        // That means there must be
+        // an explicit return (non-None), or it only raises.
+        if (IS_RETURN_OPCODE(final.op.code)) {
+            // It was an explicit return (non-None).
             return 0;
+        }
+        // It must end with a raise then.  We still have to walk the
+        // bytecode to see if there's any explicit return (non-None).
+        assert(IS_RAISE_OPCODE(final.op.code));
+        for (int i = 0; i < len; i += _PyInstruction_GetLength(co, i)) {
+            _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
+            if (IS_RETURN_OPCODE(inst.op.code)) {
+                // We alraedy know it isn't returning None.
+                return 0;
+            }
+        }
+        // It must only raise.
+    }
+    else {
+        // Walk the bytecode, looking for RETURN_VALUE.
+        for (int i = 0; i < len; i += _PyInstruction_GetLength(co, i)) {
+            _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
+            if (IS_RETURN_OPCODE(inst.op.code)) {
+                assert(i != 0);
+                // Ignore it if it returns None.
+                _Py_CODEUNIT prev = _Py_GetBaseCodeUnit(co, i-1);
+                if (prev.op.code == LOAD_CONST) {
+                    // We don't worry about EXTENDED_ARG for now.
+                    if (prev.op.arg == none_index) {
+                        continue;
+                    }
+                }
+                return 0;
+            }
         }
     }
     return 1;
+}
+
+int
+_PyCode_ReturnsOnlyNone(PyCodeObject *co)
+{
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(co);
+    res = code_returns_only_none(co);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 

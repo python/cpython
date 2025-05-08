@@ -108,7 +108,7 @@ static char *GetPythonImport (HINSTANCE hModule)
                 char *pch;
 
                 /* Don't claim that python3.dll is a Python DLL. */
-#ifdef _DEBUG
+#ifdef Py_DEBUG
                 if (strcmp(import_name, "python3_d.dll") == 0) {
 #else
                 if (strcmp(import_name, "python3.dll") == 0) {
@@ -120,7 +120,7 @@ static char *GetPythonImport (HINSTANCE hModule)
                 /* Ensure python prefix is followed only
                    by numbers to the end of the basename */
                 pch = import_name + 6;
-#ifdef _DEBUG
+#ifdef Py_DEBUG
                 while (*pch && pch[0] != '_' && pch[1] != 'd' && pch[2] != '.') {
 #else
                 while (*pch && *pch != '.') {
@@ -300,7 +300,7 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
             char buffer[256];
 
             PyOS_snprintf(buffer, sizeof(buffer),
-#ifdef _DEBUG
+#ifdef Py_DEBUG
                           "python%d%d_d.dll",
 #else
                           "python%d%d.dll",

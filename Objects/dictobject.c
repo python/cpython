@@ -3178,9 +3178,10 @@ dict_set_fromkeys(PyInterpreterState *interp, PyDictObject *mp,
     Py_ssize_t pos = 0;
     PyObject *key;
     Py_hash_t hash;
-
-    if (dictresize(interp, mp,
-                    estimate_log2_keysize(PySet_GET_SIZE(iterable)), 0)) {
+    uint8_t new_size = Py_MAX(
+        estimate_log2_keysize(PySet_GET_SIZE(iterable)),
+        DK_LOG_SIZE(mp->ma_keys));
+    if (dictresize(interp, mp, new_size, 0)) {
         Py_DECREF(mp);
         return NULL;
     }
@@ -4851,7 +4852,8 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     d->ma_used = 0;
     d->_ma_watcher_tag = 0;
-    dictkeys_incref(Py_EMPTY_KEYS);
+    // We don't inc ref empty keys because they're immortal
+    assert((Py_EMPTY_KEYS)->dk_refcnt == _Py_DICT_IMMORTAL_INITIAL_REFCNT);
     d->ma_keys = Py_EMPTY_KEYS;
     d->ma_values = NULL;
     ASSERT_CONSISTENT(d);
