@@ -176,14 +176,11 @@ library which are implemented in C; each one builds a DLL (renamed to
  * _decimal
  * _elementtree
  * _hashlib
- * _lzma
  * _multiprocessing
  * _overlapped
  * _queue
- * _remotedebugging
+ * _remote_debugging
  * _socket
- * _sqlite3
- * _ssl
  * _testbuffer
  * _testcapi
  * _testclinic
@@ -194,7 +191,6 @@ library which are implemented in C; each one builds a DLL (renamed to
  * _testlimitedcapi
  * _testmultiphase
  * _testsinglephase
- * _tkinter
  * _uuid
  * _wmi
  * _zoneinfo
@@ -215,15 +211,16 @@ _bz2
     Homepage:
         http://www.bzip.org/
 
-liblzma
-    Python wrapper for version 5.2.2 of the liblzma compression library
+_lzma
+    Python wrapper for version 5.2.2 of the liblzma compression library,
+    which is itself built by liblzma.vcxproj.
     Homepage:
         https://tukaani.org/xz/
 
-openssl
+_ssl
     Python wrapper for version 3.0.15 of the OpenSSL secure sockets
-    library, which is downloaded from our binaries repository at
-    https://github.com/python/cpython-bin-deps.
+    library, which is itself downloaded from our binaries repository at
+    https://github.com/python/cpython-bin-deps and built by openssl.vcxproj.
 
     Homepage:
         https://www.openssl.org/
@@ -239,7 +236,7 @@ openssl
     As long as this folder exists, its contents will not be downloaded
     again when building.
 
-sqlite3
+_sqlite3
     Wraps SQLite 3.49.1, which is itself built by sqlite3.vcxproj
     Homepage:
         https://www.sqlite.org/
@@ -256,7 +253,8 @@ _tkinter
     PCbuild\prepare_tcltk.bat. This will retrieve the version of the
     sources matched to the current commit from the Tcl and Tk branches
     in our source repository at
-    https://github.com/python/cpython-source-deps.
+    https://github.com/python/cpython-source-deps and build them via the
+    tcl.vcxproj and tk.vcxproj sub-projects.
 
     The two projects install their respective components in a
     directory alongside the source directories called "tcltk" on
