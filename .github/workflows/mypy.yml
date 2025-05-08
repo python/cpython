@@ -8,15 +8,17 @@ on:
   pull_request:
     paths:
       - ".github/workflows/mypy.yml"
+      - "Lib/_colorize.py"
       - "Lib/_pyrepl/**"
       - "Lib/test/libregrtest/**"
+      - "Lib/tomllib/**"
+      - "Misc/mypy/**"
       - "Tools/build/generate_sbom.py"
       - "Tools/cases_generator/**"
       - "Tools/clinic/**"
       - "Tools/jit/**"
       - "Tools/peg_generator/**"
       - "Tools/requirements-dev.txt"
-      - "Tools/wasm/**"
   workflow_dispatch:
 
 permissions:
@@ -42,12 +44,12 @@ jobs:
         target: [
           "Lib/_pyrepl",
           "Lib/test/libregrtest",
+          "Lib/tomllib",
           "Tools/build",
           "Tools/cases_generator",
           "Tools/clinic",
           "Tools/jit",
           "Tools/peg_generator",
-          "Tools/wasm",
         ]
     steps:
       - uses: actions/checkout@v4

@@ -9,6 +9,7 @@ import sysconfig
 import tempfile
 import textwrap
 import unittest
+import warnings
 from test import support
 from test.support import os_helper
 from test.support import force_not_colorized
@@ -936,14 +937,20 @@ class CmdLineTest(unittest.TestCase):
     @unittest.skipUnless(sysconfig.get_config_var('Py_TRACE_REFS'), "Requires --with-trace-refs build option")
     def test_python_dump_refs(self):
         code = 'import sys; sys._clear_type_cache()'
-        rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFS='1')
+        # TODO: Remove warnings context manager once sys._clear_type_cache is removed
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFS='1')
         self.assertEqual(rc, 0)
 
     @unittest.skipUnless(sysconfig.get_config_var('Py_TRACE_REFS'), "Requires --with-trace-refs build option")
     def test_python_dump_refs_file(self):
         with tempfile.NamedTemporaryFile() as dump_file:
             code = 'import sys; sys._clear_type_cache()'
-            rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFSFILE=dump_file.name)
+            # TODO: Remove warnings context manager once sys._clear_type_cache is removed
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFSFILE=dump_file.name)
             self.assertEqual(rc, 0)
             with open(dump_file.name, 'r') as file:
                 contents = file.read()
@@ -1150,6 +1157,24 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
         res = assert_python_ok('-c', code, PYTHON_CPU_COUNT='default')
         self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
+
+    def test_import_time(self):
+        # os is not imported at startup
+        code = 'import os; import os'
+
+        for case in 'importtime', 'importtime=1', 'importtime=true':
+            res = assert_python_ok('-X', case, '-c', code)
+            res_err = res.err.decode('utf-8')
+            self.assertRegex(res_err, r'import time: \s*\d+ \| \s*\d+ \| \s*os')
+            self.assertNotRegex(res_err, r'import time: cached\s* \| cached\s* \| os')
+
+        res = assert_python_ok('-X', 'importtime=2', '-c', code)
+        res_err = res.err.decode('utf-8')
+        self.assertRegex(res_err, r'import time: \s*\d+ \| \s*\d+ \| \s*os')
+        self.assertRegex(res_err, r'import time: cached\s* \| cached\s* \| os')
+
+        assert_python_failure('-X', 'importtime=-1', '-c', code)
+        assert_python_failure('-X', 'importtime=3', '-c', code)
 
     def res2int(self, res):
         out = res.out.strip().decode("utf-8")
