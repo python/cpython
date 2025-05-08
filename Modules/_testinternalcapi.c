@@ -1974,6 +1974,14 @@ get_crossinterp_data(PyObject *self, PyObject *args, PyObject *kwargs)
             goto error;
         }
     }
+    else if (strcmp(mode, "fallback") == 0) {
+        xidata_fallback_t fallback = _PyXIDATA_FULL_FALLBACK;
+        if (_PyObject_GetXIDataWithFallback(
+                                 tstate, obj, fallback, xidata) != 0)
+        {
+            goto error;
+        }
+    }
     else if (strcmp(mode, "pickle") == 0) {
         if (_PyPickle_GetXIData(tstate, obj, xidata) != 0) {
             goto error;
@@ -1986,6 +1994,21 @@ get_crossinterp_data(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     else if (strcmp(mode, "code") == 0) {
         if (_PyCode_GetXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
+    else if (strcmp(mode, "func") == 0) {
+        if (_PyFunction_GetXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
+    else if (strcmp(mode, "script") == 0) {
+        if (_PyCode_GetScriptXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
+    else if (strcmp(mode, "script-pure") == 0) {
+        if (_PyCode_GetPureScriptXIData(tstate, obj, xidata) != 0) {
             goto error;
         }
     }
