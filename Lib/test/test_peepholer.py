@@ -2430,14 +2430,14 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
         ]
         self.check(insts, expected)
 
-    def test_unoptimized_if_unconsumed(self):
+    def test_optimize_unconsumed_when_is_safe(self):
         insts = [
             ("LOAD_FAST", 0, 1),
             ("LOAD_FAST", 1, 2),
             ("POP_TOP", None, 3),
         ]
         expected = [
-            ("LOAD_FAST", 0, 1),
+            ("LOAD_FAST_BORROW", 0, 1),
             ("LOAD_FAST_BORROW", 1, 2),
             ("POP_TOP", None, 3),
         ]
@@ -2449,7 +2449,7 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             ("POP_TOP", None, 3),
         ]
         expected = [
-            ("LOAD_FAST", 0, 1),
+            ("LOAD_FAST_BORROW", 0, 1),
             ("NOP", None, 2),
             ("NOP", None, 3),
         ]
@@ -2509,7 +2509,12 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             ("GET_LEN", None, 2),
             ("LIST_APPEND", 0, 3),
         ]
-        self.check(insts, insts)
+        expected = [
+            ("LOAD_FAST_BORROW", 0, 1),
+            ("GET_LEN", None, 2),
+            ("LIST_APPEND", 0, 3),
+        ]
+        self.check(insts, expected)
 
     def test_check_exc_match(self):
         insts = [
@@ -2518,7 +2523,7 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             ("CHECK_EXC_MATCH", None, 3)
         ]
         expected = [
-            ("LOAD_FAST", 0, 1),
+            ("LOAD_FAST_BORROW", 0, 1),
             ("LOAD_FAST_BORROW", 1, 2),
             ("CHECK_EXC_MATCH", None, 3)
         ]
@@ -2537,7 +2542,19 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             ("LOAD_CONST", 0, 7),
             ("RETURN_VALUE", None, 8),
         ]
-        self.cfg_optimization_test(insts, insts, consts=[None])
+        expected = [
+            ("LOAD_FAST_BORROW", 0, 1),
+            top := self.Label(),
+            ("FOR_ITER", end := self.Label(), 2),
+            ("STORE_FAST", 2, 3),
+            ("JUMP", top, 4),
+            end,
+            ("END_FOR", None, 5),
+            ("POP_TOP", None, 6),
+            ("LOAD_CONST", 0, 7),
+            ("RETURN_VALUE", None, 8),
+        ]
+        self.cfg_optimization_test(insts, expected, consts=[None])
 
     def test_load_attr(self):
         insts = [
@@ -2556,7 +2573,7 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             ("LOAD_ATTR", 1, 2),
         ]
         expected = [
-            ("LOAD_FAST", 0, 1),
+            ("LOAD_FAST_BORROW", 0, 1),
             ("LOAD_ATTR", 1, 2),
         ]
         self.check(insts, expected)
@@ -2586,7 +2603,7 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
         expected = [
             ("LOAD_FAST_BORROW", 0, 1),
             ("LOAD_FAST_BORROW", 1, 2),
-            ("LOAD_FAST", 2, 3),
+            ("LOAD_FAST_BORROW", 2, 3),
             ("LOAD_SUPER_ATTR", 1, 4),
         ]
         self.check(insts, expected)
@@ -2603,7 +2620,7 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             ("RETURN_VALUE", None, 7)
         ]
         expected = [
-            ("LOAD_FAST", 0, 1),
+            ("LOAD_FAST_BORROW", 0, 1),
             ("LOAD_FAST_BORROW", 1, 2),
             ("SEND", end := self.Label(), 3),
             ("LOAD_CONST", 0, 4),
