@@ -259,10 +259,10 @@ Reference
 Module functions
 ^^^^^^^^^^^^^^^^
 
-.. function:: connect(database, timeout=5.0, detect_types=0, \
+.. function:: connect(database, *, timeout=5.0, detect_types=0, \
                       isolation_level="DEFERRED", check_same_thread=True, \
                       factory=sqlite3.Connection, cached_statements=128, \
-                      uri=False, *, \
+                      uri=False, \
                       autocommit=sqlite3.LEGACY_TRANSACTION_CONTROL)
 
    Open a connection to an SQLite database.
@@ -355,11 +355,8 @@ Module functions
    .. versionchanged:: 3.12
       Added the *autocommit* parameter.
 
-   .. versionchanged:: 3.13
-      Positional use of the parameters *timeout*, *detect_types*,
-      *isolation_level*, *check_same_thread*, *factory*, *cached_statements*,
-      and *uri* is deprecated.
-      They will become keyword-only parameters in Python 3.15.
+   .. versionchanged:: 3.15
+      All parameters except *database* are now keyword-only.
 
 .. function:: complete_statement(statement)
 
@@ -693,7 +690,7 @@ Connection objects
       :meth:`~Cursor.executescript` on it with the given *sql_script*.
       Return the new cursor object.
 
-   .. method:: create_function(name, narg, func, *, deterministic=False)
+   .. method:: create_function(name, narg, func, /, *, deterministic=False)
 
       Create or remove a user-defined SQL function.
 
@@ -719,6 +716,9 @@ Connection objects
       .. versionchanged:: 3.8
          Added the *deterministic* parameter.
 
+      .. versionchanged:: 3.15
+         The first three parameters are now positional-only.
+
       Example:
 
       .. doctest::
@@ -733,13 +733,8 @@ Connection objects
          ('acbd18db4cc2f85cedef654fccc4a4d8',)
          >>> con.close()
 
-      .. versionchanged:: 3.13
 
-         Passing *name*, *narg*, and *func* as keyword arguments is deprecated.
-         These parameters will become positional-only in Python 3.15.
-
-
-   .. method:: create_aggregate(name, n_arg, aggregate_class)
+   .. method:: create_aggregate(name, n_arg, aggregate_class, /)
 
       Create or remove a user-defined SQL aggregate function.
 
@@ -762,6 +757,9 @@ Connection objects
 
           Set to ``None`` to remove an existing SQL aggregate function.
       :type aggregate_class: :term:`class` | None
+
+      .. versionchanged:: 3.15
+         All three parameters are now positional-only.
 
       Example:
 
@@ -791,11 +789,6 @@ Connection objects
          :hide:
 
          3
-
-      .. versionchanged:: 3.13
-
-         Passing *name*, *n_arg*, and *aggregate_class* as keyword arguments is deprecated.
-         These parameters will become positional-only in Python 3.15.
 
 
    .. method:: create_window_function(name, num_params, aggregate_class, /)
@@ -937,7 +930,7 @@ Connection objects
       Aborted queries will raise an :exc:`OperationalError`.
 
 
-   .. method:: set_authorizer(authorizer_callback)
+   .. method:: set_authorizer(authorizer_callback, /)
 
       Register :term:`callable` *authorizer_callback* to be invoked
       for each attempt to access a column of a table in the database.
@@ -962,12 +955,11 @@ Connection objects
       .. versionchanged:: 3.11
          Added support for disabling the authorizer using ``None``.
 
-      .. versionchanged:: 3.13
-         Passing *authorizer_callback* as a keyword argument is deprecated.
-         The parameter will become positional-only in Python 3.15.
+      .. versionchanged:: 3.15
+         The only parameter is now positional-only.
 
 
-   .. method:: set_progress_handler(progress_handler, n)
+   .. method:: set_progress_handler(progress_handler, /, n)
 
       Register :term:`callable` *progress_handler* to be invoked for every *n*
       instructions of the SQLite virtual machine. This is useful if you want to
@@ -981,12 +973,11 @@ Connection objects
       currently executing query and cause it to raise a :exc:`DatabaseError`
       exception.
 
-      .. versionchanged:: 3.13
-         Passing *progress_handler* as a keyword argument is deprecated.
-         The parameter will become positional-only in Python 3.15.
+      .. versionchanged:: 3.15
+         The first parameter is now positional-only.
 
 
-   .. method:: set_trace_callback(trace_callback)
+   .. method:: set_trace_callback(trace_callback, /)
 
       Register :term:`callable` *trace_callback* to be invoked
       for each SQL statement that is actually executed by the SQLite backend.
@@ -1009,9 +1000,8 @@ Connection objects
 
       .. versionadded:: 3.3
 
-      .. versionchanged:: 3.13
-         Passing *trace_callback* as a keyword argument is deprecated.
-         The parameter will become positional-only in Python 3.15.
+      .. versionchanged:: 3.15
+         The first parameter is now positional-only.
 
 
    .. method:: enable_load_extension(enabled, /)
