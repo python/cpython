@@ -703,10 +703,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         ('Py_FileSystemDefaultEncoding', 'filesystem_encoding'),
         ('Py_InteractiveFlag', 'interactive'),
     ]
-    if MS_WINDOWS:
-        COPY_GLOBAL_CONFIG.extend((
-            ('Py_LegacyWindowsStdioFlag', 'legacy_windows_stdio'),
-        ))
 
     EXPECTED_CONFIG = None
 

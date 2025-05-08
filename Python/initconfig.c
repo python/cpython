@@ -463,9 +463,6 @@ static const char usage_envvars[] =
    stdin and stdout error handler to "surrogateescape". */
 int Py_UTF8Mode = 0;
 int Py_InteractiveFlag = 0; /* Previously, was used by Py_FdIsInteractive() */
-#ifdef MS_WINDOWS
-int Py_LegacyWindowsStdioFlag = 0; /* Uses FileIO instead of WindowsConsoleIO */
-#endif
 
 
 static PyObject *
@@ -508,10 +505,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 
     SET_ITEM_INT(Py_UTF8Mode);
     SET_ITEM_INT(Py_InteractiveFlag);
-
-#ifdef MS_WINDOWS
-    SET_ITEM_INT(Py_LegacyWindowsStdioFlag);
-#endif
 
     return dict;
 
@@ -1013,7 +1006,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->pathconfig_warnings = 1;
     config->_init_main = 1;
 #ifdef MS_WINDOWS
-    config->legacy_windows_stdio = -1;
+    config->legacy_windows_stdio = 0;
 #endif
 #ifdef Py_DEBUG
     config->use_frozen_modules = 0;
@@ -1651,9 +1644,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
         }
 
     COPY_FLAG(interactive, Py_InteractiveFlag);
-#ifdef MS_WINDOWS
-    COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
-#endif
 
 #undef COPY_FLAG
 #undef COPY_NOT_FLAG
@@ -1677,9 +1667,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
         }
 
     COPY_FLAG(interactive, Py_InteractiveFlag);
-#ifdef MS_WINDOWS
-    COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
-#endif
 
 #undef COPY_FLAG
 #undef COPY_NOT_FLAG

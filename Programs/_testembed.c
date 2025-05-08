@@ -583,8 +583,6 @@ static int test_init_global_config(void)
 
     putenv("PYTHONUNBUFFERED=");
 
-    /* FIXME: test Py_LegacyWindowsStdioFlag */
-
     Py_Initialize();
     dump_config();
     Py_Finalize();
@@ -1019,9 +1017,6 @@ static int test_preinit_parse_argv(void)
 static void set_all_global_config_variables(void)
 {
     Py_InteractiveFlag = 1;
-#ifdef MS_WINDOWS
-    Py_LegacyWindowsStdioFlag = 1;
-#endif
 }
 
 
@@ -1082,9 +1077,6 @@ static int check_init_python_config(int preinit)
 {
     /* global configuration variables must be ignored */
     set_all_global_config_variables();
-#ifdef MS_WINDOWS
-    Py_LegacyWindowsStdioFlag = 1;
-#endif
 
     if (preinit) {
         PyPreConfig preconfig;

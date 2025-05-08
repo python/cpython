@@ -109,25 +109,6 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    .. deprecated:: 3.12
 
 
-.. c:var:: int Py_LegacyWindowsStdioFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.legacy_windows_stdio` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   If the flag is non-zero, use :class:`io.FileIO` instead of
-   :class:`!io._WindowsConsoleIO` for :mod:`sys` standard streams.
-
-   Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSSTDIO` environment
-   variable is set to a non-empty string.
-
-   See :pep:`528` for more details.
-
-   .. availability:: Windows.
-
-   .. deprecated-removed:: 3.12 3.15
-
-
 Initializing and finalizing the interpreter
 ===========================================
 

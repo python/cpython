@@ -7,10 +7,6 @@ extern "C" {
 
 Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_InteractiveFlag;
 
-#ifdef MS_WINDOWS
-Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_LegacyWindowsStdioFlag;
-#endif
-
 /* this is a wrapper around getenv() that pays attention to
    PyConfig.use_environment.  It should be used for getting variables like
    PYTHONPATH and PYTHONHOME from the environment */
