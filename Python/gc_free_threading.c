@@ -1927,8 +1927,7 @@ get_process_mem_usage(void)
     }
 
 #elif __linux__
-    // Linux, use smaps_rollup (Kernel >= 4.4) for RSS + Swap
-    FILE* fp = fopen("/proc/self/smaps_rollup", "r");
+    FILE* fp = fopen("/proc/self/status", "r");
     if (fp == NULL) {
         return -1;
     }
@@ -1938,11 +1937,11 @@ get_process_mem_usage(void)
     long long swap_kb = -1;
 
     while (fgets(line_buffer, sizeof(line_buffer), fp) != NULL) {
-        if (rss_kb == -1 && strncmp(line_buffer, "Rss:", 4) == 0) {
-            sscanf(line_buffer + 4, "%lld", &rss_kb);
+        if (rss_kb == -1 && strncmp(line_buffer, "VmRSS:", 6) == 0) {
+            sscanf(line_buffer + 6, "%lld", &rss_kb);
         }
-        else if (swap_kb == -1 && strncmp(line_buffer, "Swap:", 5) == 0) {
-            sscanf(line_buffer + 5, "%lld", &swap_kb);
+        else if (swap_kb == -1 && strncmp(line_buffer, "VmSwap:", 7) == 0) {
+            sscanf(line_buffer + 7, "%lld", &swap_kb);
         }
         if (rss_kb != -1 && swap_kb != -1) {
             break; // Found both

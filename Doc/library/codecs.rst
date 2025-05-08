@@ -208,7 +208,7 @@ wider range of codecs when working with binary files:
    .. versionchanged:: 3.11
       The ``'U'`` mode has been removed.
 
-   .. deprecated:: next
+   .. deprecated:: 3.14
 
       :func:`codecs.open` has been superseded by :func:`open`.
 

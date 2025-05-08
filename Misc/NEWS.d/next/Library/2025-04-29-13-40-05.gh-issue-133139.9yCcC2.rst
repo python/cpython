@@ -1,3 +1,0 @@
-Add the :func:`curses.assume_default_colors` function, a refinement of the
-:func:`curses.use_default_colors` function which allows to change the color
-pair ``0``.

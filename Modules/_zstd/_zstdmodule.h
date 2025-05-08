@@ -172,19 +172,6 @@ set_parameter_error(const _zstd_state* const state, int is_compress,
 
 static const char init_twice_msg[] = "__init__ method is called twice.";
 
-extern int
-_PyZstd_load_c_dict(ZstdCompressor *self, PyObject *dict);
-
-extern int
-_PyZstd_load_d_dict(ZstdDecompressor *self, PyObject *dict);
-
-extern int
-_PyZstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
-                         const char *arg_name, const char *arg_type);
-
-extern int
-_PyZstd_set_d_parameters(ZstdDecompressor *self, PyObject *options);
-
 extern PyObject *
 decompress_impl(ZstdDecompressor *self, ZSTD_inBuffer *in,
                 Py_ssize_t max_length,
