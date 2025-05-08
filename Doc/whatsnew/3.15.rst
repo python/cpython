@@ -155,3 +155,28 @@ Deprecated C APIs
 Removed C APIs
 --------------
 
+* Global configuration variables:
+
+    * :c:var:`!Py_BytesWarningFlag`
+    * :c:var:`!Py_DebugFlag`
+    * :c:var:`!Py_DontWriteBytecodeFlag`
+    * :c:var:`!Py_FileSystemDefaultEncodeErrors`
+    * :c:var:`!Py_FileSystemDefaultEncoding`
+    * :c:var:`!Py_FrozenFlag`
+    * :c:var:`!Py_HashRandomizationFlag`
+    * :c:var:`!Py_HasFileSystemDefaultEncoding`
+    * :c:var:`!Py_IgnoreEnvironmentFlag`
+    * :c:var:`!Py_InspectFlag`
+    * :c:var:`!Py_IsolatedFlag`
+    * :c:var:`!Py_NoSiteFlag`
+    * :c:var:`!Py_NoUserSiteDirectory`
+    * :c:var:`!Py_OptimizeFlag`
+    * :c:var:`!Py_QuietFlag`
+    * :c:var:`!Py_UnbufferedStdioFlag`
+    * :c:var:`!Py_VerboseFlag`
+
+* Windows-only global configuration variables:
+
+    * :c:var:`!Py_LegacyWindowsFSEncodingFlag`
+    * :c:var:`!Py_LegacyWindowsStdioFlag`
+
