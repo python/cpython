@@ -18,9 +18,10 @@ extern "C" {
 #define _Py_ONCE_INITIALIZED 4
 
 static inline int
-PyMutex_LockFast(uint8_t *lock_bits)
+PyMutex_LockFast(PyMutex *m)
 {
     uint8_t expected = _Py_UNLOCKED;
+    uint8_t *lock_bits = &m->_bits;
     return _Py_atomic_compare_exchange_uint8(lock_bits, &expected, _Py_LOCKED);
 }
 
@@ -51,7 +52,7 @@ typedef enum _PyLockFlags {
 
 // Lock a mutex with an optional timeout and additional options. See
 // _PyLockFlags for details.
-extern PyLockStatus
+extern PyAPI_FUNC(PyLockStatus)
 _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout_ns, _PyLockFlags flags);
 
 // Lock a mutex with additional options. See _PyLockFlags for details.

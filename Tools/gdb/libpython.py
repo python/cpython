@@ -77,6 +77,14 @@ def _managed_dict_offset():
     else:
         return -3 * _sizeof_void_p()
 
+_INTERP_FRAME_HAS_TLBC_INDEX = None
+def interp_frame_has_tlbc_index():
+    global _INTERP_FRAME_HAS_TLBC_INDEX
+    if _INTERP_FRAME_HAS_TLBC_INDEX is None:
+        interp_frame = gdb.lookup_type("_PyInterpreterFrame")
+        _INTERP_FRAME_HAS_TLBC_INDEX = any(field.name == "tlbc_index"
+                                           for field in interp_frame.fields())
+    return _INTERP_FRAME_HAS_TLBC_INDEX
 
 Py_TPFLAGS_INLINE_VALUES     = (1 << 2)
 Py_TPFLAGS_MANAGED_DICT      = (1 << 4)
@@ -91,7 +99,7 @@ Py_TPFLAGS_BASE_EXC_SUBCLASS = (1 << 30)
 Py_TPFLAGS_TYPE_SUBCLASS     = (1 << 31)
 
 #From pycore_frame.h
-FRAME_OWNED_BY_CSTACK = 3
+FRAME_OWNED_BY_INTERPRETER = 3
 
 MAX_OUTPUT_LEN=1024
 
@@ -104,6 +112,7 @@ ENCODING = locale.getpreferredencoding()
 FRAME_INFO_OPTIMIZED_OUT = '(frame information optimized out)'
 UNABLE_READ_INFO_PYTHON_FRAME = 'Unable to read information on python frame'
 EVALFRAME = '_PyEval_EvalFrameDefault'
+
 
 class NullPyObjectPtr(RuntimeError):
     pass
@@ -693,6 +702,16 @@ def parse_location_table(firstlineno, linetable):
         yield addr, end_addr, line
         addr = end_addr
 
+
+class PyCodeArrayPtr:
+    def __init__(self, gdbval):
+        self._gdbval = gdbval
+
+    def get_entry(self, index):
+        assert (index >= 0) and (index < self._gdbval["size"])
+        return self._gdbval["entries"][index]
+
+
 class PyCodeObjectPtr(PyObjectPtr):
     """
     Class wrapping a gdb.Value that's a PyCodeObject* i.e. a <code> instance
@@ -871,7 +890,7 @@ class PyLongObjectPtr(PyObjectPtr):
 
     def proxyval(self, visited):
         '''
-        Python's Include/longinterpr.h has this declaration:
+        Python's Include/cpython/longinterpr.h has this declaration:
 
             typedef struct _PyLongValue {
                 uintptr_t lv_tag; /* Number of digits, sign and flags */
@@ -890,8 +909,7 @@ class PyLongObjectPtr(PyObjectPtr):
                 - 0: Positive
                 - 1: Zero
                 - 2: Negative
-            The third lowest bit of lv_tag is reserved for an immortality flag, but is
-            not currently used.
+            The third lowest bit of lv_tag is set to 1 for the small ints and 0 otherwise.
 
         where SHIFT can be either:
             #define PyLong_SHIFT        30
@@ -1085,11 +1103,16 @@ class PyFramePtr:
     def _f_lasti(self):
         codeunit_p = gdb.lookup_type("_Py_CODEUNIT").pointer()
         instr_ptr = self._gdbval["instr_ptr"]
-        first_instr = self._f_code().field("co_code_adaptive").cast(codeunit_p)
+        if interp_frame_has_tlbc_index():
+            tlbc_index = self._gdbval["tlbc_index"]
+            code_arr = PyCodeArrayPtr(self._f_code().field("co_tlbc"))
+            first_instr = code_arr.get_entry(tlbc_index).cast(codeunit_p)
+        else:
+            first_instr = self._f_code().field("co_code_adaptive").cast(codeunit_p)
         return int(instr_ptr - first_instr)
 
     def is_shim(self):
-        return self._f_special("owner", int) == FRAME_OWNED_BY_CSTACK
+        return self._f_special("owner", int) == FRAME_OWNED_BY_INTERPRETER
 
     def previous(self):
         return self._f_special("previous", PyFramePtr)

@@ -25,7 +25,7 @@ MOCK_ANY = mock.ANY
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 def mock_socket_module():
@@ -233,20 +233,25 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.assertIsNone(self.loop._default_executor)
 
     def test_shutdown_default_executor_timeout(self):
+        event = threading.Event()
+
         class DummyExecutor(concurrent.futures.ThreadPoolExecutor):
             def shutdown(self, wait=True, *, cancel_futures=False):
                 if wait:
-                    time.sleep(0.1)
+                    event.wait()
 
         self.loop._process_events = mock.Mock()
         self.loop._write_to_self = mock.Mock()
         executor = DummyExecutor()
         self.loop.set_default_executor(executor)
 
-        with self.assertWarnsRegex(RuntimeWarning,
-                                   "The executor did not finishing joining"):
-            self.loop.run_until_complete(
-                self.loop.shutdown_default_executor(timeout=0.01))
+        try:
+            with self.assertWarnsRegex(RuntimeWarning,
+                                       "The executor did not finishing joining"):
+                self.loop.run_until_complete(
+                    self.loop.shutdown_default_executor(timeout=0.01))
+        finally:
+            event.set()
 
     def test_call_soon(self):
         def cb():
@@ -833,8 +838,8 @@ class BaseEventLoopTests(test_utils.TestCase):
             loop.close()
 
     def test_create_named_task_with_custom_factory(self):
-        def task_factory(loop, coro):
-            return asyncio.Task(coro, loop=loop)
+        def task_factory(loop, coro, **kwargs):
+            return asyncio.Task(coro, loop=loop, **kwargs)
 
         async def test():
             pass
@@ -1345,7 +1350,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         with self.assertRaises(OSError) as cm:
             self.loop.run_until_complete(coro)
 
-        self.assertTrue(str(cm.exception).startswith('Multiple exceptions: '))
+        self.assertStartsWith(str(cm.exception), 'Multiple exceptions: ')
         self.assertTrue(m_socket.socket.return_value.close.called)
 
         coro = self.loop.create_connection(

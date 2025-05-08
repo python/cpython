@@ -1,4 +1,4 @@
-This is Python version 3.14.0 alpha 1
+This is Python version 3.15.0 alpha 0
 =====================================
 
 .. image:: https://github.com/python/cpython/actions/workflows/build.yml/badge.svg?branch=main&event=push
@@ -14,7 +14,7 @@ This is Python version 3.14.0 alpha 1
    :target: https://discuss.python.org/
 
 
-Copyright © 2001-2024 Python Software Foundation.  All rights reserved.
+Copyright © 2001 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -64,7 +64,7 @@ the executable is called ``python.exe``; elsewhere it's just ``python``.
 Building a complete Python installation requires the use of various
 additional third-party libraries, depending on your build platform and
 configure options.  Not all standard library modules are buildable or
-useable on all platforms.  Refer to the
+usable on all platforms.  Refer to the
 `Install dependencies <https://devguide.python.org/getting-started/setup-building.html#build-dependencies>`_
 section of the `Developer Guide`_ for current detailed information on
 dependencies for various Linux distributions and macOS.
@@ -215,7 +215,7 @@ Copyright and License Information
 ---------------------------------
 
 
-Copyright © 2001-2024 Python Software Foundation.  All rights reserved.
+Copyright © 2001 Python Software Foundation.  All rights reserved.
 
 Copyright © 2000 BeOpen.com.  All rights reserved.
 

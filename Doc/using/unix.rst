@@ -17,12 +17,12 @@ On Linux
 
 Python comes preinstalled on most Linux distributions, and is available as a
 package on all others.  However there are certain features you might want to use
-that are not available on your distro's package.  You can easily compile the
+that are not available on your distro's package.  You can compile the
 latest version of Python from source.
 
-In the event that Python doesn't come preinstalled and isn't in the repositories as
-well, you can easily make packages for your own distro.  Have a look at the
-following links:
+In the event that the latest version of Python doesn't come preinstalled and isn't
+in the repositories as well, you can make packages for your own distro.  Have a
+look at the following links:
 
 .. seealso::
 
@@ -34,6 +34,31 @@ following links:
       for Fedora users
    https://slackbook.org/html/package-management-making-packages.html
       for Slackware users
+
+.. _installing_idle_on_linux:
+
+Installing IDLE
+~~~~~~~~~~~~~~~
+
+In some cases, IDLE might not be included in your Python installation.
+
+* For Debian and Ubuntu users::
+
+   sudo apt update
+   sudo apt install idle
+
+* For Fedora, RHEL, and CentOS users::
+
+   sudo dnf install python3-idle
+
+* For SUSE and OpenSUSE users::
+
+   sudo zypper install python3-idle
+
+* For Alpine Linux users::
+
+   sudo apk add python3-idle
+
 
 
 On FreeBSD and OpenBSD

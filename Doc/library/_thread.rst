@@ -187,6 +187,9 @@ Lock objects have the following methods:
    .. versionchanged:: 3.2
       Lock acquires can now be interrupted by signals on POSIX.
 
+   .. versionchanged:: 3.14
+      Lock acquires can now be interrupted by signals on Windows.
+
 
 .. method:: lock.release()
 
@@ -218,12 +221,6 @@ In addition to these methods, lock objects can also be used via the
 
 * Calling :func:`sys.exit` or raising the :exc:`SystemExit` exception is
   equivalent to calling :func:`_thread.exit`.
-
-* It is platform-dependent whether the :meth:`~threading.Lock.acquire` method
-  on a lock can be interrupted (so that the :exc:`KeyboardInterrupt` exception
-  will happen immediately, rather than only after the lock has been acquired or
-  the operation has timed out). It can be interrupted on POSIX, but not on
-  Windows.
 
 * When the main thread exits, it is system defined whether the other threads
   survive.  On most systems, they are killed without executing

@@ -30,15 +30,6 @@ class SHA1Type "SHA1object *" "&PyType_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=3dc9a20d1becb759]*/
 
-/* Some useful types */
-
-#if SIZEOF_INT == 4
-typedef unsigned int SHA1_INT32;        /* 32-bit integer */
-typedef long long SHA1_INT64;        /* 64-bit integer */
-#else
-/* not defined. compilation will die. */
-#endif
-
 /* The SHA1 block size and message digest sizes, in bytes */
 
 #define SHA1_BLOCKSIZE    64
@@ -54,6 +45,8 @@ typedef struct {
     PyThread_type_lock lock;
     Hacl_Hash_SHA1_state_t *hash_state;
 } SHA1object;
+
+#define _SHA1object_CAST(op)    ((SHA1object *)(op))
 
 #include "clinic/sha1module.c.h"
 
@@ -73,7 +66,7 @@ sha1_get_state(PyObject *module)
 static SHA1object *
 newSHA1object(SHA1State *st)
 {
-    SHA1object *sha = (SHA1object *)PyObject_GC_New(SHA1object, st->sha1_type);
+    SHA1object *sha = PyObject_GC_New(SHA1object, st->sha1_type);
     if (sha == NULL) {
         return NULL;
     }
@@ -93,9 +86,13 @@ SHA1_traverse(PyObject *ptr, visitproc visit, void *arg)
 }
 
 static void
-SHA1_dealloc(SHA1object *ptr)
+SHA1_dealloc(PyObject *op)
 {
-    Hacl_Hash_SHA1_free(ptr->hash_state);
+    SHA1object *ptr = _SHA1object_CAST(op);
+    if (ptr->hash_state != NULL) {
+        Hacl_Hash_SHA1_free(ptr->hash_state);
+        ptr->hash_state = NULL;
+    }
     PyTypeObject *tp = Py_TYPE(ptr);
     PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
@@ -120,12 +117,17 @@ SHA1Type_copy_impl(SHA1object *self, PyTypeObject *cls)
     SHA1State *st = _PyType_GetModuleState(cls);
 
     SHA1object *newobj;
-    if ((newobj = newSHA1object(st)) == NULL)
+    if ((newobj = newSHA1object(st)) == NULL) {
         return NULL;
+    }
 
     ENTER_HASHLIB(self);
     newobj->hash_state = Hacl_Hash_SHA1_copy(self->hash_state);
     LEAVE_HASHLIB(self);
+    if (newobj->hash_state == NULL) {
+        Py_DECREF(newobj);
+        return PyErr_NoMemory();
+    }
     return (PyObject *)newobj;
 }
 
@@ -163,15 +165,23 @@ SHA1Type_hexdigest_impl(SHA1object *self)
     return _Py_strhex((const char *)digest, SHA1_DIGESTSIZE);
 }
 
-static void update(Hacl_Hash_SHA1_state_t *state, uint8_t *buf, Py_ssize_t len) {
+static void
+update(Hacl_Hash_SHA1_state_t *state, uint8_t *buf, Py_ssize_t len)
+{
+    /*
+     * Note: we explicitly ignore the error code on the basis that it would
+     * take more than 1 billion years to overflow the maximum admissible length
+     * for SHA-1 (2^61 - 1).
+     */
 #if PY_SSIZE_T_MAX > UINT32_MAX
-  while (len > UINT32_MAX) {
-    Hacl_Hash_SHA1_update(state, buf, UINT32_MAX);
-    len -= UINT32_MAX;
-    buf += UINT32_MAX;
-  }
+    while (len > UINT32_MAX) {
+        (void)Hacl_Hash_SHA1_update(state, buf, UINT32_MAX);
+        len -= UINT32_MAX;
+        buf += UINT32_MAX;
+    }
 #endif
-  Hacl_Hash_SHA1_update(state, buf, (uint32_t) len);
+    /* cast to uint32_t is now safe */
+    (void)Hacl_Hash_SHA1_update(state, buf, (uint32_t)len);
 }
 
 /*[clinic input]
@@ -184,8 +194,8 @@ Update this hash object's state with the provided string.
 [clinic start generated code]*/
 
 static PyObject *
-SHA1Type_update(SHA1object *self, PyObject *obj)
-/*[clinic end generated code: output=d9902f0e5015e9ae input=aad8e07812edbba3]*/
+SHA1Type_update_impl(SHA1object *self, PyObject *obj)
+/*[clinic end generated code: output=cdc8e0e106dbec5f input=aad8e07812edbba3]*/
 {
     Py_buffer buf;
 
@@ -217,36 +227,27 @@ static PyMethodDef SHA1_methods[] = {
 };
 
 static PyObject *
-SHA1_get_block_size(PyObject *self, void *closure)
+SHA1_get_block_size(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyLong_FromLong(SHA1_BLOCKSIZE);
 }
 
 static PyObject *
-SHA1_get_name(PyObject *self, void *closure)
+SHA1_get_name(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyUnicode_FromStringAndSize("sha1", 4);
 }
 
 static PyObject *
-sha1_get_digest_size(PyObject *self, void *closure)
+sha1_get_digest_size(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyLong_FromLong(SHA1_DIGESTSIZE);
 }
 
 static PyGetSetDef SHA1_getseters[] = {
-    {"block_size",
-     (getter)SHA1_get_block_size, NULL,
-     NULL,
-     NULL},
-    {"name",
-     (getter)SHA1_get_name, NULL,
-     NULL,
-     NULL},
-    {"digest_size",
-     (getter)sha1_get_digest_size, NULL,
-     NULL,
-     NULL},
+    {"block_size", SHA1_get_block_size, NULL, NULL, NULL},
+    {"name", SHA1_get_name, NULL, NULL, NULL},
+    {"digest_size", sha1_get_digest_size, NULL, NULL, NULL},
     {NULL}  /* Sentinel */
 };
 
@@ -285,23 +286,26 @@ _sha1_sha1_impl(PyObject *module, PyObject *string, int usedforsecurity)
     SHA1object *new;
     Py_buffer buf;
 
-    if (string)
+    if (string) {
         GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
+    }
 
     SHA1State *st = sha1_get_state(module);
     if ((new = newSHA1object(st)) == NULL) {
-        if (string)
+        if (string) {
             PyBuffer_Release(&buf);
+        }
         return NULL;
     }
 
     new->hash_state = Hacl_Hash_SHA1_malloc();
 
-    if (PyErr_Occurred()) {
+    if (new->hash_state == NULL) {
         Py_DECREF(new);
-        if (string)
+        if (string) {
             PyBuffer_Release(&buf);
-        return NULL;
+        }
+        return PyErr_NoMemory();
     }
     if (string) {
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
@@ -310,7 +314,8 @@ _sha1_sha1_impl(PyObject *module, PyObject *string, int usedforsecurity)
             Py_BEGIN_ALLOW_THREADS
             update(new->hash_state, buf.buf, buf.len);
             Py_END_ALLOW_THREADS
-        } else {
+        }
+        else {
             update(new->hash_state, buf.buf, buf.len);
         }
         PyBuffer_Release(&buf);
@@ -346,7 +351,7 @@ _sha1_clear(PyObject *module)
 static void
 _sha1_free(void *module)
 {
-    _sha1_clear((PyObject *)module);
+    (void)_sha1_clear((PyObject *)module);
 }
 
 static int
@@ -357,8 +362,15 @@ _sha1_exec(PyObject *module)
     st->sha1_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         module, &sha1_type_spec, NULL);
     if (PyModule_AddObjectRef(module,
-                           "SHA1Type",
-                           (PyObject *)st->sha1_type) < 0) {
+                              "SHA1Type",
+                              (PyObject *)st->sha1_type) < 0)
+    {
+        return -1;
+    }
+    if (PyModule_AddIntConstant(module,
+                                "_GIL_MINSIZE",
+                                HASHLIB_GIL_MINSIZE) < 0)
+    {
         return -1;
     }
 
@@ -376,14 +388,14 @@ static PyModuleDef_Slot _sha1_slots[] = {
 };
 
 static struct PyModuleDef _sha1module = {
-        PyModuleDef_HEAD_INIT,
-        .m_name = "_sha1",
-        .m_size = sizeof(SHA1State),
-        .m_methods = SHA1_functions,
-        .m_slots = _sha1_slots,
-        .m_traverse = _sha1_traverse,
-        .m_clear = _sha1_clear,
-        .m_free = _sha1_free
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_sha1",
+    .m_size = sizeof(SHA1State),
+    .m_methods = SHA1_functions,
+    .m_slots = _sha1_slots,
+    .m_traverse = _sha1_traverse,
+    .m_clear = _sha1_clear,
+    .m_free = _sha1_free
 };
 
 PyMODINIT_FUNC

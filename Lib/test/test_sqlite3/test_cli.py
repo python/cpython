@@ -4,7 +4,12 @@ import unittest
 
 from sqlite3.__main__ import main as cli
 from test.support.os_helper import TESTFN, unlink
-from test.support import captured_stdout, captured_stderr, captured_stdin
+from test.support import (
+    captured_stdout,
+    captured_stderr,
+    captured_stdin,
+    force_not_colorized,
+)
 
 
 class CommandLineInterface(unittest.TestCase):
@@ -32,6 +37,7 @@ class CommandLineInterface(unittest.TestCase):
         self.assertEqual(out, "")
         return err
 
+    @force_not_colorized
     def test_cli_help(self):
         out = self.expect_success("-h")
         self.assertIn("usage: ", out)
@@ -90,14 +96,14 @@ class InteractiveSession(unittest.TestCase):
         out, err = self.run_cli()
         self.assertIn(self.MEMORY_DB_MSG, err)
         self.assertIn(self.MEMORY_DB_MSG, err)
-        self.assertTrue(out.endswith(self.PS1))
+        self.assertEndsWith(out, self.PS1)
         self.assertEqual(out.count(self.PS1), 1)
         self.assertEqual(out.count(self.PS2), 0)
 
     def test_interact_quit(self):
         out, err = self.run_cli(commands=(".quit",))
         self.assertIn(self.MEMORY_DB_MSG, err)
-        self.assertTrue(out.endswith(self.PS1))
+        self.assertEndsWith(out, self.PS1)
         self.assertEqual(out.count(self.PS1), 1)
         self.assertEqual(out.count(self.PS2), 0)
 
@@ -105,7 +111,7 @@ class InteractiveSession(unittest.TestCase):
         out, err = self.run_cli(commands=(".version",))
         self.assertIn(self.MEMORY_DB_MSG, err)
         self.assertIn(sqlite3.sqlite_version + "\n", out)
-        self.assertTrue(out.endswith(self.PS1))
+        self.assertEndsWith(out, self.PS1)
         self.assertEqual(out.count(self.PS1), 2)
         self.assertEqual(out.count(self.PS2), 0)
         self.assertIn(sqlite3.sqlite_version, out)
@@ -114,14 +120,14 @@ class InteractiveSession(unittest.TestCase):
         out, err = self.run_cli(commands=("SELECT 1;",))
         self.assertIn(self.MEMORY_DB_MSG, err)
         self.assertIn("(1,)\n", out)
-        self.assertTrue(out.endswith(self.PS1))
+        self.assertEndsWith(out, self.PS1)
         self.assertEqual(out.count(self.PS1), 2)
         self.assertEqual(out.count(self.PS2), 0)
 
     def test_interact_incomplete_multiline_sql(self):
         out, err = self.run_cli(commands=("SELECT 1",))
         self.assertIn(self.MEMORY_DB_MSG, err)
-        self.assertTrue(out.endswith(self.PS2))
+        self.assertEndsWith(out, self.PS2)
         self.assertEqual(out.count(self.PS1), 1)
         self.assertEqual(out.count(self.PS2), 1)
 
@@ -130,7 +136,7 @@ class InteractiveSession(unittest.TestCase):
         self.assertIn(self.MEMORY_DB_MSG, err)
         self.assertIn(self.PS2, out)
         self.assertIn("(1,)\n", out)
-        self.assertTrue(out.endswith(self.PS1))
+        self.assertEndsWith(out, self.PS1)
         self.assertEqual(out.count(self.PS1), 2)
         self.assertEqual(out.count(self.PS2), 1)
 
@@ -138,7 +144,7 @@ class InteractiveSession(unittest.TestCase):
         out, err = self.run_cli(commands=("sel;",))
         self.assertIn(self.MEMORY_DB_MSG, err)
         self.assertIn("OperationalError (SQLITE_ERROR)", err)
-        self.assertTrue(out.endswith(self.PS1))
+        self.assertEndsWith(out, self.PS1)
         self.assertEqual(out.count(self.PS1), 2)
         self.assertEqual(out.count(self.PS2), 0)
 
@@ -147,7 +153,7 @@ class InteractiveSession(unittest.TestCase):
 
         out, err = self.run_cli(TESTFN, commands=("CREATE TABLE t(t);",))
         self.assertIn(TESTFN, err)
-        self.assertTrue(out.endswith(self.PS1))
+        self.assertEndsWith(out, self.PS1)
 
         out, _ = self.run_cli(TESTFN, commands=("SELECT count(t) FROM t;",))
         self.assertIn("(0,)\n", out)

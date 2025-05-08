@@ -1,8 +1,6 @@
 import contextlib
-import itertools
 import os
 import pickle
-import sys
 from textwrap import dedent
 import threading
 import unittest
@@ -14,7 +12,6 @@ from test.support import script_helper
 
 
 _interpreters = import_helper.import_module('_interpreters')
-_testinternalcapi = import_helper.import_module('_testinternalcapi')
 from _interpreters import InterpreterNotFoundError
 
 
@@ -142,88 +139,6 @@ class IsShareableTests(unittest.TestCase):
             with self.subTest(repr(obj)):
                 self.assertFalse(
                     _interpreters.is_shareable(obj))
-
-
-class ShareableTypeTests(unittest.TestCase):
-
-    def _assert_values(self, values):
-        for obj in values:
-            with self.subTest(obj):
-                xid = _testinternalcapi.get_crossinterp_data(obj)
-                got = _testinternalcapi.restore_crossinterp_data(xid)
-
-                self.assertEqual(got, obj)
-                self.assertIs(type(got), type(obj))
-
-    def test_singletons(self):
-        for obj in [None]:
-            with self.subTest(obj):
-                xid = _testinternalcapi.get_crossinterp_data(obj)
-                got = _testinternalcapi.restore_crossinterp_data(xid)
-
-                # XXX What about between interpreters?
-                self.assertIs(got, obj)
-
-    def test_types(self):
-        self._assert_values([
-            b'spam',
-            9999,
-            ])
-
-    def test_bytes(self):
-        self._assert_values(i.to_bytes(2, 'little', signed=True)
-                            for i in range(-1, 258))
-
-    def test_strs(self):
-        self._assert_values(['hello world', '你好世界', ''])
-
-    def test_int(self):
-        self._assert_values(itertools.chain(range(-1, 258),
-                                            [sys.maxsize, -sys.maxsize - 1]))
-
-    def test_non_shareable_int(self):
-        ints = [
-            sys.maxsize + 1,
-            -sys.maxsize - 2,
-            2**1000,
-        ]
-        for i in ints:
-            with self.subTest(i):
-                with self.assertRaises(OverflowError):
-                    _testinternalcapi.get_crossinterp_data(i)
-
-    def test_bool(self):
-        self._assert_values([True, False])
-
-    def test_float(self):
-        self._assert_values([0.0, 1.1, -1.0, 0.12345678, -0.12345678])
-
-    def test_tuple(self):
-        self._assert_values([(), (1,), ("hello", "world", ), (1, True, "hello")])
-        # Test nesting
-        self._assert_values([
-            ((1,),),
-            ((1, 2), (3, 4)),
-            ((1, 2), (3, 4), (5, 6)),
-        ])
-
-    def test_tuples_containing_non_shareable_types(self):
-        non_shareables = [
-                Exception(),
-                object(),
-        ]
-        for s in non_shareables:
-            value = tuple([0, 1.0, s])
-            with self.subTest(repr(value)):
-                # XXX Assert the NotShareableError when it is exported
-                with self.assertRaises(ValueError):
-                    _testinternalcapi.get_crossinterp_data(value)
-            # Check nested as well
-            value = tuple([0, 1., (s,)])
-            with self.subTest("nested " + repr(value)):
-                # XXX Assert the NotShareableError when it is exported
-                with self.assertRaises(ValueError):
-                    _testinternalcapi.get_crossinterp_data(value)
 
 
 class ModuleTests(TestBase):
@@ -365,6 +280,7 @@ class CreateTests(TestBase):
 
         self.assertEqual(len(seen), 100)
 
+    @support.skip_if_sanitizer('gh-129824: race on tp_flags', thread=True)
     def test_in_thread(self):
         lock = threading.Lock()
         id = None
@@ -551,6 +467,35 @@ class DestroyTests(TestBase):
             self.assertTrue(_interpreters.is_running(interp))
 
 
+class CommonTests(TestBase):
+    def setUp(self):
+        super().setUp()
+        self.id = _interpreters.create()
+
+    def test_signatures(self):
+        # See https://github.com/python/cpython/issues/126654
+        msg = "expected 'shared' to be a dict"
+        with self.assertRaisesRegex(TypeError, msg):
+            _interpreters.exec(self.id, 'a', 1)
+        with self.assertRaisesRegex(TypeError, msg):
+            _interpreters.exec(self.id, 'a', shared=1)
+        with self.assertRaisesRegex(TypeError, msg):
+            _interpreters.run_string(self.id, 'a', shared=1)
+        with self.assertRaisesRegex(TypeError, msg):
+            _interpreters.run_func(self.id, lambda: None, shared=1)
+
+    def test_invalid_shared_encoding(self):
+        # See https://github.com/python/cpython/issues/127196
+        bad_shared = {"\uD82A": 0}
+        msg = 'surrogates not allowed'
+        with self.assertRaisesRegex(UnicodeEncodeError, msg):
+            _interpreters.exec(self.id, 'a', shared=bad_shared)
+        with self.assertRaisesRegex(UnicodeEncodeError, msg):
+            _interpreters.run_string(self.id, 'a', shared=bad_shared)
+        with self.assertRaisesRegex(UnicodeEncodeError, msg):
+            _interpreters.run_func(self.id, lambda: None, shared=bad_shared)
+
+
 class RunStringTests(TestBase):
 
     def setUp(self):
@@ -715,6 +660,12 @@ class RunStringTests(TestBase):
     def test_bytes_for_script(self):
         with self.assertRaises(TypeError):
             _interpreters.run_string(self.id, b'print("spam")')
+
+    def test_str_subclass_string(self):
+        class StrSubclass(str): pass
+
+        output = _run_output(self.id, StrSubclass('print(1 + 2)'))
+        self.assertEqual(output, '3\n')
 
     def test_with_shared(self):
         r, w = os.pipe()

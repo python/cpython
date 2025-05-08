@@ -11,59 +11,63 @@ History of the software
 =======================
 
 Python was created in the early 1990s by Guido van Rossum at Stichting
-Mathematisch Centrum (CWI, see https://www.cwi.nl/) in the Netherlands as a
+Mathematisch Centrum (CWI, see https://www.cwi.nl) in the Netherlands as a
 successor of a language called ABC.  Guido remains Python's principal author,
 although it includes many contributions from others.
 
 In 1995, Guido continued his work on Python at the Corporation for National
-Research Initiatives (CNRI, see https://www.cnri.reston.va.us/) in Reston,
+Research Initiatives (CNRI, see https://www.cnri.reston.va.us) in Reston,
 Virginia where he released several versions of the software.
 
 In May 2000, Guido and the Python core development team moved to BeOpen.com to
 form the BeOpen PythonLabs team.  In October of the same year, the PythonLabs
-team moved to Digital Creations (now Zope Corporation; see
-https://www.zope.org/).  In 2001, the Python Software Foundation (PSF, see
+team moved to Digital Creations, which became
+Zope Corporation.  In 2001, the Python Software Foundation (PSF, see
 https://www.python.org/psf/) was formed, a non-profit organization created
-specifically to own Python-related Intellectual Property.  Zope Corporation is a
+specifically to own Python-related Intellectual Property.  Zope Corporation was a
 sponsoring member of the PSF.
 
-All Python releases are Open Source (see https://opensource.org/ for the Open
+All Python releases are Open Source (see https://opensource.org for the Open
 Source Definition). Historically, most, but not all, Python releases have also
 been GPL-compatible; the table below summarizes the various releases.
 
-+----------------+--------------+------------+------------+-----------------+
-| Release        | Derived from | Year       | Owner      | GPL compatible? |
-+================+==============+============+============+=================+
-| 0.9.0 thru 1.2 | n/a          | 1991-1995  | CWI        | yes             |
-+----------------+--------------+------------+------------+-----------------+
-| 1.3 thru 1.5.2 | 1.2          | 1995-1999  | CNRI       | yes             |
-+----------------+--------------+------------+------------+-----------------+
-| 1.6            | 1.5.2        | 2000       | CNRI       | no              |
-+----------------+--------------+------------+------------+-----------------+
-| 2.0            | 1.6          | 2000       | BeOpen.com | no              |
-+----------------+--------------+------------+------------+-----------------+
-| 1.6.1          | 1.6          | 2001       | CNRI       | no              |
-+----------------+--------------+------------+------------+-----------------+
-| 2.1            | 2.0+1.6.1    | 2001       | PSF        | no              |
-+----------------+--------------+------------+------------+-----------------+
-| 2.0.1          | 2.0+1.6.1    | 2001       | PSF        | yes             |
-+----------------+--------------+------------+------------+-----------------+
-| 2.1.1          | 2.1+2.0.1    | 2001       | PSF        | yes             |
-+----------------+--------------+------------+------------+-----------------+
-| 2.1.2          | 2.1.1        | 2002       | PSF        | yes             |
-+----------------+--------------+------------+------------+-----------------+
-| 2.1.3          | 2.1.2        | 2002       | PSF        | yes             |
-+----------------+--------------+------------+------------+-----------------+
-| 2.2 and above  | 2.1.1        | 2001-now   | PSF        | yes             |
-+----------------+--------------+------------+------------+-----------------+
++----------------+--------------+------------+------------+---------------------+
+| Release        | Derived from | Year       | Owner      | GPL-compatible? (1) |
++================+==============+============+============+=====================+
+| 0.9.0 thru 1.2 | n/a          | 1991-1995  | CWI        | yes                 |
++----------------+--------------+------------+------------+---------------------+
+| 1.3 thru 1.5.2 | 1.2          | 1995-1999  | CNRI       | yes                 |
++----------------+--------------+------------+------------+---------------------+
+| 1.6            | 1.5.2        | 2000       | CNRI       | no                  |
++----------------+--------------+------------+------------+---------------------+
+| 2.0            | 1.6          | 2000       | BeOpen.com | no                  |
++----------------+--------------+------------+------------+---------------------+
+| 1.6.1          | 1.6          | 2001       | CNRI       | yes (2)             |
++----------------+--------------+------------+------------+---------------------+
+| 2.1            | 2.0+1.6.1    | 2001       | PSF        | no                  |
++----------------+--------------+------------+------------+---------------------+
+| 2.0.1          | 2.0+1.6.1    | 2001       | PSF        | yes                 |
++----------------+--------------+------------+------------+---------------------+
+| 2.1.1          | 2.1+2.0.1    | 2001       | PSF        | yes                 |
++----------------+--------------+------------+------------+---------------------+
+| 2.1.2          | 2.1.1        | 2002       | PSF        | yes                 |
++----------------+--------------+------------+------------+---------------------+
+| 2.1.3          | 2.1.2        | 2002       | PSF        | yes                 |
++----------------+--------------+------------+------------+---------------------+
+| 2.2 and above  | 2.1.1        | 2001-now   | PSF        | yes                 |
++----------------+--------------+------------+------------+---------------------+
 
 .. note::
 
-   GPL-compatible doesn't mean that we're distributing Python under the GPL.  All
-   Python licenses, unlike the GPL, let you distribute a modified version without
-   making your changes open source. The GPL-compatible licenses make it possible to
-   combine Python with other software that is released under the GPL; the others
-   don't.
+   (1) GPL-compatible doesn't mean that we're distributing Python under the GPL.
+       All Python licenses, unlike the GPL, let you distribute a modified version
+       without making your changes open source. The GPL-compatible licenses make
+       it possible to combine Python with other software that is released under
+       the GPL; the others don't.
+
+   (2) According to Richard Stallman, 1.6.1 is not GPL-compatible, because its license
+       has a choice of law clause. According to CNRI, however, Stallman's lawyer has
+       told CNRI's lawyer that 1.6.1 is "not incompatible" with the GPL.
 
 Thanks to the many outside volunteers who have worked under Guido's direction to
 make these releases possible.
@@ -73,10 +77,10 @@ Terms and conditions for accessing or otherwise using Python
 ============================================================
 
 Python software and documentation are licensed under the
-:ref:`PSF License Agreement <PSF-license>`.
+Python Software Foundation License Version 2.
 
 Starting with Python 3.8.6, examples, recipes, and other code in
-the documentation are dual licensed under the PSF License Agreement
+the documentation are dual licensed under the PSF License Version 2
 and the :ref:`Zero-Clause BSD license <BSD0>`.
 
 Some software incorporated into Python is under different licenses.
@@ -86,39 +90,38 @@ See :ref:`OtherLicenses` for an incomplete list of these licenses.
 
 .. _PSF-license:
 
-PSF LICENSE AGREEMENT FOR PYTHON |release|
-------------------------------------------
+PYTHON SOFTWARE FOUNDATION LICENSE VERSION 2
+--------------------------------------------
 
 .. parsed-literal::
 
    1. This LICENSE AGREEMENT is between the Python Software Foundation ("PSF"), and
-      the Individual or Organization ("Licensee") accessing and otherwise using Python
-      |release| software in source or binary form and its associated documentation.
+      the Individual or Organization ("Licensee") accessing and otherwise using this
+      software ("Python") in source or binary form and its associated documentation.
 
    2. Subject to the terms and conditions of this License Agreement, PSF hereby
       grants Licensee a nonexclusive, royalty-free, world-wide license to reproduce,
       analyze, test, perform and/or display publicly, prepare derivative works,
-      distribute, and otherwise use Python |release| alone or in any derivative
+      distribute, and otherwise use Python alone or in any derivative
       version, provided, however, that PSF's License Agreement and PSF's notice of
-      copyright, i.e., "Copyright © 2001-2024 Python Software Foundation; All Rights
-      Reserved" are retained in Python |release| alone or in any derivative version
+      copyright, i.e., "Copyright © 2001 Python Software Foundation; All Rights
+      Reserved" are retained in Python alone or in any derivative version
       prepared by Licensee.
 
    3. In the event Licensee prepares a derivative work that is based on or
-      incorporates Python |release| or any part thereof, and wants to make the
+      incorporates Python or any part thereof, and wants to make the
       derivative work available to others as provided herein, then Licensee hereby
-      agrees to include in any such work a brief summary of the changes made to Python
-      |release|.
+      agrees to include in any such work a brief summary of the changes made to Python.
 
-   4. PSF is making Python |release| available to Licensee on an "AS IS" basis.
+   4. PSF is making Python available to Licensee on an "AS IS" basis.
       PSF MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED.  BY WAY OF
       EXAMPLE, BUT NOT LIMITATION, PSF MAKES NO AND DISCLAIMS ANY REPRESENTATION OR
       WARRANTY OF MERCHANTABILITY OR FITNESS FOR ANY PARTICULAR PURPOSE OR THAT THE
-      USE OF PYTHON |release| WILL NOT INFRINGE ANY THIRD PARTY RIGHTS.
+      USE OF PYTHON WILL NOT INFRINGE ANY THIRD PARTY RIGHTS.
 
-   5. PSF SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF PYTHON |release|
+   5. PSF SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF PYTHON
       FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR LOSS AS A RESULT OF
-      MODIFYING, DISTRIBUTING, OR OTHERWISE USING PYTHON |release|, OR ANY DERIVATIVE
+      MODIFYING, DISTRIBUTING, OR OTHERWISE USING PYTHON, OR ANY DERIVATIVE
       THEREOF, EVEN IF ADVISED OF THE POSSIBILITY THEREOF.
 
    6. This License Agreement will automatically terminate upon a material breach of
@@ -130,7 +133,7 @@ PSF LICENSE AGREEMENT FOR PYTHON |release|
       trademark sense to endorse or promote products or services of Licensee, or any
       third party.
 
-   8. By copying, installing or otherwise using Python |release|, Licensee agrees
+   8. By copying, installing or otherwise using Python, Licensee agrees
       to be bound by the terms and conditions of this License Agreement.
 
 
@@ -205,7 +208,7 @@ CNRI LICENSE AGREEMENT FOR PYTHON 1.6.1
       Agreement.  This Agreement together with Python 1.6.1 may be located on the
       internet using the following unique, persistent identifier (known as a handle):
       1895.22/1013.  This Agreement may also be obtained from a proxy server on the
-      internet using the following URL: http://hdl.handle.net/1895.22/1013."
+      internet using the following URL: http://hdl.handle.net/1895.22/1013".
 
    3. In the event Licensee prepares a derivative work that is based on or
       incorporates Python 1.6.1 or any part thereof, and wants to make the derivative
@@ -273,8 +276,8 @@ CWI LICENSE AGREEMENT FOR PYTHON 0.9.0 THROUGH 1.2
 
 .. _BSD0:
 
-ZERO-CLAUSE BSD LICENSE FOR CODE IN THE PYTHON |release| DOCUMENTATION
-----------------------------------------------------------------------
+ZERO-CLAUSE BSD LICENSE FOR CODE IN THE PYTHON DOCUMENTATION
+------------------------------------------------------------
 
 .. parsed-literal::
 
@@ -371,7 +374,7 @@ Project, https://www.wide.ad.jp/. ::
       may be used to endorse or promote products derived from this software
       without specific prior written permission.
 
-   THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
+   THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS "AS IS" AND
    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
    ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
@@ -580,7 +583,7 @@ interface::
      notice, this list of conditions and the following disclaimer in the
      documentation and/or other materials provided with the distribution.
 
-  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS "AS IS" AND
   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
   ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
@@ -881,7 +884,7 @@ sources unless the build is configured ``--with-system-libffi``::
 
    Permission is hereby granted, free of charge, to any person obtaining
    a copy of this software and associated documentation files (the
-   ``Software''), to deal in the Software without restriction, including
+   "Software"), to deal in the Software without restriction, including
    without limitation the rights to use, copy, modify, merge, publish,
    distribute, sublicense, and/or sell copies of the Software, and to
    permit persons to whom the Software is furnished to do so, subject to
@@ -890,7 +893,7 @@ sources unless the build is configured ``--with-system-libffi``::
    The above copyright notice and this permission notice shall be included
    in all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
    NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
@@ -1119,7 +1122,7 @@ The file is distributed under the 2-Clause BSD License::
      notice, this list of conditions and the following disclaimer in the
      documentation and/or other materials provided with the distribution.
 
-  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+  THIS SOFTWARE IS PROVIDED BY THE AUTHOR "AS IS" AND ANY EXPRESS OR
   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
   OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
   IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
@@ -1129,3 +1132,40 @@ The file is distributed under the 2-Clause BSD License::
   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
   THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+Zstandard bindings
+------------------
+
+Zstandard bindings in :file:`Modules/_zstd` and :file:`Lib/compression/zstd`
+are based on code from the
+`pyzstd library <https://github.com/Rogdham/pyzstd/>`_, copyright Ma Lin and
+contributors. The pyzstd code is distributed under the 3-Clause BSD License::
+
+  Copyright (c) 2020-present, Ma Lin and contributors.
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice, this
+     list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation
+     and/or other materials provided with the distribution.
+
+  3. Neither the name of the copyright holder nor the names of its
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

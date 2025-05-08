@@ -3,6 +3,7 @@
   Nick Mathewson
 """
 
+import annotationlib
 import sys
 import os
 import shutil
@@ -11,7 +12,7 @@ import importlib.util
 import unittest
 import textwrap
 
-from test.support import verbose
+from test.support import verbose, EqualToForwardRef
 from test.support.os_helper import create_empty_file
 from reprlib import repr as r # Don't shadow builtin repr
 from reprlib import Repr
@@ -580,6 +581,50 @@ class ReprTests(unittest.TestCase):
                 with self.assertRaisesRegex(expected_error, expected_msg):
                     r.repr(test_object)
 
+    def test_shadowed_stdlib_array(self):
+        # Issue #113570: repr() should not be fooled by an array
+        class array:
+            def __repr__(self):
+                return "not array.array"
+
+        self.assertEqual(r(array()), "not array.array")
+
+    def test_shadowed_builtin(self):
+        # Issue #113570: repr() should not be fooled
+        # by a shadowed builtin function
+        class list:
+            def __repr__(self):
+                return "not builtins.list"
+
+        self.assertEqual(r(list()), "not builtins.list")
+
+    def test_custom_repr(self):
+        class MyRepr(Repr):
+
+            def repr_TextIOWrapper(self, obj, level):
+                if obj.name in {'<stdin>', '<stdout>', '<stderr>'}:
+                    return obj.name
+                return repr(obj)
+
+        aRepr = MyRepr()
+        self.assertEqual(aRepr.repr(sys.stdin), "<stdin>")
+
+    def test_custom_repr_class_with_spaces(self):
+        class TypeWithSpaces:
+            pass
+
+        t = TypeWithSpaces()
+        type(t).__name__ = "type with spaces"
+        self.assertEqual(type(t).__name__, "type with spaces")
+
+        class MyRepr(Repr):
+            def repr_type_with_spaces(self, obj, level):
+                return "Type With Spaces"
+
+
+        aRepr = MyRepr()
+        self.assertEqual(aRepr.repr(t), "Type With Spaces")
+
 def write_file(path, text):
     with open(path, 'w', encoding='ASCII') as fp:
         fp.write(text)
@@ -784,6 +829,20 @@ class TestRecursiveRepr(unittest.TestCase):
         self.assertEqual(len(type_params), 1)
         self.assertEqual(type_params[0].__name__, 'T')
         self.assertEqual(type_params[0].__bound__, str)
+
+    def test_annotations(self):
+        class My:
+            @recursive_repr()
+            def __repr__(self, default: undefined = ...):
+                return default
+
+        annotations = annotationlib.get_annotations(
+            My.__repr__, format=annotationlib.Format.FORWARDREF
+        )
+        self.assertEqual(
+            annotations,
+            {'default': EqualToForwardRef("undefined", owner=My.__repr__)}
+        )
 
 if __name__ == "__main__":
     unittest.main()

@@ -19,7 +19,6 @@ PGO_TESTS = [
     'test_datetime',
     'test_decimal',
     'test_difflib',
-    'test_embed',
     'test_float',
     'test_fstring',
     'test_functools',
@@ -50,7 +49,7 @@ PGO_TESTS = [
     'test_xml_etree_c',
 ]
 
-def setup_pgo_tests(cmdline_args, pgo_extended: bool):
+def setup_pgo_tests(cmdline_args, pgo_extended: bool) -> None:
     if not cmdline_args and not pgo_extended:
         # run default set of tests for PGO training
         cmdline_args[:] = PGO_TESTS[:]
