@@ -615,8 +615,6 @@ add_parameters(PyObject *module)
 static inline int
 add_vars_to_module(PyObject *module)
 {
-    PyObject *obj;
-
     /* zstd_version, str */
     if (PyModule_AddStringConstant(module, "zstd_version",
                                    ZSTD_versionString()) < 0) {
@@ -654,23 +652,6 @@ add_vars_to_module(PyObject *module)
     if (add_parameters(module) < 0) {
         return -1;
     }
-
-    /* _ZSTD_CONFIG */
-    obj = Py_BuildValue("isOOO", 8*(int)sizeof(Py_ssize_t), "c",
-                        Py_False,
-                        Py_True,
-/* User mremap output buffer */
-#if defined(HAVE_MREMAP)
-                        Py_True
-#else
-                        Py_False
-#endif
-                        );
-    if (PyModule_AddObjectRef(module, "_ZSTD_CONFIG", obj) < 0) {
-        Py_XDECREF(obj);
-        return -1;
-    }
-    Py_DECREF(obj);
 
     return 0;
 }
