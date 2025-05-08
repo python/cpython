@@ -1467,7 +1467,7 @@ def invalidate_caches():
 def _parse_args(args: list[str] | None):
     import argparse
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     parser.add_argument("args", nargs="*", choices=["nonaliased", "terse"])
     parser.add_argument(
         "--terse",

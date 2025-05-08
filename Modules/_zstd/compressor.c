@@ -25,9 +25,9 @@ class _zstd.ZstdCompressor "ZstdCompressor *" "clinic_state()->ZstdCompressor_ty
 
 #define ZstdCompressor_CAST(op) ((ZstdCompressor *)op)
 
-int
-_PyZstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
-                         const char *arg_name, const char* arg_type)
+static int
+_zstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
+                       const char *arg_name, const char* arg_type)
 {
     size_t zstd_ret;
     _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
@@ -71,14 +71,14 @@ _PyZstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
             if (Py_TYPE(key) == mod_state->DParameter_type) {
                 PyErr_SetString(PyExc_TypeError,
                                 "Key of compression option dict should "
-                                "NOT be DParameter.");
+                                "NOT be DecompressionParameter.");
                 return -1;
             }
 
             int key_v = PyLong_AsInt(key);
             if (key_v == -1 && PyErr_Occurred()) {
                 PyErr_SetString(PyExc_ValueError,
-                                "Key of options dict should be a CParameter attribute.");
+                                "Key of options dict should be a CompressionParameter attribute.");
                 return -1;
             }
 
@@ -197,8 +197,8 @@ success:
     return cdict;
 }
 
-int
-_PyZstd_load_c_dict(ZstdCompressor *self, PyObject *dict) {
+static int
+_zstd_load_c_dict(ZstdCompressor *self, PyObject *dict) {
 
     size_t zstd_ret;
     _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
@@ -385,20 +385,20 @@ _zstd_ZstdCompressor___init___impl(ZstdCompressor *self, PyObject *level,
 
     /* Set compressLevel/options to compression context */
     if (level != Py_None) {
-        if (_PyZstd_set_c_parameters(self, level, "level", "int") < 0) {
+        if (_zstd_set_c_parameters(self, level, "level", "int") < 0) {
             return -1;
         }
     }
 
     if (options != Py_None) {
-        if (_PyZstd_set_c_parameters(self, options, "options", "dict") < 0) {
+        if (_zstd_set_c_parameters(self, options, "options", "dict") < 0) {
             return -1;
         }
     }
 
     /* Load dictionary to compression context */
     if (zstd_dict != Py_None) {
-        if (_PyZstd_load_c_dict(self, zstd_dict) < 0) {
+        if (_zstd_load_c_dict(self, zstd_dict) < 0) {
             return -1;
         }
 
@@ -702,6 +702,6 @@ static PyType_Slot zstdcompressor_slots[] = {
 PyType_Spec zstdcompressor_type_spec = {
     .name = "_zstd.ZstdCompressor",
     .basicsize = sizeof(ZstdCompressor),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .slots = zstdcompressor_slots,
 };

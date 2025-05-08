@@ -2153,6 +2153,10 @@ class TestArchives(BaseTest, unittest.TestCase):
     def test_unpack_archive_bztar(self):
         self.check_unpack_tarball('bztar')
 
+    @support.requires_zstd()
+    def test_unpack_archive_zstdtar(self):
+        self.check_unpack_tarball('zstdtar')
+
     @support.requires_lzma()
     @unittest.skipIf(AIX and not _maxdataOK(), "AIX MAXDATA must be 0x20000000 or larger")
     def test_unpack_archive_xztar(self):
