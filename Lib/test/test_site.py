@@ -841,21 +841,28 @@ class CommandLineTests(unittest.TestCase):
             elif site.ENABLE_USER_SITE is None:
                 return_code = 2
             output = os.pathsep.join(buffer)
-            return return_code, dedent(output).strip()
+            return return_code, os.path.normpath(dedent(output).strip())
         else:
             return 10, None
 
     def invoke_command_line(self, *args):
         args = [sys.executable, "-m", "site", *args]
+        env = os.environ.copy()
+        env["PYTHONUTF8"] = "1"
+        env["PYTHONIOENCODING"] = "utf-8"
+
         proc = subprocess.Popen(args,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT,
-                                text=True)
+                                text=True,
+                                env=env,
+                                encoding='utf-8',
+                                errors='replace')
         proc.wait()
         output = proc.stdout.read()
         return_code = proc.returncode
         proc.stdout.close()
-        return return_code, dedent(output).strip()
+        return return_code, os.path.normpath(dedent(output).strip())
 
     @unittest.skipIf(sys.platform == 'wasi', "Popen not supported on WASI")
     def test_no_args(self):
@@ -867,13 +874,11 @@ class CommandLineTests(unittest.TestCase):
         self.assertEqual(lines[-4], "]")
         excepted_base = f"USER_BASE: '{site.getuserbase()}'" +\
             f" ({self.exists(site.getuserbase())})"
-        print(excepted_base)
         self.assertEqual(lines[-3], excepted_base)
         excepted_site = f"USER_SITE: '{site.getusersitepackages()}'" +\
             f" ({self.exists(site.getusersitepackages())})"
         self.assertEqual(lines[-2], excepted_site)
         self.assertEqual(lines[-1], f"ENABLE_USER_SITE: {site.ENABLE_USER_SITE}")
-        
 
     @unittest.skipIf(sys.platform == 'wasi', "Popen not supported on WASI")
     def test_unknown_args(self):
