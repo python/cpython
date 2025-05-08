@@ -164,7 +164,7 @@ Deprecated C APIs
 Removed C APIs
 --------------
 
-*
+* Remove deprecated ``PyUnicode`` functions:
 
   * :c:func:`!PyUnicode_AsDecodedObject`:
     Use :c:func:`PyCodec_Decode` instead.
