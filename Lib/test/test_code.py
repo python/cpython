@@ -673,6 +673,20 @@ class CodeTest(unittest.TestCase):
         VARKWARGS = CO_FAST_LOCAL | CO_FAST_ARG_VAR | CO_FAST_ARG_KW
 
         funcs = {
+            defs.simple_script: {},
+            defs.complex_script: {
+                'obj': CO_FAST_LOCAL,
+                'pickle': CO_FAST_LOCAL,
+                'spam_minimal': CO_FAST_LOCAL,
+                'data': CO_FAST_LOCAL,
+                'res': CO_FAST_LOCAL,
+            },
+            defs.script_with_globals: {
+                'obj1': CO_FAST_LOCAL,
+                'obj2': CO_FAST_LOCAL,
+            },
+            defs.script_with_explicit_empty_return: {},
+            defs.script_with_return: {},
             defs.spam_minimal: {},
             defs.spam_with_builtins: {
                 'x': CO_FAST_LOCAL,
@@ -898,6 +912,19 @@ class CodeTest(unittest.TestCase):
             }
 
         funcs = {
+            defs.simple_script: new_var_counts(),
+            defs.complex_script: new_var_counts(
+                purelocals=5,
+                globalvars=1,
+                attrs=2,
+            ),
+            defs.script_with_globals: new_var_counts(
+                purelocals=2,
+                globalvars=1,
+            ),
+            defs.script_with_explicit_empty_return: new_var_counts(),
+            defs.script_with_return: new_var_counts(),
+            defs.spam_minimal: new_var_counts(),
             defs.spam_minimal: new_var_counts(),
             defs.spam_with_builtins: new_var_counts(
                 purelocals=4,
