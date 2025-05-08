@@ -1091,7 +1091,6 @@ dummy_func(void) {
     op(_GET_LEN, (obj -- obj, len)) {
         int tuple_length = sym_tuple_length(obj);
         if (tuple_length == -1) {
-            // Unknown length
             len = sym_new_type(ctx, &PyLong_Type);
         }
         else {
