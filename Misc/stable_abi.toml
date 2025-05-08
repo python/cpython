@@ -1592,8 +1592,6 @@
     added = '3.2'
 [data.PyUnicode_Type]
     added = '3.2'
-[function.PyWeakref_GetObject]
-    added = '3.2'
 [function.PyWeakref_NewProxy]
     added = '3.2'
 [function.PyWeakref_NewRef]
