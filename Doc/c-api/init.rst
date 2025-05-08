@@ -216,20 +216,6 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. deprecated-removed:: 3.12 3.15
 
-.. c:var:: int Py_NoSiteFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.site_import` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Disable the import of the module :mod:`site` and the site-dependent
-   manipulations of :data:`sys.path` that it entails.  Also disable these
-   manipulations if :mod:`site` is explicitly imported later (call
-   :func:`site.main` if you want them to be triggered).
-
-   Set by the :option:`-S` option.
-
-   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_NoUserSiteDirectory
 

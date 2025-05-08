@@ -463,7 +463,6 @@ static const char usage_envvars[] =
    stdin and stdout error handler to "surrogateescape". */
 int Py_UTF8Mode = 0;
 int Py_InteractiveFlag = 0; /* Previously, was used by Py_FdIsInteractive() */
-int Py_NoSiteFlag = 0; /* Suppress 'import site' */
 int Py_FrozenFlag = 0; /* Needed by getpath.c */
 int Py_IgnoreEnvironmentFlag = 0; /* e.g. PYTHONPATH, PYTHONHOME */
 int Py_DontWriteBytecodeFlag = 0; /* Suppress writing bytecode files (*.pyc) */
@@ -518,7 +517,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     SET_ITEM_INT(Py_UTF8Mode);
     SET_ITEM_INT(Py_InteractiveFlag);
 
-    SET_ITEM_INT(Py_NoSiteFlag);
     SET_ITEM_INT(Py_FrozenFlag);
     SET_ITEM_INT(Py_IgnoreEnvironmentFlag);
     SET_ITEM_INT(Py_DontWriteBytecodeFlag);
@@ -1005,8 +1003,8 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->remote_debug = -1;
     config->module_search_paths_set = 0;
     config->parse_argv = 0;
-    config->site_import = -1;
-    config->bytes_warning = -1;
+    config->site_import = 1;
+    config->bytes_warning = 0;
     config->warn_default_encoding = 0;
     config->inspect = 0;
     config->interactive = -1;
@@ -1669,7 +1667,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     COPY_NOT_FLAG(pathconfig_warnings, Py_FrozenFlag);
 
     COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
-    COPY_NOT_FLAG(site_import, Py_NoSiteFlag);
     COPY_NOT_FLAG(write_bytecode, Py_DontWriteBytecodeFlag);
     COPY_NOT_FLAG(user_site_directory, Py_NoUserSiteDirectory);
 
@@ -1703,7 +1700,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     COPY_NOT_FLAG(pathconfig_warnings, Py_FrozenFlag);
 
     COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
-    COPY_NOT_FLAG(site_import, Py_NoSiteFlag);
     COPY_NOT_FLAG(write_bytecode, Py_DontWriteBytecodeFlag);
     COPY_NOT_FLAG(user_site_directory, Py_NoUserSiteDirectory);
 

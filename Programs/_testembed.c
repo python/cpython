@@ -572,9 +572,6 @@ static int test_init_global_config(void)
     /* Test initialization from global configuration variables (Py_xxx) */
     Py_SetProgramName(L"./globalvar");
 
-    /* Py_IsolatedFlag is not tested */
-    Py_NoSiteFlag = 1;
-
     putenv("PYTHONINSPECT=");
 
     putenv("PYTHONOPTIMIZE=0");
@@ -699,7 +696,6 @@ static int test_init_from_config(void)
     putenv("PYTHONVERBOSE=0");
     config.verbose = 1;
 
-    Py_NoSiteFlag = 0;
     config.site_import = 0;
 
     config.bytes_warning = 1;
@@ -1045,7 +1041,6 @@ static void set_all_global_config_variables(void)
     Py_InteractiveFlag = 1;
     Py_FrozenFlag = 0;
     Py_UnbufferedStdioFlag = 1;
-    Py_NoSiteFlag = 1;
     Py_DontWriteBytecodeFlag = 1;
     Py_NoUserSiteDirectory = 1;
 #ifdef MS_WINDOWS
@@ -1115,7 +1110,6 @@ static int check_init_python_config(int preinit)
     Py_IgnoreEnvironmentFlag = 1;
     Py_FrozenFlag = 1;
     Py_UnbufferedStdioFlag = 1;
-    Py_NoSiteFlag = 1;
     Py_DontWriteBytecodeFlag = 1;
     Py_NoUserSiteDirectory = 1;
 #ifdef MS_WINDOWS
