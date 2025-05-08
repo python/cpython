@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(OrderedDict_fromkeys__doc__,
@@ -73,6 +74,53 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(OrderedDict___sizeof____doc__,
+"__sizeof__($self, /)\n"
+"--\n"
+"\n");
+
+#define ORDEREDDICT___SIZEOF___METHODDEF    \
+    {"__sizeof__", (PyCFunction)OrderedDict___sizeof__, METH_NOARGS, OrderedDict___sizeof____doc__},
+
+static Py_ssize_t
+OrderedDict___sizeof___impl(PyODictObject *self);
+
+static PyObject *
+OrderedDict___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t _return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    _return_value = OrderedDict___sizeof___impl((PyODictObject *)self);
+    Py_END_CRITICAL_SECTION();
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(OrderedDict___reduce____doc__,
+"__reduce__($self, /)\n"
+"--\n"
+"\n"
+"Return state information for pickling");
+
+#define ORDEREDDICT___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)OrderedDict___reduce__, METH_NOARGS, OrderedDict___reduce____doc__},
+
+static PyObject *
+OrderedDict___reduce___impl(PyODictObject *od);
+
+static PyObject *
+OrderedDict___reduce__(PyObject *od, PyObject *Py_UNUSED(ignored))
+{
+    return OrderedDict___reduce___impl((PyODictObject *)od);
+}
+
 PyDoc_STRVAR(OrderedDict_setdefault__doc__,
 "setdefault($self, /, key, default=None)\n"
 "--\n"
@@ -135,7 +183,9 @@ OrderedDict_setdefault(PyObject *self, PyObject *const *args, Py_ssize_t nargs, 
     }
     default_value = args[1];
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = OrderedDict_setdefault_impl((PyODictObject *)self, key, default_value);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -204,7 +254,9 @@ OrderedDict_pop(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObjec
     }
     default_value = args[1];
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = OrderedDict_pop_impl((PyODictObject *)self, key, default_value);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -272,9 +324,59 @@ OrderedDict_popitem(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyO
         goto exit;
     }
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = OrderedDict_popitem_impl((PyODictObject *)self, last);
+    Py_END_CRITICAL_SECTION();
 
 exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(OrderedDict_clear__doc__,
+"clear($self, /)\n"
+"--\n"
+"\n"
+"Remove all items from ordered dict.");
+
+#define ORDEREDDICT_CLEAR_METHODDEF    \
+    {"clear", (PyCFunction)OrderedDict_clear, METH_NOARGS, OrderedDict_clear__doc__},
+
+static PyObject *
+OrderedDict_clear_impl(PyODictObject *self);
+
+static PyObject *
+OrderedDict_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = OrderedDict_clear_impl((PyODictObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(OrderedDict_copy__doc__,
+"copy($self, /)\n"
+"--\n"
+"\n"
+"A shallow copy of ordered dict.");
+
+#define ORDEREDDICT_COPY_METHODDEF    \
+    {"copy", (PyCFunction)OrderedDict_copy, METH_NOARGS, OrderedDict_copy__doc__},
+
+static PyObject *
+OrderedDict_copy_impl(PyObject *od);
+
+static PyObject *
+OrderedDict_copy(PyObject *od, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(od);
+    return_value = OrderedDict_copy_impl(od);
+    Py_END_CRITICAL_SECTION();
+
     return return_value;
 }
 
@@ -342,9 +444,11 @@ OrderedDict_move_to_end(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         goto exit;
     }
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = OrderedDict_move_to_end_impl((PyODictObject *)self, key, last);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7d8206823bb1f419 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7bc997ca7900f06f input=a9049054013a1b77]*/
