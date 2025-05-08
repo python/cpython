@@ -14,6 +14,7 @@ on:
       - "Lib/tomllib/**"
       - "Misc/mypy/**"
       - "Tools/build/generate_sbom.py"
+      - "Tools/build/verify_ensurepip_wheels.py"
       - "Tools/cases_generator/**"
       - "Tools/clinic/**"
       - "Tools/jit/**"
