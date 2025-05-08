@@ -559,59 +559,6 @@ static PyMethodDef _zstd_methods[] = {
 };
 
 
-#define ADD_INT_PREFIX_MACRO(module, macro)                           \
-    do {                                                              \
-        if (PyModule_AddIntConstant(module, "_" #macro, macro) < 0) { \
-            return -1;                                                \
-        }                                                             \
-    } while(0)
-
-static int
-add_parameters(PyObject *module)
-{
-    /* If add new parameters, please also add to cp_list/dp_list above. */
-
-    /* Compression parameters */
-    ADD_INT_PREFIX_MACRO(module, ZSTD_c_compressionLevel);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_c_windowLog);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_c_hashLog);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_c_chainLog);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_c_searchLog);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_c_minMatch);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_c_targetLength);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_c_strategy);
-
-    ADD_INT_PREFIX_MACRO(module, ZSTD_c_enableLongDistanceMatching);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_c_ldmHashLog);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_c_ldmMinMatch);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_c_ldmBucketSizeLog);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_c_ldmHashRateLog);
-
-    ADD_INT_PREFIX_MACRO(module, ZSTD_c_contentSizeFlag);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_c_checksumFlag);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_c_dictIDFlag);
-
-    ADD_INT_PREFIX_MACRO(module, ZSTD_c_nbWorkers);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_c_jobSize);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_c_overlapLog);
-
-    /* Decompression parameters */
-    ADD_INT_PREFIX_MACRO(module, ZSTD_d_windowLogMax);
-
-    /* ZSTD_strategy enum */
-    ADD_INT_PREFIX_MACRO(module, ZSTD_fast);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_dfast);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_greedy);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_lazy);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_lazy2);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_btlazy2);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_btopt);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_btultra);
-    ADD_INT_PREFIX_MACRO(module, ZSTD_btultra2);
-
-    return 0;
-}
-
 static inline int
 add_vars_to_module(PyObject *module)
 {
@@ -648,10 +595,43 @@ add_vars_to_module(PyObject *module)
         return -1;
     }
 
-    /* Add zstd parameters */
-    if (add_parameters(module) < 0) {
-        return -1;
-    }
+    /* Add zstd compression parameters. All should also be in cp_list. */
+    PyModule_AddIntMacro(module, ZSTD_c_compressionLevel);
+    PyModule_AddIntMacro(module, ZSTD_c_windowLog);
+    PyModule_AddIntMacro(module, ZSTD_c_hashLog);
+    PyModule_AddIntMacro(module, ZSTD_c_chainLog);
+    PyModule_AddIntMacro(module, ZSTD_c_searchLog);
+    PyModule_AddIntMacro(module, ZSTD_c_minMatch);
+    PyModule_AddIntMacro(module, ZSTD_c_targetLength);
+    PyModule_AddIntMacro(module, ZSTD_c_strategy);
+
+    PyModule_AddIntMacro(module, ZSTD_c_enableLongDistanceMatching);
+    PyModule_AddIntMacro(module, ZSTD_c_ldmHashLog);
+    PyModule_AddIntMacro(module, ZSTD_c_ldmMinMatch);
+    PyModule_AddIntMacro(module, ZSTD_c_ldmBucketSizeLog);
+    PyModule_AddIntMacro(module, ZSTD_c_ldmHashRateLog);
+
+    PyModule_AddIntMacro(module, ZSTD_c_contentSizeFlag);
+    PyModule_AddIntMacro(module, ZSTD_c_checksumFlag);
+    PyModule_AddIntMacro(module, ZSTD_c_dictIDFlag);
+
+    PyModule_AddIntMacro(module, ZSTD_c_nbWorkers);
+    PyModule_AddIntMacro(module, ZSTD_c_jobSize);
+    PyModule_AddIntMacro(module, ZSTD_c_overlapLog);
+
+    /* Add zstd decompression parameters. All should also be in dp_list. */
+    PyModule_AddIntMacro(module, ZSTD_d_windowLogMax);
+
+    /* ZSTD_strategy enum */
+    PyModule_AddIntMacro(module, ZSTD_fast);
+    PyModule_AddIntMacro(module, ZSTD_dfast);
+    PyModule_AddIntMacro(module, ZSTD_greedy);
+    PyModule_AddIntMacro(module, ZSTD_lazy);
+    PyModule_AddIntMacro(module, ZSTD_lazy2);
+    PyModule_AddIntMacro(module, ZSTD_btlazy2);
+    PyModule_AddIntMacro(module, ZSTD_btopt);
+    PyModule_AddIntMacro(module, ZSTD_btultra);
+    PyModule_AddIntMacro(module, ZSTD_btultra2);
 
     return 0;
 }

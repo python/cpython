@@ -168,28 +168,28 @@ def decompress(data, zstd_dict=None, options=None):
 class CompressionParameter(enum.IntEnum):
     """Compression parameters."""
 
-    compression_level = _zstd._ZSTD_c_compressionLevel
-    window_log = _zstd._ZSTD_c_windowLog
-    hash_log = _zstd._ZSTD_c_hashLog
-    chain_log = _zstd._ZSTD_c_chainLog
-    search_log = _zstd._ZSTD_c_searchLog
-    min_match = _zstd._ZSTD_c_minMatch
-    target_length = _zstd._ZSTD_c_targetLength
-    strategy = _zstd._ZSTD_c_strategy
+    compression_level = _zstd.ZSTD_c_compressionLevel
+    window_log = _zstd.ZSTD_c_windowLog
+    hash_log = _zstd.ZSTD_c_hashLog
+    chain_log = _zstd.ZSTD_c_chainLog
+    search_log = _zstd.ZSTD_c_searchLog
+    min_match = _zstd.ZSTD_c_minMatch
+    target_length = _zstd.ZSTD_c_targetLength
+    strategy = _zstd.ZSTD_c_strategy
 
-    enable_long_distance_matching = _zstd._ZSTD_c_enableLongDistanceMatching
-    ldm_hash_log = _zstd._ZSTD_c_ldmHashLog
-    ldm_min_match = _zstd._ZSTD_c_ldmMinMatch
-    ldm_bucket_size_log = _zstd._ZSTD_c_ldmBucketSizeLog
-    ldm_hash_rate_log = _zstd._ZSTD_c_ldmHashRateLog
+    enable_long_distance_matching = _zstd.ZSTD_c_enableLongDistanceMatching
+    ldm_hash_log = _zstd.ZSTD_c_ldmHashLog
+    ldm_min_match = _zstd.ZSTD_c_ldmMinMatch
+    ldm_bucket_size_log = _zstd.ZSTD_c_ldmBucketSizeLog
+    ldm_hash_rate_log = _zstd.ZSTD_c_ldmHashRateLog
 
-    content_size_flag = _zstd._ZSTD_c_contentSizeFlag
-    checksum_flag = _zstd._ZSTD_c_checksumFlag
-    dict_id_flag = _zstd._ZSTD_c_dictIDFlag
+    content_size_flag = _zstd.ZSTD_c_contentSizeFlag
+    checksum_flag = _zstd.ZSTD_c_checksumFlag
+    dict_id_flag = _zstd.ZSTD_c_dictIDFlag
 
-    nb_workers = _zstd._ZSTD_c_nbWorkers
-    job_size = _zstd._ZSTD_c_jobSize
-    overlap_log = _zstd._ZSTD_c_overlapLog
+    nb_workers = _zstd.ZSTD_c_nbWorkers
+    job_size = _zstd.ZSTD_c_jobSize
+    overlap_log = _zstd.ZSTD_c_overlapLog
 
     def bounds(self):
         """Return the (lower, upper) int bounds of a compression parameter.
@@ -202,7 +202,7 @@ class CompressionParameter(enum.IntEnum):
 class DecompressionParameter(enum.IntEnum):
     """Decompression parameters."""
 
-    window_log_max = _zstd._ZSTD_d_windowLogMax
+    window_log_max = _zstd.ZSTD_d_windowLogMax
 
     def bounds(self):
         """Return the (lower, upper) int bounds of a decompression parameter.
@@ -220,15 +220,15 @@ class Strategy(enum.IntEnum):
     the numeric value might change.
     """
 
-    fast = _zstd._ZSTD_fast
-    dfast = _zstd._ZSTD_dfast
-    greedy = _zstd._ZSTD_greedy
-    lazy = _zstd._ZSTD_lazy
-    lazy2 = _zstd._ZSTD_lazy2
-    btlazy2 = _zstd._ZSTD_btlazy2
-    btopt = _zstd._ZSTD_btopt
-    btultra = _zstd._ZSTD_btultra
-    btultra2 = _zstd._ZSTD_btultra2
+    fast = _zstd.ZSTD_fast
+    dfast = _zstd.ZSTD_dfast
+    greedy = _zstd.ZSTD_greedy
+    lazy = _zstd.ZSTD_lazy
+    lazy2 = _zstd.ZSTD_lazy2
+    btlazy2 = _zstd.ZSTD_btlazy2
+    btopt = _zstd.ZSTD_btopt
+    btultra = _zstd.ZSTD_btultra
+    btultra2 = _zstd.ZSTD_btultra2
 
 
 # Check validity of the CompressionParameter & DecompressionParameter types
