@@ -771,6 +771,7 @@ class TestAsyncioToolsBasic(unittest.TestCase):
         cycles = ctx.exception.cycles
         self.assertTrue(any(set(c) == {1, 2, 3} for c in cycles))
 
+    @unittest.skipIf(locale.getpreferredencoding().lower() != 'utf-8', 'test requires utf-8')
     def test_table_output_format(self):
         input_ = [(1, [(1, "Task-A", [[["foo"], 2]]), (2, "Task-B", [])])]
         table = tools.build_task_table(input_)
