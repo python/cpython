@@ -35,11 +35,11 @@ Logical lines
 
 .. index:: logical line, physical line, line joining, NEWLINE token
 
-The end of a logical line is represented by the token NEWLINE.  Statements
-cannot cross logical line boundaries except where NEWLINE is allowed by the
-syntax (e.g., between statements in compound statements). A logical line is
-constructed from one or more *physical lines* by following the explicit or
-implicit *line joining* rules.
+The end of a logical line is represented by the token :data:`~token.NEWLINE`.
+Statements cannot cross logical line boundaries except where :data:`!NEWLINE`
+is allowed by the syntax (e.g., between statements in compound statements).
+A logical line is constructed from one or more *physical lines* by following
+the explicit or implicit *line joining* rules.
 
 
 .. _physical-lines:
@@ -160,11 +160,12 @@ Blank lines
 .. index:: single: blank line
 
 A logical line that contains only spaces, tabs, formfeeds and possibly a
-comment, is ignored (i.e., no NEWLINE token is generated).  During interactive
-input of statements, handling of a blank line may differ depending on the
-implementation of the read-eval-print loop.  In the standard interactive
-interpreter, an entirely blank logical line (i.e. one containing not even
-whitespace or a comment) terminates a multi-line statement.
+comment, is ignored (i.e., no :data:`~token.NEWLINE` token is generated).
+During interactive input of statements, handling of a blank line may differ
+depending on the implementation of the read-eval-print loop.
+In the standard interactive interpreter, an entirely blank logical line (that
+is, one containing not even whitespace or a comment) terminates a multi-line
+statement.
 
 
 .. _indentation:
@@ -202,19 +203,20 @@ the space count to zero).
 
 .. index:: INDENT token, DEDENT token
 
-The indentation levels of consecutive lines are used to generate INDENT and
-DEDENT tokens, using a stack, as follows.
+The indentation levels of consecutive lines are used to generate
+:data:`~token.INDENT` and :data:`~token.DEDENT` tokens, using a stack,
+as follows.
 
 Before the first line of the file is read, a single zero is pushed on the stack;
 this will never be popped off again.  The numbers pushed on the stack will
 always be strictly increasing from bottom to top.  At the beginning of each
 logical line, the line's indentation level is compared to the top of the stack.
 If it is equal, nothing happens. If it is larger, it is pushed on the stack, and
-one INDENT token is generated.  If it is smaller, it *must* be one of the
+one :data:`!INDENT` token is generated.  If it is smaller, it *must* be one of the
 numbers occurring on the stack; all numbers on the stack that are larger are
-popped off, and for each number popped off a DEDENT token is generated.  At the
-end of the file, a DEDENT token is generated for each number remaining on the
-stack that is larger than zero.
+popped off, and for each number popped off a :data:`!DEDENT` token is generated.
+At the end of the file, a :data:`!DEDENT` token is generated for each number
+remaining on the stack that is larger than zero.
 
 Here is an example of a correctly (though confusingly) indented piece of Python
 code::
@@ -254,8 +256,18 @@ Whitespace between tokens
 Except at the beginning of a logical line or in string literals, the whitespace
 characters space, tab and formfeed can be used interchangeably to separate
 tokens.  Whitespace is needed between two tokens only if their concatenation
-could otherwise be interpreted as a different token (e.g., ab is one token, but
-a b is two tokens).
+could otherwise be interpreted as a different token. For example, ``ab`` is one
+token, but ``a b`` is two tokens. However, ``+a`` and ``+ a`` both produce
+two tokens, ``+`` and ``a``, as ``+a`` is not a valid token.
+
+
+.. _endmarker-token:
+
+End marker
+----------
+
+At the end of non-interactive input, the lexical analyzer generates an
+:data:`~token.ENDMARKER` token.
 
 
 .. _other-tokens:
@@ -263,11 +275,15 @@ a b is two tokens).
 Other tokens
 ============
 
-Besides NEWLINE, INDENT and DEDENT, the following categories of tokens exist:
-*identifiers*, *keywords*, *literals*, *operators*, and *delimiters*. Whitespace
-characters (other than line terminators, discussed earlier) are not tokens, but
-serve to delimit tokens. Where ambiguity exists, a token comprises the longest
-possible string that forms a legal token, when read from left to right.
+Besides :data:`~token.NEWLINE`, :data:`~token.INDENT` and :data:`~token.DEDENT`,
+the following categories of tokens exist:
+*identifiers* and *keywords* (:data:`~token.NAME`), *literals* (such as
+:data:`~token.NUMBER` and :data:`~token.STRING`), and other symbols
+(*operators* and *delimiters*, :data:`~token.OP`).
+Whitespace characters (other than logical line terminators, discussed earlier)
+are not tokens, but serve to delimit tokens.
+Where ambiguity exists, a token comprises the longest possible string that
+forms a legal token, when read from left to right.
 
 
 .. _identifiers:
