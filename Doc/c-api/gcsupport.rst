@@ -180,7 +180,7 @@ provided.  In order to use this macro, the :c:member:`~PyTypeObject.tp_traverse`
 must name its arguments exactly *visit* and *arg*:
 
 
-.. c:function:: void Py_VISIT(PyObject *o)
+.. c:macro:: Py_VISIT(PyObject *o)
 
    If *o* is not ``NULL``, call the *visit* callback, with arguments *o*
    and *arg*.  If *visit* returns a non-zero value, then return it.
