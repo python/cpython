@@ -262,6 +262,7 @@ extern "C" {
 #define _MONITOR_RESUME 476
 #define _NOP NOP
 #define _POP_EXCEPT POP_EXCEPT
+#define _POP_ITER POP_ITER
 #define _POP_JUMP_IF_FALSE 477
 #define _POP_JUMP_IF_TRUE 478
 #define _POP_TOP POP_TOP

@@ -365,5 +365,19 @@ class ListTest(list_tests.CommonTest):
         rc, _, _ = assert_python_ok("-c", code)
         self.assertEqual(rc, 0)
 
+    def test_list_overwrite_local(self):
+        """Test that overwriting the last reference to the
+           iterable doesn't prematurely free the iterable"""
+
+        def foo(x):
+            r = 0
+            for i in x:
+                r += i
+                x = None
+            return r
+
+        self.assertEqual(foo(list(range(10))), 45)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1386,6 +1386,10 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     stacks[j] = next_stack;
                     break;
                 case GET_ITER:
+                    next_stack = push_value(pop_value(next_stack), Iterator);
+                    next_stack = push_value(next_stack, Iterator);
+                    stacks[next_i] = next_stack;
+                    break;
                 case GET_AITER:
                     next_stack = push_value(pop_value(next_stack), Iterator);
                     stacks[next_i] = next_stack;
