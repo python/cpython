@@ -463,7 +463,6 @@ static const char usage_envvars[] =
    stdin and stdout error handler to "surrogateescape". */
 int Py_UTF8Mode = 0;
 int Py_InteractiveFlag = 0; /* Previously, was used by Py_FdIsInteractive() */
-int Py_InspectFlag = 0; /* Needed to determine whether to exit at SystemExit */
 int Py_OptimizeFlag = 0; /* Needed by compile.c */
 int Py_NoSiteFlag = 0; /* Suppress 'import site' */
 int Py_FrozenFlag = 0; /* Needed by getpath.c */
@@ -519,7 +518,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 
     SET_ITEM_INT(Py_UTF8Mode);
     SET_ITEM_INT(Py_InteractiveFlag);
-    SET_ITEM_INT(Py_InspectFlag);
 
     SET_ITEM_INT(Py_OptimizeFlag);
     SET_ITEM_INT(Py_NoSiteFlag);
@@ -1012,7 +1010,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->site_import = -1;
     config->bytes_warning = -1;
     config->warn_default_encoding = 0;
-    config->inspect = -1;
+    config->inspect = 0;
     config->interactive = -1;
     config->optimization_level = -1;
     config->parser_debug= -1;
@@ -1666,7 +1664,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 
     COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
-    COPY_FLAG(inspect, Py_InspectFlag);
     COPY_FLAG(interactive, Py_InteractiveFlag);
     COPY_FLAG(optimization_level, Py_OptimizeFlag);
 #ifdef MS_WINDOWS
@@ -1702,7 +1699,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 
     COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
-    COPY_FLAG(inspect, Py_InspectFlag);
     COPY_FLAG(interactive, Py_InteractiveFlag);
     COPY_FLAG(optimization_level, Py_OptimizeFlag);
 #ifdef MS_WINDOWS

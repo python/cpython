@@ -153,20 +153,6 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. deprecated-removed:: 3.12 3.15
 
-.. c:var:: int Py_InspectFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.inspect` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   When a script is passed as first argument or the :option:`-c` option is used,
-   enter interactive mode after executing the script or the command, even when
-   :data:`sys.stdin` does not appear to be a terminal.
-
-   Set by the :option:`-i` option and the :envvar:`PYTHONINSPECT` environment
-   variable.
-
-   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_InteractiveFlag
 
@@ -449,10 +435,11 @@ Initializing and finalizing the interpreter
 
    Note that if an otherwise unhandled :exc:`SystemExit` is raised, this
    function will not return ``1``, but exit the process, as long as
-   ``Py_InspectFlag`` is not set. If ``Py_InspectFlag`` is set, execution will
-   drop into the interactive Python prompt, at which point a second otherwise
-   unhandled :exc:`SystemExit` will still exit the process, while any other
-   means of exiting will set the return value as described above.
+   :c:member:`PyConfig.inspect` is not set. If :c:member:`!PyConfig.inspect`
+   is set, execution will drop into the interactive Python prompt, at which
+   point a second otherwise unhandled :exc:`SystemExit` will still exit the
+   process, while any other means of exiting will set the return value as
+   described above.
 
    In terms of the CPython runtime configuration APIs documented in the
    :ref:`runtime configuration <init-config>` section (and without accounting

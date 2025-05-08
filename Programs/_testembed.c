@@ -576,7 +576,6 @@ static int test_init_global_config(void)
     Py_NoSiteFlag = 1;
 
     putenv("PYTHONINSPECT=");
-    Py_InspectFlag = 1;
 
     putenv("PYTHONOPTIMIZE=0");
     Py_InteractiveFlag = 1;
@@ -707,7 +706,6 @@ static int test_init_from_config(void)
     config.bytes_warning = 1;
 
     putenv("PYTHONINSPECT=");
-    Py_InspectFlag = 0;
     config.inspect = 1;
 
     Py_InteractiveFlag = 0;
@@ -1046,7 +1044,6 @@ static void set_all_global_config_variables(void)
 {
     Py_IsolatedFlag = 0;
     Py_IgnoreEnvironmentFlag = 0;
-    Py_InspectFlag = 1;
     Py_InteractiveFlag = 1;
     Py_OptimizeFlag = 1;
     Py_FrozenFlag = 0;

@@ -705,7 +705,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         ('Py_FileSystemDefaultEncoding', 'filesystem_encoding'),
         ('Py_FrozenFlag', 'pathconfig_warnings', True),
         ('Py_IgnoreEnvironmentFlag', 'use_environment', True),
-        ('Py_InspectFlag', 'inspect'),
         ('Py_InteractiveFlag', 'interactive'),
         ('Py_IsolatedFlag', 'isolated'),
         ('Py_NoSiteFlag', 'site_import', True),
