@@ -1084,8 +1084,16 @@ dummy_func(void) {
         sym_set_const(callable, (PyObject *)&PyUnicode_Type);
     }
 
-    op(_CALL_LEN, (callable[1], self_or_null[1], args[oparg] -- res)) {
+    op(_CALL_LEN, (unused, unused, unused -- res)) {
         res = sym_new_type(ctx, &PyLong_Type);
+    }
+
+    op(_GUARD_CALLABLE_LEN, (callable, unused, unused -- callable, unused, unused)) {
+        PyObject *len = _PyInterpreterState_GET()->callable_cache.len;
+        if (sym_get_const(ctx, callable) == len) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_const(callable, len);
     }
 
 // END BYTECODES //

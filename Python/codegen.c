@@ -399,7 +399,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
                 int opcode, jump_target_label target)
 {
     assert(IS_JUMP_TARGET_LABEL(target));
-    assert(OPCODE_HAS_JUMP(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
+    assert(HAS_TARGET(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
     return _PyInstructionSequence_Addop(seq, opcode, target.id, loc);
 }

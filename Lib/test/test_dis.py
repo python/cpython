@@ -1336,7 +1336,7 @@ class DisTests(DisTestBase):
         # Loop can trigger a quicken where the loop is located
         self.code_quicken(loop_test)
         got = self.get_disassembly(loop_test, adaptive=True)
-        jit = import_helper.import_module("_testinternalcapi").jit_enabled()
+        jit = sys._jit.is_enabled()
         expected = dis_loop_test_quickened_code.format("JIT" if jit else "NO_JIT")
         self.do_disassembly_compare(got, expected)
 

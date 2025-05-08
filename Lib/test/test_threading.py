@@ -5,7 +5,7 @@ Tests for the threading module.
 import test.support
 from test.support import threading_helper, requires_subprocess, requires_gil_enabled
 from test.support import verbose, cpython_only, os_helper
-from test.support.import_helper import import_module
+from test.support.import_helper import ensure_lazy_imports, import_module
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import force_not_colorized
 
@@ -119,6 +119,10 @@ class BaseTestCase(unittest.TestCase):
 
 class ThreadTests(BaseTestCase):
     maxDiff = 9999
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("threading", {"functools", "warnings"})
 
     @cpython_only
     def test_name(self):
@@ -1219,18 +1223,18 @@ class ThreadTests(BaseTestCase):
             import threading
             done = threading.Event()
 
-            def loop():
+            def set_event():
                 done.set()
-
 
             class Cycle:
                 def __init__(self):
                     self.self_ref = self
-                    self.thr = threading.Thread(target=loop, daemon=True)
+                    self.thr = threading.Thread(target=set_event, daemon=True)
                     self.thr.start()
-                    done.wait()
+                    self.thr.join()
 
                 def __del__(self):
+                    assert done.is_set()
                     assert not self.thr.is_alive()
                     self.thr.join()
                     assert not self.thr.is_alive()

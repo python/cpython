@@ -942,6 +942,7 @@ class DirectoryTestCase(ASTTestCase):
             for directory in cls.test_directories
             for item in directory.glob("*.py")
             if not item.name.startswith("bad")
+            and item.name != "annotationlib.py"  # gh-133581: t"" does not roundtrip
         ]
 
         # Test limited subset of files unless the 'cpu' resource is specified.
