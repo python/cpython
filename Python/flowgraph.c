@@ -2871,6 +2871,7 @@ optimize_load_fast(cfg_builder *g)
 
                 // Opcodes that consume no inputs
                 case GET_ANEXT:
+                case GET_ITER:
                 case GET_LEN:
                 case IMPORT_FROM:
                 case MATCH_KEYS:
