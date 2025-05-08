@@ -98,22 +98,6 @@ that the option was set. For example, ``-b`` sets :c:data:`Py_BytesWarningFlag`
 to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
 
-.. c:var:: int Py_HashRandomizationFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.hash_seed` and :c:member:`PyConfig.use_hash_seed` should
-   be used instead, see :ref:`Python Initialization Configuration
-   <init-config>`.
-
-   Set to ``1`` if the :envvar:`PYTHONHASHSEED` environment variable is set to
-   a non-empty string.
-
-   If the flag is non-zero, read the :envvar:`PYTHONHASHSEED` environment
-   variable to initialize the secret hash seed.
-
-   .. deprecated-removed:: 3.12 3.15
-
-
 .. c:var:: int Py_InteractiveFlag
 
    This API is kept for backward compatibility: setting

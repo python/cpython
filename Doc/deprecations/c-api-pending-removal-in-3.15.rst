@@ -71,10 +71,6 @@ Pending removal in Python 3.15
   * :c:var:`Py_InteractiveFlag`:
     Use :c:member:`PyConfig.interactive` or
     :c:func:`PyConfig_Get("interactive") <PyConfig_Get>` instead.
-  * :c:var:`Py_HashRandomizationFlag`:
-    Use :c:member:`PyConfig.use_hash_seed`
-    and :c:member:`PyConfig.hash_seed` or
-    :c:func:`PyConfig_Get("hash_seed") <PyConfig_Get>` instead.
   * :c:var:`Py_IsolatedFlag`:
     Use :c:member:`PyConfig.isolated` or
     :c:func:`PyConfig_Get("isolated") <PyConfig_Get>` instead.
