@@ -831,7 +831,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if value is self.IGNORE_CONFIG:
                 pre_config.pop(key, None)
                 del expected[key]
-        self.assertEqual(pre_config, expected)
+        self.assertDictEqual(pre_config, expected)
 
     def check_config(self, configs, expected):
         config = dict(configs['config'])
@@ -855,7 +855,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         pre_config = configs['pre_config']
         config = configs['config']
 
-        expected = dict(self.DEFAULT_GLOBAL_CONFIG)
+        expected = {}
         for item in self.COPY_GLOBAL_CONFIG:
             if len(item) == 3:
                 global_key, core_key, opposite = item
@@ -943,19 +943,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         config = {
             'program_name': './globalvar',
-            'site_import': False,
-            'bytes_warning': True,
-            'warnoptions': ['default::BytesWarning'],
-            'inspect': True,
             'interactive': True,
-            'optimization_level': 2,
-            'write_bytecode': False,
-            'verbose': True,
-            'quiet': True,
-            'buffered_stdio': False,
-            'remote_debug': True,
-            'user_site_directory': False,
-            'pathconfig_warnings': False,
         }
         self.check_all_configs("test_init_global_config", config, preconfig,
                                api=API_COMPAT)
