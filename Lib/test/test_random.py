@@ -392,6 +392,8 @@ class TestBasicOps:
         self.assertRaises(TypeError, self.gen.getrandbits)
         self.assertRaises(TypeError, self.gen.getrandbits, 1, 2)
         self.assertRaises(ValueError, self.gen.getrandbits, -1)
+        self.assertRaises(OverflowError, self.gen.getrandbits, 1<<1000)
+        self.assertRaises(ValueError, self.gen.getrandbits, -1<<1000)
         self.assertRaises(TypeError, self.gen.getrandbits, 10.1)
 
     def test_pickling(self):
@@ -435,6 +437,8 @@ class TestBasicOps:
         self.assertRaises(TypeError, self.gen.randbytes)
         self.assertRaises(TypeError, self.gen.randbytes, 1, 2)
         self.assertRaises(ValueError, self.gen.randbytes, -1)
+        self.assertRaises(OverflowError, self.gen.randbytes, 1<<1000)
+        self.assertRaises((ValueError, OverflowError), self.gen.randbytes, -1<<1000)
         self.assertRaises(TypeError, self.gen.randbytes, 1.0)
 
     def test_mu_sigma_default_args(self):
@@ -975,6 +979,13 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         for n in range(9):
             self.assertEqual(self.gen.randbytes(n),
                              gen2.getrandbits(n * 8).to_bytes(n, 'little'))
+
+    def test_randbytes_256M(self):
+        self.gen.seed(2849427419)
+        x = self.gen.randbytes(2**29)
+        self.assertEqual(len(x), 2**29)
+        self.assertEqual(x[:12].hex(), 'f6fd9ae63855ab91ea238b4f')
+        self.assertEqual(x[-12:].hex(), '0e7af69a84ee99bf4a11becc')
 
     def test_sample_counts_equivalence(self):
         # Test the documented strong equivalence to a sample with repeated elements.
