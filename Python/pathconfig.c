@@ -295,6 +295,7 @@ _Py_GetStdlibDir(void)
     return NULL;
 }
 
+
 /* removed in 3.15, but kept for stable ABI compatibility */
 PyAPI_FUNC(wchar_t *)
 Py_GetPrefix(void)
