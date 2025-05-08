@@ -762,6 +762,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     # If the last line is empty, we don't need to indent
                     return
 
+                # A stack to keep track of string delimiters (quotes). Push a
+                # quote when entering a string, and pop it when the string
+                # ends. When the stack is empty, we're not inside a string. If
+                # encounter a '#' while not inside a string, it's a comment
+                # start; otherwise, it's just a '#' character within a string.
                 in_string: list[str] = []
                 last_char = None
                 last_line = last_line.rstrip('\r\n')
