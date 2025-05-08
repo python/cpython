@@ -77,8 +77,7 @@ The following functions can be safely called before Python is initialized:
 
    Despite their apparent similarity to some of the functions listed above,
    the following functions **should not be called** before the interpreter has
-   been initialized: :c:func:`Py_EncodeLocale`, :c:func:`Py_GetPath`,
-   :c:func:`Py_GetPrefix`, :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome`, :c:func:`PyEval_InitThreads`, and
+   been initialized: :c:func:`Py_EncodeLocale`, :c:func:`Py_GetPrefix`, :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome`, :c:func:`PyEval_InitThreads`, and
    :c:func:`Py_RunMain`.
 
 
@@ -142,9 +141,6 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    This API is kept for backward compatibility: setting
    :c:member:`PyConfig.pathconfig_warnings` should be used instead, see
    :ref:`Python Initialization Configuration <init-config>`.
-
-   Suppress error messages when calculating the module search path in
-   :c:func:`Py_GetPath`.
 
    Private flag used by ``_freeze_module`` and ``frozenmain`` programs.
 
@@ -584,7 +580,6 @@ Process-wide parameters
    .. index::
       single: Py_Initialize()
       single: main()
-      single: Py_GetPath()
 
    This API is kept for backward compatibility: setting
    :c:member:`PyConfig.program_name` should be used instead, see :ref:`Python
@@ -594,7 +589,7 @@ Process-wide parameters
    the first time, if it is called at all.  It tells the interpreter the value
    of the ``argv[0]`` argument to the :c:func:`main` function of the program
    (converted to wide characters).
-   This is used by :c:func:`Py_GetPath` and some other functions below to find
+   This is used by some other functions below to find
    the Python run-time libraries relative to the interpreter executable.  The
    default value is ``'python'``.  The argument should point to a
    zero-terminated wide character string in static storage whose contents will not
@@ -653,34 +648,6 @@ Process-wide parameters
       Use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
       (:data:`sys.executable`) instead.
 
-
-.. c:function:: wchar_t* Py_GetPath()
-
-   .. index::
-      triple: module; search; path
-      single: path (in module sys)
-
-   Return the default module search path; this is computed from the program name
-   (set by :c:member:`PyConfig.program_name`) and some environment variables.
-   The returned string consists of a series of directory names separated by a
-   platform dependent delimiter character.  The delimiter character is ``':'``
-   on Unix and macOS, ``';'`` on Windows.  The returned string points into
-   static storage; the caller should not modify its value.  The list
-   :data:`sys.path` is initialized with this value on interpreter startup; it
-   can be (and usually is) modified later to change the search path for loading
-   modules.
-
-   This function should not be called before :c:func:`Py_Initialize`, otherwise
-   it returns ``NULL``.
-
-   .. XXX should give the exact rules
-
-   .. versionchanged:: 3.10
-      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
-
-   .. deprecated-removed:: 3.13 3.15
-      Use :c:func:`PyConfig_Get("module_search_paths") <PyConfig_Get>`
-      (:data:`sys.path`) instead.
 
 .. c:function:: const char* Py_GetVersion()
 

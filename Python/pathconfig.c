@@ -273,18 +273,6 @@ Py_SetProgramName(const wchar_t *program_name)
 
 
 wchar_t *
-Py_GetPath(void)
-{
-    /* If the user has provided a path, return that */
-    if (_Py_path_config.module_search_path) {
-        return _Py_path_config.module_search_path;
-    }
-    /* If we have already done calculations, return the calculated path */
-    return _Py_path_config.calculated_module_search_path;
-}
-
-
-wchar_t *
 _Py_GetStdlibDir(void)
 {
     wchar_t *stdlib_dir = _Py_path_config.stdlib_dir;

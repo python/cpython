@@ -1630,8 +1630,6 @@
     added = '3.2'
 [function.Py_GetCopyright]
     added = '3.2'
-[function.Py_GetPath]
-    added = '3.2'
 [function.Py_GetPlatform]
     added = '3.2'
 [function.Py_GetPrefix]

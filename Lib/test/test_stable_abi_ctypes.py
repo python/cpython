@@ -880,7 +880,6 @@ SYMBOL_NAMES = (
     "Py_GetConstant",
     "Py_GetConstantBorrowed",
     "Py_GetCopyright",
-    "Py_GetPath",
     "Py_GetPlatform",
     "Py_GetPrefix",
     "Py_GetProgramFullPath",
