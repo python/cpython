@@ -32,7 +32,7 @@ get_zstd_state_from_type(PyTypeObject *type) {
 
 extern PyType_Spec zstddict_type_spec;
 extern PyType_Spec zstdcompressor_type_spec;
-extern PyType_Spec ZstdDecompressor_type_spec;
+extern PyType_Spec zstddecompressor_type_spec;
 
 struct _zstd_state {
     PyObject *empty_bytes;
