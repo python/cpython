@@ -61,8 +61,8 @@ _get_DDict(ZstdDict *self)
 }
 
 /* Set decompression parameters to decompression context */
-int
-_PyZstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
+static int
+_zstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
 {
     size_t zstd_ret;
     PyObject *key, *value;
@@ -120,8 +120,8 @@ _PyZstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
 }
 
 /* Load dictionary or prefix to decompression context */
-int
-_PyZstd_load_d_dict(ZstdDecompressor *self, PyObject *dict)
+static int
+_zstd_load_d_dict(ZstdDecompressor *self, PyObject *dict)
 {
     size_t zstd_ret;
     _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
@@ -709,7 +709,7 @@ _zstd_ZstdDecompressor___init___impl(ZstdDecompressor *self,
 
     /* Load dictionary to decompression context */
     if (zstd_dict != Py_None) {
-        if (_PyZstd_load_d_dict(self, zstd_dict) < 0) {
+        if (_zstd_load_d_dict(self, zstd_dict) < 0) {
             return -1;
         }
 
@@ -720,7 +720,7 @@ _zstd_ZstdDecompressor___init___impl(ZstdDecompressor *self,
 
     /* Set option to decompression context */
     if (options != Py_None) {
-        if (_PyZstd_set_d_parameters(self, options) < 0) {
+        if (_zstd_set_d_parameters(self, options) < 0) {
             return -1;
         }
     }

@@ -1,3 +1,0 @@
-Use the cpython-bin-deps "externals" repository for Windows LLVM dependency
-management. Installing LLVM manually is no longer necessary for Windows JIT
-builds.
