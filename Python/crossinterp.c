@@ -865,8 +865,10 @@ get_script_xidata(PyThreadState *tstate, PyObject *obj, int pure,
         if (code == NULL) {
             goto error;
         }
+        // Compiled text can't have args or any return statements,
+        // nor be a closure.  It can use globals though.
         if (!pure) {
-            // It can't be a closure.
+            // We don't need to check for globals either.
             checked = 1;
         }
     }
