@@ -1323,7 +1323,7 @@ setup_readline(readlinestate *mod_state)
     /* The name must be defined before initialization */
     rl_readline_name = "python";
 
-#ifndef WITH_EDITLINE
+#if !defined(__APPLE__)
     /* Prevent readline from changing environment variables such as LINES and
      * COLUMNS.
      */
