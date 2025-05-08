@@ -1195,9 +1195,8 @@ bytesiobuf_getbuffer(PyObject *op, Py_buffer *view, int flags)
         return -1;
     }
 
-    bytesiobuf *obj = bytesiobuf_CAST(op);
     int ret;
-    Py_BEGIN_CRITICAL_SECTION(obj->source);
+    Py_BEGIN_CRITICAL_SECTION(bytesiobuf_CAST(op)->source);
     ret = bytesiobuf_getbuffer_lock_held(op, view, flags);
     Py_END_CRITICAL_SECTION();
     return ret;
