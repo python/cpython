@@ -902,6 +902,7 @@ dummy_func(void) {
                     // isinstance(obj, cls) where both obj and cls have known types
                     // We can deduce either True or False
                     PyTypeObject *inst_type = sym_get_type(inst_sym);
+                    // The below check is equivalent to PyObject_TypeCheck(inst, cls)
                     if (sym_matches_type(inst_sym, cls) || PyType_IsSubtype(inst_type, cls)) {
                         res = sym_new_const(ctx, Py_True);
                     }
