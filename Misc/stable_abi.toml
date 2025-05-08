@@ -886,6 +886,9 @@
     added = '3.2'
 [function.PyImport_ImportModuleLevel]
     added = '3.2'
+[function.PyImport_ImportModuleNoBlock]
+    added = '3.2'
+    abi_only = true
 [function.PyImport_ReloadModule]
     added = '3.2'
 [function.PyInterpreterState_Clear]

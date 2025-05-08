@@ -360,6 +360,7 @@ SYMBOL_NAMES = (
     "PyImport_ImportModule",
     "PyImport_ImportModuleLevel",
     "PyImport_ImportModuleLevelObject",
+    "PyImport_ImportModuleNoBlock",
     "PyImport_ReloadModule",
     "PyIndex_Check",
     "PyInterpreterState_Clear",

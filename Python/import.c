@@ -3426,6 +3426,30 @@ PyImport_ImportModule(const char *name)
 }
 
 
+/* Import a module without blocking
+ *
+ * At first it tries to fetch the module from sys.modules. If the module was
+ * never loaded before it loads it with PyImport_ImportModule() unless another
+ * thread holds the import lock. In the latter case the function raises an
+ * ImportError instead of blocking.
+ *
+ * Returns the module object with incremented ref count.
+ *
+ * Removed in 3.15, but kept for stable ABI compatibility.
+ */
+PyAPI_FUNC(PyObject *)
+PyImport_ImportModuleNoBlock(const char *name)
+{
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+        "PyImport_ImportModuleNoBlock() is deprecated and scheduled for "
+        "removal in Python 3.15. Use PyImport_ImportModule() instead.", 1))
+    {
+        return NULL;
+    }
+    return PyImport_ImportModule(name);
+}
+
+
 /* Remove importlib frames from the traceback,
  * except in Verbose mode. */
 static void
