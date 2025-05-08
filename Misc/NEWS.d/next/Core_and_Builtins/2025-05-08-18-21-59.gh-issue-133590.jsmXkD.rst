@@ -1,0 +1,1 @@
+Fix uninitialized linenumber_borrow field in stack reference debug table entries. The field is now properly initialized to 0 in the make_table_entry function, preventing potential undefined behavior when reporting stack reference leaks.
