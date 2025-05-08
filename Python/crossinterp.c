@@ -1830,7 +1830,8 @@ _sharednsitem_has_value(_PyXI_namespace_item *item, int64_t *p_interpid)
 }
 
 static int
-_sharednsitem_set_value(_PyXI_namespace_item *item, PyObject *value)
+_sharednsitem_set_value(_PyXI_namespace_item *item, PyObject *value,
+                        xidata_fallback_t fallback)
 {
     assert(_sharednsitem_is_initialized(item));
     assert(item->xidata == NULL);
@@ -1839,8 +1840,7 @@ _sharednsitem_set_value(_PyXI_namespace_item *item, PyObject *value)
         return -1;
     }
     PyThreadState *tstate = PyThreadState_Get();
-    // XXX Use _PyObject_GetXIDataWithFallback()?
-    if (_PyObject_GetXIDataNoFallback(tstate, value, item->xidata) != 0) {
+    if (_PyObject_GetXIData(tstate, value, fallback, item->xidata) < 0) {
         PyMem_RawFree(item->xidata);
         item->xidata = NULL;
         // The caller may want to propagate PyExc_NotShareableError
@@ -1872,7 +1872,8 @@ _sharednsitem_clear(_PyXI_namespace_item *item)
 }
 
 static int
-_sharednsitem_copy_from_ns(struct _sharednsitem *item, PyObject *ns)
+_sharednsitem_copy_from_ns(struct _sharednsitem *item, PyObject *ns,
+                           xidata_fallback_t fallback)
 {
     assert(item->name != NULL);
     assert(item->xidata == NULL);
@@ -1884,7 +1885,7 @@ _sharednsitem_copy_from_ns(struct _sharednsitem *item, PyObject *ns)
         // When applied, this item will be set to the default (or fail).
         return 0;
     }
-    if (_sharednsitem_set_value(item, value) < 0) {
+    if (_sharednsitem_set_value(item, value, fallback) < 0) {
         return -1;
     }
     return 0;
@@ -2138,14 +2139,15 @@ error:
 static void _propagate_not_shareable_error(_PyXI_session *);
 
 static int
-_fill_sharedns(_PyXI_namespace *ns, PyObject *nsobj, _PyXI_session *session)
+_fill_sharedns(_PyXI_namespace *ns, PyObject *nsobj,
+               xidata_fallback_t fallback, _PyXI_session *session)
 {
     // All items are expected to be shareable.
     assert(_sharedns_check_counts(ns));
     assert(ns->numnames == ns->maxitems);
     assert(ns->numvalues == 0);
     for (Py_ssize_t i=0; i < ns->maxitems; i++) {
-        if (_sharednsitem_copy_from_ns(&ns->items[i], nsobj) < 0) {
+        if (_sharednsitem_copy_from_ns(&ns->items[i], nsobj, fallback) < 0) {
             if (session != NULL) {
                 _propagate_not_shareable_error(session);
             }
@@ -2254,9 +2256,13 @@ struct xi_session {
     // beginning of the session as a convenience.
     PyObject *main_ns;
 
+    // This is a dict of objects that will be available (via sharing)
+    // once the session exits.  Do not access this directly; use
+    // _PyXI_Preserve() and _PyXI_GetPreserved() instead;
+    PyObject *_preserved;
+
     struct xi_session_error error;
 };
-
 
 _PyXI_session *
 _PyXI_NewSession(void)
@@ -2350,14 +2356,16 @@ _exit_session(_PyXI_session *session)
     PyThreadState *tstate = session->init_tstate;
     assert(tstate != NULL);
     assert(PyThreadState_Get() == tstate);
+    assert(!_PyErr_Occurred(tstate));
 
     // Release any of the entered interpreters resources.
     Py_CLEAR(session->main_ns);
+    Py_CLEAR(session->_preserved);
 
     // Ensure this thread no longer owns __main__.
     if (session->running) {
         _PyInterpreterState_SetNotRunningMain(tstate->interp);
-        assert(!PyErr_Occurred());
+        assert(!_PyErr_Occurred(tstate));
         session->running = 0;
     }
 
@@ -2415,7 +2423,9 @@ _PyXI_Enter(_PyXI_session *session,
             if (sharedns == NULL) {
                 return -1;
             }
-            if (_fill_sharedns(sharedns, nsupdates, NULL) < 0) {
+            // For now we limit it to shareable objects.
+            xidata_fallback_t fallback = _PyXIDATA_XIDATA_ONLY;
+            if (_fill_sharedns(sharedns, nsupdates, fallback, NULL) < 0) {
                 assert(session->error.info == NULL);
                 _destroy_sharedns(sharedns);
                 return -1;
@@ -2485,11 +2495,26 @@ error:
     return -1;
 }
 
+static PyObject * _capture_preserved(_PyXI_session *);
+
 int
 _PyXI_Exit(_PyXI_session *session, _PyXI_session_result *result)
 {
     _capture_current_exception(session);
     assert(!PyErr_Occurred());
+
+    if (result != NULL) {
+        result->preserved = _capture_preserved(session);
+        if (result->preserved == NULL && PyErr_Occurred()) {
+            if (session->error.info != NULL) {
+                PyErr_FormatUnraisable(
+                    "Exception ignored while capturing preserved objects");
+            }
+            else {
+                _capture_current_exception(session);
+            }
+        }
+    }
 
     struct xi_session_error err;
     (void)_session_pop_error(session, &err);
@@ -2631,6 +2656,104 @@ _PyXI_GetMainNamespace(_PyXI_session *session)
         return NULL;
     }
     return session->main_ns;
+}
+
+
+static PyObject *
+_capture_preserved(_PyXI_session *session)
+{
+    assert(_PyThreadState_GET() == session->init_tstate);  // active session
+    if (session->init_tstate == session->prev_tstate) {
+        // didn't switch
+        return Py_XNewRef(session->_preserved);
+    }
+
+    _PyXI_namespace *preserved = NULL;
+    if (session->_preserved != NULL) {
+        Py_ssize_t len = PyDict_Size(session->_preserved);
+        if (len < 0) {
+            return NULL;
+        }
+        if (len > 0) {
+            preserved = _create_sharedns(session->_preserved);
+            if (preserved == NULL) {
+                return NULL;
+            }
+            if (_fill_sharedns(preserved, session->_preserved,
+                               _PyXIDATA_FULL_FALLBACK, NULL) < 0)
+            {
+                assert(session->error.info == NULL);
+                _destroy_sharedns(preserved);
+                return NULL;
+            }
+        }
+        Py_CLEAR(session->_preserved);
+    }
+    if (preserved == NULL) {
+        return NULL;
+    }
+
+    // We need to switch back to the original interpreter long enough
+    // to restore the preservd objects.
+    (void)PyThreadState_Swap(session->prev_tstate);
+
+    PyObject *ns = PyDict_New();
+    if (ns == NULL) {
+        goto finally;
+    }
+    if (_apply_sharedns(preserved, ns, NULL) < 0) {
+        Py_CLEAR(ns);
+        goto finally;
+    }
+
+finally:
+    // Swap back into the session.
+    (void)PyThreadState_Swap(session->init_tstate);
+    assert(preserved != NULL);
+    _destroy_sharedns(preserved);
+    return ns;
+}
+
+static void
+set_exc_with_cause(PyObject *exctype, const char *msg)
+{
+    PyObject *cause = PyErr_GetRaisedException();
+    PyErr_SetString(exctype, msg);
+    PyObject *exc = PyErr_GetRaisedException();
+    PyException_SetCause(exc, cause);
+    PyErr_SetRaisedException(exc);
+}
+
+int
+_PyXI_Preserve(_PyXI_session *session, const char *name, PyObject *value)
+{
+    if (session->init_tstate == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "session not active");
+        return -1;
+    }
+    if (session->_preserved == NULL) {
+        session->_preserved = PyDict_New();
+        if (session->_preserved == NULL) {
+            set_exc_with_cause(PyExc_RuntimeError,
+                               "failed to initialize preserved objects");
+            return -1;
+        }
+    }
+    if (PyDict_SetItemString(session->_preserved, name, value) < 0) {
+        set_exc_with_cause(PyExc_RuntimeError, "failed to preserve object");
+        return -1;
+    }
+    return 0;
+}
+
+PyObject *
+_PyXI_GetPreserved(_PyXI_session_result *result, const char *name)
+{
+    PyObject *value = NULL;
+    if (result->preserved != NULL) {
+        (void)PyDict_GetItemStringRef(result->preserved, name, &value);
+    }
+    return value;
 }
 
 
