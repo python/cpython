@@ -762,9 +762,30 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     # If the last line is empty, we don't need to indent
                     return
 
+                in_string: list[str] = []
+                last_char = None
                 last_line = last_line.rstrip('\r\n')
                 indent = len(last_line) - len(last_line.lstrip())
-                if last_line.endswith(":"):
+
+                i = -1
+                while i < len(last_line) - 1:
+                    i += 1
+                    char = last_line[i]
+                    if char == "#":
+                        if in_string:
+                            last_char = char # hashtag in string, not comment
+                        else:
+                            break # ignore from comment start to line end
+                    elif char not in " \t" and not in_string:
+                        last_char = char
+
+                    if char in "\"'" and (i == 0 or last_line[i - 1] != "\\"):
+                        if in_string and in_string[-1] == char:
+                            in_string.pop()
+                        else:
+                            in_string.append(char)
+
+                if last_char == ":":
                     indent += 4
                 readline.insert_text(' ' * indent)
 

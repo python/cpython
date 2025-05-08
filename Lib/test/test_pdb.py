@@ -4870,6 +4870,22 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn(b'42', output)
 
+        # can ignore comment to locate trailing colon
+        input = b"def f(s): # comment\n"
+        # can distinguish hashtag from comment
+        input += b"if s == '#':\n"
+        input += b"return 's == ' + '#'\n"
+        # can ignore all comments, not just from the rightmost '#' to end
+        input += b"\x08\x08\x08\x08else: ##\n"
+        input += b"return 's != ' + '#'\n"
+        input += b"\n"
+        input += b"f('#')\n"
+        input += b"c\n"
+
+        output = run_pty(script, input)
+
+        self.assertIn(b's == #', output)
+
     def test_multiline_completion(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()
