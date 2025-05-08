@@ -3430,19 +3430,11 @@ _PyForIter_NextWithIndex(PyObject *seq, _PyStackRef index)
         }
         return PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq, i));
     }
-    size_t size = PyList_GET_SIZE(seq);
-    if ((size_t)i >= size) {
-        return PyStackRef_NULL;
-    }
-#ifdef Py_GIL_DISABLED
     PyObject *item = _PyList_GetItemRef((PyListObject *)seq, i);
     if (item == NULL) {
         return PyStackRef_NULL;
     }
     return PyStackRef_FromPyObjectSteal(item);
-#else
-    return PyStackRef_FromPyObjectNew(PyList_GET_ITEM(seq, i));
-#endif
 }
 
 /* Check if a 'cls' provides the given special method. */
