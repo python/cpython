@@ -28,43 +28,44 @@ set_zstd_error(const _zstd_state* const state,
     switch (type)
     {
     case ERR_DECOMPRESS:
-        msg = "Unable to decompress zstd data: %s";
+        msg = "decompress zstd data";
         break;
     case ERR_COMPRESS:
-        msg = "Unable to compress zstd data: %s";
+        msg = "compress zstd data";
         break;
     case ERR_SET_PLEDGED_INPUT_SIZE:
-        msg = "Unable to set pledged uncompressed content size: %s";
+        msg = "set pledged uncompressed content size";
         break;
 
     case ERR_LOAD_D_DICT:
-        msg = "Unable to load zstd dictionary or prefix for decompression: %s";
+        msg = "load zstd dictionary or prefix for decompression";
         break;
     case ERR_LOAD_C_DICT:
-        msg = "Unable to load zstd dictionary or prefix for compression: %s";
+        msg = "load zstd dictionary or prefix for compression";
         break;
 
     case ERR_GET_C_BOUNDS:
-        msg = "Unable to get zstd compression parameter bounds: %s";
+        msg = "get zstd compression parameter bounds";
         break;
     case ERR_GET_D_BOUNDS:
-        msg = "Unable to get zstd decompression parameter bounds: %s";
+        msg = "get zstd decompression parameter bounds";
         break;
     case ERR_SET_C_LEVEL:
-        msg = "Unable to set zstd compression level: %s";
+        msg = "set zstd compression level";
         break;
 
     case ERR_TRAIN_DICT:
-        msg = "Unable to train zstd dictionary: %s";
+        msg = "train zstd dictionary";
         break;
     case ERR_FINALIZE_DICT:
-        msg = "Unable to finalize zstd dictionary: %s";
+        msg = "finalize zstd dictionary";
         break;
 
     default:
         Py_UNREACHABLE();
     }
-    PyErr_Format(state->ZstdError, msg, ZSTD_getErrorName(zstd_ret));
+    PyErr_Format(state->ZstdError, "Unable to %s: %s",
+                 msg, ZSTD_getErrorName(zstd_ret));
 }
 
 typedef struct {
