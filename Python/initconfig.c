@@ -463,7 +463,6 @@ static const char usage_envvars[] =
    stdin and stdout error handler to "surrogateescape". */
 int Py_UTF8Mode = 0;
 int Py_InteractiveFlag = 0; /* Previously, was used by Py_FdIsInteractive() */
-int Py_UnbufferedStdioFlag = 0; /* Unbuffered binary std{in,out,err} */
 int Py_HashRandomizationFlag = 0; /* for -R and PYTHONHASHSEED */
 int Py_IsolatedFlag = 0; /* for -I, isolate from user's env */
 #ifdef MS_WINDOWS
@@ -513,7 +512,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     SET_ITEM_INT(Py_UTF8Mode);
     SET_ITEM_INT(Py_InteractiveFlag);
 
-    SET_ITEM_INT(Py_UnbufferedStdioFlag);
     SET_ITEM_INT(Py_HashRandomizationFlag);
     SET_ITEM_INT(Py_IsolatedFlag);
 
@@ -1016,7 +1014,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->quiet = 0;
     config->user_site_directory = 1;
     config->configure_c_stdio = 0;
-    config->buffered_stdio = -1;
+    config->buffered_stdio = 1;
     config->_install_importlib = 1;
     config->check_hash_pycs_mode = NULL;
     config->pathconfig_warnings = 1;
@@ -1665,8 +1663,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
 #endif
 
-    COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
-
 #undef COPY_FLAG
 #undef COPY_NOT_FLAG
 _Py_COMP_DIAG_POP
@@ -1693,8 +1689,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
 #endif
-
-    COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
 
     /* Random or non-zero hash seed */
     Py_HashRandomizationFlag = (config->use_hash_seed == 0 ||

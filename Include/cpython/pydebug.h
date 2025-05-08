@@ -6,7 +6,6 @@ extern "C" {
 #endif
 
 Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_InteractiveFlag;
-Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_UnbufferedStdioFlag;
 Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_HashRandomizationFlag;
 Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_IsolatedFlag;
 

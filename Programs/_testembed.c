@@ -582,7 +582,6 @@ static int test_init_global_config(void)
     putenv("PYTHONVERBOSE=0");
 
     putenv("PYTHONUNBUFFERED=");
-    Py_UnbufferedStdioFlag = 1;
 
     /* FIXME: test Py_LegacyWindowsFSEncodingFlag */
     /* FIXME: test Py_LegacyWindowsStdioFlag */
@@ -712,7 +711,6 @@ static int test_init_from_config(void)
     config.configure_c_stdio = 1;
 
     putenv("PYTHONUNBUFFERED=");
-    Py_UnbufferedStdioFlag = 0;
     config.buffered_stdio = 0;
 
     putenv("PYTHONIOENCODING=cp424");
@@ -1025,7 +1023,6 @@ static void set_all_global_config_variables(void)
 {
     Py_IsolatedFlag = 0;
     Py_InteractiveFlag = 1;
-    Py_UnbufferedStdioFlag = 1;
 #ifdef MS_WINDOWS
     Py_LegacyWindowsStdioFlag = 1;
 #endif
@@ -1090,7 +1087,6 @@ static int check_init_python_config(int preinit)
     /* global configuration variables must be ignored */
     set_all_global_config_variables();
     Py_IsolatedFlag = 1;
-    Py_UnbufferedStdioFlag = 1;
 #ifdef MS_WINDOWS
     Py_LegacyWindowsStdioFlag = 1;
 #endif
