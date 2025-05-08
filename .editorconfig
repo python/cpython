@@ -9,7 +9,7 @@ indent_style = space
 indent_size = 4
 
 [*.rst]
-indent_size = 3
+indent_size = 2
 
 [*.{js,yml,yaml}]
 indent_size = 2
