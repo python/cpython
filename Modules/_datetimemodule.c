@@ -6632,6 +6632,7 @@ local_timezone(PyDateTime_DateTime *utc_time)
 
     PyObject *epoch = get_const_epoch(st);
     if (epoch == NULL) {
+        RELEASE_CURRENT_STATE(st, current_mod);
         return NULL;
     }
     delta = datetime_subtract((PyObject *)utc_time, epoch);
@@ -6881,6 +6882,7 @@ datetime_timestamp(PyObject *op, PyObject *Py_UNUSED(dummy))
 
         PyObject *epoch = get_const_epoch(st);
         if (epoch == NULL) {
+            RELEASE_CURRENT_STATE(st, current_mod);
             return NULL;
         }
         PyObject *delta = datetime_subtract(op, epoch);
