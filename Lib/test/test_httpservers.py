@@ -3,6 +3,7 @@
 Written by Cody A.W. Somerville <cody-somerville@ubuntu.com>,
 Josip Dzolonga, and Michael Otteneder for the 2007/08 GHOP contest.
 """
+import locale
 from collections import OrderedDict
 from http.server import BaseHTTPRequestHandler, HTTPServer, HTTPSServer, \
      SimpleHTTPRequestHandler, CGIHTTPRequestHandler
@@ -551,13 +552,14 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.check_status_and_reason(response, HTTPStatus.OK,
                                      data=os_helper.TESTFN_UNDECODABLE)
 
+    @unittest.skipIf(locale.getpreferredencoding().lower() != 'utf-8', 'test requires utf-8')
     def test_undecodable_parameter(self):
         # sanity check using a valid parameter
         response = self.request(self.base_url + '/?x=123').read()
-        self.assertRegex(response, rf'listing for {self.base_url}/\?x=123'.encode('latin1'))
-        # now the bogus encoding
+        self.assertRegex(response, rf'listing for {self.base_url}/\?x=123'.encode('utf-8'))
+        # now the bogus (utf-8) encoding
         response = self.request(self.base_url + '/?x=%bb').read()
-        self.assertRegex(response, rf'listing for {self.base_url}/\?x=\xef\xbf\xbd'.encode('latin1'))
+        self.assertRegex(response, rf'listing for {self.base_url}/\?x=\xef\xbf\xbd'.encode('utf-8'))
 
     def test_get_dir_redirect_location_domain_injection_bug(self):
         """Ensure //evil.co/..%2f../../X does not put //evil.co/ in Location.
