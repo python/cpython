@@ -1478,7 +1478,16 @@
             }
             else {
                 assert(tuple_length >= 0);
-                len = sym_new_const(ctx, PyLong_FromLong(tuple_length));
+                PyObject *temp = PyLong_FromLong(tuple_length);
+                if (temp == NULL) {
+                    goto error;
+                }
+                len = sym_new_const(ctx, temp);
+                stack_pointer[0] = len;
+                stack_pointer += 1;
+                assert(WITHIN_STACK_BOUNDS());
+                Py_DECREF(temp);
+                stack_pointer += -1;
             }
             stack_pointer[0] = len;
             stack_pointer += 1;

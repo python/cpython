@@ -3,6 +3,7 @@
 #include "pycore_uops.h"
 #include "pycore_uop_ids.h"
 #include "internal/pycore_moduleobject.h"
+#include "tupleobject.h"
 
 #define op(name, ...) /* NAME is ignored */
 
@@ -1095,7 +1096,12 @@ dummy_func(void) {
         }
         else {
             assert(tuple_length >= 0);
-            len = sym_new_const(ctx, PyLong_FromLong(tuple_length));
+            PyObject *temp = PyLong_FromLong(tuple_length);
+            if (temp == NULL) {
+                goto error;
+            }
+            len = sym_new_const(ctx, temp);
+            Py_DECREF(temp);
         }
     }
 
