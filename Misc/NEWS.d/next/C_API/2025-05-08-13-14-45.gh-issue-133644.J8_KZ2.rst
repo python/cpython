@@ -1,0 +1,2 @@
+Remove deprecated getter functions ``Py_Get*`` slated for removal in 3.15.
+Patch by Bénédikt Tran.
