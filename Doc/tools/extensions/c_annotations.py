@@ -273,9 +273,11 @@ class CAPIToolsBanner(SphinxDirective):
     optional_arguments = 0
     final_argument_whitespace = True
 
-    text = sphinx_gettext("It is recommended to use "
-                          ":ref:`C API abstractions <c-api-tools>`, "
-                          "rather than using the Python C API directly.")
+    text = sphinx_gettext(
+        "It is recommended to use "
+        ":ref:`C API abstractions <c-api-tools>`, "
+        "rather than using the Python C API directly."
+    )
 
     def run(self) -> list[nodes.admonition]:
         text = self.text
@@ -287,7 +289,8 @@ class CAPIToolsBanner(SphinxDirective):
 
         source_lines = [text]
         admonition_node = nodes.note(
-            "\n".join(source_lines), classes=["admonition note"])
+            "\n".join(source_lines), classes=["admonition note"]
+        )
         admonition_node.append(text_node)
         return [admonition_node]
 
