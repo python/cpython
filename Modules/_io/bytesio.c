@@ -1195,17 +1195,14 @@ bytesiobuf_getbuffer(PyObject *op, Py_buffer *view, int flags)
         return -1;
     }
 
-#ifdef Py_GIL_DISABLED
     bytesiobuf *obj = bytesiobuf_CAST(op);
     bytesio *b = bytesio_CAST(obj->source);
+    (void)b;
     int ret;
     Py_BEGIN_CRITICAL_SECTION(b);
     ret = bytesiobuf_getbuffer_lock_held(op, view, flags);
     Py_END_CRITICAL_SECTION();
     return ret;
-#else
-    return bytesiobuf_getbuffer_lock_held(op, view, flags);
-#endif
 }
 
 static void
