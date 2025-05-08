@@ -846,6 +846,7 @@ get_script_xidata(PyThreadState *tstate, PyObject *obj, int pure,
     }
     else {
         const char *filename = "<script>";
+        int optimize = 0;
         PyCompilerFlags cf = _PyCompilerFlags_INIT;
         cf.cf_flags = PyCF_SOURCE_IS_UTF8;
         PyObject *ref = NULL;
@@ -858,7 +859,8 @@ get_script_xidata(PyThreadState *tstate, PyObject *obj, int pure,
             }
             goto error;
         }
-        code = Py_CompileStringExFlags(script, filename, Py_file_input, &cf, 0);
+        code = Py_CompileStringExFlags(
+                    script, filename, Py_file_input, &cf, optimize);
         Py_XDECREF(ref);
         if (code == NULL) {
             goto error;
