@@ -89,9 +89,6 @@ Pending removal in Python 3.15
   * :c:var:`Py_NoSiteFlag`:
     Use :c:member:`PyConfig.site_import` or
     :c:func:`PyConfig_Get("site_import") <PyConfig_Get>` instead.
-  * :c:var:`Py_BytesWarningFlag`:
-    Use :c:member:`PyConfig.bytes_warning` or
-    :c:func:`PyConfig_Get("bytes_warning") <PyConfig_Get>` instead.
   * :c:var:`Py_FrozenFlag`:
     Use :c:member:`PyConfig.pathconfig_warnings` or
     :c:func:`PyConfig_Get("pathconfig_warnings") <PyConfig_Get>` instead.

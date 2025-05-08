@@ -12,7 +12,6 @@ Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_InteractiveFlag;
 Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_InspectFlag;
 Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_OptimizeFlag;
 Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_NoSiteFlag;
-Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_BytesWarningFlag;
 Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_FrozenFlag;
 Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_IgnoreEnvironmentFlag;
 Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_DontWriteBytecodeFlag;

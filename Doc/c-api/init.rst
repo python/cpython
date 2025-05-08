@@ -97,20 +97,6 @@ When a flag is set by an option, the value of the flag is the number of times
 that the option was set. For example, ``-b`` sets :c:data:`Py_BytesWarningFlag`
 to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
-.. c:var:: int Py_BytesWarningFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.bytes_warning` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Issue a warning when comparing :class:`bytes` or :class:`bytearray` with
-   :class:`str` or :class:`bytes` with :class:`int`.  Issue an error if greater
-   or equal to ``2``.
-
-   Set by the :option:`-b` option.
-
-   .. deprecated-removed:: 3.12 3.15
-
 .. c:var:: int Py_DebugFlag
 
    This API is kept for backward compatibility: setting

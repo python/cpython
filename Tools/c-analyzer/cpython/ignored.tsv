@@ -116,7 +116,6 @@ Python/initconfig.c	-	Py_InteractiveFlag	-
 Python/initconfig.c	-	Py_InspectFlag	-
 Python/initconfig.c	-	Py_OptimizeFlag	-
 Python/initconfig.c	-	Py_NoSiteFlag	-
-Python/initconfig.c	-	Py_BytesWarningFlag	-
 Python/initconfig.c	-	Py_FrozenFlag	-
 Python/initconfig.c	-	Py_IgnoreEnvironmentFlag	-
 Python/initconfig.c	-	Py_DontWriteBytecodeFlag	-

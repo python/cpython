@@ -574,7 +574,6 @@ static int test_init_global_config(void)
 
     /* Py_IsolatedFlag is not tested */
     Py_NoSiteFlag = 1;
-    Py_BytesWarningFlag = 1;
 
     putenv("PYTHONINSPECT=");
     Py_InspectFlag = 1;
@@ -710,7 +709,6 @@ static int test_init_from_config(void)
     Py_NoSiteFlag = 0;
     config.site_import = 0;
 
-    Py_BytesWarningFlag = 0;
     config.bytes_warning = 1;
 
     putenv("PYTHONINSPECT=");
@@ -1054,7 +1052,6 @@ static void set_all_global_config_variables(void)
 {
     Py_IsolatedFlag = 0;
     Py_IgnoreEnvironmentFlag = 0;
-    Py_BytesWarningFlag = 2;
     Py_InspectFlag = 1;
     Py_InteractiveFlag = 1;
     Py_OptimizeFlag = 1;
