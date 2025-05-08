@@ -1670,6 +1670,9 @@ _sys_getwindowsversion_from_kernel32(void)
         !GetFileVersionInfoW(kernel32_path, 0, verblock_size, verblock) ||
         !VerQueryValueW(verblock, L"", (LPVOID)&ffi, &ffi_len)) {
         PyErr_SetFromWindowsErr(0);
+        if (verblock) {
+            PyMem_RawFree(verblock);
+        }
         return NULL;
     }
 
