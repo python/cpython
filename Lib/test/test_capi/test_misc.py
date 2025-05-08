@@ -306,7 +306,7 @@ class CAPITest(unittest.TestCase):
                     CURRENT_THREAD_REGEX +
                     r'  File .*, line 6 in <module>\n'
                     r'\n'
-                    r'Extension modules: _testcapi, _testinternalcapi \(total: 2\)\n')
+                    r'Extension modules: _testcapi \(total: 1\)\n')
         else:
             # Python built with NDEBUG macro defined:
             # test _Py_CheckFunctionResult() instead.

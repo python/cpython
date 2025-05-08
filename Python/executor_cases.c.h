@@ -5804,35 +5804,31 @@
             break;
         }
 
-        case _CALL_LEN: {
-            _PyStackRef *args;
-            _PyStackRef self_or_null;
+        case _GUARD_CALLABLE_LEN: {
             _PyStackRef callable;
-            _PyStackRef res;
-            oparg = CURRENT_OPARG();
-            args = &stack_pointer[-oparg];
-            self_or_null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3];
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
-            int total_args = oparg;
-            if (!PyStackRef_IsNull(self_or_null)) {
-                args--;
-                total_args++;
-            }
-            if (total_args != 1) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
             PyInterpreterState *interp = tstate->interp;
             if (callable_o != interp->callable_cache.len) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            break;
+        }
+
+        case _CALL_LEN: {
+            _PyStackRef arg;
+            _PyStackRef null;
+            _PyStackRef callable;
+            _PyStackRef res;
+            arg = stack_pointer[-1];
+            null = stack_pointer[-2];
+            callable = stack_pointer[-3];
+            (void)null;
             STAT_INC(CALL, hit);
-            _PyStackRef arg_stackref = args[0];
-            PyObject *arg = PyStackRef_AsPyObjectBorrow(arg_stackref);
+            PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            Py_ssize_t len_i = PyObject_Length(arg);
+            Py_ssize_t len_i = PyObject_Length(arg_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (len_i < 0) {
                 JUMP_TO_ERROR();
@@ -5842,10 +5838,12 @@
             if (res_o == NULL) {
                 JUMP_TO_ERROR();
             }
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(arg_stackref);
+            PyStackRef_CLOSE(arg);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            stack_pointer += -2 - oparg;
+            stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(callable);
@@ -6969,7 +6967,6 @@
                 Py_CLEAR(exit->executor);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
-            tstate->previous_executor = (PyObject *)current_executor;
             if (exit->executor == NULL) {
                 _Py_BackoffCounter temperature = exit->temperature;
                 if (!backoff_counter_triggers(temperature)) {
@@ -6994,7 +6991,6 @@
                 }
                 exit->executor = executor;
             }
-            Py_INCREF(exit->executor);
             GOTO_TIER_TWO(exit->executor);
             break;
         }
@@ -7098,9 +7094,6 @@
 
         case _START_EXECUTOR: {
             PyObject *executor = (PyObject *)CURRENT_OPERAND0();
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            Py_CLEAR(tstate->previous_executor);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             #ifndef _Py_JIT
             current_executor = (_PyExecutorObject*)executor;
             #endif
@@ -7123,7 +7116,6 @@
         }
 
         case _DEOPT: {
-            tstate->previous_executor = (PyObject *)current_executor;
             GOTO_TIER_ONE(_PyFrame_GetBytecode(frame) + CURRENT_TARGET());
             break;
         }
@@ -7131,7 +7123,6 @@
         case _ERROR_POP_N: {
             oparg = CURRENT_OPARG();
             uint32_t target = (uint32_t)CURRENT_OPERAND0();
-            tstate->previous_executor = (PyObject *)current_executor;
             assert(oparg == 0);
             frame->instr_ptr = _PyFrame_GetBytecode(frame) + target;
             GOTO_TIER_ONE(NULL);

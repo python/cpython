@@ -2795,6 +2795,11 @@ optimize_load_fast(cfg_builder *g)
             assert(opcode != EXTENDED_ARG);
             switch (opcode) {
                 // Opcodes that load and store locals
+                case DELETE_FAST: {
+                    kill_local(instr_flags, &refs, oparg);
+                    break;
+                }
+
                 case LOAD_FAST: {
                     PUSH_REF(i, oparg);
                     break;

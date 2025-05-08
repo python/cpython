@@ -1,7 +1,9 @@
 # A test suite for pdb; not very comprehensive at the moment.
 
+import _colorize
 import doctest
 import gc
+import io
 import os
 import pdb
 import sys
@@ -18,7 +20,7 @@ from asyncio.events import _set_event_loop_policy
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from test import support
-from test.support import force_not_colorized, has_socket_support, os_helper
+from test.support import has_socket_support, os_helper
 from test.support.import_helper import import_module
 from test.support.pty_helper import run_pty, FakeInput
 from test.support.script_helper import kill_python
@@ -3446,6 +3448,7 @@ def test_pdb_issue_gh_65052():
     """
 
 
+@support.force_not_colorized_test_class
 @support.requires_subprocess()
 class PdbTestCase(unittest.TestCase):
     def tearDown(self):
@@ -3740,7 +3743,6 @@ def bœr():
         self.assertNotIn(b'Error', stdout,
                          "Got an error running test script under PDB")
 
-    @force_not_colorized
     def test_issue16180(self):
         # A syntax error in the debuggee.
         script = "def f: pass\n"
@@ -3754,7 +3756,6 @@ def bœr():
             'Fail to handle a syntax error in the debuggee.'
             .format(expected, stderr))
 
-    @force_not_colorized
     def test_issue84583(self):
         # A syntax error from ast.literal_eval should not make pdb exit.
         script = "import ast; ast.literal_eval('')\n"
@@ -4688,6 +4689,40 @@ class PdbTestInline(unittest.TestCase):
         self.assertIn("42", stdout)
 
 
+@support.force_colorized_test_class
+class PdbTestColorize(unittest.TestCase):
+    def setUp(self):
+        self._original_can_colorize = _colorize.can_colorize
+        # Force colorize to be enabled because we are sending data
+        # to a StringIO
+        _colorize.can_colorize = lambda *args, **kwargs: True
+
+    def tearDown(self):
+        _colorize.can_colorize = self._original_can_colorize
+
+    def test_code_display(self):
+        output = io.StringIO()
+        p = pdb.Pdb(stdout=output, colorize=True)
+        p.set_trace(commands=['ll', 'c'])
+        self.assertIn("\x1b", output.getvalue())
+
+        output = io.StringIO()
+        p = pdb.Pdb(stdout=output, colorize=False)
+        p.set_trace(commands=['ll', 'c'])
+        self.assertNotIn("\x1b", output.getvalue())
+
+        output = io.StringIO()
+        p = pdb.Pdb(stdout=output)
+        p.set_trace(commands=['ll', 'c'])
+        self.assertNotIn("\x1b", output.getvalue())
+
+    def test_stack_entry(self):
+        output = io.StringIO()
+        p = pdb.Pdb(stdout=output, colorize=True)
+        p.set_trace(commands=['w', 'c'])
+        self.assertIn("\x1b", output.getvalue())
+
+
 @support.force_not_colorized_test_class
 @support.requires_subprocess()
 class TestREPLSession(unittest.TestCase):
@@ -4711,6 +4746,7 @@ class TestREPLSession(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
 
 
+@support.force_not_colorized_test_class
 @support.requires_subprocess()
 class PdbTestReadline(unittest.TestCase):
     def setUpClass():
@@ -4812,14 +4848,37 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn(b'I love Python', output)
 
+    @unittest.skipIf(sys.platform.startswith('freebsd'),
+                     '\\x08 is not interpreted as backspace on FreeBSD')
+    def test_multiline_auto_indent(self):
+        script = textwrap.dedent("""
+            import pdb; pdb.Pdb().set_trace()
+        """)
+
+        input = b"def f(x):\n"
+        input += b"if x > 0:\n"
+        input += b"x += 1\n"
+        input += b"return x\n"
+        # We need to do backspaces to remove the auto-indentation
+        input += b"\x08\x08\x08\x08else:\n"
+        input += b"return -x\n"
+        input += b"\n"
+        input += b"f(-21-21)\n"
+        input += b"c\n"
+
+        output = run_pty(script, input)
+
+        self.assertIn(b'42', output)
+
     def test_multiline_completion(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()
         """)
 
         input = b"def func():\n"
-        # Complete: \treturn 40 + 2
-        input += b"\tret\t 40 + 2\n"
+        # Auto-indent
+        # Complete: return 40 + 2
+        input += b"ret\t 40 + 2\n"
         input += b"\n"
         # Complete: func()
         input += b"fun\t()\n"
@@ -4829,6 +4888,8 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn(b'42', output)
 
+    @unittest.skipIf(sys.platform.startswith('freebsd'),
+                     '\\x08 is not interpreted as backspace on FreeBSD')
     def test_multiline_indent_completion(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()
@@ -4839,12 +4900,13 @@ class PdbTestReadline(unittest.TestCase):
         # if the completion is not working as expected
         input = textwrap.dedent("""\
             def func():
-            \ta = 1
-             \ta += 1
-              \ta += 1
-               \tif a > 0:
-                    a += 1
-            \t\treturn a
+            a = 1
+            \x08\ta += 1
+            \x08\x08\ta += 1
+            \x08\x08\x08\ta += 1
+            \x08\x08\x08\x08\tif a > 0:
+            a += 1
+            \x08\x08\x08\x08return a
 
             func()
             c
@@ -4852,7 +4914,7 @@ class PdbTestReadline(unittest.TestCase):
 
         output = run_pty(script, input)
 
-        self.assertIn(b'4', output)
+        self.assertIn(b'5', output)
         self.assertNotIn(b'Error', output)
 
     def test_interact_completion(self):
