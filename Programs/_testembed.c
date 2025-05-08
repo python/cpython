@@ -581,7 +581,6 @@ static int test_init_global_config(void)
     Py_InteractiveFlag = 1;
 
     putenv("PYTHONDEBUG=0");
-    Py_OptimizeFlag = 2;
 
     putenv("PYTHONDONTWRITEBYTECODE=");
     Py_DontWriteBytecodeFlag = 1;
@@ -712,7 +711,6 @@ static int test_init_from_config(void)
     config.interactive = 1;
 
     putenv("PYTHONOPTIMIZE=0");
-    Py_OptimizeFlag = 1;
     config.optimization_level = 2;
 
     /* FIXME: test parser_debug */
@@ -1045,7 +1043,6 @@ static void set_all_global_config_variables(void)
     Py_IsolatedFlag = 0;
     Py_IgnoreEnvironmentFlag = 0;
     Py_InteractiveFlag = 1;
-    Py_OptimizeFlag = 1;
     Py_FrozenFlag = 0;
     Py_UnbufferedStdioFlag = 1;
     Py_NoSiteFlag = 1;

@@ -709,7 +709,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         ('Py_IsolatedFlag', 'isolated'),
         ('Py_NoSiteFlag', 'site_import', True),
         ('Py_NoUserSiteDirectory', 'user_site_directory', True),
-        ('Py_OptimizeFlag', 'optimization_level'),
         ('Py_UnbufferedStdioFlag', 'buffered_stdio', True),
     ]
     if MS_WINDOWS:

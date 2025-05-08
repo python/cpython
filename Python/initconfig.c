@@ -463,7 +463,6 @@ static const char usage_envvars[] =
    stdin and stdout error handler to "surrogateescape". */
 int Py_UTF8Mode = 0;
 int Py_InteractiveFlag = 0; /* Previously, was used by Py_FdIsInteractive() */
-int Py_OptimizeFlag = 0; /* Needed by compile.c */
 int Py_NoSiteFlag = 0; /* Suppress 'import site' */
 int Py_FrozenFlag = 0; /* Needed by getpath.c */
 int Py_IgnoreEnvironmentFlag = 0; /* e.g. PYTHONPATH, PYTHONHOME */
@@ -519,7 +518,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     SET_ITEM_INT(Py_UTF8Mode);
     SET_ITEM_INT(Py_InteractiveFlag);
 
-    SET_ITEM_INT(Py_OptimizeFlag);
     SET_ITEM_INT(Py_NoSiteFlag);
     SET_ITEM_INT(Py_FrozenFlag);
     SET_ITEM_INT(Py_IgnoreEnvironmentFlag);
@@ -1012,12 +1010,12 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->warn_default_encoding = 0;
     config->inspect = 0;
     config->interactive = -1;
-    config->optimization_level = -1;
-    config->parser_debug= -1;
-    config->write_bytecode = -1;
-    config->verbose = -1;
-    config->quiet = -1;
-    config->user_site_directory = -1;
+    config->optimization_level = 0;
+    config->parser_debug = 0;
+    config->write_bytecode = 1;
+    config->verbose = 0;
+    config->quiet = 0;
+    config->user_site_directory = 1;
     config->configure_c_stdio = 0;
     config->buffered_stdio = -1;
     config->_install_importlib = 1;
@@ -1665,7 +1663,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
     COPY_FLAG(interactive, Py_InteractiveFlag);
-    COPY_FLAG(optimization_level, Py_OptimizeFlag);
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
 #endif
@@ -1700,7 +1697,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
     COPY_FLAG(interactive, Py_InteractiveFlag);
-    COPY_FLAG(optimization_level, Py_OptimizeFlag);
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
 #endif

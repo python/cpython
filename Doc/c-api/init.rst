@@ -245,17 +245,6 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. deprecated-removed:: 3.12 3.15
 
-.. c:var:: int Py_OptimizeFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.optimization_level` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Set by the :option:`-O` option and the :envvar:`PYTHONOPTIMIZE` environment
-   variable.
-
-   .. deprecated-removed:: 3.12 3.15
-
 
 .. c:var:: int Py_UnbufferedStdioFlag
 
