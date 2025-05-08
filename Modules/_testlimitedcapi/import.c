@@ -108,23 +108,6 @@ pyimport_importmodule(PyObject *Py_UNUSED(module), PyObject *args)
 }
 
 
-/* Test PyImport_ImportModuleNoBlock() */
-static PyObject *
-pyimport_importmodulenoblock(PyObject *Py_UNUSED(module), PyObject *args)
-{
-    const char *name;
-    Py_ssize_t size;
-    if (!PyArg_ParseTuple(args, "z#", &name, &size)) {
-        return NULL;
-    }
-
-    _Py_COMP_DIAG_PUSH
-    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    return PyImport_ImportModuleNoBlock(name);
-    _Py_COMP_DIAG_POP
-}
-
-
 /* Test PyImport_ImportModuleEx() */
 static PyObject *
 pyimport_importmoduleex(PyObject *Py_UNUSED(module), PyObject *args)
@@ -285,7 +268,6 @@ static PyMethodDef test_methods[] = {
     {"PyImport_AddModuleRef", pyimport_addmoduleref, METH_VARARGS},
     {"PyImport_Import", pyimport_import, METH_O},
     {"PyImport_ImportModule", pyimport_importmodule, METH_VARARGS},
-    {"PyImport_ImportModuleNoBlock", pyimport_importmodulenoblock, METH_VARARGS},
     {"PyImport_ImportModuleEx", pyimport_importmoduleex, METH_VARARGS},
     {"PyImport_ImportModuleLevel", pyimport_importmodulelevel, METH_VARARGS},
     {"PyImport_ImportModuleLevelObject", pyimport_importmodulelevelobject, METH_VARARGS},

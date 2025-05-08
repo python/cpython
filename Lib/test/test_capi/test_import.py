@@ -133,15 +133,6 @@ class ImportTests(unittest.TestCase):
         self.assertRaises(UnicodeDecodeError, importmodule, b'\xff')
         # CRASHES importmodule(NULL)
 
-    def test_importmodulenoblock(self):
-        # Test deprecated PyImport_ImportModuleNoBlock()
-        importmodulenoblock = _testlimitedcapi.PyImport_ImportModuleNoBlock
-        with check_warnings(('', DeprecationWarning)):
-            self.check_import_func(importmodulenoblock)
-            self.assertRaises(UnicodeDecodeError, importmodulenoblock, b'\xff')
-
-        # CRASHES importmodulenoblock(NULL)
-
     def check_frozen_import(self, import_frozen_module):
         # Importing a frozen module executes its code, so start by unloading
         # the module to execute the code in a new (temporary) module.

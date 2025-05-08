@@ -1,0 +1,2 @@
+Remove deprecated :c:func:`!PyImport_ImportModuleNoBlock`. Use
+:c:func:`PyImport_ImportModule` instead. Patch by Bénédikt Tran.
