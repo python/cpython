@@ -112,7 +112,7 @@ Some facts and figures:
    ``'w|bz2'``, :func:`tarfile.open` accepts the keyword argument
    *compresslevel* (default ``9``) to specify the compression level of the file.
 
-   For modes ``'w:xz'`` and ``'x:xz'``, :func:`tarfile.open` accepts the
+   For modes ``'w:xz'``, ``'x:xz'`` and ``'w|xz'``, :func:`tarfile.open` accepts the
    keyword argument *preset* to specify the compression level of the file.
 
    For special purposes, there is a second format for *mode*:
@@ -166,6 +166,9 @@ Some facts and figures:
 
    .. versionchanged:: 3.12
       The *compresslevel* keyword argument also works for streams.
+
+   .. versionchanged:: 3.14
+      The *preset* keyword argument also works for streams.
 
 
 .. class:: TarFile
@@ -615,7 +618,7 @@ be finalized; only the internally used file object will be closed. See the
    it is best practice to only do so in top-level applications or
    :mod:`site configuration <site>`.
    To set a global default this way, a filter function needs to be wrapped in
-   :func:`staticmethod()` to prevent injection of a ``self`` argument.
+   :func:`staticmethod` to prevent injection of a ``self`` argument.
 
    .. versionchanged:: 3.14
 

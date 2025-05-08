@@ -1,15 +1,21 @@
+import _ast_unparse
 import ast
 import builtins
+import contextlib
 import copy
 import dis
 import enum
+import itertools
 import os
 import re
 import sys
+import tempfile
 import textwrap
 import types
 import unittest
 import weakref
+from io import StringIO
+from pathlib import Path
 from textwrap import dedent
 try:
     import _testinternalcapi
@@ -17,8 +23,10 @@ except ImportError:
     _testinternalcapi = None
 
 from test import support
-from test.support import os_helper, script_helper
+from test.support import os_helper
+from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow
 from test.support.ast_helper import ASTTestMixin
+from test.support.import_helper import ensure_lazy_imports
 from test.test_ast.utils import to_tuple
 from test.test_ast.snippets import (
     eval_tests, eval_results, exec_tests, exec_results, single_tests, single_results
@@ -28,6 +36,22 @@ from test.test_ast.snippets import (
 STDLIB = os.path.dirname(ast.__file__)
 STDLIB_FILES = [fn for fn in os.listdir(STDLIB) if fn.endswith(".py")]
 STDLIB_FILES.extend(["test/test_grammar.py", "test/test_unpack_ex.py"])
+
+AST_REPR_DATA_FILE = Path(__file__).parent / "data" / "ast_repr.txt"
+
+def ast_repr_get_test_cases() -> list[str]:
+    return exec_tests + eval_tests
+
+
+def ast_repr_update_snapshots() -> None:
+    data = [repr(ast.parse(test)) for test in ast_repr_get_test_cases()]
+    AST_REPR_DATA_FILE.write_text("\n".join(data))
+
+
+class LazyImportTest(unittest.TestCase):
+    @support.cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("ast", {"contextlib", "enum", "inspect", "re", "collections", "argparse"})
 
 
 class AST_Tests(unittest.TestCase):
@@ -73,6 +97,23 @@ class AST_Tests(unittest.TestCase):
             # "ast.AST constructor takes 0 positional arguments"
             ast.AST(2)
 
+    def test_AST_fields_NULL_check(self):
+        # See: https://github.com/python/cpython/issues/126105
+        old_value = ast.AST._fields
+
+        def cleanup():
+            ast.AST._fields = old_value
+        self.addCleanup(cleanup)
+
+        del ast.AST._fields
+
+        msg = "type object 'ast.AST' has no attribute '_fields'"
+        # Both examples used to crash:
+        with self.assertRaisesRegex(AttributeError, msg):
+            ast.AST(arg1=123)
+        with self.assertRaisesRegex(AttributeError, msg):
+            ast.AST()
+
     def test_AST_garbage_collection(self):
         class X:
             pass
@@ -103,6 +144,12 @@ class AST_Tests(unittest.TestCase):
             tree = ast.parse(snippet)
             compile(tree, '<string>', 'exec')
 
+    def test_parse_invalid_ast(self):
+        # see gh-130139
+        for optval in (-1, 0, 1, 2):
+            self.assertRaises(TypeError, ast.parse, ast.Constant(42),
+                              optimize=optval)
+
     def test_optimization_levels__debug__(self):
         cases = [(-1, '__debug__'), (0, '__debug__'), (1, False), (2, False)]
         for (optval, expected) in cases:
@@ -117,23 +164,6 @@ class AST_Tests(unittest.TestCase):
                     else:
                         self.assertIsInstance(res.body[0].value, ast.Name)
                         self.assertEqual(res.body[0].value.id, expected)
-
-    def test_optimization_levels_const_folding(self):
-        folded = ('Expr', (1, 0, 1, 5), ('Constant', (1, 0, 1, 5), 3, None))
-        not_folded = ('Expr', (1, 0, 1, 5),
-                         ('BinOp', (1, 0, 1, 5),
-                             ('Constant', (1, 0, 1, 1), 1, None),
-                             ('Add',),
-                             ('Constant', (1, 4, 1, 5), 2, None)))
-
-        cases = [(-1, not_folded), (0, not_folded), (1, folded), (2, folded)]
-        for (optval, expected) in cases:
-            with self.subTest(optval=optval):
-                tree1 = ast.parse("1 + 2", optimize=optval)
-                tree2 = ast.parse(ast.parse("1 + 2"), optimize=optval)
-                for tree in [tree1, tree2]:
-                    res = to_tuple(tree.body[0])
-                    self.assertEqual(res, expected)
 
     def test_invalid_position_information(self):
         invalid_linenos = [
@@ -169,6 +199,26 @@ class AST_Tests(unittest.TestCase):
 
         # Check that compilation doesn't crash. Note: this may crash explicitly only on debug mode.
         compile(tree, "<string>", "exec")
+
+    def test_negative_locations_for_compile(self):
+        # See https://github.com/python/cpython/issues/130775
+        alias = ast.alias(name='traceback', lineno=0, col_offset=0)
+        for attrs in (
+            {'lineno': -2, 'col_offset': 0},
+            {'lineno': 0, 'col_offset': -2},
+            {'lineno': 0, 'col_offset': -2, 'end_col_offset': -2},
+            {'lineno': -2, 'end_lineno': -2, 'col_offset': 0},
+        ):
+            with self.subTest(attrs=attrs):
+                tree = ast.Module(body=[
+                    ast.Import(names=[alias], **attrs)
+                ], type_ignores=[])
+
+                # It used to crash on this step:
+                compile(tree, "<string>", "exec")
+
+                # This also must not crash:
+                ast.parse(tree, optimize=2)
 
     def test_slice(self):
         slc = ast.parse("x[::]").body[0].value.slice
@@ -259,7 +309,7 @@ class AST_Tests(unittest.TestCase):
         x = ast.arguments()
         self.assertEqual(x._fields, ('posonlyargs', 'args', 'vararg', 'kwonlyargs',
                                      'kw_defaults', 'kwarg', 'defaults'))
-        self.assertEqual(x.__annotations__, {
+        self.assertEqual(ast.arguments.__annotations__, {
             'posonlyargs': list[ast.arg],
             'args': list[ast.arg],
             'vararg': ast.arg | None,
@@ -408,7 +458,7 @@ class AST_Tests(unittest.TestCase):
         m = ast.Module([ast.Expr(ast.expr(**pos), **pos)], [])
         with self.assertRaises(TypeError) as cm:
             compile(m, "<test>", "exec")
-        self.assertIn("but got <ast.expr", str(cm.exception))
+        self.assertIn("but got expr()", str(cm.exception))
 
     def test_invalid_identifier(self):
         m = ast.Module([ast.Expr(ast.Name(42, ast.Load()))], [])
@@ -636,6 +686,91 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             ast.parse('(x := 0)', feature_version=(3, 7))
 
+    def test_pep750_tstring(self):
+        code = 't""'
+        ast.parse(code, feature_version=(3, 14))
+        with self.assertRaises(SyntaxError):
+            ast.parse(code, feature_version=(3, 13))
+
+    def test_pep758_except_without_parens(self):
+        code = textwrap.dedent("""
+            try:
+                ...
+            except ValueError, TypeError:
+                ...
+        """)
+        ast.parse(code, feature_version=(3, 14))
+        with self.assertRaises(SyntaxError):
+            ast.parse(code, feature_version=(3, 13))
+
+    def test_pep758_except_with_single_expr(self):
+        single_expr = textwrap.dedent("""
+            try:
+                ...
+            except{0} TypeError:
+                ...
+        """)
+
+        single_expr_with_as = textwrap.dedent("""
+            try:
+                ...
+            except{0} TypeError as exc:
+                ...
+        """)
+
+        single_tuple_expr = textwrap.dedent("""
+            try:
+                ...
+            except{0} (TypeError,):
+                ...
+        """)
+
+        single_tuple_expr_with_as = textwrap.dedent("""
+            try:
+                ...
+            except{0} (TypeError,) as exc:
+                ...
+        """)
+
+        single_parens_expr = textwrap.dedent("""
+            try:
+                ...
+            except{0} (TypeError):
+                ...
+        """)
+
+        single_parens_expr_with_as = textwrap.dedent("""
+            try:
+                ...
+            except{0} (TypeError) as exc:
+                ...
+        """)
+
+        for code in [
+            single_expr,
+            single_expr_with_as,
+            single_tuple_expr,
+            single_tuple_expr_with_as,
+            single_parens_expr,
+            single_parens_expr_with_as,
+        ]:
+            for star in [True, False]:
+                code = code.format('*' if star else '')
+                with self.subTest(code=code, star=star):
+                    ast.parse(code, feature_version=(3, 14))
+                    ast.parse(code, feature_version=(3, 13))
+
+    def test_pep758_except_star_without_parens(self):
+        code = textwrap.dedent("""
+            try:
+                ...
+            except* ValueError, TypeError:
+                ...
+        """)
+        ast.parse(code, feature_version=(3, 14))
+        with self.assertRaises(SyntaxError):
+            ast.parse(code, feature_version=(3, 13))
+
     def test_conditional_context_managers_parse_with_low_feature_version(self):
         # regression test for gh-115881
         ast.parse('with (x() if y else z()): ...', feature_version=(3, 8))
@@ -686,6 +821,17 @@ class AST_Tests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, f"identifier field can't represent '{constant}' constant"):
                 compile(expr, "<test>", "eval")
 
+    def test_constant_as_unicode_name(self):
+        constants = [
+            ("True", b"Tru\xe1\xb5\x89"),
+            ("False", b"Fal\xc5\xbfe"),
+            ("None", b"N\xc2\xbane"),
+        ]
+        for constant in constants:
+            with self.assertRaisesRegex(ValueError,
+                f"identifier field can't represent '{constant[0]}' constant"):
+                ast.parse(constant[1], mode="eval")
+
     def test_precedence_enum(self):
         class _Precedence(enum.IntEnum):
             """Precedence table that originated from python grammar."""
@@ -714,13 +860,14 @@ class AST_Tests(unittest.TestCase):
                     return self.__class__(self + 1)
                 except ValueError:
                     return self
-        enum._test_simple_enum(_Precedence, ast._Precedence)
+        enum._test_simple_enum(_Precedence, _ast_unparse._Precedence)
 
     @support.cpython_only
+    @skip_wasi_stack_overflow()
+    @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
-        fail_depth = support.exceeds_recursion_limit()
-        crash_depth = 100_000
-        success_depth = int(support.get_c_recursion_limit() * 0.8)
+        crash_depth = 500_000
+        success_depth = 200
         if _testinternalcapi is not None:
             remaining = _testinternalcapi.get_c_recursion_remaining()
             success_depth = min(success_depth, remaining)
@@ -728,13 +875,13 @@ class AST_Tests(unittest.TestCase):
         def check_limit(prefix, repeated):
             expect_ok = prefix + repeated * success_depth
             ast.parse(expect_ok)
-            for depth in (fail_depth, crash_depth):
-                broken = prefix + repeated * depth
-                details = "Compiling ({!r} + {!r} * {})".format(
-                            prefix, repeated, depth)
-                with self.assertRaises(RecursionError, msg=details):
-                    with support.infinite_recursion():
-                        ast.parse(broken)
+
+            broken = prefix + repeated * crash_depth
+            details = "Compiling ({!r} + {!r} * {})".format(
+                        prefix, repeated, crash_depth)
+            with self.assertRaises(RecursionError, msg=details):
+                with support.infinite_recursion():
+                    ast.parse(broken)
 
         check_limit("a", "()")
         check_limit("a", ".b")
@@ -771,6 +918,93 @@ class AST_Tests(unittest.TestCase):
         ]
         for node, attr, source in tests:
             self.assert_none_check(node, attr, source)
+
+    def test_repr(self) -> None:
+        snapshots = AST_REPR_DATA_FILE.read_text().split("\n")
+        for test, snapshot in zip(ast_repr_get_test_cases(), snapshots, strict=True):
+            with self.subTest(test_input=test):
+                self.assertEqual(repr(ast.parse(test)), snapshot)
+
+    def test_repr_large_input_crash(self):
+        # gh-125010: Fix use-after-free in ast repr()
+        source = "0x0" + "e" * 10_000
+        with self.assertRaisesRegex(ValueError,
+                                    r"Exceeds the limit \(\d+ digits\)"):
+            repr(ast.Constant(value=eval(source)))
+
+    def test_pep_765_warnings(self):
+        srcs = [
+            textwrap.dedent("""
+                 def f():
+                     try:
+                         pass
+                     finally:
+                         return 42
+                 """),
+            textwrap.dedent("""
+                 for x in y:
+                     try:
+                         pass
+                     finally:
+                         break
+                 """),
+            textwrap.dedent("""
+                 for x in y:
+                     try:
+                         pass
+                     finally:
+                         continue
+                 """),
+        ]
+        for src in srcs:
+            with self.assertWarnsRegex(SyntaxWarning, 'finally'):
+                ast.parse(src)
+
+    def test_pep_765_no_warnings(self):
+        srcs = [
+            textwrap.dedent("""
+                 try:
+                     pass
+                 finally:
+                     def f():
+                         return 42
+                 """),
+            textwrap.dedent("""
+                 try:
+                     pass
+                 finally:
+                     for x in y:
+                         break
+                 """),
+            textwrap.dedent("""
+                 try:
+                     pass
+                 finally:
+                     for x in y:
+                         continue
+                 """),
+        ]
+        for src in srcs:
+            ast.parse(src)
+
+    def test_tstring(self):
+        # Test AST structure for simple t-string
+        tree = ast.parse('t"Hello"')
+        self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
+        self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
+
+        # Test AST for t-string with interpolation
+        tree = ast.parse('t"Hello {name}"')
+        self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
+        self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
+        self.assertIsInstance(tree.body[0].value.values[1], ast.Interpolation)
+
+        # Test AST for implicit concat of t-string with f-string
+        tree = ast.parse('t"Hello {name}" f"{name}"')
+        self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
+        self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
+        self.assertIsInstance(tree.body[0].value.values[1], ast.Interpolation)
+        self.assertIsInstance(tree.body[0].value.values[2], ast.FormattedValue)
 
 
 class CopyTests(unittest.TestCase):
@@ -1620,6 +1854,7 @@ Module(
         exec(code, ns)
         self.assertIn('sleep', ns)
 
+    @skip_emscripten_stack_overflow()
     def test_recursion_direct(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
         e.operand = e
@@ -1627,6 +1862,7 @@ Module(
             with support.infinite_recursion():
                 compile(ast.Expression(e), "<test>", "eval")
 
+    @skip_emscripten_stack_overflow()
     def test_recursion_indirect(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
         f = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
@@ -2235,7 +2471,7 @@ class ConstantTests(unittest.TestCase):
                          "got an invalid type in Constant: list")
 
     def test_singletons(self):
-        for const in (None, False, True, Ellipsis, b'', frozenset()):
+        for const in (None, False, True, Ellipsis, b''):
             with self.subTest(const=const):
                 value = self.compile_constant(const)
                 self.assertIs(value, const)
@@ -2279,7 +2515,7 @@ class ConstantTests(unittest.TestCase):
         co = compile(tree, '<string>', 'exec')
         consts = []
         for instr in dis.get_instructions(co):
-            if instr.opname == 'LOAD_CONST' or instr.opname == 'RETURN_CONST':
+            if instr.opcode in dis.hasconst:
                 consts.append(instr.argval)
         return consts
 
@@ -2287,7 +2523,7 @@ class ConstantTests(unittest.TestCase):
     def test_load_const(self):
         consts = [None,
                   True, False,
-                  124,
+                  1000,
                   2.0,
                   3j,
                   "unicode",
@@ -3018,20 +3254,392 @@ class ModuleStateTests(unittest.TestCase):
         self.assertEqual(res, 0)
 
 
-class ASTMainTests(unittest.TestCase):
-    # Tests `ast.main()` function.
+class CommandLineTests(unittest.TestCase):
+    def setUp(self):
+        self.filename = tempfile.mktemp()
+        self.addCleanup(os_helper.unlink, self.filename)
 
-    def test_cli_file_input(self):
-        code = "print(1, 2, 3)"
-        expected = ast.dump(ast.parse(code), indent=3)
+    @staticmethod
+    def text_normalize(string):
+        return textwrap.dedent(string).strip()
 
-        with os_helper.temp_dir() as tmp_dir:
-            filename = os.path.join(tmp_dir, "test_module.py")
-            with open(filename, 'w', encoding='utf-8') as f:
-                f.write(code)
-            res, _ = script_helper.run_python_until_end("-m", "ast", filename)
+    def set_source(self, content):
+        Path(self.filename).write_text(self.text_normalize(content))
 
-        self.assertEqual(res.err, b"")
-        self.assertEqual(expected.splitlines(),
-                         res.out.decode("utf8").splitlines())
-        self.assertEqual(res.rc, 0)
+    def invoke_ast(self, *flags):
+        stderr = StringIO()
+        stdout = StringIO()
+        with (
+            contextlib.redirect_stdout(stdout),
+            contextlib.redirect_stderr(stderr),
+        ):
+            ast.main(args=[*flags, self.filename])
+        self.assertEqual(stderr.getvalue(), '')
+        return stdout.getvalue().strip()
+
+    def check_output(self, source, expect, *flags):
+        self.set_source(source)
+        res = self.invoke_ast(*flags)
+        expect = self.text_normalize(expect)
+        self.assertEqual(res, expect)
+
+    def test_invocation(self):
+        # test various combinations of parameters
+        base_flags = (
+            ('-m=exec', '--mode=exec'),
+            ('--no-type-comments', '--no-type-comments'),
+            ('-a', '--include-attributes'),
+            ('-i=4', '--indent=4'),
+            ('--feature-version=3.13', '--feature-version=3.13'),
+            ('-O=-1', '--optimize=-1'),
+            ('--show-empty', '--show-empty'),
+        )
+        self.set_source('''
+            print(1, 2, 3)
+            def f(x: int) -> int:
+                x -= 1
+                return x
+        ''')
+
+        for r in range(1, len(base_flags) + 1):
+            for choices in itertools.combinations(base_flags, r=r):
+                for args in itertools.product(*choices):
+                    with self.subTest(flags=args):
+                        self.invoke_ast(*args)
+
+    @support.force_not_colorized
+    def test_help_message(self):
+        for flag in ('-h', '--help', '--unknown'):
+            with self.subTest(flag=flag):
+                output = StringIO()
+                with self.assertRaises(SystemExit):
+                    with contextlib.redirect_stderr(output):
+                        ast.main(args=flag)
+                self.assertStartsWith(output.getvalue(), 'usage: ')
+
+    def test_exec_mode_flag(self):
+        # test 'python -m ast -m/--mode exec'
+        source = 'x: bool = 1 # type: ignore[assignment]'
+        expect = '''
+            Module(
+               body=[
+                  AnnAssign(
+                     target=Name(id='x', ctx=Store()),
+                     annotation=Name(id='bool', ctx=Load()),
+                     value=Constant(value=1),
+                     simple=1)],
+               type_ignores=[
+                  TypeIgnore(lineno=1, tag='[assignment]')])
+        '''
+        for flag in ('-m=exec', '--mode=exec'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_single_mode_flag(self):
+        # test 'python -m ast -m/--mode single'
+        source = 'pass'
+        expect = '''
+            Interactive(
+               body=[
+                  Pass()])
+        '''
+        for flag in ('-m=single', '--mode=single'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_eval_mode_flag(self):
+        # test 'python -m ast -m/--mode eval'
+        source = 'print(1, 2, 3)'
+        expect = '''
+            Expression(
+               body=Call(
+                  func=Name(id='print', ctx=Load()),
+                  args=[
+                     Constant(value=1),
+                     Constant(value=2),
+                     Constant(value=3)]))
+        '''
+        for flag in ('-m=eval', '--mode=eval'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_func_type_mode_flag(self):
+        # test 'python -m ast -m/--mode func_type'
+        source = '(int, str) -> list[int]'
+        expect = '''
+            FunctionType(
+               argtypes=[
+                  Name(id='int', ctx=Load()),
+                  Name(id='str', ctx=Load())],
+               returns=Subscript(
+                  value=Name(id='list', ctx=Load()),
+                  slice=Name(id='int', ctx=Load()),
+                  ctx=Load()))
+        '''
+        for flag in ('-m=func_type', '--mode=func_type'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_no_type_comments_flag(self):
+        # test 'python -m ast --no-type-comments'
+        source = 'x: bool = 1 # type: ignore[assignment]'
+        expect = '''
+            Module(
+               body=[
+                  AnnAssign(
+                     target=Name(id='x', ctx=Store()),
+                     annotation=Name(id='bool', ctx=Load()),
+                     value=Constant(value=1),
+                     simple=1)])
+        '''
+        self.check_output(source, expect, '--no-type-comments')
+
+    def test_include_attributes_flag(self):
+        # test 'python -m ast -a/--include-attributes'
+        source = 'pass'
+        expect = '''
+            Module(
+               body=[
+                  Pass(
+                     lineno=1,
+                     col_offset=0,
+                     end_lineno=1,
+                     end_col_offset=4)])
+        '''
+        for flag in ('-a', '--include-attributes'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_indent_flag(self):
+        # test 'python -m ast -i/--indent 0'
+        source = 'pass'
+        expect = '''
+            Module(
+            body=[
+            Pass()])
+        '''
+        for flag in ('-i=0', '--indent=0'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_feature_version_flag(self):
+        # test 'python -m ast --feature-version 3.9/3.10'
+        source = '''
+            match x:
+                case 1:
+                    pass
+        '''
+        expect = '''
+            Module(
+               body=[
+                  Match(
+                     subject=Name(id='x', ctx=Load()),
+                     cases=[
+                        match_case(
+                           pattern=MatchValue(
+                              value=Constant(value=1)),
+                           body=[
+                              Pass()])])])
+        '''
+        self.check_output(source, expect, '--feature-version=3.10')
+        with self.assertRaises(SyntaxError):
+            self.invoke_ast('--feature-version=3.9')
+
+    def test_no_optimize_flag(self):
+        # test 'python -m ast -O/--optimize -1/0'
+        source = '''
+            match a:
+                case 1+2j:
+                    pass
+        '''
+        expect = '''
+            Module(
+               body=[
+                  Match(
+                     subject=Name(id='a', ctx=Load()),
+                     cases=[
+                        match_case(
+                           pattern=MatchValue(
+                              value=BinOp(
+                                 left=Constant(value=1),
+                                 op=Add(),
+                                 right=Constant(value=2j))),
+                           body=[
+                              Pass()])])])
+        '''
+        for flag in ('-O=-1', '--optimize=-1', '-O=0', '--optimize=0'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_optimize_flag(self):
+        # test 'python -m ast -O/--optimize 1/2'
+        source = '''
+            match a:
+                case 1+2j:
+                    pass
+        '''
+        expect = '''
+            Module(
+               body=[
+                  Match(
+                     subject=Name(id='a', ctx=Load()),
+                     cases=[
+                        match_case(
+                           pattern=MatchValue(
+                              value=Constant(value=(1+2j))),
+                           body=[
+                              Pass()])])])
+        '''
+        for flag in ('-O=1', '--optimize=1', '-O=2', '--optimize=2'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_show_empty_flag(self):
+        # test 'python -m ast --show-empty'
+        source = 'print(1, 2, 3)'
+        expect = '''
+            Module(
+               body=[
+                  Expr(
+                     value=Call(
+                        func=Name(id='print', ctx=Load()),
+                        args=[
+                           Constant(value=1),
+                           Constant(value=2),
+                           Constant(value=3)],
+                        keywords=[]))],
+               type_ignores=[])
+        '''
+        self.check_output(source, expect, '--show-empty')
+
+
+class ASTOptimiziationTests(unittest.TestCase):
+    def wrap_expr(self, expr):
+        return ast.Module(body=[ast.Expr(value=expr)])
+
+    def wrap_statement(self, statement):
+        return ast.Module(body=[statement])
+
+    def assert_ast(self, code, non_optimized_target, optimized_target):
+        non_optimized_tree = ast.parse(code, optimize=-1)
+        optimized_tree = ast.parse(code, optimize=1)
+
+        # Is a non-optimized tree equal to a non-optimized target?
+        self.assertTrue(
+            ast.compare(non_optimized_tree, non_optimized_target),
+            f"{ast.dump(non_optimized_target)} must equal "
+            f"{ast.dump(non_optimized_tree)}",
+        )
+
+        # Is a optimized tree equal to a non-optimized target?
+        self.assertFalse(
+            ast.compare(optimized_tree, non_optimized_target),
+            f"{ast.dump(non_optimized_target)} must not equal "
+            f"{ast.dump(non_optimized_tree)}"
+        )
+
+        # Is a optimized tree is equal to an optimized target?
+        self.assertTrue(
+            ast.compare(optimized_tree,  optimized_target),
+            f"{ast.dump(optimized_target)} must equal "
+            f"{ast.dump(optimized_tree)}",
+        )
+
+    def test_folding_format(self):
+        code = "'%s' % (a,)"
+
+        non_optimized_target = self.wrap_expr(
+            ast.BinOp(
+                left=ast.Constant(value="%s"),
+                op=ast.Mod(),
+                right=ast.Tuple(elts=[ast.Name(id='a')]))
+        )
+        optimized_target = self.wrap_expr(
+            ast.JoinedStr(
+                values=[
+                    ast.FormattedValue(value=ast.Name(id='a'), conversion=115)
+                ]
+            )
+        )
+
+        self.assert_ast(code, non_optimized_target, optimized_target)
+
+    def test_folding_match_case_allowed_expressions(self):
+        def get_match_case_values(node):
+            result = []
+            if isinstance(node, ast.Constant):
+                result.append(node.value)
+            elif isinstance(node, ast.MatchValue):
+                result.extend(get_match_case_values(node.value))
+            elif isinstance(node, ast.MatchMapping):
+                for key in node.keys:
+                    result.extend(get_match_case_values(key))
+            elif isinstance(node, ast.MatchSequence):
+                for pat in node.patterns:
+                    result.extend(get_match_case_values(pat))
+            else:
+                self.fail(f"Unexpected node {node}")
+            return result
+
+        tests = [
+            ("-0", [0]),
+            ("-0.1", [-0.1]),
+            ("-0j", [complex(0, 0)]),
+            ("-0.1j", [complex(0, -0.1)]),
+            ("1 + 2j", [complex(1, 2)]),
+            ("1 - 2j", [complex(1, -2)]),
+            ("1.1 + 2.1j", [complex(1.1, 2.1)]),
+            ("1.1 - 2.1j", [complex(1.1, -2.1)]),
+            ("-0 + 1j", [complex(0, 1)]),
+            ("-0 - 1j", [complex(0, -1)]),
+            ("-0.1 + 1.1j", [complex(-0.1, 1.1)]),
+            ("-0.1 - 1.1j", [complex(-0.1, -1.1)]),
+            ("{-0: 0}", [0]),
+            ("{-0.1: 0}", [-0.1]),
+            ("{-0j: 0}", [complex(0, 0)]),
+            ("{-0.1j: 0}", [complex(0, -0.1)]),
+            ("{1 + 2j: 0}", [complex(1, 2)]),
+            ("{1 - 2j: 0}", [complex(1, -2)]),
+            ("{1.1 + 2.1j: 0}", [complex(1.1, 2.1)]),
+            ("{1.1 - 2.1j: 0}", [complex(1.1, -2.1)]),
+            ("{-0 + 1j: 0}", [complex(0, 1)]),
+            ("{-0 - 1j: 0}", [complex(0, -1)]),
+            ("{-0.1 + 1.1j: 0}", [complex(-0.1, 1.1)]),
+            ("{-0.1 - 1.1j: 0}", [complex(-0.1, -1.1)]),
+            ("{-0: 0, 0 + 1j: 0, 0.1 + 1j: 0}", [0, complex(0, 1), complex(0.1, 1)]),
+            ("[-0, -0.1, -0j, -0.1j]", [0, -0.1, complex(0, 0), complex(0, -0.1)]),
+            ("[[[[-0, -0.1, -0j, -0.1j]]]]", [0, -0.1, complex(0, 0), complex(0, -0.1)]),
+            ("[[-0, -0.1], -0j, -0.1j]", [0, -0.1, complex(0, 0), complex(0, -0.1)]),
+            ("[[-0, -0.1], [-0j, -0.1j]]", [0, -0.1, complex(0, 0), complex(0, -0.1)]),
+            ("(-0, -0.1, -0j, -0.1j)", [0, -0.1, complex(0, 0), complex(0, -0.1)]),
+            ("((((-0, -0.1, -0j, -0.1j))))", [0, -0.1, complex(0, 0), complex(0, -0.1)]),
+            ("((-0, -0.1), -0j, -0.1j)", [0, -0.1, complex(0, 0), complex(0, -0.1)]),
+            ("((-0, -0.1), (-0j, -0.1j))", [0, -0.1, complex(0, 0), complex(0, -0.1)]),
+        ]
+        for match_expr, constants in tests:
+            with self.subTest(match_expr):
+                src = f"match 0:\n\t case {match_expr}: pass"
+                tree = ast.parse(src, optimize=1)
+                match_stmt = tree.body[0]
+                case = match_stmt.cases[0]
+                values = get_match_case_values(case.pattern)
+                self.assertListEqual(constants, values)
+
+    def test_match_case_not_folded_in_unoptimized_ast(self):
+        src = textwrap.dedent("""
+            match a:
+                case 1+2j:
+                    pass
+            """)
+
+        unfolded = "MatchValue(value=BinOp(left=Constant(value=1), op=Add(), right=Constant(value=2j))"
+        folded = "MatchValue(value=Constant(value=(1+2j)))"
+        for optval in (0, 1, 2):
+            self.assertIn(folded if optval else unfolded, ast.dump(ast.parse(src, optimize=optval)))
+
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1 and sys.argv[1] == '--snapshot-update':
+        ast_repr_update_snapshots()
+        sys.exit(0)
+    unittest.main()

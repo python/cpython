@@ -84,6 +84,17 @@ The module defines the following items:
       formerly protected :attr:`!_compresslevel`.  The older protected name
       continues to work as a property for backwards compatibility.
 
+
+   .. method:: _for_archive(archive)
+
+      Resolve the date_time, compression attributes, and external attributes
+      to suitable defaults as used by :meth:`ZipFile.writestr`.
+
+      Returns self for chaining.
+
+      .. versionadded:: 3.14
+
+
 .. function:: is_zipfile(filename)
 
    Returns ``True`` if *filename* is a valid ZIP file based on its magic number,
@@ -527,6 +538,14 @@ The following data attributes are also available:
    it should be no longer than 65535 bytes.  Comments longer than this will be
    truncated.
 
+.. attribute:: ZipFile.data_offset
+
+   The offset to the start of ZIP data from the beginning of the file. When the
+   :class:`ZipFile` is opened in either mode ``'w'`` or ``'x'`` and the
+   underlying file does not support ``tell()``, the value will be ``None``
+   instead.
+
+   .. versionadded:: 3.14
 
 .. _path-objects:
 
@@ -542,6 +561,14 @@ Path Objects
    ``at`` specifies the location of this Path within the zipfile,
    e.g. 'dir/file.txt', 'dir/', or ''. Defaults to the empty string,
    indicating the root.
+
+   .. note::
+      The :class:`Path` class does not sanitize filenames within the ZIP archive. Unlike
+      the :meth:`ZipFile.extract` and :meth:`ZipFile.extractall` methods, it is the
+      caller's responsibility to validate or sanitize filenames to prevent path traversal
+      vulnerabilities (e.g., filenames containing ".." or absolute paths). When handling
+      untrusted archives, consider resolving filenames using :func:`os.path.abspath`
+      and checking against the target directory with :func:`os.path.commonpath`.
 
 Path objects expose the following features of :mod:`pathlib.Path`
 objects:

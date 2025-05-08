@@ -1,5 +1,3 @@
-#include <stdbool.h>
-
 #include "Python.h"
 #include "pycore_code.h"            // write_location_entry_start()
 #include "pycore_compile.h"
@@ -8,6 +6,7 @@
 #include "pycore_opcode_metadata.h" // is_pseudo_target, _PyOpcode_Caches
 #include "pycore_symtable.h"        // _Py_SourceLocation
 
+#include <stdbool.h>
 
 #define DEFAULT_CODE_SIZE 128
 #define DEFAULT_LNOTAB_SIZE 16
@@ -127,7 +126,7 @@ assemble_emit_exception_table_item(struct assembler *a, int value, int msb)
     write_except_byte(a, (value&0x3f) | msb);
 }
 
-/* See Objects/exception_handling_notes.txt for details of layout */
+/* See InternalDocs/exception_handling.md for details of layout */
 #define MAX_SIZE_OF_ENTRY 20
 
 static int
@@ -291,17 +290,15 @@ write_location_info_entry(struct assembler* a, location loc, int isize)
         assert(len > THEORETICAL_MAX_ENTRY_SIZE);
         RETURN_IF_ERROR(_PyBytes_Resize(&a->a_linetable, len*2));
     }
-    if (loc.lineno < 0) {
+    if (loc.lineno == NO_LOCATION.lineno) {
         write_location_info_none(a, isize);
         return SUCCESS;
     }
     int line_delta = loc.lineno - a->a_lineno;
     int column = loc.col_offset;
     int end_column = loc.end_col_offset;
-    assert(column >= -1);
-    assert(end_column >= -1);
     if (column < 0 || end_column < 0) {
-        if (loc.end_lineno == loc.lineno || loc.end_lineno == -1) {
+        if (loc.end_lineno == loc.lineno || loc.end_lineno < 0) {
             write_location_info_no_column(a, isize, line_delta);
             a->a_lineno = loc.lineno;
             return SUCCESS;
@@ -342,6 +339,18 @@ assemble_location_info(struct assembler *a, instr_sequence *instrs,
 {
     a->a_lineno = firstlineno;
     location loc = NO_LOCATION;
+    for (int i = instrs->s_used-1; i >= 0; i--) {
+        instruction *instr = &instrs->s_instrs[i];
+        if (same_location(instr->i_loc, NEXT_LOCATION)) {
+            if (IS_TERMINATOR_OPCODE(instr->i_opcode)) {
+                instr->i_loc = NO_LOCATION;
+            }
+            else {
+                assert(i < instrs->s_used-1);
+                instr->i_loc = instr[1].i_loc;
+            }
+        }
+    }
     int size = 0;
     for (int i = 0; i < instrs->s_used; i++) {
         instruction *instr = &instrs->s_instrs[i];
@@ -473,38 +482,57 @@ extern void _Py_set_localsplus_info(int, PyObject *, unsigned char,
 
 static int
 compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
-                        PyObject *names, PyObject *kinds)
+                        int flags, PyObject *names, PyObject *kinds)
 {
     PyObject *k, *v;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(umd->u_varnames, &pos, &k, &v)) {
-        int offset = PyLong_AsInt(v);
-        if (offset == -1 && PyErr_Occurred()) {
-            return ERROR;
-        }
-        assert(offset >= 0);
-        assert(offset < nlocalsplus);
 
-        // For now we do not distinguish arg kinds.
-        _PyLocals_Kind kind = CO_FAST_LOCAL;
-        int has_key = PyDict_Contains(umd->u_fasthidden, k);
-        RETURN_IF_ERROR(has_key);
-        if (has_key) {
-            kind |= CO_FAST_HIDDEN;
-        }
+    // Set the locals kinds.  Arg vars fill the first portion of the list.
+    struct {
+        int count;
+        _PyLocals_Kind kind;
+    }  argvarkinds[6] = {
+        {(int)umd->u_posonlyargcount, CO_FAST_ARG_POS},
+        {(int)umd->u_argcount, CO_FAST_ARG_POS | CO_FAST_ARG_KW},
+        {(int)umd->u_kwonlyargcount, CO_FAST_ARG_KW},
+        {!!(flags & CO_VARARGS), CO_FAST_ARG_VAR | CO_FAST_ARG_POS},
+        {!!(flags & CO_VARKEYWORDS), CO_FAST_ARG_VAR | CO_FAST_ARG_KW},
+        {-1, 0},  // the remaining local vars
+    };
+    int max = 0;
+    for (int i = 0; i < 6; i++) {
+        max = argvarkinds[i].count < 0
+            ? INT_MAX
+            : max + argvarkinds[i].count;
+        while (pos < max && PyDict_Next(umd->u_varnames, &pos, &k, &v)) {
+            int offset = PyLong_AsInt(v);
+            if (offset == -1 && PyErr_Occurred()) {
+                return ERROR;
+            }
+            assert(offset >= 0);
+            assert(offset < nlocalsplus);
 
-        has_key = PyDict_Contains(umd->u_cellvars, k);
-        RETURN_IF_ERROR(has_key);
-        if (has_key) {
-            kind |= CO_FAST_CELL;
-        }
+            _PyLocals_Kind kind = CO_FAST_LOCAL | argvarkinds[i].kind;
 
-        _Py_set_localsplus_info(offset, k, kind, names, kinds);
+            int has_key = PyDict_Contains(umd->u_fasthidden, k);
+            RETURN_IF_ERROR(has_key);
+            if (has_key) {
+                kind |= CO_FAST_HIDDEN;
+            }
+
+            has_key = PyDict_Contains(umd->u_cellvars, k);
+            RETURN_IF_ERROR(has_key);
+            if (has_key) {
+                kind |= CO_FAST_CELL;
+            }
+
+            _Py_set_localsplus_info(offset, k, kind, names, kinds);
+        }
     }
     int nlocals = (int)PyDict_GET_SIZE(umd->u_varnames);
 
     // This counter mirrors the fix done in fix_cell_offsets().
-    int numdropped = 0;
+    int numdropped = 0, cellvar_offset = -1;
     pos = 0;
     while (PyDict_Next(umd->u_cellvars, &pos, &k, &v)) {
         int has_name = PyDict_Contains(umd->u_varnames, k);
@@ -515,14 +543,14 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
             continue;
         }
 
-        int offset = PyLong_AsInt(v);
-        if (offset == -1 && PyErr_Occurred()) {
+        cellvar_offset = PyLong_AsInt(v);
+        if (cellvar_offset == -1 && PyErr_Occurred()) {
             return ERROR;
         }
-        assert(offset >= 0);
-        offset += nlocals - numdropped;
-        assert(offset < nlocalsplus);
-        _Py_set_localsplus_info(offset, k, CO_FAST_CELL, names, kinds);
+        assert(cellvar_offset >= 0);
+        cellvar_offset += nlocals - numdropped;
+        assert(cellvar_offset < nlocalsplus);
+        _Py_set_localsplus_info(cellvar_offset, k, CO_FAST_CELL, names, kinds);
     }
 
     pos = 0;
@@ -534,6 +562,10 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
         assert(offset >= 0);
         offset += nlocals - numdropped;
         assert(offset < nlocalsplus);
+        /* XXX If the assertion below fails it is most likely because a freevar
+           was added to u_freevars with the wrong index due to not taking into
+           account cellvars already present, see gh-128632. */
+        assert(offset > cellvar_offset);
         _Py_set_localsplus_info(offset, k, CO_FAST_FREE, names, kinds);
     }
     return SUCCESS;
@@ -581,8 +613,10 @@ makecode(_PyCompile_CodeUnitMetadata *umd, struct assembler *a, PyObject *const_
     if (localspluskinds == NULL) {
         goto error;
     }
-    if (compute_localsplus_info(umd, nlocalsplus,
-                                localsplusnames, localspluskinds) == ERROR) {
+    if (compute_localsplus_info(
+            umd, nlocalsplus, code_flags,
+            localsplusnames, localspluskinds) == ERROR)
+    {
         goto error;
     }
 
@@ -633,6 +667,10 @@ error:
     return co;
 }
 
+
+// The offset (in code units) of the END_SEND from the SEND in the `yield from` sequence.
+#define END_SEND_OFFSET 5
+
 static int
 resolve_jump_offsets(instr_sequence *instrs)
 {
@@ -671,7 +709,12 @@ resolve_jump_offsets(instr_sequence *instrs)
             if (OPCODE_HAS_JUMP(instr->i_opcode)) {
                 instruction *target = &instrs->s_instrs[instr->i_target];
                 instr->i_oparg = target->i_offset;
-                if (instr->i_oparg < offset) {
+                if (instr->i_opcode == END_ASYNC_FOR) {
+                    // sys.monitoring needs to be able to find the matching END_SEND
+                    // but the target is the SEND, so we adjust it here.
+                    instr->i_oparg = offset - instr->i_oparg - END_SEND_OFFSET;
+                }
+                else if (instr->i_oparg < offset) {
                     assert(IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
                     instr->i_oparg = offset - instr->i_oparg;
                 }

@@ -1,0 +1,140 @@
+name: Tail calling interpreter
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/tail-call.yml'
+      - 'Python/bytecodes.c'
+      - 'Python/ceval.c'
+      - 'Python/ceval_macros.h'
+      - 'Python/generated_cases.c.h'
+  push:
+    paths:
+      - '.github/workflows/tail-call.yml'
+      - 'Python/bytecodes.c'
+      - 'Python/ceval.c'
+      - 'Python/ceval_macros.h'
+      - 'Python/generated_cases.c.h'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  tail-call:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+# Un-comment as we add support for more platforms for tail-calling interpreters.
+#          - i686-pc-windows-msvc/msvc
+          - x86_64-pc-windows-msvc/msvc
+#          - aarch64-pc-windows-msvc/msvc
+          - x86_64-apple-darwin/clang
+          - aarch64-apple-darwin/clang
+          - x86_64-unknown-linux-gnu/gcc
+          - aarch64-unknown-linux-gnu/gcc
+          - free-threading
+        llvm:
+          - 20
+        include:
+#          - target: i686-pc-windows-msvc/msvc
+#            architecture: Win32
+#            runner: windows-latest
+          - target: x86_64-pc-windows-msvc/msvc
+            architecture: x64
+            runner: windows-latest
+#          - target: aarch64-pc-windows-msvc/msvc
+#            architecture: ARM64
+#            runner: windows-latest
+          - target: x86_64-apple-darwin/clang
+            architecture: x86_64
+            runner: macos-13
+          - target: aarch64-apple-darwin/clang
+            architecture: aarch64
+            runner: macos-14
+          - target: x86_64-unknown-linux-gnu/gcc
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - target: aarch64-unknown-linux-gnu/gcc
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
+          - target: free-threading
+            architecture: x86_64
+            runner: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Native Windows (debug)
+        if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
+        shell: cmd
+        run: |
+          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
+          set PlatformToolset=clangcl
+          set LLVMToolsVersion=${{ matrix.llvm }}.1.0
+          set LLVMInstallDir=C:\Program Files\LLVM
+          call ./PCbuild/build.bat --tail-call-interp -d -p ${{ matrix.architecture }}
+          call ./PCbuild/rt.bat -d -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+
+      # No tests (yet):
+      - name: Emulated Windows (release)
+        if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
+        shell: cmd
+        run: |
+          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
+          set PlatformToolset=clangcl
+          set LLVMToolsVersion=${{ matrix.llvm }}.1.0
+          set LLVMInstallDir=C:\Program Files\LLVM
+          ./PCbuild/build.bat --tail-call-interp -p ${{ matrix.architecture }}
+
+        # The `find` line is required as a result of https://github.com/actions/runner-images/issues/9966.
+        # This is a bug in the macOS runner image where the pre-installed Python is installed in the same
+        # directory as the Homebrew Python, which causes the build to fail for macos-13. This line removes
+        # the symlink to the pre-installed Python so that the Homebrew Python is used instead.
+        # Note: when a new LLVM is released, the homebrew installation directory changes, so the builds will fail.
+        # We either need to upgrade LLVM or change the directory being pointed to.
+      - name: Native macOS (release)
+        if: runner.os == 'macOS'
+        run: |
+          brew update
+          find /usr/local/bin -lname '*/Library/Frameworks/Python.framework/*' -delete
+          brew install llvm@${{ matrix.llvm }}
+          export SDKROOT="$(xcrun --show-sdk-path)"
+          export PATH="/usr/local/opt/llvm/bin:$PATH"
+          export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+          CC=clang-20 ./configure --with-tail-call-interp
+          make all --jobs 4
+          ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+
+      - name: Native Linux (debug)
+        if: runner.os == 'Linux' && matrix.target != 'free-threading'
+        run: |
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
+          CC=clang-20 ./configure --with-tail-call-interp --with-pydebug
+          make all --jobs 4
+          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+
+      - name: Native Linux with free-threading (release)
+        if: matrix.target == 'free-threading'
+        run: |
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
+          CC=clang-20 ./configure --with-tail-call-interp --disable-gil
+          make all --jobs 4
+          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+

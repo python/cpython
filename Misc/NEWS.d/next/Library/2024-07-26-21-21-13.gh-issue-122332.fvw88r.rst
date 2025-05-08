@@ -1,2 +1,0 @@
-Fixed segfault with :meth:`asyncio.Task.get_coro` when using an eager task
-factory.
