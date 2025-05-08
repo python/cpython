@@ -1160,18 +1160,11 @@ PyType_Spec bytesio_spec = {
  */
 
 static int
-bytesiobuf_getbuffer(PyObject *op, Py_buffer *view, int flags)
+bytesiobuf_getbuffer_lock_held(PyObject *op, Py_buffer *view, int flags)
 {
     bytesiobuf *obj = bytesiobuf_CAST(op);
     bytesio *b = bytesio_CAST(obj->source);
 
-    if (view == NULL) {
-        PyErr_SetString(PyExc_BufferError,
-            "bytesiobuf_getbuffer: view==NULL argument is obsolete");
-        return -1;
-    }
-
-    /* assertion not above because of test_pep3118_obsolete_write_locks() */
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(b);
 
     if (FT_ATOMIC_LOAD_SSIZE_RELAXED(b->exports) == 0 && SHARED_BUF(b)) {
@@ -1185,6 +1178,24 @@ bytesiobuf_getbuffer(PyObject *op, Py_buffer *view, int flags)
                             0, flags);
     FT_ATOMIC_ADD_SSIZE(b->exports, 1);
     return 0;
+}
+
+static int
+bytesiobuf_getbuffer(PyObject *op, Py_buffer *view, int flags)
+{
+    if (view == NULL) {
+        PyErr_SetString(PyExc_BufferError,
+            "bytesiobuf_getbuffer: view==NULL argument is obsolete");
+        return -1;
+    }
+
+    bytesiobuf *obj = bytesiobuf_CAST(op);
+    bytesio *b = bytesio_CAST(obj->source);
+    int ret;
+    Py_BEGIN_CRITICAL_SECTION(b);
+    ret = bytesiobuf_getbuffer_lock_held(op, view, flags);
+    Py_END_CRITICAL_SECTION();
+    return ret;
 }
 
 static void
