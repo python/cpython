@@ -47,25 +47,35 @@ class object "PyObject *" "&PyBaseObject_Type"
 static inline unsigned int
 mcache_name_hash(PyTypeObject *type, PyObject *name)
 {
-    unsigned int name_hash;
+    Py_hash_t name_hash;
 #if Py_GIL_DISABLED
     // Cache misses are relatively more expensive for the free-threaded build.
     // So we use the unicode string hash and unicode compare for caching
     // names.  This allows caching of non-interned strings.
-    if (PyUnicode_CheckExact(name)) {
-        name_hash = (unsigned int)_PyObject_HashFast(name);
-    }
-    else {
-        name_hash = 0;
-    }
+    assert(PyUnicode_CheckExact(name));
+    name_hash = _PyObject_HashFast(name);
+    // should not fail to hash an exact unicode object
+    assert(name_hash != -1);
 #else
     // Use the pointer value of the string for the hash and the compare.  This
     // is faster but non-interned strings can't use the cache.
-    name_hash = ((Py_ssize_t)(name)) >> 3;
+    name_hash = ((Py_hash_t)(name)) >> 3;
 #endif
     unsigned int version = FT_ATOMIC_LOAD_UINT32_RELAXED((type)->tp_version_tag);
     return (((unsigned int)(version) ^ (unsigned int)(name_hash)) &
             ((1 << MCACHE_SIZE_EXP) - 1));
+}
+
+static inline struct type_cache_entry *
+mcache_get_entry(PyTypeObject *type, PyObject *name, struct type_cache *cache)
+{
+#ifdef Py_GIL_DISABLED
+    if (!PyUnicode_CheckExact(name)) {
+        return NULL;
+    }
+#endif
+    unsigned int h = mcache_name_hash(type, name);
+    return &cache->hashtable[h];
 }
 
 static inline int
@@ -76,7 +86,7 @@ mcache_name_eq(PyObject *entry_name,  PyObject *name)
         return 0;
     }
     assert(PyUnicode_CheckExact(entry_name));
-    assert(PyUnicode_Check(name));
+    assert(PyUnicode_CheckExact(name));
     return _PyUnicode_Equal(entry_name, name);
 #else
     return entry_name == name;
@@ -5754,12 +5764,11 @@ _PyType_LookupRefAndVersion(PyTypeObject *type, PyObject *name, unsigned int *ve
 unsigned int
 _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef *out)
 {
-    unsigned int h = mcache_name_hash(type, name);
     struct type_cache *cache = get_type_cache();
-    struct type_cache_entry *entry = &cache->hashtable[h];
+    struct type_cache_entry *entry = mcache_get_entry(type, name, cache);
 #ifdef Py_GIL_DISABLED
     // synchronize-with other writing threads by doing an acquire load on the sequence
-    while (1) {
+    while (entry != NULL) {
         uint32_t sequence = _PySeqLock_BeginRead(&entry->sequence);
         uint32_t entry_version = _Py_atomic_load_uint32_acquire(&entry->version);
         uint32_t type_version = _Py_atomic_load_uint32_acquire(&type->tp_version_tag);
@@ -5837,6 +5846,7 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
 
     if (has_version) {
 #if Py_GIL_DISABLED
+        assert(entry != NULL);
         update_cache_gil_disabled(entry, name, assigned_version, res);
 #else
         PyObject *old_value = update_cache(entry, name, assigned_version, res);
