@@ -772,10 +772,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 last_line = last_line.rstrip('\r\n')
                 indent = len(last_line) - len(last_line.lstrip())
 
-                i = -1
-                while i < len(last_line) - 1:
-                    i += 1
-                    char = last_line[i]
+                for i, char in enumerate(last_line):
                     if char == "#":
                         if in_string:
                             last_char = char # hashtag in string, not comment
