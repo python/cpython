@@ -20,11 +20,6 @@ Pending removal in Python 3.15
 * :c:func:`!PyUnicode_AsEncodedUnicode`:
   Use :c:func:`PyCodec_Encode` instead; Note that some codecs (for example, "base64")
   may return a type other than :class:`bytes`, such as :class:`str`.
-* Python initialization functions, deprecated in Python 3.13:
-
-  The `pythoncapi-compat project
-  <https://github.com/python/pythoncapi-compat/>`__ can be used to get
-  :c:func:`PyConfig_Get` on Python 3.13 and older.
 
 * Functions to configure Python's initialization, deprecated in Python 3.11:
 

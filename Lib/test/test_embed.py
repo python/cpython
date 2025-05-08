@@ -1705,21 +1705,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         for (_, expected), result in zip(CASES, results):
             self.assertEqual(result, expected)
 
-    def test_global_pathconfig(self):
-        # Test C API functions getting the path configuration:
-        #
-        # The global path configuration (_Py_path_config) must be a copy
-        # of the path configuration of PyInterpreter.config (PyConfig).
-        ctypes = import_helper.import_module('ctypes')
-
-        def get_func(name):
-            func = getattr(ctypes.pythonapi, name)
-            func.argtypes = ()
-            func.restype = ctypes.c_wchar_p
-            return func
-
-        config = _testinternalcapi.get_configs()['config']
-
     def test_init_warnoptions(self):
         # lowest to highest priority
         warnoptions = [
