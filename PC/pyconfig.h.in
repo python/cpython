@@ -320,19 +320,19 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
                         the linking is explicitly handled */
 #                       if defined(Py_GIL_DISABLED)
 #                       if defined(_DEBUG)
-#                               pragma comment(lib,"python314t_d.lib")
+#                               pragma comment(lib,"python315t_d.lib")
 #                       elif defined(Py_LIMITED_API)
 #                               pragma comment(lib,"python3t.lib")
 #                       else
-#                               pragma comment(lib,"python314t.lib")
+#                               pragma comment(lib,"python315t.lib")
 #                       endif /* _DEBUG */
 #                       else /* Py_GIL_DISABLED */
 #                       if defined(_DEBUG)
-#                               pragma comment(lib,"python314_d.lib")
+#                               pragma comment(lib,"python315_d.lib")
 #                       elif defined(Py_LIMITED_API)
 #                               pragma comment(lib,"python3.lib")
 #                       else
-#                               pragma comment(lib,"python314.lib")
+#                               pragma comment(lib,"python315.lib")
 #                       endif /* _DEBUG */
 #                       endif /* Py_GIL_DISABLED */
 #               endif /* _MSC_VER && !Py_NO_LINK_LIB */
