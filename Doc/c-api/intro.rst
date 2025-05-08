@@ -7,6 +7,8 @@
 Introduction
 ************
 
+.. c-api-tools-banner::
+
 The Application Programmer's Interface to Python gives C and C++ programmers
 access to the Python interpreter at a variety of levels.  The API is equally
 usable from C++, but for brevity it is generally referred to as the Python/C
@@ -844,3 +846,24 @@ after every statement run by the interpreter.)
 
 Please refer to :file:`Misc/SpecialBuilds.txt` in the Python source distribution
 for more detailed information.
+
+
+.. _c-api-tools:
+
+Recommended third party tools
+=============================
+
+The following third party tools offer both simpler and more sophisticated
+approaches to creating C and C++ extensions for Python:
+
+* `Cython <https://cython.org/>`_
+* `cffi <https://cffi.readthedocs.io>`_
+* `HPy <https://hpyproject.org/>`_
+* `nanobind <https://github.com/wjakob/nanobind>`_ (C++)
+* `Numba <https://numba.pydata.org/>`_
+* `pybind11 <https://pybind11.readthedocs.io/>`_ (C++)
+* `PyO3 <https://pyo3.rs/>`_ (Rust)
+* `SWIG <https://www.swig.org>`_
+
+It is recommended to use these abstractions, rather than using directly the
+Python C API.

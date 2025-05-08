@@ -7,6 +7,8 @@ Tuple Objects
 
 .. index:: pair: object; tuple
 
+.. c-api-tools-banner::
+
 
 .. c:type:: PyTupleObject
 

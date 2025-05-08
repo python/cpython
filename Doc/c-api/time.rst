@@ -5,6 +5,8 @@
 PyTime C API
 ============
 
+.. c-api-tools-banner::
+
 .. versionadded:: 3.13
 
 The clock C API provides access to system clocks.

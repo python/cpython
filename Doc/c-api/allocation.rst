@@ -5,6 +5,8 @@
 Allocating Objects on the Heap
 ==============================
 
+.. c-api-tools-banner::
+
 
 .. c:function:: PyObject* _PyObject_New(PyTypeObject *type)
 

@@ -7,6 +7,8 @@ Module Objects
 
 .. index:: pair: object; module
 
+.. c-api-tools-banner::
+
 
 .. c:var:: PyTypeObject PyModule_Type
 

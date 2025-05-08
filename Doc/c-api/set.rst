@@ -7,6 +7,8 @@ Set Objects
 
 .. sectionauthor:: Raymond D. Hettinger <python@rcn.com>
 
+.. c-api-tools-banner::
+
 
 .. index::
    pair: object; set

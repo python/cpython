@@ -3,6 +3,8 @@
 PyHash API
 ----------
 
+.. c-api-tools-banner::
+
 See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 
 .. c:type:: Py_hash_t

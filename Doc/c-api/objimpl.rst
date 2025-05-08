@@ -6,6 +6,8 @@
 Object Implementation Support
 *****************************
 
+.. c-api-tools-banner::
+
 This chapter describes the functions, types, and macros used when defining new
 object types.
 

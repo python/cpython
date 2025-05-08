@@ -5,6 +5,8 @@
 Boolean Objects
 ---------------
 
+.. c-api-tools-banner::
+
 Booleans in Python are implemented as a subclass of integers.  There are only
 two booleans, :c:data:`Py_False` and :c:data:`Py_True`.  As such, the normal
 creation and deletion functions don't apply to booleans.  The following macros

@@ -5,6 +5,8 @@
 Coroutine Objects
 -----------------
 
+.. c-api-tools-banner::
+
 .. versionadded:: 3.5
 
 Coroutine objects are what functions declared with an ``async`` keyword

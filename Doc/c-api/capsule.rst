@@ -7,6 +7,8 @@ Capsules
 
 .. index:: pair: object; Capsule
 
+.. c-api-tools-banner::
+
 Refer to :ref:`using-capsules` for more information on using these objects.
 
 .. versionadded:: 3.1

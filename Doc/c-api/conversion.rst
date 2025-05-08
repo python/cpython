@@ -5,6 +5,8 @@
 String conversion and formatting
 ================================
 
+.. c-api-tools-banner::
+
 Functions for number conversion and formatted string output.
 
 

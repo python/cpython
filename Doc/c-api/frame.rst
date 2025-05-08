@@ -3,6 +3,8 @@
 Frame Objects
 -------------
 
+.. c-api-tools-banner::
+
 .. c:type:: PyFrameObject
 
    The C structure of the objects used to describe frame objects.

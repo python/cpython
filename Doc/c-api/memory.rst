@@ -9,6 +9,7 @@ Memory Management
 
 .. sectionauthor:: Vladimir Marangozov <Vladimir.Marangozov@inrialpes.fr>
 
+.. c-api-tools-banner::
 
 
 .. _memoryoverview:

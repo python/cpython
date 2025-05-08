@@ -7,6 +7,8 @@ Floating-Point Objects
 
 .. index:: pair: object; floating-point
 
+.. c-api-tools-banner::
+
 
 .. c:type:: PyFloatObject
 

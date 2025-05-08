@@ -5,6 +5,8 @@
 Data marshalling support
 ========================
 
+.. c-api-tools-banner::
+
 These routines allow C code to work with serialized objects using the same
 data format as the :mod:`marshal` module.  There are functions to write data
 into the serialization format, and additional functions that can be used to

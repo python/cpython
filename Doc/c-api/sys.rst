@@ -5,6 +5,8 @@
 Operating System Utilities
 ==========================
 
+.. c-api-tools-banner::
+
 
 .. c:function:: PyObject* PyOS_FSPath(PyObject *path)
 

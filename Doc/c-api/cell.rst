@@ -5,6 +5,8 @@
 Cell Objects
 ------------
 
+.. c-api-tools-banner::
+
 "Cell" objects are used to implement variables referenced by multiple scopes.
 For each such variable, a cell object is created to store the value; the local
 variables of each stack frame that references the value contains a reference to

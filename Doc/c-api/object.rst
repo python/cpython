@@ -5,6 +5,8 @@
 Object Protocol
 ===============
 
+.. c-api-tools-banner::
+
 
 .. c:function:: PyObject* Py_GetConstant(unsigned int constant_id)
 

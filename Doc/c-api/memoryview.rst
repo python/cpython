@@ -8,6 +8,8 @@
 MemoryView objects
 ------------------
 
+.. c-api-tools-banner::
+
 A :class:`memoryview` object exposes the C level :ref:`buffer interface
 <bufferobjects>` as a Python object which can then be passed around like
 any other object.

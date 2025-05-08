@@ -7,6 +7,8 @@
 The Very High Level Layer
 *************************
 
+.. c-api-tools-banner::
+
 The functions in this chapter will let you execute Python source code given in a
 file or a buffer, but they will not let you interact in a more detailed way with
 the interpreter.

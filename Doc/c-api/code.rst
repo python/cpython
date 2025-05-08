@@ -9,6 +9,8 @@ Code Objects
 
 .. sectionauthor:: Jeffrey Yasskin <jyasskin@gmail.com>
 
+.. c-api-tools-banner::
+
 Code objects are a low-level detail of the CPython implementation.
 Each one represents a chunk of executable code that hasn't yet been
 bound into a function.

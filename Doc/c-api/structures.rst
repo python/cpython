@@ -5,6 +5,8 @@
 Common Object Structures
 ========================
 
+.. c-api-tools-banner::
+
 There are a large number of structures which are used in the definition of
 object types for Python.  This section describes these structures and how they
 are used.

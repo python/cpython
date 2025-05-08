@@ -5,6 +5,8 @@
 Supporting Cyclic Garbage Collection
 ====================================
 
+.. c-api-tools-banner::
+
 Python's support for detecting and collecting garbage which involves circular
 references requires support from object types which are "containers" for other
 objects which may also be containers.  Types which do not store references to

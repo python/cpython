@@ -7,6 +7,8 @@
 Reference Counting
 ******************
 
+.. c-api-tools-banner::
+
 The functions and macros in this section are used for managing reference counts
 of Python objects.
 

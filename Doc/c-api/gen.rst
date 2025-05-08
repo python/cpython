@@ -5,6 +5,8 @@
 Generator Objects
 -----------------
 
+.. c-api-tools-banner::
+
 Generator objects are what Python uses to implement generator iterators. They
 are normally created by iterating over a function that yields values, rather
 than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.

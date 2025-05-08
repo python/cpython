@@ -7,6 +7,8 @@
 Exception Handling
 ******************
 
+.. c-api-tools-banner::
+
 The functions described in this chapter will let you handle and raise Python
 exceptions.  It is important to understand some of the basics of Python
 exception handling.  It works somewhat like the POSIX :c:data:`errno` variable:

@@ -5,6 +5,8 @@
 Context Variables Objects
 -------------------------
 
+.. c-api-tools-banner::
+
 .. _contextvarsobjects_pointertype_change:
 .. versionadded:: 3.7
 

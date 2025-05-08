@@ -5,6 +5,8 @@
 Descriptor Objects
 ------------------
 
+.. c-api-tools-banner::
+
 "Descriptors" are objects that describe some attribute of an object. They are
 found in the dictionary of type objects.
 

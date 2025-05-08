@@ -5,6 +5,8 @@
 Support for Perf Maps
 ----------------------
 
+.. c-api-tools-banner::
+
 On supported platforms (as of this writing, only Linux), the runtime can take
 advantage of *perf map files* to make Python functions visible to an external
 profiling tool (such as `perf <https://perf.wiki.kernel.org/index.php/Main_Page>`_).

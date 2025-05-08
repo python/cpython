@@ -7,6 +7,8 @@ Byte Array Objects
 
 .. index:: pair: object; bytearray
 
+.. c-api-tools-banner::
+
 
 .. c:type:: PyByteArrayObject
 

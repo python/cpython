@@ -5,6 +5,8 @@
 Mapping Protocol
 ================
 
+.. c-api-tools-banner::
+
 See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 :c:func:`PyObject_DelItem`.
 

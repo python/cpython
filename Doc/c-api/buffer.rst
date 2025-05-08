@@ -14,6 +14,8 @@ Buffer Protocol
 .. sectionauthor:: Benjamin Peterson
 .. sectionauthor:: Stefan Krah
 
+.. c-api-tools-banner::
+
 
 Certain objects available in Python wrap access to an underlying memory
 array or *buffer*.  Such objects include the built-in :class:`bytes` and
