@@ -644,30 +644,16 @@ add_vars_to_module(PyObject *module)
     }
 #endif
 
+    /* ZSTD_DStreamOutSize, int */
+    if (PyModule_AddIntConstant(module, "ZSTD_DStreamOutSize",
+                                (uint32_t)ZSTD_DStreamOutSize()) < 0) {
+        return -1;
+    }
+
     /* Add zstd parameters */
     if (add_parameters(module) < 0) {
         return -1;
     }
-
-    /* _ZSTD_CStreamSizes */
-    obj = Py_BuildValue("II",
-                        (uint32_t)ZSTD_CStreamInSize(),
-                        (uint32_t)ZSTD_CStreamOutSize());
-    if (PyModule_AddObjectRef(module, "_ZSTD_CStreamSizes", obj) < 0) {
-        Py_XDECREF(obj);
-        return -1;
-    }
-    Py_DECREF(obj);
-
-    /* _ZSTD_DStreamSizes */
-    obj = Py_BuildValue("II",
-                        (uint32_t)ZSTD_DStreamInSize(),
-                        (uint32_t)ZSTD_DStreamOutSize());
-    if (PyModule_AddObjectRef(module, "_ZSTD_DStreamSizes", obj) < 0) {
-        Py_XDECREF(obj);
-        return -1;
-    }
-    Py_DECREF(obj);
 
     /* _ZSTD_CONFIG */
     obj = Py_BuildValue("isOOO", 8*(int)sizeof(Py_ssize_t), "c",
