@@ -782,11 +782,13 @@ class PureShareableScriptTests(_GetXIDataTests):
             """,
     ]
     INVALID_SCRIPTS = [
-        '    pass',
-        '----',
+        '    pass',  # IndentationError
+        '----',  # SyntaxError
         """if True:
-            # do something
-            """,
+            def spam():
+                # no body
+            spam()
+            """,  # IndentationError
     ]
 
     def test_valid_str(self):
