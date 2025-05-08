@@ -316,6 +316,14 @@ jobs:
     - name: SSL tests
       run: ./python Lib/test/ssltests.py
 
+  build-sequential:
+    name: 'Sequential'
+    needs: build-context
+    if: needs.build-context.outputs.run-tests == 'true'
+    uses: ./.github/workflows/reusable-sequential.yml
+    with:
+      config_hash: ${{ needs.build-context.outputs.config-hash }}
+
   build-wasi:
     name: 'WASI'
     needs: build-context
