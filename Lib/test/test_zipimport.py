@@ -556,13 +556,6 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.assertEqual(zi.archive, TEMP_ZIP)
         self.assertTrue(zi.is_package(TESTPACK))
 
-        # PEP 302
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-
-            mod = zi.load_module(TESTPACK)
-            self.assertEqual(zi.get_filename(TESTPACK), mod.__file__)
-
         # PEP 451
         spec = zi.find_spec('spam')
         self.assertIsNotNone(spec)
@@ -675,11 +668,6 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.assertEqual(zi.archive, TEMP_ZIP)
         self.assertEqual(zi.prefix, packdir)
         self.assertTrue(zi.is_package(TESTPACK2))
-        # PEP 302
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            mod = zi.load_module(TESTPACK2)
-            self.assertEqual(zi.get_filename(TESTPACK2), mod.__file__)
         # PEP 451
         spec = zi.find_spec(TESTPACK2)
         mod = importlib.util.module_from_spec(spec)
@@ -1069,9 +1057,6 @@ class BadFileZipImportTestCase(unittest.TestCase):
         z = zipimport.zipimporter(TESTMOD)
 
         try:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", DeprecationWarning)
-                self.assertRaises(TypeError, z.load_module, None)
             self.assertRaises(TypeError, z.find_module, None)
             self.assertRaises(TypeError, z.find_spec, None)
             self.assertRaises(TypeError, z.exec_module, None)
@@ -1082,10 +1067,6 @@ class BadFileZipImportTestCase(unittest.TestCase):
 
             error = zipimport.ZipImportError
             self.assertIsNone(z.find_spec('abc'))
-
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", DeprecationWarning)
-                self.assertRaises(error, z.load_module, 'abc')
             self.assertRaises(error, z.get_code, 'abc')
             self.assertRaises(OSError, z.get_data, 'abc')
             self.assertRaises(error, z.get_source, 'abc')
