@@ -1,0 +1,1 @@
+Fix :mod:`pdb` multiline auto-indent not work with comments.
