@@ -3631,6 +3631,7 @@ class EncodedMetadataTests(unittest.TestCase):
         for name in self.file_names:
             self.assertIn(name, listing)
 
+    @unittest.skipIf(locale.getpreferredencoding().lower() != 'utf-8', 'test requires utf-8')
     def test_cli_with_metadata_encoding_extract(self):
         os.mkdir(TESTFN2)
         self.addCleanup(rmtree, TESTFN2)
