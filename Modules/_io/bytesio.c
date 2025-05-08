@@ -417,6 +417,8 @@ _io_BytesIO_tell_impl(bytesio *self)
 static PyObject *
 read_bytes_lock_held(bytesio *self, Py_ssize_t size)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+
     const char *output;
 
     assert(self->buf != NULL);
@@ -841,6 +843,8 @@ _io_BytesIO_close_impl(bytesio *self)
  static PyObject *
  bytesio_getstate_lock_held(PyObject *op)
  {
+     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+
      bytesio *self = bytesio_CAST(op);
      PyObject *initvalue = _io_BytesIO_getvalue_impl(self);
      PyObject *dict;
@@ -877,6 +881,8 @@ bytesio_getstate(PyObject *op, PyObject *Py_UNUSED(dummy))
 static PyObject *
 bytesio_setstate_lock_held(PyObject *op, PyObject *state)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+
     PyObject *result;
     PyObject *position_obj;
     PyObject *dict;
@@ -1189,6 +1195,7 @@ bytesiobuf_getbuffer(PyObject *op, Py_buffer *view, int flags)
         return -1;
     }
 
+#ifdef Py_GIL_DISABLED
     bytesiobuf *obj = bytesiobuf_CAST(op);
     bytesio *b = bytesio_CAST(obj->source);
     int ret;
@@ -1196,6 +1203,9 @@ bytesiobuf_getbuffer(PyObject *op, Py_buffer *view, int flags)
     ret = bytesiobuf_getbuffer_lock_held(op, view, flags);
     Py_END_CRITICAL_SECTION();
     return ret;
+#else
+    return bytesiobuf_getbuffer_lock_held(op, view, flags);
+#endif
 }
 
 static void
