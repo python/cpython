@@ -270,19 +270,6 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. deprecated-removed:: 3.12 3.15
 
-.. c:var:: int Py_QuietFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.quiet` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Don't display the copyright and version messages even in interactive mode.
-
-   Set by the :option:`-q` option.
-
-   .. versionadded:: 3.2
-
-   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_UnbufferedStdioFlag
 

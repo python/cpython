@@ -589,7 +589,6 @@ static int test_init_global_config(void)
 
     putenv("PYTHONVERBOSE=0");
 
-    Py_QuietFlag = 1;
     Py_NoUserSiteDirectory = 1;
 
     putenv("PYTHONUNBUFFERED=");
@@ -724,7 +723,6 @@ static int test_init_from_config(void)
     Py_DontWriteBytecodeFlag = 0;
     config.write_bytecode = 0;
 
-    Py_QuietFlag = 0;
     config.quiet = 1;
 
     config.configure_c_stdio = 1;
@@ -1051,7 +1049,6 @@ static void set_all_global_config_variables(void)
     Py_InspectFlag = 1;
     Py_InteractiveFlag = 1;
     Py_OptimizeFlag = 1;
-    Py_QuietFlag = 1;
     Py_FrozenFlag = 0;
     Py_UnbufferedStdioFlag = 1;
     Py_NoSiteFlag = 1;
