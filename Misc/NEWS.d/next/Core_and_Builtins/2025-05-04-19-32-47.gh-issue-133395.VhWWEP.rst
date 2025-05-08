@@ -1,2 +1,0 @@
-Add option for extension modules to specialize ``BINARY_OP`` instructions.
-Applied to ``array`` objects.

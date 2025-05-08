@@ -61,8 +61,8 @@ _get_DDict(ZstdDict *self)
 }
 
 /* Set decompression parameters to decompression context */
-int
-_PyZstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
+static int
+_zstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
 {
     size_t zstd_ret;
     PyObject *key, *value;
@@ -84,7 +84,7 @@ _PyZstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
         if (Py_TYPE(key) == mod_state->CParameter_type) {
             PyErr_SetString(PyExc_TypeError,
                             "Key of decompression options dict should "
-                            "NOT be CParameter.");
+                            "NOT be CompressionParameter.");
             return -1;
         }
 
@@ -92,7 +92,7 @@ _PyZstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
         int key_v = PyLong_AsInt(key);
         if (key_v == -1 && PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError,
-                            "Key of options dict should be a DParameter attribute.");
+                            "Key of options dict should be a DecompressionParameter attribute.");
             return -1;
         }
 
@@ -120,8 +120,8 @@ _PyZstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
 }
 
 /* Load dictionary or prefix to decompression context */
-int
-_PyZstd_load_d_dict(ZstdDecompressor *self, PyObject *dict)
+static int
+_zstd_load_d_dict(ZstdDecompressor *self, PyObject *dict)
 {
     size_t zstd_ret;
     _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
@@ -709,7 +709,7 @@ _zstd_ZstdDecompressor___init___impl(ZstdDecompressor *self,
 
     /* Load dictionary to decompression context */
     if (zstd_dict != Py_None) {
-        if (_PyZstd_load_d_dict(self, zstd_dict) < 0) {
+        if (_zstd_load_d_dict(self, zstd_dict) < 0) {
             return -1;
         }
 
@@ -720,7 +720,7 @@ _zstd_ZstdDecompressor___init___impl(ZstdDecompressor *self,
 
     /* Set option to decompression context */
     if (options != Py_None) {
-        if (_PyZstd_set_d_parameters(self, options) < 0) {
+        if (_zstd_set_d_parameters(self, options) < 0) {
             return -1;
         }
     }
@@ -883,9 +883,9 @@ static PyType_Slot ZstdDecompressor_slots[] = {
     {0}
 };
 
-PyType_Spec ZstdDecompressor_type_spec = {
+PyType_Spec zstddecompressor_type_spec = {
     .name = "_zstd.ZstdDecompressor",
     .basicsize = sizeof(ZstdDecompressor),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .slots = ZstdDecompressor_slots,
 };

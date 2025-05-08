@@ -1166,9 +1166,44 @@ error:
 }
 
 static PyObject *
-jit_enabled(PyObject *self, PyObject *arg)
+verify_stateless_code(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    return PyBool_FromLong(_PyInterpreterState_GET()->jit);
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *codearg;
+    PyObject *globalnames = NULL;
+    PyObject *globalsns = NULL;
+    PyObject *builtinsns = NULL;
+    static char *kwlist[] = {"code", "globalnames",
+                             "globalsns", "builtinsns", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                    "O|O!O!O!:get_code_var_counts", kwlist,
+                    &codearg, &PySet_Type, &globalnames,
+                    &PyDict_Type, &globalsns, &PyDict_Type, &builtinsns))
+    {
+        return NULL;
+    }
+    if (PyFunction_Check(codearg)) {
+        if (globalsns == NULL) {
+            globalsns = PyFunction_GET_GLOBALS(codearg);
+        }
+        if (builtinsns == NULL) {
+            builtinsns = PyFunction_GET_BUILTINS(codearg);
+        }
+        codearg = PyFunction_GET_CODE(codearg);
+    }
+    else if (!PyCode_Check(codearg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "argument must be a code object or a function");
+        return NULL;
+    }
+    PyCodeObject *code = (PyCodeObject *)codearg;
+
+    if (_PyCode_VerifyStateless(
+                tstate, code, globalnames, globalsns, builtinsns) < 0)
+    {
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 #ifdef _Py_TIER2
@@ -1949,6 +1984,21 @@ get_crossinterp_data(PyObject *self, PyObject *args, PyObject *kwargs)
             goto error;
         }
     }
+    else if (strcmp(mode, "code") == 0) {
+        if (_PyCode_GetXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
+    else if (strcmp(mode, "script") == 0) {
+        if (_PyCode_GetScriptXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
+    else if (strcmp(mode, "script-pure") == 0) {
+        if (_PyCode_GetPureScriptXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
     else {
         PyErr_Format(PyExc_ValueError, "unsupported mode %R", modeobj);
         goto error;
@@ -2293,7 +2343,8 @@ static PyMethodDef module_functions[] = {
     {"get_co_localskinds", get_co_localskinds, METH_O, NULL},
     {"get_code_var_counts", _PyCFunction_CAST(get_code_var_counts),
      METH_VARARGS | METH_KEYWORDS, NULL},
-    {"jit_enabled", jit_enabled,  METH_NOARGS, NULL},
+    {"verify_stateless_code", _PyCFunction_CAST(verify_stateless_code),
+     METH_VARARGS | METH_KEYWORDS, NULL},
 #ifdef _Py_TIER2
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
     {"invalidate_executors", invalidate_executors, METH_O, NULL},

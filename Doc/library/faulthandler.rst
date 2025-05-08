@@ -69,7 +69,7 @@ Dumping the traceback
 Dumping the C stack
 -------------------
 
-.. versionadded:: next
+.. versionadded:: 3.14
 
 .. function:: dump_c_stack(file=sys.stderr)
 
@@ -130,7 +130,7 @@ Fault handler state
       Only the current thread is dumped if the :term:`GIL` is disabled to
       prevent the risk of data races.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       The dump now displays the C stack trace if *c_stack* is true.
 
 .. function:: disable()

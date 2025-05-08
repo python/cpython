@@ -1,3 +1,0 @@
-For the free-threaded build, check the process resident set size (RSS)
-increase before triggering a full automatic garbage collection.  If the RSS
-has not increased 10% since the last collection then it is deferred.

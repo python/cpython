@@ -26,6 +26,7 @@ from test import support
 from test.support import os_helper
 from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow
 from test.support.ast_helper import ASTTestMixin
+from test.support.import_helper import ensure_lazy_imports
 from test.test_ast.utils import to_tuple
 from test.test_ast.snippets import (
     eval_tests, eval_results, exec_tests, exec_results, single_tests, single_results
@@ -45,6 +46,12 @@ def ast_repr_get_test_cases() -> list[str]:
 def ast_repr_update_snapshots() -> None:
     data = [repr(ast.parse(test)) for test in ast_repr_get_test_cases()]
     AST_REPR_DATA_FILE.write_text("\n".join(data))
+
+
+class LazyImportTest(unittest.TestCase):
+    @support.cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("ast", {"contextlib", "enum", "inspect", "re", "collections", "argparse"})
 
 
 class AST_Tests(unittest.TestCase):
@@ -813,6 +820,17 @@ class AST_Tests(unittest.TestCase):
             ast.fix_missing_locations(expr)
             with self.assertRaisesRegex(ValueError, f"identifier field can't represent '{constant}' constant"):
                 compile(expr, "<test>", "eval")
+
+    def test_constant_as_unicode_name(self):
+        constants = [
+            ("True", b"Tru\xe1\xb5\x89"),
+            ("False", b"Fal\xc5\xbfe"),
+            ("None", b"N\xc2\xbane"),
+        ]
+        for constant in constants:
+            with self.assertRaisesRegex(ValueError,
+                f"identifier field can't represent '{constant[0]}' constant"):
+                ast.parse(constant[1], mode="eval")
 
     def test_precedence_enum(self):
         class _Precedence(enum.IntEnum):

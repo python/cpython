@@ -7,12 +7,13 @@ if sys.platform != "win32":
 
 import itertools
 from functools import partial
+from test.support import force_not_colorized_test_class
 from typing import Iterable
 from unittest import TestCase
 from unittest.mock import MagicMock, call
 
 from .support import handle_all_events, code_to_events
-from .support import reader_no_colors as default_prepare_reader
+from .support import prepare_reader as default_prepare_reader
 
 try:
     from _pyrepl.console import Event, Console
@@ -29,6 +30,7 @@ except ImportError:
     pass
 
 
+@force_not_colorized_test_class
 class WindowsConsoleTests(TestCase):
     def console(self, events, **kwargs) -> Console:
         console = WindowsConsole()

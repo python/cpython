@@ -7058,7 +7058,7 @@ class TestColorized(TestCase):
         super().setUp()
         # Ensure color even if ran with NO_COLOR=1
         _colorize.can_colorize = lambda *args, **kwargs: True
-        self.ansi = _colorize.ANSIColors()
+        self.theme = _colorize.get_theme(force_color=True).argparse
 
     def test_argparse_color(self):
         # Arrange: create a parser with a bit of everything
@@ -7120,13 +7120,17 @@ class TestColorized(TestCase):
         sub2 = subparsers.add_parser("sub2", deprecated=True, help="sub2 help")
         sub2.add_argument("--baz", choices=("X", "Y", "Z"), help="baz help")
 
-        heading = self.ansi.BOLD_BLUE
-        label, label_b = self.ansi.YELLOW, self.ansi.BOLD_YELLOW
-        long, long_b = self.ansi.CYAN, self.ansi.BOLD_CYAN
-        pos, pos_b = short, short_b = self.ansi.GREEN, self.ansi.BOLD_GREEN
-        sub = self.ansi.BOLD_GREEN
-        prog = self.ansi.BOLD_MAGENTA
-        reset = self.ansi.RESET
+        prog = self.theme.prog
+        heading = self.theme.heading
+        long = self.theme.summary_long_option
+        short = self.theme.summary_short_option
+        label = self.theme.summary_label
+        pos = self.theme.summary_action
+        long_b = self.theme.long_option
+        short_b = self.theme.short_option
+        label_b = self.theme.label
+        pos_b = self.theme.action
+        reset = self.theme.reset
 
         # Act
         help_text = parser.format_help()
@@ -7171,9 +7175,9 @@ class TestColorized(TestCase):
                 {heading}subcommands:{reset}
                   valid subcommands
 
-                  {sub}{{sub1,sub2}}{reset}           additional help
-                    {sub}sub1{reset}                sub1 help
-                    {sub}sub2{reset}                sub2 help
+                  {pos_b}{{sub1,sub2}}{reset}           additional help
+                    {pos_b}sub1{reset}                sub1 help
+                    {pos_b}sub2{reset}                sub2 help
                 """
             ),
         )
@@ -7187,10 +7191,10 @@ class TestColorized(TestCase):
             prog="PROG",
             usage="[prefix] %(prog)s [suffix]",
         )
-        heading = self.ansi.BOLD_BLUE
-        prog = self.ansi.BOLD_MAGENTA
-        reset = self.ansi.RESET
-        usage = self.ansi.MAGENTA
+        heading = self.theme.heading
+        prog = self.theme.prog
+        reset = self.theme.reset
+        usage = self.theme.prog_extra
 
         # Act
         help_text = parser.format_help()

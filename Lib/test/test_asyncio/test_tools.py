@@ -18,10 +18,18 @@ TEST_INPUTS_TREE = [
                         3,
                         "timer",
                         [
-                            [["awaiter3", "awaiter2", "awaiter"], 4],
-                            [["awaiter1_3", "awaiter1_2", "awaiter1"], 5],
-                            [["awaiter1_3", "awaiter1_2", "awaiter1"], 6],
-                            [["awaiter3", "awaiter2", "awaiter"], 7],
+                            [[("awaiter3", "/path/to/app.py", 130),
+                              ("awaiter2", "/path/to/app.py", 120),
+                              ("awaiter", "/path/to/app.py", 110)], 4],
+                            [[("awaiterB3", "/path/to/app.py", 190),
+                              ("awaiterB2", "/path/to/app.py", 180),
+                              ("awaiterB", "/path/to/app.py", 170)], 5],
+                            [[("awaiterB3", "/path/to/app.py", 190),
+                              ("awaiterB2", "/path/to/app.py", 180),
+                              ("awaiterB", "/path/to/app.py", 170)], 6],
+                            [[("awaiter3", "/path/to/app.py", 130),
+                              ("awaiter2", "/path/to/app.py", 120),
+                              ("awaiter", "/path/to/app.py", 110)], 7],
                         ],
                     ),
                     (
@@ -91,14 +99,14 @@ TEST_INPUTS_TREE = [
                     "                │           └──  __aexit__",
                     "                │               └──  _aexit",
                     "                │                   ├── (T) child1_1",
-                    "                │                   │   └──  awaiter",
-                    "                │                   │       └──  awaiter2",
-                    "                │                   │           └──  awaiter3",
+                    "                │                   │   └──  awaiter /path/to/app.py:110",
+                    "                │                   │       └──  awaiter2 /path/to/app.py:120",
+                    "                │                   │           └──  awaiter3 /path/to/app.py:130",
                     "                │                   │               └── (T) timer",
                     "                │                   └── (T) child2_1",
-                    "                │                       └──  awaiter1",
-                    "                │                           └──  awaiter1_2",
-                    "                │                               └──  awaiter1_3",
+                    "                │                       └──  awaiterB /path/to/app.py:170",
+                    "                │                           └──  awaiterB2 /path/to/app.py:180",
+                    "                │                               └──  awaiterB3 /path/to/app.py:190",
                     "                │                                   └── (T) timer",
                     "                └── (T) root2",
                     "                    └──  bloch",
@@ -106,14 +114,14 @@ TEST_INPUTS_TREE = [
                     "                            └──  __aexit__",
                     "                                └──  _aexit",
                     "                                    ├── (T) child1_2",
-                    "                                    │   └──  awaiter",
-                    "                                    │       └──  awaiter2",
-                    "                                    │           └──  awaiter3",
+                    "                                    │   └──  awaiter /path/to/app.py:110",
+                    "                                    │       └──  awaiter2 /path/to/app.py:120",
+                    "                                    │           └──  awaiter3 /path/to/app.py:130",
                     "                                    │               └── (T) timer",
                     "                                    └── (T) child2_2",
-                    "                                        └──  awaiter1",
-                    "                                            └──  awaiter1_2",
-                    "                                                └──  awaiter1_3",
+                    "                                        └──  awaiterB /path/to/app.py:170",
+                    "                                            └──  awaiterB2 /path/to/app.py:180",
+                    "                                                └──  awaiterB3 /path/to/app.py:190",
                     "                                                    └── (T) timer",
                 ]
             ]
@@ -589,7 +597,6 @@ TEST_INPUTS_TABLE = [
 
 
 class TestAsyncioToolsTree(unittest.TestCase):
-
     def test_asyncio_utils(self):
         for input_, tree in TEST_INPUTS_TREE:
             with self.subTest(input_):

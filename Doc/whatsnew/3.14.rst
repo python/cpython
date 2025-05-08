@@ -2,7 +2,7 @@
   What's new in Python 3.14
 ****************************
 
-:Editor: TBD
+:Editor: Hugo van Kemenade
 
 .. Rules for maintenance:
 
@@ -48,6 +48,10 @@ This article explains the new features in Python 3.14, compared to 3.13.
 
 For full details, see the :ref:`changelog <changelog>`.
 
+.. seealso::
+
+   :pep:`745` -- Python 3.14 release schedule
+
 .. note::
 
    Prerelease users should be aware that this document is currently in draft
@@ -61,22 +65,38 @@ Summary -- release highlights
 .. This section singles out the most important changes in Python 3.14.
    Brevity is key.
 
+Python 3.14 beta is the pre-release of the next version of the Python
+programming language, with a mix of changes to the language, the
+implementation and the standard library.
+
+The biggest changes to the implementation include template strings (:pep:`750`),
+deferred evaluation of annotations (:pep:`649`),
+and a new type of interpreter that uses tail calls.
+
+The library changes include the addition of a new :mod:`!annotationlib` module
+for introspecting and wrapping annotations (:pep:`649`),
+a new :mod:`!compression.zstd` module for Zstandard support (:pep:`784`),
+plus syntax highlighting in the REPL,
+as well as the usual deprecations and removals,
+and improvements in user-friendliness and correctness.
 
 .. PEP-sized items next.
 
 * :ref:`PEP 649: deferred evaluation of annotations <whatsnew314-pep649>`
 * :ref:`PEP 741: Python Configuration C API <whatsnew314-pep741>`
-* :ref:`PEP 750: Template Strings <whatsnew314-pep750>`
+* :ref:`PEP 750: Template strings <whatsnew314-pep750>`
 * :ref:`PEP 758: Allow except and except* expressions without parentheses <whatsnew314-pep758>`
 * :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
 * :ref:`PEP 765: Disallow return/break/continue that exit a finally block <whatsnew314-pep765>`
 * :ref:`PEP 768: Safe external debugger interface for CPython <whatsnew314-pep768>`
+* :ref:`PEP 784: Adding Zstandard to the standard library <whatsnew314-pep784>`
 * :ref:`A new type of interpreter <whatsnew314-tail-call>`
 * :ref:`Syntax highlighting in PyREPL <whatsnew314-pyrepl-highlighting>`,
   and color output in :ref:`unittest <whatsnew314-color-unittest>`,
   :ref:`argparse <whatsnew314-color-argparse>`,
   :ref:`json <whatsnew314-color-json>` and
   :ref:`calendar <whatsnew314-color-calendar>` CLIs
+* :ref:`Binary releases for the experimental just-in-time compiler <whatsnew314-jit-compiler>`
 
 
 Incompatible changes
@@ -104,7 +124,7 @@ New features
 
 .. _whatsnew314-pep750:
 
-PEP 750: Template Strings
+PEP 750: Template strings
 -------------------------
 
 Template string literals (t-strings) are a generalization of f-strings,
@@ -166,11 +186,13 @@ With this in place, developers can write template systems to sanitize SQL, make
 safe shell operations, improve logging, tackle modern ideas in web development
 (HTML, CSS, and so on), and implement lightweight, custom business DSLs.
 
-See :pep:`750` for more details.
-
 (Contributed by Jim Baker, Guido van Rossum, Paul Everitt, Koudai Aono,
 Lysandros Nikolaou, Dave Peck, Adam Turner, Jelle Zijlstra, Bénédikt Tran,
 and Pablo Galindo Salgado in :gh:`132661`.)
+
+.. seealso::
+   :pep:`750`.
+
 
 .. _whatsnew314-pep768:
 
@@ -227,9 +249,56 @@ A key implementation detail is that the interface piggybacks on the interpreter'
 loop and safe points, ensuring zero overhead during normal execution while providing a reliable way
 for external processes to coordinate debugging operations.
 
-See :pep:`768` for more details.
-
 (Contributed by Pablo Galindo Salgado, Matt Wozniski, and Ivona Stojanovic in :gh:`131591`.)
+
+.. seealso::
+   :pep:`768`.
+
+
+.. _whatsnew314-pep784:
+
+PEP 784: Adding Zstandard to the standard library
+-------------------------------------------------
+
+The new ``compression`` package contains modules :mod:`!compression.lzma`,
+:mod:`!compression.bz2`, :mod:`!compression.gzip` and :mod:`!compression.zlib`
+which re-export the :mod:`lzma`, :mod:`bz2`, :mod:`gzip` and :mod:`zlib`
+modules respectively. The new import names under ``compression`` are the
+canonical names for importing these compression modules going forward. However,
+the existing modules names have not been deprecated. Any deprecation or removal
+of the existing compression modules will occur no sooner than five years after
+the release of 3.14.
+
+The new :mod:`!compression.zstd` module provides compression and decompression
+APIs for the Zstandard format via bindings to `Meta's zstd library
+<https://facebook.github.io/zstd/>`__. Zstandard is a widely adopted, highly
+efficient, and fast compression format. In addition to the APIs introduced in
+:mod:`!compression.zstd`, support for reading and writing Zstandard compressed
+archives has been added to the :mod:`tarfile`, :mod:`zipfile`, and
+:mod:`shutil` modules.
+
+Here's an example of using the new module to compress some data:
+
+.. code-block:: python
+
+    from compression import zstd
+    import math
+
+    data = str(math.pi).encode() * 20
+
+    compressed = zstd.compress(data)
+
+    ratio = len(compressed) / len(data)
+    print(f"Achieved compression ratio of {ratio}")
+
+As can be seen, the API is similar to the APIs of the :mod:`!lzma` and
+:mod:`!bz2` modules.
+
+(Contributed by Emma Harper Smith, Adam Turner, Gregory P. Smith, Tomas Roun,
+Victor Stinner, and Rogdham in :gh:`132983`)
+
+.. seealso::
+   :pep:`784`.
 
 
 .. _whatsnew314-remote-pdb:
@@ -250,11 +319,14 @@ attaching to a remote process that is blocked in a system call or waiting for
 I/O will only work once the next bytecode instruction is executed or when the
 process receives a signal.
 
-This feature leverages :pep:`768` and the :func:`sys.remote_exec` function
+This feature uses :pep:`768` and the :func:`sys.remote_exec` function
 to attach to the remote process and send the PDB commands to it.
 
 
 (Contributed by Matt Wozniski and Pablo Galindo in :gh:`131591`.)
+
+.. seealso::
+   :pep:`768`.
 
 
 .. _whatsnew314-pep758:
@@ -282,6 +354,9 @@ For example the following expressions are now valid:
 Check :pep:`758` for more details.
 
 (Contributed by Pablo Galindo and Brett Cannon in :gh:`131831`.)
+
+.. seealso::
+   :pep:`758`.
 
 
 .. _whatsnew314-pep649:
@@ -378,7 +453,7 @@ Improved error messages
   feature helps programmers quickly identify and fix common typing mistakes. For
   example:
 
-  .. code-block:: python
+  .. code-block:: pycon
 
      >>> whille True:
      ...     pass
@@ -419,7 +494,7 @@ Improved error messages
   error message prints the received number of values in more cases than before.
   (Contributed by Tushar Sadhwani in :gh:`122239`.)
 
-  .. code-block:: python
+  .. code-block:: pycon
 
      >>> x, y, z = 1, 2, 3, 4
      Traceback (most recent call last):
@@ -473,7 +548,7 @@ Improved error messages
   that the string may be intended to be part of the string. (Contributed by
   Pablo Galindo in :gh:`88535`.)
 
-  .. code-block:: python
+  .. code-block:: pycon
 
     >>> "The interesting object "The important object" is very important"
     Traceback (most recent call last):
@@ -508,6 +583,9 @@ Improved error messages
        import ast as arr[0]
                      ^^^^^^
    SyntaxError: cannot use subscript as import target
+
+.. seealso::
+   :pep:`649`.
 
 
 .. _whatsnew314-pep741:
@@ -715,8 +793,45 @@ in the :envvar:`PYTHONSTARTUP` script.
 (Contributed by Łukasz Langa in :gh:`131507`.)
 
 
+.. _whatsnew314-jit-compiler:
+
+Binary releases for the experimental just-in-time compiler
+----------------------------------------------------------
+
+The official macOS and Windows release binaries now include an *experimental*
+just-in-time (JIT) compiler. Although it is **not** recommended for production
+use, it can be tested by setting :envvar:`PYTHON_JIT=1 <PYTHON_JIT>` as an
+environment variable. Downstream source builds and redistributors can use the
+:option:`--enable-experimental-jit=yes-off` configuration option for similar
+behavior.
+
+The JIT is at an early stage and still in active development. As such, the
+typical performance impact of enabling it can range from 10% slower to 20%
+faster, depending on workload. To aid in testing and evaluation, a set of
+introspection functions has been provided in the :data:`sys._jit` namespace.
+:func:`sys._jit.is_available` can be used to determine if the current executable
+supports JIT compilation, while :func:`sys._jit.is_enabled` can be used to tell
+if JIT compilation has been enabled for the current process.
+
+Currently, the most significant missing functionality is that native debuggers
+and profilers like ``gdb`` and ``perf`` are unable to unwind through JIT frames
+(Python debuggers and profilers, like :mod:`pdb` or :mod:`profile`, continue to
+work without modification). Free-threaded builds do not support JIT compilation.
+
+Please report any bugs or major performance regressions that you encounter!
+
+.. seealso:: :pep:`744`
+
+
 Other language changes
 ======================
+
+* The default :term:`interactive` shell now supports import autocompletion.
+  This means that typing ``import foo`` and pressing ``<tab>`` will suggest
+  modules starting with ``foo``. Similarly, typing ``from foo import b`` will
+  suggest submodules of ``foo`` starting with ``b``. Note that autocompletion
+  of module attributes is not currently supported.
+  (Contributed by Tomas Roun in :gh:`69605`.)
 
 * The :func:`map` built-in now has an optional keyword-only *strict* flag
   like :func:`zip` to check that all the iterables are of equal length.
@@ -778,9 +893,9 @@ Other language changes
   The testbed can also be used to run the test suite of projects other than
   CPython itself. (Contributed by Russell Keith-Magee in :gh:`127592`.)
 
-* Three-argument :func:`pow` now try calling :meth:`~object.__rpow__` if necessary.
-  Previously it was only called in two-argument :func:`!pow` and the binary
-  power operator.
+* Three-argument :func:`pow` now tries calling :meth:`~object.__rpow__` if
+  necessary. Previously it was only called in two-argument :func:`!pow` and the
+  binary power operator.
   (Contributed by Serhiy Storchaka in :gh:`130104`.)
 
 * Add a built-in implementation for HMAC (:rfc:`2104`) using formally verified
@@ -789,20 +904,27 @@ Other language changes
   of HMAC is not available.
   (Contributed by Bénédikt Tran in :gh:`99108`.)
 
+* The import time flag can now track modules that are already loaded ('cached'),
+  via the new :option:`-X importtime=2 <-X>`.
+  When such a module is imported, the ``self`` and ``cumulative`` times
+  are replaced by the string ``cached``.
+  Values above ``2`` for ``-X importtime`` are now reserved for future use.
+  (Contributed by Noah Kim and Adam Turner in :gh:`118655`.)
+
 * When subclassing from a pure C type, the C slots for the new type are no
   longer replaced with a wrapped version on class creation if they are not
   explicitly overridden in the subclass.
   (Contributed by Tomasz Pytel in :gh:`132329`.)
 
-* The command line option :option:`-c` now automatically dedents its code
+* The command-line option :option:`-c` now automatically dedents its code
   argument before execution. The auto-dedentation behavior mirrors
   :func:`textwrap.dedent`.
   (Contributed by Jon Crall and Steven Sun in :gh:`103998`.)
 
-* Improve error message when an object supporting the synchronous (resp.
-  asynchronous) context manager protocol is entered using :keyword:`async
-  with` (resp. :keyword:`with`) instead of :keyword:`with` (resp.
-  :keyword:`async with`).
+* Improve error message when an object supporting the synchronous
+  context manager protocol is entered using :keyword:`async
+  with` instead of :keyword:`with`.
+  And vice versa with the asynchronous context manager protocol.
   (Contributed by Bénédikt Tran in :gh:`128398`.)
 
 * :option:`!-J` is no longer a reserved flag for Jython_,
@@ -813,8 +935,8 @@ Other language changes
 
 .. _whatsnew314-pep765:
 
-PEP 765: Disallow return/break/continue that exit a finally block
------------------------------------------------------------------
+PEP 765: Disallow ``return``/``break``/``continue`` that exit a ``finally`` block
+---------------------------------------------------------------------------------
 
 The compiler emits a :exc:`SyntaxWarning` when a :keyword:`return`, :keyword:`break` or
 :keyword:`continue` statements appears where it exits a :keyword:`finally` block.
@@ -849,10 +971,9 @@ argparse
 
 * Introduced the optional *color* parameter to
   :class:`argparse.ArgumentParser`, enabling color for help text.
-  This can be controlled via the :envvar:`PYTHON_COLORS` environment
-  variable as well as the canonical |NO_COLOR|_
-  and |FORCE_COLOR|_ environment variables.
-  See also :ref:`using-on-controlling-color`.
+  This can be controlled by :ref:`environment variables
+  <using-on-controlling-color>`. Color has also been enabled for help in the
+  :ref:`stdlib CLIs <library-cmdline>` which use :mod:`!argparse`.
   (Contributed by Hugo van Kemenade in :gh:`130645`.)
 
 
@@ -869,7 +990,7 @@ ast
   (Contributed by Irit Katriel in :gh:`123958`.)
 
 * The ``repr()`` output for AST nodes now includes more information.
-  (Contributed by Tomas R in :gh:`116022`.)
+  (Contributed by Tomas Roun in :gh:`116022`.)
 
 * :func:`ast.parse`, when called with an AST as input, now always verifies
   that the root node type is appropriate.
@@ -894,10 +1015,8 @@ calendar
 
 * By default, today's date is highlighted in color in :mod:`calendar`'s
   :ref:`command-line <calendar-cli>` text output.
-  This can be controlled via the :envvar:`PYTHON_COLORS` environment
-  variable as well as the canonical |NO_COLOR|_
-  and |FORCE_COLOR|_ environment variables.
-  See also :ref:`using-on-controlling-color`.
+  This can be controlled by :ref:`environment variables
+  <using-on-controlling-color>`.
   (Contributed by Hugo van Kemenade in :gh:`128317`.)
 
 
@@ -905,7 +1024,7 @@ concurrent.futures
 ------------------
 
 * Add :class:`~concurrent.futures.InterpreterPoolExecutor`,
-  which exposes "subinterpreters (multiple Python interpreters in the
+  which exposes "subinterpreters" (multiple Python interpreters in the
   same process) to Python code.  This is separate from the proposed API
   in :pep:`734`.
   (Contributed by Eric Snow in :gh:`124548`.)
@@ -984,7 +1103,7 @@ ctypes
   :class:`~ctypes.c_double_complex` and :class:`~ctypes.c_longdouble_complex`,
   are now available if both the compiler and the ``libffi`` library support
   complex C types.
-  (Contributed by Sergey B Kirpichev in :gh:`61103`).
+  (Contributed by Sergey B Kirpichev in :gh:`61103`.)
 
 * Add :func:`ctypes.util.dllist` for listing the shared libraries
   loaded by the current process.
@@ -994,7 +1113,7 @@ ctypes
   (``_pointer_type_cache``) to the :attr:`ctypes._CData.__pointer_type__`
   attribute of the corresponding :mod:`ctypes` types.
   This will stop the cache from growing without limits in some situations.
-  (Contributed by Sergey Miryanov in :gh:`100926`).
+  (Contributed by Sergey Miryanov in :gh:`100926`.)
 
 * The :class:`ctypes.py_object` type now supports subscription,
   making it a :term:`generic type`.
@@ -1111,12 +1230,21 @@ getopt
   (Contributed by Serhiy Storchaka in :gh:`126390`.)
 
 
+getpass
+-------
+
+* Support keyboard feedback by :func:`getpass.getpass` via the keyword-only
+  optional argument ``echo_char``. Placeholder characters are rendered whenever
+  a character is entered, and removed when a character is deleted.
+  (Contributed by Semyon Moroz in :gh:`77065`.)
+
+
 graphlib
 --------
 
 * Allow :meth:`graphlib.TopologicalSorter.prepare` to be called more than once
   as long as sorting has not started.
-  (Contributed by Daniel Pope in :gh:`130914`)
+  (Contributed by Daniel Pope in :gh:`130914`.)
 
 
 heapq
@@ -1209,11 +1337,10 @@ json
 
   .. _whatsnew314-color-json:
 
-* By default, the output of the :ref:`JSON command-line interface <json-commandline>`
-  is highlighted in color. This can be controlled via the
-  :envvar:`PYTHON_COLORS` environment variable as well as the canonical
-  |NO_COLOR|_ and |FORCE_COLOR|_ environment variables. See also
-  :ref:`using-on-controlling-color`.
+* By default, the output of the :ref:`JSON command-line interface
+  <json-commandline>` is highlighted in color.
+  This can be controlled by :ref:`environment variables
+  <using-on-controlling-color>`.
   (Contributed by Tomas Roun in :gh:`131952`.)
 
 linecache
@@ -1349,9 +1476,9 @@ multiprocessing
 * The :ref:`multiprocessing proxy objects <multiprocessing-proxy_objects>`
   for *list* and *dict* types gain previously overlooked missing methods:
 
-   * :meth:`!clear` and :meth:`!copy` for proxies of :class:`list`.
+   * :meth:`!clear` and :meth:`!copy` for proxies of :class:`list`
    * :meth:`~dict.fromkeys`, ``reversed(d)``, ``d | {}``, ``{} | d``,
-     ``d |= {'b': 2}`` for proxies of :class:`dict`.
+     ``d |= {'b': 2}`` for proxies of :class:`dict`
 
   (Contributed by Roy Hyunjin Han for :gh:`103134`.)
 
@@ -1361,9 +1488,9 @@ multiprocessing
   (Contributed by Mingyu Park in :gh:`129949`.)
 
 * Add :func:`multiprocessing.Process.interrupt` which terminates the child
-  process by sending :py:const:`~signal.SIGINT`. This enables "finally" clauses
-  and printing stack trace for the terminated process.
-  (Contributed by Artem Pulkin in :gh:`131913`.)
+  process by sending :py:const:`~signal.SIGINT`. This enables
+  :keyword:`finally` clauses to print a stack trace for the terminated
+  process. (Contributed by Artem Pulkin in :gh:`131913`.)
 
 operator
 --------
@@ -1466,7 +1593,7 @@ pdb
 * Source code displayed in :mod:`pdb` will be syntax-highlighted. This feature
   can be controlled using the same methods as PyREPL, in addition to the newly
   added ``colorize`` argument of :class:`pdb.Pdb`.
-  (Contributed by Tian Gao in :gh:`133355`.)
+  (Contributed by Tian Gao and Łukasz Langa in :gh:`133355`.)
 
 
 pickle
@@ -1513,7 +1640,7 @@ socket
     :const:`~socket.BTPROTO_HCI` on Linux.
     (Contributed by Serhiy Storchaka in :gh:`70145`.)
   * Accept an integer as the address for
-    :const:`~socket.BTPROTO_HCI` on Linux
+    :const:`~socket.BTPROTO_HCI` on Linux.
     (Contributed by Serhiy Storchaka in :gh:`132099`.)
   * Return *cid* in :meth:`~socket.socket.getsockname` for
     :const:`~socket.BTPROTO_L2CAP`.
@@ -1592,8 +1719,8 @@ threading
 tkinter
 -------
 
-* Make tkinter widget methods :meth:`!after` and :meth:`!after_idle` accept
-  arguments passed by keyword.
+* Make :mod:`tkinter` widget methods :meth:`!after` and :meth:`!after_idle`
+  accept arguments passed by keyword.
   (Contributed by Zhikang Yan in :gh:`126899`.)
 
 * Add ability to specify name for :class:`!tkinter.OptionMenu` and
@@ -1671,10 +1798,8 @@ unittest
 --------
 
 * :mod:`unittest` output is now colored by default.
-  This can be controlled via the :envvar:`PYTHON_COLORS` environment
-  variable as well as the canonical |NO_COLOR|_
-  and |FORCE_COLOR|_ environment variables.
-  See also :ref:`using-on-controlling-color`.
+  This can be controlled by :ref:`environment variables
+  <using-on-controlling-color>`.
   (Contributed by Hugo van Kemenade in :gh:`127221`.)
 
 * unittest discovery supports :term:`namespace package` as start
@@ -1904,17 +2029,17 @@ Deprecated
   (Contributed by Inada Naoki in :gh:`133036`.)
 
 * :mod:`ctypes`:
-  On non-Windows platforms, setting :attr:`.Structure._pack_` to use a
-  MSVC-compatible default memory layout is deprecated in favor of setting
-  :attr:`.Structure._layout_` to ``'ms'``.
-  (Contributed by Petr Viktorin in :gh:`131747`.)
 
-* :mod:`ctypes`:
-  Calling :func:`ctypes.POINTER` on a string is deprecated.
-  Use :ref:`ctypes-incomplete-types` for self-referential structures.
-  Also, the internal ``ctypes._pointer_type_cache`` is deprecated.
-  See :func:`ctypes.POINTER` for updated implementation details.
-  (Contributed by Sergey Myrianov in :gh:`100926`.)
+  * On non-Windows platforms, setting :attr:`.Structure._pack_` to use a
+    MSVC-compatible default memory layout is deprecated in favor of setting
+    :attr:`.Structure._layout_` to ``'ms'``.
+    (Contributed by Petr Viktorin in :gh:`131747`.)
+
+  * Calling :func:`ctypes.POINTER` on a string is deprecated.
+    Use :ref:`ctypes-incomplete-types` for self-referential structures.
+    Also, the internal ``ctypes._pointer_type_cache`` is deprecated.
+    See :func:`ctypes.POINTER` for updated implementation details.
+    (Contributed by Sergey Myrianov in :gh:`100926`.)
 
 * :mod:`functools`:
   Calling the Python implementation of :func:`functools.reduce` with *function*
@@ -2080,7 +2205,7 @@ asyncio
 
     asyncio.run(main())
 
-  If you need to start something, e.g. a server listening on a socket
+  If you need to start something, for example, a server listening on a socket
   and then run forever, use :func:`asyncio.run` and an
   :class:`asyncio.Event`.
 
@@ -2255,14 +2380,8 @@ Others
   integer must implement either :meth:`~object.__int__` or
   :meth:`~object.__index__`. (Contributed by Mark Dickinson in :gh:`119743`.)
 
-* The default :term:`interactive` shell now supports import autocompletion.
-  This means that typing ``import foo`` and pressing ``<tab>`` will suggest
-  modules starting with ``foo``. Similarly, typing ``from foo import b`` will
-  suggest submodules of ``foo`` starting with ``b``. Note that autocompletion
-  of module attributes is not currently supported.
-  (Contributed by Tomas Roun in :gh:`69605`.)
 
-CPython Bytecode Changes
+CPython bytecode changes
 ========================
 
 * Replaced the opcode ``BINARY_SUBSCR`` by :opcode:`BINARY_OP` with oparg ``NB_SUBSCR``.
@@ -2403,12 +2522,12 @@ New features
 
 * Add a new import and export API for Python :class:`int` objects (:pep:`757`):
 
-  * :c:func:`PyLong_GetNativeLayout`;
-  * :c:func:`PyLong_Export`;
-  * :c:func:`PyLong_FreeExport`;
-  * :c:func:`PyLongWriter_Create`;
-  * :c:func:`PyLongWriter_Finish`;
-  * :c:func:`PyLongWriter_Discard`.
+  * :c:func:`PyLong_GetNativeLayout`
+  * :c:func:`PyLong_Export`
+  * :c:func:`PyLong_FreeExport`
+  * :c:func:`PyLongWriter_Create`
+  * :c:func:`PyLongWriter_Finish`
+  * :c:func:`PyLongWriter_Discard`
 
   (Contributed by Sergey B Kirpichev and Victor Stinner in :gh:`102471`.)
 
@@ -2520,24 +2639,24 @@ Porting to Python 3.14
 
 * Private functions promoted to public C APIs:
 
-  * ``_PyBytes_Join()``: :c:func:`PyBytes_Join`.
-  * ``_PyLong_IsNegative()``: :c:func:`PyLong_IsNegative`.
-  * ``_PyLong_IsPositive()``: :c:func:`PyLong_IsPositive`.
-  * ``_PyLong_IsZero()``: :c:func:`PyLong_IsZero`.
-  * ``_PyLong_Sign()``: :c:func:`PyLong_GetSign`.
-  * ``_PyUnicodeWriter_Dealloc()``: :c:func:`PyUnicodeWriter_Discard`.
-  * ``_PyUnicodeWriter_Finish()``: :c:func:`PyUnicodeWriter_Finish`.
-  * ``_PyUnicodeWriter_Init()``: use :c:func:`PyUnicodeWriter_Create`.
-  * ``_PyUnicodeWriter_Prepare()``: (no replacement).
-  * ``_PyUnicodeWriter_PrepareKind()``: (no replacement).
-  * ``_PyUnicodeWriter_WriteChar()``: :c:func:`PyUnicodeWriter_WriteChar`.
-  * ``_PyUnicodeWriter_WriteStr()``: :c:func:`PyUnicodeWriter_WriteStr`.
-  * ``_PyUnicodeWriter_WriteSubstring()``: :c:func:`PyUnicodeWriter_WriteSubstring`.
-  * ``_PyUnicode_EQ()``: :c:func:`PyUnicode_Equal`.
-  * ``_PyUnicode_Equal()``: :c:func:`PyUnicode_Equal`.
-  * ``_Py_GetConfig()``: :c:func:`PyConfig_Get` and :c:func:`PyConfig_GetInt`.
-  * ``_Py_HashBytes()``: :c:func:`Py_HashBuffer`.
-  * ``_Py_fopen_obj()``: :c:func:`Py_fopen`.
+  * ``_PyBytes_Join()``: :c:func:`PyBytes_Join`
+  * ``_PyLong_IsNegative()``: :c:func:`PyLong_IsNegative`
+  * ``_PyLong_IsPositive()``: :c:func:`PyLong_IsPositive`
+  * ``_PyLong_IsZero()``: :c:func:`PyLong_IsZero`
+  * ``_PyLong_Sign()``: :c:func:`PyLong_GetSign`
+  * ``_PyUnicodeWriter_Dealloc()``: :c:func:`PyUnicodeWriter_Discard`
+  * ``_PyUnicodeWriter_Finish()``: :c:func:`PyUnicodeWriter_Finish`
+  * ``_PyUnicodeWriter_Init()``: use :c:func:`PyUnicodeWriter_Create`
+  * ``_PyUnicodeWriter_Prepare()``: (no replacement)
+  * ``_PyUnicodeWriter_PrepareKind()``: (no replacement)
+  * ``_PyUnicodeWriter_WriteChar()``: :c:func:`PyUnicodeWriter_WriteChar`
+  * ``_PyUnicodeWriter_WriteStr()``: :c:func:`PyUnicodeWriter_WriteStr`
+  * ``_PyUnicodeWriter_WriteSubstring()``: :c:func:`PyUnicodeWriter_WriteSubstring`
+  * ``_PyUnicode_EQ()``: :c:func:`PyUnicode_Equal`
+  * ``_PyUnicode_Equal()``: :c:func:`PyUnicode_Equal`
+  * ``_Py_GetConfig()``: :c:func:`PyConfig_Get` and :c:func:`PyConfig_GetInt`
+  * ``_Py_HashBytes()``: :c:func:`Py_HashBuffer`
+  * ``_Py_fopen_obj()``: :c:func:`Py_fopen`
 
   The `pythoncapi-compat project`_ can be used to get most of these new
   functions on Python 3.13 and older.
