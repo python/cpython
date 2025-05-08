@@ -6,8 +6,7 @@
 
 .. versionadded:: 3.2
 
-**Source code:** :source:`Lib/concurrent/futures/thread.py`
-and :source:`Lib/concurrent/futures/process.py`
+**Source code:** :source:`Lib/concurrent/futures/thread.py`, :source:`Lib/concurrent/futures/process.py` and :source:`Lib/concurrent/futures/interpreter.py`
 
 --------------
 
