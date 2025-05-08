@@ -108,11 +108,12 @@ pyimport_importmodule(PyObject *Py_UNUSED(module), PyObject *args)
 }
 
 
-/* Test PyImport_ImportModuleNoBlock() */
+/* Test PyImport_ImportModuleNoBlock() (removed in 3.15) */
 static PyObject *
 pyimport_importmodulenoblock(PyObject *Py_UNUSED(module), PyObject *args)
 {
-    extern PyObject *PyImport_ImportModuleNoBlock(const char *name);
+    // Get the function from the stable ABI.
+    PyAPI_FUNC(PyObject *) PyImport_ImportModuleNoBlock(const char *name);
 
     const char *name;
     Py_ssize_t size;
