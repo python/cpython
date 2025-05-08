@@ -2199,8 +2199,6 @@
     added = '3.10'
 [function.PyModule_AddObjectRef]
     added = '3.10'
-[data.Py_FileSystemDefaultEncodeErrors]
-    added = '3.10'
 [function.PyCodec_Unregister]
     added = '3.10'
 [function.PyErr_SetInterruptEx]

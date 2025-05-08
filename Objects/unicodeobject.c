@@ -16516,17 +16516,6 @@ init_fs_codec(PyInterpreterState *interp)
     /* At this point, PyUnicode_EncodeFSDefault() and
        PyUnicode_DecodeFSDefault() can now use the Python codec rather than
        the C implementation of the filesystem encoding. */
-
-    /* Set Py_FileSystemDefaultEncodeErrors
-       global configuration variables. */
-    if (_Py_IsMainInterpreter(interp)) {
-
-        if (_Py_SetFileSystemEncoding(fs_codec->encoding,
-                                      fs_codec->errors) < 0) {
-            PyErr_NoMemory();
-            return -1;
-        }
-    }
     return 0;
 }
 

@@ -1913,7 +1913,6 @@ finalize_interp_clear(PyThreadState *tstate)
     if (is_main_interp) {
         _Py_HashRandomization_Fini();
         _PyArg_Fini();
-        _Py_ClearFileSystemEncoding();
         _PyPerfTrampoline_Fini();
         _PyPerfTrampoline_FreeArenas();
     }

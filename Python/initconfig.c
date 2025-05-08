@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "pycore_fileutils.h"     // _Py_HasFileSystemDefaultEncodeErrors
+#include "pycore_fileutils.h"     // _Py_GetLocaleEncoding()
 #include "pycore_getopt.h"        // _PyOS_GetOpt()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // _PyInterpreterState.runtime
@@ -497,9 +497,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
         : Py_NewRef(Py_None))
 #define SET_ITEM_STR(VAR) \
     SET_ITEM(#VAR, FROM_STRING(VAR))
-
-    SET_ITEM_STR(Py_FileSystemDefaultEncodeErrors);
-    SET_ITEM_INT(_Py_HasFileSystemDefaultEncodeErrors);
 
     SET_ITEM_INT(Py_UTF8Mode);
     SET_ITEM_INT(Py_InteractiveFlag);

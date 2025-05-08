@@ -15,54 +15,6 @@ static void
 preconfig_copy(PyPreConfig *config, const PyPreConfig *config2);
 
 
-/* --- File system encoding/errors -------------------------------- */
-
-const char *Py_FileSystemDefaultEncodeErrors = NULL;
-int _Py_HasFileSystemDefaultEncodeErrors = 0;
-
-void
-_Py_ClearFileSystemEncoding(void)
-{
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    if (!_Py_HasFileSystemDefaultEncodeErrors && Py_FileSystemDefaultEncodeErrors) {
-        PyMem_RawFree((char*)Py_FileSystemDefaultEncodeErrors);
-        Py_FileSystemDefaultEncodeErrors = NULL;
-    }
-_Py_COMP_DIAG_POP
-}
-
-
-/* Set Py_FileSystemDefaultEncodeErrors
-   global configuration variables to PyConfig.filesystem_encoding and
-   PyConfig.filesystem_errors (encoded to UTF-8).
-
-   Function called by _PyUnicode_InitEncodings(). */
-int
-_Py_SetFileSystemEncoding(const char *encoding, const char *errors)
-{
-    char *encoding2 = _PyMem_RawStrdup(encoding);
-    if (encoding2 == NULL) {
-        return -1;
-    }
-
-    char *errors2 = _PyMem_RawStrdup(errors);
-    if (errors2 == NULL) {
-        PyMem_RawFree(encoding2);
-        return -1;
-    }
-
-    _Py_ClearFileSystemEncoding();
-
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    Py_FileSystemDefaultEncodeErrors = errors2;
-    _Py_HasFileSystemDefaultEncodeErrors = 0;
-_Py_COMP_DIAG_POP
-    return 0;
-}
-
-
 /* --- _PyArgv ---------------------------------------------------- */
 
 /* Decode bytes_argv using Py_DecodeLocale() */

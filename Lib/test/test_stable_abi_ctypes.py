@@ -868,7 +868,6 @@ SYMBOL_NAMES = (
     "Py_EnterRecursiveCall",
     "Py_Exit",
     "Py_FatalError",
-    "Py_FileSystemDefaultEncodeErrors",
     "Py_Finalize",
     "Py_FinalizeEx",
     "Py_GenericAlias",

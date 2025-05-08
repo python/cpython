@@ -689,16 +689,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         CONFIG_ISOLATED['legacy_windows_stdio'] = False
 
     # global config
-    DEFAULT_GLOBAL_CONFIG = {
-        '_Py_HasFileSystemDefaultEncodeErrors': 0,
-    }
     COPY_GLOBAL_PRE_CONFIG = [
         ('Py_UTF8Mode', 'utf8_mode'),
     ]
     COPY_GLOBAL_CONFIG = [
         # Copy core config to global config for expected values
         # True means that the core config value is inverted (0 => 1 and 1 => 0)
-        ('Py_FileSystemDefaultEncodeErrors', 'filesystem_errors'),
         ('Py_InteractiveFlag', 'interactive'),
     ]
 

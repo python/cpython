@@ -13,10 +13,6 @@ extern "C" {
 /* Forward declarations */
 struct _PyArgv;
 
-extern int _Py_SetFileSystemEncoding(
-    const char *encoding,
-    const char *errors);
-extern void _Py_ClearFileSystemEncoding(void);
 extern PyStatus _PyUnicode_InitEncodings(PyThreadState *tstate);
 #ifdef MS_WINDOWS
 extern int _PyUnicode_EnableLegacyWindowsFSEncoding(void);
