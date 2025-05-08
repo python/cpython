@@ -432,7 +432,6 @@ struct interp_call {
     _PyXIData_t *func;
     _PyXIData_t *args;
     _PyXIData_t *kwargs;
-    _PyXIData_t *result;  // dynamically allocated
     struct {
         _PyXIData_t func;
         _PyXIData_t args;
@@ -454,64 +453,6 @@ _interp_call_clear(struct interp_call *call)
     if (temp.kwargs != NULL) {
         _PyXIData_Clear(NULL, temp.kwargs);
     }
-    if (temp.result != NULL) {
-        (void)_PyXIData_ReleaseAndRawFree(temp.result);
-    }
-}
-
-static int
-_interp_call_init_result(struct interp_call *call)
-{
-    call->result = _PyXIData_New();
-    return (call->result == NULL) ? -1 : 0;
-}
-
-static void
-_interp_call_clear_result(struct interp_call *call)
-{
-    _PyXIData_t *xidata = call->result;
-    if (xidata == NULL) {
-        return;
-    }
-    call->result = NULL;
-    _PyXIData_Clear(NULL, xidata);
-    _PyXIData_Release(xidata);
-    PyMem_RawFree(xidata);
-}
-
-static int
-_interp_call_clear_result_immediately(PyThreadState *tstate,
-                                      struct interp_call *call,
-                                      PyInterpreterState *interp)
-{
-    _PyXIData_t *xidata = call->result;
-    if (xidata == NULL) {
-        return 0;
-    }
-    assert(tstate == _PyThreadState_GET());
-    assert(interp != NULL);
-    assert(interp == _PyInterpreterState_LookUpID(_PyXIData_INTERPID(xidata)));
-    if (tstate->interp == interp) {
-        // There's no need to switch interpreters.
-        _interp_call_clear_result(call);
-        return 0;
-    }
-
-    // It's from a different interpreter.
-    PyThreadState *temp_tstate =
-        _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_EXEC);
-    if (temp_tstate == NULL) {
-        return -1;
-    }
-    PyThreadState *save_tstate = PyThreadState_Swap(temp_tstate);
-    assert(save_tstate == tstate);
-
-    _interp_call_clear_result(call);
-
-    PyThreadState_Clear(temp_tstate);
-    (void)PyThreadState_Swap(save_tstate);
-    PyThreadState_Delete(temp_tstate);
-    return 0;
 }
 
 static int
@@ -522,7 +463,6 @@ _interp_call_pack(PyThreadState *tstate, struct interp_call *call,
     assert(call->func == NULL);
     assert(call->args == NULL);
     assert(call->kwargs == NULL);
-    assert(call->result == NULL);
     // Handle the func.
     if (!PyCallable_Check(func)) {
         _PyErr_Format(tstate, PyExc_TypeError,
@@ -571,34 +511,11 @@ _interp_call_pack(PyThreadState *tstate, struct interp_call *call,
     return 0;
 }
 
-static PyObject *
-_interp_call_pop_result(PyThreadState *tstate, struct interp_call *call,
-                        PyInterpreterState *interp)
-{
-    assert(tstate == _PyThreadState_GET());
-    assert(!_PyErr_Occurred(tstate));
-    assert(call->result != NULL);
-    PyObject *res = _PyXIData_NewObject(call->result);
-    PyObject *exc = _PyErr_GetRaisedException(tstate);
-
-    if (_interp_call_clear_result_immediately(tstate, call, interp) < 0) {
-        // We couldn't do it immediately, so we fall back to adding
-        // a pending call.  If this fails then there are other,
-        // bigger problems.
-        (int)_PyXIData_ReleaseAndRawFree(call->result);
-        call->result = NULL;
-    }
-
-    _PyErr_SetRaisedException(tstate, exc);
-    return res;
-}
-
 static int
-_make_call(struct interp_call *call)
+_make_call(struct interp_call *call, PyObject **p_result)
 {
     assert(call != NULL && call->func != NULL);
     int res = -1;
-    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *args = NULL;
     PyObject *kwargs = NULL;
     PyObject *resobj = NULL;
@@ -629,22 +546,12 @@ _make_call(struct interp_call *call)
         }
         assert(PyDict_Check(kwargs));
     }
-    // Prepare call->result.
-    if (_interp_call_init_result(call) < 0) {
-        goto finally;
-    }
     // Make the call.
     resobj = PyObject_Call(func, args, kwargs);
     if (resobj == NULL) {
-        _interp_call_clear_result(call);
         goto finally;
     }
-    // Pack the result.
-    xidata_fallback_t fallback = _PyXIDATA_FULL_FALLBACK;
-    if (_PyObject_GetXIData(tstate, resobj, fallback, call->result) < 0) {
-        _interp_call_clear_result(call);
-        goto finally;
-    }
+    *p_result = resobj;
     res = 0;
 
 finally:
@@ -671,19 +578,32 @@ _run_script(_PyXIData_t *script, PyObject *ns)
     return 0;
 }
 
+struct run_result {
+    PyObject *result;
+    PyObject *excinfo;
+};
+
+static void
+_run_result_clear(struct run_result *runres)
+{
+    Py_CLEAR(runres->result);
+    Py_CLEAR(runres->excinfo);
+}
+
 static int
 _run_in_interpreter(PyThreadState *tstate, PyInterpreterState *interp,
                      _PyXIData_t *script, struct interp_call *call,
-                     PyObject *shareables, _PyXI_session_result *result)
+                     PyObject *shareables, struct run_result *runres)
 {
     assert(!_PyErr_Occurred(tstate));
     _PyXI_session *session = _PyXI_NewSession();
     if (session == NULL) {
         return -1;
     }
+    _PyXI_session_result result = {0};
 
     // Prep and switch interpreters.
-    if (_PyXI_Enter(session, interp, shareables, result) < 0) {
+    if (_PyXI_Enter(session, interp, shareables, &result) < 0) {
         // If an error occured at this step, it means that interp
         // was not prepared and switched.
         _PyXI_FreeSession(session);
@@ -692,7 +612,6 @@ _run_in_interpreter(PyThreadState *tstate, PyInterpreterState *interp,
 
     int res = -1;
     if (script != NULL) {
-        // Run the script.
         assert(call == NULL);
         PyObject *mainns = _PyXI_GetMainNamespace(session);
         if (mainns == NULL) {
@@ -702,13 +621,31 @@ _run_in_interpreter(PyThreadState *tstate, PyInterpreterState *interp,
     }
     else {
         assert(call != NULL);
-        res = _make_call(call);
+        PyObject *resobj;
+        res = _make_call(call, &resobj);
+        if (res == 0) {
+            (void)_PyXI_Preserve(session, "resobj", resobj);
+            Py_DECREF(resobj);
+        }
     }
 
 finally:
     // Clean up and switch back.
-    (void)_PyXI_Exit(session, result);
+    (void)_PyXI_Exit(session, &result);
     _PyXI_FreeSession(session);
+    if (res < 0) {
+        runres->excinfo = result.excinfo;
+    }
+    else if (result.excinfo != NULL) {
+        runres->excinfo = result.excinfo;
+        res = -1;
+    }
+    else {
+        runres->result = _PyXI_GetPreserved(&result, "resobj");
+        if (_PyErr_Occurred(tstate)) {
+            res = -1;
+        }
+    }
     return res;
 }
 
@@ -1137,13 +1074,13 @@ interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    _PyXI_session_result result = {0};
+    struct run_result runres = {0};
     int res = _run_in_interpreter(
-                    tstate, interp, &xidata, NULL, shared, &result);
+                    tstate, interp, &xidata, NULL, shared, &runres);
     _PyXIData_Release(&xidata);
     if (res < 0) {
-        assert((result.excinfo == NULL) != (PyErr_Occurred() == NULL));
-        return result.excinfo;
+        assert((runres.excinfo == NULL) != (PyErr_Occurred() == NULL));
+        return runres.excinfo;
     }
     Py_RETURN_NONE;
 #undef FUNCNAME
@@ -1201,13 +1138,13 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    _PyXI_session_result result = {0};
+    struct run_result runres = {0};
     int res = _run_in_interpreter(
-                    tstate, interp, &xidata, NULL, shared, &result);
+                    tstate, interp, &xidata, NULL, shared, &runres);
     _PyXIData_Release(&xidata);
     if (res < 0) {
-        assert((result.excinfo == NULL) != (PyErr_Occurred() == NULL));
-        return result.excinfo;
+        assert((runres.excinfo == NULL) != (PyErr_Occurred() == NULL));
+        return runres.excinfo;
     }
     Py_RETURN_NONE;
 #undef FUNCNAME
@@ -1264,13 +1201,13 @@ interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    _PyXI_session_result result = {0};
+    struct run_result runres = {0};
     int res = _run_in_interpreter(
-                    tstate, interp, &xidata, NULL, shared, &result);
+                    tstate, interp, &xidata, NULL, shared, &runres);
     _PyXIData_Release(&xidata);
     if (res < 0) {
-        assert((result.excinfo == NULL) != (PyErr_Occurred() == NULL));
-        return result.excinfo;
+        assert((runres.excinfo == NULL) != (PyErr_Occurred() == NULL));
+        return runres.excinfo;
     }
     Py_RETURN_NONE;
 #undef FUNCNAME
@@ -1291,17 +1228,18 @@ interp_call(PyObject *self, PyObject *args, PyObject *kwds)
 #define FUNCNAME MODULE_NAME_STR ".call"
     PyThreadState *tstate = _PyThreadState_GET();
     static char *kwlist[] = {"id", "callable", "args", "kwargs",
-                             "restrict", NULL};
+                             "preserve_exc", "restrict", NULL};
     PyObject *id, *callable;
     PyObject *args_obj = NULL;
     PyObject *kwargs_obj = NULL;
+    int preserve_exc = 0;
     int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OO|O!O!$p:" FUNCNAME, kwlist,
+                                     "OO|O!O!$pp:" FUNCNAME, kwlist,
                                      &id, &callable,
                                      &PyTuple_Type, &args_obj,
                                      &PyDict_Type, &kwargs_obj,
-                                     &restricted))
+                                     &preserve_exc, &restricted))
     {
         return NULL;
     }
@@ -1319,31 +1257,22 @@ interp_call(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     PyObject *res_and_exc = NULL;
-    _PyXI_session_result result = {0};
-    if (_run_in_interpreter(tstate, interp, NULL, &call, NULL, &result) < 0) {
-        assert(result.preserved == NULL);
-        if (result.excinfo == NULL) {
+    struct run_result runres = {0};
+    if (_run_in_interpreter(tstate, interp, NULL, &call, NULL, &runres) < 0) {
+        if (runres.excinfo == NULL) {
             assert(_PyErr_Occurred(tstate));
             goto finally;
         }
         assert(!_PyErr_Occurred(tstate));
-        assert(call.result == NULL);
-        res_and_exc = Py_BuildValue("OO", Py_None, result.excinfo);
-        Py_CLEAR(result.excinfo);
     }
-    else {
-        assert(result.preserved == NULL);
-        assert(result.excinfo == NULL);
-        PyObject *res = _interp_call_pop_result(tstate, &call, interp);
-        if (res == NULL) {
-            goto finally;
-        }
-        res_and_exc = Py_BuildValue("OO", res, Py_None);
-        Py_DECREF(res);
-    }
+    assert(runres.result == NULL || runres.excinfo == NULL);
+    res_and_exc = Py_BuildValue("OO",
+                                (runres.result ? runres.result : Py_None),
+                                (runres.excinfo ? runres.excinfo : Py_None));
 
 finally:
     _interp_call_clear(&call);
+    _run_result_clear(&runres);
     return res_and_exc;
 #undef FUNCNAME
 }
