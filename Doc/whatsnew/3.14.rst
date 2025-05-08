@@ -898,12 +898,6 @@ Other language changes
   binary power operator.
   (Contributed by Serhiy Storchaka in :gh:`130104`.)
 
-* The :meth:`~object.__ipow__` method should be defined to accept an optional
-  third argument (as it was documented) to support non-``None`` third argument
-  in :c:func:`PyNumber_InPlacePower` which no longer ignored if
-  :meth:`!__ipow__` is defined.
-  (Contributed by Serhiy Storchaka in :gh:`86069`.)
-
 * Add a built-in implementation for HMAC (:rfc:`2104`) using formally verified
   code from the `HACL* <https://github.com/hacl-star/hacl-star/>`__ project.
   This implementation is used as a fallback when the OpenSSL implementation
