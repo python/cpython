@@ -569,7 +569,14 @@ static int test_init_global_config(void)
 
     /* Test initialization from global configuration variables (Py_xxx) */
     Py_SetProgramName(L"./globalvar");
+
+    putenv("PYTHONINSPECT=");
+    putenv("PYTHONOPTIMIZE=0");
     Py_InteractiveFlag = 1;
+    putenv("PYTHONDEBUG=0");
+    putenv("PYTHONDONTWRITEBYTECODE=");
+    putenv("PYTHONVERBOSE=0");
+    putenv("PYTHONUNBUFFERED=");
 
     Py_Initialize();
     dump_config();
