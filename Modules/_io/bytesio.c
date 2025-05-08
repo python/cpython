@@ -1043,6 +1043,8 @@ _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
 static PyObject *
 bytesio_sizeof_lock_held(PyObject *op)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+
     bytesio *self = bytesio_CAST(op);
     size_t res = _PyObject_SIZE(Py_TYPE(self));
     if (self->buf && !SHARED_BUF(self)) {
@@ -1168,6 +1170,10 @@ bytesiobuf_getbuffer(PyObject *op, Py_buffer *view, int flags)
             "bytesiobuf_getbuffer: view==NULL argument is obsolete");
         return -1;
     }
+
+    /* assertion not above because of test_pep3118_obsolete_write_locks() */
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(b);
+
     if (FT_ATOMIC_LOAD_SSIZE_RELAXED(b->exports) == 0 && SHARED_BUF(b)) {
         if (unshare_buffer_lock_held(b, b->string_size) < 0)
             return -1;
