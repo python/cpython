@@ -1927,14 +1927,16 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_get_len(self):
         def testfunc(n):
+            x = 0
             a = [1, 2, 3, 4]
             for _ in range(n):
                 match a:
-                    case [1,2]:
-                        _ = len(a) - 1
-        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+                    case [_, _, _, _]:
+                        x += 1
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
         uops = get_opnames(ex)
-        self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertNotIn("_GUARD_TOS_INT", uops)
         self.assertIn("_GET_LEN", uops)
 
