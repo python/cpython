@@ -581,8 +581,6 @@ static int test_init_global_config(void)
 
     putenv("PYTHONVERBOSE=0");
 
-    Py_NoUserSiteDirectory = 1;
-
     putenv("PYTHONUNBUFFERED=");
     Py_UnbufferedStdioFlag = 1;
 
@@ -722,7 +720,6 @@ static int test_init_from_config(void)
     config_set_string(&config, &config.stdio_errors, L"replace");
 
     putenv("PYTHONNOUSERSITE=");
-    Py_NoUserSiteDirectory = 0;
     config.user_site_directory = 0;
 
     config_set_string(&config, &config.check_hash_pycs_mode, L"always");
@@ -1029,7 +1026,6 @@ static void set_all_global_config_variables(void)
     Py_IsolatedFlag = 0;
     Py_InteractiveFlag = 1;
     Py_UnbufferedStdioFlag = 1;
-    Py_NoUserSiteDirectory = 1;
 #ifdef MS_WINDOWS
     Py_LegacyWindowsStdioFlag = 1;
 #endif
@@ -1095,7 +1091,6 @@ static int check_init_python_config(int preinit)
     set_all_global_config_variables();
     Py_IsolatedFlag = 1;
     Py_UnbufferedStdioFlag = 1;
-    Py_NoUserSiteDirectory = 1;
 #ifdef MS_WINDOWS
     Py_LegacyWindowsStdioFlag = 1;
 #endif

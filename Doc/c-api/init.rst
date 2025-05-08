@@ -177,21 +177,6 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    .. deprecated-removed:: 3.12 3.15
 
 
-.. c:var:: int Py_NoUserSiteDirectory
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.user_site_directory` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Don't add the :data:`user site-packages directory <site.USER_SITE>` to
-   :data:`sys.path`.
-
-   Set by the :option:`-s` and :option:`-I` options, and the
-   :envvar:`PYTHONNOUSERSITE` environment variable.
-
-   .. deprecated-removed:: 3.12 3.15
-
-
 .. c:var:: int Py_UnbufferedStdioFlag
 
    This API is kept for backward compatibility: setting

@@ -704,7 +704,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         ('Py_FileSystemDefaultEncoding', 'filesystem_encoding'),
         ('Py_InteractiveFlag', 'interactive'),
         ('Py_IsolatedFlag', 'isolated'),
-        ('Py_NoUserSiteDirectory', 'user_site_directory', True),
         ('Py_UnbufferedStdioFlag', 'buffered_stdio', True),
     ]
     if MS_WINDOWS:
