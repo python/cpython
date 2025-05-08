@@ -7,7 +7,6 @@ on:
 jobs:
   stale:
     if: github.repository_owner == 'python'
-
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write

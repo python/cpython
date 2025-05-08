@@ -90,6 +90,9 @@ class SemLock(object):
         self.acquire = self._semlock.acquire
         self.release = self._semlock.release
 
+    def locked(self):
+        return self._semlock._is_zero()
+
     def __enter__(self):
         return self._semlock.__enter__()
 
@@ -359,7 +362,7 @@ class Event(object):
                 return True
             return False
 
-    def __repr__(self) -> str:
+    def __repr__(self):
         set_status = 'set' if self.is_set() else 'unset'
         return f"<{type(self).__qualname__} at {id(self):#x} {set_status}>"
 #

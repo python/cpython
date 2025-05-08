@@ -154,14 +154,13 @@ import itertools
 import os
 import re
 import sys
-import types
 
 __all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "InterpolationError", "InterpolationDepthError",
            "InterpolationMissingOptionError", "InterpolationSyntaxError",
            "ParsingError", "MissingSectionHeaderError",
            "MultilineContinuationError", "UnnamedSectionDisabledError",
-           "ConfigParser", "RawConfigParser",
+           "InvalidWriteError", "ConfigParser", "RawConfigParser",
            "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
            "SectionProxy", "ConverterMapping",
            "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH", "UNNAMED_SECTION")
@@ -375,6 +374,14 @@ class _UnnamedSection:
     def __repr__(self):
         return "<UNNAMED_SECTION>"
 
+class InvalidWriteError(Error):
+    """Raised when attempting to write data that the parser would read back differently.
+    ex: writing a key which begins with the section header pattern would read back as a
+    new section """
+
+    def __init__(self, msg=''):
+        Error.__init__(self, msg)
+
 
 UNNAMED_SECTION = _UnnamedSection()
 
@@ -534,6 +541,8 @@ class ExtendedInterpolation(Interpolation):
                 except (KeyError, NoSectionError, NoOptionError):
                     raise InterpolationMissingOptionError(
                         option, section, rawval, ":".join(path)) from None
+                if v is None:
+                    continue
                 if "$" in v:
                     self._interpolate_some(parser, opt, accum, v, sect,
                                            dict(parser.items(sect, raw=True)),
@@ -562,35 +571,36 @@ class _ReadState:
 
 
 class _Line(str):
+    __slots__ = 'clean', 'has_comments'
 
     def __new__(cls, val, *args, **kwargs):
         return super().__new__(cls, val)
 
-    def __init__(self, val, prefixes):
-        self.prefixes = prefixes
+    def __init__(self, val, comments):
+        trimmed = val.strip()
+        self.clean = comments.strip(trimmed)
+        self.has_comments = trimmed != self.clean
 
-    @functools.cached_property
-    def clean(self):
-        return self._strip_full() and self._strip_inline()
 
-    @property
-    def has_comments(self):
-        return self.strip() != self.clean
-
-    def _strip_inline(self):
-        """
-        Search for the earliest prefix at the beginning of the line or following a space.
-        """
-        matcher = re.compile(
-            '|'.join(fr'(^|\s)({re.escape(prefix)})' for prefix in self.prefixes.inline)
-            # match nothing if no prefixes
-            or '(?!)'
+class _CommentSpec:
+    def __init__(self, full_prefixes, inline_prefixes):
+        full_patterns = (
+            # prefix at the beginning of a line
+            fr'^({re.escape(prefix)}).*'
+            for prefix in full_prefixes
         )
-        match = matcher.search(self)
-        return self[:match.start() if match else None].strip()
+        inline_patterns = (
+            # prefix at the beginning of the line or following a space
+            fr'(^|\s)({re.escape(prefix)}.*)'
+            for prefix in inline_prefixes
+        )
+        self.pattern = re.compile('|'.join(itertools.chain(full_patterns, inline_patterns)))
 
-    def _strip_full(self):
-        return '' if any(map(self.strip().startswith, self.prefixes.full)) else True
+    def strip(self, text):
+        return self.pattern.sub('', text).rstrip()
+
+    def wrap(self, text):
+        return _Line(text, self)
 
 
 class RawConfigParser(MutableMapping):
@@ -659,10 +669,7 @@ class RawConfigParser(MutableMapping):
             else:
                 self._optcre = re.compile(self._OPT_TMPL.format(delim=d),
                                           re.VERBOSE)
-        self._prefixes = types.SimpleNamespace(
-            full=tuple(comment_prefixes or ()),
-            inline=tuple(inline_comment_prefixes or ()),
-        )
+        self._comments = _CommentSpec(comment_prefixes or (), inline_comment_prefixes or ())
         self._strict = strict
         self._allow_no_value = allow_no_value
         self._empty_lines_in_values = empty_lines_in_values
@@ -959,7 +966,7 @@ class RawConfigParser(MutableMapping):
         if self._defaults:
             self._write_section(fp, self.default_section,
                                     self._defaults.items(), d)
-        if UNNAMED_SECTION in self._sections:
+        if UNNAMED_SECTION in self._sections and self._sections[UNNAMED_SECTION]:
             self._write_section(fp, UNNAMED_SECTION, self._sections[UNNAMED_SECTION].items(), d, unnamed=True)
 
         for section in self._sections:
@@ -973,6 +980,7 @@ class RawConfigParser(MutableMapping):
         if not unnamed:
             fp.write("[{}]\n".format(section_name))
         for key, value in section_items:
+            self._validate_key_contents(key)
             value = self._interpolation.before_write(self, section_name, key,
                                                      value)
             if value is not None or not self._allow_no_value:
@@ -1057,7 +1065,6 @@ class RawConfigParser(MutableMapping):
         in an otherwise empty line or may be entered in lines holding values or
         section names. Please note that comments get stripped off when reading configuration files.
         """
-
         try:
             ParsingError._raise_all(self._read_inner(fp, fpname))
         finally:
@@ -1066,8 +1073,7 @@ class RawConfigParser(MutableMapping):
     def _read_inner(self, fp, fpname):
         st = _ReadState()
 
-        Line = functools.partial(_Line, prefixes=self._prefixes)
-        for st.lineno, line in enumerate(map(Line, fp), start=1):
+        for st.lineno, line in enumerate(map(self._comments.wrap, fp), start=1):
             if not line.clean:
                 if self._empty_lines_in_values:
                     # add empty line to the value, but only if there was no
@@ -1105,11 +1111,7 @@ class RawConfigParser(MutableMapping):
     def _handle_rest(self, st, line, fpname):
         # a section header or option header?
         if self._allow_unnamed_section and st.cursect is None:
-            st.sectname = UNNAMED_SECTION
-            st.cursect = self._dict()
-            self._sections[st.sectname] = st.cursect
-            self._proxies[st.sectname] = SectionProxy(self, st.sectname)
-            st.elements_added.add(st.sectname)
+            self._handle_header(st, UNNAMED_SECTION, fpname)
 
         st.indent_level = st.cur_indent_level
         # is it a section header?
@@ -1118,10 +1120,10 @@ class RawConfigParser(MutableMapping):
         if not mo and st.cursect is None:
             raise MissingSectionHeaderError(fpname, st.lineno, line)
 
-        self._handle_header(st, mo, fpname) if mo else self._handle_option(st, line, fpname)
+        self._handle_header(st, mo.group('header'), fpname) if mo else self._handle_option(st, line, fpname)
 
-    def _handle_header(self, st, mo, fpname):
-        st.sectname = mo.group('header')
+    def _handle_header(self, st, sectname, fpname):
+        st.sectname = sectname
         if st.sectname in self._sections:
             if self._strict and st.sectname in st.elements_added:
                 raise DuplicateSectionError(st.sectname, fpname,
@@ -1213,6 +1215,14 @@ class RawConfigParser(MutableMapping):
         if value.lower() not in self.BOOLEAN_STATES:
             raise ValueError('Not a boolean: %s' % value)
         return self.BOOLEAN_STATES[value.lower()]
+
+    def _validate_key_contents(self, key):
+        """Raises an InvalidWriteError for any keys containing
+        delimiters or that match the section header pattern"""
+        if re.match(self.SECTCRE, key):
+            raise InvalidWriteError("Cannot write keys matching section pattern")
+        if any(delim in key for delim in self._delimiters):
+            raise InvalidWriteError("Cannot write key that contains delimiters")
 
     def _validate_value_types(self, *, section="", option="", value=""):
         """Raises a TypeError for illegal non-string values.

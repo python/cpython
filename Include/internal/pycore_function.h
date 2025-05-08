@@ -4,8 +4,6 @@
 extern "C" {
 #endif
 
-#include "pycore_lock.h"
-
 #ifndef Py_BUILD_CORE
 #  error "this header requires Py_BUILD_CORE define"
 #endif
@@ -16,32 +14,10 @@ extern PyObject* _PyFunction_Vectorcall(
     size_t nargsf,
     PyObject *kwnames);
 
-#define FUNC_MAX_WATCHERS 8
 
 #define FUNC_VERSION_UNSET 0
 #define FUNC_VERSION_CLEARED 1
 #define FUNC_VERSION_FIRST_VALID 2
-
-#define FUNC_VERSION_CACHE_SIZE (1<<12)  /* Must be a power of 2 */
-
-struct _func_version_cache_item {
-    PyFunctionObject *func;
-    PyObject *code;
-};
-
-struct _py_func_state {
-#ifdef Py_GIL_DISABLED
-    // Protects next_version
-    PyMutex mutex;
-#endif
-
-    uint32_t next_version;
-    // Borrowed references to function and code objects whose
-    // func_version % FUNC_VERSION_CACHE_SIZE
-    // once was equal to the index in the table.
-    // They are cleared when the function or code object is deallocated.
-    struct _func_version_cache_item func_version_cache[FUNC_VERSION_CACHE_SIZE];
-};
 
 extern PyFunctionObject* _PyFunction_FromConstructor(PyFrameConstructor *constr);
 
@@ -58,6 +34,13 @@ PyFunctionObject *_PyFunction_LookupByVersion(uint32_t version, PyObject **p_cod
 
 extern PyObject *_Py_set_function_type_params(
     PyThreadState* unused, PyObject *func, PyObject *type_params);
+
+
+/* See pycore_code.h for explanation about what "stateless" means. */
+
+PyAPI_FUNC(int)
+_PyFunction_VerifyStateless(PyThreadState *, PyObject *);
+
 
 #ifdef __cplusplus
 }

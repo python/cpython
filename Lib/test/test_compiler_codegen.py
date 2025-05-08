@@ -26,14 +26,14 @@ class IsolatedCodeGenTests(CodegenTestCase):
         false_lbl = self.Label()
         expected = [
             ('RESUME', 0, 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
             ('LOAD_CONST', 0, 1),
             ('TO_BOOL', 0, 1),
             ('POP_JUMP_IF_FALSE', false_lbl := self.Label(), 1),
-            ('NOT_TAKEN', None, 1),
-            ('LOAD_SMALL_INT', 42, 1),
+            ('LOAD_CONST', 1, 1),  # 42
             ('JUMP_NO_INTERRUPT', exit_lbl := self.Label()),
             false_lbl,
-            ('LOAD_SMALL_INT', 24, 1),
+            ('LOAD_CONST', 2, 1),  # 24
             exit_lbl,
             ('POP_TOP', None),
             ('LOAD_CONST', 1),
@@ -46,11 +46,11 @@ class IsolatedCodeGenTests(CodegenTestCase):
         false_lbl = self.Label()
         expected = [
             ('RESUME', 0, 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
             ('LOAD_NAME', 0, 1),
             ('GET_ITER', None, 1),
             loop_lbl := self.Label(),
             ('FOR_ITER', exit_lbl := self.Label(), 1),
-            ('NOT_TAKEN', None, 1),
             ('NOP', None, 1, 1),
             ('STORE_NAME', 1, 1),
             ('LOAD_NAME', 2, 2),
@@ -61,7 +61,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
             ('JUMP', loop_lbl),
             exit_lbl,
             ('END_FOR', None),
-            ('POP_TOP', None),
+            ('POP_ITER', None),
             ('LOAD_CONST', 0),
             ('RETURN_VALUE', None),
         ]
@@ -75,6 +75,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
         expected = [
             # Function definition
             ('RESUME', 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
             ('LOAD_CONST', 0),
             ('MAKE_FUNCTION', None),
             ('STORE_NAME', 0),
@@ -84,7 +85,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
                 # Function body
                 ('RESUME', 0),
                 ('LOAD_FAST', 0),
-                ('LOAD_SMALL_INT', 42),
+                ('LOAD_CONST', 42),
                 ('BINARY_OP', 0),
                 ('RETURN_VALUE', None),
                 ('LOAD_CONST', 0),
@@ -108,6 +109,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
         expected = [
             # Function definition
             ('RESUME', 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
             ('LOAD_CONST', 0),
             ('MAKE_FUNCTION', None),
             ('STORE_NAME', 0),
@@ -127,23 +129,23 @@ class IsolatedCodeGenTests(CodegenTestCase):
                 [
                     ('RESUME', 0),
                     ('NOP', None),
-                    ('LOAD_SMALL_INT', 12),
+                    ('LOAD_CONST', 12),
                     ('RETURN_VALUE', None),
                     ('LOAD_CONST', 1),
                     ('RETURN_VALUE', None),
                 ],
                 [
                     ('RESUME', 0),
-                    ('LOAD_SMALL_INT', 1),
+                    ('LOAD_CONST', 1),
                     ('STORE_FAST', 0),
-                    ('LOAD_SMALL_INT', 2),
+                    ('LOAD_CONST', 2),
                     ('STORE_FAST', 1),
-                    ('LOAD_SMALL_INT', 3),
+                    ('LOAD_CONST', 3),
                     ('STORE_FAST', 2),
-                    ('LOAD_SMALL_INT', 4),
+                    ('LOAD_CONST', 4),
                     ('STORE_FAST', 3),
                     ('NOP', None),
-                    ('LOAD_SMALL_INT', 42),
+                    ('LOAD_CONST', 42),
                     ('RETURN_VALUE', None),
                     ('LOAD_CONST', 0),
                     ('RETURN_VALUE', None),

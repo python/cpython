@@ -11,8 +11,14 @@ import unittest
 import io
 import textwrap
 from test import support
-from test.support.import_helper import import_module
+from test.support.import_helper import ensure_lazy_imports, import_module
 from test.support.pty_helper import run_pty
+
+class LazyImportTest(unittest.TestCase):
+    @support.cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("cmd", {"inspect", "string"})
+
 
 class samplecmdclass(cmd.Cmd):
     """
@@ -288,6 +294,30 @@ class CmdTestReadline(unittest.TestCase):
 
         self.assertIn(b'ab_completion_test', output)
         self.assertIn(b'tab completion success', output)
+
+    def test_bang_completion_without_do_shell(self):
+        script = textwrap.dedent("""
+            import cmd
+            class simplecmd(cmd.Cmd):
+                def completedefault(self, text, line, begidx, endidx):
+                    return ["hello"]
+
+                def default(self, line):
+                    if line.replace(" ", "") == "!hello":
+                        print('tab completion success')
+                    else:
+                        print('tab completion failure')
+                    return True
+
+            simplecmd().cmdloop()
+        """)
+
+        # '! h' or '!h' and complete 'ello' to 'hello'
+        for input in [b"! h\t\n", b"!h\t\n"]:
+            with self.subTest(input=input):
+                output = run_pty(script, input)
+                self.assertIn(b'hello', output)
+                self.assertIn(b'tab completion success', output)
 
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())
