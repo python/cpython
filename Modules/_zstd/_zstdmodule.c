@@ -826,7 +826,7 @@ static int _zstd_exec(PyObject *module) {
     // ZstdDecompressor
     if (add_type_to_module(module,
                            "ZstdDecompressor",
-                           &ZstdDecompressor_type_spec,
+                           &zstddecompressor_type_spec,
                            &mod_state->ZstdDecompressor_type) < 0) {
         return -1;
     }
@@ -890,9 +890,9 @@ _zstd_free(void *module)
 
 static struct PyModuleDef_Slot _zstd_slots[] = {
     {Py_mod_exec, _zstd_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-
-    {0}
+    {0, NULL},
 };
 
 struct PyModuleDef _zstdmodule = {
