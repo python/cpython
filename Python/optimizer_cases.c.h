@@ -2124,10 +2124,24 @@
         }
 
         case _CALL_ISINSTANCE: {
-            JitOptSymbol **args;
-            JitOptSymbol *self_or_null;
+            JitOptSymbol *cls;
+            JitOptSymbol *instance;
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            cls = stack_pointer[-1];
+            instance = stack_pointer[-2];
+            res = sym_new_type(ctx, &PyBool_Type);
+            PyTypeObject *cls_o = (PyTypeObject *)sym_get_const(ctx, cls);
+            if (cls_o && sym_matches_type(cls, &PyType_Type)) {
+                PyTypeObject *inst_type = sym_get_type(instance);
+                if (inst_type) {
+                    if (sym_matches_type(instance, cls_o) || PyType_IsSubtype(inst_type, cls_o)) {
+                        sym_set_const(res, Py_True);
+                    }
+                    else {
+                        sym_set_const(res, Py_False);
+                    }
+                }
+            }
             stack_pointer[-4] = res;
             stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
