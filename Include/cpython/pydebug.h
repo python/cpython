@@ -5,7 +5,6 @@
 extern "C" {
 #endif
 
-Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_VerboseFlag;
 Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_QuietFlag;
 Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_InteractiveFlag;
 Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_InspectFlag;

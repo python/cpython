@@ -68,9 +68,6 @@ Pending removal in Python 3.15
 
 * Global configuration variables:
 
-  * :c:var:`Py_VerboseFlag`:
-    Use :c:member:`PyConfig.verbose` or
-    :c:func:`PyConfig_Get("verbose") <PyConfig_Get>` instead.
   * :c:var:`Py_QuietFlag`:
     Use :c:member:`PyConfig.quiet` or
     :c:func:`PyConfig_Get("quiet") <PyConfig_Get>` instead.

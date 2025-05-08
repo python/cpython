@@ -713,7 +713,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         ('Py_OptimizeFlag', 'optimization_level'),
         ('Py_QuietFlag', 'quiet'),
         ('Py_UnbufferedStdioFlag', 'buffered_stdio', True),
-        ('Py_VerboseFlag', 'verbose'),
     ]
     if MS_WINDOWS:
         COPY_GLOBAL_PRE_CONFIG.extend((

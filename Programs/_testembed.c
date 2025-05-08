@@ -588,7 +588,6 @@ static int test_init_global_config(void)
     Py_DontWriteBytecodeFlag = 1;
 
     putenv("PYTHONVERBOSE=0");
-    Py_VerboseFlag = 1;
 
     Py_QuietFlag = 1;
     Py_NoUserSiteDirectory = 1;
@@ -701,7 +700,6 @@ static int test_init_from_config(void)
     config_set_string(&config, &config.platlibdir, L"my_platlibdir");
 
     putenv("PYTHONVERBOSE=0");
-    Py_VerboseFlag = 0;
     config.verbose = 1;
 
     Py_NoSiteFlag = 0;
@@ -1053,7 +1051,6 @@ static void set_all_global_config_variables(void)
     Py_InspectFlag = 1;
     Py_InteractiveFlag = 1;
     Py_OptimizeFlag = 1;
-    Py_VerboseFlag = 1;
     Py_QuietFlag = 1;
     Py_FrozenFlag = 0;
     Py_UnbufferedStdioFlag = 1;

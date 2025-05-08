@@ -297,22 +297,6 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. deprecated-removed:: 3.12 3.15
 
-.. c:var:: int Py_VerboseFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.verbose` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Print a message each time a module is initialized, showing the place
-   (filename or built-in module) from which it is loaded.  If greater or equal
-   to ``2``, print a message for each file that is checked for when
-   searching for a module. Also provides information on module cleanup at exit.
-
-   Set by the :option:`-v` option and the :envvar:`PYTHONVERBOSE` environment
-   variable.
-
-   .. deprecated-removed:: 3.12 3.15
-
 
 Initializing and finalizing the interpreter
 ===========================================
