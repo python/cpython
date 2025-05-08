@@ -866,4 +866,8 @@ approaches to creating C and C++ extensions for Python:
 * `SWIG <https://www.swig.org>`_
 
 It is recommended to use these abstractions, rather than using directly the
-Python C API.
+Python C API. These abstractions are built on top of the C API and handles API
+differences between the different Python versions.
+
+These projects are not supported by the same people who maintain Python, and
+issues need to be raised with the projects directly.
