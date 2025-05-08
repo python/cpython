@@ -7324,6 +7324,11 @@ class ExtensionModuleTests(unittest.TestCase):
         res = script_helper.assert_python_ok('-c', script)
         self.assertFalse(res.err)
 
+        if support.Py_DEBUG:
+            with self.subTest('Refleak'):
+                res = script_helper.assert_python_ok('-X', 'showrefcount', '-c', script)
+                self.assertIn(b'[0 refs, 0 blocks]', res.err)
+
 
 def load_tests(loader, standard_tests, pattern):
     standard_tests.addTest(ZoneInfoCompleteTest())

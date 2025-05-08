@@ -100,54 +100,17 @@ typedef struct {
 
 #define PyIsoCalendarDate_CAST(op) ((PyDateTime_IsoCalendarDate *)(op))
 
-static inline PyObject *
-get_const_us_per_ms(datetime_state *st) {
-    return st ? st->us_per_ms : PyLong_FromLong(1000);
-}
-
-static inline PyObject *
-get_const_us_per_second(datetime_state *st) {
-    return st ? st->us_per_second : PyLong_FromLong(1000000);
-}
-
-static inline PyObject *
-get_const_us_per_minute(datetime_state *st) {
-    return st ? st->us_per_minute : PyLong_FromLong(60000000);
-}
-
-static inline PyObject *
-get_const_us_per_hour(datetime_state *st) {
-    return st ? st->us_per_hour : PyLong_FromDouble(3600000000.0);
-}
-
-static inline PyObject *
-get_const_us_per_day(datetime_state *st) {
-    return st ? st->us_per_day : PyLong_FromDouble(86400000000.0);
-}
-
-static inline PyObject *
-get_const_us_per_week(datetime_state *st) {
-    return st ? st->us_per_week : PyLong_FromDouble(604800000000.0);
-}
-
-static inline PyObject *
-get_const_sec_per_day(datetime_state *st) {
-    return st ? st->seconds_per_day : PyLong_FromLong(24 * 3600);
-}
-
-#define CONST_US_PER_MS(st) get_const_us_per_ms(st)
-#define CONST_US_PER_SECOND(st) get_const_us_per_second(st)
-#define CONST_US_PER_MINUTE(st) get_const_us_per_minute(st)
-#define CONST_US_PER_HOUR(st) get_const_us_per_hour(st)
-#define CONST_US_PER_DAY(st) get_const_us_per_day(st)
-#define CONST_US_PER_WEEK(st) get_const_us_per_week(st)
-#define CONST_SEC_PER_DAY(st) get_const_sec_per_day(st)
 #define CONST_UTC(st) ((PyObject *)&utc_timezone)
-#define CONST_EPOCH(st) \
-    (st ? ((datetime_state *)st)->epoch \
-        : new_datetime(1970, 1, 1, 0, 0, 0, 0, (PyObject *)&utc_timezone, 0))
+static inline PyObject *get_const_us_per_ms(datetime_state *st);
+static inline PyObject *get_const_us_per_second(datetime_state *st);
+static inline PyObject *get_const_us_per_minute(datetime_state *st);
+static inline PyObject *get_const_us_per_hour(datetime_state *st);
+static inline PyObject *get_const_us_per_day(datetime_state *st);
+static inline PyObject *get_const_us_per_week(datetime_state *st);
+static inline PyObject *get_const_sec_per_day(datetime_state *st);
+static inline PyObject *get_const_epoch(datetime_state *st);
 
-static datetime_state *
+static inline datetime_state *
 get_module_state(PyObject *module)
 {
     void *state = _PyModule_GetState(module);
@@ -2149,7 +2112,12 @@ delta_to_microseconds(PyDateTime_Delta *self)
     x1 = PyLong_FromLong(GET_TD_DAYS(self));
     if (x1 == NULL)
         goto Done;
-    x2 = PyNumber_Multiply(x1, CONST_SEC_PER_DAY(st));        /* days in seconds */
+    PyObject *sec_per_day = get_const_sec_per_day(st);
+    if (sec_per_day == NULL) {
+        goto Done;
+    }
+    x2 = PyNumber_Multiply(x1, sec_per_day);  /* days in seconds */
+    Py_DECREF(sec_per_day);
     if (x2 == NULL)
         goto Done;
     Py_SETREF(x1, NULL);
@@ -2166,7 +2134,12 @@ delta_to_microseconds(PyDateTime_Delta *self)
     /* x1 = */ x2 = NULL;
 
     /* x3 has days+seconds in seconds */
-    x1 = PyNumber_Multiply(x3, CONST_US_PER_SECOND(st));          /* us */
+    PyObject *us_per_sec = get_const_us_per_second(st);
+    if (us_per_sec == NULL) {
+        goto Done;
+    }
+    x1 = PyNumber_Multiply(x3, us_per_sec);  /* us */
+    Py_DECREF(us_per_sec);
     if (x1 == NULL)
         goto Done;
     Py_SETREF(x3, NULL);
@@ -2225,7 +2198,12 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
 
-    tuple = checked_divmod(pyus, CONST_US_PER_SECOND(st));
+    PyObject *us_per_sec = get_const_us_per_second(st);
+    if (us_per_sec == NULL) {
+        goto Done;
+    }
+    tuple = checked_divmod(pyus, us_per_sec);
+    Py_DECREF(us_per_sec);
     if (tuple == NULL) {
         goto Done;
     }
@@ -2243,7 +2221,12 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     num = Py_NewRef(PyTuple_GET_ITEM(tuple, 0));        /* leftover seconds */
     Py_DECREF(tuple);
 
-    tuple = checked_divmod(num, CONST_SEC_PER_DAY(st));
+    PyObject *sec_per_day = get_const_sec_per_day(st);
+    if (sec_per_day == NULL) {
+        goto Done;
+    }
+    tuple = checked_divmod(num, sec_per_day);
+    Py_DECREF(sec_per_day);
     if (tuple == NULL)
         goto Done;
     Py_DECREF(num);
@@ -2849,27 +2832,57 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         CLEANUP;
     }
     if (ms) {
-        y = accum("milliseconds", x, ms, CONST_US_PER_MS(st), &leftover_us);
+        PyObject *us_per_ms = get_const_us_per_ms(st);
+        if (us_per_ms == NULL) {
+            goto Done;
+        }
+        y = accum("milliseconds", x, ms, us_per_ms, &leftover_us);
+        Py_DECREF(us_per_ms);
         CLEANUP;
     }
     if (second) {
-        y = accum("seconds", x, second, CONST_US_PER_SECOND(st), &leftover_us);
+        PyObject *us_per_sec = get_const_us_per_second(st);
+        if (us_per_sec == NULL) {
+            goto Done;
+        }
+        y = accum("seconds", x, second, us_per_sec, &leftover_us);
+        Py_DECREF(us_per_sec);
         CLEANUP;
     }
     if (minute) {
-        y = accum("minutes", x, minute, CONST_US_PER_MINUTE(st), &leftover_us);
+        PyObject *us_per_min = get_const_us_per_minute(st);
+        if (us_per_min == NULL) {
+            goto Done;
+        }
+        y = accum("minutes", x, minute, us_per_min, &leftover_us);
+        Py_DECREF(us_per_min);
         CLEANUP;
     }
     if (hour) {
-        y = accum("hours", x, hour, CONST_US_PER_HOUR(st), &leftover_us);
+        PyObject *us_per_hour = get_const_us_per_hour(st);
+        if (us_per_hour == NULL) {
+            goto Done;
+        }
+        y = accum("hours", x, hour, us_per_hour, &leftover_us);
+        Py_DECREF(us_per_hour);
         CLEANUP;
     }
     if (day) {
-        y = accum("days", x, day, CONST_US_PER_DAY(st), &leftover_us);
+        PyObject *us_per_day = get_const_us_per_day(st);
+        if (us_per_day == NULL) {
+            goto Done;
+        }
+        y = accum("days", x, day, us_per_day, &leftover_us);
+        Py_DECREF(us_per_day);
         CLEANUP;
     }
     if (week) {
-        y = accum("weeks", x, week, CONST_US_PER_WEEK(st), &leftover_us);
+        PyObject *us_per_week = get_const_us_per_week(st);
+        if (us_per_week == NULL) {
+            goto Done;
+        }
+        y = accum("weeks", x, week, us_per_week, &leftover_us);
+        Py_DECREF(us_per_week);
         CLEANUP;
     }
     if (leftover_us) {
@@ -3019,7 +3032,7 @@ delta_getstate(PyDateTime_Delta *self)
 static PyObject *
 delta_total_seconds(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
-    PyObject *total_seconds;
+    PyObject *total_seconds = NULL;
     PyObject *total_microseconds;
 
     total_microseconds = delta_to_microseconds(PyDelta_CAST(op));
@@ -3029,8 +3042,13 @@ delta_total_seconds(PyObject *op, PyObject *Py_UNUSED(dummy))
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
 
-    total_seconds = PyNumber_TrueDivide(total_microseconds, CONST_US_PER_SECOND(st));
-
+    PyObject *us_per_sec = get_const_us_per_second(st);
+    if (us_per_sec == NULL) {
+        goto finally;
+    }
+    total_seconds = PyNumber_TrueDivide(total_microseconds, us_per_sec);
+    Py_DECREF(us_per_sec);
+finally:
     RELEASE_CURRENT_STATE(st, current_mod);
     Py_DECREF(total_microseconds);
     return total_seconds;
@@ -6612,7 +6630,12 @@ local_timezone(PyDateTime_DateTime *utc_time)
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
 
-    delta = datetime_subtract((PyObject *)utc_time, CONST_EPOCH(st));
+    PyObject *epoch = get_const_epoch(st);
+    if (epoch == NULL) {
+        return NULL;
+    }
+    delta = datetime_subtract((PyObject *)utc_time, epoch);
+    Py_DECREF(epoch);
     RELEASE_CURRENT_STATE(st, current_mod);
     if (delta == NULL)
         return NULL;
@@ -6856,8 +6879,12 @@ datetime_timestamp(PyObject *op, PyObject *Py_UNUSED(dummy))
         PyObject *current_mod = NULL;
         datetime_state *st = GET_CURRENT_STATE(current_mod);
 
-        PyObject *delta;
-        delta = datetime_subtract(op, CONST_EPOCH(st));
+        PyObject *epoch = get_const_epoch(st);
+        if (epoch == NULL) {
+            return NULL;
+        }
+        PyObject *delta = datetime_subtract(op, epoch);
+        Py_DECREF(epoch);
         RELEASE_CURRENT_STATE(st, current_mod);
         if (delta == NULL)
             return NULL;
@@ -7224,6 +7251,56 @@ create_timezone_from_delta(int days, int sec, int ms, int normalize)
  * Module state lifecycle.
  */
 
+static inline PyObject *
+get_const_us_per_ms(datetime_state *st) {
+    return st && st->us_per_ms ? Py_NewRef(st->us_per_ms)
+                               : PyLong_FromLong(1000);
+}
+
+static inline PyObject *
+get_const_us_per_second(datetime_state *st) {
+    return st && st->us_per_second ? Py_NewRef(st->us_per_second)
+                                   : PyLong_FromLong(1000000);
+}
+
+static inline PyObject *
+get_const_us_per_minute(datetime_state *st) {
+    return st && st->us_per_minute ? Py_NewRef(st->us_per_minute)
+                                   : PyLong_FromLong(60000000);
+}
+
+static inline PyObject *
+get_const_us_per_hour(datetime_state *st) {
+    return st && st->us_per_hour ? Py_NewRef(st->us_per_hour)
+                                 : PyLong_FromDouble(3600000000.0);
+}
+
+static inline PyObject *
+get_const_us_per_day(datetime_state *st) {
+    return st && st->us_per_day ? Py_NewRef(st->us_per_day)
+                                : PyLong_FromDouble(86400000000.0);
+}
+
+static inline PyObject *
+get_const_us_per_week(datetime_state *st) {
+    return st && st->us_per_week ? Py_NewRef(st->us_per_week)
+                                 : PyLong_FromDouble(604800000000.0);
+}
+
+static inline PyObject *
+get_const_sec_per_day(datetime_state *st) {
+    return st && st->seconds_per_day ? Py_NewRef(st->seconds_per_day)
+                                     : PyLong_FromLong(24 * 3600);
+}
+
+static inline PyObject *
+get_const_epoch(datetime_state *st) {
+    return st && st->epoch ? Py_NewRef(st->epoch)
+                           : new_datetime(1970, 1, 1, 0, 0, 0, 0,
+                                          (PyObject *)&utc_timezone, 0);
+}
+
+
 static int
 init_state(datetime_state *st, PyObject *module, PyObject *old_module)
 {
@@ -7243,19 +7320,19 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
         return 0;
     }
 
-    st->us_per_ms = CONST_US_PER_MS(NULL);
+    st->us_per_ms = get_const_us_per_ms(NULL);
     if (st->us_per_ms == NULL) {
         return -1;
     }
-    st->us_per_second = CONST_US_PER_SECOND(NULL);
+    st->us_per_second = get_const_us_per_second(NULL);
     if (st->us_per_second == NULL) {
         return -1;
     }
-    st->us_per_minute = CONST_US_PER_MINUTE(NULL);
+    st->us_per_minute = get_const_us_per_minute(NULL);
     if (st->us_per_minute == NULL) {
         return -1;
     }
-    st->seconds_per_day = CONST_SEC_PER_DAY(NULL);
+    st->seconds_per_day = get_const_sec_per_day(NULL);
     if (st->seconds_per_day == NULL) {
         return -1;
     }
@@ -7263,21 +7340,21 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
     /* The rest are too big for 32-bit ints, but even
      * us_per_week fits in 40 bits, so doubles should be exact.
      */
-    st->us_per_hour = CONST_US_PER_HOUR(NULL);
+    st->us_per_hour = get_const_us_per_hour(NULL);
     if (st->us_per_hour == NULL) {
         return -1;
     }
-    st->us_per_day = CONST_US_PER_DAY(NULL);
+    st->us_per_day = get_const_us_per_day(NULL);
     if (st->us_per_day == NULL) {
         return -1;
     }
-    st->us_per_week = CONST_US_PER_WEEK(NULL);
+    st->us_per_week = get_const_us_per_week(NULL);
     if (st->us_per_week == NULL) {
         return -1;
     }
 
     /* Init Unix epoch */
-    st->epoch = CONST_EPOCH(NULL);
+    st->epoch = get_const_epoch(NULL);
     if (st->epoch == NULL) {
         return -1;
     }
