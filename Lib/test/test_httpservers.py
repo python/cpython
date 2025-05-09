@@ -34,8 +34,9 @@ from io import BytesIO, StringIO
 import unittest
 from test import support
 from test.support import (
-    is_apple, import_helper, os_helper, requires_subprocess, threading_helper
+    is_apple, import_helper, os_helper, requires_subprocess, threading_helper,
 )
+from test.support.script_helper import spawn_python, kill_python
 from test.support.socket_helper import find_unused_port
 
 try:
@@ -1539,6 +1540,7 @@ class ScriptTestCase(unittest.TestCase):
             server.test(ServerClass=mock_server, bind=bind)
             self.assertEqual(mock_server.address_family, socket.AF_INET)
 
+
 class CommandLineTestCase(unittest.TestCase):
     default_port = 8000
     default_bind = None
@@ -1558,8 +1560,6 @@ class CommandLineTestCase(unittest.TestCase):
         'tls_key': None,
         'tls_password': None,
     }
-    random_data = os.urandom(1024)
-    random_file_name = 'random.bin'
 
     def setUp(self):
         super().setUp()
@@ -1567,9 +1567,6 @@ class CommandLineTestCase(unittest.TestCase):
         with open(self.tls_password_file, 'wb') as f:
             f.write(self.tls_password.encode())
         self.addCleanup(os_helper.unlink, self.tls_password_file)
-        with open(self.random_file_name, 'wb') as f:
-            f.write(self.random_data)
-        self.addCleanup(os_helper.unlink, self.random_file_name)
 
     def invoke_httpd(self, *args):
         output = StringIO()
@@ -1734,6 +1731,17 @@ class CommandLineTestCase(unittest.TestCase):
             output = self.invoke_httpd('--unknown-flag')
             self.assertStartsWith(output, 'usage: ')
 
+
+class CommandLineRunTimeTestCase(CommandLineTestCase):
+    random_data = os.urandom(1024)
+    random_file_name = 'random.bin'
+
+    def setUp(self):
+        super().setUp()
+        with open(self.random_file_name, 'wb') as f:
+            f.write(self.random_data)
+        self.addCleanup(os_helper.unlink, self.random_file_name)
+
     def fetch_file(self, path, allow_self_signed_cert=True) -> bytes:
         context = ssl.create_default_context()
         if allow_self_signed_cert:
@@ -1771,37 +1779,28 @@ class CommandLineTestCase(unittest.TestCase):
     def test_http_client(self):
         port = find_unused_port()
         bind = '127.0.0.1'
-        proc = subprocess.Popen([sys.executable, '-u', '-m', 'http.server',
-                                 str(port), '-b', bind],
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.STDOUT,
-                                 bufsize=1,
-                                 text=True)
+        proc = spawn_python('-u', '-m', 'http.server', str(port), '-b', bind,
+                            bufsize=1, text=True)
         self.assertTrue(self.wait_for_server(proc, 'http', port, bind))
         res = self.fetch_file(f'http://{bind}:{port}/{self.random_file_name}')
         self.assertEqual(res, self.random_data)
-        proc.stdout.close()
-        proc.kill()
-        proc.wait()
+        proc.terminate()
+        kill_python(proc)
 
     def test_https_client(self):
         port = find_unused_port()
         bind = '127.0.0.1'
-        proc = subprocess.Popen([sys.executable, '-u', '-m', 'http.server',
-                                 str(port), '-b', bind,
-                                 '--tls-cert', self.tls_cert,
-                                 '--tls-key', self.tls_key,
-                                 '--tls-password-file', self.tls_password_file],
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.STDOUT,
-                                 bufsize=1,
-                                 text=True)
+        proc = spawn_python('-u', '-m', 'http.server', str(port), '-b', bind,
+                            '--tls-cert', self.tls_cert,
+                            '--tls-key', self.tls_key,
+                            '--tls-password-file', self.tls_password_file,
+                            bufsize=1, text=True)
         self.assertTrue(self.wait_for_server(proc, 'https', port, bind))
         res = self.fetch_file(f'https://{bind}:{port}/{self.random_file_name}')
         self.assertEqual(res, self.random_data)
-        proc.stdout.close()
-        proc.kill()
-        proc.wait()
+        proc.terminate()
+        kill_python(proc)
+
 
 def setUpModule():
     unittest.addModuleCleanup(os.chdir, os.getcwd())
