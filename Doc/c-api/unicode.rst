@@ -622,6 +622,7 @@ APIs:
 
 
 .. c:function:: PyObject* PyUnicode_BuildEncodingMap(PyObject* string)
+
    Return a mapping suitable for decoding a custom single-byte encoding.
    Given a Unicode string *string* of up to 256 characters representing an encoding
    table, returns either a compact internal mapping object or a dictionary
