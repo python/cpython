@@ -1760,6 +1760,10 @@ UNSIGNED_INT_CONVERTER(UnsignedInt, unsigned int)
 UNSIGNED_INT_CONVERTER(UnsignedLong, unsigned long)
 UNSIGNED_INT_CONVERTER(UnsignedLongLong, unsigned long long)
 UNSIGNED_INT_CONVERTER(Size_t, size_t)
+UNSIGNED_INT_CONVERTER(UInt8, uint8_t)
+UNSIGNED_INT_CONVERTER(UInt16, uint16_t)
+UNSIGNED_INT_CONVERTER(UInt32, uint32_t)
+UNSIGNED_INT_CONVERTER(UInt64, uint64_t)
 
 
 #define CHECK_BINOP(v,w)                                \

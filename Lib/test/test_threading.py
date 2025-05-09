@@ -530,7 +530,8 @@ class ThreadTests(BaseTestCase):
         finally:
             sys.setswitchinterval(old_interval)
 
-    def test_join_from_multiple_threads(self):
+    @support.bigmemtest(size=20, memuse=72*2**20, dry_run=False)
+    def test_join_from_multiple_threads(self, size):
         # Thread.join() should be thread-safe
         errors = []
 
@@ -1431,7 +1432,8 @@ class ThreadJoinOnShutdown(BaseTestCase):
         self._run_and_join(script)
 
     @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
-    def test_4_daemon_threads(self):
+    @support.bigmemtest(size=40, memuse=70*2**20, dry_run=False)
+    def test_4_daemon_threads(self, size):
         # Check that a daemon thread cannot crash the interpreter on shutdown
         # by manipulating internal structures that are being disposed of in
         # the main thread.

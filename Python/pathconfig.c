@@ -272,7 +272,8 @@ Py_SetProgramName(const wchar_t *program_name)
 }
 
 
-wchar_t *
+/* removed in 3.15, but kept for stable ABI compatibility */
+PyAPI_FUNC(wchar_t *)
 Py_GetPath(void)
 {
     /* If the user has provided a path, return that */
@@ -284,7 +285,7 @@ Py_GetPath(void)
 }
 
 
-wchar_t *
+PyAPI_FUNC(wchar_t *)
 _Py_GetStdlibDir(void)
 {
     wchar_t *stdlib_dir = _Py_path_config.stdlib_dir;
@@ -295,35 +296,40 @@ _Py_GetStdlibDir(void)
 }
 
 
-wchar_t *
+/* removed in 3.15, but kept for stable ABI compatibility */
+PyAPI_FUNC(wchar_t *)
 Py_GetPrefix(void)
 {
     return _Py_path_config.prefix;
 }
 
 
-wchar_t *
+/* removed in 3.15, but kept for stable ABI compatibility */
+PyAPI_FUNC(wchar_t *)
 Py_GetExecPrefix(void)
 {
     return _Py_path_config.exec_prefix;
 }
 
 
-wchar_t *
+/* removed in 3.15, but kept for stable ABI compatibility */
+PyAPI_FUNC(wchar_t *)
 Py_GetProgramFullPath(void)
 {
     return _Py_path_config.program_full_path;
 }
 
 
-wchar_t*
+/* removed in 3.15, but kept for stable ABI compatibility */
+PyAPI_FUNC(wchar_t *)
 Py_GetPythonHome(void)
 {
     return _Py_path_config.home;
 }
 
 
-wchar_t *
+/* removed in 3.15, but kept for stable ABI compatibility */
+PyAPI_FUNC(wchar_t *)
 Py_GetProgramName(void)
 {
     return _Py_path_config.program_name;

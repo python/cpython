@@ -32,7 +32,7 @@ get_zstd_state_from_type(PyTypeObject *type) {
 
 extern PyType_Spec zstddict_type_spec;
 extern PyType_Spec zstdcompressor_type_spec;
-extern PyType_Spec ZstdDecompressor_type_spec;
+extern PyType_Spec zstddecompressor_type_spec;
 
 struct _zstd_state {
     PyObject *empty_bytes;
@@ -137,7 +137,6 @@ typedef enum {
 typedef enum {
     ERR_DECOMPRESS,
     ERR_COMPRESS,
-    ERR_SET_PLEDGED_INPUT_SIZE,
 
     ERR_LOAD_D_DICT,
     ERR_LOAD_C_DICT,
@@ -147,7 +146,7 @@ typedef enum {
     ERR_SET_C_LEVEL,
 
     ERR_TRAIN_DICT,
-    ERR_FINALIZE_DICT
+    ERR_FINALIZE_DICT,
 } error_type;
 
 typedef enum {
