@@ -11200,12 +11200,17 @@ unicode_compare(PyObject *str1, PyObject *str2)
     const void *data1, *data2;
     Py_ssize_t len1, len2, len;
 
+    // Fast path: if lengths are different, we can return immediately
+    len1 = PyUnicode_GET_LENGTH(str1);
+    len2 = PyUnicode_GET_LENGTH(str2);
+    if (len1 != len2) {
+        return (len1 < len2) ? -1 : 1;
+    }
+
     kind1 = PyUnicode_KIND(str1);
     kind2 = PyUnicode_KIND(str2);
     data1 = PyUnicode_DATA(str1);
     data2 = PyUnicode_DATA(str2);
-    len1 = PyUnicode_GET_LENGTH(str1);
-    len2 = PyUnicode_GET_LENGTH(str2);
     len = Py_MIN(len1, len2);
 
     switch(kind1) {
