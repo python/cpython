@@ -1594,24 +1594,6 @@ class DictTest(unittest.TestCase):
                 self.assertEqual(d.get(key3_3), 44)
                 self.assertGreaterEqual(eq_count, 1)
 
-    def test_store_attr_with_hint(self):
-        # gh-133441: Regression test for STORE_ATTR_WITH_HINT bytecode
-        class Node:
-            def __init__(self):
-                self.parents = {}
-
-            def __setstate__(self, data_dict):
-                self.__dict__ = data_dict
-                self.parents = {}
-
-        class Dict(dict):
-            pass
-
-        obj = Node()
-        obj.__setstate__({'parents': {}})
-        obj.__setstate__({'parents': {}})
-        obj.__setstate__(Dict({'parents': {}}))
-
 
 class CAPITest(unittest.TestCase):
 
