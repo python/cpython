@@ -111,14 +111,14 @@ class InteractiveSession(unittest.TestCase):
     def test_interact_empty_source(self):
         out, err = self.run_cli(commands=("", " "))
         self.assertIn(self.MEMORY_DB_MSG, err)
-        self.assertEndsWith(out, self.PS1)
+        self.assertTrue(out.endswith(self.PS1))
         self.assertEqual(out.count(self.PS1), 3)
         self.assertEqual(out.count(self.PS2), 0)
 
     def test_interact_dot_commands_unknown(self):
         out, err = self.run_cli(commands=(".unknown_command", ))
         self.assertIn(self.MEMORY_DB_MSG, err)
-        self.assertEndsWith(out, self.PS1)
+        self.assertTrue(out.endswith(self.PS1))
         self.assertEqual(out.count(self.PS1), 2)
         self.assertEqual(out.count(self.PS2), 0)
         self.assertIn("Error", err)
@@ -128,7 +128,7 @@ class InteractiveSession(unittest.TestCase):
     def test_interact_dot_commands_empty(self):
         out, err = self.run_cli(commands=("."))
         self.assertIn(self.MEMORY_DB_MSG, err)
-        self.assertEndsWith(out, self.PS1)
+        self.assertTrue(out.endswith(self.PS1))
         self.assertEqual(out.count(self.PS1), 2)
         self.assertEqual(out.count(self.PS2), 0)
 
@@ -136,7 +136,7 @@ class InteractiveSession(unittest.TestCase):
         out, err = self.run_cli(commands=(".version ", ". version"))
         self.assertIn(self.MEMORY_DB_MSG, err)
         self.assertEqual(out.count(sqlite3.sqlite_version + "\n"), 2)
-        self.assertEndsWith(out, self.PS1)
+        self.assertTrue(out.endswith(self.PS1))
         self.assertEqual(out.count(self.PS1), 3)
         self.assertEqual(out.count(self.PS2), 0)
 
