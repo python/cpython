@@ -81,7 +81,7 @@ and a piece of C code describing its semantics:
     (definition | family | pseudo)+
 
   definition:
-    "inst" "(" NAME ["," stack_effect] ")" "{" C-code "}"
+    "inst" "(" NAME "," stack_effect ")" "{" C-code "}"
     |
     "op" "(" NAME "," stack_effect ")" "{" C-code "}"
     |
