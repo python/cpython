@@ -126,11 +126,6 @@ typedef struct {
 } ZstdDecompressor;
 
 typedef enum {
-    TYPE_DECOMPRESSOR,          // <D>, ZstdDecompressor class
-    TYPE_ENDLESS_DECOMPRESSOR,  // <E>, decompress() function
-} decompress_type;
-
-typedef enum {
     ERR_DECOMPRESS,
     ERR_COMPRESS,
 

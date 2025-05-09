@@ -216,17 +216,14 @@ load:
     return 0;
 }
 
-
+typedef enum {
+    TYPE_DECOMPRESSOR,          // <D>, ZstdDecompressor class
+    TYPE_ENDLESS_DECOMPRESSOR,  // <E>, decompress() function
+} decompress_type;
 
 /*
-    Given the two types of decompressors (defined in _zstdmodule.h):
-
-        typedef enum {
-            TYPE_DECOMPRESSOR,          // <D>, ZstdDecompressor class
-            TYPE_ENDLESS_DECOMPRESSOR,  // <E>, decompress() function
-        } decompress_type;
-
-    Decompress implementation for <D>, <E>, pseudo code:
+    Given the two types of decompressors (defined above),
+    decompress implementation for <D>, <E>, pseudo code:
 
         initialize_output_buffer
         while True:
