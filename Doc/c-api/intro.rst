@@ -865,9 +865,15 @@ approaches to creating C and C++ extensions for Python:
 * `PyO3 <https://pyo3.rs/>`_ (Rust)
 * `SWIG <https://www.swig.org>`_
 
-It is recommended to use these abstractions, rather than using directly the
-Python C API. These abstractions are built on top of the C API and handle API
-differences between the different Python versions.
+Using tools such as these can help avoid writing code that is tightly bound to
+a particular version of CPython, avoid reference counting errors, and focus
+more on your own code than on using the CPython API. In general, new versions
+of Python can be supported by updating the tool, and your code will often use
+newer and more efficient APIs automatically. Some tools also support compiling
+for other implementations of Python from a single set of sources.
+
+Directly coding against the CPython C API should, in most cases, be your last
+resort rather than the first.
 
 These projects are not supported by the same people who maintain Python, and
 issues need to be raised with the projects directly. Remember to check that the

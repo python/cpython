@@ -275,7 +275,7 @@ class CAPIToolsBanner(SphinxDirective):
 
     text = sphinx_gettext(
         "It is recommended to use "
-        ":ref:`C API abstractions <c-api-tools>`, "
+        ":ref:`third party tools <c-api-tools>`, "
         "rather than using the Python C API directly."
     )
 
