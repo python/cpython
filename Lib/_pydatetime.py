@@ -1056,8 +1056,8 @@ class date:
         This is 'YYYY-MM-DD'.
 
         References:
-        - http://www.w3.org/TR/NOTE-datetime
-        - http://www.cl.cam.ac.uk/~mgk25/iso-time.html
+        - https://www.w3.org/TR/NOTE-datetime
+        - https://www.cl.cam.ac.uk/~mgk25/iso-time.html
         """
         return "%04d-%02d-%02d" % (self._year, self._month, self._day)
 
@@ -1191,7 +1191,7 @@ class date:
         The first week is 1; Monday is 1 ... Sunday is 7.
 
         ISO calendar algorithm taken from
-        http://www.phys.uu.nl/~vgent/calendar/isocalendar.htm
+        https://www.phys.uu.nl/~vgent/calendar/isocalendar.htm
         (used with permission)
         """
         year = self._year
