@@ -281,7 +281,7 @@ class CompressorTestCase(unittest.TestCase):
         with self.assertRaisesRegex(ZstdError,
                 (r'Error when setting zstd compression parameter "window_log", '
                  r'it should \d+ <= value <= \d+, provided value is 100\. '
-                 r'\(zstd v\d\.\d\.\d, (?:32|64)-bit build\)')):
+                 r'\((?:32|64)-bit build\)')):
             compress(b'', options=option)
 
     def test_unknown_compression_parameter(self):
@@ -413,7 +413,7 @@ class DecompressorTestCase(unittest.TestCase):
         with self.assertRaisesRegex(ZstdError,
                 (r'Error when setting zstd decompression parameter "window_log_max", '
                  r'it should \d+ <= value <= \d+, provided value is 100\. '
-                 r'\(zstd v\d\.\d\.\d, (?:32|64)-bit build\)')):
+                 r'\((?:32|64)-bit build\)')):
             decompress(b'', options=options)
 
     def test_unknown_decompression_parameter(self):

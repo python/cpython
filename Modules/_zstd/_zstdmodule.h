@@ -32,7 +32,7 @@ get_zstd_state_from_type(PyTypeObject *type) {
 
 extern PyType_Spec zstddict_type_spec;
 extern PyType_Spec zstdcompressor_type_spec;
-extern PyType_Spec ZstdDecompressor_type_spec;
+extern PyType_Spec zstddecompressor_type_spec;
 
 struct _zstd_state {
     PyObject *empty_bytes;
@@ -137,7 +137,6 @@ typedef enum {
 typedef enum {
     ERR_DECOMPRESS,
     ERR_COMPRESS,
-    ERR_SET_PLEDGED_INPUT_SIZE,
 
     ERR_LOAD_D_DICT,
     ERR_LOAD_C_DICT,
@@ -147,7 +146,7 @@ typedef enum {
     ERR_SET_C_LEVEL,
 
     ERR_TRAIN_DICT,
-    ERR_FINALIZE_DICT
+    ERR_FINALIZE_DICT,
 } error_type;
 
 typedef enum {
@@ -171,19 +170,6 @@ set_parameter_error(const _zstd_state* const state, int is_compress,
                     int key_v, int value_v);
 
 static const char init_twice_msg[] = "__init__ method is called twice.";
-
-extern int
-_PyZstd_load_c_dict(ZstdCompressor *self, PyObject *dict);
-
-extern int
-_PyZstd_load_d_dict(ZstdDecompressor *self, PyObject *dict);
-
-extern int
-_PyZstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
-                         const char *arg_name, const char *arg_type);
-
-extern int
-_PyZstd_set_d_parameters(ZstdDecompressor *self, PyObject *options);
 
 extern PyObject *
 decompress_impl(ZstdDecompressor *self, ZSTD_inBuffer *in,

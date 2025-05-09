@@ -4427,7 +4427,7 @@ _ssl__SSLContext_load_dh_params_impl(PySSLContext *self, PyObject *filepath)
     FILE *f;
     DH *dh;
 
-#if defined(MS_WINDOWS) && defined(_DEBUG)
+#if defined(MS_WINDOWS) && defined(Py_DEBUG)
     PyErr_SetString(PyExc_NotImplementedError,
                     "load_dh_params: unavailable on Windows debug build");
     return NULL;
@@ -6624,6 +6624,12 @@ sslmodule_init_constants(PyObject *m)
     addbool(m, "HAS_PSK", 0);
 #else
     addbool(m, "HAS_PSK", 1);
+#endif
+
+#ifdef OPENSSL_NO_EXTERNAL_PSK_TLS13
+    addbool(m, "HAS_PSK_TLS13", 0);
+#else
+    addbool(m, "HAS_PSK_TLS13", 1);
 #endif
 
 #ifdef SSL_VERIFY_POST_HANDSHAKE
