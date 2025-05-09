@@ -86,10 +86,13 @@ New modules
 Improved modules
 ================
 
-module_name
------------
+ssl
+---
 
-* TODO
+* Indicate through :data:`ssl.HAS_PSK_TLS13` whether the :mod:`ssl` module
+  supports "External PSKs" in TLSv1.3, as described in RFC 9258.
+  (Contributed by Will Childs-Klein in :gh:`133624`.)
+
 
 .. Add improved modules above alphabetically, not here at the end.
 
@@ -143,7 +146,16 @@ New features
 Porting to Python 3.15
 ----------------------
 
-* TODO
+* :class:`sqlite3.Connection` APIs has been cleaned up.
+
+  * All parameters of :func:`sqlite3.connect` except *database* are now keyword-only.
+  * The first three parameters of methods :meth:`~sqlite3.Connection.create_function`
+    and :meth:`~sqlite3.Connection.create_aggregate` are now positional-only.
+  * The first parameter of methods :meth:`~sqlite3.Connection.set_authorizer`,
+    :meth:`~sqlite3.Connection.set_progress_handler` and
+    :meth:`~sqlite3.Connection.set_trace_callback` is now positional-only.
+
+  (Contributed by Serhiy Storchaka in :gh:`133595`.)
 
 Deprecated C APIs
 -----------------
@@ -155,29 +167,67 @@ Deprecated C APIs
 Removed C APIs
 --------------
 
+* :c:func:`!PyImport_ImportModuleNoBlock`: deprecated alias
+  of :c:func:`PyImport_ImportModule`.
+
+The following functions are removed in favor of :c:func:`PyConfig_Get`.
+The |pythoncapi_compat_project| can be used to get :c:func:`!PyConfig_Get`
+on Python 3.13 and older.
+
+* Python initialization functions:
+
+  * :c:func:`!Py_GetExecPrefix`:
+    use :c:func:`PyConfig_Get("base_exec_prefix") <PyConfig_Get>`
+    (:data:`sys.base_exec_prefix`) instead.
+    Use :c:func:`PyConfig_Get("exec_prefix") <PyConfig_Get>`
+    (:data:`sys.exec_prefix`) if :ref:`virtual environments <venv-def>`
+    need to be handled.
+  * :c:func:`!Py_GetPath`:
+    use :c:func:`PyConfig_Get("module_search_paths") <PyConfig_Get>`
+    (:data:`sys.path`) instead.
+  * :c:func:`!Py_GetPrefix`:
+    use :c:func:`PyConfig_Get("base_prefix") <PyConfig_Get>`
+    (:data:`sys.base_prefix`) instead.
+    Use :c:func:`PyConfig_Get("prefix") <PyConfig_Get>`
+    (:data:`sys.prefix`) if :ref:`virtual environments <venv-def>`
+    need to be handled.
+  * :c:func:`!Py_GetProgramFullPath`:
+    use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
+    (:data:`sys.executable`) instead.
+  * :c:func:`!Py_GetProgramName`:
+    use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
+    (:data:`sys.executable`) instead.
+  * :c:func:`!Py_GetPythonHome`:
+    use :c:func:`PyConfig_Get("home") <PyConfig_Get>` or the
+    :envvar:`PYTHONHOME` environment variable instead.
+
+.. |pythoncapi_compat_project| replace:: |pythoncapi_compat_project_link|_
+.. |pythoncapi_compat_project_link| replace:: pythoncapi-compat project
+.. _pythoncapi_compat_project_link: https://github.com/python/pythoncapi-compat
+
 * Global configuration variables:
 
-  * :c:var:`!Py_BytesWarningFlag`: use :c:member:`PyConfig.bytes_warning`
-  * :c:var:`!Py_DebugFlag`: use :c:member:`PyConfig.parser_debug`
-  * :c:var:`!Py_DontWriteBytecodeFlag`: use :c:member:`PyConfig.write_bytecode`
-  * :c:var:`!Py_FileSystemDefaultEncodeErrors`: use :c:member:`PyConfig.filesystem_errors`
-  * :c:var:`!Py_FileSystemDefaultEncoding`: use :c:member:`PyConfig.filesystem_encoding`
-  * :c:var:`!Py_FrozenFlag`: use :c:member:`PyConfig.pathconfig_warnings`
-  * :c:var:`!Py_HasFileSystemDefaultEncoding`: use :c:member:`PyConfig.filesystem_encoding`
+  * :c:var:`!Py_BytesWarningFlag`: use :c:member:`PyConfig.bytes_warning`.
+  * :c:var:`!Py_DebugFlag`: use :c:member:`PyConfig.parser_debug`.
+  * :c:var:`!Py_DontWriteBytecodeFlag`: use :c:member:`PyConfig.write_bytecode`.
+  * :c:var:`!Py_FileSystemDefaultEncodeErrors`: use :c:member:`PyConfig.filesystem_errors`.
+  * :c:var:`!Py_FileSystemDefaultEncoding`: use :c:member:`PyConfig.filesystem_encoding`.
+  * :c:var:`!Py_FrozenFlag`: use :c:member:`PyConfig.pathconfig_warnings`.
+  * :c:var:`!Py_HasFileSystemDefaultEncoding`: use :c:member:`PyConfig.filesystem_encoding`.
   * :c:var:`!Py_HashRandomizationFlag`: use :c:member:`PyConfig.use_hash_seed`
-    and :c:member:`PyConfig.hash_seed`
-  * :c:var:`!Py_IgnoreEnvironmentFlag`: use :c:member:`PyConfig.use_environment`
-  * :c:var:`!Py_InspectFlag`: use :c:member:`PyConfig.inspect`
-  * :c:var:`!Py_IsolatedFlag`: use :c:member:`PyConfig.isolated`
-  * :c:var:`!Py_NoSiteFlag`: use :c:member:`PyConfig.site_import`
-  * :c:var:`!Py_NoUserSiteDirectory`: use :c:member:`PyConfig.user_site_directory`
-  * :c:var:`!Py_OptimizeFlag`: use :c:member:`PyConfig.optimization_level`
-  * :c:var:`!Py_QuietFlag`: use :c:member:`PyConfig.quiet`
-  * :c:var:`!Py_UnbufferedStdioFlag`: use :c:member:`PyConfig.buffered_stdio`
-  * :c:var:`!Py_VerboseFlag`: use :c:member:`PyConfig.verbose`
+    and :c:member:`PyConfig.hash_seed`.
+  * :c:var:`!Py_IgnoreEnvironmentFlag`: use :c:member:`PyConfig.use_environment`.
+  * :c:var:`!Py_InspectFlag`: use :c:member:`PyConfig.inspect`.
+  * :c:var:`!Py_IsolatedFlag`: use :c:member:`PyConfig.isolated`.
+  * :c:var:`!Py_NoSiteFlag`: use :c:member:`PyConfig.site_import`.
+  * :c:var:`!Py_NoUserSiteDirectory`: use :c:member:`PyConfig.user_site_directory`.
+  * :c:var:`!Py_OptimizeFlag`: use :c:member:`PyConfig.optimization_level`.
+  * :c:var:`!Py_QuietFlag`: use :c:member:`PyConfig.quiet`.
+  * :c:var:`!Py_UnbufferedStdioFlag`: use :c:member:`PyConfig.buffered_stdio`.
+  * :c:var:`!Py_VerboseFlag`: use :c:member:`PyConfig.verbose`.
 
 * Windows-only global configuration variables:
 
-  * :c:var:`!Py_LegacyWindowsFSEncodingFlag`: use :c:member:`PyPreConfig.legacy_windows_fs_encoding`
-  * :c:var:`!Py_LegacyWindowsStdioFlag`: use :c:member:`PyConfig.legacy_windows_stdio`
+  * :c:var:`!Py_LegacyWindowsFSEncodingFlag`: use :c:member:`PyPreConfig.legacy_windows_fs_encoding`.
+  * :c:var:`!Py_LegacyWindowsStdioFlag`: use :c:member:`PyConfig.legacy_windows_stdio`.
 

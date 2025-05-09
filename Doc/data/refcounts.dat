@@ -1093,9 +1093,6 @@ PyImport_ImportModuleLevelObject:PyObject*:locals:0:???
 PyImport_ImportModuleLevelObject:PyObject*:fromlist:0:???
 PyImport_ImportModuleLevelObject:int:level::
 
-PyImport_ImportModuleNoBlock:PyObject*::+1:
-PyImport_ImportModuleNoBlock:const char*:name::
-
 PyImport_ReloadModule:PyObject*::+1:
 PyImport_ReloadModule:PyObject*:m:0:
 
@@ -3007,17 +3004,7 @@ Py_GetCompiler:const char*:::
 
 Py_GetCopyright:const char*:::
 
-Py_GetExecPrefix:wchar_t*:::
-
-Py_GetPath:wchar_t*:::
-
 Py_GetPlatform:const char*:::
-
-Py_GetPrefix:wchar_t*:::
-
-Py_GetProgramFullPath:wchar_t*:::
-
-Py_GetProgramName:wchar_t*:::
 
 Py_GetVersion:const char*:::
 

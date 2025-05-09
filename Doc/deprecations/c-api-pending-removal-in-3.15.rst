@@ -2,7 +2,7 @@ Pending removal in Python 3.15
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * The bundled copy of ``libmpdecimal``.
-* The :c:func:`PyImport_ImportModuleNoBlock`:
+* The :c:func:`!PyImport_ImportModuleNoBlock`:
   Use :c:func:`PyImport_ImportModule` instead.
 * :c:func:`PyWeakref_GetObject` and :c:func:`PyWeakref_GET_OBJECT`:
   Use :c:func:`PyWeakref_GetRef` instead. The `pythoncapi-compat project
@@ -22,27 +22,27 @@ Pending removal in Python 3.15
   may return a type other than :class:`bytes`, such as :class:`str`.
 * Python initialization functions, deprecated in Python 3.13:
 
-  * :c:func:`Py_GetPath`:
+  * :c:func:`!Py_GetPath`:
     Use :c:func:`PyConfig_Get("module_search_paths") <PyConfig_Get>`
     (:data:`sys.path`) instead.
-  * :c:func:`Py_GetPrefix`:
+  * :c:func:`!Py_GetPrefix`:
     Use :c:func:`PyConfig_Get("base_prefix") <PyConfig_Get>`
     (:data:`sys.base_prefix`) instead. Use :c:func:`PyConfig_Get("prefix")
     <PyConfig_Get>` (:data:`sys.prefix`) if :ref:`virtual environments
     <venv-def>` need to be handled.
-  * :c:func:`Py_GetExecPrefix`:
+  * :c:func:`!Py_GetExecPrefix`:
     Use :c:func:`PyConfig_Get("base_exec_prefix") <PyConfig_Get>`
     (:data:`sys.base_exec_prefix`) instead. Use
     :c:func:`PyConfig_Get("exec_prefix") <PyConfig_Get>`
     (:data:`sys.exec_prefix`) if :ref:`virtual environments <venv-def>` need to
     be handled.
-  * :c:func:`Py_GetProgramFullPath`:
+  * :c:func:`!Py_GetProgramFullPath`:
     Use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
     (:data:`sys.executable`) instead.
-  * :c:func:`Py_GetProgramName`:
+  * :c:func:`!Py_GetProgramName`:
     Use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
     (:data:`sys.executable`) instead.
-  * :c:func:`Py_GetPythonHome`:
+  * :c:func:`!Py_GetPythonHome`:
     Use :c:func:`PyConfig_Get("home") <PyConfig_Get>` or the
     :envvar:`PYTHONHOME` environment variable instead.
 
