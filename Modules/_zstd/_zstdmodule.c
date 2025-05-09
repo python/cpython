@@ -587,11 +587,6 @@ do {                                                                         \
     _zstd_state* const mod_state = get_zstd_state(m);
 
     /* Reusable objects & variables */
-    mod_state->empty_bytes = PyBytes_FromStringAndSize(NULL, 0);
-    if (mod_state->empty_bytes == NULL) {
-        return -1;
-    }
-
     mod_state->CParameter_type = NULL;
     mod_state->DParameter_type = NULL;
 
@@ -694,8 +689,6 @@ _zstd_traverse(PyObject *module, visitproc visit, void *arg)
 {
     _zstd_state* const mod_state = get_zstd_state(module);
 
-    Py_VISIT(mod_state->empty_bytes);
-
     Py_VISIT(mod_state->ZstdDict_type);
     Py_VISIT(mod_state->ZstdCompressor_type);
 
@@ -712,8 +705,6 @@ static int
 _zstd_clear(PyObject *module)
 {
     _zstd_state* const mod_state = get_zstd_state(module);
-
-    Py_CLEAR(mod_state->empty_bytes);
 
     Py_CLEAR(mod_state->ZstdDict_type);
     Py_CLEAR(mod_state->ZstdCompressor_type);
