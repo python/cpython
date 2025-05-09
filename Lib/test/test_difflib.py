@@ -355,6 +355,21 @@ class TestOutputFormat(unittest.TestCase):
         self.assertEqual(fmt(3,6), '4,6')
         self.assertEqual(fmt(0,0), '0')
 
+    def test_unified_diff_colored_output(self):
+        args = [['one', 'three'], ['two', 'three'], 'Original', 'Current',
+            '2005-01-26 23:30:50', '2010-04-02 10:20:52']
+        actual = list(difflib.unified_diff(*args, lineterm='', color=True))
+
+        expect = [
+            "\033[1m--- Original\t2005-01-26 23:30:50\033[m",
+            "\033[1m+++ Current\t2010-04-02 10:20:52\033[m",
+             "\033[36m@@ -1,2 +1,2 @@\033[m",
+             "\033[31m-one\033[m",
+             "\033[32m+two\033[m",
+             " three",
+        ]
+        self.assertEqual(expect, actual)
+
 
 class TestBytes(unittest.TestCase):
     # don't really care about the content of the output, just the fact
