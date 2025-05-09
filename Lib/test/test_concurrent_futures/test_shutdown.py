@@ -350,6 +350,11 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         #   max_tasks_per_child=1
         #   a task ends abnormally
         #   shutdown(wait=False) is called
+        start_method = self.get_context().get_start_method()
+        if (start_method == "fork" or
+           (start_method == "forkserver" and sys.platform.startswith("win"))):
+                raise unittest.SkipTest("Excluding tests with start_method "
+                                        "'fork' and 'forkserver' on Windows")
         executor = futures.ProcessPoolExecutor(
                 max_workers=max_workers,
                 max_tasks_per_child=1,
