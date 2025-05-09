@@ -554,28 +554,62 @@ static PyMethodDef _zstd_methods[] = {
     {0}
 };
 
-
-static inline int
-add_vars_to_module(PyObject *m)
+static int _zstd_exec(PyObject *m)
 {
+#define ADD_TYPE(TYPE, SPEC)                                                 \
+do {                                                                         \
+    TYPE = (PyTypeObject *)PyType_FromModuleAndSpec(m, &(SPEC), NULL);       \
+    if (TYPE == NULL) {                                                      \
+        return -1;                                                           \
+    }                                                                        \
+    if (PyModule_AddType(m, TYPE) < 0) {                                     \
+        return -1;                                                           \
+    }                                                                        \
+} while (0)
+
 #define ADD_INT_MACRO(MACRO)                                                 \
     if (PyModule_AddIntConstant((m), #MACRO, (MACRO)) < 0) {                 \
         return -1;                                                           \
     }
 
-    /* zstd_version_number, int */
+    _zstd_state* const mod_state = get_zstd_state(m);
+
+    /* Reusable objects & variables */
+    mod_state->empty_bytes = PyBytes_FromStringAndSize(NULL, 0);
+    if (mod_state->empty_bytes == NULL) {
+        return -1;
+    }
+
+    mod_state->CParameter_type = NULL;
+    mod_state->DParameter_type = NULL;
+
+    /* Create and add heap types */
+    ADD_TYPE(mod_state->ZstdDict_type, zstd_dict_type_spec);
+    ADD_TYPE(mod_state->ZstdCompressor_type, zstd_compressor_type_spec);
+    ADD_TYPE(mod_state->ZstdDecompressor_type, zstd_decompressor_type_spec);
+    mod_state->ZstdError = PyErr_NewExceptionWithDoc(
+        "_zstd.ZstdError",
+        "An error occurred in the zstd library.",
+        NULL, NULL);
+    if (mod_state->ZstdError == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(m, (PyTypeObject *)mod_state->ZstdError) < 0) {
+        Py_DECREF(mod_state->ZstdError);
+        return -1;
+    }
+
+    /* Add constants */
     if (PyModule_AddIntConstant(m, "zstd_version_number",
                                 ZSTD_versionNumber()) < 0) {
         return -1;
     }
 
-    /* zstd_version, str */
     if (PyModule_AddStringConstant(m, "zstd_version",
                                    ZSTD_versionString()) < 0) {
         return -1;
     }
 
-    /* ZSTD_CLEVEL_DEFAULT, int */
 #if ZSTD_VERSION_NUMBER >= 10500
     if (PyModule_AddIntConstant(m, "ZSTD_CLEVEL_DEFAULT",
                                 ZSTD_defaultCLevel()) < 0) {
@@ -585,7 +619,6 @@ add_vars_to_module(PyObject *m)
     ADD_INT_MACRO(ZSTD_CLEVEL_DEFAULT);
 #endif
 
-    /* ZSTD_DStreamOutSize, int */
     if (PyModule_Add(m, "ZSTD_DStreamOutSize",
                      PyLong_FromSize_t(ZSTD_DStreamOutSize())) < 0) {
         return -1;
@@ -618,7 +651,7 @@ add_vars_to_module(PyObject *m)
     /* Add zstd decompression parameters. All should also be in dp_list. */
     ADD_INT_MACRO(ZSTD_d_windowLogMax);
 
-    /* ZSTD_strategy enum */
+    /* Add ZSTD_strategy enum members */
     ADD_INT_MACRO(ZSTD_fast);
     ADD_INT_MACRO(ZSTD_dfast);
     ADD_INT_MACRO(ZSTD_greedy);
@@ -629,62 +662,13 @@ add_vars_to_module(PyObject *m)
     ADD_INT_MACRO(ZSTD_btultra);
     ADD_INT_MACRO(ZSTD_btultra2);
 
-    /* ZSTD_EndDirective enum */
+    /* Add ZSTD_EndDirective enum members */
     ADD_INT_MACRO(ZSTD_e_continue);
     ADD_INT_MACRO(ZSTD_e_flush);
     ADD_INT_MACRO(ZSTD_e_end);
 
-#undef ADD_INT_MACRO
-
-    return 0;
-}
-
-static int _zstd_exec(PyObject *m)
-{
-#define ADD_TYPE(TYPE, SPEC)                                                 \
-do {                                                                         \
-    TYPE = (PyTypeObject *)PyType_FromModuleAndSpec(m, &(SPEC), NULL);       \
-    if (TYPE == NULL) {                                                      \
-        return -1;                                                           \
-    }                                                                        \
-    if (PyModule_AddType(m, TYPE) < 0) {                                     \
-        return -1;                                                           \
-    }                                                                        \
-} while (0)
-
-    _zstd_state* const mod_state = get_zstd_state(m);
-
-    /* Reusable objects & variables */
-    mod_state->empty_bytes = PyBytes_FromStringAndSize(NULL, 0);
-    if (mod_state->empty_bytes == NULL) {
-        return -1;
-    }
-
-    mod_state->CParameter_type = NULL;
-    mod_state->DParameter_type = NULL;
-
-    /* Add variables to module */
-    if (add_vars_to_module(m) < 0) {
-        return -1;
-    }
-
-    /* Create and add heap types */
-    ADD_TYPE(mod_state->ZstdDict_type, zstd_dict_type_spec);
-    ADD_TYPE(mod_state->ZstdCompressor_type, zstd_compressor_type_spec);
-    ADD_TYPE(mod_state->ZstdDecompressor_type, zstd_decompressor_type_spec);
-    mod_state->ZstdError = PyErr_NewExceptionWithDoc(
-        "_zstd.ZstdError",
-        "An error occurred in the zstd library.",
-        NULL, NULL);
-    if (mod_state->ZstdError == NULL) {
-        return -1;
-    }
-    if (PyModule_AddType(m, (PyTypeObject *)mod_state->ZstdError) < 0) {
-        Py_DECREF(mod_state->ZstdError);
-        return -1;
-    }
-
 #undef ADD_TYPE
+#undef ADD_INT_MACRO
 
     return 0;
 }
