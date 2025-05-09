@@ -2930,6 +2930,42 @@ finally:
 
 /* Trashcan support. */
 
+#ifndef Py_GIL_DISABLED
+/* We need to store a pointer in the refcount field of
+ * an object. It is important that we never store 0 (NULL).
+* It is also important to not make the object appear immortal,
+* or it might be untracked by the cycle GC. */
+static uintptr_t
+pointer_to_safe_refcount(void *ptr)
+{
+    uintptr_t full = (uintptr_t)ptr;
+    assert((full & 3) == 0);
+#if SIZEOF_VOID_P > 4
+    uint32_t refcnt = (uint32_t)full;
+    if (refcnt >= (uint32_t)_Py_IMMORTAL_MINIMUM_REFCNT) {
+        full = full - ((uintptr_t)_Py_IMMORTAL_MINIMUM_REFCNT) + 1;
+    }
+    return full + 2;
+#else
+    // Make the top two bits 0, so it appears mortal.
+    return (full >> 2) + 1;
+#endif
+}
+
+static void *
+safe_refcount_to_pointer(uintptr_t refcnt)
+{
+#if SIZEOF_VOID_P > 4
+    if (refcnt & 1) {
+        refcnt += _Py_IMMORTAL_MINIMUM_REFCNT - 1;
+    }
+    return (void *)(refcnt - 2);
+#else
+    return (void *)((refcnt -1) << 2);
+#endif
+}
+#endif
+
 /* Add op to the gcstate->trash_delete_later list.  Called when the current
  * call-stack depth gets large.  op must be a currently untracked gc'ed
  * object, with refcount 0.  Py_DECREF must already have been called on it.
@@ -2941,11 +2977,10 @@ _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op)
 #ifdef Py_GIL_DISABLED
     op->ob_tid = (uintptr_t)tstate->delete_later;
 #else
-    /* Store the delete_later pointer in the refcnt field.
-     * As this object may still be tracked by the GC,
-     * it is important that we never store 0 (NULL). */
-    uintptr_t refcnt = (uintptr_t)tstate->delete_later;
-    *((uintptr_t*)op) = refcnt+1;
+    /* Store the delete_later pointer in the refcnt field. */
+    uintptr_t refcnt = pointer_to_safe_refcount(tstate->delete_later);
+    *((uintptr_t*)op) = refcnt;
+    assert(!_Py_IsImmortal(op));
 #endif
     tstate->delete_later = op;
 }
@@ -2967,7 +3002,7 @@ _PyTrash_thread_destroy_chain(PyThreadState *tstate)
         /* Get the delete_later pointer from the refcnt field.
          * See _PyTrash_thread_deposit_object(). */
         uintptr_t refcnt = *((uintptr_t*)op);
-        tstate->delete_later = (PyObject *)(refcnt - 1);
+        tstate->delete_later = safe_refcount_to_pointer(refcnt);
         op->ob_refcnt = 0;
 #endif
 
@@ -3248,4 +3283,12 @@ PyUnstable_IsImmortal(PyObject *op)
     _Py_AssertHoldsTstate();
     assert(op != NULL);
     return _Py_IsImmortal(op);
+}
+
+int
+PyUnstable_Object_IsUniquelyReferenced(PyObject *op)
+{
+    _Py_AssertHoldsTstate();
+    assert(op != NULL);
+    return _PyObject_IsUniquelyReferenced(op);
 }

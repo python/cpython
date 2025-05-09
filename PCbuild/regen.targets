@@ -157,7 +157,8 @@
     <_LicenseSources Include="$(PySourcePath)LICENSE;
                               $(PySourcePath)PC\crtlicense.txt;
                               $(bz2Dir)LICENSE;
-                              $(libffiDir)LICENSE;" />
+                              $(libffiDir)LICENSE;
+                              $(zstdDir)\LICENSE;" />
     <_LicenseSources Include="$(opensslOutDir)LICENSE.txt" Condition="Exists('$(opensslOutDir)LICENSE.txt')" />
     <_LicenseSources Include="$(opensslOutDir)LICENSE" Condition="!Exists('$(opensslOutDir)LICENSE.txt')" />
     <_LicenseSources Include="$(tcltkDir)tcllicense.terms;
