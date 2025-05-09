@@ -1,0 +1,1 @@
+Inside the devcontainers file under "onCreateCommad" one tooling was being installed using path ("/usr/bin/setfacl") but according to the discussion in issue (#133737) it was meant to be 'acl'
