@@ -1,7 +1,7 @@
 import io
 from os import PathLike
 from _zstd import (ZstdCompressor, ZstdDecompressor, ZstdError,
-                   ZSTD_DStreamOutSize)
+                   ZSTD_DStreamOutSize, ZSTD_e_end, ZSTD_e_flush)
 from compression._common import _streams
 
 __all__ = ("ZstdFile", "open")
@@ -28,8 +28,8 @@ class ZstdFile(_streams.BaseStream):
     bytes, and may only be written to objects that support the Buffer Protocol.
     """
 
-    FLUSH_BLOCK = ZstdCompressor.FLUSH_BLOCK
-    FLUSH_FRAME = ZstdCompressor.FLUSH_FRAME
+    FLUSH_BLOCK = ZSTD_e_flush  # ZstdCompressor.FLUSH_BLOCK
+    FLUSH_FRAME = ZSTD_e_end  # ZstdCompressor.FLUSH_FRAME
 
     def __init__(self, file, /, mode="r", *,
                  level=None, options=None, zstd_dict=None):

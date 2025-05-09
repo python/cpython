@@ -629,24 +629,14 @@ add_vars_to_module(PyObject *m)
     ADD_INT_MACRO(ZSTD_btultra);
     ADD_INT_MACRO(ZSTD_btultra2);
 
+    /* ZSTD_EndDirective enum */
+    ADD_INT_MACRO(ZSTD_e_continue);
+    ADD_INT_MACRO(ZSTD_e_flush);
+    ADD_INT_MACRO(ZSTD_e_end);
+
 #undef ADD_INT_MACRO
 
     return 0;
-}
-
-static inline int
-add_constant_to_type(PyTypeObject *type, const char *name, long value)
-{
-    PyObject *temp;
-
-    temp = PyLong_FromLong(value);
-    if (temp == NULL) {
-        return -1;
-    }
-
-    int rc = PyObject_SetAttrString((PyObject*) type, name, temp);
-    Py_DECREF(temp);
-    return rc;
 }
 
 static int _zstd_exec(PyObject *m)
@@ -691,25 +681,6 @@ do {                                                                         \
     }
     if (PyModule_AddType(m, (PyTypeObject *)mod_state->ZstdError) < 0) {
         Py_DECREF(mod_state->ZstdError);
-        return -1;
-    }
-
-    // Add EndDirective enum to ZstdCompressor
-    if (add_constant_to_type(mod_state->ZstdCompressor_type,
-                             "CONTINUE",
-                             ZSTD_e_continue) < 0) {
-        return -1;
-    }
-
-    if (add_constant_to_type(mod_state->ZstdCompressor_type,
-                             "FLUSH_BLOCK",
-                             ZSTD_e_flush) < 0) {
-        return -1;
-    }
-
-    if (add_constant_to_type(mod_state->ZstdCompressor_type,
-                             "FLUSH_FRAME",
-                             ZSTD_e_end) < 0) {
         return -1;
     }
 
