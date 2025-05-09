@@ -655,8 +655,7 @@ _zstd_ZstdCompressor_flush_impl(ZstdCompressor *self, int mode)
 static PyMethodDef ZstdCompressor_methods[] = {
     _ZSTD_ZSTDCOMPRESSOR_COMPRESS_METHODDEF
     _ZSTD_ZSTDCOMPRESSOR_FLUSH_METHODDEF
-
-    {0}
+    {NULL, NULL}
 };
 
 PyDoc_STRVAR(ZstdCompressor_last_mode_doc,

@@ -808,8 +808,7 @@ _zstd_ZstdDecompressor_decompress_impl(ZstdDecompressor *self,
 
 static PyMethodDef ZstdDecompressor_methods[] = {
     _ZSTD_ZSTDDECOMPRESSOR_DECOMPRESS_METHODDEF
-
-    {0}
+    {NULL, NULL}
 };
 
 PyDoc_STRVAR(ZstdDecompressor_eof_doc,
