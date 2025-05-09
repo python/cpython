@@ -293,6 +293,7 @@ class StencilGroup:
                 hole.kind
                 in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26", "ARM64_RELOC_BRANCH26"}
                 and hole.value is HoleValue.ZERO
+                and hole.symbol not in self.symbols
             ):
                 hole.func = "patch_aarch64_trampoline"
                 hole.need_state = True

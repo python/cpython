@@ -79,7 +79,7 @@ descriptor.
    On macOS and NetBSD, the :mod:`!fcntl` module exposes the ``F_GETNOSIGPIPE``
    and ``F_SETNOSIGPIPE`` constant.
 
-.. versionchanged:: next
+.. versionchanged:: 3.14
    On Linux >= 6.1, the :mod:`!fcntl` module exposes the ``F_DUPFD_QUERY``
    to query a file descriptor pointing to the same file.
 
@@ -121,7 +121,7 @@ The module defines the following functions:
 
    .. audit-event:: fcntl.fcntl fd,cmd,arg fcntl.fcntl
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Add support of arbitrary :term:`bytes-like objects <bytes-like object>`,
       not only :class:`bytes`.
 
@@ -181,7 +181,7 @@ The module defines the following functions:
 
    .. audit-event:: fcntl.ioctl fd,request,arg fcntl.ioctl
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       The GIL is always released during a system call.
       System calls failing with EINTR are automatically retried.
 

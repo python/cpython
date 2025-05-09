@@ -73,7 +73,7 @@ import sys
 import os
 import builtins
 import _sitebuiltins
-import io
+import _io as io
 import stat
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
