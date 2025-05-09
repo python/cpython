@@ -91,7 +91,6 @@ class ZstdFile(_streams.BaseStream):
             raw = _streams.DecompressReader(
                 self._fp,
                 ZstdDecompressor,
-                trailing_error=ZstdError,
                 zstd_dict=zstd_dict,
                 options=options,
             )
