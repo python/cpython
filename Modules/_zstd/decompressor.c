@@ -741,7 +741,6 @@ _zstd_ZstdDecompressor_unused_data_get_impl(ZstdDecompressor *self)
 {
     PyObject *ret;
 
-    /* Thread-safe code; CRITICAL_SECTION guards are managed by AC */
     if (!self->eof) {
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
