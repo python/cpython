@@ -1935,6 +1935,16 @@
             break;
         }
 
+        case _GUARD_THIRD_NULL: {
+            JitOptSymbol *null;
+            null = stack_pointer[-3];
+            if (sym_is_null(null)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_null(null);
+            break;
+        }
+
         case _GUARD_CALLABLE_TYPE_1: {
             JitOptSymbol *callable;
             callable = stack_pointer[-3];
@@ -2102,11 +2112,22 @@
             break;
         }
 
+        case _GUARD_CALLABLE_ISINSTANCE: {
+            JitOptSymbol *callable;
+            callable = stack_pointer[-4];
+            PyObject *isinstance = _PyInterpreterState_GET()->callable_cache.isinstance;
+            if (sym_get_const(ctx, callable) == isinstance) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_const(callable, isinstance);
+            break;
+        }
+
         case _CALL_ISINSTANCE: {
             JitOptSymbol *res;
             res = sym_new_not_null(ctx);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
+            stack_pointer[-4] = res;
+            stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
