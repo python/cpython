@@ -28,7 +28,7 @@ interpreter state.
 
 The `frame` of a generator is embedded in the generator object struct as a
 [`_PyInterpreterFrame`](frames.md) (see `_PyGenObject_HEAD` in
-[`pycore_genobject.h`](../Include/internal/pycore_genobject.h)).
+[`pycore_interpframe_structs.h`](../Include/internal/pycore_interpframe_structs.h)).
 This means that we can get the frame from the generator or the generator
 from the frame (see `_PyGen_GetGeneratorFromFrame` in the same file).
 Other fields of the generator struct include metadata (such as the name of
