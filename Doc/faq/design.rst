@@ -263,7 +263,7 @@ In general, structured switch statements execute one block of code
 when an expression has a particular value or set of values.
 Since Python 3.10 one can easily match literal values, or constants
 within a namespace, with a ``match ... case`` statement.
-See :pep:`634` (specification) and :pep:`636` (tutorial) for details about
+See `the specification <https://docs.python.org/3/reference/compound_stmts.html#the-match-statement>`_ and `the tutorial <https://docs.python.org/3/tutorial/controlflow.html#match-statements>`_ for details about
 the :keyword:`match` statement.
 
 An older alternative is a sequence of ``if... elif... elif... else``.
