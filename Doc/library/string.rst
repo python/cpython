@@ -237,7 +237,7 @@ See also the :ref:`formatspec` section.
 The *field_name* itself begins with an *arg_name* that is either a number or a
 keyword.  If it's a number, it refers to a positional argument, and if it's a keyword,
 it refers to a named keyword argument. An *arg_name* is treated as a number if
-a call to :meth:`str.isdecimal` on the string would return true.
+a call to :meth:`str.isdecimal` on the string would return ``True``.
 If the numerical arg_names in a format string
 are 0, 1, 2, ... in sequence, they can all be omitted (not just some)
 and the numbers 0, 1, 2, ... will be automatically inserted in that order.
@@ -858,7 +858,7 @@ these rules.  The methods of :class:`Template` are:
 
    .. method:: is_valid()
 
-      Returns false if the template has invalid placeholders that will cause
+      Returns ``False`` if the template has invalid placeholders that will cause
       :meth:`substitute` to raise :exc:`ValueError`.
 
       .. versionadded:: 3.11
