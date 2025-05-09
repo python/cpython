@@ -593,7 +593,7 @@ do {                                                                         \
     ADD_TYPE(mod_state->ZstdCompressor_type, zstd_compressor_type_spec);
     ADD_TYPE(mod_state->ZstdDecompressor_type, zstd_decompressor_type_spec);
     mod_state->ZstdError = PyErr_NewExceptionWithDoc(
-        "_zstd.ZstdError",
+        "compression.zstd.ZstdError",
         "An error occurred in the zstd library.",
         NULL, NULL);
     if (mod_state->ZstdError == NULL) {
