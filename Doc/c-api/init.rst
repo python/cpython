@@ -203,7 +203,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    Set by the :option:`-i` option.
 
-   .. deprecated:: 3.12
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_IsolatedFlag
 
