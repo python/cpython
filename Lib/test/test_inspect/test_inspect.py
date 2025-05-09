@@ -5026,7 +5026,7 @@ class TestSignatureObject(unittest.TestCase):
 
         cw = CallableWrapper(f)
         sig = inspect.signature(cw, annotation_format=Format.FORWARDREF)
-        self.assertEqual(list(sig), ['args', 'kwargs'])
+        self.assertEqual(list(sig.parameters), ['args', 'kwargs'])
 
     def test_signature_none_annotation(self):
         class funclike:
