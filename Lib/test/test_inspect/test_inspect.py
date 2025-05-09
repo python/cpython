@@ -5008,7 +5008,7 @@ class TestSignatureObject(unittest.TestCase):
                 self.x = x
 
         sig = inspect.signature(f, annotation_format=Format.FORWARDREF)
-        self.assertEqual(list(sig.parameters.keys()), ['x'])
+        self.assertEqual(list(sig.parameters), ['x'])
         sig = inspect.signature(C, annotation_format=Format.FORWARDREF)
         self.assertEqual(list(sig.parameters.keys()), ['x'])
 
