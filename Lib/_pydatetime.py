@@ -2089,7 +2089,6 @@ class datetime(date):
         else:
             ts = (self - _EPOCH) // timedelta(seconds=1)
         localtm = _time.localtime(ts)
-        local = datetime(*localtm[:6])
         # Extract TZ data
         gmtoff = localtm.tm_gmtoff
         zone = localtm.tm_zone
