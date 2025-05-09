@@ -151,12 +151,6 @@ typedef enum {
     DICT_TYPE_PREFIX = 2
 } dictionary_type;
 
-static inline int
-mt_continue_should_break(ZSTD_inBuffer *in, ZSTD_outBuffer *out)
-{
-    return in->size == in->pos && out->size != out->pos;
-}
-
 /* Format error message and set ZstdError. */
 extern void
 set_zstd_error(const _zstd_state* const state,
