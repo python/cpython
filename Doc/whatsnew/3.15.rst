@@ -86,6 +86,13 @@ New modules
 Improved modules
 ================
 
+math
+----
+
+* Add :func:`math.isnormal` and :func:`math.issubnormal` functions.
+  (Contributed by Sergey B Kirpichev in :gh:`132908`.)
+
+
 module_name
 -----------
 
