@@ -75,6 +75,9 @@ New features
 Other language changes
 ======================
 
+* Several error messages incorrectly using the term "argument" have been corrected.
+  (Contributed by Stan Ulbrych in :gh:`133382`.)
+
 
 
 New modules
