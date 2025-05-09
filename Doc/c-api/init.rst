@@ -334,6 +334,16 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. deprecated-removed:: 3.12 3.15
 
+.. c:var:: int Py_UTF8Mode
+
+   Enables the UTF-8 Mode.
+
+   If set to 1, enable the UTF-8 Mode.
+   If set to 0, disable the UTF-8 Mode.
+   If set to -1, look for the :option:`-x` option and the :envvar:`PYTHONUTF8` environment variable.
+
+   .. deprecated-removed:: 3.12 3.15
+
 
 Initializing and finalizing the interpreter
 ===========================================
