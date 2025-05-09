@@ -563,19 +563,15 @@ add_vars_to_module(PyObject *m)
         return -1;                                                           \
     }
 
-    /* zstd_version, str */
-    if (PyModule_AddStringConstant(m, "zstd_version",
-                                   ZSTD_versionString()) < 0) {
+    /* zstd_version_number, int */
+    if (PyModule_AddIntConstant(m, "zstd_version_number",
+                                ZSTD_versionNumber()) < 0) {
         return -1;
     }
 
-    /* zstd_version_info, tuple of (int, int, int) */
-    const unsigned version = ZSTD_versionNumber();
-    const uint8_t v_major = version / 100 / 100;
-    const uint8_t v_minor = (version / 100) % 100;
-    const uint8_t v_release = version % 100;
-    if (PyModule_Add(m, "zstd_version_info",
-            Py_BuildValue("BBB", v_major, v_minor, v_release)) < 0) {
+    /* zstd_version, str */
+    if (PyModule_AddStringConstant(m, "zstd_version",
+                                   ZSTD_versionString()) < 0) {
         return -1;
     }
 
