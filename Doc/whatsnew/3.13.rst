@@ -390,11 +390,11 @@ without the optional value.
 
 * ``no``: Disable the entire Tier 2 and JIT pipeline.
 * ``yes``: Enable the JIT.
-  To disable the JIT at runtime, pass the environment variable ``PYTHON_JIT=0``.
+  To disable the JIT at runtime, pass the environment variable :envvar:`PYTHON_JIT=0 <PYTHON_JIT>`.
 * ``yes-off``: Build the JIT but disable it by default.
-  To enable the JIT at runtime, pass the environment variable ``PYTHON_JIT=1``.
+  To enable the JIT at runtime, pass the environment variable :envvar:`PYTHON_JIT=1 <PYTHON_JIT>`.
 * ``interpreter``: Enable the Tier 2 interpreter but disable the JIT.
-  The interpreter can be disabled by running with ``PYTHON_JIT=0``.
+  The interpreter can be disabled by running with :envvar:`PYTHON_JIT=0 <PYTHON_JIT>`.
 
 The internal architecture is roughly as follows:
 
