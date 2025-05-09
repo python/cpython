@@ -306,6 +306,13 @@ class TestMessageAPI(TestEmailBase):
         self.assertStartsWith(lines[0], 'From ')
         self.assertEqual(text, NL.join(lines[1:]))
 
+    def test_repr(self):
+        msg = self._msgobj('msg_01.txt')
+        self.assertIn('Content-Type text/plain', repr(msg))
+        self.assertIn('Message', repr(msg))
+        self.assertEqual(repr(Message()),
+                         'Message with 0 headers and Content-Type text/plain')
+
     def test_as_string_policy(self):
         msg = self._msgobj('msg_01.txt')
         newpolicy = msg.policy.clone(linesep='\r\n')
