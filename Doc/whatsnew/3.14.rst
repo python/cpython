@@ -315,21 +315,15 @@ in CPython by Mark Shannon, Garrett Gu, Haoran Xu, and Josh Haberman.)
 
 .. _whatsnew314-free-threaded-cpython:
 
-Free-threaded CPython
+Free-threaded mode
 ---------------------
 
-Free-threaded CPython now supports :pep:`659` which is known
-as the specializing adaptive interpreter. The execution mechanism is almost same
-as the default build, however in a free-threaded CPython build, each thread
-maintains a thread-local copy of specialized bytecode.
+The free-threaded mode (:pep:`703`), initially added in 3.13, has been significantly improved. The implementation described in PEP 703 was finished, including C API changes, and temporary workarounds in the interpreter were replaced with more permanent solutions. The specializing adaptive interpreter (:pep:`659`) is now enabled in free-threaded mode, which along with many other optimizations greatly improves its performance. The performance penalty on single-threaded code in free-threaded mode is now roughly 5-10%, depending on platform and C compiler used.
 
-With this change, the free-threaded CPython build achieves better performance,
-and is only 10-15% slower than the default build.
+This work was done by many contributors: Sam Gross, Matt Page, Neil Schemenauer, Thomas Wouters, Donghee Na, Kirill Podoprigora, Ken Jin, Itamar Oren, Brett Simmers, Dino Viehland, Nathan Goldbaum, Ralf Gommers,
+Lysandros Nikolaou, and many others.
 
-This work was done by many contributors, Matt Page, Neil Schemenauer,
-Sam Gross, Thomas Wouters, Donghee Na, Kirill Podoprigora and Ken Jin.
-Meta also provided significant engineering resources for performance benchmarking and
-design of per thread specialized bytecode mechanisms.
+Some of these contributors are employed by Meta, which has continued to provide significant engineering resources to support this project.
 
 
 Other language changes
