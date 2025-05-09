@@ -568,13 +568,11 @@ add_vars_to_module(PyObject *module)
     }
 
     /* zstd_version_info, tuple of (int, int, int) */
-    PyObject *vi = Py_BuildValue("BBB", ZSTD_VERSION_MAJOR, ZSTD_VERSION_MINOR,
-                                 ZSTD_VERSION_RELEASE);
-    if (PyModule_AddObjectRef(module, "zstd_version_info", vi) < 0) {
-        Py_XDECREF(vi);
+    if (PyModule_Add(module, "zstd_version_info",
+            Py_BuildValue("BBB", ZSTD_VERSION_MAJOR, ZSTD_VERSION_MINOR,
+                          ZSTD_VERSION_RELEASE)) < 0) {
         return -1;
     }
-    Py_DECREF(vi);
 
     /* ZSTD_CLEVEL_DEFAULT, int */
 #if ZSTD_VERSION_NUMBER >= 10500
