@@ -370,6 +370,13 @@ class self_insert(EditCommand):
         r = self.reader
         text = self.event * r.get_arg()
         r.insert(text)
+        if r.paste_mode:
+            data = ""
+            ev = r.console.getpending()
+            data += ev.data
+            if data:
+                r.insert(data)
+                r.last_refresh_cache.invalidated = True
 
 
 class insert_nl(EditCommand):

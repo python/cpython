@@ -20,6 +20,7 @@ except ImportError:
 def unix_console(events, **kwargs):
     console = UnixConsole()
     console.get_event = MagicMock(side_effect=events)
+    console.getpending = MagicMock(return_value=Event("key", ""))
 
     height = kwargs.get("height", 25)
     width = kwargs.get("width", 80)
