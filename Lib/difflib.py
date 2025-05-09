@@ -1162,9 +1162,7 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
         file1_range = _format_range_unified(first[1], last[2])
         file2_range = _format_range_unified(first[3], last[4])
         _line = '@@ -{} +{} @@{}'.format(file1_range, file2_range, lineterm)
-        if color:
-            _line = colors["hunk"] + _line + reset
-        yield _line
+        yield colors["hunk"] + _line + reset if color else _line
 
         for tag, i1, i2, j1, j2 in group:
             if tag == 'equal':
