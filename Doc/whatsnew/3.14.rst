@@ -800,7 +800,7 @@ in CPython by Mark Shannon, Garrett Gu, Haoran Xu, and Josh Haberman.)
 Free-threaded mode
 ---------------------
 
-The free-threaded mode (:pep:`703`), initially added in 3.13, has been significantly improved. The implementation described in PEP 703 was finished, including C API changes, and temporary workarounds in the interpreter were replaced with more permanent solutions. The specializing adaptive interpreter (:pep:`659`) is now enabled in free-threaded mode, which along with many other optimizations greatly improves its performance. The performance penalty on single-threaded code in free-threaded mode is now roughly 5-10%, depending on platform and C compiler used.
+Free-threaded mode (:pep:`703`), initially added in 3.13, has been significantly improved. The implementation described in PEP 703 was finished, including C API changes, and temporary workarounds in the interpreter were replaced with more permanent solutions. The specializing adaptive interpreter (:pep:`659`) is now enabled in free-threaded mode, which along with many other optimizations greatly improves its performance. The performance penalty on single-threaded code in free-threaded mode is now roughly 5-10%, depending on platform and C compiler used.
 
 This work was done by many contributors: Sam Gross, Matt Page, Neil Schemenauer, Thomas Wouters, Donghee Na, Kirill Podoprigora, Ken Jin, Itamar Oren, Brett Simmers, Dino Viehland, Nathan Goldbaum, Ralf Gommers,
 Lysandros Nikolaou, and many others.
