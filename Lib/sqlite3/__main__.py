@@ -56,6 +56,8 @@ class SqliteInteractiveConsole(InteractiveConsole):
                     print("Enter SQL code and press enter.")
                 case "quit":
                     sys.exit(0)
+                case _:
+                    print('Error: unknown command or invalid arguments:  "spam". Enter ".help" for help')
         else:
             if not sqlite3.complete_statement(source):
                 return True
