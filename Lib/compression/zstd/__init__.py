@@ -40,11 +40,6 @@ zstd_version_info = (*divmod(_zstd.zstd_version_number // 100, 100),
 COMPRESSION_LEVEL_DEFAULT = _zstd.ZSTD_CLEVEL_DEFAULT
 """The default compression level for Zstandard, currently '3'."""
 
-# Set ZSTD_EndDirective constants on ZstdCompressor
-ZstdCompressor.CONTINUE = _zstd.ZSTD_e_continue
-ZstdCompressor.FLUSH_BLOCK = _zstd.ZSTD_e_flush
-ZstdCompressor.FLUSH_FRAME = _zstd.ZSTD_e_end
-
 
 class FrameInfo:
     """Information about a Zstandard frame."""

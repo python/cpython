@@ -573,6 +573,17 @@ do {                                                                         \
         return -1;                                                           \
     }
 
+#define ADD_INT_CONST_TO_TYPE(TYPE, NAME, VALUE)                             \
+do {                                                                         \
+    PyObject *v = PyLong_FromLong((VALUE));                                  \
+    if (v == NULL || PyObject_SetAttrString((PyObject *)(TYPE),              \
+                                            (NAME), v) < 0) {                \
+        Py_XDECREF(v);                                                       \
+        return -1;                                                           \
+    }                                                                        \
+    Py_DECREF(v);                                                            \
+} while (0)
+
     _zstd_state* const mod_state = get_zstd_state(m);
 
     /* Reusable objects & variables */
@@ -663,13 +674,17 @@ do {                                                                         \
     ADD_INT_MACRO(ZSTD_btultra);
     ADD_INT_MACRO(ZSTD_btultra2);
 
-    /* Add ZSTD_EndDirective enum members */
-    ADD_INT_MACRO(ZSTD_e_continue);
-    ADD_INT_MACRO(ZSTD_e_flush);
-    ADD_INT_MACRO(ZSTD_e_end);
+    /* Add ZSTD_EndDirective enum members to ZstdCompressor */
+    ADD_INT_CONST_TO_TYPE(mod_state->ZstdCompressor_type,
+                          "CONTINUE", ZSTD_e_continue);
+    ADD_INT_CONST_TO_TYPE(mod_state->ZstdCompressor_type,
+                          "FLUSH_BLOCK", ZSTD_e_flush);
+    ADD_INT_CONST_TO_TYPE(mod_state->ZstdCompressor_type,
+                          "FLUSH_FRAME", ZSTD_e_end);
 
 #undef ADD_TYPE
 #undef ADD_INT_MACRO
+#undef ADD_ZSTD_COMPRESSOR_INT_CONST
 
     return 0;
 }
