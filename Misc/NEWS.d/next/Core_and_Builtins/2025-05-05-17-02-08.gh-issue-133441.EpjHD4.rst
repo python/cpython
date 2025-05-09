@@ -1,1 +1,2 @@
-Fix crash upon calling :meth:`~object.__setstate__` with a :class:`dict` subclass. Patch by Victor Stinner.
+Fix crash upon setting an attribute with a :class:`dict` subclass.
+Patch by Victor Stinner.
