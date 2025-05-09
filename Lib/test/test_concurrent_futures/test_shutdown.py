@@ -331,11 +331,11 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         assert all([r == abs(v) for r, v in zip(res, range(-5, 5))])
 
     @classmethod
-    def _failing_task_gh_132969(cls, n: int) -> int:
+    def _failing_task_gh_132969(cls, n):
         raise ValueError("failing task")
 
     @classmethod
-    def _good_task_gh_132969(cls, n: int) -> int:
+    def _good_task_gh_132969(cls, n):
         time.sleep(0.1 * n)
         return n
 
