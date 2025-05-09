@@ -116,12 +116,12 @@ class InteractiveSession(unittest.TestCase):
         self.assertEqual(out.count(self.PS2), 0)
         self.assertIn(sqlite3.sqlite_version, out)
 
-    def test_interact_whitespace_stripping(self):
-        out, err = self.run_cli(commands=(".version" + " ",))
+    def test_interact_dot_commands_whitespace(self):
+        out, err = self.run_cli(commands=(".version ", ". version"))
         self.assertIn(self.MEMORY_DB_MSG, err)
-        self.assertIn(sqlite3.sqlite_version + "\n", out)
+        self.assertEqual(out.count(sqlite3.sqlite_version + "\n"), 2)
         self.assertEndsWith(out, self.PS1)
-        self.assertEqual(out.count(self.PS1), 2)
+        self.assertEqual(out.count(self.PS1), 3)
         self.assertEqual(out.count(self.PS2), 0)
         self.assertIn(sqlite3.sqlite_version, out)
 
