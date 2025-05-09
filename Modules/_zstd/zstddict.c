@@ -278,7 +278,7 @@ static PyType_Slot zstddict_slots[] = {
     {0}
 };
 
-PyType_Spec zstddict_type_spec = {
+PyType_Spec zstd_dict_type_spec = {
     .name = "_zstd.ZstdDict",
     .basicsize = sizeof(ZstdDict),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
