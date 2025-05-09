@@ -385,7 +385,7 @@ ignored.  This is particularly useful for aliases.  Supported locations for
 :file:`.pdbrc` file are
 
 1. ``$XDG_CONFIG_HOME/pdb`` (defaults to ``~/.config/pdb``, if environment
-   variable :envvar:`XDG_CONFIG_HOME` is not set)
+   variable ``XDG_CONFIG_HOME`` is not set)
 2. User's home directory
 3. Current working directory
 
