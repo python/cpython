@@ -894,21 +894,18 @@ dummy_func(void) {
         // the result is always a bool, but sometimes we can
         // narrow it down to True or False
         res = sym_new_type(ctx, &PyBool_Type);
+        PyTypeObject *inst_type = sym_get_type(instance);
         PyTypeObject *cls_o = (PyTypeObject *)sym_get_const(ctx, cls);
-        if (cls_o && sym_matches_type(cls, &PyType_Type)) {
-            // isinstance(obj, cls) where cls is a known class
-            PyTypeObject *inst_type = sym_get_type(instance);
-            if (inst_type) {
-                // isinstance(obj, cls) where both obj and cls have
-                // known types meaning we can deduce either True or False
+        if (inst_type && cls_o && sym_matches_type(cls, &PyType_Type)) {
+            // isinstance(inst, cls) where both inst and cls have
+            // known types, meaning we can deduce either True or False
 
-                // The below check is equivalent to PyObject_TypeCheck(inst, cls)
-                if (sym_matches_type(instance, cls_o) || PyType_IsSubtype(inst_type, cls_o)) {
-                    sym_set_const(res, Py_True);
-                }
-                else {
-                    sym_set_const(res, Py_False);
-                }
+            // The below check is equivalent to PyObject_TypeCheck(inst, cls)
+            if (sym_matches_type(instance, cls_o) || PyType_IsSubtype(inst_type, cls_o)) {
+                sym_set_const(res, Py_True);
+            }
+            else {
+                sym_set_const(res, Py_False);
             }
         }
     }
