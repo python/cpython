@@ -587,8 +587,8 @@ add_vars_to_module(PyObject *m)
 #endif
 
     /* ZSTD_DStreamOutSize, int */
-    if (PyModule_AddIntConstant(m, "ZSTD_DStreamOutSize",
-                                (uint32_t)ZSTD_DStreamOutSize()) < 0) {
+    if (PyModule_Add(m, "ZSTD_DStreamOutSize",
+                     PyLong_FromSize_t(ZSTD_DStreamOutSize())) < 0) {
         return -1;
     }
 
