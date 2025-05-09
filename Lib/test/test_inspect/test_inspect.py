@@ -5010,7 +5010,7 @@ class TestSignatureObject(unittest.TestCase):
         sig = inspect.signature(f, annotation_format=Format.FORWARDREF)
         self.assertEqual(list(sig.parameters), ['x'])
         sig = inspect.signature(C, annotation_format=Format.FORWARDREF)
-        self.assertEqual(list(sig.parameters.keys()), ['x'])
+        self.assertEqual(list(sig.parameters), ['x'])
 
         class CallableWrapper:
             def __init__(self, func):
@@ -5026,7 +5026,7 @@ class TestSignatureObject(unittest.TestCase):
 
         cw = CallableWrapper(f)
         sig = inspect.signature(cw, annotation_format=Format.FORWARDREF)
-        self.assertEqual(list(sig.parameters.keys()), ['args', 'kwargs'])
+        self.assertEqual(list(sig), ['args', 'kwargs'])
 
     def test_signature_none_annotation(self):
         class funclike:
