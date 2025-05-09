@@ -812,11 +812,11 @@ def _get_compressor(compress_type, compresslevel=None):
         if compresslevel is not None:
             return bz2.BZ2Compressor(compresslevel)
         return bz2.BZ2Compressor()
-    # compresslevel is ignored for ZIP_LZMA and ZIP_ZSTANDARD
+    # compresslevel is ignored for ZIP_LZMA
     elif compress_type == ZIP_LZMA:
         return LZMACompressor()
     elif compress_type == ZIP_ZSTANDARD:
-        return zstd.ZstdCompressor()
+        return zstd.ZstdCompressor(level=compresslevel)
     else:
         return None
 
@@ -1362,6 +1362,7 @@ class ZipFile:
                    When using ZIP_STORED or ZIP_LZMA this keyword has no effect.
                    When using ZIP_DEFLATED integers 0 through 9 are accepted.
                    When using ZIP_BZIP2 integers 1 through 9 are accepted.
+                   When using ZIP_ZSTANDARD integers are accepted.
 
     """
 
