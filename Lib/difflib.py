@@ -1094,7 +1094,7 @@ def _format_range_unified(start, stop):
     return '{},{}'.format(beginning, length)
 
 def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
-                 tofiledate='', n=3, lineterm='\n'):
+                 tofiledate='', n=3, lineterm='\n', color=False):
     r"""
     Compare two sequences of lines; generate the delta as a unified diff.
 
@@ -1110,6 +1110,9 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
 
     For inputs that do not have trailing newlines, set the lineterm
     argument to "" so that the output will be uniformly newline free.
+
+    Set `color` to True to inject ANSI color codes and make the output look
+    like what `git diff --color` shows.
 
     The unidiff format normally has a header for filenames and modification
     times.  Any or all of these may be specified using strings for
@@ -1134,6 +1137,15 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
      four
     """
 
+    # {tag: ANSI color escape code}
+    colors = {
+        "delete": "\033[31m",  # red
+        "insert": "\033[32m",  # green
+        "header": "\033[1m",  # bold / increased intensity
+        "hunk": "\033[36m",  # cyan
+    }
+    reset = "\033[m"
+
     _check_types(a, b, fromfile, tofile, fromfiledate, tofiledate, lineterm)
     started = False
     for group in SequenceMatcher(None,a,b).get_grouped_opcodes(n):
@@ -1141,13 +1153,18 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
             started = True
             fromdate = '\t{}'.format(fromfiledate) if fromfiledate else ''
             todate = '\t{}'.format(tofiledate) if tofiledate else ''
-            yield '--- {}{}{}'.format(fromfile, fromdate, lineterm)
-            yield '+++ {}{}{}'.format(tofile, todate, lineterm)
+            _line = '--- {}{}{}'.format(fromfile, fromdate, lineterm)
+            yield colors["header"] + _line + reset if color else _line
+            _line = '+++ {}{}{}'.format(tofile, todate, lineterm)
+            yield colors["header"] + _line + reset if color else _line
 
         first, last = group[0], group[-1]
         file1_range = _format_range_unified(first[1], last[2])
         file2_range = _format_range_unified(first[3], last[4])
-        yield '@@ -{} +{} @@{}'.format(file1_range, file2_range, lineterm)
+        _line = '@@ -{} +{} @@{}'.format(file1_range, file2_range, lineterm)
+        if color:
+            _line = colors["hunk"] + _line + reset
+        yield _line
 
         for tag, i1, i2, j1, j2 in group:
             if tag == 'equal':
@@ -1156,10 +1173,12 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
                 continue
             if tag in {'replace', 'delete'}:
                 for line in a[i1:i2]:
-                    yield '-' + line
+                    _line = '-' + line
+                    yield colors["delete"] + _line + reset if color else _line
             if tag in {'replace', 'insert'}:
                 for line in b[j1:j2]:
-                    yield '+' + line
+                    _line = '+' + line
+                    yield colors["insert"] + _line + reset if color else _line
 
 
 ########################################################################
