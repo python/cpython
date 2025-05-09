@@ -1,3 +1,0 @@
-Reduce import time of :mod:`gettext` by up to ten times, by importing
-:mod:`re` on demand. In particular, ``re`` is no longer implicitly
-exposed as ``gettext.re``. Patch by Eli Schwartz.

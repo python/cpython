@@ -9,7 +9,6 @@ import importlib.util
 from importlib import _bootstrap_external
 import os
 import pathlib
-import re
 import string
 import sys
 from test import support

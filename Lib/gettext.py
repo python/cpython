@@ -41,9 +41,6 @@ internationalized, to the local language and cultural habits.
 #   to do binary searches and lazy initializations.  Or you might want to use
 #   the undocumented double-hash algorithm for .mo files with hash tables, but
 #   you'll need to study the GNU gettext code to do this.
-#
-# - Support Solaris .mo file formats.  Unfortunately, we've been unable to
-#   find this format documented anywhere.
 
 
 import operator

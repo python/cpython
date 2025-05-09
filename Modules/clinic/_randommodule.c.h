@@ -103,7 +103,7 @@ static PyObject *
 _random_Random_setstate_impl(RandomObject *self, PyObject *state);
 
 static PyObject *
-_random_Random_setstate(RandomObject *self, PyObject *state)
+_random_Random_setstate(PyObject *self, PyObject *state)
 {
     PyObject *return_value = NULL;
 
@@ -143,4 +143,4 @@ _random_Random_getrandbits(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=859cfbf59c133a4e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4458b5a69201ebea input=a9049054013a1b77]*/

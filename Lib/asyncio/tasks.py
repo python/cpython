@@ -110,7 +110,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self.__eager_start()
         else:
             self._loop.call_soon(self.__step, context=self._context)
-            _register_task(self)
+            _py_register_task(self)
 
     def __del__(self):
         if self._state == futures._PENDING and self._log_destroy_pending:
@@ -245,23 +245,23 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         return self._num_cancels_requested
 
     def __eager_start(self):
-        prev_task = _swap_current_task(self._loop, self)
+        prev_task = _py_swap_current_task(self._loop, self)
         try:
-            _register_eager_task(self)
+            _py_register_eager_task(self)
             try:
                 self._context.run(self.__step_run_and_handle_result, None)
             finally:
-                _unregister_eager_task(self)
+                _py_unregister_eager_task(self)
         finally:
             try:
-                curtask = _swap_current_task(self._loop, prev_task)
+                curtask = _py_swap_current_task(self._loop, prev_task)
                 assert curtask is self
             finally:
                 if self.done():
                     self._coro = None
                     self = None  # Needed to break cycles when an exception occurs.
                 else:
-                    _register_task(self)
+                    _py_register_task(self)
 
     def __step(self, exc=None):
         if self.done():
@@ -273,11 +273,11 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self._must_cancel = False
         self._fut_waiter = None
 
-        _enter_task(self._loop, self)
+        _py_enter_task(self._loop, self)
         try:
             self.__step_run_and_handle_result(exc)
         finally:
-            _leave_task(self._loop, self)
+            _py_leave_task(self._loop, self)
             self = None  # Needed to break cycles when an exception occurs.
 
     def __step_run_and_handle_result(self, exc):
@@ -386,19 +386,13 @@ else:
     Task = _CTask = _asyncio.Task
 
 
-def create_task(coro, *, name=None, context=None):
+def create_task(coro, **kwargs):
     """Schedule the execution of a coroutine object in a spawn task.
 
     Return a Task object.
     """
     loop = events.get_running_loop()
-    if context is None:
-        # Use legacy API if context is not needed
-        task = loop.create_task(coro, name=name)
-    else:
-        task = loop.create_task(coro, name=name, context=context)
-
-    return task
+    return loop.create_task(coro, **kwargs)
 
 
 # wait() and as_completed() similar to those in PEP 3148.
@@ -1030,9 +1024,9 @@ def create_eager_task_factory(custom_task_constructor):
         used. E.g. `loop.set_task_factory(asyncio.eager_task_factory)`.
         """
 
-    def factory(loop, coro, *, name=None, context=None):
+    def factory(loop, coro, *, eager_start=True, **kwargs):
         return custom_task_constructor(
-            coro, loop=loop, name=name, context=context, eager_start=True)
+            coro, loop=loop, eager_start=eager_start, **kwargs)
 
     return factory
 
@@ -1110,7 +1104,6 @@ try:
     from _asyncio import (_register_task, _register_eager_task,
                           _unregister_task, _unregister_eager_task,
                           _enter_task, _leave_task, _swap_current_task,
-                          _scheduled_tasks, _eager_tasks, _current_tasks,
                           current_task, all_tasks)
 except ImportError:
     pass

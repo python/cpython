@@ -9,31 +9,6 @@ preserve
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
-#if !defined(_asyncio_Future__asyncio_awaited_by_DOCSTR)
-#  define _asyncio_Future__asyncio_awaited_by_DOCSTR NULL
-#endif
-#if defined(_ASYNCIO_FUTURE__ASYNCIO_AWAITED_BY_GETSETDEF)
-#  undef _ASYNCIO_FUTURE__ASYNCIO_AWAITED_BY_GETSETDEF
-#  define _ASYNCIO_FUTURE__ASYNCIO_AWAITED_BY_GETSETDEF {"_asyncio_awaited_by", (getter)_asyncio_Future__asyncio_awaited_by_get, (setter)_asyncio_Future__asyncio_awaited_by_set, _asyncio_Future__asyncio_awaited_by_DOCSTR},
-#else
-#  define _ASYNCIO_FUTURE__ASYNCIO_AWAITED_BY_GETSETDEF {"_asyncio_awaited_by", (getter)_asyncio_Future__asyncio_awaited_by_get, NULL, _asyncio_Future__asyncio_awaited_by_DOCSTR},
-#endif
-
-static PyObject *
-_asyncio_Future__asyncio_awaited_by_get_impl(FutureObj *self);
-
-static PyObject *
-_asyncio_Future__asyncio_awaited_by_get(PyObject *self, void *Py_UNUSED(context))
-{
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _asyncio_Future__asyncio_awaited_by_get_impl((FutureObj *)self);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
-}
-
 PyDoc_STRVAR(_asyncio_Future___init____doc__,
 "Future(*, loop=None)\n"
 "--\n"
@@ -64,9 +39,11 @@ _asyncio_Future___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(loop), },
     };
     #undef NUM_KEYWORDS
@@ -294,9 +271,11 @@ _asyncio_Future_add_done_callback(PyObject *self, PyTypeObject *cls, PyObject *c
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(context), },
     };
     #undef NUM_KEYWORDS
@@ -413,9 +392,11 @@ _asyncio_Future_cancel(PyObject *self, PyTypeObject *cls, PyObject *const *args,
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(msg), },
     };
     #undef NUM_KEYWORDS
@@ -531,6 +512,31 @@ _asyncio_Future_get_loop(PyObject *self, PyTypeObject *cls, PyObject *const *arg
     Py_END_CRITICAL_SECTION();
 
 exit:
+    return return_value;
+}
+
+#if !defined(_asyncio_Future__asyncio_awaited_by_DOCSTR)
+#  define _asyncio_Future__asyncio_awaited_by_DOCSTR NULL
+#endif
+#if defined(_ASYNCIO_FUTURE__ASYNCIO_AWAITED_BY_GETSETDEF)
+#  undef _ASYNCIO_FUTURE__ASYNCIO_AWAITED_BY_GETSETDEF
+#  define _ASYNCIO_FUTURE__ASYNCIO_AWAITED_BY_GETSETDEF {"_asyncio_awaited_by", (getter)_asyncio_Future__asyncio_awaited_by_get, (setter)_asyncio_Future__asyncio_awaited_by_set, _asyncio_Future__asyncio_awaited_by_DOCSTR},
+#else
+#  define _ASYNCIO_FUTURE__ASYNCIO_AWAITED_BY_GETSETDEF {"_asyncio_awaited_by", (getter)_asyncio_Future__asyncio_awaited_by_get, NULL, _asyncio_Future__asyncio_awaited_by_DOCSTR},
+#endif
+
+static PyObject *
+_asyncio_Future__asyncio_awaited_by_get_impl(FutureObj *self);
+
+static PyObject *
+_asyncio_Future__asyncio_awaited_by_get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _asyncio_Future__asyncio_awaited_by_get_impl((FutureObj *)self);
+    Py_END_CRITICAL_SECTION();
+
     return return_value;
 }
 
@@ -883,9 +889,11 @@ _asyncio_Task___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(coro), &_Py_ID(loop), &_Py_ID(name), &_Py_ID(context), &_Py_ID(eager_start), },
     };
     #undef NUM_KEYWORDS
@@ -1143,9 +1151,11 @@ _asyncio_Task_cancel(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(msg), },
     };
     #undef NUM_KEYWORDS
@@ -1281,9 +1291,11 @@ _asyncio_Task_get_stack(PyObject *self, PyTypeObject *cls, PyObject *const *args
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(limit), },
     };
     #undef NUM_KEYWORDS
@@ -1349,9 +1361,11 @@ _asyncio_Task_print_stack(PyObject *self, PyTypeObject *cls, PyObject *const *ar
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(limit), &_Py_ID(file), },
     };
     #undef NUM_KEYWORDS
@@ -1403,6 +1417,19 @@ PyDoc_STRVAR(_asyncio_Task_set_result__doc__,
 #define _ASYNCIO_TASK_SET_RESULT_METHODDEF    \
     {"set_result", (PyCFunction)_asyncio_Task_set_result, METH_O, _asyncio_Task_set_result__doc__},
 
+static PyObject *
+_asyncio_Task_set_result_impl(TaskObj *self, PyObject *result);
+
+static PyObject *
+_asyncio_Task_set_result(PyObject *self, PyObject *result)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _asyncio_Task_set_result_impl((TaskObj *)self, result);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_asyncio_Task_set_exception__doc__,
 "set_exception($self, exception, /)\n"
 "--\n"
@@ -1410,6 +1437,19 @@ PyDoc_STRVAR(_asyncio_Task_set_exception__doc__,
 
 #define _ASYNCIO_TASK_SET_EXCEPTION_METHODDEF    \
     {"set_exception", (PyCFunction)_asyncio_Task_set_exception, METH_O, _asyncio_Task_set_exception__doc__},
+
+static PyObject *
+_asyncio_Task_set_exception_impl(TaskObj *self, PyObject *exception);
+
+static PyObject *
+_asyncio_Task_set_exception(PyObject *self, PyObject *exception)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _asyncio_Task_set_exception_impl((TaskObj *)self, exception);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_asyncio_Task_get_coro__doc__,
 "get_coro($self, /)\n"
@@ -1486,7 +1526,7 @@ static PyObject *
 _asyncio_Task_set_name_impl(TaskObj *self, PyObject *value);
 
 static PyObject *
-_asyncio_Task_set_name(TaskObj *self, PyObject *value)
+_asyncio_Task_set_name(PyObject *self, PyObject *value)
 {
     PyObject *return_value = NULL;
 
@@ -1599,9 +1639,11 @@ _asyncio__register_task(PyObject *module, PyObject *const *args, Py_ssize_t narg
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(task), },
     };
     #undef NUM_KEYWORDS
@@ -1657,9 +1699,11 @@ _asyncio__register_eager_task(PyObject *module, PyObject *const *args, Py_ssize_
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(task), },
     };
     #undef NUM_KEYWORDS
@@ -1715,9 +1759,11 @@ _asyncio__unregister_task(PyObject *module, PyObject *const *args, Py_ssize_t na
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(task), },
     };
     #undef NUM_KEYWORDS
@@ -1773,9 +1819,11 @@ _asyncio__unregister_eager_task(PyObject *module, PyObject *const *args, Py_ssiz
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(task), },
     };
     #undef NUM_KEYWORDS
@@ -1833,9 +1881,11 @@ _asyncio__enter_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(loop), &_Py_ID(task), },
     };
     #undef NUM_KEYWORDS
@@ -1895,9 +1945,11 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(loop), &_Py_ID(task), },
     };
     #undef NUM_KEYWORDS
@@ -1956,9 +2008,11 @@ _asyncio__swap_current_task(PyObject *module, PyObject *const *args, Py_ssize_t 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(loop), &_Py_ID(task), },
     };
     #undef NUM_KEYWORDS
@@ -2014,9 +2068,11 @@ _asyncio_current_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(loop), },
     };
     #undef NUM_KEYWORDS
@@ -2075,9 +2131,11 @@ _asyncio_all_tasks(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(loop), },
     };
     #undef NUM_KEYWORDS
@@ -2174,4 +2232,4 @@ _asyncio_future_discard_from_awaited_by(PyObject *module, PyObject *const *args,
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fe4ffe08404ad566 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b69948ed810591d9 input=a9049054013a1b77]*/

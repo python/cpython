@@ -250,14 +250,23 @@ The special characters are:
      ``[a\-z]``) or if it's placed as the first or last character
      (e.g. ``[-a]`` or ``[a-]``), it will match a literal ``'-'``.
 
-   * Special characters lose their special meaning inside sets.  For example,
+   * Special characters except backslash lose their special meaning inside sets.
+     For example,
      ``[(+*)]`` will match any of the literal characters ``'('``, ``'+'``,
      ``'*'``, or ``')'``.
 
    .. index:: single: \ (backslash); in regular expressions
 
-   * Character classes such as ``\w`` or ``\S`` (defined below) are also accepted
-     inside a set, although the characters they match depend on the flags_ used.
+   * Backslash either escapes characters which have special meaning in a set
+     such as ``'-'``, ``']'``, ``'^'`` and ``'\\'`` itself or signals
+     a special sequence which represents a single character such as
+     ``\xa0`` or ``\n`` or a character class such as ``\w`` or ``\S``
+     (defined below).
+     Note that ``\b`` represents a single "backspace" character,
+     not a word boundary as outside a set, and numeric escapes
+     such as ``\1`` are always octal escapes, not group references.
+     Special sequences which do not match a single character such as ``\A``
+     and ``\z`` are not allowed.
 
    .. index:: single: ^ (caret); in regular expressions
 
@@ -652,10 +661,16 @@ character ``'$'``.
    matches characters which are neither alphanumeric in the current locale
    nor the underscore.
 
-.. index:: single: \Z; in regular expressions
+.. index:: single: \z; in regular expressions
+           single: \Z; in regular expressions
+
+``\z``
+   Matches only at the end of the string.
+
+   .. versionadded:: 3.14
 
 ``\Z``
-   Matches only at the end of the string.
+   The same as ``\z``.  For compatibility with old Python versions.
 
 .. index::
    single: \a; in regular expressions

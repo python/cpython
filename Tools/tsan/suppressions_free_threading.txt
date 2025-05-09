@@ -4,45 +4,54 @@
 #
 # reference: https://github.com/google/sanitizers/wiki/ThreadSanitizerSuppressions
 
-## Default build suppresssions
-
-race:get_allocator_unlocked
-race:set_allocator_unlocked
-
 ## Free-threaded suppressions
 
 
 # These entries are for warnings that trigger in a library function, as called
 # by a CPython function.
 
-# https://gist.github.com/swtaarrs/08dfe7883b4c975c31ecb39388987a67
-race:free_threadstate
-
-
 # These warnings trigger directly in a CPython function.
 
 race_top:assign_version_tag
-race_top:new_reference
-race_top:_multiprocessing_SemLock_acquire_impl
-race_top:list_get_item_ref
 race_top:_Py_slot_tp_getattr_hook
-race_top:add_threadstate
 race_top:dump_traceback
 race_top:fatal_error
-race_top:_multiprocessing_SemLock_release_impl
 race_top:_PyFrame_GetCode
 race_top:_PyFrame_Initialize
-race_top:PyInterpreterState_ThreadHead
 race_top:_PyObject_TryGetInstanceAttribute
-race_top:PyThreadState_Next
 race_top:PyUnstable_InterpreterFrame_GetLine
-race_top:tstate_delete_common
-race_top:tstate_is_freed
 race_top:type_modified_unlocked
 race_top:write_thread_id
-race_top:PyThreadState_Clear
-# Only seen on macOS, sample: https://gist.github.com/aisk/dda53f5d494a4556c35dde1fce03259c
-race_top:set_default_allocator_unlocked
+
+# gh-129068: race on shared range iterators (test_free_threading.test_zip.ZipThreading.test_threading)
+race_top:rangeiter_next
+
+# gh-129748: test.test_free_threading.test_slots.TestSlots.test_object
+race_top:mi_block_set_nextx
+
+# gh-127266: type slot updates are not thread-safe (test_opcache.test_load_attr_method_lazy_dict)
+race_top:update_one_slot
 
 # https://gist.github.com/mpage/6962e8870606cfc960e159b407a0cb40
 thread:pthread_create
+
+# Range iteration is not thread-safe yet (issue #129068)
+race_top:rangeiter_next
+
+# List resizing happens through different paths ending in memcpy or memmove
+# (for efficiency), which will probably need to rewritten as explicit loops
+# of ptr-sized copies to be thread-safe. (Issue #129069)
+race:list_ass_slice_lock_held
+race:list_inplace_repeat_lock_held
+
+# PyObject_Realloc internally does memcpy which isn't atomic so can race
+# with non-locking reads. See #132070
+race:PyObject_Realloc
+
+# gh-133467.  Some of these could be hard to trigger.
+race_top:update_one_slot
+race_top:_Py_slot_tp_getattr_hook
+race_top:slot_tp_descr_get
+race_top:type_set_name
+race_top:set_tp_bases
+race_top:type_set_bases_unlocked

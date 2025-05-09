@@ -1,2 +1,0 @@
-Undocumented and unused private C-API functions ``_PyTrash_begin`` and
-``_PyTrash_end`` are removed.

@@ -66,9 +66,11 @@ _io_FileIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(file), &_Py_ID(mode), &_Py_ID(closefd), &_Py_ID(opener), },
     };
     #undef NUM_KEYWORDS
@@ -268,8 +270,11 @@ PyDoc_STRVAR(_io_FileIO_readall__doc__,
 "\n"
 "Read all data from the file, returned as bytes.\n"
 "\n"
-"In non-blocking mode, returns as much as is immediately available,\n"
-"or None if no data is available.  Return an empty bytes object at EOF.");
+"Reads until either there is an error or read() returns size 0 (indicates EOF).\n"
+"If the file is already at EOF, returns an empty bytes object.\n"
+"\n"
+"In non-blocking mode, returns as much data as could be read before EAGAIN. If no\n"
+"data is available (EAGAIN is returned before bytes are read) returns None.");
 
 #define _IO_FILEIO_READALL_METHODDEF    \
     {"readall", (PyCFunction)_io_FileIO_readall, METH_NOARGS, _io_FileIO_readall__doc__},
@@ -289,9 +294,14 @@ PyDoc_STRVAR(_io_FileIO_read__doc__,
 "\n"
 "Read at most size bytes, returned as bytes.\n"
 "\n"
-"Only makes one system call, so less data may be returned than requested.\n"
-"In non-blocking mode, returns None if no data is available.\n"
-"Return an empty bytes object at EOF.");
+"If size is less than 0, read all bytes in the file making multiple read calls.\n"
+"See ``FileIO.readall``.\n"
+"\n"
+"Attempts to make only one system call, retrying only per PEP 475 (EINTR). This\n"
+"means less data may be returned than requested.\n"
+"\n"
+"In non-blocking mode, returns None if no data is available. Return an empty\n"
+"bytes object at EOF.");
 
 #define _IO_FILEIO_READ_METHODDEF    \
     {"read", _PyCFunction_CAST(_io_FileIO_read), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io_FileIO_read__doc__},
@@ -533,4 +543,4 @@ _io_FileIO_isatty(PyObject *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=dcbeb6a0b13e4b1f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1902fac9e39358aa input=a9049054013a1b77]*/

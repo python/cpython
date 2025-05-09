@@ -1086,7 +1086,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.assertFalse(self.protocol.connection_lost.called)
 
         self.loop.writers[7]._run()
-        # during this ^ run, the _resume_writing mock above was called and added more data
+        # during this ^ run, the _resume_writing mock above was called and added more data
 
         self.assertEqual(transport.get_write_buffer_size(), 2)
         self.loop.writers[7]._run()

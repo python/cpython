@@ -288,7 +288,7 @@ class OpcodeStats:
                 opcode = "SUPER"
             elif opcode.endswith("ATTR"):
                 opcode = "ATTR"
-            elif opcode in ("FOR_ITER", "SEND"):
+            elif opcode in ("FOR_ITER", "GET_ITER", "SEND"):
                 opcode = "ITER"
             elif opcode.endswith("SUBSCR"):
                 opcode = "SUBSCR"
@@ -298,12 +298,20 @@ class OpcodeStats:
             return "kind " + str(kind)
 
         family_stats = self._get_stats_for_opcode(opcode)
-        failure_kinds = [0] * 40
+
+        def key_to_index(key):
+            return int(key[:-1].split("[")[1])
+
+        max_index = 0
+        for key in family_stats:
+            if key.startswith("specialization.failure_kind"):
+                max_index = max(max_index, key_to_index(key))
+
+        failure_kinds = [0] * (max_index + 1)
         for key in family_stats:
             if not key.startswith("specialization.failure_kind"):
                 continue
-            index = int(key[:-1].split("[")[1])
-            failure_kinds[index] = family_stats[key]
+            failure_kinds[key_to_index(key)] = family_stats[key]
         return {
             kind_to_text(index, opcode): value
             for (index, value) in enumerate(failure_kinds)
@@ -457,6 +465,7 @@ class Stats:
         inner_loop = self._data["Optimization inner loop"]
         recursive_call = self._data["Optimization recursive call"]
         low_confidence = self._data["Optimization low confidence"]
+        unknown_callee = self._data["Optimization unknown callee"]
         executors_invalidated = self._data["Executors invalidated"]
 
         return {
@@ -497,6 +506,10 @@ class Stats:
                 "A trace is abandoned because the likelihood of the jump to top being taken "
                 "is too low.",
             ): (low_confidence, attempts),
+            Doc(
+                "Unknown callee",
+                "A trace is abandoned because the target of a call is unknown.",
+            ): (unknown_callee, attempts),
             Doc(
                 "Executors invalidated",
                 "The number of executors that were invalidated due to watched "

@@ -138,7 +138,6 @@ static PyObject *
 pysqlite_row_subscript(PyObject *op, PyObject *idx)
 {
     Py_ssize_t _idx;
-    Py_ssize_t nitems, i;
     pysqlite_Row *self = _pysqlite_Row_CAST(op);
 
     if (PyLong_Check(idx)) {
@@ -151,9 +150,13 @@ pysqlite_row_subscript(PyObject *op, PyObject *idx)
         PyObject *item = PyTuple_GetItem(self->data, _idx);
         return Py_XNewRef(item);
     } else if (PyUnicode_Check(idx)) {
-        nitems = PyTuple_Size(self->description);
+        if (Py_IsNone(self->description)) {
+            PyErr_Format(PyExc_IndexError, "No item with key %R", idx);
+            return NULL;
+        }
+        Py_ssize_t nitems = PyTuple_GET_SIZE(self->description);
 
-        for (i = 0; i < nitems; i++) {
+        for (Py_ssize_t i = 0; i < nitems; i++) {
             PyObject *obj;
             obj = PyTuple_GET_ITEM(self->description, i);
             obj = PyTuple_GET_ITEM(obj, 0);
@@ -197,17 +200,19 @@ static PyObject *
 pysqlite_row_keys_impl(pysqlite_Row *self)
 /*[clinic end generated code: output=efe3dfb3af6edc07 input=7549a122827c5563]*/
 {
-    PyObject* list;
-    Py_ssize_t nitems, i;
-
-    list = PyList_New(0);
+    PyObject *list = PyList_New(0);
     if (!list) {
         return NULL;
     }
-    nitems = PyTuple_Size(self->description);
+    if (Py_IsNone(self->description)) {
+        return list;
+    }
 
-    for (i = 0; i < nitems; i++) {
-        if (PyList_Append(list, PyTuple_GET_ITEM(PyTuple_GET_ITEM(self->description, i), 0)) != 0) {
+    Py_ssize_t nitems = PyTuple_GET_SIZE(self->description);
+    for (Py_ssize_t i = 0; i < nitems; i++) {
+        PyObject *descr = PyTuple_GET_ITEM(self->description, i);
+        PyObject *name = PyTuple_GET_ITEM(descr, 0);
+        if (PyList_Append(list, name) < 0) {
             Py_DECREF(list);
             return NULL;
         }

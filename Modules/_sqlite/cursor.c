@@ -505,7 +505,7 @@ begin_transaction(pysqlite_Connection *self)
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
-        (void)_pysqlite_seterror(self->state, self->db);
+        set_error_from_db(self->state, self->db);
         return -1;
     }
 
@@ -715,7 +715,7 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
             if (rc != SQLITE_OK) {
                 PyObject *exc = PyErr_GetRaisedException();
                 sqlite3 *db = sqlite3_db_handle(self->st);
-                _pysqlite_seterror(state, db);
+                set_error_from_db(state, db);
                 _PyErr_ChainExceptions1(exc);
                 return;
             }
@@ -764,7 +764,7 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
             if (rc != SQLITE_OK) {
                 PyObject *exc = PyErr_GetRaisedException();
                 sqlite3 *db = sqlite3_db_handle(self->st);
-                _pysqlite_seterror(state, db);
+                set_error_from_db(state, db);
                 _PyErr_ChainExceptions1(exc);
                 return;
            }
@@ -896,7 +896,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
                     PyErr_Clear();
                 }
             }
-            _pysqlite_seterror(state, self->connection->db);
+            set_error_from_db(state, self->connection->db);
             goto error;
         }
 
@@ -1087,7 +1087,7 @@ pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
     return Py_NewRef((PyObject *)self);
 
 error:
-    _pysqlite_seterror(self->connection->state, db);
+    set_error_from_db(self->connection->state, db);
     return NULL;
 }
 
@@ -1122,8 +1122,7 @@ pysqlite_cursor_iternext(PyObject *op)
         Py_CLEAR(self->statement);
     }
     else if (rc != SQLITE_ROW) {
-        (void)_pysqlite_seterror(self->connection->state,
-                                 self->connection->db);
+        set_error_from_db(self->connection->state, self->connection->db);
         (void)stmt_reset(self->statement);
         Py_CLEAR(self->statement);
         Py_DECREF(row);
@@ -1244,8 +1243,8 @@ Required by DB-API. Does nothing in sqlite3.
 [clinic start generated code]*/
 
 static PyObject *
-pysqlite_cursor_setinputsizes(pysqlite_Cursor *self, PyObject *sizes)
-/*[clinic end generated code: output=893c817afe9d08ad input=de7950a3aec79bdf]*/
+pysqlite_cursor_setinputsizes_impl(pysqlite_Cursor *self, PyObject *sizes)
+/*[clinic end generated code: output=a06c12790bd05f2e input=de7950a3aec79bdf]*/
 {
     Py_RETURN_NONE;
 }

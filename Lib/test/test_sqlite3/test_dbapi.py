@@ -550,17 +550,9 @@ class ConnectionTests(unittest.TestCase):
                 cx.execute("insert into u values(0)")
 
     def test_connect_positional_arguments(self):
-        regex = (
-            r"Passing more than 1 positional argument to sqlite3.connect\(\)"
-            " is deprecated. Parameters 'timeout', 'detect_types', "
-            "'isolation_level', 'check_same_thread', 'factory', "
-            "'cached_statements' and 'uri' will become keyword-only "
-            "parameters in Python 3.15."
-        )
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            cx = sqlite.connect(":memory:", 1.0)
-            cx.close()
-        self.assertEqual(cm.filename, __file__)
+        with self.assertRaisesRegex(TypeError,
+                r'connect\(\) takes at most 1 positional arguments'):
+            sqlite.connect(":memory:", 1.0)
 
     def test_connection_resource_warning(self):
         with self.assertWarns(ResourceWarning):
@@ -1922,6 +1914,71 @@ class MultiprocessTests(unittest.TestCase):
             proc.communicate()
             raise
         self.assertEqual(proc.returncode, 0)
+
+
+class RowTests(unittest.TestCase):
+
+    def setUp(self):
+        self.cx = sqlite.connect(":memory:")
+        self.cx.row_factory = sqlite.Row
+
+    def tearDown(self):
+        self.cx.close()
+
+    def test_row_keys(self):
+        cu = self.cx.execute("SELECT 1 as first, 2 as second")
+        row = cu.fetchone()
+        self.assertEqual(row.keys(), ["first", "second"])
+
+    def test_row_length(self):
+        cu = self.cx.execute("SELECT 1, 2, 3")
+        row = cu.fetchone()
+        self.assertEqual(len(row), 3)
+
+    def test_row_getitem(self):
+        cu = self.cx.execute("SELECT 1 as a, 2 as b")
+        row = cu.fetchone()
+        self.assertEqual(row[0], 1)
+        self.assertEqual(row[1], 2)
+        self.assertEqual(row["a"], 1)
+        self.assertEqual(row["b"], 2)
+        for key in "nokey", 4, 1.2:
+            with self.subTest(key=key):
+                with self.assertRaises(IndexError):
+                    row[key]
+
+    def test_row_equality(self):
+        c1 = self.cx.execute("SELECT 1 as a")
+        r1 = c1.fetchone()
+
+        c2 = self.cx.execute("SELECT 1 as a")
+        r2 = c2.fetchone()
+
+        self.assertIsNot(r1, r2)
+        self.assertEqual(r1, r2)
+
+        c3 = self.cx.execute("SELECT 1 as b")
+        r3 = c3.fetchone()
+
+        self.assertNotEqual(r1, r3)
+
+    def test_row_no_description(self):
+        cu = self.cx.cursor()
+        self.assertIsNone(cu.description)
+
+        row = sqlite.Row(cu, ())
+        self.assertEqual(row.keys(), [])
+        with self.assertRaisesRegex(IndexError, "nokey"):
+            row["nokey"]
+
+    def test_row_is_a_sequence(self):
+        from collections.abc import Sequence
+
+        cu = self.cx.execute("SELECT 1")
+        row = cu.fetchone()
+
+        self.assertIsSubclass(sqlite.Row, Sequence)
+        self.assertIsInstance(row, Sequence)
 
 
 if __name__ == "__main__":

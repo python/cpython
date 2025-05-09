@@ -1,1 +1,0 @@
-Add missing Deprecation warnings for :attr:`importlib.machinery.DEBUG_BYTECODE_SUFFIXES`, :attr:`importlib.machinery.OPTIMIZED_BYTECODE_SUFFIXES`, :class:`importlib.machinery.WindowsRegistryFinder`, :class:`importlib.abc.ResourceLoader`, :meth:`importlib.abc.SourceLoader.path_mtime`.
