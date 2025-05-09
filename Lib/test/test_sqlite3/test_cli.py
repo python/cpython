@@ -116,14 +116,15 @@ class InteractiveSession(unittest.TestCase):
         self.assertEqual(out.count(self.PS2), 0)
         self.assertIn(sqlite3.sqlite_version, out)
 
-    def test_interact_dot_commands_whitespace(self):
-        out, err = self.run_cli(commands=(".version ", ". version"))
+    def test_interact_dot_commands(self):
+        # test dot commands with whitespaces and unknow dot commands
+        out, err = self.run_cli(commands=(".version ", ". version", ".spam"))
         self.assertIn(self.MEMORY_DB_MSG, err)
         self.assertEqual(out.count(sqlite3.sqlite_version + "\n"), 2)
         self.assertEndsWith(out, self.PS1)
-        self.assertEqual(out.count(self.PS1), 3)
+        self.assertEqual(out.count(self.PS1), 4)
         self.assertEqual(out.count(self.PS2), 0)
-        self.assertIn(sqlite3.sqlite_version, out)
+        self.assertIn("Error", out)
 
     def test_interact_valid_sql(self):
         out, err = self.run_cli(commands=("SELECT 1;",))
