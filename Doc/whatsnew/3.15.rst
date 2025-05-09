@@ -155,6 +155,10 @@ Deprecated C APIs
 Removed C APIs
 --------------
 
+The following functions are removed in favor of :c:func:`PyConfig_Get`.
+The |pythoncapi_compat_project| can be used to get :c:func:`!PyConfig_Get`
+on Python 3.13 and older.
+
 * Python initialization functions:
 
   * :c:func:`!Py_GetExecPrefix`:
@@ -182,3 +186,6 @@ Removed C APIs
     use :c:func:`PyConfig_Get("home") <PyConfig_Get>` or the
     :envvar:`PYTHONHOME` environment variable instead.
 
+.. |pythoncapi_compat_project| replace:: |pythoncapi_compat_project_link|_.
+.. |pythoncapi_compat_project_link| replace:: pythoncapi-compat project
+.. _pythoncapi_compat_project_link: https://github.com/python/pythoncapi-compat
