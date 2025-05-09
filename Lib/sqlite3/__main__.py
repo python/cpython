@@ -55,7 +55,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
         Return False if input is a complete statement ready for execution.
         """
         theme = get_theme(force_no_color=not self._use_color)
-  
+
         if not source or source.isspace():
             return False
         if source[0] == ".":
