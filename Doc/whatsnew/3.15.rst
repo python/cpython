@@ -169,3 +169,38 @@ Removed C APIs
 
 * :c:func:`!PyImport_ImportModuleNoBlock`: deprecated alias
   of :c:func:`PyImport_ImportModule`.
+
+The following functions are removed in favor of :c:func:`PyConfig_Get`.
+The |pythoncapi_compat_project| can be used to get :c:func:`!PyConfig_Get`
+on Python 3.13 and older.
+
+* Python initialization functions:
+
+  * :c:func:`!Py_GetExecPrefix`:
+    use :c:func:`PyConfig_Get("base_exec_prefix") <PyConfig_Get>`
+    (:data:`sys.base_exec_prefix`) instead.
+    Use :c:func:`PyConfig_Get("exec_prefix") <PyConfig_Get>`
+    (:data:`sys.exec_prefix`) if :ref:`virtual environments <venv-def>`
+    need to be handled.
+  * :c:func:`!Py_GetPath`:
+    use :c:func:`PyConfig_Get("module_search_paths") <PyConfig_Get>`
+    (:data:`sys.path`) instead.
+  * :c:func:`!Py_GetPrefix`:
+    use :c:func:`PyConfig_Get("base_prefix") <PyConfig_Get>`
+    (:data:`sys.base_prefix`) instead.
+    Use :c:func:`PyConfig_Get("prefix") <PyConfig_Get>`
+    (:data:`sys.prefix`) if :ref:`virtual environments <venv-def>`
+    need to be handled.
+  * :c:func:`!Py_GetProgramFullPath`:
+    use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
+    (:data:`sys.executable`) instead.
+  * :c:func:`!Py_GetProgramName`:
+    use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
+    (:data:`sys.executable`) instead.
+  * :c:func:`!Py_GetPythonHome`:
+    use :c:func:`PyConfig_Get("home") <PyConfig_Get>` or the
+    :envvar:`PYTHONHOME` environment variable instead.
+
+.. |pythoncapi_compat_project| replace:: |pythoncapi_compat_project_link|_
+.. |pythoncapi_compat_project_link| replace:: pythoncapi-compat project
+.. _pythoncapi_compat_project_link: https://github.com/python/pythoncapi-compat
