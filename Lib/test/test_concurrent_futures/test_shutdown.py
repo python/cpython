@@ -369,14 +369,12 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         executor.shutdown(wait=False)
         return result
 
-    @unittest.skipIf(sys.platform == 'win32', 'Test does not run on Windows')
     def test_shutdown_gh_132969_case_1(self):
         # gh-132969: test that exception "object of type 'NoneType' has no len()"
         # is not raised when shutdown(wait=False) is called.
         result = self._run_test_issue_gh_132969(2)
         self.assertEqual(result, 1)
 
-    @unittest.skipIf(sys.platform == 'win32', 'Test does not run on Windows')
     def test_shutdown_gh_132969_case_2(self):
         # gh-132969: test that process does not hang and
         # exception "object of type 'NoneType' has no len()" is not raised
