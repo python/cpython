@@ -124,7 +124,7 @@ class InteractiveSession(unittest.TestCase):
         self.assertEqual(out.count(self.PS2), 0)
 
     def test_interact_dot_commands_unknown(self):
-        out, err = self.run_cli(commands=(".unknown_command"))
+        out, err = self.run_cli(commands=(".unknown_command", ))
         self.assertIn(self.MEMORY_DB_MSG, err)
         self.assertEndsWith(out, self.PS1)
         self.assertEqual(out.count(self.PS1), 2)
