@@ -36,11 +36,6 @@ extern PyType_Spec zstd_decompressor_type_spec;
 
 struct _zstd_state {
     PyObject *empty_bytes;
-    PyObject *empty_readonly_memoryview;
-    PyObject *str_read;
-    PyObject *str_readinto;
-    PyObject *str_write;
-    PyObject *str_flush;
 
     PyTypeObject *ZstdDict_type;
     PyTypeObject *ZstdCompressor_type;

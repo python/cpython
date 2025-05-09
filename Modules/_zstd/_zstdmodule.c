@@ -634,14 +634,6 @@ add_vars_to_module(PyObject *m)
     return 0;
 }
 
-#define ADD_STR_TO_STATE_MACRO(STR)                        \
-    do {                                                   \
-        mod_state->str_##STR = PyUnicode_FromString(#STR); \
-        if (mod_state->str_##STR == NULL) {                \
-            return -1;                                     \
-        }                                                  \
-    } while(0)
-
 static inline int
 add_constant_to_type(PyTypeObject *type, const char *name, long value)
 {
@@ -677,18 +669,6 @@ do {                                                                         \
     if (mod_state->empty_bytes == NULL) {
         return -1;
     }
-
-    mod_state->empty_readonly_memoryview =
-                PyMemoryView_FromMemory((char*)mod_state, 0, PyBUF_READ);
-    if (mod_state->empty_readonly_memoryview == NULL) {
-        return -1;
-    }
-
-    /* Add str to module state */
-    ADD_STR_TO_STATE_MACRO(read);
-    ADD_STR_TO_STATE_MACRO(readinto);
-    ADD_STR_TO_STATE_MACRO(write);
-    ADD_STR_TO_STATE_MACRO(flush);
 
     mod_state->CParameter_type = NULL;
     mod_state->DParameter_type = NULL;
@@ -744,11 +724,6 @@ _zstd_traverse(PyObject *module, visitproc visit, void *arg)
     _zstd_state* const mod_state = get_zstd_state(module);
 
     Py_VISIT(mod_state->empty_bytes);
-    Py_VISIT(mod_state->empty_readonly_memoryview);
-    Py_VISIT(mod_state->str_read);
-    Py_VISIT(mod_state->str_readinto);
-    Py_VISIT(mod_state->str_write);
-    Py_VISIT(mod_state->str_flush);
 
     Py_VISIT(mod_state->ZstdDict_type);
     Py_VISIT(mod_state->ZstdCompressor_type);
@@ -768,11 +743,6 @@ _zstd_clear(PyObject *module)
     _zstd_state* const mod_state = get_zstd_state(module);
 
     Py_CLEAR(mod_state->empty_bytes);
-    Py_CLEAR(mod_state->empty_readonly_memoryview);
-    Py_CLEAR(mod_state->str_read);
-    Py_CLEAR(mod_state->str_readinto);
-    Py_CLEAR(mod_state->str_write);
-    Py_CLEAR(mod_state->str_flush);
 
     Py_CLEAR(mod_state->ZstdDict_type);
     Py_CLEAR(mod_state->ZstdCompressor_type);
