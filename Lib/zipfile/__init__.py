@@ -2093,6 +2093,8 @@ class ZipFile:
                 min_version = max(BZIP2_VERSION, min_version)
             elif zinfo.compress_type == ZIP_LZMA:
                 min_version = max(LZMA_VERSION, min_version)
+            elif zinfo.compress_type == ZIP_ZSTANDARD:
+                min_version = max(ZSTANDARD_VERSION, min_version)
 
             extract_version = max(min_version, zinfo.extract_version)
             create_version = max(min_version, zinfo.create_version)
