@@ -847,8 +847,11 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
 
     assert(!element->extra || !element->extra->length);
     if (self->extra) {
-        if (element_resize(element, self->extra->length) < 0)
+        Py_ssize_t expected_count = self->extra->length;
+        if (element_resize(element, expected_count) < 0) {
+            assert(!element->extra->length);
             goto error;
+        }
 
         for (i = 0; self->extra && i < self->extra->length; i++) {
             PyObject* child = deepcopy(st, self->extra->children[i], memo);
@@ -860,15 +863,23 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
                 element->extra->length = i;
                 goto error;
             }
+            if (self->extra && expected_count != self->extra->length) {
+                // 'self->extra' got mutated and 'element' may not have
+                // sufficient space to hold the next iteration's item.
+                expected_count = self->extra->length;
+                if (element_resize(element, expected_count) < 0) {
+                    Py_DECREF(child);
+                    element->extra->length = i;
+                    goto error;
+                }
+            }
             element->extra->children[i] = child;
         }
 
         assert(!element->extra->length);
-        /*
-         * The original 'self->extra' may be gone at this point if deepcopy()
-         * has side-effects. However, 'i' is the number of copied items that
-         * we were able to successfully copy.
-         */
+        // The original 'self->extra' may be gone at this point if deepcopy()
+        // has side-effects. However, 'i' is the number of copied items that
+        // we were able to successfully copy.
         element->extra->length = i;
     }
 
@@ -903,8 +914,6 @@ deepcopy(elementtreestate *st, PyObject *object, PyObject *memo)
 
     if (Py_REFCNT(object) == 1) {
         if (PyDict_CheckExact(object)) {
-            // Exact dictionaries do not execute arbitrary code as it's
-            // impossible to override their __iter__() method.
             PyObject *key, *value;
             Py_ssize_t pos = 0;
             int simple = 1;
@@ -915,7 +924,6 @@ deepcopy(elementtreestate *st, PyObject *object, PyObject *memo)
                 }
             }
             if (simple) {
-                // This does not call object.__copy__(), so it's still safe.
                 return PyDict_Copy(object);
             }
             /* Fall through to general case */
@@ -923,10 +931,11 @@ deepcopy(elementtreestate *st, PyObject *object, PyObject *memo)
         else if (Element_CheckExact(st, object)) {
             // The __deepcopy__() call may call arbitrary code even if the
             // object to copy is a built-in XML element (one of its children
-            // may mutate 'object' in its own __deepcopy__() implementation).
-            ElementObject *tmp = (ElementObject *)Py_NewRef(object);
-            PyObject *res = _elementtree_Element___deepcopy___impl(tmp, memo);
-            Py_DECREF(tmp);
+            // any of its parents in its own __deepcopy__() implementation).
+            Py_INCREF(object);
+            PyObject *res = _elementtree_Element___deepcopy___impl(
+                (ElementObject *)object, memo);
+            Py_DECREF(object);
             return res;
         }
     }
@@ -938,9 +947,10 @@ deepcopy(elementtreestate *st, PyObject *object, PyObject *memo)
         return NULL;
     }
 
-    PyObject *args[2] = {Py_NewRef(object), memo};
+    Py_INCREF(object);
+    PyObject *args[2] = {object, memo};
     PyObject *res = PyObject_Vectorcall(st->deepcopy_obj, args, 2, NULL);
-    Py_DECREF(args[0]);
+    Py_DECREF(object);
     return res;
 }
 
