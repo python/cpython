@@ -1353,7 +1353,7 @@ class ZipFile:
           or append 'a'.
     compression: ZIP_STORED (no compression), ZIP_DEFLATED (requires zlib),
                  ZIP_BZIP2 (requires bz2), ZIP_LZMA (requires lzma), or
-                 ZIP_ZSTANDARD (requires zstd).
+                 ZIP_ZSTANDARD (requires compression.zstd).
     allowZip64: if True ZipFile will create files with ZIP64 extensions when
                 needed, otherwise it will raise an exception when this would
                 be necessary.
