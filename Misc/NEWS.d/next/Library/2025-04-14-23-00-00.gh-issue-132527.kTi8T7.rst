@@ -1,1 +1,0 @@
-Include the valid typecode 'w' in the error message when an invalid typecode is passed to :class:`array.array`.
