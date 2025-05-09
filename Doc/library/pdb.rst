@@ -402,7 +402,7 @@ by :file:`.pdbrc` files in user's home and current directory.
    :file:`.pdbrc` is now read with ``'utf-8'`` encoding. Previously, it was read
    with the system locale encoding.
 
-.. versionadded:: 3.15
+.. versionadded:: next
    :file:`.pdbrc` is now searched in ``$XDG_CONFIG_HOME/pdb`` directory first.
    Previously, this location was ignored.
 
