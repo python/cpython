@@ -351,8 +351,7 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         start_method = self.get_context().get_start_method()
         if (start_method == "fork" or
            (start_method == "forkserver" and sys.platform.startswith("win"))):
-                raise unittest.SkipTest("Excluding tests with start_method "
-                                        "'fork' and 'forkserver' on Windows")
+                raise self.skipTest(f"Excluding test with {start_method}=")
         executor = futures.ProcessPoolExecutor(
                 max_workers=max_workers,
                 max_tasks_per_child=1,
