@@ -699,7 +699,7 @@ static PyType_Slot zstdcompressor_slots[] = {
     {0}
 };
 
-PyType_Spec zstdcompressor_type_spec = {
+PyType_Spec zstd_compressor_type_spec = {
     .name = "_zstd.ZstdCompressor",
     .basicsize = sizeof(ZstdCompressor),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
