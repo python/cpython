@@ -890,7 +890,7 @@ dummy_func(void) {
         }
     }
 
-    op(_CALL_ISINSTANCE, (callable, null, instance, cls -- res)) {
+    op(_CALL_ISINSTANCE, (unused, unused, instance, cls -- res)) {
         // the result is always a bool, but sometimes we can
         // narrow it down to True or False
         res = sym_new_type(ctx, &PyBool_Type);
