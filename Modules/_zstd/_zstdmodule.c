@@ -33,9 +33,6 @@ set_zstd_error(const _zstd_state* const state,
     case ERR_COMPRESS:
         msg = "Unable to compress zstd data: %s";
         break;
-    case ERR_SET_PLEDGED_INPUT_SIZE:
-        msg = "Unable to set pledged uncompressed content size: %s";
-        break;
 
     case ERR_LOAD_D_DICT:
         msg = "Unable to load zstd dictionary or prefix for decompression: %s";
