@@ -198,7 +198,8 @@ success:
 }
 
 static int
-_zstd_load_c_dict(ZstdCompressor *self, PyObject *dict) {
+_zstd_load_c_dict(ZstdCompressor *self, PyObject *dict)
+{
 
     size_t zstd_ret;
     _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
@@ -412,7 +413,7 @@ _zstd_ZstdCompressor___init___impl(ZstdCompressor *self, PyObject *level,
     return 0;
 }
 
-PyObject *
+static PyObject *
 compress_impl(ZstdCompressor *self, Py_buffer *data,
               ZSTD_EndDirective end_directive)
 {
@@ -667,7 +668,7 @@ PyDoc_STRVAR(ZstdCompressor_last_mode_doc,
 static PyMemberDef ZstdCompressor_members[] = {
     {"last_mode", Py_T_INT, offsetof(ZstdCompressor, last_mode),
         Py_READONLY, ZstdCompressor_last_mode_doc},
-    {0}
+    {NULL}
 };
 
 static int
@@ -695,7 +696,7 @@ static PyType_Slot zstdcompressor_slots[] = {
     {Py_tp_doc, (char*)_zstd_ZstdCompressor___init____doc__},
     {Py_tp_traverse,  ZstdCompressor_traverse},
     {Py_tp_clear, ZstdCompressor_clear},
-    {0}
+    {0, 0}
 };
 
 PyType_Spec zstd_compressor_type_spec = {

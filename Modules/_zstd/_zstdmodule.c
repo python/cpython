@@ -69,8 +69,7 @@ typedef struct {
     char parameter_name[32];
 } ParameterInfo;
 
-static const ParameterInfo cp_list[] =
-{
+static const ParameterInfo cp_list[] = {
     {ZSTD_c_compressionLevel, "compression_level"},
     {ZSTD_c_windowLog,        "window_log"},
     {ZSTD_c_hashLog,          "hash_log"},
@@ -95,8 +94,7 @@ static const ParameterInfo cp_list[] =
     {ZSTD_c_overlapLog,       "overlap_log"}
 };
 
-static const ParameterInfo dp_list[] =
-{
+static const ParameterInfo dp_list[] = {
     {ZSTD_d_windowLogMax, "window_log_max"}
 };
 
@@ -730,14 +728,14 @@ static struct PyModuleDef_Slot _zstd_slots[] = {
 };
 
 struct PyModuleDef _zstdmodule = {
-    PyModuleDef_HEAD_INIT,
+    .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_zstd",
     .m_size = sizeof(_zstd_state),
     .m_slots = _zstd_slots,
     .m_methods = _zstd_methods,
     .m_traverse = _zstd_traverse,
     .m_clear = _zstd_clear,
-    .m_free = _zstd_free
+    .m_free = _zstd_free,
 };
 
 PyMODINIT_FUNC
