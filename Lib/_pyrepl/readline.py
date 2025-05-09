@@ -261,6 +261,11 @@ def _should_auto_indent(buffer: list[str], pos: int) -> bool:
     # a string.
     in_string: list[str] = []
     in_comment = False
+    char_line_indent_start = None
+    char_line_indent = 0
+    lastchar_line_indent = 0
+    cursor_line_indent = 0
+
     i = -1
     while i < pos - 1:
         i += 1
@@ -275,9 +280,18 @@ def _should_auto_indent(buffer: list[str], pos: int) -> bool:
         elif char == "\n":
             # newline ends a comment
             in_comment = False
-        elif char not in " \t" and not in_comment and not in_string:
-            # update last_char with non-whitespace chars outside comments and strings
-            last_char = char
+            if i < pos - 1 and buffer[i + 1] in " \t":
+                char_line_indent_start = i + 1
+            else:
+                char_line_indent_start = None # clear last line's line_indent_start
+                char_line_indent = 0
+        elif char not in " \t":
+            if char_line_indent_start is not None:
+                char_line_indent = i - char_line_indent_start
+            if not in_comment and not in_string:
+                # update last_char with non-whitespace chars outside comments and strings
+                last_char = char
+                lastchar_line_indent = char_line_indent
 
         # update stack
         if char in "\"'" and (i == 0 or buffer[i - 1] != "\\"):
@@ -285,7 +299,8 @@ def _should_auto_indent(buffer: list[str], pos: int) -> bool:
                 in_string.pop()
             else:
                 in_string.append(char)
-    return last_char == ":"
+    cursor_line_indent = char_line_indent
+    return last_char == ":" and cursor_line_indent <= lastchar_line_indent
 
 
 class maybe_accept(commands.Command):
