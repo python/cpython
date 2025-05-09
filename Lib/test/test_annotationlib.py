@@ -378,7 +378,7 @@ class TestStringFormat(unittest.TestCase):
 
         def g(
             w: a[[int, str], float],
-            x: a[{int, str}, 3],
+            x: a[{int}, 3],
             y: a[{int: str}, 4],
             z: a[(int, str), 5],
         ):
@@ -388,7 +388,7 @@ class TestStringFormat(unittest.TestCase):
             anno,
             {
                 "w": "a[[int, str], float]",
-                "x": "a[{int, str}, 3]",
+                "x": "a[{int}, 3]",
                 "y": "a[{int: str}, 4]",
                 "z": "a[(int, str), 5]",
             },

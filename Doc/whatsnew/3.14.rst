@@ -153,10 +153,10 @@ As another example, generating HTML attributes from data:
 .. code-block:: python
 
    attributes = {"src": "shrubbery.jpg", "alt": "looks nice"}
-   template = t"<img {attributes} />"
-   assert html(template) == '<img src="shrubbery.jpg" alt="looks nice" class="looks-nice" />'
+   template = t"<img {attributes}>"
+   assert html(template) == '<img src="shrubbery.jpg" alt="looks nice" class="looks-nice">'
 
-Unlike f-strings, the ``html`` function has access to template attributes
+Compared to using an f-string, the ``html`` function has access to template attributes
 containing the original information: static strings, interpolations, and values
 from the original scope. Unlike existing templating approaches, t-strings build
 from the well-known f-string syntax and rules. Template systems thus benefit
@@ -443,6 +443,9 @@ Python without deferred evaluation of annotations, reaches its end of life in 20
 In Python 3.14, the behavior of code using ``from __future__ import annotations``
 is unchanged.
 
+.. seealso::
+   :pep:`649`.
+
 
 Improved error messages
 -----------------------
@@ -584,8 +587,27 @@ Improved error messages
                      ^^^^^^
    SyntaxError: cannot use subscript as import target
 
-.. seealso::
-   :pep:`649`.
+* Improved error message when trying to add an instance of an unhashable type to
+  a :class:`dict` or :class:`set`. (Contributed by CF Bolz-Tereick and Victor Stinner
+  in :gh:`132828`.)
+
+  .. code-block:: pycon
+
+     >>> s = set()
+     >>> s.add({'pages': 12, 'grade': 'A'})
+     Traceback (most recent call last):
+       File "<python-input-1>", line 1, in <module>
+         s.add({'pages': 12, 'grade': 'A'})
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     TypeError: cannot use 'dict' as a set element (unhashable type: 'dict')
+     >>> d = {}
+     >>> l = [1, 2, 3]
+     >>> d[l] = 12
+     Traceback (most recent call last):
+       File "<python-input-4>", line 1, in <module>
+         d[l] = 12
+         ~^^^
+     TypeError: cannot use 'list' as a dict key (unhashable type: 'list')
 
 
 .. _whatsnew314-pep741:
