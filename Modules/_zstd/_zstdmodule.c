@@ -559,16 +559,21 @@ static PyMethodDef _zstd_methods[] = {
 
 
 static inline int
-add_vars_to_module(PyObject *module)
+add_vars_to_module(PyObject *m)
 {
+#define ADD_INT_MACRO(MACRO)                                                 \
+    if (PyModule_AddIntConstant((m), #MACRO, (MACRO)) < 0) {                 \
+        return -1;                                                           \
+    }
+
     /* zstd_version, str */
-    if (PyModule_AddStringConstant(module, "zstd_version",
+    if (PyModule_AddStringConstant(m, "zstd_version",
                                    ZSTD_versionString()) < 0) {
         return -1;
     }
 
     /* zstd_version_info, tuple of (int, int, int) */
-    if (PyModule_Add(module, "zstd_version_info",
+    if (PyModule_Add(m, "zstd_version_info",
             Py_BuildValue("BBB", ZSTD_VERSION_MAJOR, ZSTD_VERSION_MINOR,
                           ZSTD_VERSION_RELEASE)) < 0) {
         return -1;
@@ -576,59 +581,59 @@ add_vars_to_module(PyObject *module)
 
     /* ZSTD_CLEVEL_DEFAULT, int */
 #if ZSTD_VERSION_NUMBER >= 10500
-    if (PyModule_AddIntConstant(module, "ZSTD_CLEVEL_DEFAULT",
+    if (PyModule_AddIntConstant(m, "ZSTD_CLEVEL_DEFAULT",
                                 ZSTD_defaultCLevel()) < 0) {
         return -1;
     }
 #else
-    if (PyModule_AddIntMacro(module, ZSTD_CLEVEL_DEFAULT) < 0) {
-        return -1;
-    }
+    ADD_INT_MACRO(ZSTD_CLEVEL_DEFAULT);
 #endif
 
     /* ZSTD_DStreamOutSize, int */
-    if (PyModule_AddIntConstant(module, "ZSTD_DStreamOutSize",
+    if (PyModule_AddIntConstant(m, "ZSTD_DStreamOutSize",
                                 (uint32_t)ZSTD_DStreamOutSize()) < 0) {
         return -1;
     }
 
     /* Add zstd compression parameters. All should also be in cp_list. */
-    PyModule_AddIntMacro(module, ZSTD_c_compressionLevel);
-    PyModule_AddIntMacro(module, ZSTD_c_windowLog);
-    PyModule_AddIntMacro(module, ZSTD_c_hashLog);
-    PyModule_AddIntMacro(module, ZSTD_c_chainLog);
-    PyModule_AddIntMacro(module, ZSTD_c_searchLog);
-    PyModule_AddIntMacro(module, ZSTD_c_minMatch);
-    PyModule_AddIntMacro(module, ZSTD_c_targetLength);
-    PyModule_AddIntMacro(module, ZSTD_c_strategy);
+    ADD_INT_MACRO(ZSTD_c_compressionLevel);
+    ADD_INT_MACRO(ZSTD_c_windowLog);
+    ADD_INT_MACRO(ZSTD_c_hashLog);
+    ADD_INT_MACRO(ZSTD_c_chainLog);
+    ADD_INT_MACRO(ZSTD_c_searchLog);
+    ADD_INT_MACRO(ZSTD_c_minMatch);
+    ADD_INT_MACRO(ZSTD_c_targetLength);
+    ADD_INT_MACRO(ZSTD_c_strategy);
 
-    PyModule_AddIntMacro(module, ZSTD_c_enableLongDistanceMatching);
-    PyModule_AddIntMacro(module, ZSTD_c_ldmHashLog);
-    PyModule_AddIntMacro(module, ZSTD_c_ldmMinMatch);
-    PyModule_AddIntMacro(module, ZSTD_c_ldmBucketSizeLog);
-    PyModule_AddIntMacro(module, ZSTD_c_ldmHashRateLog);
+    ADD_INT_MACRO(ZSTD_c_enableLongDistanceMatching);
+    ADD_INT_MACRO(ZSTD_c_ldmHashLog);
+    ADD_INT_MACRO(ZSTD_c_ldmMinMatch);
+    ADD_INT_MACRO(ZSTD_c_ldmBucketSizeLog);
+    ADD_INT_MACRO(ZSTD_c_ldmHashRateLog);
 
-    PyModule_AddIntMacro(module, ZSTD_c_contentSizeFlag);
-    PyModule_AddIntMacro(module, ZSTD_c_checksumFlag);
-    PyModule_AddIntMacro(module, ZSTD_c_dictIDFlag);
+    ADD_INT_MACRO(ZSTD_c_contentSizeFlag);
+    ADD_INT_MACRO(ZSTD_c_checksumFlag);
+    ADD_INT_MACRO(ZSTD_c_dictIDFlag);
 
-    PyModule_AddIntMacro(module, ZSTD_c_nbWorkers);
-    PyModule_AddIntMacro(module, ZSTD_c_jobSize);
-    PyModule_AddIntMacro(module, ZSTD_c_overlapLog);
+    ADD_INT_MACRO(ZSTD_c_nbWorkers);
+    ADD_INT_MACRO(ZSTD_c_jobSize);
+    ADD_INT_MACRO(ZSTD_c_overlapLog);
 
     /* Add zstd decompression parameters. All should also be in dp_list. */
-    PyModule_AddIntMacro(module, ZSTD_d_windowLogMax);
+    ADD_INT_MACRO(ZSTD_d_windowLogMax);
 
     /* ZSTD_strategy enum */
-    PyModule_AddIntMacro(module, ZSTD_fast);
-    PyModule_AddIntMacro(module, ZSTD_dfast);
-    PyModule_AddIntMacro(module, ZSTD_greedy);
-    PyModule_AddIntMacro(module, ZSTD_lazy);
-    PyModule_AddIntMacro(module, ZSTD_lazy2);
-    PyModule_AddIntMacro(module, ZSTD_btlazy2);
-    PyModule_AddIntMacro(module, ZSTD_btopt);
-    PyModule_AddIntMacro(module, ZSTD_btultra);
-    PyModule_AddIntMacro(module, ZSTD_btultra2);
+    ADD_INT_MACRO(ZSTD_fast);
+    ADD_INT_MACRO(ZSTD_dfast);
+    ADD_INT_MACRO(ZSTD_greedy);
+    ADD_INT_MACRO(ZSTD_lazy);
+    ADD_INT_MACRO(ZSTD_lazy2);
+    ADD_INT_MACRO(ZSTD_btlazy2);
+    ADD_INT_MACRO(ZSTD_btopt);
+    ADD_INT_MACRO(ZSTD_btultra);
+    ADD_INT_MACRO(ZSTD_btultra2);
+
+#undef ADD_INT_MACRO
 
     return 0;
 }
