@@ -124,12 +124,15 @@ class InteractiveSession(unittest.TestCase):
         self.assertEqual(out.count(self.PS2), 0)
 
     def test_interact_dot_commands_unknown(self):
-        out, err = self.run_cli(commands=(".unknown_command",))
+        out, err = self.run_cli(commands=(".unknown_command", "."))
         self.assertIn(self.MEMORY_DB_MSG, err)
         self.assertEndsWith(out, self.PS1)
-        self.assertEqual(out.count(self.PS1), 2)
+        self.assertEqual(out.count(self.PS1), 3)
         self.assertEqual(out.count(self.PS2), 0)
-        self.assertIn('Error: unknown command or invalid arguments:  "unknown_command"', out)
+        # test "unknown_command" is pointed out in the error message
+        self.assertIn("unknown_command", out)
+        # test ignore empty dot command "." to mimic sqlite3 CLI
+        self.assertEqual(out.count('Error'), 1)
 
     def test_interact_dot_commands_with_whitespaces(self):
         out, err = self.run_cli(commands=(".version ", ". version"))

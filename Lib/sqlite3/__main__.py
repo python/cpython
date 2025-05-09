@@ -59,8 +59,9 @@ class SqliteInteractiveConsole(InteractiveConsole):
                 case "quit":
                     sys.exit(0)
                 case _ as unknown:
-                    print("Error: unknown command or invalid arguments:  "
-                          f'"{unknown}". Enter ".help" for help')
+                    if unknown:
+                        print("Error: unknown command or invalid arguments:"
+                              f'  "{unknown}". Enter ".help" for help')
         else:
             if not sqlite3.complete_statement(source):
                 return True
