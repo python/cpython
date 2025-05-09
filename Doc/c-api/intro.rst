@@ -870,4 +870,6 @@ Python C API. These abstractions are built on top of the C API and handles API
 differences between the different Python versions.
 
 These projects are not supported by the same people who maintain Python, and
-issues need to be raised with the projects directly.
+issues need to be raised with the projects directly. Remember to check that the
+project is still maintained and supported, as the list above may become
+outdated.
