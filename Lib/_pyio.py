@@ -2056,8 +2056,7 @@ class TextIOWrapper(TextIOBase):
             raise ValueError("invalid encoding: %r" % encoding)
 
         if not codecs.lookup(encoding)._is_text_encoding:
-            msg = ("%r is not a text encoding; "
-                   "use codecs.open() to handle arbitrary codecs")
+            msg = "%r is not a text encoding"
             raise LookupError(msg % encoding)
 
         if errors is None:

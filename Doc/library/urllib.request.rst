@@ -171,11 +171,11 @@ The :mod:`urllib.request` module defines the following functions:
       sections. For example, the path ``/etc/hosts`` is converted to
       the URL ``///etc/hosts``.
 
-   .. versionchanged:: next
-      The *add_scheme* argument was added.
+   .. versionchanged:: 3.14
+      The *add_scheme* parameter was added.
 
 
-.. function:: url2pathname(url, *, require_scheme=False)
+.. function:: url2pathname(url, *, require_scheme=False, resolve_host=False)
 
    Convert the given ``file:`` URL to a local path. This function uses
    :func:`~urllib.parse.unquote` to decode the URL.
@@ -184,6 +184,13 @@ The :mod:`urllib.request` module defines the following functions:
    ``file:`` scheme prefix. If *require_scheme* is set to true, the given
    value should include the prefix; a :exc:`~urllib.error.URLError` is raised
    if it doesn't.
+
+   The URL authority is discarded if it is empty, ``localhost``, or the local
+   hostname. Otherwise, if *resolve_host* is set to true, the authority is
+   resolved using :func:`socket.gethostbyname` and discarded if it matches a
+   local IP address (as per :rfc:`RFC 8089 §3 <8089#section-3>`). If the
+   authority is still unhandled, then on Windows a UNC path is returned, and
+   on other platforms a :exc:`~urllib.error.URLError` is raised.
 
    This example shows the function being used on Windows::
 
@@ -197,15 +204,14 @@ The :mod:`urllib.request` module defines the following functions:
       characters not following a drive letter no longer cause an
       :exc:`OSError` exception to be raised on Windows.
 
-   .. versionchanged:: next
-      This function calls :func:`socket.gethostbyname` if the URL authority
-      isn't empty, ``localhost``, or the machine hostname. If the authority
-      resolves to a local IP address then it is discarded; otherwise, on
+   .. versionchanged:: 3.14
+      The URL authority is discarded if it matches the local hostname.
+      Otherwise, if the authority isn't empty or ``localhost``, then on
       Windows a UNC path is returned (as before), and on other platforms a
       :exc:`~urllib.error.URLError` is raised.
 
-   .. versionchanged:: next
-      The *require_scheme* argument was added.
+   .. versionchanged:: 3.14
+      The *require_scheme* and *resolve_host* parameters were added.
 
 
 .. function:: getproxies()
