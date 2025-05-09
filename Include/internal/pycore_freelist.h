@@ -9,7 +9,8 @@ extern "C" {
 #endif
 
 #include "pycore_freelist_state.h"      // struct _Py_freelists
-#include "pycore_object.h"              // _PyObject_IS_GC
+#include "pycore_interp_structs.h"      // PyInterpreterState
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_STORE_PTR_RELAXED()
 #include "pycore_pystate.h"             // _PyThreadState_GET
 #include "pycore_stats.h"               // OBJECT_STAT_INC
 

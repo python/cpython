@@ -178,7 +178,7 @@ def heapify(x):
     for i in reversed(range(n//2)):
         _siftup(x, i)
 
-def _heappop_max(heap):
+def heappop_max(heap):
     """Maxheap version of a heappop."""
     lastelt = heap.pop()    # raises appropriate IndexError if heap is empty
     if heap:
@@ -188,18 +188,31 @@ def _heappop_max(heap):
         return returnitem
     return lastelt
 
-def _heapreplace_max(heap, item):
+def heapreplace_max(heap, item):
     """Maxheap version of a heappop followed by a heappush."""
     returnitem = heap[0]    # raises appropriate IndexError if heap is empty
     heap[0] = item
     _siftup_max(heap, 0)
     return returnitem
 
-def _heapify_max(x):
+def heappush_max(heap, item):
+    """Maxheap version of a heappush."""
+    heap.append(item)
+    _siftdown_max(heap, 0, len(heap)-1)
+
+def heappushpop_max(heap, item):
+    """Maxheap fast version of a heappush followed by a heappop."""
+    if heap and item < heap[0]:
+        item, heap[0] = heap[0], item
+        _siftup_max(heap, 0)
+    return item
+
+def heapify_max(x):
     """Transform list into a maxheap, in-place, in O(len(x)) time."""
     n = len(x)
     for i in reversed(range(n//2)):
         _siftup_max(x, i)
+
 
 # 'heap' is a heap at all indices >= startpos, except possibly for pos.  pos
 # is the index of a leaf with a possibly out-of-order value.  Restore the
@@ -335,9 +348,9 @@ def merge(*iterables, key=None, reverse=False):
     h_append = h.append
 
     if reverse:
-        _heapify = _heapify_max
-        _heappop = _heappop_max
-        _heapreplace = _heapreplace_max
+        _heapify = heapify_max
+        _heappop = heappop_max
+        _heapreplace = heapreplace_max
         direction = -1
     else:
         _heapify = heapify
@@ -490,10 +503,10 @@ def nsmallest(n, iterable, key=None):
         result = [(elem, i) for i, elem in zip(range(n), it)]
         if not result:
             return result
-        _heapify_max(result)
+        heapify_max(result)
         top = result[0][0]
         order = n
-        _heapreplace = _heapreplace_max
+        _heapreplace = heapreplace_max
         for elem in it:
             if elem < top:
                 _heapreplace(result, (elem, order))
@@ -507,10 +520,10 @@ def nsmallest(n, iterable, key=None):
     result = [(key(elem), i, elem) for i, elem in zip(range(n), it)]
     if not result:
         return result
-    _heapify_max(result)
+    heapify_max(result)
     top = result[0][0]
     order = n
-    _heapreplace = _heapreplace_max
+    _heapreplace = heapreplace_max
     for elem in it:
         k = key(elem)
         if k < top:
@@ -583,19 +596,13 @@ try:
     from _heapq import *
 except ImportError:
     pass
-try:
-    from _heapq import _heapreplace_max
-except ImportError:
-    pass
-try:
-    from _heapq import _heapify_max
-except ImportError:
-    pass
-try:
-    from _heapq import _heappop_max
-except ImportError:
-    pass
 
+# For backwards compatibility
+_heappop_max  = heappop_max
+_heapreplace_max = heapreplace_max
+_heappush_max = heappush_max
+_heappushpop_max = heappushpop_max
+_heapify_max = heapify_max
 
 if __name__ == "__main__":
 

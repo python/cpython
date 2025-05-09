@@ -320,7 +320,7 @@ Configuration Options
    * - ``"cpu_count"``
      - :c:member:`cpu_count <PyConfig.cpu_count>`
      - ``int``
-     - Read-only
+     - Public
    * - ``"dev_mode"``
      - :c:member:`dev_mode <PyConfig.dev_mode>`
      - ``bool``
@@ -363,7 +363,7 @@ Configuration Options
      - Read-only
    * - ``"import_time"``
      - :c:member:`import_time <PyConfig.import_time>`
-     - ``bool``
+     - ``int``
      - Read-only
    * - ``"inspect"``
      - :c:member:`inspect <PyConfig.inspect>`
@@ -578,8 +578,8 @@ Some options are read from the :mod:`sys` attributes. For example, the option
    * ``list[str]``
    * ``dict[str, str]``
 
-   The caller must hold the GIL. The function cannot be called before
-   Python initialization nor after Python finalization.
+   The caller must have an :term:`attached thread state`. The function cannot
+   be called before Python initialization nor after Python finalization.
 
    .. versionadded:: 3.14
 
@@ -601,8 +601,8 @@ Some options are read from the :mod:`sys` attributes. For example, the option
    * Return a new reference on success.
    * Set an exception and return ``NULL`` on error.
 
-   The caller must hold the GIL. The function cannot be called before
-   Python initialization nor after Python finalization.
+   The caller must have an :term:`attached thread state`. The function cannot
+   be called before Python initialization nor after Python finalization.
 
    .. versionadded:: 3.14
 
@@ -616,8 +616,10 @@ Some options are read from the :mod:`sys` attributes. For example, the option
    * Raise a :exc:`ValueError` if the option is read-only (cannot be set).
    * Raise a :exc:`TypeError` if *value* has not the proper type.
 
-   The caller must hold the GIL. The function cannot be called before
-   Python initialization nor after Python finalization.
+   The caller must have an :term:`attached thread state`. The function cannot
+   be called before Python initialization nor after Python finalization.
+
+   .. audit-event:: cpython.PyConfig_Set name,value c.PyConfig_Set
 
    .. versionadded:: 3.14
 
@@ -1475,12 +1477,18 @@ PyConfig
 
    .. c:member:: int import_time
 
-      If non-zero, profile import time.
+      If ``1``, profile import time.
+      If ``2``, include additional output that indicates
+      when an imported module has already been loaded.
 
-      Set the ``1`` by the :option:`-X importtime <-X>` option and the
+      Set by the :option:`-X importtime <-X>` option and the
       :envvar:`PYTHONPROFILEIMPORTTIME` environment variable.
 
       Default: ``0``.
+
+     .. versionchanged:: 3.14
+
+        Added support for ``import_time = 2``
 
    .. c:member:: int inspect
 

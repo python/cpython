@@ -5,7 +5,7 @@ Tests for the threading module.
 import test.support
 from test.support import threading_helper, requires_subprocess, requires_gil_enabled
 from test.support import verbose, cpython_only, os_helper
-from test.support.import_helper import import_module
+from test.support.import_helper import ensure_lazy_imports, import_module
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import force_not_colorized
 
@@ -119,6 +119,10 @@ class BaseTestCase(unittest.TestCase):
 
 class ThreadTests(BaseTestCase):
     maxDiff = 9999
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("threading", {"functools", "warnings"})
 
     @cpython_only
     def test_name(self):
@@ -526,7 +530,8 @@ class ThreadTests(BaseTestCase):
         finally:
             sys.setswitchinterval(old_interval)
 
-    def test_join_from_multiple_threads(self):
+    @support.bigmemtest(size=20, memuse=72*2**20, dry_run=False)
+    def test_join_from_multiple_threads(self, size):
         # Thread.join() should be thread-safe
         errors = []
 
@@ -1171,6 +1176,77 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(out.strip(), b"OK")
         self.assertIn(b"can't create new thread at interpreter shutdown", err)
 
+    def test_join_daemon_thread_in_finalization(self):
+        # gh-123940: Py_Finalize() prevents other threads from running Python
+        # code, so join() can not succeed unless the thread is already done.
+        # (Non-Python threads, that is `threading._DummyThread`, can't be
+        # joined at all.)
+        # We raise an exception rather than hang.
+        for timeout in (None, 10):
+            with self.subTest(timeout=timeout):
+                code = textwrap.dedent(f"""
+                    import threading
+
+
+                    def loop():
+                        while True:
+                            pass
+
+
+                    class Cycle:
+                        def __init__(self):
+                            self.self_ref = self
+                            self.thr = threading.Thread(
+                                target=loop, daemon=True)
+                            self.thr.start()
+
+                        def __del__(self):
+                            assert self.thr.is_alive()
+                            try:
+                                self.thr.join(timeout={timeout})
+                            except PythonFinalizationError:
+                                assert self.thr.is_alive()
+                                print('got the correct exception!')
+
+                    # Cycle holds a reference to itself, which ensures it is
+                    # cleaned up during the GC that runs after daemon threads
+                    # have been forced to exit during finalization.
+                    Cycle()
+                """)
+                rc, out, err = assert_python_ok("-c", code)
+                self.assertEqual(err, b"")
+                self.assertIn(b"got the correct exception", out)
+
+    def test_join_finished_daemon_thread_in_finalization(self):
+        # (see previous test)
+        # If the thread is already finished, join() succeeds.
+        code = textwrap.dedent("""
+            import threading
+            done = threading.Event()
+
+            def set_event():
+                done.set()
+
+            class Cycle:
+                def __init__(self):
+                    self.self_ref = self
+                    self.thr = threading.Thread(target=set_event, daemon=True)
+                    self.thr.start()
+                    self.thr.join()
+
+                def __del__(self):
+                    assert done.is_set()
+                    assert not self.thr.is_alive()
+                    self.thr.join()
+                    assert not self.thr.is_alive()
+                    print('all clear!')
+
+            Cycle()
+        """)
+        rc, out, err = assert_python_ok("-c", code)
+        self.assertEqual(err, b"")
+        self.assertIn(b"all clear", out)
+
     def test_start_new_thread_failed(self):
         # gh-109746: if Python fails to start newly created thread
         # due to failure of underlying PyThread_start_new_thread() call,
@@ -1356,7 +1432,8 @@ class ThreadJoinOnShutdown(BaseTestCase):
         self._run_and_join(script)
 
     @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
-    def test_4_daemon_threads(self):
+    @support.bigmemtest(size=40, memuse=70*2**20, dry_run=False)
+    def test_4_daemon_threads(self, size):
         # Check that a daemon thread cannot crash the interpreter on shutdown
         # by manipulating internal structures that are being disposed of in
         # the main thread.
@@ -2145,7 +2222,7 @@ class MiscTestCase(unittest.TestCase):
         if os_helper.TESTFN_UNENCODABLE:
             tests.append(os_helper.TESTFN_UNENCODABLE)
 
-        if sys.platform.startswith("solaris"):
+        if sys.platform.startswith("sunos"):
             encoding = "utf-8"
         else:
             encoding = sys.getfilesystemencoding()
@@ -2161,7 +2238,7 @@ class MiscTestCase(unittest.TestCase):
                     encoded = encoded.split(b'\0', 1)[0]
                 if truncate is not None:
                     encoded = encoded[:truncate]
-                if sys.platform.startswith("solaris"):
+                if sys.platform.startswith("sunos"):
                     expected = encoded.decode("utf-8", "surrogateescape")
                 else:
                     expected = os.fsdecode(encoded)

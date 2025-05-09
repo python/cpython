@@ -95,6 +95,7 @@ if "%~1"=="--experimental-jit" (set UseJIT=true) & (set UseTIER2=1) & shift & go
 if "%~1"=="--experimental-jit-off" (set UseJIT=true) & (set UseTIER2=3) & shift & goto CheckOpts
 if "%~1"=="--experimental-jit-interpreter" (set UseTIER2=4) & shift & goto CheckOpts
 if "%~1"=="--experimental-jit-interpreter-off" (set UseTIER2=6) & shift & goto CheckOpts
+if "%~1"=="--without-remote-debug" (set DisableRemoteDebug=true) & shift & goto CheckOpts
 if "%~1"=="--pystats" (set PyStats=1) & shift & goto CheckOpts
 if "%~1"=="--tail-call-interp" (set UseTailCallInterp=true) & shift & goto CheckOpts
 rem These use the actual property names used by MSBuild.  We could just let
@@ -110,6 +111,7 @@ if "%IncludeExternals%"=="" set IncludeExternals=true
 if "%IncludeCTypes%"=="" set IncludeCTypes=true
 if "%IncludeSSL%"=="" set IncludeSSL=true
 if "%IncludeTkinter%"=="" set IncludeTkinter=true
+if "%UseJIT%" NEQ "true" set IncludeLLVM=false
 
 if "%IncludeExternals%"=="true" call "%dir%get_externals.bat"
 
@@ -120,6 +122,13 @@ if "%do_pgo%" EQU "true" if "%platf%" EQU "x64" (
         echo.       and PROCESSOR_ARCHITEW6432 environment variables are correct.
         exit /b 1 
     )
+)
+
+if "%UseDisableGil%" EQU "true" if "%UseTIER2%" NEQ "" (
+    rem GH-133171: This configuration builds the JIT but never actually uses it,
+    rem which is surprising (and strictly worse than not building it at all):
+    echo.ERROR: --experimental-jit cannot be used with --disable-gil.
+    exit /b 1
 )
 
 if not exist "%GIT%" where git > "%TEMP%\git.loc" 2> nul && set /P GIT= < "%TEMP%\git.loc" & del "%TEMP%\git.loc"
@@ -192,6 +201,7 @@ echo on
  /p:UseTIER2=%UseTIER2%^
  /p:PyStats=%PyStats%^
  /p:UseTailCallInterp=%UseTailCallInterp%^
+ /p:DisableRemoteDebug=%DisableRemoteDebug%^
  %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 @echo off

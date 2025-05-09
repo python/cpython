@@ -8,8 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_lock.h"          // PyMutex
-#include "pycore_runtime_structs.h"    // struct codecs_state
+#include "pycore_interp_structs.h" // struct codecs_state
 
 /* Initialize codecs-related state for the given interpreter, including
    registering the first codec search function. Must be called before any other

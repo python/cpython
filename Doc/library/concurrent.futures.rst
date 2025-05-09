@@ -6,8 +6,9 @@
 
 .. versionadded:: 3.2
 
-**Source code:** :source:`Lib/concurrent/futures/thread.py`
-and :source:`Lib/concurrent/futures/process.py`
+**Source code:** :source:`Lib/concurrent/futures/thread.py`,
+:source:`Lib/concurrent/futures/process.py`,
+and :source:`Lib/concurrent/futures/interpreter.py`
 
 --------------
 
@@ -298,7 +299,7 @@ the bytes over a shared :mod:`socket <socket>` or
 
    The optional *initializer* and *initargs* arguments have the same
    meaning as for :class:`!ThreadPoolExecutor`: the initializer is run
-   when each worker is created, though in this case it is run.in
+   when each worker is created, though in this case it is run in
    the worker's interpreter.  The executor serializes the *initializer*
    and *initargs* using :mod:`pickle` when sending them to the worker's
    interpreter.

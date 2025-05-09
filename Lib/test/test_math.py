@@ -573,6 +573,8 @@ class MathTests(unittest.TestCase):
         #self.assertEqual(math.ceil(NINF), NINF)
         #self.assertTrue(math.isnan(math.floor(NAN)))
 
+        class TestFloorIsNone(float):
+            __floor__ = None
         class TestFloor:
             def __floor__(self):
                 return 42
@@ -588,6 +590,7 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.floor(FloatLike(41.9)), 41)
         self.assertRaises(TypeError, math.floor, TestNoFloor())
         self.assertRaises(ValueError, math.floor, TestBadFloor())
+        self.assertRaises(TypeError, math.floor, TestFloorIsNone(3.5))
 
         t = TestNoFloor()
         t.__floor__ = lambda *args: args
@@ -2533,10 +2536,10 @@ class MathTests(unittest.TestCase):
             math.log(x)
         x = -123
         with self.assertRaisesRegex(ValueError,
-                                    f"expected a positive input, got {x}"):
+                                    "expected a positive input$"):
             math.log(x)
         with self.assertRaisesRegex(ValueError,
-                                    f"expected a float or nonnegative integer, got {x}"):
+                                    f"expected a noninteger or positive integer, got {x}"):
             math.gamma(x)
         x = 1.0
         with self.assertRaisesRegex(ValueError,
@@ -2772,6 +2775,9 @@ class FMATests(unittest.TestCase):
         or (sys.platform == "android" and platform.machine() == "x86_64")
         or support.linked_to_musl(),  # gh-131032
         f"this platform doesn't implement IEE 754-2008 properly")
+    # gh-131032: musl is fixed but the fix is not yet released; when the fixed
+    # version is known change this to:
+    #   or support.linked_to_musl() < (1, <m>, <p>)
     def test_fma_zero_result(self):
         nonnegative_finites = [0.0, 1e-300, 2.3, 1e300]
 

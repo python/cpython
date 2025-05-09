@@ -245,11 +245,10 @@ class Random(_random.Random):
     def _randbelow_with_getrandbits(self, n):
         "Return a random int in the range [0,n).  Defined for n > 0."
 
-        getrandbits = self.getrandbits
         k = n.bit_length()
-        r = getrandbits(k)  # 0 <= r < 2**k
+        r = self.getrandbits(k)  # 0 <= r < 2**k
         while r >= n:
-            r = getrandbits(k)
+            r = self.getrandbits(k)
         return r
 
     def _randbelow_without_getrandbits(self, n, maxsize=1<<BPF):
@@ -336,8 +335,11 @@ class Random(_random.Random):
     def randint(self, a, b):
         """Return random integer in range [a, b], including both end points.
         """
-
-        return self.randrange(a, b+1)
+        a = _index(a)
+        b = _index(b)
+        if b < a:
+            raise ValueError(f"empty range in randint({a}, {b})")
+        return a + self._randbelow(b - a + 1)
 
 
     ## -------------------- sequence methods  -------------------
@@ -1009,7 +1011,7 @@ if hasattr(_os, "fork"):
 def _parse_args(arg_list: list[str] | None):
     import argparse
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawTextHelpFormatter)
+        formatter_class=argparse.RawTextHelpFormatter, color=True)
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "-c", "--choice", nargs="+",

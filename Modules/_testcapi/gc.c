@@ -265,7 +265,7 @@ obj_extra_data_set(PyObject *self, PyObject *newval, void *Py_UNUSED(ignored))
 }
 
 static PyGetSetDef obj_extra_data_getset[] = {
-    {"extra", (getter)obj_extra_data_get, (setter)obj_extra_data_set, NULL},
+    {"extra", obj_extra_data_get, obj_extra_data_set, NULL},
     {NULL}
 };
 

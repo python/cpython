@@ -4,8 +4,6 @@
 extern "C" {
 #endif
 
-#include "pycore_lock.h"
-
 #ifndef Py_BUILD_CORE
 #  error "this header requires Py_BUILD_CORE define"
 #endif
@@ -36,6 +34,13 @@ PyFunctionObject *_PyFunction_LookupByVersion(uint32_t version, PyObject **p_cod
 
 extern PyObject *_Py_set_function_type_params(
     PyThreadState* unused, PyObject *func, PyObject *type_params);
+
+
+/* See pycore_code.h for explanation about what "stateless" means. */
+
+PyAPI_FUNC(int)
+_PyFunction_VerifyStateless(PyThreadState *, PyObject *);
+
 
 #ifdef __cplusplus
 }

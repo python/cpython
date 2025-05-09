@@ -1,17 +1,20 @@
+/* This file contains the struct definitions for interpreter state
+ * and other necessary structs */
+
 #ifndef Py_INTERNAL_INTERP_STRUCTS_H
 #define Py_INTERNAL_INTERP_STRUCTS_H
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "pycore_structs.h"
-#include "pycore_pymath.h" // _PY_SHORT_FLOAT_REPR
-#include "pycore_llist.h"
 #include "pycore_ast_state.h"     // struct ast_state
+#include "pycore_llist.h"         // struct llist_node
+#include "pycore_opcode_utils.h"  // NUM_COMMON_CONSTANTS
+#include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
+#include "pycore_structs.h"       // PyHamtObject
+#include "pycore_tstate.h"        // _PyThreadStateImpl
+#include "pycore_typedefs.h"      // _PyRuntimeState
 
-
-/* This file contains the struct definitions for interpreter state
- * and other necessary structs */
 
 #define CODE_MAX_WATCHERS 8
 #define CONTEXT_MAX_WATCHERS 8
@@ -242,23 +245,20 @@ struct _gc_runtime_state {
 
     /* True if gc.freeze() has been used. */
     int freeze_active;
+
+    /* Memory usage of the process (RSS + swap) after last GC. */
+    Py_ssize_t last_mem;
+
+    /* This accumulates the new object count whenever collection is deferred
+       due to the RSS increase condition not being meet.  Reset on collection. */
+    Py_ssize_t deferred_count;
+
+    /* Mutex held for gc_should_collect_mem_usage(). */
+    PyMutex mutex;
 #endif
 };
 
-#ifdef Py_GIL_DISABLED
-struct _gc_thread_state {
-    /* Thread-local allocation count. */
-    Py_ssize_t alloc_count;
-};
-#endif
-
-#include "pycore_gil.h"
-
-/****** Thread state **************/
-#include "pytypedefs.h"
-#include "pystate.h"
-#include "pycore_tstate.h"
-
+#include "pycore_gil.h"           // struct _gil_runtime_state
 
 /**** Import ********/
 
@@ -332,8 +332,8 @@ struct _import_state {
 
 /********** Interpreter state **************/
 
-#include "pycore_object_state.h"
-#include "pycore_crossinterp.h"
+#include "pycore_object_state.h"  // struct _py_object_state
+#include "pycore_crossinterp.h"   // _PyXI_state_t
 
 
 struct _Py_long_state {
@@ -458,8 +458,8 @@ struct _py_func_state {
     struct _func_version_cache_item func_version_cache[FUNC_VERSION_CACHE_SIZE];
 };
 
-#include "pycore_dict_state.h"
-#include "pycore_exceptions.h"
+#include "pycore_dict_state.h"    // struct _Py_dict_state
+#include "pycore_exceptions.h"    // struct _Py_exc_state
 
 
 /****** type state *********/
@@ -592,6 +592,7 @@ struct _warnings_runtime_state {
     PyObject *default_action; /* String */
     _PyRecursiveMutex lock;
     long filters_version;
+    PyObject *context;
 };
 
 struct _Py_mem_interp_free_queue {
@@ -640,7 +641,7 @@ struct _Py_unicode_ids {
     PyObject **array;
 };
 
-#include "pycore_ucnhash.h"
+#include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
 struct _Py_unicode_state {
     struct _Py_unicode_fs_codec fs_codec;
@@ -658,8 +659,6 @@ struct callable_cache {
     PyObject *list_append;
     PyObject *object__getattribute__;
 };
-
-#include "pycore_obmalloc.h"
 
 /* Length of array of slotdef pointers used to store slots with the
    same __name__.  There should be at most MAX_EQUIV-1 slotdef entries with
@@ -701,7 +700,7 @@ struct _Py_interp_static_objects {
     } singletons;
 };
 
-#include "pycore_instruments.h"
+#include "pycore_instruments.h"   // PY_MONITORING_TOOL_IDS
 
 
 #ifdef Py_GIL_DISABLED
@@ -765,6 +764,12 @@ struct _is {
      * and should be placed at the beginning. */
     struct _ceval_state ceval;
 
+    /* This structure is carefully allocated so that it's correctly aligned
+     * to avoid undefined behaviors during LOAD and STORE. The '_malloced'
+     * field stores the allocated pointer address that will later be freed.
+     */
+    void *_malloced;
+
     PyInterpreterState *next;
 
     int64_t id;
@@ -802,7 +807,7 @@ struct _is {
     /* Reference to the _PyRuntime global variable. This field exists
        to not have to pass runtime in addition to tstate to a function.
        Get runtime from tstate: tstate->interp->runtime. */
-    struct pyruntimestate *runtime;
+    _PyRuntimeState *runtime;
 
     /* Set by Py_EndInterpreter().
 
@@ -925,8 +930,11 @@ struct _is {
     struct ast_state ast;
     struct types_state types;
     struct callable_cache callable_cache;
+    PyObject *common_consts[NUM_COMMON_CONSTANTS];
     bool jit;
     struct _PyExecutorObject *executor_list_head;
+    struct _PyExecutorObject *executor_deletion_list_head;
+    int executor_deletion_list_remaining_capacity;
     size_t trace_run_counter;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
@@ -945,11 +953,6 @@ struct _is {
 
     Py_ssize_t _interactive_src_count;
 
-    /* the initial PyInterpreterState.threads.head */
-    _PyThreadStateImpl _initial_thread;
-    // _initial_thread should be the last field of PyInterpreterState.
-    // See https://github.com/python/cpython/issues/127117.
-
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
     uint64_t next_stackref;
     _Py_hashtable_t *open_stackrefs_table;
@@ -957,8 +960,12 @@ struct _is {
     _Py_hashtable_t *closed_stackrefs_table;
 #  endif
 #endif
-};
 
+    /* the initial PyInterpreterState.threads.head */
+    _PyThreadStateImpl _initial_thread;
+    // _initial_thread should be the last field of PyInterpreterState.
+    // See https://github.com/python/cpython/issues/127117.
+};
 
 
 #ifdef __cplusplus

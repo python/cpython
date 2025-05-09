@@ -1,10 +1,10 @@
 // TypeVar, TypeVarTuple, ParamSpec, and TypeAlias
 #include "Python.h"
-#include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_interpframe.h"   // _PyInterpreterFrame
 #include "pycore_object.h"        // _PyObject_GC_TRACK/UNTRACK, PyAnnotateFormat
 #include "pycore_typevarobject.h"
-#include "pycore_unionobject.h"   // _Py_union_type_or, _Py_union_from_tuple
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
+#include "pycore_unionobject.h"   // _Py_union_type_or, _Py_union_from_tuple
 #include "structmember.h"
 
 /*[clinic input]

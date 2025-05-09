@@ -30,6 +30,7 @@ Modules/Setup*                @erlend-aasland
 Objects/set*                  @rhettinger
 Objects/dict*                 @methane @markshannon
 Objects/typevarobject.c       @JelleZijlstra
+Objects/unionobject.c         @JelleZijlstra
 Objects/type*                 @markshannon
 Objects/codeobject.c          @markshannon
 Objects/frameobject.c         @markshannon
@@ -107,12 +108,15 @@ Objects/exceptions.c          @iritkatriel
 # Hashing & cryptographic primitives
 **/*hashlib*                  @gpshead @tiran @picnixz
 **/*hashopenssl*              @gpshead @tiran @picnixz
-**/*pyhash*                   @gpshead @tiran
-**/sha*                       @gpshead @tiran @picnixz
-Modules/md5*                  @gpshead @tiran @picnixz
-**/*blake*                    @gpshead @tiran @picnixz
-Modules/_hacl/**              @gpshead
+**/*pyhash*                   @gpshead @tiran @picnixz
+Modules/*blake*               @gpshead @tiran @picnixz
+Modules/*md5*                 @gpshead @tiran @picnixz
+Modules/*sha*                 @gpshead @tiran @picnixz
+Modules/_hacl/**              @gpshead @picnixz
 **/*hmac*                     @gpshead @picnixz
+
+# libssl
+**/*ssl*                      @gpshead @picnixz
 
 # logging
 **/*logging*                  @vsajip
@@ -164,6 +168,9 @@ Include/internal/pycore_time.h  @pganssle @abalkin
 **/*imap*                     @python/email-team
 **/*poplib*                   @python/email-team
 
+# Exclude .mailmap from being owned by @python/email-team
+/.mailmap
+
 # Garbage collector
 /Modules/gcmodule.c           @pablogsal
 /Doc/library/gc.rst           @pablogsal
@@ -181,10 +188,11 @@ Include/internal/pycore_time.h  @pganssle @abalkin
 
 # AST
 Python/ast.c                  @isidentical @JelleZijlstra @eclips4
-Python/ast_opt.c              @isidentical @eclips4
+Python/ast_preprocess.c       @isidentical @eclips4
 Parser/asdl.py                @isidentical @JelleZijlstra @eclips4
 Parser/asdl_c.py              @isidentical @JelleZijlstra @eclips4
 Lib/ast.py                    @isidentical @JelleZijlstra @eclips4
+Lib/_ast_unparse.py           @isidentical @JelleZijlstra @eclips4
 Lib/test/test_ast/            @eclips4
 
 # Mock
@@ -290,7 +298,12 @@ Lib/test/test_interpreters/   @ericsnowcurrently
 **/*-ios*                     @freakboy3742
 
 # WebAssembly
-/Tools/wasm/                  @brettcannon @freakboy3742
+Tools/wasm/config.site-wasm32-emscripten  @freakboy3742
+/Tools/wasm/README.md         @brettcannon @freakboy3742
+/Tools/wasm/wasi-env          @brettcannon
+/Tools/wasm/wasi.py           @brettcannon
+/Tools/wasm/emscripten        @freakboy3742
+/Tools/wasm/wasi              @brettcannon
 
 # SBOM
 /Misc/externals.spdx.json     @sethmlarson
@@ -312,3 +325,9 @@ Lib/test/test__colorize.py    @hugovk
 
 # Fuzzing
 Modules/_xxtestfuzz/          @ammaraskar
+
+# t-strings
+**/*interpolationobject*      @lysnikolaou
+**/*templateobject*           @lysnikolaou
+**/*templatelib*              @lysnikolaou
+**/*tstring*                  @lysnikolaou

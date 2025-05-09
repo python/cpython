@@ -626,6 +626,19 @@ which, when run, will produce:
    of each message with the handler's level, and only passes a message to a
    handler if it's appropriate to do so.
 
+.. versionchanged:: 3.14
+   The :class:`QueueListener` can be started (and stopped) via the
+   :keyword:`with` statement. For example:
+
+   .. code-block:: python
+
+      with QueueListener(que, handler) as listener:
+          # The queue listener automatically starts
+          # when the 'with' block is entered.
+          pass
+      # The queue listener automatically stops once
+      # the 'with' block is exited.
+
 .. _network-logging:
 
 Sending and receiving logging events across a network
