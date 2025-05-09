@@ -1,0 +1,1 @@
+Fixed the cross-interpreter issue of subprocess module by modifying :func:`multiprocessing.spawn.prepare` and :func:`multiprocessing.spawn.get_preparation_data`. Contributed by pypy66.
