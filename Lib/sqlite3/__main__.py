@@ -48,6 +48,8 @@ class SqliteInteractiveConsole(InteractiveConsole):
         Return True if more input is needed; buffering is done automatically.
         Return False if input is a complete statement ready for execution.
         """
+        if not source or source.isspace():
+            return False
         if source[0] == ".":
             match source[1:].strip():
                 case "version":
@@ -57,7 +59,8 @@ class SqliteInteractiveConsole(InteractiveConsole):
                 case "quit":
                     sys.exit(0)
                 case _:
-                    print('Error: unknown command or invalid arguments:  "spam". Enter ".help" for help')
+                    print('Error: unknown command or invalid arguments:  '
+                          f'"{source[1:].strip()}". Enter ".help" for help')
         else:
             if not sqlite3.complete_statement(source):
                 return True
