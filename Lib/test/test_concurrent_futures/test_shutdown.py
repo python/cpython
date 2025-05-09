@@ -339,7 +339,6 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         time.sleep(0.1 * n)
         return n
 
-
     def _run_test_issue_gh_132969(self, max_workers: int) -> int:
         # max_workers=2 will repro exception
         # max_workers=4 will repro exception and then hang
