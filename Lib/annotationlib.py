@@ -371,24 +371,11 @@ class _Stringifier:
         elif type(other) in (list, tuple, set):
             extra_names = {}
             elts = []
-
-            # For sets of types, sort elements by name for consistent ordering.
-            if type(other) is set and all(isinstance(x, type) for x in other):
-                # Sort the elements by name to ensure deterministic output.
-                sorted_elts = sorted(other, key=lambda x: x.__name__)
-                for elt in sorted_elts:
-                    new_elt, new_extra_names = self.__convert_to_ast(elt)
-                    if new_extra_names is not None:
-                        extra_names.update(new_extra_names)
-                    elts.append(new_elt)
-            else:
-                # For lists, tuples, and other sets, preserve the original order.
-                for elt in other:
-                    new_elt, new_extra_names = self.__convert_to_ast(elt)
-                    if new_extra_names is not None:
-                        extra_names.update(new_extra_names)
-                    elts.append(new_elt)
-
+            for elt in other:
+                new_elt, new_extra_names = self.__convert_to_ast(elt)
+                if new_extra_names is not None:
+                    extra_names.update(new_extra_names)
+                elts.append(new_elt)
             ast_class = {list: ast.List, tuple: ast.Tuple, set: ast.Set}[type(other)]
             return ast_class(elts), extra_names
         else:
@@ -830,10 +817,6 @@ def _stringify_single(anno):
         return anno
     elif isinstance(anno, _Template):
         return ast.unparse(_template_to_ast(anno))
-    elif isinstance(anno, set) and all(isinstance(x, type) for x in anno):
-        # Sort set elements by name to ensure consistent ordering.
-        sorted_elements = sorted(anno, key=lambda x: x.__name__)
-        return "{" + ", ".join(x.__name__ for x in sorted_elements) + "}"
     else:
         return repr(anno)
 
@@ -1039,17 +1022,10 @@ def annotations_to_string(annotations):
 
     Always returns a fresh a dictionary.
     """
-    result = {}
-    for n, t in annotations.items():
-        if isinstance(t, str):
-            result[n] = t
-        elif isinstance(t, set) and all(isinstance(x, type) for x in t):
-            # Sort set elements by name to ensure consistent ordering.
-            sorted_elements = sorted(t, key=lambda x: x.__name__)
-            result[n] = "{" + ", ".join(x.__name__ for x in sorted_elements) + "}"
-        else:
-            result[n] = type_repr(t)
-    return result
+    return {
+        n: t if isinstance(t, str) else type_repr(t)
+        for n, t in annotations.items()
+    }
 
 
 def _get_and_call_annotate(obj, format):

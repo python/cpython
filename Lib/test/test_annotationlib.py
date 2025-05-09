@@ -394,17 +394,6 @@ class TestStringFormat(unittest.TestCase):
             },
         )
 
-    def test_set_ordering_consistency(self):
-        """Test that sets of types are consistently ordered in string representations."""
-        # Test with direct set annotations
-        def g1(x: {int, str}):
-            pass
-
-        anno_g1 = get_annotations(g1, format=Format.STRING)
-
-        # The set should have elements sorted by name (int before str)
-        self.assertEqual(anno_g1["x"], "{int, str}")
-
     def test_nested_expressions(self):
         def f(
             nested: list[Annotated[set[int], "set of ints", 4j]],
