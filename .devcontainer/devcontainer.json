@@ -9,7 +9,7 @@
         "zsh",
         "fish",
         // For umask fix below.
-        "/usr/bin/setfacl"
+        "acl"
     ],
     "updateContentCommand": {
         // Using the shell for `nproc` usage.
