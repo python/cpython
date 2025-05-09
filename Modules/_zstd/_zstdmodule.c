@@ -554,7 +554,8 @@ static PyMethodDef _zstd_methods[] = {
     {0}
 };
 
-static int _zstd_exec(PyObject *m)
+static int
+_zstd_exec(PyObject *m)
 {
 #define ADD_TYPE(TYPE, SPEC)                                                 \
 do {                                                                         \
