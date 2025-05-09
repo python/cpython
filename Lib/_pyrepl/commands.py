@@ -491,7 +491,6 @@ class perform_bracketed_paste(Command):
         data = ""
         start = time.time()
         while done not in data:
-            self.reader.console.wait(100)
             ev = self.reader.console.getpending()
             data += ev.data
         trace(
