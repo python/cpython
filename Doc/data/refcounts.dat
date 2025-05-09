@@ -2778,6 +2778,9 @@ PyUnicode_AppendAndDel:void:::
 PyUnicode_AppendAndDel:PyObject**:p_left:0:
 PyUnicode_AppendAndDel:PyObject*:right:-1:
 
+PyUnicode_BuildEncodingMap:PyObject*::+1:
+PyUnicode_BuildEncodingMap:PyObject*:string:::
+
 PyUnicode_GetDefaultEncoding:const char*:::
 PyUnicode_GetDefaultEncoding::void::
 
