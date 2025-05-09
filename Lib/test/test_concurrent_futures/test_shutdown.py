@@ -344,8 +344,6 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         # max_workers=2 will repro exception
         # max_workers=4 will repro exception and then hang
 
-        import multiprocessing as mp
-
         # Repro conditions
         #   max_tasks_per_child=1
         #   a task ends abnormally
@@ -358,7 +356,7 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         executor = futures.ProcessPoolExecutor(
                 max_workers=max_workers,
                 max_tasks_per_child=1,
-                mp_context=mp.get_context("spawn"))
+                mp_context=self.get_context())
         f1 = executor.submit(ProcessPoolShutdownTest._good_task_gh_132969, 1)
         f2 = executor.submit(ProcessPoolShutdownTest._failing_task_gh_132969, 2)
         f3 = executor.submit(ProcessPoolShutdownTest._good_task_gh_132969, 3)
