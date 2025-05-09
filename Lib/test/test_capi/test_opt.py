@@ -2034,8 +2034,8 @@ class TestUopsOptimization(unittest.TestCase):
         def testfunc(n):
             x = 0
             for _ in range(n):
-                # The optimization currently only narrows to bool
-                # when the second argument is a tuple of classes.
+                # A tuple of classes is currently not optimized,
+                # so this is only narrowed to bool:
                 y = isinstance(42, (int, str))
                 if y:
                     x += 1
