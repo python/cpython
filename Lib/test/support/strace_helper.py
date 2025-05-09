@@ -2,6 +2,7 @@ import re
 import sys
 import textwrap
 import os
+import subprocess
 import unittest
 from dataclasses import dataclass
 from functools import cache
@@ -92,12 +93,36 @@ def filter_memory(syscalls):
 
     return [call for call in syscalls if not _filter_memory_call(call)]
 
+# Set to True once the strace version is checked
+_version_checked = False
 
 @support.requires_subprocess()
 def strace_python(code, strace_flags, check=True):
     """Run strace and return the trace.
 
     Sets strace_returncode and python_returncode to `-1` on error."""
+
+    global _version_checked
+
+    if not _version_checked:
+        cmd = [_strace_binary, '-V']
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        if proc.returncode:
+            raise Exception(f'failed to check strace version: {proc}')
+
+        stdout = proc.stdout
+        match = re.search(r'^strace -- version ([0-9]+)\.([0-9]+)', stdout)
+        if not match:
+            raise Exception(f'failed to get strace version: {stdout!r}')
+
+        # --trace was added to strace 5.5
+        version = (int(match.group(1)), int(match.group(2)))
+        if version < (5, 5):
+            raise unittest.SkipTest(f'need strace 5.5 or newer, '
+                                    f'found strace {version[0]}.{version[1]}')
+
+        _version_checked = True
+
     res = None
 
     def _make_error(reason, details):
