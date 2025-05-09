@@ -30,17 +30,12 @@ get_zstd_state_from_type(PyTypeObject *type) {
     return (_zstd_state *)state;
 }
 
-extern PyType_Spec zstddict_type_spec;
-extern PyType_Spec zstdcompressor_type_spec;
-extern PyType_Spec zstddecompressor_type_spec;
+extern PyType_Spec zstd_dict_type_spec;
+extern PyType_Spec zstd_compressor_type_spec;
+extern PyType_Spec zstd_decompressor_type_spec;
 
 struct _zstd_state {
     PyObject *empty_bytes;
-    PyObject *empty_readonly_memoryview;
-    PyObject *str_read;
-    PyObject *str_readinto;
-    PyObject *str_write;
-    PyObject *str_flush;
 
     PyTypeObject *ZstdDict_type;
     PyTypeObject *ZstdCompressor_type;
