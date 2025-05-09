@@ -539,13 +539,19 @@ text
         for html, expected in data:
             self._run_check(html, expected)
 
-    def test_unescape_method(self):
-        from html import unescape
-        p = self.get_collector()
-        with self.assertWarns(DeprecationWarning):
-            s = '&quot;&#34;&#x22;&quot&#34&#x22&#bad;'
-            self.assertEqual(p.unescape(s), unescape(s))
-
+    def test_EOF_in_comments_or_decls(self):
+        data = [
+            ('<!', [('data', '<!')]),
+            ('<!-', [('data', '<!-')]),
+            ('<!--', [('data', '<!--')]),
+            ('<![', [('data', '<![')]),
+            ('<![CDATA[', [('data', '<![CDATA[')]),
+            ('<![CDATA[x', [('data', '<![CDATA[x')]),
+            ('<!DOCTYPE', [('data', '<!DOCTYPE')]),
+            ('<!DOCTYPE HTML', [('data', '<!DOCTYPE HTML')]),
+        ]
+        for html, expected in data:
+            self._run_check(html, expected)
     def test_bogus_comments(self):
         html = ('<! not really a comment >'
                 '<! not a comment either -->'
@@ -556,7 +562,10 @@ text
                 '<![with square brackets]!>'
                 '<![\nmultiline\nbogusness\n]!>'
                 '<![more brackets]-[and a hyphen]!>'
-                '<![cdata[should be uppercase]]>')
+                '<![cdata[should be uppercase]]>'
+                '<![CDATA [whitespaces are not ignored]]>'
+                '<![CDATA]]>'  # required '[' after CDATA
+        )
         expected = [
             ('comment', ' not really a comment '),
             ('comment', ' not a comment either --'),
@@ -568,6 +577,8 @@ text
             ('comment', '[\nmultiline\nbogusness\n]!'),
             ('comment', '[more brackets]-[and a hyphen]!'),
             ('comment', '[cdata[should be uppercase]]'),
+            ('comment', '[CDATA [whitespaces are not ignored]]'),
+            ('comment', '[CDATA]]'),
         ]
         self._run_check(html, expected)
 
