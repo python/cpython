@@ -1,1 +1,0 @@
-Fix inconsistent set ordering in annotations. Sets of types are now consistently ordered by name in string representations, making the output deterministic and easier to test.
