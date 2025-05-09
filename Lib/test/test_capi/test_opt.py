@@ -1942,6 +1942,23 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_COMPARE_OP_INT", uops)
         self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
 
+    def test_call_isinstance_guards_removed(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = isinstance(42, int)
+                if y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_GUARD_THIRD_NULL", uops)
+        self.assertNotIn("_GUARD_CALLABLE_ISINSTANCE", uops)
+
 
 def global_identity(x):
     return x

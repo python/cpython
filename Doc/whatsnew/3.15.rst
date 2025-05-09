@@ -86,10 +86,13 @@ New modules
 Improved modules
 ================
 
-module_name
------------
+ssl
+---
 
-* TODO
+* Indicate through :data:`ssl.HAS_PSK_TLS13` whether the :mod:`ssl` module
+  supports "External PSKs" in TLSv1.3, as described in RFC 9258.
+  (Contributed by Will Childs-Klein in :gh:`133624`.)
+
 
 .. Add improved modules above alphabetically, not here at the end.
 
@@ -143,7 +146,16 @@ New features
 Porting to Python 3.15
 ----------------------
 
-* TODO
+* :class:`sqlite3.Connection` APIs has been cleaned up.
+
+  * All parameters of :func:`sqlite3.connect` except *database* are now keyword-only.
+  * The first three parameters of methods :meth:`~sqlite3.Connection.create_function`
+    and :meth:`~sqlite3.Connection.create_aggregate` are now positional-only.
+  * The first parameter of methods :meth:`~sqlite3.Connection.set_authorizer`,
+    :meth:`~sqlite3.Connection.set_progress_handler` and
+    :meth:`~sqlite3.Connection.set_trace_callback` is now positional-only.
+
+  (Contributed by Serhiy Storchaka in :gh:`133595`.)
 
 Deprecated C APIs
 -----------------
@@ -154,6 +166,9 @@ Deprecated C APIs
 
 Removed C APIs
 --------------
+
+* :c:func:`!PyImport_ImportModuleNoBlock`: deprecated alias
+  of :c:func:`PyImport_ImportModule`.
 
 The following functions are removed in favor of :c:func:`PyConfig_Get`.
 The |pythoncapi_compat_project| can be used to get :c:func:`!PyConfig_Get`
