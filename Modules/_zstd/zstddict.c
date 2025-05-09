@@ -17,6 +17,7 @@ class _zstd.ZstdDict "ZstdDict *" "clinic_state()->ZstdDict_type"
 
 #include "_zstdmodule.h"
 
+#include <stdbool.h>              // bool
 #include <stddef.h>               // offsetof()
 
 #define ZstdDict_CAST(op) ((ZstdDict *)op)
@@ -31,7 +32,7 @@ _zstd_ZstdDict_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject *Py_U
     }
 
     self->dict_content = NULL;
-    self->inited = 0;
+    self->initialized = 0;
     self->d_dict = NULL;
 
     /* ZSTD_CDict dict */
@@ -92,11 +93,11 @@ _zstd_ZstdDict___init___impl(ZstdDict *self, PyObject *dict_content,
 /*[clinic end generated code: output=c5f5a0d8377d037c input=e6750f62a513b3ee]*/
 {
     /* Only called once */
-    if (self->inited) {
-        PyErr_SetString(PyExc_RuntimeError, init_twice_msg);
+    if (self->initialized) {
+        PyErr_SetString(PyExc_RuntimeError, "reinitialization not supported");
         return -1;
     }
-    self->inited = 1;
+    self->initialized = 1;
 
     /* Check dict_content's type */
     self->dict_content = PyBytes_FromObject(dict_content);

@@ -11,6 +11,8 @@ Python module.
 #include "zstd.h"
 #include "zdict.h"
 
+#include <stdbool.h>              // bool
+
 
 /* Forward declaration of module state */
 typedef struct _zstd_state _zstd_state;
@@ -61,7 +63,7 @@ typedef struct {
     uint32_t dict_id;
 
     /* __init__ has been called, 0 or 1. */
-    int inited;
+    bool initialized;
 } ZstdDict;
 
 typedef struct {
@@ -83,7 +85,7 @@ typedef struct {
     int compression_level;
 
     /* __init__ has been called, 0 or 1. */
-    int inited;
+    bool initialized;
 } ZstdCompressor;
 
 typedef struct {
@@ -120,7 +122,7 @@ typedef struct {
     char _unused_char_for_align;
 
     /* __init__ has been called, 0 or 1. */
-    int inited;
+    bool initialized;
 } ZstdDecompressor;
 
 typedef enum {
@@ -163,5 +165,3 @@ set_zstd_error(const _zstd_state* const state,
 extern void
 set_parameter_error(const _zstd_state* const state, int is_compress,
                     int key_v, int value_v);
-
-static const char init_twice_msg[] = "__init__ method is called twice.";

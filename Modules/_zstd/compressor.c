@@ -20,6 +20,7 @@ class _zstd.ZstdCompressor "ZstdCompressor *" "clinic_state()->ZstdCompressor_ty
 
 #include "buffer.h"
 
+#include <stdbool.h>              // bool
 #include <stddef.h>               // offsetof()
 
 
@@ -305,7 +306,7 @@ _zstd_ZstdCompressor_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject
         goto error;
     }
 
-    self->inited = 0;
+    self->initialized = 0;
     self->dict = NULL;
     self->use_multithread = 0;
 
@@ -372,12 +373,11 @@ _zstd_ZstdCompressor___init___impl(ZstdCompressor *self, PyObject *level,
                                    PyObject *options, PyObject *zstd_dict)
 /*[clinic end generated code: output=215e6c4342732f96 input=9f79b0d8d34c8ef0]*/
 {
-    /* Only called once */
-    if (self->inited) {
-        PyErr_SetString(PyExc_RuntimeError, init_twice_msg);
+    if (self->initialized) {
+        PyErr_SetString(PyExc_RuntimeError, "reinitialization not supported");
         return -1;
     }
-    self->inited = 1;
+    self->initialized = 1;
 
     if (level != Py_None && options != Py_None) {
         PyErr_SetString(PyExc_RuntimeError, "Only one of level or options should be used.");

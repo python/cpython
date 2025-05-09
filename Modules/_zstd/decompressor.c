@@ -19,6 +19,7 @@ class _zstd.ZstdDecompressor "ZstdDecompressor *" "clinic_state()->ZstdDecompres
 
 #include "buffer.h"
 
+#include <stdbool.h>              // bool
 #include <stddef.h>               // offsetof()
 
 #define ZstdDecompressor_CAST(op) ((ZstdDecompressor *)op)
@@ -616,7 +617,7 @@ _zstd_ZstdDecompressor_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    self->inited = 0;
+    self->initialized = 0;
     self->dict = NULL;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
@@ -695,11 +696,11 @@ _zstd_ZstdDecompressor___init___impl(ZstdDecompressor *self,
 /*[clinic end generated code: output=703af2f1ec226642 input=8fd72999acc1a146]*/
 {
     /* Only called once */
-    if (self->inited) {
-        PyErr_SetString(PyExc_RuntimeError, init_twice_msg);
+    if (self->initialized) {
+        PyErr_SetString(PyExc_RuntimeError, "reinitialization not supported");
         return -1;
     }
-    self->inited = 1;
+    self->initialized = 1;
 
     /* Load dictionary to decompression context */
     if (zstd_dict != Py_None) {
