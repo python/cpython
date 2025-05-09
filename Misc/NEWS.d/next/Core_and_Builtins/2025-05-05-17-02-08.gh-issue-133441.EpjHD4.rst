@@ -1,2 +1,1 @@
-Fix ``STORE_ATTR_WITH_HINT`` bytecode: deoptimize if the dictionary is a
-dict subclass. Patch by Victor Stinner.
+Fix crash upon calling :meth:`~object.__setstate__` with a :class:`dict` subclass. Patch by Victor Stinner.
