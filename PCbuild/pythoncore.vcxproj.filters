@@ -708,6 +708,9 @@
     <ClInclude Include="..\Include\internal\pycore_interpframe_structs.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_interpolation.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_intrinsics.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
@@ -838,6 +841,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_stackref.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_template.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_time.h">
@@ -1319,7 +1325,7 @@
     <ClCompile Include="..\Python\ast.c">
       <Filter>Python</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\ast_opt.c">
+    <ClCompile Include="..\Python\ast_preprocess.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\ast_unparse.c">

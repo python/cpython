@@ -1,4 +1,5 @@
 import dis
+import gc
 from itertools import combinations, product
 import opcode
 import sys
@@ -2472,6 +2473,13 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
         ]
         self.check(insts, insts)
 
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("DELETE_FAST", 0, 2),
+            ("POP_TOP", None, 3),
+        ]
+        self.check(insts, insts)
+
     def test_unoptimized_if_aliased(self):
         insts = [
             ("LOAD_FAST", 0, 1),
@@ -2605,6 +2613,22 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             ("RETURN_VALUE", None, 7)
         ]
         self.cfg_optimization_test(insts, expected, consts=[None])
+
+    def test_del_in_finally(self):
+        # This loads `obj` onto the stack, executes `del obj`, then returns the
+        # `obj` from the stack. See gh-133371 for more details.
+        def create_obj():
+            obj = [42]
+            try:
+                return obj
+            finally:
+                del obj
+
+        obj = create_obj()
+        # The crash in the linked issue happens while running GC during
+        # interpreter finalization, so run it here manually.
+        gc.collect()
+        self.assertEqual(obj, [42])
 
 
 
