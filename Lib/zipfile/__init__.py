@@ -37,7 +37,7 @@ except ImportError:
     zstd = None
 
 __all__ = ["BadZipFile", "BadZipfile", "error",
-           "ZIP_STORED", "ZIP_DEFLATED", "ZIP_BZIP2", "ZIP_LZMA",
+           "ZIP_STORED", "ZIP_DEFLATED", "ZIP_BZIP2", "ZIP_LZMA", "ZIP_ZSTANDARD",
            "is_zipfile", "ZipInfo", "ZipFile", "PyZipFile", "LargeZipFile",
            "Path"]
 
@@ -1352,7 +1352,8 @@ class ZipFile:
     mode: The mode can be either read 'r', write 'w', exclusive create 'x',
           or append 'a'.
     compression: ZIP_STORED (no compression), ZIP_DEFLATED (requires zlib),
-                 ZIP_BZIP2 (requires bz2) or ZIP_LZMA (requires lzma).
+                 ZIP_BZIP2 (requires bz2), ZIP_LZMA (requires lzma), or
+                 ZIP_ZSTANDARD (requires zstd).
     allowZip64: if True ZipFile will create files with ZIP64 extensions when
                 needed, otherwise it will raise an exception when this would
                 be necessary.
