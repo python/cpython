@@ -20,16 +20,6 @@ def sleep_and_print(t, msg):
     sys.stdout.flush()
 
 
-def failing_task_132969(n: int) -> int:
-    raise ValueError("failing task")
-
-
-def good_task_132969(n: int) -> int:
-    time.sleep(0.1 * n)
-    return n
-
-
-
 class ExecutorShutdownTest:
     def test_run_after_shutdown(self):
         self.executor.shutdown()
@@ -340,7 +330,18 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         # shutdown.
         assert all([r == abs(v) for r, v in zip(res, range(-5, 5))])
 
-    def _run_test_issue_132969(self, max_workers: int) -> int:
+    @classmethod
+    def _failing_task_gh_132969(cls, n: int) -> int:
+        raise ValueError("failing task")
+
+    @classmethod
+    def _good_task_gh_132969(cls, n: int) -> int:
+        time.sleep(0.1 * n)
+        return n
+
+
+    @unittest.skipIf(sys.platform == 'win32', 'Test does not run on Windows')
+    def _run_test_issue_gh_132969(self, max_workers: int) -> int:
         if sys.platform == "win32":
             raise unittest.SkipTest("skip test since forkserver is not available on Windows")
 
@@ -357,9 +358,9 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
                 max_workers=max_workers,
                 max_tasks_per_child=1,
                 mp_context=mp.get_context("forkserver"))
-        f1 = executor.submit(good_task_132969, 1)
-        f2 = executor.submit(failing_task_132969, 2)
-        f3 = executor.submit(good_task_132969, 3)
+        f1 = executor.submit(ProcessPoolShutdownTest._good_task_gh_132969, 1)
+        f2 = executor.submit(ProcessPoolShutdownTest._failing_task_gh_132969, 2)
+        f3 = executor.submit(ProcessPoolShutdownTest._good_task_gh_132969, 3)
         result:int = 0
         try:
             result += f1.result()
@@ -372,12 +373,17 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         executor.shutdown(wait=False)
         return result
 
-    def test_shutdown_len_exception_132969(self):
-        result = self._run_test_issue_132969(2)
+    def test_shutdown_gh_132969_case_1(self):
+        # gh-132969: test that exception "object of type 'NoneType' has no len()"
+        # is not raised when shutdown(wait=False) is called.
+        result = self._run_test_issue_gh_132969(2)
         self.assertEqual(result, 1)
 
-    def test_shutdown_process_hang_132969(self):
-        result = self._run_test_issue_132969(4)
+    def test_shutdown_gh_132969_case_2(self):
+        # gh-132969: test that process does not hang and
+        # exception "object of type 'NoneType' has no len()" is not raised
+        # when shutdown(wait=False) is called.
+        result = self._run_test_issue_gh_132969(4)
         self.assertEqual(result, 1)
 
 
