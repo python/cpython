@@ -1148,7 +1148,7 @@ possible, while any potentially slow operations (such as sending an email via
    .. versionchanged:: 3.5
       The ``respect_handler_level`` argument was added.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       :class:`QueueListener` can now be used as a context manager via
       :keyword:`with`. When entering the context, the listener is started. When
       exiting the context, the listener is stopped.
@@ -1186,7 +1186,7 @@ possible, while any potentially slow operations (such as sending an email via
       This starts up a background thread to monitor the queue for
       LogRecords to process.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.14
          Raises :exc:`RuntimeError` if called and the listener is already
          running.
 

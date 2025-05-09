@@ -23,11 +23,13 @@ from test import archiver_tests
 from test.support import script_helper, os_helper
 from test.support import (
     findfile, requires_zlib, requires_bz2, requires_lzma,
-    captured_stdout, captured_stderr, requires_subprocess,
+    requires_zstd, captured_stdout, captured_stderr, requires_subprocess,
+    cpython_only
 )
 from test.support.os_helper import (
     TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath
 )
+from test.support.import_helper import ensure_lazy_imports
 
 
 TESTFN2 = TESTFN + "2"
@@ -48,6 +50,13 @@ def get_files(test):
     with io.BytesIO() as f:
         yield f
         test.assertFalse(f.closed)
+
+
+class LazyImportTest(unittest.TestCase):
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("zipfile", {"typing"})
+
 
 class AbstractTestsWithSourceFile:
     @classmethod
@@ -693,6 +702,10 @@ class LzmaTestsWithSourceFile(AbstractTestsWithSourceFile,
                               unittest.TestCase):
     compression = zipfile.ZIP_LZMA
 
+@requires_zstd()
+class ZstdTestsWithSourceFile(AbstractTestsWithSourceFile,
+                              unittest.TestCase):
+    compression = zipfile.ZIP_ZSTANDARD
 
 class AbstractTestZip64InSmallFiles:
     # These tests test the ZIP64 functionality without using large files,
@@ -1270,6 +1283,10 @@ class LzmaTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
                                 unittest.TestCase):
     compression = zipfile.ZIP_LZMA
 
+@requires_zstd()
+class ZstdTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
+                                unittest.TestCase):
+    compression = zipfile.ZIP_ZSTANDARD
 
 class AbstractWriterTests:
 
@@ -1339,6 +1356,9 @@ class Bzip2WriterTests(AbstractWriterTests, unittest.TestCase):
 class LzmaWriterTests(AbstractWriterTests, unittest.TestCase):
     compression = zipfile.ZIP_LZMA
 
+@requires_zstd()
+class ZstdWriterTests(AbstractWriterTests, unittest.TestCase):
+    compression = zipfile.ZIP_ZSTANDARD
 
 class PyZipFileTests(unittest.TestCase):
     def assertCompiledIn(self, name, namelist):
@@ -2669,6 +2689,17 @@ class LzmaBadCrcTests(AbstractBadCrcTests, unittest.TestCase):
         b'ePK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x003\x00\x00'
         b'\x00>\x00\x00\x00\x00\x00')
 
+@requires_zstd()
+class ZstdBadCrcTests(AbstractBadCrcTests, unittest.TestCase):
+    compression = zipfile.ZIP_ZSTANDARD
+    zip_with_bad_crc = (
+        b'PK\x03\x04?\x00\x00\x00]\x00\x00\x00!\x00V\xb1\x17J\x14\x00'
+        b'\x00\x00\x0b\x00\x00\x00\x05\x00\x00\x00afile(\xb5/\xfd\x00'
+        b'XY\x00\x00Hello WorldPK\x01\x02?\x03?\x00\x00\x00]\x00\x00\x00'
+        b'!\x00V\xb0\x17J\x14\x00\x00\x00\x0b\x00\x00\x00\x05\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00\x80\x01\x00\x00\x00\x00afilePK'
+        b'\x05\x06\x00\x00\x00\x00\x01\x00\x01\x003\x00\x00\x007\x00\x00\x00'
+        b'\x00\x00')
 
 class DecryptionTests(unittest.TestCase):
     """Check that ZIP decryption works. Since the library does not
@@ -2896,6 +2927,10 @@ class LzmaTestsWithRandomBinaryFiles(AbstractTestsWithRandomBinaryFiles,
                                      unittest.TestCase):
     compression = zipfile.ZIP_LZMA
 
+@requires_zstd()
+class ZstdTestsWithRandomBinaryFiles(AbstractTestsWithRandomBinaryFiles,
+                                     unittest.TestCase):
+    compression = zipfile.ZIP_ZSTANDARD
 
 # Provide the tell() method but not seek()
 class Tellable:

@@ -82,7 +82,7 @@ class LocalPathGround:
     readlink = staticmethod(os.readlink)
 
     def readtext(self, p):
-        with open(p, 'r') as f:
+        with open(p, 'r', encoding='utf-8') as f:
             return f.read()
 
     def readbytes(self, p):

@@ -1735,100 +1735,35 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
     return res;
 }
 
-int
-_PyLong_UnsignedShort_Converter(PyObject *obj, void *ptr)
-{
-    unsigned long uval;
-
-    if (PyLong_Check(obj) && _PyLong_IsNegative((PyLongObject *)obj)) {
-        PyErr_SetString(PyExc_ValueError, "value must be positive");
-        return 0;
-    }
-    uval = PyLong_AsUnsignedLong(obj);
-    if (uval == (unsigned long)-1 && PyErr_Occurred())
-        return 0;
-    if (uval > USHRT_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Python int too large for C unsigned short");
-        return 0;
-    }
-
-    *(unsigned short *)ptr = Py_SAFE_DOWNCAST(uval, unsigned long, unsigned short);
-    return 1;
+#define UNSIGNED_INT_CONVERTER(NAME, TYPE)                          \
+int                                                                 \
+_PyLong_##NAME##_Converter(PyObject *obj, void *ptr)                \
+{                                                                   \
+    Py_ssize_t bytes = PyLong_AsNativeBytes(obj, ptr, sizeof(TYPE), \
+            Py_ASNATIVEBYTES_NATIVE_ENDIAN |                        \
+            Py_ASNATIVEBYTES_ALLOW_INDEX |                          \
+            Py_ASNATIVEBYTES_REJECT_NEGATIVE |                      \
+            Py_ASNATIVEBYTES_UNSIGNED_BUFFER);                      \
+    if (bytes < 0) {                                                \
+        return 0;                                                   \
+    }                                                               \
+    if ((size_t)bytes > sizeof(TYPE)) {                             \
+        PyErr_SetString(PyExc_OverflowError,                        \
+                        "Python int too large for C "#TYPE);        \
+        return 0;                                                   \
+    }                                                               \
+    return 1;                                                       \
 }
 
-int
-_PyLong_UnsignedInt_Converter(PyObject *obj, void *ptr)
-{
-    unsigned long uval;
-
-    if (PyLong_Check(obj) && _PyLong_IsNegative((PyLongObject *)obj)) {
-        PyErr_SetString(PyExc_ValueError, "value must be positive");
-        return 0;
-    }
-    uval = PyLong_AsUnsignedLong(obj);
-    if (uval == (unsigned long)-1 && PyErr_Occurred())
-        return 0;
-    if (uval > UINT_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Python int too large for C unsigned int");
-        return 0;
-    }
-
-    *(unsigned int *)ptr = Py_SAFE_DOWNCAST(uval, unsigned long, unsigned int);
-    return 1;
-}
-
-int
-_PyLong_UnsignedLong_Converter(PyObject *obj, void *ptr)
-{
-    unsigned long uval;
-
-    if (PyLong_Check(obj) && _PyLong_IsNegative((PyLongObject *)obj)) {
-        PyErr_SetString(PyExc_ValueError, "value must be positive");
-        return 0;
-    }
-    uval = PyLong_AsUnsignedLong(obj);
-    if (uval == (unsigned long)-1 && PyErr_Occurred())
-        return 0;
-
-    *(unsigned long *)ptr = uval;
-    return 1;
-}
-
-int
-_PyLong_UnsignedLongLong_Converter(PyObject *obj, void *ptr)
-{
-    unsigned long long uval;
-
-    if (PyLong_Check(obj) && _PyLong_IsNegative((PyLongObject *)obj)) {
-        PyErr_SetString(PyExc_ValueError, "value must be positive");
-        return 0;
-    }
-    uval = PyLong_AsUnsignedLongLong(obj);
-    if (uval == (unsigned long long)-1 && PyErr_Occurred())
-        return 0;
-
-    *(unsigned long long *)ptr = uval;
-    return 1;
-}
-
-int
-_PyLong_Size_t_Converter(PyObject *obj, void *ptr)
-{
-    size_t uval;
-
-    if (PyLong_Check(obj) && _PyLong_IsNegative((PyLongObject *)obj)) {
-        PyErr_SetString(PyExc_ValueError, "value must be positive");
-        return 0;
-    }
-    uval = PyLong_AsSize_t(obj);
-    if (uval == (size_t)-1 && PyErr_Occurred())
-        return 0;
-
-    *(size_t *)ptr = uval;
-    return 1;
-}
+UNSIGNED_INT_CONVERTER(UnsignedShort, unsigned short)
+UNSIGNED_INT_CONVERTER(UnsignedInt, unsigned int)
+UNSIGNED_INT_CONVERTER(UnsignedLong, unsigned long)
+UNSIGNED_INT_CONVERTER(UnsignedLongLong, unsigned long long)
+UNSIGNED_INT_CONVERTER(Size_t, size_t)
+UNSIGNED_INT_CONVERTER(UInt8, uint8_t)
+UNSIGNED_INT_CONVERTER(UInt16, uint16_t)
+UNSIGNED_INT_CONVERTER(UInt32, uint32_t)
+UNSIGNED_INT_CONVERTER(UInt64, uint64_t)
 
 
 #define CHECK_BINOP(v,w)                                \

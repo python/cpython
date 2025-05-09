@@ -1774,7 +1774,7 @@ channel_send(_channels *channels, int64_t cid, PyObject *obj,
     }
 
     // Convert the object to cross-interpreter data.
-    _PyXIData_t *data = GLOBAL_MALLOC(_PyXIData_t);
+    _PyXIData_t *data = _PyXIData_New();
     if (data == NULL) {
         PyThread_release_lock(mutex);
         return -1;
