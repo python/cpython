@@ -7272,6 +7272,15 @@ get_const_us_per_minute(datetime_state *st) {
 }
 
 static inline PyObject *
+get_const_sec_per_day(datetime_state *st) {
+    return st && st->seconds_per_day ? Py_NewRef(st->seconds_per_day)
+                                     : PyLong_FromLong(24 * 3600);
+}
+
+/* The rest are too big for 32-bit ints, but even
+ * us_per_week fits in 40 bits, so doubles should be exact.
+ */
+static inline PyObject *
 get_const_us_per_hour(datetime_state *st) {
     return st && st->us_per_hour ? Py_NewRef(st->us_per_hour)
                                  : PyLong_FromDouble(3600000000.0);
@@ -7289,11 +7298,6 @@ get_const_us_per_week(datetime_state *st) {
                                  : PyLong_FromDouble(604800000000.0);
 }
 
-static inline PyObject *
-get_const_sec_per_day(datetime_state *st) {
-    return st && st->seconds_per_day ? Py_NewRef(st->seconds_per_day)
-                                     : PyLong_FromLong(24 * 3600);
-}
 
 static inline PyObject *
 get_const_epoch(datetime_state *st) {
