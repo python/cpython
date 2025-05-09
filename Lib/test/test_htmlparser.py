@@ -635,7 +635,6 @@ text
         ]
         self._run_check(html, expected)
 
-
     def test_convert_charrefs_dropped_text(self):
         # #23144: make sure that all the events are triggered when
         # convert_charrefs is True, even if we don't call .close()
@@ -647,7 +646,6 @@ text
             [('data', 'foo '), ('starttag', 'a', []), ('data', 'link'),
              ('endtag', 'a'), ('data', ' bar & baz')]
         )
-
 
 
 class AttributesTestCase(TestCaseBase):
