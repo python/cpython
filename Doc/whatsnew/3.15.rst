@@ -75,9 +75,12 @@ New features
 Other language changes
 ======================
 
-* Python now uses UTF-8 as the default encoding, independent of the system's
+* Python now uses UTF-8_ as the default encoding, independent of the system's
   environment. This means that I/O operations without an explicit encoding,
   e.g. ``open('flying-circus.txt')``, will use UTF-8.
+  UTF-8 is a widely-supported Unicode_ character encoding that has become a
+  *de facto* standard for representing text, including nearly every webpage
+  on the internet, many common file formats, programming languages, and more.
 
   This only applies when no ``encoding`` argument is given. For best
   compatibility between versions of Python, ensure that an explicit ``encoding``
@@ -91,6 +94,9 @@ Other language changes
   :option:`-X utf8=0 <-X>` command line option.
 
   .. seealso:: :pep:`686` for further details.
+
+  .. _UTF-8: https://en.wikipedia.org/wiki/UTF-8
+  .. _Unicode: https://home.unicode.org/
 
   (Contributed by Adam Turner in :gh:`133711`; PEP 686 written by Inada Naoki.)
 
