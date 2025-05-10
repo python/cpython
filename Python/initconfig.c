@@ -2667,6 +2667,10 @@ config_read(PyConfig *config, int compute_path_config)
     if (config->_pystats < 0) {
         config->_pystats = 0;
     }
+
+    if (!_Py_StatsSetDir(getenv("PYTHON_PYSTATS_DIR"))) {
+        return _PyStatus_ERR("PYTHON_PYSTATS_DIR too long");
+    }
 #endif
 
     status = config_read_complex_options(config);
