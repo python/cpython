@@ -875,6 +875,9 @@ class Action(_AttributeHolder):
             type, an exception will be raised if it is not a member of this
             collection.
 
+        - convert_choices - Runs the ``choices`` through the ``type`` callable
+            during checking. (default: ``False``)
+
         - required -- True if the action must always be specified at the
             command line. This is only meaningful for optional command-line
             arguments.
@@ -893,6 +896,7 @@ class Action(_AttributeHolder):
                  default=None,
                  type=None,
                  choices=None,
+                 convert_choices=False,
                  required=False,
                  help=None,
                  metavar=None,
@@ -904,6 +908,7 @@ class Action(_AttributeHolder):
         self.default = default
         self.type = type
         self.choices = choices
+        self.convert_choices = convert_choices
         self.required = required
         self.help = help
         self.metavar = metavar
@@ -918,6 +923,7 @@ class Action(_AttributeHolder):
             'default',
             'type',
             'choices',
+            'convert_choices',
             'required',
             'help',
             'metavar',
@@ -980,6 +986,7 @@ class _StoreAction(Action):
                  default=None,
                  type=None,
                  choices=None,
+                 convert_choices=False,
                  required=False,
                  help=None,
                  metavar=None,
@@ -998,6 +1005,7 @@ class _StoreAction(Action):
             default=default,
             type=type,
             choices=choices,
+            convert_choices=convert_choices,
             required=required,
             help=help,
             metavar=metavar,
@@ -2617,7 +2625,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         elif len(arg_strings) == 1 and action.nargs in [None, OPTIONAL]:
             arg_string, = arg_strings
             value = self._get_value(action, arg_string)
-            self._check_value(action, value)
+            self._check_value(action, value, arg_string)
 
         # REMAINDER arguments convert all values, checking none
         elif action.nargs == REMAINDER:
@@ -2626,7 +2634,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # PARSER arguments convert all values, but check only the first
         elif action.nargs == PARSER:
             value = [self._get_value(action, v) for v in arg_strings]
-            self._check_value(action, value[0])
+            self._check_value(action, value[0], arg_strings[0])
 
         # SUPPRESS argument does not put anything in the namespace
         elif action.nargs == SUPPRESS:
@@ -2635,8 +2643,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # all other types of nargs produce a list
         else:
             value = [self._get_value(action, v) for v in arg_strings]
-            for v in value:
-                self._check_value(action, v)
+            for v, s in zip(value, arg_strings):
+                self._check_value(action, v, s)
 
         # return the converted value
         return value
@@ -2665,24 +2673,33 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # return the converted value
         return result
 
-    def _check_value(self, action, value):
+    def _check_value(self, action, value, arg_string=None):
         # converted value must be one of the choices (if specified)
         choices = action.choices
         if choices is None:
             return
 
+        if arg_string is None:
+            arg_string = value
+
         if isinstance(choices, str):
             choices = iter(choices)
 
-        if value not in choices:
-            args = {'value': str(value),
+        typed_choices = []
+        if (action.convert_choices and
+            action.type
+        ):
+            typed_choices = [action.type(v) for v in choices]
+
+        if value not in choices and value not in typed_choices:
+            args = {'value': arg_string,
                     'choices': ', '.join(map(str, action.choices))}
             msg = _('invalid choice: %(value)r (choose from %(choices)s)')
 
-            if self.suggest_on_error and isinstance(value, str):
+            if self.suggest_on_error:
                 if all(isinstance(choice, str) for choice in action.choices):
                     import difflib
-                    suggestions = difflib.get_close_matches(value, action.choices, 1)
+                    suggestions = difflib.get_close_matches(arg_string, action.choices, 1)
                     if suggestions:
                         args['closest'] = suggestions[0]
                         msg = _('invalid choice: %(value)r, maybe you meant %(closest)r? '

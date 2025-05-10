@@ -1935,6 +1935,47 @@ class TestFileTypeRB(TempDirMixin, ParserTestCase):
         ('-x - -', NS(x=eq_bstdin, spam=eq_bstdin)),
     ]
 
+class TestChoices(ParserTestCase):
+    """Test integer choices without conversion."""
+    def to_dow(arg):
+        days = ["mo", "tu", "we", "th", "fr", "sa", "su"]
+        if arg in days:
+            return days.index(arg) + 1
+        else:
+            return None
+
+    argument_signatures = [
+        Sig('when',
+            type=to_dow, choices=[1, 2, 3, 4, 5, 6, 7],
+        )
+    ]
+    failures = ['now', '1']
+    successes = [
+        ('mo', NS(when=1)),
+        ('su', NS(when=7)),
+    ]
+
+class TestTypedChoices(TestChoices):
+    """Test a set of string choices that convert to weekdays"""
+
+    argument_signatures = [
+        Sig('when',
+            type=TestChoices.to_dow,
+            choices=["mo", "tu", "we" , "th", "fr", "sa", "su"],
+            convert_choices=True,
+        )
+    ]
+
+class TestTypedChoicesNoFlag(TestChoices):
+    """Without the feature flag we fail"""
+    argument_signatures = [
+        Sig('when',
+            type=TestChoices.to_dow, choices=["mo", "tu", "we" , "th", "fr", "sa", "su"],
+        )
+    ]
+    failures = ['mo']
+    successes = []
+
 
 class WFile(object):
     seen = set()
@@ -5469,6 +5510,40 @@ class TestHelpMetavarTypeFormatter(HelpTestCase):
     version = ''
 
 
+class TestHelpTypedChoices(HelpTestCase):
+    from datetime import date, timedelta
+    def to_date(arg):
+        if arg == "today":
+            return date.today()
+        elif arg == "tomorrow":
+            return date.today() + timedelta(days=1).date()
+        else:
+            return None
+
+    parser_signature = Sig(prog='PROG')
+    argument_signatures = [
+        Sig('when',
+            type=to_date,
+            choices=["today", "tomorrow"],
+            convert_choices=True
+        ),
+    ]
+
+    usage = '''\
+usage: PROG [-h] {today,tomorrow}
+        '''
+    help = usage + '''\
+
+positional arguments:
+  {today,tomorrow}
+
+options:
+  -h, --help        show this help message and exit
+        '''
+    version = ''
+
+
+
 class TestHelpUsageLongSubparserCommand(TestCase):
     """Test that subparser commands are formatted correctly in help"""
     maxDiff = None
@@ -5860,7 +5935,8 @@ class TestStrings(TestCase):
         string = (
             "Action(option_strings=['--foo', '-a', '-b'], dest='b', "
             "nargs='+', const=None, default=42, type='int', "
-            "choices=[1, 2, 3], required=False, help='HELP', "
+            "choices=[1, 2, 3], convert_choices=False, "
+            "required=False, help='HELP', "
             "metavar='METAVAR', deprecated=False)")
         self.assertStringEqual(option, string)
 
@@ -5878,6 +5954,7 @@ class TestStrings(TestCase):
         string = (
             "Action(option_strings=[], dest='x', nargs='?', "
             "const=None, default=2.5, type=%r, choices=[0.5, 1.5, 2.5], "
+            "convert_choices=False, "
             "required=True, help='H HH H', metavar='MV MV MV', "
             "deprecated=False)" % float)
         self.assertStringEqual(argument, string)

@@ -671,6 +671,9 @@ The add_argument() method
 
    * choices_ - A sequence of the allowable values for the argument.
 
+   * convert_choices_ - Whether to convert the choices_ using the type_ callable
+     before checking.
+
    * required_ - Whether or not the command-line option may be omitted
      (optionals only).
 
@@ -1156,10 +1159,6 @@ if the argument was not one of the acceptable values::
    game.py: error: argument move: invalid choice: 'fire' (choose from 'rock',
    'paper', 'scissors')
 
-Note that inclusion in the *choices* sequence is checked after any type_
-conversions have been performed, so the type of the objects in the *choices*
-sequence should match the type_ specified.
-
 Any sequence can be passed as the *choices* value, so :class:`list` objects,
 :class:`tuple` objects, and custom sequences are all supported.
 
@@ -1170,6 +1169,36 @@ Formatted choices override the default *metavar* which is normally derived
 from *dest*.  This is usually what you want because the user never sees the
 *dest* parameter.  If this display isn't desirable (perhaps because there are
 many choices), just specify an explicit metavar_.
+
+
+.. _convert_choices:
+
+convert_choices
+^^^^^^^^^^^^^^^
+
+By default, when a user passes both a ``type`` and a ``choices`` argument, the
+``choices`` need to be specified in the target type, after conversion.
+This can cause confusing ``usage`` and ``help`` strings.
+To specify ``choices`` before conversion, set the flag ``convert_choices``::
+
+   >>> def to_dow(s):
+   ...     return ['mo', 'tu', 'we', 'th', 'fr', 'sa', 'su'].index(x)
+   ...
+   >>> parser = argparse.ArgumentParser()
+   >>> parser.add_argument('when',
+   ...                     choices=['mo', 'tu', 'we', 'th', 'fr', 'sa', 'su'],
+   ...                     convert_choices=True,
+   ...                     type=to_dow)
+   >>> parser.print_help()
+   usage: sphinx-build [-h] {mo,tu,we,th,fr,sa,su}
+
+   positional arguments:
+     {mo,tu,we,th,fr,sa,su}
+
+   options:
+     -h, --help            show this help message and exit
+
+.. versionadded:: next
 
 
 .. _required:
