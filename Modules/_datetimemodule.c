@@ -7173,8 +7173,6 @@ create_timezone_from_delta(int days, int sec, int ms, int normalize)
 static int
 init_state(datetime_state *st, PyObject *module, PyObject *old_module)
 {
-    st->module = Py_NewRef(module);
-
     /* Each module gets its own heap types. */
 #define ADD_TYPE(FIELD, SPEC, BASE)                 \
     do {                                            \
@@ -7253,7 +7251,6 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
 static int
 traverse_state(datetime_state *st, visitproc visit, void *arg)
 {
-    Py_VISIT(st->module);
     Py_VISIT(st->isocalendar_date_type);
 
     return 0;
@@ -7262,7 +7259,6 @@ traverse_state(datetime_state *st, visitproc visit, void *arg)
 static int
 clear_state(datetime_state *st)
 {
-    Py_CLEAR(st->module);  /* Invalidate first */
     Py_CLEAR(st->isocalendar_date_type);
     Py_CLEAR(st->us_per_ms);
     Py_CLEAR(st->us_per_second);
@@ -7339,6 +7335,7 @@ _datetime_exec(PyObject *module)
         }
     }
 
+    st->module = Py_NewRef(module);
     if (init_state(st, module, old_module) < 0) {
         goto error;
     }
@@ -7453,6 +7450,7 @@ _datetime_exec(PyObject *module)
     goto finally;
 
 error:
+    Py_CLEAR(st->module);
     clear_state(st);
 
 finally:
@@ -7471,6 +7469,7 @@ static int
 module_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     datetime_state *st = get_module_state(mod);
+    Py_VISIT(st->module);
     traverse_state(st, visit, arg);
     return 0;
 }
@@ -7479,6 +7478,7 @@ static int
 module_clear(PyObject *mod)
 {
     datetime_state *st = get_module_state(mod);
+    Py_CLEAR(st->module);
     clear_state(st);
 
     PyInterpreterState *interp = PyInterpreterState_Get();
