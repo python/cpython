@@ -1,0 +1,2 @@
+Remove deprecated decorator :func:`!typing.no_type_check_decorator`. Patch
+by Bénédikt Tran.

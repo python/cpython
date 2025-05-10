@@ -118,10 +118,12 @@ Deprecated
 Removed
 =======
 
-module_name
------------
+typing
+------
 
-* TODO
+* Remove deprecated decorator :func:`!typing.no_type_check_decorator`
+  as it has yet to be supported by any major type checker.
+  (Contributed by Bénédikt Tran in :gh:`133818`.)
 
 
 Porting to Python 3.15
