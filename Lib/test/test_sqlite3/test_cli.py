@@ -62,7 +62,7 @@ class CommandLineInterface(unittest.TestCase, ExtraAssertions):
         self.assertIn("(0,)", out)
 
 
-class InteractiveSession(unittest.TestCase):
+class InteractiveSession(unittest.TestCase, ExtraAssertions):
     MEMORY_DB_MSG = "Connected to a transient in-memory database"
     PS1 = "sqlite> "
     PS2 = "... "
