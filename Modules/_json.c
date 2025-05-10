@@ -11,6 +11,7 @@
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_global_strings.h" // _Py_ID()
+#include "pycore_long.h"          // _PyLong_FormatWriter()
 #include "pycore_pyerrors.h"      // _PyErr_FormatNote
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_unicodeobject.h" // _PyUnicode_CheckConsistency()
