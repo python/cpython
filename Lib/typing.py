@@ -2968,7 +2968,7 @@ class NamedTupleMeta(type):
         return nm_tpl
 
 
-def NamedTuple(typename, fields=_sentinel, /, **kwargs):
+def NamedTuple(typename, fields, /):
     """Typed version of namedtuple.
 
     Usage::
@@ -2988,48 +2988,9 @@ def NamedTuple(typename, fields=_sentinel, /, **kwargs):
 
         Employee = NamedTuple('Employee', [('name', str), ('id', int)])
     """
-    if fields is _sentinel:
-        if kwargs:
-            deprecated_thing = "Creating NamedTuple classes using keyword arguments"
-            deprecation_msg = (
-                "{name} is deprecated and will be disallowed in Python {remove}. "
-                "Use the class-based or functional syntax instead."
-            )
-        else:
-            deprecated_thing = "Failing to pass a value for the 'fields' parameter"
-            example = f"`{typename} = NamedTuple({typename!r}, [])`"
-            deprecation_msg = (
-                "{name} is deprecated and will be disallowed in Python {remove}. "
-                "To create a NamedTuple class with 0 fields "
-                "using the functional syntax, "
-                "pass an empty list, e.g. "
-            ) + example + "."
-    elif fields is None:
-        if kwargs:
-            raise TypeError(
-                "Cannot pass `None` as the 'fields' parameter "
-                "and also specify fields using keyword arguments"
-            )
-        else:
-            deprecated_thing = "Passing `None` as the 'fields' parameter"
-            example = f"`{typename} = NamedTuple({typename!r}, [])`"
-            deprecation_msg = (
-                "{name} is deprecated and will be disallowed in Python {remove}. "
-                "To create a NamedTuple class with 0 fields "
-                "using the functional syntax, "
-                "pass an empty list, e.g. "
-            ) + example + "."
-    elif kwargs:
-        raise TypeError("Either list of fields or keywords"
-                        " can be provided to NamedTuple, not both")
-    if fields is _sentinel or fields is None:
-        import warnings
-        warnings._deprecated(deprecated_thing, message=deprecation_msg, remove=(3, 15))
-        fields = kwargs.items()
     types = {n: _type_check(t, f"field {n} annotation must be a type")
              for n, t in fields}
     field_names = [n for n, _ in fields]
-
     nt = _make_nmtuple(typename, field_names, _make_eager_annotate(types), module=_caller())
     nt.__orig_bases__ = (NamedTuple,)
     return nt
