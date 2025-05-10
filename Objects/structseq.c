@@ -551,7 +551,7 @@ initialize_members(PyStructSequence_Desc *desc,
         /* The names and docstrings in these MemberDefs are statically */
         /* allocated so it is expected that they'll outlive the MemberDef */
         members[k].name = desc->fields[i].name;
-        members[k].type = _Py_T_OBJECT;
+        members[k].type = Py_T_OBJECT_EX;
         members[k].offset = offsetof(PyStructSequence, ob_item)
           + i * sizeof(PyObject*);
         members[k].flags = Py_READONLY;
