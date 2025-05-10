@@ -1,0 +1,2 @@
+We now make sure :mod:`venv` creates an executable with the same name as
+:data:`sys.executable` in environments.
