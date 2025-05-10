@@ -200,7 +200,6 @@ Now for the Python:
 
 .. code-block:: python
 
-   $ ./python
    >>> import sys
    >>> sys.path.insert(0, 'pip.pyz')  # Add .pyz file to front of path
    >>> import pip
