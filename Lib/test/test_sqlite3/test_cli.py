@@ -218,8 +218,6 @@ class CompletionTest(unittest.TestCase):
         # List candidates starting with 'S', there should be multiple matches.
         input = b"S\t\tEL\t 1;\n.quit\n"
         output = run_pty(script, input, env={"NO_COLOR": "1"})
-        # Remove control sequences that colorize typed prefix 'S'
-        output = re.sub(rb"\x1b\[[0-9;]*[mK]", b"", output)
         self.assertIn(b"SELECT", output)
         self.assertIn(b"SET", output)
         self.assertIn(b"SAVEPOINT", output)
@@ -236,7 +234,6 @@ class CompletionTest(unittest.TestCase):
         script = "from sqlite3.__main__ import main; main()"
         input = b"zzzz\t;\n.quit\n"
         output = run_pty(script, input, env={"NO_COLOR": "1"})
-        output = re.sub(rb"\x1b\[[0-9;]*[mK]", b"", output)
         for keyword in KEYWORDS:
             self.assertNotRegex(output, rf"\b{keyword}\b".encode("utf-8"))
 
@@ -244,7 +241,6 @@ class CompletionTest(unittest.TestCase):
         script = "from sqlite3.__main__ import main; main()"
         input = b"S\t\n.quit\n"
         output = run_pty(script, input, env={"NO_COLOR": "1"})
-        output = re.sub(rb"\x1b\[[0-9;]*[mK]", b"", output).strip()
         savepoint_idx = output.find(b"SAVEPOINT")
         select_idx = output.find(b"SELECT")
         set_idx = output.find(b"SET")
