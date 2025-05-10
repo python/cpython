@@ -9,10 +9,9 @@ Python module.
 #define ZSTD_MODULE_H
 #include "Python.h"
 
-#include "zstd.h"
-#include "zdict.h"
-
 #include <stdbool.h>              // bool
+#include <zstd.h>
+#include <zdict.h>
 
 
 /* Forward declaration of module state */
