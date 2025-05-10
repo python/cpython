@@ -226,7 +226,7 @@ class IOBinding:
                         default=messagebox.CANCEL,
                         parent=self.text)
                     if not confirm:
-                        return
+                        return "break"
 
             if self.writefile(self.filename):
                 self.file_timestamp = os.stat(self.filename).st_mtime
