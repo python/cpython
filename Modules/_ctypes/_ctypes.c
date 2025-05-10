@@ -576,8 +576,16 @@ _ctypes_CType_Type___sizeof___impl(PyObject *self, PyTypeObject *cls)
     return PyLong_FromSsize_t(size);
 }
 
+/*[clinic input]
+@getter
+@critical_section
+_ctypes.CType_Type.__pointer_type__
+
+[clinic start generated code]*/
+
 static PyObject *
-ctype_get_pointer_type(PyObject *self, void *Py_UNUSED(ignored))
+_ctypes_CType_Type___pointer_type___get_impl(PyObject *self)
+/*[clinic end generated code: output=718c9ff10b2b0012 input=ff7498aa6edf487c]*/
 {
     ctypes_state *st = get_module_state_by_def(Py_TYPE(self));
     StgInfo *info;
@@ -599,8 +607,16 @@ ctype_get_pointer_type(PyObject *self, void *Py_UNUSED(ignored))
     return NULL;
 }
 
+/*[clinic input]
+@setter
+@critical_section
+_ctypes.CType_Type.__pointer_type__
+
+[clinic start generated code]*/
+
 static int
-ctype_set_pointer_type(PyObject *self, PyObject *tp, void *Py_UNUSED(ignored))
+_ctypes_CType_Type___pointer_type___set_impl(PyObject *self, PyObject *value)
+/*[clinic end generated code: output=6259be8ea21693fa input=9b2dc2400c388982]*/
 {
     ctypes_state *st = get_module_state_by_def(Py_TYPE(self));
     StgInfo *info;
@@ -612,7 +628,7 @@ ctype_set_pointer_type(PyObject *self, PyObject *tp, void *Py_UNUSED(ignored))
         return -1;
     }
 
-    Py_XSETREF(info->pointer_type, Py_XNewRef(tp));
+    Py_XSETREF(info->pointer_type, Py_XNewRef(value));
     return 0;
 }
 
@@ -626,8 +642,7 @@ static PyMethodDef ctype_methods[] = {
 };
 
 static PyGetSetDef ctype_getsets[] = {
-    { "__pointer_type__", ctype_get_pointer_type, ctype_set_pointer_type,
-      "pointer type", NULL },
+    _CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF
     { NULL, NULL }
 };
 
@@ -1254,9 +1269,11 @@ PyCPointerType_SetProto(ctypes_state *st, PyObject *self, StgInfo *stginfo, PyOb
         return -1;
     }
     Py_XSETREF(stginfo->proto, Py_NewRef(proto));
+    STGINFO_LOCK(info);
     if (info->pointer_type == NULL) {
         Py_XSETREF(info->pointer_type, Py_NewRef(self));
     }
+    STGINFO_UNLOCK();
     return 0;
 }
 
