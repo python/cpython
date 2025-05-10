@@ -167,7 +167,6 @@ class HelpFormatter(object):
         indent_increment=2,
         max_help_position=24,
         width=None,
-        prefix_chars='-',
         color=False,
     ):
         # default setting for width
@@ -177,7 +176,6 @@ class HelpFormatter(object):
             width -= 2
 
         self._set_color(color)
-        self._prefix_chars = prefix_chars
         self._prog = prog
         self._indent_increment = indent_increment
         self._max_help_position = min(max_help_position,
@@ -417,14 +415,7 @@ class HelpFormatter(object):
         return ' '.join(self._get_actions_usage_parts(actions, groups))
 
     def _is_long_option(self, string):
-        return len(string) >= 2 and string[1] in self._prefix_chars
-
-    def _is_short_option(self, string):
-        return (
-            not self._is_long_option(string)
-            and len(string) >= 1
-            and string[0] in self._prefix_chars
-        )
+        return len(string) > 2
 
     def _get_actions_usage_parts(self, actions, groups):
         # find group indices and identify actions in groups
@@ -473,25 +464,22 @@ class HelpFormatter(object):
             # produce the first way to invoke the option in brackets
             else:
                 option_string = action.option_strings[0]
+                if self._is_long_option(option_string):
+                    option_color = t.summary_long_option
+                else:
+                    option_color = t.summary_short_option
 
                 # if the Optional doesn't take a value, format is:
                 #    -s or --long
                 if action.nargs == 0:
                     part = action.format_usage()
-                    if self._is_long_option(part):
-                        part = f"{t.summary_long_option}{part}{t.reset}"
-                    elif self._is_short_option(part):
-                        part = f"{t.summary_short_option}{part}{t.reset}"
+                    part = f"{option_color}{part}{t.reset}"
 
                 # if the Optional takes a value, format is:
                 #    -s ARGS or --long ARGS
                 else:
                     default = self._get_default_metavar_for_optional(action)
                     args_string = self._format_args(action, default)
-                    if self._is_long_option(option_string):
-                        option_color = t.summary_long_option
-                    elif self._is_short_option(option_string):
-                        option_color = t.summary_short_option
                     part = (
                         f"{option_color}{option_string} "
                         f"{t.summary_label}{args_string}{t.reset}"
@@ -608,10 +596,8 @@ class HelpFormatter(object):
                 for s in strings:
                     if self._is_long_option(s):
                         parts.append(f"{t.long_option}{s}{t.reset}")
-                    elif self._is_short_option(s):
-                        parts.append(f"{t.short_option}{s}{t.reset}")
                     else:
-                        parts.append(s)
+                        parts.append(f"{t.short_option}{s}{t.reset}")
                 return parts
 
             # if the Optional doesn't take a value, format is:
@@ -2726,7 +2712,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
     def _get_formatter(self):
         formatter = self.formatter_class(prog=self.prog)
-        formatter._prefix_chars = self.prefix_chars
         formatter._set_color(self.color)
         return formatter
 
