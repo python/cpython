@@ -207,6 +207,7 @@ dist-html:
 	rm -rf dist/python-$(DISTVERSION)-docs-html/_images/social_previews/
 	tar -C dist -cf dist/python-$(DISTVERSION)-docs-html.tar python-$(DISTVERSION)-docs-html
 	bzip2 -9 -k dist/python-$(DISTVERSION)-docs-html.tar
+	xz -9 -k dist/python-$(DISTVERSION)-docs-html.tar
 	(cd dist; zip -q -r -9 python-$(DISTVERSION)-docs-html.zip python-$(DISTVERSION)-docs-html)
 	rm -r dist/python-$(DISTVERSION)-docs-html
 	rm dist/python-$(DISTVERSION)-docs-html.tar
@@ -223,6 +224,7 @@ dist-text:
 	cp -pPR build/text dist/python-$(DISTVERSION)-docs-text
 	tar -C dist -cf dist/python-$(DISTVERSION)-docs-text.tar python-$(DISTVERSION)-docs-text
 	bzip2 -9 -k dist/python-$(DISTVERSION)-docs-text.tar
+	xz -9 -k dist/python-$(DISTVERSION)-docs-text.tar
 	(cd dist; zip -q -r -9 python-$(DISTVERSION)-docs-text.zip python-$(DISTVERSION)-docs-text)
 	rm -r dist/python-$(DISTVERSION)-docs-text
 	rm dist/python-$(DISTVERSION)-docs-text.tar
@@ -240,9 +242,10 @@ dist-pdf:
 	# as otherwise the full latexmk process is run twice.
 	# ($$ is needed to escape the $; https://www.gnu.org/software/make/manual/make.html#Basics-of-Variable-References)
 	-sed -i 's/: all-$$(FMT)/:/' build/latex/Makefile
-	(cd build/latex; $(MAKE) clean && $(MAKE) --jobs=$$((`nproc`+1)) --output-sync LATEXMKOPTS='-quiet' all-pdf && $(MAKE) FMT=pdf zip bz2)
+	(cd build/latex; $(MAKE) clean && $(MAKE) --jobs=$$((`nproc`+1)) --output-sync LATEXMKOPTS='-quiet' all-pdf && $(MAKE) FMT=pdf zip bz2 xz)
 	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-a4.zip
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-a4.tar.bz2
+	cp build/latex/docs-pdf.tar.xz dist/python-$(DISTVERSION)-docs-pdf-a4.tar.xz
 	@echo "Build finished and archived!"
 
 .PHONY: dist-epub
@@ -268,6 +271,7 @@ dist-texinfo:
 	cp -pPR build/texinfo dist/python-$(DISTVERSION)-docs-texinfo
 	tar -C dist -cf dist/python-$(DISTVERSION)-docs-texinfo.tar python-$(DISTVERSION)-docs-texinfo
 	bzip2 -9 -k dist/python-$(DISTVERSION)-docs-texinfo.tar
+	xz -9 -k dist/python-$(DISTVERSION)-docs-texinfo.tar
 	(cd dist; zip -q -r -9 python-$(DISTVERSION)-docs-texinfo.zip python-$(DISTVERSION)-docs-texinfo)
 	rm -r dist/python-$(DISTVERSION)-docs-texinfo
 	rm dist/python-$(DISTVERSION)-docs-texinfo.tar
