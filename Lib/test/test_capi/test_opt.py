@@ -1925,7 +1925,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertNotIn("_GUARD_TOS_INT", uops)
 
-    def test_get_len(self):
+    def test_get_len_with_tuple(self):
         def testfunc(n):
             x = ""
             for _ in range(n):
@@ -1939,6 +1939,9 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertIn("_GET_LEN", uops)
         self.assertIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
+
+
+    def test_get_len_with_non_tuple(self):
         def testfunc(n):
             x = ""
             for _ in range(n):
