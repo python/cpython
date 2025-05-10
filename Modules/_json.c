@@ -11,7 +11,6 @@
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_global_strings.h" // _Py_ID()
-#include "pycore_long.h"          // _PyLong_FormatWriter()
 #include "pycore_pyerrors.h"      // _PyErr_FormatNote
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_unicodeobject.h" // _PyUnicode_CheckConsistency()
@@ -1485,7 +1484,7 @@ encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer,
     else if (PyLong_Check(obj)) {
         if (PyLong_CheckExact(obj)) {
             // Fast-path for exact integers
-            return _PyLong_FormatWriter(writer, obj, 10, 0);
+            return PyUnicodeWriter_WriteRepr((PyUnicodeWriter*)writer, obj);
         }
         PyObject *encoded = PyLong_Type.tp_repr(obj);
         if (encoded == NULL)
