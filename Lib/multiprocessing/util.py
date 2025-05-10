@@ -135,7 +135,7 @@ def get_temp_dir():
     tempdir = process.current_process()._config.get('tempdir')
     if tempdir is None:
         import shutil, tempfile
-        tempdir = tempfile.mkdtemp(prefix='pymp-')
+        tempdir = tempfile.mkdtemp(prefix='pymp-', run_realpath=False)
         info('created temp directory %s', tempdir)
         # keep a strong reference to shutil.rmtree(), since the finalizer
         # can be called late during Python shutdown
