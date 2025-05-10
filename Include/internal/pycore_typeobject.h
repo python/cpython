@@ -134,7 +134,6 @@ extern int _PyType_AddMethod(PyTypeObject *, PyMethodDef *);
 extern void _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask,
                                       unsigned long flags);
 
-extern unsigned int _PyType_GetVersionForCurrentState(PyTypeObject *tp);
 PyAPI_FUNC(void) _PyType_SetVersion(PyTypeObject *tp, unsigned int version);
 PyTypeObject *_PyType_LookupByVersion(unsigned int version);
 
