@@ -128,7 +128,7 @@ class IOBinding:
                     chars = f.read()
                     fileencoding = f.encoding
                     eol_convention = f.newlines
-                    file_timestamp = os.stat(filename).st_mtime
+                    file_timestamp = self.getmtime(filename)
                     converted = False
             except (UnicodeDecodeError, SyntaxError):
                 # Wait for the editor window to appear
@@ -144,7 +144,7 @@ class IOBinding:
                     chars = f.read()
                     fileencoding = f.encoding
                     eol_convention = f.newlines
-                    file_timestamp = os.stat(filename).st_mtime
+                    file_timestamp = self.getmtime(filename)
                     converted = True
         except OSError as err:
             messagebox.showerror("I/O Error", str(err), parent=self.text)
@@ -213,7 +213,7 @@ class IOBinding:
             # Check the time of most recent content modification so the
             # user doesn't accidentally overwrite a newer version of the file.
             try:
-                file_timestamp = os.stat(self.filename).st_mtime
+                file_timestamp = self.getmtime(self.filename)
             except OSError:
                 pass
             else:
@@ -229,7 +229,7 @@ class IOBinding:
                         return "break"
 
             if self.writefile(self.filename):
-                self.file_timestamp = os.stat(self.filename).st_mtime
+                self.file_timestamp = self.getmtime(self.filename)
                 self.set_saved(True)
                 try:
                     self.editwin.store_file_breaks()
@@ -242,7 +242,7 @@ class IOBinding:
         filename = self.asksavefile()
         if filename:
             if self.writefile(filename):
-                self.file_timestamp = os.stat(filename).st_mtime
+                self.file_timestamp = self.getmtime(filename)
                 self.set_filename(filename)
                 self.set_saved(1)
                 try:
@@ -274,6 +274,9 @@ class IOBinding:
             messagebox.showerror("I/O Error", str(msg),
                                    parent=self.text)
             return False
+
+    def getmtime(self, filename):
+        return os.stat(filename).st_mtime
 
     def fixnewlines(self):
         """Return text with os eols.
