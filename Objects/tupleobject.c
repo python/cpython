@@ -5,7 +5,7 @@
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_freelist.h"      // _Py_FREELIST_PUSH()
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
-#include "pycore_list.h"          // _Py_memory_repeat()
+#include "pycore_list.h"          // _Py_memory_ptrs_repeat()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_stackref.h"      // PyStackRef_AsPyObjectSteal()
@@ -540,8 +540,8 @@ tuple_repeat(PyObject *self, Py_ssize_t n)
             *dest++ = *src++;
         }
 
-        _Py_memory_repeat((char *)np->ob_item, sizeof(PyObject *)*output_size,
-                          sizeof(PyObject *)*input_size);
+        _Py_memory_ptrs_repeat((char *)np->ob_item, sizeof(PyObject *)*output_size,
+                               sizeof(PyObject *)*input_size);
     }
     _PyObject_GC_TRACK(np);
     return (PyObject *) np;
