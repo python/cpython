@@ -11,6 +11,52 @@
 This module constructs higher-level threading interfaces on top of the lower
 level :mod:`_thread` module.
 
+.. include:: ../includes/wasm-notavail.rst
+
+Introduction
+------------
+
+The :mod:`threading` module provides a way to run multiple `threads
+<https://en.wikipedia.org/wiki/Thread_(computing)>`_ (smaller
+units of a process) concurrently within a single process. It allows for the
+creation and management of threads, making it possible to execute tasks in
+parallel, sharing memory space. Threads are particularly useful when tasks are
+I/O-bound, such as file operations or making network requests,
+where much of the time is spent waiting for external resources.
+
+A typical use case for :mod:`threading` includes managing a pool of worker
+threads that can process multiple tasks concurrently.  Here's a basic example of
+creating and starting threads using :class:`~threading.Thread`::
+
+   import threading
+   import time
+
+   def crawl(link, delay=3):
+       print(f"crawl started for {link}")
+       time.sleep(delay)  # Blocking I/O (simulating a network request)
+       print(f"crawl ended for {link}")
+
+   links = [
+       "https://python.org",
+       "https://docs.python.org",
+       "https://peps.python.org",
+   ]
+
+   # Start threads for each link
+   threads = []
+   for link in links:
+       # Using `args` to pass positional arguments and `kwargs` for keyword arguments
+       t = threading.Thread(target=crawl, args=(link,), kwargs={"delay": 2})
+       threads.append(t)
+
+   # Start each thread
+   for t in threads:
+       t.start()
+
+   # Wait for all threads to finish
+   for t in threads:
+       t.join()
+
 .. versionchanged:: 3.7
    This module used to be optional, it is now always available.
 
@@ -45,7 +91,23 @@ level :mod:`_thread` module.
    However, threading is still an appropriate model if you want to run
    multiple I/O-bound tasks simultaneously.
 
-.. include:: ../includes/wasm-notavail.rst
+GIL and Performance Considerations
+----------------------------------
+
+Unlike the :mod:`multiprocessing` module, which uses separate processes to
+bypass the :term:`Global Interpreter Lock <global interpreter lock>`, the
+threading module operates within a single process, meaning that all threads
+share the same memory space. However, the :term:`GIL` limits the performance
+gains of threading when it comes to CPU-bound tasks, as only one thread can
+execute Python bytecode at a time. Despite this, threads remain a useful tool
+for achieving concurrency in many scenarios.
+
+As of Python 3.13, experimental :term:`free-threaded <free threading>` builds
+can disable the :term:`GIL`, enabling true parallel execution of threads, but
+this feature is not available by default. (See :pep:`703`.)
+
+Reference
+---------
 
 This module defines the following functions:
 
@@ -258,7 +320,7 @@ All of the methods described below are executed atomically.
 
 
 Thread-Local Data
------------------
+^^^^^^^^^^^^^^^^^
 
 Thread-local data is data whose values are thread specific. If you
 have data that you want to be local to a thread, create a
@@ -390,7 +452,7 @@ affects what we see::
 .. _thread-objects:
 
 Thread Objects
---------------
+^^^^^^^^^^^^^^
 
 The :class:`Thread` class represents an activity that is run in a separate
 thread of control.  There are two ways to specify the activity: by passing a
@@ -646,7 +708,7 @@ since it is impossible to detect the termination of alien threads.
 .. _lock-objects:
 
 Lock Objects
-------------
+^^^^^^^^^^^^
 
 A primitive lock is a synchronization primitive that is not owned by a
 particular thread when locked.  In Python, it is currently the lowest level
@@ -739,7 +801,7 @@ All methods are executed atomically.
 .. _rlock-objects:
 
 RLock Objects
--------------
+^^^^^^^^^^^^^
 
 A reentrant lock is a synchronization primitive that may be acquired multiple
 times by the same thread.  Internally, it uses the concepts of "owning thread"
@@ -849,7 +911,7 @@ call release as many times the lock has been acquired can lead to deadlock.
 .. _condition-objects:
 
 Condition Objects
------------------
+^^^^^^^^^^^^^^^^^
 
 A condition variable is always associated with some kind of lock; this can be
 passed in or one will be created by default.  Passing one in is useful when
@@ -1027,7 +1089,7 @@ item to the buffer only needs to wake up one consumer thread.
 .. _semaphore-objects:
 
 Semaphore Objects
------------------
+^^^^^^^^^^^^^^^^^
 
 This is one of the oldest synchronization primitives in the history of computer
 science, invented by the early Dutch computer scientist Edsger W. Dijkstra (he
@@ -1136,7 +1198,7 @@ causes the semaphore to be released more than it's acquired will go undetected.
 .. _event-objects:
 
 Event Objects
--------------
+^^^^^^^^^^^^^
 
 This is one of the simplest mechanisms for communication between threads: one
 thread signals an event and other threads wait for it.
@@ -1193,7 +1255,7 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
 .. _timer-objects:
 
 Timer Objects
--------------
+^^^^^^^^^^^^^
 
 This class represents an action that should be run only after a certain amount
 of time has passed --- a timer.  :class:`Timer` is a subclass of :class:`Thread`
@@ -1231,7 +1293,7 @@ For example::
 
 
 Barrier Objects
----------------
+^^^^^^^^^^^^^^^
 
 .. versionadded:: 3.2
 
