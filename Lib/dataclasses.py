@@ -1191,17 +1191,21 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     return cls
 
 
-# _dataclass_getstate and _dataclass_setstate are needed for pickling frozen
-# classes with slots.  These could be slightly more performant if we generated
+# _dataclass_reduce and _dataclass_produce are needed because pickle will
+# crash when there is a cycle in the object graph and the object serves
+# as a key for a dict, set or frozenset in one of its descendants.
+# cf. gh python/cpython#124937.
+#
+# These could be slightly more performant if we generated
 # the code instead of iterating over fields.  But that can be a project for
 # another day, if performance becomes an issue.
-def _dataclass_getstate(self):
-    return [getattr(self, f.name) for f in fields(self)]
+def _dataclass_reduce(self):
+    return _dataclass_produce, ([getattr(self, f.name) for f in fields(self)],)
 
 
-def _dataclass_setstate(self, state):
-    for field, value in zip(fields(self), state):
-        # use setattr because dataclass may be frozen
+def _dataclass_produce(self, data):
+    for field, value in zip(fields(self), data):
+        # use `object.__setattr__` because dataclass may be frozen.
         object.__setattr__(self, field.name, value)
 
 
@@ -1312,12 +1316,8 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
     if qualname is not None:
         newcls.__qualname__ = qualname
 
-    if is_frozen:
-        # Need this for pickling frozen classes with slots.
-        if '__getstate__' not in cls_dict:
-            newcls.__getstate__ = _dataclass_getstate
-        if '__setstate__' not in cls_dict:
-            newcls.__setstate__ = _dataclass_setstate
+    if '__reduce__' not in cls_dict:
+        newcls.__reduce__ = _dataclass_reduce
 
     # Fix up any closures which reference __class__.  This is used to
     # fix zero argument super so that it points to the correct class
