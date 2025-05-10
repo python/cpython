@@ -1483,6 +1483,7 @@ encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer,
     }
     else if (PyLong_Check(obj)) {
         if (PyLong_CheckExact(obj)) {
+            // Fast-path for exact integers
             return _PyLong_FormatWriter(writer, obj, 10, 0);
         }
         PyObject *encoded = PyLong_Type.tp_repr(obj);
