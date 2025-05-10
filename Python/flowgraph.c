@@ -2976,7 +2976,7 @@ optimize_load_fast(cfg_builder *g)
 
         // Optimize instructions
         for (int i = 0; i < block->b_iused; i++) {
-            if (!instr_flags[i]) {
+            if (!(instr_flags[i] & (SUPPORT_KILLED | STORED_AS_LOCAL))) {
                 cfg_instr *instr = &block->b_instr[i];
                 switch (instr->i_opcode) {
                     case LOAD_FAST:
