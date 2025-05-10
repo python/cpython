@@ -5549,8 +5549,8 @@ ast_type_replace_check(PyObject *self,
                 }
             }
         }
+        Py_DECREF(field_types);
     }
-    Py_DECREF(field_types);
 
     // Now 'expecting' contains the fields or attributes
     // that would not be filled inside ast_type_replace().
