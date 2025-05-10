@@ -141,7 +141,7 @@ class OptimizerConstantEmitter(OptimizerEmitter):
         inst: Instruction | None,
     ) -> bool:
         self.out.emit(tkn)
-        self.out.emit("_stackref")
+        self.out.emit("_stackref ")
         return True
 
 def write_uop_pure_evaluation_region_header(
@@ -152,9 +152,10 @@ def write_uop_pure_evaluation_region_header(
     emitter = OptimizerConstantEmitter(out, {}, uop)
     emitter.emit("if (\n")
     assert len(uop.stack.inputs) > 0, "Pure operations must have at least 1 input"
-    for inp in uop.stack.inputs:
+    for inp in uop.stack.inputs[:-1]:
         emitter.emit(f"sym_is_const(ctx, {inp.name}) &&\n")
-    emitter.emit("1) {\n")
+    emitter.emit(f"sym_is_const(ctx, {uop.stack.inputs[-1].name})\n")
+    emitter.emit(') {\n')
     # Declare variables, before they are shadowed.
     for inp in uop.stack.inputs:
         if inp.used:

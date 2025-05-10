@@ -152,13 +152,13 @@
             JitOptSymbol *res;
             value = stack_pointer[-1];
             if (
-                sym_is_const(ctx, value) &&
-            1) {
+                sym_is_const(ctx, value)
+            ) {
                 JitOptSymbol *value_sym = value;
                 _PyStackRef value = sym_get_const_as_stackref(ctx, value_sym);
                 _PyStackRef res_stackref;
                 assert(PyStackRef_BoolCheck(value));
-                res_stackref= PyStackRef_IsFalse(value)
+                res_stackref = PyStackRef_IsFalse(value)
                 ? PyStackRef_True : PyStackRef_False;
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectBorrow(res_stackref));
                 stack_pointer[-1] = res;
@@ -333,8 +333,8 @@
             left = stack_pointer[-2];
             if (
                 sym_is_const(ctx, left) &&
-                sym_is_const(ctx, right) &&
-            1) {
+                sym_is_const(ctx, right)
+            ) {
                 JitOptSymbol *left_sym = left;
                 JitOptSymbol *right_sym = right;
                 _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
@@ -351,7 +351,7 @@
                 if (res_o == NULL) {
                     JUMP_TO_LABEL(pop_2_error);
                 }
-                res_stackref= PyStackRef_FromPyObjectSteal(res_o);
+                res_stackref = PyStackRef_FromPyObjectSteal(res_o);
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectBorrow(res_stackref));
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
@@ -376,8 +376,8 @@
             left = stack_pointer[-2];
             if (
                 sym_is_const(ctx, left) &&
-                sym_is_const(ctx, right) &&
-            1) {
+                sym_is_const(ctx, right)
+            ) {
                 JitOptSymbol *left_sym = left;
                 JitOptSymbol *right_sym = right;
                 _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
@@ -394,7 +394,7 @@
                 if (res_o == NULL) {
                     JUMP_TO_LABEL(pop_2_error);
                 }
-                res_stackref= PyStackRef_FromPyObjectSteal(res_o);
+                res_stackref = PyStackRef_FromPyObjectSteal(res_o);
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectBorrow(res_stackref));
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
@@ -419,8 +419,8 @@
             left = stack_pointer[-2];
             if (
                 sym_is_const(ctx, left) &&
-                sym_is_const(ctx, right) &&
-            1) {
+                sym_is_const(ctx, right)
+            ) {
                 JitOptSymbol *left_sym = left;
                 JitOptSymbol *right_sym = right;
                 _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
@@ -437,7 +437,7 @@
                 if (res_o == NULL) {
                     JUMP_TO_LABEL(pop_2_error);
                 }
-                res_stackref= PyStackRef_FromPyObjectSteal(res_o);
+                res_stackref = PyStackRef_FromPyObjectSteal(res_o);
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectBorrow(res_stackref));
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
@@ -482,8 +482,8 @@
             left = stack_pointer[-2];
             if (
                 sym_is_const(ctx, left) &&
-                sym_is_const(ctx, right) &&
-            1) {
+                sym_is_const(ctx, right)
+            ) {
                 JitOptSymbol *left_sym = left;
                 JitOptSymbol *right_sym = right;
                 _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
@@ -497,8 +497,8 @@
                 double dres =
                 ((PyFloatObject *)left_o)->ob_fval *
                 ((PyFloatObject *)right_o)->ob_fval;
-                res_stackref= _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
-                if (PyStackRef_IsNull(res_stackref)) {
+                res_stackref = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
+                if (PyStackRef_IsNull(res_stackref )) {
                     JUMP_TO_LABEL(pop_2_error);
                 }
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectBorrow(res_stackref));
@@ -525,8 +525,8 @@
             left = stack_pointer[-2];
             if (
                 sym_is_const(ctx, left) &&
-                sym_is_const(ctx, right) &&
-            1) {
+                sym_is_const(ctx, right)
+            ) {
                 JitOptSymbol *left_sym = left;
                 JitOptSymbol *right_sym = right;
                 _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
@@ -540,8 +540,8 @@
                 double dres =
                 ((PyFloatObject *)left_o)->ob_fval +
                 ((PyFloatObject *)right_o)->ob_fval;
-                res_stackref= _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
-                if (PyStackRef_IsNull(res_stackref)) {
+                res_stackref = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
+                if (PyStackRef_IsNull(res_stackref )) {
                     JUMP_TO_LABEL(pop_2_error);
                 }
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectBorrow(res_stackref));
@@ -568,8 +568,8 @@
             left = stack_pointer[-2];
             if (
                 sym_is_const(ctx, left) &&
-                sym_is_const(ctx, right) &&
-            1) {
+                sym_is_const(ctx, right)
+            ) {
                 JitOptSymbol *left_sym = left;
                 JitOptSymbol *right_sym = right;
                 _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
@@ -583,8 +583,8 @@
                 double dres =
                 ((PyFloatObject *)left_o)->ob_fval -
                 ((PyFloatObject *)right_o)->ob_fval;
-                res_stackref= _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
-                if (PyStackRef_IsNull(res_stackref)) {
+                res_stackref = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
+                if (PyStackRef_IsNull(res_stackref )) {
                     JUMP_TO_LABEL(pop_2_error);
                 }
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectBorrow(res_stackref));
@@ -611,8 +611,8 @@
             left = stack_pointer[-2];
             if (
                 sym_is_const(ctx, left) &&
-                sym_is_const(ctx, right) &&
-            1) {
+                sym_is_const(ctx, right)
+            ) {
                 JitOptSymbol *left_sym = left;
                 JitOptSymbol *right_sym = right;
                 _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
@@ -629,7 +629,7 @@
                 if (res_o == NULL) {
                     JUMP_TO_LABEL(pop_2_error);
                 }
-                res_stackref= PyStackRef_FromPyObjectSteal(res_o);
+                res_stackref = PyStackRef_FromPyObjectSteal(res_o);
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectBorrow(res_stackref));
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
