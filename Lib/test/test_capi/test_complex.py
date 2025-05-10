@@ -132,6 +132,19 @@ class CAPIComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
         # CRASHES imagasdouble(NULL)
 
+    def test_fromstring(self):
+        # Test PyComplex_FromString()
+        fromstring = _testlimitedcapi.complex_fromstring
+
+        self.assertEqual(fromstring("1+2j"), 1+2j)
+        self.assertEqual(fromstring("(1+2j)"), 1+2j)
+        self.assertEqual(fromstring("2j"), 2j)
+
+        self.assertRaises(ValueError, fromstring, "2j\0")
+        self.assertRaises(TypeError, fromstring, 2j)
+
+        # CRASHES fromstring(NULL)
+
     def test_asccomplex(self):
         # Test PyComplex_AsCComplex()
         asccomplex = _testcapi.complex_asccomplex
@@ -293,6 +306,16 @@ class CAPIComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertTrue(isnan(_py_c_abs(complex('nan-1j'))[0]))
 
         self.assertEqual(_py_c_abs(complex(*[DBL_MAX]*2))[1], errno.ERANGE)
+
+    def test_old__complex__(self):
+        old_complex_like = _testcapi.old_complex_like
+
+        x = old_complex_like()
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(complex(x), 1+2j)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.assertRaises(DeprecationWarning, complex, x)
 
 
 if __name__ == "__main__":
