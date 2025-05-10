@@ -275,8 +275,7 @@ load:
 */
 static PyObject *
 decompress_impl(ZstdDecompressor *self, ZSTD_inBuffer *in,
-                Py_ssize_t max_length,
-                Py_ssize_t initial_size)
+                Py_ssize_t max_length)
 {
     size_t zstd_ret;
     ZSTD_outBuffer out;
@@ -284,15 +283,8 @@ decompress_impl(ZstdDecompressor *self, ZSTD_inBuffer *in,
     PyObject *ret;
 
     /* Initialize the output buffer */
-    if (initial_size >= 0) {
-        if (_OutputBuffer_InitWithSize(&buffer, &out, max_length, initial_size) < 0) {
-            goto error;
-        }
-    }
-    else {
-        if (_OutputBuffer_InitAndGrow(&buffer, &out, max_length) < 0) {
-            goto error;
-        }
+    if (_OutputBuffer_InitAndGrow(&buffer, &out, max_length) < 0) {
+        goto error;
     }
     assert(out.pos == 0);
 
@@ -375,7 +367,6 @@ decompressor_reset_session(ZstdDecompressor *self)
 static PyObject *
 stream_decompress(ZstdDecompressor *self, Py_buffer *data, Py_ssize_t max_length)
 {
-    Py_ssize_t initial_buffer_size = -1;
     ZSTD_inBuffer in;
     PyObject *ret = NULL;
     int use_input_buffer;
@@ -471,7 +462,7 @@ stream_decompress(ZstdDecompressor *self, Py_buffer *data, Py_ssize_t max_length
     assert(in.pos == 0);
 
     /* Decompress */
-    ret = decompress_impl(self, &in, max_length, initial_buffer_size);
+    ret = decompress_impl(self, &in, max_length);
     if (ret == NULL) {
         goto error;
     }
