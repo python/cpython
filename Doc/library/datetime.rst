@@ -273,7 +273,7 @@ A :class:`timedelta` object represents a duration, the difference between two
       ...     return f'-({-td!s})'
       ...
       >>> d = timedelta(hour=-1)
-      >>> d
+      >>> str(d)
       -1 day, 23:00:00
       >>> pretty_timedelta(d)
       -(1:00:00)
