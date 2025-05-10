@@ -107,6 +107,9 @@ class MissingZipPathInfo(PathInfo):
     def is_symlink(self):
         return False
 
+    def is_junction(self):
+        return False
+
     def resolve(self):
         return self
 
