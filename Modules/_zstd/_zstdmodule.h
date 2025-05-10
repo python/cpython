@@ -20,7 +20,8 @@ extern PyModuleDef _zstdmodule;
 
 /* For clinic type calculations */
 static inline _zstd_state *
-get_zstd_state_from_type(PyTypeObject *type) {
+get_zstd_state_from_type(PyTypeObject *type)
+{
     PyObject *module = PyType_GetModuleByDef(type, &_zstdmodule);
     if (module == NULL) {
         return NULL;
@@ -35,8 +36,6 @@ extern PyType_Spec zstd_compressor_type_spec;
 extern PyType_Spec zstd_decompressor_type_spec;
 
 struct _zstd_state {
-    PyObject *empty_bytes;
-
     PyTypeObject *ZstdDict_type;
     PyTypeObject *ZstdCompressor_type;
     PyTypeObject *ZstdDecompressor_type;
@@ -151,7 +150,8 @@ typedef enum {
 } dictionary_type;
 
 static inline int
-mt_continue_should_break(ZSTD_inBuffer *in, ZSTD_outBuffer *out) {
+mt_continue_should_break(ZSTD_inBuffer *in, ZSTD_outBuffer *out)
+{
     return in->size == in->pos && out->size != out->pos;
 }
 
@@ -165,13 +165,3 @@ set_parameter_error(const _zstd_state* const state, int is_compress,
                     int key_v, int value_v);
 
 static const char init_twice_msg[] = "__init__ method is called twice.";
-
-extern PyObject *
-decompress_impl(ZstdDecompressor *self, ZSTD_inBuffer *in,
-                Py_ssize_t max_length,
-                Py_ssize_t initial_size,
-                decompress_type type);
-
-extern PyObject *
-compress_impl(ZstdCompressor *self, Py_buffer *data,
-              ZSTD_EndDirective end_directive);
