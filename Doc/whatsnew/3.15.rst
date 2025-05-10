@@ -118,10 +118,10 @@ Deprecated
 Removed
 =======
 
-module_name
------------
+sysconfig
+---------
 
-* TODO
+* The *check_home* parameter of :func:`sysconfig.is_python_build`.
 
 
 Porting to Python 3.15
