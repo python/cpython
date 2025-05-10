@@ -490,25 +490,27 @@ class _Stream:
         # taken from gzip.GzipFile with some alterations
         if self.__read(2) != b"\037\213":
             raise ReadError("not a gzip file")
-        if self.__read(1) != b"\010":
+        method, flag = struct.unpack("<BB6x", self.__read(8))
+        if method != 8:
             raise CompressionError("unsupported compression method")
 
-        flag = ord(self.__read(1))
-        self.__read(6)
-
+        # process FEXTRA
         if flag & 4:
-            xlen = ord(self.__read(1)) + 256 * ord(self.__read(1))
-            self.read(xlen)
+            extra_len, = struct.unpack("<H", self.__read(2))
+            self.__read(extra_len)
+        # process FNAME
         if flag & 8:
             while True:
                 s = self.__read(1)
-                if not s or s == NUL:
+                if not s or s == b'\000':
                     break
+        # process FCOMMENT
         if flag & 16:
             while True:
                 s = self.__read(1)
-                if not s or s == NUL:
+                if not s or s == b'\000':
                     break
+        # process FHCRC
         if flag & 2:
             self.__read(2)
 
