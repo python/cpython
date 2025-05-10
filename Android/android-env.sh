@@ -3,7 +3,7 @@
 : "${HOST:?}"  # GNU target triplet
 
 # You may also override the following:
-: "${api_level:=24}"  # Minimum Android API level the build will run on
+: "${ANDROID_API_LEVEL:=24}"  # Minimum Android API level the build will run on
 : "${PREFIX:-}"  # Path in which to find required libraries
 
 
@@ -43,7 +43,7 @@ fi
 toolchain=$(echo "$ndk"/toolchains/llvm/prebuilt/*)
 export AR="$toolchain/bin/llvm-ar"
 export AS="$toolchain/bin/llvm-as"
-export CC="$toolchain/bin/${clang_triplet}${api_level}-clang"
+export CC="$toolchain/bin/${clang_triplet}${ANDROID_API_LEVEL}-clang"
 export CXX="${CC}++"
 export LD="$toolchain/bin/ld"
 export NM="$toolchain/bin/llvm-nm"
