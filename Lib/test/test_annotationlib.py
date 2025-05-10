@@ -829,13 +829,13 @@ class TestGetAnnotations(unittest.TestCase):
             ns = support.run_code(code, extra_names=extra_names)
             return ns[name]
 
-        def check_annotations(cls, name, has_future, has_annos):
+        def check_annotations(cls, has_future, has_annos):
             if has_annos:
                 if has_future:
                     anno = "int"
                 else:
                     anno = int
-                self.assertEqual(get_annotations(cls), {f"{name}_attr": anno})
+                self.assertEqual(get_annotations(cls), {f"{cls.__name__}_attr": anno})
             else:
                 self.assertEqual(get_annotations(cls), {})
 
@@ -872,9 +872,9 @@ class TestGetAnnotations(unittest.TestCase):
                     base_text="Base",
                     extra_names={"Base": base},
                 )
-                check_annotations(meta, "Meta", meta_future, meta_has_annos)
-                check_annotations(base, "Base", base_future, base_has_annos)
-                check_annotations(child, "Child", child_future, child_has_annos)
+                check_annotations(meta, meta_future, meta_has_annos)
+                check_annotations(base, base_future, base_has_annos)
+                check_annotations(child, child_future, child_has_annos)
 
     def test_modify_annotations(self):
         def f(x: int):
