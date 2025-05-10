@@ -1,0 +1,8 @@
+:mod:`hashlib`'s builtin hash implementations now check ``usedforsecurity=False``,
+when the OpenSSL library default provider is in OpenSSL's FIPS mode.  This helps
+ensure that only US FIPS approved implementations are in use by default on systems
+configured as such.
+
+This is only active when :mod:`hashlib` has been built with OpenSSL implementation
+support and said OpenSSL library includes the FIPS mode feature.  Not all variants
+do, and OpenSSL is not a *required* build time dependency of ``hashlib``.
