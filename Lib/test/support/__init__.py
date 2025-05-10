@@ -696,9 +696,11 @@ def sortdict(dict):
     return "{%s}" % withcommas
 
 
-def run_code(code: str) -> dict[str, object]:
+def run_code(code: str, extra_names: dict[str, object] | None = None) -> dict[str, object]:
     """Run a piece of code after dedenting it, and return its global namespace."""
     ns = {}
+    if extra_names:
+        ns.update(extra_names)
     exec(textwrap.dedent(code), ns)
     return ns
 
