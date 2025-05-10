@@ -37,9 +37,9 @@ except ImportError:
     zstd = None
 
 __all__ = ["BadZipFile", "BadZipfile", "error",
-           "ZIP_STORED", "ZIP_DEFLATED", "ZIP_BZIP2", "ZIP_LZMA", "ZIP_ZSTANDARD",
-           "is_zipfile", "ZipInfo", "ZipFile", "PyZipFile", "LargeZipFile",
-           "Path"]
+           "ZIP_STORED", "ZIP_DEFLATED", "ZIP_BZIP2", "ZIP_LZMA",
+           "ZIP_ZSTANDARD", "is_zipfile", "ZipInfo", "ZipFile", "PyZipFile",
+           "LargeZipFile", "Path"]
 
 class BadZipFile(Exception):
     pass
