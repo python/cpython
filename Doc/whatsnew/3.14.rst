@@ -811,7 +811,7 @@ depending on platform and C compiler used.
 This work was done by many contributors: Sam Gross, Matt Page, Neil Schemenauer,
 Thomas Wouters, Donghee Na, Kirill Podoprigora, Ken Jin, Itamar Oren,
 Brett Simmers, Dino Viehland, Nathan Goldbaum, Ralf Gommers, Lysandros Nikolaou,
-Kumar Aditya, and many others.
+Kumar Aditya, Edgar Margffoy, and many others.
 
 Some of these contributors are employed by Meta, which has continued to provide
 significant engineering resources to support this project.
