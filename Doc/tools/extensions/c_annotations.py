@@ -274,9 +274,11 @@ class CAPIToolsBanner(SphinxDirective):
     final_argument_whitespace = True
 
     text = sphinx_gettext(
-        "It is recommended to use "
-        ":ref:`third party tools <c-api-tools>`, "
-        "rather than using the Python C API directly."
+        "The Python C API is a low level interface that allows language runtime "
+        "embedding and extension module development tools to integrate "
+        "with the running interpreter. It is generally recommended to use a "
+        "higher level :ref:`third party tool <c-api-tools>`, rather than using the "
+        "Python C API directly."
     )
 
     def run(self) -> list[nodes.admonition]:
