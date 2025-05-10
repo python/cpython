@@ -452,7 +452,7 @@ def _parse_hh_mm_ss_ff(tstr):
 
     return time_comps
 
-def _parse_isoformat_time(tstr):
+def _parse_isoformat_time(tstr, is_expanded=False):
     # Format supported is HH[:MM[:SS[.fff[fff]]]][+HH:MM[:SS[.ffffff]]]
     len_str = len(tstr)
     if len_str < 2:
@@ -492,6 +492,15 @@ def _parse_isoformat_time(tstr):
 
         if len(tzstr) in (0, 1, 3) or tstr[tz_pos-1] == 'Z':
             raise ValueError("Malformed time zone string")
+
+        if is_expanded and ":" not in tzstr and len(tzstr) > 2:
+            import warnings
+            warnings.warn(
+                "Support for partially expanded formats are deprecated in "
+                "accordance with ISO 8601:2 and will be removed in 3.15",
+                DeprecationWarning,
+                stacklevel=3,
+            )
 
         tz_comps = _parse_hh_mm_ss_ff(tzstr)
 
@@ -1947,7 +1956,10 @@ class datetime(date):
 
         if tstr:
             try:
-                time_components, became_next_day, error_from_components = _parse_isoformat_time(tstr)
+                is_expanded = date_string[4] == "-"
+                time_components, became_next_day, error_from_components = (
+                    _parse_isoformat_time(tstr, is_expanded)
+                )
             except ValueError:
                 raise ValueError(
                     f'Invalid isoformat string: {date_string!r}') from None

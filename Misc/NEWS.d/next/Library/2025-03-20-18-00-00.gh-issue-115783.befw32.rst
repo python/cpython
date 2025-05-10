@@ -1,0 +1,1 @@
+Deprecate support for invalid ISO formats in :func:`datetime.datetime.fromisoformat`
