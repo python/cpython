@@ -8,7 +8,7 @@ from test.support.testcase import ExtraAssertions
 from test.support import captured_stdout, captured_stderr, captured_stdin
 
 
-class CommandLineInterface(unittest.TestCase, ExtraAssertions):
+class CommandLineInterface(unittest.TestCase):
 
     def _do_test(self, *args, expect_success=True):
         with (
