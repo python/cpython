@@ -679,6 +679,9 @@ do {                                                                         \
     ADD_INT_CONST_TO_TYPE(mod_state->ZstdCompressor_type,
                           "FLUSH_FRAME", ZSTD_e_end);
 
+    /* Make ZstdCompressor immutable (set Py_TPFLAGS_IMMUTABLETYPE) */
+    PyType_Freeze(mod_state->ZstdCompressor_type);
+
 #undef ADD_TYPE
 #undef ADD_INT_MACRO
 #undef ADD_ZSTD_COMPRESSOR_INT_CONST
