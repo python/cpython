@@ -9,7 +9,7 @@ Python module.
 module _zstd
 class _zstd.ZstdDict "ZstdDict *" "&zstd_dict_type_spec"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a5d1254c497e52ba]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3dcc175ec974f81c]*/
 
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1

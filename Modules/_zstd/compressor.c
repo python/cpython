@@ -9,7 +9,7 @@ Python module.
 module _zstd
 class _zstd.ZstdCompressor "ZstdCompressor *" "zstd_compressor_type_spec"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=875bf614798f80cb]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=842f2c4f4520ab26]*/
 
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
