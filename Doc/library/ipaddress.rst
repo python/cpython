@@ -548,14 +548,28 @@ dictionaries.
       These attributes are true for the network as a whole if they are true
       for both the network address and the broadcast address.
 
+   .. attribute:: first_address
+
+      The first address in the network, the one with all the host bits cleared.
+      This is the same as :attr:`network_address` for IPv4 networks.
+
+      .. versionadded:: next
+
    .. attribute:: network_address
 
       The network address for the network. The network address and the
       prefix length together uniquely define a network.
 
+   .. attribute:: last_address
+
+      The last address in the network, the address with all the host bits set.
+      This is the same as :attr:`broadcast_address` for IPv4 networks.
+
+      .. versionadded:: next
+
    .. attribute:: broadcast_address
 
-      The broadcast address for the network. Packets sent to the broadcast
+      The same as :attr:`last_address` for IPv4 networks. Packets sent to this
       address should be received by every host on the network.
 
    .. attribute:: hostmask
@@ -756,8 +770,28 @@ dictionaries.
    .. attribute:: is_reserved
    .. attribute:: is_loopback
    .. attribute:: is_link_local
-   .. attribute:: network_address
-   .. attribute:: broadcast_address
+   .. attribute:: first_address
+
+      The first address in the network, the one with all the host bits cleared.
+      This is the same as :attr:`subnet_router_anycast_address` for IPv6 networks.
+
+      .. versionadded:: next
+
+   .. attribute:: subnet_router_anycast_address
+
+      The Subnet-Router anycast address for the network, which is the first address
+      in the network or None if the network is a /127 or /128, which do not have
+      a subnet router, as defined in IETF RFC 6164, section 8.
+
+      .. versionadded:: next
+
+   .. attribute:: last_address
+
+      The last address in the network, the one with all the host bits set.
+      This has no special meaning for IPv6 networks.
+
+      .. versionadded:: next
+
    .. attribute:: hostmask
    .. attribute:: netmask
    .. attribute:: with_prefixlen
@@ -767,6 +801,22 @@ dictionaries.
    .. attribute:: with_hostmask
    .. attribute:: num_addresses
    .. attribute:: prefixlen
+   .. attribute:: network_address
+
+      The first address in the network. The name "network address" has meaning for IPv4 networks,
+      but not for IPv6, hence this use is deprecated.
+
+      .. deprecated:: next
+         Use :attr:`first_address` or :attr:`subnet_router_anycast_address` instead.
+
+   .. attribute:: broadcast_address
+
+      The last address in the network. The name "broadcast address" has meaning for IPv4 networks,
+      but not for IPv6, hence this use is deprecated.
+
+      .. deprecated:: next
+         Use :attr:`last_address` instead.
+
    .. method:: hosts()
 
       Returns an iterator over the usable hosts in the network.  The usable
