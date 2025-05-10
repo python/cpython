@@ -261,7 +261,7 @@ A :class:`timedelta` object represents a duration, the difference between two
       >>> (d.days, d.seconds, d.microseconds)
       (-1, 86399, 999999)
 
-   A :class:`!timedelta` object can be rendered in a human-readable format as follows:
+   Negative :class:`!timedelta` objects can display in a way that may be confusing. Here's a recipe for displaying both positive and negative `timedelta` objects in a more readable format:
 
    .. code-block:: pycon
 
