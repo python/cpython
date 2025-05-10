@@ -1362,7 +1362,9 @@ class ZipFile:
                    When using ZIP_STORED or ZIP_LZMA this keyword has no effect.
                    When using ZIP_DEFLATED integers 0 through 9 are accepted.
                    When using ZIP_BZIP2 integers 1 through 9 are accepted.
-                   When using ZIP_ZSTANDARD integers are accepted.
+                   When using ZIP_ZSTANDARD integers -7 though 22 are common,
+                   see the CompressionParameter enum in compression.zstd for
+                   details.
 
     """
 
