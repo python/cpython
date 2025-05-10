@@ -1,0 +1,2 @@
+Fix ``%z`` directive in :func:`datetime.datetime.strptime` to allow for no provided
+offset as was documented.
