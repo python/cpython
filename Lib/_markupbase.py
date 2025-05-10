@@ -276,13 +276,14 @@ class ParserBase:
                 return -1
             if c == "(":
                 # an enumerated type; look for ')'
-                if ")" in rawdata[j:]:
-                    j = rawdata.find(")", j) + 1
+                _temp = rawdata.find(")", j)
+                if _temp != -1:
+                    j = _temp + 1
                 else:
                     return -1
                 while rawdata[j:j+1].isspace():
                     j = j + 1
-                if not rawdata[j:]:
+                if j >= len(rawdata):
                     # end of buffer, incomplete
                     return -1
             else:
