@@ -127,25 +127,8 @@ Classes
 
       Values are the result of evaluating the annotation expressions.
 
-   .. attribute:: FORWARDREF
-      :value: 2
-
-      Values are real annotation values (as per :attr:`Format.VALUE` format)
-      for defined values, and :class:`ForwardRef` proxies for undefined
-      values. Real objects may contain references to :class:`ForwardRef`
-      proxy objects.
-
-   .. attribute:: STRING
-      :value: 3
-
-      Values are the text string of the annotation as it appears in the
-      source code, up to modifications including, but not restricted to,
-      whitespace normalizations and constant values optimizations.
-
-      The exact values of these strings may change in future versions of Python.
-
    .. attribute:: VALUE_WITH_FAKE_GLOBALS
-      :value: 4
+      :value: 2
 
       Special value used to signal that an annotate function is being
       evaluated in a special environment with fake globals. When passed this
@@ -154,6 +137,23 @@ Classes
       to signal that they do not support execution in this environment.
       This format is only used internally and should not be passed to
       the functions in this module.
+
+   .. attribute:: FORWARDREF
+      :value: 3
+
+      Values are real annotation values (as per :attr:`Format.VALUE` format)
+      for defined values, and :class:`ForwardRef` proxies for undefined
+      values. Real objects may contain references to :class:`ForwardRef`
+      proxy objects.
+
+   .. attribute:: STRING
+      :value: 4
+
+      Values are the text string of the annotation as it appears in the
+      source code, up to modifications including, but not restricted to,
+      whitespace normalizations and constant values optimizations.
+
+      The exact values of these strings may change in future versions of Python.
 
    .. versionadded:: 3.14
 
