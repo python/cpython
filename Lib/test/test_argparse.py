@@ -5176,6 +5176,30 @@ class TestHelpTupleMetavarPositional(HelpTestCase):
     version = ''
 
 
+class TestHelpFormatter(HelpTestCase):
+    """Test the HelpFormatter"""
+
+    # Test subclassing the help formatter
+    class MyFormatter(argparse.HelpFormatter):
+        def __init__(self, prog) -> None:
+            super().__init__(prog)
+
+    parser_signature = Sig(
+        prog="PROG",
+        formatter_class=MyFormatter,
+        description="Test with subclassing the help formatter",
+    )
+    usage = '''\
+        usage: PROG [-h]
+        '''
+    help = usage + '''\
+
+        Test with subclassing the help formatter
+
+        options:
+          -h, --help  show this help message and exit
+        '''
+
 class TestHelpRawText(HelpTestCase):
     """Test the RawTextHelpFormatter"""
 
