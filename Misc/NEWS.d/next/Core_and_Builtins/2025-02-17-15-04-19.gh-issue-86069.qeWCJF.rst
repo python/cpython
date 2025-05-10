@@ -1,0 +1,4 @@
+The default implementation of the
+:c:member:`~PyNumberMethods.nb_inplace_power` slot no longer ignores the
+third argument, but passes it to the :meth:`~object.__ipow__` method if its
+value is not ``None``.
