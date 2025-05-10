@@ -1295,7 +1295,7 @@ static int
 bounded_lru_cache_get_lock_held(lru_cache_object *self, PyObject *args, PyObject *kwds,
                                 PyObject **result, PyObject **key, Py_hash_t *hash)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self->cache);
     lru_list_elem *link;
 
     PyObject *key_ = *key = lru_cache_make_key(self->kwd_mark, args, kwds, self->typed);
@@ -1330,7 +1330,7 @@ static PyObject *
 bounded_lru_cache_update_lock_held(lru_cache_object *self,
                                    PyObject *result, PyObject *key, Py_hash_t hash)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self->cache);
     lru_list_elem *link;
     PyObject *testresult;
     int res;
@@ -1479,7 +1479,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     Py_hash_t hash;
     int res;
 
-    Py_BEGIN_CRITICAL_SECTION(self);
+    Py_BEGIN_CRITICAL_SECTION(self->cache);
     res = bounded_lru_cache_get_lock_held(self, args, kwds, &result, &key, &hash);
     Py_END_CRITICAL_SECTION();
 
@@ -1492,7 +1492,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
 
     result = PyObject_Call(self->func, args, kwds);
 
-    Py_BEGIN_CRITICAL_SECTION(self);
+    Py_BEGIN_CRITICAL_SECTION(self->cache);
     /* Note:  key will be stolen in the below function, and
        result may be stolen or sometimes re-returned as a passthrough.
        Treat both as being stolen.
