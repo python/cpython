@@ -10,6 +10,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_pythonrun.h"     // _Py_SourceAsString()
+#include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_typeobject.h"    // _PyStaticType_InitBuiltin()
 
 
