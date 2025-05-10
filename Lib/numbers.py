@@ -297,11 +297,13 @@ class Rational(Real):
     @property
     @abstractmethod
     def numerator(self):
+        """The numerator of a rational number in lowest terms."""
         raise NotImplementedError
 
     @property
     @abstractmethod
     def denominator(self):
+        """The (positive) denominator of a rational number in lowest terms."""
         raise NotImplementedError
 
     # Concrete implementation of Real's conversion to float.
