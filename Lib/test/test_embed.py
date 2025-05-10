@@ -456,12 +456,12 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.assertEqual(len(set(out.splitlines())), 1)
 
     def test_datetime_capi_at_shutdown(self):
-        # gh-132413: datetime module is currently tested in an interp's life.
-        # PyDateTime_IMPORT needs to be called at least once after the restart.
+        # gh-132413: Users need to call PyDateTime_IMPORT every time
+        # after starting an interpreter.
         code = textwrap.dedent("""
             import sys
             import _testcapi
-            _testcapi.test_datetime_capi_newinterp()
+            _testcapi.test_datetime_capi()  # PyDateTime_IMPORT only once
             timedelta = _testcapi.get_capi_types()['timedelta']
 
             def gen():
@@ -481,7 +481,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             next(it)
         """)
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
-        self.assertEqual(out, '1\n' * INIT_LOOPS)
+        self.assertEqual(out, '1\n' + '2\n' * (INIT_LOOPS - 1))
 
     def test_static_types_inherited_slots(self):
         script = textwrap.dedent("""
