@@ -161,7 +161,7 @@ ZstdDict_str(PyObject *ob)
 static PyMemberDef ZstdDict_members[] = {
     {"dict_id", Py_T_UINT, offsetof(ZstdDict, dict_id), Py_READONLY, ZstdDict_dictid_doc},
     {"dict_content", Py_T_OBJECT_EX, offsetof(ZstdDict, dict_content), Py_READONLY, ZstdDict_dictcontent_doc},
-    {0}
+    {NULL}
 };
 
 /*[clinic input]
@@ -231,12 +231,9 @@ _zstd_ZstdDict_as_prefix_get_impl(ZstdDict *self)
 
 static PyGetSetDef ZstdDict_getset[] = {
     _ZSTD_ZSTDDICT_AS_DIGESTED_DICT_GETSETDEF
-
     _ZSTD_ZSTDDICT_AS_UNDIGESTED_DICT_GETSETDEF
-
     _ZSTD_ZSTDDICT_AS_PREFIX_GETSETDEF
-
-    {0}
+    {NULL}
 };
 
 static Py_ssize_t
@@ -275,11 +272,11 @@ static PyType_Slot zstddict_slots[] = {
     {Py_sq_length, ZstdDict_length},
     {Py_tp_traverse, ZstdDict_traverse},
     {Py_tp_clear, ZstdDict_clear},
-    {0}
+    {0, 0}
 };
 
-PyType_Spec zstddict_type_spec = {
-    .name = "_zstd.ZstdDict",
+PyType_Spec zstd_dict_type_spec = {
+    .name = "compression.zstd.ZstdDict",
     .basicsize = sizeof(ZstdDict),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .slots = zstddict_slots,

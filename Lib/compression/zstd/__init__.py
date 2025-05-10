@@ -71,7 +71,7 @@ def get_frame_info(frame_buffer):
     the frame may or may not need a dictionary to be decoded,
     and the ID of such a dictionary is not specified.
     """
-    return FrameInfo(*_zstd._get_frame_info(frame_buffer))
+    return FrameInfo(*_zstd.get_frame_info(frame_buffer))
 
 
 def train_dict(samples, dict_size):
@@ -91,7 +91,7 @@ def train_dict(samples, dict_size):
     chunk_sizes = tuple(_nbytes(sample) for sample in samples)
     if not chunks:
         raise ValueError("samples contained no data; can't train dictionary.")
-    dict_content = _zstd._train_dict(chunks, chunk_sizes, dict_size)
+    dict_content = _zstd.train_dict(chunks, chunk_sizes, dict_size)
     return ZstdDict(dict_content)
 
 
@@ -127,7 +127,7 @@ def finalize_dict(zstd_dict, /, samples, dict_size, level):
     if not chunks:
         raise ValueError("The samples are empty content, can't finalize the"
                          "dictionary.")
-    dict_content = _zstd._finalize_dict(zstd_dict.dict_content,
+    dict_content = _zstd.finalize_dict(zstd_dict.dict_content,
                                         chunks, chunk_sizes,
                                         dict_size, level)
     return ZstdDict(dict_content)
@@ -201,7 +201,7 @@ class CompressionParameter(enum.IntEnum):
 
         Both the lower and upper bounds are inclusive.
         """
-        return _zstd._get_param_bounds(self.value, is_compress=True)
+        return _zstd.get_param_bounds(self.value, is_compress=True)
 
 
 class DecompressionParameter(enum.IntEnum):
@@ -214,7 +214,7 @@ class DecompressionParameter(enum.IntEnum):
 
         Both the lower and upper bounds are inclusive.
         """
-        return _zstd._get_param_bounds(self.value, is_compress=False)
+        return _zstd.get_param_bounds(self.value, is_compress=False)
 
 
 class Strategy(enum.IntEnum):
@@ -237,4 +237,4 @@ class Strategy(enum.IntEnum):
 
 
 # Check validity of the CompressionParameter & DecompressionParameter types
-_zstd._set_parameter_types(CompressionParameter, DecompressionParameter)
+_zstd.set_parameter_types(CompressionParameter, DecompressionParameter)
