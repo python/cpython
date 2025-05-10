@@ -1186,7 +1186,8 @@ class Path(PurePath):
 
         # Fall back to copy+delete.
         ensure_distinct_paths(self, target)
-        for src, _dst in target._iter_copy_from(self, follow_symlinks=False, preserve_metadata=True):
+        for src, _dst in target._iter_copy_from(
+                self, follow_symlinks=False, preserve_metadata=True):
             if src.info.is_symlink() or src.is_junction():
                 src.unlink()
             elif src.info.is_dir():

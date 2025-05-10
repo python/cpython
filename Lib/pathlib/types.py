@@ -417,7 +417,7 @@ class _WritablePath(_JoinablePath):
             self.mkdir()
             for src in children:
                 dst = self.joinpath(src.name)
-                yield from dst._iter_copy_from(src, follow_symlinks=follow_symlinks)
+                yield from dst._iter_copy_from(src, follow_symlinks)
         else:
             ensure_different_files(source, self)
             with magic_open(source, 'rb') as source_f:
