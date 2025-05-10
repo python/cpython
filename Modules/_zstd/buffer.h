@@ -5,9 +5,10 @@ Python module.
 
 #ifndef ZSTD_BUFFER_H
 #define ZSTD_BUFFER_H
-#include "_zstdmodule.h"
 #include "Python.h"
 #include "pycore_blocks_output_buffer.h"
+
+#include <zstd.h>                 // ZSTD_outBuffer
 
 /* Blocks output buffer wrapper code */
 
