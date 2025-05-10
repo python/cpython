@@ -403,16 +403,16 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 
         errno = 0;
         if (opener == Py_None) {
+            Py_BEGIN_ALLOW_THREADS
             do {
-                Py_BEGIN_ALLOW_THREADS
 #ifdef MS_WINDOWS
                 self->fd = _wopen(widename, flags, 0666);
 #else
                 self->fd = open(name, flags, 0666);
 #endif
-                Py_END_ALLOW_THREADS
             } while (self->fd < 0 && errno == EINTR &&
                      !(async_err = PyErr_CheckSignals()));
+            Py_END_ALLOW_THREADS
 
             if (async_err)
                 goto error;

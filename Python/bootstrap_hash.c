@@ -95,16 +95,19 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
        failed with ENOSYS or EPERM. Need Linux kernel 3.17 or newer, or Solaris
        11.3 or newer */
     static int getrandom_works = 1;
-    int flags;
-    char *dest;
+    int status = 1;
+    int flags = blocking ? 0 : GRND_NONBLOCK;
+    char *dest = buffer;
+    PyThreadState *_save = 0;
     long n;
 
     if (!getrandom_works) {
         return 0;
     }
 
-    flags = blocking ? 0 : GRND_NONBLOCK;
-    dest = buffer;
+    if (raise) {
+        _save = PyEval_SaveThread();
+    }
     while (0 < size) {
 #if defined(__sun) && defined(__SVR4)
         /* Issue #26735: On Solaris, getrandom() is limited to returning up
@@ -117,26 +120,12 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
 
         errno = 0;
 #ifdef HAVE_GETRANDOM
-        if (raise) {
-            Py_BEGIN_ALLOW_THREADS
-            n = getrandom(dest, n, flags);
-            Py_END_ALLOW_THREADS
-        }
-        else {
-            n = getrandom(dest, n, flags);
-        }
+        n = getrandom(dest, n, flags);
 #else
-        /* On Linux, use the syscall() function because the GNU libc doesn't
-           expose the Linux getrandom() syscall yet. See:
+        /* Older versions of GNU libc did not expose getrandom(),
+           try using the raw system call instead.  See:
            https://sourceware.org/bugzilla/show_bug.cgi?id=17252 */
-        if (raise) {
-            Py_BEGIN_ALLOW_THREADS
-            n = syscall(SYS_getrandom, dest, n, flags);
-            Py_END_ALLOW_THREADS
-        }
-        else {
-            n = syscall(SYS_getrandom, dest, n, flags);
-        }
+        n = syscall(SYS_getrandom, dest, n, flags);
 #  ifdef _Py_MEMORY_SANITIZER
         if (n > 0) {
              __msan_unpoison(dest, n);
@@ -150,7 +139,8 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
                or something else. */
             if (errno == ENOSYS || errno == EPERM) {
                 getrandom_works = 0;
-                return 0;
+                status = 0;
+                break;
             }
 
             /* getrandom(GRND_NONBLOCK) fails with EAGAIN if the system urandom
@@ -159,13 +149,15 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
                even if the system urandom is not initialized yet:
                see the PEP 524. */
             if (errno == EAGAIN && !raise && !blocking) {
-                return 0;
+                status = 0;
+                break;
             }
 
             if (errno == EINTR) {
                 if (raise) {
                     if (PyErr_CheckSignals()) {
-                        return -1;
+                        status = -1;
+                        break;
                     }
                 }
 
@@ -176,13 +168,17 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
             if (raise) {
                 PyErr_SetFromErrno(PyExc_OSError);
             }
-            return -1;
+            status = -1;
+            break;
         }
 
         dest += n;
         size -= n;
     }
-    return 1;
+    if (raise) {
+        PyEval_RestoreThread(_save);
+    }
+    return status;
 }
 
 #elif defined(HAVE_GETENTROPY)
@@ -215,25 +211,21 @@ py_getentropy(char *buffer, Py_ssize_t size, int raise)
     /* Is getentropy() supported by the running kernel? Set to 0 if
        getentropy() failed with ENOSYS or EPERM. */
     static int getentropy_works = 1;
+    int status = 1;
+    PyThreadState *_save = 0;
 
     if (!getentropy_works) {
         return 0;
     }
 
+    if (raise) {
+        _save = PyEval_SaveThread();
+    }
     while (size > 0) {
         /* getentropy() is limited to returning up to 256 bytes. Call it
            multiple times if more bytes are requested. */
         Py_ssize_t len = Py_MIN(size, 256);
-        int res;
-
-        if (raise) {
-            Py_BEGIN_ALLOW_THREADS
-            res = getentropy(buffer, len);
-            Py_END_ALLOW_THREADS
-        }
-        else {
-            res = getentropy(buffer, len);
-        }
+        int res = getentropy(buffer, len);
 
         if (res < 0) {
             /* ENOSYS: the syscall is not supported by the running kernel.
@@ -241,13 +233,15 @@ py_getentropy(char *buffer, Py_ssize_t size, int raise)
                or something else. */
             if (errno == ENOSYS || errno == EPERM) {
                 getentropy_works = 0;
-                return 0;
+                status = 0;
+                break;
             }
 
             if (errno == EINTR) {
                 if (raise) {
                     if (PyErr_CheckSignals()) {
-                        return -1;
+                        status = -1;
+                        break;
                     }
                 }
 
@@ -258,13 +252,17 @@ py_getentropy(char *buffer, Py_ssize_t size, int raise)
             if (raise) {
                 PyErr_SetFromErrno(PyExc_OSError);
             }
-            return -1;
+            status = -1;
+            break;
         }
 
         buffer += len;
         size -= len;
     }
-    return 1;
+    if (raise) {
+        PyEval_RestoreThread(_save);
+    }
+    return status;
 }
 #endif /* defined(HAVE_GETENTROPY) && !(defined(__sun) && defined(__SVR4)) */
 

@@ -1436,9 +1436,6 @@ rlhandler(char *text)
 static char *
 readline_until_enter_or_signal(const char *prompt, int *signal)
 {
-    // Defined in Parser/myreadline.c
-    extern PyThreadState *_PyOS_ReadlineTState;
-
     char * not_done_reading = "";
     fd_set selectset;
 
@@ -1483,11 +1480,7 @@ readline_until_enter_or_signal(const char *prompt, int *signal)
             rl_callback_read_char();
         }
         else if (err == EINTR) {
-            int s;
-            PyEval_RestoreThread(_PyOS_ReadlineTState);
-            s = PyErr_CheckSignals();
-            PyEval_SaveThread();
-            if (s < 0) {
+            if (PyErr_CheckSignals() < 0) {
                 rl_free_line_state();
 #if defined(RL_READLINE_VERSION) && RL_READLINE_VERSION >= 0x0700
                 rl_callback_sigcleanup();

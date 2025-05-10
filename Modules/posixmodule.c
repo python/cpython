@@ -1904,13 +1904,13 @@ posix_fildes_fd(int fd, int (*func)(int))
     int res;
     int async_err = 0;
 
+    Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
     do {
-        Py_BEGIN_ALLOW_THREADS
-        _Py_BEGIN_SUPPRESS_IPH
         res = (*func)(fd);
-        _Py_END_SUPPRESS_IPH
-        Py_END_ALLOW_THREADS
     } while (res != 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    _Py_END_SUPPRESS_IPH
+    Py_END_ALLOW_THREADS
     if (res != 0)
         return (!async_err) ? posix_error() : NULL;
     Py_RETURN_NONE;
@@ -3793,11 +3793,11 @@ os_fchmod_impl(PyObject *module, int fd, int mode)
     }
 #else /* MS_WINDOWS */
     int async_err = 0;
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
         res = fchmod(fd, mode);
-        Py_END_ALLOW_THREADS
     } while (res != 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
     if (res != 0)
         return (!async_err) ? posix_error() : NULL;
 #endif /* MS_WINDOWS */
@@ -4147,11 +4147,11 @@ os_fchown_impl(PyObject *module, int fd, uid_t uid, gid_t gid)
         return NULL;
     }
 
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
         res = fchown(fd, uid, gid);
-        Py_END_ALLOW_THREADS
     } while (res != 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
     if (res != 0)
         return (!async_err) ? posix_error() : NULL;
 
@@ -9996,11 +9996,11 @@ os_wait3_impl(PyObject *module, int options)
     WAIT_TYPE status;
     WAIT_STATUS_INT(status) = 0;
 
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
         pid = wait3(&status, options, &ru);
-        Py_END_ALLOW_THREADS
     } while (pid < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
     if (pid < 0)
         return (!async_err) ? posix_error() : NULL;
 
@@ -10033,11 +10033,11 @@ os_wait4_impl(PyObject *module, pid_t pid, int options)
     WAIT_TYPE status;
     WAIT_STATUS_INT(status) = 0;
 
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
         res = wait4(pid, &status, options, &ru);
-        Py_END_ALLOW_THREADS
     } while (res < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
     if (res < 0)
         return (!async_err) ? posix_error() : NULL;
 
@@ -10075,11 +10075,11 @@ os_waitid_impl(PyObject *module, idtype_t idtype, id_t id, int options)
     siginfo_t si;
     si.si_pid = 0;
 
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
         res = waitid(idtype, id, &si, options);
-        Py_END_ALLOW_THREADS
     } while (res < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
     if (res < 0)
         return (!async_err) ? posix_error() : NULL;
 
@@ -10140,11 +10140,11 @@ os_waitpid_impl(PyObject *module, pid_t pid, int options)
     WAIT_TYPE status;
     WAIT_STATUS_INT(status) = 0;
 
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
         res = waitpid(pid, &status, options);
-        Py_END_ALLOW_THREADS
     } while (res < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
     if (res < 0)
         return (!async_err) ? posix_error() : NULL;
 
@@ -10174,13 +10174,13 @@ os_waitpid_impl(PyObject *module, intptr_t pid, int options)
     intptr_t res;
     int async_err = 0;
 
+    Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
     do {
-        Py_BEGIN_ALLOW_THREADS
-        _Py_BEGIN_SUPPRESS_IPH
         res = _cwait(&status, pid, options);
-        _Py_END_SUPPRESS_IPH
-        Py_END_ALLOW_THREADS
     } while (res < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    _Py_END_SUPPRESS_IPH
+    Py_END_ALLOW_THREADS
     if (res < 0)
         return (!async_err) ? posix_error() : NULL;
 
@@ -10211,11 +10211,11 @@ os_wait_impl(PyObject *module)
     WAIT_TYPE status;
     WAIT_STATUS_INT(status) = 0;
 
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
         pid = wait(&status);
-        Py_END_ALLOW_THREADS
     } while (pid < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
     if (pid < 0)
         return (!async_err) ? posix_error() : NULL;
 
@@ -11138,9 +11138,9 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
         return -1;
     }
 
+    Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
     do {
-        Py_BEGIN_ALLOW_THREADS
 #ifdef MS_WINDOWS
         fd = _wopen(path->wide, flags, mode);
 #else
@@ -11157,9 +11157,9 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
 #endif /* HAVE_OPENAT */
             fd = open(path->narrow, flags, mode);
 #endif /* !MS_WINDOWS */
-        Py_END_ALLOW_THREADS
     } while (fd < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     _Py_END_SUPPRESS_IPH
+    Py_END_ALLOW_THREADS
 
 #ifdef HAVE_OPENAT
     if (openat_unavailable) {
@@ -11607,11 +11607,11 @@ os_readv_impl(PyObject *module, int fd, PyObject *buffers)
     if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_WRITABLE) < 0)
         return -1;
 
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
         n = readv(fd, iov, cnt);
-        Py_END_ALLOW_THREADS
     } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
 
     int saved_errno = errno;
     iov_cleanup(iov, buf, cnt);
@@ -11659,13 +11659,13 @@ os_pread_impl(PyObject *module, int fd, Py_ssize_t length, Py_off_t offset)
     if (buffer == NULL)
         return NULL;
 
+    Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
     do {
-        Py_BEGIN_ALLOW_THREADS
-        _Py_BEGIN_SUPPRESS_IPH
         n = pread(fd, PyBytes_AS_STRING(buffer), length, offset);
-        _Py_END_SUPPRESS_IPH
-        Py_END_ALLOW_THREADS
     } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    _Py_END_SUPPRESS_IPH
+    Py_END_ALLOW_THREADS
 
     if (n < 0) {
         if (!async_err) {
@@ -11738,16 +11738,14 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
     if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_WRITABLE) < 0) {
         return -1;
     }
+
+    Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
+    do {
 #ifdef HAVE_PREADV2
-    do {
-        Py_BEGIN_ALLOW_THREADS
-        _Py_BEGIN_SUPPRESS_IPH
         n = preadv2(fd, iov, cnt, offset, flags);
-        _Py_END_SUPPRESS_IPH
-        Py_END_ALLOW_THREADS
-    } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 #else
-    do {
+
 #if defined(__APPLE__) && defined(__clang__)
 /* This entire function will be removed from the module dict when the API
  * is not available.
@@ -11756,18 +11754,16 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 #pragma clang diagnostic ignored "-Wunguarded-availability"
 #pragma clang diagnostic ignored "-Wunguarded-availability-new"
 #endif
-        Py_BEGIN_ALLOW_THREADS
-        _Py_BEGIN_SUPPRESS_IPH
         n = preadv(fd, iov, cnt, offset);
-        _Py_END_SUPPRESS_IPH
-        Py_END_ALLOW_THREADS
-    } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 
 #if defined(__APPLE__) && defined(__clang__)
 #pragma clang diagnostic pop
 #endif
 
 #endif
+    } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    _Py_END_SUPPRESS_IPH
+    Py_END_ALLOW_THREADS
 
     int saved_errno = errno;
     iov_cleanup(iov, buf, cnt);
@@ -11931,16 +11927,16 @@ os_sendfile_impl(PyObject *module, int out_fd, int in_fd, PyObject *offobj,
     }
 
     _Py_BEGIN_SUPPRESS_IPH
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
 #ifdef __APPLE__
         ret = sendfile(in_fd, out_fd, offset, &sbytes, &sf, flags);
 #else
         ret = sendfile(in_fd, out_fd, offset, count, &sf, &sbytes, flags);
 #endif
-        Py_END_ALLOW_THREADS
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     _Py_END_SUPPRESS_IPH
+    Py_END_ALLOW_THREADS
 
     int saved_errno = errno;
     if (sf.headers != NULL)
@@ -11975,11 +11971,11 @@ done:
 #else
 #ifdef __linux__
     if (offobj == Py_None) {
+        Py_BEGIN_ALLOW_THREADS
         do {
-            Py_BEGIN_ALLOW_THREADS
             ret = sendfile(out_fd, in_fd, NULL, count);
-            Py_END_ALLOW_THREADS
         } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+        Py_END_ALLOW_THREADS
         if (ret < 0)
             return (!async_err) ? posix_error() : NULL;
         return PyLong_FromSsize_t(ret);
@@ -11994,11 +11990,11 @@ done:
     // when the offset is equal or bigger than the in_fd size.
     struct stat st;
 
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
         ret = fstat(in_fd, &st);
-        Py_END_ALLOW_THREADS
     } while (ret != 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
     if (ret < 0)
         return (!async_err) ? posix_error() : NULL;
 
@@ -12015,8 +12011,8 @@ done:
     off_t original_offset = offset;
 #endif
 
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
         ret = sendfile(out_fd, in_fd, &offset, count);
 #if defined(__sun) && defined(__SVR4)
         // This handles illumos-specific sendfile() partial write behavior,
@@ -12025,8 +12021,9 @@ done:
             ret = offset - original_offset;
         }
 #endif
-        Py_END_ALLOW_THREADS
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
+
     if (ret < 0)
         return (!async_err) ? posix_error() : NULL;
     return PyLong_FromSsize_t(ret);
@@ -12082,11 +12079,11 @@ os_fstat_impl(PyObject *module, int fd)
     int res;
     int async_err = 0;
 
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
         res = FSTAT(fd, &st);
-        Py_END_ALLOW_THREADS
     } while (res != 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
     if (res != 0) {
 #ifdef MS_WINDOWS
         return PyErr_SetFromWindowsErr(0);
@@ -12272,11 +12269,11 @@ os_writev_impl(PyObject *module, int fd, PyObject *buffers)
         return -1;
     }
 
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
         result = writev(fd, iov, cnt);
-        Py_END_ALLOW_THREADS
     } while (result < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
 
     if (result < 0 && !async_err)
         posix_error();
@@ -12310,13 +12307,13 @@ os_pwrite_impl(PyObject *module, int fd, Py_buffer *buffer, Py_off_t offset)
     Py_ssize_t size;
     int async_err = 0;
 
+    Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
     do {
-        Py_BEGIN_ALLOW_THREADS
-        _Py_BEGIN_SUPPRESS_IPH
         size = pwrite(fd, buffer->buf, (size_t)buffer->len, offset);
-        _Py_END_SUPPRESS_IPH
-        Py_END_ALLOW_THREADS
     } while (size < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    _Py_END_SUPPRESS_IPH
+    Py_END_ALLOW_THREADS
 
     if (size < 0 && !async_err)
         posix_error();
@@ -12384,14 +12381,11 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
     if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_SIMPLE) < 0) {
         return -1;
     }
-#ifdef HAVE_PWRITEV2
+    Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
     do {
-        Py_BEGIN_ALLOW_THREADS
-        _Py_BEGIN_SUPPRESS_IPH
+#ifdef HAVE_PWRITEV2
         result = pwritev2(fd, iov, cnt, offset, flags);
-        _Py_END_SUPPRESS_IPH
-        Py_END_ALLOW_THREADS
-    } while (result < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 #else
 
 #if defined(__APPLE__) && defined(__clang__)
@@ -12402,19 +12396,15 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 #pragma clang diagnostic ignored "-Wunguarded-availability"
 #pragma clang diagnostic ignored "-Wunguarded-availability-new"
 #endif
-    do {
-        Py_BEGIN_ALLOW_THREADS
-        _Py_BEGIN_SUPPRESS_IPH
         result = pwritev(fd, iov, cnt, offset);
-        _Py_END_SUPPRESS_IPH
-        Py_END_ALLOW_THREADS
-    } while (result < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-
 #if defined(__APPLE__) && defined(__clang__)
 #pragma clang diagnostic pop
 #endif
 
 #endif
+    } while (result < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+     _Py_END_SUPPRESS_IPH
+     Py_END_ALLOW_THREADS
 
     if (result < 0) {
         if (!async_err) {
@@ -12483,11 +12473,11 @@ os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
         p_offset_dst = &offset_dst_val;
     }
 
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
         ret = copy_file_range(src, p_offset_src, dst, p_offset_dst, count, flags);
-        Py_END_ALLOW_THREADS
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
 
     if (ret < 0) {
         return (!async_err) ? posix_error() : NULL;
@@ -12552,11 +12542,11 @@ os_splice_impl(PyObject *module, int src, int dst, Py_ssize_t count,
         p_offset_dst = &offset_dst_val;
     }
 
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
         ret = splice(src, p_offset_src, dst, p_offset_dst, count, flags);
-        Py_END_ALLOW_THREADS
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
 
     if (ret < 0) {
         return (!async_err) ? posix_error() : NULL;
@@ -12593,8 +12583,8 @@ os_mkfifo_impl(PyObject *module, path_t *path, int mode, int dir_fd)
     int mkfifoat_unavailable = 0;
 #endif
 
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_MKFIFOAT
         if (dir_fd != DEFAULT_DIR_FD) {
             if (HAVE_MKFIFOAT_RUNTIME) {
@@ -12607,9 +12597,9 @@ os_mkfifo_impl(PyObject *module, path_t *path, int mode, int dir_fd)
         } else
 #endif
             result = mkfifo(path->narrow, mode);
-        Py_END_ALLOW_THREADS
     } while (result != 0 && errno == EINTR &&
              !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
 
 #ifdef HAVE_MKFIFOAT
     if (mkfifoat_unavailable) {
@@ -12662,8 +12652,8 @@ os_mknod_impl(PyObject *module, path_t *path, int mode, dev_t device,
     int mknodat_unavailable = 0;
 #endif
 
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_MKNODAT
         if (dir_fd != DEFAULT_DIR_FD) {
             if (HAVE_MKNODAT_RUNTIME) {
@@ -12676,9 +12666,9 @@ os_mknod_impl(PyObject *module, path_t *path, int mode, dev_t device,
         } else
 #endif
             result = mknod(path->narrow, mode, device);
-        Py_END_ALLOW_THREADS
     } while (result != 0 && errno == EINTR &&
              !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
 #ifdef HAVE_MKNODAT
     if (mknodat_unavailable) {
         argument_unavailable_error(NULL, "dir_fd");
@@ -12796,18 +12786,19 @@ os_ftruncate_impl(PyObject *module, int fd, Py_off_t length)
         return NULL;
     }
 
+    Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
     do {
-        Py_BEGIN_ALLOW_THREADS
-        _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
         result = _chsize_s(fd, length);
 #else
         result = ftruncate(fd, length);
 #endif
-        _Py_END_SUPPRESS_IPH
-        Py_END_ALLOW_THREADS
     } while (result != 0 && errno == EINTR &&
              !(async_err = PyErr_CheckSignals()));
+    _Py_END_SUPPRESS_IPH
+    Py_END_ALLOW_THREADS
+
     if (result != 0)
         return (!async_err) ? posix_error() : NULL;
     Py_RETURN_NONE;
@@ -12903,11 +12894,11 @@ os_posix_fallocate_impl(PyObject *module, int fd, Py_off_t offset,
     int result;
     int async_err = 0;
 
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
         result = posix_fallocate(fd, offset, length);
-        Py_END_ALLOW_THREADS
     } while (result == EINTR && !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
 
     if (result == 0)
         Py_RETURN_NONE;
@@ -12950,11 +12941,11 @@ os_posix_fadvise_impl(PyObject *module, int fd, Py_off_t offset,
     int result;
     int async_err = 0;
 
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
         result = posix_fadvise(fd, offset, length, advice);
-        Py_END_ALLOW_THREADS
     } while (result == EINTR && !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
 
     if (result == 0)
         Py_RETURN_NONE;
@@ -13463,16 +13454,17 @@ os_fstatvfs_impl(PyObject *module, int fd)
     int result;
     int async_err = 0;
 #ifdef __APPLE__
-    struct statfs st;
     /* On macOS os.fstatvfs is implemented using fstatfs(2) because
      * the former uses 32-bit values for block counts.
      */
+
+    struct statfs st;
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
         result = fstatfs(fd, &st);
-        Py_END_ALLOW_THREADS
     } while (result != 0 && errno == EINTR &&
              !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
     if (result != 0)
         return (!async_err) ? posix_error() : NULL;
 
@@ -13480,12 +13472,12 @@ os_fstatvfs_impl(PyObject *module, int fd)
 #else
     struct statvfs st;
 
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
         result = fstatvfs(fd, &st);
-        Py_END_ALLOW_THREADS
     } while (result != 0 && errno == EINTR &&
              !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
     if (result != 0)
         return (!async_err) ? posix_error() : NULL;
 

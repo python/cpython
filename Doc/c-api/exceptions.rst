@@ -631,6 +631,8 @@ Querying the error indicator
 Signal Handling
 ===============
 
+See the :mod:`signal` module for an overview of signals and signal
+handling.
 
 .. c:function:: int PyErr_CheckSignals()
 
@@ -639,29 +641,51 @@ Signal Handling
       single: SIGINT (C macro)
       single: KeyboardInterrupt (built-in exception)
 
-   This function interacts with Python's signal handling.
+   This function is to be called by long-running C code that wants to
+   be interruptible by user requests, such as by pressing Ctrl-C.
 
-   If the function is called from the main thread and under the main Python
-   interpreter, it checks whether a signal has been sent to the processes
-   and if so, invokes the corresponding signal handler.  If the :mod:`signal`
-   module is supported, this can invoke a signal handler written in Python.
+   When it is called from the main thread and under the main Python
+   interpreter, it checks whether any signals have been delivered to
+   the process, and if so, invokes the corresponding Python-level
+   signal handler (if there is one) for each signal.
 
-   The function attempts to handle all pending signals, and then returns ``0``.
-   However, if a Python signal handler raises an exception, the error
-   indicator is set and the function returns ``-1`` immediately (such that
-   other pending signals may not have been handled yet: they will be on the
-   next :c:func:`PyErr_CheckSignals()` invocation).
+   :c:func:`PyErr_CheckSignals()` attempts to call signal handlers
+   for each signal that has been delivered since the last time it
+   was called.  If all signal handlers complete successfully, it
+   returns ``0``.  However, if a signal handler raises an exception,
+   that exception is stored in the error indicator for the main thread,
+   and :c:func:`PyErr_CheckSignals()` immediately returns ``-1``.
+   (When this happens, some of the pending signals may not have had
+   their signal handlers called; they will be called the next time
+   :c:func:`PyErr_CheckSignals()` is called.)
 
-   If the function is called from a non-main thread, or under a non-main
-   Python interpreter, it does nothing and returns ``0``.
+   Callers of :c:func:`PyErr_CheckSignals()` should treat a ``-1``
+   return value the same as any other failure of a C-API function;
+   they should immediately cease work, clean up (deallocating
+   resources, etc.) and propagate the failure status to their
+   callers.
 
-   This function can be called by long-running C code that wants to
-   be interruptible by user requests (such as by pressing Ctrl-C).
+   When this function is called from other than the main thread, or
+   other than the main Python interpreter, it does not invoke any
+   signal handlers, and it always returns ``0``.
+
+   Regardless of context, calling this function may have the side
+   effect of running the cyclic garbage collector.
+
+   .. warning::
+      This function may execute arbitrary Python code before returning
+      to its caller.
 
    .. note::
-      The default Python signal handler for :c:macro:`!SIGINT` raises the
-      :exc:`KeyboardInterrupt` exception.
+      This function can be called without an :term:`attached thread state`
+      (see :ref:`threads`).  However, this function may internally
+      attach (and then release) a thread state (only if it has any
+      work to do); it must be safe to do that at each point where
+      this function is called.
 
+   .. note::
+      The default Python signal handler for :c:macro:`!SIGINT` raises
+      the :exc:`KeyboardInterrupt` exception.
 
 .. c:function:: void PyErr_SetInterrupt()
 

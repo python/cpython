@@ -101,11 +101,7 @@ my_fgets(PyThreadState* tstate, char *buf, int len, FILE *fp)
 
 #ifdef EINTR
         if (err == EINTR) {
-            PyEval_RestoreThread(tstate);
-            int s = PyErr_CheckSignals();
-            PyEval_SaveThread();
-
-            if (s < 0) {
+            if (PyErr_CheckSignals() < 0) {
                 return 1;
             }
             /* try again */
@@ -156,7 +152,6 @@ _PyOS_WindowsConsoleReadline(PyThreadState *tstate, HANDLE hStdIn)
             break;
         }
         if (n_read == 0) {
-            int s;
             err = GetLastError();
             if (err != ERROR_OPERATION_ABORTED)
                 goto exit;
@@ -165,10 +160,7 @@ _PyOS_WindowsConsoleReadline(PyThreadState *tstate, HANDLE hStdIn)
             if (WaitForSingleObjectEx(hInterruptEvent, 100, FALSE)
                     == WAIT_OBJECT_0) {
                 ResetEvent(hInterruptEvent);
-                PyEval_RestoreThread(tstate);
-                s = PyErr_CheckSignals();
-                PyEval_SaveThread();
-                if (s < 0) {
+                if (PyErr_CheckSignals() < 0) {
                     goto exit;
                 }
             }

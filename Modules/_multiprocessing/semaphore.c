@@ -356,19 +356,19 @@ _multiprocessing_SemLock_acquire_impl(SemLockObject *self, int blocking,
 
     if (res < 0 && errno == EAGAIN && blocking) {
         /* Couldn't acquire immediately, need to block */
+        Py_BEGIN_ALLOW_THREADS
         do {
-            Py_BEGIN_ALLOW_THREADS
             if (!use_deadline) {
                 res = sem_wait(self->handle);
             }
             else {
                 res = sem_timedwait(self->handle, &deadline);
             }
-            Py_END_ALLOW_THREADS
             err = errno;
             if (res == MP_EXCEPTION_HAS_BEEN_SET)
                 break;
         } while (res < 0 && errno == EINTR && !PyErr_CheckSignals());
+        Py_END_ALLOW_THREADS
     }
 
     if (res < 0) {

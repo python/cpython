@@ -1,0 +1,7 @@
+:c:func:`PyErr_CheckSignals` has been changed to acquire the global
+interpreter lock (GIL) itself, only when necessary (i.e. when it has work to
+do).  This means that modules that perform lengthy computations with the GIL
+released may now call :c:func:`PyErr_CheckSignals` during those computations
+without re-acquiring the GIL first.  (However, it must be *safe to* acquire
+the GIL at each point where :c:func:`PyErr_CheckSignals` is called.  Also,
+keep in mind that it can run arbitrary Python code before returning to you.)
