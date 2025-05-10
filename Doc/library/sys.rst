@@ -642,9 +642,6 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. versionchanged:: 3.14
       Added the ``context_aware_warnings`` attribute.
 
-   .. versionchanged:: next
-      UTF-8 mode (:option:`-X utf8 <-X>`) is now enabled by default.
-
 
 .. data:: float_info
 
