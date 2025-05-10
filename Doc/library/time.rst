@@ -567,6 +567,9 @@ Functions
       When used with the :func:`strptime` function, ``%U`` and ``%W`` are only used in
       calculations when the day of the week and the year are specified.
 
+   (5)
+      The :func:`strptime` function does not accept non-ASCII digits for numeric values.
+
    Here is an example, a format for dates compatible with that specified  in the
    :rfc:`2822` Internet email standard.  [1]_ ::
 
@@ -590,9 +593,8 @@ Functions
 
 .. function:: strptime(string[, format])
 
-   Parse a string representing a time according to a format.  The return value
-   is a :class:`struct_time` as returned by :func:`gmtime` or
-   :func:`localtime`.
+   Parse a string representing a time according to a format string.  The return
+   value is a :class:`struct_time` as returned by :func:`gmtime` or :func:`localtime`.
 
    The *format* parameter uses the same directives as those used by
    :func:`strftime`; it defaults to ``"%a %b %d %H:%M:%S %Y"`` which matches the
@@ -619,6 +621,9 @@ Functions
    directives than those listed.  But ``strptime()`` is independent of any platform
    and thus does not necessarily support all directives available that are not
    documented as supported.
+
+.. versionchanged:: next
+   Non-ASCII digits are now rejected by ``strptime``.
 
 
 .. class:: struct_time
