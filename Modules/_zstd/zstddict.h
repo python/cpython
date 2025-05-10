@@ -5,7 +5,6 @@ Python module.
 
 #ifndef ZSTD_DICT_H
 #define ZSTD_DICT_H
-#include "Python.h"
 
 #include <stdbool.h>              // bool
 #include <zstd.h>                 // ZSTD_DDict
@@ -29,4 +28,4 @@ typedef struct {
     bool initialized;
 } ZstdDict;
 
-#endif
+#endif  // !ZSTD_DICT_H

@@ -7,7 +7,6 @@ Python module.
 
 #ifndef ZSTD_MODULE_H
 #define ZSTD_MODULE_H
-#include "Python.h"
 
 /* Type specs */
 extern PyType_Spec zstd_dict_type_spec;
@@ -56,4 +55,4 @@ extern void
 set_parameter_error(const _zstd_state* const state, int is_compress,
                     int key_v, int value_v);
 
-#endif
+#endif  // !ZSTD_MODULE_H

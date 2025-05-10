@@ -5,7 +5,7 @@ Python module.
 
 #ifndef ZSTD_BUFFER_H
 #define ZSTD_BUFFER_H
-#include "Python.h"
+
 #include "pycore_blocks_output_buffer.h"
 
 #include <zstd.h>                 // ZSTD_outBuffer
@@ -107,4 +107,4 @@ _OutputBuffer_ReachedMaxLength(_BlocksOutputBuffer *buffer, ZSTD_outBuffer *ob)
     return buffer->allocated == buffer->max_length;
 }
 
-#endif
+#endif  // !ZSTD_BUFFER_H
