@@ -1,0 +1,1 @@
+Fix thread safety of :class:`collections.OrderedDict`. Patch by Kumar Aditya.
