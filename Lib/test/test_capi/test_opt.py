@@ -1940,7 +1940,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_GET_LEN", uops)
         self.assertIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
-
     def test_get_len_with_non_tuple(self):
         def testfunc(n):
             x = ""
