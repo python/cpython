@@ -61,7 +61,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
         if source[0] == ".":
             match source[1:].strip():
                 case "version":
-                    print(f"{sqlite3.sqlite_version}")
+                    print(sqlite3.sqlite_version)
                 case "help":
                     print("Enter SQL code and press enter.")
                 case "quit":
