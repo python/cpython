@@ -976,11 +976,19 @@ class CmdLineTest(unittest.TestCase):
 
     @unittest.skipUnless(support.MS_WINDOWS, 'Test only applicable on Windows')
     def test_python_legacy_windows_stdio(self):
-        code = 'import sys; print(sys.stdin.encoding, sys.stdout.encoding)'
-        expected = 'cp'
-        rc, out, err = assert_python_ok('-Xutf8=0', '-c', code,
-                                        PYTHONLEGACYWINDOWSSTDIO='1')
-        self.assertIn(expected.encode(), out)
+        def get_stderr_class(legacy_windows_stdio):
+            code = 'import sys; print(type(sys.stderr.buffer.raw))'
+            env = {'PYTHONLEGACYWINDOWSSTDIO': str(int(legacy_windows_stdio))}
+            # use stderr=None as legacy_windows_stdio doesn't affect pipes
+            p = spawn_python('-c', code, env=env, stderr=None)
+            out = kill_python(p).strip().decode('ascii', 'ignore')
+            return out.removeprefix("<class '").removesuffix("'>")
+
+        out = get_stderr_class(legacy_windows_stdio=True)
+        self.assertEqual('_io.FileIO', out)
+
+        out = get_stderr_class(legacy_windows_stdio=False)
+        self.assertEqual('_io._WindowsConsoleIO', out)
 
     @unittest.skipIf("-fsanitize" in sysconfig.get_config_vars().get('PY_CFLAGS', ()),
                      "PYTHONMALLOCSTATS doesn't work with ASAN")
