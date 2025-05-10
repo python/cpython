@@ -240,7 +240,7 @@ class CompletionTest(unittest.TestCase):
             from sqlite3.__main__ import main; main()
         """)
         input = b"zzzz\t;\n.quit\n"
-        output = run_pty(script, input, env={"NO_COLOR": "1"})
+        output = run_pty(script, input)
         for keyword in KEYWORDS:
             self.assertNotRegex(output, rf"\b{keyword}\b".encode("utf-8"))
 
@@ -251,7 +251,7 @@ class CompletionTest(unittest.TestCase):
             from sqlite3.__main__ import main; main()
         """)
         input = b"S\t;\n.quit\n"
-        output = run_pty(script, input, env={"NO_COLOR": "1"})
+        output = run_pty(script, input)
         savepoint_idx = output.find(b"SAVEPOINT")
         select_idx = output.find(b"SELECT")
         set_idx = output.find(b"SET")
