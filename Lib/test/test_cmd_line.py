@@ -976,9 +976,10 @@ class CmdLineTest(unittest.TestCase):
 
     @unittest.skipUnless(support.MS_WINDOWS, 'Test only applicable on Windows')
     def test_python_legacy_windows_stdio(self):
-        code = "import sys; print(sys.stdin.encoding, sys.stdout.encoding)"
+        code = 'import sys; print(sys.stdin.encoding, sys.stdout.encoding)'
         expected = 'cp'
-        rc, out, err = assert_python_ok('-c', code, PYTHONLEGACYWINDOWSSTDIO='1')
+        rc, out, err = assert_python_ok('-Xutf8=0', '-c', code,
+                                        PYTHONLEGACYWINDOWSSTDIO='1')
         self.assertIn(expected.encode(), out)
 
     @unittest.skipIf("-fsanitize" in sysconfig.get_config_vars().get('PY_CFLAGS', ()),
