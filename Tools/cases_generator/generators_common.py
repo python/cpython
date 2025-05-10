@@ -75,19 +75,6 @@ def write_header(
 """
     )
 
-def skip_to(tkn_iter: TokenIterator, end: str) -> Token:
-    tkn = None
-    parens = 0
-    for tkn in tkn_iter:
-        if tkn.kind == end and parens == 0:
-            return tkn
-        if tkn.kind == "LPAREN":
-            parens += 1
-        if tkn.kind == "RPAREN":
-            parens -= 1
-    assert tkn is not None
-    return tkn
-
 def emit_to(out: CWriter, tkn_iter: TokenIterator, end: str) -> Token:
     parens = 0
     for tkn in tkn_iter:

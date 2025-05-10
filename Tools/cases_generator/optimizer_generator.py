@@ -22,11 +22,9 @@ from generators_common import (
     write_header,
     Emitter,
     TokenIterator,
-    emit_to,
-    skip_to,
 )
 from cwriter import CWriter
-from typing import TextIO, Callable
+from typing import TextIO
 from lexer import Token
 from stack import Local, Stack, StackError, Storage
 
@@ -87,7 +85,7 @@ def stackref_type_name(var: StackItem) -> str:
         assert False, "Unsafe to convert a symbol to an array-like StackRef."
     if var.type:
         return var.type
-    return f"_PyStackRef "
+    return "_PyStackRef "
 
 def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
     variables = {"unused"}
@@ -210,17 +208,19 @@ def write_uop_pure_evaluation_region_header(
     # No reference management of outputs needed.
     for var in storage.outputs:
         var.in_local = True
-    emitter.emit_tokens(uop, storage, None, False, is_abstract=True)
+    emitter.emit("/* Start of pure uop copied from bytecodes for constant evaluation */\n")
+    emitter.emit_tokens(uop, storage, inst=None, emit_braces=False, is_abstract=True)
     out.start_line()
+    emitter.emit("/* End of pure uop copied from bytecodes for constant evaluation */\n")
     # Finally, assign back the output stackrefs to symbolics.
     for outp in uop.stack.outputs:
         # All new stackrefs are created from new references.
         # That's how the stackref contract works.
         if not outp.peek:
-            out.emit(f"{outp.name} = sym_new_const_steal(ctx, PyStackRef_AsPyObjectBorrow({outp.name}_stackref));\n")
+            emitter.emit(f"{outp.name} = sym_new_const_steal(ctx, PyStackRef_AsPyObjectBorrow({outp.name}_stackref));\n")
         else:
-            out.emit(f"{outp.name} = sym_new_const(ctx, PyStackRef_AsPyObjectBorrow({outp.name}_stackref));\n")
-        storage.flush(out)
+            emitter.emit(f"{outp.name} = sym_new_const(ctx, PyStackRef_AsPyObjectBorrow({outp.name}_stackref));\n")
+    storage.flush(out)
     emitter.emit("}\n")
     emitter.emit("else {\n")
 
@@ -266,7 +266,8 @@ def write_uop(
             out.start_line()
             if override:
                 emitter = OptimizerEmitter(out, {})
-                _, storage = emitter.emit_tokens(override, storage, None, False, is_abstract=True)
+                _, storage = emitter.emit_tokens(override, storage, inst=None,
+                                                 emit_braces=False, is_abstract=True)
                 storage.flush(out)
             else:
                 emit_default(out, uop, stack)

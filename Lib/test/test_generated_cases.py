@@ -2253,5 +2253,40 @@ class TestGeneratedAbstractCases(unittest.TestCase):
                                     "Inputs must have equal sizes"):
             self.run_cases_test(input, input2, output)
 
+    def test_pure_uop_body_copied_in(self):
+        input = """
+        pure op(OP, (foo -- res)) {
+            res = body(foo);
+        }
+        """
+        input2 = """
+        op(OP, (foo -- res)) {
+            res = sym_new_unknown(ctx);
+        }
+        """
+        output = """
+        case OP: {
+            JitOptSymbol *res;
+            if (
+                sym_is_const(ctx, foo)
+            ) {
+                JitOptSymbol *foo_sym = foo;
+                _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
+                _PyStackRef res_stackref;
+                /* Start of pure uop copied from bytecodes for constant evaluation */
+                res_stackref = body(foo);
+                /* End of pure uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectBorrow(res_stackref));
+                stack_pointer[-1] = res;
+            }
+            else {
+                res = sym_new_unknown(ctx);
+                stack_pointer[-1] = res;
+            }
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
 if __name__ == "__main__":
     unittest.main()
