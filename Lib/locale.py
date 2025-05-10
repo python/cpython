@@ -651,7 +651,8 @@ else:
         if sys.flags.warn_default_encoding:
             import warnings
             warnings.warn(
-                "UTF-8 Mode affects locale.getpreferredencoding(). Consider locale.getencoding() instead.",
+                "UTF-8 Mode affects locale.getpreferredencoding(). "
+                "Consider locale.getencoding() instead.",
                 EncodingWarning, 2)
         if sys.flags.utf8_mode:
             return 'utf-8'

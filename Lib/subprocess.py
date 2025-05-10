@@ -380,8 +380,7 @@ def _text_encoding():
 
     if sys.flags.utf8_mode:
         return "utf-8"
-    else:
-        return locale.getencoding()
+    return locale.getencoding()
 
 
 def call(*popenargs, timeout=None, **kwargs):
