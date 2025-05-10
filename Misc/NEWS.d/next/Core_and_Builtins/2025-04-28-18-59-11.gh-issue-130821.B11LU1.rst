@@ -1,0 +1,2 @@
+Enhance wrong type error messages and make them more consistent. Patch by
+Semyon Moroz.
