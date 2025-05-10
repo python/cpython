@@ -12,6 +12,7 @@ from test import support
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import warnings_helper
+from test.support.testcase import ExtraAssertions
 import os
 try:
     import ssl
@@ -139,7 +140,7 @@ class FakeFTPMixin(object):
         urllib.request.ftpwrapper = self._ftpwrapper_class
 
 
-class urlopen_FileTests(unittest.TestCase):
+class urlopen_FileTests(unittest.TestCase, ExtraAssertions):
     """Test urlopen() opening a temporary file.
 
     Try to test as much functionality as possible so as to cut down on reliance
@@ -169,9 +170,7 @@ class urlopen_FileTests(unittest.TestCase):
         # Make sure object returned by urlopen() has the specified methods
         for attr in ("read", "readline", "readlines", "fileno",
                      "close", "info", "geturl", "getcode", "__iter__"):
-            self.assertTrue(hasattr(self.returned_obj, attr),
-                         "object returned by urlopen() lacks %s attribute" %
-                         attr)
+            self.assertHasAttr(self.returned_obj, attr)
 
     def test_read(self):
         self.assertEqual(self.text, self.returned_obj.read())
@@ -601,7 +600,7 @@ Connection: close
             urllib.request.URLopener()
 
 
-class urlopen_DataTests(unittest.TestCase):
+class urlopen_DataTests(unittest.TestCase, ExtraAssertions):
     """Test urlopen() opening a data URL."""
 
     def setUp(self):
@@ -640,9 +639,7 @@ class urlopen_DataTests(unittest.TestCase):
         # Make sure object returned by urlopen() has the specified methods
         for attr in ("read", "readline", "readlines",
                      "close", "info", "geturl", "getcode", "__iter__"):
-            self.assertTrue(hasattr(self.text_url_resp, attr),
-                         "object returned by urlopen() lacks %s attribute" %
-                         attr)
+            self.assertHasAttr(self.text_url_resp, attr)
 
     def test_info(self):
         self.assertIsInstance(self.text_url_resp.info(), email.message.Message)
