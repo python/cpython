@@ -32,6 +32,13 @@ OPTIONS = {
     "nuspec": {"help": "a python.nuspec file"},
     "chm": {"help": "the CHM documentation"},
     "html-doc": {"help": "the HTML documentation"},
+    "freethreaded": {"help": "freethreaded binaries", "not-in-all": True},
+    "alias": {"help": "aliased python.exe entry-point binaries"},
+    "alias3": {"help": "aliased python3.exe entry-point binaries"},
+    "alias3x": {"help": "aliased python3.x.exe entry-point binaries"},
+    "install-json": {"help": "a PyManager __install__.json file"},
+    "install-embed-json": {"help": "a PyManager __install__.json file for embeddable distro"},
+    "install-test-json": {"help": "a PyManager __install__.json for the test distro"},
 }
 
 
@@ -41,13 +48,14 @@ PRESETS = {
         "options": [
             "stable",
             "pip",
-            "pip-user",
             "tcltk",
             "idle",
             "venv",
             "dev",
             "launchers",
             "appxmanifest",
+            "alias",
+            "alias3x",
             # XXX: Disabled for now "precompile",
         ],
     },
@@ -60,9 +68,10 @@ PRESETS = {
             "venv",
             "props",
             "nuspec",
+            "alias",
         ],
     },
-    "iot": {"help": "Windows IoT Core", "options": ["stable", "pip"]},
+    "iot": {"help": "Windows IoT Core", "options": ["alias", "stable", "pip"]},
     "default": {
         "help": "development kit package",
         "options": [
@@ -75,11 +84,47 @@ PRESETS = {
             "dev",
             "symbols",
             "html-doc",
+            "alias",
         ],
     },
     "embed": {
         "help": "embeddable package",
-        "options": ["stable", "zip-lib", "flat-dlls", "underpth", "precompile"],
+        "options": [
+            "alias",
+            "stable",
+            "zip-lib",
+            "flat-dlls",
+            "underpth",
+            "precompile",
+        ],
+    },
+    "pymanager": {
+        "help": "PyManager package",
+        "options": [
+            "stable",
+            "pip",
+            "tcltk",
+            "idle",
+            "venv",
+            "dev",
+            "html-doc",
+            "install-json",
+        ],
+    },
+    "pymanager-test": {
+        "help": "PyManager test package",
+        "options": [
+            "stable",
+            "pip",
+            "tcltk",
+            "idle",
+            "venv",
+            "dev",
+            "html-doc",
+            "symbols",
+            "tests",
+            "install-test-json",
+        ],
     },
 }
 

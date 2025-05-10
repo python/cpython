@@ -10,6 +10,7 @@ import weakref
 import inspect
 import types
 
+from collections import UserString
 from copy import deepcopy
 from test import support
 
@@ -54,6 +55,10 @@ class Test(object):
             self.events.append('tearDown')
 
 
+class List(list):
+    pass
+
+
 class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
 
     ### Set up attributes used by inherited tests
@@ -85,7 +90,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
             def runTest(self): raise MyException()
             def test(self): pass
 
-        self.assertEqual(Test().id()[-13:], '.Test.runTest')
+        self.assertEndsWith(Test().id(), '.Test.runTest')
 
         # test that TestCase can be instantiated with no args
         # primarily for use at the interactive interpreter
@@ -106,7 +111,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
             def runTest(self): raise MyException()
             def test(self): pass
 
-        self.assertEqual(Test('test').id()[-10:], '.Test.test')
+        self.assertEndsWith(Test('test').id(), '.Test.test')
 
     # "class TestCase([methodName])"
     # ...
@@ -304,7 +309,8 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
             def test(self):
                 pass
 
-        Foo('test').run()
+        with self.assertWarns(RuntimeWarning):
+            Foo('test').run()
 
     def test_deprecation_of_return_val_from_test(self):
         # Issue 41322 - deprecate return of value that is not None from a test
@@ -324,18 +330,40 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test1', str(w.warning))
         self.assertEqual(w.filename, __file__)
+        self.assertIn("returned 'int'", str(w.warning))
 
         with self.assertWarns(DeprecationWarning) as w:
             Foo('test2').run()
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test2', str(w.warning))
         self.assertEqual(w.filename, __file__)
+        self.assertIn("returned 'generator'", str(w.warning))
 
         with self.assertWarns(DeprecationWarning) as w:
             Foo('test3').run()
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test3', str(w.warning))
         self.assertEqual(w.filename, __file__)
+        self.assertIn(f'returned {Nothing.__name__!r}', str(w.warning))
+
+    def test_deprecation_of_return_val_from_test_async_method(self):
+        class Foo(unittest.TestCase):
+            async def test1(self):
+                return 1
+
+        with self.assertWarns(DeprecationWarning) as w:
+            warnings.filterwarnings('ignore',
+                    'coroutine .* was never awaited', RuntimeWarning)
+            Foo('test1').run()
+            support.gc_collect()
+        self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
+        self.assertIn('test1', str(w.warning))
+        self.assertEqual(w.filename, __file__)
+        self.assertIn("returned 'coroutine'", str(w.warning))
+        self.assertIn(
+            'Maybe you forgot to use IsolatedAsyncioTestCase as the base class?',
+            str(w.warning),
+        )
 
     def _check_call_order__subtests(self, result, events, expected_events):
         class Foo(Test.LoggingTestCase):
@@ -677,16 +705,136 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.assertRaises(self.failureException, self.assertIsNot, thing, thing)
 
     def testAssertIsInstance(self):
-        thing = []
+        thing = List()
         self.assertIsInstance(thing, list)
-        self.assertRaises(self.failureException, self.assertIsInstance,
-                          thing, dict)
+        self.assertIsInstance(thing, (int, list))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertIsInstance(thing, int)
+        self.assertEqual(str(cm.exception),
+                "[] is not an instance of <class 'int'>")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertIsInstance(thing, (int, float))
+        self.assertEqual(str(cm.exception),
+                "[] is not an instance of any of (<class 'int'>, <class 'float'>)")
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertIsInstance(thing, int, 'ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertIsInstance(thing, int, msg='ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
 
     def testAssertNotIsInstance(self):
-        thing = []
-        self.assertNotIsInstance(thing, dict)
-        self.assertRaises(self.failureException, self.assertNotIsInstance,
-                          thing, list)
+        thing = List()
+        self.assertNotIsInstance(thing, int)
+        self.assertNotIsInstance(thing, (int, float))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotIsInstance(thing, list)
+        self.assertEqual(str(cm.exception),
+                "[] is an instance of <class 'list'>")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotIsInstance(thing, (int, list))
+        self.assertEqual(str(cm.exception),
+                "[] is an instance of <class 'list'>")
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotIsInstance(thing, list, 'ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotIsInstance(thing, list, msg='ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
+
+    def testAssertIsSubclass(self):
+        self.assertIsSubclass(List, list)
+        self.assertIsSubclass(List, (int, list))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertIsSubclass(List, int)
+        self.assertEqual(str(cm.exception),
+                f"{List!r} is not a subclass of <class 'int'>")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertIsSubclass(List, (int, float))
+        self.assertEqual(str(cm.exception),
+                f"{List!r} is not a subclass of any of (<class 'int'>, <class 'float'>)")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertIsSubclass(1, int)
+        self.assertEqual(str(cm.exception), "1 is not a class")
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertIsSubclass(List, int, 'ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertIsSubclass(List, int, msg='ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
+
+    def testAssertNotIsSubclass(self):
+        self.assertNotIsSubclass(List, int)
+        self.assertNotIsSubclass(List, (int, float))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotIsSubclass(List, list)
+        self.assertEqual(str(cm.exception),
+                f"{List!r} is a subclass of <class 'list'>")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotIsSubclass(List, (int, list))
+        self.assertEqual(str(cm.exception),
+                f"{List!r} is a subclass of <class 'list'>")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotIsSubclass(1, int)
+        self.assertEqual(str(cm.exception), "1 is not a class")
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotIsSubclass(List, list, 'ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotIsSubclass(List, list, msg='ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
+
+    def testAssertHasAttr(self):
+        a = List()
+        a.x = 1
+        self.assertHasAttr(a, 'x')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertHasAttr(a, 'y')
+        self.assertEqual(str(cm.exception),
+                "'List' object has no attribute 'y'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertHasAttr(List, 'spam')
+        self.assertEqual(str(cm.exception),
+                "type object 'List' has no attribute 'spam'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertHasAttr(sys, 'nonexistent')
+        self.assertEqual(str(cm.exception),
+                "module 'sys' has no attribute 'nonexistent'")
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertHasAttr(a, 'y', 'ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertHasAttr(a, 'y', msg='ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
+
+    def testAssertNotHasAttr(self):
+        a = List()
+        a.x = 1
+        self.assertNotHasAttr(a, 'y')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotHasAttr(a, 'x')
+        self.assertEqual(str(cm.exception),
+                "'List' object has unexpected attribute 'x'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotHasAttr(List, 'append')
+        self.assertEqual(str(cm.exception),
+                "type object 'List' has unexpected attribute 'append'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotHasAttr(sys, 'modules')
+        self.assertEqual(str(cm.exception),
+                "module 'sys' has unexpected attribute 'modules'")
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotHasAttr(a, 'x', 'ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotHasAttr(a, 'x', msg='ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
 
     def testAssertIn(self):
         animals = {'monkey': 'banana', 'cow': 'grass', 'seal': 'fish'}
@@ -1131,6 +1279,8 @@ test case
             # need to remove the first line of the error message
             error = str(e).split('\n', 1)[1]
             self.assertEqual(sample_text_error, error)
+        else:
+            self.fail(f'{self.failureException} not raised')
 
     def testAssertEqualSingleLine(self):
         sample_text = "laden swallows fly slowly"
@@ -1147,6 +1297,74 @@ test case
             # need to remove the first line of the error message
             error = str(e).split('\n', 1)[1]
             self.assertEqual(sample_text_error, error)
+        else:
+            self.fail(f'{self.failureException} not raised')
+
+    def testAssertEqualwithEmptyString(self):
+        '''Verify when there is an empty string involved, the diff output
+         does not treat the empty string as a single empty line. It should
+         instead be handled as a non-line.
+        '''
+        sample_text = ''
+        revised_sample_text = 'unladen swallows fly quickly'
+        sample_text_error = '''\
++ unladen swallows fly quickly
+'''
+        try:
+            self.assertEqual(sample_text, revised_sample_text)
+        except self.failureException as e:
+            # need to remove the first line of the error message
+            error = str(e).split('\n', 1)[1]
+            self.assertEqual(sample_text_error, error)
+        else:
+            self.fail(f'{self.failureException} not raised')
+
+    def testAssertEqualMultipleLinesMissingNewlineTerminator(self):
+        '''Verifying format of diff output from assertEqual involving strings
+         with multiple lines, but missing the terminating newline on both.
+        '''
+        sample_text = 'laden swallows\nfly sloely'
+        revised_sample_text = 'laden swallows\nfly slowly'
+        sample_text_error = '''\
+  laden swallows
+- fly sloely
+?        ^
++ fly slowly
+?        ^
+'''
+        try:
+            self.assertEqual(sample_text, revised_sample_text)
+        except self.failureException as e:
+            # need to remove the first line of the error message
+            error = str(e).split('\n', 1)[1]
+            self.assertEqual(sample_text_error, error)
+        else:
+            self.fail(f'{self.failureException} not raised')
+
+    def testAssertEqualMultipleLinesMismatchedNewlinesTerminators(self):
+        '''Verifying format of diff output from assertEqual involving strings
+         with multiple lines and mismatched newlines. The output should
+         include a - on it's own line to indicate the newline difference
+         between the two strings
+        '''
+        sample_text = 'laden swallows\nfly sloely\n'
+        revised_sample_text = 'laden swallows\nfly slowly'
+        sample_text_error = '''\
+  laden swallows
+- fly sloely
+?        ^
++ fly slowly
+?        ^
+-\x20
+'''
+        try:
+            self.assertEqual(sample_text, revised_sample_text)
+        except self.failureException as e:
+            # need to remove the first line of the error message
+            error = str(e).split('\n', 1)[1]
+            self.assertEqual(sample_text_error, error)
+        else:
+            self.fail(f'{self.failureException} not raised')
 
     def testEqualityBytesWarning(self):
         if sys.flags.bytes_warning:
@@ -1770,6 +1988,186 @@ test case
         with self.assertNoLogs() as value:
             pass
         self.assertIsNone(value)
+
+    def testAssertStartswith(self):
+        self.assertStartsWith('ababahalamaha', 'ababa')
+        self.assertStartsWith('ababahalamaha', ('x', 'ababa', 'y'))
+        self.assertStartsWith(UserString('ababahalamaha'), 'ababa')
+        self.assertStartsWith(UserString('ababahalamaha'), ('x', 'ababa', 'y'))
+        self.assertStartsWith(bytearray(b'ababahalamaha'), b'ababa')
+        self.assertStartsWith(bytearray(b'ababahalamaha'), (b'x', b'ababa', b'y'))
+        self.assertStartsWith(b'ababahalamaha', bytearray(b'ababa'))
+        self.assertStartsWith(b'ababahalamaha',
+                (bytearray(b'x'), bytearray(b'ababa'), bytearray(b'y')))
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertStartsWith('ababahalamaha', 'amaha')
+        self.assertEqual(str(cm.exception),
+                "'ababahalamaha' doesn't start with 'amaha'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertStartsWith('ababahalamaha', ('x', 'y'))
+        self.assertEqual(str(cm.exception),
+                "'ababahalamaha' doesn't start with any of ('x', 'y')")
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertStartsWith(b'ababahalamaha', 'ababa')
+        self.assertEqual(str(cm.exception), 'Expected str, not bytes')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertStartsWith(b'ababahalamaha', ('amaha', 'ababa'))
+        self.assertEqual(str(cm.exception), 'Expected str, not bytes')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertStartsWith([], 'ababa')
+        self.assertEqual(str(cm.exception), 'Expected str, not list')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertStartsWith('ababahalamaha', b'ababa')
+        self.assertEqual(str(cm.exception), 'Expected bytes, not str')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertStartsWith('ababahalamaha', (b'amaha', b'ababa'))
+        self.assertEqual(str(cm.exception), 'Expected bytes, not str')
+        with self.assertRaises(TypeError):
+            self.assertStartsWith('ababahalamaha', ord('a'))
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertStartsWith('ababahalamaha', 'amaha', 'abracadabra')
+        self.assertIn('ababahalamaha', str(cm.exception))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertStartsWith('ababahalamaha', 'amaha', msg='abracadabra')
+        self.assertIn('ababahalamaha', str(cm.exception))
+
+    def testAssertNotStartswith(self):
+        self.assertNotStartsWith('ababahalamaha', 'amaha')
+        self.assertNotStartsWith('ababahalamaha', ('x', 'amaha', 'y'))
+        self.assertNotStartsWith(UserString('ababahalamaha'), 'amaha')
+        self.assertNotStartsWith(UserString('ababahalamaha'), ('x', 'amaha', 'y'))
+        self.assertNotStartsWith(bytearray(b'ababahalamaha'), b'amaha')
+        self.assertNotStartsWith(bytearray(b'ababahalamaha'), (b'x', b'amaha', b'y'))
+        self.assertNotStartsWith(b'ababahalamaha', bytearray(b'amaha'))
+        self.assertNotStartsWith(b'ababahalamaha',
+                (bytearray(b'x'), bytearray(b'amaha'), bytearray(b'y')))
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotStartsWith('ababahalamaha', 'ababa')
+        self.assertEqual(str(cm.exception),
+                "'ababahalamaha' starts with 'ababa'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotStartsWith('ababahalamaha', ('x', 'ababa', 'y'))
+        self.assertEqual(str(cm.exception),
+                "'ababahalamaha' starts with 'ababa'")
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotStartsWith(b'ababahalamaha', 'ababa')
+        self.assertEqual(str(cm.exception), 'Expected str, not bytes')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotStartsWith(b'ababahalamaha', ('amaha', 'ababa'))
+        self.assertEqual(str(cm.exception), 'Expected str, not bytes')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotStartsWith([], 'ababa')
+        self.assertEqual(str(cm.exception), 'Expected str, not list')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotStartsWith('ababahalamaha', b'ababa')
+        self.assertEqual(str(cm.exception), 'Expected bytes, not str')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotStartsWith('ababahalamaha', (b'amaha', b'ababa'))
+        self.assertEqual(str(cm.exception), 'Expected bytes, not str')
+        with self.assertRaises(TypeError):
+            self.assertNotStartsWith('ababahalamaha', ord('a'))
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotStartsWith('ababahalamaha', 'ababa', 'abracadabra')
+        self.assertIn('ababahalamaha', str(cm.exception))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotStartsWith('ababahalamaha', 'ababa', msg='abracadabra')
+        self.assertIn('ababahalamaha', str(cm.exception))
+
+    def testAssertEndswith(self):
+        self.assertEndsWith('ababahalamaha', 'amaha')
+        self.assertEndsWith('ababahalamaha', ('x', 'amaha', 'y'))
+        self.assertEndsWith(UserString('ababahalamaha'), 'amaha')
+        self.assertEndsWith(UserString('ababahalamaha'), ('x', 'amaha', 'y'))
+        self.assertEndsWith(bytearray(b'ababahalamaha'), b'amaha')
+        self.assertEndsWith(bytearray(b'ababahalamaha'), (b'x', b'amaha', b'y'))
+        self.assertEndsWith(b'ababahalamaha', bytearray(b'amaha'))
+        self.assertEndsWith(b'ababahalamaha',
+                (bytearray(b'x'), bytearray(b'amaha'), bytearray(b'y')))
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEndsWith('ababahalamaha', 'ababa')
+        self.assertEqual(str(cm.exception),
+                "'ababahalamaha' doesn't end with 'ababa'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEndsWith('ababahalamaha', ('x', 'y'))
+        self.assertEqual(str(cm.exception),
+                "'ababahalamaha' doesn't end with any of ('x', 'y')")
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEndsWith(b'ababahalamaha', 'amaha')
+        self.assertEqual(str(cm.exception), 'Expected str, not bytes')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEndsWith(b'ababahalamaha', ('ababa', 'amaha'))
+        self.assertEqual(str(cm.exception), 'Expected str, not bytes')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEndsWith([], 'amaha')
+        self.assertEqual(str(cm.exception), 'Expected str, not list')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEndsWith('ababahalamaha', b'amaha')
+        self.assertEqual(str(cm.exception), 'Expected bytes, not str')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEndsWith('ababahalamaha', (b'ababa', b'amaha'))
+        self.assertEqual(str(cm.exception), 'Expected bytes, not str')
+        with self.assertRaises(TypeError):
+            self.assertEndsWith('ababahalamaha', ord('a'))
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEndsWith('ababahalamaha', 'ababa', 'abracadabra')
+        self.assertIn('ababahalamaha', str(cm.exception))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEndsWith('ababahalamaha', 'ababa', msg='abracadabra')
+        self.assertIn('ababahalamaha', str(cm.exception))
+
+    def testAssertNotEndswith(self):
+        self.assertNotEndsWith('ababahalamaha', 'ababa')
+        self.assertNotEndsWith('ababahalamaha', ('x', 'ababa', 'y'))
+        self.assertNotEndsWith(UserString('ababahalamaha'), 'ababa')
+        self.assertNotEndsWith(UserString('ababahalamaha'), ('x', 'ababa', 'y'))
+        self.assertNotEndsWith(bytearray(b'ababahalamaha'), b'ababa')
+        self.assertNotEndsWith(bytearray(b'ababahalamaha'), (b'x', b'ababa', b'y'))
+        self.assertNotEndsWith(b'ababahalamaha', bytearray(b'ababa'))
+        self.assertNotEndsWith(b'ababahalamaha',
+                (bytearray(b'x'), bytearray(b'ababa'), bytearray(b'y')))
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotEndsWith('ababahalamaha', 'amaha')
+        self.assertEqual(str(cm.exception),
+                "'ababahalamaha' ends with 'amaha'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotEndsWith('ababahalamaha', ('x', 'amaha', 'y'))
+        self.assertEqual(str(cm.exception),
+                "'ababahalamaha' ends with 'amaha'")
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotEndsWith(b'ababahalamaha', 'amaha')
+        self.assertEqual(str(cm.exception), 'Expected str, not bytes')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotEndsWith(b'ababahalamaha', ('ababa', 'amaha'))
+        self.assertEqual(str(cm.exception), 'Expected str, not bytes')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotEndsWith([], 'amaha')
+        self.assertEqual(str(cm.exception), 'Expected str, not list')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotEndsWith('ababahalamaha', b'amaha')
+        self.assertEqual(str(cm.exception), 'Expected bytes, not str')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotEndsWith('ababahalamaha', (b'ababa', b'amaha'))
+        self.assertEqual(str(cm.exception), 'Expected bytes, not str')
+        with self.assertRaises(TypeError):
+            self.assertNotEndsWith('ababahalamaha', ord('a'))
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotEndsWith('ababahalamaha', 'amaha', 'abracadabra')
+        self.assertIn('ababahalamaha', str(cm.exception))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotEndsWith('ababahalamaha', 'amaha', msg='abracadabra')
+        self.assertIn('ababahalamaha', str(cm.exception))
 
     def testDeprecatedFailMethods(self):
         """Test that the deprecated fail* methods get removed in 3.12"""
