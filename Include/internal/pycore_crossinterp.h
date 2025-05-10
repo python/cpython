@@ -350,16 +350,18 @@ typedef struct xi_session _PyXI_session;
 PyAPI_FUNC(_PyXI_session *) _PyXI_NewSession(void);
 PyAPI_FUNC(void) _PyXI_FreeSession(_PyXI_session *);
 
+typedef struct {
+    PyObject *excinfo;
+} _PyXI_session_result;
+
 PyAPI_FUNC(int) _PyXI_Enter(
     _PyXI_session *session,
     PyInterpreterState *interp,
-    PyObject *nsupdates);
-PyAPI_FUNC(void) _PyXI_Exit(_PyXI_session *session);
+    PyObject *nsupdates,
+    _PyXI_session_result *);
+PyAPI_FUNC(int) _PyXI_Exit(_PyXI_session *, _PyXI_session_result *);
 
 PyAPI_FUNC(PyObject *) _PyXI_GetMainNamespace(_PyXI_session *);
-
-PyAPI_FUNC(PyObject *) _PyXI_ApplyCapturedException(_PyXI_session *session);
-PyAPI_FUNC(int) _PyXI_HasCapturedException(_PyXI_session *session);
 
 
 /*************/

@@ -2146,7 +2146,9 @@ _fill_sharedns(_PyXI_namespace *ns, PyObject *nsobj, _PyXI_session *session)
     assert(ns->numvalues == 0);
     for (Py_ssize_t i=0; i < ns->maxitems; i++) {
         if (_sharednsitem_copy_from_ns(&ns->items[i], nsobj) < 0) {
-            _propagate_not_shareable_error(session);
+            if (session != NULL) {
+                _propagate_not_shareable_error(session);
+            }
             // Clear out the ones we set so far.
             for (Py_ssize_t j=0; j < i; j++) {
                 _sharednsitem_clear_value(&ns->items[j]);
@@ -2212,6 +2214,18 @@ _apply_sharedns(_PyXI_namespace *ns, PyObject *nsobj, PyObject *dflt)
 /* switched-interpreter sessions */
 /*********************************/
 
+struct xi_session_error {
+    // This is set if the interpreter is entered and raised an exception
+    // that needs to be handled in some special way during exit.
+    _PyXI_errcode *override;
+    // This is set if exit captured an exception to propagate.
+    _PyXI_error *info;
+
+    // -- pre-allocated memory --
+    _PyXI_error _info;
+    _PyXI_errcode _override;
+};
+
 struct xi_session {
 #define SESSION_UNUSED 0
 #define SESSION_ACTIVE 1
@@ -2240,15 +2254,7 @@ struct xi_session {
     // beginning of the session as a convenience.
     PyObject *main_ns;
 
-    // This is set if the interpreter is entered and raised an exception
-    // that needs to be handled in some special way during exit.
-    _PyXI_errcode *error_override;
-    // This is set if exit captured an exception to propagate.
-    _PyXI_error *error;
-
-    // -- pre-allocated memory --
-    _PyXI_error _error;
-    _PyXI_errcode _error_override;
+    struct xi_session_error error;
 };
 
 
@@ -2277,6 +2283,23 @@ _session_is_active(_PyXI_session *session)
     return session->status == SESSION_ACTIVE;
 }
 
+static int
+_session_pop_error(_PyXI_session *session, struct xi_session_error *err)
+{
+    if (session->error.info == NULL) {
+        assert(session->error.override == NULL);
+        *err = (struct xi_session_error){0};
+        return 0;
+    }
+    *err = session->error;
+    err->info = &err->_info;
+    if (err->override != NULL) {
+        err->override = &err->_override;
+    }
+    session->error = (struct xi_session_error){0};
+    return 1;
+}
+
 static int _ensure_main_ns(_PyXI_session *);
 static inline void _session_set_error(_PyXI_session *, _PyXI_errcode);
 static void _capture_current_exception(_PyXI_session *);
@@ -2296,9 +2319,9 @@ _enter_session(_PyXI_session *session, PyInterpreterState *interp)
     assert(!session->running);
     assert(session->main_ns == NULL);
     // Set elsewhere and cleared in _capture_current_exception().
-    assert(session->error_override == NULL);
-    // Set elsewhere and cleared in _PyXI_ApplyCapturedException().
-    assert(session->error == NULL);
+    assert(session->error.override == NULL);
+    // Set elsewhere and cleared in _PyXI_Exit().
+    assert(session->error.info == NULL);
 
     // Switch to interpreter.
     PyThreadState *tstate = PyThreadState_Get();
@@ -2351,21 +2374,17 @@ _exit_session(_PyXI_session *session)
         assert(!session->own_init_tstate);
     }
 
+    assert(session->error.info == NULL);
+    assert(session->error.override == _PyXI_ERR_NO_ERROR);
+
     // For now the error data persists past the exit.
-    *session = (_PyXI_session){
-        .error_override = session->error_override,
-        .error = session->error,
-        ._error = session->_error,
-        ._error_override = session->_error_override,
-    };
+    *session = (_PyXI_session){0};
 }
 
 static void
 _propagate_not_shareable_error(_PyXI_session *session)
 {
-    if (session == NULL) {
-        return;
-    }
+    assert(session != NULL);
     PyThreadState *tstate = PyThreadState_Get();
     PyObject *exctype = get_notshareableerror_type(tstate);
     if (exctype == NULL) {
@@ -2379,26 +2398,10 @@ _propagate_not_shareable_error(_PyXI_session *session)
     }
 }
 
-PyObject *
-_PyXI_ApplyCapturedException(_PyXI_session *session)
-{
-    assert(!PyErr_Occurred());
-    assert(session->error != NULL);
-    PyObject *res = _PyXI_ApplyError(session->error);
-    assert((res == NULL) != (PyErr_Occurred() == NULL));
-    session->error = NULL;
-    return res;
-}
-
-int
-_PyXI_HasCapturedException(_PyXI_session *session)
-{
-    return session->error != NULL;
-}
-
 int
 _PyXI_Enter(_PyXI_session *session,
-            PyInterpreterState *interp, PyObject *nsupdates)
+            PyInterpreterState *interp, PyObject *nsupdates,
+            _PyXI_session_result *result)
 {
     // Convert the attrs for cross-interpreter use.
     _PyXI_namespace *sharedns = NULL;
@@ -2413,7 +2416,7 @@ _PyXI_Enter(_PyXI_session *session,
                 return -1;
             }
             if (_fill_sharedns(sharedns, nsupdates, NULL) < 0) {
-                assert(session->error == NULL);
+                assert(session->error.info == NULL);
                 _destroy_sharedns(sharedns);
                 return -1;
             }
@@ -2453,19 +2456,66 @@ _PyXI_Enter(_PyXI_session *session,
 
 error:
     // We want to propagate all exceptions here directly (best effort).
+    assert(errcode != _PyXI_ERR_NO_ERROR);
     _session_set_error(session, errcode);
+    assert(!PyErr_Occurred());
+
+    struct xi_session_error err;
+    (void)_session_pop_error(session, &err);
     _exit_session(session);
+
     if (sharedns != NULL) {
         _destroy_sharedns(sharedns);
     }
+
+    // Apply the error from the other interpreter.
+    PyObject *excinfo = _PyXI_ApplyError(err.info);
+    if (excinfo != NULL) {
+        if (result != NULL) {
+            result->excinfo = excinfo;
+        }
+        else {
+#ifdef Py_DEBUG
+            fprintf(stderr, "_PyXI_Enter(): uncaught exception discarded");
+#endif
+        }
+    }
+    assert(PyErr_Occurred());
+
     return -1;
 }
 
-void
-_PyXI_Exit(_PyXI_session *session)
+int
+_PyXI_Exit(_PyXI_session *session, _PyXI_session_result *result)
 {
     _capture_current_exception(session);
+    assert(!PyErr_Occurred());
+
+    struct xi_session_error err;
+    (void)_session_pop_error(session, &err);
     _exit_session(session);
+
+    if (err.info == NULL) {
+        return 0;
+    }
+
+    // Apply the error from the other interpreter.
+    PyObject *excinfo = _PyXI_ApplyError(err.info);
+    if (excinfo == NULL) {
+        assert(PyErr_Occurred());
+        if (result != NULL) {
+            *result = (_PyXI_session_result){0};
+        }
+    }
+    else if (result != NULL) {
+        result->excinfo = excinfo;
+    }
+    else {
+#ifdef Py_DEBUG
+        fprintf(stderr, "_PyXI_Exit(): uncaught exception discarded");
+#endif
+    }
+    return -1;
 }
 
 
@@ -2474,15 +2524,15 @@ _PyXI_Exit(_PyXI_session *session)
 static void
 _capture_current_exception(_PyXI_session *session)
 {
-    assert(session->error == NULL);
+    assert(session->error.info == NULL);
     if (!PyErr_Occurred()) {
-        assert(session->error_override == NULL);
+        assert(session->error.override == NULL);
         return;
     }
 
     // Handle the exception override.
-    _PyXI_errcode *override = session->error_override;
-    session->error_override = NULL;
+    _PyXI_errcode *override = session->error.override;
+    session->error.override = NULL;
     _PyXI_errcode errcode = override != NULL
         ? *override
         : _PyXI_ERR_UNCAUGHT_EXCEPTION;
@@ -2505,7 +2555,7 @@ _capture_current_exception(_PyXI_session *session)
     }
 
     // Capture the exception.
-    _PyXI_error *err = &session->_error;
+    _PyXI_error *err = &session->error._info;
     *err = (_PyXI_error){
         .interp = session->init_tstate->interp,
     };
@@ -2532,7 +2582,7 @@ _capture_current_exception(_PyXI_session *session)
 
     // Finished!
     assert(!PyErr_Occurred());
-    session->error = err;
+    session->error.info = err;
 }
 
 static inline void
@@ -2541,8 +2591,8 @@ _session_set_error(_PyXI_session *session, _PyXI_errcode errcode)
     assert(_session_is_active(session));
     assert(PyErr_Occurred());
     if (errcode != _PyXI_ERR_UNCAUGHT_EXCEPTION) {
-        session->_error_override = errcode;
-        session->error_override = &session->_error_override;
+        session->error._override = errcode;
+        session->error.override = &session->error._override;
     }
     _capture_current_exception(session);
 }

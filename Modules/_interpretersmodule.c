@@ -441,7 +441,7 @@ _run_script(_PyXIData_t *script, PyObject *ns)
 static int
 _exec_in_interpreter(PyThreadState *tstate, PyInterpreterState *interp,
                     _PyXIData_t *script, PyObject *shareables,
-                    PyObject **p_excinfo)
+                    _PyXI_session_result *result)
 {
     assert(!_PyErr_Occurred(tstate));
     _PyXI_session *session = _PyXI_NewSession();
@@ -450,19 +450,9 @@ _exec_in_interpreter(PyThreadState *tstate, PyInterpreterState *interp,
     }
 
     // Prep and switch interpreters.
-    if (_PyXI_Enter(session, interp, shareables) < 0) {
-        if (_PyErr_Occurred(tstate)) {
-            // If an error occured at this step, it means that interp
-            // was not prepared and switched.
-            _PyXI_FreeSession(session);
-            return -1;
-        }
-        // Now, apply the error from another interpreter:
-        PyObject *excinfo = _PyXI_ApplyCapturedException(session);
-        if (excinfo != NULL) {
-            *p_excinfo = excinfo;
-        }
-        assert(PyErr_Occurred());
+    if (_PyXI_Enter(session, interp, shareables, result) < 0) {
+        // If an error occured at this step, it means that interp
+        // was not prepared and switched.
         _PyXI_FreeSession(session);
         return -1;
     }
@@ -477,20 +467,7 @@ _exec_in_interpreter(PyThreadState *tstate, PyInterpreterState *interp,
 
 finally:
     // Clean up and switch back.
-    _PyXI_Exit(session);
-
-    // Propagate any exception out to the caller.
-    assert(!PyErr_Occurred());
-    if (res < 0) {
-        PyObject *excinfo = _PyXI_ApplyCapturedException(session);
-        if (excinfo != NULL) {
-            *p_excinfo = excinfo;
-        }
-    }
-    else {
-        assert(!_PyXI_HasCapturedException(session));
-    }
-
+    (void)_PyXI_Exit(session, result);
     _PyXI_FreeSession(session);
     return res;
 }
@@ -842,21 +819,23 @@ interp_set___main___attrs(PyObject *self, PyObject *args, PyObject *kwargs)
     }
 
     // Prep and switch interpreters, including apply the updates.
-    if (_PyXI_Enter(session, interp, updates) < 0) {
-        if (!PyErr_Occurred()) {
-            _PyXI_ApplyCapturedException(session);
-            assert(PyErr_Occurred());
-        }
-        else {
-            assert(!_PyXI_HasCapturedException(session));
-        }
+    if (_PyXI_Enter(session, interp, updates, NULL) < 0) {
         _PyXI_FreeSession(session);
         return NULL;
     }
 
     // Clean up and switch back.
-    _PyXI_Exit(session);
+    assert(!PyErr_Occurred());
+    int res = _PyXI_Exit(session, NULL);
     _PyXI_FreeSession(session);
+    assert(res == 0);
+    if (res < 0) {
+        // unreachable
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_RuntimeError, "unresolved error");
+        }
+        return NULL;
+    }
 
     Py_RETURN_NONE;
 }
@@ -918,12 +897,12 @@ interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyObject *excinfo = NULL;
-    int res = _exec_in_interpreter(tstate, interp, &xidata, shared, &excinfo);
+    _PyXI_session_result result = {0};
+    int res = _exec_in_interpreter(tstate, interp, &xidata, shared, &result);
     _PyXIData_Release(&xidata);
     if (res < 0) {
-        assert((excinfo == NULL) != (PyErr_Occurred() == NULL));
-        return excinfo;
+        assert((result.excinfo == NULL) != (PyErr_Occurred() == NULL));
+        return result.excinfo;
     }
     Py_RETURN_NONE;
 #undef FUNCNAME
@@ -981,12 +960,12 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyObject *excinfo = NULL;
-    int res = _exec_in_interpreter(tstate, interp, &xidata, shared, &excinfo);
+    _PyXI_session_result result = {0};
+    int res = _exec_in_interpreter(tstate, interp, &xidata, shared, &result);
     _PyXIData_Release(&xidata);
     if (res < 0) {
-        assert((excinfo == NULL) != (PyErr_Occurred() == NULL));
-        return excinfo;
+        assert((result.excinfo == NULL) != (PyErr_Occurred() == NULL));
+        return result.excinfo;
     }
     Py_RETURN_NONE;
 #undef FUNCNAME
@@ -1043,12 +1022,12 @@ interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyObject *excinfo = NULL;
-    int res = _exec_in_interpreter(tstate, interp, &xidata, shared, &excinfo);
+    _PyXI_session_result result = {0};
+    int res = _exec_in_interpreter(tstate, interp, &xidata, shared, &result);
     _PyXIData_Release(&xidata);
     if (res < 0) {
-        assert((excinfo == NULL) != (PyErr_Occurred() == NULL));
-        return excinfo;
+        assert((result.excinfo == NULL) != (PyErr_Occurred() == NULL));
+        return result.excinfo;
     }
     Py_RETURN_NONE;
 #undef FUNCNAME
@@ -1104,12 +1083,12 @@ interp_call(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyObject *excinfo = NULL;
-    int res = _exec_in_interpreter(tstate, interp, &xidata, NULL, &excinfo);
+    _PyXI_session_result result = {0};
+    int res = _exec_in_interpreter(tstate, interp, &xidata, NULL, &result);
     _PyXIData_Release(&xidata);
     if (res < 0) {
-        assert((excinfo == NULL) != (PyErr_Occurred() == NULL));
-        return excinfo;
+        assert((result.excinfo == NULL) != (PyErr_Occurred() == NULL));
+        return result.excinfo;
     }
     Py_RETURN_NONE;
 #undef FUNCNAME
