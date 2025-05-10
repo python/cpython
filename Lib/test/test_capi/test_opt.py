@@ -1926,30 +1926,30 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_INT", uops)
 
     def test_get_len(self):
-        def testfunc1(n):
-            x = 0
+        def testfunc(n):
+            x = ""
             for _ in range(n):
                 match (1, 2, 3, 4):
                     case [_, _, _, _]:
-                        x += 1
+                        x += "1"
             return x
-        res, ex = self._run_with_optimizer(testfunc1, TIER2_THRESHOLD)
-        self.assertEqual(res, TIER2_THRESHOLD)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(len(res), TIER2_THRESHOLD)
         uops = get_opnames(ex)
-        self.assertNotIn("_GUARD_TOS_INT", uops)
+        self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertIn("_GET_LEN", uops)
         self.assertIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
-        def testfunc1(n):
-            x = 0
+        def testfunc(n):
+            x = ""
             for _ in range(n):
                 match [1, 2, 3, 4]:
                     case [_, _, _, _]:
-                        x += 1
+                        x += "1"
             return x
-        res, ex = self._run_with_optimizer(testfunc1, TIER2_THRESHOLD)
-        self.assertEqual(res, TIER2_THRESHOLD)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(len(res), TIER2_THRESHOLD)
         uops = get_opnames(ex)
-        self.assertNotIn("_GUARD_TOS_INT", uops)
+        self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertIn("_GET_LEN", uops)
         self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
