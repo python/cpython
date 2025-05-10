@@ -16,6 +16,7 @@ import traceback
 import sys
 import textwrap
 import unittest
+from functools import partial, update_wrapper
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
 from typing import get_type_hints
@@ -5114,6 +5115,194 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
                 super()
 
         A().foo()
+
+    def test_wrapped_property(self):
+        def mydecorator(f):
+            @wraps(f)
+            def wrapper(*args, **kwargs):
+                return f(*args, **kwargs)
+            return wrapper
+
+        class B:
+            @property
+            def foo(self):
+                return "bar"
+
+        @dataclass(slots=True)
+        class A(B):
+            @property
+            @mydecorator
+            def foo(self):
+                return super().foo
+
+        self.assertEqual(A().foo, "bar")
+
+    def test_custom_descriptor(self):
+        class CustomDescriptor:
+            def __init__(self, f):
+                self._f = f
+
+            def __get__(self, instance, owner):
+                return self._f(instance)
+
+        class B:
+            def foo(self):
+                return "bar"
+
+        @dataclass(slots=True)
+        class A(B):
+            @CustomDescriptor
+            def foo(cls):
+                return super().foo()
+
+        self.assertEqual(A().foo, "bar")
+
+    def test_custom_descriptor_wrapped(self):
+        class CustomDescriptor:
+            def __init__(self, f):
+                self._f = update_wrapper(lambda *args, **kwargs: f(*args, **kwargs), f)
+
+            def __get__(self, instance, owner):
+                return self._f(instance)
+
+        class B:
+            def foo(self):
+                return "bar"
+
+        @dataclass(slots=True)
+        class A(B):
+            @CustomDescriptor
+            def foo(cls):
+                return super().foo()
+
+        self.assertEqual(A().foo, "bar")
+
+    def test_custom_nested_descriptor(self):
+        class CustomFunctionWrapper:
+            def __init__(self, f):
+                self._f = f
+
+            def __call__(self, *args, **kwargs):
+                return self._f(*args, **kwargs)
+
+        class CustomDescriptor:
+            def __init__(self, f):
+                self._wrapper = CustomFunctionWrapper(f)
+
+            def __get__(self, instance, owner):
+                return self._wrapper(instance)
+
+        class B:
+            def foo(self):
+                return "bar"
+
+        @dataclass(slots=True)
+        class A(B):
+            @CustomDescriptor
+            def foo(cls):
+                return super().foo()
+
+        self.assertEqual(A().foo, "bar")
+
+    def test_custom_nested_descriptor_with_partial(self):
+        class CustomDescriptor:
+            def __init__(self, f):
+                self._wrapper = partial(f, value="bar")
+
+            def __get__(self, instance, owner):
+                return self._wrapper(instance)
+
+        class B:
+            def foo(self, value):
+                return value
+
+        @dataclass(slots=True)
+        class A(B):
+            @CustomDescriptor
+            def foo(self, value):
+                return super().foo(value)
+
+        self.assertEqual(A().foo, "bar")
+
+    def test_custom_too_nested_descriptor(self):
+        class UnnecessaryNestedWrapper:
+            def __init__(self, wrapper):
+                self._wrapper = wrapper
+
+            def __call__(self, *args, **kwargs):
+                return self._wrapper(*args, **kwargs)
+
+        class CustomFunctionWrapper:
+            def __init__(self, f):
+                self._f = f
+
+            def __call__(self, *args, **kwargs):
+                return self._f(*args, **kwargs)
+
+        class CustomDescriptor:
+            def __init__(self, f):
+                self._wrapper = UnnecessaryNestedWrapper(CustomFunctionWrapper(f))
+
+            def __get__(self, instance, owner):
+                return self._wrapper(instance)
+
+        class B:
+            def foo(self):
+                return "bar"
+
+        @dataclass(slots=True)
+        class A(B):
+            @CustomDescriptor
+            def foo(cls):
+                return super().foo()
+
+        with self.assertRaises(TypeError) as context:
+            A().foo
+
+        expected_error_message = (
+            'super(type, obj): obj (instance of A) is not '
+            'an instance or subtype of type (A).'
+        )
+        self.assertEqual(context.exception.args, (expected_error_message,))
+
+    def test_user_defined_code_execution(self):
+        class CustomDescriptor:
+            def __init__(self, f):
+                self._wrapper = partial(f, value="bar")
+
+            def __get__(self, instance, owner):
+                return object.__getattribute__(self, "_wrapper")(instance)
+
+            def __getattribute__(self, name):
+                if name in {
+                    # these are the bare minimum for the feature to work
+                    "__class__",  # accessed on `isinstance(value, Field)`
+                    "__wrapped__",  # accessed by unwrap
+                    "__get__",  # is required for the descriptor protocol
+                    "__dict__",  # is accessed by dir() to work
+                }:
+                   return object.__getattribute__(self, name)
+                raise RuntimeError(f"Never should be accessed: {name}")
+
+        class B:
+            def foo(self, value):
+                return value
+
+        @dataclass(slots=True)
+        class A(B):
+            @CustomDescriptor
+            def foo(self, value):
+                return super().foo(value)
+
+        self.assertEqual(A().foo, "bar")
+
+        @dataclass(slots=True)
+        class A(B):
+            @CustomDescriptor
+            def foo(self, value):
+                return super().foo(value)
+
+        self.assertEqual(A().foo, "bar")
 
     def test_remembered_class(self):
         # Apply the dataclass decorator manually (not when the class
