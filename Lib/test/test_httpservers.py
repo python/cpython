@@ -8,6 +8,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer, HTTPSServer, \
      SimpleHTTPRequestHandler, CGIHTTPRequestHandler
 from http import server, HTTPStatus
 
+import locale
 import os
 import socket
 import sys
@@ -551,6 +552,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.check_status_and_reason(response, HTTPStatus.OK,
                                      data=os_helper.TESTFN_UNDECODABLE)
 
+    @unittest.skipIf(locale.getpreferredencoding().lower() != 'utf-8', 'test requires utf-8')
     def test_undecodable_parameter(self):
         # sanity check using a valid parameter
         response = self.request(self.base_url + '/?x=123').read()
