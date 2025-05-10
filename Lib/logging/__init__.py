@@ -2057,6 +2057,9 @@ def basicConfig(**kwargs):
               created FileHandler, causing it to be used when the file is
               opened in text mode. If not specified, the default value is
               `backslashreplace`.
+    formatter If specified, set this formatter for all involved handlers.
+              If not specified, the default is to create and use an instance of
+              `logging.Formatter`.
 
     Note that you could specify a stream created using open(filename, mode)
     rather than passing the filename and mode in. However, it should be
@@ -2079,6 +2082,9 @@ def basicConfig(**kwargs):
 
     .. versionchanged:: 3.9
        Added the ``encoding`` and ``errors`` parameters.
+
+    .. versionchanged:: 3.15
+       Added the ``formatter`` parameter.
     """
     # Add thread safety in case someone mistakenly calls
     # basicConfig() from multiple threads
@@ -2114,13 +2120,15 @@ def basicConfig(**kwargs):
                     stream = kwargs.pop("stream", None)
                     h = StreamHandler(stream)
                 handlers = [h]
-            dfs = kwargs.pop("datefmt", None)
-            style = kwargs.pop("style", '%')
-            if style not in _STYLES:
-                raise ValueError('Style must be one of: %s' % ','.join(
-                                 _STYLES.keys()))
-            fs = kwargs.pop("format", _STYLES[style][1])
-            fmt = Formatter(fs, dfs, style)
+            fmt = kwargs.pop("formatter", None)
+            if fmt is None:
+                dfs = kwargs.pop("datefmt", None)
+                style = kwargs.pop("style", '%')
+                if style not in _STYLES:
+                    raise ValueError('Style must be one of: %s' % ','.join(
+                                    _STYLES.keys()))
+                fs = kwargs.pop("format", _STYLES[style][1])
+                fmt = Formatter(fs, dfs, style)
             for h in handlers:
                 if h.formatter is None:
                     h.setFormatter(fmt)
