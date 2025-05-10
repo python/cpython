@@ -5775,8 +5775,8 @@ Random numbers
    ``/dev/urandom`` devices.
 
    The flags argument is a bit mask that can contain zero or more of the
-   following values ORed together: :py:const:`os.GRND_RANDOM` and
-   :py:data:`GRND_NONBLOCK`.
+   following values ORed together: :py:const:`os.GRND_RANDOM`,
+   :py:data:`GRND_NONBLOCK` and :py:data:`GRND_INSECURE`.
 
    See also the `Linux getrandom() manual page
    <https://man7.org/linux/man-pages/man2/getrandom.2.html>`_.
@@ -5846,3 +5846,15 @@ Random numbers
    ``/dev/random`` pool instead of the ``/dev/urandom`` pool.
 
    .. versionadded:: 3.6
+
+.. data:: GRND_INSECURE
+
+   If this flag is set, then :func:`getrandom` will return pseudo-random data
+   even if the entropy pool has not yet been initialized.
+   (It cannot be used with :py:const:`os.GRND_RANDOM`.)
+
+   .. note::
+
+      It is not suitable for scenarios requiring secure cryptography.
+
+   .. versionadded:: next
