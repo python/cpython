@@ -91,7 +91,7 @@ When you first install a runtime, you will likely be prompted to add a directory
 to your :envvar:`PATH`. This is optional, if you prefer to use the ``py``
 command, but is offered for those who prefer the full range of aliases (such
 as ``python3.14.exe``) to be available. The directory will be
-:file:`%LocalAppData%\Python\bin` by default, but may be customized by an
+:file:`%LocalAppData%\\Python\\bin` by default, but may be customized by an
 administrator. Click Start and search for "Edit environment variables for your
 account" for the system settings page to add the path.
 
