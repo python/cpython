@@ -2674,7 +2674,17 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         if isinstance(choices, str):
             choices = iter(choices)
 
-        if value not in choices:
+        typed_choices = []
+        if (self.convert_choices and
+            self.type and
+            isinstance(self.choices[0], str)):
+            try:
+                typed_choices = [acton.type[v] for v in choices]
+            except Exception:
+                # We use a blanket catch here, because type is user provided.
+                pass
+
+        if value not in choices and value not in typed_choices:
             args = {'value': str(value),
                     'choices': ', '.join(map(str, action.choices))}
             msg = _('invalid choice: %(value)r (choose from %(choices)s)')
