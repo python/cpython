@@ -1,6 +1,6 @@
 """sqlite3 CLI tests."""
-import re
 import sqlite3
+import textwrap
 import unittest
 
 from sqlite3.__main__ import main as cli
@@ -214,12 +214,14 @@ class CompletionTest(unittest.TestCase):
             raise unittest.SkipTest("libedit readline is not supported")
 
     def test_keyword_completion(self):
-        script = "from sqlite3.__main__ import main; main()"
+        script = textwrap.dedent("""
+            import readline
+            readline.parse_and_bind("set colored-completion-prefix off")
+            from sqlite3.__main__ import main; main()
+        """)
         # List candidates starting with 'S', there should be multiple matches.
         input = b"S\t\tEL\t 1;\n.quit\n"
-        output = run_pty(script, input, env={"NO_COLOR": "1"})
-        # Remove control sequences that colorize typed prefix 'S'
-        output = re.sub(rb"\x1b\[[0-9;]*[mK]", b"", output)
+        output = run_pty(script, input)
         self.assertIn(b"SELECT", output)
         self.assertIn(b"SET", output)
         self.assertIn(b"SAVEPOINT", output)
@@ -228,23 +230,28 @@ class CompletionTest(unittest.TestCase):
         # Keywords are completed in upper case for even lower case user input
         input = b"sel\t\t 1;\n.quit\n"
         output = run_pty(script, input)
-        output = re.sub(rb"\x1b\[[0-9;]*[mK]", b"", output)
         self.assertIn(b"SELECT", output)
         self.assertIn(b"(1,)", output)
 
     def test_nothing_to_complete(self):
-        script = "from sqlite3.__main__ import main; main()"
+        script = textwrap.dedent("""
+            import readline
+            readline.parse_and_bind("set colored-completion-prefix off")
+            from sqlite3.__main__ import main; main()
+        """)
         input = b"zzzz\t;\n.quit\n"
         output = run_pty(script, input, env={"NO_COLOR": "1"})
-        output = re.sub(rb"\x1b\[[0-9;]*[mK]", b"", output)
         for keyword in KEYWORDS:
             self.assertNotRegex(output, rf"\b{keyword}\b".encode("utf-8"))
 
     def test_completion_order(self):
-        script = "from sqlite3.__main__ import main; main()"
+        script = textwrap.dedent("""
+            import readline
+            readline.parse_and_bind("set colored-completion-prefix off")
+            from sqlite3.__main__ import main; main()
+        """)
         input = b"S\t;\n.quit\n"
         output = run_pty(script, input, env={"NO_COLOR": "1"})
-        output = re.sub(rb"\x1b\[[0-9;]*[mK]", b"", output).strip()
         savepoint_idx = output.find(b"SAVEPOINT")
         select_idx = output.find(b"SELECT")
         set_idx = output.find(b"SET")
