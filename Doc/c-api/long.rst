@@ -286,11 +286,14 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Return a C :c:expr:`unsigned long` representation of *pylong*.  *pylong*
    must be an instance of :c:type:`PyLongObject`.
 
-   Raise :exc:`OverflowError` if the value of *pylong* is out of range for a
-   :c:expr:`unsigned long`.
+   Raise :exc:`ValueError` if the value of *pylong* is negative and
+   :exc:`OverflowError` if it is out of range for a :c:expr:`unsigned long`.
 
    Returns ``(unsigned long)-1`` on error.
    Use :c:func:`PyErr_Occurred` to disambiguate.
+
+   .. versionchanged:: next
+      A negative *pylong* now raises :exc:`ValueError`, not :exc:`OverflowError`.
 
 
 .. c:function:: size_t PyLong_AsSize_t(PyObject *pylong)
@@ -302,11 +305,14 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Return a C :c:type:`size_t` representation of *pylong*.  *pylong* must be
    an instance of :c:type:`PyLongObject`.
 
-   Raise :exc:`OverflowError` if the value of *pylong* is out of range for a
-   :c:type:`size_t`.
+   Raise :exc:`ValueError` if the value of *pylong* is negative and
+   :exc:`OverflowError` if it is out of range for a :c:type:`size_t`.
 
    Returns ``(size_t)-1`` on error.
    Use :c:func:`PyErr_Occurred` to disambiguate.
+
+   .. versionchanged:: next
+      A negative *pylong* now raises :exc:`ValueError`, not :exc:`OverflowError`.
 
 
 .. c:function:: unsigned long long PyLong_AsUnsignedLongLong(PyObject *pylong)
@@ -317,14 +323,17 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Return a C :c:expr:`unsigned long long` representation of *pylong*.  *pylong*
    must be an instance of :c:type:`PyLongObject`.
 
-   Raise :exc:`OverflowError` if the value of *pylong* is out of range for an
-   :c:expr:`unsigned long long`.
+   Raise :exc:`ValueError` if the value of *pylong* is negative and
+   :exc:`OverflowError` if it is out of range for a :c:expr:`unsigned long long`.
 
    Returns ``(unsigned long long)-1`` on error.
    Use :c:func:`PyErr_Occurred` to disambiguate.
 
    .. versionchanged:: 3.1
       A negative *pylong* now raises :exc:`OverflowError`, not :exc:`TypeError`.
+
+   .. versionchanged:: next
+      A negative *pylong* now raises :exc:`ValueError`, not :exc:`OverflowError`.
 
 
 .. c:function:: unsigned long PyLong_AsUnsignedLongMask(PyObject *obj)
