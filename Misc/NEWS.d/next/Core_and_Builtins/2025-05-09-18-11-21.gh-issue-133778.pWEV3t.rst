@@ -1,0 +1,2 @@
+Fix bug where assigning to the :attr:`~type.__annotations__` attributes of
+classes defined under ``from __future__ import annotations`` had no effect.
