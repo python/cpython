@@ -408,7 +408,7 @@ class _WritablePath(_JoinablePath):
     def _iter_copy_from(self, source, follow_symlinks=True):
         """
         Recursively copy the given path to this path. Yields a
-        (target, source) tuple after each path is copied.
+        (source, target) tuple after each path is copied.
         """
         if not follow_symlinks and source.info.is_symlink():
             self.symlink_to(str(source.readlink()), source.info.is_dir())
@@ -423,7 +423,7 @@ class _WritablePath(_JoinablePath):
             with magic_open(source, 'rb') as source_f:
                 with magic_open(self, 'wb') as target_f:
                     copyfileobj(source_f, target_f)
-        yield self, source
+        yield source, self
 
 
 _JoinablePath.register(PurePath)

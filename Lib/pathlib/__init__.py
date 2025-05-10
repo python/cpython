@@ -1113,7 +1113,7 @@ class Path(PurePath):
                         preserve_metadata=False):
         """
         Recursively copy the given path to this path. Yields a
-        (target, source) tuple after each path is copied.
+        (source, target) tuple after each path is copied.
         """
         if not follow_symlinks and source.info.is_symlink():
             self._copy_from_symlink(source, preserve_metadata)
@@ -1128,7 +1128,7 @@ class Path(PurePath):
                 copy_info(source.info, self)
         else:
             self._copy_from_file(source, preserve_metadata)
-        yield self, source
+        yield source, self
 
     def _copy_from_file(self, source, preserve_metadata=False):
         ensure_different_files(source, self)
@@ -1186,7 +1186,7 @@ class Path(PurePath):
 
         # Fall back to copy+delete.
         ensure_distinct_paths(self, target)
-        for _dst, src in target._iter_copy_from(self, follow_symlinks=False, preserve_metadata=True):
+        for src, _dst in target._iter_copy_from(self, follow_symlinks=False, preserve_metadata=True):
             if src.info.is_symlink() or src.is_junction():
                 src.unlink()
             elif src.info.is_dir():
