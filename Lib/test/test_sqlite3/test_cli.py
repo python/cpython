@@ -250,7 +250,7 @@ class CompletionTest(unittest.TestCase):
             readline.parse_and_bind("set colored-completion-prefix off")
             from sqlite3.__main__ import main; main()
         """)
-        input = b"S\t;\n.quit\n"
+        input = b"S\t\t;\n.quit\n"
         output = run_pty(script, input)
         savepoint_idx = output.find(b"SAVEPOINT")
         select_idx = output.find(b"SELECT")
