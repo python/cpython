@@ -1232,6 +1232,15 @@ static struct constant {
 #ifdef TIOCM_ST
     {"TIOCM_ST", TIOCM_ST},
 #endif
+#ifdef TIOCM_OUT1
+    {"TIOCM_OUT1", TIOCM_OUT1},
+#endif
+#ifdef TIOCM_OUT2
+    {"TIOCM_OUT2", TIOCM_OUT2},
+#endif
+#ifdef TIOCM_LOOP
+    {"TIOCM_LOOP", TIOCM_LOOP},
+#endif
 #ifdef TIOCNOTTY
     {"TIOCNOTTY", TIOCNOTTY},
 #endif
