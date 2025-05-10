@@ -733,7 +733,7 @@ static struct PyModuleDef_Slot _zstd_slots[] = {
     {0, NULL},
 };
 
-struct PyModuleDef _zstdmodule = {
+static struct PyModuleDef _zstdmodule = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_zstd",
     .m_doc = "Implementation module for Zstandard compression.",

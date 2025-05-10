@@ -9,38 +9,22 @@ Python module.
 #define ZSTD_MODULE_H
 #include "Python.h"
 
-/* Forward declaration of module state */
-typedef struct _zstd_state _zstd_state;
-
-/* Forward reference of module def */
-extern PyModuleDef _zstdmodule;
-
-/* For clinic type calculations */
-static inline _zstd_state *
-get_zstd_state_from_type(PyTypeObject *type)
-{
-    PyObject *module = PyType_GetModuleByDef(type, &_zstdmodule);
-    if (module == NULL) {
-        return NULL;
-    }
-    void *state = PyModule_GetState(module);
-    assert(state != NULL);
-    return (_zstd_state *)state;
-}
-
+/* Type specs */
 extern PyType_Spec zstd_dict_type_spec;
 extern PyType_Spec zstd_compressor_type_spec;
 extern PyType_Spec zstd_decompressor_type_spec;
 
-struct _zstd_state {
+typedef struct {
+    /* Module heap types. */
     PyTypeObject *ZstdDict_type;
     PyTypeObject *ZstdCompressor_type;
     PyTypeObject *ZstdDecompressor_type;
     PyObject *ZstdError;
 
+    /* enum types set by set_parameter_types. */
     PyTypeObject *CParameter_type;
     PyTypeObject *DParameter_type;
-};
+} _zstd_state;
 
 typedef enum {
     ERR_DECOMPRESS,
