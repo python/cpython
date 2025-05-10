@@ -7,7 +7,13 @@ Python module.
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
+#include "Python.h"
+
 #include "_zstdmodule.h"
+#include "zstddict.h"
+
+#include <zstd.h>                 // ZSTD_*()
+#include <zdict.h>                // ZDICT_*()
 
 /*[clinic input]
 module _zstd
@@ -727,7 +733,7 @@ static struct PyModuleDef_Slot _zstd_slots[] = {
     {0, NULL},
 };
 
-struct PyModuleDef _zstdmodule = {
+static struct PyModuleDef _zstdmodule = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_zstd",
     .m_doc = "Implementation module for Zstandard compression.",
