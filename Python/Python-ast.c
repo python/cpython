@@ -5531,8 +5531,10 @@ ast_type_replace_check(PyObject *self,
 
     // Discard fields from 'expecting' that default to None
     PyObject *field_types = NULL;
-    if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), &_Py_ID(_field_types),
-                                    &field_types) < 0) {
+    if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self),
+                                 &_Py_ID(_field_types),
+                                 &field_types) < 0)
+    {
         Py_DECREF(expecting);
         return -1;
     }
@@ -5549,8 +5551,8 @@ ast_type_replace_check(PyObject *self,
                 }
             }
         }
+        Py_DECREF(field_types);
     }
-    Py_DECREF(field_types);
 
     // Now 'expecting' contains the fields or attributes
     // that would not be filled inside ast_type_replace().
