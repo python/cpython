@@ -7,32 +7,9 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
-#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
-static PyObject *
-_zstd_ZstdDict_new_impl(PyTypeObject *type);
-
-static PyObject *
-_zstd_ZstdDict_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    PyTypeObject *base_tp = &zstd_dict_type_spec;
-
-    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoPositional("ZstdDict", args)) {
-        goto exit;
-    }
-    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("ZstdDict", kwargs)) {
-        goto exit;
-    }
-    return_value = _zstd_ZstdDict_new_impl(type);
-
-exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(_zstd_ZstdDict___init____doc__,
+PyDoc_STRVAR(_zstd_ZstdDict_new__doc__,
 "ZstdDict(dict_content, is_raw=False)\n"
 "--\n"
 "\n"
@@ -50,14 +27,14 @@ PyDoc_STRVAR(_zstd_ZstdDict___init____doc__,
 "It\'s thread-safe, and can be shared by multiple ZstdCompressor /\n"
 "ZstdDecompressor objects.");
 
-static int
-_zstd_ZstdDict___init___impl(ZstdDict *self, PyObject *dict_content,
-                             int is_raw);
+static PyObject *
+_zstd_ZstdDict_new_impl(PyTypeObject *type, PyObject *dict_content,
+                        int is_raw);
 
-static int
-_zstd_ZstdDict___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+static PyObject *
+_zstd_ZstdDict_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    int return_value = -1;
+    PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     #define NUM_KEYWORDS 2
@@ -106,7 +83,7 @@ _zstd_ZstdDict___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         goto exit;
     }
 skip_optional_pos:
-    return_value = _zstd_ZstdDict___init___impl((ZstdDict *)self, dict_content, is_raw);
+    return_value = _zstd_ZstdDict_new_impl(type, dict_content, is_raw);
 
 exit:
     return return_value;
@@ -227,4 +204,4 @@ _zstd_ZstdDict_as_prefix_get(PyObject *self, void *Py_UNUSED(context))
 
     return return_value;
 }
-/*[clinic end generated code: output=02d46b3330c7f72a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=af0e16983f15c065 input=a9049054013a1b77]*/

@@ -23,9 +23,6 @@ typedef struct {
     PyObject *dict_content;
     /* Dictionary id */
     uint32_t dict_id;
-
-    /* __init__ has been called, 0 or 1. */
-    bool initialized;
 } ZstdDict;
 
 #endif  // !ZSTD_DICT_H
