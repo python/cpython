@@ -262,7 +262,7 @@ A :class:`timedelta` object represents a duration, the difference between two
       (-1, 86399, 999999)
 
    The string representation of :class:`!timedelta` objects can be confusing,
-   but the following recipe can be used to produce a more readable format:
+   the following recipe can be used to produce a more readable format:
 
    .. code-block:: pycon
 
