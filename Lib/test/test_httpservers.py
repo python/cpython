@@ -1732,15 +1732,22 @@ class CommandLineTestCase(unittest.TestCase):
             self.assertStartsWith(output, 'usage: ')
 
 
-class CommandLineRunTimeTestCase(CommandLineTestCase):
+class CommandLineRunTimeTestCase(unittest.TestCase):
     random_data = os.urandom(1024)
     random_file_name = 'random.bin'
+    tls_cert = certdata_file('ssl_cert.pem')
+    tls_key = certdata_file('ssl_key.pem')
+    tls_password = 'somepass'
 
     def setUp(self):
         super().setUp()
         with open(self.random_file_name, 'wb') as f:
             f.write(self.random_data)
         self.addCleanup(os_helper.unlink, self.random_file_name)
+        self.tls_password_file = tempfile.mktemp()
+        with open(self.tls_password_file, 'wb') as f:
+            f.write(self.tls_password.encode())
+        self.addCleanup(os_helper.unlink, self.tls_password_file)
 
     def fetch_file(self, path, allow_self_signed_cert=True) -> bytes:
         context = ssl.create_default_context()
