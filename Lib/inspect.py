@@ -153,7 +153,6 @@ import importlib.machinery
 import itertools
 import linecache
 import os
-import re
 import sys
 import tokenize
 import token
@@ -1334,10 +1333,10 @@ def formatannotation(annotation, base_module=None, *, quote_annotation_strings=T
     if not quote_annotation_strings and isinstance(annotation, str):
         return annotation
     if getattr(annotation, '__module__', None) == 'typing':
-        def repl(match):
-            text = match.group()
-            return text.removeprefix('typing.')
-        return re.sub(r'[\w\.]+', repl, repr(annotation))
+        return (repr(annotation)
+                .replace(".typing.", "@TYPING@")
+                .replace("typing.", "")
+                .replace("@TYPING@", ".typing."))
     if isinstance(annotation, types.GenericAlias):
         return str(annotation)
     if isinstance(annotation, type):
