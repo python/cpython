@@ -176,15 +176,7 @@ class HelpFormatter(object):
             width = shutil.get_terminal_size().columns
             width -= 2
 
-        from _colorize import can_colorize, decolor, get_theme
-
-        if color and can_colorize():
-            self._theme = get_theme(force_color=True).argparse
-            self._decolor = decolor
-        else:
-            self._theme = get_theme(force_no_color=True).argparse
-            self._decolor = lambda text: text
-
+        self._set_color(color)
         self._prefix_chars = prefix_chars
         self._prog = prog
         self._indent_increment = indent_increment
@@ -201,6 +193,16 @@ class HelpFormatter(object):
 
         self._whitespace_matcher = _re.compile(r'\s+', _re.ASCII)
         self._long_break_matcher = _re.compile(r'\n\n\n+')
+
+    def _set_color(self, color):
+        from _colorize import can_colorize, decolor, get_theme
+
+        if color and can_colorize():
+            self._theme = get_theme(force_color=True).argparse
+            self._decolor = decolor
+        else:
+            self._theme = get_theme(force_no_color=True).argparse
+            self._decolor = lambda text: text
 
     # ===============================
     # Section and indentation methods
@@ -2723,16 +2725,10 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         return formatter.format_help()
 
     def _get_formatter(self):
-        if isinstance(self.formatter_class, type) and issubclass(
-            self.formatter_class, HelpFormatter
-        ):
-            return self.formatter_class(
-                prog=self.prog,
-                prefix_chars=self.prefix_chars,
-                color=self.color,
-            )
-        else:
-            return self.formatter_class(prog=self.prog)
+        formatter = self.formatter_class(prog=self.prog)
+        formatter._prefix_chars = self.prefix_chars
+        formatter._set_color(self.color)
+        return formatter
 
     # =====================
     # Help-printing methods
