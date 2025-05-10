@@ -57,6 +57,8 @@ class Error(Exception):
     pass
 error = Error   # backward compatibility
 
+_NoValue = object()
+
 __all__ = ["Error", "copy", "deepcopy", "replace"]
 
 def copy(x):
@@ -77,20 +79,20 @@ def copy(x):
         # treat it as a regular class:
         return x
 
-    copier = getattr(cls, "__copy__", None)
-    if copier is not None:
+    copier = getattr(cls, "__copy__", _NoValue)
+    if copier is not _NoValue:
         return copier(x)
 
-    reductor = dispatch_table.get(cls)
-    if reductor is not None:
+    reductor = dispatch_table.get(cls, _NoValue)
+    if reductor is not _NoValue:
         rv = reductor(x)
     else:
-        reductor = getattr(x, "__reduce_ex__", None)
-        if reductor is not None:
+        reductor = getattr(x, "__reduce_ex__", _NoValue)
+        if reductor is not _NoValue:
             rv = reductor(4)
         else:
-            reductor = getattr(x, "__reduce__", None)
-            if reductor:
+            reductor = getattr(x, "__reduce__", _NoValue)
+            if reductor is not _NoValue:
                 rv = reductor()
             else:
                 raise Error("un(shallow)copyable object of type %s" % cls)
@@ -133,20 +135,20 @@ def deepcopy(x, memo=None, _nil=[]):
         if issubclass(cls, type):
             y = x # atomic copy
         else:
-            copier = getattr(x, "__deepcopy__", None)
-            if copier is not None:
+            copier = getattr(x, "__deepcopy__", _NoValue)
+            if copier is not _NoValue:
                 y = copier(memo)
             else:
                 reductor = dispatch_table.get(cls)
                 if reductor:
                     rv = reductor(x)
                 else:
-                    reductor = getattr(x, "__reduce_ex__", None)
-                    if reductor is not None:
+                    reductor = getattr(x, "__reduce_ex__", _NoValue)
+                    if reductor is not _NoValue:
                         rv = reductor(4)
                     else:
-                        reductor = getattr(x, "__reduce__", None)
-                        if reductor:
+                        reductor = getattr(x, "__reduce__", _NoValue)
+                        if reductor is not _NoValue:
                             rv = reductor()
                         else:
                             raise Error(
@@ -280,7 +282,7 @@ def replace(obj, /, **changes):
     frozen dataclasses.
     """
     cls = obj.__class__
-    func = getattr(cls, '__replace__', None)
-    if func is None:
+    func = getattr(cls, '__replace__', _NoValue)
+    if func is _NoValue:
         raise TypeError(f"replace() does not support {cls.__name__} objects")
     return func(obj, **changes)
