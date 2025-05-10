@@ -247,8 +247,10 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                 # It's now up to the protocol to handle the connection.
 
         except (SystemExit, KeyboardInterrupt):
+            conn.close()
             raise
         except BaseException as exc:
+            conn.close()
             if self._debug:
                 context = {
                     'message':
