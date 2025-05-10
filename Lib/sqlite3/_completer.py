@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 
 
-_keywords = ("ABORT", "ACTION", "ADD", "AFTER", "ALL", "ALTER", "ALWAYS",
+KEYWORDS = ("ABORT", "ACTION", "ADD", "AFTER", "ALL", "ALTER", "ALWAYS",
             "ANALYZE", "AND", "AS", "ASC", "ATTACH", "AUTOINCREMENT",
             "BEFORE", "BEGIN", "BETWEEN", "BY", "CASCADE", "CASE", "CAST",
             "CHECK", "COLLATE", "COLUMN", "COMMIT", "CONFLICT",
@@ -32,7 +32,7 @@ _completion_matches = []
 def _complete(text, state):
     global _completion_matches
     if state == 0:
-        _completion_matches = [c + " " for c in _keywords if c.startswith(text.upper())]
+        _completion_matches = [c + " " for c in KEYWORDS if c.startswith(text.upper())]
     try:
         return _completion_matches[state]
     except IndexError:

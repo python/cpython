@@ -4,6 +4,7 @@ import sqlite3
 import unittest
 
 from sqlite3.__main__ import main as cli
+from sqlite3._completer import KEYWORDS
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 from test.support.pty_helper import run_pty
@@ -205,11 +206,9 @@ class InteractiveSession(unittest.TestCase):
                           '\x1b[35mnear "sel": syntax error\x1b[0m', err)
 
 @requires_subprocess()
-class Completer(unittest.TestCase):
+class CompletionTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # Ensure that the readline module is loaded
-        # If this fails, the test is skipped because SkipTest will be raised
         readline = import_module("readline")
         if readline.backend == "editline":
             raise unittest.SkipTest("libedit readline is not supported")
@@ -217,10 +216,8 @@ class Completer(unittest.TestCase):
     def test_keyword_completion(self):
         script = "from sqlite3.__main__ import main; main()"
         # List candidates starting with 'S', there should be multiple matches.
-        # Then add 'EL' and complete 'SEL' to 'SELECT'.  Quit console in the end
-        # to let run_pty() return.
         input = b"S\t\tEL\t 1;\n.quit\n"
-        output = run_pty(script, input)
+        output = run_pty(script, input, env={"NO_COLOR": "1"})
         # Remove control sequences that colorize typed prefix 'S'
         output = re.sub(rb"\x1b\[[0-9;]*[mK]", b"", output)
         self.assertIn(b"SELECT", output)
@@ -234,6 +231,25 @@ class Completer(unittest.TestCase):
         output = re.sub(rb"\x1b\[[0-9;]*[mK]", b"", output)
         self.assertIn(b"SELECT", output)
         self.assertIn(b"(1,)", output)
+
+    def test_nothing_to_complete(self):
+        script = "from sqlite3.__main__ import main; main()"
+        input = b"zzzz\t;\n.quit\n"
+        output = run_pty(script, input, env={"NO_COLOR": "1"})
+        output = re.sub(rb"\x1b\[[0-9;]*[mK]", b"", output)
+        for keyword in KEYWORDS:
+            self.assertNotRegex(output, rf"\b{keyword}\b".encode("utf-8"))
+
+    def test_completion_order(self):
+        script = "from sqlite3.__main__ import main; main()"
+        input = b"S\t\n.quit\n"
+        output = run_pty(script, input, env={"NO_COLOR": "1"})
+        output = re.sub(rb"\x1b\[[0-9;]*[mK]", b"", output).strip()
+        savepoint_idx = output.find(b"SAVEPOINT")
+        select_idx = output.find(b"SELECT")
+        set_idx = output.find(b"SET")
+        self.assertTrue(0 <= savepoint_idx < select_idx < set_idx)
+
 
 if __name__ == "__main__":
     unittest.main()
