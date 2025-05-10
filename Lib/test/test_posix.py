@@ -280,6 +280,48 @@ class PosixTester(unittest.TestCase):
             """
         assert_python_ok('-c', code)
 
+    @support.requires_fork()
+    def test_register_at_fork_multiple_runs(self):
+        # if we run fork multiple times, previously registered
+        # callbacks should get executed along with newly registered
+        code = """if 1:
+            import os
+
+            r, w = os.pipe()
+            fin_r, fin_w = os.pipe()
+            # register all forkers
+            os.register_at_fork(before=lambda: os.write(w, b'A'))
+            os.register_at_fork(after_in_parent=lambda: os.write(w, b'B'))
+            os.register_at_fork(after_in_child=lambda: os.write(w, b'C'))
+
+            pid = os.fork()
+            if pid == 0:
+                # register new forkers
+                os.register_at_fork(before=lambda: os.write(w, b'D'))
+                os.register_at_fork(after_in_parent=lambda: os.write(w, b'E'))
+                os.register_at_fork(after_in_child=lambda: os.write(w, b'F'))
+                child_pid = os.fork()
+                if child_pid == 0:
+                    os.close(w)
+                    os.read(fin_r, 1)
+                    os._exit(0)
+                os.close(w)
+                os.read(fin_r, 1)
+                os.write(fin_w, b'!')
+                os._exit(0)
+            else:
+                os.close(w)
+                try:
+                    with open(r, "rb") as f:
+                        data = f.read()
+                        assert len(data) == 9, data
+                        # Check return values of all callbacks
+                        assert data == b'ABCDABECF', data
+                finally:
+                    os.write(fin_w, b'!')
+            """
+        assert_python_ok('-c', code)
+
     @unittest.skipUnless(hasattr(posix, 'lockf'), "test needs posix.lockf()")
     def test_lockf(self):
         fd = os.open(os_helper.TESTFN, os.O_WRONLY | os.O_CREAT)
