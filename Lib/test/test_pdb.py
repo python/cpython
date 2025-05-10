@@ -3935,6 +3935,41 @@ def bœr():
                     f.write("invalid")
                 self.assertEqual(pdb.Pdb().rcLines[0], "invalid")
 
+    def test_pdbrc_xdg_config_home(self):
+        with (
+            os_helper.temp_dir() as temp_dir,
+            os_helper.change_cwd(temp_dir),
+            os_helper.EnvironmentVarGuard() as env,
+            patch(
+                'os.path.expanduser',
+                lambda p: p.replace('~', os.environ.get('HOME', '~')),
+            ),
+        ):
+            for rc_dir, rcLines in (
+                (os.path.join(temp_dir, 'xdg', '.config', 'pdb'), '#xdgconf'),
+                (os.path.join(temp_dir, 'home', '.config', 'pdb'), '#homeconf'),
+                (os.path.join(temp_dir, 'home'), '#home'),
+                (temp_dir, '#cwd'),
+            ):
+                if not os.path.exists(rc_dir):
+                    os.makedirs(rc_dir)
+                with open(os.path.join(rc_dir, '.pdbrc'), 'w') as f:
+                    f.write(rcLines)
+
+            env.unset('HOME')
+            env.unset('XDG_CONFIG_HOME')
+
+            # when both XDG_CONFIG_HOME and $HOME are unset, ./.pdbrc is still loaded
+            self.assertListEqual(pdb.Pdb().rcLines, ['#cwd'])
+            # # when XDG_CONFIG_HOME is unset, it defaults to $HOME/.config
+            env.set('HOME', os.path.join(temp_dir, 'home'))
+            self.assertListEqual(pdb.Pdb().rcLines, ['#homeconf', '#home', '#cwd'])
+            # when XDG_CONFIG_HOME is set, .pdbrc is loaded from there
+            env.set('XDG_CONFIG_HOME', os.path.join(temp_dir, 'xdg', '.config'))
+            self.assertListEqual(pdb.Pdb().rcLines, ['#xdgconf', '#home', '#cwd'])
+            # when readrc=False, .pdbrc is not loaded from any location
+            self.assertListEqual(pdb.Pdb(readrc=False).rcLines, [])
+
     def test_header(self):
         stdout = StringIO()
         header = 'Nobody expects... blah, blah, blah'
