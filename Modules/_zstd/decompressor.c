@@ -43,11 +43,11 @@ typedef struct {
     PyObject *unused_data;
 
     /* 0 if decompressor has (or may has) unconsumed input data, 0 or 1. */
-    char needs_input;
+    bool needs_input;
 
     /* For ZstdDecompressor, 0 or 1.
        1 means the end of the first frame has been reached. */
-    char eof;
+    bool eof;
 
     /* __init__ has been called, 0 or 1. */
     bool initialized;
@@ -368,7 +368,7 @@ decompressor_reset_session(ZstdDecompressor *self)
     self->needs_input = 1;
     self->eof = 0;
 
-    /* Resetting session never fail */
+    /* Resetting session is guaranteed to never fail */
     ZSTD_DCtx_reset(self->dctx, ZSTD_reset_session_only);
 }
 
@@ -384,7 +384,7 @@ stream_decompress(ZstdDecompressor *self, Py_buffer *data, Py_ssize_t max_length
     if (self->eof) {
         PyErr_SetString(PyExc_EOFError, "Already at the end of a zstd frame.");
         assert(ret == NULL);
-        goto success;
+        return ret;
     }
 
     /* Prepare input buffer w/wo unconsumed data */
@@ -471,8 +471,7 @@ stream_decompress(ZstdDecompressor *self, Py_buffer *data, Py_ssize_t max_length
     assert(in.pos == 0);
 
     /* Decompress */
-    ret = decompress_impl(self, &in,
-                          max_length, initial_buffer_size);
+    ret = decompress_impl(self, &in, max_length, initial_buffer_size);
     if (ret == NULL) {
         goto error;
     }
@@ -529,16 +528,14 @@ stream_decompress(ZstdDecompressor *self, Py_buffer *data, Py_ssize_t max_length
         }
     }
 
-    goto success;
+    return ret;
 
 error:
     /* Reset decompressor's states/session */
     decompressor_reset_session(self);
 
     Py_CLEAR(ret);
-success:
-
-    return ret;
+    return NULL;
 }
 
 
