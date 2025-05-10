@@ -7,6 +7,8 @@ The ``None`` Object
 
 .. index:: pair: object; None
 
+.. c-api-tools-banner::
+
 Note that the :c:type:`PyTypeObject` for ``None`` is not directly exposed in the
 Python/C API.  Since ``None`` is a singleton, testing for object identity (using
 ``==`` in C) is sufficient. There is no :c:func:`!PyNone_Check` function for the

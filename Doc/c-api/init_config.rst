@@ -6,6 +6,8 @@
 Python Initialization Configuration
 ***********************************
 
+.. c-api-tools-banner::
+
 
 .. _pyinitconfig_api:
 

@@ -5,6 +5,8 @@
 DateTime Objects
 ----------------
 
+.. c-api-tools-banner::
+
 Various date and time objects are supplied by the :mod:`datetime` module.
 Before using any of these functions, the header file :file:`datetime.h` must be
 included in your source (note that this is not included by :file:`Python.h`),

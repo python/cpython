@@ -8,6 +8,8 @@ Unicode Objects and Codecs
 .. sectionauthor:: Marc-André Lemburg <mal@lemburg.com>
 .. sectionauthor:: Georg Brandl <georg@python.org>
 
+.. c-api-tools-banner::
+
 Unicode Objects
 ^^^^^^^^^^^^^^^
 

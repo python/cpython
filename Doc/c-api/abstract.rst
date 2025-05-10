@@ -6,6 +6,8 @@
 Abstract Objects Layer
 **********************
 
+.. c-api-tools-banner::
+
 The functions in this chapter interact with Python objects regardless of their
 type, or with wide classes of object types (e.g. all numerical types, or all
 sequence types).  When used on object types for which they do not apply, they

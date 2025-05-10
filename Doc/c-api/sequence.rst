@@ -5,6 +5,8 @@
 Sequence Protocol
 =================
 
+.. c-api-tools-banner::
+
 
 .. c:function:: int PySequence_Check(PyObject *o)
 

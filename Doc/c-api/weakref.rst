@@ -5,6 +5,8 @@
 Weak Reference Objects
 ----------------------
 
+.. c-api-tools-banner::
+
 Python supports *weak references* as first-class objects.  There are two
 specific object types which directly implement weak references.  The first is a
 simple reference object, and the second acts as a proxy for the original object

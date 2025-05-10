@@ -6,6 +6,7 @@
 API and ABI Versioning
 ***********************
 
+.. c-api-tools-banner::
 
 Build-time version constants
 ----------------------------

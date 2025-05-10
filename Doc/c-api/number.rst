@@ -5,6 +5,8 @@
 Number Protocol
 ===============
 
+.. c-api-tools-banner::
+
 
 .. c:function:: int PyNumber_Check(PyObject *o)
 

@@ -5,6 +5,8 @@
 Objects for Type Hinting
 ------------------------
 
+.. c-api-tools-banner::
+
 Various built-in types for type hinting are provided.  Currently,
 two types exist -- :ref:`GenericAlias <types-genericalias>` and
 :ref:`Union <types-union>`.  Only ``GenericAlias`` is exposed to C.

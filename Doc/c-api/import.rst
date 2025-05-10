@@ -5,6 +5,8 @@
 Importing Modules
 =================
 
+.. c-api-tools-banner::
+
 
 .. c:function:: PyObject* PyImport_ImportModule(const char *name)
 

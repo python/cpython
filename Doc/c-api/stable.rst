@@ -6,6 +6,8 @@
 C API Stability
 ***************
 
+.. c-api-tools-banner::
+
 Unless documented otherwise, Python's C API is covered by the Backwards
 Compatibility Policy, :pep:`387`.
 Most changes to it are source-compatible (typically by only adding new API).

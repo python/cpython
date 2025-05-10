@@ -7,6 +7,8 @@ Function Objects
 
 .. index:: pair: object; function
 
+.. c-api-tools-banner::
+
 There are a few functions specific to Python functions.
 
 

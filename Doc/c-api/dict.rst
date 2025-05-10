@@ -7,6 +7,8 @@ Dictionary Objects
 
 .. index:: pair: object; dictionary
 
+.. c-api-tools-banner::
+
 
 .. c:type:: PyDictObject
 
