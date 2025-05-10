@@ -773,7 +773,7 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
                    microseconds=999999)),
            "999999999 days, 23:59:59.999999")
 
-        # this is for the docs recipe
+        # This is for the docs recipe
         eq(f'-({-td(hours=-1)!s})', "-(1:00:00)")
 
     def test_repr(self):
