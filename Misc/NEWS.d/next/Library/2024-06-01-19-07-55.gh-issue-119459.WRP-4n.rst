@@ -1,0 +1,2 @@
+Fix HiDPI blurring of every program window that using tkinter. Patch by
+Wulian233
