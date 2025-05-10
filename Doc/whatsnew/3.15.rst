@@ -121,10 +121,12 @@ Deprecated
 Removed
 =======
 
-module_name
------------
+zipimport
+---------
 
-* TODO
+* Remove deprecated :meth:`!zipimport.zipimporter.load_module`.
+  Use :meth:`zipimport.zipimporter.exec_module` instead.
+  (Contributed by Jiahao Li in :gh:`133656`.)
 
 
 Porting to Python 3.15
