@@ -599,8 +599,66 @@ class ReTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             m[0] = 1
 
-        # No len().
-        self.assertRaises(TypeError, len, m)
+    def test_match_sequence(self):
+        from collections.abc import Sequence
+
+        m = re.match(r"(a)(b)(c)", "abc")
+        self.assertIsInstance(m, Sequence)
+        self.assertEqual(len(m), 4)
+
+        it = iter(m)
+        self.assertEqual(next(it), "abc")
+        self.assertEqual(next(it), "a")
+        self.assertEqual(next(it), "b")
+        self.assertEqual(next(it), "c")
+
+        self.assertEqual(tuple(m), ("abc", "a", "b", "c"))
+        self.assertEqual(list(m), ["abc", "a", "b", "c"])
+
+        abc, a, b, c = m
+        self.assertEqual(abc, "abc")
+        self.assertEqual(a, "a")
+        self.assertEqual(b, "b")
+        self.assertEqual(c, "c")
+
+        self.assertIn("abc", m)
+        self.assertIn("a", m)
+        self.assertIn("b", m)
+        self.assertIn("c", m)
+        self.assertNotIn("123", m)
+
+        self.assertEqual(list(reversed(m)), ["c", "b", "a", "abc"])
+
+        self.assertEqual(m.index("abc"), 0)
+        self.assertEqual(m.index("a"), 1)
+        self.assertEqual(m.index("b"), 2)
+        self.assertEqual(m.index("c"), 3)
+        self.assertRaises(ValueError, m.index, "123")
+
+        self.assertEqual(m.count("abc"), 1)
+        self.assertEqual(m.count("a"), 1)
+        self.assertEqual(m.count("b"), 1)
+        self.assertEqual(m.count("c"), 1)
+        self.assertEqual(m.count("123"), 0)
+
+        match m:
+            case [_, "a", "b", "c"]:
+                pass
+            case _:
+                self.fail()
+
+        match re.match(r"(\d+)-(\d+)-(\d+)", "2025-05-07"):
+            case [_, year, month, day]:
+                self.assertEqual(year, "2025")
+                self.assertEqual(month, "05")
+                self.assertEqual(day, "07")
+            case _:
+                self.fail()
+
+        for s, k, v in re.finditer(r"(\w+):(\w+)", "abc:123"):
+            self.assertEqual(s, "abc:123")
+            self.assertEqual(k, "abc")
+            self.assertEqual(v, "123")
 
     def test_re_fullmatch(self):
         # Issue 16203: Proposal: add re.fullmatch() method.

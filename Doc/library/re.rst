@@ -1378,6 +1378,27 @@ when there is no match, you can test whether there was a match with a simple
    if match:
        process(match)
 
+Match objects are proper :class:`~collections.abc.Sequence` types. You can access
+match groups via subscripting ``match[...]`` and use familiar
+:class:`~collections.abc.Sequence` idioms to iterate over and extract match groups::
+
+   >>> m = re.match(r"(\w+) (\w+)", "Isaac Newton, physicist")
+   >>> m[1]
+   "Isaac"
+   >>> list(m)
+   ["Isaac Newton", "Isaac", "Newton"]
+   >>> _, first_name, last_name = m
+   >>> last_name
+   "Newton"
+
+You can also destructure match objects with python's ``match`` statement::
+
+   >>> match re.match(r"(\d+)-(\d+)-(\d+)", "2000-10-16"):
+   ...     case [_, year, month, day]:
+   ...         year
+   ...
+   "2000"
+
 .. class:: Match
 
    Match object returned by successful ``match``\ es and ``search``\ es.
@@ -1474,6 +1495,18 @@ when there is no match, you can test whether there was a match with a simple
    .. versionadded:: 3.6
 
 
+.. method:: Match.__len__()
+
+   Returns the number of groups accessible through the subscript syntax provided by
+   :meth:`~Match.__getitem__`. This includes group ``0`` representing the entire match::
+
+      >>> m = re.match(r"(\w+) (\w+)", "Isaac Newton, physicist")
+      >>> len(m)
+      3
+
+   .. versionadded:: 3.14
+
+
 .. method:: Match.groups(default=None)
 
    Return a tuple containing all the subgroups of the match, from 1 up to however
@@ -1538,6 +1571,19 @@ when there is no match, you can test whether there was a match with a simple
    that if *group* did not contribute to the match, this is ``(-1, -1)``.
    *group* defaults to zero, the entire match.
 
+.. method:: Match.index(value, start=0, stop=sys.maxsize, /)
+
+   Return the index of the first occurrence of the value among the matched groups.
+
+   Raises ValueError if the value is not present.
+
+   .. versionadded:: 3.14
+
+.. method:: Match.count(value, /)
+
+   Return the number of occurrences of the value among the matched groups.
+
+   .. versionadded:: 3.14
 
 .. attribute:: Match.pos
 
