@@ -1,4 +1,3 @@
-#pragma once
 /*
 Low level interface to Meta's zstd library for use in the compression.zstd
 Python module.
@@ -6,6 +5,8 @@ Python module.
 
 /* Declarations shared between different parts of the _zstd module*/
 
+#ifndef ZSTD_MODULE_H
+#define ZSTD_MODULE_H
 #include "Python.h"
 
 #include "zstd.h"
@@ -154,3 +155,5 @@ set_zstd_error(const _zstd_state* const state,
 extern void
 set_parameter_error(const _zstd_state* const state, int is_compress,
                     int key_v, int value_v);
+
+#endif
