@@ -428,7 +428,9 @@ If not specified, then the field width will be determined by the content.
 When no explicit alignment is given, preceding the *width* field by a zero
 (``'0'``) character enables sign-aware zero-padding for numeric types,
 excluding :class:`complex`.  This is equivalent to a *fill* character of
-``'0'`` with an *alignment* type of ``'='``.
+``'0'`` with an *alignment* type of ``'='``.  If digit group separators of the
+integral part of a number are used (as specified either by the ``','`` or ``'_'``
+option), they are also placed between leading zeros.
 
 .. versionchanged:: 3.10
    Preceding the *width* field by ``'0'`` no longer affects the default
