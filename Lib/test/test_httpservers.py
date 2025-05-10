@@ -34,7 +34,7 @@ from io import BytesIO, StringIO
 import unittest
 from test import support
 from test.support import (
-    is_apple, import_helper, os_helper, requires_subprocess, threading_helper,
+    is_apple, import_helper, os_helper, requires_subprocess, threading_helper
 )
 from test.support.script_helper import spawn_python, kill_python
 from test.support.socket_helper import find_unused_port
