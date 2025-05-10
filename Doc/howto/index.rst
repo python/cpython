@@ -11,6 +11,7 @@ Python Library Reference.
    :maxdepth: 1
    :hidden:
 
+   concurrency.rst
    cporting.rst
    curses.rst
    descriptor.rst
@@ -53,6 +54,7 @@ General:
 
 Advanced development:
 
+* :ref:`concurrency-howto`
 * :ref:`curses-howto`
 * :ref:`freethreading-python-howto`
 * :ref:`freethreading-extensions-howto`
