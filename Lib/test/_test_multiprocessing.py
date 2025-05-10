@@ -2463,6 +2463,12 @@ class _TestValue(BaseTestCase):
         self.assertNotHasAttr(arr5, 'get_lock')
         self.assertNotHasAttr(arr5, 'get_obj')
 
+    @unittest.skipIf(c_int is None, "requires _ctypes")
+    def test_invalid_typecode(self):
+        with self.assertRaisesRegex(TypeError, 'bad typecode'):
+            self.Value('x', None)
+        with self.assertRaisesRegex(TypeError, 'bad typecode'):
+            self.RawValue('x', None)
 
 class _TestArray(BaseTestCase):
 
@@ -2543,6 +2549,12 @@ class _TestArray(BaseTestCase):
         self.assertNotHasAttr(arr5, 'get_lock')
         self.assertNotHasAttr(arr5, 'get_obj')
 
+    @unittest.skipIf(c_int is None, "requires _ctypes")
+    def test_invalid_typecode(self):
+        with self.assertRaisesRegex(TypeError, 'bad typecode'):
+            self.Array('x', [])
+        with self.assertRaisesRegex(TypeError, 'bad typecode'):
+            self.RawArray('x', [])
 #
 #
 #

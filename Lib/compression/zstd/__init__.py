@@ -28,10 +28,16 @@ __all__ = (
 
 import _zstd
 import enum
-from _zstd import *
+from _zstd import (ZstdCompressor, ZstdDecompressor, ZstdDict, ZstdError,
+                   get_frame_size, zstd_version)
 from compression.zstd._zstdfile import ZstdFile, open, _nbytes
 
-COMPRESSION_LEVEL_DEFAULT = _zstd._compressionLevel_values[0]
+# zstd_version_number is (MAJOR * 100 * 100 + MINOR * 100 + RELEASE)
+zstd_version_info = (*divmod(_zstd.zstd_version_number // 100, 100),
+                     _zstd.zstd_version_number % 100)
+"""Version number of the runtime zstd library as a tuple of integers."""
+
+COMPRESSION_LEVEL_DEFAULT = _zstd.ZSTD_CLEVEL_DEFAULT
 """The default compression level for Zstandard, currently '3'."""
 
 
@@ -65,7 +71,7 @@ def get_frame_info(frame_buffer):
     the frame may or may not need a dictionary to be decoded,
     and the ID of such a dictionary is not specified.
     """
-    return FrameInfo(*_zstd._get_frame_info(frame_buffer))
+    return FrameInfo(*_zstd.get_frame_info(frame_buffer))
 
 
 def train_dict(samples, dict_size):
@@ -85,7 +91,7 @@ def train_dict(samples, dict_size):
     chunk_sizes = tuple(_nbytes(sample) for sample in samples)
     if not chunks:
         raise ValueError("samples contained no data; can't train dictionary.")
-    dict_content = _zstd._train_dict(chunks, chunk_sizes, dict_size)
+    dict_content = _zstd.train_dict(chunks, chunk_sizes, dict_size)
     return ZstdDict(dict_content)
 
 
@@ -121,7 +127,7 @@ def finalize_dict(zstd_dict, /, samples, dict_size, level):
     if not chunks:
         raise ValueError("The samples are empty content, can't finalize the"
                          "dictionary.")
-    dict_content = _zstd._finalize_dict(zstd_dict.dict_content,
+    dict_content = _zstd.finalize_dict(zstd_dict.dict_content,
                                         chunks, chunk_sizes,
                                         dict_size, level)
     return ZstdDict(dict_content)
@@ -167,48 +173,48 @@ def decompress(data, zstd_dict=None, options=None):
 class CompressionParameter(enum.IntEnum):
     """Compression parameters."""
 
-    compression_level = _zstd._ZSTD_c_compressionLevel
-    window_log = _zstd._ZSTD_c_windowLog
-    hash_log = _zstd._ZSTD_c_hashLog
-    chain_log = _zstd._ZSTD_c_chainLog
-    search_log = _zstd._ZSTD_c_searchLog
-    min_match = _zstd._ZSTD_c_minMatch
-    target_length = _zstd._ZSTD_c_targetLength
-    strategy = _zstd._ZSTD_c_strategy
+    compression_level = _zstd.ZSTD_c_compressionLevel
+    window_log = _zstd.ZSTD_c_windowLog
+    hash_log = _zstd.ZSTD_c_hashLog
+    chain_log = _zstd.ZSTD_c_chainLog
+    search_log = _zstd.ZSTD_c_searchLog
+    min_match = _zstd.ZSTD_c_minMatch
+    target_length = _zstd.ZSTD_c_targetLength
+    strategy = _zstd.ZSTD_c_strategy
 
-    enable_long_distance_matching = _zstd._ZSTD_c_enableLongDistanceMatching
-    ldm_hash_log = _zstd._ZSTD_c_ldmHashLog
-    ldm_min_match = _zstd._ZSTD_c_ldmMinMatch
-    ldm_bucket_size_log = _zstd._ZSTD_c_ldmBucketSizeLog
-    ldm_hash_rate_log = _zstd._ZSTD_c_ldmHashRateLog
+    enable_long_distance_matching = _zstd.ZSTD_c_enableLongDistanceMatching
+    ldm_hash_log = _zstd.ZSTD_c_ldmHashLog
+    ldm_min_match = _zstd.ZSTD_c_ldmMinMatch
+    ldm_bucket_size_log = _zstd.ZSTD_c_ldmBucketSizeLog
+    ldm_hash_rate_log = _zstd.ZSTD_c_ldmHashRateLog
 
-    content_size_flag = _zstd._ZSTD_c_contentSizeFlag
-    checksum_flag = _zstd._ZSTD_c_checksumFlag
-    dict_id_flag = _zstd._ZSTD_c_dictIDFlag
+    content_size_flag = _zstd.ZSTD_c_contentSizeFlag
+    checksum_flag = _zstd.ZSTD_c_checksumFlag
+    dict_id_flag = _zstd.ZSTD_c_dictIDFlag
 
-    nb_workers = _zstd._ZSTD_c_nbWorkers
-    job_size = _zstd._ZSTD_c_jobSize
-    overlap_log = _zstd._ZSTD_c_overlapLog
+    nb_workers = _zstd.ZSTD_c_nbWorkers
+    job_size = _zstd.ZSTD_c_jobSize
+    overlap_log = _zstd.ZSTD_c_overlapLog
 
     def bounds(self):
         """Return the (lower, upper) int bounds of a compression parameter.
 
         Both the lower and upper bounds are inclusive.
         """
-        return _zstd._get_param_bounds(self.value, is_compress=True)
+        return _zstd.get_param_bounds(self.value, is_compress=True)
 
 
 class DecompressionParameter(enum.IntEnum):
     """Decompression parameters."""
 
-    window_log_max = _zstd._ZSTD_d_windowLogMax
+    window_log_max = _zstd.ZSTD_d_windowLogMax
 
     def bounds(self):
         """Return the (lower, upper) int bounds of a decompression parameter.
 
         Both the lower and upper bounds are inclusive.
         """
-        return _zstd._get_param_bounds(self.value, is_compress=False)
+        return _zstd.get_param_bounds(self.value, is_compress=False)
 
 
 class Strategy(enum.IntEnum):
@@ -219,16 +225,16 @@ class Strategy(enum.IntEnum):
     the numeric value might change.
     """
 
-    fast = _zstd._ZSTD_fast
-    dfast = _zstd._ZSTD_dfast
-    greedy = _zstd._ZSTD_greedy
-    lazy = _zstd._ZSTD_lazy
-    lazy2 = _zstd._ZSTD_lazy2
-    btlazy2 = _zstd._ZSTD_btlazy2
-    btopt = _zstd._ZSTD_btopt
-    btultra = _zstd._ZSTD_btultra
-    btultra2 = _zstd._ZSTD_btultra2
+    fast = _zstd.ZSTD_fast
+    dfast = _zstd.ZSTD_dfast
+    greedy = _zstd.ZSTD_greedy
+    lazy = _zstd.ZSTD_lazy
+    lazy2 = _zstd.ZSTD_lazy2
+    btlazy2 = _zstd.ZSTD_btlazy2
+    btopt = _zstd.ZSTD_btopt
+    btultra = _zstd.ZSTD_btultra
+    btultra2 = _zstd.ZSTD_btultra2
 
 
 # Check validity of the CompressionParameter & DecompressionParameter types
-_zstd._set_parameter_types(CompressionParameter, DecompressionParameter)
+_zstd.set_parameter_types(CompressionParameter, DecompressionParameter)

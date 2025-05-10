@@ -88,6 +88,7 @@ and improvements in user-friendliness and correctness.
 * :ref:`PEP 758: Allow except and except* expressions without parentheses <whatsnew314-pep758>`
 * :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
 * :ref:`PEP 765: Disallow return/break/continue that exit a finally block <whatsnew314-pep765>`
+* :ref:`Free-threaded mode improvements <whatsnew314-free-threaded-cpython>`
 * :ref:`PEP 768: Safe external debugger interface for CPython <whatsnew314-pep768>`
 * :ref:`PEP 784: Adding Zstandard to the standard library <whatsnew314-pep784>`
 * :ref:`A new type of interpreter <whatsnew314-tail-call>`
@@ -153,10 +154,10 @@ As another example, generating HTML attributes from data:
 .. code-block:: python
 
    attributes = {"src": "shrubbery.jpg", "alt": "looks nice"}
-   template = t"<img {attributes} />"
-   assert html(template) == '<img src="shrubbery.jpg" alt="looks nice" class="looks-nice" />'
+   template = t"<img {attributes}>"
+   assert html(template) == '<img src="shrubbery.jpg" alt="looks nice" class="looks-nice">'
 
-Unlike f-strings, the ``html`` function has access to template attributes
+Compared to using an f-string, the ``html`` function has access to template attributes
 containing the original information: static strings, interpolations, and values
 from the original scope. Unlike existing templating approaches, t-strings build
 from the well-known f-string syntax and rules. Template systems thus benefit
@@ -443,6 +444,9 @@ Python without deferred evaluation of annotations, reaches its end of life in 20
 In Python 3.14, the behavior of code using ``from __future__ import annotations``
 is unchanged.
 
+.. seealso::
+   :pep:`649`.
+
 
 Improved error messages
 -----------------------
@@ -584,8 +588,27 @@ Improved error messages
                      ^^^^^^
    SyntaxError: cannot use subscript as import target
 
-.. seealso::
-   :pep:`649`.
+* Improved error message when trying to add an instance of an unhashable type to
+  a :class:`dict` or :class:`set`. (Contributed by CF Bolz-Tereick and Victor Stinner
+  in :gh:`132828`.)
+
+  .. code-block:: pycon
+
+     >>> s = set()
+     >>> s.add({'pages': 12, 'grade': 'A'})
+     Traceback (most recent call last):
+       File "<python-input-1>", line 1, in <module>
+         s.add({'pages': 12, 'grade': 'A'})
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     TypeError: cannot use 'dict' as a set element (unhashable type: 'dict')
+     >>> d = {}
+     >>> l = [1, 2, 3]
+     >>> d[l] = 12
+     Traceback (most recent call last):
+       File "<python-input-4>", line 1, in <module>
+         d[l] = 12
+         ~^^^
+     TypeError: cannot use 'list' as a dict key (unhashable type: 'list')
 
 
 .. _whatsnew314-pep741:
@@ -771,6 +794,27 @@ For further information on how to build Python, see
 
 (Contributed by Ken Jin in :gh:`128563`, with ideas on how to implement this
 in CPython by Mark Shannon, Garrett Gu, Haoran Xu, and Josh Haberman.)
+
+.. _whatsnew314-free-threaded-cpython:
+
+Free-threaded mode
+------------------
+
+Free-threaded mode (:pep:`703`), initially added in 3.13, has been significantly improved.
+The implementation described in PEP 703 was finished, including C API changes,
+and temporary workarounds in the interpreter were replaced with more permanent solutions.
+The specializing adaptive interpreter (:pep:`659`) is now enabled in free-threaded mode,
+which along with many other optimizations greatly improves its performance.
+The performance penalty on single-threaded code in free-threaded mode is now roughly 5-10%,
+depending on platform and C compiler used.
+
+This work was done by many contributors: Sam Gross, Matt Page, Neil Schemenauer,
+Thomas Wouters, Donghee Na, Kirill Podoprigora, Ken Jin, Itamar Oren,
+Brett Simmers, Dino Viehland, Nathan Goldbaum, Ralf Gommers, Lysandros Nikolaou,
+Kumar Aditya, Edgar Margffoy, and many others.
+
+Some of these contributors are employed by Meta, which has continued to provide
+significant engineering resources to support this project.
 
 
 .. _whatsnew314-pyrepl-highlighting:
