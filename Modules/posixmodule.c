@@ -11421,17 +11421,6 @@ os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
-    switch (how) {
-    case SEEK_SET:
-        how = FILE_BEGIN;
-        break;
-    case SEEK_CUR:
-        how = FILE_CURRENT;
-        break;
-    case SEEK_END:
-        how = FILE_END;
-        break;
-    }
     HANDLE h = (HANDLE)_get_osfhandle(fd);
     if (h == INVALID_HANDLE_VALUE) {
         result = -1;
@@ -11444,13 +11433,7 @@ os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
         }
     }
     if (result >= 0) {
-        LARGE_INTEGER distance, newdistance;
-        distance.QuadPart = position;
-        if (SetFilePointerEx(h, distance, &newdistance, how)) {
-            result = newdistance.QuadPart;
-        } else {
-            result = -1;
-        }
+        result = _lseeki64(fd, position, how);
     }
 #else
     result = lseek(fd, position, how);
@@ -11458,11 +11441,6 @@ os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
     if (result < 0) {
-#ifdef MS_WINDOWS
-        if (errno == 0) {
-            errno = winerror_to_errno(GetLastError());
-        }
-#endif
         posix_error();
     }
 
