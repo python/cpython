@@ -48,9 +48,6 @@ typedef struct {
     /* For ZstdDecompressor, 0 or 1.
        1 means the end of the first frame has been reached. */
     bool eof;
-
-    /* __init__ has been called, 0 or 1. */
-    bool initialized;
 } ZstdDecompressor;
 
 #define ZstdDecompressor_CAST(op) ((ZstdDecompressor *)op)
@@ -533,18 +530,28 @@ error:
 /*[clinic input]
 @classmethod
 _zstd.ZstdDecompressor.__new__ as _zstd_ZstdDecompressor_new
+
+    zstd_dict: object = None
+        A ZstdDict object, a pre-trained zstd dictionary.
+    options: object = None
+        A dict object that contains advanced decompression parameters.
+
+Create a decompressor object for decompressing data incrementally.
+
+Thread-safe at method level. For one-shot decompression, use the decompress()
+function instead.
 [clinic start generated code]*/
 
 static PyObject *
-_zstd_ZstdDecompressor_new_impl(PyTypeObject *type)
-/*[clinic end generated code: output=4987162efa80a1ea input=b7a70c8bea6b451f]*/
+_zstd_ZstdDecompressor_new_impl(PyTypeObject *type, PyObject *zstd_dict,
+                                PyObject *options)
+/*[clinic end generated code: output=590ca65c1102ff4a input=e73db62a54e25e4b]*/
 {
     ZstdDecompressor* self = PyObject_GC_New(ZstdDecompressor, type);
     if (self == NULL) {
         goto error;
     }
 
-    self->initialized = 0;
     self->dict = NULL;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
@@ -566,6 +573,27 @@ _zstd_ZstdDecompressor_new_impl(PyTypeObject *type)
         }
         goto error;
     }
+
+    /* Load dictionary to decompression context */
+    if (zstd_dict != Py_None) {
+        if (_zstd_load_d_dict(self, zstd_dict) < 0) {
+            goto error;
+        }
+
+        /* Py_INCREF the dict */
+        Py_INCREF(zstd_dict);
+        self->dict = zstd_dict;
+    }
+
+    /* Set option to decompression context */
+    if (options != Py_None) {
+        if (_zstd_set_d_parameters(self, options) < 0) {
+            goto error;
+        }
+    }
+
+    // We can only start tracking self with the GC once self->dict is set.
+    PyObject_GC_Track(self);
 
     return (PyObject*)self;
 
@@ -598,55 +626,6 @@ ZstdDecompressor_dealloc(PyObject *ob)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_Del(ob);
     Py_DECREF(tp);
-}
-
-/*[clinic input]
-_zstd.ZstdDecompressor.__init__
-
-    zstd_dict: object = None
-        A ZstdDict object, a pre-trained zstd dictionary.
-    options: object = None
-        A dict object that contains advanced decompression parameters.
-
-Create a decompressor object for decompressing data incrementally.
-
-Thread-safe at method level. For one-shot decompression, use the decompress()
-function instead.
-[clinic start generated code]*/
-
-static int
-_zstd_ZstdDecompressor___init___impl(ZstdDecompressor *self,
-                                     PyObject *zstd_dict, PyObject *options)
-/*[clinic end generated code: output=703af2f1ec226642 input=8fd72999acc1a146]*/
-{
-    /* Only called once */
-    if (self->initialized) {
-        PyErr_SetString(PyExc_RuntimeError, "reinitialization not supported");
-        return -1;
-    }
-    self->initialized = 1;
-
-    /* Load dictionary to decompression context */
-    if (zstd_dict != Py_None) {
-        if (_zstd_load_d_dict(self, zstd_dict) < 0) {
-            return -1;
-        }
-
-        /* Py_INCREF the dict */
-        Py_INCREF(zstd_dict);
-        self->dict = zstd_dict;
-    }
-
-    /* Set option to decompression context */
-    if (options != Py_None) {
-        if (_zstd_set_d_parameters(self, options) < 0) {
-            return -1;
-        }
-    }
-
-    // We can only start tracking self with the GC once self->dict is set.
-    PyObject_GC_Track(self);
-    return 0;
 }
 
 /*[clinic input]
@@ -774,11 +753,10 @@ ZstdDecompressor_clear(PyObject *ob)
 static PyType_Slot ZstdDecompressor_slots[] = {
     {Py_tp_new, _zstd_ZstdDecompressor_new},
     {Py_tp_dealloc, ZstdDecompressor_dealloc},
-    {Py_tp_init, _zstd_ZstdDecompressor___init__},
     {Py_tp_methods, ZstdDecompressor_methods},
     {Py_tp_members, ZstdDecompressor_members},
     {Py_tp_getset, ZstdDecompressor_getset},
-    {Py_tp_doc, (char*)_zstd_ZstdDecompressor___init____doc__},
+    {Py_tp_doc, (void *)_zstd_ZstdDecompressor_new__doc__},
     {Py_tp_traverse, ZstdDecompressor_traverse},
     {Py_tp_clear, ZstdDecompressor_clear},
     {0, 0}

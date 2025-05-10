@@ -8,32 +8,9 @@ preserve
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
-#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
-static PyObject *
-_zstd_ZstdDecompressor_new_impl(PyTypeObject *type);
-
-static PyObject *
-_zstd_ZstdDecompressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    PyTypeObject *base_tp = &zstd_decompressor_type_spec;
-
-    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoPositional("ZstdDecompressor", args)) {
-        goto exit;
-    }
-    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("ZstdDecompressor", kwargs)) {
-        goto exit;
-    }
-    return_value = _zstd_ZstdDecompressor_new_impl(type);
-
-exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(_zstd_ZstdDecompressor___init____doc__,
+PyDoc_STRVAR(_zstd_ZstdDecompressor_new__doc__,
 "ZstdDecompressor(zstd_dict=None, options=None)\n"
 "--\n"
 "\n"
@@ -47,14 +24,14 @@ PyDoc_STRVAR(_zstd_ZstdDecompressor___init____doc__,
 "Thread-safe at method level. For one-shot decompression, use the decompress()\n"
 "function instead.");
 
-static int
-_zstd_ZstdDecompressor___init___impl(ZstdDecompressor *self,
-                                     PyObject *zstd_dict, PyObject *options);
+static PyObject *
+_zstd_ZstdDecompressor_new_impl(PyTypeObject *type, PyObject *zstd_dict,
+                                PyObject *options);
 
-static int
-_zstd_ZstdDecompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+static PyObject *
+_zstd_ZstdDecompressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    int return_value = -1;
+    PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     #define NUM_KEYWORDS 2
@@ -105,7 +82,7 @@ _zstd_ZstdDecompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs
     }
     options = fastargs[1];
 skip_optional_pos:
-    return_value = _zstd_ZstdDecompressor___init___impl((ZstdDecompressor *)self, zstd_dict, options);
+    return_value = _zstd_ZstdDecompressor_new_impl(type, zstd_dict, options);
 
 exit:
     return return_value;
@@ -250,4 +227,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=bb79556ce103345f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=219d26afb3452705 input=a9049054013a1b77]*/
