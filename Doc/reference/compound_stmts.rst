@@ -1885,7 +1885,7 @@ expressions. The presence of annotations does not change the runtime semantics o
 the code, except if some mechanism is used that introspects and uses the annotations
 (such as :mod:`dataclasses` or :func:`functools.singledispatch`).
 
-By default, annotations are lazily evaluated in a :ref:`annotation scope <annotation-scopes>`.
+By default, annotations are lazily evaluated in an :ref:`annotation scope <annotation-scopes>`.
 This means that they are not evaluated when the code containing the annotation is evaluated.
 Instead, the interpreter saves information that can be used to evaluate the annotation later
 if requested. The :mod:`annotationlib` module provides tools for evaluating annotations.
@@ -1897,6 +1897,12 @@ all annotations are instead stored as strings::
    >>> def f(param: annotation): ...
    >>> f.__annotations__
    {'param': 'annotation'}
+
+This future statement will be deprecated and removed in a future version of Python,
+but not before Python 3.13 reaches its end of life (see :pep:`749`).
+When it is used, introspection tools like
+:func:`annotationlib.get_annotations` and :func:`typing.get_type_hints` are
+less likely to be able to resolve annotations at runtime.
 
 
 .. rubric:: Footnotes
