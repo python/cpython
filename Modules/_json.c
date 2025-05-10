@@ -1332,11 +1332,11 @@ get_item_separator(PyEncoderObject *s,
 }
 
 static int
-write_newline_indent(PyUnicodeWriter *writer,
+write_newline_indent(_PyUnicodeWriter *writer,
                      Py_ssize_t indent_level, PyObject *indent_cache)
 {
     PyObject *newline_indent = PyList_GET_ITEM(indent_cache, indent_level * 2);
-    return PyUnicodeWriter_WriteStr(writer, newline_indent);
+    return _PyUnicodeWriter_WriteStr(writer, newline_indent);
 }
 
 
