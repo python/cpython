@@ -6,7 +6,37 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
+PyDoc_STRVAR(_thread_iter_locked__doc__,
+"iter_locked(iterable, /)\n"
+"--\n"
+"\n"
+"Make an iterator thread-safe.");
+
+static PyObject *
+_thread_iter_locked_impl(PyTypeObject *type, PyObject *iterable);
+
+static PyObject *
+_thread_iter_locked(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = clinic_state()->iter_locked_type;
+    PyObject *iterable;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("iter_locked", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("iter_locked", PyTuple_GET_SIZE(args), 1, 1)) {
+        goto exit;
+    }
+    iterable = PyTuple_GET_ITEM(args, 0);
+    return_value = _thread_iter_locked_impl(type, iterable);
+
+exit:
+    return return_value;
+}
 
 #if (defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP) || defined(MS_WINDOWS))
 
@@ -103,4 +133,4 @@ exit:
 #ifndef _THREAD_SET_NAME_METHODDEF
     #define _THREAD_SET_NAME_METHODDEF
 #endif /* !defined(_THREAD_SET_NAME_METHODDEF) */
-/*[clinic end generated code: output=e978dc4615b9bc35 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a890435ac29024b2 input=a9049054013a1b77]*/

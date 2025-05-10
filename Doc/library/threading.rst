@@ -144,6 +144,20 @@ This module defines the following functions:
    of the result, even when terminated.
 
 
+.. function:: locked_iter(iterable)
+
+   Make an iterator thread-safe.
+
+   Roughly equivalent to::
+
+        class locked_iter(Iterator):
+            def __init__(self, it):
+                self._it = iter(it)
+                self._lock = Lock()
+            def __next__(self):
+                with self._lock:
+                    return next(self._it)
+
 .. function:: main_thread()
 
    Return the main :class:`Thread` object.  In normal conditions, the
