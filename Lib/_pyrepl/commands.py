@@ -60,7 +60,7 @@ class Command:
 
 class KillCommand(Command):
     def kill_range(self, start: int, end: int) -> None:
-        if start == end:
+        if end - start <= 1:
             return
         r = self.reader
         b = r.buffer
