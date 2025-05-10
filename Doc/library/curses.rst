@@ -80,7 +80,7 @@ The module :mod:`curses` defines the following functions:
 
    * Change the definition of the color-pair ``0`` to ``(fg, bg)``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. function:: baudrate()

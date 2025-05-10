@@ -687,7 +687,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       :attr:`exitcode` you may simply catch :exc:`KeyboardInterrupt` and call
       ``exit(your_code)``.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
    .. method:: terminate()
 
