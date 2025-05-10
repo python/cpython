@@ -35,6 +35,9 @@ static PyTypeObject PyDateTime_TimeZoneType;
 
 
 typedef struct {
+    /* Corresponding module that is referenced via the interpreter state. */
+    PyObject *module;
+
     /* Module heap types. */
     PyTypeObject *isocalendar_date_type;
 
@@ -121,62 +124,40 @@ get_module_state(PyObject *module)
 }
 
 
-#define INTERP_KEY ((PyObject *)&_Py_ID(cached_datetime_module))
+#define INTERP_KEY ((PyObject *)&_Py_ID(cached_datetime_module))  // unused
 
 static PyObject *
 get_current_module(PyInterpreterState *interp, int *p_reloading)
 {
-    PyObject *mod = NULL;
-    int reloading = 0;
-
-    PyObject *dict = PyInterpreterState_GetDict(interp);
-    if (dict == NULL) {
-        goto error;
-    }
-    PyObject *ref = NULL;
-    if (PyDict_GetItemRef(dict, INTERP_KEY, &ref) < 0) {
-        goto error;
-    }
-    if (ref != NULL) {
-        reloading = 1;
-        if (ref != Py_None) {
-            (void)PyWeakref_GetRef(ref, &mod);
-            if (mod == Py_None) {
-                Py_CLEAR(mod);
-            }
-            Py_DECREF(ref);
-        }
-    }
+    datetime_state *st = interp->datetime_module_state;
     if (p_reloading != NULL) {
-        *p_reloading = reloading;
+        *p_reloading = st != NULL ? 1 : 0;
     }
-    return mod;
-
-error:
-    assert(PyErr_Occurred());
+    if (st != NULL && st != (void *)Py_None && st->module != NULL) {
+        assert(PyModule_CheckExact(st->module));
+        return Py_NewRef(st->module);
+    }
     return NULL;
 }
-
-static PyModuleDef datetimemodule;
 
 static datetime_state *
 _get_current_state(PyObject **p_mod)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    PyObject *mod = get_current_module(interp, NULL);
-    if (mod == NULL) {
-        assert(!PyErr_Occurred());
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
-        /* The static types can outlive the module,
-         * so we must re-import the module. */
-        mod = PyImport_ImportModule("_datetime");
-        if (mod == NULL) {
-            return NULL;
-        }
+    datetime_state *st = interp->datetime_module_state;
+    if (st != NULL && st != (void *)Py_None && st->module != NULL) {
+        assert(PyModule_CheckExact(st->module));
+        *p_mod = Py_NewRef(st->module);
+        return st;
     }
-    datetime_state *st = get_module_state(mod);
+
+    /* The static types can outlive the module,
+     * so we must re-import the module. */
+    PyObject *mod = PyImport_ImportModule("_datetime");
+    if (mod == NULL) {
+        return NULL;
+    }
+    st = get_module_state(mod);
     *p_mod = mod;
     return st;
 }
@@ -190,61 +171,18 @@ static int
 set_current_module(PyInterpreterState *interp, PyObject *mod)
 {
     assert(mod != NULL);
-    PyObject *dict = PyInterpreterState_GetDict(interp);
-    if (dict == NULL) {
-        return -1;
-    }
-    PyObject *ref = PyWeakref_NewRef(mod, NULL);
-    if (ref == NULL) {
-        return -1;
-    }
-    int rc = PyDict_SetItem(dict, INTERP_KEY, ref);
-    Py_DECREF(ref);
-    return rc;
+    interp->datetime_module_state = get_module_state(mod);
+    return 0;
 }
 
 static void
 clear_current_module(PyInterpreterState *interp, PyObject *expected)
 {
-    PyObject *exc = PyErr_GetRaisedException();
-
-    PyObject *dict = PyInterpreterState_GetDict(interp);
-    if (dict == NULL) {
-        goto error;
+    if (expected && get_module_state(expected) != interp->datetime_module_state) {
+        return;
     }
-
-    if (expected != NULL) {
-        PyObject *ref = NULL;
-        if (PyDict_GetItemRef(dict, INTERP_KEY, &ref) < 0) {
-            goto error;
-        }
-        if (ref != NULL) {
-            PyObject *current = NULL;
-            int rc = PyWeakref_GetRef(ref, &current);
-            /* We only need "current" for pointer comparison. */
-            Py_XDECREF(current);
-            Py_DECREF(ref);
-            if (rc < 0) {
-                goto error;
-            }
-            if (current != expected) {
-                goto finally;
-            }
-        }
-    }
-
     /* We use None to identify that the module was previously loaded. */
-    if (PyDict_SetItem(dict, INTERP_KEY, Py_None) < 0) {
-        goto error;
-    }
-
-    goto finally;
-
-error:
-    PyErr_FormatUnraisable("Exception ignored while clearing _datetime module");
-
-finally:
-    PyErr_SetRaisedException(exc);
+    interp->datetime_module_state = Py_None;
 }
 
 
@@ -2109,6 +2047,9 @@ delta_to_microseconds(PyDateTime_Delta *self)
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (current_mod == NULL) {
+        return NULL;
+    }
 
     x1 = PyLong_FromLong(GET_TD_DAYS(self));
     if (x1 == NULL)
@@ -2188,6 +2129,9 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (current_mod == NULL) {
+        return NULL;
+    }
 
     tuple = checked_divmod(pyus, CONST_US_PER_SECOND(st));
     if (tuple == NULL) {
@@ -2773,6 +2717,9 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (current_mod == NULL) {
+        return NULL;
+    }
 
     /* Argument objects. */
     PyObject *day = NULL;
@@ -2992,6 +2939,9 @@ delta_total_seconds(PyObject *op, PyObject *Py_UNUSED(dummy))
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (current_mod == NULL) {
+        return NULL;
+    }
 
     total_seconds = PyNumber_TrueDivide(total_microseconds, CONST_US_PER_SECOND(st));
 
@@ -3775,6 +3725,9 @@ date_isocalendar(PyObject *self, PyObject *Py_UNUSED(dummy))
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (current_mod == NULL) {
+        return NULL;
+    }
 
     PyObject *v = iso_calendar_date_new_impl(ISOCALENDAR_DATE_TYPE(st),
                                              year, week + 1, day + 1);
@@ -6600,6 +6553,9 @@ local_timezone(PyDateTime_DateTime *utc_time)
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (current_mod == NULL) {
+        return NULL;
+    }
 
     delta = datetime_subtract((PyObject *)utc_time, CONST_EPOCH(st));
     RELEASE_CURRENT_STATE(st, current_mod);
@@ -6844,6 +6800,9 @@ datetime_timestamp(PyObject *op, PyObject *Py_UNUSED(dummy))
     if (HASTZINFO(self) && self->tzinfo != Py_None) {
         PyObject *current_mod = NULL;
         datetime_state *st = GET_CURRENT_STATE(current_mod);
+        if (current_mod == NULL) {
+            return NULL;
+        }
 
         PyObject *delta;
         delta = datetime_subtract(op, CONST_EPOCH(st));
@@ -7214,6 +7173,8 @@ create_timezone_from_delta(int days, int sec, int ms, int normalize)
 static int
 init_state(datetime_state *st, PyObject *module, PyObject *old_module)
 {
+    st->module = Py_NewRef(module);
+
     /* Each module gets its own heap types. */
 #define ADD_TYPE(FIELD, SPEC, BASE)                 \
     do {                                            \
@@ -7232,6 +7193,7 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
         assert(old_module != module);
         datetime_state *st_old = get_module_state(old_module);
         *st = (datetime_state){
+            .module = st->module,
             .isocalendar_date_type = st->isocalendar_date_type,
             .us_per_ms = Py_NewRef(st_old->us_per_ms),
             .us_per_second = Py_NewRef(st_old->us_per_second),
@@ -7291,7 +7253,7 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
 static int
 traverse_state(datetime_state *st, visitproc visit, void *arg)
 {
-    /* heap types */
+    Py_VISIT(st->module);
     Py_VISIT(st->isocalendar_date_type);
 
     return 0;
@@ -7300,6 +7262,7 @@ traverse_state(datetime_state *st, visitproc visit, void *arg)
 static int
 clear_state(datetime_state *st)
 {
+    Py_CLEAR(st->module);  /* Invalidate first */
     Py_CLEAR(st->isocalendar_date_type);
     Py_CLEAR(st->us_per_ms);
     Py_CLEAR(st->us_per_second);
