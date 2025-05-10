@@ -1482,6 +1482,9 @@ encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer,
         return _steal_accumulate(writer, encoded);
     }
     else if (PyLong_Check(obj)) {
+        if (PyLong_CheckExact(obj)) {
+            return _PyLong_FormatWriter(writer, obj, 10, 0);
+        }
         PyObject *encoded = PyLong_Type.tp_repr(obj);
         if (encoded == NULL)
             return -1;
