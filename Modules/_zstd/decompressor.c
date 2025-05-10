@@ -276,7 +276,7 @@ load:
     output stream: ====================|
                                        ^
 */
-PyObject *
+static PyObject *
 decompress_impl(ZstdDecompressor *self, ZSTD_inBuffer *in,
                 Py_ssize_t max_length,
                 Py_ssize_t initial_size,
@@ -374,7 +374,7 @@ error:
     return NULL;
 }
 
-void
+static void
 decompressor_reset_session(ZstdDecompressor *self,
                            decompress_type type)
 {
@@ -399,7 +399,7 @@ decompressor_reset_session(ZstdDecompressor *self,
     ZSTD_DCtx_reset(self->dctx, ZSTD_reset_session_only);
 }
 
-PyObject *
+static PyObject *
 stream_decompress(ZstdDecompressor *self, Py_buffer *data, Py_ssize_t max_length,
                   decompress_type type)
 {
@@ -808,8 +808,7 @@ _zstd_ZstdDecompressor_decompress_impl(ZstdDecompressor *self,
 
 static PyMethodDef ZstdDecompressor_methods[] = {
     _ZSTD_ZSTDDECOMPRESSOR_DECOMPRESS_METHODDEF
-
-    {0}
+    {NULL, NULL}
 };
 
 PyDoc_STRVAR(ZstdDecompressor_eof_doc,
@@ -824,17 +823,14 @@ PyDoc_STRVAR(ZstdDecompressor_needs_input_doc,
 static PyMemberDef ZstdDecompressor_members[] = {
     {"eof", Py_T_BOOL, offsetof(ZstdDecompressor, eof),
     Py_READONLY, ZstdDecompressor_eof_doc},
-
     {"needs_input", Py_T_BOOL, offsetof(ZstdDecompressor, needs_input),
     Py_READONLY, ZstdDecompressor_needs_input_doc},
-
-    {0}
+    {NULL}
 };
 
 static PyGetSetDef ZstdDecompressor_getset[] = {
     _ZSTD_ZSTDDECOMPRESSOR_UNUSED_DATA_GETSETDEF
-
-    {0}
+    {NULL}
 };
 
 static int
@@ -864,11 +860,11 @@ static PyType_Slot ZstdDecompressor_slots[] = {
     {Py_tp_doc, (char*)_zstd_ZstdDecompressor___init____doc__},
     {Py_tp_traverse, ZstdDecompressor_traverse},
     {Py_tp_clear, ZstdDecompressor_clear},
-    {0}
+    {0, 0}
 };
 
 PyType_Spec zstd_decompressor_type_spec = {
-    .name = "_zstd.ZstdDecompressor",
+    .name = "compression.zstd.ZstdDecompressor",
     .basicsize = sizeof(ZstdDecompressor),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .slots = ZstdDecompressor_slots,
