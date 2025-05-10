@@ -530,11 +530,16 @@ error:
 }
 
 
+/*[clinic input]
+@classmethod
+_zstd.ZstdDecompressor.__new__ as _zstd_ZstdDecompressor_new
+[clinic start generated code]*/
+
 static PyObject *
-_zstd_ZstdDecompressor_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+_zstd_ZstdDecompressor_new_impl(PyTypeObject *type)
+/*[clinic end generated code: output=4987162efa80a1ea input=b7a70c8bea6b451f]*/
 {
-    ZstdDecompressor *self;
-    self = PyObject_GC_New(ZstdDecompressor, type);
+    ZstdDecompressor* self = PyObject_GC_New(ZstdDecompressor, type);
     if (self == NULL) {
         goto error;
     }

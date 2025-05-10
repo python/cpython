@@ -8,7 +8,30 @@ preserve
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
-#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
+
+static PyObject *
+_zstd_ZstdDecompressor_new_impl(PyTypeObject *type);
+
+static PyObject *
+_zstd_ZstdDecompressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &zstd_decompressor_type_spec;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoPositional("ZstdDecompressor", args)) {
+        goto exit;
+    }
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("ZstdDecompressor", kwargs)) {
+        goto exit;
+    }
+    return_value = _zstd_ZstdDecompressor_new_impl(type);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_zstd_ZstdDecompressor___init____doc__,
 "ZstdDecompressor(zstd_dict=None, options=None)\n"
@@ -227,4 +250,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=ae703f0465a2906d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bb79556ce103345f input=a9049054013a1b77]*/

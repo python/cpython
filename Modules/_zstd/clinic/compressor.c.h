@@ -6,7 +6,30 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
+
+static PyObject *
+_zstd_ZstdCompressor_new_impl(PyTypeObject *type);
+
+static PyObject *
+_zstd_ZstdCompressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &zstd_compressor_type_spec;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoPositional("ZstdCompressor", args)) {
+        goto exit;
+    }
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("ZstdCompressor", kwargs)) {
+        goto exit;
+    }
+    return_value = _zstd_ZstdCompressor_new_impl(type);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_zstd_ZstdCompressor___init____doc__,
 "ZstdCompressor(level=None, options=None, zstd_dict=None)\n"
@@ -252,4 +275,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ef69eab155be39f6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e893afb075d1b7c6 input=a9049054013a1b77]*/

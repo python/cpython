@@ -25,11 +25,16 @@ class _zstd.ZstdDict "ZstdDict *" "&zstd_dict_type_spec"
 
 #define ZstdDict_CAST(op) ((ZstdDict *)op)
 
+/*[clinic input]
+@classmethod
+_zstd.ZstdDict.__new__ as _zstd_ZstdDict_new
+[clinic start generated code]*/
+
 static PyObject *
-_zstd_ZstdDict_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject *Py_UNUSED(kwargs))
+_zstd_ZstdDict_new_impl(PyTypeObject *type)
+/*[clinic end generated code: output=6ae0c050f7046b51 input=de39a2a410c79d2b]*/
 {
-    ZstdDict *self;
-    self = PyObject_GC_New(ZstdDict, type);
+    ZstdDict* self = PyObject_GC_New(ZstdDict, type);
     if (self == NULL) {
         goto error;
     }

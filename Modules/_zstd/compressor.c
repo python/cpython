@@ -318,11 +318,16 @@ load:
     return 0;
 }
 
+/*[clinic input]
+@classmethod
+_zstd.ZstdCompressor.__new__ as _zstd_ZstdCompressor_new
+[clinic start generated code]*/
+
 static PyObject *
-_zstd_ZstdCompressor_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject *Py_UNUSED(kwargs))
+_zstd_ZstdCompressor_new_impl(PyTypeObject *type)
+/*[clinic end generated code: output=d1f5f14b617789e4 input=9a6b2592cd79b822]*/
 {
-    ZstdCompressor *self;
-    self = PyObject_GC_New(ZstdCompressor, type);
+    ZstdCompressor* self = PyObject_GC_New(ZstdCompressor, type);
     if (self == NULL) {
         goto error;
     }

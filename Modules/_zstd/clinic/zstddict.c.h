@@ -7,7 +7,30 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
-#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
+
+static PyObject *
+_zstd_ZstdDict_new_impl(PyTypeObject *type);
+
+static PyObject *
+_zstd_ZstdDict_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &zstd_dict_type_spec;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoPositional("ZstdDict", args)) {
+        goto exit;
+    }
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("ZstdDict", kwargs)) {
+        goto exit;
+    }
+    return_value = _zstd_ZstdDict_new_impl(type);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_zstd_ZstdDict___init____doc__,
 "ZstdDict(dict_content, is_raw=False)\n"
@@ -204,4 +227,4 @@ _zstd_ZstdDict_as_prefix_get(PyObject *self, void *Py_UNUSED(context))
 
     return return_value;
 }
-/*[clinic end generated code: output=59257c053f74eda7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=02d46b3330c7f72a input=a9049054013a1b77]*/
