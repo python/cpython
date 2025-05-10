@@ -1,0 +1,2 @@
+Cache ``getenv`` result in optimizer.c to reduce redundant calls during
+optimization
