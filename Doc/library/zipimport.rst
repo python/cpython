@@ -195,8 +195,12 @@ Here is an example that imports a module from a ZIP archive - note that the
        32145  05-10-25 10:00   pip/__main__.py
     --------                   -------
        32145                   1 file
+
+Now for the Python:
+
+.. code-block:: python
+
    $ ./python
-   Python 3.x
    >>> import sys
    >>> sys.path.insert(0, 'pip.pyz')  # Add .pyz file to front of path
    >>> import pip
