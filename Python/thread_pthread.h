@@ -1,5 +1,6 @@
 #include "pycore_interp.h"        // _PyInterpreterState.threads.stacksize
 #include "pycore_pythread.h"      // _POSIX_SEMAPHORES
+#include "pycore_time.h"          // _PyTime_FromMicrosecondsClamup()
 
 /* Posix threads interface */
 
@@ -15,6 +16,7 @@
 #undef destructor
 #endif
 #include <signal.h>
+#include <unistd.h>             /* pause(), also getthrid() on OpenBSD */
 
 #if defined(__linux__)
 #   include <sys/syscall.h>     /* syscall(SYS_gettid) */
@@ -22,8 +24,6 @@
 #   include <pthread_np.h>      /* pthread_getthreadid_np() */
 #elif defined(__FreeBSD_kernel__)
 #   include <sys/syscall.h>     /* syscall(SYS_thr_self) */
-#elif defined(__OpenBSD__)
-#   include <unistd.h>          /* getthrid() */
 #elif defined(_AIX)
 #   include <sys/thread.h>      /* thread_self() */
 #elif defined(__NetBSD__)
@@ -94,6 +94,10 @@
 #endif
 #endif
 
+/* Thread sanitizer doesn't currently support sem_clockwait */
+#ifdef _Py_THREAD_SANITIZER
+#undef HAVE_SEM_CLOCKWAIT
+#endif
 
 /* Whether or not to use semaphores directly rather than emulating them with
  * mutexes and condition variables:
@@ -149,16 +153,18 @@ _PyThread_cond_init(PyCOND_T *cond)
 void
 _PyThread_cond_after(long long us, struct timespec *abs)
 {
-    _PyTime_t timeout = _PyTime_FromMicrosecondsClamp(us);
-    _PyTime_t t;
+    PyTime_t timeout = _PyTime_FromMicrosecondsClamp(us);
+    PyTime_t t;
 #ifdef CONDATTR_MONOTONIC
     if (condattr_monotonic) {
-        t = _PyTime_GetMonotonicClock();
+        // silently ignore error: cannot report error to the caller
+        (void)PyTime_MonotonicRaw(&t);
     }
     else
 #endif
     {
-        t = _PyTime_GetSystemClock();
+        // silently ignore error: cannot report error to the caller
+        (void)PyTime_TimeRaw(&t);
     }
     t = _PyTime_Add(t, timeout);
     _PyTime_AsTimespec_clamp(t, abs);
@@ -300,6 +306,24 @@ do_start_joinable_thread(void (*func)(void *), void *arg, pthread_t* out_id)
     return 0;
 }
 
+/* Helper to convert pthread_t to PyThread_ident_t. POSIX allows pthread_t to be
+   non-arithmetic, e.g., musl typedefs it as a pointer. */
+static PyThread_ident_t
+_pthread_t_to_ident(pthread_t value) {
+// Cast through an integer type of the same size to avoid sign-extension.
+#if SIZEOF_PTHREAD_T == SIZEOF_VOID_P
+    return (uintptr_t) value;
+#elif SIZEOF_PTHREAD_T == SIZEOF_LONG
+    return (unsigned long) value;
+#elif SIZEOF_PTHREAD_T == SIZEOF_INT
+    return (unsigned int) value;
+#elif SIZEOF_PTHREAD_T == SIZEOF_LONG_LONG
+    return (unsigned long long) value;
+#else
+#error "Unsupported SIZEOF_PTHREAD_T value"
+#endif
+}
+
 int
 PyThread_start_joinable_thread(void (*func)(void *), void *arg,
                                PyThread_ident_t* ident, PyThread_handle_t* handle) {
@@ -307,9 +331,8 @@ PyThread_start_joinable_thread(void (*func)(void *), void *arg,
     if (do_start_joinable_thread(func, arg, &th)) {
         return -1;
     }
-    *ident = (PyThread_ident_t) th;
+    *ident = _pthread_t_to_ident(th);
     *handle = (PyThread_handle_t) th;
-    assert(th == (pthread_t) *ident);
     assert(th == (pthread_t) *handle);
     return 0;
 }
@@ -322,11 +345,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
         return PYTHREAD_INVALID_THREAD_ID;
     }
     pthread_detach(th);
-#if SIZEOF_PTHREAD_T <= SIZEOF_LONG
-    return (unsigned long) th;
-#else
-    return (unsigned long) *(unsigned long *) &th;
-#endif
+    return (unsigned long) _pthread_t_to_ident(th);;
 }
 
 int
@@ -337,16 +356,6 @@ PyThread_join_thread(PyThread_handle_t th) {
 int
 PyThread_detach_thread(PyThread_handle_t th) {
     return pthread_detach((pthread_t) th);
-}
-
-void
-PyThread_update_thread_after_fork(PyThread_ident_t* ident, PyThread_handle_t* handle) {
-    // The thread id might have been updated in the forked child
-    pthread_t th = pthread_self();
-    *ident = (PyThread_ident_t) th;
-    *handle = (PyThread_handle_t) th;
-    assert(th == (pthread_t) *ident);
-    assert(th == (pthread_t) *handle);
 }
 
 /* XXX This implementation is considered (to quote Tim Peters) "inherently
@@ -361,8 +370,7 @@ PyThread_get_thread_ident_ex(void) {
     if (!initialized)
         PyThread_init_thread();
     threadid = pthread_self();
-    assert(threadid == (pthread_t) (PyThread_ident_t) threadid);
-    return (PyThread_ident_t) threadid;
+    return _pthread_t_to_ident(threadid);
 }
 
 unsigned long
@@ -420,6 +428,18 @@ PyThread_exit_thread(void)
 #else
     pthread_exit(0);
 #endif
+}
+
+void _Py_NO_RETURN
+PyThread_hang_thread(void)
+{
+    while (1) {
+#if defined(__wasi__)
+        sleep(9999999);  // WASI doesn't have pause() ?!
+#else
+        pause();
+#endif
+    }
 }
 
 #ifdef USE_SEMAPHORES
@@ -491,31 +511,34 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
 
     (void) error; /* silence unused-but-set-variable warning */
 
-    _PyTime_t timeout;  // relative timeout
+    PyTime_t timeout;  // relative timeout
     if (microseconds >= 0) {
         // bpo-41710: PyThread_acquire_lock_timed() cannot report timeout
         // overflow to the caller, so clamp the timeout to
-        // [_PyTime_MIN, _PyTime_MAX].
+        // [PyTime_MIN, PyTime_MAX].
         //
-        // _PyTime_MAX nanoseconds is around 292.3 years.
+        // PyTime_MAX nanoseconds is around 292.3 years.
         //
         // _thread.Lock.acquire() and _thread.RLock.acquire() raise an
         // OverflowError if microseconds is greater than PY_TIMEOUT_MAX.
         timeout = _PyTime_FromMicrosecondsClamp(microseconds);
     }
     else {
-        timeout = _PyTime_FromNanoseconds(-1);
+        timeout = -1;
     }
 
 #ifdef HAVE_SEM_CLOCKWAIT
     struct timespec abs_timeout;
     // Local scope for deadline
     {
-        _PyTime_t deadline = _PyTime_Add(_PyTime_GetMonotonicClock(), timeout);
+        PyTime_t now;
+        // silently ignore error: cannot report error to the caller
+        (void)PyTime_MonotonicRaw(&now);
+        PyTime_t deadline = _PyTime_Add(now, timeout);
         _PyTime_AsTimespec_clamp(deadline, &abs_timeout);
     }
 #else
-    _PyTime_t deadline = 0;
+    PyTime_t deadline = 0;
     if (timeout > 0 && !intr_flag) {
         deadline = _PyDeadline_Init(timeout);
     }
@@ -527,8 +550,11 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
             status = fix_status(sem_clockwait(thelock, CLOCK_MONOTONIC,
                                               &abs_timeout));
 #else
-            _PyTime_t abs_time = _PyTime_Add(_PyTime_GetSystemClock(),
-                                             timeout);
+            PyTime_t now;
+            // silently ignore error: cannot report error to the caller
+            (void)PyTime_TimeRaw(&now);
+            PyTime_t abs_time = _PyTime_Add(now, timeout);
+
             struct timespec ts;
             _PyTime_AsTimespec_clamp(abs_time, &ts);
             status = fix_status(sem_timedwait(thelock, &ts));

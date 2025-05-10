@@ -1,1 +1,0 @@
-Add ``keep_alive`` keyword parameter for :meth:`AbstractEventLoop.create_server` and :meth:`BaseEventLoop.create_server`.

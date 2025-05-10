@@ -480,9 +480,33 @@ siftup_max(PyListObject *heap, Py_ssize_t pos)
     return siftdown_max(heap, startpos, pos);
 }
 
+/*[clinic input]
+_heapq.heappush_max
+
+    heap: object(subclass_of='&PyList_Type')
+    item: object
+    /
+
+Push item onto max heap, maintaining the heap invariant.
+[clinic start generated code]*/
+
+static PyObject *
+_heapq_heappush_max_impl(PyObject *module, PyObject *heap, PyObject *item)
+/*[clinic end generated code: output=c869d5f9deb08277 input=4743d7db137b6e2b]*/
+{
+    if (PyList_Append(heap, item)) {
+        return NULL;
+    }
+
+    if (siftdown_max((PyListObject *)heap, 0, PyList_GET_SIZE(heap)-1)) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
 
 /*[clinic input]
-_heapq._heappop_max
+_heapq.heappop_max
 
     heap: object(subclass_of='&PyList_Type')
     /
@@ -491,14 +515,14 @@ Maxheap variant of heappop.
 [clinic start generated code]*/
 
 static PyObject *
-_heapq__heappop_max_impl(PyObject *module, PyObject *heap)
-/*[clinic end generated code: output=9e77aadd4e6a8760 input=362c06e1c7484793]*/
+_heapq_heappop_max_impl(PyObject *module, PyObject *heap)
+/*[clinic end generated code: output=2f051195ab404b77 input=e62b14016a5a26de]*/
 {
     return heappop_internal(heap, siftup_max);
 }
 
 /*[clinic input]
-_heapq._heapreplace_max
+_heapq.heapreplace_max
 
     heap: object(subclass_of='&PyList_Type')
     item: object
@@ -508,15 +532,14 @@ Maxheap variant of heapreplace.
 [clinic start generated code]*/
 
 static PyObject *
-_heapq__heapreplace_max_impl(PyObject *module, PyObject *heap,
-                             PyObject *item)
-/*[clinic end generated code: output=8ad7545e4a5e8adb input=f2dd27cbadb948d7]*/
+_heapq_heapreplace_max_impl(PyObject *module, PyObject *heap, PyObject *item)
+/*[clinic end generated code: output=8770778b5a9cbe9b input=21a3d28d757c881c]*/
 {
     return heapreplace_internal(heap, item, siftup_max);
 }
 
 /*[clinic input]
-_heapq._heapify_max
+_heapq.heapify_max
 
     heap: object(subclass_of='&PyList_Type')
     /
@@ -525,10 +548,59 @@ Maxheap variant of heapify.
 [clinic start generated code]*/
 
 static PyObject *
-_heapq__heapify_max_impl(PyObject *module, PyObject *heap)
-/*[clinic end generated code: output=2cb028beb4a8b65e input=c1f765ee69f124b8]*/
+_heapq_heapify_max_impl(PyObject *module, PyObject *heap)
+/*[clinic end generated code: output=8401af3856529807 input=edda4255728c431e]*/
 {
     return heapify_internal(heap, siftup_max);
+}
+
+/*[clinic input]
+_heapq.heappushpop_max
+
+    heap: object(subclass_of='&PyList_Type')
+    item: object
+    /
+
+Maxheap variant of heappushpop.
+
+The combined action runs more efficiently than heappush_max() followed by
+a separate call to heappop_max().
+[clinic start generated code]*/
+
+static PyObject *
+_heapq_heappushpop_max_impl(PyObject *module, PyObject *heap, PyObject *item)
+/*[clinic end generated code: output=ff0019f0941aca0d input=525a843013cbd6c0]*/
+{
+    PyObject *returnitem;
+    int cmp;
+
+    if (PyList_GET_SIZE(heap) == 0) {
+        return Py_NewRef(item);
+    }
+
+    PyObject *top = PyList_GET_ITEM(heap, 0);
+    Py_INCREF(top);
+    cmp = PyObject_RichCompareBool(item, top, Py_LT);
+    Py_DECREF(top);
+    if (cmp < 0) {
+        return NULL;
+    }
+    if (cmp == 0) {
+        return Py_NewRef(item);
+    }
+
+    if (PyList_GET_SIZE(heap) == 0) {
+        PyErr_SetString(PyExc_IndexError, "index out of range");
+        return NULL;
+    }
+
+    returnitem = PyList_GET_ITEM(heap, 0);
+    PyList_SET_ITEM(heap, 0, Py_NewRef(item));
+    if (siftup_max((PyListObject *)heap, 0) < 0) {
+        Py_DECREF(returnitem);
+        return NULL;
+    }
+    return returnitem;
 }
 
 static PyMethodDef heapq_methods[] = {
@@ -537,9 +609,13 @@ static PyMethodDef heapq_methods[] = {
     _HEAPQ_HEAPPOP_METHODDEF
     _HEAPQ_HEAPREPLACE_METHODDEF
     _HEAPQ_HEAPIFY_METHODDEF
-    _HEAPQ__HEAPPOP_MAX_METHODDEF
-    _HEAPQ__HEAPIFY_MAX_METHODDEF
-    _HEAPQ__HEAPREPLACE_MAX_METHODDEF
+
+    _HEAPQ_HEAPPUSH_MAX_METHODDEF
+    _HEAPQ_HEAPPUSHPOP_MAX_METHODDEF
+    _HEAPQ_HEAPPOP_MAX_METHODDEF
+    _HEAPQ_HEAPREPLACE_MAX_METHODDEF
+    _HEAPQ_HEAPIFY_MAX_METHODDEF
+
     {NULL, NULL}           /* sentinel */
 };
 
@@ -585,7 +661,7 @@ non-existing elements are considered to be infinite.  The interesting\n\
 property of a heap is that a[0] is always its smallest element.\n"
 "\n\
 The strange invariant above is meant to be an efficient memory\n\
-representation for a tournament.  The numbers below are `k', not a[k]:\n\
+representation for a tournament.  The numbers below are 'k', not a[k]:\n\
 \n\
                                    0\n\
 \n\
@@ -598,7 +674,7 @@ representation for a tournament.  The numbers below are `k', not a[k]:\n\
     15 16   17 18   19 20   21 22   23 24   25 26   27 28   29 30\n\
 \n\
 \n\
-In the tree above, each cell `k' is topping `2*k+1' and `2*k+2'.  In\n\
+In the tree above, each cell 'k' is topping '2*k+1' and '2*k+2'.  In\n\
 a usual binary tournament we see in sports, each cell is the winner\n\
 over the two cells it tops, and we can trace the winner down the tree\n\
 to see all opponents s/he had.  However, in many computer applications\n\
@@ -653,7 +729,7 @@ vanishes, you switch heaps and start a new run.  Clever and quite\n\
 effective!\n\
 \n\
 In a word, heaps are useful memory structures to know.  I use them in\n\
-a few applications, and I think it is good to keep a `heap' module\n\
+a few applications, and I think it is good to keep a 'heap' module\n\
 around. :-)\n"
 "\n\
 --------------------\n\
@@ -681,6 +757,7 @@ heapq_exec(PyObject *m)
 static struct PyModuleDef_Slot heapq_slots[] = {
     {Py_mod_exec, heapq_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

@@ -1,2 +1,0 @@
-Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.owner`
-and :meth:`~pathlib.Path.group`, defaulting to ``True``.

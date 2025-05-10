@@ -1,4 +1,4 @@
-# Copyright (C) 2004-2006 Python Software Foundation
+# Copyright (C) 2004 Python Software Foundation
 # Authors: Baxter, Wouters and Warsaw
 # Contact: email-sig@python.org
 
@@ -30,7 +30,7 @@ from io import StringIO
 
 NLCRE = re.compile(r'\r\n|\r|\n')
 NLCRE_bol = re.compile(r'(\r\n|\r|\n)')
-NLCRE_eol = re.compile(r'(\r\n|\r|\n)\Z')
+NLCRE_eol = re.compile(r'(\r\n|\r|\n)\z')
 NLCRE_crack = re.compile(r'(\r\n|\r|\n)')
 # RFC 2822 $3.6.8 Optional fields.  ftext is %d33-57 / %d59-126, Any character
 # except controls, SP, and ":".

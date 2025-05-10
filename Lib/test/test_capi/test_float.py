@@ -1,4 +1,5 @@
 import math
+import random
 import sys
 import unittest
 import warnings
@@ -9,6 +10,7 @@ from test.test_capi.test_getargs import (Float, FloatSubclass, FloatSubclass2,
 from test.support import import_helper
 
 _testcapi = import_helper.import_module('_testcapi')
+_testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 
 NULL = None
 
@@ -29,7 +31,7 @@ NAN = float("nan")
 class CAPIFloatTest(unittest.TestCase):
     def test_check(self):
         # Test PyFloat_Check()
-        check = _testcapi.float_check
+        check = _testlimitedcapi.float_check
 
         self.assertTrue(check(4.25))
         self.assertTrue(check(FloatSubclass(4.25)))
@@ -41,7 +43,7 @@ class CAPIFloatTest(unittest.TestCase):
 
     def test_checkexact(self):
         # Test PyFloat_CheckExact()
-        checkexact = _testcapi.float_checkexact
+        checkexact = _testlimitedcapi.float_checkexact
 
         self.assertTrue(checkexact(4.25))
         self.assertFalse(checkexact(FloatSubclass(4.25)))
@@ -53,7 +55,7 @@ class CAPIFloatTest(unittest.TestCase):
 
     def test_fromstring(self):
         # Test PyFloat_FromString()
-        fromstring = _testcapi.float_fromstring
+        fromstring = _testlimitedcapi.float_fromstring
 
         self.assertEqual(fromstring("4.25"), 4.25)
         self.assertEqual(fromstring(b"4.25"), 4.25)
@@ -72,13 +74,13 @@ class CAPIFloatTest(unittest.TestCase):
 
     def test_fromdouble(self):
         # Test PyFloat_FromDouble()
-        fromdouble = _testcapi.float_fromdouble
+        fromdouble = _testlimitedcapi.float_fromdouble
 
         self.assertEqual(fromdouble(4.25), 4.25)
 
     def test_asdouble(self):
         # Test PyFloat_AsDouble()
-        asdouble = _testcapi.float_asdouble
+        asdouble = _testlimitedcapi.float_asdouble
 
         class BadFloat3:
             def __float__(self):
@@ -109,19 +111,19 @@ class CAPIFloatTest(unittest.TestCase):
 
     def test_getinfo(self):
         # Test PyFloat_GetInfo()
-        getinfo = _testcapi.float_getinfo
+        getinfo = _testlimitedcapi.float_getinfo
 
         self.assertEqual(getinfo(), sys.float_info)
 
     def test_getmax(self):
         # Test PyFloat_GetMax()
-        getmax = _testcapi.float_getmax
+        getmax = _testlimitedcapi.float_getmax
 
         self.assertEqual(getmax(), sys.float_info.max)
 
     def test_getmin(self):
         # Test PyFloat_GetMax()
-        getmin = _testcapi.float_getmin
+        getmin = _testlimitedcapi.float_getmin
 
         self.assertEqual(getmin(), sys.float_info.min)
 
@@ -176,6 +178,43 @@ class CAPIFloatTest(unittest.TestCase):
                                             (value, value2))
                         else:
                             self.assertEqual(value2, value)
+
+    @unittest.skipUnless(HAVE_IEEE_754, "requires IEEE 754")
+    def test_pack_unpack_roundtrip_for_nans(self):
+        pack = _testcapi.float_pack
+        unpack = _testcapi.float_unpack
+
+        for _ in range(10):
+            for size in (2, 4, 8):
+                sign = random.randint(0, 1)
+                if sys.maxsize != 2147483647:  # not it 32-bit mode
+                    signaling = random.randint(0, 1)
+                else:
+                    # Skip sNaN's on x86 (32-bit).  The problem is that sNaN
+                    # doubles become qNaN doubles just by the C calling
+                    # convention, there is no way to preserve sNaN doubles
+                    # between C function calls with the current
+                    # PyFloat_Pack/Unpack*() API.  See also gh-130317 and
+                    # e.g. https://developercommunity.visualstudio.com/t/155064
+                    signaling = 0
+                quiet = int(not signaling)
+                if size == 8:
+                    payload = random.randint(signaling, 0x7ffffffffffff)
+                    i = (sign << 63) + (0x7ff << 52) + (quiet << 51) + payload
+                elif size == 4:
+                    payload = random.randint(signaling, 0x3fffff)
+                    i = (sign << 31) + (0xff << 23) + (quiet << 22) + payload
+                elif size == 2:
+                    payload = random.randint(signaling, 0x1ff)
+                    i = (sign << 15) + (0x1f << 10) + (quiet << 9) + payload
+                data = bytes.fromhex(f'{i:x}')
+                for endian in (BIG_ENDIAN, LITTLE_ENDIAN):
+                    with self.subTest(data=data, size=size, endian=endian):
+                        data1 = data if endian == BIG_ENDIAN else data[::-1]
+                        value = unpack(data1, endian)
+                        data2 = pack(size, value, endian)
+                        self.assertTrue(math.isnan(value))
+                        self.assertEqual(data1, data2)
 
 
 if __name__ == "__main__":

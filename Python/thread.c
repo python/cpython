@@ -8,8 +8,9 @@
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_MakePendingCalls()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 #include "pycore_pythread.h"      // _POSIX_THREADS
+#include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 
 #ifndef DONT_HAVE_STDIO_H
 #  include <stdio.h>
@@ -20,8 +21,8 @@
 
 // Define PY_TIMEOUT_MAX constant.
 #ifdef _POSIX_THREADS
-   // PyThread_acquire_lock_timed() uses _PyTime_FromNanoseconds(us * 1000),
-   // convert microseconds to nanoseconds.
+   // PyThread_acquire_lock_timed() uses (us * 1000) to convert microseconds
+   // to nanoseconds.
 #  define PY_TIMEOUT_MAX_VALUE (LLONG_MAX / 1000)
 #elif defined (NT_THREADS)
    // WaitForSingleObject() accepts timeout in milliseconds in the range
@@ -107,7 +108,7 @@ PyThread_ParseTimeoutArg(PyObject *arg, int blocking, PY_TIMEOUT_T *timeout_p)
         return -1;
     }
 
-    _PyTime_t timeout;
+    PyTime_t timeout;
     if (_PyTime_FromSecondsObject(&timeout, arg, _PyTime_ROUND_TIMEOUT) < 0) {
         return -1;
     }
@@ -132,14 +133,14 @@ PyThread_acquire_lock_timed_with_retries(PyThread_type_lock lock,
                                          PY_TIMEOUT_T timeout)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyTime_t endtime = 0;
+    PyTime_t endtime = 0;
     if (timeout > 0) {
         endtime = _PyDeadline_Init(timeout);
     }
 
     PyLockStatus r;
     do {
-        _PyTime_t microseconds;
+        PyTime_t microseconds;
         microseconds = _PyTime_AsMicroseconds(timeout, _PyTime_ROUND_CEILING);
 
         /* first a simple non-blocking try without releasing the GIL */
