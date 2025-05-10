@@ -186,18 +186,6 @@ Examples
 Here is an example that imports a module from a ZIP archive - note that the
 :mod:`zipimport` module is not explicitly used.
 
-.. code-block:: shell-session
-
-   $ unzip -l pip.pyz
-   Archive:  pip.pyz
-     Length     Date   Time    Name
-    --------    ----   ----    ----
-       32145  05-10-25 10:00   pip/__main__.py
-    --------                   -------
-       32145                   1 file
-
-Now for the Python:
-
 .. code-block:: python
 
    >>> import sys
