@@ -239,7 +239,7 @@ class CompletionTest(unittest.TestCase):
 
     def test_completion_order(self):
         script = "from sqlite3.__main__ import main; main()"
-        input = b"S\t\n.quit\n"
+        input = b"S\t;\n.quit\n"
         output = run_pty(script, input, env={"NO_COLOR": "1"})
         savepoint_idx = output.find(b"SAVEPOINT")
         select_idx = output.find(b"SELECT")
