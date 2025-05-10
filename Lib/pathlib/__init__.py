@@ -1055,19 +1055,6 @@ class Path(PurePath):
         """
         os.rmdir(self)
 
-    def _delete(self):
-        """
-        Delete this file or directory (including all sub-directories).
-        """
-        if self.is_symlink() or self.is_junction():
-            self.unlink()
-        elif self.is_dir():
-            # Lazy import to improve module import time
-            import shutil
-            shutil.rmtree(self)
-        else:
-            self.unlink()
-
     def rename(self, target):
         """
         Rename this path to the target path.
@@ -1105,7 +1092,8 @@ class Path(PurePath):
         if not hasattr(target, 'with_segments'):
             target = self.with_segments(target)
         ensure_distinct_paths(self, target)
-        target._copy_from(self, **kwargs)
+        for _dst, _src in target._iter_copy_from(self, **kwargs):
+            pass
         return target.joinpath()  # Empty join to ensure fresh metadata.
 
     def copy_into(self, target_dir, **kwargs):
@@ -1121,22 +1109,26 @@ class Path(PurePath):
             target = self.with_segments(target_dir, name)
         return self.copy(target, **kwargs)
 
-    def _copy_from(self, source, follow_symlinks=True, preserve_metadata=False):
+    def _iter_copy_from(self, source, follow_symlinks=True,
+                        preserve_metadata=False):
         """
-        Recursively copy the given path to this path.
+        Recursively copy the given path to this path. Yields a
+        (target, source) tuple after each path is copied.
         """
         if not follow_symlinks and source.info.is_symlink():
             self._copy_from_symlink(source, preserve_metadata)
         elif source.info.is_dir():
             children = source.iterdir()
             os.mkdir(self)
-            for child in children:
-                self.joinpath(child.name)._copy_from(
-                    child, follow_symlinks, preserve_metadata)
+            for src in children:
+                dst = self.joinpath(src.name)
+                yield from dst._iter_copy_from(
+                    src, follow_symlinks, preserve_metadata)
             if preserve_metadata:
                 copy_info(source.info, self)
         else:
             self._copy_from_file(source, preserve_metadata)
+        yield self, source
 
     def _copy_from_file(self, source, preserve_metadata=False):
         ensure_different_files(source, self)
@@ -1177,24 +1169,31 @@ class Path(PurePath):
         """
         Recursively move this file or directory tree to the given destination.
         """
-        # Use os.replace() if the target is os.PathLike and on the same FS.
-        try:
+        if not hasattr(target, 'with_segments'):
             target = self.with_segments(target)
+
+        # Use os.replace() if the target is os.PathLike and on the same FS.
+        ensure_different_files(self, target)
+        try:
+            os.replace(self, os.fspath(target))
         except TypeError:
             pass
+        except OSError as err:
+            if err.errno != EXDEV:
+                raise
         else:
-            ensure_different_files(self, target)
-            try:
-                os.replace(self, target)
-            except OSError as err:
-                if err.errno != EXDEV:
-                    raise
-            else:
-                return target.joinpath()  # Empty join to ensure fresh metadata.
+            return target.joinpath()  # Empty join to ensure fresh metadata.
+
         # Fall back to copy+delete.
-        target = self.copy(target, follow_symlinks=False, preserve_metadata=True)
-        self._delete()
-        return target
+        ensure_distinct_paths(self, target)
+        for _dst, src in target._iter_copy_from(self, follow_symlinks=False, preserve_metadata=True):
+            if src.info.is_symlink() or src.is_junction():
+                src.unlink()
+            elif src.info.is_dir():
+                src.rmdir()
+            else:
+                src.unlink()
+        return target.joinpath()  # Empty join to ensure fresh metadata.
 
     def move_into(self, target_dir):
         """
