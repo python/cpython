@@ -1602,10 +1602,40 @@ lzma_exec(PyObject *module)
     return 0;
 }
 
+/*[clinic input]
+_lzma.crc32 -> unsigned_int
+
+    data: Py_buffer
+    value: unsigned_int(bitwise=True) = 0
+        Starting value of the checksum.
+    /
+
+Compute a CRC-32 checksum of data.
+
+The returned checksum is an integer.
+[clinic start generated code]*/
+
+static unsigned int
+_lzma_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
+/*[clinic end generated code: output=fca7916d796faf8b input=bb623a169c14534f]*/
+{
+    /* Releasing the GIL for very small buffers is inefficient
+       and may lower performance */
+    if (data->len > 1024*5) {
+        Py_BEGIN_ALLOW_THREADS
+        value = lzma_crc32(data->buf, (size_t)data->len, (uint32_t)value);
+        Py_END_ALLOW_THREADS
+    } else {
+        value = lzma_crc32(data->buf, (size_t)data->len, (uint32_t)value);
+    }
+    return value;
+}
+
 static PyMethodDef lzma_methods[] = {
     _LZMA_IS_CHECK_SUPPORTED_METHODDEF
     _LZMA__ENCODE_FILTER_PROPERTIES_METHODDEF
     _LZMA__DECODE_FILTER_PROPERTIES_METHODDEF
+    _LZMA_CRC32_METHODDEF
     {NULL}
 };
 
