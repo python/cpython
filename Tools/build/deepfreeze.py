@@ -17,12 +17,12 @@ import re
 import time
 import types
 
+import umarshal
+
 TYPE_CHECKING = False
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from typing import Any, TextIO
-
-import umarshal
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
