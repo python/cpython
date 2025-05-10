@@ -1682,10 +1682,10 @@ class FileTestCase(unittest.TestCase):
 
         # Trailing data isn't a valid compressed stream
         with ZstdFile(io.BytesIO(self.FRAME_42 + b'12345')) as f:
-            self.assertEqual(f.read(), self.DECOMPRESSED_42)
+            self.assertRaises(ZstdError, f.read)
 
         with ZstdFile(io.BytesIO(SKIPPABLE_FRAME + b'12345')) as f:
-            self.assertEqual(f.read(), b'')
+            self.assertRaises(ZstdError, f.read)
 
     def test_read_truncated(self):
         # Drop stream epilogue: 4 bytes checksum
