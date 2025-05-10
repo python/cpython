@@ -552,6 +552,8 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                  "spam" + pyc_ext: test_pyc}
         self.makeZip(files, file_comment=b"spam")
 
+        sys.path.insert(0, TEMP_ZIP)
+
         zi = zipimport.zipimporter(TEMP_ZIP)
         self.assertEqual(zi.archive, TEMP_ZIP)
         self.assertTrue(zi.is_package(TESTPACK))
@@ -663,6 +665,8 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         files = {packdir2 + "__init__" + pyc_ext: test_pyc,
                  packdir2 + TESTMOD + pyc_ext: test_pyc}
         self.makeZip(files, file_comment=b"eggs")
+
+        sys.path.insert(0, TEMP_ZIP + os.sep + TESTPACK)
 
         zi = zipimport.zipimporter(TEMP_ZIP + os.sep + packdir)
         self.assertEqual(zi.archive, TEMP_ZIP)

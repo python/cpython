@@ -119,7 +119,6 @@ zipimport
 ---------
 
 * Remove deprecated :meth:`!zipimport.zipimporter.load_module`.
-  They had previously raised a :exc:`DeprecationWarning` since Python 3.10.
   Use :meth:`zipimport.zipimporter.exec_module` instead.
   (Contributed by Jiahao Li in :gh:`133656`.)
 
