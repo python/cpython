@@ -11,6 +11,7 @@ Protocols for supporting classes in pathlib.
 
 
 from abc import ABC, abstractmethod
+from collections import deque
 from glob import _PathGlobber
 from io import text_encoding
 from pathlib._os import magic_open, ensure_distinct_paths, ensure_different_files, copyfileobj
@@ -337,8 +338,7 @@ class _ReadablePath(_JoinablePath):
         Recursively copy this file or directory tree to the given destination.
         """
         ensure_distinct_paths(self, target)
-        for _dst, _src in target._iter_copy_from(self, **kwargs):
-            pass
+        deque(target._iter_copy_from(self, **kwargs), maxlen=0)
         return target.joinpath()  # Empty join to ensure fresh metadata.
 
     def copy_into(self, target_dir, **kwargs):

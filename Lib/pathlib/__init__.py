@@ -11,6 +11,7 @@ import operator
 import os
 import posixpath
 import sys
+from collections import deque
 from errno import *
 from glob import _StringGlobber, _no_recurse_symlinks
 from itertools import chain
@@ -1092,8 +1093,7 @@ class Path(PurePath):
         if not hasattr(target, 'with_segments'):
             target = self.with_segments(target)
         ensure_distinct_paths(self, target)
-        for _dst, _src in target._iter_copy_from(self, **kwargs):
-            pass
+        deque(target._iter_copy_from(self, **kwargs), maxlen=0)
         return target.joinpath()  # Empty join to ensure fresh metadata.
 
     def copy_into(self, target_dir, **kwargs):
