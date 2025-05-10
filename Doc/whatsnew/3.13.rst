@@ -1908,7 +1908,7 @@ New Deprecations
 
 * :mod:`platform`:
 
-  * Deprecate :func:`~platform.java_ver`,
+  * Deprecate :func:`!platform.java_ver`,
     to be removed in Python 3.15.
     This function is only useful for Jython support, has a confusing API,
     and is largely untested.

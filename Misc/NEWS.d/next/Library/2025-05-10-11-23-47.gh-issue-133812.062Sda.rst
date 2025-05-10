@@ -1,0 +1,2 @@
+Remove deprecated and barely tested function :func:`!platform.java_ver`.
+Patch by Bénédikt Tran.

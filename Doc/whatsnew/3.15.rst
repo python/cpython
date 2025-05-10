@@ -118,10 +118,11 @@ Deprecated
 Removed
 =======
 
-module_name
------------
+platform
+--------
 
-* TODO
+* The barely tested :func:`!platform.java_ver` function.
+  (Contributed by Bénédikt Tran in :gh:`133812`.)
 
 
 Porting to Python 3.15

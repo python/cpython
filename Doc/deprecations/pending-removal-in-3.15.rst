@@ -51,7 +51,7 @@ Pending removal in Python 3.15
 
 * :mod:`platform`:
 
-  * :func:`~platform.java_ver` has been deprecated since Python 3.13.
+  * :func:`!platform.java_ver` has been deprecated since Python 3.13.
     This function is only useful for Jython support, has a confusing API,
     and is largely untested.
 

@@ -211,7 +211,7 @@ Fix :func:`repr` for global :class:`~enum.Flag` members.
 .. nonce: fD2pbP
 .. section: Library
 
-:func:`platform.java_ver` is deprecated and will be removed in 3.15. It was
+:func:`!platform.java_ver` is deprecated and will be removed in 3.15. It was
 largely untested, had a confusing API, and was only useful for Jython
 support.
 
