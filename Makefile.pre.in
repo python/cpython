@@ -1012,7 +1012,12 @@ $(LIBRARY): $(LIBRARY_OBJS)
 	$(AR) $(ARFLAGS) $@ $(LIBRARY_OBJS)
 
 libpython$(LDVERSION).so: $(LIBRARY_OBJS) $(DTRACE_OBJS)
-	$(BLDSHARED) -Wl,-h$(INSTSONAME) -o $(INSTSONAME) $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM)
+	# AIX Linker don't support "-h" option
+	if test "$(MACHDEP)" != "aix"; then \
+		$(BLDSHARED) -Wl,-h$(INSTSONAME) -o $(INSTSONAME) $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM); \
+	else \
+		$(BLDSHARED) -o $@ $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM); \
+	fi
 	if test $(INSTSONAME) != $@; then \
 		$(LN) -f $(INSTSONAME) $@; \
 	fi
