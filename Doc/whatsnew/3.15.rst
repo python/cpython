@@ -75,11 +75,24 @@ New features
 Other language changes
 ======================
 
-* Python UTF-8 mode is now enabled by default.
-  It may be disabled with by setting :envvar:`PYTHONUTF8=0 <PYTHONUTF8>` as
-  an environment variable or by using the :option:`-X utf8=0 <-X>` flag.
-  See :pep:`686` for further details.
+* Python now uses UTF-8 as the default encoding, independent of the system's
+  environment. This means that I/O operations without an explicit encoding,
+  e.g. ``open('flying-circus.txt')``, will use UTF-8.
 
+  This only applies when no ``encoding`` argument is given. For best
+  compatibility between versions of Python, ensure that an explicit ``encoding``
+  argument is always provided. The :ref:`opt-in encoding warning <io-encoding-warning>`
+  can be used to identify code that may be affected by this change.
+  The special special ``encoding='locale'`` argument uses the current locale
+  encoding, and has been supported since Python 3.10.
+
+  To retain the previous behaviour, Python's UTF-8 mode may be disabled with
+  the :envvar:`PYTHONUTF8=0 <PYTHONUTF8>` environment variable or the
+  :option:`-X utf8=0 <-X>` command line option.
+
+  .. seealso:: :pep:`686` for further details.
+
+  (Contributed by Adam Turner in :gh:`133711`; PEP 686 written by Inada Naoki.)
 
 New modules
 ===========
