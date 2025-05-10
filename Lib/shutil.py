@@ -317,7 +317,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
                     if _HAS_FCOPYFILE:
                         try:
                             _fastcopy_fcopyfile(fsrc, fdst, posix._COPYFILE_DATA)
-                            return dst
+                            return os.fspath(dst)
                         except _GiveupOnFastCopy:
                             pass
                     # Linux / Android / Solaris
@@ -326,20 +326,20 @@ def copyfile(src, dst, *, follow_symlinks=True):
                         if _USE_CP_COPY_FILE_RANGE:
                             try:
                                 _fastcopy_copy_file_range(fsrc, fdst)
-                                return dst
+                                return os.fspath(dst)
                             except _GiveupOnFastCopy:
                                 pass
                         if _USE_CP_SENDFILE:
                             try:
                                 _fastcopy_sendfile(fsrc, fdst)
-                                return dst
+                                return os.fspath(dst)
                             except _GiveupOnFastCopy:
                                 pass
                     # Windows, see:
                     # https://github.com/python/cpython/pull/7160#discussion_r195405230
                     elif _WINDOWS and file_size > 0:
                         _copyfileobj_readinto(fsrc, fdst, min(file_size, COPY_BUFSIZE))
-                        return dst
+                        return os.fspath(dst)
 
                     copyfileobj(fsrc, fdst)
 
@@ -350,7 +350,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
                 else:
                     raise
 
-    return dst
+    return os.fspath(dst)
 
 def copymode(src, dst, *, follow_symlinks=True):
     """Copy mode bits from src to dst.
@@ -488,7 +488,7 @@ def copy(src, dst, *, follow_symlinks=True):
         dst = os.path.join(dst, os.path.basename(src))
     copyfile(src, dst, follow_symlinks=follow_symlinks)
     copymode(src, dst, follow_symlinks=follow_symlinks)
-    return dst
+    return os.fspath(dst)
 
 def copy2(src, dst, *, follow_symlinks=True):
     """Copy data and metadata. Return the file's destination.
@@ -512,7 +512,7 @@ def copy2(src, dst, *, follow_symlinks=True):
             flags |= _winapi.COPY_FILE_COPY_SYMLINK
         try:
             _winapi.CopyFile2(src_, dst_, flags)
-            return dst
+            return os.fspath(dst)
         except OSError as exc:
             if (exc.winerror == _winapi.ERROR_PRIVILEGE_NOT_HELD
                 and not follow_symlinks):
@@ -528,7 +528,7 @@ def copy2(src, dst, *, follow_symlinks=True):
 
     copyfile(src, dst, follow_symlinks=follow_symlinks)
     copystat(src, dst, follow_symlinks=follow_symlinks)
-    return dst
+    return os.fspath(dst)
 
 def ignore_patterns(*patterns):
     """Function that can be used as copytree() ignore parameter.
@@ -606,7 +606,7 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
             errors.append((src, dst, str(why)))
     if errors:
         raise Error(errors)
-    return dst
+    return os.fspath(dst)
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
              ignore_dangling_symlinks=False, dirs_exist_ok=False):
@@ -937,7 +937,7 @@ def move(src, dst, copy_function=copy2):
         else:
             copy_function(src, real_dst)
             os.unlink(src)
-    return real_dst
+    return os.fspath(real_dst)
 
 def _destinsrc(src, dst):
     src = os.path.abspath(src)
