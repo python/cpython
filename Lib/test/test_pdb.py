@@ -4022,7 +4022,9 @@ class ChecklineTests(unittest.TestCase):
 
 @support.requires_subprocess()
 class PdbTestReadline(unittest.TestCase):
-    def setUpClass():
+
+    @classmethod
+    def setUpClass(cls):
         # Ensure that the readline module is loaded
         # If this fails, the test is skipped because SkipTest will be raised
         readline = import_module('readline')
