@@ -147,6 +147,18 @@ _Py_uop_sym_get_const(JitOptContext *ctx, JitOptSymbol *sym)
     return NULL;
 }
 
+_PyStackRef
+_Py_uop_sym_get_const_as_stackref(JitOptContext *ctx, JitOptSymbol *sym)
+{
+    PyObject *const_val = _Py_uop_sym_get_const(ctx, sym);
+    if (const_val == NULL) {
+        return PyStackRef_NULL;
+    }
+    // This is actually more like a borrow, but it doesn't matter here.
+    // Eventually we discard the stackref anyways.
+    return PyStackRef_FromPyObjectImmortalUnchecked(const_val);
+}
+
 void
 _Py_uop_sym_set_type(JitOptContext *ctx, JitOptSymbol *sym, PyTypeObject *typ)
 {
@@ -378,6 +390,15 @@ _Py_uop_sym_new_const(JitOptContext *ctx, PyObject *const_val)
         return out_of_space(ctx);
     }
     _Py_uop_sym_set_const(ctx, res, const_val);
+    return res;
+}
+
+JitOptSymbol *
+_Py_uop_sym_new_const_steal(JitOptContext *ctx, PyObject *const_val)
+{
+    assert(const_val != NULL);
+    JitOptSymbol *res = _Py_uop_sym_new_const(ctx, const_val);
+    Py_DECREF(const_val);
     return res;
 }
 
