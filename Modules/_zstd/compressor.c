@@ -7,23 +7,49 @@ Python module.
 
 /*[clinic input]
 module _zstd
-class _zstd.ZstdCompressor "ZstdCompressor *" "clinic_state()->ZstdCompressor_type"
+class _zstd.ZstdCompressor "ZstdCompressor *" "&zstd_compressor_type_spec"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=875bf614798f80cb]*/
-
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=7166021db1ef7df8]*/
 
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
+#include "Python.h"
+
 #include "_zstdmodule.h"
-
 #include "buffer.h"
+#include "zstddict.h"
 
+#include <stdbool.h>              // bool
 #include <stddef.h>               // offsetof()
+#include <zstd.h>                 // ZSTD_*()
 
+typedef struct {
+    PyObject_HEAD
+
+    /* Compression context */
+    ZSTD_CCtx *cctx;
+
+    /* ZstdDict object in use */
+    PyObject *dict;
+
+    /* Last mode, initialized to ZSTD_e_end */
+    int last_mode;
+
+    /* (nbWorker >= 1) ? 1 : 0 */
+    int use_multithread;
+
+    /* Compression level */
+    int compression_level;
+
+    /* __init__ has been called, 0 or 1. */
+    bool initialized;
+} ZstdCompressor;
 
 #define ZstdCompressor_CAST(op) ((ZstdCompressor *)op)
+
+#include "clinic/compressor.c.h"
 
 static int
 _zstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
@@ -198,7 +224,8 @@ success:
 }
 
 static int
-_zstd_load_c_dict(ZstdCompressor *self, PyObject *dict) {
+_zstd_load_c_dict(ZstdCompressor *self, PyObject *dict)
+{
 
     size_t zstd_ret;
     _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
@@ -291,10 +318,6 @@ load:
     return 0;
 }
 
-#define clinic_state() (get_zstd_state_from_type(type))
-#include "clinic/compressor.c.h"
-#undef clinic_state
-
 static PyObject *
 _zstd_ZstdCompressor_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject *Py_UNUSED(kwargs))
 {
@@ -304,7 +327,7 @@ _zstd_ZstdCompressor_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject
         goto error;
     }
 
-    self->inited = 0;
+    self->initialized = 0;
     self->dict = NULL;
     self->use_multithread = 0;
 
@@ -371,12 +394,11 @@ _zstd_ZstdCompressor___init___impl(ZstdCompressor *self, PyObject *level,
                                    PyObject *options, PyObject *zstd_dict)
 /*[clinic end generated code: output=215e6c4342732f96 input=9f79b0d8d34c8ef0]*/
 {
-    /* Only called once */
-    if (self->inited) {
-        PyErr_SetString(PyExc_RuntimeError, init_twice_msg);
+    if (self->initialized) {
+        PyErr_SetString(PyExc_RuntimeError, "reinitialization not supported");
         return -1;
     }
-    self->inited = 1;
+    self->initialized = 1;
 
     if (level != Py_None && options != Py_None) {
         PyErr_SetString(PyExc_RuntimeError, "Only one of level or options should be used.");
@@ -412,7 +434,7 @@ _zstd_ZstdCompressor___init___impl(ZstdCompressor *self, PyObject *level,
     return 0;
 }
 
-PyObject *
+static PyObject *
 compress_impl(ZstdCompressor *self, Py_buffer *data,
               ZSTD_EndDirective end_directive)
 {
@@ -485,6 +507,12 @@ compress_impl(ZstdCompressor *self, Py_buffer *data,
 error:
     _OutputBuffer_OnError(&buffer);
     return NULL;
+}
+
+static inline int
+mt_continue_should_break(ZSTD_inBuffer *in, ZSTD_outBuffer *out)
+{
+    return in->size == in->pos && out->size != out->pos;
 }
 
 static PyObject *
@@ -655,8 +683,7 @@ _zstd_ZstdCompressor_flush_impl(ZstdCompressor *self, int mode)
 static PyMethodDef ZstdCompressor_methods[] = {
     _ZSTD_ZSTDCOMPRESSOR_COMPRESS_METHODDEF
     _ZSTD_ZSTDCOMPRESSOR_FLUSH_METHODDEF
-
-    {0}
+    {NULL, NULL}
 };
 
 PyDoc_STRVAR(ZstdCompressor_last_mode_doc,
@@ -668,7 +695,7 @@ PyDoc_STRVAR(ZstdCompressor_last_mode_doc,
 static PyMemberDef ZstdCompressor_members[] = {
     {"last_mode", Py_T_INT, offsetof(ZstdCompressor, last_mode),
         Py_READONLY, ZstdCompressor_last_mode_doc},
-    {0}
+    {NULL}
 };
 
 static int
@@ -696,11 +723,11 @@ static PyType_Slot zstdcompressor_slots[] = {
     {Py_tp_doc, (char*)_zstd_ZstdCompressor___init____doc__},
     {Py_tp_traverse,  ZstdCompressor_traverse},
     {Py_tp_clear, ZstdCompressor_clear},
-    {0}
+    {0, 0}
 };
 
 PyType_Spec zstd_compressor_type_spec = {
-    .name = "_zstd.ZstdCompressor",
+    .name = "compression.zstd.ZstdCompressor",
     .basicsize = sizeof(ZstdCompressor),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .slots = zstdcompressor_slots,

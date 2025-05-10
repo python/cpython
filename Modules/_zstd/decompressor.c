@@ -7,21 +7,64 @@ Python module.
 
 /*[clinic input]
 module _zstd
-class _zstd.ZstdDecompressor "ZstdDecompressor *" "clinic_state()->ZstdDecompressor_type"
+class _zstd.ZstdDecompressor "ZstdDecompressor *" "&zstd_decompressor_type_spec"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4e6eae327c0c0c76]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e2969ddf48a203e0]*/
 
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
+#include "Python.h"
+
 #include "_zstdmodule.h"
-
 #include "buffer.h"
+#include "zstddict.h"
 
+#include <stdbool.h>              // bool
 #include <stddef.h>               // offsetof()
+#include <zstd.h>                 // ZSTD_*()
+
+typedef struct {
+    PyObject_HEAD
+
+    /* Decompression context */
+    ZSTD_DCtx *dctx;
+
+    /* ZstdDict object in use */
+    PyObject *dict;
+
+    /* Unconsumed input data */
+    char *input_buffer;
+    size_t input_buffer_size;
+    size_t in_begin, in_end;
+
+    /* Unused data */
+    PyObject *unused_data;
+
+    /* 0 if decompressor has (or may has) unconsumed input data, 0 or 1. */
+    char needs_input;
+
+    /* For decompress(), 0 or 1.
+       1 when both input and output streams are at a frame edge, means a
+       frame is completely decoded and fully flushed, or the decompressor
+       just be initialized. */
+    char at_frame_edge;
+
+    /* For ZstdDecompressor, 0 or 1.
+       1 means the end of the first frame has been reached. */
+    char eof;
+
+    /* Used for fast reset above three variables */
+    char _unused_char_for_align;
+
+    /* __init__ has been called, 0 or 1. */
+    bool initialized;
+} ZstdDecompressor;
 
 #define ZstdDecompressor_CAST(op) ((ZstdDecompressor *)op)
+
+#include "clinic/decompressor.c.h"
 
 static inline ZSTD_DDict *
 _get_DDict(ZstdDict *self)
@@ -215,17 +258,14 @@ load:
     return 0;
 }
 
-
+typedef enum {
+    TYPE_DECOMPRESSOR,          // <D>, ZstdDecompressor class
+    TYPE_ENDLESS_DECOMPRESSOR,  // <E>, decompress() function
+} decompress_type;
 
 /*
-    Given the two types of decompressors (defined in _zstdmodule.h):
-
-        typedef enum {
-            TYPE_DECOMPRESSOR,          // <D>, ZstdDecompressor class
-            TYPE_ENDLESS_DECOMPRESSOR,  // <E>, decompress() function
-        } decompress_type;
-
-    Decompress implementation for <D>, <E>, pseudo code:
+    Given the two types of decompressors (defined above),
+    decompress implementation for <D>, <E>, pseudo code:
 
         initialize_output_buffer
         while True:
@@ -276,7 +316,7 @@ load:
     output stream: ====================|
                                        ^
 */
-PyObject *
+static PyObject *
 decompress_impl(ZstdDecompressor *self, ZSTD_inBuffer *in,
                 Py_ssize_t max_length,
                 Py_ssize_t initial_size,
@@ -290,13 +330,7 @@ decompress_impl(ZstdDecompressor *self, ZSTD_inBuffer *in,
     /* The first AFE check for setting .at_frame_edge flag */
     if (type == TYPE_ENDLESS_DECOMPRESSOR) {
         if (self->at_frame_edge && in->pos == in->size) {
-            _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
-            if (mod_state == NULL) {
-                return NULL;
-            }
-            ret = mod_state->empty_bytes;
-            Py_INCREF(ret);
-            return ret;
+            return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
         }
     }
 
@@ -380,7 +414,7 @@ error:
     return NULL;
 }
 
-void
+static void
 decompressor_reset_session(ZstdDecompressor *self,
                            decompress_type type)
 {
@@ -405,7 +439,7 @@ decompressor_reset_session(ZstdDecompressor *self,
     ZSTD_DCtx_reset(self->dctx, ZSTD_reset_session_only);
 }
 
-PyObject *
+static PyObject *
 stream_decompress(ZstdDecompressor *self, Py_buffer *data, Py_ssize_t max_length,
                   decompress_type type)
 {
@@ -622,7 +656,7 @@ _zstd_ZstdDecompressor_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    self->inited = 0;
+    self->initialized = 0;
     self->dict = NULL;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
@@ -701,11 +735,11 @@ _zstd_ZstdDecompressor___init___impl(ZstdDecompressor *self,
 /*[clinic end generated code: output=703af2f1ec226642 input=8fd72999acc1a146]*/
 {
     /* Only called once */
-    if (self->inited) {
-        PyErr_SetString(PyExc_RuntimeError, init_twice_msg);
+    if (self->initialized) {
+        PyErr_SetString(PyExc_RuntimeError, "reinitialization not supported");
         return -1;
     }
-    self->inited = 1;
+    self->initialized = 1;
 
     /* Load dictionary to decompression context */
     if (zstd_dict != Py_None) {
@@ -747,16 +781,8 @@ _zstd_ZstdDecompressor_unused_data_get_impl(ZstdDecompressor *self)
 {
     PyObject *ret;
 
-    /* Thread-safe code */
-    Py_BEGIN_CRITICAL_SECTION(self);
-
     if (!self->eof) {
-        _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
-        if (mod_state == NULL) {
-            return NULL;
-        }
-        ret = mod_state->empty_bytes;
-        Py_INCREF(ret);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
     else {
         if (self->unused_data == NULL) {
@@ -771,8 +797,6 @@ _zstd_ZstdDecompressor_unused_data_get_impl(ZstdDecompressor *self)
             Py_INCREF(ret);
         }
     }
-
-    Py_END_CRITICAL_SECTION();
 
     return ret;
 }
@@ -818,14 +842,9 @@ _zstd_ZstdDecompressor_decompress_impl(ZstdDecompressor *self,
     return ret;
 }
 
-#define clinic_state() (get_zstd_state_from_type(type))
-#include "clinic/decompressor.c.h"
-#undef clinic_state
-
 static PyMethodDef ZstdDecompressor_methods[] = {
     _ZSTD_ZSTDDECOMPRESSOR_DECOMPRESS_METHODDEF
-
-    {0}
+    {NULL, NULL}
 };
 
 PyDoc_STRVAR(ZstdDecompressor_eof_doc,
@@ -840,17 +859,14 @@ PyDoc_STRVAR(ZstdDecompressor_needs_input_doc,
 static PyMemberDef ZstdDecompressor_members[] = {
     {"eof", Py_T_BOOL, offsetof(ZstdDecompressor, eof),
     Py_READONLY, ZstdDecompressor_eof_doc},
-
     {"needs_input", Py_T_BOOL, offsetof(ZstdDecompressor, needs_input),
     Py_READONLY, ZstdDecompressor_needs_input_doc},
-
-    {0}
+    {NULL}
 };
 
 static PyGetSetDef ZstdDecompressor_getset[] = {
     _ZSTD_ZSTDDECOMPRESSOR_UNUSED_DATA_GETSETDEF
-
-    {0}
+    {NULL}
 };
 
 static int
@@ -880,11 +896,11 @@ static PyType_Slot ZstdDecompressor_slots[] = {
     {Py_tp_doc, (char*)_zstd_ZstdDecompressor___init____doc__},
     {Py_tp_traverse, ZstdDecompressor_traverse},
     {Py_tp_clear, ZstdDecompressor_clear},
-    {0}
+    {0, 0}
 };
 
 PyType_Spec zstd_decompressor_type_spec = {
-    .name = "_zstd.ZstdDecompressor",
+    .name = "compression.zstd.ZstdDecompressor",
     .basicsize = sizeof(ZstdDecompressor),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE
              | Py_TPFLAGS_HAVE_GC,
