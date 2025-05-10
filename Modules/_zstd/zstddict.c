@@ -7,7 +7,7 @@ Python module.
 
 /*[clinic input]
 module _zstd
-class _zstd.ZstdDict "ZstdDict *" "clinic_state()->ZstdDict_type"
+class _zstd.ZstdDict "ZstdDict *" "&zstd_dict_type_spec"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=a5d1254c497e52ba]*/
 
@@ -15,10 +15,13 @@ class _zstd.ZstdDict "ZstdDict *" "clinic_state()->ZstdDict_type"
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#include "_zstdmodule.h"
+#include "Python.h"
 
-#include <stdbool.h>              // bool
-#include <stddef.h>               // offsetof()
+#include "_zstdmodule.h"
+#include "zstddict.h"
+#include "clinic/zstddict.c.h"
+
+#include <zstd.h>                 // ZSTD_freeDDict(), ZSTD_getDictID_fromDict()
 
 #define ZstdDict_CAST(op) ((ZstdDict *)op)
 
@@ -135,10 +138,6 @@ _zstd_ZstdDict___init___impl(ZstdDict *self, PyObject *dict_content,
     PyObject_GC_Track(self);
     return 0;
 }
-
-#define clinic_state() (get_zstd_state(type))
-#include "clinic/zstddict.c.h"
-#undef clinic_state
 
 PyDoc_STRVAR(ZstdDict_dictid_doc,
 "ID of zstd dictionary, a 32-bit unsigned int value.\n\n"

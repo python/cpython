@@ -7,24 +7,49 @@ Python module.
 
 /*[clinic input]
 module _zstd
-class _zstd.ZstdCompressor "ZstdCompressor *" "clinic_state()->ZstdCompressor_type"
+class _zstd.ZstdCompressor "ZstdCompressor *" "zstd_compressor_type_spec"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=875bf614798f80cb]*/
-
 
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#include "_zstdmodule.h"
+#include "Python.h"
 
+#include "_zstdmodule.h"
 #include "buffer.h"
+#include "zstddict.h"
 
 #include <stdbool.h>              // bool
 #include <stddef.h>               // offsetof()
+#include <zstd.h>                 // ZSTD_*()
 
+typedef struct {
+    PyObject_HEAD
+
+    /* Compression context */
+    ZSTD_CCtx *cctx;
+
+    /* ZstdDict object in use */
+    PyObject *dict;
+
+    /* Last mode, initialized to ZSTD_e_end */
+    int last_mode;
+
+    /* (nbWorker >= 1) ? 1 : 0 */
+    int use_multithread;
+
+    /* Compression level */
+    int compression_level;
+
+    /* __init__ has been called, 0 or 1. */
+    bool initialized;
+} ZstdCompressor;
 
 #define ZstdCompressor_CAST(op) ((ZstdCompressor *)op)
+
+#include "clinic/compressor.c.h"
 
 static int
 _zstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
@@ -292,10 +317,6 @@ load:
     }
     return 0;
 }
-
-#define clinic_state() (get_zstd_state_from_type(type))
-#include "clinic/compressor.c.h"
-#undef clinic_state
 
 static PyObject *
 _zstd_ZstdCompressor_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject *Py_UNUSED(kwargs))

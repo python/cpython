@@ -7,7 +7,7 @@ Python module.
 
 /*[clinic input]
 module _zstd
-class _zstd.ZstdDecompressor "ZstdDecompressor *" "clinic_state()->ZstdDecompressor_type"
+class _zstd.ZstdDecompressor "ZstdDecompressor *" "&zstd_decompressor_type_spec"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=4e6eae327c0c0c76]*/
 
@@ -15,14 +15,56 @@ class _zstd.ZstdDecompressor "ZstdDecompressor *" "clinic_state()->ZstdDecompres
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#include "_zstdmodule.h"
+#include "Python.h"
 
+#include "_zstdmodule.h"
 #include "buffer.h"
+#include "zstddict.h"
 
 #include <stdbool.h>              // bool
 #include <stddef.h>               // offsetof()
+#include <zstd.h>                 // ZSTD_*()
+
+typedef struct {
+    PyObject_HEAD
+
+    /* Decompression context */
+    ZSTD_DCtx *dctx;
+
+    /* ZstdDict object in use */
+    PyObject *dict;
+
+    /* Unconsumed input data */
+    char *input_buffer;
+    size_t input_buffer_size;
+    size_t in_begin, in_end;
+
+    /* Unused data */
+    PyObject *unused_data;
+
+    /* 0 if decompressor has (or may has) unconsumed input data, 0 or 1. */
+    char needs_input;
+
+    /* For decompress(), 0 or 1.
+       1 when both input and output streams are at a frame edge, means a
+       frame is completely decoded and fully flushed, or the decompressor
+       just be initialized. */
+    char at_frame_edge;
+
+    /* For ZstdDecompressor, 0 or 1.
+       1 means the end of the first frame has been reached. */
+    char eof;
+
+    /* Used for fast reset above three variables */
+    char _unused_char_for_align;
+
+    /* __init__ has been called, 0 or 1. */
+    bool initialized;
+} ZstdDecompressor;
 
 #define ZstdDecompressor_CAST(op) ((ZstdDecompressor *)op)
+
+#include "clinic/decompressor.c.h"
 
 static inline ZSTD_DDict *
 _get_DDict(ZstdDict *self)
@@ -799,10 +841,6 @@ _zstd_ZstdDecompressor_decompress_impl(ZstdDecompressor *self,
     Py_END_CRITICAL_SECTION();
     return ret;
 }
-
-#define clinic_state() (get_zstd_state_from_type(type))
-#include "clinic/decompressor.c.h"
-#undef clinic_state
 
 static PyMethodDef ZstdDecompressor_methods[] = {
     _ZSTD_ZSTDDECOMPRESSOR_DECOMPRESS_METHODDEF

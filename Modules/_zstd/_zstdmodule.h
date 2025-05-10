@@ -9,11 +9,6 @@ Python module.
 #define ZSTD_MODULE_H
 #include "Python.h"
 
-#include <stdbool.h>              // bool
-#include <zstd.h>
-#include <zdict.h>
-
-
 /* Forward declaration of module state */
 typedef struct _zstd_state _zstd_state;
 
@@ -46,84 +41,6 @@ struct _zstd_state {
     PyTypeObject *CParameter_type;
     PyTypeObject *DParameter_type;
 };
-
-typedef struct {
-    PyObject_HEAD
-
-    /* Reusable compress/decompress dictionary, they are created once and
-       can be shared by multiple threads concurrently, since its usage is
-       read-only.
-       c_dicts is a dict, int(compressionLevel):PyCapsule(ZSTD_CDict*) */
-    ZSTD_DDict *d_dict;
-    PyObject *c_dicts;
-
-    /* Content of the dictionary, bytes object. */
-    PyObject *dict_content;
-    /* Dictionary id */
-    uint32_t dict_id;
-
-    /* __init__ has been called, 0 or 1. */
-    bool initialized;
-} ZstdDict;
-
-typedef struct {
-    PyObject_HEAD
-
-    /* Compression context */
-    ZSTD_CCtx *cctx;
-
-    /* ZstdDict object in use */
-    PyObject *dict;
-
-    /* Last mode, initialized to ZSTD_e_end */
-    int last_mode;
-
-    /* (nbWorker >= 1) ? 1 : 0 */
-    int use_multithread;
-
-    /* Compression level */
-    int compression_level;
-
-    /* __init__ has been called, 0 or 1. */
-    bool initialized;
-} ZstdCompressor;
-
-typedef struct {
-    PyObject_HEAD
-
-    /* Decompression context */
-    ZSTD_DCtx *dctx;
-
-    /* ZstdDict object in use */
-    PyObject *dict;
-
-    /* Unconsumed input data */
-    char *input_buffer;
-    size_t input_buffer_size;
-    size_t in_begin, in_end;
-
-    /* Unused data */
-    PyObject *unused_data;
-
-    /* 0 if decompressor has (or may has) unconsumed input data, 0 or 1. */
-    char needs_input;
-
-    /* For decompress(), 0 or 1.
-       1 when both input and output streams are at a frame edge, means a
-       frame is completely decoded and fully flushed, or the decompressor
-       just be initialized. */
-    char at_frame_edge;
-
-    /* For ZstdDecompressor, 0 or 1.
-       1 means the end of the first frame has been reached. */
-    char eof;
-
-    /* Used for fast reset above three variables */
-    char _unused_char_for_align;
-
-    /* __init__ has been called, 0 or 1. */
-    bool initialized;
-} ZstdDecompressor;
 
 typedef enum {
     ERR_DECOMPRESS,
