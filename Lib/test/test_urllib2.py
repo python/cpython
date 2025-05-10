@@ -1543,19 +1543,24 @@ class HandlerTests(unittest.TestCase):
                            '10.0/16']
         }
         # Check hosts that should trigger the proxy bypass
-        for host in ('foo.bar', 'www.bar.com', '127.0.0.1', '10.10.0.1',
+        for hostonly in ('foo.bar', 'www.bar.com', '127.0.0.1', '10.10.0.1',
                      '10.0.0.1'):
-            self.assertTrue(_proxy_bypass_macosx_sysconf(host, bypass),
-                            'expected bypass of %s to be True' % host)
+            for port in ('', ':80'):
+                host = hostonly + port
+                self.assertTrue(_proxy_bypass_macosx_sysconf(host, bypass),
+                                'expected bypass of %s to be True' % host)
         # Check hosts that should not trigger the proxy bypass
-        for host in ('abc.foo.bar', 'bar.com', '127.0.0.2', '10.11.0.1',
+        for hostonly in ('abc.foo.bar', 'bar.com', '127.0.0.2', '10.11.0.1',
                 'notinbypass'):
-            self.assertFalse(_proxy_bypass_macosx_sysconf(host, bypass),
-                             'expected bypass of %s to be False' % host)
+            for port in ('', ':80'):
+                host = hostonly + port
+                self.assertFalse(_proxy_bypass_macosx_sysconf(host, bypass),
+                                 'expected bypass of %s to be False' % host)
 
         # Check the exclude_simple flag
         bypass = {'exclude_simple': True, 'exceptions': []}
         self.assertTrue(_proxy_bypass_macosx_sysconf('test', bypass))
+        self.assertTrue(_proxy_bypass_macosx_sysconf('test:80', bypass))
 
         # Check that invalid prefix lengths are ignored
         bypass = {
