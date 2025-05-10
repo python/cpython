@@ -171,10 +171,11 @@ dict_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(dict_pop__doc__,
-"pop($self, key, default=<unrepresentable>, /)\n"
+"pop($self, key, /)\n"
+"($self, key, default, /)\n"
 "--\n"
 "\n"
-"D.pop(k[,d]) -> v, remove specified key and return the corresponding value.\n"
+"Remove specified key and return the corresponding value.\n"
 "\n"
 "If the key is not found, return the default if given; otherwise,\n"
 "raise a KeyError.");
@@ -323,4 +324,4 @@ dict_values(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return dict_values_impl((PyDictObject *)self);
 }
-/*[clinic end generated code: output=9007b74432217017 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=80ac1f2081a3e3a9 input=a9049054013a1b77]*/

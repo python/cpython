@@ -871,7 +871,7 @@ class TestUpdateWrapper(unittest.TestCase):
             pass
         functools.update_wrapper(wrapper, max)
         self.assertEqual(wrapper.__name__, 'max')
-        self.assertStartsWith(wrapper.__doc__, 'max(')
+        self.assertEqual(wrapper.__doc__, max.__doc__)
         self.assertEqual(wrapper.__annotations__, {})
 
     def test_update_type_wrapper(self):

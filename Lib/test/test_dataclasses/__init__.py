@@ -2372,10 +2372,27 @@ class TestDocString(unittest.TestCase):
 
         self.assertDocStrEqual(ns['C'].__doc__, "C(x:X,num:int)")
 
-    def test_docstring_with_no_signature(self):
+    def test_docstring_with_multi_signature(self):
         # See https://github.com/python/cpython/issues/103449
         class Meta(type):
             __call__ = dict
+        class Base(metaclass=Meta):
+            pass
+
+        @dataclass
+        class C(Base):
+            pass
+
+        self.assertDocStrEqual(C.__doc__,
+                               "C(**kwargs)\n"
+                               "C(mapping_or_iterable, /, **kwargs)")
+
+    def test_docstring_with_no_signature(self):
+        # See https://github.com/python/cpython/issues/103449
+        class Meta(type):
+            def __call__(self, x):
+                pass
+            __call__.__text_signature__ = '<no signature>'
         class Base(metaclass=Meta):
             pass
 

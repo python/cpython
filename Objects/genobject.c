@@ -452,8 +452,11 @@ gen_close(PyObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(throw_doc,
-"throw(value)\n\
-throw(type[,value[,tb]])\n\
+"throw(value, /)\n\
+(type, /)\n\
+(type, value, /)\n\
+(type, value, traceback, /)\n\
+--\n\
 \n\
 Raise exception in generator, return next yielded value or raise\n\
 StopIteration.\n\
@@ -1187,8 +1190,11 @@ PyDoc_STRVAR(coro_send_doc,
 return next iterated value or raise StopIteration.");
 
 PyDoc_STRVAR(coro_throw_doc,
-"throw(value)\n\
-throw(type[,value[,traceback]])\n\
+"throw(value, /)\n\
+(type, /)\n\
+(type, value, /)\n\
+(type, value, traceback, /)\n\
+--\n\
 \n\
 Raise exception in coroutine, return next iterated value or raise\n\
 StopIteration.\n\
@@ -1623,8 +1629,11 @@ PyDoc_STRVAR(async_asend_doc,
 "asend(v) -> send 'v' in generator.");
 
 PyDoc_STRVAR(async_athrow_doc,
-"athrow(value)\n\
-athrow(type[,value[,tb]])\n\
+"athrow(value, /)\n\
+(type, /)\n\
+(type, value, /)\n\
+(type, value, traceback, /)\n\
+--\n\
 \n\
 raise exception in generator.\n\
 the (type, val, tb) signature is deprecated, \n\
