@@ -269,7 +269,10 @@ class Entry:
         """Preconditions:
         - our agent applies to this entry
         - filename is URL decoded"""
+        allowance = True
         for line in self.rulelines:
             if line.applies_to(filename):
-                return line.allowance
-        return True
+                allowance = line.allowance
+                if allowance:
+                    return True
+        return allowance
