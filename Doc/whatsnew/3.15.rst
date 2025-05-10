@@ -118,10 +118,14 @@ Deprecated
 Removed
 =======
 
-module_name
------------
+typing
+------
 
-* TODO
+* The undocumented keyword argument syntax for creating
+  :class:`~typing.NamedTuple` classes (for example,
+  ``Point = NamedTuple("Point", x=int, y=int)``).
+  Use the class-based syntax or the functional syntax instead.
+  (Contributed by Bénédikt Tran in :gh:`133817`.)
 
 
 Porting to Python 3.15
