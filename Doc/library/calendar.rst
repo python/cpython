@@ -503,7 +503,7 @@ The :mod:`calendar` module exports the following data attributes:
 
    .. caution::
 
-      In locales with alternative forms of month names, the :data:`!month_name` sequence
+      In locales with alternative month names forms, the :data:`!month_name` sequence
       may not be suitable when a month name stands by itself and not as part of a date.
       For instance, in Greek and in many Slavic and Baltic languages, :data:`!month_name`
       will produce the month in genitive case. Use :data:`standalone_month_name` for a form
