@@ -10,7 +10,7 @@
 
 This module provides access to the mathematical functions for integer arguments.
 These functions accept integers and objects that implement the
-:meth:`__index__` method which is used to convert the object to an integer
+:meth:`~object.__index__` method which is used to convert the object to an integer
 number.  They cannot be used with floating-point numbers or complex
 numbers.
 
