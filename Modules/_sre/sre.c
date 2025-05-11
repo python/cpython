@@ -2657,8 +2657,9 @@ _sre_SRE_Match_index_impl(MatchObject *self, PyObject *value,
 
     if (start < 0) {
         start += self->groups;
-        if (start < 0)
+        if (start < 0) {
             start = 0;
+        }
     }
     if (stop < 0) {
         stop += self->groups;
@@ -2668,14 +2669,17 @@ _sre_SRE_Match_index_impl(MatchObject *self, PyObject *value,
     }
     for (i = start; i < stop; i++) {
         PyObject* group = match_getslice_by_index(self, i, Py_None);
-        if (group == NULL)
+        if (group == NULL) {
             return NULL;
+        }
         int cmp = PyObject_RichCompareBool(group, value, Py_EQ);
         Py_DECREF(group);
-        if (cmp > 0)
+        if (cmp > 0) {
             return PyLong_FromSsize_t(i);
-        else if (cmp < 0)
+        }
+        else if (cmp < 0) {
             return NULL;
+        }
     }
     PyErr_SetString(PyExc_ValueError, "match.index(x): x not in match");
     return NULL;
@@ -2699,14 +2703,17 @@ _sre_SRE_Match_count_impl(MatchObject *self, PyObject *value)
 
     for (i = 0; i < self->groups; i++) {
         PyObject* group = match_getslice_by_index(self, i, Py_None);
-        if (group == NULL)
+        if (group == NULL) {
             return NULL;
+        }
         int cmp = PyObject_RichCompareBool(group, value, Py_EQ);
         Py_DECREF(group);
-        if (cmp > 0)
+        if (cmp > 0) {
             count++;
-        else if (cmp < 0)
+        }
+        else if (cmp < 0) {
             return NULL;
+        }
     }
     return PyLong_FromSsize_t(count);
 }
