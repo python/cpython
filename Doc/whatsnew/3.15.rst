@@ -124,7 +124,7 @@ Removed
 sysconfig
 ---------
 
-* Remove the *check_home* parameter of :func:`sysconfig.is_python_build`.
+* Removed the *check_home* parameter of :func:`sysconfig.is_python_build`.
   (Contributed by Filipe Laíns in :gh:`92897`.)
 
 
