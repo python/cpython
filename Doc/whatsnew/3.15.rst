@@ -121,9 +121,10 @@ Removed
 typing
 ------
 
-* Using  ``TypedDict("T")`` or ``TypedDict("T", None)`` to construct
-  :class:`~typing.TypedDict` with zero fields is no more supported.
-  Use ``TypedDict("T", [])`` instead.
+* Using ``TD = TypedDict("TD")`` or ``TD = TypedDict("TD", None)`` to
+  construct a :class:`~typing.TypedDict` type with zero field is no
+  longer supported. Use ``class TTD(TypedDict): pass``
+  or ``TD = TypedDict("TD", {})`` instead.
   (Contributed by Bénédikt Tran in :gh:`133823`.)
 
 
