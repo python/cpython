@@ -18,7 +18,7 @@ required *not* to match).  We use the ``|`` separator to mean PEG's
 "ordered choice" (written as ``/`` in traditional PEG grammars). See
 :pep:`617` for more details on the grammar's syntax.
 
-.. only:: not gettext
+.. only:: html or latex or epub
 
    .. literalinclude:: ../../Grammar/python.gram
      :language: peg
