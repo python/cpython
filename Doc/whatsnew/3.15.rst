@@ -121,6 +121,12 @@ Deprecated
 Removed
 =======
 
+platform
+---------
+
+* The deprecated :func:`!platform.java_ver` function.
+
+
 sysconfig
 ---------
 
