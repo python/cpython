@@ -1995,8 +1995,7 @@ New Deprecations
 
 * :mod:`wave`:
 
-  * Deprecate the :meth:`~wave.Wave_read.getmark`, :meth:`!setmark`,
-    and :meth:`~wave.Wave_read.getmarkers` methods of
+  * Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()`` methods of
     the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes,
     to be removed in Python 3.15.
     (Contributed by Victor Stinner in :gh:`105096`.)

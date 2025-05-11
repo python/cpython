@@ -144,6 +144,14 @@ typing
   (Contributed by Bénédikt Tran in :gh:`133823`.)
 
 
+wave
+----
+
+* The ``getmark()``, ``setmark()`` and ``getmarkers()`` methods of
+  the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes.
+  (Contributed by Bénédikt Tran in :gh:`133873`.)
+
+
 Porting to Python 3.15
 ======================
 
