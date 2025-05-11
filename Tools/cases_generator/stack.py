@@ -168,7 +168,7 @@ class Local:
 
     @staticmethod
     def register(name: str) -> "Local":
-        item = StackItem(name, None, "", False, True)
+        item = StackItem(name, None, "", [], False, True)
         return Local(item, None, True)
 
     def kill(self) -> None:

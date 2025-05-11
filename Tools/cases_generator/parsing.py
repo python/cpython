@@ -249,7 +249,7 @@ class StackAttribute(Node):
     ident: str
     expr: str
 
-    def __str__(self):
+    def __repr__(self) -> str:
         return f"{self.ident}({self.expr})"
 
 @dataclass
@@ -483,8 +483,9 @@ class Parser(PLexer):
                 if tkn.text not in STACK_ATTRIBUTES:
                     raise self.make_syntax_error(f"Stack attribute {tkn.text} is not recognized.")
                 expr = self.expression()
+                assert expr is not None
                 self.require(lx.RPAREN)
-                res.append(StackAttribute(tkn.text.strip(), expr.text.strip()))
+                res.append(StackAttribute(tkn.text.strip(), expr.size.strip()))
             else:
                 self.backup()
                 break

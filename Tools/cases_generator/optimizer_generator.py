@@ -193,10 +193,10 @@ def write_uop(
             _, storage = emitter.emit_tokens(override, storage, None, False)
             # Emit type effects.
             out.start_line()
-            for var in override.stack.inputs:
-                typ = get_type(var)
+            for input_ in override.stack.inputs:
+                typ = get_type(input_)
                 if typ is not None:
-                    emitter.emit(f"assert(sym_matches_type({var.name}, {typ}));\n")
+                    emitter.emit(f"assert(sym_matches_type({input_.name}, {typ}));\n")
             storage.flush(out)
         else:
             emit_default(out, uop, stack)
