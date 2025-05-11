@@ -2445,9 +2445,7 @@ match_item(PyObject *op, Py_ssize_t index)
 
     if (index < 0 || index >= self->groups) {
         /* raise IndexError if we were given a bad group number */
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_IndexError, "no such group");
-        }
+        PyErr_SetString(PyExc_IndexError, "no such group");
         return NULL;
     }
 
