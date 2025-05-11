@@ -2416,7 +2416,7 @@ class AtexitTests(unittest.TestCase):
         self.assertIn("RuntimeError: can't register atexit after shutdown",
                 err.decode())
 
-class LockedIterTests(unittest.TestCase):
+class IterLockedTests(unittest.TestCase):
 
      def test_iter_locked(self):
             for s in ("123", [], [1, 2, 3], tuple(), (1, 2, 3)):
