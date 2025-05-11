@@ -428,6 +428,9 @@ class delete(EditCommand):
             r.update_screen()
             r.console.finish()
             raise EOFError
+        elif "\n" in b and self.event[-1] == "\004":
+            self.finish = True
+
         for i in range(r.get_arg()):
             if r.pos != len(b):
                 del b[r.pos]

@@ -1,0 +1,3 @@
+Fixed Ctrl+D (^D) behavior in _pyrepl module: Now properly exits multiline
+mode when pressed in multiline section. Added test cases to verify the
+behavior in both multiline and single line modes.

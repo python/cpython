@@ -1768,3 +1768,42 @@ class TestMain(ReplTestCase):
                     " outside of the Python REPL"
                 )
                 self.assertIn(hint, output)
+class TestPyReplCtrlD(TestCase):
+    def prepare_reader(self, events):
+        console = FakeConsole(events)
+        config = ReadlineConfig(readline_completer=None)
+        reader = ReadlineAlikeReader(console=console, config=config)
+        return reader
+
+    def test_ctrl_d_empty_buffer(self):
+        """Test that pressing Ctrl+D on empty buffer exits the program"""
+        events = [
+            Event(evt="key", data="\x04", raw=bytearray(b"\x04")),  # Ctrl+D
+        ]
+        reader = self.prepare_reader(events)
+        with self.assertRaises(EOFError):
+            multiline_input(reader)
+
+    def test_ctrl_d_multiline_mode(self):
+        """Test that pressing Ctrl+D in multiline mode exits multiline mode"""
+        events = itertools.chain(
+            code_to_events("def f():\n"),  # Enter multiline mode
+            [
+                Event(evt="key", data="\x04", raw=bytearray(b"\x04")),  # Ctrl+D
+            ],
+        )
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, "def f():\n    ")  # Should return current input
+
+    def test_ctrl_d_single_line(self):
+        """Test that pressing Ctrl+D in single line mode deletes current character"""
+        events = itertools.chain(
+            code_to_events("hello"),
+            [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))],  # move left
+            [Event(evt="key", data="\x04", raw=bytearray(b"\x04"))],    # Ctrl+D
+            code_to_events("\n"),
+        )
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, "hell")  # Should delete the last character
