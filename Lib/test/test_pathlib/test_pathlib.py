@@ -539,12 +539,6 @@ class PurePathTest(unittest.TestCase):
         self.assertRaises(ValueError, P('a/b').with_stem, '')
         self.assertRaises(ValueError, P('a/b').with_stem, '.')
 
-    def test_is_reserved_deprecated(self):
-        P = self.cls
-        p = P('a/b')
-        with self.assertWarns(DeprecationWarning):
-            p.is_reserved()
-
     def test_full_match_case_sensitive(self):
         P = self.cls
         self.assertFalse(P('A.py').full_match('a.PY', case_sensitive=True))
