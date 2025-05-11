@@ -1,0 +1,3 @@
+Fix crashes on an empty DELETE_WORD_BACKWARDS (^W) followed by
+CLEAR_TO_START (^K). Added comprehensive test cases for both Control-W and
+Control-K functionality.
