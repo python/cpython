@@ -1045,6 +1045,9 @@ get_code_var_counts(PyObject *self, PyObject *_args, PyObject *_kwargs)
 #define SET_COUNT(DICT, STRUCT, NAME) \
     do { \
         PyObject *count = PyLong_FromLong(STRUCT.NAME); \
+        if (count == NULL) { \
+            goto error; \
+        } \
         int res = PyDict_SetItemString(DICT, #NAME, count); \
         Py_DECREF(count); \
         if (res < 0) { \
