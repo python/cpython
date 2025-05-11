@@ -207,6 +207,8 @@ class InteractiveSession(unittest.TestCase):
 
 @requires_subprocess()
 class CompletionTest(unittest.TestCase):
+    PS1 = "sqlite> "
+
     @classmethod
     def setUpClass(cls):
         readline = import_module("readline")
@@ -239,24 +241,38 @@ class CompletionTest(unittest.TestCase):
             readline.parse_and_bind("set colored-completion-prefix off")
             from sqlite3.__main__ import main; main()
         """)
-        input = b"zzzz\t;\n.quit\n"
-        output = run_pty(script, input)
-        for keyword in SQLITE_KEYWORDS:
-            self.assertNotRegex(output, rf"\b{keyword}\b".encode("utf-8"))
+        input = b"xyzzy\t\t\b\b\b\b\b.quit\n"
+        output = run_pty(script, input, env={"NO_COLOR": "1"})
+        output_lines = output.decode().splitlines()
+        line_num = next(i for i, line in enumerate(output_lines, 1)
+                        if line.startswith(f"{self.PS1}xyzzy"))
+        # completions occupy lines, assert no extra lines when there is nothing
+        # to complete
+        self.assertEqual(line_num, len(output_lines))
 
     def test_completion_order(self):
         script = textwrap.dedent("""
             import readline
             readline.parse_and_bind("set colored-completion-prefix off")
+            # hide control sequences surrounding each candidate
+            readline.parse_and_bind("set colored-stats off")
+            # hide "Display all xxx possibilities? (y or n)"
+            readline.parse_and_bind("set completion-query-items 0")
+            # hide "--More--"
+            readline.parse_and_bind("set page-completions off")
+            # show candidates one per line
+            readline.parse_and_bind("set completion-display-width 0")
             from sqlite3.__main__ import main; main()
         """)
-        input = b"S\t\t;\n.quit\n"
-        output = run_pty(script, input)
-        savepoint_idx = output.find(b"SAVEPOINT")
-        select_idx = output.find(b"SELECT")
-        set_idx = output.find(b"SET")
-        self.assertTrue(0 <= savepoint_idx < select_idx < set_idx)
-
+        input = b"\t\t.quit\n"
+        output = run_pty(script, input, env={"NO_COLOR": "1"})
+        output_lines = output.decode().splitlines()
+        candidates = []
+        for line in output_lines[-2::-1]:
+            if line.startswith(self.PS1):
+                break
+            candidates.append(line.strip())
+        self.assertEqual(sorted(candidates, reverse=True), candidates)
 
 if __name__ == "__main__":
     unittest.main()
