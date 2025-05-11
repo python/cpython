@@ -197,7 +197,7 @@ Here is an example that imports a module from a ZIP archive - note that the
     --------                   -------
         8467                   1 file
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> import sys
    >>> sys.path.insert(0, 'example_archive.zip')  # Add .zip file to front of path
