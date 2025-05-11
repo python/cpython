@@ -188,6 +188,7 @@ Here is an example that imports a module from a ZIP archive - note that the
 
 .. code-block:: shell-session
 
+
    $ unzip -l example_archive.zip
    Archive:  example_archive.zip
      Length     Date   Time    Name
