@@ -3159,7 +3159,7 @@ class _TypedDictMeta(type):
     __instancecheck__ = __subclasscheck__
 
 
-def TypedDict(typename, fields=_sentinel, /, *, total=True):
+def TypedDict(typename, fields, /, *, total=True):
     """A simple typed namespace. At runtime it is equivalent to a plain dict.
 
     TypedDict creates a dictionary type such that a type checker will expect all
@@ -3214,24 +3214,6 @@ def TypedDict(typename, fields=_sentinel, /, *, total=True):
             username: str      # the "username" key can be changed
 
     """
-    if fields is _sentinel or fields is None:
-        import warnings
-
-        if fields is _sentinel:
-            deprecated_thing = "Failing to pass a value for the 'fields' parameter"
-        else:
-            deprecated_thing = "Passing `None` as the 'fields' parameter"
-
-        example = f"`{typename} = TypedDict({typename!r}, {{{{}}}})`"
-        deprecation_msg = (
-            "{name} is deprecated and will be disallowed in Python {remove}. "
-            "To create a TypedDict class with 0 fields "
-            "using the functional syntax, "
-            "pass an empty dictionary, e.g. "
-        ) + example + "."
-        warnings._deprecated(deprecated_thing, message=deprecation_msg, remove=(3, 15))
-        fields = {}
-
     ns = {'__annotations__': dict(fields)}
     module = _caller()
     if module is not None:
