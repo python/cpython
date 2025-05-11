@@ -6972,7 +6972,7 @@ class TestProgName(TestCase):
         return zip_name
 
     def check_usage(self, expected, *args, **kwargs):
-        res = script_helper.assert_python_ok(*args, '-h', **kwargs)
+        res = script_helper.assert_python_ok('-Xutf8', *args, '-h', **kwargs)
         self.assertEqual(os.fsdecode(res.out.splitlines()[0]),
                          f'usage: {expected} [-h]')
 
