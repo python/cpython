@@ -56,9 +56,7 @@ find_state_by_type(PyTypeObject *tp)
     return get_thread_state(mod);
 }
 
-#define clinic_state() (find_state_by_type(type))
 #include "clinic/_threadmodule.c.h"
-#undef clinic_state
 
 #ifdef MS_WINDOWS
 typedef HRESULT (WINAPI *PF_GET_THREAD_DESCRIPTION)(HANDLE, PCWSTR*);
@@ -70,10 +68,10 @@ static PF_SET_THREAD_DESCRIPTION pSetThreadDescription = NULL;
 
 /*[clinic input]
 module _thread
-class _thread.iter_locked "iter_locked_object *" "clinic_state()->iter_locked_type"
+class _thread.iter_locked "iter_locked_object *" "find_state_by_type(type)->iter_locked_type"
 
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6c78d729dec7bf7e]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=cc495aee1743488d]*/
 
 
 // _ThreadHandle type
@@ -770,20 +768,24 @@ _thread_iter_locked_impl(PyTypeObject *type, PyObject *iterable)
     if (it == NULL)
         return NULL;
 
-    iter_locked_object *lz = (iter_locked_object *)type->tp_alloc(type, 0);
-    lz->it = it;
+    iter_locked_object *il = (iter_locked_object *)type->tp_alloc(type, 0);
+    if (il == NULL) {
+        Py_DECREF(it);
+        return NULL;
+    }
+    il->it = it;
 
-    return (PyObject *)lz;
+    return (PyObject *)il;
 }
 
 static void
 iter_locked_dealloc(PyObject *op)
 {
-    iter_locked_object *lz = iter_locked_object_CAST(op);
-    PyTypeObject *tp = Py_TYPE(lz);
-    PyObject_GC_UnTrack(lz);
-    Py_XDECREF(lz->it);
-    tp->tp_free(lz);
+    iter_locked_object *il = iter_locked_object_CAST(op);
+    PyTypeObject *tp = Py_TYPE(il);
+    PyObject_GC_UnTrack(il);
+    Py_DECREF(il->it);
+    tp->tp_free(il);
     Py_DECREF(tp);
 }
 
@@ -802,16 +804,12 @@ iter_locked_next(PyObject *op)
     iter_locked_object *lz = iter_locked_object_CAST(op);
     PyObject *result = NULL;
 
-    Py_BEGIN_CRITICAL_SECTION(lz->it);  // or lock on op?
+    Py_BEGIN_CRITICAL_SECTION(op);  // lock on op or lz->it?
     PyObject *it = lz->it;
-    if (it != NULL) {
-        result = PyIter_Next(lz->it);
-        if (result == NULL) {
-            /* Note:  StopIteration is already cleared by PyIter_Next() */
-            if (PyErr_Occurred())
-                return NULL;
-            Py_CLEAR(lz->it);
-        }
+    result = PyIter_Next(it);
+    if (result == NULL) {
+        /* Note:  StopIteration is already cleared by PyIter_Next() */
+        /* If PyErr_Occurred() we will also return NULL*/
     }
     Py_END_CRITICAL_SECTION();
     return result;
@@ -2854,7 +2852,7 @@ thread_module_traverse(PyObject *module, visitproc visit, void *arg)
 {
     thread_module_state *state = get_thread_state(module);
     Py_VISIT(state->excepthook_type);
-    Py_CLEAR(state->iter_locked_type);
+    Py_VISIT(state->iter_locked_type);
     Py_VISIT(state->lock_type);
     Py_VISIT(state->local_type);
     Py_VISIT(state->local_dummy_type);

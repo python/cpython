@@ -41,6 +41,7 @@ class iter_lockedThreading(unittest.TestCase):
 
         data = tuple(range(400))
         for it in range(number_of_iterations):
+            print(f'test_iter_locked {it=}')
             iter_locked_iterator = iter_locked(non_atomic_iterator(data,))
             worker_threads = []
             for ii in range(number_of_threads):

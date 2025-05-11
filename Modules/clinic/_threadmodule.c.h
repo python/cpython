@@ -21,7 +21,7 @@ static PyObject *
 _thread_iter_locked(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    PyTypeObject *base_tp = clinic_state()->iter_locked_type;
+    PyTypeObject *base_tp = find_state_by_type(type)->iter_locked_type;
     PyObject *iterable;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
@@ -133,4 +133,4 @@ exit:
 #ifndef _THREAD_SET_NAME_METHODDEF
     #define _THREAD_SET_NAME_METHODDEF
 #endif /* !defined(_THREAD_SET_NAME_METHODDEF) */
-/*[clinic end generated code: output=a890435ac29024b2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9555ccecaeb48d69 input=a9049054013a1b77]*/
