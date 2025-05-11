@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_zstd_ZstdCompressor_new__doc__,
@@ -25,7 +26,7 @@ PyDoc_STRVAR(_zstd_ZstdCompressor_new__doc__,
 "function instead.");
 
 static PyObject *
-_zstd_ZstdCompressor_new_impl(PyTypeObject *type, PyObject *level,
+_zstd_ZstdCompressor_new_impl(PyTypeObject *type, Py_ssize_t level,
                               PyObject *options, PyObject *zstd_dict);
 
 static PyObject *
@@ -63,7 +64,7 @@ _zstd_ZstdCompressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
-    PyObject *level = Py_None;
+    Py_ssize_t level = PY_SSIZE_T_MIN;
     PyObject *options = Py_None;
     PyObject *zstd_dict = Py_None;
 
@@ -76,7 +77,9 @@ _zstd_ZstdCompressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto skip_optional_pos;
     }
     if (fastargs[0]) {
-        level = fastargs[0];
+        if (!_Py_convert_optional_to_ssize_t(fastargs[0], &level)) {
+            goto exit;
+        }
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -252,4 +255,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ee2d1dc298de790c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=95b86cea725001df input=a9049054013a1b77]*/

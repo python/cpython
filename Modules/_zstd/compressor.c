@@ -45,98 +45,101 @@ typedef struct {
 #include "clinic/compressor.c.h"
 
 static int
-_zstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
-                       const char *arg_name, const char* arg_type)
+_zstd_set_c_level(ZstdCompressor *self, const Py_ssize_t level)
 {
-    size_t zstd_ret;
+    /* Set integer compression level */
+    const int min_level = ZSTD_minCLevel();
+    const int max_level = ZSTD_maxCLevel();
+    if (level < min_level || level > max_level) {
+        PyErr_Format(PyExc_ValueError,
+            "compression level %zd not in valid range %d <= level <= %d.",
+            level, min_level, max_level);
+        return -1;
+    }
+
+    /* Save for generating ZSTD_CDICT */
+    self->compression_level = (int)level;
+
+    /* Set compressionLevel to compression context */
+    const size_t zstd_ret = ZSTD_CCtx_setParameter(
+        self->cctx, ZSTD_c_compressionLevel, (int)level);
+
+    /* Check error */
+    if (ZSTD_isError(zstd_ret)) {
+        const _zstd_state* const st = PyType_GetModuleState(Py_TYPE(self));
+        if (st == NULL) {
+            return -1;
+        }
+        set_zstd_error(st, ERR_SET_C_LEVEL, zstd_ret);
+        return -1;
+    }
+    return 0;
+}
+
+static int
+_zstd_set_c_parameters(ZstdCompressor *self, PyObject *options)
+{
+    /* Set options dict */
     _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
     if (mod_state == NULL) {
         return -1;
     }
 
-    /* Integer compression level */
-    if (PyLong_Check(level_or_options)) {
-        int level = PyLong_AsInt(level_or_options);
-        if (level == -1 && PyErr_Occurred()) {
-            PyErr_Format(PyExc_ValueError,
-                            "Compression level should be an int value between %d and %d.",
-                            ZSTD_minCLevel(), ZSTD_maxCLevel());
+    if (!PyDict_Check(options)) {
+        PyErr_Format(PyExc_TypeError, "invalid type for options, expected dict");
+        return -1;
+    }
+
+    Py_ssize_t pos = 0;
+    PyObject *key, *value;
+    while (PyDict_Next(options, &pos, &key, &value)) {
+        /* Check key type */
+        if (Py_TYPE(key) == mod_state->DParameter_type) {
+            PyErr_SetString(PyExc_TypeError,
+                            "key should NOT be DecompressionParameter.");
             return -1;
         }
 
-        /* Save for generating ZSTD_CDICT */
-        self->compression_level = level;
+        const int key_v = PyLong_AsInt(key);
+        if (key_v == -1 && PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ValueError,
+                            "key should be a CompressionParameter attribute.");
+            return -1;
+        }
 
-        /* Set compressionLevel to compression context */
-        zstd_ret = ZSTD_CCtx_setParameter(self->cctx,
-                                          ZSTD_c_compressionLevel,
-                                          level);
+        // TODO(emmatyping): check bounds when there is a value error here for better
+        // error message?
+        int value_v = PyLong_AsInt(value);
+        if (value_v == -1 && PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ValueError,
+                            "options dict value should be an int.");
+            return -1;
+        }
 
-        /* Check error */
+        if (key_v == ZSTD_c_compressionLevel) {
+            /* Save for generating ZSTD_CDICT */
+            self->compression_level = value_v;
+        }
+        else if (key_v == ZSTD_c_nbWorkers) {
+            /* From the zstd library docs:
+               1. When nbWorkers >= 1, triggers asynchronous mode when
+                  used with ZSTD_compressStream2().
+               2, Default value is `0`, aka "single-threaded mode" : no
+                  worker is spawned, compression is performed inside
+                  caller's thread, all invocations are blocking. */
+            if (value_v != 0) {
+                self->use_multithread = 1;
+            }
+        }
+
+        /* Set parameter to compression context */
+        const size_t zstd_ret = ZSTD_CCtx_setParameter(self->cctx, key_v, value_v);
         if (ZSTD_isError(zstd_ret)) {
-            set_zstd_error(mod_state, ERR_SET_C_LEVEL, zstd_ret);
+            set_parameter_error(mod_state, 1, key_v, value_v);
             return -1;
         }
-        return 0;
     }
-
-    /* Options dict */
-    if (PyDict_Check(level_or_options)) {
-        PyObject *key, *value;
-        Py_ssize_t pos = 0;
-
-        while (PyDict_Next(level_or_options, &pos, &key, &value)) {
-            /* Check key type */
-            if (Py_TYPE(key) == mod_state->DParameter_type) {
-                PyErr_SetString(PyExc_TypeError,
-                                "Key of compression option dict should "
-                                "NOT be DecompressionParameter.");
-                return -1;
-            }
-
-            int key_v = PyLong_AsInt(key);
-            if (key_v == -1 && PyErr_Occurred()) {
-                PyErr_SetString(PyExc_ValueError,
-                                "Key of options dict should be a CompressionParameter attribute.");
-                return -1;
-            }
-
-            // TODO(emmatyping): check bounds when there is a value error here for better
-            // error message?
-            int value_v = PyLong_AsInt(value);
-            if (value_v == -1 && PyErr_Occurred()) {
-                PyErr_SetString(PyExc_ValueError,
-                                "Value of option dict should be an int.");
-                return -1;
-            }
-
-            if (key_v == ZSTD_c_compressionLevel) {
-                /* Save for generating ZSTD_CDICT */
-                self->compression_level = value_v;
-            }
-            else if (key_v == ZSTD_c_nbWorkers) {
-                /* From the zstd library docs:
-                   1. When nbWorkers >= 1, triggers asynchronous mode when
-                      used with ZSTD_compressStream2().
-                   2, Default value is `0`, aka "single-threaded mode" : no
-                      worker is spawned, compression is performed inside
-                      caller's thread, all invocations are blocking. */
-                if (value_v != 0) {
-                    self->use_multithread = 1;
-                }
-            }
-
-            /* Set parameter to compression context */
-            zstd_ret = ZSTD_CCtx_setParameter(self->cctx, key_v, value_v);
-            if (ZSTD_isError(zstd_ret)) {
-                set_parameter_error(mod_state, 1, key_v, value_v);
-                return -1;
-            }
-        }
-        return 0;
-    }
-    PyErr_Format(PyExc_TypeError, "Invalid type for %s. Expected %s", arg_name, arg_type);
-    return -1;
+    return 0;
 }
 
 static void
@@ -314,7 +317,7 @@ load:
 /*[clinic input]
 @classmethod
 _zstd.ZstdCompressor.__new__ as _zstd_ZstdCompressor_new
-    level: object = None
+    level: Py_ssize_t(c_default='PY_SSIZE_T_MIN', accept={int, NoneType}) = None
         The compression level to use. Defaults to COMPRESSION_LEVEL_DEFAULT.
     options: object = None
         A dict object that contains advanced compression parameters.
@@ -328,9 +331,9 @@ function instead.
 [clinic start generated code]*/
 
 static PyObject *
-_zstd_ZstdCompressor_new_impl(PyTypeObject *type, PyObject *level,
+_zstd_ZstdCompressor_new_impl(PyTypeObject *type, Py_ssize_t level,
                               PyObject *options, PyObject *zstd_dict)
-/*[clinic end generated code: output=cdef61eafecac3d7 input=92de0211ae20ffdc]*/
+/*[clinic end generated code: output=a857ec0dc29fc5e2 input=9899740b24d11319]*/
 {
     ZstdCompressor* self = PyObject_GC_New(ZstdCompressor, type);
     if (self == NULL) {
@@ -353,20 +356,20 @@ _zstd_ZstdCompressor_new_impl(PyTypeObject *type, PyObject *level,
     /* Last mode */
     self->last_mode = ZSTD_e_end;
 
-    if (level != Py_None && options != Py_None) {
+    if (level != PY_SSIZE_T_MIN && options != Py_None) {
         PyErr_SetString(PyExc_RuntimeError, "Only one of level or options should be used.");
         goto error;
     }
 
     /* Set compressLevel/options to compression context */
-    if (level != Py_None) {
-        if (_zstd_set_c_parameters(self, level, "level", "int") < 0) {
+    if (level != PY_SSIZE_T_MIN) {
+        if (_zstd_set_c_level(self, level) < 0) {
             goto error;
         }
     }
 
     if (options != Py_None) {
-        if (_zstd_set_c_parameters(self, options, "options", "dict") < 0) {
+        if (_zstd_set_c_parameters(self, options) < 0) {
             goto error;
         }
     }
