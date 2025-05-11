@@ -7191,7 +7191,6 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
         assert(old_module != module);
         datetime_state *st_old = get_module_state(old_module);
         *st = (datetime_state){
-            .module = st->module,
             .isocalendar_date_type = st->isocalendar_date_type,
             .us_per_ms = Py_NewRef(st_old->us_per_ms),
             .us_per_second = Py_NewRef(st_old->us_per_second),
@@ -7336,7 +7335,6 @@ _datetime_exec(PyObject *module)
         }
     }
 
-    st->module = Py_NewRef(module);
     if (init_state(st, module, old_module) < 0) {
         goto error;
     }
@@ -7446,12 +7444,12 @@ _datetime_exec(PyObject *module)
     if (set_current_module(interp, module) < 0) {
         goto error;
     }
+    st->module = Py_NewRef(module);
 
     rc = 0;
     goto finally;
 
 error:
-    Py_CLEAR(st->module);
     clear_state(st);
 
 finally:
