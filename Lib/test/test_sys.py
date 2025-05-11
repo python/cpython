@@ -2091,6 +2091,8 @@ print("Remote script executed successfully!")
         self.assertEqual(stderr, b"")
 
     @unittest.skipUnless(os_helper.TESTFN_UNDECODABLE, 'requires undecodable path')
+    @unittest.skipIf(sys.platform == 'darwin',
+                     'undecodable paths are not supported on macOS')
     def test_remote_exec_undecodable(self):
         script = '''
 print("Remote script executed successfully!")

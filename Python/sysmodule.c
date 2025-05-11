@@ -2498,9 +2498,7 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
         Py_DECREF(path);
         return NULL;
     }
-    Py_BEGIN_ALLOW_THREADS
     DWORD attr = GetFileAttributesW(debugger_script_path_w);
-    Py_END_ALLOW_THREADS
     PyMem_Free(debugger_script_path_w);
     if (attr == INVALID_FILE_ATTRIBUTES) {
         DWORD err = GetLastError();
