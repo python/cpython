@@ -75,6 +75,9 @@ New features
 Other language changes
 ======================
 
+* Several error messages incorrectly using the term "argument" have been corrected.
+  (Contributed by Stan Ulbrych in :gh:`133382`.)
+
 
 
 New modules
@@ -122,6 +125,16 @@ sysconfig
 ---------
 
 * The *check_home* parameter of :func:`sysconfig.is_python_build`.
+
+
+typing
+------
+
+* The undocumented keyword argument syntax for creating
+  :class:`~typing.NamedTuple` classes (for example,
+  ``Point = NamedTuple("Point", x=int, y=int)``).
+  Use the class-based syntax or the functional syntax instead.
+  (Contributed by Bénédikt Tran in :gh:`133817`.)
 
 
 Porting to Python 3.15
