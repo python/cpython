@@ -3,6 +3,8 @@
 # Script initially imported from:
 # https://github.com/FFY00/python-instrospection/blob/main/python_introspection/scripts/generate-build-details.py
 
+from __future__ import annotations
+
 import argparse
 import collections
 import importlib.machinery
@@ -11,19 +13,23 @@ import os
 import sys
 import sysconfig
 
+TYPE_CHECKING = False
+if TYPE_CHECKING:
+    from typing import Any
 
-def version_info_to_dict(obj):  # (object) -> dict[str, Any]
+
+def version_info_to_dict(obj: sys._version_info) -> dict[str, Any]:
     field_names = ('major', 'minor', 'micro', 'releaselevel', 'serial')
     return {field: getattr(obj, field) for field in field_names}
 
 
-def get_dict_key(container, key):  # (dict[str, Any], str) -> dict[str, Any]
+def get_dict_key(container: dict[str, Any], key: str) -> dict[str, Any]:
     for part in key.split('.'):
         container = container[part]
     return container
 
 
-def generate_data(schema_version):
+def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
     """Generate the build-details.json data (PEP 739).
 
     :param schema_version: The schema version of the data we want to generate.
@@ -32,7 +38,9 @@ def generate_data(schema_version):
     if schema_version != '1.0':
         raise ValueError(f'Unsupported schema_version: {schema_version}')
 
-    data = collections.defaultdict(lambda: collections.defaultdict(dict))
+    data: collections.defaultdict[str, Any] = collections.defaultdict(
+        lambda: collections.defaultdict(dict),
+    )
 
     data['schema_version'] = schema_version
 
@@ -122,7 +130,7 @@ def generate_data(schema_version):
     return data
 
 
-def make_paths_relative(data, config_path=None):  # (dict[str, Any], str | None) -> None
+def make_paths_relative(data: dict[str, Any], config_path: str | None = None) -> None:
     # Make base_prefix relative to the config_path directory
     if config_path:
         data['base_prefix'] = os.path.relpath(data['base_prefix'], os.path.dirname(config_path))
@@ -152,7 +160,7 @@ def make_paths_relative(data, config_path=None):  # (dict[str, Any], str | None)
         container[child] = new_path
 
 
-def main():  # () -> None
+def main() -> None:
     parser = argparse.ArgumentParser(exit_on_error=False)
     parser.add_argument('location')
     parser.add_argument(
