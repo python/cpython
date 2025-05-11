@@ -6,32 +6,9 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
-static PyObject *
-_zstd_ZstdCompressor_new_impl(PyTypeObject *type);
-
-static PyObject *
-_zstd_ZstdCompressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    PyTypeObject *base_tp = &zstd_compressor_type_spec;
-
-    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoPositional("ZstdCompressor", args)) {
-        goto exit;
-    }
-    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("ZstdCompressor", kwargs)) {
-        goto exit;
-    }
-    return_value = _zstd_ZstdCompressor_new_impl(type);
-
-exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(_zstd_ZstdCompressor___init____doc__,
+PyDoc_STRVAR(_zstd_ZstdCompressor_new__doc__,
 "ZstdCompressor(level=None, options=None, zstd_dict=None)\n"
 "--\n"
 "\n"
@@ -47,14 +24,14 @@ PyDoc_STRVAR(_zstd_ZstdCompressor___init____doc__,
 "Thread-safe at method level. For one-shot compression, use the compress()\n"
 "function instead.");
 
-static int
-_zstd_ZstdCompressor___init___impl(ZstdCompressor *self, PyObject *level,
-                                   PyObject *options, PyObject *zstd_dict);
+static PyObject *
+_zstd_ZstdCompressor_new_impl(PyTypeObject *type, PyObject *level,
+                              PyObject *options, PyObject *zstd_dict);
 
-static int
-_zstd_ZstdCompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+static PyObject *
+_zstd_ZstdCompressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    int return_value = -1;
+    PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     #define NUM_KEYWORDS 3
@@ -112,7 +89,7 @@ _zstd_ZstdCompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     zstd_dict = fastargs[2];
 skip_optional_pos:
-    return_value = _zstd_ZstdCompressor___init___impl((ZstdCompressor *)self, level, options, zstd_dict);
+    return_value = _zstd_ZstdCompressor_new_impl(type, level, options, zstd_dict);
 
 exit:
     return return_value;
@@ -275,4 +252,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e893afb075d1b7c6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f30de86bbd38a79a input=a9049054013a1b77]*/
