@@ -123,7 +123,7 @@ typing
 
 * Using ``TD = TypedDict("TD")`` or ``TD = TypedDict("TD", None)`` to
   construct a :class:`~typing.TypedDict` type with zero field is no
-  longer supported. Use ``class TTD(TypedDict): pass``
+  longer supported. Use ``class TD(TypedDict): pass``
   or ``TD = TypedDict("TD", {})`` instead.
   (Contributed by Bénédikt Tran in :gh:`133823`.)
 
