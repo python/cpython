@@ -187,6 +187,7 @@ Here is an example that imports a module from a ZIP archive - note that the
 :mod:`zipimport` module is not explicitly used.
 
 .. code-block:: shell-session
+
    $ unzip -l example_archive.zip
    Archive:  example_archive.zip
      Length     Date   Time    Name
