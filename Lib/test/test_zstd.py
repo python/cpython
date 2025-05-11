@@ -281,7 +281,7 @@ class CompressorTestCase(unittest.TestCase):
         with self.assertRaisesRegex(ZstdError,
                 (r'Error when setting zstd compression parameter "window_log", '
                  r'it should \d+ <= value <= \d+, provided value is 100\. '
-                 r'\(zstd v\d\.\d\.\d, (?:32|64)-bit build\)')):
+                 r'\((?:32|64)-bit build\)')):
             compress(b'', options=option)
 
     def test_unknown_compression_parameter(self):
@@ -413,7 +413,7 @@ class DecompressorTestCase(unittest.TestCase):
         with self.assertRaisesRegex(ZstdError,
                 (r'Error when setting zstd decompression parameter "window_log_max", '
                  r'it should \d+ <= value <= \d+, provided value is 100\. '
-                 r'\(zstd v\d\.\d\.\d, (?:32|64)-bit build\)')):
+                 r'\((?:32|64)-bit build\)')):
             decompress(b'', options=options)
 
     def test_unknown_decompression_parameter(self):
@@ -1174,43 +1174,43 @@ class ZstdDictTestCase(unittest.TestCase):
     def test_train_dict_c(self):
         # argument wrong type
         with self.assertRaises(TypeError):
-            _zstd._train_dict({}, (), 100)
+            _zstd.train_dict({}, (), 100)
         with self.assertRaises(TypeError):
-            _zstd._train_dict(b'', 99, 100)
+            _zstd.train_dict(b'', 99, 100)
         with self.assertRaises(TypeError):
-            _zstd._train_dict(b'', (), 100.1)
+            _zstd.train_dict(b'', (), 100.1)
 
         # size > size_t
         with self.assertRaises(ValueError):
-            _zstd._train_dict(b'', (2**64+1,), 100)
+            _zstd.train_dict(b'', (2**64+1,), 100)
 
         # dict_size <= 0
         with self.assertRaises(ValueError):
-            _zstd._train_dict(b'', (), 0)
+            _zstd.train_dict(b'', (), 0)
 
     def test_finalize_dict_c(self):
         with self.assertRaises(TypeError):
-            _zstd._finalize_dict(1, 2, 3, 4, 5)
+            _zstd.finalize_dict(1, 2, 3, 4, 5)
 
         # argument wrong type
         with self.assertRaises(TypeError):
-            _zstd._finalize_dict({}, b'', (), 100, 5)
+            _zstd.finalize_dict({}, b'', (), 100, 5)
         with self.assertRaises(TypeError):
-            _zstd._finalize_dict(TRAINED_DICT.dict_content, {}, (), 100, 5)
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, {}, (), 100, 5)
         with self.assertRaises(TypeError):
-            _zstd._finalize_dict(TRAINED_DICT.dict_content, b'', 99, 100, 5)
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', 99, 100, 5)
         with self.assertRaises(TypeError):
-            _zstd._finalize_dict(TRAINED_DICT.dict_content, b'', (), 100.1, 5)
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', (), 100.1, 5)
         with self.assertRaises(TypeError):
-            _zstd._finalize_dict(TRAINED_DICT.dict_content, b'', (), 100, 5.1)
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', (), 100, 5.1)
 
         # size > size_t
         with self.assertRaises(ValueError):
-            _zstd._finalize_dict(TRAINED_DICT.dict_content, b'', (2**64+1,), 100, 5)
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', (2**64+1,), 100, 5)
 
         # dict_size <= 0
         with self.assertRaises(ValueError):
-            _zstd._finalize_dict(TRAINED_DICT.dict_content, b'', (), 0, 5)
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', (), 0, 5)
 
     def test_train_buffer_protocol_samples(self):
         def _nbytes(dat):
@@ -1232,19 +1232,19 @@ class ZstdDictTestCase(unittest.TestCase):
         # wrong size list
         with self.assertRaisesRegex(ValueError,
                 "The samples size tuple doesn't match the concatenation's size"):
-            _zstd._train_dict(concatenation, tuple(wrong_size_lst), 100*_1K)
+            _zstd.train_dict(concatenation, tuple(wrong_size_lst), 100*_1K)
 
         # correct size list
-        _zstd._train_dict(concatenation, tuple(correct_size_lst), 3*_1K)
+        _zstd.train_dict(concatenation, tuple(correct_size_lst), 3*_1K)
 
         # wrong size list
         with self.assertRaisesRegex(ValueError,
                 "The samples size tuple doesn't match the concatenation's size"):
-            _zstd._finalize_dict(TRAINED_DICT.dict_content,
+            _zstd.finalize_dict(TRAINED_DICT.dict_content,
                                   concatenation, tuple(wrong_size_lst), 300*_1K, 5)
 
         # correct size list
-        _zstd._finalize_dict(TRAINED_DICT.dict_content,
+        _zstd.finalize_dict(TRAINED_DICT.dict_content,
                               concatenation, tuple(correct_size_lst), 300*_1K, 5)
 
     def test_as_prefix(self):
@@ -1682,10 +1682,10 @@ class FileTestCase(unittest.TestCase):
 
         # Trailing data isn't a valid compressed stream
         with ZstdFile(io.BytesIO(self.FRAME_42 + b'12345')) as f:
-            self.assertEqual(f.read(), self.DECOMPRESSED_42)
+            self.assertRaises(ZstdError, f.read)
 
         with ZstdFile(io.BytesIO(SKIPPABLE_FRAME + b'12345')) as f:
-            self.assertEqual(f.read(), b'')
+            self.assertRaises(ZstdError, f.read)
 
     def test_read_truncated(self):
         # Drop stream epilogue: 4 bytes checksum
