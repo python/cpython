@@ -2952,7 +2952,6 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     out_s_long = (long)current_s_dbl; // current_s_dbl is now integer part
 
     out_d_long = (long)py_round(current_d_dbl); // Round final days
-
     // Final explicit normalization to ensure positive remainders and correct carries
     // This handles cases where intermediate results might be negative or exceed component limits
     // before final casting to long.
@@ -3118,10 +3117,10 @@ delta_str(PyObject *self)
 static PyObject *
 delta_getstate(PyDateTime_Delta *self)
 {
-    return Py_BuildValue("iii", GET_TD_DAYS(self),
-                                GET_TD_SECONDS(self),
-                                GET_TD_MICROSECONDS(self),
-                                GET_TD_NANOSECONDS(self));
+    return Py_BuildValue("iiii", GET_TD_DAYS(self),
+                                 GET_TD_SECONDS(self),
+                                 GET_TD_MICROSECONDS(self),
+                                 GET_TD_NANOSECONDS(self));
 }
 
 static PyObject *
