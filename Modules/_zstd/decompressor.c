@@ -375,7 +375,7 @@ stream_decompress(ZstdDecompressor *self, Py_buffer *data, Py_ssize_t max_length
     if (self->eof) {
         PyErr_SetString(PyExc_EOFError, "Already at the end of a zstd frame.");
         assert(ret == NULL);
-        return ret;
+        return NULL;
     }
 
     /* Prepare input buffer w/wo unconsumed data */
