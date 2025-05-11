@@ -88,6 +88,7 @@ and improvements in user-friendliness and correctness.
 * :ref:`PEP 758: Allow except and except* expressions without parentheses <whatsnew314-pep758>`
 * :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
 * :ref:`PEP 765: Disallow return/break/continue that exit a finally block <whatsnew314-pep765>`
+* :ref:`Free-threaded mode improvements <whatsnew314-free-threaded-cpython>`
 * :ref:`PEP 768: Safe external debugger interface for CPython <whatsnew314-pep768>`
 * :ref:`PEP 784: Adding Zstandard to the standard library <whatsnew314-pep784>`
 * :ref:`A new type of interpreter <whatsnew314-tail-call>`
@@ -793,6 +794,27 @@ For further information on how to build Python, see
 
 (Contributed by Ken Jin in :gh:`128563`, with ideas on how to implement this
 in CPython by Mark Shannon, Garrett Gu, Haoran Xu, and Josh Haberman.)
+
+.. _whatsnew314-free-threaded-cpython:
+
+Free-threaded mode
+------------------
+
+Free-threaded mode (:pep:`703`), initially added in 3.13, has been significantly improved.
+The implementation described in PEP 703 was finished, including C API changes,
+and temporary workarounds in the interpreter were replaced with more permanent solutions.
+The specializing adaptive interpreter (:pep:`659`) is now enabled in free-threaded mode,
+which along with many other optimizations greatly improves its performance.
+The performance penalty on single-threaded code in free-threaded mode is now roughly 5-10%,
+depending on platform and C compiler used.
+
+This work was done by many contributors: Sam Gross, Matt Page, Neil Schemenauer,
+Thomas Wouters, Donghee Na, Kirill Podoprigora, Ken Jin, Itamar Oren,
+Brett Simmers, Dino Viehland, Nathan Goldbaum, Ralf Gommers, Lysandros Nikolaou,
+Kumar Aditya, Edgar Margffoy, and many others.
+
+Some of these contributors are employed by Meta, which has continued to provide
+significant engineering resources to support this project.
 
 
 .. _whatsnew314-pyrepl-highlighting:
