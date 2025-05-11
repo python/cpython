@@ -155,7 +155,6 @@ Others
   (Contributed by Sergey B Kirpichev in :gh:`109311`.)
 
 
-
 Porting to Python 3.15
 ======================
 
