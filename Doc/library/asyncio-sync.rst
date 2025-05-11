@@ -52,6 +52,7 @@ Lock
        # ... later
        async with lock:
            # access shared state
+           ...
 
    which is equivalent to::
 
@@ -61,6 +62,7 @@ Lock
        await lock.acquire()
        try:
            # access shared state
+           ...
        finally:
            lock.release()
 
@@ -300,6 +302,7 @@ Semaphore
        # ... later
        async with sem:
            # work with shared resource
+           ...
 
    which is equivalent to::
 
@@ -309,6 +312,7 @@ Semaphore
        await sem.acquire()
        try:
            # work with shared resource
+           ...
        finally:
            sem.release()
 

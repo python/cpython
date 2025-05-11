@@ -360,6 +360,7 @@ Number 1
         print('Reason: ', e.reason)
     else:
         # everything is fine
+        ...
 
 
 .. note::
@@ -386,6 +387,7 @@ Number 2
             print('Error code: ', e.code)
     else:
         # everything is fine
+        ...
 
 
 info and geturl

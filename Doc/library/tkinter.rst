@@ -872,6 +872,7 @@ and to have a callback function trigger when that event type occurs.  The form
 of the bind method is::
 
    def bind(self, sequence, func, add=''):
+       ...
 
 where:
 

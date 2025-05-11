@@ -340,7 +340,7 @@ Why are default values shared between objects?
 This type of bug commonly bites neophyte programmers.  Consider this function::
 
    def foo(mydict={}):  # Danger: shared reference to one dict for all calls
-       ... compute something ...
+       # ... compute something ...
        mydict[key] = value
        return mydict
 
@@ -382,7 +382,7 @@ requested again.  This is called "memoizing", and can be implemented like this::
            return _cache[(arg1, arg2)]
 
        # Calculate the value
-       result = ... expensive computation ...
+       result = ...  # ... expensive computation ...
        _cache[(arg1, arg2)] = result           # Store result in the cache
        return result
 
@@ -1555,7 +1555,8 @@ that does something::
            ...  # code to search a mailbox
        elif isinstance(obj, Document):
            ...  # code to search a document
-       elif ...
+       elif ...:
+           ...
 
 A better approach is to define a ``search()`` method on all the classes and just
 call it::

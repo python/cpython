@@ -1656,6 +1656,7 @@ Do not instantiate the :class:`Server` class directly.
 
       async with srv:
           # some code
+          ...
 
       # At this point, srv is closed and no longer accepts new connections.
 

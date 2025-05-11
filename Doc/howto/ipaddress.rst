@@ -255,6 +255,7 @@ membership test syntax like this::
 
    if address in network:
        # do something
+       ...
 
 Containment testing is done efficiently based on the network prefix::
 

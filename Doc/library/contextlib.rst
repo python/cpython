@@ -69,6 +69,7 @@ Functions and classes provided:
    The function can then be used like this::
 
       >>> with managed_resource(timeout=3600) as resource:
+      ...     ...
       ...     # Resource is released at the end of this block,
       ...     # even if code in the block raises an exception
 
@@ -145,6 +146,7 @@ Functions and classes provided:
      @timeit()
      async def main():
          # ... async code ...
+         ...
 
    When used as a decorator, a new generator instance is implicitly created on
    each function call. This allows the otherwise "one-shot" context managers
@@ -241,6 +243,7 @@ Functions and classes provided:
               cm = contextlib.nullcontext()
           with cm:
               # Do something
+              ...
 
    An example using *enter_result*::
 
@@ -254,6 +257,7 @@ Functions and classes provided:
 
           with cm as file:
               # Perform processing on the file
+              ...
 
    It can also be used as a stand-in for
    :ref:`asynchronous context managers <async-context-managers>`::
@@ -268,6 +272,7 @@ Functions and classes provided:
 
            async with cm as session:
                # Send http requests with session
+               ...
 
    .. versionadded:: 3.7
 
@@ -438,12 +443,14 @@ Functions and classes provided:
       def f():
           with cm():
               # Do stuff
+              ...
 
    ``ContextDecorator`` lets you instead write::
 
       @cm()
       def f():
           # Do stuff
+          ...
 
    It makes it clear that the ``cm`` applies to the whole function, rather than
    just a piece of it (and saving an indentation level is nice, too).
@@ -706,9 +713,11 @@ protocol can be separated slightly in order to allow this::
        x = stack.enter_context(cm)
    except Exception:
        # handle __enter__ exception
+       ...
    else:
        with stack:
            # Handle normal case
+           ...
 
 Actually needing to do this is likely to indicate that the underlying API
 should be providing a direct resource management interface for use with

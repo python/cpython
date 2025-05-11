@@ -2935,7 +2935,8 @@ Explicitly pass resources to child processes
         from multiprocessing import Process, Lock
 
         def f():
-            ... do something using "lock" ...
+            # ... do something using "lock" ...
+            ...
 
         if __name__ == '__main__':
             lock = Lock()
@@ -2947,7 +2948,8 @@ Explicitly pass resources to child processes
         from multiprocessing import Process, Lock
 
         def f(l):
-            ... do something using "l" ...
+            # ... do something using "l" ...
+            ...
 
         if __name__ == '__main__':
             lock = Lock()
