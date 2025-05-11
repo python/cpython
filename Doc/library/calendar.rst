@@ -522,7 +522,7 @@ The :mod:`calendar` module exports the following data attributes:
 
    .. caution::
 
-      In locales with alternative forms of month names, the :data:`!month_abbr` sequence
+      In locales with alternative month names forms, the :data:`!month_abbr` sequence
       may not be suitable when a month name stands by itself and not as part of a date.
       Use :data:`standalone_month_abbr` for a form suitable for standalone use.
 
@@ -530,9 +530,9 @@ The :mod:`calendar` module exports the following data attributes:
 .. data:: standalone_month_name
 
    A sequence that represents the months of the year in the current locale
-   in the grammatical form used when a month name stands by itself if the locale
-   provides one. If the locale does not supply an alternative form, it is equal to
-   :data:`month_name`.
+   in the grammatical form used when a month name stands by itself if
+   the locale provides one. If the locale does not supply a standalone form,
+   it is equal to :data:`month_name`.
 
        >>> import calendar
        >>> list(calendar.standalone_month_name)
@@ -544,9 +544,9 @@ The :mod:`calendar` module exports the following data attributes:
 .. data:: standalone_month_abbr
 
    A sequence that represents the abbreviated months of the year in the current
-   locale in the grammatical form used when a month name stands by itself if the
-   locale provides one. If the locale does not supply an alternative form, it is equal to
-   :data:`month_abbr`.
+   locale in the grammatical form used when a month name stands by itself if
+   the locale provides one. If the locale does not supply a standalone form
+   it is equal to :data:`month_abbr`.
 
        >>> import calendar
        >>> list(calendar.standalone_month_abbr)
