@@ -45,7 +45,7 @@ Pending removal in Python 3.15
 
 * :mod:`pathlib`:
 
-  * :meth:`.PurePath.is_reserved`
+  * :meth:`!.PurePath.is_reserved`
     has been deprecated since Python 3.13.
     Use :func:`os.path.isreserved` to detect reserved paths on Windows.
 
