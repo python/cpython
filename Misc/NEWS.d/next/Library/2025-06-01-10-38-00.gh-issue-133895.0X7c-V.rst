@@ -1,0 +1,3 @@
+Provide C99 Annex G return values for :mod:`cmath`'s functions as the
+"value" attribute of the ValueError exception object.  Patch by Sergey B
+Kirpichev.

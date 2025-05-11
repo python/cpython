@@ -36,6 +36,15 @@ class Py_complex_protected_return_converter(CReturnConverter):
         data.return_conversion.append("""
 if (errno == EDOM) {
     PyErr_SetString(PyExc_ValueError, "math domain error");
+
+    PyObject *exc = PyErr_GetRaisedException();
+    PyObject *value = PyComplex_FromCComplex(_return_value);
+
+    if (value) {
+        PyObject_SetAttrString(exc, "value", value);
+    }
+    Py_DECREF(value);
+    PyErr_SetRaisedException(exc);
     goto exit;
 }
 else if (errno == ERANGE) {
@@ -47,7 +56,7 @@ else {
 }
 """.strip())
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=8b27adb674c08321]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=2d92b1a541ef42a3]*/
 
 #if (FLT_RADIX != 2 && FLT_RADIX != 16)
 #error "Modules/cmathmodule.c expects FLT_RADIX to be 2 or 16"
@@ -888,8 +897,21 @@ cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj)
         y = c_log(y);
         x = _Py_c_quot(x, y);
     }
-    if (errno != 0)
-        return math_error();
+    if (errno) {
+        PyObject *ret = math_error();
+
+        if (errno == EDOM) {
+            PyObject *exc = PyErr_GetRaisedException();
+            PyObject *value = PyComplex_FromCComplex(x);
+
+            if (value) {
+                PyObject_SetAttrString(exc, "value", value);
+            }
+            Py_DECREF(value);
+            PyErr_SetRaisedException(exc);
+        }
+        return ret;
+    }
     return PyComplex_FromCComplex(x);
 }
 
@@ -972,7 +994,7 @@ cmath_polar_impl(PyObject *module, Py_complex z)
 static Py_complex rect_special_values[7][7];
 
 /*[clinic input]
-cmath.rect
+cmath.rect -> Py_complex_protected
 
     r: double
     phi: double
@@ -981,9 +1003,9 @@ cmath.rect
 Convert from polar coordinates to rectangular coordinates.
 [clinic start generated code]*/
 
-static PyObject *
+static Py_complex
 cmath_rect_impl(PyObject *module, double r, double phi)
-/*[clinic end generated code: output=385a0690925df2d5 input=24c5646d147efd69]*/
+/*[clinic end generated code: output=74ff3d17585f3388 input=50e60c5d28c834e6]*/
 {
     Py_complex z;
     errno = 0;
@@ -1027,11 +1049,7 @@ cmath_rect_impl(PyObject *module, double r, double phi)
         z.imag = r * sin(phi);
         errno = 0;
     }
-
-    if (errno != 0)
-        return math_error();
-    else
-        return PyComplex_FromCComplex(z);
+    return z;
 }
 
 /*[clinic input]
