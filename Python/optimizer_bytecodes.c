@@ -104,16 +104,18 @@ dummy_func(void) {
         res = sym_new_null(ctx);
     }
 
-    op(_GUARD_TOS_INT, (tos -- type(&PyLong_Type) tos)) {
+    op(_GUARD_TOS_INT, (tos -- tos)) {
         if (sym_matches_type(tos, &PyLong_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
+        sym_set_type(tos, &PyLong_Type);
     }
 
-    op(_GUARD_NOS_INT, (nos, unused -- type(&PyLong_Type) nos, unused)) {
+    op(_GUARD_NOS_INT, (nos, unused -- nos, unused)) {
         if (sym_matches_type(nos, &PyLong_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
+        sym_set_type(nos, &PyLong_Type);
     }
 
     op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
@@ -139,16 +141,18 @@ dummy_func(void) {
         }
     }
 
-    op(_GUARD_TOS_FLOAT, (tos -- type(&PyFloat_Type) tos)) {
+    op(_GUARD_TOS_FLOAT, (tos -- tos)) {
         if (sym_matches_type(tos, &PyFloat_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
+        sym_set_type(tos, &PyFloat_Type);
     }
 
-    op(_GUARD_NOS_FLOAT, (nos, unused -- type(&PyFloat_Type) nos, unused)) {
+    op(_GUARD_NOS_FLOAT, (nos, unused -- nos, unused)) {
         if (sym_matches_type(nos, &PyFloat_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
+        sym_set_type(nos, &PyFloat_Type);
     }
 
     op(_BINARY_OP, (left, right -- res)) {
@@ -404,16 +408,18 @@ dummy_func(void) {
         }
     }
 
-    op(_GUARD_NOS_UNICODE, (nos, unused -- type(&PyUnicode_Type) nos, unused)) {
+    op(_GUARD_NOS_UNICODE, (nos, unused -- nos, unused)) {
         if (sym_matches_type(nos, &PyUnicode_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
+        sym_set_type(nos, &PyUnicode_Type);
     }
 
-    op(_GUARD_TOS_UNICODE, (value -- type(&PyUnicode_Type) value)) {
+    op(_GUARD_TOS_UNICODE, (value -- value)) {
         if (sym_matches_type(value, &PyUnicode_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
+        sym_set_type(value, &PyUnicode_Type);
     }
 
     op(_TO_BOOL_STR, (value -- res)) {
@@ -423,7 +429,8 @@ dummy_func(void) {
         }
     }
 
-    op(_UNARY_NOT, (type(&PyBool_Type) value -- res)) {
+    op(_UNARY_NOT, (value -- res)) {
+        sym_set_type(value, &PyBool_Type);
         res = sym_new_truthiness(ctx, value, false);
     }
 
@@ -624,12 +631,13 @@ dummy_func(void) {
         self_or_null = sym_new_not_null(ctx);
     }
 
-    op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, self_or_null, unused[oparg] -- type(&PyFunction_Type) callable, self_or_null, unused[oparg])) {
+    op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
         if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyFunction_Type)) {
             assert(PyFunction_Check(sym_get_const(ctx, callable)));
             REPLACE_OP(this_instr, _CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
             this_instr->operand1 = (uintptr_t)sym_get_const(ctx, callable);
         }
+        sym_set_type(callable, &PyFunction_Type);
     }
 
     op(_CHECK_FUNCTION_EXACT_ARGS, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
@@ -645,9 +653,9 @@ dummy_func(void) {
         }
     }
 
-    op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- type(&PyMethod_Type) callable, null, unused[oparg])) {
+    op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
         sym_set_null(null);
-        (void)callable;
+        sym_set_type(callable, &PyMethod_Type);
     }
 
     op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
@@ -969,40 +977,46 @@ dummy_func(void) {
         }
     }
 
-    op(_GUARD_TOS_LIST, (tos -- type(&PyList_Type) tos)) {
+    op(_GUARD_TOS_LIST, (tos -- tos)) {
         if (sym_matches_type(tos, &PyList_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
+        sym_set_type(tos, &PyList_Type);
     }
 
-    op(_GUARD_NOS_LIST, (nos, unused -- type(&PyList_Type) nos, unused)) {
+    op(_GUARD_NOS_LIST, (nos, unused -- nos, unused)) {
         if (sym_matches_type(nos, &PyList_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
+        sym_set_type(nos, &PyList_Type);
     }
 
-    op(_GUARD_TOS_TUPLE, (tos -- type(&PyTuple_Type) tos)) {
+    op(_GUARD_TOS_TUPLE, (tos -- tos)) {
         if (sym_matches_type(tos, &PyTuple_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
+        sym_set_type(tos, &PyTuple_Type);
     }
 
-    op(_GUARD_NOS_TUPLE, (nos, unused -- type(&PyTuple_Type) nos, unused)) {
+    op(_GUARD_NOS_TUPLE, (nos, unused -- nos, unused)) {
         if (sym_matches_type(nos, &PyTuple_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
+        sym_set_type(nos, &PyTuple_Type);
     }
 
-    op(_GUARD_TOS_DICT, (tos -- type(&PyDict_Type) tos)) {
+    op(_GUARD_TOS_DICT, (tos -- tos)) {
         if (sym_matches_type(tos, &PyDict_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
+        sym_set_type(tos, &PyDict_Type);
     }
 
-    op(_GUARD_NOS_DICT, (nos, unused -- type(&PyDict_Type) nos, unused)) {
+    op(_GUARD_NOS_DICT, (nos, unused -- nos, unused)) {
         if (sym_matches_type(nos, &PyDict_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
+        sym_set_type(nos, &PyDict_Type);
     }
 
     op(_GUARD_TOS_ANY_SET, (tos -- tos)) {
@@ -1041,7 +1055,7 @@ dummy_func(void) {
         sym_set_const(callable, (PyObject *)&PyUnicode_Type);
     }
 
-    op(_CALL_LEN, (callable[1], self_or_null[1], args[oparg] -- type(res)) {
+    op(_CALL_LEN, (callable[1], self_or_null[1], args[oparg] -- res)) {
         res = sym_new_type(ctx, &PyLong_Type);
     }
 
