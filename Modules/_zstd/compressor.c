@@ -1,7 +1,4 @@
-/*
-Low level interface to Meta's zstd library for use in the compression.zstd
-Python module.
-*/
+/* Low level interface to the Zstandard algorthm & the zstd library. */
 
 /* ZstdCompressor class definitions */
 
@@ -186,8 +183,8 @@ _get_CDict(ZstdDict *self, int compressionLevel)
             _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
             if (mod_state != NULL) {
                 PyErr_SetString(mod_state->ZstdError,
-                    "Failed to create ZSTD_CDict instance from zstd "
-                    "dictionary content. Maybe the content is corrupted.");
+                    "Failed to create a ZSTD_CDict instance from "
+                    "Zstandard dictionary content.");
             }
             goto error;
         }

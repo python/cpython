@@ -1072,9 +1072,9 @@ class ZstdDictTestCase(unittest.TestCase):
 
         # corrupted
         zd = ZstdDict(dict_content, is_raw=False)
-        with self.assertRaisesRegex(ZstdError, r'ZSTD_CDict.*?corrupted'):
+        with self.assertRaisesRegex(ZstdError, r'ZSTD_CDict.*?content\.$'):
             ZstdCompressor(zstd_dict=zd.as_digested_dict)
-        with self.assertRaisesRegex(ZstdError, r'ZSTD_DDict.*?corrupted'):
+        with self.assertRaisesRegex(ZstdError, r'ZSTD_DDict.*?content\.$'):
             ZstdDecompressor(zd)
 
         # wrong type

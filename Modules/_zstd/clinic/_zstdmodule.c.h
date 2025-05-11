@@ -13,7 +13,7 @@ PyDoc_STRVAR(_zstd_train_dict__doc__,
 "train_dict($module, samples_bytes, samples_sizes, dict_size, /)\n"
 "--\n"
 "\n"
-"Internal function, train a zstd dictionary on sample data.\n"
+"Internal function, train a Zstandard dictionary on sample data.\n"
 "\n"
 "  samples_bytes\n"
 "    Concatenation of samples.\n"
@@ -73,7 +73,7 @@ PyDoc_STRVAR(_zstd_finalize_dict__doc__,
 "              dict_size, compression_level, /)\n"
 "--\n"
 "\n"
-"Internal function, finalize a zstd dictionary.\n"
+"Internal function, finalize a Zstandard dictionary.\n"
 "\n"
 "  custom_dict_bytes\n"
 "    Custom dictionary content.\n"
@@ -428,4 +428,4 @@ _zstd_set_parameter_types(PyObject *module, PyObject *const *args, Py_ssize_t na
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8445b658dcdcbb9c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=553eaf1ea05d38ef input=a9049054013a1b77]*/

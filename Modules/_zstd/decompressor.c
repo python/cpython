@@ -1,7 +1,4 @@
-/*
-Low level interface to Meta's zstd library for use in the compression.zstd
-Python module.
-*/
+/* Low level interface to the Zstandard algorthm & the zstd library. */
 
 /* ZstdDecompressor class definition */
 
@@ -78,8 +75,8 @@ _get_DDict(ZstdDict *self)
             _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
             if (mod_state != NULL) {
                 PyErr_SetString(mod_state->ZstdError,
-                                "Failed to create ZSTD_DDict instance from zstd "
-                                "dictionary content. Maybe the content is corrupted.");
+                                "Failed to create a ZSTD_DDict instance from "
+                                "Zstandard dictionary content.");
             }
         }
     }
@@ -370,7 +367,7 @@ stream_decompress(ZstdDecompressor *self, Py_buffer *data, Py_ssize_t max_length
 
     /* Check .eof flag */
     if (self->eof) {
-        PyErr_SetString(PyExc_EOFError, "Already at the end of a zstd frame.");
+        PyErr_SetString(PyExc_EOFError, "Already at the end of a Zstandard frame.");
         assert(ret == NULL);
         return NULL;
     }

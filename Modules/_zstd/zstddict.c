@@ -1,7 +1,4 @@
-/*
-Low level interface to Meta's zstd library for use in the compression.zstd
-Python module.
-*/
+/* Low level interface to the Zstandard algorthm & the zstd library. */
 
 /* ZstdDict class definitions */
 
@@ -84,9 +81,7 @@ _zstd_ZstdDict_new_impl(PyTypeObject *type, PyObject *dict_content,
 
     /* Check validity for ordinary dictionary */
     if (!is_raw && self->dict_id == 0) {
-        char *msg = "The dict_content argument is not a valid zstd "
-                    "dictionary. The first 4 bytes of a valid zstd dictionary "
-                    "should be a magic number: b'\\x37\\xA4\\x30\\xEC'.\n";
+        char *msg = "Invalid Zstandard dictionary and is_raw not set.\n";
         PyErr_SetString(PyExc_ValueError, msg);
         goto error;
     }
@@ -123,15 +118,14 @@ ZstdDict_dealloc(PyObject *ob)
 }
 
 PyDoc_STRVAR(ZstdDict_dictid_doc,
-"ID of zstd dictionary, a 32-bit unsigned int value.\n\n"
-"Non-zero means ordinary dictionary, was created by zstd functions, follow\n"
-"a specified format.\n\n"
-"0 means a \"raw content\" dictionary, free of any format restriction, used\n"
-"for advanced user.");
+"The ID of Zstandard dictionary, an integer between 0 and 2**32.\n\n"
+"A non-zero value represents an ordinary Zstandard dictionary, "
+"conforming to the standardised format.\n\n"
+"The special value '0' means a 'raw content' dictionary,"
+"without any restrictions on format or content.");
 
 PyDoc_STRVAR(ZstdDict_dictcontent_doc,
-"The content of zstd dictionary, a bytes object, it's the same as dict_content\n"
-"argument in ZstdDict.__init__() method. It can be used with other programs.");
+"The content of a Zstandard dictionary, as a bytes object.");
 
 static PyObject *
 ZstdDict_str(PyObject *ob)

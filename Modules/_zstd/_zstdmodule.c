@@ -1,7 +1,4 @@
-/*
-Low level interface to Meta's zstd library for use in the compression.zstd
-Python module.
-*/
+/* Low level interface to the Zstandard algorthm & the zstd library. */
 
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
@@ -34,17 +31,17 @@ set_zstd_error(const _zstd_state* const state,
     switch (type)
     {
     case ERR_DECOMPRESS:
-        msg = "Unable to decompress zstd data: %s";
+        msg = "Unable to decompress Zstandard data: %s";
         break;
     case ERR_COMPRESS:
-        msg = "Unable to compress zstd data: %s";
+        msg = "Unable to compress Zstandard data: %s";
         break;
 
     case ERR_LOAD_D_DICT:
-        msg = "Unable to load zstd dictionary or prefix for decompression: %s";
+        msg = "Unable to load Zstandard dictionary or prefix for decompression: %s";
         break;
     case ERR_LOAD_C_DICT:
-        msg = "Unable to load zstd dictionary or prefix for compression: %s";
+        msg = "Unable to load Zstandard dictionary or prefix for compression: %s";
         break;
 
     case ERR_GET_C_BOUNDS:
@@ -58,10 +55,10 @@ set_zstd_error(const _zstd_state* const state,
         break;
 
     case ERR_TRAIN_DICT:
-        msg = "Unable to train zstd dictionary: %s";
+        msg = "Unable to train the Zstandard dictionary: %s";
         break;
     case ERR_FINALIZE_DICT:
-        msg = "Unable to finalize zstd dictionary: %s";
+        msg = "Unable to finalize the Zstandard dictionary: %s";
         break;
 
     default:
@@ -187,13 +184,13 @@ _zstd.train_dict
         The size of the dictionary.
     /
 
-Internal function, train a zstd dictionary on sample data.
+Internal function, train a Zstandard dictionary on sample data.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
                       PyObject *samples_sizes, Py_ssize_t dict_size)
-/*[clinic end generated code: output=8e87fe43935e8f77 input=70fcd8937f2528b6]*/
+/*[clinic end generated code: output=8e87fe43935e8f77 input=829e31fbbf3454b0]*/
 {
     // TODO(emmatyping): The preamble and suffix to this function and _finalize_dict
     // are pretty similar. We should see if we can refactor them to share that code.
@@ -295,7 +292,7 @@ _zstd.finalize_dict
         Optimize for a specific zstd compression level, 0 means default.
     /
 
-Internal function, finalize a zstd dictionary.
+Internal function, finalize a Zstandard dictionary.
 [clinic start generated code]*/
 
 static PyObject *
@@ -303,7 +300,7 @@ _zstd_finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
                          PyBytesObject *samples_bytes,
                          PyObject *samples_sizes, Py_ssize_t dict_size,
                          int compression_level)
-/*[clinic end generated code: output=f91821ba5ae85bda input=130d1508adb55ba1]*/
+/*[clinic end generated code: output=f91821ba5ae85bda input=11af97dcc7608059]*/
 {
     Py_ssize_t chunks_number;
     size_t *chunk_sizes = NULL;
@@ -457,9 +454,9 @@ _zstd_get_frame_size_impl(PyObject *module, Py_buffer *frame_buffer)
     if (ZSTD_isError(frame_size)) {
         _zstd_state* const mod_state = get_zstd_state(module);
         PyErr_Format(mod_state->ZstdError,
-            "Error when finding the compressed size of a zstd frame. "
-            "Make sure the frame_buffer argument starts from the "
-            "beginning of a frame, and its length not less than this "
+            "Error when finding the compressed size of a Zstandard frame. "
+            "Ensure the frame_buffer argument starts from the "
+            "beginning of a frame, and its length is not less than this "
             "complete frame. Zstd error message: %s.",
             ZSTD_getErrorName(frame_size));
         return NULL;
@@ -494,9 +491,9 @@ _zstd_get_frame_info_impl(PyObject *module, Py_buffer *frame_buffer)
         _zstd_state* const mod_state = get_zstd_state(module);
         PyErr_SetString(mod_state->ZstdError,
             "Error when getting information from the header of "
-            "a zstd frame. Make sure the frame_buffer argument "
+            "a Zstandard frame. Ensure the frame_buffer argument "
             "starts from the beginning of a frame, and its length "
-            "not less than the frame header (6~18 bytes).");
+            "is not less than the frame header (6~18 bytes).");
         return NULL;
     }
 
