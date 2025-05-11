@@ -1,3 +1,0 @@
-Use protocol :class:`io.Writer` as annotation for
-:func:`asyncio.format_call_graph`'s ``file`` parameter instead of
-:class:`typing.TextIO`.
