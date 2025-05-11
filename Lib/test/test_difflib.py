@@ -366,7 +366,7 @@ class TestOutputFormat(unittest.TestCase):
              "\033[36m@@ -1,2 +1,2 @@\033[0m",
              "\033[31m-one\033[0m",
              "\033[32m+two\033[0m",
-             " three",
+             "\033[0m three\033[0m",
         ]
         self.assertEqual(expect, actual)
 
