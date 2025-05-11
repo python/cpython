@@ -154,11 +154,6 @@ def get_type(item: StackItem) -> str | None:
             return attribute.expr
     return None
 
-def emit_sym_set_type_for_stack_effect(emitter: Emitter, items: list[StackItem]) -> None:
-    for var in items:
-        typ = get_type(var)
-        if typ is not None:
-            emitter.emit(f"sym_set_type({var.name}, {typ});\n")
 
 
 def write_uop(
@@ -198,9 +193,10 @@ def write_uop(
             _, storage = emitter.emit_tokens(override, storage, None, False)
             # Emit type effects.
             out.start_line()
-            emit_sym_set_type_for_stack_effect(emitter, override.stack.inputs)
-            emit_sym_set_type_for_stack_effect(emitter, override.stack.outputs)
-            out.start_line()
+            for var in override.stack.inputs:
+                typ = get_type(var)
+                if typ is not None:
+                    emitter.emit(f"assert(sym_matches_type({var.name}, {typ}));\n")
             storage.flush(out)
         else:
             emit_default(out, uop, stack)
