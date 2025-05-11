@@ -1697,10 +1697,10 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
     def test_extreme_timedelta(self):
         if 'Pure' not in self.__class__.__name__: return # BUG
         big = self.theclass.max - self.theclass.min
-        # 3652058 days, 23 hours, 59 minutes, 59 seconds, 999999 microseconds, 999 nanoseconds
-        n = (big.days*24*3600 + big.seconds)*1000000 + big.microseconds
-        # n == 315537897599999999 ~= 2**58.13
-        justasbig = timedelta(0, 0, n, big.nanoseconds)
+        # 3652058 days, 86399 seconds, 999999 microseconds, 999 nanoseconds
+        n = ((big.days*24*3600 + big.seconds)*1000000 + big.microseconds) * 1000 + big.nanoseconds
+        # n == 315537897599999999999 ~= 2**68.1
+        justasbig = timedelta(0, 0, 0, n)
         self.assertEqual(big, justasbig)
         self.assertEqual(self.theclass.min + big, self.theclass.max)
         self.assertEqual(self.theclass.max - big, self.theclass.min)
