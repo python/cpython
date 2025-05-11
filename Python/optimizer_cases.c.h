@@ -151,8 +151,8 @@
             JitOptSymbol *value;
             JitOptSymbol *res;
             value = stack_pointer[-1];
-            res = sym_new_truthiness(ctx, value, false);
             sym_set_type(value, &PyBool_Type);
+            res = sym_new_truthiness(ctx, value, false);
             stack_pointer[-1] = res;
             break;
         }
@@ -1811,7 +1811,6 @@
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             sym_set_null(null);
-            (void)callable;
             sym_set_type(callable, &PyMethod_Type);
             break;
         }
