@@ -322,7 +322,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    See :ref:`difflib-interface` for a more detailed example.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: next
       Added the *color* parameter.
 
 
