@@ -124,7 +124,7 @@ Removed
 ctypes
 ------
 
-* The undocumented function :func:`!ctypes.SetPointerType`.
+* Removed the undocumented function :func:`!ctypes.SetPointerType`.
   (Contributed by Bénédikt Tran in :gh:`133866`.)
 
 
