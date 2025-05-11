@@ -1976,12 +1976,11 @@ class TestRemoteExec(unittest.TestCase):
     def tearDown(self):
         test.support.reap_children()
 
-    def _run_remote_exec_test(self, script_code, python_args=None, env=None, prologue=''):
+    def _run_remote_exec_test(self, script_code, python_args=None, env=None, prologue='', script_path=os_helper.TESTFN + '_remote.py'):
         # Create the script that will be remotely executed
-        script = os_helper.TESTFN + '_remote.py'
-        self.addCleanup(os_helper.unlink, script)
+        self.addCleanup(os_helper.unlink, script_path)
 
-        with open(script, 'w') as f:
+        with open(script_path, 'w') as f:
             f.write(script_code)
 
         # Create and run the target process
@@ -2050,7 +2049,7 @@ sock.close()
                 self.assertEqual(response, b"ready")
 
                 # Try remote exec on the target process
-                sys.remote_exec(proc.pid, script)
+                sys.remote_exec(proc.pid, script_path)
 
                 # Signal script to continue
                 client_socket.sendall(b"continue")
@@ -2078,6 +2077,27 @@ print("Remote script executed successfully!")
 '''
         returncode, stdout, stderr = self._run_remote_exec_test(script)
         # self.assertEqual(returncode, 0)
+        self.assertIn(b"Remote script executed successfully!", stdout)
+        self.assertEqual(stderr, b"")
+
+    def test_remote_exec_bytes(self):
+        script = '''
+print("Remote script executed successfully!")
+'''
+        script_path = os.fsencode(os_helper.TESTFN) + b'_bytes_remote.py'
+        returncode, stdout, stderr = self._run_remote_exec_test(script,
+                                                    script_path=script_path)
+        self.assertIn(b"Remote script executed successfully!", stdout)
+        self.assertEqual(stderr, b"")
+
+    @unittest.skipUnless(os_helper.TESTFN_UNDECODABLE, 'requires undecodable path')
+    def test_remote_exec_undecodable(self):
+        script = '''
+print("Remote script executed successfully!")
+'''
+        script_path = os_helper.TESTFN_UNDECODABLE + b'_undecodable_remote.py'
+        returncode, stdout, stderr = self._run_remote_exec_test(script,
+                                                    script_path=script_path)
         self.assertIn(b"Remote script executed successfully!", stdout)
         self.assertEqual(stderr, b"")
 
