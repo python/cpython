@@ -125,7 +125,6 @@ ctypes
 ------
 
 * The undocumented function :func:`!ctypes.SetPointerType`.
-  Use ``ptr.set_type(cls)`` instead.
   (Contributed by Bénédikt Tran in :gh:`133866`.)
 
 
