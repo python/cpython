@@ -3127,20 +3127,18 @@ delta_getstate(PyDateTime_Delta *self)
 static PyObject *
 delta_total_seconds(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
-    PyObject *total_seconds;
-    PyObject *total_microseconds;
-    total_microseconds = delta_to_microseconds(PyDelta_CAST(op));
-    if (total_microseconds == NULL)
-        return NULL;
-
-    PyObject *current_mod = NULL;
-    datetime_state *st = GET_CURRENT_STATE(current_mod);
-
-    total_seconds = PyNumber_TrueDivide(total_microseconds, CONST_US_PER_SECOND(st));
-
-    RELEASE_CURRENT_STATE(st, current_mod);
-    Py_DECREF(total_microseconds);
-    return total_seconds;
+    PyDateTime_Delta *self = PyDelta_CAST(op);
+    int days = GET_TD_DAYS(self);
+    int seconds = GET_TD_SECONDS(self);
+    int microseconds = GET_TD_MICROSECONDS(self);
+    int nanoseconds = GET_TD_NANOSECONDS(self);
+    double total = (double)days * 86400.0
+                 + (double)seconds
+                 + (double)microseconds * 1e-6
+                 + (double)nanoseconds * 1e-9;
+    // round to 9 decimal places
+    total = round(total * 1e9) / 1e9;
+    return PyFloat_FromDouble(total);
 }
 
 static PyObject *

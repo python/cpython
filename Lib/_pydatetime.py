@@ -827,8 +827,7 @@ class timedelta:
 
     def total_seconds(self):
         """Total seconds in the duration."""
-        return ((self.days * 86400 + self.seconds) * 10**6 +
-                self.microseconds) / 10**6 + self.nanoseconds / 10**9
+        return round(self.days * 86400 + self.seconds + self.microseconds * 1e-6 + self.nanoseconds * 1e-9, 9)
 
     # Read-only field accessors
     @property
