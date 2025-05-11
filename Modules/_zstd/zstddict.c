@@ -7,17 +7,21 @@ Python module.
 
 /*[clinic input]
 module _zstd
-class _zstd.ZstdDict "ZstdDict *" "clinic_state()->ZstdDict_type"
+class _zstd.ZstdDict "ZstdDict *" "&zstd_dict_type_spec"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a5d1254c497e52ba]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3dcc175ec974f81c]*/
 
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#include "_zstdmodule.h"
+#include "Python.h"
 
-#include <stddef.h>               // offsetof()
+#include "_zstdmodule.h"
+#include "zstddict.h"
+#include "clinic/zstddict.c.h"
+
+#include <zstd.h>                 // ZSTD_freeDDict(), ZSTD_getDictID_fromDict()
 
 #define ZstdDict_CAST(op) ((ZstdDict *)op)
 
@@ -31,7 +35,7 @@ _zstd_ZstdDict_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject *Py_U
     }
 
     self->dict_content = NULL;
-    self->inited = 0;
+    self->initialized = 0;
     self->d_dict = NULL;
 
     /* ZSTD_CDict dict */
@@ -92,11 +96,11 @@ _zstd_ZstdDict___init___impl(ZstdDict *self, PyObject *dict_content,
 /*[clinic end generated code: output=c5f5a0d8377d037c input=e6750f62a513b3ee]*/
 {
     /* Only called once */
-    if (self->inited) {
-        PyErr_SetString(PyExc_RuntimeError, init_twice_msg);
+    if (self->initialized) {
+        PyErr_SetString(PyExc_RuntimeError, "reinitialization not supported");
         return -1;
     }
-    self->inited = 1;
+    self->initialized = 1;
 
     /* Check dict_content's type */
     self->dict_content = PyBytes_FromObject(dict_content);
@@ -134,10 +138,6 @@ _zstd_ZstdDict___init___impl(ZstdDict *self, PyObject *dict_content,
     PyObject_GC_Track(self);
     return 0;
 }
-
-#define clinic_state() (get_zstd_state(type))
-#include "clinic/zstddict.c.h"
-#undef clinic_state
 
 PyDoc_STRVAR(ZstdDict_dictid_doc,
 "ID of zstd dictionary, a 32-bit unsigned int value.\n\n"
@@ -278,6 +278,7 @@ static PyType_Slot zstddict_slots[] = {
 PyType_Spec zstd_dict_type_spec = {
     .name = "compression.zstd.ZstdDict",
     .basicsize = sizeof(ZstdDict),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE
+             | Py_TPFLAGS_HAVE_GC,
     .slots = zstddict_slots,
 };

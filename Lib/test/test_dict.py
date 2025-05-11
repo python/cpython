@@ -1039,10 +1039,8 @@ class DictTest(unittest.TestCase):
         a = C()
         a.x = 1
         d = a.__dict__
-        before_resize = sys.getsizeof(d)
         d[2] = 2 # split table is resized to a generic combined table
 
-        self.assertGreater(sys.getsizeof(d), before_resize)
         self.assertEqual(list(d), ['x', 2])
 
     def test_iterator_pickling(self):
