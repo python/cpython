@@ -727,13 +727,16 @@ _io.FileIO.readall
 
 Read all data from the file, returned as bytes.
 
-In non-blocking mode, returns as much as is immediately available,
-or None if no data is available.  Return an empty bytes object at EOF.
+Reads until either there is an error or read() returns size 0 (indicates EOF).
+If the file is already at EOF, returns an empty bytes object.
+
+In non-blocking mode, returns as much data as could be read before EAGAIN. If no
+data is available (EAGAIN is returned before bytes are read) returns None.
 [clinic start generated code]*/
 
 static PyObject *
 _io_FileIO_readall_impl(fileio *self)
-/*[clinic end generated code: output=faa0292b213b4022 input=dbdc137f55602834]*/
+/*[clinic end generated code: output=faa0292b213b4022 input=1e19849857f5d0a1]*/
 {
     Py_off_t pos, end;
     PyObject *result;
@@ -848,14 +851,19 @@ _io.FileIO.read
 
 Read at most size bytes, returned as bytes.
 
-Only makes one system call, so less data may be returned than requested.
-In non-blocking mode, returns None if no data is available.
-Return an empty bytes object at EOF.
+If size is less than 0, read all bytes in the file making multiple read calls.
+See ``FileIO.readall``.
+
+Attempts to make only one system call, retrying only per PEP 475 (EINTR). This
+means less data may be returned than requested.
+
+In non-blocking mode, returns None if no data is available. Return an empty
+bytes object at EOF.
 [clinic start generated code]*/
 
 static PyObject *
 _io_FileIO_read_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size)
-/*[clinic end generated code: output=bbd749c7c224143e input=f613d2057e4a1918]*/
+/*[clinic end generated code: output=bbd749c7c224143e input=cf21fddef7d38ab6]*/
 {
     char *ptr;
     Py_ssize_t n;
@@ -1254,8 +1262,7 @@ static PyMethodDef fileio_methods[] = {
     _IO_FILEIO_ISATTY_METHODDEF
     {"_isatty_open_only", _io_FileIO_isatty_open_only, METH_NOARGS},
     {"_dealloc_warn", fileio_dealloc_warn, METH_O, NULL},
-    {"__reduce__", _PyIOBase_cannot_pickle, METH_NOARGS},
-    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_O},
+    {"__getstate__", _PyIOBase_cannot_pickle, METH_NOARGS},
     {NULL,           NULL}             /* sentinel */
 };
 
@@ -1285,8 +1292,8 @@ fileio_get_mode(PyObject *op, void *closure)
 static PyObject *
 fileio_get_blksize(PyObject *op, void *closure)
 {
-    fileio *self = PyFileIO_CAST(op);
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
+    fileio *self = PyFileIO_CAST(op);
     if (self->stat_atopen != NULL && self->stat_atopen->st_blksize > 1) {
         return PyLong_FromLong(self->stat_atopen->st_blksize);
     }

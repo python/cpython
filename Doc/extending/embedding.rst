@@ -196,8 +196,8 @@ interesting part with respect to embedding Python starts with ::
 
 After initializing the interpreter, the script is loaded using
 :c:func:`PyImport_Import`.  This routine needs a Python string as its argument,
-which is constructed using the :c:func:`PyUnicode_FromString` data conversion
-routine. ::
+which is constructed using the :c:func:`PyUnicode_DecodeFSDefault` data
+conversion routine. ::
 
    pFunc = PyObject_GetAttrString(pModule, argv[2]);
    /* pFunc is a new reference */

@@ -57,7 +57,7 @@ Pending removal in Python 3.15
 
 * :mod:`sysconfig`:
 
-  * The ``check_home`` argument of :func:`sysconfig.is_python_build` has been
+  * The *check_home* argument of :func:`sysconfig.is_python_build` has been
     deprecated since Python 3.12.
 
 * :mod:`threading`:
@@ -84,6 +84,13 @@ Pending removal in Python 3.15
     (for example, ``Point = NamedTuple("Point", x=int, y=int)``)
     has been deprecated since Python 3.13.
     Use the class-based syntax or the functional syntax instead.
+
+  * When using the functional syntax of :class:`~typing.TypedDict`\s, failing
+    to pass a value to the *fields* parameter (``TD = TypedDict("TD")``) or
+    passing ``None`` (``TD = TypedDict("TD", None)``) has been deprecated
+    since Python 3.13.
+    Use ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``
+    to create a TypedDict with zero field.
 
   * The :func:`typing.no_type_check_decorator` decorator function
     has been deprecated since Python 3.13.

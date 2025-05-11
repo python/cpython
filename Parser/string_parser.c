@@ -1,5 +1,3 @@
-#include <stdbool.h>
-
 #include <Python.h>
 #include "pycore_bytesobject.h"   // _PyBytes_DecodeEscape()
 #include "pycore_unicodeobject.h" // _PyUnicode_DecodeUnicodeEscapeInternal()
@@ -7,6 +5,8 @@
 #include "lexer/state.h"
 #include "pegen.h"
 #include "string_parser.h"
+
+#include <stdbool.h>
 
 //// STRING HANDLING FUNCTIONS ////
 
@@ -19,7 +19,8 @@ warn_invalid_escape_sequence(Parser *p, const char* buffer, const char *first_in
         return 0;
     }
     unsigned char c = (unsigned char)*first_invalid_escape;
-    if ((t->type == FSTRING_MIDDLE || t->type == FSTRING_END) && (c == '{' || c == '}')) {
+    if ((t->type == FSTRING_MIDDLE || t->type == FSTRING_END || t->type == TSTRING_MIDDLE || t->type == TSTRING_END)
+            && (c == '{' || c == '}')) {
         // in this case the tokenizer has already emitted a warning,
         // see Parser/tokenizer/helpers.c:warn_invalid_escape_sequence
         return 0;

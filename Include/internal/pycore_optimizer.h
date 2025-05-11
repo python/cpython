@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_typedefs.h"      // _PyInterpreterFrame
 #include "pycore_uop_ids.h"
 #include <stdbool.h>
 
@@ -68,7 +69,7 @@ typedef struct {
 typedef struct {
     uint32_t target;
     _Py_BackoffCounter temperature;
-    const struct _PyExecutorObject *executor;
+    struct _PyExecutorObject *executor;
 } _PyExitData;
 
 typedef struct _PyExecutorObject {
@@ -83,6 +84,10 @@ typedef struct _PyExecutorObject {
     _PyExitData exits[1];
 } _PyExecutorObject;
 
+/* If pending deletion list gets large enough, then scan,
+ * and free any executors that aren't executing
+ * i.e. any that aren't a thread's current_executor. */
+#define EXECUTOR_DELETE_LIST_MAX 100
 
 // Export for '_opcode' shared extension (JIT compiler).
 PyAPI_FUNC(_PyExecutorObject*) _Py_GetExecutor(PyCodeObject *code, int offset);
@@ -117,7 +122,7 @@ PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
 
 #define TRACE_STACK_SIZE 5
 
-int _Py_uop_analyze_and_optimize(struct _PyInterpreterFrame *frame,
+int _Py_uop_analyze_and_optimize(_PyInterpreterFrame *frame,
     _PyUOpInstruction *trace, int trace_len, int curr_stackentries,
     _PyBloomFilter *dependencies);
 
@@ -172,6 +177,7 @@ typedef enum _JitSymType {
     JIT_SYM_KNOWN_CLASS_TAG = 6,
     JIT_SYM_KNOWN_VALUE_TAG = 7,
     JIT_SYM_TUPLE_TAG = 8,
+    JIT_SYM_TRUTHINESS_TAG = 9,
 } JitSymType;
 
 typedef struct _jit_opt_known_class {
@@ -198,12 +204,19 @@ typedef struct _jit_opt_tuple {
     uint16_t items[MAX_SYMBOLIC_TUPLE_SIZE];
 } JitOptTuple;
 
+typedef struct {
+    uint8_t tag;
+    bool invert;
+    uint16_t value;
+} JitOptTruthiness;
+
 typedef union _jit_opt_symbol {
     uint8_t tag;
     JitOptKnownClass cls;
     JitOptKnownValue value;
     JitOptKnownVersion version;
     JitOptTuple tuple;
+    JitOptTruthiness truthiness;
 } JitOptSymbol;
 
 
@@ -245,8 +258,8 @@ typedef struct _JitOptContext {
 
 extern bool _Py_uop_sym_is_null(JitOptSymbol *sym);
 extern bool _Py_uop_sym_is_not_null(JitOptSymbol *sym);
-extern bool _Py_uop_sym_is_const(JitOptSymbol *sym);
-extern PyObject *_Py_uop_sym_get_const(JitOptSymbol *sym);
+extern bool _Py_uop_sym_is_const(JitOptContext *ctx, JitOptSymbol *sym);
+extern PyObject *_Py_uop_sym_get_const(JitOptContext *ctx, JitOptSymbol *sym);
 extern JitOptSymbol *_Py_uop_sym_new_unknown(JitOptContext *ctx);
 extern JitOptSymbol *_Py_uop_sym_new_not_null(JitOptContext *ctx);
 extern JitOptSymbol *_Py_uop_sym_new_type(
@@ -262,12 +275,13 @@ extern void _Py_uop_sym_set_type(JitOptContext *ctx, JitOptSymbol *sym, PyTypeOb
 extern bool _Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptSymbol *sym, unsigned int version);
 extern void _Py_uop_sym_set_const(JitOptContext *ctx, JitOptSymbol *sym, PyObject *const_val);
 extern bool _Py_uop_sym_is_bottom(JitOptSymbol *sym);
-extern int _Py_uop_sym_truthiness(JitOptSymbol *sym);
+extern int _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptSymbol *sym);
 extern PyTypeObject *_Py_uop_sym_get_type(JitOptSymbol *sym);
 extern bool _Py_uop_sym_is_immortal(JitOptSymbol *sym);
 extern JitOptSymbol *_Py_uop_sym_new_tuple(JitOptContext *ctx, int size, JitOptSymbol **args);
 extern JitOptSymbol *_Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptSymbol *sym, int item);
 extern int _Py_uop_sym_tuple_length(JitOptSymbol *sym);
+extern JitOptSymbol *_Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptSymbol *value, bool truthy);
 
 extern void _Py_uop_abstractcontext_init(JitOptContext *ctx);
 extern void _Py_uop_abstractcontext_fini(JitOptContext *ctx);
@@ -282,7 +296,7 @@ extern int _Py_uop_frame_pop(JitOptContext *ctx);
 
 PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);
 
-PyAPI_FUNC(int) _PyOptimizer_Optimize(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *start, _PyExecutorObject **exec_ptr, int chain_depth);
+PyAPI_FUNC(int) _PyOptimizer_Optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *start, _PyExecutorObject **exec_ptr, int chain_depth);
 
 static inline int is_terminator(const _PyUOpInstruction *uop)
 {
@@ -294,6 +308,9 @@ static inline int is_terminator(const _PyUOpInstruction *uop)
 }
 
 PyAPI_FUNC(int) _PyDumpExecutors(FILE *out);
+#ifdef _Py_TIER2
+extern void _Py_ClearExecutorDeletionList(PyInterpreterState *interp);
+#endif
 
 #ifdef __cplusplus
 }

@@ -1,18 +1,22 @@
 from _compat_pickle import (IMPORT_MAPPING, REVERSE_IMPORT_MAPPING,
                             NAME_MAPPING, REVERSE_NAME_MAPPING)
 import builtins
-import pickle
-import io
 import collections
+import contextlib
+import io
+import pickle
 import struct
 import sys
+import tempfile
 import warnings
 import weakref
+from textwrap import dedent
 
 import doctest
 import unittest
 from test import support
-from test.support import import_helper
+from test.support import cpython_only, import_helper, os_helper
+from test.support.import_helper import ensure_lazy_imports
 
 from test.pickletester import AbstractHookTests
 from test.pickletester import AbstractUnpickleTests
@@ -31,6 +35,12 @@ try:
     has_c_implementation = True
 except ImportError:
     has_c_implementation = False
+
+
+class LazyImportTest(unittest.TestCase):
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("pickle", {"re"})
 
 
 class PyPickleTests(AbstractPickleModuleTests, unittest.TestCase):
@@ -699,8 +709,61 @@ class CompatPickleTests(unittest.TestCase):
                                  ('multiprocessing.context', name))
 
 
+class CommandLineTest(unittest.TestCase):
+    def setUp(self):
+        self.filename = tempfile.mktemp()
+        self.addCleanup(os_helper.unlink, self.filename)
+
+    @staticmethod
+    def text_normalize(string):
+        """Dedent *string* and strip it from its surrounding whitespaces.
+
+        This method is used by the other utility functions so that any
+        string to write or to match against can be freely indented.
+        """
+        return dedent(string).strip()
+
+    def set_pickle_data(self, data):
+        with open(self.filename, 'wb') as f:
+            pickle.dump(data, f)
+
+    def invoke_pickle(self, *flags):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            pickle._main(args=[*flags, self.filename])
+        return self.text_normalize(output.getvalue())
+
+    def test_invocation(self):
+        # test 'python -m pickle pickle_file'
+        data = {
+            'a': [1, 2.0, 3+4j],
+            'b': ('character string', b'byte string'),
+            'c': 'string'
+        }
+        expect = '''
+            {'a': [1, 2.0, (3+4j)],
+             'b': ('character string', b'byte string'),
+             'c': 'string'}
+        '''
+        self.set_pickle_data(data)
+
+        with self.subTest(data=data):
+            res = self.invoke_pickle()
+            expect = self.text_normalize(expect)
+            self.assertListEqual(res.splitlines(), expect.splitlines())
+
+    @support.force_not_colorized
+    def test_unknown_flag(self):
+        stderr = io.StringIO()
+        with self.assertRaises(SystemExit):
+            # check that the parser help is shown
+            with contextlib.redirect_stderr(stderr):
+                _ = self.invoke_pickle('--unknown')
+        self.assertStartsWith(stderr.getvalue(), 'usage: ')
+
+
 def load_tests(loader, tests, pattern):
-    tests.addTest(doctest.DocTestSuite())
+    tests.addTest(doctest.DocTestSuite(pickle))
     return tests
 
 

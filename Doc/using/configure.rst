@@ -22,7 +22,7 @@ Features and minimum versions required to build CPython:
 
 * Support for threads.
 
-* OpenSSL 1.1.1 is the minimum version and OpenSSL 3.0.9 is the recommended
+* OpenSSL 1.1.1 is the minimum version and OpenSSL 3.0.16 is the recommended
   minimum version for the :mod:`ssl` and :mod:`hashlib` extension modules.
 
 * SQLite 3.15.2 for the :mod:`sqlite3` extension module.
@@ -302,14 +302,21 @@ General Options
 
 .. option:: --enable-experimental-jit=[no|yes|yes-off|interpreter]
 
-   Indicate how to integrate the :ref:`JIT compiler <whatsnew313-jit-compiler>`.
+   Indicate how to integrate the :ref:`experimental just-in-time compiler <whatsnew314-jit-compiler>`.
 
-   * ``no`` - build the interpreter without the JIT.
-   * ``yes`` - build the interpreter with the JIT.
-   * ``yes-off`` - build the interpreter with the JIT but disable it by default.
-   * ``interpreter`` - build the interpreter without the JIT, but with the tier 2 enabled interpreter.
+   * ``no``: Don't build the JIT.
+   * ``yes``: Enable the JIT. To disable it at runtime, set the environment
+     variable :envvar:`PYTHON_JIT=0 <PYTHON_JIT>`.
+   * ``yes-off``: Build the JIT, but disable it by default. To enable it at
+     runtime, set the environment variable :envvar:`PYTHON_JIT=1 <PYTHON_JIT>`.
+   * ``interpreter``: Enable the "JIT interpreter" (only useful for those
+     debugging the JIT itself). To disable it at runtime, set the environment
+     variable :envvar:`PYTHON_JIT=0 <PYTHON_JIT>`.
 
-   By convention, ``--enable-experimental-jit`` is a shorthand for ``--enable-experimental-jit=yes``.
+   ``--enable-experimental-jit=no`` is the default behavior if the option is not
+   provided, and ``--enable-experimental-jit`` is shorthand for
+   ``--enable-experimental-jit=yes``.  See :file:`Tools/jit/README.md` for more
+   information, including how to install the necessary build-time dependencies.
 
    .. note::
 
@@ -659,6 +666,17 @@ also be used to improve performance.
 
    Add ``-fstrict-overflow`` to the C compiler flags (by default we add
    ``-fno-strict-overflow`` instead).
+
+.. option:: --without-remote-debug
+
+   Deactivate remote debugging support described in :pep:`768` (enabled by default).
+   When this flag is provided the code that allows the interpreter to schedule the
+   execution of a Python file in a separate process as described in :pep:`768` is
+   not compiled. This includes both the functionality to schedule code to be executed
+   and the functionality to receive code to be executed.
+
+
+   .. versionadded:: 3.14
 
 
 .. _debug-build:
