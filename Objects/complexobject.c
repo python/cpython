@@ -498,8 +498,8 @@ try_complex_special_method(PyObject *op)
             return res;
         }
         PyErr_Format(PyExc_TypeError,
-            "__complex__ returned non-complex (type %.200s)",
-            Py_TYPE(res)->tp_name);
+            "%T.__complex__ returned non-complex (type %T)",
+            op, res);
         Py_DECREF(res);
         return NULL;
     }

@@ -287,8 +287,8 @@ PyFloat_AsDouble(PyObject *op)
     }
     if (!PyFloat_CheckExact(res)) {
         PyErr_Format(PyExc_TypeError,
-                     "%.50s.__float__ returned non-float (type %.50s)",
-                     Py_TYPE(op)->tp_name, Py_TYPE(res)->tp_name);
+                     "%T.__float__ returned non-float (type %T)",
+                     op, res);
         Py_DECREF(res);
         return -1;
     }

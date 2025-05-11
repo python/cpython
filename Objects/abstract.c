@@ -1608,8 +1608,8 @@ PyNumber_Float(PyObject *o)
         }
 
         PyErr_Format(PyExc_TypeError,
-                     "%.50s.__float__ returned non-float (type %.50s)",
-                     Py_TYPE(o)->tp_name, Py_TYPE(res)->tp_name);
+                     "%T.__float__ returned non-float (type %T)",
+                     o, res);
         Py_DECREF(res);
         return NULL;
     }
