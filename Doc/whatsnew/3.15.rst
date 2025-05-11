@@ -137,6 +137,12 @@ typing
   Use the class-based syntax or the functional syntax instead.
   (Contributed by Bénédikt Tran in :gh:`133817`.)
 
+* Using ``TD = TypedDict("TD")`` or ``TD = TypedDict("TD", None)`` to
+  construct a :class:`~typing.TypedDict` type with zero field is no
+  longer supported. Use ``class TD(TypedDict): pass``
+  or ``TD = TypedDict("TD", {})`` instead.
+  (Contributed by Bénédikt Tran in :gh:`133823`.)
+
 
 Porting to Python 3.15
 ======================
