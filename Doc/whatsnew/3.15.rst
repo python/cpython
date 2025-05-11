@@ -147,8 +147,8 @@ typing
 wave
 ----
 
-* Removed the ``getmark()``, ``setmark()`` and ``getmarkers()`` methods of
-  the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes.
+* Removed the ``getmark()``, ``setmark()`` and ``getmarkers()`` methods
+  of the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes.
   (Contributed by Bénédikt Tran in :gh:`133873`.)
 
 
