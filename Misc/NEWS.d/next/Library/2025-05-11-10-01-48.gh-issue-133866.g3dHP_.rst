@@ -1,0 +1,2 @@
+The undocumented function :func:`!ctypes.SetPointerType`. Use
+``ptr.set_type(cls)`` instead. Patch by Bénédikt Tran.
