@@ -189,8 +189,8 @@ Here is an example that imports a module from a ZIP archive - note that the
 .. code-block:: python
 
    >>> import sys
-   >>> sys.path.insert(0, 'pip.pyz')  # Add .pyz file to front of path
-   >>> import pip
-   >>> pip.__file__
-   'pip.pyz/pip/__main__.py'
+   >>> sys.path.insert(0, 'example.zip')  # Add .zip file to front of path
+   >>> import example
+   >>> example.__file__
+   'example.zip/example/__main__.py'
 
