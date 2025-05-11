@@ -1050,8 +1050,12 @@ class date:
     @classmethod
     def fromisoformat(cls, date_string):
         """Construct a date from a string in ISO 8601 format."""
+
         if not isinstance(date_string, str):
-            raise TypeError('fromisoformat: argument must be str')
+            raise TypeError('Argument must be a str')
+
+        if not date_string.isascii():
+            raise ValueError('Argument must be an ASCII str')
 
         if len(date_string) not in (7, 8, 10):
             raise ValueError(f'Invalid isoformat string: {date_string!r}')
@@ -1123,8 +1127,8 @@ class date:
         This is 'YYYY-MM-DD'.
 
         References:
-        - http://www.w3.org/TR/NOTE-datetime
-        - http://www.cl.cam.ac.uk/~mgk25/iso-time.html
+        - https://www.w3.org/TR/NOTE-datetime
+        - https://www.cl.cam.ac.uk/~mgk25/iso-time.html
         """
         return "%04d-%02d-%02d" % (self._year, self._month, self._day)
 
@@ -1258,7 +1262,7 @@ class date:
         The first week is 1; Monday is 1 ... Sunday is 7.
 
         ISO calendar algorithm taken from
-        http://www.phys.uu.nl/~vgent/calendar/isocalendar.htm
+        https://www.phys.uu.nl/~vgent/calendar/isocalendar.htm
         (used with permission)
         """
         year = self._year
@@ -2085,7 +2089,6 @@ class datetime(date):
         else:
             ts = (self - _EPOCH) // timedelta(seconds=1)
         localtm = _time.localtime(ts)
-        local = datetime(*localtm[:6])
         # Extract TZ data
         gmtoff = localtm.tm_gmtoff
         zone = localtm.tm_zone

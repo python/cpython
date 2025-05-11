@@ -482,10 +482,10 @@ def register_standard_browsers():
 
     if sys.platform == 'darwin':
         register("MacOSX", None, MacOSXOSAScript('default'))
-        register("chrome", None, MacOSXOSAScript('chrome'))
+        register("chrome", None, MacOSXOSAScript('google chrome'))
         register("firefox", None, MacOSXOSAScript('firefox'))
         register("safari", None, MacOSXOSAScript('safari'))
-        # OS X can use below Unix support (but we prefer using the OS X
+        # macOS can use below Unix support (but we prefer using the macOS
         # specific stuff)
 
     if sys.platform == "ios":
@@ -559,6 +559,19 @@ def register_standard_browsers():
         # Treat choices in same way as if passed into get() but do register
         # and prepend to _tryorder
         for cmdline in userchoices:
+            if all(x not in cmdline for x in " \t"):
+                # Assume this is the name of a registered command, use
+                # that unless it is a GenericBrowser.
+                try:
+                    command = _browsers[cmdline.lower()]
+                except KeyError:
+                    pass
+
+                else:
+                    if not isinstance(command[1], GenericBrowser):
+                        _tryorder.insert(0, cmdline.lower())
+                        continue
+
             if cmdline != '':
                 cmd = _synthesize(cmdline, preferred=True)
                 if cmd[1] is None:
@@ -706,7 +719,9 @@ if sys.platform == "ios":
 
 def parse_args(arg_list: list[str] | None):
     import argparse
-    parser = argparse.ArgumentParser(description="Open URL in a web browser.")
+    parser = argparse.ArgumentParser(
+        description="Open URL in a web browser.", color=True,
+    )
     parser.add_argument("url", help="URL to open")
 
     group = parser.add_mutually_exclusive_group()
