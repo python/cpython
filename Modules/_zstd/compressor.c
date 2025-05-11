@@ -18,7 +18,6 @@ class _zstd.ZstdCompressor "ZstdCompressor *" "&zstd_compressor_type_spec"
 #include "buffer.h"
 #include "zstddict.h"
 
-#include <stdbool.h>              // bool
 #include <stddef.h>               // offsetof()
 #include <zstd.h>                 // ZSTD_*()
 

@@ -3,7 +3,6 @@
 #ifndef ZSTD_DICT_H
 #define ZSTD_DICT_H
 
-#include <stdbool.h>              // bool
 #include <zstd.h>                 // ZSTD_DDict
 
 typedef struct {
