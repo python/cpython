@@ -1575,7 +1575,7 @@ You can also destructure match objects with python's ``match`` statement::
 
    Return the index of the first occurrence of the value among the matched groups.
 
-   Raises ValueError if the value is not present.
+   Raises :exc:`ValueError` if the value is not present.
 
    .. versionadded:: 3.14
 
