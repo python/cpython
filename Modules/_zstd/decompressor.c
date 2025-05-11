@@ -530,7 +530,6 @@ error:
 /*[clinic input]
 @classmethod
 _zstd.ZstdDecompressor.__new__ as _zstd_ZstdDecompressor_new
-
     zstd_dict: object = None
         A ZstdDict object, a pre-trained zstd dictionary.
     options: object = None
@@ -545,14 +544,13 @@ function instead.
 static PyObject *
 _zstd_ZstdDecompressor_new_impl(PyTypeObject *type, PyObject *zstd_dict,
                                 PyObject *options)
-/*[clinic end generated code: output=590ca65c1102ff4a input=e73db62a54e25e4b]*/
+/*[clinic end generated code: output=590ca65c1102ff4a input=0f161edb33d83216]*/
 {
     ZstdDecompressor* self = PyObject_GC_New(ZstdDecompressor, type);
     if (self == NULL) {
         goto error;
     }
 
-    self->dict = NULL;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
     self->in_begin = -1;
@@ -574,13 +572,12 @@ _zstd_ZstdDecompressor_new_impl(PyTypeObject *type, PyObject *zstd_dict,
         goto error;
     }
 
-    /* Load dictionary to decompression context */
+    /* Load zstd dictionary to decompression context */
+    self->dict = NULL;
     if (zstd_dict != Py_None) {
         if (_zstd_load_d_dict(self, zstd_dict) < 0) {
             goto error;
         }
-
-        /* Py_INCREF the dict */
         Py_INCREF(zstd_dict);
         self->dict = zstd_dict;
     }
@@ -592,7 +589,7 @@ _zstd_ZstdDecompressor_new_impl(PyTypeObject *type, PyObject *zstd_dict,
         }
     }
 
-    // We can only start tracking self with the GC once self->dict is set.
+    // We can only start GC tracking once self->dict is set.
     PyObject_GC_Track(self);
 
     return (PyObject*)self;

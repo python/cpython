@@ -15,7 +15,7 @@ PyDoc_STRVAR(_zstd_ZstdCompressor_new__doc__,
 "Create a compressor object for compressing data incrementally.\n"
 "\n"
 "  level\n"
-"    The compression level to use, defaults to ZSTD_CLEVEL_DEFAULT.\n"
+"    The compression level to use. Defaults to COMPRESSION_LEVEL_DEFAULT.\n"
 "  options\n"
 "    A dict object that contains advanced compression parameters.\n"
 "  zstd_dict\n"
@@ -252,4 +252,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f30de86bbd38a79a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c33f03bf68e679e5 input=a9049054013a1b77]*/

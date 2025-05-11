@@ -318,9 +318,8 @@ load:
 /*[clinic input]
 @classmethod
 _zstd.ZstdCompressor.__new__ as _zstd_ZstdCompressor_new
-
     level: object = None
-        The compression level to use, defaults to ZSTD_CLEVEL_DEFAULT.
+        The compression level to use. Defaults to COMPRESSION_LEVEL_DEFAULT.
     options: object = None
         A dict object that contains advanced compression parameters.
     zstd_dict: object = None
@@ -335,16 +334,14 @@ function instead.
 static PyObject *
 _zstd_ZstdCompressor_new_impl(PyTypeObject *type, PyObject *level,
                               PyObject *options, PyObject *zstd_dict)
-/*[clinic end generated code: output=cdef61eafecac3d7 input=a9e9d73f246d6588]*/
+/*[clinic end generated code: output=cdef61eafecac3d7 input=b9ea61ecafbb1b1e]*/
 {
     ZstdCompressor* self = PyObject_GC_New(ZstdCompressor, type);
     if (self == NULL) {
         goto error;
     }
 
-    self->dict = NULL;
     self->use_multithread = 0;
-
 
     /* Compression context */
     self->cctx = ZSTD_createCCtx();
@@ -378,18 +375,17 @@ _zstd_ZstdCompressor_new_impl(PyTypeObject *type, PyObject *level,
         }
     }
 
-    /* Load dictionary to compression context */
+    /* Load zstd dictionary to compression context */
+    self->dict = NULL;
     if (zstd_dict != Py_None) {
         if (_zstd_load_c_dict(self, zstd_dict) < 0) {
             goto error;
         }
-
-        /* Py_INCREF the dict */
         Py_INCREF(zstd_dict);
         self->dict = zstd_dict;
     }
 
-    // We can only start tracking self with the GC once self->dict is set.
+    // We can only start GC tracking once self->dict is set.
     PyObject_GC_Track(self);
 
     return (PyObject*)self;

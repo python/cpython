@@ -10,19 +10,17 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_zstd_ZstdDict_new__doc__,
-"ZstdDict(dict_content, is_raw=False)\n"
+"ZstdDict(dict_content, /, *, is_raw=False)\n"
 "--\n"
 "\n"
 "Represents a zstd dictionary, which can be used for compression/decompression.\n"
 "\n"
 "  dict_content\n"
-"    A bytes-like object, dictionary\'s content.\n"
+"    The content of a Zstandard dictionary as a bytes-like object.\n"
 "  is_raw\n"
-"    This parameter is for advanced user. True means dict_content\n"
-"    argument is a \"raw content\" dictionary, free of any format\n"
-"    restriction. False means dict_content argument is an ordinary\n"
-"    zstd dictionary, was created by zstd functions, follow a\n"
-"    specified format.\n"
+"    If true, perform no checks on *dict_content*, useful for some\n"
+"    advanced cases. Otherwise, check that the content represents\n"
+"    a Zstandard dictionary created by the zstd functions.\n"
 "\n"
 "It\'s thread-safe, and can be shared by multiple ZstdCompressor /\n"
 "ZstdDecompressor objects.");
@@ -37,7 +35,7 @@ _zstd_ZstdDict_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 1
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -46,7 +44,7 @@ _zstd_ZstdDict_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(dict_content), &_Py_ID(is_raw), },
+        .ob_item = { &_Py_ID(is_raw), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -55,7 +53,7 @@ _zstd_ZstdDict_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"dict_content", "is_raw", NULL};
+    static const char * const _keywords[] = {"", "is_raw", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "ZstdDict",
@@ -70,19 +68,19 @@ _zstd_ZstdDict_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int is_raw = 0;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
     dict_content = fastargs[0];
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     is_raw = PyObject_IsTrue(fastargs[1]);
     if (is_raw < 0) {
         goto exit;
     }
-skip_optional_pos:
+skip_optional_kwonly:
     return_value = _zstd_ZstdDict_new_impl(type, dict_content, is_raw);
 
 exit:
@@ -204,4 +202,4 @@ _zstd_ZstdDict_as_prefix_get(PyObject *self, void *Py_UNUSED(context))
 
     return return_value;
 }
-/*[clinic end generated code: output=af0e16983f15c065 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f301594e7b37f709 input=a9049054013a1b77]*/

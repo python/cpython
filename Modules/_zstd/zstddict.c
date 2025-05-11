@@ -29,13 +29,13 @@ class _zstd.ZstdDict "ZstdDict *" "&zstd_dict_type_spec"
 @classmethod
 _zstd.ZstdDict.__new__ as _zstd_ZstdDict_new
     dict_content: object
-        A bytes-like object, dictionary's content.
+        The content of a Zstandard dictionary as a bytes-like object.
+    /
+    *
     is_raw: bool = False
-        This parameter is for advanced user. True means dict_content
-        argument is a "raw content" dictionary, free of any format
-        restriction. False means dict_content argument is an ordinary
-        zstd dictionary, was created by zstd functions, follow a
-        specified format.
+        If true, perform no checks on *dict_content*, useful for some
+        advanced cases. Otherwise, check that the content represents
+        a Zstandard dictionary created by the zstd functions.
 
 Represents a zstd dictionary, which can be used for compression/decompression.
 
@@ -46,7 +46,7 @@ ZstdDecompressor objects.
 static PyObject *
 _zstd_ZstdDict_new_impl(PyTypeObject *type, PyObject *dict_content,
                         int is_raw)
-/*[clinic end generated code: output=3ebff839cb3be6d7 input=a0356fa7336dea1c]*/
+/*[clinic end generated code: output=3ebff839cb3be6d7 input=e9e22fdc68fa04cc]*/
 {
     ZstdDict* self = PyObject_GC_New(ZstdDict, type);
     if (self == NULL) {
@@ -86,10 +86,7 @@ _zstd_ZstdDict_new_impl(PyTypeObject *type, PyObject *dict_content,
     if (!is_raw && self->dict_id == 0) {
         char *msg = "The dict_content argument is not a valid zstd "
                     "dictionary. The first 4 bytes of a valid zstd dictionary "
-                    "should be a magic number: b'\\x37\\xA4\\x30\\xEC'.\n"
-                    "If you are an advanced user, and can be sure that "
-                    "dict_content argument is a \"raw content\" zstd "
-                    "dictionary, set is_raw parameter to True.";
+                    "should be a magic number: b'\\x37\\xA4\\x30\\xEC'.\n";
         PyErr_SetString(PyExc_ValueError, msg);
         goto error;
     }
