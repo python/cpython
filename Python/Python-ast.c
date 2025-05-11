@@ -5528,6 +5528,32 @@ ast_type_replace_check(PyObject *self,
             Py_DECREF(unused);
         }
     }
+
+    // Discard fields from 'expecting' that default to None
+    PyObject *field_types = NULL;
+    if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self),
+                                 &_Py_ID(_field_types),
+                                 &field_types) < 0)
+    {
+        Py_DECREF(expecting);
+        return -1;
+    }
+    if (field_types != NULL) {
+        Py_ssize_t pos = 0;
+        PyObject *field_name, *field_type;
+        while (PyDict_Next(field_types, &pos, &field_name, &field_type)) {
+            if (_PyUnion_Check(field_type)) {
+                // optional field
+                if (PySet_Discard(expecting, field_name) < 0) {
+                    Py_DECREF(expecting);
+                    Py_DECREF(field_types);
+                    return -1;
+                }
+            }
+        }
+        Py_DECREF(field_types);
+    }
+
     // Now 'expecting' contains the fields or attributes
     // that would not be filled inside ast_type_replace().
     Py_ssize_t m = PySet_GET_SIZE(expecting);
@@ -6362,7 +6388,7 @@ init_types(void *arg)
         "     | UnaryOp(unaryop op, expr operand)\n"
         "     | Lambda(arguments args, expr body)\n"
         "     | IfExp(expr test, expr body, expr orelse)\n"
-        "     | Dict(expr* keys, expr* values)\n"
+        "     | Dict(expr?* keys, expr* values)\n"
         "     | Set(expr* elts)\n"
         "     | ListComp(expr elt, comprehension* generators)\n"
         "     | SetComp(expr elt, comprehension* generators)\n"
@@ -6419,7 +6445,7 @@ init_types(void *arg)
     if (!state->IfExp_type) return -1;
     state->Dict_type = make_type(state, "Dict", state->expr_type, Dict_fields,
                                  2,
-        "Dict(expr* keys, expr* values)");
+        "Dict(expr?* keys, expr* values)");
     if (!state->Dict_type) return -1;
     state->Set_type = make_type(state, "Set", state->expr_type, Set_fields, 1,
         "Set(expr* elts)");
