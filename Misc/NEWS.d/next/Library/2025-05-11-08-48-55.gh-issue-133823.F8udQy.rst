@@ -1,0 +1,3 @@
+Remove support for ``TypedDict("T")`` and ``TypedDict("T", None)`` calls for
+constructing :class:`typing.TypedDict` objects with zero fields. Patch by
+Bénédikt Tran.

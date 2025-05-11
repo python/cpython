@@ -118,10 +118,13 @@ Deprecated
 Removed
 =======
 
-module_name
------------
+typing
+------
 
-* TODO
+* Using  ``TypedDict("T")`` or ``TypedDict("T", None)`` to construct
+  :class:`~typing.TypedDict` with zero fields is no more supported.
+  Use ``TypedDict("T", [])`` instead.
+  (Contributed by Bénédikt Tran in :gh:`133823`.)
 
 
 Porting to Python 3.15

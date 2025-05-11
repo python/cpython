@@ -8904,38 +8904,26 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(CallTypedDict.__orig_bases__, (TypedDict,))
 
     def test_zero_fields_typeddicts(self):
-        T1 = TypedDict("T1", {})
+        T1a = TypedDict("T1a", {})
+        T1b = TypedDict("T1b", [])
+        T1c = TypedDict("T1c", ())
         class T2(TypedDict): pass
         class T3[tvar](TypedDict): pass
         S = TypeVar("S")
         class T4(TypedDict, Generic[S]): pass
 
-        expected_warning = re.escape(
-            "Failing to pass a value for the 'fields' parameter is deprecated "
-            "and will be disallowed in Python 3.15. "
-            "To create a TypedDict class with 0 fields "
-            "using the functional syntax, "
-            "pass an empty dictionary, e.g. `T5 = TypedDict('T5', {})`."
-        )
-        with self.assertWarnsRegex(DeprecationWarning, fr"^{expected_warning}$"):
-            T5 = TypedDict('T5')
-
-        expected_warning = re.escape(
-            "Passing `None` as the 'fields' parameter is deprecated "
-            "and will be disallowed in Python 3.15. "
-            "To create a TypedDict class with 0 fields "
-            "using the functional syntax, "
-            "pass an empty dictionary, e.g. `T6 = TypedDict('T6', {})`."
-        )
-        with self.assertWarnsRegex(DeprecationWarning, fr"^{expected_warning}$"):
-            T6 = TypedDict('T6', None)
-
-        for klass in T1, T2, T3, T4, T5, T6:
+        for klass in T1a, T1b, T1c, T2, T3, T4:
             with self.subTest(klass=klass.__name__):
                 self.assertEqual(klass.__annotations__, {})
                 self.assertEqual(klass.__required_keys__, set())
                 self.assertEqual(klass.__optional_keys__, set())
                 self.assertIsInstance(klass(), dict)
+
+    def test_errors(self):
+        with self.assertRaisesRegex(TypeError, "missing 1 required.*argument"):
+            TypedDict('TD')
+        with self.assertRaisesRegex(TypeError, "object is not iterable"):
+            TypedDict('TD', None)
 
     def test_readonly_inheritance(self):
         class Base1(TypedDict):
