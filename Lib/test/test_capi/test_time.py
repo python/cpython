@@ -72,3 +72,7 @@ class CAPITest(unittest.TestCase):
         # Test PyTime_Time() and PyTime_TimeRaw()
         self.check_clock(_testcapi.PyTime_Time, time.time)
         self.check_clock(_testcapi.PyTime_TimeRaw, time.time)
+
+
+if __name__ == "__main__":
+    unittest.main()

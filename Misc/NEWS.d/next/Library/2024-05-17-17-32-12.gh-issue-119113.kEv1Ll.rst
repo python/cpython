@@ -1,2 +1,0 @@
-Fix issue where :meth:`pathlib.PurePath.with_suffix` didn't raise
-:exc:`TypeError` when given ``None`` as a suffix.

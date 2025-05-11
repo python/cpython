@@ -6,9 +6,9 @@ It also provides some help for examining source code and class layout.
 
 Here are some of the useful functions provided by this module:
 
-    ismodule(), isclass(), ismethod(), isfunction(), isgeneratorfunction(),
-        isgenerator(), istraceback(), isframe(), iscode(), isbuiltin(),
-        isroutine() - check object types
+    ismodule(), isclass(), ismethod(), ispackage(), isfunction(),
+        isgeneratorfunction(), isgenerator(), istraceback(), isframe(),
+        iscode(), isbuiltin(), isroutine() - check object types
     getmembers() - get members of an object that satisfy a given condition
 
     getfile(), getsourcefile(), getsource() - find an object's source code
@@ -24,8 +24,6 @@ Here are some of the useful functions provided by this module:
     stack(), trace() - get info about frames on the stack or in a traceback
 
     signature() - get a Signature object for the callable
-
-    get_annotations() - safely compute an object's annotations
 """
 
 # This module is in the public domain.  No warranties.
@@ -58,6 +56,8 @@ __all__ = [
     "CO_OPTIMIZED",
     "CO_VARARGS",
     "CO_VARKEYWORDS",
+    "CO_HAS_DOCSTRING",
+    "CO_METHOD",
     "ClassFoundException",
     "ClosureVars",
     "EndOfBlock",
@@ -130,6 +130,7 @@ __all__ = [
     "ismethoddescriptor",
     "ismethodwrapper",
     "ismodule",
+    "ispackage",
     "isroutine",
     "istraceback",
     "markcoroutinefunction",
@@ -142,7 +143,8 @@ __all__ = [
 
 
 import abc
-from annotationlib import get_annotations
+from annotationlib import Format, ForwardRef
+from annotationlib import get_annotations  # re-exported
 import ast
 import dis
 import collections.abc
@@ -186,6 +188,10 @@ def isclass(object):
 def ismethod(object):
     """Return true if the object is an instance method."""
     return isinstance(object, types.MethodType)
+
+def ispackage(object):
+    """Return true if the object is a package."""
+    return ismodule(object) and hasattr(object, "__path__")
 
 def ismethoddescriptor(object):
     """Return true if the object is a method descriptor.
@@ -264,11 +270,16 @@ def isfunction(object):
     Function objects provide these attributes:
         __doc__         documentation string
         __name__        name with which this function was defined
+        __qualname__    qualified name of this function
+        __module__      name of the module the function was defined in or None
         __code__        code object containing compiled function bytecode
         __defaults__    tuple of any default values for arguments
         __globals__     global namespace in which this function was defined
         __annotations__ dict of parameter annotations
-        __kwdefaults__  dict of keyword only parameters with defaults"""
+        __kwdefaults__  dict of keyword only parameters with defaults
+        __dict__        namespace which is supporting arbitrary function attributes
+        __closure__     a tuple of cells or None
+        __type_params__ tuple of type parameters"""
     return isinstance(object, types.FunctionType)
 
 def _has_code_flag(f, flag):
@@ -333,17 +344,18 @@ def isgenerator(object):
     """Return true if the object is a generator.
 
     Generator objects provide these attributes:
-        __iter__        defined to support iteration over container
-        close           raises a new GeneratorExit exception inside the
-                        generator to terminate the iteration
         gi_code         code object
         gi_frame        frame object or possibly None once the generator has
                         been exhausted
         gi_running      set to 1 when generator is executing, 0 otherwise
-        next            return the next item from the container
-        send            resumes the generator and "sends" a value that becomes
+        gi_yieldfrom    object being iterated by yield from or None
+
+        __iter__()      defined to support iteration over container
+        close()         raises a new GeneratorExit exception inside the
+                        generator to terminate the iteration
+        send()          resumes the generator and "sends" a value that becomes
                         the result of the current yield-expression
-        throw           used to raise an exception inside the generator"""
+        throw()         used to raise an exception inside the generator"""
     return isinstance(object, types.GeneratorType)
 
 def iscoroutine(object):
@@ -378,7 +390,11 @@ def isframe(object):
         f_lasti         index of last attempted instruction in bytecode
         f_lineno        current line number in Python source code
         f_locals        local namespace seen by this frame
-        f_trace         tracing function for this frame, or None"""
+        f_trace         tracing function for this frame, or None
+        f_trace_lines   is a tracing event triggered for each source line?
+        f_trace_opcodes are per-opcode events being requested?
+
+        clear()          used to clear all references to local variables"""
     return isinstance(object, types.FrameType)
 
 def iscode(object):
@@ -395,6 +411,7 @@ def iscode(object):
         co_flags            bitmap: 1=optimized | 2=newlocals | 4=*arg | 8=**arg
                             | 16=nested | 32=generator | 64=nofree | 128=coroutine
                             | 256=iterable_coroutine | 512=async_generator
+                            | 0x4000000=has_docstring
         co_freevars         tuple of names of free variables
         co_posonlyargcount  number of positional only arguments
         co_kwonlyargcount   number of keyword only arguments (not including ** arg)
@@ -403,7 +420,12 @@ def iscode(object):
         co_names            tuple of names other than arguments and function locals
         co_nlocals          number of local variables
         co_stacksize        virtual machine stack space required
-        co_varnames         tuple of names of arguments and local variables"""
+        co_varnames         tuple of names of arguments and local variables
+        co_qualname         fully qualified function name
+
+        co_lines()          returns an iterator that yields successive bytecode ranges
+        co_positions()      returns an iterator of source code positions for each bytecode instruction
+        replace()           returns a copy of the code object with a new values"""
     return isinstance(object, types.CodeType)
 
 def isbuiltin(object):
@@ -425,7 +447,8 @@ def isroutine(object):
             or isfunction(object)
             or ismethod(object)
             or ismethoddescriptor(object)
-            or ismethodwrapper(object))
+            or ismethodwrapper(object)
+            or isinstance(object, functools._singledispatchmethod_get))
 
 def isabstract(object):
     """Return true if the object is an abstract base class (ABC)."""
@@ -836,8 +859,7 @@ def getsourcefile(object):
     Return None if no way can be identified to get the source.
     """
     filename = getfile(object)
-    all_bytecode_suffixes = importlib.machinery.DEBUG_BYTECODE_SUFFIXES[:]
-    all_bytecode_suffixes += importlib.machinery.OPTIMIZED_BYTECODE_SUFFIXES[:]
+    all_bytecode_suffixes = importlib.machinery.BYTECODE_SUFFIXES[:]
     if any(filename.endswith(s) for s in all_bytecode_suffixes):
         filename = (os.path.splitext(filename)[0] +
                     importlib.machinery.SOURCE_SUFFIXES[0])
@@ -947,6 +969,8 @@ def findsource(object):
     module = getmodule(object, file)
     if module:
         lines = linecache.getlines(file, module.__dict__)
+        if not lines and file.startswith('<') and hasattr(object, "__code__"):
+            lines = linecache._getlines_from_code(object.__code__)
     else:
         lines = linecache.getlines(file)
     if not lines:
@@ -957,10 +981,12 @@ def findsource(object):
 
     if isclass(object):
         try:
-            firstlineno = object.__firstlineno__
-        except AttributeError:
+            lnum = vars(object)['__firstlineno__'] - 1
+        except (TypeError, KeyError):
             raise OSError('source code not available')
-        return lines, object.__firstlineno__ - 1
+        if lnum >= len(lines):
+            raise OSError('lineno is out of bounds')
+        return lines, lnum
 
     if ismethod(object):
         object = object.__func__
@@ -1304,7 +1330,9 @@ def getargvalues(frame):
     args, varargs, varkw = getargs(frame.f_code)
     return ArgInfo(args, varargs, varkw, frame.f_locals)
 
-def formatannotation(annotation, base_module=None):
+def formatannotation(annotation, base_module=None, *, quote_annotation_strings=True):
+    if not quote_annotation_strings and isinstance(annotation, str):
+        return annotation
     if getattr(annotation, '__module__', None) == 'typing':
         def repl(match):
             text = match.group()
@@ -1316,6 +1344,8 @@ def formatannotation(annotation, base_module=None):
         if annotation.__module__ in ('builtins', base_module):
             return annotation.__qualname__
         return annotation.__module__+'.'+annotation.__qualname__
+    if isinstance(annotation, ForwardRef):
+        return annotation.__forward_arg__
     return repr(annotation)
 
 def formatannotationrelativeto(object):
@@ -1482,11 +1512,15 @@ def getclosurevars(func):
     global_vars = {}
     builtin_vars = {}
     unbound_names = set()
-    for name in code.co_names:
-        if name in ("None", "True", "False"):
-            # Because these used to be builtins instead of keywords, they
-            # may still show up as name references. We ignore them.
-            continue
+    global_names = set()
+    for instruction in dis.get_instructions(code):
+        opname = instruction.opname
+        name = instruction.argval
+        if opname == "LOAD_ATTR":
+            unbound_names.add(name)
+        elif opname == "LOAD_GLOBAL":
+            global_names.add(name)
+    for name in global_names:
         try:
             global_vars[name] = global_ns[name]
         except KeyError:
@@ -1867,7 +1901,7 @@ _NonUserDefinedCallables = (types.WrapperDescriptorType,
                             types.BuiltinFunctionType)
 
 
-def _signature_get_user_defined_method(cls, method_name):
+def _signature_get_user_defined_method(cls, method_name, *, follow_wrapper_chains=True):
     """Private helper. Checks if ``cls`` has an attribute
     named ``method_name`` and returns it only if it is a
     pure python function.
@@ -1876,12 +1910,20 @@ def _signature_get_user_defined_method(cls, method_name):
         meth = getattr(cls, method_name, None)
     else:
         meth = getattr_static(cls, method_name, None)
-    if meth is None or isinstance(meth, _NonUserDefinedCallables):
+    if meth is None:
+        return None
+
+    if follow_wrapper_chains:
+        meth = unwrap(meth, stop=(lambda m: hasattr(m, "__signature__")
+                                  or _signature_is_builtin(m)))
+    if isinstance(meth, _NonUserDefinedCallables):
         # Once '__signature__' will be added to 'C'-level
         # callables, this check won't be necessary
         return None
     if method_name != '__new__':
         meth = _descriptor_get(meth, cls)
+        if follow_wrapper_chains:
+            meth = unwrap(meth, stop=lambda m: hasattr(m, "__signature__"))
     return meth
 
 
@@ -1917,7 +1959,12 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
             if param.kind is _POSITIONAL_ONLY:
                 # If positional-only parameter is bound by partial,
                 # it effectively disappears from the signature
-                new_params.pop(param_name)
+                # However, if it is a Placeholder it is not removed
+                # And also looses default value
+                if arg_value is functools.Placeholder:
+                    new_params[param_name] = param.replace(default=_empty)
+                else:
+                    new_params.pop(param_name)
                 continue
 
             if param.kind is _POSITIONAL_OR_KEYWORD:
@@ -1939,7 +1986,17 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
                     new_params[param_name] = param.replace(default=arg_value)
                 else:
                     # was passed as a positional argument
-                    new_params.pop(param.name)
+                    # Do not pop if it is a Placeholder
+                    #   also change kind to positional only
+                    #   and remove default
+                    if arg_value is functools.Placeholder:
+                        new_param = param.replace(
+                            kind=_POSITIONAL_ONLY,
+                            default=_empty
+                        )
+                        new_params[param_name] = new_param
+                    else:
+                        new_params.pop(param_name)
                     continue
 
             if param.kind is _KEYWORD_ONLY:
@@ -2017,13 +2074,11 @@ def _signature_is_functionlike(obj):
     code = getattr(obj, '__code__', None)
     defaults = getattr(obj, '__defaults__', _void) # Important to use _void ...
     kwdefaults = getattr(obj, '__kwdefaults__', _void) # ... and not None here
-    annotations = getattr(obj, '__annotations__', None)
 
     return (isinstance(code, types.CodeType) and
             isinstance(name, str) and
             (defaults is None or isinstance(defaults, tuple)) and
-            (kwdefaults is None or isinstance(kwdefaults, dict)) and
-            (isinstance(annotations, (dict)) or annotations is None) )
+            (kwdefaults is None or isinstance(kwdefaults, dict)))
 
 
 def _signature_strip_non_python_syntax(signature):
@@ -2240,7 +2295,8 @@ def _signature_from_builtin(cls, func, skip_bound_arg=True):
 
 
 def _signature_from_function(cls, func, skip_bound_arg=True,
-                             globals=None, locals=None, eval_str=False):
+                             globals=None, locals=None, eval_str=False,
+                             *, annotation_format=Format.VALUE):
     """Private helper: constructs Signature for the given python function."""
 
     is_duck_function = False
@@ -2266,7 +2322,8 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
     positional = arg_names[:pos_count]
     keyword_only_count = func_code.co_kwonlyargcount
     keyword_only = arg_names[pos_count:pos_count + keyword_only_count]
-    annotations = get_annotations(func, globals=globals, locals=locals, eval_str=eval_str)
+    annotations = get_annotations(func, globals=globals, locals=locals, eval_str=eval_str,
+                                  format=annotation_format)
     defaults = func.__defaults__
     kwdefaults = func.__kwdefaults__
 
@@ -2349,7 +2406,8 @@ def _signature_from_callable(obj, *,
                              globals=None,
                              locals=None,
                              eval_str=False,
-                             sigcls):
+                             sigcls,
+                             annotation_format=Format.VALUE):
 
     """Private helper function to get signature for arbitrary
     callable objects.
@@ -2361,7 +2419,8 @@ def _signature_from_callable(obj, *,
                                 globals=globals,
                                 locals=locals,
                                 sigcls=sigcls,
-                                eval_str=eval_str)
+                                eval_str=eval_str,
+                                annotation_format=annotation_format)
 
     if not callable(obj):
         raise TypeError('{!r} is not a callable object'.format(obj))
@@ -2394,18 +2453,10 @@ def _signature_from_callable(obj, *,
         pass
     else:
         if sig is not None:
-            # since __text_signature__ is not writable on classes, __signature__
-            # may contain text (or be a callable that returns text);
-            # if so, convert it
-            o_sig = sig
-            if not isinstance(sig, (Signature, str)) and callable(sig):
-                sig = sig()
-            if isinstance(sig, str):
-                sig = _signature_fromstr(sigcls, obj, sig)
             if not isinstance(sig, Signature):
                 raise TypeError(
                     'unexpected object {!r} in __signature__ '
-                    'attribute'.format(o_sig))
+                    'attribute'.format(sig))
             return sig
 
     try:
@@ -2433,6 +2484,11 @@ def _signature_from_callable(obj, *,
                 sig_params = tuple(sig.parameters.values())
                 assert (not sig_params or
                         first_wrapped_param is not sig_params[0])
+                # If there were placeholders set,
+                #   first param is transformed to positional only
+                if partialmethod.args.count(functools.Placeholder):
+                    first_wrapped_param = first_wrapped_param.replace(
+                        kind=Parameter.POSITIONAL_ONLY)
                 new_params = (first_wrapped_param,) + sig_params
                 return sig.replace(parameters=new_params)
 
@@ -2445,7 +2501,8 @@ def _signature_from_callable(obj, *,
         # of a Python function (Cython functions, for instance), then:
         return _signature_from_function(sigcls, obj,
                                         skip_bound_arg=skip_bound_arg,
-                                        globals=globals, locals=locals, eval_str=eval_str)
+                                        globals=globals, locals=locals, eval_str=eval_str,
+                                        annotation_format=annotation_format)
 
     if _signature_is_builtin(obj):
         return _signature_from_builtin(sigcls, obj,
@@ -2456,12 +2513,26 @@ def _signature_from_callable(obj, *,
 
         # First, let's see if it has an overloaded __call__ defined
         # in its metaclass
-        call = _signature_get_user_defined_method(type(obj), '__call__')
+        call = _signature_get_user_defined_method(
+            type(obj),
+            '__call__',
+            follow_wrapper_chains=follow_wrapper_chains,
+        )
         if call is not None:
             return _get_signature_of(call)
 
-        new = _signature_get_user_defined_method(obj, '__new__')
-        init = _signature_get_user_defined_method(obj, '__init__')
+        # NOTE: The user-defined method can be a function with a thin wrapper
+        # around object.__new__ (e.g., generated by `@warnings.deprecated`)
+        new = _signature_get_user_defined_method(
+            obj,
+            '__new__',
+            follow_wrapper_chains=follow_wrapper_chains,
+        )
+        init = _signature_get_user_defined_method(
+            obj,
+            '__init__',
+            follow_wrapper_chains=follow_wrapper_chains,
+        )
 
         # Go through the MRO and see if any class has user-defined
         # pure Python __new__ or __init__ method
@@ -2501,10 +2572,14 @@ def _signature_from_callable(obj, *,
         # Last option is to check if its '__init__' is
         # object.__init__ or type.__init__.
         if type not in obj.__mro__:
+            obj_init = obj.__init__
+            obj_new = obj.__new__
+            if follow_wrapper_chains:
+                obj_init = unwrap(obj_init)
+                obj_new = unwrap(obj_new)
             # We have a class (not metaclass), but no user-defined
             # __init__ or __new__ for it
-            if (obj.__init__ is object.__init__ and
-                obj.__new__ is object.__new__):
+            if obj_init is object.__init__ and obj_new is object.__new__:
                 # Return a signature of 'object' builtin.
                 return sigcls.from_callable(object)
             else:
@@ -2680,13 +2755,17 @@ class Parameter:
         return type(self)(name, kind, default=default, annotation=annotation)
 
     def __str__(self):
+        return self._format()
+
+    def _format(self, *, quote_annotation_strings=True):
         kind = self.kind
         formatted = self._name
 
         # Add annotation and default value
         if self._annotation is not _empty:
-            formatted = '{}: {}'.format(formatted,
-                                       formatannotation(self._annotation))
+            annotation = formatannotation(self._annotation,
+                                          quote_annotation_strings=quote_annotation_strings)
+            formatted = '{}: {}'.format(formatted, annotation)
 
         if self._default is not _empty:
             if self._annotation is not _empty:
@@ -2893,10 +2972,18 @@ class Signature:
                 params = OrderedDict()
                 top_kind = _POSITIONAL_ONLY
                 seen_default = False
+                seen_var_parameters = set()
 
                 for param in parameters:
                     kind = param.kind
                     name = param.name
+
+                    if kind in (_VAR_POSITIONAL, _VAR_KEYWORD):
+                        if kind in seen_var_parameters:
+                            msg = f'more than one {kind.description} parameter'
+                            raise ValueError(msg)
+
+                        seen_var_parameters.add(kind)
 
                     if kind < top_kind:
                         msg = (
@@ -2934,11 +3021,13 @@ class Signature:
 
     @classmethod
     def from_callable(cls, obj, *,
-                      follow_wrapped=True, globals=None, locals=None, eval_str=False):
+                      follow_wrapped=True, globals=None, locals=None, eval_str=False,
+                      annotation_format=Format.VALUE):
         """Constructs Signature for the given callable object."""
         return _signature_from_callable(obj, sigcls=cls,
                                         follow_wrapper_chains=follow_wrapped,
-                                        globals=globals, locals=locals, eval_str=eval_str)
+                                        globals=globals, locals=locals, eval_str=eval_str,
+                                        annotation_format=annotation_format)
 
     @property
     def parameters(self):
@@ -3017,6 +3106,9 @@ class Signature:
                         break
                     elif param.name in kwargs:
                         if param.kind == _POSITIONAL_ONLY:
+                            if param.default is _empty:
+                                msg = f'missing a required positional-only argument: {param.name!r}'
+                                raise TypeError(msg)
                             # Raise a TypeError once we are sure there is no
                             # **kwargs param later.
                             pos_only_param_in_kwargs.append(param)
@@ -3153,19 +3245,24 @@ class Signature:
     def __str__(self):
         return self.format()
 
-    def format(self, *, max_width=None):
+    def format(self, *, max_width=None, quote_annotation_strings=True):
         """Create a string representation of the Signature object.
 
         If *max_width* integer is passed,
         signature will try to fit into the *max_width*.
         If signature is longer than *max_width*,
         all parameters will be on separate lines.
+
+        If *quote_annotation_strings* is False, annotations
+        in the signature are displayed without opening and closing quotation
+        marks. This is useful when the signature was created with the
+        STRING format or when ``from __future__ import annotations`` was used.
         """
         result = []
         render_pos_only_separator = False
         render_kw_only_separator = True
         for param in self.parameters.values():
-            formatted = str(param)
+            formatted = param._format(quote_annotation_strings=quote_annotation_strings)
 
             kind = param.kind
 
@@ -3202,16 +3299,19 @@ class Signature:
             rendered = '(\n    {}\n)'.format(',\n    '.join(result))
 
         if self.return_annotation is not _empty:
-            anno = formatannotation(self.return_annotation)
+            anno = formatannotation(self.return_annotation,
+                                    quote_annotation_strings=quote_annotation_strings)
             rendered += ' -> {}'.format(anno)
 
         return rendered
 
 
-def signature(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False):
+def signature(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False,
+              annotation_format=Format.VALUE):
     """Get a signature object for the passed callable."""
     return Signature.from_callable(obj, follow_wrapped=follow_wrapped,
-                                   globals=globals, locals=locals, eval_str=eval_str)
+                                   globals=globals, locals=locals, eval_str=eval_str,
+                                   annotation_format=annotation_format)
 
 
 class BufferFlags(enum.IntFlag):
@@ -3241,7 +3341,7 @@ def _main():
     import argparse
     import importlib
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     parser.add_argument(
         'object',
          help="The object to be analysed. "

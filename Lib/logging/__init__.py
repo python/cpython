@@ -37,7 +37,7 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'captureWarnings', 'critical', 'debug', 'disable', 'error',
            'exception', 'fatal', 'getLevelName', 'getLogger', 'getLoggerClass',
            'info', 'log', 'makeLogRecord', 'setLoggerClass', 'shutdown',
-           'warning', 'getLogRecordFactory', 'setLogRecordFactory',
+           'warn', 'warning', 'getLogRecordFactory', 'setLogRecordFactory',
            'lastResort', 'raiseExceptions', 'getLevelNamesMapping',
            'getHandlerByName', 'getHandlerNames']
 
@@ -1474,6 +1474,8 @@ class Logger(Filterer):
     level, and "input.csv", "input.xls" and "input.gnu" for the sub-levels.
     There is no arbitrary limit to the depth of nesting.
     """
+    _tls = threading.local()
+
     def __init__(self, name, level=NOTSET):
         """
         Initialize the logger with a name and an optional level.
@@ -1529,6 +1531,11 @@ class Logger(Filterer):
         """
         if self.isEnabledFor(WARNING):
             self._log(WARNING, msg, args, **kwargs)
+
+    def warn(self, msg, *args, **kwargs):
+        warnings.warn("The 'warn' method is deprecated, "
+            "use 'warning' instead", DeprecationWarning, 2)
+        self.warning(msg, *args, **kwargs)
 
     def error(self, msg, *args, **kwargs):
         """
@@ -1665,14 +1672,19 @@ class Logger(Filterer):
         This method is used for unpickled records received from a socket, as
         well as those created locally. Logger-level filtering is applied.
         """
-        if self.disabled:
+        if self._is_disabled():
             return
-        maybe_record = self.filter(record)
-        if not maybe_record:
-            return
-        if isinstance(maybe_record, LogRecord):
-            record = maybe_record
-        self.callHandlers(record)
+
+        self._tls.in_progress = True
+        try:
+            maybe_record = self.filter(record)
+            if not maybe_record:
+                return
+            if isinstance(maybe_record, LogRecord):
+                record = maybe_record
+            self.callHandlers(record)
+        finally:
+            self._tls.in_progress = False
 
     def addHandler(self, hdlr):
         """
@@ -1760,7 +1772,7 @@ class Logger(Filterer):
         """
         Is this logger enabled for level 'level'?
         """
-        if self.disabled:
+        if self._is_disabled():
             return False
 
         try:
@@ -1809,6 +1821,11 @@ class Logger(Filterer):
             return set(item for item in d.values()
                        if isinstance(item, Logger) and item.parent is self and
                        _hierlevel(item) == 1 + _hierlevel(item.parent))
+
+    def _is_disabled(self):
+        # We need to use getattr as it will only be set the first time a log
+        # message is recorded on any given thread
+        return self.disabled or getattr(self._tls, 'in_progress', False)
 
     def __repr__(self):
         level = getLevelName(self.getEffectiveLevel())
@@ -1905,6 +1922,11 @@ class LoggerAdapter(object):
         Delegate a warning call to the underlying logger.
         """
         self.log(WARNING, msg, *args, **kwargs)
+
+    def warn(self, msg, *args, **kwargs):
+        warnings.warn("The 'warn' method is deprecated, "
+            "use 'warning' instead", DeprecationWarning, 2)
+        self.warning(msg, *args, **kwargs)
 
     def error(self, msg, *args, **kwargs):
         """
@@ -2168,6 +2190,11 @@ def warning(msg, *args, **kwargs):
     if len(root.handlers) == 0:
         basicConfig()
     root.warning(msg, *args, **kwargs)
+
+def warn(msg, *args, **kwargs):
+    warnings.warn("The 'warn' function is deprecated, "
+        "use 'warning' instead", DeprecationWarning, 2)
+    warning(msg, *args, **kwargs)
 
 def info(msg, *args, **kwargs):
     """

@@ -21,6 +21,7 @@
 
 from __future__ import annotations
 import os
+import time
 
 # Categories of actions:
 #  killing
@@ -31,6 +32,7 @@ import os
 #  finishing
 # [completion]
 
+from .trace import trace
 
 # types
 if False:
@@ -282,7 +284,7 @@ class down(MotionCommand):
             x, y = r.pos2xy()
             new_y = y + 1
 
-            if new_y > r.max_row():
+            if r.eol() == len(b):
                 if r.historyi < len(r.history):
                     r.select_item(r.historyi + 1)
                     r.pos = r.eol(0)
@@ -309,7 +311,7 @@ class down(MotionCommand):
 class left(MotionCommand):
     def do(self) -> None:
         r = self.reader
-        for i in range(r.get_arg()):
+        for _ in range(r.get_arg()):
             p = r.pos - 1
             if p >= 0:
                 r.pos = p
@@ -321,7 +323,7 @@ class right(MotionCommand):
     def do(self) -> None:
         r = self.reader
         b = r.buffer
-        for i in range(r.get_arg()):
+        for _ in range(r.get_arg()):
             p = r.pos + 1
             if p <= len(b):
                 r.pos = p
@@ -437,7 +439,7 @@ class help(Command):
         import _sitebuiltins
 
         with self.reader.suspend():
-            self.reader.msg = _sitebuiltins._Helper()()  # type: ignore[assignment, call-arg]
+            self.reader.msg = _sitebuiltins._Helper()()  # type: ignore[assignment]
 
 
 class invalid_key(Command):
@@ -456,28 +458,39 @@ class invalid_command(Command):
 class show_history(Command):
     def do(self) -> None:
         from .pager import get_pager
-        from site import gethistoryfile  # type: ignore[attr-defined]
+        from site import gethistoryfile
 
         history = os.linesep.join(self.reader.history[:])
-        with self.reader.suspend():
-            pager = get_pager()
-            pager(history, gethistoryfile())
+        self.reader.console.restore()
+        pager = get_pager()
+        pager(history, gethistoryfile())
+        self.reader.console.prepare()
+
+        # We need to copy over the state so that it's consistent between
+        # console and reader, and console does not overwrite/append stuff
+        self.reader.console.screen = self.reader.screen.copy()
+        self.reader.console.posxy = self.reader.cxy
 
 
 class paste_mode(Command):
-
     def do(self) -> None:
         self.reader.paste_mode = not self.reader.paste_mode
         self.reader.dirty = True
 
 
-class enable_bracketed_paste(Command):
+class perform_bracketed_paste(Command):
     def do(self) -> None:
-        self.reader.paste_mode = True
-        self.reader.in_bracketed_paste = True
-
-class disable_bracketed_paste(Command):
-    def do(self) -> None:
-        self.reader.paste_mode = False
-        self.reader.in_bracketed_paste = False
-        self.reader.dirty = True
+        done = "\x1b[201~"
+        data = ""
+        start = time.time()
+        while done not in data:
+            self.reader.console.wait(100)
+            ev = self.reader.console.getpending()
+            data += ev.data
+        trace(
+            "bracketed pasting of {l} chars done in {s:.2f}s",
+            l=len(data),
+            s=time.time() - start,
+        )
+        self.reader.insert(data.replace(done, ""))
+        self.reader.last_refresh_cache.invalidated = True
