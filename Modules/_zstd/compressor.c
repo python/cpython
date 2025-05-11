@@ -173,8 +173,8 @@ _get_CDict(ZstdDict *self, int compressionLevel)
     }
     if (capsule == NULL) {
         /* Create ZSTD_CDict instance */
-        char *dict_buffer = PyBytes_AS_STRING(self->dict_content);
-        Py_ssize_t dict_len = Py_SIZE(self->dict_content);
+        char *dict_buffer = self->dict_buffer;
+        Py_ssize_t dict_len = self->dict_len;
         Py_BEGIN_ALLOW_THREADS
         cdict = ZSTD_createCDict(dict_buffer,
                                  dict_len,
