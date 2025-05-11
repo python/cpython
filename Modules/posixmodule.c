@@ -11407,7 +11407,7 @@ static Py_off_t
 os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
 /*[clinic end generated code: output=971e1efb6b30bd2f input=f096e754c5367504]*/
 {
-    Py_off_t result = 0;
+    Py_off_t result = -1;
 
 #ifdef SEEK_SET
     /* Turn 0, 1, 2 into SEEK_{SET,CUR,END} */
@@ -11422,18 +11422,13 @@ os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
     HANDLE h = (HANDLE)_get_osfhandle(fd);
-    if (h == INVALID_HANDLE_VALUE) {
-        result = -1;
-    }
-    if (result >= 0) {
-        if (GetFileType(h) != FILE_TYPE_DISK) {
+    if (h != INVALID_HANDLE_VALUE) {
+        if (GetFileType(h) == FILE_TYPE_DISK) {
+            result = _lseeki64(fd, position, how);
+        } else {
             // Only file is seekable
             errno = ESPIPE;
-            result = -1;
         }
-    }
-    if (result >= 0) {
-        result = _lseeki64(fd, position, how);
     }
 #else
     result = lseek(fd, position, how);
