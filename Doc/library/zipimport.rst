@@ -186,11 +186,20 @@ Examples
 Here is an example that imports a module from a ZIP archive - note that the
 :mod:`zipimport` module is not explicitly used.
 
+.. code-block:: shell-session
+   $ unzip -l example_archive.zip
+   Archive:  example.zip
+     Length     Date   Time    Name
+    --------    ----   ----    ----
+        8467  05-11-25 12:29   example.py
+    --------                   -------
+        8467                   1 file
+
 .. code-block:: python
 
    >>> import sys
-   >>> sys.path.insert(0, 'example.zip')  # Add .zip file to front of path
+   >>> sys.path.insert(0, 'example_archive.zip')  # Add .zip file to front of path
    >>> import example
    >>> example.__file__
-   'example.zip/example/__main__.py'
+   'example.zip/example.py'
 
