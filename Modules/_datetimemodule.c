@@ -2867,7 +2867,6 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
     PyObject *td_self = NULL;
     PyObject *current_mod = NULL;
-    datetime_state *st = GET_CURRENT_STATE(current_mod);
 
     PyObject *days_arg = NULL, *seconds_arg = NULL, *us_arg = NULL, *ns_arg = NULL;
     PyObject *ms_arg = NULL, *minutes_arg = NULL, *hours_arg = NULL, *weeks_arg = NULL;
@@ -3006,7 +3005,6 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
 ErrorExit:
     // Py_XDECREF(td_self); // td_self would be NULL or DECREF'd by caller if tp_alloc failed
-    RELEASE_CURRENT_STATE(st, current_mod);
     return NULL; // Error already set
 }
 
