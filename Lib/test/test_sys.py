@@ -2094,14 +2094,13 @@ print("Remote script executed successfully!")
     @unittest.skipIf(sys.platform == 'darwin',
                      'undecodable paths are not supported on macOS')
     def test_remote_exec_undecodable(self):
-        script = '''
-print("Remote script executed successfully!")
-'''
+        script = 'print("Remote script executed successfully!")'
         script_path = os_helper.TESTFN_UNDECODABLE + b'_undecodable_remote.py'
-        returncode, stdout, stderr = self._run_remote_exec_test(script,
-                                                    script_path=script_path)
-        self.assertIn(b"Remote script executed successfully!", stdout)
-        self.assertEqual(stderr, b"")
+        for script_path in [script_path, os.fsdecode(script_path)]:
+            returncode, stdout, stderr = self._run_remote_exec_test(script,
+                                                        script_path=script_path)
+            self.assertIn(b"Remote script executed successfully!", stdout)
+            self.assertEqual(stderr, b"")
 
     def test_remote_exec_with_self_process(self):
         """Test remote exec with the target process being the same as the test process"""

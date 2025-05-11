@@ -2483,25 +2483,28 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
 {
     PyObject *path;
     const char *debugger_script_path;
-#ifdef MS_WINDOWS
-    if (PyUnicode_FSDecoder(script, &path) < 0) {
+
+    if (PyUnicode_FSConverter(script, &path) < 0) {
         return NULL;
     }
-    debugger_script_path = PyUnicode_AsUTF8(path);
-    if (debugger_script_path == NULL) {
+    debugger_script_path = PyBytes_AS_STRING(path);
+#ifdef MS_WINDOWS
+    PyObject *unicode_path;
+    if (PyUnicode_FSDecoder(path, &unicode_path) < 0) {
         Py_DECREF(path);
         return NULL;
     }
     // Use UTF-16 (wide char) version of the path for permission checks
-    wchar_t *debugger_script_path_w = PyUnicode_AsWideCharString(path, NULL);
+    wchar_t *debugger_script_path_w = PyUnicode_AsWideCharString(unicode_path, NULL);
+    Py_DECREF(unicode_path);
     if (debugger_script_path_w == NULL) {
         Py_DECREF(path);
         return NULL;
     }
     DWORD attr = GetFileAttributesW(debugger_script_path_w);
-    PyMem_Free(debugger_script_path_w);
     if (attr == INVALID_FILE_ATTRIBUTES) {
         DWORD err = GetLastError();
+        PyMem_Free(debugger_script_path_w);
         if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) {
             PyErr_SetString(PyExc_FileNotFoundError, "Script file does not exist");
         }
@@ -2514,12 +2517,8 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
         Py_DECREF(path);
         return NULL;
     }
+    PyMem_Free(debugger_script_path_w);
 #else // MS_WINDOWS
-    if (PyUnicode_FSConverter(script, &path) < 0) {
-        return NULL;
-    }
-    debugger_script_path = PyBytes_AS_STRING(path);
-
     if (access(debugger_script_path, F_OK | R_OK) != 0) {
         switch (errno) {
             case ENOENT:
