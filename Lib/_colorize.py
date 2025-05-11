@@ -208,6 +208,16 @@ class Unittest(ThemeSection):
 
 
 @dataclass(frozen=True)
+class Difflib(ThemeSection):
+    """A 'git diff'-like theme for `difflib.unified_diff`."""
+    header: str = ANSIColors.BOLD  # eg "---" and "+++" lines
+    hunk: str = ANSIColors.CYAN  # the "@@" lines
+    insert: str = ANSIColors.GREEN
+    delete: str = ANSIColors.RED
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True)
 class Theme:
     """A suite of themes for all sections of Python.
 
@@ -218,6 +228,7 @@ class Theme:
     syntax: Syntax = field(default_factory=Syntax)
     traceback: Traceback = field(default_factory=Traceback)
     unittest: Unittest = field(default_factory=Unittest)
+    difflib: Difflib = field(default_factory=Difflib)
 
     def copy_with(
         self,
@@ -226,6 +237,7 @@ class Theme:
         syntax: Syntax | None = None,
         traceback: Traceback | None = None,
         unittest: Unittest | None = None,
+        difflib: Difflib | None = None,
     ) -> Self:
         """Return a new Theme based on this instance with some sections replaced.
 
@@ -237,6 +249,7 @@ class Theme:
             syntax=syntax or self.syntax,
             traceback=traceback or self.traceback,
             unittest=unittest or self.unittest,
+            difflib=difflib or self.difflib,
         )
 
     @classmethod
@@ -252,6 +265,7 @@ class Theme:
             syntax=Syntax.no_colors(),
             traceback=Traceback.no_colors(),
             unittest=Unittest.no_colors(),
+            difflib=Difflib.no_colors(),
         )
 
 
