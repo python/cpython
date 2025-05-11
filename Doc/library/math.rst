@@ -144,7 +144,7 @@ Number-theoretic functions
 
 .. function:: factorial(n)
 
-   Return *n* factorial as an integer.  Raises :exc:`ValueError` if *n* is not integral or
+   Return *n* factorial as an integer.  Raises :exc:`TypeError` if *n* is not integral or
    is negative.
 
    .. versionchanged:: 3.10
