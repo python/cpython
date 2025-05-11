@@ -17,7 +17,7 @@ __all__ = (
 )
 
 if False:  # for type checkers
-    from typing import TextIO
+    from io import Writer
 
 # Sadly, we can't re-use the traceback module's datastructures as those
 # are tailored for error reporting, whereas we need to represent an
@@ -270,7 +270,7 @@ def print_call_graph(
     future: futures.Future | None = None,
     /,
     *,
-    file: TextIO | None = None,
+    file: Writer[str] | None = None,
     depth: int = 1,
     limit: int | None = None,
 ) -> None:
