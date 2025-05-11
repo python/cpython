@@ -379,12 +379,6 @@ def create_unicode_buffer(init, size=None):
         return buf
     raise TypeError(init)
 
-
-def SetPointerType(pointer, cls):
-    import warnings
-    warnings._deprecated("ctypes.SetPointerType", remove=(3, 15))
-    pointer.set_type(cls)
-
 def ARRAY(typ, len):
     return typ * len
 

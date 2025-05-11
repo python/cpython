@@ -21,9 +21,7 @@ class TestSetPointerType(unittest.TestCase):
             _fields_ = [("name", c_char_p),
                         ("next", lpcell)]
 
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            ctypes.SetPointerType(lpcell, cell)
+        lpcell.set_type(cell)
 
         self.assertIs(POINTER(cell), lpcell)
 
@@ -50,10 +48,9 @@ class TestSetPointerType(unittest.TestCase):
             _fields_ = [("name", c_char_p),
                         ("next", lpcell)]
 
-        with self.assertWarns(DeprecationWarning):
-            ctypes.SetPointerType(lpcell, cell)
-
+        lpcell.set_type(cell)
         self.assertIs(POINTER(cell), lpcell)
+
 
 if __name__ == '__main__':
     unittest.main()
