@@ -380,8 +380,8 @@ static void dump_symtable(PySTEntryObject* ste)
 }
 #endif
 
-#define DUPLICATE_ARGUMENT \
-"duplicate argument '%U' in function definition"
+#define DUPLICATE_PARAMETER \
+"duplicate parameter '%U' in function definition"
 
 static struct symtable *
 symtable_new(void)
@@ -1494,7 +1494,7 @@ symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _s
         }
         if ((flag & DEF_PARAM) && (val & DEF_PARAM)) {
             /* Is it better to use 'mangled' or 'name' here? */
-            PyErr_Format(PyExc_SyntaxError, DUPLICATE_ARGUMENT, name);
+            PyErr_Format(PyExc_SyntaxError, DUPLICATE_PARAMETER, name);
             SET_ERROR_LOCATION(st->st_filename, loc);
             goto error;
         }
@@ -2510,8 +2510,16 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         if (e->v.FormattedValue.format_spec)
             VISIT(st, expr, e->v.FormattedValue.format_spec);
         break;
+    case Interpolation_kind:
+        VISIT(st, expr, e->v.Interpolation.value);
+        if (e->v.Interpolation.format_spec)
+            VISIT(st, expr, e->v.Interpolation.format_spec);
+        break;
     case JoinedStr_kind:
         VISIT_SEQ(st, expr, e->v.JoinedStr.values);
+        break;
+    case TemplateStr_kind:
+        VISIT_SEQ(st, expr, e->v.TemplateStr.values);
         break;
     case Constant_kind:
         /* Nothing to do here. */
@@ -2749,8 +2757,10 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
     // Annotations in local scopes are not executed and should not affect the symtable
     bool is_unevaluated = st->st_cur->ste_type == FunctionBlock;
 
-    if ((st->st_cur->ste_type == ClassBlock || st->st_cur->ste_type == ModuleBlock)
-            && st->st_cur->ste_in_conditional_block
+    // Module-level annotations are always considered conditional because the module
+    // may be partially executed.
+    if ((((st->st_cur->ste_type == ClassBlock && st->st_cur->ste_in_conditional_block)
+            || st->st_cur->ste_type == ModuleBlock))
             && !st->st_cur->ste_has_conditional_annotations)
     {
         st->st_cur->ste_has_conditional_annotations = 1;

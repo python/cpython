@@ -1,5 +1,0 @@
-Fix issue where :func:`urllib.request.url2pathname` mishandled file URLs with
-authorities. If an authority is present and resolves to ``localhost``, it is
-now discarded. If an authority is present but *doesn't* resolve to
-``localhost``, then on Windows a UNC path is returned (as before), and on
-other platforms a :exc:`urllib.error.URLError` is now raised.

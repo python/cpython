@@ -56,6 +56,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_pyhash.h"        // _Py_HashSecret_t
 #include "pycore_pylifecycle.h"   // _Py_SetFileSystemEncoding()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_template.h"      // _PyTemplate_Concat()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
@@ -1140,6 +1141,21 @@ unicode_fill_invalid(PyObject *unicode, Py_ssize_t old_length)
 #endif
 
 static PyObject*
+resize_copy(PyObject *unicode, Py_ssize_t length)
+{
+    Py_ssize_t copy_length;
+    PyObject *copy;
+
+    copy = PyUnicode_New(length, PyUnicode_MAX_CHAR_VALUE(unicode));
+    if (copy == NULL)
+        return NULL;
+
+    copy_length = Py_MIN(length, PyUnicode_GET_LENGTH(unicode));
+    _PyUnicode_FastCopyCharacters(copy, 0, unicode, 0, copy_length);
+    return copy;
+}
+
+static PyObject*
 resize_compact(PyObject *unicode, Py_ssize_t length)
 {
     Py_ssize_t char_size;
@@ -1150,7 +1166,14 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
     Py_ssize_t old_length = _PyUnicode_LENGTH(unicode);
 #endif
 
-    assert(unicode_modifiable(unicode));
+    if (!unicode_modifiable(unicode)) {
+        PyObject *copy = resize_copy(unicode, length);
+        if (copy == NULL) {
+            return NULL;
+        }
+        Py_DECREF(unicode);
+        return copy;
+    }
     assert(PyUnicode_IS_COMPACT(unicode));
 
     char_size = PyUnicode_KIND(unicode);
@@ -1248,21 +1271,6 @@ resize_inplace(PyObject *unicode, Py_ssize_t length)
     }
     assert(_PyUnicode_CheckConsistency(unicode, 0));
     return 0;
-}
-
-static PyObject*
-resize_copy(PyObject *unicode, Py_ssize_t length)
-{
-    Py_ssize_t copy_length;
-    PyObject *copy;
-
-    copy = PyUnicode_New(length, PyUnicode_MAX_CHAR_VALUE(unicode));
-    if (copy == NULL)
-        return NULL;
-
-    copy_length = Py_MIN(length, PyUnicode_GET_LENGTH(unicode));
-    _PyUnicode_FastCopyCharacters(copy, 0, unicode, 0, copy_length);
-    return copy;
 }
 
 static const char*
@@ -1816,7 +1824,7 @@ static int
 unicode_modifiable(PyObject *unicode)
 {
     assert(_PyUnicode_CHECK(unicode));
-    if (Py_REFCNT(unicode) != 1)
+    if (!_PyObject_IsUniquelyReferenced(unicode))
         return 0;
     if (PyUnicode_HASH(unicode) != -1)
         return 0;
@@ -3722,7 +3730,7 @@ PyUnicode_Decode(const char *s,
     return NULL;
 }
 
-PyObject *
+PyAPI_FUNC(PyObject *)
 PyUnicode_AsDecodedObject(PyObject *unicode,
                           const char *encoding,
                           const char *errors)
@@ -3732,12 +3740,6 @@ PyUnicode_AsDecodedObject(PyObject *unicode,
         return NULL;
     }
 
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "PyUnicode_AsDecodedObject() is deprecated "
-                     "and will be removed in 3.15; "
-                     "use PyCodec_Decode() to decode from str", 1) < 0)
-        return NULL;
-
     if (encoding == NULL)
         encoding = PyUnicode_GetDefaultEncoding();
 
@@ -3745,7 +3747,7 @@ PyUnicode_AsDecodedObject(PyObject *unicode,
     return PyCodec_Decode(unicode, encoding, errors);
 }
 
-PyObject *
+PyAPI_FUNC(PyObject *)
 PyUnicode_AsDecodedUnicode(PyObject *unicode,
                            const char *encoding,
                            const char *errors)
@@ -3756,12 +3758,6 @@ PyUnicode_AsDecodedUnicode(PyObject *unicode,
         PyErr_BadArgument();
         goto onError;
     }
-
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "PyUnicode_AsDecodedUnicode() is deprecated "
-                     "and will be removed in 3.15; "
-                     "use PyCodec_Decode() to decode from str to str", 1) < 0)
-        return NULL;
 
     if (encoding == NULL)
         encoding = PyUnicode_GetDefaultEncoding();
@@ -3785,7 +3781,7 @@ PyUnicode_AsDecodedUnicode(PyObject *unicode,
     return NULL;
 }
 
-PyObject *
+PyAPI_FUNC(PyObject *)
 PyUnicode_AsEncodedObject(PyObject *unicode,
                           const char *encoding,
                           const char *errors)
@@ -3796,13 +3792,6 @@ PyUnicode_AsEncodedObject(PyObject *unicode,
         PyErr_BadArgument();
         goto onError;
     }
-
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "PyUnicode_AsEncodedObject() is deprecated "
-                     "and will be removed in 3.15; "
-                     "use PyUnicode_AsEncodedString() to encode from str to bytes "
-                     "or PyCodec_Encode() for generic encoding", 1) < 0)
-        return NULL;
 
     if (encoding == NULL)
         encoding = PyUnicode_GetDefaultEncoding();
@@ -4009,7 +3998,7 @@ PyUnicode_AsEncodedString(PyObject *unicode,
     return NULL;
 }
 
-PyObject *
+PyAPI_FUNC(PyObject *)
 PyUnicode_AsEncodedUnicode(PyObject *unicode,
                            const char *encoding,
                            const char *errors)
@@ -4020,12 +4009,6 @@ PyUnicode_AsEncodedUnicode(PyObject *unicode,
         PyErr_BadArgument();
         goto onError;
     }
-
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "PyUnicode_AsEncodedUnicode() is deprecated "
-                     "and will be removed in 3.15; "
-                     "use PyCodec_Encode() to encode from str to str", 1) < 0)
-        return NULL;
 
     if (encoding == NULL)
         encoding = PyUnicode_GetDefaultEncoding();
@@ -11621,10 +11604,16 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
         return NULL;
 
     if (!PyUnicode_Check(right)) {
-        PyErr_Format(PyExc_TypeError,
-                     "can only concatenate str (not \"%.200s\") to str",
-                     Py_TYPE(right)->tp_name);
-        return NULL;
+        if (_PyTemplate_CheckExact(right)) {
+            // str + tstring is implemented in the tstring type
+            return _PyTemplate_Concat(left, right);
+        }
+        else {
+            PyErr_Format(PyExc_TypeError,
+                "can only concatenate str (not \"%.200s\") to str",
+                Py_TYPE(right)->tp_name);
+            return NULL;
+        }
     }
 
     /* Shortcuts */
@@ -14738,7 +14727,7 @@ _PyUnicode_FormatLong(PyObject *val, int alt, int prec, int type)
     assert(PyUnicode_IS_ASCII(result));
 
     /* To modify the string in-place, there can only be one reference. */
-    if (Py_REFCNT(result) != 1) {
+    if (!_PyObject_IsUniquelyReferenced(result)) {
         Py_DECREF(result);
         PyErr_BadInternalCall();
         return NULL;
@@ -15904,7 +15893,7 @@ immortalize_interned(PyObject *s)
         _Py_DecRefTotal(_PyThreadState_GET());
     }
 #endif
-    FT_ATOMIC_STORE_UINT16_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_IMMORTAL);
+    FT_ATOMIC_STORE_UINT8_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_IMMORTAL);
     _Py_SetImmortal(s);
 }
 
@@ -16022,7 +16011,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
         Py_DECREF(s);
         Py_DECREF(s);
     }
-    FT_ATOMIC_STORE_UINT16_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_MORTAL);
+    FT_ATOMIC_STORE_UINT8_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_MORTAL);
 
     /* INTERNED_MORTAL -> INTERNED_IMMORTAL (if needed) */
 
@@ -16158,7 +16147,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
             Py_UNREACHABLE();
         }
         if (!shared) {
-            FT_ATOMIC_STORE_UINT16_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_NOT_INTERNED);
+            FT_ATOMIC_STORE_UINT8_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_NOT_INTERNED);
         }
     }
 #ifdef INTERNED_STATS

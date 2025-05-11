@@ -544,7 +544,6 @@ def tier_variable(node: parser.CodeDef) -> int | None:
 def has_error_with_pop(op: parser.CodeDef) -> bool:
     return (
         variable_used(op, "ERROR_IF")
-        or variable_used(op, "pop_1_error")
         or variable_used(op, "exception_unwind")
     )
 
@@ -552,7 +551,6 @@ def has_error_with_pop(op: parser.CodeDef) -> bool:
 def has_error_without_pop(op: parser.CodeDef) -> bool:
     return (
         variable_used(op, "ERROR_NO_POP")
-        or variable_used(op, "pop_1_error")
         or variable_used(op, "exception_unwind")
     )
 
@@ -679,6 +677,9 @@ NON_ESCAPING_FUNCTIONS = (
     "JUMP_TO_LABEL",
     "restart_backoff_counter",
     "_Py_ReachedRecursionLimit",
+    "PyStackRef_IsTaggedInt",
+    "PyStackRef_TagInt",
+    "PyStackRef_UntagInt",
 )
 
 def check_escaping_calls(instr: parser.CodeDef, escapes: dict[SimpleStmt, EscapingCall]) -> None:
