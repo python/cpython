@@ -110,7 +110,8 @@ PyDoc_STRVAR(math_factorial__doc__,
 "\n"
 "Find n!.\n"
 "\n"
-"Raise a ValueError if x is negative or non-integral.");
+"Raises TypeError if n is not an integer.\n"
+"Raises ValueError if n is negative.");
 
 #define MATH_FACTORIAL_METHODDEF    \
     {"factorial", (PyCFunction)math_factorial, METH_O, math_factorial__doc__},
