@@ -128,8 +128,8 @@ def finalize_dict(zstd_dict, /, samples, dict_size, level):
     if not chunks:
         raise ValueError("The samples are empty content, can't finalize the "
                          "dictionary.")
-    dict_content = _zstd._finalize_dict(zstd_dict.dict_content, chunks,
-                                        chunk_sizes, dict_size, level)
+    dict_content = _zstd.finalize_dict(zstd_dict.dict_content, chunks,
+                                       chunk_sizes, dict_size, level)
     return ZstdDict(dict_content)
 
 
