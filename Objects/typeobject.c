@@ -82,11 +82,17 @@ static inline int
 mcache_name_eq(PyObject *entry_name,  PyObject *name)
 {
 #ifdef Py_GIL_DISABLED
+    if (entry_name == name) {
+        return 1;
+    }
     if (entry_name == NULL || entry_name == Py_None) {
         return 0;
     }
     assert(PyUnicode_CheckExact(entry_name));
     assert(PyUnicode_CheckExact(name));
+    if (_PyObject_HashFast(entry_name) != _PyObject_HashFast(name)) {
+        return 0;
+    }
     return _PyUnicode_Equal(entry_name, name);
 #else
     return entry_name == name;
