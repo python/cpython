@@ -551,11 +551,11 @@ Advanced parameter control
       inputs by finding large matches at greater distances. It increases memory
       usage and window size.
 
-      Enabling this parameter increases default :attr:`~CParameter.window_log`
-      to 128 MiB except when expressly set to a different value. This setting
-      is enabled by default if :attr:`~CParameter.window_log` >= 128 MiB and
-      the compression strategy >= :attr:`~Strategy.btopt` (compression
-      level 16+).
+      Enabling this parameter increases default
+      :attr:`~CompressionParameter.window_log` to 128 MiB except when expressly
+      set to a different value. This setting is enabled by default if
+      :attr:`~CompressionParameter.window_log` >= 128 MiB and the compression
+      strategy >= :attr:`~Strategy.btopt` (compression level 16+).
 
    .. attribute:: ldm_hash_log
 
@@ -605,16 +605,16 @@ Advanced parameter control
    .. attribute:: job_size
 
       Size of a compression job, in bytes. This value is enforced only when
-      :attr:`~CParameter.nb_workers` >= 1. Each compression job is completed in
-      parallel, so this value can indirectly impact the number of active
-      threads.
+      :attr:`~CompressionParameter.nb_workers` >= 1. Each compression job is
+      completed in parallel, so this value can indirectly impact the number of
+      active threads.
 
    .. attribute:: overlap_log
 
       Sets how much data is reloaded from previous jobs (threads) for new jobs
       to be used by the look behind window during compression. This values is
-      only used when :attr:`~CParameter.nb_workers` >= 1. Acceptable values vary
-      from 0 to 9.
+      only used when :attr:`~CompressionParameter.nb_workers` >= 1. Acceptable
+      values vary from 0 to 9.
 
          * 0 means dynamically set the overlap amount
          * 1 means no overlap
