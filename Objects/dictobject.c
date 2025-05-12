@@ -6839,6 +6839,9 @@ store_instance_attr_lock_held(PyObject *obj, PyDictValues *values,
                                    value == NULL ? PyDict_EVENT_DELETED :
                                    PyDict_EVENT_MODIFIED);
         _PyDict_NotifyEvent(interp, event, dict, name, value);
+        if (value) {
+            MAINTAIN_TRACKING(dict, name, value);
+        }
     }
 
     FT_ATOMIC_STORE_PTR_RELEASE(values->values[ix], Py_XNewRef(value));
