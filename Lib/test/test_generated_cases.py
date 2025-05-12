@@ -2261,12 +2261,14 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo -- res)) {
-            res = sym_new_unknown(ctx);
+            res = sym_new_known(ctx, foo);
         }
         """
         output = """
         case OP: {
+            JitOptSymbol *foo;
             JitOptSymbol *res;
+            foo = stack_pointer[-1];
             if (
                 sym_is_const(ctx, foo)
             ) {
@@ -2280,7 +2282,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
                 stack_pointer[-1] = res;
             }
             else {
-                res = sym_new_unknown(ctx);
+                res = sym_new_known(ctx, foo);
                 stack_pointer[-1] = res;
             }
             break;
@@ -2301,12 +2303,14 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo -- res)) {
-            res = sym_new_unknown(ctx);
+            res = sym_new_known(ctx, foo);
         }
         """
         output = """
         case OP: {
+            JitOptSymbol *foo;
             JitOptSymbol *res;
+            foo = stack_pointer[-1];
             if (
                 sym_is_const(ctx, foo)
             ) {
@@ -2325,7 +2329,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
                 stack_pointer[-1] = res;
             }
             else {
-                res = sym_new_unknown(ctx);
+                res = sym_new_known(ctx, foo);
                 stack_pointer[-1] = res;
             }
             break;
