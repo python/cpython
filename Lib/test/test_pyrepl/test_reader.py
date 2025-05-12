@@ -361,12 +361,10 @@ class TestReader(ScreenEqualMixin, TestCase):
 
     def test_empty_line_control_w_k(self):
         """Test that Control-W followed by Control-K on an empty line doesn't crash."""
-        events = itertools.chain(
-            [
-                Event(evt="key", data="\x17", raw=bytearray(b"\x17")),  # Control-W
-                Event(evt="key", data="\x0b", raw=bytearray(b"\x0b")),  # Control-K
-            ],
-        )
+        events = [
+            Event(evt="key", data="\x17", raw=bytearray(b"\x17")),  # Control-W
+            Event(evt="key", data="\x0b", raw=bytearray(b"\x0b")),  # Control-K
+        ]
         reader, _ = handle_all_events(events)
         self.assert_screen_equal(reader, "", clean=True)
         self.assertEqual(reader.pos, 0)
@@ -375,7 +373,7 @@ class TestReader(ScreenEqualMixin, TestCase):
         """Test Control-W delete word"""
         def test_with_text(text: str, expected: list[str], before_pos: int, after_pos: int):
             events = itertools.chain(
-                code_to_events(text) if len(text) else [],
+                code_to_events(text),
                 [Event(evt="key", data="left", raw=bytearray(b"\x1b[D"))] * (len(text) - before_pos),  # Move cursor to specified position
                 [
                     Event(evt="key", data="\x17", raw=bytearray(b"\x17")), # Control-W
