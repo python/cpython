@@ -1277,10 +1277,14 @@ static PyMethodDef imath_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
+static PyModuleDef_Slot imath_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL}
+};
 
 PyDoc_STRVAR(module_doc,
 "This module provides access to integer related mathematical functions.");
-
 
 static struct PyModuleDef imathmodule = {
     PyModuleDef_HEAD_INIT,
@@ -1288,10 +1292,11 @@ static struct PyModuleDef imathmodule = {
     .m_doc = module_doc,
     .m_size = 0,
     .m_methods = imath_methods,
+    .m_slots = imath_slots,
 };
 
 PyMODINIT_FUNC
 PyInit_imath(void)
 {
-    return PyModule_Create(&imathmodule);
+    return PyModuleDef_Init(&imathmodule);
 }
