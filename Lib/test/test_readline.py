@@ -3,12 +3,14 @@ Very minimal unittests for parts of the readline module.
 """
 import locale
 import os
+import subprocess
 import sys
 import tempfile
 import textwrap
 import threading
 import unittest
 from test import support
+from test.support import requires_subprocess
 from test.support import threading_helper
 from test.support import verbose
 from test.support.import_helper import import_module
@@ -404,6 +406,17 @@ readline.write_history_file(history_file)
         # possible deduplication with arbitrary previous content).
         # So, we've only tested that the read did not fail.
         # See TestHistoryManipulation for the full test.
+
+    @requires_subprocess()
+    def test_environment_is_not_modified(self):
+        env_output = subprocess.check_output(["env"])
+        env_lines = env_output.decode('utf-8', 'surrogateescape').splitlines()
+        current_env = dict([line.split('=', 1) for line in env_lines])
+
+        changes = {k for k in set(os.environ).union(current_env)
+                   if os.getenv(k) != current_env.get(k)}
+
+        self.assertEqual(len(changes), 0)
 
 
 @unittest.skipUnless(support.Py_GIL_DISABLED, 'these tests can only possibly fail with GIL disabled')
