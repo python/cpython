@@ -409,14 +409,9 @@ readline.write_history_file(history_file)
 
     @requires_subprocess()
     def test_environment_is_not_modified(self):
-        env_output = subprocess.check_output(["env"])
-        env_lines = env_output.decode('utf-8', 'surrogateescape').splitlines()
-        current_env = dict([line.split('=', 1) for line in env_lines])
-
-        changes = {k for k in set(os.environ).union(current_env)
-                   if os.getenv(k) != current_env.get(k)}
-
-        self.assertEqual(len(changes), 0)
+        original_env = dict(os.environ)
+        os.reload_environ()
+        self.assertEqual(dict(os.environ), original_env)
 
 
 @unittest.skipUnless(support.Py_GIL_DISABLED, 'these tests can only possibly fail with GIL disabled')
