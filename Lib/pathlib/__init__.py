@@ -28,7 +28,7 @@ except ImportError:
 
 from pathlib._os import (
     PathInfo, DirEntryInfo,
-    magic_open, vfspath,
+    vfsopen, vfspath,
     ensure_different_files, ensure_distinct_paths,
     copyfile2, copyfileobj, copy_info,
 )
@@ -766,6 +766,27 @@ class Path(PurePath):
         return (st.st_ino == other_st.st_ino and
                 st.st_dev == other_st.st_dev)
 
+    def __open_reader__(self):
+        """
+        Open the file pointed to by this path for reading in binary mode and
+        return a file object.
+        """
+        return io.open(self, 'rb')
+
+    def __open_writer__(self, mode):
+        """
+        Open the file pointed to by this path for writing in binary mode and
+        return a file object.
+        """
+        return io.open(self, f'{mode}b')
+
+    def __open_updater__(self, mode):
+        """
+        Open the file pointed to by this path for updating in binary mode and
+        return a file object.
+        """
+        return io.open(self, f'{mode}+b')
+
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
         """
@@ -1141,7 +1162,7 @@ class Path(PurePath):
 
     def _copy_from_file(self, source, preserve_metadata=False):
         ensure_different_files(source, self)
-        with magic_open(source, 'rb') as source_f:
+        with vfsopen(source, 'rb') as source_f:
             with open(self, 'wb') as target_f:
                 copyfileobj(source_f, target_f)
         if preserve_metadata:

@@ -166,48 +166,78 @@ def copyfileobj(source_f, target_f):
         write_target(buf)
 
 
-def magic_open(path, mode='r', buffering=-1, encoding=None, errors=None,
-               newline=None):
+def _open_reader(obj):
+    cls = type(obj)
+    try:
+        return cls.__open_reader__(obj)
+    except AttributeError:
+        if hasattr(cls, '__open_reader__'):
+            raise
+    raise TypeError(f"{cls.__name__} can't be opened for reading")
+
+
+def _open_writer(obj, mode):
+    cls = type(obj)
+    try:
+        return cls.__open_writer__(obj, mode)
+    except AttributeError:
+        if hasattr(cls, '__open_writer__'):
+            raise
+    raise TypeError(f"{cls.__name__} can't be opened for writing")
+
+
+def _open_updater(obj, mode):
+    cls = type(obj)
+    try:
+        return cls.__open_updater__(obj, mode)
+    except AttributeError:
+        if hasattr(cls, '__open_updater__'):
+            raise
+    raise TypeError(f"{cls.__name__} can't be opened for updating")
+
+
+def vfsopen(obj, mode='r', buffering=-1, encoding=None, errors=None,
+            newline=None):
     """
     Open the file pointed to by this path and return a file object, as
     the built-in open() function does.
+
+    Unlike the built-in open() function, this function accepts 'openable'
+    objects, which are objects with any of these magic methods:
+
+        __open_reader__()
+        __open_writer__(mode)
+        __open_updater__(mode)
+
+    '__open_reader__' is called for 'r' mode; '__open_writer__' for 'a', 'w'
+    and 'x' modes; and '__open_updater__' for 'r+' and 'w+' modes. If text
+    mode is requested, the result is wrapped in an io.TextIOWrapper object.
     """
     text = 'b' not in mode
-    if text:
+    if buffering != -1:
+        raise ValueError("buffer size can't be customized")
+    elif text:
         # Call io.text_encoding() here to ensure any warning is raised at an
         # appropriate stack level.
         encoding = text_encoding(encoding)
-    try:
-        return open(path, mode, buffering, encoding, errors, newline)
-    except TypeError:
-        pass
-    cls = type(path)
-    mode = ''.join(sorted(c for c in mode if c not in 'bt'))
-    if text:
-        try:
-            attr = getattr(cls, f'__open_{mode}__')
-        except AttributeError:
-            pass
-        else:
-            return attr(path, buffering, encoding, errors, newline)
     elif encoding is not None:
         raise ValueError("binary mode doesn't take an encoding argument")
     elif errors is not None:
         raise ValueError("binary mode doesn't take an errors argument")
     elif newline is not None:
         raise ValueError("binary mode doesn't take a newline argument")
-
-    try:
-        attr = getattr(cls, f'__open_{mode}b__')
-    except AttributeError:
-        pass
+    mode = ''.join(sorted(c for c in mode if c not in 'bt'))
+    if mode == 'r':
+        stream = _open_reader(obj)
+    elif mode in ('a', 'w', 'x'):
+        stream = _open_writer(obj, mode)
+    elif mode in ('+r', '+w'):
+        stream = _open_updater(obj, mode[1])
     else:
-        stream = attr(path, buffering)
-        if text:
-            stream = TextIOWrapper(stream, encoding, errors, newline)
-        return stream
-
-    raise TypeError(f"{cls.__name__} can't be opened with mode {mode!r}")
+        raise ValueError(f'invalid mode: {mode}')
+    if text:
+        stream = TextIOWrapper(stream, encoding, errors, newline)
+    return stream
 
 
 def vfspath(path):
