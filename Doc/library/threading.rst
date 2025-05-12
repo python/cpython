@@ -146,9 +146,35 @@ This module defines the following functions:
 
 .. function:: iter_locked(iterable)
 
-   Make an iterable thread-safe.
+   Convert an iterable into an iterator that performs iteration using locks.
 
-   Roughly equivalent to::
+   The ``iter_locked`` makes non-atomic iterators atomic::
+
+       class non_atomic_iterator:
+
+            def __init__(self, it):
+                self.it = iter(it)
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                a = next(self.it)
+                b = next(self.it)
+                return a, b
+
+        atomic_iterator = iter_locked(non_atomic_iterator())
+
+   The ``iter_locked`` allows concurrent iteration over generator objects. For example::
+
+        def count():
+            i = 0
+            while True:
+                i += 1
+                yield i
+        concurrent_iterator = iter_locked(count())
+
+   The implementation is roughly equivalent to::
 
         class iter_locked(Iterator):
             def __init__(self, it):
