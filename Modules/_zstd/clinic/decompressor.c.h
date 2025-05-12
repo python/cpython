@@ -10,28 +10,28 @@ preserve
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
-PyDoc_STRVAR(_zstd_ZstdDecompressor___init____doc__,
+PyDoc_STRVAR(_zstd_ZstdDecompressor_new__doc__,
 "ZstdDecompressor(zstd_dict=None, options=None)\n"
 "--\n"
 "\n"
 "Create a decompressor object for decompressing data incrementally.\n"
 "\n"
 "  zstd_dict\n"
-"    A ZstdDict object, a pre-trained zstd dictionary.\n"
+"    A ZstdDict object, a pre-trained Zstandard dictionary.\n"
 "  options\n"
 "    A dict object that contains advanced decompression parameters.\n"
 "\n"
 "Thread-safe at method level. For one-shot decompression, use the decompress()\n"
 "function instead.");
 
-static int
-_zstd_ZstdDecompressor___init___impl(ZstdDecompressor *self,
-                                     PyObject *zstd_dict, PyObject *options);
+static PyObject *
+_zstd_ZstdDecompressor_new_impl(PyTypeObject *type, PyObject *zstd_dict,
+                                PyObject *options);
 
-static int
-_zstd_ZstdDecompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+static PyObject *
+_zstd_ZstdDecompressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    int return_value = -1;
+    PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     #define NUM_KEYWORDS 2
@@ -82,7 +82,7 @@ _zstd_ZstdDecompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs
     }
     options = fastargs[1];
 skip_optional_pos:
-    return_value = _zstd_ZstdDecompressor___init___impl((ZstdDecompressor *)self, zstd_dict, options);
+    return_value = _zstd_ZstdDecompressor_new_impl(type, zstd_dict, options);
 
 exit:
     return return_value;
@@ -130,7 +130,7 @@ PyDoc_STRVAR(_zstd_ZstdDecompressor_decompress__doc__,
 "Decompress *data*, returning uncompressed bytes if possible, or b\'\' otherwise.\n"
 "\n"
 "  data\n"
-"    A bytes-like object, zstd data to be decompressed.\n"
+"    A bytes-like object, Zstandard data to be decompressed.\n"
 "  max_length\n"
 "    Maximum size of returned data. When it is negative, the size of\n"
 "    output buffer is unlimited. When it is nonnegative, returns at\n"
@@ -227,4 +227,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=ae703f0465a2906d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7a4d278f9244e684 input=a9049054013a1b77]*/
