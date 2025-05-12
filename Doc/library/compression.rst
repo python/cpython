@@ -1,25 +1,18 @@
 The :mod:`!compression` package
-=================================
+===============================
 
 .. versionadded:: 3.14
 
-.. note::
+.. attention::
 
-    Several modules in :mod:`!compression` re-export modules that currently
-    exist at the repository top-level. These re-exported modules are the new
-    canonical import name for the respective top-level module. The existing
-    modules are not currently deprecated and will not be removed prior to Python
-    3.19, but users are encouraged to migrate to the new import names when
-    feasible.
+   The :mod:`!compression` package is the new location for the data compression
+   modules in the standard library, listed below. The existing modules are not
+   deprecated and will not be removed before Python 3.19. The new ``compression.*``
+   import names are encouraged for use where practicable.
 
 * :mod:`!compression.bz2` -- Re-exports :mod:`bz2`
-
 * :mod:`!compression.gzip` -- Re-exports :mod:`gzip`
-
 * :mod:`!compression.lzma` -- Re-exports :mod:`lzma`
-
 * :mod:`!compression.zlib` -- Re-exports :mod:`zlib`
-
 * :mod:`compression.zstd` -- Wrapper for the Zstandard compression library
-
 

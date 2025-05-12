@@ -138,10 +138,9 @@ Reading and writing compressed files
 
       ``'rb'`` for reading and ``'wb'`` for writing.
 
-
    .. attribute:: name
 
-      The zstd file name. Equivalent to the :attr:`~io.FileIO.name`
+      The name of the Zstandard file. Equivalent to the :attr:`~io.FileIO.name`
       attribute of the underlying :term:`file object`.
 
 
@@ -542,8 +541,7 @@ Advanced parameter control
       compression technique used by zstd, resulting in higher compression
       ratios but slower compression.
 
-      .. seealso::
-         :class:`Strategy`
+      .. seealso:: :class:`Strategy`
 
    .. attribute:: enable_long_distance_matching
 
@@ -684,11 +682,11 @@ Miscellaneous
 
 .. function:: get_frame_info(frame_buffer)
 
-   Retrieve a :class:`FrameInfo`, containing metadata about a Zstandard frame.
-   Frames contain metadata related to the compressed data they hold.
+   Retrieve a :class:`FrameInfo` object containing metadata about a Zstandard
+   frame. Frames contain metadata related to the compressed data they hold.
 
 
-.. class:: FrameInfo()
+.. class:: FrameInfo
 
    Metadata related to a Zstandard frame. There are currently two attributes
    containing metadata related to Zstandard frames.
@@ -712,34 +710,38 @@ Miscellaneous
 
 .. attribute:: zstd_version_info
 
-   Version number of the runtime zstd library as a tuple of int
+   Version number of the runtime zstd library as a tuple of integers
    (major, minor, release).
 
 
 Examples
 --------
 
-Reading in a compressed file::
+Reading in a compressed file:
 
+.. code-block:: python
    from compression import zstd
    with zstd.open("file.zst") as f:
        file_content = f.read()
 
-Creating a compressed file::
+Creating a compressed file:
 
+.. code-block:: python
    from compression import zstd
    data = b"Insert Data Here"
    with zstd.open("file.zst", "w") as f:
        f.write(data)
 
-Compressing data in memory::
+Compressing data in memory:
 
+.. code-block:: python
    from compression import zstd
    data_in = b"Insert Data Here"
    data_out = zstd.compress(data_in)
 
-Incremental compression::
+Incremental compression:
 
+.. code-block:: python
    from compression import zstd
    comp = zstd.ZstdCompressor()
    out1 = comp.compress(b"Some data\n")
@@ -749,8 +751,9 @@ Incremental compression::
    # Concatenate all the partial results:
    result = b"".join([out1, out2, out3, out4])
 
-Writing compressed data to an already-open file::
+Writing compressed data to an already-open file:
 
+.. code-block:: python
    from compression import zstd
    with open("file.zst", "wb") as f:
        f.write(b"This data will not be compressed\n")
@@ -758,8 +761,9 @@ Writing compressed data to an already-open file::
            zstf.write(b"This *will* be compressed\n")
        f.write(b"Not compressed\n")
 
-Creating a compressed file using compression parameters::
+Creating a compressed file using compression parameters:
 
+.. code-block:: python
    from compression import zstd
    options = {
       zstd.CompressionParameter.checksum_flag: 1
