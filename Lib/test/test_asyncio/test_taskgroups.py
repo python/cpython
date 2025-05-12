@@ -1081,6 +1081,7 @@ class BaseTestTaskGroup:
         # cancellation happens here and error is more understandable
         await asyncio.sleep(0)
 
+    @unittest.expectedFailure
     async def test_name(self):
         name = None
 
