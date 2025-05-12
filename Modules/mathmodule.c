@@ -83,7 +83,7 @@ module math
 Double and triple length extended precision algorithms from:
 
   Accurate Sum and Dot Product
-  by Takeshi Ogita, Siegfried M. Rump, and Shin’Ichi Oishi
+  by Takeshi Ogita, Siegfried M. Rump, and Shin'Ichi Oishi
   https://doi.org/10.1137/030601818
   https://www.tuhh.de/ti3/paper/rump/OgRuOi05.pdf
 
@@ -847,44 +847,31 @@ math_lcm_impl(PyObject *module, PyObject * const *args,
 static int
 is_error(double x, int raise_edom)
 {
-    int result = 1;     /* presumption of guilt */
-    assert(errno);      /* non-zero errno is a precondition for calling */
-    if (errno == EDOM) {
+    if (Py_IS_NAN(x)) {
         if (raise_edom) {
-            PyErr_SetString(PyExc_ValueError, "math domain error");
+            PyObject *exc = PyErr_GetRaisedException();
+            PyObject *value = PyFloat_FromDouble(x);
+            if (value) {
+                PyObject_SetAttrString(exc, "value", value);
+            }
+            Py_DECREF(value);
+            PyErr_SetRaisedException(exc);
         }
+        return 1;
     }
-
-    else if (errno == ERANGE) {
-        /* ANSI C generally requires libm functions to set ERANGE
-         * on overflow, but also generally *allows* them to set
-         * ERANGE on underflow too.  There's no consistency about
-         * the latter across platforms.
-         * Alas, C99 never requires that errno be set.
-         * Here we suppress the underflow errors (libm functions
-         * should return a zero on underflow, and +- HUGE_VAL on
-         * overflow, so testing the result for zero suffices to
-         * distinguish the cases).
-         *
-         * On some platforms (Ubuntu/ia64) it seems that errno can be
-         * set to ERANGE for subnormal results that do *not* underflow
-         * to zero.  So to be safe, we'll ignore ERANGE whenever the
-         * function result is less than 1.5 in absolute value.
-         *
-         * bpo-46018: Changed to 1.5 to ensure underflows in expm1()
-         * are correctly detected, since the function may underflow
-         * toward -1.0 rather than 0.0.
-         */
-        if (fabs(x) < 1.5)
-            result = 0;
-        else
-            PyErr_SetString(PyExc_OverflowError,
-                            "math range error");
+    if (Py_IS_INFINITY(x)) {
+        if (raise_edom) {
+            PyObject *exc = PyErr_GetRaisedException();
+            PyObject *value = PyFloat_FromDouble(x);
+            if (value) {
+                PyObject_SetAttrString(exc, "value", value);
+            }
+            Py_DECREF(value);
+            PyErr_SetRaisedException(exc);
+        }
+        return 1;
     }
-    else
-        /* Unexpected math error */
-        PyErr_SetFromErrno(PyExc_ValueError);
-    return result;
+    return 0;
 }
 
 /*

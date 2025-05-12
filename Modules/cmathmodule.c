@@ -35,11 +35,23 @@ class Py_complex_protected_return_converter(CReturnConverter):
         self.declare(data)
         data.return_conversion.append("""
 if (errno == EDOM) {
-    PyErr_SetString(PyExc_ValueError, "math domain error");
+    PyObject *exc = PyErr_GetRaisedException();
+    PyObject *value = PyComplex_FromCComplex(_return_value);
+    if (value) {
+        PyObject_SetAttrString(exc, "value", value);
+    }
+    Py_DECREF(value);
+    PyErr_SetRaisedException(exc);
     goto exit;
 }
 else if (errno == ERANGE) {
-    PyErr_SetString(PyExc_OverflowError, "math range error");
+    PyObject *exc = PyErr_GetRaisedException();
+    PyObject *value = PyComplex_FromCComplex(_return_value);
+    if (value) {
+        PyObject_SetAttrString(exc, "value", value);
+    }
+    Py_DECREF(value);
+    PyErr_SetRaisedException(exc);
     goto exit;
 }
 else {
@@ -408,8 +420,8 @@ cmath_cosh_impl(PyObject *module, Py_complex z)
 
     /* special treatment for cosh(+/-inf + iy) if y is not a NaN */
     if (!isfinite(z.real) || !isfinite(z.imag)) {
-        if (isinf(z.real) && isfinite(z.imag) &&
-            (z.imag != 0.)) {
+        if (isinf(z.real) && isfinite(z.imag)
+            && (z.imag != 0.)) {
             if (z.real > 0) {
                 r.real = copysign(INF, cos(z.imag));
                 r.imag = copysign(INF, sin(z.imag));
@@ -899,10 +911,24 @@ cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj)
 static PyObject *
 math_error(void)
 {
-    if (errno == EDOM)
-        PyErr_SetString(PyExc_ValueError, "math domain error");
-    else if (errno == ERANGE)
-        PyErr_SetString(PyExc_OverflowError, "math range error");
+    if (errno == EDOM) {
+        PyObject *exc = PyErr_GetRaisedException();
+        PyObject *value = PyComplex_FromCComplex(_return_value);
+        if (value) {
+            PyObject_SetAttrString(exc, "value", value);
+        }
+        Py_DECREF(value);
+        PyErr_SetRaisedException(exc);
+    }
+    else if (errno == ERANGE) {
+        PyObject *exc = PyErr_GetRaisedException();
+        PyObject *value = PyComplex_FromCComplex(_return_value);
+        if (value) {
+            PyObject_SetAttrString(exc, "value", value);
+        }
+        Py_DECREF(value);
+        PyErr_SetRaisedException(exc);
+    }
     else    /* Unexpected math error */
         PyErr_SetFromErrno(PyExc_ValueError);
     return NULL;
@@ -1337,4 +1363,34 @@ PyMODINIT_FUNC
 PyInit_cmath(void)
 {
     return PyModuleDef_Init(&cmathmodule);
+}
+
+static int
+Py_complex_protected_return_converter(PyObject *obj, void *ptr)
+{
+    Py_complex *p = (Py_complex *)ptr;
+    if (PyComplex_Check(obj)) {
+        *p = PyComplex_AsCComplex(obj);
+        return 1;
+    }
+    if (PyFloat_Check(obj)) {
+        p->real = PyFloat_AsDouble(obj);
+        p->imag = 0.0;
+        return 1;
+    }
+    if (PyLong_Check(obj)) {
+        p->real = PyLong_AsDouble(obj);
+        p->imag = 0.0;
+        return 1;
+    }
+    if (PyErr_Occurred()) {
+        PyObject *exc = PyErr_GetRaisedException();
+        PyObject *value = PyComplex_FromCComplex(*p);
+        if (value) {
+            PyObject_SetAttrString(exc, "value", value);
+        }
+        Py_DECREF(value);
+        PyErr_SetRaisedException(exc);
+    }
+    return 0;
 }
