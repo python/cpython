@@ -1009,4 +1009,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=77e7b8c161c39843 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9fe02dc4af07c1e0 input=a9049054013a1b77]*/
