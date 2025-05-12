@@ -144,7 +144,7 @@ Number-theoretic functions
 
 .. function:: factorial(n)
 
-   Return factorial of the non-negative integer *n*.
+   Return factorial of the nonnegative integer *n*.
 
    .. versionchanged:: 3.10
       Floats with integral values (like ``5.0``) are no longer accepted.
