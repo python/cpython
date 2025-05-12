@@ -371,44 +371,50 @@ class TestReader(ScreenEqualMixin, TestCase):
 
     def test_control_w_delete_word(self):
         """Test Control-W delete word"""
-        def test_with_text(text: str, expected: list[str], before_pos: int, after_pos: int):
-            events = itertools.chain(
-                code_to_events(text),
-                [Event(evt="key", data="left", raw=bytearray(b"\x1b[D"))] * (len(text) - before_pos),  # Move cursor to specified position
-                [
-                    Event(evt="key", data="\x17", raw=bytearray(b"\x17")), # Control-W
-                ],
-            )
-            reader, _ = handle_all_events(events)
-            self.assertEqual(reader.screen, expected)
-            self.assertEqual(reader.pos, after_pos)
+        cases = (
+            ("", 0, 0, []),
+            ("a", 1, 0, [""]),
+            ("abc", 3, 0, [""]),
+            ("abc def", 4, 0, ["def"]),
+            ("abc def", 7, 4, ["abc "]),
+            ("def xxx():xxx\n    ", 18, 10, ["def xxx():"]),
+        )
 
-        test_with_text("", [], 0, 0)
-        test_with_text("a", [""], 1, 0)
-        test_with_text("abc", [""], 3, 0)
-        test_with_text("abc def", ["def"], 4, 0)
-        test_with_text("abc def", ["abc "], 7, 4)
-        test_with_text("def xxx():xxx\n    ", ["def xxx():"], 18, 10)
+        for text, before_pos, after_pos, expected in cases:
+            with self.subTest(text=text, before_pos=before_pos):
+                events = itertools.chain(
+                    code_to_events(text),
+                    [Event(evt="key", data="left", raw=bytearray(b"\x1b[D"))] * (len(text) - before_pos),  # Move cursor to specified position
+                    [
+                        Event(evt="key", data="\x17", raw=bytearray(b"\x17")), # Control-W
+                    ],
+                )
+                reader, _ = handle_all_events(events)
+                self.assertEqual(reader.screen, expected)
+                self.assertEqual(reader.pos, after_pos)
 
     def test_control_k_delete_to_eol(self):
         """Test Control-K delete from cursor to end of line"""
-        def test_with_text(text: str, pos: int, expected: list[str]):
-            events = itertools.chain(
-                code_to_events(text) if len(text) else [],
-                [Event(evt="key", data="left", raw=bytearray(b"\x1b[D"))] * (len(text) - pos),  # Move cursor to specified position
-                [
-                    Event(evt="key", data="\x0b", raw=bytearray(b"\x0b")),  # Control-K
-                ],
-            )
-            reader, _ = handle_all_events(events)
-            self.assertEqual(reader.screen, expected)
-            self.assertEqual(reader.pos, pos)
+        cases = (
+            ("", 0, [""]),
+            ("a", 0, [""]),
+            ("abc", 1, ["a"]),
+            ("abc def", 4, ["abc "]),
+            ("def xxx():xxx\n    pass", 10, ["def xxx():", "    pass"]),
+        )
 
-        test_with_text("", 0, [""])
-        test_with_text("a", 0, [""])
-        test_with_text("abc", 1, ["a"])
-        test_with_text("abc def", 4, ["abc "])
-        test_with_text("def xxx():xxx\n    pass", 10, ["def xxx():", "    pass"])
+        for text, pos, expected in cases:
+            with self.subTest(text=text, pos=pos):
+                events = itertools.chain(
+                    code_to_events(text),
+                    [Event(evt="key", data="left", raw=bytearray(b"\x1b[D"))] * (len(text) - pos),  # Move cursor to specified position
+                    [
+                        Event(evt="key", data="\x0b", raw=bytearray(b"\x0b")),  # Control-K
+                    ],
+                )
+                reader, _ = handle_all_events(events)
+                self.assertEqual(reader.screen, expected)
+                self.assertEqual(reader.pos, pos)
 
 @force_colorized_test_class
 class TestReaderInColor(ScreenEqualMixin, TestCase):
