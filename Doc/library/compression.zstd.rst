@@ -40,9 +40,10 @@ The :mod:`compression.zstd` module contains:
 Reading and writing compressed files
 ------------------------------------
 
-.. function:: open(file, /, mode="rb", *, level=None, options=None, zstd_dict=None, encoding=None, errors=None, newline=None)
+.. function:: open(file, /, mode='rb', *, level=None, options=None, \
+                   zstd_dict=None, encoding=None, errors=None, newline=None)
 
-   Open an Zstandard-compressed file in binary or text mode, returning a
+   Open a Zstandard-compressed file in binary or text mode, returning a
    :term:`file object`.
 
    The *file* argument can be either an actual file name (given as a
@@ -79,14 +80,14 @@ Reading and writing compressed files
    behavior, and line ending(s).
 
 
-.. class:: ZstdFile(file, /, mode="r", *, level=None, options=None, zstd_dict=None)
+.. class:: ZstdFile(file, /, mode='r', *, level=None, options=None, zstd_dict=None)
 
    Open a Zstandard-compressed file in binary mode.
 
    A :class:`ZstdFile` can wrap an already-open :term:`file object`, or operate
    directly on a named file. The *file* argument specifies either the file
    object to wrap, or the name of the file to open (as a :class:`str`,
-   :class:`bytes` or :term:`path-like <path-like object>` object). When
+   :class:`bytes` or :term:`path-like <path-like object>` object). If
    wrapping an existing file object, the wrapped file will not be closed when
    the :class:`ZstdFile` is closed.
 
@@ -527,7 +528,7 @@ Advanced parameter control
       The impact of this field depends on the selected :class:`Strategy`.
 
       For strategies :attr:`~Strategy.btopt`, :attr:`~Strategy.btultra` and
-      :attr:`~Strategy.btultra2`, the values is the length of a match
+      :attr:`~Strategy.btultra2`, the value is the length of a match
       considered "good enough" to stop searching. Larger values make
       compression ratios better, but compresses slower.
 
@@ -571,6 +572,7 @@ Advanced parameter control
       Log size of each bucket in the long distance matcher hash table for
       collision resolution. Larger values improve collision resolution but
       decrease compression speed.
+
    .. attribute:: ldm_hash_rate_log
 
       Frequency of inserting/looking up entries into the long distance matcher
@@ -598,7 +600,7 @@ Advanced parameter control
       Select how many threads will be spawned to compress in parallel. When
       :attr:`~.nb_workers` >= 1, enables multi-threaded compression, 1
       means "1-thread multi-threaded mode". More workers improve speed, but
-      also increases memory usage and slightly reduce compression ratio.
+      also increase memory usage and slightly reduce compression ratio.
 
    .. attribute:: job_size
 
@@ -610,7 +612,7 @@ Advanced parameter control
    .. attribute:: overlap_log
 
       Sets how much data is reloaded from previous jobs (threads) for new jobs
-      to be used by the look behind window during compression. This values is
+      to be used by the look behind window during compression. This value is
       only used when :attr:`~CompressionParameter.nb_workers` >= 1. Acceptable
       values vary from 0 to 9.
 
@@ -720,6 +722,7 @@ Examples
 Reading in a compressed file:
 
 .. code-block:: python
+
    from compression import zstd
    with zstd.open("file.zst") as f:
        file_content = f.read()
@@ -727,6 +730,7 @@ Reading in a compressed file:
 Creating a compressed file:
 
 .. code-block:: python
+
    from compression import zstd
    data = b"Insert Data Here"
    with zstd.open("file.zst", "w") as f:
@@ -735,6 +739,7 @@ Creating a compressed file:
 Compressing data in memory:
 
 .. code-block:: python
+
    from compression import zstd
    data_in = b"Insert Data Here"
    data_out = zstd.compress(data_in)
@@ -742,6 +747,7 @@ Compressing data in memory:
 Incremental compression:
 
 .. code-block:: python
+
    from compression import zstd
    comp = zstd.ZstdCompressor()
    out1 = comp.compress(b"Some data\n")
@@ -754,6 +760,7 @@ Incremental compression:
 Writing compressed data to an already-open file:
 
 .. code-block:: python
+
    from compression import zstd
    with open("file.zst", "wb") as f:
        f.write(b"This data will not be compressed\n")
@@ -764,6 +771,7 @@ Writing compressed data to an already-open file:
 Creating a compressed file using compression parameters:
 
 .. code-block:: python
+
    from compression import zstd
    options = {
       zstd.CompressionParameter.checksum_flag: 1
