@@ -359,8 +359,7 @@ Number 1
         print('We failed to reach a server.')
         print('Reason: ', e.reason)
     else:
-        # everything is fine
-        ...
+        ...  # everything is fine
 
 
 .. note::
@@ -386,8 +385,7 @@ Number 2
             print('The server couldn\'t fulfill the request.')
             print('Error code: ', e.code)
     else:
-        # everything is fine
-        ...
+        ...  # everything is fine
 
 
 info and geturl
