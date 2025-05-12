@@ -743,24 +743,14 @@ class timedelta:
         usdouble = secondsfrac * 1e6
         assert abs(usdouble) < 2.1e6    # exact value not critical
         # secondsfrac isn't referenced again
-
-        if isinstance(microseconds, float):
-            microseconds, nanoseconds1 = divmod((microseconds + usdouble) * 1000, 1000)
-            microseconds = round(microseconds)
+        microseconds, nanoseconds1 = divmod((microseconds + usdouble) * 1000, 1000)
+        microseconds = round(microseconds)
+        if nanoseconds1 != 0:
             nanoseconds += nanoseconds1
-            seconds, microseconds = divmod(microseconds, 1000000)
-            days, seconds = divmod(seconds, 24*3600)
-            d += days
-            s += seconds
-        else:
-            microseconds, nanoseconds1 = divmod((microseconds) * 1000, 1000)
-            microseconds = round(microseconds)
-            nanoseconds += nanoseconds1
-            seconds, microseconds = divmod(microseconds, 1000000)
-            days, seconds = divmod(seconds, 24*3600)
-            d += days
-            s += seconds
-            microseconds = round(microseconds + usdouble)
+        seconds, microseconds = divmod(microseconds, 1000000)
+        days, seconds = divmod(seconds, 24*3600)
+        d += days
+        s += seconds
         nanoseconds = round(nanoseconds)
         assert isinstance(s, int), f"{s =}"
         assert isinstance(microseconds, int)

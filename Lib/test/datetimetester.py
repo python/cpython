@@ -672,7 +672,7 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         if 'Pure' not in self.__class__.__name__: return # BUG
         td = timedelta(days=365)
         self.assertEqual(td.total_seconds(), 31536000.0)
-        for total_seconds in [123456.789012, -123456.789012, 0.123456, 0, 1e6]:
+        for total_seconds in [123456.789012, -123456.789012, 0.123456, 1e-9, -1e-9, 0, 1e6]:
             td = timedelta(seconds=total_seconds)
             self.assertEqual(td.total_seconds(), total_seconds)
         # Issue8644: Test that td.total_seconds() has the same
@@ -881,21 +881,21 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         eq(td(milliseconds=-0.6/1000), td(nanoseconds=-600))
         eq(td(milliseconds=1.5/1000), td(nanoseconds=1500))
         eq(td(milliseconds=-1.5/1000), td(nanoseconds=-1500))
-        eq(td(seconds=0.5/10**6), td(microseconds=0))
-        eq(td(seconds=-0.5/10**6), td(microseconds=-0))
-        eq(td(seconds=1/2**7), td(microseconds=7812))
-        eq(td(seconds=-1/2**7), td(microseconds=-7812))
+        eq(td(seconds=0.5/10**6), td(nanoseconds=500))
+        eq(td(seconds=-0.5/10**6), td(nanoseconds=-500))
+        eq(td(seconds=1/2**7), td(microseconds=7812, nanoseconds=500))
+        eq(td(seconds=-1/2**7), td(microseconds=-7812, nanoseconds=-500))
 
         # Rounding due to contributions from more than one field.
         us_per_hour = 3600e6
         us_per_day = us_per_hour * 24
-        eq(td(days=.4/us_per_day), td(microseconds=0))
-        eq(td(hours=.2/us_per_hour), td(microseconds=0))
-        eq(td(days=.4/us_per_day, hours=.2/us_per_hour), td(microseconds=1))
+        eq(td(days=.4/us_per_day), td(nanoseconds=400))
+        eq(td(hours=.2/us_per_hour), td(nanoseconds=200))
+        eq(td(days=.4/us_per_day, hours=.2/us_per_hour), td(nanoseconds=600))
 
-        eq(td(days=-.4/us_per_day), td(microseconds=0))
-        eq(td(hours=-.2/us_per_hour), td(microseconds=0))
-        eq(td(days=-.4/us_per_day, hours=-.2/us_per_hour), td(microseconds=-1))
+        eq(td(days=-.4/us_per_day), td(nanoseconds=-400))
+        eq(td(hours=-.2/us_per_hour), td(nanoseconds=-200))
+        eq(td(days=-.4/us_per_day, hours=-.2/us_per_hour), td(nanoseconds=-600))
 
         # Test for a patch in Issue 8860
         eq(td(microseconds=0.5), 0.5*td(microseconds=1.0))
