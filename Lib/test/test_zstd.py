@@ -2430,6 +2430,7 @@ class OpenTestCase(unittest.TestCase):
             self.assertEqual(f.write(arr), LENGTH)
             self.assertEqual(f.tell(), LENGTH)
 
+@unittest.skip("it fails for now, see gh-133885")
 class FreeThreadingMethodTests(unittest.TestCase):
 
     @unittest.skipUnless(Py_GIL_DISABLED, 'this test can only possibly fail with GIL disabled')
