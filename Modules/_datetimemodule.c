@@ -2793,218 +2793,219 @@ delta_divmod(PyObject *left, PyObject *right)
     return result;
 }
 
-#include <math.h>
-#include <assert.h>
-
-static double
-py_round(double x) {
-    double int_part, frac_part;
-    frac_part = modf(x, &int_part);
-
-    if (fabs(frac_part) != 0.5) {
-        // Standard rounding: 0.4 down, 0.6 up.
-        // floor(x + 0.5) for positive x, ceil(x - 0.5) for negative x.
-        if (x >= 0.0) {
-            return floor(x + 0.5);
-        } else {
-            return ceil(x - 0.5);
-        }
-    }
-
-    // Tie-breaking: round to nearest even integer for .5 cases
-    if (fmod(int_part, 2.0) == 0.0) { // int_part is even
-        return int_part;
-    } else { // int_part is odd
-        return x > 0 ? int_part + 1.0 : int_part - 1.0;
-    }
-}
-
-// Helper to convert PyObject arg to double, sets error and returns 0.0 on failure.
-static double
-get_arg_as_double(PyObject *arg, const char *arg_name, int *error_occurred)
+/* Fold in the value of the tag ("seconds", "weeks", etc) component of a
+ * timedelta constructor.  sofar is the # of microseconds accounted for
+ * so far, and there are factor microseconds per current unit, the number
+ * of which is given by num.  num * factor is added to sofar in a
+ * numerically careful way, and that's the result.  Any fractional
+ * microseconds left over (this can happen if num is a float type) are
+ * added into *leftover.
+ * Note that there are many ways this can give an error (NULL) return.
+ */
+static PyObject *
+accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
+      double *leftover)
 {
-    *error_occurred = 0;
-    if (arg == NULL) { // Argument not provided
-        return 0.0;
+    PyObject *prod;
+    PyObject *sum;
+
+    assert(num != NULL);
+
+    if (PyLong_Check(num)) {
+        prod = PyNumber_Multiply(num, factor);
+        if (prod == NULL)
+            return NULL;
+        sum = PyNumber_Add(sofar, prod);
+        Py_DECREF(prod);
+        return sum;
     }
 
-    if (PyFloat_Check(arg)) {
-        double val = PyFloat_AsDouble(arg);
-        if (val == -1.0 && PyErr_Occurred()) {
-            *error_occurred = 1;
-        }
-        return val;
-    }
+    if (PyFloat_Check(num)) {
+        double dnum;
+        double fracpart;
+        double intpart;
+        PyObject *x;
+        PyObject *y;
 
-    if (PyLong_Check(arg)) {
-        double val = PyLong_AsDouble(arg);
-        if (val == -1.0 && PyErr_Occurred()) {
-            *error_occurred = 1;
+        /* The Plan:  decompose num into an integer part and a
+         * fractional part, num = intpart + fracpart.
+         * Then num * factor ==
+         *      intpart * factor + fracpart * factor
+         * and the LHS can be computed exactly in long arithmetic.
+         * The RHS is again broken into an int part and frac part.
+         * and the frac part is added into *leftover.
+         */
+        dnum = PyFloat_AsDouble(num);
+        if (dnum == -1.0 && PyErr_Occurred())
+            return NULL;
+        fracpart = modf(dnum, &intpart);
+        x = PyLong_FromDouble(intpart);
+        if (x == NULL)
+            return NULL;
+
+        prod = PyNumber_Multiply(x, factor);
+        Py_DECREF(x);
+        if (prod == NULL)
+            return NULL;
+
+        sum = PyNumber_Add(sofar, prod);
+        Py_DECREF(prod);
+        if (sum == NULL)
+            return NULL;
+
+        if (fracpart == 0.0)
+            return sum;
+        /* So far we've lost no information.  Dealing with the
+         * fractional part requires float arithmetic, and may
+         * lose a little info.
+         */
+        assert(PyLong_CheckExact(factor));
+        dnum = PyLong_AsDouble(factor);
+
+        dnum *= fracpart;
+        fracpart = modf(dnum, &intpart);
+        x = PyLong_FromDouble(intpart);
+        if (x == NULL) {
+            Py_DECREF(sum);
+            return NULL;
         }
-        return val;
+
+        y = PyNumber_Add(sum, x);
+        Py_DECREF(sum);
+        Py_DECREF(x);
+        *leftover += fracpart;
+        return y;
     }
 
     PyErr_Format(PyExc_TypeError,
                  "unsupported type for timedelta %s component: %s",
-                 arg_name, Py_TYPE(arg)->tp_name);
-    *error_occurred = 1;
-    return 0.0;
+                 tag, Py_TYPE(num)->tp_name);
+    return NULL;
 }
-
-// DIVMOD_DBL_FLOOR(v, D, q_out, r_out) calculates q = floor(v/D), r = v - q*D.
-// This ensures that for a positive D, r_out will be 0 <= r_out < D.
-#define DIVMOD_DBL_FLOOR(v, D, q_out, r_out) \
-    do { \
-        double __v = (v); \
-        double __d = (D); \
-        q_out = floor(__v / __d); \
-        r_out = __v - q_out * __d; \
-    } while (0)
-
 
 static PyObject *
 delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
-    PyObject *td_self = NULL;
-    PyObject *current_mod = NULL;
+    PyObject *self = NULL;
 
-    PyObject *days_arg = NULL, *seconds_arg = NULL, *us_arg = NULL, *ns_arg = NULL;
-    PyObject *ms_arg = NULL, *minutes_arg = NULL, *hours_arg = NULL, *weeks_arg = NULL;
+    PyObject *current_mod = NULL;
+    datetime_state *st = GET_CURRENT_STATE(current_mod);
+
+    /* Argument objects. */
+    PyObject *day = NULL;
+    PyObject *second = NULL;
+    PyObject *us = NULL;
+    PyObject *ns = NULL;
+    PyObject *ms = NULL;
+    PyObject *minute = NULL;
+    PyObject *hour = NULL;
+    PyObject *week = NULL;
+
+    PyObject *x = NULL;         /* running sum of microseconds */
+    PyObject *y = NULL;         /* temp sum of microseconds */
+    double leftover_us = 0.0;
 
     static char *keywords[] = {
         "days", "seconds", "microseconds", "nanoseconds", "milliseconds",
         "minutes", "hours", "weeks", NULL
     };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "|OOOOOOOO:__new__", keywords,
-                                     &days_arg, &seconds_arg, &us_arg, &ns_arg,
-                                     &ms_arg, &minutes_arg, &hours_arg, &weeks_arg)) {
-        goto ErrorExit;
+    if (PyArg_ParseTupleAndKeywords(args, kw, "|OOOOOOOO:__new__",
+                                    keywords,
+                                    &day, &second, &us, &ns,
+                                    &ms, &minute, &hour, &week) == 0)
+        goto Done;
+
+    x = PyLong_FromLong(0);
+    if (x == NULL)
+        goto Done;
+
+#define CLEANUP         \
+    Py_DECREF(x);       \
+    x = y;              \
+    if (x == NULL)      \
+        goto Done
+
+    if (us) {
+        y = accum("microseconds", x, us, _PyLong_GetOne(), &leftover_us);
+        CLEANUP;
+    }
+    // if (ns) {
+    //     y = accum("nanoseconds", x, ns, CONST_US_PER_NANOSECOND(st), &leftover_us);
+    //     CLEANUP;
+    // }
+    if (ms) {
+        y = accum("milliseconds", x, ms, CONST_US_PER_MS(st), &leftover_us);
+        CLEANUP;
+    }
+    if (second) {
+        y = accum("seconds", x, second, CONST_US_PER_SECOND(st), &leftover_us);
+        CLEANUP;
+    }
+    if (minute) {
+        y = accum("minutes", x, minute, CONST_US_PER_MINUTE(st), &leftover_us);
+        CLEANUP;
+    }
+    if (hour) {
+        y = accum("hours", x, hour, CONST_US_PER_HOUR(st), &leftover_us);
+        CLEANUP;
+    }
+    if (day) {
+        y = accum("days", x, day, CONST_US_PER_DAY(st), &leftover_us);
+        CLEANUP;
+    }
+    if (week) {
+        y = accum("weeks", x, week, CONST_US_PER_WEEK(st), &leftover_us);
+        CLEANUP;
+    }
+    if (leftover_us) {
+        /* Round to nearest whole # of us, and add into x. */
+        double whole_us = round(leftover_us);
+        int x_is_odd;
+        PyObject *temp;
+
+        if (fabs(whole_us - leftover_us) == 0.5) {
+            /* We're exactly halfway between two integers.  In order
+             * to do round-half-to-even, we must determine whether x
+             * is odd. Note that x is odd when it's last bit is 1. The
+             * code below uses bitwise and operation to check the last
+             * bit. */
+            temp = PyNumber_And(x, _PyLong_GetOne());  /* temp <- x & 1 */
+            if (temp == NULL) {
+                Py_DECREF(x);
+                goto Done;
+            }
+            x_is_odd = PyObject_IsTrue(temp);
+            Py_DECREF(temp);
+            if (x_is_odd == -1) {
+                Py_DECREF(x);
+                goto Done;
+            }
+            whole_us = 2.0 * round((leftover_us + x_is_odd) * 0.5) - x_is_odd;
+        }
+
+        temp = PyLong_FromLong((long)whole_us);
+
+        if (temp == NULL) {
+            Py_DECREF(x);
+            goto Done;
+        }
+        y = PyNumber_Add(x, temp);
+        Py_DECREF(temp);
+        CLEANUP;
     }
 
-    int error_occurred = 0;
-    double d_val = get_arg_as_double(days_arg, "days", &error_occurred); if (error_occurred) goto ErrorExit;
-    double s_val = get_arg_as_double(seconds_arg, "seconds", &error_occurred); if (error_occurred) goto ErrorExit;
-    double us_val = get_arg_as_double(us_arg, "microseconds", &error_occurred); if (error_occurred) goto ErrorExit;
-    double ns_val = get_arg_as_double(ns_arg, "nanoseconds", &error_occurred); if (error_occurred) goto ErrorExit;
-    double ms_val = get_arg_as_double(ms_arg, "milliseconds", &error_occurred); if (error_occurred) goto ErrorExit;
-    double minutes_val = get_arg_as_double(minutes_arg, "minutes", &error_occurred); if (error_occurred) goto ErrorExit;
-    double hours_val = get_arg_as_double(hours_arg, "hours", &error_occurred); if (error_occurred) goto ErrorExit;
-    double weeks_val = get_arg_as_double(weeks_arg, "weeks", &error_occurred); if (error_occurred) goto ErrorExit;
-
-    d_val += weeks_val * 7.0;
-    s_val += minutes_val * 60.0 + hours_val * 3600.0;
-    us_val += ms_val * 1000.0;
-
-    long out_d_long, out_s_long, out_us_long, out_ns_long;
-
-    double current_d_dbl = d_val;
-    double current_s_dbl = s_val;
-    double current_us_dbl = us_val;
-    double current_ns_dbl = ns_val;
-    double daysecondsfrac = 0.0;
-
-    if (current_d_dbl != floor(current_d_dbl)) {
-        double day_whole_part;
-        double day_frac_part = modf(current_d_dbl, &day_whole_part);
-        current_d_dbl = day_whole_part;
-        double dayseconds_whole_part;
-        daysecondsfrac = modf(day_frac_part * 86400.0, &dayseconds_whole_part);
-        current_s_dbl += dayseconds_whole_part;
+    self = microseconds_to_delta_ex(x, type);
+    if (ns) {
+        SET_TD_NANOSECONDS((PyDateTime_Delta *)self, PyLong_AsLong(ns));
     }
+    Py_DECREF(x);
 
-    // Process seconds
-    double secondsfrac_total;
-    if (current_s_dbl != floor(current_s_dbl)) {
-        double sec_whole_part;
-        double sec_frac_part = modf(current_s_dbl, &sec_whole_part);
-        current_s_dbl = sec_whole_part;
-        secondsfrac_total = sec_frac_part + daysecondsfrac;
-    } else {
-        secondsfrac_total = daysecondsfrac;
-    }
-
-    // Normalize current_s_dbl
-    double d_carry_from_s;
-    DIVMOD_DBL_FLOOR(current_s_dbl, 86400.0, d_carry_from_s, current_s_dbl);
-    current_d_dbl += d_carry_from_s;
-
-    // Process microseconds and nanoseconds
-    current_us_dbl += secondsfrac_total * 1e6;
-    double total_ns_double = current_us_dbl * 1000.0 + current_ns_dbl;
-    total_ns_double = py_round(total_ns_double);
-
-    double us_from_total_ns;
-    DIVMOD_DBL_FLOOR(total_ns_double, 1000.0, us_from_total_ns, current_ns_dbl);
-    current_us_dbl = us_from_total_ns;
-    out_ns_long = (long)current_ns_dbl; // current_ns_dbl is now integer part
-
-    // Final normalization cascade
-    // Normalize current_us_dbl (microseconds)
-    double s_carry_from_us;
-    DIVMOD_DBL_FLOOR(current_us_dbl, 1000000.0, s_carry_from_us, current_us_dbl);
-    current_s_dbl += s_carry_from_us;
-    out_us_long = (long)current_us_dbl; // current_us_dbl is now integer part
-
-    // Normalize current_s_dbl (seconds) again
-    DIVMOD_DBL_FLOOR(current_s_dbl, 86400.0, d_carry_from_s, current_s_dbl);
-    current_d_dbl += d_carry_from_s;
-    out_s_long = (long)current_s_dbl; // current_s_dbl is now integer part
-
-    out_d_long = (long)py_round(current_d_dbl); // Round final days
-    // Final explicit normalization to ensure positive remainders and correct carries
-    // This handles cases where intermediate results might be negative or exceed component limits
-    // before final casting to long.
-    long temp_carry;
-
-    // Normalize nanoseconds (out_ns_long)
-    temp_carry = out_ns_long / 1000L;
-    out_ns_long %= 1000L;
-    if (out_ns_long < 0) {
-        out_ns_long += 1000L;
-        temp_carry--;
-    }
-    out_us_long += temp_carry;
-
-    // Normalize microseconds (out_us_long)
-    temp_carry = out_us_long / 1000000L;
-    out_us_long %= 1000000L;
-    if (out_us_long < 0) {
-        out_us_long += 1000000L;
-        temp_carry--;
-    }
-    out_s_long += temp_carry;
-
-    // Normalize seconds (out_s_long)
-    temp_carry = out_s_long / 86400L;
-    out_s_long %= 86400L;
-    if (out_s_long < 0) {
-        out_s_long += 86400L;
-        temp_carry--;
-    }
-    out_d_long += temp_carry;
-
-    td_self = type->tp_alloc(type, 0);
-    if (td_self == NULL) {
-        goto ErrorExit; // tp_alloc sets error
-    }
-
-    assert(out_s_long >= 0 && out_s_long < 86400);
-    assert(out_us_long >= 0 && out_us_long < 1000000);
-    assert(out_ns_long >= 0 && out_ns_long < 1000);
-
-    ((PyDateTime_Delta *)td_self)->days = (int)out_d_long;
-    ((PyDateTime_Delta *)td_self)->seconds = (int)out_s_long;
-    ((PyDateTime_Delta *)td_self)->microseconds = (int)out_us_long;
-    ((PyDateTime_Delta *)td_self)->nanoseconds = (int)out_ns_long;
-    ((PyDateTime_Delta *)td_self)->hashcode = -1;
-
+Done:
     RELEASE_CURRENT_STATE(st, current_mod);
-    return td_self;
+    return self;
 
-ErrorExit:
-    // Py_XDECREF(td_self); // td_self would be NULL or DECREF'd by caller if tp_alloc failed
-    return NULL; // Error already set
+#undef CLEANUP
 }
 
 static int
