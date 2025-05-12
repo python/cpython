@@ -713,7 +713,7 @@ _PyFunction_GetXIData(PyThreadState *tstate, PyObject *func,
     if (_PyFunction_VerifyStateless(tstate, func) < 0) {
         PyObject *cause = _PyErr_GetRaisedException(tstate);
         assert(cause != NULL);
-        const char *msg = "non-stateless functions are not shareable";
+        const char *msg = "only stateless functions are shareable";
         set_notshareableerror(tstate, cause, 0, msg);
         Py_DECREF(cause);
         return -1;
