@@ -4320,7 +4320,7 @@ to be ignored.
 
    The current process is replaced immediately. Open file objects are not
    flushed, so if there may be data buffered on these open files, you should
-   flush them using :meth:`~io.IOBase.flush`, e.g. ``sys.stdout.flush()``,
+   flush them using :meth:`~io.IOBase.flush`, e.g. :meth:`sys.stdout.flush`,
    before calling an :func:`exec\* <execl>` function.
 
    The "l" and "v" variants of the :func:`exec\* <execl>` functions differ in how
