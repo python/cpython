@@ -1,7 +1,4 @@
-/*
-Low level interface to Meta's zstd library for use in the compression.zstd
-Python module.
-*/
+/* Low level interface to the Zstandard algorthm & the zstd library. */
 
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
@@ -34,17 +31,17 @@ set_zstd_error(const _zstd_state* const state,
     switch (type)
     {
     case ERR_DECOMPRESS:
-        msg = "Unable to decompress zstd data: %s";
+        msg = "Unable to decompress Zstandard data: %s";
         break;
     case ERR_COMPRESS:
-        msg = "Unable to compress zstd data: %s";
+        msg = "Unable to compress Zstandard data: %s";
         break;
 
     case ERR_LOAD_D_DICT:
-        msg = "Unable to load zstd dictionary or prefix for decompression: %s";
+        msg = "Unable to load Zstandard dictionary or prefix for decompression: %s";
         break;
     case ERR_LOAD_C_DICT:
-        msg = "Unable to load zstd dictionary or prefix for compression: %s";
+        msg = "Unable to load Zstandard dictionary or prefix for compression: %s";
         break;
 
     case ERR_GET_C_BOUNDS:
@@ -58,10 +55,10 @@ set_zstd_error(const _zstd_state* const state,
         break;
 
     case ERR_TRAIN_DICT:
-        msg = "Unable to train zstd dictionary: %s";
+        msg = "Unable to train the Zstandard dictionary: %s";
         break;
     case ERR_FINALIZE_DICT:
-        msg = "Unable to finalize zstd dictionary: %s";
+        msg = "Unable to finalize the Zstandard dictionary: %s";
         break;
 
     default:
@@ -152,7 +149,7 @@ set_parameter_error(const _zstd_state* const state, int is_compress,
     }
     if (ZSTD_isError(bounds.error)) {
         PyErr_Format(state->ZstdError,
-                     "Zstd %s parameter \"%s\" is invalid.",
+                     "Invalid zstd %s parameter \"%s\".",
                      type, name);
         return;
     }
@@ -187,13 +184,13 @@ _zstd.train_dict
         The size of the dictionary.
     /
 
-Internal function, train a zstd dictionary on sample data.
+Train a Zstandard dictionary on sample data.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
                       PyObject *samples_sizes, Py_ssize_t dict_size)
-/*[clinic end generated code: output=8e87fe43935e8f77 input=70fcd8937f2528b6]*/
+/*[clinic end generated code: output=8e87fe43935e8f77 input=d20dedb21c72cb62]*/
 {
     // TODO(emmatyping): The preamble and suffix to this function and _finalize_dict
     // are pretty similar. We should see if we can refactor them to share that code.
@@ -258,7 +255,7 @@ _zstd_train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
                                      chunk_sizes, (uint32_t)chunks_number);
     Py_END_ALLOW_THREADS
 
-    /* Check zstd dict error */
+    /* Check Zstandard dict error */
     if (ZDICT_isError(zstd_ret)) {
         _zstd_state* const mod_state = get_zstd_state(module);
         set_zstd_error(mod_state, ERR_TRAIN_DICT, zstd_ret);
@@ -292,10 +289,10 @@ _zstd.finalize_dict
     dict_size: Py_ssize_t
         The size of the dictionary.
     compression_level: int
-        Optimize for a specific zstd compression level, 0 means default.
+        Optimize for a specific Zstandard compression level, 0 means default.
     /
 
-Internal function, finalize a zstd dictionary.
+Finalize a Zstandard dictionary.
 [clinic start generated code]*/
 
 static PyObject *
@@ -303,7 +300,7 @@ _zstd_finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
                          PyBytesObject *samples_bytes,
                          PyObject *samples_sizes, Py_ssize_t dict_size,
                          int compression_level)
-/*[clinic end generated code: output=f91821ba5ae85bda input=130d1508adb55ba1]*/
+/*[clinic end generated code: output=f91821ba5ae85bda input=3c7e2480aa08fb56]*/
 {
     Py_ssize_t chunks_number;
     size_t *chunk_sizes = NULL;
@@ -360,7 +357,7 @@ _zstd_finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
 
     /* Parameters */
 
-    /* Optimize for a specific zstd compression level, 0 means default. */
+    /* Optimize for a specific Zstandard compression level, 0 means default. */
     params.compressionLevel = compression_level;
     /* Write log to stderr, 0 = none. */
     params.notificationLevel = 0;
@@ -376,7 +373,7 @@ _zstd_finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
                         (uint32_t)chunks_number, params);
     Py_END_ALLOW_THREADS
 
-    /* Check zstd dict error */
+    /* Check Zstandard dict error */
     if (ZDICT_isError(zstd_ret)) {
         _zstd_state* const mod_state = get_zstd_state(module);
         set_zstd_error(mod_state, ERR_FINALIZE_DICT, zstd_ret);
@@ -407,12 +404,12 @@ _zstd.get_param_bounds
     is_compress: bool
         True for CompressionParameter, False for DecompressionParameter.
 
-Internal function, get CompressionParameter/DecompressionParameter bounds.
+Get CompressionParameter/DecompressionParameter bounds.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_get_param_bounds_impl(PyObject *module, int parameter, int is_compress)
-/*[clinic end generated code: output=4acf5a876f0620ca input=84e669591e487008]*/
+/*[clinic end generated code: output=4acf5a876f0620ca input=45742ef0a3531b65]*/
 {
     ZSTD_bounds bound;
     if (is_compress) {
@@ -442,14 +439,12 @@ _zstd.get_frame_size
         A bytes-like object, it should start from the beginning of a frame,
         and contains at least one complete frame.
 
-Get the size of a zstd frame, including frame header and 4-byte checksum if it has one.
-
-It will iterate all blocks' headers within a frame, to accumulate the frame size.
+Get the size of a Zstandard frame, including the header and optional checksum.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_get_frame_size_impl(PyObject *module, Py_buffer *frame_buffer)
-/*[clinic end generated code: output=a7384c2f8780f442 input=7d3ad24311893bf3]*/
+/*[clinic end generated code: output=a7384c2f8780f442 input=3b9f73f8c8129d38]*/
 {
     size_t frame_size;
 
@@ -457,9 +452,9 @@ _zstd_get_frame_size_impl(PyObject *module, Py_buffer *frame_buffer)
     if (ZSTD_isError(frame_size)) {
         _zstd_state* const mod_state = get_zstd_state(module);
         PyErr_Format(mod_state->ZstdError,
-            "Error when finding the compressed size of a zstd frame. "
-            "Make sure the frame_buffer argument starts from the "
-            "beginning of a frame, and its length not less than this "
+            "Error when finding the compressed size of a Zstandard frame. "
+            "Ensure the frame_buffer argument starts from the "
+            "beginning of a frame, and its length is not less than this "
             "complete frame. Zstd error message: %s.",
             ZSTD_getErrorName(frame_size));
         return NULL;
@@ -472,14 +467,14 @@ _zstd_get_frame_size_impl(PyObject *module, Py_buffer *frame_buffer)
 _zstd.get_frame_info
 
     frame_buffer: Py_buffer
-        A bytes-like object, containing the header of a zstd frame.
+        A bytes-like object, containing the header of a Zstandard frame.
 
-Internal function, get zstd frame infomation from a frame header.
+Get Zstandard frame infomation from a frame header.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_get_frame_info_impl(PyObject *module, Py_buffer *frame_buffer)
-/*[clinic end generated code: output=56e033cf48001929 input=1816f14656b6aa22]*/
+/*[clinic end generated code: output=56e033cf48001929 input=94b240583ae22ca5]*/
 {
     uint64_t decompressed_size;
     uint32_t dict_id;
@@ -494,9 +489,9 @@ _zstd_get_frame_info_impl(PyObject *module, Py_buffer *frame_buffer)
         _zstd_state* const mod_state = get_zstd_state(module);
         PyErr_SetString(mod_state->ZstdError,
             "Error when getting information from the header of "
-            "a zstd frame. Make sure the frame_buffer argument "
+            "a Zstandard frame. Ensure the frame_buffer argument "
             "starts from the beginning of a frame, and its length "
-            "not less than the frame header (6~18 bytes).");
+            "is not less than the frame header (6~18 bytes).");
         return NULL;
     }
 
@@ -518,13 +513,13 @@ _zstd.set_parameter_types
     d_parameter_type: object(subclass_of='&PyType_Type')
         DecompressionParameter IntEnum type object
 
-Internal function, set CompressionParameter/DecompressionParameter types for validity check.
+Set CompressionParameter and DecompressionParameter types for validity check.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_set_parameter_types_impl(PyObject *module, PyObject *c_parameter_type,
                                PyObject *d_parameter_type)
-/*[clinic end generated code: output=f3313b1294f19502 input=30402523871b8280]*/
+/*[clinic end generated code: output=f3313b1294f19502 input=75d7a953580fae5f]*/
 {
     _zstd_state* const mod_state = get_zstd_state(module);
 
