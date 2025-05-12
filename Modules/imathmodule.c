@@ -164,7 +164,7 @@ static PyObject *
 imath_ilog2(PyObject *module, PyObject *n)
 /*[clinic end generated code: output=6ab48d1a7f5160c2 input=e2d8e8631ec5c29b]*/
 {
-    size_t bits;
+    int64_t bits;
 
     n = PyNumber_Index(n);
     if (n == NULL) {
@@ -174,17 +174,17 @@ imath_ilog2(PyObject *module, PyObject *n)
     if (!_PyLong_IsPositive((PyLongObject *)n)) {
         PyErr_SetString(
             PyExc_ValueError,
-            "ilog() argument must be positive");
+            "ilog2() argument must be positive");
         Py_DECREF(n);
         return NULL;
     }
 
     bits = _PyLong_NumBits(n);
     Py_DECREF(n);
-    if (bits == (size_t)(-1)) {
+    if (bits == -1) {
         return NULL;
     }
-    return PyLong_FromSize_t(bits - 1);
+    return PyLong_FromInt64(bits - 1);
 }
 
 
