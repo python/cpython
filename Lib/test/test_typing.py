@@ -3,6 +3,7 @@ import contextlib
 import collections
 import collections.abc
 from collections import defaultdict
+from collections.abc import Callable as ABCallable
 from functools import lru_cache, wraps, reduce
 import gc
 import inspect
@@ -10774,14 +10775,17 @@ class TestGenericAliasHandling(BaseTestCase):
 
 class TestCallableAlias(BaseTestCase):
     def test_callable_alias_preserves_subclass(self):
-        C = Callable[[str, ForwardRef("int")], int]
+        C = ABCallable[[str, ForwardRef('int')], int]
         class A:
             c: C
+        # Explicitly pass global namespace to ensure correct resolution
+        hints = get_type_hints(A, globalns=globals())
 
-        hints = get_type_hints(A)
-
-        # Ensure evaluated type retains the correct class
+        # Ensure evaluated type retains the correct subclass (_CallableGenericAlias)
         self.assertEqual(hints['c'].__class__, C.__class__)
+
+        # Ensure evaluated type retains correct origin
+        self.assertEqual(hints['c'].__origin__, C.__origin__)
 
         # Instead of comparing raw ForwardRef, check if the resolution is correct
         expected_args = tuple(int if isinstance(arg, ForwardRef) else arg for arg in C.__args__)
