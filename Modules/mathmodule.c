@@ -2008,12 +2008,11 @@ math.factorial
     /
 
 Find n!.
-
 [clinic start generated code]*/
 
 static PyObject *
 math_factorial(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=6686f26fae00e9ca input=06200bf38384f7ae]*/
+/*[clinic end generated code: output=6686f26fae00e9ca input=366cc321df3d4773]*/
 {
     long x, two_valuation;
     int overflow;
