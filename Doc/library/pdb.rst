@@ -700,7 +700,7 @@ can be overridden by the local file.
       output channel rather than :data:`sys.stderr`.
 
 .. pdbcommand:: attach process
-   
+
    Attach to a running process.  The *process* argument could be either a
    :class:`subprocess.Popen`, :class:`multiprocessing.Process` or a process ID.
 
