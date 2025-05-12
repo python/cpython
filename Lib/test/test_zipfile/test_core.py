@@ -3489,7 +3489,7 @@ class EncodedMetadataTests(unittest.TestCase):
             except OSError:
                 pass
             except UnicodeEncodeError:
-                self.skipTest(f'cannot encode file name {fn!r}')
+                self.skipTest(f'cannot encode file name {fn!a}')
 
         zipfile.main(["--metadata-encoding=shift_jis", "-e", TESTFN, TESTFN2])
         listing = os.listdir(TESTFN2)
