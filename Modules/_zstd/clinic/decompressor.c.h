@@ -17,7 +17,7 @@ PyDoc_STRVAR(_zstd_ZstdDecompressor_new__doc__,
 "Create a decompressor object for decompressing data incrementally.\n"
 "\n"
 "  zstd_dict\n"
-"    A ZstdDict object, a pre-trained zstd dictionary.\n"
+"    A ZstdDict object, a pre-trained Zstandard dictionary.\n"
 "  options\n"
 "    A dict object that contains advanced decompression parameters.\n"
 "\n"
@@ -130,7 +130,7 @@ PyDoc_STRVAR(_zstd_ZstdDecompressor_decompress__doc__,
 "Decompress *data*, returning uncompressed bytes if possible, or b\'\' otherwise.\n"
 "\n"
 "  data\n"
-"    A bytes-like object, zstd data to be decompressed.\n"
+"    A bytes-like object, Zstandard data to be decompressed.\n"
 "  max_length\n"
 "    Maximum size of returned data. When it is negative, the size of\n"
 "    output buffer is unlimited. When it is nonnegative, returns at\n"
@@ -227,4 +227,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=219d26afb3452705 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7a4d278f9244e684 input=a9049054013a1b77]*/

@@ -288,8 +288,8 @@ class CompressorTestCase(unittest.TestCase):
         KEY = 100001234
         option = {CompressionParameter.compression_level: 10,
                   KEY: 200000000}
-        pattern = r'Zstd compression parameter.*?"unknown parameter \(key %d\)"' \
-                  % KEY
+        pattern = (r'Invalid zstd compression parameter.*?'
+                   fr'"unknown parameter \(key {KEY}\)"')
         with self.assertRaisesRegex(ZstdError, pattern):
             ZstdCompressor(options=option)
 
@@ -420,8 +420,8 @@ class DecompressorTestCase(unittest.TestCase):
         KEY = 100001234
         options = {DecompressionParameter.window_log_max: DecompressionParameter.window_log_max.bounds()[1],
                   KEY: 200000000}
-        pattern = r'Zstd decompression parameter.*?"unknown parameter \(key %d\)"' \
-                  % KEY
+        pattern = (r'Invalid zstd decompression parameter.*?'
+                   fr'"unknown parameter \(key {KEY}\)"')
         with self.assertRaisesRegex(ZstdError, pattern):
             ZstdDecompressor(options=options)
 

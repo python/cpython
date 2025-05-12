@@ -115,7 +115,7 @@ _zstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
                 self->compression_level = value_v;
             }
             else if (key_v == ZSTD_c_nbWorkers) {
-                /* From zstd library doc:
+                /* From the zstd library docs:
                    1. When nbWorkers >= 1, triggers asynchronous mode when
                       used with ZSTD_compressStream2().
                    2, Default value is `0`, aka "single-threaded mode" : no
@@ -319,7 +319,7 @@ _zstd.ZstdCompressor.__new__ as _zstd_ZstdCompressor_new
     options: object = None
         A dict object that contains advanced compression parameters.
     zstd_dict: object = None
-        A ZstdDict object, a pre-trained zstd dictionary.
+        A ZstdDict object, a pre-trained Zstandard dictionary.
 
 Create a compressor object for compressing data incrementally.
 
@@ -330,7 +330,7 @@ function instead.
 static PyObject *
 _zstd_ZstdCompressor_new_impl(PyTypeObject *type, PyObject *level,
                               PyObject *options, PyObject *zstd_dict)
-/*[clinic end generated code: output=cdef61eafecac3d7 input=b9ea61ecafbb1b1e]*/
+/*[clinic end generated code: output=cdef61eafecac3d7 input=92de0211ae20ffdc]*/
 {
     ZstdCompressor* self = PyObject_GC_New(ZstdCompressor, type);
     if (self == NULL) {
@@ -371,7 +371,7 @@ _zstd_ZstdCompressor_new_impl(PyTypeObject *type, PyObject *level,
         }
     }
 
-    /* Load zstd dictionary to compression context */
+    /* Load Zstandard dictionary to compression context */
     self->dict = NULL;
     if (zstd_dict != Py_None) {
         if (_zstd_load_c_dict(self, zstd_dict) < 0) {
@@ -446,7 +446,7 @@ compress_impl(ZstdCompressor *self, Py_buffer *data,
     }
 
 
-    /* zstd stream compress */
+    /* Zstandard stream compress */
     while (1) {
         Py_BEGIN_ALLOW_THREADS
         zstd_ret = ZSTD_compressStream2(self->cctx, &out, &in, end_directive);
@@ -510,7 +510,7 @@ compress_mt_continue_impl(ZstdCompressor *self, Py_buffer *data)
         goto error;
     }
 
-    /* zstd stream compress */
+    /* Zstandard stream compress */
     while (1) {
         Py_BEGIN_ALLOW_THREADS
         do {
@@ -619,14 +619,14 @@ _zstd.ZstdCompressor.flush
 
 Finish the compression process.
 
-Flush any remaining data left in internal buffers. Since zstd data consists
-of one or more independent frames, the compressor object can still be used
-after this method is called.
+Flush any remaining data left in internal buffers. Since Zstandard data
+consists of one or more independent frames, the compressor object can still
+be used after this method is called.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_ZstdCompressor_flush_impl(ZstdCompressor *self, int mode)
-/*[clinic end generated code: output=b7cf2c8d64dcf2e3 input=a766870301932b85]*/
+/*[clinic end generated code: output=b7cf2c8d64dcf2e3 input=0ab19627f323cdbc]*/
 {
     PyObject *ret;
 

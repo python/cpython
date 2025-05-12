@@ -19,7 +19,7 @@ PyDoc_STRVAR(_zstd_ZstdCompressor_new__doc__,
 "  options\n"
 "    A dict object that contains advanced compression parameters.\n"
 "  zstd_dict\n"
-"    A ZstdDict object, a pre-trained zstd dictionary.\n"
+"    A ZstdDict object, a pre-trained Zstandard dictionary.\n"
 "\n"
 "Thread-safe at method level. For one-shot compression, use the compress()\n"
 "function instead.");
@@ -189,9 +189,9 @@ PyDoc_STRVAR(_zstd_ZstdCompressor_flush__doc__,
 "    Can be these 2 values ZstdCompressor.FLUSH_FRAME,\n"
 "    ZstdCompressor.FLUSH_BLOCK\n"
 "\n"
-"Flush any remaining data left in internal buffers. Since zstd data consists\n"
-"of one or more independent frames, the compressor object can still be used\n"
-"after this method is called.");
+"Flush any remaining data left in internal buffers. Since Zstandard data\n"
+"consists of one or more independent frames, the compressor object can still\n"
+"be used after this method is called.");
 
 #define _ZSTD_ZSTDCOMPRESSOR_FLUSH_METHODDEF    \
     {"flush", _PyCFunction_CAST(_zstd_ZstdCompressor_flush), METH_FASTCALL|METH_KEYWORDS, _zstd_ZstdCompressor_flush__doc__},
@@ -252,4 +252,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c33f03bf68e679e5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ee2d1dc298de790c input=a9049054013a1b77]*/

@@ -32,18 +32,18 @@ _zstd.ZstdDict.__new__ as _zstd_ZstdDict_new
     is_raw: bool = False
         If true, perform no checks on *dict_content*, useful for some
         advanced cases. Otherwise, check that the content represents
-        a Zstandard dictionary created by the zstd functions.
+        a Zstandard dictionary created by the zstd library or CLI.
 
-Represents a zstd dictionary, which can be used for compression/decompression.
+Represents a Zstandard dictionary.
 
-It's thread-safe, and can be shared by multiple ZstdCompressor /
-ZstdDecompressor objects.
+The dictionary can be used for compression or decompression, and can be shared
+by multiple ZstdCompressor or ZstdDecompressor objects.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_ZstdDict_new_impl(PyTypeObject *type, PyObject *dict_content,
                         int is_raw)
-/*[clinic end generated code: output=3ebff839cb3be6d7 input=e9e22fdc68fa04cc]*/
+/*[clinic end generated code: output=3ebff839cb3be6d7 input=6b5de413869ae878]*/
 {
     ZstdDict* self = PyObject_GC_New(ZstdDict, type);
     if (self == NULL) {
@@ -71,7 +71,7 @@ _zstd_ZstdDict_new_impl(PyTypeObject *type, PyObject *dict_content,
        at least 8 bytes */
     if (Py_SIZE(self->dict_content) < 8) {
         PyErr_SetString(PyExc_ValueError,
-                        "Zstd dictionary content should at least 8 bytes.");
+                        "Zstandard dictionary content should at least 8 bytes.");
         goto error;
     }
 
@@ -118,7 +118,7 @@ ZstdDict_dealloc(PyObject *ob)
 }
 
 PyDoc_STRVAR(ZstdDict_dictid_doc,
-"The ID of Zstandard dictionary, an integer between 0 and 2**32.\n\n"
+"the Zstandard dictionary, an int between 0 and 2**32.\n\n"
 "A non-zero value represents an ordinary Zstandard dictionary, "
 "conforming to the standardised format.\n\n"
 "The special value '0' means a 'raw content' dictionary,"
