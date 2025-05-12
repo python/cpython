@@ -1,12 +1,10 @@
 import io
 from os import PathLike
-from _zstd import (ZstdCompressor, ZstdDecompressor, _ZSTD_DStreamSizes,
-                   ZstdError)
+from _zstd import (ZstdCompressor, ZstdDecompressor, ZstdError,
+                   ZSTD_DStreamOutSize)
 from compression._common import _streams
 
 __all__ = ("ZstdFile", "open")
-
-_ZSTD_DStreamOutSize = _ZSTD_DStreamSizes[1]
 
 _MODE_CLOSED = 0
 _MODE_READ = 1
@@ -91,7 +89,6 @@ class ZstdFile(_streams.BaseStream):
             raw = _streams.DecompressReader(
                 self._fp,
                 ZstdDecompressor,
-                trailing_error=ZstdError,
                 zstd_dict=zstd_dict,
                 options=options,
             )
@@ -188,7 +185,7 @@ class ZstdFile(_streams.BaseStream):
             # Note this should *not* be io.DEFAULT_BUFFER_SIZE.
             # ZSTD_DStreamOutSize is the minimum amount to read guaranteeing
             # a full block is read.
-            size = _ZSTD_DStreamOutSize
+            size = ZSTD_DStreamOutSize
         return self._buffer.read1(size)
 
     def readinto(self, b):

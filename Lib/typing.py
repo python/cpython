@@ -2968,7 +2968,7 @@ class NamedTupleMeta(type):
         return nm_tpl
 
 
-def NamedTuple(typename, fields=_sentinel, /, **kwargs):
+def NamedTuple(typename, fields, /):
     """Typed version of namedtuple.
 
     Usage::
@@ -2988,48 +2988,9 @@ def NamedTuple(typename, fields=_sentinel, /, **kwargs):
 
         Employee = NamedTuple('Employee', [('name', str), ('id', int)])
     """
-    if fields is _sentinel:
-        if kwargs:
-            deprecated_thing = "Creating NamedTuple classes using keyword arguments"
-            deprecation_msg = (
-                "{name} is deprecated and will be disallowed in Python {remove}. "
-                "Use the class-based or functional syntax instead."
-            )
-        else:
-            deprecated_thing = "Failing to pass a value for the 'fields' parameter"
-            example = f"`{typename} = NamedTuple({typename!r}, [])`"
-            deprecation_msg = (
-                "{name} is deprecated and will be disallowed in Python {remove}. "
-                "To create a NamedTuple class with 0 fields "
-                "using the functional syntax, "
-                "pass an empty list, e.g. "
-            ) + example + "."
-    elif fields is None:
-        if kwargs:
-            raise TypeError(
-                "Cannot pass `None` as the 'fields' parameter "
-                "and also specify fields using keyword arguments"
-            )
-        else:
-            deprecated_thing = "Passing `None` as the 'fields' parameter"
-            example = f"`{typename} = NamedTuple({typename!r}, [])`"
-            deprecation_msg = (
-                "{name} is deprecated and will be disallowed in Python {remove}. "
-                "To create a NamedTuple class with 0 fields "
-                "using the functional syntax, "
-                "pass an empty list, e.g. "
-            ) + example + "."
-    elif kwargs:
-        raise TypeError("Either list of fields or keywords"
-                        " can be provided to NamedTuple, not both")
-    if fields is _sentinel or fields is None:
-        import warnings
-        warnings._deprecated(deprecated_thing, message=deprecation_msg, remove=(3, 15))
-        fields = kwargs.items()
     types = {n: _type_check(t, f"field {n} annotation must be a type")
              for n, t in fields}
     field_names = [n for n, _ in fields]
-
     nt = _make_nmtuple(typename, field_names, _make_eager_annotate(types), module=_caller())
     nt.__orig_bases__ = (NamedTuple,)
     return nt
@@ -3198,7 +3159,7 @@ class _TypedDictMeta(type):
     __instancecheck__ = __subclasscheck__
 
 
-def TypedDict(typename, fields=_sentinel, /, *, total=True):
+def TypedDict(typename, fields, /, *, total=True):
     """A simple typed namespace. At runtime it is equivalent to a plain dict.
 
     TypedDict creates a dictionary type such that a type checker will expect all
@@ -3253,24 +3214,6 @@ def TypedDict(typename, fields=_sentinel, /, *, total=True):
             username: str      # the "username" key can be changed
 
     """
-    if fields is _sentinel or fields is None:
-        import warnings
-
-        if fields is _sentinel:
-            deprecated_thing = "Failing to pass a value for the 'fields' parameter"
-        else:
-            deprecated_thing = "Passing `None` as the 'fields' parameter"
-
-        example = f"`{typename} = TypedDict({typename!r}, {{{{}}}})`"
-        deprecation_msg = (
-            "{name} is deprecated and will be disallowed in Python {remove}. "
-            "To create a TypedDict class with 0 fields "
-            "using the functional syntax, "
-            "pass an empty dictionary, e.g. "
-        ) + example + "."
-        warnings._deprecated(deprecated_thing, message=deprecation_msg, remove=(3, 15))
-        fields = {}
-
     ns = {'__annotations__': dict(fields)}
     module = _caller()
     if module is not None:
