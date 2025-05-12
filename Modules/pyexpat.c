@@ -98,26 +98,102 @@ typedef struct {
 
 #define CHARACTER_DATA_BUFFER_SIZE 8192
 
-typedef const void *xmlhandler;
+typedef union xmlhandler_union {
+    // - XML_StartCdataSectionHandler
+    // - XML_EndCdataSectionHandler
+    // - XML_EndDoctypeDeclHandler
+    void (*parser_only)(
+        void *
+    );
+    // XML_NotStandaloneHandler
+    int (*not_standalone)(
+        void *
+    );
+    // - XML_EndElementHandler
+    // - XML_EndNamespaceDeclHandler
+    // - XML_CommentHandler
+    void (*parser_and_data)(
+        void *, const XML_Char *
+    );
+    // - XML_CharacterDataHandler
+    // - XML_DefaultHandler
+    // - XML_DefaultHandlerExpand
+    // - XML_SkippedEntityHandler
+    // - noop_character_data_handler
+    void (*parser_and_data_and_int)(
+        void *, const XML_Char *, int
+    );
+    // - XML_ProcessingInstructionHandler
+    // - XML_StartNamespaceDeclHandler
+    void (*parser_and_data_and_data)(
+        void *, const XML_Char *, const XML_Char *
+    );
+    // XML_StartElementHandler
+    void (*start_element)(
+        void *, const XML_Char *, const XML_Char **
+    );
+    // XML_ElementDeclHandler
+    void (*element_decl)(
+        void *, const XML_Char *, XML_Content *
+    );
+    // XML_XmlDeclHandler
+    void (*xml_decl)(
+        void *, const XML_Char *, const XML_Char *, int
+    );
+    // XML_StartDoctypeDeclHandler
+    void (*start_doctype_decl)(
+        void *,
+        const XML_Char *, const XML_Char *, const XML_Char *,
+        int
+    );
+    // XML_NotationDeclHandler
+    void (*notation_decl)(
+        void *,
+        const XML_Char *, const XML_Char *, const XML_Char *, const XML_Char *
+    );
+    // XML_AttlistDeclHandler
+    void (*attlist_decl)(
+        void *,
+        const XML_Char *, const XML_Char *, const XML_Char *, const XML_Char *,
+        int
+    );
+    // XML_UnparsedEntityDeclHandler
+    void (*unparsed_entity_decl)(
+        void *,
+        const XML_Char *, const XML_Char *,
+        const XML_Char *, const XML_Char *, const XML_Char *
+    );
+    // XML_EntityDeclHandler
+    void (*entity_decl)(
+        void *,
+        const XML_Char *, int,
+        const XML_Char *, int,
+        const XML_Char *, const XML_Char *, const XML_Char *, const XML_Char *
+    );
+    // XML_ExternalEntityRefHandler
+    int (*external_entity_ref)(
+        XML_Parser,
+        const XML_Char *, const XML_Char *, const XML_Char *, const XML_Char *
+    );
+} xmlhandler_union;
+
+typedef xmlhandler_union *xmlhandler;
 typedef void (*xmlhandlersetter)(XML_Parser self, xmlhandler handler);
 
 struct HandlerInfo {
     const char *name;
     xmlhandlersetter setter;
-    xmlhandler handler;
+    xmlhandler_union handler;
     PyGetSetDef getset;
 };
 
 static struct HandlerInfo handler_info[64];
 
-// gh-111178: Use _Py_NO_SANITIZE_UNDEFINED, rather than using the exact
-// handler API for each handler.
-static inline void _Py_NO_SANITIZE_UNDEFINED
+static inline void
 CALL_XML_HANDLER_SETTER(const struct HandlerInfo *handler_info,
                         XML_Parser xml_parser, xmlhandler xml_handler)
 {
-    xmlhandlersetter setter = (xmlhandlersetter)handler_info->setter;
-    setter(xml_parser, xml_handler);
+    handler_info->setter(xml_parser, xml_handler);
 }
 
 /* Set an integer attribute on the error object; return true on success,
@@ -1063,7 +1139,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
         if (handler != NULL) {
             new_parser->handlers[i] = Py_NewRef(handler);
             struct HandlerInfo info = handler_info[i];
-            CALL_XML_HANDLER_SETTER(&info, new_parser->itself, info.handler);
+            CALL_XML_HANDLER_SETTER(&info, new_parser->itself, &info.handler);
         }
     }
 
@@ -1315,15 +1391,23 @@ xmlparse_dealloc(PyObject *op)
     Py_DECREF(tp);
 }
 
+static Py_ssize_t
+xmlparse_handler_get_index(void *closure)
+{
+    struct HandlerInfo *info = (struct HandlerInfo *)closure;
+    Py_ssize_t ind = (Py_ssize_t)(info - handler_info);
+    assert(ind >= 0);
+    assert(ind < (Py_ssize_t)Py_ARRAY_LENGTH(handler_info));
+    assert(info->name == handler_info[ind].name);
+    return ind;
+}
 
 static PyObject *
 xmlparse_handler_getter(PyObject *op, void *closure)
 {
     xmlparseobject *self = xmlparseobject_CAST(op);
-    struct HandlerInfo *hi = (struct HandlerInfo *)closure;
-    assert((hi - handler_info) < (Py_ssize_t)Py_ARRAY_LENGTH(handler_info));
-    int handlernum = (int)(hi - handler_info);
-    PyObject *result = self->handlers[handlernum];
+    Py_ssize_t ind = xmlparse_handler_get_index(closure);
+    PyObject *result = self->handlers[ind];
     if (result == NULL) {
         result = Py_None;
     }
@@ -1334,9 +1418,7 @@ static int
 xmlparse_handler_setter(PyObject *op, PyObject *v, void *closure)
 {
     xmlparseobject *self = xmlparseobject_CAST(op);
-    struct HandlerInfo *hi = (struct HandlerInfo *)closure;
-    assert((hi - handler_info) < (Py_ssize_t)Py_ARRAY_LENGTH(handler_info));
-    int handlernum = (int)(hi - handler_info);
+    Py_ssize_t handlernum = xmlparse_handler_get_index(closure);
     if (v == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot delete attribute");
         return -1;
@@ -1365,13 +1447,18 @@ xmlparse_handler_setter(PyObject *op, PyObject *v, void *closure)
            elaborate system of handlers and state could remove the
            C handler more effectively. */
         if (handlernum == CharacterData && self->in_callback) {
-            c_handler = noop_character_data_handler;
+            // The cast to union type '(union T)' is NOT a cast in the regular
+            // sense but a constructor as it does not produce an lvalue. It
+            // is a valid construction as per ISO C11, §6.5.2.5.
+            *c_handler = (xmlhandler_union){
+                .parser_and_data_and_int = noop_character_data_handler
+            };
         }
         v = NULL;
     }
     else if (v != NULL) {
         Py_INCREF(v);
-        c_handler = handler_info[handlernum].handler;
+        c_handler = &handler_info[handlernum].handler;
     }
     Py_XSETREF(self->handlers[handlernum], v);
     CALL_XML_HANDLER_SETTER(&handler_info[handlernum], self->itself, c_handler);
@@ -2222,40 +2309,69 @@ clear_handlers(xmlparseobject *self, int initial)
     }
 }
 
-static struct HandlerInfo handler_info[] = {
-
-    // The cast to `xmlhandlersetter` is needed as the signature of XML
-    // handler functions is not compatible with `xmlhandlersetter` since
-    // their second parameter is narrower than a `const void *`.
-#define HANDLER_INFO(name) \
-    {#name, (xmlhandlersetter)XML_Set##name, my_##name},
-
-    HANDLER_INFO(StartElementHandler)
-    HANDLER_INFO(EndElementHandler)
-    HANDLER_INFO(ProcessingInstructionHandler)
-    HANDLER_INFO(CharacterDataHandler)
-    HANDLER_INFO(UnparsedEntityDeclHandler)
-    HANDLER_INFO(NotationDeclHandler)
-    HANDLER_INFO(StartNamespaceDeclHandler)
-    HANDLER_INFO(EndNamespaceDeclHandler)
-    HANDLER_INFO(CommentHandler)
-    HANDLER_INFO(StartCdataSectionHandler)
-    HANDLER_INFO(EndCdataSectionHandler)
-    HANDLER_INFO(DefaultHandler)
-    HANDLER_INFO(DefaultHandlerExpand)
-    HANDLER_INFO(NotStandaloneHandler)
-    HANDLER_INFO(ExternalEntityRefHandler)
-    HANDLER_INFO(StartDoctypeDeclHandler)
-    HANDLER_INFO(EndDoctypeDeclHandler)
-    HANDLER_INFO(EntityDeclHandler)
-    HANDLER_INFO(XmlDeclHandler)
-    HANDLER_INFO(ElementDeclHandler)
-    HANDLER_INFO(AttlistDeclHandler)
+/*
+ * The handler type TYPE is typically useful to detect issues at compile time.
+ */
+#define SETTER_WRAPPER(NAME, MEMBER)                                    \
+    static inline void                                                  \
+    my_Set ## NAME (XML_Parser parser, xmlhandler handle)               \
+    {                                                                   \
+        (void)XML_Set ## NAME (parser, handle ? handle->MEMBER : NULL); \
+    }
+SETTER_WRAPPER(StartElementHandler, start_element)
+SETTER_WRAPPER(EndElementHandler, parser_and_data)
+SETTER_WRAPPER(ProcessingInstructionHandler, parser_and_data_and_data)
+SETTER_WRAPPER(CharacterDataHandler, parser_and_data_and_int)
+SETTER_WRAPPER(UnparsedEntityDeclHandler, unparsed_entity_decl)
+SETTER_WRAPPER(NotationDeclHandler, notation_decl)
+SETTER_WRAPPER(StartNamespaceDeclHandler, parser_and_data_and_data)
+SETTER_WRAPPER(EndNamespaceDeclHandler, parser_and_data)
+SETTER_WRAPPER(CommentHandler, parser_and_data)
+SETTER_WRAPPER(StartCdataSectionHandler, parser_only)
+SETTER_WRAPPER(EndCdataSectionHandler, parser_only)
+SETTER_WRAPPER(DefaultHandler, parser_and_data_and_int)
+SETTER_WRAPPER(DefaultHandlerExpand, parser_and_data_and_int)
+SETTER_WRAPPER(NotStandaloneHandler, not_standalone)
+SETTER_WRAPPER(ExternalEntityRefHandler, external_entity_ref)
+SETTER_WRAPPER(StartDoctypeDeclHandler, start_doctype_decl)
+SETTER_WRAPPER(EndDoctypeDeclHandler, parser_only)
+SETTER_WRAPPER(EntityDeclHandler, entity_decl)
+SETTER_WRAPPER(XmlDeclHandler, xml_decl)
+SETTER_WRAPPER(ElementDeclHandler, element_decl)
+SETTER_WRAPPER(AttlistDeclHandler, attlist_decl)
 #if XML_COMBINED_VERSION >= 19504
-    HANDLER_INFO(SkippedEntityHandler)
+SETTER_WRAPPER(SkippedEntityHandler, parser_and_data_and_int)
 #endif
+#undef SETTER_WRAPPER
 
+static struct HandlerInfo handler_info[] = {
+#define HANDLER_INFO(IND, NAME, MEMBER) \
+    [IND] = {#NAME, my_Set##NAME, {.MEMBER = my_##NAME}},
+
+    HANDLER_INFO(StartElement, StartElementHandler, start_element)
+    HANDLER_INFO(EndElement, EndElementHandler, parser_and_data)
+    HANDLER_INFO(ProcessingInstruction, ProcessingInstructionHandler, parser_and_data_and_data)
+    HANDLER_INFO(CharacterData, CharacterDataHandler, parser_and_data_and_int)
+    HANDLER_INFO(UnparsedEntityDecl, UnparsedEntityDeclHandler, unparsed_entity_decl)
+    HANDLER_INFO(NotationDecl, NotationDeclHandler, notation_decl)
+    HANDLER_INFO(StartNamespaceDecl, StartNamespaceDeclHandler, parser_and_data_and_data)
+    HANDLER_INFO(EndNamespaceDecl, EndNamespaceDeclHandler, parser_and_data)
+    HANDLER_INFO(Comment, CommentHandler, parser_and_data)
+    HANDLER_INFO(StartCdataSection, StartCdataSectionHandler, parser_only)
+    HANDLER_INFO(EndCdataSection, EndCdataSectionHandler, parser_only)
+    HANDLER_INFO(Default, DefaultHandler, parser_and_data_and_int)
+    HANDLER_INFO(DefaultHandlerExpand, DefaultHandlerExpand, parser_and_data_and_int)
+    HANDLER_INFO(NotStandalone, NotStandaloneHandler, not_standalone)
+    HANDLER_INFO(ExternalEntityRef, ExternalEntityRefHandler, external_entity_ref)
+    HANDLER_INFO(StartDoctypeDecl, StartDoctypeDeclHandler, start_doctype_decl)
+    HANDLER_INFO(EndDoctypeDecl, EndDoctypeDeclHandler, parser_only)
+    HANDLER_INFO(EntityDecl, EntityDeclHandler, entity_decl)
+    HANDLER_INFO(XmlDecl, XmlDeclHandler, xml_decl)
+    HANDLER_INFO(ElementDecl, ElementDeclHandler, element_decl)
+    HANDLER_INFO(AttlistDecl, AttlistDeclHandler, attlist_decl)
+#if XML_COMBINED_VERSION >= 19504
+    HANDLER_INFO(SkippedEntity, SkippedEntityHandler, parser_and_data_and_int)
+#endif
 #undef HANDLER_INFO
-
-    {NULL, NULL, NULL} /* sentinel */
+    {NULL, NULL, {NULL}} /* sentinel */
 };
