@@ -384,7 +384,7 @@ class TestReader(ScreenEqualMixin, TestCase):
             with self.subTest(text=text, before_pos=before_pos):
                 events = itertools.chain(
                     code_to_events(text),
-                    [Event(evt="key", data="left", raw=bytearray(b"\x1b[D"))] * (len(text) - before_pos),  # Move cursor to specified position
+                    [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))] * (len(text) - before_pos),  # Move cursor to specified position
                     [
                         Event(evt="key", data="\x17", raw=bytearray(b"\x17")), # Control-W
                     ],
@@ -407,7 +407,7 @@ class TestReader(ScreenEqualMixin, TestCase):
             with self.subTest(text=text, pos=pos):
                 events = itertools.chain(
                     code_to_events(text),
-                    [Event(evt="key", data="left", raw=bytearray(b"\x1b[D"))] * (len(text) - pos),  # Move cursor to specified position
+                    [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))] * (len(text) - pos),  # Move cursor to specified position
                     [
                         Event(evt="key", data="\x0b", raw=bytearray(b"\x0b")),  # Control-K
                     ],
