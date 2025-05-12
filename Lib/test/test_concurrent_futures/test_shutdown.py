@@ -349,7 +349,7 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         #   shutdown(wait=False) is called
         start_method = self.get_context().get_start_method()
         if start_method != ProcessPoolSpawnMixin.ctx:
-                self.skipTest(f"Skipping test for {start_method}=")
+                self.skipTest(f"Skipping test for {start_method = }")
         executor = futures.ProcessPoolExecutor(
                 max_workers=max_workers,
                 max_tasks_per_child=1,
