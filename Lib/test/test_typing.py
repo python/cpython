@@ -10668,6 +10668,9 @@ class UnionGenericAliasTests(BaseTestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertNotEqual(int, typing._UnionGenericAlias)
 
+    def test_hashable(self):
+        self.assertIsInstance(hash(typing._UnionGenericAlias), int)
+
 
 def load_tests(loader, tests, pattern):
     import doctest

@@ -1649,6 +1649,9 @@ class _UnionGenericAliasMeta(type):
             return True
         return NotImplemented
 
+    def __hash__(self):
+        return super().__hash__()
+
 
 class _UnionGenericAlias(metaclass=_UnionGenericAliasMeta):
     """Compatibility hack.
