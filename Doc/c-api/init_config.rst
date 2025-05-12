@@ -363,7 +363,7 @@ Configuration Options
      - Read-only
    * - ``"import_time"``
      - :c:member:`import_time <PyConfig.import_time>`
-     - ``bool``
+     - ``int``
      - Read-only
    * - ``"inspect"``
      - :c:member:`inspect <PyConfig.inspect>`
@@ -1477,12 +1477,18 @@ PyConfig
 
    .. c:member:: int import_time
 
-      If non-zero, profile import time.
+      If ``1``, profile import time.
+      If ``2``, include additional output that indicates
+      when an imported module has already been loaded.
 
-      Set the ``1`` by the :option:`-X importtime <-X>` option and the
+      Set by the :option:`-X importtime <-X>` option and the
       :envvar:`PYTHONPROFILEIMPORTTIME` environment variable.
 
       Default: ``0``.
+
+     .. versionchanged:: 3.14
+
+        Added support for ``import_time = 2``
 
    .. c:member:: int inspect
 
