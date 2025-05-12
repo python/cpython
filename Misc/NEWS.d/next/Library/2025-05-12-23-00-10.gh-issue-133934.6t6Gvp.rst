@@ -1,2 +1,2 @@
 Make ``.help`` in the :mod:`sqlite3` command-line interface print list of
-available commands and `.help <command>` prints help for that command.
+available commands and ``.help <command>`` prints help for that command.
