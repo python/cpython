@@ -11,10 +11,10 @@
 
 --------------
 
-This module provides classes and convenience functions for compressing and
-decompressing data using the Zstandard (or "zstd") compression algorithm. Also
-included is a file interface supporting reading and writing contents of ``.zst``
-files created from the :program:`zstd` utility, as well as raw zstd compressed
+This module provides classes and functions for compressing and
+decompressing data using the Zstandard (or *zstd*) compression algorithm. Also
+included is a file interface that supports reading and writing the contents of ``.zst`` files.
+files created by the :program:`zstd` utility, as well as raw zstd compressed
 streams.
 
 The :mod:`compression.zstd` module contains:
@@ -51,33 +51,33 @@ Reading and writing compressed files
    in which case the named file is opened, or it can be an existing file object
    to read from or write to.
 
-   The mode argument can be either 'r' for reading (default), 'w' for
-   overwriting, 'a' for appending, or 'x' for exclusive creation. These can
-   equivalently be given as 'rb', 'wb', 'ab', and 'xb' respectively. You may
-   also open in text mode with 'rt', 'wt', 'at', and 'xt' respectively.
+   The mode argument can be either ``'r'`` for reading (default), ``'w'`` for
+   overwriting, 'a' for appending, or ``'x'`` for exclusive creation. These can
+   equivalently be given as ``'rb'``, ``'wb'``, ``'ab'``, and ``'xb'`` respectively. You may
+   also open in text mode with ``'rt'``, ``'wt'``, ``'at'``, and ``'xt'`` respectively.
 
    When opening a file for reading, the *options* argument can be a dictionary
-   providing advanced decompression parameters, see
+   providing advanced decompression parameters; see
    :class:`DecompressionParameter` for detailed information about supported
    parameters. The *zstd_dict* argument is a :class:`ZstdDict` instance to be
    used during decompression. When opening a file for reading, the *level*
    argument should not be used.
 
    When opening a file for writing, the *options* argument can be a dictionary
-   providing advanced decompression parameters, see
+   providing advanced decompression parameters; see
    :class:`CompressionParameter` for detailed information about supported
    parameters. The *level* argument is the compression level to use when
    writing compressed data. Only one of *level* or *options* may be passed. The
    *zstd_dict* argument is a :class:`ZstdDict` instance to be used during
    compression.
 
-   For binary mode, this function is equivalent to the :class:`ZstdFile`
+   In binary mode, this function is equivalent to the :class:`ZstdFile`
    constructor: ``ZstdFile(file, mode, ...)``. In this case, the
-   *encoding*, *errors* and *newline* parameters must not be provided.
+   *encoding*, *errors*, and *newline* parameters must not be provided.
 
-   For text mode, a :class:`ZstdFile` object is created, and wrapped in an
+   In text mode, a :class:`ZstdFile` object is created, and wrapped in an
    :class:`io.TextIOWrapper` instance with the specified encoding, error handling
-   behavior, and line ending(s).
+   behavior, and line endings.
 
 
 .. class:: ZstdFile(file, /, mode='r', *, level=None, options=None, zstd_dict=None)
