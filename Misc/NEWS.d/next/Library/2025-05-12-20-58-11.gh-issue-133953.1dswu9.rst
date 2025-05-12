@@ -1,0 +1,1 @@
+``attach`` command is added to :mod:`pdb` to attach to a running process.
