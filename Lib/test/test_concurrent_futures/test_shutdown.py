@@ -348,7 +348,8 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         #   a task ends abnormally
         #   shutdown(wait=False) is called
         start_method = self.get_context().get_start_method()
-        if start_method != ProcessPoolSpawnMixin.ctx:
+        if (start_method == "fork" or
+           (start_method == "forkserver" and sys.platform.startswith("win"))):
                 self.skipTest(f"Skipping test for {start_method = }")
         executor = futures.ProcessPoolExecutor(
                 max_workers=max_workers,
