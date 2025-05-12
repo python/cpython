@@ -178,7 +178,10 @@ def get_syscalls(code, strace_flags, prelude="", cleanup="",
 # Moderately expensive (spawns a subprocess), so share results when possible.
 @cache
 def _can_strace():
-    res = strace_python("import sys; sys.exit(0)", [], check=False)
+    res = strace_python("import sys; sys.exit(0)",
+                        # --trace option needs strace 5.5 (gh-133741)
+                        ["--trace=%process"],
+                        check=False)
     if res.strace_returncode == 0 and res.python_returncode == 0:
         assert res.events(), "Should have parsed multiple calls"
         return True
