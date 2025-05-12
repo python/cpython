@@ -11,6 +11,7 @@ Protocols for supporting classes in pathlib.
 
 
 from abc import ABC, abstractmethod
+from collections import deque
 from glob import _PathGlobber
 from io import text_encoding
 from pathlib._os import magic_open, ensure_distinct_paths, ensure_different_files, copyfileobj
@@ -337,7 +338,7 @@ class _ReadablePath(_JoinablePath):
         Recursively copy this file or directory tree to the given destination.
         """
         ensure_distinct_paths(self, target)
-        target._copy_from(self, **kwargs)
+        deque(target._iter_copy_from(self, **kwargs), maxlen=0)
         return target.joinpath()  # Empty join to ensure fresh metadata.
 
     def copy_into(self, target_dir, **kwargs):
@@ -404,25 +405,25 @@ class _WritablePath(_JoinablePath):
         with magic_open(self, mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
-    def _copy_from(self, source, follow_symlinks=True):
+    def _iter_copy_from(self, source, follow_symlinks=True):
         """
-        Recursively copy the given path to this path.
+        Recursively copy the given path to this path. Yields a
+        (source, target) tuple after each path is copied.
         """
-        stack = [(source, self)]
-        while stack:
-            src, dst = stack.pop()
-            if not follow_symlinks and src.info.is_symlink():
-                dst.symlink_to(str(src.readlink()), src.info.is_dir())
-            elif src.info.is_dir():
-                children = src.iterdir()
-                dst.mkdir()
-                for child in children:
-                    stack.append((child, dst.joinpath(child.name)))
-            else:
-                ensure_different_files(src, dst)
-                with magic_open(src, 'rb') as source_f:
-                    with magic_open(dst, 'wb') as target_f:
-                        copyfileobj(source_f, target_f)
+        if not follow_symlinks and source.info.is_symlink():
+            self.symlink_to(str(source.readlink()), source.info.is_dir())
+        elif source.info.is_dir():
+            children = source.iterdir()
+            self.mkdir()
+            for src in children:
+                dst = self.joinpath(src.name)
+                yield from dst._iter_copy_from(src, follow_symlinks)
+        else:
+            ensure_different_files(source, self)
+            with magic_open(source, 'rb') as source_f:
+                with magic_open(self, 'wb') as target_f:
+                    copyfileobj(source_f, target_f)
+        yield source, self
 
 
 _JoinablePath.register(PurePath)

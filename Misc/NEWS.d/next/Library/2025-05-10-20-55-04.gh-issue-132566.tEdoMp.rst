@@ -1,0 +1,2 @@
+Fix issue where :meth:`pathlib.Path.move` copied all paths before deleting
+any when moving between filesystems.
