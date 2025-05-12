@@ -709,6 +709,27 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             task = None
         return task
 
+    def _get_pid_from_process(self, process):
+        """process could be a subprocess.Popen, multiprocessing.Process or a pid
+        """
+        # They are not used elsewhere so do a lazy import
+        from multiprocessing import Process
+        from subprocess import Popen
+
+        try:
+            process = self._getval(process)
+        except:
+            # Error message is already displayed
+            return None
+
+        if isinstance(process, (Process, Popen)):
+            return process.pid
+        elif isinstance(process, int):
+            return process
+
+        self.error(f"Invalid process {process}")
+        return None
+
     def interaction(self, frame, tb_or_exc):
         # Restore the previous signal handler at the Pdb prompt.
         if Pdb._previous_sigint_handler:
@@ -1967,32 +1988,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Attach to process, which can be a subprocess.Popen,
         multiprocessing.Process or a pid.
         """
-        import multiprocessing
-        import subprocess
+        pid = self._get_pid_from_process(process)
 
-        try:
-            process = self._getval(process)
-        except:
-            # Error message is already displayed
-            return
-
-        if isinstance(process, subprocess.Popen):
-            pid = process.pid
-        elif isinstance(process, multiprocessing.Process):
-            pid = process.pid
-        elif isinstance(process, int):
-            pid = process
-        else:
-            self.error("Invalid process: %s" % process)
-            return
-
-        self.message(f"Attaching to process {pid}")
-        try:
-            attach(pid)
-        except Exception as e:
-            self._error_exc()
-            return
-        self.message(f"Detached from process {pid}")
+        if pid is not None:
+            self.message(f"Attaching to process {pid}")
+            try:
+                attach(pid)
+            except Exception as e:
+                self._error_exc()
+                return
+            self.message(f"Detached from process {pid}")
 
     def do_quit(self, arg):
         """q(uit) | exit
@@ -2961,26 +2966,9 @@ class _PdbServer(Pdb):
                 pass
 
     def do_attach(self, process):
-        import multiprocessing
-        import subprocess
-
-        try:
-            process = self._getval(process)
-        except:
-            # Error message is already displayed
-            return
-
-        if isinstance(process, subprocess.Popen):
-            pid = process.pid
-        elif isinstance(process, multiprocessing.Process):
-            pid = process.pid
-        elif isinstance(process, int):
-            pid = process
-        else:
-            self.error("Invalid process: %s" % process)
-            return
-
-        self._send(attach=pid)
+        pid = self._get_pid_from_process(process)
+        if pid is not None:
+            self._send(attach=pid)
 
     def do_debug(self, arg):
         # Clear our cached list of valid commands; the recursive debugger might
