@@ -10777,7 +10777,7 @@ class TestCallableAlias(BaseTestCase):
         C = Callable[[str, ForwardRef("int")], int]
         class A:
             c: C
-        
+
         hints = get_type_hints(A)
 
         # Ensure evaluated type retains the correct class
