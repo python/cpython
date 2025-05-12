@@ -10772,6 +10772,20 @@ class TestGenericAliasHandling(BaseTestCase):
     def test_hashable(self):
         self.assertEqual(hash(typing._UnionGenericAlias), hash(Union))
 
+class TestCallableAlias(BaseTestCase):
+    def test_callable_alias_preserves_subclass(self):
+        C = Callable[[str, ForwardRef("int")], int]
+        class A:
+            c: C
+        
+        hints = get_type_hints(A)
+
+        # Ensure evaluated type retains the correct class
+        self.assertEqual(hints['c'].__class__, C.__class__)
+
+        # Instead of comparing raw ForwardRef, check if the resolution is correct
+        expected_args = tuple(int if isinstance(arg, ForwardRef) else arg for arg in C.__args__)
+        self.assertEqual(hints['c'].__args__, expected_args)
 
 def load_tests(loader, tests, pattern):
     import doctest
