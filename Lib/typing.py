@@ -1650,7 +1650,7 @@ class _UnionGenericAliasMeta(type):
         return NotImplemented
 
     def __hash__(self):
-        return super().__hash__()
+        return hash(Union)
 
 
 class _UnionGenericAlias(metaclass=_UnionGenericAliasMeta):
