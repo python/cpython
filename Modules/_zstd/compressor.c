@@ -486,11 +486,13 @@ error:
     return NULL;
 }
 
+#ifdef Py_DEBUG
 static inline int
 mt_continue_should_break(ZSTD_inBuffer *in, ZSTD_outBuffer *out)
 {
     return in->size == in->pos && out->size != out->pos;
 }
+#endif
 
 static PyObject *
 compress_mt_continue_impl(ZstdCompressor *self, Py_buffer *data)
