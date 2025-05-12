@@ -1607,6 +1607,45 @@ class PdbAttachTestCase(unittest.TestCase):
 @cpython_only
 @requires_subprocess()
 class PdbAttachCommand(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        # We need to do a quick test to see if we have the permission to remote
+        # execute the code. If not, just skip the whole test.
+        script_path = TESTFN + "script.py"
+        remote_path = TESTFN + "remote.py"
+        script = textwrap.dedent("""
+            import time
+            print("ready", flush=True)
+            while True:
+                print('hello')
+                time.sleep(0.1)
+        """)
+
+        with open(script_path, "w") as f:
+            f.write(script)
+
+        with open(remote_path, "w") as f:
+            f.write("pass\n")
+
+        with subprocess.Popen(
+            [sys.executable, script_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        ) as proc:
+            try:
+                proc.stdout.readline()
+                sys.remote_exec(proc.pid, remote_path)
+            except PermissionError:
+                print("raise")
+                # Skip the test if we don't have permission to execute remote code
+                raise unittest.SkipTest("We don't have permission to execute remote code")
+            finally:
+                os.unlink(script_path)
+                os.unlink(remote_path)
+                proc.terminate()
+
     def do_test(self, target, commands):
         with tempfile.TemporaryDirectory() as tmpdir:
             target = textwrap.dedent(target)
