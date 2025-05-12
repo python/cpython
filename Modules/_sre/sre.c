@@ -2453,10 +2453,52 @@ match_item(PyObject *op, Py_ssize_t index)
 }
 
 static PyObject*
-match_subscript(PyObject *op, PyObject* name)
+match_subscript(PyObject *op, PyObject* item)
 {
     MatchObject *self = _MatchObject_CAST(op);
-    return match_getslice(self, name, Py_None);
+
+    if (PyIndex_Check(item)) {
+        Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
+        if (i == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
+        if (i < 0) {
+            i += self->groups;
+        }
+        return match_item(op, i);
+    }
+    else if (PySlice_Check(item)) {
+        Py_ssize_t start, stop, step;
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
+            return NULL;
+        }
+        Py_ssize_t slicelength = PySlice_AdjustIndices(self->groups, &start, &stop, step);
+        PyObject* result = PyTuple_New(slicelength);
+        if (!result) {
+            return NULL;
+        }
+        for (Py_ssize_t cur = start, i = 0; i < slicelength; cur += step, i++) {
+            PyObject* group = match_getslice_by_index(self, cur, Py_None);
+            if (!group) {
+                Py_DECREF(result);
+                return NULL;
+            }
+            PyTuple_SET_ITEM(result, i, group);
+        }
+        return result;
+    }
+    else {
+        if (self->pattern->groupindex) {
+            PyObject* index = PyDict_GetItemWithError(self->pattern->groupindex, item);
+            if (index && PyLong_Check(index)) {
+                return match_item(op, PyLong_AsSsize_t(index));
+            }
+        }
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_IndexError, "no such group");
+        }
+        return NULL;
+    }
 }
 
 /*[clinic input]

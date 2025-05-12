@@ -570,10 +570,14 @@ class ReTests(unittest.TestCase):
         self.assertEqual(m[1], 'a')
         self.assertEqual(m[2], None)
         self.assertEqual(m[3], None)
+        self.assertEqual(m[-1], None)
+        self.assertEqual(m[-2], None)
+        self.assertEqual(m[-3], 'a')
+        self.assertEqual(m[-4], 'a')
         with self.assertRaisesRegex(IndexError, 'no such group'):
             m['X']
         with self.assertRaisesRegex(IndexError, 'no such group'):
-            m[-1]
+            m[-5]
         with self.assertRaisesRegex(IndexError, 'no such group'):
             m[4]
         with self.assertRaisesRegex(IndexError, 'no such group'):
@@ -605,6 +609,23 @@ class ReTests(unittest.TestCase):
         m = re.match(r"(a)(b)(c)", "abc")
         self.assertIsInstance(m, Sequence)
         self.assertEqual(len(m), 4)
+
+        self.assertEqual(m[0], "abc")
+        self.assertEqual(m[1], "a")
+        self.assertEqual(m[2], "b")
+        self.assertEqual(m[3], "c")
+        with self.assertRaises(IndexError):
+            _ = m[4]
+
+        self.assertEqual(m[-1], "c")
+        self.assertEqual(m[-2], "b")
+        self.assertEqual(m[-3], "a")
+        self.assertEqual(m[-4], "abc")
+        with self.assertRaises(IndexError):
+            _ = m[-5]
+
+        self.assertEqual(m[1:-1], ("a", "b"))
+        self.assertEqual(m[::-1], ("c", "b", "a", "abc"))
 
         it = iter(m)
         self.assertEqual(next(it), "abc")

@@ -1494,6 +1494,25 @@ You can also destructure match objects with python's ``match`` statement::
 
    .. versionadded:: 3.6
 
+   .. versionchanged:: 3.14
+
+      Negative indexing is now supported. This allows accessing match groups
+      from the end, starting from the last group defined in the pattern::
+
+         >>> m = re.match(r"(\w+) (\w+)", "Isaac Newton, physicist")
+         >>> m[-1]      # The first parenthesized subgroup starting from the end.
+         'Newton'
+         >>> m[-2]      # The second parenthesized subgroup starting from the end.
+         'Isaac'
+         >>> m[-3]      # The entire match starting from the end.
+         'Isaac Newton'
+
+      You can also use slicing to extract multiple groups as a tuple::
+
+         >>> m = re.match(r"(\w+) (\w+)", "Isaac Newton, physicist")
+         >>> m[1:]
+         ('Isaac', 'Newton')
+
 
 .. method:: Match.__len__()
 
