@@ -2491,15 +2491,13 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
 #ifdef MS_WINDOWS
     PyObject *unicode_path;
     if (PyUnicode_FSDecoder(path, &unicode_path) < 0) {
-        Py_DECREF(path);
-        return NULL;
+        goto error;
     }
     // Use UTF-16 (wide char) version of the path for permission checks
     wchar_t *debugger_script_path_w = PyUnicode_AsWideCharString(unicode_path, NULL);
     Py_DECREF(unicode_path);
     if (debugger_script_path_w == NULL) {
-        Py_DECREF(path);
-        return NULL;
+        goto error;
     }
     DWORD attr = GetFileAttributesW(debugger_script_path_w);
     if (attr == INVALID_FILE_ATTRIBUTES) {
@@ -2514,8 +2512,7 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
         else {
             PyErr_SetFromWindowsErr(err);
         }
-        Py_DECREF(path);
-        return NULL;
+        goto error;
     }
     PyMem_Free(debugger_script_path_w);
 #else // MS_WINDOWS
@@ -2530,17 +2527,19 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
             default:
                 PyErr_SetFromErrno(PyExc_OSError);
         }
-        Py_DECREF(path);
-        return NULL;
+        goto error;
     }
 #endif // MS_WINDOWS
     if (_PySysRemoteDebug_SendExec(pid, 0, debugger_script_path) < 0) {
-        Py_DECREF(path);
-        return NULL;
+        goto error;
     }
 
     Py_DECREF(path);
     Py_RETURN_NONE;
+
+error:
+    Py_DECREF(path);
+    return NULL;
 }
 
 
