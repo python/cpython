@@ -1683,9 +1683,10 @@ class PdbAttachCommand(unittest.TestCase):
 
             def worker(queue):
                 block = True
-                queue.put(42)
+                queue.put(0)
                 while block:
                     time.sleep(0.2)
+                queue.put(42)
 
             def test_function(queue):
                 data = queue.get()
@@ -1698,6 +1699,7 @@ class PdbAttachCommand(unittest.TestCase):
                 queue = multiprocessing.Queue()
                 p = multiprocessing.Process(target=worker, args=(queue,))
                 p.start()
+                queue.get()
                 test_function(queue)
                 p.join()
         """
