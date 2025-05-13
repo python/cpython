@@ -1345,7 +1345,7 @@ write_newline_indent(PyUnicodeWriter *writer,
                      Py_ssize_t indent_level, PyObject *indent_cache)
 {
     PyObject *newline_indent = PyList_GET_ITEM(indent_cache, indent_level * 2);
-    return _PyUnicodeWriter_WriteStr((_PyUnicodeWriter *)writer, newline_indent);
+    return PyUnicodeWriter_WriteStr(writer, newline_indent);
 }
 
 
@@ -1461,7 +1461,7 @@ static int
 _steal_accumulate(PyUnicodeWriter *writer, PyObject *stolen)
 {
     /* Append stolen and then decrement its reference count */
-    int rval = _PyUnicodeWriter_WriteStr((_PyUnicodeWriter *)writer, stolen);
+    int rval = PyUnicodeWriter_WriteStr(writer, stolen);
     Py_DECREF(stolen);
     return rval;
 }
@@ -1611,7 +1611,7 @@ encoder_encode_key_value(PyEncoderObject *s, PyUnicodeWriter *writer, bool *firs
         *first = false;
     }
     else {
-        if (_PyUnicodeWriter_WriteStr((_PyUnicodeWriter *)writer, item_separator) < 0) {
+        if (PyUnicodeWriter_WriteStr(writer, item_separator) < 0) {
             Py_DECREF(keystr);
             return -1;
         }
@@ -1626,7 +1626,7 @@ encoder_encode_key_value(PyEncoderObject *s, PyUnicodeWriter *writer, bool *firs
     if (_steal_accumulate(writer, encoded) < 0) {
         return -1;
     }
-    if (_PyUnicodeWriter_WriteStr((_PyUnicodeWriter *)writer, s->key_separator) < 0) {
+    if (PyUnicodeWriter_WriteStr(writer, s->key_separator) < 0) {
         return -1;
     }
     if (encoder_listencode_obj(s, writer, value, indent_level, indent_cache) < 0) {
@@ -1789,7 +1789,7 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
     for (i = 0; i < PySequence_Fast_GET_SIZE(s_fast); i++) {
         PyObject *obj = PySequence_Fast_GET_ITEM(s_fast, i);
         if (i) {
-            if (_PyUnicodeWriter_WriteStr((_PyUnicodeWriter *)writer, separator) < 0)
+            if (PyUnicodeWriter_WriteStr(writer, separator) < 0)
                 goto bail;
         }
         if (encoder_listencode_obj(s, writer, obj, indent_level, indent_cache)) {
