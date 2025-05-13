@@ -154,8 +154,12 @@ that may require changes to your code.
 Build changes
 =============
 
-* Removed bundled copy of the libmpdec, use system library if it's
-  available.
+* Remove the bundled libmpdec_ decimal library from the CPython source tree,
+  to simplify maintenence and updates. The :mod:`decimal` module will now
+  unconditionally use the system's libmpdec decimal library. Also remove the
+  now unused :option:`!--with-system-libmpdec` :program:`configure` flag.
+  
+  .. _libmpdec: https://www.bytereef.org/mpdecimal/
   (Contributed by Sergey B Kirpichev in :gh:`115119`.)
 
 
