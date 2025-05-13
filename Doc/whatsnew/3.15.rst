@@ -124,7 +124,8 @@ Removed
 platform
 --------
 
-* The deprecated :func:`!platform.java_ver` function.
+* Removed the deprecated :func:`!platform.java_ver` function.
+  (Contributed by Alexey Makridenko in :gh:`133888`.)
 
 
 sysconfig

@@ -29,9 +29,8 @@
 #
 #    History:
 #
-#    <see CVS and SVN checkin messages for history>
+#    <see checkin messages for history>
 #
-#    1.1.0 - removed deprecated java_ver()
 #    1.0.9 - added invalidate_caches() function to invalidate cached values
 #    1.0.8 - changed Windows support to read version from kernel32.dll
 #    1.0.7 - added DEV_NULL
