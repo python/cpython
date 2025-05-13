@@ -319,17 +319,15 @@ text
 
     def test_escapable_raw_text_content(self):
         contents = [
-            '<h2>This is a header</h2>',
-            'Rebelious<h1>Heading'
-            '<!-- not a comment --> &not-an-entity-ref;',
-            "<not a='start tag'>",
-            '<a href="" /> <p> <span></span>',
-            'foo = "</scr" + "ipt>";',
             'foo = "</TITLE" + ">";',
             'foo = <\n/title> ',
             '<!-- document.write("</scr" + "ipt>"); -->',
             '\n//<![CDATA[\n'
             '\n<!-- //\nvar foo = 3.14;\n// -->\n',
+            # valid character reference
+            '&#65;',
+            # ambiguous ampersand example
+            '&notaref',
             'foo = "</sty" + "le>";',
             '<!-- \u2603 -->',
             # these two should be invalid according to the HTML 5 spec,
