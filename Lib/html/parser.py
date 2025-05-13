@@ -12,6 +12,7 @@ import re
 import _markupbase
 
 from html import unescape
+from html.entities import html5 as html5_entities
 
 
 __all__ = ['HTMLParser']
@@ -23,6 +24,7 @@ incomplete = re.compile('&[a-zA-Z#]')
 
 entityref = re.compile('&([a-zA-Z][-.a-zA-Z0-9]*)[^a-zA-Z0-9]')
 charref = re.compile('&#(?:[0-9]+|[xX][0-9a-fA-F]+)[^0-9a-fA-F]')
+attr_charref = re.compile(r'&(#[0-9]+|#[xX][0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*)[;=]?')
 
 starttagopen = re.compile('<[a-zA-Z]')
 piclose = re.compile('>')
@@ -57,6 +59,22 @@ endendtag = re.compile('>')
 # </ and the tag name, so maybe this should be fixed
 endtagfind = re.compile(r'</\s*([a-zA-Z][-.a-zA-Z0-9:_]*)\s*>')
 
+# Character reference processing logic specific to attribute values
+# See: https://html.spec.whatwg.org/multipage/parsing.html#named-character-reference-state
+def _replace_attr_charref(match):
+    ref = match.group(0)
+    # Numeric / hex char refs must always be unescaped
+    if ref.startswith('&#'):
+        return unescape(ref)
+    # Named character / entity references must only be unescaped
+    # if they are an exact match, and they are not followed by an equals sign
+    if not ref.endswith('=') and ref[1:] in html5_entities:
+        return unescape(ref)
+    # Otherwise do not unescape
+    return ref
+
+def _unescape_attrvalue(s):
+    return attr_charref.sub(_replace_attr_charref, s)
 
 
 class HTMLParser(_markupbase.ParserBase):
@@ -242,7 +260,7 @@ class HTMLParser(_markupbase.ParserBase):
             else:
                 assert 0, "interesting.search() lied"
         # end while
-        if end and i < n and not self.cdata_elem:
+        if end and i < n:
             if self.convert_charrefs and not self.cdata_elem:
                 self.handle_data(unescape(rawdata[i:n]))
             else:
@@ -260,7 +278,7 @@ class HTMLParser(_markupbase.ParserBase):
         if rawdata[i:i+4] == '<!--':
             # this case is actually already handled in goahead()
             return self.parse_comment(i)
-        elif rawdata[i:i+3] == '<![':
+        elif rawdata[i:i+9] == '<![CDATA[':
             return self.parse_marked_section(i)
         elif rawdata[i:i+9].lower() == '<!doctype':
             # find the closing >
@@ -277,7 +295,7 @@ class HTMLParser(_markupbase.ParserBase):
     def parse_bogus_comment(self, i, report=1):
         rawdata = self.rawdata
         assert rawdata[i:i+2] in ('<!', '</'), ('unexpected call to '
-                                                'parse_comment()')
+                                                'parse_bogus_comment()')
         pos = rawdata.find('>', i+2)
         if pos == -1:
             return -1
@@ -323,7 +341,7 @@ class HTMLParser(_markupbase.ParserBase):
                  attrvalue[:1] == '"' == attrvalue[-1:]:
                 attrvalue = attrvalue[1:-1]
             if attrvalue:
-                attrvalue = unescape(attrvalue)
+                attrvalue = _unescape_attrvalue(attrvalue)
             attrs.append((attrname.lower(), attrvalue))
             k = m.end()
 

@@ -157,9 +157,13 @@ def run_multiline_interactive_console(
             r.pos = len(r.get_unicode())
             r.dirty = True
             r.refresh()
-            r.in_bracketed_paste = False
             console.write("\nKeyboardInterrupt\n")
             console.resetbuffer()
         except MemoryError:
             console.write("\nMemoryError\n")
+            console.resetbuffer()
+        except SystemExit:
+            raise
+        except:
+            console.showtraceback()
             console.resetbuffer()

@@ -274,7 +274,7 @@ minimal value for the corresponding signed integer type.
 ``k`` (:class:`int`) [unsigned long]
    Convert a Python integer to a C :c:expr:`unsigned long`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Use :meth:`~object.__index__` if available.
 
 ``L`` (:class:`int`) [long long]
@@ -283,7 +283,7 @@ minimal value for the corresponding signed integer type.
 ``K`` (:class:`int`) [unsigned long long]
    Convert a Python integer to a C :c:expr:`unsigned long long`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Use :meth:`~object.__index__` if available.
 
 ``n`` (:class:`int`) [:c:type:`Py_ssize_t`]
@@ -387,10 +387,10 @@ Other objects
    The *converter* for the ``O&`` format unit in *items* must not store
    a borrowed buffer or a borrowed reference.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       :class:`str` and :class:`bytearray` objects no longer accepted as a sequence.
 
-   .. deprecated:: next
+   .. deprecated:: 3.14
       Non-tuple sequences are deprecated if *items* contains format units
       which store a borrowed buffer or a borrowed reference.
 
@@ -403,7 +403,7 @@ Other objects
    If the argument is not ``None``, it is parsed according to the specified
    format unit.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 A few other characters have a meaning in a format string.  These may not occur
 inside nested parentheses.  They are:

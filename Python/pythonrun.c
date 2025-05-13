@@ -1498,7 +1498,7 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
     }
     if (flags && (flags->cf_flags & PyCF_ONLY_AST)) {
         int syntax_check_only = ((flags->cf_flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST); /* unoptiomized AST */
-        if (_PyCompile_AstOptimize(mod, filename, flags, optimize, arena, syntax_check_only) < 0) {
+        if (_PyCompile_AstPreprocess(mod, filename, flags, optimize, arena, syntax_check_only) < 0) {
             _PyArena_Free(arena);
             return NULL;
         }
@@ -1522,6 +1522,26 @@ Py_CompileStringExFlags(const char *str, const char *filename_str, int start,
     co = Py_CompileStringObject(str, filename, start, flags, optimize);
     Py_DECREF(filename);
     return co;
+}
+
+int
+_PyObject_SupportedAsScript(PyObject *cmd)
+{
+    if (PyUnicode_Check(cmd)) {
+        return 1;
+    }
+    else if (PyBytes_Check(cmd)) {
+        return 1;
+    }
+    else if (PyByteArray_Check(cmd)) {
+        return 1;
+    }
+    else if (PyObject_CheckBuffer(cmd)) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
 }
 
 const char *

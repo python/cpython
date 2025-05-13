@@ -24,7 +24,7 @@
 
 #define GUARDSZ 8
 // NUL followed by random bytes.
-static const char guard[GUARDSZ] = "\x00\xfa\x69\xc4\x67\xa3\x6c\x58";
+static const char guard[GUARDSZ] _Py_NONSTRING = "\x00\xfa\x69\xc4\x67\xa3\x6c\x58";
 
 /*[clinic input]
 module fcntl
