@@ -1,9 +1,10 @@
+import signal
 import sys
 import textwrap
 from test import list_tests, support
 from test.support import cpython_only
 from test.support.import_helper import import_module
-from test.support.script_helper import assert_python_failure
+from test.support.script_helper import assert_python_failure, assert_python_ok
 import pickle
 import unittest
 
@@ -116,6 +117,19 @@ class ListTest(list_tests.CommonTest):
             lst * size
         with self.assertRaises((MemoryError, OverflowError)):
             lst *= size
+
+    def test_repr_mutate(self):
+        class Obj:
+            @staticmethod
+            def __repr__():
+                try:
+                    mylist.pop()
+                except IndexError:
+                    pass
+                return 'obj'
+
+        mylist = [Obj() for _ in range(5)]
+        self.assertEqual(repr(mylist), '[obj, obj, obj]')
 
     def test_repr_large(self):
         # Check the repr of large list objects
@@ -324,8 +338,32 @@ class ListTest(list_tests.CommonTest):
         _testcapi.set_nomemory(0)
         l = [None]
         """)
-        _, _, err = assert_python_failure("-c", code)
-        self.assertIn("MemoryError", err.decode("utf-8"))
+        rc, _, _ = assert_python_failure("-c", code)
+        if support.MS_WINDOWS:
+            # STATUS_ACCESS_VIOLATION
+            self.assertNotEqual(rc, 0xC0000005)
+        else:
+            self.assertNotEqual(rc, -int(signal.SIGSEGV))
+
+    def test_deopt_from_append_list(self):
+        # gh-132011: it used to crash, because
+        # of `CALL_LIST_APPEND` specialization failure.
+        code = textwrap.dedent("""
+            l = []
+            def lappend(l, x, y):
+                l.append((x, y))
+            for x in range(3):
+                lappend(l, None, None)
+            try:
+                lappend(list, None, None)
+            except TypeError:
+                pass
+            else:
+                raise AssertionError
+        """)
+
+        rc, _, _ = assert_python_ok("-c", code)
+        self.assertEqual(rc, 0)
 
 if __name__ == "__main__":
     unittest.main()

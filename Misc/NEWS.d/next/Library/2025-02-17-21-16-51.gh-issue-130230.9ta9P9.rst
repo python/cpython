@@ -1,1 +1,0 @@
-Fix crash in :func:`pow` with only :class:`~decimal.Decimal` third argument.

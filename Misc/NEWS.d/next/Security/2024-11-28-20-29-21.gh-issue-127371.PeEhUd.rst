@@ -1,3 +1,0 @@
-Avoid unbounded buffering for :meth:`!tempfile.SpooledTemporaryFile.writelines`.
-Previously, disk spillover was only checked after the lines iterator had been
-exhausted. This is now done after each line is written.

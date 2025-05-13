@@ -38,8 +38,8 @@ def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     # line option '-i' and the process name set to '<stdin>'.
     # The directory of argv[0] must match the directory of the Python
     # executable for the Popen() call to python to succeed as the directory
-    # path may be used by Py_GetPath() to build the default module search
-    # path.
+    # path may be used by PyConfig_Get("module_search_paths") to build the
+    # default module search path.
     stdin_fname = os.path.join(os.path.dirname(sys.executable), "<stdin>")
     cmd_line = [stdin_fname, '-I', '-i']
     cmd_line.extend(args)
@@ -197,7 +197,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
         expected_lines = [
             '    def f(x, x): ...',
             '             ^',
-            "SyntaxError: duplicate argument 'x' in function definition"
+            "SyntaxError: duplicate parameter 'x' in function definition"
         ]
         self.assertEqual(output.splitlines()[4:-1], expected_lines)
 
@@ -213,7 +213,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
         p.stdin.write(user_input)
         user_input2 = dedent("""
         import linecache
-        print(linecache.cache['<stdin>-1'])
+        print(linecache._interactive_cache[linecache._make_key(foo.__code__)])
         """)
         p.stdin.write(user_input2)
         output = kill_python(p)
@@ -296,12 +296,12 @@ class TestInteractiveModeSyntaxErrors(unittest.TestCase):
 
 class TestAsyncioREPL(unittest.TestCase):
     def test_multiple_statements_fail_early(self):
-        user_input = "1 / 0; print('afterwards')"
+        user_input = "1 / 0; print(f'afterwards: {1+1}')"
         p = spawn_repl("-m", "asyncio")
         p.stdin.write(user_input)
         output = kill_python(p)
         self.assertIn("ZeroDivisionError", output)
-        self.assertNotIn("afterwards", output)
+        self.assertNotIn("afterwards: 2", output)
 
     def test_toplevel_contextvars_sync(self):
         user_input = dedent("""\

@@ -670,6 +670,25 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
       .. versionadded:: 3.3
 
+   .. method:: interrupt()
+
+      Terminate the process. Works on POSIX using the :py:const:`~signal.SIGINT` signal.
+      Behavior on Windows is undefined.
+
+      By default, this terminates the child process by raising :exc:`KeyboardInterrupt`.
+      This behavior can be altered by setting the respective signal handler in the child
+      process :func:`signal.signal` for :py:const:`~signal.SIGINT`.
+
+      Note: if the child process catches and discards :exc:`KeyboardInterrupt`, the
+      process will not be terminated.
+
+      Note: the default behavior will also set :attr:`exitcode` to ``1`` as if an
+      uncaught exception was raised in the child process. To have a different
+      :attr:`exitcode` you may simply catch :exc:`KeyboardInterrupt` and call
+      ``exit(your_code)``.
+
+      .. versionadded:: 3.14
+
    .. method:: terminate()
 
       Terminate the process.  On POSIX this is done using the :py:const:`~signal.SIGTERM` signal;
@@ -1421,6 +1440,13 @@ object -- see :ref:`multiprocessing-managers`.
       when invoked on an unlocked lock, a :exc:`ValueError` is raised.
 
 
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: 3.14
+
+
 .. class:: RLock()
 
    A recursive lock object: a close analog of :class:`threading.RLock`.  A
@@ -1479,6 +1505,13 @@ object -- see :ref:`multiprocessing-managers`.
       or thread other than the owner or if the lock is in an unlocked (unowned)
       state.  Note that the type of exception raised in this situation
       differs from the implemented behavior in :meth:`threading.RLock.release`.
+
+
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: 3.14
 
 
 .. class:: Semaphore([value])
@@ -1953,7 +1986,7 @@ their parent process exits.  The manager classes are defined in the
 
       Create a shared :class:`set` object and return a proxy for it.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
          :class:`set` support was added.
 
    .. versionchanged:: 3.6

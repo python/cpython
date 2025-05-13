@@ -1,2 +1,0 @@
-Fix a race condition in the :term:`free threading` build when ``repr(set)``
-is called concurrently with ``set.clear()``.

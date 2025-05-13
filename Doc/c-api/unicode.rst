@@ -33,8 +33,14 @@ Python:
 
 .. c:var:: PyTypeObject PyUnicode_Type
 
-   This instance of :c:type:`PyTypeObject` represents the Python Unicode type.  It
-   is exposed to Python code as :py:class:`str`.
+   This instance of :c:type:`PyTypeObject` represents the Python Unicode type.
+   It is exposed to Python code as :py:class:`str`.
+
+
+.. c:var:: PyTypeObject PyUnicodeIter_Type
+
+   This instance of :c:type:`PyTypeObject` represents the Python Unicode
+   iterator type. It is used to iterate over Unicode string objects.
 
 
 .. c:type:: Py_UCS4
@@ -596,6 +602,14 @@ APIs:
    Objects other than Unicode or its subtypes will cause a :exc:`TypeError`.
 
 
+.. c:function:: PyObject* PyUnicode_FromOrdinal(int ordinal)
+
+   Create a Unicode Object from the given Unicode code point *ordinal*.
+
+   The ordinal must be in ``range(0x110000)``. A :exc:`ValueError` is
+   raised in the case it is not.
+
+
 .. c:function:: PyObject* PyUnicode_FromEncodedObject(PyObject *obj, \
                                const char *encoding, const char *errors)
 
@@ -612,6 +626,34 @@ APIs:
 
    The API returns ``NULL`` if there was an error.  The caller is responsible for
    decref'ing the returned objects.
+
+
+.. c:function:: void PyUnicode_Append(PyObject **p_left, PyObject *right)
+
+   Append the string *right* to the end of *p_left*.
+   *p_left* must point to a :term:`strong reference` to a Unicode object;
+   :c:func:`!PyUnicode_Append` releases ("steals") this reference.
+
+   On error, set *\*p_left* to ``NULL`` and set an exception.
+
+   On success, set *\*p_left* to a new strong reference to the result.
+
+
+.. c:function:: void PyUnicode_AppendAndDel(PyObject **p_left, PyObject *right)
+
+   The function is similar to :c:func:`PyUnicode_Append`, with the only
+   difference being that it decrements the reference count of *right* by one.
+
+
+.. c:function:: PyObject* PyUnicode_BuildEncodingMap(PyObject* string)
+
+   Return a mapping suitable for decoding a custom single-byte encoding.
+   Given a Unicode string *string* of up to 256 characters representing an encoding
+   table, returns either a compact internal mapping object or a dictionary
+   mapping character ordinals to byte values. Raises a :exc:`TypeError` and
+   return ``NULL`` on invalid input.
+
+   .. versionadded:: 3.2
 
 
 .. c:function:: const char* PyUnicode_GetDefaultEncoding(void)
@@ -647,6 +689,21 @@ APIs:
    See :c:func:`PyUnicode_New` for details.
 
    .. versionadded:: 3.3
+
+
+.. c:function:: int PyUnicode_Resize(PyObject **unicode, Py_ssize_t length);
+
+   Resize a Unicode object *\*unicode* to the new *length* in code points.
+
+   Try to resize the string in place (which is usually faster than allocating
+   a new string and copying characters), or create a new string.
+
+   *\*unicode* is modified to point to the new (resized) object and ``0`` is
+   returned on success. Otherwise, ``-1`` is returned and an exception is set,
+   and *\*unicode* is left untouched.
+
+   The function doesn't check string content, the result may not be a
+   string in canonical representation.
 
 
 .. c:function:: Py_ssize_t PyUnicode_Fill(PyObject *unicode, Py_ssize_t start, \
@@ -985,6 +1042,17 @@ generic ones are documented for simplicity.
 
 Generic Codecs
 """"""""""""""
+
+The following macro is provided:
+
+
+.. c:macro:: Py_UNICODE_REPLACEMENT_CHARACTER
+
+   The Unicode code point ``U+FFFD`` (replacement character).
+
+   This Unicode character is used as the replacement character during
+   decoding if the *errors* argument is set to "replace".
+
 
 These are the generic codec APIs:
 
@@ -1851,7 +1919,7 @@ The following API is deprecated.
 
    .. versionadded:: 3.3
 
-   .. deprecated:: next
+   .. deprecated:: 3.14
       This API does nothing since Python 3.12.
       Previously, this could be called to check if
       :c:func:`PyUnicode_READY` is necessary.
