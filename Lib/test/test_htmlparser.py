@@ -397,9 +397,15 @@ text
                         ('starttag', 'script', []), ('data', text),
                         ('endtag', 'script'), ('data', '"'),
                         ('starttag', 'style', []), ('data', text),
-                        ('endtag', 'style'), ('data', '"')]
+                        ('endtag', 'style'), ('data', '"'),
+                        ('starttag', 'title', []), ('data', text),
+                        ('endtag', 'title'), ('data', '"'),
+                        ('starttag', 'textarea', []), ('data', text),
+                        ('endtag', 'textarea'), ('data', '"')]
             self._run_check('{1}<script>{0}</script>{1}'
-                            '<style>{0}</style>{1}'.format(text, charref),
+                            '<style>{0}</style>{1}'
+                            '<title>{0}</title>{1}'
+                            '<textarea>{0}</textarea>{1}'.format(text, charref),
                             expected, collector=collector())
         # check truncated charrefs at the end of the file
         html = '&quo &# &#x'
