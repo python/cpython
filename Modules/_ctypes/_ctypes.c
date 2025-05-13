@@ -478,6 +478,7 @@ CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
         Py_VISIT(info->converters);
         Py_VISIT(info->restype);
         Py_VISIT(info->checker);
+        Py_VISIT(info->pointer_type);
         Py_VISIT(info->module);
     }
     Py_VISIT(Py_TYPE(self));
@@ -493,7 +494,22 @@ ctype_clear_stginfo(StgInfo *info)
     Py_CLEAR(info->converters);
     Py_CLEAR(info->restype);
     Py_CLEAR(info->checker);
-    Py_CLEAR(info->module);
+    Py_CLEAR(info->pointer_type);
+    Py_CLEAR(info->module);  // decref the module last
+}
+
+void
+ctype_free_stginfo_members(StgInfo *info)
+{
+    assert(info);
+
+    PyMem_Free(info->ffi_type_pointer.elements);
+    info->ffi_type_pointer.elements = NULL;
+    PyMem_Free(info->format);
+    info->format = NULL;
+    PyMem_Free(info->shape);
+    info->shape = NULL;
+    ctype_clear_stginfo(info);
 }
 
 static int
@@ -519,13 +535,7 @@ CType_Type_dealloc(PyObject *self)
                                "deallocating ctypes %R", self);
     }
     if (info) {
-        PyMem_Free(info->ffi_type_pointer.elements);
-        info->ffi_type_pointer.elements = NULL;
-        PyMem_Free(info->format);
-        info->format = NULL;
-        PyMem_Free(info->shape);
-        info->shape = NULL;
-        ctype_clear_stginfo(info);
+        ctype_free_stginfo_members(info);
     }
 
     PyTypeObject *tp = Py_TYPE(self);
@@ -566,6 +576,64 @@ _ctypes_CType_Type___sizeof___impl(PyObject *self, PyTypeObject *cls)
     return PyLong_FromSsize_t(size);
 }
 
+/*[clinic input]
+@getter
+_ctypes.CType_Type.__pointer_type__
+
+[clinic start generated code]*/
+
+static PyObject *
+_ctypes_CType_Type___pointer_type___get_impl(PyObject *self)
+/*[clinic end generated code: output=718c9ff10b2b0012 input=ad12dc835943ceb8]*/
+{
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(self));
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, self, &info) < 0) {
+        return NULL;
+    }
+    if (!info) {
+        PyErr_Format(PyExc_TypeError, "%R must have storage info", self);
+        return NULL;
+    }
+    PyObject *pointer_type;
+    STGINFO_LOCK(info);
+    pointer_type = Py_XNewRef(info->pointer_type);
+    STGINFO_UNLOCK();
+    if (pointer_type) {
+        return pointer_type;
+    }
+
+    PyErr_Format(PyExc_AttributeError,
+                 "%R has no attribute '__pointer_type__'",
+                 self);
+    return NULL;
+}
+
+/*[clinic input]
+@setter
+_ctypes.CType_Type.__pointer_type__
+
+[clinic start generated code]*/
+
+static int
+_ctypes_CType_Type___pointer_type___set_impl(PyObject *self, PyObject *value)
+/*[clinic end generated code: output=6259be8ea21693fa input=a05055fc7f4714b6]*/
+{
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(self));
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, self, &info) < 0) {
+        return -1;
+    }
+    if (!info) {
+        PyErr_Format(PyExc_TypeError, "%R must have storage info", self);
+        return -1;
+    }
+    STGINFO_LOCK(info);
+    Py_XSETREF(info->pointer_type, Py_XNewRef(value));
+    STGINFO_UNLOCK();
+    return 0;
+}
+
 static PyObject *
 CType_Type_repeat(PyObject *self, Py_ssize_t length);
 
@@ -575,12 +643,18 @@ static PyMethodDef ctype_methods[] = {
     {0},
 };
 
+static PyGetSetDef ctype_getsets[] = {
+    _CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF
+    { NULL, NULL }
+};
+
 static PyType_Slot ctype_type_slots[] = {
     {Py_tp_token, Py_TP_USE_SPEC},
     {Py_tp_traverse, CType_Type_traverse},
     {Py_tp_clear, CType_Type_clear},
     {Py_tp_dealloc, CType_Type_dealloc},
     {Py_tp_methods, ctype_methods},
+    {Py_tp_getset, ctype_getsets},
     // Sequence protocol.
     {Py_sq_repeat, CType_Type_repeat},
     {0, NULL},
@@ -1181,7 +1255,7 @@ class _ctypes.PyCPointerType "PyObject *" "clinic_state()->PyCPointerType_Type"
 
 
 static int
-PyCPointerType_SetProto(ctypes_state *st, StgInfo *stginfo, PyObject *proto)
+PyCPointerType_SetProto(ctypes_state *st, PyObject *self, StgInfo *stginfo, PyObject *proto)
 {
     if (!proto || !PyType_Check(proto)) {
         PyErr_SetString(PyExc_TypeError,
@@ -1193,12 +1267,15 @@ PyCPointerType_SetProto(ctypes_state *st, StgInfo *stginfo, PyObject *proto)
         return -1;
     }
     if (!info) {
-        PyErr_SetString(PyExc_TypeError,
-                        "_type_ must have storage info");
+        PyErr_Format(PyExc_TypeError, "%R must have storage info", proto);
         return -1;
     }
-    Py_INCREF(proto);
-    Py_XSETREF(stginfo->proto, proto);
+    Py_XSETREF(stginfo->proto, Py_NewRef(proto));
+    STGINFO_LOCK(info);
+    if (info->pointer_type == NULL) {
+        Py_XSETREF(info->pointer_type, Py_NewRef(self));
+    }
+    STGINFO_UNLOCK();
     return 0;
 }
 
@@ -1251,7 +1328,7 @@ PyCPointerType_init(PyObject *self, PyObject *args, PyObject *kwds)
     }
     if (proto) {
         const char *current_format;
-        if (PyCPointerType_SetProto(st, stginfo, proto) < 0) {
+        if (PyCPointerType_SetProto(st, self, stginfo, proto) < 0) {
             Py_DECREF(proto);
             return -1;
         }
@@ -1298,34 +1375,23 @@ PyCPointerType_set_type_impl(PyTypeObject *self, PyTypeObject *cls,
                              PyObject *type)
 /*[clinic end generated code: output=51459d8f429a70ac input=67e1e8df921f123e]*/
 {
-    PyObject *attrdict = PyType_GetDict(self);
-    if (!attrdict) {
-        return NULL;
-    }
     ctypes_state *st = get_module_state_by_class(cls);
     StgInfo *info;
     if (PyStgInfo_FromType(st, (PyObject *)self, &info) < 0) {
-        Py_DECREF(attrdict);
         return NULL;
     }
     if (!info) {
         PyErr_SetString(PyExc_TypeError,
                         "abstract class");
-        Py_DECREF(attrdict);
         return NULL;
     }
 
-    if (PyCPointerType_SetProto(st, info, type) < 0) {
-        Py_DECREF(attrdict);
+    if (PyCPointerType_SetProto(st, (PyObject *)self, info, type) < 0) {
         return NULL;
     }
-
-    if (-1 == PyDict_SetItem(attrdict, &_Py_ID(_type_), type)) {
-        Py_DECREF(attrdict);
+    if (PyObject_SetAttr((PyObject *)self, &_Py_ID(_type_), type) < 0) {
         return NULL;
     }
-
-    Py_DECREF(attrdict);
     Py_RETURN_NONE;
 }
 
@@ -6216,7 +6282,6 @@ _ctypes_add_objects(PyObject *mod)
     } while (0)
 
     ctypes_state *st = get_module_state(mod);
-    MOD_ADD("_pointer_type_cache", Py_NewRef(st->_ctypes_ptrtype_cache));
 
 #ifdef MS_WIN32
     MOD_ADD("COMError", Py_NewRef(st->PyComError_Type));
@@ -6279,11 +6344,6 @@ _ctypes_mod_exec(PyObject *mod)
         return -1;
     }
 
-    st->_ctypes_ptrtype_cache = PyDict_New();
-    if (st->_ctypes_ptrtype_cache == NULL) {
-        return -1;
-    }
-
     st->PyExc_ArgError = PyErr_NewException("ctypes.ArgumentError", NULL, NULL);
     if (!st->PyExc_ArgError) {
         return -1;
@@ -6322,7 +6382,6 @@ _ctypes_mod_exec(PyObject *mod)
 static int
 module_traverse(PyObject *module, visitproc visit, void *arg) {
     ctypes_state *st = get_module_state(module);
-    Py_VISIT(st->_ctypes_ptrtype_cache);
     Py_VISIT(st->_unpickle);
     Py_VISIT(st->array_cache);
     Py_VISIT(st->error_object_name);
@@ -6357,7 +6416,6 @@ module_traverse(PyObject *module, visitproc visit, void *arg) {
 static int
 module_clear(PyObject *module) {
     ctypes_state *st = get_module_state(module);
-    Py_CLEAR(st->_ctypes_ptrtype_cache);
     Py_CLEAR(st->_unpickle);
     Py_CLEAR(st->array_cache);
     Py_CLEAR(st->error_object_name);

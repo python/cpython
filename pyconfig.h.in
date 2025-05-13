@@ -1630,11 +1630,17 @@
 /* Define to 1 if you have the 'writev' function. */
 #undef HAVE_WRITEV
 
+/* Define to 1 if you have the <zdict.h> header file. */
+#undef HAVE_ZDICT_H
+
 /* Define if the zlib library has inflateCopy */
 #undef HAVE_ZLIB_COPY
 
 /* Define to 1 if you have the <zlib.h> header file. */
 #undef HAVE_ZLIB_H
+
+/* Define to 1 if you have the <zstd.h> header file. */
+#undef HAVE_ZSTD_H
 
 /* Define to 1 if you have the '_getpty' function. */
 #undef HAVE__GETPTY
@@ -1723,9 +1729,6 @@
 /* Define hash algorithm for str, bytes and memoryview. SipHash24: 1, FNV: 2,
    SipHash13: 3, externally defined: 0 */
 #undef Py_HASH_ALGORITHM
-
-/* Defined if _Complex C type is available. */
-#undef Py_HAVE_C_COMPLEX
 
 /* Define if year with century should be normalized for strftime. */
 #undef Py_NORMALIZE_CENTURY

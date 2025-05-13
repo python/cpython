@@ -549,6 +549,21 @@ _PyPegen_new_identifier(Parser *p, const char *n)
         }
         id = id2;
     }
+    static const char * const forbidden[] = {
+        "None",
+        "True",
+        "False",
+        NULL
+    };
+    for (int i = 0; forbidden[i] != NULL; i++) {
+        if (_PyUnicode_EqualToASCIIString(id, forbidden[i])) {
+            PyErr_Format(PyExc_ValueError,
+                         "identifier field can't represent '%s' constant",
+                         forbidden[i]);
+            Py_DECREF(id);
+            goto error;
+        }
+    }
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyUnicode_InternImmortal(interp, &id);
     if (_PyArena_AddPyObject(p->arena, id) < 0)

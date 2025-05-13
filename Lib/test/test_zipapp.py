@@ -113,6 +113,19 @@ class ZipAppTest(unittest.TestCase):
         with self.assertRaises(zipapp.ZipAppError):
             zipapp.create_archive(source, target)
 
+    def test_target_overwrites_filtered_source_file(self):
+        # If there's a filter that excludes the target,
+        # the overwrite check shouldn't trigger.
+        source = self.tmpdir
+        (source / '__main__.py').touch()
+        target = source / 'target.pyz'
+        target.touch()
+        pyz_filter = lambda p: not p.match('*.pyz')
+        zipapp.create_archive(source, target, filter=pyz_filter)
+        with zipfile.ZipFile(target, 'r') as z:
+            self.assertEqual(len(z.namelist()), 1)
+            self.assertIn('__main__.py', z.namelist())
+
     def test_create_archive_filter_exclude_dir(self):
         # Test packing a directory and using a filter to exclude a
         # subdirectory (ensures that the path supplied to include

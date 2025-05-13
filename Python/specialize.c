@@ -440,7 +440,9 @@ _Py_PrintSpecializationStats(int to_file)
 #define SPECIALIZATION_FAIL(opcode, kind) \
 do { \
     if (_Py_stats) { \
-        _Py_stats->opcode_stats[opcode].specialization.failure_kinds[kind]++; \
+        int _kind = (kind); \
+        assert(_kind < SPECIALIZATION_FAILURE_KINDS); \
+        _Py_stats->opcode_stats[opcode].specialization.failure_kinds[_kind]++; \
     } \
 } while (0)
 
@@ -2145,7 +2147,7 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
             }
             /* len(o) */
             PyInterpreterState *interp = _PyInterpreterState_GET();
-            if (callable == interp->callable_cache.len) {
+            if (callable == interp->callable_cache.len && instr->op.arg == 1) {
                 specialize(instr, CALL_LEN);
                 return 0;
             }
@@ -2156,7 +2158,7 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
             if (nargs == 2) {
                 /* isinstance(o1, o2) */
                 PyInterpreterState *interp = _PyInterpreterState_GET();
-                if (callable == interp->callable_cache.isinstance) {
+                if (callable == interp->callable_cache.isinstance && instr->op.arg == 2) {
                     specialize(instr, CALL_ISINSTANCE);
                     return 0;
                 }
@@ -2653,6 +2655,10 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
             }
             if (PyDict_CheckExact(lhs)) {
                 specialize(instr, BINARY_OP_SUBSCR_DICT);
+                return;
+            }
+            if (PyList_CheckExact(lhs) && PySlice_Check(rhs)) {
+                specialize(instr, BINARY_OP_SUBSCR_LIST_SLICE);
                 return;
             }
             unsigned int tp_version;
