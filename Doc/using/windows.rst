@@ -77,15 +77,10 @@ To install the file downloaded from python.org, either double-click and select
 "Install", or run ``Add-AppxPackage <path to MSIX>`` in Windows Powershell.
 
 After installation, the ``python``, ``py``, and ``pymanager`` commands should be
-available. If they are not, click Start and search for "Manage app execution
-aliases". This settings page will let you enable the relevant commands. They
-will be labelled "Python (default)", "Python (default windowed)", and "Python
-install manager".
-
-If you have existing installations of Python, or you have modified your
-:envvar:`PATH` variable, you may need to remove them or undo the modifications
-in order for the commands to work. Old versions of Python can be reinstalled
-using the Python install manager.
+available. If you have existing installations of Python, or you have modified
+your :envvar:`PATH` variable, you may need to remove them or undo the
+modifications. See :ref:`pymanager-troubleshoot` for more help with fixing
+non-working commands.
 
 When you first install a runtime, you will likely be prompted to add a directory
 to your :envvar:`PATH`. This is optional, if you prefer to use the ``py``
@@ -149,6 +144,10 @@ want to be passed to the runtime (such as script files or the module to launch):
    ...
    $> py -m this
    ...
+
+The default runtime can be overridden with the :envvar:`PYTHON_MANAGER_DEFAULT`
+environment variable, or a configuration file. See :ref:`pymanager-config` for
+information about configuration settings.
 
 To launch a specific runtime, the ``py`` command accepts a ``-V:<TAG>`` option.
 This option must be specified before any others. The tag is part or all of the
@@ -471,6 +470,10 @@ an installed runtime. That is, any command generated in the global aliases
 directory (which you may have added to your :envvar:`PATH` environment variable)
 can be used in a shebang, even if it is not on your :envvar:`PATH`. This allows
 the use of shebangs like ``/usr/bin/python3.12`` to select a particular runtime.
+
+If no runtimes are installed, or if automatic installation is enabled, the
+requested runtime will be installed if necessary. See :ref:`pymanager-config`
+for information about configuration settings.
 
 The ``/usr/bin/env`` form of shebang line will also search the :envvar:`PATH`
 environment variable for unrecognized commands. This corresponds to the
