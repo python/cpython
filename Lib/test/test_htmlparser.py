@@ -345,28 +345,6 @@ text
                                     ("data", content),
                                     ("endtag", element_lower)])
 
-    def test_escapable_raw_text_with_closing_tags(self):
-        # see issue #13358
-        # make sure that HTMLParser calls handle_data only once for each CDATA.
-        # The normal event collector normalizes  the events in get_events,
-        # so we override it to return the original list of events.
-        class Collector(EventCollector):
-            def get_events(self):
-                return self.events
-
-        content = """<!-- not a comment --> &not-an-entity-ref;
-                  <a href="" /> </p><p> <span></span></style>
-                  '</script' + '>'"""
-        for element in [' script', 'script ', ' script ',
-                        '\nscript', 'script\n', '\nscript\n']:
-            element_lower = element.lower().strip()
-            s = '<script>{content}</{element}>'.format(element=element,
-                                                       content=content)
-            self._run_check(s, [("starttag", element_lower, []),
-                                ("data", content),
-                                ("endtag", element_lower)],
-                            collector=Collector(convert_charrefs=False))
-
     def test_comments(self):
         html = ("<!-- I'm a valid comment -->"
                 '<!--me too!-->'
