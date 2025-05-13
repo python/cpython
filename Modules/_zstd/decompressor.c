@@ -64,8 +64,8 @@ _get_DDict(ZstdDict *self)
     Py_BEGIN_CRITICAL_SECTION(self);
     if (self->d_dict == NULL) {
         /* Create ZSTD_DDict instance from dictionary content */
-        char *dict_buffer = PyBytes_AS_STRING(self->dict_content);
-        Py_ssize_t dict_len = Py_SIZE(self->dict_content);
+        char *dict_buffer = self->dict_buffer;
+        Py_ssize_t dict_len = self->dict_len;
         Py_BEGIN_ALLOW_THREADS
         self->d_dict = ZSTD_createDDict(dict_buffer,
                                         dict_len);
@@ -213,19 +213,15 @@ load:
     else if (type == DICT_TYPE_UNDIGESTED) {
         /* Load a dictionary */
         Py_BEGIN_CRITICAL_SECTION2(self, zd);
-        zstd_ret = ZSTD_DCtx_loadDictionary(
-                            self->dctx,
-                            PyBytes_AS_STRING(zd->dict_content),
-                            Py_SIZE(zd->dict_content));
+        zstd_ret = ZSTD_DCtx_loadDictionary(self->dctx, zd->dict_buffer,
+                                            zd->dict_len);
         Py_END_CRITICAL_SECTION2();
     }
     else if (type == DICT_TYPE_PREFIX) {
         /* Load a prefix */
         Py_BEGIN_CRITICAL_SECTION2(self, zd);
-        zstd_ret = ZSTD_DCtx_refPrefix(
-                            self->dctx,
-                            PyBytes_AS_STRING(zd->dict_content),
-                            Py_SIZE(zd->dict_content));
+        zstd_ret = ZSTD_DCtx_refPrefix(self->dctx, zd->dict_buffer,
+                                       zd->dict_len);
         Py_END_CRITICAL_SECTION2();
     }
     else {
