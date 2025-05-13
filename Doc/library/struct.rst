@@ -260,6 +260,10 @@ platform-dependent.
 +--------+--------------------------+--------------------+----------------+------------+
 | ``d``  | :c:expr:`double`         | float              | 8              | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
+| ``F``  | :c:expr:`float complex`  | complex            | 8              | \(10)      |
++--------+--------------------------+--------------------+----------------+------------+
+| ``D``  | :c:expr:`double complex` | complex            | 16             | \(10)      |
++--------+--------------------------+--------------------+----------------+------------+
 | ``s``  | :c:expr:`char[]`         | bytes              |                | \(9)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``p``  | :c:expr:`char[]`         | bytes              |                | \(8)       |
@@ -273,15 +277,18 @@ platform-dependent.
 .. versionchanged:: 3.6
    Added support for the ``'e'`` format.
 
+.. versionchanged:: 3.14
+   Added support for the ``'F'`` and ``'D'`` formats.
+
 
 Notes:
 
 (1)
    .. index:: single: ? (question mark); in struct format strings
 
-   The ``'?'`` conversion code corresponds to the :c:expr:`_Bool` type defined by
-   C99. If this type is not available, it is simulated using a :c:expr:`char`. In
-   standard mode, it is always represented by one byte.
+   The ``'?'`` conversion code corresponds to the :c:expr:`_Bool` type
+   defined by C standards since C99.  In standard mode, it is
+   represented by one byte.
 
 (2)
    When attempting to pack a non-integer using any of the integer conversion
@@ -348,6 +355,16 @@ Notes:
    unpacking, the resulting bytes object always has exactly the specified number
    of bytes.  As a special case, ``'0s'`` means a single, empty string (while
    ``'0c'`` means 0 characters).
+
+(10)
+   For the ``'F'`` and ``'D'`` format characters, the packed representation uses
+   the IEEE 754 binary32 and binary64 format for components of the complex
+   number, regardless of the floating-point format used by the platform.
+   Note that complex types (``F`` and ``D``) are available unconditionally,
+   despite complex types being an optional feature in C.
+   As specified in the C11 standard, each complex type is represented by a
+   two-element C array containing, respectively, the real and imaginary parts.
+
 
 A format character may be preceded by an integral repeat count.  For example,
 the format string ``'4h'`` means exactly the same as ``'hhhh'``.

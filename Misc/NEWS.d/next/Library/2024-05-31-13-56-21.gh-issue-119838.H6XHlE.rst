@@ -1,3 +1,0 @@
-In mixed arithmetic operations with :class:`~fractions.Fraction` and
-complex, the fraction is now converted to :class:`float` instead of
-:class:`complex`.

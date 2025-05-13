@@ -1,5 +1,6 @@
 """Test program for the fcntl C module.
 """
+import errno
 import multiprocessing
 import platform
 import os
@@ -135,16 +136,21 @@ class TestFcntl(unittest.TestCase):
         or platform.system() == "Android",
         "this platform returns EINVAL for F_NOTIFY DN_MULTISHOT")
     def test_fcntl_64_bit(self):
-        # Issue #1309352: fcntl shouldn't fail when the third arg fits in a
+        # Issue GH-42434: fcntl shouldn't fail when the third arg fits in a
         # C 'long' but not in a C 'int'.
         try:
             cmd = fcntl.F_NOTIFY
-            # This flag is larger than 2**31 in 64-bit builds
+            # DN_MULTISHOT is >= 2**31 in 64-bit builds
             flags = fcntl.DN_MULTISHOT
         except AttributeError:
             self.skipTest("F_NOTIFY or DN_MULTISHOT unavailable")
         fd = os.open(os.path.dirname(os.path.abspath(TESTFN)), os.O_RDONLY)
         try:
+            try:
+                fcntl.fcntl(fd, cmd, fcntl.DN_DELETE)
+            except OSError as exc:
+                if exc.errno == errno.EINVAL:
+                    self.skipTest("F_NOTIFY not available by this environment")
             fcntl.fcntl(fd, cmd, flags)
         finally:
             os.close(fd)
@@ -221,6 +227,52 @@ class TestFcntl(unittest.TestCase):
         finally:
             os.close(test_pipe_r)
             os.close(test_pipe_w)
+
+    def _check_fcntl_not_mutate_len(self, nbytes=None):
+        self.f = open(TESTFN, 'wb')
+        buf = struct.pack('ii', fcntl.F_OWNER_PID, os.getpid())
+        if nbytes is not None:
+            buf += b' ' * (nbytes - len(buf))
+        else:
+            nbytes = len(buf)
+        save_buf = bytes(buf)
+        r = fcntl.fcntl(self.f, fcntl.F_SETOWN_EX, buf)
+        self.assertIsInstance(r, bytes)
+        self.assertEqual(len(r), len(save_buf))
+        self.assertEqual(buf, save_buf)
+        type, pid = memoryview(r).cast('i')[:2]
+        self.assertEqual(type, fcntl.F_OWNER_PID)
+        self.assertEqual(pid, os.getpid())
+
+        buf = b' ' * nbytes
+        r = fcntl.fcntl(self.f, fcntl.F_GETOWN_EX, buf)
+        self.assertIsInstance(r, bytes)
+        self.assertEqual(len(r), len(save_buf))
+        self.assertEqual(buf, b' ' * nbytes)
+        type, pid = memoryview(r).cast('i')[:2]
+        self.assertEqual(type, fcntl.F_OWNER_PID)
+        self.assertEqual(pid, os.getpid())
+
+        buf = memoryview(b' ' * nbytes)
+        r = fcntl.fcntl(self.f, fcntl.F_GETOWN_EX, buf)
+        self.assertIsInstance(r, bytes)
+        self.assertEqual(len(r), len(save_buf))
+        self.assertEqual(bytes(buf), b' ' * nbytes)
+        type, pid = memoryview(r).cast('i')[:2]
+        self.assertEqual(type, fcntl.F_OWNER_PID)
+        self.assertEqual(pid, os.getpid())
+
+    @unittest.skipUnless(
+        hasattr(fcntl, "F_SETOWN_EX") and hasattr(fcntl, "F_GETOWN_EX"),
+        "requires F_SETOWN_EX and F_GETOWN_EX")
+    def test_fcntl_small_buffer(self):
+        self._check_fcntl_not_mutate_len()
+
+    @unittest.skipUnless(
+        hasattr(fcntl, "F_SETOWN_EX") and hasattr(fcntl, "F_GETOWN_EX"),
+        "requires F_SETOWN_EX and F_GETOWN_EX")
+    def test_fcntl_large_buffer(self):
+        self._check_fcntl_not_mutate_len(2024)
 
 
 if __name__ == '__main__':

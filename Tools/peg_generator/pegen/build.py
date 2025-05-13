@@ -95,7 +95,7 @@ def compile_c_extension(
     import setuptools.logging
 
     from setuptools import Extension, Distribution
-    from setuptools._distutils.dep_util import newer_group
+    from setuptools.modified import newer_group
     from setuptools._distutils.ccompiler import new_compiler
     from setuptools._distutils.sysconfig import customize_compiler
 
