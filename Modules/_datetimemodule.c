@@ -2354,22 +2354,12 @@ nanoseconds_to_delta(PyObject *pyns)
 static PyObject *
 multiply_int_timedelta(PyObject *intobj, PyDateTime_Delta *delta)
 {
-    PyObject *pyus_in;
-    PyObject *pyus_out;
-    PyObject *result;
-
-    pyus_in = delta_to_nanoseconds(delta);
-    if (pyus_in == NULL)
-        return NULL;
-
-    pyus_out = PyNumber_Multiply(intobj, pyus_in);
-    Py_DECREF(pyus_in);
-    if (pyus_out == NULL)
-        return NULL;
-
-    result = nanoseconds_to_delta(pyus_out);
-    Py_DECREF(pyus_out);
-    return result;
+    return new_delta_ex(GET_TD_DAYS(delta) * PyLong_AsLong(intobj),
+                        GET_TD_SECONDS(delta) * PyLong_AsLong(intobj),
+                        GET_TD_MICROSECONDS(delta) * PyLong_AsLong(intobj),
+                        GET_TD_NANOSECONDS(delta) * PyLong_AsLong(intobj),
+                        1,
+                        DELTA_TYPE(NO_STATE));
 }
 
 static PyObject *

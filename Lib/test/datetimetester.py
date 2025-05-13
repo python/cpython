@@ -310,7 +310,6 @@ class TestTimeZone(unittest.TestCase):
             class MyTimezone(timezone): pass
 
     def test_utcoffset(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         dummy = self.DT
         for h in [0, 1.5, 12]:
             offset = h * HOUR
@@ -352,7 +351,6 @@ class TestTimeZone(unittest.TestCase):
         with self.assertRaises(TypeError): self.EST.tzname(5)
 
     def test_fromutc(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         with self.assertRaises(ValueError):
             timezone.utc.fromutc(self.DT)
         with self.assertRaises(TypeError):
@@ -365,7 +363,6 @@ class TestTimeZone(unittest.TestCase):
                              self.DT.replace(tzinfo=timezone.utc))
 
     def test_comparison(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         self.assertNotEqual(timezone(ZERO), timezone(HOUR))
         self.assertEqual(timezone(HOUR), timezone(HOUR))
         self.assertEqual(timezone(-5 * HOUR), timezone(-5 * HOUR, 'EST'))
@@ -552,7 +549,6 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         ra(TypeError, lambda: td(microseconds='1'))
 
     def test_computations(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         eq = self.assertEqual
         td = timedelta
 
@@ -867,7 +863,6 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         self.assertRaises(OverflowError, day.__mul__, -INF)
 
     def test_microsecond_rounding(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         td = timedelta
         eq = self.assertEqual
 
@@ -878,8 +873,8 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         eq(td(milliseconds=-0.5/1000), td(nanoseconds=-500))
         eq(td(milliseconds=0.6/1000), td(nanoseconds=600))
         eq(td(milliseconds=-0.6/1000), td(nanoseconds=-600))
-        eq(td(milliseconds=1.5/1000), td(nanoseconds=1500))
-        eq(td(milliseconds=-1.5/1000), td(nanoseconds=-1500))
+        eq(td(milliseconds=1.5/1000), td(microseconds=1, nanoseconds=500))
+        eq(td(milliseconds=-1.5/1000), td(microseconds=-1, nanoseconds=-500))
         eq(td(seconds=0.5/10**6), td(nanoseconds=500))
         eq(td(seconds=-0.5/10**6), td(nanoseconds=-500))
         eq(td(seconds=1/2**7), td(microseconds=7812, nanoseconds=500))
@@ -1143,7 +1138,6 @@ class TestDateOnly(unittest.TestCase):
         self.assertEqual(dt2, dt - days)
 
     def test_strptime(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         inputs = [
             # Basic valid cases
             (date(1998, 2, 3), '1998-02-03', '%Y-%m-%d'),
@@ -1380,7 +1374,6 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(dic[e], 2)
 
     def test_computations(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         a = self.theclass(2002, 1, 31)
         b = self.theclass(1956, 1, 31)
         c = self.theclass(2001,2,1)
@@ -1431,7 +1424,6 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertRaises(TypeError, lambda: a + a)
 
     def test_overflow(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         tiny = self.theclass.resolution
 
         for delta in [tiny, timedelta(1), timedelta(2)]:
@@ -2269,7 +2261,6 @@ class TestDateTime(TestDate):
         self.assertEqual(t.isoformat(), "0002-03-02T00:00:00+00:00:16")
 
     def test_isoformat_timezone(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         tzoffsets = [
             ('05:00', timedelta(hours=5)),
             ('02:00', timedelta(hours=2)),
@@ -2297,7 +2288,7 @@ class TestDateTime(TestDate):
             dt = dt_base.replace(tzinfo=tzi)
             exp = exp_base + exp_tz
             with self.subTest(tzi=tzi):
-                assert dt.isoformat() == exp
+                self.assertEqual(dt.isoformat(), exp)
 
     def test_format(self):
         dt = self.theclass(2007, 9, 10, 4, 5, 1, 123)
@@ -2450,7 +2441,6 @@ class TestDateTime(TestDate):
         self.assertEqual(dic[e], 2)
 
     def test_computations(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         a = self.theclass(2002, 1, 31)
         b = self.theclass(1956, 1, 31)
         diff = a-b
@@ -2862,7 +2852,6 @@ class TestDateTime(TestDate):
         self.assertLessEqual(abs(from_timestamp - from_now), tolerance)
 
     def test_strptime(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         string = '2004-12-01 13:02:47.197'
         format = '%Y-%m-%d %H:%M:%S.%f'
         expected = _strptime._strptime_datetime_datetime(self.theclass, string,
@@ -3314,7 +3303,6 @@ class TestDateTime(TestDate):
                     self.assertEqual(dt, dt_rt)
 
     def test_fromisoformat_timezone(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         base_dt = self.theclass(2014, 12, 30, 12, 30, 45, 217456)
 
         tzoffsets = [
@@ -3823,7 +3811,6 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.isoformat(timespec='auto'), "12:34:56")
 
     def test_isoformat_timezone(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         tzoffsets = [
             ('05:00', timedelta(hours=5)),
             ('02:00', timedelta(hours=2)),
@@ -4007,7 +3994,6 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
                     self.assertEqual(derived, expected)
 
     def test_strptime(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         # bpo-34482: Check that surrogates are handled properly.
         inputs = [
             (self.theclass(13, 2, 47, 197000), '13:02:47.197', '%H:%M:%S.%f'),
@@ -4021,7 +4007,6 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
                 self.assertIs(type(got), self.theclass)
 
     def test_strptime_tz(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         strptime = self.theclass.strptime
         self.assertEqual(strptime("+0002", "%z").utcoffset(), 2 * MINUTE)
         self.assertEqual(strptime("-0002", "%z").utcoffset(), -2 * MINUTE)
@@ -4346,7 +4331,6 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         self.assertIsNone(t.tzinfo)
 
     def test_zones(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         est = FixedOffset(-300, "EST", 1)
         utc = FixedOffset(0, "UTC", -2)
         met = FixedOffset(60, "MET", 3)
@@ -4635,7 +4619,6 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
                     self.assertEqual(t, t_rt)
 
     def test_fromisoformat_timezone(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         base_time = self.theclass(12, 30, 45, 217456)
 
         tzoffsets = [
@@ -5718,7 +5701,6 @@ class TestTimezoneConversions(unittest.TestCase):
                 self.checkoutside(outside, tz, utc)
 
     def test_easy(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         # Despite the name of this test, the endcases are excruciating.
         self.convert_between_tz_and_utc(Eastern, utc_real)
         self.convert_between_tz_and_utc(Pacific, utc_real)
@@ -5743,7 +5725,6 @@ class TestTimezoneConversions(unittest.TestCase):
         # self.convert_between_tz_and_utc(Central, Eastern)  # can't work
 
     def test_tricky(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         # 22:00 on day before daylight starts.
         fourback = self.dston - timedelta(hours=4)
         ninewest = FixedOffset(-9*60, "-0900", 0)
@@ -5795,7 +5776,6 @@ class TestTimezoneConversions(unittest.TestCase):
 
 
     def test_bogus_dst(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         class ok(tzinfo):
             def utcoffset(self, dt): return HOUR
             def dst(self, dt): return HOUR
@@ -5823,7 +5803,6 @@ class TestTimezoneConversions(unittest.TestCase):
         self.assertRaises(ValueError, dt.astimezone, tricky_notok())
 
     def test_fromutc(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         self.assertRaises(TypeError, Eastern.fromutc)   # not enough args
         now = datetime.now(tz=utc_real)
         self.assertRaises(ValueError, Eastern.fromutc, now) # wrong tzinfo
@@ -6129,7 +6108,6 @@ class Europe_Vilnius_1941(tzinfo):
 class TestLocalTimeDisambiguation(unittest.TestCase):
 
     def test_vilnius_1941_fromutc(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         Vilnius = Europe_Vilnius_1941()
 
         gdt = datetime(1941, 6, 23, 20, 59, 59, tzinfo=timezone.utc)
@@ -6154,7 +6132,6 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
         self.assertTrue(ldt.dst())
 
     def test_vilnius_1941_toutc(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         Vilnius = Europe_Vilnius_1941()
 
         ldt = datetime(1941, 6, 23, 22, 59, 59, tzinfo=Vilnius)
@@ -6333,7 +6310,6 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
 
 
     def test_utcoffset(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         # Let's first establish that things work in regular times.
         dt_summer = datetime(2002, 10, 27, 1, tzinfo=Eastern2) - timedelta.resolution
         dt_winter = datetime(2002, 10, 27, 2, tzinfo=Eastern2)
@@ -6344,7 +6320,6 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
         self.assertEqual(dt_winter.replace(fold=1).utcoffset(), -5 * HOUR)
 
     def test_fromutc(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         # Let's first establish that things work in regular times.
         u_summer = datetime(2002, 10, 27, 6, tzinfo=Eastern2) - timedelta.resolution
         u_winter = datetime(2002, 10, 27, 7, tzinfo=Eastern2)
