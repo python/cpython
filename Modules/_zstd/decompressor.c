@@ -554,6 +554,7 @@ _zstd_ZstdDecompressor_new_impl(PyTypeObject *type, PyObject *zstd_dict,
     self->in_end = -1;
     self->unused_data = NULL;
     self->eof = 0;
+    self->dict = NULL;
 
     /* needs_input flag */
     self->needs_input = 1;
@@ -570,7 +571,6 @@ _zstd_ZstdDecompressor_new_impl(PyTypeObject *type, PyObject *zstd_dict,
     }
 
     /* Load Zstandard dictionary to decompression context */
-    self->dict = NULL;
     if (zstd_dict != Py_None) {
         if (_zstd_load_d_dict(self, zstd_dict) < 0) {
             goto error;
@@ -592,9 +592,7 @@ _zstd_ZstdDecompressor_new_impl(PyTypeObject *type, PyObject *zstd_dict,
     return (PyObject*)self;
 
 error:
-    if (self != NULL) {
-        PyObject_GC_Del(self);
-    }
+    Py_XDECREF(self);
     return NULL;
 }
 
@@ -606,7 +604,9 @@ ZstdDecompressor_dealloc(PyObject *ob)
     PyObject_GC_UnTrack(self);
 
     /* Free decompression context */
-    ZSTD_freeDCtx(self->dctx);
+    if (self->dctx) {
+        ZSTD_freeDCtx(self->dctx);
+    }
 
     /* Py_CLEAR the dict after free decompression context */
     Py_CLEAR(self->dict);
