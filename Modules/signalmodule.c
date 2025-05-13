@@ -1175,12 +1175,12 @@ signal_sigwaitinfo_impl(PyObject *module, sigset_t sigset)
     int err;
     int async_err = 0;
 
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
         err = sigwaitinfo(&sigset, &si);
-        Py_END_ALLOW_THREADS
     } while (err == -1
              && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
     if (err == -1)
         return (!async_err) ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
 
@@ -1759,12 +1759,22 @@ _PySignal_Fini(void)
     Py_CLEAR(state->ignore_handler);
 }
 
-
-/* Declared in pyerrors.h */
-int
-PyErr_CheckSignals(void)
+/* Subroutine of _PyErr_CheckSignalsNoGIL.  Does all the work that
+   needs the GIL.  When called, 'tstate' must be the thread state for
+   the current thread, and the current thread must hold the GIL.  */
+static int
+_PyErr_CheckSignalsHoldingGIL(PyThreadState *tstate, bool cycle_collect)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
+#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
+    _PyRunRemoteDebugger(tstate);
+#endif
+
+    /* It is necessary to repeat all of the checks of global flags
+       that were done in _PyErr_CheckSignalsNoGIL.  At the time of
+       those checks, we might not have held the GIL; in between those
+       checks and when we acquired the GIL, some other thread may have
+       processed the events that were flagged.  Since we now hold the
+       GIL, a check now will be valid until we release it again.  */
 
     /* Opportunistically check if the GC is scheduled to run and run it
        if we have a request. This is done here because native code needs
@@ -1777,24 +1787,8 @@ PyErr_CheckSignals(void)
         _Py_RunGC(tstate);
     }
 
-#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
-    _PyRunRemoteDebugger(tstate);
-#endif
-
-    if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
-        return 0;
-    }
-
-    return _PyErr_CheckSignalsTstate(tstate);
-}
-
-
-/* Declared in cpython/pyerrors.h */
-int
-_PyErr_CheckSignalsTstate(PyThreadState *tstate)
-{
-    _Py_CHECK_EMSCRIPTEN_SIGNALS();
-    if (!_Py_atomic_load_int(&is_tripped)) {
+    if (!_Py_ThreadCanHandleSignals(tstate->interp)
+        || !_Py_atomic_load_int(&is_tripped)) {
         return 0;
     }
 
@@ -1877,15 +1871,66 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
     return 0;
 }
 
+/* Subroutine of the PyErr_CheckSignals family:
+   Determine whether there is actually any work needing to be done.
+   If so, acquire the GIL if necessary, and do that work.  */
+static int
+_PyErr_CheckSignalsNoGIL(PyThreadState *tstate, bool cycle_collect)
+{
+    /* If this thread does not have a thread state at all, then it has
+       never been associated with the Python runtime, so it should not
+       attempt to handle signals or run the cycle collector.  */
+    if (!tstate) {
+        return 0;
+    }
 
+    _Py_CHECK_EMSCRIPTEN_SIGNALS();
 
+    /* Don't acquire the GIL if we don't have anything to do.
+       VERIFYME: I *think* every piece of this expression is safe to
+       execute without holding the GIL and is already sufficiently
+       atomic.  */
+    if ((!_Py_ThreadCanHandleSignals(tstate->interp)
+         || !_Py_atomic_load_int(&is_tripped))
+        && (!cycle_collect
+            || !_Py_eval_breaker_bit_is_set(tstate, _PY_GC_SCHEDULED_BIT))) {
+        return 0;
+    }
+
+    /* FIXME: Given that we already have 'tstate', is there a more efficient
+       way to do this? */
+    PyGILState_STATE st = PyGILState_Ensure();
+    int err = _PyErr_CheckSignalsHoldingGIL(tstate, cycle_collect);
+    PyGILState_Release(st);
+
+    return err;
+}
+
+/* Declared in pycore_pyerrors.h.
+   This function may be called without the GIL. */
+int
+_PyErr_CheckSignalsTstate(PyThreadState *tstate)
+{
+    return _PyErr_CheckSignalsNoGIL(tstate, true);
+}
+
+/* Declared in pycore_pyerrors.h.
+   This function may be called without the GIL.  */
 int
 _PyErr_CheckSignals(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    return _PyErr_CheckSignalsTstate(tstate);
+    PyThreadState *tstate = PyGILState_GetThisThreadState();
+    return _PyErr_CheckSignalsNoGIL(tstate, false);
 }
 
+/* Declared in pyerrors.h.
+   This function may be called without the GIL. */
+int
+PyErr_CheckSignals(void)
+{
+    PyThreadState *tstate = PyGILState_GetThisThreadState();
+    return _PyErr_CheckSignalsNoGIL(tstate, true);
+}
 
 /* Simulate the effect of a signal arriving. The next time PyErr_CheckSignals
    is called,  the corresponding Python signal handler will be raised.

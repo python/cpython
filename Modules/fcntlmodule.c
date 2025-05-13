@@ -73,11 +73,11 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
             }
         }
 
+        Py_BEGIN_ALLOW_THREADS
         do {
-            Py_BEGIN_ALLOW_THREADS
             ret = fcntl(fd, code, (int)int_arg);
-            Py_END_ALLOW_THREADS
         } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+        Py_END_ALLOW_THREADS
         if (ret < 0) {
             return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
         }
@@ -103,11 +103,11 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
         memcpy(buf + len, guard, GUARDSZ);
         PyBuffer_Release(&view);
 
+        Py_BEGIN_ALLOW_THREADS
         do {
-            Py_BEGIN_ALLOW_THREADS
             ret = fcntl(fd, code, buf);
-            Py_END_ALLOW_THREADS
         } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+        Py_END_ALLOW_THREADS
         if (ret < 0) {
             return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
         }
@@ -195,11 +195,11 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
             }
         }
 
+        Py_BEGIN_ALLOW_THREADS
         do {
-            Py_BEGIN_ALLOW_THREADS
             ret = ioctl(fd, code, int_arg);
-            Py_END_ALLOW_THREADS
         } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+        Py_END_ALLOW_THREADS
         if (ret < 0) {
             return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
         }
@@ -219,11 +219,11 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
                     memcpy(buf + len, guard, GUARDSZ);
                     ptr = buf;
                 }
+                Py_BEGIN_ALLOW_THREADS
                 do {
-                    Py_BEGIN_ALLOW_THREADS
                     ret = ioctl(fd, code, ptr);
-                    Py_END_ALLOW_THREADS
                 } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+                Py_END_ALLOW_THREADS
                 if (ret < 0) {
                     if (!async_err) {
                         PyErr_SetFromErrno(PyExc_OSError);
@@ -261,11 +261,11 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
         memcpy(buf + len, guard, GUARDSZ);
         PyBuffer_Release(&view);
 
+        Py_BEGIN_ALLOW_THREADS
         do {
-            Py_BEGIN_ALLOW_THREADS
             ret = ioctl(fd, code, buf);
-            Py_END_ALLOW_THREADS
         } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+        Py_END_ALLOW_THREADS
         if (ret < 0) {
             return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
         }
@@ -308,11 +308,11 @@ fcntl_flock_impl(PyObject *module, int fd, int code)
     }
 
 #ifdef HAVE_FLOCK
+    Py_BEGIN_ALLOW_THREADS
     do {
-        Py_BEGIN_ALLOW_THREADS
         ret = flock(fd, code);
-        Py_END_ALLOW_THREADS
     } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    Py_END_ALLOW_THREADS
 #else
 
 #ifndef LOCK_SH
@@ -335,11 +335,11 @@ fcntl_flock_impl(PyObject *module, int fd, int code)
             return NULL;
         }
         l.l_whence = l.l_start = l.l_len = 0;
+        Py_BEGIN_ALLOW_THREADS
         do {
-            Py_BEGIN_ALLOW_THREADS
             ret = fcntl(fd, (code & LOCK_NB) ? F_SETLK : F_SETLKW, &l);
-            Py_END_ALLOW_THREADS
         } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+        Py_END_ALLOW_THREADS
     }
 #endif /* HAVE_FLOCK */
     if (ret < 0) {
@@ -439,11 +439,11 @@ fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
                 return NULL;
         }
         l.l_whence = whence;
+        Py_BEGIN_ALLOW_THREADS
         do {
-            Py_BEGIN_ALLOW_THREADS
             ret = fcntl(fd, (code & LOCK_NB) ? F_SETLK : F_SETLKW, &l);
-            Py_END_ALLOW_THREADS
         } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+        Py_END_ALLOW_THREADS
     }
     if (ret < 0) {
         return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
