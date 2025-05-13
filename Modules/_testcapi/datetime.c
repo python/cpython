@@ -453,37 +453,6 @@ test_PyDateTime_DELTA_GET(PyObject *self, PyObject *obj)
     return Py_BuildValue("(iii)", days, seconds, microseconds);
 }
 
-static PyObject *
-get_capi_types(PyObject *self, PyObject *args)
-{
-    if (PyDateTimeAPI == NULL) {
-        Py_RETURN_NONE;
-    }
-    PyObject *dict = PyDict_New();
-    if (dict == NULL) {
-        return NULL;
-    }
-    if (PyDict_SetItemString(dict, "date", (PyObject *)PyDateTimeAPI->DateType) < 0) {
-        goto error;
-    }
-    if (PyDict_SetItemString(dict, "time", (PyObject *)PyDateTimeAPI->TimeType) < 0) {
-        goto error;
-    }
-    if (PyDict_SetItemString(dict, "datetime", (PyObject *)PyDateTimeAPI->DateTimeType) < 0) {
-        goto error;
-    }
-    if (PyDict_SetItemString(dict, "timedelta", (PyObject *)PyDateTimeAPI->DeltaType) < 0) {
-        goto error;
-    }
-    if (PyDict_SetItemString(dict, "tzinfo", (PyObject *)PyDateTimeAPI->TZInfoType) < 0) {
-        goto error;
-    }
-    return dict;
-error:
-    Py_DECREF(dict);
-    return NULL;
-}
-
 static PyMethodDef test_methods[] = {
     {"PyDateTime_DATE_GET",         test_PyDateTime_DATE_GET,       METH_O},
     {"PyDateTime_DELTA_GET",        test_PyDateTime_DELTA_GET,      METH_O},
@@ -504,7 +473,6 @@ static PyMethodDef test_methods[] = {
     {"get_time_fromtimeandfold",    get_time_fromtimeandfold,       METH_VARARGS},
     {"get_timezone_utc_capi",       get_timezone_utc_capi,          METH_VARARGS},
     {"get_timezones_offset_zero",   get_timezones_offset_zero,      METH_NOARGS},
-    {"get_capi_types",              get_capi_types,                 METH_NOARGS},
     {"make_timezones_capi",         make_timezones_capi,            METH_NOARGS},
     {"test_datetime_capi",          test_datetime_capi,             METH_NOARGS},
     {NULL},

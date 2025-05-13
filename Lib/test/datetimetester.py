@@ -7270,8 +7270,7 @@ class ExtensionModuleTests(unittest.TestCase):
                 assert isinstance(_datetime.timezone.utc, _datetime.tzinfo)
                 del sys.modules['_datetime']
             """)
-        res = script_helper.assert_python_ok('-c', script)
-        self.assertFalse(res.err)
+        script_helper.assert_python_ok('-c', script)
 
     def test_module_free(self):
         script = textwrap.dedent("""
