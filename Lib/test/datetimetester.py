@@ -834,8 +834,8 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         self.assertIsInstance(timedelta.max, timedelta)
         self.assertIsInstance(timedelta.resolution, timedelta)
         self.assertTrue(timedelta.max > timedelta.min)
-        self.assertEqual(timedelta.min, timedelta(-999999999))
-        self.assertEqual(timedelta.max, timedelta(999999999, 24*3600-1, 1e6-1, MAX_NS))
+        self.assertEqual(timedelta.min, timedelta(-999_999_999))
+        self.assertEqual(timedelta.max, timedelta(999_999_999, 24*3600-1, 1e6-1, MAX_NS))
         self.assertEqual(timedelta.resolution, timedelta(0, 0, 0, 1))
 
     def test_overflow(self):

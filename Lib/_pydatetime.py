@@ -773,7 +773,7 @@ class timedelta:
         assert isinstance(us, int) and 0 <= us < 1000000
         assert isinstance(ns, int) and 0 <= ns < 1000
 
-        if abs(d) > 999999999:
+        if abs(d) > 999_999_999:
             raise OverflowError("timedelta # of days is too large: %d" % d)
 
         self = object.__new__(cls)
@@ -996,9 +996,9 @@ class timedelta:
     def __reduce__(self):
         return (self.__class__, self._getstate())
 
-timedelta.min = timedelta(-999999999)
-timedelta.max = timedelta(days=999999999, hours=23, minutes=59, seconds=59,
-                          microseconds=999999, nanoseconds=MAX_NS)
+timedelta.min = timedelta(-999_999_999)
+timedelta.max = timedelta(days=999_999_999, hours=23, minutes=59, seconds=59,
+                          microseconds=999_999, nanoseconds=MAX_NS)
 timedelta.resolution = timedelta(nanoseconds=1)
 
 class date:
