@@ -2744,11 +2744,7 @@ _get_current_channelend_type(int end)
         // Force the module to be loaded, to register the type.
         PyObject *highlevel = PyImport_ImportModule("interpreters.channels");
         if (highlevel == NULL) {
-            PyErr_Clear();
-            highlevel = PyImport_ImportModule("test.support.interpreters.channels");
-            if (highlevel == NULL) {
-                return NULL;
-            }
+            return NULL;
         }
         Py_DECREF(highlevel);
         if (end == CHANNEL_SEND) {
