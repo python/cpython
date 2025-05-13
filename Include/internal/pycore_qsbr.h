@@ -11,7 +11,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "pycore_lock.h"        // PyMutex
 
 #ifdef __cplusplus
 extern "C" {

@@ -129,6 +129,17 @@ class TestPrint(unittest.TestCase):
                 raise RuntimeError
         self.assertRaises(RuntimeError, print, 1, file=noflush(), flush=True)
 
+    def test_gh130163(self):
+        class X:
+            def __str__(self):
+                sys.stdout = StringIO()
+                support.gc_collect()
+                return 'foo'
+
+        with support.swap_attr(sys, 'stdout', None):
+            sys.stdout = StringIO()  # the only reference
+            print(X())  # should not crash
+
 
 class TestPy2MigrationHint(unittest.TestCase):
     """Test that correct hint is produced analogous to Python3 syntax,

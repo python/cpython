@@ -18,9 +18,11 @@ import sys
 import textwrap
 import types
 import unittest
+import unittest.mock as mock
 import warnings
 import weakref
 
+from contextlib import nullcontext
 from functools import partial
 from itertools import product, islice
 from test import support
@@ -120,6 +122,21 @@ ATTLIST_XML = """\
 <bar>&qux;</bar>
 </foo>
 """
+
+def is_python_implementation():
+    assert ET is not None, "ET must be initialized"
+    assert pyET is not None, "pyET must be initialized"
+    return ET is pyET
+
+
+def equal_wrapper(cls):
+    """Mock cls.__eq__ to check whether it has been called or not.
+
+    The behaviour of cls.__eq__ (side-effects included) is left as is.
+    """
+    eq = cls.__eq__
+    return mock.patch.object(cls, "__eq__", autospec=True, wraps=eq)
+
 
 def checkwarnings(*filters, quiet=False):
     def decorator(test):
@@ -327,9 +344,9 @@ class ElementTreeTest(unittest.TestCase):
         self.serialize_check(element, '<tag key="value"><subtag /></tag>') # 4
         element.remove(subelement)
         self.serialize_check(element, '<tag key="value" />') # 5
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaisesRegex(ValueError,
+                                    r'Element\.remove\(.+\): element not found'):
             element.remove(subelement)
-        self.assertEqual(str(cm.exception), 'list.remove(x): x not in list')
         self.serialize_check(element, '<tag key="value" />') # 6
         element[0:0] = [subelement, subelement, subelement]
         self.serialize_check(element[1], '<subtag />')
@@ -2642,6 +2659,7 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
 
 
 class BadElementTest(ElementTestCase, unittest.TestCase):
+
     def test_extend_mutable_list(self):
         class X:
             @property
@@ -2680,18 +2698,168 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         e = ET.Element('foo')
         e.extend(L)
 
-    def test_remove_with_mutating(self):
-        class X(ET.Element):
-            def __eq__(self, o):
-                del e[:]
-                return False
-        e = ET.Element('foo')
-        e.extend([X('bar')])
-        self.assertRaises(ValueError, e.remove, ET.Element('baz'))
+    def test_remove_with_clear_assume_missing(self):
+        # gh-126033: Check that a concurrent clear() for an assumed-to-be
+        # missing element does not make the interpreter crash.
+        self.do_test_remove_with_clear(raises=True)
 
-        e = ET.Element('foo')
-        e.extend([ET.Element('bar')])
-        self.assertRaises(ValueError, e.remove, X('baz'))
+    def test_remove_with_clear_assume_existing(self):
+        # gh-126033: Check that a concurrent clear() for an assumed-to-be
+        # existing element does not make the interpreter crash.
+        self.do_test_remove_with_clear(raises=False)
+
+    def do_test_remove_with_clear(self, *, raises):
+
+        # Until the discrepency between "del root[:]" and "root.clear()" is
+        # resolved, we need to keep two tests. Previously, using "del root[:]"
+        # did not crash with the reproducer of gh-126033 while "root.clear()"
+        # did.
+
+        class E(ET.Element):
+            """Local class to be able to mock E.__eq__ for introspection."""
+
+        class X(E):
+            def __eq__(self, o):
+                del root[:]
+                return not raises
+
+        class Y(E):
+            def __eq__(self, o):
+                root.clear()
+                return not raises
+
+        if raises:
+            get_checker_context = lambda: self.assertRaises(ValueError)
+        else:
+            get_checker_context = nullcontext
+
+        self.assertIs(E.__eq__, object.__eq__)
+
+        for Z, side_effect in [(X, 'del root[:]'), (Y, 'root.clear()')]:
+            self.enterContext(self.subTest(side_effect=side_effect))
+
+            # test removing R() from [U()]
+            for R, U, description in [
+                (E, Z, "remove missing E() from [Z()]"),
+                (Z, E, "remove missing Z() from [E()]"),
+                (Z, Z, "remove missing Z() from [Z()]"),
+            ]:
+                with self.subTest(description):
+                    root = E('top')
+                    root.extend([U('one')])
+                    with get_checker_context():
+                        root.remove(R('missing'))
+
+            # test removing R() from [U(), V()]
+            cases = self.cases_for_remove_missing_with_mutations(E, Z)
+            for R, U, V, description in cases:
+                with self.subTest(description):
+                    root = E('top')
+                    root.extend([U('one'), V('two')])
+                    with get_checker_context():
+                        root.remove(R('missing'))
+
+            # Test removing root[0] from [Z()].
+            #
+            # Since we call root.remove() with root[0], Z.__eq__()
+            # will not be called (we branch on the fast Py_EQ path).
+            with self.subTest("remove root[0] from [Z()]"):
+                root = E('top')
+                root.append(Z('rem'))
+                with equal_wrapper(E) as f, equal_wrapper(Z) as g:
+                    root.remove(root[0])
+                f.assert_not_called()
+                g.assert_not_called()
+
+            # Test removing root[1] (of type R) from [U(), R()].
+            is_special = is_python_implementation() and raises and Z is Y
+            if is_python_implementation() and raises and Z is Y:
+                # In pure Python, using root.clear() sets the children
+                # list to [] without calling list.clear().
+                #
+                # For this reason, the call to root.remove() first
+                # checks root[0] and sets the children list to []
+                # since either root[0] or root[1] is an evil element.
+                #
+                # Since checking root[1] still uses the old reference
+                # to the children list, PyObject_RichCompareBool() branches
+                # to the fast Py_EQ path and Y.__eq__() is called exactly
+                # once (when checking root[0]).
+                continue
+            else:
+                cases = self.cases_for_remove_existing_with_mutations(E, Z)
+                for R, U, description in cases:
+                    with self.subTest(description):
+                        root = E('top')
+                        root.extend([U('one'), R('rem')])
+                        with get_checker_context():
+                            root.remove(root[1])
+
+    def test_remove_with_mutate_root_assume_missing(self):
+        # gh-126033: Check that a concurrent mutation for an assumed-to-be
+        # missing element does not make the interpreter crash.
+        self.do_test_remove_with_mutate_root(raises=True)
+
+    def test_remove_with_mutate_root_assume_existing(self):
+        # gh-126033: Check that a concurrent mutation for an assumed-to-be
+        # existing element does not make the interpreter crash.
+        self.do_test_remove_with_mutate_root(raises=False)
+
+    def do_test_remove_with_mutate_root(self, *, raises):
+        E = ET.Element
+
+        class Z(E):
+            def __eq__(self, o):
+                del root[0]
+                return not raises
+
+        if raises:
+            get_checker_context = lambda: self.assertRaises(ValueError)
+        else:
+            get_checker_context = nullcontext
+
+        # test removing R() from [U(), V()]
+        cases = self.cases_for_remove_missing_with_mutations(E, Z)
+        for R, U, V, description in cases:
+            with self.subTest(description):
+                root = E('top')
+                root.extend([U('one'), V('two')])
+                with get_checker_context():
+                    root.remove(R('missing'))
+
+        # test removing root[1] (of type R) from [U(), R()]
+        cases = self.cases_for_remove_existing_with_mutations(E, Z)
+        for R, U, description in cases:
+            with self.subTest(description):
+                root = E('top')
+                root.extend([U('one'), R('rem')])
+                with get_checker_context():
+                    root.remove(root[1])
+
+    def cases_for_remove_missing_with_mutations(self, E, Z):
+        # Cases for removing R() from [U(), V()].
+        # The case U = V = R = E is not interesting as there is no mutation.
+        for U, V in [(E, Z), (Z, E), (Z, Z)]:
+            description = (f"remove missing {E.__name__}() from "
+                           f"[{U.__name__}(), {V.__name__}()]")
+            yield E, U, V, description
+
+        for U, V in [(E, E), (E, Z), (Z, E), (Z, Z)]:
+            description = (f"remove missing {Z.__name__}() from "
+                           f"[{U.__name__}(), {V.__name__}()]")
+            yield Z, U, V, description
+
+    def cases_for_remove_existing_with_mutations(self, E, Z):
+        # Cases for removing root[1] (of type R) from [U(), R()].
+        # The case U = R = E is not interesting as there is no mutation.
+        for U, R, description in [
+            (E, Z, "remove root[1] from [E(), Z()]"),
+            (Z, E, "remove root[1] from [Z(), E()]"),
+            (Z, Z, "remove root[1] from [Z(), Z()]"),
+        ]:
+            description = (f"remove root[1] (of type {R.__name__}) "
+                           f"from [{U.__name__}(), {R.__name__}()]")
+            yield R, U, description
 
     @support.infinite_recursion(25)
     def test_recursive_repr(self):
@@ -2792,21 +2960,83 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         del b
         gc_collect()
 
+    def test_deepcopy_clear(self):
+        # Prevent crashes when __deepcopy__() clears the children list.
+        # See https://github.com/python/cpython/issues/133009.
+        class X(ET.Element):
+            def __deepcopy__(self, memo):
+                root.clear()
+                return self
 
-class MutatingElementPath(str):
+        root = ET.Element('a')
+        evil = X('x')
+        root.extend([evil, ET.Element('y')])
+        if is_python_implementation():
+            # Mutating a list over which we iterate raises an error.
+            self.assertRaises(RuntimeError, copy.deepcopy, root)
+        else:
+            c = copy.deepcopy(root)
+            # In the C implementation, we can still copy the evil element.
+            self.assertListEqual(list(c), [evil])
+
+    def test_deepcopy_grow(self):
+        # Prevent crashes when __deepcopy__() mutates the children list.
+        # See https://github.com/python/cpython/issues/133009.
+        a = ET.Element('a')
+        b = ET.Element('b')
+        c = ET.Element('c')
+
+        class X(ET.Element):
+            def __deepcopy__(self, memo):
+                root.append(a)
+                root.append(b)
+                return self
+
+        root = ET.Element('top')
+        evil1, evil2 = X('1'), X('2')
+        root.extend([evil1, c, evil2])
+        children = list(copy.deepcopy(root))
+        # mock deep copies
+        self.assertIs(children[0], evil1)
+        self.assertIs(children[2], evil2)
+        # true deep copies
+        self.assertEqual(children[1].tag, c.tag)
+        self.assertEqual([c.tag for c in children[3:]],
+                         [a.tag, b.tag, a.tag, b.tag])
+
+
+class MutationDeleteElementPath(str):
     def __new__(cls, elem, *args):
         self = str.__new__(cls, *args)
         self.elem = elem
         return self
+
     def __eq__(self, o):
         del self.elem[:]
         return True
-MutatingElementPath.__hash__ = str.__hash__
+
+    __hash__ = str.__hash__
+
+
+class MutationClearElementPath(str):
+    def __new__(cls, elem, *args):
+        self = str.__new__(cls, *args)
+        self.elem = elem
+        return self
+
+    def __eq__(self, o):
+        self.elem.clear()
+        return True
+
+    __hash__ = str.__hash__
+
 
 class BadElementPath(str):
     def __eq__(self, o):
         raise 1/0
-BadElementPath.__hash__ = str.__hash__
+
+    __hash__ = str.__hash__
+
 
 class BadElementPathTest(ElementTestCase, unittest.TestCase):
     def setUp(self):
@@ -2821,9 +3051,11 @@ class BadElementPathTest(ElementTestCase, unittest.TestCase):
         super().tearDown()
 
     def test_find_with_mutating(self):
-        e = ET.Element('foo')
-        e.extend([ET.Element('bar')])
-        e.find(MutatingElementPath(e, 'x'))
+        for cls in [MutationDeleteElementPath, MutationClearElementPath]:
+            with self.subTest(cls):
+                e = ET.Element('foo')
+                e.extend([ET.Element('bar')])
+                e.find(cls(e, 'x'))
 
     def test_find_with_error(self):
         e = ET.Element('foo')
@@ -2834,9 +3066,11 @@ class BadElementPathTest(ElementTestCase, unittest.TestCase):
             pass
 
     def test_findtext_with_mutating(self):
-        e = ET.Element('foo')
-        e.extend([ET.Element('bar')])
-        e.findtext(MutatingElementPath(e, 'x'))
+        for cls in [MutationDeleteElementPath, MutationClearElementPath]:
+            with self.subTest(cls):
+                e = ET.Element('foo')
+                e.extend([ET.Element('bar')])
+                e.findtext(cls(e, 'x'))
 
     def test_findtext_with_error(self):
         e = ET.Element('foo')
@@ -2861,9 +3095,11 @@ class BadElementPathTest(ElementTestCase, unittest.TestCase):
         self.assertEqual(root_elem.findtext('./bar'), '')
 
     def test_findall_with_mutating(self):
-        e = ET.Element('foo')
-        e.extend([ET.Element('bar')])
-        e.findall(MutatingElementPath(e, 'x'))
+        for cls in [MutationDeleteElementPath, MutationClearElementPath]:
+            with self.subTest(cls):
+                e = ET.Element('foo')
+                e.extend([ET.Element('bar')])
+                e.findall(cls(e, 'x'))
 
     def test_findall_with_error(self):
         e = ET.Element('foo')

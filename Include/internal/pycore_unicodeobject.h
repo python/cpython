@@ -8,10 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_lock.h"          // PyMutex
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
-#include "pycore_global_objects.h"  // _Py_SINGLETON
 
 /* --- Characters Type APIs ----------------------------------------------- */
 
@@ -141,14 +139,18 @@ extern PyObject* _PyUnicode_DecodeUnicodeEscapeStateful(
 // Helper for PyUnicode_DecodeUnicodeEscape that detects invalid escape
 // chars.
 // Export for test_peg_generator.
-PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscapeInternal(
+PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscapeInternal2(
     const char *string,     /* Unicode-Escape encoded string */
     Py_ssize_t length,      /* size of string */
     const char *errors,     /* error handling */
     Py_ssize_t *consumed,   /* bytes consumed */
-    const char **first_invalid_escape); /* on return, points to first
-                                           invalid escaped char in
-                                           string. */
+    int *first_invalid_escape_char, /* on return, if not -1, contain the first
+                                       invalid escaped char (<= 0xff) or invalid
+                                       octal escape (> 0xff) in string. */
+    const char **first_invalid_escape_ptr); /* on return, if not NULL, may
+                                        point to the first invalid escaped
+                                        char in string.
+                                        May be NULL if errors is not NULL. */
 
 /* --- Raw-Unicode-Escape Codecs ---------------------------------------------- */
 
@@ -246,7 +248,14 @@ extern Py_ssize_t _PyUnicode_InsertThousandsGrouping(
     Py_ssize_t min_width,
     const char *grouping,
     PyObject *thousands_sep,
-    Py_UCS4 *maxchar);
+    Py_UCS4 *maxchar,
+    int forward);
+
+/* Dedent a string.
+   Behaviour is expected to be an exact match of `textwrap.dedent`.
+   Return a new reference on success, NULL with exception set on error.
+   */
+extern PyObject* _PyUnicode_Dedent(PyObject *unicode);
 
 /* --- Misc functions ----------------------------------------------------- */
 
@@ -285,40 +294,6 @@ PyAPI_FUNC(void) _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject *
 extern void _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **);
 
 /* --- Other API ---------------------------------------------------------- */
-
-struct _Py_unicode_runtime_ids {
-    PyMutex mutex;
-    // next_index value must be preserved when Py_Initialize()/Py_Finalize()
-    // is called multiple times: see _PyUnicode_FromId() implementation.
-    Py_ssize_t next_index;
-};
-
-struct _Py_unicode_runtime_state {
-    struct _Py_unicode_runtime_ids ids;
-};
-
-/* fs_codec.encoding is initialized to NULL.
-   Later, it is set to a non-NULL string by _PyUnicode_InitEncodings(). */
-struct _Py_unicode_fs_codec {
-    char *encoding;   // Filesystem encoding (encoded to UTF-8)
-    int utf8;         // encoding=="utf-8"?
-    char *errors;     // Filesystem errors (encoded to UTF-8)
-    _Py_error_handler error_handler;
-};
-
-struct _Py_unicode_ids {
-    Py_ssize_t size;
-    PyObject **array;
-};
-
-struct _Py_unicode_state {
-    struct _Py_unicode_fs_codec fs_codec;
-
-    _PyUnicode_Name_CAPI *ucnhash_capi;
-
-    // Unicode identifiers (_Py_Identifier): see _PyUnicode_FromId()
-    struct _Py_unicode_ids ids;
-};
 
 extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);
 
