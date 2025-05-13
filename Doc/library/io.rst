@@ -592,10 +592,10 @@ I/O Base Classes
 
    .. method:: read1(size=-1, /)
 
-      Read and return up to *size* bytes, calilng ``raw.readinto``,
-      retrying if :py:const:`~errno.EINTR` is encountered per  :pep:`475`. If
-      *size* is ``-1`` or not provided, the implementation will choose an
-      arbitrary value for *size*.
+      Read and return up to *size* bytes, calling :meth:`~RawIOBase.readinto`
+      which may retry if :py:const:`~errno.EINTR` is encountered per
+      :pep:`475`. If *size* is ``-1`` or not provided, the implementation will
+      choose an arbitrary value for *size*.
 
       .. note::
 
@@ -748,14 +748,14 @@ than raw I/O does.
 
    .. method:: read1(size=-1, /)
 
-      In :class:`BytesIO`, this is the same as :meth:`io.BufferedIOBase.read`.
+      In :class:`BytesIO`, this is the same as :meth:`~BufferedIOBase.read`.
 
       .. versionchanged:: 3.7
          The *size* argument is now optional.
 
    .. method:: readinto1(b, /)
 
-      In :class:`BytesIO`, this is the same as :meth:`io.BufferedIOBase.readinto`.
+      In :class:`BytesIO`, this is the same as :meth:`~BufferedIOBase.readinto`.
 
       .. versionadded:: 3.5
 
@@ -854,7 +854,7 @@ than raw I/O does.
    :data:`DEFAULT_BUFFER_SIZE`.
 
    :class:`BufferedRWPair` implements all of :class:`BufferedIOBase`\'s methods
-   except for :meth:`io.BufferedIOBase.detach`, which raises
+   except for :meth:`~BufferedIOBase.detach`, which raises
    :exc:`UnsupportedOperation`.
 
    .. warning::
@@ -1004,8 +1004,8 @@ Text I/O
    If *line_buffering* is ``True``, :meth:`~IOBase.flush` is implied when a call to
    write contains a newline character or a carriage return.
 
-   If *write_through* is ``True``, calls to :meth:`io.BufferedIOBase.write` are
-   guaranteed not to be buffered: any data written on the :class:`TextIOWrapper`
+   If *write_through* is ``True``, calls to :meth:`~BufferedIOBase.write` are guaranteed
+   not to be buffered: any data written on the :class:`TextIOWrapper`
    object is immediately handled to its underlying binary *buffer*.
 
    .. versionchanged:: 3.3
