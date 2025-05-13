@@ -882,7 +882,6 @@ TCLTK_LIBS
 TCLTK_CFLAGS
 LIBSQLITE3_LIBS
 LIBSQLITE3_CFLAGS
-LIBMPDEC_INTERNAL
 LIBMPDEC_LIBS
 LIBMPDEC_CFLAGS
 MODULE__CTYPES_MALLOC_CLOSURE
@@ -15617,11 +15616,115 @@ fi
         # Put the nasty error message in config.log where it belongs
         echo "$LIBMPDEC_PKG_ERRORS" >&5
 
-        have_mpdec=no
+
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$CPPFLAGS $LIBMPDEC_CFLAGS"
+    LIBS="$LIBS $LIBMPDEC_LIBS"
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+        #include <mpdecimal.h>
+        #if MPD_VERSION_HEX < 0x02050000
+        #  error "mpdecimal 2.5.0 or higher required"
+        #endif
+
+int
+main (void)
+{
+const char *x = mpd_version();
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  have_mpdec=yes
+else case e in #(
+  e) have_mpdec=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+
+    if test "x$have_mpdec" = xyes
+then :
+
+     LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
+     LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
+
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
 elif test $pkg_failed = untried; then
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-        have_mpdec=no
+
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$CPPFLAGS $LIBMPDEC_CFLAGS"
+    LIBS="$LIBS $LIBMPDEC_LIBS"
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+        #include <mpdecimal.h>
+        #if MPD_VERSION_HEX < 0x02050000
+        #  error "mpdecimal 2.5.0 or higher required"
+        #endif
+
+int
+main (void)
+{
+const char *x = mpd_version();
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  have_mpdec=yes
+else case e in #(
+  e) have_mpdec=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+
+    if test "x$have_mpdec" = xyes
+then :
+
+     LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
+     LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
+
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
 else
         LIBMPDEC_CFLAGS=$pkg_cv_LIBMPDEC_CFLAGS
         LIBMPDEC_LIBS=$pkg_cv_LIBMPDEC_LIBS
@@ -15635,6 +15738,21 @@ if test "x$with_pydebug" = xyes
 then :
   as_fn_append LIBMPDEC_CFLAGS " -DTEST_COVERAGE"
 fi
+
+if test "$have_ipa_pure_const_bug" = yes; then
+    # Some versions of gcc miscompile inline asm:
+    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
+    # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
+    as_fn_append LIBMPDEC_CFLAGS " -fno-ipa-pure-const"
+fi
+
+if test "$have_glibc_memmove_bug" = yes; then
+    # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
+    # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
+    as_fn_append LIBMPDEC_CFLAGS " -U_FORTIFY_SOURCE"
+fi
+
+
 
 # Check whether _decimal should use a coroutine-local or thread-local context
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-decimal-contextvar" >&5
@@ -15656,26 +15774,8 @@ then
 printf "%s\n" "#define WITH_DECIMAL_CONTEXTVAR 1" >>confdefs.h
 
 fi
-
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_decimal_contextvar" >&5
 printf "%s\n" "$with_decimal_contextvar" >&6; }
-
-if test "$have_ipa_pure_const_bug" = yes; then
-    # Some versions of gcc miscompile inline asm:
-    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
-    # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
-    as_fn_append LIBMPDEC_CFLAGS " -fno-ipa-pure-const"
-fi
-
-if test "$have_glibc_memmove_bug" = yes; then
-    # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
-    # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
-    as_fn_append LIBMPDEC_CFLAGS " -U_FORTIFY_SOURCE"
-fi
-
-
-
-
 
 
 

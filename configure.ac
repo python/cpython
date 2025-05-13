@@ -4090,15 +4090,47 @@ if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
               [Defined if _Complex C type can be used with libffi.])
 fi
 
-dnl Check for libmpdec library.
-PKG_CHECK_MODULES(
-  [LIBMPDEC], [libmpdec >= 2.5.0],
-  [have_mpdec=yes], [have_mpdec=no])
+dnl Check for libmpdec >= 2.5.0
+PKG_CHECK_MODULES([LIBMPDEC], [libmpdec >= 2.5.0], [have_mpdec=yes], [
+  WITH_SAVE_ENV([
+    CPPFLAGS="$CPPFLAGS $LIBMPDEC_CFLAGS"
+    LIBS="$LIBS $LIBMPDEC_LIBS"
+
+    AC_LINK_IFELSE([
+      AC_LANG_PROGRAM([
+        #include <mpdecimal.h>
+        #if MPD_VERSION_HEX < 0x02050000
+        #  error "mpdecimal 2.5.0 or higher required"
+        #endif
+      ], [const char *x = mpd_version();])
+    ], [have_mpdec=yes], [have_mpdec=no])
+
+    AS_VAR_IF([have_mpdec], [yes], [
+     LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
+     LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
+    ])
+  ])
+])
 
 # Disable forced inlining in debug builds, see GH-94847
 AS_VAR_IF(
   [with_pydebug], [yes],
   [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DTEST_COVERAGE"])])
+
+if test "$have_ipa_pure_const_bug" = yes; then
+    # Some versions of gcc miscompile inline asm:
+    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
+    # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
+    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -fno-ipa-pure-const"])
+fi
+
+if test "$have_glibc_memmove_bug" = yes; then
+    # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
+    # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
+    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -U_FORTIFY_SOURCE"])
+fi
+
+AC_SUBST([LIBMPDEC_CFLAGS])
 
 # Check whether _decimal should use a coroutine-local or thread-local context
 AC_MSG_CHECKING([for --with-decimal-contextvar])
@@ -4116,25 +4148,7 @@ then
     AC_DEFINE([WITH_DECIMAL_CONTEXTVAR], [1],
       [Define if you want build the _decimal module using a coroutine-local rather than a thread-local context])
 fi
-
 AC_MSG_RESULT([$with_decimal_contextvar])
-
-if test "$have_ipa_pure_const_bug" = yes; then
-    # Some versions of gcc miscompile inline asm:
-    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
-    # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
-    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -fno-ipa-pure-const"])
-fi
-
-if test "$have_glibc_memmove_bug" = yes; then
-    # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
-    # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
-    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -U_FORTIFY_SOURCE"])
-fi
-
-AC_SUBST([LIBMPDEC_CFLAGS])
-AC_SUBST([LIBMPDEC_INTERNAL])
-
 
 dnl detect sqlite3 from Emscripten emport
 PY_CHECK_EMSCRIPTEN_PORT([LIBSQLITE3], [-sUSE_SQLITE3])
