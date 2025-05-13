@@ -1,0 +1,2 @@
+Raise ValueError if an opener returns a negative fd in ``_pyio``
+:func:`open` to match ``_io``
