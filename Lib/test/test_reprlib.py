@@ -3,6 +3,7 @@
   Nick Mathewson
 """
 
+import annotationlib
 import sys
 import os
 import shutil
@@ -11,7 +12,7 @@ import importlib.util
 import unittest
 import textwrap
 
-from test.support import verbose
+from test.support import verbose, EqualToForwardRef
 from test.support.os_helper import create_empty_file
 from reprlib import repr as r # Don't shadow builtin repr
 from reprlib import Repr
@@ -828,6 +829,20 @@ class TestRecursiveRepr(unittest.TestCase):
         self.assertEqual(len(type_params), 1)
         self.assertEqual(type_params[0].__name__, 'T')
         self.assertEqual(type_params[0].__bound__, str)
+
+    def test_annotations(self):
+        class My:
+            @recursive_repr()
+            def __repr__(self, default: undefined = ...):
+                return default
+
+        annotations = annotationlib.get_annotations(
+            My.__repr__, format=annotationlib.Format.FORWARDREF
+        )
+        self.assertEqual(
+            annotations,
+            {'default': EqualToForwardRef("undefined", owner=My.__repr__)}
+        )
 
 if __name__ == "__main__":
     unittest.main()

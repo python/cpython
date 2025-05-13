@@ -327,6 +327,25 @@ class AnnotateTests(unittest.TestCase):
         f.__annotations__ = {"z": 43}
         self.assertIs(f.__annotate__, None)
 
+    def test_user_defined_annotate(self):
+        class X:
+            a: int
+
+            def __annotate__(format):
+                return {"a": str}
+        self.assertEqual(X.__annotate__(annotationlib.Format.VALUE), {"a": str})
+        self.assertEqual(annotationlib.get_annotations(X), {"a": str})
+
+        mod = build_module(
+            """
+            a: int
+            def __annotate__(format):
+                return {"a": str}
+            """
+        )
+        self.assertEqual(mod.__annotate__(annotationlib.Format.VALUE), {"a": str})
+        self.assertEqual(annotationlib.get_annotations(mod), {"a": str})
+
 
 class DeferredEvaluationTests(unittest.TestCase):
     def test_function(self):

@@ -158,6 +158,11 @@ PyAPI_FUNC(int) _PyLong_UnsignedLongLong_Converter(PyObject *, void *);
 // Export for '_testclinic' shared extension (Argument Clinic code)
 PyAPI_FUNC(int) _PyLong_Size_t_Converter(PyObject *, void *);
 
+PyAPI_FUNC(int) _PyLong_UInt8_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyLong_UInt16_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyLong_UInt32_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyLong_UInt64_Converter(PyObject *, void *);
+
 /* Long value tag bits:
  * 0-1: Sign bits value = (1-sign), ie. negative=2, positive=0, zero=1.
  * 2: Set to 1 for the small ints
