@@ -464,22 +464,19 @@ class BaseEventLoop(events.AbstractEventLoop):
         Return a task object.
         """
         self._check_closed()
+
         if self._task_factory is not None:
             if context is not None:
                 kwargs["context"] = context
 
             task = self._task_factory(self, coro, **kwargs)
             task.set_name(name)
-            try:
-                # gh-128552: prevent a refcycle of
-                # task.exception().__traceback__->BaseEventLoop.create_task->task
-                return task
-            finally:
-                del task
 
-        task = tasks.Task(coro, loop=self, name=name, context=context, **kwargs)
-        if task._source_traceback:
-            del task._source_traceback[-1]
+        else:
+            task = tasks.Task(coro, loop=self, name=name, context=context, **kwargs)
+            if task._source_traceback:
+                del task._source_traceback[-1]
+
         try:
             return task
         finally:
