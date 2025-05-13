@@ -677,6 +677,60 @@ _PyCode_GetXIData(PyThreadState *tstate, PyObject *obj, _PyXIData_t *xidata)
     return 0;
 }
 
+// function
+
+PyObject *
+_PyFunction_FromXIData(_PyXIData_t *xidata)
+{
+    // For now "stateless" functions are the only ones we must accommodate.
+
+    PyObject *code = _PyMarshal_ReadObjectFromXIData(xidata);
+    if (code == NULL) {
+        return NULL;
+    }
+    // Create a new function.
+    assert(PyCode_Check(code));
+    PyObject *globals = PyDict_New();
+    if (globals == NULL) {
+        Py_DECREF(code);
+        return NULL;
+    }
+    PyObject *func = PyFunction_New(code, globals);
+    Py_DECREF(code);
+    Py_DECREF(globals);
+    return func;
+}
+
+int
+_PyFunction_GetXIData(PyThreadState *tstate, PyObject *func,
+                      _PyXIData_t *xidata)
+{
+    if (!PyFunction_Check(func)) {
+        const char *msg = "expected a function, got %R";
+        format_notshareableerror(tstate, NULL, 0, msg, func);
+        return -1;
+    }
+    if (_PyFunction_VerifyStateless(tstate, func) < 0) {
+        PyObject *cause = _PyErr_GetRaisedException(tstate);
+        assert(cause != NULL);
+        const char *msg = "only stateless functions are shareable";
+        set_notshareableerror(tstate, cause, 0, msg);
+        Py_DECREF(cause);
+        return -1;
+    }
+    PyObject *code = PyFunction_GET_CODE(func);
+
+    // Ideally code objects would be immortal and directly shareable.
+    // In the meantime, we use marshal.
+    if (_PyMarshal_GetXIData(tstate, code, xidata) < 0) {
+        return -1;
+    }
+    // Replace _PyMarshal_ReadObjectFromXIData.
+    // (_PyFunction_FromXIData() will call it.)
+    _PyXIData_SET_NEW_OBJECT(xidata, _PyFunction_FromXIData);
+    return 0;
+}
+
 
 // registration
 
@@ -717,4 +771,6 @@ _register_builtins_for_crossinterpreter_data(dlregistry_t *xidregistry)
     if (_xidregistry_add_type(xidregistry, &PyTuple_Type, _tuple_shared) != 0) {
         Py_FatalError("could not register tuple for cross-interpreter sharing");
     }
+
+    // For now, we do not register PyCode_Type or PyFunction_Type.
 }
