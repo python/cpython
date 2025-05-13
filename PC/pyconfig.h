@@ -104,7 +104,7 @@ WIN32 is still required for the locale module.
 /* We undefine if it was set to zero because all later checks are #ifdef.
  * Note that non-Windows builds do not do this, and so every effort should
  * be made to avoid defining the variable at all when not desired. However,
- * sysconfig.get_config_val always returns a 1 or a 0, and so it seems likely
+ * sysconfig.get_config_var always returns a 1 or a 0, and so it seems likely
  * that a build backend will define it with the value.
  */
 #if Py_GIL_DISABLED == 0
