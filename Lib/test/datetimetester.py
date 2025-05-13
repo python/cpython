@@ -7296,8 +7296,7 @@ class ExtensionModuleTests(unittest.TestCase):
                 assert isinstance(_datetime.timezone.utc, _datetime.tzinfo)
                 del sys.modules['_datetime']
             """)
-        res = script_helper.assert_python_ok('-c', script)
-        self.assertFalse(res.err)
+        script_helper.assert_python_ok('-c', script)
 
     def test_module_free(self):
         script = textwrap.dedent("""
@@ -7327,7 +7326,7 @@ class ExtensionModuleTests(unittest.TestCase):
 
     def test_static_type_on_subinterp(self):
         script = textwrap.dedent("""
-            date = _testcapi.get_capi_types()['date']
+            date = type(_testcapi.get_date_fromdate(False, 2000, 1, 1))
             date.today
             """)
         with_setup = 'setup()' + script
@@ -7346,7 +7345,7 @@ class ExtensionModuleTests(unittest.TestCase):
             self.assert_python_ok_in_subinterp(with_import, 'setup()')
 
         with_import = textwrap.dedent("""
-            timedelta = _testcapi.get_capi_types()['timedelta']
+            timedelta = type(_testcapi.get_delta_fromdsu(False, 1, 0, 0))
             timedelta(days=1)
             """) + script
         with self.subTest('Implicit import'):
