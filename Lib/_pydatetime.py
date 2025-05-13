@@ -744,7 +744,7 @@ class timedelta:
         assert abs(usdouble) < 2.1e6    # exact value not critical
         # secondsfrac isn't referenced again
         microseconds, nanoseconds1 = divmod((microseconds + usdouble) * 1000, 1000)
-        microseconds = round(microseconds)
+        microseconds = int(microseconds)
         if nanoseconds1 != 0:
             nanoseconds += nanoseconds1
         seconds, microseconds = divmod(microseconds, 1000000)
