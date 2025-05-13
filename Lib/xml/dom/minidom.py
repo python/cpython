@@ -33,6 +33,7 @@ _nodeTypes_with_children = (xml.dom.Node.ELEMENT_NODE,
 
 class Node(xml.dom.Node):
     """Base class representing a node in the DOM tree.
+
     Provides core properties and methods that all DOM nodes must implement.
     """
     namespaceURI = None # this is non-null only for elements and attributes
