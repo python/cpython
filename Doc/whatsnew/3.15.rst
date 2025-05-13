@@ -121,10 +121,27 @@ Deprecated
 Removed
 =======
 
-module_name
------------
+sysconfig
+---------
 
-* TODO
+* Removed the *check_home* parameter of :func:`sysconfig.is_python_build`.
+  (Contributed by Filipe Laíns in :gh:`92897`.)
+
+
+typing
+------
+
+* The undocumented keyword argument syntax for creating
+  :class:`~typing.NamedTuple` classes (for example,
+  ``Point = NamedTuple("Point", x=int, y=int)``) is no longer supported.
+  Use the class-based syntax or the functional syntax instead.
+  (Contributed by Bénédikt Tran in :gh:`133817`.)
+
+* Using ``TD = TypedDict("TD")`` or ``TD = TypedDict("TD", None)`` to
+  construct a :class:`~typing.TypedDict` type with zero field is no
+  longer supported. Use ``class TD(TypedDict): pass``
+  or ``TD = TypedDict("TD", {})`` instead.
+  (Contributed by Bénédikt Tran in :gh:`133823`.)
 
 
 Porting to Python 3.15
@@ -187,6 +204,7 @@ Removed C APIs
 
 * :c:func:`!PyImport_ImportModuleNoBlock`: deprecated alias
   of :c:func:`PyImport_ImportModule`.
+  (Contributed by Bénédikt Tran in :gh:`133644`.)
 
 The following functions are removed in favor of :c:func:`PyConfig_Get`.
 The |pythoncapi_compat_project| can be used to get :c:func:`!PyConfig_Get`
@@ -218,6 +236,8 @@ on Python 3.13 and older.
   * :c:func:`!Py_GetPythonHome`:
     use :c:func:`PyConfig_Get("home") <PyConfig_Get>` or the
     :envvar:`PYTHONHOME` environment variable instead.
+
+  (Contributed by Bénédikt Tran in :gh:`133644`.)
 
 .. |pythoncapi_compat_project| replace:: |pythoncapi_compat_project_link|_
 .. |pythoncapi_compat_project_link| replace:: pythoncapi-compat project
