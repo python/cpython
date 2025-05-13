@@ -846,12 +846,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         except UnicodeDecodeError:
             displaypath = urllib.parse.unquote(self.path)
         displaypath = html.escape(displaypath, quote=False)
-        enc = sys.getfilesystemencoding()
         title = f'Directory listing for {displaypath}'
         r.append('<!DOCTYPE HTML>')
         r.append('<html lang="en">')
         r.append('<head>')
-        r.append(f'<meta charset="{enc}">')
+        r.append('<meta charset="utf-8">')
         r.append('<style type="text/css">\n:root {\ncolor-scheme: light dark;\n}\n</style>')
         r.append(f'<title>{title}</title>\n</head>')
         r.append(f'<body>\n<h1>{title}</h1>')
@@ -871,12 +870,12 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                                           errors='surrogatepass'),
                        html.escape(displayname, quote=False)))
         r.append('</ul>\n<hr>\n</body>\n</html>\n')
-        encoded = '\n'.join(r).encode(enc, 'surrogateescape')
+        encoded = '\n'.join(r).encode('utf-8', 'surrogateescape')
         f = io.BytesIO()
         f.write(encoded)
         f.seek(0)
         self.send_response(HTTPStatus.OK)
-        self.send_header("Content-type", "text/html; charset=%s" % enc)
+        self.send_header("Content-type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(encoded)))
         self.end_headers()
         return f
