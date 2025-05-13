@@ -14083,6 +14083,17 @@ _PyUnicodeWriter_WriteASCIIString(_PyUnicodeWriter *writer,
     return 0;
 }
 
+
+int
+PyUnicodeWriter_WriteASCII(PyUnicodeWriter *writer,
+                           const char *str,
+                           Py_ssize_t size)
+{
+    _PyUnicodeWriter *priv_writer = (_PyUnicodeWriter*)writer;
+    return _PyUnicodeWriter_WriteASCIIString(priv_writer, str, size);
+}
+
+
 int
 PyUnicodeWriter_WriteUTF8(PyUnicodeWriter *writer,
                           const char *str,
