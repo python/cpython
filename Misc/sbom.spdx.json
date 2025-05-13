@@ -994,7 +994,7 @@
         }
       ],
       "fileName": "Lib/ctypes/macholib/framework.py"
-    },
+    }
   ],
   "packages": [
     {
@@ -1441,7 +1441,7 @@
       "relatedSpdxElement": "SPDXRef-FILE-Lib-ctypes-macholib-framework.py",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-macholib"
-    },
+    }
   ],
   "spdxVersion": "SPDX-2.3"
 }
