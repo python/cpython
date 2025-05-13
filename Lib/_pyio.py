@@ -407,6 +407,9 @@ class IOBase(metaclass=abc.ABCMeta):
         if closed:
             return
 
+        if dealloc_warn := getattr(self, "_dealloc_warn", None):
+            dealloc_warn(self)
+
         # If close() fails, the caller logs the exception with
         # sys.unraisablehook. close() must be called at the end at __del__().
         self.close()
@@ -852,6 +855,10 @@ class _BufferedIOMixin(BufferedIOBase):
             return "<{}.{}>".format(modname, clsname)
         else:
             return "<{}.{} name={!r}>".format(modname, clsname, name)
+
+    def _dealloc_warn(self, source):
+        if dealloc_warn := getattr(self.raw, "_dealloc_warn", None):
+            dealloc_warn(source)
 
     ### Lower-level APIs ###
 
@@ -1600,11 +1607,15 @@ class FileIO(RawIOBase):
             raise
         self._fd = fd
 
-    def __del__(self):
+    def _dealloc_warn(self, source):
         if self._fd >= 0 and self._closefd and not self.closed:
             import warnings
-            warnings.warn('unclosed file %r' % (self,), ResourceWarning,
+            warnings.warn(f'unclosed file {source!r}', ResourceWarning,
                           stacklevel=2, source=self)
+
+    def __del__(self):
+        if self._fd >= 0 and self._closefd and not self.closed:
+            self._dealloc_warn(self)
             self.close()
 
     def __getstate__(self):
@@ -2688,6 +2699,10 @@ class TextIOWrapper(TextIOBase):
     @property
     def newlines(self):
         return self._decoder.newlines if self._decoder else None
+
+    def _dealloc_warn(self, source):
+        if dealloc_warn := getattr(self.buffer, "_dealloc_warn", None):
+            dealloc_warn(source)
 
 
 class StringIO(TextIOWrapper):
