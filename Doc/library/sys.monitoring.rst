@@ -173,8 +173,6 @@ events, use the expression ``PY_RETURN | PY_START``.
 
     Setting this event deactivates all events.
 
-Events can be divided into groups:
-
 .. _monitoring-event-local:
 
 Local events
