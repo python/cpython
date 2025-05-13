@@ -338,6 +338,7 @@ _zstd_ZstdCompressor_new_impl(PyTypeObject *type, PyObject *level,
     }
 
     self->use_multithread = 0;
+    self->dict = NULL;
 
     /* Compression context */
     self->cctx = ZSTD_createCCtx();
@@ -372,7 +373,6 @@ _zstd_ZstdCompressor_new_impl(PyTypeObject *type, PyObject *level,
     }
 
     /* Load Zstandard dictionary to compression context */
-    self->dict = NULL;
     if (zstd_dict != Py_None) {
         if (_zstd_load_c_dict(self, zstd_dict) < 0) {
             goto error;
@@ -387,9 +387,7 @@ _zstd_ZstdCompressor_new_impl(PyTypeObject *type, PyObject *level,
     return (PyObject*)self;
 
 error:
-    if (self != NULL) {
-        PyObject_GC_Del(self);
-    }
+    Py_XDECREF(self);
     return NULL;
 }
 
@@ -401,7 +399,9 @@ ZstdCompressor_dealloc(PyObject *ob)
     PyObject_GC_UnTrack(self);
 
     /* Free compression context */
-    ZSTD_freeCCtx(self->cctx);
+    if (self->cctx) {
+        ZSTD_freeCCtx(self->cctx);
+    }
 
     /* Py_XDECREF the dict after free the compression context */
     Py_CLEAR(self->dict);
