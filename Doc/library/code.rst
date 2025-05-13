@@ -24,8 +24,8 @@ build applications which provide an interactive interpreter prompt.
 
    Note that functions and classes objects created under an
    :class:`!InteractiveInterpreter` instance will belong to the namespace
-   defined by *locals*.
-   They are only pickleable if *locals* defined the namespace of an existing
+   specified by *locals*.
+   They are only pickleable if *locals* is the namespace of an existing
    module.
 
 
