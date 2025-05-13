@@ -210,6 +210,26 @@ def magic_open(path, mode='r', buffering=-1, encoding=None, errors=None,
     raise TypeError(f"{cls.__name__} can't be opened with mode {mode!r}")
 
 
+def vfspath(path):
+    """
+    Return the string representation of a virtual path object.
+    """
+    try:
+        return os.fsdecode(path)
+    except TypeError:
+        pass
+
+    path_type = type(path)
+    try:
+        return path_type.__vfspath__(path)
+    except AttributeError:
+        if hasattr(path_type, '__vfspath__'):
+            raise
+
+    raise TypeError("expected str, bytes, os.PathLike or JoinablePath "
+                    "object, not " + path_type.__name__)
+
+
 def ensure_distinct_paths(source, target):
     """
     Raise OSError(EINVAL) if the other path is within this path.
@@ -225,8 +245,8 @@ def ensure_distinct_paths(source, target):
         err = OSError(EINVAL, "Source path is a parent of target path")
     else:
         return
-    err.filename = str(source)
-    err.filename2 = str(target)
+    err.filename = vfspath(source)
+    err.filename2 = vfspath(target)
     raise err
 
 
@@ -247,8 +267,8 @@ def ensure_different_files(source, target):
         except (OSError, ValueError):
             return
     err = OSError(EINVAL, "Source and target are the same file")
-    err.filename = str(source)
-    err.filename2 = str(target)
+    err.filename = vfspath(source)
+    err.filename2 = vfspath(target)
     raise err
 
 

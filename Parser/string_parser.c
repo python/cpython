@@ -196,15 +196,18 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
     len = (size_t)(p - buf);
     s = buf;
 
-    const char *first_invalid_escape;
-    v = _PyUnicode_DecodeUnicodeEscapeInternal(s, (Py_ssize_t)len, NULL, NULL, &first_invalid_escape);
+    int first_invalid_escape_char;
+    const char *first_invalid_escape_ptr;
+    v = _PyUnicode_DecodeUnicodeEscapeInternal2(s, (Py_ssize_t)len, NULL, NULL,
+                                                &first_invalid_escape_char,
+                                                &first_invalid_escape_ptr);
 
     // HACK: later we can simply pass the line no, since we don't preserve the tokens
     // when we are decoding the string but we preserve the line numbers.
-    if (v != NULL && first_invalid_escape != NULL && t != NULL) {
-        if (warn_invalid_escape_sequence(parser, s, first_invalid_escape, t) < 0) {
-            /* We have not decref u before because first_invalid_escape points
-               inside u. */
+    if (v != NULL && first_invalid_escape_ptr != NULL && t != NULL) {
+        if (warn_invalid_escape_sequence(parser, s, first_invalid_escape_ptr, t) < 0) {
+            /* We have not decref u before because first_invalid_escape_ptr
+               points inside u. */
             Py_XDECREF(u);
             Py_DECREF(v);
             return NULL;
@@ -217,14 +220,17 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
 static PyObject *
 decode_bytes_with_escapes(Parser *p, const char *s, Py_ssize_t len, Token *t)
 {
-    const char *first_invalid_escape;
-    PyObject *result = _PyBytes_DecodeEscape(s, len, NULL, &first_invalid_escape);
+    int first_invalid_escape_char;
+    const char *first_invalid_escape_ptr;
+    PyObject *result = _PyBytes_DecodeEscape2(s, len, NULL,
+                                              &first_invalid_escape_char,
+                                              &first_invalid_escape_ptr);
     if (result == NULL) {
         return NULL;
     }
 
-    if (first_invalid_escape != NULL) {
-        if (warn_invalid_escape_sequence(p, s, first_invalid_escape, t) < 0) {
+    if (first_invalid_escape_ptr != NULL) {
+        if (warn_invalid_escape_sequence(p, s, first_invalid_escape_ptr, t) < 0) {
             Py_DECREF(result);
             return NULL;
         }
