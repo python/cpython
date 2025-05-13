@@ -93,5 +93,4 @@
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030E0000
 /* New in 3.14 */
 #define Py_tp_token 83
-#define Py_tp_binop_specialize 84
 #endif

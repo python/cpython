@@ -190,6 +190,27 @@
       "name": "zlib-ng",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "2.2.4"
+    },
+    {
+      "SPDXID": "SPDXRef-PACKAGE-zstd",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f24b52470d12f466e9fa4fcc94e6c530625ada51d7b36de7fdc6ed7e6f499c8e"
+        }
+      ],
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/zstd-1.5.7.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceLocator": "cpe:2.3:a:facebook:zstandard:1.5.7:*:*:*:*:*:*:*",
+          "referenceType": "cpe23Type"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "name": "zstd",
+      "primaryPackagePurpose": "SOURCE",
+      "versionInfo": "1.5.7"
     }
   ],
   "spdxVersion": "SPDX-2.3"

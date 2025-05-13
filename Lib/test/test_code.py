@@ -673,6 +673,20 @@ class CodeTest(unittest.TestCase):
         VARKWARGS = CO_FAST_LOCAL | CO_FAST_ARG_VAR | CO_FAST_ARG_KW
 
         funcs = {
+            defs.simple_script: {},
+            defs.complex_script: {
+                'obj': CO_FAST_LOCAL,
+                'pickle': CO_FAST_LOCAL,
+                'spam_minimal': CO_FAST_LOCAL,
+                'data': CO_FAST_LOCAL,
+                'res': CO_FAST_LOCAL,
+            },
+            defs.script_with_globals: {
+                'obj1': CO_FAST_LOCAL,
+                'obj2': CO_FAST_LOCAL,
+            },
+            defs.script_with_explicit_empty_return: {},
+            defs.script_with_return: {},
             defs.spam_minimal: {},
             defs.spam_with_builtins: {
                 'x': CO_FAST_LOCAL,
@@ -687,6 +701,16 @@ class CodeTest(unittest.TestCase):
                 'checks': CO_FAST_LOCAL,
                 'res': CO_FAST_LOCAL,
             },
+            defs.spam_args_attrs_and_builtins: {
+                'a': POSONLY,
+                'b': POSONLY,
+                'c': POSORKW,
+                'd': POSORKW,
+                'e': KWONLY,
+                'f': KWONLY,
+                'args': VARARGS,
+                'kwargs': VARKWARGS,
+            },
             defs.spam_returns_arg: {
                 'x': POSORKW,
             },
@@ -696,6 +720,11 @@ class CodeTest(unittest.TestCase):
             defs.spam_with_inner_closure: {
                 'x': CO_FAST_CELL,
                 'eggs': CO_FAST_LOCAL,
+            },
+            defs.spam_annotated: {
+                'a': POSORKW,
+                'b': POSORKW,
+                'c': POSORKW,
             },
             defs.spam_full: {
                 'a': POSONLY,
@@ -883,6 +912,19 @@ class CodeTest(unittest.TestCase):
             }
 
         funcs = {
+            defs.simple_script: new_var_counts(),
+            defs.complex_script: new_var_counts(
+                purelocals=5,
+                globalvars=1,
+                attrs=2,
+            ),
+            defs.script_with_globals: new_var_counts(
+                purelocals=2,
+                globalvars=1,
+            ),
+            defs.script_with_explicit_empty_return: new_var_counts(),
+            defs.script_with_return: new_var_counts(),
+            defs.spam_minimal: new_var_counts(),
             defs.spam_minimal: new_var_counts(),
             defs.spam_with_builtins: new_var_counts(
                 purelocals=4,
@@ -891,6 +933,14 @@ class CodeTest(unittest.TestCase):
             defs.spam_with_globals_and_builtins: new_var_counts(
                 purelocals=5,
                 globalvars=6,
+            ),
+            defs.spam_args_attrs_and_builtins: new_var_counts(
+                posonly=2,
+                posorkw=2,
+                kwonly=2,
+                varargs=1,
+                varkwargs=1,
+                attrs=1,
             ),
             defs.spam_returns_arg: new_var_counts(
                 posorkw=1,
@@ -901,6 +951,9 @@ class CodeTest(unittest.TestCase):
             defs.spam_with_inner_closure: new_var_counts(
                 othercells=1,
                 purelocals=1,
+            ),
+            defs.spam_annotated: new_var_counts(
+                posorkw=3,
             ),
             defs.spam_full: new_var_counts(
                 posonly=2,

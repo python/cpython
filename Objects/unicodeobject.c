@@ -6621,13 +6621,15 @@ _PyUnicode_GetNameCAPI(void)
 /* --- Unicode Escape Codec ----------------------------------------------- */
 
 PyObject *
-_PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
+_PyUnicode_DecodeUnicodeEscapeInternal2(const char *s,
                                Py_ssize_t size,
                                const char *errors,
                                Py_ssize_t *consumed,
-                               const char **first_invalid_escape)
+                               int *first_invalid_escape_char,
+                               const char **first_invalid_escape_ptr)
 {
     const char *starts = s;
+    const char *initial_starts = starts;
     _PyUnicodeWriter writer;
     const char *end;
     PyObject *errorHandler = NULL;
@@ -6635,7 +6637,8 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
     _PyUnicode_Name_CAPI *ucnhash_capi;
 
     // so we can remember if we've seen an invalid escape char or not
-    *first_invalid_escape = NULL;
+    *first_invalid_escape_char = -1;
+    *first_invalid_escape_ptr = NULL;
 
     if (size == 0) {
         if (consumed) {
@@ -6723,9 +6726,12 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
                 }
             }
             if (ch > 0377) {
-                if (*first_invalid_escape == NULL) {
-                    *first_invalid_escape = s-3; /* Back up 3 chars, since we've
-                                                    already incremented s. */
+                if (*first_invalid_escape_char == -1) {
+                    *first_invalid_escape_char = ch;
+                    if (starts == initial_starts) {
+                        /* Back up 3 chars, since we've already incremented s. */
+                        *first_invalid_escape_ptr = s - 3;
+                    }
                 }
             }
             WRITE_CHAR(ch);
@@ -6820,9 +6826,12 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
             goto error;
 
         default:
-            if (*first_invalid_escape == NULL) {
-                *first_invalid_escape = s-1; /* Back up one char, since we've
-                                                already incremented s. */
+            if (*first_invalid_escape_char == -1) {
+                *first_invalid_escape_char = c;
+                if (starts == initial_starts) {
+                    /* Back up one char, since we've already incremented s. */
+                    *first_invalid_escape_ptr = s - 1;
+                }
             }
             WRITE_ASCII_CHAR('\\');
             WRITE_CHAR(c);
@@ -6867,19 +6876,20 @@ _PyUnicode_DecodeUnicodeEscapeStateful(const char *s,
                               const char *errors,
                               Py_ssize_t *consumed)
 {
-    const char *first_invalid_escape;
-    PyObject *result = _PyUnicode_DecodeUnicodeEscapeInternal(s, size, errors,
+    int first_invalid_escape_char;
+    const char *first_invalid_escape_ptr;
+    PyObject *result = _PyUnicode_DecodeUnicodeEscapeInternal2(s, size, errors,
                                                       consumed,
-                                                      &first_invalid_escape);
+                                                      &first_invalid_escape_char,
+                                                      &first_invalid_escape_ptr);
     if (result == NULL)
         return NULL;
-    if (first_invalid_escape != NULL) {
-        unsigned char c = *first_invalid_escape;
-        if ('4' <= c && c <= '7') {
+    if (first_invalid_escape_char != -1) {
+        if (first_invalid_escape_char > 0xff) {
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                                 "\"\\%.3s\" is an invalid octal escape sequence. "
+                                 "\"\\%o\" is an invalid octal escape sequence. "
                                  "Such sequences will not work in the future. ",
-                                 first_invalid_escape) < 0)
+                                 first_invalid_escape_char) < 0)
             {
                 Py_DECREF(result);
                 return NULL;
@@ -6889,7 +6899,7 @@ _PyUnicode_DecodeUnicodeEscapeStateful(const char *s,
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
                                  "\"\\%c\" is an invalid escape sequence. "
                                  "Such sequences will not work in the future. ",
-                                 c) < 0)
+                                 first_invalid_escape_char) < 0)
             {
                 Py_DECREF(result);
                 return NULL;
@@ -13944,7 +13954,12 @@ _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
 int
 PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
 {
-    if (Py_TYPE(obj) == &PyLong_Type) {
+    PyTypeObject *type = Py_TYPE(obj);
+    if (type == &PyUnicode_Type) {
+        return _PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer, obj);
+    }
+
+    if (type == &PyLong_Type) {
         return _PyLong_FormatWriter((_PyUnicodeWriter*)writer, obj, 10, 0);
     }
 

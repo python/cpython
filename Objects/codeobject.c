@@ -1959,13 +1959,9 @@ int
 _PyCode_CheckNoInternalState(PyCodeObject *co, const char **p_errmsg)
 {
     const char *errmsg = NULL;
-    if (_PyCode_HAS_EXECUTORS(co) || _PyCode_HAS_INSTRUMENTATION(co)) {
-        errmsg = "only basic code objects are supported";
-    }
-    else if (co->_co_monitoring != NULL) {
-        errmsg = "only basic code objects are supported";
-    }
-    else if (co->co_extra != NULL) {
+    // We don't worry about co_executors, co_instrumentation,
+    // or co_monitoring.  They are essentially ephemeral.
+    if (co->co_extra != NULL) {
         errmsg = "only basic code objects are supported";
     }
 
