@@ -13,6 +13,7 @@ from test.support import os_helper
 from test.support import socket_helper
 from test.support import captured_stderr
 from test.support.os_helper import TESTFN, EnvironmentVarGuard
+from test.support.script_helper import spawn_python, kill_python
 import ast
 import builtins
 import glob
@@ -808,23 +809,24 @@ class _pthFileTests(unittest.TestCase):
 
 class CommandLineTests(unittest.TestCase):
     def exists(self, path):
-            if path is not None and os.path.isdir(path):
-                return "exists"
-            else:
-                return "doesn't exist"
+        if path is not None and os.path.isdir(path):
+            return "exists"
+        else:
+            return "doesn't exist"
 
     def get_excepted_output(self, *args):
         if len(args) == 0:
             user_base = site.getuserbase()
             user_site = site.getusersitepackages()
-            output = "sys.path = [\n"
+            output = io.StringIO()
+            output.write("sys.path = [\n")
             for dir in sys.path:
-                output += "    %r,\n" % (dir,)
-            output += "]\n"
-            output += f"USER_BASE: {user_base!r} ({self.exists(user_base)})\n"
-            output += f"USER_SITE: {user_site!r} ({self.exists(user_site)})\n"
-            output += f"ENABLE_USER_SITE: {site.ENABLE_USER_SITE!r}\n"
-            return 0, dedent(output).strip()
+                output.write("    %r,\n" % (dir,))
+            output.write("]\n")
+            output.write(f"USER_BASE: {user_base} ({self.exists(user_base)})\n")
+            output.write(f"USER_SITE: {user_site} ({self.exists(user_site)})\n")
+            output.write(f"ENABLE_USER_SITE: {site.ENABLE_USER_SITE}\n")
+            return 0, dedent(output.getvalue()).strip()
 
         buffer = []
         if '--user-base' in args:
@@ -846,25 +848,19 @@ class CommandLineTests(unittest.TestCase):
             return 10, None
 
     def invoke_command_line(self, *args):
-        args = [sys.executable, "-m", "site", *args]
-        env = os.environ.copy()
-        env["PYTHONUTF8"] = "1"
-        env["PYTHONIOENCODING"] = "utf-8"
+        args = ["-m", "site", *args]
 
-        proc = subprocess.Popen(args,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT,
-                                text=True,
-                                env=env,
-                                encoding='utf-8',
-                                errors='replace')
-        proc.wait()
-        output = proc.stdout.read()
+        with EnvironmentVarGuard() as env:
+            env["PYTHONUTF8"] = "1"
+            env["PYTHONIOENCODING"] = "utf-8"
+            proc = spawn_python(*args, text=True, env=env,
+                                encoding='utf-8', errors='replace')
+
+        output = kill_python(proc)
         return_code = proc.returncode
-        proc.stdout.close()
         return return_code, os.path.normpath(dedent(output).strip())
 
-    @unittest.skipIf(sys.platform == 'wasi', "Popen not supported on WASI")
+    @support.requires_subprocess()
     def test_no_args(self):
         return_code, output = self.invoke_command_line()
         excepted_return_code, _ = self.get_excepted_output()
@@ -880,14 +876,14 @@ class CommandLineTests(unittest.TestCase):
         self.assertEqual(lines[-2], excepted_site)
         self.assertEqual(lines[-1], f"ENABLE_USER_SITE: {site.ENABLE_USER_SITE}")
 
-    @unittest.skipIf(sys.platform == 'wasi', "Popen not supported on WASI")
+    @support.requires_subprocess()
     def test_unknown_args(self):
         return_code, output = self.invoke_command_line("--unknown-arg")
         excepted_return_code, _ = self.get_excepted_output("--unknown-arg")
         self.assertEqual(return_code, excepted_return_code)
         self.assertIn('[--user-base] [--user-site]', output)
 
-    @unittest.skipIf(sys.platform == 'wasi', "Popen not supported on WASI")
+    @support.requires_subprocess()
     def test_base_arg(self):
         return_code, output = self.invoke_command_line("--user-base")
         excepted = self.get_excepted_output("--user-base")
@@ -895,7 +891,7 @@ class CommandLineTests(unittest.TestCase):
         self.assertEqual(return_code, excepted_return_code)
         self.assertEqual(output, excepted_output)
 
-    @unittest.skipIf(sys.platform == 'wasi', "Popen not supported on WASI")
+    @support.requires_subprocess()
     def test_site_arg(self):
         return_code, output = self.invoke_command_line("--user-site")
         excepted = self.get_excepted_output("--user-site")
@@ -903,7 +899,7 @@ class CommandLineTests(unittest.TestCase):
         self.assertEqual(return_code, excepted_return_code)
         self.assertEqual(output, excepted_output)
 
-    @unittest.skipIf(sys.platform == 'wasi', "Popen not supported on WASI")
+    @support.requires_subprocess()
     def test_both_args(self):
         return_code, output = self.invoke_command_line("--user-base",
                                                        "--user-site")
