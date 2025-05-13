@@ -1130,7 +1130,6 @@
     <elf-symbol name='_PyBytesWriter_Prepare' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyBytesWriter_Resize' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyBytesWriter_WriteBytes' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
-    <elf-symbol name='_PyBytes_DecodeEscape' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyBytes_Find' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyBytes_FromData' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyBytes_FromXIData' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
@@ -1448,7 +1447,6 @@
     <elf-symbol name='_PyUnicode_AsUTF8String' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyUnicode_CheckConsistency' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyUnicode_Copy' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
-    <elf-symbol name='_PyUnicode_DecodeUnicodeEscapeInternal' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyUnicode_EncodeUTF16' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyUnicode_EncodeUTF32' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyUnicode_Equal' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
@@ -24179,21 +24177,6 @@
       <parameter type-id='type-id-6'/>
       <parameter type-id='type-id-6'/>
       <return type-id='type-id-5'/>
-    </function-decl>
-    <function-decl name='_PyBytes_DecodeEscape' mangled-name='_PyBytes_DecodeEscape' filepath='./Include/internal/pycore_bytesobject.h' line='23' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyBytes_DecodeEscape'>
-      <parameter type-id='type-id-4'/>
-      <parameter type-id='type-id-7'/>
-      <parameter type-id='type-id-4'/>
-      <parameter type-id='type-id-266'/>
-      <return type-id='type-id-6'/>
-    </function-decl>
-    <function-decl name='_PyUnicode_DecodeUnicodeEscapeInternal' mangled-name='_PyUnicode_DecodeUnicodeEscapeInternal' filepath='./Include/internal/pycore_unicodeobject.h' line='142' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_DecodeUnicodeEscapeInternal'>
-      <parameter type-id='type-id-4'/>
-      <parameter type-id='type-id-7'/>
-      <parameter type-id='type-id-4'/>
-      <parameter type-id='type-id-8'/>
-      <parameter type-id='type-id-266'/>
-      <return type-id='type-id-6'/>
     </function-decl>
     <function-decl name='_PyErr_BadInternalCall' mangled-name='_PyErr_BadInternalCall' filepath='./Include/pyerrors.h' line='223' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyErr_BadInternalCall'>
       <parameter type-id='type-id-4'/>
