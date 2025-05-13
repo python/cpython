@@ -158,7 +158,7 @@ Build changes
   to simplify maintenence and updates. The :mod:`decimal` module will now
   unconditionally use the system's libmpdec decimal library. Also remove the
   now unused :option:`!--with-system-libmpdec` :program:`configure` flag.
-  
+
   .. _libmpdec: https://www.bytereef.org/mpdecimal/
   (Contributed by Sergey B Kirpichev in :gh:`115119`.)
 
