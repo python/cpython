@@ -479,10 +479,10 @@ _PyObject_GetXIDataWithFallback(PyThreadState *tstate,
             return -1;
         default:
 #ifdef Py_DEBUG
-            Py_UNREACHABLE();
+            Py_FatalError("unsupported xidata fallback option");
 #endif
             _PyErr_SetString(tstate, PyExc_SystemError,
-                             "unknown xidata fallback");
+                             "unsuppocted xidata fallback option");
             return -1;
     }
 }
@@ -1665,14 +1665,9 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
     PyThreadState *tstate = _PyThreadState_GET();
 
     assert(!PyErr_Occurred());
+    assert(code != _PyXI_ERR_NO_ERROR);
+    assert(code != _PyXI_ERR_UNCAUGHT_EXCEPTION);
     switch (code) {
-    case _PyXI_ERR_NO_ERROR: _Py_FALLTHROUGH;
-    case _PyXI_ERR_UNCAUGHT_EXCEPTION:
-        // There is nothing to apply.
-#ifdef Py_DEBUG
-        Py_UNREACHABLE();
-#endif
-        return 0;
     case _PyXI_ERR_OTHER:
         // XXX msg?
         PyErr_SetNone(PyExc_InterpreterError);
@@ -1697,7 +1692,7 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
         break;
     default:
 #ifdef Py_DEBUG
-        Py_UNREACHABLE();
+        Py_FatalError("unsupported error code");
 #else
         PyErr_Format(PyExc_RuntimeError, "unsupported error code %d", code);
 #endif
