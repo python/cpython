@@ -15617,31 +15617,11 @@ fi
         # Put the nasty error message in config.log where it belongs
         echo "$LIBMPDEC_PKG_ERRORS" >&5
 
-        as_fn_error $? "Package requirements (libmpdec >= 2.5.0) were not met:
-
-$LIBMPDEC_PKG_ERRORS
-
-Consider adjusting the PKG_CONFIG_PATH environment variable if you
-installed software in a non-standard prefix.
-
-Alternatively, you may set the environment variables LIBMPDEC_CFLAGS
-and LIBMPDEC_LIBS to avoid the need to call pkg-config.
-See the pkg-config man page for more details." "$LINENO" 5
+        have_mpdec=no
 elif test $pkg_failed = untried; then
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-        { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-printf "%s\n" "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "The pkg-config script could not be found or is too old.  Make sure it
-is in your PATH or set the PKG_CONFIG environment variable to the full
-path to pkg-config.
-
-Alternatively, you may set the environment variables LIBMPDEC_CFLAGS
-and LIBMPDEC_LIBS to avoid the need to call pkg-config.
-See the pkg-config man page for more details.
-
-To get pkg-config, see <http://pkg-config.freedesktop.org/>.
-See \`config.log' for more details" "$LINENO" 5; }
+        have_mpdec=no
 else
         LIBMPDEC_CFLAGS=$pkg_cv_LIBMPDEC_CFLAGS
         LIBMPDEC_LIBS=$pkg_cv_LIBMPDEC_LIBS
@@ -15679,73 +15659,6 @@ fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_decimal_contextvar" >&5
 printf "%s\n" "$with_decimal_contextvar" >&6; }
-
-if test "x$with_system_libmpdec" = xno
-then :
-  # Check for libmpdec machine flavor
-   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for decimal libmpdec machine" >&5
-printf %s "checking for decimal libmpdec machine... " >&6; }
-   case $ac_sys_system in #(
-  Darwin*) :
-    libmpdec_system=Darwin ;; #(
-  SunOS*) :
-    libmpdec_system=sunos ;; #(
-  *) :
-    libmpdec_system=other
-    ;;
-esac
-
-   libmpdec_machine=unknown
-   if test "$libmpdec_system" = Darwin; then
-       # universal here means: build libmpdec with the same arch options
-       # the python interpreter was built with
-       libmpdec_machine=universal
-   elif test $ac_cv_sizeof_size_t -eq 8; then
-       if test "$ac_cv_gcc_asm_for_x64" = yes; then
-           libmpdec_machine=x64
-       elif test "$ac_cv_type___uint128_t" = yes; then
-           libmpdec_machine=uint128
-       else
-           libmpdec_machine=ansi64
-       fi
-   elif test $ac_cv_sizeof_size_t -eq 4; then
-       if test "$ac_cv_gcc_asm_for_x87" = yes -a "$libmpdec_system" != sunos; then
-           case $ac_cv_cc_name in #(
-  *gcc*) :
-    libmpdec_machine=ppro ;; #(
-  *clang*) :
-    libmpdec_machine=ppro ;; #(
-  *) :
-    libmpdec_machine=ansi32
-            ;;
-esac
-       else
-           libmpdec_machine=ansi32
-       fi
-   fi
-   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $libmpdec_machine" >&5
-printf "%s\n" "$libmpdec_machine" >&6; }
-
-   case $libmpdec_machine in #(
-  x64) :
-    as_fn_append LIBMPDEC_CFLAGS " -DCONFIG_64=1 -DASM=1" ;; #(
-  uint128) :
-    as_fn_append LIBMPDEC_CFLAGS " -DCONFIG_64=1 -DANSI=1 -DHAVE_UINT128_T=1" ;; #(
-  ansi64) :
-    as_fn_append LIBMPDEC_CFLAGS " -DCONFIG_64=1 -DANSI=1" ;; #(
-  ppro) :
-    as_fn_append LIBMPDEC_CFLAGS " -DCONFIG_32=1 -DANSI=1 -DASM=1 -Wno-unknown-pragmas" ;; #(
-  ansi32) :
-    as_fn_append LIBMPDEC_CFLAGS " -DCONFIG_32=1 -DANSI=1" ;; #(
-  ansi-legacy) :
-    as_fn_append LIBMPDEC_CFLAGS " -DCONFIG_32=1 -DANSI=1 -DLEGACY_COMPILER=1" ;; #(
-  universal) :
-    as_fn_append LIBMPDEC_CFLAGS " -DUNIVERSAL=1" ;; #(
-  *) :
-    as_fn_error $? "_decimal: unsupported architecture" "$LINENO" 5
-    ;;
-esac
-fi
 
 if test "$have_ipa_pure_const_bug" = yes; then
     # Some versions of gcc miscompile inline asm:
@@ -29667,7 +29580,6 @@ SRCDIRS="\
   Modules \
   Modules/_ctypes \
   Modules/_decimal \
-  Modules/_decimal/libmpdec \
   Modules/_hacl \
   Modules/_io \
   Modules/_multiprocessing \
@@ -32865,11 +32777,13 @@ then :
   if test "$have_mpdec" = "yes"
 then :
   py_cv_module__decimal=yes
-else $as_nop
-  py_cv_module__decimal=missing
+else case e in #(
+  e) py_cv_module__decimal=missing ;;
+esac
 fi
-else $as_nop
-  py_cv_module__decimal=disabled
+else case e in #(
+  e) py_cv_module__decimal=disabled ;;
+esac
 fi
 
 fi
