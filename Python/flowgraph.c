@@ -295,7 +295,7 @@ dump_instr(cfg_instr *i)
 static inline int
 basicblock_returns(const basicblock *b) {
     cfg_instr *last = basicblock_last_instr(b);
-    return last && last->i_opcode == RETURN_VALUE;
+    return last && IS_RETURN_OPCODE(last->i_opcode);
 }
 
 static void
@@ -2795,6 +2795,11 @@ optimize_load_fast(cfg_builder *g)
             assert(opcode != EXTENDED_ARG);
             switch (opcode) {
                 // Opcodes that load and store locals
+                case DELETE_FAST: {
+                    kill_local(instr_flags, &refs, oparg);
+                    break;
+                }
+
                 case LOAD_FAST: {
                     PUSH_REF(i, oparg);
                     break;

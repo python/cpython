@@ -626,7 +626,7 @@ which, when run, will produce:
    of each message with the handler's level, and only passes a message to a
    handler if it's appropriate to do so.
 
-.. versionchanged:: next
+.. versionchanged:: 3.14
    The :class:`QueueListener` can be started (and stopped) via the
    :keyword:`with` statement. For example:
 

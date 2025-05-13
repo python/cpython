@@ -218,24 +218,24 @@ class TranslateTestCase(unittest.TestCase):
 
     def test_translate(self):
         import re
-        self.assertEqual(translate('*'), r'(?s:.*)\Z')
-        self.assertEqual(translate('?'), r'(?s:.)\Z')
-        self.assertEqual(translate('a?b*'), r'(?s:a.b.*)\Z')
-        self.assertEqual(translate('[abc]'), r'(?s:[abc])\Z')
-        self.assertEqual(translate('[]]'), r'(?s:[]])\Z')
-        self.assertEqual(translate('[!x]'), r'(?s:[^x])\Z')
-        self.assertEqual(translate('[^x]'), r'(?s:[\^x])\Z')
-        self.assertEqual(translate('[x'), r'(?s:\[x)\Z')
+        self.assertEqual(translate('*'), r'(?s:.*)\z')
+        self.assertEqual(translate('?'), r'(?s:.)\z')
+        self.assertEqual(translate('a?b*'), r'(?s:a.b.*)\z')
+        self.assertEqual(translate('[abc]'), r'(?s:[abc])\z')
+        self.assertEqual(translate('[]]'), r'(?s:[]])\z')
+        self.assertEqual(translate('[!x]'), r'(?s:[^x])\z')
+        self.assertEqual(translate('[^x]'), r'(?s:[\^x])\z')
+        self.assertEqual(translate('[x'), r'(?s:\[x)\z')
         # from the docs
-        self.assertEqual(translate('*.txt'), r'(?s:.*\.txt)\Z')
+        self.assertEqual(translate('*.txt'), r'(?s:.*\.txt)\z')
         # squash consecutive stars
-        self.assertEqual(translate('*********'), r'(?s:.*)\Z')
-        self.assertEqual(translate('A*********'), r'(?s:A.*)\Z')
-        self.assertEqual(translate('*********A'), r'(?s:.*A)\Z')
-        self.assertEqual(translate('A*********?[?]?'), r'(?s:A.*.[?].)\Z')
+        self.assertEqual(translate('*********'), r'(?s:.*)\z')
+        self.assertEqual(translate('A*********'), r'(?s:A.*)\z')
+        self.assertEqual(translate('*********A'), r'(?s:.*A)\z')
+        self.assertEqual(translate('A*********?[?]?'), r'(?s:A.*.[?].)\z')
         # fancy translation to prevent exponential-time match failure
         t = translate('**a*a****a')
-        self.assertEqual(t, r'(?s:(?>.*?a)(?>.*?a).*a)\Z')
+        self.assertEqual(t, r'(?s:(?>.*?a)(?>.*?a).*a)\z')
         # and try pasting multiple translate results - it's an undocumented
         # feature that this works
         r1 = translate('**a**a**a*')
@@ -249,27 +249,27 @@ class TranslateTestCase(unittest.TestCase):
 
     def test_translate_wildcards(self):
         for pattern, expect in [
-            ('ab*', r'(?s:ab.*)\Z'),
-            ('ab*cd', r'(?s:ab.*cd)\Z'),
-            ('ab*cd*', r'(?s:ab(?>.*?cd).*)\Z'),
-            ('ab*cd*12', r'(?s:ab(?>.*?cd).*12)\Z'),
-            ('ab*cd*12*', r'(?s:ab(?>.*?cd)(?>.*?12).*)\Z'),
-            ('ab*cd*12*34', r'(?s:ab(?>.*?cd)(?>.*?12).*34)\Z'),
-            ('ab*cd*12*34*', r'(?s:ab(?>.*?cd)(?>.*?12)(?>.*?34).*)\Z'),
+            ('ab*', r'(?s:ab.*)\z'),
+            ('ab*cd', r'(?s:ab.*cd)\z'),
+            ('ab*cd*', r'(?s:ab(?>.*?cd).*)\z'),
+            ('ab*cd*12', r'(?s:ab(?>.*?cd).*12)\z'),
+            ('ab*cd*12*', r'(?s:ab(?>.*?cd)(?>.*?12).*)\z'),
+            ('ab*cd*12*34', r'(?s:ab(?>.*?cd)(?>.*?12).*34)\z'),
+            ('ab*cd*12*34*', r'(?s:ab(?>.*?cd)(?>.*?12)(?>.*?34).*)\z'),
         ]:
             with self.subTest(pattern):
                 translated = translate(pattern)
                 self.assertEqual(translated, expect, pattern)
 
         for pattern, expect in [
-            ('*ab', r'(?s:.*ab)\Z'),
-            ('*ab*', r'(?s:(?>.*?ab).*)\Z'),
-            ('*ab*cd', r'(?s:(?>.*?ab).*cd)\Z'),
-            ('*ab*cd*', r'(?s:(?>.*?ab)(?>.*?cd).*)\Z'),
-            ('*ab*cd*12', r'(?s:(?>.*?ab)(?>.*?cd).*12)\Z'),
-            ('*ab*cd*12*', r'(?s:(?>.*?ab)(?>.*?cd)(?>.*?12).*)\Z'),
-            ('*ab*cd*12*34', r'(?s:(?>.*?ab)(?>.*?cd)(?>.*?12).*34)\Z'),
-            ('*ab*cd*12*34*', r'(?s:(?>.*?ab)(?>.*?cd)(?>.*?12)(?>.*?34).*)\Z'),
+            ('*ab', r'(?s:.*ab)\z'),
+            ('*ab*', r'(?s:(?>.*?ab).*)\z'),
+            ('*ab*cd', r'(?s:(?>.*?ab).*cd)\z'),
+            ('*ab*cd*', r'(?s:(?>.*?ab)(?>.*?cd).*)\z'),
+            ('*ab*cd*12', r'(?s:(?>.*?ab)(?>.*?cd).*12)\z'),
+            ('*ab*cd*12*', r'(?s:(?>.*?ab)(?>.*?cd)(?>.*?12).*)\z'),
+            ('*ab*cd*12*34', r'(?s:(?>.*?ab)(?>.*?cd)(?>.*?12).*34)\z'),
+            ('*ab*cd*12*34*', r'(?s:(?>.*?ab)(?>.*?cd)(?>.*?12)(?>.*?34).*)\z'),
         ]:
             with self.subTest(pattern):
                 translated = translate(pattern)
@@ -277,28 +277,28 @@ class TranslateTestCase(unittest.TestCase):
 
     def test_translate_expressions(self):
         for pattern, expect in [
-            ('[', r'(?s:\[)\Z'),
-            ('[!', r'(?s:\[!)\Z'),
-            ('[]', r'(?s:\[\])\Z'),
-            ('[abc', r'(?s:\[abc)\Z'),
-            ('[!abc', r'(?s:\[!abc)\Z'),
-            ('[abc]', r'(?s:[abc])\Z'),
-            ('[!abc]', r'(?s:[^abc])\Z'),
-            ('[!abc][!def]', r'(?s:[^abc][^def])\Z'),
+            ('[', r'(?s:\[)\z'),
+            ('[!', r'(?s:\[!)\z'),
+            ('[]', r'(?s:\[\])\z'),
+            ('[abc', r'(?s:\[abc)\z'),
+            ('[!abc', r'(?s:\[!abc)\z'),
+            ('[abc]', r'(?s:[abc])\z'),
+            ('[!abc]', r'(?s:[^abc])\z'),
+            ('[!abc][!def]', r'(?s:[^abc][^def])\z'),
             # with [[
-            ('[[', r'(?s:\[\[)\Z'),
-            ('[[a', r'(?s:\[\[a)\Z'),
-            ('[[]', r'(?s:[\[])\Z'),
-            ('[[]a', r'(?s:[\[]a)\Z'),
-            ('[[]]', r'(?s:[\[]\])\Z'),
-            ('[[]a]', r'(?s:[\[]a\])\Z'),
-            ('[[a]', r'(?s:[\[a])\Z'),
-            ('[[a]]', r'(?s:[\[a]\])\Z'),
-            ('[[a]b', r'(?s:[\[a]b)\Z'),
+            ('[[', r'(?s:\[\[)\z'),
+            ('[[a', r'(?s:\[\[a)\z'),
+            ('[[]', r'(?s:[\[])\z'),
+            ('[[]a', r'(?s:[\[]a)\z'),
+            ('[[]]', r'(?s:[\[]\])\z'),
+            ('[[]a]', r'(?s:[\[]a\])\z'),
+            ('[[a]', r'(?s:[\[a])\z'),
+            ('[[a]]', r'(?s:[\[a]\])\z'),
+            ('[[a]b', r'(?s:[\[a]b)\z'),
             # backslashes
-            ('[\\', r'(?s:\[\\)\Z'),
-            (r'[\]', r'(?s:[\\])\Z'),
-            (r'[\\]', r'(?s:[\\\\])\Z'),
+            ('[\\', r'(?s:\[\\)\z'),
+            (r'[\]', r'(?s:[\\])\z'),
+            (r'[\\]', r'(?s:[\\\\])\z'),
         ]:
             with self.subTest(pattern):
                 translated = translate(pattern)

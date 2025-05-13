@@ -2009,6 +2009,8 @@ New Deprecations
 
 .. include:: ../deprecations/pending-removal-in-3.16.rst
 
+.. include:: ../deprecations/pending-removal-in-3.17.rst
+
 .. include:: ../deprecations/pending-removal-in-future.rst
 
 CPython Bytecode Changes
@@ -2475,17 +2477,17 @@ Deprecated C APIs
 
   * :c:func:`PySys_ResetWarnOptions`:
     Clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
-  * :c:func:`Py_GetExecPrefix`:
+  * :c:func:`!Py_GetExecPrefix`:
     Get :data:`sys.exec_prefix` instead.
-  * :c:func:`Py_GetPath`:
+  * :c:func:`!Py_GetPath`:
     Get :data:`sys.path` instead.
-  * :c:func:`Py_GetPrefix`:
+  * :c:func:`!Py_GetPrefix`:
     Get :data:`sys.prefix` instead.
-  * :c:func:`Py_GetProgramFullPath`:
+  * :c:func:`!Py_GetProgramFullPath`:
     Get :data:`sys.executable` instead.
-  * :c:func:`Py_GetProgramName`:
+  * :c:func:`!Py_GetProgramName`:
     Get :data:`sys.executable` instead.
-  * :c:func:`Py_GetPythonHome`:
+  * :c:func:`!Py_GetPythonHome`:
     Get :c:member:`PyConfig.home`
     or the :envvar:`PYTHONHOME` environment variable instead.
 
@@ -2497,7 +2499,7 @@ Deprecated C APIs
   which return a :term:`borrowed reference`.
   (Soft deprecated as part of :pep:`667`.)
 
-* Deprecate the :c:func:`PyImport_ImportModuleNoBlock` function,
+* Deprecate the :c:func:`!PyImport_ImportModuleNoBlock` function,
   which is just an alias to :c:func:`PyImport_ImportModule` since Python 3.3.
   (Contributed by Victor Stinner in :gh:`105396`.)
 
@@ -2528,6 +2530,8 @@ Deprecated C APIs
 .. include:: ../deprecations/c-api-pending-removal-in-3.14.rst
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
 
 .. include:: ../deprecations/c-api-pending-removal-in-future.rst
 

@@ -16,10 +16,11 @@ from unittest import mock
 from urllib.request import pathname2url
 
 from test.support import import_helper
+from test.support import cpython_only
 from test.support import is_emscripten, is_wasi
 from test.support import infinite_recursion
 from test.support import os_helper
-from test.support.os_helper import TESTFN, FakePath
+from test.support.os_helper import TESTFN, FS_NONASCII, FakePath
 try:
     import fcntl
 except ImportError:
@@ -78,6 +79,12 @@ class UnsupportedOperationTest(unittest.TestCase):
     def test_is_notimplemented(self):
         self.assertTrue(issubclass(pathlib.UnsupportedOperation, NotImplementedError))
         self.assertTrue(isinstance(pathlib.UnsupportedOperation(), NotImplementedError))
+
+
+class LazyImportTest(unittest.TestCase):
+    @cpython_only
+    def test_lazy_import(self):
+        import_helper.ensure_lazy_imports("pathlib", {"shutil"})
 
 
 #
@@ -763,12 +770,16 @@ class PurePathTest(unittest.TestCase):
         self.assertEqual(self.make_uri(P('c:/')), 'file:///c:/')
         self.assertEqual(self.make_uri(P('c:/a/b.c')), 'file:///c:/a/b.c')
         self.assertEqual(self.make_uri(P('c:/a/b%#c')), 'file:///c:/a/b%25%23c')
-        self.assertEqual(self.make_uri(P('c:/a/b\xe9')), 'file:///c:/a/b%C3%A9')
         self.assertEqual(self.make_uri(P('//some/share/')), 'file://some/share/')
         self.assertEqual(self.make_uri(P('//some/share/a/b.c')),
                          'file://some/share/a/b.c')
-        self.assertEqual(self.make_uri(P('//some/share/a/b%#c\xe9')),
-                         'file://some/share/a/b%25%23c%C3%A9')
+
+        from urllib.parse import quote_from_bytes
+        QUOTED_FS_NONASCII = quote_from_bytes(os.fsencode(FS_NONASCII))
+        self.assertEqual(self.make_uri(P('c:/a/b' + FS_NONASCII)),
+                         'file:///c:/a/b' + QUOTED_FS_NONASCII)
+        self.assertEqual(self.make_uri(P('//some/share/a/b%#c' + FS_NONASCII)),
+                         'file://some/share/a/b%25%23c' + QUOTED_FS_NONASCII)
 
     @needs_windows
     def test_ordering_windows(self):
@@ -3290,7 +3301,6 @@ class PathTest(PurePathTest):
         self.assertEqual(P.from_uri('file:////foo/bar'), P('//foo/bar'))
         self.assertEqual(P.from_uri('file://localhost/foo/bar'), P('/foo/bar'))
         if not is_wasi:
-            self.assertEqual(P.from_uri('file://127.0.0.1/foo/bar'), P('/foo/bar'))
             self.assertEqual(P.from_uri(f'file://{socket.gethostname()}/foo/bar'),
                              P('/foo/bar'))
         self.assertRaises(ValueError, P.from_uri, 'foo/bar')
