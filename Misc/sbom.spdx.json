@@ -1062,28 +1062,6 @@
       "originator": "Person: Ronald Oussoren (ronaldoussoren@mac.com)",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "1.0"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-mpdecimal",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "9f9cd4c041f99b5c49ffb7b59d9f12d95b683d88585608aa56a6307667b2b21f"
-        }
-      ],
-      "downloadLocation": "https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-2.5.1.tar.gz",
-      "externalRefs": [
-        {
-          "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:bytereef:mpdecimal:2.5.1:*:*:*:*:*:*:*",
-          "referenceType": "cpe23Type"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "mpdecimal",
-      "originator": "Organization: bytereef.org",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "2.5.1"
     }
   ],
   "relationships": [
