@@ -2930,10 +2930,6 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         y = accum("microseconds", x, us, _PyLong_GetOne(), &leftover_us);
         CLEANUP;
     }
-    // if (ns) {
-    //     y = accum("nanoseconds", x, ns, CONST_US_PER_NANOSECOND(st), &leftover_us);
-    //     CLEANUP;
-    // }
     if (ms) {
         y = accum("milliseconds", x, ms, CONST_US_PER_MS(st), &leftover_us);
         CLEANUP;
@@ -2958,34 +2954,19 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         y = accum("weeks", x, week, CONST_US_PER_WEEK(st), &leftover_us);
         CLEANUP;
     }
+    long leftover_ns = 0;
+    if (ns) {
+        leftover_ns += PyLong_AsLong(ns);
+    }
     if (leftover_us) {
-        /* Round to nearest whole # of us, and add into x. */
-        double whole_us = round(leftover_us);
-        int x_is_odd;
-        PyObject *temp;
-
-        if (fabs(whole_us - leftover_us) == 0.5) {
-            /* We're exactly halfway between two integers.  In order
-             * to do round-half-to-even, we must determine whether x
-             * is odd. Note that x is odd when it's last bit is 1. The
-             * code below uses bitwise and operation to check the last
-             * bit. */
-            temp = PyNumber_And(x, _PyLong_GetOne());  /* temp <- x & 1 */
-            if (temp == NULL) {
-                Py_DECREF(x);
-                goto Done;
-            }
-            x_is_odd = PyObject_IsTrue(temp);
-            Py_DECREF(temp);
-            if (x_is_odd == -1) {
-                Py_DECREF(x);
-                goto Done;
-            }
-            whole_us = 2.0 * round((leftover_us + x_is_odd) * 0.5) - x_is_odd;
+        long integral_us = (long)leftover_us;
+        // TODO: should use py_round; previous rounding was also wrong as it checks for x_is_odd instead of x + whole_us
+        leftover_ns = round((leftover_us - integral_us) * 1000);
+        if (leftover_ns > 999) {
+            integral_us++;
+            leftover_ns -= 1000;
         }
-
-        temp = PyLong_FromLong((long)whole_us);
-
+        PyObject *temp = PyLong_FromLong(integral_us);
         if (temp == NULL) {
             Py_DECREF(x);
             goto Done;
@@ -2996,9 +2977,7 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     }
 
     self = microseconds_to_delta_ex(x, type);
-    if (ns) {
-        SET_TD_NANOSECONDS((PyDateTime_Delta *)self, PyLong_AsLong(ns));
-    }
+    SET_TD_NANOSECONDS((PyDateTime_Delta *)self, leftover_ns);
     Py_DECREF(x);
 
 Done:

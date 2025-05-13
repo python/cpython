@@ -669,7 +669,6 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(td.microseconds, us)
 
     def test_total_seconds(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         td = timedelta(days=365)
         self.assertEqual(td.total_seconds(), 31536000.0)
         for total_seconds in [123456.789012, -123456.789012, 0.123456, 1e-9, -1e-9, 0, 1e6]:
@@ -1694,13 +1693,20 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertIsInstance(self.theclass.resolution, timedelta)
         self.assertTrue(self.theclass.max > self.theclass.min)
 
+    def is_pure_test(self):
+        return 'Pure' in self.__class__.__name__
+
     def test_extreme_timedelta(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         big = self.theclass.max - self.theclass.min
         # 3652058 days, 86399 seconds, 999999 microseconds, 999 nanoseconds
-        n = ((big.days*24*3600 + big.seconds)*1000000 + big.microseconds) * 1000 + big.nanoseconds
-        # n == 315537897599999999999 ~= 2**68.1
-        justasbig = timedelta(0, 0, 0, n)
+        if self.is_pure_test():
+            n = ((big.days*24*3600 + big.seconds)*1000000 + big.microseconds) * 1000 + big.nanoseconds
+            # n == 315537897599999999999 ~= 2**68.1 ;
+            justasbig = timedelta(0, 0, 0, n)
+        else:
+            n = ((big.days*24*3600 + big.seconds)*1000000 + big.microseconds)
+            # n == 315537897599999999 ~= 2**58.13
+            justasbig = timedelta(0, 0, n, big.nanoseconds)
         self.assertEqual(big, justasbig)
         self.assertEqual(self.theclass.min + big, self.theclass.max)
         self.assertEqual(self.theclass.max - big, self.theclass.min)
