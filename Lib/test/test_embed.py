@@ -461,7 +461,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             import sys
             import _testcapi
             _testcapi.test_datetime_capi()  # PyDateTime_IMPORT only once
-            timedelta = _testcapi.get_capi_types()['timedelta']
+            timedelta = type(_testcapi.get_delta_fromdsu(False, 1, 0, 0))
 
             def gen():
                 try:
