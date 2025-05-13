@@ -1022,6 +1022,7 @@ class TestBinaryPlistlib(unittest.TestCase):
                     self.decode(bytes([token]) + b'\x00'*16)
 
     def test_invalid_binary(self):
+        # return # BUG
         for name, data in INVALID_BINARY_PLISTS:
             with self.subTest(name):
                 with self.assertRaises(plistlib.InvalidFileException):
