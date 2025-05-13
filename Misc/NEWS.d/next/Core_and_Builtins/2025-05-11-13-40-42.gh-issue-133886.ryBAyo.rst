@@ -1,0 +1,2 @@
+Fix :func:`sys.remote_exec` for non-ASCII paths in non-UTF-8 locales and
+non-UTF-8 paths in UTF-8 locales.

@@ -258,7 +258,7 @@ def configure_wasi_python(context, working_dir):
     with exec_script.open("w", encoding="utf-8") as file:
         file.write(f'#!/bin/sh\nexec {host_runner} {python_wasm} "$@"\n')
     exec_script.chmod(0o755)
-    print(f"🏃‍♀️ Created {exec_script} ... ")
+    print(f"🏃‍♀️ Created {exec_script} (--host-runner)... ")
     sys.stdout.flush()
 
 
@@ -270,10 +270,10 @@ def make_wasi_python(context, working_dir):
              quiet=context.quiet)
 
     exec_script = working_dir / "python.sh"
-    subprocess.check_call([exec_script, "--version"])
+    call([exec_script, "--version"], quiet=False)
     print(
-        f"🎉 Use '{exec_script.relative_to(context.init_dir)}' "
-        "to run CPython in wasm runtime"
+        f"🎉 Use `{exec_script.relative_to(context.init_dir)}` "
+        "to run CPython w/ the WASI host specified by --host-runner"
     )
 
 
