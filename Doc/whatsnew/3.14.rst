@@ -2743,13 +2743,6 @@ Deprecated
   or a :term:`borrowed reference`.
   (Contributed by Serhiy Storchaka in :gh:`50333`.)
 
-* For unsigned integer formats in :c:func:`PyArg_ParseTuple`,
-  accepting Python integers with value that is larger than
-  the maximal value the corresponding C type or less than
-  the minimal value for the corresponding signed integer type
-  is now deprecated.
-  (Contributed by Serhiy Storchaka in :gh:`132629`.)
-
 * The previously undocumented function :c:func:`PySequence_In` is :term:`soft deprecated`.
   Use :c:func:`PySequence_Contains` instead.
   (Contributed by Yuki Kobayashi in :gh:`127896`.)
