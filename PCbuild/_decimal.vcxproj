@@ -98,56 +98,15 @@
       <PreprocessorDefinitions Condition="'$(Platform)'=='ARM'">CONFIG_32;ANSI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Platform)'=='ARM64'">CONFIG_64;ANSI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Platform)' == 'x64'">CONFIG_64;MASM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\Modules\_decimal;..\Modules\_decimal\windows;$(mpdecimalDir)\libmpdec;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Modules\_decimal;..\Modules\_decimal\windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="$(mpdecimalDir)\libmpdec\basearith.h" />
-    <ClInclude Include="$(mpdecimalDir)\libmpdec\bits.h" />
-    <ClInclude Include="$(mpdecimalDir)\libmpdec\constants.h" />
-    <ClInclude Include="$(mpdecimalDir)\libmpdec\convolute.h" />
-    <ClInclude Include="$(mpdecimalDir)\libmpdec\crt.h" />
-    <ClInclude Include="$(mpdecimalDir)\libmpdec\difradix2.h" />
     <ClInclude Include="..\Modules\_decimal\docstrings.h" />
-    <ClInclude Include="$(mpdecimalDir)\libmpdec\fnt.h" />
-    <ClInclude Include="$(mpdecimalDir)\libmpdec\fourstep.h" />
     <ClInclude Include="..\Modules\_decimal\windows\mpdecimal.h" />
-    <ClInclude Condition="'$(Platform)' == 'Win32'" Include="$(mpdecimalDir)\libmpdec\mpdecimal32vc.h" />
-    <ClInclude Condition="'$(Platform)' == 'ARM'" Include="$(mpdecimalDir)\libmpdec\mpdecimal32vc.h" />
-    <ClInclude Condition="'$(Platform)' == 'ARM64'" Include="$(mpdecimalDir)\libmpdec\mpdecimal64vc.h" />
-    <ClInclude Condition="'$(Platform)' == 'x64'" Include="$(mpdecimalDir)\libmpdec\mpdecimal64vc.h" />
-    <ClInclude Include="$(mpdecimalDir)\libmpdec\numbertheory.h" />
-    <ClInclude Include="$(mpdecimalDir)\libmpdec\sixstep.h" />
-    <ClInclude Include="$(mpdecimalDir)\libmpdec\transpose.h" />
-    <ClInclude Include="$(mpdecimalDir)\libmpdec\typearith.h" />
-    <ClInclude Include="$(mpdecimalDir)\libmpdec\umodarith.h" />
-    <ClInclude Include="$(mpdecimalDir)\libmpdec\vccompat.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_decimal\_decimal.c" />
-    <ClCompile Include="$(mpdecimalDir)\libmpdec\basearith.c" />
-    <ClCompile Include="$(mpdecimalDir)\libmpdec\constants.c" />
-    <ClCompile Include="$(mpdecimalDir)\libmpdec\context.c" />
-    <ClCompile Include="$(mpdecimalDir)\libmpdec\convolute.c" />
-    <ClCompile Include="$(mpdecimalDir)\libmpdec\crt.c" />
-    <ClCompile Include="$(mpdecimalDir)\libmpdec\difradix2.c" />
-    <ClCompile Include="$(mpdecimalDir)\libmpdec\fnt.c" />
-    <ClCompile Include="$(mpdecimalDir)\libmpdec\fourstep.c" />
-    <ClCompile Include="$(mpdecimalDir)\libmpdec\io.c" />
-    <ClCompile Include="$(mpdecimalDir)\libmpdec\mpalloc.c" />
-    <ClCompile Include="$(mpdecimalDir)\libmpdec\mpdecimal.c" />
-    <ClCompile Include="$(mpdecimalDir)\libmpdec\numbertheory.c" />
-    <ClCompile Include="$(mpdecimalDir)\libmpdec\sixstep.c" />
-    <ClCompile Include="$(mpdecimalDir)\libmpdec\transpose.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="$(mpdecimalDir)\libmpdec\vcdiv64.asm">
-      <ExcludedFromBuild Condition="'$(Platform)'=='Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Platform)'=='ARM'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Platform)'=='ARM64'">true</ExcludedFromBuild>
-      <Command>ml64 /nologo /c /Zi /Fo "$(IntDir)vcdiv64.obj" "%(FullPath)"</Command>
-      <Outputs>$(IntDir)vcdiv64.obj;%(Outputs)</Outputs>
-    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />

@@ -33,14 +33,3 @@ level directory. setup.py autodetects the following build configurations:
 It is possible to override autodetection by exporting:
 
    PYTHON_DECIMAL_WITH_MACHINE=value, where value is one of the above options.
-
-
-NOTE
-====
-
-decimal.so is not built from a static libmpdec.a since doing so led to
-failures on AIX (user report) and Windows (mixing static and dynamic CRTs
-causes locale problems and more).
-
-
-

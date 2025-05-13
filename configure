@@ -15617,25 +15617,37 @@ fi
         # Put the nasty error message in config.log where it belongs
         echo "$LIBMPDEC_PKG_ERRORS" >&5
 
-        LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
-     LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
+        as_fn_error $? "Package requirements (libmpdec >= 2.5.0) were not met:
 
+$LIBMPDEC_PKG_ERRORS
 
-]
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables LIBMPDEC_CFLAGS
+and LIBMPDEC_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details." "$LINENO" 5
 elif test $pkg_failed = untried; then
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-        LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
-     LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
+        { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
 
+Alternatively, you may set the environment variables LIBMPDEC_CFLAGS
+and LIBMPDEC_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
 
-]
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details" "$LINENO" 5; }
 else
         LIBMPDEC_CFLAGS=$pkg_cv_LIBMPDEC_CFLAGS
         LIBMPDEC_LIBS=$pkg_cv_LIBMPDEC_LIBS
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-
+        have_mpdec=yes
 fi
 
 # Disable forced inlining in debug builds, see GH-94847
@@ -32853,13 +32865,11 @@ then :
   if test "$have_mpdec" = "yes"
 then :
   py_cv_module__decimal=yes
-else case e in #(
-  e) py_cv_module__decimal=missing ;;
-esac
+else $as_nop
+  py_cv_module__decimal=missing
 fi
-else case e in #(
-  e) py_cv_module__decimal=disabled ;;
-esac
+else $as_nop
+  py_cv_module__decimal=disabled
 fi
 
 fi
