@@ -464,7 +464,6 @@ class BaseEventLoop(events.AbstractEventLoop):
         Return a task object.
         """
         self._check_closed()
-
         if self._task_factory is not None:
             if context is not None:
                 kwargs["context"] = context
