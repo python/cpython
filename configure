@@ -1112,7 +1112,6 @@ with_hash_algorithm
 with_tzpath
 with_libs
 with_system_expat
-with_system_libmpdec
 with_decimal_contextvar
 enable_loadable_sqlite_extensions
 with_dbmliborder
@@ -1909,9 +1908,6 @@ Optional Packages:
   --with-libs='lib1 ...'  link against additional libs (default is no)
   --with-system-expat     build pyexpat module using an installed expat
                           library, see Doc/library/pyexpat.rst (default is no)
-  --with-system-libmpdec  build _decimal module using an installed mpdecimal
-                          library, see Doc/library/decimal.rst (default is
-                          yes)
   --with-decimal-contextvar
                           build _decimal module using a coroutine-local rather
                           than a thread-local context (default is yes)
@@ -15643,13 +15639,17 @@ fi
 
         LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
      LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
-     LIBMPDEC_INTERNAL=
+
+
+]
 elif test $pkg_failed = untried; then
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
         LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
      LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
-     LIBMPDEC_INTERNAL=
+
+
+]
 else
         LIBMPDEC_CFLAGS=$pkg_cv_LIBMPDEC_CFLAGS
         LIBMPDEC_LIBS=$pkg_cv_LIBMPDEC_LIBS

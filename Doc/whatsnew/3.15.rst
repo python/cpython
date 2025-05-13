@@ -154,6 +154,10 @@ that may require changes to your code.
 Build changes
 =============
 
+* Removed bundled copy of the libmpdec, use system library if it's
+  available.
+  (Contributed by Sergey B Kirpichev in :gh:`115119`.)
+
 
 C API changes
 =============
