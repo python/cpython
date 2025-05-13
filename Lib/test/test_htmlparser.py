@@ -285,7 +285,9 @@ text
             #'foo = </\nscript>',
             #'foo = </ script>',
         ]
-        elements = ['script', 'style', 'SCRIPT', 'TEXTAREA', 'Script', 'Textarea']
+        tags = ['script', 'style', 'textarea', 'title']
+        # test the following 'casing' for each tag: script, SCRIPT, Script etc.
+        elements = [f(tag) for tag in tags for f in (str.lower, str.upper, str.capitalize)]
         for content in contents:
             for element in elements:
                 element_lower = element.lower()
