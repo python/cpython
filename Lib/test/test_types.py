@@ -2513,10 +2513,10 @@ class SubinterpreterTests(unittest.TestCase):
     def setUpClass(cls):
         global interpreters
         try:
-            from test.support import interpreters
+            import interpreters
         except ModuleNotFoundError:
             raise unittest.SkipTest('subinterpreters required')
-        import test.support.interpreters.channels  # noqa: F401
+        import interpreters.channels  # noqa: F401
 
     @cpython_only
     @no_rerun('channels (and queues) might have a refleak; see gh-122199')
@@ -2547,7 +2547,7 @@ class SubinterpreterTests(unittest.TestCase):
         main_results = collate_results(raw)
 
         interp = interpreters.create()
-        interp.exec('from test.support import interpreters')
+        interp.exec('import interpreters')
         interp.prepare_main(sch=sch)
         interp.exec(script)
         raw = rch.recv_nowait()

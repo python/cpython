@@ -138,11 +138,7 @@ ensure_highlevel_module_loaded(void)
 {
     PyObject *highlevel = PyImport_ImportModule("interpreters.queues");
     if (highlevel == NULL) {
-        PyErr_Clear();
-        highlevel = PyImport_ImportModule("test.support.interpreters.queues");
-        if (highlevel == NULL) {
-            return -1;
-        }
+        return -1;
     }
     Py_DECREF(highlevel);
     return 0;
@@ -299,7 +295,7 @@ add_QueueError(PyObject *mod)
 {
     module_state *state = get_module_state(mod);
 
-#define PREFIX "test.support.interpreters."
+#define PREFIX "interpreters."
 #define ADD_EXCTYPE(NAME, BASE, DOC)                                    \
     assert(state->NAME == NULL);                                        \
     if (add_exctype(mod, &state->NAME, PREFIX #NAME, DOC, BASE) < 0) {  \
