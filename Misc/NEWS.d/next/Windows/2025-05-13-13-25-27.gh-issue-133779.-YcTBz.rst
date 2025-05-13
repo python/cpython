@@ -1,0 +1,6 @@
+Reverts the change to generate different :file:`pyconfig.h` files based on
+compiler settings, as it was frequently causing extension builds to break.
+In particular, the ``Py_GIL_DISABLED`` preprocessor variable must now always
+be defined explicitly when compiling for the experimental free-threaded
+runtime. The :func:`sysconfig.get_config_var` function can be used to
+determine whether the current runtime was compiled with that flag or not.
