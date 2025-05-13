@@ -4,7 +4,6 @@ import sys
 import pickle
 import subprocess
 from test import support
-from test.support import force_not_colorized
 
 import unittest
 from unittest.case import _Outcome
@@ -107,7 +106,7 @@ class TestCleanUp(unittest.TestCase):
         self.assertTrue(test.doCleanups())
         self.assertEqual(cleanups, [(2, (), {}), (1, (1, 2, 3), dict(four='hello', five='goodbye'))])
 
-    @force_not_colorized
+    @support.force_not_colorized
     def testCleanUpWithErrors(self):
         class TestableTest(unittest.TestCase):
             def testNothing(self):
@@ -251,6 +250,7 @@ class TestCleanUp(unittest.TestCase):
         self.assertEqual(test._cleanups, [])
 
 
+@support.force_not_colorized_test_class
 class TestClassCleanup(unittest.TestCase):
     def test_addClassCleanUp(self):
         class TestableTest(unittest.TestCase):
@@ -418,7 +418,6 @@ class TestClassCleanup(unittest.TestCase):
         self.assertIsInstance(e2[1], CustomError)
         self.assertEqual(str(e2[1]), 'cleanup1')
 
-    @force_not_colorized
     def test_with_errors_addCleanUp(self):
         ordering = []
         class TestableTest(unittest.TestCase):
@@ -442,7 +441,6 @@ class TestClassCleanup(unittest.TestCase):
                          ['setUpClass', 'setUp', 'cleanup_exc',
                           'tearDownClass', 'cleanup_good'])
 
-    @force_not_colorized
     def test_run_with_errors_addClassCleanUp(self):
         ordering = []
         class TestableTest(unittest.TestCase):
@@ -466,7 +464,6 @@ class TestClassCleanup(unittest.TestCase):
                          ['setUpClass', 'setUp', 'test', 'cleanup_good',
                           'tearDownClass', 'cleanup_exc'])
 
-    @force_not_colorized
     def test_with_errors_in_addClassCleanup_and_setUps(self):
         ordering = []
         class_blow_up = False
@@ -519,7 +516,6 @@ class TestClassCleanup(unittest.TestCase):
                          ['setUpClass', 'setUp', 'tearDownClass',
                           'cleanup_exc'])
 
-    @force_not_colorized
     def test_with_errors_in_tearDownClass(self):
         ordering = []
         class TestableTest(unittest.TestCase):
@@ -596,7 +592,6 @@ class TestClassCleanup(unittest.TestCase):
                 'inner setup', 'inner test', 'inner cleanup',
                 'end outer test', 'outer cleanup'])
 
-    @force_not_colorized
     def test_run_empty_suite_error_message(self):
         class EmptyTest(unittest.TestCase):
             pass
@@ -608,6 +603,7 @@ class TestClassCleanup(unittest.TestCase):
         self.assertIn("\nNO TESTS RAN\n", runner.stream.getvalue())
 
 
+@support.force_not_colorized_test_class
 class TestModuleCleanUp(unittest.TestCase):
     def test_add_and_do_ModuleCleanup(self):
         module_cleanups = []
@@ -670,7 +666,6 @@ class TestModuleCleanUp(unittest.TestCase):
         self.assertEqual(cleanups,
                          [((1, 2), {'function': 'hello'})])
 
-    @force_not_colorized
     def test_run_module_cleanUp(self):
         blowUp = True
         ordering = []
@@ -810,7 +805,6 @@ class TestModuleCleanUp(unittest.TestCase):
                                     'tearDownClass', 'cleanup_good'])
         self.assertEqual(unittest.case._module_cleanups, [])
 
-    @force_not_colorized
     def test_run_module_cleanUp_when_teardown_exception(self):
         ordering = []
         class Module(object):
@@ -972,7 +966,6 @@ class TestModuleCleanUp(unittest.TestCase):
         self.assertEqual(cleanups,
                          [((1, 2), {'function': 3, 'self': 4})])
 
-    @force_not_colorized
     def test_with_errors_in_addClassCleanup(self):
         ordering = []
 
@@ -1006,7 +999,6 @@ class TestModuleCleanUp(unittest.TestCase):
                          ['setUpModule', 'setUpClass', 'test', 'tearDownClass',
                           'cleanup_exc', 'tearDownModule', 'cleanup_good'])
 
-    @force_not_colorized
     def test_with_errors_in_addCleanup(self):
         ordering = []
         class Module(object):
@@ -1037,7 +1029,6 @@ class TestModuleCleanUp(unittest.TestCase):
                          ['setUpModule', 'setUp', 'test', 'tearDown',
                           'cleanup_exc', 'tearDownModule', 'cleanup_good'])
 
-    @force_not_colorized
     def test_with_errors_in_addModuleCleanup_and_setUps(self):
         ordering = []
         module_blow_up = False
@@ -1330,7 +1321,7 @@ class Test_TextTestRunner(unittest.TestCase):
         expectedresult = (runner.stream, DESCRIPTIONS, VERBOSITY)
         self.assertEqual(runner._makeResult(), expectedresult)
 
-    @force_not_colorized
+    @support.force_not_colorized
     @support.requires_subprocess()
     def test_warnings(self):
         """

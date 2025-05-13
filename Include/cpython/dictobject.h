@@ -68,7 +68,12 @@ PyAPI_FUNC(PyObject *) _PyDict_NewPresized(Py_ssize_t minused);
 
 PyAPI_FUNC(int) PyDict_Pop(PyObject *dict, PyObject *key, PyObject **result);
 PyAPI_FUNC(int) PyDict_PopString(PyObject *dict, const char *key, PyObject **result);
-PyAPI_FUNC(PyObject *) _PyDict_Pop(PyObject *dict, PyObject *key, PyObject *default_value);
+
+// Use PyDict_Pop() instead
+Py_DEPRECATED(3.14) PyAPI_FUNC(PyObject *) _PyDict_Pop(
+    PyObject *dict,
+    PyObject *key,
+    PyObject *default_value);
 
 /* Dictionary watchers */
 

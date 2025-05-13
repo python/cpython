@@ -2,15 +2,17 @@
 #define _PY_INTERPRETER
 
 #include "Python.h"
-#include "pycore_frame.h"
-#include "pycore_function.h"
-#include "pycore_global_objects.h"
-#include "pycore_compile.h"       // _PyCompile_GetUnaryIntrinsicName, etc
+#include "pycore_compile.h"       // _PyCompile_GetUnaryIntrinsicName
+#include "pycore_function.h"      // _Py_set_function_type_params()
+#include "pycore_genobject.h"     // _PyAsyncGenValueWrapperNew
+#include "pycore_interpframe.h"   // _PyFrame_GetLocals()
 #include "pycore_intrinsics.h"    // INTRINSIC_PRINT
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_runtime.h"       // _Py_ID()
-#include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_sysmodule.h"     // _PySys_GetRequiredAttr()
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_typevarobject.h" // _Py_make_typevar()
+#include "pycore_unicodeobject.h" // _PyUnicode_FromASCII()
 
 
 /******** Unary functions ********/
@@ -23,16 +25,15 @@ no_intrinsic1(PyThreadState* tstate, PyObject *unused)
 }
 
 static PyObject *
-print_expr(PyThreadState* tstate, PyObject *value)
+print_expr(PyThreadState* Py_UNUSED(ignored), PyObject *value)
 {
-    PyObject *hook = _PySys_GetAttr(tstate, &_Py_ID(displayhook));
-    // Can't use ERROR_IF here.
+    PyObject *hook = _PySys_GetRequiredAttr(&_Py_ID(displayhook));
     if (hook == NULL) {
-        _PyErr_SetString(tstate, PyExc_RuntimeError,
-                            "lost sys.displayhook");
         return NULL;
     }
-    return PyObject_CallOneArg(hook, value);
+    PyObject *res = PyObject_CallOneArg(hook, value);
+    Py_DECREF(hook);
+    return res;
 }
 
 static int

@@ -626,6 +626,19 @@ which, when run, will produce:
    of each message with the handler's level, and only passes a message to a
    handler if it's appropriate to do so.
 
+.. versionchanged:: 3.14
+   The :class:`QueueListener` can be started (and stopped) via the
+   :keyword:`with` statement. For example:
+
+   .. code-block:: python
+
+      with QueueListener(que, handler) as listener:
+          # The queue listener automatically starts
+          # when the 'with' block is entered.
+          pass
+      # The queue listener automatically stops once
+      # the 'with' block is exited.
+
 .. _network-logging:
 
 Sending and receiving logging events across a network
@@ -825,15 +838,28 @@ To test these files, do the following in a POSIX environment:
    which will lead to records being written to the log.
 
 #. Inspect the log files in the :file:`run` subdirectory. You should see the
-   most recent log lines in files matching the pattern :file:`app.log*`. They won't be in
-   any particular order, since they have been handled concurrently by different
-   worker processes in a non-deterministic way.
+   most recent log lines in files matching the pattern :file:`app.log*`. They
+   won't be in any particular order, since they have been handled concurrently
+   by different worker processes in a non-deterministic way.
 
 #. You can shut down the listener and the web application by running
    ``venv/bin/supervisorctl -c supervisor.conf shutdown``.
 
 You may need to tweak the configuration files in the unlikely event that the
 configured ports clash with something else in your test environment.
+
+The default configuration uses a TCP socket on port 9020. You can use a Unix
+Domain socket instead of a TCP socket by doing the following:
+
+#. In :file:`listener.json`, add a ``socket`` key with the path to the domain
+   socket you want to use. If this key is present, the listener listens on the
+   corresponding domain socket and not on a TCP socket (the ``port`` key is
+   ignored).
+
+#. In :file:`webapp.json`, change the socket handler configuration dictionary
+   so that the ``host`` value is the path to the domain socket, and set the
+   ``port`` value to ``null``.
+
 
 .. currentmodule:: logging
 

@@ -94,6 +94,11 @@ WIN32 is still required for the locale module.
 #endif
 #endif /* Py_BUILD_CORE || Py_BUILD_CORE_BUILTIN || Py_BUILD_CORE_MODULE */
 
+/* _DEBUG implies Py_DEBUG */
+#ifdef _DEBUG
+#  define Py_DEBUG 1
+#endif
+
 /* Define to 1 if you want to disable the GIL */
 /* Uncomment the definition for free-threaded builds, or define it manually
  * when compiling extension modules. Note that we test with #ifdef, so
@@ -311,27 +316,31 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #ifdef MS_COREDLL
 #       if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
                 /* not building the core - must be an ext */
-#               if defined(_MSC_VER)
+#               if defined(_MSC_VER) && !defined(Py_NO_LINK_LIB)
                         /* So MSVC users need not specify the .lib
                         file in their Makefile */
+                        /* Define Py_NO_LINK_LIB to build extension disabling pragma
+                        based auto-linking.
+                        This is relevant when using build-system generator (e.g CMake) where
+                        the linking is explicitly handled */
 #                       if defined(Py_GIL_DISABLED)
-#                       if defined(_DEBUG)
-#                               pragma comment(lib,"python314t_d.lib")
+#                       if defined(Py_DEBUG)
+#                               pragma comment(lib,"python315t_d.lib")
 #                       elif defined(Py_LIMITED_API)
 #                               pragma comment(lib,"python3t.lib")
 #                       else
-#                               pragma comment(lib,"python314t.lib")
-#                       endif /* _DEBUG */
+#                               pragma comment(lib,"python315t.lib")
+#                       endif /* Py_DEBUG */
 #                       else /* Py_GIL_DISABLED */
-#                       if defined(_DEBUG)
-#                               pragma comment(lib,"python314_d.lib")
+#                       if defined(Py_DEBUG)
+#                               pragma comment(lib,"python315_d.lib")
 #                       elif defined(Py_LIMITED_API)
 #                               pragma comment(lib,"python3.lib")
 #                       else
-#                               pragma comment(lib,"python314.lib")
-#                       endif /* _DEBUG */
+#                               pragma comment(lib,"python315.lib")
+#                       endif /* Py_DEBUG */
 #                       endif /* Py_GIL_DISABLED */
-#               endif /* _MSC_VER */
+#               endif /* _MSC_VER && !Py_NO_LINK_LIB */
 #       endif /* Py_BUILD_CORE */
 #endif /* MS_COREDLL */
 
@@ -371,11 +380,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #       endif
 #       define ALIGNOF_MAX_ALIGN_T 8
 #endif
-
-#ifdef _DEBUG
-#       define Py_DEBUG
-#endif
-
 
 #ifdef MS_WIN32
 
@@ -752,5 +756,8 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define if libssl has X509_VERIFY_PARAM_set1_host and related function */
 #define HAVE_X509_VERIFY_PARAM_SET1_HOST 1
+
+// Truncate the thread name to 32766 characters.
+#define _PYTHREAD_NAME_MAXLEN 32766
 
 #endif /* !Py_CONFIG_H */

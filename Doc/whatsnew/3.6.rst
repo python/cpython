@@ -45,7 +45,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.6, compared to 3.5.
-Python 3.6 was released on December 23, 2016.  See the
+Python 3.6 was released on December 23, 2016.  See the
 `changelog <https://docs.python.org/3.6/whatsnew/changelog.html>`_ for a full
 list of changes.
 

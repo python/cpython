@@ -232,10 +232,14 @@ def _generate_posix_vars():
 
     print(f'Written {destfile}')
 
+    install_vars = get_config_vars()
+    # Fix config vars to match the values after install (of the default environment)
+    install_vars['projectbase'] = install_vars['BINDIR']
+    install_vars['srcdir'] = install_vars['LIBPL']
     # Write a JSON file with the output of sysconfig.get_config_vars
     jsonfile = os.path.join(pybuilddir, _get_json_data_name())
     with open(jsonfile, 'w') as f:
-        json.dump(get_config_vars(), f, indent=2)
+        json.dump(install_vars, f, indent=2)
 
     print(f'Written {jsonfile}')
 

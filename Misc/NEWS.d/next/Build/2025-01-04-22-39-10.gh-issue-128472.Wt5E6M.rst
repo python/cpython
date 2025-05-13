@@ -1,2 +1,0 @@
-Skip BOLT optimization of functions using computed gotos, fixing errors on
-build with LLVM 19.

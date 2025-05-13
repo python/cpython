@@ -11,6 +11,9 @@ import re
 import types
 import unittest
 
+from test.support import cpython_only
+from test.support.import_helper import ensure_lazy_imports
+
 # list, tuple and dict subclasses that do or don't overwrite __repr__
 class list2(list):
     pass
@@ -128,6 +131,10 @@ class QueryTestCase(unittest.TestCase):
         self.a = list(range(100))
         self.b = list(range(200))
         self.a[-12] = self.b
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("pprint", {"dataclasses", "re"})
 
     def test_init(self):
         pp = pprint.PrettyPrinter()
