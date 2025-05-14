@@ -32906,6 +32906,10 @@ fi
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__decimal" >&5
 printf "%s\n" "$py_cv_module__decimal" >&6; }
 
+if test "$have_mpdec" = "no"
+then
+  py_cv_module__decimal=n/a
+fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _dbm" >&5
 printf %s "checking for stdlib extension module _dbm... " >&6; }
