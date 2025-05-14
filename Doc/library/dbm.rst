@@ -15,9 +15,16 @@
 * :mod:`dbm.ndbm`
 
 If none of these modules are installed, the
-slow-but-simple implementation in module :mod:`dbm.dumb` will be used.  There
+slow-but-simple implementation in module :mod:`dbm.dumb` will be used. There
 is a `third party interface <https://www.jcea.es/programacion/pybsddb.htm>`_ to
 the Oracle Berkeley DB.
+
+.. note::
+   None of the underlying modules will automatically shrink the disk space used by
+   the database file. However, :mod:`dbm.sqlite3` and :mod:`dbm.dumb` provide
+   a :meth:`!vacuum` method that can be used for this purpose. :mod:`dbm.gnu` can
+   do the same with its :meth:`!reorganize`, called like this for retro-compatibility.
+
 
 .. exception:: error
 
@@ -185,6 +192,16 @@ or any other SQLite browser, including the SQLite CLI.
    :param mode:
       The Unix file access mode of the file (default: octal ``0o666``),
       used only when the database has to be created.
+
+   .. method:: sqlite3.vacuum()
+
+      If you have carried out a lot of deletions and would like to shrink the space
+      used on disk, this method will reorganize the database; therwise, deleted file
+      space will be kept and reused as new (key, value) pairs are added.
+
+   .. note::
+      During vacuuming, as much as twice the size of the original database is required
+      in free disk space.
 
 
 :mod:`dbm.gnu` --- GNU database manager
@@ -438,6 +455,9 @@ The :mod:`!dbm.dumb` module defines the following:
       with a sufficiently large/complex entry due to stack depth limitations in
       Python's AST compiler.
 
+   .. warning::
+      :mod:`dbm.dumb` does not support concurrent writes, which can corrupt the database.
+
    .. versionchanged:: 3.5
       :func:`~dbm.dumb.open` always creates a new database when *flag* is ``'n'``.
 
@@ -460,3 +480,9 @@ The :mod:`!dbm.dumb` module defines the following:
    .. method:: dumbdbm.close()
 
       Close the database.
+
+   .. method:: dumbdbm.vacuum()
+
+      If you have carried out a lot of deletions and would like to shrink the space
+      used on disk, this method will reorganize the database; otherwise, deleted file
+      space will not be reused.
