@@ -930,8 +930,12 @@ three types: integers, floating-point numbers, and imaginary numbers.
 
    NUMBER: `integer` | `floatnumber` | `imagnumber`
 
+The numeric value of a numeric literal is the same as if it were passed as a
+string to the :class:`int`, :class:`float` or :class:`complex` class
+constructor, respectively.
+Note that not all valid inputs for those constructors are also valid literals.
 
-Note that numeric literals do not include a sign; a phrase like ``-1`` is
+Numeric literals do not include a sign; a phrase like ``-1`` is
 actually an expression composed of the unary operator '``-``' and the literal
 ``1``.
 
@@ -950,7 +954,7 @@ and the :ref:`imaginary literal <imaginary>` ``2j``.
 .. _integers:
 
 Integer literals
-----------------
+^^^^^^^^^^^^^^^^
 
 Integer literals denote whole numbers. For example::
 
@@ -1023,26 +1027,58 @@ Formally, integer literals are described by the following lexical definitions:
 .. _floating:
 
 Floating-point literals
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 
-Floating-point literals are described by the following lexical definitions:
+Floating-point (float) literals, such as ``3.14`` or ``1.5``, denote
+:ref:`approximations of real numbers <datamodel-float>`.
 
-.. productionlist:: python-grammar
-   floatnumber: `pointfloat` | `exponentfloat`
-   pointfloat: [`digitpart`] `fraction` | `digitpart` "."
-   exponentfloat: (`digitpart` | `pointfloat`) `exponent`
+They consist of *integer* and *fraction* parts, each composed of decimal digits.
+The parts are separated by a decimal point, ``.``::
+
+   2.71828
+   4.0
+
+Unlike in integer literals, leading zeros are allowed in the numeric parts.
+For example, ``077.010`` is legal, and denotes the same number as ``77.10``.
+
+As in integer literals, single underscores may occur between digits to help
+readability::
+
+   96_485.332_123
+   3.14_15_93
+
+Either of these parts, but not both, can be empty. For example::
+
+   10.  # (equivalent to 10.0)
+   .001  # (equivalent to 0.001)
+
+Optionally, the integer and fraction may be followed by an *exponent*:
+the letter ``e`` or ``E``, followed by an optional sign, ``+`` or ``-``,
+and a number in the same format as the integer and fraction parts.
+The ``e`` or ``E`` represents "times ten raised to the power of"::
+
+   1.0e3  # (represents 1.0×10³, or 1000.0)
+   1.166e-5  # (represents 1.166×10⁻⁵, or 0.00001166)
+   6.02214076e+23  # (represents 6.02214076×10²³, or 602214076000000000000000.)
+
+In floats with only integer and exponent parts, the decimal point may be
+omitted::
+
+   1e3  # (equivalent to 1.e3 and 1.0e3)
+   0e0  # (equivalent to 0.)
+
+Formally, floating-point literals are described by the following
+lexical definitions:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   floatnumber:
+      | `digitpart` "." [`digitpart`] [`exponent`]
+      | "." `digitpart` [`exponent`]
+      | `digitpart` `exponent`
    digitpart: `digit` (["_"] `digit`)*
-   fraction: "." `digitpart`
-   exponent: ("e" | "E") ["+" | "-"] `digitpart`
-
-Note that the integer and exponent parts are always interpreted using radix 10.
-For example, ``077e010`` is legal, and denotes the same number as ``77e10``. The
-allowed range of floating-point literals is implementation-dependent.  As in
-integer literals, underscores are supported for digit grouping.
-
-Some examples of floating-point literals::
-
-   3.14    10.    .001    1e100    3.14e-10    0e0    3.14_15_93
+   exponent:  ("e" | "E") ["+" | "-"] `digitpart`
 
 .. versionchanged:: 3.6
    Underscores are now allowed for grouping purposes in literals.
@@ -1053,7 +1089,7 @@ Some examples of floating-point literals::
 .. _imaginary:
 
 Imaginary literals
-------------------
+^^^^^^^^^^^^^^^^^^
 
 Imaginary literals are described by the following lexical definitions:
 
