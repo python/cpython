@@ -60,6 +60,12 @@ my_getallocationgranularity (void)
 
 #endif
 
+#if !defined(DONT_USE_SEH) && !(defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
+// Only the WINDOWS_DESKTOP and WINDOWS_SYSTEM API partitions support lsa handling we want to
+// perform in there
+#define DONT_USE_SEH
+#endif
+
 #ifdef UNIX
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -292,7 +298,7 @@ filter_page_exception_method(mmap_object *self, EXCEPTION_POINTERS *ptrs,
 }
 #endif
 
-#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) && !defined(DONT_USE_SEH)
+#if defined(MS_WINDOWS) && !defined(DONT_USE_SEH)
 #define HANDLE_INVALID_MEM(sourcecode)                                     \
 do {                                                                       \
     EXCEPTION_RECORD record;                                               \
@@ -320,7 +326,7 @@ do {                                                                       \
 } while (0)
 #endif
 
-#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) && !defined(DONT_USE_SEH)
+#if defined(MS_WINDOWS) && !defined(DONT_USE_SEH)
 #define HANDLE_INVALID_MEM_METHOD(self, sourcecode)                           \
 do {                                                                          \
     EXCEPTION_RECORD record;                                                  \
