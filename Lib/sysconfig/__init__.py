@@ -462,7 +462,7 @@ def get_config_h_filename():
             inc_dir = _PROJECT_BASE
     else:
         inc_dir = get_path('platinclude')
-    return os.path.join(inc_dir, 'Include', 'pyconfig.h')
+    return os.path.join(inc_dir, 'pyconfig.h')
 
 
 def get_scheme_names():
