@@ -1050,6 +1050,9 @@ def _get_dunder_annotations(obj):
 
     Does not return a fresh dictionary.
     """
+    # This special case is needed to support types defined under
+    # from __future__ import annotations, where accessing the __annotations__
+    # attribute directly might return annotations for the wrong class.
     if isinstance(obj, type):
         try:
             ann = _BASE_GET_ANNOTATIONS(obj)
