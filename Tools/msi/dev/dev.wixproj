@@ -16,7 +16,7 @@
     </ItemGroup>
     <ItemGroup>
         <InstallFiles Include="$(PySourcePath)include\**\*.h"
-                      Exclude="$(PySourcePath)include\pyconfig.h">
+                      Exclude="$(PySourcePath)PC\pyconfig.h">
             <SourceBase>$(PySourcePath)</SourceBase>
             <Source>!(bindpath.src)</Source>
             <TargetBase>$(PySourcePath)</TargetBase>
