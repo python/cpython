@@ -108,6 +108,14 @@ Refer to :ref:`using-capsules` for more information on using these objects.
    Return the capsule's internal *pointer* on success.  On failure, set an
    exception and return ``NULL``.
 
+   .. note::
+
+      :c:func:`PyCapsule_Import` splits *name* on the ``.`` character, and
+      imports the first element. It then processes further elements using
+      attribute lookups. As a result, if *name* points to an attribute in
+      some submodule or subpackage, this submodule or subpackage must be
+      previously imported using other means (e.g. by using :c:func:`PyImport_ImportModule`).
+
    .. versionchanged:: 3.3
       *no_block* has no effect anymore.
 
