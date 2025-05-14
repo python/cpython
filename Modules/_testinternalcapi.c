@@ -1989,6 +1989,11 @@ get_crossinterp_data(PyObject *self, PyObject *args, PyObject *kwargs)
             goto error;
         }
     }
+    else if (strcmp(mode, "func") == 0) {
+        if (_PyFunction_GetXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
     else if (strcmp(mode, "script") == 0) {
         if (_PyCode_GetScriptXIData(tstate, obj, xidata) != 0) {
             goto error;

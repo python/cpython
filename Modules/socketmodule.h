@@ -259,7 +259,7 @@ typedef int SOCKET_T;
 #endif
 
 // AF_HYPERV is only supported on Windows
-#if defined(AF_HYPERV) && defined(MS_WINDOWS)
+#if defined(AF_HYPERV) && (defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
 #  define HAVE_AF_HYPERV
 #endif
 
