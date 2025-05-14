@@ -2269,6 +2269,18 @@ expression support in the :mod:`re` module).
       >>> '   1   2   3   '.split()
       ['1', '2', '3']
 
+   If *sep* is not specified or is ``None`` and  *maxsplit* is ``0``, only
+   leading runs of consecutive whitespace are considered.
+
+   For example::
+
+      >>> "".split(None, 0)
+      []
+      >>> "   ".split(None, 0)
+      []
+      >>> "   foo   ".split(maxsplit=0)
+      ['foo   ']
+
 
 .. index::
    single: universal newlines; str.splitlines method
@@ -6040,3 +6052,4 @@ If you need to disable it entirely, set it to ``0``.
 
 .. [5] To format only a tuple you should therefore provide a singleton tuple whose only
    element is the tuple to be formatted.
+
