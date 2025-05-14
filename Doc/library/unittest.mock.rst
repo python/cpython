@@ -2654,9 +2654,9 @@ with any methods on the mock:
 
 .. code-block:: pycon
 
-    >>> mock.has_data()
+    >>> mock.header_items()
     <mock.Mock object at 0x...>
-    >>> mock.has_data.assret_called_with()  # Intentional typo!
+    >>> mock.header_items.assret_called_with()  # Intentional typo!
 
 Auto-speccing solves this problem. You can either pass ``autospec=True`` to
 :func:`patch` / :func:`patch.object` or use the :func:`create_autospec` function to create a

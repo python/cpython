@@ -77,23 +77,21 @@ To install the file downloaded from python.org, either double-click and select
 "Install", or run ``Add-AppxPackage <path to MSIX>`` in Windows Powershell.
 
 After installation, the ``python``, ``py``, and ``pymanager`` commands should be
-available. If they are not, click Start and search for "Manage app execution
-aliases". This settings page will let you enable the relevant commands. They
-will be labelled "Python (default)", "Python (default windowed)", and "Python
-install manager".
-
-If you have existing installations of Python, or you have modified your
-:envvar:`PATH` variable, you may need to remove them or undo the modifications
-in order for the commands to work. Old versions of Python can be reinstalled
-using the Python install manager.
+available. If you have existing installations of Python, or you have modified
+your :envvar:`PATH` variable, you may need to remove them or undo the
+modifications. See :ref:`pymanager-troubleshoot` for more help with fixing
+non-working commands.
 
 When you first install a runtime, you will likely be prompted to add a directory
 to your :envvar:`PATH`. This is optional, if you prefer to use the ``py``
 command, but is offered for those who prefer the full range of aliases (such
 as ``python3.14.exe``) to be available. The directory will be
-:file:`%LocalAppData%\Python\bin` by default, but may be customized by an
+:file:`%LocalAppData%\\Python\\bin` by default, but may be customized by an
 administrator. Click Start and search for "Edit environment variables for your
 account" for the system settings page to add the path.
+
+Each Python runtime you install will have its own directory for scripts. These
+also need to be added to :envvar:`PATH` if you want to use them.
 
 The Python install manager will be automatically updated to new releases. This
 does not affect any installs of Python runtimes. Uninstalling the Python install
@@ -146,6 +144,10 @@ want to be passed to the runtime (such as script files or the module to launch):
    ...
    $> py -m this
    ...
+
+The default runtime can be overridden with the :envvar:`PYTHON_MANAGER_DEFAULT`
+environment variable, or a configuration file. See :ref:`pymanager-config` for
+information about configuration settings.
 
 To launch a specific runtime, the ``py`` command accepts a ``-V:<TAG>`` option.
 This option must be specified before any others. The tag is part or all of the
@@ -469,6 +471,10 @@ directory (which you may have added to your :envvar:`PATH` environment variable)
 can be used in a shebang, even if it is not on your :envvar:`PATH`. This allows
 the use of shebangs like ``/usr/bin/python3.12`` to select a particular runtime.
 
+If no runtimes are installed, or if automatic installation is enabled, the
+requested runtime will be installed if necessary. See :ref:`pymanager-config`
+for information about configuration settings.
+
 The ``/usr/bin/env`` form of shebang line will also search the :envvar:`PATH`
 environment variable for unrecognized commands. This corresponds to the
 behaviour of the Unix ``env`` program, which performs the same search, but
@@ -712,6 +718,16 @@ default).
    ``py``","Click Start, open ""Manage app execution aliases"", and check that
    your ``pythonw.exe`` and ``pyw.exe`` aliases are consistent with your
    others.
+   "
+   "``pip`` gives me a ""command not found"" error when I type it in my
+   terminal.","Have you activated a virtual environment? Run the
+   ``.venv\Scripts\activate`` script in your terminal to activate.
+   "
+   "","The package may be available but missing the generated executable.
+   We recommend using the ``python -m pip`` command instead, or alternatively
+   the ``python -m pip install --force pip`` command will recreate the
+   executables and show you the path to add to :envvar:`PATH`. These scripts are
+   separated for each runtime, and so you may need to add multiple paths.
    "
 
 

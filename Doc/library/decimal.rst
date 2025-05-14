@@ -1037,7 +1037,7 @@ function to temporarily change the active context.
    IEEE interchange formats.  The argument must be a multiple of 32 and less
    than :const:`IEEE_CONTEXT_MAX_BITS`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 New contexts can also be created using the :class:`Context` constructor
 described below. In addition, the module provides three pre-made contexts:
