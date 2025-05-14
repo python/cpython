@@ -851,6 +851,9 @@ class TestGetAnnotations(unittest.TestCase):
                 meta_future=meta_future,
                 base_future=base_future,
                 child_future=child_future,
+                meta_has_annos=meta_has_annos,
+                base_has_annos=base_has_annos,
+                child_has_annos=child_has_annos,
             ):
                 meta = define_class(
                     "Meta",
