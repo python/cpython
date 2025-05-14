@@ -935,8 +935,8 @@ Note that numeric literals do not include a sign; a phrase like ``-1`` is
 actually an expression composed of the unary operator '``-``' and the literal
 ``1``.
 
-Similarly, there are no complex literals; a phrase like ``1+2j`` is an
-expression composed by the :ref:`integer literal <integers>` ``1``,
+Similarly, there are no complex literals; the expression ``1+2j`` is composed
+of the :ref:`integer literal <integers>` ``1``,
 the :ref:`operator <operators>` '``+``',
 and the :ref:`imaginary literal <imaginary>` ``2j``.
 
