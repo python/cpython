@@ -533,7 +533,7 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
             # <srcdir>/PC/pyconfig.h.in always exists even if unused
             pyconfig_h = os.path.join(srcdir, 'PC', 'pyconfig.h.in')
             self.assertTrue(os.path.exists(pyconfig_h), pyconfig_h)
-            pyconfig_h_in = os.path.join(srcdir, 'pyconfig.h.in')
+            pyconfig_h_in = os.path.join(srcdir, 'Include', 'pyconfig.h.in')
             self.assertTrue(os.path.exists(pyconfig_h_in), pyconfig_h_in)
             if os.name == 'nt':
                 # <executable dir>/pyconfig.h exists on Windows in a build tree
