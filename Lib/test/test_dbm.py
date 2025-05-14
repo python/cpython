@@ -138,11 +138,19 @@ class AnyDBMTestCase:
     def test_anydbm_readonly_vacuum(self):
         self.init_db()
         with dbm.open(_fname, 'r') as d:
+            # Early stopping.
+            if not hasattr(d, 'vacuum'):
+                return
+
             self.assertRaises(dbm.error, lambda: d.vacuum())
 
     def test_anydbm_vacuum_not_changed_content(self):
         self.init_db()
         with dbm.open(_fname, 'c') as d:
+            # Early stopping.
+            if not hasattr(d, 'vacuum'):
+                return
+
             keys_before = sorted(d.keys())
             values_before = [d[k] for k in keys_before]
             d.vacuum()
@@ -165,6 +173,10 @@ class AnyDBMTestCase:
 
         # This test requires relatively large databases to reliably show difference in size before and after vacuum.
         with dbm.open(_fname, 'n') as f:
+            # Early stopping.
+            if not hasattr(f, 'vacuum'):
+                return
+
             for k in self._dict:
                 f[k.encode('ascii')] = self._dict[k] * 100000
             db_keys = list(f.keys())
