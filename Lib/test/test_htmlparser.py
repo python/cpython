@@ -294,6 +294,29 @@ text
                 self._run_check(s, [("starttag", element_lower, []),
                                     ("data", content),
                                     ("endtag", element_lower)])
+    def test_raw_text_content(self):
+        """See gh-issue #118350"""
+        content = """<h1>tagshould be handled as text"""
+        elements = [
+            "script",
+            "style",
+            "title",
+            "textarea",
+            "SCRIPT",
+            "STYLE",
+            "TITLE",
+            "TEXTAREA",
+            "Script",
+            "Style",
+            "Title",
+            "Textarea",
+        ]
+        for element in elements:
+            source = f"<{element}>{content}"
+            self._run_check(source, [
+                ("starttag", element.lower(), []),
+                ("data", content)
+            ])
 
     def test_cdata_with_closing_tags(self):
         # see issue #13358
