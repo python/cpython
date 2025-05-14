@@ -173,6 +173,17 @@ class Argparse(ThemeSection):
 
 
 @dataclass(frozen=True)
+class Difflib(ThemeSection):
+    """A 'git diff'-like theme for `difflib.unified_diff`."""
+    header: str = ANSIColors.BOLD  # eg "---" and "+++" lines
+    hunk: str = ANSIColors.CYAN  # the "@@" lines
+    context: str = ANSIColors.RESET  # context lines
+    added: str = ANSIColors.GREEN
+    removed: str = ANSIColors.RED
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True)
 class Syntax(ThemeSection):
     prompt: str = ANSIColors.BOLD_MAGENTA
     keyword: str = ANSIColors.BOLD_BLUE
@@ -204,17 +215,6 @@ class Unittest(ThemeSection):
     warn: str = ANSIColors.YELLOW
     fail: str = ANSIColors.RED
     fail_info: str = ANSIColors.BOLD_RED
-    reset: str = ANSIColors.RESET
-
-
-@dataclass(frozen=True)
-class Difflib(ThemeSection):
-    """A 'git diff'-like theme for `difflib.unified_diff`."""
-    header: str = ANSIColors.BOLD  # eg "---" and "+++" lines
-    hunk: str = ANSIColors.CYAN  # the "@@" lines
-    context: str = ANSIColors.RESET  # context lines
-    added: str = ANSIColors.GREEN
-    removed: str = ANSIColors.RED
     reset: str = ANSIColors.RESET
 
 
