@@ -175,10 +175,10 @@ class Argparse(ThemeSection):
 @dataclass(frozen=True)
 class Difflib(ThemeSection):
     """A 'git diff'-like theme for `difflib.unified_diff`."""
+    added: str = ANSIColors.GREEN
+    context: str = ANSIColors.RESET  # context lines
     header: str = ANSIColors.BOLD  # eg "---" and "+++" lines
     hunk: str = ANSIColors.CYAN  # the "@@" lines
-    context: str = ANSIColors.RESET  # context lines
-    added: str = ANSIColors.GREEN
     removed: str = ANSIColors.RED
     reset: str = ANSIColors.RESET
 
@@ -235,10 +235,10 @@ class Theme:
         self,
         *,
         argparse: Argparse | None = None,
+        difflib: Difflib | None = None,
         syntax: Syntax | None = None,
         traceback: Traceback | None = None,
         unittest: Unittest | None = None,
-        difflib: Difflib | None = None,
     ) -> Self:
         """Return a new Theme based on this instance with some sections replaced.
 
@@ -247,10 +247,10 @@ class Theme:
         """
         return type(self)(
             argparse=argparse or self.argparse,
+            difflib=difflib or self.difflib,
             syntax=syntax or self.syntax,
             traceback=traceback or self.traceback,
             unittest=unittest or self.unittest,
-            difflib=difflib or self.difflib,
         )
 
     @classmethod
@@ -263,10 +263,10 @@ class Theme:
         """
         return cls(
             argparse=Argparse.no_colors(),
+            difflib=Difflib.no_colors(),
             syntax=Syntax.no_colors(),
             traceback=Traceback.no_colors(),
             unittest=Unittest.no_colors(),
-            difflib=Difflib.no_colors(),
         )
 
 
