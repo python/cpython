@@ -10,7 +10,7 @@ val ANDROID_DIR = file("../..")
 val PYTHON_DIR = ANDROID_DIR.parentFile!!
 val PYTHON_CROSS_DIR = file("$PYTHON_DIR/cross-build")
 val inSourceTree = (
-    ANDROID_DIR.name == "Android" && file("$PYTHON_DIR/pyconfig.h.in").exists()
+    ANDROID_DIR.name == "Android" && file("$PYTHON_DIR/Include/pyconfig.h.in").exists()
 )
 
 val KNOWN_ABIS = mapOf(
