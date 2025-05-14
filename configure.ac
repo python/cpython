@@ -7956,6 +7956,10 @@ PY_STDLIB_MOD([_curses_panel],
 PY_STDLIB_MOD([_decimal],
   [], [test "$have_mpdec" = "yes"],
   [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LIBS])
+if test "$have_mpdec" = "no"
+then
+  AS_VAR_SET([py_cv_module_]_decimal, [n/a])
+fi
 PY_STDLIB_MOD([_dbm],
   [test -n "$with_dbmliborder"], [test "$have_dbm" != "no"],
   [$DBM_CFLAGS], [$DBM_LIBS])
