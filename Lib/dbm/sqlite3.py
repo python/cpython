@@ -15,6 +15,7 @@ LOOKUP_KEY = "SELECT value FROM Dict WHERE key = CAST(? AS BLOB)"
 STORE_KV = "REPLACE INTO Dict (key, value) VALUES (CAST(? AS BLOB), CAST(? AS BLOB))"
 DELETE_KEY = "DELETE FROM Dict WHERE key = CAST(? AS BLOB)"
 ITER_KEYS = "SELECT key FROM Dict"
+VACUUM = "VACUUM"
 
 
 class error(OSError):
@@ -121,6 +122,9 @@ class _Database(MutableMapping):
 
     def __exit__(self, *args):
         self.close()
+
+    def vacuum(self):
+        self._execute(VACUUM)
 
 
 def open(filename, /, flag="r", mode=0o666):
