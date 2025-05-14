@@ -2430,14 +2430,14 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
         ]
         self.check(insts, expected)
 
-    def test_optimize_unconsumed_when_is_safe(self):
+    def test_unoptimized_if_unconsumed(self):
         insts = [
             ("LOAD_FAST", 0, 1),
             ("LOAD_FAST", 1, 2),
             ("POP_TOP", None, 3),
         ]
         expected = [
-            ("LOAD_FAST_BORROW", 0, 1),
+            ("LOAD_FAST", 0, 1),
             ("LOAD_FAST_BORROW", 1, 2),
             ("POP_TOP", None, 3),
         ]
@@ -2449,7 +2449,7 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             ("POP_TOP", None, 3),
         ]
         expected = [
-            ("LOAD_FAST_BORROW", 0, 1),
+            ("LOAD_FAST", 0, 1),
             ("NOP", None, 2),
             ("NOP", None, 3),
         ]
@@ -2509,12 +2509,7 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             ("GET_LEN", None, 2),
             ("LIST_APPEND", 0, 3),
         ]
-        expected = [
-            ("LOAD_FAST_BORROW", 0, 1),
-            ("GET_LEN", None, 2),
-            ("LIST_APPEND", 0, 3),
-        ]
-        self.check(insts, expected)
+        self.check(insts, insts)
 
     def test_check_exc_match(self):
         insts = [
@@ -2523,7 +2518,7 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             ("CHECK_EXC_MATCH", None, 3)
         ]
         expected = [
-            ("LOAD_FAST_BORROW", 0, 1),
+            ("LOAD_FAST", 0, 1),
             ("LOAD_FAST_BORROW", 1, 2),
             ("CHECK_EXC_MATCH", None, 3)
         ]
@@ -2573,7 +2568,7 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             ("LOAD_ATTR", 1, 2),
         ]
         expected = [
-            ("LOAD_FAST_BORROW", 0, 1),
+            ("LOAD_FAST", 0, 1),
             ("LOAD_ATTR", 1, 2),
         ]
         self.check(insts, expected)
@@ -2603,7 +2598,7 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
         expected = [
             ("LOAD_FAST_BORROW", 0, 1),
             ("LOAD_FAST_BORROW", 1, 2),
-            ("LOAD_FAST_BORROW", 2, 3),
+            ("LOAD_FAST", 2, 3),
             ("LOAD_SUPER_ATTR", 1, 4),
         ]
         self.check(insts, expected)
