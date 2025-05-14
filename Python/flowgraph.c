@@ -3268,7 +3268,7 @@ optimize_load_fast(cfg_builder *g)
                                 break;
                             }
                         }
-                        
+
                         if (depth_from_tos_at_block_end != -1) {
                              can_borrow = check_borrow_safety_globally(block, depth_from_tos_at_block_end, local_idx, g);
                         } else {
@@ -3305,7 +3305,7 @@ optimize_load_fast(cfg_builder *g)
                                 can_borrow = false;
                             }
                         }
-                        
+
                         if (unconsumed_in_block && !found_any_on_stack) {
                             can_borrow = false;
                         }
