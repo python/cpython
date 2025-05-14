@@ -3,14 +3,12 @@ Very minimal unittests for parts of the readline module.
 """
 import locale
 import os
-import subprocess
 import sys
 import tempfile
 import textwrap
 import threading
 import unittest
 from test import support
-from test.support import requires_subprocess
 from test.support import threading_helper
 from test.support import verbose
 from test.support.import_helper import import_module
@@ -407,7 +405,6 @@ readline.write_history_file(history_file)
         # So, we've only tested that the read did not fail.
         # See TestHistoryManipulation for the full test.
 
-    @requires_subprocess()
     def test_environment_is_not_modified(self):
         original_env = dict(os.environ)
         os.reload_environ()
