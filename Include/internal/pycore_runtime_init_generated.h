@@ -900,7 +900,6 @@ extern "C" {
     INIT_ID(deterministic), \
     INIT_ID(device), \
     INIT_ID(dict), \
-    INIT_ID(dict_content), \
     INIT_ID(dictcomp), \
     INIT_ID(difference_update), \
     INIT_ID(digest), \
