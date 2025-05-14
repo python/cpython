@@ -2708,7 +2708,7 @@ load_fast_push_block(basicblock ***sp, basicblock *target,
 /*
  * Recursively determine if a borrowed reference remains safe along all CFG paths.
  *
- * This function performs a Depth-First Search (DFS) starting from 'current_block'.
+ * This function performs a DFS starting from 'current_block'.
  * It tracks a specific value that was notionally loaded by a LOAD_FAST_BORROW
  * instruction and is currently at 'depth_of_value_on_entry' on the operand stack
  * (0 being TOS, -1 if already known to be consumed). The 'original_local_idx'
@@ -2733,20 +2733,11 @@ load_fast_push_block(basicblock ***sp, basicblock *target,
  * - 'depth_of_value_on_entry': The depth of the tracked item upon entering 'current_block'.
  * - 'current_target_depth': The depth of the item as instructions in 'current_block' are processed.
  * - 'depth_before_jump_op_effect': When a jump instruction is encountered, this
- *   is calculated by simulating all prior instructions in 'current_block' to find
- *   the item's depth *just before* the jump instruction itself has any stack effect.
- *   This precise depth is then used to calculate the 'target_entry_depth' for the
- *   recursive call to the jump's target block.
+ *      is calculated by simulating all prior instructions in 'current_block' to find
+ *      the item's depth *just before* the jump instruction itself has any stack effect.
+ *      This precise depth is then used to calculate the 'target_entry_depth' for the
+ *      recursive call to the jump's target block.
  *
- * Args:
- *   current_block: The basic block to start analysis from for this recursive step.
- *   depth_of_value_on_entry: The depth of the tracked borrowed value from TOS
- *                            (0 = TOS, -1 if already consumed).
- *   original_local_idx: The index of the local variable backing the borrow.
- *   g: The CFG builder.
- *
- * Returns:
- *   true if the borrow is safe along all paths from this point, false otherwise.
  */
 static bool
 is_borrow_safe(
@@ -2771,40 +2762,34 @@ is_borrow_safe(
         int opcode = instr->i_opcode;
         int oparg = instr->i_oparg;
 
-        // 1. Check if the original local is killed before the value is consumed.
         if ((opcode == STORE_FAST || opcode == DELETE_FAST || opcode == LOAD_FAST_AND_CLEAR) &&
             oparg == original_local_idx) {
             return false;
         }
 
-        // 2. Simulate stack effect and check for consumption or unsafe store.
         stack_effects effects_noj;
         if (get_stack_effects(opcode, oparg, 0, &effects_noj) < 0) {
-            return false; // Error in stack effect calculation
+            return false;
         }
         int num_popped = _PyOpcode_num_popped(opcode, oparg);
         int num_pushed = _PyOpcode_num_pushed(opcode, oparg);
 
         if (current_target_depth < num_popped) {
             if (opcode == STORE_FAST && current_target_depth == 0) {
-                // Unsafe: borrowed value was at TOS and is being stored into a local.
                 return false;
             }
-            return true; // Safely consumed by this instruction.
+            return true;
         }
-        // Value not consumed, update its depth.
         current_target_depth = current_target_depth - num_popped + num_pushed;
 
-        // 3. Handle branches (jumps are always last in a basic block).
         if (HAS_TARGET(opcode)) {
             if (i != current_block->b_iused - 1) {
                 continue; // Skip jumps that are not the last instruction in the block.
             }
             bool safe_on_all_branches = true;
 
-            // Calculate item's depth just before this jump instruction's own stack effect.
             Py_ssize_t depth_before_jump_op_effect = depth_of_value_on_entry;
-            for(int k=0; k < i; ++k) { // Iterate instructions before the current jump
+            for(int k=0; k < i; ++k) {
                 cfg_instr *prev_instr_in_block = &current_block->b_instr[k];
                 // Kill check for intermediate instructions
                 if ((prev_instr_in_block->i_opcode == STORE_FAST ||
@@ -2818,11 +2803,11 @@ is_borrow_safe(
                     return false;
                 }
                 int prev_popped_val = _PyOpcode_num_popped(prev_instr_in_block->i_opcode, prev_instr_in_block->i_oparg);
-                if (depth_before_jump_op_effect < prev_popped_val) { // Consumed before jump
+                if (depth_before_jump_op_effect < prev_popped_val) {
                     if (prev_instr_in_block->i_opcode == STORE_FAST && depth_before_jump_op_effect == 0) {
-                        return false; // Stored into local
+                        return false;
                     }
-                    return true; // Safely consumed before the jump
+                    return true;
                 }
                 depth_before_jump_op_effect = depth_before_jump_op_effect - prev_popped_val +
                                              _PyOpcode_num_pushed(prev_instr_in_block->i_opcode, prev_instr_in_block->i_oparg);
@@ -2834,11 +2819,10 @@ is_borrow_safe(
             int jump_popped_val = _PyOpcode_num_popped(opcode, oparg);
             Py_ssize_t target_entry_depth = depth_before_jump_op_effect;
 
-            if (target_entry_depth < jump_popped_val) { // Consumed by the jump op itself
+            if (target_entry_depth < jump_popped_val) {
                 if (opcode == STORE_FAST && target_entry_depth == 0) {
                     safe_on_all_branches = false;
                 }
-                // else: safely consumed by jump operation.
             } else { // Not consumed by jump op, recurse on target.
                 target_entry_depth = target_entry_depth - jump_popped_val + _PyOpcode_num_pushed(opcode, oparg);
                 if (!is_borrow_safe(instr->i_target, target_entry_depth, original_local_idx, g)) {
@@ -2848,7 +2832,6 @@ is_borrow_safe(
 
             // Analyze fallthrough path for conditional jumps, if the jump path was safe.
             if (safe_on_all_branches && IS_CONDITIONAL_JUMP_OPCODE(opcode) && current_block->b_next) {
-                // 'current_target_depth' already reflects the stack state if the jump is *not* taken.
                 if (!is_borrow_safe(current_block->b_next, current_target_depth, original_local_idx, g)) {
                     safe_on_all_branches = false;
                 }
@@ -2862,14 +2845,16 @@ is_borrow_safe(
         return is_borrow_safe(current_block->b_next, current_target_depth, original_local_idx, g);
     }
 
-    // No further path (or no fallthrough) and value is still on stack (current_target_depth is valid).
-    // This means it's unconsumed at the end of a CFG path.
+    /*
+    No further path (or no fallthrough) and value is still on stack (current_target_depth is valid).
+    This means it's unconsumed at the end of a CFG path, so it's unsafe.
+    */
     return false;
 }
 
 
 /*
- * Initiates a Control Flow Graph (CFG) wide safety check for a borrowed reference.
+ * Initiates a CFG wide safety check for a borrowed reference.
  *
  * This function is called when a LOAD_FAST instruction is a candidate for
  * LOAD_FAST_BORROW, but its produced value ('REF_UNCONSUMED' flag is set)
@@ -2888,17 +2873,6 @@ is_borrow_safe(
  * to ensure that 'is_borrow_safe()' uses a fresh set of visited markers
  * ('b_dfs_visited_gen') for its analysis.
  *
- * Args:
- *   producer_block: The basic block containing the LOAD_FAST candidate.
- *   depth_of_value_at_producer_end: The depth of the candidate borrowed value
- *                                   from TOS at the end of 'producer_block'.
- *                                   (0 = TOS, -1 if already consumed - though
- *                                   this function expects a live value).
- *   original_local_idx: The index of the local variable backing the borrow.
- *   g: The CFG builder.
- *
- * Returns:
- *   true if the borrow is safe across all subsequent CFG paths, false otherwise.
  */
 static bool
 check_borrow_safety_globally(
@@ -2923,11 +2897,10 @@ check_borrow_safety_globally(
         int jump_popped = _PyOpcode_num_popped(last_instr->i_opcode, last_instr->i_oparg);
         Py_ssize_t entry_depth_for_target = depth_of_value_at_producer_end;
 
-        if (entry_depth_for_target < jump_popped) { // Consumed by the jump itself.
+        if (entry_depth_for_target < jump_popped) {
             if (last_instr->i_opcode == STORE_FAST && entry_depth_for_target == 0) {
-                overall_safety = false; // Unsafe store of borrowed value.
+                overall_safety = false;
             }
-            // else: safely consumed.
         } else {
             entry_depth_for_target = entry_depth_for_target - jump_popped +
                                      _PyOpcode_num_pushed(last_instr->i_opcode, last_instr->i_oparg);
@@ -2938,17 +2911,16 @@ check_borrow_safety_globally(
 
         // Analyze fallthrough path for conditional jumps, if the jump path was safe.
         if (overall_safety && IS_CONDITIONAL_JUMP_OPCODE(last_instr->i_opcode) && producer_block->b_next) {
-            stack_effects effects_fall; // Stack effect if jump is NOT taken.
+            stack_effects effects_fall;
             if (get_stack_effects(last_instr->i_opcode, last_instr->i_oparg, 0, &effects_fall) < 0) return false;
             int fall_popped = _PyOpcode_num_popped(last_instr->i_opcode, last_instr->i_oparg);
             Py_ssize_t entry_depth_for_fallthrough = depth_of_value_at_producer_end;
 
-            if (entry_depth_for_fallthrough < fall_popped) { // Consumed by not taking jump.
+            if (entry_depth_for_fallthrough < fall_popped) {
                 if (last_instr->i_opcode == STORE_FAST && entry_depth_for_fallthrough == 0) {
-                    overall_safety = false; // Unsafe store.
+                    overall_safety = false;
                 }
-                 // else: safely consumed.
-            } else { // Not consumed by not taking jump, recurse on fallthrough.
+            } else { // Recurse on fallthrough.
                 entry_depth_for_fallthrough = entry_depth_for_fallthrough - fall_popped +
                                              _PyOpcode_num_pushed(last_instr->i_opcode, last_instr->i_oparg);
                 if (!is_borrow_safe(producer_block->b_next, entry_depth_for_fallthrough, original_local_idx, g)) {
@@ -2960,8 +2932,8 @@ check_borrow_safety_globally(
         if (!is_borrow_safe(producer_block->b_next, depth_of_value_at_producer_end, original_local_idx, g)) {
             overall_safety = false;
         }
-    } else { // No successors (e.g., block ends in RETURN/RAISE) and value still on stack.
-        overall_safety = false; // Unconsumed at end of a CFG path.
+    } else {
+        overall_safety = false;
     }
     return overall_safety;
 }
