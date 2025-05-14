@@ -464,7 +464,7 @@ def get_config_h_filename():
     else:
         parts.append(get_path('platinclude'))
     parts.append('pyconfig.h')
-    return os.path.join(parts)
+    return os.path.join(*parts)
 
 
 def get_scheme_names():
