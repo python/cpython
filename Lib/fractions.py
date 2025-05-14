@@ -234,14 +234,14 @@ class Fraction(numbers.Rational):
             elif isinstance(numerator, str):
                 # Handle construction from strings.
                 fraction_literal = numerator
-                num, _, denom = fraction_literal.partition('/')
+                num, is_fraction_format, denom = fraction_literal.partition('/')
                 try:
                     num = num.strip()
                     denom = denom.strip()
                     if num and denom and denom[0].isdigit():
                         denominator = int(denom)
                         numerator = int(num)
-                    elif num and not _:
+                    elif num and not is_fraction_format:
                         denominator = 1
                         num, _, exp = num.replace('E', 'e').partition('e')
                         if _ and not exp:
