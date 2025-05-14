@@ -212,9 +212,9 @@ class Difflib(ThemeSection):
     """A 'git diff'-like theme for `difflib.unified_diff`."""
     header: str = ANSIColors.BOLD  # eg "---" and "+++" lines
     hunk: str = ANSIColors.CYAN  # the "@@" lines
-    equal: str = ANSIColors.RESET  # context lines
-    insert: str = ANSIColors.GREEN
-    delete: str = ANSIColors.RED
+    context: str = ANSIColors.RESET  # context lines
+    added: str = ANSIColors.GREEN
+    removed: str = ANSIColors.RED
     reset: str = ANSIColors.RESET
 
 

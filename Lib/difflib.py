@@ -1161,14 +1161,14 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
         for tag, i1, i2, j1, j2 in group:
             if tag == 'equal':
                 for line in a[i1:i2]:
-                    yield f'{t.equal} {line}{t.reset}'
+                    yield f'{t.context} {line}{t.reset}'
                 continue
             if tag in {'replace', 'delete'}:
                 for line in a[i1:i2]:
-                    yield f'{t.delete}-{line}{t.reset}'
+                    yield f'{t.removed}-{line}{t.reset}'
             if tag in {'replace', 'insert'}:
                 for line in b[j1:j2]:
-                    yield f'{t.insert}+{line}{t.reset}'
+                    yield f'{t.added}+{line}{t.reset}'
 
 
 ########################################################################
