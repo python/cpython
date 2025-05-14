@@ -6052,4 +6052,3 @@ If you need to disable it entirely, set it to ``0``.
 
 .. [5] To format only a tuple you should therefore provide a singleton tuple whose only
    element is the tuple to be formatted.
-
