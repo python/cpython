@@ -1112,8 +1112,8 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
     For inputs that do not have trailing newlines, set the lineterm
     argument to "" so that the output will be uniformly newline free.
 
-    Set `color` to True to inject ANSI color codes and make the output look
-    like what `git diff --color` shows.
+    Set *color* to ``True`` to inject ANSI color codes and make the output
+    look like what ``git diff --color`` shows.
 
     The unidiff format normally has a header for filenames and modification
     times.  Any or all of these may be specified using strings for
