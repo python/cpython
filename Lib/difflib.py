@@ -1095,7 +1095,7 @@ def _format_range_unified(start, stop):
     return '{},{}'.format(beginning, length)
 
 def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
-                 tofiledate='', n=3, lineterm='\n', color=False):
+                 tofiledate='', n=3, lineterm='\n', *, color=False):
     r"""
     Compare two sequences of lines; generate the delta as a unified diff.
 
