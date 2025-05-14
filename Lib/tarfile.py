@@ -2065,7 +2065,7 @@ class TarFile(object):
         "gz":  "gzopen",    # gzip compressed tar
         "bz2": "bz2open",   # bzip2 compressed tar
         "xz":  "xzopen",    # lzma compressed tar
-        "zst": "zstopen"    # zstd compressed tar
+        "zst": "zstopen",   # zstd compressed tar
     }
 
     #--------------------------------------------------------------------------
