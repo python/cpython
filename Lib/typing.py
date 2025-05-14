@@ -3048,14 +3048,16 @@ class _TypedDictMeta(type):
         else:
             generic_base = ()
 
+        ns_annotations = ns.pop('__annotations__', None)
+
         tp_dict = type.__new__(_TypedDictMeta, name, (*generic_base, dict), ns)
 
         if not hasattr(tp_dict, '__orig_bases__'):
             tp_dict.__orig_bases__ = bases
 
-        if "__annotations__" in ns:
+        if ns_annotations is not None:
             own_annotate = None
-            own_annotations = ns["__annotations__"]
+            own_annotations = ns_annotations
         elif (own_annotate := _lazy_annotationlib.get_annotate_from_class_namespace(ns)) is not None:
             own_annotations = _lazy_annotationlib.call_annotate_function(
                 own_annotate, _lazy_annotationlib.Format.FORWARDREF, owner=tp_dict
@@ -3126,7 +3128,7 @@ class _TypedDictMeta(type):
                 if base_annotate is None:
                     continue
                 base_annos = _lazy_annotationlib.call_annotate_function(
-                    base.__annotate__, format, owner=base)
+                    base_annotate, format, owner=base)
                 annos.update(base_annos)
             if own_annotate is not None:
                 own = _lazy_annotationlib.call_annotate_function(
