@@ -1,0 +1,2 @@
+Allow one or two whitespaces after * in IMAP response.  
+Patch by Edward Smith.
