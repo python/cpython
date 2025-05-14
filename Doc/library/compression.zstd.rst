@@ -2,7 +2,7 @@
 =============================================================================
 
 .. module:: compression.zstd
-   :synopsis: Low level interface to compression and decompression routines in
+   :synopsis: Low-level interface to compression and decompression routines in
               Meta's zstd library
 
 .. versionadded:: 3.14
@@ -17,7 +17,7 @@ included is a file interface that supports reading and writing the contents of `
 files created by the :program:`zstd` utility, as well as raw zstd compressed
 streams.
 
-The :mod:`compression.zstd` module contains:
+The :mod:`!compression.zstd` module contains:
 
 * The :func:`.open` function and :class:`ZstdFile` class for reading and
   writing compressed files.
@@ -52,7 +52,7 @@ Reading and writing compressed files
    to read from or write to.
 
    The mode argument can be either ``'r'`` for reading (default), ``'w'`` for
-   overwriting, 'a' for appending, or ``'x'`` for exclusive creation. These can
+   overwriting, ``'a'`` for appending, or ``'x'`` for exclusive creation. These can
    equivalently be given as ``'rb'``, ``'wb'``, ``'ab'``, and ``'xb'`` respectively. You may
    also open in text mode with ``'rt'``, ``'wt'``, ``'at'``, and ``'xt'`` respectively.
 
@@ -132,7 +132,7 @@ Reading and writing compressed files
 
       .. note:: While calling :meth:`peek` does not change the file position of
          the :class:`ZstdFile`, it may change the position of the underlying
-         file object (e.g. if the :class:`ZstdFile` was constructed by passing a
+         file object (for example, if the :class:`ZstdFile` was constructed by passing a
          file object for *filename*).
 
    .. attribute:: mode
@@ -154,7 +154,7 @@ Compressing and decompressing data in memory
    data as a :class:`bytes` object.
 
    The *level* argument is an int object controlling the level of
-   compression. Please refer to :meth:`CompressionParameter.bounds` to get the
+   compression. Refer to :meth:`CompressionParameter.bounds` to get the
    values that can be passed for *level*. If advanced compression options are
    needed, this argument must be omitted and in the *options* dictionary the
    :attr:`CompressionParameter.compression_level` parameter should be set.
@@ -194,7 +194,7 @@ Compressing and decompressing data in memory
    module-level function :func:`compress`.
 
    The *level* argument is an int object controlling the level of
-   compression. Please refer to :meth:`CompressionParameter.bounds` to get the
+   compression. Refer to :meth:`CompressionParameter.bounds` to get the
    values that can be passed for *level*. If advanced compression options are
    needed, this argument must be omitted and in the *options* dictionary the
    :attr:`CompressionParameter.compression_level` parameter should be set.
@@ -283,7 +283,7 @@ Compressing and decompressing data in memory
       The returned data should be concatenated with the output of any previous
       calls to :meth:`~.decompress`.
 
-      If *max_length* is nonnegative, returns at most *max_length*
+      If *max_length* is non-negative, returns at most *max_length*
       bytes of decompressed data. If this limit is reached and further
       output can be produced, the :attr:`~.needs_input` attribute will
       be set to ``False``. In this case, the next call to
@@ -315,7 +315,7 @@ Compressing and decompressing data in memory
       decompressed data before requiring new uncompressed input.
 
 
-Zstandard Dictionaries
+Zstandard dictionaries
 ----------------------
 
 
@@ -333,7 +333,7 @@ Zstandard Dictionaries
 
    The *dict_size* argument, an integer, is the maximum size (in bytes) the
    Zstandard dictionary should be. The Zstandard documentation suggests an
-   absolute maximum of no more than 100KB, but the maximum can often be smaller
+   absolute maximum of no more than 100 KB, but the maximum can often be smaller
    depending on the data. Larger dictionaries generally slow down compression,
    but improve compression ratios. Smaller dictionaries lead to faster
    compression, but reduce the compression ratio.
@@ -353,7 +353,7 @@ Zstandard Dictionaries
    generating the Zstandard dictionary.
 
    The *dict_size* argument, an integer, is the maximum size (in bytes) the
-   Zstandard dictionary should be. Please see :func:`train_dict` for
+   Zstandard dictionary should be. See :func:`train_dict` for
    suggestions on the maximum dictionary size.
 
    The *level* argument (an integer) is the compression level expected to be
@@ -374,8 +374,8 @@ Zstandard Dictionaries
    The *is_raw* argument, a boolean, is an advanced parameter controlling the
    meaning of *dict_content*. ``True`` means *dict_content* is a "raw content"
    dictionary, without any format restrictions. ``False`` means *dict_content*
-   is an ordinary Zstandard dictionary, created from Zstandard functions, e.g.
-   :func:`train_dict` or the ``zstd`` CLI.
+   is an ordinary Zstandard dictionary, created from Zstandard functions,
+   for example, :func:`train_dict` or the ``zstd`` CLI.
 
     .. attribute:: dict_content
 
@@ -385,7 +385,7 @@ Zstandard Dictionaries
 
     .. attribute:: dict_id
 
-        Identifier of the Zstandard dictionary, a int value between 0 and .
+        Identifier of the Zstandard dictionary, an int value between zero and .
 
         Non-zero means the dictionary is ordinary, created by Zstandard
         functions and following the Zstandard format.
@@ -409,7 +409,7 @@ Zstandard Dictionaries
 
         Digesting a dictionary is a costly operation. These two attributes can
         control how the dictionary is loaded to the compressor, by passing them
-        as the ``zstd_dict`` argument, e.g.
+        as the ``zstd_dict`` argument, for example,
         ``compress(data, zstd_dict=zd.as_digested_dict)``.
 
         If don't use one of these attributes, an **undigested** dictionary is
@@ -466,7 +466,7 @@ Advanced parameter control
    The :meth:`~.bounds` method can be used on any attribute to get the valid
    values for that parameter.
 
-   Setting any parameter to "0" causes zstd to dynamically select a value
+   Setting any parameter to zero causes zstd to dynamically select a value
    for that parameter based on other compression parameters' settings.
 
    .. method:: bounds()
@@ -482,26 +482,26 @@ Advanced parameter control
    .. attribute:: compression_level
 
       A high-level means of setting other compression parameters that affect
-      the speed and ratio of compressing data. Setting the level to 0 uses the
+      the speed and ratio of compressing data. Setting the level to zero uses the
       default :attr:`COMPRESSION_LEVEL_DEFAULT`.
 
    .. attribute:: window_log
 
       Maximum allowed back-reference distance the compressor can use when
-      compressing data, expressed as power of 2, ``1 << window_log`` bytes. This
+      compressing data, expressed as power of two, ``1 << window_log`` bytes. This
       parameter greatly influences the memory usage of compression. Higher
       values require more memory but gain better compression values.
 
    .. attribute:: hash_log
 
-      Size of the initial probe table, as a power of 2. The resulting memory
+      Size of the initial probe table, as a power of two. The resulting memory
       usage is ``1 << (hash_log+2)`` bytes. Larger tables improve compression
       ratio of strategies <= :attr:`~Strategy.dfast`, and improve compression
       speed of strategies > :attr:`~Strategy.dfast`.
 
    .. attribute:: chain_log
 
-      Size of the multi-probe search table, as a power of 2. The resulting
+      Size of the multi-probe search table, as a power of two. The resulting
       memory usage is ``1 << (chain_log+2)`` bytes. Larger tables result in
       better and slower compression. This parameter has no effect for the
       :attr:`~Strategy.fast` strategy. It's still useful when using
@@ -510,7 +510,7 @@ Advanced parameter control
 
    .. attribute:: search_log
 
-      Number of search attempts, as a power of 2. More attempts result in
+      Number of search attempts, as a power of two. More attempts result in
       better and slower compression. This parameter is useless for
       :attr:`~Strategy.fast` and :attr:`~Strategy.dfast` strategies.
 
@@ -553,12 +553,12 @@ Advanced parameter control
       Enabling this parameter increases default
       :attr:`~CompressionParameter.window_log` to 128 MiB except when expressly
       set to a different value. This setting is enabled by default if
-      :attr:`~CompressionParameter.window_log` >= 128 MiB and the compression
+      :attr:`!window_log` >= 128 MiB and the compression
       strategy >= :attr:`~Strategy.btopt` (compression level 16+).
 
    .. attribute:: ldm_hash_log
 
-      Size of the table for long distance matching, as a power of 2. Larger
+      Size of the table for long distance matching, as a power of two. Larger
       values increase memory usage and compression ratio, but decrease
       compression speed.
 
@@ -586,7 +586,7 @@ Advanced parameter control
 
    .. attribute:: checksum_flag
 
-      A 4-byte checksum using XXHash64 of the uncompressed content is written
+      A four-byte checksum using XXHash64 of the uncompressed content is written
       at the end of each frame. Zstandard's decompression code verifies the
       checksum. If there is a mismatch a :class:`ZstdError` exception is
       raised.
@@ -690,8 +690,7 @@ Miscellaneous
 
 .. class:: FrameInfo
 
-   Metadata related to a Zstandard frame. There are currently two attributes
-   containing metadata related to Zstandard frames.
+   Metadata related to a Zstandard frame.
 
    .. attribute:: decompressed_size
 
@@ -707,7 +706,7 @@ Miscellaneous
 
 .. attribute:: COMPRESSION_LEVEL_DEFAULT
 
-   The default compression level for Zstandard, currently '3'.
+   The default compression level for Zstandard: ``3``.
 
 
 .. attribute:: zstd_version_info
@@ -724,6 +723,7 @@ Reading in a compressed file:
 .. code-block:: python
 
    from compression import zstd
+
    with zstd.open("file.zst") as f:
        file_content = f.read()
 
@@ -732,6 +732,7 @@ Creating a compressed file:
 .. code-block:: python
 
    from compression import zstd
+
    data = b"Insert Data Here"
    with zstd.open("file.zst", "w") as f:
        f.write(data)
@@ -741,6 +742,7 @@ Compressing data in memory:
 .. code-block:: python
 
    from compression import zstd
+
    data_in = b"Insert Data Here"
    data_out = zstd.compress(data_in)
 
@@ -749,6 +751,7 @@ Incremental compression:
 .. code-block:: python
 
    from compression import zstd
+
    comp = zstd.ZstdCompressor()
    out1 = comp.compress(b"Some data\n")
    out2 = comp.compress(b"Another piece of data\n")
@@ -762,6 +765,7 @@ Writing compressed data to an already-open file:
 .. code-block:: python
 
    from compression import zstd
+
    with open("file.zst", "wb") as f:
        f.write(b"This data will not be compressed\n")
        with zstd.open(f, "w") as zstf:
@@ -773,6 +777,7 @@ Creating a compressed file using compression parameters:
 .. code-block:: python
 
    from compression import zstd
+
    options = {
       zstd.CompressionParameter.checksum_flag: 1
    }
