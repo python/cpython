@@ -13,9 +13,9 @@
 
 This module provides classes and functions for compressing and
 decompressing data using the Zstandard (or *zstd*) compression algorithm. Also
-included is a file interface that supports reading and writing the contents of ``.zst`` files.
-files created by the :program:`zstd` utility, as well as raw zstd compressed
-streams.
+included is a file interface that supports reading and writing the contents of
+``.zst`` files created by the :program:`zstd` utility, as well as raw zstd
+compressed streams.
 
 The :mod:`!compression.zstd` module contains:
 
@@ -30,6 +30,9 @@ The :mod:`!compression.zstd` module contains:
 * The :class:`CompressionParameter`, :class:`DecompressionParameter`, and
   :class:`Strategy` classes for setting advanced (de)compression parameters.
 
+
+Exceptions
+----------
 
 .. exception:: ZstdError
 
@@ -52,16 +55,17 @@ Reading and writing compressed files
    to read from or write to.
 
    The mode argument can be either ``'r'`` for reading (default), ``'w'`` for
-   overwriting, ``'a'`` for appending, or ``'x'`` for exclusive creation. These can
-   equivalently be given as ``'rb'``, ``'wb'``, ``'ab'``, and ``'xb'`` respectively. You may
-   also open in text mode with ``'rt'``, ``'wt'``, ``'at'``, and ``'xt'`` respectively.
+   overwriting, ``'a'`` for appending, or ``'x'`` for exclusive creation. These
+   can equivalently be given as ``'rb'``, ``'wb'``, ``'ab'``, and ``'xb'``
+   respectively. You may also open in text mode with ``'rt'``, ``'wt'``,
+   ``'at'``, and ``'xt'`` respectively.
 
    When opening a file for reading, the *options* argument can be a dictionary
    providing advanced decompression parameters; see
    :class:`DecompressionParameter` for detailed information about supported
    parameters. The *zstd_dict* argument is a :class:`ZstdDict` instance to be
-   used during decompression. When opening a file for reading, the *level*
-   argument should not be used.
+   used during decompression. When opening a file for reading, if the *level*
+   argument is passed a :exc:`!TypeError` will be raised.
 
    When opening a file for writing, the *options* argument can be a dictionary
    providing advanced decompression parameters; see
@@ -76,11 +80,12 @@ Reading and writing compressed files
    *encoding*, *errors*, and *newline* parameters must not be provided.
 
    In text mode, a :class:`ZstdFile` object is created, and wrapped in an
-   :class:`io.TextIOWrapper` instance with the specified encoding, error handling
-   behavior, and line endings.
+   :class:`io.TextIOWrapper` instance with the specified encoding, error
+   handling behavior, and line endings.
 
 
-.. class:: ZstdFile(file, /, mode='r', *, level=None, options=None, zstd_dict=None)
+.. class:: ZstdFile(file, /, mode='r', *, level=None, options=None, \
+                    zstd_dict=None)
 
    Open a Zstandard-compressed file in binary mode.
 
@@ -91,20 +96,20 @@ Reading and writing compressed files
    wrapping an existing file object, the wrapped file will not be closed when
    the :class:`ZstdFile` is closed.
 
-   The *mode* argument can be either ``"r"`` for reading (default), ``"w"`` for
-   overwriting, ``"x"`` for exclusive creation, or ``"a"`` for appending. These
-   can equivalently be given as ``"rb"``, ``"wb"``, ``"xb"`` and ``"ab"``
+   The *mode* argument can be either ``'r'`` for reading (default), ``'w'`` for
+   overwriting, ``'x'`` for exclusive creation, or ``'a'`` for appending. These
+   can equivalently be given as ``'rb'``, ``'wb'``, ``'xb'`` and ``'ab'``
    respectively.
 
    If *file* is a file object (rather than an actual file name), a mode of
-   ``"w"`` does not truncate the file, and is instead equivalent to ``"a"``.
+   ``'w'`` does not truncate the file, and is instead equivalent to ``'a'``.
 
    When opening a file for reading, the *options* argument can be a dictionary
    providing advanced decompression parameters, see
    :class:`DecompressionParameter` for detailed information about supported
    parameters. The *zstd_dict* argument is a :class:`!ZstdDict` instance to be
-   used during decompression. When opening a file for reading, the *level*
-   argument should not be used.
+   used during decompression. When opening a file for reading, if the *level*
+   argument is passed a :exc:`!TypeError` will be raised.
 
    When opening a file for writing, the *options* argument can be a dictionary
    providing advanced decompression parameters, see
@@ -132,8 +137,8 @@ Reading and writing compressed files
 
       .. note:: While calling :meth:`peek` does not change the file position of
          the :class:`ZstdFile`, it may change the position of the underlying
-         file object (for example, if the :class:`ZstdFile` was constructed by passing a
-         file object for *filename*).
+         file object (for example, if the :class:`ZstdFile` was constructed by
+         passing a file object for *file*).
 
    .. attribute:: mode
 
@@ -307,7 +312,7 @@ Compressing and decompressing data in memory
 
       Data found after the end of the compressed stream.
 
-      Before the end of the stream is reached, this will be ``b""``.
+      Before the end of the stream is reached, this will be ``b''``.
 
    .. attribute:: needs_input
 
@@ -377,6 +382,40 @@ Zstandard dictionaries
    is an ordinary Zstandard dictionary, created from Zstandard functions,
    for example, :func:`train_dict` or the ``zstd`` CLI.
 
+   When passing a :class:`!ZstdDict` to a function, the
+   :attr:`!as_digested_dict` and :attr:`!as_undigested_dict` attributes can
+   control how the dictionary is loaded by passing them as the ``zstd_dict``
+   argument, for example, ``compress(data, zstd_dict=zd.as_digested_dict)``.
+   Digesting a dictionary is a costly operation that occurs when loading a
+   Zstandard dictionary. When making multiple calls to compression or
+   decompression, passing a digested dictionary will reduce the overhead of
+   loading the dictionary.
+
+    .. list-table:: Difference for compression
+       :widths: 10 14 10
+       :header-rows: 1
+
+       * -
+         - Digested dictionary
+         - Undigested dictionary
+       * - Advanced parameters of the compressor which may be overridden by
+           the dictionary's parameters
+         - ``window_log``, ``hash_log``, ``chain_log``, ``search_log``,
+           ``min_match``, ``target_length``, ``strategy``,
+           ``enable_long_distance_matching``, ``ldm_hash_log``,
+           ``ldm_min_match``, ``ldm_bucket_size_log``, ``ldm_hash_rate_log``,
+           and some non-public parameters.
+         - None
+       * - :class:`!ZstdDict` internally caches the dictionary
+         - Yes. It's faster when loading a digested dictionary again with the
+           same compression level.
+         - No. If you wish to load an undigested dictionary multiple times,
+           consider reusing a compressor object.
+
+   If passing a :class:`!ZstdDict` without any attribute, an undigested
+   dictionary is passed by default when compressing and a digested dictionary
+   is passed by default when decompressing.
+
     .. attribute:: dict_content
 
         The content of the Zstandard dictionary, a ``bytes`` object. It's the
@@ -407,53 +446,6 @@ Zstandard dictionaries
 
         Load as an undigested dictionary.
 
-        Digesting a dictionary is a costly operation. These two attributes can
-        control how the dictionary is loaded to the compressor, by passing them
-        as the ``zstd_dict`` argument, for example,
-        ``compress(data, zstd_dict=zd.as_digested_dict)``.
-
-        If don't use one of these attributes, an **undigested** dictionary is
-        passed by default.
-
-        .. list-table:: Difference for compression
-            :widths: 12 12 12
-            :header-rows: 1
-
-            * -
-              - | Digested
-                | dictionary
-              - | Undigested
-                | dictionary
-            * - | Some advanced
-                | parameters of the
-                | compressor may
-                | be overridden
-                | by dictionary's
-                | parameters
-              - | ``window_log``, ``hash_log``,
-                | ``chain_log``, ``search_log``,
-                | ``min_match``, ``target_length``,
-                | ``strategy``,
-                | ``enable_long_distance_matching``,
-                | ``ldm_hash_log``, ``ldm_min_match``,
-                | ``ldm_bucket_size_log``,
-                | ``ldm_hash_rate_log``, and some
-                | non-public parameters.
-              - No
-            * - | ZstdDict internally
-                | caches the dictionary
-              - | Yes. It's faster when
-                | loading a digested
-                | dictionary again with the same
-                | compression level.
-              - | No. If you wish to load an undigested
-                | dictionary multiple times,
-                | consider reusing a
-                | compressor object.
-
-        A **digested** dictionary is used for decompression by default, which
-        is faster when loaded multiple times.
-
 
 Advanced parameter control
 --------------------------
@@ -482,14 +474,14 @@ Advanced parameter control
    .. attribute:: compression_level
 
       A high-level means of setting other compression parameters that affect
-      the speed and ratio of compressing data. Setting the level to zero uses the
-      default :attr:`COMPRESSION_LEVEL_DEFAULT`.
+      the speed and ratio of compressing data. Setting the level to zero uses
+      the default :attr:`COMPRESSION_LEVEL_DEFAULT`.
 
    .. attribute:: window_log
 
       Maximum allowed back-reference distance the compressor can use when
-      compressing data, expressed as power of two, ``1 << window_log`` bytes. This
-      parameter greatly influences the memory usage of compression. Higher
+      compressing data, expressed as power of two, ``1 << window_log`` bytes.
+      This parameter greatly influences the memory usage of compression. Higher
       values require more memory but gain better compression values.
 
    .. attribute:: hash_log
@@ -519,9 +511,9 @@ Advanced parameter control
       Minimum size of searched matches. Larger values increase compression and
       decompression speed, but decrease ratio. Note that Zstandard can still
       find matches of smaller size, it just tweaks its search algorithm to look
-      for this size and larger. Note that currently, for all strategies
-      < :attr:`~Strategy.btopt`, the effective minimum is ``4``, for all
-      strategies > :attr:`~Strategy.fast`, the effective maximum is ``6``.
+      for this size and larger. For all strategies < :attr:`~Strategy.btopt`,
+      the effective minimum is ``4``, for all strategies
+      > :attr:`~Strategy.fast`, the effective maximum is ``6``.
 
    .. attribute:: target_length
 
@@ -599,7 +591,7 @@ Advanced parameter control
 
       Select how many threads will be spawned to compress in parallel. When
       :attr:`!nb_workers` >= 1, enables multi-threaded compression, 1
-      means "1-thread multi-threaded mode". More workers improve speed, but
+      means "one-thread multi-threaded mode". More workers improve speed, but
       also increase memory usage and slightly reduce compression ratio.
 
    .. attribute:: job_size
@@ -655,8 +647,9 @@ Advanced parameter control
 
    .. note::
 
-      The values of attributes of :class:`Strategy` are not necessarily stable
-      between zstd versions. Only the ordering may be relied upon.
+      The values of attributes of :class:`!Strategy` are not necessarily stable
+      across zstd versions. Only the ordering of the attributes may be relied
+      upon.
 
    The following strategies are available:
 
