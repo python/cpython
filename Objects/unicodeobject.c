@@ -13929,7 +13929,12 @@ _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
 int
 PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
 {
-    if (Py_TYPE(obj) == &PyLong_Type) {
+    PyTypeObject *type = Py_TYPE(obj);
+    if (type == &PyUnicode_Type) {
+        return _PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer, obj);
+    }
+
+    if (type == &PyLong_Type) {
         return _PyLong_FormatWriter((_PyUnicodeWriter*)writer, obj, 10, 0);
     }
 
