@@ -28,7 +28,6 @@ attr_charref = re.compile(r'&(#[0-9]+|#[xX][0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*)[;=
 
 starttagopen = re.compile('<[a-zA-Z]')
 piclose = re.compile('>')
-escapable_raw_text_close = re.compile('</(title|textarea)>', re.I)
 commentclose = re.compile(r'--\s*>')
 # Note:
 #  1) if you change tagfind/attrfind remember to update locatestarttagend too;
@@ -101,7 +100,6 @@ class HTMLParser(_markupbase.ParserBase):
     """
 
     CDATA_CONTENT_ELEMENTS = ("script", "style")
-    ESCAPABLE_RAW_TEXT_ELEMENTS = ("title", "textarea")
 
     def __init__(self, *, convert_charrefs=True):
         """Initialize and reset this instance.
@@ -119,7 +117,6 @@ class HTMLParser(_markupbase.ParserBase):
         self.lasttag = '???'
         self.interesting = interesting_normal
         self.cdata_elem = None
-        self.escapable_raw_text_elem = None
         super().reset()
 
     def feed(self, data):
@@ -141,14 +138,6 @@ class HTMLParser(_markupbase.ParserBase):
         """Return full source of start tag: '<...>'."""
         return self.__starttag_text
 
-    def set_escapable_raw_text_mode(self, elem):
-        self.escapable_raw_text_elem = elem.lower()
-        self.interesting = re.compile(r'</\s*%s\s*>' % self.escapable_raw_text_elem, re.I)
-
-    def clear_escapable_raw_text_mode(self):
-        self.interesting = interesting_normal
-        self.escapable_raw_text_elem = None
-
     def set_cdata_mode(self, elem):
         self.cdata_elem = elem.lower()
         self.interesting = re.compile(r'</\s*%s\s*>' % self.cdata_elem, re.I)
@@ -165,7 +154,7 @@ class HTMLParser(_markupbase.ParserBase):
         i = 0
         n = len(rawdata)
         while i < n:
-            if self.convert_charrefs and not self.cdata_elem and not self.escapable_raw_text_elem:
+            if self.convert_charrefs and not self.cdata_elem:
                 j = rawdata.find('<', i)
                 if j < 0:
                     # if we can't find the next <, either we are at the end
@@ -184,13 +173,11 @@ class HTMLParser(_markupbase.ParserBase):
                 if match:
                     j = match.start()
                 else:
-                    if self.escapable_raw_text_elem:
-                        break
                     if self.cdata_elem:
                         break
                     j = n
             if i < j:
-                if self.convert_charrefs and not self.cdata_elem and not self.escapable_raw_text_elem:
+                if self.convert_charrefs and not self.cdata_elem:
                     self.handle_data(unescape(rawdata[i:j]))
                 else:
                     self.handle_data(rawdata[i:j])
@@ -367,8 +354,6 @@ class HTMLParser(_markupbase.ParserBase):
             self.handle_startendtag(tag, attrs)
         else:
             self.handle_starttag(tag, attrs)
-            if tag in self.ESCAPABLE_RAW_TEXT_ELEMENTS:
-                self.set_escapable_raw_text_mode(tag)
             if tag in self.CDATA_CONTENT_ELEMENTS:
                 self.set_cdata_mode(tag)
         return endpos
@@ -444,14 +429,8 @@ class HTMLParser(_markupbase.ParserBase):
                 self.handle_data(rawdata[i:gtpos])
                 return gtpos
 
-        if self.escapable_raw_text_elem is not None: # title or textarea
-            if elem != self.escapable_raw_text_elem:
-                self.handle_data(rawdata[i:gtpos])
-                return gtpos
-
         self.handle_endtag(elem)
         self.clear_cdata_mode()
-        self.clear_escapable_raw_text_mode()
         return gtpos
 
     # Overridable -- finish processing of start+end tag: <tag.../>

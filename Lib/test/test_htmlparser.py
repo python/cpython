@@ -285,9 +285,7 @@ text
             #'foo = </\nscript>',
             #'foo = </ script>',
         ]
-        tags = ['script', 'style', 'textarea', 'title']
-        # test the following 'casing' for each tag: script, SCRIPT, Script etc.
-        elements = [f(tag) for tag in tags for f in (str.lower, str.upper, str.capitalize)]
+        elements = ['script', 'style', 'SCRIPT', 'STYLE', 'Script', 'Style']
         for content in contents:
             for element in elements:
                 element_lower = element.lower()
@@ -318,34 +316,6 @@ text
                                 ("data", content),
                                 ("endtag", element_lower)],
                             collector=Collector(convert_charrefs=False))
-
-    def test_escapable_raw_text_content(self):
-        contents = [
-            'foo = "</TITLE" + ">";',
-            'foo = <\n/title> ',
-            '<!-- document.write("</scr" + "ipt>"); -->',
-            '\n//<![CDATA[\n'
-            '\n<!-- //\nvar foo = 3.14;\n// -->\n',
-            # valid character reference
-            '&#65;',
-            # ambiguous ampersand example
-            '&notaref',
-            'foo = "</sty" + "le>";',
-            '<!-- \u2603 -->',
-            # these two should be invalid according to the HTML 5 spec,
-            # section 8.1.2.2
-            #'foo = </\nscript>',
-            #'foo = </ script>',
-        ]
-        elements = ['title', 'textarea', 'TITLE', 'TEXTAREA', 'Title', 'Textarea']
-        for content in contents:
-            for element in elements:
-                element_lower = element.lower()
-                s = '<{element}>{content}</{element}>'.format(element=element,
-                                                               content=content)
-                self._run_check(s, [("starttag", element_lower, []),
-                                    ("data", content),
-                                    ("endtag", element_lower)])
 
     def test_EOF_in_cdata(self):
         content = """<!-- not a comment --> &not-an-entity-ref;
@@ -407,15 +377,9 @@ text
                         ('starttag', 'script', []), ('data', text),
                         ('endtag', 'script'), ('data', '"'),
                         ('starttag', 'style', []), ('data', text),
-                        ('endtag', 'style'), ('data', '"'),
-                        ('starttag', 'title', []), ('data', text),
-                        ('endtag', 'title'), ('data', '"'),
-                        ('starttag', 'textarea', []), ('data', text),
-                        ('endtag', 'textarea'), ('data', '"')]
+                        ('endtag', 'style'), ('data', '"')]
             self._run_check('{1}<script>{0}</script>{1}'
-                            '<style>{0}</style>{1}'
-                            '<title>{0}</title>{1}'
-                            '<textarea>{0}</textarea>{1}'.format(text, charref),
+                            '<style>{0}</style>{1}'.format(text, charref),
                             expected, collector=collector())
         # check truncated charrefs at the end of the file
         html = '&quo &# &#x'
