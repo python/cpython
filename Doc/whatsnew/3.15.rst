@@ -65,6 +65,7 @@ Summary --- release highlights
 
 .. PEP-sized items next.
 
+* :ref:`argparse <whatsnew314-color-argparse>`,
 
 
 New features
@@ -86,10 +87,17 @@ New modules
 Improved modules
 ================
 
-module_name
------------
+difflib
+-------
 
-* TODO
+  .. _whatsnew314-color-argparse:
+
+* Introduced the optional *color* parameter to :func:`difflib.unified_diff`,
+  enabling colored output similar to what ``git diff`` displays.
+  This can be controlled by :ref:`environment variables
+  <using-on-controlling-color>`.
+  (Contributed by Douglas Thor in :gh:`133725`.)
+
 
 .. Add improved modules above alphabetically, not here at the end.
 
