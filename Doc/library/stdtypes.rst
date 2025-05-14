@@ -2012,7 +2012,7 @@ expression support in the :mod:`re` module).
 
 .. method:: str.isprintable()
 
-   Return true if all characters in the string are printable, false if it
+   Return ``True`` if all characters in the string are printable, ``False`` if it
    contains at least one non-printable character.
 
    Here "printable" means the character is suitable for :func:`repr` to use in
@@ -2268,6 +2268,18 @@ expression support in the :mod:`re` module).
       ['1', '2 3']
       >>> '   1   2   3   '.split()
       ['1', '2', '3']
+
+   If *sep* is not specified or is ``None`` and  *maxsplit* is ``0``, only
+   leading runs of consecutive whitespace are considered.
+
+   For example::
+
+      >>> "".split(None, 0)
+      []
+      >>> "   ".split(None, 0)
+      []
+      >>> "   foo   ".split(maxsplit=0)
+      ['foo   ']
 
 
 .. index::

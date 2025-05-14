@@ -1383,8 +1383,8 @@ bounded_lru_cache_update_lock_held(lru_cache_object *self,
            this same key, then this setitem call will update the cache dict
            with this new link, leaving the old link as an orphan (i.e. not
            having a cache dict entry that refers to it). */
-        if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
-                                      hash) < 0) {
+        if (_PyDict_SetItem_KnownHash_LockHeld((PyDictObject *)self->cache, key,
+                                               (PyObject *)link, hash) < 0) {
             Py_DECREF(link);
             return NULL;
         }
@@ -1453,8 +1453,8 @@ bounded_lru_cache_update_lock_held(lru_cache_object *self,
        for successful insertion in the cache dict before adding the
        link to the linked list.  Otherwise, the potentially reentrant
        __eq__ call could cause the then orphan link to be visited. */
-    if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
-                                  hash) < 0) {
+    if (_PyDict_SetItem_KnownHash_LockHeld((PyDictObject *)self->cache, key,
+                                           (PyObject *)link, hash) < 0) {
         /* Somehow the cache dict update failed.  We no longer can
            restore the old link.  Let the error propagate upward and
            leave the cache short one link. */
@@ -1689,7 +1689,13 @@ _functools__lru_cache_wrapper_cache_clear_impl(PyObject *self)
     lru_list_elem *list = lru_cache_unlink_list(_self);
     FT_ATOMIC_STORE_SSIZE_RELAXED(_self->hits, 0);
     FT_ATOMIC_STORE_SSIZE_RELAXED(_self->misses, 0);
-    PyDict_Clear(_self->cache);
+    if (_self->wrapper == bounded_lru_cache_wrapper) {
+        /* The critical section on the lru cache itself protects the dictionary
+           for bounded_lru_cache instances. */
+        _PyDict_Clear_LockHeld(_self->cache);
+    } else {
+        PyDict_Clear(_self->cache);
+    }
     lru_cache_clear_list(list);
     Py_RETURN_NONE;
 }

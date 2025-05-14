@@ -1,0 +1,1 @@
+Fixed a race in :func:`functools.lru_cache` under free-threading.

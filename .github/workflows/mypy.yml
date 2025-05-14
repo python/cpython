@@ -15,6 +15,7 @@ on:
       - "Misc/mypy/**"
       - "Tools/build/compute-changes.py"
       - "Tools/build/generate_sbom.py"
+      - "Tools/build/generate-build-details.py"
       - "Tools/build/verify_ensurepip_wheels.py"
       - "Tools/build/update_file.py"
       - "Tools/cases_generator/**"
