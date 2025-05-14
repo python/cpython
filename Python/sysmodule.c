@@ -1643,7 +1643,7 @@ static PyObject *
 _sys_getwindowsversion_from_kernel32(void)
 {
 #ifndef MS_WINDOWS_DESKTOP
-    PyErr_SetFromWindowsErr(0);
+    PyErr_SetString(PyExc_OSError, "cannot read version info on this platform");
     return NULL;
 #else
     HANDLE hKernel32;
