@@ -102,7 +102,7 @@ Reading and writing compressed files
    When opening a file for reading, the *options* argument can be a dictionary
    providing advanced decompression parameters, see
    :class:`DecompressionParameter` for detailed information about supported
-   parameters. The *zstd_dict* argument is a :class:`ZstdDict` instance to be
+   parameters. The *zstd_dict* argument is a :class:`!ZstdDict` instance to be
    used during decompression. When opening a file for reading, the *level*
    argument should not be used.
 
@@ -111,13 +111,13 @@ Reading and writing compressed files
    :class:`CompressionParameter` for detailed information about supported
    parameters. The *level* argument is the compression level to use when
    writing compressed data. Only one of *level* or *options* may be passed. The
-   *zstd_dict* argument is a :class:`ZstdDict` instance to be used during
+   *zstd_dict* argument is a :class:`!ZstdDict` instance to be used during
    compression.
 
    When opening a file for writing, the *options*, *zstd_dict* and *level*
    arguments have the same meanings as for :class:`ZstdCompressor`.
 
-   :class:`ZstdFile` supports all the members specified by
+   :class:`!ZstdFile` supports all the members specified by
    :class:`io.BufferedIOBase`, except for :meth:`~io.BufferedIOBase.detach`
    and :meth:`~io.IOBase.truncate`.
    Iteration and the :keyword:`with` statement are supported.
@@ -231,7 +231,7 @@ Compressing and decompressing data in memory
       Compress *data* (a :term:`bytes-like object`), returning a :class:`bytes`
       object if possible, or an empty byte string otherwise. Some of *data* may
       be buffered internally, for use in later calls to
-      :meth:`~.compress` and :meth:`~.flush`. The
+      :meth:`!compress` and :meth:`~.flush`. The
       returned data should be concatenated with the output of any previous calls
       to :meth:`~.compress`.
 
@@ -273,15 +273,15 @@ Compressing and decompressing data in memory
       compressed frames, unlike the :func:`decompress` function and
       :class:`ZstdFile` class. To decompress a multi-frame input, you should
       use :func:`decompress`, :class:`ZstdFile` if working with a
-      :term:`file object`, or multiple :class:`ZstdDecompressor` instances.
+      :term:`file object`, or multiple :class:`!ZstdDecompressor` instances.
 
    .. method:: decompress(data, max_length=-1)
 
       Decompress *data* (a :term:`bytes-like object`), returning
       uncompressed data as bytes. Some of *data* may be buffered
-      internally, for use in later calls to :meth:`~.decompress`.
+      internally, for use in later calls to :meth:`!decompress`.
       The returned data should be concatenated with the output of any previous
-      calls to :meth:`~.decompress`.
+      calls to :meth:`!decompress`.
 
       If *max_length* is non-negative, returns at most *max_length*
       bytes of decompressed data. If this limit is reached and further
@@ -395,7 +395,7 @@ Zstandard dictionaries
 
         .. note::
 
-            The meaning of ``0`` for :attr:`ZstdDict.dict_id` is different from
+            The meaning of ``0`` for :attr:`!ZstdDict.dict_id` is different from
             the ``dictionary_id`` argument to the :func:`get_frame_info`
             function.
 
@@ -598,7 +598,7 @@ Advanced parameter control
    .. attribute:: nb_workers
 
       Select how many threads will be spawned to compress in parallel. When
-      :attr:`~.nb_workers` >= 1, enables multi-threaded compression, 1
+      :attr:`!nb_workers` >= 1, enables multi-threaded compression, 1
       means "1-thread multi-threaded mode". More workers improve speed, but
       also increase memory usage and slightly reduce compression ratio.
 
