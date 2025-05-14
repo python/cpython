@@ -834,12 +834,14 @@ PyObject_VectorcallMethod(PyObject *name, PyObject *const *args,
     assert(PyVectorcall_NARGS(nargsf) >= 1);
 
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *callable = NULL;
+    _PyCStackRef method;
+    _PyThreadState_PushCStackRef(tstate, &method);
     /* Use args[0] as "self" argument */
-    int unbound = _PyObject_GetMethod(args[0], name, &callable);
-    if (callable == NULL) {
+    int unbound = _PyObject_GetMethodStackRef(tstate, args[0], name, &method.ref);
+    if (PyStackRef_IsNull(method.ref)) {
         return NULL;
     }
+    PyObject *callable = PyStackRef_AsPyObjectBorrow(method.ref);
 
     if (unbound) {
         /* We must remove PY_VECTORCALL_ARGUMENTS_OFFSET since
@@ -855,7 +857,7 @@ PyObject_VectorcallMethod(PyObject *name, PyObject *const *args,
     EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_METHOD, callable);
     PyObject *result = _PyObject_VectorcallTstate(tstate, callable,
                                                   args, nargsf, kwnames);
-    Py_DECREF(callable);
+    _PyThreadState_PopCStackRef(tstate, &method);
     return result;
 }
 
