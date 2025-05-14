@@ -150,6 +150,8 @@ extern int _PyDict_Pop_KnownHash(
     Py_hash_t hash,
     PyObject **result);
 
+extern void _PyDict_Clear_LockHeld(PyObject *op);
+
 #ifdef Py_GIL_DISABLED
 PyAPI_FUNC(void) _PyDict_EnsureSharedOnRead(PyDictObject *mp);
 #endif
