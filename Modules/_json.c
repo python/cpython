@@ -360,13 +360,6 @@ _build_rval_index_tuple(PyObject *rval, Py_ssize_t idx) {
     return tpl;
 }
 
-static inline int
-_PyUnicodeWriter_IsEmpty(PyUnicodeWriter *writer_pub)
-{
-    _PyUnicodeWriter *writer = (_PyUnicodeWriter*)writer_pub;
-    return (writer->pos == 0);
-}
-
 static PyObject *
 scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next_end_ptr)
 {
@@ -385,10 +378,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
     const void *buf;
     int kind;
 
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
-    if (writer == NULL) {
-        goto bail;
-    }
+    PyUnicodeWriter *writer = NULL;
 
     len = PyUnicode_GET_LENGTH(pystr);
     buf = PyUnicode_DATA(pystr);
@@ -419,12 +409,11 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
 
         if (c == '"') {
             // Fast path for simple case.
-            if (_PyUnicodeWriter_IsEmpty(writer)) {
+            if (writer == NULL) {
                 PyObject *ret = PyUnicode_Substring(pystr, end, next);
                 if (ret == NULL) {
                     goto bail;
                 }
-                PyUnicodeWriter_Discard(writer);
                 *next_end_ptr = next + 1;;
                 return ret;
             }
@@ -432,6 +421,11 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
         else if (c != '\\') {
             raise_errmsg("Unterminated string starting at", pystr, begin);
             goto bail;
+        } else if (writer == NULL) {
+            writer = PyUnicodeWriter_Create(0);
+            if (writer == NULL) {
+                goto bail;
+            }
         }
 
         /* Pick up this chunk if it's not zero length */
