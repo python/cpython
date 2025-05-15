@@ -1,0 +1,1 @@
+:class:`Wave_write` setters don't raise an error anymore, if the value did not change after frames were written.

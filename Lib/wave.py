@@ -478,7 +478,7 @@ class Wave_write:
     # User visible methods.
     #
     def setnchannels(self, nchannels):
-        if self._datawritten:
+        if self._datawritten and self._nchannels != nchannels:
             raise Error('cannot change parameters after starting to write')
         if nchannels < 1:
             raise Error('bad # of channels')
@@ -490,7 +490,7 @@ class Wave_write:
         return self._nchannels
 
     def setsampwidth(self, sampwidth):
-        if self._datawritten:
+        if self._datawritten and self._sampwidth != sampwidth:
             raise Error('cannot change parameters after starting to write')
         if sampwidth < 1 or sampwidth > 4:
             raise Error('bad sample width')
@@ -502,11 +502,12 @@ class Wave_write:
         return self._sampwidth
 
     def setframerate(self, framerate):
-        if self._datawritten:
+        rounded_framerate = int(round(framerate))
+        if self._datawritten and self._framerate != rounded_framerate:
             raise Error('cannot change parameters after starting to write')
-        if framerate <= 0:
+        if rounded_framerate <= 0:
             raise Error('bad frame rate')
-        self._framerate = int(round(framerate))
+        self._framerate = rounded_framerate
 
     def getframerate(self):
         if not self._framerate:
@@ -514,7 +515,7 @@ class Wave_write:
         return self._framerate
 
     def setnframes(self, nframes):
-        if self._datawritten:
+        if self._datawritten and self._nframes != nframes:
             raise Error('cannot change parameters after starting to write')
         self._nframes = nframes
 
@@ -522,7 +523,7 @@ class Wave_write:
         return self._nframeswritten
 
     def setcomptype(self, comptype, compname):
-        if self._datawritten:
+        if self._datawritten and (self._comptype != comptype or self._compname != compname):
             raise Error('cannot change parameters after starting to write')
         if comptype not in ('NONE',):
             raise Error('unsupported compression type')
@@ -537,8 +538,8 @@ class Wave_write:
 
     def setparams(self, params):
         nchannels, sampwidth, framerate, nframes, comptype, compname = params
-        if self._datawritten:
-            raise Error('cannot change parameters after starting to write')
+        # no check for value change required: either the properties have the same
+        # value or they throw the exception them selfs
         self.setnchannels(nchannels)
         self.setsampwidth(sampwidth)
         self.setframerate(framerate)
