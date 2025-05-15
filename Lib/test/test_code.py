@@ -1132,13 +1132,13 @@ class CodeTest(unittest.TestCase):
 
         c = foo.__code__
 
-        co_nlocalsplus = len({*c.co_varnames, *c.co_cellvars, *c.co_freevars})
-        # anything below that limit is a valid co_stacksize
-        evil_stacksize = int(_testcapi.INT_MAX / 16 - co_nlocalsplus)
+        # The exact limit depends on co_nlocalsplus, so we do not hardcode it.
+        too_large_stacksize = _testcapi.INT_MAX // 16
+        ok_stacksize = too_large_stacksize // 2
 
         with self.assertRaisesRegex(OverflowError, "stack size is too large"):
-            c.__replace__(co_stacksize=evil_stacksize)
-        c.__replace__(co_stacksize=evil_stacksize - 1)
+            c.__replace__(co_stacksize=too_large_stacksize)
+        c.__replace__(co_stacksize=ok_stacksize)
 
 
 def isinterned(s):
