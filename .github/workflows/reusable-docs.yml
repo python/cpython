@@ -81,7 +81,7 @@ jobs:
         set -Eeuo pipefail
         make -C Doc/ PYTHON=../python SPHINXOPTS="--quiet --fail-on-warning" epub
         pip install epubcheck
-        epubcheck build/epub
+        epubcheck build/epub/Python.epub
 
   # Run "doctest" on HEAD as new syntax doesn't exist in the latest stable release
   doctest:
