@@ -839,6 +839,7 @@ PyObject_VectorcallMethod(PyObject *name, PyObject *const *args,
     /* Use args[0] as "self" argument */
     int unbound = _PyObject_GetMethodStackRef(tstate, args[0], name, &method.ref);
     if (PyStackRef_IsNull(method.ref)) {
+        _PyThreadState_PopCStackRef(tstate, &method);
         return NULL;
     }
     PyObject *callable = PyStackRef_AsPyObjectBorrow(method.ref);
