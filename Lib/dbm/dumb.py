@@ -295,7 +295,7 @@ class _Database(collections.abc.MutableMapping):
             reorganize_pos = 0
 
             # Iterate over existing keys, sorted by starting byte.
-            for key in sorted(self._index.keys(), key = lambda k: self._index[k][0]):
+            for key in sorted(self._index, key = lambda k: self._index[k][0]):
                 pos, siz = self._index[key]
                 f.seek(pos)
                 val = f.read(siz)
