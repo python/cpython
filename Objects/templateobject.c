@@ -444,6 +444,8 @@ template_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
 
 static PyMethodDef template_methods[] = {
     {"__reduce__", template_reduce, METH_NOARGS, NULL},
+    {"__class_getitem__", Py_GenericAlias,
+        METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL},
 };
 
