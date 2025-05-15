@@ -1779,6 +1779,7 @@ class PyUnicodeWriterTest(unittest.TestCase):
     def test_ascii(self):
         writer = self.create_writer(0)
         writer.write_ascii(b"Hello ", -1)
+        writer.write_ascii(b"", 0)
         writer.write_ascii(b"Python! <truncated>", 6)
         self.assertEqual(writer.finish(), "Hello Python")
 
