@@ -634,6 +634,7 @@ if 'create-social-cards' not in tags:  # noqa: F821
     # Define a static preview image when not creating social cards
     ogp_image = '_static/og-image.png'
     ogp_custom_meta_tags = [
-        '<meta property="og:image:width" content="200">',
-        '<meta property="og:image:height" content="200">',
+        # Self-closing for EPUB validity
+        '<meta property="og:image:width" content="200" />',
+        '<meta property="og:image:height" content="200" />',
     ]
