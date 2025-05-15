@@ -135,31 +135,31 @@ class AnyDBMTestCase:
         assert(f[key] == b"Python:")
         f.close()
 
-    def test_anydbm_readonly_vacuum(self):
+    def test_anydbm_readonly_reorganize(self):
         self.init_db()
         with dbm.open(_fname, 'r') as d:
             # Early stopping.
-            if not hasattr(d, 'vacuum'):
+            if not hasattr(d, 'reorganize'):
                 return
 
-            self.assertRaises(dbm.error, lambda: d.vacuum())
+            self.assertRaises(dbm.error, lambda: d.reorganize())
 
-    def test_anydbm_vacuum_not_changed_content(self):
+    def test_anydbm_reorganize_not_changed_content(self):
         self.init_db()
         with dbm.open(_fname, 'c') as d:
             # Early stopping.
-            if not hasattr(d, 'vacuum'):
+            if not hasattr(d, 'reorganize'):
                 return
 
             keys_before = sorted(d.keys())
             values_before = [d[k] for k in keys_before]
-            d.vacuum()
+            d.reorganize()
             keys_after = sorted(d.keys())
             values_after = [d[k] for k in keys_before]
             self.assertEqual(keys_before, keys_after)
             self.assertEqual(values_before, values_after)
 
-    def test_anydbm_vacuum_decreased_size(self):
+    def test_anydbm_reorganize_decreased_size(self):
 
         def _calculate_db_size(db_path):
             if os.path.isfile(db_path):
@@ -171,10 +171,10 @@ class AnyDBMTestCase:
                     total_size += os.path.getsize(file_path)
             return total_size
 
-        # This test requires relatively large databases to reliably show difference in size before and after vacuum.
+        # This test requires relatively large databases to reliably show difference in size before and after reorganizing.
         with dbm.open(_fname, 'n') as f:
             # Early stopping.
-            if not hasattr(f, 'vacuum'):
+            if not hasattr(f, 'reorganize'):
                 return
 
             for k in self._dict:
@@ -182,20 +182,19 @@ class AnyDBMTestCase:
             db_keys = list(f.keys())
 
         # Make sure to calculate size of database only after file is closed to ensure file content are flushed to disk.
-        size_before = _calculate_db_size(_fname)
+        size_before = _calculate_db_size(os.path.dirname(_fname))
 
         # Delete some elements from the start of the database.
         keys_to_delete = db_keys[:len(db_keys) // 2]
         with dbm.open(_fname, 'c') as f:
             for k in keys_to_delete:
                 del f[k]
-            f.vacuum()
+            f.reorganize()
 
         # Make sure to calculate size of database only after file is closed to ensure file content are flushed to disk.
-        size_after = _calculate_db_size(_fname)
+        size_after = _calculate_db_size(os.path.dirname(_fname))
 
-        # Less or equal because not all submodules support vacuuming.
-        self.assertLessEqual(size_after, size_before)
+        self.assertLess(size_after, size_before)
 
     def test_open_with_bytes(self):
         dbm.open(os.fsencode(_fname), "c").close()

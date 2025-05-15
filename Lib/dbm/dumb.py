@@ -284,15 +284,15 @@ class _Database(collections.abc.MutableMapping):
     def __exit__(self, *args):
         self.close()
 
-    def vacuum(self):
+    def reorganize(self):
         if self._readonly:
             raise error('The database is opened for reading only')
         self._verify_open()
-        # Ensure all changes are committed before vacuuming.
+        # Ensure all changes are committed before reorganizing.
         self._commit()
         # Open file in r+ to allow changing in-place.
         with _io.open(self._datfile, 'rb+') as f:
-            vacuum_pos = 0
+            reorganize_pos = 0
 
             # Iterate over existing keys, sorted by starting byte.
             for key in sorted(self._index.keys(), key = lambda k: self._index[k][0]):
@@ -300,14 +300,14 @@ class _Database(collections.abc.MutableMapping):
                 f.seek(pos)
                 val = f.read(siz)
 
-                f.seek(vacuum_pos)
+                f.seek(reorganize_pos)
                 f.write(val)
-                self._index[key] = (vacuum_pos, siz)
+                self._index[key] = (reorganize_pos, siz)
 
                 blocks_occupied = (siz + _BLOCKSIZE - 1) // _BLOCKSIZE
-                vacuum_pos += blocks_occupied * _BLOCKSIZE
+                reorganize_pos += blocks_occupied * _BLOCKSIZE
 
-            f.truncate(vacuum_pos)
+            f.truncate(reorganize_pos)
         # Commit changes to index, which were not in-place.
         self._commit()
 

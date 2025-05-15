@@ -21,9 +21,8 @@ the Oracle Berkeley DB.
 
 .. note::
    None of the underlying modules will automatically shrink the disk space used by
-   the database file. However, :mod:`dbm.sqlite3` and :mod:`dbm.dumb` provide
-   a :meth:`!vacuum` method that can be used for this purpose. :mod:`dbm.gnu` can
-   do the same with its :meth:`!reorganize`, called like this for retro-compatibility.
+   the database file. However, :mod:`dbm.sqlite3`, :mod:`dbm.gnu` and :mod:`dbm.dumb`
+   provide a :meth:`!reorganize` method that can be used for this purpose.
 
 
 .. exception:: error
@@ -193,14 +192,14 @@ or any other SQLite browser, including the SQLite CLI.
       The Unix file access mode of the file (default: octal ``0o666``),
       used only when the database has to be created.
 
-   .. method:: sqlite3.vacuum()
+   .. method:: sqlite3.reorganize()
 
       If you have carried out a lot of deletions and would like to shrink the space
-      used on disk, this method will reorganize the database; therwise, deleted file
+      used on disk, this method will reorganize the database; otherwise, deleted file
       space will be kept and reused as new (key, value) pairs are added.
 
    .. note::
-      During vacuuming, as much as twice the size of the original database is required
+      While reorganizing, as much as twice the size of the original database is required
       in free disk space.
 
 
@@ -481,7 +480,7 @@ The :mod:`!dbm.dumb` module defines the following:
 
       Close the database.
 
-   .. method:: dumbdbm.vacuum()
+   .. method:: dumbdbm.reorganize()
 
       If you have carried out a lot of deletions and would like to shrink the space
       used on disk, this method will reorganize the database; otherwise, deleted file
