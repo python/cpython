@@ -167,6 +167,7 @@ New features
   input string contains non-ASCII characters.
   (Contributed by Victor Stinner in :gh:`133968`.)
 
+
 Porting to Python 3.15
 ----------------------
 
