@@ -215,7 +215,7 @@ class CCallMakerVisitor(GrammarVisitor):
         return call
 
     def assert_no_undefined_behavior(
-        self, call: FunctionCall, wrapper: str, expected_rtype: str,
+        self, call: FunctionCall, wrapper: str, expected_rtype: str | None,
     ) -> None:
         if call.return_type != expected_rtype:
             raise RuntimeError(
