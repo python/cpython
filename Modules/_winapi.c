@@ -1678,10 +1678,6 @@ _winapi_GetShortPathName_impl(PyObject *module, LPCWSTR path)
         PyErr_SetFromWindowsErr(0);
     }
     return result;
-#else
-    PyErr_SetString(PyExc_OSError, "GetShortPathName unavailable on this platform");
-    return NULL;
-
 }
 
 #endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
