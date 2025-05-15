@@ -119,9 +119,9 @@ def win_getpass(prompt='Password: ', stream=None, *, echo_char=None):
             raise KeyboardInterrupt
         if c == '\b':
             if echo_char and pw:
-                msvcrt.putch('\b')
-                msvcrt.putch(' ')
-                msvcrt.putch('\b')
+                msvcrt.putwch('\b')
+                msvcrt.putwch(' ')
+                msvcrt.putwch('\b')
             pw = pw[:-1]
         else:
             pw = pw + c
