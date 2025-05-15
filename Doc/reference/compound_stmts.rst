@@ -154,7 +154,7 @@ The :keyword:`for` statement is used to iterate over the elements of a sequence
 (such as a string, tuple, or list) or other iterable object:
 
 .. productionlist:: python-grammar
-   for_stmt: "for" `target_list` "in" `star_expressions` ":" `suite`
+   for_stmt: "for" `target_list` "in" `starred_expression_list` ":" `suite`
            : ["else" ":" `suite`]
 
 The expression following ``in`` is evaluated once; it should yield an :term:`iterable` object.
@@ -165,7 +165,7 @@ by the iterator. When the iterator is exhausted, the suite in the :keyword:`!els
 if present, is executed, and the loop terminates.
 
 As of Python 3.11, unpacking with starred expressions (e.g., ``*x``) is supported
-in the iterable expression. This follows the same rules as :token:`star_expressions` in the grammar.
+in the iterable expression. This follows the same rules as :token:`starred_expression_list` in the grammar.
 
 .. index::
    pair: statement; break
