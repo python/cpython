@@ -287,11 +287,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(float_(IndexLike.with_val(-1)), -1.0)
 
         self.assertRaises(TypeError, float_, FloatLike.with_val(687))
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", DeprecationWarning)
-            self.assertRaises(DeprecationWarning, float_, FloatLike.with_val(subclassof(float)(4.25)))
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(float_(FloatLike.with_val(subclassof(float)(4.25))), 4.25)
+        self.assertRaises(TypeError, float_, FloatLike.with_val(subclassof(float)(4.25)))
         self.assertRaises(RuntimeError, float_, FloatLike.with_exc(RuntimeError))
 
         self.assertRaises(TypeError, float_, IndexLike.with_val(1.25))
