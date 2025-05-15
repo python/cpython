@@ -3218,6 +3218,27 @@ class _TestPoolWorkerErrors(BaseTestCase):
         p.close()
         p.join()
 
+    def test_pool_worker_died_without_communicating(self):
+        # Issue22393: test fix of indefinite hang caused by worker processes
+        # exiting abruptly (such as via os._exit()) without communicating
+        # back to the pool at all.
+        prog = (
+            "import os, multiprocessing as mp; "
+            "is_main = (__name__ == '__main__'); "
+            "p = mp.Pool(1) if is_main else print('worker'); "
+            "p.map(os._exit, [1]) if is_main else None; "
+            "(p.close() or p.join()) if is_main else None"
+        )
+        # Only if there is a regression will this ever trigger a
+        # subprocess.TimeoutExpired.
+        completed_process = subprocess.run(
+            [sys.executable, '-E', '-S', '-O', '-c', prog],
+            check=False,
+            timeout=100,
+            capture_output=True
+        )
+        self.assertNotEqual(0, completed_process.returncode)
+
 class _TestPoolWorkerLifetime(BaseTestCase):
     ALLOWED_TYPES = ('processes', )
 
