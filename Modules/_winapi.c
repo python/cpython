@@ -1598,7 +1598,7 @@ _winapi_GetLongPathName_impl(PyObject *module, LPCWSTR path)
     }
     return result;
 #else
-    return PyUnicode_FromWideChar(path, wcslen(path));
+    return PyUnicode_FromWideChar(path, -1);
 #endif
 }
 
@@ -1636,6 +1636,8 @@ _winapi_GetModuleFileName_impl(PyObject *module, HMODULE module_handle)
     return PyUnicode_FromWideChar(filename, wcslen(filename));
 }
 
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
+
 /*[clinic input]
 _winapi.GetShortPathName
 
@@ -1653,7 +1655,6 @@ static PyObject *
 _winapi_GetShortPathName_impl(PyObject *module, LPCWSTR path)
 /*[clinic end generated code: output=dab6ae494c621e81 input=43fa349aaf2ac718]*/
 {
-#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
     DWORD cchBuffer;
     PyObject *result = NULL;
 
@@ -1680,8 +1681,10 @@ _winapi_GetShortPathName_impl(PyObject *module, LPCWSTR path)
 #else
     PyErr_SetString(PyExc_OSError, "GetShortPathName unavailable on this platform");
     return NULL;
-#endif
+
 }
+
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
 
 /*[clinic input]
 _winapi.GetStdHandle -> HANDLE
