@@ -1389,7 +1389,7 @@ static PyObject *format_error(PyObject *self, PyObject *args)
         code = GetLastError();
     lpMsgBuf = FormatError(code);
     if (lpMsgBuf) {
-        result = PyUnicode_FromWideChar(lpMsgBuf, wcslen(lpMsgBuf));
+        result = PyUnicode_FromWideChar(lpMsgBuf, -1);
         LocalFree(lpMsgBuf);
     } else {
         result = PyUnicode_FromString("<no description>");
