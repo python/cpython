@@ -144,6 +144,15 @@ typing
   (Contributed by Bénédikt Tran in :gh:`133823`.)
 
 
+wave
+----
+
+* Removed the ``getmark()``, ``setmark()`` and ``getmarkers()`` methods
+  of the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes,
+  which were deprecated since Python 3.13.
+  (Contributed by Bénédikt Tran in :gh:`133873`.)
+
+
 Porting to Python 3.15
 ======================
 
