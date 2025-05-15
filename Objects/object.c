@@ -1730,6 +1730,7 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
         }
     }
     if (dict != NULL) {
+        // TODO: use _Py_dict_lookup_threadsafe_stackref
         Py_INCREF(dict);
         PyObject *value;
         if (PyDict_GetItemRef(dict, name, &value) != 0) {
