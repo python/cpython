@@ -1,2 +1,2 @@
-Raise ValueError if an opener returns a negative fd in ``_pyio``
+Raise :exc:`ValueError` if an opener returns a negative file-descriptor in ``_pyio``
 :func:`open` to match ``_io``
