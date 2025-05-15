@@ -2453,7 +2453,7 @@ match_item(PyObject *op, Py_ssize_t index)
 }
 
 static PyObject*
-match_subscript(PyObject *op, PyObject* item)
+match_getitem(PyObject *op, PyObject* item)
 {
     MatchObject *self = _MatchObject_CAST(op);
 
@@ -2491,7 +2491,10 @@ match_subscript(PyObject *op, PyObject* item)
         if (self->pattern->groupindex) {
             PyObject* index = PyDict_GetItemWithError(self->pattern->groupindex, item);
             if (index && PyLong_Check(index)) {
-                return match_item(op, PyLong_AsSsize_t(index));
+                Py_ssize_t i = PyLong_AsSsize_t(index);
+                if (i != -1) {
+                    return match_item(op, i);
+                }
             }
         }
         if (!PyErr_Occurred()) {
@@ -2695,32 +2698,20 @@ _sre_SRE_Match_index_impl(MatchObject *self, PyObject *value,
                           Py_ssize_t start, Py_ssize_t stop)
 /*[clinic end generated code: output=846597f6f96f829c input=7f41b5a99e0ad88e]*/
 {
-    Py_ssize_t i;
+    PySlice_AdjustIndices(self->groups, &start, &stop, 1);
 
-    if (start < 0) {
-        start += self->groups;
-        if (start < 0) {
-            start = 0;
-        }
-    }
-    if (stop < 0) {
-        stop += self->groups;
-    }
-    else if (stop > self->groups) {
-        stop = self->groups;
-    }
-    for (i = start; i < stop; i++) {
+    for (Py_ssize_t i = start; i < stop; i++) {
         PyObject* group = match_getslice_by_index(self, i, Py_None);
         if (group == NULL) {
             return NULL;
         }
         int cmp = PyObject_RichCompareBool(group, value, Py_EQ);
         Py_DECREF(group);
+        if (cmp < 0) {
+            return NULL;
+        }
         if (cmp > 0) {
             return PyLong_FromSsize_t(i);
-        }
-        else if (cmp < 0) {
-            return NULL;
         }
     }
     PyErr_SetString(PyExc_ValueError, "match.index(x): x not in match");
@@ -2750,11 +2741,11 @@ _sre_SRE_Match_count_impl(MatchObject *self, PyObject *value)
         }
         int cmp = PyObject_RichCompareBool(group, value, Py_EQ);
         Py_DECREF(group);
+        if (cmp < 0) {
+            return NULL;
+        }
         if (cmp > 0) {
             count++;
-        }
-        else if (cmp < 0) {
-            return NULL;
         }
     }
     return PyLong_FromSsize_t(count);
@@ -3421,7 +3412,7 @@ static PyType_Slot match_slots[] = {
     {Py_sq_item, match_item},
 
     // Support group names provided as subscripts
-    {Py_mp_subscript, match_subscript},
+    {Py_mp_subscript, match_getitem},
 
     {0, NULL},
 };

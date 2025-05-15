@@ -1494,7 +1494,7 @@ You can also destructure match objects with python's ``match`` statement::
 
    .. versionadded:: 3.6
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
 
       Negative indexing is now supported. This allows accessing match groups
       from the end, starting from the last group defined in the pattern::
@@ -1523,7 +1523,7 @@ You can also destructure match objects with python's ``match`` statement::
       >>> len(m)
       3
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 
 .. method:: Match.groups(default=None)
@@ -1596,13 +1596,13 @@ You can also destructure match objects with python's ``match`` statement::
 
    Raises :exc:`ValueError` if the value is not present.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 .. method:: Match.count(value, /)
 
    Return the number of occurrences of the value among the matched groups.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 .. attribute:: Match.pos
 

@@ -8,6 +8,7 @@ import string
 import sys
 import unittest
 import warnings
+from collections.abc import Sequence
 from re import Scanner
 from weakref import proxy
 
@@ -598,40 +599,47 @@ class ReTests(unittest.TestCase):
         self.assertEqual(m[1], 'a')
         self.assertEqual(m[2], None)
         self.assertEqual(m[3], 'c')
+        self.assertEqual(m[-1], 'c')
+        self.assertEqual(m[-2], None)
+        self.assertEqual(m[-3], 'a')
+        self.assertEqual(m[-4], 'ac')
 
         # Cannot assign.
         with self.assertRaises(TypeError):
             m[0] = 1
 
-    def test_match_sequence(self):
-        from collections.abc import Sequence
+        # Slices.
+        m = re.match(r"(a)(b)(c)", "abc")
+        self.assertEqual(m[:0], ())
+        self.assertEqual(m[:1], ("abc",))
+        self.assertEqual(m[:2], ("abc", "a"))
+        self.assertEqual(m[:3], ("abc", "a", "b"))
+        self.assertEqual(m[:4], ("abc", "a", "b", "c"))
+        self.assertEqual(m[0:], ("abc", "a", "b", "c"))
+        self.assertEqual(m[1:], ("a", "b", "c"))
+        self.assertEqual(m[2:], ("b", "c"))
+        self.assertEqual(m[3:], ("c",))
+        self.assertEqual(m[4:], ())
+        self.assertEqual(m[:-4], ())
+        self.assertEqual(m[:-3], ("abc",))
+        self.assertEqual(m[:-2], ("abc", "a"))
+        self.assertEqual(m[:-1], ("abc", "a", "b"))
+        self.assertEqual(m[-4:], ("abc", "a", "b", "c"))
+        self.assertEqual(m[-3:], ("a", "b", "c"))
+        self.assertEqual(m[-2:], ("b", "c"))
+        self.assertEqual(m[-1:], ("c",))
+        self.assertEqual(m[1:-1], ("a", "b"))
+        self.assertEqual(m[::-1], ("c", "b", "a", "abc"))
+        self.assertEqual(m[::4], ("abc",))
+        self.assertEqual(m[2:2], ())
+        self.assertEqual(m[3:1], ())
+        self.assertEqual(m[1:3], ("a", "b"))
+        self.assertEqual(m[-1::-2], ("c", "a"))
 
+    def test_match_sequence(self):
         m = re.match(r"(a)(b)(c)", "abc")
         self.assertIsInstance(m, Sequence)
         self.assertEqual(len(m), 4)
-
-        self.assertEqual(m[0], "abc")
-        self.assertEqual(m[1], "a")
-        self.assertEqual(m[2], "b")
-        self.assertEqual(m[3], "c")
-        with self.assertRaises(IndexError):
-            _ = m[4]
-
-        self.assertEqual(m[-1], "c")
-        self.assertEqual(m[-2], "b")
-        self.assertEqual(m[-3], "a")
-        self.assertEqual(m[-4], "abc")
-        with self.assertRaises(IndexError):
-            _ = m[-5]
-
-        self.assertEqual(m[1:-1], ("a", "b"))
-        self.assertEqual(m[::-1], ("c", "b", "a", "abc"))
-
-        it = iter(m)
-        self.assertEqual(next(it), "abc")
-        self.assertEqual(next(it), "a")
-        self.assertEqual(next(it), "b")
-        self.assertEqual(next(it), "c")
 
         self.assertEqual(tuple(m), ("abc", "a", "b", "c"))
         self.assertEqual(list(m), ["abc", "a", "b", "c"])
@@ -650,36 +658,97 @@ class ReTests(unittest.TestCase):
 
         self.assertEqual(list(reversed(m)), ["c", "b", "a", "abc"])
 
+        for s, k, v in re.finditer(r"(\w+):(\w+)", "abc:123"):
+            self.assertEqual(s, "abc:123")
+            self.assertEqual(k, "abc")
+            self.assertEqual(v, "123")
+
+    def test_match_iter(self):
+        m = re.match(r"(a)(b)(c)", "abc")
+        it = iter(m)
+        self.assertEqual(next(it), "abc")
+        self.assertEqual(next(it), "a")
+        self.assertEqual(next(it), "b")
+        self.assertEqual(next(it), "c")
+        with self.assertRaises(StopIteration):
+            next(it)
+
+    def test_match_index(self):
+        m = re.match(r"(a)(b)(c)", "abc")
         self.assertEqual(m.index("abc"), 0)
         self.assertEqual(m.index("a"), 1)
         self.assertEqual(m.index("b"), 2)
         self.assertEqual(m.index("c"), 3)
         self.assertRaises(ValueError, m.index, "123")
 
+        # With start index.
+        self.assertRaises(ValueError, m.index, "abc", 1)
+        self.assertEqual(m.index("a", 1), 1)
+        self.assertEqual(m.index("b", 1), 2)
+        self.assertEqual(m.index("c", 1), 3)
+        self.assertRaises(ValueError, m.index, "123", 1)
+
+        self.assertRaises(ValueError, m.index, "abc", 2)
+        self.assertRaises(ValueError, m.index, "a", 2)
+        self.assertEqual(m.index("b", 2), 2)
+        self.assertEqual(m.index("c", 2), 3)
+        self.assertRaises(ValueError, m.index, "123", 2)
+
+        self.assertRaises(ValueError, m.index, "abc", 3)
+        self.assertRaises(ValueError, m.index, "a", 3)
+        self.assertRaises(ValueError, m.index, "b", 3)
+        self.assertEqual(m.index("c", 3), 3)
+        self.assertRaises(ValueError, m.index, "123", 3)
+
+        self.assertRaises(ValueError, m.index, "abc", 4)
+        self.assertRaises(ValueError, m.index, "a", 4)
+        self.assertRaises(ValueError, m.index, "b", 4)
+        self.assertRaises(ValueError, m.index, "c", 4)
+        self.assertRaises(ValueError, m.index, "123", 4)
+
+        # With start index and stop index.
+        self.assertRaises(ValueError, m.index, "b", 0, 2)
+        self.assertEqual(m.index("b", 1, 3), 2)
+        self.assertEqual(m.index("b", 2, 4), 2)
+        self.assertRaises(ValueError, m.index, "b", 3, 4)
+        self.assertRaises(ValueError, m.index, "b", -1, 0)
+
+        # Non-string objects.
+        self.assertRaises(ValueError, m.index, 123)
+        self.assertRaises(ValueError, m.index, [1, 2, 3])
+        self.assertRaises(ValueError, m.index, object())
+
+    def test_match_count(self):
+        m = re.match(r"(a)(b)(c)", "abc")
         self.assertEqual(m.count("abc"), 1)
         self.assertEqual(m.count("a"), 1)
         self.assertEqual(m.count("b"), 1)
         self.assertEqual(m.count("c"), 1)
         self.assertEqual(m.count("123"), 0)
 
+        # Non-string objects.
+        self.assertEqual(m.count(123), 0)
+        self.assertEqual(m.count([1, 2, 3]), 0)
+        self.assertEqual(m.count(object()), 0)
+
+    def test_match_match_case(self):
+        m = re.match(r"(a)(b)(c)", "abc")
+
         match m:
-            case [_, "a", "b", "c"]:
-                pass
+            case [abc, "a", "b", "c"]:
+                self.assertEqual(abc, "abc")
             case _:
                 self.fail()
 
         match re.match(r"(\d+)-(\d+)-(\d+)", "2025-05-07"):
-            case [_, year, month, day]:
+            case [date, year, month, day]:
+                self.assertEqual(date, "2025-05-07")
                 self.assertEqual(year, "2025")
                 self.assertEqual(month, "05")
                 self.assertEqual(day, "07")
             case _:
                 self.fail()
 
-        for s, k, v in re.finditer(r"(\w+):(\w+)", "abc:123"):
-            self.assertEqual(s, "abc:123")
-            self.assertEqual(k, "abc")
-            self.assertEqual(v, "123")
 
     def test_re_fullmatch(self):
         # Issue 16203: Proposal: add re.fullmatch() method.
