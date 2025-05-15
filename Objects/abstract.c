@@ -2833,6 +2833,10 @@ PyObject_GetAIter(PyObject *o) {
     unaryfunc f;
 
     if (t->tp_as_async == NULL || t->tp_as_async->am_aiter == NULL) {
+        PyObject *iter = PyObject_GetIter(o);
+        if (iter != NULL) {
+            return PySeqAIter_New(iter);
+        }
         return type_error("'%.200s' object is not an async iterable", o);
     }
     f = t->tp_as_async->am_aiter;
