@@ -773,8 +773,8 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
         a_type_module = cls_module.__dict__.get(module_name)
         if (
             isinstance(a_type_module, types.ModuleType)
-            # Consider the case when a_type does not belong
-            # to the namespace, e.g. 'dataclasses.ClassVar[int]'
+            # Handle cases when a_type is not defined in
+            # the referenced module, e.g. 'dataclasses.ClassVar[int]'
             and a_type_module.__dict__.get(type_name) is a_type
         ):
             ns = sys.modules.get(a_type.__module__).__dict__
