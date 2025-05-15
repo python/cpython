@@ -1573,6 +1573,7 @@ static PyObject *
 _winapi_GetLongPathName_impl(PyObject *module, LPCWSTR path)
 /*[clinic end generated code: output=c4774b080275a2d0 input=9872e211e3a4a88f]*/
 {
+#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
     DWORD cchBuffer;
     PyObject *result = NULL;
 
@@ -1596,6 +1597,9 @@ _winapi_GetLongPathName_impl(PyObject *module, LPCWSTR path)
         PyErr_SetFromWindowsErr(0);
     }
     return result;
+#else
+    return PyUnicode_FromWideChar(path, wcslen(path));
+#endif
 }
 
 /*[clinic input]
@@ -1649,6 +1653,7 @@ static PyObject *
 _winapi_GetShortPathName_impl(PyObject *module, LPCWSTR path)
 /*[clinic end generated code: output=dab6ae494c621e81 input=43fa349aaf2ac718]*/
 {
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
     DWORD cchBuffer;
     PyObject *result = NULL;
 
@@ -1672,6 +1677,10 @@ _winapi_GetShortPathName_impl(PyObject *module, LPCWSTR path)
         PyErr_SetFromWindowsErr(0);
     }
     return result;
+#else
+    PyErr_SetString(PyExc_OSError, "GetShortPathName unavailable on this platform");
+    return NULL;
+#endif
 }
 
 /*[clinic input]
@@ -2883,6 +2892,7 @@ _winapi_NeedCurrentDirectoryForExePath_impl(PyObject *module,
                                             LPCWSTR exe_name)
 /*[clinic end generated code: output=a65ec879502b58fc input=972aac88a1ec2f00]*/
 {
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
     BOOL result;
 
     Py_BEGIN_ALLOW_THREADS
@@ -2890,6 +2900,9 @@ _winapi_NeedCurrentDirectoryForExePath_impl(PyObject *module,
     Py_END_ALLOW_THREADS
 
     return result;
+#else
+    return TRUE;
+#endif
 }
 
 
