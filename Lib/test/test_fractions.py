@@ -462,22 +462,23 @@ class FractionTest(unittest.TestCase):
     def test_limit_int(self):
         maxdigits = 5000
         with adjust_int_max_str_digits(maxdigits):
+            msg = 'Exceeds the limit'
             val = '1' * maxdigits
             num = (10**maxdigits - 1)//9
             self.assertEqual((num, 1), _components(F(val)))
-            self.assertRaises(ValueError, F, val + '1')
+            self.assertRaisesRegex(ValueError, msg, F, val + '1')
             self.assertEqual((num, 2), _components(F(val + '/2')))
-            self.assertRaises(ValueError, F, val + '1/2')
+            self.assertRaisesRegex(ValueError, msg, F, val + '1/2')
             self.assertEqual((1, num), _components(F('1/' + val)))
-            self.assertRaises(ValueError, F, '1/1' + val)
+            self.assertRaisesRegex(ValueError, msg, F, '1/1' + val)
             self.assertEqual(((10**(maxdigits+1) - 1)//9, 10**maxdigits),
                              _components(F('1.' + val)))
-            self.assertRaises(ValueError, F, '1.1' + val)
+            self.assertRaisesRegex(ValueError, msg, F, '1.1' + val)
             self.assertEqual((num, 10**maxdigits), _components(F('.' + val)))
-            self.assertRaises(ValueError, F, '.1' + val)
-            self.assertRaises(ValueError, F, '1.1e1' + val)
+            self.assertRaisesRegex(ValueError, msg, F, '.1' + val)
+            self.assertRaisesRegex(ValueError, msg, F, '1.1e1' + val)
             self.assertEqual((11, 10), _components(F('1.1e' + '0' * maxdigits)))
-            self.assertRaises(ValueError, F, '1.1e' + '0' * (maxdigits+1))
+            self.assertRaisesRegex(ValueError, msg, F, '1.1e' + '0' * (maxdigits+1))
 
     def testImmutable(self):
         r = F(7, 3)
