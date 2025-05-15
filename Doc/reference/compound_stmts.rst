@@ -165,7 +165,7 @@ by the iterator. When the iterator is exhausted, the suite in the :keyword:`!els
 if present, is executed, and the loop terminates.
 
 As of Python 3.11, unpacking with starred expressions (e.g., ``*x``) is supported
-in the iterable expression. This follows the same rules as :token:`starred_expression_list` in the grammar.
+in the iterable expression.
 
 .. index::
    pair: statement; break
