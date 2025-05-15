@@ -1290,7 +1290,7 @@ winreg_ExpandEnvironmentStrings_impl(PyObject *module, const wchar_t *string)
         return PyErr_SetFromWindowsErrWithFunction(retValueSize,
                                         "ExpandEnvironmentStrings");
     }
-    o = PyUnicode_FromWideChar(retValue, wcslen(retValue));
+    o = PyUnicode_FromWideChar(retValue, -1);
     PyMem_Free(retValue);
     return o;
 }

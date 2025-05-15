@@ -1253,7 +1253,7 @@ Z_get(void *ptr, Py_ssize_t size)
     wchar_t *p;
     p = *(wchar_t **)ptr;
     if (p) {
-        return PyUnicode_FromWideChar(p, wcslen(p));
+        return PyUnicode_FromWideChar(p, -1);
     } else {
         Py_RETURN_NONE;
     }

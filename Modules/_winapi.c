@@ -1629,7 +1629,7 @@ _winapi_GetModuleFileName_impl(PyObject *module, HMODULE module_handle)
     if (! result)
         return PyErr_SetFromWindowsErr(GetLastError());
 
-    return PyUnicode_FromWideChar(filename, wcslen(filename));
+    return PyUnicode_FromWideChar(filename, -1);
 }
 
 /*[clinic input]
