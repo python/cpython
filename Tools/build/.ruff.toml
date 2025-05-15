@@ -1,7 +1,7 @@
 extend = "../../.ruff.toml"  # Inherit the project-wide settings
 
 [per-file-target-version]
-"deepfreeze.py" = "py310"
+"deepfreeze.py" = "py311"  # requires `code.co_exceptiontable`
 "stable_abi.py" = "py311"  # requires 'tomllib'
 
 [format]
