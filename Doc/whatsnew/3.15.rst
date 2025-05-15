@@ -144,6 +144,14 @@ typing
   (Contributed by Bénédikt Tran in :gh:`133823`.)
 
 
+zipimport
+---------
+
+* Remove deprecated :meth:`!zipimport.zipimporter.load_module`.
+  Use :meth:`zipimport.zipimporter.exec_module` instead.
+  (Contributed by Jiahao Li in :gh:`133656`.)
+
+
 Porting to Python 3.15
 ======================
 

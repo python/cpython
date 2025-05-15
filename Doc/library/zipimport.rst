@@ -142,17 +142,6 @@ zipimporter Objects
       :exc:`ZipImportError` if the module couldn't be found.
 
 
-   .. method:: load_module(fullname)
-
-      Load the module specified by *fullname*. *fullname* must be the fully
-      qualified (dotted) module name. Returns the imported module on success,
-      raises :exc:`ZipImportError` on failure.
-
-      .. deprecated-removed:: 3.10 3.15
-
-         Use :meth:`exec_module` instead.
-
-
    .. method:: invalidate_caches()
 
       Clear out the internal cache of information about files found within
