@@ -1,0 +1,3 @@
+Fix bug where :class:`typing.TypedDict` classes defined under ``from
+__future__ import annotations`` and inheriting from another ``TypedDict``
+had an incorrect ``__annotations__`` attribute.
