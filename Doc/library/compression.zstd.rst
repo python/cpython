@@ -119,9 +119,6 @@ Reading and writing compressed files
    *zstd_dict* argument is a :class:`!ZstdDict` instance to be used during
    compression.
 
-   When opening a file for writing, the *options*, *zstd_dict* and *level*
-   arguments have the same meanings as for :class:`ZstdCompressor`.
-
    :class:`!ZstdFile` supports all the members specified by
    :class:`io.BufferedIOBase`, except for :meth:`~io.BufferedIOBase.detach`
    and :meth:`~io.IOBase.truncate`.
