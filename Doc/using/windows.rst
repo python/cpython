@@ -544,7 +544,7 @@ recommended.
 To programmatically install the Python install manager, it is easiest to use
 WinGet, which is included with all supported versions of Windows:
 
-.. code::
+.. code-block:: powershell
 
    $> winget install 9NQ7512CXL7T -e --accept-package-agreements --disable-interactivity
 
@@ -557,7 +557,7 @@ Downloads directory (add ``-d <location>`` to customize the output location).
 This also generates a YAML file that appears to be unnecessary, as the
 downloaded MSIX can be installed by launching or using the commands below.
 
-.. code::
+.. code-block:: powershell
 
    $> winget download 9NQ7512CXL7T -e --skip-license --accept-package-agreements --disable-interactivity
 
@@ -566,7 +566,7 @@ To programmatically install or uninstall an MSIX using only PowerShell, the
 and `Remove-AppxPackage <https://learn.microsoft.com/powershell/module/appx/remove-appxpackage>`_
 PowerShell cmdlets are recommended:
 
-.. code::
+.. code-block:: powershell
 
    $> Add-AppxPackage C:\Downloads\python-manager-25.0.msix
    ...
