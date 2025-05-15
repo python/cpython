@@ -1,6 +1,8 @@
+import gc
 import itertools
 import threading
 import time
+import traceback
 import weakref
 from concurrent import futures
 from operator import add
@@ -70,8 +72,41 @@ class ExecutorTest:
         i = self.executor.map(divmod, [1, 1, 1, 1], [2, 3, 0, 5])
         self.assertEqual(i.__next__(), (0, 1))
         self.assertEqual(i.__next__(), (0, 1))
-        with self.assertRaises(ZeroDivisionError):
+
+        exception = None
+        try:
             i.__next__()
+        except Exception as e:
+            exception = e
+        self.assertTrue(
+            isinstance(exception, ZeroDivisionError),
+            msg="should raise a ZeroDivisionError",
+        )
+
+        # pause needed for free-threading builds on Ubuntu (ARM) and Windows
+        time.sleep(1)
+
+        self.assertFalse(
+            gc.get_referrers(exception),
+            msg="the exception should not have any referrers",
+        )
+
+        self.assertFalse(
+            [
+                (var, val)
+                # go through the frames of the exception's traceback
+                for frame, _ in traceback.walk_tb(exception.__traceback__)
+                # skipping the current frame
+                if frame is not exception.__traceback__.tb_frame
+                # go through the locals captured in that frame
+                for var, val in frame.f_locals.items()
+                # check if one of them is an exception
+                if isinstance(val, Exception)
+                # check if it is captured in its own traceback
+                and frame is val.__traceback__.tb_frame
+            ],
+            msg=f"the exception's traceback should not contain an exception captured in its own traceback",
+        )
 
     @support.requires_resource('walltime')
     def test_map_timeout(self):
@@ -155,7 +190,7 @@ class ExecutorTest:
         self.assertEqual(
             next(ints),
             buffersize,
-            msg="should have fetched only `buffersize` elements from `ints`.",
+            msg="should have fetched only `buffersize` elements from `ints`",
         )
 
     def test_shutdown_race_issue12456(self):
