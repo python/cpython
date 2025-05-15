@@ -1161,7 +1161,6 @@ static PyObject*
 faulthandler_sigfpe(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     faulthandler_suppress_crash_report();
-    /* raise SIGFPE manually to prevent crafted undefined behaviors */
     raise(SIGFPE);
     Py_UNREACHABLE();
 }
