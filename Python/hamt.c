@@ -1176,7 +1176,7 @@ hamt_node_bitmap_dump(PyHamtNode_Bitmap *node,
         }
 
         if (key_or_null == NULL) {
-            if (PyUnicodeWriter_WriteASCII(writer, "NULL:\n", -1) < 0) {
+            if (PyUnicodeWriter_WriteASCII(writer, "NULL:\n", 6) < 0) {
                 goto error;
             }
 
