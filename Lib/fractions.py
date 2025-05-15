@@ -247,23 +247,32 @@ class Fraction(numbers.Rational):
                         if _ and not exp:
                             raise ValueError
                         num, _, decimal = num.partition('.')
-                        if decimal:
-                            if num and num[0] in ('+', '-'):
+                        if num:
+                            if num[0] in ('+', '-'):
                                 sign = num[0] == '-'
                                 num = num[1:]
                             else:
                                 sign = 0
+                            if num and not (num[-1].isdigit() and num[0].isdigit()):
+                                raise ValueError
+                        else:
+                            sign = 0
+                        if decimal:
+                            if not decimal[0].isdigit() or not decimal[-1].isdigit():
+                                raise ValueError
                             numerator = int(num or '0')
                             decimal_len = len(decimal.replace('_', ''))
                             decimal = int(decimal)
                             scale = 10**decimal_len
                             numerator = numerator*scale + decimal
                             denominator *= scale
-                            if sign:
-                                numerator = -numerator
                         else:
                             numerator = int(num)
+                        if sign:
+                            numerator = -numerator
                         if exp:
+                            if not (exp[0] in ('+', '-') or exp[0].isdigit()):
+                                raise ValueError
                             exp = int(exp)
                             if exp >= 0:
                                 numerator *= 10**exp
@@ -271,7 +280,9 @@ class Fraction(numbers.Rational):
                                 denominator *= 10**-exp
                     else:
                         raise ValueError
-                except ValueError:
+                except ValueError as exc:
+                    if exc.args and re.match('^Exceeds', exc.args[0]):
+                        raise
                     raise ValueError('Invalid literal for Fraction: %r' %
                                      fraction_literal)
 
