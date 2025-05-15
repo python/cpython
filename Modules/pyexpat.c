@@ -1433,7 +1433,8 @@ xmlparse_handler_setter(PyObject *op, PyObject *v, void *closure)
             return -1;
     }
 
-    xmlhandler c_handler = NULL;
+    int used = 0;
+    xmlhandler_union c_handler;
     if (v == Py_None) {
         /* If this is the character data handler, and a character
            data handler is already active, we need to be more
@@ -1450,18 +1451,21 @@ xmlparse_handler_setter(PyObject *op, PyObject *v, void *closure)
             // The cast to union type '(union T)' is NOT a cast in the regular
             // sense but a constructor as it does not produce an lvalue. It
             // is a valid construction as per ISO C11, §6.5.2.5.
-            *c_handler = (xmlhandler_union){
+            c_handler = (xmlhandler_union){
                 .parser_and_data_and_int = noop_character_data_handler
             };
+            used = 1;
         }
         v = NULL;
     }
     else if (v != NULL) {
         Py_INCREF(v);
-        c_handler = &handler_info[handlernum].handler;
+        c_handler = handler_info[handlernum].handler;
+        used = 1;
     }
     Py_XSETREF(self->handlers[handlernum], v);
-    CALL_XML_HANDLER_SETTER(&handler_info[handlernum], self->itself, c_handler);
+    xmlhandler p_handler = used ? &c_handler : NULL;
+    CALL_XML_HANDLER_SETTER(&handler_info[handlernum], self->itself, p_handler);
     return 0;
 }
 
