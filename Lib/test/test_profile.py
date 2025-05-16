@@ -4,6 +4,7 @@ import sys
 import pstats
 import unittest
 import os
+import subprocess
 from difflib import unified_diff
 from io import StringIO
 from test.support.os_helper import TESTFN, unlink, temp_dir, change_cwd
@@ -130,6 +131,112 @@ class ProfileTest(unittest.TestCase):
 
             self.assertTrue(os.path.exists('out.pstats'))
 
+class ProfileCLITests(unittest.TestCase):
+    """Tests for the profile module's command line interface."""
+
+    def setUp(self):
+        # Create a simple Python script to profile
+        self.script_content = """\
+def factorial(n):
+    if n <= 1:
+        return 1
+    return n * factorial(n-1)
+
+if __name__ == "__main__":
+    factorial(10)
+"""
+        self.script_file = TESTFN
+        with open(self.script_file, "w") as f:
+            f.write(self.script_content)
+        self.addCleanup(unlink, self.script_file)
+
+    def _run_profile_cli(self, *args):
+        """Helper to run the profile CLI with given arguments."""
+        cmd = [sys.executable, '-m', 'profile'] + list(args)
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True
+        )
+        stdout, stderr = proc.communicate()
+        return proc.returncode, stdout, stderr
+
+    def test_basic_profile(self):
+        """Test basic profiling of a script."""
+        returncode, stdout, stderr = self._run_profile_cli(self.script_file)
+        self.assertEqual(returncode, 0)
+        self.assertIn("function calls", stdout)
+        self.assertIn("factorial", stdout)
+
+    def test_sort_options(self):
+        """Test different sort options."""
+        # List of sort options known to work
+        sort_options = ['calls', 'cumulative', 'cumtime', 'file',
+                       'filename', 'module', 'ncalls', 'pcalls',
+                       'line', 'stdname', 'time', 'tottime']
+        
+        # Test each sort option individually
+        for option in sort_options:
+            with self.subTest(sort_option=option):
+                returncode, stdout, stderr = self._run_profile_cli(
+                    '-s', option, self.script_file
+                )
+                self.assertEqual(returncode, 0)
+                self.assertIn("function calls", stdout)
+
+    def test_output_file(self):
+        """Test writing profile results to a file."""
+        output_file = TESTFN + '.prof'
+        self.addCleanup(unlink, output_file)
+        
+        returncode, stdout, stderr = self._run_profile_cli(
+            '-o', output_file, self.script_file
+        )
+        self.assertEqual(returncode, 0)
+        
+        # Check that the output file exists and contains profile data
+        self.assertTrue(os.path.exists(output_file))
+        stats = pstats.Stats(output_file)
+        self.assertGreater(stats.total_calls, 0)
+
+    def test_invalid_option(self):
+        """Test behavior with an invalid option."""
+        returncode, stdout, stderr = self._run_profile_cli(
+            '--invalid-option', self.script_file
+        )
+        self.assertNotEqual(returncode, 0)
+        self.assertIn("error", stderr.lower())
+
+    def test_no_arguments(self):
+        """Test behavior with no arguments."""
+        returncode, stdout, stderr = self._run_profile_cli()
+        self.assertNotEqual(returncode, 0)
+        
+        # Check either stdout or stderr for usage information
+        combined_output = stdout.lower() + stderr.lower()
+        self.assertTrue("usage:" in combined_output or 
+                       "error:" in combined_output or
+                       "no script filename specified" in combined_output,
+                       "Expected usage information or error message not found")
+
+    def test_run_module(self):
+        """Test profiling a module with -m option."""
+        # Create a small module
+        module_name = "test_profile_module"
+        module_file = f"{module_name}.py"
+        
+        with open(module_file, "w") as f:
+            f.write("print('Module executed')\n")
+        
+        self.addCleanup(unlink, module_file)
+        
+        returncode, stdout, stderr = self._run_profile_cli(
+            '-m', module_name
+        )
+        self.assertEqual(returncode, 0)
+        self.assertIn("Module executed", stdout)
+        self.assertIn("function calls", stdout)
 
 def regenerate_expected_output(filename, cls):
     filename = filename.rstrip('co')

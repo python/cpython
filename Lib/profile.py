@@ -551,7 +551,7 @@ class Profile:
 
 #****************************************************************************
 
-def main():
+def main(args=None):
     import os
     from optparse import OptionParser
 
@@ -570,7 +570,7 @@ def main():
         parser.print_usage()
         sys.exit(2)
 
-    (options, args) = parser.parse_args()
+    (options, args) = parser.parse_args(args)
     sys.argv[:] = args
 
     # The script that we're profiling may chdir, so capture the absolute path
