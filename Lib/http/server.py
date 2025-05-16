@@ -69,7 +69,6 @@ __all__ = [
     "BaseHTTPRequestHandler", "SimpleHTTPRequestHandler",
 ]
 
-import copy
 import datetime
 import email.utils
 import html
@@ -79,7 +78,6 @@ import itertools
 import mimetypes
 import os
 import posixpath
-import select
 import shutil
 import socket
 import socketserver
