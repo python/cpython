@@ -126,7 +126,7 @@ http.server
 
 * Removed the :class:`!http.server.CGIHTTPRequestHandler` class
   and the ``--cgi`` flag to the :program:`python -m http.server`
-  command-line interface. Those are deprecated since 3.13.
+  command-line interface. Those are deprecated since Python 3.13.
   (Contributed by Bénédikt Tran in :gh:`133810`.)
 
 
