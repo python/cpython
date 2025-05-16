@@ -1745,7 +1745,7 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         res = urllib.request.urlopen(req, context=context)
         return res.read()
 
-    def parse_cli_output(self, output: str) -> tuple[str, str, int]:
+    def parse_cli_output(self, output):
         try:
             matches = re.search(r'\((https?)://([^/:]+):(\d+)/?\)', output)
             return matches.group(1), matches.group(2), int(matches.group(3))
