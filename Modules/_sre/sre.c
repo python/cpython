@@ -2710,7 +2710,7 @@ _sre_SRE_Match_index_impl(MatchObject *self, PyObject *value,
         if (cmp < 0) {
             return NULL;
         }
-        if (cmp > 0) {
+        else if (cmp > 0) {
             return PyLong_FromSsize_t(i);
         }
     }
@@ -2744,7 +2744,7 @@ _sre_SRE_Match_count_impl(MatchObject *self, PyObject *value)
         if (cmp < 0) {
             return NULL;
         }
-        if (cmp > 0) {
+        else if (cmp > 0) {
             count++;
         }
     }
