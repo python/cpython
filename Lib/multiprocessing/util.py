@@ -121,6 +121,21 @@ abstract_sockets_supported = _platform_supports_abstract_sockets()
 # Function returning a temp directory which will be removed on exit
 #
 
+# Maximum length of a socket file path is usually between 92 and 108 [1].
+# BSD-based operating systems usually use 104 (OpenBSD, FreeBSD, macOS)
+# and Linux uses 108 [2].
+#
+# [1]: https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/sys_un.h.html
+# [2]: https://man7.org/linux/man-pages/man7/unix.7.html.
+
+if sys.platform == 'linux':
+    _SUN_PATH_MAX = 104
+elif sys.platform.startswith(('openbsd', 'freebsd')):
+    _SUN_PATH_MAX = 108
+else:
+    # On Windows platforms, we do not create AF_UNIX sockets.
+    _SUN_PATH_MAX = None if os.name == 'nt' else 92
+
 def _remove_temp_dir(rmtree, tempdir):
     rmtree(tempdir)
 
@@ -135,7 +150,26 @@ def get_temp_dir():
     tempdir = process.current_process()._config.get('tempdir')
     if tempdir is None:
         import shutil, tempfile
-        tempdir = tempfile.mkdtemp(prefix='pymp-')
+        if os.name == 'nt':
+            tempdir = tempfile.mkdtemp(prefix='pymp-')
+        else:
+            # Most of the time, the root temporary directory is /tmp, and thus
+            # listener sockets files "$TMPDIR/pymp-XXXXXXXX/sock-XXXXXXXX"
+            # do not have a path length exceeding SUN_PATH_MAX.
+            #
+            # If users specify their own temporary directory, we may be unable
+            # to create those files. Therefore, we fall back to the system-wide
+            # temporary directory /tmp, assumed to exist on POSIX systems.
+            #
+            # See https://github.com/python/cpython/issues/132124.
+            base_tempdir = tempfile.gettempdir()
+            # len(base_tempdir) + len('/pymp-XXXXXXXX') + len('/sock-XXXXXXXX')
+            sun_path_len = len(base_tempdir) + 14 + 14
+            if sun_path_len > _SUN_PATH_MAX:
+                # fallback to the system-wide temporary directory,
+                # ignoring environment variables.
+                base_tempdir = '/tmp'
+            tempdir = tempfile.mkdtemp(prefix='pymp-', dir=base_tempdir)
         info('created temp directory %s', tempdir)
         # keep a strong reference to shutil.rmtree(), since the finalizer
         # can be called late during Python shutdown
