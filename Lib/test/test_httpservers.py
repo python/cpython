@@ -31,7 +31,7 @@ from io import BytesIO, StringIO
 import unittest
 from test import support
 from test.support import (
-    is_apple, import_helper, os_helper, requires_subprocess, threading_helper
+    is_apple, import_helper, os_helper, threading_helper
 )
 
 try:
