@@ -1042,14 +1042,27 @@ def _get_and_call_annotate(obj, format):
     return None
 
 
+_BASE_GET_ANNOTATIONS = type.__dict__["__annotations__"].__get__
+
+
 def _get_dunder_annotations(obj):
     """Return the annotations for an object, checking that it is a dictionary.
 
     Does not return a fresh dictionary.
     """
-    ann = getattr(obj, "__annotations__", None)
-    if ann is None:
-        return None
+    # This special case is needed to support types defined under
+    # from __future__ import annotations, where accessing the __annotations__
+    # attribute directly might return annotations for the wrong class.
+    if isinstance(obj, type):
+        try:
+            ann = _BASE_GET_ANNOTATIONS(obj)
+        except AttributeError:
+            # For static types, the descriptor raises AttributeError.
+            return None
+    else:
+        ann = getattr(obj, "__annotations__", None)
+        if ann is None:
+            return None
 
     if not isinstance(ann, dict):
         raise ValueError(f"{obj!r}.__annotations__ is neither a dict nor None")
