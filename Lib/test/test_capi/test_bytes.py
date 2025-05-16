@@ -2,6 +2,7 @@ import unittest
 from test.support import import_helper
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
+_testcapi = import_helper.import_module('_testcapi')
 from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
 
 NULL = None
@@ -52,6 +53,8 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(fromstringandsize(b'abc'), b'abc')
         self.assertEqual(fromstringandsize(b'abc', 2), b'ab')
         self.assertEqual(fromstringandsize(b'abc\0def'), b'abc\0def')
+        self.assertEqual(fromstringandsize(b'a'), b'a')
+        self.assertEqual(fromstringandsize(b'a', 1), b'a')
         self.assertEqual(fromstringandsize(b'', 0), b'')
         self.assertEqual(fromstringandsize(NULL, 0), b'')
         self.assertEqual(len(fromstringandsize(NULL, 3)), 3)
@@ -90,6 +93,7 @@ class CAPITest(unittest.TestCase):
         # Test PyBytes_Size()
         size = _testlimitedcapi.bytes_size
 
+        self.assertEqual(size(b''), 0)
         self.assertEqual(size(b'abc'), 3)
         self.assertEqual(size(BytesSubclass(b'abc')), 3)
         self.assertRaises(TypeError, size, bytearray(b'abc'))
@@ -216,6 +220,75 @@ class CAPITest(unittest.TestCase):
 
         # CRASHES decodeescape(b'abc', NULL, -1)
         # CRASHES decodeescape(NULL, NULL, 1)
+
+    def test_resize(self):
+        """Test _PyBytes_Resize()"""
+        resize = _testcapi.bytes_resize
+
+        for new in True, False:
+            self.assertEqual(resize(b'abc', 0, new), b'')
+            self.assertEqual(resize(b'abc', 1, new), b'a')
+            self.assertEqual(resize(b'abc', 2, new), b'ab')
+            self.assertEqual(resize(b'abc', 3, new), b'abc')
+            b = resize(b'abc', 4, new)
+            self.assertEqual(len(b), 4)
+            self.assertEqual(b[:3], b'abc')
+
+            self.assertEqual(resize(b'a', 0, new), b'')
+            self.assertEqual(resize(b'a', 1, new), b'a')
+            b = resize(b'a', 2, new)
+            self.assertEqual(len(b), 2)
+            self.assertEqual(b[:1], b'a')
+
+            self.assertEqual(resize(b'', 0, new), b'')
+            self.assertEqual(len(resize(b'', 1, new)), 1)
+            self.assertEqual(len(resize(b'', 2, new)), 2)
+
+        self.assertRaises(SystemError, resize, b'abc', -1, False)
+        self.assertRaises(SystemError, resize, bytearray(b'abc'), 3, False)
+
+        # CRASHES resize(NULL, 0, False)
+        # CRASHES resize(NULL, 3, False)
+
+    def test_join(self):
+        """Test PyBytes_Join()"""
+        bytes_join = _testcapi.bytes_join
+
+        self.assertEqual(bytes_join(b'', []), b'')
+        self.assertEqual(bytes_join(b'sep', []), b'')
+
+        self.assertEqual(bytes_join(b'', [b'a', b'b', b'c']), b'abc')
+        self.assertEqual(bytes_join(b'-', [b'a', b'b', b'c']), b'a-b-c')
+        self.assertEqual(bytes_join(b' - ', [b'a', b'b', b'c']), b'a - b - c')
+        self.assertEqual(bytes_join(b'-', [bytearray(b'abc'),
+                                           memoryview(b'def')]),
+                         b'abc-def')
+
+        self.assertEqual(bytes_join(b'-', iter([b'a', b'b', b'c'])), b'a-b-c')
+
+        # invalid 'sep' argument
+        with self.assertRaises(TypeError):
+            bytes_join(bytearray(b'sep'), [])
+        with self.assertRaises(TypeError):
+            bytes_join(memoryview(b'sep'), [])
+        with self.assertRaises(TypeError):
+            bytes_join('', [])  # empty Unicode string
+        with self.assertRaises(TypeError):
+            bytes_join('unicode', [])
+        with self.assertRaises(TypeError):
+            bytes_join(123, [])
+        with self.assertRaises(SystemError):
+            self.assertEqual(bytes_join(NULL, [b'a', b'b', b'c']), b'abc')
+
+        # invalid 'iterable' argument
+        with self.assertRaises(TypeError):
+            bytes_join(b'', [b'bytes', 'unicode'])
+        with self.assertRaises(TypeError):
+            bytes_join(b'', [b'bytes', 123])
+        with self.assertRaises(TypeError):
+            bytes_join(b'', 123)
+        with self.assertRaises(SystemError):
+            bytes_join(b'', NULL)
 
 
 if __name__ == "__main__":

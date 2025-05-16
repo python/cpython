@@ -11,6 +11,7 @@ from setuptools import setup, Extension
 
 
 SOURCE = 'extension.c'
+
 if not support.MS_WINDOWS:
     # C compiler flags for GCC and clang
     CFLAGS = [
@@ -18,13 +19,26 @@ if not support.MS_WINDOWS:
         # extension using the Python C API does not emit C compiler warnings.
         '-Werror',
 
-        # gh-116869: The Python C API must be compatible with building
-        # with the -Werror=declaration-after-statement compiler flag.
-        '-Werror=declaration-after-statement',
+        # gh-120593: Check the 'const' qualifier
+        '-Wcast-qual',
+
+        # Ask for strict(er) compliance with the standard
+        '-pedantic-errors',
     ]
+    if not support.Py_GIL_DISABLED:
+        CFLAGS.append(
+            # gh-116869: The Python C API must be compatible with building
+            # with the -Werror=declaration-after-statement compiler flag.
+            '-Werror=declaration-after-statement',
+        )
 else:
-    # Don't pass any compiler flag to MSVC
-    CFLAGS = []
+    # MSVC compiler flags
+    CFLAGS = [
+        # Display warnings level 1 to 4
+        '/W4',
+        # Treat all compiler warnings as compiler errors
+        '/WX',
+    ]
 
 
 def main():
@@ -39,19 +53,22 @@ def main():
     if std:
         if support.MS_WINDOWS:
             cflags.append(f'/std:{std}')
-            std_prefix = '/std'
         else:
             cflags.append(f'-std={std}')
-            std_prefix = '-std'
 
-        # Remove existing -std options to only test ours
-        cmd = (sysconfig.get_config_var('CC') or '')
-        if cmd is not None:
-            cmd = shlex.split(cmd)
-            cmd = [arg for arg in cmd if not arg.startswith(std_prefix)]
-            cmd = shlex.join(cmd)
-            # CC env var overrides sysconfig CC variable in setuptools
-            os.environ['CC'] = cmd
+    # Remove existing -std or /std options from CC command line.
+    # Python adds -std=c11 option.
+    cmd = (sysconfig.get_config_var('CC') or '')
+    if cmd is not None:
+        if support.MS_WINDOWS:
+            std_prefix = '/std'
+        else:
+            std_prefix = '-std'
+        cmd = shlex.split(cmd)
+        cmd = [arg for arg in cmd if not arg.startswith(std_prefix)]
+        cmd = shlex.join(cmd)
+        # CC env var overrides sysconfig CC variable in setuptools
+        os.environ['CC'] = cmd
 
     # Define Py_LIMITED_API macro
     if limited:

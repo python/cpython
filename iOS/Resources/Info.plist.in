@@ -29,6 +29,6 @@
 		<string>iPhoneOS</string>
 	</array>
 	<key>MinimumOSVersion</key>
-	<string>@IOS_DEPLOYMENT_TARGET@</string>
+	<string>@IPHONEOS_DEPLOYMENT_TARGET@</string>
 </dict>
 </plist>

@@ -8,9 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_lock.h"          // PyMutex
 #include "pycore_fileutils.h"     // _Py_error_handler
-#include "pycore_identifier.h"    // _Py_Identifier
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
 /* --- Characters Type APIs ----------------------------------------------- */
@@ -33,6 +31,7 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
 
 PyAPI_FUNC(void) _PyUnicode_ExactDealloc(PyObject *op);
 extern Py_ssize_t _PyUnicode_InternedSize(void);
+extern Py_ssize_t _PyUnicode_InternedSize_Immortal(void);
 
 // Get a copy of a Unicode string.
 // Export for '_datetime' shared extension.
@@ -140,14 +139,18 @@ extern PyObject* _PyUnicode_DecodeUnicodeEscapeStateful(
 // Helper for PyUnicode_DecodeUnicodeEscape that detects invalid escape
 // chars.
 // Export for test_peg_generator.
-PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscapeInternal(
+PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscapeInternal2(
     const char *string,     /* Unicode-Escape encoded string */
     Py_ssize_t length,      /* size of string */
     const char *errors,     /* error handling */
     Py_ssize_t *consumed,   /* bytes consumed */
-    const char **first_invalid_escape); /* on return, points to first
-                                           invalid escaped char in
-                                           string. */
+    int *first_invalid_escape_char, /* on return, if not -1, contain the first
+                                       invalid escaped char (<= 0xff) or invalid
+                                       octal escape (> 0xff) in string. */
+    const char **first_invalid_escape_ptr); /* on return, if not NULL, may
+                                        point to the first invalid escaped
+                                        char in string.
+                                        May be NULL if errors is not NULL. */
 
 /* --- Raw-Unicode-Escape Codecs ---------------------------------------------- */
 
@@ -189,7 +192,7 @@ extern PyObject* _PyUnicode_EncodeCharmap(
 
 /* --- Decimal Encoder ---------------------------------------------------- */
 
-// Coverts a Unicode object holding a decimal value to an ASCII string
+// Converts a Unicode object holding a decimal value to an ASCII string
 // for using in int, float and complex parsers.
 // Transforms code points that have decimal digit property to the
 // corresponding ASCII digit code points.  Transforms spaces to ASCII.
@@ -245,17 +248,20 @@ extern Py_ssize_t _PyUnicode_InsertThousandsGrouping(
     Py_ssize_t min_width,
     const char *grouping,
     PyObject *thousands_sep,
-    Py_UCS4 *maxchar);
+    Py_UCS4 *maxchar,
+    int forward);
+
+/* Dedent a string.
+   Behaviour is expected to be an exact match of `textwrap.dedent`.
+   Return a new reference on success, NULL with exception set on error.
+   */
+extern PyObject* _PyUnicode_Dedent(PyObject *unicode);
 
 /* --- Misc functions ----------------------------------------------------- */
 
 extern PyObject* _PyUnicode_FormatLong(PyObject *, int, int, int);
 
-/* Fast equality check when the inputs are known to be exact unicode types
-   and where the hash values are equal (i.e. a very probable match) */
-extern int _PyUnicode_EQ(PyObject *, PyObject *);
-
-// Equality check.
+// Fast equality check when the inputs are known to be exact unicode types.
 // Export for '_pickle' shared extension.
 PyAPI_FUNC(int) _PyUnicode_Equal(PyObject *, PyObject *);
 
@@ -275,43 +281,20 @@ extern void _PyUnicode_FiniTypes(PyInterpreterState *);
 
 extern PyTypeObject _PyUnicodeASCIIIter_Type;
 
+/* --- Interning ---------------------------------------------------------- */
+
+// All these are "ref-neutral", like the public PyUnicode_InternInPlace.
+
+// Explicit interning routines:
+PyAPI_FUNC(void) _PyUnicode_InternMortal(PyInterpreterState *interp, PyObject **);
+PyAPI_FUNC(void) _PyUnicode_InternImmortal(PyInterpreterState *interp, PyObject **);
+// Left here to help backporting:
+PyAPI_FUNC(void) _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p);
+// Only for singletons in the _PyRuntime struct:
+extern void _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **);
+
 /* --- Other API ---------------------------------------------------------- */
 
-struct _Py_unicode_runtime_ids {
-    PyMutex mutex;
-    // next_index value must be preserved when Py_Initialize()/Py_Finalize()
-    // is called multiple times: see _PyUnicode_FromId() implementation.
-    Py_ssize_t next_index;
-};
-
-struct _Py_unicode_runtime_state {
-    struct _Py_unicode_runtime_ids ids;
-};
-
-/* fs_codec.encoding is initialized to NULL.
-   Later, it is set to a non-NULL string by _PyUnicode_InitEncodings(). */
-struct _Py_unicode_fs_codec {
-    char *encoding;   // Filesystem encoding (encoded to UTF-8)
-    int utf8;         // encoding=="utf-8"?
-    char *errors;     // Filesystem errors (encoded to UTF-8)
-    _Py_error_handler error_handler;
-};
-
-struct _Py_unicode_ids {
-    Py_ssize_t size;
-    PyObject **array;
-};
-
-struct _Py_unicode_state {
-    struct _Py_unicode_fs_codec fs_codec;
-
-    _PyUnicode_Name_CAPI *ucnhash_capi;
-
-    // Unicode identifiers (_Py_Identifier): see _PyUnicode_FromId()
-    struct _Py_unicode_ids ids;
-};
-
-extern void _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p);
 extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);
 
 // Like PyUnicode_AsUTF8(), but check for embedded null characters.

@@ -1,5 +1,5 @@
-:mod:`csv` --- CSV File Reading and Writing
-===========================================
+:mod:`!csv` --- CSV File Reading and Writing
+============================================
 
 .. module:: csv
    :synopsis: Write and read tabular data to and from delimited files.
@@ -156,8 +156,10 @@ The :mod:`csv` module defines the following classes:
 
    The *fieldnames* parameter is a :term:`sequence`.  If *fieldnames* is
    omitted, the values in the first row of file *f* will be used as the
-   fieldnames.  Regardless of how the fieldnames are determined, the
-   dictionary preserves their original ordering.
+   fieldnames and will be omitted from the results. If
+   *fieldnames* is provided, they will be used and the first row will be
+   included in the results.  Regardless of how the fieldnames are determined,
+   the dictionary preserves their original ordering.
 
    If a row has more fields than fieldnames, the remaining data is put in a
    list and stored with the fieldname specified by *restkey* (which defaults
@@ -347,8 +349,8 @@ The :mod:`csv` module defines the following constants:
    ``None``.  This is similar to :data:`QUOTE_ALL`, except that if a
    field value is ``None`` an empty (unquoted) string is written.
 
-   Instructs :class:`reader` objects to interpret an empty (unquoted) field as None and
-   to otherwise behave as :data:`QUOTE_ALL`.
+   Instructs :class:`reader` objects to interpret an empty (unquoted) field
+   as ``None`` and to otherwise behave as :data:`QUOTE_ALL`.
 
    .. versionadded:: 3.12
 

@@ -2,8 +2,11 @@ import unittest
 from collections import OrderedDict, UserDict
 from types import MappingProxyType
 from test import support
-import _testcapi
-import _testlimitedcapi
+from test.support import import_helper
+
+
+_testcapi = import_helper.import_module("_testcapi")
+_testlimitedcapi = import_helper.import_module("_testlimitedcapi")
 
 
 NULL = None
