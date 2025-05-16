@@ -1577,7 +1577,7 @@ class CommandLineTestCase(unittest.TestCase):
         with contextlib.redirect_stdout(stdout), \
             contextlib.redirect_stderr(stderr):
             server._main(args)
-        return {'stdout': stdout.getvalue(), 'stderr': stderr.getvalue()}
+        return stdout.getvalue(), stderr.getvalue()
 
     @mock.patch('http.server.test')
     def test_port_flag(self, mock_func):
