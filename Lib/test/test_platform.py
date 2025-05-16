@@ -1,5 +1,8 @@
-import os
+import contextlib
 import copy
+import io
+import itertools
+import os
 import pickle
 import platform
 import subprocess
@@ -739,6 +742,67 @@ class PlatformTest(unittest.TestCase):
         }
         self.assertEqual(info, expected)
         self.assertEqual(len(info["SPECIALS"]), 5)
+
+
+class CommandLineTest(unittest.TestCase):
+    def setUp(self):
+        platform.invalidate_caches()
+        self.addCleanup(platform.invalidate_caches)
+
+    def invoke_platform(self, *flags):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            platform._main(args=flags)
+        return output.getvalue()
+
+    def test_unknown_flag(self):
+        with self.assertRaises(SystemExit):
+            output = io.StringIO()
+            # suppress argparse error message
+            with contextlib.redirect_stderr(output):
+                _ = self.invoke_platform('--unknown')
+            self.assertStartsWith(output, "usage: ")
+
+    def test_invocation(self):
+        flags = (
+            "--terse", "--nonaliased", "terse", "nonaliased"
+        )
+
+        for r in range(len(flags) + 1):
+            for combination in itertools.combinations(flags, r):
+                self.invoke_platform(*combination)
+
+    def test_arg_parsing(self):
+        # For backwards compatibility, the `aliased` and `terse` parameters are
+        # computed based on a combination of positional arguments and flags.
+        #
+        # Test that the arguments are correctly passed to the underlying
+        # `platform.platform()` call.
+        options = (
+            (["--nonaliased"], False, False),
+            (["nonaliased"], False, False),
+            (["--terse"], True, True),
+            (["terse"], True, True),
+            (["nonaliased", "terse"], False, True),
+            (["--nonaliased", "terse"], False, True),
+            (["--terse", "nonaliased"], False, True),
+        )
+
+        for flags, aliased, terse in options:
+            with self.subTest(flags=flags, aliased=aliased, terse=terse):
+                with mock.patch.object(platform, 'platform') as obj:
+                    self.invoke_platform(*flags)
+                    obj.assert_called_once_with(aliased, terse)
+
+    @support.force_not_colorized
+    def test_help(self):
+        output = io.StringIO()
+
+        with self.assertRaises(SystemExit):
+            with contextlib.redirect_stdout(output):
+                platform._main(args=["--help"])
+
+        self.assertStartsWith(output.getvalue(), "usage:")
 
 
 if __name__ == '__main__':

@@ -1464,9 +1464,41 @@ def invalidate_caches():
 
 ### Command line interface
 
-if __name__ == '__main__':
-    # Default is to print the aliased verbose platform string
-    terse = ('terse' in sys.argv or '--terse' in sys.argv)
-    aliased = (not 'nonaliased' in sys.argv and not '--nonaliased' in sys.argv)
+def _parse_args(args: list[str] | None):
+    import argparse
+
+    parser = argparse.ArgumentParser(color=True)
+    parser.add_argument("args", nargs="*", choices=["nonaliased", "terse"])
+    parser.add_argument(
+        "--terse",
+        action="store_true",
+        help=(
+            "return only the absolute minimum information needed "
+            "to identify the platform"
+        ),
+    )
+    parser.add_argument(
+        "--nonaliased",
+        dest="aliased",
+        action="store_false",
+        help=(
+            "disable system/OS name aliasing. If aliasing is enabled, "
+            "some platforms report system names different from "
+            "their common names, e.g. SunOS is reported as Solaris"
+        ),
+    )
+
+    return parser.parse_args(args)
+
+
+def _main(args: list[str] | None = None):
+    args = _parse_args(args)
+
+    terse = args.terse or ("terse" in args.args)
+    aliased = args.aliased and ('nonaliased' not in args.args)
+
     print(platform(aliased, terse))
-    sys.exit(0)
+
+
+if __name__ == "__main__":
+    _main()

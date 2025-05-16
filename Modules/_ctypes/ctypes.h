@@ -11,8 +11,7 @@
 
 // Do we support C99 complex types in ffi?
 // For Apple's libffi, this must be determined at runtime (see gh-128156).
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-#   include "../_complex.h"       // complex
+#if defined(Py_FFI_SUPPORT_C_COMPLEX)
 #   if USING_APPLE_OS_LIBFFI && defined(__has_builtin)
 #       if __has_builtin(__builtin_available)
 #           define Py_FFI_COMPLEX_AVAILABLE __builtin_available(macOS 10.15, *)
@@ -494,11 +493,9 @@ struct tagPyCArgObject {
         double d;
         float f;
         void *p;
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-        double complex D;
-        float complex F;
-        long double complex G;
-#endif
+        double D[2];
+        float F[2];
+        long double G[2];
     } value;
     PyObject *obj;
     Py_ssize_t size; /* for the 'V' tag */

@@ -167,7 +167,6 @@ class HelpFormatter(object):
         indent_increment=2,
         max_help_position=24,
         width=None,
-        prefix_chars='-',
         color=False,
     ):
         # default setting for width
@@ -176,16 +175,7 @@ class HelpFormatter(object):
             width = shutil.get_terminal_size().columns
             width -= 2
 
-        from _colorize import ANSIColors, NoColors, can_colorize, decolor
-
-        if color and can_colorize():
-            self._ansi = ANSIColors()
-            self._decolor = decolor
-        else:
-            self._ansi = NoColors
-            self._decolor = lambda text: text
-
-        self._prefix_chars = prefix_chars
+        self._set_color(color)
         self._prog = prog
         self._indent_increment = indent_increment
         self._max_help_position = min(max_help_position,
@@ -201,6 +191,16 @@ class HelpFormatter(object):
 
         self._whitespace_matcher = _re.compile(r'\s+', _re.ASCII)
         self._long_break_matcher = _re.compile(r'\n\n\n+')
+
+    def _set_color(self, color):
+        from _colorize import can_colorize, decolor, get_theme
+
+        if color and can_colorize():
+            self._theme = get_theme(force_color=True).argparse
+            self._decolor = decolor
+        else:
+            self._theme = get_theme(force_no_color=True).argparse
+            self._decolor = lambda text: text
 
     # ===============================
     # Section and indentation methods
@@ -237,14 +237,12 @@ class HelpFormatter(object):
 
             # add the heading if the section was non-empty
             if self.heading is not SUPPRESS and self.heading is not None:
-                bold_blue = self.formatter._ansi.BOLD_BLUE
-                reset = self.formatter._ansi.RESET
-
                 current_indent = self.formatter._current_indent
                 heading_text = _('%(heading)s:') % dict(heading=self.heading)
+                t = self.formatter._theme
                 heading = (
                     f'{" " * current_indent}'
-                    f'{bold_blue}{heading_text}{reset}\n'
+                    f'{t.heading}{heading_text}{t.reset}\n'
                 )
             else:
                 heading = ''
@@ -314,10 +312,7 @@ class HelpFormatter(object):
                         if part and part is not SUPPRESS])
 
     def _format_usage(self, usage, actions, groups, prefix):
-        bold_blue = self._ansi.BOLD_BLUE
-        bold_magenta = self._ansi.BOLD_MAGENTA
-        magenta = self._ansi.MAGENTA
-        reset = self._ansi.RESET
+        t = self._theme
 
         if prefix is None:
             prefix = _('usage: ')
@@ -325,15 +320,15 @@ class HelpFormatter(object):
         # if usage is specified, use that
         if usage is not None:
             usage = (
-                magenta
+                t.prog_extra
                 + usage
-                % {"prog": f"{bold_magenta}{self._prog}{reset}{magenta}"}
-                + reset
+                % {"prog": f"{t.prog}{self._prog}{t.reset}{t.prog_extra}"}
+                + t.reset
             )
 
         # if no optionals or positionals are available, usage is just prog
         elif usage is None and not actions:
-            usage = f"{bold_magenta}{self._prog}{reset}"
+            usage = f"{t.prog}{self._prog}{t.reset}"
 
         # if optionals and positionals are available, calculate usage
         elif usage is None:
@@ -411,23 +406,16 @@ class HelpFormatter(object):
                 usage = '\n'.join(lines)
 
             usage = usage.removeprefix(prog)
-            usage = f"{bold_magenta}{prog}{reset}{usage}"
+            usage = f"{t.prog}{prog}{t.reset}{usage}"
 
         # prefix with 'usage:'
-        return f'{bold_blue}{prefix}{reset}{usage}\n\n'
+        return f'{t.usage}{prefix}{t.reset}{usage}\n\n'
 
     def _format_actions_usage(self, actions, groups):
         return ' '.join(self._get_actions_usage_parts(actions, groups))
 
     def _is_long_option(self, string):
-        return len(string) >= 2 and string[1] in self._prefix_chars
-
-    def _is_short_option(self, string):
-        return (
-            not self._is_long_option(string)
-            and len(string) >= 1
-            and string[0] in self._prefix_chars
-        )
+        return len(string) > 2
 
     def _get_actions_usage_parts(self, actions, groups):
         # find group indices and identify actions in groups
@@ -452,10 +440,7 @@ class HelpFormatter(object):
 
         # collect all actions format strings
         parts = []
-        cyan = self._ansi.CYAN
-        green = self._ansi.GREEN
-        yellow = self._ansi.YELLOW
-        reset = self._ansi.RESET
+        t = self._theme
         for action in actions:
 
             # suppressed arguments are marked with None
@@ -465,7 +450,11 @@ class HelpFormatter(object):
             # produce all arg strings
             elif not action.option_strings:
                 default = self._get_default_metavar_for_positional(action)
-                part = green + self._format_args(action, default) + reset
+                part = (
+                    t.summary_action
+                    + self._format_args(action, default)
+                    + t.reset
+                )
 
                 # if it's in a group, strip the outer []
                 if action in group_actions:
@@ -475,26 +464,26 @@ class HelpFormatter(object):
             # produce the first way to invoke the option in brackets
             else:
                 option_string = action.option_strings[0]
+                if self._is_long_option(option_string):
+                    option_color = t.summary_long_option
+                else:
+                    option_color = t.summary_short_option
 
                 # if the Optional doesn't take a value, format is:
                 #    -s or --long
                 if action.nargs == 0:
                     part = action.format_usage()
-                    if self._is_long_option(part):
-                        part = f"{cyan}{part}{reset}"
-                    elif self._is_short_option(part):
-                        part = f"{green}{part}{reset}"
+                    part = f"{option_color}{part}{t.reset}"
 
                 # if the Optional takes a value, format is:
                 #    -s ARGS or --long ARGS
                 else:
                     default = self._get_default_metavar_for_optional(action)
                     args_string = self._format_args(action, default)
-                    if self._is_long_option(option_string):
-                        option_string = f"{cyan}{option_string}"
-                    elif self._is_short_option(option_string):
-                        option_string = f"{green}{option_string}"
-                    part = f"{option_string} {yellow}{args_string}{reset}"
+                    part = (
+                        f"{option_color}{option_string} "
+                        f"{t.summary_label}{args_string}{t.reset}"
+                    )
 
                 # make it look optional if it's not required or in a group
                 if not action.required and action not in group_actions:
@@ -590,17 +579,14 @@ class HelpFormatter(object):
         return self._join_parts(parts)
 
     def _format_action_invocation(self, action):
-        bold_green = self._ansi.BOLD_GREEN
-        bold_cyan = self._ansi.BOLD_CYAN
-        bold_yellow = self._ansi.BOLD_YELLOW
-        reset = self._ansi.RESET
+        t = self._theme
 
         if not action.option_strings:
             default = self._get_default_metavar_for_positional(action)
             return (
-                bold_green
+                t.action
                 + ' '.join(self._metavar_formatter(action, default)(1))
-                + reset
+                + t.reset
             )
 
         else:
@@ -609,11 +595,9 @@ class HelpFormatter(object):
                 parts = []
                 for s in strings:
                     if self._is_long_option(s):
-                        parts.append(f"{bold_cyan}{s}{reset}")
-                    elif self._is_short_option(s):
-                        parts.append(f"{bold_green}{s}{reset}")
+                        parts.append(f"{t.long_option}{s}{t.reset}")
                     else:
-                        parts.append(s)
+                        parts.append(f"{t.short_option}{s}{t.reset}")
                 return parts
 
             # if the Optional doesn't take a value, format is:
@@ -628,7 +612,7 @@ class HelpFormatter(object):
                 default = self._get_default_metavar_for_optional(action)
                 option_strings = color_option_strings(action.option_strings)
                 args_string = (
-                    f"{bold_yellow}{self._format_args(action, default)}{reset}"
+                    f"{t.label}{self._format_args(action, default)}{t.reset}"
                 )
                 return ', '.join(option_strings) + ' ' + args_string
 
@@ -2727,16 +2711,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         return formatter.format_help()
 
     def _get_formatter(self):
-        if isinstance(self.formatter_class, type) and issubclass(
-            self.formatter_class, HelpFormatter
-        ):
-            return self.formatter_class(
-                prog=self.prog,
-                prefix_chars=self.prefix_chars,
-                color=self.color,
-            )
-        else:
-            return self.formatter_class(prog=self.prog)
+        formatter = self.formatter_class(prog=self.prog)
+        formatter._set_color(self.color)
+        return formatter
 
     # =====================
     # Help-printing methods

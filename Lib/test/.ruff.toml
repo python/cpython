@@ -9,8 +9,9 @@ extend-exclude = [
     "encoded_modules/module_iso_8859_1.py",
     "encoded_modules/module_koi8_r.py",
     # SyntaxError because of t-strings
-    "test_tstring.py",
+    "test_annotationlib.py",
     "test_string/test_templatelib.py",
+    "test_tstring.py",
     # New grammar constructions may not yet be recognized by Ruff,
     # and tests re-use the same names as only the grammar is being checked.
     "test_grammar.py",

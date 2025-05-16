@@ -95,10 +95,16 @@ PyStackRef_IsNone(_PyStackRef ref)
     return _Py_stackref_get_object(ref) == Py_None;
 }
 
+static inline bool
+PyStackRef_IsTaggedInt(_PyStackRef ref)
+{
+    return (ref.index & 1) == 1;
+}
+
 static inline PyObject *
 _PyStackRef_AsPyObjectBorrow(_PyStackRef ref, const char *filename, int linenumber)
 {
-    assert((ref.index & 1) == 0);
+    assert(!PyStackRef_IsTaggedInt(ref));
     _Py_stackref_record_borrow(ref, filename, linenumber);
     return _Py_stackref_get_object(ref);
 }
@@ -134,12 +140,6 @@ _PyStackRef_FromPyObjectImmortal(PyObject *obj, const char *filename, int linenu
     return _Py_stackref_create(obj, filename, linenumber);
 }
 #define PyStackRef_FromPyObjectImmortal(obj) _PyStackRef_FromPyObjectImmortal(_PyObject_CAST(obj), __FILE__, __LINE__)
-
-static inline bool
-PyStackRef_IsTaggedInt(_PyStackRef ref)
-{
-    return (ref.index & 1) == 1;
-}
 
 static inline void
 _PyStackRef_CLOSE(_PyStackRef ref, const char *filename, int linenumber)
@@ -256,7 +256,7 @@ PyStackRef_TagInt(intptr_t i)
 static inline intptr_t
 PyStackRef_UntagInt(_PyStackRef i)
 {
-    assert((i.bits & Py_INT_TAG) == Py_INT_TAG);
+    assert(PyStackRef_IsTaggedInt(i));
     intptr_t val = (intptr_t)i.bits;
     return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, val, 2);
 }
@@ -286,6 +286,7 @@ static const _PyStackRef PyStackRef_NULL = { .bits = Py_TAG_DEFERRED};
 static inline PyObject *
 PyStackRef_AsPyObjectBorrow(_PyStackRef stackref)
 {
+    assert(!PyStackRef_IsTaggedInt(stackref));
     PyObject *cleared = ((PyObject *)((stackref).bits & (~Py_TAG_BITS)));
     return cleared;
 }

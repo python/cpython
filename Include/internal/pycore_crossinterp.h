@@ -185,6 +185,28 @@ PyAPI_FUNC(int) _PyMarshal_GetXIData(
         PyObject *,
         _PyXIData_t *);
 
+// _PyObject_GetXIData() for code objects
+PyAPI_FUNC(PyObject *) _PyCode_FromXIData(_PyXIData_t *);
+PyAPI_FUNC(int) _PyCode_GetXIData(
+        PyThreadState *,
+        PyObject *,
+        _PyXIData_t *);
+PyAPI_FUNC(int) _PyCode_GetScriptXIData(
+        PyThreadState *,
+        PyObject *,
+        _PyXIData_t *);
+PyAPI_FUNC(int) _PyCode_GetPureScriptXIData(
+        PyThreadState *,
+        PyObject *,
+        _PyXIData_t *);
+
+// _PyObject_GetXIData() for functions
+PyAPI_FUNC(PyObject *) _PyFunction_FromXIData(_PyXIData_t *);
+PyAPI_FUNC(int) _PyFunction_GetXIData(
+        PyThreadState *,
+        PyObject *,
+        _PyXIData_t *);
+
 
 /* using cross-interpreter data */
 

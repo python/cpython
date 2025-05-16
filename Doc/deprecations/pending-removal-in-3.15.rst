@@ -85,6 +85,13 @@ Pending removal in Python 3.15
     has been deprecated since Python 3.13.
     Use the class-based syntax or the functional syntax instead.
 
+  * When using the functional syntax of :class:`~typing.TypedDict`\s, failing
+    to pass a value to the *fields* parameter (``TD = TypedDict("TD")``) or
+    passing ``None`` (``TD = TypedDict("TD", None)``) has been deprecated
+    since Python 3.13.
+    Use ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``
+    to create a TypedDict with zero field.
+
   * The :func:`typing.no_type_check_decorator` decorator function
     has been deprecated since Python 3.13.
     After eight years in the :mod:`typing` module,
@@ -92,8 +99,7 @@ Pending removal in Python 3.15
 
 * :mod:`wave`:
 
-  * The :meth:`~wave.Wave_read.getmark`, :meth:`!setmark`,
-    and :meth:`~wave.Wave_read.getmarkers` methods of
+  * The ``getmark()``, ``setmark()`` and ``getmarkers()`` methods of
     the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes
     have been deprecated since Python 3.13.
 

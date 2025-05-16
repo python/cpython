@@ -170,7 +170,7 @@ created.  Socket addresses are represented as follows:
     .. versionchanged:: 3.13.3
        FreeBSD support added.
 
-    .. versionchanged:: next
+    .. versionchanged:: 3.14
        Added ``channel`` field.
        ``device_id`` not packed in a tuple is now accepted.
 
@@ -178,7 +178,7 @@ created.  Socket addresses are represented as follows:
     the Bluetooth address as a string or a :class:`bytes` object.
     (ex. ``'12:23:34:45:56:67'`` or ``b'12:23:34:45:56:67'``)
 
-    .. versionchanged:: next
+    .. versionchanged:: 3.14
        FreeBSD support added.
 
 - :const:`AF_ALG` is a Linux-only socket based interface to Kernel
@@ -498,7 +498,7 @@ Constants
    .. versionchanged:: 3.11
       NetBSD support was added.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Restored missing ``CAN_RAW_ERR_FILTER`` on Linux.
 
 .. data:: CAN_BCM
@@ -709,7 +709,7 @@ Constants
    :const:`!SO_BTH_*` are only available on Windows.
    Other constants may be available on Linux and various BSD platforms.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. data:: HCI_FILTER
           HCI_TIME_STAMP
@@ -720,7 +720,7 @@ Constants
    Option names for use with :const:`BTPROTO_HCI`.
    Availability and format of the option values depend on platform.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Added :const:`!SO_HCI_EVT_FILTER` and :const:`!SO_HCI_PKT_FILTER`
       on NetBSD and DragonFly BSD.
       Added :const:`!HCI_DATA_DIR` on FreeBSD, NetBSD and DragonFly BSD.
@@ -732,7 +732,7 @@ Constants
 
    .. availability:: Linux
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. data:: HCI_CHANNEL_RAW
           HCI_CHANNEL_USER
@@ -744,7 +744,7 @@ Constants
 
    .. availability:: Linux
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. data:: AF_QIPCRTR
 

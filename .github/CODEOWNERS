@@ -188,7 +188,7 @@ Include/internal/pycore_time.h  @pganssle @abalkin
 
 # AST
 Python/ast.c                  @isidentical @JelleZijlstra @eclips4
-Python/ast_opt.c              @isidentical @eclips4
+Python/ast_preprocess.c       @isidentical @eclips4
 Parser/asdl.py                @isidentical @JelleZijlstra @eclips4
 Parser/asdl_c.py              @isidentical @JelleZijlstra @eclips4
 Lib/ast.py                    @isidentical @JelleZijlstra @eclips4
@@ -298,7 +298,12 @@ Lib/test/test_interpreters/   @ericsnowcurrently
 **/*-ios*                     @freakboy3742
 
 # WebAssembly
-/Tools/wasm/                  @brettcannon @freakboy3742
+Tools/wasm/config.site-wasm32-emscripten  @freakboy3742
+/Tools/wasm/README.md         @brettcannon @freakboy3742
+/Tools/wasm/wasi-env          @brettcannon
+/Tools/wasm/wasi.py           @brettcannon
+/Tools/wasm/emscripten        @freakboy3742
+/Tools/wasm/wasi              @brettcannon
 
 # SBOM
 /Misc/externals.spdx.json     @sethmlarson

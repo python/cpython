@@ -22190,7 +22190,7 @@ invalid_parameters_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_parameters[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"/\" ','"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "at least one argument must precede /" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "at least one parameter must precede /" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -22456,7 +22456,7 @@ invalid_star_etc_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_star_etc[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*' (')' | ',' (')' | '**'))"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "named arguments must follow bare *" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "named parameters must follow bare *" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -22516,7 +22516,7 @@ invalid_star_etc_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_star_etc[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*' param '='"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "var-positional argument cannot have default value" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "var-positional parameter cannot have default value" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -22552,7 +22552,7 @@ invalid_star_etc_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_star_etc[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*' (param_no_default | ',') param_maybe_default* '*' (param_no_default | ',')"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "* argument may appear only once" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "* may appear only once" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -22601,7 +22601,7 @@ invalid_kwds_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_kwds[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'**' param '='"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "var-keyword argument cannot have default value" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "var-keyword parameter cannot have default value" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -22634,7 +22634,7 @@ invalid_kwds_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_kwds[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'**' param ',' param"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "arguments cannot follow var-keyword argument" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "parameters cannot follow var-keyword parameter" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -22667,7 +22667,7 @@ invalid_kwds_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_kwds[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'**' param ',' ('*' | '**' | '/')"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "arguments cannot follow var-keyword argument" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "parameters cannot follow var-keyword parameter" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -22781,7 +22781,7 @@ invalid_lambda_parameters_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_lambda_parameters[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"/\" ','"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "at least one argument must precede /" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "at least one parameter must precede /" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -23065,7 +23065,7 @@ invalid_lambda_star_etc_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_lambda_star_etc[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*' (':' | ',' (':' | '**'))"));
-            _res = RAISE_SYNTAX_ERROR ( "named arguments must follow bare *" );
+            _res = RAISE_SYNTAX_ERROR ( "named parameters must follow bare *" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -23095,7 +23095,7 @@ invalid_lambda_star_etc_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_lambda_star_etc[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*' lambda_param '='"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "var-positional argument cannot have default value" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "var-positional parameter cannot have default value" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -23131,7 +23131,7 @@ invalid_lambda_star_etc_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_lambda_star_etc[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*' (lambda_param_no_default | ',') lambda_param_maybe_default* '*' (lambda_param_no_default | ',')"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "* argument may appear only once" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "* may appear only once" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -23183,7 +23183,7 @@ invalid_lambda_kwds_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_lambda_kwds[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'**' lambda_param '='"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "var-keyword argument cannot have default value" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "var-keyword parameter cannot have default value" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -23216,7 +23216,7 @@ invalid_lambda_kwds_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_lambda_kwds[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'**' lambda_param ',' lambda_param"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "arguments cannot follow var-keyword argument" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "parameters cannot follow var-keyword parameter" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -23249,7 +23249,7 @@ invalid_lambda_kwds_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_lambda_kwds[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'**' lambda_param ',' ('*' | '**' | '/')"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "arguments cannot follow var-keyword argument" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "parameters cannot follow var-keyword parameter" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;

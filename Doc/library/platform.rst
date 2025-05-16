@@ -17,7 +17,7 @@
    section.
 
 
-Cross Platform
+Cross platform
 --------------
 
 
@@ -188,7 +188,7 @@ Cross Platform
       :attr:`processor` is resolved late instead of immediately.
 
 
-Java Platform
+Java platform
 -------------
 
 
@@ -206,7 +206,7 @@ Java Platform
       and was only useful for Jython support.
 
 
-Windows Platform
+Windows platform
 ----------------
 
 
@@ -240,7 +240,7 @@ Windows Platform
    .. versionadded:: 3.8
 
 
-macOS Platform
+macOS platform
 --------------
 
 .. function:: mac_ver(release='', versioninfo=('','',''), machine='')
@@ -252,7 +252,7 @@ macOS Platform
    Entries which cannot be determined are set to ``''``.  All tuple entries are
    strings.
 
-iOS Platform
+iOS platform
 ------------
 
 .. function:: ios_ver(system='', release='', model='', is_simulator=False)
@@ -271,7 +271,7 @@ iOS Platform
    parameters.
 
 
-Unix Platforms
+Unix platforms
 --------------
 
 .. function:: libc_ver(executable=sys.executable, lib='', version='', chunksize=16384)
@@ -287,7 +287,7 @@ Unix Platforms
    The file is read and scanned in chunks of *chunksize* bytes.
 
 
-Linux Platforms
+Linux platforms
 ---------------
 
 .. function:: freedesktop_os_release()
@@ -325,7 +325,7 @@ Linux Platforms
    .. versionadded:: 3.10
 
 
-Android Platform
+Android platform
 ----------------
 
 .. function:: android_ver(release="", api_level=0, manufacturer="", \
@@ -360,6 +360,34 @@ Android Platform
 
    .. versionadded:: 3.13
 
+.. _platform-cli:
+
+Command-line usage
+------------------
+
+:mod:`platform` can also be invoked directly using the :option:`-m`
+switch of the interpreter::
+
+   python -m platform [--terse] [--nonaliased] [{nonaliased,terse} ...]
+
+The following options are accepted:
+
+.. program:: platform
+
+.. option:: --terse
+
+   Print terse information about the platform. This is equivalent to
+   calling :func:`platform.platform` with the *terse* argument set to ``True``.
+
+.. option:: --nonaliased
+
+   Print platform information without system/OS name aliasing. This is
+   equivalent to calling :func:`platform.platform` with the *aliased* argument
+   set to ``True``.
+
+You can also pass one or more positional arguments (``terse``, ``nonaliased``)
+to explicitly control the output format. These behave similarly to their
+corresponding options.
 
 Miscellaneous
 -------------

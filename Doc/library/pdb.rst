@@ -243,7 +243,7 @@ The ``run*`` functions and :func:`set_trace` are aliases for instantiating the
 access further features, you have to do this yourself:
 
 .. class:: Pdb(completekey='tab', stdin=None, stdout=None, skip=None, \
-               nosigint=False, readrc=True, mode=None, backend=None)
+               nosigint=False, readrc=True, mode=None, backend=None, colorize=False)
 
    :class:`Pdb` is the debugger class.
 
@@ -273,6 +273,9 @@ access further features, you have to do this yourself:
    is passed, the default backend will be used. See :func:`set_default_backend`.
    Otherwise the supported backends are ``'settrace'`` and ``'monitoring'``.
 
+   The *colorize* argument, if set to ``True``, will enable colorized output in the
+   debugger, if color is supported. This will highlight source code displayed in pdb.
+
    Example call to enable tracing with *skip*::
 
       import pdb; pdb.Pdb(skip=['django.*']).set_trace()
@@ -294,6 +297,9 @@ access further features, you have to do this yourself:
 
    .. versionadded:: 3.14
       Added the *backend* argument.
+
+   .. versionadded:: 3.14
+      Added the *colorize* argument.
 
    .. versionchanged:: 3.14
       Inline breakpoints like :func:`breakpoint` or :func:`pdb.set_trace` will
