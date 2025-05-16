@@ -1703,7 +1703,7 @@ class CommandLineTestCase(unittest.TestCase):
     @mock.patch('http.server.test')
     def test_unknown_flag(self, _):
         with self.assertRaises(SystemExit):
-            output = self.invoke_httpd('--unknown-flag')
+            _ = self.invoke_httpd('--unknown-flag')
 
 class CommandLineRunTimeTestCase(unittest.TestCase):
     random_data = os.urandom(1024)
