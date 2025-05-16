@@ -972,32 +972,25 @@ class CmdLineTest(unittest.TestCase):
 
     @unittest.skipUnless(support.MS_WINDOWS, 'Test only applicable on Windows')
     def test_python_legacy_windows_stdio(self):
-        fn = os_helper.TESTFN
-        # We cannot use PIPE to test ConsoleIO
-        code = dedent(f"""
-        import sys
-        with open({fn!r}, 'w', encoding='utf-8') as f:
-            print(type(sys.stdout.buffer.raw).__name__, file=f)
-        """)
-
-        # Test that _WindowsConsoleIO is used when PYTHONLEGACYWINDOWSSTDIO is not set.
-        subprocess.run([sys.executable, "-c", code], check=True,
-                       creationflags=subprocess.CREATE_NEW_CONSOLE)
-        with open(fn, "r", encoding="utf-8") as f:
-            out = f.read()
-        os.remove(fn)
-        self.assertEqual(out.strip(), "_WindowsConsoleIO")
-
-        # Test that _FileIO is used when PYTHONLEGACYWINDOWSSTDIO is set.
+        # Test that _WindowsConsoleIO is used when PYTHONLEGACYWINDOWSSTDIO
+        # is not set.
+        # We cannot use PIPE becase it prevents creating new console.
+        # So we use exit code.
+        code = "import sys; sys.exit(type(sys.stdout.buffer.raw).__name__ != '_WindowsConsoleIO')"
         env = os.environ.copy()
+        env["PYTHONLEGACYWINDOWSSTDIO"] = ""
+        p = subprocess.run([sys.executable, "-c", code],
+                           creationflags=subprocess.CREATE_NEW_CONSOLE,
+                           env=env)
+        self.assertEqual(p.returncode, 0)
+
+        # Then test that FIleIO is used when PYTHONLEGACYWINDOWSSTDIO is set.
+        code = "import sys; sys.exit(type(sys.stdout.buffer.raw).__name__ != 'FileIO')"
         env["PYTHONLEGACYWINDOWSSTDIO"] = "1"
-        subprocess.run([sys.executable, "-c", code], check=True,
-                       creationflags=subprocess.CREATE_NEW_CONSOLE,
-                       env=env)
-        with open(fn, "r", encoding="utf-8") as f:
-            out = f.read()
-        os.remove(fn)
-        self.assertEqual(out.strip(), "FileIO")
+        p = subprocess.run([sys.executable, "-c", code],
+                           creationflags=subprocess.CREATE_NEW_CONSOLE,
+                           env=env)
+        self.assertEqual(p.returncode, 0)
 
     @unittest.skipIf("-fsanitize" in sysconfig.get_config_vars().get('PY_CFLAGS', ()),
                      "PYTHONMALLOCSTATS doesn't work with ASAN")
