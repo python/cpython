@@ -1715,6 +1715,7 @@ class TestArgumentsFromFile(TempDirMixin, ParserTestCase):
                           b'@hello'),
             ('invalid', b'@no-such-path\n'),
             ('undecodable', self.undecodable + b'\n'),
+            ('blanklines', b'spam\n\nham\n')
         ]
         for path, text in file_texts:
             with open(path, 'wb') as file:
@@ -1736,6 +1737,7 @@ class TestArgumentsFromFile(TempDirMixin, ParserTestCase):
         ('-a B @recursive Y Z', NS(a='A', x=hello, y=['Y', 'Z'])),
         ('X @recursive Z -a B', NS(a='B', x='X', y=[hello, 'Z'])),
         (["-a", "", "X", "Y"], NS(a='', x='X', y=['Y'])),
+        ('@blanklines', NS(a=None, x='spam', y=['ham'])),
     ]
     if os_helper.TESTFN_UNDECODABLE:
         undecodable = os_helper.TESTFN_UNDECODABLE.lstrip(b'@')
