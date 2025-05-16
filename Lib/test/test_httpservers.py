@@ -1673,7 +1673,7 @@ class CommandLineTestCase(unittest.TestCase):
             for tls_cert_option in self.tls_cert_options:
                 with self.assertRaises(SystemExit):
                     self.invoke_httpd(tls_key_option, self.tls_key)
-                    mock_func.reset_mock()
+                mock_func.reset_mock()
 
     @unittest.skipIf(ssl is None, "requires ssl")
     @mock.patch('http.server.test')
