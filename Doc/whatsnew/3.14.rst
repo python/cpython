@@ -82,7 +82,7 @@ and improvements in user-friendliness and correctness.
 
 .. PEP-sized items next.
 
-* :ref:`PEP 649: deferred evaluation of annotations <whatsnew314-pep649>`
+* :ref:`PEP 649 and 749: deferred evaluation of annotations <whatsnew314-pep649>`
 * :ref:`PEP 741: Python Configuration C API <whatsnew314-pep741>`
 * :ref:`PEP 750: Template strings <whatsnew314-pep750>`
 * :ref:`PEP 758: Allow except and except* expressions without parentheses <whatsnew314-pep758>`
@@ -362,18 +362,19 @@ Check :pep:`758` for more details.
 
 .. _whatsnew314-pep649:
 
-PEP 649: deferred evaluation of annotations
--------------------------------------------
+PEP 649 and 749: deferred evaluation of annotations
+---------------------------------------------------
 
 The :term:`annotations <annotation>` on functions, classes, and modules are no
 longer evaluated eagerly. Instead, annotations are stored in special-purpose
 :term:`annotate functions <annotate function>` and evaluated only when
-necessary. This is specified in :pep:`649` and :pep:`749`.
+necessary (except if ``from __future__ import annotations`` is used).
+This is specified in :pep:`649` and :pep:`749`.
 
 This change is designed to make annotations in Python more performant and more
 usable in most circumstances. The runtime cost for defining annotations is
 minimized, but it remains possible to introspect annotations at runtime.
-It is usually no longer necessary to enclose annotations in strings if they
+It is no longer necessary to enclose annotations in strings if they
 contain forward references.
 
 The new :mod:`annotationlib` module provides tools for inspecting deferred
@@ -409,7 +410,8 @@ writing annotations the same way you did with previous versions of Python.
 You will likely be able to remove quoted strings in annotations, which are frequently
 used for forward references. Similarly, if you use ``from __future__ import annotations``
 to avoid having to write strings in annotations, you may well be able to
-remove that import. However, if you rely on third-party libraries that read annotations,
+remove that import once you support only Python 3.14 and newer.
+However, if you rely on third-party libraries that read annotations,
 those libraries may need changes to support unquoted annotations before they
 work as expected.
 
@@ -422,6 +424,11 @@ annotations. For example, you may want to use :func:`annotationlib.get_annotatio
 with the :attr:`~annotationlib.Format.FORWARDREF` format, as the :mod:`dataclasses`
 module now does.
 
+The external :pypi:`typing_extensions` package provides partial backports of some of the
+functionality of the :mod:`annotationlib` module, such as the :class:`~annotationlib.Format`
+enum and the :func:`~annotationlib.get_annotations` function. These can be used to
+write cross-version code that takes advantage of the new behavior in Python 3.14.
+
 Related changes
 ^^^^^^^^^^^^^^^
 
@@ -432,6 +439,10 @@ if you rely on undocumented details of the annotation behavior or on private
 functions in the standard library, there are many ways in which your code may
 not work in Python 3.14. To safeguard your code against future changes,
 use only the documented functionality of the :mod:`annotationlib` module.
+
+In particular, do not read annotations directly from the namespace dictionary
+attribute of type objects. Use :func:`annotationlib.get_annotate_from_class_namespace`
+during class construction and :func:`annotationlib.get_annotations` afterwards.
 
 ``from __future__ import annotations``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -444,8 +455,10 @@ Python without deferred evaluation of annotations, reaches its end of life in 20
 In Python 3.14, the behavior of code using ``from __future__ import annotations``
 is unchanged.
 
+(Contributed by Jelle Zijlstra in :gh:`119180`; :pep:`649` was written by Larry Hastings.)
+
 .. seealso::
-   :pep:`649`.
+   :pep:`649` and :pep:`749`.
 
 
 Improved error messages

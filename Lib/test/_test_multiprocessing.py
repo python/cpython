@@ -513,9 +513,14 @@ class _TestProcess(BaseTestCase):
         time.sleep(100)
 
     @classmethod
-    def _sleep_no_int_handler(cls):
+    def _sleep_some_event(cls, event):
+        event.set()
+        time.sleep(100)
+
+    @classmethod
+    def _sleep_no_int_handler(cls, event):
         signal.signal(signal.SIGINT, signal.SIG_DFL)
-        cls._sleep_some()
+        cls._sleep_some_event(event)
 
     @classmethod
     def _test_sleep(cls, delay):
@@ -525,7 +530,10 @@ class _TestProcess(BaseTestCase):
         if self.TYPE == 'threads':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
 
-        p = self.Process(target=target or self._sleep_some)
+        event = self.Event()
+        if not target:
+            target = self._sleep_some_event
+        p = self.Process(target=target, args=(event,))
         p.daemon = True
         p.start()
 
@@ -543,8 +551,11 @@ class _TestProcess(BaseTestCase):
         self.assertTimingAlmostEqual(join.elapsed, 0.0)
         self.assertEqual(p.is_alive(), True)
 
-        # XXX maybe terminating too soon causes the problems on Gentoo...
-        time.sleep(1)
+        timeout = support.SHORT_TIMEOUT
+        if not event.wait(timeout):
+            p.terminate()
+            p.join()
+            self.fail(f"event not signaled in {timeout} seconds")
 
         meth(p)
 
