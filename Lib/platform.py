@@ -110,7 +110,7 @@ __copyright__ = """
 
 """
 
-__version__ = '1.0.9'
+__version__ = '1.0.10'
 
 import collections
 import os
@@ -391,6 +391,49 @@ def win32_edition():
 
     return None
 
+def _format_sp_and_product_type(spmajor, spminor, product_type):
+    csd = f"SP{spmajor}.{spminor}" if spminor else f"SP{spmajor}"
+    is_client = (int(product_type) == 1)
+    return csd, is_client
+
+def _get_version_using_rtlgetversion():
+    import ctypes
+    class OSVERSIONINFOEXW(ctypes.Structure):
+        _fields_ = [
+            ("dwOSVersionInfoSize", ctypes.c_uint32),
+            ("dwMajorVersion", ctypes.c_uint32),
+            ("dwMinorVersion", ctypes.c_uint32),
+            ("dwBuildNumber", ctypes.c_uint32),
+            ("dwPlatformId", ctypes.c_uint32),
+            ("szCSDVersion", ctypes.c_wchar * 128),  # Service Pack name
+            ("wServicePackMajor", ctypes.c_uint16),  # Major Service Pack version
+            ("wServicePackMinor", ctypes.c_uint16),  # Minor Service Pack version
+            ("wSuiteMask", ctypes.c_uint16),
+            ("wProductType", ctypes.c_uint8),  # Type of product (Workstation, etc.)
+            ("wReserved", ctypes.c_uint8)  # Reserved
+        ]
+
+    # Initialize OSVERSIONINFOEXW structure
+    os_version = OSVERSIONINFOEXW()
+    os_version.dwOSVersionInfoSize = ctypes.sizeof(OSVERSIONINFOEXW)
+
+    # Load ntdll.dll and call RtlGetVersion
+    ntdll = ctypes.WinDLL("ntdll")
+    rtl_get_version = ntdll.RtlGetVersion
+    rtl_get_version(ctypes.byref(os_version))
+
+    # Extract the version details
+    major = os_version.dwMajorVersion
+    minor = os_version.dwMinorVersion
+    build = os_version.dwBuildNumber
+    spmajor = os_version.wServicePackMajor
+    spminor = os_version.wServicePackMinor
+    product_type = os_version.wProductType
+
+    version = f"{major}.{minor}.{build}"
+    csd, is_client =  _format_sp_and_product_type(spmajor, spminor, product_type)
+    return version, csd, is_client
+
 def _win32_ver(version, csd, ptype):
     # Try using WMI first, as this is the canonical source of data
     try:
@@ -402,40 +445,39 @@ def _win32_ver(version, csd, ptype):
             'ServicePackMajorVersion',
             'ServicePackMinorVersion',
         )
-        is_client = (int(product_type) == 1)
-        if spminor and spminor != '0':
-            csd = f'SP{spmajor}.{spminor}'
-        else:
-            csd = f'SP{spmajor}'
+        csd, is_client =  _format_sp_and_product_type(spmajor, spminor, product_type)
         return version, csd, ptype, is_client
     except OSError:
         pass
 
-    # Fall back to a combination of sys.getwindowsversion and "ver"
+    # Fall back to RtlGetVersion using ntdll
     try:
-        from sys import getwindowsversion
-    except ImportError:
-        return version, csd, ptype, True
-
-    winver = getwindowsversion()
-    is_client = (getattr(winver, 'product_type', 1) == 1)
-    try:
-        version = _syscmd_ver()[2]
-        major, minor, build = map(int, version.split('.'))
-    except ValueError:
-        major, minor, build = winver.platform_version or winver[:3]
-        version = '{0}.{1}.{2}'.format(major, minor, build)
-
-    # getwindowsversion() reflect the compatibility mode Python is
-    # running under, and so the service pack value is only going to be
-    # valid if the versions match.
-    if winver[:2] == (major, minor):
+        version, csd, is_client = _get_version_using_rtlgetversion()
+    except Exception:
+        # Fall back to a combination of sys.getwindowsversion and "ver"
         try:
-            csd = 'SP{}'.format(winver.service_pack_major)
-        except AttributeError:
-            if csd[:13] == 'Service Pack ':
-                csd = 'SP' + csd[13:]
+            from sys import getwindowsversion
+        except ImportError:
+            return version, csd, ptype, True
 
+        winver = getwindowsversion()
+        is_client = (getattr(winver, 'product_type', 1) == 1)
+        try:
+            version = _syscmd_ver()[2]
+            major, minor, build = map(int, version.split('.'))
+        except ValueError:
+            major, minor, build = winver.platform_version or winver[:3]
+            version = '{0}.{1}.{2}'.format(major, minor, build)
+
+        # getwindowsversion() reflect the compatibility mode Python is
+        # running under, and so the service pack value is only going to be
+        # valid if the versions match.
+        if winver[:2] == (major, minor):
+            try:
+                csd = 'SP{}'.format(winver.service_pack_major)
+            except AttributeError:
+                if csd[:13] == 'Service Pack ':
+                    csd = 'SP' + csd[13:]
     try:
         import winreg
     except ImportError:
