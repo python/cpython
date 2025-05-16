@@ -131,6 +131,7 @@ class ProfileTest(unittest.TestCase):
 
             self.assertTrue(os.path.exists('out.pstats'))
 
+
 class ProfileCLITests(unittest.TestCase):
     """Tests for the profile module's command line interface."""
 
@@ -173,9 +174,9 @@ if __name__ == "__main__":
         """Test different sort options."""
         # List of sort options known to work
         sort_options = ['calls', 'cumulative', 'cumtime', 'file',
-                       'filename', 'module', 'ncalls', 'pcalls',
-                       'line', 'stdname', 'time', 'tottime']
-        
+                        'filename', 'module', 'ncalls', 'pcalls',
+                        'line', 'stdname', 'time', 'tottime']
+
         # Test each sort option individually
         for option in sort_options:
             with self.subTest(sort_option=option):
@@ -189,12 +190,12 @@ if __name__ == "__main__":
         """Test writing profile results to a file."""
         output_file = TESTFN + '.prof'
         self.addCleanup(unlink, output_file)
-        
+
         returncode, stdout, stderr = self._run_profile_cli(
             '-o', output_file, self.script_file
         )
         self.assertEqual(returncode, 0)
-        
+
         # Check that the output file exists and contains profile data
         self.assertTrue(os.path.exists(output_file))
         stats = pstats.Stats(output_file)
@@ -212,31 +213,34 @@ if __name__ == "__main__":
         """Test behavior with no arguments."""
         returncode, stdout, stderr = self._run_profile_cli()
         self.assertNotEqual(returncode, 0)
-        
+
         # Check either stdout or stderr for usage information
         combined_output = stdout.lower() + stderr.lower()
-        self.assertTrue("usage:" in combined_output or 
-                       "error:" in combined_output or
-                       "no script filename specified" in combined_output,
-                       "Expected usage information or error message not found")
+        self.assertTrue(
+            "usage:" in combined_output or
+            "error:" in combined_output or
+            "no script filename specified" in combined_output,
+            "Expected usage information or error message not found"
+        )
 
     def test_run_module(self):
         """Test profiling a module with -m option."""
         # Create a small module
         module_name = "test_profile_module"
         module_file = f"{module_name}.py"
-        
+
         with open(module_file, "w") as f:
             f.write("print('Module executed')\n")
-        
+
         self.addCleanup(unlink, module_file)
-        
+
         returncode, stdout, stderr = self._run_profile_cli(
             '-m', module_name
         )
         self.assertEqual(returncode, 0)
         self.assertIn("Module executed", stdout)
         self.assertIn("function calls", stdout)
+
 
 def regenerate_expected_output(filename, cls):
     filename = filename.rstrip('co')
