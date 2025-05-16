@@ -233,8 +233,7 @@ and information on using the :keyword:`raise` statement to generate exceptions
 may be found in section :ref:`raise`.
 
 .. versionchanged:: 3.14
-   Support for optionally dropping grouping parentheses when using multiple
-   exception types. See :pep:`758`.
+   Support for optionally dropping grouping parentheses when using multiple exception types. See :pep:`758`.
 
 .. _except:
 
