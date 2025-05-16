@@ -251,7 +251,7 @@ class CompletionTest(unittest.TestCase):
         # to complete
         self.assertEqual(line_num, len(output_lines))
 
-    def test_completion_order(self):
+    def test_completion_for_nothing(self):
         script = textwrap.dedent("""
             import readline
             readline.parse_and_bind("set colored-completion-prefix off")
