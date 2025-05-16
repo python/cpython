@@ -1,0 +1,2 @@
+Fixed a use-after-free bug that would occur when an imported module wasn't
+in sys.modules after the initial import. Patch by Nico-Posada.
