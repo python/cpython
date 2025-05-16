@@ -1703,7 +1703,7 @@ class CommandLineTestCase(unittest.TestCase):
         for option in options:
             with self.assertRaises(SystemExit):
                 output = self.invoke_httpd(option)
-                self.assertStartsWith(output, 'usage: ')
+            self.assertStartsWith(output, 'usage: ')
 
     @mock.patch('http.server.test')
     def test_unknown_flag(self, _):
