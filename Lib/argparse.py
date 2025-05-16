@@ -190,6 +190,7 @@ class HelpFormatter(object):
     # ===============================
     # Section and indentation methods
     # ===============================
+
     def _indent(self):
         self._current_indent += self._indent_increment
         self._level += 1
@@ -237,6 +238,7 @@ class HelpFormatter(object):
     # ========================
     # Message building methods
     # ========================
+
     def start_section(self, heading):
         self._indent()
         section = self._Section(self, self._current_section, heading)
@@ -280,6 +282,7 @@ class HelpFormatter(object):
     # =======================
     # Help-formatting methods
     # =======================
+
     def format_help(self):
         help = self._root_section.format_help()
         if help:
@@ -1402,6 +1405,7 @@ class _ActionsContainer(object):
     # ====================
     # Registration methods
     # ====================
+
     def register(self, registry_name, value, object):
         registry = self._registries.setdefault(registry_name, {})
         registry[value] = object
@@ -1412,6 +1416,7 @@ class _ActionsContainer(object):
     # ==================================
     # Namespace default accessor methods
     # ==================================
+
     def set_defaults(self, **kwargs):
         self._defaults.update(kwargs)
 
@@ -1431,6 +1436,7 @@ class _ActionsContainer(object):
     # =======================
     # Adding argument actions
     # =======================
+
     def add_argument(self, *args, **kwargs):
         """
         add_argument(dest, ..., name=value, ...)
@@ -1820,6 +1826,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # =======================
     # Pretty __repr__ methods
     # =======================
+
     def _get_kwargs(self):
         names = [
             'prog',
@@ -1834,6 +1841,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # ==================================
     # Optional/Positional adding methods
     # ==================================
+
     def add_subparsers(self, **kwargs):
         if self._subparsers is not None:
             raise ArgumentError(None, _('cannot have multiple subparser arguments'))
@@ -1885,6 +1893,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # =====================================
     # Command line argument parsing methods
     # =====================================
+
     def parse_args(self, args=None, namespace=None):
         args, argv = self.parse_known_args(args, namespace)
         if argv:
@@ -2479,6 +2488,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # ========================
     # Value conversion methods
     # ========================
+
     def _get_values(self, action, arg_strings):
         # optional argument produces a default when not present
         if not arg_strings and action.nargs == OPTIONAL:
@@ -2570,6 +2580,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # =======================
     # Help-formatting methods
     # =======================
+
     def format_usage(self):
         formatter = self._get_formatter()
         formatter.add_usage(self.usage, self._actions,
@@ -2605,6 +2616,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # =====================
     # Help-printing methods
     # =====================
+
     def print_usage(self, file=None):
         if file is None:
             file = _sys.stdout
@@ -2626,6 +2638,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # ===============
     # Exiting methods
     # ===============
+
     def exit(self, status=0, message=None):
         if message:
             self._print_message(message, _sys.stderr)
