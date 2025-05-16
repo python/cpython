@@ -182,7 +182,7 @@ def _strip_ipv6_iface(enc_name: bytes) -> bytes:
 
 class HTTPMessage(email.message.Message):
 
-    # The getallmatchingheaders() method was only used in by the CGI handler
+    # The getallmatchingheaders() method was only used by the CGI handler
     # that was removed in Python 3.15. However, since the public API was not
     # properly defined, it will be kept for backwards compatibility reasons.
 
