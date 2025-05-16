@@ -17,6 +17,7 @@ _C_EXTENSION = 3
 _PKG_DIRECTORY = 5
 _C_BUILTIN = 6
 _PY_FROZEN = 7
+_NAMESPACE = 8
 
 # Modulefinder does a good job at simulating Python's, but it can not
 # handle __path__ modifications packages make at runtime.  Therefore there
@@ -66,7 +67,10 @@ def _find_module(name, path=None):
 
     file_path = spec.origin
 
-    if spec.loader.is_package(name):
+    if isinstance(spec.loader, importlib.machinery.NamespaceLoader):
+        return None, spec.submodule_search_locations, ("", "", _NAMESPACE)
+
+    if spec.loader.is_package(name):  # non-namespace package
         return None, os.path.dirname(file_path), ("", "", _PKG_DIRECTORY)
 
     if isinstance(spec.loader, importlib.machinery.SourceFileLoader):
