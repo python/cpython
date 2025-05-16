@@ -195,7 +195,7 @@ the built-in type :func:`range` represents immutable arithmetic sequences of int
 For instance, iterating ``range(3)`` successively yields 0, 1, and then 2.
 
 .. versionchanged:: 3.11
-   starred elements are now allowed in the expression list.
+   Starred elements are now allowed in the expression list.
 
 
 .. _try:
