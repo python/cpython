@@ -293,10 +293,10 @@ class Formatter:
         Return an iterable that contains tuples of the form
         (literal_text, field_name, format_spec, conversion).
 
-        *literal_text* can be zero length and *field_name*
-        can be None, in which case nothing is formatted.
-
-        If *field_name* is not None, it is looked up and
+        *literal_text* can be zero length;
+        
+        *field_name* can be None, in which case there's no object
+        to format and output; otherwise, it is looked up and
         formatted with *format_spec* and *conversion*.
         """
         return _string.formatter_parser(format_string)
