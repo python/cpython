@@ -12,7 +12,6 @@ import os
 import socket
 import sys
 import re
-import base64
 import ntpath
 import pathlib
 import shutil
