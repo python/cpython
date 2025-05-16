@@ -1698,7 +1698,7 @@ class CommandLineTestCase(unittest.TestCase):
         options = ['-h', '--help']
         for option in options:
             with self.assertRaises(SystemExit):
-                output = self.invoke_httpd(option)
+                _ = self.invoke_httpd(option)
 
     @mock.patch('http.server.test')
     def test_unknown_flag(self, _):
