@@ -32,6 +32,7 @@
 #include "microprotocols.h"
 #include "row.h"
 #include "blob.h"
+#include "util.h"
 
 #if SQLITE_VERSION_NUMBER < 3015002
 #error "SQLite 3.15.2 or higher required"
@@ -405,51 +406,39 @@ pysqlite_error_name(int rc)
 }
 
 static int
-add_sequence_constants(PyObject *module)
+add_keyword_tuple(PyObject *module)
 {
-    PyObject *kwd;
-    const char *_keywords[] = {
-        "ABORT", "ACTION", "ADD", "AFTER", "ALL", "ALTER", "ALWAYS", "ANALYZE",
-        "AND", "AS", "ASC", "ATTACH", "AUTOINCREMENT", "BEFORE", "BEGIN",
-        "BETWEEN", "BY", "CASCADE", "CASE", "CAST", "CHECK", "COLLATE",
-        "COLUMN", "COMMIT", "CONFLICT", "CONSTRAINT", "CREATE", "CROSS",
-        "CURRENT", "CURRENT_DATE", "CURRENT_TIME", "CURRENT_TIMESTAMP",
-        "DATABASE", "DEFAULT", "DEFERRABLE", "DEFERRED", "DELETE", "DESC",
-        "DETACH", "DISTINCT", "DO", "DROP", "EACH", "ELSE", "END", "ESCAPE",
-        "EXCEPT", "EXCLUDE", "EXCLUSIVE", "EXISTS", "EXPLAIN", "FAIL",
-        "FILTER", "FIRST", "FOLLOWING", "FOR", "FOREIGN", "FROM", "FULL",
-        "GENERATED", "GLOB", "GROUP", "GROUPS", "HAVING", "IF", "IGNORE",
-        "IMMEDIATE", "IN", "INDEX", "INDEXED", "INITIALLY", "INNER", "INSERT",
-        "INSTEAD", "INTERSECT", "INTO", "IS", "ISNULL", "JOIN", "KEY", "LAST",
-        "LEFT", "LIKE", "LIMIT", "MATCH", "MATERIALIZED", "NATURAL", "NO",
-        "NOT", "NOTHING", "NOTNULL", "NULL", "NULLS", "OF", "OFFSET", "ON",
-        "OR", "ORDER", "OTHERS", "OUTER", "OVER", "PARTITION", "PLAN",
-        "PRAGMA", "PRECEDING", "PRIMARY", "QUERY", "RAISE", "RANGE",
-        "RECURSIVE", "REFERENCES", "REGEXP", "REINDEX", "RELEASE", "RENAME",
-        "REPLACE", "RESTRICT", "RETURNING", "RIGHT", "ROLLBACK", "ROW", "ROWS",
-        "SAVEPOINT", "SELECT", "SET", "TABLE", "TEMP", "TEMPORARY", "THEN",
-        "TIES", "TO", "TRANSACTION", "TRIGGER", "UNBOUNDED", "UNION", "UNIQUE",
-        "UPDATE", "USING", "VACUUM", "VALUES", "VIEW", "VIRTUAL", "WHEN",
-        "WHERE", "WINDOW", "WITH", "WITHOUT", NULL
-    };
-    PyObject *keywords = PyTuple_New(147);
-
+    int count = sqlite3_keyword_count();
+    PyObject *keywords = PyTuple_New(count);
     if (keywords == NULL) {
-        return -1;
+        goto error;
     }
-    for (int i = 0; _keywords[i] != NULL; i++) {
-        kwd = PyUnicode_FromString(_keywords[i]);
-        if (PyTuple_SetItem(keywords, i, kwd) != 0) {
+    for (int i = 0; i < count; i++) {
+        const char *keyword;
+        int size;
+        int result = sqlite3_keyword_name(i, &keyword, &size);
+        if (result != SQLITE_OK) {
+            pysqlite_state *state = pysqlite_get_state(module);
+            set_error_from_code(state, result);
+            goto error;
+        }
+        PyObject *kwd = PyUnicode_FromStringAndSize(keyword, size);
+        if (!kwd) {
+            goto error;
+        }
+        if (PyTuple_SetItem(keywords, i, kwd) < 0) {
             Py_DECREF(kwd);
-            Py_DECREF(keywords);
-            return -1;
+            goto error;
         }
     }
     if (PyModule_Add(module, "SQLITE_KEYWORDS", keywords) < 0) {
-        Py_DECREF(keywords);
-        return -1;
+        goto error;
     }
     return 0;
+
+error:
+    Py_XDECREF(keywords);
+    return -1;
 }
 
 static int
@@ -750,8 +739,8 @@ module_exec(PyObject *module)
         goto error;
     }
 
-    /* Set sequence constants */
-    if (add_sequence_constants(module) < 0) {
+    /* Set the keyword tuple */
+    if (add_keyword_tuple(module) < 0) {
         goto error;
     }
 
