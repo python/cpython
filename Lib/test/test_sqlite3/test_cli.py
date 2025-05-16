@@ -273,7 +273,7 @@ class CompletionTest(unittest.TestCase):
         self.assertEqual(len(indices), 2)
         start, end = indices[0] + 1, indices[1]
         candidates = tuple(map(str.strip, output_lines[start:end]))
-        self.assertEqual(candidates, SQLITE_KEYWORDS)
+        self.assertEqual(candidates, sorted(SQLITE_KEYWORDS))
 
 
 if __name__ == "__main__":
