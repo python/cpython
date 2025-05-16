@@ -3,8 +3,8 @@ import sqlite3
 import textwrap
 import unittest
 
+from _sqlite3 import SQLITE_KEYWORDS
 from sqlite3.__main__ import main as cli
-from sqlite3._completer import KEYWORDS
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 from test.support.pty_helper import run_pty
