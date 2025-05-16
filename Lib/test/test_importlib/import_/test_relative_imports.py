@@ -223,6 +223,14 @@ class RelativeImports:
             self.__import__('sys', {'__package__': '', '__spec__': None},
                             level=1)
 
+    def test_malicious_relative_import(self):
+        # testing for gh-134100
+        import sys
+        loooong = "".ljust(0x23000, "b")
+        sys.modules.update({f"a.{loooong}.c": {}})
+        with self.assertRaisesRegex(KeyError, r"'a\.b+' not in sys\.modules as expected"):
+            __import__(f"{loooong}.c", {"__package__": "a"}, level=1)
+
 
 (Frozen_RelativeImports,
  Source_RelativeImports
