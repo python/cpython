@@ -755,6 +755,11 @@ class ProcessPoolExecutor(_base.Executor):
                 self._executor_manager_thread_wakeup
 
     def _adjust_process_count(self):
+        # gh-132969: avoid error if shutdown(wait=False) is called and state is reset
+        # and leaving the executor still running
+        if self._processes is None:
+            return
+
         # if there's an idle process, we don't need to spawn a new one.
         if self._idle_worker_semaphore.acquire(blocking=False):
             return
