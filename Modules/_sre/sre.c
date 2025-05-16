@@ -2492,7 +2492,7 @@ match_getitem(PyObject *op, PyObject* item)
             PyObject* index = PyDict_GetItemWithError(self->pattern->groupindex, item);
             if (index && PyLong_Check(index)) {
                 Py_ssize_t i = PyLong_AsSsize_t(index);
-                if (i != -1) {
+                if (!PyErr_Occurred()) {
                     return match_item(op, i);
                 }
             }
