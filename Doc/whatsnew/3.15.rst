@@ -121,6 +121,14 @@ Deprecated
 Removed
 =======
 
+platform
+--------
+
+* Removed the :func:`!platform.java_ver` function,
+  which was deprecated since Python 3.13.
+  (Contributed by Alexey Makridenko in :gh:`133604`.)
+
+
 sysconfig
 ---------
 
