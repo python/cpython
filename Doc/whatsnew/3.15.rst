@@ -70,12 +70,6 @@ Summary --- release highlights
 New features
 ============
 
-sqlite3
--------
-
-* Support keyword completion in the :mod:`sqlite3` command-line interface.
-  (Contributed by Tan Long in :gh:`133393`.)
-
 
 Other language changes
 ======================
@@ -93,6 +87,13 @@ New modules
 
 Improved modules
 ================
+
+sqlite3
+-------
+
+* Support keyword completion in the :mod:`sqlite3` command-line interface.
+  (Contributed by Tan Long in :gh:`133393`.)
+
 
 ssl
 ---

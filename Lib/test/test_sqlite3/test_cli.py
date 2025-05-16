@@ -205,6 +205,7 @@ class InteractiveSession(unittest.TestCase):
             self.assertIn('\x1b[1;35mOperationalError (SQLITE_ERROR)\x1b[0m: '
                           '\x1b[35mnear "sel": syntax error\x1b[0m', err)
 
+
 @requires_subprocess()
 class CompletionTest(unittest.TestCase):
     PS1 = "sqlite> "
@@ -215,15 +216,18 @@ class CompletionTest(unittest.TestCase):
         if readline.backend == "editline":
             raise unittest.SkipTest("libedit readline is not supported")
 
-    def test_keyword_completion(self):
+    def write_input(self, input, env=None):
         script = textwrap.dedent("""
             import readline
             readline.parse_and_bind("set colored-completion-prefix off")
             from sqlite3.__main__ import main; main()
         """)
+        return run_pty(script, input, env)
+
+    def test_keyword_completion(self):
         # List candidates starting with 'S', there should be multiple matches.
         input = b"S\t\tEL\t 1;\n.quit\n"
-        output = run_pty(script, input)
+        output = self.write_input(input)
         self.assertIn(b"SELECT", output)
         self.assertIn(b"SET", output)
         self.assertIn(b"SAVEPOINT", output)
@@ -231,21 +235,18 @@ class CompletionTest(unittest.TestCase):
 
         # Keywords are completed in upper case for even lower case user input
         input = b"sel\t\t 1;\n.quit\n"
-        output = run_pty(script, input)
+        output = self.write_input(input)
         self.assertIn(b"SELECT", output)
         self.assertIn(b"(1,)", output)
 
     def test_nothing_to_complete(self):
-        script = textwrap.dedent("""
-            import readline
-            readline.parse_and_bind("set colored-completion-prefix off")
-            from sqlite3.__main__ import main; main()
-        """)
         input = b"xyzzy\t\t\b\b\b\b\b.quit\n"
-        output = run_pty(script, input, env={"NO_COLOR": "1"})
+        # set NO_COLOR to disable coloring for self.PS1
+        output = self.write_input(input, env={"NO_COLOR": "1"})
         output_lines = output.decode().splitlines()
-        line_num = next(i for i, line in enumerate(output_lines, 1)
-                        if line.startswith(f"{self.PS1}xyzzy"))
+        line_num = next((i for i, line in enumerate(output_lines, 1)
+                         if line.startswith(f"{self.PS1}xyzzy")), -1)
+        self.assertNotEqual(line_num, -1)
         # completions occupy lines, assert no extra lines when there is nothing
         # to complete
         self.assertEqual(line_num, len(output_lines))
@@ -273,6 +274,7 @@ class CompletionTest(unittest.TestCase):
                 break
             candidates.append(line.strip())
         self.assertEqual(sorted(candidates, reverse=True), candidates)
+
 
 if __name__ == "__main__":
     unittest.main()

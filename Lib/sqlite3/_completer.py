@@ -7,9 +7,10 @@ _completion_matches = []
 def _complete(text, state):
     global _completion_matches
     if state == 0:
-        _completion_matches = [c + " " for c in SQLITE_KEYWORDS if c.startswith(text.upper())]
+        text_upper = text.upper()
+        _completion_matches = [c for c in SQLITE_KEYWORDS if c.startswith(text_upper)]
     try:
-        return _completion_matches[state]
+        return _completion_matches[state] + " "
     except IndexError:
         return None
 
