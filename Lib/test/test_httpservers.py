@@ -1736,7 +1736,7 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
             f.write(self.tls_password.encode())
         self.addCleanup(os_helper.unlink, self.tls_password_file)
 
-    def fetch_file(self, path, allow_self_signed_cert=True) -> bytes:
+    def fetch_file(self, path, allow_self_signed_cert=True):
         context = ssl.create_default_context()
         if allow_self_signed_cert:
             context.check_hostname = False
