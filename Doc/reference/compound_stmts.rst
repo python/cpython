@@ -157,15 +157,14 @@ The :keyword:`for` statement is used to iterate over the elements of a sequence
    for_stmt: "for" `target_list` "in" `starred_expression_list` ":" `suite`
            : ["else" ":" `suite`]
 
-The expression following ``in`` is evaluated once; it should yield an :term:`iterable` object.
-An :term:`iterator` is created for that iterable. The first item provided by the iterator
-is then assigned to the target list using the standard rules for assignments
-(see :ref:`assignment`), and the suite is executed. This repeats for each item provided
-by the iterator. When the iterator is exhausted, the suite in the :keyword:`!else` clause,
-if present, is executed, and the loop terminates.
-
-As of Python 3.11, unpacking with starred expressions (e.g., ``*x``) is supported
-in the iterable expression.
+The expression following ``in`` is evaluated once; it should yield an
+:term:`iterable` object. An :term:`iterator` is created for that iterable. The
+first item provided by the iterator is then assigned to the target list using
+the standard rules for assignments (see :ref:`assignment`), and the suite is
+executed. This repeats for each item provided by the iterator. When the iterator
+is exhausted, the suite in the :keyword:`!else` clause, if present, is
+executed,
+and the loop terminates.
 
 .. index::
    pair: statement; break
@@ -197,7 +196,7 @@ the built-in type :func:`range` represents immutable arithmetic sequences of int
 For instance, iterating ``range(3)`` successively yields 0, 1, and then 2.
 
 .. versionchanged:: 3.11
-   Starred elements are now allowed in the expression list.
+   starred elements are now allowed in the expression list.
 
 
 .. _try:
@@ -234,7 +233,8 @@ and information on using the :keyword:`raise` statement to generate exceptions
 may be found in section :ref:`raise`.
 
 .. versionchanged:: 3.14
-   Support for optionally dropping grouping parentheses when using multiple exception types. See :pep:`758`.
+   Support for optionally dropping grouping parentheses when using multiple
+   exception types. See :pep:`758`.
 
 .. _except:
 
