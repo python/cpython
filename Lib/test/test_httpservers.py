@@ -1732,11 +1732,10 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         return res.read()
 
     def parse_cli_output(self, output):
-        try:
-            matches = re.search(r'\((https?)://([^/:]+):(\d+)/?\)', output)
-            return matches.group(1), matches.group(2), int(matches.group(3))
-        except:
+        matches = re.search(r'\((https?)://([^/:]+):(\d+)/?\)', output)
+        if matches is None:
             return None, None, None
+        return matches.group(1), matches.group(2), int(matches.group(3))
 
     def wait_for_server(self, proc, protocol, port, bind, timeout=50) -> bool:
         while timeout > 0:
