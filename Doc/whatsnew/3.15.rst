@@ -125,7 +125,7 @@ ctypes
 ------
 
 * Removed the undocumented function :func:`!ctypes.SetPointerType`,
-  which has been deprecated since 3.13.
+  which has been deprecated since Python 3.13.
   (Contributed by Bénédikt Tran in :gh:`133866`.)
 
 
