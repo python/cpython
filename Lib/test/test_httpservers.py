@@ -1694,14 +1694,7 @@ class CommandLineTestCase(unittest.TestCase):
     @mock.patch('http.server.test')
     def test_no_arguments(self, mock_func):
         self.invoke_httpd()
-        mock_func.assert_called_once_with(HandlerClass=self.default_handler,
-                                          ServerClass=self.default_server,
-                                          protocol=self.default_protocol,
-                                          port=self.default_port,
-                                          bind=self.default_bind,
-                                          tls_cert=None,
-                                          tls_key=None,
-                                          tls_password=None)
+        mock_func.assert_called_once_with(**self.args)
         mock_func.reset_mock()
 
     @mock.patch('http.server.test')
