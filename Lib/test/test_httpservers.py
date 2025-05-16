@@ -1550,6 +1550,9 @@ class CommandLineTestCase(unittest.TestCase):
     tls_cert = certdata_file('ssl_cert.pem')
     tls_key = certdata_file('ssl_key.pem')
     tls_password = 'somepass'
+    tls_cert_options = ['--tls-cert']
+    tls_key_options = ['--tls-key']
+    tls_password_options = ['--tls-password-file']
     args = {
         'HandlerClass': default_handler,
         'ServerClass': default_server,
@@ -1629,63 +1632,55 @@ class CommandLineTestCase(unittest.TestCase):
 
     @unittest.skipIf(ssl is None, "requires ssl")
     @mock.patch('http.server.test')
-    def test_tls_flag(self, mock_func):
-        tls_cert_options = ['--tls-cert', ]
-        tls_key_options = ['--tls-key', ]
-        tls_password_options = ['--tls-password-file', ]
-        # Normal: --tls-cert and --tls-key
-
-        for tls_cert_option in tls_cert_options:
-            for tls_key_option in tls_key_options:
+    def test_tls_cert_and_key_flags(self, mock_func):
+        for tls_cert_option in self.tls_cert_options:
+            for tls_key_option in self.tls_key_options:
                 self.invoke_httpd(tls_cert_option, self.tls_cert,
                                   tls_key_option, self.tls_key)
-                self.args['tls_cert'] = self.tls_cert
-                self.args['tls_key'] = self.tls_key
-                mock_func.assert_called_once_with(**self.args)
-                self.args['tls_cert'] = None
-                self.args['tls_key'] = None
+                call_args = {
+                    'tls_cert': self.tls_cert,
+                    'tls_key': self.tls_key,
+                }
+                call_args = self.args | call_args
+                mock_func.assert_called_once_with(**call_args)
                 mock_func.reset_mock()
 
-        # Normal: --tls-cert, --tls-key and --tls-password-file
-
-        for tls_cert_option in tls_cert_options:
-            for tls_key_option in tls_key_options:
-                for tls_password_option in tls_password_options:
+    @unittest.skipIf(ssl is None, "requires ssl")
+    @mock.patch('http.server.test')
+    def test_tls_cert_and_key_and_password_flags(self, mock_func):
+        for tls_cert_option in self.tls_cert_options:
+            for tls_key_option in self.tls_key_options:
+                for tls_password_option in self.tls_password_options:
                     self.invoke_httpd(tls_cert_option,
                                       self.tls_cert,
                                       tls_key_option,
                                       self.tls_key,
                                       tls_password_option,
                                       self.tls_password_file)
-                    self.args['tls_cert'] = self.tls_cert
-                    self.args['tls_key'] = self.tls_key
-                    self.args['tls_password'] = self.tls_password
-                    mock_func.assert_called_once_with(**self.args)
-                    self.args['tls_cert'] = None
-                    self.args['tls_key'] = None
-                    self.args['tls_password'] = None
+                    call_args = {
+                        'tls_cert': self.tls_cert,
+                        'tls_key': self.tls_key,
+                        'tls_password': self.tls_password,
+                    }
+                    call_args = self.args | call_args
+                    mock_func.assert_called_once_with(**call_args)
                     mock_func.reset_mock()
 
-        # Abnormal: --tls-key without --tls-cert
-
-        for tls_key_option in tls_key_options:
-            for tls_cert_option in tls_cert_options:
+    @unittest.skipIf(ssl is None, "requires ssl")
+    @mock.patch('http.server.test')
+    def test_missing_tls_cert_flag(self, mock_func):
+        for tls_key_option in self.tls_key_options:
+            for tls_cert_option in self.tls_cert_options:
                 with self.assertRaises(SystemExit):
                     self.invoke_httpd(tls_key_option, self.tls_key)
                     mock_func.reset_mock()
 
-        # Abnormal: --tls-password-file without --tls-cert
-
-        for tls_password_option in tls_password_options:
-            with self.assertRaises(SystemExit):
-                self.invoke_httpd(tls_password_option, self.tls_password_file)
-                mock_func.reset_mock()
-
-        # Abnormal: --tls-password-file cannot be opened
-
+    @unittest.skipIf(ssl is None, "requires ssl")
+    @mock.patch('http.server.test')
+    def test_invalid_password_file(self, mock_func):
         non_existent_file = 'non_existent_file'
-        for tls_password_option in tls_password_options:
-            for tls_cert_option in tls_cert_options:
+        for tls_password_option in self.tls_password_options:
+            for tls_cert_option in self.tls_cert_options:
                 with self.assertRaises(SystemExit):
                     self.invoke_httpd(tls_cert_option,
                                       self.tls_cert,
