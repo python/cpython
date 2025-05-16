@@ -1069,17 +1069,6 @@ faulthandler_suppress_crash_report(void)
 #endif
 }
 
-static PyObject*
-faulthandler_read_null(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    volatile int *x;
-    volatile int y;
-
-    faulthandler_suppress_crash_report();
-    x = NULL;
-    y = *x;
-    return PyLong_FromLong(y);
-}
 
 static void
 faulthandler_raise_sigsegv(void)
@@ -1304,10 +1293,6 @@ static PyMethodDef module_methods[] = {
                "Unregister the handler of the signal "
                "'signum' registered by register().")},
 #endif
-    {"_read_null", faulthandler_read_null, METH_NOARGS,
-     PyDoc_STR("_read_null($module, /)\n--\n\n"
-               "Read from NULL, raise "
-               "a SIGSEGV or SIGBUS signal depending on the platform.")},
     {"_sigsegv", faulthandler_sigsegv, METH_VARARGS,
      PyDoc_STR("_sigsegv($module, release_gil=False, /)\n--\n\n"
                "Raise a SIGSEGV signal.")},
