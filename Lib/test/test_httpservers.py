@@ -1716,7 +1716,7 @@ class CommandLineTestCase(unittest.TestCase):
     def test_unknown_flag(self, _):
         with self.assertRaises(SystemExit):
             output = self.invoke_httpd('--unknown-flag')
-            self.assertStartsWith(output, 'usage: ')
+        self.assertStartsWith(output, 'usage: ')
 
 
 class CommandLineRunTimeTestCase(unittest.TestCase):
