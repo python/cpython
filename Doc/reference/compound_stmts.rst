@@ -151,7 +151,7 @@ The :keyword:`!for` statement
    single: : (colon); compound statement
 
 The :keyword:`for` statement is used to iterate over the elements of a sequence
-(such as a string, tuple, or list) or other iterable object:
+(such as a string, tuple or list) or other iterable object:
 
 .. productionlist:: python-grammar
    for_stmt: "for" `target_list` "in" `starred_expression_list` ":" `suite`
