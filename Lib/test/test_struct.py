@@ -22,12 +22,6 @@ byteorders = '', '@', '=', '<', '>', '!'
 INF = float('inf')
 NAN = float('nan')
 
-try:
-    struct.pack('D', 1j)
-    have_c_complex = True
-except struct.error:
-    have_c_complex = False
-
 def iter_integer_formats(byteorders=byteorders):
     for code in integer_codes:
         for byteorder in byteorders:
@@ -796,7 +790,6 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         s = struct.Struct('=i2H')
         self.assertEqual(repr(s), f'Struct({s.format!r})')
 
-    @unittest.skipUnless(have_c_complex, "requires C11 complex type support")
     def test_c_complex_round_trip(self):
         values = [complex(*_) for _ in combinations([1, -1, 0.0, -0.0, 2,
                                                      -3, INF, -INF, NAN], 2)]
@@ -805,19 +798,6 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 with self.subTest(z=z, format=f):
                     round_trip = struct.unpack(f, struct.pack(f, z))[0]
                     self.assertComplexesAreIdentical(z, round_trip)
-
-    @unittest.skipIf(have_c_complex, "requires no C11 complex type support")
-    def test_c_complex_error(self):
-        msg1 = "'F' format not supported on this system"
-        msg2 = "'D' format not supported on this system"
-        with self.assertRaisesRegex(struct.error, msg1):
-            struct.pack('F', 1j)
-        with self.assertRaisesRegex(struct.error, msg1):
-            struct.unpack('F', b'1')
-        with self.assertRaisesRegex(struct.error, msg2):
-            struct.pack('D', 1j)
-        with self.assertRaisesRegex(struct.error, msg2):
-            struct.unpack('D', b'1')
 
 
 class UnpackIteratorTest(unittest.TestCase):

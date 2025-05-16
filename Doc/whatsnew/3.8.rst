@@ -1629,8 +1629,8 @@ Build and C API Changes
   (Contributed by Pablo Galindo in :issue:`37221`.)
 
 * :c:func:`!Py_SetPath` now sets :data:`sys.executable` to the program full
-  path (:c:func:`Py_GetProgramFullPath`) rather than to the program name
-  (:c:func:`Py_GetProgramName`).
+  path (:c:func:`!Py_GetProgramFullPath`) rather than to the program name
+  (:c:func:`!Py_GetProgramName`).
   (Contributed by Victor Stinner in :issue:`38234`.)
 
 

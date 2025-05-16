@@ -1340,7 +1340,7 @@ if __name__ == '__main__':
     import argparse
     import contextlib
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     parser.add_argument('--cgi', action='store_true',
                         help='run as CGI server')
     parser.add_argument('-b', '--bind', metavar='ADDRESS',

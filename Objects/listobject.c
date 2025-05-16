@@ -550,7 +550,6 @@ list_dealloc(PyObject *self)
     PyListObject *op = (PyListObject *)self;
     Py_ssize_t i;
     PyObject_GC_UnTrack(op);
-    Py_TRASHCAN_BEGIN(op, list_dealloc)
     if (op->ob_item != NULL) {
         /* Do it backwards, for Christian Tismer.
            There's a simple test case where somehow this reduces
@@ -569,7 +568,6 @@ list_dealloc(PyObject *self)
     else {
         PyObject_GC_Del(op);
     }
-    Py_TRASHCAN_END
 }
 
 static PyObject *
@@ -1315,9 +1313,15 @@ list_extend_set(PyListObject *self, PySetObject *other)
 {
     Py_ssize_t m = Py_SIZE(self);
     Py_ssize_t n = PySet_GET_SIZE(other);
-    if (list_resize(self, m + n) < 0) {
+    Py_ssize_t r = m + n;
+    if (r == 0) {
+        return 0;
+    }
+    if (list_resize(self, r) < 0) {
         return -1;
     }
+
+    assert(self->ob_item != NULL);
     /* populate the end of self with iterable's items */
     Py_ssize_t setpos = 0;
     Py_hash_t hash;
@@ -1327,7 +1331,7 @@ list_extend_set(PyListObject *self, PySetObject *other)
         FT_ATOMIC_STORE_PTR_RELEASE(*dest, key);
         dest++;
     }
-    Py_SET_SIZE(self, m + n);
+    Py_SET_SIZE(self, r);
     return 0;
 }
 
@@ -1337,10 +1341,15 @@ list_extend_dict(PyListObject *self, PyDictObject *dict, int which_item)
     // which_item: 0 for keys and 1 for values
     Py_ssize_t m = Py_SIZE(self);
     Py_ssize_t n = PyDict_GET_SIZE(dict);
-    if (list_resize(self, m + n) < 0) {
+    Py_ssize_t r = m + n;
+    if (r == 0) {
+        return 0;
+    }
+    if (list_resize(self, r) < 0) {
         return -1;
     }
 
+    assert(self->ob_item != NULL);
     PyObject **dest = self->ob_item + m;
     Py_ssize_t pos = 0;
     PyObject *keyvalue[2];
@@ -1351,7 +1360,7 @@ list_extend_dict(PyListObject *self, PyDictObject *dict, int which_item)
         dest++;
     }
 
-    Py_SET_SIZE(self, m + n);
+    Py_SET_SIZE(self, r);
     return 0;
 }
 
@@ -1360,10 +1369,15 @@ list_extend_dictitems(PyListObject *self, PyDictObject *dict)
 {
     Py_ssize_t m = Py_SIZE(self);
     Py_ssize_t n = PyDict_GET_SIZE(dict);
-    if (list_resize(self, m + n) < 0) {
+    Py_ssize_t r = m + n;
+    if (r == 0) {
+        return 0;
+    }
+    if (list_resize(self, r) < 0) {
         return -1;
     }
 
+    assert(self->ob_item != NULL);
     PyObject **dest = self->ob_item + m;
     Py_ssize_t pos = 0;
     Py_ssize_t i = 0;
@@ -1379,7 +1393,7 @@ list_extend_dictitems(PyListObject *self, PyDictObject *dict)
         i++;
     }
 
-    Py_SET_SIZE(self, m + n);
+    Py_SET_SIZE(self, r);
     return 0;
 }
 
@@ -3603,6 +3617,24 @@ list_slice_wrap(PyListObject *aa, Py_ssize_t start, Py_ssize_t stop, Py_ssize_t 
     return res;
 }
 
+static inline PyObject*
+list_slice_subscript(PyObject* self, PyObject* item)
+{
+    assert(PyList_Check(self));
+    assert(PySlice_Check(item));
+    Py_ssize_t start, stop, step;
+    if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
+        return NULL;
+    }
+    return list_slice_wrap((PyListObject *)self, start, stop, step);
+}
+
+PyObject *
+_PyList_SliceSubscript(PyObject* _self, PyObject* item)
+{
+    return list_slice_subscript(_self, item);
+}
+
 static PyObject *
 list_subscript(PyObject* _self, PyObject* item)
 {
@@ -3617,11 +3649,7 @@ list_subscript(PyObject* _self, PyObject* item)
         return list_item((PyObject *)self, i);
     }
     else if (PySlice_Check(item)) {
-        Py_ssize_t start, stop, step;
-        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
-            return NULL;
-        }
-        return list_slice_wrap(self, start, stop, step);
+        return list_slice_subscript(_self, item);
     }
     else {
         PyErr_Format(PyExc_TypeError,

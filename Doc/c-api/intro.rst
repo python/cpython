@@ -779,20 +779,11 @@ found along :envvar:`PATH`.)  The user can override this behavior by setting the
 environment variable :envvar:`PYTHONHOME`, or insert additional directories in
 front of the standard path by setting :envvar:`PYTHONPATH`.
 
-.. index::
-   single: Py_GetPath (C function)
-   single: Py_GetPrefix (C function)
-   single: Py_GetExecPrefix (C function)
-   single: Py_GetProgramFullPath (C function)
-
 The embedding application can steer the search by setting
 :c:member:`PyConfig.program_name` *before* calling
 :c:func:`Py_InitializeFromConfig`. Note that
 :envvar:`PYTHONHOME` still overrides this and :envvar:`PYTHONPATH` is still
-inserted in front of the standard path.  An application that requires total
-control has to provide its own implementation of :c:func:`Py_GetPath`,
-:c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`, and
-:c:func:`Py_GetProgramFullPath` (all defined in :file:`Modules/getpath.c`).
+inserted in front of the standard path.
 
 .. index:: single: Py_IsInitialized (C function)
 
@@ -826,14 +817,17 @@ frequently used builds will be described in the remainder of this section.
 
 Compiling the interpreter with the :c:macro:`!Py_DEBUG` macro defined produces
 what is generally meant by :ref:`a debug build of Python <debug-build>`.
-:c:macro:`!Py_DEBUG` is enabled in the Unix build by adding
-:option:`--with-pydebug` to the :file:`./configure` command.
-It is also implied by the presence of the
-not-Python-specific :c:macro:`!_DEBUG` macro.  When :c:macro:`!Py_DEBUG` is enabled
-in the Unix build, compiler optimization is disabled.
+
+On Unix, :c:macro:`!Py_DEBUG` can be enabled by adding :option:`--with-pydebug`
+to the :file:`./configure` command. This will also disable compiler optimization.
+
+On Windows, selecting a debug build (e.g., by passing the :option:`-d` option to
+:file:`PCbuild/build.bat`) automatically enables :c:macro:`!Py_DEBUG`.
+Additionally, the presence of the not-Python-specific :c:macro:`!_DEBUG` macro,
+when defined by the compiler, will also implicitly enable :c:macro:`!Py_DEBUG`.
 
 In addition to the reference count debugging described below, extra checks are
-performed, see :ref:`Python Debug Build <debug-build>`.
+performed. See :ref:`Python Debug Build <debug-build>` for more details.
 
 Defining :c:macro:`Py_TRACE_REFS` enables reference tracing
 (see the :option:`configure --with-trace-refs option <--with-trace-refs>`).

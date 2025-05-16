@@ -1,1 +1,0 @@
-Improved the accuracy of ``statistics.NormalDist.cdf`` for negative inputs.

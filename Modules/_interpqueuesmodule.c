@@ -1138,7 +1138,7 @@ queue_put(_queues *queues, int64_t qid, PyObject *obj, int fmt, int unboundop)
     assert(queue != NULL);
 
     // Convert the object to cross-interpreter data.
-    _PyXIData_t *data = GLOBAL_MALLOC(_PyXIData_t);
+    _PyXIData_t *data = _PyXIData_New();
     if (data == NULL) {
         _queue_unmark_waiter(queue, queues->mutex);
         return -1;

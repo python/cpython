@@ -342,6 +342,7 @@ search_section_in_file(const char* secname, char* path, uintptr_t base, mach_vm_
     munmap(map, fs.st_size);
     if (close(fd) != 0) {
         PyErr_SetFromErrno(PyExc_OSError);
+        result = 0;
     }
     return result;
 }
@@ -371,7 +372,9 @@ search_map_for_section(proc_handle_t *handle, const char* secname, const char* s
 
     mach_port_t proc_ref = pid_to_task(handle->pid);
     if (proc_ref == 0) {
-        PyErr_SetString(PyExc_PermissionError, "Cannot get task for PID");
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_PermissionError, "Cannot get task for PID");
+        }
         return 0;
     }
 
@@ -495,6 +498,7 @@ exit:
     }
     if (fd >= 0 && close(fd) != 0) {
         PyErr_SetFromErrno(PyExc_OSError);
+        result = 0;
     }
     return result;
 }
@@ -570,7 +574,10 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
     }
 
     PyMem_Free(line);
-    fclose(maps_file);
+    if (fclose(maps_file) != 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        retval = 0;
+    }
 
     return retval;
 }
@@ -681,14 +688,18 @@ _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
     address = search_windows_map_for_section(handle, "PyRuntime", L"python");
     if (address == 0) {
         // Error out: 'python' substring covers both executable and DLL
+        PyObject *exc = PyErr_GetRaisedException();
         PyErr_SetString(PyExc_RuntimeError, "Failed to find the PyRuntime section in the process.");
+        _PyErr_ChainExceptions1(exc);
     }
 #elif defined(__linux__)
     // On Linux, search for 'python' in executable or DLL
     address = search_linux_map_for_section(handle, "PyRuntime", "python");
     if (address == 0) {
         // Error out: 'python' substring covers both executable and DLL
+        PyObject *exc = PyErr_GetRaisedException();
         PyErr_SetString(PyExc_RuntimeError, "Failed to find the PyRuntime section in the process.");
+        _PyErr_ChainExceptions1(exc);
     }
 #elif defined(__APPLE__) && TARGET_OS_OSX
     // On macOS, try libpython first, then fall back to python
@@ -699,7 +710,7 @@ _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
         address = search_map_for_section(handle, "PyRuntime", "python");
     }
 #else
-    address = 0;
+    Py_UNREACHABLE();
 #endif
 
     return address;

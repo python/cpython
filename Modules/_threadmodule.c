@@ -511,11 +511,21 @@ ThreadHandle_join(ThreadHandle *self, PyTime_t timeout_ns)
     // To work around this, we set `thread_is_exiting` immediately before
     // `thread_run` returns.  We can be sure that we are not attempting to join
     // ourselves if the handle's thread is about to exit.
-    if (!_PyEvent_IsSet(&self->thread_is_exiting) &&
-        ThreadHandle_ident(self) == PyThread_get_thread_ident_ex()) {
-        // PyThread_join_thread() would deadlock or error out.
-        PyErr_SetString(ThreadError, "Cannot join current thread");
-        return -1;
+    if (!_PyEvent_IsSet(&self->thread_is_exiting)) {
+        if (ThreadHandle_ident(self) == PyThread_get_thread_ident_ex()) {
+            // PyThread_join_thread() would deadlock or error out.
+            PyErr_SetString(ThreadError, "Cannot join current thread");
+            return -1;
+        }
+        if (Py_IsFinalizing()) {
+            // gh-123940: On finalization, other threads are prevented from
+            // running Python code. They cannot finalize themselves,
+            // so join() would hang forever (or until timeout).
+            // We raise instead.
+            PyErr_SetString(PyExc_PythonFinalizationError,
+                            "cannot join thread at interpreter shutdown");
+            return -1;
+        }
     }
 
     // Wait until the deadline for the thread to exit.

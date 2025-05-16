@@ -1410,7 +1410,7 @@ test_unsigned_long_converter(PyObject *module, PyObject *const *args, Py_ssize_t
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (!PyLong_Check(args[2])) {
+    if (!PyIndex_Check(args[2])) {
         _PyArg_BadArgument("test_unsigned_long_converter", "argument 3", "int", args[2]);
         goto exit;
     }
@@ -1425,7 +1425,7 @@ exit:
 static PyObject *
 test_unsigned_long_converter_impl(PyObject *module, unsigned long a,
                                   unsigned long b, unsigned long c)
-/*[clinic end generated code: output=540bb0ba2894e1fe input=f450d94cae1ef73b]*/
+/*[clinic end generated code: output=d74eed227d77a31b input=f450d94cae1ef73b]*/
 
 
 /*[clinic input]
@@ -1525,7 +1525,7 @@ test_unsigned_long_long_converter(PyObject *module, PyObject *const *args, Py_ss
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (!PyLong_Check(args[2])) {
+    if (!PyIndex_Check(args[2])) {
         _PyArg_BadArgument("test_unsigned_long_long_converter", "argument 3", "int", args[2]);
         goto exit;
     }
@@ -1542,7 +1542,7 @@ test_unsigned_long_long_converter_impl(PyObject *module,
                                        unsigned long long a,
                                        unsigned long long b,
                                        unsigned long long c)
-/*[clinic end generated code: output=3d69994f618b46bb input=a15115dc41866ff4]*/
+/*[clinic end generated code: output=5ca4e4dfb3db644b input=a15115dc41866ff4]*/
 
 
 /*[clinic input]

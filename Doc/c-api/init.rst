@@ -77,10 +77,7 @@ The following functions can be safely called before Python is initialized:
 
    Despite their apparent similarity to some of the functions listed above,
    the following functions **should not be called** before the interpreter has
-   been initialized: :c:func:`Py_EncodeLocale`, :c:func:`Py_GetPath`,
-   :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`,
-   :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome`,
-   :c:func:`Py_GetProgramName`, :c:func:`PyEval_InitThreads`, and
+   been initialized: :c:func:`Py_EncodeLocale`, :c:func:`PyEval_InitThreads`, and
    :c:func:`Py_RunMain`.
 
 
@@ -145,9 +142,6 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    :c:member:`PyConfig.pathconfig_warnings` should be used instead, see
    :ref:`Python Initialization Configuration <init-config>`.
 
-   Suppress error messages when calculating the module search path in
-   :c:func:`Py_GetPath`.
-
    Private flag used by ``_freeze_module`` and ``frozenmain`` programs.
 
    .. deprecated-removed:: 3.12 3.15
@@ -203,7 +197,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    Set by the :option:`-i` option.
 
-   .. deprecated:: 3.12
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_IsolatedFlag
 
@@ -586,7 +580,6 @@ Process-wide parameters
    .. index::
       single: Py_Initialize()
       single: main()
-      single: Py_GetPath()
 
    This API is kept for backward compatibility: setting
    :c:member:`PyConfig.program_name` should be used instead, see :ref:`Python
@@ -596,7 +589,7 @@ Process-wide parameters
    the first time, if it is called at all.  It tells the interpreter the value
    of the ``argv[0]`` argument to the :c:func:`main` function of the program
    (converted to wide characters).
-   This is used by :c:func:`Py_GetPath` and some other functions below to find
+   This is used by some other functions below to find
    the Python run-time libraries relative to the interpreter executable.  The
    default value is ``'python'``.  The argument should point to a
    zero-terminated wide character string in static storage whose contents will not
@@ -608,146 +601,6 @@ Process-wide parameters
 
    .. deprecated-removed:: 3.11 3.15
 
-
-.. c:function:: wchar_t* Py_GetProgramName()
-
-   Return the program name set with :c:member:`PyConfig.program_name`, or the default.
-   The returned string points into static storage; the caller should not modify its
-   value.
-
-   This function should not be called before :c:func:`Py_Initialize`, otherwise
-   it returns ``NULL``.
-
-   .. versionchanged:: 3.10
-      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
-
-   .. deprecated-removed:: 3.13 3.15
-      Use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
-      (:data:`sys.executable`) instead.
-
-
-.. c:function:: wchar_t* Py_GetPrefix()
-
-   Return the *prefix* for installed platform-independent files. This is derived
-   through a number of complicated rules from the program name set with
-   :c:member:`PyConfig.program_name` and some environment variables; for example, if the
-   program name is ``'/usr/local/bin/python'``, the prefix is ``'/usr/local'``. The
-   returned string points into static storage; the caller should not modify its
-   value.  This corresponds to the :makevar:`prefix` variable in the top-level
-   :file:`Makefile` and the :option:`--prefix` argument to the :program:`configure`
-   script at build time.  The value is available to Python code as ``sys.base_prefix``.
-   It is only useful on Unix.  See also the next function.
-
-   This function should not be called before :c:func:`Py_Initialize`, otherwise
-   it returns ``NULL``.
-
-   .. versionchanged:: 3.10
-      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
-
-   .. deprecated-removed:: 3.13 3.15
-      Use :c:func:`PyConfig_Get("base_prefix") <PyConfig_Get>`
-      (:data:`sys.base_prefix`) instead. Use :c:func:`PyConfig_Get("prefix")
-      <PyConfig_Get>` (:data:`sys.prefix`) if :ref:`virtual environments
-      <venv-def>` need to be handled.
-
-
-.. c:function:: wchar_t* Py_GetExecPrefix()
-
-   Return the *exec-prefix* for installed platform-*dependent* files.  This is
-   derived through a number of complicated rules from the program name set with
-   :c:member:`PyConfig.program_name` and some environment variables; for example, if the
-   program name is ``'/usr/local/bin/python'``, the exec-prefix is
-   ``'/usr/local'``.  The returned string points into static storage; the caller
-   should not modify its value.  This corresponds to the :makevar:`exec_prefix`
-   variable in the top-level :file:`Makefile` and the ``--exec-prefix``
-   argument to the :program:`configure` script at build  time.  The value is
-   available to Python code as ``sys.base_exec_prefix``.  It is only useful on
-   Unix.
-
-   Background: The exec-prefix differs from the prefix when platform dependent
-   files (such as executables and shared libraries) are installed in a different
-   directory tree.  In a typical installation, platform dependent files may be
-   installed in the :file:`/usr/local/plat` subtree while platform independent may
-   be installed in :file:`/usr/local`.
-
-   Generally speaking, a platform is a combination of hardware and software
-   families, e.g.  Sparc machines running the Solaris 2.x operating system are
-   considered the same platform, but Intel machines running Solaris 2.x are another
-   platform, and Intel machines running Linux are yet another platform.  Different
-   major revisions of the same operating system generally also form different
-   platforms.  Non-Unix operating systems are a different story; the installation
-   strategies on those systems are so different that the prefix and exec-prefix are
-   meaningless, and set to the empty string. Note that compiled Python bytecode
-   files are platform independent (but not independent from the Python version by
-   which they were compiled!).
-
-   System administrators will know how to configure the :program:`mount` or
-   :program:`automount` programs to share :file:`/usr/local` between platforms
-   while having :file:`/usr/local/plat` be a different filesystem for each
-   platform.
-
-   This function should not be called before :c:func:`Py_Initialize`, otherwise
-   it returns ``NULL``.
-
-   .. versionchanged:: 3.10
-      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
-
-   .. deprecated-removed:: 3.13 3.15
-      Use :c:func:`PyConfig_Get("base_exec_prefix") <PyConfig_Get>`
-      (:data:`sys.base_exec_prefix`) instead. Use
-      :c:func:`PyConfig_Get("exec_prefix") <PyConfig_Get>`
-      (:data:`sys.exec_prefix`) if :ref:`virtual environments <venv-def>` need
-      to be handled.
-
-.. c:function:: wchar_t* Py_GetProgramFullPath()
-
-   .. index::
-      single: executable (in module sys)
-
-   Return the full program name of the Python executable; this is  computed as a
-   side-effect of deriving the default module search path  from the program name
-   (set by :c:member:`PyConfig.program_name`). The returned string points into
-   static storage; the caller should not modify its value.  The value is available
-   to Python code as ``sys.executable``.
-
-   This function should not be called before :c:func:`Py_Initialize`, otherwise
-   it returns ``NULL``.
-
-   .. versionchanged:: 3.10
-      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
-
-   .. deprecated-removed:: 3.13 3.15
-      Use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
-      (:data:`sys.executable`) instead.
-
-
-.. c:function:: wchar_t* Py_GetPath()
-
-   .. index::
-      triple: module; search; path
-      single: path (in module sys)
-
-   Return the default module search path; this is computed from the program name
-   (set by :c:member:`PyConfig.program_name`) and some environment variables.
-   The returned string consists of a series of directory names separated by a
-   platform dependent delimiter character.  The delimiter character is ``':'``
-   on Unix and macOS, ``';'`` on Windows.  The returned string points into
-   static storage; the caller should not modify its value.  The list
-   :data:`sys.path` is initialized with this value on interpreter startup; it
-   can be (and usually is) modified later to change the search path for loading
-   modules.
-
-   This function should not be called before :c:func:`Py_Initialize`, otherwise
-   it returns ``NULL``.
-
-   .. XXX should give the exact rules
-
-   .. versionchanged:: 3.10
-      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
-
-   .. deprecated-removed:: 3.13 3.15
-      Use :c:func:`PyConfig_Get("module_search_paths") <PyConfig_Get>`
-      (:data:`sys.path`) instead.
 
 .. c:function:: const char* Py_GetVersion()
 
@@ -917,23 +770,6 @@ Process-wide parameters
    :c:expr:`wchar_t*` string.
 
    .. deprecated-removed:: 3.11 3.15
-
-
-.. c:function:: wchar_t* Py_GetPythonHome()
-
-   Return the default "home", that is, the value set by
-   :c:member:`PyConfig.home`, or the value of the :envvar:`PYTHONHOME`
-   environment variable if it is set.
-
-   This function should not be called before :c:func:`Py_Initialize`, otherwise
-   it returns ``NULL``.
-
-   .. versionchanged:: 3.10
-      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
-
-   .. deprecated-removed:: 3.13 3.15
-      Use :c:func:`PyConfig_Get("home") <PyConfig_Get>` or the
-      :envvar:`PYTHONHOME` environment variable instead.
 
 
 .. _threads:
@@ -1131,7 +967,7 @@ Cautions regarding runtime finalization
 In the late stage of :term:`interpreter shutdown`, after attempting to wait for
 non-daemon threads to exit (though this can be interrupted by
 :class:`KeyboardInterrupt`) and running the :mod:`atexit` functions, the runtime
-is marked as *finalizing*: :c:func:`_Py_IsFinalizing` and
+is marked as *finalizing*: :c:func:`Py_IsFinalizing` and
 :func:`sys.is_finalizing` return true.  At this point, only the *finalization
 thread* that initiated finalization (typically the main thread) is allowed to
 acquire the :term:`GIL`.
@@ -1515,16 +1351,6 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    extensions should use to store interpreter-specific state information.
 
    .. versionadded:: 3.8
-
-
-.. c:function:: PyObject* PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *interp)
-
-   Return a :term:`strong reference` to the ``__main__`` :ref:`module object <moduleobjects>`
-   for the given interpreter.
-
-   The caller must have an :term:`attached thread state`.
-
-   .. versionadded:: 3.13
 
 
 .. c:type:: PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
