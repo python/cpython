@@ -272,8 +272,8 @@ class CompletionTest(unittest.TestCase):
                    if line.startswith(self.PS1)]
         self.assertEqual(len(indices), 2)
         start, end = indices[0] + 1, indices[1]
-        candidates = list(map(str.strip, output_lines[start:end]))
-        self.assertEqual(candidates, list(KEYWORDS))
+        candidates = tuple(map(str.strip, output_lines[start:end]))
+        self.assertEqual(candidates, KEYWORDS)
 
 
 if __name__ == "__main__":
