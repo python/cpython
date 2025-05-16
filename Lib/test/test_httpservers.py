@@ -1626,19 +1626,6 @@ class CommandLineTestCase(unittest.TestCase):
                     self.args['protocol'] = self.default_protocol
                     mock_func.reset_mock()
 
-    # TODO: This test should be removed once the CGI component is removed(3.15)
-    @mock.patch('http.server.test')
-    def test_cgi_flag(self, mock_func):
-        self.invoke_httpd('--cgi')
-        mock_func.assert_called_once_with(HandlerClass=CGIHTTPRequestHandler,
-                                          ServerClass=self.default_server,
-                                          protocol=self.default_protocol,
-                                          port=self.default_port,
-                                          bind=self.default_bind,
-                                          tls_cert=None,
-                                          tls_key=None,
-                                          tls_password=None)
-
     @unittest.skipIf(ssl is None, "requires ssl")
     @mock.patch('http.server.test')
     def test_tls_flag(self, mock_func):
