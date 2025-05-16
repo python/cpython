@@ -703,7 +703,7 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
 
         # Keys dependent on uncontrollable external context
         ignore_keys = {'userbase'}
-        # Keys dependent on Python being run outside the build directrory
+        # Keys dependent on Python being run outside the build directory
         if sysconfig.is_python_build():
             ignore_keys |= {'srcdir'}
         # Keys dependent on the executable location
