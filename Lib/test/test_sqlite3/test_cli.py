@@ -273,7 +273,7 @@ class CompletionTest(unittest.TestCase):
             if line.startswith(self.PS1):
                 break
             candidates.append(line.strip())
-        self.assertEqual(sorted(candidates, reverse=True), candidates)
+        self.assertEqual(sorted(candidates), list(KEYWORDS))
 
 
 if __name__ == "__main__":
