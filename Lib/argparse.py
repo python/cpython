@@ -2562,13 +2562,13 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         return args
 
     def parse_known_intermixed_args(self, args=None, namespace=None):
-        # returns a namespace and list of extras
-        #
-        # positional can be freely intermixed with optionals.  optionals are
-        # first parsed with all positional arguments deactivated.  The 'extras'
-        # are then parsed.  If the parser definition is incompatible with the
-        # intermixed assumptions (e.g. use of REMAINDER, subparsers) a
-        # TypeError is raised.
+        """
+        Return a namespace and list of extras positional can be freely
+        intermixed with optionals.  optionals are first parsed with all
+        positional arguments deactivated.  The 'extras' are then parsed.
+        If the parser definition is incompatible with the intermixed
+        assumptions (e.g. use of REMAINDER, subparsers) a TypeError is raised.
+        """
 
         positionals = self._get_positional_actions()
         a = [action for action in positionals
