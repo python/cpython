@@ -243,8 +243,8 @@ class Fraction(numbers.Rational):
                         numerator = int(num)
                     elif num and not is_fraction_format:
                         denominator = 1
-                        num, _, exp = num.replace('E', 'e').partition('e')
-                        if _ and not exp:
+                        num, is_exp_format, exp = num.replace('E', 'e').partition('e')
+                        if is_exp_format and not exp:
                             raise ValueError
                         num, _, decimal = num.partition('.')
                         if num:
