@@ -71,6 +71,7 @@ New features
 ============
 
 
+
 Other language changes
 ======================
 
@@ -92,7 +93,7 @@ sqlite3
 -------
 
 * Support keyword completion in the :mod:`sqlite3` command-line interface.
-  (Contributed by Tan Long in :gh:`133393`.)
+  (Contributed by Long Tan in :gh:`133393`.)
 
 
 ssl
