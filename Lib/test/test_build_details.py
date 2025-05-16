@@ -114,7 +114,7 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
     def test_location(self):
         self.assertTrue(os.path.isfile(self.location))
 
-    # Override generic format tests with tests for our specific implemenation.
+    # Override generic format tests with tests for our specific implementation.
 
     @needs_installed_python
     @unittest.skipIf(is_android or is_apple_mobile, 'Android and iOS run tests via a custom testbed method that changes sys.executable')
