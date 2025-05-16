@@ -608,7 +608,7 @@ class ReTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             m[0] = 1
 
-        # Slices.
+    def test_match_getitem_slice(self):
         m = re.match(r"(a)(b)(c)", "abc")
         self.assertEqual(m[:0], ())
         self.assertEqual(m[:1], ("abc",))
