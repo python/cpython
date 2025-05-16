@@ -268,11 +268,12 @@ class CompletionTest(unittest.TestCase):
         input = b"\t\t.quit\n"
         output = run_pty(script, input, env={"NO_COLOR": "1"})
         output_lines = output.decode().splitlines()
-        slices = tuple(i for i, line in enumerate(output_lines) if line.startswith(self.PS1))
-        self.assertEqual(len(slices), 2)
-        start, end = slices
-        candidates = [c.strip() for c in output_lines[start+1 : end]]
-        self.assertEqual(sorted(candidates), list(KEYWORDS))
+        indices = [i for i, line in enumerate(output_lines)
+                   if line.startswith(self.PS1)]
+        self.assertEqual(len(indices), 2)
+        start, end = indices[0] + 1, indices[1]
+        candidates = list(map(str.strip, output_lines[start:end]))
+        self.assertEqual(candidates, list(KEYWORDS))
 
 
 if __name__ == "__main__":
