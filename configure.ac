@@ -4092,22 +4092,22 @@ fi
 
 # Check for use of the system libmpdec library
 AC_MSG_CHECKING([for --with-system-libmpdec])
-AC_ARG_WITH(
-  [system_libmpdec],
-  [AS_HELP_STRING(
-    [--with-system-libmpdec],
-    [build _decimal module using an installed mpdecimal library, see Doc/library/decimal.rst (default is yes)]
-  )],
-  [],
-  [with_system_libmpdec="yes"])
-AC_MSG_RESULT([$with_system_libmpdec])
-
 AC_DEFUN([USE_BUNDLED_LIBMPDEC],
          [LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
           LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
           LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
           have_mpdec=yes
           with_system_libmpdec=no])
+AC_ARG_WITH(
+  [system_libmpdec],
+  [AS_HELP_STRING(
+    [--with-system-libmpdec],
+    [build _decimal module using an installed mpdecimal library, see Doc/library/decimal.rst (default is yes)]
+  )],
+  [AS_IF([test "x$with_system_libmpdec" = xno],
+         [USE_BUNDLED_LIBMPDEC()])],
+  [with_system_libmpdec="yes"])
+AC_MSG_RESULT([$with_system_libmpdec])
 
 AS_VAR_IF(
   [with_system_libmpdec], [yes],
@@ -4115,8 +4115,7 @@ AS_VAR_IF(
     [LIBMPDEC], [libmpdec >= 2.5.0], [],
     [LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
      LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
-     LIBMPDEC_INTERNAL=])],
-  [USE_BUNDLED_LIBMPDEC()])
+     LIBMPDEC_INTERNAL=])])
 
 AS_VAR_IF([with_system_libmpdec], [yes],
   [WITH_SAVE_ENV([
@@ -4132,16 +4131,17 @@ AS_VAR_IF([with_system_libmpdec], [yes],
       ], [const char *x = mpd_version();])],
       [have_mpdec=yes],
       [have_mpdec=no])
-  ])],
-  [AC_MSG_WARN([m4_normalize([
+  ])])
+AS_VAR_IF([with_system_libmpdec], [no],
+          [AC_MSG_WARN([m4_normalize([
      the bundled copy of libmpdecimal is scheduled for removal in Python 3.16;
      consider using a system installed mpdecimal library.])])])
 
 AS_IF([test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"],
       [AC_MSG_WARN([m4_normalize([
-         no system libmpdecimal found; falling back to bundled libmpdecimal
-         (deprecated and scheduled for removal in Python 3.16)])])
-       USE_BUNDLED_LIBMPDEC()])
+         no system libmpdecimal found; falling back to pure-Python version
+         for the decimal module])])
+       AS_VAR_SET([py_cv_module_]_decimal, [n/a])])
 
 # Disable forced inlining in debug builds, see GH-94847
 AS_VAR_IF(
