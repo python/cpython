@@ -1678,6 +1678,28 @@ Make sure that the old "raise X, Y[, Z]" form is gone:
      ...
    SyntaxError: invalid syntax
 
+Better errors for `raise` statement:
+
+    >>> raise ValueError from
+    Traceback (most recent call last):
+    SyntaxError: did you forget an expression after 'from'?
+
+    >>> raise mod.ValueError() from
+    Traceback (most recent call last):
+    SyntaxError: did you forget an expression after 'from'?
+
+    >>> raise from exc
+    Traceback (most recent call last):
+    SyntaxError: did you forget an expression between 'raise' and 'from'?
+
+    >>> raise from None
+    Traceback (most recent call last):
+    SyntaxError: did you forget an expression between 'raise' and 'from'?
+
+    >>> raise from
+    Traceback (most recent call last):
+    SyntaxError: did you forget an expression between 'raise' and 'from'?
+
 Check that an multiple exception types with missing parentheses
 raise a custom exception only when using 'as'
 
