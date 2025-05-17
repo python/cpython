@@ -767,6 +767,13 @@ class BaseTest:
         self.checkraises(TypeError, 'hello', 'replace', 42, 'h')
         self.checkraises(TypeError, 'hello', 'replace', 'h', 42)
 
+        # gh-127971
+        any_3_nonblank_codepoints = '!!!'
+        seven_codepoints = any_3_nonblank_codepoints + ' ' + any_3_nonblank_codepoints
+        a = (' ' * 243) + seven_codepoints + (' ' * 7)
+        b = ' ' * 6 + chr(256)
+        a.replace(seven_codepoints, b)
+
     def test_replace_uses_two_way_maxcount(self):
         # Test that maxcount works in _two_way_count in fastsearch.h
         A, B = "A"*1000, "B"*1000
