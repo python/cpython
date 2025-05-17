@@ -177,4 +177,4 @@ def run_multiline_interactive_console(
             console.showtraceback()
             console.resetbuffer()
         if showrefcount:
-           console.write(f"\n[{sys.gettotalrefcount()} refs, {sys.getallocatedblocks()} blocks]\n")
+           console.write(f"[{sys.gettotalrefcount()} refs, {sys.getallocatedblocks()} blocks]\n")
