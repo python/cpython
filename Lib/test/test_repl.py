@@ -197,7 +197,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
         expected_lines = [
             '    def f(x, x): ...',
             '             ^',
-            "SyntaxError: duplicate argument 'x' in function definition"
+            "SyntaxError: duplicate parameter 'x' in function definition"
         ]
         self.assertEqual(output.splitlines()[4:-1], expected_lines)
 

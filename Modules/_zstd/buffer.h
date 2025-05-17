@@ -1,10 +1,11 @@
-/*
-Low level interface to Meta's zstd library for use in the compression.zstd
-Python module.
-*/
+/* Low level interface to the Zstandard algorthm & the zstd library. */
 
-#include "_zstdmodule.h"
+#ifndef ZSTD_BUFFER_H
+#define ZSTD_BUFFER_H
+
 #include "pycore_blocks_output_buffer.h"
+
+#include <zstd.h>                 // ZSTD_outBuffer
 
 /* Blocks output buffer wrapper code */
 
@@ -102,3 +103,5 @@ _OutputBuffer_ReachedMaxLength(_BlocksOutputBuffer *buffer, ZSTD_outBuffer *ob)
 
     return buffer->allocated == buffer->max_length;
 }
+
+#endif  // !ZSTD_BUFFER_H

@@ -1463,14 +1463,18 @@
     added = '3.2'
 [function.PyUnicode_AsDecodedObject]
     added = '3.2'
+    abi_only = true
 [function.PyUnicode_AsDecodedUnicode]
     added = '3.2'
+    abi_only = true
 [function.PyUnicode_AsEncodedObject]
     added = '3.2'
+    abi_only = true
 [function.PyUnicode_AsEncodedString]
     added = '3.2'
 [function.PyUnicode_AsEncodedUnicode]
     added = '3.2'
+    abi_only = true
 [function.PyUnicode_AsLatin1String]
     added = '3.2'
 [function.PyUnicode_AsRawUnicodeEscapeString]
