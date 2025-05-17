@@ -351,6 +351,10 @@ MAX_SIZES = {
 
     # Catch-alls:
     _abs('Include/**/*.h'): (5_000, 500),
+
+    # Specific to clang
+    _abs('Modules/selectmodule.c'): (40_000, 3000),
+    _abs('Modules/_testcapi/pyatomic.c'): (30_000, 1000),
 }
 
 
