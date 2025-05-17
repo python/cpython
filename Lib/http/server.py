@@ -818,11 +818,14 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             return None
         list.sort(key=lambda a: a.lower())
         r = []
+        displaypath = self.path
+        displaypath = displaypath.split('#', 1)[0]
+        displaypath = displaypath.split('?', 1)[0]
         try:
-            displaypath = urllib.parse.unquote(self.path,
+            displaypath = urllib.parse.unquote(displaypath,
                                                errors='surrogatepass')
         except UnicodeDecodeError:
-            displaypath = urllib.parse.unquote(self.path)
+            displaypath = urllib.parse.unquote(displaypath)
         displaypath = html.escape(displaypath, quote=False)
         enc = sys.getfilesystemencoding()
         title = f'Directory listing for {displaypath}'

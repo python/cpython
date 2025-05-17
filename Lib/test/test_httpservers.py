@@ -627,13 +627,14 @@ class SimpleHTTPServerTestCase(BaseTestCase):
                 self.check_list_dir_filename(filename)
                 os_helper.unlink(os.path.join(self.tempdir, filename))
 
-    def test_undecodable_parameter(self):
-        # sanity check using a valid parameter
+    def test_list_dir_with_query_and_fragment(self):
+        prefix = f'listing for {self.base_url}/</'.encode('latin1')
+        response = self.request(self.base_url + '/#123').read()
+        self.assertIn(prefix + b'title>', response)
+        self.assertIn(prefix + b'h1>', response)
         response = self.request(self.base_url + '/?x=123').read()
-        self.assertRegex(response, rf'listing for {self.base_url}/\?x=123'.encode('latin1'))
-        # now the bogus encoding
-        response = self.request(self.base_url + '/?x=%bb').read()
-        self.assertRegex(response, rf'listing for {self.base_url}/\?x=\xef\xbf\xbd'.encode('latin1'))
+        self.assertIn(prefix + b'title>', response)
+        self.assertIn(prefix + b'h1>', response)
 
     def test_get_dir_redirect_location_domain_injection_bug(self):
         """Ensure //evil.co/..%2f../../X does not put //evil.co/ in Location.
