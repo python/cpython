@@ -327,7 +327,6 @@ class TestTimeZone(unittest.TestCase):
         with self.assertRaises(TypeError): self.EST.dst(5)
 
     def test_tzname(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         self.assertEqual('UTC', timezone.utc.tzname(None))
         self.assertEqual('UTC', UTC.tzname(None))
         self.assertEqual('UTC', timezone(ZERO).tzname(None))
@@ -845,7 +844,6 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(timedelta.resolution, timedelta(0, 0, 0, 1))
 
     def test_overflow(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         tiny = timedelta.resolution
 
         td = timedelta.min + tiny
@@ -1059,7 +1057,6 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
                 timedelta() * get_bad_float(bad_ratio)
 
     def test_issue31752(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         # The interpreter shouldn't crash because divmod() returns negative
         # remainder.
         class BadInt(int):
@@ -6640,7 +6637,6 @@ class ZoneInfoTest(unittest.TestCase):
                          (b.replace(tzinfo=None), b.fold, id(b.tzinfo)))
 
     def test_folds(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         tz = self.tz
         for dt, shift in tz.folds():
             for x in [0 * shift, 0.5 * shift, shift - timedelta.resolution]:
@@ -6663,7 +6659,6 @@ class ZoneInfoTest(unittest.TestCase):
                 self.assertEqual(ldt.fold, 0)
 
     def test_gaps(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         tz = self.tz
         for dt, shift in tz.gaps():
             for x in [0 * shift, 0.5 * shift, shift - timedelta.resolution]:
@@ -6701,7 +6696,6 @@ class ZoneInfoTest(unittest.TestCase):
         hasattr(_time, "tzset"), "time module has no attribute tzset"
     )
     def test_system_transitions(self):
-        if 'Pure' not in self.__class__.__name__: return # BUG
         if ('Riyadh8' in self.zonename or
             # From tzdata NEWS file:
             # The files solar87, solar88, and solar89 are no longer distributed.
