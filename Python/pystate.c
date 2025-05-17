@@ -1910,8 +1910,8 @@ zapthreads(PyInterpreterState *interp)
 {
     PyThreadState *tstate;
     /* No need to lock the mutex here because this should only happen
-       when the threads are all really dead (XXX famous last words). 
-       
+       when the threads are all really dead (XXX famous last words).
+
        Cannot use _Py_FOR_EACH_TSTATE_UNLOCKED because we are freeing
        the thread states here.
     */
