@@ -1131,6 +1131,13 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
     int tzsign = (*tzinfo_pos == '-') ? -1 : 1;
     tzinfo_pos++;
     int tzhour = 0, tzminute = 0, tzsecond = 0;
+
+    if (tzinfo_pos + 2 < p_end && tzinfo_pos[2] != ':' && strlen(tzinfo_pos) > 2) {
+        PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "Support for partially expanded formats is deprecated in "
+                     "accordance with ISO 8601:2 and will be removed in 3.15", 3);
+    }
+
     rv = parse_hh_mm_ss_ff(tzinfo_pos, p_end, &tzhour, &tzminute, &tzsecond,
                            tzmicrosecond);
 
