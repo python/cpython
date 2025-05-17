@@ -455,14 +455,16 @@ def parse_config_h(fp, vars=None):
 
 def get_config_h_filename():
     """Return the path of pyconfig.h."""
+    parts = []
     if _PYTHON_BUILD:
         if os.name == "nt":
-            inc_dir = os.path.dirname(sys._base_executable)
+            parts.append(os.path.dirname(sys._base_executable))
         else:
-            inc_dir = _PROJECT_BASE
+            parts.extend([_PROJECT_BASE, 'Include'])
     else:
-        inc_dir = get_path('platinclude')
-    return os.path.join(inc_dir, 'pyconfig.h')
+        parts.append(get_path('platinclude'))
+    parts.append('pyconfig.h')
+    return os.path.join(*parts)
 
 
 def get_scheme_names():

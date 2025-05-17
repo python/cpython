@@ -119,10 +119,10 @@ def check_library(library, dynamic=False):
 
 def check_extensions():
     print(__file__)
-    # This assumes pybuilddir.txt is in same directory as pyconfig.h.
+    # This assumes pybuilddir.txt is in same directory as Makefile.
     # In the case of out-of-tree builds, we can't assume pybuilddir.txt is
     # in the source folder.
-    config_dir = os.path.dirname(sysconfig.get_config_h_filename())
+    config_dir = os.path.dirname(sysconfig.get_makefile_filename())
     filename = os.path.join(config_dir, "pybuilddir.txt")
     try:
         with open(filename, encoding="utf-8") as fp:

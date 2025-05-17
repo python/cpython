@@ -3645,7 +3645,7 @@ else
 fi
 
 
-ac_config_headers="$ac_config_headers pyconfig.h"
+ac_config_headers="$ac_config_headers Include/pyconfig.h"
 
 
 
@@ -35075,7 +35075,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
-    "pyconfig.h") CONFIG_HEADERS="$CONFIG_HEADERS pyconfig.h" ;;
+    "Include/pyconfig.h") CONFIG_HEADERS="$CONFIG_HEADERS Include/pyconfig.h" ;;
     "Mac/Makefile") CONFIG_FILES="$CONFIG_FILES Mac/Makefile" ;;
     "Mac/PythonLauncher/Makefile") CONFIG_FILES="$CONFIG_FILES Mac/PythonLauncher/Makefile" ;;
     "Mac/Resources/framework/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/framework/Info.plist" ;;

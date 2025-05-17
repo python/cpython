@@ -132,7 +132,7 @@ else
 fi
 
 AC_CONFIG_SRCDIR([Include/object.h])
-AC_CONFIG_HEADERS([pyconfig.h])
+AC_CONFIG_HEADERS([Include/pyconfig.h])
 
 AC_CANONICAL_HOST
 AC_SUBST([build])
