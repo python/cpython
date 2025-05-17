@@ -2568,6 +2568,13 @@ class PathTest(PurePathTest):
         q.unlink()
         self.assertTrue(q.info.is_symlink())
 
+    @needs_windows
+    def test_info_is_junction(self):
+        p = self.cls(self.base, 'fileA')
+        with mock.patch.object(os.path, 'isjunction'):
+            self.assertFalse(p.info.is_junction())
+            os.path.isjunction.assert_called_once_with(p)
+
     def test_stat(self):
         statA = self.cls(self.base).joinpath('fileA').stat()
         statB = self.cls(self.base).joinpath('dirB', 'fileB').stat()
