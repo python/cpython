@@ -1,0 +1,3 @@
+Return a :term:`path-like object` from :func:`tempfile.NamedTemporaryFile`
+and :func:`~tempfile.TemporaryDirectory`. (Contributed by Barney Gale in
+:gh:`87646`.)
