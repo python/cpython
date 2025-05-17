@@ -140,7 +140,7 @@ class ProfileCLITests(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, self.temp_dir)
-        
+
         self.script_content = """\
 def factorial(n):
     if n <= 1:
@@ -219,17 +219,17 @@ if __name__ == "__main__":
     def test_run_module(self):
         module_name = "profilemod"
         module_file = os.path.join(self.temp_dir, f"{module_name}.py")
-        
+
         with open(module_file, "w") as f:
             f.write("print('Module executed')\n")
-        
+
         env = os.environ.copy()
-        
+
         python_path = self.temp_dir
         if 'PYTHONPATH' in env:
             python_path = os.pathsep.join([python_path, env['PYTHONPATH']])
         env['PYTHONPATH'] = python_path
-        
+
         cmd = [sys.executable, '-m', 'profile', '-m', module_name]
         proc = subprocess.Popen(
             cmd,
@@ -240,7 +240,7 @@ if __name__ == "__main__":
         )
         stdout, stderr = proc.communicate()
         returncode = proc.returncode
-        
+
         self.assertEqual(returncode, 0)
         self.assertIn("Module executed", stdout)
         self.assertIn("function calls", stdout)
