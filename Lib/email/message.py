@@ -306,7 +306,10 @@ class Message:
             return payload
         if isinstance(payload, str):
             try:
-                bpayload = payload.encode('ascii', 'surrogateescape')
+                if cte == '8bit':
+                    bpayload = payload.encode(self.get_param('charset', 'ascii'), 'surrogateescape')
+                else:
+                    bpayload = payload.encode('ascii', 'surrogateescape')
             except UnicodeEncodeError:
                 # This won't happen for RFC compliant messages (messages
                 # containing only ASCII code points in the unicode input).
