@@ -2340,7 +2340,88 @@ BadDivmod:
 static PyObject *
 nanoseconds_to_delta(PyObject *pyns)
 {
-    return new_delta(0, 0, 0, PyLong_AsLong(pyns), 1);
+    int d, s, us, ns_rem;
+    PyObject *py_total_us = NULL, *py_ns_rem_obj = NULL;
+    PyObject *py_total_s = NULL, *py_us_rem_obj = NULL;
+    PyObject *py_d_final = NULL, *py_s_rem_obj = NULL;
+    PyObject *PY_NS_PER_US_CONST = NULL;
+    PyObject *result = NULL;
+    PyObject *temp_tuple = NULL;
+
+    PyObject *current_mod = NULL;
+    datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        // GET_CURRENT_STATE already sets error if module import fails
+        return NULL;
+    }
+
+    PY_NS_PER_US_CONST = PyLong_FromLong(1000L);
+    if (PY_NS_PER_US_CONST == NULL) {
+        goto Done;
+    }
+
+    // Nanoseconds to total_microseconds and ns_remainder
+    temp_tuple = checked_divmod(pyns, PY_NS_PER_US_CONST);
+    if (temp_tuple == NULL) {
+        goto Done;
+    }
+    py_total_us = Py_NewRef(PyTuple_GET_ITEM(temp_tuple, 0));
+    py_ns_rem_obj = Py_NewRef(PyTuple_GET_ITEM(temp_tuple, 1));
+    Py_DECREF(temp_tuple);
+    temp_tuple = NULL;
+
+    ns_rem = PyLong_AsInt(py_ns_rem_obj);
+    if (ns_rem == -1 && PyErr_Occurred()) {
+        goto Done;
+    }
+
+    // Total_microseconds to total_seconds and us_remainder
+    temp_tuple = checked_divmod(py_total_us, CONST_US_PER_SECOND(st));
+    if (temp_tuple == NULL) {
+        goto Done;
+    }
+    py_total_s = Py_NewRef(PyTuple_GET_ITEM(temp_tuple, 0));
+    py_us_rem_obj = Py_NewRef(PyTuple_GET_ITEM(temp_tuple, 1));
+    Py_DECREF(temp_tuple);
+    temp_tuple = NULL;
+
+    us = PyLong_AsInt(py_us_rem_obj);
+    if (us == -1 && PyErr_Occurred()) {
+        goto Done;
+    }
+
+    // Total_seconds to total_days and s_remainder
+    temp_tuple = checked_divmod(py_total_s, CONST_SEC_PER_DAY(st));
+    if (temp_tuple == NULL) {
+        goto Done;
+    }
+    py_d_final = Py_NewRef(PyTuple_GET_ITEM(temp_tuple, 0));
+    py_s_rem_obj = Py_NewRef(PyTuple_GET_ITEM(temp_tuple, 1));
+    Py_DECREF(temp_tuple);
+    temp_tuple = NULL;
+
+    s = PyLong_AsInt(py_s_rem_obj);
+    if (s == -1 && PyErr_Occurred()) {
+        goto Done;
+    }
+
+    d = PyLong_AsInt(py_d_final);
+    if (d == -1 && PyErr_Occurred()) {
+        goto Done;
+    }
+    result = new_delta(d, s, us, ns_rem, 1); // Ensure normalization
+
+Done:
+    Py_XDECREF(py_total_us);
+    Py_XDECREF(py_ns_rem_obj);
+    Py_XDECREF(py_total_s);
+    Py_XDECREF(py_us_rem_obj);
+    Py_XDECREF(py_d_final);
+    Py_XDECREF(py_s_rem_obj);
+    Py_XDECREF(PY_NS_PER_US_CONST);
+    Py_XDECREF(temp_tuple);
+    RELEASE_CURRENT_STATE(st, current_mod);
+    return result;
 }
 
 static PyObject *
