@@ -1,0 +1,1 @@
+The devpoll object now has an upper limit on number of registered file descriptors of 2^18 to prevent memory exhaustion at the time of instantiation.
