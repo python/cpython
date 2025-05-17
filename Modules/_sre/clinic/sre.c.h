@@ -1485,6 +1485,74 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_sre_SRE_Match_index__doc__,
+"index($self, value, start=0, stop=sys.maxsize, /)\n"
+"--\n"
+"\n"
+"Return the index of the first occurrence of the value among the matched groups.\n"
+"\n"
+"Raises ValueError if the value is not present.");
+
+#define _SRE_SRE_MATCH_INDEX_METHODDEF    \
+    {"index", _PyCFunction_CAST(_sre_SRE_Match_index), METH_FASTCALL, _sre_SRE_Match_index__doc__},
+
+static PyObject *
+_sre_SRE_Match_index_impl(MatchObject *self, PyObject *value,
+                          Py_ssize_t start, Py_ssize_t stop);
+
+static PyObject *
+_sre_SRE_Match_index(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *value;
+    Py_ssize_t start = 0;
+    Py_ssize_t stop = PY_SSIZE_T_MAX;
+
+    if (!_PyArg_CheckPositional("index", nargs, 1, 3)) {
+        goto exit;
+    }
+    value = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndexNotNone(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndexNotNone(args[2], &stop)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _sre_SRE_Match_index_impl((MatchObject *)self, value, start, stop);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_sre_SRE_Match_count__doc__,
+"count($self, value, /)\n"
+"--\n"
+"\n"
+"Return the number of occurrences of the value among the matched groups.");
+
+#define _SRE_SRE_MATCH_COUNT_METHODDEF    \
+    {"count", (PyCFunction)_sre_SRE_Match_count, METH_O, _sre_SRE_Match_count__doc__},
+
+static PyObject *
+_sre_SRE_Match_count_impl(MatchObject *self, PyObject *value);
+
+static PyObject *
+_sre_SRE_Match_count(PyObject *self, PyObject *value)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _sre_SRE_Match_count_impl((MatchObject *)self, value);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_sre_SRE_Match___copy____doc__,
 "__copy__($self, /)\n"
 "--\n"
@@ -1568,4 +1636,4 @@ _sre_SRE_Scanner_search(PyObject *self, PyTypeObject *cls, PyObject *const *args
 #ifndef _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
     #define _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
 #endif /* !defined(_SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF) */
-/*[clinic end generated code: output=bbf42e1de3bdd3ae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eb27b8f0b871277f input=a9049054013a1b77]*/
