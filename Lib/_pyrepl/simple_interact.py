@@ -113,7 +113,7 @@ def run_multiline_interactive_console(
     if sys._xoptions.get("showrefcount"):
         # Were we compiled --with-pydebug?
         if hasattr(sys, "gettotalrefcount"):
-            showrefcount = sys._is_showrefcount_enabled()  # type: ignore[attr-defined]
+            showrefcount = True
         else:
             showrefcount = False
     else:
