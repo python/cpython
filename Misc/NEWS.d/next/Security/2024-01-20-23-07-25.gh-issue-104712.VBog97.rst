@@ -1,0 +1,4 @@
+On the Windows platform, treat the NTFS Alternate Data Stream alternatives
+as ``cgi_directories`` also when determining whether a request is CGI or not
+in the :class:`http.server.CGIHTTPRequestHandler`, to prevent CGI source
+code disclosure and directory listing.
