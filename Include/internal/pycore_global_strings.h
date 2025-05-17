@@ -603,6 +603,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(name_from)
         STRUCT_FOR_ID(namespace_separator)
         STRUCT_FOR_ID(namespaces)
+        STRUCT_FOR_ID(nanosecond)
         STRUCT_FOR_ID(ndigits)
         STRUCT_FOR_ID(nested)
         STRUCT_FOR_ID(new_file_name)
