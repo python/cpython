@@ -874,7 +874,6 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         self.assertRaises(OverflowError, day.__mul__, -INF)
 
     def test_microsecond_rounding(self):
-        if self.is_fast_test(): return # BUG
         td = timedelta
         eq = self.assertEqual
 

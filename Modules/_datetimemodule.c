@@ -3018,9 +3018,14 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         y = accum("weeks", x, week, CONST_US_PER_WEEK(st), &leftover_us);
         CLEANUP;
     }
-    long leftover_ns = 0;
+    float leftover_ns = 0;
     if (ns) {
-        leftover_ns += PyLong_AsLong(ns);
+        if (PyFloat_Check(ns)) {
+            double ns_val = PyFloat_AsDouble(ns);
+            leftover_ns += ns_val;
+        } else {
+            leftover_ns += PyLong_AsLong(ns);
+        }
     }
     if (leftover_us) {
         long integral_us = (long)leftover_us;
@@ -3046,7 +3051,7 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         leftover_ns += 1000;
     }
     self = microseconds_to_delta_ex(x, type);
-    SET_TD_NANOSECONDS((PyDateTime_Delta *)self, leftover_ns);
+    SET_TD_NANOSECONDS((PyDateTime_Delta *)self, (long)(leftover_ns)); // todo: py_round
     Py_DECREF(x);
 
 Done:
