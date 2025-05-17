@@ -14,16 +14,21 @@
 `JSON (JavaScript Object Notation) <https://json.org>`_, specified by
 :rfc:`7159` (which obsoletes :rfc:`4627`) and by
 `ECMA-404 <https://ecma-international.org/publications-and-standards/standards/ecma-404/>`_,
-is a lightweight data interchange format inspired by
-`JavaScript <https://en.wikipedia.org/wiki/JavaScript>`_ object literal syntax
+is a lightweight data interchange format inspired by the object literal syntax
+of `JavaScript <https://en.wikipedia.org/wiki/JavaScript>`_
 (although it is not a strict subset of JavaScript [#rfc-errata]_ ).
+
+.. note::
+   The term "object" in the context of JSON processing in Python can be
+   ambiguous. All values in Python are objects. In JSON, an object refers to
+   any data wrapped in curly braces, similar to a Python dictionary.
 
 .. warning::
    Be cautious when parsing JSON data from untrusted sources. A malicious
    JSON string may cause the decoder to consume considerable CPU and memory
    resources. Limiting the size of data to be parsed is recommended.
 
-:mod:`json` exposes an API familiar to users of the standard library
+This module exposes an API familiar to users of the standard library
 :mod:`marshal` and :mod:`pickle` modules.
 
 Encoding basic Python object hierarchies::
@@ -60,7 +65,7 @@ Pretty printing::
         "6": 7
     }
 
-Specializing JSON object encoding::
+Customizing JSON object encoding::
 
    >>> import json
    >>> def custom_json(obj):
@@ -83,7 +88,7 @@ Decoding JSON::
     >>> json.load(io)
     ['streaming API']
 
-Specializing JSON object decoding::
+Customizing JSON object decoding::
 
     >>> import json
     >>> def as_complex(dct):
