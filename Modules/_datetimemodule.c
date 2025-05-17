@@ -2226,15 +2226,7 @@ delta_to_microseconds(PyDateTime_Delta *self)
     x2 = PyLong_FromLong(GET_TD_MICROSECONDS(self));
     if (x2 == NULL)
         goto Done;
-    x3 = PyNumber_Add(x1, x2);
-    Py_SETREF(x1, NULL);
-    Py_SETREF(x2, NULL);
-    if (x3 == NULL)
-        goto Done;
-    x1 = PyLong_FromLong(GET_TD_NANOSECONDS(self));
-    if (x1 == NULL)
-        goto Done;
-    result = PyNumber_Add(x3, x1);
+    result = PyNumber_Add(x1, x2);
     assert(result == NULL || PyLong_CheckExact(result));
 
 Done:
