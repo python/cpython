@@ -1706,7 +1706,7 @@ class CommandLineTestCase(unittest.TestCase):
             _ = self.invoke_httpd('--unknown-flag')
 
 class CommandLineRunTimeTestCase(unittest.TestCase):
-    random_data = os.urandom(1024)
+    random_data = os.urandom(32)
     random_file_name = 'random.bin'
     tls_cert = certdata_file('ssl_cert.pem')
     tls_key = certdata_file('ssl_key.pem')
