@@ -1,12 +1,8 @@
-/*
-Low level interface to Meta's zstd library for use in the compression.zstd
-Python module.
-*/
+/* Low level interface to the Zstandard algorthm & the zstd library. */
 
 #ifndef ZSTD_DICT_H
 #define ZSTD_DICT_H
 
-#include <stdbool.h>              // bool
 #include <zstd.h>                 // ZSTD_DDict
 
 typedef struct {
@@ -23,9 +19,6 @@ typedef struct {
     PyObject *dict_content;
     /* Dictionary id */
     uint32_t dict_id;
-
-    /* __init__ has been called, 0 or 1. */
-    bool initialized;
 } ZstdDict;
 
 #endif  // !ZSTD_DICT_H
