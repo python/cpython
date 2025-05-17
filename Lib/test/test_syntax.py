@@ -3271,6 +3271,21 @@ while 1:
         ]:
             self._check_error(f"x = {lhs_stmt} if 1 else {rhs_stmt}", msg)
 
+    def test_caret_location_invalid_star_expr(self):
+        # regression test for caret location, see #133357
+        with self.assertRaises(SyntaxError) as cm:
+            compile("A[*]", "<string>", "exec")
+        with self.assertRaises(SyntaxError) as cm2:
+            compile("A[*(1:2)] = 1", "<string>", "exec")
+        e = cm.exception
+        e2 = cm2.exception
+        self.assertEqual(e.msg, "Invalid star expression")
+        self.assertEqual(e.text.strip(), "A[*]")
+        self.assertEqual(e.offset, 4)
+        self.assertEqual(e2.msg, "Invalid star expression")
+        self.assertEqual(e2.text.strip(), "A[*(1:2)] = 1")
+        self.assertEqual(e2.offset, 6)
+
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())
     return tests
