@@ -1871,7 +1871,7 @@ New Deprecations
 
 * :mod:`http.server`:
 
-  * Deprecate :class:`~http.server.CGIHTTPRequestHandler`,
+  * Deprecate :class:`!CGIHTTPRequestHandler`,
     to be removed in Python 3.15.
     Process-based CGI HTTP servers have been out of favor for a very long time.
     This code was outdated, unmaintained, and rarely used.
