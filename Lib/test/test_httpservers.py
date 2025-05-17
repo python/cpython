@@ -1513,11 +1513,11 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         bind = '127.0.0.1'
         proc = spawn_python('-u', '-m', 'http.server', str(port), '-b', bind,
                             bufsize=1, text=True)
+        self.addCleanup(kill_python, proc)
+        self.addCleanup(proc.terminate)
         self.assertTrue(self.wait_for_server(proc, 'http', port, bind))
         res = self.fetch_file(f'http://{bind}:{port}/{self.random_file_name}')
         self.assertEqual(res, self.random_data)
-        proc.terminate()
-        kill_python(proc)
 
     def test_https_client(self):
         port = find_unused_port()
@@ -1527,12 +1527,11 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
                             '--tls-key', self.tls_key,
                             '--tls-password-file', self.tls_password_file,
                             bufsize=1, text=True)
+        self.addCleanup(kill_python, proc)
+        self.addCleanup(proc.terminate)
         self.assertTrue(self.wait_for_server(proc, 'https', port, bind))
         res = self.fetch_file(f'https://{bind}:{port}/{self.random_file_name}')
         self.assertEqual(res, self.random_data)
-        proc.terminate()
-        kill_python(proc)
-
 
 def setUpModule():
     unittest.addModuleCleanup(os.chdir, os.getcwd())
