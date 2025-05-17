@@ -2485,7 +2485,7 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
     PyObject *path;
     const char *debugger_script_path;
 
-    if (PyUnicode_FSConverter(script, &path) < 0) {
+    if (PyUnicode_FSConverter(script, &path) == 0) {
         return NULL;
     }
     debugger_script_path = PyBytes_AS_STRING(path);

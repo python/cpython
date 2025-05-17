@@ -2176,6 +2176,13 @@ raise Exception("Remote script exception")
         with self.assertRaises(OSError):
             sys.remote_exec(99999, "print('should not run')")
 
+    def test_remote_exec_invalid_script(self):
+        """Test remote exec with invalid script type"""
+        with self.assertRaises(TypeError):
+            sys.remote_exec(0, None)
+        with self.assertRaises(TypeError):
+            sys.remote_exec(0, 123)
+
     def test_remote_exec_syntax_error(self):
         """Test remote exec with syntax error in script"""
         script = '''
