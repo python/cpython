@@ -24,6 +24,7 @@ import os
 import sys
 
 import ctypes
+import types
 from ctypes.wintypes import (
     _COORD,
     WORD,
@@ -58,6 +59,12 @@ except:
             self.err = err
             self.descr = descr
 
+# declare nt optional to allow None assignment on other platforms
+nt: types.ModuleType | None
+try:
+    import nt
+except ImportError:
+    nt = None
 
 TYPE_CHECKING = False
 
@@ -121,9 +128,8 @@ class _error(Exception):
 
 def _supports_vt():
     try:
-        import nt
         return nt._supports_virtual_terminal()
-    except (ImportError, AttributeError):
+    except AttributeError:
         return False
 
 class WindowsConsole(Console):
@@ -235,11 +241,9 @@ class WindowsConsole(Console):
 
     @property
     def input_hook(self):
-        try:
-            import nt
-        except ImportError:
-            return None
-        if nt._is_inputhook_installed():
+        # avoid inline imports here so the repl doesn't get flooded
+        # with import logging from -X importtime=2
+        if nt is not None and nt._is_inputhook_installed():
             return nt._inputhook
 
     def __write_changed_line(
@@ -464,7 +468,7 @@ class WindowsConsole(Console):
 
             if key == "\r":
                 # Make enter unix-like
-                return Event(evt="key", data="\n", raw=b"\n")
+                return Event(evt="key", data="\n")
             elif key_event.wVirtualKeyCode == 8:
                 # Turn backspace directly into the command
                 key = "backspace"
@@ -476,24 +480,29 @@ class WindowsConsole(Console):
                         key = f"ctrl {key}"
                     elif key_event.dwControlKeyState & ALT_ACTIVE:
                         # queue the key, return the meta command
-                        self.event_queue.insert(Event(evt="key", data=key, raw=key))
+                        self.event_queue.insert(Event(evt="key", data=key))
                         return Event(evt="key", data="\033")  # keymap.py uses this for meta
-                    return Event(evt="key", data=key, raw=key)
+                    return Event(evt="key", data=key)
                 if block:
                     continue
 
                 return None
             elif self.__vt_support:
                 # If virtual terminal is enabled, scanning VT sequences
-                self.event_queue.push(rec.Event.KeyEvent.uChar.UnicodeChar)
+                for char in raw_key.encode(self.event_queue.encoding, "replace"):
+                    self.event_queue.push(char)
                 continue
 
             if key_event.dwControlKeyState & ALT_ACTIVE:
-                # queue the key, return the meta command
-                self.event_queue.insert(Event(evt="key", data=key, raw=raw_key))
-                return Event(evt="key", data="\033")  # keymap.py uses this for meta
+                # Do not swallow characters that have been entered via AltGr:
+                # Windows internally converts AltGr to CTRL+ALT, see
+                # https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-vkkeyscanw
+                if not key_event.dwControlKeyState & CTRL_ACTIVE:
+                    # queue the key, return the meta command
+                    self.event_queue.insert(Event(evt="key", data=key))
+                    return Event(evt="key", data="\033")  # keymap.py uses this for meta
 
-            return Event(evt="key", data=key, raw=raw_key)
+            return Event(evt="key", data=key)
         return self.event_queue.get()
 
     def push_char(self, char: int | bytes) -> None:

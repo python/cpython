@@ -949,7 +949,9 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="Generate a UUID using the selected UUID function.")
+        description="Generate a UUID using the selected UUID function.",
+        color=True,
+    )
     parser.add_argument("-u", "--uuid",
                         choices=uuid_funcs.keys(),
                         default="uuid4",

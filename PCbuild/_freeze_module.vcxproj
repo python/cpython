@@ -190,7 +190,7 @@
     <ClCompile Include="..\Python\asdl.c" />
     <ClCompile Include="..\Python\assemble.c" />
     <ClCompile Include="..\Python\ast.c" />
-    <ClCompile Include="..\Python\ast_opt.c" />
+    <ClCompile Include="..\Python\ast_preprocess.c" />
     <ClCompile Include="..\Python\ast_unparse.c" />
     <ClCompile Include="..\Python\bltinmodule.c" />
     <ClCompile Include="..\Python\brc.c" />

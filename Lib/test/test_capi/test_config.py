@@ -57,7 +57,7 @@ class CAPITests(unittest.TestCase):
             ("home", str | None, None),
             ("thread_inherit_context", int, None),
             ("context_aware_warnings", int, None),
-            ("import_time", bool, None),
+            ("import_time", int, None),
             ("inspect", bool, None),
             ("install_signal_handlers", bool, None),
             ("int_max_str_digits", int, None),

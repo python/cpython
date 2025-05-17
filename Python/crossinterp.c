@@ -6,8 +6,11 @@
 #include "osdefs.h"               // MAXPATHLEN
 #include "pycore_ceval.h"         // _Py_simple_func
 #include "pycore_crossinterp.h"   // _PyXIData_t
+#include "pycore_function.h"      // _PyFunction_VerifyStateless()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_namespace.h"     // _PyNamespace_New()
+#include "pycore_pythonrun.h"     // _Py_SourceAsString()
+#include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_typeobject.h"    // _PyStaticType_InitBuiltin()
 
 
@@ -512,9 +515,12 @@ _unpickle_context_set_module(struct _unpickle_context *ctx,
     struct sync_module_result res = {0};
     struct sync_module_result *cached = NULL;
     const char *filename = NULL;
+    const char *run_modname = modname;
     if (strcmp(modname, "__main__") == 0) {
         cached = &ctx->main.cached;
         filename = ctx->main.filename;
+        // We don't want to trigger "if __name__ == '__main__':".
+        run_modname = "<fake __main__>";
     }
     else {
         res.failed = PyExc_NotImplementedError;
@@ -533,7 +539,7 @@ _unpickle_context_set_module(struct _unpickle_context *ctx,
         res.failed = PyExc_NotImplementedError;
         goto finally;
     }
-    res.loaded = runpy_run_path(filename, modname);
+    res.loaded = runpy_run_path(filename, run_modname);
     if (res.loaded == NULL) {
         Py_CLEAR(res.module);
         res.failed = _PyErr_GetRaisedException(ctx->tstate);
@@ -778,6 +784,131 @@ _PyMarshal_GetXIData(PyThreadState *tstate, PyObject *obj, _PyXIData_t *xidata)
         return -1;
     }
     return 0;
+}
+
+
+/* script wrapper */
+
+static int
+verify_script(PyThreadState *tstate, PyCodeObject *co, int checked, int pure)
+{
+    // Make sure it isn't a closure and (optionally) doesn't use globals.
+    PyObject *builtins = NULL;
+    if (pure) {
+        builtins = _PyEval_GetBuiltins(tstate);
+        assert(builtins != NULL);
+    }
+    if (checked) {
+        assert(_PyCode_VerifyStateless(tstate, co, NULL, NULL, builtins) == 0);
+    }
+    else if (_PyCode_VerifyStateless(tstate, co, NULL, NULL, builtins) < 0) {
+        return -1;
+    }
+    // Make sure it doesn't have args.
+    if (co->co_argcount > 0
+        || co->co_posonlyargcount > 0
+        || co->co_kwonlyargcount > 0
+        || co->co_flags & (CO_VARARGS | CO_VARKEYWORDS))
+    {
+        _PyErr_SetString(tstate, PyExc_ValueError,
+                         "code with args not supported");
+        return -1;
+    }
+    // Make sure it doesn't return anything.
+    if (!_PyCode_ReturnsOnlyNone(co)) {
+        _PyErr_SetString(tstate, PyExc_ValueError,
+                         "code that returns a value is not a script");
+        return -1;
+    }
+    return 0;
+}
+
+static int
+get_script_xidata(PyThreadState *tstate, PyObject *obj, int pure,
+                  _PyXIData_t *xidata)
+{
+    // Get the corresponding code object.
+    PyObject *code = NULL;
+    int checked = 0;
+    if (PyCode_Check(obj)) {
+        code = obj;
+        Py_INCREF(code);
+    }
+    else if (PyFunction_Check(obj)) {
+        code = PyFunction_GET_CODE(obj);
+        assert(code != NULL);
+        Py_INCREF(code);
+        if (pure) {
+            if (_PyFunction_VerifyStateless(tstate, obj) < 0) {
+                goto error;
+            }
+            checked = 1;
+        }
+    }
+    else {
+        const char *filename = "<script>";
+        int optimize = 0;
+        PyCompilerFlags cf = _PyCompilerFlags_INIT;
+        cf.cf_flags = PyCF_SOURCE_IS_UTF8;
+        PyObject *ref = NULL;
+        const char *script = _Py_SourceAsString(obj, "???", "???", &cf, &ref);
+        if (script == NULL) {
+            if (!_PyObject_SupportedAsScript(obj)) {
+                // We discard the raised exception.
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "unsupported script %R", obj);
+            }
+            goto error;
+        }
+        code = Py_CompileStringExFlags(
+                    script, filename, Py_file_input, &cf, optimize);
+        Py_XDECREF(ref);
+        if (code == NULL) {
+            goto error;
+        }
+        // Compiled text can't have args or any return statements,
+        // nor be a closure.  It can use globals though.
+        if (!pure) {
+            // We don't need to check for globals either.
+            checked = 1;
+        }
+    }
+
+    // Make sure it's actually a script.
+    if (verify_script(tstate, (PyCodeObject *)code, checked, pure) < 0) {
+        goto error;
+    }
+
+    // Convert the code object.
+    int res = _PyCode_GetXIData(tstate, code, xidata);
+    Py_DECREF(code);
+    if (res < 0) {
+        return -1;
+    }
+    return 0;
+
+error:
+    Py_XDECREF(code);
+    PyObject *cause = _PyErr_GetRaisedException(tstate);
+    assert(cause != NULL);
+    _set_xid_lookup_failure(
+                tstate, NULL, "object not a valid script", cause);
+    Py_DECREF(cause);
+    return -1;
+}
+
+int
+_PyCode_GetScriptXIData(PyThreadState *tstate,
+                        PyObject *obj, _PyXIData_t *xidata)
+{
+    return get_script_xidata(tstate, obj, 0, xidata);
+}
+
+int
+_PyCode_GetPureScriptXIData(PyThreadState *tstate,
+                            PyObject *obj, _PyXIData_t *xidata)
+{
+    return get_script_xidata(tstate, obj, 1, xidata);
 }
 
 

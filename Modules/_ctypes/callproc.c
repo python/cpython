@@ -92,7 +92,7 @@ module _ctypes
 #include <sanitizer/msan_interface.h>
 #endif
 
-#if defined(_DEBUG) || defined(__MINGW32__)
+#if defined(Py_DEBUG) || defined(__MINGW32__)
 /* Don't use structured exception handling on Windows if this is defined.
    MingW, AFAIK, doesn't support it.
 */
@@ -103,9 +103,6 @@ module _ctypes
 #include "pycore_global_objects.h"// _Py_ID()
 #include "pycore_traceback.h"     // _PyTraceback_Add()
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-#include "../_complex.h"          // complex
-#endif
 #define clinic_state() (get_module_state(module))
 #include "clinic/callproc.c.h"
 #undef clinic_state
@@ -652,11 +649,9 @@ union result {
     double d;
     float f;
     void *p;
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-    double complex D;
-    float complex F;
-    long double complex G;
-#endif
+    double D[2];
+    float F[2];
+    long double G[2];
 };
 
 struct argument {
@@ -1394,7 +1389,7 @@ static PyObject *format_error(PyObject *self, PyObject *args)
         code = GetLastError();
     lpMsgBuf = FormatError(code);
     if (lpMsgBuf) {
-        result = PyUnicode_FromWideChar(lpMsgBuf, wcslen(lpMsgBuf));
+        result = PyUnicode_FromWideChar(lpMsgBuf, -1);
         LocalFree(lpMsgBuf);
     } else {
         result = PyUnicode_FromString("<no description>");

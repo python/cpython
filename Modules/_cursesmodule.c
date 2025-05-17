@@ -787,7 +787,8 @@ Window_TwoArgNoReturnFunction(wresize, int, "ii;lines,columns")
 
 static PyObject *
 PyCursesWindow_New(cursesmodule_state *state,
-                   WINDOW *win, const char *encoding)
+                   WINDOW *win, const char *encoding,
+                   PyCursesWindowObject *orig)
 {
     if (encoding == NULL) {
 #if defined(MS_WINDOWS)
@@ -821,6 +822,8 @@ PyCursesWindow_New(cursesmodule_state *state,
         PyErr_NoMemory();
         return NULL;
     }
+    wo->orig = orig;
+    Py_XINCREF(orig);
     PyObject_GC_Track((PyObject *)wo);
     return (PyObject *)wo;
 }
@@ -838,6 +841,7 @@ PyCursesWindow_dealloc(PyObject *self)
     if (wo->encoding != NULL) {
         PyMem_Free(wo->encoding);
     }
+    Py_XDECREF(wo->orig);
     window_type->tp_free(self);
     Py_DECREF(window_type);
 }
@@ -846,6 +850,8 @@ static int
 PyCursesWindow_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
+    PyCursesWindowObject *wo = (PyCursesWindowObject *)self;
+    Py_VISIT(wo->orig);
     return 0;
 }
 
@@ -1453,7 +1459,7 @@ _curses_window_derwin_impl(PyCursesWindowObject *self, int group_left_1,
     }
 
     cursesmodule_state *state = get_cursesmodule_state_by_win(self);
-    return PyCursesWindow_New(state, win, NULL);
+    return PyCursesWindow_New(state, win, NULL, self);
 }
 
 /*[clinic input]
@@ -2493,7 +2499,7 @@ _curses_window_subwin_impl(PyCursesWindowObject *self, int group_left_1,
     }
 
     cursesmodule_state *state = get_cursesmodule_state_by_win(self);
-    return PyCursesWindow_New(state, win, self->encoding);
+    return PyCursesWindow_New(state, win, self->encoding, self);
 }
 
 /*[clinic input]
@@ -3237,7 +3243,7 @@ _curses_getwin(PyObject *module, PyObject *file)
         goto error;
     }
     cursesmodule_state *state = get_cursesmodule_state(module);
-    res = PyCursesWindow_New(state, win, NULL);
+    res = PyCursesWindow_New(state, win, NULL, NULL);
 
 error:
     fclose(fp);
@@ -3410,7 +3416,7 @@ _curses_initscr_impl(PyObject *module)
     if (curses_initscr_called) {
         wrefresh(stdscr);
         cursesmodule_state *state = get_cursesmodule_state(module);
-        return PyCursesWindow_New(state, stdscr, NULL);
+        return PyCursesWindow_New(state, stdscr, NULL, NULL);
     }
 
     win = initscr();
@@ -3514,7 +3520,7 @@ _curses_initscr_impl(PyObject *module)
 #undef SetDictInt
 
     cursesmodule_state *state = get_cursesmodule_state(module);
-    PyObject *winobj = PyCursesWindow_New(state, win, NULL);
+    PyObject *winobj = PyCursesWindow_New(state, win, NULL, NULL);
     if (winobj == NULL) {
         return NULL;
     }
@@ -3898,7 +3904,7 @@ _curses_newpad_impl(PyObject *module, int nlines, int ncols)
     }
 
     cursesmodule_state *state = get_cursesmodule_state(module);
-    return PyCursesWindow_New(state, win, NULL);
+    return PyCursesWindow_New(state, win, NULL, NULL);
 }
 
 /*[clinic input]
@@ -3939,7 +3945,7 @@ _curses_newwin_impl(PyObject *module, int nlines, int ncols,
     }
 
     cursesmodule_state *state = get_cursesmodule_state(module);
-    return PyCursesWindow_New(state, win, NULL);
+    return PyCursesWindow_New(state, win, NULL, NULL);
 }
 
 /*[clinic input]
@@ -4720,15 +4726,12 @@ _curses_use_env_impl(PyObject *module, int flag)
 /*[clinic input]
 _curses.use_default_colors
 
-Allow use of default values for colors on terminals supporting this feature.
-
-Use this to support transparency in your application.  The default color
-is assigned to the color number -1.
+Equivalent to assume_default_colors(-1, -1).
 [clinic start generated code]*/
 
 static PyObject *
 _curses_use_default_colors_impl(PyObject *module)
-/*[clinic end generated code: output=a3b81ff71dd901be input=656844367470e8fc]*/
+/*[clinic end generated code: output=a3b81ff71dd901be input=99ff0b7c69834d1f]*/
 {
     int code;
 
@@ -4741,6 +4744,39 @@ _curses_use_default_colors_impl(PyObject *module)
     } else {
         cursesmodule_state *state = get_cursesmodule_state(module);
         PyErr_SetString(state->error, "use_default_colors() returned ERR");
+        return NULL;
+    }
+}
+
+/*[clinic input]
+_curses.assume_default_colors
+    fg: int
+    bg: int
+    /
+
+Allow use of default values for colors on terminals supporting this feature.
+
+Assign terminal default foreground/background colors to color number -1.
+Change the definition of the color-pair 0 to (fg, bg).
+
+Use this to support transparency in your application.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_assume_default_colors_impl(PyObject *module, int fg, int bg)
+/*[clinic end generated code: output=54985397a7d2b3a5 input=7fe301712ef3e9fb]*/
+{
+    int code;
+
+    PyCursesStatefulInitialised(module);
+    PyCursesStatefulInitialisedColor(module);
+
+    code = assume_default_colors(fg, bg);
+    if (code != ERR) {
+        Py_RETURN_NONE;
+    } else {
+        cursesmodule_state *state = get_cursesmodule_state(module);
+        PyErr_SetString(state->error, "assume_default_colors() returned ERR");
         return NULL;
     }
 }
@@ -4902,6 +4938,7 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_UNGET_WCH_METHODDEF
     _CURSES_USE_ENV_METHODDEF
     _CURSES_USE_DEFAULT_COLORS_METHODDEF
+    _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     {NULL,                  NULL}         /* sentinel */
 };
 

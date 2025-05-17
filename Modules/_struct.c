@@ -853,8 +853,8 @@ static const formatdef native_table[] = {
     {'e',       sizeof(short),  _Alignof(short),    nu_halffloat,   np_halffloat},
     {'f',       sizeof(float),  _Alignof(float),    nu_float,       np_float},
     {'d',       sizeof(double), _Alignof(double),   nu_double,      np_double},
-    {'F',       2*sizeof(float), _Alignof(float[2]), nu_float_complex, np_float_complex},
-    {'D',       2*sizeof(double), _Alignof(double[2]), nu_double_complex, np_double_complex},
+    {'F',       2*sizeof(float), _Alignof(float), nu_float_complex, np_float_complex},
+    {'D',       2*sizeof(double), _Alignof(double), nu_double_complex, np_double_complex},
     {'P',       sizeof(void *), _Alignof(void *),   nu_void_p,      np_void_p},
     {0}
 };

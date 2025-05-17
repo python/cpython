@@ -31,10 +31,15 @@ try:
 except ImportError:
     lzma = None
 
+try:
+    from compression import zstd # We may need its compression method
+except ImportError:
+    zstd = None
+
 __all__ = ["BadZipFile", "BadZipfile", "error",
            "ZIP_STORED", "ZIP_DEFLATED", "ZIP_BZIP2", "ZIP_LZMA",
-           "is_zipfile", "ZipInfo", "ZipFile", "PyZipFile", "LargeZipFile",
-           "Path"]
+           "ZIP_ZSTANDARD", "is_zipfile", "ZipInfo", "ZipFile", "PyZipFile",
+           "LargeZipFile", "Path"]
 
 class BadZipFile(Exception):
     pass
@@ -58,12 +63,14 @@ ZIP_STORED = 0
 ZIP_DEFLATED = 8
 ZIP_BZIP2 = 12
 ZIP_LZMA = 14
+ZIP_ZSTANDARD = 93
 # Other ZIP compression methods not supported
 
 DEFAULT_VERSION = 20
 ZIP64_VERSION = 45
 BZIP2_VERSION = 46
 LZMA_VERSION = 63
+ZSTANDARD_VERSION = 63
 # we recognize (but not necessarily support) all features up to that version
 MAX_EXTRACT_VERSION = 63
 
@@ -505,6 +512,8 @@ class ZipInfo:
             min_version = max(BZIP2_VERSION, min_version)
         elif self.compress_type == ZIP_LZMA:
             min_version = max(LZMA_VERSION, min_version)
+        elif self.compress_type == ZIP_ZSTANDARD:
+            min_version = max(ZSTANDARD_VERSION, min_version)
 
         self.extract_version = max(min_version, self.extract_version)
         self.create_version = max(min_version, self.create_version)
@@ -766,6 +775,7 @@ compressor_names = {
     14: 'lzma',
     18: 'terse',
     19: 'lz77',
+    93: 'zstd',
     97: 'wavpack',
     98: 'ppmd',
 }
@@ -785,6 +795,10 @@ def _check_compression(compression):
         if not lzma:
             raise RuntimeError(
                 "Compression requires the (missing) lzma module")
+    elif compression == ZIP_ZSTANDARD:
+        if not zstd:
+            raise RuntimeError(
+                "Compression requires the (missing) compression.zstd module")
     else:
         raise NotImplementedError("That compression method is not supported")
 
@@ -801,6 +815,8 @@ def _get_compressor(compress_type, compresslevel=None):
     # compresslevel is ignored for ZIP_LZMA
     elif compress_type == ZIP_LZMA:
         return LZMACompressor()
+    elif compress_type == ZIP_ZSTANDARD:
+        return zstd.ZstdCompressor(level=compresslevel)
     else:
         return None
 
@@ -815,6 +831,8 @@ def _get_decompressor(compress_type):
         return bz2.BZ2Decompressor()
     elif compress_type == ZIP_LZMA:
         return LZMADecompressor()
+    elif compress_type == ZIP_ZSTANDARD:
+        return zstd.ZstdDecompressor()
     else:
         descr = compressor_names.get(compress_type)
         if descr:
@@ -1334,7 +1352,8 @@ class ZipFile:
     mode: The mode can be either read 'r', write 'w', exclusive create 'x',
           or append 'a'.
     compression: ZIP_STORED (no compression), ZIP_DEFLATED (requires zlib),
-                 ZIP_BZIP2 (requires bz2) or ZIP_LZMA (requires lzma).
+                 ZIP_BZIP2 (requires bz2), ZIP_LZMA (requires lzma), or
+                 ZIP_ZSTANDARD (requires compression.zstd).
     allowZip64: if True ZipFile will create files with ZIP64 extensions when
                 needed, otherwise it will raise an exception when this would
                 be necessary.
@@ -1343,6 +1362,9 @@ class ZipFile:
                    When using ZIP_STORED or ZIP_LZMA this keyword has no effect.
                    When using ZIP_DEFLATED integers 0 through 9 are accepted.
                    When using ZIP_BZIP2 integers 1 through 9 are accepted.
+                   When using ZIP_ZSTANDARD integers -7 though 22 are common,
+                   see the CompressionParameter enum in compression.zstd for
+                   details.
 
     """
 
@@ -2075,6 +2097,8 @@ class ZipFile:
                 min_version = max(BZIP2_VERSION, min_version)
             elif zinfo.compress_type == ZIP_LZMA:
                 min_version = max(LZMA_VERSION, min_version)
+            elif zinfo.compress_type == ZIP_ZSTANDARD:
+                min_version = max(ZSTANDARD_VERSION, min_version)
 
             extract_version = max(min_version, zinfo.extract_version)
             create_version = max(min_version, zinfo.create_version)
@@ -2317,7 +2341,7 @@ def main(args=None):
     import argparse
 
     description = 'A simple command-line interface for zipfile module.'
-    parser = argparse.ArgumentParser(description=description)
+    parser = argparse.ArgumentParser(description=description, color=True)
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-l', '--list', metavar='<zipfile>',
                        help='Show listing of a zipfile')
