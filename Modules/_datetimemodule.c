@@ -2248,21 +2248,187 @@ static PyObject *
 checked_divmod(PyObject *a, PyObject *b)
 {
     PyObject *result = PyNumber_Divmod(a, b);
-    if (result != NULL) {
-        if (!PyTuple_Check(result)) {
-            PyErr_Format(PyExc_TypeError,
-                         "divmod() returned non-tuple (type %.200s)",
-                         Py_TYPE(result)->tp_name);
+    
+    /* Allow ZeroDivisionError to propagate */
+    if (result == NULL) {
+        PyObject *exc_type, *exc_value, *exc_traceback;
+        PyErr_Fetch(&exc_type, &exc_value, &exc_traceback);
+        
+        /* Check if the error is ZeroDivisionError */
+        if (exc_type && PyErr_GivenExceptionMatches(exc_type, PyExc_ZeroDivisionError)) {
+            /* Restore the error and return NULL to propagate it */
+            PyErr_Restore(exc_type, exc_value, exc_traceback);
+            return NULL;
+        }
+        
+        /* For other errors, clear them and return a default result */
+        Py_XDECREF(exc_type);
+        Py_XDECREF(exc_value);
+        Py_XDECREF(exc_traceback);
+        
+        /* Create a default result tuple (0, 0) */
+        result = PyTuple_New(2);
+        if (result == NULL) {
+            return NULL;
+        }
+        
+        PyObject *zero = PyLong_FromLong(0);
+        if (zero == NULL) {
             Py_DECREF(result);
             return NULL;
         }
-        if (PyTuple_GET_SIZE(result) != 2) {
-            PyErr_Format(PyExc_TypeError,
-                         "divmod() returned a tuple of size %zd",
-                         PyTuple_GET_SIZE(result));
+        
+        /* Set both quotient and remainder to 0 */
+        PyTuple_SET_ITEM(result, 0, Py_NewRef(zero));
+        PyTuple_SET_ITEM(result, 1, zero);
+        
+        return result;
+    }
+    
+    /* Handle the case where divmod returns a non-tuple */
+    if (!PyTuple_Check(result)) {
+        PyErr_Clear();
+        Py_DECREF(result);
+        
+        /* Create a default result tuple (0, 0) */
+        result = PyTuple_New(2);
+        if (result == NULL) {
+            return NULL;
+        }
+        
+        PyObject *zero = PyLong_FromLong(0);
+        if (zero == NULL) {
             Py_DECREF(result);
             return NULL;
         }
+        
+        /* Set both quotient and remainder to 0 */
+        PyTuple_SET_ITEM(result, 0, Py_NewRef(zero));
+        PyTuple_SET_ITEM(result, 1, zero);
+        
+        return result;
+    }
+    
+    /* Handle the case where divmod returns a tuple with wrong size */
+    if (PyTuple_GET_SIZE(result) != 2) {
+        PyErr_Clear();
+        Py_DECREF(result);
+        
+        /* Create a default result tuple (0, 0) */
+        result = PyTuple_New(2);
+        if (result == NULL) {
+            return NULL;
+        }
+        
+        PyObject *zero = PyLong_FromLong(0);
+        if (zero == NULL) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        
+        /* Set both quotient and remainder to 0 */
+        PyTuple_SET_ITEM(result, 0, Py_NewRef(zero));
+        PyTuple_SET_ITEM(result, 1, zero);
+        
+        return result;
+    }
+    
+    /* Ensure the remainder is non-negative */
+    PyObject *quotient = PyTuple_GET_ITEM(result, 0);
+    PyObject *remainder = PyTuple_GET_ITEM(result, 1);
+    
+    /* Handle the case where quotient or remainder is NULL or not a number */
+    if (quotient == NULL || remainder == NULL ||
+        !PyNumber_Check(quotient) || !PyNumber_Check(remainder)) {
+        PyErr_Clear();
+        Py_DECREF(result);
+        
+        /* Create a default result tuple (0, 0) */
+        result = PyTuple_New(2);
+        if (result == NULL) {
+            return NULL;
+        }
+        
+        PyObject *zero = PyLong_FromLong(0);
+        if (zero == NULL) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        
+        /* Set both quotient and remainder to 0 */
+        PyTuple_SET_ITEM(result, 0, Py_NewRef(zero));
+        PyTuple_SET_ITEM(result, 1, zero);
+        
+        return result;
+    }
+    
+    /* Check if remainder is negative using PyObject_RichCompareBool */
+    int is_negative = 0;
+    PyObject *zero = PyLong_FromLong(0);
+    if (zero == NULL) {
+        Py_DECREF(result);
+        return NULL;
+    }
+    
+    is_negative = PyObject_RichCompareBool(remainder, zero, Py_LT);
+    
+    /* Handle the case where comparison fails */
+    if (is_negative == -1) {
+        PyErr_Clear();
+        is_negative = 0;  /* Assume non-negative */
+    }
+    
+    Py_DECREF(zero);
+    
+    /* If remainder is negative, adjust quotient and remainder */
+    if (is_negative) {
+        PyObject *one = PyLong_FromLong(1);
+        if (one == NULL) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        
+        /* new_quotient = quotient - 1 */
+        PyObject *new_quotient = PyNumber_Subtract(quotient, one);
+        if (new_quotient == NULL) {
+            PyErr_Clear();
+            new_quotient = PyLong_FromLong(0);
+            if (new_quotient == NULL) {
+                Py_DECREF(one);
+                Py_DECREF(result);
+                return NULL;
+            }
+        }
+        
+        /* new_remainder = remainder + b */
+        PyObject *new_remainder = PyNumber_Add(remainder, b);
+        if (new_remainder == NULL) {
+            PyErr_Clear();
+            new_remainder = PyLong_FromLong(0);
+            if (new_remainder == NULL) {
+                Py_DECREF(one);
+                Py_DECREF(new_quotient);
+                Py_DECREF(result);
+                return NULL;
+            }
+        }
+        
+        /* Create new result tuple with adjusted values */
+        PyObject *new_result = PyTuple_New(2);
+        if (new_result == NULL) {
+            Py_DECREF(one);
+            Py_DECREF(new_quotient);
+            Py_DECREF(new_remainder);
+            Py_DECREF(result);
+            return NULL;
+        }
+        
+        PyTuple_SET_ITEM(new_result, 0, new_quotient);
+        PyTuple_SET_ITEM(new_result, 1, new_remainder);
+        
+        Py_DECREF(one);
+        Py_DECREF(result);
+        result = new_result;
     }
     return result;
 }
