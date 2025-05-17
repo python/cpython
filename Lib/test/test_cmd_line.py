@@ -299,6 +299,10 @@ class CmdLineTest(unittest.TestCase):
             cmd = [sys.executable, '-X', 'utf8', '-c', code, arg]
             return subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
 
+        def run_no_utf8_mode(arg):
+            cmd = [sys.executable, '-X', 'utf8=0', '-c', code, arg]
+            return subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
+
         valid_utf8 = 'e:\xe9, euro:\u20ac, non-bmp:\U0010ffff'.encode('utf-8')
         # invalid UTF-8 byte sequences with a valid UTF-8 sequence
         # in the middle.
@@ -311,7 +315,7 @@ class CmdLineTest(unittest.TestCase):
         )
         test_args = [valid_utf8, invalid_utf8]
 
-        for run_cmd in (run_default, run_c_locale, run_utf8_mode):
+        for run_cmd in (run_default, run_c_locale, run_utf8_mode, run_no_utf8_mode):
             with self.subTest(run_cmd=run_cmd):
                 for arg in test_args:
                     proc = run_cmd(arg)
@@ -972,10 +976,19 @@ class CmdLineTest(unittest.TestCase):
 
     @unittest.skipUnless(support.MS_WINDOWS, 'Test only applicable on Windows')
     def test_python_legacy_windows_stdio(self):
-        code = "import sys; print(sys.stdin.encoding, sys.stdout.encoding)"
-        expected = 'cp'
-        rc, out, err = assert_python_ok('-c', code, PYTHONLEGACYWINDOWSSTDIO='1')
-        self.assertIn(expected.encode(), out)
+        def get_stderr_class(legacy_windows_stdio):
+            code = 'import sys; print(type(sys.stderr.buffer.raw))'
+            env = {'PYTHONLEGACYWINDOWSSTDIO': str(int(legacy_windows_stdio))}
+            # use stderr=None as legacy_windows_stdio doesn't affect pipes
+            p = spawn_python('-c', code, env=env, stderr=None)
+            out = kill_python(p).strip().decode('ascii', 'ignore')
+            return out.removeprefix("<class '").removesuffix("'>")
+
+        out = get_stderr_class(legacy_windows_stdio=True)
+        self.assertEqual('_io.FileIO', out)
+
+        out = get_stderr_class(legacy_windows_stdio=False)
+        self.assertEqual('_io._WindowsConsoleIO', out)
 
     @unittest.skipIf("-fsanitize" in sysconfig.get_config_vars().get('PY_CFLAGS', ()),
                      "PYTHONMALLOCSTATS doesn't work with ASAN")
