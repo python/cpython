@@ -554,6 +554,11 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         ra(TypeError, lambda: td(milliseconds='1'))
         ra(TypeError, lambda: td(microseconds='1'))
 
+    def test_zero_delta(self):
+        td = timedelta
+        ns = td(nanoseconds=1)
+        assert ns/3 != ns, f"{ns/3 =} should not be equal to {ns =}"
+
     def test_computations(self):
         if self.is_fast_test(): return # BUG
         eq = self.assertEqual

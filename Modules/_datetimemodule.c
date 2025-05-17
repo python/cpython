@@ -1437,10 +1437,11 @@ new_delta_ex(int days, int seconds, int microseconds, int nanoseconds, int norma
     if (check_delta_day_range(days) < 0)
         return NULL;
 
+    // FIX: gives zero_delta.nanoseconds = 1; how?
     self = look_up_delta(days, seconds, microseconds, nanoseconds, type);
-    if (self != NULL) {
-        return (PyObject *)self;
-    }
+    // if (self != NULL) {
+    //     return (PyObject *)self;
+    // }
     assert(!PyErr_Occurred());
 
     self = (PyDateTime_Delta *) (type->tp_alloc(type, 0));
