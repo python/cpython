@@ -295,6 +295,57 @@ text
                                     ("data", content),
                                     ("endtag", element_lower)])
 
+    def test_raw_text_content(self):
+        # Tags should be treated as text in raw text and escapable raw text content.
+        content = """<h1>tagshould be handled as text"""
+        elements = [
+            "script",
+            "style",
+            "title",
+            "textarea",
+            "SCRIPT",
+            "STYLE",
+            "TITLE",
+            "TEXTAREA",
+            "Script",
+            "Style",
+            "Title",
+            "Textarea",
+        ]
+        for element in elements:
+            source = f"<{element}>{content}"
+            self._run_check(source, [
+                ("starttag", element.lower(), []),
+                ("data", content)
+            ])
+
+    def test_escapable_raw_text_content(self):
+        # Charrefs should be escaped in esacapable raw text content.
+        class Collector(EventCollector):
+            pass
+
+        content = "Timon &amp; Pumba"
+        expected = "Timon & Pumba"
+        elements = [
+            "title",
+            "textarea",
+            "TITLE",
+            "TEXTAREA",
+            "Title",
+            "Textarea",
+        ]
+        for element in elements:
+            source = f"<{element}>{content}"
+            self._run_check(
+                source, [
+                  ("starttag", element.lower(), []),
+                  ('data', 'Timon '),
+                  ('entityref', 'amp'),
+                  ('data', ' Pumba')
+                ],
+                collector=Collector(convert_charrefs=False),
+            )
+
     def test_cdata_with_closing_tags(self):
         # see issue #13358
         # make sure that HTMLParser calls handle_data only once for each CDATA.
@@ -473,7 +524,7 @@ text
             ('starttag', 'a', [('foo', None), ('=', None), ('bar', None)])
         ]
         self._run_check(html, expected)
-        #see issue #14538
+        # see issue #14538
         html = ('<meta><meta / ><meta // ><meta / / >'
                 '<meta/><meta /><meta //><meta//>')
         expected = [
