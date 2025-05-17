@@ -436,6 +436,14 @@ class BufferTextTest(unittest.TestCase):
                           "<!--abc-->", "4", "<!--def-->", "5", "</a>"],
                          "buffered text not properly split")
 
+    def test_noop(self):
+        def handler(*args):
+            parser.CharacterDataHandler = None
+
+        parser = expat.ParserCreate()
+        parser.CharacterDataHandler = handler
+        parser.Parse(b"<a>1<b/>2<c></c>3<!--abc-->4<!--def-->5</a> ", True)
+
 
 # Test handling of exception from callback:
 class HandlerExceptionTest(unittest.TestCase):
