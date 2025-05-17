@@ -224,8 +224,8 @@ _PyCompile_MaybeAddStaticAttributeToClass(compiler *c, expr_ty e)
     return SUCCESS;
 }
 
-static int
-compiler_set_qualname(compiler *c)
+static PyObject *
+compiler_calc_qualname(compiler *c, PyObject *u_name)
 {
     Py_ssize_t stack_size;
     struct compiler_unit *u = c->u;
@@ -248,8 +248,7 @@ compiler_set_qualname(compiler *c)
             if (stack_size == 2) {
                 // If we're immediately within the module, we can skip
                 // the rest and just set the qualname to be the same as name.
-                u->u_metadata.u_qualname = Py_NewRef(u->u_metadata.u_name);
-                return SUCCESS;
+                return Py_NewRef(u_name);
             }
             capsule = PyList_GET_ITEM(c->c_stack, stack_size - 2);
             parent = (struct compiler_unit *)PyCapsule_GetPointer(capsule, CAPSULE_NAME);
@@ -259,15 +258,17 @@ compiler_set_qualname(compiler *c)
         if (u->u_scope_type == COMPILE_SCOPE_FUNCTION
             || u->u_scope_type == COMPILE_SCOPE_ASYNC_FUNCTION
             || u->u_scope_type == COMPILE_SCOPE_CLASS) {
-            assert(u->u_metadata.u_name);
-            mangled = _Py_Mangle(parent->u_private, u->u_metadata.u_name);
+            assert(u_name);
+            mangled = _Py_Mangle(parent->u_private, u_name);
             if (!mangled) {
-                return ERROR;
+                return NULL;
             }
 
             scope = _PyST_GetScope(parent->u_ste, mangled);
             Py_DECREF(mangled);
-            RETURN_IF_ERROR(scope);
+            if (scope == -1) {
+                return NULL;
+            }
             assert(scope != GLOBAL_IMPLICIT);
             if (scope == GLOBAL_EXPLICIT)
                 force_global = 1;
@@ -282,7 +283,7 @@ compiler_set_qualname(compiler *c)
                 base = PyUnicode_Concat(parent->u_metadata.u_qualname,
                                         &_Py_STR(dot_locals));
                 if (base == NULL) {
-                    return ERROR;
+                    return NULL;
                 }
             }
             else {
@@ -295,18 +296,28 @@ compiler_set_qualname(compiler *c)
         name = PyUnicode_Concat(base, _Py_LATIN1_CHR('.'));
         Py_DECREF(base);
         if (name == NULL) {
-            return ERROR;
+            return NULL;
         }
-        PyUnicode_Append(&name, u->u_metadata.u_name);
+        PyUnicode_Append(&name, u_name);
         if (name == NULL) {
-            return ERROR;
+            return NULL;
         }
     }
     else {
-        name = Py_NewRef(u->u_metadata.u_name);
+        name = Py_NewRef(u_name);
     }
-    u->u_metadata.u_qualname = name;
 
+    return name;
+}
+
+static int
+compiler_set_qualname(compiler *c)
+{
+    PyObject *qualname = compiler_calc_qualname(c, c->u->u_metadata.u_name);
+    if (qualname == NULL) {
+        return ERROR;
+    }
+    c->u->u_metadata.u_qualname = qualname;
     return SUCCESS;
 }
 
@@ -1313,6 +1324,12 @@ _PyCompile_Qualname(compiler *c)
 {
     assert(c->u->u_metadata.u_qualname);
     return c->u->u_metadata.u_qualname;
+}
+
+PyObject *
+_PyCompile_PeekQualname(compiler *c, PyObject *name)
+{
+    return compiler_calc_qualname(c, name);
 }
 
 _PyCompile_CodeUnitMetadata *
