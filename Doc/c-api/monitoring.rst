@@ -1,5 +1,7 @@
 .. highlight:: c
 
+.. c-api-tools-banner::
+
 .. _c-api-monitoring:
 
 Monitoring C API

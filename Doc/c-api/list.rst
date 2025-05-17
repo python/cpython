@@ -7,6 +7,8 @@ List Objects
 
 .. index:: pair: object; list
 
+.. c-api-tools-banner::
+
 
 .. c:type:: PyListObject
 

@@ -5,6 +5,8 @@
 Call Protocol
 =============
 
+.. c-api-tools-banner::
+
 CPython supports two different calling protocols:
 *tp_call* and vectorcall.
 

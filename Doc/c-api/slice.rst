@@ -5,6 +5,8 @@
 Slice Objects
 -------------
 
+.. c-api-tools-banner::
+
 
 .. c:var:: PyTypeObject PySlice_Type
 

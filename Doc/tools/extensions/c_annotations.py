@@ -265,6 +265,38 @@ class LimitedAPIList(SphinxDirective):
         return [node]
 
 
+class CAPIToolsBanner(SphinxDirective):
+    """CAPI Tools banner."""
+
+    has_content = False
+    required_arguments = 0
+    optional_arguments = 0
+    final_argument_whitespace = True
+
+    text = sphinx_gettext(
+        "The Python C API is a low level interface that allows language runtime "
+        "embedding and extension module development tools to integrate "
+        "with the running interpreter. It is generally recommended to use a "
+        "higher level :ref:`third party tool <c-api-tools>`, rather than using the "
+        "Python C API directly."
+    )
+
+    def run(self) -> list[nodes.admonition]:
+        text = self.text
+
+        text_node = nodes.paragraph(text)
+        text_node.line = self.lineno
+        node, msg = self.state.inline_text(text, self.lineno)
+        text_node.extend(node + msg)
+
+        source_lines = [text]
+        admonition_node = nodes.note(
+            "\n".join(source_lines), classes=["admonition note"]
+        )
+        admonition_node.append(text_node)
+        return [admonition_node]
+
+
 def init_annotations(app: Sphinx) -> None:
     # Using domaindata is a bit hack-ish,
     # but allows storing state without a global variable or closure.
@@ -281,6 +313,7 @@ def setup(app: Sphinx) -> ExtensionMetadata:
     app.add_config_value("refcount_file", "", "env", types={str})
     app.add_config_value("stable_abi_file", "", "env", types={str})
     app.add_directive("limited-api-list", LimitedAPIList)
+    app.add_directive("c-api-tools-banner", CAPIToolsBanner)
     app.connect("builder-inited", init_annotations)
     app.connect("doctree-read", add_annotations)
 

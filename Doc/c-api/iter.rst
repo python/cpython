@@ -5,6 +5,8 @@
 Iterator Protocol
 =================
 
+.. c-api-tools-banner::
+
 There are two functions specifically for working with iterators.
 
 .. c:function:: int PyIter_Check(PyObject *o)

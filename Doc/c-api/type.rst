@@ -7,6 +7,8 @@ Type Objects
 
 .. index:: pair: object; type
 
+.. c-api-tools-banner::
+
 
 .. c:type:: PyTypeObject
 

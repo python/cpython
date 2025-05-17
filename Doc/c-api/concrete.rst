@@ -7,6 +7,8 @@
 Concrete Objects Layer
 **********************
 
+.. c-api-tools-banner::
+
 The functions in this chapter are specific to certain Python object types.
 Passing them an object of the wrong type is not a good idea; if you receive an
 object from a Python program and you are not sure that it has the right type,

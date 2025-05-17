@@ -7,6 +7,8 @@
 Initialization, Finalization, and Threads
 *****************************************
 
+.. c-api-tools-banner::
+
 See :ref:`Python Initialization Configuration <init-config>` for details
 on how to configure the interpreter prior to initialization.
 

@@ -5,6 +5,8 @@
 Type Object Structures
 ======================
 
+.. c-api-tools-banner::
+
 Perhaps one of the most important structures of the Python object system is the
 structure that defines a new type: the :c:type:`PyTypeObject` structure.  Type
 objects can be handled using any of the ``PyObject_*`` or

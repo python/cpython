@@ -5,6 +5,8 @@
 Reflection
 ==========
 
+.. c-api-tools-banner::
+
 .. c:function:: PyObject* PyEval_GetBuiltins(void)
 
    .. deprecated:: 3.13

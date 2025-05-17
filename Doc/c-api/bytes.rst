@@ -5,6 +5,8 @@
 Bytes Objects
 -------------
 
+.. c-api-tools-banner::
+
 These functions raise :exc:`TypeError` when expecting a bytes parameter and
 called with a non-bytes parameter.
 

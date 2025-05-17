@@ -3,6 +3,8 @@
 Codec registry and support functions
 ====================================
 
+.. c-api-tools-banner::
+
 .. c:function:: int PyCodec_Register(PyObject *search_function)
 
    Register a new codec search function.

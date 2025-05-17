@@ -5,6 +5,8 @@
 Iterator Objects
 ----------------
 
+.. c-api-tools-banner::
+
 Python provides two general-purpose iterator objects.  The first, a sequence
 iterator, works with an arbitrary sequence supporting the :meth:`~object.__getitem__`
 method.  The second works with a callable object and a sentinel value, calling
