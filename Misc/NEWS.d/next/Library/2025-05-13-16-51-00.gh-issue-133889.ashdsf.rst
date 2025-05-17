@@ -1,0 +1,1 @@
+Encode file paths with utf-8 in :meth:`http.SimpleHTTPRequestHandler.list_directory`.
