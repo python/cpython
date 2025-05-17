@@ -171,6 +171,13 @@ class _LazyModule(types.ModuleType):
     def __getattribute__(self, attr):
         """Trigger the load of the module and return the attribute."""
         __spec__ = object.__getattribute__(self, '__spec__')
+
+        # Allow __spec__ to go through without triggering the load, since the import
+        # machinery uses it to determine if a cached module is still initialzing
+        # (see importlib._bootstrap._find_and_load()).
+        if attr == "__spec__":
+            return __spec__
+
         loader_state = __spec__.loader_state
         with loader_state['lock']:
             # Only the first thread to get the lock should trigger the load
