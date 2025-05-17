@@ -713,19 +713,21 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     case 'b': { /* unsigned byte -- very short int */
         unsigned char *p = va_arg(*p_va, unsigned char *);
         HANDLE_NULLABLE;
-        long ival = PyLong_AsLong(arg);
+        int overflow;
+        long ival = PyLong_AsLongAndOverflow(arg, &overflow);
         if (ival == -1 && PyErr_Occurred())
             RETURN_ERR_OCCURRED;
-        else if (ival < 0) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "unsigned byte integer is less than minimum");
-            RETURN_ERR_OCCURRED;
-        }
-        else if (ival > UCHAR_MAX) {
+        else if (overflow > 0 || ival > UCHAR_MAX) {
             PyErr_SetString(PyExc_OverflowError,
                             "unsigned byte integer is greater than maximum");
             RETURN_ERR_OCCURRED;
         }
+        else if (overflow < 0 || ival < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "unsigned byte integer is less than minimum");
+            RETURN_ERR_OCCURRED;
+        }
+        else
             *p = (unsigned char) ival;
         break;
     }
@@ -745,17 +747,18 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     case 'h': {/* signed short int */
         short *p = va_arg(*p_va, short *);
         HANDLE_NULLABLE;
-        long ival = PyLong_AsLong(arg);
+        int overflow;
+        long ival = PyLong_AsLongAndOverflow(arg, &overflow);
         if (ival == -1 && PyErr_Occurred())
             RETURN_ERR_OCCURRED;
-        else if (ival < SHRT_MIN) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is less than minimum");
-            RETURN_ERR_OCCURRED;
-        }
-        else if (ival > SHRT_MAX) {
+        else if (overflow > 0 || ival > SHRT_MAX) {
             PyErr_SetString(PyExc_OverflowError,
                             "signed short integer is greater than maximum");
+            RETURN_ERR_OCCURRED;
+        }
+        else if (overflow < 0 || ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
             RETURN_ERR_OCCURRED;
         }
         else
@@ -778,15 +781,16 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     case 'i': {/* signed int */
         int *p = va_arg(*p_va, int *);
         HANDLE_NULLABLE;
-        long ival = PyLong_AsLong(arg);
+        int overflow;
+        long ival = PyLong_AsLongAndOverflow(arg, &overflow);
         if (ival == -1 && PyErr_Occurred())
             RETURN_ERR_OCCURRED;
-        else if (ival > INT_MAX) {
+        else if (overflow > 0 || ival > INT_MAX) {
             PyErr_SetString(PyExc_OverflowError,
                             "signed integer is greater than maximum");
             RETURN_ERR_OCCURRED;
         }
-        else if (ival < INT_MIN) {
+        else if (overflow < 0 || ival < INT_MIN) {
             PyErr_SetString(PyExc_OverflowError,
                             "signed integer is less than minimum");
             RETURN_ERR_OCCURRED;

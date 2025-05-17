@@ -534,7 +534,7 @@ class`. In addition, it provides a few more methods:
 
     The *signed* argument determines whether two's complement is used to
     represent the integer.  If *signed* is ``False`` and a negative integer is
-    given, an :exc:`OverflowError` is raised. The default value for *signed*
+    given, a :exc:`ValueError` is raised. The default value for *signed*
     is ``False``.
 
     The default values can be used to conveniently turn an integer into a
@@ -559,8 +559,14 @@ class`. In addition, it provides a few more methods:
             return bytes((n >> i*8) & 0xff for i in order)
 
     .. versionadded:: 3.2
+
     .. versionchanged:: 3.11
-       Added default argument values for ``length`` and ``byteorder``.
+       Added default argument values for *length* and *byteorder*.
+
+    .. versionchanged:: next
+       Raise :exc:`ValueError` instead of :exc:`OverflowError` for
+       negative integer if *signed* is false.
+
 
 .. classmethod:: int.from_bytes(bytes, byteorder='big', *, signed=False)
 
