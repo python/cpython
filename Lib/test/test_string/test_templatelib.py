@@ -149,13 +149,11 @@ class TemplateIterTests(unittest.TestCase):
         self.assertEqual(res[2], ' yz')
 
     def test_exhausted(self):
-        # gh-134119
+        # See https://github.com/python/cpython/issues/134119.
         template_iter = iter(t"{1}")
         self.assertIsInstance(next(template_iter), Interpolation)
-        with self.assertRaises(StopIteration):
-            next(template_iter)
-        with self.assertRaises(StopIteration):
-            next(template_iter)
+        self.assertRaises(StopIteration, next, template_iter)
+        self.assertRaises(StopIteration, next, template_iter)
 
 
 if __name__ == '__main__':
