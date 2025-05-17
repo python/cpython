@@ -242,7 +242,6 @@ class SMTP:
         will be used.
 
         """
-        self._host = host
         self.timeout = timeout
         self.esmtp_features = {}
         self.command_encoding = 'ascii'
@@ -333,6 +332,7 @@ class SMTP:
                     port = int(port)
                 except ValueError:
                     raise OSError("nonnumeric port")
+        self._host = host
         if not port:
             port = self.default_port
         sys.audit("smtplib.connect", self, host, port)
