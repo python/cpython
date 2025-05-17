@@ -1744,12 +1744,12 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
                 time.sleep(0.1)
                 timeout -= 1
                 continue
-            _protocol, _host, _port = self.parse_cli_output(line)
-            if not _protocol or not _host or not _port:
+            protocol_, host_, port_ = self.parse_cli_output(line)
+            if not protocol_ or not host_ or not port_:
                 time.sleep(0.1)
                 timeout -= 1
                 continue
-            if _protocol == protocol and _host == bind and _port == port:
+            if protocol_ == protocol and host_ == bind and port_ == port:
                 return True
             else:
                 break
