@@ -14,6 +14,7 @@ from unittest import mock
 
 from test import support
 from test.support import import_helper
+from test.support.script_helper import assert_python_ok
 
 py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
 c_uuid = import_helper.import_fresh_module('uuid', fresh=['_uuid'])
@@ -1217,9 +1218,36 @@ class BaseTestUUID:
 class TestUUIDWithoutExtModule(BaseTestUUID, unittest.TestCase):
     uuid = py_uuid
 
+
 @unittest.skipUnless(c_uuid, 'requires the C _uuid module')
 class TestUUIDWithExtModule(BaseTestUUID, unittest.TestCase):
     uuid = c_uuid
+
+    def check_has_stable_libuuid_extractable_node(self):
+        if not self.uuid._has_stable_extractable_node:
+            self.skipTest("libuuid cannot deduce MAC address")
+
+    @unittest.skipUnless(os.name == 'posix', 'POSIX only')
+    def test_unix_getnode_from_libuuid(self):
+        self.check_has_stable_libuuid_extractable_node()
+        script = 'import uuid; print(uuid._unix_getnode())'
+        _, n_a, _ = assert_python_ok('-c', script)
+        _, n_b, _ = assert_python_ok('-c', script)
+        n_a, n_b = n_a.decode().strip(), n_b.decode().strip()
+        self.assertTrue(n_a.isdigit())
+        self.assertTrue(n_b.isdigit())
+        self.assertEqual(n_a, n_b)
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows only')
+    def test_windows_getnode_from_libuuid(self):
+        self.check_has_stable_libuuid_extractable_node()
+        script = 'import uuid; print(uuid._windll_getnode())'
+        _, n_a, _ = assert_python_ok('-c', script)
+        _, n_b, _ = assert_python_ok('-c', script)
+        n_a, n_b = n_a.decode().strip(), n_b.decode().strip()
+        self.assertTrue(n_a.isdigit())
+        self.assertTrue(n_b.isdigit())
+        self.assertEqual(n_a, n_b)
 
 
 class BaseTestInternals:
