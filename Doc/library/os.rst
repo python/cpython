@@ -4255,15 +4255,6 @@ Process Management
 
 These functions may be used to create and manage processes.
 
-The various :func:`exec\* <execl>` functions take a list of arguments for the new
-program loaded into the process.  In each case, the first of these arguments is
-passed to the new program as its own name rather than as an argument a user may
-have typed on a command line.  For the C programmer, this is the ``argv[0]``
-passed to a program's :c:func:`main`.  For example, ``os.execv('/bin/echo',
-['foo', 'bar'])`` will only print ``bar`` on standard output; ``foo`` will seem
-to be ignored.
-
-
 .. function:: abort()
 
    Generate a :const:`SIGABRT` signal to the current process.  On Unix, the default
@@ -4325,6 +4316,15 @@ to be ignored.
    :func:`sys.stdout.flush` or :func:`os.fsync` before calling an
    :func:`exec\* <execl>` function.
 
+   *Program arguments*
+
+   The exec functions take a list of arguments for the new program. The first of these 
+   is by convention the command name used on the command line, rather than an argument to the command, 
+   and becomes argv[0] passed to the main function of a C program.
+
+   For example, ``os.execv('/bin/echo', ['echo', 'foo', 'bar'])`` would only print ``foo bar``; 
+   the echo argument would seem to be ignored.
+
    The "l" and "v" variants of the :func:`exec\* <execl>` functions differ in how
    command-line arguments are passed.  The "l" variants are perhaps the easiest
    to work with if the number of parameters is fixed when the code is written; the
@@ -4334,16 +4334,27 @@ to be ignored.
    parameter.  In either case, the arguments to the child process should start with
    the name of the command being run, but this is not enforced.
 
+   *Location of the executable*
+
    The variants which include a "p" near the end (:func:`execlp`,
    :func:`execlpe`, :func:`execvp`, and :func:`execvpe`) will use the
    :envvar:`PATH` environment variable to locate the program *file*.  When the
-   environment is being replaced (using one of the :func:`exec\*e <execl>` variants,
-   discussed in the next paragraph), the new environment is used as the source of
-   the :envvar:`PATH` variable. The other variants, :func:`execl`, :func:`execle`,
-   :func:`execv`, and :func:`execve`, will not use the :envvar:`PATH` variable to
+   environment is being replaced (see *Environment variables*
+   below), the new environment is used as the source of
+   the :envvar:`PATH` variable.
+
+   The variants without "p" (:func:`execl`, :func:`execle`,
+   :func:`execv`, and :func:`execve`) will not use the :envvar:`PATH` variable to
    locate the executable; *path* must contain an appropriate absolute or relative
    path. Relative paths must include at least one slash, even on Windows, as
    plain names will not be resolved.
+
+   For :func:`execve` on some platforms, *path* may also be specified as an open
+   file descriptor.  This functionality may not be supported on your platform;
+   you can check whether or not it is available using :data:`os.supports_fd`.
+   If it is unavailable, using it will raise a :exc:`NotImplementedError`.
+
+   *Environment variables*
 
    For :func:`execle`, :func:`execlpe`, :func:`execve`, and :func:`execvpe` (note
    that these all end in "e"), the *env* parameter must be a mapping which is
@@ -4351,11 +4362,6 @@ to be ignored.
    instead of the current process' environment); the functions :func:`execl`,
    :func:`execlp`, :func:`execv`, and :func:`execvp` all cause the new process to
    inherit the environment of the current process.
-
-   For :func:`execve` on some platforms, *path* may also be specified as an open
-   file descriptor.  This functionality may not be supported on your platform;
-   you can check whether or not it is available using :data:`os.supports_fd`.
-   If it is unavailable, using it will raise a :exc:`NotImplementedError`.
 
    .. audit-event:: os.exec path,args,env os.execl
 
@@ -4367,6 +4373,11 @@ to be ignored.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. seealso::
+      The :mod:`subprocess` module.
+
+      The :func:`system` and :func:`spawn <spawnl>` functions also execute a new program.
 
 .. function:: _exit(n)
 
@@ -4872,12 +4883,13 @@ written in Python, such as a mail server's external command delivery program.
               spawnvp(mode, file, args)
               spawnvpe(mode, file, args, env)
 
-   Execute the program *path* in a new process.
 
    (Note that the :mod:`subprocess` module provides more powerful facilities for
    spawning new processes and retrieving their results; using that module is
    preferable to using these functions.  Check especially the
    :ref:`subprocess-replacements` section.)
+
+   Execute the program *path* in a new process.
 
    If *mode* is :const:`P_NOWAIT`, this function returns the process id of the new
    process; if *mode* is :const:`P_WAIT`, returns the process's exit code if it
@@ -4941,6 +4953,10 @@ written in Python, such as a mail server's external command delivery program.
       These functions are :term:`soft deprecated` and should no longer be used
       to write new code. The :mod:`subprocess` module is recommended instead.
 
+   .. seealso::
+      The :mod:`subprocess` module.
+
+      The :func:`system` and :func:`exec <execl>` functions also execute a new program.
 
 .. data:: P_NOWAIT
           P_NOWAITO
@@ -5027,6 +5043,10 @@ written in Python, such as a mail server's external command delivery program.
 
 .. function:: system(command)
 
+   (Note that the :mod:`subprocess` module provides more powerful facilities for
+   executing programs; using that module is preferable to using these functions.
+   Refer to the :ref:`subprocess-replacements` section for some helpful recipes.)
+
    Execute the command (a string) in a subshell.  This is implemented by calling
    the Standard C function :c:func:`system`, and has the same limitations.
    Changes to :data:`sys.stdin`, etc. are not reflected in the environment of
@@ -5044,11 +5064,6 @@ written in Python, such as a mail server's external command delivery program.
    status of the command run; on systems using a non-native shell, consult your
    shell documentation.
 
-   The :mod:`subprocess` module provides more powerful facilities for spawning
-   new processes and retrieving their results; using that module is recommended
-   to using this function.  See the :ref:`subprocess-replacements` section in
-   the :mod:`subprocess` documentation for some helpful recipes.
-
    On Unix, :func:`waitstatus_to_exitcode` can be used to convert the result
    (exit status) into an exit code. On Windows, the result is directly the exit
    code.
@@ -5057,6 +5072,10 @@ written in Python, such as a mail server's external command delivery program.
 
    .. availability:: Unix, Windows, not WASI, not Android, not iOS.
 
+   .. seealso::
+      The :mod:`subprocess` module.
+
+      The :func:`exec <execl>` and :func:`spawn <spawnl>` functions also execute a system command.
 
 .. function:: times()
 
