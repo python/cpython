@@ -1704,7 +1704,7 @@ class CommandLineTestCase(unittest.TestCase):
 
 class CommandLineRunTimeTestCase(unittest.TestCase):
     random_data = os.urandom(32)
-    random_file_name = 'random.bin'
+    random_file_name = 'served_filename'
     tls_cert = certdata_file('ssl_cert.pem')
     tls_key = certdata_file('ssl_key.pem')
     tls_password = 'somepass'
