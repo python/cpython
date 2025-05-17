@@ -61,7 +61,7 @@ import warnings
 import weakref
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from unittest.mock import patch
+from unittest.mock import call, Mock, patch
 from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)
@@ -4214,6 +4214,89 @@ class ConfigDictTest(BaseTest):
         handler = logging.getHandlerByName('custom')
         self.assertEqual(handler.custom_kwargs, custom_kwargs)
 
+    # See gh-91555 and gh-90321
+    @support.requires_subprocess()
+    def test_deadlock_in_queue(self):
+        queue = multiprocessing.Queue()
+        handler = logging.handlers.QueueHandler(queue)
+        logger = multiprocessing.get_logger()
+        level = logger.level
+        try:
+            logger.setLevel(logging.DEBUG)
+            logger.addHandler(handler)
+            logger.debug("deadlock")
+        finally:
+            logger.setLevel(level)
+            logger.removeHandler(handler)
+
+    def test_recursion_in_custom_handler(self):
+        class BadHandler(logging.Handler):
+            def __init__(self):
+                super().__init__()
+            def emit(self, record):
+                logger.debug("recurse")
+        logger = logging.getLogger("test_recursion_in_custom_handler")
+        logger.addHandler(BadHandler())
+        logger.setLevel(logging.DEBUG)
+        logger.debug("boom")
+
+    @threading_helper.requires_working_threading()
+    def test_thread_supression_noninterference(self):
+        lock = threading.Lock()
+        logger = logging.getLogger("test_thread_supression_noninterference")
+
+        # Block on the first call, allow others through
+        #
+        # NOTE: We need to bypass the base class's lock, otherwise that will
+        #       block multiple calls to the same handler itself.
+        class BlockOnceHandler(TestHandler):
+            def __init__(self, barrier):
+                super().__init__(support.Matcher())
+                self.barrier = barrier
+
+            def createLock(self):
+                self.lock = None
+
+            def handle(self, record):
+                self.emit(record)
+
+            def emit(self, record):
+                if self.barrier:
+                    barrier = self.barrier
+                    self.barrier = None
+                    barrier.wait()
+                    with lock:
+                        pass
+                super().emit(record)
+                logger.info("blow up if not supressed")
+
+        barrier = threading.Barrier(2)
+        handler = BlockOnceHandler(barrier)
+        logger.addHandler(handler)
+        logger.setLevel(logging.DEBUG)
+
+        t1 = threading.Thread(target=logger.debug, args=("1",))
+        with lock:
+
+            # Ensure first thread is blocked in the handler, hence supressing logging...
+            t1.start()
+            barrier.wait()
+
+            # ...but the second thread should still be able to log...
+            t2 = threading.Thread(target=logger.debug, args=("2",))
+            t2.start()
+            t2.join(timeout=3)
+
+            self.assertEqual(len(handler.buffer), 1)
+            self.assertTrue(handler.matches(levelno=logging.DEBUG, message='2'))
+
+            # The first thread should still be blocked here
+            self.assertTrue(t1.is_alive())
+
+        # Now the lock has been released the first thread should complete
+        t1.join()
+        self.assertEqual(len(handler.buffer), 2)
+        self.assertTrue(handler.matches(levelno=logging.DEBUG, message='1'))
 
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):
@@ -5572,12 +5655,19 @@ class BasicConfigTest(unittest.TestCase):
         assertRaises = self.assertRaises
         handlers = [logging.StreamHandler()]
         stream = sys.stderr
+        formatter = logging.Formatter()
         assertRaises(ValueError, logging.basicConfig, filename='test.log',
                                                       stream=stream)
         assertRaises(ValueError, logging.basicConfig, filename='test.log',
                                                       handlers=handlers)
         assertRaises(ValueError, logging.basicConfig, stream=stream,
                                                       handlers=handlers)
+        assertRaises(ValueError, logging.basicConfig, formatter=formatter,
+                                                      format='%(message)s')
+        assertRaises(ValueError, logging.basicConfig, formatter=formatter,
+                                                      datefmt='%H:%M:%S')
+        assertRaises(ValueError, logging.basicConfig, formatter=formatter,
+                                                      style='%')
         # Issue 23207: test for invalid kwargs
         assertRaises(ValueError, logging.basicConfig, loglevel=logging.INFO)
         # Should pop both filename and filemode even if filename is None
@@ -5711,6 +5801,20 @@ class BasicConfigTest(unittest.TestCase):
             os.remove('test.log')
             # didn't write anything due to the encoding error
             self.assertEqual(data, r'')
+
+    def test_formatter_given(self):
+        mock_formatter = Mock()
+        mock_handler = Mock(formatter=None)
+        with patch("logging.Formatter") as mock_formatter_init:
+            logging.basicConfig(formatter=mock_formatter, handlers=[mock_handler])
+        self.assertEqual(mock_handler.setFormatter.call_args_list, [call(mock_formatter)])
+        self.assertEqual(mock_formatter_init.call_count, 0)
+
+    def test_formatter_not_given(self):
+        mock_handler = Mock(formatter=None)
+        with patch("logging.Formatter") as mock_formatter_init:
+            logging.basicConfig(handlers=[mock_handler])
+        self.assertEqual(mock_formatter_init.call_count, 1)
 
     @support.requires_working_socket()
     def test_log_taskName(self):

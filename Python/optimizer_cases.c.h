@@ -171,14 +171,13 @@
 
         case _TO_BOOL_BOOL: {
             JitOptSymbol *value;
-            JitOptSymbol *res;
             value = stack_pointer[-1];
-            int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &value);
             if (!already_bool) {
                 sym_set_type(value, &PyBool_Type);
-                res = sym_new_truthiness(ctx, value, true);
+                value = sym_new_truthiness(ctx, value, true);
             }
-            stack_pointer[-1] = res;
+            stack_pointer[-1] = value;
             break;
         }
 
@@ -292,22 +291,22 @@
         }
 
         case _GUARD_NOS_INT: {
-            JitOptSymbol *nos;
-            nos = stack_pointer[-2];
-            if (sym_matches_type(nos, &PyLong_Type)) {
+            JitOptSymbol *left;
+            left = stack_pointer[-2];
+            if (sym_matches_type(left, &PyLong_Type)) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
-            sym_set_type(nos, &PyLong_Type);
+            sym_set_type(left, &PyLong_Type);
             break;
         }
 
         case _GUARD_TOS_INT: {
-            JitOptSymbol *tos;
-            tos = stack_pointer[-1];
-            if (sym_matches_type(tos, &PyLong_Type)) {
+            JitOptSymbol *value;
+            value = stack_pointer[-1];
+            if (sym_matches_type(value, &PyLong_Type)) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
-            sym_set_type(tos, &PyLong_Type);
+            sym_set_type(value, &PyLong_Type);
             break;
         }
 
@@ -396,22 +395,22 @@
         }
 
         case _GUARD_NOS_FLOAT: {
-            JitOptSymbol *nos;
-            nos = stack_pointer[-2];
-            if (sym_matches_type(nos, &PyFloat_Type)) {
+            JitOptSymbol *left;
+            left = stack_pointer[-2];
+            if (sym_matches_type(left, &PyFloat_Type)) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
-            sym_set_type(nos, &PyFloat_Type);
+            sym_set_type(left, &PyFloat_Type);
             break;
         }
 
         case _GUARD_TOS_FLOAT: {
-            JitOptSymbol *tos;
-            tos = stack_pointer[-1];
-            if (sym_matches_type(tos, &PyFloat_Type)) {
+            JitOptSymbol *value;
+            value = stack_pointer[-1];
+            if (sym_matches_type(value, &PyFloat_Type)) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
-            sym_set_type(tos, &PyFloat_Type);
+            sym_set_type(value, &PyFloat_Type);
             break;
         }
 
@@ -811,14 +810,17 @@
         /* _SEND is not a viable micro-op for tier 2 */
 
         case _SEND_GEN_FRAME: {
+            _Py_UOpsAbstractFrame *gen_frame;
+            gen_frame = NULL;
             ctx->done = true;
+            stack_pointer[-1] = (JitOptSymbol *)gen_frame;
             break;
         }
 
         case _YIELD_VALUE: {
-            JitOptSymbol *res;
-            res = sym_new_unknown(ctx);
-            stack_pointer[-1] = res;
+            JitOptSymbol *value;
+            value = sym_new_unknown(ctx);
+            stack_pointer[-1] = value;
             break;
         }
 
@@ -858,7 +860,10 @@
 
         case _UNPACK_SEQUENCE: {
             JitOptSymbol **values;
+            JitOptSymbol **top;
             values = &stack_pointer[-1];
+            top = &stack_pointer[-1 + oparg];
+            (void)top;
             for (int i = 0; i < oparg; i++) {
                 values[i] = sym_new_unknown(ctx);
             }
@@ -907,7 +912,10 @@
 
         case _UNPACK_EX: {
             JitOptSymbol **values;
+            JitOptSymbol **top;
             values = &stack_pointer[-1];
+            top = &stack_pointer[(oparg & 0xFF) + (oparg >> 8)];
+            (void)top;
             int totalargs = (oparg & 0xFF) + (oparg >> 8) + 1;
             for (int i = 0; i < totalargs; i++) {
                 values[i] = sym_new_unknown(ctx);
@@ -1376,18 +1384,18 @@
         }
 
         case _IS_OP: {
-            JitOptSymbol *res;
-            res = sym_new_type(ctx, &PyBool_Type);
-            stack_pointer[-2] = res;
+            JitOptSymbol *b;
+            b = sym_new_type(ctx, &PyBool_Type);
+            stack_pointer[-2] = b;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _CONTAINS_OP: {
-            JitOptSymbol *res;
-            res = sym_new_type(ctx, &PyBool_Type);
-            stack_pointer[-2] = res;
+            JitOptSymbol *b;
+            b = sym_new_type(ctx, &PyBool_Type);
+            stack_pointer[-2] = b;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -1405,18 +1413,18 @@
         }
 
         case _CONTAINS_OP_SET: {
-            JitOptSymbol *res;
-            res = sym_new_type(ctx, &PyBool_Type);
-            stack_pointer[-2] = res;
+            JitOptSymbol *b;
+            b = sym_new_type(ctx, &PyBool_Type);
+            stack_pointer[-2] = b;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _CONTAINS_OP_DICT: {
-            JitOptSymbol *res;
-            res = sym_new_type(ctx, &PyBool_Type);
-            stack_pointer[-2] = res;
+            JitOptSymbol *b;
+            b = sym_new_type(ctx, &PyBool_Type);
+            stack_pointer[-2] = b;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -1600,7 +1608,12 @@
         }
 
         case _FOR_ITER_GEN_FRAME: {
+            _Py_UOpsAbstractFrame *gen_frame;
+            gen_frame = NULL;
             ctx->done = true;
+            stack_pointer[0] = (JitOptSymbol *)gen_frame;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -1721,15 +1734,16 @@
 
         case _MAYBE_EXPAND_METHOD: {
             JitOptSymbol **args;
-            JitOptSymbol *func;
-            JitOptSymbol *maybe_self;
+            JitOptSymbol *self_or_null;
+            JitOptSymbol *callable;
             args = &stack_pointer[-oparg];
-            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             (void)args;
-            func = sym_new_not_null(ctx);
-            maybe_self = sym_new_not_null(ctx);
-            stack_pointer[-2 - oparg] = func;
-            stack_pointer[-1 - oparg] = maybe_self;
+            callable = sym_new_not_null(ctx);
+            self_or_null = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = callable;
+            stack_pointer[-1 - oparg] = self_or_null;
             break;
         }
 
@@ -1921,6 +1935,16 @@
             break;
         }
 
+        case _GUARD_THIRD_NULL: {
+            JitOptSymbol *null;
+            null = stack_pointer[-3];
+            if (sym_is_null(null)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_null(null);
+            break;
+        }
+
         case _GUARD_CALLABLE_TYPE_1: {
             JitOptSymbol *callable;
             callable = stack_pointer[-3];
@@ -2001,17 +2025,18 @@
 
         case _CHECK_AND_ALLOCATE_OBJECT: {
             JitOptSymbol **args;
-            JitOptSymbol *self;
-            JitOptSymbol *init;
+            JitOptSymbol *self_or_null;
+            JitOptSymbol *callable;
             args = &stack_pointer[-oparg];
-            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             uint32_t type_version = (uint32_t)this_instr->operand0;
             (void)type_version;
             (void)args;
-            self = sym_new_not_null(ctx);
-            init = sym_new_not_null(ctx);
-            stack_pointer[-2 - oparg] = self;
-            stack_pointer[-1 - oparg] = init;
+            callable = sym_new_not_null(ctx);
+            self_or_null = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = callable;
+            stack_pointer[-1 - oparg] = self_or_null;
             break;
         }
 
@@ -2087,11 +2112,22 @@
             break;
         }
 
+        case _GUARD_CALLABLE_ISINSTANCE: {
+            JitOptSymbol *callable;
+            callable = stack_pointer[-4];
+            PyObject *isinstance = _PyInterpreterState_GET()->callable_cache.isinstance;
+            if (sym_get_const(ctx, callable) == isinstance) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_const(callable, isinstance);
+            break;
+        }
+
         case _CALL_ISINSTANCE: {
             JitOptSymbol *res;
             res = sym_new_not_null(ctx);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
+            stack_pointer[-4] = res;
+            stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -2270,15 +2306,15 @@
         }
 
         case _BINARY_OP: {
-            JitOptSymbol *right;
-            JitOptSymbol *left;
+            JitOptSymbol *rhs;
+            JitOptSymbol *lhs;
             JitOptSymbol *res;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            bool lhs_int = sym_matches_type(left, &PyLong_Type);
-            bool rhs_int = sym_matches_type(right, &PyLong_Type);
-            bool lhs_float = sym_matches_type(left, &PyFloat_Type);
-            bool rhs_float = sym_matches_type(right, &PyFloat_Type);
+            rhs = stack_pointer[-1];
+            lhs = stack_pointer[-2];
+            bool lhs_int = sym_matches_type(lhs, &PyLong_Type);
+            bool rhs_int = sym_matches_type(rhs, &PyLong_Type);
+            bool lhs_float = sym_matches_type(lhs, &PyFloat_Type);
+            bool rhs_float = sym_matches_type(rhs, &PyFloat_Type);
             if (!((lhs_int || lhs_float) && (rhs_int || rhs_float))) {
                 res = sym_new_unknown(ctx);
             }
@@ -2289,10 +2325,10 @@
                 else if (lhs_float) {
                     res = sym_new_type(ctx, &PyFloat_Type);
                 }
-                else if (!sym_is_const(ctx, right)) {
+                else if (!sym_is_const(ctx, rhs)) {
                     res = sym_new_unknown(ctx);
                 }
-                else if (_PyLong_IsNegative((PyLongObject *)sym_get_const(ctx, right))) {
+                else if (_PyLong_IsNegative((PyLongObject *)sym_get_const(ctx, rhs))) {
                     res = sym_new_type(ctx, &PyFloat_Type);
                 }
                 else {
@@ -2375,33 +2411,33 @@
         }
 
         case _GUARD_IS_NONE_POP: {
-            JitOptSymbol *flag;
-            flag = stack_pointer[-1];
-            if (sym_is_const(ctx, flag)) {
-                PyObject *value = sym_get_const(ctx, flag);
+            JitOptSymbol *val;
+            val = stack_pointer[-1];
+            if (sym_is_const(ctx, val)) {
+                PyObject *value = sym_get_const(ctx, val);
                 assert(value != NULL);
                 eliminate_pop_guard(this_instr, !Py_IsNone(value));
             }
-            else if (sym_has_type(flag)) {
-                assert(!sym_matches_type(flag, &_PyNone_Type));
+            else if (sym_has_type(val)) {
+                assert(!sym_matches_type(val, &_PyNone_Type));
                 eliminate_pop_guard(this_instr, true);
             }
-            sym_set_const(flag, Py_None);
+            sym_set_const(val, Py_None);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _GUARD_IS_NOT_NONE_POP: {
-            JitOptSymbol *flag;
-            flag = stack_pointer[-1];
-            if (sym_is_const(ctx, flag)) {
-                PyObject *value = sym_get_const(ctx, flag);
+            JitOptSymbol *val;
+            val = stack_pointer[-1];
+            if (sym_is_const(ctx, val)) {
+                PyObject *value = sym_get_const(ctx, val);
                 assert(value != NULL);
                 eliminate_pop_guard(this_instr, Py_IsNone(value));
             }
-            else if (sym_has_type(flag)) {
-                assert(!sym_matches_type(flag, &_PyNone_Type));
+            else if (sym_has_type(val)) {
+                assert(!sym_matches_type(val, &_PyNone_Type));
                 eliminate_pop_guard(this_instr, false);
             }
             stack_pointer += -1;

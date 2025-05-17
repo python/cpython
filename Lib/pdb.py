@@ -3383,8 +3383,7 @@ def _connect(
             f"\nLocal pdb module's protocol version: {attach_ver}"
         )
     else:
-        remote_pdb.rcLines.extend(commands.splitlines())
-        remote_pdb.set_trace(frame=frame)
+        remote_pdb.set_trace(frame=frame, commands=commands.splitlines())
 
 
 def attach(pid, commands=()):

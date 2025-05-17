@@ -2962,8 +2962,6 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
             /* option handled by _PyPreCmdline_Read() */
             break;
 
-        /* case 'J': reserved for Jython */
-
         case 'O':
             config->optimization_level++;
             break;

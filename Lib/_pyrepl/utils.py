@@ -102,6 +102,8 @@ def gen_colors(buffer: str) -> Iterator[ColorSpan]:
         for color in gen_colors_from_token_stream(gen, line_lengths):
             yield color
             last_emitted = color
+    except SyntaxError:
+        return
     except tokenize.TokenError as te:
         yield from recover_unterminated_string(
             te, line_lengths, last_emitted, buffer
