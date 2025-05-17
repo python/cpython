@@ -67,6 +67,7 @@ __all__ = [
     "GEN_CREATED",
     "GEN_RUNNING",
     "GEN_SUSPENDED",
+    "MultiSignature",
     "Parameter",
     "Signature",
     "TPFLAGS_IS_ABSTRACT",
@@ -135,6 +136,7 @@ __all__ = [
     "istraceback",
     "markcoroutinefunction",
     "signature",
+    "signatures",
     "stack",
     "trace",
     "unwrap",
@@ -161,7 +163,7 @@ import types
 import functools
 import builtins
 from keyword import iskeyword
-from operator import attrgetter
+from operator import attrgetter, or_
 from collections import namedtuple, OrderedDict
 from weakref import ref as make_weakref
 
@@ -1927,28 +1929,13 @@ def _signature_get_user_defined_method(cls, method_name, *, follow_wrapper_chain
     return meth
 
 
-def _signature_get_partial(wrapped_sig, partial, extra_args=()):
-    """Private helper to calculate how 'wrapped_sig' signature will
-    look like after applying a 'functools.partial' object (or alike)
-    on it.
-    """
+def _signature_partial(sig, args, kwargs):
+    if isinstance(sig, MultiSignature):
+        return _multisignature_partial(sig, args, kwargs)
 
-    old_params = wrapped_sig.parameters
-    new_params = OrderedDict(old_params.items())
-
-    partial_args = partial.args or ()
-    partial_keywords = partial.keywords or {}
-
-    if extra_args:
-        partial_args = extra_args + partial_args
-
-    try:
-        ba = wrapped_sig.bind_partial(*partial_args, **partial_keywords)
-    except TypeError as ex:
-        msg = 'partial object {!r} has incorrect arguments'.format(partial)
-        raise ValueError(msg) from ex
-
-
+    ba = sig.bind_partial(*args, **kwargs)
+    old_params = sig.parameters
+    new_params = OrderedDict(old_params)
     transform_to_kwonly = False
     for param_name, param in old_params.items():
         try:
@@ -1968,7 +1955,7 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
                 continue
 
             if param.kind is _POSITIONAL_OR_KEYWORD:
-                if param_name in partial_keywords:
+                if param_name in kwargs:
                     # This means that this parameter, and all parameters
                     # after it should be keyword-only (and var-positional
                     # should be removed). Here's why. Consider the following
@@ -2015,7 +2002,43 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
             elif param.kind is _VAR_POSITIONAL:
                 new_params.pop(param.name)
 
-    return wrapped_sig.replace(parameters=new_params.values())
+    return sig.replace(parameters=new_params.values())
+
+
+def _multisignature_partial(sig, args, kwargs, partial=_signature_partial):
+    last_exc = None
+    signatures = []
+    for s in sig:
+        try:
+            signatures.append(partial(s, args, kwargs))
+        except TypeError as e:
+            last_exc = e
+    if not signatures:
+        raise last_exc
+    if len(signatures) == 1:
+        return signatures[0]
+    return sig.__class__(signatures)
+
+
+def _signature_partialmethod(sig, args, kwargs):
+    if isinstance(sig, MultiSignature):
+        return _multisignature_partial(sig, args, kwargs, _signature_partialmethod)
+
+    new_sig = _signature_partial(sig, (None, *args), kwargs)
+    first_wrapped_param = tuple(sig.parameters.values())[0]
+    if first_wrapped_param.kind is Parameter.VAR_POSITIONAL:
+        # First argument of the wrapped callable is `*args`, as in
+        # `partialmethod(lambda *args)`.
+        return new_sig
+    sig_params = tuple(new_sig.parameters.values())
+    assert not sig_params or first_wrapped_param is not sig_params[0]
+    # If there were placeholders set,
+    #   first param is transformed to positional only
+    if functools.Placeholder in args:
+        first_wrapped_param = first_wrapped_param.replace(
+            kind=Parameter.POSITIONAL_ONLY)
+    new_params = (first_wrapped_param, *sig_params)
+    return new_sig.replace(parameters=new_params)
 
 
 def _signature_bound_method(sig):
@@ -2023,25 +2046,10 @@ def _signature_bound_method(sig):
     functions to bound methods.
     """
 
-    params = tuple(sig.parameters.values())
-
-    if not params or params[0].kind in (_VAR_KEYWORD, _KEYWORD_ONLY):
+    try:
+        return _signature_partial(sig, (None,), {})
+    except TypeError:
         raise ValueError('invalid method signature')
-
-    kind = params[0].kind
-    if kind in (_POSITIONAL_OR_KEYWORD, _POSITIONAL_ONLY):
-        # Drop first parameter:
-        # '(p1, p2[, ...])' -> '(p2[, ...])'
-        params = params[1:]
-    else:
-        if kind is not _VAR_POSITIONAL:
-            # Unless we add a new parameter type we never
-            # get here
-            raise ValueError('invalid argument type')
-        # It's a var-positional parameter.
-        # Do nothing. '(*args[, ...])' -> '(*args[, ...])'
-
-    return sig.replace(parameters=params)
 
 
 def _signature_is_builtin(obj):
@@ -2081,19 +2089,20 @@ def _signature_is_functionlike(obj):
             (kwdefaults is None or isinstance(kwdefaults, dict)))
 
 
-def _signature_strip_non_python_syntax(signature):
+def _signature_split(signature):
     """
     Private helper function. Takes a signature in Argument Clinic's
     extended signature format.
 
-    Returns a tuple of two things:
+    Yields pairs:
       * that signature re-rendered in standard Python syntax, and
       * the index of the "self" parameter (generally 0), or None if
         the function does not have a "self" parameter.
     """
 
     if not signature:
-        return signature, None
+        yield (signature, None)
+        return
 
     self_parameter = None
 
@@ -2106,7 +2115,8 @@ def _signature_strip_non_python_syntax(signature):
 
     current_parameter = 0
     OP = token.OP
-    ERRORTOKEN = token.ERRORTOKEN
+    NEWLINE = token.NEWLINE
+    NL = token.NL
 
     # token stream always starts with ENCODING token, skip it
     t = next(token_stream)
@@ -2114,30 +2124,38 @@ def _signature_strip_non_python_syntax(signature):
 
     for t in token_stream:
         type, string = t.type, t.string
-
-        if type == OP:
+        if type == NEWLINE:
+            yield (''.join(text), self_parameter)
+            text.clear()
+            self_parameter = None
+            current_parameter = 0
+            continue
+        elif type == NL:
+            continue
+        elif type == OP:
             if string == ',':
                 current_parameter += 1
-
-        if (type == OP) and (string == '$'):
-            assert self_parameter is None
-            self_parameter = current_parameter
-            continue
-
+                string = ', '
+            elif string == '$' and self_parameter is None:
+                self_parameter = current_parameter
+                continue
         add(string)
-        if (string == ','):
-            add(' ')
-    clean_signature = ''.join(text).strip().replace("\n", "")
-    return clean_signature, self_parameter
-
 
 def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
     """Private helper to parse content of '__text_signature__'
     and return a Signature based on it.
     """
-    Parameter = cls._parameter_cls
+    signatures = [_signature_fromstr1(cls, obj,
+                                      clean_signature, self_parameter,
+                                      skip_bound_arg)
+        for clean_signature, self_parameter in _signature_split(s)]
+    if len(signatures) == 1:
+        return signatures[0]
+    else:
+        return MultiSignature(signatures)
 
-    clean_signature, self_parameter = _signature_strip_non_python_syntax(s)
+def _signature_fromstr1(cls, obj, clean_signature, self_parameter, skip_bound_arg):
+    Parameter = cls._parameter_cls
 
     program = "def foo" + clean_signature + ": pass"
 
@@ -2473,28 +2491,21 @@ def _signature_from_callable(obj, *,
             # automatically (as for boundmethods)
 
             wrapped_sig = _get_signature_of(partialmethod.func)
-
-            sig = _signature_get_partial(wrapped_sig, partialmethod, (None,))
-            first_wrapped_param = tuple(wrapped_sig.parameters.values())[0]
-            if first_wrapped_param.kind is Parameter.VAR_POSITIONAL:
-                # First argument of the wrapped callable is `*args`, as in
-                # `partialmethod(lambda *args)`.
-                return sig
-            else:
-                sig_params = tuple(sig.parameters.values())
-                assert (not sig_params or
-                        first_wrapped_param is not sig_params[0])
-                # If there were placeholders set,
-                #   first param is transformed to positional only
-                if partialmethod.args.count(functools.Placeholder):
-                    first_wrapped_param = first_wrapped_param.replace(
-                        kind=Parameter.POSITIONAL_ONLY)
-                new_params = (first_wrapped_param,) + sig_params
-                return sig.replace(parameters=new_params)
+            try:
+                return _signature_partialmethod(wrapped_sig,
+                                                partialmethod.args,
+                                                partialmethod.keywords)
+            except TypeError as ex:
+                msg = f'partial object {partialmethod!r} has incorrect arguments'
+                raise ValueError(msg) from ex
 
     if isinstance(obj, functools.partial):
         wrapped_sig = _get_signature_of(obj.func)
-        return _signature_get_partial(wrapped_sig, obj)
+        try:
+            return _signature_partial(wrapped_sig, obj.args, obj.keywords)
+        except TypeError as ex:
+            msg = f'partial object {obj!r} has incorrect arguments'
+            raise ValueError(msg) from ex
 
     if isfunction(obj) or _signature_is_functionlike(obj):
         # If it's a pure Python function, or an object that is duck type
@@ -2754,6 +2765,8 @@ class Parameter:
 
         return type(self)(name, kind, default=default, annotation=annotation)
 
+    __replace__ = replace
+
     def __str__(self):
         return self._format()
 
@@ -2779,8 +2792,6 @@ class Parameter:
             formatted = '**' + formatted
 
         return formatted
-
-    __replace__ = replace
 
     def __repr__(self):
         return '<{} "{}">'.format(self.__class__.__name__, self)
@@ -3071,7 +3082,7 @@ class Signature:
     def __eq__(self, other):
         if self is other:
             return True
-        if not isinstance(other, Signature):
+        if not isinstance(other, Signature) or isinstance(other, MultiSignature):
             return NotImplemented
         return self._hash_basis() == other._hash_basis()
 
@@ -3306,12 +3317,140 @@ class Signature:
         return rendered
 
 
-def signature(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False,
-              annotation_format=Format.VALUE):
+class MultiSignature(Signature):
+    __slots__ = ('_signatures',)
+
+    def __init__(self, signatures):
+        signatures = tuple(signatures)
+        if not signatures:
+            raise ValueError('No signatures')
+        self._signatures = signatures
+
+    @staticmethod
+    def from_callable(obj, *,
+                      follow_wrapped=True, globals=None, locals=None,
+                      eval_str=False, annotation_format=Format.VALUE):
+        """Constructs MultiSignature for the given callable object."""
+        signature = Signature.from_callable(obj, follow_wrapped=follow_wrapped,
+                                            globals=globals, locals=locals,
+                                            eval_str=eval_str,
+                                            annotation_format=annotation_format)
+        if not isinstance(signature, MultiSignature):
+            signature = MultiSignature((signature,))
+        return signature
+
+    @property
+    def parameters(self):
+        try:
+            return self._parameters
+        except AttributeError:
+            pass
+        params = {}
+        for s in self._signatures:
+            params.update(s.parameters)
+        self._parameters = types.MappingProxyType(params)
+        return self._parameters
+
+    @property
+    def return_annotation(self):
+        try:
+            return self._return_annotation
+        except AttributeError:
+            pass
+        return_annotations = []
+        for s in self._signatures:
+            ann = s.return_annotation
+            if ann != _empty:
+                if ann is None:
+                    ann = type(ann)
+                elif isinstance(ann, str):
+                    from typing import ForwardRef
+                    ann = ForwardRef(ann)
+                return_annotations.append(ann)
+        self._return_annotation = (functools.reduce(or_, return_annotations)
+                                   if return_annotations else _empty)
+        return self._return_annotation
+
+    def replace(self):
+        raise NotImplementedError
+
+    __replace__ = replace
+
+    def __iter__(self):
+        return iter(self._signatures)
+
+    def __hash__(self):
+        if len(self._signatures) == 1:
+            return hash(self._signatures[0])
+        return hash(self._signatures)
+
+    def __eq__(self, other):
+        if self is other:
+            return True
+        if isinstance(other, MultiSignature):
+            return self._signatures == other._signatures
+        if isinstance(other, Signature):
+            return len(self._signatures) == 1 and self._signatures[0] == other
+        return NotImplemented
+
+    def bind(self, /, *args, **kwargs):
+        last_exc = None
+        for s in self._signatures:
+            try:
+                return s.bind(*args, **kwargs)
+            except TypeError as e:
+                last_exc = e
+        raise last_exc
+
+    def bind_partial(self, /, *args, **kwargs):
+        last_exc = None
+        bas = []
+        for s in self._signatures:
+            try:
+                bas.append(s.bind_partial(*args, **kwargs))
+            except TypeError as e:
+                last_exc = e
+        if not bas:
+            raise last_exc
+        if len(bas) == 1:
+            return bas[0]
+        arguments = bas[0].arguments
+        for ba in bas:
+            if ba.arguments != arguments:
+                raise TypeError('ambiguous binding')
+        sig = (self if len(bas) == len(self._signatures) else
+               self.__class__([ba.signature for ba in bas]))
+        return BoundArguments(sig, arguments)
+
+    def __reduce__(self):
+        return type(self), (self._signatures,)
+
+    def __repr__(self):
+        return '<%s %s>' % (self.__class__.__name__,
+                            '|'.join(map(str, self._signatures)))
+
+    def __str__(self):
+        return '\n'.join(map(str, self._signatures))
+
+    def format(self, *, max_width=None):
+        return '\n'.join(sig.format(max_width=max_width)
+                         for sig in self._signatures)
+
+
+def signature(obj, *, follow_wrapped=True, globals=None, locals=None,
+              eval_str=False, annotation_format=Format.VALUE):
     """Get a signature object for the passed callable."""
     return Signature.from_callable(obj, follow_wrapped=follow_wrapped,
                                    globals=globals, locals=locals, eval_str=eval_str,
                                    annotation_format=annotation_format)
+
+def signatures(obj, *, follow_wrapped=True, globals=None, locals=None,
+               eval_str=False, annotation_format=Format.VALUE):
+    """Get a multi-signature object for the passed callable."""
+    return MultiSignature.from_callable(obj, follow_wrapped=follow_wrapped,
+                                        globals=globals, locals=locals,
+                                        eval_str=eval_str,
+                                        annotation_format=annotation_format)
 
 
 class BufferFlags(enum.IntFlag):

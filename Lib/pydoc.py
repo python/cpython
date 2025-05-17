@@ -213,25 +213,29 @@ def splitdoc(doc):
         return lines[0], '\n'.join(lines[2:])
     return '', '\n'.join(lines)
 
-def _getargspec(object):
+def _getargspecs(object):
     try:
-        signature = inspect.signature(object, annotation_format=Format.STRING)
-        if signature:
+        signatures = inspect.signatures(object, annotation_format=Format.STRING)
+        if signatures:
             name = getattr(object, '__name__', '')
             # <lambda> function are always single-line and should not be formatted
             max_width = (80 - len(name)) if name != '<lambda>' else None
-            return signature.format(max_width=max_width, quote_annotation_strings=False)
+            return [sig.format(max_width=max_width, quote_annotation_strings=False)
+                    for sig in signatures]
+        return None
     except (ValueError, TypeError):
-        argspec = getattr(object, '__text_signature__', None)
-        if argspec:
-            if argspec[:2] == '($':
-                argspec = '(' + argspec[2:]
+        pass
+    text_signature = getattr(object, '__text_signature__', None)
+    if text_signature:
+        argspecs = []
+        for argspec, _ in inspect._signature_split(text_signature):
             if getattr(object, '__self__', None) is not None:
                 # Strip the bound argument.
                 m = re.match(r'\(\w+(?:(?=\))|,\s*(?:/(?:(?=\))|,\s*))?)', argspec)
                 if m:
                     argspec = '(' + argspec[m.end():]
-        return argspec
+            argspecs.append(argspec)
+        return argspecs
     return None
 
 def classname(object, modname):
@@ -1086,9 +1090,10 @@ class HTMLDoc(Doc):
             title = title + '(%s)' % ', '.join(parents)
 
         decl = ''
-        argspec = _getargspec(object)
-        if argspec and argspec != '()':
-            decl = name + self.escape(argspec) + '\n\n'
+        argspecs = _getargspecs(object)
+        if argspecs and argspecs != ['()']:
+            decl = '\n'.join(name + self.escape(argspec)
+                             for argspec in argspecs) + '\n\n'
 
         doc = getdoc(object)
         if decl:
@@ -1162,29 +1167,32 @@ class HTMLDoc(Doc):
                 reallink = realname
             title = '<a name="%s"><strong>%s</strong></a> = %s' % (
                 anchor, name, reallink)
-        argspec = None
+        argspecs = None
         if inspect.isroutine(object):
-            argspec = _getargspec(object)
-            if argspec and realname == '<lambda>':
+            argspecs = _getargspecs(object)
+            if argspecs and realname == '<lambda>':
                 title = '<strong>%s</strong> <em>lambda</em> ' % name
                 # XXX lambda's won't usually have func_annotations['return']
                 # since the syntax doesn't support but it is possible.
                 # So removing parentheses isn't truly safe.
                 if not object.__annotations__:
-                    argspec = argspec[1:-1] # remove parentheses
-        if not argspec:
-            argspec = '(...)'
+                    argspecs = [argspec[1:-1] for argspec in argspecs] # remove parentheses
+        if not argspecs:
+            argspecs = ['(...)']
 
-        decl = asyncqualifier + title + self.escape(argspec) + (note and
-               self.grey('<span class="heading-text">%s</span>' % note))
+        decl = ''.join(
+                '<dt>%s%s%s%s</dt>' % (
+                    asyncqualifier, title, self.escape(argspec),
+                    (note and self.grey('<span class="heading-text">%s</span>' % note)))
+                for argspec in argspecs)
 
         if skipdocs:
-            return '<dl><dt>%s</dt></dl>\n' % decl
+            return '<dl>%s</dl>\n' % decl
         else:
             doc = self.markup(
                 getdoc(object), self.preformat, funcs, classes, methods)
             doc = doc and '<dd><span class="code">%s</span></dd>' % doc
-            return '<dl><dt>%s</dt>%s</dl>\n' % (decl, doc)
+            return '<dl>%s%s</dl>\n' % (decl, doc)
 
     def docdata(self, object, name=None, mod=None, cl=None, *ignored):
         """Produce html documentation for a data descriptor."""
@@ -1418,9 +1426,11 @@ location listed above.
         contents = []
         push = contents.append
 
-        argspec = _getargspec(object)
-        if argspec and argspec != '()':
-            push(name + argspec + '\n')
+        argspecs = _getargspecs(object)
+        if argspecs and argspecs != ['()']:
+            for argspec in argspecs:
+                push(name + argspec)
+            push('')
 
         doc = getdoc(object)
         if doc:
@@ -1605,20 +1615,21 @@ location listed above.
                 if note.startswith(' from '):
                     note = ''
             title = self.bold(name) + ' = ' + realname
-        argspec = None
+        argspecs = None
 
         if inspect.isroutine(object):
-            argspec = _getargspec(object)
-            if argspec and realname == '<lambda>':
+            argspecs = _getargspecs(object)
+            if argspecs and realname == '<lambda>':
                 title = self.bold(name) + ' lambda '
                 # XXX lambda's won't usually have func_annotations['return']
                 # since the syntax doesn't support but it is possible.
                 # So removing parentheses isn't truly safe.
                 if not object.__annotations__:
-                    argspec = argspec[1:-1]
-        if not argspec:
-            argspec = '(...)'
-        decl = asyncqualifier + title + argspec + note
+                    argspecs = [argspec[1:-1] for argspec in argspecs] # remove parentheses
+        if not argspecs:
+            argspecs = ['(...)']
+        decl = '\n'.join(asyncqualifier + title + argspec + note
+                         for argspec in argspecs)
 
         if skipdocs:
             return decl + '\n'

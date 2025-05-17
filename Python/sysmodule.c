@@ -1488,7 +1488,11 @@ error:
 }
 
 PyDoc_STRVAR(set_asyncgen_hooks_doc,
-"set_asyncgen_hooks([firstiter] [, finalizer])\n\
+"set_asyncgen_hooks($module, /)\n\
+($module, /, *, finalizer)\n\
+($module, /, firstiter)\n\
+($module, /, firstiter, finalizer)\n\
+--\n\
 \n\
 Set a finalizer for async generators objects."
 );
@@ -1999,7 +2003,9 @@ sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(getsizeof_doc,
-"getsizeof(object [, default]) -> int\n\
+"getsizeof($module, object)\n\
+($module, object, default)\n\
+--\n\
 \n\
 Return the size of object in bytes.");
 

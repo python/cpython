@@ -2620,6 +2620,8 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
 }
 
 /*[clinic input]
+@text_signature "($self, /, *, bytes_per_sep=1)"
+@text_signature "($self, /, sep, bytes_per_sep=1)"
 bytes.hex
 
     sep: object = NULL
@@ -2644,7 +2646,7 @@ Example:
 
 static PyObject *
 bytes_hex_impl(PyBytesObject *self, PyObject *sep, int bytes_per_sep)
-/*[clinic end generated code: output=1f134da504064139 input=1a21282b1f1ae595]*/
+/*[clinic end generated code: output=1f134da504064139 input=a896de1af0991eda]*/
 {
     const char *argbuf = PyBytes_AS_STRING(self);
     Py_ssize_t arglen = PyBytes_GET_SIZE(self);
@@ -2739,6 +2741,10 @@ static PyObject *
 bytes_subtype_new(PyTypeObject *, PyObject *);
 
 /*[clinic input]
+@text_signature "()"
+@text_signature "(source)"
+@text_signature "(source, encoding)"
+@text_signature "(source, encoding, errors)"
 @classmethod
 bytes.__new__ as bytes_new
 
@@ -2746,12 +2752,20 @@ bytes.__new__ as bytes_new
     encoding: str = NULL
     errors: str = NULL
 
+Construct an immutable array of bytes.
+
+If there are no arguments, create an empty bytes object.  If the first
+argument is an integer, create a zero-filled bytes object of the
+specified size.  If it is an iterable of integers, fill the new bytes
+object with them.  If it is an object implementing the buffer protocol,
+copy its content in the new bytes object.  If it is a text string,
+encode it with the specified encoding and errors handler.
 [clinic start generated code]*/
 
 static PyObject *
 bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
                const char *errors)
-/*[clinic end generated code: output=1e0c471be311a425 input=f0a966d19b7262b4]*/
+/*[clinic end generated code: output=1e0c471be311a425 input=22b618010386f6c2]*/
 {
     PyObject *bytes;
     PyObject *func;
@@ -3076,19 +3090,6 @@ bytes_subtype_new(PyTypeObject *type, PyObject *tmp)
     return pnew;
 }
 
-PyDoc_STRVAR(bytes_doc,
-"bytes(iterable_of_ints) -> bytes\n\
-bytes(string, encoding[, errors]) -> bytes\n\
-bytes(bytes_or_buffer) -> immutable copy of bytes_or_buffer\n\
-bytes(int) -> bytes object of size given by the parameter initialized with null bytes\n\
-bytes() -> empty bytes object\n\
-\n\
-Construct an immutable array of bytes from:\n\
-  - an iterable yielding integers in range(256)\n\
-  - a text string encoded using the specified encoding\n\
-  - any object implementing the buffer API.\n\
-  - an integer");
-
 static PyObject *bytes_iter(PyObject *seq);
 
 PyTypeObject PyBytes_Type = {
@@ -3114,7 +3115,7 @@ PyTypeObject PyBytes_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
         Py_TPFLAGS_BYTES_SUBCLASS |
         _Py_TPFLAGS_MATCH_SELF,               /* tp_flags */
-    bytes_doc,                                  /* tp_doc */
+    bytes_new__doc__,                           /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     bytes_richcompare,                          /* tp_richcompare */

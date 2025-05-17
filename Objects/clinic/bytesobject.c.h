@@ -1228,7 +1228,8 @@ bytes_fromhex(PyObject *type, PyObject *string)
 }
 
 PyDoc_STRVAR(bytes_hex__doc__,
-"hex($self, /, sep=<unrepresentable>, bytes_per_sep=1)\n"
+"hex($self, /, *, bytes_per_sep=1)\n"
+"($self, /, sep, bytes_per_sep=1)\n"
 "--\n"
 "\n"
 "Create a string of hexadecimal numbers from a bytes object.\n"
@@ -1316,6 +1317,22 @@ skip_optional_pos:
 exit:
     return return_value;
 }
+
+PyDoc_STRVAR(bytes_new__doc__,
+"bytes()\n"
+"(source)\n"
+"(source, encoding)\n"
+"(source, encoding, errors)\n"
+"--\n"
+"\n"
+"Construct an immutable array of bytes.\n"
+"\n"
+"If there are no arguments, create an empty bytes object.  If the first\n"
+"argument is an integer, create a zero-filled bytes object of the\n"
+"specified size.  If it is an iterable of integers, fill the new bytes\n"
+"object with them.  If it is an object implementing the buffer protocol,\n"
+"copy its content in the new bytes object.  If it is a text string,\n"
+"encode it with the specified encoding and errors handler.");
 
 static PyObject *
 bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
@@ -1411,4 +1428,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=08b9507244f73638 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=16a50a937cb9ee69 input=a9049054013a1b77]*/
