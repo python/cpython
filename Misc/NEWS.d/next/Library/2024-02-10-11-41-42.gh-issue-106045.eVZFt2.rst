@@ -1,0 +1,2 @@
+Fix ``venv`` creation from a python executable symlink. Patch by Matthieu
+Darbois.
