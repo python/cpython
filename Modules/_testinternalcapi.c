@@ -1764,9 +1764,9 @@ finally:
 
 /* To run some code in a sub-interpreter.
 
-Generally you can use test.support.interpreters,
+Generally you can use the interpreters module,
 but we keep this helper as a distinct implementation.
-That's especially important for testing test.support.interpreters.
+That's especially important for testing the interpreters module.
 */
 static PyObject *
 run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -1971,6 +1971,14 @@ get_crossinterp_data(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     if (strcmp(mode, "xidata") == 0) {
         if (_PyObject_GetXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
+    else if (strcmp(mode, "fallback") == 0) {
+        xidata_fallback_t fallback = _PyXIDATA_FULL_FALLBACK;
+        if (_PyObject_GetXIDataWithFallback(
+                                 tstate, obj, fallback, xidata) != 0)
+        {
             goto error;
         }
     }
