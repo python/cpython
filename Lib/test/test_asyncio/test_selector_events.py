@@ -172,7 +172,9 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
                 con = self.loop.create_task(self.loop.sock_connect(sock, addr))
                 self.loop.run_until_complete(con)
                 m_gai.assert_called_with(
-                    addr[0], addr[1], sock.family, sock.type, sock.proto, 0)
+                    addr[0], addr[1], sock.family, sock.type, sock.proto,
+                    mock.ANY,
+                )
 
                 self.loop.run_until_complete(con)
                 sock.connect.assert_called_with(('127.0.0.1', 0))
