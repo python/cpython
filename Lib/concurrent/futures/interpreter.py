@@ -36,9 +36,6 @@ Uncaught in the interpreter:
                 """.strip())
 
 
-UNBOUND = 2  # error; this should not happen.
-
-
 class WorkerContext(_thread.WorkerContext):
 
     @classmethod
@@ -47,23 +44,9 @@ class WorkerContext(_thread.WorkerContext):
             if isinstance(fn, str):
                 # XXX Circle back to this later.
                 raise TypeError('scripts not supported')
-                if args or kwargs:
-                    raise ValueError(f'a script does not take args or kwargs, got {args!r} and {kwargs!r}')
-                data = textwrap.dedent(fn)
-                kind = 'script'
-                # Make sure the script compiles.
-                # Ideally we wouldn't throw away the resulting code
-                # object.  However, there isn't much to be done until
-                # code objects are shareable and/or we do a better job
-                # of supporting code objects in _interpreters.exec().
-                compile(data, '<string>', 'exec')
             else:
-                # Functions defined in the __main__ module can't be pickled,
-                # so they can't be used here.  In the future, we could possibly
-                # borrow from multiprocessing to work around this.
-                data = pickle.dumps((fn, args, kwargs))
-                kind = 'function'
-            return (data, kind)
+                task = (fn, args, kwargs)
+            return task
 
         if initializer is not None:
             try:
@@ -78,39 +61,6 @@ class WorkerContext(_thread.WorkerContext):
             return cls(initdata, shared)
         return create_context, resolve_task
 
-    @classmethod
-    @contextlib.contextmanager
-    def _capture_exc(cls, resultsid):
-        try:
-            yield
-        except BaseException as exc:
-            # Send the captured exception out on the results queue,
-            # but still leave it unhandled for the interpreter to handle.
-            err = pickle.dumps(exc)
-            _interpqueues.put(resultsid, (None, err), 1, UNBOUND)
-            raise  # re-raise
-
-    @classmethod
-    def _send_script_result(cls, resultsid):
-        _interpqueues.put(resultsid, (None, None), 0, UNBOUND)
-
-    @classmethod
-    def _call(cls, func, args, kwargs, resultsid):
-        with cls._capture_exc(resultsid):
-            res = func(*args or (), **kwargs or {})
-        # Send the result back.
-        try:
-            _interpqueues.put(resultsid, (res, None), 0, UNBOUND)
-        except _interpreters.NotShareableError:
-            res = pickle.dumps(res)
-            _interpqueues.put(resultsid, (res, None), 1, UNBOUND)
-
-    @classmethod
-    def _call_pickled(cls, pickled, resultsid):
-        with cls._capture_exc(resultsid):
-            fn, args, kwargs = pickle.loads(pickled)
-        cls._call(fn, args, kwargs, resultsid)
-
     def __init__(self, initdata, shared=None):
         self.initdata = initdata
         self.shared = dict(shared) if shared else None
@@ -121,11 +71,42 @@ class WorkerContext(_thread.WorkerContext):
         if self.interpid is not None:
             self.finalize()
 
-    def _exec(self, script):
-        assert self.interpid is not None
-        excinfo = _interpreters.exec(self.interpid, script, restrict=True)
+    def _call(self, fn, args, kwargs):
+        def do_call(resultsid, func, *args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except BaseException as exc:
+                # Avoid relying on globals.
+                import _interpqueues
+                # Send the captured exception out on the results queue,
+                # but still leave it unhandled for the interpreter to handle.
+                _interpqueues.put(resultsid, err)
+                raise  # re-raise
+
+        args = (self.resultsid, fn, *args)
+        res, excinfo = _interpreters.call(self.interpid, do_call, args, kwargs)
         if excinfo is not None:
             raise ExecutionFailed(excinfo)
+        return res
+
+    def _get_exception(self):
+        # Wait for the exception data to show up.
+        while True:
+            try:
+                excdata = _interpqueues.get(self.resultsid)
+            except _interpqueues.QueueNotFoundError:
+                raise  # re-raise
+            except _interpqueues.QueueError:
+                continue
+            except ModuleNotFoundError:
+                # interpreters.queues doesn't exist, which means
+                # QueueEmpty doesn't.  Act as though it does.
+                continue
+            else:
+                break
+        exc, unboundop = excdata
+        assert unboundop is None, unboundop
+        return exc
 
     def initialize(self):
         assert self.interpid is None, self.interpid
@@ -134,8 +115,7 @@ class WorkerContext(_thread.WorkerContext):
             _interpreters.incref(self.interpid)
 
             maxsize = 0
-            fmt = 0
-            self.resultsid = _interpqueues.create(maxsize, fmt, UNBOUND)
+            self.resultsid = _interpqueues.create(maxsize)
 
             self._exec(f'from {__name__} import WorkerContext')
 
@@ -166,48 +146,12 @@ class WorkerContext(_thread.WorkerContext):
                 pass
 
     def run(self, task):
-        data, kind = task
-        if kind == 'script':
-            raise NotImplementedError('script kind disabled')
-            script = f"""
-with WorkerContext._capture_exc({self.resultsid}):
-{textwrap.indent(data, '    ')}
-WorkerContext._send_script_result({self.resultsid})"""
-        elif kind == 'function':
-            script = f'WorkerContext._call_pickled({data!r}, {self.resultsid})'
-        else:
-            raise NotImplementedError(kind)
-
+        fn, args, kwargs = task
         try:
-            self._exec(script)
-        except ExecutionFailed as exc:
-            exc_wrapper = exc
-        else:
-            exc_wrapper = None
-
-        # Return the result, or raise the exception.
-        while True:
-            try:
-                obj = _interpqueues.get(self.resultsid)
-            except _interpqueues.QueueNotFoundError:
-                raise  # re-raise
-            except _interpqueues.QueueError:
-                continue
-            except ModuleNotFoundError:
-                # interpreters.queues doesn't exist, which means
-                # QueueEmpty doesn't.  Act as though it does.
-                continue
-            else:
-                break
-        (res, excdata), pickled, unboundop = obj
-        assert unboundop is None, unboundop
-        if excdata is not None:
-            assert res is None, res
-            assert pickled
-            assert exc_wrapper is not None
-            exc = pickle.loads(excdata)
-            raise exc from exc_wrapper
-        return pickle.loads(res) if pickled else res
+            return self._call(fn, args, kwargs)
+        except ExecutionFailed as wrapper:
+            exc = self._get_exception()
+            raise exc from wrapper
 
 
 class BrokenInterpreterPool(_thread.BrokenThreadPool):
