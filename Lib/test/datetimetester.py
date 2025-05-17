@@ -560,7 +560,6 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         assert ns/3 != ns, f"{ns/3 =} should not be equal to {ns =}"
 
     def test_computations(self):
-        if self.is_fast_test(): return # BUG
         eq = self.assertEqual
         td = timedelta
 
@@ -1009,7 +1008,6 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         # currently permitted.
 
     def test_remainder(self):
-        if self.is_fast_test(): return # BUG
         t = timedelta(minutes=2, seconds=30)
         minute = timedelta(minutes=1)
         r = t % minute
