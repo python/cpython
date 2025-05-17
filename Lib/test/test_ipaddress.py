@@ -1393,16 +1393,6 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(int(self.ipv4_network.broadcast_address), 16909311)
         self.assertEqual(str(self.ipv4_network.broadcast_address), '1.2.3.255')
 
-        self.assertEqual(int(self.ipv6_network.broadcast_address),
-                         42540616829182469451850391367731642367)
-        self.assertEqual(str(self.ipv6_network.broadcast_address),
-                         '2001:658:22a:cafe:ffff:ffff:ffff:ffff')
-
-        self.assertEqual(int(self.ipv6_scoped_network.broadcast_address),
-                         42540616829182469451850391367731642367)
-        self.assertEqual(str(self.ipv6_scoped_network.broadcast_address),
-                         '2001:658:22a:cafe:ffff:ffff:ffff:ffff')
-
     def testGetPrefixlen(self):
         self.assertEqual(self.ipv4_interface.network.prefixlen, 24)
         self.assertEqual(self.ipv6_interface.network.prefixlen, 64)
@@ -1412,6 +1402,16 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(self.ipv4_network.supernet().prefixlen, 23)
         self.assertEqual(str(self.ipv4_network.supernet().network_address),
                          '1.2.2.0')
+        self.assertEqual(int(self.ipv6_network.broadcast_address),
+                          42540616829182469451850391367731642367)
+        self.assertEqual(str(self.ipv6_network.broadcast_address),
+                          '2001:658:22a:cafe:ffff:ffff:ffff:ffff')
+        self.assertEqual(int(self.ipv6_scoped_network.broadcast_address),
+                          42540616829182469451850391367731642367)
+        self.assertEqual(str(self.ipv6_scoped_network.broadcast_address),
+                          '2001:658:22a:cafe:ffff:ffff:ffff:ffff')
+
+        self.assertEqual(self.ipv4_network.supernet(new_prefix=22).prefixlen, 22)
         self.assertEqual(
             ipaddress.IPv4Interface('0.0.0.0/0').network.supernet(),
             ipaddress.IPv4Network('0.0.0.0/0'))
@@ -2040,9 +2040,9 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertTrue(ipaddress.ip_interface('::1%scope/80') >
                         ipaddress.ip_interface('::1/64'))
         self.assertTrue(ipaddress.ip_interface('::2%scope/64') >
-                        ipaddress.ip_interface('::1/64'))
+                        ipaddress.ip_interface('::1%scope/64'))
         self.assertTrue(ipaddress.ip_interface('::1%scope/64') >
-                        ipaddress.ip_interface('::2/48'))
+                        ipaddress.ip_interface('::2%scope/48'))
 
         self.assertFalse(ipaddress.ip_interface('::1/64') ==
                         ipaddress.ip_interface('::1%scope/64'))
@@ -2708,21 +2708,13 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(self.ipv6_interface.network.network_address,
                          ipaddress.IPv6Address('2001:658:22a:cafe::'))
 
-        self.assertEqual(
-            self.ipv6_network.broadcast_address,
-            ipaddress.IPv6Address('2001:658:22a:cafe:ffff:ffff:ffff:ffff'))
         self.assertEqual(self.ipv6_network.hostmask,
                          ipaddress.IPv6Address('::ffff:ffff:ffff:ffff'))
-        self.assertEqual(
-            self.ipv6_interface.network.broadcast_address,
-            ipaddress.IPv6Address('2001:658:22a:cafe:ffff:ffff:ffff:ffff'))
         self.assertEqual(self.ipv6_interface.network.hostmask,
                          ipaddress.IPv6Address('::ffff:ffff:ffff:ffff'))
 
         # V6 - check we're cached
-        self.assertIn('broadcast_address', self.ipv6_network.__dict__)
         self.assertIn('hostmask', self.ipv6_network.__dict__)
-        self.assertIn('broadcast_address', self.ipv6_interface.network.__dict__)
         self.assertIn('hostmask', self.ipv6_interface.network.__dict__)
 
     def testTeredo(self):
@@ -2762,6 +2754,54 @@ class IpaddrUnitTest(unittest.TestCase):
         ipv6_address2 = ipaddress.IPv6Interface("2001:658:22a:cafe:200:0:0:2")
         self.assertNotEqual(ipv6_address1.__hash__(), ipv6_address2.__hash__())
 
+    def testV6NetworkAddressDeprecation(self):
+        network = ipaddress.IPv6Network('2001:658:22a:cafe::/64')
+        with self.assertWarns(DeprecationWarning) as warn:
+            addr = network.network_address
+            self.assertEqual(str(addr), "2001:658:22a:cafe::")
+            self.assertEqual(int(addr), 42540616829182469433403647294022090752)
+            self.assertEqual(addr, network.first_address)
+            self.assertEqual(addr, network.subnet_router_anycast_address)
+        self.assertIn("IPv6 has no network addresses", str(warn.warning))
+        self.assertIn("consider using first_address or subnet_router_anycast_address instead", str(warn.warning))
+
+    def testV6NetworkBroadcastAddressDeprecation(self):
+        network = ipaddress.IPv6Network('2001:658:22a:cafe::/64')
+        with self.assertWarns(DeprecationWarning) as warn:
+            addr = network.broadcast_address
+            self.assertEqual(str(addr), "2001:658:22a:cafe:ffff:ffff:ffff:ffff")
+            self.assertEqual(int(addr), 42540616829182469451850391367731642367)
+            self.assertEqual(addr, network.last_address)
+        self.assertIn("IPv6 has no broadcast addresses", str(warn.warning))
+        self.assertIn("consider using last_address instead", str(warn.warning))
+
+    def testV4NetworkFirstAddress(self):
+        network = ipaddress.IPv4Network('192.0.2.0/24')
+        addr = network.first_address
+        self.assertEqual(addr, ipaddress.IPv4Address("192.0.2.0"))
+        self.assertEqual(int(addr), 3221225984)
+
+    def testV6NetworkLastAddress(self):
+        network = ipaddress.IPv4Network('192.0.2.0/24')
+        addr = network.last_address
+        self.assertEqual(addr, ipaddress.IPv4Address("192.0.2.255"))
+        self.assertEqual(int(addr), 3221226239)
+
+    def testV6NetworkSubnetRouterAnycastAddress(self):
+        network = ipaddress.IPv6Network('2001:658:22a:cafe::/64')
+        addr = network.subnet_router_anycast_address
+        self.assertEqual(addr, ipaddress.IPv6Address("2001:658:22a:cafe::"))
+        self.assertEqual(int(addr), 42540616829182469433403647294022090752)
+
+    def testV6NetworkSubnetRouterAnycastAddressWithPrefix127(self):
+        network = ipaddress.IPv6Network('2001:658:22a:cafe::/127')
+        addr = network.subnet_router_anycast_address
+        self.assertIsNone(addr)
+
+    def testV6NetworkSubnetRouterAnycastAddressWithPrefix128(self):
+        network = ipaddress.IPv6Network('2001:658:22a:cafe::/128')
+        addr = network.subnet_router_anycast_address
+        self.assertIsNone(addr)
 
 if __name__ == '__main__':
     unittest.main()
