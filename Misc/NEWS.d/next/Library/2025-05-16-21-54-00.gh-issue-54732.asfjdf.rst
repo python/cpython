@@ -1,0 +1,1 @@
+Fix issue in :mod:`argparse` where an args file with blank lines could not be parsed.
