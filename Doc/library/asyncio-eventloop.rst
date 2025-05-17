@@ -364,6 +364,12 @@ Creating Futures and Tasks
    for interoperability. In this case, the result type is a subclass
    of :class:`Task`.
 
+   The arguments shown above are merely the most common ones, described below
+   The full function signature is largely the same as that of the
+   :class:`Task` constructor (or factory) - all of the keyword arguments to
+   this function are passed through to that interface, except *name*,
+   or *context* if it is ``None``.
+
    If the *name* argument is provided and not ``None``, it is set as
    the name of the task using :meth:`Task.set_name`.
 
