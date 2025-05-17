@@ -110,6 +110,15 @@ def run_multiline_interactive_console(
     more_lines = functools.partial(_more_lines, console)
     input_n = 0
 
+    if sys._xoptions.get("showrefcount"):
+        # Were we compiled --with-pydebug?
+        if hasattr(sys, "gettotalrefcount"):
+            showrefcount = sys._is_showrefcount_enabled()  # type: ignore[attr-defined]
+        else:
+            showrefcount = False
+    else:
+        showrefcount = False
+
     def maybe_run_command(statement: str) -> bool:
         statement = statement.strip()
         if statement in console.locals or statement not in REPL_COMMANDS:
@@ -167,3 +176,5 @@ def run_multiline_interactive_console(
         except:
             console.showtraceback()
             console.resetbuffer()
+        if showrefcount:
+           console.write(f"\n[{sys.gettotalrefcount()} refs, {sys.getallocatedblocks()} blocks]\n")
