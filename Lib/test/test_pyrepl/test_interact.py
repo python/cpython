@@ -52,7 +52,16 @@ class TestSimpleInteract(unittest.TestCase):
         with contextlib.redirect_stdout(f):
             more = console.push(code, filename="<stdin>", _symbol="single")  # type: ignore[call-arg]
         self.assertFalse(more)
-        self.assertEqual(f.getvalue(), "1\n")
+        self.assertEqual(f.getvalue(), "1\n1\n")
+
+        namespace = {}
+        code = "'foo';'bar'"
+        console = InteractiveColoredConsole(namespace, filename="<stdin>")
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            more = console.push(code, filename="<stdin>", _symbol="single")  # type: ignore[call-arg]
+        self.assertFalse(more)
+        self.assertEqual(f.getvalue(), "'foo'\n'bar'\n")
 
     @force_not_colorized
     def test_multiple_statements_fail_early(self):
