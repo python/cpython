@@ -23,6 +23,9 @@ templateiter_next(PyObject *op)
     if (self->from_strings) {
         item = PyIter_Next(self->stringsiter);
         self->from_strings = 0;
+        if (item == NULL) {
+            return NULL;
+        }
         if (PyUnicode_GET_LENGTH(item) == 0) {
             Py_SETREF(item, PyIter_Next(self->interpolationsiter));
             self->from_strings = 1;
