@@ -1585,9 +1585,8 @@ class CommandLineTestCase(unittest.TestCase):
         for port in ports:
             with self.subTest(port=port):
                 self.invoke_httpd(str(port))
-                self.args['port'] = port
-                mock_func.assert_called_once_with(**self.args)
-                self.args['port'] = self.default_port
+                call_args = self.args | dict(port=port)
+                mock_func.assert_called_once_with(**call_args)
                 mock_func.reset_mock()
 
     @mock.patch('http.server.test')
@@ -1612,9 +1611,8 @@ class CommandLineTestCase(unittest.TestCase):
             for bind_address in bind_addresses:
                 with self.subTest(flag=flag, bind_address=bind_address):
                     self.invoke_httpd(flag, bind_address)
-                    self.args['bind'] = bind_address
-                    mock_func.assert_called_once_with(**self.args)
-                    self.args['bind'] = self.default_bind
+                    call_args = self.args | dict(bind=bind_address)
+                    mock_func.assert_called_once_with(**call_args)
                     mock_func.reset_mock()
 
     @mock.patch('http.server.test')
@@ -1625,9 +1623,8 @@ class CommandLineTestCase(unittest.TestCase):
             for protocol in protocols:
                 with self.subTest(flag=flag, protocol=protocol):
                     self.invoke_httpd(flag, protocol)
-                    self.args['protocol'] = protocol
-                    mock_func.assert_called_once_with(**self.args)
-                    self.args['protocol'] = self.default_protocol
+                    call_args = self.args | dict(protocol=protocol)
+                    mock_func.assert_called_once_with(**call_args)
                     mock_func.reset_mock()
 
     @unittest.skipIf(ssl is None, "requires ssl")
@@ -1728,8 +1725,8 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
             context.check_hostname = False
             context.verify_mode = ssl.CERT_NONE
         req = urllib.request.Request(path, method='GET')
-        res = urllib.request.urlopen(req, context=context)
-        return res.read()
+        with urllib.request.urlopen(req, context=context) as res:
+            return res.read()
 
     def parse_cli_output(self, output):
         matches = re.search(r'\((https?)://([^/:]+):(\d+)/?\)', output)
