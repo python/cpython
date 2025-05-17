@@ -238,10 +238,16 @@ Creating Tasks
 
 -----------------------------------------------
 
-.. function:: create_task(coro, *, name=None, context=None)
+.. function:: create_task(coro, *, name=None, context=None, eager_start=None, **kwargs)
 
    Wrap the *coro* :ref:`coroutine <coroutine>` into a :class:`Task`
    and schedule its execution.  Return the Task object.
+
+   The arguments shown above are merely the most common ones, described below
+   The full function signature is largely the same as that of the
+   :class:`Task` constructor (or factory) - all of the keyword arguments to
+   this function are passed through to that interface, except *name*,
+   or *context* if it is ``None``.
 
    If *name* is not ``None``, it is set as the name of the task using
    :meth:`Task.set_name`.
@@ -249,6 +255,13 @@ Creating Tasks
    An optional keyword-only *context* argument allows specifying a
    custom :class:`contextvars.Context` for the *coro* to run in.
    The current context copy is created when no *context* is provided.
+
+   An optional keyword-only *eager_start* argument allows eagerly starting
+   the execution of the :class:`asyncio.Task` at task creation time.
+   If set to ``True`` and the event loop is running, the task will start
+   executing the coroutine immediately, until the first time the coroutine
+   blocks. If the coroutine returns or raises without blocking, the task
+   will be finished eagerly and will skip scheduling to the event loop.
 
    The task is executed in the loop returned by :func:`get_running_loop`,
    :exc:`RuntimeError` is raised if there is no running loop in
@@ -290,6 +303,14 @@ Creating Tasks
    .. versionchanged:: 3.11
       Added the *context* parameter.
 
+   .. versionchanged:: 3.13.3
+      Added ``kwargs`` which always passes on ``kwargs`` such as the *eager_start*
+      parameter and *name* parameter.
+
+   .. versionchanged:: 3.13.4
+      Rolled back the change that passes on *name* and *context* (if it is None),
+      passing on new keword arguments such as *eager_start* is still supported.
+
 
 Task Cancellation
 =================
@@ -330,10 +351,10 @@ and reliable way to wait for all tasks in the group to finish.
 
    .. versionadded:: 3.11
 
-   .. method:: create_task(coro, *, name=None, context=None)
+   .. method:: create_task(coro, *, name=None, context=None, eager_start=None, **kwargs)
 
       Create a task in this task group.
-      The signature matches that of :func:`asyncio.create_task`.
+      The signature matches that of :meth:`loop.create_task`.
       If the task group is inactive (e.g. not yet entered,
       already finished, or in the process of shutting down),
       we will close the given ``coro``.
@@ -341,6 +362,10 @@ and reliable way to wait for all tasks in the group to finish.
       .. versionchanged:: 3.13
 
          Close the given coroutine if the task group is not active.
+
+      .. versionchanged:: 3.13.3
+
+         Passes on all keyword arguments to :meth:`loop.create_task`
 
 Example::
 
