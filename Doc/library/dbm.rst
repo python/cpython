@@ -459,7 +459,9 @@ The :mod:`!dbm.dumb` module defines the following:
       Python's AST compiler.
 
    .. warning::
-      :mod:`dbm.dumb` does not support concurrent writes, which can corrupt the database.
+      :mod:`dbm.dumb` does not support concurrent read/write access. (Multiple
+      simultaneous read accesses are safe.) When a program has the database open
+      for writing, no other program should have it open for reading or writing.
 
    .. versionchanged:: 3.5
       :func:`~dbm.dumb.open` always creates a new database when *flag* is ``'n'``.
