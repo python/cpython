@@ -26,6 +26,7 @@ _bootstrap = None
 import _imp
 import _io
 import sys
+import time
 import _warnings
 import marshal
 
@@ -457,8 +458,8 @@ def _classify_pyc(data, name, exc_details):
     return flags
 
 
-def _validate_timestamp_pyc(data, source_mtime, source_size, name,
-                            exc_details):
+def _validate_timestamp_pyc(self, data, source_mtime, source_size, name,
+                            bytecode_path, exc_details):
     """Validate a pyc against the source last-modified time.
 
     *data* is the contents of the pyc file. (Only the first 16 bytes are
@@ -470,19 +471,32 @@ def _validate_timestamp_pyc(data, source_mtime, source_size, name,
 
     *name* is the name of the module being imported. It is used for logging.
 
+    *bytecode_path* is the path of the pyc file.
+
     *exc_details* is a dictionary passed to ImportError if it raised for
     improved debugging.
 
     An ImportError is raised if the bytecode is stale.
 
     """
-    if _unpack_uint32(data[8:12]) != (source_mtime & 0xFFFFFFFF):
+    timestamp = _unpack_uint32(data[8:12])
+    if timestamp != (int(source_mtime) & 0xFFFFFFFF):
         message = f'bytecode is stale for {name!r}'
         _bootstrap._verbose_message('{}', message)
         raise ImportError(message, **exc_details)
     if (source_size is not None and
         _unpack_uint32(data[12:16]) != (source_size & 0xFFFFFFFF)):
         raise ImportError(f'bytecode is stale for {name!r}', **exc_details)
+    if time.time() - source_mtime < 2:
+        try:
+            bytecode_mtime = self.path_stats(bytecode_path)['mtime']
+        except OSError:
+            pass
+        else:
+            if bytecode_mtime < source_mtime:
+                message = f'bytecode is stale for {name!r}'
+                _bootstrap._verbose_message('{}', message)
+                raise ImportError(message, **exc_details)
 
 
 def _validate_hash_pyc(data, source_hash, name, exc_details):
@@ -526,7 +540,7 @@ def _code_to_timestamp_pyc(code, mtime=0, source_size=0):
     "Produce the data for a timestamp-based pyc."
     data = bytearray(MAGIC_NUMBER)
     data.extend(_pack_uint32(0))
-    data.extend(_pack_uint32(mtime))
+    data.extend(_pack_uint32(int(mtime)))
     data.extend(_pack_uint32(source_size))
     data.extend(marshal.dumps(code))
     return data
@@ -849,7 +863,7 @@ class SourceLoader(_LoaderBasics):
             except OSError:
                 pass
             else:
-                source_mtime = int(st['mtime'])
+                source_mtime = st['mtime']
                 try:
                     data = self.get_data(bytecode_path)
                 except OSError:
@@ -877,10 +891,12 @@ class SourceLoader(_LoaderBasics):
                                                    exc_details)
                         else:
                             _validate_timestamp_pyc(
+                                self,
                                 data,
                                 source_mtime,
                                 st['size'],
                                 fullname,
+                                bytecode_path,
                                 exc_details,
                             )
                     except (ImportError, EOFError):
