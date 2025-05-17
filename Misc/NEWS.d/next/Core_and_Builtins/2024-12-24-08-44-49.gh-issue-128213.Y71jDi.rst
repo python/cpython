@@ -1,0 +1,3 @@
+Speed up :class:`bytes` creation from :class:`list` and :class:`tuple` of integers. Benchmarks show that from a list with 1000000 random numbers the time to create a bytes object is reduced by around 31%, or 30% with 10000 numbers, or 27% with 100 numbers.
+
+Patch by Ben Hsing
