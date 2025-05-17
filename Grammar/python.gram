@@ -1418,7 +1418,7 @@ invalid_except_stmt:
         RAISE_SYNTAX_ERROR_STARTING_FROM(a, "multiple exception types must be parenthesized when using 'as'") }
     | a='except' expression ['as' NAME ] NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='except' NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
-    | 'except' expression 'as' a=expression {
+    | 'except' expression 'as' a=expression ':' block {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a, "cannot use except statement with %s", _PyPegen_get_expr_name(a)) }
 invalid_except_star_stmt:
@@ -1426,7 +1426,7 @@ invalid_except_star_stmt:
         RAISE_SYNTAX_ERROR_STARTING_FROM(a, "multiple exception types must be parenthesized when using 'as'") }
     | a='except' '*' expression ['as' NAME ] NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='except' '*' (NEWLINE | ':') { RAISE_SYNTAX_ERROR("expected one or more exception types") }
-    | 'except' '*' expression 'as' a=expression {
+    | 'except' '*' expression 'as' a=expression ':' block {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a, "cannot use except* statement with %s", _PyPegen_get_expr_name(a)) }
 invalid_finally_stmt:
