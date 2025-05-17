@@ -395,7 +395,7 @@ Creating Futures and Tasks
 
    .. versionchanged:: 3.13.4
       Rolled back the change that passes on *name* and *context* (if it is None),
-      passing on new keword arguments such as *eager_start* is still supported.
+      passing on new keyword arguments such as *eager_start* is still supported.
 
 .. method:: loop.set_task_factory(factory)
 
