@@ -72,24 +72,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(complex___complex____doc__,
-"__complex__($self, /)\n"
-"--\n"
-"\n"
-"Convert this value to exact type complex.");
-
-#define COMPLEX___COMPLEX___METHODDEF    \
-    {"__complex__", (PyCFunction)complex___complex__, METH_NOARGS, complex___complex____doc__},
-
-static PyObject *
-complex___complex___impl(PyComplexObject *self);
-
-static PyObject *
-complex___complex__(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    return complex___complex___impl((PyComplexObject *)self);
-}
-
 PyDoc_STRVAR(complex_new__doc__,
 "complex(real=0, imag=0)\n"
 "--\n"
@@ -185,4 +167,4 @@ complex_from_number(PyObject *type, PyObject *number)
 
     return return_value;
 }
-/*[clinic end generated code: output=05d2ff43fc409733 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ade9206f2f398f1c input=a9049054013a1b77]*/

@@ -1,0 +1,3 @@
+Add :c:func:`PyComplex_FromString` to create :class:`complex` numbers from
+strings and :c:func:`PyNumber_Complex` (``complex(o)`` equivalent).  Patch by
+Sergey B Kirpichev.
