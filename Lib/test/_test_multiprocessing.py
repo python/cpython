@@ -4621,6 +4621,16 @@ class _TestSharedMemory(BaseTestCase):
                 # No longer there to be attached to again.
                 absent_sl = shared_memory.ShareableList(name=held_name)
 
+    def test_shared_memory_SharedMemoryManager_named_objects(self):
+        shm_name = 'test_named_shared_memory'
+        sl_name = 'test_named_sharable_list'
+        with multiprocessing.managers.SharedMemoryManager() as smm:
+            shm = smm.SharedMemory(size=32, name=shm_name)
+            doppleganger_shm = shared_memory.SharedMemory(name=shm_name)
+            self.assertGreaterEqual(len(doppleganger_shm.buf), 32)
+            sl = smm.ShareableList(range(5), name=sl_name)
+            doppleganger_sl = shared_memory.ShareableList(name=sl_name)
+            self.assertEqual(len(doppleganger_sl), 5)
 
     def test_shared_memory_ShareableList_basics(self):
         sl = shared_memory.ShareableList(
