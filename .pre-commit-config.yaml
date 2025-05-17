@@ -39,6 +39,8 @@ repos:
         exclude: Lib/test/tokenizedata/coding20731.py
       - id: trailing-whitespace
         types_or: [c, inc, python, rst]
+      - id: trailing-whitespace
+        files: '\.(gram)$'
 
   - repo: https://github.com/woodruffw/zizmor-pre-commit
     rev: v1.6.0
