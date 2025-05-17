@@ -2321,7 +2321,7 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     if (d == -1 && PyErr_Occurred()) {
         goto Done;
     }
-    result = new_delta_ex(d, s, us, 0, 0, type);
+    result = new_delta_ex(d, s, us, 0, 1, type);
 
 Done:
     Py_XDECREF(tuple);
