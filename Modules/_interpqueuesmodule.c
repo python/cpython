@@ -1270,7 +1270,7 @@ set_external_queue_type(module_state *state, PyTypeObject *queue_type)
     }
 
     // Add and register the new type.
-    if (ensure_xid_class(queue_type, _queueobj_shared) < 0) {
+    if (ensure_xid_class(queue_type, GETDATA(_queueobj_shared)) < 0) {
         return -1;
     }
     state->queue_type = (PyTypeObject *)Py_NewRef(queue_type);
