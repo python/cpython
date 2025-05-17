@@ -934,24 +934,33 @@ class TestCase(object):
             raise self.failureException(msg)
 
     def assertAlmostEqual(self, first, second, places=None, msg=None,
-                          delta=None):
+                          delta=None, rel_delta=None):
         """Fail if the two objects are unequal as determined by their
-           difference rounded to the given number of decimal places
-           (default 7) and comparing to zero, or by comparing that the
-           difference between the two objects is more than the given
-           delta.
+           difference by one of the following methods:
 
-           Note that decimal places (from zero) are usually not the same
-           as significant digits (measured from the most significant digit).
+           1) Given number of decimal places. This is the default method
+              (default value 7 digits). Note that decimal places (from
+              zero) are usually not the same as significant digits
+              (measured from the most significant digit).
+
+           2) Comparing that the absolute difference between the two
+              objects is more than the given delta.
+
+           3) Comparing that the relative difference between the two
+              objects is more than the given rel_delta, using the same
+              algorithm as :meth:`math.isclose`.
 
            If the two objects compare equal then they will automatically
-           compare almost equal.
+           compare almost equal. Comparison of floating point numbers
+           (espaicially inf, -inf, and NaN) is applied in the same way as
+           in :meth:`math.isclose` according to IEEE standard 754.
         """
         if first == second:
             # shortcut
             return
-        if delta is not None and places is not None:
-            raise TypeError("specify delta or places not both")
+        if int(delta is not None) + int(places is not None) + \
+                int(rel_delta is not None) > 1:
+            raise TypeError("specify maximally one: delta, places or rel_delta")
 
         diff = abs(first - second)
         if delta is not None:
@@ -963,6 +972,15 @@ class TestCase(object):
                 safe_repr(second),
                 safe_repr(delta),
                 safe_repr(diff))
+        elif rel_delta is not None:
+            if (diff < rel_delta*abs(first)) or (diff < rel_delta*abs(second)):
+                return
+
+            standardMsg = '%s != %s within relatively %s (%s rel. difference)' % (
+                safe_repr(first),
+                safe_repr(second),
+                safe_repr(rel_delta),
+                safe_repr(diff/abs(first)))
         else:
             if places is None:
                 places = 7
@@ -979,28 +997,38 @@ class TestCase(object):
         raise self.failureException(msg)
 
     def assertNotAlmostEqual(self, first, second, places=None, msg=None,
-                             delta=None):
+                             delta=None, rel_delta=None):
         """Fail if the two objects are equal as determined by their
-           difference rounded to the given number of decimal places
-           (default 7) and comparing to zero, or by comparing that the
-           difference between the two objects is less than the given delta.
-
-           Note that decimal places (from zero) are usually not the same
-           as significant digits (measured from the most significant digit).
+           difference by one of the methods analougsly described for
+           assertAlmostEqual().
 
            Objects that are equal automatically fail.
         """
-        if delta is not None and places is not None:
-            raise TypeError("specify delta or places not both")
+        if int(delta is not None) + int(places is not None) + \
+                int(rel_delta is not None) > 1:
+            raise TypeError("specify maximally one: delta, places or rel_delta")
+
         diff = abs(first - second)
+
         if delta is not None:
-            if not (first == second) and diff > delta:
+            if not (first == second) and ((diff > delta) or diff != diff):
                 return
             standardMsg = '%s == %s within %s delta (%s difference)' % (
                 safe_repr(first),
                 safe_repr(second),
                 safe_repr(delta),
                 safe_repr(diff))
+        elif rel_delta is not None:
+            if not (first == second) and \
+                (((diff > rel_delta*abs(first)) and (diff > rel_delta*abs(second)))
+                 or (diff != diff) or (diff/2 == diff)):
+                return
+
+            standardMsg = '%s == %s within relatively %s (%s rel. difference)' % (
+                safe_repr(first),
+                safe_repr(second),
+                safe_repr(rel_delta),
+                safe_repr(diff/abs(first)))
         else:
             if places is None:
                 places = 7
