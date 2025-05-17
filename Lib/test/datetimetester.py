@@ -461,6 +461,12 @@ class HarmlessMixedComparison:
     # Subclasses must define 'theclass', and theclass(1, 1, 1) must be a
     # legit constructor.
 
+    def is_pure_test(self):
+        return 'Pure' in self.__class__.__name__
+
+    def is_fast_test(self):
+        return 'Fast' in self.__class__.__name__
+
     def test_harmless_mixed_comparison(self):
         me = self.theclass(1, 1, 1)
 
@@ -1686,12 +1692,6 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertIsInstance(self.theclass.max, expected_class)
         self.assertIsInstance(self.theclass.resolution, timedelta)
         self.assertTrue(self.theclass.max > self.theclass.min)
-
-    def is_pure_test(self):
-        return 'Pure' in self.__class__.__name__
-
-    def is_fast_test(self):
-        return 'Fast' in self.__class__.__name__
 
     def test_extreme_timedelta(self):
         big = self.theclass.max - self.theclass.min
