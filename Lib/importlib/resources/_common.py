@@ -93,12 +93,13 @@ def _infer_caller():
     """
 
     def is_this_file(frame_info):
-        return frame_info.filename == __file__
+        return frame_info.filename == stack[0].filename
 
     def is_wrapper(frame_info):
         return frame_info.function == 'wrapper'
 
-    not_this_file = itertools.filterfalse(is_this_file, inspect.stack())
+    stack = inspect.stack()
+    not_this_file = itertools.filterfalse(is_this_file, stack)
     # also exclude 'wrapper' due to singledispatch in the call stack
     callers = itertools.filterfalse(is_wrapper, not_this_file)
     return next(callers).frame
