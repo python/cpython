@@ -349,6 +349,13 @@ class TestTimeZone(unittest.TestCase):
         with self.assertRaises(TypeError): self.EST.tzname('')
         with self.assertRaises(TypeError): self.EST.tzname(5)
 
+    def test_name_property(self):
+        tz_named = timezone(timedelta(hours=5), 'IST')
+        self.assertEqual(tz_named.name, 'IST')
+
+        tz_unnamed = timezone(timedelta(hours=0))
+        self.assertEqual(tz_unnamed.name, '')
+
     def test_fromutc(self):
         with self.assertRaises(ValueError):
             timezone.utc.fromutc(self.DT)

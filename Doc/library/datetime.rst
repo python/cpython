@@ -2437,6 +2437,10 @@ Class attributes:
 
    The UTC time zone, ``timezone(timedelta(0))``.
 
+.. attribute:: timezone.name
+
+   The name of the timezone if specified during creation. If no name is provided,
+   an empty string is returned.
 
 .. index::
    single: % (percent); datetime format
