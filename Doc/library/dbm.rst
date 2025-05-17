@@ -198,9 +198,9 @@ or any other SQLite browser, including the SQLite CLI.
       used on disk, this method will reorganize the database; otherwise, deleted file
       space will be kept and reused as new (key, value) pairs are added.
 
-   .. note::
-      While reorganizing, as much as twice the size of the original database is required
-      in free disk space.
+      .. note::
+         While reorganizing, as much as two times the size of the original database is required
+         in free disk space. However, be aware that this factor changes for each :mod:`dbm` submodule.
 
 
 :mod:`dbm.gnu` --- GNU database manager
@@ -299,6 +299,10 @@ functionality like crash tolerance.
       objects will not shorten the length of a database file except by using this
       reorganization; otherwise, deleted file space will be kept and reused as new
       (key, value) pairs are added.
+
+      .. note::
+         While reorganizing, as much as one time the size of the original database is required
+         in free disk space. However, be aware that this factor changes for each :mod:`dbm` submodule.
 
    .. method:: gdbm.sync()
 
@@ -485,3 +489,7 @@ The :mod:`!dbm.dumb` module defines the following:
       If you have carried out a lot of deletions and would like to shrink the space
       used on disk, this method will reorganize the database; otherwise, deleted file
       space will not be reused.
+
+      .. note::
+         While reorganizing, no additional free disk space is required. However, be aware
+         that this factor changes for each :mod:`dbm` submodule.
