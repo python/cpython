@@ -1457,19 +1457,6 @@ typedef struct PyAsyncGenAThrow {
 } PyAsyncGenAThrow;
 
 
-typedef struct _PyAsyncGenWrappedValue {
-    PyObject_HEAD
-    PyObject *agw_val;
-} _PyAsyncGenWrappedValue;
-
-
-#define _PyAsyncGenWrappedValue_CheckExact(o) \
-                    Py_IS_TYPE(o, &_PyAsyncGenWrappedValue_Type)
-#define _PyAsyncGenWrappedValue_CAST(op) \
-    (assert(_PyAsyncGenWrappedValue_CheckExact(op)), \
-     _Py_CAST(_PyAsyncGenWrappedValue*, (op)))
-
-
 static int
 async_gen_traverse(PyObject *self, visitproc visit, void *arg)
 {
