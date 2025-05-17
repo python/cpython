@@ -709,6 +709,27 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             task = None
         return task
 
+    def _get_pid_from_process(self, process):
+        """process could be a subprocess.Popen, multiprocessing.Process or a pid
+        """
+        # They are not used elsewhere so do a lazy import
+        from multiprocessing import Process
+        from subprocess import Popen
+
+        try:
+            process = self._getval(process)
+        except:
+            # Error message is already displayed
+            return None
+
+        if isinstance(process, (Process, Popen)):
+            return process.pid
+        elif isinstance(process, int):
+            return process
+
+        self.error(f"Invalid process {process}")
+        return None
+
     def interaction(self, frame, tb_or_exc):
         # Restore the previous signal handler at the Pdb prompt.
         if Pdb._previous_sigint_handler:
@@ -1961,6 +1982,23 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     complete_debug = _complete_expression
 
+    def do_attach(self, process):
+        """attach process
+
+        Attach to process, which can be a subprocess.Popen,
+        multiprocessing.Process or a pid.
+        """
+        pid = self._get_pid_from_process(process)
+
+        if pid is not None:
+            self.message(f"Attaching to process {pid}")
+            try:
+                attach(pid)
+            except Exception as e:
+                self._error_exc()
+                return
+            self.message(f"Detached from process {pid}")
+
     def do_quit(self, arg):
         """q(uit) | exit
 
@@ -2741,6 +2779,8 @@ class _PdbServer(Pdb):
                 # Due to aliases this list is not static, but the client
                 # needs to know it for multi-line editing.
                 pass
+            case {"attach": int()}:
+                pass
             case _:
                 raise AssertionError(
                     f"PDB message doesn't follow the schema! {msg}"
@@ -2924,6 +2964,11 @@ class _PdbServer(Pdb):
             except OSError:
                 # close() can fail if the connection was broken unexpectedly.
                 pass
+
+    def do_attach(self, process):
+        pid = self._get_pid_from_process(process)
+        if pid is not None:
+            self._send(attach=pid)
 
     def do_debug(self, arg):
         # Clear our cached list of valid commands; the recursive debugger might
@@ -3277,6 +3322,14 @@ class _PdbClient:
                     state = "dumb"
                 self.state = state
                 self.prompt_for_reply(prompt)
+            case {"attach": int(pid)}:
+                print(f"Attaching to process {pid}")
+                try:
+                    attach(pid)
+                    print(f"Detached from process {pid}")
+                except Exception as exc:
+                    msg = traceback.format_exception_only(exc)[-1].strip()
+                    print("***", msg, flush=True)
             case _:
                 raise RuntimeError(f"Unrecognized payload {payload}")
 

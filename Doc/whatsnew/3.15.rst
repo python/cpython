@@ -89,6 +89,12 @@ New modules
 Improved modules
 ================
 
+pdb
+---
+
+* ``attach`` command is added to attach to a running process from :mod:`pdb`.
+  (Contributed by Tian Gao in :gh:`133954`.)
+
 ssl
 ---
 
