@@ -489,6 +489,12 @@ class PosixPathTest(unittest.TestCase):
         finally:
             os_helper.unlink(ABSTFN)
 
+    def test_realpath_unencodable(self):
+        self.assertRaises(ValueError, realpath, 'test\0', strict=False)
+        self.assertRaises(ValueError, realpath, 'test\0', strict=True)
+        self.assertRaises(UnicodeEncodeError, realpath, '\ud800', strict=False)
+        self.assertRaises(UnicodeEncodeError, realpath, '\ud800', strict=True)
+
     @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
     def test_realpath_relative(self):
