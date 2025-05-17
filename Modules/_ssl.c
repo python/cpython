@@ -3051,6 +3051,125 @@ static PyType_Spec PySSLSocket_spec = {
     .slots = PySSLSocket_slots,
 };
 
+#ifdef _MSC_VER
+static const unsigned char *
+_get_cert_bytes(const X509 *cert, int *length)
+{
+    unsigned char *cert_bytes;
+    int cert_bytes_length = i2d_X509(cert, NULL);
+    if (cert_bytes_length <= 0) {
+        return NULL;
+    }
+
+    cert_bytes = PyMem_RawMalloc(cert_bytes_length);
+    if (cert_bytes == NULL) {
+        return NULL;
+    }
+
+    if (i2d_X509(cert, &cert_bytes) <= 0) {
+        return NULL;
+    }
+
+    *length = cert_bytes_length;
+
+    /* i2d_X509 moves the input pointer to the end of the data */
+    return cert_bytes - cert_bytes_length;
+}
+
+
+static int
+_translate_policy_status_error(int error)
+{
+    switch (error) {
+    case TRUST_E_CERT_SIGNATURE:
+        return X509_V_ERR_CERT_SIGNATURE_FAILURE;
+    case CERT_E_UNTRUSTEDROOT:
+        return X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY;
+    case CERT_E_CHAINING:
+        return X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT;
+    case CERT_E_EXPIRED:
+        return X509_V_ERR_CERT_HAS_EXPIRED;
+    case CERT_E_INVALID_POLICY:
+        return X509_V_ERR_INVALID_POLICY_EXTENSION;
+    case CERT_E_WRONG_USAGE:
+    case CERT_E_CRITICAL:
+    case CERT_E_PURPOSE:
+    case CERT_E_ROLE:
+        return X509_V_ERR_INVALID_PURPOSE;
+    case CERT_E_VALIDITYPERIODNESTING:
+    default:
+        return X509_V_ERR_APPLICATION_VERIFICATION;
+    }
+}
+
+
+static int
+_verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
+{
+    int ret = 0;
+    /* windows api calls below do not check for hostname mismatch */
+    if (preverify_ok
+        || X509_STORE_CTX_get_error(ctx) == X509_V_ERR_HOSTNAME_MISMATCH)
+    {
+        return preverify_ok;
+    }
+
+    HCERTSTORE store = CertOpenStore(CERT_STORE_PROV_MEMORY, 0, 0,
+                                     CERT_STORE_DEFER_CLOSE_UNTIL_LAST_FREE_FLAG,
+                                     NULL);
+    if (store == NULL) {
+        return ret;
+    }
+
+    int cert_bytes_length;
+    const X509 *cert = X509_STORE_CTX_get_current_cert(ctx);
+    const BYTE *cert_bytes = _get_cert_bytes(cert, &cert_bytes_length);
+    if (cert_bytes == NULL) {
+        goto error_1;
+    }
+
+    PCCERT_CONTEXT primary_context = NULL;
+    if (!CertAddEncodedCertificateToStore(store, X509_ASN_ENCODING,
+                                          cert_bytes, cert_bytes_length,
+                                          CERT_STORE_ADD_REPLACE_EXISTING,
+                                          &primary_context))
+    {
+        goto error_2;
+    }
+    PCCERT_CHAIN_CONTEXT chain_context = NULL;
+    CERT_CHAIN_PARA parameters = {0};
+    if (!CertGetCertificateChain(NULL, primary_context, NULL, store,
+                                 &parameters, 0, NULL, &chain_context))
+    {
+        goto error_3;
+    }
+    CERT_CHAIN_POLICY_PARA policy_parameters = {0};
+    CERT_CHAIN_POLICY_STATUS policy_status = {0};
+    if (CertVerifyCertificateChainPolicy(CERT_CHAIN_POLICY_SSL, chain_context,
+                                         &policy_parameters, &policy_status))
+    {
+        if (policy_status.dwError == CERT_TRUST_NO_ERROR) {
+            ret = 1;
+        }
+        else {
+            int err = _translate_policy_status_error(policy_status.dwError);
+            X509_STORE_CTX_set_error(ctx, err);
+        }
+    }
+
+    CertFreeCertificateChain(chain_context);
+error_3:
+    CertFreeCertificateContext(primary_context);
+error_2:
+    PyMem_RawFree((void *)cert_bytes);
+error_1:
+    CertCloseStore(store, 0);
+    return ret;
+}
+#else
+#define _verify_callback NULL
+#endif
+
 /*
  * _SSLContext objects
  */
@@ -3079,7 +3198,7 @@ _set_verify_mode(PySSLContext *self, enum py_ssl_cert_requirements n)
     /* bpo-37428: newPySSLSocket() sets SSL_VERIFY_POST_HANDSHAKE flag for
      * server sockets and SSL_set_post_handshake_auth() for client. */
 
-    SSL_CTX_set_verify(self->ctx, mode, NULL);
+    SSL_CTX_set_verify(self->ctx, mode, _verify_callback);
     return 0;
 }
 
