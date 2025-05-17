@@ -75,7 +75,6 @@ def write_header(
 """
     )
 
-
 def emit_to(out: CWriter, tkn_iter: TokenIterator, end: str) -> Token:
     parens = 0
     for tkn in tkn_iter:
@@ -130,6 +129,30 @@ class Emitter:
         self.out = out
         self.labels = labels
 
+    def emit_to_with_replacement(
+        self,
+        out: CWriter,
+        tkn_iter: TokenIterator,
+        end: str,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None
+    ) -> Token:
+        parens = 0
+        for tkn in tkn_iter:
+            if tkn.kind == end and parens == 0:
+                return tkn
+            if tkn.kind == "LPAREN":
+                parens += 1
+            if tkn.kind == "RPAREN":
+                parens -= 1
+            if tkn.text in self._replacers:
+                self._replacers[tkn.text](tkn, tkn_iter, uop, storage, inst)
+            else:
+                out.emit(tkn)
+        raise analysis_error(f"Expecting {end}. Reached end of file", tkn)
+
+
     def dispatch(
         self,
         tkn: Token,
@@ -156,7 +179,7 @@ class Emitter:
         lparen = next(tkn_iter)
         assert lparen.kind == "LPAREN"
         first_tkn = tkn_iter.peek()
-        emit_to(self.out, tkn_iter, "RPAREN")
+        self.emit_to_with_replacement(self.out, tkn_iter, "RPAREN", uop, storage, inst)
         self.emit(") {\n")
         next(tkn_iter)  # Semi colon
         assert inst is not None
@@ -196,7 +219,7 @@ class Emitter:
         else:
             self.out.emit_at("if ", tkn)
             self.emit(lparen)
-            emit_to(self.out, tkn_iter, "RPAREN")
+            self.emit_to_with_replacement(self.out, tkn_iter, "RPAREN", uop, storage, inst)
             self.out.emit(") {\n")
         next(tkn_iter)  # Semi colon
         storage.clear_inputs("at ERROR_IF")
@@ -459,12 +482,13 @@ class Emitter:
         uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
+        is_abstract: bool,
     ) -> tuple[bool, Token | None, Storage]:
         method_name = "emit_" + stmt.__class__.__name__
         method = getattr(self, method_name, None)
         if method is None:
             raise NotImplementedError
-        return method(stmt, uop, storage, inst) # type: ignore[no-any-return]
+        return method(stmt, uop, storage, inst, is_abstract) # type: ignore[no-any-return]
 
     def emit_SimpleStmt(
         self,
@@ -472,12 +496,13 @@ class Emitter:
         uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
+        is_abstract: bool,
     ) -> tuple[bool, Token | None, Storage]:
         local_stores = set(uop.local_stores)
         reachable = True
         tkn = stmt.contents[-1]
         try:
-            if stmt in uop.properties.escaping_calls:
+            if stmt in uop.properties.escaping_calls and not is_abstract:
                 escape = uop.properties.escaping_calls[stmt]
                 if escape.kills is not None:
                     self.stackref_kill(escape.kills, storage, True)
@@ -514,7 +539,7 @@ class Emitter:
                         self.out.emit(tkn)
                 else:
                     self.out.emit(tkn)
-            if stmt in uop.properties.escaping_calls:
+            if stmt in uop.properties.escaping_calls and not is_abstract:
                 self.emit_reload(storage)
             return reachable, None, storage
         except StackError as ex:
@@ -527,6 +552,7 @@ class Emitter:
         uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
+        is_abstract: bool
     ) -> tuple[bool, Token | None, Storage]:
         self.out.emit(stmt.condition)
         branch = stmt.else_ is not None
@@ -534,7 +560,7 @@ class Emitter:
         if branch:
             else_storage = storage.copy()
         for s in stmt.body:
-            r, tkn, storage = self._emit_stmt(s, uop, storage, inst)
+            r, tkn, storage = self._emit_stmt(s, uop, storage, inst, is_abstract)
             if tkn is not None:
                 self.out.emit(tkn)
             if not r:
@@ -544,7 +570,7 @@ class Emitter:
             self.out.emit(stmt.else_)
             assert stmt.else_body is not None
             for s in stmt.else_body:
-                r, tkn, else_storage = self._emit_stmt(s, uop, else_storage, inst)
+                r, tkn, else_storage = self._emit_stmt(s, uop, else_storage, inst, is_abstract)
                 if tkn is not None:
                     self.out.emit(tkn)
                 if not r:
@@ -561,6 +587,7 @@ class Emitter:
         uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
+        is_abstract: bool
     ) -> tuple[bool, Token | None, Storage]:
         self.out.emit(stmt.if_)
         for tkn in stmt.condition:
@@ -568,13 +595,13 @@ class Emitter:
         if_storage = storage.copy()
         rbrace: Token | None = stmt.if_
         try:
-            reachable, rbrace, if_storage = self._emit_stmt(stmt.body, uop, if_storage, inst)
+            reachable, rbrace, if_storage = self._emit_stmt(stmt.body, uop, if_storage, inst, is_abstract)
             if stmt.else_ is not None:
                 assert rbrace is not None
                 self.out.emit(rbrace)
                 self.out.emit(stmt.else_)
             if stmt.else_body is not None:
-                else_reachable, rbrace, else_storage = self._emit_stmt(stmt.else_body, uop, storage, inst)
+                else_reachable, rbrace, else_storage = self._emit_stmt(stmt.else_body, uop, storage, inst, is_abstract)
                 if not reachable:
                     reachable, storage = else_reachable, else_storage
                 elif not else_reachable:
@@ -602,6 +629,7 @@ class Emitter:
         uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
+        is_abstract: bool,
         emit_braces: bool = True,
     ) -> tuple[bool, Token | None, Storage]:
         """ Returns (reachable?, closing '}', stack)."""
@@ -611,7 +639,7 @@ class Emitter:
                 self.out.emit(stmt.open)
             reachable = True
             for s in stmt.body:
-                reachable, tkn, storage = self._emit_stmt(s, uop, storage, inst)
+                reachable, tkn, storage = self._emit_stmt(s, uop, storage, inst, is_abstract)
                 if tkn is not None:
                     self.out.emit(tkn)
                 if not reachable:
@@ -628,12 +656,13 @@ class Emitter:
         uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
+        is_abstract: bool,
     ) -> tuple[bool, Token | None, Storage]:
         """ Returns (reachable?, closing '}', stack)."""
         self.out.emit(stmt.for_)
         for tkn in stmt.header:
             self.out.emit(tkn)
-        return self._emit_stmt(stmt.body, uop, storage, inst)
+        return self._emit_stmt(stmt.body, uop, storage, inst, is_abstract)
 
     def emit_WhileStmt(
         self,
@@ -641,12 +670,13 @@ class Emitter:
         uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
+        is_abstract: bool,
     ) -> tuple[bool, Token | None, Storage]:
         """ Returns (reachable?, closing '}', stack)."""
         self.out.emit(stmt.while_)
         for tkn in stmt.condition:
             self.out.emit(tkn)
-        return self._emit_stmt(stmt.body, uop, storage, inst)
+        return self._emit_stmt(stmt.body, uop, storage, inst, is_abstract)
 
 
     def emit_tokens(
@@ -654,10 +684,11 @@ class Emitter:
         code: CodeSection,
         storage: Storage,
         inst: Instruction | None,
-        emit_braces: bool = True
+        emit_braces: bool = True,
+        is_abstract: bool = False,
     ) -> tuple[bool, Storage]:
         self.out.start_line()
-        reachable, tkn, storage = self.emit_BlockStmt(code.body, code, storage, inst, emit_braces)
+        reachable, tkn, storage = self.emit_BlockStmt(code.body, code, storage, inst, is_abstract, emit_braces)
         assert tkn is not None
         try:
             if reachable:
