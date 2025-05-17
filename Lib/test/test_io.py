@@ -918,7 +918,7 @@ class IOTest(unittest.TestCase):
         def badopener(fname, flags):
             return -1
         with self.assertRaises(ValueError) as cm:
-            open('non-existent', 'r', opener=badopener)
+            self.open('non-existent', 'r', opener=badopener)
         self.assertEqual(str(cm.exception), 'opener returned -1')
 
     def test_bad_opener_other_negative(self):
@@ -926,7 +926,7 @@ class IOTest(unittest.TestCase):
         def badopener(fname, flags):
             return -2
         with self.assertRaises(ValueError) as cm:
-            open('non-existent', 'r', opener=badopener)
+            self.open('non-existent', 'r', opener=badopener)
         self.assertEqual(str(cm.exception), 'opener returned -2')
 
     def test_opener_invalid_fd(self):
