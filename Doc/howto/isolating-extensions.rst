@@ -224,15 +224,15 @@ process. For example::
    static int
    exec_module(PyObject* module)
    {
-       PyMutex_Lock(modinit_mutex);
+       PyMutex_Lock(&modinit_mutex);
        if (loaded) {
-           PyMutex_Unlock(modinit_mutex);
+           PyMutex_Unlock(&modinit_mutex);
            PyErr_SetString(PyExc_ImportError,
                            "cannot load module more than once per process");
            return -1;
        }
        loaded = 1;
-       PyMutex_Unlock(modinit_mutex);
+       PyMutex_Unlock(&modinit_mutex);
        // ... rest of initialization
    }
 
