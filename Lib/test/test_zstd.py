@@ -196,8 +196,11 @@ class CompressorTestCase(unittest.TestCase):
         self.assertRaises(TypeError, ZstdCompressor, zstd_dict=b"abcd1234")
         self.assertRaises(TypeError, ZstdCompressor, zstd_dict={1: 2, 3: 4})
 
+        # valid compression level range is [-(1<<17), 22]
         with self.assertRaises(ValueError):
             ZstdCompressor(2**31)
+        with self.assertRaises(ValueError):
+            ZstdCompressor(level=-(2**31))
         with self.assertRaises(ValueError):
             ZstdCompressor(options={2**31: 100})
 
@@ -261,8 +264,10 @@ class CompressorTestCase(unittest.TestCase):
 
         # clamp compressionLevel
         level_min, level_max = CompressionParameter.compression_level.bounds()
-        compress(b'', level_max+1)
-        compress(b'', level_min-1)
+        with self.assertRaises(ValueError):
+            compress(b'', level_max+1)
+        with self.assertRaises(ValueError):
+            compress(b'', level_min-1)
 
         compress(b'', options={CompressionParameter.compression_level:level_max+1})
         compress(b'', options={CompressionParameter.compression_level:level_min-1})
