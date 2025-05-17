@@ -1,0 +1,28 @@
+name: Check Lib/idlelib/help.html is up to date
+
+on:
+  push:
+    paths:
+      - "Doc/library/idle.rst"
+
+jobs:
+  check-help-html:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3'
+      - name: Build and copy
+        run: |
+          cd Doc
+          make venv
+          make html
+          cd ..
+          python -c "from Lib.idlelib.help import copy_strip; copy_strip()"
+      - run: |
+          if ! git diff --quiet Lib/idlelib/help.html; then
+            exit 1
