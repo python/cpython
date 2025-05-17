@@ -1689,7 +1689,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
     def is_pure_test(self):
         return 'Pure' in self.__class__.__name__
-    
+
     def is_fast_test(self):
         return 'Fast' in self.__class__.__name__
 
