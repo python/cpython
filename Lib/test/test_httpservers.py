@@ -3,16 +3,15 @@
 Written by Cody A.W. Somerville <cody-somerville@ubuntu.com>,
 Josip Dzolonga, and Michael Otteneder for the 2007/08 GHOP contest.
 """
-from collections import OrderedDict
+
 from http.server import BaseHTTPRequestHandler, HTTPServer, HTTPSServer, \
-     SimpleHTTPRequestHandler, CGIHTTPRequestHandler
+     SimpleHTTPRequestHandler
 from http import server, HTTPStatus
 
 import os
 import socket
 import sys
 import re
-import base64
 import ntpath
 import pathlib
 import shutil
@@ -31,7 +30,7 @@ from io import BytesIO, StringIO
 import unittest
 from test import support
 from test.support import (
-    is_apple, import_helper, os_helper, requires_subprocess, threading_helper
+    is_apple, import_helper, os_helper, threading_helper
 )
 
 try:
@@ -820,329 +819,6 @@ class SimpleHTTPServerTestCase(BaseTestCase):
                          self.tempdir_name + "/?hi=1")
 
 
-cgi_file1 = """\
-#!%s
-
-print("Content-type: text/html")
-print()
-print("Hello World")
-"""
-
-cgi_file2 = """\
-#!%s
-import os
-import sys
-import urllib.parse
-
-print("Content-type: text/html")
-print()
-
-content_length = int(os.environ["CONTENT_LENGTH"])
-query_string = sys.stdin.buffer.read(content_length)
-params = {key.decode("utf-8"): val.decode("utf-8")
-            for key, val in urllib.parse.parse_qsl(query_string)}
-
-print("%%s, %%s, %%s" %% (params["spam"], params["eggs"], params["bacon"]))
-"""
-
-cgi_file4 = """\
-#!%s
-import os
-
-print("Content-type: text/html")
-print()
-
-print(os.environ["%s"])
-"""
-
-cgi_file6 = """\
-#!%s
-import os
-
-print("X-ambv: was here")
-print("Content-type: text/html")
-print()
-print("<pre>")
-for k, v in os.environ.items():
-    try:
-        k.encode('ascii')
-        v.encode('ascii')
-    except UnicodeEncodeError:
-        continue  # see: BPO-44647
-    print(f"{k}={v}")
-print("</pre>")
-"""
-
-
-@unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
-        "This test can't be run reliably as root (issue #13308).")
-@requires_subprocess()
-class CGIHTTPServerTestCase(BaseTestCase):
-    class request_handler(NoLogRequestHandler, CGIHTTPRequestHandler):
-        _test_case_self = None  # populated by each setUp() method call.
-
-        def __init__(self, *args, **kwargs):
-            with self._test_case_self.assertWarnsRegex(
-                    DeprecationWarning,
-                    r'http\.server\.CGIHTTPRequestHandler'):
-                # This context also happens to catch and silence the
-                # threading DeprecationWarning from os.fork().
-                super().__init__(*args, **kwargs)
-
-    linesep = os.linesep.encode('ascii')
-
-    def setUp(self):
-        self.request_handler._test_case_self = self  # practical, but yuck.
-        BaseTestCase.setUp(self)
-        self.cwd = os.getcwd()
-        self.parent_dir = tempfile.mkdtemp()
-        self.cgi_dir = os.path.join(self.parent_dir, 'cgi-bin')
-        self.cgi_child_dir = os.path.join(self.cgi_dir, 'child-dir')
-        self.sub_dir_1 = os.path.join(self.parent_dir, 'sub')
-        self.sub_dir_2 = os.path.join(self.sub_dir_1, 'dir')
-        self.cgi_dir_in_sub_dir = os.path.join(self.sub_dir_2, 'cgi-bin')
-        os.mkdir(self.cgi_dir)
-        os.mkdir(self.cgi_child_dir)
-        os.mkdir(self.sub_dir_1)
-        os.mkdir(self.sub_dir_2)
-        os.mkdir(self.cgi_dir_in_sub_dir)
-        self.nocgi_path = None
-        self.file1_path = None
-        self.file2_path = None
-        self.file3_path = None
-        self.file4_path = None
-        self.file5_path = None
-
-        # The shebang line should be pure ASCII: use symlink if possible.
-        # See issue #7668.
-        self._pythonexe_symlink = None
-        if os_helper.can_symlink():
-            self.pythonexe = os.path.join(self.parent_dir, 'python')
-            self._pythonexe_symlink = support.PythonSymlink(self.pythonexe).__enter__()
-        else:
-            self.pythonexe = sys.executable
-
-        try:
-            # The python executable path is written as the first line of the
-            # CGI Python script. The encoding cookie cannot be used, and so the
-            # path should be encodable to the default script encoding (utf-8)
-            self.pythonexe.encode('utf-8')
-        except UnicodeEncodeError:
-            self.tearDown()
-            self.skipTest("Python executable path is not encodable to utf-8")
-
-        self.nocgi_path = os.path.join(self.parent_dir, 'nocgi.py')
-        with open(self.nocgi_path, 'w', encoding='utf-8') as fp:
-            fp.write(cgi_file1 % self.pythonexe)
-        os.chmod(self.nocgi_path, 0o777)
-
-        self.file1_path = os.path.join(self.cgi_dir, 'file1.py')
-        with open(self.file1_path, 'w', encoding='utf-8') as file1:
-            file1.write(cgi_file1 % self.pythonexe)
-        os.chmod(self.file1_path, 0o777)
-
-        self.file2_path = os.path.join(self.cgi_dir, 'file2.py')
-        with open(self.file2_path, 'w', encoding='utf-8') as file2:
-            file2.write(cgi_file2 % self.pythonexe)
-        os.chmod(self.file2_path, 0o777)
-
-        self.file3_path = os.path.join(self.cgi_child_dir, 'file3.py')
-        with open(self.file3_path, 'w', encoding='utf-8') as file3:
-            file3.write(cgi_file1 % self.pythonexe)
-        os.chmod(self.file3_path, 0o777)
-
-        self.file4_path = os.path.join(self.cgi_dir, 'file4.py')
-        with open(self.file4_path, 'w', encoding='utf-8') as file4:
-            file4.write(cgi_file4 % (self.pythonexe, 'QUERY_STRING'))
-        os.chmod(self.file4_path, 0o777)
-
-        self.file5_path = os.path.join(self.cgi_dir_in_sub_dir, 'file5.py')
-        with open(self.file5_path, 'w', encoding='utf-8') as file5:
-            file5.write(cgi_file1 % self.pythonexe)
-        os.chmod(self.file5_path, 0o777)
-
-        self.file6_path = os.path.join(self.cgi_dir, 'file6.py')
-        with open(self.file6_path, 'w', encoding='utf-8') as file6:
-            file6.write(cgi_file6 % self.pythonexe)
-        os.chmod(self.file6_path, 0o777)
-
-        os.chdir(self.parent_dir)
-
-    def tearDown(self):
-        self.request_handler._test_case_self = None
-        try:
-            os.chdir(self.cwd)
-            if self._pythonexe_symlink:
-                self._pythonexe_symlink.__exit__(None, None, None)
-            if self.nocgi_path:
-                os.remove(self.nocgi_path)
-            if self.file1_path:
-                os.remove(self.file1_path)
-            if self.file2_path:
-                os.remove(self.file2_path)
-            if self.file3_path:
-                os.remove(self.file3_path)
-            if self.file4_path:
-                os.remove(self.file4_path)
-            if self.file5_path:
-                os.remove(self.file5_path)
-            if self.file6_path:
-                os.remove(self.file6_path)
-            os.rmdir(self.cgi_child_dir)
-            os.rmdir(self.cgi_dir)
-            os.rmdir(self.cgi_dir_in_sub_dir)
-            os.rmdir(self.sub_dir_2)
-            os.rmdir(self.sub_dir_1)
-            # The 'gmon.out' file can be written in the current working
-            # directory if C-level code profiling with gprof is enabled.
-            os_helper.unlink(os.path.join(self.parent_dir, 'gmon.out'))
-            os.rmdir(self.parent_dir)
-        finally:
-            BaseTestCase.tearDown(self)
-
-    def test_url_collapse_path(self):
-        # verify tail is the last portion and head is the rest on proper urls
-        test_vectors = {
-            '': '//',
-            '..': IndexError,
-            '/.//..': IndexError,
-            '/': '//',
-            '//': '//',
-            '/\\': '//\\',
-            '/.//': '//',
-            'cgi-bin/file1.py': '/cgi-bin/file1.py',
-            '/cgi-bin/file1.py': '/cgi-bin/file1.py',
-            'a': '//a',
-            '/a': '//a',
-            '//a': '//a',
-            './a': '//a',
-            './C:/': '/C:/',
-            '/a/b': '/a/b',
-            '/a/b/': '/a/b/',
-            '/a/b/.': '/a/b/',
-            '/a/b/c/..': '/a/b/',
-            '/a/b/c/../d': '/a/b/d',
-            '/a/b/c/../d/e/../f': '/a/b/d/f',
-            '/a/b/c/../d/e/../../f': '/a/b/f',
-            '/a/b/c/../d/e/.././././..//f': '/a/b/f',
-            '../a/b/c/../d/e/.././././..//f': IndexError,
-            '/a/b/c/../d/e/../../../f': '/a/f',
-            '/a/b/c/../d/e/../../../../f': '//f',
-            '/a/b/c/../d/e/../../../../../f': IndexError,
-            '/a/b/c/../d/e/../../../../f/..': '//',
-            '/a/b/c/../d/e/../../../../f/../.': '//',
-        }
-        for path, expected in test_vectors.items():
-            if isinstance(expected, type) and issubclass(expected, Exception):
-                self.assertRaises(expected,
-                                  server._url_collapse_path, path)
-            else:
-                actual = server._url_collapse_path(path)
-                self.assertEqual(expected, actual,
-                                 msg='path = %r\nGot:    %r\nWanted: %r' %
-                                 (path, actual, expected))
-
-    def test_headers_and_content(self):
-        res = self.request('/cgi-bin/file1.py')
-        self.assertEqual(
-            (res.read(), res.getheader('Content-type'), res.status),
-            (b'Hello World' + self.linesep, 'text/html', HTTPStatus.OK))
-
-    def test_issue19435(self):
-        res = self.request('///////////nocgi.py/../cgi-bin/nothere.sh')
-        self.assertEqual(res.status, HTTPStatus.NOT_FOUND)
-
-    def test_post(self):
-        params = urllib.parse.urlencode(
-            {'spam' : 1, 'eggs' : 'python', 'bacon' : 123456})
-        headers = {'Content-type' : 'application/x-www-form-urlencoded'}
-        res = self.request('/cgi-bin/file2.py', 'POST', params, headers)
-
-        self.assertEqual(res.read(), b'1, python, 123456' + self.linesep)
-
-    def test_invaliduri(self):
-        res = self.request('/cgi-bin/invalid')
-        res.read()
-        self.assertEqual(res.status, HTTPStatus.NOT_FOUND)
-
-    def test_authorization(self):
-        headers = {b'Authorization' : b'Basic ' +
-                   base64.b64encode(b'username:pass')}
-        res = self.request('/cgi-bin/file1.py', 'GET', headers=headers)
-        self.assertEqual(
-            (b'Hello World' + self.linesep, 'text/html', HTTPStatus.OK),
-            (res.read(), res.getheader('Content-type'), res.status))
-
-    def test_no_leading_slash(self):
-        # http://bugs.python.org/issue2254
-        res = self.request('cgi-bin/file1.py')
-        self.assertEqual(
-            (b'Hello World' + self.linesep, 'text/html', HTTPStatus.OK),
-            (res.read(), res.getheader('Content-type'), res.status))
-
-    def test_os_environ_is_not_altered(self):
-        signature = "Test CGI Server"
-        os.environ['SERVER_SOFTWARE'] = signature
-        res = self.request('/cgi-bin/file1.py')
-        self.assertEqual(
-            (b'Hello World' + self.linesep, 'text/html', HTTPStatus.OK),
-            (res.read(), res.getheader('Content-type'), res.status))
-        self.assertEqual(os.environ['SERVER_SOFTWARE'], signature)
-
-    def test_urlquote_decoding_in_cgi_check(self):
-        res = self.request('/cgi-bin%2ffile1.py')
-        self.assertEqual(
-            (b'Hello World' + self.linesep, 'text/html', HTTPStatus.OK),
-            (res.read(), res.getheader('Content-type'), res.status))
-
-    def test_nested_cgi_path_issue21323(self):
-        res = self.request('/cgi-bin/child-dir/file3.py')
-        self.assertEqual(
-            (b'Hello World' + self.linesep, 'text/html', HTTPStatus.OK),
-            (res.read(), res.getheader('Content-type'), res.status))
-
-    def test_query_with_multiple_question_mark(self):
-        res = self.request('/cgi-bin/file4.py?a=b?c=d')
-        self.assertEqual(
-            (b'a=b?c=d' + self.linesep, 'text/html', HTTPStatus.OK),
-            (res.read(), res.getheader('Content-type'), res.status))
-
-    def test_query_with_continuous_slashes(self):
-        res = self.request('/cgi-bin/file4.py?k=aa%2F%2Fbb&//q//p//=//a//b//')
-        self.assertEqual(
-            (b'k=aa%2F%2Fbb&//q//p//=//a//b//' + self.linesep,
-             'text/html', HTTPStatus.OK),
-            (res.read(), res.getheader('Content-type'), res.status))
-
-    def test_cgi_path_in_sub_directories(self):
-        try:
-            CGIHTTPRequestHandler.cgi_directories.append('/sub/dir/cgi-bin')
-            res = self.request('/sub/dir/cgi-bin/file5.py')
-            self.assertEqual(
-                (b'Hello World' + self.linesep, 'text/html', HTTPStatus.OK),
-                (res.read(), res.getheader('Content-type'), res.status))
-        finally:
-            CGIHTTPRequestHandler.cgi_directories.remove('/sub/dir/cgi-bin')
-
-    def test_accept(self):
-        browser_accept = \
-                    'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-        tests = (
-            ((('Accept', browser_accept),), browser_accept),
-            ((), ''),
-            # Hack case to get two values for the one header
-            ((('Accept', 'text/html'), ('ACCEPT', 'text/plain')),
-               'text/html,text/plain'),
-        )
-        for headers, expected in tests:
-            headers = OrderedDict(headers)
-            with self.subTest(headers):
-                res = self.request('/cgi-bin/file6.py', 'GET', headers=headers)
-                self.assertEqual(http.HTTPStatus.OK, res.status)
-                expected = f"HTTP_ACCEPT={expected}".encode('ascii')
-                self.assertIn(expected, res.read())
-
-
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, directory=None):
         request = mock.Mock()
@@ -1161,6 +837,7 @@ class SocketlessRequestHandler(SimpleHTTPRequestHandler):
 
     def log_message(self, format, *args):
         pass
+
 
 class RejectingSocketlessRequestHandler(SocketlessRequestHandler):
     def handle_expect_100(self):

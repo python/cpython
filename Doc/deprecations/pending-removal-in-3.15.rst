@@ -20,7 +20,7 @@ Pending removal in Python 3.15
 
 * :mod:`http.server`:
 
-  * The obsolete and rarely used :class:`~http.server.CGIHTTPRequestHandler`
+  * The obsolete and rarely used :class:`!CGIHTTPRequestHandler`
     has been deprecated since Python 3.13.
     No direct replacement exists.
     *Anything* is better than CGI to interface
