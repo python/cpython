@@ -1038,7 +1038,7 @@ There are two main functions for creating :class:`unittest.TestSuite` instances
 from text files and modules with doctests:
 
 
-.. function:: DocFileSuite(*paths, module_relative=True, package=None, setUp=None, tearDown=None, globs=None, optionflags=0, parser=DocTestParser(), encoding=None)
+.. function:: DocFileSuite(*paths, module_relative=True, package=None, setUp=None, tearDown=None, globs=None, optionflags=0, parser=DocTestParser(), encoding=None, test_case=DocFileCase, runner=DocTestRunner)
 
    Convert doctest tests from one or more text files to a
    :class:`unittest.TestSuite`.
@@ -1102,11 +1102,24 @@ from text files and modules with doctests:
    Optional argument *encoding* specifies an encoding that should be used to
    convert the file to unicode.
 
+   Optional argument *test_case* specifies the :class:`!DocFileCase` class (or a
+   subclass) that should be used to create test cases. By default, :class:`!DocFileCase`
+   is used. This allows for custom test case classes that can add additional behavior
+   or attributes to the test cases.
+
+   Optional argument *runner* specifies the :class:`DocTestRunner` class (or a
+   subclass) that should be used to run the tests. By default, :class:`DocTestRunner`
+   is used.
+
    The global ``__file__`` is added to the globals provided to doctests loaded
    from a text file using :func:`DocFileSuite`.
 
+   .. versionchanged:: 3.13
+      Added *test_case* and *runner* parameters to support user specified test case
+      and runner in DocFileSuite.
 
-.. function:: DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None, setUp=None, tearDown=None, optionflags=0, checker=None)
+
+.. function:: DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None, setUp=None, tearDown=None, optionflags=0, checker=None, test_case=DocTestCase, runner=DocTestRunner)
 
    Convert doctest tests for a module to a :class:`unittest.TestSuite`.
 
@@ -1134,11 +1147,24 @@ from text files and modules with doctests:
    Optional arguments *setUp*, *tearDown*, and *optionflags* are the same as for
    function :func:`DocFileSuite` above.
 
+   Optional argument *test_case* specifies the :class:`!DocTestCase` class (or a
+   subclass) that should be used to create test cases. By default, :class:`!DocTestCase`
+   is used. This allows for custom test case classes that can add additional behavior
+   or attributes to the test cases.
+
+   Optional argument *runner* specifies the :class:`DocTestRunner` class (or a
+   subclass) that should be used to run the tests. By default, :class:`DocTestRunner`
+   is used.
+
    This function uses the same search technique as :func:`testmod`.
 
    .. versionchanged:: 3.5
       :func:`DocTestSuite` returns an empty :class:`unittest.TestSuite` if *module*
       contains no docstrings instead of raising :exc:`ValueError`.
+
+   .. versionchanged:: 3.13
+      Added *runner* and *test_case* parameters to support custom test runners
+      and test case classes in DocTestSuite.
 
 .. exception:: failureException
 
