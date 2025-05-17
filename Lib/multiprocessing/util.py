@@ -192,9 +192,9 @@ def _get_base_temp_dir(tempfile):
     try:
         base_system_tempdir = tempfile._get_default_tempdir(dirlist)
     except FileNotFoundError:
-        warn("Process-wide temporary directory %r will not be usable for "
+        warn("Process-wide temporary directory %s will not be usable for "
              "creating socket files and no usable system-wide temporary "
-             "directory was found in %r", base_tempdir, dirlist)
+             "directory was found in %s", base_tempdir, dirlist)
         # At this point, the system-wide temporary directory is not usable
         # but we may assume that the user-defined one is, even if we will
         # not be able to write socket files out there.
