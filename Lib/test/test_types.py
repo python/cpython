@@ -2241,21 +2241,26 @@ class CoroutineTests(unittest.TestCase):
         self.assertIs(wrapper.__name__, gen.__name__)
 
         # Test AttributeErrors
-        for name in {'gi_running', 'gi_frame', 'gi_code', 'gi_yieldfrom',
-                     'cr_running', 'cr_frame', 'cr_code', 'cr_await'}:
+        for name in (
+            'gi_running', 'gi_suspended', 'gi_frame', 'gi_code', 'gi_yieldfrom',
+            'cr_running', 'cr_suspended', 'cr_frame', 'cr_code', 'cr_await'
+        ):
             with self.assertRaises(AttributeError):
                 getattr(wrapper, name)
 
         # Test attributes pass-through
         gen.gi_running = object()
+        gen.gi_suspended = object()
         gen.gi_frame = object()
         gen.gi_code = object()
         gen.gi_yieldfrom = object()
         self.assertIs(wrapper.gi_running, gen.gi_running)
+        self.assertIs(wrapper.gi_suspended, gen.gi_suspended)
         self.assertIs(wrapper.gi_frame, gen.gi_frame)
         self.assertIs(wrapper.gi_code, gen.gi_code)
         self.assertIs(wrapper.gi_yieldfrom, gen.gi_yieldfrom)
         self.assertIs(wrapper.cr_running, gen.gi_running)
+        self.assertIs(wrapper.cr_suspended, gen.gi_suspended)
         self.assertIs(wrapper.cr_frame, gen.gi_frame)
         self.assertIs(wrapper.cr_code, gen.gi_code)
         self.assertIs(wrapper.cr_await, gen.gi_yieldfrom)

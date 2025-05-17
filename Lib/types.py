@@ -33,7 +33,7 @@ except ImportError:
     async def _c(): pass
     _c = _c()
     CoroutineType = type(_c)
-    _c.close()  # Prevent ResourceWarning
+    _c.close()  # Prevent RuntimeWarning
 
     async def _ag():
         yield
@@ -250,7 +250,6 @@ class DynamicClassAttribute:
 
 
 class _GeneratorWrapper:
-    # TODO: Implement this in C.
     def __init__(self, gen):
         self.__wrapped = gen
         self.__isgen = gen.__class__ is GeneratorType
@@ -272,11 +271,15 @@ class _GeneratorWrapper:
     def gi_running(self):
         return self.__wrapped.gi_running
     @property
+    def gi_suspended(self):
+        return self.__wrapped.gi_suspended
+    @property
     def gi_yieldfrom(self):
         return self.__wrapped.gi_yieldfrom
     cr_code = gi_code
     cr_frame = gi_frame
     cr_running = gi_running
+    cr_suspended = gi_suspended
     cr_await = gi_yieldfrom
     def __next__(self):
         return next(self.__wrapped)
@@ -285,6 +288,12 @@ class _GeneratorWrapper:
             return self.__wrapped
         return self
     __await__ = __iter__
+
+try:
+    from _types import _GeneratorWrapper
+except ImportError:
+    # Leave the pure Python version in place.
+    pass
 
 def coroutine(func):
     """Convert regular generator function to a coroutine."""
