@@ -1568,6 +1568,10 @@ def getframeinfo(frame, context=1):
     The optional second argument specifies the number of lines of context
     to return, which are centered around the current line."""
     if istraceback(frame):
+        lineno = _tblineno(frame)
+        frame = frame.tb_frame
+    else:
+        lineno = getlineno(frame)
         positions = _get_code_position_from_tb(frame)
         lineno = frame.tb_lineno
         frame = frame.tb_frame
@@ -1602,10 +1606,34 @@ def getframeinfo(frame, context=1):
     return Traceback(filename, lineno, frame.f_code.co_name, lines,
                      index, positions=dis.Positions(*positions))
 
+
+def _tblineno(tb):
+    tb_lineno = tb.tb_lineno
+    if tb_lineno is not None:
+        return tb_lineno
+
+    return _lasti2lineno(tb.tb_frame.f_code, tb.tb_lasti)
+
+
+def _lasti2lineno(code, lasti):
+    prev_line = code.co_firstlineno
+
+    for start, next_line in dis.findlinestarts(code):
+        if lasti < start:
+            return prev_line
+        prev_line = next_line
+
+    return prev_line
+
 def getlineno(frame):
     """Get the line number from a frame object, allowing for optimization."""
-    # FrameType.f_lineno is now a descriptor that grovels co_lnotab
-    return frame.f_lineno
+    # FrameType.f_lineno is now a descriptor that often grovels co_lnotab
+    f_lineno = frame.f_lineno
+    if f_lineno is not None:
+        return f_lineno
+
+    return _lasti2lineno(frame.f_code, frame.f_lasti)
+
 
 _FrameInfo = namedtuple('_FrameInfo', ('frame',) + Traceback._fields)
 class FrameInfo(_FrameInfo):
