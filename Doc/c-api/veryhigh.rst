@@ -143,6 +143,8 @@ the same library that the Python runtime is using.
    event loops, as done in the :file:`Modules/_tkinter.c` in the
    Python source code.
 
+   This function should block until stdin is readable.
+
    .. versionchanged:: 3.12
       This function is only called from the
       :ref:`main interpreter <sub-interpreter-support>`.
