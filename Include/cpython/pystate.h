@@ -194,7 +194,7 @@ struct _ts {
     /* The thread's exception stack entry.  (Always the last entry.) */
     _PyErr_StackItem exc_state;
 
-    PyObject *previous_executor;
+    PyObject *current_executor;
 
     uint64_t dict_global_version;
 

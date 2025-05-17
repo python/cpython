@@ -439,7 +439,7 @@ class help(Command):
         import _sitebuiltins
 
         with self.reader.suspend():
-            self.reader.msg = _sitebuiltins._Helper()()  # type: ignore[assignment, call-arg]
+            self.reader.msg = _sitebuiltins._Helper()()  # type: ignore[assignment]
 
 
 class invalid_key(Command):

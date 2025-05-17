@@ -17,6 +17,30 @@
 
 #include "pydtrace.h"
 
+// Platform-specific includes for get_process_mem_usage().
+#ifdef _WIN32
+    #include <windows.h>
+    #include <psapi.h> // For GetProcessMemoryInfo
+#elif defined(__linux__)
+    #include <unistd.h> // For sysconf, getpid
+#elif defined(__APPLE__)
+    #include <mach/mach.h>
+    #include <mach/task.h> // Required for TASK_VM_INFO
+    #include <unistd.h> // For sysconf, getpid
+#elif defined(__FreeBSD__)
+    #include <sys/types.h>
+    #include <sys/sysctl.h>
+    #include <sys/user.h> // Requires sys/user.h for kinfo_proc definition
+    #include <kvm.h>
+    #include <unistd.h> // For sysconf, getpid
+    #include <fcntl.h> // For O_RDONLY
+    #include <limits.h> // For _POSIX2_LINE_MAX
+#elif defined(__OpenBSD__)
+    #include <sys/types.h>
+    #include <sys/sysctl.h>
+    #include <sys/user.h> // For kinfo_proc
+    #include <unistd.h> // For sysconf, getpid
+#endif
 
 // enable the "mark alive" pass of GC
 #define GC_ENABLE_MARK_ALIVE 1
@@ -1878,6 +1902,185 @@ cleanup_worklist(struct worklist *worklist)
     }
 }
 
+// Return the memory usage (typically RSS + swap) of the process, in units of
+// KB.  Returns -1 if this operation is not supported or on failure.
+static Py_ssize_t
+get_process_mem_usage(void)
+{
+#ifdef _WIN32
+    // Windows implementation using GetProcessMemoryInfo
+    // Returns WorkingSetSize + PagefileUsage
+    PROCESS_MEMORY_COUNTERS pmc;
+    HANDLE hProcess = GetCurrentProcess();
+    if (NULL == hProcess) {
+        // Should not happen for the current process
+        return -1;
+    }
+
+    // GetProcessMemoryInfo returns non-zero on success
+    if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc))) {
+        // Values are in bytes, convert to KB.
+        return (Py_ssize_t)((pmc.WorkingSetSize + pmc.PagefileUsage) / 1024);
+    }
+    else {
+        return -1;
+    }
+
+#elif __linux__
+    FILE* fp = fopen("/proc/self/status", "r");
+    if (fp == NULL) {
+        return -1;
+    }
+
+    char line_buffer[256];
+    long long rss_kb = -1;
+    long long swap_kb = -1;
+
+    while (fgets(line_buffer, sizeof(line_buffer), fp) != NULL) {
+        if (rss_kb == -1 && strncmp(line_buffer, "VmRSS:", 6) == 0) {
+            sscanf(line_buffer + 6, "%lld", &rss_kb);
+        }
+        else if (swap_kb == -1 && strncmp(line_buffer, "VmSwap:", 7) == 0) {
+            sscanf(line_buffer + 7, "%lld", &swap_kb);
+        }
+        if (rss_kb != -1 && swap_kb != -1) {
+            break; // Found both
+        }
+    }
+    fclose(fp);
+
+    if (rss_kb != -1 && swap_kb != -1) {
+        return (Py_ssize_t)(rss_kb + swap_kb);
+    }
+    return -1;
+
+#elif defined(__APPLE__)
+    // --- MacOS (Darwin) ---
+    // Returns phys_footprint (RAM + compressed memory)
+    task_vm_info_data_t vm_info;
+    mach_msg_type_number_t count = TASK_VM_INFO_COUNT;
+    kern_return_t kerr;
+
+    kerr = task_info(mach_task_self(), TASK_VM_INFO, (task_info_t)&vm_info, &count);
+    if (kerr != KERN_SUCCESS) {
+        return -1;
+    }
+    // phys_footprint is in bytes. Convert to KB.
+    return (Py_ssize_t)(vm_info.phys_footprint / 1024);
+
+#elif defined(__FreeBSD__)
+    // NOTE: Returns RSS only. Per-process swap usage isn't readily available
+    long page_size_kb = sysconf(_SC_PAGESIZE) / 1024;
+    if (page_size_kb <= 0) {
+        return -1;
+    }
+
+    // Using /dev/null for vmcore avoids needing dump file.
+    // NULL for kernel file uses running kernel.
+    char errbuf[_POSIX2_LINE_MAX]; // For kvm error messages
+    kvm_t *kd = kvm_openfiles(NULL, "/dev/null", NULL, O_RDONLY, errbuf);
+    if (kd == NULL) {
+        return -1;
+    }
+
+    // KERN_PROC_PID filters for the specific process ID
+    // n_procs will contain the number of processes returned (should be 1 or 0)
+    pid_t pid = getpid();
+    int n_procs;
+    struct kinfo_proc *kp = kvm_getprocs(kd, KERN_PROC_PID, pid, &n_procs);
+    if (kp == NULL) {
+        kvm_close(kd);
+        return -1;
+    }
+
+    Py_ssize_t rss_kb = -1;
+    if (n_procs > 0) {
+        // kp[0] contains the info for our process
+        // ki_rssize is in pages. Convert to KB.
+        rss_kb = (Py_ssize_t)kp->ki_rssize * page_size_kb;
+    }
+    else {
+        // Process with PID not found, shouldn't happen for self.
+        rss_kb = -1;
+    }
+
+    kvm_close(kd);
+    return rss_kb;
+
+#elif defined(__OpenBSD__)
+    // NOTE: Returns RSS only. Per-process swap usage isn't readily available
+    long page_size_kb = sysconf(_SC_PAGESIZE) / 1024;
+    if (page_size_kb <= 0) {
+        return -1;
+    }
+
+    struct kinfo_proc kp;
+    pid_t pid = getpid();
+    int mib[6];
+    size_t len = sizeof(kp);
+
+    mib[0] = CTL_KERN;
+    mib[1] = KERN_PROC;
+    mib[2] = KERN_PROC_PID;
+    mib[3] = pid;
+    mib[4] = sizeof(struct kinfo_proc); // size of the structure we want
+    mib[5] = 1;                         // want 1 structure back
+    if (sysctl(mib, 6, &kp, &len, NULL, 0) == -1) {
+         return -1;
+    }
+
+    if (len > 0) {
+        // p_vm_rssize is in pages on OpenBSD. Convert to KB.
+        return (Py_ssize_t)kp.p_vm_rssize * page_size_kb;
+    }
+    else {
+        // Process info not returned
+        return -1;
+    }
+#else
+    // Unsupported platform
+    return -1;
+#endif
+}
+
+static bool
+gc_should_collect_mem_usage(GCState *gcstate)
+{
+    Py_ssize_t mem = get_process_mem_usage();
+    if (mem < 0) {
+        // Reading process memory usage is not support or failed.
+        return true;
+    }
+    int threshold = gcstate->young.threshold;
+    Py_ssize_t deferred = _Py_atomic_load_ssize_relaxed(&gcstate->deferred_count);
+    if (deferred > threshold * 40) {
+        // Too many new container objects since last GC, even though memory use
+        // might not have increased much.  This is intended to avoid resource
+        // exhaustion if some objects consume resources but don't result in a
+        // memory usage increase.  We use 40x as the factor here because older
+        // versions of Python would do full collections after roughly every
+        // 70,000 new container objects.
+        return true;
+    }
+    Py_ssize_t last_mem = gcstate->last_mem;
+    Py_ssize_t mem_threshold = Py_MAX(last_mem / 10, 128);
+    if ((mem - last_mem) > mem_threshold) {
+        // The process memory usage has increased too much, do a collection.
+        return true;
+    }
+    else {
+        // The memory usage has not increased enough, defer the collection and
+        // clear the young object count so we don't check memory usage again
+        // on the next call to gc_should_collect().
+        PyMutex_Lock(&gcstate->mutex);
+        int young_count = _Py_atomic_exchange_int(&gcstate->young.count, 0);
+        _Py_atomic_store_ssize_relaxed(&gcstate->deferred_count,
+                                       gcstate->deferred_count + young_count);
+        PyMutex_Unlock(&gcstate->mutex);
+        return false;
+    }
+}
+
 static bool
 gc_should_collect(GCState *gcstate)
 {
@@ -1887,11 +2090,17 @@ gc_should_collect(GCState *gcstate)
     if (count <= threshold || threshold == 0 || !gc_enabled) {
         return false;
     }
-    // Avoid quadratic behavior by scaling threshold to the number of live
-    // objects. A few tests rely on immediate scheduling of the GC so we ignore
-    // the scaled threshold if generations[1].threshold is set to zero.
-    return (count > gcstate->long_lived_total / 4 ||
-            gcstate->old[0].threshold == 0);
+    if (gcstate->old[0].threshold == 0) {
+        // A few tests rely on immediate scheduling of the GC so we ignore the
+        // extra conditions if generations[1].threshold is set to zero.
+        return true;
+    }
+    if (count < gcstate->long_lived_total / 4) {
+        // Avoid quadratic behavior by scaling threshold to the number of live
+        // objects.
+        return false;
+    }
+    return gc_should_collect_mem_usage(gcstate);
 }
 
 static void
@@ -1940,6 +2149,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     }
 
     state->gcstate->young.count = 0;
+    state->gcstate->deferred_count = 0;
     for (int i = 1; i <= generation; ++i) {
         state->gcstate->old[i-1].count = 0;
     }
@@ -2032,6 +2242,10 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     // the reference cycles to be broken. It may also cause some objects
     // to be freed.
     delete_garbage(state);
+
+    // Store the current memory usage, can be smaller now if breaking cycles
+    // freed some memory.
+    state->gcstate->last_mem = get_process_mem_usage();
 
     // Append objects with legacy finalizers to the "gc.garbage" list.
     handle_legacy_finalizers(state);

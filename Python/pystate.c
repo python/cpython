@@ -678,6 +678,8 @@ init_interpreter(PyInterpreterState *interp,
     interp->sys_trace_initialized = false;
     interp->jit = false;
     interp->executor_list_head = NULL;
+    interp->executor_deletion_list_head = NULL;
+    interp->executor_deletion_list_remaining_capacity = 0;
     interp->trace_run_counter = JIT_CLEANUP_THRESHOLD;
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
@@ -902,6 +904,10 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->after_forkers_child);
 #endif
 
+
+#ifdef _Py_TIER2
+    _Py_ClearExecutorDeletionList(interp);
+#endif
     _PyAST_Fini(interp);
     _PyWarnings_Fini(interp);
     _PyAtExit_Fini(interp);
@@ -1570,7 +1576,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->datastack_top = NULL;
     tstate->datastack_limit = NULL;
     tstate->what_event = -1;
-    tstate->previous_executor = NULL;
+    tstate->current_executor = NULL;
     tstate->dict_global_version = 0;
 
     _tstate->c_stack_soft_limit = UINTPTR_MAX;
