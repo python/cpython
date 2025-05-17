@@ -23,6 +23,8 @@ Allocating Objects on the Heap
 
    In general, consider this function to be a low-level routine. Use
    :c:member:`~PyTypeObject.tp_alloc` where possible.
+   For implementing :c:member:`!tp_alloc` for your type, prefer
+   :c:func:`PyType_GenericAlloc` or :c:func:`PyObject_New`.
 
    .. note::
 
@@ -35,7 +37,7 @@ Allocating Objects on the Heap
    This does everything :c:func:`PyObject_Init` does, and also initializes the
    length information for a variable-size object.
 
-   .. warning::
+   .. note::
 
       This function only initializes some of the object's memory.  It does not
       zero the rest.
@@ -63,15 +65,15 @@ Allocating Objects on the Heap
    This cannot be used for objects with :c:macro:`Py_TPFLAGS_HAVE_GC` set in
    :c:member:`~PyTypeObject.tp_flags`; use :c:macro:`PyObject_GC_New` instead.
 
-   Memory allocated by this function must be freed with :c:func:`PyObject_Free`
+   Memory allocated by this macro must be freed with :c:func:`PyObject_Free`
    (usually called via the object's :c:member:`~PyTypeObject.tp_free` slot).
 
-   .. warning::
+   .. note::
 
       The returned memory is not guaranteed to have been completely zeroed
       before it was initialized.
 
-   .. warning::
+   .. note::
 
       This macro does not construct a fully initialized object of the given
       type; it merely allocates memory and prepares it for further
@@ -116,12 +118,12 @@ Allocating Objects on the Heap
    Memory allocated by this function must be freed with :c:func:`PyObject_Free`
    (usually called via the object's :c:member:`~PyTypeObject.tp_free` slot).
 
-   .. warning::
+   .. note::
 
       The returned memory is not guaranteed to have been completely zeroed
       before it was initialized.
 
-   .. warning::
+   .. note::
 
       This macro does not construct a fully initialized object of the given
       type; it merely allocates memory and prepares it for further

@@ -695,12 +695,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
      (:c:member:`~PyTypeObject.tp_finalize`) or automatically cleared
      (:c:member:`~PyTypeObject.tp_clear`).
 
-   .. warning::
-
-      The :c:member:`~PyTypeObject.tp_dealloc` function can be called from any
-      thread, although the :term:`GIL` will be held.
-
-   Python currently destroys an object immediately from :c:func:`Py_DECREF`
+   CPython currently destroys an object immediately from :c:func:`Py_DECREF`
    when the new reference count is zero, but this may change in a future
    version.
 
@@ -777,13 +772,13 @@ and :c:data:`PyType_Type` effectively act as defaults.)
           PyErr_SetRaisedException(exc);
       }
 
-   In a garbage collected Python, :c:member:`!tp_dealloc` may be called from
+   :c:member:`!tp_dealloc` may be called from
    any Python thread, not just the thread which created the object (if the
    object becomes part of a refcount cycle, that cycle might be collected by
    a garbage collection on any thread).  This is not a problem for Python
    API calls, since the thread on which :c:member:`!tp_dealloc` is called
    with an :term:`attached thread state`.  However, if the object being
-   destroyed in turn destroys objects from some other C or C++ library, care
+   destroyed in turn destroys objects from some other C library, care
    should be taken to ensure that destroying those objects on the thread
    which called :c:member:`!tp_dealloc` will not violate any assumptions of
    the library.
@@ -1191,9 +1186,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       must be allocated using :c:macro:`PyObject_GC_New` or
       :c:func:`PyType_GenericAlloc` and deallocated (see
       :c:member:`~PyTypeObject.tp_free`) using :c:func:`PyObject_GC_Del`.  More
-      information in section :ref:`supporting-cycle-detection`.  This bit also
-      implies that the GC-related fields :c:member:`~PyTypeObject.tp_traverse`
-      and :c:member:`~PyTypeObject.tp_clear` are present in the type object.
+      information in section :ref:`supporting-cycle-detection`.
 
       **Inheritance:**
 
@@ -1530,10 +1523,10 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    heap-allocated superclass).
    If they do not, the type object may not be garbage-collected.
 
-   .. warning::
+   .. note::
 
       The :c:member:`~PyTypeObject.tp_traverse` function can be called from any
-      thread, although the :term:`GIL` will be held.
+      thread.
 
    .. versionchanged:: 3.9
 
@@ -1568,29 +1561,29 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    integers.  However, it may be convenient to clear all references, and write
    the type's :c:member:`~PyTypeObject.tp_dealloc` function to invoke
    :c:member:`!tp_clear` to avoid code duplication.  (Beware that
-   :c:member:`!tp_clear` might have already been called, but :c:func:`Py_CLEAR`
-   is idempotent so extra checks are usually unnecessary.)
+   :c:member:`!tp_clear` might have already been called. Prefer calling
+   idempotent functions like :c:func:`Py_CLEAR`.)
 
    Any non-trivial cleanup should be performed in
    :c:member:`~PyTypeObject.tp_finalize` instead of :c:member:`!tp_clear`.
 
-   .. warning::
+   .. note::
 
       If :c:member:`!tp_clear` fails to break a reference cycle then the
       objects in the :term:`cyclic isolate` may remain indefinitely
       uncollectable ("leak").  See :data:`gc.garbage`.
 
-   .. warning::
+   .. note::
 
       Referents (direct and indirect) might have already been cleared; they are
       not guaranteed to be in a consistent state.
 
-   .. warning::
+   .. note::
 
       The :c:member:`~PyTypeObject.tp_clear` function can be called from any
-      thread, although the :term:`GIL` will be held.
+      thread.
 
-   .. warning::
+   .. note::
 
       An object is not guaranteed to be automatically cleared before its
       destructor (:c:member:`~PyTypeObject.tp_dealloc`) is called.
@@ -1635,7 +1628,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    * Python will not automatically call :c:member:`!tp_clear` multiple times
      concurrently.
 
-   Python currently only automatically clears objects as needed to break
+   CPython currently only automatically clears objects as needed to break
    reference cycles in a :term:`cyclic isolate`, but future versions might
    clear objects regularly before their destruction.
 
@@ -2078,11 +2071,11 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    Static subtypes inherit this slot, which will be
    :c:func:`PyType_GenericAlloc` if inherited from :class:`object`.
 
-   Dynamic subtypes (created by a class statement) do not inherit this slot.
+   :ref:`Heap subtypes <heap-types>` do not inherit this slot.
 
    **Default:**
 
-   For dynamic subtypes, this field is always set to
+   For heap subtypes, this field is always set to
    :c:func:`PyType_GenericAlloc`.
 
    For static subtypes, this slot is inherited (see above).
@@ -2145,11 +2138,11 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    :c:func:`PyObject_Free`, then this slot is not inherited but instead defaults
    to :c:func:`PyObject_GC_Del`.
 
-   Dynamic subtypes (created by a class statement) do not inherit this slot.
+   :ref:`Heap subtypes <heap-types>` do not inherit this slot.
 
    **Default:**
 
-   For dynamic subtypes, this slot defaults to a deallocator suitable to match
+   For :ref:`heap subtypes <heap-types>`, this slot defaults to a deallocator suitable to match
    :c:func:`PyType_GenericAlloc` and the value of the
    :c:macro:`Py_TPFLAGS_HAVE_GC` flag.
 
@@ -2289,7 +2282,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    The primary purpose of finalization is to perform any non-trivial cleanup
    that must be performed before the object is destroyed, while the object and
    any other objects it directly or indirectly references are still in a
-   consistent state.  See :pep:`442`.  The finalizer is allowed to execute
+   consistent state.  The finalizer is allowed to execute
    arbitrary Python code.
 
    Before Python automatically finalizes an object, some of the object's direct
@@ -2301,7 +2294,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    finalizer must leave the object in a sane state (e.g., invariants are still
    met).
 
-   .. warning::
+   .. note::
 
       After Python automatically finalizes an object, Python might start
       automatically clearing (:c:member:`~PyTypeObject.tp_clear`) the object
@@ -2309,7 +2302,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       guaranteed to be in a consistent state; a finalized object must be able
       to tolerate cleared referents.
 
-   .. warning::
+   .. note::
 
       An object is not guaranteed to be automatically finalized before its
       destructor (:c:member:`~PyTypeObject.tp_dealloc`) is called.  It is
@@ -2317,12 +2310,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       beginning of :c:member:`!tp_dealloc` to guarantee that the object is
       always finalized before destruction.
 
-   .. warning::
+   .. note::
 
       The :c:member:`~PyTypeObject.tp_finalize` function can be called from any
       thread, although the :term:`GIL` will be held.
 
-   .. warning::
+   .. note::
 
       The :c:member:`!tp_finalize` function can be called during shutdown,
       after some global variables have been deleted.  See the documentation of

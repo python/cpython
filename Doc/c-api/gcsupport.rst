@@ -64,7 +64,7 @@ rules:
    :c:func:`PyType_GenericAlloc` is preferred over a custom function that
    simply calls this macro.
 
-   Memory allocated by this function must be freed with
+   Memory allocated by this macro must be freed with
    :c:func:`PyObject_GC_Del` (usually called via the object's
    :c:member:`~PyTypeObject.tp_free` slot).
 
@@ -88,7 +88,7 @@ rules:
    :c:func:`PyType_GenericAlloc` is preferred over a custom function that
    simply calls this macro.
 
-   Memory allocated by this function must be freed with
+   Memory allocated by this macro must be freed with
    :c:func:`PyObject_GC_Del` (usually called via the object's
    :c:member:`~PyTypeObject.tp_free` slot).
 

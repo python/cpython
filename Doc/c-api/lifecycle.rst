@@ -151,7 +151,7 @@ that must be true for *B* to occur after *A*.
    * When the garbage collector discovers a :term:`cyclic isolate` and all of
      the objects in the group have already been marked as *finalized*, the
      garbage collector clears one or more of the uncleared objects in the group
-     (possibly concurrently, but with the :term:`GIL` held) by calling each's
+     (possibly concurrently) by calling each's
      :c:member:`~PyTypeObject.tp_clear` function.  This repeats as long as the
      cyclic isolate still exists and not all of the objects have been cleared.
 
@@ -209,7 +209,7 @@ Unlike clearing, finalization is not a phase of destruction.  A finalized
 object must still behave properly by continuing to fulfill its design
 contracts.  An object's finalizer is allowed to execute arbitrary Python code,
 and is even allowed to prevent the impending destruction by adding a reference.
-The finalizer is only contemporaneously related to destruction---it runs just
+The finalizer is only related to destruction by call order---if it runs, it runs
 before destruction, which starts with :c:member:`~PyTypeObject.tp_clear` (if
 called) and concludes with :c:member:`~PyTypeObject.tp_dealloc`.
 
