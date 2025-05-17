@@ -838,8 +838,8 @@ class BaseEventLoopTests(test_utils.TestCase):
             loop.close()
 
     def test_create_named_task_with_custom_factory(self):
-        def task_factory(loop, coro, **kwargs):
-            return asyncio.Task(coro, loop=loop, **kwargs)
+        def task_factory(loop, coro):
+            return asyncio.Task(coro, loop=loop)
 
         async def test():
             pass
