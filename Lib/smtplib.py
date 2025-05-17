@@ -50,6 +50,7 @@ import hmac
 import copy
 import datetime
 import sys
+import warnings
 from email.base64mime import body_encode as encode_base64
 
 __all__ = ["SMTPException", "SMTPNotSupportedError", "SMTPServerDisconnected", "SMTPResponseException",
@@ -663,6 +664,8 @@ class SMTP:
         """ Authobject to use with CRAM-MD5 authentication. Requires self.user
         and self.password to be set."""
         # CRAM-MD5 does not support initial-response.
+        warnings.warn("This function is deprecated and will be removed in Python 3.15.",
+                       DeprecationWarning, stacklevel=2)
         if challenge is None:
             return None
         return self.user + " " + hmac.HMAC(
