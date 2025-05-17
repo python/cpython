@@ -133,7 +133,6 @@ static inline void _PyObject_GC_SET_SHARED(PyObject *op) {
 */
 #define _PyGC_NEXT_MASK_OLD_SPACE_1    1
 
-#define _PyGC_PREV_SHIFT           2
 #define _PyGC_PREV_MASK            (((uintptr_t) -1) << _PyGC_PREV_SHIFT)
 
 /* set for debugging information */
