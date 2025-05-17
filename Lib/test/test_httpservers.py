@@ -1667,10 +1667,14 @@ class CommandLineTestCase(unittest.TestCase):
     @mock.patch('http.server.test')
     def test_missing_tls_cert_flag(self, mock_func):
         for tls_key_option in self.tls_key_options:
-            for tls_cert_option in self.tls_cert_options:
-                with self.assertRaises(SystemExit):
-                    self.invoke_httpd(tls_key_option, self.tls_key)
-                mock_func.reset_mock()
+            with self.assertRaises(SystemExit):
+                self.invoke_httpd(tls_key_option, self.tls_key)
+            mock_func.reset_mock()
+
+        for tls_password_option in self.tls_password_options:
+            with self.assertRaises(SystemExit):
+                self.invoke_httpd(tls_password_option, self.tls_password)
+            mock_func.reset_mock()
 
     @unittest.skipIf(ssl is None, "requires ssl")
     @mock.patch('http.server.test')
