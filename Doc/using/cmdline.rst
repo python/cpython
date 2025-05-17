@@ -1113,8 +1113,7 @@ conflict.
    components running in the same process (such as the GNU ``readline``
    library), the updated setting is also seen in subprocesses (regardless of
    whether or not those processes are running a Python interpreter), as well as
-   in operations that query the environment rather than the current C locale
-   (such as Python's own :func:`locale.getdefaultlocale`).
+   in operations that query the environment rather than the current C locale.
 
    Configuring one of these locales (either explicitly or via the above
    implicit locale coercion) automatically enables the ``surrogateescape``

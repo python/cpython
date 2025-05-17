@@ -121,6 +121,14 @@ Deprecated
 Removed
 =======
 
+
+locale
+------
+* Remove the :func:`!locale.getdefaultlocale` function,
+  which was deprecated since Python 3.13.
+  (Contributed by Stan Ulbrych in :gh:`XXXXXX`.)
+
+
 platform
 --------
 

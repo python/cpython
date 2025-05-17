@@ -444,50 +444,6 @@ exit:
 }
 #endif
 
-#if defined(MS_WINDOWS)
-
-/*[clinic input]
-_locale._getdefaultlocale
-
-[clinic start generated code]*/
-
-static PyObject *
-_locale__getdefaultlocale_impl(PyObject *module)
-/*[clinic end generated code: output=e6254088579534c2 input=003ea41acd17f7c7]*/
-{
-    char encoding[20];
-    char locale[100];
-
-    PyOS_snprintf(encoding, sizeof(encoding), "cp%u", GetACP());
-
-    if (GetLocaleInfoA(LOCALE_USER_DEFAULT,
-                      LOCALE_SISO639LANGNAME,
-                      locale, sizeof(locale))) {
-        Py_ssize_t i = strlen(locale);
-        locale[i++] = '_';
-        if (GetLocaleInfoA(LOCALE_USER_DEFAULT,
-                          LOCALE_SISO3166CTRYNAME,
-                          locale+i, (int)(sizeof(locale)-i)))
-            return Py_BuildValue("ss", locale, encoding);
-    }
-
-    /* If we end up here, this windows version didn't know about
-       ISO639/ISO3166 names (it's probably Windows 95).  Return the
-       Windows language identifier instead (a hexadecimal number) */
-
-    locale[0] = '0';
-    locale[1] = 'x';
-    if (GetLocaleInfoA(LOCALE_USER_DEFAULT, LOCALE_IDEFAULTLANGUAGE,
-                      locale+2, sizeof(locale)-2)) {
-        return Py_BuildValue("ss", locale, encoding);
-    }
-
-    /* cannot determine the language code (very unlikely) */
-    Py_INCREF(Py_None);
-    return Py_BuildValue("Os", Py_None, encoding);
-}
-#endif
-
 #ifdef HAVE_LANGINFO_H
 #define LANGINFO(X, Y) {#X, X, Y}
 static struct langinfo_constant{
@@ -898,9 +854,6 @@ static struct PyMethodDef PyLocale_Methods[] = {
 #endif
 #ifdef HAVE_WCSXFRM
     _LOCALE_STRXFRM_METHODDEF
-#endif
-#if defined(MS_WINDOWS)
-    _LOCALE__GETDEFAULTLOCALE_METHODDEF
 #endif
 #ifdef HAVE_LANGINFO_H
     _LOCALE_NL_LANGINFO_METHODDEF

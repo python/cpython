@@ -151,27 +151,6 @@ exit:
 
 #endif /* defined(HAVE_WCSXFRM) */
 
-#if defined(MS_WINDOWS)
-
-PyDoc_STRVAR(_locale__getdefaultlocale__doc__,
-"_getdefaultlocale($module, /)\n"
-"--\n"
-"\n");
-
-#define _LOCALE__GETDEFAULTLOCALE_METHODDEF    \
-    {"_getdefaultlocale", (PyCFunction)_locale__getdefaultlocale, METH_NOARGS, _locale__getdefaultlocale__doc__},
-
-static PyObject *
-_locale__getdefaultlocale_impl(PyObject *module);
-
-static PyObject *
-_locale__getdefaultlocale(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return _locale__getdefaultlocale_impl(module);
-}
-
-#endif /* defined(MS_WINDOWS) */
-
 #if defined(HAVE_LANGINFO_H)
 
 PyDoc_STRVAR(_locale_nl_langinfo__doc__,
@@ -564,10 +543,6 @@ _locale_getencoding(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define _LOCALE_STRXFRM_METHODDEF
 #endif /* !defined(_LOCALE_STRXFRM_METHODDEF) */
 
-#ifndef _LOCALE__GETDEFAULTLOCALE_METHODDEF
-    #define _LOCALE__GETDEFAULTLOCALE_METHODDEF
-#endif /* !defined(_LOCALE__GETDEFAULTLOCALE_METHODDEF) */
-
 #ifndef _LOCALE_NL_LANGINFO_METHODDEF
     #define _LOCALE_NL_LANGINFO_METHODDEF
 #endif /* !defined(_LOCALE_NL_LANGINFO_METHODDEF) */
@@ -595,4 +570,4 @@ _locale_getencoding(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
     #define _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
 #endif /* !defined(_LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF) */
-/*[clinic end generated code: output=034a3c219466d207 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d33720466578590f input=a9049054013a1b77]*/

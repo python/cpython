@@ -35,7 +35,7 @@ Pending removal in Python 3.15
 
 * :class:`locale`:
 
-  * The :func:`~locale.getdefaultlocale` function
+  * The :func:`!~locale.getdefaultlocale` function
     has been deprecated since Python 3.11.
     Its removal was originally planned for Python 3.13 (:gh:`90817`),
     but has been postponed to Python 3.15.

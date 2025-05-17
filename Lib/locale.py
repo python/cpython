@@ -23,7 +23,7 @@ import functools
 
 # Yuck:  LC_MESSAGES is non-standard:  can't tell whether it exists before
 # trying the import.  So __all__ is also fiddled at the end of the file.
-__all__ = ["getlocale", "getdefaultlocale", "getpreferredencoding", "Error",
+__all__ = ["getlocale", "getpreferredencoding", "Error",
            "setlocale", "localeconv", "strcoll", "strxfrm",
            "str", "atof", "atoi", "format_string", "currency",
            "normalize", "LC_CTYPE", "LC_COLLATE", "LC_TIME", "LC_MONETARY",
@@ -520,69 +520,6 @@ def _build_localename(localetuple):
     except (TypeError, ValueError):
         raise TypeError('Locale must be None, a string, or an iterable of '
                         'two strings -- language code, encoding.') from None
-
-def getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
-
-    """ Tries to determine the default locale settings and returns
-        them as tuple (language code, encoding).
-
-        According to POSIX, a program which has not called
-        setlocale(LC_ALL, "") runs using the portable 'C' locale.
-        Calling setlocale(LC_ALL, "") lets it use the default locale as
-        defined by the LANG variable. Since we don't want to interfere
-        with the current locale setting we thus emulate the behavior
-        in the way described above.
-
-        To maintain compatibility with other platforms, not only the
-        LANG variable is tested, but a list of variables given as
-        envvars parameter. The first found to be defined will be
-        used. envvars defaults to the search path used in GNU gettext;
-        it must always contain the variable name 'LANG'.
-
-        Except for the code 'C', the language code corresponds to RFC
-        1766.  code and encoding can be None in case the values cannot
-        be determined.
-
-    """
-
-    import warnings
-    warnings._deprecated(
-        "locale.getdefaultlocale",
-        "{name!r} is deprecated and slated for removal in Python {remove}. "
-        "Use setlocale(), getencoding() and getlocale() instead.",
-        remove=(3, 15))
-    return _getdefaultlocale(envvars)
-
-
-def _getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
-    try:
-        # check if it's supported by the _locale module
-        import _locale
-        code, encoding = _locale._getdefaultlocale()
-    except (ImportError, AttributeError):
-        pass
-    else:
-        # make sure the code/encoding values are valid
-        if sys.platform == "win32" and code and code[:2] == "0x":
-            # map windows language identifier to language name
-            code = windows_locale.get(int(code, 0))
-        # ...add other platform-specific processing here, if
-        # necessary...
-        return code, encoding
-
-    # fall back on POSIX behaviour
-    import os
-    lookup = os.environ.get
-    for variable in envvars:
-        localename = lookup(variable,None)
-        if localename:
-            if variable == 'LANGUAGE':
-                localename = localename.split(':')[0]
-            break
-    else:
-        localename = 'C'
-    return _parse_localename(localename)
-
 
 def getlocale(category=LC_CTYPE):
 
@@ -1728,12 +1665,11 @@ def _print_locale():
     _init_categories()
     del categories['LC_ALL']
 
-    print('Locale defaults as determined by getdefaultlocale():')
+    print('Locale defaults as determined by locale.getlocale() and locale.getpreferredencoding():')
     print('-'*72)
-    lang, enc = getdefaultlocale()
-    print('Language: ', lang or '(undefined)')
-    print('Encoding: ', enc or '(undefined)')
-    print()
+    lang, enc = getlocale()
+    print(f'Language: {lang or "(undefined)"}')
+    print(f'Encoding: {enc or getpreferredencoding(False) or "(undefined)"}\n')
 
     print('Locale settings on startup:')
     print('-'*72)

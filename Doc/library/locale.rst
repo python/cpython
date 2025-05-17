@@ -327,31 +327,6 @@ The :mod:`locale` module defines the following exception and functions:
       The function now temporarily sets the ``LC_CTYPE`` locale in some cases.
 
 
-.. function:: getdefaultlocale([envvars])
-
-   Tries to determine the default locale settings and returns them as a tuple of
-   the form ``(language code, encoding)``.
-
-   According to POSIX, a program which has not called ``setlocale(LC_ALL, '')``
-   runs using the portable ``'C'`` locale.  Calling ``setlocale(LC_ALL, '')`` lets
-   it use the default locale as defined by the :envvar:`LANG` variable.  Since we
-   do not want to interfere with the current locale setting we thus emulate the
-   behavior in the way described above.
-
-   To maintain compatibility with other platforms, not only the :envvar:`LANG`
-   variable is tested, but a list of variables given as envvars parameter.  The
-   first found to be defined will be used.  *envvars* defaults to the search
-   path used in GNU gettext; it must always contain the variable name
-   ``'LANG'``.  The GNU gettext search path contains ``'LC_ALL'``,
-   ``'LC_CTYPE'``, ``'LANG'`` and ``'LANGUAGE'``, in that order.
-
-   Except for the code ``'C'``, the language code corresponds to :rfc:`1766`.
-   *language code* and *encoding* may be ``None`` if their values cannot be
-   determined.
-
-   .. deprecated-removed:: 3.11 3.15
-
-
 .. function:: getlocale(category=LC_CTYPE)
 
    Returns the current setting for the given locale category as sequence containing

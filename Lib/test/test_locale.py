@@ -483,30 +483,6 @@ class NormalizeTest(unittest.TestCase):
 
 
 class TestMiscellaneous(unittest.TestCase):
-    def test_defaults_UTF8(self):
-        # Issue #18378: on (at least) macOS setting LC_CTYPE to "UTF-8" is
-        # valid. Furthermore LC_CTYPE=UTF is used by the UTF-8 locale coercing
-        # during interpreter startup (on macOS).
-        import _locale
-
-        self.assertEqual(locale._parse_localename('UTF-8'), (None, 'UTF-8'))
-
-        if hasattr(_locale, '_getdefaultlocale'):
-            orig_getlocale = _locale._getdefaultlocale
-            del _locale._getdefaultlocale
-        else:
-            orig_getlocale = None
-
-        try:
-            with os_helper.EnvironmentVarGuard() as env:
-                env.unset('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')
-                env.set('LC_CTYPE', 'UTF-8')
-
-                with check_warnings(('', DeprecationWarning)):
-                    self.assertEqual(locale.getdefaultlocale(), (None, 'UTF-8'))
-        finally:
-            if orig_getlocale is not None:
-                _locale._getdefaultlocale = orig_getlocale
 
     def test_getencoding(self):
         # Invoke getencoding to make sure it does not cause exceptions.
