@@ -2762,6 +2762,34 @@ class IpaddrUnitTest(unittest.TestCase):
         ipv6_address2 = ipaddress.IPv6Interface("2001:658:22a:cafe:200:0:0:2")
         self.assertNotEqual(ipv6_address1.__hash__(), ipv6_address2.__hash__())
 
+    # issue 134062 Hash collisions in IPv4Network and IPv6Network
+    def testNetworkV4HashCollisions(self):
+        self.assertNotEqual(
+            ipaddress.IPv4Network("192.168.1.255/32").__hash__(),
+            ipaddress.IPv4Network("192.168.1.0/24").__hash__()
+        )
+        self.assertNotEqual(
+            ipaddress.IPv4Network("172.24.255.0/24").__hash__(),
+            ipaddress.IPv4Network("172.24.0.0/16").__hash__()
+        )
+        self.assertNotEqual(
+            ipaddress.IPv4Network("192.168.1.87/32").__hash__(),
+            ipaddress.IPv4Network("192.168.1.86/31").__hash__()
+        )
+
+    # issue 134062 Hash collisions in IPv4Network and IPv6Network
+    def testNetworkV6HashCollisions(self):
+        self.assertNotEqual(
+            ipaddress.IPv6Network("fe80::/64").__hash__(),
+            ipaddress.IPv6Network("fe80::ffff:ffff:ffff:0/112").__hash__()
+        )
+        self.assertNotEqual(
+            ipaddress.IPv4Network("10.0.0.0/8").__hash__(),
+            ipaddress.IPv6Network(
+                "ffff:ffff:ffff:ffff:ffff:ffff:aff:0/112"
+            ).__hash__()
+        )
+
 
 if __name__ == '__main__':
     unittest.main()

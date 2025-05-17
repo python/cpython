@@ -729,7 +729,7 @@ class _BaseNetwork(_IPAddressBase):
             return NotImplemented
 
     def __hash__(self):
-        return hash(int(self.network_address) ^ int(self.netmask))
+        return hash((int(self.network_address), int(self.netmask)))
 
     def __contains__(self, other):
         # always false if one is v4 and the other is v6.
