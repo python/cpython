@@ -3039,6 +3039,11 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         CLEANUP;
     }
 
+    if (leftover_ns < 0) {
+        y = PyNumber_Subtract(x, PyLong_FromLong(1));
+        CLEANUP;
+        leftover_ns += 1000;
+    }
     self = microseconds_to_delta_ex(x, type);
     SET_TD_NANOSECONDS((PyDateTime_Delta *)self, leftover_ns);
     Py_DECREF(x);
