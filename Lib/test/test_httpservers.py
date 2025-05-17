@@ -1315,9 +1315,9 @@ class CommandLineTestCase(unittest.TestCase):
             f.write(self.tls_password.encode())
         self.addCleanup(os_helper.unlink, self.tls_password_file)
 
-    def invoke_httpd(self, *args):
-        stdout = StringIO()
-        stderr = StringIO()
+    def invoke_httpd(self, *args, stdout=None, stderr=None):
+        stdout = StringIO() if stdout is None else stdout
+        stderr = StringIO() if stderr is None else stderr
         with contextlib.redirect_stdout(stdout), \
             contextlib.redirect_stderr(stderr):
             server._main(args)
@@ -1441,14 +1441,20 @@ class CommandLineTestCase(unittest.TestCase):
     @mock.patch('http.server.test')
     def test_help_flag(self, _):
         options = ['-h', '--help']
+        stdout, stderr = StringIO(), StringIO()
         for option in options:
             with self.assertRaises(SystemExit):
-                _ = self.invoke_httpd(option)
+                self.invoke_httpd(option, stdout=stdout, stderr=stderr)
+            self.assertIn('usage', stdout.getvalue())
+            self.assertEqual('', stderr.getvalue())
 
     @mock.patch('http.server.test')
     def test_unknown_flag(self, _):
+        stdout, stderr = StringIO(), StringIO()
         with self.assertRaises(SystemExit):
-            _ = self.invoke_httpd('--unknown-flag')
+            self.invoke_httpd('--unknown-flag', stdout=stdout, stderr=stderr)
+        self.assertEqual('', stdout.getvalue())
+        self.assertIn('error', stderr.getvalue())
 
 class CommandLineRunTimeTestCase(unittest.TestCase):
     random_data = os.urandom(32)
