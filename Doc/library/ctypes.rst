@@ -2044,8 +2044,8 @@ Utility functions
    to initialize the array items. Bytes not initialized this way are
    set to zero (NUL).
 
-   If *size* is not given (or if it is ``None``), the buffer is made one byte
-   larger than *init*, effectively adding a NUL termination byte.
+   If *size* is not given (or if it is ``None``), the buffer is made one element
+   larger than *init*, effectively adding a NUL terminator.
 
    If both arguments are given, *size* must not be less than ``len(init)``.
 
@@ -2078,37 +2078,8 @@ Utility functions
    This function creates a mutable unicode character buffer. The returned object is
    a ctypes array of :class:`c_wchar`.
 
-   If *size* is given (and not ``None``), it must be an :class:`int`.
-   It specifies the size of the returned array.
-
-   If the *init* argument is given, it must be a string. It is used
-   to initialize the array items. Bytes not initialized this way are
-   set to zero (NUL).
-
-   If *size* is not given (or if it is ``None``), the buffer is made one byte
-   larger than *init*, effectively adding a NUL termination byte.
-
-   If both arguments are given, *size* must not be less than ``len(init)``.
-
-   .. warning::
-
-      If *size* is equal to ``len(init)``, a NUL terminator is
-      not added. Do not treat such a buffer as a C string.
-
-   For example::
-
-      >>> bytes(create_unicode_buffer(2))
-      b'\x00\x00\x00\x00\x00\x00\x00\x00'
-      >>> bytes(create_unicode_buffer('ab'))
-      b'a\x00\x00\x00b\x00\x00\x00\x00\x00\x00\x00'
-      >>> bytes(create_unicode_buffer('ab', 2))
-      b'a\x00\x00\x00b\x00\x00\x00'
-      >>> bytes(create_unicode_buffer('ab', 4))
-      b'a\x00\x00\x00b\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-      >>> bytes(create_unicode_buffer('abcdef', 2))
-      Traceback (most recent call last):
-         ...
-      ValueError: string too long
+   The function takes the same arguments as :func:`~create_string_buffer` except
+   *init* must be a string and *size* counts :class:`c_wchar`.
 
    .. audit-event:: ctypes.create_unicode_buffer init,size ctypes.create_unicode_buffer
 
