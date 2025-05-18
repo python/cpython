@@ -309,7 +309,7 @@ class FutureTests(BaseTestCase):
         self.assertTrue(done)
         self.assertFalse(cancelled)
         self.assertIsNone(result)
-        self.assertEqual(exception, exc)
+        self.assertIs(exception, exc)
 
         # Test with a cancelled future
         f = Future()
