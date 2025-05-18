@@ -976,7 +976,8 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     ServerClass.address_family, addr = _get_best_family(bind, port)
     HandlerClass.protocol_version = protocol
 
-    if issubclass(ServerClass, HTTPSServer):
+    # Make sure ServerClass is a class object, not a function instance
+    if isinstance(ServerClass, type) and issubclass(ServerClass, HTTPSServer):
         server = ServerClass(addr, HandlerClass, certfile=tls_cert,
                              keyfile=tls_key, password=tls_password)
     else:
