@@ -4093,6 +4093,7 @@ class TestExtractionFilters(unittest.TestCase):
                 self.assertIs(filtered.name, tarinfo.name)
                 self.assertIs(filtered.type, tarinfo.type)
 
+    @unittest.skipIf(sys.platform == 'win32', 'requires native bytes paths')
     def test_filter_unencodable(self):
         # Sanity check using a valid path.
         tarinfo = tarfile.TarInfo(os_helper.TESTFN)
@@ -4101,14 +4102,17 @@ class TestExtractionFilters(unittest.TestCase):
         filtered = tarfile.data_filter(tarinfo, '')
         self.assertIs(filtered.name, tarinfo.name)
 
-        tarinfo = tarfile.TarInfo('test\0')
+        tarinfo = tarfile.TarInfo('test\x00')
         self.assertRaises(ValueError, tarfile.tar_filter, tarinfo, '')
         self.assertRaises(ValueError, tarfile.data_filter, tarinfo, '')
         tarinfo = tarfile.TarInfo('\ud800')
         self.assertRaises(UnicodeEncodeError, tarfile.tar_filter, tarinfo, '')
         self.assertRaises(UnicodeEncodeError, tarfile.data_filter, tarinfo, '')
 
-    def test_extract_encode_error(self):
+    @unittest.skipIf(sys.platform == 'win32', 'requires native bytes paths')
+    def test_extract_unencodable(self):
+        # Create a member with name \xed\xa0\x80 which is UTF-8 encoded
+        # lone surrogate \ud800.
         with ArchiveMaker(encoding='ascii', errors='surrogateescape') as arc:
             arc.add('\udced\udca0\udc80')
         with os_helper.temp_cwd() as tmp:

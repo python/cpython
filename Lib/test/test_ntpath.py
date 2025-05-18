@@ -437,6 +437,34 @@ class TestNtpath(NtpathTestCase):
         # gh-106242: Embedded nulls should raise OSError (not ValueError)
         self.assertRaises(OSError, ntpath.realpath, ABSTFN + "\0spam", strict=True)
 
+    @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
+    def test_realpath_embedded_null(self):
+        realpath = ntpath.realpath
+        ABSTFN = ntpath.abspath(os_helper.TESTFN)
+        path = ABSTFN + '\x00'
+        self.assertEqual(realpath(path, strict=False), path)
+        self.assertRaises(OSError, realpath, path, strict=True)
+        path = os.fsencode(ABSTFN) + b'\x00'
+        self.assertEqual(realpath(path, strict=False), path)
+        self.assertRaises(OSError, realpath, path, strict=True)
+        path = ABSTFN + '\\nonexistent\\x\x00'
+        self.assertEqual(realpath(path, strict=False), path)
+        self.assertRaises(OSError, realpath, path, strict=True)
+        path = os.fsencode(ABSTFN) + b'\\nonexistent\\x\x00'
+        self.assertEqual(realpath(path, strict=False), path)
+        self.assertRaises(OSError, realpath, path, strict=True)
+
+    @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
+    def test_realpath_undecodable(self):
+        realpath = ntpath.realpath
+        ABSTFN = ntpath.abspath(os_helper.TESTFN)
+        path = os.fsencode(ABSTFN) + b'\xff'
+        self.assertRaises(UnicodeDecodeError, realpath, path, strict=False)
+        self.assertRaises(UnicodeDecodeError, realpath, path, strict=True)
+        path = os.fsencode(ABSTFN) + b'\\nonexistent\\\xff'
+        self.assertRaises(UnicodeDecodeError, realpath, path, strict=False)
+        self.assertRaises(UnicodeDecodeError, realpath, path, strict=True)
+
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_relative(self):
