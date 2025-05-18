@@ -284,7 +284,7 @@ Basic Usage
 
    :param object_hook:
       If set, a function that is called with the result of
-      any object literal decoded (a :class:`dict`).
+      any JSON object literal decoded (a :class:`dict`).
       The return value of this function will be used
       instead of the :class:`dict`.
       This feature can be used to implement custom decoders,
@@ -294,7 +294,7 @@ Basic Usage
 
    :param object_pairs_hook:
       If set, a function that is called with the result of
-      any object literal decoded with an ordered list of pairs.
+      any JSON object literal decoded with an ordered list of pairs.
       The return value of this function will be used
       instead of the :class:`dict`.
       This feature can be used to implement custom decoders.
