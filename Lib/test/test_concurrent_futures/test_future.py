@@ -6,6 +6,7 @@ from concurrent.futures._base import (
     PENDING, RUNNING, CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, Future)
 
 from test import support
+from test.support import threading_helper
 
 from .util import (
     PENDING_FUTURE, RUNNING_FUTURE, CANCELLED_FUTURE,
@@ -330,14 +331,8 @@ class FutureTests(BaseTestCase):
                 snapshot = f._get_snapshot()
                 results.append(snapshot)
 
-        threads = []
-        for _ in range(4):
-            t = threading.Thread(target=get_snapshot)
-            threads.append(t)
-            t.start()
-
-        for t in threads:
-            t.join()
+        threads = [threading.Thread(target=get_snapshot) for _ in range(4)]
+        threading_helper.start_threads(threads)
 
         # All snapshots should be identical for a finished future
         expected = (True, False, 100, None)
