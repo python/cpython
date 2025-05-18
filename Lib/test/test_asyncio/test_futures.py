@@ -413,7 +413,7 @@ class BaseFutureTests:
     def test_copy_state(self):
         from asyncio.futures import _copy_future_state
 
-        f = self._new_future(loop=self.loop)
+        f = concurrent.futures.Future()
         f.set_result(10)
 
         newf = self._new_future(loop=self.loop)
@@ -421,7 +421,7 @@ class BaseFutureTests:
         self.assertTrue(newf.done())
         self.assertEqual(newf.result(), 10)
 
-        f_exception = self._new_future(loop=self.loop)
+        f_exception = concurrent.futures.Future()
         f_exception.set_exception(RuntimeError())
 
         newf_exception = self._new_future(loop=self.loop)
@@ -429,7 +429,7 @@ class BaseFutureTests:
         self.assertTrue(newf_exception.done())
         self.assertRaises(RuntimeError, newf_exception.result)
 
-        f_cancelled = self._new_future(loop=self.loop)
+        f_cancelled = concurrent.futures.Future()
         f_cancelled.cancel()
 
         newf_cancelled = self._new_future(loop=self.loop)
@@ -441,7 +441,7 @@ class BaseFutureTests:
         except BaseException as e:
             f_exc = e
 
-        f_conexc = self._new_future(loop=self.loop)
+        f_conexc = concurrent.futures.Future()
         f_conexc.set_exception(f_exc)
 
         newf_conexc = self._new_future(loop=self.loop)
