@@ -3357,8 +3357,11 @@ delta_total_seconds(PyObject *op, PyObject *Py_UNUSED(dummy))
                  + (double)seconds
                  + (double)microseconds * 1e-6
                  + (double)nanoseconds * 1e-9;
-    // round to 9 decimal places
-    total = roundl(total * 1e9) / 1e9;
+    // check for decimal parts
+    if ((long)total != total){
+        // round to 9 decimal places
+        total = roundl(total * 1e9) / 1e9;
+    }
     return PyFloat_FromDouble(total);
 }
 
