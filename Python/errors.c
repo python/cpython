@@ -1485,7 +1485,8 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
         }
     }
 
-    // Try printing the exception with color
+    // Try printing the exception using the stdlib module.
+    // If this fails, then we have to use the C implementation.
     PyObject *print_exception_fn = PyImport_ImportModuleAttrString("traceback",
                                                                    "_print_exception_bltin");
     if (print_exception_fn != NULL && PyCallable_Check(print_exception_fn)) {
@@ -1494,6 +1495,7 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
         Py_DECREF(print_exception_fn);
         Py_XDECREF(result);
         if (result != NULL) {
+            // Nothing else to do
             return 0;
         }
     }
