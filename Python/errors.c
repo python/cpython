@@ -1439,8 +1439,6 @@ make_unraisable_hook_args(PyThreadState *tstate, PyObject *exc_type,
     return args;
 }
 
-
-
 /* Default implementation of sys.unraisablehook.
 
    It can be called to log the exception of a custom sys.unraisablehook.
@@ -1484,6 +1482,20 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
             return -1;
         }
     }
+
+    // Try printing the exception with color
+    PyObject *print_exception_fn = PyImport_ImportModuleAttrString("traceback",
+                                                                   "_print_exception_bltin");
+    if (print_exception_fn != NULL && PyCallable_Check(print_exception_fn)) {
+        PyObject *result = PyObject_CallOneArg(print_exception_fn, exc_value);
+        Py_DECREF(print_exception_fn);
+        Py_XDECREF(result);
+        if (result != NULL) {
+            return 0;
+        }
+    }
+    // traceback module failed, fall back to pure C
+    Py_XDECREF(print_exception_fn);
 
     if (exc_tb != NULL && exc_tb != Py_None) {
         if (PyTraceBack_Print(exc_tb, file) < 0) {
