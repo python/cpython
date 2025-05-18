@@ -1489,7 +1489,8 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
     PyObject *print_exception_fn = PyImport_ImportModuleAttrString("traceback",
                                                                    "_print_exception_bltin");
     if (print_exception_fn != NULL && PyCallable_Check(print_exception_fn)) {
-        PyObject *result = PyObject_CallOneArg(print_exception_fn, exc_value);
+        PyObject *args[2] = {exc_value, file};
+        PyObject *result = PyObject_Vectorcall(print_exception_fn, args, 2, NULL);
         Py_DECREF(print_exception_fn);
         Py_XDECREF(result);
         if (result != NULL) {
