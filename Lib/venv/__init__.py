@@ -315,7 +315,7 @@ class EnvBuilder:
                 os.chmod(path, 0o755)
 
             suffixes = ['python', 'python3', f'python3.{sys.version_info[1]}']
-            if sys.version_info[:2] == (3, 14):
+            if sys.version_info[:2] == (3, 14) and sys.getfilesystemencoding() == 'utf-8':
                 suffixes.append('𝜋thon')
             for suffix in suffixes:
                 path = os.path.join(binpath, suffix)
