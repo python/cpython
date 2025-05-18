@@ -332,8 +332,8 @@ class FutureTests(BaseTestCase):
                 results.append(snapshot)
 
         threads = [threading.Thread(target=get_snapshot) for _ in range(4)]
-        threading_helper.start_threads(threads)
-
+        with threading_helper.start_threads(threads):
+            pass
         # All snapshots should be identical for a finished future
         expected = (True, False, 100, None)
         for result in results:
