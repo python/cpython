@@ -157,7 +157,7 @@ The :keyword:`for` statement is used to iterate over the elements of a sequence
    for_stmt: "for" `target_list` "in" `starred_expression_list` ":" `suite`
            : ["else" ":" `suite`]
 
-The `starred_expression_list` expression is evaluated once; it should 
+The ``starred_expression_list`` expression is evaluated once; it should 
 yield an :term:`iterable` object.  An :term:`iterator` is created for that iterable.
 The first item provided
 by the iterator is then assigned to the target list using the standard
