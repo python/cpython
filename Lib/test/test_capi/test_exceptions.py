@@ -6,7 +6,7 @@ import unittest
 import textwrap
 
 from test import support
-from test.support import import_helper
+from test.support import import_helper, force_not_colorized
 from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE
 from test.support.script_helper import assert_python_failure, assert_python_ok
 from test.support.testcase import ExceptionIsLikeMixin
@@ -355,6 +355,7 @@ class Test_ErrSetAndRestore(unittest.TestCase):
         # CRASHES writeunraisable(NULL, hex)
         # CRASHES writeunraisable(NULL, NULL)
 
+    @force_not_colorized
     def test_err_formatunraisable(self):
         # Test PyErr_FormatUnraisable()
         formatunraisable = _testcapi.err_formatunraisable
