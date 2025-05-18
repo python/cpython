@@ -1613,11 +1613,6 @@ class FileIO(RawIOBase):
             warnings.warn(f'unclosed file {source!r}', ResourceWarning,
                           stacklevel=2, source=self)
 
-    def __del__(self):
-        if self._fd >= 0 and self._closefd and not self.closed:
-            self._dealloc_warn(self)
-            self.close()
-
     def __getstate__(self):
         raise TypeError(f"cannot pickle {self.__class__.__name__!r} object")
 
@@ -1791,7 +1786,7 @@ class FileIO(RawIOBase):
         if not self.closed:
             self._stat_atopen = None
             try:
-                if self._closefd:
+                if self._closefd and self._fd >= 0:
                     os.close(self._fd)
             finally:
                 super().close()
