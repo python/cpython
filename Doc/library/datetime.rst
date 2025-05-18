@@ -116,7 +116,7 @@ Available Types
    An idealized time, independent of any particular day, assuming that every day
    has exactly 24\*60\*60 seconds.  (There is no notion of "leap seconds" here.)
    Attributes: :attr:`hour`, :attr:`minute`, :attr:`second`, :attr:`microsecond`,
-   :attr:`.tzinfo` , :attr:`fold` and :attr:`nanosecond`.
+   :attr:`.tzinfo`, :attr:`fold` and :attr:`nanosecond`.
 
 
 .. class:: datetime
