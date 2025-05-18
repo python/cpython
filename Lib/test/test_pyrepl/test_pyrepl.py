@@ -944,13 +944,16 @@ class TestPyReplModuleCompleter(TestCase):
             ("import importlib.resources.\t\ta\t\n", "import importlib.resources.abc"),
             ("import foo, impo\t\n", "import foo, importlib"),
             ("import foo as bar, impo\t\n", "import foo as bar, importlib"),
+            ("import pri\t\n", "import pri"),  # do not complete with "print("
             ("from impo\t\n", "from importlib"),
+            ("from pri\t\n", "from pri"),
             ("from importlib.res\t\n", "from importlib.resources"),
             ("from importlib.\t\tres\t\n", "from importlib.resources"),
             ("from importlib.resources.ab\t\n", "from importlib.resources.abc"),
             ("from importlib import mac\t\n", "from importlib import machinery"),
             ("from importlib import res\t\n", "from importlib import resources"),
             ("from importlib.res\t import a\t\n", "from importlib.resources import abc"),
+            ("from typing import Na\t\n", "from typing import Na"),  # do not complete with "NameError("
         )
         for code, expected in cases:
             with self.subTest(code=code):

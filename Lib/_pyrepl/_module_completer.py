@@ -42,11 +42,14 @@ class ModuleCompleter:
         self._global_cache: list[pkgutil.ModuleInfo] = []
         self._curr_sys_path: list[str] = sys.path[:]
 
-    def get_completions(self, line: str) -> list[str]:
-        """Return the next possible import completions for 'line'."""
+    def get_completions(self, line: str) -> list[str] | None:
+        """Return the next possible import completions for 'line'.
+
+        If 'line' is not an import statement, return None.
+        """
         result = ImportParser(line).parse()
         if not result:
-            return []
+            return None
         try:
             return self.complete(*result)
         except Exception:
