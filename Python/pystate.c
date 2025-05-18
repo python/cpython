@@ -268,9 +268,8 @@ unbind_gilstate_tstate(PyThreadState *tstate)
     assert(tstate_is_bound(tstate));
     // XXX assert(!tstate->_status.active);
     assert(tstate->_status.bound_gilstate);
-    if (tstate == gilstate_get()) {
-        gilstate_clear();
-    }
+    assert(tstate == gilstate_get());
+    gilstate_clear();
     tstate->_status.bound_gilstate = 0;
 }
 
