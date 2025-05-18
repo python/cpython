@@ -1495,6 +1495,7 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
         }
     }
     // traceback module failed, fall back to pure C
+    _PyErr_Clear(tstate);
     Py_XDECREF(print_exception_fn);
 
     if (exc_tb != NULL && exc_tb != Py_None) {
