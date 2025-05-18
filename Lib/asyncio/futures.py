@@ -353,10 +353,24 @@ def _copy_future_state(source, dest):
 
     The other Future may be a concurrent.futures.Future.
     """
-    assert source.done()
     if dest.cancelled():
         return
     assert not dest.done()
+
+    # Use _get_snapshot for futures that support it
+    if hasattr(source, '_get_snapshot'):
+        done, cancelled, result, exception = source._get_snapshot()
+        assert done
+        if cancelled:
+            dest.cancel()
+        elif exception is not None:
+            dest.set_exception(_convert_future_exc(exception))
+        else:
+            dest.set_result(result)
+        return
+
+    # Traditional fallback needs done check
+    assert source.done()
     if source.cancelled():
         dest.cancel()
     else:
