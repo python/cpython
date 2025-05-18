@@ -119,9 +119,6 @@ Reading and writing compressed files
    *zstd_dict* argument is a :class:`!ZstdDict` instance to be used during
    compression.
 
-   When opening a file for writing, the *options*, *zstd_dict* and *level*
-   arguments have the same meanings as for :class:`ZstdCompressor`.
-
    :class:`!ZstdFile` supports all the members specified by
    :class:`io.BufferedIOBase`, except for :meth:`~io.BufferedIOBase.detach`
    and :meth:`~io.IOBase.truncate`.
@@ -168,8 +165,8 @@ Compressing and decompressing data in memory
    parameters. The valid keys and values for compression parameters are
    documented as part of the :class:`CompressionParameter` documentation.
 
-   The *zstd_dict* argument is an instance of :class:`ZstdDict`, a Zstandard
-   dictionary, containing trained data to improve compression efficiency. The
+   The *zstd_dict* argument is an instance of :class:`ZstdDict`
+   containing trained data to improve compression efficiency. The
    function :func:`train_dict` can be used to generate a Zstandard dictionary.
 
 
@@ -183,8 +180,8 @@ Compressing and decompressing data in memory
    parameters are documented as part of the :class:`DecompressionParameter`
    documentation.
 
-   The *zstd_dict* argument is an instance of :class:`ZstdDict`, a Zstandard
-   dictionary, containing trained data used during compression. This must be
+   The *zstd_dict* argument is an instance of :class:`ZstdDict`
+   containing trained data used during compression. This must be
    the same Zstandard dictionary used during compression.
 
    If *data* is the concatenation of multiple distinct compressed frames,
@@ -208,8 +205,8 @@ Compressing and decompressing data in memory
    parameters. The valid keys and values for compression parameters are
    documented as part of the :class:`CompressionParameter` documentation.
 
-   The *zstd_dict* argument is an instance of :class:`ZstdDict`, a Zstandard
-   dictionary, containing trained data to improve compression efficiency. The
+   The *zstd_dict* argument is an instance of :class:`ZstdDict`
+   containing trained data to improve compression efficiency. The
    function :func:`train_dict` can be used to generate a Zstandard dictionary.
 
    .. attribute:: CONTINUE
@@ -269,8 +266,8 @@ Compressing and decompressing data in memory
    parameters are documented as part of the :class:`DecompressionParameter`
    documentation.
 
-   The *zstd_dict* argument is an instance of :class:`ZstdDict`, a Zstandard
-   dictionary, containing trained data used during compression. This must be
+   The *zstd_dict* argument is an instance of :class:`ZstdDict`
+   containing trained data used during compression. This must be
    the same Zstandard dictionary used during compression.
 
    .. note::
