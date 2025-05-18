@@ -4978,13 +4978,13 @@ time_from_pickle(PyTypeObject *type, PyObject *state, PyObject *tzinfo)
 
         /* Copy the data we have */
         memcpy(me->data, pdata, data_size);
-        
+
         /* If we don't have nanoseconds in the pickled data, initialize them to 0 */
         if (data_size == _PyDateTime_OLD_TIME_DATASIZE) {
             me->data[6] = 0;
             me->data[7] = 0;
         }
-        
+
         me->hashcode = -1;
         me->hastzinfo = aware;
         if (aware) {
@@ -5741,13 +5741,13 @@ datetime_from_pickle(PyTypeObject *type, PyObject *state, PyObject *tzinfo)
 
         /* Copy the data we have */
         memcpy(me->data, pdata, data_size);
-        
+
         /* If we don't have nanoseconds in the pickled data, initialize them to 0 */
         if (data_size == _PyDateTime_OLD_DATETIME_DATASIZE) {
             me->data[10] = 0;
             me->data[11] = 0;
         }
-        
+
         me->hashcode = -1;
         me->hastzinfo = aware;
         if (aware) {
