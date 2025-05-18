@@ -2741,6 +2741,12 @@ class TestParser(TestParserMixin, TestEmailBase):
             )
         self.assertEqual(message_id.token_type, 'message-id')
 
+    def test_parse_message_id_with_invalid_domain(self):
+        message_id = parser.parse_message_id("<T@[")
+        self.assertEqual(message_id.token_type, 'message-id')
+        self.assertEqual(str(message_id.all_defects[-1]),
+                         "end of input inside domain-literal")
+
     def test_parse_message_id_with_remaining(self):
         message_id = self._test_parse_x(
             parser.parse_message_id,
