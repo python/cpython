@@ -420,7 +420,6 @@ class BugsTestCase(unittest.TestCase):
                  ('dict key', {fset: 'x'}),
                  ('dict value', {'x': fset}),
                  ('dict key & value', {fset: fset}),
-                 ('dict set key & buffer', {fset: fset}),
                  ('slice', slice(fset, fset)),
                  ('code', code))
         for name, arg in cases:
