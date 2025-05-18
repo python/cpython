@@ -1690,11 +1690,12 @@ create_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
 static PyObject *
 destroy_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"id", NULL};
+    static char *kwlist[] = {"id", "basic", NULL};
     PyObject *idobj = NULL;
+    int basic = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                     "O:destroy_interpreter", kwlist,
-                                     &idobj))
+                                     "O|p:destroy_interpreter", kwlist,
+                                     &idobj, &basic))
     {
         return NULL;
     }
@@ -1704,7 +1705,27 @@ destroy_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
 
-    _PyXI_EndInterpreter(interp, NULL, NULL);
+    if (basic)
+    {
+        // Test the basic Py_EndInterpreter with weird out of order thread states
+        PyThreadState *t1, *t2;
+        PyThreadState *prev;
+        t1 = interp->threads.head;
+        if (t1 == NULL) {
+            t1 = PyThreadState_New(interp);
+        }
+        t2 = PyThreadState_New(interp);
+        prev = PyThreadState_Swap(t2);
+        PyThreadState_Clear(t1);
+        PyThreadState_Delete(t1);
+        Py_EndInterpreter(t2);
+        PyThreadState_Swap(prev);
+    }
+    else
+    {
+        // use the cross interpreter _PyXI_EndInterpreter normally
+        _PyXI_EndInterpreter(interp, NULL, NULL);
+    }
     Py_RETURN_NONE;
 }
 
