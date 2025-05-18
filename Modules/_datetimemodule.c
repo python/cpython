@@ -3217,7 +3217,9 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         leftover_ns += 1000;
     }
     self = microseconds_to_delta_ex(x, type);
-    SET_TD_NANOSECONDS((PyDateTime_Delta *)self, (long)(leftover_ns)); // todo: py_round
+    if (self != NULL){
+        SET_TD_NANOSECONDS((PyDateTime_Delta *)self, (long)(leftover_ns)); // todo: py_round
+    }
     Py_DECREF(x);
 
 Done:
