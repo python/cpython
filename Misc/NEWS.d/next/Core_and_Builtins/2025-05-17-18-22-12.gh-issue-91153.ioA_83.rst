@@ -1,3 +1,0 @@
-Fix an issue where a :class:`bytearray` item assignment could crash or write
-to the wrong bytearray when resized by the new value's :meth:`__index__`
-method.

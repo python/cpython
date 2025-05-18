@@ -1890,6 +1890,8 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
                 self._testlimitedcapi.sequence_setitem(b, 0, Boom())
 
     def test_mutating_index_inbounds(self):
+        # See gh-91153
+
         class MutatesOnIndex:
             new_ba: bytearray
 
