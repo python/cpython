@@ -23,6 +23,22 @@ def requires_builtin_hmac():
     return unittest.skipIf(_hmac is None, "requires _hmac")
 
 
+def _missing_hash(digestname, implementation=None, *, exc=None):
+    parts = ["missing", implementation, f"hash algorithm: {digestname!r}"]
+    msg = " ".join(filter(None, parts))
+    raise unittest.SkipTest(msg) from exc
+
+
+def _openssl_availabillity(digestname, *, usedforsecurity):
+    try:
+        _hashlib.new(digestname, usedforsecurity=usedforsecurity)
+    except AttributeError:
+        assert _hashlib is None
+        _missing_hash(digestname, "OpenSSL")
+    except ValueError as exc:
+        _missing_hash(digestname, "OpenSSL", exc=exc)
+
+
 def _decorate_func_or_class(func_or_class, decorator_func):
     if not isinstance(func_or_class, type):
         return decorator_func(func_or_class)
@@ -71,8 +87,7 @@ def requires_hashdigest(digestname, openssl=None, usedforsecurity=True):
             try:
                 test_availability()
             except ValueError as exc:
-                msg = f"missing hash algorithm: {digestname!r}"
-                raise unittest.SkipTest(msg) from exc
+                _missing_hash(digestname, exc=exc)
             return func(*args, **kwargs)
         return wrapper
 
@@ -87,20 +102,212 @@ def requires_openssl_hashdigest(digestname, *, usedforsecurity=True):
     The hashing algorithm may be missing or blocked by a strict crypto policy.
     """
     def decorator_func(func):
-        @requires_hashlib()
+        @requires_hashlib()  # avoid checking at each call
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            try:
-                _hashlib.new(digestname, usedforsecurity=usedforsecurity)
-            except ValueError:
-                msg = f"missing OpenSSL hash algorithm: {digestname!r}"
-                raise unittest.SkipTest(msg)
+            _openssl_availabillity(digestname, usedforsecurity=usedforsecurity)
             return func(*args, **kwargs)
         return wrapper
 
     def decorator(func_or_class):
         return _decorate_func_or_class(func_or_class, decorator_func)
     return decorator
+
+
+def find_openssl_hashdigest_constructor(digestname, *, usedforsecurity=True):
+    """Find the OpenSSL hash function constructor by its name."""
+    assert isinstance(digestname, str), digestname
+    _openssl_availabillity(digestname, usedforsecurity=usedforsecurity)
+    # This returns a function of the form _hashlib.openssl_<name> and
+    # not a lambda function as it is rejected by _hashlib.hmac_new().
+    return getattr(_hashlib, f"openssl_{digestname}")
+
+
+def requires_builtin_hashdigest(
+    module_name, digestname, *, usedforsecurity=True
+):
+    """Decorator raising SkipTest if a HACL* hashing algorithm is missing.
+
+    - The *module_name* is the C extension module name based on HACL*.
+    - The *digestname* is one of its member, e.g., 'md5'.
+    """
+    def decorator_func(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            module = import_module(module_name)
+            try:
+                getattr(module, digestname)
+            except AttributeError:
+                fullname = f'{module_name}.{digestname}'
+                _missing_hash(fullname, implementation="HACL")
+            return func(*args, **kwargs)
+        return wrapper
+
+    def decorator(func_or_class):
+        return _decorate_func_or_class(func_or_class, decorator_func)
+    return decorator
+
+
+def find_builtin_hashdigest_constructor(
+    module_name, digestname, *, usedforsecurity=True
+):
+    """Find the HACL* hash function constructor.
+
+    - The *module_name* is the C extension module name based on HACL*.
+    - The *digestname* is one of its member, e.g., 'md5'.
+    """
+    module = import_module(module_name)
+    try:
+        constructor = getattr(module, digestname)
+        constructor(b'', usedforsecurity=usedforsecurity)
+    except (AttributeError, TypeError, ValueError):
+        _missing_hash(f'{module_name}.{digestname}', implementation="HACL")
+    return constructor
+
+
+class HashFunctionsTrait:
+    """Mixin trait class containing hash functions.
+
+    This class is assumed to have all unitest.TestCase methods but should
+    not directly inherit from it to prevent the test suite being run on it.
+
+    Subclasses should implement the hash functions by returning an object
+    that can be recognized as a valid digestmod parameter for both hashlib
+    and HMAC. In particular, it cannot be a lambda function as it will not
+    be recognized by hashlib (it will still be accepted by the pure Python
+    implementation of HMAC).
+    """
+
+    ALGORITHMS = [
+        'md5', 'sha1',
+        'sha224', 'sha256', 'sha384', 'sha512',
+        'sha3_224', 'sha3_256', 'sha3_384', 'sha3_512',
+    ]
+
+    # Default 'usedforsecurity' to use when looking up a hash function.
+    usedforsecurity = True
+
+    def _find_constructor(self, name):
+        # By default, a missing algorithm skips the test that uses it.
+        self.assertIn(name, self.ALGORITHMS)
+        self.skipTest(f"missing hash function: {name}")
+
+    @property
+    def md5(self):
+        return self._find_constructor("md5")
+
+    @property
+    def sha1(self):
+        return self._find_constructor("sha1")
+
+    @property
+    def sha224(self):
+        return self._find_constructor("sha224")
+
+    @property
+    def sha256(self):
+        return self._find_constructor("sha256")
+
+    @property
+    def sha384(self):
+        return self._find_constructor("sha384")
+
+    @property
+    def sha512(self):
+        return self._find_constructor("sha512")
+
+    @property
+    def sha3_224(self):
+        return self._find_constructor("sha3_224")
+
+    @property
+    def sha3_256(self):
+        return self._find_constructor("sha3_256")
+
+    @property
+    def sha3_384(self):
+        return self._find_constructor("sha3_384")
+
+    @property
+    def sha3_512(self):
+        return self._find_constructor("sha3_512")
+
+
+class NamedHashFunctionsTrait(HashFunctionsTrait):
+    """Trait containing named hash functions.
+
+    Hash functions are available if and only if they are available in hashlib.
+    """
+
+    def _find_constructor(self, name):
+        self.assertIn(name, self.ALGORITHMS)
+        return name
+
+
+class OpenSSLHashFunctionsTrait(HashFunctionsTrait):
+    """Trait containing OpenSSL hash functions.
+
+    Hash functions are available if and only if they are available in _hashlib.
+    """
+
+    def _find_constructor(self, name):
+        self.assertIn(name, self.ALGORITHMS)
+        return find_openssl_hashdigest_constructor(
+            name, usedforsecurity=self.usedforsecurity
+        )
+
+
+class BuiltinHashFunctionsTrait(HashFunctionsTrait):
+    """Trait containing HACL* hash functions.
+
+    Hash functions are available if and only if they are available in C.
+    In particular, HACL* HMAC-MD5 may be available even though HACL* md5
+    is not since the former is unconditionally built.
+    """
+
+    def _find_constructor_in(self, module, name):
+        self.assertIn(name, self.ALGORITHMS)
+        return find_builtin_hashdigest_constructor(module, name)
+
+    @property
+    def md5(self):
+        return self._find_constructor_in("_md5", "md5")
+
+    @property
+    def sha1(self):
+        return self._find_constructor_in("_sha1", "sha1")
+
+    @property
+    def sha224(self):
+        return self._find_constructor_in("_sha2", "sha224")
+
+    @property
+    def sha256(self):
+        return self._find_constructor_in("_sha2", "sha256")
+
+    @property
+    def sha384(self):
+        return self._find_constructor_in("_sha2", "sha384")
+
+    @property
+    def sha512(self):
+        return self._find_constructor_in("_sha2", "sha512")
+
+    @property
+    def sha3_224(self):
+        return self._find_constructor_in("_sha3", "sha3_224")
+
+    @property
+    def sha3_256(self):
+        return self._find_constructor_in("_sha3","sha3_256")
+
+    @property
+    def sha3_384(self):
+        return self._find_constructor_in("_sha3","sha3_384")
+
+    @property
+    def sha3_512(self):
+        return self._find_constructor_in("_sha3","sha3_512")
 
 
 def find_gil_minsize(modules_names, default=2048):
