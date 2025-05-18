@@ -1051,8 +1051,10 @@ if __name__ == '__main__':
             self.RequestHandlerClass(request, client_address, self,
                                      directory=args.directory)
 
-    class HTTPDualStackServer(DualStackServerMixin, ThreadingHTTPServer): pass
-    class HTTPSDualStackServer(DualStackServerMixin, ThreadingHTTPSServer): pass
+    class HTTPDualStackServer(DualStackServerMixin, ThreadingHTTPServer):
+        pass
+    class HTTPSDualStackServer(DualStackServerMixin, ThreadingHTTPSServer):
+        pass
 
     ServerClass = HTTPSDualStackServer if args.tls_cert else HTTPDualStackServer
 
