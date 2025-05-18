@@ -33,7 +33,7 @@ __all__ = [
     "is_resource_enabled", "requires", "requires_freebsd_version",
     "requires_gil_enabled", "requires_linux_version", "requires_mac_ver",
     "check_syntax_error",
-    "requires_gzip", "requires_bz2", "requires_lzma",
+    "requires_gzip", "requires_bz2", "requires_lzma", "requires_zstd",
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "requires_zlib",
     "has_fork_support", "requires_fork",
@@ -527,6 +527,13 @@ def requires_lzma(reason='requires lzma'):
         lzma = None
     return unittest.skipUnless(lzma, reason)
 
+def requires_zstd(reason='requires zstd'):
+    try:
+        from compression import zstd
+    except ImportError:
+        zstd = None
+    return unittest.skipUnless(zstd, reason)
+
 def has_no_debug_ranges():
     try:
         import _testcapi
@@ -689,9 +696,11 @@ def sortdict(dict):
     return "{%s}" % withcommas
 
 
-def run_code(code: str) -> dict[str, object]:
+def run_code(code: str, extra_names: dict[str, object] | None = None) -> dict[str, object]:
     """Run a piece of code after dedenting it, and return its global namespace."""
     ns = {}
+    if extra_names:
+        ns.update(extra_names)
     exec(textwrap.dedent(code), ns)
     return ns
 
@@ -1332,8 +1341,8 @@ MISSING_C_DOCSTRINGS = (check_impl_detail() and
                         sys.platform != 'win32' and
                         not sysconfig.get_config_var('WITH_DOC_STRINGS'))
 
-HAVE_DOCSTRINGS = (_check_docstrings.__doc__ is not None and
-                   not MISSING_C_DOCSTRINGS)
+HAVE_PY_DOCSTRINGS = _check_docstrings.__doc__ is not None
+HAVE_DOCSTRINGS = (HAVE_PY_DOCSTRINGS and not MISSING_C_DOCSTRINGS)
 
 requires_docstrings = unittest.skipUnless(HAVE_DOCSTRINGS,
                                           "test requires docstrings")
@@ -1940,8 +1949,9 @@ def missing_compiler_executable(cmd_names=[]):
     missing.
 
     """
-    from setuptools._distutils import ccompiler, sysconfig, spawn
+    from setuptools._distutils import ccompiler, sysconfig
     from setuptools import errors
+    import shutil
 
     compiler = ccompiler.new_compiler()
     sysconfig.customize_compiler(compiler)
@@ -1960,7 +1970,7 @@ def missing_compiler_executable(cmd_names=[]):
                     "the '%s' executable is not configured" % name
         elif not cmd:
             continue
-        if spawn.find_executable(cmd[0]) is None:
+        if shutil.which(cmd[0]) is None:
             return cmd[0]
 
 
@@ -2416,7 +2426,7 @@ def _findwheel(pkgname):
     filenames = os.listdir(wheel_dir)
     filenames = sorted(filenames, reverse=True)  # approximate "newest" first
     for filename in filenames:
-        # filename is like 'setuptools-67.6.1-py3-none-any.whl'
+        # filename is like 'setuptools-{version}-py3-none-any.whl'
         if not filename.endswith(".whl"):
             continue
         prefix = pkgname + '-'
@@ -2425,16 +2435,16 @@ def _findwheel(pkgname):
     raise FileNotFoundError(f"No wheel for {pkgname} found in {wheel_dir}")
 
 
-# Context manager that creates a virtual environment, install setuptools and wheel in it
-# and returns the path to the venv directory and the path to the python executable
+# Context manager that creates a virtual environment, install setuptools in it,
+# and returns the paths to the venv directory and the python executable
 @contextlib.contextmanager
-def setup_venv_with_pip_setuptools_wheel(venv_dir):
-    import shlex
+def setup_venv_with_pip_setuptools(venv_dir):
     import subprocess
     from .os_helper import temp_cwd
 
     def run_command(cmd):
         if verbose:
+            import shlex
             print()
             print('Run:', ' '.join(map(shlex.quote, cmd)))
             subprocess.run(cmd, check=True)
@@ -2458,10 +2468,10 @@ def setup_venv_with_pip_setuptools_wheel(venv_dir):
         else:
             python = os.path.join(venv, 'bin', python_exe)
 
-        cmd = [python, '-X', 'dev',
+        cmd = (python, '-X', 'dev',
                '-m', 'pip', 'install',
                _findwheel('setuptools'),
-               _findwheel('wheel')]
+               )
         run_command(cmd)
 
         yield python
@@ -2585,30 +2595,30 @@ def sleeping_retry(timeout, err_msg=None, /,
         delay = min(delay * 2, max_delay)
 
 
-class CPUStopwatch:
+class Stopwatch:
     """Context manager to roughly time a CPU-bound operation.
 
-    Disables GC. Uses CPU time if it can (i.e. excludes sleeps & time of
-    other processes).
+    Disables GC. Uses perf_counter, which is a clock with the highest
+    available resolution. It is chosen even though it does include
+    time elapsed during sleep and is system-wide, because the
+    resolution of process_time is too coarse on Windows and
+    process_time does not exist everywhere (for example, WASM).
 
-    N.B.:
-    - This *includes* time spent in other threads.
+    Note:
+    - This *includes* time spent in other threads/processes.
     - Some systems only have a coarse resolution; check
-      stopwatch.clock_info.rseolution if.
+      stopwatch.clock_info.resolution when using the results.
 
     Usage:
 
-    with ProcessStopwatch() as stopwatch:
+    with Stopwatch() as stopwatch:
         ...
     elapsed = stopwatch.seconds
     resolution = stopwatch.clock_info.resolution
     """
     def __enter__(self):
-        get_time = time.process_time
-        clock_info = time.get_clock_info('process_time')
-        if get_time() <= 0:  # some platforms like WASM lack process_time()
-            get_time = time.monotonic
-            clock_info = time.get_clock_info('monotonic')
+        get_time = time.perf_counter
+        clock_info = time.get_clock_info('perf_counter')
         self.context = disable_gc()
         self.context.__enter__()
         self.get_time = get_time
@@ -2647,13 +2657,9 @@ skip_on_s390x = unittest.skipIf(is_s390x, 'skipped on s390x')
 
 Py_TRACE_REFS = hasattr(sys, 'getobjects')
 
-try:
-    from _testinternalcapi import jit_enabled
-except ImportError:
-    requires_jit_enabled = requires_jit_disabled = unittest.skip("requires _testinternalcapi")
-else:
-    requires_jit_enabled = unittest.skipUnless(jit_enabled(), "requires JIT enabled")
-    requires_jit_disabled = unittest.skipIf(jit_enabled(), "requires JIT disabled")
+_JIT_ENABLED = sys._jit.is_enabled()
+requires_jit_enabled = unittest.skipUnless(_JIT_ENABLED, "requires JIT enabled")
+requires_jit_disabled = unittest.skipIf(_JIT_ENABLED, "requires JIT disabled")
 
 
 _BASE_COPY_SRC_DIR_IGNORED_NAMES = frozenset({
@@ -2854,36 +2860,59 @@ def iter_slot_wrappers(cls):
 
 
 @contextlib.contextmanager
-def no_color():
+def force_color(color: bool):
     import _colorize
     from .os_helper import EnvironmentVarGuard
 
     with (
-        swap_attr(_colorize, "can_colorize", lambda file=None: False),
+        swap_attr(_colorize, "can_colorize", lambda file=None: color),
         EnvironmentVarGuard() as env,
     ):
         env.unset("FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS")
-        env.set("NO_COLOR", "1")
+        env.set("FORCE_COLOR" if color else "NO_COLOR", "1")
         yield
 
 
-def force_not_colorized(func):
-    """Force the terminal not to be colorized."""
+def force_colorized(func):
+    """Force the terminal to be colorized."""
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        with no_color():
+        with force_color(True):
             return func(*args, **kwargs)
     return wrapper
 
 
-def force_not_colorized_test_class(cls):
-    """Force the terminal not to be colorized for the entire test class."""
+def force_not_colorized(func):
+    """Force the terminal NOT to be colorized."""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        with force_color(False):
+            return func(*args, **kwargs)
+    return wrapper
+
+
+def force_colorized_test_class(cls):
+    """Force the terminal to be colorized for the entire test class."""
     original_setUpClass = cls.setUpClass
 
     @classmethod
     @functools.wraps(cls.setUpClass)
     def new_setUpClass(cls):
-        cls.enterClassContext(no_color())
+        cls.enterClassContext(force_color(True))
+        original_setUpClass()
+
+    cls.setUpClass = new_setUpClass
+    return cls
+
+
+def force_not_colorized_test_class(cls):
+    """Force the terminal NOT to be colorized for the entire test class."""
+    original_setUpClass = cls.setUpClass
+
+    @classmethod
+    @functools.wraps(cls.setUpClass)
+    def new_setUpClass(cls):
+        cls.enterClassContext(force_color(False))
         original_setUpClass()
 
     cls.setUpClass = new_setUpClass

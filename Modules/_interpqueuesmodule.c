@@ -1127,11 +1127,7 @@ queue_destroy(_queues *queues, int64_t qid)
 static int
 queue_put(_queues *queues, int64_t qid, PyObject *obj, int fmt, int unboundop)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    _PyXIData_lookup_context_t ctx;
-    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
-        return -1;
-    }
+    PyThreadState *tstate = PyThreadState_Get();
 
     // Look up the queue.
     _queue *queue = NULL;
@@ -1142,17 +1138,18 @@ queue_put(_queues *queues, int64_t qid, PyObject *obj, int fmt, int unboundop)
     assert(queue != NULL);
 
     // Convert the object to cross-interpreter data.
-    _PyXIData_t *data = GLOBAL_MALLOC(_PyXIData_t);
+    _PyXIData_t *data = _PyXIData_New();
     if (data == NULL) {
         _queue_unmark_waiter(queue, queues->mutex);
         return -1;
     }
-    if (_PyObject_GetXIData(&ctx, obj, data) != 0) {
+    if (_PyObject_GetXIData(tstate, obj, data) != 0) {
         _queue_unmark_waiter(queue, queues->mutex);
         GLOBAL_FREE(data);
         return -1;
     }
-    assert(_PyXIData_INTERPID(data) == PyInterpreterState_GetID(interp));
+    assert(_PyXIData_INTERPID(data) ==
+            PyInterpreterState_GetID(tstate->interp));
 
     // Add the data to the queue.
     int64_t interpid = -1;  // _queueitem_init() will set it.

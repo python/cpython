@@ -19,7 +19,8 @@ from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
 from test.support import ALWAYS_EQ, REPO_ROOT
-from test.support import threading_helper
+from test.support import threading_helper, cpython_only
+from test.support.import_helper import ensure_lazy_imports
 from datetime import timedelta
 
 python_version = sys.version_info[:2]
@@ -1568,6 +1569,17 @@ class TestSpecial(unittest.TestCase):
             X = 1
         self.assertIn(IntEnum1.X, IntFlag1)
         self.assertIn(IntFlag1.X, IntEnum1)
+
+    def test_contains_does_not_call_missing(self):
+        class AnEnum(Enum):
+            UNKNOWN = None
+            LUCKY = 3
+            @classmethod
+            def _missing_(cls, *values):
+                return cls.UNKNOWN
+        self.assertTrue(None in AnEnum)
+        self.assertTrue(3 in AnEnum)
+        self.assertFalse(7 in AnEnum)
 
     def test_inherited_data_type(self):
         class HexInt(int):
@@ -5276,6 +5288,10 @@ class MiscTestCase(unittest.TestCase):
 
     def test__all__(self):
         support.check__all__(self, enum, not_exported={'bin', 'show_flag_values'})
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("enum", {"functools", "warnings", "inspect", "re"})
 
     def test_doc_1(self):
         class Single(Enum):

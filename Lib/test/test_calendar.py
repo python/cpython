@@ -987,6 +987,7 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertCLIFails(*args)
         self.assertCmdFails(*args)
 
+    @support.force_not_colorized
     def test_help(self):
         stdout = self.run_cmd_ok('-h')
         self.assertIn(b'usage:', stdout)

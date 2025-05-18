@@ -1,2 +1,0 @@
-The ``application/yaml`` mime type (:rfc:`9512`) is now supported
-by :mod:`mimetypes`. Patch by Sasha "Nelie" Chernykh and Hugo van Kemenade.

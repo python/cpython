@@ -7,6 +7,7 @@ import sys
 import unittest
 import encodings
 from unittest import mock
+import warnings
 
 from test import support
 from test.support import os_helper
@@ -20,13 +21,12 @@ try:
 except ImportError:
     _testinternalcapi = None
 
-try:
-    import ctypes
-except ImportError:
-    ctypes = None
-    SIZEOF_WCHAR_T = -1
-else:
-    SIZEOF_WCHAR_T = ctypes.sizeof(ctypes.c_wchar)
+
+def codecs_open_no_warn(*args, **kwargs):
+    """Call codecs.open(*args, **kwargs) ignoring DeprecationWarning."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return codecs.open(*args, **kwargs)
 
 def coding_checker(self, coder):
     def check(input, expect):
@@ -35,13 +35,13 @@ def coding_checker(self, coder):
 
 # On small versions of Windows like Windows IoT or Windows Nano Server not all codepages are present
 def is_code_page_present(cp):
-    from ctypes import POINTER, WINFUNCTYPE, WinDLL
+    from ctypes import POINTER, WINFUNCTYPE, WinDLL, Structure
     from ctypes.wintypes import BOOL, BYTE, WCHAR, UINT, DWORD
 
     MAX_LEADBYTES = 12  # 5 ranges, 2 bytes ea., 0 term.
     MAX_DEFAULTCHAR = 2 # single or double byte
     MAX_PATH = 260
-    class CPINFOEXW(ctypes.Structure):
+    class CPINFOEXW(Structure):
         _fields_ = [("MaxCharSize", UINT),
                     ("DefaultChar", BYTE*MAX_DEFAULTCHAR),
                     ("LeadByte", BYTE*MAX_LEADBYTES),
@@ -719,19 +719,19 @@ class UTF16Test(ReadTest, unittest.TestCase):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         with open(os_helper.TESTFN, 'wb') as fp:
             fp.write(s)
-        with codecs.open(os_helper.TESTFN, 'r',
+        with codecs_open_no_warn(os_helper.TESTFN, 'r',
                          encoding=self.encoding) as reader:
             self.assertEqual(reader.read(), s1)
 
     def test_invalid_modes(self):
         for mode in ('U', 'rU', 'r+U'):
             with self.assertRaises(ValueError) as cm:
-                codecs.open(os_helper.TESTFN, mode, encoding=self.encoding)
+                codecs_open_no_warn(os_helper.TESTFN, mode, encoding=self.encoding)
             self.assertIn('invalid mode', str(cm.exception))
 
         for mode in ('rt', 'wt', 'at', 'r+t'):
             with self.assertRaises(ValueError) as cm:
-                codecs.open(os_helper.TESTFN, mode, encoding=self.encoding)
+                codecs_open_no_warn(os_helper.TESTFN, mode, encoding=self.encoding)
             self.assertIn("can't have text and binary mode at once",
                           str(cm.exception))
 
@@ -1196,22 +1196,38 @@ class EscapeDecodeTest(unittest.TestCase):
         check(br"[\1010]", b"[A0]")
         check(br"[\x41]", b"[A]")
         check(br"[\x410]", b"[A0]")
+
+    def test_warnings(self):
+        decode = codecs.escape_decode
+        check = coding_checker(self, decode)
         for i in range(97, 123):
             b = bytes([i])
             if b not in b'abfnrtvx':
-                with self.assertWarns(DeprecationWarning):
+                with self.assertWarnsRegex(DeprecationWarning,
+                        r'"\\%c" is an invalid escape sequence' % i):
                     check(b"\\" + b, b"\\" + b)
-            with self.assertWarns(DeprecationWarning):
+            with self.assertWarnsRegex(DeprecationWarning,
+                    r'"\\%c" is an invalid escape sequence' % (i-32)):
                 check(b"\\" + b.upper(), b"\\" + b.upper())
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarnsRegex(DeprecationWarning,
+                r'"\\8" is an invalid escape sequence'):
             check(br"\8", b"\\8")
         with self.assertWarns(DeprecationWarning):
             check(br"\9", b"\\9")
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarnsRegex(DeprecationWarning,
+                r'"\\\xfa" is an invalid escape sequence') as cm:
             check(b"\\\xfa", b"\\\xfa")
         for i in range(0o400, 0o1000):
-            with self.assertWarns(DeprecationWarning):
+            with self.assertWarnsRegex(DeprecationWarning,
+                    r'"\\%o" is an invalid octal escape sequence' % i):
                 check(rb'\%o' % i, bytes([i & 0o377]))
+
+        with self.assertWarnsRegex(DeprecationWarning,
+                r'"\\z" is an invalid escape sequence'):
+            self.assertEqual(decode(br'\x\z', 'ignore'), (b'\\z', 4))
+        with self.assertWarnsRegex(DeprecationWarning,
+                r'"\\501" is an invalid octal escape sequence'):
+            self.assertEqual(decode(br'\x\501', 'ignore'), (b'A', 6))
 
     def test_errors(self):
         decode = codecs.escape_decode
@@ -1844,9 +1860,9 @@ class CodecsModuleTest(unittest.TestCase):
     def test_open(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         for mode in ('w', 'r', 'r+', 'w+', 'a', 'a+'):
-            with self.subTest(mode), \
-                    codecs.open(os_helper.TESTFN, mode, 'ascii') as file:
-                self.assertIsInstance(file, codecs.StreamReaderWriter)
+            with self.subTest(mode), self.assertWarns(DeprecationWarning):
+                with codecs.open(os_helper.TESTFN, mode, 'ascii') as file:
+                    self.assertIsInstance(file, codecs.StreamReaderWriter)
 
     def test_undefined(self):
         self.assertRaises(UnicodeError, codecs.encode, 'abc', 'undefined')
@@ -1863,7 +1879,7 @@ class CodecsModuleTest(unittest.TestCase):
         mock_open = mock.mock_open()
         with mock.patch('builtins.open', mock_open) as file:
             with self.assertRaises(LookupError):
-                codecs.open(os_helper.TESTFN, 'wt', 'invalid-encoding')
+                codecs_open_no_warn(os_helper.TESTFN, 'wt', 'invalid-encoding')
 
             file().close.assert_called()
 
@@ -2661,23 +2677,39 @@ class UnicodeEscapeTest(ReadTest, unittest.TestCase):
         check(br"[\x410]", "[A0]")
         check(br"\u20ac", "\u20ac")
         check(br"\U0001d120", "\U0001d120")
+
+    def test_decode_warnings(self):
+        decode = codecs.unicode_escape_decode
+        check = coding_checker(self, decode)
         for i in range(97, 123):
             b = bytes([i])
             if b not in b'abfnrtuvx':
-                with self.assertWarns(DeprecationWarning):
+                with self.assertWarnsRegex(DeprecationWarning,
+                        r'"\\%c" is an invalid escape sequence' % i):
                     check(b"\\" + b, "\\" + chr(i))
             if b.upper() not in b'UN':
-                with self.assertWarns(DeprecationWarning):
+                with self.assertWarnsRegex(DeprecationWarning,
+                        r'"\\%c" is an invalid escape sequence' % (i-32)):
                     check(b"\\" + b.upper(), "\\" + chr(i-32))
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarnsRegex(DeprecationWarning,
+                r'"\\8" is an invalid escape sequence'):
             check(br"\8", "\\8")
         with self.assertWarns(DeprecationWarning):
             check(br"\9", "\\9")
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarnsRegex(DeprecationWarning,
+                r'"\\\xfa" is an invalid escape sequence') as cm:
             check(b"\\\xfa", "\\\xfa")
         for i in range(0o400, 0o1000):
-            with self.assertWarns(DeprecationWarning):
+            with self.assertWarnsRegex(DeprecationWarning,
+                    r'"\\%o" is an invalid octal escape sequence' % i):
                 check(rb'\%o' % i, chr(i))
+
+        with self.assertWarnsRegex(DeprecationWarning,
+                r'"\\z" is an invalid escape sequence'):
+            self.assertEqual(decode(br'\x\z', 'ignore'), ('\\z', 4))
+        with self.assertWarnsRegex(DeprecationWarning,
+                r'"\\501" is an invalid octal escape sequence'):
+            self.assertEqual(decode(br'\x\501', 'ignore'), ('\u0141', 6))
 
     def test_decode_errors(self):
         decode = codecs.unicode_escape_decode
@@ -2883,7 +2915,7 @@ class BomTest(unittest.TestCase):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         for encoding in tests:
             # Check if the BOM is written only once
-            with codecs.open(os_helper.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs_open_no_warn(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.write(data)
                 f.write(data)
                 f.seek(0)
@@ -2892,7 +2924,7 @@ class BomTest(unittest.TestCase):
                 self.assertEqual(f.read(), data * 2)
 
             # Check that the BOM is written after a seek(0)
-            with codecs.open(os_helper.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs_open_no_warn(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.write(data[0])
                 self.assertNotEqual(f.tell(), 0)
                 f.seek(0)
@@ -2901,7 +2933,7 @@ class BomTest(unittest.TestCase):
                 self.assertEqual(f.read(), data)
 
             # (StreamWriter) Check that the BOM is written after a seek(0)
-            with codecs.open(os_helper.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs_open_no_warn(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.writer.write(data[0])
                 self.assertNotEqual(f.writer.tell(), 0)
                 f.writer.seek(0)
@@ -2911,7 +2943,7 @@ class BomTest(unittest.TestCase):
 
             # Check that the BOM is not written after a seek() at a position
             # different than the start
-            with codecs.open(os_helper.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs_open_no_warn(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.write(data)
                 f.seek(f.tell())
                 f.write(data)
@@ -2920,7 +2952,7 @@ class BomTest(unittest.TestCase):
 
             # (StreamWriter) Check that the BOM is not written after a seek()
             # at a position different than the start
-            with codecs.open(os_helper.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs_open_no_warn(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.writer.write(data)
                 f.writer.seek(f.writer.tell())
                 f.writer.write(data)

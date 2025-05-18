@@ -513,9 +513,14 @@ class _TestProcess(BaseTestCase):
         time.sleep(100)
 
     @classmethod
-    def _sleep_no_int_handler(cls):
+    def _sleep_some_event(cls, event):
+        event.set()
+        time.sleep(100)
+
+    @classmethod
+    def _sleep_no_int_handler(cls, event):
         signal.signal(signal.SIGINT, signal.SIG_DFL)
-        cls._sleep_some()
+        cls._sleep_some_event(event)
 
     @classmethod
     def _test_sleep(cls, delay):
@@ -525,7 +530,10 @@ class _TestProcess(BaseTestCase):
         if self.TYPE == 'threads':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
 
-        p = self.Process(target=target or self._sleep_some)
+        event = self.Event()
+        if not target:
+            target = self._sleep_some_event
+        p = self.Process(target=target, args=(event,))
         p.daemon = True
         p.start()
 
@@ -543,8 +551,11 @@ class _TestProcess(BaseTestCase):
         self.assertTimingAlmostEqual(join.elapsed, 0.0)
         self.assertEqual(p.is_alive(), True)
 
-        # XXX maybe terminating too soon causes the problems on Gentoo...
-        time.sleep(1)
+        timeout = support.SHORT_TIMEOUT
+        if not event.wait(timeout):
+            p.terminate()
+            p.join()
+            self.fail(f"event not signaled in {timeout} seconds")
 
         meth(p)
 
@@ -1516,6 +1527,7 @@ class _TestLock(BaseTestCase):
         res.value = lock.locked()
         event.set()
 
+    @unittest.skipUnless(HAS_SHAREDCTYPES, 'needs sharedctypes')
     def test_lock_locked_2processes(self):
         if self.TYPE != 'processes':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -1600,6 +1612,7 @@ class _TestLock(BaseTestCase):
         self.assertFalse(lock.locked())
         self.assertRaises((AssertionError, RuntimeError), lock.release)
 
+    @unittest.skipUnless(HAS_SHAREDCTYPES, 'needs sharedctypes')
     def test_rlock_locked_2processes(self):
         if self.TYPE != 'processes':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -2461,6 +2474,12 @@ class _TestValue(BaseTestCase):
         self.assertNotHasAttr(arr5, 'get_lock')
         self.assertNotHasAttr(arr5, 'get_obj')
 
+    @unittest.skipIf(c_int is None, "requires _ctypes")
+    def test_invalid_typecode(self):
+        with self.assertRaisesRegex(TypeError, 'bad typecode'):
+            self.Value('x', None)
+        with self.assertRaisesRegex(TypeError, 'bad typecode'):
+            self.RawValue('x', None)
 
 class _TestArray(BaseTestCase):
 
@@ -2541,6 +2560,12 @@ class _TestArray(BaseTestCase):
         self.assertNotHasAttr(arr5, 'get_lock')
         self.assertNotHasAttr(arr5, 'get_obj')
 
+    @unittest.skipIf(c_int is None, "requires _ctypes")
+    def test_invalid_typecode(self):
+        with self.assertRaisesRegex(TypeError, 'bad typecode'):
+            self.Array('x', [])
+        with self.assertRaisesRegex(TypeError, 'bad typecode'):
+            self.RawArray('x', [])
 #
 #
 #
