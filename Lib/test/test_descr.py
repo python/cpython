@@ -1192,10 +1192,9 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             pass
         else:
             self.fail("[''] slots not caught")
-        class C(object):
+
+        class WithValidIdentifiers(object):
             __slots__ = ["a", "a_b", "_a", "A0123456789Z"]
-        # XXX(nnorwitz): was there supposed to be something tested
-        # from the class above?
 
         # Test a single string is not expanded as a sequence.
         class C(object):
@@ -1590,7 +1589,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         cm = classmethod(f)
         cm_dict = {'__doc__': (
                        "f docstring"
-                       if support.HAVE_DOCSTRINGS
+                       if support.HAVE_PY_DOCSTRINGS
                        else None
                     ),
                    '__module__': __name__,
@@ -3515,6 +3514,10 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertEqual(repr(2 ** I(3)), "I(8)")
         self.assertEqual(repr(I(2) ** 3), "I(8)")
         self.assertEqual(repr(pow(I(2), I(3), I(5))), "I(3)")
+        self.assertEqual(repr(pow(I(2), I(3), 5)), "I(3)")
+        self.assertEqual(repr(pow(I(2), 3, 5)), "I(3)")
+        self.assertEqual(repr(pow(2, I(3), 5)), "I(3)")
+        self.assertEqual(repr(pow(2, 3, I(5))), "3")
         class S(str):
             def __eq__(self, other):
                 return self.lower() == other.lower()

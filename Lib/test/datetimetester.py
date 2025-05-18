@@ -773,6 +773,9 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
                    microseconds=999999)),
            "999999999 days, 23:59:59.999999")
 
+        # test the Doc/library/datetime.rst recipe
+        eq(f'-({-td(hours=-1)!s})', "-(1:00:00)")
+
     def test_repr(self):
         name = 'datetime.' + self.theclass.__name__
         self.assertEqual(repr(self.theclass(1)),
@@ -2087,6 +2090,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             '10000-W25-1',      # Invalid year
             '2020-W25-0',       # Invalid day-of-week
             '2020-W25-8',       # Invalid day-of-week
+            '٢025-03-09'        # Unicode characters
             '2009\ud80002\ud80028',     # Separators are surrogate codepoints
         ]
 
@@ -3542,7 +3546,7 @@ class TestDateTime(TestDate):
             '2009-04-19T03:15:4500:00',     # Bad time zone separator
             '2009-04-19T03:15:45.123456+24:30',    # Invalid time zone offset
             '2009-04-19T03:15:45.123456-24:30',    # Invalid negative offset
-            '2009-04-10ᛇᛇᛇᛇᛇ12:15',         # Too many unicode separators
+            '2009-04-10ᛇᛇᛇᛇᛇ12:15',         # Unicode chars
             '2009-04\ud80010T12:15',        # Surrogate char in date
             '2009-04-10T12\ud80015',        # Surrogate char in time
             '2009-04-19T1',                 # Incomplete hours

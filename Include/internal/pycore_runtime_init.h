@@ -230,8 +230,6 @@ extern PyTypeObject _PyExc_MemoryError;
         ._data = (LITERAL), \
     }
 
-#include "pycore_runtime_init_generated.h"
-
 #ifdef __cplusplus
 }
 #endif

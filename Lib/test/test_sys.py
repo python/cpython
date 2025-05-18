@@ -891,7 +891,9 @@ class SysModuleTest(unittest.TestCase):
 
     @test.support.cpython_only
     def test_clear_type_cache(self):
-        sys._clear_type_cache()
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"sys\._clear_type_cache\(\) is deprecated.*"):
+            sys._clear_type_cache()
 
     @force_not_colorized
     @support.requires_subprocess()
@@ -1958,7 +1960,7 @@ def _supports_remote_attaching():
     PROCESS_VM_READV_SUPPORTED = False
 
     try:
-        from _testexternalinspection import PROCESS_VM_READV_SUPPORTED
+        from _remote_debugging import PROCESS_VM_READV_SUPPORTED
     except ImportError:
         pass
 
@@ -1974,12 +1976,13 @@ class TestRemoteExec(unittest.TestCase):
     def tearDown(self):
         test.support.reap_children()
 
-    def _run_remote_exec_test(self, script_code, python_args=None, env=None, prologue=''):
+    def _run_remote_exec_test(self, script_code, python_args=None, env=None,
+                              prologue='',
+                              script_path=os_helper.TESTFN + '_remote.py'):
         # Create the script that will be remotely executed
-        script = os_helper.TESTFN + '_remote.py'
-        self.addCleanup(os_helper.unlink, script)
+        self.addCleanup(os_helper.unlink, script_path)
 
-        with open(script, 'w') as f:
+        with open(script_path, 'w') as f:
             f.write(script_code)
 
         # Create and run the target process
@@ -2048,7 +2051,7 @@ sock.close()
                 self.assertEqual(response, b"ready")
 
                 # Try remote exec on the target process
-                sys.remote_exec(proc.pid, script)
+                sys.remote_exec(proc.pid, script_path)
 
                 # Signal script to continue
                 client_socket.sendall(b"continue")
@@ -2071,13 +2074,31 @@ sock.close()
 
     def test_remote_exec(self):
         """Test basic remote exec functionality"""
-        script = '''
-print("Remote script executed successfully!")
-'''
+        script = 'print("Remote script executed successfully!")'
         returncode, stdout, stderr = self._run_remote_exec_test(script)
         # self.assertEqual(returncode, 0)
         self.assertIn(b"Remote script executed successfully!", stdout)
         self.assertEqual(stderr, b"")
+
+    def test_remote_exec_bytes(self):
+        script = 'print("Remote script executed successfully!")'
+        script_path = os.fsencode(os_helper.TESTFN) + b'_bytes_remote.py'
+        returncode, stdout, stderr = self._run_remote_exec_test(script,
+                                                    script_path=script_path)
+        self.assertIn(b"Remote script executed successfully!", stdout)
+        self.assertEqual(stderr, b"")
+
+    @unittest.skipUnless(os_helper.TESTFN_UNDECODABLE, 'requires undecodable path')
+    @unittest.skipIf(sys.platform == 'darwin',
+                     'undecodable paths are not supported on macOS')
+    def test_remote_exec_undecodable(self):
+        script = 'print("Remote script executed successfully!")'
+        script_path = os_helper.TESTFN_UNDECODABLE + b'_undecodable_remote.py'
+        for script_path in [script_path, os.fsdecode(script_path)]:
+            returncode, stdout, stderr = self._run_remote_exec_test(script,
+                                                        script_path=script_path)
+            self.assertIn(b"Remote script executed successfully!", stdout)
+            self.assertEqual(stderr, b"")
 
     def test_remote_exec_with_self_process(self):
         """Test remote exec with the target process being the same as the test process"""
@@ -2099,7 +2120,7 @@ print("Remote script executed successfully!")
         prologue = '''\
 import sys
 def audit_hook(event, arg):
-    print(f"Audit event: {event}, arg: {arg}")
+    print(f"Audit event: {event}, arg: {arg}".encode("ascii", errors="replace"))
 sys.addaudithook(audit_hook)
 '''
         script = '''
@@ -2125,6 +2146,19 @@ raise Exception("Remote script exception")
         self.assertIn(b"Remote script exception", stderr)
         self.assertEqual(stdout.strip(), b"Target process running...")
 
+    def test_new_namespace_for_each_remote_exec(self):
+        """Test that each remote_exec call gets its own namespace."""
+        script = textwrap.dedent(
+            """
+            assert globals() is not __import__("__main__").__dict__
+            print("Remote script executed successfully!")
+            """
+        )
+        returncode, stdout, stderr = self._run_remote_exec_test(script)
+        self.assertEqual(returncode, 0)
+        self.assertEqual(stderr, b"")
+        self.assertIn(b"Remote script executed successfully", stdout)
+
     def test_remote_exec_disabled_by_env(self):
         """Test remote exec is disabled when PYTHON_DISABLE_REMOTE_DEBUG is set"""
         env = os.environ.copy()
@@ -2141,6 +2175,13 @@ raise Exception("Remote script exception")
         """Test remote exec with invalid process ID"""
         with self.assertRaises(OSError):
             sys.remote_exec(99999, "print('should not run')")
+
+    def test_remote_exec_invalid_script(self):
+        """Test remote exec with invalid script type"""
+        with self.assertRaises(TypeError):
+            sys.remote_exec(0, None)
+        with self.assertRaises(TypeError):
+            sys.remote_exec(0, 123)
 
     def test_remote_exec_syntax_error(self):
         """Test remote exec with syntax error in script"""
@@ -2181,6 +2222,64 @@ this is invalid python code
         self.assertIn(b"Remote debugging is not enabled", err)
         self.assertEqual(out, b"")
 
+class TestSysJIT(unittest.TestCase):
+
+    def test_jit_is_available(self):
+        available = sys._jit.is_available()
+        script = f"import sys; assert sys._jit.is_available() is {available}"
+        assert_python_ok("-c", script, PYTHON_JIT="0")
+        assert_python_ok("-c", script, PYTHON_JIT="1")
+
+    def test_jit_is_enabled(self):
+        available = sys._jit.is_available()
+        script = "import sys; assert sys._jit.is_enabled() is {enabled}"
+        assert_python_ok("-c", script.format(enabled=False), PYTHON_JIT="0")
+        assert_python_ok("-c", script.format(enabled=available), PYTHON_JIT="1")
+
+    def test_jit_is_active(self):
+        available = sys._jit.is_available()
+        script = textwrap.dedent(
+            """
+            import _testcapi
+            import _testinternalcapi
+            import sys
+
+            def frame_0_interpreter() -> None:
+                assert sys._jit.is_active() is False
+
+            def frame_1_interpreter() -> None:
+                assert sys._jit.is_active() is False
+                frame_0_interpreter()
+                assert sys._jit.is_active() is False
+
+            def frame_2_jit(expected: bool) -> None:
+                # Inlined into the last loop of frame_3_jit:
+                assert sys._jit.is_active() is expected
+                # Insert C frame:
+                _testcapi.pyobject_vectorcall(frame_1_interpreter, None, None)
+                assert sys._jit.is_active() is expected
+
+            def frame_3_jit() -> None:
+                # JITs just before the last loop:
+                for i in range(_testinternalcapi.TIER2_THRESHOLD + 1):
+                    # Careful, doing this in the reverse order breaks tracing:
+                    expected = {enabled} and i == _testinternalcapi.TIER2_THRESHOLD
+                    assert sys._jit.is_active() is expected
+                    frame_2_jit(expected)
+                    assert sys._jit.is_active() is expected
+
+            def frame_4_interpreter() -> None:
+                assert sys._jit.is_active() is False
+                frame_3_jit()
+                assert sys._jit.is_active() is False
+
+            assert sys._jit.is_active() is False
+            frame_4_interpreter()
+            assert sys._jit.is_active() is False
+            """
+        )
+        assert_python_ok("-c", script.format(enabled=False), PYTHON_JIT="0")
+        assert_python_ok("-c", script.format(enabled=available), PYTHON_JIT="1")
 
 
 if __name__ == "__main__":

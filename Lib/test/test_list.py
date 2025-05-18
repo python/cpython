@@ -118,6 +118,19 @@ class ListTest(list_tests.CommonTest):
         with self.assertRaises((MemoryError, OverflowError)):
             lst *= size
 
+    def test_repr_mutate(self):
+        class Obj:
+            @staticmethod
+            def __repr__():
+                try:
+                    mylist.pop()
+                except IndexError:
+                    pass
+                return 'obj'
+
+        mylist = [Obj() for _ in range(5)]
+        self.assertEqual(repr(mylist), '[obj, obj, obj]')
+
     def test_repr_large(self):
         # Check the repr of large list objects
         def check(n):
