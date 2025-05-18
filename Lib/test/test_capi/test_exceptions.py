@@ -314,7 +314,6 @@ class Test_ErrSetAndRestore(unittest.TestCase):
                          (ENOENT, 'No such file or directory', 'file'))
         # CRASHES setfromerrnowithfilename(ENOENT, NULL, b'error')
 
-    @force_not_colorized
     def test_err_writeunraisable(self):
         # Test PyErr_WriteUnraisable()
         writeunraisable = _testcapi.err_writeunraisable
@@ -356,7 +355,6 @@ class Test_ErrSetAndRestore(unittest.TestCase):
         # CRASHES writeunraisable(NULL, hex)
         # CRASHES writeunraisable(NULL, NULL)
 
-    @force_not_colorized
     def test_err_formatunraisable(self):
         # Test PyErr_FormatUnraisable()
         formatunraisable = _testcapi.err_formatunraisable
