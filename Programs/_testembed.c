@@ -2326,7 +2326,7 @@ do_gilstate_ensure(void *event_ptr)
 static int
 test_gilstate_after_finalization(void)
 {
-    _testembed_Py_Initialize();
+    _testembed_initialize();
     Py_Finalize();
     PyThread_handle_t handle;
     PyThread_ident_t ident;
