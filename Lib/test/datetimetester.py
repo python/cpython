@@ -865,6 +865,8 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         self.assertRaises(OverflowError, day.__truediv__, 1e-10)
         self.assertRaises(OverflowError, day.__truediv__, 9e-10)
 
+        self.assertRaises(OverflowError, timedelta, seconds=140737488355328.0)
+
     @support.requires_IEEE_754
     def _test_overflow_special(self):
         day = timedelta(1)
