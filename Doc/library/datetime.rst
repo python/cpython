@@ -1582,8 +1582,8 @@ Instance methods:
 
    Return a string representing the date and time in ISO 8601 format:
 
-   - ``YYYY-MM-DDTHH:MM:SS.ffffff``, if :attr:`microsecond` is not 0
    - ``YYYY-MM-DDTHH:MM:SS.nnnnnnnnn``, if :attr:`nanosecond` is not 0
+   - ``YYYY-MM-DDTHH:MM:SS.ffffff``, if :attr:`microsecond` is not 0
    - ``YYYY-MM-DDTHH:MM:SS``, if both :attr:`microsecond` and :attr:`nanosecond` are 0
 
    If :meth:`utcoffset` does not return ``None``, a string is
