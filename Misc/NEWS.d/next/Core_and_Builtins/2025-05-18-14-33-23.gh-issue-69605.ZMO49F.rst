@@ -1,0 +1,1 @@
+Stop import names completion fallback on regular names completion in the :term:`REPL`.
