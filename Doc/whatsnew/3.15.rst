@@ -150,7 +150,7 @@ threading
 
 * Remove support for arbitrary positional or keyword arguments in the C
   implementation of :class:`~threading.RLock` objects. This was deprecated
-  since Python 3.14.
+  in Python 3.14.
   (Contributed by Bénédikt Tran in :gh:`134087`.)
 
 
