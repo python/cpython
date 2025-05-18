@@ -548,20 +548,20 @@ _Py_atomic_load_ssize_acquire(const Py_ssize_t *obj);
 // --- _Py_atomic_memcpy / _Py_atomic_memmove ------------
 
 static inline void *
-_Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, Py_ssize_t sn)
+_Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, Py_ssize_t n)
 {
-    size_t n = (size_t)sn;
+    size_t size = (size_t)n;
     assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
     assert(((uintptr_t)src & (sizeof (void *) - 1)) == 0);
-    assert(n % sizeof(void *) == 0);
+    assert(size % sizeof(void *) == 0);
 
     if (dest != src) {
-        void **d = (void **)dest;
-        void **s = (void **)src;
-        void **e = d + n / sizeof(void *);
+        void **dest_ = (void **)dest;
+        void **src_ = (void **)src;
+        void **end = dest_ + size / sizeof(void *);
 
-        for (; d != e; d++, s++) {
-            _Py_atomic_store_ptr_relaxed(d, *s);
+        for (; dest_ != end; dest_++, src_++) {
+            _Py_atomic_store_ptr_relaxed(dest_, *src_);
         }
     }
 
@@ -569,30 +569,30 @@ _Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, Py_ssize_t sn)
 }
 
 static inline void *
-_Py_atomic_memmove_ptr_store_relaxed(void *dest, void *src, Py_ssize_t sn)
+_Py_atomic_memmove_ptr_store_relaxed(void *dest, void *src, Py_ssize_t n)
 {
-    size_t n = (size_t)sn;
+    size_t size = (size_t)n;
     assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
     assert(((uintptr_t)src & (sizeof (void *) - 1)) == 0);
-    assert(n % sizeof(void *) == 0);
+    assert(size % sizeof(void *) == 0);
 
-    if (dest < src || dest >= (void *)((char *)src + n)) {
-        void **d = (void **)dest;
-        void **s = (void **)src;
-        void **e = d + n / sizeof(void *);
+    if (dest < src || dest >= (void *)((char *)src + size)) {
+        void **dest_ = (void **)dest;
+        void **src_ = (void **)src;
+        void **end = dest_ + size / sizeof(void *);
 
-        for (; d != e; d++, s++) {
-            _Py_atomic_store_ptr_relaxed(d, *s);
+        for (; dest_ != end; dest_++, src_++) {
+            _Py_atomic_store_ptr_relaxed(dest_, *src_);
         }
     }
     else if (dest > src) {
-        n = n / sizeof(void *) - 1;
-        void **d = (void **)dest + n;
-        void **s = (void **)src + n;
-        void **e = (void **)dest - 1;
+        size = size / sizeof(void *) - 1;
+        void **dest_ = (void **)dest + size;
+        void **src_ = (void **)src + size;
+        void **end = (void **)dest - 1;
 
-        for (; d != e; d--, s--) {
-            _Py_atomic_store_ptr_relaxed(d, *s);
+        for (; dest_ != end; dest_--, src_--) {
+            _Py_atomic_store_ptr_relaxed(dest_, *src_);
         }
     }
 
