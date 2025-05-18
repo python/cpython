@@ -390,12 +390,11 @@ Creating Futures and Tasks
       Added the *context* parameter.
 
    .. versionchanged:: 3.13.3
-      Added ``kwargs`` which always passes on ``kwargs`` such as the *eager_start*
-      parameter and *name* parameter.
+      Added ``kwargs`` which passes on arbitrary extra parameters, including  ``name`` and ``context``.
 
    .. versionchanged:: 3.13.4
       Rolled back the change that passes on *name* and *context* (if it is None),
-      passing on new keyword arguments such as *eager_start* is still supported.
+      while still passing on other arbitrary keyword arguments (to avoid breaking backwards compatibility with 3.13.3).
 
 .. method:: loop.set_task_factory(factory)
 
@@ -409,11 +408,11 @@ Creating Futures and Tasks
    must pass on all *kwargs*, and return a :class:`asyncio.Task`-compatible object.
 
    .. versionchanged:: 3.13.3
-   Required that all *kwargs* are passed on to :class:`asyncio.Task`.
+      Required that all *kwargs* are passed on to :class:`asyncio.Task`.
 
    .. versionchanged:: 3.13.4
-   *name* is no longer passed to task factories. *context* is no longer passed
-   to task factories if it is ``None``.
+      *name* is no longer passed to task factories. *context* is no longer passed
+      to task factories if it is ``None``.
 
 .. method:: loop.get_task_factory()
 
