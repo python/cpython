@@ -3339,6 +3339,11 @@ delta_str(PyObject *self)
 static PyObject *
 delta_getstate(PyDateTime_Delta *self)
 {
+    if (GET_TD_NANOSECONDS(self) == 0){
+        return Py_BuildValue("iii", GET_TD_DAYS(self),
+                                 GET_TD_SECONDS(self),
+                                 GET_TD_MICROSECONDS(self));
+    }
     return Py_BuildValue("iiii", GET_TD_DAYS(self),
                                  GET_TD_SECONDS(self),
                                  GET_TD_MICROSECONDS(self),
@@ -5005,15 +5010,17 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
             tzinfo = PyTuple_GET_ITEM(args, 1);
         }
         if (PyBytes_Check(state)) {
-            if (PyBytes_GET_SIZE(state) == _PyDateTime_TIME_DATASIZE &&
-                (0x7F & ((unsigned char) (PyBytes_AS_STRING(state)[0]))) < 24)
+            if ((PyBytes_GET_SIZE(state) == _PyDateTime_TIME_DATASIZE ||
+                 PyBytes_GET_SIZE(state) == _PyDateTime_OLD_TIME_DATASIZE) &&
+                 (0x7F & ((unsigned char) (PyBytes_AS_STRING(state)[0]))) < 24)
             {
                 return time_from_pickle(type, state, tzinfo);
             }
         }
         else if (PyUnicode_Check(state)) {
-            if (PyUnicode_GET_LENGTH(state) == _PyDateTime_TIME_DATASIZE &&
-                (0x7F & PyUnicode_READ_CHAR(state, 0)) < 24)
+            if ((PyUnicode_GET_LENGTH(state) == _PyDateTime_TIME_DATASIZE ||
+                 PyUnicode_GET_LENGTH(state) == _PyDateTime_OLD_TIME_DATASIZE) &&
+                 (0x7F & PyUnicode_READ_CHAR(state, 0)) < 24)
             {
                 state = PyUnicode_AsLatin1String(state);
                 if (state == NULL) {
@@ -5489,8 +5496,14 @@ time_getstate(PyDateTime_Time *self, int proto)
     PyObject *basestate;
     PyObject *result = NULL;
 
-    basestate =  PyBytes_FromStringAndSize((char *)self->data,
-                                            _PyDateTime_TIME_DATASIZE);
+    if (GET_TD_NANOSECONDS(self) == 0){
+        basestate = PyBytes_FromStringAndSize((char *)self->data,
+                                           _PyDateTime_OLD_TIME_DATASIZE);
+    }
+    else{
+        basestate = PyBytes_FromStringAndSize((char *)self->data,
+                                             _PyDateTime_TIME_DATASIZE);
+    }
     if (basestate != NULL) {
         if (proto > 3 && TIME_GET_FOLD(self))
             /* Set the first bit of the first byte */
@@ -5753,15 +5766,17 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
             tzinfo = PyTuple_GET_ITEM(args, 1);
         }
         if (PyBytes_Check(state)) {
-            if (PyBytes_GET_SIZE(state) == _PyDateTime_DATETIME_DATASIZE &&
-                MONTH_IS_SANE(PyBytes_AS_STRING(state)[2] & 0x7F))
+            if ((PyBytes_GET_SIZE(state) == _PyDateTime_DATETIME_DATASIZE ||
+                 PyBytes_GET_SIZE(state) == _PyDateTime_OLD_DATETIME_DATASIZE) &&
+                 MONTH_IS_SANE(PyBytes_AS_STRING(state)[2] & 0x7F))
             {
                 return datetime_from_pickle(type, state, tzinfo);
             }
         }
         else if (PyUnicode_Check(state)) {
-            if (PyUnicode_GET_LENGTH(state) == _PyDateTime_DATETIME_DATASIZE &&
-                MONTH_IS_SANE(PyUnicode_READ_CHAR(state, 2) & 0x7F))
+            if ((PyUnicode_GET_LENGTH(state) == _PyDateTime_DATETIME_DATASIZE ||
+                 PyUnicode_GET_LENGTH(state) == _PyDateTime_OLD_DATETIME_DATASIZE) &&
+                 MONTH_IS_SANE(PyUnicode_READ_CHAR(state, 2) & 0x7F))
             {
                 state = PyUnicode_AsLatin1String(state);
                 if (state == NULL) {
@@ -7385,9 +7400,14 @@ datetime_getstate(PyDateTime_DateTime *self, int proto)
 {
     PyObject *basestate;
     PyObject *result = NULL;
-
-    basestate = PyBytes_FromStringAndSize((char *)self->data,
-                                           _PyDateTime_DATETIME_DATASIZE);
+    if (GET_TD_NANOSECONDS(self) == 0){
+        basestate = PyBytes_FromStringAndSize((char *)self->data,
+                                           _PyDateTime_OLD_DATETIME_DATASIZE);
+    }
+    else{
+        basestate = PyBytes_FromStringAndSize((char *)self->data,
+                                             _PyDateTime_DATETIME_DATASIZE);
+    }
     if (basestate != NULL) {
         if (proto > 3 && DATE_GET_FOLD(self))
             /* Set the first bit of the third byte */

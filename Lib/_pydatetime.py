@@ -991,6 +991,8 @@ class timedelta:
     # Pickle support.
 
     def _getstate(self):
+        if self._nanoseconds == 0:
+            return (self._days, self._seconds, self._microseconds)
         return (self._days, self._seconds, self._microseconds, self._nanoseconds)
 
     def __reduce__(self):
@@ -1472,7 +1474,7 @@ class time:
         fold (keyword only, default to zero)
         nanosecond (keyword only, default to zero)
         """
-        if (isinstance(hour, (bytes, str)) and len(hour) == 8 and
+        if (isinstance(hour, (bytes, str)) and len(hour) in (6, 8) and
             ord(hour[0:1])&0x7F < 24):
             # Pickle support
             if isinstance(hour, str):
@@ -1779,7 +1781,9 @@ class time:
         if self._fold and protocol > 3:
             h += 128
         basestate = bytes([h, self._minute, self._second,
-                           us1, us2, us3, ns1, ns2])
+                           us1, us2, us3])
+        if self._nanosecond:
+            basestate += bytes([ns1, ns2])
         if self._tzinfo is None:
             return (basestate,)
         else:
@@ -1788,6 +1792,8 @@ class time:
     def __setstate(self, string, tzinfo):
         if tzinfo is not None and not isinstance(tzinfo, _tzinfo_class):
             raise TypeError("bad tzinfo state arg")
+        if len(string) == 6:
+            string = string + b'\x00\x00'
         h, self._minute, self._second, us1, us2, us3, ns1, ns2 = string
         if h > 127:
             self._fold = 1
@@ -1822,7 +1828,7 @@ class datetime(date):
 
     def __new__(cls, year, month=None, day=None, hour=0, minute=0, second=0,
                 microsecond=0, tzinfo=None, *, fold=0, nanosecond=0):
-        if (isinstance(year, (bytes, str)) and len(year) == 12 and
+        if (isinstance(year, (bytes, str)) and len(year) in (10, 12) and
             1 <= ord(year[2:3])&0x7F <= 12):
             # Pickle support
             if isinstance(year, str):
@@ -2450,7 +2456,9 @@ class datetime(date):
             m += 128
         basestate = bytes([yhi, ylo, m, self._day,
                            self._hour, self._minute, self._second,
-                           us1, us2, us3, ns1, ns2])
+                           us1, us2, us3])
+        if self._nanosecond:
+            basestate += bytes([ns1, ns2])
         if self._tzinfo is None:
             return (basestate,)
         else:
@@ -2459,6 +2467,8 @@ class datetime(date):
     def __setstate(self, string, tzinfo):
         if tzinfo is not None and not isinstance(tzinfo, _tzinfo_class):
             raise TypeError("bad tzinfo state arg")
+        if len(string) == 10:
+            string = string + b'\x00\x00'
         (yhi, ylo, m, self._day, self._hour,
          self._minute, self._second, us1, us2, us3, ns1, ns2) = string
         if m > 127:

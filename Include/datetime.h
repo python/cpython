@@ -27,9 +27,13 @@ extern "C" {
 
 /* # of bytes for hour, minute, second, microsecond and nanosecond */
 #define _PyDateTime_TIME_DATASIZE 8
+// without nanoseconds
+#define _PyDateTime_OLD_TIME_DATASIZE 6
 
 /* # of bytes for year, month, day, hour, minute, second, microsecond and nanosecond */
 #define _PyDateTime_DATETIME_DATASIZE 12
+// without nanoseconds
+#define _PyDateTime_OLD_DATETIME_DATASIZE 10
 
 
 typedef struct
