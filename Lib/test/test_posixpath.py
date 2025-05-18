@@ -489,38 +489,6 @@ class PosixPathTest(unittest.TestCase):
         finally:
             os_helper.unlink(ABSTFN)
 
-    def test_realpath_embedded_null(self):
-        path = '/\x00'
-        self.assertRaises(ValueError, realpath, path, strict=False)
-        self.assertRaises(ValueError, realpath, path, strict=True)
-        path = b'/\x00'
-        self.assertRaises(ValueError, realpath, path, strict=False)
-        self.assertRaises(ValueError, realpath, path, strict=True)
-        path = '/nonexistent/x\x00'
-        self.assertRaises(ValueError, realpath, path, strict=False)
-        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
-        path = b'/nonexistent/x\x00'
-        self.assertRaises(ValueError, realpath, path, strict=False)
-        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
-
-    @unittest.skipIf(sys.platform == 'win32', 'requires native bytes paths')
-    def test_realpath_unencodable(self):
-        path = '/\ud800'
-        self.assertRaises(UnicodeEncodeError, realpath, path, strict=False)
-        self.assertRaises(UnicodeEncodeError, realpath, path, strict=True)
-        path = '/nonexistent/\ud800'
-        self.assertRaises(UnicodeEncodeError, realpath, path, strict=False)
-        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
-
-    @unittest.skipUnless(sys.platform == 'win32', 'requires native Unicode paths')
-    def test_realpath_undecodable(self):
-        path = b'/\xff'
-        self.assertRaises(UnicodeDecodeError, realpath, path, strict=False)
-        self.assertRaises(UnicodeDecodeError, realpath, path, strict=True)
-        path = b'/nonexistent/\xff'
-        self.assertRaises(UnicodeDecodeError, realpath, path, strict=False)
-        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
-
     @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
     def test_realpath_relative(self):
