@@ -3351,12 +3351,12 @@ delta_total_seconds(PyObject *op, PyObject *Py_UNUSED(dummy))
     int seconds = GET_TD_SECONDS(self);
     int microseconds = GET_TD_MICROSECONDS(self);
     int nanoseconds = GET_TD_NANOSECONDS(self);
-    double total = (double)days * 86400.0
+    long double total = (double)days * 86400.0
                  + (double)seconds
                  + (double)microseconds * 1e-6
                  + (double)nanoseconds * 1e-9;
     // round to 9 decimal places
-    total = round(total * 1e9) / 1e9;
+    total = roundl(total * 1e9) / 1e9;
     return PyFloat_FromDouble(total);
 }
 
