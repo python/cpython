@@ -1,0 +1,4 @@
+Add ``_get_snapshot()`` method to :class:`concurrent.futures.Future` to
+atomically retrieve all future state in a single lock acquisition. This speeds
+up :mod:`asyncio`'s ``_copy_future_state()`` by up to 4x when transferring state
+from :class:`concurrent.futures.Future` to :class:`asyncio.Future`. Patch by J. Nick Koston.
