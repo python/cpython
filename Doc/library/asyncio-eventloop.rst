@@ -355,7 +355,7 @@ Creating Futures and Tasks
 
    .. versionadded:: 3.5.2
 
-.. method:: loop.create_task(coro, *, name=None, context=None, eager_start=None, **kwargs)
+.. method:: loop.create_task(coro, *, name=None, context=None, **kwargs)
 
    Schedule the execution of :ref:`coroutine <coroutine>` *coro*.
    Return a :class:`Task` object.
@@ -375,13 +375,6 @@ Creating Futures and Tasks
    An optional keyword-only *context* argument allows specifying a
    custom :class:`contextvars.Context` for the *coro* to run in.
    The current context copy is created when no *context* is provided.
-
-   An optional keyword-only *eager_start* argument allows eagerly starting
-   the execution of the :class:`asyncio.Task` at task creation time.
-   If set to ``True`` and the event loop is running, the task will start
-   executing the coroutine immediately, until the first time the coroutine
-   blocks. If the coroutine returns or raises without blocking, the task
-   will be finished eagerly and will skip scheduling to the event loop.
 
    .. versionchanged:: 3.8
       Added the *name* parameter.
