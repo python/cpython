@@ -976,9 +976,9 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     ServerClass.address_family, addr = _get_best_family(bind, port)
     HandlerClass.protocol_version = protocol
 
-    if tls_cert:
-        server = ThreadingHTTPSServer(addr, HandlerClass, certfile=tls_cert,
-                                      keyfile=tls_key, password=tls_password)
+    if issubclass(ServerClass, HTTPSServer):
+        server = ServerClass(addr, HandlerClass, certfile=tls_cert,
+                             keyfile=tls_key, password=tls_password)
     else:
         server = ServerClass(addr, HandlerClass)
 
@@ -1051,9 +1051,22 @@ if __name__ == '__main__':
             self.RequestHandlerClass(request, client_address, self,
                                      directory=args.directory)
 
+    class HTTPSDualStackServer(ThreadingHTTPSServer):
+        def server_bind(self):
+            with contextlib.suppress(Exception):
+                self.socket.setsockopt(
+                    socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+            return super().server_bind()
+
+        def finish_request(self, request, client_address):
+            self.RequestHandlerClass(request, client_address, self,
+                                     directory=args.directory)
+
+    ServerClass = HTTPSDualStackServer if args.tls_cert else DualStackServer
+
     test(
         HandlerClass=SimpleHTTPRequestHandler,
-        ServerClass=DualStackServer,
+        ServerClass=ServerClass,
         port=args.port,
         bind=args.bind,
         protocol=args.protocol,
