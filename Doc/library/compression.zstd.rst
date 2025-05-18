@@ -571,11 +571,6 @@ Advanced parameter control
       hash table. Larger values improve compression speed. Deviating far from
       the default value will likely result in a compression ratio decrease.
 
-   .. attribute:: content_size_flag
-
-      Uncompressed content size will be written into frame header whenever
-      known. This flag currently has no effect.
-
    .. attribute:: checksum_flag
 
       A four-byte checksum using XXHash64 of the uncompressed content is written
