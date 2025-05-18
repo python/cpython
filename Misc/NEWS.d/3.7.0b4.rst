@@ -235,7 +235,7 @@ End framing at the end of C implementation of :func:`pickle.Pickler.dump`.
 .. section: Library
 
 Improved error handling and fixed a reference leak in
-:func:`os.posix_spawn()`.
+:func:`os.posix_spawn`.
 
 ..
 

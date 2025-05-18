@@ -8,6 +8,7 @@
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_modsupport.h"    // _PyArg_UnpackStack()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_object_deferred.h" // _PyObject_SetDeferredRefcount()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
@@ -144,7 +145,7 @@ method_get(PyObject *self, PyObject *obj, PyObject *type)
         return NULL;
     }
     if (descr->d_method->ml_flags & METH_METHOD) {
-        if (PyType_Check(type)) {
+        if (type == NULL || PyType_Check(type)) {
             return PyCMethod_New(descr->d_method, obj, NULL, descr->d_common.d_type);
         } else {
             PyErr_Format(PyExc_TypeError,
@@ -518,7 +519,7 @@ wrapperdescr_raw_call(PyWrapperDescrObject *descr, PyObject *self,
     wrapperfunc wrapper = descr->d_base->wrapper;
 
     if (descr->d_base->flags & PyWrapperFlag_KEYWORDS) {
-        wrapperfunc_kwds wk = (wrapperfunc_kwds)(void(*)(void))wrapper;
+        wrapperfunc_kwds wk = _Py_FUNC_CAST(wrapperfunc_kwds, wrapper);
         return (*wk)(self, args, descr->d_wrapped, kwds);
     }
 
@@ -1310,11 +1311,9 @@ wrapper_dealloc(PyObject *self)
 {
     wrapperobject *wp = (wrapperobject *)self;
     PyObject_GC_UnTrack(wp);
-    Py_TRASHCAN_BEGIN(wp, wrapper_dealloc)
     Py_XDECREF(wp->descr);
     Py_XDECREF(wp->self);
     PyObject_GC_Del(wp);
-    Py_TRASHCAN_END
 }
 
 static PyObject *
@@ -1349,7 +1348,7 @@ wrapper_hash(PyObject *self)
     wrapperobject *wp = (wrapperobject *)self;
     Py_hash_t x, y;
     x = PyObject_GenericHash(wp->self);
-    y = _Py_HashPointer(wp->descr);
+    y = Py_HashPointer(wp->descr);
     x = x ^ y;
     if (x == -1)
         x = -2;
@@ -1507,6 +1506,8 @@ PyWrapper_New(PyObject *d, PyObject *self)
 
 
 /* A built-in 'property' type */
+
+#define _propertyobject_CAST(op)    ((propertyobject *)(op))
 
 /*
 class property(object):
@@ -1859,21 +1860,8 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     /* if no docstring given and the getter has one, use that one */
     else if (fget != NULL) {
         int rc = PyObject_GetOptionalAttr(fget, &_Py_ID(__doc__), &prop_doc);
-        if (rc <= 0) {
+        if (rc < 0) {
             return rc;
-        }
-        if (!Py_IS_TYPE(self, &PyProperty_Type) &&
-            prop_doc != NULL && prop_doc != Py_None) {
-            // This oddity preserves the long existing behavior of surfacing
-            // an AttributeError when using a dict-less (__slots__) property
-            // subclass as a decorator on a getter method with a docstring.
-            // See PropertySubclassTest.test_slots_docstring_copy_exception.
-            int err = PyObject_SetAttr(
-                        (PyObject *)self, &_Py_ID(__doc__), prop_doc);
-            if (err < 0) {
-                Py_DECREF(prop_doc);  // release our new reference.
-                return -1;
-            }
         }
         if (prop_doc == Py_None) {
             prop_doc = NULL;
@@ -1902,7 +1890,9 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
         Py_DECREF(prop_doc);
         if (err < 0) {
             assert(PyErr_Occurred());
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!self->getter_doc &&
+                PyErr_ExceptionMatches(PyExc_AttributeError))
+            {
                 PyErr_Clear();
                 // https://github.com/python/cpython/issues/98963#issuecomment-1574413319
                 // Python silently dropped this doc assignment through 3.11.
@@ -1922,8 +1912,9 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
 }
 
 static PyObject *
-property_get__name__(propertyobject *prop, void *Py_UNUSED(ignored))
+property_get__name__(PyObject *op, void *Py_UNUSED(ignored))
 {
+    propertyobject *prop = _propertyobject_CAST(op);
     PyObject *name;
     if (property_name(prop, &name) < 0) {
         return NULL;
@@ -1936,16 +1927,17 @@ property_get__name__(propertyobject *prop, void *Py_UNUSED(ignored))
 }
 
 static int
-property_set__name__(propertyobject *prop, PyObject *value,
-                     void *Py_UNUSED(ignored))
+property_set__name__(PyObject *op, PyObject *value, void *Py_UNUSED(ignored))
 {
+    propertyobject *prop = _propertyobject_CAST(op);
     Py_XSETREF(prop->prop_name, Py_XNewRef(value));
     return 0;
 }
 
 static PyObject *
-property_get___isabstractmethod__(propertyobject *prop, void *closure)
+property_get___isabstractmethod__(PyObject *op, void *closure)
 {
+    propertyobject *prop = _propertyobject_CAST(op);
     int res = _PyObject_IsAbstract(prop->prop_get);
     if (res == -1) {
         return NULL;
@@ -1973,9 +1965,8 @@ property_get___isabstractmethod__(propertyobject *prop, void *closure)
 }
 
 static PyGetSetDef property_getsetlist[] = {
-    {"__name__", (getter)property_get__name__, (setter)property_set__name__},
-    {"__isabstractmethod__",
-     (getter)property_get___isabstractmethod__, NULL,
+    {"__name__", property_get__name__, property_set__name__, NULL, NULL},
+    {"__isabstractmethod__", property_get___isabstractmethod__, NULL,
      NULL,
      NULL},
     {NULL} /* Sentinel */

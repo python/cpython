@@ -15,10 +15,8 @@ Allocating Objects on the Heap
 .. c:function:: PyObject* PyObject_Init(PyObject *op, PyTypeObject *type)
 
    Initialize a newly allocated object *op* with its type and initial
-   reference.  Returns the initialized object.  If *type* indicates that the
-   object participates in the cyclic garbage detector, it is added to the
-   detector's set of observed objects. Other fields of the object are not
-   affected.
+   reference.  Returns the initialized object.  Other fields of the object are
+   not affected.
 
 
 .. c:function:: PyVarObject* PyObject_InitVar(PyVarObject *op, PyTypeObject *type, Py_ssize_t size)
@@ -37,6 +35,10 @@ Allocating Objects on the Heap
    The size of the memory allocation is determined from the
    :c:member:`~PyTypeObject.tp_basicsize` field of the type object.
 
+   Note that this function is unsuitable if *typeobj* has
+   :c:macro:`Py_TPFLAGS_HAVE_GC` set. For such objects,
+   use :c:func:`PyObject_GC_New` instead.
+
 
 .. c:macro:: PyObject_NewVar(TYPE, typeobj, size)
 
@@ -51,15 +53,14 @@ Allocating Objects on the Heap
    fields into the same allocation decreases the number of allocations,
    improving the memory management efficiency.
 
+   Note that this function is unsuitable if *typeobj* has
+   :c:macro:`Py_TPFLAGS_HAVE_GC` set. For such objects,
+   use :c:func:`PyObject_GC_NewVar` instead.
+
 
 .. c:function:: void PyObject_Del(void *op)
 
-   Releases memory allocated to an object using :c:macro:`PyObject_New` or
-   :c:macro:`PyObject_NewVar`.  This is normally called from the
-   :c:member:`~PyTypeObject.tp_dealloc` handler specified in the object's type.  The fields of
-   the object should not be accessed after this call as the memory is no
-   longer a valid Python object.
-
+   Same as :c:func:`PyObject_Free`.
 
 .. c:var:: PyObject _Py_NoneStruct
 

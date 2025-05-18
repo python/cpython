@@ -20,12 +20,13 @@ class Test_OSXSupport(unittest.TestCase):
         self.prog_name = 'bogus_program_xxxx'
         self.temp_path_dir = os.path.abspath(os.getcwd())
         self.env = self.enterContext(os_helper.EnvironmentVarGuard())
-        for cv in ('CFLAGS', 'LDFLAGS', 'CPPFLAGS',
-                            'BASECFLAGS', 'BLDSHARED', 'LDSHARED', 'CC',
-                            'CXX', 'PY_CFLAGS', 'PY_LDFLAGS', 'PY_CPPFLAGS',
-                            'PY_CORE_CFLAGS', 'PY_CORE_LDFLAGS'):
-            if cv in self.env:
-                self.env.unset(cv)
+
+        self.env.unset(
+            'CFLAGS', 'LDFLAGS', 'CPPFLAGS',
+            'BASECFLAGS', 'BLDSHARED', 'LDSHARED', 'CC',
+            'CXX', 'PY_CFLAGS', 'PY_LDFLAGS', 'PY_CPPFLAGS',
+            'PY_CORE_CFLAGS', 'PY_CORE_LDFLAGS'
+        )
 
     def add_expected_saved_initial_values(self, config_vars, expected_vars):
         # Ensure that the initial values for all modified config vars

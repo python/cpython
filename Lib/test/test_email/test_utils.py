@@ -3,9 +3,17 @@ from email import utils
 import test.support
 import time
 import unittest
-import sys
-import os.path
-import zoneinfo
+
+from test.support import cpython_only
+from test.support.import_helper import ensure_lazy_imports
+
+
+class TestImportTime(unittest.TestCase):
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("email.utils", {"random", "socket"})
+
 
 class DateTimeTests(unittest.TestCase):
 

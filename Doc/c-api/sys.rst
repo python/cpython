@@ -216,6 +216,38 @@ Operating System Utilities
       The function now uses the UTF-8 encoding on Windows if
       :c:member:`PyPreConfig.legacy_windows_fs_encoding` is zero.
 
+.. c:function:: FILE* Py_fopen(PyObject *path, const char *mode)
+
+   Similar to :c:func:`!fopen`, but *path* is a Python object and
+   an exception is set on error.
+
+   *path* must be a :class:`str` object, a :class:`bytes` object,
+   or a :term:`path-like object`.
+
+   On success, return the new file pointer.
+   On error, set an exception and return ``NULL``.
+
+   The file must be closed by :c:func:`Py_fclose` rather than calling directly
+   :c:func:`!fclose`.
+
+   The file descriptor is created non-inheritable (:pep:`446`).
+
+   The caller must have an :term:`attached thread state`.
+
+   .. versionadded:: 3.14
+
+
+.. c:function:: int Py_fclose(FILE *file)
+
+   Close a file that was opened by :c:func:`Py_fopen`.
+
+   On success, return ``0``.
+   On error, return ``EOF`` and ``errno`` is set to indicate the error.
+   In either case, any further access (including another call to
+   :c:func:`Py_fclose`) to the stream results in undefined behavior.
+
+   .. versionadded:: 3.14
+
 
 .. _systemfunctions:
 
@@ -346,8 +378,8 @@ accessible to C code.  They all work with the current interpreter thread's
    silently abort the operation by raising an error subclassed from
    :class:`Exception` (other errors will not be silenced).
 
-   The hook function is always called with the GIL held by the Python
-   interpreter that raised the event.
+   The hook function is always called with an :term:`attached thread state` by
+   the Python interpreter that raised the event.
 
    See :pep:`578` for a detailed description of auditing.  Functions in the
    runtime and standard library that raise events are listed in the
@@ -426,3 +458,7 @@ Process Control
    function registered last is called first. Each cleanup function will be called
    at most once.  Since Python's internal finalization will have completed before
    the cleanup function, no Python APIs should be called by *func*.
+
+   .. seealso::
+
+      :c:func:`PyUnstable_AtExit` for passing a ``void *data`` argument.

@@ -122,9 +122,7 @@ The module defines the following items:
    .. method:: peek(n)
 
       Read *n* uncompressed bytes without advancing the file position.
-      At most one single read on the compressed stream is done to satisfy
-      the call.  The number of bytes returned may be more or less than
-      requested.
+      The number of bytes returned may be more or less than requested.
 
       .. note:: While calling :meth:`peek` does not change the file position of
          the :class:`GzipFile`, it may change the position of the underlying
@@ -184,13 +182,12 @@ The module defines the following items:
       attribute instead.
 
 
-.. function:: compress(data, compresslevel=9, *, mtime=None)
+.. function:: compress(data, compresslevel=9, *, mtime=0)
 
    Compress the *data*, returning a :class:`bytes` object containing
    the compressed data.  *compresslevel* and *mtime* have the same meaning as in
-   the :class:`GzipFile` constructor above. When *mtime* is set to ``0``, this
-   function is equivalent to :func:`zlib.compress` with *wbits* set to ``31``.
-   The zlib function is faster.
+   the :class:`GzipFile` constructor above,
+   but *mtime* defaults to 0 for reproducible output.
 
    .. versionadded:: 3.2
    .. versionchanged:: 3.8
@@ -198,7 +195,17 @@ The module defines the following items:
    .. versionchanged:: 3.11
       Speed is improved by compressing all data at once instead of in a
       streamed fashion. Calls with *mtime* set to ``0`` are delegated to
-      :func:`zlib.compress` for better speed.
+      :func:`zlib.compress` for better speed. In this situation the
+      output may contain a gzip header "OS" byte value other than 255
+      "unknown" as supplied by the underlying zlib implementation.
+
+   .. versionchanged:: 3.13
+      The gzip header OS byte is guaranteed to be set to 255 when this function
+      is used as was the case in 3.10 and earlier.
+   .. versionchanged:: 3.14
+      The *mtime* parameter now defaults to 0 for reproducible output.
+      For the previous behaviour of using the current time,
+      pass ``None`` to *mtime*.
 
 .. function:: decompress(data)
 
@@ -251,6 +258,10 @@ Example of how to GZIP compress a binary string::
       The basic data compression module needed to support the :program:`gzip` file
       format.
 
+   In case gzip (de)compression is a bottleneck, the `python-isal`_
+   package speeds up (de)compression with a mostly compatible API.
+
+   .. _python-isal: https://github.com/pycompression/python-isal
 
 .. program:: gzip
 

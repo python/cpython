@@ -1,11 +1,12 @@
 import sys
-import time
 
 import unittest
 from unittest import mock
 from test import support
-from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
-                               INVALID_UNDERSCORE_LITERALS)
+from test.support.numbers import (
+    VALID_UNDERSCORE_LITERALS,
+    INVALID_UNDERSCORE_LITERALS,
+)
 
 try:
     import _pylong
@@ -517,6 +518,7 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(int('1_2_3_4_5_6_7_8_9', 16), 0x123456789)
         self.assertEqual(int('1_2_3_4_5_6_7', 32), 1144132807)
 
+    @support.cpython_only
     def test_round_with_none_arg_direct_call(self):
         for val in [(1).__round__(None),
                     round(1),
@@ -588,7 +590,7 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         digits = 78_268
         with (
                 support.adjust_int_max_str_digits(digits),
-                support.CPUStopwatch() as sw_convert):
+                support.Stopwatch() as sw_convert):
             huge_decimal = str(huge_int)
         self.assertEqual(len(huge_decimal), digits)
         # Ensuring that we chose a slow enough conversion to measure.
@@ -603,7 +605,7 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         with support.adjust_int_max_str_digits(int(.995 * digits)):
             with (
                     self.assertRaises(ValueError) as err,
-                    support.CPUStopwatch() as sw_fail_huge):
+                    support.Stopwatch() as sw_fail_huge):
                 str(huge_int)
         self.assertIn('conversion', str(err.exception))
         self.assertLessEqual(sw_fail_huge.seconds, sw_convert.seconds/2)
@@ -613,7 +615,7 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         extra_huge_int = int(f'0x{"c"*500_000}', base=16)  # 602060 digits.
         with (
                 self.assertRaises(ValueError) as err,
-                support.CPUStopwatch() as sw_fail_extra_huge):
+                support.Stopwatch() as sw_fail_extra_huge):
             # If not limited, 8 seconds said Zen based cloud VM.
             str(extra_huge_int)
         self.assertIn('conversion', str(err.exception))
@@ -628,7 +630,7 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         huge = '8'*digits
         with (
                 support.adjust_int_max_str_digits(digits),
-                support.CPUStopwatch() as sw_convert):
+                support.Stopwatch() as sw_convert):
             int(huge)
         # Ensuring that we chose a slow enough conversion to measure.
         # It takes 0.1 seconds on a Zen based cloud VM in an opt build.
@@ -640,7 +642,7 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         with support.adjust_int_max_str_digits(digits - 1):
             with (
                     self.assertRaises(ValueError) as err,
-                    support.CPUStopwatch() as sw_fail_huge):
+                    support.Stopwatch() as sw_fail_huge):
                 int(huge)
         self.assertIn('conversion', str(err.exception))
         self.assertLessEqual(sw_fail_huge.seconds, sw_convert.seconds/2)
@@ -650,7 +652,7 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         extra_huge = '7'*1_200_000
         with (
                 self.assertRaises(ValueError) as err,
-                support.CPUStopwatch() as sw_fail_extra_huge):
+                support.Stopwatch() as sw_fail_extra_huge):
             # If not limited, 8 seconds in the Zen based cloud VM.
             int(extra_huge)
         self.assertIn('conversion', str(err.exception))

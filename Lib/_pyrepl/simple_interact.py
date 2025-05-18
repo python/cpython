@@ -26,13 +26,14 @@ allowing multiline input and multiline history entries.
 from __future__ import annotations
 
 import _sitebuiltins
-import linecache
+import functools
+import os
 import sys
 import code
-from types import ModuleType
+import warnings
 
-from .console import InteractiveColoredConsole
-from .readline import _get_reader, multiline_input
+from .readline import _get_reader, multiline_input, append_history_file
+
 
 _error: tuple[type[Exception], ...] | type[Exception]
 try:
@@ -45,7 +46,9 @@ def check() -> str:
     try:
         _get_reader()
     except _error as e:
-        return str(e) or repr(e) or "unknown error"
+        if term := os.environ.get("TERM", ""):
+            term = f"; TERM={term}"
+        return str(str(e) or repr(e) or "unknown error") + term
     return ""
 
 
@@ -69,28 +72,42 @@ REPL_COMMANDS = {
     "exit": _sitebuiltins.Quitter('exit', ''),
     "quit": _sitebuiltins.Quitter('quit' ,''),
     "copyright": _sitebuiltins._Printer('copyright', sys.copyright),
-    "help": "help",
+    "help": _sitebuiltins._Helper(),
     "clear": _clear_screen,
+    "\x1a": _sitebuiltins.Quitter('\x1a', ''),
 }
 
 
-def run_multiline_interactive_console(
-    mainmodule: ModuleType | None = None,
-    future_flags: int = 0,
-    console: code.InteractiveConsole | None = None,
-) -> None:
-    import __main__
-    from .readline import _setup
-    _setup()
+def _more_lines(console: code.InteractiveConsole, unicodetext: str) -> bool:
+    # ooh, look at the hack:
+    src = _strip_final_indent(unicodetext)
+    try:
+        code = console.compile(src, "<stdin>", "single")
+    except (OverflowError, SyntaxError, ValueError):
+        lines = src.splitlines(keepends=True)
+        if len(lines) == 1:
+            return False
 
-    mainmodule = mainmodule or __main__
-    if console is None:
-        console = InteractiveColoredConsole(
-            mainmodule.__dict__, filename="<stdin>"
-        )
+        last_line = lines[-1]
+        was_indented = last_line.startswith((" ", "\t"))
+        not_empty = last_line.strip() != ""
+        incomplete = not last_line.endswith("\n")
+        return (was_indented or not_empty) and incomplete
+    else:
+        return code is None
+
+
+def run_multiline_interactive_console(
+    console: code.InteractiveConsole,
+    *,
+    future_flags: int = 0,
+) -> None:
+    from .readline import _setup
+    _setup(console.locals)
     if future_flags:
         console.compile.compiler.flags |= future_flags
 
+    more_lines = functools.partial(_more_lines, console)
     input_n = 0
 
     def maybe_run_command(statement: str) -> bool:
@@ -102,31 +119,13 @@ def run_multiline_interactive_console(
         reader.history.pop()  # skip internal commands in history
         command = REPL_COMMANDS[statement]
         if callable(command):
-            command()
+            # Make sure that history does not change because of commands
+            with reader.suspend_history():
+                command()
             return True
-
-        if isinstance(command, str):
-            # Internal readline commands require a prepared reader like
-            # inside multiline_input.
-            reader.prepare()
-            reader.refresh()
-            reader.do_cmd((command, [statement]))
-            reader.restore()
-            return True
-
         return False
 
-    def more_lines(unicodetext: str) -> bool:
-        # ooh, look at the hack:
-        src = _strip_final_indent(unicodetext)
-        try:
-            code = console.compile(src, "<stdin>", "single")
-        except (OverflowError, SyntaxError, ValueError):
-            return False
-        else:
-            return code is None
-
-    while 1:
+    while True:
         try:
             try:
                 sys.stdout.flush()
@@ -144,13 +143,27 @@ def run_multiline_interactive_console(
                 continue
 
             input_name = f"<python-input-{input_n}>"
-            linecache._register_code(input_name, statement, "<stdin>")  # type: ignore[attr-defined]
             more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")  # type: ignore[call-arg]
             assert not more
+            try:
+                append_history_file()
+            except (FileNotFoundError, PermissionError, OSError) as e:
+                warnings.warn(f"failed to open the history file for writing: {e}")
             input_n += 1
         except KeyboardInterrupt:
-            console.write("KeyboardInterrupt\n")
+            r = _get_reader()
+            if r.input_trans is r.isearch_trans:
+                r.do_cmd(("isearch-end", [""]))
+            r.pos = len(r.get_unicode())
+            r.dirty = True
+            r.refresh()
+            console.write("\nKeyboardInterrupt\n")
             console.resetbuffer()
         except MemoryError:
             console.write("\nMemoryError\n")
+            console.resetbuffer()
+        except SystemExit:
+            raise
+        except:
+            console.showtraceback()
             console.resetbuffer()

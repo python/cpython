@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
-#include "pycore_lock.h"
+#include "pycore_lock.h"             // PyMutex_LockFlags()
 #include "pycore_object.h"           // _Py_REF_IS_MERGED()
 #include "pycore_pyatomic_ft_wrappers.h"
 
@@ -109,7 +109,7 @@ extern Py_ssize_t _PyWeakref_GetWeakrefCount(PyObject *obj);
 
 // Clear all the weak references to obj but leave their callbacks uncalled and
 // intact.
-extern void _PyWeakref_ClearWeakRefsExceptCallbacks(PyObject *obj);
+extern void _PyWeakref_ClearWeakRefsNoCallbacks(PyObject *obj);
 
 PyAPI_FUNC(int) _PyWeakref_IsDead(PyObject *weakref);
 

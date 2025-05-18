@@ -1046,8 +1046,9 @@ class RunTestCase(BaseTestCase):
                 ('return', 1, '<module>'), ('quit', ),
             ]
             import test_module_for_bdb
+            ns = {'test_module_for_bdb': test_module_for_bdb}
             with TracerRun(self) as tracer:
-                tracer.runeval('test_module_for_bdb.main()', globals(), locals())
+                tracer.runeval('test_module_for_bdb.main()', ns, ns)
 
 class IssuesTestCase(BaseTestCase):
     """Test fixed bdb issues."""
@@ -1215,6 +1216,19 @@ class IssuesTestCase(BaseTestCase):
             ]
             with TracerRun(self) as tracer:
                 tracer.runcall(tfunc_import)
+
+    def test_next_to_botframe(self):
+        # gh-125422
+        # Check that next command won't go to the bottom frame.
+        code = """
+            lno = 2
+        """
+        self.expect_set = [
+            ('line', 2, '<module>'),   ('step', ),
+            ('return', 2, '<module>'), ('next', ),
+        ]
+        with TracerRun(self) as tracer:
+            tracer.run(compile(textwrap.dedent(code), '<string>', 'exec'))
 
 
 class TestRegressions(unittest.TestCase):

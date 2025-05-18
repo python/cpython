@@ -4,8 +4,9 @@ Interface summary:
 
         import copy
 
-        x = copy.copy(y)        # make a shallow copy of y
-        x = copy.deepcopy(y)    # make a deep copy of y
+        x = copy.copy(y)                # make a shallow copy of y
+        x = copy.deepcopy(y)            # make a deep copy of y
+        x = copy.replace(y, a=1, b=2)   # new object with fields replaced, as defined by `__replace__`
 
 For module specific errors, copy.Error is raised.
 
@@ -56,7 +57,7 @@ class Error(Exception):
     pass
 error = Error   # backward compatibility
 
-__all__ = ["Error", "copy", "deepcopy"]
+__all__ = ["Error", "copy", "deepcopy", "replace"]
 
 def copy(x):
     """Shallow copy operation on arbitrary Python objects.
@@ -66,13 +67,15 @@ def copy(x):
 
     cls = type(x)
 
-    copier = _copy_dispatch.get(cls)
-    if copier:
-        return copier(x)
+    if cls in _copy_atomic_types:
+        return x
+    if cls in _copy_builtin_containers:
+        return cls.copy(x)
+
 
     if issubclass(cls, type):
         # treat it as a regular class:
-        return _copy_immutable(x)
+        return x
 
     copier = getattr(cls, "__copy__", None)
     if copier is not None:
@@ -97,23 +100,12 @@ def copy(x):
     return _reconstruct(x, None, *rv)
 
 
-_copy_dispatch = d = {}
-
-def _copy_immutable(x):
-    return x
-for t in (types.NoneType, int, float, bool, complex, str, tuple,
+_copy_atomic_types = {types.NoneType, int, float, bool, complex, str, tuple,
           bytes, frozenset, type, range, slice, property,
           types.BuiltinFunctionType, types.EllipsisType,
           types.NotImplementedType, types.FunctionType, types.CodeType,
-          weakref.ref):
-    d[t] = _copy_immutable
-
-d[list] = list.copy
-d[dict] = dict.copy
-d[set] = set.copy
-d[bytearray] = bytearray.copy
-
-del d, t
+          weakref.ref, super}
+_copy_builtin_containers = {list, dict, set, bytearray}
 
 def deepcopy(x, memo=None, _nil=[]):
     """Deep copy operation on arbitrary Python objects.

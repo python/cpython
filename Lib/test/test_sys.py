@@ -2,21 +2,27 @@ import builtins
 import codecs
 import _datetime
 import gc
+import io
 import locale
 import operator
 import os
 import random
+import socket
 import struct
 import subprocess
 import sys
 import sysconfig
 import test.support
+from io import StringIO
+from unittest import mock
 from test import support
 from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support.socket_helper import find_unused_port
 from test.support import threading_helper
 from test.support import import_helper
 from test.support import force_not_colorized
+from test.support import SHORT_TIMEOUT
 try:
     from test.support import interpreters
 except ImportError:
@@ -79,6 +85,18 @@ class DisplayHookTest(unittest.TestCase):
         with support.swap_attr(sys, 'displayhook', baddisplayhook):
             code = compile("42", "<string>", "single")
             self.assertRaises(ValueError, eval, code)
+
+    def test_gh130163(self):
+        class X:
+            def __repr__(self):
+                sys.stdout = io.StringIO()
+                support.gc_collect()
+                return 'foo'
+
+        with support.swap_attr(sys, 'stdout', None):
+            sys.stdout = io.StringIO()  # the only reference
+            sys.displayhook(X())  # should not crash
+
 
 class ActiveExceptionTests(unittest.TestCase):
     def test_exc_info_no_exception(self):
@@ -206,6 +224,20 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
+        # gh-125842: Windows uses 32-bit unsigned integers for exit codes
+        # so a -1 exit code is sometimes interpreted as 0xffff_ffff.
+        rc, out, err = assert_python_failure('-c', 'import sys; sys.exit(0xffff_ffff)')
+        self.assertIn(rc, (-1, 0xff, 0xffff_ffff))
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
+        # Overflow results in a -1 exit code, which may be converted to 0xff
+        # or 0xffff_ffff.
+        rc, out, err = assert_python_failure('-c', 'import sys; sys.exit(2**128)')
+        self.assertIn(rc, (-1, 0xff, 0xffff_ffff))
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
         # call with integer argument
         with self.assertRaises(SystemExit) as cm:
             sys.exit(42)
@@ -257,6 +289,27 @@ class SysModuleTest(unittest.TestCase):
         check_exit_message(
             r'import sys; sys.exit("h\xe9")',
             b"h\xe9", PYTHONIOENCODING='latin-1')
+
+    @support.requires_subprocess()
+    def test_exit_codes_under_repl(self):
+        # GH-129900: SystemExit, or things that raised it, didn't
+        # get their return code propagated by the REPL
+        import tempfile
+
+        exit_ways = [
+            "exit",
+            "__import__('sys').exit",
+            "raise SystemExit"
+        ]
+
+        for exitfunc in exit_ways:
+            for return_code in (0, 123):
+                with self.subTest(exitfunc=exitfunc, return_code=return_code):
+                    with tempfile.TemporaryFile("w+") as stdin:
+                        stdin.write(f"{exitfunc}({return_code})\n")
+                        stdin.seek(0)
+                        proc = subprocess.run([sys.executable], stdin=stdin)
+                        self.assertEqual(proc.returncode, return_code)
 
     def test_getdefaultencoding(self):
         self.assertRaises(TypeError, sys.getdefaultencoding, 42)
@@ -671,6 +724,8 @@ class SysModuleTest(unittest.TestCase):
         self.assertIn(sys.float_repr_style, ('short', 'legacy'))
         if not sys.platform.startswith('win'):
             self.assertIsInstance(sys.abiflags, str)
+        else:
+            self.assertFalse(hasattr(sys, 'abiflags'))
 
     def test_thread_info(self):
         info = sys.thread_info
@@ -731,8 +786,11 @@ class SysModuleTest(unittest.TestCase):
         if has_is_interned:
             self.assertIs(sys._is_interned(S("abc")), False)
 
+    @support.cpython_only
     @requires_subinterpreters
     def test_subinterp_intern_dynamically_allocated(self):
+        # Implementation detail: Dynamically allocated strings
+        # are distinct between interpreters
         s = "never interned before" + str(random.randrange(0, 10**9))
         t = sys.intern(s)
         self.assertIs(t, s)
@@ -740,24 +798,58 @@ class SysModuleTest(unittest.TestCase):
         interp = interpreters.create()
         interp.exec(textwrap.dedent(f'''
             import sys
-            t = sys.intern({s!r})
+
+            # set `s`, avoid parser interning & constant folding
+            s = str({s.encode()!r}, 'utf-8')
+
+            t = sys.intern(s)
+
             assert id(t) != {id(s)}, (id(t), {id(s)})
             assert id(t) != {id(t)}, (id(t), {id(t)})
             '''))
 
+    @support.cpython_only
     @requires_subinterpreters
     def test_subinterp_intern_statically_allocated(self):
+        # Implementation detail: Statically allocated strings are shared
+        # between interpreters.
         # See Tools/build/generate_global_objects.py for the list
         # of strings that are always statically allocated.
-        s = '__init__'
-        t = sys.intern(s)
+        for s in ('__init__', 'CANCELLED', '<module>', 'utf-8',
+                  '{{', '', '\n', '_', 'x', '\0', '\N{CEDILLA}', '\xff',
+                  ):
+            with self.subTest(s=s):
+                t = sys.intern(s)
 
-        interp = interpreters.create()
-        interp.exec(textwrap.dedent(f'''
-            import sys
-            t = sys.intern({s!r})
-            assert id(t) == {id(t)}, (id(t), {id(t)})
-            '''))
+                interp = interpreters.create()
+                interp.exec(textwrap.dedent(f'''
+                    import sys
+
+                    # set `s`, avoid parser interning & constant folding
+                    s = str({s.encode()!r}, 'utf-8')
+
+                    t = sys.intern(s)
+                    assert id(t) == {id(t)}, (id(t), {id(t)})
+                    '''))
+
+    @support.cpython_only
+    @requires_subinterpreters
+    def test_subinterp_intern_singleton(self):
+        # Implementation detail: singletons are used for 0- and 1-character
+        # latin1 strings.
+        for s in '', '\n', '_', 'x', '\0', '\N{CEDILLA}', '\xff':
+            with self.subTest(s=s):
+                interp = interpreters.create()
+                interp.exec(textwrap.dedent(f'''
+                    import sys
+
+                    # set `s`, avoid parser interning & constant folding
+                    s = str({s.encode()!r}, 'utf-8')
+
+                    assert id(s) == {id(s)}
+                    t = sys.intern(s)
+                    '''))
+                self.assertTrue(sys._is_interned(s))
 
     def test_sys_flags(self):
         self.assertTrue(sys.flags)
@@ -799,7 +891,9 @@ class SysModuleTest(unittest.TestCase):
 
     @test.support.cpython_only
     def test_clear_type_cache(self):
-        sys._clear_type_cache()
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"sys\._clear_type_cache\(\) is deprecated.*"):
+            sys._clear_type_cache()
 
     @force_not_colorized
     @support.requires_subprocess()
@@ -1005,14 +1099,10 @@ class SysModuleTest(unittest.TestCase):
         # Output of sys._debugmallocstats() depends on configure flags.
         # The sysconfig vars are not available on Windows.
         if sys.platform != "win32":
-            with_freelists = sysconfig.get_config_var("WITH_FREELISTS")
             with_pymalloc = sysconfig.get_config_var("WITH_PYMALLOC")
-            if with_freelists:
-                self.assertIn(b"free PyDictObjects", err)
+            self.assertIn(b"free PyDictObjects", err)
             if with_pymalloc:
                 self.assertIn(b'Small block threshold', err)
-            if not with_freelists and not with_pymalloc:
-                self.assertFalse(err)
 
         # The function has no parameter
         self.assertRaises(TypeError, sys._debugmallocstats, True)
@@ -1043,17 +1133,30 @@ class SysModuleTest(unittest.TestCase):
             # about the underlying implementation: the function might
             # return 0 or something greater.
             self.assertGreaterEqual(a, 0)
+        gc.collect()
+        b = sys.getallocatedblocks()
+        self.assertLessEqual(b, a)
         try:
             # While we could imagine a Python session where the number of
             # multiple buffer objects would exceed the sharing of references,
             # it is unlikely to happen in a normal test run.
-            self.assertLess(a, sys.gettotalrefcount())
+            #
+            # In free-threaded builds each code object owns an array of
+            # pointers to copies of the bytecode. When the number of
+            # code objects is a large fraction of the total number of
+            # references, this can cause the total number of allocated
+            # blocks to exceed the total number of references.
+            #
+            # For some reason, iOS seems to trigger the "unlikely to happen"
+            # case reliably under CI conditions. It's not clear why; but as
+            # this test is checking the behavior of getallocatedblock()
+            # under garbage collection, we can skip this pre-condition check
+            # for now. See GH-130384.
+            if not support.Py_GIL_DISABLED and not support.is_apple_mobile:
+                self.assertLess(a, sys.gettotalrefcount())
         except AttributeError:
             # gettotalrefcount() not available
             pass
-        gc.collect()
-        b = sys.getallocatedblocks()
-        self.assertLessEqual(b, a)
         gc.collect()
         c = sys.getallocatedblocks()
         self.assertIn(c, range(b - 50, b + 50))
@@ -1561,12 +1664,16 @@ class SizeofTest(unittest.TestCase):
         # float
         check(float(0), size('d'))
         # sys.floatinfo
-        check(sys.float_info, vsize('') + self.P * len(sys.float_info))
+        check(sys.float_info, self.P + vsize('') + self.P * len(sys.float_info))
         # frame
         def func():
             return sys._getframe()
         x = func()
-        check(x, size('3Pi2cP7P2ic??2P'))
+        if support.Py_GIL_DISABLED:
+            INTERPRETER_FRAME = '9PihcP'
+        else:
+            INTERPRETER_FRAME = '9PhcP'
+        check(x, size('3PiccPPP' + INTERPRETER_FRAME + 'P'))
         # function
         def func(): pass
         check(func, size('16Pi'))
@@ -1583,7 +1690,7 @@ class SizeofTest(unittest.TestCase):
             check(bar, size('PP'))
         # generator
         def get_gen(): yield 1
-        check(get_gen(), size('PP4P4c7P2ic??2P'))
+        check(get_gen(), size('6P4c' + INTERPRETER_FRAME + 'P'))
         # iterator
         check(iter('abc'), size('lP'))
         # callable-iterator
@@ -1665,13 +1772,14 @@ class SizeofTest(unittest.TestCase):
         # super
         check(super(int), size('3P'))
         # tuple
-        check((), vsize(''))
-        check((1,2,3), vsize('') + 3*self.P)
+        check((), vsize('') + self.P)
+        check((1,2,3), vsize('') + self.P + 3*self.P)
         # type
         # static type: PyTypeObject
         fmt = 'P2nPI13Pl4Pn9Pn12PIPc'
         s = vsize(fmt)
         check(int, s)
+        typeid = 'n' if support.Py_GIL_DISABLED else ''
         # class
         s = vsize(fmt +                 # PyTypeObject
                   '4P'                  # PyAsyncMethods
@@ -1679,8 +1787,9 @@ class SizeofTest(unittest.TestCase):
                   '3P'                  # PyMappingMethods
                   '10P'                 # PySequenceMethods
                   '2P'                  # PyBufferProcs
-                  '6P'
-                  '1PIP'                 # Specializer cache
+                  '7P'
+                  '1PIP'                # Specializer cache
+                  + typeid              # heap type id (free-threaded only)
                   )
         class newstyleclass(object): pass
         # Separate block for PyDictKeysObject with 8 keys and 5 entries
@@ -1785,7 +1894,10 @@ class SizeofTest(unittest.TestCase):
         # symtable entry
         # XXX
         # sys.flags
-        check(sys.flags, vsize('') + self.P * len(sys.flags))
+        # FIXME: The +3 is for the 'gil', 'thread_inherit_context' and
+        # 'context_aware_warnings' flags and will not be necessary once
+        # gh-122575 is fixed
+        check(sys.flags, vsize('') + self.P + self.P * (3 + len(sys.flags)))
 
     def test_asyncgen_hooks(self):
         old = sys.get_asyncgen_hooks()
@@ -1842,6 +1954,333 @@ class SizeofTest(unittest.TestCase):
         rc, out, err = assert_python_failure('-c', code)
         self.assertEqual(out, b"")
         self.assertEqual(err, b"")
+
+
+def _supports_remote_attaching():
+    PROCESS_VM_READV_SUPPORTED = False
+
+    try:
+        from _remote_debugging import PROCESS_VM_READV_SUPPORTED
+    except ImportError:
+        pass
+
+    return PROCESS_VM_READV_SUPPORTED
+
+@unittest.skipIf(not sys.is_remote_debug_enabled(), "Remote debugging is not enabled")
+@unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux" and sys.platform != "win32",
+                    "Test only runs on Linux, Windows and MacOS")
+@unittest.skipIf(sys.platform == "linux" and not _supports_remote_attaching(),
+                    "Test only runs on Linux with process_vm_readv support")
+@test.support.cpython_only
+class TestRemoteExec(unittest.TestCase):
+    def tearDown(self):
+        test.support.reap_children()
+
+    def _run_remote_exec_test(self, script_code, python_args=None, env=None,
+                              prologue='',
+                              script_path=os_helper.TESTFN + '_remote.py'):
+        # Create the script that will be remotely executed
+        self.addCleanup(os_helper.unlink, script_path)
+
+        with open(script_path, 'w') as f:
+            f.write(script_code)
+
+        # Create and run the target process
+        target = os_helper.TESTFN + '_target.py'
+        self.addCleanup(os_helper.unlink, target)
+
+        port = find_unused_port()
+
+        with open(target, 'w') as f:
+            f.write(f'''
+import sys
+import time
+import socket
+
+# Connect to the test process
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect(('localhost', {port}))
+
+{prologue}
+
+# Signal that the process is ready
+sock.sendall(b"ready")
+
+print("Target process running...")
+
+# Wait for remote script to be executed
+# (the execution will happen as the following
+# code is processed as soon as the recv call
+# unblocks)
+sock.recv(1024)
+
+# Do a bunch of work to give the remote script time to run
+x = 0
+for i in range(100):
+    x += i
+
+# Write confirmation back
+sock.sendall(b"executed")
+sock.close()
+''')
+
+        # Start the target process and capture its output
+        cmd = [sys.executable]
+        if python_args:
+            cmd.extend(python_args)
+        cmd.append(target)
+
+        # Create a socket server to communicate with the target process
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_socket.bind(('localhost', port))
+        server_socket.settimeout(SHORT_TIMEOUT)
+        server_socket.listen(1)
+
+        with subprocess.Popen(cmd,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE,
+                              env=env,
+                              ) as proc:
+            client_socket = None
+            try:
+                # Accept connection from target process
+                client_socket, _ = server_socket.accept()
+                server_socket.close()
+
+                response = client_socket.recv(1024)
+                self.assertEqual(response, b"ready")
+
+                # Try remote exec on the target process
+                sys.remote_exec(proc.pid, script_path)
+
+                # Signal script to continue
+                client_socket.sendall(b"continue")
+
+                # Wait for execution confirmation
+                response = client_socket.recv(1024)
+                self.assertEqual(response, b"executed")
+
+                # Return output for test verification
+                stdout, stderr = proc.communicate(timeout=10.0)
+                return proc.returncode, stdout, stderr
+            except PermissionError:
+                self.skipTest("Insufficient permissions to execute code in remote process")
+            finally:
+                if client_socket is not None:
+                    client_socket.close()
+                proc.kill()
+                proc.terminate()
+                proc.wait(timeout=SHORT_TIMEOUT)
+
+    def test_remote_exec(self):
+        """Test basic remote exec functionality"""
+        script = 'print("Remote script executed successfully!")'
+        returncode, stdout, stderr = self._run_remote_exec_test(script)
+        # self.assertEqual(returncode, 0)
+        self.assertIn(b"Remote script executed successfully!", stdout)
+        self.assertEqual(stderr, b"")
+
+    def test_remote_exec_bytes(self):
+        script = 'print("Remote script executed successfully!")'
+        script_path = os.fsencode(os_helper.TESTFN) + b'_bytes_remote.py'
+        returncode, stdout, stderr = self._run_remote_exec_test(script,
+                                                    script_path=script_path)
+        self.assertIn(b"Remote script executed successfully!", stdout)
+        self.assertEqual(stderr, b"")
+
+    @unittest.skipUnless(os_helper.TESTFN_UNDECODABLE, 'requires undecodable path')
+    @unittest.skipIf(sys.platform == 'darwin',
+                     'undecodable paths are not supported on macOS')
+    def test_remote_exec_undecodable(self):
+        script = 'print("Remote script executed successfully!")'
+        script_path = os_helper.TESTFN_UNDECODABLE + b'_undecodable_remote.py'
+        for script_path in [script_path, os.fsdecode(script_path)]:
+            returncode, stdout, stderr = self._run_remote_exec_test(script,
+                                                        script_path=script_path)
+            self.assertIn(b"Remote script executed successfully!", stdout)
+            self.assertEqual(stderr, b"")
+
+    def test_remote_exec_with_self_process(self):
+        """Test remote exec with the target process being the same as the test process"""
+
+        code = 'import sys;print("Remote script executed successfully!", file=sys.stderr)'
+        file = os_helper.TESTFN + '_remote_self.py'
+        with open(file, 'w') as f:
+            f.write(code)
+        self.addCleanup(os_helper.unlink, file)
+        with mock.patch('sys.stderr', new_callable=StringIO) as mock_stderr:
+            with mock.patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                sys.remote_exec(os.getpid(), os.path.abspath(file))
+                print("Done")
+                self.assertEqual(mock_stderr.getvalue(), "Remote script executed successfully!\n")
+                self.assertEqual(mock_stdout.getvalue(), "Done\n")
+
+    def test_remote_exec_raises_audit_event(self):
+        """Test remote exec raises an audit event"""
+        prologue = '''\
+import sys
+def audit_hook(event, arg):
+    print(f"Audit event: {event}, arg: {arg}".encode("ascii", errors="replace"))
+sys.addaudithook(audit_hook)
+'''
+        script = '''
+print("Remote script executed successfully!")
+'''
+        returncode, stdout, stderr = self._run_remote_exec_test(script, prologue=prologue)
+        self.assertEqual(returncode, 0)
+        self.assertIn(b"Remote script executed successfully!", stdout)
+        self.assertIn(b"Audit event: remote_debugger_script, arg: ", stdout)
+        self.assertEqual(stderr, b"")
+
+    def test_remote_exec_with_exception(self):
+        """Test remote exec with an exception raised in the target process
+
+        The exception should be raised in the main thread of the target process
+        but not crash the target process.
+        """
+        script = '''
+raise Exception("Remote script exception")
+'''
+        returncode, stdout, stderr = self._run_remote_exec_test(script)
+        self.assertEqual(returncode, 0)
+        self.assertIn(b"Remote script exception", stderr)
+        self.assertEqual(stdout.strip(), b"Target process running...")
+
+    def test_new_namespace_for_each_remote_exec(self):
+        """Test that each remote_exec call gets its own namespace."""
+        script = textwrap.dedent(
+            """
+            assert globals() is not __import__("__main__").__dict__
+            print("Remote script executed successfully!")
+            """
+        )
+        returncode, stdout, stderr = self._run_remote_exec_test(script)
+        self.assertEqual(returncode, 0)
+        self.assertEqual(stderr, b"")
+        self.assertIn(b"Remote script executed successfully", stdout)
+
+    def test_remote_exec_disabled_by_env(self):
+        """Test remote exec is disabled when PYTHON_DISABLE_REMOTE_DEBUG is set"""
+        env = os.environ.copy()
+        env['PYTHON_DISABLE_REMOTE_DEBUG'] = '1'
+        with self.assertRaisesRegex(RuntimeError, "Remote debugging is not enabled in the remote process"):
+            self._run_remote_exec_test("print('should not run')", env=env)
+
+    def test_remote_exec_disabled_by_xoption(self):
+        """Test remote exec is disabled with -Xdisable-remote-debug"""
+        with self.assertRaisesRegex(RuntimeError, "Remote debugging is not enabled in the remote process"):
+            self._run_remote_exec_test("print('should not run')", python_args=['-Xdisable-remote-debug'])
+
+    def test_remote_exec_invalid_pid(self):
+        """Test remote exec with invalid process ID"""
+        with self.assertRaises(OSError):
+            sys.remote_exec(99999, "print('should not run')")
+
+    def test_remote_exec_invalid_script(self):
+        """Test remote exec with invalid script type"""
+        with self.assertRaises(TypeError):
+            sys.remote_exec(0, None)
+        with self.assertRaises(TypeError):
+            sys.remote_exec(0, 123)
+
+    def test_remote_exec_syntax_error(self):
+        """Test remote exec with syntax error in script"""
+        script = '''
+this is invalid python code
+'''
+        returncode, stdout, stderr = self._run_remote_exec_test(script)
+        self.assertEqual(returncode, 0)
+        self.assertIn(b"SyntaxError", stderr)
+        self.assertEqual(stdout.strip(), b"Target process running...")
+
+    def test_remote_exec_invalid_script_path(self):
+        """Test remote exec with invalid script path"""
+        with self.assertRaises(OSError):
+            sys.remote_exec(os.getpid(), "invalid_script_path")
+
+    def test_remote_exec_in_process_without_debug_fails_envvar(self):
+        """Test remote exec in a process without remote debugging enabled"""
+        script = os_helper.TESTFN + '_remote.py'
+        self.addCleanup(os_helper.unlink, script)
+        with open(script, 'w') as f:
+            f.write('print("Remote script executed successfully!")')
+        env = os.environ.copy()
+        env['PYTHON_DISABLE_REMOTE_DEBUG'] = '1'
+
+        _, out, err = assert_python_failure('-c', f'import os, sys; sys.remote_exec(os.getpid(), "{script}")', **env)
+        self.assertIn(b"Remote debugging is not enabled", err)
+        self.assertEqual(out, b"")
+
+    def test_remote_exec_in_process_without_debug_fails_xoption(self):
+        """Test remote exec in a process without remote debugging enabled"""
+        script = os_helper.TESTFN + '_remote.py'
+        self.addCleanup(os_helper.unlink, script)
+        with open(script, 'w') as f:
+            f.write('print("Remote script executed successfully!")')
+
+        _, out, err = assert_python_failure('-Xdisable-remote-debug', '-c', f'import os, sys; sys.remote_exec(os.getpid(), "{script}")')
+        self.assertIn(b"Remote debugging is not enabled", err)
+        self.assertEqual(out, b"")
+
+class TestSysJIT(unittest.TestCase):
+
+    def test_jit_is_available(self):
+        available = sys._jit.is_available()
+        script = f"import sys; assert sys._jit.is_available() is {available}"
+        assert_python_ok("-c", script, PYTHON_JIT="0")
+        assert_python_ok("-c", script, PYTHON_JIT="1")
+
+    def test_jit_is_enabled(self):
+        available = sys._jit.is_available()
+        script = "import sys; assert sys._jit.is_enabled() is {enabled}"
+        assert_python_ok("-c", script.format(enabled=False), PYTHON_JIT="0")
+        assert_python_ok("-c", script.format(enabled=available), PYTHON_JIT="1")
+
+    def test_jit_is_active(self):
+        available = sys._jit.is_available()
+        script = textwrap.dedent(
+            """
+            import _testcapi
+            import _testinternalcapi
+            import sys
+
+            def frame_0_interpreter() -> None:
+                assert sys._jit.is_active() is False
+
+            def frame_1_interpreter() -> None:
+                assert sys._jit.is_active() is False
+                frame_0_interpreter()
+                assert sys._jit.is_active() is False
+
+            def frame_2_jit(expected: bool) -> None:
+                # Inlined into the last loop of frame_3_jit:
+                assert sys._jit.is_active() is expected
+                # Insert C frame:
+                _testcapi.pyobject_vectorcall(frame_1_interpreter, None, None)
+                assert sys._jit.is_active() is expected
+
+            def frame_3_jit() -> None:
+                # JITs just before the last loop:
+                for i in range(_testinternalcapi.TIER2_THRESHOLD + 1):
+                    # Careful, doing this in the reverse order breaks tracing:
+                    expected = {enabled} and i == _testinternalcapi.TIER2_THRESHOLD
+                    assert sys._jit.is_active() is expected
+                    frame_2_jit(expected)
+                    assert sys._jit.is_active() is expected
+
+            def frame_4_interpreter() -> None:
+                assert sys._jit.is_active() is False
+                frame_3_jit()
+                assert sys._jit.is_active() is False
+
+            assert sys._jit.is_active() is False
+            frame_4_interpreter()
+            assert sys._jit.is_active() is False
+            """
+        )
+        assert_python_ok("-c", script.format(enabled=False), PYTHON_JIT="0")
+        assert_python_ok("-c", script.format(enabled=available), PYTHON_JIT="1")
+
 
 if __name__ == "__main__":
     unittest.main()
