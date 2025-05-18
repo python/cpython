@@ -7936,7 +7936,7 @@ then
     # available on x86_64. However, performance of the HACL SIMD128 implementation
     # isn't great, so it's disabled on ARM64.
     AC_MSG_CHECKING([for HACL* SIMD128 implementation])
-    if [[ "$build_cpu" == "aarch64" && "$build_vendor" == "apple" ]]; then
+    if test "$UNIVERSAL_ARCHS" = "universal2" -o \( "$build_cpu" = "aarch64" -a "$build_vendor" = "apple" \); then
       [LIBHACL_BLAKE2_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o"]
       AC_MSG_RESULT([universal2])
     else
@@ -7968,7 +7968,7 @@ then
     # implementation requires symbols that aren't available on ARM64. Use a
     # wrapped implementation if we're building for universal2.
     AC_MSG_CHECKING([for HACL* SIMD256 implementation])
-    if [[ "$build_cpu" == "aarch64" && "$build_vendor" == "apple" ]]; then
+    if test "$UNIVERSAL_ARCHS" = "universal2" -o \( "$build_cpu" = "aarch64" -a "$build_vendor" = "apple" \); then
       [LIBHACL_BLAKE2_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o"]
       AC_MSG_RESULT([universal2])
     else
