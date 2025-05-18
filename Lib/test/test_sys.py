@@ -1485,6 +1485,7 @@ class UnraisableHookTest(unittest.TestCase):
             expected = None
             hook_args = None
 
+    @force_not_colorized
     def test_custom_unraisablehook_fail(self):
         _testcapi = import_helper.import_module('_testcapi')
         from _testcapi import err_writeunraisable
