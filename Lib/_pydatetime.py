@@ -204,7 +204,7 @@ def _format_offset(off, sep=':'):
                 s += '.%06d' % ss.microseconds
 
                 if ss.nanoseconds:
-                    s += '.%03d' % ss.nanoseconds
+                    s += '%03d' % ss.nanoseconds
     return s
 
 _normalize_century = None
