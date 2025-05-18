@@ -7331,6 +7331,24 @@ class ExtensionModuleTests(unittest.TestCase):
                 res = script_helper.assert_python_ok('-X', 'showrefcount', '-c', script)
                 self.assertIn(b'[0 refs, 0 blocks]', res.err)
 
+        with self.subTest('With closure'):
+            # Finalization does not happen when a generator is nested
+            script = textwrap.dedent("""
+                def no_issue():
+                    def gen():
+                        try:
+                            yield
+                        finally:
+                            assert sys.modules
+                    import sys
+                    it = gen()
+                    next(it)
+
+                exec(no_issue.__code__)
+                """)
+            res = script_helper.assert_python_ok('-c', script)
+            self.assertFalse(res.err)
+
 
 def load_tests(loader, standard_tests, pattern):
     standard_tests.addTest(ZoneInfoCompleteTest())
