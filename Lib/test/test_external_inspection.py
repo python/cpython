@@ -510,7 +510,6 @@ class TestGetStackTrace(unittest.TestCase):
         "Test only runs on Linux with process_vm_readv support",
     )
     def test_async_global_awaited_by(self):
-        return # BUG
         port = find_unused_port()
         script = textwrap.dedent(
             f"""\

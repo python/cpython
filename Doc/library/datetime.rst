@@ -1130,8 +1130,8 @@ Other constructors, all class methods:
        datetime.datetime(2011, 1, 4, 0, 5, 23, 283000)
        >>> datetime.fromisoformat('2011-11-04 00:05:23.283')
        datetime.datetime(2011, 11, 4, 0, 5, 23, 283000)
-       # BUG: >>> datetime.fromisoformat('2011-11-04 00:05:23.283123456')
-       # datetime.datetime(2011, 11, 4, 0, 5, 23, 283123, nanosecond=456)
+       >>> datetime.fromisoformat('2011-11-04 00:05:23.283123456')
+       datetime.datetime(2011, 11, 4, 0, 5, 23, 283123, nanosecond=456)
        >>> datetime.fromisoformat('2011-11-04 00:05:23.283+00:00')
        datetime.datetime(2011, 11, 4, 0, 5, 23, 283000, tzinfo=datetime.timezone.utc)
        >>> datetime.fromisoformat('2011-11-04T00:05:23+04:00')   # doctest: +NORMALIZE_WHITESPACE
@@ -2069,8 +2069,8 @@ Instance methods:
       >>> dt = time(hour=12, minute=34, second=56, microsecond=123456, nanosecond=789)
       >>> dt.isoformat(timespec='microseconds')
       '12:34:56.000000'
-      # BUG: >>> dt.isoformat(timespec='nanoseconds')
-      # '12:34:56.123456789'
+      >>> dt.isoformat(timespec='nanoseconds')
+      '12:34:56.123456789'
 
    .. versionchanged:: 3.6
       Added the *timespec* parameter.

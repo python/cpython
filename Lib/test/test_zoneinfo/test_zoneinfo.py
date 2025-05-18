@@ -631,7 +631,6 @@ class WeirdZoneTest(ZoneInfoTestBase):
                 self.assertEqual(dt.dst(), DST.dst)
 
     def test_no_tz_str(self):
-        return # BUG
         STD = ZoneOffset("STD", ONE_H, ZERO)
         DST = ZoneOffset("DST", 2 * ONE_H, ONE_H)
 

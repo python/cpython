@@ -2576,7 +2576,7 @@ nanoseconds_to_delta(PyObject *pyns)
     if (d == -1 && PyErr_Occurred()) {
         goto Done;
     }
-    result = new_delta(d, s, us, ns_rem, 1); // Ensure normalization
+    result = new_delta(d, s, us, ns_rem, 1);
 
 Done:
     Py_XDECREF(py_total_us);
