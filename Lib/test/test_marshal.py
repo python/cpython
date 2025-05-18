@@ -410,7 +410,7 @@ class BugsTestCase(unittest.TestCase):
 
     def test_unmarshallable(self):
         # Check no crash after encountering unmarshallable objects.
-        # See https://github.com/python/cpython/issues/106287
+        # See https://github.com/python/cpython/issues/106287.
         fset = frozenset([int])
         code = compile("a = 1", "<string>", "exec")
         code = code.replace(co_consts=(1, fset, None))
