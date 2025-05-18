@@ -1024,6 +1024,7 @@ def _get_ptext_to_endchars(value, endchars):
     vchars = []
     escape = False
     had_qp = False
+    pos = 0
     for pos in range(len(fragment)):
         if fragment[pos] == '\\':
             if escape:
