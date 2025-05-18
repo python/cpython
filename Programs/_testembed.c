@@ -8,7 +8,7 @@
 #include <Python.h>
 #include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
 #include "pycore_runtime.h"       // _PyRuntime
-#include "pycore_semaphore.h"     // _PySemaphore
+#include "pycore_lock.h"          // PyEvent
 #include "pycore_pythread.h"      // PyThread_start_joinable_thread()
 #include "pycore_import.h"        // _PyImport_FrozenBootstrap
 #include <inttypes.h>
