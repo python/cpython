@@ -17,6 +17,7 @@ class _zstd.ZstdCompressor "ZstdCompressor *" "&zstd_compressor_type_spec"
 #include "_zstdmodule.h"
 #include "buffer.h"
 #include "zstddict.h"
+#include "internal/pycore_lock.h" // PyMutex_IsLocked
 
 #include <stddef.h>               // offsetof()
 #include <zstd.h>                 // ZSTD_*()
@@ -38,6 +39,9 @@ typedef struct {
 
     /* Compression level */
     int compression_level;
+
+    /* Lock to protect the compression context */
+    PyMutex lock;
 } ZstdCompressor;
 
 #define ZstdCompressor_CAST(op) ((ZstdCompressor *)op)
@@ -276,28 +280,22 @@ load:
         }
         /* Reference a prepared dictionary.
            It overrides some compression context's parameters. */
-        Py_BEGIN_CRITICAL_SECTION(self);
         zstd_ret = ZSTD_CCtx_refCDict(self->cctx, c_dict);
-        Py_END_CRITICAL_SECTION();
     }
     else if (type == DICT_TYPE_UNDIGESTED) {
         /* Load a dictionary.
            It doesn't override compression context's parameters. */
-        Py_BEGIN_CRITICAL_SECTION2(self, zd);
         zstd_ret = ZSTD_CCtx_loadDictionary(
                             self->cctx,
                             PyBytes_AS_STRING(zd->dict_content),
                             Py_SIZE(zd->dict_content));
-        Py_END_CRITICAL_SECTION2();
     }
     else if (type == DICT_TYPE_PREFIX) {
         /* Load a prefix */
-        Py_BEGIN_CRITICAL_SECTION2(self, zd);
         zstd_ret = ZSTD_CCtx_refPrefix(
                             self->cctx,
                             PyBytes_AS_STRING(zd->dict_content),
                             Py_SIZE(zd->dict_content));
-        Py_END_CRITICAL_SECTION2();
     }
     else {
         Py_UNREACHABLE();
@@ -339,6 +337,7 @@ _zstd_ZstdCompressor_new_impl(PyTypeObject *type, PyObject *level,
 
     self->use_multithread = 0;
     self->dict = NULL;
+    self->lock = (PyMutex){0};
 
     /* Compression context */
     self->cctx = ZSTD_createCCtx();
@@ -403,6 +402,10 @@ ZstdCompressor_dealloc(PyObject *ob)
         ZSTD_freeCCtx(self->cctx);
     }
 
+    if (PyMutex_IsLocked(&self->lock)) {
+        PyMutex_Unlock(&self->lock);
+    }
+
     /* Py_XDECREF the dict after free the compression context */
     Py_CLEAR(self->dict);
 
@@ -412,8 +415,8 @@ ZstdCompressor_dealloc(PyObject *ob)
 }
 
 static PyObject *
-compress_impl(ZstdCompressor *self, Py_buffer *data,
-              ZSTD_EndDirective end_directive)
+compress_lock_held(ZstdCompressor *self, Py_buffer *data,
+                   ZSTD_EndDirective end_directive)
 {
     ZSTD_inBuffer in;
     ZSTD_outBuffer out;
@@ -495,7 +498,7 @@ mt_continue_should_break(ZSTD_inBuffer *in, ZSTD_outBuffer *out)
 #endif
 
 static PyObject *
-compress_mt_continue_impl(ZstdCompressor *self, Py_buffer *data)
+compress_mt_continue_lock_held(ZstdCompressor *self, Py_buffer *data)
 {
     ZSTD_inBuffer in;
     ZSTD_outBuffer out;
@@ -529,7 +532,7 @@ compress_mt_continue_impl(ZstdCompressor *self, Py_buffer *data)
             goto error;
         }
 
-        /* Like compress_impl(), output as much as possible. */
+        /* Like compress_lock_held(), output as much as possible. */
         if (out.pos == out.size) {
             if (_OutputBuffer_Grow(&buffer, &out) < 0) {
                 goto error;
@@ -588,14 +591,14 @@ _zstd_ZstdCompressor_compress_impl(ZstdCompressor *self, Py_buffer *data,
     }
 
     /* Thread-safe code */
-    Py_BEGIN_CRITICAL_SECTION(self);
+    PyMutex_Lock(&self->lock);
 
     /* Compress */
     if (self->use_multithread && mode == ZSTD_e_continue) {
-        ret = compress_mt_continue_impl(self, data);
+        ret = compress_mt_continue_lock_held(self, data);
     }
     else {
-        ret = compress_impl(self, data, mode);
+        ret = compress_lock_held(self, data, mode);
     }
 
     if (ret) {
@@ -607,7 +610,7 @@ _zstd_ZstdCompressor_compress_impl(ZstdCompressor *self, Py_buffer *data,
         /* Resetting cctx's session never fail */
         ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
     }
-    Py_END_CRITICAL_SECTION();
+    PyMutex_Unlock(&self->lock);
 
     return ret;
 }
@@ -642,8 +645,9 @@ _zstd_ZstdCompressor_flush_impl(ZstdCompressor *self, int mode)
     }
 
     /* Thread-safe code */
-    Py_BEGIN_CRITICAL_SECTION(self);
-    ret = compress_impl(self, NULL, mode);
+    PyMutex_Lock(&self->lock);
+
+    ret = compress_lock_held(self, NULL, mode);
 
     if (ret) {
         self->last_mode = mode;
@@ -654,7 +658,7 @@ _zstd_ZstdCompressor_flush_impl(ZstdCompressor *self, int mode)
         /* Resetting cctx's session never fail */
         ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
     }
-    Py_END_CRITICAL_SECTION();
+    PyMutex_Unlock(&self->lock);
 
     return ret;
 }
