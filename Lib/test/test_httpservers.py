@@ -1514,8 +1514,7 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         return False
 
     def test_http_client(self):
-        _, addr = server._get_best_family(None, find_unused_port())
-        bind, port = addr[:2]
+        bind, port = 'localhost', find_unused_port()
         proc = spawn_python('-u', '-m', 'http.server', str(port), '-b', bind,
                             bufsize=1, text=True)
         self.addCleanup(kill_python, proc)
