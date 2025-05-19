@@ -1871,7 +1871,7 @@ New Deprecations
 
 * :mod:`http.server`:
 
-  * Deprecate :class:`~http.server.CGIHTTPRequestHandler`,
+  * Deprecate :class:`!CGIHTTPRequestHandler`,
     to be removed in Python 3.15.
     Process-based CGI HTTP servers have been out of favor for a very long time.
     This code was outdated, unmaintained, and rarely used.
@@ -1908,7 +1908,7 @@ New Deprecations
 
 * :mod:`platform`:
 
-  * Deprecate :func:`~platform.java_ver`,
+  * Deprecate :func:`!platform.java_ver`,
     to be removed in Python 3.15.
     This function is only useful for Jython support, has a confusing API,
     and is largely untested.
@@ -1995,8 +1995,7 @@ New Deprecations
 
 * :mod:`wave`:
 
-  * Deprecate the :meth:`~wave.Wave_read.getmark`, :meth:`!setmark`,
-    and :meth:`~wave.Wave_read.getmarkers` methods of
+  * Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()`` methods of
     the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes,
     to be removed in Python 3.15.
     (Contributed by Victor Stinner in :gh:`105096`.)
@@ -2477,17 +2476,17 @@ Deprecated C APIs
 
   * :c:func:`PySys_ResetWarnOptions`:
     Clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
-  * :c:func:`Py_GetExecPrefix`:
+  * :c:func:`!Py_GetExecPrefix`:
     Get :data:`sys.exec_prefix` instead.
-  * :c:func:`Py_GetPath`:
+  * :c:func:`!Py_GetPath`:
     Get :data:`sys.path` instead.
-  * :c:func:`Py_GetPrefix`:
+  * :c:func:`!Py_GetPrefix`:
     Get :data:`sys.prefix` instead.
-  * :c:func:`Py_GetProgramFullPath`:
+  * :c:func:`!Py_GetProgramFullPath`:
     Get :data:`sys.executable` instead.
-  * :c:func:`Py_GetProgramName`:
+  * :c:func:`!Py_GetProgramName`:
     Get :data:`sys.executable` instead.
-  * :c:func:`Py_GetPythonHome`:
+  * :c:func:`!Py_GetPythonHome`:
     Get :c:member:`PyConfig.home`
     or the :envvar:`PYTHONHOME` environment variable instead.
 
@@ -2499,7 +2498,7 @@ Deprecated C APIs
   which return a :term:`borrowed reference`.
   (Soft deprecated as part of :pep:`667`.)
 
-* Deprecate the :c:func:`PyImport_ImportModuleNoBlock` function,
+* Deprecate the :c:func:`!PyImport_ImportModuleNoBlock` function,
   which is just an alias to :c:func:`PyImport_ImportModule` since Python 3.3.
   (Contributed by Victor Stinner in :gh:`105396`.)
 

@@ -758,6 +758,160 @@ class CodeTests(_GetXIDataTests):
         ])
 
 
+class ShareableFuncTests(_GetXIDataTests):
+
+    MODE = 'func'
+
+    def test_stateless(self):
+        self.assert_roundtrip_not_equal([
+            *defs.STATELESS_FUNCTIONS,
+            # Generators can be stateless too.
+            *defs.FUNCTION_LIKE,
+        ])
+
+    def test_not_stateless(self):
+        self.assert_not_shareable([
+            *(f for f in defs.FUNCTIONS
+              if f not in defs.STATELESS_FUNCTIONS),
+        ])
+
+    def test_other_objects(self):
+        self.assert_not_shareable([
+            None,
+            True,
+            False,
+            Ellipsis,
+            NotImplemented,
+            9999,
+            'spam',
+            b'spam',
+            (),
+            [],
+            {},
+            object(),
+        ])
+
+
+class PureShareableScriptTests(_GetXIDataTests):
+
+    MODE = 'script-pure'
+
+    VALID_SCRIPTS = [
+        '',
+        'spam',
+        '# a comment',
+        'print("spam")',
+        'raise Exception("spam")',
+        """if True:
+            do_something()
+            """,
+        """if True:
+            def spam(x):
+                return x
+            class Spam:
+                def eggs(self):
+                    return 42
+            x = Spam().eggs()
+            raise ValueError(spam(x))
+            """,
+    ]
+    INVALID_SCRIPTS = [
+        '    pass',  # IndentationError
+        '----',  # SyntaxError
+        """if True:
+            def spam():
+                # no body
+            spam()
+            """,  # IndentationError
+    ]
+
+    def test_valid_str(self):
+        self.assert_roundtrip_not_equal([
+            *self.VALID_SCRIPTS,
+        ], expecttype=types.CodeType)
+
+    def test_invalid_str(self):
+        self.assert_not_shareable([
+            *self.INVALID_SCRIPTS,
+        ])
+
+    def test_valid_bytes(self):
+        self.assert_roundtrip_not_equal([
+            *(s.encode('utf8') for s in self.VALID_SCRIPTS),
+        ], expecttype=types.CodeType)
+
+    def test_invalid_bytes(self):
+        self.assert_not_shareable([
+            *(s.encode('utf8') for s in self.INVALID_SCRIPTS),
+        ])
+
+    def test_pure_script_code(self):
+        self.assert_roundtrip_equal_not_identical([
+            *(f.__code__ for f in defs.PURE_SCRIPT_FUNCTIONS),
+        ])
+
+    def test_impure_script_code(self):
+        self.assert_not_shareable([
+            *(f.__code__ for f in defs.SCRIPT_FUNCTIONS
+              if f not in defs.PURE_SCRIPT_FUNCTIONS),
+        ])
+
+    def test_other_code(self):
+        self.assert_not_shareable([
+            *(f.__code__ for f in defs.FUNCTIONS
+              if f not in defs.SCRIPT_FUNCTIONS),
+            *(f.__code__ for f in defs.FUNCTION_LIKE),
+        ])
+
+    def test_pure_script_function(self):
+        self.assert_roundtrip_not_equal([
+            *defs.PURE_SCRIPT_FUNCTIONS,
+        ], expecttype=types.CodeType)
+
+    def test_impure_script_function(self):
+        self.assert_not_shareable([
+            *(f for f in defs.SCRIPT_FUNCTIONS
+              if f not in defs.PURE_SCRIPT_FUNCTIONS),
+        ])
+
+    def test_other_function(self):
+        self.assert_not_shareable([
+            *(f for f in defs.FUNCTIONS
+              if f not in defs.SCRIPT_FUNCTIONS),
+            *defs.FUNCTION_LIKE,
+        ])
+
+    def test_other_objects(self):
+        self.assert_not_shareable([
+            None,
+            True,
+            False,
+            Ellipsis,
+            NotImplemented,
+            (),
+            [],
+            {},
+            object(),
+        ])
+
+
+class ShareableScriptTests(PureShareableScriptTests):
+
+    MODE = 'script'
+
+    def test_impure_script_code(self):
+        self.assert_roundtrip_equal_not_identical([
+            *(f.__code__ for f in defs.SCRIPT_FUNCTIONS
+              if f not in defs.PURE_SCRIPT_FUNCTIONS),
+        ])
+
+    def test_impure_script_function(self):
+        self.assert_roundtrip_not_equal([
+            *(f for f in defs.SCRIPT_FUNCTIONS
+              if f not in defs.PURE_SCRIPT_FUNCTIONS),
+        ], expecttype=types.CodeType)
+
+
 class ShareableTypeTests(_GetXIDataTests):
 
     MODE = 'xidata'

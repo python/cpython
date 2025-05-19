@@ -1,4 +1,3 @@
-
 #include "Python.h"
 
 #include "pycore_object.h"
@@ -34,6 +33,7 @@ make_table_entry(PyObject *obj, const char *filename, int linenumber)
     result->filename = filename;
     result->linenumber = linenumber;
     result->filename_borrow = NULL;
+    result->linenumber_borrow = 0;
     return result;
 }
 

@@ -4488,6 +4488,7 @@ class ThreadedTests(unittest.TestCase):
 
     @requires_tls_version('TLSv1_3')
     @unittest.skipUnless(ssl.HAS_PSK, 'TLS-PSK disabled on this OpenSSL build')
+    @unittest.skipUnless(ssl.HAS_PSK_TLS13, 'TLS 1.3 PSK disabled on this OpenSSL build')
     def test_psk_tls1_3(self):
         psk = bytes.fromhex('deadbeef')
         identity_hint = 'identity-hint'
