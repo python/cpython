@@ -1,0 +1,1 @@
+Use Python versioning in :program:`msgfmt` and :program:`pygettext`.

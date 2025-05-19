@@ -34,7 +34,7 @@ import array
 from email.parser import HeaderParser
 import codecs
 
-__version__ = "1.2"
+__version__ = "3.15"
 
 
 MESSAGES = {}
