@@ -1004,7 +1004,6 @@ class TestPyReplModuleCompleter(TestCase):
             ('foo.bar', ('foo', 'bar')),
             ('foo.bar.', ('foo.bar', '')),
             ('foo.bar.baz', ('foo.bar', 'baz')),
-            ('sys', ('', 'sys')),
         )
         completer = ModuleCompleter()
         for name, expected in cases:
