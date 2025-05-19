@@ -282,6 +282,9 @@ class Sniffer:
         """
         import re
 
+        # Remove lists from the data, see issue 119123
+        data = re.sub(r'\[.*?\]', '', data)
+
         matches = []
         for restr in (r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?P=delim)', # ,".*?",
                       r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?P<delim>[^\w\n"\'])(?P<space> ?)',   #  ".*?",
