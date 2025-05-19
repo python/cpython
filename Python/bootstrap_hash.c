@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_fstat_noraise()
 #include "pycore_initconfig.h"
+#include "pycore_pyhash.h"        // _Py_HashSecret_t
 #include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
 #include "pycore_runtime.h"       // _PyRuntime
 

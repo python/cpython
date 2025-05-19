@@ -8,7 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_lock.h"            // PyMutex
 #include "pycore_pyerrors.h"
 
 
@@ -58,7 +57,7 @@ struct _xidata {
     // likely a registered "xidatafunc", is responsible for
     // ensuring it owns the reference (i.e. incref).
     PyObject *obj;
-    // interp is the ID of the owning interpreter of the original
+    // interpid is the ID of the owning interpreter of the original
     // object.  It corresponds to the active interpreter when
     // _PyObject_GetXIData() was called.  This should only
     // be set by the cross-interpreter machinery.
@@ -94,41 +93,6 @@ PyAPI_FUNC(void) _PyXIData_Free(_PyXIData_t *data);
 // Users should not need getters for "new_object" or "free".
 
 
-/* getting cross-interpreter data */
-
-typedef int (*xidatafunc)(PyThreadState *tstate, PyObject *, _PyXIData_t *);
-
-typedef struct _xid_lookup_state _PyXIData_lookup_t;
-
-typedef struct {
-    _PyXIData_lookup_t *global;
-    _PyXIData_lookup_t *local;
-    PyObject *PyExc_NotShareableError;
-} _PyXIData_lookup_context_t;
-
-PyAPI_FUNC(int) _PyXIData_GetLookupContext(
-        PyInterpreterState *,
-        _PyXIData_lookup_context_t *);
-
-PyAPI_FUNC(xidatafunc) _PyXIData_Lookup(
-        _PyXIData_lookup_context_t *,
-        PyObject *);
-PyAPI_FUNC(int) _PyObject_CheckXIData(
-        _PyXIData_lookup_context_t *,
-        PyObject *);
-PyAPI_FUNC(int) _PyObject_GetXIData(
-        _PyXIData_lookup_context_t *,
-        PyObject *,
-        _PyXIData_t *);
-
-
-/* using cross-interpreter data */
-
-PyAPI_FUNC(PyObject *) _PyXIData_NewObject(_PyXIData_t *);
-PyAPI_FUNC(int) _PyXIData_Release(_PyXIData_t *);
-PyAPI_FUNC(int) _PyXIData_ReleaseAndRawFree(_PyXIData_t *);
-
-
 /* defining cross-interpreter data */
 
 PyAPI_FUNC(void) _PyXIData_Init(
@@ -139,7 +103,7 @@ PyAPI_FUNC(int) _PyXIData_InitWithSize(
         _PyXIData_t *,
         PyInterpreterState *interp, const size_t, PyObject *,
         xid_newobjfunc);
-PyAPI_FUNC(void) _PyXIData_Clear( PyInterpreterState *, _PyXIData_t *);
+PyAPI_FUNC(void) _PyXIData_Clear(PyInterpreterState *, _PyXIData_t *);
 
 // Normally the Init* functions are sufficient.  The only time
 // additional initialization might be needed is to set the "free" func,
@@ -148,6 +112,8 @@ PyAPI_FUNC(void) _PyXIData_Clear( PyInterpreterState *, _PyXIData_t *);
     do { \
         (DATA)->free = (FUNC); \
     } while (0)
+#define _PyXIData_CHECK_FREE(DATA, FUNC) \
+    ((DATA)->free == (FUNC))
 // Additionally, some shareable types are essentially light wrappers
 // around other shareable types.  The xidatafunc of the wrapper
 // can often be implemented by calling the wrapped object's
@@ -159,6 +125,94 @@ PyAPI_FUNC(void) _PyXIData_Clear( PyInterpreterState *, _PyXIData_t *);
     do { \
         (DATA)->new_object = (FUNC); \
     } while (0)
+#define _PyXIData_CHECK_NEW_OBJECT(DATA, FUNC) \
+    ((DATA)->new_object == (FUNC))
+
+
+/* getting cross-interpreter data */
+
+typedef int (*xidatafunc)(PyThreadState *tstate, PyObject *, _PyXIData_t *);
+
+PyAPI_FUNC(PyObject *) _PyXIData_GetNotShareableErrorType(PyThreadState *);
+PyAPI_FUNC(void) _PyXIData_SetNotShareableError(PyThreadState *, const char *);
+PyAPI_FUNC(void) _PyXIData_FormatNotShareableError(
+        PyThreadState *,
+        const char *,
+        ...);
+
+PyAPI_FUNC(xidatafunc) _PyXIData_Lookup(
+        PyThreadState *,
+        PyObject *);
+PyAPI_FUNC(int) _PyObject_CheckXIData(
+        PyThreadState *,
+        PyObject *);
+
+PyAPI_FUNC(int) _PyObject_GetXIData(
+        PyThreadState *,
+        PyObject *,
+        _PyXIData_t *);
+
+// _PyObject_GetXIData() for bytes
+typedef struct {
+    const char *bytes;
+    Py_ssize_t len;
+} _PyBytes_data_t;
+PyAPI_FUNC(int) _PyBytes_GetData(PyObject *, _PyBytes_data_t *);
+PyAPI_FUNC(PyObject *) _PyBytes_FromData(_PyBytes_data_t *);
+PyAPI_FUNC(PyObject *) _PyBytes_FromXIData(_PyXIData_t *);
+PyAPI_FUNC(int) _PyBytes_GetXIData(
+        PyThreadState *,
+        PyObject *,
+        _PyXIData_t *);
+PyAPI_FUNC(_PyBytes_data_t *) _PyBytes_GetXIDataWrapped(
+        PyThreadState *,
+        PyObject *,
+        size_t,
+        xid_newobjfunc,
+        _PyXIData_t *);
+
+// _PyObject_GetXIData() for pickle
+PyAPI_DATA(PyObject *) _PyPickle_LoadFromXIData(_PyXIData_t *);
+PyAPI_FUNC(int) _PyPickle_GetXIData(
+        PyThreadState *,
+        PyObject *,
+        _PyXIData_t *);
+
+// _PyObject_GetXIData() for marshal
+PyAPI_FUNC(PyObject *) _PyMarshal_ReadObjectFromXIData(_PyXIData_t *);
+PyAPI_FUNC(int) _PyMarshal_GetXIData(
+        PyThreadState *,
+        PyObject *,
+        _PyXIData_t *);
+
+// _PyObject_GetXIData() for code objects
+PyAPI_FUNC(PyObject *) _PyCode_FromXIData(_PyXIData_t *);
+PyAPI_FUNC(int) _PyCode_GetXIData(
+        PyThreadState *,
+        PyObject *,
+        _PyXIData_t *);
+PyAPI_FUNC(int) _PyCode_GetScriptXIData(
+        PyThreadState *,
+        PyObject *,
+        _PyXIData_t *);
+PyAPI_FUNC(int) _PyCode_GetPureScriptXIData(
+        PyThreadState *,
+        PyObject *,
+        _PyXIData_t *);
+
+// _PyObject_GetXIData() for functions
+PyAPI_FUNC(PyObject *) _PyFunction_FromXIData(_PyXIData_t *);
+PyAPI_FUNC(int) _PyFunction_GetXIData(
+        PyThreadState *,
+        PyObject *,
+        _PyXIData_t *);
+
+
+/* using cross-interpreter data */
+
+PyAPI_FUNC(PyObject *) _PyXIData_NewObject(_PyXIData_t *);
+PyAPI_FUNC(int) _PyXIData_Release(_PyXIData_t *);
+PyAPI_FUNC(int) _PyXIData_ReleaseAndRawFree(_PyXIData_t *);
 
 
 /* cross-interpreter data registry */
@@ -171,6 +225,8 @@ PyAPI_FUNC(void) _PyXIData_Clear( PyInterpreterState *, _PyXIData_t *);
 /*****************************/
 /* runtime state & lifecycle */
 /*****************************/
+
+typedef struct _xid_lookup_state _PyXIData_lookup_t;
 
 typedef struct {
     // builtin types

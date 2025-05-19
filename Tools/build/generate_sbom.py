@@ -1,14 +1,15 @@
 """Tool for generating Software Bill of Materials (SBOM) for Python's dependencies"""
-import os
-import re
+
+import glob
 import hashlib
 import json
-import glob
-from pathlib import Path, PurePosixPath, PureWindowsPath
+import os
+import re
 import subprocess
 import sys
-import urllib.request
 import typing
+import urllib.request
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 CPYTHON_ROOT_DIR = Path(__file__).parent.parent.parent
 
@@ -60,7 +61,7 @@ PACKAGE_TO_FILES = {
         exclude=[
             "Modules/expat/expat_config.h",
             "Modules/expat/pyexpatns.h",
-            "Modules/_hacl/refresh.sh",
+            "Modules/expat/refresh.sh",
         ]
     ),
     "macholib": PackageFiles(
@@ -250,7 +251,7 @@ def check_sbom_packages(sbom_data: dict[str, typing.Any]) -> None:
         license_concluded = package["licenseConcluded"]
         error_if(
             license_concluded != "NOASSERTION",
-            f"License identifier must be 'NOASSERTION'"
+            "License identifier must be 'NOASSERTION'"
         )
 
 

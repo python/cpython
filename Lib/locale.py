@@ -13,7 +13,6 @@ also includes default encodings for all supported locale names.
 import sys
 import encodings
 import encodings.aliases
-import re
 import _collections_abc
 from builtins import str as _builtin_str
 import functools
@@ -177,8 +176,7 @@ def _strip_padding(s, amount):
         amount -= 1
     return s[lpos:rpos+1]
 
-_percent_re = re.compile(r'%(?:\((?P<key>.*?)\))?'
-                         r'(?P<modifiers>[-#0-9 +*.hlL]*?)[eEfFgGdiouxXcrs%]')
+_percent_re = None
 
 def _format(percent, value, grouping=False, monetary=False, *additional):
     if additional:
@@ -217,6 +215,13 @@ def format_string(f, val, grouping=False, monetary=False):
     Grouping is applied if the third parameter is true.
     Conversion uses monetary thousands separator and grouping strings if
     forth parameter monetary is true."""
+    global _percent_re
+    if _percent_re is None:
+        import re
+
+        _percent_re = re.compile(r'%(?:\((?P<key>.*?)\))?(?P<modifiers'
+                                 r'>[-#0-9 +*.hlL]*?)[eEfFgGdiouxXcrs%]')
+
     percents = list(_percent_re.finditer(f))
     new_f = _percent_re.sub('%s', f)
 

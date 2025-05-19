@@ -204,6 +204,11 @@ aliases = {
     'csibm869'           : 'cp869',
     'ibm869'             : 'cp869',
 
+    # cp874 codec
+    '874'                : 'cp874',
+    'ms874'              : 'cp874',
+    'windows_874'        : 'cp874',
+
     # cp932 codec
     '932'                : 'cp932',
     'ms932'              : 'cp932',
@@ -241,6 +246,7 @@ aliases = {
     'ks_c_5601_1987'     : 'euc_kr',
     'ksx1001'            : 'euc_kr',
     'ks_x_1001'          : 'euc_kr',
+    'cseuckr'            : 'euc_kr',
 
     # gb18030 codec
     'gb18030_2000'       : 'gb18030',

@@ -8,8 +8,9 @@
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_MakePendingCalls()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 #include "pycore_pythread.h"      // _POSIX_THREADS
+#include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 
 #ifndef DONT_HAVE_STDIO_H
 #  include <stdio.h>

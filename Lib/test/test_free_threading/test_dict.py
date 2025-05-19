@@ -74,6 +74,7 @@ class TestDict(TestCase):
             last = -1
             while True:
                 if CUR == last:
+                    time.sleep(0.001)
                     continue
                 elif CUR == OBJECT_COUNT:
                     break

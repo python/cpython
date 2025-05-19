@@ -3,6 +3,7 @@
 import os
 import platform
 import shlex
+import sys
 import sysconfig
 from test import support
 
@@ -19,6 +20,17 @@ if not support.MS_WINDOWS:
         # warnings
         '-Werror',
     ]
+
+    CPPFLAGS_PEDANTIC = [
+        # Ask for strict(er) compliance with the standard.
+        # We cannot do this for c++03 unlimited API, since several headers in
+        # Include/cpython/ use commas at end of `enum` declarations, a C++11
+        # feature for which GCC has no narrower option than -Wpedantic itself.
+        '-pedantic-errors',
+
+        # We also use `long long`, a C++11 feature we can enable individually.
+        '-Wno-long-long',
+    ]
 else:
     # MSVC compiler flags
     CPPFLAGS = [
@@ -27,6 +39,7 @@ else:
         # Treat all compiler warnings as compiler errors
         '/WX',
     ]
+    CPPFLAGS_PEDANTIC = []
 
 
 def main():
@@ -44,6 +57,10 @@ def main():
             cppflags.append(f'/std:{std}')
         else:
             cppflags.append(f'-std={std}')
+
+        if limited or (std != 'c++03'):
+            # See CPPFLAGS_PEDANTIC docstring
+            cppflags.extend(CPPFLAGS_PEDANTIC)
 
     # gh-105776: When "gcc -std=11" is used as the C++ compiler, -std=c11
     # option emits a C++ compiler warning. Remove "-std11" option from the

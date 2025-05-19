@@ -1,12 +1,14 @@
 import inspect
 import os
 import posixpath
+import random
 import sys
 import unittest
 from posixpath import realpath, abspath, dirname, basename
+from test import support
 from test import test_genericpath
-from test.support import get_attribute, import_helper
-from test.support import cpython_only, os_helper
+from test.support import import_helper
+from test.support import os_helper
 from test.support.os_helper import FakePath
 from unittest import mock
 
@@ -227,6 +229,7 @@ class PosixPathTest(unittest.TestCase):
         finally:
             safe_rmdir(ABSTFN)
 
+    def test_ismount_invalid_paths(self):
         self.assertIs(posixpath.ismount('/\udfff'), False)
         self.assertIs(posixpath.ismount(b'/\xff'), False)
         self.assertIs(posixpath.ismount('/\x00'), False)
@@ -285,7 +288,7 @@ class PosixPathTest(unittest.TestCase):
         self.assertFalse(posixpath.isjunction(ABSTFN))
 
     @unittest.skipIf(sys.platform == 'win32', "Fast paths are not for win32")
-    @cpython_only
+    @support.cpython_only
     def test_fast_paths_in_use(self):
         # There are fast paths of these functions implemented in posixmodule.c.
         # Confirm that they are being used, and not the Python fallbacks
@@ -359,16 +362,23 @@ class PosixPathTest(unittest.TestCase):
                      "no home directory on VxWorks")
     def test_expanduser_pwd2(self):
         pwd = import_helper.import_module('pwd')
-        for all_entry in get_attribute(pwd, 'getpwall')():
-            name = all_entry.pw_name
-
+        getpwall = support.get_attribute(pwd, 'getpwall')
+        names = [entry.pw_name for entry in getpwall()]
+        maxusers = 1000 if support.is_resource_enabled('cpu') else 100
+        if len(names) > maxusers:
+            # Select random names, half of them with non-ASCII name,
+            # if available.
+            random.shuffle(names)
+            names.sort(key=lambda name: name.isascii())
+            del names[maxusers//2:-maxusers//2]
+        for name in names:
             # gh-121200: pw_dir can be different between getpwall() and
             # getpwnam(), so use getpwnam() pw_dir as expanduser() does.
             entry = pwd.getpwnam(name)
             home = entry.pw_dir
             home = home.rstrip('/') or '/'
 
-            with self.subTest(all_entry=all_entry, entry=entry):
+            with self.subTest(name=name, pw_dir=entry.pw_dir):
                 self.assertEqual(posixpath.expanduser('~' + name), home)
                 self.assertEqual(posixpath.expanduser(os.fsencode('~' + name)),
                                  os.fsencode(home))
@@ -479,6 +489,79 @@ class PosixPathTest(unittest.TestCase):
             self.assertRaises(FileNotFoundError, realpath, ABSTFN + "2", strict=True)
         finally:
             os_helper.unlink(ABSTFN)
+
+    def test_realpath_invalid_paths(self):
+        path = '/\x00'
+        self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(ValueError, realpath, path, strict=True)
+        path = b'/\x00'
+        self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(ValueError, realpath, path, strict=True)
+        path = '/nonexistent/x\x00'
+        self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+        path = b'/nonexistent/x\x00'
+        self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+        path = '/\x00/..'
+        self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(ValueError, realpath, path, strict=True)
+        path = b'/\x00/..'
+        self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(ValueError, realpath, path, strict=True)
+        path = '/nonexistent/x\x00/..'
+        self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+        path = b'/nonexistent/x\x00/..'
+        self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+
+        path = '/\udfff'
+        if sys.platform == 'win32':
+            self.assertEqual(realpath(path, strict=False), path)
+            self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+        else:
+            self.assertRaises(UnicodeEncodeError, realpath, path, strict=False)
+            self.assertRaises(UnicodeEncodeError, realpath, path, strict=True)
+        path = '/nonexistent/\udfff'
+        if sys.platform == 'win32':
+            self.assertEqual(realpath(path, strict=False), path)
+        else:
+            self.assertRaises(UnicodeEncodeError, realpath, path, strict=False)
+        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+        path = '/\udfff/..'
+        if sys.platform == 'win32':
+            self.assertEqual(realpath(path, strict=False), '/')
+            self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+        else:
+            self.assertRaises(UnicodeEncodeError, realpath, path, strict=False)
+            self.assertRaises(UnicodeEncodeError, realpath, path, strict=True)
+        path = '/nonexistent/\udfff/..'
+        if sys.platform == 'win32':
+            self.assertEqual(realpath(path, strict=False), '/nonexistent')
+        else:
+            self.assertRaises(UnicodeEncodeError, realpath, path, strict=False)
+        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+
+        path = b'/\xff'
+        if sys.platform == 'win32':
+            self.assertRaises(UnicodeDecodeError, realpath, path, strict=False)
+            self.assertRaises(UnicodeDecodeError, realpath, path, strict=True)
+        else:
+            self.assertEqual(realpath(path, strict=False), path)
+            if support.is_wasi:
+                self.assertRaises(OSError, realpath, path, strict=True)
+            else:
+                self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+        path = b'/nonexistent/\xff'
+        if sys.platform == 'win32':
+            self.assertRaises(UnicodeDecodeError, realpath, path, strict=False)
+        else:
+            self.assertEqual(realpath(path, strict=False), path)
+        if support.is_wasi:
+            self.assertRaises(OSError, realpath, path, strict=True)
+        else:
+            self.assertRaises(FileNotFoundError, realpath, path, strict=True)
 
     @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash

@@ -124,6 +124,11 @@ class BaseLockTests(BaseTestCase):
         lock = self.locktype()
         del lock
 
+    def test_constructor_noargs(self):
+        self.assertRaises(TypeError, self.locktype, 1)
+        self.assertRaises(TypeError, self.locktype, x=1)
+        self.assertRaises(TypeError, self.locktype, 1, x=2)
+
     def test_repr(self):
         lock = self.locktype()
         self.assertRegex(repr(lock), "<unlocked .* object (.*)?at .*>")
@@ -352,6 +357,18 @@ class RLockTests(BaseLockTests):
         lock.release()
         lock.release()
         self.assertRaises(RuntimeError, lock.release)
+
+    def test_locked(self):
+        lock = self.locktype()
+        self.assertFalse(lock.locked())
+        lock.acquire()
+        self.assertTrue(lock.locked())
+        lock.acquire()
+        self.assertTrue(lock.locked())
+        lock.release()
+        self.assertTrue(lock.locked())
+        lock.release()
+        self.assertFalse(lock.locked())
 
     def test_release_save_unacquired(self):
         # Cannot _release_save an unacquired lock
