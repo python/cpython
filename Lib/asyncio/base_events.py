@@ -1645,6 +1645,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             # Skip one loop iteration so that all 'loop.add_reader'
             # go through.
             await tasks.sleep(0)
+            # Proactor loop needs one loop iteration to start the serving loop first.
+            await tasks.sleep(0)
 
         if self._debug:
             logger.info("%r is serving", server)
