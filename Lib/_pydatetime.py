@@ -502,6 +502,8 @@ def _parse_isoformat_time(tstr):
             tzsign = -1 if tstr[tz_pos - 1] == '-' else 1
 
             try:
+                # This function is intended to validate datetimes, but because
+                # we restrict time zones to ±24h, it serves here as well.
                 _check_time_fields(hour=tz_comps[0], minute=tz_comps[1],
                                    second=tz_comps[2], microsecond=tz_comps[3],
                                    fold=0)
@@ -1647,7 +1649,7 @@ class time:
                 raise error_from_tz
             if error_from_components:
                 raise ValueError(
-                    "minute, second, and microsecond must be 0 when hour is 24"
+                    "Minute, second, and microsecond must be 0 when hour is 24"
                 )
 
             return cls(*time_components)

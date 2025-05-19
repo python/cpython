@@ -1135,7 +1135,7 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
     rv = parse_hh_mm_ss_ff(tzinfo_pos, p_end, &tzhour, &tzminute, &tzsecond,
                            tzmicrosecond);
 
-    // Check if Timezone fields are in range
+    // Check if timezone fields are in range
     if (check_time_args(tzhour, tzminute, tzsecond, *tzmicrosecond, 0) < 0) {
         return -6;
     }
