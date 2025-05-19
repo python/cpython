@@ -1,1 +1,1 @@
-Made curses `instr` method to allocate buffer on heap instead of on stack. Incremented the max buffer size to 2047 instead of 1023.
+Made curses ``instr`` method to allocate buffer on heap instead of on stack. Incremented the max buffer size to 2047 instead of 1023.
