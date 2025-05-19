@@ -752,6 +752,22 @@ lookup_tp_subclasses(PyTypeObject *self)
     return (PyObject *)self->tp_subclasses;
 }
 
+PyObject *
+_PyType_LookupSubclasses(PyTypeObject *self)
+{
+    return lookup_tp_subclasses(self);
+}
+
+PyObject *
+_PyType_InitSubclasses(PyTypeObject *self)
+{
+    PyObject *existing = lookup_tp_subclasses(self);
+    if (existing != NULL) {
+        return existing;
+    }
+    return init_tp_subclasses(self);
+}
+
 int
 _PyType_HasSubclasses(PyTypeObject *self)
 {
