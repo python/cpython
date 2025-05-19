@@ -1,1 +1,2 @@
-Change :func:`datetime.now` to half-even rounding for consistency with :func:`datetime.fromtimestamp`.
+Change :func:`datetime.datetime.now` to half-even rounding for
+consistency with :func:`datetime.datetime.fromtimestamp`.
