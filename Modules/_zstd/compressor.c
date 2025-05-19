@@ -157,8 +157,6 @@ _get_CDict(ZstdDict *self, int compressionLevel)
     PyObject *capsule;
     ZSTD_CDict *cdict;
 
-    // TODO(emmatyping): refactor critical section code into a lock_held function
-    Py_BEGIN_CRITICAL_SECTION(self);
 
     /* int level object */
     level = PyLong_FromLong(compressionLevel);
@@ -216,7 +214,6 @@ error:
     cdict = NULL;
 success:
     Py_XDECREF(level);
-    Py_END_CRITICAL_SECTION();
     return cdict;
 }
 
