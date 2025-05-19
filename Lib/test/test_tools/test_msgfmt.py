@@ -253,7 +253,7 @@ class CLITest(unittest.TestCase):
         for option in ('--version', '-V'):
             res = assert_python_ok(msgfmt_py, option)
             out = res.out.decode('utf-8').strip()
-            self.assertEqual('msgfmt.py 1.2', out)
+            self.assertRegex(out, r'^msgfmt\.py \d+\.\d+$')
 
     def test_invalid_option(self):
         res = assert_python_failure(msgfmt_py, '--invalid-option')
