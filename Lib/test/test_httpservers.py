@@ -1378,11 +1378,10 @@ class CommandLineTestCase(unittest.TestCase):
             for tls_key_option in self.tls_key_options:
                 self.invoke_httpd(tls_cert_option, self.tls_cert,
                                   tls_key_option, self.tls_key)
-                call_args = {
+                call_args = self.args | {
                     'tls_cert': self.tls_cert,
                     'tls_key': self.tls_key,
                 }
-                call_args = self.args | call_args
                 mock_func.assert_called_once_with(**call_args)
                 mock_func.reset_mock()
 
