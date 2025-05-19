@@ -1451,7 +1451,7 @@ class CommandLineTestCase(unittest.TestCase):
         stdout, stderr = StringIO(), StringIO()
         with self.assertRaises(SystemExit):
             self.invoke_httpd('--unknown-flag', stdout=stdout, stderr=stderr)
-        self.assertEqual('', stdout.getvalue())
+        self.assertEqual(stdout.getvalue(), '')
         self.assertIn('error', stderr.getvalue())
 
 class CommandLineRunTimeTestCase(unittest.TestCase):
