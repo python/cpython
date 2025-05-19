@@ -1444,7 +1444,7 @@ class CommandLineTestCase(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 self.invoke_httpd(option, stdout=stdout, stderr=stderr)
             self.assertIn('usage', stdout.getvalue())
-            self.assertEqual('', stderr.getvalue())
+            self.assertEqual(stderr.getvalue(), '')
 
     @mock.patch('http.server.test')
     def test_unknown_flag(self, _):
