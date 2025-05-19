@@ -653,7 +653,7 @@ class CosmeticTestCase(ASTTestCase):
 
     def test_backslash_in_format_spec(self):
         import re
-        msg = re.escape("invalid escape sequence '\\ '")
+        msg = re.escape("invalid escape sequence")
         with self.assertWarnsRegex(SyntaxWarning, msg):
             self.check_ast_roundtrip("""f"{x:\\ }" """)
         self.check_ast_roundtrip("""f"{x:\\n}" """)

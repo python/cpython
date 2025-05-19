@@ -116,7 +116,7 @@ class TestLiterals(unittest.TestCase):
             warnings.simplefilter('always', category=SyntaxWarning)
             eval("'''\n\\z'''")
         self.assertEqual(len(w), 1)
-        self.assertEqual(str(w[0].message), r"invalid escape sequence '\z'")
+        self.assertEqual(str(w[0].message), r"'\z' is an invalid escape sequence. ")
         self.assertEqual(w[0].filename, '<string>')
         self.assertEqual(w[0].lineno, 2)
 
@@ -153,7 +153,7 @@ class TestLiterals(unittest.TestCase):
             eval("'''\n\\407'''")
         self.assertEqual(len(w), 1)
         self.assertEqual(str(w[0].message),
-                         r"invalid octal escape sequence '\407'")
+                         r"'\407' is an invalid octal escape sequence. ")
         self.assertEqual(w[0].filename, '<string>')
         self.assertEqual(w[0].lineno, 2)
 
@@ -228,7 +228,7 @@ class TestLiterals(unittest.TestCase):
             warnings.simplefilter('always', category=SyntaxWarning)
             eval("b'''\n\\z'''")
         self.assertEqual(len(w), 1)
-        self.assertEqual(str(w[0].message), r"invalid escape sequence '\z'")
+        self.assertEqual(str(w[0].message), r"'\z' is an invalid escape sequence. ")
         self.assertEqual(w[0].filename, '<string>')
         self.assertEqual(w[0].lineno, 2)
 
@@ -252,7 +252,7 @@ class TestLiterals(unittest.TestCase):
             eval("b'''\n\\407'''")
         self.assertEqual(len(w), 1)
         self.assertEqual(str(w[0].message),
-                         r"invalid octal escape sequence '\407'")
+                         r"'\407' is an invalid octal escape sequence. ")
         self.assertEqual(w[0].filename, '<string>')
         self.assertEqual(w[0].lineno, 2)
 

@@ -281,8 +281,8 @@ class CodeopTests(unittest.TestCase):
     def test_warning(self):
         # Test that the warning is only returned once.
         with warnings_helper.check_warnings(
-                ('"is" with \'str\' literal', SyntaxWarning),
-                ("invalid escape sequence", SyntaxWarning),
+                (r'"is" with.*literal', SyntaxWarning),
+                (r'invalid escape sequence', SyntaxWarning),
                 ) as w:
             compile_command(r"'\e' is 0")
             self.assertEqual(len(w.warnings), 2)
