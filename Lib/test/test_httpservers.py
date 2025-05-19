@@ -1478,21 +1478,22 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
             return res.read()
 
     def parse_cli_output(self, output):
-        matches = re.search(r'\((https?)://([^/:]+):(\d+)/?\)', output)
+        matches = re.search(r'\((https?)://(\[::\]|[^/:]+):(\d+)/?\)', output)
         if matches is None:
             return None, None, None
         return matches.group(1), matches.group(2), int(matches.group(3))
 
     def wait_for_server(self, proc, protocol, port):
         """Extract the server bind address once it has been started."""
-        line = proc.stdout.readline()
+        line = proc.stdout.readline().strip()
         if support.verbose:
             print()
-            print('python -m http.server: ', line, end='')
+            print('python -m http.server: ', line)
         parsed_protocol, host, parsed_port = self.parse_cli_output(line)
         if protocol == parsed_protocol and parsed_port == port:
             return host
-        print("failed to start HTTP(s) server. Output was:", repr(line))
+        print("failed to start HTTP(s) server. Output was:")
+        print("\n".join([line, proc.stdout.readline().rstrip()]))
         return None
 
     def test_http_client(self):
