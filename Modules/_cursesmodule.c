@@ -386,6 +386,19 @@ _PyCursesStatefulCheckFunction(PyObject *module,
 
 /* Utility Functions */
 
+#ifdef Py_DEBUG
+#define curses_assert_success(CODE, CURSES_FUNCNAME, PYTHON_FUNCNAME)       \
+    do {                                                                    \
+        if (CODE != OK) {                                                   \
+            PyErr_Format("%s (called by %s()) returned %d instead of %d",   \
+                         CURSES_FUNCNAME, PYTHON_FUNCNAME, CODE, OK);       \
+            return NULL;                                                    \
+        }                                                                   \
+    } while (0)
+#else
+#define curses_assert_success(_code, _curses_funcname, _python_funcname)
+#endif
+
 /*
  * Check the return code from a curses function, returning None
  * on success and setting an exception on error.
@@ -402,7 +415,7 @@ curses_check_err(PyObject *module, int code,
                  const char *python_funcname)
 {
     if (code != ERR) {
-        assert(code == OK);
+        curses_assert_success(code, curses_funcname, python_funcname);
         Py_RETURN_NONE;
     }
     curses_set_error(module, curses_funcname, python_funcname);
@@ -416,7 +429,7 @@ curses_window_check_err(PyCursesWindowObject *win, int code,
                         const char *python_funcname)
 {
     if (code != ERR) {
-        assert(code == OK);
+        curses_assert_success(code, curses_funcname, python_funcname);
         Py_RETURN_NONE;
     }
     curses_window_set_error(win, curses_funcname, python_funcname);
