@@ -959,6 +959,26 @@ class TestPyReplModuleCompleter(TestCase):
                 output = reader.readline()
                 self.assertEqual(output, expected)
 
+    def test_builtin_completion_top_level(self):
+        import importlib
+        # Make iter_modules() search only the standard library.
+        # This makes the test more reliable in case there are
+        # other user packages/scripts on PYTHONPATH which can
+        # intefere with the completions.
+        lib_path = os.path.dirname(importlib.__path__[0])
+        sys.path = [lib_path]
+
+        cases = (
+            ("import bui\t\n", "import builtins"),
+            ("from bui\t\n", "from builtins"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
     def test_relative_import_completions(self):
         cases = (
             ("from .readl\t\n", "from .readline"),
