@@ -1455,17 +1455,17 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertIn('error', stderr.getvalue())
 
 class CommandLineRunTimeTestCase(unittest.TestCase):
-    random_data = os.urandom(32)
-    random_file_name = 'served_filename'
+    served_data = os.urandom(32)
+    served_file_name = 'served_filename'
     tls_cert = certdata_file('ssl_cert.pem')
     tls_key = certdata_file('ssl_key.pem')
     tls_password = 'somepass'
 
     def setUp(self):
         super().setUp()
-        with open(self.random_file_name, 'wb') as f:
-            f.write(self.random_data)
-        self.addCleanup(os_helper.unlink, self.random_file_name)
+        with open(self.served_file_name, 'wb') as f:
+            f.write(self.served_data)
+        self.addCleanup(os_helper.unlink, self.served_file_name)
         self.tls_password_file = tempfile.mktemp()
         with open(self.tls_password_file, 'wb') as f:
             f.write(self.tls_password.encode())
@@ -1489,7 +1489,7 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
     def wait_for_server(self, proc, protocol, port, bind, timeout=50):
         """Check the server process output.
 
-        Return True if the server was successfully started 
+        Return True if the server was successfully started
         and is listening on the given port and bind address.
         """
         while timeout > 0:
@@ -1516,8 +1516,8 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         self.addCleanup(kill_python, proc)
         self.addCleanup(proc.terminate)
         self.assertTrue(self.wait_for_server(proc, 'http', port, bind))
-        res = self.fetch_file(f'http://{bind}:{port}/{self.random_file_name}')
-        self.assertEqual(res, self.random_data)
+        res = self.fetch_file(f'http://{bind}:{port}/{self.served_file_name}')
+        self.assertEqual(res, self.served_data)
 
     def test_https_client(self):
         port = find_unused_port()
@@ -1530,8 +1530,8 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         self.addCleanup(kill_python, proc)
         self.addCleanup(proc.terminate)
         self.assertTrue(self.wait_for_server(proc, 'https', port, bind))
-        res = self.fetch_file(f'https://{bind}:{port}/{self.random_file_name}')
-        self.assertEqual(res, self.random_data)
+        res = self.fetch_file(f'https://{bind}:{port}/{self.served_file_name}')
+        self.assertEqual(res, self.served_data)
 
 
 def setUpModule():
