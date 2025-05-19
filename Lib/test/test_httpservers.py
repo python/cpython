@@ -1472,14 +1472,6 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
             f.write(self.tls_password.encode())
         self.addCleanup(os_helper.unlink, self.tls_password_file)
 
-    @unittest.skipIf(ssl is None, "requires ssl")
-    def get_ssl_context(self):
-        context = ssl.create_default_context()
-        # allow self-signed certificates
-        context.check_hostname = False
-        context.verify_mode = ssl.CERT_NONE
-        return context
-
     def fetch_file(self, path, context=None):
         req = urllib.request.Request(path, method='GET')
         with urllib.request.urlopen(req, context=context) as res:
@@ -1515,7 +1507,13 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         res = self.fetch_file(f'http://{bind}:{port}/{self.served_file_name}')
         self.assertEqual(res, self.served_data)
 
+    @unittest.skipIf(ssl is None, "requires ssl")
     def test_https_client(self):
+        context = ssl.create_default_context()
+        # allow self-signed certificates
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+
         port = find_unused_port()
         proc = spawn_python('-u', '-m', 'http.server', str(port),
                             '--tls-cert', self.tls_cert,
@@ -1527,7 +1525,7 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         bind = self.wait_for_server(proc, 'https', port)
         self.assertIsNotNone(bind)
         url = f'https://{bind}:{port}/{self.served_file_name}'
-        res = self.fetch_file(url, context=self.get_ssl_context())
+        res = self.fetch_file(url, context=context)
         self.assertEqual(res, self.served_data)
 
 
