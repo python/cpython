@@ -44,7 +44,7 @@ package instead.
 .. _base_64_rfc_4648:
 
 RFC 4648 Encodings
-^^^^^^^^^^^^^^^^^^
+------------------
 
 The :rfc:`4648` encodings are suitable for encoding binary data so that it can be
 safely sent by email, used as parts of URLs, or included as part of an HTTP
@@ -187,7 +187,7 @@ POST request.  The encoding algorithm is not the same as the
 .. _base_64_base_85:
 
 Base 85 Encodings
-^^^^^^^^^^^^^^^^^
+-----------------
 
 Base-85 encoding is not formally specified. Base-85 encoding is a de facto standard
 originating from the ASCII Base-85 Strings encoding defined by the
@@ -290,7 +290,7 @@ Refer to the documentation of the individual functions for more information.
 .. _base_64_legacy:
 
 Legacy Interface
-^^^^^^^^^^^^^^^^
+----------------
 
 .. function:: decode(input, output)
 
