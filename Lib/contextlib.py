@@ -171,8 +171,7 @@ class _GeneratorContextManager(
                 # like a normal function we set the current exception context
                 # to what it was during the context manager's __enter__
                 # (see gh-111676).
-                sys._set_exception(exc_context)
-                self.gen.throw(value)
+                self.gen.throw(value, exc_context=exc_context)
             except StopIteration as exc:
                 # Suppress StopIteration *unless* it's the same exception that
                 # was passed to throw().  This prevents a StopIteration

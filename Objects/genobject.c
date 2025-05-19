@@ -452,8 +452,8 @@ gen_close(PyObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(throw_doc,
-"throw(value)\n\
-throw(type[,value[,tb]])\n\
+"throw(value, /, *, exc_context=None)\n\
+throw(type[,value[,tb]], /, *, exc_context=None)\n\
 \n\
 Raise exception in generator, return next yielded value or raise\n\
 StopIteration.\n\
@@ -592,14 +592,22 @@ failed_throw:
     return NULL;
 }
 
+/*
+throw(...) method of builtins.generator instance
+    throw(value, /, *, exc_context=None)
+    throw(type[,value[,tb]], /, *, exc_context=None)
 
+    Raise exception in generator, return next yielded value or raise
+    StopIteration.
+*/
 static PyObject *
-gen_throw(PyObject *op, PyObject *const *args, Py_ssize_t nargs)
+gen_throw(PyObject *op, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyGenObject *gen = _PyGen_CAST(op);
     PyObject *typ;
     PyObject *tb = NULL;
     PyObject *val = NULL;
+    PyObject *exc_context = NULL;
 
     if (!_PyArg_CheckPositional("throw", nargs, 1, 3)) {
         return NULL;
@@ -612,6 +620,18 @@ gen_throw(PyObject *op, PyObject *const *args, Py_ssize_t nargs)
             return NULL;
         }
     }
+
+    static const char * const _keywords[] = {"", "", "", "exc_context", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "throw",
+    };
+    PyObject *argsbuf[4];
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, 1, argsbuf);
+    if (!args) {
+        return NULL;
+    }
+
     typ = args[0];
     if (nargs == 3) {
         val = args[1];
@@ -620,6 +640,17 @@ gen_throw(PyObject *op, PyObject *const *args, Py_ssize_t nargs)
     else if (nargs == 2) {
         val = args[1];
     }
+
+    if (kwnames && PyTuple_GET_SIZE(kwnames)){
+        exc_context = args[3];
+        if (!Py_IsNone(exc_context) && !PyExceptionInstance_Check(exc_context)){
+            PyErr_SetString(PyExc_TypeError, "exc_context must be an Exception object or None");
+            return NULL;
+        }
+    }
+    // update the generator's current exception context before throwing the
+    // exception into it
+    PyErr_SetHandledException(exc_context == NULL ? Py_None : exc_context);
     return _gen_throw(gen, 1, typ, val, tb);
 }
 
@@ -841,7 +872,7 @@ PyDoc_STRVAR(sizeof__doc__,
 
 static PyMethodDef gen_methods[] = {
     {"send", gen_send, METH_O, send_doc},
-    {"throw", _PyCFunction_CAST(gen_throw), METH_FASTCALL, throw_doc},
+    {"throw", _PyCFunction_CAST(gen_throw), METH_FASTCALL|METH_KEYWORDS, throw_doc},
     {"close", gen_close, METH_NOARGS, close_doc},
     {"__sizeof__", gen_sizeof, METH_NOARGS, sizeof__doc__},
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
@@ -1187,8 +1218,8 @@ PyDoc_STRVAR(coro_send_doc,
 return next iterated value or raise StopIteration.");
 
 PyDoc_STRVAR(coro_throw_doc,
-"throw(value)\n\
-throw(type[,value[,traceback]])\n\
+"throw(value, /, *, exc_context=None)\n\
+throw(type[,value[,tb]], *, exc_context=None)\n\
 \n\
 Raise exception in coroutine, return next iterated value or raise\n\
 StopIteration.\n\
@@ -1201,7 +1232,7 @@ PyDoc_STRVAR(coro_close_doc,
 
 static PyMethodDef coro_methods[] = {
     {"send", gen_send, METH_O, coro_send_doc},
-    {"throw",_PyCFunction_CAST(gen_throw), METH_FASTCALL, coro_throw_doc},
+    {"throw", _PyCFunction_CAST(gen_throw), METH_FASTCALL|METH_KEYWORDS, coro_throw_doc},
     {"close", gen_close, METH_NOARGS, coro_close_doc},
     {"__sizeof__", gen_sizeof, METH_NOARGS, sizeof__doc__},
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
@@ -1291,10 +1322,10 @@ coro_wrapper_send(PyObject *self, PyObject *arg)
 }
 
 static PyObject *
-coro_wrapper_throw(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+coro_wrapper_throw(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyCoroWrapper *cw = _PyCoroWrapper_CAST(self);
-    return gen_throw((PyObject*)cw->cw_coroutine, args, nargs);
+    return gen_throw((PyObject*)cw->cw_coroutine, args, nargs, kwnames);
 }
 
 static PyObject *
@@ -1314,8 +1345,8 @@ coro_wrapper_traverse(PyObject *self, visitproc visit, void *arg)
 
 static PyMethodDef coro_wrapper_methods[] = {
     {"send", coro_wrapper_send, METH_O, coro_send_doc},
-    {"throw", _PyCFunction_CAST(coro_wrapper_throw), METH_FASTCALL,
-     coro_throw_doc},
+    {"throw", _PyCFunction_CAST(coro_wrapper_throw),
+    METH_FASTCALL|METH_KEYWORDS, coro_throw_doc},
     {"close", coro_wrapper_close, METH_NOARGS, coro_close_doc},
     {NULL, NULL}        /* Sentinel */
 };
@@ -1827,7 +1858,7 @@ async_gen_asend_iternext(PyObject *ags)
 
 
 static PyObject *
-async_gen_asend_throw(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+async_gen_asend_throw(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyAsyncGenASend *o = _PyAsyncGenASend_CAST(self);
 
@@ -1851,7 +1882,7 @@ async_gen_asend_throw(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         o->ags_gen->ag_running_async = 1;
     }
 
-    PyObject *result = gen_throw((PyObject*)o->ags_gen, args, nargs);
+    PyObject *result = gen_throw((PyObject*)o->ags_gen, args, nargs, kwnames);
     result = async_gen_unwrap_value(o->ags_gen, result);
 
     if (result == NULL) {
@@ -1871,7 +1902,7 @@ async_gen_asend_close(PyObject *self, PyObject *args)
         Py_RETURN_NONE;
     }
 
-    PyObject *result = async_gen_asend_throw(self, &PyExc_GeneratorExit, 1);
+    PyObject *result = async_gen_asend_throw(self, &PyExc_GeneratorExit, 1, NULL);
     if (result == NULL) {
         if (PyErr_ExceptionMatches(PyExc_StopIteration) ||
             PyErr_ExceptionMatches(PyExc_StopAsyncIteration) ||
@@ -1899,7 +1930,8 @@ async_gen_asend_finalize(PyObject *self)
 
 static PyMethodDef async_gen_asend_methods[] = {
     {"send", async_gen_asend_send, METH_O, send_doc},
-    {"throw", _PyCFunction_CAST(async_gen_asend_throw), METH_FASTCALL, throw_doc},
+    {"throw", _PyCFunction_CAST(async_gen_asend_throw),
+    METH_FASTCALL|METH_KEYWORDS, throw_doc},
     {"close", async_gen_asend_close, METH_NOARGS, close_doc},
     {NULL, NULL}        /* Sentinel */
 };
@@ -2227,7 +2259,7 @@ check_error:
 
 
 static PyObject *
-async_gen_athrow_throw(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+async_gen_athrow_throw(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyAsyncGenAThrow *o = _PyAsyncGenAThrow_CAST(self);
 
@@ -2258,7 +2290,7 @@ async_gen_athrow_throw(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         o->agt_gen->ag_running_async = 1;
     }
 
-    PyObject *retval = gen_throw((PyObject*)o->agt_gen, args, nargs);
+    PyObject *retval = gen_throw((PyObject*)o->agt_gen, args, nargs, kwnames);
     if (o->agt_args) {
         retval = async_gen_unwrap_value(o->agt_gen, retval);
         if (retval == NULL) {
@@ -2311,7 +2343,7 @@ async_gen_athrow_close(PyObject *self, PyObject *args)
         Py_RETURN_NONE;
     }
     PyObject *result = async_gen_athrow_throw((PyObject*)agt,
-                                              &PyExc_GeneratorExit, 1);
+                                              &PyExc_GeneratorExit, 1, NULL);
     if (result == NULL) {
         if (PyErr_ExceptionMatches(PyExc_StopIteration) ||
             PyErr_ExceptionMatches(PyExc_StopAsyncIteration) ||
@@ -2342,7 +2374,7 @@ async_gen_athrow_finalize(PyObject *op)
 static PyMethodDef async_gen_athrow_methods[] = {
     {"send", async_gen_athrow_send, METH_O, send_doc},
     {"throw", _PyCFunction_CAST(async_gen_athrow_throw),
-    METH_FASTCALL, throw_doc},
+    METH_FASTCALL|METH_KEYWORDS, throw_doc},
     {"close", async_gen_athrow_close, METH_NOARGS, close_doc},
     {NULL, NULL}        /* Sentinel */
 };
