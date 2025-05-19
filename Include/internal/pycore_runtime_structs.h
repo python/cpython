@@ -223,6 +223,9 @@ struct pyruntimestate {
     struct _pythread_runtime_state threads;
     struct _signals_runtime_state signals;
 
+    /* Used instead of PyThreadState.trash when there is not current tstate. */
+    Py_tss_t trashTSSkey;
+
     PyWideStringList orig_argv;
 
     struct _parser_runtime_state parser;
