@@ -1454,6 +1454,7 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertEqual(stdout.getvalue(), '')
         self.assertIn('error', stderr.getvalue())
 
+
 class CommandLineRunTimeTestCase(unittest.TestCase):
     served_data = os.urandom(32)
     served_file_name = 'served_filename'
