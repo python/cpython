@@ -30,11 +30,10 @@ def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
             print(FAIL_REASON, file=sys.stderr)
         return sys._baserepl()
 
-    if mainmodule:
-        namespace = mainmodule.__dict__
-    else:
-        __main__ = types.ModuleType("__main__")
-        namespace = __main__.__dict__
+    if not mainmodule:
+        mainmodule = types.ModuleType("__main__")
+
+    namespace = mainmodule.__dict__
 
     # sys._baserepl() above does this internally, we do it here
     startup_path = os.getenv("PYTHONSTARTUP")
