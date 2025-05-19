@@ -1002,7 +1002,11 @@ _curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1,
     type = PyCurses_ConvertToCchar_t(self, ch, &cch, wstr);
     if (type == 2) {
         wstr[1] = L'\0';
-        setcchar(&wcval, wstr, attr, PAIR_NUMBER(attr), NULL);
+        rtn = setcchar(&wcval, wstr, attr, PAIR_NUMBER(attr), NULL);
+        if (rtn == ERR) {
+            curses_window_set_error(self, "setcchar", "addch");
+            return NULL;
+        }
         if (coordinates_group) {
             rtn = mvwadd_wch(self->win,y,x, &wcval);
             funcname = "mvwadd_wch";
