@@ -905,14 +905,12 @@ dummy_func(void) {
             // known types, meaning we can deduce either True or False
 
             // The below check is equivalent to PyObject_TypeCheck(inst, cls)
+            PyObject *out = Py_False;
             if (inst_type == cls_o || PyType_IsSubtype(inst_type, cls_o)) {
-                sym_set_const(res, Py_True);
-                REPLACE_OP(this_instr, _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
+                out = Py_True;
             }
-            else {
-                sym_set_const(res, Py_False);
-                REPLACE_OP(this_instr, _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_False);
-            }
+            sym_set_const(res, out);
+            REPLACE_OP(this_instr, _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
         }
     }
 
