@@ -35,6 +35,7 @@ from test.support import (
     is_apple, import_helper, os_helper, threading_helper
 )
 from test.support.script_helper import kill_python, spawn_python
+from test.support.socket_helper import find_unused_port
 
 try:
     import ssl
@@ -1490,7 +1491,7 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
             return None, None, None
         return matches.group(1), matches.group(2), int(matches.group(3))
 
-    def wait_for_server(self, proc, protocol):
+    def wait_for_server(self, proc, protocol, port):
         """Check the server process output."""
         for _ in range(10):
             line = proc.stdout.readline()
@@ -1499,32 +1500,32 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
                 continue
             if support.verbose > 1:
                 print(line)
-            parsed_protocol, host, port = self.parse_cli_output(line)
-            if protocol == parsed_protocol:
-                return host, port
-        return None, None
+            parsed_protocol, host, parsed_port = self.parse_cli_output(line)
+            if protocol == parsed_protocol and parsed_port == port:
+                return host
+        return None
 
     def test_http_client(self):
-        proc = spawn_python('-u', '-m', 'http.server', text=True)
+        port = find_unused_port()
+        proc = spawn_python('-u', '-m', 'http.server', str(port), text=True)
         self.addCleanup(kill_python, proc)
         self.addCleanup(proc.terminate)
-        bind, port = self.wait_for_server(proc, 'http')
+        bind = self.wait_for_server(proc, 'http', port)
         self.assertIsNotNone(bind)
-        self.assertIsNotNone(port)
         res = self.fetch_file(f'http://{bind}:{port}/{self.served_file_name}')
         self.assertEqual(res, self.served_data)
 
     def test_https_client(self):
-        proc = spawn_python('-u', '-m', 'http.server',
+        port = find_unused_port()
+        proc = spawn_python('-u', '-m', 'http.server', str(port),
                             '--tls-cert', self.tls_cert,
                             '--tls-key', self.tls_key,
                             '--tls-password-file', self.tls_password_file,
                             text=True)
         self.addCleanup(kill_python, proc)
         self.addCleanup(proc.terminate)
-        bind, port = self.wait_for_server(proc, 'https')
+        bind = self.wait_for_server(proc, 'https', port)
         self.assertIsNotNone(bind)
-        self.assertIsNotNone(port)
         url = f'https://{bind}:{port}/{self.served_file_name}'
         res = self.fetch_file(url, context=self.get_ssl_context())
         self.assertEqual(res, self.served_data)
