@@ -101,9 +101,8 @@ class ModuleCompleter:
 
     def _is_suggestion_match(self, module_name: str, prefix: str) -> bool:
         """
-        Filter the modules returned by the autocompletion
-
-        The private modules (start with _) are only returned if explicitly specified
+        Return True if the module name matches the prefix or if no prefix is specified.
+        Return False if the name is private (starts with _) and no prefix is specified
         """
         if prefix:
             return module_name.startswith(prefix)
