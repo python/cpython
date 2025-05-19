@@ -1078,7 +1078,8 @@ the following methods and attributes:
    Return a bytes object of characters, extracted from the window starting at the
    current cursor position, or at *y*, *x* if specified. Attributes are stripped
    from the characters.  If *n* is specified, :meth:`instr` returns a string
-   at most *n* characters long (exclusive of the trailing NUL).
+   at most *n* characters long (exclusive of the trailing NUL). The maximum of *n*
+   for this method is 2047.
 
 
 .. method:: window.is_linetouched(line)
