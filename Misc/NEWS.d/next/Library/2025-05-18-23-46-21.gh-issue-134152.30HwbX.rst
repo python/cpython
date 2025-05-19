@@ -1,1 +1,1 @@
-Fix parsing of emails message_id with invalid domain.
+:mod:`email`: Fix parsing of emails message ID with invalid domain.
