@@ -22,7 +22,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="echo commands as they are run"
     )
+    parser.add_argument(
+        "--with-cflags", help="additional flags to pass to the compiler", default=""
+    )
     args = parser.parse_args()
     args.target.debug = args.debug
     args.target.verbose = args.verbose
+    args.target.cflags = args.with_cflags
     args.target.build(pathlib.Path.cwd(), comment=comment, force=args.force)

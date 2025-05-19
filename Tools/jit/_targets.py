@@ -7,6 +7,7 @@ import json
 import os
 import pathlib
 import re
+import shlex
 import sys
 import tempfile
 import typing
@@ -42,6 +43,7 @@ class _Target(typing.Generic[_S, _R]):
     stable: bool = False
     debug: bool = False
     verbose: bool = False
+    cflags: str = ""
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
 
     def _get_nop(self) -> bytes:
@@ -115,6 +117,7 @@ class _Target(typing.Generic[_S, _R]):
     ) -> _stencils.StencilGroup:
         o = tempdir / f"{opname}.o"
         args = [
+            *shlex.split(self.cflags),
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
