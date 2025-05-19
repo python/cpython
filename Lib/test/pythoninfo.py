@@ -657,6 +657,7 @@ def collect_zlib(info_add):
     attributes = ('ZLIB_VERSION', 'ZLIB_RUNTIME_VERSION', 'ZLIBNG_VERSION')
     copy_attributes(info_add, zlib, 'zlib.%s', attributes)
 
+
 def collect_zstd(info_add):
     try:
         import _zstd
@@ -664,8 +665,8 @@ def collect_zstd(info_add):
         return
 
     attributes = ('zstd_version',)
-
     copy_attributes(info_add, _zstd, 'zstd.%s', attributes)
+
 
 def collect_expat(info_add):
     try:
