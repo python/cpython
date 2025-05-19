@@ -25,7 +25,7 @@ There are four basic concrete server classes:
    the :class:`BaseServer` base class.
 
    .. versionchanged:: next
-      Set getattr(socket, "SOMAXCONN", 5) as the default queue size for TCPServer.
+      The default queue size is now ``socket.SOMAXCONN`` for :class:`socketserver.TCPServer`.
 
 .. class:: UDPServer(server_address, RequestHandlerClass, bind_and_activate=True)
 
