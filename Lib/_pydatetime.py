@@ -467,6 +467,7 @@ def _parse_isoformat_time(tstr):
     hour, minute, second, microsecond = time_comps
     became_next_day = False
     error_from_components = False
+    error_from_tz = None
     if (hour == 24):
         if all(time_comp == 0 for time_comp in time_comps[1:]):
             hour = 0
@@ -500,14 +501,22 @@ def _parse_isoformat_time(tstr):
         else:
             tzsign = -1 if tstr[tz_pos - 1] == '-' else 1
 
-            td = timedelta(hours=tz_comps[0], minutes=tz_comps[1],
-                           seconds=tz_comps[2], microseconds=tz_comps[3])
-
-            tzi = timezone(tzsign * td)
+            try:
+                # This function is intended to validate datetimes, but because
+                # we restrict time zones to ±24h, it serves here as well.
+                _check_time_fields(hour=tz_comps[0], minute=tz_comps[1],
+                                   second=tz_comps[2], microsecond=tz_comps[3],
+                                   fold=0)
+            except ValueError as e:
+                error_from_tz = e
+            else:
+                td = timedelta(hours=tz_comps[0], minutes=tz_comps[1],
+                               seconds=tz_comps[2], microseconds=tz_comps[3])
+                tzi = timezone(tzsign * td)
 
     time_comps.append(tzi)
 
-    return time_comps, became_next_day, error_from_components
+    return time_comps, became_next_day, error_from_components, error_from_tz
 
 # tuple[int, int, int] -> tuple[int, int, int] version of date.fromisocalendar
 def _isoweek_to_gregorian(year, week, day):
@@ -1633,9 +1642,21 @@ class time:
         time_string = time_string.removeprefix('T')
 
         try:
-            return cls(*_parse_isoformat_time(time_string)[0])
-        except Exception:
-            raise ValueError(f'Invalid isoformat string: {time_string!r}')
+            time_components, _, error_from_components, error_from_tz = (
+                _parse_isoformat_time(time_string)
+            )
+        except ValueError:
+            raise ValueError(
+                f'Invalid isoformat string: {time_string!r}') from None
+        else:
+            if error_from_tz:
+                raise error_from_tz
+            if error_from_components:
+                raise ValueError(
+                    "Minute, second, and microsecond must be 0 when hour is 24"
+                )
+
+            return cls(*time_components)
 
     def strftime(self, format):
         """Format using strftime().  The date part of the timestamp passed
@@ -1947,11 +1968,16 @@ class datetime(date):
 
         if tstr:
             try:
-                time_components, became_next_day, error_from_components = _parse_isoformat_time(tstr)
+                (time_components,
+                 became_next_day,
+                 error_from_components,
+                 error_from_tz) = _parse_isoformat_time(tstr)
             except ValueError:
                 raise ValueError(
                     f'Invalid isoformat string: {date_string!r}') from None
             else:
+                if error_from_tz:
+                    raise error_from_tz
                 if error_from_components:
                     raise ValueError("minute, second, and microsecond must be 0 when hour is 24")
 
