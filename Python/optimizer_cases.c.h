@@ -1921,6 +1921,16 @@
             break;
         }
 
+        case _GUARD_NOS_NOT_NULL: {
+            JitOptSymbol *nos;
+            nos = stack_pointer[-2];
+            if (sym_is_not_null(nos)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_non_null(nos);
+            break;
+        }
+
         case _GUARD_THIRD_NULL: {
             JitOptSymbol *null;
             null = stack_pointer[-3];
@@ -2129,6 +2139,17 @@
             stack_pointer[-4] = res;
             stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _GUARD_CALLABLE_LIST_APPEND: {
+            JitOptSymbol *callable;
+            callable = stack_pointer[-3];
+            PyObject *list_append = _PyInterpreterState_GET()->callable_cache.list_append;
+            if (sym_get_const(ctx, callable) == list_append) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_const(callable, list_append);
             break;
         }
 

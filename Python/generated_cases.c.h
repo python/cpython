@@ -3475,58 +3475,79 @@
             INSTRUCTION_STATS(CALL_LIST_APPEND);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef callable;
+            _PyStackRef nos;
             _PyStackRef self;
             _PyStackRef arg;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
-            arg = stack_pointer[-1];
-            self = stack_pointer[-2];
-            callable = stack_pointer[-3];
-            assert(oparg == 1);
-            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
-            PyObject *self_o = PyStackRef_AsPyObjectBorrow(self);
-            PyInterpreterState *interp = tstate->interp;
-            if (callable_o != interp->callable_cache.list_append) {
-                UPDATE_MISS_STATS(CALL);
-                assert(_PyOpcode_Deopt[opcode] == (CALL));
-                JUMP_TO_PREDICTED(CALL);
+            // _GUARD_CALLABLE_LIST_APPEND
+            {
+                callable = stack_pointer[-3];
+                PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+                PyInterpreterState *interp = tstate->interp;
+                if (callable_o != interp->callable_cache.list_append) {
+                    UPDATE_MISS_STATS(CALL);
+                    assert(_PyOpcode_Deopt[opcode] == (CALL));
+                    JUMP_TO_PREDICTED(CALL);
+                }
             }
-            if (self_o == NULL) {
-                UPDATE_MISS_STATS(CALL);
-                assert(_PyOpcode_Deopt[opcode] == (CALL));
-                JUMP_TO_PREDICTED(CALL);
+            // _GUARD_NOS_NOT_NULL
+            {
+                nos = stack_pointer[-2];
+                PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
+                if (o == NULL) {
+                    UPDATE_MISS_STATS(CALL);
+                    assert(_PyOpcode_Deopt[opcode] == (CALL));
+                    JUMP_TO_PREDICTED(CALL);
+                }
             }
-            if (!PyList_Check(self_o)) {
-                UPDATE_MISS_STATS(CALL);
-                assert(_PyOpcode_Deopt[opcode] == (CALL));
-                JUMP_TO_PREDICTED(CALL);
+            // _GUARD_NOS_LIST
+            {
+                PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
+                if (!PyList_CheckExact(o)) {
+                    UPDATE_MISS_STATS(CALL);
+                    assert(_PyOpcode_Deopt[opcode] == (CALL));
+                    JUMP_TO_PREDICTED(CALL);
+                }
             }
-            if (!LOCK_OBJECT(self_o)) {
-                UPDATE_MISS_STATS(CALL);
-                assert(_PyOpcode_Deopt[opcode] == (CALL));
-                JUMP_TO_PREDICTED(CALL);
-            }
-            STAT_INC(CALL, hit);
-            int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
-            UNLOCK_OBJECT(self_o);
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(self);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(callable);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (err) {
-                JUMP_TO_LABEL(error);
-            }
-            #if TIER_ONE
+            // _CALL_LIST_APPEND
+            {
+                arg = stack_pointer[-1];
+                self = nos;
+                assert(oparg == 1);
+                PyObject *self_o = PyStackRef_AsPyObjectBorrow(self);
+                if (!PyList_CheckExact(self_o)) {
+                    UPDATE_MISS_STATS(CALL);
+                    assert(_PyOpcode_Deopt[opcode] == (CALL));
+                    JUMP_TO_PREDICTED(CALL);
+                }
+                if (!LOCK_OBJECT(self_o)) {
+                    UPDATE_MISS_STATS(CALL);
+                    assert(_PyOpcode_Deopt[opcode] == (CALL));
+                    JUMP_TO_PREDICTED(CALL);
+                }
+                STAT_INC(CALL, hit);
+                int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
+                UNLOCK_OBJECT(self_o);
+                stack_pointer += -2;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_CLOSE(self);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_CLOSE(callable);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (err) {
+                    JUMP_TO_LABEL(error);
+                }
+                #if TIER_ONE
 
-            assert(next_instr->op.code == POP_TOP);
-            SKIP_OVER(1);
-            #endif
+                assert(next_instr->op.code == POP_TOP);
+                SKIP_OVER(1);
+                #endif
+            }
             DISPATCH();
         }
 

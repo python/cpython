@@ -5238,6 +5238,17 @@
             break;
         }
 
+        case _GUARD_NOS_NOT_NULL: {
+            _PyStackRef nos;
+            nos = stack_pointer[-2];
+            PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
+            if (o == NULL) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
         case _GUARD_THIRD_NULL: {
             _PyStackRef null;
             null = stack_pointer[-3];
@@ -5882,6 +5893,18 @@
             break;
         }
 
+        case _GUARD_CALLABLE_LIST_APPEND: {
+            _PyStackRef callable;
+            callable = stack_pointer[-3];
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            PyInterpreterState *interp = tstate->interp;
+            if (callable_o != interp->callable_cache.list_append) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
         case _CALL_LIST_APPEND: {
             _PyStackRef arg;
             _PyStackRef self;
@@ -5891,18 +5914,8 @@
             self = stack_pointer[-2];
             callable = stack_pointer[-3];
             assert(oparg == 1);
-            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyObject *self_o = PyStackRef_AsPyObjectBorrow(self);
-            PyInterpreterState *interp = tstate->interp;
-            if (callable_o != interp->callable_cache.list_append) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            if (self_o == NULL) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            if (!PyList_Check(self_o)) {
+            if (!PyList_CheckExact(self_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
