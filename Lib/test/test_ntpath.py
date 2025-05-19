@@ -972,8 +972,11 @@ class TestNtpath(NtpathTestCase):
 
     def test_abspath_invalid_paths(self):
         abspath = ntpath.abspath
-        self.assertEqual(abspath("C:\x00"), ntpath.join(abspath("C:"), "\x00"))
-        self.assertEqual(abspath("\x00:spam"), "\x00:\\spam")
+        if sys.platform == 'win32':
+            self.assertEqual(abspath("C:\x00"), ntpath.join(abspath("C:"), "\x00"))
+            self.assertEqual(abspath(b"C:\x00"), ntpath.join(abspath(b"C:"), b"\x00"))
+            self.assertEqual(abspath("\x00:spam"), "\x00:\\spam")
+            self.assertEqual(abspath(b"\x00:spam"), b"\x00:\\spam")
         self.assertEqual(abspath('c:\\fo\x00o'), 'c:\\fo\x00o')
         self.assertEqual(abspath(b'c:\\fo\x00o'), b'c:\\fo\x00o')
         self.assertEqual(abspath('c:\\fo\x00o\\..\\bar'), 'c:\\bar')
