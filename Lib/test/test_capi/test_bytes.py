@@ -75,7 +75,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(fromstring(b'abc\0def'), b'abc')
         self.assertEqual(fromstring(b''), b'')
 
-        # CRASHES fromstring(NULL) 
+        # CRASHES fromstring(NULL)
 
     def test_fromobject(self):
         # Test PyBytes_FromObject()
