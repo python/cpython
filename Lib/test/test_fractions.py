@@ -446,6 +446,7 @@ class FractionTest(unittest.TestCase):
         # No space around e.
         check_invalid("3.2 e1")
         check_invalid("3.2e 1")
+        check_invalid("232e\t2")
         # Fractional part don't need a sign.
         check_invalid("3.+2")
         check_invalid("3.-2")
