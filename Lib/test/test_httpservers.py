@@ -1492,18 +1492,18 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         parsed_protocol, host, parsed_port = self.parse_cli_output(line)
         if protocol == parsed_protocol and parsed_port == port:
             return host
-        print("failed to start HTTP(s) server. Output was:")
-        print("\n".join([line, proc.stdout.readline().rstrip()]))
         return None
 
     def test_http_client(self):
         port = find_unused_port()
-        proc = spawn_python('-u', '-m', 'http.server', str(port),
+        proc = spawn_python('-u', '-m', 'http.server',
+                            str(port), '-b', 'localhost',
                             bufsize=1, text=True)
         self.addCleanup(kill_python, proc)
         self.addCleanup(proc.terminate)
         bind = self.wait_for_server(proc, 'http', port)
         self.assertIsNotNone(bind)
+        # localhost may be redirected to something else for whatever reason
         res = self.fetch_file(f'http://{bind}:{port}/{self.served_filename}')
         self.assertEqual(res, self.served_data)
 
@@ -1514,8 +1514,9 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
 
-        port = find_unused_port()
-        proc = spawn_python('-u', '-m', 'http.server', str(port),
+        bind, port = 'localhost', find_unused_port()
+        proc = spawn_python('-u', '-m', 'http.server',
+                            str(port), '-b', 'localhost',
                             '--tls-cert', self.tls_cert,
                             '--tls-key', self.tls_key,
                             '--tls-password-file', self.tls_password_file,
@@ -1524,6 +1525,7 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         self.addCleanup(proc.terminate)
         bind = self.wait_for_server(proc, 'https', port)
         self.assertIsNotNone(bind)
+        # localhost may be redirected to something else for whatever reason
         url = f'https://{bind}:{port}/{self.served_filename}'
         res = self.fetch_file(url, context=context)
         self.assertEqual(res, self.served_data)
