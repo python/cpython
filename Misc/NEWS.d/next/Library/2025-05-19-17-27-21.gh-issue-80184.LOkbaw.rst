@@ -1,1 +1,1 @@
-Set 0 as the default queue size for TCPServer
+Set getattr(socket, "SOMAXCONN", 5) as the default queue size for TCPServer
