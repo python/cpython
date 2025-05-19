@@ -738,8 +738,11 @@ given location, they can obviously be matched an infinite number of times.
    different: ``\A`` still matches only at the beginning of the string, but ``^``
    may match at any location inside the string that follows a newline character.
 
-``\Z``
+``\z``
    Matches only at the end of the string.
+
+``\Z``
+   The same as ``\z``.  For compatibility with old Python versions.
 
 ``\b``
    Word boundary.  This is a zero-width assertion that matches only at the

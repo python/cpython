@@ -89,8 +89,8 @@ class BaseTaskTests:
     Future = None
     all_tasks = None
 
-    def new_task(self, loop, coro, name='TestTask', context=None):
-        return self.__class__.Task(coro, loop=loop, name=name, context=context)
+    def new_task(self, loop, coro, name='TestTask', context=None, eager_start=None):
+        return self.__class__.Task(coro, loop=loop, name=name, context=context, eager_start=eager_start)
 
     def new_future(self, loop):
         return self.__class__.Future(loop=loop)
@@ -2685,6 +2685,35 @@ class BaseTaskTests:
             loop.close()
 
         self.assertEqual([None, 1, 2], ret)
+
+    def test_eager_start_true(self):
+        name = None
+
+        async def asyncfn():
+            nonlocal name
+            name = self.current_task().get_name()
+
+        async def main():
+            t = self.new_task(coro=asyncfn(), loop=asyncio.get_running_loop(), eager_start=True, name="example")
+            self.assertTrue(t.done())
+            self.assertEqual(name, "example")
+            await t
+
+    def test_eager_start_false(self):
+        name = None
+
+        async def asyncfn():
+            nonlocal name
+            name = self.current_task().get_name()
+
+        async def main():
+            t = self.new_task(coro=asyncfn(), loop=asyncio.get_running_loop(), eager_start=False, name="example")
+            self.assertFalse(t.done())
+            self.assertIsNone(name)
+            await t
+            self.assertEqual(name, "example")
+
+        asyncio.run(main(), loop_factory=asyncio.EventLoop)
 
     def test_get_coro(self):
         loop = asyncio.new_event_loop()
