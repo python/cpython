@@ -1248,6 +1248,13 @@ class TestNtpath(NtpathTestCase):
         self.assertIs(ntpath.isfile('/tmp\x00abcds'), False)
         self.assertIs(ntpath.isfile(b'/tmp\x00abcds'), False)
 
+    @unittest.skipIf(sys.platform != 'win32', "drive letters are a windows concept")
+    def test_isfile_driveletter(self):
+        drive = os.environ.get('SystemDrive')
+        if drive is None or len(drive) != 2 or drive[1] != ':':
+            raise unittest.SkipTest('SystemDrive is not defined or malformed')
+        self.assertFalse(os.path.isfile('\\\\.\\' + drive))
+
     @unittest.skipUnless(hasattr(os, 'pipe'), "need os.pipe()")
     def test_isfile_anonymous_pipe(self):
         pr, pw = os.pipe()
