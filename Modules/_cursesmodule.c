@@ -3993,8 +3993,12 @@ _curses_mouseinterval_impl(PyObject *module, int interval)
 /*[clinic end generated code: output=c4f5ff04354634c5 input=75aaa3f0db10ac4e]*/
 {
     PyCursesStatefulInitialised(module);
-    int rtn = mouseinterval(interval);
-    return curses_check_err(module, rtn, "mouseinterval", NULL);
+    int value = mouseinterval(interval);
+    if (value == ERR) {
+        curses_set_error(module, "mouseinterval", NULL);
+        return NULL;
+    }
+    return PyLong_FromLong(value);
 }
 
 /*[clinic input]
