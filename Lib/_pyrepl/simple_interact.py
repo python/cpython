@@ -110,14 +110,9 @@ def run_multiline_interactive_console(
     more_lines = functools.partial(_more_lines, console)
     input_n = 0
 
-    if sys._xoptions.get("showrefcount"):
-        # Were we compiled --with-pydebug?
-        if hasattr(sys, "gettotalrefcount"):
-            showrefcount = True
-        else:
-            showrefcount = False
-    else:
-        showrefcount = False
+    _is_x_showrefcount_set = sys._xoptions.get("showrefcount")
+    _is_pydebug_build = hasattr(sys, "gettotalrefcount")
+    show_ref_count = _is_x_showrefcount_set and _is_pydebug_build
 
     def maybe_run_command(statement: str) -> bool:
         statement = statement.strip()
@@ -176,5 +171,8 @@ def run_multiline_interactive_console(
         except:
             console.showtraceback()
             console.resetbuffer()
-        if showrefcount:
-           console.write(f"[{sys.gettotalrefcount()} refs, {sys.getallocatedblocks()} blocks]\n")
+        if show_ref_count:
+            console.write(
+                f"[{sys.gettotalrefcount()} refs,"
+                f" {sys.getallocatedblocks()} blocks]\n"
+            )

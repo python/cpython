@@ -1614,6 +1614,7 @@ class TestMain(ReplTestCase):
     @skipUnless(Py_DEBUG, '-X showrefcount requires a Python debug build')
     def test_showrefcount(self):
         env = os.environ.copy()
+        env.pop("PYTHON_BASIC_REPL", "")
         output, _ = self.run_repl("1\n1+2\nexit()\n", cmdline_args=['-Xshowrefcount'], env=env)
         matches = re.findall(r'\[-?\d+ refs, \d+ blocks\]', output)
         self.assertEqual(len(matches), 3)
