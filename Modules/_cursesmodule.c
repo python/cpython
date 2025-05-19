@@ -1389,7 +1389,7 @@ _curses_window_border_impl(PyCursesWindowObject *self, PyObject *ls,
 /*[clinic end generated code: output=670ef38d3d7c2aa3 input=e015f735d67a240b]*/
 {
     chtype ch[8];
-    int i;
+    int i, rtn;
 
     /* Clear the array of parameters */
     for(i=0; i<8; i++)
@@ -1410,10 +1410,10 @@ _curses_window_border_impl(PyCursesWindowObject *self, PyObject *ls,
 
 #undef CONVERTTOCHTYPE
 
-    wborder(self->win,
-            ch[0], ch[1], ch[2], ch[3],
-            ch[4], ch[5], ch[6], ch[7]);
-    Py_RETURN_NONE;
+    rtn = wborder(self->win,
+                  ch[0], ch[1], ch[2], ch[3],
+                  ch[4], ch[5], ch[6], ch[7]);
+    return curses_window_check_err(self, rtn, "wborder", "border");
 }
 
 /*[clinic input]
