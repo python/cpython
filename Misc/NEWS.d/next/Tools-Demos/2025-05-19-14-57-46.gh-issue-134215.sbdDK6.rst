@@ -1,1 +1,1 @@
-autocompletion return the private modules (start with _) only if explicitly specified
+:term:`REPL` import autocomplete only suggests private modules when explicitly specified.
