@@ -652,6 +652,10 @@ class TestInterpreterClose(TestBase):
 
         FINISHED = b'F'
 
+        # It's unlikely, but technically speaking, it's possible
+        # that the thread could've finished before interp.close() is
+        # reached, so this test might not properly exercise the case.
+        # However, it's quite unlikely and I'm too lazy to deal with it.
         interp = interpreters.create()
         interp.exec(f"""if True:
             import os
