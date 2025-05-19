@@ -1478,10 +1478,10 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
             return res.read()
 
     def parse_cli_output(self, output):
-        matches = re.search(r'\((https?)://(\[::\]|[^/:]+):(\d+)/?\)', output)
+        matches = re.search(r'Serving (HTTP|HTTPS) on (.+) port (\d+)', output)
         if matches is None:
             return None, None, None
-        return matches.group(1), matches.group(2), int(matches.group(3))
+        return matches.group(1).lower(), matches.group(2), int(matches.group(3))
 
     def wait_for_server(self, proc, protocol, port):
         """Extract the server bind address once it has been started."""
@@ -1496,8 +1496,7 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
 
     def test_http_client(self):
         port = find_unused_port()
-        proc = spawn_python('-u', '-m', 'http.server',
-                            str(port), '-b', 'localhost',
+        proc = spawn_python('-u', '-m', 'http.server', str(port),
                             bufsize=1, text=True)
         self.addCleanup(kill_python, proc)
         self.addCleanup(proc.terminate)
@@ -1514,9 +1513,8 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
 
-        bind, port = 'localhost', find_unused_port()
-        proc = spawn_python('-u', '-m', 'http.server',
-                            str(port), '-b', 'localhost',
+        port = find_unused_port()
+        proc = spawn_python('-u', '-m', 'http.server', str(port),
                             '--tls-cert', self.tls_cert,
                             '--tls-key', self.tls_key,
                             '--tls-password-file', self.tls_password_file,
@@ -1525,7 +1523,6 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         self.addCleanup(proc.terminate)
         bind = self.wait_for_server(proc, 'https', port)
         self.assertIsNotNone(bind)
-        # localhost may be redirected to something else for whatever reason
         url = f'https://{bind}:{port}/{self.served_filename}'
         res = self.fetch_file(url, context=context)
         self.assertEqual(res, self.served_data)
