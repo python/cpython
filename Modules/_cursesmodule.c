@@ -1695,14 +1695,6 @@ _curses_window_getch_impl(PyCursesWindowObject *self, int group_right_1,
     }
     Py_END_ALLOW_THREADS
 
-    /* getch() returns ERR in nodelay mode */
-    if (PyErr_CheckSignals()) {
-      cursesmodule_state *state = get_cursesmodule_state_by_win(self);
-      const char *funcname = group_right_1 ? "mvwgetch" : "wgetch";
-      PyErr_Format(state->error, "getch(): %s(): no input", funcname);
-      return ERR;
-    }
-
     return rtn;
 }
 
