@@ -14,9 +14,10 @@
 --------------
 
 This module provides functions for encoding binary data to printable
-ASCII characters and decoding such encodings back to binary data,
-such as :ref:`those specified in RFC 4648 <base_64_rfc_4648>` and
-:ref:`Base85 encodings <base_64_base_85>`.
+ASCII characters and decoding such encodings back to binary data.
+This includes the :ref:`encodings specified in <base64-rfc-4648>`
+:rfc:`4648` (Base64, Base32 and Base16)
+and the non-standard :ref:`Base85 encodings <base64-base-85>`.
 
 There are two interfaces provided by this module.  The modern interface
 supports encoding :term:`bytes-like objects <bytes-like object>` to ASCII
@@ -24,7 +25,7 @@ supports encoding :term:`bytes-like objects <bytes-like object>` to ASCII
 strings containing ASCII to :class:`bytes`.  Both base-64 alphabets
 defined in :rfc:`4648` (normal, and URL- and filesystem-safe) are supported.
 
-The :ref:`legacy interface <base_64_legacy>` does not support decoding from strings, but it does
+The :ref:`legacy interface <base-64-legacy>` does not support decoding from strings, but it does
 provide functions for encoding and decoding to and from :term:`file objects
 <file object>`.  It only supports the Base64 standard alphabet, and it adds
 newlines every 76 characters as per :rfc:`2045`.  Note that if you are looking
@@ -41,15 +42,14 @@ package instead.
    encoding and decoding functions in this module.  Ascii85/Base85 support added.
 
 
-.. _base_64_rfc_4648:
+.. _base64-rfc-4648:
 
 RFC 4648 Encodings
 ------------------
 
 The :rfc:`4648` encodings are suitable for encoding binary data so that it can be
 safely sent by email, used as parts of URLs, or included as part of an HTTP
-POST request.  The encoding algorithm is not the same as the
-:program:`uuencode` program.
+POST request.
 
 .. function:: b64encode(s, altchars=None)
 
@@ -184,17 +184,17 @@ POST request.  The encoding algorithm is not the same as the
    incorrectly padded or if there are non-alphabet characters present in the
    input.
 
-.. _base_64_base_85:
+.. _base64-base-85:
 
 Base85 Encodings
 -----------------
 
-Base85 encoding is not formally specified. Base85 encoding is a de facto standard,
-and different systems perform the encoding differently.
+Base85 encoding is not formally specified but rather a de facto standard,
+thus different systems perform the encoding differently.
 
 The :func:`a85encode` and :func:`b85encode` functions in this module are two implementations of
-the de facto standard. Which function you should use depends on how the other
-software you use implements the Base85 encoding.
+the de facto standard. You should call the function with the Base85
+implementation used by the software you intend to work with.
 
 The two functions present in this module differ in how they handle the following:
 
@@ -285,7 +285,7 @@ Refer to the documentation of the individual functions for more information.
    .. versionadded:: 3.13
 
 
-.. _base_64_legacy:
+.. _base64-legacy:
 
 Legacy Interface
 ----------------
