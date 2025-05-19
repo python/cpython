@@ -31,7 +31,7 @@ class CAPITest(unittest.TestCase):
         self.assertFalse(check(object()))
         self.assertTrue(check(b''))
 
-        # CRASHES check(NULL) #PyBytes_Check() expects PyObject*
+        # CRASHES check(NULL)
 
     def test_checkexact(self):
         # Test PyBytes_CheckExact()
@@ -46,7 +46,7 @@ class CAPITest(unittest.TestCase):
         self.assertFalse(check(object()))
         self.assertTrue(check(b''))
 
-        # CRASHES check(NULL) #PyBytes_CheckExact() expects PyObject*
+        # CRASHES check(NULL)
 
     def test_fromstringandsize(self):
         # Test PyBytes_FromStringAndSize()
