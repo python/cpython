@@ -13,8 +13,8 @@
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_global_objects_fini_generated.h"  // _PyStaticObjects_CheckRefcnt()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_interpolation.h" // _PyInterpolation_InitTypes()
 #include "pycore_long.h"          // _PyLong_InitTypes()
-#include "pycore_memoryobject.h"  // _PyMemoryView_InitTypes()
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_obmalloc.h"      // _PyMem_init_obmalloc()
 #include "pycore_optimizer.h"     // _Py_Executors_InvalidateAll
@@ -755,7 +755,7 @@ pycore_init_types(PyInterpreterState *interp)
         return status;
     }
 
-    status = _PyMemoryView_InitTypes(interp);
+    status = _PyInterpolation_InitTypes(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -854,6 +854,10 @@ error:
 static PyStatus
 pycore_interp_init(PyThreadState *tstate)
 {
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    if (_tstate->c_stack_hard_limit == 0) {
+        _Py_InitializeRecursionLimits(tstate);
+    }
     PyInterpreterState *interp = tstate->interp;
     PyStatus status;
     PyObject *sysmod = NULL;
@@ -1851,7 +1855,6 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyTypes_FiniExtTypes(interp);
     _PyUnicode_FiniTypes(interp);
     _PySys_FiniTypes(interp);
-    _PyMemoryView_FiniTypes(interp);
     _PyXI_FiniTypes(interp);
     _PyExc_Fini(interp);
     _PyFloat_FiniType(interp);
@@ -2762,7 +2765,7 @@ init_set_builtins_open(void)
         goto error;
     }
 
-    if (!(wrapper = PyImport_ImportModuleAttrString("io", "open"))) {
+    if (!(wrapper = PyImport_ImportModuleAttrString("_io", "open"))) {
         goto error;
     }
 
@@ -2807,7 +2810,7 @@ init_sys_streams(PyThreadState *tstate)
     }
 #endif
 
-    if (!(iomod = PyImport_ImportModule("io"))) {
+    if (!(iomod = PyImport_ImportModule("_io"))) {
         goto error;
     }
 
@@ -3141,7 +3144,7 @@ static inline void _Py_NO_RETURN
 fatal_error_exit(int status)
 {
     if (status < 0) {
-#if defined(MS_WINDOWS) && defined(_DEBUG)
+#if defined(MS_WINDOWS) && defined(Py_DEBUG)
         DebugBreak();
 #endif
         abort();

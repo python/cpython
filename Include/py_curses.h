@@ -75,10 +75,11 @@ extern "C" {
 
 /* Type declarations */
 
-typedef struct {
+typedef struct PyCursesWindowObject {
     PyObject_HEAD
     WINDOW *win;
     char *encoding;
+    struct PyCursesWindowObject *orig;
 } PyCursesWindowObject;
 
 #define PyCurses_CAPSULE_NAME "_curses._C_API"

@@ -422,8 +422,9 @@ jobs:
         # failing when executed from inside a virtual environment.
         "${VENV_PYTHON}" -m test \
           -W \
-          -o \
+          --slowest \
           -j4 \
+          --timeout 900 \
           -x test_asyncio \
           -x test_multiprocessing_fork \
           -x test_multiprocessing_forkserver \

@@ -1911,6 +1911,54 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_COMPARE_OP_INT", uops)
         self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
 
+    def test_call_len(self):
+        def testfunc(n):
+            a = [1, 2, 3, 4]
+            for _ in range(n):
+                _ = len(a) - 1
+
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+        self.assertNotIn("_GUARD_NOS_NULL", uops)
+        self.assertNotIn("_GUARD_CALLABLE_LEN", uops)
+        self.assertIn("_CALL_LEN", uops)
+        self.assertNotIn("_GUARD_NOS_INT", uops)
+        self.assertNotIn("_GUARD_TOS_INT", uops)
+
+    def test_binary_op_subscr_tuple_int(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = (1, 2)
+                if y[0] == 1:  # _COMPARE_OP_INT + _GUARD_IS_TRUE_POP are removed
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_SUBSCR_TUPLE_INT", uops)
+        self.assertNotIn("_COMPARE_OP_INT", uops)
+        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+
+    def test_call_isinstance_guards_removed(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = isinstance(42, int)
+                if y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_GUARD_THIRD_NULL", uops)
+        self.assertNotIn("_GUARD_CALLABLE_ISINSTANCE", uops)
+
 
 def global_identity(x):
     return x

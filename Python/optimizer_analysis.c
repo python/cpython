@@ -19,14 +19,11 @@
 #include "pycore_opcode_utils.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_uop_metadata.h"
-#include "pycore_dict.h"
 #include "pycore_long.h"
 #include "pycore_interpframe.h"  // _PyFrame_GetCode
 #include "pycore_optimizer.h"
 #include "pycore_object.h"
-#include "pycore_dict.h"
 #include "pycore_function.h"
-#include "pycore_uop_metadata.h"
 #include "pycore_uop_ids.h"
 #include "pycore_range.h"
 

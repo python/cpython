@@ -678,13 +678,15 @@ init_interpreter(PyInterpreterState *interp,
     interp->sys_trace_initialized = false;
     interp->jit = false;
     interp->executor_list_head = NULL;
+    interp->executor_deletion_list_head = NULL;
+    interp->executor_deletion_list_remaining_capacity = 0;
     interp->trace_run_counter = JIT_CLEANUP_THRESHOLD;
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
     }
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
-    interp->next_stackref = 1;
+    interp->next_stackref = INITIAL_STACKREF_INDEX;
     _Py_hashtable_allocator_t alloc = {
         .malloc = malloc,
         .free = free,
@@ -902,6 +904,10 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->after_forkers_child);
 #endif
 
+
+#ifdef _Py_TIER2
+    _Py_ClearExecutorDeletionList(interp);
+#endif
     _PyAST_Fini(interp);
     _PyWarnings_Fini(interp);
     _PyAtExit_Fini(interp);
@@ -1210,14 +1216,40 @@ _PyInterpreterState_SetWhence(PyInterpreterState *interp, long whence)
 
 
 PyObject *
-PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *interp)
+_Py_GetMainModule(PyThreadState *tstate)
 {
-    PyObject *modules = _PyImport_GetModules(interp);
-    if (modules == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "interpreter not initialized");
-        return NULL;
+    // We return None to indicate "not found" or "bogus".
+    PyObject *modules = _PyImport_GetModulesRef(tstate->interp);
+    if (modules == Py_None) {
+        return modules;
     }
-    return PyMapping_GetItemString(modules, "__main__");
+    PyObject *module = NULL;
+    (void)PyMapping_GetOptionalItem(modules, &_Py_ID(__main__), &module);
+    Py_DECREF(modules);
+    if (module == NULL && !PyErr_Occurred()) {
+        Py_RETURN_NONE;
+    }
+    return module;
+}
+
+int
+_Py_CheckMainModule(PyObject *module)
+{
+    if (module == NULL || module == Py_None) {
+        if (!PyErr_Occurred()) {
+            (void)_PyErr_SetModuleNotFoundError(&_Py_ID(__main__));
+        }
+        return -1;
+    }
+    if (!Py_IS_TYPE(module, &PyModule_Type)) {
+        /* The __main__ module has been tampered with. */
+        PyObject *msg = PyUnicode_FromString("invalid __main__ module");
+        if (msg != NULL) {
+            (void)PyErr_SetImportError(msg, &_Py_ID(__main__), NULL);
+        }
+        return -1;
+    }
+    return 0;
 }
 
 
@@ -1533,7 +1565,6 @@ init_threadstate(_PyThreadStateImpl *_tstate,
 
     tstate->py_recursion_limit = interp->ceval.recursion_limit;
     tstate->py_recursion_remaining = interp->ceval.recursion_limit;
-    tstate->c_recursion_remaining = 2;
     tstate->exc_info = &tstate->exc_state;
 
     // PyGILState_Release must not try to delete this thread state.
@@ -1545,7 +1576,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->datastack_top = NULL;
     tstate->datastack_limit = NULL;
     tstate->what_event = -1;
-    tstate->previous_executor = NULL;
+    tstate->current_executor = NULL;
     tstate->dict_global_version = 0;
 
     _tstate->c_stack_soft_limit = UINTPTR_MAX;
@@ -1877,9 +1908,14 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
 static void
 zapthreads(PyInterpreterState *interp)
 {
+    PyThreadState *tstate;
     /* No need to lock the mutex here because this should only happen
-       when the threads are all really dead (XXX famous last words). */
-    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, tstate) {
+       when the threads are all really dead (XXX famous last words).
+
+       Cannot use _Py_FOR_EACH_TSTATE_UNLOCKED because we are freeing
+       the thread states here.
+    */
+    while ((tstate = interp->threads.head) != NULL) {
         tstate_verify_not_active(tstate);
         tstate_delete_common(tstate, 0);
         free_threadstate((_PyThreadStateImpl *)tstate);
@@ -2143,7 +2179,10 @@ _PyThreadState_Attach(PyThreadState *tstate)
     if (current_fast_get() != NULL) {
         Py_FatalError("non-NULL old thread state");
     }
-
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    if (_tstate->c_stack_hard_limit == 0) {
+        _Py_InitializeRecursionLimits(tstate);
+    }
 
     while (1) {
         _PyEval_AcquireLock(tstate);

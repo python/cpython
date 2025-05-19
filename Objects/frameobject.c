@@ -1813,15 +1813,16 @@ frame_lineno_set_impl(PyFrameObject *self, PyObject *value)
         start_stack = pop_value(start_stack);
     }
     while (start_stack > best_stack) {
+        _PyStackRef popped = _PyFrame_StackPop(self->f_frame);
         if (top_of_stack(start_stack) == Except) {
             /* Pop exception stack as well as the evaluation stack */
-            PyObject *exc = PyStackRef_AsPyObjectBorrow(_PyFrame_StackPop(self->f_frame));
+            PyObject *exc = PyStackRef_AsPyObjectBorrow(popped);
             assert(PyExceptionInstance_Check(exc) || exc == Py_None);
             PyThreadState *tstate = _PyThreadState_GET();
             Py_XSETREF(tstate->exc_info->exc_value, exc == Py_None ? NULL : exc);
         }
         else {
-            PyStackRef_XCLOSE(_PyFrame_StackPop(self->f_frame));
+            PyStackRef_XCLOSE(popped);
         }
         start_stack = pop_value(start_stack);
     }
@@ -1916,7 +1917,6 @@ frame_dealloc(PyObject *op)
         _PyObject_GC_UNTRACK(f);
     }
 
-    Py_TRASHCAN_BEGIN(f, frame_dealloc);
     /* GH-106092: If f->f_frame was on the stack and we reached the maximum
      * nesting depth for deallocations, the trashcan may have delayed this
      * deallocation until after f->f_frame is freed. Avoid dereferencing
@@ -1941,7 +1941,6 @@ frame_dealloc(PyObject *op)
     Py_CLEAR(f->f_locals_cache);
     Py_CLEAR(f->f_overwritten_fast_locals);
     PyObject_GC_Del(f);
-    Py_TRASHCAN_END;
 }
 
 static int

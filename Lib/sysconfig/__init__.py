@@ -219,18 +219,7 @@ if os.name == 'nt':
 if "_PYTHON_PROJECT_BASE" in os.environ:
     _PROJECT_BASE = _safe_realpath(os.environ["_PYTHON_PROJECT_BASE"])
 
-def is_python_build(check_home=None):
-    if check_home is not None:
-        import warnings
-        warnings.warn(
-            (
-                'The check_home argument of sysconfig.is_python_build is '
-                'deprecated and its value is ignored. '
-                'It will be removed in Python 3.15.'
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
+def is_python_build():
     for fn in ("Setup", "Setup.local"):
         if os.path.isfile(os.path.join(_PROJECT_BASE, "Modules", fn)):
             return True

@@ -1589,7 +1589,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         cm = classmethod(f)
         cm_dict = {'__doc__': (
                        "f docstring"
-                       if support.HAVE_DOCSTRINGS
+                       if support.HAVE_PY_DOCSTRINGS
                        else None
                     ),
                    '__module__': __name__,

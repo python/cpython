@@ -16,6 +16,16 @@ if check_impl_detail(cpython=False):
 _testinternalcapi = import_module("_testinternalcapi")
 
 
+def have_dict_key_versions():
+    # max version value that can be stored in the load global cache. This is
+    # determined by the type of module_keys_version and builtin_keys_version
+    # in _PyLoadGlobalCache, uint16_t.
+    max_version = 1<<16
+    # use a wide safety margin (use only half of what's available)
+    limit = max_version // 2
+    return _testinternalcapi.get_next_dict_keys_version() < limit
+
+
 class TestBase(unittest.TestCase):
     def assert_specialized(self, f, opname):
         instructions = dis.get_instructions(f, adaptive=True)
@@ -550,6 +560,13 @@ class TestCallCache(TestBase):
         with self.assertRaises(TypeError):
             instantiate()
 
+    def test_recursion_check_for_general_calls(self):
+        def test(default=None):
+            return test()
+
+        with self.assertRaises(RecursionError):
+            test()
+
 
 def make_deferred_ref_count_obj():
     """Create an object that uses deferred reference counting.
@@ -1029,6 +1046,8 @@ class TestRacesDoNotCrash(TestBase):
 
     @requires_specialization_ft
     def test_load_global_module(self):
+        if not have_dict_key_versions():
+            raise unittest.SkipTest("Low on dict key versions")
         def get_items():
             items = []
             for _ in range(self.ITEMS):
