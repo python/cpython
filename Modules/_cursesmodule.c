@@ -1594,7 +1594,7 @@ _curses_window_derwin_impl(PyCursesWindowObject *self, int group_left_1,
     win = derwin(self->win,nlines,ncols,begin_y,begin_x);
 
     if (win == NULL) {
-        curses_window_set_error(self, "derwin", NULL);
+        curses_window_set_null_error(self, "derwin", NULL);
         return NULL;
     }
 
