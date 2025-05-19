@@ -2028,6 +2028,16 @@ _Py_Finalize(_PyRuntimeState *runtime)
 
     _PyAtExit_Call(tstate->interp);
 
+    /* Clean up any lingering subinterpreters.
+
+       Two preconditions need to be met here:
+
+        - This has to happen before _PyRuntimeState_SetFinalizing is
+          called, or else threads might get prematurely blocked.
+        - The world must not be stopped, as finalizers can run.
+    */
+    finalize_subinterpreters();
+
     assert(_PyThreadState_GET() == tstate);
 
     /* Copy the core config, PyInterpreterState_Delete() free
@@ -2042,16 +2052,6 @@ _Py_Finalize(_PyRuntimeState *runtime)
 #ifdef WITH_PYMALLOC
     int malloc_stats = tstate->interp->config.malloc_stats;
 #endif
-
-    /* Clean up any lingering subinterpreters.
-
-       Two preconditions need to be met here:
-
-        - This has to happen before _PyRuntimeState_SetFinalizing is
-          called, or else threads might get prematurely blocked.
-        - The world must not be stopped, as finalizers can run.
-    */
-    finalize_subinterpreters();
 
     /* Ensure that remaining threads are detached */
     _PyEval_StopTheWorldAll(runtime);
