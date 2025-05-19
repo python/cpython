@@ -1,0 +1,2 @@
+Fix ModuleCompleter module: autocompletion now shows the underscored names
+only if specifically asked for
