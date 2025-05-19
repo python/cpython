@@ -4041,6 +4041,11 @@ dummy_func(
             DEOPT_IF(!PyStackRef_IsNull(null));
         }
 
+        op(_GUARD_NOS_NOT_NULL, (nos, unused -- nos, unused)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
+            EXIT_IF(o == NULL);
+        }
+
         op(_GUARD_THIRD_NULL, (null, unused, unused -- null, unused, unused)) {
             DEOPT_IF(!PyStackRef_IsNull(null));
         }
@@ -4394,16 +4399,26 @@ dummy_func(
             _GUARD_CALLABLE_ISINSTANCE +
             _CALL_ISINSTANCE;
 
-        // This is secretly a super-instruction
-        inst(CALL_LIST_APPEND, (unused/1, unused/2, callable, self, arg -- )) {
-            assert(oparg == 1);
-            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
-            PyObject *self_o = PyStackRef_AsPyObjectBorrow(self);
+        macro(CALL_LIST_APPEND) =
+            unused/1 +
+            unused/2 +
+            _GUARD_CALLABLE_LIST_APPEND +
+            _GUARD_NOS_NOT_NULL +
+            _GUARD_NOS_LIST +
+            _CALL_LIST_APPEND;
 
+        op(_GUARD_CALLABLE_LIST_APPEND, (callable, unused, unused -- callable, unused, unused)){
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable_o != interp->callable_cache.list_append);
-            DEOPT_IF(self_o == NULL);
-            DEOPT_IF(!PyList_Check(self_o));
+        }
+
+        // This is secretly a super-instruction
+        op(_CALL_LIST_APPEND, (callable, self, arg -- )) {
+            assert(oparg == 1);
+            PyObject *self_o = PyStackRef_AsPyObjectBorrow(self);
+
+            DEOPT_IF(!PyList_CheckExact(self_o));
             DEOPT_IF(!LOCK_OBJECT(self_o));
             STAT_INC(CALL, hit);
             int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));

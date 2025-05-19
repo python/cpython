@@ -1960,6 +1960,21 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_CALLABLE_ISINSTANCE", uops)
         self.assertIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
+    def test_call_list_append(self):
+        def testfunc(n):
+            a = []
+            for i in range(n):
+                a.append(i)
+            return sum(a)
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, sum(range(TIER2_THRESHOLD)))
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_LIST_APPEND", uops)
+        # We should remove these in the future
+        self.assertIn("_GUARD_NOS_LIST", uops)
+        self.assertIn("_GUARD_CALLABLE_LIST_APPEND", uops)
+
     def test_call_isinstance_is_true(self):
         def testfunc(n):
             x = 0
