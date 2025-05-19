@@ -390,7 +390,8 @@ _PyCursesStatefulCheckFunction(PyObject *module,
 #define curses_assert_success(CODE, CURSES_FUNCNAME, PYTHON_FUNCNAME)       \
     do {                                                                    \
         if (CODE != OK) {                                                   \
-            PyErr_Format("%s (called by %s()) returned %d instead of %d",   \
+            PyErr_Format(PyExc_SystemError,                                 \
+                         "%s (called by %s()) returned %d instead of %d",   \
                          CURSES_FUNCNAME, PYTHON_FUNCNAME, CODE, OK);       \
             return NULL;                                                    \
         }                                                                   \
