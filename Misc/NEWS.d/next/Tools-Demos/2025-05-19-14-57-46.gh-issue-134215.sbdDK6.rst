@@ -1,2 +1,1 @@
-Fix ModuleCompleter module: autocompletion now shows the underscored names
-only if specifically asked for
+autocompletion return the private modules (start with _) only if explicitly specified

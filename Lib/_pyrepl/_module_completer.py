@@ -101,9 +101,14 @@ class ModuleCompleter:
                 if self._is_suggestion_match(module.name, prefix)]
 
     def _is_suggestion_match(self, module_name: str, prefix: str) -> bool:
-        prefix_modules = prefix and module_name.startswith(prefix)
-        public_modules = not prefix and not module_name.startswith("_")
-        return prefix_modules or public_modules
+        """
+        Filter the modules returned by the autocompletion
+
+        The private modules (start with _) are only returned if explicitly specified
+        """
+        if prefix:
+            return module_name.startswith(prefix)
+        return not module_name.startswith("_")
 
     def iter_submodules(self, parent_modules: list[pkgutil.ModuleInfo]) -> Iterator[pkgutil.ModuleInfo]:
         """Iterate over all submodules of the given parent modules."""
