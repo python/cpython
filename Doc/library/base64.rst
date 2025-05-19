@@ -191,7 +191,7 @@ Base 85 Encodings
 
 Base-85 encoding is not formally specified. Base-85 encoding is a de facto standard
 originating from the ASCII Base-85 Strings encoding defined by the
-`PostScript Language <https://web.archive.org/web/20161222092741/https://www.adobe.com/products/postscript/pdfs/PLRM.pdf>`_. 
+`PostScript Language <https://web.archive.org/web/20161222092741/https://www.adobe.com/products/postscript/pdfs/PLRM.pdf>`_.
 
 The Ascii85 and Base85 functions in this module are two implementations of
 the de facto standard. Which function you should use depends on how the other
