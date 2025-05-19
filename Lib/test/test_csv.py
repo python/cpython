@@ -1341,7 +1341,7 @@ ghi\0jkl
         sniffer = csv.Sniffer()
         self.assertTrue(sniffer.has_header(self.sample12))
         self.assertFalse(sniffer.has_header(self.sample13))
-    
+
     def test_issue119123(self):
         sniffer = csv.Sniffer()
         dialect = sniffer.sniff(self.sample15, ",;")
