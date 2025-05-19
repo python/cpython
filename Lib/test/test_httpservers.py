@@ -1478,31 +1478,26 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
             return res.read()
 
     def parse_cli_output(self, output):
-        matches = re.search(r'Serving (HTTP|HTTPS) on (.+) port (\d+)', output)
-        if matches is None:
+        match = re.search(r'Serving (HTTP|HTTPS) on (.+) port (\d+)', output)
+        if match is None:
             return None, None, None
-        return matches.group(1).lower(), matches.group(2), int(matches.group(3))
+        return match.group(1).lower(), match.group(2), int(match.group(3))
 
-    def wait_for_server(self, proc, protocol, port):
-        """Extract the server bind address once it has been started."""
+    def wait_for_server(self, proc, protocol, bind, port):
+        """Check that the server has been successfully started."""
         line = proc.stdout.readline().strip()
         if support.verbose:
             print()
             print('python -m http.server: ', line)
-        parsed_protocol, host, parsed_port = self.parse_cli_output(line)
-        if protocol == parsed_protocol and parsed_port == port:
-            return host
-        return None
+        return self.parse_cli_output(line) == (protocol, bind, port)
 
     def test_http_client(self):
-        port = find_unused_port()
-        proc = spawn_python('-u', '-m', 'http.server', str(port),
+        bind, port = '127.0.0.1', find_unused_port()
+        proc = spawn_python('-u', '-m', 'http.server', str(port), '-b', bind,
                             bufsize=1, text=True)
         self.addCleanup(kill_python, proc)
         self.addCleanup(proc.terminate)
-        bind = self.wait_for_server(proc, 'http', port)
-        self.assertIsNotNone(bind)
-        # localhost may be redirected to something else for whatever reason
+        self.assertTrue(self.wait_for_server(proc, 'http', bind, port))
         res = self.fetch_file(f'http://{bind}:{port}/{self.served_filename}')
         self.assertEqual(res, self.served_data)
 
@@ -1514,16 +1509,14 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         context.verify_mode = ssl.CERT_NONE
 
         bind, port = '127.0.0.1', find_unused_port()
-        proc = spawn_python('-u', '-m', 'http.server', str(port),
-                            '-b', bind,
+        proc = spawn_python('-u', '-m', 'http.server', str(port), '-b', bind,
                             '--tls-cert', self.tls_cert,
                             '--tls-key', self.tls_key,
                             '--tls-password-file', self.tls_password_file,
                             bufsize=1, text=True)
         self.addCleanup(kill_python, proc)
         self.addCleanup(proc.terminate)
-        bind = self.wait_for_server(proc, 'https', port)
-        self.assertIsNotNone(bind)
+        self.assertTrue(self.wait_for_server(proc, 'https', bind, port))
         url = f'https://{bind}:{port}/{self.served_filename}'
         res = self.fetch_file(url, context=context)
         self.assertEqual(res, self.served_data)
