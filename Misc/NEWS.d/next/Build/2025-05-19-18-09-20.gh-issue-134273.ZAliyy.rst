@@ -1,0 +1,1 @@
+Respect CFLAGS set during configure during JIT builds
