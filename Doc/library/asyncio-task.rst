@@ -296,7 +296,7 @@ Creating Tasks
    .. versionchanged:: 3.11
       Added the *context* parameter.
 
-   .. versionchanges:: 3.14
+   .. versionchanged:: 3.14
       Added the *eager_start* parameter by passing on all *kwargs*.
 
 
