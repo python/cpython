@@ -823,8 +823,8 @@ than raw I/O does.
 
       Write the :term:`bytes-like object`, *b*, and return the
       number of bytes written.  When in non-blocking mode, a
-      :exc:`BlockingIOError` is raised if the buffer needs to be written out but
-      the raw stream blocks.
+      :exc:`BlockingIOError` with :attr:`BlockingIOError.characters_written` set
+      is raised if the buffer needs to be written out but the raw stream blocks.
 
 
 .. class:: BufferedRandom(raw, buffer_size=DEFAULT_BUFFER_SIZE)
