@@ -2033,7 +2033,7 @@ _curses_window_insch_impl(PyCursesWindowObject *self, int group_left_1,
 }
 
 /*[clinic input]
-_curses.window.inch -> unsigned_long
+_curses.window.inch
 
     [
     y: int
@@ -2048,21 +2048,30 @@ Return the character at the given position in the window.
 The bottom 8 bits are the character proper, and upper bits are the attributes.
 [clinic start generated code]*/
 
-static unsigned long
+static PyObject *
 _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
                          int y, int x)
-/*[clinic end generated code: output=6c4719fe978fe86a input=fac23ee11e3b3a66]*/
+/*[clinic end generated code: output=97ca8581baaafd06 input=4b4fb43d85b177c3]*/
 {
-    unsigned long rtn;
+    chtype rtn;
+    const char *funcname;
 
     if (!group_right_1) {
+        // winch() should never return (chtype)ERR, but this cannot
+        // be guaranteed since this is an implementation detail.
         rtn = winch(self->win);
+        funcname = "winch";
     }
     else {
+        // mvwinch() may return ERR (as a chtype) if the move fails.
         rtn = mvwinch(self->win, y, x);
+        funcname = "mvwinch";
     }
-
-    return rtn;
+    if (rtn == (chtype)ERR) {
+        curses_window_set_error(self, funcname, "inch");
+        return NULL;
+    }
+    return PyLong_FromUnsignedLong(rtn);
 }
 
 /*[-clinic input]
