@@ -297,6 +297,8 @@ class GzipFile(_streams.BaseStream):
         mtime = self._write_mtime
         if mtime is None:
             mtime = time.time()
+            if mtime < 0 or mtime >= 2**32:
+                mtime = 0
         write32u(self.fileobj, int(mtime))
         if compresslevel == _COMPRESS_LEVEL_BEST:
             xfl = b'\002'
