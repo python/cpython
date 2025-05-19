@@ -2008,13 +2008,11 @@ math.factorial
     /
 
 Find n!.
-
-Raise a ValueError if x is negative or non-integral.
 [clinic start generated code]*/
 
 static PyObject *
 math_factorial(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=6686f26fae00e9ca input=713fb771677e8c31]*/
+/*[clinic end generated code: output=6686f26fae00e9ca input=366cc321df3d4773]*/
 {
     long x, two_valuation;
     int overflow;

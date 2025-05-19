@@ -61,6 +61,7 @@ try:
     from tkinter import Event
 except ImportError:
     Event = None
+from string.templatelib import Template, Interpolation
 
 from typing import TypeVar
 T = TypeVar('T')
@@ -139,7 +140,10 @@ class BaseTest(unittest.TestCase):
                      DictReader, DictWriter,
                      array,
                      staticmethod,
-                     classmethod]
+                     classmethod,
+                     Template,
+                     Interpolation,
+                    ]
     if ctypes is not None:
         generic_types.extend((ctypes.Array, ctypes.LibraryLoader, ctypes.py_object))
     if ValueProxy is not None:

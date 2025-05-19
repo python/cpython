@@ -261,6 +261,22 @@ A :class:`timedelta` object represents a duration, the difference between two
       >>> (d.days, d.seconds, d.microseconds)
       (-1, 86399, 999999)
 
+   Since the string representation of :class:`!timedelta` objects can be confusing,
+   use the following recipe to produce a more readable format:
+
+   .. code-block:: pycon
+
+      >>> def pretty_timedelta(td):
+      ...     if td.days >= 0:
+      ...         return str(td)
+      ...     return f'-({-td!s})'
+      ...
+      >>> d = timedelta(hours=-1)
+      >>> str(d)  # not human-friendly
+      '-1 day, 23:00:00'
+      >>> pretty_timedelta(d)
+      '-(1:00:00)'
+
 
 Class attributes:
 

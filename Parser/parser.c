@@ -22190,7 +22190,7 @@ invalid_parameters_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_parameters[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"/\" ','"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "at least one argument must precede /" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "at least one parameter must precede /" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -22456,7 +22456,7 @@ invalid_star_etc_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_star_etc[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*' (')' | ',' (')' | '**'))"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "named arguments must follow bare *" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "named parameters must follow bare *" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -22516,7 +22516,7 @@ invalid_star_etc_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_star_etc[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*' param '='"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "var-positional argument cannot have default value" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "var-positional parameter cannot have default value" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -22552,7 +22552,7 @@ invalid_star_etc_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_star_etc[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*' (param_no_default | ',') param_maybe_default* '*' (param_no_default | ',')"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "* argument may appear only once" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "* may appear only once" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -22601,7 +22601,7 @@ invalid_kwds_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_kwds[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'**' param '='"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "var-keyword argument cannot have default value" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "var-keyword parameter cannot have default value" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -22634,7 +22634,7 @@ invalid_kwds_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_kwds[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'**' param ',' param"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "arguments cannot follow var-keyword argument" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "parameters cannot follow var-keyword parameter" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -22667,7 +22667,7 @@ invalid_kwds_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_kwds[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'**' param ',' ('*' | '**' | '/')"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "arguments cannot follow var-keyword argument" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "parameters cannot follow var-keyword parameter" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -22781,7 +22781,7 @@ invalid_lambda_parameters_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_lambda_parameters[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"/\" ','"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "at least one argument must precede /" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "at least one parameter must precede /" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -23065,7 +23065,7 @@ invalid_lambda_star_etc_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_lambda_star_etc[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*' (':' | ',' (':' | '**'))"));
-            _res = RAISE_SYNTAX_ERROR ( "named arguments must follow bare *" );
+            _res = RAISE_SYNTAX_ERROR ( "named parameters must follow bare *" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -23095,7 +23095,7 @@ invalid_lambda_star_etc_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_lambda_star_etc[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*' lambda_param '='"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "var-positional argument cannot have default value" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "var-positional parameter cannot have default value" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -23131,7 +23131,7 @@ invalid_lambda_star_etc_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_lambda_star_etc[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*' (lambda_param_no_default | ',') lambda_param_maybe_default* '*' (lambda_param_no_default | ',')"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "* argument may appear only once" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "* may appear only once" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -23183,7 +23183,7 @@ invalid_lambda_kwds_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_lambda_kwds[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'**' lambda_param '='"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "var-keyword argument cannot have default value" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "var-keyword parameter cannot have default value" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -23216,7 +23216,7 @@ invalid_lambda_kwds_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_lambda_kwds[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'**' lambda_param ',' lambda_param"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "arguments cannot follow var-keyword argument" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "parameters cannot follow var-keyword parameter" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -23249,7 +23249,7 @@ invalid_lambda_kwds_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_lambda_kwds[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'**' lambda_param ',' ('*' | '**' | '/')"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "arguments cannot follow var-keyword argument" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "parameters cannot follow var-keyword parameter" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -24202,7 +24202,7 @@ invalid_try_stmt_rule(Parser *p)
 //     | 'except' expression ',' expressions 'as' NAME ':'
 //     | 'except' expression ['as' NAME] NEWLINE
 //     | 'except' NEWLINE
-//     | 'except' expression 'as' expression
+//     | 'except' expression 'as' expression ':' block
 static void *
 invalid_except_stmt_rule(Parser *p)
 {
@@ -24318,15 +24318,17 @@ invalid_except_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_except_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'except' NEWLINE"));
     }
-    { // 'except' expression 'as' expression
+    { // 'except' expression 'as' expression ':' block
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> invalid_except_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' expression 'as' expression"));
+        D(fprintf(stderr, "%*c> invalid_except_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' expression 'as' expression ':' block"));
         Token * _keyword;
         Token * _keyword_1;
+        Token * _literal;
         expr_ty a;
+        asdl_stmt_seq* block_var;
         expr_ty expression_var;
         if (
             (_keyword = _PyPegen_expect_token(p, 677))  // token='except'
@@ -24336,9 +24338,13 @@ invalid_except_stmt_rule(Parser *p)
             (_keyword_1 = _PyPegen_expect_token(p, 680))  // token='as'
             &&
             (a = expression_rule(p))  // expression
+            &&
+            (_literal = _PyPegen_expect_token(p, 11))  // token=':'
+            &&
+            (block_var = block_rule(p))  // block
         )
         {
-            D(fprintf(stderr, "%*c+ invalid_except_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except' expression 'as' expression"));
+            D(fprintf(stderr, "%*c+ invalid_except_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except' expression 'as' expression ':' block"));
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot use except statement with %s" , _PyPegen_get_expr_name ( a ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -24349,7 +24355,7 @@ invalid_except_stmt_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_except_stmt[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'except' expression 'as' expression"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'except' expression 'as' expression ':' block"));
     }
     _res = NULL;
   done:
@@ -24361,7 +24367,7 @@ invalid_except_stmt_rule(Parser *p)
 //     | 'except' '*' expression ',' expressions 'as' NAME ':'
 //     | 'except' '*' expression ['as' NAME] NEWLINE
 //     | 'except' '*' (NEWLINE | ':')
-//     | 'except' '*' expression 'as' expression
+//     | 'except' '*' expression 'as' expression ':' block
 static void *
 invalid_except_star_stmt_rule(Parser *p)
 {
@@ -24486,16 +24492,18 @@ invalid_except_star_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_except_star_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'except' '*' (NEWLINE | ':')"));
     }
-    { // 'except' '*' expression 'as' expression
+    { // 'except' '*' expression 'as' expression ':' block
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> invalid_except_star_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' '*' expression 'as' expression"));
+        D(fprintf(stderr, "%*c> invalid_except_star_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' '*' expression 'as' expression ':' block"));
         Token * _keyword;
         Token * _keyword_1;
         Token * _literal;
+        Token * _literal_1;
         expr_ty a;
+        asdl_stmt_seq* block_var;
         expr_ty expression_var;
         if (
             (_keyword = _PyPegen_expect_token(p, 677))  // token='except'
@@ -24507,9 +24515,13 @@ invalid_except_star_stmt_rule(Parser *p)
             (_keyword_1 = _PyPegen_expect_token(p, 680))  // token='as'
             &&
             (a = expression_rule(p))  // expression
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 11))  // token=':'
+            &&
+            (block_var = block_rule(p))  // block
         )
         {
-            D(fprintf(stderr, "%*c+ invalid_except_star_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except' '*' expression 'as' expression"));
+            D(fprintf(stderr, "%*c+ invalid_except_star_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except' '*' expression 'as' expression ':' block"));
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot use except* statement with %s" , _PyPegen_get_expr_name ( a ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -24520,7 +24532,7 @@ invalid_except_star_stmt_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_except_star_stmt[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'except' '*' expression 'as' expression"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'except' '*' expression 'as' expression ':' block"));
     }
     _res = NULL;
   done:

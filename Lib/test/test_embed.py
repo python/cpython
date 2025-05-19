@@ -296,7 +296,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         if MS_WINDOWS:
             expected_path = self.test_exe
         else:
-            expected_path = os.path.join(os.getcwd(), "spam")
+            expected_path = os.path.join(os.getcwd(), "_testembed")
         expected_output = f"sys.executable: {expected_path}\n"
         self.assertIn(expected_output, out)
         self.assertEqual(err, '')
@@ -969,7 +969,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'utf8_mode': True,
         }
         config = {
-            'program_name': './globalvar',
             'site_import': False,
             'bytes_warning': True,
             'warnoptions': ['default::BytesWarning'],

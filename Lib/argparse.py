@@ -167,7 +167,6 @@ class HelpFormatter(object):
         indent_increment=2,
         max_help_position=24,
         width=None,
-        prefix_chars='-',
         color=False,
     ):
         # default setting for width
@@ -176,16 +175,7 @@ class HelpFormatter(object):
             width = shutil.get_terminal_size().columns
             width -= 2
 
-        from _colorize import can_colorize, decolor, get_theme
-
-        if color and can_colorize():
-            self._theme = get_theme(force_color=True).argparse
-            self._decolor = decolor
-        else:
-            self._theme = get_theme(force_no_color=True).argparse
-            self._decolor = lambda text: text
-
-        self._prefix_chars = prefix_chars
+        self._set_color(color)
         self._prog = prog
         self._indent_increment = indent_increment
         self._max_help_position = min(max_help_position,
@@ -202,9 +192,20 @@ class HelpFormatter(object):
         self._whitespace_matcher = _re.compile(r'\s+', _re.ASCII)
         self._long_break_matcher = _re.compile(r'\n\n\n+')
 
+    def _set_color(self, color):
+        from _colorize import can_colorize, decolor, get_theme
+
+        if color and can_colorize():
+            self._theme = get_theme(force_color=True).argparse
+            self._decolor = decolor
+        else:
+            self._theme = get_theme(force_no_color=True).argparse
+            self._decolor = lambda text: text
+
     # ===============================
     # Section and indentation methods
     # ===============================
+
     def _indent(self):
         self._current_indent += self._indent_increment
         self._level += 1
@@ -256,6 +257,7 @@ class HelpFormatter(object):
     # ========================
     # Message building methods
     # ========================
+
     def start_section(self, heading):
         self._indent()
         section = self._Section(self, self._current_section, heading)
@@ -299,6 +301,7 @@ class HelpFormatter(object):
     # =======================
     # Help-formatting methods
     # =======================
+
     def format_help(self):
         help = self._root_section.format_help()
         if help:
@@ -415,14 +418,7 @@ class HelpFormatter(object):
         return ' '.join(self._get_actions_usage_parts(actions, groups))
 
     def _is_long_option(self, string):
-        return len(string) >= 2 and string[1] in self._prefix_chars
-
-    def _is_short_option(self, string):
-        return (
-            not self._is_long_option(string)
-            and len(string) >= 1
-            and string[0] in self._prefix_chars
-        )
+        return len(string) > 2
 
     def _get_actions_usage_parts(self, actions, groups):
         # find group indices and identify actions in groups
@@ -471,25 +467,22 @@ class HelpFormatter(object):
             # produce the first way to invoke the option in brackets
             else:
                 option_string = action.option_strings[0]
+                if self._is_long_option(option_string):
+                    option_color = t.summary_long_option
+                else:
+                    option_color = t.summary_short_option
 
                 # if the Optional doesn't take a value, format is:
                 #    -s or --long
                 if action.nargs == 0:
                     part = action.format_usage()
-                    if self._is_long_option(part):
-                        part = f"{t.summary_long_option}{part}{t.reset}"
-                    elif self._is_short_option(part):
-                        part = f"{t.summary_short_option}{part}{t.reset}"
+                    part = f"{option_color}{part}{t.reset}"
 
                 # if the Optional takes a value, format is:
                 #    -s ARGS or --long ARGS
                 else:
                     default = self._get_default_metavar_for_optional(action)
                     args_string = self._format_args(action, default)
-                    if self._is_long_option(option_string):
-                        option_color = t.summary_long_option
-                    elif self._is_short_option(option_string):
-                        option_color = t.summary_short_option
                     part = (
                         f"{option_color}{option_string} "
                         f"{t.summary_label}{args_string}{t.reset}"
@@ -606,10 +599,8 @@ class HelpFormatter(object):
                 for s in strings:
                     if self._is_long_option(s):
                         parts.append(f"{t.long_option}{s}{t.reset}")
-                    elif self._is_short_option(s):
-                        parts.append(f"{t.short_option}{s}{t.reset}")
                     else:
-                        parts.append(s)
+                        parts.append(f"{t.short_option}{s}{t.reset}")
                 return parts
 
             # if the Optional doesn't take a value, format is:
@@ -1479,6 +1470,7 @@ class _ActionsContainer(object):
     # ====================
     # Registration methods
     # ====================
+
     def register(self, registry_name, value, object):
         registry = self._registries.setdefault(registry_name, {})
         registry[value] = object
@@ -1489,6 +1481,7 @@ class _ActionsContainer(object):
     # ==================================
     # Namespace default accessor methods
     # ==================================
+
     def set_defaults(self, **kwargs):
         self._defaults.update(kwargs)
 
@@ -1508,6 +1501,7 @@ class _ActionsContainer(object):
     # =======================
     # Adding argument actions
     # =======================
+
     def add_argument(self, *args, **kwargs):
         """
         add_argument(dest, ..., name=value, ...)
@@ -1933,6 +1927,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # =======================
     # Pretty __repr__ methods
     # =======================
+
     def _get_kwargs(self):
         names = [
             'prog',
@@ -1947,6 +1942,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # ==================================
     # Optional/Positional adding methods
     # ==================================
+
     def add_subparsers(self, **kwargs):
         if self._subparsers is not None:
             raise ValueError('cannot have multiple subparser arguments')
@@ -2000,6 +1996,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # =====================================
     # Command line argument parsing methods
     # =====================================
+
     def parse_args(self, args=None, namespace=None):
         args, argv = self.parse_known_args(args, namespace)
         if argv:
@@ -2594,6 +2591,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # ========================
     # Value conversion methods
     # ========================
+
     def _get_values(self, action, arg_strings):
         # optional argument produces a default when not present
         if not arg_strings and action.nargs == OPTIONAL:
@@ -2693,6 +2691,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # =======================
     # Help-formatting methods
     # =======================
+
     def format_usage(self):
         formatter = self._get_formatter()
         formatter.add_usage(self.usage, self._actions,
@@ -2723,20 +2722,14 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         return formatter.format_help()
 
     def _get_formatter(self):
-        if isinstance(self.formatter_class, type) and issubclass(
-            self.formatter_class, HelpFormatter
-        ):
-            return self.formatter_class(
-                prog=self.prog,
-                prefix_chars=self.prefix_chars,
-                color=self.color,
-            )
-        else:
-            return self.formatter_class(prog=self.prog)
+        formatter = self.formatter_class(prog=self.prog)
+        formatter._set_color(self.color)
+        return formatter
 
     # =====================
     # Help-printing methods
     # =====================
+
     def print_usage(self, file=None):
         if file is None:
             file = _sys.stdout
@@ -2758,6 +2751,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # ===============
     # Exiting methods
     # ===============
+
     def exit(self, status=0, message=None):
         if message:
             self._print_message(message, _sys.stderr)

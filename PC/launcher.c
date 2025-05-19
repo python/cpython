@@ -140,7 +140,7 @@ static wchar_t * get_env(wchar_t * key)
     return buf;
 }
 
-#if defined(_DEBUG)
+#if defined(Py_DEBUG)
 /* Do not define EXECUTABLEPATH_VALUE in debug builds as it'll
    never point to the debug build. */
 #if defined(_WINDOWS)

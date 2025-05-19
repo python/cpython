@@ -497,6 +497,26 @@ class TestReaderInColor(ScreenEqualMixin, TestCase):
         self.assert_screen_equal(reader, code, clean=True)
         self.assert_screen_equal(reader, expected)
 
+    def test_syntax_highlighting_indentation_error(self):
+        code = dedent(
+            """\
+            def unfinished_function():
+                var = 1
+               oops
+            """
+        )
+        expected = dedent(
+            """\
+            {k}def{z} {d}unfinished_function{z}{o}({z}{o}){z}{o}:{z}
+                var {o}={z} {n}1{z}
+               oops
+            """
+        ).format(**colors)
+        events = code_to_events(code)
+        reader, _ = handle_all_events(events)
+        self.assert_screen_equal(reader, code, clean=True)
+        self.assert_screen_equal(reader, expected)
+
     def test_control_characters(self):
         code = 'flag = "🏳️‍🌈"'
         events = code_to_events(code)

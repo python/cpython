@@ -38,8 +38,8 @@ def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     # line option '-i' and the process name set to '<stdin>'.
     # The directory of argv[0] must match the directory of the Python
     # executable for the Popen() call to python to succeed as the directory
-    # path may be used by Py_GetPath() to build the default module search
-    # path.
+    # path may be used by PyConfig_Get("module_search_paths") to build the
+    # default module search path.
     stdin_fname = os.path.join(os.path.dirname(sys.executable), "<stdin>")
     cmd_line = [stdin_fname, '-I', '-i']
     cmd_line.extend(args)
@@ -197,7 +197,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
         expected_lines = [
             '    def f(x, x): ...',
             '             ^',
-            "SyntaxError: duplicate argument 'x' in function definition"
+            "SyntaxError: duplicate parameter 'x' in function definition"
         ]
         self.assertEqual(output.splitlines()[4:-1], expected_lines)
 

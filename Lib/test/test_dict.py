@@ -338,16 +338,33 @@ class DictTest(unittest.TestCase):
         self.assertRaises(Exc, baddict2.fromkeys, [1])
 
         # test fast path for dictionary inputs
+        res = dict(zip(range(6), [0]*6))
         d = dict(zip(range(6), range(6)))
-        self.assertEqual(dict.fromkeys(d, 0), dict(zip(range(6), [0]*6)))
+        self.assertEqual(dict.fromkeys(d, 0), res)
+        # test fast path for set inputs
+        d = set(range(6))
+        self.assertEqual(dict.fromkeys(d, 0), res)
+        # test slow path for other iterable inputs
+        d = list(range(6))
+        self.assertEqual(dict.fromkeys(d, 0), res)
 
+        # test fast path when object's constructor returns large non-empty dict
         class baddict3(dict):
             def __new__(cls):
                 return d
-        d = {i : i for i in range(10)}
+        d = {i : i for i in range(1000)}
         res = d.copy()
         res.update(a=None, b=None, c=None)
         self.assertEqual(baddict3.fromkeys({"a", "b", "c"}), res)
+
+        # test slow path when object is a proper subclass of dict
+        class baddict4(dict):
+            def __init__(self):
+                dict.__init__(self, d)
+        d = {i : i for i in range(1000)}
+        res = d.copy()
+        res.update(a=None, b=None, c=None)
+        self.assertEqual(baddict4.fromkeys({"a", "b", "c"}), res)
 
     def test_copy(self):
         d = {1: 1, 2: 2, 3: 3}
@@ -1022,10 +1039,8 @@ class DictTest(unittest.TestCase):
         a = C()
         a.x = 1
         d = a.__dict__
-        before_resize = sys.getsizeof(d)
         d[2] = 2 # split table is resized to a generic combined table
 
-        self.assertGreater(sys.getsizeof(d), before_resize)
         self.assertEqual(list(d), ['x', 2])
 
     def test_iterator_pickling(self):

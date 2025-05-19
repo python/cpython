@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_long.h"          // _PyLong_UInt16_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_socket_socket_close__doc__,
@@ -369,4 +370,4 @@ exit:
 #ifndef _SOCKET_IF_INDEXTONAME_METHODDEF
     #define _SOCKET_IF_INDEXTONAME_METHODDEF
 #endif /* !defined(_SOCKET_IF_INDEXTONAME_METHODDEF) */
-/*[clinic end generated code: output=c971b79d2193b426 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=07776dd21d1e3b56 input=a9049054013a1b77]*/

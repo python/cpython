@@ -1,0 +1,1 @@
+Add basic color to :mod:`sqlite3` CLI interface.

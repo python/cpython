@@ -576,8 +576,15 @@ _ctypes_CType_Type___sizeof___impl(PyObject *self, PyTypeObject *cls)
     return PyLong_FromSsize_t(size);
 }
 
+/*[clinic input]
+@getter
+_ctypes.CType_Type.__pointer_type__
+
+[clinic start generated code]*/
+
 static PyObject *
-ctype_get_pointer_type(PyObject *self, void *Py_UNUSED(ignored))
+_ctypes_CType_Type___pointer_type___get_impl(PyObject *self)
+/*[clinic end generated code: output=718c9ff10b2b0012 input=ad12dc835943ceb8]*/
 {
     ctypes_state *st = get_module_state_by_def(Py_TYPE(self));
     StgInfo *info;
@@ -588,9 +595,12 @@ ctype_get_pointer_type(PyObject *self, void *Py_UNUSED(ignored))
         PyErr_Format(PyExc_TypeError, "%R must have storage info", self);
         return NULL;
     }
-
-    if (info->pointer_type) {
-        return Py_NewRef(info->pointer_type);
+    PyObject *pointer_type;
+    STGINFO_LOCK(info);
+    pointer_type = Py_XNewRef(info->pointer_type);
+    STGINFO_UNLOCK();
+    if (pointer_type) {
+        return pointer_type;
     }
 
     PyErr_Format(PyExc_AttributeError,
@@ -599,8 +609,15 @@ ctype_get_pointer_type(PyObject *self, void *Py_UNUSED(ignored))
     return NULL;
 }
 
+/*[clinic input]
+@setter
+_ctypes.CType_Type.__pointer_type__
+
+[clinic start generated code]*/
+
 static int
-ctype_set_pointer_type(PyObject *self, PyObject *tp, void *Py_UNUSED(ignored))
+_ctypes_CType_Type___pointer_type___set_impl(PyObject *self, PyObject *value)
+/*[clinic end generated code: output=6259be8ea21693fa input=a05055fc7f4714b6]*/
 {
     ctypes_state *st = get_module_state_by_def(Py_TYPE(self));
     StgInfo *info;
@@ -611,8 +628,9 @@ ctype_set_pointer_type(PyObject *self, PyObject *tp, void *Py_UNUSED(ignored))
         PyErr_Format(PyExc_TypeError, "%R must have storage info", self);
         return -1;
     }
-
-    Py_XSETREF(info->pointer_type, Py_XNewRef(tp));
+    STGINFO_LOCK(info);
+    Py_XSETREF(info->pointer_type, Py_XNewRef(value));
+    STGINFO_UNLOCK();
     return 0;
 }
 
@@ -626,8 +644,7 @@ static PyMethodDef ctype_methods[] = {
 };
 
 static PyGetSetDef ctype_getsets[] = {
-    { "__pointer_type__", ctype_get_pointer_type, ctype_set_pointer_type,
-      "pointer type", NULL },
+    _CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF
     { NULL, NULL }
 };
 
@@ -1254,9 +1271,11 @@ PyCPointerType_SetProto(ctypes_state *st, PyObject *self, StgInfo *stginfo, PyOb
         return -1;
     }
     Py_XSETREF(stginfo->proto, Py_NewRef(proto));
+    STGINFO_LOCK(info);
     if (info->pointer_type == NULL) {
         Py_XSETREF(info->pointer_type, Py_NewRef(self));
     }
+    STGINFO_UNLOCK();
     return 0;
 }
 

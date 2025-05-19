@@ -96,12 +96,12 @@ func_type[mod_ty]: '(' a=[type_expressions] ')' '->' b=expression NEWLINE* ENDMA
 
 statements[asdl_stmt_seq*]: a=statement+ { _PyPegen_register_stmts(p, (asdl_stmt_seq*)_PyPegen_seq_flatten(p, a)) }
 
-statement[asdl_stmt_seq*]: 
-    | a=compound_stmt { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) } 
+statement[asdl_stmt_seq*]:
+    | a=compound_stmt { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) }
     | a[asdl_stmt_seq*]=simple_stmts { a }
 
 single_compound_stmt[asdl_stmt_seq*]:
-    | a=compound_stmt { 
+    | a=compound_stmt {
         _PyPegen_register_stmts(p, (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a)) }
 
 statement_newline[asdl_stmt_seq*]:
@@ -449,9 +449,9 @@ except_block[excepthandler_ty]:
         _PyAST_ExceptHandler(e, ((expr_ty) t)->v.Name.id, b, EXTRA) }
     | 'except' e=expressions ':' b=block {
         CHECK_VERSION(
-            excepthandler_ty, 
-            14, 
-            "except expressions without parentheses are", 
+            excepthandler_ty,
+            14,
+            "except expressions without parentheses are",
             _PyAST_ExceptHandler(e, NULL, b, EXTRA)) }
     | 'except' ':' b=block { _PyAST_ExceptHandler(NULL, NULL, b, EXTRA) }
     | invalid_except_stmt
@@ -463,9 +463,9 @@ except_star_block[excepthandler_ty]:
         _PyAST_ExceptHandler(e, ((expr_ty) t)->v.Name.id, b, EXTRA) }
     | 'except' '*' e=expressions ':' b=block {
         CHECK_VERSION(
-            excepthandler_ty, 
-            14, 
-            "except expressions without parentheses are", 
+            excepthandler_ty,
+            14,
+            "except expressions without parentheses are",
             _PyAST_ExceptHandler(e,  NULL, b, EXTRA)) }
     | invalid_except_star_stmt
 finally_block[asdl_stmt_seq*]:
@@ -977,11 +977,11 @@ tstring_middle[expr_ty]:
     | tstring_replacement_field
     | t=TSTRING_MIDDLE { _PyPegen_constant_from_token(p, t) }
 tstring[expr_ty] (memo):
-    | a=TSTRING_START b=tstring_middle* c=TSTRING_END { 
+    | a=TSTRING_START b=tstring_middle* c=TSTRING_END {
         CHECK_VERSION(
-            expr_ty, 
-            14, 
-            "t-strings are", 
+            expr_ty,
+            14,
+            "t-strings are",
             _PyPegen_template_str(p, a, (asdl_expr_seq*)b, c)) }
 
 string[expr_ty]: s[Token*]=STRING { _PyPegen_constant_from_string(p, s) }
@@ -1305,7 +1305,7 @@ invalid_dict_comprehension:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "dict unpacking cannot be used in dict comprehension") }
 invalid_parameters:
     | a="/" ',' {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "at least one argument must precede /") }
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "at least one parameter must precede /") }
     | (slash_no_default | slash_with_default) param_maybe_default* a='/' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ may appear only once") }
     | slash_no_default? param_no_default* invalid_parameters_helper a=param_no_default {
@@ -1319,21 +1319,21 @@ invalid_parameters:
 invalid_default:
     | a='=' &(')'|',') { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expected default value expression") }
 invalid_star_etc:
-    | a='*' (')' | ',' (')' | '**')) { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "named arguments must follow bare *") }
+    | a='*' (')' | ',' (')' | '**')) { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "named parameters must follow bare *") }
     | '*' ',' TYPE_COMMENT { RAISE_SYNTAX_ERROR("bare * has associated type comment") }
-    | '*' param a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "var-positional argument cannot have default value") }
+    | '*' param a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "var-positional parameter cannot have default value") }
     | '*' (param_no_default | ',') param_maybe_default* a='*' (param_no_default | ',') {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "* argument may appear only once") }
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "* may appear only once") }
 invalid_kwds:
-    | '**' param a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "var-keyword argument cannot have default value") }
-    | '**' param ',' a=param { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "arguments cannot follow var-keyword argument") }
-    | '**' param ',' a[Token*]=('*'|'**'|'/') { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "arguments cannot follow var-keyword argument") }
+    | '**' param a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "var-keyword parameter cannot have default value") }
+    | '**' param ',' a=param { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "parameters cannot follow var-keyword parameter") }
+    | '**' param ',' a[Token*]=('*'|'**'|'/') { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "parameters cannot follow var-keyword parameter") }
 invalid_parameters_helper: # This is only there to avoid type errors
     | a=slash_with_default { _PyPegen_singleton_seq(p, a) }
     | param_with_default+
 invalid_lambda_parameters:
     | a="/" ',' {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "at least one argument must precede /") }
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "at least one parameter must precede /") }
     | (lambda_slash_no_default | lambda_slash_with_default) lambda_param_maybe_default* a='/' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ may appear only once") }
     | lambda_slash_no_default? lambda_param_no_default* invalid_lambda_parameters_helper a=lambda_param_no_default {
@@ -1348,14 +1348,14 @@ invalid_lambda_parameters_helper:
     | a=lambda_slash_with_default { _PyPegen_singleton_seq(p, a) }
     | lambda_param_with_default+
 invalid_lambda_star_etc:
-    | '*' (':' | ',' (':' | '**')) { RAISE_SYNTAX_ERROR("named arguments must follow bare *") }
-    | '*' lambda_param a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "var-positional argument cannot have default value") }
+    | '*' (':' | ',' (':' | '**')) { RAISE_SYNTAX_ERROR("named parameters must follow bare *") }
+    | '*' lambda_param a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "var-positional parameter cannot have default value") }
     | '*' (lambda_param_no_default | ',') lambda_param_maybe_default* a='*' (lambda_param_no_default | ',') {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "* argument may appear only once") }
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "* may appear only once") }
 invalid_lambda_kwds:
-    | '**' lambda_param a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "var-keyword argument cannot have default value") }
-    | '**' lambda_param ',' a=lambda_param { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "arguments cannot follow var-keyword argument") }
-    | '**' lambda_param ',' a[Token*]=('*'|'**'|'/') { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "arguments cannot follow var-keyword argument") }
+    | '**' lambda_param a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "var-keyword parameter cannot have default value") }
+    | '**' lambda_param ',' a=lambda_param { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "parameters cannot follow var-keyword parameter") }
+    | '**' lambda_param ',' a[Token*]=('*'|'**'|'/') { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "parameters cannot follow var-keyword parameter") }
 invalid_double_type_comments:
     | TYPE_COMMENT NEWLINE TYPE_COMMENT NEWLINE INDENT {
         RAISE_SYNTAX_ERROR("Cannot have two type comments on def") }
@@ -1383,11 +1383,11 @@ invalid_import:
         RAISE_SYNTAX_ERROR_STARTING_FROM(token, "Expected one or more names after 'import'") }
 invalid_dotted_as_name:
     | dotted_name 'as' !(NAME (',' | ')' | NEWLINE)) a=expression {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, 
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a,
             "cannot use %s as import target", _PyPegen_get_expr_name(a)) }
 invalid_import_from_as_name:
     | NAME 'as' !(NAME (',' | ')' | NEWLINE)) a=expression {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, 
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a,
             "cannot use %s as import target", _PyPegen_get_expr_name(a)) }
 
 invalid_import_from_targets:
@@ -1418,7 +1418,7 @@ invalid_except_stmt:
         RAISE_SYNTAX_ERROR_STARTING_FROM(a, "multiple exception types must be parenthesized when using 'as'") }
     | a='except' expression ['as' NAME ] NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='except' NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
-    | 'except' expression 'as' a=expression {
+    | 'except' expression 'as' a=expression ':' block {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a, "cannot use except statement with %s", _PyPegen_get_expr_name(a)) }
 invalid_except_star_stmt:
@@ -1426,7 +1426,7 @@ invalid_except_star_stmt:
         RAISE_SYNTAX_ERROR_STARTING_FROM(a, "multiple exception types must be parenthesized when using 'as'") }
     | a='except' '*' expression ['as' NAME ] NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='except' '*' (NEWLINE | ':') { RAISE_SYNTAX_ERROR("expected one or more exception types") }
-    | 'except' '*' expression 'as' a=expression {
+    | 'except' '*' expression 'as' a=expression ':' block {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a, "cannot use except* statement with %s", _PyPegen_get_expr_name(a)) }
 invalid_finally_stmt:

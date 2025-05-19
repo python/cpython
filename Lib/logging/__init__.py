@@ -1474,6 +1474,8 @@ class Logger(Filterer):
     level, and "input.csv", "input.xls" and "input.gnu" for the sub-levels.
     There is no arbitrary limit to the depth of nesting.
     """
+    _tls = threading.local()
+
     def __init__(self, name, level=NOTSET):
         """
         Initialize the logger with a name and an optional level.
@@ -1670,14 +1672,19 @@ class Logger(Filterer):
         This method is used for unpickled records received from a socket, as
         well as those created locally. Logger-level filtering is applied.
         """
-        if self.disabled:
+        if self._is_disabled():
             return
-        maybe_record = self.filter(record)
-        if not maybe_record:
-            return
-        if isinstance(maybe_record, LogRecord):
-            record = maybe_record
-        self.callHandlers(record)
+
+        self._tls.in_progress = True
+        try:
+            maybe_record = self.filter(record)
+            if not maybe_record:
+                return
+            if isinstance(maybe_record, LogRecord):
+                record = maybe_record
+            self.callHandlers(record)
+        finally:
+            self._tls.in_progress = False
 
     def addHandler(self, hdlr):
         """
@@ -1765,7 +1772,7 @@ class Logger(Filterer):
         """
         Is this logger enabled for level 'level'?
         """
-        if self.disabled:
+        if self._is_disabled():
             return False
 
         try:
@@ -1814,6 +1821,11 @@ class Logger(Filterer):
             return set(item for item in d.values()
                        if isinstance(item, Logger) and item.parent is self and
                        _hierlevel(item) == 1 + _hierlevel(item.parent))
+
+    def _is_disabled(self):
+        # We need to use getattr as it will only be set the first time a log
+        # message is recorded on any given thread
+        return self.disabled or getattr(self._tls, 'in_progress', False)
 
     def __repr__(self):
         level = getLevelName(self.getEffectiveLevel())
@@ -2045,6 +2057,15 @@ def basicConfig(**kwargs):
               created FileHandler, causing it to be used when the file is
               opened in text mode. If not specified, the default value is
               `backslashreplace`.
+    formatter If specified, set this formatter instance for all involved
+              handlers.
+              If not specified, the default is to create and use an instance of
+              `logging.Formatter` based on arguments 'format', 'datefmt' and
+              'style'.
+              When 'formatter' is specified together with any of the three
+              arguments 'format', 'datefmt' and 'style', a `ValueError`
+              is raised to signal that these arguments would lose meaning
+              otherwise.
 
     Note that you could specify a stream created using open(filename, mode)
     rather than passing the filename and mode in. However, it should be
@@ -2067,6 +2088,9 @@ def basicConfig(**kwargs):
 
     .. versionchanged:: 3.9
        Added the ``encoding`` and ``errors`` parameters.
+
+    .. versionchanged:: 3.15
+       Added the ``formatter`` parameter.
     """
     # Add thread safety in case someone mistakenly calls
     # basicConfig() from multiple threads
@@ -2102,13 +2126,19 @@ def basicConfig(**kwargs):
                     stream = kwargs.pop("stream", None)
                     h = StreamHandler(stream)
                 handlers = [h]
-            dfs = kwargs.pop("datefmt", None)
-            style = kwargs.pop("style", '%')
-            if style not in _STYLES:
-                raise ValueError('Style must be one of: %s' % ','.join(
-                                 _STYLES.keys()))
-            fs = kwargs.pop("format", _STYLES[style][1])
-            fmt = Formatter(fs, dfs, style)
+            fmt = kwargs.pop("formatter", None)
+            if fmt is None:
+                dfs = kwargs.pop("datefmt", None)
+                style = kwargs.pop("style", '%')
+                if style not in _STYLES:
+                    raise ValueError('Style must be one of: %s' % ','.join(
+                                    _STYLES.keys()))
+                fs = kwargs.pop("format", _STYLES[style][1])
+                fmt = Formatter(fs, dfs, style)
+            else:
+                for forbidden_key in ("datefmt", "format", "style"):
+                    if forbidden_key in kwargs:
+                        raise ValueError(f"{forbidden_key!r} should not be specified together with 'formatter'")
             for h in handlers:
                 if h.formatter is None:
                     h.setFormatter(fmt)

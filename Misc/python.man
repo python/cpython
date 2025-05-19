@@ -529,11 +529,11 @@ See also the \fB\-X frozen_modules\fR option.
 If this variable is set to 1, the global interpreter lock (GIL) will be forced
 on. Setting it to 0 forces the GIL off. Only available in builds configured
 with \fB\-\-disable\-gil\fP.
+.IP
+This is equivalent to the \fB\-X gil\fR option.
 .IP PYTHON_HISTORY
 This environment variable can be used to set the location of a history file
 (on Unix, it is \fI~/.python_history\fP by default).
-.IP
-This is equivalent to the \fB\-X gil\fR option.
 .IP PYTHONNODEBUGRANGES
 If this variable is set, it disables the inclusion of the tables mapping
 extra location information (end line, start column offset and end column

@@ -111,7 +111,6 @@ Local naming conventions:
 #include "pycore_moduleobject.h"  // _PyModule_GetState
 #include "pycore_time.h"          // _PyTime_AsMilliseconds()
 #include "pycore_pystate.h"       // _Py_AssertHoldsTstate()
-#include "pycore_pyatomic_ft_wrappers.h"
 
 #ifdef _Py_MEMORY_SANITIZER
 #  include <sanitizer/msan_interface.h>
@@ -565,7 +564,6 @@ static int sock_cloexec_works = -1;
 static inline void
 set_sock_fd(PySocketSockObject *s, SOCKET_T fd)
 {
-#ifdef Py_GIL_DISABLED
 #if SIZEOF_SOCKET_T == SIZEOF_INT
     _Py_atomic_store_int_relaxed((int *)&s->sock_fd, (int)fd);
 #elif SIZEOF_SOCKET_T == SIZEOF_LONG
@@ -575,15 +573,11 @@ set_sock_fd(PySocketSockObject *s, SOCKET_T fd)
 #else
     #error "Unsupported SIZEOF_SOCKET_T"
 #endif
-#else
-    s->sock_fd = fd;
-#endif
 }
 
 static inline SOCKET_T
 get_sock_fd(PySocketSockObject *s)
 {
-#ifdef Py_GIL_DISABLED
 #if SIZEOF_SOCKET_T == SIZEOF_INT
     return (SOCKET_T)_Py_atomic_load_int_relaxed((int *)&s->sock_fd);
 #elif SIZEOF_SOCKET_T == SIZEOF_LONG
@@ -592,9 +586,6 @@ get_sock_fd(PySocketSockObject *s)
     return (SOCKET_T)_Py_atomic_load_llong_relaxed((long long *)&s->sock_fd);
 #else
     #error "Unsupported SIZEOF_SOCKET_T"
-#endif
-#else
-    return s->sock_fd;
 #endif
 }
 
@@ -638,33 +629,22 @@ _PyLong_##NAME##_Converter(PyObject *obj, void *ptr)                \
     return 1;                                                       \
 }
 
-UNSIGNED_INT_CONVERTER(UInt16, uint16_t)
-UNSIGNED_INT_CONVERTER(UInt32, uint32_t)
-
 #if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
 # ifdef MS_WINDOWS
     UNSIGNED_INT_CONVERTER(NetIfindex, NET_IFINDEX)
 # else
-    UNSIGNED_INT_CONVERTER(NetIfindex, unsigned int)
+#   define _PyLong_NetIfindex_Converter _PyLong_UnsignedInt_Converter
 #   define NET_IFINDEX unsigned int
 # endif
 #endif // defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
 
 /*[python input]
-class uint16_converter(CConverter):
-    type = "uint16_t"
-    converter = '_PyLong_UInt16_Converter'
-
-class uint32_converter(CConverter):
-    type = "uint32_t"
-    converter = '_PyLong_UInt32_Converter'
-
 class NET_IFINDEX_converter(CConverter):
     type = "NET_IFINDEX"
     converter = '_PyLong_NetIfindex_Converter'
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=3de2e4a03fbf83b8]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=1cf809c40a407c34]*/
 
 /*[clinic input]
 module _socket

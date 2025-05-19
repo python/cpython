@@ -3144,7 +3144,7 @@ static inline void _Py_NO_RETURN
 fatal_error_exit(int status)
 {
     if (status < 0) {
-#if defined(MS_WINDOWS) && defined(_DEBUG)
+#if defined(MS_WINDOWS) && defined(Py_DEBUG)
         DebugBreak();
 #endif
         abort();

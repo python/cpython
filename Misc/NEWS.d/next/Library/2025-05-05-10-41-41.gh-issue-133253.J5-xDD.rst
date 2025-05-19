@@ -1,0 +1,1 @@
+Fix thread-safety issues in :mod:`linecache`.

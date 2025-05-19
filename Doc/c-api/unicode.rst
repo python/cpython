@@ -645,6 +645,17 @@ APIs:
    difference being that it decrements the reference count of *right* by one.
 
 
+.. c:function:: PyObject* PyUnicode_BuildEncodingMap(PyObject* string)
+
+   Return a mapping suitable for decoding a custom single-byte encoding.
+   Given a Unicode string *string* of up to 256 characters representing an encoding
+   table, returns either a compact internal mapping object or a dictionary
+   mapping character ordinals to byte values. Raises a :exc:`TypeError` and
+   return ``NULL`` on invalid input.
+
+   .. versionadded:: 3.2
+
+
 .. c:function:: const char* PyUnicode_GetDefaultEncoding(void)
 
    Return the name of the default string encoding, ``"utf-8"``.

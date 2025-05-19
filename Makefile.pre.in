@@ -1012,7 +1012,12 @@ $(LIBRARY): $(LIBRARY_OBJS)
 	$(AR) $(ARFLAGS) $@ $(LIBRARY_OBJS)
 
 libpython$(LDVERSION).so: $(LIBRARY_OBJS) $(DTRACE_OBJS)
-	$(BLDSHARED) -Wl,-h$(INSTSONAME) -o $(INSTSONAME) $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM)
+	# AIX Linker don't support "-h" option
+	if test "$(MACHDEP)" != "aix"; then \
+		$(BLDSHARED) -Wl,-h$(INSTSONAME) -o $(INSTSONAME) $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM); \
+	else \
+		$(BLDSHARED) -o $@ $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM); \
+	fi
 	if test $(INSTSONAME) != $@; then \
 		$(LN) -f $(INSTSONAME) $@; \
 	fi
@@ -2507,8 +2512,7 @@ maninstall:	altmaninstall
 XMLLIBSUBDIRS=  xml xml/dom xml/etree xml/parsers xml/sax
 LIBSUBDIRS=	asyncio \
 		collections \
-		compression compression/bz2 compression/gzip compression/zstd \
-		compression/lzma compression/zlib compression/_common \
+		compression compression/_common compression/zstd \
 		concurrent concurrent/futures \
 		csv \
 		ctypes ctypes/macholib \
@@ -3341,7 +3345,7 @@ MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/_testcapi/parts.h $(srcdir)/Modules/_tes
 MODULE__TESTLIMITEDCAPI_DEPS=$(srcdir)/Modules/_testlimitedcapi/testcapi_long.h $(srcdir)/Modules/_testlimitedcapi/parts.h $(srcdir)/Modules/_testlimitedcapi/util.h
 MODULE__TESTINTERNALCAPI_DEPS=$(srcdir)/Modules/_testinternalcapi/parts.h
 MODULE__SQLITE3_DEPS=$(srcdir)/Modules/_sqlite/connection.h $(srcdir)/Modules/_sqlite/cursor.h $(srcdir)/Modules/_sqlite/microprotocols.h $(srcdir)/Modules/_sqlite/module.h $(srcdir)/Modules/_sqlite/prepare_protocol.h $(srcdir)/Modules/_sqlite/row.h $(srcdir)/Modules/_sqlite/util.h
-MODULE__ZSTD_DEPS=$(srcdir)/Modules/_zstd/_zstdmodule.h $(srcdir)/Modules/_zstd/buffer.h
+MODULE__ZSTD_DEPS=$(srcdir)/Modules/_zstd/_zstdmodule.h $(srcdir)/Modules/_zstd/buffer.h $(srcdir)/Modules/_zstd/zstddict.h
 
 CODECS_COMMON_HEADERS=$(srcdir)/Modules/cjkcodecs/multibytecodec.h $(srcdir)/Modules/cjkcodecs/cjkcodecs.h
 MODULE__CODECS_CN_DEPS=$(srcdir)/Modules/cjkcodecs/mappings_cn.h $(CODECS_COMMON_HEADERS)

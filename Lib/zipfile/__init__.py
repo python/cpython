@@ -38,8 +38,8 @@ except ImportError:
 
 __all__ = ["BadZipFile", "BadZipfile", "error",
            "ZIP_STORED", "ZIP_DEFLATED", "ZIP_BZIP2", "ZIP_LZMA",
-           "is_zipfile", "ZipInfo", "ZipFile", "PyZipFile", "LargeZipFile",
-           "Path"]
+           "ZIP_ZSTANDARD", "is_zipfile", "ZipInfo", "ZipFile", "PyZipFile",
+           "LargeZipFile", "Path"]
 
 class BadZipFile(Exception):
     pass
@@ -812,11 +812,11 @@ def _get_compressor(compress_type, compresslevel=None):
         if compresslevel is not None:
             return bz2.BZ2Compressor(compresslevel)
         return bz2.BZ2Compressor()
-    # compresslevel is ignored for ZIP_LZMA and ZIP_ZSTANDARD
+    # compresslevel is ignored for ZIP_LZMA
     elif compress_type == ZIP_LZMA:
         return LZMACompressor()
     elif compress_type == ZIP_ZSTANDARD:
-        return zstd.ZstdCompressor()
+        return zstd.ZstdCompressor(level=compresslevel)
     else:
         return None
 
@@ -1352,7 +1352,8 @@ class ZipFile:
     mode: The mode can be either read 'r', write 'w', exclusive create 'x',
           or append 'a'.
     compression: ZIP_STORED (no compression), ZIP_DEFLATED (requires zlib),
-                 ZIP_BZIP2 (requires bz2) or ZIP_LZMA (requires lzma).
+                 ZIP_BZIP2 (requires bz2), ZIP_LZMA (requires lzma), or
+                 ZIP_ZSTANDARD (requires compression.zstd).
     allowZip64: if True ZipFile will create files with ZIP64 extensions when
                 needed, otherwise it will raise an exception when this would
                 be necessary.
@@ -1361,6 +1362,9 @@ class ZipFile:
                    When using ZIP_STORED or ZIP_LZMA this keyword has no effect.
                    When using ZIP_DEFLATED integers 0 through 9 are accepted.
                    When using ZIP_BZIP2 integers 1 through 9 are accepted.
+                   When using ZIP_ZSTANDARD integers -7 though 22 are common,
+                   see the CompressionParameter enum in compression.zstd for
+                   details.
 
     """
 
@@ -2093,6 +2097,8 @@ class ZipFile:
                 min_version = max(BZIP2_VERSION, min_version)
             elif zinfo.compress_type == ZIP_LZMA:
                 min_version = max(LZMA_VERSION, min_version)
+            elif zinfo.compress_type == ZIP_ZSTANDARD:
+                min_version = max(ZSTANDARD_VERSION, min_version)
 
             extract_version = max(min_version, zinfo.extract_version)
             create_version = max(min_version, zinfo.create_version)

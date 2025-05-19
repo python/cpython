@@ -8,10 +8,11 @@ from test.support import (
     captured_stdout,
     captured_stderr,
     captured_stdin,
-    force_not_colorized,
+    force_not_colorized_test_class,
 )
 
 
+@force_not_colorized_test_class
 class CommandLineInterface(unittest.TestCase):
 
     def _do_test(self, *args, expect_success=True):
@@ -37,7 +38,6 @@ class CommandLineInterface(unittest.TestCase):
         self.assertEqual(out, "")
         return err
 
-    @force_not_colorized
     def test_cli_help(self):
         out = self.expect_success("-h")
         self.assertIn("usage: ", out)
@@ -69,6 +69,7 @@ class CommandLineInterface(unittest.TestCase):
         self.assertIn("(0,)", out)
 
 
+@force_not_colorized_test_class
 class InteractiveSession(unittest.TestCase):
     MEMORY_DB_MSG = "Connected to a transient in-memory database"
     PS1 = "sqlite> "
@@ -116,6 +117,38 @@ class InteractiveSession(unittest.TestCase):
         self.assertEqual(out.count(self.PS2), 0)
         self.assertIn(sqlite3.sqlite_version, out)
 
+    def test_interact_empty_source(self):
+        out, err = self.run_cli(commands=("", " "))
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 3)
+        self.assertEqual(out.count(self.PS2), 0)
+
+    def test_interact_dot_commands_unknown(self):
+        out, err = self.run_cli(commands=(".unknown_command", ))
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 2)
+        self.assertEqual(out.count(self.PS2), 0)
+        self.assertIn("Error", err)
+        # test "unknown_command" is pointed out in the error message
+        self.assertIn("unknown_command", err)
+
+    def test_interact_dot_commands_empty(self):
+        out, err = self.run_cli(commands=("."))
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 2)
+        self.assertEqual(out.count(self.PS2), 0)
+
+    def test_interact_dot_commands_with_whitespaces(self):
+        out, err = self.run_cli(commands=(".version ", ". version"))
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertEqual(out.count(sqlite3.sqlite_version + "\n"), 2)
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 3)
+        self.assertEqual(out.count(self.PS2), 0)
+
     def test_interact_valid_sql(self):
         out, err = self.run_cli(commands=("SELECT 1;",))
         self.assertIn(self.MEMORY_DB_MSG, err)
@@ -158,6 +191,14 @@ class InteractiveSession(unittest.TestCase):
         out, _ = self.run_cli(TESTFN, commands=("SELECT count(t) FROM t;",))
         self.assertIn("(0,)\n", out)
 
+    def test_color(self):
+        with unittest.mock.patch("_colorize.can_colorize", return_value=True):
+            out, err = self.run_cli(commands="TEXT\n")
+            self.assertIn("\x1b[1;35msqlite> \x1b[0m", out)
+            self.assertIn("\x1b[1;35m    ... \x1b[0m\x1b", out)
+            out, err = self.run_cli(commands=("sel;",))
+            self.assertIn('\x1b[1;35mOperationalError (SQLITE_ERROR)\x1b[0m: '
+                          '\x1b[35mnear "sel": syntax error\x1b[0m', err)
 
 if __name__ == "__main__":
     unittest.main()

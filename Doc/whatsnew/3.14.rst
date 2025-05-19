@@ -82,12 +82,13 @@ and improvements in user-friendliness and correctness.
 
 .. PEP-sized items next.
 
-* :ref:`PEP 649: deferred evaluation of annotations <whatsnew314-pep649>`
+* :ref:`PEP 649 and 749: deferred evaluation of annotations <whatsnew314-pep649>`
 * :ref:`PEP 741: Python Configuration C API <whatsnew314-pep741>`
 * :ref:`PEP 750: Template strings <whatsnew314-pep750>`
 * :ref:`PEP 758: Allow except and except* expressions without parentheses <whatsnew314-pep758>`
 * :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
 * :ref:`PEP 765: Disallow return/break/continue that exit a finally block <whatsnew314-pep765>`
+* :ref:`Free-threaded mode improvements <whatsnew314-free-threaded-cpython>`
 * :ref:`PEP 768: Safe external debugger interface for CPython <whatsnew314-pep768>`
 * :ref:`PEP 784: Adding Zstandard to the standard library <whatsnew314-pep784>`
 * :ref:`A new type of interpreter <whatsnew314-tail-call>`
@@ -153,10 +154,10 @@ As another example, generating HTML attributes from data:
 .. code-block:: python
 
    attributes = {"src": "shrubbery.jpg", "alt": "looks nice"}
-   template = t"<img {attributes} />"
-   assert html(template) == '<img src="shrubbery.jpg" alt="looks nice" class="looks-nice" />'
+   template = t"<img {attributes}>"
+   assert html(template) == '<img src="shrubbery.jpg" alt="looks nice" class="looks-nice">'
 
-Unlike f-strings, the ``html`` function has access to template attributes
+Compared to using an f-string, the ``html`` function has access to template attributes
 containing the original information: static strings, interpolations, and values
 from the original scope. Unlike existing templating approaches, t-strings build
 from the well-known f-string syntax and rules. Template systems thus benefit
@@ -361,18 +362,19 @@ Check :pep:`758` for more details.
 
 .. _whatsnew314-pep649:
 
-PEP 649: deferred evaluation of annotations
--------------------------------------------
+PEP 649 and 749: deferred evaluation of annotations
+---------------------------------------------------
 
 The :term:`annotations <annotation>` on functions, classes, and modules are no
 longer evaluated eagerly. Instead, annotations are stored in special-purpose
 :term:`annotate functions <annotate function>` and evaluated only when
-necessary. This is specified in :pep:`649` and :pep:`749`.
+necessary (except if ``from __future__ import annotations`` is used).
+This is specified in :pep:`649` and :pep:`749`.
 
 This change is designed to make annotations in Python more performant and more
 usable in most circumstances. The runtime cost for defining annotations is
 minimized, but it remains possible to introspect annotations at runtime.
-It is usually no longer necessary to enclose annotations in strings if they
+It is no longer necessary to enclose annotations in strings if they
 contain forward references.
 
 The new :mod:`annotationlib` module provides tools for inspecting deferred
@@ -408,7 +410,8 @@ writing annotations the same way you did with previous versions of Python.
 You will likely be able to remove quoted strings in annotations, which are frequently
 used for forward references. Similarly, if you use ``from __future__ import annotations``
 to avoid having to write strings in annotations, you may well be able to
-remove that import. However, if you rely on third-party libraries that read annotations,
+remove that import once you support only Python 3.14 and newer.
+However, if you rely on third-party libraries that read annotations,
 those libraries may need changes to support unquoted annotations before they
 work as expected.
 
@@ -421,6 +424,11 @@ annotations. For example, you may want to use :func:`annotationlib.get_annotatio
 with the :attr:`~annotationlib.Format.FORWARDREF` format, as the :mod:`dataclasses`
 module now does.
 
+The external :pypi:`typing_extensions` package provides partial backports of some of the
+functionality of the :mod:`annotationlib` module, such as the :class:`~annotationlib.Format`
+enum and the :func:`~annotationlib.get_annotations` function. These can be used to
+write cross-version code that takes advantage of the new behavior in Python 3.14.
+
 Related changes
 ^^^^^^^^^^^^^^^
 
@@ -432,6 +440,10 @@ functions in the standard library, there are many ways in which your code may
 not work in Python 3.14. To safeguard your code against future changes,
 use only the documented functionality of the :mod:`annotationlib` module.
 
+In particular, do not read annotations directly from the namespace dictionary
+attribute of type objects. Use :func:`annotationlib.get_annotate_from_class_namespace`
+during class construction and :func:`annotationlib.get_annotations` afterwards.
+
 ``from __future__ import annotations``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -442,6 +454,11 @@ However, this removal will not happen until after Python 3.13, the last version 
 Python without deferred evaluation of annotations, reaches its end of life in 2029.
 In Python 3.14, the behavior of code using ``from __future__ import annotations``
 is unchanged.
+
+(Contributed by Jelle Zijlstra in :gh:`119180`; :pep:`649` was written by Larry Hastings.)
+
+.. seealso::
+   :pep:`649` and :pep:`749`.
 
 
 Improved error messages
@@ -584,8 +601,27 @@ Improved error messages
                      ^^^^^^
    SyntaxError: cannot use subscript as import target
 
-.. seealso::
-   :pep:`649`.
+* Improved error message when trying to add an instance of an unhashable type to
+  a :class:`dict` or :class:`set`. (Contributed by CF Bolz-Tereick and Victor Stinner
+  in :gh:`132828`.)
+
+  .. code-block:: pycon
+
+     >>> s = set()
+     >>> s.add({'pages': 12, 'grade': 'A'})
+     Traceback (most recent call last):
+       File "<python-input-1>", line 1, in <module>
+         s.add({'pages': 12, 'grade': 'A'})
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     TypeError: cannot use 'dict' as a set element (unhashable type: 'dict')
+     >>> d = {}
+     >>> l = [1, 2, 3]
+     >>> d[l] = 12
+     Traceback (most recent call last):
+       File "<python-input-4>", line 1, in <module>
+         d[l] = 12
+         ~^^^
+     TypeError: cannot use 'list' as a dict key (unhashable type: 'list')
 
 
 .. _whatsnew314-pep741:
@@ -771,6 +807,33 @@ For further information on how to build Python, see
 
 (Contributed by Ken Jin in :gh:`128563`, with ideas on how to implement this
 in CPython by Mark Shannon, Garrett Gu, Haoran Xu, and Josh Haberman.)
+
+.. _whatsnew314-free-threaded-cpython:
+
+Free-threaded mode
+------------------
+
+Free-threaded mode (:pep:`703`), initially added in 3.13, has been significantly improved.
+The implementation described in PEP 703 was finished, including C API changes,
+and temporary workarounds in the interpreter were replaced with more permanent solutions.
+The specializing adaptive interpreter (:pep:`659`) is now enabled in free-threaded mode,
+which along with many other optimizations greatly improves its performance.
+The performance penalty on single-threaded code in free-threaded mode is now roughly 5-10%,
+depending on platform and C compiler used.
+
+This work was done by many contributors: Sam Gross, Matt Page, Neil Schemenauer,
+Thomas Wouters, Donghee Na, Kirill Podoprigora, Ken Jin, Itamar Oren,
+Brett Simmers, Dino Viehland, Nathan Goldbaum, Ralf Gommers, Lysandros Nikolaou,
+Kumar Aditya, Edgar Margffoy, and many others.
+
+Some of these contributors are employed by Meta, which has continued to provide
+significant engineering resources to support this project.
+
+From 3.14, when compiling extension modules for the free-threaded build of
+CPython on Windows, the preprocessor variable ``Py_GIL_DISABLED`` now needs to
+be specified by the build backend, as it will no longer be determined
+automatically by the C compiler. For a running interpreter, the setting that
+was used at compile time can be found using :func:`sysconfig.get_config_var`.
 
 
 .. _whatsnew314-pyrepl-highlighting:

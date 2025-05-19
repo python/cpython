@@ -23,6 +23,9 @@ templateiter_next(PyObject *op)
     if (self->from_strings) {
         item = PyIter_Next(self->stringsiter);
         self->from_strings = 0;
+        if (item == NULL) {
+            return NULL;
+        }
         if (PyUnicode_GET_LENGTH(item) == 0) {
             Py_SETREF(item, PyIter_Next(self->interpolationsiter));
             self->from_strings = 1;
@@ -444,6 +447,8 @@ template_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
 
 static PyMethodDef template_methods[] = {
     {"__reduce__", template_reduce, METH_NOARGS, NULL},
+    {"__class_getitem__", Py_GenericAlias,
+        METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL},
 };
 

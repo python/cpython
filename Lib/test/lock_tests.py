@@ -124,6 +124,11 @@ class BaseLockTests(BaseTestCase):
         lock = self.locktype()
         del lock
 
+    def test_constructor_noargs(self):
+        self.assertRaises(TypeError, self.locktype, 1)
+        self.assertRaises(TypeError, self.locktype, x=1)
+        self.assertRaises(TypeError, self.locktype, 1, x=2)
+
     def test_repr(self):
         lock = self.locktype()
         self.assertRegex(repr(lock), "<unlocked .* object (.*)?at .*>")

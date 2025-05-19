@@ -94,12 +94,22 @@ WIN32 is still required for the locale module.
 #endif
 #endif /* Py_BUILD_CORE || Py_BUILD_CORE_BUILTIN || Py_BUILD_CORE_MODULE */
 
-/* Define to 1 if you want to disable the GIL */
-/* Uncomment the definition for free-threaded builds, or define it manually
- * when compiling extension modules. Note that we test with #ifdef, so
- * defining as 0 will still disable the GIL. */
-#ifndef Py_GIL_DISABLED
-/* #define Py_GIL_DISABLED 1 */
+/* _DEBUG implies Py_DEBUG */
+#ifdef _DEBUG
+#  define Py_DEBUG 1
+#endif
+
+/* Define to 1 when compiling for experimental free-threaded builds */
+#ifdef Py_GIL_DISABLED
+/* We undefine if it was set to zero because all later checks are #ifdef.
+ * Note that non-Windows builds do not do this, and so every effort should
+ * be made to avoid defining the variable at all when not desired. However,
+ * sysconfig.get_config_var always returns a 1 or a 0, and so it seems likely
+ * that a build backend will define it with the value.
+ */
+#if Py_GIL_DISABLED == 0
+#undef Py_GIL_DISABLED
+#endif
 #endif
 
 /* Compiler specific defines */
@@ -319,21 +329,21 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
                         This is relevant when using build-system generator (e.g CMake) where
                         the linking is explicitly handled */
 #                       if defined(Py_GIL_DISABLED)
-#                       if defined(_DEBUG)
+#                       if defined(Py_DEBUG)
 #                               pragma comment(lib,"python315t_d.lib")
 #                       elif defined(Py_LIMITED_API)
 #                               pragma comment(lib,"python3t.lib")
 #                       else
 #                               pragma comment(lib,"python315t.lib")
-#                       endif /* _DEBUG */
+#                       endif /* Py_DEBUG */
 #                       else /* Py_GIL_DISABLED */
-#                       if defined(_DEBUG)
+#                       if defined(Py_DEBUG)
 #                               pragma comment(lib,"python315_d.lib")
 #                       elif defined(Py_LIMITED_API)
 #                               pragma comment(lib,"python3.lib")
 #                       else
 #                               pragma comment(lib,"python315.lib")
-#                       endif /* _DEBUG */
+#                       endif /* Py_DEBUG */
 #                       endif /* Py_GIL_DISABLED */
 #               endif /* _MSC_VER && !Py_NO_LINK_LIB */
 #       endif /* Py_BUILD_CORE */
@@ -375,11 +385,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #       endif
 #       define ALIGNOF_MAX_ALIGN_T 8
 #endif
-
-#ifdef _DEBUG
-#       define Py_DEBUG
-#endif
-
 
 #ifdef MS_WIN32
 
