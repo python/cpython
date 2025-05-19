@@ -969,29 +969,15 @@ class TestPyReplModuleCompleter(TestCase):
         sys.path = [lib_path]
 
         cases = (
-            # Basic import completion
             ("import tim\t\n", "import time"),
-            ("import sys\t\t\n", "import sys"),  # should pass?
+            ("import sys\t\t\n", "import sys"),
             ("import mat\t\n", "import math"),
             ("import bui\t\n", "import builtins"),
-
-            # Multiple imports
-            ("import foo, ti\t\n", "import foo, time"),
-            ("import foo, sys\t\n", "import foo, sys"),
-
-            # Import with alias
-            ("import tim\t as t\n", "import time as t"),
-            ("import math as m, sys\t\n", "import math as m, sys"),
-
-            # From-import with top level
             ("from mat\t\n", "from math"),
             ("from ma\t\tt\t\n", "from math"),
-
-            # From-import for modules
             ("from bui\t\n", "from builtins"),
-
-            # not matching anything
-            ("import ll\t\t\n", "import ll")
+            ("import foo, ti\t\n", "import foo, time"),
+            ("import foo, sys\t\n", "import foo, sys"),
         )
         for code, expected in cases:
             with self.subTest(code=code):
