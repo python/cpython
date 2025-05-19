@@ -267,7 +267,11 @@ class Element:
 
         """
         # assert iselement(element)
-        self._children.remove(subelement)
+        try:
+            self._children.remove(subelement)
+        except ValueError:
+            # to align the error message with the C implementation
+            raise ValueError("Element.remove(x): element not found") from None
 
     def find(self, path, namespaces=None):
         """Find first matching element by tag name or path.

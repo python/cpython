@@ -15,7 +15,6 @@ __all__ = (
     "_set_event_loop_policy",
     "set_event_loop_policy",
     "get_event_loop",
-    "_set_event_loop",
     "set_event_loop",
     "new_event_loop",
     "_set_running_loop",
@@ -112,6 +111,34 @@ class Handle:
                 context['source_traceback'] = self._source_traceback
             self._loop.call_exception_handler(context)
         self = None  # Needed to break cycles when an exception occurs.
+
+# _ThreadSafeHandle is used for callbacks scheduled with call_soon_threadsafe
+# and is thread safe unlike Handle which is not thread safe.
+class _ThreadSafeHandle(Handle):
+
+    __slots__ = ('_lock',)
+
+    def __init__(self, callback, args, loop, context=None):
+        super().__init__(callback, args, loop, context)
+        self._lock = threading.RLock()
+
+    def cancel(self):
+        with self._lock:
+            return super().cancel()
+
+    def cancelled(self):
+        with self._lock:
+            return super().cancelled()
+
+    def _run(self):
+        # The event loop checks for cancellation without holding the lock
+        # It is possible that the handle is cancelled after the check
+        # but before the callback is called so check it again after acquiring
+        # the lock and return without calling the callback if it is cancelled.
+        with self._lock:
+            if self._cancelled:
+                return
+            return super()._run()
 
 
 class TimerHandle(Handle):
@@ -301,7 +328,7 @@ class AbstractEventLoop:
 
     # Method scheduling a coroutine object: create a task.
 
-    def create_task(self, coro, *, name=None, context=None):
+    def create_task(self, coro, **kwargs):
         raise NotImplementedError
 
     # Methods for interacting with threads.
@@ -807,13 +834,9 @@ def get_event_loop():
     return _get_event_loop_policy().get_event_loop()
 
 
-def _set_event_loop(loop):
-    _get_event_loop_policy().set_event_loop(loop)
-
 def set_event_loop(loop):
     """Equivalent to calling get_event_loop_policy().set_event_loop(loop)."""
-    warnings._deprecated('asyncio.set_event_loop', remove=(3,16))
-    _set_event_loop(loop)
+    _get_event_loop_policy().set_event_loop(loop)
 
 
 def new_event_loop():

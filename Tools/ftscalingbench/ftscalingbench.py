@@ -54,8 +54,29 @@ def object_cfunction():
 
 @register_benchmark
 def cmodule_function():
-    for i in range(1000 * WORK_SCALE):
-        math.floor(i * i)
+    N = 1000 * WORK_SCALE
+    for i in range(N):
+        math.cos(i / N)
+
+@register_benchmark
+def object_lookup_special():
+    # round() uses `_PyObject_LookupSpecial()` internally.
+    N = 1000 * WORK_SCALE
+    for i in range(N):
+        round(i / N)
+
+class MyContextManager:
+    def __enter__(self):
+        pass
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+
+@register_benchmark
+def context_manager():
+    N = 1000 * WORK_SCALE
+    for i in range(N):
+        with MyContextManager():
+            pass
 
 @register_benchmark
 def mult_constant():
@@ -206,7 +227,7 @@ def benchmark(func):
             color = "\x1b[33m"  # yellow
         reset_color = "\x1b[0m"
 
-    print(f"{color}{func.__name__:<18} {round(factor, 1):>4}x {direction}{reset_color}")
+    print(f"{color}{func.__name__:<25} {round(factor, 1):>4}x {direction}{reset_color}")
 
 def determine_num_threads_and_affinity():
     if sys.platform != "linux":

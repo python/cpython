@@ -1,9 +1,9 @@
-#include <stdbool.h>
-
 #include "Python.h"
 
 #include "pycore_index_pool.h"
 #include "pycore_lock.h"
+
+#include <stdbool.h>
 
 #ifdef Py_GIL_DISABLED
 

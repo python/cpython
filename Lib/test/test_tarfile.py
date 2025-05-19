@@ -38,6 +38,10 @@ try:
     import lzma
 except ImportError:
     lzma = None
+try:
+    from compression import zstd
+except ImportError:
+    zstd = None
 
 def sha256sum(data):
     return sha256(data).hexdigest()
@@ -48,6 +52,7 @@ tarname = support.findfile("testtar.tar", subdir="archivetestdata")
 gzipname = os.path.join(TEMPDIR, "testtar.tar.gz")
 bz2name = os.path.join(TEMPDIR, "testtar.tar.bz2")
 xzname = os.path.join(TEMPDIR, "testtar.tar.xz")
+zstname = os.path.join(TEMPDIR, "testtar.tar.zst")
 tmpname = os.path.join(TEMPDIR, "tmp.tar")
 dotlessname = os.path.join(TEMPDIR, "testtar")
 
@@ -90,6 +95,12 @@ class LzmaTest:
     open = lzma.LZMAFile if lzma else None
     taropen = tarfile.TarFile.xzopen
 
+@support.requires_zstd()
+class ZstdTest:
+    tarname = zstname
+    suffix = 'zst'
+    open = zstd.ZstdFile if zstd else None
+    taropen = tarfile.TarFile.zstopen
 
 class ReadTest(TarTest):
 
@@ -271,6 +282,8 @@ class Bz2UstarReadTest(Bz2Test, UstarReadTest):
 class LzmaUstarReadTest(LzmaTest, UstarReadTest):
     pass
 
+class ZstdUstarReadTest(ZstdTest, UstarReadTest):
+    pass
 
 class ListTest(ReadTest, unittest.TestCase):
 
@@ -375,6 +388,8 @@ class Bz2ListTest(Bz2Test, ListTest):
 class LzmaListTest(LzmaTest, ListTest):
     pass
 
+class ZstdListTest(ZstdTest, ListTest):
+    pass
 
 class CommonReadTest(ReadTest):
 
@@ -837,6 +852,8 @@ class Bz2MiscReadTest(Bz2Test, MiscReadTestBase, unittest.TestCase):
 class LzmaMiscReadTest(LzmaTest, MiscReadTestBase, unittest.TestCase):
     pass
 
+class ZstdMiscReadTest(ZstdTest, MiscReadTestBase, unittest.TestCase):
+    pass
 
 class StreamReadTest(CommonReadTest, unittest.TestCase):
 
@@ -909,6 +926,9 @@ class Bz2StreamReadTest(Bz2Test, StreamReadTest):
 class LzmaStreamReadTest(LzmaTest, StreamReadTest):
     pass
 
+class ZstdStreamReadTest(ZstdTest, StreamReadTest):
+    pass
+
 class TarStreamModeReadTest(StreamModeTest, unittest.TestCase):
 
     def test_stream_mode_no_cache(self):
@@ -923,6 +943,9 @@ class Bz2StreamModeReadTest(Bz2Test, TarStreamModeReadTest):
     pass
 
 class LzmaStreamModeReadTest(LzmaTest, TarStreamModeReadTest):
+    pass
+
+class ZstdStreamModeReadTest(ZstdTest, TarStreamModeReadTest):
     pass
 
 class DetectReadTest(TarTest, unittest.TestCase):
@@ -986,6 +1009,8 @@ class Bz2DetectReadTest(Bz2Test, DetectReadTest):
 class LzmaDetectReadTest(LzmaTest, DetectReadTest):
     pass
 
+class ZstdDetectReadTest(ZstdTest, DetectReadTest):
+    pass
 
 class GzipBrokenHeaderCorrectException(GzipTest, unittest.TestCase):
     """
@@ -1639,10 +1664,13 @@ class WriteTest(WriteTestBase, unittest.TestCase):
                         raise exctype
 
             f = BadFile()
-            with self.assertRaises(exctype):
-                tar = tarfile.open(tmpname, self.mode, fileobj=f,
-                                   format=tarfile.PAX_FORMAT,
-                                   pax_headers={'non': 'empty'})
+            with (
+                warnings_helper.check_no_resource_warning(self),
+                self.assertRaises(exctype),
+            ):
+                tarfile.open(tmpname, self.mode, fileobj=f,
+                             format=tarfile.PAX_FORMAT,
+                             pax_headers={'non': 'empty'})
             self.assertFalse(f.closed)
 
     def test_missing_fileobj(self):
@@ -1663,6 +1691,8 @@ class Bz2WriteTest(Bz2Test, WriteTest):
 class LzmaWriteTest(LzmaTest, WriteTest):
     pass
 
+class ZstdWriteTest(ZstdTest, WriteTest):
+    pass
 
 class StreamWriteTest(WriteTestBase, unittest.TestCase):
 
@@ -1723,6 +1753,9 @@ class Bz2StreamWriteTest(Bz2Test, StreamWriteTest):
 
 class LzmaStreamWriteTest(LzmaTest, StreamWriteTest):
     decompressor = lzma.LZMADecompressor if lzma else None
+
+class ZstdStreamWriteTest(ZstdTest, StreamWriteTest):
+    decompressor = zstd.ZstdDecompressor if zstd else None
 
 class _CompressedWriteTest(TarTest):
     # This is not actually a standalone test.
@@ -2038,6 +2071,14 @@ class LzmaCreateTest(LzmaTest, CreateTest):
         with tarfile.open(tmpname, self.mode, preset=1) as tobj:
             tobj.add(self.file_path)
 
+
+class ZstdCreateTest(ZstdTest, CreateTest):
+
+    # Unlike gz and bz2, zstd uses the level keyword instead of compresslevel.
+    # It does not allow for level to be specified when reading.
+    def test_create_with_level(self):
+        with tarfile.open(tmpname, self.mode, level=1) as tobj:
+            tobj.add(self.file_path)
 
 class CreateWithXModeTest(CreateTest):
 
@@ -2520,6 +2561,8 @@ class Bz2AppendTest(Bz2Test, AppendTestBase, unittest.TestCase):
 class LzmaAppendTest(LzmaTest, AppendTestBase, unittest.TestCase):
     pass
 
+class ZstdAppendTest(ZstdTest, AppendTestBase, unittest.TestCase):
+    pass
 
 class LimitsTest(unittest.TestCase):
 
@@ -2832,7 +2875,7 @@ class CommandLineTest(unittest.TestCase):
                  support.findfile('tokenize_tests-no-coding-cookie-'
                                   'and-utf8-bom-sig-only.txt',
                                   subdir='tokenizedata')]
-        for filetype in (GzipTest, Bz2Test, LzmaTest):
+        for filetype in (GzipTest, Bz2Test, LzmaTest, ZstdTest):
             if not filetype.open:
                 continue
             try:
@@ -3447,11 +3490,12 @@ class ArchiveMaker:
         with t.open() as tar:
             ... # `tar` is now a TarFile with 'filename' in it!
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.bio = io.BytesIO()
+        self.tar_kwargs = dict(kwargs)
 
     def __enter__(self):
-        self.tar_w = tarfile.TarFile(mode='w', fileobj=self.bio)
+        self.tar_w = tarfile.TarFile(mode='w', fileobj=self.bio, **self.tar_kwargs)
         return self
 
     def __exit__(self, *exc):
@@ -4030,7 +4074,10 @@ class TestExtractionFilters(unittest.TestCase):
         # that in the test archive.)
         with tarfile.TarFile.open(tarname) as tar:
             for tarinfo in tar.getmembers():
-                filtered = tarfile.tar_filter(tarinfo, '')
+                try:
+                    filtered = tarfile.tar_filter(tarinfo, '')
+                except UnicodeEncodeError:
+                    continue
                 self.assertIs(filtered.name, tarinfo.name)
                 self.assertIs(filtered.type, tarinfo.type)
 
@@ -4041,10 +4088,47 @@ class TestExtractionFilters(unittest.TestCase):
             for tarinfo in tar.getmembers():
                 try:
                     filtered = tarfile.data_filter(tarinfo, '')
-                except tarfile.FilterError:
+                except (tarfile.FilterError, UnicodeEncodeError):
                     continue
                 self.assertIs(filtered.name, tarinfo.name)
                 self.assertIs(filtered.type, tarinfo.type)
+
+    @unittest.skipIf(sys.platform == 'win32', 'requires native bytes paths')
+    def test_filter_unencodable(self):
+        # Sanity check using a valid path.
+        tarinfo = tarfile.TarInfo(os_helper.TESTFN)
+        filtered = tarfile.tar_filter(tarinfo, '')
+        self.assertIs(filtered.name, tarinfo.name)
+        filtered = tarfile.data_filter(tarinfo, '')
+        self.assertIs(filtered.name, tarinfo.name)
+
+        tarinfo = tarfile.TarInfo('test\x00')
+        self.assertRaises(ValueError, tarfile.tar_filter, tarinfo, '')
+        self.assertRaises(ValueError, tarfile.data_filter, tarinfo, '')
+        tarinfo = tarfile.TarInfo('\ud800')
+        self.assertRaises(UnicodeEncodeError, tarfile.tar_filter, tarinfo, '')
+        self.assertRaises(UnicodeEncodeError, tarfile.data_filter, tarinfo, '')
+
+    @unittest.skipIf(sys.platform == 'win32', 'requires native bytes paths')
+    def test_extract_unencodable(self):
+        # Create a member with name \xed\xa0\x80 which is UTF-8 encoded
+        # lone surrogate \ud800.
+        with ArchiveMaker(encoding='ascii', errors='surrogateescape') as arc:
+            arc.add('\udced\udca0\udc80')
+        with os_helper.temp_cwd() as tmp:
+            tar = arc.open(encoding='utf-8', errors='surrogatepass',
+                           errorlevel=1)
+            self.assertEqual(tar.getnames(), ['\ud800'])
+            with self.assertRaises(UnicodeEncodeError):
+                tar.extractall()
+            self.assertEqual(os.listdir(), [])
+
+            tar = arc.open(encoding='utf-8', errors='surrogatepass',
+                           errorlevel=0, debug=1)
+            with support.captured_stderr() as stderr:
+                tar.extractall()
+            self.assertEqual(os.listdir(), [])
+            self.assertIn('tarfile: UnicodeEncodeError ', stderr.getvalue())
 
     def test_change_default_filter_on_instance(self):
         tar = tarfile.TarFile(tarname, 'r')
@@ -4254,7 +4338,7 @@ def setUpModule():
         data = fobj.read()
 
     # Create compressed tarfiles.
-    for c in GzipTest, Bz2Test, LzmaTest:
+    for c in GzipTest, Bz2Test, LzmaTest, ZstdTest:
         if c.open:
             os_helper.unlink(c.tarname)
             testtarnames.append(c.tarname)
