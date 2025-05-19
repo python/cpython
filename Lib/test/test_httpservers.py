@@ -1513,8 +1513,9 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
 
-        port = find_unused_port()
+        bind, port = '127.0.0.1', find_unused_port()
         proc = spawn_python('-u', '-m', 'http.server', str(port),
+                            '-b', bind,
                             '--tls-cert', self.tls_cert,
                             '--tls-key', self.tls_key,
                             '--tls-password-file', self.tls_password_file,
