@@ -372,7 +372,6 @@ class TestGzip(BaseTest):
                     fRead.read()
                     self.assertEqual(fRead.mtime, 0)
 
-
     def test_metadata(self):
         mtime = 123456789
 
