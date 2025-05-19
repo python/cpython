@@ -1398,12 +1398,11 @@ class CommandLineTestCase(unittest.TestCase):
                                       self.tls_key,
                                       tls_password_option,
                                       self.tls_password_file)
-                    call_args = {
+                    call_args = self.args | {
                         'tls_cert': self.tls_cert,
                         'tls_key': self.tls_key,
                         'tls_password': self.tls_password,
                     }
-                    call_args = self.args | call_args
                     mock_func.assert_called_once_with(**call_args)
                     mock_func.reset_mock()
 
