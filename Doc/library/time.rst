@@ -568,7 +568,8 @@ Functions
       calculations when the day of the week and the year are specified.
 
    (5)
-      The :func:`strptime` function does not accept non-ASCII digits for numeric values.
+      The :func:`strptime` function does not accept non-ASCII digits for
+      non-locale-specific numeric format codes.
 
    Here is an example, a format for dates compatible with that specified  in the
    :rfc:`2822` Internet email standard.  [1]_ ::
@@ -623,7 +624,8 @@ Functions
    documented as supported.
 
 .. versionchanged:: next
-   Non-ASCII digits are now rejected by ``strptime``.
+   Non-ASCII digits are now rejected by ``strptime`` for non-locale-specific
+   format codes.
 
 
 .. class:: struct_time

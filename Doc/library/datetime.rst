@@ -2628,7 +2628,8 @@ differences between platforms in handling of unsupported format specifiers.
    ``%:z`` was added.
 
 .. versionchanged:: next
-   Non-ASCII digits are now rejected by ``strptime`` for numerical directives.
+   Non-ASCII digits are now rejected by ``strptime`` for non-locale-specific
+   numerical directives.
 
 Technical Detail
 ^^^^^^^^^^^^^^^^
