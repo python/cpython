@@ -1484,7 +1484,7 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         return matches.group(1), matches.group(2), int(matches.group(3))
 
     def wait_for_server(self, proc, protocol, port):
-        """Check the server process output."""
+        """Extract the server bind address once it has been started."""
         for _ in range(10):
             line = proc.stdout.readline()
             if not line:
