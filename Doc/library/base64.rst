@@ -200,7 +200,7 @@ software you use implements the Base-85 encoding.
 The two functions present in this module provide options
 to configure the encoding in the following ways:
 
-* Whether to include enclosing `<~` and `~>` markers
+* Whether to include enclosing ``<~`` and ``~>`` markers
 * Whether to include newline characters
 * The set of ASCII characters used for encoding
 * Handling of null bytes
