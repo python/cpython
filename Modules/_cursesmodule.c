@@ -1405,7 +1405,7 @@ _curses_window_box_impl(PyCursesWindowObject *self, int group_right_1,
             return NULL;
         }
     }
-    (void)box(self->win,ch1,ch2);
+    box(self->win,ch1,ch2);
     Py_RETURN_NONE;
 }
 
@@ -1504,12 +1504,12 @@ PyCursesWindow_ChgAt(PyObject *op, PyObject *args)
 
     if (use_xy) {
         rtn = mvwchgat(self->win,y,x,num,attr,color,NULL);
-        (void)touchline(self->win,y,1);
+        touchline(self->win,y,1);
         funcname = "mvwchgat";
     } else {
         getyx(self->win,y,x);
         rtn = wchgat(self->win,num,attr,color,NULL);
-        (void)touchline(self->win,y,1);
+        touchline(self->win,y,1);
         funcname = "wchgat";
     }
     return curses_window_check_err(self, rtn, funcname, "chgat");
@@ -3593,7 +3593,7 @@ _curses_initscr_impl(PyObject *module)
     WINDOW *win;
 
     if (curses_initscr_called) {
-        (void)wrefresh(stdscr); // TODO(picnixz): should we report an error?
+        wrefresh(stdscr);
         cursesmodule_state *state = get_cursesmodule_state(module);
         return PyCursesWindow_New(state, stdscr, NULL, NULL);
     }
