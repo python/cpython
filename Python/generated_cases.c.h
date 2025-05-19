@@ -904,8 +904,8 @@
                 assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(str_st);
-                res = PyStackRef_FromPyObjectBorrow(res_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                res = PyStackRef_FromPyObjectBorrow(res_o);
             }
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -9004,9 +9004,7 @@
             INSTRUCTION_STATS(LOAD_CONST);
             _PyStackRef value;
             PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             value = PyStackRef_FromPyObjectBorrow(obj);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -9541,9 +9539,7 @@
             _PyStackRef value;
             assert(oparg < _PY_NSMALLPOSINTS);
             PyObject *obj = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + oparg];
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             value = PyStackRef_FromPyObjectBorrow(obj);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
