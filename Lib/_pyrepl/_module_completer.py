@@ -100,7 +100,7 @@ class ModuleCompleter:
         return [module.name for module in modules
                 if self._should_add_module_name(module.name, prefix)]
 
-    def _should_add_module_name(self, module_name: str, prefix: str) -> bool:
+    def _is_suggestion_match(self, module_name: str, prefix: str) -> bool:
         prefix_modules = prefix and module_name.startswith(prefix)
         public_modules = not prefix and not module_name.startswith("_")
         return prefix_modules or public_modules
