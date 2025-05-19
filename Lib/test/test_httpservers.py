@@ -1472,11 +1472,15 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
             f.write(self.tls_password.encode())
         self.addCleanup(os_helper.unlink, self.tls_password_file)
 
-    def fetch_file(self, path):
+    @unittest.skipIf(ssl is None, "requires ssl")
+    def get_ssl_context(self):
         context = ssl.create_default_context()
         # allow self-signed certificates
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
+        return context
+
+    def fetch_file(self, path, context=None):
         req = urllib.request.Request(path, method='GET')
         with urllib.request.urlopen(req, context=context) as res:
             return res.read()
@@ -1510,8 +1514,7 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         return False
 
     def test_http_client(self):
-        port = find_unused_port()
-        bind = '127.0.0.1'
+        _, (bind, port) = server._get_best_family(None, find_unused_port())
         proc = spawn_python('-u', '-m', 'http.server', str(port), '-b', bind,
                             bufsize=1, text=True)
         self.addCleanup(kill_python, proc)
@@ -1521,8 +1524,7 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         self.assertEqual(res, self.served_data)
 
     def test_https_client(self):
-        port = find_unused_port()
-        bind = '127.0.0.1'
+        _, (bind, port) = server._get_best_family(None, find_unused_port())
         proc = spawn_python('-u', '-m', 'http.server', str(port), '-b', bind,
                             '--tls-cert', self.tls_cert,
                             '--tls-key', self.tls_key,
@@ -1531,7 +1533,8 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         self.addCleanup(kill_python, proc)
         self.addCleanup(proc.terminate)
         self.assertTrue(self.wait_for_server(proc, 'https', port, bind))
-        res = self.fetch_file(f'https://{bind}:{port}/{self.served_file_name}')
+        url = f'https://{bind}:{port}/{self.served_file_name}'
+        res = self.fetch_file(url, context=self.get_ssl_context())
         self.assertEqual(res, self.served_data)
 
 
