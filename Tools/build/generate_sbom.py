@@ -163,7 +163,9 @@ def get_externals() -> list[str]:
     return externals
 
 
-def download_with_retries(download_location: str, retries: int = 5):
+def download_with_retries(
+    download_location: str,
+    retries: int = 5) -> typing.Any:
     """Download a file with exponential backoff retry."""
     attempt = 0
     while attempt < retries:
