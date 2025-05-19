@@ -511,20 +511,6 @@ dummy_func(void) {
 
     op(_LOAD_CONST, (-- value)) {
         PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
-        int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
-        REPLACE_OP(this_instr, opcode, 0, (uintptr_t)val);
-        value = sym_new_const(ctx, val);
-    }
-
-    op(_LOAD_CONST_MORTAL, (-- value)) {
-        PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
-        int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
-        REPLACE_OP(this_instr, opcode, 0, (uintptr_t)val);
-        value = sym_new_const(ctx, val);
-    }
-
-    op(_LOAD_CONST_IMMORTAL, (-- value)) {
-        PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
         REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
         value = sym_new_const(ctx, val);
     }
