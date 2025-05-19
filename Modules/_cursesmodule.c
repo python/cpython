@@ -2270,8 +2270,7 @@ _curses_window_is_linetouched_impl(PyCursesWindowObject *self, int line)
     int erg;
     erg = is_linetouched(self->win, line);
     if (erg == ERR) {
-        PyErr_SetString(PyExc_TypeError,
-                        "is_linetouched: line number outside of boundaries");
+        curses_window_set_error(self, "is_linetouched", NULL);
         return NULL;
     }
     return PyBool_FromLong(erg);
