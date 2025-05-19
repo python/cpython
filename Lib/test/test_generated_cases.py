@@ -2270,7 +2270,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
             JitOptSymbol *res;
             foo = stack_pointer[-1];
             if (
-                sym_is_const(ctx, foo)
+                sym_is_safe_const(ctx, foo)
             ) {
                 JitOptSymbol *foo_sym = foo;
                 _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
@@ -2312,7 +2312,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
             JitOptSymbol *res;
             foo = stack_pointer[-1];
             if (
-                sym_is_const(ctx, foo)
+                sym_is_safe_const(ctx, foo)
             ) {
                 JitOptSymbol *foo_sym = foo;
                 _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);

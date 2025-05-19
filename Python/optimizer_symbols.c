@@ -159,6 +159,26 @@ _Py_uop_sym_get_const_as_stackref(JitOptContext *ctx, JitOptSymbol *sym)
     return PyStackRef_FromPyObjectImmortalUnchecked(const_val);
 }
 
+/*
+ Indicates whether the constant is safe to constant evaluate
+ (without side effects).
+ */
+bool
+_Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptSymbol *sym)
+{
+    PyObject *const_val = _Py_uop_sym_get_const(ctx, sym);
+    if (const_val == NULL) {
+        return false;
+    }
+    PyTypeObject *typ = Py_TYPE(const_val);
+    return (typ == &PyLong_Type) ||
+        (typ == &PyUnicode_Type) ||
+        (typ == &PyFloat_Type) ||
+        (typ == &PyDict_Type) ||
+        (typ == &PyTuple_Type) ||
+        (typ == &PyList_Type);
+}
+
 void
 _Py_uop_sym_set_type(JitOptContext *ctx, JitOptSymbol *sym, PyTypeObject *typ)
 {

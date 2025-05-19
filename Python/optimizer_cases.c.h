@@ -152,7 +152,7 @@
             JitOptSymbol *res;
             value = stack_pointer[-1];
             if (
-                sym_is_const(ctx, value)
+                sym_is_safe_const(ctx, value)
             ) {
                 JitOptSymbol *value_sym = value;
                 _PyStackRef value = sym_get_const_as_stackref(ctx, value_sym);
@@ -333,8 +333,8 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             if (
-                sym_is_const(ctx, left) &&
-                sym_is_const(ctx, right)
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
             ) {
                 JitOptSymbol *left_sym = left;
                 JitOptSymbol *right_sym = right;
@@ -378,8 +378,8 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             if (
-                sym_is_const(ctx, left) &&
-                sym_is_const(ctx, right)
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
             ) {
                 JitOptSymbol *left_sym = left;
                 JitOptSymbol *right_sym = right;
@@ -423,8 +423,8 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             if (
-                sym_is_const(ctx, left) &&
-                sym_is_const(ctx, right)
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
             ) {
                 JitOptSymbol *left_sym = left;
                 JitOptSymbol *right_sym = right;
@@ -488,8 +488,8 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             if (
-                sym_is_const(ctx, left) &&
-                sym_is_const(ctx, right)
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
             ) {
                 JitOptSymbol *left_sym = left;
                 JitOptSymbol *right_sym = right;
@@ -533,8 +533,8 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             if (
-                sym_is_const(ctx, left) &&
-                sym_is_const(ctx, right)
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
             ) {
                 JitOptSymbol *left_sym = left;
                 JitOptSymbol *right_sym = right;
@@ -578,8 +578,8 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             if (
-                sym_is_const(ctx, left) &&
-                sym_is_const(ctx, right)
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
             ) {
                 JitOptSymbol *left_sym = left;
                 JitOptSymbol *right_sym = right;
@@ -623,8 +623,8 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             if (
-                sym_is_const(ctx, left) &&
-                sym_is_const(ctx, right)
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
             ) {
                 JitOptSymbol *left_sym = left;
                 JitOptSymbol *right_sym = right;

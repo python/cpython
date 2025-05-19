@@ -187,8 +187,8 @@ def write_uop_pure_evaluation_region_header(
     emitter.emit("if (\n")
     assert len(uop.stack.inputs) > 0, "Pure operations must have at least 1 input"
     for inp in uop.stack.inputs[:-1]:
-        emitter.emit(f"sym_is_const(ctx, {inp.name}) &&\n")
-    emitter.emit(f"sym_is_const(ctx, {uop.stack.inputs[-1].name})\n")
+        emitter.emit(f"sym_is_safe_const(ctx, {inp.name}) &&\n")
+    emitter.emit(f"sym_is_safe_const(ctx, {uop.stack.inputs[-1].name})\n")
     emitter.emit(') {\n')
     # Declare variables, before they are shadowed.
     for inp in uop.stack.inputs:
