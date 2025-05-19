@@ -21,7 +21,6 @@ import email.utils
 import html
 import http, http.client
 import urllib.parse
-import urllib.request
 import tempfile
 import time
 import datetime
@@ -34,8 +33,6 @@ from test import support
 from test.support import (
     is_apple, import_helper, os_helper, threading_helper
 )
-from test.support.script_helper import kill_python, spawn_python
-from test.support.socket_helper import find_unused_port
 
 try:
     import ssl
