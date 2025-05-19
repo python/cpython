@@ -25,7 +25,7 @@ supports encoding :term:`bytes-like objects <bytes-like object>` to ASCII
 strings containing ASCII to :class:`bytes`.  Both base-64 alphabets
 defined in :rfc:`4648` (normal, and URL- and filesystem-safe) are supported.
 
-The :ref:`legacy interface <base-64-legacy>` does not support decoding from strings, but it does
+The :ref:`legacy interface <base64-legacy>` does not support decoding from strings, but it does
 provide functions for encoding and decoding to and from :term:`file objects
 <file object>`.  It only supports the Base64 standard alphabet, and it adds
 newlines every 76 characters as per :rfc:`2045`.  Note that if you are looking
