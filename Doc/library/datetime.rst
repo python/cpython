@@ -2767,10 +2767,10 @@ Notes:
 
 (11)
    When parsing a string using :meth:`~.datetime.strptime`, if more than one
-   directives of the same time unit were used, a SyntaxWarning is raised as
+   directive of the same time unit is used, a SyntaxWarning is raised as
    only the last directive gets parsed and applied to the datetime object. For
    example, if the format string contains both ``%Y`` and ``%y``, like ``%Y%y``,
-   only the last directive on the string (``%y``) gets used on the resulting
+   only the last directive of the string (``%y``) gets used on the resulting
    datetime object.
 
 
