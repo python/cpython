@@ -5539,7 +5539,7 @@ datetime_best_possible(PyObject *cls, TM_FUNC f, PyObject *tzinfo)
     time_t secs;
     int us;
 
-    if (_PyTime_AsTimevalTime_t(ts, &secs, &us, _PyTime_ROUND_FLOOR) < 0)
+    if (_PyTime_AsTimevalTime_t(ts, &secs, &us, _PyTime_ROUND_HALF_EVEN) < 0)
         return NULL;
     assert(0 <= us && us <= 999999);
 
