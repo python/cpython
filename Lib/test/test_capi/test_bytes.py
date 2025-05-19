@@ -22,6 +22,7 @@ class CAPITest(unittest.TestCase):
         # Test PyBytes_Check()
         check = _testlimitedcapi.bytes_check
         self.assertTrue(check(b'abc'))
+        self.assertTrue(check(b''))
         self.assertFalse(check('abc'))
         self.assertFalse(check(bytearray(b'abc')))
         self.assertTrue(check(BytesSubclass(b'abc')))
@@ -29,7 +30,6 @@ class CAPITest(unittest.TestCase):
         self.assertFalse(check(3))
         self.assertFalse(check([]))
         self.assertFalse(check(object()))
-        self.assertTrue(check(b''))
 
         # CRASHES check(NULL)
 
@@ -37,6 +37,7 @@ class CAPITest(unittest.TestCase):
         # Test PyBytes_CheckExact()
         check = _testlimitedcapi.bytes_checkexact
         self.assertTrue(check(b'abc'))
+        self.assertTrue(check(b''))
         self.assertFalse(check('abc'))
         self.assertFalse(check(bytearray(b'abc')))
         self.assertFalse(check(BytesSubclass(b'abc')))
@@ -44,7 +45,6 @@ class CAPITest(unittest.TestCase):
         self.assertFalse(check(3))
         self.assertFalse(check([]))
         self.assertFalse(check(object()))
-        self.assertTrue(check(b''))
 
         # CRASHES check(NULL)
 
