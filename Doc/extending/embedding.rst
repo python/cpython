@@ -245,21 +245,30 @@ Python extension.  For example::
        return PyLong_FromLong(numargs);
    }
 
-   static PyMethodDef EmbMethods[] = {
+   static PyMethodDef emb_module_methods[] = {
        {"numargs", emb_numargs, METH_VARARGS,
         "Return the number of arguments received by the process."},
        {NULL, NULL, 0, NULL}
    };
 
-   static PyModuleDef EmbModule = {
-       PyModuleDef_HEAD_INIT, "emb", NULL, -1, EmbMethods,
-       NULL, NULL, NULL, NULL
+   static PyModuleDef_Slot emb_module_slots[] = {
+       {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+       {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+       {0, NULL}
+   };
+
+   struct PyModuleDef embmodule = {
+       .m_base = PyModuleDef_HEAD_INIT,
+       .m_name = "emb",
+       .m_size = 0,
+       .m_methods = emb_module_methods,
+       .m_slots = emb_module_slots,
    };
 
    static PyObject*
    PyInit_emb(void)
    {
-       return PyModule_Create(&EmbModule);
+       return PyModuleDef_Init(&embmodule);
    }
 
 Insert the above code just above the :c:func:`main` function. Also, insert the

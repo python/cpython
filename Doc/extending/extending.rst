@@ -22,6 +22,11 @@ your system setup; details are given in later chapters.
 
 .. note::
 
+   The documentation is based on multi-phase initialization (:PEP:`489`)
+   since Python 3.14.  See :file:`Modules/xxmodule.c` for more examples.
+
+.. note::
+
    The C extension interface is specific to CPython, and extension modules do
    not work on other Python implementations.  In many cases, it is possible to
    avoid writing C extensions and preserve portability to other implementations.
@@ -90,11 +95,10 @@ shortly how it ends up being called)::
    spam_system(PyObject *self, PyObject *args)
    {
        const char *command;
-       int sts;
-
-       if (!PyArg_ParseTuple(args, "s", &command))
+       if (!PyArg_ParseTuple(args, "s", &command)) {
            return NULL;
-       sts = system(command);
+       }
+       int sts = system(command);
        return PyLong_FromLong(sts);
    }
 
@@ -204,30 +208,80 @@ value must be in a particular range or must satisfy other conditions,
 :c:data:`PyExc_ValueError` is appropriate.
 
 You can also define a new exception that is unique to your module. For this, you
-usually declare a static object variable at the beginning of your file::
-
-   static PyObject *SpamError;
-
-and initialize it in your module's initialization function (:c:func:`!PyInit_spam`)
+usually declare an object variable in the per-module state and initialize it
+in your module's :c:data:`Py_mod_exec` function (:c:func:`!spam_module_exec`)
 with an exception object::
+
+   typedef struct {
+       PyObject *SpamError;
+   } spam_state;
+
+   static int
+   spam_module_exec(PyObject *module)
+   {
+       spam_state *state = PyModule_GetState(module);
+       if (state == NULL) {
+           return -1;
+       }
+
+       state->SpamError = PyErr_NewException("spam.error", NULL, NULL);
+       if (state->SpamError == NULL) {
+           return -1;
+       }
+       if (PyModule_AddObjectRef(module, "error", state->SpamError) < 0) {
+           return -1;  // followed by spam_module_free() then Py_CLEAR()
+       }
+
+       return 0;
+   }
+
+   static int
+   spam_module_traverse(PyObject *module, visitproc visit, void *arg) {
+       spam_state *state = PyModule_GetState(module);
+       if (state == NULL) {
+           return -1;
+       }
+       Py_VISIT(st->SpamError);
+       return 0;
+   }
+
+   static int
+   spam_module_clear(PyObject *module) {
+       spam_state *state = PyModule_GetState(module);
+       if (state == NULL) {
+           return -1;
+       }
+       Py_CLEAR(st->SpamError);
+       return 0;
+   }
+
+   static void
+   spam_module_free(void *module)
+   {
+       (void)spam_module_clear((PyObject *)module);
+   }
+
+   static PyModuleDef_Slot spam_module_slots[] = {
+       {Py_mod_exec, spam_module_exec},
+       {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+       {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+       {0, NULL}
+   };
+
+   static struct PyModuleDef spammodule = {
+       .m_base = PyModuleDef_HEAD_INIT,
+       .m_name = "spam",
+       .m_size = sizeof(spam_state),  // size of per-module state
+       .m_slots = spam_module_slots,
+       .m_traverse = spam_module_traverse,
+       .m_clear = spam_module_clear,
+       .m_free = spam_module_free,
+   };
 
    PyMODINIT_FUNC
    PyInit_spam(void)
    {
-       PyObject *m;
-
-       m = PyModule_Create(&spammodule);
-       if (m == NULL)
-           return NULL;
-
-       SpamError = PyErr_NewException("spam.error", NULL, NULL);
-       if (PyModule_AddObjectRef(m, "error", SpamError) < 0) {
-           Py_CLEAR(SpamError);
-           Py_DECREF(m);
-           return NULL;
-       }
-
-       return m;
+       return PyModuleDef_Init(&spammodule);
    }
 
 Note that the Python name for the exception object is :exc:`!spam.error`.  The
@@ -252,13 +306,15 @@ call to :c:func:`PyErr_SetString` as shown below::
    spam_system(PyObject *self, PyObject *args)
    {
        const char *command;
-       int sts;
-
-       if (!PyArg_ParseTuple(args, "s", &command))
+       if (!PyArg_ParseTuple(args, "s", &command)) {
            return NULL;
-       sts = system(command);
+       }
+       int sts = system(command);
        if (sts < 0) {
-           PyErr_SetString(SpamError, "System command failed");
+           spam_state *state = PyModule_GetState(self);
+           if (state != NULL) {
+               PyErr_SetString(state->SpamError, "System command failed");
+           }
            return NULL;
        }
        return PyLong_FromLong(sts);
@@ -273,8 +329,9 @@ Back to the Example
 Going back to our example function, you should now be able to understand this
 statement::
 
-   if (!PyArg_ParseTuple(args, "s", &command))
+   if (!PyArg_ParseTuple(args, "s", &command)) {
        return NULL;
+   }
 
 It returns ``NULL`` (the error indicator for functions returning object pointers)
 if an error is detected in the argument list, relying on the exception set by
@@ -287,7 +344,7 @@ the variable :c:data:`!command` should properly be declared as ``const char
 The next statement is a call to the Unix function :c:func:`system`, passing it
 the string we just got from :c:func:`PyArg_ParseTuple`::
 
-   sts = system(command);
+   int sts = system(command);
 
 Our :func:`!spam.system` function must return the value of :c:data:`!sts` as a
 Python object.  This is done using the function :c:func:`PyLong_FromLong`. ::
@@ -344,12 +401,9 @@ function.
 The method table must be referenced in the module definition structure::
 
    static struct PyModuleDef spammodule = {
-       PyModuleDef_HEAD_INIT,
-       "spam",   /* name of module */
-       spam_doc, /* module documentation, may be NULL */
-       -1,       /* size of per-interpreter state of the module,
-                    or -1 if the module keeps state in global variables. */
-       SpamMethods
+       ...
+       .m_methods = SpamMethods,
+       ...
    };
 
 This structure, in turn, must be passed to the interpreter in the module's
@@ -360,23 +414,17 @@ only non-\ ``static`` item defined in the module file::
    PyMODINIT_FUNC
    PyInit_spam(void)
    {
-       return PyModule_Create(&spammodule);
+       return PyModuleDef_Init(&spammodule);
    }
 
 Note that :c:macro:`PyMODINIT_FUNC` declares the function as ``PyObject *`` return type,
 declares any special linkage declarations required by the platform, and for C++
 declares the function as ``extern "C"``.
 
-When the Python program imports module :mod:`!spam` for the first time,
-:c:func:`!PyInit_spam` is called. (See below for comments about embedding Python.)
-It calls :c:func:`PyModule_Create`, which returns a module object, and
-inserts built-in function objects into the newly created module based upon the
-table (an array of :c:type:`PyMethodDef` structures) found in the module definition.
-:c:func:`PyModule_Create` returns a pointer to the module object
-that it creates.  It may abort with a fatal error for
-certain errors, or return ``NULL`` if the module could not be initialized
-satisfactorily. The init function must return the module object to its caller,
-so that it then gets inserted into ``sys.modules``.
+:c:func:`!PyInit_spam` is called when each interpreter imports its module
+:mod:`!spam` for the first time.  (See below for comments about embedding Python.)
+A pointer to the module definition must be returned via :c:func:`PyModuleDef_Init`,
+so that the import machinery can create the module and store it in ``sys.modules``.
 
 When embedding Python, the :c:func:`!PyInit_spam` function is not called
 automatically unless there's an entry in the :c:data:`PyImport_Inittab` table.
@@ -430,25 +478,6 @@ optionally followed by an import of the module::
         PyConfig_Clear(&config);
         Py_ExitStatusException(status);
    }
-
-.. note::
-
-   Removing entries from ``sys.modules`` or importing compiled modules into
-   multiple interpreters within a process (or following a :c:func:`fork` without an
-   intervening :c:func:`exec`) can create problems for some extension modules.
-   Extension module authors should exercise caution when initializing internal data
-   structures.
-
-A more substantial example module is included in the Python source distribution
-as :file:`Modules/xxmodule.c`.  This file may be used as a  template or simply
-read as an example.
-
-.. note::
-
-   Unlike our ``spam`` example, ``xxmodule`` uses *multi-phase initialization*
-   (new in Python 3.5), where a PyModuleDef structure is returned from
-   ``PyInit_spam``, and creation of the module is left to the import machinery.
-   For details on multi-phase initialization, see :PEP:`489`.
 
 
 .. _compilation:
@@ -790,18 +819,24 @@ Philbrick (philbrick@hks.com)::
        {NULL, NULL, 0, NULL}   /* sentinel */
    };
 
+   static PyModuleDef_Slot keywdarg_slots[] = {
+       {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+       {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+       {0, NULL}
+   };
+
    static struct PyModuleDef keywdargmodule = {
-       PyModuleDef_HEAD_INIT,
-       "keywdarg",
-       NULL,
-       -1,
-       keywdarg_methods
+       .m_base = PyModuleDef_HEAD_INIT,
+       .m_name = "keywdarg",
+       .m_size = 0,
+       .m_methods = keywdarg_methods,
+       .m_slots = keywdarg_slots,
    };
 
    PyMODINIT_FUNC
    PyInit_keywdarg(void)
    {
-       return PyModule_Create(&keywdargmodule);
+       return PyModuleDef_Init(&keywdargmodule);
    }
 
 
@@ -1241,11 +1276,10 @@ The function :c:func:`!spam_system` is modified in a trivial way::
    spam_system(PyObject *self, PyObject *args)
    {
        const char *command;
-       int sts;
-
-       if (!PyArg_ParseTuple(args, "s", &command))
+       if (!PyArg_ParseTuple(args, "s", &command)) {
            return NULL;
-       sts = PySpam_System(command);
+       }
+       int sts = PySpam_System(command);
        return PyLong_FromLong(sts);
    }
 
@@ -1262,33 +1296,50 @@ The ``#define`` is used to tell the header file that it is being included in the
 exporting module, not a client module. Finally, the module's initialization
 function must take care of initializing the C API pointer array::
 
+   typedef struct {
+       void *PySpam_API[PySpam_API_pointers];
+   } spam_state;
+
+   static int
+   spam_module_exec(PyObject *module)
+   {
+       spam_state *state = PyModule_GetState(module);
+       if (state == NULL) {
+           return -1;
+       }
+
+       /* Initialize the C API pointer array */
+       state->PySpam_API[PySpam_System_NUM] = PySpam_System;
+
+       /* Create a Capsule containing the API pointer array's address */
+       PyObject *capi = PyCapsule_New(state->PySpam_API, "spam._C_API", NULL);
+       if (PyModule_Add(module, "_C_API", capi) < 0) {
+           Py_CLEAR(capi);
+           return -1;
+       }
+
+       return 0;
+   }
+
+   static PyModuleDef_Slot spam_module_slots[] = {
+       {Py_mod_exec, spam_module_exec},
+       {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+       {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+       {0, NULL}
+   };
+
+   static struct PyModuleDef spammodule = {
+       .m_base = PyModuleDef_HEAD_INIT,
+       .m_name = "spam",
+       .m_size = sizeof(spam_state),
+       .m_slots = spam_module_slots,
+   };
+
    PyMODINIT_FUNC
    PyInit_spam(void)
    {
-       PyObject *m;
-       static void *PySpam_API[PySpam_API_pointers];
-       PyObject *c_api_object;
-
-       m = PyModule_Create(&spammodule);
-       if (m == NULL)
-           return NULL;
-
-       /* Initialize the C API pointer array */
-       PySpam_API[PySpam_System_NUM] = (void *)PySpam_System;
-
-       /* Create a Capsule containing the API pointer array's address */
-       c_api_object = PyCapsule_New((void *)PySpam_API, "spam._C_API", NULL);
-
-       if (PyModule_Add(m, "_C_API", c_api_object) < 0) {
-           Py_DECREF(m);
-           return NULL;
-       }
-
-       return m;
+       return PyModuleDef_Init(&spammodule);
    }
-
-Note that ``PySpam_API`` is declared ``static``; otherwise the pointer
-array would disappear when :c:func:`!PyInit_spam` terminates!
 
 The bulk of the work is in the header file :file:`spammodule.h`, which looks
 like this::
@@ -1318,20 +1369,8 @@ like this::
    #else
    /* This section is used in modules that use spammodule's API */
 
-   static void **PySpam_API;
-
    #define PySpam_System \
     (*(PySpam_System_RETURN (*)PySpam_System_PROTO) PySpam_API[PySpam_System_NUM])
-
-   /* Return -1 on error, 0 on success.
-    * PyCapsule_Import will set an exception if there's an error.
-    */
-   static int
-   import_spam(void)
-   {
-       PySpam_API = (void **)PyCapsule_Import("spam._C_API", 0);
-       return (PySpam_API != NULL) ? 0 : -1;
-   }
 
    #endif
 
@@ -1341,22 +1380,44 @@ like this::
 
    #endif /* !defined(Py_SPAMMODULE_H) */
 
-All that a client module must do in order to have access to the function
-:c:func:`!PySpam_System` is to call the function (or rather macro)
-:c:func:`!import_spam` in its initialization function::
+
+   typedef struct {
+       void **PySpam_API;
+   } client_state;
+
+   static int
+   client_module_exec(PyObject *module)
+   {
+       client_state *state = PyModule_GetState(module);
+       if (state == NULL) {
+           return -1;
+       }
+       state->PySpam_API = (void **)PyCapsule_Import("spam._C_API", 0);
+       if (state->PySpam_API == NULL) {
+           return -1;
+       }
+       /* additional initialization can happen here */
+       return 0;
+   }
+
+   static PyModuleDef_Slot client_module_slots[] = {
+       {Py_mod_exec, client_module_exec},
+       {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+       {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+       {0, NULL}
+   };
+
+   static struct PyModuleDef clientmodule = {
+       .m_base = PyModuleDef_HEAD_INIT,
+       .m_name = "client",
+       .m_size = sizeof(client_state),
+       .m_slots = client_module_slots,
+   };
 
    PyMODINIT_FUNC
    PyInit_client(void)
    {
-       PyObject *m;
-
-       m = PyModule_Create(&clientmodule);
-       if (m == NULL)
-           return NULL;
-       if (import_spam() < 0)
-           return NULL;
-       /* additional initialization can happen here */
-       return m;
+       return PyModuleDef_Init(&clientmodule);
    }
 
 The main disadvantage of this approach is that the file :file:`spammodule.h` is

@@ -171,18 +171,18 @@ implementation provided by the API function :c:func:`PyType_GenericNew`. ::
    .tp_new = PyType_GenericNew,
 
 Everything else in the file should be familiar, except for some code in
-:c:func:`!PyInit_custom`::
+:c:func:`!custom_module_exec`::
 
-   if (PyType_Ready(&CustomType) < 0)
-       return;
+   if (PyType_Ready(&CustomType) < 0) {
+       return -1;
+   }
 
 This initializes the :class:`!Custom` type, filling in a number of members
 to the appropriate default values, including :c:member:`~PyObject.ob_type` that we initially
 set to ``NULL``. ::
 
-   if (PyModule_AddObjectRef(m, "Custom", (PyObject *) &CustomType) < 0) {
-       Py_DECREF(m);
-       return NULL;
+   if (PyModule_AddObjectRef(mod, "Custom", (PyObject *)&CustomType) < 0) {
+       return -1;
    }
 
 This adds the type to the module dictionary.  This allows us to create
@@ -875,27 +875,22 @@ but let the base class handle it by calling its own :c:member:`~PyTypeObject.tp_
 The :c:type:`PyTypeObject` struct supports a :c:member:`~PyTypeObject.tp_base`
 specifying the type's concrete base class.  Due to cross-platform compiler
 issues, you can't fill that field directly with a reference to
-:c:type:`PyList_Type`; it should be done later in the module initialization
+:c:type:`PyList_Type`; it should be done in the :c:data:`Py_mod_exec`
 function::
 
-   PyMODINIT_FUNC
-   PyInit_sublist(void)
+   static int
+   sublist_module_exec(PyObject *mod)
    {
-       PyObject* m;
        SubListType.tp_base = &PyList_Type;
-       if (PyType_Ready(&SubListType) < 0)
-           return NULL;
-
-       m = PyModule_Create(&sublistmodule);
-       if (m == NULL)
-           return NULL;
-
-       if (PyModule_AddObjectRef(m, "SubList", (PyObject *) &SubListType) < 0) {
-           Py_DECREF(m);
-           return NULL;
+       if (PyType_Ready(&SubListType) < 0) {
+           return -1;
        }
 
-       return m;
+       if (PyModule_AddObjectRef(mod, "SubList", (PyObject *)&SubListType) < 0) {
+           return -1;
+       }
+
+       return 0;
    }
 
 Before calling :c:func:`PyType_Ready`, the type structure must have the
