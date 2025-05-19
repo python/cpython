@@ -7,6 +7,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 import typing
 import urllib.request
 import urllib.error
@@ -162,7 +163,7 @@ def get_externals() -> list[str]:
     return externals
 
 
-def download_with_retries(download_location, retries=5):
+def download_with_retries(download_location: str, retries: int = 5):
     """Download a file with exponential backoff retry."""
     attempt = 0
     while attempt < retries:
