@@ -1594,7 +1594,6 @@ class SubinterpThreadingTests(BaseTestCase):
         self.assertEqual(os.read(r_interp, 1), DONE)
 
     @cpython_only
-    @unittest.skipIf(True, "only crashes some of the time now that Py_EndInterpreter() can handle more threads")
     def test_daemon_threads_fatal_error(self):
         import_module("_testcapi")
         subinterp_code = f"""if 1:
