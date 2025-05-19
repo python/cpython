@@ -229,6 +229,7 @@ class PosixPathTest(unittest.TestCase):
         finally:
             safe_rmdir(ABSTFN)
 
+    def test_ismount_invalid_paths(self):
         self.assertIs(posixpath.ismount('/\udfff'), False)
         self.assertIs(posixpath.ismount(b'/\xff'), False)
         self.assertIs(posixpath.ismount('/\x00'), False)
@@ -488,6 +489,79 @@ class PosixPathTest(unittest.TestCase):
             self.assertRaises(FileNotFoundError, realpath, ABSTFN + "2", strict=True)
         finally:
             os_helper.unlink(ABSTFN)
+
+    def test_realpath_invalid_paths(self):
+        path = '/\x00'
+        self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(ValueError, realpath, path, strict=True)
+        path = b'/\x00'
+        self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(ValueError, realpath, path, strict=True)
+        path = '/nonexistent/x\x00'
+        self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+        path = b'/nonexistent/x\x00'
+        self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+        path = '/\x00/..'
+        self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(ValueError, realpath, path, strict=True)
+        path = b'/\x00/..'
+        self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(ValueError, realpath, path, strict=True)
+        path = '/nonexistent/x\x00/..'
+        self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+        path = b'/nonexistent/x\x00/..'
+        self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+
+        path = '/\udfff'
+        if sys.platform == 'win32':
+            self.assertEqual(realpath(path, strict=False), path)
+            self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+        else:
+            self.assertRaises(UnicodeEncodeError, realpath, path, strict=False)
+            self.assertRaises(UnicodeEncodeError, realpath, path, strict=True)
+        path = '/nonexistent/\udfff'
+        if sys.platform == 'win32':
+            self.assertEqual(realpath(path, strict=False), path)
+        else:
+            self.assertRaises(UnicodeEncodeError, realpath, path, strict=False)
+        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+        path = '/\udfff/..'
+        if sys.platform == 'win32':
+            self.assertEqual(realpath(path, strict=False), '/')
+            self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+        else:
+            self.assertRaises(UnicodeEncodeError, realpath, path, strict=False)
+            self.assertRaises(UnicodeEncodeError, realpath, path, strict=True)
+        path = '/nonexistent/\udfff/..'
+        if sys.platform == 'win32':
+            self.assertEqual(realpath(path, strict=False), '/nonexistent')
+        else:
+            self.assertRaises(UnicodeEncodeError, realpath, path, strict=False)
+        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+
+        path = b'/\xff'
+        if sys.platform == 'win32':
+            self.assertRaises(UnicodeDecodeError, realpath, path, strict=False)
+            self.assertRaises(UnicodeDecodeError, realpath, path, strict=True)
+        else:
+            self.assertEqual(realpath(path, strict=False), path)
+            if support.is_wasi:
+                self.assertRaises(OSError, realpath, path, strict=True)
+            else:
+                self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+        path = b'/nonexistent/\xff'
+        if sys.platform == 'win32':
+            self.assertRaises(UnicodeDecodeError, realpath, path, strict=False)
+        else:
+            self.assertEqual(realpath(path, strict=False), path)
+        if support.is_wasi:
+            self.assertRaises(OSError, realpath, path, strict=True)
+        else:
+            self.assertRaises(FileNotFoundError, realpath, path, strict=True)
 
     @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
