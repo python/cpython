@@ -528,14 +528,13 @@ I/O Base Classes
    It inherits from :class:`IOBase`.
 
    The main difference with :class:`RawIOBase` is that methods :meth:`read`,
-   :meth:`readinto` and :meth:`write` will try (respectively) to read as much
-   input as requested or to consume all given output, at the expense of
-   making perhaps more than one system call.
+   :meth:`readinto` and :meth:`write` will try (respectively) to read
+   as much input as requested or to emit all provided data.
 
-   In addition, those methods can raise :exc:`BlockingIOError` if the
-   underlying raw stream is in non-blocking mode and cannot take or give
-   enough data; unlike their :class:`RawIOBase` counterparts, they will
-   never return ``None``.
+   In addition, if the underlying raw stream is in non-blocking mode, when the
+   system returns would block :meth:`write` will raise :exc:`BlockingIOError`
+   with :attr:`BlockingIOError.characters_written` and :meth:`read` will return
+   data read so far or ``None`` if no data is available.
 
    Besides, the :meth:`read` method does not have a default
    implementation that defers to :meth:`readinto`.
