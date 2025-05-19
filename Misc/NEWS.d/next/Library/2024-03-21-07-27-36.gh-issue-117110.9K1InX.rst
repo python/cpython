@@ -1,1 +1,0 @@
-Fix a bug that prevents subclasses of :class:`typing.Any` to be instantiated with arguments. Patch by Chris Fu.

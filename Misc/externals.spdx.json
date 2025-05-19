@@ -48,14 +48,14 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "93118043651ffa33dcaaab445bae4f8929fca25d2d749079b78e97f220c3d8b1"
+          "checksumValue": "338fac3fb8cdd60f406b6326431338756f58a8af94229ffd9bf1e7c2b1ad71ca"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/mpdecimal-2.5.1.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/mpdecimal-4.0.0.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:bytereef:mpdecimal:2.5.1:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:bytereef:mpdecimal:4.0.0:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
@@ -63,91 +63,91 @@
       "name": "mpdecimal",
       "originator": "Organization: bytereef.org",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "2.5.1"
+      "versionInfo": "4.0.0"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-openssl",
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "e6a77c273ebb284fedd8ea19b081fce74a9455936ffd47215f7c24713e2614b2"
+          "checksumValue": "6bb739ecddbd2cfb6d255eb5898437a9b5739277dee931338d3275bac5d96ba2"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/openssl-3.0.13.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/openssl-3.0.16.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:openssl:openssl:3.0.13:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:openssl:openssl:3.0.16:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
       "licenseConcluded": "NOASSERTION",
       "name": "openssl",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "3.0.13"
+      "versionInfo": "3.0.16"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-sqlite",
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "6f0364a27375435a34137b138ca4fedef8d23eec6493ca1dfff33bfc0c34fda4"
+          "checksumValue": "e335aeb44fa36cde60ecbb6a9f8be6f5d449d645ce9b0199ee53a7e6728d19d2"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/sqlite-3.45.1.0.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/sqlite-3.49.1.0.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:sqlite:sqlite:3.45.1.0:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:sqlite:sqlite:3.49.1.0:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
       "licenseConcluded": "NOASSERTION",
       "name": "sqlite",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "3.45.1.0"
+      "versionInfo": "3.49.1.0"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-tcl-core",
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "1d3f2015e49e269cf681373d433cd54d88d5ef7443fe87f5f50f5fcfe9003e73"
+          "checksumValue": "4c23f0dd3efcbe6f3a22c503a68d147617bb30c4f5290f1eb3eaacf0b460440b"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tcl-core-8.6.13.1.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tcl-core-8.6.15.0.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:8.6.13.1:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:8.6.15.0:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
       "licenseConcluded": "NOASSERTION",
       "name": "tcl-core",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "8.6.13.1"
+      "versionInfo": "8.6.15.0"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-tk",
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "6056203b8a6aaf6ea89d90a7b55dc7f407e55c093f731a98fd830a712a3c81d3"
+          "checksumValue": "0ae56d39bca92865f338529557a1e56d110594184b6dc5a91339c5675751e264"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tk-8.6.13.1.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tk-8.6.15.0.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:8.6.13.1:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:8.6.15.0:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
       "licenseConcluded": "NOASSERTION",
       "name": "tk",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "8.6.13.1"
+      "versionInfo": "8.6.15.0"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-xz",
@@ -161,7 +161,7 @@
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:xz_project:xz:5.2.5:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:tukaani:xz:5.2.5:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
@@ -171,25 +171,46 @@
       "versionInfo": "5.2.5"
     },
     {
-      "SPDXID": "SPDXRef-PACKAGE-zlib",
+      "SPDXID": "SPDXRef-PACKAGE-zlib-ng",
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "e3f3fb32564952006eb18b091ca8464740e5eca29d328cfb0b2da22768e0b638"
+          "checksumValue": "00bbd88709bc416cb96160ab61d3e1c8f76e106799af7328d0fe434dc7dd5004"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/zlib-1.3.1.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/zlib-ng-2.2.4.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:zlib:zlib:1.3.1:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:zlib-ng:zlib-ng:2.2.4:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
       "licenseConcluded": "NOASSERTION",
-      "name": "zlib",
+      "name": "zlib-ng",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "1.3.1"
+      "versionInfo": "2.2.4"
+    },
+    {
+      "SPDXID": "SPDXRef-PACKAGE-zstd",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f24b52470d12f466e9fa4fcc94e6c530625ada51d7b36de7fdc6ed7e6f499c8e"
+        }
+      ],
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/zstd-1.5.7.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceLocator": "cpe:2.3:a:facebook:zstandard:1.5.7:*:*:*:*:*:*:*",
+          "referenceType": "cpe23Type"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "name": "zstd",
+      "primaryPackagePurpose": "SOURCE",
+      "versionInfo": "1.5.7"
     }
   ],
   "spdxVersion": "SPDX-2.3"

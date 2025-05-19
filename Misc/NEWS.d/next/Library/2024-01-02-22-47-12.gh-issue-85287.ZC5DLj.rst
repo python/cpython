@@ -1,2 +1,0 @@
-Changes Unicode codecs to return UnicodeEncodeError or UnicodeDecodeError,
-rather than just UnicodeError.

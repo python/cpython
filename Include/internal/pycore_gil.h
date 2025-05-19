@@ -21,8 +21,20 @@ extern "C" {
 
 struct _gil_runtime_state {
 #ifdef Py_GIL_DISABLED
-    /* Whether or not this GIL is being used. Can change from 0 to 1 at runtime
-       if, for example, a module that requires the GIL is loaded. */
+    /* If this GIL is disabled, enabled == 0.
+
+       If this GIL is enabled transiently (most likely to initialize a module
+       of unknown safety), enabled indicates the number of active transient
+       requests.
+
+       If this GIL is enabled permanently, enabled == INT_MAX.
+
+       It must not be modified directly; use _PyEval_EnableGILTransiently(),
+       _PyEval_EnableGILPermanently(), and _PyEval_DisableGIL()
+
+       It is always read and written atomically, but a thread can assume its
+       value will be stable as long as that thread is attached or knows that no
+       other threads are attached (e.g., during a stop-the-world.). */
     int enabled;
 #endif
     /* microseconds (the Python API uses seconds, though) */

@@ -1,9 +1,12 @@
 import errno
+import inspect
 import os
 import posixpath
+import random
 import sys
 import unittest
 from posixpath import realpath, abspath, dirname, basename, ALL_BUT_LAST
+from test import support
 from test import test_genericpath
 from test.support import import_helper
 from test.support import os_helper
@@ -57,6 +60,8 @@ class PosixPathTest(unittest.TestCase):
         self.assertEqual(fn(b"/foo", b"bar", b"baz"),          b"/foo/bar/baz")
         self.assertEqual(fn(b"/foo/", b"bar/", b"baz/"),       b"/foo/bar/baz/")
 
+        self.assertEqual(fn("a", ""),          "a/")
+        self.assertEqual(fn("a", "", ""),      "a/")
         self.assertEqual(fn("a", "b"),         "a/b")
         self.assertEqual(fn("a", "b/"),        "a/b/")
         self.assertEqual(fn("a/", "b"),        "a/b")
@@ -282,6 +287,16 @@ class PosixPathTest(unittest.TestCase):
     def test_isjunction(self):
         self.assertFalse(posixpath.isjunction(ABSTFN))
 
+    @unittest.skipIf(sys.platform == 'win32', "Fast paths are not for win32")
+    @support.cpython_only
+    def test_fast_paths_in_use(self):
+        # There are fast paths of these functions implemented in posixmodule.c.
+        # Confirm that they are being used, and not the Python fallbacks
+        self.assertTrue(os.path.splitroot is posix._path_splitroot_ex)
+        self.assertFalse(inspect.isfunction(os.path.splitroot))
+        self.assertTrue(os.path.normpath is posix._path_normpath)
+        self.assertFalse(inspect.isfunction(os.path.normpath))
+
     def test_expanduser(self):
         self.assertEqual(posixpath.expanduser("foo"), "foo")
         self.assertEqual(posixpath.expanduser(b"foo"), b"foo")
@@ -343,12 +358,38 @@ class PosixPathTest(unittest.TestCase):
                 for path in ('~', '~/.local', '~vstinner/'):
                     self.assertEqual(posixpath.expanduser(path), path)
 
+    @unittest.skipIf(sys.platform == "vxworks",
+                     "no home directory on VxWorks")
+    def test_expanduser_pwd2(self):
+        pwd = import_helper.import_module('pwd')
+        getpwall = support.get_attribute(pwd, 'getpwall')
+        names = [entry.pw_name for entry in getpwall()]
+        maxusers = 1000 if support.is_resource_enabled('cpu') else 100
+        if len(names) > maxusers:
+            # Select random names, half of them with non-ASCII name,
+            # if available.
+            random.shuffle(names)
+            names.sort(key=lambda name: name.isascii())
+            del names[maxusers//2:-maxusers//2]
+        for name in names:
+            # gh-121200: pw_dir can be different between getpwall() and
+            # getpwnam(), so use getpwnam() pw_dir as expanduser() does.
+            entry = pwd.getpwnam(name)
+            home = entry.pw_dir
+            home = home.rstrip('/') or '/'
+
+            with self.subTest(name=name, pw_dir=entry.pw_dir):
+                self.assertEqual(posixpath.expanduser('~' + name), home)
+                self.assertEqual(posixpath.expanduser(os.fsencode('~' + name)),
+                                 os.fsencode(home))
+
     NORMPATH_CASES = [
         ("", "."),
         ("/", "/"),
         ("/.", "/"),
         ("/./", "/"),
         ("/.//.", "/"),
+        ("/./foo/bar", "/foo/bar"),
         ("/foo", "/foo"),
         ("/foo/bar", "/foo/bar"),
         ("//", "//"),
@@ -358,6 +399,7 @@ class PosixPathTest(unittest.TestCase):
         ("///..//./foo/.//bar", "/foo/bar"),
         (".", "."),
         (".//.", "."),
+        ("./foo/bar", "foo/bar"),
         ("..", ".."),
         ("../", ".."),
         ("../foo", "../foo"),
@@ -456,6 +498,15 @@ class PosixPathTest(unittest.TestCase):
             self.assertEqual(realpath(ABSTFN), ABSTFN+"1")
         finally:
             os_helper.unlink(ABSTFN)
+
+    @os_helper.skip_unless_symlink
+    @skip_if_ABSTFN_contains_backslash
+    def test_realpath_missing_pardir(self):
+        try:
+            os.symlink(os_helper.TESTFN + "1", os_helper.TESTFN)
+            self.assertEqual(realpath("nonexistent/../" + os_helper.TESTFN), ABSTFN + "1")
+        finally:
+            os_helper.unlink(os_helper.TESTFN)
 
     @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
@@ -640,6 +691,83 @@ class PosixPathTest(unittest.TestCase):
 
     @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
+    @unittest.skipIf(os.chmod not in os.supports_follow_symlinks, "Can't set symlink permissions")
+    @unittest.skipIf(sys.platform != "darwin", "only macOS requires read permission to readlink()")
+    def test_realpath_unreadable_symlink(self):
+        try:
+            os.symlink(ABSTFN+"1", ABSTFN)
+            os.chmod(ABSTFN, 0o000, follow_symlinks=False)
+            self.assertEqual(realpath(ABSTFN), ABSTFN)
+            self.assertEqual(realpath(ABSTFN + '/foo'), ABSTFN + '/foo')
+            self.assertEqual(realpath(ABSTFN + '/../foo'), dirname(ABSTFN) + '/foo')
+            self.assertEqual(realpath(ABSTFN + '/foo/..'), ABSTFN)
+            with self.assertRaises(PermissionError):
+                realpath(ABSTFN, strict=True)
+        finally:
+            os.chmod(ABSTFN, 0o755, follow_symlinks=False)
+            os.unlink(ABSTFN)
+
+    @skip_if_ABSTFN_contains_backslash
+    def test_realpath_nonterminal_file(self):
+        try:
+            with open(ABSTFN, 'w') as f:
+                f.write('test_posixpath wuz ere')
+            self.assertEqual(realpath(ABSTFN, strict=False), ABSTFN)
+            self.assertEqual(realpath(ABSTFN, strict=True), ABSTFN)
+            self.assertEqual(realpath(ABSTFN + "/", strict=False), ABSTFN)
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/", strict=True)
+            self.assertEqual(realpath(ABSTFN + "/.", strict=False), ABSTFN)
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/.", strict=True)
+            self.assertEqual(realpath(ABSTFN + "/..", strict=False), dirname(ABSTFN))
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/..", strict=True)
+            self.assertEqual(realpath(ABSTFN + "/subdir", strict=False), ABSTFN + "/subdir")
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/subdir", strict=True)
+        finally:
+            os_helper.unlink(ABSTFN)
+
+    @os_helper.skip_unless_symlink
+    @skip_if_ABSTFN_contains_backslash
+    def test_realpath_nonterminal_symlink_to_file(self):
+        try:
+            with open(ABSTFN + "1", 'w') as f:
+                f.write('test_posixpath wuz ere')
+            os.symlink(ABSTFN + "1", ABSTFN)
+            self.assertEqual(realpath(ABSTFN, strict=False), ABSTFN + "1")
+            self.assertEqual(realpath(ABSTFN, strict=True), ABSTFN + "1")
+            self.assertEqual(realpath(ABSTFN + "/", strict=False), ABSTFN + "1")
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/", strict=True)
+            self.assertEqual(realpath(ABSTFN + "/.", strict=False), ABSTFN + "1")
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/.", strict=True)
+            self.assertEqual(realpath(ABSTFN + "/..", strict=False), dirname(ABSTFN))
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/..", strict=True)
+            self.assertEqual(realpath(ABSTFN + "/subdir", strict=False), ABSTFN + "1/subdir")
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/subdir", strict=True)
+        finally:
+            os_helper.unlink(ABSTFN)
+
+    @os_helper.skip_unless_symlink
+    @skip_if_ABSTFN_contains_backslash
+    def test_realpath_nonterminal_symlink_to_symlinks_to_file(self):
+        try:
+            with open(ABSTFN + "2", 'w') as f:
+                f.write('test_posixpath wuz ere')
+            os.symlink(ABSTFN + "2", ABSTFN + "1")
+            os.symlink(ABSTFN + "1", ABSTFN)
+            self.assertEqual(realpath(ABSTFN, strict=False), ABSTFN + "2")
+            self.assertEqual(realpath(ABSTFN, strict=True), ABSTFN + "2")
+            self.assertEqual(realpath(ABSTFN + "/", strict=False), ABSTFN + "2")
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/", strict=True)
+            self.assertEqual(realpath(ABSTFN + "/.", strict=False), ABSTFN + "2")
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/.", strict=True)
+            self.assertEqual(realpath(ABSTFN + "/..", strict=False), dirname(ABSTFN))
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/..", strict=True)
+            self.assertEqual(realpath(ABSTFN + "/subdir", strict=False), ABSTFN + "2/subdir")
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/subdir", strict=True)
+        finally:
+            os_helper.unlink(ABSTFN)
+
+    @os_helper.skip_unless_symlink
+    @skip_if_ABSTFN_contains_backslash
     def test_realpath_mode(self):
         try:
             os.mkdir(ABSTFN)
@@ -648,7 +776,7 @@ class PosixPathTest(unittest.TestCase):
             open(ABSTFN + "/dir/file2", "wb").close()
             os.symlink("file", ABSTFN + "/link")
             os.symlink("dir", ABSTFN + "/link2")
-            os.symlink("nonexisting", ABSTFN + "/broken")
+            os.symlink("nonexistent", ABSTFN + "/broken")
             os.symlink("cycle", ABSTFN + "/cycle")
             def check(path, mode, expected, errno=None):
                 if isinstance(expected, str):
@@ -673,9 +801,9 @@ class PosixPathTest(unittest.TestCase):
                 check("file/.", False, "/file")
                 check("file/.", ALL_BUT_LAST, NotADirectoryError)
                 check("file/.", True, NotADirectoryError)
-                check("file/../link", False, "/file")
-                check("file/../link", ALL_BUT_LAST, NotADirectoryError)
-                check("file/../link", True, NotADirectoryError)
+                check("file/../link2", False, "/dir")
+                check("file/../link2", ALL_BUT_LAST, NotADirectoryError)
+                check("file/../link2", True, NotADirectoryError)
 
                 check("dir", False, "/dir")
                 check("dir", ALL_BUT_LAST, "/dir")
@@ -713,26 +841,26 @@ class PosixPathTest(unittest.TestCase):
                 check("link2/file2", ALL_BUT_LAST, "/dir/file2")
                 check("link2/file2", True, "/dir/file2")
 
-                check("nonexisting", False, "/nonexisting")
-                check("nonexisting", ALL_BUT_LAST, "/nonexisting")
-                check("nonexisting", True, FileNotFoundError)
-                check("nonexisting/", False, "/nonexisting")
-                check("nonexisting/", ALL_BUT_LAST, "/nonexisting")
-                check("nonexisting/", True, FileNotFoundError)
-                check("nonexisting/file", False, "/nonexisting/file")
-                check("nonexisting/file", ALL_BUT_LAST, FileNotFoundError)
-                check("nonexisting/file", True, FileNotFoundError)
-                check("nonexisting/../link", False, "/file")
-                check("nonexisting/../link", ALL_BUT_LAST, FileNotFoundError)
-                check("nonexisting/../link", True, FileNotFoundError)
+                check("nonexistent", False, "/nonexistent")
+                check("nonexistent", ALL_BUT_LAST, "/nonexistent")
+                check("nonexistent", True, FileNotFoundError)
+                check("nonexistent/", False, "/nonexistent")
+                check("nonexistent/", ALL_BUT_LAST, "/nonexistent")
+                check("nonexistent/", True, FileNotFoundError)
+                check("nonexistent/file", False, "/nonexistent/file")
+                check("nonexistent/file", ALL_BUT_LAST, FileNotFoundError)
+                check("nonexistent/file", True, FileNotFoundError)
+                check("nonexistent/../link", False, "/file")
+                check("nonexistent/../link", ALL_BUT_LAST, FileNotFoundError)
+                check("nonexistent/../link", True, FileNotFoundError)
 
-                check("broken", False, "/nonexisting")
-                check("broken", ALL_BUT_LAST, "/nonexisting")
+                check("broken", False, "/nonexistent")
+                check("broken", ALL_BUT_LAST, "/nonexistent")
                 check("broken", True, FileNotFoundError)
-                check("broken/", False, "/nonexisting")
-                check("broken/", ALL_BUT_LAST, "/nonexisting")
+                check("broken/", False, "/nonexistent")
+                check("broken/", ALL_BUT_LAST, "/nonexistent")
                 check("broken/", True, FileNotFoundError)
-                check("broken/file", False, "/nonexisting/file")
+                check("broken/file", False, "/nonexistent/file")
                 check("broken/file", ALL_BUT_LAST, FileNotFoundError)
                 check("broken/file", True, FileNotFoundError)
                 check("broken/../link", False, "/file")
@@ -765,6 +893,7 @@ class PosixPathTest(unittest.TestCase):
         (real_getcwd, os.getcwd) = (os.getcwd, lambda: r"/home/user/bar")
         try:
             curdir = os.path.split(os.getcwd())[-1]
+            self.assertRaises(TypeError, posixpath.relpath, None)
             self.assertRaises(ValueError, posixpath.relpath, "")
             self.assertEqual(posixpath.relpath("a"), "a")
             self.assertEqual(posixpath.relpath(posixpath.abspath("a")), "a")

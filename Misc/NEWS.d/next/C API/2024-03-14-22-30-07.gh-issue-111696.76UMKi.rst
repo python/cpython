@@ -1,4 +1,0 @@
-Add support for ``%T``, ``%T#``, ``%N`` and ``%N#`` formats to
-:c:func:`PyUnicode_FromFormat`: format the fully qualified name of an object
-type and of a type: call :c:func:`PyType_GetModuleName`. See :pep:`737` for
-more information. Patch by Victor Stinner.

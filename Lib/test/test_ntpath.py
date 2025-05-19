@@ -347,13 +347,18 @@ class TestNtpath(NtpathTestCase):
 
         tester("ntpath.normpath('..')", r'..')
         tester("ntpath.normpath('.')", r'.')
+        tester("ntpath.normpath('c:.')", 'c:')
         tester("ntpath.normpath('')", r'.')
         tester("ntpath.normpath('/')", '\\')
         tester("ntpath.normpath('c:/')", 'c:\\')
         tester("ntpath.normpath('/../.././..')", '\\')
         tester("ntpath.normpath('c:/../../..')", 'c:\\')
+        tester("ntpath.normpath('/./a/b')", r'\a\b')
+        tester("ntpath.normpath('c:/./a/b')", r'c:\a\b')
         tester("ntpath.normpath('../.././..')", r'..\..\..')
         tester("ntpath.normpath('K:../.././..')", r'K:..\..\..')
+        tester("ntpath.normpath('./a/b')", r'a\b')
+        tester("ntpath.normpath('c:./a/b')", r'c:a\b')
         tester("ntpath.normpath('C:////a/b')", r'C:\a\b')
         tester("ntpath.normpath('//machine/share//a/b')", r'\\machine\share\a\b')
 
@@ -374,6 +379,7 @@ class TestNtpath(NtpathTestCase):
         tester("ntpath.normpath('\\\\foo\\')", '\\\\foo\\')
         tester("ntpath.normpath('\\\\foo')", '\\\\foo')
         tester("ntpath.normpath('\\\\')", '\\\\')
+        tester("ntpath.normpath('//?/UNC/server/share/..')", '\\\\?\\UNC\\server\\share\\')
 
     def test_realpath_curdir(self):
         expected = ntpath.normpath(os.getcwd())
@@ -805,6 +811,9 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.abspath("C:\\spam. . .")', "C:\\spam")
         tester('ntpath.abspath("C:/nul")',  "\\\\.\\nul")
         tester('ntpath.abspath("C:\\nul")', "\\\\.\\nul")
+        self.assertTrue(ntpath.isabs(ntpath.abspath("C:spam")))
+        self.assertEqual(ntpath.abspath("C:\x00"), ntpath.join(ntpath.abspath("C:"), "\x00"))
+        self.assertEqual(ntpath.abspath("\x00:spam"), "\x00:\\spam")
         tester('ntpath.abspath("//..")',           "\\\\")
         tester('ntpath.abspath("//../")',          "\\\\..\\")
         tester('ntpath.abspath("//../..")',        "\\\\..\\")
@@ -931,7 +940,6 @@ class TestNtpath(NtpathTestCase):
         self.assertRaises(TypeError, ntpath.commonpath, ['C:\\Foo', b'Foo\\Baz'])
         self.assertRaises(TypeError, ntpath.commonpath, ['Foo', b'C:\\Foo\\Baz'])
 
-    @unittest.skipIf(is_emscripten, "Emscripten cannot fstat unnamed files.")
     def test_sameopenfile(self):
         with TemporaryFile() as tf1, TemporaryFile() as tf2:
             # Make sure the same file is really the same
@@ -1094,6 +1102,27 @@ class TestNtpath(NtpathTestCase):
             raise unittest.SkipTest('SystemDrive is not defined or malformed')
         self.assertFalse(os.path.isfile('\\\\.\\' + drive))
 
+    @unittest.skipUnless(hasattr(os, 'pipe'), "need os.pipe()")
+    def test_isfile_anonymous_pipe(self):
+        pr, pw = os.pipe()
+        try:
+            self.assertFalse(ntpath.isfile(pr))
+        finally:
+            os.close(pr)
+            os.close(pw)
+
+    @unittest.skipIf(sys.platform != 'win32', "windows only")
+    def test_isfile_named_pipe(self):
+        import _winapi
+        named_pipe = f'//./PIPE/python_isfile_test_{os.getpid()}'
+        h = _winapi.CreateNamedPipe(named_pipe,
+                                    _winapi.PIPE_ACCESS_INBOUND,
+                                    0, 1, 0, 0, 0, 0)
+        try:
+            self.assertFalse(ntpath.isfile(named_pipe))
+        finally:
+            _winapi.CloseHandle(h)
+
     @unittest.skipIf(sys.platform != 'win32', "windows only")
     def test_con_device(self):
         self.assertFalse(os.path.isfile(r"\\.\CON"))
@@ -1107,14 +1136,22 @@ class TestNtpath(NtpathTestCase):
         # There are fast paths of these functions implemented in posixmodule.c.
         # Confirm that they are being used, and not the Python fallbacks in
         # genericpath.py.
+        self.assertTrue(os.path.splitroot is nt._path_splitroot_ex)
+        self.assertFalse(inspect.isfunction(os.path.splitroot))
+        self.assertTrue(os.path.normpath is nt._path_normpath)
+        self.assertFalse(inspect.isfunction(os.path.normpath))
         self.assertTrue(os.path.isdir is nt._path_isdir)
         self.assertFalse(inspect.isfunction(os.path.isdir))
         self.assertTrue(os.path.isfile is nt._path_isfile)
         self.assertFalse(inspect.isfunction(os.path.isfile))
         self.assertTrue(os.path.islink is nt._path_islink)
         self.assertFalse(inspect.isfunction(os.path.islink))
+        self.assertTrue(os.path.isjunction is nt._path_isjunction)
+        self.assertFalse(inspect.isfunction(os.path.isjunction))
         self.assertTrue(os.path.exists is nt._path_exists)
         self.assertFalse(inspect.isfunction(os.path.exists))
+        self.assertTrue(os.path.lexists is nt._path_lexists)
+        self.assertFalse(inspect.isfunction(os.path.lexists))
 
     @unittest.skipIf(os.name != 'nt', "Dev Drives only exist on Win32")
     def test_isdevdrive(self):

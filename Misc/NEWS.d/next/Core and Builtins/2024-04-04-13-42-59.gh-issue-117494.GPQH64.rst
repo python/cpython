@@ -1,1 +1,0 @@
-Refactored the instruction sequence data structure out of compile.c into instruction_sequence.c.

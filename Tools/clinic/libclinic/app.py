@@ -9,8 +9,7 @@ import libclinic
 from libclinic import fail, warn
 from libclinic.function import Class
 from libclinic.block_parser import Block, BlockParser
-from libclinic.crenderdata import Include
-from libclinic.codegen import BlockPrinter, Destination
+from libclinic.codegen import BlockPrinter, Destination, CodeGen
 from libclinic.parser import Parser, PythonParser
 from libclinic.dsl_parser import DSLParser
 if TYPE_CHECKING:
@@ -102,8 +101,7 @@ impl_definition block
         self.modules: ModuleDict = {}
         self.classes: ClassDict = {}
         self.functions: list[Function] = []
-        # dict: include name => Include instance
-        self.includes: dict[str, Include] = {}
+        self.codegen = CodeGen(self.limited_capi)
 
         self.line_prefix = self.line_suffix = ''
 
@@ -132,7 +130,6 @@ impl_definition block
         DestBufferList = list[DestBufferType]
 
         self.destination_buffers_stack: DestBufferList = []
-        self.ifndef_symbols: set[str] = set()
 
         self.presets: dict[str, dict[Any, Any]] = {}
         preset = None
@@ -158,24 +155,6 @@ impl_definition block
 
             assert name in self.destination_buffers
             preset[name] = buffer
-
-    def add_include(self, name: str, reason: str,
-                    *, condition: str | None = None) -> None:
-        try:
-            existing = self.includes[name]
-        except KeyError:
-            pass
-        else:
-            if existing.condition and not condition:
-                # If the previous include has a condition and the new one is
-                # unconditional, override the include.
-                pass
-            else:
-                # Already included, do nothing. Only mention a single reason,
-                # no need to list all of them.
-                return
-
-        self.includes[name] = Include(name, reason, condition)
 
     def add_destination(
         self,
@@ -212,9 +191,7 @@ impl_definition block
                     self.parsers[dsl_name] = parsers[dsl_name](self)
                 parser = self.parsers[dsl_name]
                 parser.parse(block)
-            printer.print_block(block,
-                                limited_capi=self.limited_capi,
-                                header_includes=self.includes)
+            printer.print_block(block)
 
         # these are destinations not buffers
         for name, destination in self.destinations.items():
@@ -229,9 +206,7 @@ impl_definition block
                     block.input = "dump " + name + "\n"
                     warn("Destination buffer " + repr(name) + " not empty at end of file, emptying.")
                     printer.write("\n")
-                    printer.print_block(block,
-                                        limited_capi=self.limited_capi,
-                                        header_includes=self.includes)
+                    printer.print_block(block)
                     continue
 
                 if destination.type == 'file':
@@ -255,11 +230,10 @@ impl_definition block
                         pass
 
                     block.input = 'preserve\n'
+                    includes = self.codegen.get_includes()
+
                     printer_2 = BlockPrinter(self.language)
-                    printer_2.print_block(block,
-                                          core_includes=True,
-                                          limited_capi=self.limited_capi,
-                                          header_includes=self.includes)
+                    printer_2.print_block(block, header_includes=includes)
                     libclinic.write_file(destination.filename,
                                          printer_2.f.getvalue())
                     continue

@@ -626,6 +626,19 @@ which, when run, will produce:
    of each message with the handler's level, and only passes a message to a
    handler if it's appropriate to do so.
 
+.. versionchanged:: 3.14
+   The :class:`QueueListener` can be started (and stopped) via the
+   :keyword:`with` statement. For example:
+
+   .. code-block:: python
+
+      with QueueListener(que, handler) as listener:
+          # The queue listener automatically starts
+          # when the 'with' block is entered.
+          pass
+      # The queue listener automatically stops once
+      # the 'with' block is exited.
+
 .. _network-logging:
 
 Sending and receiving logging events across a network
@@ -825,15 +838,28 @@ To test these files, do the following in a POSIX environment:
    which will lead to records being written to the log.
 
 #. Inspect the log files in the :file:`run` subdirectory. You should see the
-   most recent log lines in files matching the pattern :file:`app.log*`. They won't be in
-   any particular order, since they have been handled concurrently by different
-   worker processes in a non-deterministic way.
+   most recent log lines in files matching the pattern :file:`app.log*`. They
+   won't be in any particular order, since they have been handled concurrently
+   by different worker processes in a non-deterministic way.
 
 #. You can shut down the listener and the web application by running
    ``venv/bin/supervisorctl -c supervisor.conf shutdown``.
 
 You may need to tweak the configuration files in the unlikely event that the
 configured ports clash with something else in your test environment.
+
+The default configuration uses a TCP socket on port 9020. You can use a Unix
+Domain socket instead of a TCP socket by doing the following:
+
+#. In :file:`listener.json`, add a ``socket`` key with the path to the domain
+   socket you want to use. If this key is present, the listener listens on the
+   corresponding domain socket and not on a TCP socket (the ``port`` key is
+   ignored).
+
+#. In :file:`webapp.json`, change the socket handler configuration dictionary
+   so that the ``host`` value is the path to the domain socket, and set the
+   ``port`` value to ``null``.
+
 
 .. currentmodule:: logging
 
@@ -1267,11 +1293,8 @@ to adapt in your own applications.
 
 You could also write your own handler which uses the :class:`~multiprocessing.Lock`
 class from the :mod:`multiprocessing` module to serialize access to the
-file from your processes. The existing :class:`FileHandler` and subclasses do
-not make use of :mod:`multiprocessing` at present, though they may do so in the
-future. Note that at present, the :mod:`multiprocessing` module does not provide
-working lock functionality on all platforms (see
-https://bugs.python.org/issue3770).
+file from your processes. The stdlib :class:`FileHandler` and subclasses do
+not make use of :mod:`multiprocessing`.
 
 .. currentmodule:: logging.handlers
 
@@ -1912,7 +1935,7 @@ Subclassing QueueHandler and QueueListener- a ``pynng`` example
 ---------------------------------------------------------------
 
 In a similar way to the above section, we can implement a listener and handler
-using `pynng <https://pypi.org/project/pynng/>`_, which is a Python binding to
+using :pypi:`pynng`, which is a Python binding to
 `NNG <https://nng.nanomsg.org/>`_, billed as a spiritual successor to ZeroMQ.
 The following snippets illustrate -- you can test them in an environment which has
 ``pynng`` installed. Just for variety, we present the listener first.
@@ -2950,7 +2973,7 @@ When run, this produces a file with exactly two lines:
 .. code-block:: none
 
     28/01/2015 07:21:23|INFO|Sample message|
-    28/01/2015 07:21:23|ERROR|ZeroDivisionError: integer division or modulo by zero|'Traceback (most recent call last):\n  File "logtest7.py", line 30, in main\n    x = 1 / 0\nZeroDivisionError: integer division or modulo by zero'|
+    28/01/2015 07:21:23|ERROR|ZeroDivisionError: division by zero|'Traceback (most recent call last):\n  File "logtest7.py", line 30, in main\n    x = 1 / 0\nZeroDivisionError: division by zero'|
 
 While the above treatment is simplistic, it points the way to how exception
 information can be formatted to your liking. The :mod:`traceback` module may be
@@ -3575,9 +3598,8 @@ A Qt GUI for logging
 
 A question that comes up from time to time is about how to log to a GUI
 application. The `Qt <https://www.qt.io/>`_ framework is a popular
-cross-platform UI framework with Python bindings using `PySide2
-<https://pypi.org/project/PySide2/>`_ or `PyQt5
-<https://pypi.org/project/PyQt5/>`_ libraries.
+cross-platform UI framework with Python bindings using :pypi:`PySide2`
+or :pypi:`PyQt5` libraries.
 
 The following example shows how to log to a Qt GUI. This introduces a simple
 ``QtHandler`` class which takes a callable, which should be a slot in the main
@@ -4023,7 +4045,7 @@ As you can see, this output isn't ideal. That's because the underlying code
 which writes to ``sys.stderr`` makes multiple writes, each of which results in a
 separate logged line (for example, the last three lines above). To get around
 this problem, you need to buffer things and only output log lines when newlines
-are seen. Let's use a slghtly better implementation of ``LoggerWriter``:
+are seen. Let's use a slightly better implementation of ``LoggerWriter``:
 
 .. code-block:: python
 

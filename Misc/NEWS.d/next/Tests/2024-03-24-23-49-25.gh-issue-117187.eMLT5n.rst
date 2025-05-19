@@ -1,1 +1,0 @@
-Fix XML tests for vanilla Expat <2.6.0.

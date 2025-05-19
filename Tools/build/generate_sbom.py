@@ -1,16 +1,17 @@
 """Tool for generating Software Bill of Materials (SBOM) for Python's dependencies"""
-import os
-import re
+
+import glob
 import hashlib
 import json
-import glob
-import pathlib
+import os
+import re
 import subprocess
 import sys
-import urllib.request
 import typing
+import urllib.request
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
-CPYTHON_ROOT_DIR = pathlib.Path(__file__).parent.parent.parent
+CPYTHON_ROOT_DIR = Path(__file__).parent.parent.parent
 
 # Before adding a new entry to this list, double check that
 # the license expression is a valid SPDX license expression:
@@ -59,6 +60,8 @@ PACKAGE_TO_FILES = {
         include=["Modules/expat/**"],
         exclude=[
             "Modules/expat/expat_config.h",
+            "Modules/expat/pyexpatns.h",
+            "Modules/expat/refresh.sh",
         ]
     ),
     "macholib": PackageFiles(
@@ -68,9 +71,6 @@ PACKAGE_TO_FILES = {
             "Lib/ctypes/macholib/fetch_macholib",
             "Lib/ctypes/macholib/fetch_macholib.bat",
         ],
-    ),
-    "libb2": PackageFiles(
-        include=["Modules/_blake2/impl/**"]
     ),
     "hacl-star": PackageFiles(
         include=["Modules/_hacl/**"],
@@ -96,6 +96,19 @@ def error_if(value: bool, error_message: str) -> None:
         sys.exit(1)
 
 
+def is_root_directory_git_index() -> bool:
+    """Checks if the root directory is a git index"""
+    try:
+        subprocess.check_call(
+            ["git", "-C", str(CPYTHON_ROOT_DIR), "rev-parse"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except subprocess.CalledProcessError:
+        return False
+    return True
+
+
 def filter_gitignored_paths(paths: list[str]) -> list[str]:
     """
     Filter out paths excluded by the gitignore file.
@@ -108,6 +121,10 @@ def filter_gitignored_paths(paths: list[str]) -> list[str]:
 
         '.gitignore:9:*.a    Tools/lib.a'
     """
+    # No paths means no filtering to be done.
+    if not paths:
+        return []
+
     # Filter out files in gitignore.
     # Non-matching files show up as '::<whitespace><path>'
     git_check_ignore_proc = subprocess.run(
@@ -119,9 +136,16 @@ def filter_gitignored_paths(paths: list[str]) -> list[str]:
     # 1 means matches, 0 means no matches.
     assert git_check_ignore_proc.returncode in (0, 1)
 
+    # Paths may or may not be quoted, Windows quotes paths.
+    git_check_ignore_re = re.compile(r"^::\s+(\"([^\"]+)\"|(.+))\Z")
+
     # Return the list of paths sorted
     git_check_ignore_lines = git_check_ignore_proc.stdout.decode().splitlines()
-    return sorted([line.split()[-1] for line in git_check_ignore_lines if line.startswith("::")])
+    git_check_not_ignored = []
+    for line in git_check_ignore_lines:
+        if match := git_check_ignore_re.fullmatch(line):
+            git_check_not_ignored.append(match.group(2) or match.group(3))
+    return sorted(git_check_not_ignored)
 
 
 def get_externals() -> list[str]:
@@ -197,11 +221,37 @@ def check_sbom_packages(sbom_data: dict[str, typing.Any]) -> None:
                 "HACL* SBOM version doesn't match value in 'Modules/_hacl/refresh.sh'"
             )
 
+        # libexpat specifies its expected rev in a refresh script.
+        if package["name"] == "libexpat":
+            libexpat_refresh_sh = (CPYTHON_ROOT_DIR / "Modules/expat/refresh.sh").read_text()
+            libexpat_expected_version_match = re.search(
+                r"expected_libexpat_version=\"([0-9]+\.[0-9]+\.[0-9]+)\"",
+                libexpat_refresh_sh
+            )
+            libexpat_expected_sha256_match = re.search(
+                r"expected_libexpat_sha256=\"[a-f0-9]{40}\"",
+                libexpat_refresh_sh
+            )
+            libexpat_expected_version = libexpat_expected_version_match and libexpat_expected_version_match.group(1)
+            libexpat_expected_sha256 = libexpat_expected_sha256_match and libexpat_expected_sha256_match.group(1)
+
+            error_if(
+                libexpat_expected_version != version,
+                "libexpat SBOM version doesn't match value in 'Modules/expat/refresh.sh'"
+            )
+            error_if(
+                package["checksums"] != [{
+                    "algorithm": "SHA256",
+                    "checksumValue": libexpat_expected_sha256
+                }],
+                "libexpat SBOM checksum doesn't match value in 'Modules/expat/refresh.sh'"
+            )
+
         # License must be on the approved list for SPDX.
         license_concluded = package["licenseConcluded"]
         error_if(
             license_concluded != "NOASSERTION",
-            f"License identifier must be 'NOASSERTION'"
+            "License identifier must be 'NOASSERTION'"
         )
 
 
@@ -238,12 +288,20 @@ def create_source_sbom() -> None:
             )
 
             for path in paths:
+
+                # Normalize the filename from any combination of slashes.
+                path = str(PurePosixPath(PureWindowsPath(path)))
+
                 # Skip directories and excluded files
                 if not (CPYTHON_ROOT_DIR / path).is_file() or path in exclude:
                     continue
 
                 # SPDX requires SHA1 to be used for files, but we provide SHA256 too.
                 data = (CPYTHON_ROOT_DIR / path).read_bytes()
+                # We normalize line-endings for consistent checksums.
+                # This is a rudimentary check for binary files.
+                if b"\x00" not in data:
+                    data = data.replace(b"\r\n", b"\n")
                 checksum_sha1 = hashlib.sha1(data).hexdigest()
                 checksum_sha256 = hashlib.sha256(data).hexdigest()
 
@@ -290,7 +348,21 @@ def create_externals_sbom() -> None:
 
     # Set the versionInfo and downloadLocation fields for all packages.
     for package in sbom_data["packages"]:
-        package["versionInfo"] = externals_name_to_version[package["name"]]
+        package_version = externals_name_to_version[package["name"]]
+
+        # Update the version information in all the locations.
+        package["versionInfo"] = package_version
+        for external_ref in package["externalRefs"]:
+            if external_ref["referenceType"] != "cpe23Type":
+                continue
+            # Version is the fifth field of a CPE.
+            cpe23ref = external_ref["referenceLocator"]
+            external_ref["referenceLocator"] = re.sub(
+                r"\A(cpe(?::[^:]+){4}):[^:]+:",
+                fr"\1:{package_version}:",
+                cpe23ref
+            )
+
         download_location = (
             f"https://github.com/python/cpython-source-deps/archive/refs/tags/{externals_name_to_git_tag[package['name']]}.tar.gz"
         )
@@ -308,6 +380,11 @@ def create_externals_sbom() -> None:
 
 
 def main() -> None:
+    # Don't regenerate the SBOM if we're not a git repository.
+    if not is_root_directory_git_index():
+        print("Skipping SBOM generation due to not being a git repository")
+        return
+
     create_source_sbom()
     create_externals_sbom()
 

@@ -27,8 +27,6 @@ Lib/test/cjkencodings/*                    noeol
 Lib/test/tokenizedata/coding20731.py       noeol
 Lib/test/decimaltestdata/*.decTest         noeol
 Lib/test/test_email/data/*.txt             noeol
-Lib/test/test_importlib/resources/data01/*           noeol
-Lib/test/test_importlib/resources/namespacedata01/*  noeol
 Lib/test/xmltestdata/*                     noeol
 
 # Shell scripts should have LF even on Windows because of Cygwin

@@ -5,7 +5,7 @@
 from functools import partial
 from test import support, test_tools
 from test.support import os_helper
-from test.support.os_helper import TESTFN, unlink
+from test.support.os_helper import TESTFN, unlink, rmtree
 from textwrap import dedent
 from unittest import TestCase
 import inspect
@@ -32,6 +32,15 @@ with test_tools.imports_under_tool('clinic'):
     from libclinic.dsl_parser import DSLParser
     from libclinic.cli import parse_file, Clinic
 
+
+def repeat_fn(*functions):
+    def wrapper(test):
+        def wrapped(self):
+            for fn in functions:
+                with self.subTest(fn=fn):
+                    test(self, fn)
+        return wrapped
+    return wrapper
 
 def _make_clinic(*, filename='clinic_tests', limited_capi=False):
     clang = CLanguage(filename)
@@ -322,15 +331,29 @@ class ClinicWholeFileTest(TestCase):
         """
         self.expect_failure(block, err, lineno=8)
 
-    def test_multiple_star_in_args(self):
+    def test_star_after_vararg(self):
         err = "'my_test_func' uses '*' more than once."
         block = """
             /*[clinic input]
             my_test_func
 
                 pos_arg: object
-                *args: object
+                *args: tuple
                 *
+                kw_arg: object
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=6)
+
+    def test_vararg_after_star(self):
+        err = "'my_test_func' uses '*' more than once."
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                pos_arg: object
+                *
+                *args: tuple
                 kw_arg: object
             [clinic start generated code]*/
         """
@@ -662,6 +685,71 @@ class ClinicWholeFileTest(TestCase):
         err = "Illegal C basename: '.illegal.'"
         self.expect_failure(block, err, lineno=7)
 
+    def test_cloned_forced_text_signature(self):
+        block = dedent("""
+            /*[clinic input]
+            @text_signature "($module, a[, b])"
+            src
+                a: object
+                    param a
+                b: object = NULL
+                /
+
+            docstring
+            [clinic start generated code]*/
+
+            /*[clinic input]
+            dst = src
+            [clinic start generated code]*/
+        """)
+        self.clinic.parse(block)
+        self.addCleanup(rmtree, "clinic")
+        funcs = self.clinic.functions
+        self.assertEqual(len(funcs), 2)
+
+        src_docstring_lines = funcs[0].docstring.split("\n")
+        dst_docstring_lines = funcs[1].docstring.split("\n")
+
+        # Signatures are copied.
+        self.assertEqual(src_docstring_lines[0], "src($module, a[, b])")
+        self.assertEqual(dst_docstring_lines[0], "dst($module, a[, b])")
+
+        # Param docstrings are copied.
+        self.assertIn("    param a", src_docstring_lines)
+        self.assertIn("    param a", dst_docstring_lines)
+
+        # Docstrings are not copied.
+        self.assertIn("docstring", src_docstring_lines)
+        self.assertNotIn("docstring", dst_docstring_lines)
+
+    def test_cloned_forced_text_signature_illegal(self):
+        block = """
+            /*[clinic input]
+            @text_signature "($module, a[, b])"
+            src
+                a: object
+                b: object = NULL
+                /
+            [clinic start generated code]*/
+
+            /*[clinic input]
+            @text_signature "($module, a_override[, b])"
+            dst = src
+            [clinic start generated code]*/
+        """
+        err = "Cannot use @text_signature when cloning a function"
+        self.expect_failure(block, err, lineno=11)
+
+    def test_ignore_preprocessor_in_comments(self):
+        for dsl in "clinic", "python":
+            raw = dedent(f"""\
+                /*[{dsl} input]
+                # CPP directives, valid or not, should be ignored in C comments.
+                #
+                [{dsl} start generated code]*/
+            """)
+            self.clinic.parse(raw)
+
 
 class ParseFileUnitTest(TestCase):
     def expect_parsing_failure(
@@ -822,9 +910,8 @@ class ClinicBlockParserTest(TestCase):
 
         blocks = list(BlockParser(input, language))
         writer = BlockPrinter(language)
-        c = _make_clinic()
         for block in blocks:
-            writer.print_block(block, limited_capi=c.limited_capi, header_includes=c.includes)
+            writer.print_block(block)
         output = writer.f.getvalue()
         assert output == input, "output != input!\n\noutput " + repr(output) + "\n\n input " + repr(input)
 
@@ -1733,13 +1820,43 @@ class ClinicParserTest(TestCase):
         )
         self.expect_failure(block, err, lineno=4)
 
+    def test_parameters_required_after_depr_star3(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                * [from 3.14]
+                *args: tuple
+                b: int
+            Docstring.
+        """
+        err = (
+            "Function 'bar' specifies '* [from ...]' without "
+            "following parameters."
+        )
+        self.expect_failure(block, err, lineno=4)
+
     def test_depr_star_must_come_before_star(self):
         block = """
             module foo
             foo.bar
-                this: int
+                a: int
                 *
                 * [from 3.14]
+                b: int
+            Docstring.
+        """
+        err = "Function 'bar': '* [from ...]' must precede '*'"
+        self.expect_failure(block, err, lineno=4)
+
+    def test_depr_star_must_come_before_vararg(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                *args: tuple
+                * [from 3.14]
+                b: int
             Docstring.
         """
         err = "Function 'bar': '* [from ...]' must precede '*'"
@@ -1854,13 +1971,26 @@ class ClinicParserTest(TestCase):
         err = "Function 'bar' uses '/' more than once."
         self.expect_failure(block, err)
 
-    def test_mix_star_and_slash(self):
+    def test_slash_after_star(self):
         block = """
             module foo
             foo.bar
                x: int
                y: int
                *
+               z: int
+               /
+        """
+        err = "Function 'bar': '/' must precede '*'"
+        self.expect_failure(block, err)
+
+    def test_slash_after_vararg(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               y: int
+               *args: tuple
                z: int
                /
         """
@@ -1906,6 +2036,19 @@ class ClinicParserTest(TestCase):
         err = "Function 'bar': '/ [from ...]' must precede '*'"
         self.expect_failure(block, err, lineno=4)
 
+    def test_vararg_must_come_after_depr_slash(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                *args: tuple
+                / [from 3.14]
+                b: int
+            Docstring.
+        """
+        err = "Function 'bar': '/ [from ...]' must precede '*'"
+        self.expect_failure(block, err, lineno=4)
+
     def test_depr_slash_must_come_after_slash(self):
         block = """
             module foo
@@ -1933,12 +2076,12 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err)
 
     def test_parameters_no_more_than_one_vararg(self):
-        err = "Too many var args"
+        err = "Function 'bar' uses '*' more than once."
         block = """
             module foo
             foo.bar
-               *vararg1: object
-               *vararg2: object
+               *vararg1: tuple
+               *vararg2: tuple
         """
         self.expect_failure(block, err, lineno=3)
 
@@ -2023,11 +2166,11 @@ class ClinicParserTest(TestCase):
         block = """
             module foo
             foo.bar
-               *vararg1: object
-            \t*vararg2: object
+               *vararg1: tuple
+            \t*vararg2: tuple
         """
         err = ("Tab characters are illegal in the Clinic DSL: "
-               r"'\t*vararg2: object'")
+               r"'\t*vararg2: tuple'")
         self.expect_failure(block, err)
 
     def test_indent_stack_illegal_outdent(self):
@@ -2372,7 +2515,7 @@ class ClinicParserTest(TestCase):
         err = "Vararg can't take a default value!"
         block = """
             fn
-                *args: object = None
+                *args: tuple = None
         """
         self.expect_failure(block, err, lineno=1)
 
@@ -2453,6 +2596,25 @@ class ClinicParserTest(TestCase):
                 {parameters}
         """
         self.expect_failure(block, err, lineno=7)
+
+    def test_kind_defining_class(self):
+        function = self.parse_function("""
+            module m
+            class m.C "PyObject *" ""
+            m.C.meth
+                cls: defining_class
+        """, signatures_in_block=3, function_index=2)
+        p = function.parameters['cls']
+        self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
+
+    def test_disallow_defining_class_at_module_level(self):
+        err = "A 'defining_class' parameter cannot be defined at module level."
+        block = """
+            module m
+            m.func
+                cls: defining_class
+        """
+        self.expect_failure(block, err, lineno=2)
 
 
 class ClinicExternalTest(TestCase):
@@ -2551,7 +2713,7 @@ class ClinicExternalTest(TestCase):
             # Verify by checking the checksum.
             checksum = (
                 "/*[clinic end generated code: "
-                "output=c16447c01510dfb3 input=9543a8d2da235301]*/\n"
+                "output=a2957bc4d43a3c2f input=9543a8d2da235301]*/\n"
             )
             with open(fn, encoding='utf-8') as f:
                 generated = f.read()
@@ -2673,6 +2835,10 @@ class ClinicExternalTest(TestCase):
             "size_t",
             "slice_index",
             "str",
+            "uint16",
+            "uint32",
+            "uint64",
+            "uint8",
             "unicode",
             "unsigned_char",
             "unsigned_int",
@@ -2823,7 +2989,7 @@ class ClinicFunctionalTest(unittest.TestCase):
         regex = (
             fr"Passing( more than)?( [0-9]+)? positional argument(s)? to "
             fr"{re.escape(name)}\(\) is deprecated. Parameters? {pnames} will "
-            fr"become( a)? keyword-only parameters? in Python 3\.14"
+            fr"become( a)? keyword-only parameters? in Python 3\.37"
         )
         self.check_depr(regex, fn, *args, **kwds)
 
@@ -2836,7 +3002,7 @@ class ClinicFunctionalTest(unittest.TestCase):
         regex = (
             fr"Passing keyword argument{pl} {pnames} to "
             fr"{re.escape(name)}\(\) is deprecated. Parameter{pl} {pnames} "
-            fr"will become positional-only in Python 3\.14."
+            fr"will become positional-only in Python 3\.37."
         )
         self.check_depr(regex, fn, *args, **kwds)
 
@@ -2869,6 +3035,11 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.bool_converter(), (True, True, True))
         self.assertEqual(ac_tester.bool_converter('', [], 5), (False, False, True))
         self.assertEqual(ac_tester.bool_converter(('not empty',), {1: 2}, 0), (True, True, False))
+
+    def test_bool_converter_c_default(self):
+        self.assertEqual(ac_tester.bool_converter_c_default(), (1, 0, -2, -3))
+        self.assertEqual(ac_tester.bool_converter_c_default(False, True, False, True),
+                         (0, 1, 0, 1))
 
     def test_char_converter(self):
         with self.assertRaises(TypeError):
@@ -3235,44 +3406,111 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.keyword_only_parameter(1)
         self.assertEqual(ac_tester.keyword_only_parameter(a=1), (1,))
 
-    def test_posonly_vararg(self):
-        with self.assertRaises(TypeError):
-            ac_tester.posonly_vararg()
-        self.assertEqual(ac_tester.posonly_vararg(1, 2), (1, 2, ()))
-        self.assertEqual(ac_tester.posonly_vararg(1, b=2), (1, 2, ()))
-        self.assertEqual(ac_tester.posonly_vararg(1, 2, 3, 4), (1, 2, (3, 4)))
-        with self.assertRaises(TypeError):
-            ac_tester.posonly_vararg(b=4)
-        with self.assertRaises(TypeError):
-            ac_tester.posonly_vararg(1, 2, 3, b=4)
+    if ac_tester is not None:
+        @repeat_fn(ac_tester.varpos,
+                   ac_tester.varpos_array,
+                   ac_tester.TestClass.varpos_no_fastcall,
+                   ac_tester.TestClass.varpos_array_no_fastcall)
+        def test_varpos(self, fn):
+            # fn(*args)
+            self.assertEqual(fn(), ())
+            self.assertEqual(fn(1, 2), (1, 2))
 
-    def test_vararg_and_posonly(self):
-        with self.assertRaises(TypeError):
-            ac_tester.vararg_and_posonly()
-        with self.assertRaises(TypeError):
-            ac_tester.vararg_and_posonly(1, b=2)
-        self.assertEqual(ac_tester.vararg_and_posonly(1, 2, 3, 4), (1, (2, 3, 4)))
+        @repeat_fn(ac_tester.posonly_varpos,
+                   ac_tester.posonly_varpos_array,
+                   ac_tester.TestClass.posonly_varpos_no_fastcall,
+                   ac_tester.TestClass.posonly_varpos_array_no_fastcall)
+        def test_posonly_varpos(self, fn):
+            # fn(a, b, /, *args)
+            self.assertRaises(TypeError, fn)
+            self.assertRaises(TypeError, fn, 1)
+            self.assertRaises(TypeError, fn, 1, b=2)
+            self.assertEqual(fn(1, 2), (1, 2, ()))
+            self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
 
-    def test_vararg(self):
-        with self.assertRaises(TypeError):
-            ac_tester.vararg()
-        with self.assertRaises(TypeError):
-            ac_tester.vararg(1, b=2)
-        self.assertEqual(ac_tester.vararg(1, 2, 3, 4), (1, (2, 3, 4)))
+        @repeat_fn(ac_tester.posonly_req_opt_varpos,
+                   ac_tester.posonly_req_opt_varpos_array,
+                   ac_tester.TestClass.posonly_req_opt_varpos_no_fastcall,
+                   ac_tester.TestClass.posonly_req_opt_varpos_array_no_fastcall)
+        def test_posonly_req_opt_varpos(self, fn):
+            # fn(a, b=False, /, *args)
+            self.assertRaises(TypeError, fn)
+            self.assertRaises(TypeError, fn, a=1)
+            self.assertEqual(fn(1), (1, False, ()))
+            self.assertEqual(fn(1, 2), (1, 2, ()))
+            self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
 
-    def test_vararg_with_default(self):
-        with self.assertRaises(TypeError):
-            ac_tester.vararg_with_default()
-        self.assertEqual(ac_tester.vararg_with_default(1, b=False), (1, (), False))
-        self.assertEqual(ac_tester.vararg_with_default(1, 2, 3, 4), (1, (2, 3, 4), False))
-        self.assertEqual(ac_tester.vararg_with_default(1, 2, 3, 4, b=True), (1, (2, 3, 4), True))
+        @repeat_fn(ac_tester.posonly_poskw_varpos,
+                   ac_tester.posonly_poskw_varpos_array,
+                   ac_tester.TestClass.posonly_poskw_varpos_no_fastcall,
+                   ac_tester.TestClass.posonly_poskw_varpos_array_no_fastcall)
+        def test_posonly_poskw_varpos(self, fn):
+            # fn(a, /, b, *args)
+            self.assertRaises(TypeError, fn)
+            self.assertEqual(fn(1, 2), (1, 2, ()))
+            self.assertEqual(fn(1, b=2), (1, 2, ()))
+            self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
+            self.assertRaises(TypeError, fn, b=4)
+            errmsg = re.escape("given by name ('b') and position (2)")
+            self.assertRaisesRegex(TypeError, errmsg, fn, 1, 2, 3, b=4)
 
-    def test_vararg_with_only_defaults(self):
-        self.assertEqual(ac_tester.vararg_with_only_defaults(), ((), None))
-        self.assertEqual(ac_tester.vararg_with_only_defaults(b=2), ((), 2))
-        self.assertEqual(ac_tester.vararg_with_only_defaults(1, b=2), ((1, ), 2))
-        self.assertEqual(ac_tester.vararg_with_only_defaults(1, 2, 3, 4), ((1, 2, 3, 4), None))
-        self.assertEqual(ac_tester.vararg_with_only_defaults(1, 2, 3, 4, b=5), ((1, 2, 3, 4), 5))
+    def test_poskw_varpos(self):
+        # fn(a, *args)
+        fn = ac_tester.poskw_varpos
+        self.assertRaises(TypeError, fn)
+        self.assertRaises(TypeError, fn, 1, b=2)
+        self.assertEqual(fn(a=1), (1, ()))
+        errmsg = re.escape("given by name ('a') and position (1)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, a=2)
+        self.assertEqual(fn(1), (1, ()))
+        self.assertEqual(fn(1, 2, 3, 4), (1, (2, 3, 4)))
+
+    def test_poskw_varpos_kwonly_opt(self):
+        # fn(a, *args, b=False)
+        fn = ac_tester.poskw_varpos_kwonly_opt
+        self.assertRaises(TypeError, fn)
+        errmsg = re.escape("given by name ('a') and position (1)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, a=2)
+        self.assertEqual(fn(1, b=2), (1, (), True))
+        self.assertEqual(fn(1, 2, 3, 4), (1, (2, 3, 4), False))
+        self.assertEqual(fn(1, 2, 3, 4, b=5), (1, (2, 3, 4), True))
+        self.assertEqual(fn(a=1), (1, (), False))
+        self.assertEqual(fn(a=1, b=2), (1, (), True))
+
+    def test_poskw_varpos_kwonly_opt2(self):
+        # fn(a, *args, b=False, c=False)
+        fn = ac_tester.poskw_varpos_kwonly_opt2
+        self.assertRaises(TypeError, fn)
+        errmsg = re.escape("given by name ('a') and position (1)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, a=2)
+        self.assertEqual(fn(1, b=2), (1, (), 2, False))
+        self.assertEqual(fn(1, b=2, c=3), (1, (), 2, 3))
+        self.assertEqual(fn(1, 2, 3), (1, (2, 3), False, False))
+        self.assertEqual(fn(1, 2, 3, b=4), (1, (2, 3), 4, False))
+        self.assertEqual(fn(1, 2, 3, b=4, c=5), (1, (2, 3), 4, 5))
+        self.assertEqual(fn(a=1), (1, (), False, False))
+        self.assertEqual(fn(a=1, b=2), (1, (), 2, False))
+        self.assertEqual(fn(a=1, b=2, c=3), (1, (), 2, 3))
+
+    def test_varpos_kwonly_opt(self):
+        # fn(*args, b=False)
+        fn = ac_tester.varpos_kwonly_opt
+        self.assertEqual(fn(), ((), False))
+        self.assertEqual(fn(b=2), ((), 2))
+        self.assertEqual(fn(1, b=2), ((1, ), 2))
+        self.assertEqual(fn(1, 2, 3, 4), ((1, 2, 3, 4), False))
+        self.assertEqual(fn(1, 2, 3, 4, b=5), ((1, 2, 3, 4), 5))
+
+    def test_varpos_kwonly_req_opt(self):
+        fn = ac_tester.varpos_kwonly_req_opt
+        self.assertRaises(TypeError, fn)
+        self.assertEqual(fn(a=1), ((), 1, False, False))
+        self.assertEqual(fn(a=1, b=2), ((), 1, 2, False))
+        self.assertEqual(fn(a=1, b=2, c=3), ((), 1, 2, 3))
+        self.assertRaises(TypeError, fn, 1)
+        self.assertEqual(fn(1, a=2), ((1,), 2, False, False))
+        self.assertEqual(fn(1, a=2, b=3), ((1,), 2, 3, False))
+        self.assertEqual(fn(1, a=2, b=3, c=4), ((1,), 2, 3, 4))
 
     def test_gh_32092_oob(self):
         ac_tester.gh_32092_oob(1, 2, 3, 4, kw1=5, kw2=6)
@@ -3296,35 +3534,20 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.gh_99240_double_free('a', '\0b')
 
     def test_null_or_tuple_for_varargs(self):
+        # fn(name, *constraints, covariant=False)
+        fn = ac_tester.null_or_tuple_for_varargs
         # All of these should not crash:
-        valid_args_for_test = [
-            (('a',), {},
-             ('a', (), False)),
-            (('a', 1, 2, 3), {'covariant': True},
-             ('a', (1, 2, 3), True)),
-            ((), {'name': 'a'},
-             ('a', (), False)),
-            ((), {'name': 'a', 'covariant': True},
-             ('a', (), True)),
-            ((), {'covariant': True, 'name': 'a'},
-             ('a', (), True)),
-        ]
-        for args, kwargs, expected in valid_args_for_test:
-            with self.subTest(args=args, kwargs=kwargs):
-                self.assertEqual(
-                    ac_tester.null_or_tuple_for_varargs(*args, **kwargs),
-                    expected,
-                )
+        self.assertEqual(fn('a'), ('a', (), False))
+        self.assertEqual(fn('a', 1, 2, 3, covariant=True), ('a', (1, 2, 3), True))
+        self.assertEqual(fn(name='a'), ('a', (), False))
+        self.assertEqual(fn(name='a', covariant=True), ('a', (), True))
+        self.assertEqual(fn(covariant=True, name='a'), ('a', (), True))
 
-    def test_null_or_tuple_for_varargs_error(self):
-        with self.assertRaises(TypeError):
-            ac_tester.null_or_tuple_for_varargs(covariant=True)
-        with self.assertRaises(TypeError):
-            ac_tester.null_or_tuple_for_varargs(1, name='a')
-        with self.assertRaises(TypeError):
-            ac_tester.null_or_tuple_for_varargs(1, 2, 3, name='a', covariant=True)
-        with self.assertRaises(TypeError):
-            ac_tester.null_or_tuple_for_varargs(1, 2, 3, covariant=True, name='a')
+        self.assertRaises(TypeError, fn, covariant=True)
+        errmsg = re.escape("given by name ('name') and position (1)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, name='a')
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, 2, 3, name='a', covariant=True)
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, 2, 3, covariant=True, name='a')
 
     def test_cloned_func_exception_message(self):
         incorrect_arg = -1  # f1() and f2() accept a single str
@@ -3339,25 +3562,78 @@ class ClinicFunctionalTest(unittest.TestCase):
                 func = getattr(ac_tester, name)
                 self.assertEqual(func(), name)
 
-    def test_meth_method_no_params(self):
+    def test_get_defining_class(self):
         obj = ac_tester.TestClass()
-        meth = obj.meth_method_no_params
+        meth = obj.get_defining_class
+        self.assertIs(obj.get_defining_class(), ac_tester.TestClass)
+
+        # 'defining_class' argument is a positional only argument
+        with self.assertRaises(TypeError):
+            obj.get_defining_class_arg(cls=ac_tester.TestClass)
+
         check = partial(self.assertRaisesRegex, TypeError, "no arguments")
         check(meth, 1)
         check(meth, a=1)
 
-    def test_meth_method_no_params_capi(self):
+    def test_get_defining_class_capi(self):
         from _testcapi import pyobject_vectorcall
         obj = ac_tester.TestClass()
-        meth = obj.meth_method_no_params
+        meth = obj.get_defining_class
         pyobject_vectorcall(meth, None, None)
         pyobject_vectorcall(meth, (), None)
         pyobject_vectorcall(meth, (), ())
         pyobject_vectorcall(meth, None, ())
+        self.assertIs(pyobject_vectorcall(meth, (), ()), ac_tester.TestClass)
 
         check = partial(self.assertRaisesRegex, TypeError, "no arguments")
         check(pyobject_vectorcall, meth, (1,), None)
         check(pyobject_vectorcall, meth, (1,), ("a",))
+
+    def test_get_defining_class_arg(self):
+        obj = ac_tester.TestClass()
+        self.assertEqual(obj.get_defining_class_arg("arg"),
+                         (ac_tester.TestClass, "arg"))
+        self.assertEqual(obj.get_defining_class_arg(arg=123),
+                         (ac_tester.TestClass, 123))
+
+        # 'defining_class' argument is a positional only argument
+        with self.assertRaises(TypeError):
+            obj.get_defining_class_arg(cls=ac_tester.TestClass, arg="arg")
+
+        # wrong number of arguments
+        with self.assertRaises(TypeError):
+            obj.get_defining_class_arg()
+        with self.assertRaises(TypeError):
+            obj.get_defining_class_arg("arg1", "arg2")
+
+    def test_defclass_varpos(self):
+        # fn(*args)
+        cls = ac_tester.TestClass
+        obj = cls()
+        fn = obj.defclass_varpos
+        self.assertEqual(fn(), (cls, ()))
+        self.assertEqual(fn(1, 2), (cls, (1, 2)))
+        fn = cls.defclass_varpos
+        self.assertRaises(TypeError, fn)
+        self.assertEqual(fn(obj), (cls, ()))
+        self.assertEqual(fn(obj, 1, 2), (cls, (1, 2)))
+
+    def test_defclass_posonly_varpos(self):
+        # fn(a, b, /, *args)
+        cls = ac_tester.TestClass
+        obj = cls()
+        fn = obj.defclass_posonly_varpos
+        errmsg = 'takes at least 2 positional arguments'
+        self.assertRaisesRegex(TypeError, errmsg, fn)
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1)
+        self.assertEqual(fn(1, 2), (cls, 1, 2, ()))
+        self.assertEqual(fn(1, 2, 3, 4), (cls, 1, 2, (3, 4)))
+        fn = cls.defclass_posonly_varpos
+        self.assertRaises(TypeError, fn)
+        self.assertRaisesRegex(TypeError, errmsg, fn, obj)
+        self.assertRaisesRegex(TypeError, errmsg, fn, obj, 1)
+        self.assertEqual(fn(obj, 1, 2), (cls, 1, 2, ()))
+        self.assertEqual(fn(obj, 1, 2, 3, 4), (cls, 1, 2, (3, 4)))
 
     def test_depr_star_new(self):
         cls = ac_tester.DeprStarNew
@@ -3510,9 +3786,9 @@ class ClinicFunctionalTest(unittest.TestCase):
         fn("a", b="b", c="c", d="d", e="e", f="f", g="g", h="h")
         errmsg = (
             "Passing more than 1 positional argument to depr_star_multi() is deprecated. "
-            "Parameter 'b' will become a keyword-only parameter in Python 3.16. "
-            "Parameters 'c' and 'd' will become keyword-only parameters in Python 3.15. "
-            "Parameters 'e', 'f' and 'g' will become keyword-only parameters in Python 3.14.")
+            "Parameter 'b' will become a keyword-only parameter in Python 3.39. "
+            "Parameters 'c' and 'd' will become keyword-only parameters in Python 3.38. "
+            "Parameters 'e', 'f' and 'g' will become keyword-only parameters in Python 3.37.")
         check = partial(self.check_depr, re.escape(errmsg), fn)
         check("a", "b", c="c", d="d", e="e", f="f", g="g", h="h")
         check("a", "b", "c", d="d", e="e", f="f", g="g", h="h")
@@ -3611,9 +3887,9 @@ class ClinicFunctionalTest(unittest.TestCase):
         fn("a", "b", "c", "d", "e", "f", "g", h="h")
         errmsg = (
             "Passing keyword arguments 'b', 'c', 'd', 'e', 'f' and 'g' to depr_kwd_multi() is deprecated. "
-            "Parameter 'b' will become positional-only in Python 3.14. "
-            "Parameters 'c' and 'd' will become positional-only in Python 3.15. "
-            "Parameters 'e', 'f' and 'g' will become positional-only in Python 3.16.")
+            "Parameter 'b' will become positional-only in Python 3.37. "
+            "Parameters 'c' and 'd' will become positional-only in Python 3.38. "
+            "Parameters 'e', 'f' and 'g' will become positional-only in Python 3.39.")
         check = partial(self.check_depr, re.escape(errmsg), fn)
         check("a", "b", "c", "d", "e", "f", g="g", h="h")
         check("a", "b", "c", "d", "e", f="f", g="g", h="h")
@@ -3628,8 +3904,8 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertRaises(TypeError, fn, "a", "b", "c", "d", "e", "f", "g")
         errmsg = (
             "Passing more than 4 positional arguments to depr_multi() is deprecated. "
-            "Parameter 'e' will become a keyword-only parameter in Python 3.15. "
-            "Parameter 'f' will become a keyword-only parameter in Python 3.14.")
+            "Parameter 'e' will become a keyword-only parameter in Python 3.38. "
+            "Parameter 'f' will become a keyword-only parameter in Python 3.37.")
         check = partial(self.check_depr, re.escape(errmsg), fn)
         check("a", "b", "c", "d", "e", "f", g="g")
         check("a", "b", "c", "d", "e", f="f", g="g")
@@ -3637,8 +3913,8 @@ class ClinicFunctionalTest(unittest.TestCase):
         fn("a", "b", "c", d="d", e="e", f="f", g="g")
         errmsg = (
             "Passing keyword arguments 'b' and 'c' to depr_multi() is deprecated. "
-            "Parameter 'b' will become positional-only in Python 3.14. "
-            "Parameter 'c' will become positional-only in Python 3.15.")
+            "Parameter 'b' will become positional-only in Python 3.37. "
+            "Parameter 'c' will become positional-only in Python 3.38.")
         check = partial(self.check_depr, re.escape(errmsg), fn)
         check("a", "b", c="c", d="d", e="e", f="f", g="g")
         check("a", b="b", c="c", d="d", e="e", f="f", g="g")
@@ -4048,9 +4324,6 @@ class ClinicReprTests(unittest.TestCase):
         self.assertRegex(repr(cls), r"<clinic.Class 'foo' at \d+>")
 
     def test_FunctionKind_repr(self):
-        self.assertEqual(
-            repr(FunctionKind.INVALID), "<clinic.FunctionKind.INVALID>"
-        )
         self.assertEqual(
             repr(FunctionKind.CLASS_METHOD), "<clinic.FunctionKind.CLASS_METHOD>"
         )

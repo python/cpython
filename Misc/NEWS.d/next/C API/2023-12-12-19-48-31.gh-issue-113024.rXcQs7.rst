@@ -1,1 +1,0 @@
-Add :c:func:`PyObject_GenericHash` function.

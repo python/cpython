@@ -1,11 +1,13 @@
 import unittest
 import unittest.mock
+from test import support
 from test.support import (verbose, refcount_test,
                           cpython_only, requires_subprocess,
-                          requires_gil_enabled)
+                          requires_gil_enabled,
+                          Py_GIL_DISABLED)
 from test.support.import_helper import import_module
 from test.support.os_helper import temp_dir, TESTFN, unlink
-from test.support.script_helper import assert_python_ok, make_script
+from test.support.script_helper import assert_python_ok, make_script, run_test_script
 from test.support import threading_helper, gc_threshold
 
 import gc
@@ -28,6 +30,11 @@ except ImportError:
                 raise unittest.SkipTest('requires _testcapi.with_tp_del')
         return C
     ContainerNoGC = None
+
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 ### Support code
 ###############################################################################
@@ -225,7 +232,9 @@ class GCTests(unittest.TestCase):
         exec("def f(): pass\n", d)
         gc.collect()
         del d
-        self.assertEqual(gc.collect(), 2)
+        # In the free-threaded build, the count returned by `gc.collect()`
+        # is 3 because it includes f's code object.
+        self.assertIn(gc.collect(), (2, 3))
 
     def test_function_tp_clear_leaves_consistent_state(self):
         # https://github.com/python/cpython/issues/91636
@@ -291,7 +300,7 @@ class GCTests(unittest.TestCase):
         # We're mostly just checking that this doesn't crash.
         rc, stdout, stderr = assert_python_ok("-c", code)
         self.assertEqual(rc, 0)
-        self.assertRegex(stdout, rb"""\A\s*func=<function  at \S+>\s*\Z""")
+        self.assertRegex(stdout, rb"""\A\s*func=<function  at \S+>\s*\z""")
         self.assertFalse(stderr)
 
     @refcount_test
@@ -470,7 +479,7 @@ class GCTests(unittest.TestCase):
                 make_nested()
 
         old_switchinterval = sys.getswitchinterval()
-        sys.setswitchinterval(1e-5)
+        support.setswitchinterval(1e-5)
         try:
             exit = []
             threads = []
@@ -1037,70 +1046,95 @@ class GCTests(unittest.TestCase):
         callback.assert_not_called()
         gc.enable()
 
+    @cpython_only
+    def test_get_referents_on_capsule(self):
+        # gh-124538: Calling gc.get_referents() on an untracked capsule must not crash.
+        import _datetime
+        import _socket
+        untracked_capsule = _datetime.datetime_CAPI
+        tracked_capsule = _socket.CAPI
+
+        # For whoever sees this in the future: if this is failing
+        # after making datetime's capsule tracked, that's fine -- this isn't something
+        # users are relying on. Just find a different capsule that is untracked.
+        self.assertFalse(gc.is_tracked(untracked_capsule))
+        self.assertTrue(gc.is_tracked(tracked_capsule))
+
+        self.assertEqual(len(gc.get_referents(untracked_capsule)), 0)
+        gc.get_referents(tracked_capsule)
+
+    @cpython_only
+    def test_get_objects_during_gc(self):
+        # gh-125859: Calling gc.get_objects() or gc.get_referrers() during a
+        # collection should not crash.
+        test = self
+        collected = False
+
+        class GetObjectsOnDel:
+            def __del__(self):
+                nonlocal collected
+                collected = True
+                objs = gc.get_objects()
+                # NB: can't use "in" here because some objects override __eq__
+                for obj in objs:
+                    test.assertTrue(obj is not self)
+                test.assertEqual(gc.get_referrers(self), [])
+
+        obj = GetObjectsOnDel()
+        obj.cycle = obj
+        del obj
+
+        gc.collect()
+        self.assertTrue(collected)
+
+    def test_traverse_frozen_objects(self):
+        # See GH-126312: Objects that were not frozen could traverse over
+        # a frozen object on the free-threaded build, which would cause
+        # a negative reference count.
+        x = [1, 2, 3]
+        gc.freeze()
+        y = [x]
+        y.append(y)
+        del y
+        gc.collect()
+        gc.unfreeze()
+
+    def test_deferred_refcount_frozen(self):
+        # Also from GH-126312: objects that use deferred reference counting
+        # weren't ignored if they were frozen. Unfortunately, it's pretty
+        # difficult to come up with a case that triggers this.
+        #
+        # Calling gc.collect() while the garbage collector is frozen doesn't
+        # trigger this normally, but it *does* if it's inside unittest for whatever
+        # reason. We can't call unittest from inside a test, so it has to be
+        # in a subprocess.
+        source = textwrap.dedent("""
+        import gc
+        import unittest
+
+
+        class Test(unittest.TestCase):
+            def test_something(self):
+                gc.freeze()
+                gc.collect()
+                gc.unfreeze()
+
+
+        if __name__ == "__main__":
+            unittest.main()
+        """)
+        assert_python_ok("-c", source)
+
 
 class IncrementalGCTests(unittest.TestCase):
-
-    def setUp(self):
-        # Reenable GC as it is disabled module-wide
-        gc.enable()
-
-    def tearDown(self):
-        gc.disable()
-
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     @requires_gil_enabled("Free threading does not support incremental GC")
-    # Use small increments to emulate longer running process in a shorter time
-    @gc_threshold(200, 10)
     def test_incremental_gc_handles_fast_cycle_creation(self):
-
-        class LinkedList:
-
-            #Use slots to reduce number of implicit objects
-            __slots__ = "next", "prev", "surprise"
-
-            def __init__(self, next=None, prev=None):
-                self.next = next
-                if next is not None:
-                    next.prev = self
-                self.prev = prev
-                if prev is not None:
-                    prev.next = self
-
-        def make_ll(depth):
-            head = LinkedList()
-            for i in range(depth):
-                head = LinkedList(head, head.prev)
-            return head
-
-        head = make_ll(1000)
-        count = 1000
-
-        # There will be some objects we aren't counting,
-        # e.g. the gc stats dicts. This test checks
-        # that the counts don't grow, so we try to
-        # correct for the uncounted objects
-        # This is just an estimate.
-        CORRECTION = 20
-
-        enabled = gc.isenabled()
-        gc.enable()
-        olds = []
-        for i in range(20_000):
-            newhead = make_ll(20)
-            count += 20
-            newhead.surprise = head
-            olds.append(newhead)
-            if len(olds) == 20:
-                stats = gc.get_stats()
-                young = stats[0]
-                incremental = stats[1]
-                old = stats[2]
-                collected = young['collected'] + incremental['collected'] + old['collected']
-                count += CORRECTION
-                live = count - collected
-                self.assertLess(live, 25000)
-                del olds[:]
-        if not enabled:
-            gc.disable()
+        # Run this test in a fresh process.  The number of alive objects (which can
+        # be from unit tests run before this one) can influence how quickly cyclic
+        # garbage is found.
+        script = support.findfile("_test_gc_fast_cycles.py")
+        run_test_script(script)
 
 
 class GCCallbackTests(unittest.TestCase):
@@ -1239,7 +1273,8 @@ class GCCallbackTests(unittest.TestCase):
             from test.support import gc_collect, SuppressCrashReport
 
             a = [1, 2, 3]
-            b = [a]
+            b = [a, a]
+            a.append(b)
 
             # Avoid coredump when Py_FatalError() calls abort()
             SuppressCrashReport().__enter__()
@@ -1249,6 +1284,8 @@ class GCCallbackTests(unittest.TestCase):
             # (to avoid deallocating it):
             import ctypes
             ctypes.pythonapi.Py_DecRef(ctypes.py_object(a))
+            del a
+            del b
 
             # The garbage collector should now have a fatal error
             # when it reaches the broken object
@@ -1277,7 +1314,7 @@ class GCCallbackTests(unittest.TestCase):
         self.assertRegex(stderr,
             br'object type name: list')
         self.assertRegex(stderr,
-            br'object repr     : \[1, 2, 3\]')
+            br'object repr     : \[1, 2, 3, \[\[...\], \[...\]\]\]')
 
 
 class GCTogglingTests(unittest.TestCase):
@@ -1344,6 +1381,10 @@ class GCTogglingTests(unittest.TestCase):
         junk = []
         i = 0
         detector = GC_Detector()
+        if Py_GIL_DISABLED:
+            # The free-threaded build doesn't have multiple generations, so
+            # just trigger a GC manually.
+            gc.collect()
         while not detector.gc_happened:
             i += 1
             if i > 10000:
@@ -1412,6 +1453,10 @@ class GCTogglingTests(unittest.TestCase):
         detector = GC_Detector()
         junk = []
         i = 0
+        if Py_GIL_DISABLED:
+            # The free-threaded build doesn't have multiple generations, so
+            # just trigger a GC manually.
+            gc.collect()
         while not detector.gc_happened:
             i += 1
             if i > 10000:

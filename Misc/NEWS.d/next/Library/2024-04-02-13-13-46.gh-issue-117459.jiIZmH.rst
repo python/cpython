@@ -1,1 +1,0 @@
-:meth:`asyncio.asyncio.run_coroutine_threadsafe` now keeps the traceback of :class:`CancelledError`, :class:`TimeoutError` and :class:`InvalidStateError` which are raised in the coroutine.
