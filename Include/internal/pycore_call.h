@@ -186,6 +186,7 @@ _PyObject_CallNoArgs(PyObject *func) {
 }
 
 
+// these are exported only for other re-generated interpreters to call
 PyAPI_FUNC(PyObject *const *)
 _PyStack_UnpackDict(PyThreadState *tstate,
     PyObject *const *args, Py_ssize_t nargs,
