@@ -8,6 +8,7 @@ import select
 import subprocess
 import sys
 import tempfile
+from pkgutil import ModuleInfo
 from unittest import TestCase, skipUnless, skipIf
 from unittest.mock import patch
 from test.support import force_not_colorized, make_clean_env
@@ -951,6 +952,45 @@ class TestPyReplModuleCompleter(TestCase):
             ("from importlib import mac\t\n", "from importlib import machinery"),
             ("from importlib import res\t\n", "from importlib import resources"),
             ("from importlib.res\t import a\t\n", "from importlib.resources import abc"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    @patch("pkgutil.iter_modules", lambda: [(None, 'public', None),
+                                            (None, '_private', None)])
+    def test_private_completions(self):
+        cases = (
+            # Return public methods by default
+            ("import \t\n", "import public"),
+            ("from \t\n", "from public"),
+            # Return private methods if explicitly specified
+            ("import _\t\n", "import _private"),
+            ("from _\t\n", "from _private"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    @patch(
+        "_pyrepl._module_completer.ModuleCompleter.iter_submodules",
+        lambda *_: [
+            ModuleInfo(None, "public", True),
+            ModuleInfo(None, "_private", True),
+        ],
+    )
+    def test_sub_module_private_completions(self):
+        cases = (
+            # Return public methods by default
+            ("from foo import \t\n", "from foo import public"),
+            # Return private methods if explicitly specified
+            ("from foo import _\t\n", "from foo import _private"),
         )
         for code, expected in cases:
             with self.subTest(code=code):

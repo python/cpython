@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from itertools import chain
 from tokenize import TokenInfo
+from .trace import trace
 
 TYPE_CHECKING = False
 
@@ -74,6 +75,7 @@ class ModuleCompleter:
     def find_modules(self, path: str, prefix: str) -> list[str]:
         """Find all modules under 'path' that start with 'prefix'."""
         modules = self._find_modules(path, prefix)
+        trace(">> path {path} prefix {prefix}", path=path, prefix=prefix)
         # Filter out invalid module names
         # (for example those containing dashes that cannot be imported with 'import')
         return [mod for mod in modules if mod.isidentifier()]
@@ -82,7 +84,7 @@ class ModuleCompleter:
         if not path:
             # Top-level import (e.g. `import foo<tab>`` or `from foo<tab>`)`
             return [name for _, name, _ in self.global_cache
-                    if name.startswith(prefix)]
+                    if self._should_add_module_name(name, prefix)]
 
         if path.startswith('.'):
             # Convert relative path to absolute path
@@ -96,8 +98,14 @@ class ModuleCompleter:
             modules = [mod_info for mod_info in modules
                        if mod_info.ispkg and mod_info.name == segment]
             modules = self.iter_submodules(modules)
+
         return [module.name for module in modules
-                if module.name.startswith(prefix)]
+                if self._should_add_module_name(module.name, prefix)]
+
+    def _should_add_module_name(self, module_name: str, prefix: str) -> bool:
+        prefix_modules = prefix and module_name.startswith(prefix)
+        public_modules = not prefix and not module_name.startswith("_")
+        return prefix_modules or public_modules
 
     def iter_submodules(self, parent_modules: list[pkgutil.ModuleInfo]) -> Iterator[pkgutil.ModuleInfo]:
         """Iterate over all submodules of the given parent modules."""
