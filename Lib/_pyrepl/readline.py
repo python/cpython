@@ -134,7 +134,8 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
         return "".join(b[p + 1 : self.pos])
 
     def get_completions(self, stem: str) -> list[str]:
-        if (module_completions := self.get_module_completions()) is not None:
+        module_completions = self.get_module_completions()
+        if module_completions is not None:
             return module_completions
         if len(stem) == 0 and self.more_lines is not None:
             b = self.buffer
