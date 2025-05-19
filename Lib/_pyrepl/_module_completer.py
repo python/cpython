@@ -9,7 +9,6 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from itertools import chain
 from tokenize import TokenInfo
-from .trace import trace
 
 TYPE_CHECKING = False
 
@@ -75,7 +74,6 @@ class ModuleCompleter:
     def find_modules(self, path: str, prefix: str) -> list[str]:
         """Find all modules under 'path' that start with 'prefix'."""
         modules = self._find_modules(path, prefix)
-        trace(">> path {path} prefix {prefix}", path=path, prefix=prefix)
         # Filter out invalid module names
         # (for example those containing dashes that cannot be imported with 'import')
         return [mod for mod in modules if mod.isidentifier()]
