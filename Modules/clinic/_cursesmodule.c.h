@@ -733,23 +733,13 @@ PyDoc_STRVAR(_curses_window_getbkgd__doc__,
 #define _CURSES_WINDOW_GETBKGD_METHODDEF    \
     {"getbkgd", (PyCFunction)_curses_window_getbkgd, METH_NOARGS, _curses_window_getbkgd__doc__},
 
-static long
+static PyObject *
 _curses_window_getbkgd_impl(PyCursesWindowObject *self);
 
 static PyObject *
 _curses_window_getbkgd(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-    long _return_value;
-
-    _return_value = _curses_window_getbkgd_impl((PyCursesWindowObject *)self);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromLong(_return_value);
-
-exit:
-    return return_value;
+    return _curses_window_getbkgd_impl((PyCursesWindowObject *)self);
 }
 
 PyDoc_STRVAR(_curses_window_getch__doc__,
@@ -4440,4 +4430,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=42b2923d88c8d0f6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2063e1379ea08436 input=a9049054013a1b77]*/

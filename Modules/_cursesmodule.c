@@ -1693,16 +1693,21 @@ _curses_window_enclose_impl(PyCursesWindowObject *self, int y, int x)
 #endif
 
 /*[clinic input]
-_curses.window.getbkgd -> long
+_curses.window.getbkgd
 
 Return the window's current background character/attribute pair.
 [clinic start generated code]*/
 
-static long
+static PyObject *
 _curses_window_getbkgd_impl(PyCursesWindowObject *self)
-/*[clinic end generated code: output=c52b25dc16b215c3 input=a69db882fa35426c]*/
+/*[clinic end generated code: output=3ff953412b0e6028 input=7cf1f59a31f89df4]*/
 {
-    return (long) getbkgd(self->win);
+    chtype rtn = getbkgd(self->win);
+    if (rtn == (chtype)ERR) {
+        curses_window_set_error(self, "getbkgd", NULL);
+        return NULL;
+    }
+    return PyLong_FromLong(rtn);
 }
 
 /*[clinic input]
