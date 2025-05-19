@@ -1,1 +1,1 @@
-Set ``getattr(socket, "SOMAXCONN", 5)`` as the default queue size for :class:`socketserver.TCPServer`.
+The default queue size is now ``socket.SOMAXCONN`` for :class:`socketserver.TCPServer`.
