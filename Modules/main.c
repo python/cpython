@@ -305,11 +305,8 @@ pymain_start_pyrepl(void)
         res = pymain_exit_err_print();
         goto done;
     }
-    if (!PyDict_SetItemString(kwargs, "pythonstartup", _PyLong_GetOne())) {
-        if (PyDict_SetItemString(kwargs, "mainmodule", main_module) < 0) {
-            res = pymain_exit_err_print();
-            goto done;
-        }
+    if (!PyDict_SetItemString(kwargs, "mainmodule", main_module)
+        && !PyDict_SetItemString(kwargs, "pythonstartup", _PyLong_GetOne())) {
         console_result = PyObject_Call(console, empty_tuple, kwargs);
         if (console_result == NULL) {
             res = pymain_exit_err_print();
