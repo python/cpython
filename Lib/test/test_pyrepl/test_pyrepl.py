@@ -1055,11 +1055,15 @@ class TestPyReplModuleCompleter(TestCase):
                 self.assertEqual(actual, parsed)
             # The parser should not get tripped up by any
             # other preceding statements
-            code = f'import xyz\n{code}'
-            with self.subTest(code=code):
+            _code = f'import xyz\n{code}'
+            parser = ImportParser(_code)
+            actual = parser.parse()
+            with self.subTest(code=_code):
                 self.assertEqual(actual, parsed)
-            code = f'import xyz;{code}'
-            with self.subTest(code=code):
+            _code = f'import xyz;{code}'
+            parser = ImportParser(_code)
+            actual = parser.parse()
+            with self.subTest(code=_code):
                 self.assertEqual(actual, parsed)
 
     def test_parse_error(self):
