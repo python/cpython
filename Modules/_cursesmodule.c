@@ -932,8 +932,9 @@ PyCursesWindow_dealloc(PyObject *self)
     PyObject_GC_UnTrack(self);
     PyCursesWindowObject *wo = (PyCursesWindowObject *)self;
     if (wo->win != stdscr && wo->win != NULL) {
-        // silently ignore errors in delwin(3)
-        (void)delwin(wo->win);
+        if (delwin(wo->win) == ERR) {
+            PyErr_FormatUnraisable("delwin() error ignored");
+        }
     }
     if (wo->encoding != NULL) {
         PyMem_Free(wo->encoding);
