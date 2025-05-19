@@ -41,17 +41,15 @@ class Span(NamedTuple):
 
     @classmethod
     def from_token(cls, token: TI, line_len: list[int]) -> Self:
-        end_offset = 0
-        if ((token.type is T.FSTRING_MIDDLE or token.type is T.TSTRING_MIDDLE)
+        end_offset = -1
+        if (token.type in {T.FSTRING_MIDDLE, T.TSTRING_MIDDLE}
             and token.string.endswith(("{", "}"))):
-            # Double braces in f-string / t-string are translated into a single
-            # brace by the tokenizer, and are always at the end of the token:
-            # we must add 1 to the token end position to color the two braces.
-            end_offset = 1
+            # gh-134158: a visible trailing brace comes from a double brace in input
+            end_offset += 1
 
         return cls(
             line_len[token.start[0] - 1] + token.start[1],
-            line_len[token.end[0] - 1] + token.end[1] - 1 + end_offset,
+            line_len[token.end[0] - 1] + token.end[1] + end_offset,
         )
 
 
