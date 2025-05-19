@@ -269,7 +269,7 @@ SRCDIRS= 	@SRCDIRS@
 SUBDIRSTOO=	Include Lib Misc
 
 # Files and directories to be distributed
-CONFIGFILES=	configure configure.ac acconfig.h pyconfig.h.in Makefile.pre.in
+CONFIGFILES=	configure configure.ac acconfig.h Include/pyconfig.h.in Makefile.pre.in
 DISTFILES=	README.rst ChangeLog $(CONFIGFILES)
 DISTDIRS=	$(SUBDIRS) $(SUBDIRSTOO) Ext-dummy
 DIST=		$(DISTFILES) $(DISTDIRS)
@@ -1207,7 +1207,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/warnings.h \
 		$(srcdir)/Include/weakrefobject.h \
 		\
-		pyconfig.h \
+		Include/pyconfig.h \
 		$(PARSER_HEADERS) \
 		\
 		$(srcdir)/Include/cpython/abstract.h \
@@ -2875,8 +2875,8 @@ inclinstall:
 			$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc; \
 		done; \
 	fi
-	echo $(INSTALL_DATA) pyconfig.h $(DESTDIR)$(CONFINCLUDEPY)/pyconfig.h
-	$(INSTALL_DATA) pyconfig.h $(DESTDIR)$(CONFINCLUDEPY)/pyconfig.h
+	echo $(INSTALL_DATA) Include/pyconfig.h $(DESTDIR)$(CONFINCLUDEPY)/pyconfig.h
+	$(INSTALL_DATA) Include/pyconfig.h $(DESTDIR)$(CONFINCLUDEPY)/pyconfig.h
 
 # Install the library and miscellaneous stuff needed for extending/embedding
 # This goes into $(exec_prefix)
@@ -3076,7 +3076,7 @@ JIT_DEPS = \
 		$(srcdir)/Tools/jit/*.c \
 		$(srcdir)/Tools/jit/*.py \
 		$(srcdir)/Python/executor_cases.c.h \
-		pyconfig.h
+		Include/pyconfig.h
 
 jit_stencils.h: $(JIT_DEPS)
 	@REGEN_JIT_COMMAND@
@@ -3209,7 +3209,7 @@ clean: clean-retain-profile clean-bolt
 clobber: clean
 	-rm -f $(BUILDPYTHON) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
 		tags TAGS \
-		config.cache config.log pyconfig.h Modules/config.c
+		config.cache config.log Include/pyconfig.h Modules/config.c
 	-rm -rf build platform
 	-rm -rf $(PYTHONFRAMEWORKDIR)
 	-rm -rf iOS/Frameworks

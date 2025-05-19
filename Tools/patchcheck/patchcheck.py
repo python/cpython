@@ -178,7 +178,7 @@ def regenerated_configure(file_paths):
 def regenerated_pyconfig_h_in(file_paths):
     """Check if pyconfig.h.in has been regenerated."""
     if 'configure.ac' in file_paths:
-        return "yes" if 'pyconfig.h.in' in file_paths else "no"
+        return "yes" if os.path.join('Include', 'pyconfig.h.in') in file_paths else "no"
     else:
         return "not needed"
 

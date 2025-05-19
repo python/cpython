@@ -63,6 +63,7 @@ Doc/.venv/
 Doc/env/
 Doc/.env/
 Include/pydtrace_probes.h
+Include/pyconfig.h
 Lib/site-packages/*
 !Lib/site-packages/README.txt
 Lib/test/data/*
