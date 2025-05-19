@@ -1487,8 +1487,11 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         return matches.group(1), matches.group(2), int(matches.group(3))
 
     def wait_for_server(self, proc, protocol, port, bind, timeout=50):
-        """Parses the output of the server process by lines and returns True if
-        the server is listening on the given port and bind address."""
+        """Check the server process output.
+
+        Return True if the server was successfully started 
+        and is listening on the given port and bind address.
+        """
         while timeout > 0:
             line = proc.stdout.readline()
             if not line:
