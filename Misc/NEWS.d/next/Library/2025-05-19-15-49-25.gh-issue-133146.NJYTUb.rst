@@ -1,0 +1,1 @@
+Document the old public :meth:`get_value<multiprocessing.synchronized.Semaphore>`. Replace code using private attributes with this public method in ``multiprocessing.synchronized.py`` and ``multiprocessing.queues.py`` files
