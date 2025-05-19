@@ -125,18 +125,19 @@ class TestNtpath(NtpathTestCase):
                ("//?/UNC/server/share", "/dir"))
 
     def test_splitdrive_invalid_paths(self):
-        self.assertEqual(ntpath.splitdrive('\\\\ser\x00ver\\sha\x00re\\di\x00r'),
+        splitdrive = ntpath.splitdrive
+        self.assertEqual(splitdrive('\\\\ser\x00ver\\sha\x00re\\di\x00r'),
                          ('\\\\ser\x00ver\\sha\x00re', '\\di\x00r'))
-        self.assertEqual(ntpath.splitdrive(b'\\\\ser\x00ver\\sha\x00re\\di\x00r'),
+        self.assertEqual(splitdrive(b'\\\\ser\x00ver\\sha\x00re\\di\x00r'),
                          (b'\\\\ser\x00ver\\sha\x00re', b'\\di\x00r'))
-        self.assertEqual(ntpath.splitdrive("\\\\\udfff\\\udffe\\\udffd"),
+        self.assertEqual(splitdrive("\\\\\udfff\\\udffe\\\udffd"),
                          ('\\\\\udfff\\\udffe', '\\\udffd'))
         if sys.platform == 'win32':
-            self.assertRaises(UnicodeDecodeError, ntpath.splitdrive, b'\\\\\xff\\share\\dir')
-            self.assertRaises(UnicodeDecodeError, ntpath.splitdrive, b'\\\\server\\\xff\\dir')
-            self.assertRaises(UnicodeDecodeError, ntpath.splitdrive, b'\\\\server\\share\\\xff')
+            self.assertRaises(UnicodeDecodeError, splitdrive, b'\\\\\xff\\share\\dir')
+            self.assertRaises(UnicodeDecodeError, splitdrive, b'\\\\server\\\xff\\dir')
+            self.assertRaises(UnicodeDecodeError, splitdrive, b'\\\\server\\share\\\xff')
         else:
-            self.assertEqual(ntpath.splitdrive(b'\\\\\xff\\\xfe\\\xfd'),
+            self.assertEqual(splitdrive(b'\\\\\xff\\\xfe\\\xfd'),
                              (b'\\\\\xff\\\xfe', b'\\\xfd'))
 
     def test_splitroot(self):
@@ -230,18 +231,19 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.splitroot("/:/foo")', ("", "/", ":/foo"))
 
     def test_splitroot_invalid_paths(self):
-        self.assertEqual(ntpath.splitroot('\\\\ser\x00ver\\sha\x00re\\di\x00r'),
+        splitroot = ntpath.splitroot
+        self.assertEqual(splitroot('\\\\ser\x00ver\\sha\x00re\\di\x00r'),
                          ('\\\\ser\x00ver\\sha\x00re', '\\', 'di\x00r'))
-        self.assertEqual(ntpath.splitroot(b'\\\\ser\x00ver\\sha\x00re\\di\x00r'),
+        self.assertEqual(splitroot(b'\\\\ser\x00ver\\sha\x00re\\di\x00r'),
                          (b'\\\\ser\x00ver\\sha\x00re', b'\\', b'di\x00r'))
-        self.assertEqual(ntpath.splitroot("\\\\\udfff\\\udffe\\\udffd"),
+        self.assertEqual(splitroot("\\\\\udfff\\\udffe\\\udffd"),
                          ('\\\\\udfff\\\udffe', '\\', '\udffd'))
         if sys.platform == 'win32':
-            self.assertRaises(UnicodeDecodeError, ntpath.splitroot, b'\\\\\xff\\share\\dir')
-            self.assertRaises(UnicodeDecodeError, ntpath.splitroot, b'\\\\server\\\xff\\dir')
-            self.assertRaises(UnicodeDecodeError, ntpath.splitroot, b'\\\\server\\share\\\xff')
+            self.assertRaises(UnicodeDecodeError, splitroot, b'\\\\\xff\\share\\dir')
+            self.assertRaises(UnicodeDecodeError, splitroot, b'\\\\server\\\xff\\dir')
+            self.assertRaises(UnicodeDecodeError, splitroot, b'\\\\server\\share\\\xff')
         else:
-            self.assertEqual(ntpath.splitroot(b'\\\\\xff\\\xfe\\\xfd'),
+            self.assertEqual(splitroot(b'\\\\\xff\\\xfe\\\xfd'),
                              (b'\\\\\xff\\\xfe', b'\\', b'\xfd'))
 
     def test_split(self):
@@ -257,17 +259,18 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.split("//conky/mountpoint/")', ('//conky/mountpoint/', ''))
 
     def test_split_invalid_paths(self):
-        self.assertEqual(ntpath.split('c:\\fo\x00o\\ba\x00r'),
+        split = ntpath.split
+        self.assertEqual(split('c:\\fo\x00o\\ba\x00r'),
                          ('c:\\fo\x00o', 'ba\x00r'))
-        self.assertEqual(ntpath.split(b'c:\\fo\x00o\\ba\x00r'),
+        self.assertEqual(split(b'c:\\fo\x00o\\ba\x00r'),
                          (b'c:\\fo\x00o', b'ba\x00r'))
-        self.assertEqual(ntpath.split('c:\\\udfff\\\udffe'),
+        self.assertEqual(split('c:\\\udfff\\\udffe'),
                          ('c:\\\udfff', '\udffe'))
         if sys.platform == 'win32':
-            self.assertRaises(UnicodeDecodeError, ntpath.split, b'c:\\\xff\\bar')
-            self.assertRaises(UnicodeDecodeError, ntpath.split, b'c:\\foo\\\xff')
+            self.assertRaises(UnicodeDecodeError, split, b'c:\\\xff\\bar')
+            self.assertRaises(UnicodeDecodeError, split, b'c:\\foo\\\xff')
         else:
-            self.assertEqual(ntpath.split(b'c:\\\xff\\\xfe'),
+            self.assertEqual(split(b'c:\\\xff\\\xfe'),
                              (b'c:\\\xff', b'\xfe'))
 
     def test_isabs(self):
@@ -393,12 +396,13 @@ class TestNtpath(NtpathTestCase):
                              expected.encode())
 
     def test_normcase_invalid_paths(self):
-        self.assertEqual(ntpath.normcase('abc\x00def'), 'abc\x00def')
-        self.assertEqual(ntpath.normcase(b'abc\x00def'), b'abc\x00def')
-        self.assertEqual(ntpath.normcase('\udfff'), '\udfff')
+        normcase = ntpath.normcase
+        self.assertEqual(normcase('abc\x00def'), 'abc\x00def')
+        self.assertEqual(normcase(b'abc\x00def'), b'abc\x00def')
+        self.assertEqual(normcase('\udfff'), '\udfff')
         if sys.platform == 'win32':
             path = b'ABC' + bytes(range(128, 256))
-            self.assertEqual(ntpath.normcase(path), path.lower())
+            self.assertEqual(normcase(path), path.lower())
 
     def test_normpath(self):
         tester("ntpath.normpath('A//////././//.//B')", r'A\B')
@@ -1126,15 +1130,16 @@ class TestNtpath(NtpathTestCase):
             self.assertTrue(ntpath.ismount(b"\\\\localhost\\c$\\"))
 
     def test_ismount_invalid_paths(self):
-        self.assertFalse(ntpath.ismount("c:\\\udfff"))
+        ismount = ntpath.ismount
+        self.assertFalse(ismount("c:\\\udfff"))
         if sys.platform == 'win32':
-            self.assertRaises(ValueError, ntpath.ismount, "c:\\\x00")
-            self.assertRaises(ValueError, ntpath.ismount, b"c:\\\x00")
-            self.assertRaises(UnicodeDecodeError, ntpath.ismount, b"c:\\\xff")
+            self.assertRaises(ValueError, ismount, "c:\\\x00")
+            self.assertRaises(ValueError, ismount, b"c:\\\x00")
+            self.assertRaises(UnicodeDecodeError, ismount, b"c:\\\xff")
         else:
-            self.assertFalse(ntpath.ismount("c:\\\x00"))
-            self.assertFalse(ntpath.ismount(b"c:\\\x00"))
-            self.assertFalse(ntpath.ismount(b"c:\\\xff"))
+            self.assertFalse(ismount("c:\\\x00"))
+            self.assertFalse(ismount(b"c:\\\x00"))
+            self.assertFalse(ismount(b"c:\\\xff"))
 
     def test_isreserved(self):
         self.assertFalse(ntpath.isreserved(''))
@@ -1243,10 +1248,11 @@ class TestNtpath(NtpathTestCase):
                 self.assertPathEqual(ntpath.realpath('testjunc'), ntpath.realpath('tmpdir'))
 
     def test_isfile_invalid_paths(self):
-        self.assertIs(ntpath.isfile('/tmp\udfffabcds'), False)
-        self.assertIs(ntpath.isfile(b'/tmp\xffabcds'), False)
-        self.assertIs(ntpath.isfile('/tmp\x00abcds'), False)
-        self.assertIs(ntpath.isfile(b'/tmp\x00abcds'), False)
+        isfile = ntpath.isfile
+        self.assertIs(isfile('/tmp\udfffabcds'), False)
+        self.assertIs(isfile(b'/tmp\xffabcds'), False)
+        self.assertIs(isfile('/tmp\x00abcds'), False)
+        self.assertIs(isfile(b'/tmp\x00abcds'), False)
 
     @unittest.skipIf(sys.platform != 'win32', "drive letters are a windows concept")
     def test_isfile_driveletter(self):
