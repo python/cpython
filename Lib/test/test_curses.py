@@ -130,6 +130,9 @@ class TestCurses(unittest.TestCase):
         curses.use_env(False)
         curses.use_env(True)
 
+    def test_error(self):
+        self.assertIsSubclass(curses.error, Exception)
+
     def test_create_windows(self):
         win = curses.newwin(5, 10)
         self.assertEqual(win.getbegyx(), (0, 0))

@@ -23,6 +23,14 @@ You can use it to enable code that only runs under the free-threaded build::
     /* code that only runs in the free-threaded build */
     #endif
 
+.. note::
+
+   On Windows, this macro is not defined automatically, but must be specified
+   to the compiler when building. The :func:`sysconfig.get_config_var` function
+   can be used to determine whether the current running interpreter had the
+   macro defined.
+
+
 Module Initialization
 =====================
 
