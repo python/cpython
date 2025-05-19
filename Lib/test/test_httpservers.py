@@ -1350,7 +1350,7 @@ class CommandLineTestCase(unittest.TestCase):
     def test_bind_flag(self, mock_func):
         options = ['-b', '--bind']
         bind_addresses = ['localhost', '127.0.0.1', '::1',
-                          '0.0.0.0', '8.8.8.8',]
+                          '0.0.0.0', '8.8.8.8']
         for flag in options:
             for bind_address in bind_addresses:
                 with self.subTest(flag=flag, bind_address=bind_address):
