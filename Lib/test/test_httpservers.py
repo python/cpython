@@ -1533,6 +1533,7 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         res = self.fetch_file(f'https://{bind}:{port}/{self.random_file_name}')
         self.assertEqual(res, self.random_data)
 
+
 def setUpModule():
     unittest.addModuleCleanup(os.chdir, os.getcwd())
 
