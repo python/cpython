@@ -16,7 +16,7 @@
 This module provides functions for encoding binary data to printable
 ASCII characters and decoding such encodings back to binary data,
 such as :ref:`those specified in RFC 4648 <base_64_rfc_4648>` and
-:ref:`Base-85 encodings <base_64_base_85>`.
+:ref:`Base85 encodings <base_64_base_85>`.
 
 There are two interfaces provided by this module.  The modern interface
 supports encoding :term:`bytes-like objects <bytes-like object>` to ASCII
@@ -186,15 +186,15 @@ POST request.  The encoding algorithm is not the same as the
 
 .. _base_64_base_85:
 
-Base 85 Encodings
+Base85 Encodings
 -----------------
 
-Base-85 encoding is not formally specified. Base-85 encoding is a de facto standard,
+Base85 encoding is not formally specified. Base85 encoding is a de facto standard,
 and different systems perform the encoding differently.
 
 The Ascii85 and Base85 functions in this module are two implementations of
 the de facto standard. Which function you should use depends on how the other
-software you use implements the Base-85 encoding.
+software you use implements the Base85 encoding.
 
 The two functions present in this module differ in how they handle the following:
 
