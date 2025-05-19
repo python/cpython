@@ -21,6 +21,7 @@ import email.utils
 import html
 import http, http.client
 import urllib.parse
+import urllib.request
 import tempfile
 import time
 import datetime
@@ -33,6 +34,8 @@ from test import support
 from test.support import (
     is_apple, import_helper, os_helper, threading_helper
 )
+from test.support.script_helper import kill_python, spawn_python
+from test.support.socket_helper import find_unused_port
 
 try:
     import ssl
@@ -1452,23 +1455,22 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertIn('error', stderr.getvalue())
 
 
-@unittest.skipUnless(sys.platform == 'linux', 'Linux-specific test')
 class CommandLineRunTimeTestCase(unittest.TestCase):
     served_data = os.urandom(32)
-    served_file_name = 'served_filename'
+    served_filename = 'served_filename'
     tls_cert = certdata_file('ssl_cert.pem')
     tls_key = certdata_file('ssl_key.pem')
-    tls_password = 'somepass'
+    tls_password = b'somepass'
+    tls_password_file = 'ssl_key_password'
 
     def setUp(self):
         super().setUp()
-        with open(self.served_file_name, 'wb') as f:
+        server_dir_context = os_helper.temp_cwd()
+        server_dir = self.enterContext(server_dir_context)
+        with open(self.served_filename, 'wb') as f:
             f.write(self.served_data)
-        self.addCleanup(os_helper.unlink, self.served_file_name)
-        self.tls_password_file = tempfile.mktemp()
         with open(self.tls_password_file, 'wb') as f:
-            f.write(self.tls_password.encode())
-        self.addCleanup(os_helper.unlink, self.tls_password_file)
+            f.write(self.tls_password)
 
     def fetch_file(self, path, context=None):
         req = urllib.request.Request(path, method='GET')
@@ -1483,26 +1485,25 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
 
     def wait_for_server(self, proc, protocol, port):
         """Extract the server bind address once it has been started."""
-        for _ in range(10):
-            line = proc.stdout.readline()
-            if not line:
-                time.sleep(0.5)
-                continue
-            if support.verbose > 1:
-                print(line)
-            parsed_protocol, host, parsed_port = self.parse_cli_output(line)
-            if protocol == parsed_protocol and parsed_port == port:
-                return host
+        line = proc.stdout.readline()
+        if support.verbose:
+            print()
+            print('python -m http.server: ', line, end='')
+        parsed_protocol, host, parsed_port = self.parse_cli_output(line)
+        if protocol == parsed_protocol and parsed_port == port:
+            return host
+        print("failed to start HTTP(s) server. Output was:", repr(line))
         return None
 
     def test_http_client(self):
         port = find_unused_port()
-        proc = spawn_python('-u', '-m', 'http.server', str(port), text=True)
+        proc = spawn_python('-u', '-m', 'http.server', str(port),
+                            bufsize=1, text=True)
         self.addCleanup(kill_python, proc)
         self.addCleanup(proc.terminate)
         bind = self.wait_for_server(proc, 'http', port)
         self.assertIsNotNone(bind)
-        res = self.fetch_file(f'http://{bind}:{port}/{self.served_file_name}')
+        res = self.fetch_file(f'http://{bind}:{port}/{self.served_filename}')
         self.assertEqual(res, self.served_data)
 
     @unittest.skipIf(ssl is None, "requires ssl")
@@ -1517,12 +1518,12 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
                             '--tls-cert', self.tls_cert,
                             '--tls-key', self.tls_key,
                             '--tls-password-file', self.tls_password_file,
-                            text=True)
+                            bufsize=1, text=True)
         self.addCleanup(kill_python, proc)
         self.addCleanup(proc.terminate)
         bind = self.wait_for_server(proc, 'https', port)
         self.assertIsNotNone(bind)
-        url = f'https://{bind}:{port}/{self.served_file_name}'
+        url = f'https://{bind}:{port}/{self.served_filename}'
         res = self.fetch_file(url, context=context)
         self.assertEqual(res, self.served_data)
 
