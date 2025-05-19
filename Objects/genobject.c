@@ -462,11 +462,13 @@ and may be removed in a future version of Python.");
 
 static PyObject *
 _gen_throw(PyGenObject *gen, int close_on_genexit,
-           PyObject *typ, PyObject *val, PyObject *tb)
+           PyObject *typ, PyObject *val, PyObject *tb,
+           PyObject *exc_context)
 {
     PyObject *yf = _PyGen_yf(gen);
 
     if (yf) {
+        assert(exc_context == NULL);
         _PyInterpreterFrame *frame = &gen->gi_iframe;
         PyObject *ret;
         int err;
@@ -502,7 +504,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             PyFrameState state = gen->gi_frame_state;
             gen->gi_frame_state = FRAME_EXECUTING;
             ret = _gen_throw((PyGenObject *)yf, close_on_genexit,
-                             typ, val, tb);
+                             typ, val, tb, NULL);
             gen->gi_frame_state = state;
             tstate->current_frame = prev;
             frame->previous = NULL;
@@ -581,8 +583,17 @@ throw_here:
             goto failed_throw;
     }
 
+    /* hide the current thread's exception context from the generator */
+    PyThreadState *tstate = _PyThreadState_GET();
+    assert(tstate != NULL);
+    PyObject *prev_exc = tstate->exc_info->exc_value;
+    tstate->exc_info->exc_value = (exc_context == NULL ? Py_None : exc_context);
+
     PyErr_Restore(typ, val, tb);
-    return gen_send_ex(gen, Py_None, 1, 0);
+    PyObject* ret = gen_send_ex(gen, Py_None, 1, 0);
+
+    tstate->exc_info->exc_value = prev_exc;
+    return ret;
 
 failed_throw:
     /* Didn't use our arguments, so restore their original refcounts */
@@ -648,10 +659,7 @@ gen_throw(PyObject *op, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnam
             return NULL;
         }
     }
-    // update the generator's current exception context before throwing the
-    // exception into it
-    PyErr_SetHandledException(exc_context == NULL ? Py_None : exc_context);
-    return _gen_throw(gen, 1, typ, val, tb);
+    return _gen_throw(gen, 1, typ, val, tb, exc_context);
 }
 
 
@@ -2182,7 +2190,7 @@ async_gen_athrow_send(PyObject *self, PyObject *arg)
             retval = _gen_throw((PyGenObject *)gen,
                                 0,  /* Do not close generator when
                                        PyExc_GeneratorExit is passed */
-                                PyExc_GeneratorExit, NULL, NULL);
+                                PyExc_GeneratorExit, NULL, NULL, NULL);
 
             if (retval && _PyAsyncGenWrappedValue_CheckExact(retval)) {
                 Py_DECREF(retval);
@@ -2201,7 +2209,7 @@ async_gen_athrow_send(PyObject *self, PyObject *arg)
             retval = _gen_throw((PyGenObject *)gen,
                                 0,  /* Do not close generator when
                                        PyExc_GeneratorExit is passed */
-                                typ, val, tb);
+                                typ, val, tb, NULL);
             retval = async_gen_unwrap_value(o->agt_gen, retval);
         }
         if (retval == NULL) {
