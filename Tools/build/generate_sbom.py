@@ -9,6 +9,7 @@ import subprocess
 import sys
 import typing
 import urllib.request
+import urllib.error
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
 CPYTHON_ROOT_DIR = Path(__file__).parent.parent.parent
@@ -161,6 +162,21 @@ def get_externals() -> list[str]:
     return externals
 
 
+def download_with_retries(download_location, retries=5):
+    """Download a file with exponential backoff retry."""
+    attempt = 0
+    while attempt < retries:
+        attempt += 1
+        try:
+            resp = urllib.request.urlopen(download_location)
+        except urllib.error.URLError as ex:
+            if attempt == retries:
+                raise ex
+            time.sleep(2**attempt)
+        else:
+            return resp
+
+
 def check_sbom_packages(sbom_data: dict[str, typing.Any]) -> None:
     """Make a bunch of assertions about the SBOM package data to ensure it's consistent."""
 
@@ -175,7 +191,7 @@ def check_sbom_packages(sbom_data: dict[str, typing.Any]) -> None:
         # and that the download URL is valid.
         if "checksums" not in package or "CI" in os.environ:
             download_location = package["downloadLocation"]
-            resp = urllib.request.urlopen(download_location)
+            resp = download_with_retries(download_location)
             error_if(resp.status != 200, f"Couldn't access URL: {download_location}'")
 
             package["checksums"] = [{
