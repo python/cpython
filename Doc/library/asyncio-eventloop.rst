@@ -400,7 +400,7 @@ Creating Futures and Tasks
       while still passing on other arbitrary keyword arguments (to avoid breaking backwards compatibility with 3.13.3).
 
    .. versionchanged:: 3.14
-      All kwargs are now passed on. The *eager_start* parameter works with eager task factories.
+      All *kwargs* are now passed on. The *eager_start* parameter works with eager task factories.
 
 .. method:: loop.set_task_factory(factory)
 
