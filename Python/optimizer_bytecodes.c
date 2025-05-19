@@ -550,6 +550,10 @@ dummy_func(void) {
         value = sym_new_const(ctx, ptr);
     }
 
+    op(_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused, unused, unused -- value)) {
+        value = sym_new_const(ctx, ptr);
+    }
+
     op(_COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
         assert(oparg > 0);
         top = bottom;
@@ -903,9 +907,11 @@ dummy_func(void) {
             // The below check is equivalent to PyObject_TypeCheck(inst, cls)
             if (inst_type == cls_o || PyType_IsSubtype(inst_type, cls_o)) {
                 sym_set_const(res, Py_True);
+                REPLACE_OP(this_instr, _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
             }
             else {
                 sym_set_const(res, Py_False);
+                REPLACE_OP(this_instr, _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_False);
             }
         }
     }

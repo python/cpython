@@ -2135,9 +2135,11 @@
             if (inst_type && cls_o && sym_matches_type(cls, &PyType_Type)) {
                 if (inst_type == cls_o || PyType_IsSubtype(inst_type, cls_o)) {
                     sym_set_const(res, Py_True);
+                    REPLACE_OP(this_instr, _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
                 }
                 else {
                     sym_set_const(res, Py_False);
+                    REPLACE_OP(this_instr, _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_False);
                 }
             }
             stack_pointer[-4] = res;
@@ -2531,6 +2533,16 @@
             value = sym_new_not_null(ctx);
             stack_pointer[-2] = value;
             stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW: {
+            JitOptSymbol *value;
+            PyObject *ptr = (PyObject *)this_instr->operand0;
+            value = sym_new_const(ctx, ptr);
+            stack_pointer[-4] = value;
+            stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
