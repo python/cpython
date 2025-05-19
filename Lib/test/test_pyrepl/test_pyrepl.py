@@ -959,6 +959,59 @@ class TestPyReplModuleCompleter(TestCase):
                 output = reader.readline()
                 self.assertEqual(output, expected)
 
+    def test_builtin_completion(self):
+        import importlib
+        # Make iter_modules() search only the standard library.
+        # This makes the test more reliable in case there are
+        # other user packages/scripts on PYTHONPATH which can
+        # intefere with the completions.
+        lib_path = os.path.dirname(importlib.__path__[0])
+        sys.path = [lib_path]
+
+        cases = (
+            # Basic import completion
+            ("import tim\t\n", "import time"),
+            ("import sys\t\t\n", "import sys"),  # should pass?
+            ("import mat\t\n", "import math"),
+            ("import bui\t\n", "import builtins"),
+
+            # Multiple imports
+            ("import foo, ti\t\n", "import foo, time"),
+            ("import foo, sys\t\n", "import foo, sys"),
+
+            # Import with alias
+            ("import time as t\t\n", "import time as t"),
+            ("import math as m, sys\t\n", "import math as m, sys"),
+
+            # From-import for functions or attributes
+            ("from math import si\t\n", "from math import sin"),
+            ("from math import co\t\n", "from math import cos"),
+            ("from sys import pat\t\n", "from sys import path"),
+            ("from builtins import str\t\n", "from builtins import str"),
+
+            # From-import for modules
+            ("from bui\t\n", "from builtins"),
+            ("from math impo\t\n", "from math import"),
+            ("from sys impo\t\n", "from sys import"),
+
+            # Nested completion with tab navigation
+            ("import builti\t\t\n", "import builtins"),
+            ("from builti\t\t\n", "from builtins"),
+
+            # tab twice
+            ("import ma\t\t\n", "import math"),
+            ("from ma\t\t\n", "from math"),
+            
+            # not matching anything
+            ("import ll\t\t\n", "import ll")
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
     def test_relative_import_completions(self):
         cases = (
             ("from .readl\t\n", "from .readline"),
