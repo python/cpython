@@ -10,7 +10,7 @@ dnl to regenerate the configure script.
 dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
-m4_define([PYTHON_VERSION], [3.14])
+m4_define([PYTHON_VERSION], [3.15])
 
 AC_PREREQ([2.72])
 
@@ -3838,35 +3838,6 @@ dnl The AIX_BUILDDATE is obtained from the kernel fileset - bos.mp64
 	*) ;;
 esac
 
-# check for _Complex C type
-#
-# Note that despite most compilers define __STDC_IEC_559_COMPLEX__ - almost
-# none properly support C11+ Annex G (where pure imaginary types
-# represented by _Imaginary are mandatory).  This is a bug (see e.g.
-# llvm/llvm-project#60269), so we don't rely on presence
-# of __STDC_IEC_559_COMPLEX__.
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <complex.h>
-#define test(type, out)                                \
-{                                                      \
-    type complex z = 1 + 2*I; z = z*z;                 \
-    (out) = (out) || creal(z) != -3 || cimag(z) != 4;  \
-}
-int main(void)
-{
-   int res = 0;
-   test(float, res);
-   test(double, res);
-   test(long double, res);
-   return res;
-}]])], [ac_cv_c_complex_supported=yes],
-[ac_cv_c_complex_supported=no],
-[ac_cv_c_complex_supported=no])
-if test "$ac_cv_c_complex_supported" = "yes"; then
-    AC_DEFINE([Py_HAVE_C_COMPLEX], [1],
-              [Defined if _Complex C type is available.])
-fi
-
 # check for systems that require aligned memory access
 AC_CACHE_CHECK([aligned memory access is required], [ac_cv_aligned_required],
 [AC_RUN_IFELSE([AC_LANG_SOURCE([[
@@ -5415,32 +5386,27 @@ PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
   ])
 ])
 
-have_libzstd=no
-AC_DEFUN([TEST_ZSTD_VERSION],[
-  AC_MSG_CHECKING([if libzstd is new enough])
-
-  dnl TODO(emmatyping): check if we can set a C define for the minimum version
-  dnl to re-use here and in the header compile check
-
-  dnl This is checked when both a package is found and we do fallback searches
-  dnl If you update the minimum version here, you should update the compile
-  dnl check in Modules/_zstd/_zstdmodule.h
-  AC_RUN_IFELSE([AC_LANG_PROGRAM([@%:@include "zstd.h"], [
-      #if ZSTD_VERSION_NUMBER < 10405
-          exit(1);
-      #endif
-    ])], [py__zstd_too_old=no], [py__zstd_too_old=yes])
-  dnl Important to record that we have libzstd
-  have_libzstd=yes
-])
-
-PKG_CHECK_MODULES([LIBZSTD], [libzstd], [TEST_ZSTD_VERSION()], [
+dnl zstd 1.4.5 stabilised ZDICT_finalizeDictionary
+PKG_CHECK_MODULES([LIBZSTD], [libzstd >= 1.4.5], [have_libzstd=yes], [
   WITH_SAVE_ENV([
     CPPFLAGS="$CPPFLAGS $LIBZSTD_CFLAGS"
+    CFLAGS="$CFLAGS $LIBZSTD_CFLAGS"
     LIBS="$LIBS $LIBZSTD_LIBS"
-    AC_CHECK_HEADERS([zstd.h zdict.h], [
-      AC_CHECK_LIB([zstd], [ZDICT_finalizeDictionary],
-       [TEST_ZSTD_VERSION()], [have_libzstd=no])
+    AC_SEARCH_LIBS([ZDICT_finalizeDictionary], [zstd], [
+      AC_MSG_CHECKING([ZSTD_VERSION_NUMBER >= 1.4.5])
+      AC_COMPILE_IFELSE([
+        AC_LANG_PROGRAM([@%:@include "zstd.h"], [
+          #if ZSTD_VERSION_NUMBER < 10405
+          #  error "zstd version is too old"
+          #endif
+        ])
+      ], [
+        AC_MSG_RESULT([yes])
+        AC_CHECK_HEADERS([zstd.h zdict.h], [have_libzstd=yes], [have_libzstd=no])
+      ], [
+        AC_MSG_RESULT([no])
+        have_libzstd=no
+      ])
     ], [have_libzstd=no])
     AS_VAR_IF([have_libzstd], [yes], [
       LIBZSTD_CFLAGS=${LIBZSTD_CFLAGS-""}
@@ -7148,9 +7114,9 @@ SRCDIRS="\
   Modules/_testinternalcapi \
   Modules/_testlimitedcapi \
   Modules/_xxtestfuzz \
+  Modules/_zstd \
   Modules/cjkcodecs \
   Modules/expat \
-  Modules/_zstd \
   Objects \
   Objects/mimalloc \
   Objects/mimalloc/prim \
@@ -8101,7 +8067,7 @@ PY_STDLIB_MOD([_bz2], [], [test "$have_bzip2" = yes],
   [$BZIP2_CFLAGS], [$BZIP2_LIBS])
 PY_STDLIB_MOD([_lzma], [], [test "$have_liblzma" = yes],
   [$LIBLZMA_CFLAGS], [$LIBLZMA_LIBS])
-PY_STDLIB_MOD([_zstd], [test "$py__zstd_too_old" = no], [test "$have_libzstd" = yes],
+PY_STDLIB_MOD([_zstd], [], [test "$have_libzstd" = yes],
   [$LIBZSTD_CFLAGS], [$LIBZSTD_LIBS])
 
 dnl OpenSSL bindings

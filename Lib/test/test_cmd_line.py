@@ -1158,6 +1158,24 @@ class CmdLineTest(unittest.TestCase):
         res = assert_python_ok('-c', code, PYTHON_CPU_COUNT='default')
         self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
 
+    def test_import_time(self):
+        # os is not imported at startup
+        code = 'import os; import os'
+
+        for case in 'importtime', 'importtime=1', 'importtime=true':
+            res = assert_python_ok('-X', case, '-c', code)
+            res_err = res.err.decode('utf-8')
+            self.assertRegex(res_err, r'import time: \s*\d+ \| \s*\d+ \| \s*os')
+            self.assertNotRegex(res_err, r'import time: cached\s* \| cached\s* \| os')
+
+        res = assert_python_ok('-X', 'importtime=2', '-c', code)
+        res_err = res.err.decode('utf-8')
+        self.assertRegex(res_err, r'import time: \s*\d+ \| \s*\d+ \| \s*os')
+        self.assertRegex(res_err, r'import time: cached\s* \| cached\s* \| os')
+
+        assert_python_failure('-X', 'importtime=-1', '-c', code)
+        assert_python_failure('-X', 'importtime=3', '-c', code)
+
     def res2int(self, res):
         out = res.out.strip().decode("utf-8")
         return tuple(int(i) for i in out.split())

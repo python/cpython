@@ -434,8 +434,6 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
  * On a specialization failure, the backoff counter is restarted.
  */
 
-#include "pycore_backoff.h"
-
 // A value of 1 means that we attempt to specialize the *second* time each
 // instruction is executed. Executing twice is a much better indicator of
 // "hotness" than executing once, but additional warmup delays only prevent
@@ -565,6 +563,98 @@ extern int _Py_ClearUnusedTLBC(PyInterpreterState *interp);
 #endif
 
 
+typedef struct {
+    int total;
+    struct co_locals_counts {
+        int total;
+        struct {
+            int total;
+            int numposonly;
+            int numposorkw;
+            int numkwonly;
+            int varargs;
+            int varkwargs;
+        } args;
+        int numpure;
+        struct {
+            int total;
+            // numargs does not contribute to locals.total.
+            int numargs;
+            int numothers;
+        } cells;
+        struct {
+            int total;
+            int numpure;
+            int numcells;
+        } hidden;
+    } locals;
+    int numfree;  // nonlocal
+    struct co_unbound_counts {
+        int total;
+        struct {
+            int total;
+            int numglobal;
+            int numbuiltin;
+            int numunknown;
+        } globals;
+        int numattrs;
+        int numunknown;
+    } unbound;
+} _PyCode_var_counts_t;
+
+PyAPI_FUNC(void) _PyCode_GetVarCounts(
+        PyCodeObject *,
+        _PyCode_var_counts_t *);
+PyAPI_FUNC(int) _PyCode_SetUnboundVarCounts(
+        PyThreadState *,
+        PyCodeObject *,
+        _PyCode_var_counts_t *,
+        PyObject *globalnames,
+        PyObject *attrnames,
+        PyObject *globalsns,
+        PyObject *builtinsns);
+
+
+/* "Stateless" code is a function or code object which does not rely on
+ * external state or internal state.  It may rely on arguments and
+ * builtins, but not globals or a closure.  Thus it does not rely
+ * on __globals__ or __closure__, and a stateless function
+ * is equivalent to its code object.
+ *
+ * Stateless code also does not keep any persistent state
+ * of its own, so it can't have any executors, monitoring,
+ * instrumentation, or "extras" (i.e. co_extra).
+ *
+ * Stateless code may create nested functions, including closures.
+ * However, nested functions must themselves be stateless, except they
+ * *can* close on the enclosing locals.
+ *
+ * Stateless code may return any value, including nested functions and closures.
+ *
+ * Stateless code that takes no arguments and doesn't return anything
+ * may be treated like a script.
+ *
+ * We consider stateless code to be "portable" if it does not return
+ * any object that holds a reference to any of the code's locals.  Thus
+ * generators and coroutines are not portable.  Likewise a function
+ * that returns a closure is not portable.  The concept of
+ * portability is useful in cases where the code is run
+ * in a different execution context than where
+ * the return value will be used. */
+
+PyAPI_FUNC(int) _PyCode_CheckNoInternalState(PyCodeObject *, const char **);
+PyAPI_FUNC(int) _PyCode_CheckNoExternalState(
+        PyCodeObject *,
+        _PyCode_var_counts_t *,
+        const char **);
+PyAPI_FUNC(int) _PyCode_VerifyStateless(
+        PyThreadState *,
+        PyCodeObject *,
+        PyObject *globalnames,
+        PyObject *globalsns,
+        PyObject *builtinsns);
+
+PyAPI_FUNC(int) _PyCode_CheckPureFunction(PyCodeObject *, const char **);
 PyAPI_FUNC(int) _PyCode_ReturnsOnlyNone(PyCodeObject *);
 
 

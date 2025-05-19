@@ -518,7 +518,7 @@ def _main(args=None):
         sys.exit(1)
 
     # Parse the arguments and options
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     parser.add_argument(dest='filename', nargs='?',
                         metavar='filename.py',
                         help='the file to tokenize; defaults to stdin')

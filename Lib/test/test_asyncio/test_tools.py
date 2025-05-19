@@ -18,10 +18,18 @@ TEST_INPUTS_TREE = [
                         3,
                         "timer",
                         [
-                            [["awaiter3", "awaiter2", "awaiter"], 4],
-                            [["awaiter1_3", "awaiter1_2", "awaiter1"], 5],
-                            [["awaiter1_3", "awaiter1_2", "awaiter1"], 6],
-                            [["awaiter3", "awaiter2", "awaiter"], 7],
+                            [[("awaiter3", "/path/to/app.py", 130),
+                              ("awaiter2", "/path/to/app.py", 120),
+                              ("awaiter", "/path/to/app.py", 110)], 4],
+                            [[("awaiterB3", "/path/to/app.py", 190),
+                              ("awaiterB2", "/path/to/app.py", 180),
+                              ("awaiterB", "/path/to/app.py", 170)], 5],
+                            [[("awaiterB3", "/path/to/app.py", 190),
+                              ("awaiterB2", "/path/to/app.py", 180),
+                              ("awaiterB", "/path/to/app.py", 170)], 6],
+                            [[("awaiter3", "/path/to/app.py", 130),
+                              ("awaiter2", "/path/to/app.py", 120),
+                              ("awaiter", "/path/to/app.py", 110)], 7],
                         ],
                     ),
                     (
@@ -91,14 +99,14 @@ TEST_INPUTS_TREE = [
                     "                │           └──  __aexit__",
                     "                │               └──  _aexit",
                     "                │                   ├── (T) child1_1",
-                    "                │                   │   └──  awaiter",
-                    "                │                   │       └──  awaiter2",
-                    "                │                   │           └──  awaiter3",
+                    "                │                   │   └──  awaiter /path/to/app.py:110",
+                    "                │                   │       └──  awaiter2 /path/to/app.py:120",
+                    "                │                   │           └──  awaiter3 /path/to/app.py:130",
                     "                │                   │               └── (T) timer",
                     "                │                   └── (T) child2_1",
-                    "                │                       └──  awaiter1",
-                    "                │                           └──  awaiter1_2",
-                    "                │                               └──  awaiter1_3",
+                    "                │                       └──  awaiterB /path/to/app.py:170",
+                    "                │                           └──  awaiterB2 /path/to/app.py:180",
+                    "                │                               └──  awaiterB3 /path/to/app.py:190",
                     "                │                                   └── (T) timer",
                     "                └── (T) root2",
                     "                    └──  bloch",
@@ -106,14 +114,14 @@ TEST_INPUTS_TREE = [
                     "                            └──  __aexit__",
                     "                                └──  _aexit",
                     "                                    ├── (T) child1_2",
-                    "                                    │   └──  awaiter",
-                    "                                    │       └──  awaiter2",
-                    "                                    │           └──  awaiter3",
+                    "                                    │   └──  awaiter /path/to/app.py:110",
+                    "                                    │       └──  awaiter2 /path/to/app.py:120",
+                    "                                    │           └──  awaiter3 /path/to/app.py:130",
                     "                                    │               └── (T) timer",
                     "                                    └── (T) child2_2",
-                    "                                        └──  awaiter1",
-                    "                                            └──  awaiter1_2",
-                    "                                                └──  awaiter1_3",
+                    "                                        └──  awaiterB /path/to/app.py:170",
+                    "                                            └──  awaiterB2 /path/to/app.py:180",
+                    "                                                └──  awaiterB3 /path/to/app.py:190",
                     "                                                    └── (T) timer",
                 ]
             ]
@@ -589,7 +597,6 @@ TEST_INPUTS_TABLE = [
 
 
 class TestAsyncioToolsTree(unittest.TestCase):
-
     def test_asyncio_utils(self):
         for input_, tree in TEST_INPUTS_TREE:
             with self.subTest(input_):
@@ -784,21 +791,21 @@ class TestAsyncioToolsBasic(unittest.TestCase):
 class TestAsyncioToolsEdgeCases(unittest.TestCase):
 
     def test_task_awaits_self(self):
-        """A task directly awaits itself – should raise a cycle."""
+        """A task directly awaits itself - should raise a cycle."""
         input_ = [(1, [(1, "Self-Awaiter", [[["loopback"], 1]])])]
         with self.assertRaises(tools.CycleFoundException) as ctx:
             tools.build_async_tree(input_)
         self.assertIn([1, 1], ctx.exception.cycles)
 
     def test_task_with_missing_awaiter_id(self):
-        """Awaiter ID not in task list – should not crash, just show 'Unknown'."""
+        """Awaiter ID not in task list - should not crash, just show 'Unknown'."""
         input_ = [(1, [(1, "Task-A", [[["coro"], 999]])])]  # 999 not defined
         table = tools.build_task_table(input_)
         self.assertEqual(len(table), 1)
         self.assertEqual(table[0][4], "Unknown")
 
     def test_duplicate_coroutine_frames(self):
-        """Same coroutine frame repeated under a parent – should deduplicate."""
+        """Same coroutine frame repeated under a parent - should deduplicate."""
         input_ = [
             (
                 1,
@@ -822,7 +829,7 @@ class TestAsyncioToolsEdgeCases(unittest.TestCase):
         self.assertIn("Task-1", flat)
 
     def test_task_with_no_name(self):
-        """Task with no name in id2name – should still render with fallback."""
+        """Task with no name in id2name - should still render with fallback."""
         input_ = [(1, [(1, "root", [[["f1"], 2]]), (2, None, [])])]
         # If name is None, fallback to string should not crash
         tree = tools.build_async_tree(input_)

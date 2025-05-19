@@ -12,7 +12,7 @@ import threading
 import types
 import warnings
 
-from _colorize import can_colorize, ANSIColors  # type: ignore[import-not-found]
+from _colorize import get_theme
 from _pyrepl.console import InteractiveColoredConsole
 
 from . import futures
@@ -103,8 +103,9 @@ class REPLThread(threading.Thread):
                     exec(startup_code, console.locals)
 
             ps1 = getattr(sys, "ps1", ">>> ")
-            if can_colorize() and CAN_USE_PYREPL:
-                ps1 = f"{ANSIColors.BOLD_MAGENTA}{ps1}{ANSIColors.RESET}"
+            if CAN_USE_PYREPL:
+                theme = get_theme().syntax
+                ps1 = f"{theme.prompt}{ps1}{theme.reset}"
             console.write(f"{ps1}import asyncio\n")
 
             if CAN_USE_PYREPL:
@@ -145,6 +146,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         prog="python3 -m asyncio",
         description="Interactive asyncio shell and CLI tools",
+        color=True,
     )
     subparsers = parser.add_subparsers(help="sub-commands", dest="command")
     ps = subparsers.add_parser(

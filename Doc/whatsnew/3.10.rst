@@ -551,11 +551,12 @@ Patterns and classes
 
 If you are using classes to structure your data, you can use as a pattern
 the class name followed by an argument list resembling a constructor. This
-pattern has the ability to capture class attributes into variables::
+pattern has the ability to capture instance attributes into variables::
 
     class Point:
-        x: int
-        y: int
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
 
     def location(point):
         match point:
@@ -2176,9 +2177,9 @@ Porting to Python 3.10
   ``unicodedata.ucnhash_CAPI`` has been moved to the internal C API.
   (Contributed by Victor Stinner in :issue:`42157`.)
 
-* :c:func:`Py_GetPath`, :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`,
-  :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome` and
-  :c:func:`Py_GetProgramName` functions now return ``NULL`` if called before
+* :c:func:`!Py_GetPath`, :c:func:`!Py_GetPrefix`, :c:func:`!Py_GetExecPrefix`,
+  :c:func:`!Py_GetProgramFullPath`, :c:func:`!Py_GetPythonHome` and
+  :c:func:`!Py_GetProgramName` functions now return ``NULL`` if called before
   :c:func:`Py_Initialize` (before Python is initialized). Use the new
   :ref:`init-config` API to get the :ref:`init-path-config`.
   (Contributed by Victor Stinner in :issue:`42260`.)

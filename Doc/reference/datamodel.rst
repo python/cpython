@@ -3346,7 +3346,7 @@ left undefined.
    argument if the three-argument version of the built-in :func:`pow` function
    is to be supported.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
 
       Three-argument :func:`pow` now try calling :meth:`~object.__rpow__` if necessary.
       Previously it was only called in two-argument :func:`!pow` and the binary

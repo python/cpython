@@ -641,7 +641,7 @@ keyword argument::
    >>> parser = argparse.ArgumentParser(description='Process some integers.')
    >>> parser.color = True
 
-.. versionadded:: next
+.. versionadded:: 3.14
 
 
 The add_argument() method

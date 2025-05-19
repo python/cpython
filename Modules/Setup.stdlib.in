@@ -69,7 +69,7 @@
 @MODULE_BINASCII_TRUE@binascii binascii.c
 @MODULE__BZ2_TRUE@_bz2 _bz2module.c
 @MODULE__LZMA_TRUE@_lzma _lzmamodule.c
-@MODULE__ZSTD_TRUE@_zstd _zstd/_zstdmodule.c _zstd/zdict.c _zstd/compressor.c _zstd/decompressor.c
+@MODULE__ZSTD_TRUE@_zstd _zstd/_zstdmodule.c _zstd/zstddict.c _zstd/compressor.c _zstd/decompressor.c
 @MODULE_ZLIB_TRUE@zlib zlibmodule.c
 
 # dbm/gdbm

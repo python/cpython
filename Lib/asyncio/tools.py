@@ -21,13 +21,21 @@ class CycleFoundException(Exception):
 
 
 # ─── indexing helpers ───────────────────────────────────────────
+def _format_stack_entry(elem: tuple[str, str, int] | str) -> str:
+    if isinstance(elem, tuple):
+        fqname, path, line_no = elem
+        return f"{fqname} {path}:{line_no}"
+
+    return elem
+
+
 def _index(result):
     id2name, awaits = {}, []
     for _thr_id, tasks in result:
         for tid, tname, awaited in tasks:
             id2name[tid] = tname
             for stack, parent_id in awaited:
-                stack = [elem[0] if isinstance(elem, tuple) else elem for elem in stack]
+                stack = [_format_stack_entry(elem) for elem in stack]
                 awaits.append((parent_id, stack, tid))
     return id2name, awaits
 
@@ -106,7 +114,7 @@ def _find_cycles(graph):
 # ─── PRINT TREE FUNCTION ───────────────────────────────────────
 def build_async_tree(result, task_emoji="(T)", cor_emoji=""):
     """
-    Build a list of strings for pretty-print a async call tree.
+    Build a list of strings for pretty-print an async call tree.
 
     The call tree is produced by `get_all_async_stacks()`, prefixing tasks
     with `task_emoji` and coroutine frames with `cor_emoji`.
@@ -169,7 +177,7 @@ def build_task_table(result):
     return table
 
 def _print_cycle_exception(exception: CycleFoundException):
-    print("ERROR: await-graph contains cycles – cannot print a tree!", file=sys.stderr)
+    print("ERROR: await-graph contains cycles - cannot print a tree!", file=sys.stderr)
     print("", file=sys.stderr)
     for c in exception.cycles:
         inames = " → ".join(exception.id2name.get(tid, hex(tid)) for tid in c)
