@@ -81,8 +81,10 @@ class ModuleCompleter:
     def _find_modules(self, path: str, prefix: str) -> list[str]:
         if not path:
             # Top-level import (e.g. `import foo<tab>`` or `from foo<tab>`)`
-            builtin_modules = [name for name in sys.builtin_module_names if self._is_suggestion_match(name, prefix)]
-            third_party_modules = [name for _, name, _ in self.global_cache if self._is_suggestion_match(name, prefix)]
+            builtin_modules = [name for name in sys.builtin_module_names
+                               if self.is_suggestion_match(name, prefix)]
+            third_party_modules = [module.name for module in self.global_cache
+                                   if self.is_suggestion_match(module.name, prefix)]
             return sorted(builtin_modules + third_party_modules)
 
         if path.startswith('.'):
@@ -98,9 +100,9 @@ class ModuleCompleter:
                        if mod_info.ispkg and mod_info.name == segment]
             modules = self.iter_submodules(modules)
         return [module.name for module in modules
-                if self._is_suggestion_match(module.name, prefix)]
+                if self.is_suggestion_match(module.name, prefix)]
 
-    def _is_suggestion_match(self, module_name: str, prefix: str) -> bool:
+    def is_suggestion_match(self, module_name: str, prefix: str) -> bool:
         """
         Return True if the module name matches the prefix or if no prefix is specified.
         Return False if the name is private (starts with _) and no prefix is specified

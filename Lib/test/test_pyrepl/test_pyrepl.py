@@ -962,6 +962,7 @@ class TestPyReplModuleCompleter(TestCase):
 
     @patch("pkgutil.iter_modules", lambda: [(None, 'public', None),
                                             (None, '_private', None)])
+    @patch("sys.builtin_module_names", ())
     def test_private_completions(self):
         cases = (
             # Return public methods by default
@@ -998,7 +999,7 @@ class TestPyReplModuleCompleter(TestCase):
                 reader = self.prepare_reader(events, namespace={})
                 output = reader.readline()
                 self.assertEqual(output, expected)
-                
+
     def test_builtin_completion_top_level(self):
         import importlib
         # Make iter_modules() search only the standard library.
