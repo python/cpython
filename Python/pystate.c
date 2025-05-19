@@ -402,7 +402,6 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
     /* The count is cleared by _Py_FinalizeRefTotal(). */
     assert(runtime->object_state.interpreter_leaks == 0);
 #endif
-    gilstate_clear();
 }
 
 #ifdef HAVE_FORK
@@ -434,7 +433,6 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
 #endif
 
     _PyTypes_AfterFork();
-    gilstate_clear();
 
     _PyThread_AfterFork(&runtime->threads);
 
