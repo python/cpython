@@ -1959,6 +1959,136 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_THIRD_NULL", uops)
         self.assertNotIn("_GUARD_CALLABLE_ISINSTANCE", uops)
 
+    def test_call_list_append(self):
+        def testfunc(n):
+            a = []
+            for i in range(n):
+                a.append(i)
+            return sum(a)
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, sum(range(TIER2_THRESHOLD)))
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_LIST_APPEND", uops)
+        # We should remove these in the future
+        self.assertIn("_GUARD_NOS_LIST", uops)
+        self.assertIn("_GUARD_CALLABLE_LIST_APPEND", uops)
+
+    def test_call_isinstance_is_true(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = isinstance(42, int)
+                if y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+
+    def test_call_isinstance_is_false(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = isinstance(42, str)
+                if not y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertNotIn("_GUARD_IS_FALSE_POP", uops)
+
+    def test_call_isinstance_subclass(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = isinstance(True, int)
+                if y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+
+    def test_call_isinstance_unknown_object(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                # The optimizer doesn't know the return type here:
+                bar = eval("42")
+                # This will only narrow to bool:
+                y = isinstance(bar, int)
+                if y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertIn("_GUARD_IS_TRUE_POP", uops)
+
+    def test_call_isinstance_tuple_of_classes(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                # A tuple of classes is currently not optimized,
+                # so this is only narrowed to bool:
+                y = isinstance(42, (int, str))
+                if y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertIn("_GUARD_IS_TRUE_POP", uops)
+
+    def test_call_isinstance_metaclass(self):
+        class EvenNumberMeta(type):
+            def __instancecheck__(self, number):
+                return number % 2 == 0
+
+        class EvenNumber(metaclass=EvenNumberMeta):
+            pass
+
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                # Only narrowed to bool
+                y = isinstance(42, EvenNumber)
+                if y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertIn("_GUARD_IS_TRUE_POP", uops)
+
 
 def global_identity(x):
     return x
