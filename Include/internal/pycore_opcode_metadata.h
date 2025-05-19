@@ -1787,8 +1787,6 @@ const uint8_t _PyOpcode_Caches[256] = {
 extern const uint8_t _PyOpcode_Deopt[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Deopt[256] = {
-    [119] = 119,
-    [120] = 120,
     [121] = 121,
     [122] = 122,
     [123] = 123,
@@ -1796,7 +1794,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [125] = 125,
     [126] = 126,
     [127] = 127,
-    [211] = 211,
     [212] = 212,
     [213] = 213,
     [214] = 214,
