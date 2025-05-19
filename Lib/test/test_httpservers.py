@@ -1472,10 +1472,12 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         self.addCleanup(os_helper.unlink, self.tls_password_file)
 
     def fetch_file(self, path):
-        context = ssl.create_default_context()
-        # allow self-signed certificates
-        context.check_hostname = False
-        context.verify_mode = ssl.CERT_NONE
+        context = None
+        if ssl is not None:
+            context = ssl.create_default_context()
+            # allow self-signed certificates
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
         req = urllib.request.Request(path, method='GET')
         with urllib.request.urlopen(req, context=context) as res:
             return res.read()
@@ -1519,6 +1521,7 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         res = self.fetch_file(f'http://{bind}:{port}/{self.served_file_name}')
         self.assertEqual(res, self.served_data)
 
+    @unittest.skipIf(ssl is None, "requires ssl")
     def test_https_client(self):
         port = find_unused_port()
         bind = '127.0.0.1'
