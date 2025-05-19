@@ -929,7 +929,7 @@ class TestPyReplModuleCompleter(TestCase):
         reader = ReadlineAlikeReader(console=console, config=config)
         return reader
 
-    def test_import_completions(self):
+    def _only_stdlib_imports(self):
         import importlib
         # Make iter_modules() search only the standard library.
         # This makes the test more reliable in case there are
@@ -938,22 +938,21 @@ class TestPyReplModuleCompleter(TestCase):
         lib_path = os.path.dirname(importlib.__path__[0])
         sys.path = [lib_path]
 
+    def test_import_completions(self):
+        self._only_stdlib_imports()
         cases = (
             ("import path\t\n", "import pathlib"),
             ("import importlib.\t\tres\t\n", "import importlib.resources"),
             ("import importlib.resources.\t\ta\t\n", "import importlib.resources.abc"),
             ("import foo, impo\t\n", "import foo, importlib"),
             ("import foo as bar, impo\t\n", "import foo as bar, importlib"),
-            ("import pri\t\n", "import pri"),  # do not complete with "print("
             ("from impo\t\n", "from importlib"),
-            ("from pri\t\n", "from pri"),
             ("from importlib.res\t\n", "from importlib.resources"),
             ("from importlib.\t\tres\t\n", "from importlib.resources"),
             ("from importlib.resources.ab\t\n", "from importlib.resources.abc"),
             ("from importlib import mac\t\n", "from importlib import machinery"),
             ("from importlib import res\t\n", "from importlib import resources"),
             ("from importlib.res\t import a\t\n", "from importlib.resources import abc"),
-            ("from typing import Na\t\n", "from typing import Na"),  # do not complete with "NameError("
         )
         for code, expected in cases:
             with self.subTest(code=code):
@@ -983,6 +982,20 @@ class TestPyReplModuleCompleter(TestCase):
             ("import valid\t\n", "import valid_name"),
             # 'invalid-name' contains a dash and should not be completed
             ("import invalid\t\n", "import invalid"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    def test_no_fallback_on_regular_completion(self):
+        self._only_stdlib_imports()
+        cases = (
+            ("import pri\t\n", "import pri"),
+            ("from pri\t\n", "from pri"),
+            ("from typing import Na\t\n", "from typing import Na"),
         )
         for code, expected in cases:
             with self.subTest(code=code):
