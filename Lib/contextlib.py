@@ -235,11 +235,10 @@ class _GeneratorContextManager(
                 # However, since we're still currently handling the exception
                 # that we throw into the generator here, the exception context
                 # in the generator wouldn't change.
-                # To work around this, we forcefully set the current exception
-                # context to be what it was just before the generator's yield
-                # statement before throwing the current exception into it.
+                # To work around this, we pass the exception context as it was
+                # just before the generator's yield statement into the generator.
                 # (see gh-111676).
-                self.gen.throw(value)
+                self.gen.throw(value, exc_context=exc_context)
             except StopIteration as exc:
                 # Suppress StopIteration *unless* it's the same exception that
                 # was passed to throw().  This prevents a StopIteration
