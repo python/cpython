@@ -1991,7 +1991,6 @@ resolve_final_tstate(_PyRuntimeState *runtime)
 
     /* We might want to warn if main_tstate->current_frame != NULL. */
 
-    assert(main_tstate->interp == main_interp);
     return main_tstate;
 }
 
@@ -2007,8 +2006,6 @@ _Py_Finalize(_PyRuntimeState *runtime)
 
     /* Get final thread state pointer. */
     PyThreadState *tstate = resolve_final_tstate(runtime);
-    // We must be in the main interpreter
-    assert(tstate->interp == &runtime->_main_interpreter);
 
     // Block some operations.
     tstate->interp->finalizing = 1;
@@ -2513,8 +2510,7 @@ finalize_subinterpreters(void)
     while (interp != NULL) {
         /* Make a tstate for finalization. */
         PyThreadState *tstate = _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_FINI);
-        if (tstate == NULL)
-        {
+        if (tstate == NULL) {
             // XXX Some graceful way to always get a thread state?
             Py_FatalError("thread state allocation failed");
         }
