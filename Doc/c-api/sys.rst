@@ -232,7 +232,7 @@ Operating System Utilities
 
    The file descriptor is created non-inheritable (:pep:`446`).
 
-   The caller must hold the GIL.
+   The caller must have an :term:`attached thread state`.
 
    .. versionadded:: 3.14
 
@@ -378,8 +378,8 @@ accessible to C code.  They all work with the current interpreter thread's
    silently abort the operation by raising an error subclassed from
    :class:`Exception` (other errors will not be silenced).
 
-   The hook function is always called with the GIL held by the Python
-   interpreter that raised the event.
+   The hook function is always called with an :term:`attached thread state` by
+   the Python interpreter that raised the event.
 
    See :pep:`578` for a detailed description of auditing.  Functions in the
    runtime and standard library that raise events are listed in the

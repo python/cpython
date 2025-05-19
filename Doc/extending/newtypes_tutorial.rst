@@ -250,16 +250,17 @@ Because we now have data to manage, we have to be more careful about object
 allocation and deallocation.  At a minimum, we need a deallocation method::
 
    static void
-   Custom_dealloc(CustomObject *self)
+   Custom_dealloc(PyObject *op)
    {
+       CustomObject *self = (CustomObject *) op;
        Py_XDECREF(self->first);
        Py_XDECREF(self->last);
-       Py_TYPE(self)->tp_free((PyObject *) self);
+       Py_TYPE(self)->tp_free(self);
    }
 
 which is assigned to the :c:member:`~PyTypeObject.tp_dealloc` member::
 
-   .tp_dealloc = (destructor) Custom_dealloc,
+   .tp_dealloc = Custom_dealloc,
 
 This method first clears the reference counts of the two Python attributes.
 :c:func:`Py_XDECREF` correctly handles the case where its argument is
@@ -270,11 +271,31 @@ the object's type might not be :class:`!CustomType`, because the object may
 be an instance of a subclass.
 
 .. note::
-   The explicit cast to ``destructor`` above is needed because we defined
-   ``Custom_dealloc`` to take a ``CustomObject *`` argument, but the ``tp_dealloc``
-   function pointer expects to receive a ``PyObject *`` argument.  Otherwise,
-   the compiler will emit a warning.  This is object-oriented polymorphism,
-   in C!
+
+   The explicit cast to ``CustomObject *`` above is needed because we defined
+   ``Custom_dealloc`` to take a ``PyObject *`` argument, as the ``tp_dealloc``
+   function pointer expects to receive a ``PyObject *`` argument.
+   By assigning to the the ``tp_dealloc`` slot of a type, we declare
+   that it can only be called with instances of our ``CustomObject``
+   class, so the cast to ``(CustomObject *)`` is safe.
+   This is object-oriented polymorphism, in C!
+
+   In existing code, or in previous versions of this tutorial,
+   you might see similar functions take a pointer to the subtype
+   object structure (``CustomObject*``) directly, like this::
+
+      Custom_dealloc(CustomObject *self)
+      {
+          Py_XDECREF(self->first);
+          Py_XDECREF(self->last);
+          Py_TYPE(self)->tp_free((PyObject *) self);
+      }
+      ...
+      .tp_dealloc = (destructor) Custom_dealloc,
+
+   This does the same thing on all architectures that CPython
+   supports, but according to the C standard, it invokes
+   undefined behavior.
 
 We want to make sure that the first and last names are initialized to empty
 strings, so we provide a ``tp_new`` implementation::
@@ -352,8 +373,9 @@ We also define an initialization function which accepts arguments to provide
 initial values for our instance::
 
    static int
-   Custom_init(CustomObject *self, PyObject *args, PyObject *kwds)
+   Custom_init(PyObject *op, PyObject *args, PyObject *kwds)
    {
+       CustomObject *self = (CustomObject *) op;
        static char *kwlist[] = {"first", "last", "number", NULL};
        PyObject *first = NULL, *last = NULL, *tmp;
 
@@ -379,7 +401,7 @@ initial values for our instance::
 
 by filling the :c:member:`~PyTypeObject.tp_init` slot. ::
 
-   .tp_init = (initproc) Custom_init,
+   .tp_init = Custom_init,
 
 The :c:member:`~PyTypeObject.tp_init` slot is exposed in Python as the
 :meth:`~object.__init__` method.  It is used to initialize an object after it's
@@ -403,8 +425,8 @@ the new attribute values.  We might be tempted, for example to assign the
 But this would be risky.  Our type doesn't restrict the type of the
 ``first`` member, so it could be any kind of object.  It could have a
 destructor that causes code to be executed that tries to access the
-``first`` member; or that destructor could release the
-:term:`Global interpreter Lock <GIL>` and let arbitrary code run in other
+``first`` member; or that destructor could detach the
+:term:`thread state <attached thread state>` and let arbitrary code run in other
 threads that accesses and modifies our object.
 
 To be paranoid and protect ourselves against this possibility, we almost
@@ -413,8 +435,8 @@ don't we have to do this?
 
 * when we absolutely know that the reference count is greater than 1;
 
-* when we know that deallocation of the object [#]_ will neither release
-  the :term:`GIL` nor cause any calls back into our type's code;
+* when we know that deallocation of the object [#]_ will neither detach
+  the :term:`thread state <attached thread state>` nor cause any calls back into our type's code;
 
 * when decrementing a reference count in a :c:member:`~PyTypeObject.tp_dealloc`
   handler on a type which doesn't support cyclic garbage collection [#]_.
@@ -451,8 +473,9 @@ We define a single method, :meth:`!Custom.name`, that outputs the objects name a
 concatenation of the first and last names. ::
 
    static PyObject *
-   Custom_name(CustomObject *self, PyObject *Py_UNUSED(ignored))
+   Custom_name(PyObject *op, PyObject *Py_UNUSED(dummy))
    {
+       CustomObject *self = (CustomObject *) op;
        if (self->first == NULL) {
            PyErr_SetString(PyExc_AttributeError, "first");
            return NULL;
@@ -486,7 +509,7 @@ Now that we've defined the method, we need to create an array of method
 definitions::
 
    static PyMethodDef Custom_methods[] = {
-       {"name", (PyCFunction) Custom_name, METH_NOARGS,
+       {"name", Custom_name, METH_NOARGS,
         "Return the name, combining the first and last name"
        },
        {NULL}  /* Sentinel */
@@ -543,15 +566,17 @@ we'll use custom getter and setter functions.  Here are the functions for
 getting and setting the :attr:`!first` attribute::
 
    static PyObject *
-   Custom_getfirst(CustomObject *self, void *closure)
+   Custom_getfirst(PyObject *op, void *closure)
    {
+       CustomObject *self = (CustomObject *) op;
        Py_INCREF(self->first);
        return self->first;
    }
 
    static int
-   Custom_setfirst(CustomObject *self, PyObject *value, void *closure)
+   Custom_setfirst(PyObject *op, PyObject *value, void *closure)
    {
+       CustomObject *self = (CustomObject *) op;
        PyObject *tmp;
        if (value == NULL) {
            PyErr_SetString(PyExc_TypeError, "Cannot delete the first attribute");
@@ -583,9 +608,9 @@ new value is not a string.
 We create an array of :c:type:`PyGetSetDef` structures::
 
    static PyGetSetDef Custom_getsetters[] = {
-       {"first", (getter) Custom_getfirst, (setter) Custom_setfirst,
+       {"first", Custom_getfirst, Custom_setfirst,
         "first name", NULL},
-       {"last", (getter) Custom_getlast, (setter) Custom_setlast,
+       {"last", Custom_getlast, Custom_setlast,
         "last name", NULL},
        {NULL}  /* Sentinel */
    };
@@ -609,8 +634,9 @@ We also need to update the :c:member:`~PyTypeObject.tp_init` handler to only
 allow strings [#]_ to be passed::
 
    static int
-   Custom_init(CustomObject *self, PyObject *args, PyObject *kwds)
+   Custom_init(PyObject *op, PyObject *args, PyObject *kwds)
    {
+       CustomObject *self = (CustomObject *) op;
        static char *kwlist[] = {"first", "last", "number", NULL};
        PyObject *first = NULL, *last = NULL, *tmp;
 
@@ -689,8 +715,9 @@ First, the traversal method lets the cyclic GC know about subobjects that could
 participate in cycles::
 
    static int
-   Custom_traverse(CustomObject *self, visitproc visit, void *arg)
+   Custom_traverse(PyObject *op, visitproc visit, void *arg)
    {
+       CustomObject *self = (CustomObject *) op;
        int vret;
        if (self->first) {
            vret = visit(self->first, arg);
@@ -716,8 +743,9 @@ functions.  With :c:func:`Py_VISIT`, we can minimize the amount of boilerplate
 in ``Custom_traverse``::
 
    static int
-   Custom_traverse(CustomObject *self, visitproc visit, void *arg)
+   Custom_traverse(PyObject *op, visitproc visit, void *arg)
    {
+       CustomObject *self = (CustomObject *) op;
        Py_VISIT(self->first);
        Py_VISIT(self->last);
        return 0;
@@ -731,8 +759,9 @@ Second, we need to provide a method for clearing any subobjects that can
 participate in cycles::
 
    static int
-   Custom_clear(CustomObject *self)
+   Custom_clear(PyObject *op)
    {
+       CustomObject *self = (CustomObject *) op;
        Py_CLEAR(self->first);
        Py_CLEAR(self->last);
        return 0;
@@ -765,11 +794,11 @@ Here is our reimplemented deallocator using :c:func:`PyObject_GC_UnTrack`
 and ``Custom_clear``::
 
    static void
-   Custom_dealloc(CustomObject *self)
+   Custom_dealloc(PyObject *op)
    {
-       PyObject_GC_UnTrack(self);
-       Custom_clear(self);
-       Py_TYPE(self)->tp_free((PyObject *) self);
+       PyObject_GC_UnTrack(op);
+       (void)Custom_clear(op);
+       Py_TYPE(op)->tp_free(op);
    }
 
 Finally, we add the :c:macro:`Py_TPFLAGS_HAVE_GC` flag to the class flags::
@@ -825,9 +854,10 @@ When a Python object is a :class:`!SubList` instance, its ``PyObject *`` pointer
 can be safely cast to both ``PyListObject *`` and ``SubListObject *``::
 
    static int
-   SubList_init(SubListObject *self, PyObject *args, PyObject *kwds)
+   SubList_init(PyObject *op, PyObject *args, PyObject *kwds)
    {
-       if (PyList_Type.tp_init((PyObject *) self, args, kwds) < 0)
+       SubListObject *self = (SubListObject *) op;
+       if (PyList_Type.tp_init(op, args, kwds) < 0)
            return -1;
        self->state = 0;
        return 0;

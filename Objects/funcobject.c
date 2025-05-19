@@ -1,12 +1,15 @@
-
 /* Function object implementation */
 
 #include "Python.h"
-#include "pycore_dict.h"                // _Py_INCREF_DICT()
-#include "pycore_long.h"                // _PyLong_GetOne()
-#include "pycore_modsupport.h"          // _PyArg_NoKeywords()
-#include "pycore_object.h"              // _PyObject_GC_UNTRACK()
-#include "pycore_pyerrors.h"            // _PyErr_Occurred()
+#include "pycore_code.h"          // _PyCode_VerifyStateless()
+#include "pycore_dict.h"          // _Py_INCREF_DICT()
+#include "pycore_function.h"      // _PyFunction_Vectorcall
+#include "pycore_long.h"          // _PyLong_GetOne()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"      // _PyErr_Occurred()
+#include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_stats.h"
 
 
 static const char *
@@ -1239,6 +1242,58 @@ PyTypeObject PyFunction_Type = {
 };
 
 
+int
+_PyFunction_VerifyStateless(PyThreadState *tstate, PyObject *func)
+{
+    assert(!PyErr_Occurred());
+    assert(PyFunction_Check(func));
+
+    // Check the globals.
+    PyObject *globalsns = PyFunction_GET_GLOBALS(func);
+    if (globalsns != NULL && !PyDict_Check(globalsns)) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "unsupported globals %R", globalsns);
+        return -1;
+    }
+    // Check the builtins.
+    PyObject *builtinsns = PyFunction_GET_BUILTINS(func);
+    if (builtinsns != NULL && !PyDict_Check(builtinsns)) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "unsupported builtins %R", builtinsns);
+        return -1;
+    }
+    // Disallow __defaults__.
+    PyObject *defaults = PyFunction_GET_DEFAULTS(func);
+    if (defaults != NULL && defaults != Py_None && PyDict_Size(defaults) > 0)
+    {
+        _PyErr_SetString(tstate, PyExc_ValueError, "defaults not supported");
+        return -1;
+    }
+    // Disallow __kwdefaults__.
+    PyObject *kwdefaults = PyFunction_GET_KW_DEFAULTS(func);
+    if (kwdefaults != NULL && kwdefaults != Py_None
+            && PyDict_Size(kwdefaults) > 0)
+    {
+        _PyErr_SetString(tstate, PyExc_ValueError,
+                         "keyword defaults not supported");
+        return -1;
+    }
+    // Disallow __closure__.
+    PyObject *closure = PyFunction_GET_CLOSURE(func);
+    if (closure != NULL && closure != Py_None && PyTuple_GET_SIZE(closure) > 0)
+    {
+        _PyErr_SetString(tstate, PyExc_ValueError, "closures not supported");
+        return -1;
+    }
+    // Check the code.
+    PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
+    if (_PyCode_VerifyStateless(tstate, co, NULL, globalsns, builtinsns) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+
 static int
 functools_copy_attr(PyObject *wrapper, PyObject *wrapped, PyObject *name)
 {
@@ -1483,6 +1538,11 @@ static PyGetSetDef cm_getsetlist[] = {
     {NULL} /* Sentinel */
 };
 
+static PyMethodDef cm_methodlist[] = {
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, NULL},
+    {NULL} /* Sentinel */
+};
+
 static PyObject*
 cm_repr(PyObject *self)
 {
@@ -1541,7 +1601,7 @@ PyTypeObject PyClassMethod_Type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
+    cm_methodlist,                              /* tp_methods */
     cm_memberlist,                              /* tp_members */
     cm_getsetlist,                              /* tp_getset */
     0,                                          /* tp_base */
@@ -1715,6 +1775,11 @@ static PyGetSetDef sm_getsetlist[] = {
     {NULL} /* Sentinel */
 };
 
+static PyMethodDef sm_methodlist[] = {
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, NULL},
+    {NULL} /* Sentinel */
+};
+
 static PyObject*
 sm_repr(PyObject *self)
 {
@@ -1771,7 +1836,7 @@ PyTypeObject PyStaticMethod_Type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
+    sm_methodlist,                              /* tp_methods */
     sm_memberlist,                              /* tp_members */
     sm_getsetlist,                              /* tp_getset */
     0,                                          /* tp_base */

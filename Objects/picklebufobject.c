@@ -91,22 +91,25 @@ picklebuf_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static int
-picklebuf_traverse(PyPickleBufferObject *self, visitproc visit, void *arg)
+picklebuf_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyPickleBufferObject *self = (PyPickleBufferObject*)op;
     Py_VISIT(self->view.obj);
     return 0;
 }
 
 static int
-picklebuf_clear(PyPickleBufferObject *self)
+picklebuf_clear(PyObject *op)
 {
+    PyPickleBufferObject *self = (PyPickleBufferObject*)op;
     PyBuffer_Release(&self->view);
     return 0;
 }
 
 static void
-picklebuf_dealloc(PyPickleBufferObject *self)
+picklebuf_dealloc(PyObject *op)
 {
+    PyPickleBufferObject *self = (PyPickleBufferObject*)op;
     PyObject_GC_UnTrack(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
@@ -117,8 +120,9 @@ picklebuf_dealloc(PyPickleBufferObject *self)
 /* Buffer API */
 
 static int
-picklebuf_getbuf(PyPickleBufferObject *self, Py_buffer *view, int flags)
+picklebuf_getbuf(PyObject *op, Py_buffer *view, int flags)
 {
+    PyPickleBufferObject *self = (PyPickleBufferObject*)op;
     if (self->view.obj == NULL) {
         PyErr_SetString(PyExc_ValueError,
                         "operation forbidden on released PickleBuffer object");
@@ -128,7 +132,7 @@ picklebuf_getbuf(PyPickleBufferObject *self, Py_buffer *view, int flags)
 }
 
 static void
-picklebuf_releasebuf(PyPickleBufferObject *self, Py_buffer *view)
+picklebuf_releasebuf(PyObject *self, Py_buffer *view)
 {
     /* Since our bf_getbuffer redirects to the original object, this
      * implementation is never called.  It only exists to signal that
@@ -138,15 +142,16 @@ picklebuf_releasebuf(PyPickleBufferObject *self, Py_buffer *view)
 }
 
 static PyBufferProcs picklebuf_as_buffer = {
-    .bf_getbuffer = (getbufferproc) picklebuf_getbuf,
-    .bf_releasebuffer = (releasebufferproc) picklebuf_releasebuf,
+    .bf_getbuffer = picklebuf_getbuf,
+    .bf_releasebuffer = picklebuf_releasebuf,
 };
 
 /* Methods */
 
 static PyObject *
-picklebuf_raw(PyPickleBufferObject *self, PyObject *Py_UNUSED(ignored))
+picklebuf_raw(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyPickleBufferObject *self = (PyPickleBufferObject*)op;
     if (self->view.obj == NULL) {
         PyErr_SetString(PyExc_ValueError,
                         "operation forbidden on released PickleBuffer object");
@@ -185,8 +190,9 @@ Return a memoryview of the raw memory underlying this buffer.\n\
 Will raise BufferError is the buffer isn't contiguous.");
 
 static PyObject *
-picklebuf_release(PyPickleBufferObject *self, PyObject *Py_UNUSED(ignored))
+picklebuf_release(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyPickleBufferObject *self = (PyPickleBufferObject*)op;
     PyBuffer_Release(&self->view);
     Py_RETURN_NONE;
 }
@@ -197,8 +203,8 @@ PyDoc_STRVAR(picklebuf_release_doc,
 Release the underlying buffer exposed by the PickleBuffer object.");
 
 static PyMethodDef picklebuf_methods[] = {
-    {"raw",     (PyCFunction) picklebuf_raw,     METH_NOARGS, picklebuf_raw_doc},
-    {"release", (PyCFunction) picklebuf_release, METH_NOARGS, picklebuf_release_doc},
+    {"raw",     picklebuf_raw,     METH_NOARGS, picklebuf_raw_doc},
+    {"release", picklebuf_release, METH_NOARGS, picklebuf_release_doc},
     {NULL,      NULL}
 };
 
@@ -209,9 +215,9 @@ PyTypeObject PyPickleBuffer_Type = {
     .tp_basicsize = sizeof(PyPickleBufferObject),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_new = picklebuf_new,
-    .tp_dealloc = (destructor) picklebuf_dealloc,
-    .tp_traverse = (traverseproc) picklebuf_traverse,
-    .tp_clear = (inquiry) picklebuf_clear,
+    .tp_dealloc = picklebuf_dealloc,
+    .tp_traverse = picklebuf_traverse,
+    .tp_clear = picklebuf_clear,
     .tp_weaklistoffset = offsetof(PyPickleBufferObject, weakreflist),
     .tp_as_buffer = &picklebuf_as_buffer,
     .tp_methods = picklebuf_methods,

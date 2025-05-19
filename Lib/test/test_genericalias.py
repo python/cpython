@@ -61,6 +61,7 @@ try:
     from tkinter import Event
 except ImportError:
     Event = None
+from string.templatelib import Template, Interpolation
 
 from typing import TypeVar
 T = TypeVar('T')
@@ -137,9 +138,14 @@ class BaseTest(unittest.TestCase):
                      Future, _WorkItem,
                      Morsel,
                      DictReader, DictWriter,
-                     array]
+                     array,
+                     staticmethod,
+                     classmethod,
+                     Template,
+                     Interpolation,
+                    ]
     if ctypes is not None:
-        generic_types.extend((ctypes.Array, ctypes.LibraryLoader))
+        generic_types.extend((ctypes.Array, ctypes.LibraryLoader, ctypes.py_object))
     if ValueProxy is not None:
         generic_types.extend((ValueProxy, DictProxy, ListProxy, ApplyResult,
                               MPSimpleQueue, MPQueue, MPJoinableQueue))
@@ -473,6 +479,76 @@ class BaseTest(unittest.TestCase):
         t = tuple[int, str]
         iter_x = iter(t)
         del iter_x
+
+    def test_paramspec_specialization(self):
+        # gh-124445
+        T = TypeVar("T")
+        U = TypeVar("U")
+        type X[**P] = Callable[P, int]
+
+        generic = X[[T]]
+        self.assertEqual(generic.__args__, ([T],))
+        self.assertEqual(generic.__parameters__, (T,))
+        specialized = generic[str]
+        self.assertEqual(specialized.__args__, ([str],))
+        self.assertEqual(specialized.__parameters__, ())
+
+        generic = X[(T,)]
+        self.assertEqual(generic.__args__, (T,))
+        self.assertEqual(generic.__parameters__, (T,))
+        specialized = generic[str]
+        self.assertEqual(specialized.__args__, (str,))
+        self.assertEqual(specialized.__parameters__, ())
+
+        generic = X[[T, U]]
+        self.assertEqual(generic.__args__, ([T, U],))
+        self.assertEqual(generic.__parameters__, (T, U))
+        specialized = generic[str, int]
+        self.assertEqual(specialized.__args__, ([str, int],))
+        self.assertEqual(specialized.__parameters__, ())
+
+        generic = X[(T, U)]
+        self.assertEqual(generic.__args__, (T, U))
+        self.assertEqual(generic.__parameters__, (T, U))
+        specialized = generic[str, int]
+        self.assertEqual(specialized.__args__, (str, int))
+        self.assertEqual(specialized.__parameters__, ())
+
+    def test_nested_paramspec_specialization(self):
+        # gh-124445
+        type X[**P, T] = Callable[P, T]
+
+        x_list = X[[int, str], float]
+        self.assertEqual(x_list.__args__, ([int, str], float))
+        self.assertEqual(x_list.__parameters__, ())
+
+        x_tuple = X[(int, str), float]
+        self.assertEqual(x_tuple.__args__, ((int, str), float))
+        self.assertEqual(x_tuple.__parameters__, ())
+
+        U = TypeVar("U")
+        V = TypeVar("V")
+
+        multiple_params_list = X[[int, U], V]
+        self.assertEqual(multiple_params_list.__args__, ([int, U], V))
+        self.assertEqual(multiple_params_list.__parameters__, (U, V))
+        multiple_params_list_specialized = multiple_params_list[str, float]
+        self.assertEqual(multiple_params_list_specialized.__args__, ([int, str], float))
+        self.assertEqual(multiple_params_list_specialized.__parameters__, ())
+
+        multiple_params_tuple = X[(int, U), V]
+        self.assertEqual(multiple_params_tuple.__args__, ((int, U), V))
+        self.assertEqual(multiple_params_tuple.__parameters__, (U, V))
+        multiple_params_tuple_specialized = multiple_params_tuple[str, float]
+        self.assertEqual(multiple_params_tuple_specialized.__args__, ((int, str), float))
+        self.assertEqual(multiple_params_tuple_specialized.__parameters__, ())
+
+        deeply_nested = X[[U, [V], int], V]
+        self.assertEqual(deeply_nested.__args__, ([U, [V], int], V))
+        self.assertEqual(deeply_nested.__parameters__, (U, V))
+        deeply_nested_specialized = deeply_nested[str, float]
+        self.assertEqual(deeply_nested_specialized.__args__, ([str, [float], int], float))
+        self.assertEqual(deeply_nested_specialized.__parameters__, ())
 
 
 class TypeIterationTests(unittest.TestCase):

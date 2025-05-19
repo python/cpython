@@ -1,1 +1,0 @@
-Make the :type:`bytearray` safe under :term:`free threading`.

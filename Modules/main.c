@@ -2,6 +2,8 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_fileutils.h"     // struct _Py_stat_struct
+#include "pycore_import.h"        // _PyImport_Fini2()
 #include "pycore_initconfig.h"    // _PyArgv
 #include "pycore_interp.h"        // _PyInterpreterState.sysdict
 #include "pycore_long.h"          // _PyLong_GetOne()
@@ -9,6 +11,7 @@
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromPyArgv()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_pythonrun.h"     // _PyRun_AnyFileObject()
+#include "pycore_unicodeobject.h" // _PyUnicode_Dedent()
 
 /* Includes for exit_sigint() */
 #include <stdio.h>                // perror()
@@ -125,7 +128,7 @@ pymain_get_importer(const wchar_t *filename, PyObject **importer_p, int *exitcod
 {
     PyObject *sys_path0 = NULL, *importer;
 
-    sys_path0 = PyUnicode_FromWideChar(filename, wcslen(filename));
+    sys_path0 = PyUnicode_FromWideChar(filename, -1);
     if (sys_path0 == NULL) {
         goto error;
     }
@@ -242,6 +245,11 @@ pymain_run_command(wchar_t *command)
         return pymain_exit_err_print();
     }
 
+    Py_SETREF(unicode, _PyUnicode_Dedent(unicode));
+    if (unicode == NULL) {
+        goto error;
+    }
+
     bytes = PyUnicode_AsUTF8String(unicode);
     Py_DECREF(unicode);
     if (bytes == NULL) {
@@ -320,7 +328,7 @@ pymain_run_module(const wchar_t *modname, int set_argv0)
         fprintf(stderr, "Could not import runpy._run_module_as_main\n");
         return pymain_exit_err_print();
     }
-    module = PyUnicode_FromWideChar(modname, wcslen(modname));
+    module = PyUnicode_FromWideChar(modname, -1);
     if (module == NULL) {
         fprintf(stderr, "Could not convert module name to unicode\n");
         Py_DECREF(runmodule);
@@ -431,7 +439,7 @@ pymain_run_startup(PyConfig *config, int *exitcode)
     if (env == NULL || env[0] == L'\0') {
         return 0;
     }
-    startup = PyUnicode_FromWideChar(env, wcslen(env));
+    startup = PyUnicode_FromWideChar(env, -1);
     if (startup == NULL) {
         goto error;
     }
@@ -554,8 +562,7 @@ pymain_run_stdin(PyConfig *config)
         int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
         return (run != 0);
     }
-    int run = pymain_run_module(L"_pyrepl", 0);
-    return (run != 0);
+    return pymain_run_module(L"_pyrepl", 0);
 }
 
 

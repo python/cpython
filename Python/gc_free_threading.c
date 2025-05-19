@@ -2,21 +2,45 @@
 #include "Python.h"
 #include "pycore_brc.h"           // struct _brc_thread_state
 #include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()
-#include "pycore_context.h"
 #include "pycore_dict.h"          // _PyInlineValuesSize()
+#include "pycore_frame.h"         // FRAME_CLEARED
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
-#include "pycore_initconfig.h"
+#include "pycore_genobject.h"     // _PyGen_GetGeneratorFromFrame()
+#include "pycore_initconfig.h"    // _PyStatus_NO_MEMORY()
 #include "pycore_interp.h"        // PyInterpreterState.gc
-#include "pycore_object.h"
+#include "pycore_interpframe.h"   // _PyFrame_GetLocalsArray()
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
-#include "pycore_object_stack.h"
-#include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tstate.h"        // _PyThreadStateImpl
+#include "pycore_tuple.h"         // _PyTuple_MaybeUntrack()
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
-#include "pydtrace.h"
-#include "pycore_uniqueid.h"      // _PyObject_MergeThreadLocalRefcounts()
 
+#include "pydtrace.h"
+
+// Platform-specific includes for get_process_mem_usage().
+#ifdef _WIN32
+    #include <windows.h>
+    #include <psapi.h> // For GetProcessMemoryInfo
+#elif defined(__linux__)
+    #include <unistd.h> // For sysconf, getpid
+#elif defined(__APPLE__)
+    #include <mach/mach.h>
+    #include <mach/task.h> // Required for TASK_VM_INFO
+    #include <unistd.h> // For sysconf, getpid
+#elif defined(__FreeBSD__)
+    #include <sys/types.h>
+    #include <sys/sysctl.h>
+    #include <sys/user.h> // Requires sys/user.h for kinfo_proc definition
+    #include <kvm.h>
+    #include <unistd.h> // For sysconf, getpid
+    #include <fcntl.h> // For O_RDONLY
+    #include <limits.h> // For _POSIX2_LINE_MAX
+#elif defined(__OpenBSD__)
+    #include <sys/types.h>
+    #include <sys/sysctl.h>
+    #include <sys/user.h> // For kinfo_proc
+    #include <unistd.h> // For sysconf, getpid
+#endif
 
 // enable the "mark alive" pass of GC
 #define GC_ENABLE_MARK_ALIVE 1
@@ -265,7 +289,7 @@ frame_disable_deferred_refcounting(_PyInterpreterFrame *frame)
 
     frame->f_funcobj = PyStackRef_AsStrongReference(frame->f_funcobj);
     for (_PyStackRef *ref = frame->localsplus; ref < frame->stackpointer; ref++) {
-        if (!PyStackRef_IsNull(*ref) && PyStackRef_IsDeferred(*ref)) {
+        if (!PyStackRef_IsNullOrInt(*ref) && PyStackRef_IsDeferred(*ref)) {
             *ref = PyStackRef_AsStrongReference(*ref);
         }
     }
@@ -420,7 +444,7 @@ gc_visit_heaps(PyInterpreterState *interp, mi_block_visit_fun *visitor,
 static inline void
 gc_visit_stackref(_PyStackRef stackref)
 {
-    if (PyStackRef_IsDeferred(stackref) && !PyStackRef_IsNull(stackref)) {
+    if (PyStackRef_IsDeferred(stackref) && !PyStackRef_IsNullOrInt(stackref)) {
         PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
         if (_PyObject_GC_IS_TRACKED(obj) && !gc_is_frozen(obj)) {
             gc_add_refs(obj, 1);
@@ -433,6 +457,12 @@ static void
 gc_visit_thread_stacks(PyInterpreterState *interp, struct collection_state *state)
 {
     _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
+        _PyCStackRef *c_ref = ((_PyThreadStateImpl *)p)->c_stack_refs;
+        while (c_ref != NULL) {
+            gc_visit_stackref(c_ref->ref);
+            c_ref = c_ref->next;
+        }
+
         for (_PyInterpreterFrame *f = p->current_frame; f != NULL; f = f->previous) {
             if (f->owner >= FRAME_OWNED_BY_INTERPRETER) {
                 continue;
@@ -682,6 +712,12 @@ gc_mark_enqueue_no_buffer(PyObject *op, gc_mark_args_t *args)
     return 0;
 }
 
+static inline int
+gc_mark_enqueue_no_buffer_visitproc(PyObject *op, void *args)
+{
+    return gc_mark_enqueue_no_buffer(op, (gc_mark_args_t *)args);
+}
+
 static int
 gc_mark_enqueue_buffer(PyObject *op, gc_mark_args_t *args)
 {
@@ -693,6 +729,12 @@ gc_mark_enqueue_buffer(PyObject *op, gc_mark_args_t *args)
     else {
         return gc_mark_stack_push(&args->stack, op);
     }
+}
+
+static inline int
+gc_mark_enqueue_buffer_visitproc(PyObject *op, void *args)
+{
+    return gc_mark_enqueue_buffer(op, (gc_mark_args_t *)args);
 }
 
 // Called when we find an object that needs to be marked alive (either from a
@@ -799,7 +841,7 @@ gc_abort_mark_alive(PyInterpreterState *interp,
 static int
 gc_visit_stackref_mark_alive(gc_mark_args_t *args, _PyStackRef stackref)
 {
-    if (!PyStackRef_IsNull(stackref)) {
+    if (!PyStackRef_IsNullOrInt(stackref)) {
         PyObject *op = PyStackRef_AsPyObjectBorrow(stackref);
         if (gc_mark_enqueue(op, args) < 0) {
             return -1;
@@ -980,12 +1022,12 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
 }
 
 static int
-visit_clear_unreachable(PyObject *op, _PyObjectStack *stack)
+visit_clear_unreachable(PyObject *op, void *stack)
 {
     if (gc_is_unreachable(op)) {
         _PyObject_ASSERT(op, _PyObject_GC_IS_TRACKED(op));
         gc_clear_unreachable(op);
-        return _PyObjectStack_Push(stack, op);
+        return _PyObjectStack_Push((_PyObjectStack *)stack, op);
     }
     return 0;
 }
@@ -997,7 +1039,7 @@ mark_reachable(PyObject *op)
     _PyObjectStack stack = { NULL };
     do {
         traverseproc traverse = Py_TYPE(op)->tp_traverse;
-        if (traverse(op, (visitproc)&visit_clear_unreachable, &stack) < 0) {
+        if (traverse(op, visit_clear_unreachable, &stack) < 0) {
             _PyObjectStack_Clear(&stack);
             return -1;
         }
@@ -1267,7 +1309,7 @@ gc_propagate_alive_prefetch(gc_mark_args_t *args)
                 return -1;
             }
         }
-        else if (traverse(op, (visitproc)&gc_mark_enqueue_buffer, args) < 0) {
+        else if (traverse(op, gc_mark_enqueue_buffer_visitproc, args) < 0) {
             return -1;
         }
     }
@@ -1288,7 +1330,7 @@ gc_propagate_alive(gc_mark_args_t *args)
             assert(_PyObject_GC_IS_TRACKED(op));
             assert(gc_is_alive(op));
             traverseproc traverse = Py_TYPE(op)->tp_traverse;
-            if (traverse(op, (visitproc)&gc_mark_enqueue_no_buffer, args) < 0) {
+            if (traverse(op, gc_mark_enqueue_no_buffer_visitproc, args) < 0) {
                 return -1;
             }
         }
@@ -1688,6 +1730,7 @@ _PyGC_VisitStackRef(_PyStackRef *ref, visitproc visit, void *arg)
     // This is a bit tricky! We want to ignore deferred references when
     // computing the incoming references, but otherwise treat them like
     // regular references.
+    assert(!PyStackRef_IsTaggedInt(*ref));
     if (!PyStackRef_IsDeferred(*ref) ||
         (visit != visit_decref && visit != visit_decref_unreachable))
     {
@@ -1745,9 +1788,7 @@ handle_resurrected_objects(struct collection_state *state)
         op->ob_ref_local -= 1;
 
         traverseproc traverse = Py_TYPE(op)->tp_traverse;
-        (void) traverse(op,
-            (visitproc)visit_decref_unreachable,
-            NULL);
+        (void)traverse(op, visit_decref_unreachable, NULL);
     }
 
     // Find resurrected objects
@@ -1861,6 +1902,185 @@ cleanup_worklist(struct worklist *worklist)
     }
 }
 
+// Return the memory usage (typically RSS + swap) of the process, in units of
+// KB.  Returns -1 if this operation is not supported or on failure.
+static Py_ssize_t
+get_process_mem_usage(void)
+{
+#ifdef _WIN32
+    // Windows implementation using GetProcessMemoryInfo
+    // Returns WorkingSetSize + PagefileUsage
+    PROCESS_MEMORY_COUNTERS pmc;
+    HANDLE hProcess = GetCurrentProcess();
+    if (NULL == hProcess) {
+        // Should not happen for the current process
+        return -1;
+    }
+
+    // GetProcessMemoryInfo returns non-zero on success
+    if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc))) {
+        // Values are in bytes, convert to KB.
+        return (Py_ssize_t)((pmc.WorkingSetSize + pmc.PagefileUsage) / 1024);
+    }
+    else {
+        return -1;
+    }
+
+#elif __linux__
+    FILE* fp = fopen("/proc/self/status", "r");
+    if (fp == NULL) {
+        return -1;
+    }
+
+    char line_buffer[256];
+    long long rss_kb = -1;
+    long long swap_kb = -1;
+
+    while (fgets(line_buffer, sizeof(line_buffer), fp) != NULL) {
+        if (rss_kb == -1 && strncmp(line_buffer, "VmRSS:", 6) == 0) {
+            sscanf(line_buffer + 6, "%lld", &rss_kb);
+        }
+        else if (swap_kb == -1 && strncmp(line_buffer, "VmSwap:", 7) == 0) {
+            sscanf(line_buffer + 7, "%lld", &swap_kb);
+        }
+        if (rss_kb != -1 && swap_kb != -1) {
+            break; // Found both
+        }
+    }
+    fclose(fp);
+
+    if (rss_kb != -1 && swap_kb != -1) {
+        return (Py_ssize_t)(rss_kb + swap_kb);
+    }
+    return -1;
+
+#elif defined(__APPLE__)
+    // --- MacOS (Darwin) ---
+    // Returns phys_footprint (RAM + compressed memory)
+    task_vm_info_data_t vm_info;
+    mach_msg_type_number_t count = TASK_VM_INFO_COUNT;
+    kern_return_t kerr;
+
+    kerr = task_info(mach_task_self(), TASK_VM_INFO, (task_info_t)&vm_info, &count);
+    if (kerr != KERN_SUCCESS) {
+        return -1;
+    }
+    // phys_footprint is in bytes. Convert to KB.
+    return (Py_ssize_t)(vm_info.phys_footprint / 1024);
+
+#elif defined(__FreeBSD__)
+    // NOTE: Returns RSS only. Per-process swap usage isn't readily available
+    long page_size_kb = sysconf(_SC_PAGESIZE) / 1024;
+    if (page_size_kb <= 0) {
+        return -1;
+    }
+
+    // Using /dev/null for vmcore avoids needing dump file.
+    // NULL for kernel file uses running kernel.
+    char errbuf[_POSIX2_LINE_MAX]; // For kvm error messages
+    kvm_t *kd = kvm_openfiles(NULL, "/dev/null", NULL, O_RDONLY, errbuf);
+    if (kd == NULL) {
+        return -1;
+    }
+
+    // KERN_PROC_PID filters for the specific process ID
+    // n_procs will contain the number of processes returned (should be 1 or 0)
+    pid_t pid = getpid();
+    int n_procs;
+    struct kinfo_proc *kp = kvm_getprocs(kd, KERN_PROC_PID, pid, &n_procs);
+    if (kp == NULL) {
+        kvm_close(kd);
+        return -1;
+    }
+
+    Py_ssize_t rss_kb = -1;
+    if (n_procs > 0) {
+        // kp[0] contains the info for our process
+        // ki_rssize is in pages. Convert to KB.
+        rss_kb = (Py_ssize_t)kp->ki_rssize * page_size_kb;
+    }
+    else {
+        // Process with PID not found, shouldn't happen for self.
+        rss_kb = -1;
+    }
+
+    kvm_close(kd);
+    return rss_kb;
+
+#elif defined(__OpenBSD__)
+    // NOTE: Returns RSS only. Per-process swap usage isn't readily available
+    long page_size_kb = sysconf(_SC_PAGESIZE) / 1024;
+    if (page_size_kb <= 0) {
+        return -1;
+    }
+
+    struct kinfo_proc kp;
+    pid_t pid = getpid();
+    int mib[6];
+    size_t len = sizeof(kp);
+
+    mib[0] = CTL_KERN;
+    mib[1] = KERN_PROC;
+    mib[2] = KERN_PROC_PID;
+    mib[3] = pid;
+    mib[4] = sizeof(struct kinfo_proc); // size of the structure we want
+    mib[5] = 1;                         // want 1 structure back
+    if (sysctl(mib, 6, &kp, &len, NULL, 0) == -1) {
+         return -1;
+    }
+
+    if (len > 0) {
+        // p_vm_rssize is in pages on OpenBSD. Convert to KB.
+        return (Py_ssize_t)kp.p_vm_rssize * page_size_kb;
+    }
+    else {
+        // Process info not returned
+        return -1;
+    }
+#else
+    // Unsupported platform
+    return -1;
+#endif
+}
+
+static bool
+gc_should_collect_mem_usage(GCState *gcstate)
+{
+    Py_ssize_t mem = get_process_mem_usage();
+    if (mem < 0) {
+        // Reading process memory usage is not support or failed.
+        return true;
+    }
+    int threshold = gcstate->young.threshold;
+    Py_ssize_t deferred = _Py_atomic_load_ssize_relaxed(&gcstate->deferred_count);
+    if (deferred > threshold * 40) {
+        // Too many new container objects since last GC, even though memory use
+        // might not have increased much.  This is intended to avoid resource
+        // exhaustion if some objects consume resources but don't result in a
+        // memory usage increase.  We use 40x as the factor here because older
+        // versions of Python would do full collections after roughly every
+        // 70,000 new container objects.
+        return true;
+    }
+    Py_ssize_t last_mem = gcstate->last_mem;
+    Py_ssize_t mem_threshold = Py_MAX(last_mem / 10, 128);
+    if ((mem - last_mem) > mem_threshold) {
+        // The process memory usage has increased too much, do a collection.
+        return true;
+    }
+    else {
+        // The memory usage has not increased enough, defer the collection and
+        // clear the young object count so we don't check memory usage again
+        // on the next call to gc_should_collect().
+        PyMutex_Lock(&gcstate->mutex);
+        int young_count = _Py_atomic_exchange_int(&gcstate->young.count, 0);
+        _Py_atomic_store_ssize_relaxed(&gcstate->deferred_count,
+                                       gcstate->deferred_count + young_count);
+        PyMutex_Unlock(&gcstate->mutex);
+        return false;
+    }
+}
+
 static bool
 gc_should_collect(GCState *gcstate)
 {
@@ -1870,11 +2090,17 @@ gc_should_collect(GCState *gcstate)
     if (count <= threshold || threshold == 0 || !gc_enabled) {
         return false;
     }
-    // Avoid quadratic behavior by scaling threshold to the number of live
-    // objects. A few tests rely on immediate scheduling of the GC so we ignore
-    // the scaled threshold if generations[1].threshold is set to zero.
-    return (count > gcstate->long_lived_total / 4 ||
-            gcstate->old[0].threshold == 0);
+    if (gcstate->old[0].threshold == 0) {
+        // A few tests rely on immediate scheduling of the GC so we ignore the
+        // extra conditions if generations[1].threshold is set to zero.
+        return true;
+    }
+    if (count < gcstate->long_lived_total / 4) {
+        // Avoid quadratic behavior by scaling threshold to the number of live
+        // objects.
+        return false;
+    }
+    return gc_should_collect_mem_usage(gcstate);
 }
 
 static void
@@ -1923,6 +2149,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     }
 
     state->gcstate->young.count = 0;
+    state->gcstate->deferred_count = 0;
     for (int i = 1; i <= generation; ++i) {
         state->gcstate->old[i-1].count = 0;
     }
@@ -2015,6 +2242,10 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     // the reference cycles to be broken. It may also cause some objects
     // to be freed.
     delete_garbage(state);
+
+    // Store the current memory usage, can be smaller now if breaking cycles
+    // freed some memory.
+    state->gcstate->last_mem = get_process_mem_usage();
 
     // Append objects with legacy finalizers to the "gc.garbage" list.
     handle_legacy_finalizers(state);
@@ -2494,9 +2725,8 @@ void
 PyObject_GC_UnTrack(void *op_raw)
 {
     PyObject *op = _PyObject_CAST(op_raw);
-    /* Obscure:  the Py_TRASHCAN mechanism requires that we be able to
-     * call PyObject_GC_UnTrack twice on an object.
-     */
+    /* The code for some objects, such as tuples, is a bit
+     * sloppy about when the object is tracked and untracked. */
     if (_PyObject_GC_IS_TRACKED(op)) {
         _PyObject_GC_UNTRACK(op);
     }
