@@ -1455,6 +1455,7 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertIn('error', stderr.getvalue())
 
 
+@unittest.skipUnless(sys.platform == 'linux', 'Linux-specific test')
 class CommandLineRunTimeTestCase(unittest.TestCase):
     served_data = os.urandom(32)
     served_file_name = 'served_filename'
