@@ -15,7 +15,15 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}-reusable
+  group: >-
+    ${{
+      github.workflow
+    }}-${{
+      github.ref_name
+    }}-${{
+      github.event.pull_request.number
+      || github.sha
+    }}
   cancel-in-progress: true
 
 env:
