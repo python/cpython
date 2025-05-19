@@ -3669,8 +3669,12 @@ _curses_initscr_impl(PyObject *module)
     WINDOW *win;
 
     if (curses_initscr_called) {
-        wrefresh(stdscr);
         cursesmodule_state *state = get_cursesmodule_state(module);
+        int code = wrefresh(stdscr);
+        if (code == ERR) {
+            _curses_set_null_error(state, "wrefresh", "initscr");
+            return NULL;
+        }
         return PyCursesWindow_New(state, stdscr, NULL, NULL);
     }
 
