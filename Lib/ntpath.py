@@ -597,6 +597,9 @@ else:  # use native Windows method on Windows
                 path = join(getcwd(), path)
         return normpath(path)
 
+# A singleton with true boolean value
+ALL_BUT_LAST = ['ALL_BUT_LAST']
+
 try:
     from nt import _findfirstfile, _getfinalpathname, readlink as _nt_readlink
 except ImportError:
@@ -735,7 +738,13 @@ else:
             path = normpath(path)
         except OSError as ex:
             if strict:
-                raise
+                if strict is not ALL_BUT_LAST or not isinstance(ex, FileNotFoundError):
+                    raise
+                dirname, basename = split(path)
+                if not basename:
+                    dirname, basename = split(path)
+                if not isdir(dirname):
+                    raise
             initial_winerror = ex.winerror
             path = _getfinalpathname_nonstrict(path)
         # The path returned by _getfinalpathname will always start with \\?\ -

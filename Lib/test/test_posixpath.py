@@ -767,7 +767,7 @@ class PosixPathTest(unittest.TestCase):
             os_helper.unlink(ABSTFN)
 
     @os_helper.skip_unless_symlink
-    @skip_if_ABSTFN_contains_backslash
+    # @skip_if_ABSTFN_contains_backslash
     def test_realpath_mode(self):
         try:
             os.mkdir(ABSTFN)
@@ -781,7 +781,8 @@ class PosixPathTest(unittest.TestCase):
             def check(path, mode, expected, errno=None):
                 if isinstance(expected, str):
                     assert errno is None
-                    self.assertEqual(realpath(path, strict=mode), ABSTFN + expected)
+                    self.assertEqual(realpath(path, strict=mode).replace('/', os.sep),
+                                     ABSTFN.replace('/', os.sep) + expected.replace('/', os.sep))
                 else:
                     with self.assertRaises(expected) as cm:
                         realpath(path, strict=mode)
