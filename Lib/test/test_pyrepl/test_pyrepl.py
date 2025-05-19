@@ -1012,7 +1012,6 @@ class TestPyReplModuleCompleter(TestCase):
         cases = (
             ("import bui\t\n", "import builtins"),
             ("from bui\t\n", "from builtins"),
-
         )
         for code, expected in cases:
             with self.subTest(code=code):
