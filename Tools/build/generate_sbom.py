@@ -9,8 +9,8 @@ import subprocess
 import sys
 import time
 import typing
-import urllib.request
 import urllib.error
+import urllib.request
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
 CPYTHON_ROOT_DIR = Path(__file__).parent.parent.parent
