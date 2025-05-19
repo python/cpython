@@ -1342,6 +1342,14 @@ ghi\0jkl
         self.assertFalse(sniffer.has_header(self.sample10))
         self.assertFalse(sniffer.has_header(self.sample11))
 
+    def test_issue129374_writing_quoted_strings(self):
+        s = '42,"hello","world",-1\n'
+        d = csv.Sniffer().sniff(s)
+        x = list(csv.reader([s], d))
+        f = StringIO()
+        csv.writer(f,d).writerows(x)
+        self.assertEqual(f.getvalue(), '42,"hello", "world",-1\r\n')
+
     def test_has_header(self):
         sniffer = csv.Sniffer()
         self.assertIs(sniffer.has_header(self.sample1), False)
