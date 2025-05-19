@@ -1334,11 +1334,33 @@
         }
 
         case _COMPARE_OP_FLOAT: {
+            JitOptSymbol *right;
+            JitOptSymbol *left;
             JitOptSymbol *res;
-            res = sym_new_type(ctx, &PyBool_Type);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
+                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
+                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
+                PyObject *tmp = PyObject_RichCompare(sym_get_const(ctx, left),
+                    sym_get_const(ctx, right),
+                    oparg >> 5);
+                if (tmp == NULL) {
+                    goto error;
+                }
+                assert(PyBool_Check(tmp));
+                REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)tmp);
+                res = sym_new_const(ctx, tmp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                Py_DECREF(tmp);
+            }
+            else {
+                res = sym_new_type(ctx, &PyBool_Type);
+                stack_pointer += -1;
+            }
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -1375,11 +1397,33 @@
         }
 
         case _COMPARE_OP_STR: {
+            JitOptSymbol *right;
+            JitOptSymbol *left;
             JitOptSymbol *res;
-            res = sym_new_type(ctx, &PyBool_Type);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
+                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
+                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
+                PyObject *tmp = PyObject_RichCompare(sym_get_const(ctx, left),
+                    sym_get_const(ctx, right),
+                    oparg >> 5);
+                if (tmp == NULL) {
+                    goto error;
+                }
+                assert(PyBool_Check(tmp));
+                REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)tmp);
+                res = sym_new_const(ctx, tmp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                Py_DECREF(tmp);
+            }
+            else {
+                res = sym_new_type(ctx, &PyBool_Type);
+                stack_pointer += -1;
+            }
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -2343,6 +2387,23 @@
             }
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
+            }
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                PyObject *temp = PyObject_RichCompare(sym_get_const(ctx, left),
+                    sym_get_const(ctx, right),
+                    oparg >> 5);
+                if (temp == NULL) {
+                    goto error;
+                }
+                assert(PyBool_Check(temp));
+                assert(_Py_IsImmortal(temp));
+                REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
+                res = sym_new_const(ctx, temp);
+                Py_DECREF(temp);
+                stack_pointer += 1;
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
