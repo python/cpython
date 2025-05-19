@@ -52,4 +52,21 @@ extern void
 set_parameter_error(const _zstd_state* const state, int is_compress,
                     int key_v, int value_v);
 
+static inline int
+check_object_shared(PyObject *ob, char *type)
+{
+#if defined(Py_GIL_DISABLED)
+    if (!_Py_IsOwnedByCurrentThread(ob))
+    {
+        PyErr_Format(PyExc_RuntimeError,
+                     "%s cannot be shared across multiple threads.",
+                     type);
+        return 1;
+    }
+    return 0;
+#else
+    return 0;
+#endif
+}
+
 #endif  // !ZSTD_MODULE_H

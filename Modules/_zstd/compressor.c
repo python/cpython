@@ -575,6 +575,12 @@ _zstd_ZstdCompressor_compress_impl(ZstdCompressor *self, Py_buffer *data,
 {
     PyObject *ret;
 
+    /* Check we are on the same thread as the compressor was created */
+    if (check_object_shared((PyObject *)self, "ZstdCompressor") > 0)
+    {
+        return NULL;
+    }
+
     /* Check mode value */
     if (mode != ZSTD_e_continue &&
         mode != ZSTD_e_flush &&
@@ -586,9 +592,6 @@ _zstd_ZstdCompressor_compress_impl(ZstdCompressor *self, Py_buffer *data,
                         "ZstdCompressor.FLUSH_FRAME.");
         return NULL;
     }
-
-    /* Thread-safe code */
-    Py_BEGIN_CRITICAL_SECTION(self);
 
     /* Compress */
     if (self->use_multithread && mode == ZSTD_e_continue) {
@@ -607,7 +610,6 @@ _zstd_ZstdCompressor_compress_impl(ZstdCompressor *self, Py_buffer *data,
         /* Resetting cctx's session never fail */
         ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
     }
-    Py_END_CRITICAL_SECTION();
 
     return ret;
 }
@@ -632,6 +634,12 @@ _zstd_ZstdCompressor_flush_impl(ZstdCompressor *self, int mode)
 {
     PyObject *ret;
 
+    /* Check we are on the same thread as the compressor was created */
+    if (check_object_shared((PyObject *)self, "ZstdCompressor") > 0)
+    {
+        return NULL;
+    }
+
     /* Check mode value */
     if (mode != ZSTD_e_end && mode != ZSTD_e_flush) {
         PyErr_SetString(PyExc_ValueError,
@@ -641,8 +649,6 @@ _zstd_ZstdCompressor_flush_impl(ZstdCompressor *self, int mode)
         return NULL;
     }
 
-    /* Thread-safe code */
-    Py_BEGIN_CRITICAL_SECTION(self);
     ret = compress_impl(self, NULL, mode);
 
     if (ret) {
@@ -654,7 +660,6 @@ _zstd_ZstdCompressor_flush_impl(ZstdCompressor *self, int mode)
         /* Resetting cctx's session never fail */
         ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
     }
-    Py_END_CRITICAL_SECTION();
 
     return ret;
 }

@@ -2430,82 +2430,53 @@ class OpenTestCase(unittest.TestCase):
             self.assertEqual(f.write(arr), LENGTH)
             self.assertEqual(f.tell(), LENGTH)
 
-@unittest.skip("it fails for now, see gh-133885")
+
 class FreeThreadingMethodTests(unittest.TestCase):
 
     @unittest.skipUnless(Py_GIL_DISABLED, 'this test can only possibly fail with GIL disabled')
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
-    def test_compress_locking(self):
+    def test_compressor_cannot_share(self):
         input = b'a'* (16*_1K)
         num_threads = 8
 
-        comp = ZstdCompressor()
-        parts = []
-        for _ in range(num_threads):
-            res = comp.compress(input, ZstdCompressor.FLUSH_BLOCK)
-            if res:
-                parts.append(res)
-        rest1 = comp.flush()
-        expected = b''.join(parts) + rest1
 
         comp = ZstdCompressor()
-        output = []
-        def run_method(method, input_data, output_data):
-            res = method(input_data, ZstdCompressor.FLUSH_BLOCK)
-            if res:
-                output_data.append(res)
+        def run_method(method, input_data):
+            with self.assertRaises(RuntimeError):
+                method(input_data, ZstdCompressor.FLUSH_BLOCK)
         threads = []
 
         for i in range(num_threads):
-            thread = threading.Thread(target=run_method, args=(comp.compress, input, output))
+            thread = threading.Thread(target=run_method, args=(comp.compress, input))
 
             threads.append(thread)
 
         with threading_helper.start_threads(threads):
             pass
 
-        rest2 = comp.flush()
-        self.assertEqual(rest1, rest2)
-        actual = b''.join(output) + rest2
-        self.assertEqual(expected, actual)
-
     @unittest.skipUnless(Py_GIL_DISABLED, 'this test can only possibly fail with GIL disabled')
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
-    def test_decompress_locking(self):
+    def test_decompressor_cannot_share(self):
         input = compress(b'a'* (16*_1K))
         num_threads = 8
         # to ensure we decompress over multiple calls, set maxsize
         window_size = _1K * 16//num_threads
 
-        decomp = ZstdDecompressor()
-        parts = []
-        for _ in range(num_threads):
-            res = decomp.decompress(input, window_size)
-            if res:
-                parts.append(res)
-        expected = b''.join(parts)
-
         comp = ZstdDecompressor()
-        output = []
-        def run_method(method, input_data, output_data):
-            res = method(input_data, window_size)
-            if res:
-                output_data.append(res)
+        def run_method(method, input_data):
+            with self.assertRaises(RuntimeError):
+                method(input_data, window_size)
         threads = []
 
         for i in range(num_threads):
-            thread = threading.Thread(target=run_method, args=(comp.decompress, input, output))
+            thread = threading.Thread(target=run_method, args=(comp.decompress, input))
 
             threads.append(thread)
 
         with threading_helper.start_threads(threads):
             pass
-
-        actual = b''.join(output)
-        self.assertEqual(expected, actual)
-
 
 
 if __name__ == "__main__":

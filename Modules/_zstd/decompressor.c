@@ -639,6 +639,12 @@ _zstd_ZstdDecompressor_unused_data_get_impl(ZstdDecompressor *self)
 {
     PyObject *ret;
 
+    /* Check we are on the same thread as the decompressor was created */
+    if (check_object_shared((PyObject *)self, "ZstdDecompressor") > 0)
+    {
+        return NULL;
+    }
+
     if (!self->eof) {
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
@@ -692,11 +698,12 @@ _zstd_ZstdDecompressor_decompress_impl(ZstdDecompressor *self,
 /*[clinic end generated code: output=a4302b3c940dbec6 input=6463dfdf98091caa]*/
 {
     PyObject *ret;
-    /* Thread-safe code */
-    Py_BEGIN_CRITICAL_SECTION(self);
-
+    /* Check we are on the same thread as the decompressor was created */
+    if (check_object_shared((PyObject *)self, "ZstdDecompressor") > 0)
+    {
+        return NULL;
+    }
     ret = stream_decompress(self, data, max_length);
-    Py_END_CRITICAL_SECTION();
     return ret;
 }
 
