@@ -902,7 +902,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(deterministic));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(device));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(dict));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(dict_content));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(dictcomp));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(difference_update));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(digest));
