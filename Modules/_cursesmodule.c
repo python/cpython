@@ -1695,6 +1695,14 @@ _curses_window_getch_impl(PyCursesWindowObject *self, int group_right_1,
     }
     Py_END_ALLOW_THREADS
 
+    /* getch() returns ERR in nodelay mode */
+    if (PyErr_CheckSignals()) {
+      cursesmodule_state *state = get_cursesmodule_state_by_win(self);
+      const char *funcname = group_right_1 ? "mvwgetch" : "wgetch";
+      PyErr_Format(state->error, "getch(): %s(): no input", funcname);
+      return ERR;
+    }
+
     return rtn;
 }
 
@@ -2042,12 +2050,16 @@ PyCursesWindow_InStr(PyObject *op, PyObject *args)
     PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
 
     int x, y, n;
-    char rtn[1024]; /* This should be big enough.. I hope */
-    int rtn2;
+    int err_code;
+
+    /* could make the buffer size larger/dynamic */
+    const int max_buf_size = 2048;
+    PyObject *result = PyBytes_FromStringAndSize(NULL, max_buf_size);
+    char *buf = PyBytes_AS_STRING(result);
 
     switch (PyTuple_Size(args)) {
     case 0:
-        rtn2 = winnstr(self->win,rtn, 1023);
+        err_code = winnstr(self->win, buf, max_buf_size - 1);
         break;
     case 1:
         if (!PyArg_ParseTuple(args,"i;n", &n))
@@ -2056,12 +2068,12 @@ PyCursesWindow_InStr(PyObject *op, PyObject *args)
             PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
             return NULL;
         }
-        rtn2 = winnstr(self->win, rtn, Py_MIN(n, 1023));
+        err_code = winnstr(self->win, buf, Py_MIN(n, max_buf_size - 1));
         break;
     case 2:
         if (!PyArg_ParseTuple(args,"ii;y,x",&y,&x))
             return NULL;
-        rtn2 = mvwinnstr(self->win,y,x,rtn,1023);
+        err_code = mvwinnstr(self->win, y, x, buf, max_buf_size - 1);
         break;
     case 3:
         if (!PyArg_ParseTuple(args, "iii;y,x,n", &y, &x, &n))
@@ -2070,15 +2082,19 @@ PyCursesWindow_InStr(PyObject *op, PyObject *args)
             PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
             return NULL;
         }
-        rtn2 = mvwinnstr(self->win, y, x, rtn, Py_MIN(n,1023));
+        err_code = mvwinnstr(self->win, y, x, buf, Py_MIN(n, max_buf_size - 1));
         break;
     default:
         PyErr_SetString(PyExc_TypeError, "instr requires 0 or 3 arguments");
         return NULL;
     }
-    if (rtn2 == ERR)
-        rtn[0] = 0;
-    return PyBytes_FromString(rtn);
+    if (err_code == ERR)
+        buf[0] = '\0';
+
+    size_t size = strlen(buf);
+    _PyBytes_Resize(&result, size);
+
+    return result;
 }
 
 /*[clinic input]
