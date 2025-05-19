@@ -2133,7 +2133,7 @@
             PyTypeObject *inst_type = sym_get_type(instance);
             PyTypeObject *cls_o = (PyTypeObject *)sym_get_const(ctx, cls);
             if (inst_type && cls_o && sym_matches_type(cls, &PyType_Type)) {
-                if (sym_matches_type(instance, cls_o) || PyType_IsSubtype(inst_type, cls_o)) {
+                if (inst_type == cls_o || PyType_IsSubtype(inst_type, cls_o)) {
                     sym_set_const(res, Py_True);
                 }
                 else {
