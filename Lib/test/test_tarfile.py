@@ -4087,13 +4087,13 @@ class TestExtractionFilters(unittest.TestCase):
                            errorlevel=1)
             self.assertEqual(tar.getnames(), ['\ud800'])
             with self.assertRaises(UnicodeEncodeError):
-                tar.extractall()
+                tar.extractall(filter=tarfile.tar_filter)
             self.assertEqual(os.listdir(), [])
 
             tar = arc.open(encoding='utf-8', errors='surrogatepass',
                            errorlevel=0, debug=1)
             with support.captured_stderr() as stderr:
-                tar.extractall()
+                tar.extractall(filter=tarfile.tar_filter)
             self.assertEqual(os.listdir(), [])
             self.assertIn('tarfile: UnicodeEncodeError ', stderr.getvalue())
 
