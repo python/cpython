@@ -959,7 +959,7 @@ class TestPyReplModuleCompleter(TestCase):
                 output = reader.readline()
                 self.assertEqual(output, expected)
 
-    def test_builtin_completion(self):
+    def test_builtin_completion_top_level(self):
         import importlib
         # Make iter_modules() search only the standard library.
         # This makes the test more reliable in case there are
@@ -980,28 +980,17 @@ class TestPyReplModuleCompleter(TestCase):
             ("import foo, sys\t\n", "import foo, sys"),
 
             # Import with alias
-            ("import time as t\t\n", "import time as t"),
+            ("import tim\t as t\n", "import time as t"),
             ("import math as m, sys\t\n", "import math as m, sys"),
 
-            # From-import for functions or attributes
-            ("from math import si\t\n", "from math import sin"),
-            ("from math import co\t\n", "from math import cos"),
-            ("from sys import pat\t\n", "from sys import path"),
+            # From-import with top level
+            ("from mat\t", "from math"),
+            ("from ma\t\tt\t\n", "from math"),
             ("from builtins import str\t\n", "from builtins import str"),
 
             # From-import for modules
             ("from bui\t\n", "from builtins"),
-            ("from math impo\t\n", "from math import"),
-            ("from sys impo\t\n", "from sys import"),
 
-            # Nested completion with tab navigation
-            ("import builti\t\t\n", "import builtins"),
-            ("from builti\t\t\n", "from builtins"),
-
-            # tab twice
-            ("import ma\t\t\n", "import math"),
-            ("from ma\t\t\n", "from math"),
-            
             # not matching anything
             ("import ll\t\t\n", "import ll")
         )
