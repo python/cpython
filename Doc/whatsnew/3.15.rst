@@ -89,12 +89,30 @@ New modules
 Improved modules
 ================
 
+datetime
+--------
+
+* When using digits in :meth:`datetime.date.strptime`,
+  :meth:`datetime.datetime.strptime`, or :meth:`datetime.time.strptime`, a
+  :exc:`ValueError` is raised if non-ASCII digits are specified for
+  non-locale-specific numeric format codes.
+  (Contributed by Stan Ulbrych in :gh:`131008`.)
+
+
 ssl
 ---
 
 * Indicate through :data:`ssl.HAS_PSK_TLS13` whether the :mod:`ssl` module
   supports "External PSKs" in TLSv1.3, as described in RFC 9258.
   (Contributed by Will Childs-Klein in :gh:`133624`.)
+
+
+time
+----
+
+* When using digits in :func:`time.strptime`, a :exc:`ValueError` is raised if
+  non-ASCII digits are specified for non-locale-specific numeric format codes.
+  (Contributed by Stan Ulbrych in :gh:`131008`.)
 
 
 .. Add improved modules above alphabetically, not here at the end.

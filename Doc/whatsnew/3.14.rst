@@ -1196,12 +1196,6 @@ datetime
 * Add :meth:`datetime.time.strptime` and :meth:`datetime.date.strptime`.
   (Contributed by Wannes Boeykens in :gh:`41431`.)
 
-* When using digits in :meth:`datetime.date.strptime`,
-  :meth:`datetime.datetime.strptime`, or :meth:`datetime.time.strptime`, a
-  :exc:`ValueError` is raised if non-ASCII digits are specified for
-  non-locale-specific numeric format codes.
-  (Contributed by Stan Ulbrych in :gh:`131008`.)
-
 
 decimal
 -------
@@ -1771,20 +1765,11 @@ sys.monitoring
   :monitoring-event:`BRANCH_RIGHT`. The ``BRANCH`` event is deprecated.
 
 
-time
-----
-
-* When using digits in :func:`time.strptime`, a :exc:`ValueError` is raised if
-  non-ASCII digits are specified for non-locale-specific numeric format codes.
-  (Contributed by Stan Ulbrych in :gh:`131008`.)
-
-
 sysconfig
 ---------
 
 * Add ``ABIFLAGS`` key to :func:`sysconfig.get_config_vars` on Windows.
   (Contributed by Xuehai Pan in :gh:`131799`.)
-
 
 
 threading
