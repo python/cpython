@@ -1036,6 +1036,27 @@ _curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1,
     return curses_window_check_err(self, rtn, funcname, "addch");
 }
 
+#ifdef HAVE_NCURSESW
+#define curses_release_wstr(STRTYPE, WSTR)  \
+    do {                                    \
+        if ((STRTYPE) == 2) {               \
+            PyMem_Free((WSTR));             \
+        }                                   \
+    } while (0)
+#else
+#define curses_release_wstr(_STRTYPE, _WSTR)
+#endif
+
+static int
+curses_wattrset(PyCursesWindowObject *self, long attr, const char *funcname)
+{
+    if (wattrset(self->win, attr) == ERR) {
+        curses_window_set_error(self, "wattrset", funcname);
+        return -1;
+    }
+    return 0;
+}
+
 /*[clinic input]
 _curses.window.addstr
 
@@ -1089,7 +1110,10 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
     }
     if (use_attr) {
         attr_old = getattrs(self->win);
-        (void)wattrset(self->win,attr);
+        if (curses_wattrset(self, attr, "addstr") < 0) {
+            curses_release_wstr(strtype, wstr);
+            return NULL;
+        }
     }
 #ifdef HAVE_NCURSESW
     if (strtype == 2) {
@@ -1117,9 +1141,15 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
         }
         Py_DECREF(bytesobj);
     }
-    if (use_attr)
-        (void)wattrset(self->win,attr_old);
-    return curses_window_check_err(self, rtn, funcname, "addstr");
+    if (rtn == ERR) {
+        curses_window_set_error(self, funcname, "addstr");
+        return NULL;
+    }
+    if (use_attr) {
+        rtn = wattrset(self->win, attr_old);
+        return curses_window_check_err(self, rtn, "wattrset", "addstr");
+    }
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -1178,7 +1208,10 @@ _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
 
     if (use_attr) {
         attr_old = getattrs(self->win);
-        (void)wattrset(self->win,attr);
+        if (curses_wattrset(self, attr, "addnstr") < 0) {
+            curses_release_wstr(strtype, wstr);
+            return NULL;
+        }
     }
 #ifdef HAVE_NCURSESW
     if (strtype == 2) {
@@ -1206,9 +1239,15 @@ _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
         }
         Py_DECREF(bytesobj);
     }
-    if (use_attr)
-        (void)wattrset(self->win,attr_old);
-    return curses_window_check_err(self, rtn, funcname, "addnstr");
+    if (rtn == ERR) {
+        curses_window_set_error(self, funcname, "addnstr");
+        return NULL;
+    }
+    if (use_attr) {
+        rtn = wattrset(self->win, attr_old);
+        return curses_window_check_err(self, rtn, "wattrset", "addnstr");
+    }
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -2138,7 +2177,10 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
 
     if (use_attr) {
         attr_old = getattrs(self->win);
-        (void)wattrset(self->win, (attr_t)attr);
+        if (curses_wattrset(self, attr, "insstr") < 0) {
+            curses_release_wstr(strtype, wstr);
+            return NULL;
+        }
     }
 #ifdef HAVE_NCURSESW
     if (strtype == 2) {
@@ -2166,9 +2208,15 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
         }
         Py_DECREF(bytesobj);
     }
-    if (use_attr)
-        (void)wattrset(self->win,attr_old);
-    return curses_window_check_err(self, rtn, funcname, "insstr");
+    if (rtn == ERR) {
+        curses_window_set_error(self, funcname, "insstr");
+        return NULL;
+    }
+    if (use_attr) {
+        rtn = wattrset(self->win, attr_old);
+        return curses_window_check_err(self, rtn, "wattrset", "insstr");
+    }
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -2229,7 +2277,10 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
 
     if (use_attr) {
         attr_old = getattrs(self->win);
-        (void)wattrset(self->win, (attr_t)attr);
+        if (curses_wattrset(self, attr, "insnstr") < 0) {
+            curses_release_wstr(strtype, wstr);
+            return NULL;
+        }
     }
 #ifdef HAVE_NCURSESW
     if (strtype == 2) {
@@ -2257,9 +2308,15 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
         }
         Py_DECREF(bytesobj);
     }
-    if (use_attr)
-        (void)wattrset(self->win,attr_old);
-    return curses_window_check_err(self, rtn, funcname, "insnstr");
+    if (rtn == ERR) {
+        curses_window_set_error(self, funcname, "insnstr");
+        return NULL;
+    }
+    if (use_attr) {
+        rtn = wattrset(self->win, attr_old);
+        return curses_window_check_err(self, rtn, "wattrset", "insnstr");
+    }
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
