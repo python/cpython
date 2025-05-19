@@ -10,7 +10,7 @@ import sys
 import tempfile
 from unittest import TestCase, skipUnless, skipIf
 from unittest.mock import patch
-from test.support import force_not_colorized, make_clean_env
+from test.support import force_not_colorized, make_clean_env, Py_DEBUG
 from test.support import SHORT_TIMEOUT, STDLIB_DIR
 from test.support.import_helper import import_module
 from test.support.os_helper import EnvironmentVarGuard, unlink
@@ -1380,3 +1380,16 @@ class TestMain(ReplTestCase):
         # Extra stuff (newline and `exit` rewrites) are necessary
         # because of how run_repl works.
         self.assertNotIn(">>> \n>>> >>>", cleaned_output)
+
+    @skipUnless(Py_DEBUG, '-X showrefcount requires a Python debug build')
+    def test_showrefcount(self):
+        env = os.environ.copy()
+        env.pop("PYTHON_BASIC_REPL", "")
+        output, _ = self.run_repl("1\n1+2\nexit()\n", cmdline_args=['-Xshowrefcount'], env=env)
+        matches = re.findall(r'\[-?\d+ refs, \d+ blocks\]', output)
+        self.assertEqual(len(matches), 3)
+
+        env["PYTHON_BASIC_REPL"] = "1"
+        output, _ = self.run_repl("1\n1+2\nexit()\n", cmdline_args=['-Xshowrefcount'], env=env)
+        matches = re.findall(r'\[-?\d+ refs, \d+ blocks\]', output)
+        self.assertEqual(len(matches), 3)
