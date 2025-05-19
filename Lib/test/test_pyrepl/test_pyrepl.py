@@ -984,7 +984,7 @@ class TestPyReplModuleCompleter(TestCase):
             ("import math as m, sys\t\n", "import math as m, sys"),
 
             # From-import with top level
-            ("from mat\t", "from math"),
+            ("from mat\t\n", "from math"),
             ("from ma\t\tt\t\n", "from math"),
 
             # From-import for modules
