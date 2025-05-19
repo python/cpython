@@ -11,7 +11,6 @@ from http import server, HTTPStatus
 import contextlib
 import os
 import socket
-import subprocess
 import sys
 import re
 import ntpath
