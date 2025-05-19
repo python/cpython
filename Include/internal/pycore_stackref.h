@@ -239,6 +239,7 @@ PyStackRef_IsNullOrInt(_PyStackRef ref);
 #else
 
 #define Py_INT_TAG 3
+#define Py_TAG_REFCNT 1
 
 static inline bool
 PyStackRef_IsTaggedInt(_PyStackRef i)
@@ -264,7 +265,7 @@ PyStackRef_UntagInt(_PyStackRef i)
 
 #ifdef Py_GIL_DISABLED
 
-#define Py_TAG_DEFERRED (1)
+#define Py_TAG_DEFERRED Py_TAG_REFCNT
 
 #define Py_TAG_PTR      ((uintptr_t)0)
 #define Py_TAG_BITS     ((uintptr_t)1)
@@ -444,7 +445,6 @@ PyStackRef_AsStrongReference(_PyStackRef stackref)
  * as they can (must) have their reclamation deferred */
 
 #define Py_TAG_BITS 3
-#define Py_TAG_REFCNT 1
 #if _Py_IMMORTAL_FLAGS != Py_TAG_REFCNT
 #  error "_Py_IMMORTAL_FLAGS != Py_TAG_REFCNT"
 #endif
