@@ -49,7 +49,7 @@ Reading and writing compressed files
    Open a Zstandard-compressed file in binary or text mode, returning a
    :term:`file object`.
 
-   The *file* argument can be either an actual file name (given as a
+   The *file* argument can be either a file name (given as a
    :class:`str`, :class:`bytes` or :term:`path-like <path-like object>` object),
    in which case the named file is opened, or it can be an existing file object
    to read from or write to.
@@ -65,7 +65,7 @@ Reading and writing compressed files
    :class:`DecompressionParameter` for detailed information about supported
    parameters. The *zstd_dict* argument is a :class:`ZstdDict` instance to be
    used during decompression. When opening a file for reading, if the *level*
-   argument is passed a :exc:`!TypeError` will be raised.
+   argument is passed, a :exc:`!TypeError` will be raised.
 
    When opening a file for writing, the *options* argument can be a dictionary
    providing advanced decompression parameters; see
@@ -241,7 +241,7 @@ Compressing and decompressing data in memory
       :attr:`~.CONTINUE`, :attr:`~.FLUSH_BLOCK`,
       or :attr:`~.FLUSH_FRAME`.
 
-      When you have finished providing data to the compressor, call the
+      When all data has been provided to the compressor, call the
       :meth:`~.flush` method to finish the compression process.
 
    .. method:: flush(mode)
@@ -767,4 +767,4 @@ Creating a compressed file using compression parameters:
       zstd.CompressionParameter.checksum_flag: 1
    }
    with zstd.open("file.zst", "w", options=options) as f:
-       f.write(b"blah blah blah")
+       f.write(b"Mind if I squeeze in?")
