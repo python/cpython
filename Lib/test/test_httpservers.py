@@ -1439,8 +1439,8 @@ class CommandLineTestCase(unittest.TestCase):
     @mock.patch('http.server.test')
     def test_help_flag(self, _):
         options = ['-h', '--help']
-        stdout, stderr = StringIO(), StringIO()
         for option in options:
+            stdout, stderr = StringIO(), StringIO()
             with self.assertRaises(SystemExit):
                 self.invoke_httpd(option, stdout=stdout, stderr=stderr)
             self.assertIn('usage', stdout.getvalue())
