@@ -406,9 +406,9 @@ _PyCursesStatefulCheckFunction(PyObject *module,
  */
 
 /*
- * Return None if 'code' is OK. Otherwise, set an exception
- * using curses_set_error() and the remaining arguments, and
- * return NULL.
+ * Return None if 'code' is different from ERR (implementation-defined).
+ * Otherwise, set an exception using curses_set_error() and the remaining
+ * arguments, and return NULL.
  */
 static PyObject *
 curses_check_err(PyObject *module, int code,
@@ -416,7 +416,8 @@ curses_check_err(PyObject *module, int code,
                  const char *python_funcname)
 {
     if (code != ERR) {
-        curses_assert_success(code, curses_funcname, python_funcname);
+        // Depending on the implementation of curses, a nonzero code
+        // may anything that is not ERR to indicate a successful call.
         Py_RETURN_NONE;
     }
     curses_set_error(module, curses_funcname, python_funcname);
@@ -430,7 +431,6 @@ curses_window_check_err(PyCursesWindowObject *win, int code,
                         const char *python_funcname)
 {
     if (code != ERR) {
-        curses_assert_success(code, curses_funcname, python_funcname);
         Py_RETURN_NONE;
     }
     curses_window_set_error(win, curses_funcname, python_funcname);
