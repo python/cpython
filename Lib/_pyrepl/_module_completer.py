@@ -81,8 +81,9 @@ class ModuleCompleter:
     def _find_modules(self, path: str, prefix: str) -> list[str]:
         if not path:
             # Top-level import (e.g. `import foo<tab>`` or `from foo<tab>`)`
-            return [name for _, name, _ in self.global_cache
-                    if name.startswith(prefix)]
+            builtins = [name for name in sys.builtin_module_names if name.startswith(prefix)]
+            modules = [name for _, name, _ in self.global_cache if name.startswith(prefix)]
+            return sorted(builtins + modules)
 
         if path.startswith('.'):
             # Convert relative path to absolute path
