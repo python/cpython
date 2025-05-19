@@ -192,7 +192,7 @@ Base85 Encodings
 Base85 encoding is not formally specified. Base85 encoding is a de facto standard,
 and different systems perform the encoding differently.
 
-The Ascii85 and Base85 functions in this module are two implementations of
+The :func:`a85encode` and :func:`b85encode` functions in this module are two implementations of
 the de facto standard. Which function you should use depends on how the other
 software you use implements the Base85 encoding.
 
