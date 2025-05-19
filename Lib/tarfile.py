@@ -2439,7 +2439,7 @@ class TarFile(object):
         unfiltered = tarinfo
         try:
             tarinfo = filter_function(tarinfo, path)
-        except (OSError, FilterError) as e:
+        except (OSError, UnicodeEncodeError, FilterError) as e:
             self._handle_fatal_error(e)
         except ExtractError as e:
             self._handle_nonfatal_error(e)
@@ -2460,7 +2460,7 @@ class TarFile(object):
             self._extract_member(tarinfo, os.path.join(path, tarinfo.name),
                                  set_attrs=set_attrs,
                                  numeric_owner=numeric_owner)
-        except OSError as e:
+        except (OSError, UnicodeEncodeError) as e:
             self._handle_fatal_error(e)
         except ExtractError as e:
             self._handle_nonfatal_error(e)

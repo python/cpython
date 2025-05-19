@@ -1396,9 +1396,12 @@ static int test_audit_subinterpreter(void)
     PySys_AddAuditHook(_audit_subinterpreter_hook, NULL);
     _testembed_initialize();
 
-    Py_NewInterpreter();
-    Py_NewInterpreter();
-    Py_NewInterpreter();
+    PyThreadState *tstate = PyThreadState_Get();
+    for (int i = 0; i < 3; ++i)
+    {
+        Py_EndInterpreter(Py_NewInterpreter());
+        PyThreadState_Swap(tstate);
+    }
 
     Py_Finalize();
 
