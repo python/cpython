@@ -156,20 +156,20 @@ class TestCommandLine(unittest.TestCase):
         self.test_script.write(textwrap.dedent("""
             def simple_function():
                 sum(range(1000))
-                
+
             if __name__ == "__main__":
                 simple_function()
         """))
         self.test_script.close()
-        
+
     def tearDown(self):
         os.unlink(self.test_script.name)
-    
+
     def test_sort(self):
         rc, out, err = assert_python_failure('-m', 'cProfile', '-s', 'demo')
         self.assertGreater(rc, 0)
         self.assertIn(b"option -s: invalid choice: 'demo'", err)
-    
+
     def test_valid_sort_options(self):
         for sort_opt in ['calls', 'cumulative', 'cumtime', 'filename',
                          'ncalls', 'pcalls', 'line', 'name', 'nfl',
@@ -177,11 +177,10 @@ class TestCommandLine(unittest.TestCase):
             rc, out, err = assert_python_ok('-m', 'cProfile', '-s', sort_opt, self.test_script.name)
             self.assertEqual(rc, 0)
             self.assertIn(b"function calls", out)
-    
+
     def test_outfile(self):
         with tempfile.NamedTemporaryFile(suffix='.prof', delete=False) as outfile:
             outfile_name = outfile.name
-        
         try:
             rc, out, err = assert_python_ok('-m', 'cProfile', '-o', outfile_name, self.test_script.name)
             self.assertEqual(rc, 0)
@@ -190,34 +189,34 @@ class TestCommandLine(unittest.TestCase):
         finally:
             if os.path.exists(outfile_name):
                 os.unlink(outfile_name)
-    
+
     def test_no_arguments(self):
         rc, out, err = assert_python_failure('-m', 'cProfile')
         self.assertGreater(rc, 0)
-    
+
     def test_help_option(self):
         rc, out, err = assert_python_ok('-m', 'cProfile', '--help')
         self.assertEqual(rc, 0)
         self.assertIn(b"Usage:", out)
-    
+
     def test_version_output(self):
         rc, out, err = assert_python_ok('-m', 'cProfile', self.test_script.name)
         self.assertEqual(rc, 0)
         import os
         self.assertIn(os.path.basename(self.test_script.name).encode(), out)
-    
+
     def test_run_command_line_module(self):
         rc, out, err = assert_python_ok('-m', 'cProfile', '-m', 'timeit', '-n', '1', 'pass')
         self.assertEqual(rc, 0)
         self.assertIn(b"function calls", out)
-    
+
     def test_profile_script_importing_main(self):
         with tempfile.NamedTemporaryFile("w+", suffix='.py', delete=False) as f:
             f.write(textwrap.dedent("""\
                 def test_func():
                     x = 1 + 1
                     return x
-                
+
                 if __name__ == "__main__":
                     test_func()
                 """))
@@ -229,31 +228,31 @@ class TestCommandLine(unittest.TestCase):
                 self.assertIn(b"test_func", out)
             finally:
                 os.unlink(f.name)
-    
+
     def test_output_format(self):
         rc, out, err = assert_python_ok('-m', 'cProfile', self.test_script.name)
         self.assertEqual(rc, 0)
-        
+
         output = out.decode('utf-8')
-        
+
         self.assertRegex(output, r'\d+ function calls in \d+\.\d+ seconds')
-        
+
         self.assertIn('Ordered by:', output)
-        
+
         self.assertIn('ncalls', output)
         self.assertIn('tottime', output)
         self.assertIn('percall', output)
         self.assertIn('cumtime', output)
         self.assertIn('filename:lineno(function)', output)
-        
+
         self.assertIn('simple_function', output)
-        
+
     def test_different_sort_outputs(self):
         rc1, out1, _ = assert_python_ok('-m', 'cProfile', '-s', 'time', self.test_script.name)
         rc2, out2, _ = assert_python_ok('-m', 'cProfile', '-s', 'cumulative', self.test_script.name)
-        
+
         self.assertNotEqual(out1, out2)
-        
+
         self.assertIn(b'simple_function', out1)
         self.assertIn(b'simple_function', out2)
 
