@@ -7920,11 +7920,13 @@ AC_SUBST([LIBHACL_CFLAGS])
 LIBHACL_LDFLAGS=  # for now, no specific linker flags are needed
 AC_SUBST([LIBHACL_LDFLAGS])
 
-# Determine if the specific HACL* universal2 implementation should be used
-use_hacl_universal2_impl=no
+dnl Check if universal2 HACL* implementation should be used.
 if test "$UNIVERSAL_ARCHS" = "universal2" -o \
-   \( "$build_cpu" = "aarch64" -a "$build_vendor" = "apple" \); then
+   \( "$build_cpu" = "aarch64" -a "$build_vendor" = "apple" \)
+then
   use_hacl_universal2_impl=yes
+else
+  use_hacl_universal2_impl=no
 fi
 
 # The SIMD files use aligned_alloc, which is not available on older versions of
