@@ -818,11 +818,14 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             return None
         list.sort(key=lambda a: a.lower())
         r = []
+        displaypath = self.path
+        displaypath = displaypath.split('#', 1)[0]
+        displaypath = displaypath.split('?', 1)[0]
         try:
-            displaypath = urllib.parse.unquote(self.path,
+            displaypath = urllib.parse.unquote(displaypath,
                                                errors='surrogatepass')
         except UnicodeDecodeError:
-            displaypath = urllib.parse.unquote(self.path)
+            displaypath = urllib.parse.unquote(displaypath)
         displaypath = html.escape(displaypath, quote=False)
         enc = sys.getfilesystemencoding()
         title = f'Directory listing for {displaypath}'
@@ -997,7 +1000,7 @@ def test(HandlerClass=BaseHTTPRequestHandler,
             sys.exit(0)
 
 
-if __name__ == '__main__':
+def _main(args=None):
     import argparse
     import contextlib
 
@@ -1021,7 +1024,7 @@ if __name__ == '__main__':
     parser.add_argument('port', default=8000, type=int, nargs='?',
                         help='bind to this port '
                              '(default: %(default)s)')
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     if not args.tls_cert and args.tls_key:
         parser.error("--tls-key requires --tls-cert to be set")
@@ -1061,3 +1064,7 @@ if __name__ == '__main__':
         tls_key=args.tls_key,
         tls_password=tls_key_password,
     )
+
+
+if __name__ == '__main__':
+    _main()
