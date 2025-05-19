@@ -1,1 +1,2 @@
-Stop import names completion fallback on regular names completion in the :term:`REPL`.
+When auto-completing an import in the :term:`REPL`, finding no candidates
+now issues no suggestion, rather than suggestions from the current namespace.
