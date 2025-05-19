@@ -1505,8 +1505,7 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
                 continue
             if protocol_ == protocol and host_ == bind and port_ == port:
                 return True
-            else:
-                break
+            break
         return False
 
     def test_http_client(self):
