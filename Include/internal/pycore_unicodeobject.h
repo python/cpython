@@ -154,6 +154,15 @@ PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscapeInternal2(
                                         point to the first invalid escaped
                                         char in string.
                                         May be NULL if errors is not NULL. */
+// Export for binary compatibility.
+PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscapeInternal(
+    const char *string,     /* Unicode-Escape encoded string */
+    Py_ssize_t length,      /* size of string */
+    const char *errors,     /* error handling */
+    Py_ssize_t *consumed,   /* bytes consumed */
+    const char **first_invalid_escape); /* on return, points to first
+                                           invalid escaped char in
+                                           string. */
 
 /* --- Raw-Unicode-Escape Codecs ---------------------------------------------- */
 

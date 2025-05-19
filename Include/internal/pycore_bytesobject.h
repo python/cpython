@@ -23,6 +23,9 @@ extern PyObject* _PyBytes_FromHex(
 PyAPI_FUNC(PyObject*) _PyBytes_DecodeEscape2(const char *, Py_ssize_t,
                                              const char *,
                                              int *, const char **);
+// Export for binary compatibility.
+PyAPI_FUNC(PyObject*) _PyBytes_DecodeEscape(const char *, Py_ssize_t,
+                                            const char *, const char **);
 
 
 // Substring Search.

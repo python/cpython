@@ -1183,6 +1183,19 @@ PyObject *_PyBytes_DecodeEscape2(const char *s,
     return NULL;
 }
 
+// Export for binary compatibility.
+PyObject *_PyBytes_DecodeEscape(const char *s,
+                                Py_ssize_t len,
+                                const char *errors,
+                                const char **first_invalid_escape)
+{
+    int first_invalid_escape_char;
+    return _PyBytes_DecodeEscape2(
+            s, len, errors,
+            &first_invalid_escape_char,
+            first_invalid_escape);
+}
+
 PyObject *PyBytes_DecodeEscape(const char *s,
                                 Py_ssize_t len,
                                 const char *errors,

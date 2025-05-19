@@ -6433,6 +6433,21 @@ _PyUnicode_DecodeUnicodeEscapeInternal2(const char *s,
     return NULL;
 }
 
+// Export for binary compatibility.
+PyObject *
+_PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
+                               Py_ssize_t size,
+                               const char *errors,
+                               Py_ssize_t *consumed,
+                               const char **first_invalid_escape)
+{
+    int first_invalid_escape_char;
+    return _PyUnicode_DecodeUnicodeEscapeInternal2(
+            s, size, errors, consumed,
+            &first_invalid_escape_char,
+            first_invalid_escape);
+}
+
 PyObject *
 _PyUnicode_DecodeUnicodeEscapeStateful(const char *s,
                               Py_ssize_t size,
