@@ -1190,9 +1190,10 @@ code, or when embedding the Python interpreter:
 .. c:function:: PyThreadState* PyThreadState_Swap(PyThreadState *tstate)
 
    Swap the current thread state with the thread state given by the argument
-   *tstate*, which may be ``NULL``.  The global interpreter lock must be held
-   and is not released.
+   *tstate*, which may be ``NULL``.
 
+   The :term:`GIL` does not need to be held, but will be held upon returning
+   if *tstate* is non-``NULL``.
 
 The following functions use thread-local storage, and are not compatible
 with sub-interpreters:
