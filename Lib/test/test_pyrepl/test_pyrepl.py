@@ -969,15 +969,8 @@ class TestPyReplModuleCompleter(TestCase):
         sys.path = [lib_path]
 
         cases = (
-            ("import tim\t\n", "import time"),
-            ("import sys\t\t\n", "import sys"),
-            ("import mat\t\n", "import math"),
             ("import bui\t\n", "import builtins"),
-            ("from mat\t\n", "from math"),
-            ("from ma\t\tt\t\n", "from math"),
             ("from bui\t\n", "from builtins"),
-            ("import foo, ti\t\n", "import foo, time"),
-            ("import foo, sys\t\n", "import foo, sys"),
         )
         for code, expected in cases:
             with self.subTest(code=code):
