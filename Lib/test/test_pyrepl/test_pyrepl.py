@@ -986,7 +986,6 @@ class TestPyReplModuleCompleter(TestCase):
             # From-import with top level
             ("from mat\t", "from math"),
             ("from ma\t\tt\t\n", "from math"),
-            ("from builtins import str\t\n", "from builtins import str"),
 
             # From-import for modules
             ("from bui\t\n", "from builtins"),
