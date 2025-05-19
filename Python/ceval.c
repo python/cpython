@@ -1863,7 +1863,7 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
 {
     bool has_dict = (kwargs != NULL && PyDict_GET_SIZE(kwargs) > 0);
     PyObject *kwnames = NULL;
-    _PyStackRef *newargs;
+    _PyStackRef *newargs = NULL;
     PyObject *const *object_array = NULL;
     _PyStackRef stack_array[8];
     if (has_dict) {
@@ -1904,7 +1904,7 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
         _PyStack_UnpackDict_FreeNoDecRef(object_array, kwnames);
     }
     else if (nargs > 8) {
-       PyMem_Free((void *)newargs);
+        PyMem_Free((void *)newargs);
     }
     /* No need to decref func here because the reference has been stolen by
        _PyEvalFramePushAndInit.
