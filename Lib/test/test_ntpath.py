@@ -933,8 +933,6 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.abspath("C:/nul")',  "\\\\.\\nul")
         tester('ntpath.abspath("C:\\nul")', "\\\\.\\nul")
         self.assertTrue(ntpath.isabs(ntpath.abspath("C:spam")))
-        self.assertEqual(ntpath.abspath("C:\x00"), ntpath.join(ntpath.abspath("C:"), "\x00"))
-        self.assertEqual(ntpath.abspath("\x00:spam"), "\x00:\\spam")
         tester('ntpath.abspath("//..")',           "\\\\")
         tester('ntpath.abspath("//../")',          "\\\\..\\")
         tester('ntpath.abspath("//../..")',        "\\\\..\\")
@@ -970,6 +968,8 @@ class TestNtpath(NtpathTestCase):
 
     def test_abspath_invalid_paths(self):
         abspath = ntpath.abspath
+        self.assertEqual(abspath("C:\x00"), ntpath.join(abspath("C:"), "\x00"))
+        self.assertEqual(abspath("\x00:spam"), "\x00:\\spam")
         self.assertEqual(abspath('c:\\fo\x00o'), 'c:\\fo\x00o')
         self.assertEqual(abspath(b'c:\\fo\x00o'), b'c:\\fo\x00o')
         self.assertEqual(abspath('c:\\fo\x00o\\..\\bar'), 'c:\\bar')
