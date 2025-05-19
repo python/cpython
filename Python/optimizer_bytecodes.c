@@ -208,9 +208,9 @@ dummy_func(void) {
             res = sym_new_type(ctx, &PyFloat_Type);
         }
 
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            PyObject *temp = PyObject_RichCompare(sym_get_const(ctx, left),
-                                                 sym_get_const(ctx, right),
+        if (sym_is_const(ctx, lhs) && sym_is_const(ctx, rhs)) {
+            PyObject *temp = PyObject_RichCompare(sym_get_const(ctx, lhs),
+                                                 sym_get_const(ctx, rhs),
                                                  oparg >> 5);
             if (temp == NULL) {
                 goto error;
