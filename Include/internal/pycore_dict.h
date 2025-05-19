@@ -32,7 +32,7 @@ PyAPI_FUNC(int) _PyDict_DelItem_KnownHash(PyObject *mp, PyObject *key,
                                           Py_hash_t hash);
 
 extern int _PyDict_DelItem_KnownHash_LockHeld(PyObject *mp, PyObject *key,
-                                            Py_hash_t hash);
+                                              Py_hash_t hash);
 
 extern int _PyDict_Contains_KnownHash(PyObject *, PyObject *, Py_hash_t);
 

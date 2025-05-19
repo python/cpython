@@ -1021,11 +1021,9 @@ Done:
     return result;
 }
 
-
 /* setdefault(): Skips __missing__() calls. */
 
-static int PyODict_SetItem_LockHeld(PyObject *self, PyObject *key,
-                                  PyObject *value);
+static int PyODict_SetItem_LockHeld(PyObject *self, PyObject *key, PyObject *value);
 
 /*[clinic input]
 @critical_section
@@ -1620,10 +1618,10 @@ PyODict_New(void)
 
 static int
 _PyODict_SetItem_KnownHash_LockHeld(PyObject *od, PyObject *key, PyObject *value,
-                           Py_hash_t hash)
+                                    Py_hash_t hash)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(od);
-    int res = _PyDict_SetItem_KnownHash_LockHeld((PyDictObject *)(od), key, value, hash);
+    int res = _PyDict_SetItem_KnownHash_LockHeld((PyDictObject *)od, key, value, hash);
     if (res == 0) {
         res = _odict_add_new_node(_PyODictObject_CAST(od), key, hash);
         if (res < 0) {
@@ -1651,12 +1649,11 @@ static int
 PyODict_SetItem_LockHeld(PyObject *od, PyObject *key, PyObject *value)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(od);
-    int res;
     Py_hash_t hash = PyObject_Hash(key);
-    if (hash == -1)
+    if (hash == -1) {
         return -1;
-    res = _PyODict_SetItem_KnownHash_LockHeld(od, key, value, hash);
-    return res;
+    }
+    return _PyODict_SetItem_KnownHash_LockHeld(od, key, value, hash);
 }
 
 int
