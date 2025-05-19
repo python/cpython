@@ -5469,11 +5469,60 @@ class TestHelpMetavarTypeFormatter(HelpTestCase):
     version = ''
 
 
-class TestHelpUsageLongSubparserCommand(TestCase):
-    """Test that subparser commands are formatted correctly in help"""
+class TestHelpCustomHelpFormatter(TestCase):
     maxDiff = None
 
-    def test_parent_help(self):
+    def test_custom_formatter_function(self):
+        def custom_formatter(prog):
+            return argparse.RawTextHelpFormatter(prog, indent_increment=5)
+
+        parser = argparse.ArgumentParser(
+                prog='PROG',
+                prefix_chars='-+',
+                formatter_class=custom_formatter
+        )
+        parser.add_argument('+f', '++foo', help="foo help")
+        parser.add_argument('spam', help="spam help")
+
+        parser_help = parser.format_help()
+        self.assertEqual(parser_help, textwrap.dedent('''\
+            usage: PROG [-h] [+f FOO] spam
+
+            positional arguments:
+                 spam           spam help
+
+            options:
+                 -h, --help     show this help message and exit
+                 +f, ++foo FOO  foo help
+        '''))
+
+    def test_custom_formatter_class(self):
+        class CustomFormatter(argparse.RawTextHelpFormatter):
+            def __init__(self, prog):
+                super().__init__(prog, indent_increment=5)
+
+        parser = argparse.ArgumentParser(
+                prog='PROG',
+                prefix_chars='-+',
+                formatter_class=CustomFormatter
+        )
+        parser.add_argument('+f', '++foo', help="foo help")
+        parser.add_argument('spam', help="spam help")
+
+        parser_help = parser.format_help()
+        self.assertEqual(parser_help, textwrap.dedent('''\
+            usage: PROG [-h] [+f FOO] spam
+
+            positional arguments:
+                 spam           spam help
+
+            options:
+                 -h, --help     show this help message and exit
+                 +f, ++foo FOO  foo help
+        '''))
+
+    def test_usage_long_subparser_command(self):
+        """Test that subparser commands are formatted correctly in help"""
         def custom_formatter(prog):
             return argparse.RawTextHelpFormatter(prog, max_help_position=50)
 
@@ -6973,7 +7022,7 @@ class TestProgName(TestCase):
 
     def check_usage(self, expected, *args, **kwargs):
         res = script_helper.assert_python_ok('-Xutf8', *args, '-h', **kwargs)
-        self.assertEqual(res.out.splitlines()[0].decode(),
+        self.assertEqual(os.fsdecode(res.out.splitlines()[0]),
                          f'usage: {expected} [-h]')
 
     def test_script(self, compiled=False):
@@ -7053,6 +7102,7 @@ class TestTranslations(TestTranslationsBase):
 
 
 class TestColorized(TestCase):
+    maxDiff = None
 
     def setUp(self):
         super().setUp()
@@ -7210,6 +7260,79 @@ class TestColorized(TestCase):
                 """
             ),
         )
+
+    def test_custom_formatter_function(self):
+        def custom_formatter(prog):
+            return argparse.RawTextHelpFormatter(prog, indent_increment=5)
+
+        parser = argparse.ArgumentParser(
+            prog="PROG",
+            prefix_chars="-+",
+            formatter_class=custom_formatter,
+            color=True,
+        )
+        parser.add_argument('+f', '++foo', help="foo help")
+        parser.add_argument('spam', help="spam help")
+
+        prog = self.theme.prog
+        heading = self.theme.heading
+        short = self.theme.summary_short_option
+        label = self.theme.summary_label
+        pos = self.theme.summary_action
+        long_b = self.theme.long_option
+        short_b = self.theme.short_option
+        label_b = self.theme.label
+        pos_b = self.theme.action
+        reset = self.theme.reset
+
+        parser_help = parser.format_help()
+        self.assertEqual(parser_help, textwrap.dedent(f'''\
+            {heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] [{short}+f {label}FOO{reset}] {pos}spam{reset}
+
+            {heading}positional arguments:{reset}
+                 {pos_b}spam{reset}               spam help
+
+            {heading}options:{reset}
+                 {short_b}-h{reset}, {long_b}--help{reset}         show this help message and exit
+                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}      foo help
+        '''))
+
+    def test_custom_formatter_class(self):
+        class CustomFormatter(argparse.RawTextHelpFormatter):
+            def __init__(self, prog):
+                super().__init__(prog, indent_increment=5)
+
+        parser = argparse.ArgumentParser(
+            prog="PROG",
+            prefix_chars="-+",
+            formatter_class=CustomFormatter,
+            color=True,
+        )
+        parser.add_argument('+f', '++foo', help="foo help")
+        parser.add_argument('spam', help="spam help")
+
+        prog = self.theme.prog
+        heading = self.theme.heading
+        short = self.theme.summary_short_option
+        label = self.theme.summary_label
+        pos = self.theme.summary_action
+        long_b = self.theme.long_option
+        short_b = self.theme.short_option
+        label_b = self.theme.label
+        pos_b = self.theme.action
+        reset = self.theme.reset
+
+        parser_help = parser.format_help()
+        self.assertEqual(parser_help, textwrap.dedent(f'''\
+            {heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] [{short}+f {label}FOO{reset}] {pos}spam{reset}
+
+            {heading}positional arguments:{reset}
+                 {pos_b}spam{reset}               spam help
+
+            {heading}options:{reset}
+                 {short_b}-h{reset}, {long_b}--help{reset}         show this help message and exit
+                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}      foo help
+        '''))
 
 
 def tearDownModule():

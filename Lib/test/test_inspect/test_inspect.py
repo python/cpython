@@ -4997,6 +4997,37 @@ class TestSignatureObject(unittest.TestCase):
                 with self.assertRaisesRegex(NameError, "undefined"):
                     signature_func(ida.f)
 
+    def test_signature_deferred_annotations(self):
+        def f(x: undef):
+            pass
+
+        class C:
+            x: undef
+
+            def __init__(self, x: undef):
+                self.x = x
+
+        sig = inspect.signature(f, annotation_format=Format.FORWARDREF)
+        self.assertEqual(list(sig.parameters), ['x'])
+        sig = inspect.signature(C, annotation_format=Format.FORWARDREF)
+        self.assertEqual(list(sig.parameters), ['x'])
+
+        class CallableWrapper:
+            def __init__(self, func):
+                self.func = func
+                self.__annotate__ = func.__annotate__
+
+            def __call__(self, *args, **kwargs):
+                return self.func(*args, **kwargs)
+
+            @property
+            def __annotations__(self):
+                return self.__annotate__(Format.VALUE)
+
+        cw = CallableWrapper(f)
+        sig = inspect.signature(cw, annotation_format=Format.FORWARDREF)
+        self.assertEqual(list(sig.parameters), ['args', 'kwargs'])
+
     def test_signature_none_annotation(self):
         class funclike:
             # Has to be callable, and have correct
@@ -6146,12 +6177,14 @@ class TestRepl(unittest.TestCase):
         object.
         """
 
+        # TODO(picnixz): refactor this as it's used by test_repl.py
+
         # To run the REPL without using a terminal, spawn python with the command
         # line option '-i' and the process name set to '<stdin>'.
         # The directory of argv[0] must match the directory of the Python
         # executable for the Popen() call to python to succeed as the directory
-        # path may be used by Py_GetPath() to build the default module search
-        # path.
+        # path may be used by PyConfig_Get("module_search_paths") to build the
+        # default module search path.
         stdin_fname = os.path.join(os.path.dirname(sys.executable), "<stdin>")
         cmd_line = [stdin_fname, '-E', '-i']
         cmd_line.extend(args)

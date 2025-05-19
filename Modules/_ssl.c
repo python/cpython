@@ -6626,6 +6626,12 @@ sslmodule_init_constants(PyObject *m)
     addbool(m, "HAS_PSK", 1);
 #endif
 
+#ifdef OPENSSL_NO_EXTERNAL_PSK_TLS13
+    addbool(m, "HAS_PSK_TLS13", 0);
+#else
+    addbool(m, "HAS_PSK_TLS13", 1);
+#endif
+
 #ifdef SSL_VERIFY_POST_HANDSHAKE
     addbool(m, "HAS_PHA", 1);
 #else

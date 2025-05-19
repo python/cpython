@@ -47,6 +47,8 @@ repos:
         exclude: Lib/test/tokenizedata/coding20731.py
       - id: trailing-whitespace
         types_or: [c, inc, python, rst]
+      - id: trailing-whitespace
+        files: '\.(gram)$'
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.33.0

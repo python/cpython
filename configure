@@ -22451,11 +22451,301 @@ fi
         # Put the nasty error message in config.log where it belongs
         echo "$LIBZSTD_PKG_ERRORS" >&5
 
-        have_libzstd=no
-elif test $pkg_failed = untried; then
+
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$CPPFLAGS $LIBZSTD_CFLAGS"
+    CFLAGS="$CFLAGS $LIBZSTD_CFLAGS"
+    LIBS="$LIBS $LIBZSTD_LIBS"
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing ZDICT_finalizeDictionary" >&5
+printf %s "checking for library containing ZDICT_finalizeDictionary... " >&6; }
+if test ${ac_cv_search_ZDICT_finalizeDictionary+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.
+   The 'extern "C"' is for builds by C++ compilers;
+   although this is not generally supported in C code supporting it here
+   has little cost and some practical benefit (sr 110532).  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char ZDICT_finalizeDictionary (void);
+int
+main (void)
+{
+return ZDICT_finalizeDictionary ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' zstd
+do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_search_ZDICT_finalizeDictionary=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext
+  if test ${ac_cv_search_ZDICT_finalizeDictionary+y}
+then :
+  break
+fi
+done
+if test ${ac_cv_search_ZDICT_finalizeDictionary+y}
+then :
+
+else case e in #(
+  e) ac_cv_search_ZDICT_finalizeDictionary=no ;;
+esac
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_ZDICT_finalizeDictionary" >&5
+printf "%s\n" "$ac_cv_search_ZDICT_finalizeDictionary" >&6; }
+ac_res=$ac_cv_search_ZDICT_finalizeDictionary
+if test "$ac_res" != no
+then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking ZSTD_VERSION_NUMBER >= 1.4.5" >&5
+printf %s "checking ZSTD_VERSION_NUMBER >= 1.4.5... " >&6; }
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+        #include "zstd.h"
+int
+main (void)
+{
+
+          #if ZSTD_VERSION_NUMBER < 10405
+          #  error "zstd version is too old"
+          #endif
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+               for ac_header in zstd.h zdict.h
+do :
+  as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | sed "$as_sed_sh"`
+ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"
+then :
+  cat >>confdefs.h <<_ACEOF
+#define `printf "%s\n" "HAVE_$ac_header" | sed "$as_sed_cpp"` 1
+_ACEOF
+ have_libzstd=yes
+else case e in #(
+  e) have_libzstd=no ;;
+esac
+fi
+
+done
+
+else case e in #(
+  e)
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
         have_libzstd=no
+       ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+else case e in #(
+  e) have_libzstd=no ;;
+esac
+fi
+
+    if test "x$have_libzstd" = xyes
+then :
+
+      LIBZSTD_CFLAGS=${LIBZSTD_CFLAGS-""}
+      LIBZSTD_LIBS=${LIBZSTD_LIBS-"-lzstd"}
+
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$CPPFLAGS $LIBZSTD_CFLAGS"
+    CFLAGS="$CFLAGS $LIBZSTD_CFLAGS"
+    LIBS="$LIBS $LIBZSTD_LIBS"
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing ZDICT_finalizeDictionary" >&5
+printf %s "checking for library containing ZDICT_finalizeDictionary... " >&6; }
+if test ${ac_cv_search_ZDICT_finalizeDictionary+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.
+   The 'extern "C"' is for builds by C++ compilers;
+   although this is not generally supported in C code supporting it here
+   has little cost and some practical benefit (sr 110532).  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char ZDICT_finalizeDictionary (void);
+int
+main (void)
+{
+return ZDICT_finalizeDictionary ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' zstd
+do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_search_ZDICT_finalizeDictionary=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext
+  if test ${ac_cv_search_ZDICT_finalizeDictionary+y}
+then :
+  break
+fi
+done
+if test ${ac_cv_search_ZDICT_finalizeDictionary+y}
+then :
+
+else case e in #(
+  e) ac_cv_search_ZDICT_finalizeDictionary=no ;;
+esac
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_ZDICT_finalizeDictionary" >&5
+printf "%s\n" "$ac_cv_search_ZDICT_finalizeDictionary" >&6; }
+ac_res=$ac_cv_search_ZDICT_finalizeDictionary
+if test "$ac_res" != no
+then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking ZSTD_VERSION_NUMBER >= 1.4.5" >&5
+printf %s "checking ZSTD_VERSION_NUMBER >= 1.4.5... " >&6; }
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+        #include "zstd.h"
+int
+main (void)
+{
+
+          #if ZSTD_VERSION_NUMBER < 10405
+          #  error "zstd version is too old"
+          #endif
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+               for ac_header in zstd.h zdict.h
+do :
+  as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | sed "$as_sed_sh"`
+ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"
+then :
+  cat >>confdefs.h <<_ACEOF
+#define `printf "%s\n" "HAVE_$ac_header" | sed "$as_sed_cpp"` 1
+_ACEOF
+ have_libzstd=yes
+else case e in #(
+  e) have_libzstd=no ;;
+esac
+fi
+
+done
+
+else case e in #(
+  e)
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+        have_libzstd=no
+       ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+else case e in #(
+  e) have_libzstd=no ;;
+esac
+fi
+
+    if test "x$have_libzstd" = xyes
+then :
+
+      LIBZSTD_CFLAGS=${LIBZSTD_CFLAGS-""}
+      LIBZSTD_LIBS=${LIBZSTD_LIBS-"-lzstd"}
+
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
 else
         LIBZSTD_CFLAGS=$pkg_cv_LIBZSTD_CFLAGS
         LIBZSTD_LIBS=$pkg_cv_LIBZSTD_LIBS
