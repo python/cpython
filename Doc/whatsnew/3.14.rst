@@ -1196,6 +1196,10 @@ datetime
 * Add :meth:`datetime.time.strptime` and :meth:`datetime.date.strptime`.
   (Contributed by Wannes Boeykens in :gh:`41431`.)
 
+* Add nanosecond precision support for :class:`datetime.datetime` and
+  :class:`datetime.time` objects.
+  (Contributed by Manojkumar Palanisamy in :gh:`59648`.)
+
 decimal
 -------
 

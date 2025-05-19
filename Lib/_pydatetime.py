@@ -24,6 +24,7 @@ def _get_class_module(self):
 MINYEAR = 1
 MAXYEAR = 9999
 _MAXORDINAL = 3652059  # date.max.toordinal()
+MAX_NS = 999
 
 # Utility functions, adapted from Python's Demo/classes/Dates.py, which
 # also assumes the current Gregorian calendar indefinitely extended in
@@ -163,18 +164,19 @@ def _build_struct_time(y, m, d, hh, mm, ss, dstflag):
     dnum = _days_before_month(y, m) + d
     return _time.struct_time((y, m, d, hh, mm, ss, wday, dnum, dstflag))
 
-def _format_time(hh, mm, ss, us, timespec='auto'):
+def _format_time(hh, mm, ss, us, ns, timespec='auto'):
     specs = {
         'hours': '{:02d}',
         'minutes': '{:02d}:{:02d}',
         'seconds': '{:02d}:{:02d}:{:02d}',
         'milliseconds': '{:02d}:{:02d}:{:02d}.{:03d}',
-        'microseconds': '{:02d}:{:02d}:{:02d}.{:06d}'
+        'microseconds': '{:02d}:{:02d}:{:02d}.{:06d}',
+        'nanoseconds': '{:02d}:{:02d}:{:02d}.{:06d}{:03d}',
     }
 
     if timespec == 'auto':
         # Skip trailing microseconds when us==0.
-        timespec = 'microseconds' if us else 'seconds'
+        timespec = 'nanoseconds' if ns else 'microseconds' if us else 'seconds'
     elif timespec == 'milliseconds':
         us //= 1000
     try:
@@ -182,7 +184,7 @@ def _format_time(hh, mm, ss, us, timespec='auto'):
     except KeyError:
         raise ValueError('Unknown timespec value')
     else:
-        return fmt.format(hh, mm, ss, us)
+        return fmt.format(hh, mm, ss, us, ns)
 
 def _format_offset(off, sep=':'):
     s = ''
@@ -195,11 +197,14 @@ def _format_offset(off, sep=':'):
         hh, mm = divmod(off, timedelta(hours=1))
         mm, ss = divmod(mm, timedelta(minutes=1))
         s += "%s%02d%s%02d" % (sign, hh, sep, mm)
-        if ss or ss.microseconds:
+        if ss or ss.microseconds or ss.nanoseconds:
             s += "%s%02d" % (sep, ss.seconds)
 
-            if ss.microseconds:
+            if ss.microseconds or ss.nanoseconds:
                 s += '.%06d' % ss.microseconds
+
+                if ss.nanoseconds:
+                    s += '%03d' % ss.nanoseconds
     return s
 
 _normalize_century = None
@@ -402,16 +407,16 @@ def _parse_isoformat_date(dtstr):
         return [year, month, day]
 
 
-_FRACTION_CORRECTION = [100000, 10000, 1000, 100, 10]
-
+_MICROSECOND_CORRECTION = [100000, 10000, 1000, 100, 10]
+_NANOSECOND_CORRECTION = [100, 10]
 
 def _parse_hh_mm_ss_ff(tstr):
-    # Parses things of the form HH[:?MM[:?SS[{.,}fff[fff]]]]
+    # Parses things of the form HH[:?MM[:?SS[{.,}fff[fff[fff]]]]]
     len_str = len(tstr)
 
-    time_comps = [0, 0, 0, 0]
+    time_comps = [0, 0, 0, 0, 0]
     pos = 0
-    for comp in range(0, 3):
+    for comp in range(0, 4):
         if (len_str - pos) < 2:
             raise ValueError("Incomplete time component")
 
@@ -448,7 +453,20 @@ def _parse_hh_mm_ss_ff(tstr):
 
             time_comps[3] = int(tstr[pos:(pos+to_parse)])
             if to_parse < 6:
-                time_comps[3] *= _FRACTION_CORRECTION[to_parse-1]
+                time_comps[3] *= _MICROSECOND_CORRECTION[to_parse-1]
+
+            pos += to_parse
+            len_remains = len_str - pos
+
+            if len_remains >= 3:
+                to_parse = 3
+            else:
+                to_parse = len_remains
+
+            if to_parse > 0:
+                time_comps[4] = int(tstr[pos:(pos+to_parse)])
+                if to_parse < 3:
+                    time_comps[4] *= _NANOSECOND_CORRECTION[to_parse-1]
 
     return time_comps
 
@@ -464,7 +482,8 @@ def _parse_isoformat_time(tstr):
 
     time_comps = _parse_hh_mm_ss_ff(timestr)
 
-    hour, minute, second, microsecond = time_comps
+    hour, minute, second, microsecond, nanosecond = time_comps
+    time_comps.pop()
     became_next_day = False
     error_from_components = False
     if (hour == 24):
@@ -501,13 +520,14 @@ def _parse_isoformat_time(tstr):
             tzsign = -1 if tstr[tz_pos - 1] == '-' else 1
 
             td = timedelta(hours=tz_comps[0], minutes=tz_comps[1],
-                           seconds=tz_comps[2], microseconds=tz_comps[3])
+                           seconds=tz_comps[2], microseconds=tz_comps[3],
+                           nanoseconds=tz_comps[4])
 
             tzi = timezone(tzsign * td)
 
     time_comps.append(tzi)
 
-    return time_comps, became_next_day, error_from_components
+    return (time_comps, nanosecond), became_next_day, error_from_components
 
 # tuple[int, int, int] -> tuple[int, int, int] version of date.fromisocalendar
 def _isoweek_to_gregorian(year, week, day):
@@ -579,11 +599,12 @@ def _check_date_fields(year, month, day):
         raise ValueError(f"day {day} must be in range 1..{dim} for month {month} in year {year}")
     return year, month, day
 
-def _check_time_fields(hour, minute, second, microsecond, fold):
+def _check_time_fields(hour, minute, second, microsecond, nanosecond, fold):
     hour = _index(hour)
     minute = _index(minute)
     second = _index(second)
     microsecond = _index(microsecond)
+    nanosecond = _index(nanosecond)
     if not 0 <= hour <= 23:
         raise ValueError(f"hour must be in 0..23, not {hour}")
     if not 0 <= minute <= 59:
@@ -592,9 +613,11 @@ def _check_time_fields(hour, minute, second, microsecond, fold):
         raise ValueError(f"second must be in 0..59, not {second}")
     if not 0 <= microsecond <= 999999:
         raise ValueError(f"microsecond must be in 0..999999, not {microsecond}")
+    if not 0 <= nanosecond <= 999:
+        raise ValueError(f"nanosecond must be in 0..999, not {nanosecond}")
     if fold not in (0, 1):
         raise ValueError(f"fold must be either 0 or 1, not {fold}")
-    return hour, minute, second, microsecond, fold
+    return hour, minute, second, microsecond, nanosecond, fold
 
 def _check_tzinfo_arg(tz):
     if tz is not None and not isinstance(tz, tzinfo):
@@ -637,15 +660,15 @@ class timedelta:
     returning a timedelta, and addition or subtraction of a datetime
     and a timedelta giving a datetime.
 
-    Representation: (days, seconds, microseconds).
+    Representation: (days, seconds, microseconds, nanoseconds).
     """
-    # The representation of (days, seconds, microseconds) was chosen
+    # The representation of (days, seconds, microseconds, nanoseconds) was chosen
     # arbitrarily; the exact rationale originally specified in the docstring
     # was "Because I felt like it."
 
-    __slots__ = '_days', '_seconds', '_microseconds', '_hashcode'
+    __slots__ = '_days', '_seconds', '_microseconds', '_nanoseconds', '_hashcode'
 
-    def __new__(cls, days=0, seconds=0, microseconds=0,
+    def __new__(cls, days=0, seconds=0, microseconds=0, nanoseconds=0,
                 milliseconds=0, minutes=0, hours=0, weeks=0):
         # Doing this efficiently and accurately in C is going to be difficult
         # and error-prone, due to ubiquitous overflow possibilities, and that
@@ -659,6 +682,7 @@ class timedelta:
             ("days", days),
             ("seconds", seconds),
             ("microseconds", microseconds),
+            ("nanoseconds", nanoseconds),
             ("milliseconds", milliseconds),
             ("minutes", minutes),
             ("hours", hours),
@@ -671,9 +695,9 @@ class timedelta:
 
         # Final values, all integer.
         # s and us fit in 32-bit signed ints; d isn't bounded.
-        d = s = us = 0
+        d = s = us = ns = 0
 
-        # Normalize everything to days, seconds, microseconds.
+        # Normalize everything to days, seconds, microseconds
         days += weeks*7
         seconds += minutes*60 + hours*3600
         microseconds += milliseconds*1000
@@ -719,24 +743,24 @@ class timedelta:
         usdouble = secondsfrac * 1e6
         assert abs(usdouble) < 2.1e6    # exact value not critical
         # secondsfrac isn't referenced again
-
-        if isinstance(microseconds, float):
-            microseconds = round(microseconds + usdouble)
-            seconds, microseconds = divmod(microseconds, 1000000)
-            days, seconds = divmod(seconds, 24*3600)
-            d += days
-            s += seconds
-        else:
-            microseconds = int(microseconds)
-            seconds, microseconds = divmod(microseconds, 1000000)
-            days, seconds = divmod(seconds, 24*3600)
-            d += days
-            s += seconds
-            microseconds = round(microseconds + usdouble)
-        assert isinstance(s, int)
+        microseconds, nanoseconds1 = divmod((microseconds + usdouble) * 1000, 1000)
+        microseconds = int(microseconds)
+        if nanoseconds1 != 0:
+            nanoseconds += nanoseconds1
+        seconds, microseconds = divmod(microseconds, 1000000)
+        days, seconds = divmod(seconds, 24*3600)
+        d += days
+        s += seconds
+        nanoseconds = round(nanoseconds)
+        assert isinstance(s, int), f"{s =}"
         assert isinstance(microseconds, int)
         assert abs(s) <= 3 * 24 * 3600
         assert abs(microseconds) < 3.1e6
+
+        # Normalize nanoseconds to microseconds.
+        microseconds1, ns = divmod(nanoseconds, 1000)
+        microseconds += microseconds1
+        assert isinstance(ns, int) and 0 <= ns < 1000, f"{ns =}"
 
         # Just a little bit of carrying possible for microseconds and seconds.
         seconds, us = divmod(microseconds, 1000000)
@@ -747,14 +771,16 @@ class timedelta:
         assert isinstance(d, int)
         assert isinstance(s, int) and 0 <= s < 24*3600
         assert isinstance(us, int) and 0 <= us < 1000000
+        assert isinstance(ns, int) and 0 <= ns < 1000
 
-        if abs(d) > 999999999:
+        if abs(d) > 999_999_999:
             raise OverflowError("timedelta # of days is too large: %d" % d)
 
         self = object.__new__(cls)
         self._days = d
         self._seconds = s
         self._microseconds = us
+        self._nanoseconds = ns
         self._hashcode = -1
         return self
 
@@ -766,6 +792,8 @@ class timedelta:
             args.append("seconds=%d" % self._seconds)
         if self._microseconds:
             args.append("microseconds=%d" % self._microseconds)
+        if self._nanoseconds:
+            args.append("nanoseconds=%d" % self._nanoseconds)
         if not args:
             args.append('0')
         return "%s%s(%s)" % (_get_class_module(self),
@@ -780,14 +808,16 @@ class timedelta:
             def plural(n):
                 return n, abs(n) != 1 and "s" or ""
             s = ("%d day%s, " % plural(self._days)) + s
-        if self._microseconds:
+        if self._microseconds or self._nanoseconds:
             s = s + ".%06d" % self._microseconds
+
+            if self._nanoseconds:
+                s = s + "%03d" % self._nanoseconds
         return s
 
     def total_seconds(self):
         """Total seconds in the duration."""
-        return ((self.days * 86400 + self.seconds) * 10**6 +
-                self.microseconds) / 10**6
+        return round(self.days * 86400 + self.seconds + self.microseconds * 1e-6 + self.nanoseconds * 1e-9, 9)
 
     # Read-only field accessors
     @property
@@ -805,13 +835,19 @@ class timedelta:
         """microseconds"""
         return self._microseconds
 
+    @property
+    def nanoseconds(self):
+        """nanoseconds"""
+        return self._nanoseconds
+
     def __add__(self, other):
         if isinstance(other, timedelta):
             # for CPython compatibility, we cannot use
             # our __class__ here, but need a real timedelta
             return timedelta(self._days + other._days,
                              self._seconds + other._seconds,
-                             self._microseconds + other._microseconds)
+                             self._microseconds + other._microseconds,
+                             self._nanoseconds + other._nanoseconds)
         return NotImplemented
 
     __radd__ = __add__
@@ -822,7 +858,8 @@ class timedelta:
             # our __class__ here, but need a real timedelta
             return timedelta(self._days - other._days,
                              self._seconds - other._seconds,
-                             self._microseconds - other._microseconds)
+                             self._microseconds - other._microseconds,
+                             self._nanoseconds - other._nanoseconds)
         return NotImplemented
 
     def __rsub__(self, other):
@@ -835,7 +872,8 @@ class timedelta:
         # our __class__ here, but need a real timedelta
         return timedelta(-self._days,
                          -self._seconds,
-                         -self._microseconds)
+                         -self._microseconds,
+                         -self._nanoseconds)
 
     def __pos__(self):
         return self
@@ -852,11 +890,12 @@ class timedelta:
             # our __class__ here, but need a real timedelta
             return timedelta(self._days * other,
                              self._seconds * other,
-                             self._microseconds * other)
+                             self._microseconds * other,
+                             self._nanoseconds * other)
         if isinstance(other, float):
-            usec = self._to_microseconds()
+            nsec = self._to_nanoseconds()
             a, b = other.as_integer_ratio()
-            return timedelta(0, 0, _divide_and_round(usec * a, b))
+            return timedelta(0, 0, 0, _divide_and_round(nsec * a, b))
         return NotImplemented
 
     __rmul__ = __mul__
@@ -865,38 +904,41 @@ class timedelta:
         return ((self._days * (24*3600) + self._seconds) * 1000000 +
                 self._microseconds)
 
+    def _to_nanoseconds(self):
+        return self._to_microseconds() * 1000 + self._nanoseconds
+
     def __floordiv__(self, other):
         if not isinstance(other, (int, timedelta)):
             return NotImplemented
-        usec = self._to_microseconds()
+        nsec = self._to_nanoseconds()
         if isinstance(other, timedelta):
-            return usec // other._to_microseconds()
+            return nsec // (other._to_nanoseconds())
         if isinstance(other, int):
-            return timedelta(0, 0, usec // other)
+            return timedelta(0, 0, 0, nsec // other)
 
     def __truediv__(self, other):
         if not isinstance(other, (int, float, timedelta)):
             return NotImplemented
-        usec = self._to_microseconds()
+        nsec = self._to_nanoseconds()
         if isinstance(other, timedelta):
-            return usec / other._to_microseconds()
+            return nsec / other._to_nanoseconds()
         if isinstance(other, int):
-            return timedelta(0, 0, _divide_and_round(usec, other))
+            return timedelta(0, 0, 0, _divide_and_round(nsec, other))
         if isinstance(other, float):
             a, b = other.as_integer_ratio()
-            return timedelta(0, 0, _divide_and_round(b * usec, a))
+            return timedelta(0, 0, 0, _divide_and_round(b * nsec, a))
 
     def __mod__(self, other):
         if isinstance(other, timedelta):
-            r = self._to_microseconds() % other._to_microseconds()
-            return timedelta(0, 0, r)
+            r = self._to_nanoseconds() % other._to_nanoseconds()
+            return timedelta(0, 0, 0, r)
         return NotImplemented
 
     def __divmod__(self, other):
         if isinstance(other, timedelta):
-            q, r = divmod(self._to_microseconds(),
-                          other._to_microseconds())
-            return q, timedelta(0, 0, r)
+            q, r = divmod(self._to_nanoseconds(),
+                          other._to_nanoseconds())
+            return q, timedelta(0, 0, 0, r)
         return NotImplemented
 
     # Comparisons of timedelta objects with other.
@@ -943,20 +985,23 @@ class timedelta:
     def __bool__(self):
         return (self._days != 0 or
                 self._seconds != 0 or
-                self._microseconds != 0)
+                self._microseconds != 0 or
+                self._nanoseconds != 0)
 
     # Pickle support.
 
     def _getstate(self):
-        return (self._days, self._seconds, self._microseconds)
+        if self._nanoseconds == 0:
+            return (self._days, self._seconds, self._microseconds)
+        return (self._days, self._seconds, self._microseconds, self._nanoseconds)
 
     def __reduce__(self):
         return (self.__class__, self._getstate())
 
-timedelta.min = timedelta(-999999999)
-timedelta.max = timedelta(days=999999999, hours=23, minutes=59, seconds=59,
-                          microseconds=999999)
-timedelta.resolution = timedelta(microseconds=1)
+timedelta.min = timedelta(-999_999_999)
+timedelta.max = timedelta(days=999_999_999, hours=23, minutes=59, seconds=59,
+                          microseconds=999_999, nanoseconds=MAX_NS)
+timedelta.resolution = timedelta(nanoseconds=1)
 
 class date:
     """Concrete date type.
@@ -1414,11 +1459,11 @@ class time:
     dst()
 
     Properties (readonly):
-    hour, minute, second, microsecond, tzinfo, fold
+    hour, minute, second, microsecond, nanosecond, tzinfo, fold
     """
-    __slots__ = '_hour', '_minute', '_second', '_microsecond', '_tzinfo', '_hashcode', '_fold'
+    __slots__ = '_hour', '_minute', '_second', '_microsecond', '_nanosecond', '_tzinfo', '_hashcode', '_fold'
 
-    def __new__(cls, hour=0, minute=0, second=0, microsecond=0, tzinfo=None, *, fold=0):
+    def __new__(cls, hour=0, minute=0, second=0, microsecond=0, tzinfo=None, *, fold=0, nanosecond=0):
         """Constructor.
 
         Arguments:
@@ -1427,8 +1472,9 @@ class time:
         second, microsecond (default to zero)
         tzinfo (default to None)
         fold (keyword only, default to zero)
+        nanosecond (keyword only, default to zero)
         """
-        if (isinstance(hour, (bytes, str)) and len(hour) == 6 and
+        if (isinstance(hour, (bytes, str)) and len(hour) in (6, 8) and
             ord(hour[0:1])&0x7F < 24):
             # Pickle support
             if isinstance(hour, str):
@@ -1444,14 +1490,15 @@ class time:
             self.__setstate(hour, minute or None)
             self._hashcode = -1
             return self
-        hour, minute, second, microsecond, fold = _check_time_fields(
-            hour, minute, second, microsecond, fold)
+        hour, minute, second, microsecond, nanosecond, fold = _check_time_fields(
+            hour, minute, second, microsecond, nanosecond, fold)
         _check_tzinfo_arg(tzinfo)
         self = object.__new__(cls)
         self._hour = hour
         self._minute = minute
         self._second = second
         self._microsecond = microsecond
+        self._nanosecond = nanosecond
         self._tzinfo = tzinfo
         self._hashcode = -1
         self._fold = fold
@@ -1483,6 +1530,11 @@ class time:
     def microsecond(self):
         """microsecond (0-999999)"""
         return self._microsecond
+
+    @property
+    def nanosecond(self):
+        """nanosecond (0-999)"""
+        return self._nanosecond
 
     @property
     def tzinfo(self):
@@ -1542,9 +1594,9 @@ class time:
 
         if base_compare:
             return _cmp((self._hour, self._minute, self._second,
-                         self._microsecond),
+                         self._microsecond, self._nanosecond),
                         (other._hour, other._minute, other._second,
-                         other._microsecond))
+                         other._microsecond, other._nanosecond))
         if myoff is None or otoff is None:
             if allow_mixed:
                 return 2 # arbitrary non-zero value
@@ -1552,8 +1604,8 @@ class time:
                 raise TypeError("cannot compare naive and aware times")
         myhhmm = self._hour * 60 + self._minute - myoff//timedelta(minutes=1)
         othhmm = other._hour * 60 + other._minute - otoff//timedelta(minutes=1)
-        return _cmp((myhhmm, self._second, self._microsecond),
-                    (othhmm, other._second, other._microsecond))
+        return _cmp((myhhmm, self._second, self._microsecond, self._nanosecond),
+                    (othhmm, other._second, other._microsecond, other._nanosecond))
 
     def __hash__(self):
         """Hash."""
@@ -1571,9 +1623,9 @@ class time:
                 assert not m % timedelta(minutes=1), "whole minute"
                 m //= timedelta(minutes=1)
                 if 0 <= h < 24:
-                    self._hashcode = hash(time(h, m, self.second, self.microsecond))
+                    self._hashcode = hash(time(h, m, self.second, self.microsecond, nanosecond=self.nanosecond))
                 else:
-                    self._hashcode = hash((h, m, self.second, self.microsecond))
+                    self._hashcode = hash((h, m, self.second, self.microsecond, self.nanosecond))
         return self._hashcode
 
     # Conversion to string
@@ -1594,6 +1646,9 @@ class time:
         s = "%s%s(%d, %d%s)" % (_get_class_module(self),
                                 self.__class__.__qualname__,
                                 self._hour, self._minute, s)
+        if self._nanosecond:
+            assert s[-1:] == ")"
+            s = s[:-1] + ", nanosecond=%d" % self._nanosecond + ")"
         if self._tzinfo is not None:
             assert s[-1:] == ")"
             s = s[:-1] + ", tzinfo=%r" % self._tzinfo + ")"
@@ -1605,15 +1660,15 @@ class time:
     def isoformat(self, timespec='auto'):
         """Return the time formatted according to ISO.
 
-        The full format is 'HH:MM:SS.mmmmmm+zz:zz'. By default, the fractional
-        part is omitted if self.microsecond == 0.
+        The full format is 'HH:MM:SS.mmmmmmmmm+zz:zz'. By default, the fractional
+        part is truncated based on the value of self.nanosecond and self.microsecond.
 
         The optional argument timespec specifies the number of additional
         terms of the time to include. Valid options are 'auto', 'hours',
-        'minutes', 'seconds', 'milliseconds' and 'microseconds'.
+        'minutes', 'seconds', 'milliseconds', 'microseconds' and 'nanoseconds'.
         """
         s = _format_time(self._hour, self._minute, self._second,
-                          self._microsecond, timespec)
+                          self._microsecond, self._nanosecond, timespec)
         tz = self._tzstr()
         if tz:
             s += tz
@@ -1633,7 +1688,8 @@ class time:
         time_string = time_string.removeprefix('T')
 
         try:
-            return cls(*_parse_isoformat_time(time_string)[0])
+            args, nanosecond = _parse_isoformat_time(time_string)[0]
+            return cls(*args, nanosecond=nanosecond)
         except Exception:
             raise ValueError(f'Invalid isoformat string: {time_string!r}')
 
@@ -1695,7 +1751,7 @@ class time:
         return offset
 
     def replace(self, hour=None, minute=None, second=None, microsecond=None,
-                tzinfo=True, *, fold=None):
+                tzinfo=True, *, fold=None, nanosecond=None):
         """Return a new time with new values for the specified fields."""
         if hour is None:
             hour = self.hour
@@ -1705,11 +1761,13 @@ class time:
             second = self.second
         if microsecond is None:
             microsecond = self.microsecond
+        if nanosecond is None:
+            nanosecond = self.nanosecond
         if tzinfo is True:
             tzinfo = self.tzinfo
         if fold is None:
             fold = self._fold
-        return type(self)(hour, minute, second, microsecond, tzinfo, fold=fold)
+        return type(self)(hour, minute, second, microsecond, tzinfo, fold=fold, nanosecond=nanosecond)
 
     __replace__ = replace
 
@@ -1718,11 +1776,14 @@ class time:
     def _getstate(self, protocol=3):
         us2, us3 = divmod(self._microsecond, 256)
         us1, us2 = divmod(us2, 256)
+        ns1, ns2 = divmod(self._nanosecond, 256)
         h = self._hour
         if self._fold and protocol > 3:
             h += 128
         basestate = bytes([h, self._minute, self._second,
                            us1, us2, us3])
+        if self._nanosecond:
+            basestate += bytes([ns1, ns2])
         if self._tzinfo is None:
             return (basestate,)
         else:
@@ -1731,7 +1792,9 @@ class time:
     def __setstate(self, string, tzinfo):
         if tzinfo is not None and not isinstance(tzinfo, _tzinfo_class):
             raise TypeError("bad tzinfo state arg")
-        h, self._minute, self._second, us1, us2, us3 = string
+        if len(string) == 6:
+            string = string + b'\x00\x00'
+        h, self._minute, self._second, us1, us2, us3, ns1, ns2 = string
         if h > 127:
             self._fold = 1
             self._hour = h - 128
@@ -1739,6 +1802,7 @@ class time:
             self._fold = 0
             self._hour = h
         self._microsecond = (((us1 << 8) | us2) << 8) | us3
+        self._nanosecond = ((ns1 << 8) | ns2)
         self._tzinfo = tzinfo
 
     def __reduce_ex__(self, protocol):
@@ -1750,8 +1814,8 @@ class time:
 _time_class = time  # so functions w/ args named "time" can get at the class
 
 time.min = time(0, 0, 0)
-time.max = time(23, 59, 59, 999999)
-time.resolution = timedelta(microseconds=1)
+time.max = time(23, 59, 59, 999999, nanosecond=MAX_NS)
+time.resolution = timedelta(nanoseconds=1)
 
 
 class datetime(date):
@@ -1763,8 +1827,8 @@ class datetime(date):
     __slots__ = time.__slots__
 
     def __new__(cls, year, month=None, day=None, hour=0, minute=0, second=0,
-                microsecond=0, tzinfo=None, *, fold=0):
-        if (isinstance(year, (bytes, str)) and len(year) == 10 and
+                microsecond=0, tzinfo=None, *, fold=0, nanosecond=0):
+        if (isinstance(year, (bytes, str)) and len(year) in (10, 12) and
             1 <= ord(year[2:3])&0x7F <= 12):
             # Pickle support
             if isinstance(year, str):
@@ -1777,12 +1841,13 @@ class datetime(date):
                         "a datetime object. "
                         "pickle.load(data, encoding='latin1') is assumed.")
             self = object.__new__(cls)
+            # year is string and month is tzinfo
             self.__setstate(year, month)
             self._hashcode = -1
             return self
         year, month, day = _check_date_fields(year, month, day)
-        hour, minute, second, microsecond, fold = _check_time_fields(
-            hour, minute, second, microsecond, fold)
+        hour, minute, second, microsecond, nanosecond, fold = _check_time_fields(
+            hour, minute, second, microsecond, nanosecond, fold)
         _check_tzinfo_arg(tzinfo)
         self = object.__new__(cls)
         self._year = year
@@ -1792,6 +1857,7 @@ class datetime(date):
         self._minute = minute
         self._second = second
         self._microsecond = microsecond
+        self._nanosecond = nanosecond
         self._tzinfo = tzinfo
         self._hashcode = -1
         self._fold = fold
@@ -1819,6 +1885,11 @@ class datetime(date):
         return self._microsecond
 
     @property
+    def nanosecond(self):
+        """nanosecond (0-999)"""
+        return self._nanosecond
+
+    @property
     def tzinfo(self):
         """timezone info object"""
         return self._tzinfo
@@ -1833,8 +1904,19 @@ class datetime(date):
 
         A timezone info object may be passed in as well.
         """
-        frac, t = _math.modf(t)
-        us = round(frac * 1e6)
+        if isinstance(t, int) and len(str(t))==19:
+            # t is in nanoseconds
+            # A Unix timestamp in nanoseconds becomes 20 digits on
+            # November 20, 2286, at 17:46:40 UTC.
+            t = str(t)
+            t, us, ns = map(int, (t[:-9], t[-9:-3], t[-3:]))
+            if t < 0:
+                us, ns = -us, -ns
+        else:
+            frac, t = _math.modf(t)
+            us = round(frac * 1e6)
+            ns = 0
+
         if us >= 1000000:
             t += 1
             us -= 1000000
@@ -1845,7 +1927,7 @@ class datetime(date):
         converter = _time.gmtime if utc else _time.localtime
         y, m, d, hh, mm, ss, weekday, jday, dst = converter(t)
         ss = min(ss, 59)    # clamp out leap seconds if the platform has them
-        result = cls(y, m, d, hh, mm, ss, us, tz)
+        result = cls(y, m, d, hh, mm, ss, us, tz, nanosecond=ns)
         if tz is None and not utc:
             # As of version 2015f max fold in IANA database is
             # 23 hours at 1969-09-30 13:00:00 in Kwajalein.
@@ -1860,11 +1942,11 @@ class datetime(date):
                 return result
 
             y, m, d, hh, mm, ss = converter(t - max_fold_seconds)[:6]
-            probe1 = cls(y, m, d, hh, mm, ss, us, tz)
+            probe1 = cls(y, m, d, hh, mm, ss, us, tz, nanosecond=ns)
             trans = result - probe1 - timedelta(0, max_fold_seconds)
             if trans.days < 0:
                 y, m, d, hh, mm, ss = converter(t + trans // timedelta(0, 1))[:6]
-                probe2 = cls(y, m, d, hh, mm, ss, us, tz)
+                probe2 = cls(y, m, d, hh, mm, ss, us, tz, nanosecond=ns)
                 if probe2 == result:
                     result._fold = 1
         elif tz is not None:
@@ -1896,7 +1978,7 @@ class datetime(date):
     @classmethod
     def now(cls, tz=None):
         "Construct a datetime from time.time() and optional time zone info."
-        t = _time.time()
+        t = _time.time_ns()
         return cls.fromtimestamp(t, tz)
 
     @classmethod
@@ -1909,7 +1991,7 @@ class datetime(date):
                       "datetime.datetime.now(datetime.UTC).",
                       DeprecationWarning,
                       stacklevel=2)
-        t = _time.time()
+        t = _time.time_ns()
         return cls._fromtimestamp(t, True, None)
 
     @classmethod
@@ -1923,7 +2005,7 @@ class datetime(date):
             tzinfo = time.tzinfo
         return cls(date.year, date.month, date.day,
                    time.hour, time.minute, time.second, time.microsecond,
-                   tzinfo, fold=time.fold)
+                   tzinfo, fold=time.fold, nanosecond=time.nanosecond)
 
     @classmethod
     def fromisoformat(cls, date_string):
@@ -1947,13 +2029,13 @@ class datetime(date):
 
         if tstr:
             try:
-                time_components, became_next_day, error_from_components = _parse_isoformat_time(tstr)
+                (time_components, nanosecond), became_next_day, error_from_components = _parse_isoformat_time(tstr)
             except ValueError:
                 raise ValueError(
                     f'Invalid isoformat string: {date_string!r}') from None
             else:
                 if error_from_components:
-                    raise ValueError("minute, second, and microsecond must be 0 when hour is 24")
+                    raise ValueError("minute, second, microsecond and nanosecond must be 0 when hour is 24")
 
                 if became_next_day:
                     year, month, day = date_components
@@ -1970,8 +2052,9 @@ class datetime(date):
                         date_components = [year, month, day]
         else:
             time_components = [0, 0, 0, 0, None]
+            nanosecond = 0
 
-        return cls(*(date_components + time_components))
+        return cls(*(date_components + time_components), nanosecond=nanosecond)
 
     def timetuple(self):
         "Return local time tuple compatible with time.localtime()."
@@ -2044,16 +2127,16 @@ class datetime(date):
 
     def time(self):
         "Return the time part, with tzinfo None."
-        return time(self.hour, self.minute, self.second, self.microsecond, fold=self.fold)
+        return time(self.hour, self.minute, self.second, self.microsecond, fold=self.fold, nanosecond=self.nanosecond)
 
     def timetz(self):
         "Return the time part, with same tzinfo."
         return time(self.hour, self.minute, self.second, self.microsecond,
-                    self._tzinfo, fold=self.fold)
+                    self._tzinfo, fold=self.fold, nanosecond=self.nanosecond)
 
     def replace(self, year=None, month=None, day=None, hour=None,
                 minute=None, second=None, microsecond=None, tzinfo=True,
-                *, fold=None):
+                *, fold=None, nanosecond=None):
         """Return a new datetime with new values for the specified fields."""
         if year is None:
             year = self.year
@@ -2069,12 +2152,14 @@ class datetime(date):
             second = self.second
         if microsecond is None:
             microsecond = self.microsecond
+        if nanosecond is None:
+            nanosecond = self.nanosecond
         if tzinfo is True:
             tzinfo = self.tzinfo
         if fold is None:
             fold = self.fold
         return type(self)(year, month, day, hour, minute, second,
-                          microsecond, tzinfo, fold=fold)
+                          microsecond, tzinfo, fold=fold, nanosecond=nanosecond)
 
     __replace__ = replace
 
@@ -2134,22 +2219,22 @@ class datetime(date):
     def isoformat(self, sep='T', timespec='auto'):
         """Return the time formatted according to ISO.
 
-        The full format looks like 'YYYY-MM-DD HH:MM:SS.mmmmmm'.
-        By default, the fractional part is omitted if self.microsecond == 0.
+        The full format looks like 'YYYY-MM-DD HH:MM:SS.mmmmmmmmm'.
+        By default, the fractional part is truncated based on the value of self.nanosecond and self.microsecond.
 
         If self.tzinfo is not None, the UTC offset is also attached, giving
-        giving a full format of 'YYYY-MM-DD HH:MM:SS.mmmmmm+HH:MM'.
+        giving a full format of 'YYYY-MM-DD HH:MM:SS.mmmmmmmmm+HH:MM'.
 
         Optional argument sep specifies the separator between date and
         time, default 'T'.
 
         The optional argument timespec specifies the number of additional
         terms of the time to include. Valid options are 'auto', 'hours',
-        'minutes', 'seconds', 'milliseconds' and 'microseconds'.
+        'minutes', 'seconds', 'milliseconds', 'microseconds' and 'nanoseconds'.
         """
         s = ("%04d-%02d-%02d%c" % (self._year, self._month, self._day, sep) +
              _format_time(self._hour, self._minute, self._second,
-                          self._microsecond, timespec))
+                          self._microsecond, self._nanosecond, timespec))
 
         off = self.utcoffset()
         tz = _format_offset(off)
@@ -2169,6 +2254,9 @@ class datetime(date):
         s = "%s%s(%s)" % (_get_class_module(self),
                           self.__class__.__qualname__,
                           ", ".join(map(str, L)))
+        if self._nanosecond:
+            assert s[-1:] == ")"
+            s = s[:-1] + ", nanosecond=%d" % self._nanosecond + ")"
         if self._tzinfo is not None:
             assert s[-1:] == ")"
             s = s[:-1] + ", tzinfo=%r" % self._tzinfo + ")"
@@ -2278,10 +2366,10 @@ class datetime(date):
         if base_compare:
             return _cmp((self._year, self._month, self._day,
                          self._hour, self._minute, self._second,
-                         self._microsecond),
+                         self._microsecond, self._nanosecond),
                         (other._year, other._month, other._day,
                          other._hour, other._minute, other._second,
-                         other._microsecond))
+                         other._microsecond, other._nanosecond))
         if myoff is None or otoff is None:
             if allow_mixed:
                 return 2 # arbitrary non-zero value
@@ -2301,7 +2389,8 @@ class datetime(date):
                           hours=self._hour,
                           minutes=self._minute,
                           seconds=self._second,
-                          microseconds=self._microsecond)
+                          microseconds=self._microsecond,
+                          nanoseconds=self._nanosecond)
         delta += other
         hour, rem = divmod(delta.seconds, 3600)
         minute, second = divmod(rem, 60)
@@ -2309,7 +2398,8 @@ class datetime(date):
             return type(self).combine(date.fromordinal(delta.days),
                                       time(hour, minute, second,
                                            delta.microseconds,
-                                           tzinfo=self._tzinfo))
+                                           tzinfo=self._tzinfo,
+                                           nanosecond=delta.nanoseconds))
         raise OverflowError("result out of range")
 
     __radd__ = __add__
@@ -2327,7 +2417,8 @@ class datetime(date):
         secs2 = other._second + other._minute * 60 + other._hour * 3600
         base = timedelta(days1 - days2,
                          secs1 - secs2,
-                         self._microsecond - other._microsecond)
+                         self._microsecond - other._microsecond,
+                         self._nanosecond - other._nanosecond)
         if self._tzinfo is other._tzinfo:
             return base
         myoff = self.utcoffset()
@@ -2350,7 +2441,7 @@ class datetime(date):
             else:
                 days = _ymd2ord(self.year, self.month, self.day)
                 seconds = self.hour * 3600 + self.minute * 60 + self.second
-                self._hashcode = hash(timedelta(days, seconds, self.microsecond) - tzoff)
+                self._hashcode = hash(timedelta(days, seconds, self.microsecond, self.nanosecond) - tzoff)
         return self._hashcode
 
     # Pickle support.
@@ -2359,12 +2450,15 @@ class datetime(date):
         yhi, ylo = divmod(self._year, 256)
         us2, us3 = divmod(self._microsecond, 256)
         us1, us2 = divmod(us2, 256)
+        ns1, ns2 = divmod(self._nanosecond, 256)
         m = self._month
         if self._fold and protocol > 3:
             m += 128
         basestate = bytes([yhi, ylo, m, self._day,
                            self._hour, self._minute, self._second,
                            us1, us2, us3])
+        if self._nanosecond:
+            basestate += bytes([ns1, ns2])
         if self._tzinfo is None:
             return (basestate,)
         else:
@@ -2373,8 +2467,10 @@ class datetime(date):
     def __setstate(self, string, tzinfo):
         if tzinfo is not None and not isinstance(tzinfo, _tzinfo_class):
             raise TypeError("bad tzinfo state arg")
+        if len(string) == 10:
+            string = string + b'\x00\x00'
         (yhi, ylo, m, self._day, self._hour,
-         self._minute, self._second, us1, us2, us3) = string
+         self._minute, self._second, us1, us2, us3, ns1, ns2) = string
         if m > 127:
             self._fold = 1
             self._month = m - 128
@@ -2383,6 +2479,7 @@ class datetime(date):
             self._month = m
         self._year = yhi * 256 + ylo
         self._microsecond = (((us1 << 8) | us2) << 8) | us3
+        self._nanosecond = ((ns1 << 8) | ns2)
         self._tzinfo = tzinfo
 
     def __reduce_ex__(self, protocol):
@@ -2393,8 +2490,8 @@ class datetime(date):
 
 
 datetime.min = datetime(1, 1, 1)
-datetime.max = datetime(9999, 12, 31, 23, 59, 59, 999999)
-datetime.resolution = timedelta(microseconds=1)
+datetime.max = datetime(9999, 12, 31, 23, 59, 59, 999999, nanosecond=MAX_NS)
+datetime.resolution = timedelta(nanoseconds=1)
 
 
 def _isoweek1monday(year):
@@ -2504,7 +2601,7 @@ class timezone(tzinfo):
         raise TypeError("fromutc() argument must be a datetime instance"
                         " or None")
 
-    _maxoffset = timedelta(hours=24, microseconds=-1)
+    _maxoffset = timedelta(hours=24, nanoseconds=-1)
     _minoffset = -_maxoffset
 
     @staticmethod
@@ -2520,6 +2617,10 @@ class timezone(tzinfo):
         minutes, rest = divmod(rest, timedelta(minutes=1))
         seconds = rest.seconds
         microseconds = rest.microseconds
+        nanoseconds = rest.nanoseconds
+        if nanoseconds:
+            return (f'UTC{sign}{hours:02d}:{minutes:02d}:{seconds:02d}'
+                    f'.{microseconds:06d}{nanoseconds:03d}')
         if microseconds:
             return (f'UTC{sign}{hours:02d}:{minutes:02d}:{seconds:02d}'
                     f'.{microseconds:06d}')
