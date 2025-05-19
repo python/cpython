@@ -82,7 +82,7 @@ class ModuleCompleter:
         if not path:
             # Top-level import (e.g. `import foo<tab>`` or `from foo<tab>`)`
             return [name for _, name, _ in self.global_cache
-                    if self._should_add_module_name(name, prefix)]
+                    if self._is_suggestion_match(name, prefix)]
 
         if path.startswith('.'):
             # Convert relative path to absolute path
@@ -98,7 +98,7 @@ class ModuleCompleter:
             modules = self.iter_submodules(modules)
 
         return [module.name for module in modules
-                if self._should_add_module_name(module.name, prefix)]
+                if self._is_suggestion_match(module.name, prefix)]
 
     def _is_suggestion_match(self, module_name: str, prefix: str) -> bool:
         prefix_modules = prefix and module_name.startswith(prefix)
