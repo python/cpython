@@ -1524,8 +1524,7 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         self.assertEqual(res, self.served_data)
 
     def test_https_client(self):
-        _, addr = server._get_best_family(None, find_unused_port())
-        bind, port = addr[:2]
+        bind, port = 'localhost', find_unused_port()
         proc = spawn_python('-u', '-m', 'http.server', str(port), '-b', bind,
                             '--tls-cert', self.tls_cert,
                             '--tls-key', self.tls_key,
