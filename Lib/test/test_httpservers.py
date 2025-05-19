@@ -1472,11 +1472,11 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
             f.write(self.tls_password.encode())
         self.addCleanup(os_helper.unlink, self.tls_password_file)
 
-    def fetch_file(self, path, allow_self_signed_cert=True):
+    def fetch_file(self, path):
         context = ssl.create_default_context()
-        if allow_self_signed_cert:
-            context.check_hostname = False
-            context.verify_mode = ssl.CERT_NONE
+        # allow self-signed certificates
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
         req = urllib.request.Request(path, method='GET')
         with urllib.request.urlopen(req, context=context) as res:
             return res.read()
