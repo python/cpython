@@ -1179,7 +1179,7 @@ signal_sigwaitinfo_impl(PyObject *module, sigset_t sigset)
     do {
         err = sigwaitinfo(&sigset, &si);
     } while (err == -1
-             && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+             && errno == EINTR && !(async_err = PyErr_CheckSignals_Detached()));
     Py_END_ALLOW_THREADS
     if (err == -1)
         return (!async_err) ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
@@ -1759,11 +1759,12 @@ _PySignal_Fini(void)
     Py_CLEAR(state->ignore_handler);
 }
 
-/* Subroutine of _PyErr_CheckSignalsNoGIL.  Does all the work that
-   needs the GIL.  When called, 'tstate' must be the thread state for
-   the current thread, and the current thread must hold the GIL.  */
+
+/* Subroutine of the PyErr_CheckSignals family.  Does all the work
+   that needs an attached thread state.  When called, 'tstate' must
+   be the thread state for the current thread, and it must be attached.  */
 static int
-_PyErr_CheckSignalsHoldingGIL(PyThreadState *tstate, bool cycle_collect)
+check_signals_attached(PyThreadState *tstate, bool cycle_collect)
 {
 #if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
     _PyRunRemoteDebugger(tstate);
@@ -1872,10 +1873,47 @@ _PyErr_CheckSignalsHoldingGIL(PyThreadState *tstate, bool cycle_collect)
 }
 
 /* Subroutine of the PyErr_CheckSignals family:
-   Determine whether there is actually any work needing to be done.
-   If so, acquire the GIL if necessary, and do that work.  */
+   Assert that `tstate` is the current thread's state and it is
+   attached; then proceed to do the work of checking for pending
+   signals.  */
 static int
-_PyErr_CheckSignalsNoGIL(PyThreadState *tstate, bool cycle_collect)
+check_signals_require_attached(PyThreadState *tstate, bool cycle_collect)
+{
+    _Py_AssertHoldsTstate();
+    _Py_CHECK_EMSCRIPTEN_SIGNALS();
+    return check_signals_attached(tstate, cycle_collect);
+}
+
+/* Declared in pycore_pyerrors.h.  */
+int
+_PyErr_CheckSignalsTstate(PyThreadState *tstate)
+{
+    return check_signals_require_attached(tstate, true);
+}
+
+/* Declared in pycore_pyerrors.h.  */
+int
+_PyErr_CheckSignals(void)
+{
+    PyThreadState *tstate = PyGILState_GetThisThreadState();
+    return check_signals_require_attached(tstate, false);
+}
+
+/* Declared in pyerrors.h.  */
+int
+PyErr_CheckSignals(void)
+{
+    PyThreadState *tstate = PyGILState_GetThisThreadState();
+    return check_signals_require_attached(tstate, true);
+}
+
+/* Subroutine of the PyErr_CheckSignals family:
+   Determine whether there is actually any work needing to be done.
+   If so, attach the thread state if necessary, and do that work.
+   The 'tstate' argument must be the thread state (if any) for the
+   current thread, but it does not need to be attached.  */
+static int
+check_signals_detached(PyThreadState *tstate, bool cycle_collect)
 {
     /* If this thread does not have a thread state at all, then it has
        never been associated with the Python runtime, so it should not
@@ -1900,36 +1938,19 @@ _PyErr_CheckSignalsNoGIL(PyThreadState *tstate, bool cycle_collect)
     /* FIXME: Given that we already have 'tstate', is there a more efficient
        way to do this? */
     PyGILState_STATE st = PyGILState_Ensure();
-    int err = _PyErr_CheckSignalsHoldingGIL(tstate, cycle_collect);
+    int err = check_signals_attached(tstate, cycle_collect);
     PyGILState_Release(st);
 
     return err;
 }
 
-/* Declared in pycore_pyerrors.h.
-   This function may be called without the GIL. */
-int
-_PyErr_CheckSignalsTstate(PyThreadState *tstate)
-{
-    return _PyErr_CheckSignalsNoGIL(tstate, true);
-}
-
-/* Declared in pycore_pyerrors.h.
-   This function may be called without the GIL.  */
-int
-_PyErr_CheckSignals(void)
-{
-    PyThreadState *tstate = PyGILState_GetThisThreadState();
-    return _PyErr_CheckSignalsNoGIL(tstate, false);
-}
-
 /* Declared in pyerrors.h.
    This function may be called without the GIL. */
 int
-PyErr_CheckSignals(void)
+PyErr_CheckSignals_Detached(void)
 {
     PyThreadState *tstate = PyGILState_GetThisThreadState();
-    return _PyErr_CheckSignalsNoGIL(tstate, true);
+    return check_signals_detached(tstate, true);
 }
 
 /* Simulate the effect of a signal arriving. The next time PyErr_CheckSignals
