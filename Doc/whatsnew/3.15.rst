@@ -145,6 +145,15 @@ sysconfig
   (Contributed by Filipe Laíns in :gh:`92897`.)
 
 
+threading
+---------
+
+* Remove support for arbitrary positional or keyword arguments in the C
+  implementation of :class:`~threading.RLock` objects. This was deprecated
+  in Python 3.14.
+  (Contributed by Bénédikt Tran in :gh:`134087`.)
+
+
 typing
 ------
 

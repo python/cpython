@@ -1393,10 +1393,8 @@ interp_look_up_id(_PyRuntimeState *runtime, int64_t requested_id)
 {
     PyInterpreterState *interp = runtime->interpreters.head;
     while (interp != NULL) {
-        int64_t id = PyInterpreterState_GetID(interp);
-        if (id < 0) {
-            return NULL;
-        }
+        int64_t id = interp->id;
+        assert(id >= 0);
         if (requested_id == id) {
             return interp;
         }
@@ -1908,9 +1906,14 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
 static void
 zapthreads(PyInterpreterState *interp)
 {
+    PyThreadState *tstate;
     /* No need to lock the mutex here because this should only happen
-       when the threads are all really dead (XXX famous last words). */
-    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, tstate) {
+       when the threads are all really dead (XXX famous last words).
+
+       Cannot use _Py_FOR_EACH_TSTATE_UNLOCKED because we are freeing
+       the thread states here.
+    */
+    while ((tstate = interp->threads.head) != NULL) {
         tstate_verify_not_active(tstate);
         tstate_delete_common(tstate, 0);
         free_threadstate((_PyThreadStateImpl *)tstate);
