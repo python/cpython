@@ -1955,9 +1955,10 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_GUARD_THIRD_NULL", uops)
         self.assertNotIn("_GUARD_CALLABLE_ISINSTANCE", uops)
+        self.assertIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_list_append(self):
         def testfunc(n):
@@ -1987,9 +1988,10 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+        self.assertIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_isinstance_is_false(self):
         def testfunc(n):
@@ -2004,9 +2006,10 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertNotIn("_GUARD_IS_FALSE_POP", uops)
+        self.assertIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_isinstance_subclass(self):
         def testfunc(n):
@@ -2021,9 +2024,10 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+        self.assertIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_isinstance_unknown_object(self):
         def testfunc(n):
