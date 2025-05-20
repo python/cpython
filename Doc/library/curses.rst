@@ -991,7 +991,7 @@ the following methods and attributes:
    The maximum value for *n* is 2047.
 
    .. versionchanged:: next
-      The maximum value for *n* is set to 2047.
+      The maximum value for *n* was increased from 1023 to 2047.
 
 
 .. method:: window.getyx()
@@ -1086,7 +1086,7 @@ the following methods and attributes:
    The maximum value for *n* is 2047.
 
    .. versionchanged:: next
-      The maximum value for *n* is set to 2047.
+      The maximum value for *n* was increased from 1023 to 2047.
 
 
 .. method:: window.is_linetouched(line)
