@@ -1088,6 +1088,7 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
     //     -3:  Failed to parse time component
     //     -4:  Failed to parse time separator
     //     -5:  Malformed timezone string
+    //     -6:  Timezone fields are not in range
 
     const char *p = dtstr;
     const char *p_end = dtstr + dtlen;
@@ -1133,6 +1134,11 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
     int tzhour = 0, tzminute = 0, tzsecond = 0;
     rv = parse_hh_mm_ss_ff(tzinfo_pos, p_end, &tzhour, &tzminute, &tzsecond,
                            tzmicrosecond);
+
+    // Check if timezone fields are in range
+    if (check_time_args(tzhour, tzminute, tzsecond, *tzmicrosecond, 0) < 0) {
+        return -6;
+    }
 
     *tzoffset = tzsign * ((tzhour * 3600) + (tzminute * 60) + tzsecond);
     *tzmicrosecond *= tzsign;
@@ -5039,6 +5045,9 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
                                   &tzoffset, &tzimicrosecond);
 
     if (rv < 0) {
+        if (rv == -6) {
+            goto error;
+        }
         goto invalid_string_error;
     }
 
@@ -5074,6 +5083,9 @@ invalid_iso_midnight:
 
 invalid_string_error:
     PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R", tstr);
+    return NULL;
+
+error:
     return NULL;
 }
 
@@ -5539,8 +5551,9 @@ datetime_best_possible(PyObject *cls, TM_FUNC f, PyObject *tzinfo)
     time_t secs;
     int us;
 
-    if (_PyTime_AsTimevalTime_t(ts, &secs, &us, _PyTime_ROUND_FLOOR) < 0)
+    if (_PyTime_AsTimevalTime_t(ts, &secs, &us, _PyTime_ROUND_HALF_EVEN) < 0) {
         return NULL;
+    }
     assert(0 <= us && us <= 999999);
 
     return datetime_from_timet_and_us(cls, f, secs, us, tzinfo);
@@ -5927,6 +5940,9 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
         len -= (p - dt_ptr);
         rv = parse_isoformat_time(p, len, &hour, &minute, &second,
                                   &microsecond, &tzoffset, &tzusec);
+        if (rv == -6) {
+            goto error;
+        }
     }
     if (rv < 0) {
         goto invalid_string_error;
