@@ -1,1 +1,1 @@
-Made curses ``instr`` method to allocate buffer on heap instead of on stack. Incremented the max buffer size to 2047 instead of 1023.
+The :meth:`curses.window.instr` and :meth:`curses.window.getstr` allocate its internal buffer on the heap instead of the stack. Increased its max buffer size to 2047 from of 1023, documenting the limit.
