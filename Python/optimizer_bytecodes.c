@@ -3,7 +3,6 @@
 #include "pycore_uops.h"
 #include "pycore_uop_ids.h"
 #include "internal/pycore_moduleobject.h"
-#include "refcount.h"
 
 #define op(name, ...) /* NAME is ignored */
 
