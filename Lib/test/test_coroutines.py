@@ -2300,7 +2300,7 @@ class CoroAsyncIOCompatTest(unittest.TestCase):
             buffer.append('unreachable')
 
         loop = asyncio.new_event_loop()
-        asyncio._set_event_loop(loop)
+        asyncio.set_event_loop(loop)
         try:
             loop.run_until_complete(f())
         except MyException:

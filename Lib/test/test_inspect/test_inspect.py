@@ -37,7 +37,7 @@ except ImportError:
 
 from test.support import cpython_only, import_helper
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
-from test.support import run_no_yield_async_fn
+from test.support import run_no_yield_async_fn, EqualToForwardRef
 from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN, temp_cwd
 from test.support.script_helper import assert_python_ok, assert_python_failure, kill_python
@@ -3412,9 +3412,10 @@ class TestSignatureObject(unittest.TestCase):
                           int))
 
     def test_signature_on_classmethod(self):
-        self.assertEqual(self.signature(classmethod),
-                         ((('function', ..., ..., "positional_only"),),
-                          ...))
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertEqual(self.signature(classmethod),
+                            ((('function', ..., ..., "positional_only"),),
+                            ...))
 
         class Test:
             @classmethod
@@ -3434,9 +3435,10 @@ class TestSignatureObject(unittest.TestCase):
                           ...))
 
     def test_signature_on_staticmethod(self):
-        self.assertEqual(self.signature(staticmethod),
-                         ((('function', ..., ..., "positional_only"),),
-                          ...))
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertEqual(self.signature(staticmethod),
+                            ((('function', ..., ..., "positional_only"),),
+                            ...))
 
         class Test:
             @staticmethod
@@ -3845,7 +3847,6 @@ class TestSignatureObject(unittest.TestCase):
                            ('b', ..., ..., "positional_or_keyword")),
                           ...))
 
-
     def test_signature_on_class(self):
         class C:
             def __init__(self, a):
@@ -3954,9 +3955,10 @@ class TestSignatureObject(unittest.TestCase):
 
             self.assertEqual(C(3), 8)
             self.assertEqual(C(3, 7), 1)
-            # BUG: Returns '<Signature (b)>'
-            with self.assertRaises(AssertionError):
-                self.assertEqual(self.signature(C), self.signature((0).__pow__))
+            if not support.MISSING_C_DOCSTRINGS:
+                # BUG: Returns '<Signature (b)>'
+                with self.assertRaises(AssertionError):
+                    self.assertEqual(self.signature(C), self.signature((0).__pow__))
 
         class CM(type):
             def __new__(mcls, name, bases, dct, *, foo=1):
@@ -4018,6 +4020,45 @@ class TestSignatureObject(unittest.TestCase):
                            ('dct', ..., ..., "positional_or_keyword"),
                            ('bar', 2, ..., "keyword_only")),
                           ...))
+
+    def test_signature_on_class_with_decorated_new(self):
+        def identity(func):
+            @functools.wraps(func)
+            def wrapped(*args, **kwargs):
+                return func(*args, **kwargs)
+            return wrapped
+
+        class Foo:
+            @identity
+            def __new__(cls, a, b):
+                pass
+
+        self.assertEqual(self.signature(Foo),
+                         ((('a', ..., ..., "positional_or_keyword"),
+                           ('b', ..., ..., "positional_or_keyword")),
+                          ...))
+
+        self.assertEqual(self.signature(Foo.__new__),
+                         ((('cls', ..., ..., "positional_or_keyword"),
+                           ('a', ..., ..., "positional_or_keyword"),
+                           ('b', ..., ..., "positional_or_keyword")),
+                          ...))
+
+        class Bar:
+            __new__ = identity(object.__new__)
+
+        varargs_signature = (
+            (('args', ..., ..., 'var_positional'),
+             ('kwargs', ..., ..., 'var_keyword')),
+            ...,
+        )
+
+        self.assertEqual(self.signature(Bar), ((), ...))
+        self.assertEqual(self.signature(Bar.__new__), varargs_signature)
+        self.assertEqual(self.signature(Bar, follow_wrapped=False),
+                         varargs_signature)
+        self.assertEqual(self.signature(Bar.__new__, follow_wrapped=False),
+                         varargs_signature)
 
     def test_signature_on_class_with_init(self):
         class C:
@@ -4352,7 +4393,8 @@ class TestSignatureObject(unittest.TestCase):
                 __call__ = (2).__pow__
 
             self.assertEqual(C()(3), 8)
-            self.assertEqual(self.signature(C()), self.signature((0).__pow__))
+            if not support.MISSING_C_DOCSTRINGS:
+                self.assertEqual(self.signature(C()), self.signature((0).__pow__))
 
         with self.subTest('ClassMethodDescriptorType'):
             class C(dict):
@@ -4361,7 +4403,8 @@ class TestSignatureObject(unittest.TestCase):
             res = C()([1, 2], 3)
             self.assertEqual(res, {1: 3, 2: 3})
             self.assertEqual(type(res), C)
-            self.assertEqual(self.signature(C()), self.signature(dict.fromkeys))
+            if not support.MISSING_C_DOCSTRINGS:
+                self.assertEqual(self.signature(C()), self.signature(dict.fromkeys))
 
         with self.subTest('MethodDescriptorType'):
             class C(str):
@@ -4375,7 +4418,8 @@ class TestSignatureObject(unittest.TestCase):
                 __call__ = int.__pow__
 
             self.assertEqual(C(2)(3), 8)
-            self.assertEqual(self.signature(C()), self.signature((0).__pow__))
+            if not support.MISSING_C_DOCSTRINGS:
+                self.assertEqual(self.signature(C()), self.signature((0).__pow__))
 
         with self.subTest('MemberDescriptorType'):
             class C:
@@ -4393,7 +4437,8 @@ class TestSignatureObject(unittest.TestCase):
             def __call__(self, *args, **kwargs):
                 pass
 
-        self.assertEqual(self.signature(C), ((), ...))
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertEqual(self.signature(C), ((), ...))
         self.assertEqual(self.signature(C()),
                          ((('a', ..., ..., "positional_only"),
                            ('b', ..., ..., "positional_or_keyword"),
@@ -4940,14 +4985,48 @@ class TestSignatureObject(unittest.TestCase):
                     signature_func(ida.f, annotation_format=Format.STRING),
                     sig([par("x", PORK, annotation="undefined")])
                 )
+                s1 = signature_func(ida.f, annotation_format=Format.FORWARDREF)
+                s2 = sig([par("x", PORK, annotation=EqualToForwardRef("undefined", owner=ida.f))])
+                #breakpoint()
                 self.assertEqual(
                     signature_func(ida.f, annotation_format=Format.FORWARDREF),
-                    sig([par("x", PORK, annotation=ForwardRef("undefined"))])
+                    sig([par("x", PORK, annotation=EqualToForwardRef("undefined", owner=ida.f))])
                 )
                 with self.assertRaisesRegex(NameError, "undefined"):
                     signature_func(ida.f, annotation_format=Format.VALUE)
                 with self.assertRaisesRegex(NameError, "undefined"):
                     signature_func(ida.f)
+
+    def test_signature_deferred_annotations(self):
+        def f(x: undef):
+            pass
+
+        class C:
+            x: undef
+
+            def __init__(self, x: undef):
+                self.x = x
+
+        sig = inspect.signature(f, annotation_format=Format.FORWARDREF)
+        self.assertEqual(list(sig.parameters), ['x'])
+        sig = inspect.signature(C, annotation_format=Format.FORWARDREF)
+        self.assertEqual(list(sig.parameters), ['x'])
+
+        class CallableWrapper:
+            def __init__(self, func):
+                self.func = func
+                self.__annotate__ = func.__annotate__
+
+            def __call__(self, *args, **kwargs):
+                return self.func(*args, **kwargs)
+
+            @property
+            def __annotations__(self):
+                return self.__annotate__(Format.VALUE)
+
+        cw = CallableWrapper(f)
+        sig = inspect.signature(cw, annotation_format=Format.FORWARDREF)
+        self.assertEqual(list(sig.parameters), ['args', 'kwargs'])
 
     def test_signature_none_annotation(self):
         class funclike:
@@ -5757,7 +5836,7 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_faulthandler_module_has_signatures(self):
         import faulthandler
-        unsupported_signature = {'dump_traceback', 'dump_traceback_later', 'enable'}
+        unsupported_signature = {'dump_traceback', 'dump_traceback_later', 'enable', 'dump_c_stack'}
         unsupported_signature |= {name for name in ['register']
                                   if hasattr(faulthandler, name)}
         self._test_module_has_signatures(faulthandler, unsupported_signature=unsupported_signature)
@@ -5796,7 +5875,7 @@ class TestSignatureDefinitions(unittest.TestCase):
         self._test_module_has_signatures(operator)
 
     def test_os_module_has_signatures(self):
-        unsupported_signature = {'chmod', 'utime'}
+        unsupported_signature = {'chmod', 'link', 'utime'}
         unsupported_signature |= {name for name in
             ['get_terminal_size', 'posix_spawn', 'posix_spawnp',
              'register_at_fork', 'startfile']
@@ -6098,12 +6177,14 @@ class TestRepl(unittest.TestCase):
         object.
         """
 
+        # TODO(picnixz): refactor this as it's used by test_repl.py
+
         # To run the REPL without using a terminal, spawn python with the command
         # line option '-i' and the process name set to '<stdin>'.
         # The directory of argv[0] must match the directory of the Python
         # executable for the Popen() call to python to succeed as the directory
-        # path may be used by Py_GetPath() to build the default module search
-        # path.
+        # path may be used by PyConfig_Get("module_search_paths") to build the
+        # default module search path.
         stdin_fname = os.path.join(os.path.dirname(sys.executable), "<stdin>")
         cmd_line = [stdin_fname, '-E', '-i']
         cmd_line.extend(args)

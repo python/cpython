@@ -28,8 +28,9 @@ except ImportError:
 
 from pathlib._os import (
     PathInfo, DirEntryInfo,
+    magic_open, vfspath,
     ensure_different_files, ensure_distinct_paths,
-    copyfile2, copyfileobj, magic_open, copy_info,
+    copyfile2, copyfileobj, copy_info,
 )
 
 
@@ -1164,12 +1165,12 @@ class Path(PurePath):
         # os.symlink() incorrectly creates a file-symlink on Windows. Avoid
         # this by passing *target_is_dir* to os.symlink() on Windows.
         def _copy_from_symlink(self, source, preserve_metadata=False):
-            os.symlink(str(source.readlink()), self, source.info.is_dir())
+            os.symlink(vfspath(source.readlink()), self, source.info.is_dir())
             if preserve_metadata:
                 copy_info(source.info, self, follow_symlinks=False)
     else:
         def _copy_from_symlink(self, source, preserve_metadata=False):
-            os.symlink(str(source.readlink()), self)
+            os.symlink(vfspath(source.readlink()), self)
             if preserve_metadata:
                 copy_info(source.info, self, follow_symlinks=False)
 
@@ -1271,15 +1272,17 @@ class Path(PurePath):
         if not self.is_absolute():
             raise ValueError("relative paths can't be expressed as file URIs")
         from urllib.request import pathname2url
-        return f'file:{pathname2url(str(self))}'
+        return pathname2url(str(self), add_scheme=True)
 
     @classmethod
     def from_uri(cls, uri):
         """Return a new path from the given 'file' URI."""
-        if not uri.startswith('file:'):
-            raise ValueError(f"URI does not start with 'file:': {uri!r}")
+        from urllib.error import URLError
         from urllib.request import url2pathname
-        path = cls(url2pathname(uri.removeprefix('file:')))
+        try:
+            path = cls(url2pathname(uri, require_scheme=True))
+        except URLError as exc:
+            raise ValueError(exc.reason) from None
         if not path.is_absolute():
             raise ValueError(f"URI is not absolute: {uri!r}")
         return path

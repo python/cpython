@@ -156,26 +156,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - windows-latest
         arch:
           - x64
+          - Win32
+          - arm64
         free-threading:
           - false
           - true
-        include:
-          - os: windows-latest # FIXME(diegorusso): change to os: windows-aarch64
-            arch: arm64
-            free-threading: false
-          - os: windows-latest # FIXME(diegorusso): change to os: windows-aarch64
-            arch: arm64
-            free-threading: true
-          - os: windows-latest
-            arch: Win32
-            free-threading: false
+        exclude:
+          # Skip Win32 on free-threaded builds
+          - { arch: Win32, free-threading: true }
     uses: ./.github/workflows/reusable-windows.yml
     with:
-      os: ${{ matrix.os }}
       arch: ${{ matrix.arch }}
       free-threading: ${{ matrix.free-threading }}
 
@@ -272,7 +264,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04]
-        openssl_ver: [3.0.15, 3.1.7, 3.2.3, 3.3.2, 3.4.0]
+        openssl_ver: [3.0.16, 3.1.8, 3.2.4, 3.3.3, 3.4.1]
         # See Tools/ssl/make_ssl_data.py for notes on adding a new version
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
@@ -339,7 +331,7 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     env:
-      OPENSSL_VER: 3.0.15
+      OPENSSL_VER: 3.0.16
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v4
@@ -430,8 +422,9 @@ jobs:
         # failing when executed from inside a virtual environment.
         "${VENV_PYTHON}" -m test \
           -W \
-          -o \
+          --slowest \
           -j4 \
+          --timeout 900 \
           -x test_asyncio \
           -x test_multiprocessing_fork \
           -x test_multiprocessing_forkserver \
@@ -458,7 +451,7 @@ jobs:
       matrix:
         os: [ubuntu-24.04]
     env:
-      OPENSSL_VER: 3.0.15
+      OPENSSL_VER: 3.0.16
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:

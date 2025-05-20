@@ -26,16 +26,24 @@ PyAPI_DATA(int) (*PyOS_InputHook)(void);
  * apart. In practice, that means it must be larger than the C
  * stack consumption of PyEval_EvalDefault */
 #if defined(_Py_ADDRESS_SANITIZER) || defined(_Py_THREAD_SANITIZER)
-#  define PYOS_STACK_MARGIN 4096
+#  define PYOS_LOG2_STACK_MARGIN 12
 #elif defined(Py_DEBUG) && defined(WIN32)
-#  define PYOS_STACK_MARGIN 4096
+#  define PYOS_LOG2_STACK_MARGIN 12
 #elif defined(__wasi__)
    /* Web assembly has two stacks, so this isn't really a size */
-#  define PYOS_STACK_MARGIN 500
+#  define PYOS_LOG2_STACK_MARGIN 9
 #else
-#  define PYOS_STACK_MARGIN 2048
+#  define PYOS_LOG2_STACK_MARGIN 11
 #endif
+#define PYOS_STACK_MARGIN (1 << PYOS_LOG2_STACK_MARGIN)
 #define PYOS_STACK_MARGIN_BYTES (PYOS_STACK_MARGIN * sizeof(void *))
+
+#if SIZEOF_VOID_P == 8
+#define PYOS_STACK_MARGIN_SHIFT (PYOS_LOG2_STACK_MARGIN + 3)
+#else
+#define PYOS_STACK_MARGIN_SHIFT (PYOS_LOG2_STACK_MARGIN + 2)
+#endif
+
 
 #if defined(WIN32)
 #define USE_STACKCHECK

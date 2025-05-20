@@ -78,11 +78,6 @@ CLASSES
      |  __weakref__%s
 
     class B(builtins.object)
-     |  Methods defined here:
-     |
-     |  __annotate__(format, /)
-     |
-     |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
      |
      |  __dict__%s
@@ -180,9 +175,6 @@ class A(builtins.object)
             list of weak references to the object
 
 class B(builtins.object)
-    Methods defined here:
-        __annotate__(format, /)
-    ----------------------------------------------------------------------
     Data descriptors defined here:
         __dict__
             dictionary for instance variables
@@ -1935,18 +1927,28 @@ class PydocFodderTest(unittest.TestCase):
         self.assertIn(' |  global_func(x, y) from test.test_pydoc.pydocfodder', lines)
         self.assertIn(' |  global_func_alias = global_func(x, y)', lines)
         self.assertIn(' |  global_func2_alias = global_func2(x, y) from test.test_pydoc.pydocfodder', lines)
-        self.assertIn(' |  count(self, value, /) from builtins.list', lines)
-        self.assertIn(' |  list_count = count(self, value, /)', lines)
-        self.assertIn(' |  __repr__(self, /) from builtins.object', lines)
-        self.assertIn(' |  object_repr = __repr__(self, /)', lines)
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn(' |  count(self, value, /) from builtins.list', lines)
+            self.assertIn(' |  list_count = count(self, value, /)', lines)
+            self.assertIn(' |  __repr__(self, /) from builtins.object', lines)
+            self.assertIn(' |  object_repr = __repr__(self, /)', lines)
+        else:
+            self.assertIn(' |  count(self, object, /) from builtins.list', lines)
+            self.assertIn(' |  list_count = count(self, object, /)', lines)
+            self.assertIn(' |  __repr__(...) from builtins.object', lines)
+            self.assertIn(' |  object_repr = __repr__(...)', lines)
 
         lines = self.getsection(result, f' |  Static methods {where}:', ' |  ' + '-'*70)
         self.assertIn(' |  A_classmethod_ref = A_classmethod(x) class method of test.test_pydoc.pydocfodder.A', lines)
         note = '' if cls is pydocfodder.B else ' class method of test.test_pydoc.pydocfodder.B'
         self.assertIn(' |  B_classmethod_ref = B_classmethod(x)' + note, lines)
         self.assertIn(' |  A_method_ref = A_method() method of test.test_pydoc.pydocfodder.A instance', lines)
-        self.assertIn(' |  get(key, default=None, /) method of builtins.dict instance', lines)
-        self.assertIn(' |  dict_get = get(key, default=None, /) method of builtins.dict instance', lines)
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn(' |  get(key, default=None, /) method of builtins.dict instance', lines)
+            self.assertIn(' |  dict_get = get(key, default=None, /) method of builtins.dict instance', lines)
+        else:
+            self.assertIn(' |  get(...) method of builtins.dict instance', lines)
+            self.assertIn(' |  dict_get = get(...) method of builtins.dict instance', lines)
 
         lines = self.getsection(result, f' |  Class methods {where}:', ' |  ' + '-'*70)
         self.assertIn(' |  B_classmethod(x)', lines)
@@ -1965,10 +1967,16 @@ class PydocFodderTest(unittest.TestCase):
         self.assertIn('global_func(x, y) from test.test_pydoc.pydocfodder', lines)
         self.assertIn('global_func_alias = global_func(x, y)', lines)
         self.assertIn('global_func2_alias = global_func2(x, y) from test.test_pydoc.pydocfodder', lines)
-        self.assertIn('count(self, value, /) from builtins.list', lines)
-        self.assertIn('list_count = count(self, value, /)', lines)
-        self.assertIn('__repr__(self, /) from builtins.object', lines)
-        self.assertIn('object_repr = __repr__(self, /)', lines)
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn('count(self, value, /) from builtins.list', lines)
+            self.assertIn('list_count = count(self, value, /)', lines)
+            self.assertIn('__repr__(self, /) from builtins.object', lines)
+            self.assertIn('object_repr = __repr__(self, /)', lines)
+        else:
+            self.assertIn('count(self, object, /) from builtins.list', lines)
+            self.assertIn('list_count = count(self, object, /)', lines)
+            self.assertIn('__repr__(...) from builtins.object', lines)
+            self.assertIn('object_repr = __repr__(...)', lines)
 
         lines = self.getsection(result, f'Static methods {where}:', '-'*70)
         self.assertIn('A_classmethod_ref = A_classmethod(x) class method of test.test_pydoc.pydocfodder.A', lines)
@@ -2005,15 +2013,27 @@ class PydocFodderTest(unittest.TestCase):
         self.assertIn('    A_method3 = A_method() method of B instance', lines)
         self.assertIn('    A_staticmethod_ref = A_staticmethod(x, y)', lines)
         self.assertIn('    A_staticmethod_ref2 = A_staticmethod(y) method of B instance', lines)
-        self.assertIn('    get(key, default=None, /) method of builtins.dict instance', lines)
-        self.assertIn('    dict_get = get(key, default=None, /) method of builtins.dict instance', lines)
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn('    get(key, default=None, /) method of builtins.dict instance', lines)
+            self.assertIn('    dict_get = get(key, default=None, /) method of builtins.dict instance', lines)
+        else:
+            self.assertIn('    get(...) method of builtins.dict instance', lines)
+            self.assertIn('    dict_get = get(...) method of builtins.dict instance', lines)
+
         # unbound methods
         self.assertIn('    B_method(self)', lines)
         self.assertIn('    B_method2 = B_method(self)', lines)
-        self.assertIn('    count(self, value, /) unbound builtins.list method', lines)
-        self.assertIn('    list_count = count(self, value, /) unbound builtins.list method', lines)
-        self.assertIn('    __repr__(self, /) unbound builtins.object method', lines)
-        self.assertIn('    object_repr = __repr__(self, /) unbound builtins.object method', lines)
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn('    count(self, value, /) unbound builtins.list method', lines)
+            self.assertIn('    list_count = count(self, value, /) unbound builtins.list method', lines)
+            self.assertIn('    __repr__(self, /) unbound builtins.object method', lines)
+            self.assertIn('    object_repr = __repr__(self, /) unbound builtins.object method', lines)
+        else:
+            self.assertIn('    count(self, object, /) unbound builtins.list method', lines)
+            self.assertIn('    list_count = count(self, object, /) unbound builtins.list method', lines)
+            self.assertIn('    __repr__(...) unbound builtins.object method', lines)
+            self.assertIn('    object_repr = __repr__(...) unbound builtins.object method', lines)
+
 
     def test_html_doc_routines_in_module(self):
         doc = pydoc.HTMLDoc()
@@ -2034,15 +2054,25 @@ class PydocFodderTest(unittest.TestCase):
         self.assertIn(' A_method3 = A_method() method of B instance', lines)
         self.assertIn(' A_staticmethod_ref = A_staticmethod(x, y)', lines)
         self.assertIn(' A_staticmethod_ref2 = A_staticmethod(y) method of B instance', lines)
-        self.assertIn(' get(key, default=None, /) method of builtins.dict instance', lines)
-        self.assertIn(' dict_get = get(key, default=None, /) method of builtins.dict instance', lines)
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn(' get(key, default=None, /) method of builtins.dict instance', lines)
+            self.assertIn(' dict_get = get(key, default=None, /) method of builtins.dict instance', lines)
+        else:
+            self.assertIn(' get(...) method of builtins.dict instance', lines)
+            self.assertIn(' dict_get = get(...) method of builtins.dict instance', lines)
         # unbound methods
         self.assertIn(' B_method(self)', lines)
         self.assertIn(' B_method2 = B_method(self)', lines)
-        self.assertIn(' count(self, value, /) unbound builtins.list method', lines)
-        self.assertIn(' list_count = count(self, value, /) unbound builtins.list method', lines)
-        self.assertIn(' __repr__(self, /) unbound builtins.object method', lines)
-        self.assertIn(' object_repr = __repr__(self, /) unbound builtins.object method', lines)
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn(' count(self, value, /) unbound builtins.list method', lines)
+            self.assertIn(' list_count = count(self, value, /) unbound builtins.list method', lines)
+            self.assertIn(' __repr__(self, /) unbound builtins.object method', lines)
+            self.assertIn(' object_repr = __repr__(self, /) unbound builtins.object method', lines)
+        else:
+            self.assertIn(' count(self, object, /) unbound builtins.list method', lines)
+            self.assertIn(' list_count = count(self, object, /) unbound builtins.list method', lines)
+            self.assertIn(' __repr__(...) unbound builtins.object method', lines)
+            self.assertIn(' object_repr = __repr__(...) unbound builtins.object method', lines)
 
 
 @unittest.skipIf(
