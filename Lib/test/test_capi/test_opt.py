@@ -1971,12 +1971,12 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_get_len_with_immortal_tuple(self):
         def testfunc(n):
-            class TestObject(tuple):
+            class TestObject:
                 pass
             x = 0.0
             for _ in range(n):
                 match TestObject.__mro__:
-                    case (_, _, _,):
+                    case (_, _,):
                         x += 1.0
             return x
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
