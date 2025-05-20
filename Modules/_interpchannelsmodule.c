@@ -1779,7 +1779,7 @@ channel_send(_channels *channels, int64_t cid, PyObject *obj,
         PyThread_release_lock(mutex);
         return -1;
     }
-    if (_PyObject_GetXIData(tstate, obj, data) != 0) {
+    if (_PyObject_GetXIDataNoFallback(tstate, obj, data) != 0) {
         PyThread_release_lock(mutex);
         GLOBAL_FREE(data);
         return -1;

@@ -443,16 +443,16 @@ _get_xidata(PyThreadState *tstate,
 }
 
 int
-_PyObject_GetXIData(PyThreadState *tstate,
-                    PyObject *obj, _PyXIData_t *xidata)
+_PyObject_GetXIDataNoFallback(PyThreadState *tstate,
+                              PyObject *obj, _PyXIData_t *xidata)
 {
     return _get_xidata(tstate, obj, _PyXIDATA_XIDATA_ONLY, xidata);
 }
 
 int
-_PyObject_GetXIDataWithFallback(PyThreadState *tstate,
-                                PyObject *obj, xidata_fallback_t fallback,
-                                _PyXIData_t *xidata)
+_PyObject_GetXIData(PyThreadState *tstate,
+                    PyObject *obj, xidata_fallback_t fallback,
+                    _PyXIData_t *xidata)
 {
     switch (fallback) {
         case _PyXIDATA_XIDATA_ONLY:
@@ -1839,7 +1839,7 @@ _sharednsitem_set_value(_PyXI_namespace_item *item, PyObject *value)
         return -1;
     }
     PyThreadState *tstate = PyThreadState_Get();
-    if (_PyObject_GetXIData(tstate, value, item->xidata) != 0) {
+    if (_PyObject_GetXIDataNoFallback(tstate, value, item->xidata) != 0) {
         PyMem_RawFree(item->xidata);
         item->xidata = NULL;
         // The caller may want to propagate PyExc_NotShareableError

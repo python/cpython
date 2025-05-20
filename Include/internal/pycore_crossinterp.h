@@ -163,11 +163,11 @@ PyAPI_FUNC(int) _PyObject_CheckXIData(
         PyThreadState *,
         PyObject *);
 
-PyAPI_FUNC(int) _PyObject_GetXIData(
+PyAPI_FUNC(int) _PyObject_GetXIDataNoFallback(
         PyThreadState *,
         PyObject *,
         _PyXIData_t *);
-PyAPI_FUNC(int) _PyObject_GetXIDataWithFallback(
+PyAPI_FUNC(int) _PyObject_GetXIData(
         PyThreadState *,
         PyObject *,
         xidata_fallback_t,

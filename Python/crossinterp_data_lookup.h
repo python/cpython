@@ -642,8 +642,7 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj, xidata_fallback_t fallback,
 
         int res = -1;
         if (!_Py_EnterRecursiveCallTstate(tstate, " while sharing a tuple")) {
-            res = _PyObject_GetXIDataWithFallback(
-                                    tstate, item, fallback, xidata_i);
+            res = _PyObject_GetXIData(tstate, item, fallback, xidata_i);
             _Py_LeaveRecursiveCallTstate(tstate);
         }
         if (res < 0) {

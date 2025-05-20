@@ -1143,7 +1143,7 @@ queue_put(_queues *queues, int64_t qid, PyObject *obj, int fmt, int unboundop)
         _queue_unmark_waiter(queue, queues->mutex);
         return -1;
     }
-    if (_PyObject_GetXIData(tstate, obj, data) != 0) {
+    if (_PyObject_GetXIDataNoFallback(tstate, obj, data) != 0) {
         _queue_unmark_waiter(queue, queues->mutex);
         GLOBAL_FREE(data);
         return -1;
