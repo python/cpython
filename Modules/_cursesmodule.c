@@ -1834,6 +1834,8 @@ PyCursesWindow_GetStr(PyObject *op, PyObject *args)
     /* could make the buffer size larger/dynamic */
     Py_ssize_t max_buf_size = 2048;
     PyObject *result = PyBytes_FromStringAndSize(NULL, max_buf_size);
+    if (result == NULL)
+        return NULL;
     char *buf = PyBytes_AS_STRING(result);
 
     switch (PyTuple_Size(args)) {
@@ -2061,6 +2063,8 @@ PyCursesWindow_InStr(PyObject *op, PyObject *args)
     /* could make the buffer size larger/dynamic */
     Py_ssize_t max_buf_size = 2048;
     PyObject *result = PyBytes_FromStringAndSize(NULL, max_buf_size);
+    if (result == NULL)
+        return NULL;
     char *buf = PyBytes_AS_STRING(result);
 
     switch (PyTuple_Size(args)) {
