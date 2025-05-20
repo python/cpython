@@ -5035,13 +5035,7 @@ _curses_assume_default_colors_impl(PyObject *module, int fg, int bg)
     PyCursesStatefulInitialisedColor(module);
 
     code = assume_default_colors(fg, bg);
-    if (code != ERR) {
-        Py_RETURN_NONE;
-    } else {
-        cursesmodule_state *state = get_cursesmodule_state(module);
-        PyErr_SetString(state->error, "assume_default_colors() returned ERR");
-        return NULL;
-    }
+    return curses_check_err(module, code, "assume_default_colors", NULL);
 }
 #endif /* STRICT_SYSV_CURSES */
 
