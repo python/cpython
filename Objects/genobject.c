@@ -583,16 +583,20 @@ throw_here:
             goto failed_throw;
     }
 
-    /* hide the current thread's exception context from the generator */
-    PyThreadState *tstate = _PyThreadState_GET();
-    assert(tstate != NULL);
-    PyObject *prev_exc = tstate->exc_info->exc_value;
-    tstate->exc_info->exc_value = (exc_context == NULL ? Py_None : exc_context);
-
+    /* If an exception context is provided, set it (and restore it after) */
+    PyThreadState *tstate;
+    PyObject *prev_exc = NULL;
+    if (exc_context != NULL){
+        tstate = _PyThreadState_GET();
+        assert(tstate != NULL);
+        prev_exc = tstate->exc_info->exc_value;
+        tstate->exc_info->exc_value = exc_context;
+    }
     PyErr_Restore(typ, val, tb);
     PyObject* ret = gen_send_ex(gen, Py_None, 1, 0);
-
-    tstate->exc_info->exc_value = prev_exc;
+    if (prev_exc != NULL){
+        tstate->exc_info->exc_value = prev_exc;
+    }
     return ret;
 
 failed_throw:
@@ -658,6 +662,10 @@ gen_throw(PyObject *op, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnam
             PyErr_SetString(PyExc_TypeError, "exc_context must be an Exception object or None");
             return NULL;
         }
+    }
+    /* default to current exception */
+    if (exc_context == NULL){
+        exc_context = _PyErr_GetTopmostException(_PyThreadState_GET())->exc_value;
     }
     return _gen_throw(gen, 1, typ, val, tb, exc_context);
 }
