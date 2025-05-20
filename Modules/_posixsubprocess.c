@@ -664,12 +664,34 @@ static int set_groups(Py_ssize_t extra_group_size, const gid_t *extra_groups)
 
 
 static int
-set_identity(uid_t uid, gid_t gid,
-             Py_ssize_t extra_group_size, const gid_t *extra_groups)
+set_identity_priv(uid_t uid, gid_t gid,
+                  Py_ssize_t extra_group_size, const gid_t *extra_groups)
+{
+    return (set_user_identity(uid)
+            || set_group_identity(gid)
+            || set_groups(extra_group_size, extra_groups)) ? -1 : 0;
+}
+
+
+static int
+set_identity_unpriv(uid_t uid, gid_t gid,
+                    Py_ssize_t extra_group_size, const gid_t *extra_groups)
 {
     return (set_groups(extra_group_size, extra_groups)
             || set_group_identity(gid)
             || set_user_identity(uid)) ? -1 : 0;
+}
+
+
+static int
+set_identity(uid_t uid, gid_t gid,
+             Py_ssize_t extra_group_size, const gid_t *extra_groups)
+{
+    if (uid == 0) {
+        return set_identity_priv(uid, gid, extra_group_size, extra_groups);
+    } else {
+        return set_identity_unpriv(uid, gid, extra_group_size, extra_groups);
+    }
 }
 
 
