@@ -1943,7 +1943,7 @@ class TestUopsOptimization(unittest.TestCase):
         def testfunc(n):
             x = 0.0
             for _ in range(n):
-                match (object(), object()):
+                match object(), object():
                     case [_, _]:
                         x += 1.0
             return x
