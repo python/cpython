@@ -732,7 +732,7 @@ asyncio
 
 * The function and methods named ``create_task`` have received a new
   ``**kwargs`` argument that is passed through to the task constructor.
-  This changed was accidentally added in 3.13.3,
+  This change was accidentally added in 3.13.3,
   and broke the API contract for custom task factories.
   Several third-party task factories implemented workarounds for this.
   In 3.13.4 and later releases the old factory contract is honored
