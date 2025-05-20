@@ -972,10 +972,25 @@ class CmdLineTest(unittest.TestCase):
 
     @unittest.skipUnless(support.MS_WINDOWS, 'Test only applicable on Windows')
     def test_python_legacy_windows_stdio(self):
-        code = "import sys; print(sys.stdin.encoding, sys.stdout.encoding)"
-        expected = 'cp'
-        rc, out, err = assert_python_ok('-c', code, PYTHONLEGACYWINDOWSSTDIO='1')
-        self.assertIn(expected.encode(), out)
+        # Test that _WindowsConsoleIO is used when PYTHONLEGACYWINDOWSSTDIO
+        # is not set.
+        # We cannot use PIPE becase it prevents creating new console.
+        # So we use exit code.
+        code = "import sys; sys.exit(type(sys.stdout.buffer.raw).__name__ != '_WindowsConsoleIO')"
+        env = os.environ.copy()
+        env["PYTHONLEGACYWINDOWSSTDIO"] = ""
+        p = subprocess.run([sys.executable, "-c", code],
+                           creationflags=subprocess.CREATE_NEW_CONSOLE,
+                           env=env)
+        self.assertEqual(p.returncode, 0)
+
+        # Then test that FIleIO is used when PYTHONLEGACYWINDOWSSTDIO is set.
+        code = "import sys; sys.exit(type(sys.stdout.buffer.raw).__name__ != 'FileIO')"
+        env["PYTHONLEGACYWINDOWSSTDIO"] = "1"
+        p = subprocess.run([sys.executable, "-c", code],
+                           creationflags=subprocess.CREATE_NEW_CONSOLE,
+                           env=env)
+        self.assertEqual(p.returncode, 0)
 
     @unittest.skipIf("-fsanitize" in sysconfig.get_config_vars().get('PY_CFLAGS', ()),
                      "PYTHONMALLOCSTATS doesn't work with ASAN")
