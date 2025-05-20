@@ -1659,19 +1659,6 @@ _curses_window_getbkgd_impl(PyCursesWindowObject *self)
     return (long) getbkgd(self->win);
 }
 
-static PyObject *
-curses_check_signals_on_input_error(PyCursesWindowObject *self,
-                                    const char *curses_funcname,
-                                    const char *python_funcname)
-{
-    if (!PyErr_CheckSignals() && !PyErr_Occurred()) {
-        cursesmodule_state *state = get_cursesmodule_state_by_win(self);
-        PyErr_Format(state->error, "%s() (called by %s()): no input",
-                     curses_funcname, python_funcname);
-    }
-    return NULL;
-}
-
 /*[clinic input]
 _curses.window.getch
 
@@ -1707,11 +1694,29 @@ _curses_window_getch_impl(PyCursesWindowObject *self, int group_right_1,
     Py_END_ALLOW_THREADS
 
     if (rtn == ERR) {
-        /* wgetch() returns ERR in nodelay mode */
-        const char *funcname = group_right_1 ? "mvwgetch" : "wgetch";
-        return curses_check_signals_on_input_error(self, funcname, "getch");
+        // We suppress ERR returned by wgetch() in nodelay mode
+        // after we handled possible interruption signals.
+        if (PyErr_CheckSignals()) {
+            return NULL;
+        }
+        // ERR is an implementation detail, so to be on the safe side,
+        // we forcibly set the return value to -1 as documented above.
+        rtn = -1;
     }
     return PyLong_FromLong(rtn);
+}
+
+static PyObject *
+curses_check_signals_on_input_error(PyCursesWindowObject *self,
+                                    const char *curses_funcname,
+                                    const char *python_funcname)
+{
+    if (!PyErr_CheckSignals() && !PyErr_Occurred()) {
+        cursesmodule_state *state = get_cursesmodule_state_by_win(self);
+        PyErr_Format(state->error, "%s() (called by %s()): no input",
+                     curses_funcname, python_funcname);
+    }
+    return NULL;
 }
 
 /*[clinic input]
