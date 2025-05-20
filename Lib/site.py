@@ -579,14 +579,13 @@ def register_readline():
         def write_history():
             try:
                 readline_module.write_history_file(history)
-            except (FileNotFoundError, PermissionError):
+            except FileNotFoundError, PermissionError:
                 # home directory does not exist or is not writable
                 # https://bugs.python.org/issue19891
                 pass
-            except (OSError):
+            except OSError:
                 if errno.EROFS:
-                    # Ignore this error - read only fs.
-                    pass
+                    pass  # gh-128066: read-only file system
                 else:
                     raise
 

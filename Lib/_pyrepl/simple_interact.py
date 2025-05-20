@@ -152,13 +152,8 @@ def run_multiline_interactive_console(
             assert not more
             try:
                 append_history_file()
-            except (FileNotFoundError, PermissionError) as e:
+            except (FileNotFoundError, PermissionError, OSError) as e:
                 warnings.warn(f"failed to open the history file for writing: {e}")
-            except (OSError):
-                if errno.EROFS:
-                    pass
-                else:
-                    raise
 
             input_n += 1
         except KeyboardInterrupt:
