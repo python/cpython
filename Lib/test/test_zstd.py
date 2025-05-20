@@ -2432,7 +2432,6 @@ class OpenTestCase(unittest.TestCase):
 
 class FreeThreadingMethodTests(unittest.TestCase):
 
-    @unittest.skipUnless(Py_GIL_DISABLED, 'this test can only possibly fail with GIL disabled')
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     def test_compress_locking(self):
@@ -2469,7 +2468,6 @@ class FreeThreadingMethodTests(unittest.TestCase):
         actual = b''.join(output) + rest2
         self.assertEqual(expected, actual)
 
-    @unittest.skipUnless(Py_GIL_DISABLED, 'this test can only possibly fail with GIL disabled')
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     def test_decompress_locking(self):
