@@ -5342,6 +5342,15 @@ dummy_func(
             value = PyStackRef_FromPyObjectImmortal(ptr);
         }
 
+        tier2 pure op(_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, pop1, pop2 -- value)) {
+            PyStackRef_CLOSE(pop2);
+            PyStackRef_CLOSE(pop1);
+            (void)null; // Silence compiler warnings about unused variables
+            DEAD(null);
+            PyStackRef_CLOSE(callable);
+            value = PyStackRef_FromPyObjectImmortal(ptr);
+        }
+
         tier2 op(_CHECK_FUNCTION, (func_version/2 -- )) {
             assert(PyStackRef_FunctionCheck(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
