@@ -2503,7 +2503,6 @@ class FreeThreadingMethodTests(unittest.TestCase):
         actual = b''.join(output)
         self.assertEqual(expected, actual)
 
-
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     def test_compress_shared_dict(self):
