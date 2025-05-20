@@ -1423,6 +1423,15 @@ ghi\0jkl
         dialect = sniffer.sniff(self.sample9)
         self.assertTrue(dialect.doublequote)
 
+    def test_quote_detection(self):
+        sniffer = csv.Sniffer()
+        dialect = sniffer.sniff(self.sample1)
+        self.assertEqual(dialect.quoting, csv.QUOTE_NONE)
+        breakpoint()
+        dialect = sniffer.sniff(self.sample2)
+        self.assertEqual(dialect.quoting, csv.QUOTE_ALL)
+
+
 class NUL:
     def write(s, *args):
         pass
