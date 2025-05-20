@@ -1128,10 +1128,10 @@ dummy_func(void) {
             if (temp == NULL) {
                 goto error;
             }
-            len = sym_new_const(ctx, temp);
             if (_Py_IsImmortal(temp)) {
                 REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
             }
+            len = sym_new_const(ctx, temp);
             Py_DECREF(temp);
         }
     }
