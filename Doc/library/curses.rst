@@ -988,7 +988,7 @@ the following methods and attributes:
             window.getstr(y, x, n)
 
    Read a bytes object from the user, with primitive line editing capacity.
-   The maximum of *n* for this method is 2047.
+   The maximum value for *n* is 2047.
 
    .. versionchanged:: next
       The maximum value for *n* is set to 2047.
