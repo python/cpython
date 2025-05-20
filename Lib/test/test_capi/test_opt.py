@@ -1942,14 +1942,14 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_get_len_with_non_const_tuple(self):
         def testfunc(n):
-            x = ""
+            x = 0.0
             for _ in range(n):
                 match (object(), object()):
                     case [_, _]:
-                        x += "1"
+                        x += 1.0
             return x
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
-        self.assertEqual(len(res), TIER2_THRESHOLD)
+        self.assertEqual(int(res), TIER2_THRESHOLD)
         uops = get_opnames(ex)
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertIn("_GET_LEN", uops)
@@ -1957,18 +1957,34 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_get_len_with_non_tuple(self):
         def testfunc(n):
-            x = ""
+            x = 0.0
             for _ in range(n):
                 match [1, 2, 3, 4]:
                     case [_, _, _, _]:
-                        x += "1"
+                        x += 1.0
             return x
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
-        self.assertEqual(len(res), TIER2_THRESHOLD)
+        self.assertEqual(int(res), TIER2_THRESHOLD)
         uops = get_opnames(ex)
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertIn("_GET_LEN", uops)
-        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_get_len_with_immortal_tuple(self):
+        def testfunc(n):
+            class TestObject(tuple):
+                pass
+            x = 0.0
+            for _ in range(n):
+                match TestObject.__mro__:
+                    case (_, _, _,):
+                        x += 1.0
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(int(res), TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+        self.assertIn("_GET_LEN", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
+
 
     def test_binary_op_subscr_tuple_int(self):
         def testfunc(n):

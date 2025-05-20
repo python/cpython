@@ -1477,6 +1477,9 @@
                     goto error;
                 }
                 len = sym_new_const(ctx, temp);
+                if (_Py_IsImmortal(temp)) {
+                    REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
+                }
                 stack_pointer[0] = len;
                 stack_pointer += 1;
                 assert(WITHIN_STACK_BOUNDS());

@@ -3,6 +3,7 @@
 #include "pycore_uops.h"
 #include "pycore_uop_ids.h"
 #include "internal/pycore_moduleobject.h"
+#include "refcount.h"
 
 #define op(name, ...) /* NAME is ignored */
 
@@ -1128,6 +1129,9 @@ dummy_func(void) {
                 goto error;
             }
             len = sym_new_const(ctx, temp);
+            if (_Py_IsImmortal(temp)) {
+                REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
+            }
             Py_DECREF(temp);
         }
     }
