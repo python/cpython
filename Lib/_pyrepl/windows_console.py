@@ -395,78 +395,21 @@ class WindowsConsole(Console):
             self._move_relative(x, y)
             self.posxy = x, y
 
-    def sync_screen(self):
+    def sync_cursor(self):
         """
-        Synchronize self.posxy, self.screen, self.width and self.height.
-        Assuming that the content of the screen doesn't change, only the width changes.
+        Synchronize posxy after resizing.
         """
-        if not self.screen:
-            self.posxy = 0, 0
-            return
+        info = CONSOLE_SCREEN_BUFFER_INFO()
+        if not GetConsoleScreenBufferInfo(OutHandle, info):
+            raise WinError(GetLastError())
+        cur_x, cur_y = info.dwCursorPosition.X, info.dwCursorPosition.Y
+        self.posxy = cur_x, cur_y + self.__offset
 
-        px, py = self.posxy
-        old_height, old_width = self.height, self.width
-        new_height, new_width = self.getheightwidth()
-
-        vlines = []
-        x, y = 0, 0
-        new_line = True
-        for i, line in enumerate(self.screen):
-            l = wlen(line)
-            if i == py:
-                if new_line:
-                    y = sum(wlen(g) // new_width for g in vlines) + len(vlines)
-                    x = px
-                else:
-                    y = sum(wlen(g) // new_width for g in vlines[:-1]) + len(vlines) - 1
-                    x = px + wlen(vlines[-1])
-                if x >= new_width:
-                    y += x // new_width
-                    x %= new_width
-
-            if new_line:
-                vlines.append(line)
-                new_line = False
-            else:
-                vlines[-1] += line
-            if l != old_width:
-                new_line = True
-
-        new_screen = []
-        for vline in vlines:
-            parts = []
-            last_end = 0
-            for match in ANSI_ESCAPE_SEQUENCE.finditer(vline):
-                if match.start() > last_end:
-                    parts.append((vline[last_end:match.start()], False))
-                parts.append((match.group(), True))
-                last_end = match.end()
-
-            if last_end < len(vline):
-                parts.append((vline[last_end:], False))
-
-            result = ""
-            length = 0
-            for part, is_escape in parts:
-                if is_escape:
-                    result += part
-                    continue
-                for char in part:
-                    lc = wlen(char)
-                    if lc + length > new_width:
-                        # save the current line
-                        new_screen.append(result)
-                        result = ""
-                        length = 0
-                    result += char
-                    length += lc
-
-            if result:
-                new_screen.append(result)
-
-        self.posxy = x, y
-        self.screen = new_screen
-        self.height, self.width = new_height, new_width
+    def sync_screen_size(self):
+        """
+        Synchronize screen size after resizing.
+        """
+        self.height, self.width = self.getheightwidth()
 
     def set_cursor_vis(self, visible: bool) -> None:
         if visible:

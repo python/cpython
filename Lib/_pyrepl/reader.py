@@ -716,6 +716,9 @@ class Reader:
             elif event.evt == "scroll":
                 self.refresh()
             elif event.evt == "resize":
+                self.console.sync_screen_size()
+                self.console.sync_cursor()
+                self.console.clear()
                 self.refresh()
             else:
                 translate = False

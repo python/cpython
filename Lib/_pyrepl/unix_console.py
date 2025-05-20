@@ -271,8 +271,9 @@ class UnixConsole(Console):
             self.posxy = 0, old_offset
             for i in range(old_offset - offset):
                 self.__write_code(self._ri)
-                oldscr.pop(-1)
                 oldscr.insert(0, "")
+                if len(oldscr) > height:
+                    oldscr.pop(-1)
         elif old_offset < offset and self._ind:
             self.__hide_cursor()
             self.__write_code(self._cup, self.height - 1, 0)
@@ -321,78 +322,28 @@ class UnixConsole(Console):
             self.posxy = x, y
             self.flushoutput()
 
-    def sync_screen(self):
+    def sync_cursor(self):
         """
-        Synchronize self.posxy, self.screen, self.width and self.height.
-        Assuming that the content of the screen doesn't change, only the width changes.
+        Synchronize posxy after resizing.
         """
-        if not self.screen:
-            self.posxy = 0, 0
-            return
+        os.write(self.output_fd, b"\x1b[6n")
+        response = b""
+        while True:
+            ch = os.read(self.input_fd, 1)
+            response += ch
+            if ch == b'R':
+                break
+        m = re.match(rb"\x1b\[(\d+);(\d+)R", response)
+        if m:
+            row, col = map(int, m.groups())
+            cur_x, cur_y = col - 1, row - 1
+            self.posxy = cur_x, cur_y + self.__offset
 
-        px, py = self.posxy
-        old_height, old_width = self.height, self.width
-        new_height, new_width = self.getheightwidth()
-
-        vlines = []
-        x, y = 0, 0
-        new_line = True
-        for i, line in enumerate(self.screen):
-            l = wlen(line)
-            if i == py:
-                if new_line:
-                    y = sum(wlen(g) // new_width for g in vlines) + len(vlines)
-                    x = px
-                else:
-                    y = sum(wlen(g) // new_width for g in vlines[:-1]) + len(vlines) - 1
-                    x = px + wlen(vlines[-1])
-                if x >= new_width:
-                    y += x // new_width
-                    x %= new_width
-
-            if new_line:
-                vlines.append(line)
-                new_line = False
-            else:
-                vlines[-1] += line
-            if l != old_width:
-                new_line = True
-
-        new_screen = []
-        for vline in vlines:
-            parts = []
-            last_end = 0
-            for match in ANSI_ESCAPE_SEQUENCE.finditer(vline):
-                if match.start() > last_end:
-                    parts.append((vline[last_end:match.start()], False))
-                parts.append((match.group(), True))
-                last_end = match.end()
-
-            if last_end < len(vline):
-                parts.append((vline[last_end:], False))
-
-            result = ""
-            length = 0
-            for part, is_escape in parts:
-                if is_escape:
-                    result += part
-                    continue
-                for char in part:
-                    lc = wlen(char)
-                    if lc + length > new_width:
-                        # save the current line
-                        new_screen.append(result)
-                        result = ""
-                        length = 0
-                    result += char
-                    length += lc
-
-            if result:
-                new_screen.append(result)
-
-        self.posxy = x, y
-        self.screen = new_screen
-        self.height, self.width = new_height, new_width
+    def sync_screen_size(self):
+        """
+        Synchronize screen size after resizing.
+        """
+        self.height, self.width = self.getheightwidth()
 
     def prepare(self):
         """
