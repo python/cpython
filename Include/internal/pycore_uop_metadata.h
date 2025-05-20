@@ -45,8 +45,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_FAST_AND_CLEAR] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
     [_LOAD_FAST_LOAD_FAST] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
     [_LOAD_FAST_BORROW_LOAD_FAST_BORROW] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
-    [_LOAD_CONST_MORTAL] = HAS_ARG_FLAG | HAS_CONST_FLAG,
-    [_LOAD_CONST_IMMORTAL] = HAS_ARG_FLAG | HAS_CONST_FLAG,
+    [_LOAD_CONST] = HAS_ARG_FLAG | HAS_CONST_FLAG,
     [_LOAD_SMALL_INT_0] = 0,
     [_LOAD_SMALL_INT_1] = 0,
     [_LOAD_SMALL_INT_2] = 0,
@@ -501,10 +500,9 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_LOAD_ATTR_WITH_HINT] = "_LOAD_ATTR_WITH_HINT",
     [_LOAD_BUILD_CLASS] = "_LOAD_BUILD_CLASS",
     [_LOAD_COMMON_CONSTANT] = "_LOAD_COMMON_CONSTANT",
-    [_LOAD_CONST_IMMORTAL] = "_LOAD_CONST_IMMORTAL",
+    [_LOAD_CONST] = "_LOAD_CONST",
     [_LOAD_CONST_INLINE] = "_LOAD_CONST_INLINE",
     [_LOAD_CONST_INLINE_BORROW] = "_LOAD_CONST_INLINE_BORROW",
-    [_LOAD_CONST_MORTAL] = "_LOAD_CONST_MORTAL",
     [_LOAD_DEREF] = "_LOAD_DEREF",
     [_LOAD_FAST] = "_LOAD_FAST",
     [_LOAD_FAST_0] = "_LOAD_FAST_0",
@@ -674,9 +672,7 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _LOAD_FAST_BORROW_LOAD_FAST_BORROW:
             return 0;
-        case _LOAD_CONST_MORTAL:
-            return 0;
-        case _LOAD_CONST_IMMORTAL:
+        case _LOAD_CONST:
             return 0;
         case _LOAD_SMALL_INT_0:
             return 0;

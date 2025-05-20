@@ -894,9 +894,10 @@ Text I/O
 
    .. attribute:: buffer
 
-      The underlying binary buffer (a :class:`BufferedIOBase` instance) that
-      :class:`TextIOBase` deals with.  This is not part of the
-      :class:`TextIOBase` API and may not exist in some implementations.
+      The underlying binary buffer (a :class:`BufferedIOBase`
+      or :class:`RawIOBase` instance) that :class:`TextIOBase` deals with.
+      This is not part of the :class:`TextIOBase` API and may not exist
+      in some implementations.
 
    .. method:: detach()
 
