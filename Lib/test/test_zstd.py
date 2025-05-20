@@ -2507,7 +2507,7 @@ class FreeThreadingMethodTests(unittest.TestCase):
     @threading_helper.requires_working_threading()
     def test_compress_shared_dict(self):
         num_threads = 8
-        
+
         def run_method(b):
             level = threading.get_ident() % 2
             # sync threads to increase chance of contention on
