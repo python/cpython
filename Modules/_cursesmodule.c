@@ -392,9 +392,9 @@ _PyCursesStatefulCheckFunction(PyObject *module,
  */
 
 /*
- * Return None if 'code' is OK. Otherwise, set an exception
- * using curses_set_error() and the remaining arguments, and
- * return NULL.
+ * Return None if 'code' is different from ERR (implementation-defined).
+ * Otherwise, set an exception using curses_set_error() and the remaining
+ * arguments, and return NULL.
  */
 static PyObject *
 curses_check_err(PyObject *module, int code,
@@ -402,7 +402,6 @@ curses_check_err(PyObject *module, int code,
                  const char *python_funcname)
 {
     if (code != ERR) {
-        assert(code == OK);
         Py_RETURN_NONE;
     }
     curses_set_error(module, curses_funcname, python_funcname);
@@ -416,7 +415,6 @@ curses_window_check_err(PyCursesWindowObject *win, int code,
                         const char *python_funcname)
 {
     if (code != ERR) {
-        assert(code == OK);
         Py_RETURN_NONE;
     }
     curses_window_set_error(win, curses_funcname, python_funcname);
@@ -1580,7 +1578,7 @@ _curses_window_derwin_impl(PyCursesWindowObject *self, int group_left_1,
     win = derwin(self->win,nlines,ncols,begin_y,begin_x);
 
     if (win == NULL) {
-        curses_window_set_error(self, "derwin", NULL);
+        curses_window_set_null_error(self, "derwin", NULL);
         return NULL;
     }
 
