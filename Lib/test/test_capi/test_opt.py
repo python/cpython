@@ -1969,7 +1969,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertIn("_GET_LEN", uops)
 
-
     def test_binary_op_subscr_tuple_int(self):
         def testfunc(n):
             x = 0
