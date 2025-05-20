@@ -71,10 +71,10 @@ Executor Objects
       :class:`ThreadPoolExecutor` and :class:`InterpreterPoolExecutor`,
       *chunksize* has no effect.
 
-      .. versionadded:: 3.5
+      .. versionchanged:: 3.5
          Added the *chunksize* parameter.
 
-      .. versionadded:: 3.14
+      .. versionchanged:: 3.14
          Added the *buffersize* parameter.
 
    .. method:: shutdown(wait=True, *, cancel_futures=False)
@@ -114,7 +114,7 @@ Executor Objects
              e.submit(shutil.copy, 'src4.txt', 'dest4.txt')
 
       .. versionadded:: 3.9
-         Added *cancel_futures*.
+         Added the *cancel_futures* parameter.
 
 
 ThreadPoolExecutor
@@ -181,12 +181,12 @@ And::
       should be higher than the number of workers
       for :class:`ProcessPoolExecutor`.
 
-   .. versionadded:: 3.6
+   .. versionchanged:: 3.6
       Added the *thread_name_prefix* parameter to allow users to
       control the :class:`threading.Thread` names for worker threads created by
       the pool for easier debugging.
 
-   .. versionadded:: 3.7
+   .. versionchanged:: 3.7
       Added the *initializer* and *initargs* arguments.
 
    .. versionchanged:: 3.8
@@ -202,7 +202,7 @@ And::
       Default value of *max_workers* is changed to
       ``min(32, (os.process_cpu_count() or 1) + 4)``.
 
-   .. versionadded:: 3.14
+   .. versionchanged:: 3.14
       Added *ctxkwargs* to pass additional arguments to ``cls.prepare_context``
       class method.
 
@@ -402,13 +402,13 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
       was undefined but operations on the executor or its futures would often
       freeze or deadlock.
 
-   .. versionadded:: 3.7
+   .. versionchanged:: 3.7
       The *mp_context* argument was added to allow users to control the
       start_method for worker processes created by the pool.
 
       Added the *initializer* and *initargs* arguments.
 
-   .. versionadded:: 3.11
+   .. versionchanged:: 3.11
       The *max_tasks_per_child* argument was added to allow users to
       control the lifetime of workers in the pool.
 
