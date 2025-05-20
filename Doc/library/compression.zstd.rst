@@ -50,9 +50,9 @@ Reading and writing compressed files
    :term:`file object`.
 
    The *file* argument can be either a file name (given as a
-   :class:`str`, :class:`bytes` or :term:`path-like <path-like object>` object),
-   in which case the named file is opened, or it can be an existing file object
-   to read from or write to.
+   :class:`str`, :class:`bytes` or :term:`path-like <path-like object>`
+   object), in which case the named file is opened, or it can be an existing
+   file object to read from or write to.
 
    The mode argument can be either ``'rb'`` for reading (default), ``'wb'`` for
    overwriting, ``'ab'`` for appending, or ``'xb'`` for exclusive creation.
@@ -60,19 +60,19 @@ Reading and writing compressed files
    respectively. You may also open in text mode with ``'rt'``, ``'wt'``,
    ``'at'``, and ``'xt'`` respectively.
 
-   When opening a file for reading, the *options* argument can be a dictionary
-   providing advanced decompression parameters; see
-   :class:`DecompressionParameter` for detailed information about supported
+   When reading, the *options* argument can be a dictionary providing advanced
+   decompression parameters; see :class:`DecompressionParameter` for detailed
+   information about supported
    parameters. The *zstd_dict* argument is a :class:`ZstdDict` instance to be
-   used during decompression. When opening a file for reading, if the *level*
+   used during decompression. When reading, if the *level*
    argument is not None, a :exc:`!TypeError` will be raised.
 
-   When opening a file for writing, the *options* argument can be a dictionary
+   When writing, the *options* argument can be a dictionary
    providing advanced decompression parameters; see
    :class:`CompressionParameter` for detailed information about supported
    parameters. The *level* argument is the compression level to use when
-   writing compressed data. Only one of *level* or *options* may be passed. The
-   *zstd_dict* argument is a :class:`ZstdDict` instance to be used during
+   writing compressed data. Only one of *level* or *options* may be non-None.
+   The *zstd_dict* argument is a :class:`ZstdDict` instance to be used during
    compression.
 
    In binary mode, this function is equivalent to the :class:`ZstdFile`
@@ -104,19 +104,19 @@ Reading and writing compressed files
    If *file* is a file object (rather than an actual file name), a mode of
    ``'w'`` does not truncate the file, and is instead equivalent to ``'a'``.
 
-   When opening a file for reading, the *options* argument can be a dictionary
+   When reading, the *options* argument can be a dictionary
    providing advanced decompression parameters; see
    :class:`DecompressionParameter` for detailed information about supported
    parameters. The *zstd_dict* argument is a :class:`ZstdDict` instance to be
-   used during decompression. When opening a file for reading, if the *level*
-   argument is passed a :exc:`!TypeError` will be raised.
+   used during decompression. When reading, if the *level*
+   argument is not None, a :exc:`!TypeError` will be raised.
 
-   When opening a file for writing, the *options* argument can be a dictionary
-   providing advanced decompression parameters, see
+   When writing, the *options* argument can be a dictionary
+   providing advanced decompression parameters; see
    :class:`CompressionParameter` for detailed information about supported
    parameters. The *level* argument is the compression level to use when
    writing compressed data. Only one of *level* or *options* may be passed. The
-   *zstd_dict* argument is a :class:`!ZstdDict` instance to be used during
+   *zstd_dict* argument is a :class:`ZstdDict` instance to be used during
    compression.
 
    :class:`!ZstdFile` supports all the members specified by
@@ -161,9 +161,9 @@ Compressing and decompressing data in memory
    needed, this argument must be omitted and in the *options* dictionary the
    :attr:`CompressionParameter.compression_level` parameter should be set.
 
-   The *options* argument is a Python dictionary containing advanced compression
-   parameters. The valid keys and values for compression parameters are
-   documented as part of the :class:`CompressionParameter` documentation.
+   The *options* argument is a Python dictionary containing advanced
+   compression parameters. The valid keys and values for compression parameters
+   are documented as part of the :class:`CompressionParameter` documentation.
 
    The *zstd_dict* argument is an instance of :class:`ZstdDict`
    containing trained data to improve compression efficiency. The
@@ -190,7 +190,8 @@ Compressing and decompressing data in memory
 
 .. class:: ZstdCompressor(level=None, options=None, zstd_dict=None)
 
-   Create a compressor object, which can be used to compress data incrementally.
+   Create a compressor object, which can be used to compress data
+   incrementally.
 
    For a more convenient way of compressing a single chunk of data, see the
    module-level function :func:`compress`.
@@ -201,13 +202,41 @@ Compressing and decompressing data in memory
    needed, this argument must be omitted and in the *options* dictionary the
    :attr:`CompressionParameter.compression_level` parameter should be set.
 
-   The *options* argument is a Python dictionary containing advanced compression
-   parameters. The valid keys and values for compression parameters are
-   documented as part of the :class:`CompressionParameter` documentation.
+   The *options* argument is a Python dictionary containing advanced
+   compression parameters. The valid keys and values for compression parameters
+   are documented as part of the :class:`CompressionParameter` documentation.
 
    The *zstd_dict* argument is an optional instance of :class:`ZstdDict`
    containing trained data to improve compression efficiency. The
    function :func:`train_dict` can be used to generate a Zstandard dictionary.
+
+
+   .. method:: compress(data, mode=ZstdCompressor.CONTINUE)
+
+      Compress *data* (a :term:`bytes-like object`), returning a :class:`bytes`
+      object with compressed data if possible, or otherwise an empty
+      :class:`!bytes` object. Some of *data* may be buffered internally, for
+      use in later calls to :meth:`!compress` and :meth:`~.flush`. The returned
+      data should be concatenated with the output of any previous calls to
+      :meth:`~.compress`.
+
+      The *mode* argument is a :class:`ZstdCompressor` attribute, either
+      :attr:`~.CONTINUE`, :attr:`~.FLUSH_BLOCK`,
+      or :attr:`~.FLUSH_FRAME`.
+
+      When all data has been provided to the compressor, call the
+      :meth:`~.flush` method to finish the compression process. If
+      :meth:`~.compress` is called with *mode* set to :attr:`~.FLUSH_FRAME`,
+      :meth:`~.flush` should not be called, as it would write out a new empty
+      frame.
+
+   .. method:: flush(mode=ZstdCompressor.FLUSH_FRAME)
+
+      Finish the compression process, returning a :class:`bytes` object
+      containing any data stored in the compressor's internal buffers.
+
+      The *mode* argument is a :class:`ZstdCompressor` attribute, either
+      :attr:`~.FLUSH_BLOCK`, or :attr:`~.FLUSH_FRAME`.
 
    .. attribute:: CONTINUE
 
@@ -227,30 +256,6 @@ Compressing and decompressing data in memory
       Complete and write out a frame. Future data provided to
       :meth:`~.compress` will be written into a new frame and
       *cannot* reference past data.
-
-   .. method:: compress(data, mode=ZstdCompressor.CONTINUE)
-
-      Compress *data* (a :term:`bytes-like object`), returning a :class:`bytes`
-      object if possible, or an empty byte string otherwise. Some of *data* may
-      be buffered internally, for use in later calls to
-      :meth:`!compress` and :meth:`~.flush`. The
-      returned data should be concatenated with the output of any previous calls
-      to :meth:`~.compress`.
-
-      The *mode* argument is a :class:`ZstdCompressor` attribute, either
-      :attr:`~.CONTINUE`, :attr:`~.FLUSH_BLOCK`,
-      or :attr:`~.FLUSH_FRAME`.
-
-      When all data has been provided to the compressor, call the
-      :meth:`~.flush` method to finish the compression process.
-
-   .. method:: flush(mode)
-
-      Finish the compression process, returning a :class:`bytes` object
-      containing any data stored in the compressor's internal buffers.
-
-      The *mode* argument is a :class:`ZstdCompressor` attribute, either
-      :attr:`~.FLUSH_BLOCK`, or :attr:`~.FLUSH_FRAME`.
 
 
 .. class:: ZstdDecompressor(zstd_dict=None, options=None)
@@ -325,13 +330,13 @@ Zstandard dictionaries
 
    Train a Zstandard dictionary, returning a :class:`ZstdDict` instance.
    Zstandard dictionaries enable more efficient compression of smaller sizes
-   of data, which is traditionally difficult to compress due to less repetition.
-   If you are compressing multiple similar groups of data (such as similar
-   files), Zstandard dictionaries can improve compression ratios and speed
-   significantly.
+   of data, which is traditionally difficult to compress due to less
+   repetition. If you are compressing multiple similar groups of data (such as
+   similar files), Zstandard dictionaries can improve compression ratios and
+   speed significantly.
 
-   The *samples* argument (an iterable of :class:`bytes` objects), is the population of
-   samples used to train the Zstandard dictionary.
+   The *samples* argument (an iterable of :class:`bytes` objects), is the
+   population of samples used to train the Zstandard dictionary.
 
    The *dict_size* argument, an integer, is the maximum size (in bytes) the
    Zstandard dictionary should be. The Zstandard documentation suggests an
@@ -351,8 +356,8 @@ Zstandard dictionaries
    The *zstd_dict* argument is a :class:`ZstdDict` instance with
    the :attr:`~ZstdDict.dict_content` containing the raw dictionary contents.
 
-   The *samples* argument (an iterable of bytes), contains sample data for
-   generating the Zstandard dictionary.
+   The *samples* argument (an iterable of :class:`bytes` objects), contains
+   sample data for generating the Zstandard dictionary.
 
    The *dict_size* argument, an integer, is the maximum size (in bytes) the
    Zstandard dictionary should be. See :func:`train_dict` for
@@ -377,7 +382,7 @@ Zstandard dictionaries
    meaning of *dict_content*. ``True`` means *dict_content* is a "raw content"
    dictionary, without any format restrictions. ``False`` means *dict_content*
    is an ordinary Zstandard dictionary, created from Zstandard functions,
-   for example, :func:`train_dict` or the ``zstd`` CLI.
+   for example, :func:`train_dict` or the external :program:`zstd` CLI.
 
    When passing a :class:`!ZstdDict` to a function, the
    :attr:`!as_digested_dict` and :attr:`!as_undigested_dict` attributes can
@@ -411,7 +416,7 @@ Zstandard dictionaries
 
    If passing a :class:`!ZstdDict` without any attribute, an undigested
    dictionary is passed by default when compressing and a digested dictionary
-   is passed by default when decompressing.
+   is generated if necessary and passed by default when decompressing.
 
     .. attribute:: dict_content
 
@@ -431,8 +436,8 @@ Zstandard dictionaries
 
         .. note::
 
-            The meaning of ``0`` for :attr:`!ZstdDict.dict_id` is different from
-            the ``dictionary_id`` argument to the :func:`get_frame_info`
+            The meaning of ``0`` for :attr:`!ZstdDict.dict_id` is different
+            from the ``dictionary_id`` attribute to the :func:`get_frame_info`
             function.
 
     .. attribute:: as_digested_dict
@@ -455,8 +460,8 @@ Advanced parameter control
    The :meth:`~.bounds` method can be used on any attribute to get the valid
    values for that parameter.
 
-   Setting any parameter to zero causes zstd to dynamically select a value
-   for that parameter based on other compression parameters' settings.
+   Parameters are optional; any omitted parameter will have it's value selected
+   automatically.
 
    .. method:: bounds()
 
@@ -481,12 +486,16 @@ Advanced parameter control
       This parameter greatly influences the memory usage of compression. Higher
       values require more memory but gain better compression values.
 
+      A value of zero causes the value to be selected automatically.
+
    .. attribute:: hash_log
 
       Size of the initial probe table, as a power of two. The resulting memory
       usage is ``1 << (hash_log+2)`` bytes. Larger tables improve compression
       ratio of strategies <= :attr:`~Strategy.dfast`, and improve compression
       speed of strategies > :attr:`~Strategy.dfast`.
+
+      A value of zero causes the value to be selected automatically.
 
    .. attribute:: chain_log
 
@@ -497,11 +506,15 @@ Advanced parameter control
       :attr:`~Strategy.dfast` strategy, in which case it defines a secondary
       probe table.
 
+      A value of zero causes the value to be selected automatically.
+
    .. attribute:: search_log
 
       Number of search attempts, as a power of two. More attempts result in
       better and slower compression. This parameter is useless for
       :attr:`~Strategy.fast` and :attr:`~Strategy.dfast` strategies.
+
+      A value of zero causes the value to be selected automatically.
 
    .. attribute:: min_match
 
@@ -511,6 +524,8 @@ Advanced parameter control
       for this size and larger. For all strategies < :attr:`~Strategy.btopt`,
       the effective minimum is ``4``; for all strategies
       > :attr:`~Strategy.fast`, the effective maximum is ``6``.
+
+      A value of zero causes the value to be selected automatically.
 
    .. attribute:: target_length
 
@@ -524,6 +539,8 @@ Advanced parameter control
       For strategy :attr:`~Strategy.fast`, it is the distance between match
       sampling. Larger values make compression faster, but with a worse
       compression ratio.
+
+      A value of zero causes the value to be selected automatically.
 
    .. attribute:: strategy
 
@@ -539,6 +556,9 @@ Advanced parameter control
       inputs by finding large matches at greater distances. It increases memory
       usage and window size.
 
+      ``True`` or ``0`` enable long distance matching while ``False`` or ``1``
+      disable it.
+
       Enabling this parameter increases default
       :attr:`~CompressionParameter.window_log` to 128 MiB except when expressly
       set to a different value. This setting is enabled by default if
@@ -551,10 +571,14 @@ Advanced parameter control
       values increase memory usage and compression ratio, but decrease
       compression speed.
 
+      A value of zero causes the value to be selected automatically.
+
    .. attribute:: ldm_min_match
 
       Minimum match size for long distance matcher. Larger or too small values
       can often decrease the compression ratio.
+
+      A value of zero causes the value to be selected automatically.
 
    .. attribute:: ldm_bucket_size_log
 
@@ -562,22 +586,33 @@ Advanced parameter control
       collision resolution. Larger values improve collision resolution but
       decrease compression speed.
 
+      A value of zero causes the value to be selected automatically.
+
    .. attribute:: ldm_hash_rate_log
 
       Frequency of inserting/looking up entries into the long distance matcher
       hash table. Larger values improve compression speed. Deviating far from
       the default value will likely result in a compression ratio decrease.
 
+      A value of zero causes the value to be selected automatically.
+
    .. attribute:: checksum_flag
 
-      A four-byte checksum using XXHash64 of the uncompressed content is written
-      at the end of each frame. Zstandard's decompression code verifies the
-      checksum. If there is a mismatch a :class:`ZstdError` exception is
+      A four-byte checksum using XXHash64 of the uncompressed content is
+      written at the end of each frame. Zstandard's decompression code verifies
+      the checksum. If there is a mismatch a :class:`ZstdError` exception is
       raised.
+
+      ``True`` or ``0`` enable checksum generation while ``False`` or ``1``
+      disable it.
+
    .. attribute:: dict_id_flag
 
       When compressing with a :class:`ZstdDict`, the dictionary's ID is written
       into the frame header.
+
+      ``True`` or ``0`` enable storing the dictionary ID while ``False`` or
+      ``1`` disable it.
 
    .. attribute:: nb_workers
 
@@ -586,12 +621,16 @@ Advanced parameter control
       means "one-thread multi-threaded mode". More workers improve speed, but
       also increase memory usage and slightly reduce compression ratio.
 
+      A value of zero disables multi-threading.
+
    .. attribute:: job_size
 
       Size of a compression job, in bytes. This value is enforced only when
       :attr:`~CompressionParameter.nb_workers` >= 1. Each compression job is
       completed in parallel, so this value can indirectly impact the number of
       active threads.
+
+      A value of zero causes the value to be selected automatically.
 
    .. attribute:: overlap_log
 
@@ -610,7 +649,8 @@ Advanced parameter control
 .. class:: DecompressionParameter()
 
    An :class:`~enum.IntEnum` containing the advanced decompression parameter
-   names that can be used when decompressing data.
+   keys that can be used when decompressing data. Parameters are optional; any
+   omitted parameter will have it's value selected automatically.
 
    The :meth:`~.bounds` method can be used on any attribute to get the valid
    values for that parameter.
@@ -627,9 +667,13 @@ Advanced parameter control
 
    .. attribute:: window_log_max
 
-      The base-two logarithm of the maximum size of the window used during decompression.
-      This can be useful to limit the amount of memory used when decompressing
-      data.
+      The base-two logarithm of the maximum size of the window used during
+      decompression. This can be useful to limit the amount of memory used when
+      decompressing data. A larger maximum window size leads to faster
+      decompression.
+
+      A value of zero causes the value to be selected automatically.
+
 
 .. class:: Strategy()
 
@@ -641,7 +685,7 @@ Advanced parameter control
 
       The values of attributes of :class:`!Strategy` are not necessarily stable
       across zstd versions. Only the ordering of the attributes may be relied
-      upon.
+      upon. The attributes are listed below in order.
 
    The following strategies are available:
 
@@ -685,8 +729,8 @@ Miscellaneous
 
       An int object representing the Zstandard dictionary ID needed for
       decompressing the frame. ``0`` means the dictionary ID was not
-      recorded in the frame header, the frame may or may not need a dictionary
-      to be decoded, or the ID of such a dictionary is not specified.
+      recorded in the frame header. This may mean that a Zstandard dictionary
+      is not needed, or that the ID of a required dictionary was not recorded.
 
 
 .. attribute:: COMPRESSION_LEVEL_DEFAULT
@@ -751,7 +795,7 @@ Writing compressed data to an already-open file:
 
    from compression import zstd
 
-   with open("file.zst", "wb") as f:
+   with open("myfile", "wb") as f:
        f.write(b"This data will not be compressed\n")
        with zstd.open(f, "w") as zstf:
            zstf.write(b"This *will* be compressed\n")
