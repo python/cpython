@@ -2059,7 +2059,7 @@ PyCursesWindow_InStr(PyObject *op, PyObject *args)
     int rtn;
 
     /* could make the buffer size larger/dynamic */
-    const int max_buf_size = 2048;
+    Py_ssize_t max_buf_size = 2048;
     PyObject *result = PyBytes_FromStringAndSize(NULL, max_buf_size);
     char *buf = PyBytes_AS_STRING(result);
 
