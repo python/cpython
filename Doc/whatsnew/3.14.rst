@@ -1997,10 +1997,18 @@ Optimizations
 asyncio
 -------
 
-* :mod:`asyncio` now uses double linked list implementation for native tasks
-  which speeds up execution by 10% on standard pyperformance benchmarks and
-  reduces memory usage.
+* :mod:`asyncio` has new per-thread double linked list implementation internally for
+  :class:`native tasks <asyncio.Task>` which speeds up execution by 10-20% on standard
+  pyperformance benchmarks and reduces memory usage.
+  This enables external introspection tools such as
+  :ref:`python -m asyncio pstree <whatsnew314-asyncio-introspection>`
+  to introspect the call graph of asyncio tasks running in all threads.
   (Contributed by Kumar Aditya in :gh:`107803`.)
+
+* :mod:`asyncio` has first class support for :term:`free-threading builds <free threading>`.
+  This enables parallel execution of multiple event loops across different threads and scales
+  linearly with the number of threads.
+  (Contributed by Kumar Aditya in :gh:`128002`.)
 
 * :mod:`asyncio` has new utility functions for introspecting and printing
   the program's call graph: :func:`asyncio.capture_call_graph` and
@@ -2083,7 +2091,6 @@ Deprecated
     * :class:`asyncio.WindowsProactorEventLoopPolicy`
     * :func:`asyncio.get_event_loop_policy`
     * :func:`asyncio.set_event_loop_policy`
-    * :func:`asyncio.set_event_loop`
 
     Users should use :func:`asyncio.run` or :class:`asyncio.Runner` with
     *loop_factory* to use the desired event loop implementation.
