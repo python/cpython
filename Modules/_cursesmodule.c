@@ -2109,7 +2109,7 @@ PyCursesWindow_InStr(PyObject *op, PyObject *args)
     }
 
     return result;
- 
+
 error:
     Py_DECREF(result);
     return NULL;
