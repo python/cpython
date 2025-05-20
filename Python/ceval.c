@@ -442,7 +442,8 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
     _tstate->c_stack_soft_limit = _tstate->c_stack_hard_limit + PYOS_STACK_MARGIN_BYTES;
 #else
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
-#  if defined(HAVE_PTHREAD_GETATTR_NP) && !defined(_AIX) && !defined(__NetBSD__)
+#  if defined(HAVE_PTHREAD_GETATTR_NP) && !defined(_AIX) && \
+        !defined(__NetBSD__) && defined(__GLIBC__)
     size_t stack_size, guard_size;
     void *stack_addr;
     pthread_attr_t attr;
