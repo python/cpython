@@ -526,11 +526,6 @@ class CommandLineTest(unittest.TestCase):
 
     @staticmethod
     def text_normalize(string):
-        """Dedent *string* and strip it from its surrounding whitespaces.
-
-        This method is used by the other utility functions so that any
-        string to write or to match against can be freely indented.
-        """
         return textwrap.dedent(string).strip()
 
     def set_pickle_data(self, data):
@@ -538,10 +533,15 @@ class CommandLineTest(unittest.TestCase):
             pickle.dump(data, f)
 
     def invoke_pickletools(self, *flags):
-        output = io.StringIO()
-        with contextlib.redirect_stdout(output):
+        stderr = io.StringIO()
+        stdout = io.StringIO()
+        with (
+            contextlib.redirect_stdout(stdout),
+            contextlib.redirect_stderr(stderr),
+        ):
             pickletools._main(args=[*flags, self.filename])
-        return self.text_normalize(output.getvalue())
+        self.assertEqual(stderr.getvalue(), '')
+        return self.text_normalize(stdout.getvalue())
 
     def check_output(self, data, expect, *flags):
         with self.subTest(data=data, flags=flags):
@@ -561,7 +561,7 @@ class CommandLineTest(unittest.TestCase):
             ('-a', '--annotate'),
             ('-p="Another:"', '--preamble="Another:"'),
         ]
-        data = { "a", "b", "c" }
+        data = { 'a', 'b', 'c' }
 
         self.set_pickle_data(data)
 
@@ -569,18 +569,20 @@ class CommandLineTest(unittest.TestCase):
             for choices in itertools.combinations(base_flags, r=r):
                 for args in itertools.product(*choices):
                     with self.subTest(args=args[1:]):
-                        _ = self.invoke_pickletools(*args)
+                        self.invoke_pickletools(*args)
 
+    def test_unknown_flag(self):
         with self.assertRaises(SystemExit):
-            # suppress argparse error message
-            with contextlib.redirect_stderr(io.StringIO()):
-                _ = self.invoke_pickletools('--unknown')
+            output = io.StringIO()
+            with contextlib.redirect_stderr(output):
+                pickletools._main(args=['--unknown'])
+            self.assertStartsWith(output.getvalue(), 'usage: ')
 
     def test_output_flag(self):
         # test 'python -m pickletools -o/--output'
         output_file = tempfile.mktemp()
         self.addCleanup(os_helper.unlink, output_file)
-        data = ("fake_data",)
+        data = ('fake_data',)
         expect = '''
             0: \\x80 PROTO      5
             2: \\x95 FRAME      15
@@ -605,7 +607,7 @@ class CommandLineTest(unittest.TestCase):
 
     def test_memo_flag(self):
         # test 'python -m pickletools -m/--memo'
-        data = ("fake_data",)
+        data = ('fake_data',)
         expect = '''
             0: \\x80 PROTO      5
             2: \\x95 FRAME      15
@@ -621,7 +623,7 @@ class CommandLineTest(unittest.TestCase):
 
     def test_indentlevel_flag(self):
         # test 'python -m pickletools -l/--indentlevel'
-        data = ("fake_data",)
+        data = ('fake_data',)
         expect = '''
             0: \\x80 PROTO      5
             2: \\x95 FRAME      15
@@ -637,7 +639,7 @@ class CommandLineTest(unittest.TestCase):
 
     def test_annotate_flag(self):
         # test 'python -m pickletools -a/--annotate'
-        data = ("fake_data",)
+        data = ('fake_data',)
         expect = '''
             0: \\x80 PROTO      5              Protocol version indicator.
             2: \\x95 FRAME      15             Indicate the beginning of a new frame.
@@ -653,7 +655,7 @@ class CommandLineTest(unittest.TestCase):
 
     def test_preamble_flag(self):
         # test 'python -m pickletools -p/--preamble'
-        data = ("fake_data",)
+        data = ('fake_data',)
         expect = '''
         Another:
             0: \\x80 PROTO      5
