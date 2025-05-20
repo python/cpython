@@ -990,6 +990,9 @@ the following methods and attributes:
    Read a bytes object from the user, with primitive line editing capacity.
    The maximum of *n* for this method is 2047.
 
+   .. versionchanged:: next
+      The maximum value for *n* is set to 2047.
+
 .. method:: window.getyx()
 
    Return a tuple ``(y, x)`` of current cursor position  relative to the window's
