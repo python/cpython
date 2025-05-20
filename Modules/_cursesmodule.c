@@ -2094,9 +2094,12 @@ PyCursesWindow_InStr(PyObject *op, PyObject *args)
     }
 
     if (rtn == ERR) {
-        _PyBytes_Resize(&result, 0);
-    } else {
-        _PyBytes_Resize(&result, rtn);
+      Py_DECREF(result);
+      return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
+
+    if (_PyBytes_Resize(&result, rtn) < 0) {
+        return NULL;
     }
 
     return result;
