@@ -10,6 +10,7 @@ import re
 import sys
 import tempfile
 import typing
+import shlex
 
 import _llvm
 import _schema
@@ -46,6 +47,7 @@ class _Target(typing.Generic[_S, _R]):
     stable: bool = False
     debug: bool = False
     verbose: bool = False
+    cflags: str = ""
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
 
     def _get_nop(self) -> bytes:
@@ -61,6 +63,7 @@ class _Target(typing.Generic[_S, _R]):
         hasher = hashlib.sha256()
         hasher.update(self.triple.encode())
         hasher.update(self.debug.to_bytes())
+        hasher.update(self.cflags.encode())
         # These dependencies are also reflected in _JITSources in regen.targets:
         hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
         hasher.update((out / "pyconfig.h").read_bytes())
@@ -119,6 +122,7 @@ class _Target(typing.Generic[_S, _R]):
     ) -> _stencils.StencilGroup:
         o = tempdir / f"{opname}.o"
         args = [
+            *shlex.split(self.cflags),
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
