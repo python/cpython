@@ -83,8 +83,8 @@ class ModuleCompleter:
             # Top-level import (e.g. `import foo<tab>`` or `from foo<tab>`)`
             builtin_modules = [name for name in sys.builtin_module_names
                                if self.is_suggestion_match(name, prefix)]
-            third_party_modules = [name for _, name, _ in self.global_cache
-                                   if self.is_suggestion_match(name, prefix)]
+            third_party_modules = [module.name for module in self.global_cache
+                                   if self.is_suggestion_match(module.name, prefix)]
             return sorted(builtin_modules + third_party_modules)
 
         if path.startswith('.'):

@@ -960,8 +960,8 @@ class TestPyReplModuleCompleter(TestCase):
                 output = reader.readline()
                 self.assertEqual(output, expected)
 
-    @patch("pkgutil.iter_modules", lambda: [(None, 'public', None),
-                                            (None, '_private', None)])
+    @patch("pkgutil.iter_modules", lambda: [ModuleInfo(None, "public", True),
+                                            ModuleInfo(None, "_private", True)])
     @patch("sys.builtin_module_names", ())
     def test_private_completions(self):
         cases = (
@@ -1032,8 +1032,8 @@ class TestPyReplModuleCompleter(TestCase):
                 output = reader.readline()
                 self.assertEqual(output, expected)
 
-    @patch("pkgutil.iter_modules", lambda: [(None, 'valid_name', None),
-                                            (None, 'invalid-name', None)])
+    @patch("pkgutil.iter_modules", lambda: [ModuleInfo(None, "valid_name", True),
+                                            ModuleInfo(None, "invalid-name", True)])
     def test_invalid_identifiers(self):
         # Make sure modules which are not valid identifiers
         # are not suggested as those cannot be imported via 'import'.
