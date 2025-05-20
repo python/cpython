@@ -30,6 +30,11 @@ import functools
 import os
 import sys
 import code
+<<<<<<< HEAD
+=======
+import warnings
+import errno
+>>>>>>> c91ad5da9d9 (gh-128066: Properly handle history file writes for RO fs on PyREPL (gh-134380))
 
 from .readline import _get_reader, multiline_input
 
