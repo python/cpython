@@ -988,6 +988,10 @@ the following methods and attributes:
             window.getstr(y, x, n)
 
    Read a bytes object from the user, with primitive line editing capacity.
+   The maximum value for *n* is 2047.
+
+   .. versionchanged:: 3.14
+      The maximum value for *n* was increased from 1023 to 2047.
 
 
 .. method:: window.getyx()
@@ -1079,6 +1083,10 @@ the following methods and attributes:
    current cursor position, or at *y*, *x* if specified. Attributes are stripped
    from the characters.  If *n* is specified, :meth:`instr` returns a string
    at most *n* characters long (exclusive of the trailing NUL).
+   The maximum value for *n* is 2047.
+
+   .. versionchanged:: 3.14
+      The maximum value for *n* was increased from 1023 to 2047.
 
 
 .. method:: window.is_linetouched(line)
