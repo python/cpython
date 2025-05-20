@@ -7,7 +7,7 @@ import sys
 import unittest
 import warnings
 from test.support import cpython_only, os_helper
-from test.support import TestFailed, is_emscripten
+from test.support import TestFailed
 from test.support.os_helper import FakePath
 from test import test_genericpath
 from tempfile import TemporaryFile

@@ -32,7 +32,6 @@ from sysconfig import (get_paths, get_platform, get_config_vars,
 from sysconfig.__main__ import _main, _parse_makefile, _get_pybuilddir, _get_json_data_name
 import _imp
 import _osx_support
-import _sysconfig
 
 
 HAS_USER_BASE = sysconfig._HAS_USER_BASE

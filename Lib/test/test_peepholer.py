@@ -12,7 +12,7 @@ except ImportError:
 
 from test import support
 from test.support.bytecode_helper import (
-    BytecodeTestCase, CfgOptimizationTestCase, CompilationStepTestCase)
+    BytecodeTestCase, CfgOptimizationTestCase)
 
 
 def compile_pattern_with_fast_locals(pattern):

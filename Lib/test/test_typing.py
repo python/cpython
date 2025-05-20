@@ -46,11 +46,10 @@ import abc
 import textwrap
 import typing
 import weakref
-import warnings
 import types
 
 from test.support import (
-    captured_stderr, cpython_only, infinite_recursion, requires_docstrings, import_helper, run_code,
+    captured_stderr, cpython_only, requires_docstrings, import_helper, run_code,
     EqualToForwardRef,
 )
 from test.typinganndata import (
