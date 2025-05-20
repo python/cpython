@@ -2727,6 +2727,7 @@ def iter_builtin_types():
     # Fall back to making a best-effort guess.
     if hasattr(object, '__flags__'):
         # Look for any type object with the Py_TPFLAGS_STATIC_BUILTIN flag set.
+        import datetime  # noqa: F401
         seen = set()
         for cls, subs in walk_class_hierarchy(object):
             if cls in seen:
