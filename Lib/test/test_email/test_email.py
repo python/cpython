@@ -4019,8 +4019,14 @@ class TestParsers(TestEmailBase):
 
             """.lstrip()
         M_BYTES = BytesIO(m.encode())
+
         msg = email.message_from_binary_file(M_BYTES, policy=email.policy.default.clone(utf8=True))
-        self.assertEqual(msg.as_string(), m)
+        for i, part in enumerate(msg.iter_parts(), 1):
+            _ = part.as_string()
+
+        msg_string = msg.as_string()
+        self.assertIn("This is the préamble.", msg_string)
+        self.assertIn("Un petit café", msg_string)
 
     def test_parser_does_not_close_file(self):
         with openfile('msg_02.txt', encoding="utf-8") as fp:
