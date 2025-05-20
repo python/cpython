@@ -944,6 +944,8 @@ class Thread:
             # This thread is alive.
             self._ident = new_ident
             assert self._os_thread_handle.ident == new_ident
+            if _HAVE_THREAD_NATIVE_ID:
+                self._set_native_id()
         else:
             # Otherwise, the thread is dead, Jim.  _PyThread_AfterFork()
             # already marked our handle done.
