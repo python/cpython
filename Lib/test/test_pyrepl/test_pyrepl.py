@@ -8,9 +8,10 @@ import select
 import subprocess
 import sys
 import tempfile
+from pkgutil import ModuleInfo
 from unittest import TestCase, skipUnless, skipIf
 from unittest.mock import patch
-from test.support import force_not_colorized, make_clean_env
+from test.support import force_not_colorized, make_clean_env, Py_DEBUG
 from test.support import SHORT_TIMEOUT, STDLIB_DIR
 from test.support.import_helper import import_module
 from test.support.os_helper import EnvironmentVarGuard, unlink
@@ -959,6 +960,66 @@ class TestPyReplModuleCompleter(TestCase):
                 output = reader.readline()
                 self.assertEqual(output, expected)
 
+    @patch("pkgutil.iter_modules", lambda: [ModuleInfo(None, "public", True),
+                                            ModuleInfo(None, "_private", True)])
+    @patch("sys.builtin_module_names", ())
+    def test_private_completions(self):
+        cases = (
+            # Return public methods by default
+            ("import \t\n", "import public"),
+            ("from \t\n", "from public"),
+            # Return private methods if explicitly specified
+            ("import _\t\n", "import _private"),
+            ("from _\t\n", "from _private"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    @patch(
+        "_pyrepl._module_completer.ModuleCompleter.iter_submodules",
+        lambda *_: [
+            ModuleInfo(None, "public", True),
+            ModuleInfo(None, "_private", True),
+        ],
+    )
+    def test_sub_module_private_completions(self):
+        cases = (
+            # Return public methods by default
+            ("from foo import \t\n", "from foo import public"),
+            # Return private methods if explicitly specified
+            ("from foo import _\t\n", "from foo import _private"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    def test_builtin_completion_top_level(self):
+        import importlib
+        # Make iter_modules() search only the standard library.
+        # This makes the test more reliable in case there are
+        # other user packages/scripts on PYTHONPATH which can
+        # intefere with the completions.
+        lib_path = os.path.dirname(importlib.__path__[0])
+        sys.path = [lib_path]
+
+        cases = (
+            ("import bui\t\n", "import builtins"),
+            ("from bui\t\n", "from builtins"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
     def test_relative_import_completions(self):
         cases = (
             ("from .readl\t\n", "from .readline"),
@@ -971,8 +1032,8 @@ class TestPyReplModuleCompleter(TestCase):
                 output = reader.readline()
                 self.assertEqual(output, expected)
 
-    @patch("pkgutil.iter_modules", lambda: [(None, 'valid_name', None),
-                                            (None, 'invalid-name', None)])
+    @patch("pkgutil.iter_modules", lambda: [ModuleInfo(None, "valid_name", True),
+                                            ModuleInfo(None, "invalid-name", True)])
     def test_invalid_identifiers(self):
         # Make sure modules which are not valid identifiers
         # are not suggested as those cannot be imported via 'import'.
@@ -1055,11 +1116,15 @@ class TestPyReplModuleCompleter(TestCase):
                 self.assertEqual(actual, parsed)
             # The parser should not get tripped up by any
             # other preceding statements
-            code = f'import xyz\n{code}'
-            with self.subTest(code=code):
+            _code = f'import xyz\n{code}'
+            parser = ImportParser(_code)
+            actual = parser.parse()
+            with self.subTest(code=_code):
                 self.assertEqual(actual, parsed)
-            code = f'import xyz;{code}'
-            with self.subTest(code=code):
+            _code = f'import xyz;{code}'
+            parser = ImportParser(_code)
+            actual = parser.parse()
+            with self.subTest(code=_code):
                 self.assertEqual(actual, parsed)
 
     def test_parse_error(self):
@@ -1610,3 +1675,16 @@ class TestMain(ReplTestCase):
         # Extra stuff (newline and `exit` rewrites) are necessary
         # because of how run_repl works.
         self.assertNotIn(">>> \n>>> >>>", cleaned_output)
+
+    @skipUnless(Py_DEBUG, '-X showrefcount requires a Python debug build')
+    def test_showrefcount(self):
+        env = os.environ.copy()
+        env.pop("PYTHON_BASIC_REPL", "")
+        output, _ = self.run_repl("1\n1+2\nexit()\n", cmdline_args=['-Xshowrefcount'], env=env)
+        matches = re.findall(r'\[-?\d+ refs, \d+ blocks\]', output)
+        self.assertEqual(len(matches), 3)
+
+        env["PYTHON_BASIC_REPL"] = "1"
+        output, _ = self.run_repl("1\n1+2\nexit()\n", cmdline_args=['-Xshowrefcount'], env=env)
+        matches = re.findall(r'\[-?\d+ refs, \d+ blocks\]', output)
+        self.assertEqual(len(matches), 3)
