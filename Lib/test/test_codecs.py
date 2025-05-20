@@ -1181,19 +1181,31 @@ class EscapeDecodeTest(unittest.TestCase):
         check(br"[\501]", b"[A]")
         check(br"[\x41]", b"[A]")
         check(br"[\x410]", b"[A0]")
+
+    def test_warnings(self):
+        decode = codecs.escape_decode
+        check = coding_checker(self, decode)
         for i in range(97, 123):
             b = bytes([i])
             if b not in b'abfnrtvx':
-                with self.assertWarns(DeprecationWarning):
+                with self.assertWarnsRegex(DeprecationWarning,
+                        r"invalid escape sequence '\\%c'" % i):
                     check(b"\\" + b, b"\\" + b)
-            with self.assertWarns(DeprecationWarning):
+            with self.assertWarnsRegex(DeprecationWarning,
+                    r"invalid escape sequence '\\%c'" % (i-32)):
                 check(b"\\" + b.upper(), b"\\" + b.upper())
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarnsRegex(DeprecationWarning,
+                r"invalid escape sequence '\\8'"):
             check(br"\8", b"\\8")
         with self.assertWarns(DeprecationWarning):
             check(br"\9", b"\\9")
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarnsRegex(DeprecationWarning,
+                r"invalid escape sequence '\\\xfa'") as cm:
             check(b"\\\xfa", b"\\\xfa")
+
+        with self.assertWarnsRegex(DeprecationWarning,
+                r"invalid escape sequence '\\z'"):
+            self.assertEqual(decode(br'\x\z', 'ignore'), (b'\\z', 4))
 
     def test_errors(self):
         decode = codecs.escape_decode
@@ -2408,20 +2420,31 @@ class UnicodeEscapeTest(ReadTest, unittest.TestCase):
         check(br"[\x410]", "[A0]")
         check(br"\u20ac", "\u20ac")
         check(br"\U0001d120", "\U0001d120")
+
+    def test_decode_warnings(self):
+        decode = codecs.unicode_escape_decode
+        check = coding_checker(self, decode)
         for i in range(97, 123):
             b = bytes([i])
             if b not in b'abfnrtuvx':
-                with self.assertWarns(DeprecationWarning):
+                with self.assertWarnsRegex(DeprecationWarning,
+                        r"invalid escape sequence '\\%c'" % i):
                     check(b"\\" + b, "\\" + chr(i))
             if b.upper() not in b'UN':
-                with self.assertWarns(DeprecationWarning):
+                with self.assertWarnsRegex(DeprecationWarning,
+                        r"invalid escape sequence '\\%c'" % (i-32)):
                     check(b"\\" + b.upper(), "\\" + chr(i-32))
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarnsRegex(DeprecationWarning,
+                r"invalid escape sequence '\\8'"):
             check(br"\8", "\\8")
         with self.assertWarns(DeprecationWarning):
             check(br"\9", "\\9")
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarnsRegex(DeprecationWarning,
+                r"invalid escape sequence '\\\xfa'") as cm:
             check(b"\\\xfa", "\\\xfa")
+        with self.assertWarnsRegex(DeprecationWarning,
+                r"invalid escape sequence '\\z'"):
+            self.assertEqual(decode(br'\x\z', 'ignore'), ('\\z', 4))
 
     def test_decode_errors(self):
         decode = codecs.unicode_escape_decode
