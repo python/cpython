@@ -1,0 +1,2 @@
+Fix a race  in :mod:`_wmimodule` that can result in an "invalid handle"
+exception under high load. Fix by Chris Eibl.
