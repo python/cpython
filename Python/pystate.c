@@ -434,7 +434,6 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
 #endif
 
     _PyTypes_AfterFork();
-    gilstate_clear();
 
     _PyThread_AfterFork(&runtime->threads);
 
