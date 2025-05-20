@@ -468,7 +468,6 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
     PyObject *yf = _PyGen_yf(gen);
 
     if (yf) {
-        assert(exc_context == NULL);
         _PyInterpreterFrame *frame = &gen->gi_iframe;
         PyObject *ret;
         int err;
@@ -504,7 +503,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             PyFrameState state = gen->gi_frame_state;
             gen->gi_frame_state = FRAME_EXECUTING;
             ret = _gen_throw((PyGenObject *)yf, close_on_genexit,
-                             typ, val, tb, NULL);
+                             typ, val, tb, exc_context);
             gen->gi_frame_state = state;
             tstate->current_frame = prev;
             frame->previous = NULL;
