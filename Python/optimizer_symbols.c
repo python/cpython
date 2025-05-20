@@ -275,11 +275,21 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptSymbol *sym, PyObject *const_val
             }
             return;
         case JIT_SYM_TUPLE_TAG:
-            if (Py_TYPE(const_val) != &PyTuple_Type) {
-                sym_set_bottom(ctx, sym);
-                return;
+            // TODO: We should do something smarter here. It's not as simple
+            // as sym_set_const, though, since we need to sym_set_bottom if
+            // the length doesn't match, or one of the symbolic types within
+            // the tuple contradicts its constant counterpart:
+            if (PyTuple_CheckExact(const_val)) {
+                Py_ssize_t len = PyTuple_GET_SIZE(const_val);
+                if (len == sym->tuple.length) {
+                    for (Py_ssize_t i = 0; i < len; i++) {
+                        JitOptSymbol *item = allocation_base(ctx) + sym->tuple.items[i];
+                        PyObject *item_const = PyTuple_GET_ITEM(const_val, i);
+                        _Py_uop_sym_set_const(ctx, item, item_const);
+                    }
+                }
             }
-            make_const(sym, const_val);
+            sym_set_bottom(ctx, sym);
             return;
         case JIT_SYM_TYPE_VERSION_TAG:
             if (sym->version.version != Py_TYPE(const_val)->tp_version_tag) {
