@@ -736,9 +736,11 @@ asyncio
   and broke the API contract for custom task factories.
   Several third-party task factories implemented workarounds for this.
   In 3.13.4 and later releases the old factory contract is honored
-  once again (until 3.14), but the extra ``**kwargs`` argument still
+  once again (until 3.14).
+  To keep the workarounds working, the extra ``**kwargs`` argument still
   allows passing additional keyword arguments to :class:`~asyncio.Task`
-  and to custom task factories, to keep the workarounds working.
+  and to custom task factories.
+
   This affects the following function and methods:
   :meth:`asyncio.create_task`,
   :meth:`asyncio.loop.create_task`,

@@ -1067,13 +1067,14 @@ ast
 asyncio
 -------
 
-* The function and methods named ``create_task`` now take an arbitrary
+* The function and methods named :func:`!create_task` now take an arbitrary
   list of keyword arguments. All keyword arguments are passed to the
   :class:`~asyncio.Task` constructor or the custom task factory.
   (See :meth:`~asyncio.loop.set_task_factory` for details.)
-  Keywords ``name`` and ``context`` are no longer special; the name
-  should now be set using the ``name`` keyword argument of the factory,
+  The ``name`` and ``context`` keyword arguments are no longer special;
+  the name should now be set using the ``name`` keyword argument of the factory,
   and ``context`` may be ``None``.
+
   This affects the following function and methods:
   :meth:`asyncio.create_task`,
   :meth:`asyncio.loop.create_task`,
