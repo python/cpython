@@ -47,7 +47,7 @@ class _Target(typing.Generic[_S, _R]):
     debug: bool = False
     verbose: bool = False
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
-    pyconfig: pathlib.Path | None = None
+    pyconfig_dir: pathlib.Path = pathlib.Path.cwd().resolve()
 
     def _get_nop(self) -> bytes:
         if re.fullmatch(r"aarch64-.*", self.triple):
@@ -64,8 +64,7 @@ class _Target(typing.Generic[_S, _R]):
         hasher.update(self.debug.to_bytes())
         # These dependencies are also reflected in _JITSources in regen.targets:
         hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
-        assert self.pyconfig is not None
-        hasher.update(self.pyconfig.read_bytes())
+        hasher.update((self.pyconfig_dir / "pyconfig.h").read_bytes())
         for dirpath, _, filenames in sorted(os.walk(TOOLS_JIT)):
             for filename in filenames:
                 hasher.update(pathlib.Path(dirpath, filename).read_bytes())
@@ -120,7 +119,6 @@ class _Target(typing.Generic[_S, _R]):
         self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
     ) -> _stencils.StencilGroup:
         o = tempdir / f"{opname}.o"
-        assert self.pyconfig is not None
         args = [
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
@@ -128,7 +126,7 @@ class _Target(typing.Generic[_S, _R]):
             f"-D_JIT_OPCODE={opname}",
             "-D_PyJIT_ACTIVE",
             "-D_Py_JIT",
-            f"-I{self.pyconfig.parent}",
+            f"-I{self.pyconfig_dir}",
             f"-I{CPYTHON / 'Include'}",
             f"-I{CPYTHON / 'Include' / 'internal'}",
             f"-I{CPYTHON / 'Include' / 'internal' / 'mimalloc'}",

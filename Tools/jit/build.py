@@ -44,7 +44,7 @@ if __name__ == "__main__":
         target.debug = args.debug
         target.force = args.force
         target.verbose = args.verbose
-        target.pyconfig = args.pyconfig_dir / "pyconfig.h"
+        target.pyconfig_dir = args.pyconfig_dir
         target.build(
             comment=comment,
             force=args.force,
