@@ -11,11 +11,14 @@
 
 --------------
 
-This module provides classes and functions for compressing and
-decompressing data using the Zstandard (or *zstd*) compression algorithm. Also
-included is a file interface that supports reading and writing the contents of
-``.zst`` files created by the :program:`zstd` utility, as well as raw zstd
-compressed streams.
+This module provides classes and functions for compressing and decompressing
+data using the Zstandard (or *zstd*) compression algorithm. The
+`zstd manual <https://facebook.github.io/zstd/doc/api_manual_latest.html>`__
+describes Zstandard as "a fast lossless compression algorithm, targeting
+real-time compression scenarios at zlib-level and better compression ratios."
+Also included is a file interface that supports reading and writing the
+contents of ``.zst`` files created by the :program:`zstd` utility, as well as
+raw zstd compressed streams.
 
 The :mod:`!compression.zstd` module contains:
 
