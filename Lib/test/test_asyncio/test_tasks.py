@@ -89,8 +89,8 @@ class BaseTaskTests:
     Future = None
     all_tasks = None
 
-    def new_task(self, loop, coro, name='TestTask', context=None):
-        return self.__class__.Task(coro, loop=loop, name=name, context=context)
+    def new_task(self, loop, coro, name='TestTask', context=None, eager_start=None):
+        return self.__class__.Task(coro, loop=loop, name=name, context=context, eager_start=eager_start)
 
     def new_future(self, loop):
         return self.__class__.Future(loop=loop)
@@ -212,8 +212,8 @@ class BaseTaskTests:
         self.assertEqual(t.result(), 'ok')
 
         # Deprecated in 3.10, undeprecated in 3.12
-        asyncio._set_event_loop(self.loop)
-        self.addCleanup(asyncio._set_event_loop, None)
+        asyncio.set_event_loop(self.loop)
+        self.addCleanup(asyncio.set_event_loop, None)
         t = asyncio.ensure_future(notmuch())
         self.assertIs(t._loop, self.loop)
         self.loop.run_until_complete(t)
@@ -2202,8 +2202,8 @@ class BaseTaskTests:
         async def coro():
             return 42
 
-        asyncio._set_event_loop(self.loop)
-        self.addCleanup(asyncio._set_event_loop, None)
+        asyncio.set_event_loop(self.loop)
+        self.addCleanup(asyncio.set_event_loop, None)
         outer = asyncio.shield(coro())
         self.assertEqual(outer._loop, self.loop)
         res = self.loop.run_until_complete(outer)
@@ -2685,6 +2685,35 @@ class BaseTaskTests:
             loop.close()
 
         self.assertEqual([None, 1, 2], ret)
+
+    def test_eager_start_true(self):
+        name = None
+
+        async def asyncfn():
+            nonlocal name
+            name = self.current_task().get_name()
+
+        async def main():
+            t = self.new_task(coro=asyncfn(), loop=asyncio.get_running_loop(), eager_start=True, name="example")
+            self.assertTrue(t.done())
+            self.assertEqual(name, "example")
+            await t
+
+    def test_eager_start_false(self):
+        name = None
+
+        async def asyncfn():
+            nonlocal name
+            name = self.current_task().get_name()
+
+        async def main():
+            t = self.new_task(coro=asyncfn(), loop=asyncio.get_running_loop(), eager_start=False, name="example")
+            self.assertFalse(t.done())
+            self.assertIsNone(name)
+            await t
+            self.assertEqual(name, "example")
+
+        asyncio.run(main(), loop_factory=asyncio.EventLoop)
 
     def test_get_coro(self):
         loop = asyncio.new_event_loop()
@@ -3322,8 +3351,8 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
 
     def test_constructor_empty_sequence_use_global_loop(self):
         # Deprecated in 3.10, undeprecated in 3.12
-        asyncio._set_event_loop(self.one_loop)
-        self.addCleanup(asyncio._set_event_loop, None)
+        asyncio.set_event_loop(self.one_loop)
+        self.addCleanup(asyncio.set_event_loop, None)
         fut = asyncio.gather()
         self.assertIsInstance(fut, asyncio.Future)
         self.assertIs(fut._loop, self.one_loop)
@@ -3430,8 +3459,8 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
         # Deprecated in 3.10, undeprecated in 3.12
         async def coro():
             return 'abc'
-        asyncio._set_event_loop(self.other_loop)
-        self.addCleanup(asyncio._set_event_loop, None)
+        asyncio.set_event_loop(self.other_loop)
+        self.addCleanup(asyncio.set_event_loop, None)
         gen1 = coro()
         gen2 = coro()
         fut = asyncio.gather(gen1, gen2)

@@ -204,7 +204,6 @@ dis_bug1333982 = """\
               LOAD_CONST               1 (<code object <genexpr> at 0x..., file "%s", line %d>)
               MAKE_FUNCTION
               LOAD_FAST_BORROW         0 (x)
-              GET_ITER
               CALL                     0
 
 %3d           LOAD_SMALL_INT           1
@@ -382,24 +381,36 @@ lst[fun(0)]: int = 1
 # leading newline is for a reason (tests lineno)
 
 dis_annot_stmt_str = """\
-  0           RESUME                   0
+  --           MAKE_CELL                0 (__conditional_annotations__)
 
-  2           LOAD_SMALL_INT           1
-              STORE_NAME               0 (x)
+   0           RESUME                   0
 
-  4           LOAD_SMALL_INT           1
-              LOAD_NAME                1 (lst)
-              LOAD_NAME                2 (fun)
-              PUSH_NULL
-              LOAD_SMALL_INT           0
-              CALL                     1
-              STORE_SUBSCR
+   2           LOAD_CONST               1 (<code object __annotate__ at 0x..., file "<dis>", line 2>)
+               MAKE_FUNCTION
+               STORE_NAME               4 (__annotate__)
+               BUILD_SET                0
+               STORE_NAME               0 (__conditional_annotations__)
+               LOAD_SMALL_INT           1
+               STORE_NAME               1 (x)
+               LOAD_NAME                0 (__conditional_annotations__)
+               LOAD_SMALL_INT           0
+               SET_ADD                  1
+               POP_TOP
 
-  2           LOAD_CONST               1 (<code object __annotate__ at 0x..., file "<dis>", line 2>)
-              MAKE_FUNCTION
-              STORE_NAME               3 (__annotate__)
-              LOAD_CONST               2 (None)
-              RETURN_VALUE
+   3           LOAD_NAME                0 (__conditional_annotations__)
+               LOAD_SMALL_INT           1
+               SET_ADD                  1
+               POP_TOP
+
+   4           LOAD_SMALL_INT           1
+               LOAD_NAME                2 (lst)
+               LOAD_NAME                3 (fun)
+               PUSH_NULL
+               LOAD_SMALL_INT           0
+               CALL                     1
+               STORE_SUBSCR
+               LOAD_CONST               2 (None)
+               RETURN_VALUE
 """
 
 fn_with_annotate_str = """
@@ -821,7 +832,6 @@ Disassembly of <code object foo at 0x..., file "%s", line %d>:
                MAKE_FUNCTION
                SET_FUNCTION_ATTRIBUTE   8 (closure)
                LOAD_DEREF               1 (y)
-               GET_ITER
                CALL                     0
                CALL                     1
                RETURN_VALUE
@@ -997,7 +1007,8 @@ class DisTests(DisTestBase):
     def test_widths(self):
         long_opcodes = set(['JUMP_BACKWARD_NO_INTERRUPT',
                             'LOAD_FAST_BORROW_LOAD_FAST_BORROW',
-                            'INSTRUMENTED_CALL_FUNCTION_EX'])
+                            'INSTRUMENTED_CALL_FUNCTION_EX',
+                            'ANNOTATIONS_PLACEHOLDER'])
         for op, opname in enumerate(dis.opname):
             if opname in long_opcodes or opname.startswith("INSTRUMENTED"):
                 continue
@@ -1325,7 +1336,7 @@ class DisTests(DisTestBase):
         # Loop can trigger a quicken where the loop is located
         self.code_quicken(loop_test)
         got = self.get_disassembly(loop_test, adaptive=True)
-        jit = import_helper.import_module("_testinternalcapi").jit_enabled()
+        jit = sys._jit.is_enabled()
         expected = dis_loop_test_quickened_code.format("JIT" if jit else "NO_JIT")
         self.do_disassembly_compare(got, expected)
 
