@@ -200,6 +200,10 @@ _Py_uop_sym_set_type(JitOptContext *ctx, JitOptSymbol *sym, PyTypeObject *typ)
 bool
 _Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptSymbol *sym, unsigned int version)
 {
+    PyTypeObject *type = _PyType_LookupByVersion(version);
+    if (type) {
+        _Py_uop_sym_set_type(ctx, sym, type);
+    }
     JitSymType tag = sym->tag;
     switch(tag) {
         case JIT_SYM_NULL_TAG:
@@ -215,18 +219,23 @@ _Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptSymbol *sym, unsigned int
                 return true;
             }
         case JIT_SYM_KNOWN_VALUE_TAG:
-            Py_CLEAR(sym->value.value);
-            sym_set_bottom(ctx, sym);
-            return false;
+            if (Py_TYPE(sym->value.value)->tp_version_tag != version) {
+                sym_set_bottom(ctx, sym);
+                return false;
+            };
+            return true;
         case JIT_SYM_TUPLE_TAG:
-            sym_set_bottom(ctx, sym);
-            return false;
+            if (PyTuple_Type.tp_version_tag != version) {
+                sym_set_bottom(ctx, sym);
+                return false;
+            };
+            return true;
         case JIT_SYM_TYPE_VERSION_TAG:
-            if (sym->version.version == version) {
-                return true;
+            if (sym->version.version != version) {
+                sym_set_bottom(ctx, sym);
+                return false;
             }
-            sym_set_bottom(ctx, sym);
-            return false;
+            return true;
         case JIT_SYM_BOTTOM_TAG:
             return false;
         case JIT_SYM_NON_NULL_TAG:
@@ -266,7 +275,11 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptSymbol *sym, PyObject *const_val
             }
             return;
         case JIT_SYM_TUPLE_TAG:
-            sym_set_bottom(ctx, sym);
+            if (Py_TYPE(const_val) != &PyTuple_Type) {
+                sym_set_bottom(ctx, sym);
+                return;
+            }
+            make_const(sym, const_val);
             return;
         case JIT_SYM_TYPE_VERSION_TAG:
             if (sym->version.version != Py_TYPE(const_val)->tp_version_tag) {

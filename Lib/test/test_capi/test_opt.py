@@ -2093,6 +2093,25 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertIn("_GUARD_IS_TRUE_POP", uops)
 
+    def test_set_type_version_sets_type(self):
+        class C:
+            A = 1
+
+        def testfunc(n):
+            x = 0
+            c = C()
+            for _ in range(n):
+                x += c.A  # Guarded.
+                x += type(c).A  # Unguarded!
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 2 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_GUARD_TYPE_VERSION", uops)
+        self.assertNotIn("_CHECK_ATTR_CLASS", uops)
+
 
 def global_identity(x):
     return x
