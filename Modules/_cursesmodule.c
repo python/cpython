@@ -1348,6 +1348,7 @@ _curses_window_bkgdset_impl(PyCursesWindowObject *self, PyObject *ch,
     if (!PyCurses_ConvertToChtype(self, ch, &bkgd))
         return NULL;
 
+    // wbkgdset() is a void function
     wbkgdset(self->win, bkgd | attr);
     Py_RETURN_NONE;
 }
