@@ -921,6 +921,7 @@ def _log_on_cancel_callback(inner):
             context['source_traceback'] = inner._source_traceback
         inner._loop.call_exception_handler(context)
 
+
 def shield(arg):
     """Wait for a future, shielding it from cancellation.
 
