@@ -905,7 +905,7 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(str_st);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                res = PyStackRef_FromPyObjectImmortal(res_o);
+                res = PyStackRef_FromPyObjectBorrow(res_o);
             }
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -9002,63 +9002,9 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_CONST);
-            PREDICTED_LOAD_CONST:;
-            _Py_CODEUNIT* const this_instr = next_instr - 1;
-            (void)this_instr;
             _PyStackRef value;
             PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);
-            value = PyStackRef_FromPyObjectNew(obj);
-            #if ENABLE_SPECIALIZATION_FT
-            #ifdef Py_GIL_DISABLED
-            uint8_t expected = LOAD_CONST;
-            if (!_Py_atomic_compare_exchange_uint8(
-                    &this_instr->op.code, &expected,
-                    _Py_IsImmortal(obj) ? LOAD_CONST_IMMORTAL : LOAD_CONST_MORTAL)) {
-                assert(expected >= MIN_INSTRUMENTED_OPCODE);
-            }
-            #else
-            if (this_instr->op.code == LOAD_CONST) {
-                this_instr->op.code = _Py_IsImmortal(obj) ? LOAD_CONST_IMMORTAL : LOAD_CONST_MORTAL;
-            }
-            #endif
-            #endif
-            stack_pointer[0] = value;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            DISPATCH();
-        }
-
-        TARGET(LOAD_CONST_IMMORTAL) {
-            #if Py_TAIL_CALL_INTERP
-            int opcode = LOAD_CONST_IMMORTAL;
-            (void)(opcode);
-            #endif
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(LOAD_CONST_IMMORTAL);
-            static_assert(0 == 0, "incorrect cache size");
-            _PyStackRef value;
-            PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);
-            assert(_Py_IsImmortal(obj));
-            value = PyStackRef_FromPyObjectImmortal(obj);
-            stack_pointer[0] = value;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            DISPATCH();
-        }
-
-        TARGET(LOAD_CONST_MORTAL) {
-            #if Py_TAIL_CALL_INTERP
-            int opcode = LOAD_CONST_MORTAL;
-            (void)(opcode);
-            #endif
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(LOAD_CONST_MORTAL);
-            static_assert(0 == 0, "incorrect cache size");
-            _PyStackRef value;
-            PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);
-            value = PyStackRef_FromPyObjectNewMortal(obj);
+            value = PyStackRef_FromPyObjectBorrow(obj);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -9593,7 +9539,7 @@
             _PyStackRef value;
             assert(oparg < _PY_NSMALLPOSINTS);
             PyObject *obj = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + oparg];
-            value = PyStackRef_FromPyObjectImmortal(obj);
+            value = PyStackRef_FromPyObjectBorrow(obj);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -11240,10 +11186,6 @@
             INSTRUCTION_STATS(STORE_FAST);
             _PyStackRef value;
             value = stack_pointer[-1];
-            assert(
-                   ((_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_GENERATOR)) == 0) ||
-                   PyStackRef_IsHeapSafe(value)
-            );
             _PyStackRef tmp = GETLOCAL(oparg);
             GETLOCAL(oparg) = value;
             stack_pointer += -1;
@@ -11265,10 +11207,6 @@
             _PyStackRef value1;
             _PyStackRef value2;
             value1 = stack_pointer[-1];
-            assert(
-                   ((_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_GENERATOR)) == 0) ||
-                   PyStackRef_IsHeapSafe(value1)
-            );
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             _PyStackRef tmp = GETLOCAL(oparg1);
@@ -11293,14 +11231,6 @@
             _PyStackRef value1;
             value1 = stack_pointer[-1];
             value2 = stack_pointer[-2];
-            assert(
-                   ((_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_GENERATOR)) == 0) ||
-                   PyStackRef_IsHeapSafe(value1)
-            );
-            assert(
-                   ((_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_GENERATOR)) == 0) ||
-                   PyStackRef_IsHeapSafe(value2)
-            );
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             _PyStackRef tmp = GETLOCAL(oparg1);

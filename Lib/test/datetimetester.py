@@ -2972,6 +2972,17 @@ class TestDateTime(TestDate):
         with self._assertNotWarns(DeprecationWarning):
             self.theclass.strptime('02-29,2024', '%m-%d,%Y')
 
+    def test_strptime_z_empty(self):
+        for directive in ('z',):
+            string = '2025-04-25 11:42:47'
+            format = f'%Y-%m-%d %H:%M:%S%{directive}'
+            target = self.theclass(2025, 4, 25, 11, 42, 47)
+            with self.subTest(string=string,
+                              format=format,
+                              target=target):
+                result = self.theclass.strptime(string, format)
+                self.assertEqual(result, target)
+
     def test_more_timetuple(self):
         # This tests fields beyond those tested by the TestDate.test_timetuple.
         t = self.theclass(2004, 12, 31, 6, 22, 33)
