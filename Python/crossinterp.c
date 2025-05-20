@@ -482,7 +482,7 @@ _PyObject_GetXIDataWithFallback(PyThreadState *tstate,
             Py_FatalError("unsupported xidata fallback option");
 #endif
             _PyErr_SetString(tstate, PyExc_SystemError,
-                             "unsuppocted xidata fallback option");
+                             "unsupported xidata fallback option");
             return -1;
     }
 }

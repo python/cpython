@@ -404,7 +404,7 @@ class _GetXIDataTests(unittest.TestCase):
                 # Currently the "extra" attrs are not preserved
                 # (via __reduce__).
                 self.assertIs(type(exc1), type(exc2))
-                #self.assert_exc_equal(grouped1, grouped2)
+                self.assert_exc_equal(grouped1, grouped2)
         else:
             self.assertEqual(args1, args2)
 
@@ -435,7 +435,6 @@ class _GetXIDataTests(unittest.TestCase):
     def assert_equal_or_equalish(self, obj, expected):
         cls = type(expected)
         if cls.__eq__ is not object.__eq__:
-#            assert cls not in (types.MethodType, types.BuiltinMethodType, types.MethodWrapperType), cls
             self.assertEqual(obj, expected)
         elif cls is types.FunctionType:
             self.assert_functions_equal(obj, expected)
@@ -723,13 +722,13 @@ class PickleTests(_GetXIDataTests):
     def assert_func_defs_other_pickle(self, defs, mod):
         # Pickle relative to a different module than the original.
         for func in defs.TOP_FUNCTIONS:
-            assert not hasattr(mod, func.__name__), (cls, getattr(mod, func.__name__))
+            assert not hasattr(mod, func.__name__), (getattr(mod, func.__name__),)
         self.assert_not_shareable(defs.TOP_FUNCTIONS)
 
     def assert_func_defs_other_unpickle(self, defs, mod, *, fail=False):
         # Unpickle relative to a different module than the original.
         for func in defs.TOP_FUNCTIONS:
-            assert not hasattr(mod, func.__name__), (cls, getattr(mod, func.__name__))
+            assert not hasattr(mod, func.__name__), (getattr(mod, func.__name__),)
 
         captured = []
         for func in defs.TOP_FUNCTIONS:
@@ -754,7 +753,7 @@ class PickleTests(_GetXIDataTests):
         self.assert_not_shareable(defs.TOP_FUNCTIONS)
 
     def test_user_function_normal(self):
-#        self.assert_roundtrip_equal(defs.TOP_FUNCTIONS)
+        self.assert_roundtrip_equal(defs.TOP_FUNCTIONS)
         self.assert_func_defs_same(defs)
 
     def test_user_func_in___main__(self):
@@ -841,7 +840,7 @@ class PickleTests(_GetXIDataTests):
         special = {
             BaseExceptionGroup: (msg, [caught]),
             ExceptionGroup: (msg, [caught]),
-#            UnicodeError: (None, msg, None, None, None),
+            UnicodeError: (None, msg, None, None, None),
             UnicodeEncodeError: ('utf-8', '', 1, 3, msg),
             UnicodeDecodeError: ('utf-8', b'', 1, 3, msg),
             UnicodeTranslateError: ('', 1, 3, msg),
@@ -1339,8 +1338,8 @@ class ShareableTypeTests(_GetXIDataTests):
 
     def test_tuples_containing_non_shareable_types(self):
         non_shareables = [
-                EXCEPTION,
-                OBJECT,
+            EXCEPTION,
+            OBJECT,
         ]
         for s in non_shareables:
             value = tuple([0, 1.0, s])
