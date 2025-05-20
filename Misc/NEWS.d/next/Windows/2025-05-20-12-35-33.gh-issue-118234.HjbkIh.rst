@@ -1,0 +1,2 @@
+Avoid socket failure with missing SYSTEMROOT env var on Windows. Patch by
+John Keith Hohm.
