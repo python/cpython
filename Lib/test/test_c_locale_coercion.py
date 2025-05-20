@@ -12,7 +12,9 @@ from test import support
 from test.support.script_helper import run_python_until_end
 
 
-# Set the list of ways we expect to be able to ask for the "C" locale
+# Set the list of ways we expect to be able to ask for the "C" locale.
+# 'invalid.ascii' is an invalid LOCALE name and so should get turned in to the
+# default locale, which is traditionally C.
 EXPECTED_C_LOCALE_EQUIVALENTS = ["C", "invalid.ascii"]
 
 # Set our expectation for the default encoding used in the C locale
@@ -21,6 +23,7 @@ EXPECTED_C_LOCALE_STREAM_ENCODING = "ascii"
 EXPECTED_C_LOCALE_FS_ENCODING = "ascii"
 
 # Set our expectation for the default locale used when none is specified
+DEFAULT_LOCALE_IS_C = True
 EXPECT_COERCION_IN_DEFAULT_LOCALE = True
 
 TARGET_LOCALES = ["C.UTF-8", "C.utf8", "UTF-8"]
@@ -30,12 +33,12 @@ if sys.platform == "android":
     # Android defaults to using UTF-8 for all system interfaces
     EXPECTED_C_LOCALE_STREAM_ENCODING = "utf-8"
     EXPECTED_C_LOCALE_FS_ENCODING = "utf-8"
-elif sys.platform.startswith("linux"):
-    # Linux distros typically alias the POSIX locale directly to the C
-    # locale.
-    # TODO: Once https://bugs.python.org/issue30672 is addressed, we'll be
-    #       able to check this case unconditionally
-    EXPECTED_C_LOCALE_EQUIVALENTS.append("POSIX")
+elif support.linked_to_musl():
+    # MUSL defaults to utf-8 unless the C locale is set explicitly.
+    EXPECTED_C_LOCALE_EQUIVALENTS = ["C"]
+    DEFAULT_LOCALE_IS_C = False
+    DEFAULT_ENCODING = 'utf-8'
+    EXPECT_COERCION_IN_DEFAULT_LOCALE = False
 elif sys.platform.startswith("aix"):
     # AIX uses iso8859-1 in the C locale, other *nix platforms use ASCII
     EXPECTED_C_LOCALE_STREAM_ENCODING = "iso8859-1"
@@ -52,6 +55,11 @@ elif sys.platform == "vxworks":
     # VxWorks defaults to using UTF-8 for all system interfaces
     EXPECTED_C_LOCALE_STREAM_ENCODING = "utf-8"
     EXPECTED_C_LOCALE_FS_ENCODING = "utf-8"
+if sys.platform.startswith("linux"):
+    # Linux recognizes POSIX as a synonym for C.  Python will always coerce
+    # if the locale is set to POSIX, but not all platforms will use the
+    # C locale encodings if POSIX is set, so we'll only test it on linux.
+    EXPECTED_C_LOCALE_EQUIVALENTS.append("POSIX")
 
 # Note that the above expectations are still wrong in some cases, such as:
 # * Windows when PYTHONLEGACYWINDOWSFSENCODING is set
@@ -362,9 +370,14 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
             base_var_dict["PYTHONCOERCECLOCALE"] = coerce_c_locale
 
         # Check behaviour for the default locale
+        _fs_encoding = fs_encoding
+        _stream_encoding = stream_encoding
+        if not DEFAULT_LOCALE_IS_C and 'LC_ALL' not in extra_vars:
+            _fs_encoding = _stream_encoding = DEFAULT_ENCODING
         with self.subTest(default_locale=True,
                           PYTHONCOERCECLOCALE=coerce_c_locale):
-            if EXPECT_COERCION_IN_DEFAULT_LOCALE:
+            if (EXPECT_COERCION_IN_DEFAULT_LOCALE
+                    or (not DEFAULT_LOCALE_IS_C and 'LC_ALL' in extra_vars)):
                 _expected_warnings = expected_warnings
                 _coercion_expected = coercion_expected
             else:
@@ -378,8 +391,8 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
                     _expected_warnings == [CLI_COERCION_WARNING]):
                 _expected_warnings = None
             self._check_child_encoding_details(base_var_dict,
-                                               fs_encoding,
-                                               stream_encoding,
+                                               _fs_encoding,
+                                               _stream_encoding,
                                                None,
                                                _expected_warnings,
                                                _coercion_expected)
