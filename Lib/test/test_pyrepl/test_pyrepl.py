@@ -10,7 +10,7 @@ import sys
 import tempfile
 from unittest import TestCase, skipUnless, skipIf
 from unittest.mock import patch
-from test.support import force_not_colorized, make_clean_env
+from test.support import force_not_colorized, make_clean_env, Py_DEBUG
 from test.support import SHORT_TIMEOUT, STDLIB_DIR
 from test.support.import_helper import import_module
 from test.support.os_helper import EnvironmentVarGuard, unlink
@@ -451,6 +451,11 @@ class TestPyReplAutoindent(TestCase):
             "    "
         )
         # fmt: on
+
+        events = code_to_events(input_code)
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
 
     def test_auto_indent_continuation(self):
         # auto indenting according to previous user indentation
@@ -954,6 +959,26 @@ class TestPyReplModuleCompleter(TestCase):
                 output = reader.readline()
                 self.assertEqual(output, expected)
 
+    def test_builtin_completion_top_level(self):
+        import importlib
+        # Make iter_modules() search only the standard library.
+        # This makes the test more reliable in case there are
+        # other user packages/scripts on PYTHONPATH which can
+        # intefere with the completions.
+        lib_path = os.path.dirname(importlib.__path__[0])
+        sys.path = [lib_path]
+
+        cases = (
+            ("import bui\t\n", "import builtins"),
+            ("from bui\t\n", "from builtins"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
     def test_relative_import_completions(self):
         cases = (
             ("from .readl\t\n", "from .readline"),
@@ -1050,11 +1075,15 @@ class TestPyReplModuleCompleter(TestCase):
                 self.assertEqual(actual, parsed)
             # The parser should not get tripped up by any
             # other preceding statements
-            code = f'import xyz\n{code}'
-            with self.subTest(code=code):
+            _code = f'import xyz\n{code}'
+            parser = ImportParser(_code)
+            actual = parser.parse()
+            with self.subTest(code=_code):
                 self.assertEqual(actual, parsed)
-            code = f'import xyz;{code}'
-            with self.subTest(code=code):
+            _code = f'import xyz;{code}'
+            parser = ImportParser(_code)
+            actual = parser.parse()
+            with self.subTest(code=_code):
                 self.assertEqual(actual, parsed)
 
     def test_parse_error(self):
@@ -1605,3 +1634,16 @@ class TestMain(ReplTestCase):
         # Extra stuff (newline and `exit` rewrites) are necessary
         # because of how run_repl works.
         self.assertNotIn(">>> \n>>> >>>", cleaned_output)
+
+    @skipUnless(Py_DEBUG, '-X showrefcount requires a Python debug build')
+    def test_showrefcount(self):
+        env = os.environ.copy()
+        env.pop("PYTHON_BASIC_REPL", "")
+        output, _ = self.run_repl("1\n1+2\nexit()\n", cmdline_args=['-Xshowrefcount'], env=env)
+        matches = re.findall(r'\[-?\d+ refs, \d+ blocks\]', output)
+        self.assertEqual(len(matches), 3)
+
+        env["PYTHON_BASIC_REPL"] = "1"
+        output, _ = self.run_repl("1\n1+2\nexit()\n", cmdline_args=['-Xshowrefcount'], env=env)
+        matches = re.findall(r'\[-?\d+ refs, \d+ blocks\]', output)
+        self.assertEqual(len(matches), 3)

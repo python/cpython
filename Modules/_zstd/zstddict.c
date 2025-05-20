@@ -1,38 +1,58 @@
-/*
-Low level interface to Meta's zstd library for use in the compression.zstd
-Python module.
-*/
+/* Low level interface to the Zstandard algorthm & the zstd library. */
 
 /* ZstdDict class definitions */
 
 /*[clinic input]
 module _zstd
-class _zstd.ZstdDict "ZstdDict *" "clinic_state()->ZstdDict_type"
+class _zstd.ZstdDict "ZstdDict *" "&zstd_dict_type_spec"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a5d1254c497e52ba]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3dcc175ec974f81c]*/
 
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#include "_zstdmodule.h"
+#include "Python.h"
 
-#include <stddef.h>               // offsetof()
+#include "_zstdmodule.h"
+#include "zstddict.h"
+#include "clinic/zstddict.c.h"
+
+#include <zstd.h>                 // ZSTD_freeDDict(), ZSTD_getDictID_fromDict()
 
 #define ZstdDict_CAST(op) ((ZstdDict *)op)
 
+/*[clinic input]
+@classmethod
+_zstd.ZstdDict.__new__ as _zstd_ZstdDict_new
+    dict_content: object
+        The content of a Zstandard dictionary as a bytes-like object.
+    /
+    *
+    is_raw: bool = False
+        If true, perform no checks on *dict_content*, useful for some
+        advanced cases. Otherwise, check that the content represents
+        a Zstandard dictionary created by the zstd library or CLI.
+
+Represents a Zstandard dictionary.
+
+The dictionary can be used for compression or decompression, and can be shared
+by multiple ZstdCompressor or ZstdDecompressor objects.
+[clinic start generated code]*/
+
 static PyObject *
-_zstd_ZstdDict_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject *Py_UNUSED(kwargs))
+_zstd_ZstdDict_new_impl(PyTypeObject *type, PyObject *dict_content,
+                        int is_raw)
+/*[clinic end generated code: output=3ebff839cb3be6d7 input=6b5de413869ae878]*/
 {
-    ZstdDict *self;
-    self = PyObject_GC_New(ZstdDict, type);
+    ZstdDict* self = PyObject_GC_New(ZstdDict, type);
     if (self == NULL) {
         goto error;
     }
 
     self->dict_content = NULL;
-    self->inited = 0;
     self->d_dict = NULL;
+    self->dict_id = 0;
 
     /* ZSTD_CDict dict */
     self->c_dicts = PyDict_New();
@@ -40,12 +60,40 @@ _zstd_ZstdDict_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject *Py_U
         goto error;
     }
 
+    /* Check dict_content's type */
+    self->dict_content = PyBytes_FromObject(dict_content);
+    if (self->dict_content == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "dict_content argument should be bytes-like object.");
+        goto error;
+    }
+
+    /* Both ordinary dictionary and "raw content" dictionary should
+       at least 8 bytes */
+    if (Py_SIZE(self->dict_content) < 8) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Zstandard dictionary content should at least 8 bytes.");
+        goto error;
+    }
+
+    /* Get dict_id, 0 means "raw content" dictionary. */
+    self->dict_id = ZSTD_getDictID_fromDict(PyBytes_AS_STRING(self->dict_content),
+                                            Py_SIZE(self->dict_content));
+
+    /* Check validity for ordinary dictionary */
+    if (!is_raw && self->dict_id == 0) {
+        char *msg = "Invalid Zstandard dictionary and is_raw not set.\n";
+        PyErr_SetString(PyExc_ValueError, msg);
+        goto error;
+    }
+
+    // Can only track self once self->dict_content is included
+    PyObject_GC_Track(self);
+
     return (PyObject*)self;
 
 error:
-    if (self != NULL) {
-        PyObject_GC_Del(self);
-    }
+    Py_XDECREF(self);
     return NULL;
 }
 
@@ -57,7 +105,9 @@ ZstdDict_dealloc(PyObject *ob)
     PyObject_GC_UnTrack(self);
 
     /* Free ZSTD_DDict instance */
-    ZSTD_freeDDict(self->d_dict);
+    if (self->d_dict) {
+        ZSTD_freeDDict(self->d_dict);
+    }
 
     /* Release dict_content after Free ZSTD_CDict/ZSTD_DDict instances */
     Py_CLEAR(self->dict_content);
@@ -68,87 +118,15 @@ ZstdDict_dealloc(PyObject *ob)
     Py_DECREF(tp);
 }
 
-/*[clinic input]
-_zstd.ZstdDict.__init__
-
-    dict_content: object
-        A bytes-like object, dictionary's content.
-    is_raw: bool = False
-        This parameter is for advanced user. True means dict_content
-        argument is a "raw content" dictionary, free of any format
-        restriction. False means dict_content argument is an ordinary
-        zstd dictionary, was created by zstd functions, follow a
-        specified format.
-
-Represents a zstd dictionary, which can be used for compression/decompression.
-
-It's thread-safe, and can be shared by multiple ZstdCompressor /
-ZstdDecompressor objects.
-[clinic start generated code]*/
-
-static int
-_zstd_ZstdDict___init___impl(ZstdDict *self, PyObject *dict_content,
-                             int is_raw)
-/*[clinic end generated code: output=c5f5a0d8377d037c input=e6750f62a513b3ee]*/
-{
-    /* Only called once */
-    if (self->inited) {
-        PyErr_SetString(PyExc_RuntimeError, init_twice_msg);
-        return -1;
-    }
-    self->inited = 1;
-
-    /* Check dict_content's type */
-    self->dict_content = PyBytes_FromObject(dict_content);
-    if (self->dict_content == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "dict_content argument should be bytes-like object.");
-        return -1;
-    }
-
-    /* Both ordinary dictionary and "raw content" dictionary should
-       at least 8 bytes */
-    if (Py_SIZE(self->dict_content) < 8) {
-        PyErr_SetString(PyExc_ValueError,
-                        "Zstd dictionary content should at least 8 bytes.");
-        return -1;
-    }
-
-    /* Get dict_id, 0 means "raw content" dictionary. */
-    self->dict_id = ZSTD_getDictID_fromDict(PyBytes_AS_STRING(self->dict_content),
-                                            Py_SIZE(self->dict_content));
-
-    /* Check validity for ordinary dictionary */
-    if (!is_raw && self->dict_id == 0) {
-        char *msg = "The dict_content argument is not a valid zstd "
-                    "dictionary. The first 4 bytes of a valid zstd dictionary "
-                    "should be a magic number: b'\\x37\\xA4\\x30\\xEC'.\n"
-                    "If you are an advanced user, and can be sure that "
-                    "dict_content argument is a \"raw content\" zstd "
-                    "dictionary, set is_raw parameter to True.";
-        PyErr_SetString(PyExc_ValueError, msg);
-        return -1;
-    }
-
-    // Can only track self once self->dict_content is included
-    PyObject_GC_Track(self);
-    return 0;
-}
-
-#define clinic_state() (get_zstd_state(type))
-#include "clinic/zstddict.c.h"
-#undef clinic_state
-
 PyDoc_STRVAR(ZstdDict_dictid_doc,
-"ID of zstd dictionary, a 32-bit unsigned int value.\n\n"
-"Non-zero means ordinary dictionary, was created by zstd functions, follow\n"
-"a specified format.\n\n"
-"0 means a \"raw content\" dictionary, free of any format restriction, used\n"
-"for advanced user.");
+"the Zstandard dictionary, an int between 0 and 2**32.\n\n"
+"A non-zero value represents an ordinary Zstandard dictionary, "
+"conforming to the standardised format.\n\n"
+"The special value '0' means a 'raw content' dictionary,"
+"without any restrictions on format or content.");
 
 PyDoc_STRVAR(ZstdDict_dictcontent_doc,
-"The content of zstd dictionary, a bytes object, it's the same as dict_content\n"
-"argument in ZstdDict.__init__() method. It can be used with other programs.");
+"The content of a Zstandard dictionary, as a bytes object.");
 
 static PyObject *
 ZstdDict_str(PyObject *ob)
@@ -161,7 +139,7 @@ ZstdDict_str(PyObject *ob)
 static PyMemberDef ZstdDict_members[] = {
     {"dict_id", Py_T_UINT, offsetof(ZstdDict, dict_id), Py_READONLY, ZstdDict_dictid_doc},
     {"dict_content", Py_T_OBJECT_EX, offsetof(ZstdDict, dict_content), Py_READONLY, ZstdDict_dictcontent_doc},
-    {0}
+    {NULL}
 };
 
 /*[clinic input]
@@ -231,12 +209,9 @@ _zstd_ZstdDict_as_prefix_get_impl(ZstdDict *self)
 
 static PyGetSetDef ZstdDict_getset[] = {
     _ZSTD_ZSTDDICT_AS_DIGESTED_DICT_GETSETDEF
-
     _ZSTD_ZSTDDICT_AS_UNDIGESTED_DICT_GETSETDEF
-
     _ZSTD_ZSTDDICT_AS_PREFIX_GETSETDEF
-
-    {0}
+    {NULL}
 };
 
 static Py_ssize_t
@@ -269,18 +244,18 @@ static PyType_Slot zstddict_slots[] = {
     {Py_tp_getset, ZstdDict_getset},
     {Py_tp_new, _zstd_ZstdDict_new},
     {Py_tp_dealloc, ZstdDict_dealloc},
-    {Py_tp_init, _zstd_ZstdDict___init__},
     {Py_tp_str, ZstdDict_str},
-    {Py_tp_doc, (char*)_zstd_ZstdDict___init____doc__},
+    {Py_tp_doc, (void *)_zstd_ZstdDict_new__doc__},
     {Py_sq_length, ZstdDict_length},
     {Py_tp_traverse, ZstdDict_traverse},
     {Py_tp_clear, ZstdDict_clear},
-    {0}
+    {0, 0}
 };
 
-PyType_Spec zstddict_type_spec = {
-    .name = "_zstd.ZstdDict",
+PyType_Spec zstd_dict_type_spec = {
+    .name = "compression.zstd.ZstdDict",
     .basicsize = sizeof(ZstdDict),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE
+             | Py_TPFLAGS_HAVE_GC,
     .slots = zstddict_slots,
 };

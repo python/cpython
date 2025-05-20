@@ -1315,6 +1315,15 @@ class CopyTests(unittest.TestCase):
         self.assertIs(repl.id, 'y')
         self.assertIs(repl.ctx, context)
 
+    def test_replace_accept_missing_field_with_default(self):
+        node = ast.FunctionDef(name="foo", args=ast.arguments())
+        self.assertIs(node.returns, None)
+        self.assertEqual(node.decorator_list, [])
+        node2 = copy.replace(node, name="bar")
+        self.assertEqual(node2.name, "bar")
+        self.assertIs(node2.returns, None)
+        self.assertEqual(node2.decorator_list, [])
+
     def test_replace_reject_known_custom_instance_fields_commits(self):
         node = ast.parse('x').body[0].value
         node.extra = extra = object()  # add instance 'extra' field
