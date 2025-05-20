@@ -1803,8 +1803,45 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
 }
 #endif
 
-/*[-clinic input]
-_curses.window.getstr
+/*
+ * Helper function for parsing parameters from getstr() and instr().
+ * This function is necessary because Argument Clinic does not know
+ * how to handle nested optional groups with default values inside.
+ *
+ * Return 1 on success and 0 on failure, similar to PyArg_ParseTuple().
+ */
+static int
+curses_clinic_parse_optional_xy_n(PyObject *args,
+                                  int *y, int *x, unsigned int *n, int *use_xy,
+                                  const char *qualname)
+{
+    switch (PyTuple_GET_SIZE(args)) {
+        case 0: {
+            *use_xy = 0;
+            return 1;
+        }
+        case 1: {
+            *use_xy = 0;
+            return PyArg_ParseTuple(args, "O&;n",
+                                    _PyLong_UnsignedInt_Converter, n);
+        }
+        case 2: {
+            *use_xy = 1;
+            return PyArg_ParseTuple(args, "ii;y,x", y, x);
+        }
+        case 3: {
+            *use_xy = 1;
+            return PyArg_ParseTuple(args, "iiO&;y,x,n", y, x,
+                                    _PyLong_UnsignedInt_Converter, n);
+        }
+        default: {
+            *use_xy = 0;
+            PyErr_Format(PyExc_TypeError, "%s requires 0 to 3 arguments",
+                         qualname);
+            return 0;
+        }
+    }
+}
 
     [
     y: int
