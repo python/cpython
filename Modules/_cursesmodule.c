@@ -1890,8 +1890,8 @@ PyCursesWindow_GetStr(PyObject *op, PyObject *args)
     }
 
     if (rtn == ERR) {
-      Py_DECREF(result);
-      return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+        Py_DECREF(result);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
 
     if (_PyBytes_Resize(&result, strlen(buf)) < 0) {
