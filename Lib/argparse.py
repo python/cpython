@@ -181,6 +181,9 @@ class HelpFormatter(object):
         self._max_help_position = min(max_help_position,
                                       max(width - 20, indent_increment * 2))
         self._width = width
+        self._adaptive_help_start_column = min(max_help_position,
+                                               max(self._width - 20, indent_increment * 2))
+        self._globally_calculated_help_start_col = self._adaptive_help_start_column
 
         self._current_indent = 0
         self._level = 0
@@ -191,6 +194,37 @@ class HelpFormatter(object):
 
         self._whitespace_matcher = _re.compile(r'\s+', _re.ASCII)
         self._long_break_matcher = _re.compile(r'\n\n\n+')
+
+    def _get_action_details_for_pass(self, section, current_indent_for_section_items):
+        """
+        Recursively collects details for actions within a given section and its subsections.
+        These details (action object, invocation length, indent) are used for calculating
+        the global help text alignment column.
+        """
+        collected_details = []
+
+        for func_to_call, args_for_func in section.items:
+            if func_to_call == self._format_action and args_for_func:
+                action_object = args_for_func[0]
+                if action_object.help is not SUPPRESS:
+                    invocation_string = self._format_action_invocation(action_object)
+                    # Length without color codes is needed for alignment.
+                    invocation_length = len(self._decolor(invocation_string))
+                    
+                    collected_details.append({
+                        'action': action_object,
+                        'inv_len': invocation_length,
+                        'indent': current_indent_for_section_items,
+                    })
+            elif hasattr(func_to_call, '__self__') and isinstance(func_to_call.__self__, self._Section):
+                sub_section_object = func_to_call.__self__
+                
+                indent_for_subsection_items = current_indent_for_section_items + self._indent_increment
+                
+                collected_details.extend(
+                    self._get_action_details_for_pass(sub_section_object, indent_for_subsection_items)
+                )
+        return collected_details
 
     def _set_color(self, color):
         from _colorize import can_colorize, decolor, get_theme
@@ -224,32 +258,59 @@ class HelpFormatter(object):
             self.items = []
 
         def format_help(self):
-            # format the indented section
-            if self.parent is not None:
+            """
+            Formats the help for this section, including its heading and all items.
+            """
+            is_subsection = self.parent is not None
+            if is_subsection:
                 self.formatter._indent()
-            join = self.formatter._join_parts
-            item_help = join([func(*args) for func, args in self.items])
-            if self.parent is not None:
+
+            # Generate help strings for all items (actions, text, subsections) in this section
+            item_help_strings = [func(*args) for func, args in self.items]
+            rendered_items_help = self.formatter._join_parts(item_help_strings)
+
+            if is_subsection:
+                # Restore indent level after formatting subsection items
                 self.formatter._dedent()
 
             # return nothing if the section was empty
-            if not item_help:
+            if not rendered_items_help:
                 return ''
 
-            # add the heading if the section was non-empty
+            # If we're here, rendered_items_help is not empty.
+            # Now, format the heading for this section if it exists and is not suppressed.
+            formatted_heading_output_part = ""
             if self.heading is not SUPPRESS and self.heading is not None:
-                current_indent = self.formatter._current_indent
-                heading_text = _('%(heading)s:') % dict(heading=self.heading)
-                t = self.formatter._theme
-                heading = (
-                    f'{" " * current_indent}'
-                    f'{t.heading}{heading_text}{t.reset}\n'
+                current_section_heading_indent = ' ' * self.formatter._current_indent
+                
+                try:
+                    # This line checks if global `_` is defined.
+                    # If `_` is not defined in any accessible scope, it raises NameError.
+                    _ 
+                except NameError:
+                    # If global `_` was not found, this line defines `_` in the global scope
+                    # as a no-op lambda function.
+                    _ = lambda text_to_translate: text_to_translate
+                
+                # Now, call `_` directly. It is guaranteed to be defined at this point
+                # (either as the original gettext `_` or the no-op lambda).
+                # `xgettext` will correctly identify `_('%(heading)s:')` as translatable.
+                heading_title_text = _('%(heading)s:') % {'heading': self.heading}
+                
+                theme_colors = self.formatter._theme
+                formatted_heading_output_part = (
+                    f'{current_section_heading_indent}{theme_colors.heading}'
+                    f'{heading_title_text}{theme_colors.reset}\n'
                 )
-            else:
-                heading = ''
-
-            # join the section-initial newline, the heading and the help
-            return join(['\n', heading, item_help, '\n'])
+            
+            section_output_parts = [
+                '\n',
+                formatted_heading_output_part,
+                rendered_items_help,
+                '\n'
+            ]
+            
+            return self.formatter._join_parts(section_output_parts)
 
     def _add_item(self, func, args):
         self._current_section.items.append((func, args))
@@ -302,12 +363,105 @@ class HelpFormatter(object):
     # Help-formatting methods
     # =======================
 
+    def _collect_all_action_details(self):
+        """
+        Helper for format_help: Traverses all sections starting from the root
+        and collects details about each action (like its invocation string length
+        and current indent level). This information is used to determine the
+        optimal global alignment for help text.
+        """
+        all_details = []
+        # Actions within top-level sections (direct children of _root_section, like "options:")
+        # will have an initial indent.
+        indent_for_actions_in_top_level_sections = self._indent_increment # Typically 2 spaces
+
+        for item_func, _item_args in self._root_section.items:
+            section_candidate = getattr(item_func, '__self__', None)
+            if isinstance(section_candidate, self._Section):
+                top_level_section = section_candidate
+                details_from_this_section = self._get_action_details_for_pass(
+                    top_level_section,
+                    indent_for_actions_in_top_level_sections
+                )
+                all_details.extend(details_from_this_section)
+        return all_details
+
+    def _calculate_global_help_start_column(self, all_action_details):
+        """
+        Helper for format_help: Calculates the single, globally optimal starting column
+        for all help text associated with actions. This aims to align help texts neatly.
+        """
+        if not all_action_details:
+            # No actions with help were found, so use the default adaptive start column.
+            return self._adaptive_help_start_column
+
+        min_padding_between_action_and_help = 2
+        # Track the maximum endpoint (indent + length) of action strings that can
+        # "reasonably" have their help text start on the same line without exceeding
+        # the _adaptive_help_start_column for the help text itself.
+        max_endpoint_of_reasonable_actions = 0
+
+        for detail in all_action_details:
+            # The column where this action's invocation string ends.
+            action_invocation_end_column = detail['indent'] + detail['inv_len']
+            
+            # An action is "reasonable" if its help text can start on the same line,
+            # aligned at or before _adaptive_help_start_column, while maintaining minimum padding.
+            is_reasonable_to_align_with_others = \
+                (action_invocation_end_column + min_padding_between_action_and_help <=
+                 self._adaptive_help_start_column)
+
+            if is_reasonable_to_align_with_others:
+                max_endpoint_of_reasonable_actions = max(
+                    max_endpoint_of_reasonable_actions,
+                    action_invocation_end_column
+                )
+        
+        if max_endpoint_of_reasonable_actions > 0:
+            # At least one action fits the "reasonable" criteria.
+            # The desired alignment column is after the longest of these "reasonable" actions, plus padding.
+            desired_global_alignment_column = \
+                max_endpoint_of_reasonable_actions + min_padding_between_action_and_help
+            
+            # However, this alignment should not exceed the user's preferred _adaptive_help_start_column.
+            return min(desired_global_alignment_column, self._adaptive_help_start_column)
+        else:
+            # No action was "reasonable" (e.g., all actions are very long, or _adaptive_help_start_column is too small).
+            # In this scenario, fall back to using _adaptive_help_start_column.
+            # Help text for most actions will likely start on a new line, indented to this column.
+            return self._adaptive_help_start_column
+
+
     def format_help(self):
-        help = self._root_section.format_help()
-        if help:
-            help = self._long_break_matcher.sub('\n\n', help)
-            help = help.strip('\n') + '\n'
-        return help
+        """
+        Formats the full help message.
+        This orchestrates the collection of action details for alignment,
+        calculates the global help start column, and then formats all sections.
+        """
+        # First Pass: Collect details of all actions to determine optimal help text alignment.
+        # This populates a list of dictionaries, each with action details.
+        all_action_details = self._collect_all_action_details()
+
+        # Calculate and set the global starting column for help text based on these details.
+        # This value (self._globally_calculated_help_start_col) will be used by _format_action.
+        self._globally_calculated_help_start_col = \
+            self._calculate_global_help_start_column(all_action_details)
+        
+        # Second Pass: Actually format the help.
+        # This will recursively call _Section.format_help for all sections,
+        # which in turn call item formatters like _format_action, _format_text.
+        # These formatting methods will use the self._globally_calculated_help_start_col set above.
+        raw_help_output = self._root_section.format_help()
+
+        # Post-process the generated help string for final presentation.
+        if raw_help_output:
+            # Consolidate multiple consecutive blank lines into a single blank line.
+            processed_help_output = self._long_break_matcher.sub('\n\n', raw_help_output)
+            # Ensure the help message ends with a single newline and strip any other leading/trailing newlines.
+            processed_help_output = processed_help_output.strip('\n') + '\n'
+            return processed_help_output
+        
+        return "" # Return an empty string if no help content was generated.
 
     def _join_parts(self, part_strings):
         return ''.join([part
@@ -527,59 +681,97 @@ class HelpFormatter(object):
         return self._fill_text(text, text_width, indent) + '\n\n'
 
     def _format_action(self, action):
-        # determine the required width and the entry label
-        help_position = min(self._action_max_length + 2,
-                            self._max_help_position)
-        help_width = max(self._width - help_position, 11)
-        action_width = help_position - self._current_indent - 2
-        action_header = self._format_action_invocation(action)
-        action_header_no_color = self._decolor(action_header)
+        """
+        Formats the help for a single action (argument).
+        This includes the action's invocation string and its help text,
+        aligning the help text based on _globally_calculated_help_start_col.
+        """
+        action_invocation_string = self._format_action_invocation(action)
+        action_invocation_len_no_color = len(self._decolor(action_invocation_string))
+        current_action_item_indent_str = ' ' * self._current_indent
+        globally_determined_help_start_col = self._globally_calculated_help_start_col
+        min_padding_after_action_invocation = 2
+        output_parts = [] 
 
-        # no help; start on same line and add a final newline
-        if not action.help:
-            tup = self._current_indent, '', action_header
-            action_header = '%*s%s\n' % tup
+        # Determine the maximum length the action_invocation_string (decolored) can be
+        # for its help text to start on the same line, aligned at globally_determined_help_start_col,
+        # while respecting self._current_indent and min_padding_after_action_invocation.
+        max_action_invocation_len_for_same_line_help = \
+            globally_determined_help_start_col - self._current_indent - min_padding_after_action_invocation
 
-        # short action name; start on the same line and pad two spaces
-        elif len(action_header_no_color) <= action_width:
-            # calculate widths without color codes
-            action_header_color = action_header
-            tup = self._current_indent, '', action_width, action_header_no_color
-            action_header = '%*s%-*s  ' % tup
-            # swap in the colored header
-            action_header = action_header.replace(
-                action_header_no_color, action_header_color
-            )
-            indent_first = 0
+        action_invocation_line_part = ""
+        help_should_start_on_new_line = True 
+        
+        # The actual column where the first line of help text (and subsequent wrapped lines) will start.
+        actual_help_text_alignment_column = globally_determined_help_start_col
 
-        # long action name; start on the next line
+        has_help_text = action.help and action.help.strip()
+
+        if has_help_text:
+            if action_invocation_len_no_color <= max_action_invocation_len_for_same_line_help:
+                # Action invocation is short enough: help text can start on the same line.
+                # Calculate the number of padding spaces needed to align the help text correctly.
+                num_padding_spaces = globally_determined_help_start_col - \
+                                     (self._current_indent + action_invocation_len_no_color)
+                
+                action_invocation_line_part = (
+                    f"{current_action_item_indent_str}{action_invocation_string}"
+                    f"{' ' * num_padding_spaces}" 
+                )
+                help_should_start_on_new_line = False
+            else:
+                action_invocation_line_part = f"{current_action_item_indent_str}{action_invocation_string}\n"
         else:
-            tup = self._current_indent, '', action_header
-            action_header = '%*s%s\n' % tup
-            indent_first = help_position
+            action_invocation_line_part = f"{current_action_item_indent_str}{action_invocation_string}\n"
 
-        # collect the pieces of the action help
-        parts = [action_header]
+        output_parts.append(action_invocation_line_part)
 
-        # if there was help for the action, add lines of help text
-        if action.help and action.help.strip():
-            help_text = self._expand_help(action)
-            if help_text:
-                help_lines = self._split_lines(help_text, help_width)
-                parts.append('%*s%s\n' % (indent_first, '', help_lines[0]))
-                for line in help_lines[1:]:
-                    parts.append('%*s%s\n' % (help_position, '', line))
+        if has_help_text:
+            expanded_help_text = self._expand_help(action)
+            
+            # Calculate the available width for wrapping the help text.
+            # The help text block starts at actual_help_text_alignment_column and extends to self._width.
+            help_text_wrapping_width = max(self._width - actual_help_text_alignment_column, 11)
+            
+            split_help_lines = self._split_lines(expanded_help_text, help_text_wrapping_width)
 
-        # or add a newline if the description doesn't end with one
-        elif not action_header.endswith('\n'):
-            parts.append('\n')
+            if split_help_lines: # Proceed only if splitting the help text yields any lines.
+                first_help_line_content = split_help_lines[0]
+                remaining_help_lines_content = split_help_lines[1:]
 
-        # if there are any sub-actions, add their help as well
+                if help_should_start_on_new_line:
+                    # Help starts on a new line, indented to actual_help_text_alignment_column.
+                    output_parts.append(f"{' ' * actual_help_text_alignment_column}{first_help_line_content}\n")
+                else:
+                    # Help starts on the same line as action_invocation_line_part.
+                    # Append the first_help_line_content to the last part in output_parts.
+                    # (action_invocation_line_part does not end with \n in this case).
+                    output_parts[-1] += f"{first_help_line_content}\n"
+                
+                # Add any subsequent wrapped help lines, each indented to actual_help_text_alignment_column.
+                for line_content in remaining_help_lines_content:
+                    output_parts.append(f"{' ' * actual_help_text_alignment_column}{line_content}\n")
+            
+            elif not output_parts[-1].endswith('\n'):
+                 # Case: has_help_text was true (action.help existed), but it was empty after strip()
+                 # or _split_lines returned empty. If action_invocation_line_part didn't end with \n
+                 # (because help_should_start_on_new_line was false), add a newline.
+                output_parts[-1] += '\n'
+
+        elif output_parts and not output_parts[-1].endswith('\n'):
+            # This handles the unlikely case where there's no help text, but action_invocation_line_part
+            # (which is output_parts[-1]) somehow didn't end with a newline.
+            # Based on the logic above, action_invocation_line_part should always end with \n if no help text.
+            # This is mostly defensive.
+            output_parts[-1] += '\n'
+
+        # Recursively format any subactions associated with this action.
+        # The _iter_indented_subactions method manages _indent() and _dedent() calls internally,
+        # ensuring self._current_indent is correctly set for these recursive _format_action calls.
         for subaction in self._iter_indented_subactions(action):
-            parts.append(self._format_action(subaction))
+            output_parts.append(self._format_action(subaction))
 
-        # return a single string
-        return self._join_parts(parts)
+        return self._join_parts(output_parts)
 
     def _format_action_invocation(self, action):
         t = self._theme
