@@ -105,8 +105,8 @@ class ModuleCompleter:
     def is_suggestion_match(self, module_name: str, prefix: str) -> bool:
         if prefix:
             return module_name.startswith(prefix)
-        # Return False if no prefix and the module is private
-        # So that the default behavior is only returning public modules
+        # For consistency with attribute completion, which
+        # does not suggest private attributes unless requested.
         return not module_name.startswith("_")
 
     def iter_submodules(self, parent_modules: list[pkgutil.ModuleInfo]) -> Iterator[pkgutil.ModuleInfo]:
