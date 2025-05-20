@@ -3,7 +3,7 @@
 
 .. module:: compression.zstd
    :synopsis: Low-level interface to compression and decompression routines in
-              Meta's zstd library
+              the zstd library.
 
 .. versionadded:: 3.14
 
@@ -54,9 +54,9 @@ Reading and writing compressed files
    in which case the named file is opened, or it can be an existing file object
    to read from or write to.
 
-   The mode argument can be either ``'r'`` for reading (default), ``'w'`` for
-   overwriting, ``'a'`` for appending, or ``'x'`` for exclusive creation. These
-   can equivalently be given as ``'rb'``, ``'wb'``, ``'ab'``, and ``'xb'``
+   The mode argument can be either ``'rb'`` for reading (default), ``'wb'`` for
+   overwriting, ``'ab'`` for appending, or ``'xb'`` for exclusive creation.
+   These can equivalently be given as ``'r'``, ``'w'``, ``'a'``, and ``'x'``
    respectively. You may also open in text mode with ``'rt'``, ``'wt'``,
    ``'at'``, and ``'xt'`` respectively.
 
@@ -84,7 +84,7 @@ Reading and writing compressed files
    handling behavior, and line endings.
 
 
-.. class:: ZstdFile(file, /, mode='r', *, level=None, options=None, \
+.. class:: ZstdFile(file, /, mode='rb', *, level=None, options=None, \
                     zstd_dict=None)
 
    Open a Zstandard-compressed file in binary mode.
@@ -96,9 +96,9 @@ Reading and writing compressed files
    wrapping an existing file object, the wrapped file will not be closed when
    the :class:`ZstdFile` is closed.
 
-   The *mode* argument can be either ``'r'`` for reading (default), ``'w'`` for
-   overwriting, ``'x'`` for exclusive creation, or ``'a'`` for appending. These
-   can equivalently be given as ``'rb'``, ``'wb'``, ``'xb'`` and ``'ab'``
+   The *mode* argument can be either ``'rb'`` for reading (default), ``'wb'``
+   for overwriting, ``'xb'`` for exclusive creation, or ``'ab'`` for appending.
+   These can equivalently be given as ``'r'``, ``'w'``, ``'x'`` and ``'a'``
    respectively.
 
    If *file* is a file object (rather than an actual file name), a mode of
