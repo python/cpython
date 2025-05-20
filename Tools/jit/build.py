@@ -23,10 +23,18 @@ if __name__ == "__main__":
         "-f", "--force", action="store_true", help="force the entire JIT to be rebuilt"
     )
     parser.add_argument(
-        "-o", "--output-dir", help="where to output generated files", required=True, type=lambda p: pathlib.Path(p).resolve()
+        "-o",
+        "--output-dir",
+        help="where to output generated files",
+        required=True,
+        type=lambda p: pathlib.Path(p).resolve(),
     )
     parser.add_argument(
-        "-p", "--pyconfig-dir", help="where to find pyconfig.h", required=True, type=lambda p: pathlib.Path(p).resolve()
+        "-p",
+        "--pyconfig-dir",
+        help="where to find pyconfig.h",
+        required=True,
+        type=lambda p: pathlib.Path(p).resolve(),
     )
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="echo commands as they are run"
@@ -36,7 +44,7 @@ if __name__ == "__main__":
         target.debug = args.debug
         target.force = args.force
         target.verbose = args.verbose
-        target.pyconfig=args.pyconfig_dir / "pyconfig.h"
+        target.pyconfig = args.pyconfig_dir / "pyconfig.h"
         target.build(
             comment=comment,
             force=args.force,
