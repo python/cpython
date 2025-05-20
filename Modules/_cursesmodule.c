@@ -1845,7 +1845,7 @@ PyCursesWindow_GetStr(PyObject *op, PyObject *args)
         Py_END_ALLOW_THREADS
         break;
     case 1:
-        if (!PyArg_ParseTuple(args, "i;n", &n))
+        if (!PyArg_ParseTuple(args,"i;n", &n))
             return NULL;
         if (n < 0) {
             PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
