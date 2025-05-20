@@ -66,21 +66,7 @@
             break;
         }
 
-        /* _LOAD_CONST is not a viable micro-op for tier 2 */
-
-        case _LOAD_CONST_MORTAL: {
-            JitOptSymbol *value;
-            PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
-            int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
-            REPLACE_OP(this_instr, opcode, 0, (uintptr_t)val);
-            value = sym_new_const(ctx, val);
-            stack_pointer[0] = value;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _LOAD_CONST_IMMORTAL: {
+        case _LOAD_CONST: {
             JitOptSymbol *value;
             PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
             REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
@@ -1935,6 +1921,16 @@
             break;
         }
 
+        case _GUARD_NOS_NOT_NULL: {
+            JitOptSymbol *nos;
+            nos = stack_pointer[-2];
+            if (sym_is_not_null(nos)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_non_null(nos);
+            break;
+        }
+
         case _GUARD_THIRD_NULL: {
             JitOptSymbol *null;
             null = stack_pointer[-3];
@@ -2124,11 +2120,36 @@
         }
 
         case _CALL_ISINSTANCE: {
+            JitOptSymbol *cls;
+            JitOptSymbol *instance;
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            cls = stack_pointer[-1];
+            instance = stack_pointer[-2];
+            res = sym_new_type(ctx, &PyBool_Type);
+            PyTypeObject *inst_type = sym_get_type(instance);
+            PyTypeObject *cls_o = (PyTypeObject *)sym_get_const(ctx, cls);
+            if (inst_type && cls_o && sym_matches_type(cls, &PyType_Type)) {
+                PyObject *out = Py_False;
+                if (inst_type == cls_o || PyType_IsSubtype(inst_type, cls_o)) {
+                    out = Py_True;
+                }
+                sym_set_const(res, out);
+                REPLACE_OP(this_instr, _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
+            }
             stack_pointer[-4] = res;
             stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _GUARD_CALLABLE_LIST_APPEND: {
+            JitOptSymbol *callable;
+            callable = stack_pointer[-3];
+            PyObject *list_append = _PyInterpreterState_GET()->callable_cache.list_append;
+            if (sym_get_const(ctx, callable) == list_append) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_const(callable, list_append);
             break;
         }
 
@@ -2517,6 +2538,16 @@
             value = sym_new_not_null(ctx);
             stack_pointer[-2] = value;
             stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW: {
+            JitOptSymbol *value;
+            PyObject *ptr = (PyObject *)this_instr->operand0;
+            value = sym_new_const(ctx, ptr);
+            stack_pointer[-4] = value;
+            stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }

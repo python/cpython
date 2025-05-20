@@ -572,7 +572,7 @@ class IOTest(unittest.TestCase):
         for [test, abilities] in tests:
             with self.subTest(test):
                 if test == pipe_writer and not threading_helper.can_start_thread:
-                    skipTest()
+                    self.skipTest("Need threads")
                 with test() as obj:
                     do_test(test, obj, abilities)
 

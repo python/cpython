@@ -128,7 +128,7 @@ pymain_get_importer(const wchar_t *filename, PyObject **importer_p, int *exitcod
 {
     PyObject *sys_path0 = NULL, *importer;
 
-    sys_path0 = PyUnicode_FromWideChar(filename, wcslen(filename));
+    sys_path0 = PyUnicode_FromWideChar(filename, -1);
     if (sys_path0 == NULL) {
         goto error;
     }
@@ -328,7 +328,7 @@ pymain_run_module(const wchar_t *modname, int set_argv0)
         fprintf(stderr, "Could not import runpy._run_module_as_main\n");
         return pymain_exit_err_print();
     }
-    module = PyUnicode_FromWideChar(modname, wcslen(modname));
+    module = PyUnicode_FromWideChar(modname, -1);
     if (module == NULL) {
         fprintf(stderr, "Could not convert module name to unicode\n");
         Py_DECREF(runmodule);
@@ -439,7 +439,7 @@ pymain_run_startup(PyConfig *config, int *exitcode)
     if (env == NULL || env[0] == L'\0') {
         return 0;
     }
-    startup = PyUnicode_FromWideChar(env, wcslen(env));
+    startup = PyUnicode_FromWideChar(env, -1);
     if (startup == NULL) {
         goto error;
     }
