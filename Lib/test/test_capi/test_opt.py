@@ -1927,11 +1927,11 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_get_len_with_const_tuple(self):
         def testfunc(n):
-            x = ""
+            x = 0.0
             for _ in range(n):
                 match (1, 2, 3, 4):
                     case [_, _, _, _]:
-                        x += "1"
+                        x += 1.0
             return x
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertEqual(len(res), TIER2_THRESHOLD)
