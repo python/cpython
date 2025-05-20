@@ -1689,6 +1689,7 @@ static PyObject *
 _curses_window_enclose_impl(PyCursesWindowObject *self, int y, int x)
 /*[clinic end generated code: output=8679beef50502648 input=4fd3355d723f7bc9]*/
 {
+    // wenclose() returns always return a boolean
     return PyBool_FromLong(wenclose(self->win, y, x));
 }
 #endif
