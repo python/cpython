@@ -523,14 +523,7 @@ error:
 
 }
 
-const uint16_t op_without_pop[MAX_UOP_ID] = {
-    [_POP_TOP] = _NOP,
-    [_POP_TOP_LOAD_CONST_INLINE] = _LOAD_CONST_INLINE,
-    [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _LOAD_CONST_INLINE_BORROW,
-    [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
-};
-
-const uint16_t op_without_push[MAX_UOP_ID] = {
+const uint16_t op_without_push[MAX_UOP_ID + 1] = {
     [_COPY] = _NOP,
     [_LOAD_CONST_INLINE] = _NOP,
     [_LOAD_CONST_INLINE_BORROW] = _NOP,
@@ -540,6 +533,13 @@ const uint16_t op_without_push[MAX_UOP_ID] = {
     [_POP_TOP_LOAD_CONST_INLINE] = _POP_TOP,
     [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _POP_TOP,
     [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TWO,
+};
+
+const uint16_t op_without_pop[MAX_UOP_ID + 1] = {
+    [_POP_TOP] = _NOP,
+    [_POP_TOP_LOAD_CONST_INLINE] = _LOAD_CONST_INLINE,
+    [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _LOAD_CONST_INLINE_BORROW,
+    [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
 };
 
 

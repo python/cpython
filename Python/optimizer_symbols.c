@@ -284,7 +284,7 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptSymbol *sym, PyObject *const_val
                         PyObject *item = PyTuple_GET_ITEM(const_val, i);
                         _Py_uop_sym_set_const(ctx, sym_item, item);
                     }
-                    _Py_uop_sym_set_const(ctx, sym, const_val);
+                    make_const(sym, const_val);
                     return;
                 }
             }
