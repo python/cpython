@@ -1844,10 +1844,10 @@ PyCursesWindow_GetStr(PyObject *op, PyObject *args)
         break;
     case 1:
         if (!PyArg_ParseTuple(args,"i;n", &n))
-            return NULL;
+            goto error;
         if (n < 0) {
             PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
-            return NULL;
+            goto error;
         }
         Py_BEGIN_ALLOW_THREADS
         rtn = wgetnstr(self->win, buf, Py_MIN(n, max_buf_size - 1));
@@ -1855,7 +1855,7 @@ PyCursesWindow_GetStr(PyObject *op, PyObject *args)
         break;
     case 2:
         if (!PyArg_ParseTuple(args,"ii;y,x",&y,&x))
-            return NULL;
+            goto error;
         Py_BEGIN_ALLOW_THREADS
 #ifdef STRICT_SYSV_CURSES
         rtn = wmove(self->win,y,x)==ERR ? ERR : wgetnstr(self->win, rtn, max_buf_size - 1);
@@ -1866,10 +1866,10 @@ PyCursesWindow_GetStr(PyObject *op, PyObject *args)
         break;
     case 3:
         if (!PyArg_ParseTuple(args,"iii;y,x,n", &y, &x, &n))
-            return NULL;
+            goto error;
         if (n < 0) {
             PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
-            return NULL;
+            goto error;
         }
 #ifdef STRICT_SYSV_CURSES
         Py_BEGIN_ALLOW_THREADS
@@ -1884,7 +1884,7 @@ PyCursesWindow_GetStr(PyObject *op, PyObject *args)
         break;
     default:
         PyErr_SetString(PyExc_TypeError, "getstr requires 0 to 3 arguments");
-        return NULL;
+        goto error;
     }
 
     if (rtn == ERR) {
@@ -1892,11 +1892,15 @@ PyCursesWindow_GetStr(PyObject *op, PyObject *args)
       return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
 
-    if (_PyBytes_Resize(&result, rtn) < 0) {
+    if (_PyBytes_Resize(&result, strlen(buf)) < 0) {
         return NULL;
     }
 
     return result;
+
+error:
+    Py_DECREF(result);
+    return NULL;
 }
 
 /*[clinic input]
@@ -2065,30 +2069,30 @@ PyCursesWindow_InStr(PyObject *op, PyObject *args)
         break;
     case 1:
         if (!PyArg_ParseTuple(args,"i;n", &n))
-            return NULL;
+            goto error;
         if (n < 0) {
             PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
-            return NULL;
+            goto error;
         }
         rtn = winnstr(self->win, buf, Py_MIN(n, max_buf_size - 1));
         break;
     case 2:
         if (!PyArg_ParseTuple(args,"ii;y,x",&y,&x))
-            return NULL;
+            goto error;
         rtn = mvwinnstr(self->win, y, x, buf, max_buf_size - 1);
         break;
     case 3:
         if (!PyArg_ParseTuple(args, "iii;y,x,n", &y, &x, &n))
-            return NULL;
+            goto error;
         if (n < 0) {
             PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
-            return NULL;
+            goto error;
         }
         rtn = mvwinnstr(self->win, y, x, buf, Py_MIN(n, max_buf_size - 1));
         break;
     default:
         PyErr_SetString(PyExc_TypeError, "instr requires 0 or 3 arguments");
-        return NULL;
+        goto error;
     }
 
     if (rtn == ERR) {
@@ -2096,11 +2100,15 @@ PyCursesWindow_InStr(PyObject *op, PyObject *args)
       return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
 
-    if (_PyBytes_Resize(&result, rtn) < 0) {
-        return NULL;
+    if (_PyBytes_Resize(&result, strlen(buf)) < 0) {
+      return NULL;
     }
 
     return result;
+ 
+error:
+    Py_DECREF(result);
+    return NULL;
 }
 
 /*[clinic input]
