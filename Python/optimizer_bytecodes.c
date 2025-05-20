@@ -118,6 +118,18 @@ dummy_func(void) {
         sym_set_type(left, &PyLong_Type);
     }
 
+    op(_CHECK_ATTR_CLASS, (type_version/2, owner -- owner)) {
+        PyObject *type = (PyObject *)_PyType_LookupByVersion(type_version);
+        if (type) {
+            if (type == sym_get_const(ctx, owner)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            else {
+                sym_set_const(owner, type);
+            }
+        }
+    }
+
     op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
         assert(type_version);
         if (sym_matches_type_version(owner, type_version)) {

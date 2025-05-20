@@ -102,6 +102,12 @@
             break;
         }
 
+        case _POP_TWO: {
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _PUSH_NULL: {
             JitOptSymbol *res;
             res = sym_new_null(ctx);
@@ -1259,6 +1265,18 @@
         }
 
         case _CHECK_ATTR_CLASS: {
+            JitOptSymbol *owner;
+            owner = stack_pointer[-1];
+            uint32_t type_version = (uint32_t)this_instr->operand0;
+            PyObject *type = (PyObject *)_PyType_LookupByVersion(type_version);
+            if (type) {
+                if (type == sym_get_const(ctx, owner)) {
+                    REPLACE_OP(this_instr, _NOP, 0, 0);
+                }
+                else {
+                    sym_set_const(owner, type);
+                }
+            }
             break;
         }
 

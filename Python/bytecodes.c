@@ -344,6 +344,11 @@ dummy_func(
             PyStackRef_CLOSE(value);
         }
 
+        tier2 op(_POP_TWO, (nos, tos --)) {
+            PyStackRef_CLOSE(tos);
+            PyStackRef_CLOSE(nos);
+        }
+
         pure inst(PUSH_NULL, (-- res)) {
             res = PyStackRef_NULL;
         }
