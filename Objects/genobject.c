@@ -10,6 +10,7 @@
 #include "pycore_gc.h"            // _PyGC_CLEAR_FINALIZED()
 #include "pycore_genobject.h"     // _PyGen_SetStopIterationValue()
 #include "pycore_interpframe.h"   // _PyFrame_GetCode()
+#include "pycore_pymem.h"         // _PyObject_XSetRefDelayed()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_utils.h"  // RESUME_AFTER_YIELD_FROM
@@ -718,7 +719,9 @@ gen_set_name(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
                         "__name__ must be set to a string object");
         return -1;
     }
-    Py_XSETREF(op->gi_name, Py_NewRef(value));
+    Py_BEGIN_CRITICAL_SECTION(self);
+    _PyObject_XSetRefDelayed(&op->gi_name, value);
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -740,7 +743,9 @@ gen_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
                         "__qualname__ must be set to a string object");
         return -1;
     }
-    Py_XSETREF(op->gi_qualname, Py_NewRef(value));
+    Py_BEGIN_CRITICAL_SECTION(self);
+    _PyObject_XSetRefDelayed(&op->gi_qualname, value);
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 

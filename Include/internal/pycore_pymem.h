@@ -100,6 +100,15 @@ static inline void _PyObject_XDecRefDelayed(PyObject *obj)
 }
 #endif
 
+#ifdef Py_GIL_DISABLED
+PyAPI_FUNC(void) _PyObject_XSetRefDelayed(PyObject **p_obj, PyObject *obj);
+#else
+static inline void _PyObject_XSetRefDelayed(PyObject **p_obj, PyObject *obj)
+{
+    Py_XSETREF(*p_obj, obj);
+}
+#endif
+
 // Periodically process delayed free requests.
 extern void _PyMem_ProcessDelayed(PyThreadState *tstate);
 
