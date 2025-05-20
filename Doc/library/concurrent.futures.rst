@@ -71,10 +71,10 @@ Executor Objects
       :class:`ThreadPoolExecutor` and :class:`InterpreterPoolExecutor`,
       *chunksize* has no effect.
 
-      .. versionchanged:: 3.5
+      .. versionadded:: 3.5
          Added the *chunksize* parameter.
 
-      .. versionchanged:: 3.14
+      .. versionadded:: 3.14
          Added the *buffersize* parameter.
 
    .. method:: shutdown(wait=True, *, cancel_futures=False)
@@ -113,7 +113,7 @@ Executor Objects
              e.submit(shutil.copy, 'src3.txt', 'dest3.txt')
              e.submit(shutil.copy, 'src4.txt', 'dest4.txt')
 
-      .. versionchanged:: 3.9
+      .. versionadded:: 3.9
          Added *cancel_futures*.
 
 
@@ -154,7 +154,8 @@ And::
    executor.submit(wait_on_future)
 
 
-.. class:: ThreadPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=())
+.. class:: ThreadPoolExecutor(max_workers=None, thread_name_prefix='', \
+                              initializer=None, initargs=(), **ctxkwargs)
 
    An :class:`Executor` subclass that uses a pool of at most *max_workers*
    threads to execute calls asynchronously.
@@ -180,12 +181,12 @@ And::
       should be higher than the number of workers
       for :class:`ProcessPoolExecutor`.
 
-   .. versionchanged:: 3.6
+   .. versionadded:: 3.6
       Added the *thread_name_prefix* parameter to allow users to
       control the :class:`threading.Thread` names for worker threads created by
       the pool for easier debugging.
 
-   .. versionchanged:: 3.7
+   .. versionadded:: 3.7
       Added the *initializer* and *initargs* arguments.
 
    .. versionchanged:: 3.8
@@ -200,6 +201,10 @@ And::
    .. versionchanged:: 3.13
       Default value of *max_workers* is changed to
       ``min(32, (os.process_cpu_count() or 1) + 4)``.
+
+   .. versionadded:: 3.14
+      Added *ctxkwargs* to pass additional arguments to ``cls.prepare_context``
+      class method.
 
 
 .. _threadpoolexecutor-example:
@@ -287,7 +292,8 @@ efficient alternative is to serialize with :mod:`pickle` and then send
 the bytes over a shared :mod:`socket <socket>` or
 :func:`pipe <os.pipe>`.
 
-.. class:: InterpreterPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=(), shared=None)
+.. class:: InterpreterPoolExecutor(max_workers=None, thread_name_prefix='', \
+                                   initializer=None, initargs=(), shared=None)
 
    A :class:`ThreadPoolExecutor` subclass that executes calls asynchronously
    using a pool of at most *max_workers* threads.  Each thread runs
@@ -357,7 +363,9 @@ that :class:`ProcessPoolExecutor` will not work in the interactive interpreter.
 Calling :class:`Executor` or :class:`Future` methods from a callable submitted
 to a :class:`ProcessPoolExecutor` will result in deadlock.
 
-.. class:: ProcessPoolExecutor(max_workers=None, mp_context=None, initializer=None, initargs=(), max_tasks_per_child=None)
+.. class:: ProcessPoolExecutor(max_workers=None, mp_context=None, \
+                               initializer=None, initargs=(), \
+                               max_tasks_per_child=None)
 
    An :class:`Executor` subclass that executes calls asynchronously using a pool
    of at most *max_workers* processes.  If *max_workers* is ``None`` or not
@@ -394,13 +402,13 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
       was undefined but operations on the executor or its futures would often
       freeze or deadlock.
 
-   .. versionchanged:: 3.7
+   .. versionadded:: 3.7
       The *mp_context* argument was added to allow users to control the
       start_method for worker processes created by the pool.
 
       Added the *initializer* and *initargs* arguments.
 
-   .. versionchanged:: 3.11
+   .. versionadded:: 3.11
       The *max_tasks_per_child* argument was added to allow users to
       control the lifetime of workers in the pool.
 
