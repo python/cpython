@@ -487,27 +487,35 @@ class PosixPathTest(unittest.TestCase):
     def test_realpath_invalid_paths(self):
         path = '/\x00'
         self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(ValueError, realpath, path, strict=ALL_BUT_LAST)
         self.assertRaises(ValueError, realpath, path, strict=True)
         path = b'/\x00'
         self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(ValueError, realpath, path, strict=ALL_BUT_LAST)
         self.assertRaises(ValueError, realpath, path, strict=True)
         path = '/nonexistent/x\x00'
         self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(FileNotFoundError, realpath, path, strict=ALL_BUT_LAST)
         self.assertRaises(FileNotFoundError, realpath, path, strict=True)
         path = b'/nonexistent/x\x00'
         self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(FileNotFoundError, realpath, path, strict=ALL_BUT_LAST)
         self.assertRaises(FileNotFoundError, realpath, path, strict=True)
         path = '/\x00/..'
         self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(ValueError, realpath, path, strict=ALL_BUT_LAST)
         self.assertRaises(ValueError, realpath, path, strict=True)
         path = b'/\x00/..'
         self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(ValueError, realpath, path, strict=ALL_BUT_LAST)
         self.assertRaises(ValueError, realpath, path, strict=True)
         path = '/nonexistent/x\x00/..'
         self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(FileNotFoundError, realpath, path, strict=ALL_BUT_LAST)
         self.assertRaises(FileNotFoundError, realpath, path, strict=True)
         path = b'/nonexistent/x\x00/..'
         self.assertRaises(ValueError, realpath, path, strict=False)
+        self.assertRaises(FileNotFoundError, realpath, path, strict=ALL_BUT_LAST)
         self.assertRaises(FileNotFoundError, realpath, path, strict=True)
 
         path = '/\udfff'
@@ -516,12 +524,14 @@ class PosixPathTest(unittest.TestCase):
             self.assertRaises(FileNotFoundError, realpath, path, strict=True)
         else:
             self.assertRaises(UnicodeEncodeError, realpath, path, strict=False)
+            self.assertRaises(UnicodeEncodeError, realpath, path, strict=ALL_BUT_LAST)
             self.assertRaises(UnicodeEncodeError, realpath, path, strict=True)
         path = '/nonexistent/\udfff'
         if sys.platform == 'win32':
             self.assertEqual(realpath(path, strict=False), path)
         else:
             self.assertRaises(UnicodeEncodeError, realpath, path, strict=False)
+        self.assertRaises(FileNotFoundError, realpath, path, strict=ALL_BUT_LAST)
         self.assertRaises(FileNotFoundError, realpath, path, strict=True)
         path = '/\udfff/..'
         if sys.platform == 'win32':
@@ -529,12 +539,14 @@ class PosixPathTest(unittest.TestCase):
             self.assertRaises(FileNotFoundError, realpath, path, strict=True)
         else:
             self.assertRaises(UnicodeEncodeError, realpath, path, strict=False)
+            self.assertRaises(UnicodeEncodeError, realpath, path, strict=ALL_BUT_LAST)
             self.assertRaises(UnicodeEncodeError, realpath, path, strict=True)
         path = '/nonexistent/\udfff/..'
         if sys.platform == 'win32':
             self.assertEqual(realpath(path, strict=False), '/nonexistent')
         else:
             self.assertRaises(UnicodeEncodeError, realpath, path, strict=False)
+        self.assertRaises(FileNotFoundError, realpath, path, strict=ALL_BUT_LAST)
         self.assertRaises(FileNotFoundError, realpath, path, strict=True)
 
         path = b'/\xff'
@@ -543,6 +555,7 @@ class PosixPathTest(unittest.TestCase):
             self.assertRaises(UnicodeDecodeError, realpath, path, strict=True)
         else:
             self.assertEqual(realpath(path, strict=False), path)
+            self.assertEqual(realpath(path, strict=ALL_BUT_LAST), path)
             if support.is_wasi:
                 self.assertRaises(OSError, realpath, path, strict=True)
             else:
@@ -553,8 +566,10 @@ class PosixPathTest(unittest.TestCase):
         else:
             self.assertEqual(realpath(path, strict=False), path)
         if support.is_wasi:
+            self.assertRaises(OSError, realpath, path, strict=ALL_BUT_LAST)
             self.assertRaises(OSError, realpath, path, strict=True)
         else:
+            self.assertRaises(FileNotFoundError, realpath, path, strict=ALL_BUT_LAST)
             self.assertRaises(FileNotFoundError, realpath, path, strict=True)
 
     @os_helper.skip_unless_symlink
@@ -623,30 +638,48 @@ class PosixPathTest(unittest.TestCase):
         # strict mode.
         try:
             os.symlink(ABSTFN, ABSTFN)
+            self.assertRaises(OSError, realpath, ABSTFN, strict=ALL_BUT_LAST)
             self.assertRaises(OSError, realpath, ABSTFN, strict=True)
 
             os.symlink(ABSTFN+"1", ABSTFN+"2")
             os.symlink(ABSTFN+"2", ABSTFN+"1")
+            self.assertRaises(OSError, realpath, ABSTFN+"1", strict=ALL_BUT_LAST)
             self.assertRaises(OSError, realpath, ABSTFN+"1", strict=True)
+            self.assertRaises(OSError, realpath, ABSTFN+"2", strict=ALL_BUT_LAST)
             self.assertRaises(OSError, realpath, ABSTFN+"2", strict=True)
 
+            self.assertRaises(OSError, realpath, ABSTFN+"1/x", strict=ALL_BUT_LAST)
             self.assertRaises(OSError, realpath, ABSTFN+"1/x", strict=True)
+            self.assertRaises(OSError, realpath, ABSTFN+"1/..", strict=ALL_BUT_LAST)
             self.assertRaises(OSError, realpath, ABSTFN+"1/..", strict=True)
+            self.assertRaises(OSError, realpath, ABSTFN+"1/../x", strict=ALL_BUT_LAST)
             self.assertRaises(OSError, realpath, ABSTFN+"1/../x", strict=True)
             os.symlink(ABSTFN+"x", ABSTFN+"y")
             self.assertRaises(OSError, realpath,
-                              ABSTFN+"1/../" + basename(ABSTFN) + "y", strict=True)
+                              ABSTFN+"1/../" + basename(ABSTFN) + "y",
+                              strict=ALL_BUT_LAST)
             self.assertRaises(OSError, realpath,
-                              ABSTFN+"1/../" + basename(ABSTFN) + "1", strict=True)
+                              ABSTFN+"1/../" + basename(ABSTFN) + "y",
+                              strict=True)
+            self.assertRaises(OSError, realpath,
+                              ABSTFN+"1/../" + basename(ABSTFN) + "1",
+                              strict=ALL_BUT_LAST)
+            self.assertRaises(OSError, realpath,
+                              ABSTFN+"1/../" + basename(ABSTFN) + "1",
+                              strict=True)
 
             os.symlink(basename(ABSTFN) + "a/b", ABSTFN+"a")
+            self.assertRaises(OSError, realpath, ABSTFN+"a", strict=ALL_BUT_LAST)
             self.assertRaises(OSError, realpath, ABSTFN+"a", strict=True)
 
             os.symlink("../" + basename(dirname(ABSTFN)) + "/" +
                        basename(ABSTFN) + "c", ABSTFN+"c")
+            self.assertRaises(OSError, realpath, ABSTFN+"c", strict=ALL_BUT_LAST)
             self.assertRaises(OSError, realpath, ABSTFN+"c", strict=True)
 
             # Test using relative path as well.
+            with os_helper.change_cwd(dirname(ABSTFN)):
+                self.assertRaises(OSError, realpath, basename(ABSTFN), strict=ALL_BUT_LAST)
             with os_helper.change_cwd(dirname(ABSTFN)):
                 self.assertRaises(OSError, realpath, basename(ABSTFN), strict=True)
         finally:
@@ -769,6 +802,8 @@ class PosixPathTest(unittest.TestCase):
             self.assertEqual(realpath(ABSTFN + '/../foo'), dirname(ABSTFN) + '/foo')
             self.assertEqual(realpath(ABSTFN + '/foo/..'), ABSTFN)
             with self.assertRaises(PermissionError):
+                realpath(ABSTFN, strict=ALL_BUT_LAST)
+            with self.assertRaises(PermissionError):
                 realpath(ABSTFN, strict=True)
         finally:
             os.chmod(ABSTFN, 0o755, follow_symlinks=False)
@@ -780,14 +815,19 @@ class PosixPathTest(unittest.TestCase):
             with open(ABSTFN, 'w') as f:
                 f.write('test_posixpath wuz ere')
             self.assertEqual(realpath(ABSTFN, strict=False), ABSTFN)
+            self.assertEqual(realpath(ABSTFN, strict=ALL_BUT_LAST), ABSTFN)
             self.assertEqual(realpath(ABSTFN, strict=True), ABSTFN)
             self.assertEqual(realpath(ABSTFN + "/", strict=False), ABSTFN)
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/", strict=ALL_BUT_LAST)
             self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/", strict=True)
             self.assertEqual(realpath(ABSTFN + "/.", strict=False), ABSTFN)
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/.", strict=ALL_BUT_LAST)
             self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/.", strict=True)
             self.assertEqual(realpath(ABSTFN + "/..", strict=False), dirname(ABSTFN))
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/..", strict=ALL_BUT_LAST)
             self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/..", strict=True)
             self.assertEqual(realpath(ABSTFN + "/subdir", strict=False), ABSTFN + "/subdir")
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/subdir", strict=ALL_BUT_LAST)
             self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/subdir", strict=True)
         finally:
             os_helper.unlink(ABSTFN)
@@ -800,14 +840,19 @@ class PosixPathTest(unittest.TestCase):
                 f.write('test_posixpath wuz ere')
             os.symlink(ABSTFN + "1", ABSTFN)
             self.assertEqual(realpath(ABSTFN, strict=False), ABSTFN + "1")
+            self.assertEqual(realpath(ABSTFN, strict=ALL_BUT_LAST), ABSTFN + "1")
             self.assertEqual(realpath(ABSTFN, strict=True), ABSTFN + "1")
             self.assertEqual(realpath(ABSTFN + "/", strict=False), ABSTFN + "1")
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/", strict=ALL_BUT_LAST)
             self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/", strict=True)
             self.assertEqual(realpath(ABSTFN + "/.", strict=False), ABSTFN + "1")
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/.", strict=ALL_BUT_LAST)
             self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/.", strict=True)
             self.assertEqual(realpath(ABSTFN + "/..", strict=False), dirname(ABSTFN))
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/..", strict=ALL_BUT_LAST)
             self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/..", strict=True)
             self.assertEqual(realpath(ABSTFN + "/subdir", strict=False), ABSTFN + "1/subdir")
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/subdir", strict=ALL_BUT_LAST)
             self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/subdir", strict=True)
         finally:
             os_helper.unlink(ABSTFN)
@@ -822,14 +867,19 @@ class PosixPathTest(unittest.TestCase):
             os.symlink(ABSTFN + "2", ABSTFN + "1")
             os.symlink(ABSTFN + "1", ABSTFN)
             self.assertEqual(realpath(ABSTFN, strict=False), ABSTFN + "2")
+            self.assertEqual(realpath(ABSTFN, strict=ALL_BUT_LAST), ABSTFN + "2")
             self.assertEqual(realpath(ABSTFN, strict=True), ABSTFN + "2")
             self.assertEqual(realpath(ABSTFN + "/", strict=False), ABSTFN + "2")
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/", strict=ALL_BUT_LAST)
             self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/", strict=True)
             self.assertEqual(realpath(ABSTFN + "/.", strict=False), ABSTFN + "2")
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/.", strict=ALL_BUT_LAST)
             self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/.", strict=True)
             self.assertEqual(realpath(ABSTFN + "/..", strict=False), dirname(ABSTFN))
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/..", strict=ALL_BUT_LAST)
             self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/..", strict=True)
             self.assertEqual(realpath(ABSTFN + "/subdir", strict=False), ABSTFN + "2/subdir")
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/subdir", strict=ALL_BUT_LAST)
             self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/subdir", strict=True)
         finally:
             os_helper.unlink(ABSTFN)
@@ -837,7 +887,6 @@ class PosixPathTest(unittest.TestCase):
             os_helper.unlink(ABSTFN + "2")
 
     @os_helper.skip_unless_symlink
-    # @skip_if_ABSTFN_contains_backslash
     def test_realpath_mode(self):
         self.addCleanup(os_helper.rmdir, ABSTFN)
         self.addCleanup(os_helper.rmdir, ABSTFN + "/dir")

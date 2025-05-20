@@ -7,6 +7,7 @@ import subprocess
 import sys
 import unittest
 import warnings
+from ntpath import ALL_BUT_LAST
 from test.support import cpython_only, os_helper
 from test.support import TestFailed, is_emscripten
 from test.support.os_helper import FakePath
@@ -527,40 +528,52 @@ class TestNtpath(NtpathTestCase):
         # gh-106242: Embedded nulls and non-strict fallback to abspath
         self.assertEqual(realpath(path, strict=False), path)
         # gh-106242: Embedded nulls should raise OSError (not ValueError)
+        self.assertRaises(OSError, realpath, path, strict=ALL_BUT_LAST)
         self.assertRaises(OSError, realpath, path, strict=True)
         path = ABSTFNb + b'\x00'
         self.assertEqual(realpath(path, strict=False), path)
+        self.assertRaises(OSError, realpath, path, strict=ALL_BUT_LAST)
         self.assertRaises(OSError, realpath, path, strict=True)
         path = ABSTFN + '\\nonexistent\\x\x00'
         self.assertEqual(realpath(path, strict=False), path)
+        self.assertRaises(OSError, realpath, path, strict=ALL_BUT_LAST)
         self.assertRaises(OSError, realpath, path, strict=True)
         path = ABSTFNb + b'\\nonexistent\\x\x00'
         self.assertEqual(realpath(path, strict=False), path)
+        self.assertRaises(OSError, realpath, path, strict=ALL_BUT_LAST)
         self.assertRaises(OSError, realpath, path, strict=True)
         path = ABSTFN + '\x00\\..'
         self.assertEqual(realpath(path, strict=False), os.getcwd())
+        self.assertEqual(realpath(path, strict=ALL_BUT_LAST), os.getcwd())
         self.assertEqual(realpath(path, strict=True), os.getcwd())
         path = ABSTFNb + b'\x00\\..'
         self.assertEqual(realpath(path, strict=False), os.getcwdb())
+        self.assertEqual(realpath(path, strict=ALL_BUT_LAST), os.getcwdb())
         self.assertEqual(realpath(path, strict=True), os.getcwdb())
         path = ABSTFN + '\\nonexistent\\x\x00\\..'
         self.assertEqual(realpath(path, strict=False), ABSTFN + '\\nonexistent')
+        self.assertRaises(OSError, realpath, path, strict=ALL_BUT_LAST)
         self.assertRaises(OSError, realpath, path, strict=True)
         path = ABSTFNb + b'\\nonexistent\\x\x00\\..'
         self.assertEqual(realpath(path, strict=False), ABSTFNb + b'\\nonexistent')
+        self.assertRaises(OSError, realpath, path, strict=ALL_BUT_LAST)
         self.assertRaises(OSError, realpath, path, strict=True)
 
         path = ABSTFNb + b'\xff'
         self.assertRaises(UnicodeDecodeError, realpath, path, strict=False)
+        self.assertRaises(UnicodeDecodeError, realpath, path, strict=ALL_BUT_LAST)
         self.assertRaises(UnicodeDecodeError, realpath, path, strict=True)
         path = ABSTFNb + b'\\nonexistent\\\xff'
         self.assertRaises(UnicodeDecodeError, realpath, path, strict=False)
+        self.assertRaises(UnicodeDecodeError, realpath, path, strict=ALL_BUT_LAST)
         self.assertRaises(UnicodeDecodeError, realpath, path, strict=True)
         path = ABSTFNb + b'\xff\\..'
         self.assertRaises(UnicodeDecodeError, realpath, path, strict=False)
+        self.assertRaises(UnicodeDecodeError, realpath, path, strict=ALL_BUT_LAST)
         self.assertRaises(UnicodeDecodeError, realpath, path, strict=True)
         path = ABSTFNb + b'\\nonexistent\\\xff\\..'
         self.assertRaises(UnicodeDecodeError, realpath, path, strict=False)
+        self.assertRaises(UnicodeDecodeError, realpath, path, strict=ALL_BUT_LAST)
         self.assertRaises(UnicodeDecodeError, realpath, path, strict=True)
 
     @os_helper.skip_unless_symlink
@@ -691,34 +704,53 @@ class TestNtpath(NtpathTestCase):
         self.addCleanup(os_helper.unlink, ABSTFN + "a")
 
         os.symlink(ABSTFN, ABSTFN)
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN, strict=ALL_BUT_LAST)
         self.assertRaises(OSError, ntpath.realpath, ABSTFN, strict=True)
 
         os.symlink(ABSTFN + "1", ABSTFN + "2")
         os.symlink(ABSTFN + "2", ABSTFN + "1")
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "1", strict=ALL_BUT_LAST)
         self.assertRaises(OSError, ntpath.realpath, ABSTFN + "1", strict=True)
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "2", strict=ALL_BUT_LAST)
         self.assertRaises(OSError, ntpath.realpath, ABSTFN + "2", strict=True)
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "1\\x", strict=ALL_BUT_LAST)
         self.assertRaises(OSError, ntpath.realpath, ABSTFN + "1\\x", strict=True)
         # Windows eliminates '..' components before resolving links, so the
         # following call is not expected to raise.
+        self.assertPathEqual(ntpath.realpath(ABSTFN + "1\\..", strict=ALL_BUT_LAST),
+                             ntpath.dirname(ABSTFN))
         self.assertPathEqual(ntpath.realpath(ABSTFN + "1\\..", strict=True),
                              ntpath.dirname(ABSTFN))
+        self.assertPathEqual(ntpath.realpath(ABSTFN + "1\\..\\x", strict=ALL_BUT_LAST),
+                             ntpath.dirname(ABSTFN) + "\\x")
         self.assertRaises(OSError, ntpath.realpath, ABSTFN + "1\\..\\x", strict=True)
         os.symlink(ABSTFN + "x", ABSTFN + "y")
+        self.assertPathEqual(ntpath.realpath(ABSTFN + "1\\..\\"
+                                             + ntpath.basename(ABSTFN) + "y",
+                                             strict=ALL_BUT_LAST),
+                             ABSTFN + "x")
         self.assertRaises(OSError, ntpath.realpath, ABSTFN + "1\\..\\"
                                              + ntpath.basename(ABSTFN) + "y",
                                              strict=True)
         self.assertRaises(OSError, ntpath.realpath,
                           ABSTFN + "1\\..\\" + ntpath.basename(ABSTFN) + "1",
+                          strict=ALL_BUT_LAST)
+        self.assertRaises(OSError, ntpath.realpath,
+                          ABSTFN + "1\\..\\" + ntpath.basename(ABSTFN) + "1",
                           strict=True)
 
         os.symlink(ntpath.basename(ABSTFN) + "a\\b", ABSTFN + "a")
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "a", strict=ALL_BUT_LAST)
         self.assertRaises(OSError, ntpath.realpath, ABSTFN + "a", strict=True)
 
         os.symlink("..\\" + ntpath.basename(ntpath.dirname(ABSTFN))
                    + "\\" + ntpath.basename(ABSTFN) + "c", ABSTFN + "c")
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "c", strict=ALL_BUT_LAST)
         self.assertRaises(OSError, ntpath.realpath, ABSTFN + "c", strict=True)
 
         # Test using relative path as well.
+        self.assertRaises(OSError, ntpath.realpath, ntpath.basename(ABSTFN),
+                          strict=ALL_BUT_LAST)
         self.assertRaises(OSError, ntpath.realpath, ntpath.basename(ABSTFN),
                           strict=True)
 
