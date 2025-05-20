@@ -555,10 +555,11 @@ class PosixPathTest(unittest.TestCase):
             self.assertRaises(UnicodeDecodeError, realpath, path, strict=True)
         else:
             self.assertEqual(realpath(path, strict=False), path)
-            self.assertEqual(realpath(path, strict=ALL_BUT_LAST), path)
             if support.is_wasi:
+                self.assertRaises(OSError, realpath, path, strict=ALL_BUT_LAST)
                 self.assertRaises(OSError, realpath, path, strict=True)
             else:
+                self.assertEqual(realpath(path, strict=ALL_BUT_LAST), path)
                 self.assertRaises(FileNotFoundError, realpath, path, strict=True)
         path = b'/nonexistent/\xff'
         if sys.platform == 'win32':
