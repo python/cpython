@@ -1,7 +1,4 @@
-/*
-Low level interface to Meta's zstd library for use in the compression.zstd
-Python module.
-*/
+/* Low level interface to the Zstandard algorthm & the zstd library. */
 
 /* ZstdDecompressor class definition */
 
@@ -48,9 +45,6 @@ typedef struct {
     /* For ZstdDecompressor, 0 or 1.
        1 means the end of the first frame has been reached. */
     bool eof;
-
-    /* __init__ has been called, 0 or 1. */
-    bool initialized;
 } ZstdDecompressor;
 
 #define ZstdDecompressor_CAST(op) ((ZstdDecompressor *)op)
@@ -81,8 +75,8 @@ _get_DDict(ZstdDict *self)
             _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
             if (mod_state != NULL) {
                 PyErr_SetString(mod_state->ZstdError,
-                                "Failed to create ZSTD_DDict instance from zstd "
-                                "dictionary content. Maybe the content is corrupted.");
+                                "Failed to create a ZSTD_DDict instance from "
+                                "Zstandard dictionary content.");
             }
         }
     }
@@ -265,8 +259,8 @@ load:
                 finish
 
     ZSTD_decompressStream()'s size_t return value:
-      - 0 when a frame is completely decoded and fully flushed, zstd's internal
-        buffer has no data.
+      - 0 when a frame is completely decoded and fully flushed,
+        zstd's internal buffer has no data.
       - An error code, which can be tested using ZSTD_isError().
       - Or any other value > 0, which means there is still some decoding or
         flushing to do to complete current frame.
@@ -311,7 +305,7 @@ decompress_impl(ZstdDecompressor *self, ZSTD_inBuffer *in,
         }
 
         /* Need to check out before in. Maybe zstd's internal buffer still has
-           a few bytes can be output, grow the buffer and continue. */
+           a few bytes that can be output, grow the buffer and continue. */
         if (out.pos == out.size) {
             /* Output buffer exhausted */
 
@@ -373,7 +367,7 @@ stream_decompress(ZstdDecompressor *self, Py_buffer *data, Py_ssize_t max_length
 
     /* Check .eof flag */
     if (self->eof) {
-        PyErr_SetString(PyExc_EOFError, "Already at the end of a zstd frame.");
+        PyErr_SetString(PyExc_EOFError, "Already at the end of a Zstandard frame.");
         assert(ret == NULL);
         return NULL;
     }
@@ -530,17 +524,30 @@ error:
 }
 
 
+/*[clinic input]
+@classmethod
+_zstd.ZstdDecompressor.__new__ as _zstd_ZstdDecompressor_new
+    zstd_dict: object = None
+        A ZstdDict object, a pre-trained Zstandard dictionary.
+    options: object = None
+        A dict object that contains advanced decompression parameters.
+
+Create a decompressor object for decompressing data incrementally.
+
+Thread-safe at method level. For one-shot decompression, use the decompress()
+function instead.
+[clinic start generated code]*/
+
 static PyObject *
-_zstd_ZstdDecompressor_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+_zstd_ZstdDecompressor_new_impl(PyTypeObject *type, PyObject *zstd_dict,
+                                PyObject *options)
+/*[clinic end generated code: output=590ca65c1102ff4a input=213daa57e3ea4062]*/
 {
-    ZstdDecompressor *self;
-    self = PyObject_GC_New(ZstdDecompressor, type);
+    ZstdDecompressor* self = PyObject_GC_New(ZstdDecompressor, type);
     if (self == NULL) {
         goto error;
     }
 
-    self->initialized = 0;
-    self->dict = NULL;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
     self->in_begin = -1;
@@ -561,6 +568,26 @@ _zstd_ZstdDecompressor_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
         goto error;
     }
+
+    /* Load Zstandard dictionary to decompression context */
+    self->dict = NULL;
+    if (zstd_dict != Py_None) {
+        if (_zstd_load_d_dict(self, zstd_dict) < 0) {
+            goto error;
+        }
+        Py_INCREF(zstd_dict);
+        self->dict = zstd_dict;
+    }
+
+    /* Set option to decompression context */
+    if (options != Py_None) {
+        if (_zstd_set_d_parameters(self, options) < 0) {
+            goto error;
+        }
+    }
+
+    // We can only start GC tracking once self->dict is set.
+    PyObject_GC_Track(self);
 
     return (PyObject*)self;
 
@@ -593,55 +620,6 @@ ZstdDecompressor_dealloc(PyObject *ob)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_Del(ob);
     Py_DECREF(tp);
-}
-
-/*[clinic input]
-_zstd.ZstdDecompressor.__init__
-
-    zstd_dict: object = None
-        A ZstdDict object, a pre-trained zstd dictionary.
-    options: object = None
-        A dict object that contains advanced decompression parameters.
-
-Create a decompressor object for decompressing data incrementally.
-
-Thread-safe at method level. For one-shot decompression, use the decompress()
-function instead.
-[clinic start generated code]*/
-
-static int
-_zstd_ZstdDecompressor___init___impl(ZstdDecompressor *self,
-                                     PyObject *zstd_dict, PyObject *options)
-/*[clinic end generated code: output=703af2f1ec226642 input=8fd72999acc1a146]*/
-{
-    /* Only called once */
-    if (self->initialized) {
-        PyErr_SetString(PyExc_RuntimeError, "reinitialization not supported");
-        return -1;
-    }
-    self->initialized = 1;
-
-    /* Load dictionary to decompression context */
-    if (zstd_dict != Py_None) {
-        if (_zstd_load_d_dict(self, zstd_dict) < 0) {
-            return -1;
-        }
-
-        /* Py_INCREF the dict */
-        Py_INCREF(zstd_dict);
-        self->dict = zstd_dict;
-    }
-
-    /* Set option to decompression context */
-    if (options != Py_None) {
-        if (_zstd_set_d_parameters(self, options) < 0) {
-            return -1;
-        }
-    }
-
-    // We can only start tracking self with the GC once self->dict is set.
-    PyObject_GC_Track(self);
-    return 0;
 }
 
 /*[clinic input]
@@ -685,7 +663,7 @@ _zstd_ZstdDecompressor_unused_data_get_impl(ZstdDecompressor *self)
 _zstd.ZstdDecompressor.decompress
 
     data: Py_buffer
-        A bytes-like object, zstd data to be decompressed.
+        A bytes-like object, Zstandard data to be decompressed.
     max_length: Py_ssize_t = -1
         Maximum size of returned data. When it is negative, the size of
         output buffer is unlimited. When it is nonnegative, returns at
@@ -711,7 +689,7 @@ static PyObject *
 _zstd_ZstdDecompressor_decompress_impl(ZstdDecompressor *self,
                                        Py_buffer *data,
                                        Py_ssize_t max_length)
-/*[clinic end generated code: output=a4302b3c940dbec6 input=830e455bc9a50b6e]*/
+/*[clinic end generated code: output=a4302b3c940dbec6 input=6463dfdf98091caa]*/
 {
     PyObject *ret;
     /* Thread-safe code */
@@ -769,11 +747,10 @@ ZstdDecompressor_clear(PyObject *ob)
 static PyType_Slot ZstdDecompressor_slots[] = {
     {Py_tp_new, _zstd_ZstdDecompressor_new},
     {Py_tp_dealloc, ZstdDecompressor_dealloc},
-    {Py_tp_init, _zstd_ZstdDecompressor___init__},
     {Py_tp_methods, ZstdDecompressor_methods},
     {Py_tp_members, ZstdDecompressor_members},
     {Py_tp_getset, ZstdDecompressor_getset},
-    {Py_tp_doc, (char*)_zstd_ZstdDecompressor___init____doc__},
+    {Py_tp_doc, (void *)_zstd_ZstdDecompressor_new__doc__},
     {Py_tp_traverse, ZstdDecompressor_traverse},
     {Py_tp_clear, ZstdDecompressor_clear},
     {0, 0}
