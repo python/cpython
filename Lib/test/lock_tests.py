@@ -370,6 +370,19 @@ class RLockTests(BaseLockTests):
         lock.release()
         self.assertFalse(lock.locked())
 
+    def test_locked_2threads(self):
+        l = []
+        rlock = self.locktype()
+        def acquire():
+            rlock.acquire()
+            l.append(rlock.locked())
+
+        with Bunch(acquire, 1):
+            pass
+        self.assertTrue(rlock.locked())
+        self.assertTrue(l[0])
+        del rlock
+
     def test_release_save_unacquired(self):
         # Cannot _release_save an unacquired lock
         lock = self.locktype()

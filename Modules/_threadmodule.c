@@ -1110,8 +1110,12 @@ Release the lock.");
 static PyObject *
 rlock_locked(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    rlockobject *self = rlockobject_CAST(op);
-    int is_locked = _PyRecursiveMutex_IsLockedByCurrentThread(&self->lock);
+    /*
+    see gh-134323: the `_PyRecursiveMutex_IsLocked` function does not exist, so we cast the `op`
+    to `lockobject` in order to call `PyMutex_IsLocked`.
+    */
+    lockobject *self = lockobject_CAST(op);
+    int is_locked = PyMutex_IsLocked(&self->lock);
     return PyBool_FromLong(is_locked);
 }
 
