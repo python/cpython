@@ -2021,65 +2021,43 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
     return rtn;
 }
 
-/*[-clinic input]
-_curses.window.instr
+PyDoc_STRVAR(_curses_window_instr__doc__,
+"instr([y, x,] n=1023)\n"
+"Return a string of characters, extracted from the window.\n"
+"\n"
+"  y\n"
+"    Y-coordinate.\n"
+"  x\n"
+"    X-coordinate.\n"
+"  n\n"
+"    Maximal number of characters.\n"
+"\n"
+"Return a string of characters, extracted from the window starting at the\n"
+"current cursor position, or at y, x if specified.  Attributes are stripped\n"
+"from the characters.  If n is specified, instr() returns a string at most\n"
+"n characters long (exclusive of the trailing NUL).");
 
-    [
-    y: int
-        Y-coordinate.
-    x: int
-        X-coordinate.
-    ]
-    n: int = 1023
-        Maximal number of characters.
-    /
-
-Return a string of characters, extracted from the window.
-
-Return a string of characters, extracted from the window starting at the
-current cursor position, or at y, x if specified.  Attributes are stripped
-from the characters.  If n is specified, instr() returns a string at most
-n characters long (exclusive of the trailing NUL).
-[-clinic start generated code]*/
 static PyObject *
-PyCursesWindow_InStr(PyObject *op, PyObject *args)
+PyCursesWindow_instr(PyObject *op, PyObject *args)
 {
     PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
-
-    int x, y, n;
+    int use_xy = 0, y = 0, x = 0;
+    unsigned int n = 1023;
     char rtn[1024]; /* This should be big enough.. I hope */
     int rtn2;
 
-    switch (PyTuple_Size(args)) {
-    case 0:
-        rtn2 = winnstr(self->win,rtn, 1023);
-        break;
-    case 1:
-        if (!PyArg_ParseTuple(args,"i;n", &n))
-            return NULL;
-        if (n < 0) {
-            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
-            return NULL;
-        }
-        rtn2 = winnstr(self->win, rtn, Py_MIN(n, 1023));
-        break;
-    case 2:
-        if (!PyArg_ParseTuple(args,"ii;y,x",&y,&x))
-            return NULL;
-        rtn2 = mvwinnstr(self->win,y,x,rtn,1023);
-        break;
-    case 3:
-        if (!PyArg_ParseTuple(args, "iii;y,x,n", &y, &x, &n))
-            return NULL;
-        if (n < 0) {
-            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
-            return NULL;
-        }
-        rtn2 = mvwinnstr(self->win, y, x, rtn, Py_MIN(n,1023));
-        break;
-    default:
-        PyErr_SetString(PyExc_TypeError, "instr requires 0 or 3 arguments");
+    if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
+                                           "_curses.window.instr"))
+    {
         return NULL;
+    }
+
+    n = Py_MIN(n, 1023);
+    if (use_xy) {
+        rtn2 = mvwinnstr(self->win, y, x, rtn, n);
+    }
+    else {
+        rtn2 = winnstr(self->win, rtn, n);
     }
     if (rtn2 == ERR)
         rtn[0] = 0;
@@ -2868,7 +2846,10 @@ static PyMethodDef PyCursesWindow_methods[] = {
     {"insertln",        PyCursesWindow_winsertln, METH_NOARGS},
     _CURSES_WINDOW_INSNSTR_METHODDEF
     _CURSES_WINDOW_INSSTR_METHODDEF
-    {"instr",           PyCursesWindow_InStr, METH_VARARGS},
+    {
+        "instr", PyCursesWindow_instr, METH_VARARGS,
+        _curses_window_instr__doc__
+    },
     _CURSES_WINDOW_IS_LINETOUCHED_METHODDEF
     {"is_wintouched",   PyCursesWindow_is_wintouched, METH_NOARGS},
     {"keypad",          PyCursesWindow_keypad, METH_VARARGS},
