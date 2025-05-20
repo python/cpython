@@ -405,17 +405,17 @@ remove_unusable_flags(PyObject *m)
 
 /* issue #118234, avoid WinError 10106 with empty environment */
 static void ensure_system_root() {
-  LPCWSTR name = L"SystemRoot";
-  DWORD size = GetEnvironmentVariableW(name, NULL, 0);
-  if (size) {
-    return;
-  }
-  wchar_t root[4096];
-  UINT len = GetWindowsDirectoryW(root, 4096);
-  if (len == 0 || len >= 4096) {
-    return;
-  }
-  SetEnvironmentVariableW(name, root);
+    LPCWSTR name = L"SystemRoot";
+    DWORD size = GetEnvironmentVariableW(name, NULL, 0);
+    if (size) {
+        return;
+    }
+    wchar_t root[4096];
+    UINT len = GetWindowsDirectoryW(root, 4096);
+    if (len == 0 || len >= 4096) {
+        return;
+    }
+    SetEnvironmentVariableW(name, root);
 }
 
 #endif
