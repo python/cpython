@@ -321,7 +321,8 @@ do_mkvalue(const char **p_format, va_list *p_va)
             return PyLong_FromLongLong((long long)va_arg(*p_va, long long));
 
         case 'K':
-            return PyLong_FromUnsignedLongLong((long long)va_arg(*p_va, unsigned long long));
+            return PyLong_FromUnsignedLongLong(
+                va_arg(*p_va, unsigned long long));
 
         case 'u':
         {

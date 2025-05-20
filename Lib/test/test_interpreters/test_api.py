@@ -693,8 +693,7 @@ class TestInterpreterPrepareMain(TestBase):
 
     def test_not_shareable(self):
         interp = interpreters.create()
-        # XXX TypeError?
-        with self.assertRaises(ValueError):
+        with self.assertRaises(interpreters.NotShareableError):
             interp.prepare_main(spam={'spam': 'eggs', 'foo': 'bar'})
 
         # Make sure neither was actually bound.
@@ -1450,6 +1449,14 @@ class LowLevelTests(TestBase):
             self.assertTrue(
                 self.interp_exists(interpid))
             _interpreters.destroy(interpid)
+            self.assertFalse(
+                self.interp_exists(interpid))
+
+        with self.subTest('basic C-API'):
+            interpid = _testinternalcapi.create_interpreter()
+            self.assertTrue(
+                self.interp_exists(interpid))
+            _testinternalcapi.destroy_interpreter(interpid, basic=True)
             self.assertFalse(
                 self.interp_exists(interpid))
 
