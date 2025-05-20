@@ -134,7 +134,8 @@ implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
    argument is a list of ``(name, value)`` pairs containing the attributes found
    inside the tag's ``<>`` brackets.  The *name* will be translated to lower case,
    and quotes in the *value* have been removed, and character and entity references
-   have been replaced.
+   have been replaced. If a boolean attribute is encountered, the *value* for the
+   ``(name, value)`` attribute pair will be ``None``.
 
    For instance, for the tag ``<A HREF="https://www.cwi.nl/">``, this method
    would be called as ``handle_starttag('a', [('href', 'https://www.cwi.nl/')])``.
@@ -308,6 +309,16 @@ further parsing:
    Start tag: script
         attr: ('type', 'text/javascript')
    Data     : alert("<strong>hello!</strong>");
+   End tag  : script
+
+Boolean attributes have a *value* of ``None``:
+
+.. doctest::
+
+   >>> parser.feed("<script src='/script.js' defer></script>")
+   Start tag: script
+        attr: ('src', '/script.js')
+        attr: ('defer', None)
    End tag  : script
 
 Parsing comments:
