@@ -990,7 +990,7 @@ the following methods and attributes:
    Read a bytes object from the user, with primitive line editing capacity.
    The maximum value for *n* is 2047.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       The maximum value for *n* was increased from 1023 to 2047.
 
 
@@ -1085,7 +1085,7 @@ the following methods and attributes:
    at most *n* characters long (exclusive of the trailing NUL).
    The maximum value for *n* is 2047.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       The maximum value for *n* was increased from 1023 to 2047.
 
 
