@@ -5299,7 +5299,7 @@ dummy_func(
             (void)null; // Silence compiler warnings about unused variables
             DEAD(null);
             PyStackRef_CLOSE(callable);
-            value = PyStackRef_FromPyObjectImmortal(ptr);
+            value = PyStackRef_FromPyObjectBorrow(ptr);
         }
 
         tier2 op(_CHECK_FUNCTION, (func_version/2 -- )) {

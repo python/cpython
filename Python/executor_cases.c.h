@@ -7080,7 +7080,7 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(callable);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            value = PyStackRef_FromPyObjectImmortal(ptr);
+            value = PyStackRef_FromPyObjectBorrow(ptr);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
