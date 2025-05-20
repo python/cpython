@@ -411,6 +411,8 @@ the :mod:`glob` module.)
    If a path doesn't exist or a symlink loop is encountered, and *strict* is
    ``True``, :exc:`OSError` is raised. If *strict* is ``False`` these errors
    are ignored, and so the result might be missing or otherwise inaccessible.
+   If *strict* is :data:`ALL_BUT_LAST`, the last component of the path
+   might be missing, but other errors are not ignored.
 
    .. note::
       This function emulates the operating system's procedure for making a path
@@ -428,6 +430,16 @@ the :mod:`glob` module.)
 
    .. versionchanged:: 3.10
       The *strict* parameter was added.
+
+   .. versionchanged:: next
+      Support for :data:`ALL_BUT_LAST` was added.
+
+
+.. data:: ALL_BUT_LAST
+
+   Special value used for *strict* in :func:`realpath`.
+
+   .. versionadded:: next
 
 
 .. function:: relpath(path, start=os.curdir)
