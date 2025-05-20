@@ -403,6 +403,21 @@ remove_unusable_flags(PyObject *m)
     return 0;
 }
 
+/* issue #118234, avoid WinError 10106 with empty environment */
+static void ensure_system_root() {
+  LPCWSTR name = L"SystemRoot";
+  DWORD size = GetEnvironmentVariableW(name, NULL, 0);
+  if (size) {
+    return;
+  }
+  wchar_t root[4096];
+  UINT len = GetWindowsDirectoryW(root, 4096);
+  if (len == 0 || len >= 4096) {
+    return;
+  }
+  SetEnvironmentVariableW(name, root);
+}
+
 #endif
 
 #include <stddef.h>
@@ -5617,6 +5632,10 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
 
     SOCKET_T fd = INVALID_SOCKET;
     socket_state *state = find_module_state_by_def(Py_TYPE(self));
+
+#ifdef MS_WINDOWS
+    ensure_system_root();
+#endif
 
 #ifndef MS_WINDOWS
 #ifdef SOCK_CLOEXEC
