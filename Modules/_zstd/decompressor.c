@@ -602,9 +602,7 @@ ZstdDecompressor_dealloc(PyObject *ob)
         ZSTD_freeDCtx(self->dctx);
     }
 
-    if (PyMutex_IsLocked(&self->lock)) {
-        PyMutex_Unlock(&self->lock);
-    }
+    assert(!PyMutex_IsLocked(&self->lock));
 
     /* Py_CLEAR the dict after free decompression context */
     Py_CLEAR(self->dict);
