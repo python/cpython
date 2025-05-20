@@ -116,6 +116,12 @@
             break;
         }
 
+        case _POP_TWO: {
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _PUSH_NULL: {
             JitOptSymbol *res;
             res = sym_new_null(ctx);
