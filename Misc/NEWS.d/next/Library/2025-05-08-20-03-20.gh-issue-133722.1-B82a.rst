@@ -1,2 +1,2 @@
-Added a ``color`` option to :func:`difflib.unified_diff` that injects ANSI color
-codes to mimic ``git diff`` colors.
+Added a *color* option to :func:`difflib.unified_diff` that colors output
+similar to :program:`git diff`.

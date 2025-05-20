@@ -1112,8 +1112,9 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
     For inputs that do not have trailing newlines, set the lineterm
     argument to "" so that the output will be uniformly newline free.
 
-    Set *color* to ``True`` to inject ANSI color codes and make the output
-    look like what ``git diff --color`` shows.
+   Set *color* to ``True`` to enable output in color, similar to
+   :program:`git diff --color`. Even if enabled, it can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
 
     The unidiff format normally has a header for filenames and modification
     times.  Any or all of these may be specified using strings for
@@ -1150,13 +1151,13 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
             started = True
             fromdate = '\t{}'.format(fromfiledate) if fromfiledate else ''
             todate = '\t{}'.format(tofiledate) if tofiledate else ''
-            yield '{}--- {}{}{}{}'.format(t.header, fromfile, fromdate, lineterm, t.reset)
-            yield '{}+++ {}{}{}{}'.format(t.header, tofile, todate, lineterm, t.reset)
+            yield f'{t.header}--- {fromfile}{fromdate}{lineterm}{t.reset}'
+            yield f'{t.header}+++ {tofile}{todate}{lineterm}{t.reset}'
 
         first, last = group[0], group[-1]
         file1_range = _format_range_unified(first[1], last[2])
         file2_range = _format_range_unified(first[3], last[4])
-        yield '{}@@ -{} +{} @@{}{}'.format(t.hunk, file1_range, file2_range, lineterm, t.reset)
+        yield f'{t.hunk}@@ -{file1_range} +{file2_range} @@{lineterm}{t.reset}'
 
         for tag, i1, i2, j1, j2 in group:
             if tag == 'equal':

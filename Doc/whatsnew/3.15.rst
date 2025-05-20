@@ -65,7 +65,6 @@ Summary --- release highlights
 
 .. PEP-sized items next.
 
-* :ref:`argparse <whatsnew315-color-difflib>`,
 
 
 New features
@@ -96,7 +95,7 @@ difflib
   .. _whatsnew315-color-difflib:
 
 * Introduced the optional *color* parameter to :func:`difflib.unified_diff`,
-  enabling colored output similar to what ``git diff`` displays.
+  enabling color output similar to :program:`git diff`.
   This can be controlled by :ref:`environment variables
   <using-on-controlling-color>`.
   (Contributed by Douglas Thor in :gh:`133725`.)
