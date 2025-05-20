@@ -1,2 +1,2 @@
-Fix a race  in :mod:`_wmimodule` that can result in an "invalid handle"
-exception under high load. Fix by Chris Eibl.
+Fix a race in :mod:`_wmi` that can result in an "invalid handle"
+exception under high load. Patch by Chris Eibl.
