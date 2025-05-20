@@ -1081,6 +1081,9 @@ the following methods and attributes:
    at most *n* characters long (exclusive of the trailing NUL). The maximum of *n*
    for this method is 2047.
 
+   .. versionchanged:: next
+      The maximum value for *n* is set to 2047.
+
 
 .. method:: window.is_linetouched(line)
 
