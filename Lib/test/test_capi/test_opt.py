@@ -1939,6 +1939,19 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
+    def test_get_len_with_non_const_tuple(self):
+        def testfunc(n):
+            x = 0.0
+            for _ in range(n):
+                match (object(), object()):
+                    case [_, _]:
+                        x += 1.0
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(int(res), TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+        self.assertNotIn("_GUARD_NOS_INT", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_get_len_with_non_tuple(self):
         def testfunc(n):
