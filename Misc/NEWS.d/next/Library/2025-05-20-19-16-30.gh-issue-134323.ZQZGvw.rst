@@ -1,0 +1,2 @@
+Fix the public :meth:`locked<threading.RLock>`  and its implemntation in the ``_thread``module.
+Also adding a unit test in ``lock_test.py`` file.
