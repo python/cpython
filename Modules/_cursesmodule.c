@@ -4860,7 +4860,12 @@ _curses_unctrl(PyObject *module, PyObject *ch)
     if (!PyCurses_ConvertToChtype(NULL, ch, &ch_))
         return NULL;
 
-    return PyBytes_FromString(unctrl(ch_));
+    const char *res = unctrl(ch_);
+    if (res == NULL) {
+        curses_set_null_error(module, "unctrl", NULL);
+        return NULL;
+    }
+    return PyBytes_FromString(res);
 }
 
 /*[clinic input]
