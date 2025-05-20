@@ -65,7 +65,7 @@ Reading and writing compressed files
    :class:`DecompressionParameter` for detailed information about supported
    parameters. The *zstd_dict* argument is a :class:`ZstdDict` instance to be
    used during decompression. When opening a file for reading, if the *level*
-   argument is passed, a :exc:`!TypeError` will be raised.
+   argument is not None, a :exc:`!TypeError` will be raised.
 
    When opening a file for writing, the *options* argument can be a dictionary
    providing advanced decompression parameters; see
@@ -105,9 +105,9 @@ Reading and writing compressed files
    ``'w'`` does not truncate the file, and is instead equivalent to ``'a'``.
 
    When opening a file for reading, the *options* argument can be a dictionary
-   providing advanced decompression parameters, see
+   providing advanced decompression parameters; see
    :class:`DecompressionParameter` for detailed information about supported
-   parameters. The *zstd_dict* argument is a :class:`!ZstdDict` instance to be
+   parameters. The *zstd_dict* argument is a :class:`ZstdDict` instance to be
    used during decompression. When opening a file for reading, if the *level*
    argument is passed a :exc:`!TypeError` will be raised.
 
@@ -205,7 +205,7 @@ Compressing and decompressing data in memory
    parameters. The valid keys and values for compression parameters are
    documented as part of the :class:`CompressionParameter` documentation.
 
-   The *zstd_dict* argument is an instance of :class:`ZstdDict`
+   The *zstd_dict* argument is an optional instance of :class:`ZstdDict`
    containing trained data to improve compression efficiency. The
    function :func:`train_dict` can be used to generate a Zstandard dictionary.
 
@@ -285,7 +285,7 @@ Compressing and decompressing data in memory
       The returned data should be concatenated with the output of any previous
       calls to :meth:`!decompress`.
 
-      If *max_length* is non-negative, returns at most *max_length*
+      If *max_length* is non-negative, the method returns at most *max_length*
       bytes of decompressed data. If this limit is reached and further
       output can be produced, the :attr:`~.needs_input` attribute will
       be set to ``False``. In this case, the next call to
@@ -314,7 +314,7 @@ Compressing and decompressing data in memory
    .. attribute:: needs_input
 
       ``False`` if the :meth:`.decompress` method can provide more
-      decompressed data before requiring new uncompressed input.
+      decompressed data before requiring new compressed input.
 
 
 Zstandard dictionaries
@@ -330,7 +330,7 @@ Zstandard dictionaries
    files), Zstandard dictionaries can improve compression ratios and speed
    significantly.
 
-   The *samples* argument (an iterable of :class:`bytes`), is the population of
+   The *samples* argument (an iterable of :class:`bytes` objects), is the population of
    samples used to train the Zstandard dictionary.
 
    The *dict_size* argument, an integer, is the maximum size (in bytes) the
@@ -421,7 +421,7 @@ Zstandard dictionaries
 
     .. attribute:: dict_id
 
-        Identifier of the Zstandard dictionary, an int value between zero and .
+        Identifier of the Zstandard dictionary, a non-negative int value.
 
         Non-zero means the dictionary is ordinary, created by Zstandard
         functions and following the Zstandard format.
@@ -437,7 +437,7 @@ Zstandard dictionaries
 
     .. attribute:: as_digested_dict
 
-        Load as a digested dictionary, see below.
+        Load as a digested dictionary.
 
     .. attribute:: as_undigested_dict
 
@@ -450,7 +450,7 @@ Advanced parameter control
 .. class:: CompressionParameter()
 
    An :class:`~enum.IntEnum` containing the advanced compression parameter
-   names that can be used when compressing data.
+   keys that can be used when compressing data.
 
    The :meth:`~.bounds` method can be used on any attribute to get the valid
    values for that parameter.
@@ -472,7 +472,7 @@ Advanced parameter control
 
       A high-level means of setting other compression parameters that affect
       the speed and ratio of compressing data. Setting the level to zero uses
-      the default :attr:`COMPRESSION_LEVEL_DEFAULT`.
+      :attr:`COMPRESSION_LEVEL_DEFAULT`.
 
    .. attribute:: window_log
 
@@ -509,7 +509,7 @@ Advanced parameter control
       decompression speed, but decrease ratio. Note that Zstandard can still
       find matches of smaller size, it just tweaks its search algorithm to look
       for this size and larger. For all strategies < :attr:`~Strategy.btopt`,
-      the effective minimum is ``4``, for all strategies
+      the effective minimum is ``4``; for all strategies
       > :attr:`~Strategy.fast`, the effective maximum is ``6``.
 
    .. attribute:: target_length
@@ -621,13 +621,13 @@ Advanced parameter control
       parameter. This method should be called on the attribute you wish to
       retrieve the bounds of. For example, to get the valid values for
       :attr:`~.window_log_max`, one may check the result of
-      ``CompressionParameter.window_log_max.bounds()``.
+      ``DecompressionParameter.window_log_max.bounds()``.
 
       Both the lower and upper bounds are inclusive.
 
    .. attribute:: window_log_max
 
-      The power of two maximum size of the window used during decompression.
+      The base-two logarithm of the maximum size of the window used during decompression.
       This can be useful to limit the amount of memory used when decompressing
       data.
 
