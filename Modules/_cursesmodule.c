@@ -1818,7 +1818,7 @@ _curses.window.getstr
     x: int
         X-coordinate.
     ]
-    n: int = 1023
+    n: int = 2047
         Maximal number of characters.
     /
 
@@ -1831,24 +1831,28 @@ PyCursesWindow_GetStr(PyObject *op, PyObject *args)
     PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
 
     int x, y, n;
-    char rtn[1024]; /* This should be big enough.. I hope */
-    int rtn2;
+    int rtn;
+
+    /* could make the buffer size larger/dynamic */
+    const int max_buf_size = 2048;
+    PyObject *result = PyBytes_FromStringAndSize(NULL, max_buf_size);
+    char *buf = PyBytes_AS_STRING(result);
 
     switch (PyTuple_Size(args)) {
     case 0:
         Py_BEGIN_ALLOW_THREADS
-        rtn2 = wgetnstr(self->win,rtn, 1023);
+        rtn = wgetnstr(self->win, buf, max_buf_size - 1);
         Py_END_ALLOW_THREADS
         break;
     case 1:
-        if (!PyArg_ParseTuple(args,"i;n", &n))
+        if (!PyArg_ParseTuple(args, "i;n", &n))
             return NULL;
         if (n < 0) {
             PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
             return NULL;
         }
         Py_BEGIN_ALLOW_THREADS
-        rtn2 = wgetnstr(self->win, rtn, Py_MIN(n, 1023));
+        rtn = wgetnstr(self->win, buf, Py_MIN(n, max_buf_size - 1));
         Py_END_ALLOW_THREADS
         break;
     case 2:
@@ -1856,14 +1860,14 @@ PyCursesWindow_GetStr(PyObject *op, PyObject *args)
             return NULL;
         Py_BEGIN_ALLOW_THREADS
 #ifdef STRICT_SYSV_CURSES
-        rtn2 = wmove(self->win,y,x)==ERR ? ERR : wgetnstr(self->win, rtn, 1023);
+        rtn = wmove(self->win,y,x)==ERR ? ERR : wgetnstr(self->win, rtn, max_buf_size - 1);
 #else
-        rtn2 = mvwgetnstr(self->win,y,x,rtn, 1023);
+        rtn = mvwgetnstr(self->win,y,x,buf, max_buf_size - 1);
 #endif
         Py_END_ALLOW_THREADS
         break;
     case 3:
-        if (!PyArg_ParseTuple(args,"iii;y,x,n", &y, &x, &n))
+        if (!PyArg_ParseTuple(args, "iii;y,x,n", &y, &x, &n))
             return NULL;
         if (n < 0) {
             PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
@@ -1871,12 +1875,12 @@ PyCursesWindow_GetStr(PyObject *op, PyObject *args)
         }
 #ifdef STRICT_SYSV_CURSES
         Py_BEGIN_ALLOW_THREADS
-        rtn2 = wmove(self->win,y,x)==ERR ? ERR :
-        wgetnstr(self->win, rtn, Py_MIN(n, 1023));
+        rtn = wmove(self->win,y,x)==ERR ? ERR :
+        wgetnstr(self->win, rtn, Py_MIN(n, max_buf_size - 1));
         Py_END_ALLOW_THREADS
 #else
         Py_BEGIN_ALLOW_THREADS
-        rtn2 = mvwgetnstr(self->win, y, x, rtn, Py_MIN(n, 1023));
+        rtn = mvwgetnstr(self->win, y, x, buf, Py_MIN(n, max_buf_size - 1));
         Py_END_ALLOW_THREADS
 #endif
         break;
@@ -1884,9 +1888,14 @@ PyCursesWindow_GetStr(PyObject *op, PyObject *args)
         PyErr_SetString(PyExc_TypeError, "getstr requires 0 to 3 arguments");
         return NULL;
     }
-    if (rtn2 == ERR)
-        rtn[0] = 0;
-    return PyBytes_FromString(rtn);
+
+    if (rtn == ERR) {
+      _PyBytes_Resize(&result, 0);
+    } else {
+      _PyBytes_Resize(&result, rtn);
+    }
+
+    return result;
 }
 
 /*[clinic input]
@@ -2025,7 +2034,7 @@ _curses.window.instr
     x: int
         X-coordinate.
     ]
-    n: int = 1023
+    n: int = 2047
         Maximal number of characters.
     /
 
