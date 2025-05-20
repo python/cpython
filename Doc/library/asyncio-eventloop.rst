@@ -419,7 +419,7 @@ Creating Futures and Tasks
    .. versionchanged:: 3.13.4
       *name* is no longer passed to task factories. *context* is no longer passed
       to task factories if it is ``None``.
-      
+
       .. versionchanged:: 3.14
          *name* and *context* are now unconditionally passed on to task factories again.
 
