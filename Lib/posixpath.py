@@ -36,7 +36,7 @@ __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext"
            "samefile","sameopenfile","samestat",
            "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
            "devnull","realpath","supports_unicode_filenames","relpath",
-           "commonpath", "isjunction","isdevdrive"]
+           "commonpath", "isjunction","isdevdrive", 'ALL_BUT_LAST']
 
 
 def _get_sep(path):
@@ -387,9 +387,6 @@ def abspath(path):
 
 # Return a canonical path (i.e. the absolute location of a file on the
 # filesystem).
-
-# A singleton with true boolean value
-ALL_BUT_LAST = ['ALL_BUT_LAST']
 
 def realpath(filename, *, strict=False):
     """Return the canonical path of the specified filename, eliminating any

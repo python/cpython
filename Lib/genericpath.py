@@ -8,7 +8,7 @@ import stat
 
 __all__ = ['commonprefix', 'exists', 'getatime', 'getctime', 'getmtime',
            'getsize', 'isdevdrive', 'isdir', 'isfile', 'isjunction', 'islink',
-           'lexists', 'samefile', 'sameopenfile', 'samestat']
+           'lexists', 'samefile', 'sameopenfile', 'samestat', 'ALL_BUT_LAST']
 
 
 # Does a path exist?
@@ -189,3 +189,13 @@ def _check_arg_types(funcname, *args):
                             f'os.PathLike object, not {s.__class__.__name__!r}') from None
     if hasstr and hasbytes:
         raise TypeError("Can't mix strings and bytes in path components") from None
+
+
+# A singleton with a true boolean value.
+@object.__new__
+class ALL_BUT_LAST:
+    """Special value for use in realpath()."""
+    def __repr__(self):
+        return self.__class__.__name__
+    def __reduce__(self):
+        return self.__class__.__name__

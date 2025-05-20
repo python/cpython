@@ -29,7 +29,7 @@ __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext"
            "abspath","curdir","pardir","sep","pathsep","defpath","altsep",
            "extsep","devnull","realpath","supports_unicode_filenames","relpath",
            "samefile", "sameopenfile", "samestat", "commonpath", "isjunction",
-           "isdevdrive"]
+           "isdevdrive", 'ALL_BUT_LAST']
 
 def _get_bothseps(path):
     if isinstance(path, bytes):
@@ -596,9 +596,6 @@ else:  # use native Windows method on Windows
             else:
                 path = join(getcwd(), path)
         return normpath(path)
-
-# A singleton with true boolean value
-ALL_BUT_LAST = ['ALL_BUT_LAST']
 
 try:
     from nt import _findfirstfile, _getfinalpathname, readlink as _nt_readlink
