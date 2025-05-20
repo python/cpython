@@ -1485,6 +1485,13 @@ Instance methods:
    instance. The return value is a :class:`float` similar to that
    returned by :func:`time.time`.
 
+   Naive :class:`.datetime` instances are assumed to represent local
+   time and this method relies on the platform C :c:func:`locatime_s`
+   function to perform the conversion. Since :class:`.datetime`
+   supports wider range of values than :c:func:`locatime_s` on many
+   platforms, this method may raise :exc:`OverflowError` or :exc:`OSError`
+   for times far in the past or far in the future.
+
    For aware :class:`.datetime` instances, the return value is computed
    as::
 
