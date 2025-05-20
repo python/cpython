@@ -8,6 +8,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer, HTTPSServer, \
      SimpleHTTPRequestHandler
 from http import server, HTTPStatus
 
+import contextlib
 import os
 import socket
 import sys
@@ -1279,6 +1280,176 @@ class ScriptTestCase(unittest.TestCase):
             mock_server = self.mock_server_class()
             server.test(ServerClass=mock_server, bind=bind)
             self.assertEqual(mock_server.address_family, socket.AF_INET)
+
+
+class CommandLineTestCase(unittest.TestCase):
+    default_port = 8000
+    default_bind = None
+    default_protocol = 'HTTP/1.0'
+    default_handler = SimpleHTTPRequestHandler
+    default_server = unittest.mock.ANY
+    tls_cert = certdata_file('ssl_cert.pem')
+    tls_key = certdata_file('ssl_key.pem')
+    tls_password = 'somepass'
+    tls_cert_options = ['--tls-cert']
+    tls_key_options = ['--tls-key']
+    tls_password_options = ['--tls-password-file']
+    args = {
+        'HandlerClass': default_handler,
+        'ServerClass': default_server,
+        'protocol': default_protocol,
+        'port': default_port,
+        'bind': default_bind,
+        'tls_cert': None,
+        'tls_key': None,
+        'tls_password': None,
+    }
+
+    def setUp(self):
+        super().setUp()
+        self.tls_password_file = tempfile.mktemp()
+        with open(self.tls_password_file, 'wb') as f:
+            f.write(self.tls_password.encode())
+        self.addCleanup(os_helper.unlink, self.tls_password_file)
+
+    def invoke_httpd(self, *args, stdout=None, stderr=None):
+        stdout = StringIO() if stdout is None else stdout
+        stderr = StringIO() if stderr is None else stderr
+        with contextlib.redirect_stdout(stdout), \
+            contextlib.redirect_stderr(stderr):
+            server._main(args)
+        return stdout.getvalue(), stderr.getvalue()
+
+    @mock.patch('http.server.test')
+    def test_port_flag(self, mock_func):
+        ports = [8000, 65535]
+        for port in ports:
+            with self.subTest(port=port):
+                self.invoke_httpd(str(port))
+                call_args = self.args | dict(port=port)
+                mock_func.assert_called_once_with(**call_args)
+                mock_func.reset_mock()
+
+    @mock.patch('http.server.test')
+    def test_directory_flag(self, mock_func):
+        options = ['-d', '--directory']
+        directories = ['.', '/foo', '\\bar', '/',
+                       'C:\\', 'C:\\foo', 'C:\\bar',
+                       '/home/user', './foo/foo2', 'D:\\foo\\bar']
+        for flag in options:
+            for directory in directories:
+                with self.subTest(flag=flag, directory=directory):
+                    self.invoke_httpd(flag, directory)
+                    mock_func.assert_called_once_with(**self.args)
+                    mock_func.reset_mock()
+
+    @mock.patch('http.server.test')
+    def test_bind_flag(self, mock_func):
+        options = ['-b', '--bind']
+        bind_addresses = ['localhost', '127.0.0.1', '::1',
+                          '0.0.0.0', '8.8.8.8']
+        for flag in options:
+            for bind_address in bind_addresses:
+                with self.subTest(flag=flag, bind_address=bind_address):
+                    self.invoke_httpd(flag, bind_address)
+                    call_args = self.args | dict(bind=bind_address)
+                    mock_func.assert_called_once_with(**call_args)
+                    mock_func.reset_mock()
+
+    @mock.patch('http.server.test')
+    def test_protocol_flag(self, mock_func):
+        options = ['-p', '--protocol']
+        protocols = ['HTTP/1.0', 'HTTP/1.1', 'HTTP/2.0', 'HTTP/3.0']
+        for flag in options:
+            for protocol in protocols:
+                with self.subTest(flag=flag, protocol=protocol):
+                    self.invoke_httpd(flag, protocol)
+                    call_args = self.args | dict(protocol=protocol)
+                    mock_func.assert_called_once_with(**call_args)
+                    mock_func.reset_mock()
+
+    @unittest.skipIf(ssl is None, "requires ssl")
+    @mock.patch('http.server.test')
+    def test_tls_cert_and_key_flags(self, mock_func):
+        for tls_cert_option in self.tls_cert_options:
+            for tls_key_option in self.tls_key_options:
+                self.invoke_httpd(tls_cert_option, self.tls_cert,
+                                  tls_key_option, self.tls_key)
+                call_args = self.args | {
+                    'tls_cert': self.tls_cert,
+                    'tls_key': self.tls_key,
+                }
+                mock_func.assert_called_once_with(**call_args)
+                mock_func.reset_mock()
+
+    @unittest.skipIf(ssl is None, "requires ssl")
+    @mock.patch('http.server.test')
+    def test_tls_cert_and_key_and_password_flags(self, mock_func):
+        for tls_cert_option in self.tls_cert_options:
+            for tls_key_option in self.tls_key_options:
+                for tls_password_option in self.tls_password_options:
+                    self.invoke_httpd(tls_cert_option,
+                                      self.tls_cert,
+                                      tls_key_option,
+                                      self.tls_key,
+                                      tls_password_option,
+                                      self.tls_password_file)
+                    call_args = self.args | {
+                        'tls_cert': self.tls_cert,
+                        'tls_key': self.tls_key,
+                        'tls_password': self.tls_password,
+                    }
+                    mock_func.assert_called_once_with(**call_args)
+                    mock_func.reset_mock()
+
+    @unittest.skipIf(ssl is None, "requires ssl")
+    @mock.patch('http.server.test')
+    def test_missing_tls_cert_flag(self, mock_func):
+        for tls_key_option in self.tls_key_options:
+            with self.assertRaises(SystemExit):
+                self.invoke_httpd(tls_key_option, self.tls_key)
+            mock_func.reset_mock()
+
+        for tls_password_option in self.tls_password_options:
+            with self.assertRaises(SystemExit):
+                self.invoke_httpd(tls_password_option, self.tls_password)
+            mock_func.reset_mock()
+
+    @unittest.skipIf(ssl is None, "requires ssl")
+    @mock.patch('http.server.test')
+    def test_invalid_password_file(self, mock_func):
+        non_existent_file = 'non_existent_file'
+        for tls_password_option in self.tls_password_options:
+            for tls_cert_option in self.tls_cert_options:
+                with self.assertRaises(SystemExit):
+                    self.invoke_httpd(tls_cert_option,
+                                      self.tls_cert,
+                                      tls_password_option,
+                                      non_existent_file)
+
+    @mock.patch('http.server.test')
+    def test_no_arguments(self, mock_func):
+        self.invoke_httpd()
+        mock_func.assert_called_once_with(**self.args)
+        mock_func.reset_mock()
+
+    @mock.patch('http.server.test')
+    def test_help_flag(self, _):
+        options = ['-h', '--help']
+        for option in options:
+            stdout, stderr = StringIO(), StringIO()
+            with self.assertRaises(SystemExit):
+                self.invoke_httpd(option, stdout=stdout, stderr=stderr)
+            self.assertIn('usage', stdout.getvalue())
+            self.assertEqual(stderr.getvalue(), '')
+
+    @mock.patch('http.server.test')
+    def test_unknown_flag(self, _):
+        stdout, stderr = StringIO(), StringIO()
+        with self.assertRaises(SystemExit):
+            self.invoke_httpd('--unknown-flag', stdout=stdout, stderr=stderr)
+        self.assertEqual(stdout.getvalue(), '')
+        self.assertIn('error', stderr.getvalue())
 
 
 def setUpModule():

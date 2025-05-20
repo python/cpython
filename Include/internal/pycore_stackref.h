@@ -134,12 +134,11 @@ _PyStackRef_FromPyObjectSteal(PyObject *obj, const char *filename, int linenumbe
 #define PyStackRef_FromPyObjectSteal(obj) _PyStackRef_FromPyObjectSteal(_PyObject_CAST(obj), __FILE__, __LINE__)
 
 static inline _PyStackRef
-_PyStackRef_FromPyObjectImmortal(PyObject *obj, const char *filename, int linenumber)
+_PyStackRef_FromPyObjectBorrow(PyObject *obj, const char *filename, int linenumber)
 {
-    assert(_Py_IsImmortal(obj));
     return _Py_stackref_create(obj, filename, linenumber);
 }
-#define PyStackRef_FromPyObjectImmortal(obj) _PyStackRef_FromPyObjectImmortal(_PyObject_CAST(obj), __FILE__, __LINE__)
+#define PyStackRef_FromPyObjectBorrow(obj) _PyStackRef_FromPyObjectBorrow(_PyObject_CAST(obj), __FILE__, __LINE__)
 
 static inline void
 _PyStackRef_CLOSE(_PyStackRef ref, const char *filename, int linenumber)
@@ -366,15 +365,14 @@ PyStackRef_FromPyObjectNew(PyObject *obj)
 #define PyStackRef_FromPyObjectNew(obj) PyStackRef_FromPyObjectNew(_PyObject_CAST(obj))
 
 static inline _PyStackRef
-PyStackRef_FromPyObjectImmortal(PyObject *obj)
+PyStackRef_FromPyObjectBorrow(PyObject *obj)
 {
     // Make sure we don't take an already tagged value.
     assert(((uintptr_t)obj & Py_TAG_BITS) == 0);
     assert(obj != NULL);
-    assert(_Py_IsImmortal(obj));
     return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_DEFERRED };
 }
-#define PyStackRef_FromPyObjectImmortal(obj) PyStackRef_FromPyObjectImmortal(_PyObject_CAST(obj))
+#define PyStackRef_FromPyObjectBorrow(obj) PyStackRef_FromPyObjectBorrow(_PyObject_CAST(obj))
 
 #define PyStackRef_CLOSE(REF)                                        \
         do {                                                            \
@@ -582,9 +580,8 @@ _PyStackRef_FromPyObjectNewMortal(PyObject *obj)
 
 /* Create a new reference from an object with an embedded reference count */
 static inline _PyStackRef
-PyStackRef_FromPyObjectImmortal(PyObject *obj)
+PyStackRef_FromPyObjectBorrow(PyObject *obj)
 {
-    assert(_Py_IsImmortal(obj));
     return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_REFCNT};
 }
 
