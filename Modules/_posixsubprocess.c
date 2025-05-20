@@ -625,6 +625,48 @@ reset_signal_handlers(const sigset_t *child_sigmask)
 #endif /* VFORK_USABLE */
 
 
+static int set_user_identity(uid_t uid)
+{
+#ifdef HAVE_SETREUID
+    if (uid != (uid_t)-1)
+        return setreuid(uid, uid);
+#endif /* HAVE_SETREUID */
+    return 0;
+}
+
+
+static int set_group_identity(gid_t gid)
+{
+#ifdef HAVE_SETREGID
+    if (gid != (gid_t)-1)
+        return setregid(gid, gid);
+#endif /* HAVE_SETREGID */
+    return 0;
+}
+
+
+static int set_groups(Py_ssize_t extra_group_size, const gid_t *extra_groups)
+{
+#ifdef HAVE_SETGROUPS
+    if (extra_group_size >= 0) {
+        assert((extra_group_size == 0) == (extra_groups == NULL));
+        return setgroups(extra_group_size, extra_groups);
+    }
+#endif /* HAVE_SETGROUPS */
+    return 0;
+}
+
+
+static int
+set_identity(uid_t uid, gid_t gid,
+             Py_ssize_t extra_group_size, const gid_t *extra_groups)
+{
+    return (set_groups(extra_group_size, extra_groups)
+            || set_group_identity(gid)
+            || set_user_identity(uid)) ? -1 : 0;
+}
+
+
 /*
  * This function is code executed in the child process immediately after
  * (v)fork to set things up and call exec().
@@ -773,23 +815,7 @@ child_exec(char *const exec_array[],
     }
 #endif
 
-#ifdef HAVE_SETGROUPS
-    if (extra_group_size >= 0) {
-        assert((extra_group_size == 0) == (extra_groups == NULL));
-        POSIX_CALL(setgroups(extra_group_size, extra_groups));
-    }
-#endif /* HAVE_SETGROUPS */
-
-#ifdef HAVE_SETREGID
-    if (gid != (gid_t)-1)
-        POSIX_CALL(setregid(gid, gid));
-#endif /* HAVE_SETREGID */
-
-#ifdef HAVE_SETREUID
-    if (uid != (uid_t)-1)
-        POSIX_CALL(setreuid(uid, uid));
-#endif /* HAVE_SETREUID */
-
+    POSIX_CALL(set_identity(uid, gid, extra_group_size, extra_groups));
 
     err_msg = "";
     if (preexec_fn != Py_None && preexec_fn_args_tuple) {
