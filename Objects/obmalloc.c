@@ -1238,7 +1238,6 @@ _PyObject_XSetRefDelayed(PyObject **ptr, PyObject *value)
     PyObject *old = *ptr;
     FT_ATOMIC_STORE_PTR_RELEASE(*ptr, Py_NewRef(value));
     _PyObject_XDecRefDelayed(old);
-    Py_XDECREF(old);
 }
 #endif
 
