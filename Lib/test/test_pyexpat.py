@@ -436,7 +436,7 @@ class BufferTextTest(unittest.TestCase):
                           "<!--abc-->", "4", "<!--def-->", "5", "</a>"],
                          "buffered text not properly split")
 
-    def test_noop(self):
+    def test_change_character_data_handler_in_callback(self):
         def handler(*args):
             parser.CharacterDataHandler = None
 
