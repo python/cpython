@@ -530,7 +530,7 @@ const uint16_t op_without_pop[MAX_UOP_ID] = {
     [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
 };
 
-const uint16_t remove_push[MAX_UOP_ID] = {
+const uint16_t op_without_push[MAX_UOP_ID] = {
     [_COPY] = _NOP,
     [_LOAD_CONST_INLINE] = _NOP,
     [_LOAD_CONST_INLINE_BORROW] = _NOP,
@@ -581,10 +581,10 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     while (last->opcode == _NOP) {
                         last--;
                     }
-                    if (!remove_push[last->opcode]) {
+                    if (!op_without_push[last->opcode]) {
                         break;
                     }
-                    last->opcode = remove_push[last->opcode];
+                    last->opcode = op_without_push[last->opcode];
                     opcode = buffer[pc].opcode = op_without_pop[opcode];
                 }
                 /* _PUSH_FRAME doesn't escape or error, but it
