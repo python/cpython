@@ -563,7 +563,7 @@ be left as zero.
 Concretely, here is how the statically declared type object would look::
 
    static PyTypeObject TrivialType = {
-       .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
+       PyVarObject_HEAD_INIT(NULL, 0)
        /* ... other members omitted for brevity ... */
        .tp_flags = Py_TPFLAGS_MANAGED_WEAKREF | ...,
    };
