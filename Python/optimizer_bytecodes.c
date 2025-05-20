@@ -1116,6 +1116,25 @@ dummy_func(void) {
         res = sym_new_type(ctx, &PyLong_Type);
     }
 
+    op(_GET_LEN, (obj -- obj, len)) {
+        int tuple_length = sym_tuple_length(obj);
+        if (tuple_length == -1) {
+            len = sym_new_type(ctx, &PyLong_Type);
+        }
+        else {
+            assert(tuple_length >= 0);
+            PyObject *temp = PyLong_FromLong(tuple_length);
+            if (temp == NULL) {
+                goto error;
+            }
+            if (_Py_IsImmortal(temp)) {
+                REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
+            }
+            len = sym_new_const(ctx, temp);
+            Py_DECREF(temp);
+        }
+    }
+
     op(_GUARD_CALLABLE_LEN, (callable, unused, unused -- callable, unused, unused)) {
         PyObject *len = _PyInterpreterState_GET()->callable_cache.len;
         if (sym_get_const(ctx, callable) == len) {
