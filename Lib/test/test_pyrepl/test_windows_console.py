@@ -24,6 +24,7 @@ try:
         MOVE_UP,
         MOVE_DOWN,
         ERASE_IN_LINE,
+        CLEAR,
     )
     import _pyrepl.windows_console as wc
 except ImportError:
@@ -117,9 +118,8 @@ class WindowsConsoleTests(TestCase):
             prepare_console=same_console,
         )
 
-        con.out.write.assert_any_call(self.move_right(2))
-        con.out.write.assert_any_call(self.move_up(2))
-        con.out.write.assert_any_call(b"567890")
+        con.out.write.assert_any_call(self.clear())
+        con.out.write.assert_any_call(b"1234567890")
 
         con.restore()
 
@@ -280,11 +280,13 @@ class WindowsConsoleTests(TestCase):
         )
         con.out.write.assert_has_calls(
             [
-                call(self.move_left(5)),
+                call(self.clear()),
+                call(b"\n"),
                 call(self.move_up()),
                 call(b"def f():"),
-                call(self.move_left(3)),
+                call(self.move_left(8)),
                 call(self.move_down()),
+                call(b"  foo")
             ]
         )
         console.restore()
@@ -318,9 +320,7 @@ class WindowsConsoleTests(TestCase):
         )
         con.out.write.assert_has_calls(
             [
-                call(self.move_left(5)),
-                call(self.move_up()),
-                call(self.erase_in_line()),
+                call(self.clear()),
                 call(b"  foo"),
             ]
         )
@@ -341,6 +341,9 @@ class WindowsConsoleTests(TestCase):
 
     def erase_in_line(self):
         return ERASE_IN_LINE.encode("utf8")
+
+    def clear(self):
+        return CLEAR.encode("utf8")
 
     def test_multiline_ctrl_z(self):
         # see gh-126332

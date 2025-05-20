@@ -216,6 +216,9 @@ class WindowsConsole(Console):
         oldscr = self.screen[old_offset : old_offset + height]
         newscr = screen[offset : offset + height]
 
+        if len(oldscr) < height:
+            oldscr += [""] * (height - len(oldscr))
+
         self.__offset = offset
 
         self._hide_cursor()
