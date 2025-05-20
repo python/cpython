@@ -312,6 +312,12 @@ class EditorWindow:
         self.askyesno = messagebox.askyesno
         self.showerror = messagebox.showerror
 
+        # Bind keys to pseudoevents for non-configurable key-specific handlers.
+        text.event_add('<<smart-backspace>>', '<Key-BackSpace>')
+        text.event_add('<<newline-and-indent>>',
+                       '<Key-Return>', '<Key-KP_Enter>')
+        text.event_add('<<smart-indent>>', '<Key-Tab>')
+
         # Add pseudoevents for former extension fixed keys.
         # (This probably needs to be done once in the process.)
         text.event_add('<<autocomplete>>', '<Key-Tab>')
