@@ -463,6 +463,16 @@ Advanced parameter control
    Parameters are optional; any omitted parameter will have it's value selected
    automatically.
 
+   Example getting the lower and upper bound of :attr:`~.compression_level`::
+
+      lower, upper = CompressionParameter.compression_level.bounds()
+
+   Example setting the :attr:`~.window_log` to the maximum size::
+
+      _lower, upper = CompressionParameter.window_log.bounds()
+      options = {CompressionParameter.window_log: upper}
+      compress(b'venezuelan beaver cheese', options=options)
+
    .. method:: bounds()
 
       Return the tuple of int bounds, ``(lower, upper)``, of a compression
@@ -655,13 +665,20 @@ Advanced parameter control
    The :meth:`~.bounds` method can be used on any attribute to get the valid
    values for that parameter.
 
+   Example setting the :attr:`~.window_log_max` to the maximum size::
+
+      data = compress(b'Some very long buffer of bytes...')
+
+      _lower, upper = DecompressionParameter.window_log_max.bounds()
+
+      options = {DecompressionParameter.window_log_max: upper}
+      decompress(data, options=options)
+
    .. method:: bounds()
 
       Return the tuple of int bounds, ``(lower, upper)``, of a decompression
       parameter. This method should be called on the attribute you wish to
-      retrieve the bounds of. For example, to get the valid values for
-      :attr:`~.window_log_max`, one may check the result of
-      ``DecompressionParameter.window_log_max.bounds()``.
+      retrieve the bounds of.
 
       Both the lower and upper bounds are inclusive.
 
