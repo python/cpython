@@ -1843,77 +1843,51 @@ curses_clinic_parse_optional_xy_n(PyObject *args,
     }
 }
 
-    [
-    y: int
-        Y-coordinate.
-    x: int
-        X-coordinate.
-    ]
-    n: int = 1023
-        Maximal number of characters.
-    /
-
-Read a string from the user, with primitive line editing capacity.
-[-clinic start generated code]*/
+PyDoc_STRVAR(_curses_window_getstr__doc__,
+"getstr([[y, x,] n=1023])\n"
+"Read a string from the user, with primitive line editing capacity.\n"
+"\n"
+"  y\n"
+"    Y-coordinate.\n"
+"  x\n"
+"    X-coordinate.\n"
+"  n\n"
+"    Maximal number of characters.");
 
 static PyObject *
-PyCursesWindow_GetStr(PyObject *op, PyObject *args)
+PyCursesWindow_getstr(PyObject *op, PyObject *args)
 {
     PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
-
-    int x, y, n;
+    int use_xy = 0, y = 0, x = 0;
+    unsigned int n = 1023;
     char rtn[1024]; /* This should be big enough.. I hope */
     int rtn2;
 
-    switch (PyTuple_Size(args)) {
-    case 0:
-        Py_BEGIN_ALLOW_THREADS
-        rtn2 = wgetnstr(self->win,rtn, 1023);
-        Py_END_ALLOW_THREADS
-        break;
-    case 1:
-        if (!PyArg_ParseTuple(args,"i;n", &n))
-            return NULL;
-        if (n < 0) {
-            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
-            return NULL;
-        }
-        Py_BEGIN_ALLOW_THREADS
-        rtn2 = wgetnstr(self->win, rtn, Py_MIN(n, 1023));
-        Py_END_ALLOW_THREADS
-        break;
-    case 2:
-        if (!PyArg_ParseTuple(args,"ii;y,x",&y,&x))
-            return NULL;
-        Py_BEGIN_ALLOW_THREADS
-#ifdef STRICT_SYSV_CURSES
-        rtn2 = wmove(self->win,y,x)==ERR ? ERR : wgetnstr(self->win, rtn, 1023);
-#else
-        rtn2 = mvwgetnstr(self->win,y,x,rtn, 1023);
-#endif
-        Py_END_ALLOW_THREADS
-        break;
-    case 3:
-        if (!PyArg_ParseTuple(args,"iii;y,x,n", &y, &x, &n))
-            return NULL;
-        if (n < 0) {
-            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
-            return NULL;
-        }
-#ifdef STRICT_SYSV_CURSES
-        Py_BEGIN_ALLOW_THREADS
-        rtn2 = wmove(self->win,y,x)==ERR ? ERR :
-        wgetnstr(self->win, rtn, Py_MIN(n, 1023));
-        Py_END_ALLOW_THREADS
-#else
-        Py_BEGIN_ALLOW_THREADS
-        rtn2 = mvwgetnstr(self->win, y, x, rtn, Py_MIN(n, 1023));
-        Py_END_ALLOW_THREADS
-#endif
-        break;
-    default:
-        PyErr_SetString(PyExc_TypeError, "getstr requires 0 to 3 arguments");
+    if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
+                                           "_curses.window.getstr"))
+    {
         return NULL;
+    }
+
+    n = Py_MIN(n, 1023);
+    if (use_xy) {
+        Py_BEGIN_ALLOW_THREADS
+#ifdef STRICT_SYSV_CURSES
+        if (wmove(self->win, y, x) == ERR) {
+            rtn2 = ERR;
+        }
+        else {
+            rtn2 = wgetnstr(self->win, rtn, n);
+        }
+#else
+        rtn2 = mvwgetnstr(self->win, y, x, rtn, n);
+#endif
+        Py_END_ALLOW_THREADS
+    }
+    else {
+        Py_BEGIN_ALLOW_THREADS
+        rtn2 = wgetnstr(self->win, rtn, n);
+        Py_END_ALLOW_THREADS
     }
     if (rtn2 == ERR)
         rtn[0] = 0;
@@ -2877,7 +2851,10 @@ static PyMethodDef PyCursesWindow_methods[] = {
     _CURSES_WINDOW_GET_WCH_METHODDEF
     {"getmaxyx",        PyCursesWindow_getmaxyx, METH_NOARGS},
     {"getparyx",        PyCursesWindow_getparyx, METH_NOARGS},
-    {"getstr",          PyCursesWindow_GetStr, METH_VARARGS},
+    {
+        "getstr", PyCursesWindow_getstr, METH_VARARGS,
+        _curses_window_getstr__doc__
+    },
     {"getyx",           PyCursesWindow_getyx, METH_NOARGS},
     _CURSES_WINDOW_HLINE_METHODDEF
     {"idcok",           PyCursesWindow_idcok, METH_VARARGS},
