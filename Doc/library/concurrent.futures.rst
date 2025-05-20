@@ -206,6 +206,11 @@ And::
       Added *ctxkwargs* to pass additional arguments to ``cls.prepare_context``
       class method.
 
+   .. classmethod:: prepare_context(initializer, initargs)
+      Setting up the necessary context for creating worker instances in a pool-based executor (e.g., in a concurrent environment like threads or interpreters).
+
+      .. versionadded:: 3.14
+
 
 .. _threadpoolexecutor-example:
 
