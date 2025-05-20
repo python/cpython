@@ -249,3 +249,8 @@ quirks by using :func:`annotationlib.get_annotations` on Python 3.14+ or
 Python, you can avoid these bugs by accessing the annotations from the
 class's :attr:`~type.__dict__`
 (e.g., ``cls.__dict__.get('__annotations__', None)``).
+
+In some versions of Python, instances of classes may have an ``__annotations__``
+attribute. This is not supported functionality, so the best practice is to always
+interact with the ``__annotations__`` attribute of an instance's type. For example
+``type(myinstance).__annotations__``.
