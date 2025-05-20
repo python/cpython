@@ -993,6 +993,7 @@ the following methods and attributes:
    .. versionchanged:: next
       The maximum value for *n* is set to 2047.
 
+
 .. method:: window.getyx()
 
    Return a tuple ``(y, x)`` of current cursor position  relative to the window's
