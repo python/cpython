@@ -1934,7 +1934,7 @@ class TestUopsOptimization(unittest.TestCase):
                         x += 1.0
             return x
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
-        self.assertEqual(len(res), TIER2_THRESHOLD)
+        self.assertEqual(int(res), TIER2_THRESHOLD)
         uops = get_opnames(ex)
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
