@@ -113,7 +113,7 @@ Executor Objects
              e.submit(shutil.copy, 'src3.txt', 'dest3.txt')
              e.submit(shutil.copy, 'src4.txt', 'dest4.txt')
 
-      .. versionadded:: 3.9
+      .. versionchanged:: 3.9
          Added the *cancel_futures* parameter.
 
 
