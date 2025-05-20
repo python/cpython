@@ -1429,32 +1429,27 @@ int py_mvwdelch(WINDOW *w, int y, int x)
 
 /* chgat, added by Fabian Kreutz <fabian.kreutz at gmx.net> */
 #ifdef HAVE_CURSES_WCHGAT
-/*[-clinic input]
-_curses.window.chgat
 
-    [
-    y: int
-        Y-coordinate.
-    x: int
-        X-coordinate.
-    ]
+PyDoc_STRVAR(_curses_window_chgat__doc__,
+"chgat([y, x,] [n=-1,] attr)\n"
+"Set the attributes of characters.\n"
+"\n"
+"  y\n"
+"    Y-coordinate.\n"
+"  x\n"
+"    X-coordinate.\n"
+"  n\n"
+"    Number of characters.\n"
+"  attr\n"
+"    Attributes for characters.\n"
+"\n"
+"Set the attributes of num characters at the current cursor position, or at\n"
+"position (y, x) if supplied.  If no value of num is given or num = -1, the\n"
+"attribute will be set on all the characters to the end of the line.  This\n"
+"function does not move the cursor.  The changed line will be touched using\n"
+"the touchline() method so that the contents will be redisplayed by the next\n"
+"window refresh.");
 
-    n: int = -1
-        Number of characters.
-
-    attr: long
-        Attributes for characters.
-    /
-
-Set the attributes of characters.
-
-Set the attributes of num characters at the current cursor position, or at
-position (y, x) if supplied.  If no value of num is given or num = -1, the
-attribute will be set on all the characters to the end of the line.  This
-function does not move the cursor.  The changed line will be touched using
-the touchline() method so that the contents will be redisplayed by the next
-window refresh.
-[-clinic start generated code]*/
 static PyObject *
 PyCursesWindow_ChgAt(PyObject *op, PyObject *args)
 {
@@ -1481,19 +1476,20 @@ PyCursesWindow_ChgAt(PyObject *op, PyObject *args)
         attr = lattr;
         break;
     case 3:
-        if (!PyArg_ParseTuple(args,"iil;int,int,attr", &y, &x, &lattr))
+        if (!PyArg_ParseTuple(args,"iil;y,x,attr", &y, &x, &lattr))
             return NULL;
         attr = lattr;
         use_xy = TRUE;
         break;
     case 4:
-        if (!PyArg_ParseTuple(args,"iiil;int,int,n,attr", &y, &x, &num, &lattr))
+        if (!PyArg_ParseTuple(args,"iiil;y,x,n,attr", &y, &x, &num, &lattr))
             return NULL;
         attr = lattr;
         use_xy = TRUE;
         break;
     default:
-        PyErr_SetString(PyExc_TypeError, "chgat requires 1 to 4 arguments");
+        PyErr_SetString(PyExc_TypeError,
+                        "_curses.window.chgat requires 1 to 4 arguments");
         return NULL;
     }
 
@@ -2818,7 +2814,10 @@ static PyMethodDef PyCursesWindow_methods[] = {
     _CURSES_WINDOW_ATTRSET_METHODDEF
     _CURSES_WINDOW_BKGD_METHODDEF
 #ifdef HAVE_CURSES_WCHGAT
-    {"chgat",           PyCursesWindow_ChgAt, METH_VARARGS},
+    {
+        "chgat", PyCursesWindow_ChgAt, METH_VARARGS,
+        _curses_window_chgat__doc__
+    },
 #endif
     _CURSES_WINDOW_BKGDSET_METHODDEF
     _CURSES_WINDOW_BORDER_METHODDEF
