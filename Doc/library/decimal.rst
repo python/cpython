@@ -121,7 +121,7 @@ reset them before monitoring a calculation.
 
 .. _decimal-tutorial:
 
-Quick-start Tutorial
+Quick-start tutorial
 --------------------
 
 The usual start to using decimals is importing the module, viewing the current
@@ -1781,7 +1781,7 @@ The following table summarizes the hierarchy of signals::
 
 .. _decimal-notes:
 
-Floating-Point Notes
+Floating-point notes
 --------------------
 
 
