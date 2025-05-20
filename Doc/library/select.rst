@@ -162,7 +162,7 @@ The module defines the following:
 
       :c:func:`!select` may not work with file objects that
       internally buffer data because select is only aware of data in the
-      file descriptor provided by the kernel. However, file-like-objects often
+      file descriptor provided by the kernel. However, :term:`file-like objects <file object>` often
       contain a reference to a file descriptor via a :meth:`!fileno` method
       which will work with select.
 
