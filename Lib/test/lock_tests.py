@@ -337,6 +337,11 @@ class RLockTests(BaseLockTests):
     """
     Tests for recursive locks.
     """
+    def test_locked_repr(self):
+        super().test_locked_repr()
+        lock = self.locktype()
+        self.assertIn("count=0", repr(lock))
+
     def test_reacquire(self):
         lock = self.locktype()
         lock.acquire()

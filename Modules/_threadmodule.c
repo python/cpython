@@ -1219,7 +1219,8 @@ rlock_repr(PyObject *op)
 {
     rlockobject *self = rlockobject_CAST(op);
     PyThread_ident_t owner = self->lock.thread;
-    size_t count = self->lock.level + 1;
+    size_t count = _PyRecursiveMutex_IsLockedByCurrentThread(&self->lock) ?
+                   self->lock.level + 1 : 0;
     return PyUnicode_FromFormat(
         "<%s %s object owner=%" PY_FORMAT_THREAD_IDENT_T " count=%zu at %p>",
         owner ? "locked" : "unlocked",
