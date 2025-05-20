@@ -1281,16 +1281,21 @@ class ThreadTests(BaseTestCase):
         script = """if True:
             import threading
             import os
+            from test import support
 
             parent_thread_native_id = threading.current_thread().native_id
             print(parent_thread_native_id, flush=True)
             assert parent_thread_native_id == threading.get_native_id()
-            if os.fork() == 0:
+            childpid = os.fork()
+            if childpid == 0:
                 print(threading.current_thread().native_id, flush=True)
                 assert threading.current_thread().native_id == threading.get_native_id()
             else:
-                assert parent_thread_native_id == threading.current_thread().native_id
-                assert parent_thread_native_id == threading.get_native_id()
+                try:
+                    assert parent_thread_native_id == threading.current_thread().native_id
+                    assert parent_thread_native_id == threading.get_native_id()
+                finally:
+                    support.wait_process(childpid, exitcode=0)
             """
         rc, out, err = assert_python_ok('-c', script)
         self.assertEqual(rc, 0)
