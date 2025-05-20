@@ -2137,8 +2137,7 @@ class CRLockTests(lock_tests.RLockTests):
         ]
         for args, kwargs in arg_types:
             with self.subTest(args=args, kwargs=kwargs):
-                with self.assertWarns(DeprecationWarning):
-                    threading.RLock(*args, **kwargs)
+                self.assertRaises(TypeError, threading.RLock, *args, **kwargs)
 
         # Subtypes with custom `__init__` are allowed (but, not recommended):
         class CustomRLock(self.locktype):
@@ -2155,6 +2154,9 @@ class EventTests(lock_tests.EventTests):
 class ConditionAsRLockTests(lock_tests.RLockTests):
     # Condition uses an RLock by default and exports its API.
     locktype = staticmethod(threading.Condition)
+
+    def test_constructor_noargs(self):
+        self.skipTest("Condition allows positional arguments")
 
     def test_recursion_count(self):
         self.skipTest("Condition does not expose _recursion_count()")
