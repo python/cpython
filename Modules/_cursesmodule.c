@@ -4985,6 +4985,7 @@ static PyObject *
 _curses_use_env_impl(PyObject *module, int flag)
 /*[clinic end generated code: output=b2c445e435c0b164 input=06ac30948f2d78e4]*/
 {
+    // use_env() is a void function
     use_env(flag);
     Py_RETURN_NONE;
 }
