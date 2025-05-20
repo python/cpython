@@ -143,12 +143,6 @@ class FakeConsole(Console):
     def move_cursor(self, x: int, y: int) -> None:
         pass
 
-    def sync_cursor(self) -> None:
-        pass
-
-    def sync_screen_size(self) -> None:
-        pass
-
     def set_cursor_vis(self, visible: bool) -> None:
         pass
 

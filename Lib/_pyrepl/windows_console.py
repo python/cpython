@@ -39,7 +39,7 @@ from ctypes.wintypes import (
 from ctypes import Structure, POINTER, Union
 from .console import Event, Console
 from .trace import trace
-from .utils import wlen, ANSI_ESCAPE_SEQUENCE
+from .utils import wlen
 from .windows_eventqueue import EventQueue
 
 try:
@@ -394,22 +394,6 @@ class WindowsConsole(Console):
         else:
             self._move_relative(x, y)
             self.posxy = x, y
-
-    def sync_cursor(self):
-        """
-        Synchronize posxy after resizing.
-        """
-        info = CONSOLE_SCREEN_BUFFER_INFO()
-        if not GetConsoleScreenBufferInfo(OutHandle, info):
-            raise WinError(GetLastError())
-        cur_x, cur_y = info.dwCursorPosition.X, info.dwCursorPosition.Y
-        self.posxy = cur_x, cur_y + self.__offset
-
-    def sync_screen_size(self):
-        """
-        Synchronize screen size after resizing.
-        """
-        self.height, self.width = self.getheightwidth()
 
     def set_cursor_vis(self, visible: bool) -> None:
         if visible:

@@ -357,6 +357,86 @@ class WindowsConsoleTests(TestCase):
         self.assertEqual(reader.cxy, (2, 3))
         con.restore()
 
+    def test_resize_screen_larger(self):
+        # fmt: off
+        code = (
+            "def f():\n"
+            "  foo = 123456789\n"
+            "  bar = 'baz'"
+        )
+        # fmt: on
+
+        events = itertools.chain(code_to_events(code))
+        reader, console = self.handle_events_narrow(events)
+
+        console.width = 80
+        console.getheightwidth = MagicMock(return_value=(100, 80))
+
+        def same_reader(_):
+            return reader
+
+        def same_console(events):
+            console.get_event = MagicMock(side_effect=events)
+            return console
+
+        _, con = handle_all_events(
+            [Event(evt="resize", data=None)],
+            prepare_reader=same_reader,
+            prepare_console=same_console,
+        )
+        self.assertListEqual(
+            con.screen,
+            [
+                "def f():",
+                "  foo = 123456789",
+                "  bar = 'baz'"
+            ]
+        )
+
+    def test_resize_screen_smaller(self):
+        # fmt: off
+        code = (
+            "def f():\n"
+            "  foo = 123456789\n"
+            "  bar = 'baz'"
+        )
+        # fmt: on
+
+        events = itertools.chain(code_to_events(code))
+        reader, console = self.handle_events(events)
+
+        console.width = 5
+        console.getheightwidth = MagicMock(return_value=(100, 5))
+
+        def same_reader(_):
+            return reader
+
+        def same_console(events):
+            console.get_event = MagicMock(side_effect=events)
+            return console
+
+        _, con = handle_all_events(
+            [Event(evt="resize", data=None)],
+            prepare_reader=same_reader,
+            prepare_console=same_console,
+        )
+        self.assertListEqual(
+            con.screen,
+            [
+                "def \\",
+                "f():",
+                "  fo\\",
+                "o = \\",
+                "1234\\",
+                "5678\\",
+                "9",
+                "  ba\\",
+                "r = \\",
+                "'baz\\",
+                "'"
+            ]
+        )
+
 
 class WindowsConsoleGetEventTests(TestCase):
     # Virtual-Key Codes: https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
@@ -573,86 +653,6 @@ class WindowsConsoleGetEventTests(TestCase):
         self.assertEqual(self.get_event(irs, vt_support=True),
                          Event(evt='key', data='up', raw=bytearray(b'\x1b[A')))
         self.assertEqual(self.mock.call_count, 3)
-
-    def test_sync_screen_larger(self):
-        # fmt: off
-        code = (
-            "def f():\n"
-            "  foo = 123456789\n"
-            "  bar = 'baz'"
-        )
-        # fmt: on
-
-        events = itertools.chain(code_to_events(code))
-        reader, console = self.handle_events_narrow(events)
-
-        console.width = 80
-        console.getheightwidth = MagicMock(return_value=(100, 80))
-
-        def same_reader(_):
-            return reader
-
-        def same_console(events):
-            console.get_event = MagicMock(side_effect=events)
-            return console
-
-        _, con = handle_all_events(
-            [Event(evt="resize", data=None)],
-            prepare_reader=same_reader,
-            prepare_console=same_console,
-        )
-        self.assertListEqual(
-            con.screen,
-            [
-                "def f():",
-                "  foo = 123456789",
-                "  bar = 'baz'"
-            ]
-        )
-
-    def test_sync_screen_smaller(self):
-        # fmt: off
-        code = (
-            "def f():\n"
-            "  foo = 123456789\n"
-            "  bar = 'baz'"
-        )
-        # fmt: on
-
-        events = itertools.chain(code_to_events(code))
-        reader, console = self.handle_events(events)
-
-        console.width = 5
-        console.getheightwidth = MagicMock(return_value=(100, 5))
-
-        def same_reader(_):
-            return reader
-
-        def same_console(events):
-            console.get_event = MagicMock(side_effect=events)
-            return console
-
-        _, con = handle_all_events(
-            [Event(evt="resize", data=None)],
-            prepare_reader=same_reader,
-            prepare_console=same_console,
-        )
-        self.assertListEqual(
-            con.screen,
-            [
-                "def \\",
-                "f():",
-                "  fo\\",
-                "o = \\",
-                "1234\\",
-                "5678\\",
-                "9",
-                "  ba\\",
-                "r = \\",
-                "'baz\\",
-                "'"
-            ]
-        )
 
 
 if __name__ == "__main__":

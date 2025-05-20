@@ -38,7 +38,7 @@ from .console import Console, Event
 from .fancy_termios import tcgetattr, tcsetattr
 from .trace import trace
 from .unix_eventqueue import EventQueue
-from .utils import wlen, ANSI_ESCAPE_SEQUENCE
+from .utils import wlen
 
 # declare posix optional to allow None assignment on other platforms
 posix: types.ModuleType | None
@@ -321,29 +321,6 @@ class UnixConsole(Console):
             self.__move(x, y)
             self.posxy = x, y
             self.flushoutput()
-
-    def sync_cursor(self):
-        """
-        Synchronize posxy after resizing.
-        """
-        os.write(self.output_fd, b"\x1b[6n")
-        response = b""
-        while True:
-            ch = os.read(self.input_fd, 1)
-            response += ch
-            if ch == b'R':
-                break
-        m = re.match(rb"\x1b\[(\d+);(\d+)R", response)
-        if m:
-            row, col = map(int, m.groups())
-            cur_x, cur_y = col - 1, row - 1
-            self.posxy = cur_x, cur_y + self.__offset
-
-    def sync_screen_size(self):
-        """
-        Synchronize screen size after resizing.
-        """
-        self.height, self.width = self.getheightwidth()
 
     def prepare(self):
         """

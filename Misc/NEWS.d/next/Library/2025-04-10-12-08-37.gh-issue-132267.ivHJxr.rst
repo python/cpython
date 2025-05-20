@@ -1,1 +1,2 @@
-Add function Console.sync_screen to recalculate the cursor position and the screen buffer.
+In the New REPL, resize triggers full redraw.
+Cross-line width calculation and old content calculation during scrolling was fixed.

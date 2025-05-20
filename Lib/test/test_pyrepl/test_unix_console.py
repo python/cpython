@@ -48,6 +48,7 @@ handle_events_unix_console_height_3 = partial(
     handle_all_events, prepare_console=partial(unix_console, height=3)
 )
 
+
 TERM_CAPABILITIES = {
     "bel": b"\x07",
     "civis": b"\x1b[?25l",
@@ -328,7 +329,7 @@ class TestConsole(TestCase):
             os.environ = []
             self.assertIsInstance(console.getheightwidth(), tuple)
 
-    def test_sync_screen_larger(self, _os_write):
+    def test_resize_screen_larger(self, _os_write):
         # fmt: off
         code = (
             "def f():\n"
@@ -364,7 +365,7 @@ class TestConsole(TestCase):
             ]
         )
 
-    def test_sync_screen_smaller(self, _os_write):
+    def test_resize_screen_smaller(self, _os_write):
         # fmt: off
         code = (
             "def f():\n"
