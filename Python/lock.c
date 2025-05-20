@@ -619,3 +619,11 @@ PyMutex_Unlock(PyMutex *m)
         Py_FatalError("unlocking mutex that is not locked");
     }
 }
+
+
+#undef PyMutex_IsLocked
+int
+PyMutex_IsLocked(PyMutex *m)
+{
+    return _PyMutex_IsLocked(m);
+}
