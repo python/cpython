@@ -411,11 +411,15 @@ Dialects support the following attributes:
 
 .. attribute:: Dialect.escapechar
 
-   A one-character string used by the writer to escape the *delimiter*,
-   the *quotechar*, ``'\r'``, ``'\n'`` and any of the characters in
-   *lineterminator* if *quoting* is set to :const:`QUOTE_NONE`,
-   the *quotechar* if *doublequote* is :const:`False`,
-   and the *escapechar* itself.
+   A one-character string used by the writer to escape characters that
+   require escaping:
+
+      * the *delimiter*, the *quotechar*, ``'\r'``, ``'\n'`` and any of the
+        characters in *lineterminator* are escaped if *quoting* is set to
+        :const:`QUOTE_NONE`;
+      * the *quotechar* is escaped if *doublequote* is :const:`False`;
+      * the *escapechar* itself.
+
    On reading, the *escapechar* removes any special meaning from
    the following character. It defaults to :const:`None`, which disables escaping.
 
