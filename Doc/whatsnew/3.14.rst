@@ -1200,6 +1200,9 @@ ctypes
   making it a :term:`generic type`.
   (Contributed by Brian Schubert in :gh:`132168`.)
 
+* :mod:`ctypes` now supports :term:`free-threading builds <free threading>`.
+  (Contributed by Kumar Aditya and Peter Bierma in :gh:`127945`.)
+
 curses
 ------
 
