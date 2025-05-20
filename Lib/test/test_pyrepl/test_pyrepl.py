@@ -917,7 +917,14 @@ class TestPyReplCompleter(TestCase):
 
 class TestPyReplModuleCompleter(TestCase):
     def setUp(self):
+        import importlib
+        # Make iter_modules() search only the standard library.
+        # This makes the test more reliable in case there are
+        # other user packages/scripts on PYTHONPATH which can
+        # interfere with the completions.
+        lib_path = os.path.dirname(importlib.__path__[0])
         self._saved_sys_path = sys.path
+        sys.path = [lib_path]
 
     def tearDown(self):
         sys.path = self._saved_sys_path
@@ -929,17 +936,7 @@ class TestPyReplModuleCompleter(TestCase):
         reader = ReadlineAlikeReader(console=console, config=config)
         return reader
 
-    def _only_stdlib_imports(self):
-        import importlib
-        # Make iter_modules() search only the standard library.
-        # This makes the test more reliable in case there are
-        # other user packages/scripts on PYTHONPATH which can
-        # intefere with the completions.
-        lib_path = os.path.dirname(importlib.__path__[0])
-        sys.path = [lib_path]
-
     def test_import_completions(self):
-        self._only_stdlib_imports()
         cases = (
             ("import path\t\n", "import pathlib"),
             ("import importlib.\t\tres\t\n", "import importlib.resources"),
@@ -991,7 +988,6 @@ class TestPyReplModuleCompleter(TestCase):
                 self.assertEqual(output, expected)
 
     def test_no_fallback_on_regular_completion(self):
-        self._only_stdlib_imports()
         cases = (
             ("import pri\t\n", "import pri"),
             ("from pri\t\n", "from pri"),
