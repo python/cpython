@@ -103,12 +103,10 @@ class ModuleCompleter:
                 if self.is_suggestion_match(module.name, prefix)]
 
     def is_suggestion_match(self, module_name: str, prefix: str) -> bool:
-        """
-        Return True if the module name matches the prefix or if no prefix is specified.
-        Return False if the name is private (starts with _) and no prefix is specified
-        """
         if prefix:
             return module_name.startswith(prefix)
+        # Return False if no prefix and the module is private
+        # So that the default behavior is only returning public modules
         return not module_name.startswith("_")
 
     def iter_submodules(self, parent_modules: list[pkgutil.ModuleInfo]) -> Iterator[pkgutil.ModuleInfo]:
