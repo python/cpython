@@ -908,18 +908,23 @@ def gather(*coros_or_futures, return_exceptions=False):
     return outer
 
 
-def _log_on_cancel_callback(inner):
-    if not inner.cancelled():
-        exc = inner.exception()
-        context = {
-            'message':
-            f'{exc.__class__.__name__} exception in shielded future',
-            'exception': exc,
-            'future': inner,
-        }
-        if inner._source_traceback:
-            context['source_traceback'] = inner._source_traceback
-        inner._loop.call_exception_handler(context)
+def _log_on_exception(fut):
+    if fut.cancelled():
+        return
+
+    exc = fut.exception()
+    if exc is None:
+        return
+
+    context = {
+        'message':
+        f'{exc.__class__.__name__} exception in shielded future',
+        'exception': exc,
+        'future': fut,
+    }
+    if fut._source_traceback:
+        context['source_traceback'] = fut._source_traceback
+    fut._loop.call_exception_handler(context)
 
 
 def shield(arg):
@@ -987,8 +992,8 @@ def shield(arg):
         if not inner.done():
             inner.remove_done_callback(_inner_done_callback)
             # Keep only one callback to log on cancel
-            inner.remove_done_callback(_log_on_cancel_callback)
-            inner.add_done_callback(_log_on_cancel_callback)
+            inner.remove_done_callback(_log_on_exception)
+            inner.add_done_callback(_log_on_exception)
 
     if cur_task is not None:
         inner.add_done_callback(_clear_awaited_by_callback)
