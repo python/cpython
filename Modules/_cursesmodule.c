@@ -2042,7 +2042,7 @@ PyCursesWindow_InStr(PyObject *op, PyObject *args)
     PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
 
     int x, y, n;
-    int err_code;
+    int rtn;
 
     /* could make the buffer size larger/dynamic */
     const int max_buf_size = 2048;
@@ -2051,7 +2051,7 @@ PyCursesWindow_InStr(PyObject *op, PyObject *args)
 
     switch (PyTuple_Size(args)) {
     case 0:
-        err_code = winnstr(self->win, buf, max_buf_size - 1);
+        rtn = winnstr(self->win, buf, max_buf_size - 1);
         break;
     case 1:
         if (!PyArg_ParseTuple(args,"i;n", &n))
@@ -2060,12 +2060,12 @@ PyCursesWindow_InStr(PyObject *op, PyObject *args)
             PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
             return NULL;
         }
-        err_code = winnstr(self->win, buf, Py_MIN(n, max_buf_size - 1));
+        rtn = winnstr(self->win, buf, Py_MIN(n, max_buf_size - 1));
         break;
     case 2:
         if (!PyArg_ParseTuple(args,"ii;y,x",&y,&x))
             return NULL;
-        err_code = mvwinnstr(self->win, y, x, buf, max_buf_size - 1);
+        rtn = mvwinnstr(self->win, y, x, buf, max_buf_size - 1);
         break;
     case 3:
         if (!PyArg_ParseTuple(args, "iii;y,x,n", &y, &x, &n))
@@ -2074,17 +2074,18 @@ PyCursesWindow_InStr(PyObject *op, PyObject *args)
             PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
             return NULL;
         }
-        err_code = mvwinnstr(self->win, y, x, buf, Py_MIN(n, max_buf_size - 1));
+        rtn = mvwinnstr(self->win, y, x, buf, Py_MIN(n, max_buf_size - 1));
         break;
     default:
         PyErr_SetString(PyExc_TypeError, "instr requires 0 or 3 arguments");
         return NULL;
     }
-    if (err_code == ERR)
-        buf[0] = '\0';
 
-    size_t size = strlen(buf);
-    _PyBytes_Resize(&result, size);
+    if (rtn == ERR) {
+        _PyBytes_Resize(&result, 0);
+    } else {
+        _PyBytes_Resize(&result, rtn);
+    }
 
     return result;
 }
