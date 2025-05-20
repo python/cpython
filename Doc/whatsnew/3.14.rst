@@ -1997,7 +1997,7 @@ Optimizations
 asyncio
 -------
 
-* :mod:`asyncio` has new per-thread double linked list implementation internally for
+* :mod:`asyncio` has a new per-thread double linked list implementation internally for
   :class:`native tasks <asyncio.Task>` which speeds up execution by 10-20% on standard
   pyperformance benchmarks and reduces memory usage.
   This enables external introspection tools such as
