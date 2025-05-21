@@ -1336,7 +1336,7 @@ class TestMain(ReplTestCase):
             )
 
     @force_not_colorized
-    def _run_repl_globals_test(self, expectations, *, as_file=False, as_module=False):
+    def _run_repl_globals_test(self, expectations, *, as_file=False, as_module=False, pythonstartup=False):
         clean_env = make_clean_env()
         clean_env["NO_COLOR"] = "1"  # force_not_colorized doesn't touch subprocesses
 
@@ -1345,9 +1345,13 @@ class TestMain(ReplTestCase):
             blue.mkdir()
             mod = blue / "calx.py"
             mod.write_text("FOO = 42", encoding="utf-8")
+            startup = blue / "startup.py"
+            startup.write_text("BAR = 64", encoding="utf-8")
             commands = [
                 "print(f'^{" + var + "=}')" for var in expectations
             ] + ["exit()"]
+            if pythonstartup:
+                clean_env["PYTHONSTARTUP"] = str(startup)
             if as_file and as_module:
                 self.fail("as_file and as_module are mutually exclusive")
             elif as_file:
@@ -1366,7 +1370,13 @@ class TestMain(ReplTestCase):
                     skip=True,
                 )
             else:
-                self.fail("Choose one of as_file or as_module")
+                output, exit_code = self.run_repl(
+                    commands,
+                    cmdline_args=[],
+                    env=clean_env,
+                    cwd=td,
+                    skip=True,
+                )
 
         self.assertEqual(exit_code, 0)
         for var, expected in expectations.items():
@@ -1379,6 +1389,23 @@ class TestMain(ReplTestCase):
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
+    def test_globals_initialized_as_default(self):
+        expectations = {
+            "__name__": "'__main__'",
+            "__package__": "None",
+            # "__file__" is missing in -i, like in the basic REPL
+        }
+        self._run_repl_globals_test(expectations)
+
+    def test_globals_initialized_from_pythonstartup(self):
+        expectations = {
+            "BAR": "64",
+            "__name__": "'__main__'",
+            "__package__": "None",
+            # "__file__" is missing in -i, like in the basic REPL
+        }
+        self._run_repl_globals_test(expectations, pythonstartup=True)
+
     def test_inspect_keeps_globals_from_inspected_file(self):
         expectations = {
             "FOO": "42",
@@ -1388,6 +1415,16 @@ class TestMain(ReplTestCase):
         }
         self._run_repl_globals_test(expectations, as_file=True)
 
+    def test_inspect_keeps_globals_from_inspected_file_with_pythonstartup(self):
+        expectations = {
+            "FOO": "42",
+            "BAR": "64",
+            "__name__": "'__main__'",
+            "__package__": "None",
+            # "__file__" is missing in -i, like in the basic REPL
+        }
+        self._run_repl_globals_test(expectations, as_file=True, pythonstartup=True)
+
     def test_inspect_keeps_globals_from_inspected_module(self):
         expectations = {
             "FOO": "42",
@@ -1396,6 +1433,16 @@ class TestMain(ReplTestCase):
             "__file__": re.compile(r"^'.*calx.py'$"),
         }
         self._run_repl_globals_test(expectations, as_module=True)
+
+    def test_inspect_keeps_globals_from_inspected_module_with_pythonstartup(self):
+        expectations = {
+            "FOO": "42",
+            "BAR": "64",
+            "__name__": "'__main__'",
+            "__package__": "'blue'",
+            "__file__": re.compile(r"^'.*calx.py'$"),
+        }
+        self._run_repl_globals_test(expectations, as_module=True, pythonstartup=True)
 
     @force_not_colorized
     def test_python_basic_repl(self):
