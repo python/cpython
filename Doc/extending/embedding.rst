@@ -257,7 +257,7 @@ Python extension.  For example::
        {0, NULL}
    };
 
-   struct PyModuleDef embmodule = {
+   struct PyModuleDef emb_module = {
        .m_base = PyModuleDef_HEAD_INIT,
        .m_name = "emb",
        .m_size = 0,
@@ -268,7 +268,7 @@ Python extension.  For example::
    static PyObject*
    PyInit_emb(void)
    {
-       return PyModuleDef_Init(&embmodule);
+       return PyModuleDef_Init(&emb_module);
    }
 
 Insert the above code just above the :c:func:`main` function. Also, insert the

@@ -375,7 +375,7 @@ The Module's Method Table and Initialization Function
 I promised to show how :c:func:`!spam_system` is called from Python programs.
 First, we need to list its name and address in a "method table"::
 
-   static PyMethodDef SpamMethods[] = {
+   static PyMethodDef spam_methods[] = {
        ...
        {"system",  spam_system, METH_VARARGS,
         "Execute a shell command."},
@@ -400,7 +400,7 @@ function.
 
 The method table must be referenced in the module definition structure::
 
-   static struct PyModuleDef spammodule = {
+   static struct PyModuleDef spam_module = {
        ...
        .m_methods = spam_methods,
        ...

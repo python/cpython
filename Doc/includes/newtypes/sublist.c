@@ -64,7 +64,7 @@ static PyModuleDef_Slot sublist_module_slots[] = {
     {0, NULL}
 };
 
-static PyModuleDef sublistmodule = {
+static PyModuleDef sublist_module = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "sublist",
     .m_doc = "Example module that creates an extension type.",
@@ -75,5 +75,5 @@ static PyModuleDef sublistmodule = {
 PyMODINIT_FUNC
 PyInit_sublist(void)
 {
-    return PyModuleDef_Init(&sublistmodule);
+    return PyModuleDef_Init(&sublist_module);
 }

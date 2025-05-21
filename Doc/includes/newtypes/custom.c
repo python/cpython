@@ -38,7 +38,7 @@ static PyModuleDef_Slot custom_module_slots[] = {
     {0, NULL}
 };
 
-static PyModuleDef custommodule = {
+static PyModuleDef custom_module = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "custom",
     .m_doc = "Example module that creates an extension type.",
@@ -49,5 +49,5 @@ static PyModuleDef custommodule = {
 PyMODINIT_FUNC
 PyInit_custom(void)
 {
-    return PyModuleDef_Init(&custommodule);
+    return PyModuleDef_Init(&custom_module);
 }
