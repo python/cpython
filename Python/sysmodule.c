@@ -18,13 +18,15 @@ Data members:
 #include "pycore_audit.h"         // _Py_AuditHookEntry
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_SetAsyncGenFinalizer()
-#include "pycore_dict.h"          // _PyDict_GetItemWithError()
 #include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_import.h"        // _PyImport_SetDLOpenFlags()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_interpframe.h"   // _PyFrame_GetFirstComplete()
 #include "pycore_long.h"          // _PY_LONG_MAX_STR_DIGITS_THRESHOLD
 #include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_object.h"        // _PyObject_DebugTypeStats()
+#include "pycore_optimizer.h"     // _PyDumpExecutors()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _PyErr_WriteUnraisableDefaultHook()
@@ -34,7 +36,7 @@ Data members:
 #include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
 #include "pycore_structseq.h"     // _PyStructSequence_InitBuiltinWithFlags()
 #include "pycore_sysmodule.h"     // export _PySys_GetSizeOf()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
 
 #include "pydtrace.h"             // PyDTrace_AUDIT()
 #include "osdefs.h"               // DELIM
@@ -45,7 +47,9 @@ Data members:
 #endif
 
 #ifdef MS_WINDOWS
-#  define WIN32_LEAN_AND_MEAN
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
 #  include <windows.h>
 #endif /* MS_WINDOWS */
 
@@ -1610,7 +1614,7 @@ sys_getrecursionlimit_impl(PyObject *module)
 
 #ifdef MS_WINDOWS
 
-static PyTypeObject WindowsVersionType = {0, 0, 0, 0, 0, 0};
+static PyTypeObject WindowsVersionType = { 0 };
 
 static PyStructSequence_Field windows_version_fields[] = {
     {"major", "Major version number"},
@@ -1639,6 +1643,7 @@ static PyObject *
 _sys_getwindowsversion_from_kernel32(void)
 {
 #ifndef MS_WINDOWS_DESKTOP
+    PyErr_SetString(PyExc_OSError, "cannot read version info on this platform");
     return NULL;
 #else
     HANDLE hKernel32;
@@ -1666,6 +1671,9 @@ _sys_getwindowsversion_from_kernel32(void)
         !GetFileVersionInfoW(kernel32_path, 0, verblock_size, verblock) ||
         !VerQueryValueW(verblock, L"", (LPVOID)&ffi, &ffi_len)) {
         PyErr_SetFromWindowsErr(0);
+        if (verblock) {
+            PyMem_RawFree(verblock);
+        }
         return NULL;
     }
 
@@ -2204,6 +2212,14 @@ static PyObject *
 sys__clear_type_cache_impl(PyObject *module)
 /*[clinic end generated code: output=20e48ca54a6f6971 input=127f3e04a8d9b555]*/
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "sys._clear_type_cache() is deprecated and"
+                     " scheduled for removal in a future version."
+                     " Use sys._clear_internal_caches() instead.",
+                     1) < 0)
+    {
+        return NULL;
+    }
     PyType_ClearCache();
     Py_RETURN_NONE;
 }
@@ -2417,6 +2433,118 @@ sys_is_stack_trampoline_active_impl(PyObject *module)
     Py_RETURN_FALSE;
 }
 
+
+/*[clinic input]
+sys.is_remote_debug_enabled
+
+Return True if remote debugging is enabled, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+sys_is_remote_debug_enabled_impl(PyObject *module)
+/*[clinic end generated code: output=7ca3d38bdd5935eb input=7335c4a2fe8cf4f3]*/
+{
+#if !defined(Py_REMOTE_DEBUG) || !defined(Py_SUPPORTS_REMOTE_DEBUG)
+    Py_RETURN_FALSE;
+#else
+    const PyConfig *config = _Py_GetConfig();
+    return PyBool_FromLong(config->remote_debug);
+#endif
+}
+
+/*[clinic input]
+sys.remote_exec
+
+    pid: int
+    script: object
+
+Executes a file containing Python code in a given remote Python process.
+
+This function returns immediately, and the code will be executed by the
+target process's main thread at the next available opportunity, similarly
+to how signals are handled. There is no interface to determine when the
+code has been executed. The caller is responsible for making sure that
+the file still exists whenever the remote process tries to read it and that
+it hasn't been overwritten.
+
+The remote process must be running a CPython interpreter of the same major
+and minor version as the local process. If either the local or remote
+interpreter is pre-release (alpha, beta, or release candidate) then the
+local and remote interpreters must be the same exact version.
+
+Args:
+     pid (int): The process ID of the target Python process.
+     script (str|bytes): The path to a file containing
+         the Python code to be executed.
+[clinic start generated code]*/
+
+static PyObject *
+sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
+/*[clinic end generated code: output=7d94c56afe4a52c0 input=39908ca2c5fe1eb0]*/
+{
+    PyObject *path;
+    const char *debugger_script_path;
+
+    if (PyUnicode_FSConverter(script, &path) == 0) {
+        return NULL;
+    }
+    debugger_script_path = PyBytes_AS_STRING(path);
+#ifdef MS_WINDOWS
+    PyObject *unicode_path;
+    if (PyUnicode_FSDecoder(path, &unicode_path) < 0) {
+        goto error;
+    }
+    // Use UTF-16 (wide char) version of the path for permission checks
+    wchar_t *debugger_script_path_w = PyUnicode_AsWideCharString(unicode_path, NULL);
+    Py_DECREF(unicode_path);
+    if (debugger_script_path_w == NULL) {
+        goto error;
+    }
+    DWORD attr = GetFileAttributesW(debugger_script_path_w);
+    if (attr == INVALID_FILE_ATTRIBUTES) {
+        DWORD err = GetLastError();
+        PyMem_Free(debugger_script_path_w);
+        if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) {
+            PyErr_SetString(PyExc_FileNotFoundError, "Script file does not exist");
+        }
+        else if (err == ERROR_ACCESS_DENIED) {
+            PyErr_SetString(PyExc_PermissionError, "Script file cannot be read");
+        }
+        else {
+            PyErr_SetFromWindowsErr(err);
+        }
+        goto error;
+    }
+    PyMem_Free(debugger_script_path_w);
+#else // MS_WINDOWS
+    if (access(debugger_script_path, F_OK | R_OK) != 0) {
+        switch (errno) {
+            case ENOENT:
+                PyErr_SetString(PyExc_FileNotFoundError, "Script file does not exist");
+                break;
+            case EACCES:
+                PyErr_SetString(PyExc_PermissionError, "Script file cannot be read");
+                break;
+            default:
+                PyErr_SetFromErrno(PyExc_OSError);
+        }
+        goto error;
+    }
+#endif // MS_WINDOWS
+    if (_PySysRemoteDebug_SendExec(pid, 0, debugger_script_path) < 0) {
+        goto error;
+    }
+
+    Py_DECREF(path);
+    Py_RETURN_NONE;
+
+error:
+    Py_DECREF(path);
+    return NULL;
+}
+
+
+
 /*[clinic input]
 sys._dump_tracelets
 
@@ -2526,7 +2654,9 @@ sys__is_gil_enabled_impl(PyObject *module)
 }
 
 
+#ifndef MS_WINDOWS
 static PerfMapState perf_map_state;
+#endif
 
 PyAPI_FUNC(int) PyUnstable_PerfMapState_Init(void) {
 #ifndef MS_WINDOWS
@@ -2689,6 +2819,8 @@ static PyMethodDef sys_methods[] = {
     SYS_ACTIVATE_STACK_TRAMPOLINE_METHODDEF
     SYS_DEACTIVATE_STACK_TRAMPOLINE_METHODDEF
     SYS_IS_STACK_TRAMPOLINE_ACTIVE_METHODDEF
+    SYS_IS_REMOTE_DEBUG_ENABLED_METHODDEF
+    SYS_REMOTE_EXEC_METHODDEF
     SYS_UNRAISABLEHOOK_METHODDEF
     SYS_GET_INT_MAX_STR_DIGITS_METHODDEF
     SYS_SET_INT_MAX_STR_DIGITS_METHODDEF
@@ -3213,6 +3345,8 @@ static PyStructSequence_Field flags_fields[] = {
     {"safe_path", "-P"},
     {"int_max_str_digits",      "-X int_max_str_digits"},
     {"gil",                     "-X gil"},
+    {"thread_inherit_context",  "-X thread_inherit_context"},
+    {"context_aware_warnings",    "-X context_aware_warnings"},
     {0}
 };
 
@@ -3313,6 +3447,8 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
 #else
     SetFlagObj(PyLong_FromLong(1));
 #endif
+    SetFlag(config->thread_inherit_context);
+    SetFlag(config->context_aware_warnings);
 #undef SetFlagObj
 #undef SetFlag
     return 0;
@@ -3852,6 +3988,71 @@ error:
 
 PyObject *_Py_CreateMonitoringObject(void);
 
+/*[clinic input]
+module _jit
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=10952f74d7bbd972]*/
+
+PyDoc_STRVAR(_jit_doc, "Utilities for observing just-in-time compilation.");
+
+/*[clinic input]
+_jit.is_available -> bool
+Return True if the current Python executable supports JIT compilation, and False otherwise.
+[clinic start generated code]*/
+
+static int
+_jit_is_available_impl(PyObject *module)
+/*[clinic end generated code: output=6849a9cd2ff4aac9 input=03add84aa8347cf1]*/
+{
+    (void)module;
+#ifdef _Py_TIER2
+    return true;
+#else
+    return false;
+#endif
+}
+
+/*[clinic input]
+_jit.is_enabled -> bool
+Return True if JIT compilation is enabled for the current Python process (implies sys._jit.is_available()), and False otherwise.
+[clinic start generated code]*/
+
+static int
+_jit_is_enabled_impl(PyObject *module)
+/*[clinic end generated code: output=55865f8de993fe42 input=02439394da8e873f]*/
+{
+    (void)module;
+    return _PyInterpreterState_GET()->jit;
+}
+
+/*[clinic input]
+_jit.is_active -> bool
+Return True if the topmost Python frame is currently executing JIT code (implies sys._jit.is_enabled()), and False otherwise.
+[clinic start generated code]*/
+
+static int
+_jit_is_active_impl(PyObject *module)
+/*[clinic end generated code: output=7facca06b10064d4 input=be2fcd8a269d9b72]*/
+{
+    (void)module;
+    return _PyThreadState_GET()->current_executor != NULL;
+}
+
+static PyMethodDef _jit_methods[] = {
+    _JIT_IS_AVAILABLE_METHODDEF
+    _JIT_IS_ENABLED_METHODDEF
+    _JIT_IS_ACTIVE_METHODDEF
+    {NULL}
+};
+
+static struct PyModuleDef _jit_module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "sys._jit",
+    .m_doc = _jit_doc,
+    .m_size = -1,
+    .m_methods = _jit_methods,
+};
+
 /* Create sys module without all attributes.
    _PySys_UpdateConfig() should be called later to add remaining attributes. */
 PyStatus
@@ -3910,6 +4111,16 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     int err = PyDict_SetItemString(sysdict, "monitoring", monitoring);
     Py_DECREF(monitoring);
     if (err < 0) {
+        goto error;
+    }
+
+    PyObject *_jit = _PyModule_CreateInitialized(&_jit_module, PYTHON_API_VERSION);
+    if (_jit == NULL) {
+        goto error;
+    }
+    err = PyDict_SetItemString(sysdict, "_jit", _jit);
+    Py_DECREF(_jit);
+    if (err) {
         goto error;
     }
 

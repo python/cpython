@@ -1,1 +1,0 @@
-:class:`configparser.ConfigParser`: do not write an empty unnamed section

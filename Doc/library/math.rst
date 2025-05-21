@@ -144,8 +144,7 @@ Number-theoretic functions
 
 .. function:: factorial(n)
 
-   Return *n* factorial as an integer.  Raises :exc:`ValueError` if *n* is not integral or
-   is negative.
+   Return factorial of the nonnegative integer *n*.
 
    .. versionchanged:: 3.10
       Floats with integral values (like ``5.0``) are no longer accepted.
@@ -350,8 +349,8 @@ Floating point manipulation functions
 
    *abs_tol* is the absolute tolerance; it defaults to ``0.0`` and it must be
    nonnegative.  When comparing ``x`` to ``0.0``, ``isclose(x, 0)`` is computed
-   as ``abs(x) <= rel_tol  * abs(x)``, which is ``False`` for any ``x`` and
-   rel_tol less than ``1.0``.  So add an appropriate positive abs_tol argument
+   as ``abs(x) <= rel_tol  * abs(x)``, which is ``False`` for any nonzero ``x`` and
+   *rel_tol* less than ``1.0``.  So add an appropriate positive *abs_tol* argument
    to the call.
 
    The IEEE 754 special values of ``NaN``, ``inf``, and ``-inf`` will be

@@ -314,6 +314,10 @@ Standard names are defined for the following types:
 
    .. versionadded:: 3.10
 
+   .. versionchanged:: 3.14
+
+      This is now an alias for :class:`typing.Union`.
+
 .. class:: TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)
 
    The type of traceback objects such as found in ``sys.exception().__traceback__``.

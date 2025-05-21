@@ -648,7 +648,7 @@ class LocaleHTMLCalendar(HTMLCalendar):
             return super().formatmonthname(theyear, themonth, withyear)
 
 
-class _CLIDemoCalendar(LocaleTextCalendar):
+class _CLIDemoCalendar(TextCalendar):
     def __init__(self, highlight_day=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.highlight_day = highlight_day
@@ -752,6 +752,12 @@ class _CLIDemoCalendar(LocaleTextCalendar):
         return ''.join(v)
 
 
+class _CLIDemoLocaleCalendar(LocaleTextCalendar, _CLIDemoCalendar):
+    def __init__(self, highlight_day=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.highlight_day = highlight_day
+
+
 # Support for old module level interface
 c = TextCalendar()
 
@@ -804,7 +810,7 @@ def timegm(tuple):
 
 def main(args=None):
     import argparse
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     textgroup = parser.add_argument_group('text only arguments')
     htmlgroup = parser.add_argument_group('html only arguments')
     textgroup.add_argument(
@@ -893,7 +899,7 @@ def main(args=None):
             write(cal.formatyearpage(options.year, **optdict))
     else:
         if options.locale:
-            cal = _CLIDemoCalendar(highlight_day=today, locale=locale)
+            cal = _CLIDemoLocaleCalendar(highlight_day=today, locale=locale)
         else:
             cal = _CLIDemoCalendar(highlight_day=today)
         cal.setfirstweekday(options.first_weekday)

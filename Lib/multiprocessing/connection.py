@@ -76,7 +76,7 @@ def arbitrary_address(family):
     if family == 'AF_INET':
         return ('localhost', 0)
     elif family == 'AF_UNIX':
-        return tempfile.mktemp(prefix='listener-', dir=util.get_temp_dir())
+        return tempfile.mktemp(prefix='sock-', dir=util.get_temp_dir())
     elif family == 'AF_PIPE':
         return tempfile.mktemp(prefix=r'\\.\pipe\pyc-%d-%d-' %
                                (os.getpid(), next(_mmap_counter)), dir="")
@@ -322,22 +322,32 @@ if _winapi:
                 try:
                     ov, err = _winapi.ReadFile(self._handle, bsize,
                                                 overlapped=True)
+
+                    sentinel = object()
+                    return_value = sentinel
                     try:
-                        if err == _winapi.ERROR_IO_PENDING:
-                            waitres = _winapi.WaitForMultipleObjects(
-                                [ov.event], False, INFINITE)
-                            assert waitres == WAIT_OBJECT_0
+                        try:
+                            if err == _winapi.ERROR_IO_PENDING:
+                                waitres = _winapi.WaitForMultipleObjects(
+                                    [ov.event], False, INFINITE)
+                                assert waitres == WAIT_OBJECT_0
+                        except:
+                            ov.cancel()
+                            raise
+                        finally:
+                            nread, err = ov.GetOverlappedResult(True)
+                            if err == 0:
+                                f = io.BytesIO()
+                                f.write(ov.getbuffer())
+                                return_value = f
+                            elif err == _winapi.ERROR_MORE_DATA:
+                                return_value = self._get_more_data(ov, maxsize)
                     except:
-                        ov.cancel()
-                        raise
-                    finally:
-                        nread, err = ov.GetOverlappedResult(True)
-                        if err == 0:
-                            f = io.BytesIO()
-                            f.write(ov.getbuffer())
-                            return f
-                        elif err == _winapi.ERROR_MORE_DATA:
-                            return self._get_more_data(ov, maxsize)
+                        if return_value is sentinel:
+                            raise
+
+                    if return_value is not sentinel:
+                        return return_value
                 except OSError as e:
                     if e.winerror == _winapi.ERROR_BROKEN_PIPE:
                         raise EOFError

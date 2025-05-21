@@ -14,6 +14,7 @@
 #include "pycore_object.h"        // _PyObject_Init(), _PyDebugAllocatorStats()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_stackref.h"      // PyStackRef_AsPyObjectBorrow()
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 
 #include <float.h>                // DBL_MAX
@@ -134,40 +135,12 @@ PyFloat_FromDouble(double fval)
     return (PyObject *) op;
 }
 
-#ifdef Py_GIL_DISABLED
-
-PyObject *_PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value)
+_PyStackRef _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value)
 {
-    PyStackRef_CLOSE(left);
-    PyStackRef_CLOSE(right);
-    return PyFloat_FromDouble(value);
+    PyStackRef_CLOSE_SPECIALIZED(left, _PyFloat_ExactDealloc);
+    PyStackRef_CLOSE_SPECIALIZED(right, _PyFloat_ExactDealloc);
+    return PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(value));
 }
-
-#else // Py_GIL_DISABLED
-
-PyObject *_PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value)
-{
-    PyObject *left_o = PyStackRef_AsPyObjectSteal(left);
-    PyObject *right_o = PyStackRef_AsPyObjectSteal(right);
-    if (Py_REFCNT(left_o) == 1) {
-        ((PyFloatObject *)left_o)->ob_fval = value;
-        _Py_DECREF_SPECIALIZED(right_o, _PyFloat_ExactDealloc);
-        return left_o;
-    }
-    else if (Py_REFCNT(right_o) == 1)  {
-        ((PyFloatObject *)right_o)->ob_fval = value;
-        _Py_DECREF_NO_DEALLOC(left_o);
-        return right_o;
-    }
-    else {
-        PyObject *result = PyFloat_FromDouble(value);
-        _Py_DECREF_NO_DEALLOC(left_o);
-        _Py_DECREF_NO_DEALLOC(right_o);
-        return result;
-    }
-}
-
-#endif // Py_GIL_DISABLED
 
 static PyObject *
 float_from_string_inner(const char *s, Py_ssize_t len, void *obj)
@@ -1270,8 +1243,8 @@ Create a floating-point number from a hexadecimal string.
 [clinic start generated code]*/
 
 static PyObject *
-float_fromhex(PyTypeObject *type, PyObject *string)
-/*[clinic end generated code: output=46c0274d22b78e82 input=0407bebd354bca89]*/
+float_fromhex_impl(PyTypeObject *type, PyObject *string)
+/*[clinic end generated code: output=c54b4923552e5af5 input=0407bebd354bca89]*/
 {
     PyObject *result;
     double x;
@@ -1684,8 +1657,8 @@ Convert real number to a floating-point number.
 [clinic start generated code]*/
 
 static PyObject *
-float_from_number(PyTypeObject *type, PyObject *number)
-/*[clinic end generated code: output=bbcf05529fe907a3 input=1f8424d9bc11866a]*/
+float_from_number_impl(PyTypeObject *type, PyObject *number)
+/*[clinic end generated code: output=dda7e4466ab7068d input=1f8424d9bc11866a]*/
 {
     if (PyFloat_CheckExact(number) && type == &PyFloat_Type) {
         Py_INCREF(number);
@@ -2048,14 +2021,13 @@ PyFloat_Pack2(double x, char *data, int le)
         bits = 0;
     }
     else if (isnan(x)) {
-        /* There are 2046 distinct half-precision NaNs (1022 signaling and
-           1024 quiet), but there are only two quiet NaNs that don't arise by
-           quieting a signaling NaN; we get those by setting the topmost bit
-           of the fraction field and clearing all other fraction bits. We
-           choose the one with the appropriate sign. */
         sign = (copysign(1.0, x) == -1.0);
         e = 0x1f;
-        bits = 512;
+
+        uint64_t v;
+        memcpy(&v, &x, sizeof(v));
+        v &= 0xffc0000000000ULL;
+        bits = (unsigned short)(v >> 42); /* NaN's type & payload */
     }
     else {
         sign = (x < 0.0);
@@ -2219,6 +2191,40 @@ PyFloat_Pack4(double x, char *data, int le)
         if (isinf(y) && !isinf(x))
             goto Overflow;
 
+        /* correct y if x was a sNaN, transformed to qNaN by conversion */
+        if (isnan(x)) {
+            uint64_t v;
+
+            memcpy(&v, &x, 8);
+#ifndef __riscv
+            if ((v & (1ULL << 51)) == 0) {
+                uint32_t u32;
+                memcpy(&u32, &y, 4);
+                u32 &= ~(1 << 22); /* make sNaN */
+                memcpy(&y, &u32, 4);
+            }
+#else
+            uint32_t u32;
+
+            memcpy(&u32, &y, 4);
+            if ((v & (1ULL << 51)) == 0) {
+                u32 &= ~(1 << 22);
+            }
+            /* Workaround RISC-V: "If a NaN value is converted to a
+             * different floating-point type, the result is the
+             * canonical NaN of the new type".  The canonical NaN here
+             * is a positive qNaN with zero payload. */
+            if (v & (1ULL << 63)) {
+                u32 |= (1 << 31); /* set sign */
+            }
+            /* add payload */
+            u32 -= (u32 & 0x3fffff);
+            u32 += (uint32_t)((v & 0x7ffffffffffffULL) >> 29);
+
+            memcpy(&y, &u32, 4);
+#endif
+        }
+
         unsigned char s[sizeof(float)];
         memcpy(s, &y, sizeof(float));
 
@@ -2353,7 +2359,9 @@ PyFloat_Pack8(double x, char *data, int le)
         return -1;
     }
     else {
-        const unsigned char *s = (unsigned char*)&x;
+        unsigned char as_bytes[8];
+        memcpy(as_bytes, &x, 8);
+        const unsigned char *s = as_bytes;
         int i, incr = 1;
 
         if ((double_format == ieee_little_endian_format && !le)
@@ -2401,7 +2409,11 @@ PyFloat_Unpack2(const char *data, int le)
         }
         else {
             /* NaN */
-            return sign ? -fabs(Py_NAN) : fabs(Py_NAN);
+            uint64_t v = sign ? 0xfff0000000000000ULL : 0x7ff0000000000000ULL;
+
+            v += (uint64_t)f << 42; /* add NaN's type & payload */
+            memcpy(&x, &v, sizeof(v));
+            return x;
         }
     }
 
@@ -2495,6 +2507,41 @@ PyFloat_Unpack4(const char *data, int le)
         }
         else {
             memcpy(&x, p, 4);
+        }
+
+        /* return sNaN double if x was sNaN float */
+        if (isnan(x)) {
+            uint32_t v;
+            memcpy(&v, &x, 4);
+
+#ifndef __riscv
+            if ((v & (1 << 22)) == 0) {
+                double y = x; /* will make qNaN double */
+                uint64_t u64;
+                memcpy(&u64, &y, 8);
+                u64 &= ~(1ULL << 51); /* make sNaN */
+                memcpy(&y, &u64, 8);
+                return y;
+            }
+#else
+            double y = x;
+            uint64_t u64;
+
+            memcpy(&u64, &y, 8);
+            if ((v & (1 << 22)) == 0) {
+                u64 &= ~(1ULL << 51);
+            }
+            /* Workaround RISC-V, see PyFloat_Pack4() */
+            if (v & (1 << 31)) {
+                u64 |= (1ULL << 63); /* set sign */
+            }
+            /* add payload */
+            u64 -= (u64 & 0x7ffffffffffffULL);
+            u64 += ((v & 0x3fffffULL) << 29);
+
+            memcpy(&y, &u64, 8);
+            return y;
+#endif
         }
 
         return x;

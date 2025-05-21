@@ -52,6 +52,12 @@ get_testerror(PyObject *self) {
     return state->error;
 }
 
+static void
+simple_object_dealloc(PyObject *self)
+{
+    PyObject_Free(self);
+}
+
 /* Raise _testcapi.error with test_name + ": " + msg, and return NULL. */
 
 static PyObject *
@@ -171,7 +177,7 @@ static PyTypeObject _HashInheritanceTester_Type = {
     "hashinheritancetester",            /* Name of this type */
     sizeof(PyObject),           /* Basic object size */
     0,                          /* Item size for varobject */
-    (destructor)PyObject_Free,  /* tp_dealloc */
+    simple_object_dealloc,      /* tp_dealloc */
     0,                          /* tp_vectorcall_offset */
     0,                          /* tp_getattr */
     0,                          /* tp_setattr */
@@ -1737,7 +1743,7 @@ meth_o(PyObject* self, PyObject* obj)
 }
 
 static PyObject*
-meth_noargs(PyObject* self, PyObject* ignored)
+meth_noargs(PyObject* self, PyObject *Py_UNUSED(dummy))
 {
     return _null_to_none(self);
 }
@@ -2515,6 +2521,31 @@ code_offset_to_line(PyObject* self, PyObject* const* args, Py_ssize_t nargsf)
 }
 
 
+static int
+_reftrace_printer(PyObject *obj, PyRefTracerEvent event, void *counter_data)
+{
+    if (event == PyRefTracer_CREATE) {
+        printf("CREATE %s\n", Py_TYPE(obj)->tp_name);
+    }
+    else {  // PyRefTracer_DESTROY
+        printf("DESTROY %s\n", Py_TYPE(obj)->tp_name);
+    }
+    return 0;
+}
+
+// A simple reftrace printer for very simple tests
+static PyObject *
+toggle_reftrace_printer(PyObject *ob, PyObject *arg)
+{
+    if (arg == Py_True) {
+        PyRefTracer_SetTracer(_reftrace_printer, NULL);
+    }
+    else {
+        PyRefTracer_SetTracer(NULL, NULL);
+    }
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -2527,10 +2558,10 @@ static PyMethodDef TestMethods[] = {
     {"pyobject_repr_from_null", pyobject_repr_from_null, METH_NOARGS},
     {"pyobject_str_from_null",  pyobject_str_from_null, METH_NOARGS},
     {"pyobject_bytes_from_null", pyobject_bytes_from_null, METH_NOARGS},
-    {"test_capsule", (PyCFunction)test_capsule, METH_NOARGS},
-    {"test_from_contiguous", (PyCFunction)test_from_contiguous, METH_NOARGS},
+    {"test_capsule", test_capsule, METH_NOARGS},
+    {"test_from_contiguous", test_from_contiguous, METH_NOARGS},
 #if (defined(__linux__) || defined(__FreeBSD__)) && defined(__GNUC__)
-    {"test_pep3118_obsolete_write_locks", (PyCFunction)test_pep3118_obsolete_write_locks, METH_NOARGS},
+    {"test_pep3118_obsolete_write_locks", test_pep3118_obsolete_write_locks, METH_NOARGS},
 #endif
     {"getbuffer_with_null_view", getbuffer_with_null_view,       METH_O},
     {"PyBuffer_SizeFromFormat",  test_PyBuffer_SizeFromFormat,   METH_VARARGS},
@@ -2608,6 +2639,7 @@ static PyMethodDef TestMethods[] = {
     {"finalize_thread_hang", finalize_thread_hang, METH_O, NULL},
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
+    {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
@@ -2742,6 +2774,7 @@ typedef struct {
     PyObject *ao_iterator;
 } awaitObject;
 
+#define awaitObject_CAST(op)    ((awaitObject *)(op))
 
 static PyObject *
 awaitObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -2764,21 +2797,23 @@ awaitObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 
 static void
-awaitObject_dealloc(awaitObject *ao)
+awaitObject_dealloc(PyObject *op)
 {
+    awaitObject *ao = awaitObject_CAST(op);
     Py_CLEAR(ao->ao_iterator);
     Py_TYPE(ao)->tp_free(ao);
 }
 
 
 static PyObject *
-awaitObject_await(awaitObject *ao)
+awaitObject_await(PyObject *op)
 {
+    awaitObject *ao = awaitObject_CAST(op);
     return Py_NewRef(ao->ao_iterator);
 }
 
 static PyAsyncMethods awaitType_as_async = {
-    (unaryfunc)awaitObject_await,           /* am_await */
+    awaitObject_await,                      /* am_await */
     0,                                      /* am_aiter */
     0,                                      /* am_anext */
     0,                                      /* am_send  */
@@ -2790,7 +2825,7 @@ static PyTypeObject awaitType = {
     "awaitType",
     sizeof(awaitObject),                /* tp_basicsize */
     0,                                  /* tp_itemsize */
-    (destructor)awaitObject_dealloc,    /* destructor tp_dealloc */
+    awaitObject_dealloc,                /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -2845,8 +2880,9 @@ MyList_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 void
-MyList_dealloc(MyListObject* op)
+MyList_dealloc(PyObject *self)
 {
+    MyListObject *op = (MyListObject *)self;
     if (op->deallocated) {
         /* We cannot raise exceptions here but we still want the testsuite
          * to fail when we hit this */
@@ -2861,7 +2897,7 @@ static PyTypeObject MyList_Type = {
     "MyList",
     sizeof(MyListObject),
     0,
-    (destructor)MyList_dealloc,                 /* tp_dealloc */
+    MyList_dealloc,                             /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -2905,20 +2941,22 @@ typedef struct {
 } PyGenericAliasObject;
 
 static void
-generic_alias_dealloc(PyGenericAliasObject *self)
+generic_alias_dealloc(PyObject *op)
 {
+    PyGenericAliasObject *self = (PyGenericAliasObject*)op;
     Py_CLEAR(self->item);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static PyObject *
-generic_alias_mro_entries(PyGenericAliasObject *self, PyObject *bases)
+generic_alias_mro_entries(PyObject *op, PyObject *Py_UNUSED(bases))
 {
+    PyGenericAliasObject *self = (PyGenericAliasObject*)op;
     return PyTuple_Pack(1, self->item);
 }
 
 static PyMethodDef generic_alias_methods[] = {
-    {"__mro_entries__", _PyCFunction_CAST(generic_alias_mro_entries), METH_O, NULL},
+    {"__mro_entries__", generic_alias_mro_entries, METH_O, NULL},
     {NULL}  /* sentinel */
 };
 
@@ -2927,7 +2965,7 @@ static PyTypeObject GenericAlias_Type = {
     "GenericAlias",
     sizeof(PyGenericAliasObject),
     0,
-    .tp_dealloc = (destructor)generic_alias_dealloc,
+    .tp_dealloc = generic_alias_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_methods = generic_alias_methods,
 };
@@ -3058,10 +3096,11 @@ ContainerNoGC_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 }
 
 static void
-ContainerNoGC_dealloc(ContainerNoGCobject *self)
+ContainerNoGC_dealloc(PyObject *op)
 {
+    ContainerNoGCobject *self = (ContainerNoGCobject*)op;
     Py_DECREF(self->value);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static PyMemberDef ContainerNoGC_members[] = {
@@ -3074,7 +3113,7 @@ static PyTypeObject ContainerNoGC_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_testcapi.ContainerNoGC",
     sizeof(ContainerNoGCobject),
-    .tp_dealloc = (destructor)ContainerNoGC_dealloc,
+    .tp_dealloc = ContainerNoGC_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_members = ContainerNoGC_members,
     .tp_new = ContainerNoGC_new,

@@ -73,8 +73,9 @@ import sys
 import os
 import builtins
 import _sitebuiltins
-import io
+import _io as io
 import stat
+import errno
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
@@ -578,10 +579,15 @@ def register_readline():
         def write_history():
             try:
                 readline_module.write_history_file(history)
-            except (FileNotFoundError, PermissionError):
+            except FileNotFoundError, PermissionError:
                 # home directory does not exist or is not writable
                 # https://bugs.python.org/issue19891
                 pass
+            except OSError:
+                if errno.EROFS:
+                    pass  # gh-128066: read-only file system
+                else:
+                    raise
 
         atexit.register(write_history)
 

@@ -73,9 +73,11 @@ class BaseEventQueue:
         """
         Processes a character by updating the buffer and handling special key mappings.
         """
+        assert isinstance(char, (int, bytes))
         ord_char = char if isinstance(char, int) else ord(char)
-        char = bytes(bytearray((ord_char,)))
+        char = ord_char.to_bytes()
         self.buf.append(ord_char)
+
         if char in self.keymap:
             if self.keymap is self.compiled_keymap:
                 # sanity check, buffer is empty when a special key comes

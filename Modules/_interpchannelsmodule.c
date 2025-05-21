@@ -11,7 +11,9 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GetIDObject()
 
 #ifdef MS_WINDOWS
-#define WIN32_LEAN_AND_MEAN
+#ifndef WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>        // SwitchToThread()
 #elif defined(HAVE_SCHED_H)
 #include <sched.h>          // sched_yield()
@@ -1752,16 +1754,9 @@ static int
 channel_send(_channels *channels, int64_t cid, PyObject *obj,
              _waiting_t *waiting, int unboundop)
 {
-    PyInterpreterState *interp = _get_current_interp();
-    if (interp == NULL) {
-        return -1;
-    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyInterpreterState *interp = tstate->interp;
     int64_t interpid = PyInterpreterState_GetID(interp);
-
-    _PyXIData_lookup_context_t ctx;
-    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
-        return -1;
-    }
 
     // Look up the channel.
     PyThread_type_lock mutex = NULL;
@@ -1779,12 +1774,12 @@ channel_send(_channels *channels, int64_t cid, PyObject *obj,
     }
 
     // Convert the object to cross-interpreter data.
-    _PyXIData_t *data = GLOBAL_MALLOC(_PyXIData_t);
+    _PyXIData_t *data = _PyXIData_New();
     if (data == NULL) {
         PyThread_release_lock(mutex);
         return -1;
     }
-    if (_PyObject_GetXIData(&ctx, obj, data) != 0) {
+    if (_PyObject_GetXIDataNoFallback(tstate, obj, data) != 0) {
         PyThread_release_lock(mutex);
         GLOBAL_FREE(data);
         return -1;
@@ -2699,7 +2694,7 @@ add_channelid_type(PyObject *mod)
         Py_DECREF(cls);
         return NULL;
     }
-    if (ensure_xid_class(cls, _channelid_shared) < 0) {
+    if (ensure_xid_class(cls, GETDATA(_channelid_shared)) < 0) {
         Py_DECREF(cls);
         return NULL;
     }
@@ -2802,12 +2797,12 @@ set_channelend_types(PyObject *mod, PyTypeObject *send, PyTypeObject *recv)
     // Add and register the types.
     state->send_channel_type = (PyTypeObject *)Py_NewRef(send);
     state->recv_channel_type = (PyTypeObject *)Py_NewRef(recv);
-    if (ensure_xid_class(send, _channelend_shared) < 0) {
+    if (ensure_xid_class(send, GETDATA(_channelend_shared)) < 0) {
         Py_CLEAR(state->send_channel_type);
         Py_CLEAR(state->recv_channel_type);
         return -1;
     }
-    if (ensure_xid_class(recv, _channelend_shared) < 0) {
+    if (ensure_xid_class(recv, GETDATA(_channelend_shared)) < 0) {
         (void)clear_xid_class(state->send_channel_type);
         Py_CLEAR(state->send_channel_type);
         Py_CLEAR(state->recv_channel_type);
@@ -3593,7 +3588,7 @@ static struct PyModuleDef moduledef = {
     .m_slots = module_slots,
     .m_traverse = module_traverse,
     .m_clear = module_clear,
-    .m_free = (freefunc)module_free,
+    .m_free = module_free,
 };
 
 PyMODINIT_FUNC

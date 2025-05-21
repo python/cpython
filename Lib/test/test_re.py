@@ -1,7 +1,7 @@
 from test.support import (gc_collect, bigmemtest, _2G,
                           cpython_only, captured_stdout,
-                          check_disallow_instantiation, is_emscripten, is_wasi,
-                          warnings_helper, SHORT_TIMEOUT, CPUStopwatch, requires_resource)
+                          check_disallow_instantiation, linked_to_musl,
+                          warnings_helper, SHORT_TIMEOUT, Stopwatch, requires_resource)
 import locale
 import re
 import string
@@ -619,6 +619,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.fullmatch(r"a.*?b", "axxb").span(), (0, 4))
         self.assertIsNone(re.fullmatch(r"a+", "ab"))
         self.assertIsNone(re.fullmatch(r"abc$", "abc\n"))
+        self.assertIsNone(re.fullmatch(r"abc\z", "abc\n"))
         self.assertIsNone(re.fullmatch(r"abc\Z", "abc\n"))
         self.assertIsNone(re.fullmatch(r"(?m)abc$", "abc\n"))
         self.assertEqual(re.fullmatch(r"ab(?=c)cd", "abcd").span(), (0, 4))
@@ -802,6 +803,8 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search(r"\B(b.)\B",
                                    "abc bcd bc abxd", re.ASCII).group(1), "bx")
         self.assertEqual(re.search(r"^abc$", "\nabc\n", re.M).group(0), "abc")
+        self.assertEqual(re.search(r"^\Aabc\z$", "abc", re.M).group(0), "abc")
+        self.assertIsNone(re.search(r"^\Aabc\z$", "\nabc\n", re.M))
         self.assertEqual(re.search(r"^\Aabc\Z$", "abc", re.M).group(0), "abc")
         self.assertIsNone(re.search(r"^\Aabc\Z$", "\nabc\n", re.M))
         self.assertEqual(re.search(br"\b(b.)\b",
@@ -813,6 +816,8 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search(br"\B(b.)\B",
                                    b"abc bcd bc abxd", re.LOCALE).group(1), b"bx")
         self.assertEqual(re.search(br"^abc$", b"\nabc\n", re.M).group(0), b"abc")
+        self.assertEqual(re.search(br"^\Aabc\z$", b"abc", re.M).group(0), b"abc")
+        self.assertIsNone(re.search(br"^\Aabc\z$", b"\nabc\n", re.M))
         self.assertEqual(re.search(br"^\Aabc\Z$", b"abc", re.M).group(0), b"abc")
         self.assertIsNone(re.search(br"^\Aabc\Z$", b"\nabc\n", re.M))
         self.assertEqual(re.search(r"\d\D\w\W\s\S",
@@ -836,7 +841,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match(r"[\^a]+", 'a^').group(), 'a^')
         self.assertIsNone(re.match(r"[\^a]+", 'b'))
         re.purge()  # for warnings
-        for c in 'ceghijklmopqyzCEFGHIJKLMNOPQRTVXY':
+        for c in 'ceghijklmopqyCEFGHIJKLMNOPQRTVXY':
             with self.subTest(c):
                 self.assertRaises(re.PatternError, re.compile, '\\%c' % c)
         for c in 'ceghijklmopqyzABCEFGHIJKLMNOPQRTVXYZ':
@@ -2172,10 +2177,7 @@ class ReTests(unittest.TestCase):
         # with ignore case.
         self.assertEqual(re.fullmatch('[a-c]+', 'ABC', re.I).span(), (0, 3))
 
-    @unittest.skipIf(
-        is_emscripten or is_wasi,
-        "musl libc issue on Emscripten/WASI, bpo-46390"
-    )
+    @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
     def test_locale_caching(self):
         # Issue #22410
         oldlocale = locale.setlocale(locale.LC_CTYPE)
@@ -2212,10 +2214,7 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.match(b'(?Li)\xc5', b'\xe5'))
         self.assertIsNone(re.match(b'(?Li)\xe5', b'\xc5'))
 
-    @unittest.skipIf(
-        is_emscripten or is_wasi,
-        "musl libc issue on Emscripten/WASI, bpo-46390"
-    )
+    @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
     def test_locale_compiled(self):
         oldlocale = locale.setlocale(locale.LC_CTYPE)
         self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
@@ -2473,7 +2472,7 @@ class ReTests(unittest.TestCase):
     @requires_resource('cpu')
     def test_search_anchor_at_beginning(self):
         s = 'x'*10**7
-        with CPUStopwatch() as stopwatch:
+        with Stopwatch() as stopwatch:
             for p in r'\Ay', r'^y':
                 self.assertIsNone(re.search(p, s))
                 self.assertEqual(re.split(p, s), [s])
@@ -2614,8 +2613,8 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.findall(r'(?>(?:ab){1,3})', 'ababc'), ['abab'])
 
     def test_bug_gh91616(self):
-        self.assertTrue(re.fullmatch(r'(?s:(?>.*?\.).*)\Z', "a.txt")) # reproducer
-        self.assertTrue(re.fullmatch(r'(?s:(?=(?P<g0>.*?\.))(?P=g0).*)\Z', "a.txt"))
+        self.assertTrue(re.fullmatch(r'(?s:(?>.*?\.).*)\z', "a.txt")) # reproducer
+        self.assertTrue(re.fullmatch(r'(?s:(?=(?P<g0>.*?\.))(?P=g0).*)\z', "a.txt"))
 
     def test_bug_gh100061(self):
         # gh-100061

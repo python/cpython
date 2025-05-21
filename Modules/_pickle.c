@@ -9,17 +9,18 @@
 #endif
 
 #include "Python.h"
-#include "pycore_bytesobject.h"       // _PyBytesWriter
-#include "pycore_ceval.h"             // _Py_EnterRecursiveCall()
-#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
-#include "pycore_long.h"              // _PyLong_AsByteArray()
-#include "pycore_moduleobject.h"      // _PyModule_GetState()
-#include "pycore_object.h"            // _PyNone_Type
-#include "pycore_pyerrors.h"          // _PyErr_FormatNote
-#include "pycore_pystate.h"           // _PyThreadState_GET()
-#include "pycore_runtime.h"           // _Py_ID()
-#include "pycore_setobject.h"         // _PySet_NextEntry()
-#include "pycore_sysmodule.h"         // _PySys_GetSizeOf()
+#include "pycore_bytesobject.h"   // _PyBytesWriter
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_long.h"          // _PyLong_AsByteArray()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _PyNone_Type
+#include "pycore_pyerrors.h"      // _PyErr_FormatNote
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_sysmodule.h"     // _PySys_GetSizeOf()
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #include <stdlib.h>               // strtol()
 
@@ -7969,9 +7970,9 @@ pickle_clear(PyObject *m)
 }
 
 static void
-pickle_free(PyObject *m)
+pickle_free(void *m)
 {
-    _Pickle_ClearState(_Pickle_GetState(m));
+    _Pickle_ClearState(_Pickle_GetState((PyObject*)m));
 }
 
 static int
@@ -8077,7 +8078,7 @@ static struct PyModuleDef _picklemodule = {
     .m_slots = pickle_slots,
     .m_traverse = pickle_traverse,
     .m_clear = pickle_clear,
-    .m_free = (freefunc)pickle_free,
+    .m_free = pickle_free,
 };
 
 PyMODINIT_FUNC

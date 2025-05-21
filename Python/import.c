@@ -8,6 +8,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // struct _import_runtime_state
 #include "pycore_magic_number.h"  // PYC_MAGIC_NUMBER_TOKEN
+#include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_namespace.h"     // _PyNamespace_Type
 #include "pycore_object.h"        // _Py_SetImmortal()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
@@ -17,6 +18,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
 #include "pycore_time.h"          // _PyTime_AsMicroseconds()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
@@ -101,6 +103,15 @@ static struct _inittab *inittab_copy = NULL;
 #define FIND_AND_LOAD(interp) \
     (interp)->imports.find_and_load
 
+#define _IMPORT_TIME_HEADER(interp)                                           \
+    do {                                                                      \
+        if (FIND_AND_LOAD((interp)).header) {                                 \
+            fputs("import time: self [us] | cumulative | imported package\n", \
+                  stderr);                                                    \
+            FIND_AND_LOAD((interp)).header = 0;                               \
+        }                                                                     \
+    } while (0)
+
 
 /*******************/
 /* the import lock */
@@ -149,6 +160,20 @@ PyObject *
 _PyImport_GetModules(PyInterpreterState *interp)
 {
     return MODULES(interp);
+}
+
+PyObject *
+_PyImport_GetModulesRef(PyInterpreterState *interp)
+{
+    _PyImport_AcquireLock(interp);
+    PyObject *modules = MODULES(interp);
+    if (modules == NULL) {
+        /* The interpreter hasn't been initialized yet. */
+        modules = Py_None;
+    }
+    Py_INCREF(modules);
+    _PyImport_ReleaseLock(interp);
+    return modules;
 }
 
 void
@@ -230,9 +255,13 @@ import_ensure_initialized(PyInterpreterState *interp, PyObject *mod, PyObject *n
         rc = _PyModuleSpec_IsInitializing(spec);
         Py_DECREF(spec);
     }
-    if (rc <= 0) {
+    if (rc == 0) {
+        goto done;
+    }
+    else if (rc < 0) {
         return rc;
     }
+
     /* Wait until module is done importing. */
     PyObject *value = PyObject_CallMethodOneArg(
         IMPORTLIB(interp), &_Py_ID(_lock_unlock_module), name);
@@ -240,6 +269,19 @@ import_ensure_initialized(PyInterpreterState *interp, PyObject *mod, PyObject *n
         return -1;
     }
     Py_DECREF(value);
+
+done:
+    /* When -X importtime=2, print an import time entry even if an
+       imported module has already been loaded.
+     */
+    if (_PyInterpreterState_GetConfig(interp)->import_time == 2) {
+        _IMPORT_TIME_HEADER(interp);
+#define import_level FIND_AND_LOAD(interp).import_level
+        fprintf(stderr, "import time: cached    | cached     | %*s\n",
+                import_level*2, PyUnicode_AsUTF8(name));
+#undef import_level
+    }
+
     return 0;
 }
 
@@ -1146,8 +1188,9 @@ get_cached_m_dict(struct extensions_cache_value *value,
 }
 
 static void
-del_extensions_cache_value(struct extensions_cache_value *value)
+del_extensions_cache_value(void *raw)
 {
+    struct extensions_cache_value *value = raw;
     if (value != NULL) {
         del_cached_m_dict(value);
         del_cached_def(value);
@@ -1248,7 +1291,7 @@ _extensions_cache_init(void)
         hashtable_hash_str,
         hashtable_compare_str,
         hashtable_destroy_str,  // key
-        (_Py_hashtable_destroy_func)del_extensions_cache_value,  // value
+        del_extensions_cache_value,  // value
         &alloc
     );
     if (EXTENSIONS.hashtable == NULL) {
@@ -3391,8 +3434,10 @@ PyImport_ImportModule(const char *name)
  * ImportError instead of blocking.
  *
  * Returns the module object with incremented ref count.
+ *
+ * Removed in 3.15, but kept for stable ABI compatibility.
  */
-PyObject *
+PyAPI_FUNC(PyObject *)
 PyImport_ImportModuleNoBlock(const char *name)
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
@@ -3669,13 +3714,7 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
      * _PyDict_GetItemIdWithError().
      */
     if (import_time) {
-#define header FIND_AND_LOAD(interp).header
-        if (header) {
-            fputs("import time: self [us] | cumulative | imported package\n",
-                  stderr);
-            header = 0;
-        }
-#undef header
+        _IMPORT_TIME_HEADER(interp);
 
         import_level++;
         // ignore error: don't block import if reading the clock fails
@@ -3815,15 +3854,17 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                 }
 
                 final_mod = import_get_module(tstate, to_return);
-                Py_DECREF(to_return);
                 if (final_mod == NULL) {
                     if (!_PyErr_Occurred(tstate)) {
                         _PyErr_Format(tstate, PyExc_KeyError,
                                       "%R not in sys.modules as expected",
                                       to_return);
                     }
+                    Py_DECREF(to_return);
                     goto error;
                 }
+
+                Py_DECREF(to_return);
             }
         }
         else {

@@ -1,1 +1,0 @@
-Extend support for specifying custom keywords in :program:`pygettext`.

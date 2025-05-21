@@ -316,15 +316,15 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
             if idx < last_part_idx:
                 results.append(any_sep)
     res = ''.join(results)
-    return fr'(?s:{res})\Z'
+    return fr'(?s:{res})\z'
 
 
 @functools.lru_cache(maxsize=512)
-def _compile_pattern(pat, sep, case_sensitive, recursive=True):
+def _compile_pattern(pat, seps, case_sensitive, recursive=True):
     """Compile given glob pattern to a re.Pattern object (observing case
     sensitivity)."""
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
-    regex = translate(pat, recursive=recursive, include_hidden=True, seps=sep)
+    regex = translate(pat, recursive=recursive, include_hidden=True, seps=seps)
     return re.compile(regex, flags=flags).match
 
 
@@ -358,10 +358,17 @@ class _GlobberBase:
         """
         raise NotImplementedError
 
+    @staticmethod
+    def stringify_path(path):
+        """Converts the path to a string object
+        """
+        raise NotImplementedError
+
     # High-level methods
 
-    def compile(self, pat):
-        return _compile_pattern(pat, self.sep, self.case_sensitive, self.recursive)
+    def compile(self, pat, altsep=None):
+        seps = (self.sep, altsep) if altsep else self.sep
+        return _compile_pattern(pat, seps, self.case_sensitive, self.recursive)
 
     def selector(self, parts):
         """Returns a function that selects from a given path, walking and
@@ -465,8 +472,9 @@ class _GlobberBase:
         select_next = self.selector(parts)
 
         def select_recursive(path, exists=False):
-            match_pos = len(str(path))
-            if match is None or match(str(path), match_pos):
+            path_str = self.stringify_path(path)
+            match_pos = len(path_str)
+            if match is None or match(path_str, match_pos):
                 yield from select_next(path, exists)
             stack = [path]
             while stack:
@@ -488,7 +496,7 @@ class _GlobberBase:
                         pass
 
                     if is_dir or not dir_only:
-                        entry_path_str = str(entry_path)
+                        entry_path_str = self.stringify_path(entry_path)
                         if dir_only:
                             entry_path = self.concat_path(entry_path, self.sep)
                         if match is None or match(entry_path_str, match_pos):
@@ -528,19 +536,6 @@ class _StringGlobber(_GlobberBase):
             entries = list(scandir_it)
         return ((entry, entry.name, entry.path) for entry in entries)
 
-
-class _PathGlobber(_GlobberBase):
-    """Provides shell-style pattern matching and globbing for pathlib paths.
-    """
-
     @staticmethod
-    def lexists(path):
-        return path.info.exists(follow_symlinks=False)
-
-    @staticmethod
-    def scandir(path):
-        return ((child.info, child.name, child) for child in path.iterdir())
-
-    @staticmethod
-    def concat_path(path, text):
-        return path.with_segments(str(path) + text)
+    def stringify_path(path):
+        return path  # Already a string.

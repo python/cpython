@@ -1,1 +1,0 @@
-stdlib configparser will now attempt to validate that keys it writes will not result in file corruption (creating a file unable to be accurately parsed by a future read() call from the same parser). Attempting a corrupting write() will raise an InvalidWriteError.
