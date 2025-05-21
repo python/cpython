@@ -52,8 +52,6 @@ Glossary
       can be retrieved by calling :func:`annotationlib.get_annotations`
       on modules, classes, and functions, respectively.
 
-      Note that an *instance* of a :term:`class` cannot be annotated.
-
       See :term:`variable annotation`, :term:`function annotation`, :pep:`484`,
       :pep:`526`, and :pep:`649`, which describe this functionality.
       Also see :ref:`annotations-howto`
