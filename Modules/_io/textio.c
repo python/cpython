@@ -1573,17 +1573,73 @@ _io_TextIOWrapper_detach_impl(textio *self)
     return buffer;
 }
 
+/* Prepend bytes to pending_bytes.
+
+   At the front because other bytes were added via TextIOWrapper.write
+   during buffer.write (see: gh-119506, gh-118138). */
+static int
+_textiowrapper_prepend(textio *self, PyObject *unwritten)
+{
+    assert(PyBytes_CheckExact(unwritten));
+
+    /* Ensure pending_bytes and pending_bytes_count are protected. */
+    _Py_AssertHoldsTstate();
+
+    if (self->pending_bytes == NULL) {
+        self->pending_bytes = unwritten;
+        assert(self->pending_bytes == 0);
+        self->pending_bytes_count += PyBytes_GET_SIZE(unwritten);
+    }
+    else if (!PyList_CheckExact(self->pending_bytes)) {
+        PyObject *list = PyList_New(2);
+        if (list == NULL) {
+            Py_DECREF(unwritten);
+            return -1;
+        }
+        // Since Python 3.12, allocating GC object won't trigger GC and release
+        // GIL. See https://github.com/python/cpython/issues/97922
+        assert(!PyList_CheckExact(self->pending_bytes));
+        PyList_SET_ITEM(list, 0, unwritten);
+        PyList_SET_ITEM(list, 1, self->pending_bytes);
+        self->pending_bytes = list;
+        self->pending_bytes_count += PyBytes_GET_SIZE(unwritten);
+    }
+    else {
+        PyList_Insert(self->pending_bytes, 0, unwritten);
+        self->pending_bytes_count += PyBytes_GET_SIZE(unwritten);
+        Py_DECREF(unwritten);
+    }
+    return 0;
+}
+
 /* Flush the internal write buffer. This doesn't explicitly flush the
    underlying buffered object, though. */
 static int
 _textiowrapper_writeflush(textio *self)
 {
+    /* Validate have exclusive access to members.
+
+       NOTE: this code relies on GIL / @critical_section. It needs to ensure
+       state is "safe" before/after calls to other Python code.
+
+       In particular:
+          _textiowrapper_writeflush() calls buffer.write(). self->pending_bytes
+          can be appended during buffer->write() or other thread.
+
+       At the end of this function either pending_bytes needs to be NULL _or_
+       there needs to be an exception.
+
+       For more details see: gh-119506, gh-118138. */
+    _Py_AssertHoldsTstate();
+
     if (self->pending_bytes == NULL)
         return 0;
 
     PyObject *pending = self->pending_bytes;
+    Py_ssize_t bytes_to_write = self->pending_bytes_count;
     PyObject *b;
 
+    /* Make pending_bytes into a contiguous bytes. */
     if (PyBytes_Check(pending)) {
         b = Py_NewRef(pending);
     }
@@ -1628,20 +1684,140 @@ _textiowrapper_writeflush(textio *self)
         assert(pos == self->pending_bytes_count);
     }
 
+
+    /* pending_bytes is now owned by this function. */
     self->pending_bytes_count = 0;
     self->pending_bytes = NULL;
     Py_DECREF(pending);
 
     PyObject *ret;
-    do {
+    /* Continue until all data written or an error occurs. */
+    while (1) {
+        /* note: gh-119506 self->pending_bytes and self->pending_bytes_count
+           may be altered during this call. */
         ret = PyObject_CallMethodOneArg(self->buffer, &_Py_ID(write), b);
-    } while (ret == NULL && _PyIO_trap_eintr());
+
+        /* Validate have exclusive access to members. */
+        _Py_AssertHoldsTstate();
+
+        if (ret == NULL) {
+            /* PEP 475 Retry on EINTR */
+            if (_PyIO_trap_eintr()) {
+                continue;
+            }
+
+            /* Try to find out how many bytes were written before exception. */
+            PyObject *exc = PyErr_GetRaisedException();
+            /* If it's a BlockingIOError, use the bytes written. */
+            if (PyErr_GivenExceptionMatches(exc, PyExc_BlockingIOError)) {
+                PyOSErrorObject *err = (PyOSErrorObject *)exc;
+                bytes_to_write -= err->written;
+                if (bytes_to_write) {
+                    pending = PyBytes_FromStringAndSize(
+                        PyBytes_AS_STRING(b) + err->written,
+                        self->pending_bytes_count);
+                    if (pending) {
+                        /* _textiowrapper can raise an exception if it fails to
+                            allocate a list, that just adds to active error
+                            list. Already exiting as fast as possible. */
+                        _textiowrapper_prepend(self, pending);
+                    }
+                    else {
+                        PyErr_SetString(PyExc_MemoryError,
+                            "lost unwritten bytes during partial write");
+
+                    }
+                }
+            }
+            /* XXX: For other exceptions this assumes all data was written. */
+            /* Re-raise exceptions. */
+            PyErr_SetRaisedException(exc);
+            Py_DECREF(b);  /* note: ret is NULL / no need to decref */
+            return -1;
+        }
+
+        /* Try to determine bytes written from return value
+
+           XXX: On unexpected return this matches previous behavior and asumes
+                all data was written. */
+        /* OPEN QUESTION: None is common in CPython, should this warn? */
+        if (ret == Py_None) {
+            Py_DECREF(b);
+            Py_DECREF(ret);
+            return 0;
+        }
+
+        /* Should be an integer. */
+        if (!_PyIndex_Check(ret)) {
+            PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "write returned '%s' not specified by BufferedIOBase or"
+                " TextIOBase, typically count of bytes written",
+                ret);
+            Py_DECREF(b);
+            Py_DECREF(ret);
+            return 0;
+        }
+        Py_ssize_t size = PyNumber_AsSsize_t(ret, PyExc_OverflowError);
+
+        /* Check for unexpected return values. */
+        /* Can't get out size follow return previous behavior. */
+        if (size == -1 && PyErr_Occurred()) {
+            if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
+                Py_DECREF(b);
+                Py_DECREF(ret);
+                return -1;
+            }
+            PyErr_Clear();  /* fall through */
+            PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "buffer.write returned value '%s' not specified by"
+                " BufferedIOBase or TextIOBase", ret);
+            Py_DECREF(b);
+            Py_DECREF(ret);
+            return 0;
+        }
+        /* Negative count of bytes doesn't make sense. */
+        else if (size < 0) {
+            PyErr_WarnFormat(PyExc_RuntimeWarning, 1,
+                "buffer.write returned negative count of bytes '%s'",
+                ret);
+            Py_DECREF(b);
+            Py_DECREF(ret);
+            return 0;
+        }
+        /* More written than passed in call. */
+        else if (size > bytes_to_write) {
+            PyErr_WarnFormat(PyExc_RuntimeWarning, 1,
+                "buffer.write returned '%s' bytes written but was only"
+                " called with '%s' bytes to write",
+                ret, bytes_to_write);
+            Py_DECREF(b);
+            Py_DECREF(ret);
+            return 0;
+        }
+
+        /* Wrote data! */
+        bytes_to_write -= size;
+        assert(bytes_to_write >= 0);
+
+        /* Avoid a new byte allocation if fully written. */
+        if (bytes_to_write == 0) {
+            Py_DECREF(ret);
+            break;
+        }
+
+        /* Make a new PyByte to keep type for next call to write. */
+        pending = PyBytes_FromStringAndSize(
+            PyBytes_AS_STRING(b) + size,
+            self->pending_bytes_count);
+        Py_DECREF(b);
+        b = pending;
+        pending = NULL;
+    }
+
+    /* All data owned by this function is written. Other bytes could have shown
+       up while running. */
+    assert(self->pending_bytes_count >= 0);
     Py_DECREF(b);
-    // NOTE: We cleared buffer but we don't know how many bytes are actually written
-    // when an error occurred.
-    if (ret == NULL)
-        return -1;
-    Py_DECREF(ret);
     return 0;
 }
 
@@ -1733,12 +1909,12 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     // Flush the buffer before adding b to the buffer if b is not small.
     // https://github.com/python/cpython/issues/87426
     if (bytes_len >= self->chunk_size) {
-        // _textiowrapper_writeflush() calls buffer.write().
-        // self->pending_bytes can be appended during buffer->write()
-        // or other thread.
-        // We need to loop until buffer becomes empty.
-        // https://github.com/python/cpython/issues/118138
-        // https://github.com/python/cpython/issues/119506
+        /* writeflush works to ensure all data written.
+
+           Additional data may be written to the TextIO when the lock is
+           released while calling buffer.write (and show up in
+           pending_bytes). When that happens, flush again to avoid copying
+           the current bytes. */
         while (self->pending_bytes != NULL) {
             if (_textiowrapper_writeflush(self) < 0) {
                 Py_DECREF(b);

@@ -1,0 +1,3 @@
+Improve behavior of :meth:`TextIOWrapper.write` when there is a partial write
+caused by underlying buffer being :class:`RawIOBase` (:gh:`91606` :gh:`85393`)
+or if there is a :exc:`BlockingIOError` :gh:`97531`
