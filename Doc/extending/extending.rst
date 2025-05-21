@@ -487,8 +487,8 @@ optionally followed by an import of the module::
    initialization when removing entries from ``sys.modules`` or importing
    compiled modules into multiple interpreters within a process
    (or following a :c:func:`fork` without an intervening :c:func:`exec`).
-   At least, the :c:data:`Py_mod_multiple_interpreters` slot in the examples
-   should be ``Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED``.
+   In this case, at least the :c:data:`Py_mod_multiple_interpreters` slot
+   in the examples should be ``Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED``.
 
 .. _compilation:
 
@@ -835,7 +835,7 @@ Philbrick (philbrick@hks.com)::
        {0, NULL}
    };
 
-   static struct PyModuleDef keywdargmodule = {
+   static struct PyModuleDef keywdarg_module = {
        .m_base = PyModuleDef_HEAD_INIT,
        .m_name = "keywdarg",
        .m_size = 0,
@@ -846,7 +846,7 @@ Philbrick (philbrick@hks.com)::
    PyMODINIT_FUNC
    PyInit_keywdarg(void)
    {
-       return PyModuleDef_Init(&keywdargmodule);
+       return PyModuleDef_Init(&keywdarg_module);
    }
 
 
