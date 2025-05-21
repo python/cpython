@@ -5548,22 +5548,18 @@ datetime_from_timestamp(PyObject *cls, TM_FUNC f, PyObject *timestamp,
     time_t timet;
     long us;
 
-#ifdef MS_WINDOWS
-    if (PyFloat_Check(timestamp) && PyFloat_AsDouble(timestamp) < 0) {
-      if (_PyTime_ObjectToTimeval(timestamp,
-				  &timet, &us, _PyTime_ROUND_HALF_EVEN) == -1)
-	return NULL;
+    if (_PyTime_ObjectToTimeval(timestamp,
+                                &timet, &us, _PyTime_ROUND_HALF_EVEN) == -1)
+        return NULL;
 
+#ifdef MS_WINDOWS
+    if (timet < 0) {
       int normalize = 1, factor = 1;
       PyObject *dt = datetime_from_timet_and_us(cls, f, 0, 0, tzinfo);
       PyObject *delta = new_delta(0, (int)timet, us, normalize);
       return add_datetime_timedelta(PyDateTime_CAST(dt), PyDelta_CAST(delta), factor);
     }
 #endif
-
-    if (_PyTime_ObjectToTimeval(timestamp,
-                                &timet, &us, _PyTime_ROUND_HALF_EVEN) == -1)
-        return NULL;
 
     return datetime_from_timet_and_us(cls, f, timet, (int)us, tzinfo);
 }

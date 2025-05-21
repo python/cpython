@@ -2730,6 +2730,7 @@ class TestDateTime(TestDate):
             # If that assumption changes, this value can change as well
             self.assertEqual(max_ts, 253402300799.0)
 
+    @unittest.skipIf(sys.platform == "win32", "Windows can't generate negative timestamps")
     def test_fromtimestamp_limits(self):
         try:
             self.theclass.fromtimestamp(-2**32 - 1)
@@ -2769,6 +2770,7 @@ class TestDateTime(TestDate):
                     # OverflowError, especially on 32-bit platforms.
                     self.theclass.fromtimestamp(ts)
 
+    @unittest.skipIf(sys.platform == "win32", "Windows can't generate negative timestamps")
     def test_utcfromtimestamp_limits(self):
         with self.assertWarns(DeprecationWarning):
             try:
