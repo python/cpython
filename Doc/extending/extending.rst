@@ -95,10 +95,11 @@ shortly how it ends up being called)::
    spam_system(PyObject *self, PyObject *args)
    {
        const char *command;
-       if (!PyArg_ParseTuple(args, "s", &command)) {
+       int sts;
+
+       if (!PyArg_ParseTuple(args, "s", &command))
            return NULL;
-       }
-       int sts = system(command);
+       sts = system(command);
        return PyLong_FromLong(sts);
    }
 
@@ -306,10 +307,11 @@ call to :c:func:`PyErr_SetString` as shown below::
    spam_system(PyObject *self, PyObject *args)
    {
        const char *command;
-       if (!PyArg_ParseTuple(args, "s", &command)) {
+       int sts;
+
+       if (!PyArg_ParseTuple(args, "s", &command))
            return NULL;
-       }
-       int sts = system(command);
+       sts = system(command);
        if (sts < 0) {
            spam_state *state = PyModule_GetState(self);
            if (state != NULL) {
@@ -329,9 +331,8 @@ Back to the Example
 Going back to our example function, you should now be able to understand this
 statement::
 
-   if (!PyArg_ParseTuple(args, "s", &command)) {
+   if (!PyArg_ParseTuple(args, "s", &command))
        return NULL;
-   }
 
 It returns ``NULL`` (the error indicator for functions returning object pointers)
 if an error is detected in the argument list, relying on the exception set by
@@ -344,7 +345,7 @@ the variable :c:data:`!command` should properly be declared as ``const char
 The next statement is a call to the Unix function :c:func:`system`, passing it
 the string we just got from :c:func:`PyArg_ParseTuple`::
 
-   int sts = system(command);
+   sts = system(command);
 
 Our :func:`!spam.system` function must return the value of :c:data:`!sts` as a
 Python object.  This is done using the function :c:func:`PyLong_FromLong`. ::
@@ -1285,10 +1286,11 @@ The function :c:func:`!spam_system` is modified in a trivial way::
    spam_system(PyObject *self, PyObject *args)
    {
        const char *command;
-       if (!PyArg_ParseTuple(args, "s", &command)) {
+       int sts;
+
+       if (!PyArg_ParseTuple(args, "s", &command))
            return NULL;
-       }
-       int sts = PySpam_System(command);
+       sts = PySpam_System(command);
        return PyLong_FromLong(sts);
    }
 

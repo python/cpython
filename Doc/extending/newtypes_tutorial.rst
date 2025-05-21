@@ -173,9 +173,8 @@ implementation provided by the API function :c:func:`PyType_GenericNew`. ::
 Everything else in the file should be familiar, except for some code in
 :c:func:`!custom_module_exec`::
 
-   if (PyType_Ready(&CustomType) < 0) {
+   if (PyType_Ready(&CustomType) < 0)
        return -1;
-   }
 
 This initializes the :class:`!Custom` type, filling in a number of members
 to the appropriate default values, including :c:member:`~PyObject.ob_type` that we initially
@@ -882,9 +881,8 @@ function::
    sublist_module_exec(PyObject *mod)
    {
        SubListType.tp_base = &PyList_Type;
-       if (PyType_Ready(&SubListType) < 0) {
+       if (PyType_Ready(&SubListType) < 0)
            return -1;
-       }
 
        if (PyModule_AddObjectRef(mod, "SubList", (PyObject *)&SubListType) < 0) {
            return -1;

@@ -19,9 +19,8 @@ static PyTypeObject CustomType = {
 static int
 custom_module_exec(PyObject *mod)
 {
-    if (PyType_Ready(&CustomType) < 0) {
+    if (PyType_Ready(&CustomType) < 0)
         return -1;
-    }
 
     if (PyModule_AddObjectRef(mod, "Custom", (PyObject *)&CustomType) < 0) {
         return -1;
