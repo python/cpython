@@ -154,38 +154,12 @@ def _copy_items(items):
 # ===============
 
 
-import shutil
-import re as _re
-import textwrap
-
-# Assume these constants are defined elsewhere, e.g., from argparse
-# These are placeholders for the purpose of this refactoring.
-SUPPRESS = "==SUPPRESS=="
-OPTIONAL = "?"
-ZERO_OR_MORE = "*"
-ONE_OR_MORE = "+"
-REMAINDER = "..."
-PARSER = "A..."
-
-# Module-level gettext fallback
-try:
-    # If gettext is configured, this will be overridden
-    import gettext
-    _ = gettext.gettext
-except (ImportError, NameError):
-    _ = lambda text_to_translate: text_to_translate
-
-
 class HelpFormatter(object):
     """Formatter for generating usage messages and argument help strings.
 
     Only the name of this class is considered a public API. All the methods
     provided by the class are considered an implementation detail.
     """
-    _DEFAULT_WIDTH_REDUCTION = 20
-    _MIN_WRAP_WIDTH = 11
-    _USAGE_PROG_SHORT_FACTOR = 0.75
-    _MIN_PADDING_BETWEEN_ACTION_AND_HELP = 2 # Used in _calculate_global_help_start_column
 
     def __init__(
         self,
@@ -195,32 +169,25 @@ class HelpFormatter(object):
         width=None,
         color=False,
     ):
+        # default setting for width
         if width is None:
-            try:
-                width = shutil.get_terminal_size().columns - 2
-            except (OSError, AttributeError): # Fallback if terminal size can't be determined
-                width = 80 - 2
-        self._width = width
+            import shutil
+            width = shutil.get_terminal_size().columns
+            width -= 2
 
         self._set_color(color)
         self._prog = prog
         self._indent_increment = indent_increment
-
-        # Calculate the adaptive help start column
-        # This is the preferred starting column for help text, normally capped by max_help_position.
-        effective_max_help_pos_limit = max(
-            self._width - self._DEFAULT_WIDTH_REDUCTION,
-            self._indent_increment * 2
-        )
-        self._adaptive_help_start_column = min(max_help_position, effective_max_help_pos_limit)
-
-        # This will be calculated globally before formatting actions.
-        # Initialize with the adaptive default.
+        self._max_help_position = min(max_help_position,
+                                      max(width - 20, indent_increment * 2))
+        self._width = width
+        self._adaptive_help_start_column = min(max_help_position,
+                                               max(self._width - 20, indent_increment * 2))
         self._globally_calculated_help_start_col = self._adaptive_help_start_column
 
         self._current_indent = 0
         self._level = 0
-        # self._action_max_length = 0 # Removed as it was unused
+        self._action_max_length = 0
 
         self._root_section = self._Section(self, None)
         self._current_section = self._root_section
@@ -228,56 +195,46 @@ class HelpFormatter(object):
         self._whitespace_matcher = _re.compile(r'\s+', _re.ASCII)
         self._long_break_matcher = _re.compile(r'\n\n\n+')
 
-    def _set_color(self, color_flag):
-        # Assuming _colorize module and its functions are available
-        # This part remains largely the same, ensure _colorize is importable
-        try:
-            from _colorize import can_colorize, decolor, get_theme
-            if color_flag and can_colorize():
-                self._theme = get_theme(force_color=True).argparse
-                self._decolor = decolor
-            else:
-                self._theme = get_theme(force_no_color=True).argparse
-                self._decolor = lambda text: text
-        except ImportError:
-            # Fallback if _colorize is not available
-            class DummyTheme:
-                def __getattr__(self, name):
-                    return "" # Return empty string for any color attribute
-            self._theme = DummyTheme()
-            self._decolor = lambda text: text
-
-
     def _get_action_details_for_pass(self, section, current_indent_for_section_items):
         """
         Recursively collects details for actions within a given section and its subsections.
+        These details (action object, invocation length, indent) are used for calculating
+        the global help text alignment column.
         """
         collected_details = []
 
-        for item in section.items:
-            if isinstance(item, self._Section): # Item is a sub-section object
-                sub_section_object = item
-                # Heading of a sub-section does not increase indent of its items further by default here,
-                # the indent is managed by the section's _indent call.
-                # Actions inside a sub-section are indented relative to the sub-section's own level.
+        for func_to_call, args_for_func in section.items:
+            if func_to_call == self._format_action and args_for_func:
+                action_object = args_for_func[0]
+                if action_object.help is not SUPPRESS:
+                    invocation_string = self._format_action_invocation(action_object)
+                    # Length without color codes is needed for alignment.
+                    invocation_length = len(self._decolor(invocation_string))
+
+                    collected_details.append({
+                        'action': action_object,
+                        'inv_len': invocation_length,
+                        'indent': current_indent_for_section_items,
+                    })
+            elif hasattr(func_to_call, '__self__') and isinstance(func_to_call.__self__, self._Section):
+                sub_section_object = func_to_call.__self__
+
                 indent_for_subsection_items = current_indent_for_section_items + self._indent_increment
+
                 collected_details.extend(
                     self._get_action_details_for_pass(sub_section_object, indent_for_subsection_items)
                 )
-            else: # Item is (func, args)
-                func_to_call, args_for_func = item
-                if func_to_call == self._format_action and args_for_func:
-                    action_object = args_for_func[0]
-                    if action_object.help is not SUPPRESS:
-                        invocation_string = self._format_action_invocation(action_object)
-                        invocation_length = len(self._decolor(invocation_string))
-
-                        collected_details.append({
-                            'action': action_object,
-                            'inv_len': invocation_length,
-                            'indent': current_indent_for_section_items,
-                        })
         return collected_details
+
+    def _set_color(self, color):
+        from _colorize import can_colorize, decolor, get_theme
+
+        if color and can_colorize():
+            self._theme = get_theme(force_color=True).argparse
+            self._decolor = decolor
+        else:
+            self._theme = get_theme(force_no_color=True).argparse
+            self._decolor = lambda text: text
 
     # ===============================
     # Section and indentation methods
@@ -293,78 +250,67 @@ class HelpFormatter(object):
         self._level -= 1
 
     class _Section(object):
+
         def __init__(self, formatter, parent, heading=None):
             self.formatter = formatter
             self.parent = parent
             self.heading = heading
-            self.items = [] # Will store (callable, args) or _Section instances
+            self.items = []
 
         def format_help(self):
+            """
+            Formats the help for this section, including its heading and all items.
+            """
             is_subsection = self.parent is not None
-            if is_subsection: # When formatting a subsection, its items are indented
+            if is_subsection:
                 self.formatter._indent()
 
-            item_help_strings = []
-            for item in self.items:
-                if isinstance(item, self.formatter._Section): # It's a sub-section instance
-                    item_help_strings.append(item.format_help())
-                else: # It's a (func, args) tuple
-                    func, args = item
-                    result = func(*args)
-                    if result is not SUPPRESS and result is not None:
-                         item_help_strings.append(result)
-
+            # Generate help strings for all items (actions, text, subsections) in this section
+            item_help_strings = [func(*args) for func, args in self.items]
             rendered_items_help = self.formatter._join_parts(item_help_strings)
 
             if is_subsection:
-                self.formatter._dedent() # Restore indent level
+                # Restore indent level after formatting subsection items
+                self.formatter._dedent()
 
-            if not rendered_items_help and (self.heading is None or self.heading is SUPPRESS) :
+            # return nothing if the section was empty
+            if not rendered_items_help:
                 return ''
 
+            # If we're here, rendered_items_help is not empty.
+            # Now, format the heading for this section if it exists and is not suppressed.
             formatted_heading_output_part = ""
             if self.heading is not SUPPRESS and self.heading is not None:
-                # current_section_heading_indent is based on the formatter's indent *before* this section's own items were indented
-                # For root sections, this is 0. For subsections, it's the indent of the parent.
-                # The _indent() call above affects _current_indent for items *within* this section.
-                # The heading should be at the level the section was *started* at.
-                # If it's a subsection, its own _indent() call would have happened.
-                # The formatter._current_indent here would be the indent level *for the items of this section*.
-                # The heading should be one level less if it's a subsection that was indented.
-                heading_indent_level = self.formatter._current_indent
-                if is_subsection: # Because we just dedented if it was a subsection.
-                     heading_indent_level = self.formatter._current_indent
+                current_section_heading_indent = ' ' * self.formatter._current_indent
 
+                try:
+                    # This line checks if global `_` is defined.
+                    # If `_` is not defined in any accessible scope, it raises NameError.
+                    _
+                except NameError:
+                    # If global `_` was not found, this line defines `_` in the global scope
+                    # as a no-op lambda function.
+                    _ = lambda text_to_translate: text_to_translate
 
-                current_section_heading_indent_str = ' ' * heading_indent_level
+                # Now, call `_` directly. It is guaranteed to be defined at this point
+                # (either as the original gettext `_` or the no-op lambda).
+                # `xgettext` will correctly identify `_('%(heading)s:')` as translatable.
                 heading_title_text = _('%(heading)s:') % {'heading': self.heading}
+
                 theme_colors = self.formatter._theme
                 formatted_heading_output_part = (
-                    f'{current_section_heading_indent_str}{theme_colors.heading}'
+                    f'{current_section_heading_indent}{theme_colors.heading}'
                     f'{heading_title_text}{theme_colors.reset}\n'
                 )
 
-            # Ensure a newline before the heading if there's a heading, or before items if no heading but items exist.
-            # And ensure a newline after the items.
-            parts_to_join = []
-            if formatted_heading_output_part or rendered_items_help:
-                parts_to_join.append('\n') # Pre-section newline
+            section_output_parts = [
+                '\n',
+                formatted_heading_output_part,
+                rendered_items_help,
+                '\n'
+            ]
 
-            if formatted_heading_output_part:
-                parts_to_join.append(formatted_heading_output_part)
-
-            if rendered_items_help:
-                parts_to_join.append(rendered_items_help)
-                # If items render, they should end with newlines.
-                # _format_action ensures newlines. _format_text ensures newlines.
-                # Subsections.format_help also ensure newlines via this logic.
-                # So, an additional '\n' might only be needed if rendered_items_help itself doesn't end with one
-                # which it should if all formatters are consistent.
-                # The original code added a final '\n' to the list. Let's see.
-                # The final post-processing in HelpFormatter.format_help handles trailing newlines.
-
-            return self.formatter._join_parts(parts_to_join)
-
+            return self.formatter._join_parts(section_output_parts)
 
     def _add_item(self, func, args):
         self._current_section.items.append((func, args))
@@ -374,20 +320,14 @@ class HelpFormatter(object):
     # ========================
 
     def start_section(self, heading):
-        # self.formatter._indent() was here in the original _Section.format_help
-        # We manage indent for the *contents* of the section.
-        # The heading itself uses the current indent.
-        # Indentation for the items within the section is handled by _Section.format_help
+        self._indent()
         section = self._Section(self, self._current_section, heading)
-        # Instead of adding section.format_help, add the section itself
-        self._current_section.items.append(section)
+        self._add_item(section.format_help, [])
         self._current_section = section
-        # No _indent() here; _Section.format_help will handle indenting its own content.
 
     def end_section(self):
         self._current_section = self._current_section.parent
-        # No _dedent() here; _Section.format_help handles matching its indent.
-
+        self._dedent()
 
     def add_text(self, text):
         if text is not SUPPRESS and text is not None:
@@ -400,7 +340,19 @@ class HelpFormatter(object):
 
     def add_argument(self, action):
         if action.help is not SUPPRESS:
-            # The _action_max_length calculation was removed as it was unused.
+
+            # find all invocations
+            get_invocation = self._format_action_invocation
+            invocation_lengths = [len(get_invocation(action)) + self._current_indent]
+            for subaction in self._iter_indented_subactions(action):
+                invocation_lengths.append(len(get_invocation(subaction)) + self._current_indent)
+
+            # update the maximum item length
+            action_length = max(invocation_lengths)
+            self._action_max_length = max(self._action_max_length,
+                                          action_length)
+
+            # add the item to the list
             self._add_item(self._format_action, [action])
 
     def add_arguments(self, actions):
@@ -412,15 +364,21 @@ class HelpFormatter(object):
     # =======================
 
     def _collect_all_action_details(self):
+        """
+        Helper for format_help: Traverses all sections starting from the root
+        and collects details about each action (like its invocation string length
+        and current indent level). This information is used to determine the
+        optimal global alignment for help text.
+        """
         all_details = []
-        # Actions within top-level sections (direct children of _root_section)
-        # will have their items indented by one level.
-        indent_for_actions_in_top_level_sections = self._indent_increment
+        # Actions within top-level sections (direct children of _root_section, like "options:")
+        # will have an initial indent.
+        indent_for_actions_in_top_level_sections = self._indent_increment # Typically 2 spaces
 
-        for item in self._root_section.items:
-            if isinstance(item, self._Section):
-                top_level_section = item
-                # The indent passed here is for the *items* within that top-level section
+        for item_func, _item_args in self._root_section.items:
+            section_candidate = getattr(item_func, '__self__', None)
+            if isinstance(section_candidate, self._Section):
+                top_level_section = section_candidate
                 details_from_this_section = self._get_action_details_for_pass(
                     top_level_section,
                     indent_for_actions_in_top_level_sections
@@ -429,386 +387,429 @@ class HelpFormatter(object):
         return all_details
 
     def _calculate_global_help_start_column(self, all_action_details):
+        """
+        Helper for format_help: Calculates the single, globally optimal starting column
+        for all help text associated with actions. This aims to align help texts neatly.
+        """
         if not all_action_details:
+            # No actions with help were found, so use the default adaptive start column.
             return self._adaptive_help_start_column
 
+        min_padding_between_action_and_help = 2
+        # Track the maximum endpoint (indent + length) of action strings that can
+        # "reasonably" have their help text start on the same line without exceeding
+        # the _adaptive_help_start_column for the help text itself.
         max_endpoint_of_reasonable_actions = 0
+
         for detail in all_action_details:
+            # The column where this action's invocation string ends.
             action_invocation_end_column = detail['indent'] + detail['inv_len']
-            is_reasonable = (
-                action_invocation_end_column + self._MIN_PADDING_BETWEEN_ACTION_AND_HELP <=
-                self._adaptive_help_start_column
-            )
-            if is_reasonable:
+
+            # An action is "reasonable" if its help text can start on the same line,
+            # aligned at or before _adaptive_help_start_column, while maintaining minimum padding.
+            is_reasonable_to_align_with_others = \
+                (action_invocation_end_column + min_padding_between_action_and_help <=
+                 self._adaptive_help_start_column)
+
+            if is_reasonable_to_align_with_others:
                 max_endpoint_of_reasonable_actions = max(
                     max_endpoint_of_reasonable_actions,
                     action_invocation_end_column
                 )
 
         if max_endpoint_of_reasonable_actions > 0:
-            desired_global_alignment_column = (
-                max_endpoint_of_reasonable_actions + self._MIN_PADDING_BETWEEN_ACTION_AND_HELP
-            )
+            # At least one action fits the "reasonable" criteria.
+            # The desired alignment column is after the longest of these "reasonable" actions, plus padding.
+            desired_global_alignment_column = \
+                max_endpoint_of_reasonable_actions + min_padding_between_action_and_help
+
+            # However, this alignment should not exceed the user's preferred _adaptive_help_start_column.
             return min(desired_global_alignment_column, self._adaptive_help_start_column)
         else:
+            # No action was "reasonable" (e.g., all actions are very long, or _adaptive_help_start_column is too small).
+            # In this scenario, fall back to using _adaptive_help_start_column.
+            # Help text for most actions will likely start on a new line, indented to this column.
             return self._adaptive_help_start_column
 
+
     def format_help(self):
+        """
+        Formats the full help message.
+        This orchestrates the collection of action details for alignment,
+        calculates the global help start column, and then formats all sections.
+        """
+        # First Pass: Collect details of all actions to determine optimal help text alignment.
+        # This populates a list of dictionaries, each with action details.
         all_action_details = self._collect_all_action_details()
+
+        # Calculate and set the global starting column for help text based on these details.
+        # This value (self._globally_calculated_help_start_col) will be used by _format_action.
         self._globally_calculated_help_start_col = \
             self._calculate_global_help_start_column(all_action_details)
 
-        # Reset indent before formatting the whole tree, _Section.format_help manages its own
-        self._current_indent = 0
-        self._level = 0
+        # Second Pass: Actually format the help.
+        # This will recursively call _Section.format_help for all sections,
+        # which in turn call item formatters like _format_action, _format_text.
+        # These formatting methods will use the self._globally_calculated_help_start_col set above.
         raw_help_output = self._root_section.format_help()
 
+        # Post-process the generated help string for final presentation.
         if raw_help_output:
+            # Consolidate multiple consecutive blank lines into a single blank line.
             processed_help_output = self._long_break_matcher.sub('\n\n', raw_help_output)
-            # Ensure the help message ends with a single newline and strip leading/trailing newlines from the block.
-            processed_help_output = processed_help_output.strip('\n')
-            if processed_help_output: # Avoid adding newline to an empty string after strip
-                processed_help_output += '\n'
+            # Ensure the help message ends with a single newline and strip any other leading/trailing newlines.
+            processed_help_output = processed_help_output.strip('\n') + '\n'
             return processed_help_output
-        return ""
+
+        return "" # Return an empty string if no help content was generated.
 
     def _join_parts(self, part_strings):
-        return ''.join([part for part in part_strings if part and part is not SUPPRESS])
-
+        return ''.join([part
+                        for part in part_strings
+                        if part and part is not SUPPRESS])
 
     def _format_usage(self, usage, actions, groups, prefix):
         t = self._theme
+
         if prefix is None:
-            # Use the module-level _ for translation
-            prefix_text = _('usage: ')
-            prefix = f"{t.usage}{prefix_text}{t.reset}" # Apply color to "usage: " literal
-        else: # If prefix is provided, assume it's already formatted or doesn't need usage color
-            prefix_text = prefix # keep original prefix for length calculations
+            prefix = _('usage: ')
 
-        prog_str = f"{t.prog}{self._prog}{t.reset}"
+        # if usage is specified, use that
+        if usage is not None:
+            usage = (
+                t.prog_extra
+                + usage
+                % {"prog": f"{t.prog}{self._prog}{t.reset}{t.prog_extra}"}
+                + t.reset
+            )
 
-        if usage is not None: # User-specified usage string
-            # Apply prog color to %(prog)s occurrences
-            usage = usage.replace('%(prog)s', prog_str)
-            # Apply general extra color to the rest of the user-defined usage
-            usage_content = f"{t.prog_extra}{usage}{t.reset}"
-        elif not actions: # No actions, usage is just the program name
-            usage_content = prog_str
-        else: # Auto-generate usage
-            optionals = [action for action in actions if action.option_strings]
-            positionals = [action for action in actions if not action.option_strings]
+        # if no optionals or positionals are available, usage is just prog
+        elif usage is None and not actions:
+            usage = f"{t.prog}{self._prog}{t.reset}"
 
-            action_usage_str = self._format_actions_usage(optionals + positionals, groups)
+        # if optionals and positionals are available, calculate usage
+        elif usage is None:
+            prog = '%(prog)s' % dict(prog=self._prog)
 
-            # Temporarily combine prog and action_usage without prefix for wrapping check
-            # Use decolorized versions for length checks
-            decolored_prog = self._decolor(prog_str)
-            decolored_action_usage = self._decolor(action_usage_str)
+            # split optionals from positionals
+            optionals = []
+            positionals = []
+            for action in actions:
+                if action.option_strings:
+                    optionals.append(action)
+                else:
+                    positionals.append(action)
 
-            full_usage_no_prefix = ' '.join(s for s in [decolored_prog, decolored_action_usage] if s)
+            # build full usage string
+            format = self._format_actions_usage
+            action_usage = format(optionals + positionals, groups)
+            usage = ' '.join([s for s in [prog, action_usage] if s])
 
-            # Available width for the usage string itself (after prefix)
-            # self._current_indent is 0 for usage string
-            text_width = self._width
+            # wrap the usage parts if it's too long
+            text_width = self._width - self._current_indent
+            if len(prefix) + len(self._decolor(usage)) > text_width:
 
-            if len(self._decolor(prefix)) + len(full_usage_no_prefix) > text_width:
-                # Wrapping needed
+                # break usage into wrappable parts
                 opt_parts = self._get_actions_usage_parts(optionals, groups)
                 pos_parts = self._get_actions_usage_parts(positionals, groups)
 
-                # get_lines needs the colored parts for final output
-                # but makes decisions based on decolored lengths
-                def get_lines(parts_to_wrap, indent_str, initial_prefix_str=None):
-                    lines_out = []
-                    current_line_parts = []
+                # helper for wrapping lines
+                def get_lines(parts, indent, prefix=None):
+                    lines = []
+                    line = []
+                    indent_length = len(indent)
+                    if prefix is not None:
+                        line_len = len(prefix) - 1
+                    else:
+                        line_len = indent_length - 1
+                    for part in parts:
+                        part_len = len(self._decolor(part))
+                        if line_len + 1 + part_len > text_width and line:
+                            lines.append(indent + ' '.join(line))
+                            line = []
+                            line_len = indent_length - 1
+                        line.append(part)
+                        line_len += part_len + 1
+                    if line:
+                        lines.append(indent + ' '.join(line))
+                    if prefix is not None:
+                        lines[0] = lines[0][indent_length:]
+                    return lines
 
-                    # Effective prefix for length calculation of the first line
-                    current_line_len = len(self._decolor(initial_prefix_str if initial_prefix_str is not None else indent_str))
-
-                    for i, part in enumerate(parts_to_wrap):
-                        decolored_part = self._decolor(part)
-                        # Add 1 for space, unless it's the first part on a line after initial_prefix/indent
-                        space_len = 0 if not current_line_parts and (initial_prefix_str or indent_str) else 1
-
-                        if current_line_parts and \
-                           current_line_len + space_len + len(decolored_part) > text_width:
-                            # Finish current line
-                            lines_out.append((indent_str if initial_prefix_str is None or lines_out else "") +
-                                           ' '.join(current_line_parts))
-                            current_line_parts = []
-                            current_line_len = len(self._decolor(indent_str)) # Reset for new line with indent
-                            space_len = 0 # No leading space for first part on new line
-
-                        current_line_parts.append(part)
-                        current_line_len += space_len + len(decolored_part)
-
-                    if current_line_parts:
-                        lines_out.append((indent_str if initial_prefix_str is None or lines_out else "") +
-                                       ' '.join(current_line_parts))
-
-                    if initial_prefix_str is not None and lines_out:
-                         lines_out[0] = initial_prefix_str + lines_out[0] # Prepend the actual prefix str
-
-                    return lines_out
-
-                prog_len_decolored = len(decolored_prog)
-                prefix_len_decolored = len(self._decolor(prefix))
-
-                wrapped_lines = []
-                # Prog string with its theme color
-                actual_prog_part_for_usage = prog_str
-
-                if prefix_len_decolored + prog_len_decolored <= self._USAGE_PROG_SHORT_FACTOR * text_width:
-                    # Prog is short, try to fit optionals/positionals on the same line
-                    line_indent_str = ' ' * (prefix_len_decolored + prog_len_decolored + 1) # indent for subsequent lines
-
-                    # First line starts with prefix + prog
-                    first_line_prefix = f"{prefix}{actual_prog_part_for_usage} "
-
+                # if prog is short, follow it with optionals or positionals
+                prog_len = len(self._decolor(prog))
+                if len(prefix) + prog_len <= 0.75 * text_width:
+                    indent = ' ' * (len(prefix) + prog_len + 1)
                     if opt_parts:
-                        wrapped_lines.extend(get_lines(opt_parts, line_indent_str, first_line_prefix if not wrapped_lines else None))
-                        # If there were opt_parts, pos_parts start on a new line or continue with indent
-                        wrapped_lines.extend(get_lines(pos_parts, line_indent_str, None if wrapped_lines and opt_parts else first_line_prefix))
+                        lines = get_lines([prog] + opt_parts, indent, prefix)
+                        lines.extend(get_lines(pos_parts, indent))
                     elif pos_parts:
-                        wrapped_lines.extend(get_lines(pos_parts, line_indent_str, first_line_prefix))
-                    else: # Only prog
-                        wrapped_lines.append(f"{prefix}{actual_prog_part_for_usage}")
+                        lines = get_lines([prog] + pos_parts, indent, prefix)
+                    else:
+                        lines = [prog]
+
+                # if prog is long, put it on its own line
                 else:
-                    # Prog is long, put it on its own line after prefix
-                    wrapped_lines.append(f"{prefix}{actual_prog_part_for_usage}")
-                    line_indent_str = ' ' * prefix_len_decolored # indent for subsequent lines under prefix
+                    indent = ' ' * len(prefix)
+                    parts = opt_parts + pos_parts
+                    lines = get_lines(parts, indent)
+                    if len(lines) > 1:
+                        lines = []
+                        lines.extend(get_lines(opt_parts, indent))
+                        lines.extend(get_lines(pos_parts, indent))
+                    lines = [prog] + lines
 
-                    all_following_parts = opt_parts + pos_parts
-                    if all_following_parts: # Check if there's anything to add
-                        wrapped_lines.extend(get_lines(all_following_parts, line_indent_str))
+                # join lines into usage
+                usage = '\n'.join(lines)
 
-                usage_content = '\n'.join(wrapped_lines)
-                # Prefix is already included in usage_content by get_lines/initial setup
-                return f"{usage_content}\n\n" # Add trailing newlines for the usage block
-            else: # No wrapping needed
-                usage_content = ' '.join(s for s in [prog_str, action_usage_str] if s)
+            usage = usage.removeprefix(prog)
+            usage = f"{t.prog}{prog}{t.reset}{usage}"
 
-        # Combine prefix and usage content
-        # If user provided usage, it's already colored.
-        # If auto-generated, prog_str and action_usage_str are colored.
-        return f"{prefix}{usage_content}\n\n"
-
+        # prefix with 'usage:'
+        return f'{t.usage}{prefix}{t.reset}{usage}\n\n'
 
     def _format_actions_usage(self, actions, groups):
         return ' '.join(self._get_actions_usage_parts(actions, groups))
 
     def _is_long_option(self, string):
-        return len(string) > 1 and string.startswith('--') # More specific check for --
+        return len(string) > 2
 
     def _get_actions_usage_parts(self, actions, groups):
-        # This complex method's logic for grouping and formatting is largely preserved.
+        # find group indices and identify actions in groups
         group_actions = set()
-        inserts = {} # (start_index, end_index) -> group_object
-
-        # Create a temporary list of actions that are not suppressed for indexing
-        visible_actions = [action for action in actions if action.help is not SUPPRESS]
-        if not visible_actions: return []
-
-
+        inserts = {}
         for group in groups:
-            if not group._group_actions or all(action.help is SUPPRESS for action in group._group_actions):
-                continue
+            if not group._group_actions:
+                raise ValueError(f'empty group {group}')
 
-            # Find indices of visible group actions within the list of visible actions
-            current_group_visible_actions = [ga for ga in group._group_actions if ga.help is not SUPPRESS]
-            if not current_group_visible_actions:
+            if all(action.help is SUPPRESS for action in group._group_actions):
                 continue
 
             try:
-                # Find where this group's actions sequence starts in the main 'visible_actions' list
-                start_index = -1
-                for i in range(len(visible_actions) - len(current_group_visible_actions) + 1):
-                    # Check if the slice of visible_actions matches current_group_visible_actions
-                    # This needs to be robust if actions can be in multiple groups or order differs slightly.
-                    # Original check was actions.index(item), which assumes exact sequence.
-                    # A more robust check might be needed if action order isn't guaranteed.
-                    # For now, assume visible_actions contains group actions contiguously.
-
-                    # Simplified: find first action of the group.
-                    first_group_action = current_group_visible_actions[0]
-                    if first_group_action in visible_actions[i:]:
-                        candidate_start = visible_actions.index(first_group_action, i)
-                        # Check if the entire group sequence matches
-                        if visible_actions[candidate_start : candidate_start + len(current_group_visible_actions)] == current_group_visible_actions:
-                            start_index = candidate_start
-                            break
-                if start_index == -1: continue
-
-            except ValueError: # min() on empty sequence or action not found
+                start = min(actions.index(item) for item in group._group_actions)
+            except ValueError:
                 continue
             else:
-                end_index = start_index + len(current_group_visible_actions)
-                # Ensure set equality for robustness if order isn't strictly guaranteed by input 'actions'
-                if set(visible_actions[start_index:end_index]) == set(current_group_visible_actions):
-                    # Add original group actions (including suppressed ones if any, for set update)
+                end = start + len(group._group_actions)
+                if set(actions[start:end]) == set(group._group_actions):
                     group_actions.update(group._group_actions)
-                    inserts[start_index, end_index] = group
+                    inserts[start, end] = group
 
+        # collect all actions format strings
         parts = []
         t = self._theme
-        for action in visible_actions: # Iterate over only visible actions
-            part = None # Default for suppressed or skipped actions
-            if not action.option_strings: # Positional
-                default = self._get_default_metavar_for_positional(action)
-                part = f"{t.summary_action}{self._format_args(action, default)}{t.reset}"
-                if action in group_actions and part.startswith('[') and part.endswith(']'):
-                    part = part[1:-1]
-            else: # Optional
-                option_string = action.option_strings[0]
-                option_color = t.summary_long_option if self._is_long_option(option_string) else t.summary_short_option
+        for action in actions:
 
+            # suppressed arguments are marked with None
+            if action.help is SUPPRESS:
+                part = None
+
+            # produce all arg strings
+            elif not action.option_strings:
+                default = self._get_default_metavar_for_positional(action)
+                part = (
+                    t.summary_action
+                    + self._format_args(action, default)
+                    + t.reset
+                )
+
+                # if it's in a group, strip the outer []
+                if action in group_actions:
+                    if part[0] == '[' and part[-1] == ']':
+                        part = part[1:-1]
+
+            # produce the first way to invoke the option in brackets
+            else:
+                option_string = action.option_strings[0]
+                if self._is_long_option(option_string):
+                    option_color = t.summary_long_option
+                else:
+                    option_color = t.summary_short_option
+
+                # if the Optional doesn't take a value, format is:
+                #    -s or --long
                 if action.nargs == 0:
-                    part = f"{option_color}{action.format_usage()}{t.reset}" # format_usage here usually gives -s or --long
+                    part = action.format_usage()
+                    part = f"{option_color}{part}{t.reset}"
+
+                # if the Optional takes a value, format is:
+                #    -s ARGS or --long ARGS
                 else:
                     default = self._get_default_metavar_for_optional(action)
                     args_string = self._format_args(action, default)
-                    part = f"{option_color}{option_string}{t.reset} {t.summary_label}{args_string}{t.reset}"
+                    part = (
+                        f"{option_color}{option_string} "
+                        f"{t.summary_label}{args_string}{t.reset}"
+                    )
 
+                # make it look optional if it's not required or in a group
                 if not action.required and action not in group_actions:
-                    part = f"[{part}]"
+                    part = '[%s]' % part
+
+            # add the action string to the list
             parts.append(part)
 
-        # Group mutually exclusive actions (modifies 'parts' in place)
-        # Process inserts sorted by start_index to handle nested groups correctly (larger groups first if they have same start)
-        # Reverse=True on sorted key helps when removing/replacing slices
-        processed_indices_in_groups = set()
-        for (start, end), group in sorted(inserts.items(), key=lambda x: (x[0][0], - (x[0][1] - x[0][0]))): # Sort by start, then by length desc
-            group_slice_parts = [p for p in parts[start:end] if p is not None] # Get actual parts for this group
-            if not group_slice_parts: continue
+        # group mutually exclusive actions
+        inserted_separators_indices = set()
+        for start, end in sorted(inserts, reverse=True):
+            group = inserts[start, end]
+            group_parts = [item for item in parts[start:end] if item is not None]
+            group_size = len(group_parts)
+            if group.required:
+                open, close = "()" if group_size > 1 else ("", "")
+            else:
+                open, close = "[]"
+            group_parts[0] = open + group_parts[0]
+            group_parts[-1] = group_parts[-1] + close
+            for i, part in enumerate(group_parts[:-1], start=start):
+                # insert a separator if not already done in a nested group
+                if i not in inserted_separators_indices:
+                    parts[i] = part + ' |'
+                    inserted_separators_indices.add(i)
+            parts[start + group_size - 1] = group_parts[-1]
+            for i in range(start + group_size, end):
+                parts[i] = None
 
-            group_size = len(group_slice_parts)
-
-            # Determine brackets based on group requirement and number of items
-            open_bracket, close_bracket = "", ""
-            if group_size > 1 or not group.required : # always bracket if multiple, or if single and not required
-                 open_bracket, close_bracket = ("(", ")") if group.required else ("[", "]")
-
-
-            # Apply brackets to the first and last part of the group's representation
-            if open_bracket: group_slice_parts[0] = open_bracket + group_slice_parts[0]
-            if close_bracket: group_slice_parts[-1] = group_slice_parts[-1] + close_bracket
-
-            # Join with '|'
-            temp_group_str_list = []
-            for i in range(group_size):
-                temp_group_str_list.append(group_slice_parts[i])
-                if i < group_size - 1: # Add separator if not the last item
-                     # Check if this index (global in 'parts') has already been processed by a (potentially nested) group
-                     if (start + i) not in processed_indices_in_groups:
-                        temp_group_str_list.append(f" {t.summary_group_separator}|{t.reset} ") # Add themed separator
-                        processed_indices_in_groups.add(start + i)
-
-            # Replace the original slice in 'parts' with the new single group string
-            # And mark other parts in the slice as None (handled by final filter)
-            parts[start] = "".join(temp_group_str_list)
-            for i in range(start + 1, end):
-                parts[i] = None # Mark for removal
-
+        # return the usage parts
         return [item for item in parts if item is not None]
-
 
     def _format_text(self, text):
         if '%(prog)' in text:
             text = text % dict(prog=self._prog)
-
-        # Use max with _MIN_WRAP_WIDTH to prevent errors with textwrap if width is too small
-        text_width = max(self._width - self._current_indent, self._MIN_WRAP_WIDTH)
-        indent_str = ' ' * self._current_indent
-
-        # Normalize whitespace then fill
-        text = self._whitespace_matcher.sub(' ', text).strip()
-        filled_text = textwrap.fill(text, text_width,
-                                   initial_indent=indent_str,
-                                   subsequent_indent=indent_str)
-        return f"{filled_text}\n\n"
-
+        text_width = max(self._width - self._current_indent, 11)
+        indent = ' ' * self._current_indent
+        return self._fill_text(text, text_width, indent) + '\n\n'
 
     def _format_action(self, action):
+        """
+        Formats the help for a single action (argument).
+        This includes the action's invocation string and its help text,
+        aligning the help text based on _globally_calculated_help_start_col.
+        """
         action_invocation_string = self._format_action_invocation(action)
         action_invocation_len_no_color = len(self._decolor(action_invocation_string))
-
         current_action_item_indent_str = ' ' * self._current_indent
-        help_start_col = self._globally_calculated_help_start_col # Calculated globally
-
+        globally_determined_help_start_col = self._globally_calculated_help_start_col
+        min_padding_after_action_invocation = 2
         output_parts = []
 
-        # Max length for action invocation to have help on the same line
-        max_len_for_same_line_help = (
-            help_start_col - self._current_indent - self._MIN_PADDING_BETWEEN_ACTION_AND_HELP
-        )
+        # Determine the maximum length the action_invocation_string (decolored) can be
+        # for its help text to start on the same line, aligned at globally_determined_help_start_col,
+        # while respecting self._current_indent and min_padding_after_action_invocation.
+        max_action_invocation_len_for_same_line_help = \
+            globally_determined_help_start_col - self._current_indent - min_padding_after_action_invocation
 
-        has_help_text = action.help and self._decolor(action.help).strip() # Check decolored help
+        action_invocation_line_part = ""
+        help_should_start_on_new_line = True
 
-        action_line_part = f"{current_action_item_indent_str}{action_invocation_string}"
+        # The actual column where the first line of help text (and subsequent wrapped lines) will start.
+        actual_help_text_alignment_column = globally_determined_help_start_col
+
+        has_help_text = action.help and action.help.strip()
 
         if has_help_text:
-            if action_invocation_len_no_color <= max_len_for_same_line_help:
-                # Help starts on the same line
-                padding_spaces = help_start_col - (self._current_indent + action_invocation_len_no_color)
-                action_line_part += ' ' * padding_spaces
+            if action_invocation_len_no_color <= max_action_invocation_len_for_same_line_help:
+                # Action invocation is short enough: help text can start on the same line.
+                # Calculate the number of padding spaces needed to align the help text correctly.
+                num_padding_spaces = globally_determined_help_start_col - \
+                                     (self._current_indent + action_invocation_len_no_color)
 
-                expanded_help = self._expand_help(action)
-                help_text_wrapping_width = max(self._width - help_start_col, self._MIN_WRAP_WIDTH)
-                wrapped_help_lines = self._split_lines(expanded_help, help_text_wrapping_width)
-
-                if wrapped_help_lines:
-                    action_line_part += wrapped_help_lines[0] + '\n'
-                    output_parts.append(action_line_part)
-                    for line_content in wrapped_help_lines[1:]:
-                        output_parts.append(f"{' ' * help_start_col}{line_content}\n")
-                else: # Help was just whitespace
-                    output_parts.append(action_line_part + '\n')
-
+                action_invocation_line_part = (
+                    f"{current_action_item_indent_str}{action_invocation_string}"
+                    f"{' ' * num_padding_spaces}"
+                )
+                help_should_start_on_new_line = False
             else:
-                # Help starts on a new line
-                output_parts.append(action_line_part + '\n')
-                expanded_help = self._expand_help(action)
-                help_text_wrapping_width = max(self._width - help_start_col, self._MIN_WRAP_WIDTH)
-                wrapped_help_lines = self._split_lines(expanded_help, help_text_wrapping_width)
-
-                for line_content in wrapped_help_lines:
-                    output_parts.append(f"{' ' * help_start_col}{line_content}\n")
+                action_invocation_line_part = f"{current_action_item_indent_str}{action_invocation_string}\n"
         else:
-            # No help text, just the action invocation
-            output_parts.append(action_line_part + '\n')
+            action_invocation_line_part = f"{current_action_item_indent_str}{action_invocation_string}\n"
 
-        # Recursively format any subactions
-        # _iter_indented_subactions manages indent/dedent for subaction block
+        output_parts.append(action_invocation_line_part)
+
+        if has_help_text:
+            expanded_help_text = self._expand_help(action)
+
+            # Calculate the available width for wrapping the help text.
+            # The help text block starts at actual_help_text_alignment_column and extends to self._width.
+            help_text_wrapping_width = max(self._width - actual_help_text_alignment_column, 11)
+
+            split_help_lines = self._split_lines(expanded_help_text, help_text_wrapping_width)
+
+            if split_help_lines: # Proceed only if splitting the help text yields any lines.
+                first_help_line_content = split_help_lines[0]
+                remaining_help_lines_content = split_help_lines[1:]
+
+                if help_should_start_on_new_line:
+                    # Help starts on a new line, indented to actual_help_text_alignment_column.
+                    output_parts.append(f"{' ' * actual_help_text_alignment_column}{first_help_line_content}\n")
+                else:
+                    # Help starts on the same line as action_invocation_line_part.
+                    # Append the first_help_line_content to the last part in output_parts.
+                    # (action_invocation_line_part does not end with \n in this case).
+                    output_parts[-1] += f"{first_help_line_content}\n"
+
+                # Add any subsequent wrapped help lines, each indented to actual_help_text_alignment_column.
+                for line_content in remaining_help_lines_content:
+                    output_parts.append(f"{' ' * actual_help_text_alignment_column}{line_content}\n")
+
+            elif not output_parts[-1].endswith('\n'):
+                 # Case: has_help_text was true (action.help existed), but it was empty after strip()
+                 # or _split_lines returned empty. If action_invocation_line_part didn't end with \n
+                 # (because help_should_start_on_new_line was false), add a newline.
+                output_parts[-1] += '\n'
+
+        elif output_parts and not output_parts[-1].endswith('\n'):
+            # This handles the unlikely case where there's no help text, but action_invocation_line_part
+            # (which is output_parts[-1]) somehow didn't end with a newline.
+            # Based on the logic above, action_invocation_line_part should always end with \n if no help text.
+            # This is mostly defensive.
+            output_parts[-1] += '\n'
+
+        # Recursively format any subactions associated with this action.
+        # The _iter_indented_subactions method manages _indent() and _dedent() calls internally,
+        # ensuring self._current_indent is correctly set for these recursive _format_action calls.
         for subaction in self._iter_indented_subactions(action):
-            output_parts.append(self._format_action(subaction)) # Recursive call
+            output_parts.append(self._format_action(subaction))
 
         return self._join_parts(output_parts)
 
-
     def _format_action_invocation(self, action):
         t = self._theme
-        if not action.option_strings: # Positional
-            default_metavar = self._get_default_metavar_for_positional(action)
-            # The metavar_formatter returns a tuple of metavar strings
-            metavars = self._metavar_formatter(action, default_metavar)(1)
-            # Format based on nargs for positionals, typically just the metavar
-            # This should be simple for invocation; _format_args handles complex nargs
-            # For invocation, it's usually just the metavar.
-            return f"{t.action}{' '.join(metavars)}{t.reset}"
-        else: # Optional
-            colored_option_strings = []
-            for s in action.option_strings:
-                color = t.long_option if self._is_long_option(s) else t.short_option
-                colored_option_strings.append(f"{color}{s}{t.reset}")
 
-            parts_str = f"{t.option_strings_separator}, {t.reset}".join(colored_option_strings)
+        if not action.option_strings:
+            default = self._get_default_metavar_for_positional(action)
+            return (
+                t.action
+                + ' '.join(self._metavar_formatter(action, default)(1))
+                + t.reset
+            )
 
-            if action.nargs != 0: # Takes arguments
-                default_metavar = self._get_default_metavar_for_optional(action)
-                args_string = self._format_args(action, default_metavar)
-                parts_str += f" {t.label}{args_string}{t.reset}"
-            return parts_str
+        else:
 
+            def color_option_strings(strings):
+                parts = []
+                for s in strings:
+                    if self._is_long_option(s):
+                        parts.append(f"{t.long_option}{s}{t.reset}")
+                    else:
+                        parts.append(f"{t.short_option}{s}{t.reset}")
+                return parts
+
+            # if the Optional doesn't take a value, format is:
+            #    -s, --long
+            if action.nargs == 0:
+                option_strings = color_option_strings(action.option_strings)
+                return ', '.join(option_strings)
+
+            # if the Optional takes a value, format is:
+            #    -s, --long ARGS
+            else:
+                default = self._get_default_metavar_for_optional(action)
+                option_strings = color_option_strings(action.option_strings)
+                args_string = (
+                    f"{t.label}{self._format_args(action, default)}{t.reset}"
+                )
+                return ', '.join(option_strings) + ' ' + args_string
 
     def _metavar_formatter(self, action, default_metavar):
         if action.metavar is not None:
@@ -818,110 +819,79 @@ class HelpFormatter(object):
         else:
             result = default_metavar
 
-        # Ensure result is a tuple, even if a single string was provided for metavar
-        if isinstance(result, tuple):
-            base_metavars = result
-        else:
-            base_metavars = (result,)
-
-        # This function now returns the actual tuple of metavars needed,
-        # expanding the base_metavars if necessary to match tuple_size.
-        def format_metavars(tuple_size):
-            if len(base_metavars) == tuple_size:
-                return base_metavars
-            elif len(base_metavars) == 1: # common case, repeat single metavar
-                return base_metavars * tuple_size
-            else: # Mismatch, e.g. metavar=('X', 'Y') but nargs=1 or nargs=3.
-                  # argparse behavior is to use the first one if nargs=1, or join if nargs > len(metavar).
-                  # For simplicity here, if not a direct match or single, we'll just join and repeat.
-                  # This might need to precisely match argparse's more complex logic if this is for argparse.
-                  # A simple strategy: if tuple_size is 1, take first. Otherwise, cycle or fill.
-                if tuple_size == 1: return (base_metavars[0],)
-                # Fallback: just repeat the first one if tuple_size > 1 and len(base_metavars) != tuple_size
-                return (base_metavars[0],) * tuple_size
-        return format_metavars
-
+        def format(tuple_size):
+            if isinstance(result, tuple):
+                return result
+            else:
+                return (result, ) * tuple_size
+        return format
 
     def _format_args(self, action, default_metavar):
-        # This method's logic for various nargs values is largely preserved.
-        get_metavar_tuple = self._metavar_formatter(action, default_metavar)
-
-        if action.nargs is None: # Single argument (optional actions) or fixed (positional)
-            result = '%s' % get_metavar_tuple(1)
-        elif action.nargs == OPTIONAL: # '?'
-            result = '[%s]' % get_metavar_tuple(1)
-        elif action.nargs == ZERO_OR_MORE: # '*'
-            metavars = get_metavar_tuple(1) # Typically one metavar for *
-            result = '[%s [%s ...]]' % (metavars[0], metavars[0]) if len(metavars) == 1 else '[%s ...]' % metavars
-        elif action.nargs == ONE_OR_MORE: # '+'
-            metavars = get_metavar_tuple(2) # Needs two for "X [Y ...]" style
-            result = '%s [%s ...]' % (metavars[0], metavars[1] if len(metavars) > 1 else metavars[0])
-        elif action.nargs == REMAINDER: # '...'
+        get_metavar = self._metavar_formatter(action, default_metavar)
+        if action.nargs is None:
+            result = '%s' % get_metavar(1)
+        elif action.nargs == OPTIONAL:
+            result = '[%s]' % get_metavar(1)
+        elif action.nargs == ZERO_OR_MORE:
+            metavar = get_metavar(1)
+            if len(metavar) == 2:
+                result = '[%s [%s ...]]' % metavar
+            else:
+                result = '[%s ...]' % metavar
+        elif action.nargs == ONE_OR_MORE:
+            result = '%s [%s ...]' % get_metavar(2)
+        elif action.nargs == REMAINDER:
             result = '...'
-        elif action.nargs == PARSER: # Used with subparsers
-            # Metavar is usually the subparser dest or a generic term
-            result = '%s ...' % get_metavar_tuple(1)
-        elif action.nargs == SUPPRESS: # Argument not shown
+        elif action.nargs == PARSER:
+            result = '%s ...' % get_metavar(1)
+        elif action.nargs == SUPPRESS:
             result = ''
-        else: # Integer number of arguments
+        else:
             try:
-                num_args = int(action.nargs)
-                formats = ['%s'] * num_args
-                result = ' '.join(formats) % get_metavar_tuple(num_args)
-            except (TypeError, ValueError):
-                raise ValueError(f"invalid nargs value: {action.nargs}") from None
+                formats = ['%s' for _ in range(action.nargs)]
+            except TypeError:
+                raise ValueError("invalid nargs value") from None
+            result = ' '.join(formats) % get_metavar(action.nargs)
         return result
 
     def _expand_help(self, action):
         help_string = self._get_help_string(action)
-        if not help_string or '%' not in help_string: # Also check if help_string is None or empty
-            return help_string if help_string else ""
-
-        # Build params for %-formatting
-        params = vars(action).copy() # Use a copy
-        params['prog'] = self._prog
-
-        # Filter out SUPPRESS and represent callables by name
-        for name in list(params): # list() for safe deletion
+        if '%' not in help_string:
+            return help_string
+        params = dict(vars(action), prog=self._prog)
+        for name in list(params):
             value = params[name]
             if value is SUPPRESS:
                 del params[name]
-            elif callable(value) and hasattr(value, '__name__'):
+            elif hasattr(value, '__name__'):
                 params[name] = value.__name__
-
         if params.get('choices') is not None:
             params['choices'] = ', '.join(map(str, params['choices']))
-
-        try:
-            return help_string % params
-        except (TypeError, KeyError) as e:
-            # If formatting fails (e.g. bad format string or missing key not in action vars)
-            # return the original string to avoid crashing help.
-            # Or, one might want to log a warning here.
-            return help_string
-
+        return help_string % params
 
     def _iter_indented_subactions(self, action):
-        if hasattr(action, '_get_subactions'):
+        try:
+            get_subactions = action._get_subactions
+        except AttributeError:
+            pass
+        else:
             self._indent()
-            yield from action._get_subactions()
+            yield from get_subactions()
             self._dedent()
 
     def _split_lines(self, text, width):
         text = self._whitespace_matcher.sub(' ', text).strip()
-        if not text: return [] # textwrap.wrap can fail on empty or pure whitespace after strip
-        return textwrap.wrap(text, width, drop_whitespace=True, replace_whitespace=False)
-
+        # The textwrap module is used only for formatting help.
+        # Delay its import for speeding up the common usage of argparse.
+        import textwrap
+        return textwrap.wrap(text, width)
 
     def _fill_text(self, text, width, indent):
         text = self._whitespace_matcher.sub(' ', text).strip()
-        if not text: return indent # if text is empty, return just the indent (or empty if indent is empty)
+        import textwrap
         return textwrap.fill(text, width,
                              initial_indent=indent,
-                             subsequent_indent=indent,
-                             drop_whitespace=True,
-                             replace_whitespace=False)
-
+                             subsequent_indent=indent)
 
     def _get_help_string(self, action):
         return action.help
@@ -930,8 +900,7 @@ class HelpFormatter(object):
         return action.dest.upper()
 
     def _get_default_metavar_for_positional(self, action):
-        return action.des
-    t
+        return action.dest
 
 
 class RawDescriptionHelpFormatter(HelpFormatter):
@@ -2996,4 +2965,3 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     def _warning(self, message):
         args = {'prog': self.prog, 'message': message}
         self._print_message(_('%(prog)s: warning: %(message)s\n') % args, _sys.stderr)
- # type: ignore
