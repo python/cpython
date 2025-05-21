@@ -3241,6 +3241,13 @@ date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     return self;
 }
 
+static PyObject *add_datetime_timedelta(PyDateTime_DateTime *date,
+                                        PyDateTime_Delta *delta,
+                                        int factor);
+static PyObject *
+add_date_timedelta(PyDateTime_Date *date, PyDateTime_Delta *delta, int negate);
+
+
 static PyObject *
 date_fromtimestamp(PyObject *cls, PyObject *obj)
 {
@@ -3259,8 +3266,9 @@ date_fromtimestamp(PyObject *cls, PyObject *obj)
 					      tm.tm_mon + 1,
 					      tm.tm_mday,
 					      cls);
-	PyObject *delta = new_delta(0, t, 0, 1);
-	return add_datetime_timedelta(date, delta, 1);
+	int normalize = 1, negate = 0;
+	PyObject *delta = new_delta(0, (int)t, 0, normalize);
+	return add_date_timedelta(PyDate_CAST(date), PyDelta_CAST(delta), negate);
     }
 #endif
 
@@ -4084,9 +4092,6 @@ tzinfo_dst(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(dt))
 }
 
 
-static PyObject *add_datetime_timedelta(PyDateTime_DateTime *date,
-                                        PyDateTime_Delta *delta,
-                                        int factor);
 static PyObject *datetime_utcoffset(PyObject *self, PyObject *);
 static PyObject *datetime_dst(PyObject *self, PyObject *);
 
@@ -5544,16 +5549,15 @@ datetime_from_timestamp(PyObject *cls, TM_FUNC f, PyObject *timestamp,
     long us;
 
 #ifdef MS_WINDOWS
-    if (PyFloat_Check(timestamp)) {
-	if (PyFloat_AsDouble(timestamp) < 0) {
-	    if (_PyTime_ObjectToTimeval(timestamp,
-					&timet, &us, _PyTime_ROUND_HALF_EVEN) == -1)
-		return NULL;
+    if (PyFloat_Check(timestamp) && PyFloat_AsDouble(timestamp) < 0) {
+      if (_PyTime_ObjectToTimeval(timestamp,
+				  &timet, &us, _PyTime_ROUND_HALF_EVEN) == -1)
+	return NULL;
 
-	    PyObject *dt = datetime_from_timet_and_us(cls, f, 0, 0, tzinfo);
-	    PyObject *delta = new_delta(0, timet, us, 1);
-	    return add_datetime_timedelta(date, delta, 1);
-	}
+      int normalize = 1, factor = 1;
+      PyObject *dt = datetime_from_timet_and_us(cls, f, 0, 0, tzinfo);
+      PyObject *delta = new_delta(0, (int)timet, us, normalize);
+      return add_datetime_timedelta(PyDateTime_CAST(dt), PyDelta_CAST(delta), factor);
     }
 #endif
 
