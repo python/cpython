@@ -19,7 +19,7 @@ from subprocess import _args_from_interpreter_flags
 from . import process
 
 __all__ = [
-    'sub_debug', 'debug', 'info', 'sub_warning', 'warn', 'get_logger',
+    'sub_debug', 'debug', 'info', 'sub_warning', 'get_logger',
     'log_to_stderr', 'get_temp_dir', 'register_after_fork',
     'is_exiting', 'Finalize', 'ForkAwareThreadLock', 'ForkAwareLocal',
     'close_all_fds_except', 'SUBDEBUG', 'SUBWARNING',
@@ -54,7 +54,7 @@ def info(msg, *args):
     if _logger:
         _logger.log(INFO, msg, *args, stacklevel=2)
 
-def warn(msg, *args):
+def _warn(msg, *args):
     if _logger:
         _logger.log(WARNING, msg, *args, stacklevel=2)
 
@@ -192,14 +192,14 @@ def _get_base_temp_dir(tempfile):
     try:
         base_system_tempdir = tempfile._get_default_tempdir(dirlist)
     except FileNotFoundError:
-        warn("Process-wide temporary directory %s will not be usable for "
-             "creating socket files and no usable system-wide temporary "
-             "directory was found in %s", base_tempdir, dirlist)
+        _warn("Process-wide temporary directory %s will not be usable for "
+              "creating socket files and no usable system-wide temporary "
+              "directory was found in %s", base_tempdir, dirlist)
         # At this point, the system-wide temporary directory is not usable
         # but we may assume that the user-defined one is, even if we will
         # not be able to write socket files out there.
         return base_tempdir
-    warn("Ignoring user-defined temporary directory: %s", base_tempdir)
+    _warn("Ignoring user-defined temporary directory: %s", base_tempdir)
     # at most max(map(len, dirlist)) + 14 + 14 = 36 characters
     assert len(base_system_tempdir) + 14 + 14 <= _SUN_PATH_MAX
     return base_system_tempdir
