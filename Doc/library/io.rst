@@ -570,7 +570,7 @@ I/O Base Classes
       Read and return up to *size* bytes. If the argument is omitted, ``None``,
       or negative read as much as possible.
 
-      Less bytes may be returned than requested. An empty :class:`bytes` object
+      Fewer bytes may be returned than requested. An empty :class:`bytes` object
       is returned if the stream is already at EOF. More than one read may be
       made and calls may be retried if specific errors are encountered, see
       :meth:`os.read` and :pep:`475` for more details. Less than size bytes
