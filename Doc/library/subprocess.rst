@@ -651,8 +651,8 @@ functions.
       execute.  On Windows, in order to run a `side-by-side assembly`_, or a
       Python program using the :mod:`socket` module (or another module that
       depends on it, such as :mod:`asyncio`), the specified *env* **must**
-      include a valid :envvar:`SystemRoot`; omitting it will emit a
-      RuntimeWarning.
+      include a valid :envvar:`SystemRoot`; omitting it may emit a
+      :exc:`RuntimeWarning`.
 
    .. _side-by-side assembly: https://en.wikipedia.org/wiki/Side-by-Side_Assembly
 
