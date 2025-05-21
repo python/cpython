@@ -535,6 +535,24 @@ PyObject *
 PyModule_FromSlotsAndSpec(PyModuleDef_Slot *slots, PyObject *spec)
 {
     PyObject *result = NULL;
+    if (!slots) {
+        PyErr_BadArgument();
+    }
+    PyObject *nameobj = PyObject_GetAttrString(spec, "name");
+    if (nameobj == NULL) {
+        goto finally;
+    }
+    const char *name = PyUnicode_AsUTF8(nameobj);
+    if (name == NULL) {
+        goto finally;
+    }
+
+    // Fill in enough of a PyModuleDef to pass to common machinery
+    PyModuleDef def_like = {.m_slots = slots};
+
+    result = PyModule_FromDefAndSpec2(&def_like, spec, 3);
+finally:
+    Py_XDECREF(nameobj);
     return result;
 }
 
