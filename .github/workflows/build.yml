@@ -15,15 +15,13 @@ permissions:
   contents: read
 
 concurrency:
-  # For PRs, this names the group after the workflow ('Tests'), 
-  # the PR number followed by '/merge', and the name of the branch being merged
-  #   example: Tests-123456/merge-mycoolbranch
-  #
-  # For anything else that triggers this workflow, it names the group after
-  # the workflow ('Tests'), the branch, and the sha hash
-  #   example: Tests-main-(40 char sha hash)
-  #
-  group: ${{ github.workflow }}-${{ github.ref_name }}-${{ github.head_ref || github.sha }}
+  # https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#concurrency
+  # 'group' must be a key uniquely representing a PR or push event.
+  # github.workflow is the workflow name
+  # github.actor is the user invoking the workflow
+  # github.head_ref is the source branch of the PR or otherwise blank
+  # github.run_id is a unique number for the current run
+  group: ${{ github.workflow }}-${{ github.actor }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 env:
