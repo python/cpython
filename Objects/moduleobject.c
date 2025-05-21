@@ -150,6 +150,12 @@ new_module_notrack(PyTypeObject *mt)
     m->md_state = NULL;
     m->md_weaklist = NULL;
     m->md_name = NULL;
+    m->md_size = 0;
+    m->md_traverse = NULL;
+    m->md_clear = NULL;
+    m->md_free = NULL;
+    m->md_exec = NULL;
+    m->md_token = NULL;
     m->md_dict = PyDict_New();
     if (m->md_dict == NULL) {
         Py_DECREF(m);

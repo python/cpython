@@ -27,6 +27,12 @@ typedef struct {
 #ifdef Py_GIL_DISABLED
     void *md_gil;
 #endif
+    Py_ssize_t md_size;
+    traverseproc md_traverse;
+    inquiry md_clear;
+    freefunc md_free;
+    void *md_token;
+    int (*md_exec)(PyObject *);
 } PyModuleObject;
 
 static inline PyModuleDef* _PyModule_GetDef(PyObject *mod) {
