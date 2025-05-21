@@ -2509,11 +2509,43 @@ class FreeThreadingMethodTests(unittest.TestCase):
         num_threads = 8
 
         def run_method(b):
-            level = threading.get_ident() % 2
+            level = threading.get_ident() % 4
             # sync threads to increase chance of contention on
             # capsule storing dictionary levels
             b.wait()
-            ZstdCompressor(level=level, zstd_dict=TRAINED_DICT.as_digested_dict)
+            ZstdCompressor(level=level,
+                           zstd_dict=TRAINED_DICT.as_digested_dict)
+            b.wait()
+            ZstdCompressor(level=level,
+                           zstd_dict=TRAINED_DICT.as_undigested_dict)
+            b.wait()
+            ZstdCompressor(level=level,
+                           zstd_dict=TRAINED_DICT.as_prefix)
+        threads = []
+
+        b = threading.Barrier(num_threads)
+        for i in range(num_threads):
+            thread = threading.Thread(target=run_method, args=(b,))
+
+            threads.append(thread)
+
+        with threading_helper.start_threads(threads):
+            pass
+
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_decompress_shared_dict(self):
+        num_threads = 8
+
+        def run_method(b):
+            # sync threads to increase chance of contention on
+            # decompression dictionary
+            b.wait()
+            ZstdDecompressor(zstd_dict=TRAINED_DICT.as_digested_dict)
+            b.wait()
+            ZstdDecompressor(zstd_dict=TRAINED_DICT.as_undigested_dict)
+            b.wait()
+            ZstdDecompressor(zstd_dict=TRAINED_DICT.as_prefix)
         threads = []
 
         b = threading.Barrier(num_threads)
