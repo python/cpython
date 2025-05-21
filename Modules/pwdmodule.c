@@ -308,17 +308,16 @@ pwd_getpwall_impl(PyObject *module)
     PyMutex_Lock(&getpwall_mutex);
 #endif
     int failure = 0;
-    PyObject *orphan = NULL;
+    PyObject *v = NULL;
     setpwent();
     while ((p = getpwent()) != NULL) {
-        /* NOTE: Ref counts are not decremented here, as we cannot allow
-         * re-entrancy while holding the mutex. */
-        PyObject *v = mkpwent(module, p);
+        v = mkpwent(module, p);
         if (v == NULL || PyList_Append(d, v) != 0) {
-            orphan = v;
+            /* NOTE: cannot dec-ref here, while holding the mutex. */
             failure = 1;
             goto done;
         }
+        Py_DECREF(v);
     }
 
 done:
@@ -326,13 +325,8 @@ done:
 #ifdef Py_GIL_DISABLED
     PyMutex_Unlock(&getpwall_mutex);
 #endif
-    /* Deferred decref on entries created above and added to the list. */
-    Py_ssize_t n = PyList_Size(d);
-    while (--n >= 0) {
-        Py_DECREF(PyList_GetItem(d, n));
-    }
     if (failure) {
-        Py_XDECREF(orphan);
+        Py_XDECREF(v);
         Py_CLEAR(d);
     }
     return d;
