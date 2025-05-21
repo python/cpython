@@ -206,6 +206,9 @@ class GzipFile(_streams.BaseStream):
         if mode and 'b' not in mode:
             mode += 'b'
 
+        if mtime is not None and (mtime < 0 or mtime >= 2**32):
+            raise ValueError(f'mtime must be in the range 0 through {2**32-1}')
+
         try:
             if fileobj is None:
                 fileobj = self.myfileobj = builtins.open(filename, mode or 'rb')

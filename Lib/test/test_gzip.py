@@ -353,12 +353,12 @@ class TestGzip(BaseTest):
             self.assertEqual(fRead.mtime, mtime)
 
     def test_mtime_out_of_range(self):
-        # exception should be raised when mtime<0 or mtime>=2**32 and is
+        # ValueError should be raised when mtime<0 or mtime>=2**32 and is
         # explicitly specified
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValueError):
             with gzip.GzipFile(self.filename, 'w', mtime=-1) as fWrite:
                 pass
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValueError):
             with gzip.GzipFile(self.filename, 'w', mtime=2**32) as fWrite:
                 pass
 
