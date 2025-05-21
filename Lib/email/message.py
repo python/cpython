@@ -164,6 +164,10 @@ class Message:
         """
         return self.as_string()
 
+    def __repr__(self):
+        return f"{self.__class__.__name__} with {len(self._headers)} " \
+               f"headers and Content-Type {self._default_type}"
+
     def as_string(self, unixfrom=False, maxheaderlen=0, policy=None):
         """Return the entire formatted message as a string.
 
