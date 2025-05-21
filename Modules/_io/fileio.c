@@ -83,7 +83,7 @@ typedef struct {
 } fileio;
 
 #define PyFileIO_Check(state, op) (PyObject_TypeCheck((op), state->PyFileIO_Type))
-#define _PyFileIO_CAST(op) _Py_CAST(fileio*, (op))
+#define PyFileIO_CAST(op) ((fileio *)(op))
 
 /* Forward declarations */
 static PyObject* portable_lseek(fileio *self, PyObject *posobj, int whence, bool suppress_pipe_error);
@@ -91,7 +91,7 @@ static PyObject* portable_lseek(fileio *self, PyObject *posobj, int whence, bool
 int
 _PyFileIO_closed(PyObject *self)
 {
-    return (_PyFileIO_CAST(self)->fd < 0);
+    return (PyFileIO_CAST(self)->fd < 0);
 }
 
 /* Because this can call arbitrary code, it shouldn't be called when
@@ -100,13 +100,15 @@ _PyFileIO_closed(PyObject *self)
 static PyObject *
 fileio_dealloc_warn(PyObject *op, PyObject *source)
 {
-    fileio *self = _PyFileIO_CAST(op);
+    fileio *self = PyFileIO_CAST(op);
     if (self->fd >= 0 && self->closefd) {
         PyObject *exc = PyErr_GetRaisedException();
         if (PyErr_ResourceWarning(source, 1, "unclosed file %R", source)) {
             /* Spurious errors can appear at shutdown */
-            if (PyErr_ExceptionMatches(PyExc_Warning))
-                PyErr_WriteUnraisable((PyObject *) self);
+            if (PyErr_ExceptionMatches(PyExc_Warning)) {
+                PyErr_FormatUnraisable("Exception ignored "
+                                       "while finalizing file %R", self);
+            }
         }
         PyErr_SetRaisedException(exc);
     }
@@ -540,7 +542,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 static int
 fileio_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    fileio *self = _PyFileIO_CAST(op);
+    fileio *self = PyFileIO_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     return 0;
@@ -549,7 +551,7 @@ fileio_traverse(PyObject *op, visitproc visit, void *arg)
 static int
 fileio_clear(PyObject *op)
 {
-    fileio *self = _PyFileIO_CAST(op);
+    fileio *self = PyFileIO_CAST(op);
     Py_CLEAR(self->dict);
     return 0;
 }
@@ -557,7 +559,7 @@ fileio_clear(PyObject *op)
 static void
 fileio_dealloc(PyObject *op)
 {
-    fileio *self = _PyFileIO_CAST(op);
+    fileio *self = PyFileIO_CAST(op);
     self->finalizing = 1;
     if (_PyIOBase_finalize(op) < 0) {
         return;
@@ -725,13 +727,16 @@ _io.FileIO.readall
 
 Read all data from the file, returned as bytes.
 
-In non-blocking mode, returns as much as is immediately available,
-or None if no data is available.  Return an empty bytes object at EOF.
+Reads until either there is an error or read() returns size 0 (indicates EOF).
+If the file is already at EOF, returns an empty bytes object.
+
+In non-blocking mode, returns as much data as could be read before EAGAIN. If no
+data is available (EAGAIN is returned before bytes are read) returns None.
 [clinic start generated code]*/
 
 static PyObject *
 _io_FileIO_readall_impl(fileio *self)
-/*[clinic end generated code: output=faa0292b213b4022 input=dbdc137f55602834]*/
+/*[clinic end generated code: output=faa0292b213b4022 input=1e19849857f5d0a1]*/
 {
     Py_off_t pos, end;
     PyObject *result;
@@ -846,14 +851,19 @@ _io.FileIO.read
 
 Read at most size bytes, returned as bytes.
 
-Only makes one system call, so less data may be returned than requested.
-In non-blocking mode, returns None if no data is available.
-Return an empty bytes object at EOF.
+If size is less than 0, read all bytes in the file making multiple read calls.
+See ``FileIO.readall``.
+
+Attempts to make only one system call, retrying only per PEP 475 (EINTR). This
+means less data may be returned than requested.
+
+In non-blocking mode, returns None if no data is available. Return an empty
+bytes object at EOF.
 [clinic start generated code]*/
 
 static PyObject *
 _io_FileIO_read_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size)
-/*[clinic end generated code: output=bbd749c7c224143e input=f613d2057e4a1918]*/
+/*[clinic end generated code: output=bbd749c7c224143e input=cf21fddef7d38ab6]*/
 {
     char *ptr;
     Py_ssize_t n;
@@ -1159,7 +1169,7 @@ mode_string(fileio *self)
 static PyObject *
 fileio_repr(PyObject *op)
 {
-    fileio *self = _PyFileIO_CAST(op);
+    fileio *self = PyFileIO_CAST(op);
     const char *type_name = Py_TYPE(self)->tp_name;
 
     if (self->fd < 0) {
@@ -1225,9 +1235,9 @@ _io_FileIO_isatty_impl(fileio *self)
    context TOCTOU issues (the fd could be arbitrarily modified by
    surrounding code). */
 static PyObject *
-_io_FileIO_isatty_open_only(PyObject *op, PyObject *Py_UNUSED(ignored))
+_io_FileIO_isatty_open_only(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
-    fileio *self = _PyFileIO_CAST(op);
+    fileio *self = PyFileIO_CAST(op);
     if (self->stat_atopen != NULL && !S_ISCHR(self->stat_atopen->st_mode)) {
         Py_RETURN_FALSE;
     }
@@ -1252,8 +1262,7 @@ static PyMethodDef fileio_methods[] = {
     _IO_FILEIO_ISATTY_METHODDEF
     {"_isatty_open_only", _io_FileIO_isatty_open_only, METH_NOARGS},
     {"_dealloc_warn", fileio_dealloc_warn, METH_O, NULL},
-    {"__reduce__", _PyIOBase_cannot_pickle, METH_NOARGS},
-    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_O},
+    {"__getstate__", _PyIOBase_cannot_pickle, METH_NOARGS},
     {NULL,           NULL}             /* sentinel */
 };
 
@@ -1262,29 +1271,29 @@ static PyMethodDef fileio_methods[] = {
 static PyObject *
 fileio_get_closed(PyObject *op, void *closure)
 {
-    fileio *self = _PyFileIO_CAST(op);
+    fileio *self = PyFileIO_CAST(op);
     return PyBool_FromLong((long)(self->fd < 0));
 }
 
 static PyObject *
 fileio_get_closefd(PyObject *op, void *closure)
 {
-    fileio *self = _PyFileIO_CAST(op);
+    fileio *self = PyFileIO_CAST(op);
     return PyBool_FromLong((long)(self->closefd));
 }
 
 static PyObject *
 fileio_get_mode(PyObject *op, void *closure)
 {
-    fileio *self = _PyFileIO_CAST(op);
+    fileio *self = PyFileIO_CAST(op);
     return PyUnicode_FromString(mode_string(self));
 }
 
 static PyObject *
 fileio_get_blksize(PyObject *op, void *closure)
 {
-    fileio *self = _PyFileIO_CAST(op);
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
+    fileio *self = PyFileIO_CAST(op);
     if (self->stat_atopen != NULL && self->stat_atopen->st_blksize > 1) {
         return PyLong_FromLong(self->stat_atopen->st_blksize);
     }

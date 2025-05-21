@@ -1,12 +1,10 @@
 # Run the tests in Programs/_testembed.c (tests for the CPython embedding APIs)
 from test import support
-from test.libregrtest.utils import get_build_info
 from test.support import import_helper, os_helper, threading_helper, MS_WINDOWS
 import unittest
 
 from collections import namedtuple
 import contextlib
-import io
 import json
 import os
 import os.path
@@ -50,8 +48,8 @@ API_ISOLATED = 3
 INIT_LOOPS = 4
 MAX_HASH_SEED = 4294967295
 
-ABI_THREAD = 't' if sysconfig.get_config_var('Py_GIL_DISABLED') else ''
-# PLATSTDLIB_LANDMARK copied from Modules/getpath.py
+ABI_THREAD = 't' if support.Py_GIL_DISABLED else ''
+# PLATSTDLIB_LANDMARK copied from Modules/getpath.py
 if os.name == 'nt':
     PLATSTDLIB_LANDMARK = f'{sys.platlibdir}'
 else:
@@ -60,6 +58,8 @@ else:
     PLATSTDLIB_LANDMARK = (f'{sys.platlibdir}/python{VERSION_MAJOR}.'
                            f'{VERSION_MINOR}{ABI_THREAD}/lib-dynload')
 
+DEFAULT_THREAD_INHERIT_CONTEXT = 1 if support.Py_GIL_DISABLED else 0
+DEFAULT_CONTEXT_AWARE_WARNINGS = 1 if support.Py_GIL_DISABLED else 0
 
 # If we are running from a build dir, but the stdlib has been installed,
 # some tests need to expect different results.
@@ -296,7 +296,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         if MS_WINDOWS:
             expected_path = self.test_exe
         else:
-            expected_path = os.path.join(os.getcwd(), "spam")
+            expected_path = os.path.join(os.getcwd(), "_testembed")
         expected_output = f"sys.executable: {expected_path}\n"
         self.assertIn(expected_output, out)
         self.assertEqual(err, '')
@@ -384,11 +384,14 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_specialized_static_code_gets_unspecialized_at_Py_FINALIZE(self):
         # https://github.com/python/cpython/issues/92031
 
-        code = textwrap.dedent("""\
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
+
+        code = textwrap.dedent(f"""\
             import dis
             import importlib._bootstrap
             import opcode
             import test.test_dis
+            import test.support
 
             def is_specialized(f):
                 for instruction in dis.get_instructions(f, adaptive=True):
@@ -407,11 +410,11 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             func = importlib._bootstrap._handle_fromlist
 
             # "copy" the code to un-specialize it:
-            func.__code__ = func.__code__.replace()
+            test.support.reset_code(func)
 
             assert not is_specialized(func), "specialized instructions found"
 
-            for i in range(test.test_dis.ADAPTIVE_WARMUP_DELAY):
+            for _ in range({_testinternalcapi.SPECIALIZATION_THRESHOLD}):
                 func(importlib._bootstrap, ["x"], lambda *args: None)
 
             assert is_specialized(func), "no specialized instructions found"
@@ -582,7 +585,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'faulthandler': False,
         'tracemalloc': 0,
         'perf_profiling': 0,
-        'import_time': False,
+        'import_time': 0,
+        'thread_inherit_context': DEFAULT_THREAD_INHERIT_CONTEXT,
+        'context_aware_warnings': DEFAULT_CONTEXT_AWARE_WARNINGS,
         'code_debug_ranges': True,
         'show_ref_count': False,
         'dump_refs': False,
@@ -625,6 +630,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'write_bytecode': True,
         'verbose': 0,
         'quiet': False,
+        'remote_debug': True,
         'user_site_directory': True,
         'configure_c_stdio': False,
         'buffered_stdio': True,
@@ -963,7 +969,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'utf8_mode': True,
         }
         config = {
-            'program_name': './globalvar',
             'site_import': False,
             'bytes_warning': True,
             'warnoptions': ['default::BytesWarning'],
@@ -974,7 +979,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'verbose': True,
             'quiet': True,
             'buffered_stdio': False,
-
+            'remote_debug': True,
             'user_site_directory': False,
             'pathconfig_warnings': False,
         }
@@ -992,7 +997,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'hash_seed': 123,
             'tracemalloc': 2,
             'perf_profiling': 0,
-            'import_time': True,
+            'import_time': 2,
             'code_debug_ranges': False,
             'show_ref_count': True,
             'malloc_stats': True,
@@ -1030,6 +1035,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'write_bytecode': False,
             'verbose': 1,
             'quiet': True,
+            'remote_debug': True,
             'configure_c_stdio': True,
             'buffered_stdio': False,
             'user_site_directory': False,
@@ -1057,7 +1063,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'use_hash_seed': True,
             'hash_seed': 42,
             'tracemalloc': 2,
-            'import_time': True,
+            'import_time': 1,
             'code_debug_ranges': False,
             'malloc_stats': True,
             'inspect': True,
@@ -1093,7 +1099,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'use_hash_seed': True,
             'hash_seed': 42,
             'tracemalloc': 2,
-            'import_time': True,
+            'import_time': 1,
             'code_debug_ranges': False,
             'malloc_stats': True,
             'inspect': True,
@@ -1981,57 +1987,6 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
         out = proc.stdout.strip()
         self.assertIn("Tests passed", out)
         self.assertIn("unique-python-message", out)
-
-
-class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
-    # Test PyStdPrinter_Type which is used by _PySys_SetPreliminaryStderr():
-    #   "Set up a preliminary stderr printer until we have enough
-    #    infrastructure for the io module in place."
-
-    STDOUT_FD = 1
-
-    def create_printer(self, fd):
-        ctypes = import_helper.import_module('ctypes')
-        PyFile_NewStdPrinter = ctypes.pythonapi.PyFile_NewStdPrinter
-        PyFile_NewStdPrinter.argtypes = (ctypes.c_int,)
-        PyFile_NewStdPrinter.restype = ctypes.py_object
-        return PyFile_NewStdPrinter(fd)
-
-    def test_write(self):
-        message = "unicode:\xe9-\u20ac-\udc80!\n"
-
-        stdout_fd = self.STDOUT_FD
-        stdout_fd_copy = os.dup(stdout_fd)
-        self.addCleanup(os.close, stdout_fd_copy)
-
-        rfd, wfd = os.pipe()
-        self.addCleanup(os.close, rfd)
-        self.addCleanup(os.close, wfd)
-        try:
-            # PyFile_NewStdPrinter() only accepts fileno(stdout)
-            # or fileno(stderr) file descriptor.
-            os.dup2(wfd, stdout_fd)
-
-            printer = self.create_printer(stdout_fd)
-            printer.write(message)
-        finally:
-            os.dup2(stdout_fd_copy, stdout_fd)
-
-        data = os.read(rfd, 100)
-        self.assertEqual(data, message.encode('utf8', 'backslashreplace'))
-
-    def test_methods(self):
-        fd = self.STDOUT_FD
-        printer = self.create_printer(fd)
-        self.assertEqual(printer.fileno(), fd)
-        self.assertEqual(printer.isatty(), os.isatty(fd))
-        printer.flush()  # noop
-        printer.close()  # noop
-
-    def test_disallow_instantiation(self):
-        fd = self.STDOUT_FD
-        printer = self.create_printer(fd)
-        support.check_disallow_instantiation(self, type(printer))
 
 
 if __name__ == "__main__":

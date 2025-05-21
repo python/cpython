@@ -865,6 +865,8 @@ class DictConfigurator(BaseConfigurator):
             else:
                 factory = klass
         kwargs = {k: config[k] for k in config if (k != '.' and valid_ident(k))}
+        # When deprecation ends for using the 'strm' parameter, remove the
+        # "except TypeError ..."
         try:
             result = factory(**kwargs)
         except TypeError as te:
@@ -876,6 +878,15 @@ class DictConfigurator(BaseConfigurator):
             #(e.g. by Django)
             kwargs['strm'] = kwargs.pop('stream')
             result = factory(**kwargs)
+
+            import warnings
+            warnings.warn(
+                "Support for custom logging handlers with the 'strm' argument "
+                "is deprecated and scheduled for removal in Python 3.16. "
+                "Define handlers with the 'stream' argument instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         if formatter:
             result.setFormatter(formatter)
         if level is not None:

@@ -1,1 +1,0 @@
-Fix compile errors with Clang 9 and older due to lack of ``__attribute__((fallthrough))`` support.

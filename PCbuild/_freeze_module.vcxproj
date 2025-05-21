@@ -92,6 +92,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -fno-lto</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -142,6 +143,7 @@
     <ClCompile Include="..\Objects\funcobject.c" />
     <ClCompile Include="..\Objects\genericaliasobject.c" />
     <ClCompile Include="..\Objects\genobject.c" />
+    <ClCompile Include="..\Objects\interpolationobject.c" />
     <ClCompile Include="..\Objects\iterobject.c" />
     <ClCompile Include="..\Objects\listobject.c" />
     <ClCompile Include="..\Objects\longobject.c" />
@@ -157,6 +159,7 @@
     <ClCompile Include="..\Objects\setobject.c" />
     <ClCompile Include="..\Objects\sliceobject.c" />
     <ClCompile Include="..\Objects\structseq.c" />
+    <ClCompile Include="..\Objects\templateobject.c" />
     <ClCompile Include="..\Objects\tupleobject.c" />
     <ClCompile Include="..\Objects\typeobject.c" />
     <ClCompile Include="..\Objects\typevarobject.c" />
@@ -187,7 +190,7 @@
     <ClCompile Include="..\Python\asdl.c" />
     <ClCompile Include="..\Python\assemble.c" />
     <ClCompile Include="..\Python\ast.c" />
-    <ClCompile Include="..\Python\ast_opt.c" />
+    <ClCompile Include="..\Python\ast_preprocess.c" />
     <ClCompile Include="..\Python\ast_unparse.c" />
     <ClCompile Include="..\Python\bltinmodule.c" />
     <ClCompile Include="..\Python\brc.c" />
@@ -259,6 +262,7 @@
     <ClCompile Include="..\Python\Python-tokenize.c" />
     <ClCompile Include="..\Python\pytime.c" />
     <ClCompile Include="..\Python\qsbr.c" />
+    <ClCompile Include="..\Python\remote_debugging.c" />
     <ClCompile Include="..\Python\specialize.c" />
     <ClCompile Include="..\Python\structmember.c" />
     <ClCompile Include="..\Python\suggestions.c" />
@@ -272,7 +276,7 @@
     <ClCompile Include="..\Python\uniqueid.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\PC\pyconfig.h.in" />
+    <ClInclude Include="..\PC\pyconfig.h" />
   </ItemGroup>
   <ItemGroup>
     <!-- BEGIN frozen modules -->
@@ -431,31 +435,6 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-
-  <!-- Direct copy from pythoncore.vcxproj, but this one is only used for our
-       own build. All other extension modules will use the copy that pythoncore
-       generates. -->
-  <Target Name="_UpdatePyconfig" BeforeTargets="PrepareForBuild">
-    <MakeDir Directories="$(IntDir)" Condition="!Exists($(IntDir))" />
-    <ItemGroup>
-      <PyConfigH Remove="@(PyConfigH)" />
-      <PyConfigH Include="@(ClInclude)" Condition="'%(Filename)%(Extension)' == 'pyconfig.h.in'" />
-    </ItemGroup>
-    <Error Text="Did not find pyconfig.h" Condition="@(ClInclude) == ''" />
-    <PropertyGroup>
-      <PyConfigH>@(PyConfigH->'%(FullPath)', ';')</PyConfigH>
-      <PyConfigHText>$([System.IO.File]::ReadAllText($(PyConfigH)))</PyConfigHText>
-      <OldPyConfigH Condition="Exists('$(IntDir)pyconfig.h')">$([System.IO.File]::ReadAllText('$(IntDir)pyconfig.h'))</OldPyConfigH>
-    </PropertyGroup>
-    <PropertyGroup Condition="$(DisableGil) == 'true'">
-      <PyConfigHText>$(PyConfigHText.Replace('#undef Py_GIL_DISABLED', '#define Py_GIL_DISABLED 1'))</PyConfigHText>
-    </PropertyGroup>
-    <Message Text="Updating pyconfig.h" Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
-    <WriteLinesToFile File="$(IntDir)pyconfig.h"
-                      Lines="$(PyConfigHText)"
-                      Overwrite="true"
-                      Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
-  </Target>
 
   <Target Name="_RebuildGetPath" AfterTargets="_RebuildFrozen" Condition="$(Configuration) != 'PGUpdate'">
     <Exec Command='"$(TargetPath)" "%(GetPath.ModName)" "%(GetPath.FullPath)" "%(GetPath.IntFile)"' />

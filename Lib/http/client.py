@@ -181,11 +181,10 @@ def _strip_ipv6_iface(enc_name: bytes) -> bytes:
     return enc_name
 
 class HTTPMessage(email.message.Message):
-    # XXX The only usage of this method is in
-    # http.server.CGIHTTPRequestHandler.  Maybe move the code there so
-    # that it doesn't need to be part of the public API.  The API has
-    # never been defined so this could cause backwards compatibility
-    # issues.
+
+    # The getallmatchingheaders() method was only used by the CGI handler
+    # that was removed in Python 3.15. However, since the public API was not
+    # properly defined, it will be kept for backwards compatibility reasons.
 
     def getallmatchingheaders(self, name):
         """Find all header lines matching a given header name.
@@ -472,7 +471,7 @@ class HTTPResponse(io.BufferedIOBase):
         if self.chunked:
             return self._read_chunked(amt)
 
-        if amt is not None:
+        if amt is not None and amt >= 0:
             if self.length is not None and amt > self.length:
                 # clip the read to the "end of response"
                 amt = self.length
@@ -590,6 +589,8 @@ class HTTPResponse(io.BufferedIOBase):
 
     def _read_chunked(self, amt=None):
         assert self.chunked != _UNKNOWN
+        if amt is not None and amt < 0:
+            amt = None
         value = []
         try:
             while (chunk_left := self._get_chunk_left()) is not None:

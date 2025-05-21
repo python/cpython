@@ -22,6 +22,7 @@ class CAPITest(unittest.TestCase):
         # Test PyBytes_Check()
         check = _testlimitedcapi.bytes_check
         self.assertTrue(check(b'abc'))
+        self.assertTrue(check(b''))
         self.assertFalse(check('abc'))
         self.assertFalse(check(bytearray(b'abc')))
         self.assertTrue(check(BytesSubclass(b'abc')))
@@ -36,6 +37,7 @@ class CAPITest(unittest.TestCase):
         # Test PyBytes_CheckExact()
         check = _testlimitedcapi.bytes_checkexact
         self.assertTrue(check(b'abc'))
+        self.assertTrue(check(b''))
         self.assertFalse(check('abc'))
         self.assertFalse(check(bytearray(b'abc')))
         self.assertFalse(check(BytesSubclass(b'abc')))
@@ -93,6 +95,7 @@ class CAPITest(unittest.TestCase):
         # Test PyBytes_Size()
         size = _testlimitedcapi.bytes_size
 
+        self.assertEqual(size(b''), 0)
         self.assertEqual(size(b'abc'), 3)
         self.assertEqual(size(BytesSubclass(b'abc')), 3)
         self.assertRaises(TypeError, size, bytearray(b'abc'))
@@ -107,6 +110,7 @@ class CAPITest(unittest.TestCase):
 
         self.assertEqual(asstring(b'abc', 4), b'abc\0')
         self.assertEqual(asstring(b'abc\0def', 8), b'abc\0def\0')
+        self.assertEqual(asstring(b'', 1), b'\0')
         self.assertRaises(TypeError, asstring, 'abc', 0)
         self.assertRaises(TypeError, asstring, object(), 0)
 
@@ -119,6 +123,7 @@ class CAPITest(unittest.TestCase):
 
         self.assertEqual(asstringandsize(b'abc', 4), (b'abc\0', 3))
         self.assertEqual(asstringandsize(b'abc\0def', 8), (b'abc\0def\0', 7))
+        self.assertEqual(asstringandsize(b'', 1), (b'\0', 0))
         self.assertEqual(asstringandsize_null(b'abc', 4), b'abc\0')
         self.assertRaises(ValueError, asstringandsize_null, b'abc\0def', 8)
         self.assertRaises(TypeError, asstringandsize, 'abc', 0)
@@ -162,6 +167,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(concat(b'', bytearray(b'def')), b'def')
         self.assertEqual(concat(memoryview(b'xabcy')[1:4], b'def'), b'abcdef')
         self.assertEqual(concat(b'abc', memoryview(b'xdefy')[1:4]), b'abcdef')
+        self.assertEqual(concat(b'', b''), b'')
 
         self.assertEqual(concat(b'abc', b'def', True), b'abcdef')
         self.assertEqual(concat(b'abc', bytearray(b'def'), True), b'abcdef')

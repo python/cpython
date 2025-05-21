@@ -5,6 +5,10 @@
 extern "C" {
 #endif
 
+#include "pycore_interp.h"
+#include "pycore_optimizer.h"
+#include "pycore_stackref.h"
+
 #ifndef Py_BUILD_CORE
 #  error "this header requires Py_BUILD_CORE define"
 #endif

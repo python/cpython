@@ -7,6 +7,7 @@ from test.support import os_helper
 from test.support import import_helper
 from test.support.warnings_helper import check_warnings
 
+_testcapi = import_helper.import_module('_testcapi')
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 NULL = None
 
@@ -133,7 +134,7 @@ class ImportTests(unittest.TestCase):
         # CRASHES importmodule(NULL)
 
     def test_importmodulenoblock(self):
-        # Test deprecated PyImport_ImportModuleNoBlock()
+        # Test deprecated (stable ABI only) PyImport_ImportModuleNoBlock()
         importmodulenoblock = _testlimitedcapi.PyImport_ImportModuleNoBlock
         with check_warnings(('', DeprecationWarning)):
             self.check_import_func(importmodulenoblock)
@@ -148,7 +149,7 @@ class ImportTests(unittest.TestCase):
         try:
             self.assertEqual(import_frozen_module('zipimport'), 1)
 
-            # import zipimport again
+            # import zipimport again
             self.assertEqual(import_frozen_module('zipimport'), 1)
         finally:
             sys.modules['zipimport'] = old_zipimport
@@ -316,6 +317,59 @@ class ImportTests(unittest.TestCase):
         sys.modules.pop(nonstring, None)
         # CRASHES execute_code_func(NULL, code, NULL, NULL)
         # CRASHES execute_code_func(name, NULL, NULL, NULL)
+
+    def check_importmoduleattr(self, importmoduleattr):
+        self.assertIs(importmoduleattr('sys', 'argv'), sys.argv)
+        self.assertIs(importmoduleattr('types', 'ModuleType'), types.ModuleType)
+
+        # module name containing a dot
+        attr = importmoduleattr('email.message', 'Message')
+        from email.message import Message
+        self.assertIs(attr, Message)
+
+        with self.assertRaises(ImportError):
+            # nonexistent module
+            importmoduleattr('nonexistentmodule', 'attr')
+        with self.assertRaises(AttributeError):
+            # nonexistent attribute
+            importmoduleattr('sys', 'nonexistentattr')
+        with self.assertRaises(AttributeError):
+            # attribute name containing a dot
+            importmoduleattr('sys', 'implementation.name')
+
+    def test_importmoduleattr(self):
+        # Test PyImport_ImportModuleAttr()
+        importmoduleattr = _testcapi.PyImport_ImportModuleAttr
+        self.check_importmoduleattr(importmoduleattr)
+
+        # Invalid module name type
+        for mod_name in (object(), 123, b'bytes'):
+            with self.subTest(mod_name=mod_name):
+                with self.assertRaises(TypeError):
+                    importmoduleattr(mod_name, "attr")
+
+        # Invalid attribute name type
+        for attr_name in (object(), 123, b'bytes'):
+            with self.subTest(attr_name=attr_name):
+                with self.assertRaises(TypeError):
+                    importmoduleattr("sys", attr_name)
+
+        with self.assertRaises(SystemError):
+            importmoduleattr(NULL, "argv")
+        # CRASHES importmoduleattr("sys", NULL)
+
+    def test_importmoduleattrstring(self):
+        # Test PyImport_ImportModuleAttrString()
+        importmoduleattr = _testcapi.PyImport_ImportModuleAttrString
+        self.check_importmoduleattr(importmoduleattr)
+
+        with self.assertRaises(UnicodeDecodeError):
+            importmoduleattr(b"sys\xff", "argv")
+        with self.assertRaises(UnicodeDecodeError):
+            importmoduleattr("sys", b"argv\xff")
+
+        # CRASHES importmoduleattr(NULL, "argv")
+        # CRASHES importmoduleattr("sys", NULL)
 
     # TODO: test PyImport_GetImporter()
     # TODO: test PyImport_ReloadModule()
