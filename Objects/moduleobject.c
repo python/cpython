@@ -27,6 +27,18 @@ static PyMemberDef module_members[] = {
     {0}
 };
 
+static void
+assert_def_missing_or_redundant(PyModuleObject *m) {
+    if (m->md_def) {
+#define DO_ASSERT(F) assert (m->md_def->m_ ## F == m->md_ ## F);
+        DO_ASSERT(size);
+        DO_ASSERT(traverse);
+        DO_ASSERT(clear);
+        DO_ASSERT(free);
+#undef DO_ASSERT
+    }
+}
+
 
 PyTypeObject PyModuleDef_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -270,6 +282,16 @@ PyModule_Create2(PyModuleDef* module, int module_api_version)
     return _PyModule_CreateInitialized(module, module_api_version);
 }
 
+static void
+module_set_def(PyModuleObject *md, PyModuleDef *def)
+{
+    md->md_def = def;
+    md->md_size = def->m_size;
+    md->md_traverse = def->m_traverse;
+    md->md_clear = def->m_clear;
+    md->md_free = def->m_free;
+}
+
 PyObject *
 _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
 {
@@ -316,7 +338,7 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
             return NULL;
         }
     }
-    m->md_def = module;
+    module_set_def(m, module);
 #ifdef Py_GIL_DISABLED
     m->md_gil = Py_MOD_GIL_USED;
 #endif
@@ -462,7 +484,7 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
 
     if (PyModule_Check(m)) {
         ((PyModuleObject*)m)->md_state = NULL;
-        ((PyModuleObject*)m)->md_def = def;
+        module_set_def(((PyModuleObject*)m), def);
 #ifdef Py_GIL_DISABLED
         ((PyModuleObject*)m)->md_gil = gil_slot;
 #else
@@ -894,6 +916,7 @@ module_dealloc(PyObject *self)
     }
     FT_CLEAR_WEAKREFS(self, m->md_weaklist);
 
+    assert_def_missing_or_redundant(m);
     /* bpo-39824: Don't call m_free() if m_size > 0 and md_state=NULL */
     if (m->md_def && m->md_def->m_free
         && (m->md_def->m_size <= 0 || m->md_state != NULL))
@@ -1212,6 +1235,7 @@ module_traverse(PyObject *self, visitproc visit, void *arg)
 {
     PyModuleObject *m = _PyModule_CAST(self);
 
+    assert_def_missing_or_redundant(m);
     /* bpo-39824: Don't call m_traverse() if m_size > 0 and md_state=NULL */
     if (m->md_def && m->md_def->m_traverse
         && (m->md_def->m_size <= 0 || m->md_state != NULL))
@@ -1230,6 +1254,7 @@ module_clear(PyObject *self)
 {
     PyModuleObject *m = _PyModule_CAST(self);
 
+    assert_def_missing_or_redundant(m);
     /* bpo-39824: Don't call m_clear() if m_size > 0 and md_state=NULL */
     if (m->md_def && m->md_def->m_clear
         && (m->md_def->m_size <= 0 || m->md_state != NULL))
