@@ -69,7 +69,7 @@ The module provides the following classes:
    .. versionchanged:: 3.7
       *blocksize* parameter was added.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       *continue_timeout* parameter was added.
 
 
@@ -327,7 +327,7 @@ HTTPConnection Objects
       No attempt is made to determine the Content-Length for file
       objects.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       If the headers include ``Expect: 100-Continue`` and *body* is set,
       the body will not be sent until either a ``100 Continue`` response is
       received from the server or the :class:`HTTPConnection`'s *continue_timeout*
@@ -355,7 +355,7 @@ HTTPConnection Objects
       :class:`HTTPConnection` object will be ready to reconnect when
       a new request is sent.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       Added the *ignore_100_continue* parameter. (In prior versions
       a ``Continue`` response was always ignored.)
 
@@ -493,7 +493,7 @@ also send your request step by step, by using the four functions below.
    .. versionchanged:: 3.6
       Added chunked encoding support and the *encode_chunked* parameter.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
       The *expect_continue* parameter was added.
 
 
@@ -674,7 +674,7 @@ method attribute. Here is an example session that uses the ``PUT`` method::
     >>> print(response.status, response.reason)
     200, OK
 
-Since version 3.14, conditional transmission of the body is supported when an
+Since version 3.15, conditional transmission of the body is supported when an
 ``Expect: 100-Continue`` header is set. To use this in a simple case, just
 set the header, and optionally the time for which the client should wait for
 a ``100 Continue`` response before sending the body regardless::
