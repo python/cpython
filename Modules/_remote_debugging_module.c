@@ -1556,7 +1556,7 @@ get_stack_trace(PyObject* self, PyObject* args)
                     &address_of_current_frame)
             < 0)
         {
-            Py_DECREF(result);
+            Py_CLEAR(result);
             goto result_err;
         }
 
@@ -1565,7 +1565,7 @@ get_stack_trace(PyObject* self, PyObject* args)
         }
 
         if (PyList_Append(result, frame_info) == -1) {
-            Py_DECREF(result);
+            Py_CLEAR(result);
             goto result_err;
         }
 
