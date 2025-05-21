@@ -627,20 +627,26 @@ reset_signal_handlers(const sigset_t *child_sigmask)
 
 static int set_user_identity(uid_t uid)
 {
-#ifdef HAVE_SETREUID
-    if (uid != (uid_t)-1)
-        return setreuid(uid, uid);
-#endif /* HAVE_SETREUID */
+    if (uid == (uid_t)-1)
+        return 0;
+#if defined(HAVE_SETRESUID)
+    return setresuid(uid, uid, uid);
+#elif defined(HAVE_SETREUID)
+    return setreuid(uid, uid);
+#endif
     return 0;
 }
 
 
 static int set_group_identity(gid_t gid)
 {
-#ifdef HAVE_SETREGID
-    if (gid != (gid_t)-1)
-        return setregid(gid, gid);
-#endif /* HAVE_SETREGID */
+    if (gid == (gid_t)-1)
+        return 0;
+#if defined(HAVE_SETRESGID)
+    return setresgid(gid, gid, gid);
+#elif defined(HAVE_SETREGID)
+    return setregid(gid, gid);
+#endif
     return 0;
 }
 
