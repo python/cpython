@@ -482,13 +482,13 @@ optionally followed by an import of the module::
 
 .. note::
 
-   If you need to define *static* extension types rather than heap-allocated
-   types, the :c:data:`Py_mod_multiple_interpreters` slot in the examples should
-   be ``Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED``.  Without it, the module
-   can create the same problems as the legacy single-phase initialization, when
-   removing entries from ``sys.modules`` or importing compiled modules into
-   multiple interpreters within a process (or following a :c:func:`fork` without an
-   intervening :c:func:`exec`).
+   If you define *static* extension types rather than heap-allocated types,
+   the module can create the same problems as the legacy single-phase
+   initialization when removing entries from ``sys.modules`` or importing
+   compiled modules into multiple interpreters within a process
+   (or following a :c:func:`fork` without an intervening :c:func:`exec`).
+   At least, the :c:data:`Py_mod_multiple_interpreters` slot in the examples
+   should be ``Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED``.
 
 .. _compilation:
 
