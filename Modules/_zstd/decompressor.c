@@ -58,6 +58,7 @@ typedef struct {
 static inline ZSTD_DDict *
 _get_DDict(ZstdDict *self)
 {
+    assert(PyMutex_IsLocked(&self->lock));
     ZSTD_DDict *ret;
 
     /* Already created */
@@ -70,9 +71,9 @@ _get_DDict(ZstdDict *self)
         char *dict_buffer = PyBytes_AS_STRING(self->dict_content);
         Py_ssize_t dict_len = Py_SIZE(self->dict_content);
         Py_BEGIN_ALLOW_THREADS
-        self->d_dict = ZSTD_createDDict(dict_buffer,
-                                        dict_len);
+        ret = ZSTD_createDDict(dict_buffer, dict_len);
         Py_END_ALLOW_THREADS
+        self->d_dict = ret;
 
         if (self->d_dict == NULL) {
             _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
@@ -84,10 +85,7 @@ _get_DDict(ZstdDict *self)
         }
     }
 
-    /* Don't lose any exception */
-    ret = self->d_dict;
-
-    return ret;
+    return self->d_dict;
 }
 
 /* Set decompression parameters to decompression context */
@@ -629,7 +627,6 @@ ZstdDecompressor_dealloc(PyObject *ob)
 }
 
 /*[clinic input]
-@critical_section
 @getter
 _zstd.ZstdDecompressor.unused_data
 
@@ -641,7 +638,7 @@ decompressed, unused input data after the frame. Otherwise this will be b''.
 
 static PyObject *
 _zstd_ZstdDecompressor_unused_data_get_impl(ZstdDecompressor *self)
-/*[clinic end generated code: output=f3a20940f11b6b09 input=5233800bef00df04]*/
+/*[clinic end generated code: output=f3a20940f11b6b09 input=54d41ecd681a3444]*/
 {
     PyObject *ret;
 

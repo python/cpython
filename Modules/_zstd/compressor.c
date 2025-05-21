@@ -153,6 +153,7 @@ capsule_free_cdict(PyObject *capsule)
 ZSTD_CDict *
 _get_CDict(ZstdDict *self, int compressionLevel)
 {
+    assert(PyMutex_IsLocked(&self->lock));
     PyObject *level = NULL;
     PyObject *capsule;
     ZSTD_CDict *cdict;
@@ -197,11 +198,14 @@ _get_CDict(ZstdDict *self, int compressionLevel)
         }
 
         /* Add PyCapsule object to self->c_dicts if not already inserted */
-        if (PyDict_SetItem(self->c_dicts, level, capsule) < 0) {
-            Py_DECREF(capsule);
+        PyObject *capsule_dict;
+        int ret = PyDict_SetDefaultRef(self->c_dicts, level, capsule,
+                                       &capsule_dict);
+        Py_XDECREF(capsule_dict);
+        Py_DECREF(capsule);
+        if (ret < 0) {
             goto error;
         }
-        Py_DECREF(capsule);
     }
     else {
         /* ZSTD_CDict instance already exists */
