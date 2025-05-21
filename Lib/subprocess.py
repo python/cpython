@@ -1545,7 +1545,8 @@ class Popen:
             if cwd is not None:
                 cwd = os.fsdecode(cwd)
 
-            if env is not None and not env.get('SystemRoot'):
+            if env is not None and not any(
+                    k.upper() == 'SYSTEMROOT' and v for k, v in env.items()):
                 warnings.warn("env lacks a valid 'SystemRoot'.", RuntimeWarning)
 
             sys.audit("subprocess.Popen", executable, args, cwd, env)
