@@ -972,11 +972,14 @@ convert_code_arg(PyThreadState *tstate,
     PyObject *cause;
     PyCodeObject *code = NULL;
     if (PyFunction_Check(arg)) {
-        if (_PyFunction_VerifyStateless(tstate, arg) < 0) {
+        // For now we allow globals, so we can't use
+        // _PyFunction_VerifyStateless().
+        PyObject *codeobj = PyFunction_GetCode(arg);
+        if (_PyCode_VerifyStateless(
+                    tstate, (PyCodeObject *)codeobj, NULL, NULL, NULL) < 0) {
             goto chained;
         }
-        code = (PyCodeObject *)PyFunction_GetCode(arg);
-        Py_INCREF(code);
+        code = (PyCodeObject *)Py_NewRef(codeobj);
     }
     else if (PyCode_Check(arg)) {
         if (_PyCode_VerifyStateless(
