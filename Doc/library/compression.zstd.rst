@@ -158,7 +158,7 @@ Compressing and decompressing data in memory
    Compress *data* (a :term:`bytes-like object`), returning the compressed
    data as a :class:`bytes` object.
 
-   The *level* argument is an int object controlling the level of
+   The *level* argument is an integer controlling the level of
    compression. *level* is an alternative to setting
    :attr:`CompressionParameter.compression_level` in *options*. Use
    :meth:`~CompressionParameter.bounds` on
@@ -202,7 +202,7 @@ Compressing and decompressing data in memory
    For a more convenient way of compressing a single chunk of data, see the
    module-level function :func:`compress`.
 
-   The *level* argument is an int object controlling the level of
+   The *level* argument is an integer controlling the level of
    compression. *level* is an alternative to setting
    :attr:`CompressionParameter.compression_level` in *options*. Use
    :meth:`~CompressionParameter.bounds` on
@@ -575,7 +575,7 @@ Advanced parameter control
       inputs by finding large matches at greater distances. It increases memory
       usage and window size.
 
-      ``True`` or ``0`` enable long distance matching while ``False`` or ``1``
+      ``True`` or ``1`` enable long distance matching while ``False`` or ``0``
       disable it.
 
       Enabling this parameter increases default
@@ -622,7 +622,7 @@ Advanced parameter control
       the checksum. If there is a mismatch a :class:`ZstdError` exception is
       raised.
 
-      ``True`` or ``0`` enable checksum generation while ``False`` or ``1``
+      ``True`` or ``1`` enable checksum generation while ``False`` or ``0``
       disable it.
 
    .. attribute:: dict_id_flag
@@ -630,15 +630,15 @@ Advanced parameter control
       When compressing with a :class:`ZstdDict`, the dictionary's ID is written
       into the frame header.
 
-      ``True`` or ``0`` enable storing the dictionary ID while ``False`` or
-      ``1`` disable it.
+      ``True`` or ``1`` enable storing the dictionary ID while ``False`` or
+      ``0`` disable it.
 
    .. attribute:: nb_workers
 
       Select how many threads will be spawned to compress in parallel. When
-      :attr:`!nb_workers` >= 1, enables multi-threaded compression, 1
-      means "one-thread multi-threaded mode". More workers improve speed, but
-      also increase memory usage and slightly reduce compression ratio.
+      :attr:`!nb_workers` > 0, enables multi-threaded compression, a value of
+      ``1`` means "one-thread multi-threaded mode". More workers improve speed,
+      but also increase memory usage and slightly reduce compression ratio.
 
       A value of zero disables multi-threading.
 
@@ -753,7 +753,7 @@ Miscellaneous
 
    .. attribute:: dictionary_id
 
-      An int object representing the Zstandard dictionary ID needed for
+      An integer representing the Zstandard dictionary ID needed for
       decompressing the frame. ``0`` means the dictionary ID was not
       recorded in the frame header. This may mean that a Zstandard dictionary
       is not needed, or that the ID of a required dictionary was not recorded.
