@@ -27,10 +27,10 @@ def _object_name(obj):
         return type(obj).__qualname__
 
 def _normalize(name):
-    """ Normalize 'name' in NKFC form """
+    """Normalize 'name' to NKFC form."""
     global _unicodedata_normalize
     if _unicodedata_normalize is None:
-        from unicodedata import _normalize
+        from unicodedata import normalize as _unicodedata_normalize
     return _unicodedata_normalize('NFKC', name)
 
 # Bootstrap-related code ######################################################
@@ -43,7 +43,7 @@ _weakref = None
 # Import done by _install_external_importers()
 _bootstrap_external = None
 
-# Import done as needed by _normalize
+# Import done lazily as needed by _normalize as unicodedata is not built-in.
 _unicodedata_normalize = None
 
 def _wrap(new, old):

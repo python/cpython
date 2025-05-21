@@ -1591,8 +1591,8 @@ class FileFinder:
         else:
             self.path = _path_abspath(path)
         self._path_mtime = -1
-        self._path_cache = dict()
-        self._relaxed_path_cache = dict()
+        self._path_cache = {}
+        self._relaxed_path_cache = {}
         self._cache_is_normalized = False
 
     def invalidate_caches(self):
@@ -1686,7 +1686,7 @@ class FileFinder:
             # so it's done once instead of for every import. This is safe as
             # the specified suffixes to check against are always specified in a
             # case-sensitive manner.
-            lower_suffix_contents = dict()
+            lower_suffix_contents = {}
             for item in contents:
                 name, dot, suffix = item.partition('.')
                 if dot:
@@ -1701,9 +1701,7 @@ class FileFinder:
         self._cache_is_normalized = False
 
     def _normalize_cache(self):
-        """
-        Normalize all entries in the caches to NFKC.
-        """
+        """Normalize all entries in the caches to NFKC."""
         from unicodedata import normalize
 
         self._path_cache = { normalize('NFKC', p): p for p in self._path_cache }
