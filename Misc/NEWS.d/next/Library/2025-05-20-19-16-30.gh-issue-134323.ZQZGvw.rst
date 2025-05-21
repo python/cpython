@@ -1,2 +1,1 @@
-Fix the public :meth:`locked<threading.RLock>` and its implementation in the ``_thread`` module.
-Also adding a unit test in ``lock_test.py`` file.
+Fix the :meth:`threading.RLock.locked` method.

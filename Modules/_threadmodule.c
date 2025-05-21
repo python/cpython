@@ -1022,6 +1022,13 @@ rlock_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
+/*
+helper function used by rlock_locked and rlock_repr.
+*/
+static int
+rlock_locked_impl(rlockobject *self) {
+    return PyMutex_IsLocked(&self->lock.mutex);
+}
 
 static void
 rlock_dealloc(PyObject *self)
@@ -1114,8 +1121,8 @@ rlock_locked(PyObject *op, PyObject *Py_UNUSED(ignored))
     see gh-134323: the `_PyRecursiveMutex_IsLocked` function does not exist, so we cast the `op`
     to `lockobject` in order to call `PyMutex_IsLocked`.
     */
-    lockobject *self = lockobject_CAST(op);
-    int is_locked = PyMutex_IsLocked(&self->lock);
+    rlockobject *self = rlockobject_CAST(op);
+    int is_locked = rlock_locked_impl(self);
     return PyBool_FromLong(is_locked);
 }
 

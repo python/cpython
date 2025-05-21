@@ -371,16 +371,22 @@ class RLockTests(BaseLockTests):
         self.assertFalse(lock.locked())
 
     def test_locked_2threads(self):
+        # see gh-134323: check that a rlock which
+        # is acquired in a secaondary thread,
+        # is still locked in the main thread.
         l = []
         rlock = self.locktype()
+        self.assertFalse(rlock.locked())
         def acquire():
+            l.append(rlock.locked())
             rlock.acquire()
             l.append(rlock.locked())
 
         with Bunch(acquire, 1):
             pass
         self.assertTrue(rlock.locked())
-        self.assertTrue(l[0])
+        self.assertFalse(l[0])
+        self.assertTrue(l[1])
         del rlock
 
     def test_release_save_unacquired(self):
