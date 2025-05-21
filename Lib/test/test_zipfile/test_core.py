@@ -1503,6 +1503,23 @@ class AbstractRemoveTests:
                     zh.remove(file)
                 mock_fn.assert_not_called()
 
+        # mode 'w': error and do nothing
+        with zipfile.ZipFile(TESTFN, 'w', self.compression) as zh:
+            zh.writestr(file, data)
+            with mock.patch('zipfile.ZipFile._remove_members') as mock_fn:
+                with self.assertRaises(ValueError):
+                    zh.remove(file)
+                mock_fn.assert_not_called()
+
+        # mode 'x': error and do nothing
+        os.remove(TESTFN)
+        with zipfile.ZipFile(TESTFN, 'x', self.compression) as zh:
+            zh.writestr(file, data)
+            with mock.patch('zipfile.ZipFile._remove_members') as mock_fn:
+                with self.assertRaises(ValueError):
+                    zh.remove(file)
+                mock_fn.assert_not_called()
+
         # mode 'a': the most general use case
         with zipfile.ZipFile(TESTFN, 'w', self.compression) as zh:
             zh.writestr(file, data)
@@ -1530,21 +1547,6 @@ class AbstractRemoveTests:
                 with self.assertRaises(KeyError):
                     zh.remove(zinfo)
                 mock_fn.assert_not_called()
-
-        # mode 'w': like 'a'; allows removing a just written member
-        with zipfile.ZipFile(TESTFN, 'w', self.compression) as zh:
-            zh.writestr(file, data)
-            with mock.patch('zipfile.ZipFile._remove_members') as mock_fn:
-                zh.remove(file)
-                mock_fn.assert_called_once_with({zh.getinfo(file)})
-
-        # mode 'x': like 'w'
-        os.remove(TESTFN)
-        with zipfile.ZipFile(TESTFN, 'x', self.compression) as zh:
-            zh.writestr(file, data)
-            with mock.patch('zipfile.ZipFile._remove_members') as mock_fn:
-                zh.remove(file)
-                mock_fn.assert_called_once_with({zh.getinfo(file)})
 
     def test_zip64(self):
         """Test if members use zip64."""

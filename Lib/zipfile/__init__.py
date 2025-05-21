@@ -1867,10 +1867,13 @@ class ZipFile:
             self._extract_member(zipinfo, path, pwd)
 
     def remove(self, zinfo_or_arcname):
-        """Remove a member from the archive."""
+        """Remove a member from the archive.
 
-        if self.mode not in ('w', 'x', 'a'):
-            raise ValueError("remove() requires mode 'w', 'x', or 'a'")
+        The archive must be open with mode 'a', since mode 'w'/'x' may be used
+        on an unseekable file buffer, which disallows truncation."""
+
+        if self.mode != 'a':
+            raise ValueError("remove() requires mode 'a'")
         if not self.fp:
             raise ValueError(
                 "Attempt to write to ZIP archive that was already closed")
