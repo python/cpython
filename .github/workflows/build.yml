@@ -15,15 +15,15 @@ permissions:
   contents: read
 
 concurrency:
-  group: >-
-    ${{
-      github.workflow
-    }}-${{
-      github.ref_name
-    }}-${{
-      github.event.pull_request.number
-      || github.sha
-    }}
+  # For PRs, this names the group after the workflow ('Tests'), 
+  # the PR number followed by '/merge', and the name of the branch being merged
+  #   example: Tests-123456/merge-mycoolbranch
+  #
+  # For anything else that triggers this workflow, it names the group after
+  # the workflow ('Tests'), the branch, and the sha hash
+  #   example: Tests-main-(40 char sha hash)
+  #
+  group: ${{ github.workflow }}-${{ github.ref_name }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
 env:
