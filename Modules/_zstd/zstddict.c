@@ -146,7 +146,6 @@ static PyMemberDef ZstdDict_members[] = {
 };
 
 /*[clinic input]
-@critical_section
 @getter
 _zstd.ZstdDict.as_digested_dict
 
@@ -163,13 +162,12 @@ Pass this attribute as zstd_dict argument: compress(dat, zstd_dict=zd.as_digeste
 
 static PyObject *
 _zstd_ZstdDict_as_digested_dict_get_impl(ZstdDict *self)
-/*[clinic end generated code: output=09b086e7a7320dbb input=585448c79f31f74a]*/
+/*[clinic end generated code: output=09b086e7a7320dbb input=10cd2b6165931b77]*/
 {
     return Py_BuildValue("Oi", self, DICT_TYPE_DIGESTED);
 }
 
 /*[clinic input]
-@critical_section
 @getter
 _zstd.ZstdDict.as_undigested_dict
 
@@ -184,13 +182,12 @@ Pass this attribute as zstd_dict argument: compress(dat, zstd_dict=zd.as_undiges
 
 static PyObject *
 _zstd_ZstdDict_as_undigested_dict_get_impl(ZstdDict *self)
-/*[clinic end generated code: output=43c7a989e6d4253a input=022b0829ffb1c220]*/
+/*[clinic end generated code: output=43c7a989e6d4253a input=11e5f5df690a85b4]*/
 {
     return Py_BuildValue("Oi", self, DICT_TYPE_UNDIGESTED);
 }
 
 /*[clinic input]
-@critical_section
 @getter
 _zstd.ZstdDict.as_prefix
 
@@ -205,7 +202,7 @@ Pass this attribute as zstd_dict argument: compress(dat, zstd_dict=zd.as_prefix)
 
 static PyObject *
 _zstd_ZstdDict_as_prefix_get_impl(ZstdDict *self)
-/*[clinic end generated code: output=6f7130c356595a16 input=09fb82a6a5407e87]*/
+/*[clinic end generated code: output=6f7130c356595a16 input=b028e0ae6ec4292b]*/
 {
     return Py_BuildValue("Oi", self, DICT_TYPE_PREFIX);
 }
