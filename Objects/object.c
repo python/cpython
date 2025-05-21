@@ -1931,7 +1931,7 @@ PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
         return -1;
     }
     Py_BEGIN_CRITICAL_SECTION(obj);
-    _PyObject_XSetRefDelayed(dictptr, value);
+    _PyObject_XSetRefDelayed(dictptr, Py_NewRef(value));
     Py_END_CRITICAL_SECTION();
     return 0;
 }
