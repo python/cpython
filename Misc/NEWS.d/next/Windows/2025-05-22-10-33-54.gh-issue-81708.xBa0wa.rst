@@ -1,0 +1,2 @@
+Support negative :meth:`datetime.datetime.timestamp` values from naive
+datetimes on Windows by subtracting a naive epoch. Patch by John Keith Hohm.

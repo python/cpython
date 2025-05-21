@@ -2671,6 +2671,10 @@ class TestDateTime(TestDate):
         self.assertEqual(t.timestamp(),
                          18000 + 3600 + 2*60 + 3 + 4*1e-6)
 
+    def test_naive_timestamp_before_epoch(self):
+        # Before #81708 this raised OSError on Windows.
+        self.assertLess(self.theclass(1969,1,1).timestamp(), 0)
+
     @support.run_with_tz('MSK-03')  # Something east of Greenwich
     def test_microsecond_rounding(self):
         def utcfromtimestamp(*args, **kwargs):
