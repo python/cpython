@@ -1559,7 +1559,8 @@ class FileIO(RawIOBase):
                     if not isinstance(fd, int):
                         raise TypeError('expected integer from opener')
                     if fd < 0:
-                        raise OSError('Negative file descriptor')
+                        # bpo-27066: Raise a ValueError for bad value.
+                        raise ValueError(f'opener returned {fd}')
                 owned_fd = fd
                 if not noinherit_flag:
                     os.set_inheritable(fd, False)
