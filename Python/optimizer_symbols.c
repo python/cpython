@@ -13,8 +13,12 @@
 #include <stdint.h>
 #include <stddef.h>
 
-/* Symbols
-   =======
+/* 
+
+Symbols
+=======
+
+https://github.com/faster-cpython/ideas/blob/main/3.13/redundancy_eliminator.md
 
 Logically, all symbols begin as UNKNOWN, and can transition downwards along the
 edges of the lattice, but *never* upwards (see the diagram below). The UNKNOWN
@@ -48,7 +52,7 @@ result of a truth test, which would allow us to narrow the symbol to KNOWN_VALUE
 the same symbol, that would be a contradiction, and the symbol would be set to
 BOTTOM (indicating that the code is unreachable).
 
- */
+*/
 
 #ifdef Py_DEBUG
 static inline int get_lltrace(void) {
