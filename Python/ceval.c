@@ -360,7 +360,6 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
 #  define Py_C_STACK_SIZE 1200000
 #elif defined(__sparc__)
 #  define Py_C_STACK_SIZE 1600000
-
 #elif defined(__hppa__) || defined(__powerpc64__)
 #  define Py_C_STACK_SIZE 2000000
 #else
