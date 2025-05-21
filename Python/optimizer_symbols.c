@@ -874,6 +874,11 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
         _Py_uop_sym_get_const(ctx, _Py_uop_sym_tuple_getitem(ctx, sym, 1)) == val_43,
         "tuple item does not match value used to create tuple"
     );
+    sym = _Py_uop_sym_new_type(ctx, &PyTuple_Type);
+    TEST_PREDICATE(
+        _Py_uop_sym_is_not_null(_Py_uop_sym_tuple_getitem(ctx, sym, 42)),
+        "Unknown tuple item is not narrowed to non-NULL"
+    );
     JitOptSymbol *value = _Py_uop_sym_new_type(ctx, &PyBool_Type);
     sym = _Py_uop_sym_new_truthiness(ctx, value, false);
     TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyBool_Type), "truthiness is not boolean");
