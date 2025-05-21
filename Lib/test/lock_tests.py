@@ -372,7 +372,7 @@ class RLockTests(BaseLockTests):
 
     def test_locked_2threads(self):
         # see gh-134323: check that a rlock which
-        # is acquired in a secaondary thread,
+        # is acquired in a different thread,
         # is still locked in the main thread.
         l = []
         rlock = self.locktype()
