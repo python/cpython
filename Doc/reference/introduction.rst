@@ -90,9 +90,10 @@ Notation
 
 .. index:: BNF, grammar, syntax, notation
 
-The descriptions of lexical analysis and syntax use a modified
-`Backus–Naur form (BNF) <https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form>`_ grammar
-notation.  This uses the following style of definition:
+The descriptions of lexical analysis use a grammar notation that is a mixture
+of `EBNF <https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form>`_
+and `PEG <https://en.wikipedia.org/wiki/Parsing_expression_grammar>`_.
+For example:
 
 .. grammar-snippet::
    :group: notation
@@ -136,7 +137,11 @@ The definition to the right of the colon uses the following syntax elements:
 * ``e1 e2``: Items separated only by whitespace denote a sequence.
   Here, ``e1`` must be followed by ``e2``.
 * ``e1 | e2``: A vertical bar is used to separate alternatives.
-  It is the least tightly binding operator in this notation.
+  It denotes PEG's "ordered choice": if ``e1`` matches, ``e2`` is
+  not considered.
+  In traditional PEG grammars, this is written as a slash, ``/``, rather than
+  a vertical bar.
+  See :pep:`617` for more background and details.
 * ``e*``: A star means zero or more repetitions of the preceding item.
 * ``e+``: Likewise, a plus means one or more repetitions.
 * ``[e]``: A phrase enclosed in square brackets means zero or
@@ -145,7 +150,8 @@ The definition to the right of the colon uses the following syntax elements:
   the preceding item is optional.
 * ``(e)``: Parentheses are used for grouping.
 
-The unary operators (``*``, ``+``, ``?``) bind as tightly as possible.
+The unary operators (``*``, ``+``, ``?``) bind as tightly as possible;
+the vertical bar (``|``) binds most loosely.
 
 White space is only meaningful to separate tokens.
 
