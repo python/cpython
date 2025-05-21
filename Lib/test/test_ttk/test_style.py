@@ -205,7 +205,8 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
         style = self.style
         with self.assertRaises(IndexError):
             style.element_create('plain.newelem', 'from')
-        with self.assertRaisesRegex(TclError, 'theme "spam" doesn\'t exist'):
+        with self.assertRaisesRegex(TclError,
+            'theme "spam" (does not|doesn\'t) exist'):
             style.element_create('plain.newelem', 'from', 'spam')
 
     def test_element_create_image(self):
@@ -227,13 +228,13 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
                                    foreground='blue', background='yellow')
         img3 = tkinter.BitmapImage(master=self.root, file=imgfile,
                                    foreground='white', background='black')
-        style.element_create('Button.button', 'image',
+        style.element_create('TestButton.button', 'image',
                              img1, ('pressed', img2), ('active', img3),
                              border=(2, 4), sticky='we')
-        self.assertIn('Button.button', style.element_names())
+        self.assertIn('TestButton.button', style.element_names())
 
-        style.layout('Button', [('Button.button', {'sticky': 'news'})])
-        b = ttk.Button(self.root, style='Button')
+        style.layout('TestButton', [('TestButton.button', {'sticky': 'news'})])
+        b = ttk.Button(self.root, style='TestButton')
         b.pack(expand=True, fill='both')
         self.assertEqual(b.winfo_reqwidth(), 16)
         self.assertEqual(b.winfo_reqheight(), 16)

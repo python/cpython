@@ -2,7 +2,7 @@
 """
 
 # Copyright (C) 1999-2001 Gregory P. Ward.
-# Copyright (C) 2002, 2003 Python Software Foundation.
+# Copyright (C) 2002 Python Software Foundation.
 # Written by Greg Ward <gward@python.net>
 
 import re
@@ -86,7 +86,7 @@ class TextWrapper:
               -(?: (?<=%(lt)s{2}-) | (?<=%(lt)s-%(lt)s-))
               (?= %(lt)s -? %(lt)s)
             | # end of word
-              (?=%(ws)s|\Z)
+              (?=%(ws)s|\z)
             | # em-dash
               (?<=%(wp)s) (?=-{2,}\w)
             )
@@ -107,7 +107,7 @@ class TextWrapper:
     sentence_end_re = re.compile(r'[a-z]'             # lowercase letter
                                  r'[\.\!\?]'          # sentence-ending punct.
                                  r'[\"\']?'           # optional end-of-quote
-                                 r'\Z')               # end of chunk
+                                 r'\z')               # end of chunk
 
     def __init__(self,
                  width=70,
@@ -413,9 +413,6 @@ def shorten(text, width, **kwargs):
 
 # -- Loosely related functionality -------------------------------------
 
-_whitespace_only_re = re.compile('^[ \t]+$', re.MULTILINE)
-_leading_whitespace_re = re.compile('(^[ \t]*)(?:[^ \t\n])', re.MULTILINE)
-
 def dedent(text):
     """Remove any common leading whitespace from every line in `text`.
 
@@ -429,42 +426,22 @@ def dedent(text):
 
     Entirely blank lines are normalized to a newline character.
     """
-    # Look for the longest leading string of spaces and tabs common to
-    # all lines.
-    margin = None
-    text = _whitespace_only_re.sub('', text)
-    indents = _leading_whitespace_re.findall(text)
-    for indent in indents:
-        if margin is None:
-            margin = indent
+    try:
+        lines = text.split('\n')
+    except (AttributeError, TypeError):
+        msg = f'expected str object, not {type(text).__qualname__!r}'
+        raise TypeError(msg) from None
 
-        # Current line more deeply indented than previous winner:
-        # no change (previous winner is still on top).
-        elif indent.startswith(margin):
-            pass
+    # Get length of leading whitespace, inspired by ``os.path.commonprefix()``.
+    non_blank_lines = [l for l in lines if l and not l.isspace()]
+    l1 = min(non_blank_lines, default='')
+    l2 = max(non_blank_lines, default='')
+    margin = 0
+    for margin, c in enumerate(l1):
+        if c != l2[margin] or c not in ' \t':
+            break
 
-        # Current line consistent with and no deeper than previous winner:
-        # it's the new winner.
-        elif margin.startswith(indent):
-            margin = indent
-
-        # Find the largest common whitespace between current line and previous
-        # winner.
-        else:
-            for i, (x, y) in enumerate(zip(margin, indent)):
-                if x != y:
-                    margin = margin[:i]
-                    break
-
-    # sanity check (testing/debugging only)
-    if 0 and margin:
-        for line in text.split("\n"):
-            assert not line or line.startswith(margin), \
-                   "line = %r, margin = %r" % (line, margin)
-
-    if margin:
-        text = re.sub(r'(?m)^' + margin, '', text)
-    return text
+    return '\n'.join([l[margin:] if not l.isspace() else '' for l in lines])
 
 
 def indent(text, prefix, predicate=None):
@@ -475,19 +452,20 @@ def indent(text, prefix, predicate=None):
     it will default to adding 'prefix' to all non-empty lines that do not
     consist solely of whitespace characters.
     """
-    if predicate is None:
-        # str.splitlines(True) doesn't produce empty string.
-        #  ''.splitlines(True) => []
-        #  'foo\n'.splitlines(True) => ['foo\n']
-        # So we can use just `not s.isspace()` here.
-        predicate = lambda s: not s.isspace()
-
     prefixed_lines = []
-    for line in text.splitlines(True):
-        if predicate(line):
-            prefixed_lines.append(prefix)
-        prefixed_lines.append(line)
-
+    if predicate is None:
+        # str.splitlines(keepends=True) doesn't produce the empty string,
+        # so we need to use `str.isspace()` rather than a truth test.
+        # Inlining the predicate leads to a ~30% performance improvement.
+        for line in text.splitlines(True):
+            if not line.isspace():
+                prefixed_lines.append(prefix)
+            prefixed_lines.append(line)
+    else:
+        for line in text.splitlines(True):
+            if predicate(line):
+                prefixed_lines.append(prefix)
+            prefixed_lines.append(line)
     return ''.join(prefixed_lines)
 
 

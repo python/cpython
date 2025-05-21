@@ -67,19 +67,19 @@ class FutureTest(unittest.TestCase):
         with import_helper.CleanImport(
             'test.test_future_stmt.test_future_single_import',
         ):
-            from test.test_future_stmt import test_future_single_import
+            from test.test_future_stmt import test_future_single_import  # noqa: F401
 
     def test_future_multiple_imports(self):
         with import_helper.CleanImport(
             'test.test_future_stmt.test_future_multiple_imports',
         ):
-            from test.test_future_stmt import test_future_multiple_imports
+            from test.test_future_stmt import test_future_multiple_imports  # noqa: F401
 
     def test_future_multiple_features(self):
         with import_helper.CleanImport(
             "test.test_future_stmt.test_future_multiple_features",
         ):
-            from test.test_future_stmt import test_future_multiple_features
+            from test.test_future_stmt import test_future_multiple_features  # noqa: F401
 
     def test_unknown_future_flag(self):
         code = """
@@ -88,7 +88,7 @@ class FutureTest(unittest.TestCase):
         """
         self.assertSyntaxError(
             code, lineno=2,
-            message='future feature rested_snopes is not defined',
+            message='future feature rested_snopes is not defined', offset=24,
         )
 
     def test_future_import_not_on_top(self):
@@ -137,23 +137,23 @@ class FutureTest(unittest.TestCase):
         code = """
             from __future__ import *
         """
-        self.assertSyntaxError(code, message='future feature * is not defined')
+        self.assertSyntaxError(code, message='future feature * is not defined', offset=24)
 
     def test_future_import_braces(self):
         code = """
             from __future__ import braces
         """
         # Congrats, you found an easter egg!
-        self.assertSyntaxError(code, message='not a chance')
+        self.assertSyntaxError(code, message='not a chance', offset=24)
 
         code = """
             from __future__ import nested_scopes, braces
         """
-        self.assertSyntaxError(code, message='not a chance')
+        self.assertSyntaxError(code, message='not a chance', offset=39)
 
     def test_module_with_future_import_not_on_top(self):
         with self.assertRaises(SyntaxError) as cm:
-            from test.test_future_stmt import badsyntax_future
+            from test.test_future_stmt import badsyntax_future  # noqa: F401
         self.check_syntax_error(cm.exception, "badsyntax_future", lineno=3)
 
     def test_ensure_flags_dont_clash(self):
@@ -171,26 +171,6 @@ class FutureTest(unittest.TestCase):
         }
         self.assertCountEqual(set(flags.values()), flags.values())
 
-    def test_parserhack(self):
-        # test that the parser.c::future_hack function works as expected
-        # Note: although this test must pass, it's not testing the original
-        #       bug as of 2.6 since the with statement is not optional and
-        #       the parser hack disabled. If a new keyword is introduced in
-        #       2.6, change this to refer to the new future import.
-        try:
-            exec("from __future__ import print_function; print 0")
-        except SyntaxError:
-            pass
-        else:
-            self.fail("syntax error didn't occur")
-
-        try:
-            exec("from __future__ import (print_function); print 0")
-        except SyntaxError:
-            pass
-        else:
-            self.fail("syntax error didn't occur")
-
     def test_unicode_literals_exec(self):
         scope = {}
         exec("from __future__ import unicode_literals; x = ''", {}, scope)
@@ -202,6 +182,25 @@ class FutureTest(unittest.TestCase):
         p.stdin.write(b"2 <> 3\n")
         out = kill_python(p)
         self.assertNotIn(b'SyntaxError: invalid syntax', out)
+
+    def test_future_dotted_import(self):
+        with self.assertRaises(ImportError):
+            exec("from .__future__ import spam")
+
+        code = dedent(
+            """
+            from __future__ import print_function
+            from ...__future__ import ham
+            """
+        )
+        with self.assertRaises(ImportError):
+            exec(code)
+
+        code = """
+            from .__future__ import nested_scopes
+            from __future__ import barry_as_FLUFL
+        """
+        self.assertSyntaxError(code, lineno=2)
 
 class AnnotationsFutureTestCase(unittest.TestCase):
     template = dedent(
@@ -423,6 +422,11 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq('(((a)))', 'a')
         eq('(((a, b)))', '(a, b)')
         eq("1 + 2 + 3")
+        eq("t''")
+        eq("t'{a    +  b}'")
+        eq("t'{a!s}'")
+        eq("t'{a:b}'")
+        eq("t'{a:b=}'")
 
     def test_fstring_debug_annotations(self):
         # f-strings with '=' don't round trip very well, so set the expected

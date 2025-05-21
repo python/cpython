@@ -126,7 +126,7 @@ class AutoFileTests:
         # it must also return None if an exception was given
         try:
             1/0
-        except:
+        except ZeroDivisionError:
             self.assertEqual(self.f.__exit__(*sys.exc_info()), None)
 
     def testReadWhenWriting(self):
@@ -215,6 +215,16 @@ class OtherFileTests:
         # a warning
         with self.assertWarnsRegex(RuntimeWarning, 'line buffering'):
             self._checkBufferSize(1)
+
+    def testDefaultBufferSize(self):
+        with self.open(TESTFN, 'wb') as f:
+            blksize = f.raw._blksize
+            f.write(b"\0" * 5_000_000)
+
+        with self.open(TESTFN, 'rb') as f:
+            data = f.read1()
+            expected_size = max(min(blksize, 8192 * 1024), io.DEFAULT_BUFFER_SIZE)
+            self.assertEqual(len(data), expected_size)
 
     def testTruncateOnWindows(self):
         # SF bug <https://bugs.python.org/issue801631>

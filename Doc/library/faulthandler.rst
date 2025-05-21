@@ -1,5 +1,5 @@
-:mod:`faulthandler` --- Dump the Python traceback
-=================================================
+:mod:`!faulthandler` --- Dump the Python traceback
+==================================================
 
 .. module:: faulthandler
    :synopsis: Dump the Python traceback.
@@ -10,14 +10,15 @@
 
 This module contains functions to dump Python tracebacks explicitly, on a fault,
 after a timeout, or on a user signal. Call :func:`faulthandler.enable` to
-install fault handlers for the :const:`SIGSEGV`, :const:`SIGFPE`,
-:const:`SIGABRT`, :const:`SIGBUS`, and :const:`SIGILL` signals. You can also
+install fault handlers for the :const:`~signal.SIGSEGV`,
+:const:`~signal.SIGFPE`, :const:`~signal.SIGABRT`, :const:`~signal.SIGBUS`, and
+:const:`~signal.SIGILL` signals. You can also
 enable them at startup by setting the :envvar:`PYTHONFAULTHANDLER` environment
 variable or by using the :option:`-X` ``faulthandler`` command line option.
 
 The fault handler is compatible with system fault handlers like Apport or the
 Windows fault handler. The module uses an alternative stack for signal handlers
-if the :c:func:`sigaltstack` function is available. This allows it to dump the
+if the :c:func:`!sigaltstack` function is available. This allows it to dump the
 traceback even on a stack overflow.
 
 The fault handler is called on catastrophic cases and therefore can only use
@@ -65,19 +66,55 @@ Dumping the traceback
       Added support for passing file descriptor to this function.
 
 
+Dumping the C stack
+-------------------
+
+.. versionadded:: 3.14
+
+.. function:: dump_c_stack(file=sys.stderr)
+
+   Dump the C stack trace of the current thread into *file*.
+
+   If the Python build does not support it or the operating system
+   does not provide a stack trace, then this prints an error in place
+   of a dumped C stack.
+
+.. _c-stack-compatibility:
+
+C Stack Compatibility
+*********************
+
+If the system does not support the C-level :manpage:`backtrace(3)`
+or :manpage:`dladdr1(3)`, then C stack dumps will not work.
+An error will be printed instead of the stack.
+
+Additionally, some compilers do not support :term:`CPython's <CPython>`
+implementation of C stack dumps. As a result, a different error may be printed
+instead of the stack, even if the the operating system supports dumping stacks.
+
+.. note::
+
+   Dumping C stacks can be arbitrarily slow, depending on the DWARF level
+   of the binaries in the call stack.
+
 Fault handler state
 -------------------
 
-.. function:: enable(file=sys.stderr, all_threads=True)
+.. function:: enable(file=sys.stderr, all_threads=True, c_stack=True)
 
-   Enable the fault handler: install handlers for the :const:`SIGSEGV`,
-   :const:`SIGFPE`, :const:`SIGABRT`, :const:`SIGBUS` and :const:`SIGILL`
+   Enable the fault handler: install handlers for the :const:`~signal.SIGSEGV`,
+   :const:`~signal.SIGFPE`, :const:`~signal.SIGABRT`, :const:`~signal.SIGBUS`
+   and :const:`~signal.SIGILL`
    signals to dump the Python traceback. If *all_threads* is ``True``,
    produce tracebacks for every running thread. Otherwise, dump only the current
    thread.
 
    The *file* must be kept open until the fault handler is disabled: see
    :ref:`issue with file descriptors <faulthandler-fd>`.
+
+   If *c_stack* is ``True``, then the C stack trace is printed after the Python
+   traceback, unless the system does not support it. See :func:`dump_c_stack` for
+   more information on compatibility.
 
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
@@ -88,6 +125,13 @@ Fault handler state
    .. versionchanged:: 3.10
       The dump now mentions if a garbage collector collection is running
       if *all_threads* is true.
+
+   .. versionchanged:: 3.14
+      Only the current thread is dumped if the :term:`GIL` is disabled to
+      prevent the risk of data races.
+
+   .. versionchanged:: 3.14
+      The dump now displays the C stack trace if *c_stack* is true.
 
 .. function:: disable()
 
@@ -106,8 +150,8 @@ Dumping the tracebacks after a timeout
 
    Dump the tracebacks of all threads, after a timeout of *timeout* seconds, or
    every *timeout* seconds if *repeat* is ``True``.  If *exit* is ``True``, call
-   :c:func:`_exit` with status=1 after dumping the tracebacks.  (Note
-   :c:func:`_exit` exits the process immediately, which means it doesn't do any
+   :c:func:`!_exit` with status=1 after dumping the tracebacks.  (Note
+   :c:func:`!_exit` exits the process immediately, which means it doesn't do any
    cleanup like flushing file buffers.) If the function is called twice, the new
    call replaces previous parameters and resets the timeout. The timer has a
    sub-second resolution.
@@ -118,11 +162,11 @@ Dumping the tracebacks after a timeout
 
    This function is implemented using a watchdog thread.
 
-   .. versionchanged:: 3.7
-      This function is now always available.
-
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
+
+   .. versionchanged:: 3.7
+      This function is now always available.
 
 .. function:: cancel_dump_traceback_later()
 

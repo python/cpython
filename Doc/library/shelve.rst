@@ -1,5 +1,5 @@
-:mod:`shelve` --- Python object persistence
-===========================================
+:mod:`!shelve` --- Python object persistence
+============================================
 
 .. module:: shelve
    :synopsis: Python object persistence.
@@ -86,7 +86,7 @@ Two additional methods are supported:
 
 .. seealso::
 
-   `Persistent dictionary recipe <https://code.activestate.com/recipes/576642/>`_
+   `Persistent dictionary recipe <https://code.activestate.com/recipes/576642-persistent-dict-with-multiple-standard-file-format/>`_
    with widely supported storage formats and having the speed of native
    dictionaries.
 
@@ -112,6 +112,9 @@ Restrictions
   reading or writing.  Unix file locking can be used to solve this, but this
   differs across Unix versions and requires knowledge about the database
   implementation used.
+
+* On macOS :mod:`dbm.ndbm` can silently corrupt the database file on updates,
+  which can cause hard crashes when trying to read from the database.
 
 
 .. class:: Shelf(dict, protocol=None, writeback=False, keyencoding='utf-8')

@@ -1,2 +1,0 @@
-The statistics.geometric_mean() function now returns zero for datasets
-containing a zero.  Formerly, it would raise an exception.

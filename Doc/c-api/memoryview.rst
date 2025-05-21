@@ -20,6 +20,17 @@ any other object.
    read/write, otherwise it may be either read-only or read/write at the
    discretion of the exporter.
 
+
+.. c:macro:: PyBUF_READ
+
+   Flag to request a readonly buffer.
+
+
+.. c:macro:: PyBUF_WRITE
+
+   Flag to request a writable buffer.
+
+
 .. c:function:: PyObject *PyMemoryView_FromMemory(char *mem, Py_ssize_t size, int flags)
 
    Create a memoryview object using *mem* as the underlying buffer.
@@ -40,6 +51,8 @@ any other object.
    interface. If memory is contiguous, the memoryview object points to the
    original memory. Otherwise, a copy is made and the memoryview points to a
    new bytes object.
+
+   *buffertype* can be one of :c:macro:`PyBUF_READ` or :c:macro:`PyBUF_WRITE`.
 
 
 .. c:function:: int PyMemoryView_Check(PyObject *obj)

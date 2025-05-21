@@ -1,5 +1,5 @@
-:mod:`email.message`: Representing an email message
----------------------------------------------------
+:mod:`!email.message`: Representing an email message
+----------------------------------------------------
 
 .. module:: email.message
    :synopsis: The base class representing email messages.
@@ -40,9 +40,9 @@ over the object tree.
 The :class:`EmailMessage` dictionary-like interface is indexed by the header
 names, which must be ASCII values.  The values of the dictionary are strings
 with some extra methods.  Headers are stored and returned in case-preserving
-form, but field names are matched case-insensitively.  Unlike a real dict,
-there is an ordering to the keys, and there can be duplicate keys.  Additional
-methods are provided for working with headers that have duplicate keys.
+form, but field names are matched case-insensitively.  The keys are ordered,
+but unlike a real dict, there can be duplicates.  Additional methods are
+provided for working with headers that have duplicate keys.
 
 The *payload* is either a string or bytes object, in the case of simple message
 objects, or a list of :class:`EmailMessage` objects, for MIME container
@@ -124,7 +124,7 @@ message objects.
 
    .. method:: __bytes__()
 
-      Equivalent to :meth:`.as_bytes()`.  Allows ``bytes(msg)`` to produce a
+      Equivalent to :meth:`.as_bytes`.  Allows ``bytes(msg)`` to produce a
       bytes object containing the serialized message.
 
 

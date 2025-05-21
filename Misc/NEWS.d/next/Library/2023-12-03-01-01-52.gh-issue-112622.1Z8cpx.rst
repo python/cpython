@@ -1,2 +1,0 @@
-Ensure ``name`` parameter is passed to event loop in
-:func:`asyncio.create_task`.

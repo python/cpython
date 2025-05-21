@@ -12,8 +12,20 @@
 #undef powerpc
 #undef sparc
 #undef unix
+
 #if defined(__ANDROID__)
-    # Android is not a multiarch system.
+#  if defined(__x86_64__)
+PLATFORM_TRIPLET=x86_64-linux-android
+#  elif defined(__i386__)
+PLATFORM_TRIPLET=i686-linux-android
+#  elif defined(__aarch64__)
+PLATFORM_TRIPLET=aarch64-linux-android
+#  elif defined(__arm__)
+PLATFORM_TRIPLET=arm-linux-androideabi
+#  else
+#    error unknown Android platform
+#  endif
+
 #elif defined(__linux__)
 /*
  * BEGIN of Linux block
@@ -45,21 +57,21 @@
 #  endif
 #  if defined(_MIPS_SIM)
 #   if defined(__mips_hard_float)
-#    if _MIPS_SIM == _ABIO32
+#    if defined(_ABIO32) && _MIPS_SIM == _ABIO32
 #     define LIBC_MIPS gnu
-#    elif _MIPS_SIM == _ABIN32
+#    elif defined(_ABIN32) && _MIPS_SIM == _ABIN32
 #     define LIBC_MIPS gnuabin32
-#    elif _MIPS_SIM == _ABI64
+#    elif defined(_ABI64) && _MIPS_SIM == _ABI64
 #     define LIBC_MIPS gnuabi64
 #    else
 #     error unknown mips sim value
 #    endif
 #   else
-#    if _MIPS_SIM == _ABIO32
+#    if defined(_ABIO32) && _MIPS_SIM == _ABIO32
 #     define LIBC_MIPS gnusf
-#    elif _MIPS_SIM == _ABIN32
+#    elif defined(_ABIN32) && _MIPS_SIM == _ABIN32
 #     define LIBC_MIPS gnuabin32sf
-#    elif _MIPS_SIM == _ABI64
+#    elif defined(_ABI64) && _MIPS_SIM == _ABI64
 #     define LIBC_MIPS gnuabi64sf
 #    else
 #     error unknown mips sim value
@@ -95,21 +107,21 @@
 #   endif
 #   if defined(_MIPS_SIM)
 #    if defined(__mips_hard_float)
-#     if _MIPS_SIM == _ABIO32
+#     if defined(_ABIO32) && _MIPS_SIM == _ABIO32
 #      define LIBC_MIPS musl
-#     elif _MIPS_SIM == _ABIN32
+#     elif defined(_ABIN32) && _MIPS_SIM == _ABIN32
 #      define LIBC_MIPS musln32
-#     elif _MIPS_SIM == _ABI64
+#     elif defined(_ABI64) && _MIPS_SIM == _ABI64
 #      define LIBC_MIPS musl
 #     else
 #      error unknown mips sim value
 #     endif
 #    else
-#     if _MIPS_SIM == _ABIO32
+#     if defined(_ABIO32) && _MIPS_SIM == _ABIO32
 #      define LIBC_MIPS muslsf
-#     elif _MIPS_SIM == _ABIN32
+#     elif defined(_ABIN32) && _MIPS_SIM == _ABIN32
 #      define LIBC_MIPS musln32sf
-#     elif _MIPS_SIM == _ABI64
+#     elif defined(_ABI64) && _MIPS_SIM == _ABI64
 #      define LIBC_MIPS muslsf
 #     else
 #      error unknown mips sim value
@@ -233,7 +245,24 @@ PLATFORM_TRIPLET=i386-gnu
 #   error unknown platform triplet
 # endif
 #elif defined(__APPLE__)
+#  include "TargetConditionals.h"
+// Older macOS SDKs do not define TARGET_OS_*
+#  if defined(TARGET_OS_IOS) && TARGET_OS_IOS
+#    if defined(TARGET_OS_SIMULATOR) && TARGET_OS_SIMULATOR
+#      if __x86_64__
+PLATFORM_TRIPLET=x86_64-iphonesimulator
+#      else
+PLATFORM_TRIPLET=arm64-iphonesimulator
+#      endif
+#    else
+PLATFORM_TRIPLET=arm64-iphoneos
+#    endif
+// Older macOS SDKs do not define TARGET_OS_OSX
+#  elif !defined(TARGET_OS_OSX) || TARGET_OS_OSX
 PLATFORM_TRIPLET=darwin
+#  else
+#    error unknown Apple platform
+#  endif
 #elif defined(__VXWORKS__)
 PLATFORM_TRIPLET=vxworks
 #elif defined(__wasm32__)

@@ -1,11 +1,10 @@
 """Generate 10,000 unique examples for the Levenshtein short-circuit tests."""
 
 import argparse
-from functools import lru_cache
 import json
 import os.path
+from functools import lru_cache
 from random import choices, randrange
-
 
 # This should be in sync with Lib/traceback.py.  It's not importing those values
 # because this script is being executed by PYTHON_FOR_REGEN and not by the in-tree

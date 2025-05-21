@@ -29,14 +29,17 @@
 
 // Py_IS_NAN(X)
 // Return 1 if float or double arg is a NaN, else 0.
+// Soft deprecated since Python 3.14, use isnan() instead.
 #define Py_IS_NAN(X) isnan(X)
 
 // Py_IS_INFINITY(X)
 // Return 1 if float or double arg is an infinity, else 0.
+// Soft deprecated since Python 3.14, use isinf() instead.
 #define Py_IS_INFINITY(X) isinf(X)
 
 // Py_IS_FINITE(X)
 // Return 1 if float or double arg is neither infinite nor NAN, else 0.
+// Soft deprecated since Python 3.14, use isfinite() instead.
 #define Py_IS_FINITE(X) isfinite(X)
 
 // Py_INFINITY: Value that evaluates to a positive double infinity.
@@ -46,7 +49,7 @@
 
 /* Py_HUGE_VAL should always be the same as Py_INFINITY.  But historically
  * this was not reliable and Python did not require IEEE floats and C99
- * conformity.  Prefer Py_INFINITY for new code.
+ * conformity.  The macro was soft deprecated in Python 3.14, use Py_INFINITY instead.
  */
 #ifndef Py_HUGE_VAL
 #  define Py_HUGE_VAL HUGE_VAL

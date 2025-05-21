@@ -1,5 +1,5 @@
-:mod:`difflib` --- Helpers for computing deltas
-===============================================
+:mod:`!difflib` --- Helpers for computing deltas
+================================================
 
 .. module:: difflib
    :synopsis: Helpers for computing differences between objects.
@@ -52,8 +52,8 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    the purpose of sequence matching. This heuristic can be turned off by setting
    the ``autojunk`` argument to ``False`` when creating the :class:`SequenceMatcher`.
 
-   .. versionadded:: 3.2
-      The *autojunk* parameter.
+   .. versionchanged:: 3.2
+      Added the *autojunk* parameter.
 
 
 .. class:: Differ
@@ -383,8 +383,8 @@ The :class:`SequenceMatcher` class has this constructor:
    The optional argument *autojunk* can be used to disable the automatic junk
    heuristic.
 
-   .. versionadded:: 3.2
-      The *autojunk* parameter.
+   .. versionchanged:: 3.2
+      Added the *autojunk* parameter.
 
    SequenceMatcher objects get three data attributes: *bjunk* is the
    set of elements of *b* for which *isjunk* is ``True``; *bpopular* is the set of
@@ -631,7 +631,7 @@ If you want to know how to change the first sequence into the second, use
      work.
 
    * `Simple version control recipe
-     <https://code.activestate.com/recipes/576729/>`_ for a small application
+     <https://code.activestate.com/recipes/576729-simple-version-control/>`_ for a small application
      built with :class:`SequenceMatcher`.
 
 
