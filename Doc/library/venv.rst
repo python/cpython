@@ -83,6 +83,21 @@ It also creates a :file:`lib/pythonX.Y/site-packages` subdirectory
 (on Windows, this is :file:`Lib\site-packages`).
 If an existing directory is specified, it will be re-used.
 
+.. versionchanged:: 3.5
+   The use of ``venv`` is now recommended for creating virtual environments.
+
+.. deprecated-removed:: 3.6 3.8
+   :program:`pyvenv` was the recommended tool for creating virtual environments
+   for Python 3.3 and 3.4, and replaced in 3.5 by executing ``venv`` directly.
+
+.. highlight:: none
+
+On Windows, invoke the ``venv`` command as follows:
+
+.. code-block:: ps1con
+
+   PS> python -m venv C:\path\to\new\virtual\environment
+
 The command, if run with ``-h``, will show the available options::
 
    usage: venv [-h] [--system-site-packages] [--symlinks | --copies] [--clear]
@@ -91,33 +106,6 @@ The command, if run with ``-h``, will show the available options::
                ENV_DIR [ENV_DIR ...]
 
    Creates virtual Python environments in one or more target directories.
-
-   positional arguments:
-     ENV_DIR               A directory to create the environment in.
-
-   options:
-     -h, --help            show this help message and exit
-     --system-site-packages
-                           Give the virtual environment access to the system
-                           site-packages dir.
-     --symlinks            Try to use symlinks rather than copies, when
-                           symlinks are not the default for the platform.
-     --copies              Try to use copies rather than symlinks, even when
-                           symlinks are the default for the platform.
-     --clear               Delete the contents of the environment directory
-                           if it already exists, before environment creation.
-     --upgrade             Upgrade the environment directory to use this
-                           version of Python, assuming Python has been
-                           upgraded in-place.
-     --without-pip         Skips installing or upgrading pip in the virtual
-                           environment (pip is bootstrapped by default)
-     --prompt PROMPT       Provides an alternative prompt prefix for this
-                           environment.
-     --upgrade-deps        Upgrade core dependencies (pip) to the latest
-                           version in PyPI
-     --without-scm-ignore-files
-                           Skips adding SCM ignore files to the environment
-                           directory (Git is supported by default).
 
    Once an environment has been created, you may wish to activate it, e.g. by
    sourcing an activate script in its bin directory.
