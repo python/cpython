@@ -41,12 +41,12 @@ The module provides the following classes:
    number.  If no port number is passed, the port is extracted from the host
    string if it has the form ``host:port``, else the default HTTP port (80) is
    used.  If the optional *timeout* parameter is given, blocking
-   operations (like connection attempts) will timeout after that many seconds
-   (if it is not given, the global default timeout setting is used).
-   The optional *source_address* parameter may be a tuple of a (host, port)
-   to use as the source address the HTTP connection is made from.
-   The optional *blocksize* parameter sets the buffer size in bytes for
-   sending a file-like message body.
+   operations (like connection attempts) will timeout after that many seconds.
+   If it is ``None`` then blocking operations will not time out. If it is not given,
+   the global default timeout setting is used. The optional *source_address*
+   parameter may be a tuple of a (host, port) to use as the source address the
+   HTTP connection is made from. The optional *blocksize* parameter sets the buffer
+   size in bytes for sending a file-like message body.
 
    For example, the following calls all create instances that connect to the server
    at the same host and port::
