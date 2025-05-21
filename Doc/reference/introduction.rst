@@ -161,8 +161,8 @@ may be wrapped:
 .. grammar-snippet::
    :group: notation
 
-   literal: `stringliteral` | `bytesliteral`
-            | `integer` | `floatnumber` | `imagnumber`
+   literal: stringliteral | bytesliteral
+            | integer | floatnumber | imagnumber
 
 Alternatively, rules may be formatted with the first line ending at the colon,
 and each alternative beginning with a vertical bar on a new line.
@@ -173,11 +173,11 @@ For example:
    :group: notation-alt
 
    literal:
-      | `stringliteral`
-      | `bytesliteral`
-      | `integer`
-      | `floatnumber`
-      | `imagnumber`
+      | stringliteral
+      | bytesliteral
+      | integer
+      | floatnumber
+      | imagnumber
 
 This does *not* mean that there is an empty first alternative.
 
