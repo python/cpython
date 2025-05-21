@@ -251,7 +251,7 @@ _zstd_train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
                                             &chunk_sizes);
     if (chunks_number < 0)
     {
-        return NULL;
+        goto error;
     }
 
     /* Allocate dict buffer */
@@ -333,7 +333,7 @@ _zstd_finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
                                             &chunk_sizes);
     if (chunks_number < 0)
     {
-        return NULL;
+        goto error;
     }
 
     /* Allocate dict buffer */
