@@ -1,7 +1,7 @@
 #include "pyconfig.h"   // Py_GIL_DISABLED
-// Need limited C API version 3.14 for PySys_GetAttr() etc
+// Need limited C API version 3.15 for PySys_GetAttr() etc
 #if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
-#  define Py_LIMITED_API 0x030e0000
+#  define Py_LIMITED_API 0x030f0000
 #endif
 #include "parts.h"
 #include "util.h"

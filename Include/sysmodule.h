@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030f0000
 PyAPI_FUNC(PyObject *) PySys_GetAttr(PyObject *);
 PyAPI_FUNC(PyObject *) PySys_GetAttrString(const char *);
 PyAPI_FUNC(int) PySys_GetOptionalAttr(PyObject *, PyObject **);
