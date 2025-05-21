@@ -1353,6 +1353,7 @@ class ThreadTests(BaseTestCase):
         assert_python_ok("-c", script)
 
     @skip_unless_reliable_fork
+    @unittest.skipUnless(hasattr(threading, 'get_native_id'), "test needs threading.get_native_id()")
     def test_native_id_after_fork(self):
         script = """if True:
             import threading
