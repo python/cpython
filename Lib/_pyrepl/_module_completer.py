@@ -81,8 +81,10 @@ class ModuleCompleter:
     def _find_modules(self, path: str, prefix: str) -> list[str]:
         if not path:
             # Top-level import (e.g. `import foo<tab>`` or `from foo<tab>`)`
-            builtin_modules = [name for name in sys.builtin_module_names if name.startswith(prefix)]
-            third_party_modules = [name for _, name, _ in self.global_cache if name.startswith(prefix)]
+            builtin_modules = [name for name in sys.builtin_module_names
+                               if self.is_suggestion_match(name, prefix)]
+            third_party_modules = [module.name for module in self.global_cache
+                                   if self.is_suggestion_match(module.name, prefix)]
             return sorted(builtin_modules + third_party_modules)
 
         if path.startswith('.'):
@@ -98,7 +100,14 @@ class ModuleCompleter:
                        if mod_info.ispkg and mod_info.name == segment]
             modules = self.iter_submodules(modules)
         return [module.name for module in modules
-                if module.name.startswith(prefix)]
+                if self.is_suggestion_match(module.name, prefix)]
+
+    def is_suggestion_match(self, module_name: str, prefix: str) -> bool:
+        if prefix:
+            return module_name.startswith(prefix)
+        # For consistency with attribute completion, which
+        # does not suggest private attributes unless requested.
+        return not module_name.startswith("_")
 
     def iter_submodules(self, parent_modules: list[pkgutil.ModuleInfo]) -> Iterator[pkgutil.ModuleInfo]:
         """Iterate over all submodules of the given parent modules."""

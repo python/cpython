@@ -200,6 +200,10 @@ _Py_uop_sym_set_type(JitOptContext *ctx, JitOptSymbol *sym, PyTypeObject *typ)
 bool
 _Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptSymbol *sym, unsigned int version)
 {
+    PyTypeObject *type = _PyType_LookupByVersion(version);
+    if (type) {
+        _Py_uop_sym_set_type(ctx, sym, type);
+    }
     JitSymType tag = sym->tag;
     switch(tag) {
         case JIT_SYM_NULL_TAG:
@@ -215,18 +219,24 @@ _Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptSymbol *sym, unsigned int
                 return true;
             }
         case JIT_SYM_KNOWN_VALUE_TAG:
-            Py_CLEAR(sym->value.value);
-            sym_set_bottom(ctx, sym);
-            return false;
+            if (Py_TYPE(sym->value.value)->tp_version_tag != version) {
+                Py_CLEAR(sym->value.value);
+                sym_set_bottom(ctx, sym);
+                return false;
+            };
+            return true;
         case JIT_SYM_TUPLE_TAG:
-            sym_set_bottom(ctx, sym);
-            return false;
+            if (PyTuple_Type.tp_version_tag != version) {
+                sym_set_bottom(ctx, sym);
+                return false;
+            };
+            return true;
         case JIT_SYM_TYPE_VERSION_TAG:
-            if (sym->version.version == version) {
-                return true;
+            if (sym->version.version != version) {
+                sym_set_bottom(ctx, sym);
+                return false;
             }
-            sym_set_bottom(ctx, sym);
-            return false;
+            return true;
         case JIT_SYM_BOTTOM_TAG:
             return false;
         case JIT_SYM_NON_NULL_TAG:
@@ -266,6 +276,18 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptSymbol *sym, PyObject *const_val
             }
             return;
         case JIT_SYM_TUPLE_TAG:
+            if (PyTuple_CheckExact(const_val)) {
+                Py_ssize_t len = _Py_uop_sym_tuple_length(sym);
+                if (len == PyTuple_GET_SIZE(const_val)) {
+                    for (Py_ssize_t i = 0; i < len; i++) {
+                        JitOptSymbol *sym_item = _Py_uop_sym_tuple_getitem(ctx, sym, i);
+                        PyObject *item = PyTuple_GET_ITEM(const_val, i);
+                        _Py_uop_sym_set_const(ctx, sym_item, item);
+                    }
+                    make_const(sym, const_val);
+                    return;
+                }
+            }
             sym_set_bottom(ctx, sym);
             return;
         case JIT_SYM_TYPE_VERSION_TAG:
