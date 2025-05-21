@@ -2166,20 +2166,25 @@ class TestUopsOptimization(unittest.TestCase):
             A = 1
             def m(self):
                 return 1
+        class E(Exception):
+            def m(self):
+                return 1
         def f(n):
             x = 0
             c = C()
             d = D()
+            e = E()
             for _ in range(n):
                 x += C.A  # _LOAD_ATTR_CLASS
                 x += c.A  # _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES
                 x += d.A  # _LOAD_ATTR_NONDESCRIPTOR_NO_DICT
                 x += c.m()  # _LOAD_ATTR_METHOD_WITH_VALUES
                 x += d.m()  # _LOAD_ATTR_METHOD_NO_DICT
+                x += e.m()  # _LOAD_ATTR_METHOD_LAZY_DICT
             return x
 
         res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
-        self.assertEqual(res, 5 * TIER2_THRESHOLD)
+        self.assertEqual(res, 6 * TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_LOAD_ATTR_CLASS", uops)
@@ -2187,6 +2192,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_LOAD_ATTR_NONDESCRIPTOR_NO_DICT", uops)
         self.assertNotIn("_LOAD_ATTR_METHOD_WITH_VALUES", uops)
         self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
+        self.assertNotIn("_LOAD_ATTR_METHOD_LAZY_DICT", uops)
 
 
 def global_identity(x):
