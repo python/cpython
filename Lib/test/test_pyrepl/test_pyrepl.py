@@ -925,6 +925,7 @@ class TestPyReplModuleCompleter(TestCase):
     def prepare_reader(self, events, namespace):
         console = FakeConsole(events)
         config = ReadlineConfig()
+        config.module_completer = ModuleCompleter(namespace)
         config.readline_completer = rlcompleter.Completer(namespace).complete
         reader = ReadlineAlikeReader(console=console, config=config)
         return reader
@@ -961,13 +962,15 @@ class TestPyReplModuleCompleter(TestCase):
 
     def test_relative_import_completions(self):
         cases = (
-            ("from .readl\t\n", "from .readline"),
-            ("from . import readl\t\n", "from . import readline"),
+            (None, "from .readl\t\n", "from .readl"),
+            (None, "from . import readl\t\n", "from . import readl"),
+            ("_pyrepl", "from .readl\t\n", "from .readline"),
+            ("_pyrepl", "from . import readl\t\n", "from . import readline"),
         )
-        for code, expected in cases:
+        for package, code, expected in cases:
             with self.subTest(code=code):
                 events = code_to_events(code)
-                reader = self.prepare_reader(events, namespace={})
+                reader = self.prepare_reader(events, namespace={"__package__": package})
                 output = reader.readline()
                 self.assertEqual(output, expected)
 
