@@ -1738,8 +1738,8 @@ _textiowrapper_writeflush(textio *self)
 
         /* Try to determine bytes written from return value
 
-           XXX: On unexpected return this matches previous behavior and asumes
-                all data was written. */
+           XXX: Unexpected return: match previous behavior assume all data was
+                written. */
         /* OPEN QUESTION: None is common in CPython, should this warn? */
         if (ret == Py_None) {
             Py_DECREF(b);
@@ -1762,15 +1762,12 @@ _textiowrapper_writeflush(textio *self)
         /* Check for unexpected return values. */
         /* Can't get out size follow return previous behavior. */
         if (size == -1 && PyErr_Occurred()) {
-            if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
-                Py_DECREF(b);
-                Py_DECREF(ret);
-                return -1;
-            }
-            PyErr_Clear();  /* fall through */
+            /* Warn about the value, but do not error. */
+            PyObject *exc = PyErr_GetRaisedException()
             PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "buffer.write returned value '%s' not specified by"
-                " BufferedIOBase or TextIOBase", ret);
+                "write returned value '%s' not specified by"
+                " BufferedIOBase or TextIOBase (%s)", ret, exc);
+            Py_DECREF(exc);
             Py_DECREF(b);
             Py_DECREF(ret);
             return 0;
@@ -1778,8 +1775,7 @@ _textiowrapper_writeflush(textio *self)
         /* Negative count of bytes doesn't make sense. */
         else if (size < 0) {
             PyErr_WarnFormat(PyExc_RuntimeWarning, 1,
-                "buffer.write returned negative count of bytes '%s'",
-                ret);
+                "write returned negative count of bytes '%s'", ret);
             Py_DECREF(b);
             Py_DECREF(ret);
             return 0;
@@ -1787,9 +1783,8 @@ _textiowrapper_writeflush(textio *self)
         /* More written than passed in call. */
         else if (size > bytes_to_write) {
             PyErr_WarnFormat(PyExc_RuntimeWarning, 1,
-                "buffer.write returned '%s' bytes written but was only"
-                " called with '%s' bytes to write",
-                ret, bytes_to_write);
+                "write returned '%s' bytes written but was only called"
+                " with '%s' bytes to write", ret, bytes_to_write);
             Py_DECREF(b);
             Py_DECREF(ret);
             return 0;
@@ -1805,7 +1800,7 @@ _textiowrapper_writeflush(textio *self)
             break;
         }
 
-        /* Make a new PyByte to keep type for next call to write. */
+        /* Make a new PyBytes to keep type for next call to write. */
         pending = PyBytes_FromStringAndSize(
             PyBytes_AS_STRING(b) + size,
             self->pending_bytes_count);
