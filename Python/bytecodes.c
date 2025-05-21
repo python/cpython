@@ -5342,7 +5342,7 @@ dummy_func(
             value = PyStackRef_FromPyObjectImmortal(ptr);
         }
 
-        tier2 pure op(_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, pop1, pop2 -- value)) {
+        tier2 op(_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, pop1, pop2 -- value)) {
             PyStackRef_CLOSE(pop2);
             PyStackRef_CLOSE(pop1);
             (void)null; // Silence compiler warnings about unused variables
