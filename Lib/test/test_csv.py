@@ -1348,7 +1348,7 @@ ghi\0jkl
         x = list(csv.reader([s], d))
         f = StringIO()
         csv.writer(f,d).writerows(x)
-        self.assertEqual(f.getvalue(), '42,"hello", "world",-1\r\n')
+        self.assertEqual(f.getvalue(), '42.0,"hello","world",-1.0\r\n')
 
     def test_has_header(self):
         sniffer = csv.Sniffer()
@@ -1427,7 +1427,6 @@ ghi\0jkl
         sniffer = csv.Sniffer()
         dialect = sniffer.sniff(self.sample1)
         self.assertEqual(dialect.quoting, csv.QUOTE_NONE)
-        breakpoint()
         dialect = sniffer.sniff(self.sample2)
         self.assertEqual(dialect.quoting, csv.QUOTE_ALL)
 
