@@ -208,8 +208,8 @@ value must be in a particular range or must satisfy other conditions,
 :c:data:`PyExc_ValueError` is appropriate.
 
 You can also define a new exception that is unique to your module. For this, you
-usually declare an object variable in the per-module state and initialize it
-in your module's :c:data:`Py_mod_exec` function (:c:func:`!spam_module_exec`)
+usually declare an object variable in the module's state and initialize it
+in the module's :c:data:`Py_mod_exec` function (:c:func:`!spam_module_exec`)
 with an exception object::
 
    typedef struct {
@@ -228,7 +228,7 @@ with an exception object::
        if (state->SpamError == NULL) {
            return -1;
        }
-       if (PyModule_AddObjectRef(module, "error", state->SpamError) < 0) {
+       if (PyModule_AddObjectRef(module, "SpamError", state->SpamError) < 0) {
            return -1;  // followed by spam_module_free() then Py_CLEAR()
        }
 
@@ -268,7 +268,7 @@ with an exception object::
        {0, NULL}
    };
 
-   static struct PyModuleDef spammodule = {
+   static struct PyModuleDef spam_module = {
        .m_base = PyModuleDef_HEAD_INIT,
        .m_name = "spam",
        .m_size = sizeof(spam_state),  // size of per-module state
@@ -281,7 +281,7 @@ with an exception object::
    PyMODINIT_FUNC
    PyInit_spam(void)
    {
-       return PyModuleDef_Init(&spammodule);
+       return PyModuleDef_Init(&spam_module);
    }
 
 Note that the Python name for the exception object is :exc:`!spam.error`.  The
@@ -402,7 +402,7 @@ The method table must be referenced in the module definition structure::
 
    static struct PyModuleDef spammodule = {
        ...
-       .m_methods = SpamMethods,
+       .m_methods = spam_methods,
        ...
    };
 
@@ -414,7 +414,7 @@ only non-\ ``static`` item defined in the module file::
    PyMODINIT_FUNC
    PyInit_spam(void)
    {
-       return PyModuleDef_Init(&spammodule);
+       return PyModuleDef_Init(&spam_module);
    }
 
 Note that :c:macro:`PyMODINIT_FUNC` declares the function as ``PyObject *`` return type,
@@ -1328,7 +1328,7 @@ function must take care of initializing the C API pointer array::
        {0, NULL}
    };
 
-   static struct PyModuleDef spammodule = {
+   static struct PyModuleDef spam_module = {
        .m_base = PyModuleDef_HEAD_INIT,
        .m_name = "spam",
        .m_size = sizeof(spam_state),
@@ -1338,7 +1338,7 @@ function must take care of initializing the C API pointer array::
    PyMODINIT_FUNC
    PyInit_spam(void)
    {
-       return PyModuleDef_Init(&spammodule);
+       return PyModuleDef_Init(&spam_module);
    }
 
 The bulk of the work is in the header file :file:`spammodule.h`, which looks
@@ -1407,7 +1407,7 @@ like this::
        {0, NULL}
    };
 
-   static struct PyModuleDef clientmodule = {
+   static struct PyModuleDef client_module = {
        .m_base = PyModuleDef_HEAD_INIT,
        .m_name = "client",
        .m_size = sizeof(client_state),
@@ -1417,7 +1417,7 @@ like this::
    PyMODINIT_FUNC
    PyInit_client(void)
    {
-       return PyModuleDef_Init(&clientmodule);
+       return PyModuleDef_Init(&client_module);
    }
 
 The main disadvantage of this approach is that the file :file:`spammodule.h` is
