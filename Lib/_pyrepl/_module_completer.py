@@ -17,8 +17,8 @@ if TYPE_CHECKING:
 
 
 def make_default_module_completer() -> ModuleCompleter:
-    # Inside pyrepl, __package__ is set to '_pyrepl'
-    return ModuleCompleter(namespace={'__package__': '_pyrepl'})
+    # Inside pyrepl, __package__ is set to None by default
+    return ModuleCompleter(namespace={'__package__': None})
 
 
 class ModuleCompleter:
