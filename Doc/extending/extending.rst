@@ -363,7 +363,7 @@ macro)::
    return Py_None;
 
 :c:data:`Py_None` is the C name for the special Python object ``None``.  It is a
-genuine Python object rather than a ``NULL`` pointer, which means "error" in most
+genuine Python object rather than a ``NULL`` pointer, which means "SpamError" in most
 contexts, as we have seen.
 
 
@@ -479,6 +479,15 @@ optionally followed by an import of the module::
         Py_ExitStatusException(status);
    }
 
+.. note::
+
+   If you need to define *static* extension types rather than heap-allocated
+   types, the :c:data:`Py_mod_multiple_interpreters` slot in the example should
+   be ``Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED}``.  Without it, the module
+   can create the same problems as the legacy single-phase initialization, when
+   removing entries from ``sys.modules`` or importing compiled modules into
+   multiple interpreters within a process (or following a :c:func:`fork` without an
+   intervening :c:func:`exec`).
 
 .. _compilation:
 
