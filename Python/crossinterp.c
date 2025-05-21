@@ -210,16 +210,16 @@ _Py_CallInInterpreterAndRawFree(PyInterpreterState *interp,
 /* cross-interpreter data */
 /**************************/
 
-/* registry of {type -> xidatafunc} */
+/* registry of {type -> _PyXIData_getdata_t} */
 
-/* For now we use a global registry of shareable classes.  An
-   alternative would be to add a tp_* slot for a class's
-   xidatafunc. It would be simpler and more efficient. */
+/* For now we use a global registry of shareable classes.
+   An alternative would be to add a tp_* slot for a class's
+   _PyXIData_getdata_t.  It would be simpler and more efficient. */
 
 static void xid_lookup_init(_PyXIData_lookup_t *);
 static void xid_lookup_fini(_PyXIData_lookup_t *);
 struct _dlcontext;
-static xidatafunc lookup_getdata(struct _dlcontext *, PyObject *);
+static _PyXIData_getdata_t lookup_getdata(struct _dlcontext *, PyObject *);
 #include "crossinterp_data_lookup.h"
 
 
@@ -343,7 +343,7 @@ _set_xid_lookup_failure(PyThreadState *tstate, PyObject *obj, const char *msg,
         set_notshareableerror(tstate, cause, 0, msg);
     }
     else {
-        msg = "%S does not support cross-interpreter data";
+        msg = "%R does not support cross-interpreter data";
         format_notshareableerror(tstate, cause, 0, msg, obj);
     }
 }
@@ -356,8 +356,8 @@ _PyObject_CheckXIData(PyThreadState *tstate, PyObject *obj)
     if (get_lookup_context(tstate, &ctx) < 0) {
         return -1;
     }
-    xidatafunc getdata = lookup_getdata(&ctx, obj);
-    if (getdata == NULL) {
+    _PyXIData_getdata_t getdata = lookup_getdata(&ctx, obj);
+    if (getdata.basic == NULL && getdata.fallback == NULL) {
         if (!_PyErr_Occurred(tstate)) {
             _set_xid_lookup_failure(tstate, obj, NULL, NULL);
         }
@@ -388,9 +388,9 @@ _check_xidata(PyThreadState *tstate, _PyXIData_t *xidata)
     return 0;
 }
 
-int
-_PyObject_GetXIData(PyThreadState *tstate,
-                    PyObject *obj, _PyXIData_t *xidata)
+static int
+_get_xidata(PyThreadState *tstate,
+            PyObject *obj, xidata_fallback_t fallback, _PyXIData_t *xidata)
 {
     PyInterpreterState *interp = tstate->interp;
 
@@ -398,6 +398,7 @@ _PyObject_GetXIData(PyThreadState *tstate,
     assert(xidata->obj == NULL);
     if (xidata->data != NULL || xidata->obj != NULL) {
         _PyErr_SetString(tstate, PyExc_ValueError, "xidata not cleared");
+        return -1;
     }
 
     // Call the "getdata" func for the object.
@@ -406,8 +407,8 @@ _PyObject_GetXIData(PyThreadState *tstate,
         return -1;
     }
     Py_INCREF(obj);
-    xidatafunc getdata = lookup_getdata(&ctx, obj);
-    if (getdata == NULL) {
+    _PyXIData_getdata_t getdata = lookup_getdata(&ctx, obj);
+    if (getdata.basic == NULL && getdata.fallback == NULL) {
         if (PyErr_Occurred()) {
             Py_DECREF(obj);
             return -1;
@@ -419,7 +420,9 @@ _PyObject_GetXIData(PyThreadState *tstate,
         }
         return -1;
     }
-    int res = getdata(tstate, obj, xidata);
+    int res = getdata.basic != NULL
+        ? getdata.basic(tstate, obj, xidata)
+        : getdata.fallback(tstate, obj, fallback, xidata);
     Py_DECREF(obj);
     if (res != 0) {
         PyObject *cause = _PyErr_GetRaisedException(tstate);
@@ -437,6 +440,51 @@ _PyObject_GetXIData(PyThreadState *tstate,
     }
 
     return 0;
+}
+
+int
+_PyObject_GetXIDataNoFallback(PyThreadState *tstate,
+                              PyObject *obj, _PyXIData_t *xidata)
+{
+    return _get_xidata(tstate, obj, _PyXIDATA_XIDATA_ONLY, xidata);
+}
+
+int
+_PyObject_GetXIData(PyThreadState *tstate,
+                    PyObject *obj, xidata_fallback_t fallback,
+                    _PyXIData_t *xidata)
+{
+    switch (fallback) {
+        case _PyXIDATA_XIDATA_ONLY:
+            return _get_xidata(tstate, obj, fallback, xidata);
+        case _PyXIDATA_FULL_FALLBACK:
+            if (_get_xidata(tstate, obj, fallback, xidata) == 0) {
+                return 0;
+            }
+            PyObject *exc = _PyErr_GetRaisedException(tstate);
+            if (PyFunction_Check(obj)) {
+                if (_PyFunction_GetXIData(tstate, obj, xidata) == 0) {
+                    Py_DECREF(exc);
+                    return 0;
+                }
+                _PyErr_Clear(tstate);
+            }
+            // We could try _PyMarshal_GetXIData() but we won't for now.
+            if (_PyPickle_GetXIData(tstate, obj, xidata) == 0) {
+                Py_DECREF(exc);
+                return 0;
+            }
+            // Raise the original exception.
+            _PyErr_SetRaisedException(tstate, exc);
+            return -1;
+        default:
+#ifdef Py_DEBUG
+            Py_FatalError("unsupported xidata fallback option");
+#endif
+            _PyErr_SetString(tstate, PyExc_SystemError,
+                             "unsupported xidata fallback option");
+            return -1;
+    }
 }
 
 
@@ -1617,14 +1665,9 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
     PyThreadState *tstate = _PyThreadState_GET();
 
     assert(!PyErr_Occurred());
+    assert(code != _PyXI_ERR_NO_ERROR);
+    assert(code != _PyXI_ERR_UNCAUGHT_EXCEPTION);
     switch (code) {
-    case _PyXI_ERR_NO_ERROR: _Py_FALLTHROUGH;
-    case _PyXI_ERR_UNCAUGHT_EXCEPTION:
-        // There is nothing to apply.
-#ifdef Py_DEBUG
-        Py_UNREACHABLE();
-#endif
-        return 0;
     case _PyXI_ERR_OTHER:
         // XXX msg?
         PyErr_SetNone(PyExc_InterpreterError);
@@ -1649,7 +1692,7 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
         break;
     default:
 #ifdef Py_DEBUG
-        Py_UNREACHABLE();
+        Py_FatalError("unsupported error code");
 #else
         PyErr_Format(PyExc_RuntimeError, "unsupported error code %d", code);
 #endif
@@ -1796,7 +1839,7 @@ _sharednsitem_set_value(_PyXI_namespace_item *item, PyObject *value)
         return -1;
     }
     PyThreadState *tstate = PyThreadState_Get();
-    if (_PyObject_GetXIData(tstate, value, item->xidata) != 0) {
+    if (_PyObject_GetXIDataNoFallback(tstate, value, item->xidata) != 0) {
         PyMem_RawFree(item->xidata);
         item->xidata = NULL;
         // The caller may want to propagate PyExc_NotShareableError
