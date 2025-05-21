@@ -166,7 +166,6 @@ class HelpFormatter(object):
         indent_increment=2,
         max_help_position=24,
         width=None,
-        prefix_chars='-',
         color=False,
     ):
         # default setting for width
@@ -176,7 +175,6 @@ class HelpFormatter(object):
             width -= 2
 
         self._set_color(color)
-        self._prefix_chars = prefix_chars
         self._prog = prog
         self._indent_increment = indent_increment
         self._max_help_position = min(max_help_position,
