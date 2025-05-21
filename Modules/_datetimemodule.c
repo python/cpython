@@ -3262,11 +3262,11 @@ date_fromtimestamp(PyObject *cls, PyObject *obj)
         if (_PyTime_localtime(0, &tm) != 0)
             return NULL;
 
+        int normalize = 1, negate = 0;
         PyObject *date = new_date_subclass_ex(tm.tm_year + 1900,
                                               tm.tm_mon + 1,
                                               tm.tm_mday,
                                               cls);
-        int normalize = 1, negate = 0;
         PyObject *delta = new_delta(0, (int)t, 0, normalize);
         PyObject *result = add_date_timedelta(PyDate_CAST(date), PyDelta_CAST(delta), negate);
         Py_XDECREF(delta);
