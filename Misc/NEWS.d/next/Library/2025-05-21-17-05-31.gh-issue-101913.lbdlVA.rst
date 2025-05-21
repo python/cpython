@@ -1,0 +1,2 @@
+Changed wording of docstring in _parsedate_tz to say "disclaims" instead of "declaims" for improved clarity, as it confused some users.
+Contributed by Gustaf Gyllensporre.
