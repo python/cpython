@@ -1628,11 +1628,7 @@
                     REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
                 }
                 len = sym_new_const(ctx, temp);
-                stack_pointer[0] = len;
-                stack_pointer += 1;
-                assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
-                stack_pointer += -1;
             }
             stack_pointer[0] = len;
             stack_pointer += 1;

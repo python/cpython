@@ -140,13 +140,6 @@ _PyStackRef_FromPyObjectBorrow(PyObject *obj, const char *filename, int linenumb
 }
 #define PyStackRef_FromPyObjectBorrow(obj) _PyStackRef_FromPyObjectBorrow(_PyObject_CAST(obj), __FILE__, __LINE__)
 
-static inline _PyStackRef
-_PyStackRef_FromPyObjectImmortalUnchecked(PyObject *obj, const char *filename, int linenumber)
-{
-    return _Py_stackref_create(obj, filename, linenumber);
-}
-#define PyStackRef_FromPyObjectImmortalUnchecked(obj) _PyStackRef_FromPyObjectImmortalUnchecked(_PyObject_CAST(obj), __FILE__, __LINE__)
-
 static inline void
 _PyStackRef_CLOSE(_PyStackRef ref, const char *filename, int linenumber)
 {
@@ -381,16 +374,6 @@ PyStackRef_FromPyObjectBorrow(PyObject *obj)
 }
 #define PyStackRef_FromPyObjectBorrow(obj) PyStackRef_FromPyObjectBorrow(_PyObject_CAST(obj))
 
-static inline _PyStackRef
-PyStackRef_FromPyObjectImmortalUnchecked(PyObject *obj)
-{
-    // Make sure we don't take an already tagged value.
-    assert(((uintptr_t)obj & Py_TAG_BITS) == 0);
-    assert(obj != NULL);
-    return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_DEFERRED };
-}
-#define PyStackRef_FromPyObjectImmortalUnchecked(obj) PyStackRef_FromPyObjectImmortalUnchecked(_PyObject_CAST(obj))
-
 
 #define PyStackRef_CLOSE(REF)                                        \
         do {                                                            \
@@ -599,12 +582,6 @@ _PyStackRef_FromPyObjectNewMortal(PyObject *obj)
 /* Create a new reference from an object with an embedded reference count */
 static inline _PyStackRef
 PyStackRef_FromPyObjectBorrow(PyObject *obj)
-{
-    return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_REFCNT};
-}
-
-static inline _PyStackRef
-PyStackRef_FromPyObjectImmortalUnchecked(PyObject *obj)
 {
     return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_REFCNT};
 }
