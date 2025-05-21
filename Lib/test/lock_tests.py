@@ -337,10 +337,25 @@ class RLockTests(BaseLockTests):
     """
     Tests for recursive locks.
     """
-    def test_locked_repr(self):
-        super().test_locked_repr()
+    def test_repr_count(self):
+        # see gh-134322: check that count values are correct:
+        # when a rlock is just created,
+        # in a secondary thread when rlock is acquired in the main thread.
         lock = self.locktype()
         self.assertIn("count=0", repr(lock))
+        self.assertIn("<unlocked", repr(lock))
+        lock.acquire()
+        lock.acquire()
+        self.assertIn("count=2", repr(lock))
+        self.assertIn("<locked", repr(lock))
+
+        l = []
+        def acquire():
+            l.append(repr(lock))
+        with Bunch(acquire, 1):
+            pass
+        self.assertIn("count=2", l[0])
+        self.assertIn("<locked", l[0])
 
     def test_reacquire(self):
         lock = self.locktype()
