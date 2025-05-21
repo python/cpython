@@ -154,8 +154,6 @@ _Py_uop_sym_get_const_as_stackref(JitOptContext *ctx, JitOptSymbol *sym)
     if (const_val == NULL) {
         return PyStackRef_NULL;
     }
-    // This is actually more like a borrow, but it doesn't matter here.
-    // Eventually we discard the stackref anyways.
     return PyStackRef_FromPyObjectBorrow(const_val);
 }
 
