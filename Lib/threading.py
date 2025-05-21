@@ -29,7 +29,7 @@ __all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
            'Barrier', 'BrokenBarrierError', 'Timer', 'ThreadError',
            'setprofile', 'settrace', 'local', 'stack_size',
            'excepthook', 'ExceptHookArgs', 'gettrace', 'getprofile',
-           'setprofile_all_threads','settrace_all_threads']
+           'setprofile_all_threads','settrace_all_threads', 'AtomicCounter']
 
 # Rename some stuff so "from threading import *" is safe
 _start_joinable_thread = _thread.start_joinable_thread
@@ -854,6 +854,31 @@ _active_limbo_lock = RLock()
 _active = {}    # maps thread id to Thread object
 _limbo = {}
 _dangling = WeakSet()
+
+
+class AtomicCounter:
+    """Threadsafe counter.
+
+    Returns the value after inc/dec operations.
+    """
+
+    def __init__(self, initial=0):
+        self._value = initial
+        self._lock = Lock()
+
+    def inc(self, n=1):
+        with self._lock:
+            self._value += n
+            return self._value
+
+    def dec(self, n=1):
+        with self._lock:
+            self._value -= n
+            return self._value
+
+    def get(self):
+        with self._lock:
+            return self._value
 
 
 # Main class for threads
