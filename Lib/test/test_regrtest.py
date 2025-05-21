@@ -1188,10 +1188,11 @@ class ArgsTestCase(BaseTestCase):
 
         # --forever --rerun
         output = self.run_tests('--forever', '--rerun', test, exitcode=0)
+        rerun = Rerun(test,
+                      match=r'test_regrtest_forever\.ForeverTester\.test_run',
+                      success=True)
         self.check_executed_tests(output, [test]*3,
-                                  rerun=Rerun(test,
-                                              match='test_run',
-                                              success=True),
+                                  rerun=rerun,
                                   stats=TestStats(4, 1),
                                   forever=True)
 
@@ -1340,7 +1341,8 @@ class ArgsTestCase(BaseTestCase):
                                   parallel=True, stats=0)
 
     def parse_methods(self, output):
-        regex = re.compile("^(test[^ ]+).*ok$", flags=re.MULTILINE)
+        regex = re.compile(r"^test_regrtest_noop\d+\.Tests\.(test[^ .]+).*ok$",
+                           flags=re.MULTILINE)
         return [match.group(1) for match in regex.finditer(output)]
 
     def test_ignorefile(self):
@@ -1464,10 +1466,11 @@ class ArgsTestCase(BaseTestCase):
         testname = self.create_test(code=code)
 
         output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
+        rerun = Rerun(testname,
+                      match=r"test_regrtest_noop\d+\.Tests\.test_fail_always",
+                      success=False)
         self.check_executed_tests(output, [testname],
-                                  rerun=Rerun(testname,
-                                              "test_fail_always",
-                                              success=False),
+                                  rerun=rerun,
                                   stats=TestStats(3, 2))
 
     def test_rerun_success(self):
@@ -1495,10 +1498,11 @@ class ArgsTestCase(BaseTestCase):
 
         # FAILURE then SUCCESS => exit code 0
         output = self.run_tests("--rerun", testname, exitcode=0)
+        rerun = Rerun(testname,
+                      match=r"test_regrtest_noop\d+\.Tests\.test_fail_once",
+                      success=True)
         self.check_executed_tests(output, [testname],
-                                  rerun=Rerun(testname,
-                                              match="test_fail_once",
-                                              success=True),
+                                  rerun=rerun,
                                   stats=TestStats(3, 1))
         os_helper.unlink(marker_filename)
 
@@ -1506,10 +1510,11 @@ class ArgsTestCase(BaseTestCase):
         # on "FAILURE then SUCCESS" state.
         output = self.run_tests("--rerun", "--fail-rerun", testname,
                                 exitcode=EXITCODE_RERUN_FAIL)
+        rerun = Rerun(testname,
+                      match=r"test_regrtest_noop\d+\.Tests\.test_fail_once",
+                      success=True)
         self.check_executed_tests(output, [testname],
-                                  rerun=Rerun(testname,
-                                              match="test_fail_once",
-                                              success=True),
+                                  rerun=rerun,
                                   stats=TestStats(3, 1))
         os_helper.unlink(marker_filename)
 
@@ -1618,11 +1623,12 @@ class ArgsTestCase(BaseTestCase):
         testname = self.create_test(code=code)
 
         output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
+        rerun = Rerun(testname,
+                      match=r"test_regrtest_noop\d+\.ExampleTests\.test_success",
+                      success=False)
         self.check_executed_tests(output, testname,
                                   failed=[testname],
-                                  rerun=Rerun(testname,
-                                              match="test_success",
-                                              success=False),
+                                  rerun=rerun,
                                   stats=2)
 
     def test_rerun_teardown_hook_failure(self):
@@ -1640,11 +1646,12 @@ class ArgsTestCase(BaseTestCase):
         testname = self.create_test(code=code)
 
         output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
+        rerun = Rerun(testname,
+                      match=r"test_regrtest_noop\d+\.ExampleTests\.test_success",
+                      success=False)
         self.check_executed_tests(output, testname,
                                   failed=[testname],
-                                  rerun=Rerun(testname,
-                                              match="test_success",
-                                              success=False),
+                                  rerun=rerun,
                                   stats=2)
 
     def test_rerun_async_setup_hook_failure(self):
@@ -1662,10 +1669,11 @@ class ArgsTestCase(BaseTestCase):
         testname = self.create_test(code=code)
 
         output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
+        rerun = Rerun(testname,
+                      match=r"test_regrtest_noop\d+\.ExampleTests\.test_success",
+                      success=False)
         self.check_executed_tests(output, testname,
-                                  rerun=Rerun(testname,
-                                              match="test_success",
-                                              success=False),
+                                  rerun=rerun,
                                   stats=2)
 
     def test_rerun_async_teardown_hook_failure(self):
@@ -1683,11 +1691,12 @@ class ArgsTestCase(BaseTestCase):
         testname = self.create_test(code=code)
 
         output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
+        rerun = Rerun(testname,
+                      match=r"test_regrtest_noop\d+\.ExampleTests\.test_success",
+                      success=False)
         self.check_executed_tests(output, testname,
                                   failed=[testname],
-                                  rerun=Rerun(testname,
-                                              match="test_success",
-                                              success=False),
+                                  rerun=rerun,
                                   stats=2)
 
     def test_no_tests_ran(self):
