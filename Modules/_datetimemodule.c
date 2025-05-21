@@ -3268,7 +3268,10 @@ date_fromtimestamp(PyObject *cls, PyObject *obj)
                                               cls);
         int normalize = 1, negate = 0;
         PyObject *delta = new_delta(0, (int)t, 0, normalize);
-        return add_date_timedelta(PyDate_CAST(date), PyDelta_CAST(delta), negate);
+        PyObject *result = add_date_timedelta(PyDate_CAST(date), PyDelta_CAST(delta), negate);
+        Py_XDECREF(delta);
+        Py_XDECREF(date);
+        return result;
     }
 #endif
 
@@ -5554,10 +5557,13 @@ datetime_from_timestamp(PyObject *cls, TM_FUNC f, PyObject *timestamp,
 
 #ifdef MS_WINDOWS
     if (timet < 0) {
-      int normalize = 1, factor = 1;
-      PyObject *dt = datetime_from_timet_and_us(cls, f, 0, 0, tzinfo);
-      PyObject *delta = new_delta(0, (int)timet, us, normalize);
-      return add_datetime_timedelta(PyDateTime_CAST(dt), PyDelta_CAST(delta), factor);
+        int normalize = 1, factor = 1;
+        PyObject *dt = datetime_from_timet_and_us(cls, f, 0, 0, tzinfo);
+        PyObject *delta = new_delta(0, (int)timet, us, normalize);
+        PyObject *result = add_datetime_timedelta(PyDateTime_CAST(dt), PyDelta_CAST(delta), factor);
+        Py_XDECREF(delta);
+        Py_XDECREF(dt);
+        return result;
     }
 #endif
 
