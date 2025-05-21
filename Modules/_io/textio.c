@@ -1622,9 +1622,8 @@ _textiowrapper_writeflush(textio *self)
        NOTE: this code relies on GIL / @critical_section. It needs to ensure
        state is "safe" before/after calls to other Python code.
 
-       In particular:
-          _textiowrapper_writeflush() calls buffer.write(). self->pending_bytes
-          can be appended during buffer->write() or other thread.
+       In particular _textiowrapper_writeflush() calls buffer.write(). That will
+       modify self->pending_bytes.
 
        At the end of this function either pending_bytes needs to be NULL _or_
        there needs to be an exception.
@@ -1683,7 +1682,6 @@ _textiowrapper_writeflush(textio *self)
         }
         assert(pos == self->pending_bytes_count);
     }
-
 
     /* pending_bytes is now owned by this function. */
     self->pending_bytes_count = 0;
@@ -1760,10 +1758,10 @@ _textiowrapper_writeflush(textio *self)
         Py_ssize_t size = PyNumber_AsSsize_t(ret, PyExc_OverflowError);
 
         /* Check for unexpected return values. */
-        /* Can't get out size follow return previous behavior. */
+        /* Can't get out size. */
         if (size == -1 && PyErr_Occurred()) {
             /* Warn about the value, but do not error. */
-            PyObject *exc = PyErr_GetRaisedException()
+            PyObject *exc = PyErr_GetRaisedException();
             PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
                 "write returned value '%s' not specified by"
                 " BufferedIOBase or TextIOBase (%s)", ret, exc);
