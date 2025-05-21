@@ -15,6 +15,7 @@ except for a few extra complications:
 * ``&e``: a positive lookahead (that is, ``e`` is required to match but
   not consumed)
 * ``!e``: a negative lookahead (that is, ``e`` is required *not* to match)
+* ``~`` ("cut"): commit to the current alternative, even if it fails to parse
 
 .. literalinclude:: ../../Grammar/python.gram
   :language: peg
