@@ -523,7 +523,7 @@ ZipFile Objects
    Removes a member from the archive.  *zinfo_or_arcname* is either the full
    path of the member, or a :class:`ZipInfo` instance.
 
-   The archive must be opened with mode ``'w'``, ``'x'`` or ``'a'``.
+   The archive must be opened with mode ``'a'``.
 
    Calling :meth:`remove` on a closed ZipFile will raise a :exc:`ValueError`.
 
