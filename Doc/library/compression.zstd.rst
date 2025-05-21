@@ -159,10 +159,13 @@ Compressing and decompressing data in memory
    data as a :class:`bytes` object.
 
    The *level* argument is an int object controlling the level of
-   compression. Refer to :meth:`CompressionParameter.bounds` to get the
-   values that can be passed for *level*. If advanced compression options are
-   needed, this argument must be omitted and in the *options* dictionary the
-   :attr:`CompressionParameter.compression_level` parameter should be set.
+   compression. *level* is an alternative to setting
+   :attr:`CompressionParameter.compression_level` in *options*. Use
+   :meth:`~CompressionParameter.bounds` on
+   :attr:`~CompressionParameter.compression_level` to get the values that can
+   be passed for *level*. If advanced compression options are needed, the
+   *level* argument must be omitted and in the *options* dictionary the
+   :attr:`!CompressionParameter.compression_level` parameter should be set.
 
    The *options* argument is a Python dictionary containing advanced
    compression parameters. The valid keys and values for compression parameters
@@ -200,10 +203,13 @@ Compressing and decompressing data in memory
    module-level function :func:`compress`.
 
    The *level* argument is an int object controlling the level of
-   compression. Refer to :meth:`CompressionParameter.bounds` to get the
-   values that can be passed for *level*. If advanced compression options are
-   needed, this argument must be omitted and in the *options* dictionary the
-   :attr:`CompressionParameter.compression_level` parameter should be set.
+   compression. *level* is an alternative to setting
+   :attr:`CompressionParameter.compression_level` in *options*. Use
+   :meth:`~CompressionParameter.bounds` on
+   :attr:`~CompressionParameter.compression_level` to get the values that can
+   be passed for *level*. If advanced compression options are needed, the
+   *level* argument must be omitted and in the *options* dictionary the
+   :attr:`!CompressionParameter.compression_level` parameter should be set.
 
    The *options* argument is a Python dictionary containing advanced
    compression parameters. The valid keys and values for compression parameters
