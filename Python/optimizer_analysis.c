@@ -552,11 +552,13 @@ const uint16_t op_without_push[MAX_UOP_ID + 1] = {
     [_POP_TOP_LOAD_CONST_INLINE] = _POP_TOP,
     [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _POP_TOP,
     [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TWO,
+    [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW] = _POP_CALL_TWO,
 };
 
 const bool op_skip[MAX_UOP_ID + 1] = {
     [_NOP] = true,
     [_CHECK_VALIDITY] = true,
+    [_SET_IP] = true,
 };
 
 const uint16_t op_without_pop[MAX_UOP_ID + 1] = {
@@ -565,6 +567,14 @@ const uint16_t op_without_pop[MAX_UOP_ID + 1] = {
     [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _LOAD_CONST_INLINE_BORROW,
     [_POP_TWO] = _POP_TOP,
     [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
+    [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW] = _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW,
+    [_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW] = _POP_CALL_LOAD_CONST_INLINE_BORROW,
+    [_POP_CALL_TWO] = _POP_CALL_ONE,
+    [_POP_CALL_ONE] = _POP_CALL,
+    // The following two instructions are handled separately in remove_unneeded_uops.
+    // The TOS for both is null so calling _POP_TOP (which closes the stackref) is not safe. 
+    // [_POP_CALL] = _POP_TOP,
+    // [_POP_CALL_LOAD_CONST_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
 };
 
 
@@ -601,6 +611,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 //     _LOAD_FAST + _POP_TWO_LOAD_CONST_INLINE_BORROW + _POP_TOP
                 // ...becomes:
                 //     _NOP + _POP_TOP + _NOP
+                again:
                 while (op_without_pop[opcode]) {
                     _PyUOpInstruction *last = &buffer[pc - 1];
                     while (op_skip[last->opcode]) {
@@ -614,6 +625,29 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     if (op_without_pop[last->opcode]) {
                         opcode = last->opcode;
                         pc = last - buffer;
+                    }
+                }
+                // Handle _POP_CALL and _POP_CALL_LOAD_CONST_INLINE_BORROW separately.
+                // This looks for a preceding _PUSH_NULL instruction and simplifies to _POP_TOP.
+                if (opcode == _POP_CALL || opcode == _POP_CALL_LOAD_CONST_INLINE_BORROW) {
+                    _PyUOpInstruction *last = &buffer[pc - 1];
+                    while (op_skip[last->opcode]) {
+                        last--;
+                    }
+                    if (last->opcode == _PUSH_NULL) {
+                        last->opcode = _NOP;
+                        if (opcode == _POP_CALL) {
+                            opcode = buffer[pc].opcode = _POP_TOP;
+                        }
+                        else {
+                            opcode = buffer[pc].opcode = _POP_TOP_LOAD_CONST_INLINE_BORROW;
+                        }
+                        opcode = buffer[pc].opcode = _POP_TOP;
+                        if (op_without_pop[last->opcode]) {
+                            opcode = last->opcode;
+                            pc = last - buffer;
+                        }
+                        goto again;
                     }
                 }
                 /* _PUSH_FRAME doesn't escape or error, but it
