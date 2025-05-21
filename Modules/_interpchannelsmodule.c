@@ -1779,7 +1779,7 @@ channel_send(_channels *channels, int64_t cid, PyObject *obj,
         PyThread_release_lock(mutex);
         return -1;
     }
-    if (_PyObject_GetXIData(tstate, obj, data) != 0) {
+    if (_PyObject_GetXIDataNoFallback(tstate, obj, data) != 0) {
         PyThread_release_lock(mutex);
         GLOBAL_FREE(data);
         return -1;
@@ -2694,7 +2694,7 @@ add_channelid_type(PyObject *mod)
         Py_DECREF(cls);
         return NULL;
     }
-    if (ensure_xid_class(cls, _channelid_shared) < 0) {
+    if (ensure_xid_class(cls, GETDATA(_channelid_shared)) < 0) {
         Py_DECREF(cls);
         return NULL;
     }
@@ -2797,12 +2797,12 @@ set_channelend_types(PyObject *mod, PyTypeObject *send, PyTypeObject *recv)
     // Add and register the types.
     state->send_channel_type = (PyTypeObject *)Py_NewRef(send);
     state->recv_channel_type = (PyTypeObject *)Py_NewRef(recv);
-    if (ensure_xid_class(send, _channelend_shared) < 0) {
+    if (ensure_xid_class(send, GETDATA(_channelend_shared)) < 0) {
         Py_CLEAR(state->send_channel_type);
         Py_CLEAR(state->recv_channel_type);
         return -1;
     }
-    if (ensure_xid_class(recv, _channelend_shared) < 0) {
+    if (ensure_xid_class(recv, GETDATA(_channelend_shared)) < 0) {
         (void)clear_xid_class(state->send_channel_type);
         Py_CLEAR(state->send_channel_type);
         Py_CLEAR(state->recv_channel_type);
