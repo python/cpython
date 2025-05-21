@@ -7105,6 +7105,36 @@
             break;
         }
 
+        case _LOAD_CONST_UNDER_INLINE: {
+            _PyStackRef old;
+            _PyStackRef value;
+            _PyStackRef new;
+            old = stack_pointer[-1];
+            PyObject *ptr = (PyObject *)CURRENT_OPERAND0();
+            new = old;
+            value = PyStackRef_FromPyObjectNew(ptr);
+            stack_pointer[-1] = value;
+            stack_pointer[0] = new;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_CONST_UNDER_INLINE_BORROW: {
+            _PyStackRef old;
+            _PyStackRef value;
+            _PyStackRef new;
+            old = stack_pointer[-1];
+            PyObject *ptr = (PyObject *)CURRENT_OPERAND0();
+            new = old;
+            value = PyStackRef_FromPyObjectBorrow(ptr);
+            stack_pointer[-1] = value;
+            stack_pointer[0] = new;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _CHECK_FUNCTION: {
             uint32_t func_version = (uint32_t)CURRENT_OPERAND0();
             assert(PyStackRef_FunctionCheck(frame->f_funcobj));
