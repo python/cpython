@@ -118,6 +118,18 @@ dummy_func(void) {
         sym_set_type(left, &PyLong_Type);
     }
 
+    op(_CHECK_ATTR_CLASS, (type_version/2, owner -- owner)) {
+        PyObject *type = (PyObject *)_PyType_LookupByVersion(type_version);
+        if (type) {
+            if (type == sym_get_const(ctx, owner)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            else {
+                sym_set_const(owner, type);
+            }
+        }
+    }
+
     op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
         assert(type_version);
         if (sym_matches_type_version(owner, type_version)) {
@@ -433,20 +445,6 @@ dummy_func(void) {
     }
 
     op(_LOAD_CONST, (-- value)) {
-        PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
-        int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
-        REPLACE_OP(this_instr, opcode, 0, (uintptr_t)val);
-        value = sym_new_const(ctx, val);
-    }
-
-    op(_LOAD_CONST_MORTAL, (-- value)) {
-        PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
-        int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
-        REPLACE_OP(this_instr, opcode, 0, (uintptr_t)val);
-        value = sym_new_const(ctx, val);
-    }
-
-    op(_LOAD_CONST_IMMORTAL, (-- value)) {
         PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
         REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
         value = sym_new_const(ctx, val);
@@ -1051,6 +1049,25 @@ dummy_func(void) {
 
     op(_CALL_LEN, (unused, unused, unused -- res)) {
         res = sym_new_type(ctx, &PyLong_Type);
+    }
+
+    op(_GET_LEN, (obj -- obj, len)) {
+        int tuple_length = sym_tuple_length(obj);
+        if (tuple_length == -1) {
+            len = sym_new_type(ctx, &PyLong_Type);
+        }
+        else {
+            assert(tuple_length >= 0);
+            PyObject *temp = PyLong_FromLong(tuple_length);
+            if (temp == NULL) {
+                goto error;
+            }
+            if (_Py_IsImmortal(temp)) {
+                REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
+            }
+            len = sym_new_const(ctx, temp);
+            Py_DECREF(temp);
+        }
     }
 
     op(_GUARD_CALLABLE_LEN, (callable, unused, unused -- callable, unused, unused)) {

@@ -1064,6 +1064,24 @@ ast
   (Contributed by Semyon Moroz in :gh:`133367`.)
 
 
+asyncio
+-------
+
+* The function and methods named :func:`!create_task` now take an arbitrary
+  list of keyword arguments. All keyword arguments are passed to the
+  :class:`~asyncio.Task` constructor or the custom task factory.
+  (See :meth:`~asyncio.loop.set_task_factory` for details.)
+  The ``name`` and ``context`` keyword arguments are no longer special;
+  the name should now be set using the ``name`` keyword argument of the factory,
+  and ``context`` may be ``None``.
+
+  This affects the following function and methods:
+  :meth:`asyncio.create_task`,
+  :meth:`asyncio.loop.create_task`,
+  :meth:`asyncio.TaskGroup.create_task`.
+  (Contributed by Thomas Grainger in :gh:`128307`.)
+
+
 bdb
 ---
 
@@ -1181,6 +1199,9 @@ ctypes
 * The :class:`ctypes.py_object` type now supports subscription,
   making it a :term:`generic type`.
   (Contributed by Brian Schubert in :gh:`132168`.)
+
+* :mod:`ctypes` now supports :term:`free-threading builds <free threading>`.
+  (Contributed by Kumar Aditya and Peter Bierma in :gh:`127945`.)
 
 curses
 ------
@@ -1979,10 +2000,18 @@ Optimizations
 asyncio
 -------
 
-* :mod:`asyncio` now uses double linked list implementation for native tasks
-  which speeds up execution by 10% on standard pyperformance benchmarks and
-  reduces memory usage.
+* :mod:`asyncio` has a new per-thread double linked list implementation internally for
+  :class:`native tasks <asyncio.Task>` which speeds up execution by 10-20% on standard
+  pyperformance benchmarks and reduces memory usage.
+  This enables external introspection tools such as
+  :ref:`python -m asyncio pstree <whatsnew314-asyncio-introspection>`
+  to introspect the call graph of asyncio tasks running in all threads.
   (Contributed by Kumar Aditya in :gh:`107803`.)
+
+* :mod:`asyncio` has first class support for :term:`free-threading builds <free threading>`.
+  This enables parallel execution of multiple event loops across different threads and scales
+  linearly with the number of threads.
+  (Contributed by Kumar Aditya in :gh:`128002`.)
 
 * :mod:`asyncio` has new utility functions for introspecting and printing
   the program's call graph: :func:`asyncio.capture_call_graph` and
@@ -2065,7 +2094,6 @@ Deprecated
     * :class:`asyncio.WindowsProactorEventLoopPolicy`
     * :func:`asyncio.get_event_loop_policy`
     * :func:`asyncio.set_event_loop_policy`
-    * :func:`asyncio.set_event_loop`
 
     Users should use :func:`asyncio.run` or :class:`asyncio.Runner` with
     *loop_factory* to use the desired event loop implementation.
