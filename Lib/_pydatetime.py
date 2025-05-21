@@ -1872,7 +1872,7 @@ class datetime(date):
         if t < 0 and sys.platform.startswith("win"):
             # Windows converters throw an OSError for negative values.
             y, m, d, hh, mm, ss, weekday, jday, dst = converter(0)
-            result = cls(y, m, d, hh, mm, ss, us, tz)
+            result = cls(y, m, d, hh, mm, ss, 0, tz)
             return result + timedelta(seconds=t, microseconds=us)
         y, m, d, hh, mm, ss, weekday, jday, dst = converter(t)
         ss = min(ss, 59)    # clamp out leap seconds if the platform has them
