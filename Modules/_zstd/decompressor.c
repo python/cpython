@@ -147,58 +147,11 @@ _zstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
     return 0;
 }
 
-/* Load dictionary or prefix to decompression context */
 static int
-_zstd_load_d_dict(ZstdDecompressor *self, PyObject *dict)
+_zstd_load_impl(ZstdDecompressor *self, ZstdDict *zd,
+                _zstd_state *mod_state, int type)
 {
     size_t zstd_ret;
-    _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
-    if (mod_state == NULL) {
-        return -1;
-    }
-    ZstdDict *zd;
-    int type, ret;
-
-    /* Check ZstdDict */
-    ret = PyObject_IsInstance(dict, (PyObject*)mod_state->ZstdDict_type);
-    if (ret < 0) {
-        return -1;
-    }
-    else if (ret > 0) {
-        /* When decompressing, use digested dictionary by default. */
-        zd = (ZstdDict*)dict;
-        type = DICT_TYPE_DIGESTED;
-        goto load;
-    }
-
-    /* Check (ZstdDict, type) */
-    if (PyTuple_CheckExact(dict) && PyTuple_GET_SIZE(dict) == 2) {
-        /* Check ZstdDict */
-        ret = PyObject_IsInstance(PyTuple_GET_ITEM(dict, 0),
-                                  (PyObject*)mod_state->ZstdDict_type);
-        if (ret < 0) {
-            return -1;
-        }
-        else if (ret > 0) {
-            /* type == -1 may indicate an error. */
-            type = PyLong_AsInt(PyTuple_GET_ITEM(dict, 1));
-            if (type == DICT_TYPE_DIGESTED ||
-                type == DICT_TYPE_UNDIGESTED ||
-                type == DICT_TYPE_PREFIX)
-            {
-                assert(type >= 0);
-                zd = (ZstdDict*)PyTuple_GET_ITEM(dict, 0);
-                goto load;
-            }
-        }
-    }
-
-    /* Wrong type */
-    PyErr_SetString(PyExc_TypeError,
-                    "zstd_dict argument should be ZstdDict object.");
-    return -1;
-
-load:
     if (type == DICT_TYPE_DIGESTED) {
         /* Get ZSTD_DDict */
         ZSTD_DDict *d_dict = _get_DDict(zd);
@@ -235,6 +188,63 @@ load:
         return -1;
     }
     return 0;
+}
+
+/* Load dictionary or prefix to decompression context */
+static int
+_zstd_load_d_dict(ZstdDecompressor *self, PyObject *dict)
+{
+    _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
+    if (mod_state == NULL) {
+        return -1;
+    }
+    ZstdDict *zd;
+    int type, ret;
+
+    /* Check ZstdDict */
+    ret = PyObject_IsInstance(dict, (PyObject*)mod_state->ZstdDict_type);
+    if (ret < 0) {
+        return -1;
+    }
+    else if (ret > 0) {
+        /* When decompressing, use digested dictionary by default. */
+        zd = (ZstdDict*)dict;
+        type = DICT_TYPE_DIGESTED;
+        PyMutex_Lock(&zd->lock);
+        ret = _zstd_load_impl(self, zd, mod_state, type);
+        PyMutex_Unlock(&zd->lock);
+        return ret;
+    }
+
+    /* Check (ZstdDict, type) */
+    if (PyTuple_CheckExact(dict) && PyTuple_GET_SIZE(dict) == 2) {
+        /* Check ZstdDict */
+        ret = PyObject_IsInstance(PyTuple_GET_ITEM(dict, 0),
+                                  (PyObject*)mod_state->ZstdDict_type);
+        if (ret < 0) {
+            return -1;
+        }
+        else if (ret > 0) {
+            /* type == -1 may indicate an error. */
+            type = PyLong_AsInt(PyTuple_GET_ITEM(dict, 1));
+            if (type == DICT_TYPE_DIGESTED ||
+                type == DICT_TYPE_UNDIGESTED ||
+                type == DICT_TYPE_PREFIX)
+            {
+                assert(type >= 0);
+                zd = (ZstdDict*)PyTuple_GET_ITEM(dict, 0);
+                PyMutex_Lock(&zd->lock);
+                ret = _zstd_load_impl(self, zd, mod_state, type);
+                PyMutex_Unlock(&zd->lock);
+                return ret;
+            }
+        }
+    }
+
+    /* Wrong type */
+    PyErr_SetString(PyExc_TypeError,
+                    "zstd_dict argument should be ZstdDict object.");
+    return -1;
 }
 
 /*

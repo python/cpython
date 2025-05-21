@@ -53,6 +53,7 @@ _zstd_ZstdDict_new_impl(PyTypeObject *type, PyObject *dict_content,
     self->dict_content = NULL;
     self->d_dict = NULL;
     self->dict_id = 0;
+    self->lock = (PyMutex){0};
 
     /* ZSTD_CDict dict */
     self->c_dicts = PyDict_New();
@@ -108,6 +109,8 @@ ZstdDict_dealloc(PyObject *ob)
     if (self->d_dict) {
         ZSTD_freeDDict(self->d_dict);
     }
+
+    assert(!PyMutex_IsLocked(&self->lock));
 
     /* Release dict_content after Free ZSTD_CDict/ZSTD_DDict instances */
     Py_CLEAR(self->dict_content);
