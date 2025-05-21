@@ -80,6 +80,7 @@
         case _LOAD_SMALL_INT: {
             JitOptSymbol *value;
             PyObject *val = PyLong_FromLong(this_instr->oparg);
+            REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
             value = sym_new_const(ctx, val);
             stack_pointer[0] = value;
             stack_pointer += 1;

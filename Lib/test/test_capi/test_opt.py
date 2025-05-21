@@ -2156,6 +2156,17 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_GUARD_TYPE_VERSION", uops)
         self.assertNotIn("_CHECK_ATTR_CLASS", uops)
 
+    def test_load_small_int(self):
+        def testfunc(n):
+            x = 0
+            for i in range(n):
+                x += 1
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
 def global_identity(x):
     return x
