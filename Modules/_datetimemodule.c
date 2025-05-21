@@ -3250,6 +3250,20 @@ date_fromtimestamp(PyObject *cls, PyObject *obj)
     if (_PyTime_ObjectToTime_t(obj, &t, _PyTime_ROUND_FLOOR) == -1)
         return NULL;
 
+#ifdef MS_WINDOWS
+    if (t < 0) {
+	if (_PyTime_localtime(0, &tm) != 0)
+	    return NULL;
+
+	PyObject *date = new_date_subclass_ex(tm.tm_year + 1900,
+					      tm.tm_mon + 1,
+					      tm.tm_mday,
+					      cls);
+	PyObject *delta = new_delta(0, t, 0, 1);
+	return add_datetime_timedelta(date, delta, 1);
+    }
+#endif
+
     if (_PyTime_localtime(t, &tm) != 0)
         return NULL;
 
@@ -5528,6 +5542,20 @@ datetime_from_timestamp(PyObject *cls, TM_FUNC f, PyObject *timestamp,
 {
     time_t timet;
     long us;
+
+#ifdef MS_WINDOWS
+    if (PyFloat_Check(timestamp)) {
+	if (PyFloat_AsDouble(timestamp) < 0) {
+	    if (_PyTime_ObjectToTimeval(timestamp,
+					&timet, &us, _PyTime_ROUND_HALF_EVEN) == -1)
+		return NULL;
+
+	    PyObject *dt = datetime_from_timet_and_us(cls, f, 0, 0, tzinfo);
+	    PyObject *delta = new_delta(0, timet, us, 1);
+	    return add_datetime_timedelta(date, delta, 1);
+	}
+    }
+#endif
 
     if (_PyTime_ObjectToTimeval(timestamp,
                                 &timet, &us, _PyTime_ROUND_HALF_EVEN) == -1)

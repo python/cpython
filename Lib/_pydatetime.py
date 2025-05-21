@@ -1037,6 +1037,11 @@ class date:
         "Construct a date from a POSIX timestamp (like time.time())."
         if t is None:
             raise TypeError("'NoneType' object cannot be interpreted as an integer")
+        if t < 0 and sys.platform.startswith("win"):
+            # Windows converters throw an OSError for negative values.
+            y, m, d, hh, mm, ss, weekday, jday, dst = _time.localtime(0)
+            result = cls(y, m, d)
+            return result + timedelta(seconds=t)
         y, m, d, hh, mm, ss, weekday, jday, dst = _time.localtime(t)
         return cls(y, m, d)
 
@@ -1864,6 +1869,11 @@ class datetime(date):
             us += 1000000
 
         converter = _time.gmtime if utc else _time.localtime
+        if t < 0 and sys.platform.startswith("win"):
+            # Windows converters throw an OSError for negative values.
+            y, m, d, hh, mm, ss, weekday, jday, dst = converter(0)
+            result = cls(y, m, d, hh, mm, ss, us, tz)
+            return result + timedelta(seconds=t, microseconds=us)
         y, m, d, hh, mm, ss, weekday, jday, dst = converter(t)
         ss = min(ss, 59)    # clamp out leap seconds if the platform has them
         result = cls(y, m, d, hh, mm, ss, us, tz)

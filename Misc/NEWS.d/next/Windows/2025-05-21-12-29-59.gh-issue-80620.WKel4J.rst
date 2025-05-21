@@ -1,0 +1,4 @@
+Support negative values in :meth:`datetime.date.fromtimestamp` and
+:meth:`datetime.datetime.fromtimestamp` on Windows, by substituting 0 and
+using :class:`datetime.timedelta` to go back in time. Patch by John Keith
+Hohm.
