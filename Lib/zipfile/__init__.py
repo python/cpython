@@ -1998,6 +1998,8 @@ class ZipFile:
             if remove_physical:
                 old_header_offset = info.header_offset
                 info.header_offset -= entry_offset
+                if info._end_offset is not None:
+                    info._end_offset -= entry_offset
                 read_size = 0
                 while read_size < entry_size:
                     fp.seek(old_header_offset + read_size)
