@@ -1362,7 +1362,7 @@ class ZstdWriterTests(AbstractWriterTests, unittest.TestCase):
 
 class AbstractRemoveTests:
 
-    def _test_removing_members(self, test_files, indexes):
+    def _test_removing_members(self, test_files, indexes, force_zip64=False):
         """Test underlying _remove_members() for removing members at given
         indexes."""
         # calculate the expected results
@@ -1370,14 +1370,16 @@ class AbstractRemoveTests:
         with zipfile.ZipFile(TESTFN, 'w', self.compression) as zh:
             for i, (file, data) in enumerate(test_files):
                 if i not in indexes:
-                    zh.writestr(file, data)
+                    with zh.open(file, 'w', force_zip64=force_zip64) as fh:
+                        fh.write(data)
                     expected_files.append(file)
         expected_size = os.path.getsize(TESTFN)
 
         # prepare the test zip
         with zipfile.ZipFile(TESTFN, 'w', self.compression) as zh:
             for file, data in test_files:
-                zh.writestr(file, data)
+                with zh.open(file, 'w', force_zip64=force_zip64) as fh:
+                    fh.write(data)
 
         # do the removal and check the result
         with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
@@ -1550,30 +1552,13 @@ class AbstractRemoveTests:
 
     def test_zip64(self):
         """Test if members use zip64."""
-        file = 'datafile.txt'
-        file1 = 'pre.txt'
-        file2 = 'post.txt'
-        data = b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'
-        data1 = b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'
-        data2 = b'Duis aute irure dolor in reprehenderit in voluptate velit esse'
-        with zipfile.ZipFile(TESTFN, 'w', self.compression) as zh:
-            with zh.open(file1, 'w', force_zip64=True) as fh:
-                fh.write(data1)
-            with zh.open(file2, 'w', force_zip64=True) as fh:
-                fh.write(data2)
-        expected_size = os.path.getsize(TESTFN)
+        test_files = [
+            ('pre.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
+            ('datafile', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
+            ('post.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
+        ]
 
-        with zipfile.ZipFile(TESTFN, 'w', self.compression) as zh:
-            with zh.open(file1, 'w', force_zip64=True) as fh:
-                fh.write(data1)
-            with zh.open(file, 'w', force_zip64=True) as fh:
-                fh.write(data)
-            with zh.open(file2, 'w', force_zip64=True) as fh:
-                fh.write(data2)
-        with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
-            zh.remove(file)
-            self.assertIsNone(zh.testzip())
-        self.assertEqual(os.path.getsize(TESTFN), expected_size)
+        self._test_removing_members(test_files, [1], force_zip64=True)
 
 class StoredRemoveTests(AbstractRemoveTests, unittest.TestCase):
     compression = zipfile.ZIP_STORED
