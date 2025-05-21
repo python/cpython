@@ -1400,23 +1400,19 @@ class TestMain(ReplTestCase):
     @force_not_colorized
     def test_python_basic_repl(self):
         env = os.environ.copy()
-        commands = ("from test.support import initialized_with_pyrepl\n"
-                    "initialized_with_pyrepl()\n"
-                    "exit()\n")
-
+        pyrepl_commands = "clear\nexit()\n"
         env.pop("PYTHON_BASIC_REPL", None)
-        output, exit_code = self.run_repl(commands, env=env, skip=True)
+        output, exit_code = self.run_repl(pyrepl_commands, env=env, skip=True)
         self.assertEqual(exit_code, 0)
-        self.assertIn("True", output)
-        self.assertNotIn("False", output)
         self.assertNotIn("Exception", output)
+        self.assertNotIn("NameError", output)
         self.assertNotIn("Traceback", output)
 
+        basic_commands = "help\nexit()\n"
         env["PYTHON_BASIC_REPL"] = "1"
-        output, exit_code = self.run_repl(commands, env=env)
+        output, exit_code = self.run_repl(basic_commands, env=env)
         self.assertEqual(exit_code, 0)
-        self.assertIn("False", output)
-        self.assertNotIn("True", output)
+        self.assertIn("Type help() for interactive help", output)
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
