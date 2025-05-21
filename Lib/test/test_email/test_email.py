@@ -3989,7 +3989,7 @@ class TestParsers(TestEmailBase):
                               bytesParser(policy=email.policy.strict).parse,
                               fp)
             self.assertFalse(fp.closed)
-            
+
     def test_bytes_parser_uses_policy_utf8_setting(self):
         m = """
             From: Nathaniel Nameson <nathan@nameson.com>
