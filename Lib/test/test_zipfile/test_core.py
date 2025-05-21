@@ -1575,6 +1575,10 @@ class Bzip2RemoveTests(AbstractRemoveTests, unittest.TestCase):
 class LzmaRemoveTests(AbstractRemoveTests, unittest.TestCase):
     compression = zipfile.ZIP_LZMA
 
+@requires_zstd()
+class ZstdRemoveTests(AbstractRemoveTests, unittest.TestCase):
+    compression = zipfile.ZIP_ZSTANDARD
+
 
 class PyZipFileTests(unittest.TestCase):
     def assertCompiledIn(self, name, namelist):
