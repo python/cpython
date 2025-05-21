@@ -1715,7 +1715,7 @@ _textiowrapper_writeflush(textio *self)
                 if (bytes_to_write) {
                     pending = PyBytes_FromStringAndSize(
                         PyBytes_AS_STRING(b) + err->written,
-                        self->pending_bytes_count);
+                        bytes_to_write);
                     if (pending) {
                         /* _textiowrapper can raise an exception if it fails to
                             allocate a list, that just adds to active error
@@ -1803,7 +1803,7 @@ _textiowrapper_writeflush(textio *self)
         /* Make a new PyBytes to keep type for next call to write. */
         pending = PyBytes_FromStringAndSize(
             PyBytes_AS_STRING(b) + size,
-            self->pending_bytes_count);
+            bytes_to_write);
         Py_DECREF(b);
         b = pending;
         pending = NULL;
@@ -1811,7 +1811,6 @@ _textiowrapper_writeflush(textio *self)
 
     /* All data owned by this function is written. Other bytes could have shown
        up while running. */
-    assert(self->pending_bytes_count >= 0);
     Py_DECREF(b);
     return 0;
 }
