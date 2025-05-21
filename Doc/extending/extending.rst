@@ -364,7 +364,7 @@ macro)::
    return Py_None;
 
 :c:data:`Py_None` is the C name for the special Python object ``None``.  It is a
-genuine Python object rather than a ``NULL`` pointer, which means "SpamError" in most
+genuine Python object rather than a ``NULL`` pointer, which means "error" in most
 contexts, as we have seen.
 
 
