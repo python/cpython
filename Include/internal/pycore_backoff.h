@@ -97,8 +97,8 @@ backoff_counter_triggers(_Py_BackoffCounter counter)
 
 // Initial JUMP_BACKWARD counter.
 // Must be larger than ADAPTIVE_COOLDOWN_VALUE, otherwise when JIT code is
-// invalidated up we may construct a new trace before the Tier 1 code has
-// properly re-specialized.
+// invalidated we may construct a new trace before the bytecode has properly
+// re-specialized:
 #define JUMP_BACKWARD_INITIAL_VALUE 4095
 #define JUMP_BACKWARD_INITIAL_BACKOFF 12
 static inline _Py_BackoffCounter
