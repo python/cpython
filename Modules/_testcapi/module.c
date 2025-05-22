@@ -130,6 +130,36 @@ module_from_slots_token(PyObject *self, PyObject *spec)
     return mod;
 }
 
+static int
+simple_exec(PyObject *module)
+{
+    return PyModule_AddIntConstant(module, "a_number", 456);
+}
+
+static PyObject *
+module_from_slots_exec(PyObject *self, PyObject *spec)
+{
+    PyModuleDef_Slot slots[] = {
+        {Py_mod_exec, simple_exec},
+        {0},
+    };
+    PyObject *mod = PyModule_FromSlotsAndSpec(slots, spec);
+    if (!mod) {
+        return NULL;
+    }
+    int res = PyObject_HasAttrStringWithError(mod, "a_number");
+    if (res < 0) {
+        Py_DECREF(mod);
+        return NULL;
+    }
+    assert(res == 0);
+    if (PyModule_Exec(mod) < 0) {
+        Py_DECREF(mod);
+        return NULL;
+    }
+    return mod;
+}
+
 
 static int
 slot_from_object(PyObject *obj)
@@ -201,6 +231,7 @@ static PyMethodDef test_methods[] = {
     {"module_from_slots_methods", module_from_slots_methods, METH_O},
     {"module_from_slots_gc", module_from_slots_gc, METH_O},
     {"module_from_slots_token", module_from_slots_token, METH_O},
+    {"module_from_slots_exec", module_from_slots_exec, METH_O},
     {"module_from_slots_repeat_slot", module_from_slots_repeat_slot, METH_O},
     {"module_from_slots_null_slot", module_from_slots_null_slot, METH_O},
     {"module_from_def_slot", module_from_def_slot, METH_O},

@@ -62,6 +62,13 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
         self.assertEqual(mod.__name__, 'testmod')
         self.assertEqual(mod.__doc__, None)
 
+    def test_exec(self):
+        mod = _testcapi.module_from_slots_exec(FakeSpec())
+        self.assertIsInstance(mod, types.ModuleType)
+        self.assertEqual(mod.__name__, 'testmod')
+        self.assertEqual(mod.__doc__, None)
+        self.assertEqual(mod.a_number, 456)
+
     def test_def_slot(self):
         """Slots that replace PyModuleDef fields can't be used with PyModuleDef
         """
@@ -76,7 +83,7 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
 
     def test_repeated_def_slot(self):
         """Slots that replace PyModuleDef fields can't be repeated"""
-        for name in DEF_SLOTS:
+        for name in (*DEF_SLOTS, 'Py_mod_exec'):
             with self.subTest(name):
                 spec = FakeSpec()
                 spec._test_slot_id = getattr(_testcapi, name)
@@ -87,7 +94,7 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
 
     def test_null_def_slot(self):
         """Slots that replace PyModuleDef fields can't be NULL"""
-        for name in DEF_SLOTS:
+        for name in (*DEF_SLOTS, 'Py_mod_exec'):
             with self.subTest(name):
                 spec = FakeSpec()
                 spec._test_slot_id = getattr(_testcapi, name)

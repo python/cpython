@@ -2467,6 +2467,21 @@ class SubinterpImportTests(unittest.TestCase):
                         self.check_compatible_here(
                             modname, filename, strict=False, isolated=False)
 
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    def test_testmultiphase_exec_multiple(self):
+        modname = '_testmultiphase_exec_multiple'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(modname, filename,
+                                            put_in_sys_modules=False)
+        # All three exec's were called.
+        self.assertEqual(module.a, 1)
+        self.assertEqual(module.b, 2)
+        self.assertEqual(module.c, 3)
+        # They were called in order.
+        keys = list(module.__dict__)
+        self.assertLess(keys.index('a'), keys.index('b'))
+        self.assertLess(keys.index('b'), keys.index('c'))
+
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     def test_python_compat(self):
         module = 'threading'

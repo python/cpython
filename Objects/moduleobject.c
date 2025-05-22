@@ -642,71 +642,93 @@ PyUnstable_Module_SetGIL(PyObject *module, void *gil)
 }
 #endif
 
-int
-PyModule_ExecDef(PyObject *module, PyModuleDef *def)
+static int
+run_exec_func(PyObject *module, int (*exec)(PyObject *))
 {
-    PyModuleDef_Slot *cur_slot;
-    const char *name;
-    int ret;
-
-    name = PyModule_GetName(module);
-    if (name == NULL) {
+    int ret = exec(module);
+    if (ret != 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_Format(
+                PyExc_SystemError,
+                "execution of %S failed without setting an exception",
+                module);
+        }
         return -1;
     }
+    if (PyErr_Occurred()) {
+        _PyErr_FormatFromCause(
+            PyExc_SystemError,
+            "execution of module %S raised unreported exception",
+            module);
+        return -1;
+    }
+    return 0;
+}
 
-    if (def->m_size >= 0) {
-        PyModuleObject *md = (PyModuleObject*)module;
+static int
+alloc_state(PyObject *module)
+{
+    if(!PyModule_Check(module)) {
+        PyErr_Format(PyExc_TypeError, "expected module, got %T", module);
+        return -1;
+    }
+    PyModuleObject *md = (PyModuleObject*)module;
+
+    if (md->md_size >= 0) {
         if (md->md_state == NULL) {
             /* Always set a state pointer; this serves as a marker to skip
              * multiple initialization (importlib.reload() is no-op) */
-            md->md_state = PyMem_Malloc(def->m_size);
+            md->md_state = PyMem_Malloc(md->md_size);
             if (!md->md_state) {
                 PyErr_NoMemory();
                 return -1;
             }
-            memset(md->md_state, 0, def->m_size);
+            memset(md->md_state, 0, md->md_size);
         }
     }
+    return 0;
+}
+
+int
+PyModule_Exec(PyObject *module)
+{
+    if (alloc_state(module) < 0) {
+        return -1;
+    }
+    PyModuleObject *md = (PyModuleObject*)module;
+    if (md->md_exec) {
+        assert(!md->md_def_or_null);
+        return run_exec_func(module, md->md_exec);
+    }
+
+    if (md->md_def_or_null) {
+        return PyModule_ExecDef(module, md->md_def_or_null);
+    }
+    return 0;
+}
+
+int
+PyModule_ExecDef(PyObject *module, PyModuleDef *def)
+{
+    PyModuleDef_Slot *cur_slot;
+
+    if (alloc_state(module) < 0) {
+        return -1;
+    }
+
+    assert(PyModule_Check(module));
 
     if (def->m_slots == NULL) {
         return 0;
     }
 
     for (cur_slot = def->m_slots; cur_slot && cur_slot->slot; cur_slot++) {
-        switch (cur_slot->slot) {
-            case Py_mod_create:
-                /* handled in PyModule_FromDefAndSpec2 */
-                break;
-            case Py_mod_exec:
-                ret = ((int (*)(PyObject *))cur_slot->value)(module);
-                if (ret != 0) {
-                    if (!PyErr_Occurred()) {
-                        PyErr_Format(
-                            PyExc_SystemError,
-                            "execution of module %s failed without setting an exception",
-                            name);
-                    }
-                    return -1;
-                }
-                if (PyErr_Occurred()) {
-                    _PyErr_FormatFromCause(
-                        PyExc_SystemError,
-                        "execution of module %s raised unreported exception",
-                        name);
-                    return -1;
-                }
-                break;
-            case Py_mod_multiple_interpreters:
-            case Py_mod_gil:
-            case Py_mod_abi:
-                /* handled in PyModule_FromDefAndSpec2 */
-                break;
-            default:
-                PyErr_Format(
-                    PyExc_SystemError,
-                    "module %s initialized with unknown slot %i",
-                    name, cur_slot->slot);
+        if (cur_slot->slot == Py_mod_exec) {
+            int (*func)(PyObject *) = cur_slot->value;
+            if (run_exec_func(module, func) < 0) {
                 return -1;
+            }
+            continue;
         }
     }
     return 0;
