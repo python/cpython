@@ -152,7 +152,9 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(resize(ba, 0), 0)
         self.assertEqual(ba, bytearray())
 
-        self.assertEqual(resize(bytearray(b''), 0), 0)
+        ba = bytearray(b'')
+        self.assertEqual(resize(ba, 0), 0)
+        self.assertEqual(ba, bytearray())
 
         ba = ByteArraySubclass(b'abcdef')
         self.assertEqual(resize(ba, 3), 0)

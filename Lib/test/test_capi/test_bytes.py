@@ -139,7 +139,7 @@ class CAPITest(unittest.TestCase):
         # Test PyBytes_Repr()
         bytes_repr = _testlimitedcapi.bytes_repr
 
-        self.assertEqual(bytes_repr(b'''''', 0), r"""b''""")
+        self.assertEqual(bytes_repr(b'', 0), r"""b''""")
         self.assertEqual(bytes_repr(b'''abc''', 0), r"""b'abc'""")
         self.assertEqual(bytes_repr(b'''abc''', 1), r"""b'abc'""")
         self.assertEqual(bytes_repr(b'''a'b"c"d''', 0), r"""b'a\'b"c"d'""")
