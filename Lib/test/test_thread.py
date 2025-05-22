@@ -439,21 +439,6 @@ class TestForkInThread(unittest.TestCase):
         self.assertIsNotNone(pid)
         support.wait_process(pid, exitcode=0)
 
-    @support.requires_fork()
-    @threading_helper.reap_threads
-    def test_forked_not_started(self):
-        handle = thread._ThreadHandle()
-        pid = os.fork()
-        if pid == 0:
-            # child process
-            try:
-                self.assertTrue(handle.is_alive())
-                self.assertFalse(handle.is_done())
-            finally:
-                os._exit(0)
-        else:
-            support.wait_process(pid, exitcode=0)
-
     def tearDown(self):
         try:
             os.close(self.read_fd)

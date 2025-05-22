@@ -6844,6 +6844,28 @@ class MiscTestCase(unittest.TestCase):
         self.assertEqual("332833500", out.decode('utf-8').strip())
         self.assertFalse(err, msg=err.decode('utf-8'))
 
+    @support.requires_fork()
+    def test_forked_not_started(self):
+        # gh-134381
+        # Ensure that a forked parent process, which has not been started yet,
+        # can be initiated within the child process.
+
+        ctx = multiprocessing.get_context("fork")   # local “fork” cont
+        q = ctx.Queue()
+        t = threading.Thread(target=lambda: q.put("done"), daemon=True)
+
+        def child():
+            t.start()
+            t.join()
+
+        p = ctx.Process(target=child)
+        p.start()
+        p.join(support.SHORT_TIMEOUT)
+
+        self.assertEqual(p.exitcode, 0)
+        self.assertEqual(q.get_nowait(), "done")
+        close_queue(q)
+
 
 #
 # Mixins
