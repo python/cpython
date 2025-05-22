@@ -1925,6 +1925,50 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertNotIn("_GUARD_TOS_INT", uops)
 
+    def test_get_len_with_const_tuple(self):
+        def testfunc(n):
+            x = 0.0
+            for _ in range(n):
+                match (1, 2, 3, 4):
+                    case [_, _, _, _]:
+                        x += 1.0
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(int(res), TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+        self.assertNotIn("_GUARD_NOS_INT", uops)
+        self.assertNotIn("_GET_LEN", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_get_len_with_non_const_tuple(self):
+        def testfunc(n):
+            x = 0.0
+            for _ in range(n):
+                match object(), object():
+                    case [_, _]:
+                        x += 1.0
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(int(res), TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+        self.assertNotIn("_GUARD_NOS_INT", uops)
+        self.assertNotIn("_GET_LEN", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_get_len_with_non_tuple(self):
+        def testfunc(n):
+            x = 0.0
+            for _ in range(n):
+                match [1, 2, 3, 4]:
+                    case [_, _, _, _]:
+                        x += 1.0
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(int(res), TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+        self.assertNotIn("_GUARD_NOS_INT", uops)
+        self.assertIn("_GET_LEN", uops)
+
     def test_binary_op_subscr_tuple_int(self):
         def testfunc(n):
             x = 0
@@ -2092,6 +2136,25 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertIn("_GUARD_IS_TRUE_POP", uops)
+
+    def test_set_type_version_sets_type(self):
+        class C:
+            A = 1
+
+        def testfunc(n):
+            x = 0
+            c = C()
+            for _ in range(n):
+                x += c.A  # Guarded.
+                x += type(c).A  # Unguarded!
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 2 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_GUARD_TYPE_VERSION", uops)
+        self.assertNotIn("_CHECK_ATTR_CLASS", uops)
 
 
 def global_identity(x):
