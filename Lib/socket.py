@@ -557,7 +557,7 @@ if hasattr(_socket.socket, "sendmsg"):
         Send the list of file descriptors fds over an AF_UNIX socket.
         """
         return sock.sendmsg(buffers, [(_socket.SOL_SOCKET,
-            _socket.SCM_RIGHTS, array.array("i", fds))])
+            _socket.SCM_RIGHTS, array.array("i", fds))], flags, address)
     __all__.append("send_fds")
 
 if hasattr(_socket.socket, "recvmsg"):
