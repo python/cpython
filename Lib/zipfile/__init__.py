@@ -2022,9 +2022,6 @@ class ZipFile:
             self.start_dir -= entry_offset
         self._didModify = True
 
-        # seek to the start of the central dir
-        fp.seek(self.start_dir)
-
     def _writecheck(self, zinfo):
         """Check for errors before writing a file to the archive."""
         if zinfo.filename in self.NameToInfo:
