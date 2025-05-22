@@ -170,11 +170,10 @@ _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptSymbol *sym)
     }
     PyTypeObject *typ = Py_TYPE(const_val);
     return (typ == &PyLong_Type) ||
-        (typ == &PyUnicode_Type) ||
-        (typ == &PyFloat_Type) ||
-        (typ == &PyDict_Type) ||
-        (typ == &PyTuple_Type) ||
-        (typ == &PyList_Type);
+           (typ == &PyUnicode_Type) ||
+           (typ == &PyFloat_Type) ||
+           (typ == &PyDict_Type) ||
+           (typ == &PyTuple_Type);
 }
 
 void
@@ -438,6 +437,10 @@ _Py_uop_sym_new_const_steal(JitOptContext *ctx, PyObject *const_val)
 {
     assert(const_val != NULL);
     JitOptSymbol *res = _Py_uop_sym_new_const(ctx, const_val);
+    // Decref once because sym_new_const increfs it.
+    Py_DECREF(const_val);
+    // Decref it another time, because we are a steal operation.
+    // (Ownership now belongs to the symbol).
     Py_DECREF(const_val);
     return res;
 }

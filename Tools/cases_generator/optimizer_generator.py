@@ -217,7 +217,7 @@ def write_uop_pure_evaluation_region_header(
         # All new stackrefs are created from new references.
         # That's how the stackref contract works.
         if not outp.peek:
-            emitter.emit(f"{outp.name} = sym_new_const_steal(ctx, PyStackRef_AsPyObjectBorrow({outp.name}_stackref));\n")
+            emitter.emit(f"{outp.name} = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal({outp.name}_stackref));\n")
         else:
             emitter.emit(f"{outp.name} = sym_new_const(ctx, PyStackRef_AsPyObjectBorrow({outp.name}_stackref));\n")
     storage.flush(out)

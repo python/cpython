@@ -154,7 +154,7 @@
                 res_stackref = PyStackRef_IsFalse(value)
                 ? PyStackRef_True : PyStackRef_False;
                 /* End of pure uop copied from bytecodes for constant evaluation */
-                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectBorrow(res_stackref));
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 stack_pointer[-1] = res;
             }
             else {
@@ -347,7 +347,7 @@
                 }
                 res_stackref = PyStackRef_FromPyObjectSteal(res_o);
                 /* End of pure uop copied from bytecodes for constant evaluation */
-                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectBorrow(res_stackref));
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
@@ -392,7 +392,7 @@
                 }
                 res_stackref = PyStackRef_FromPyObjectSteal(res_o);
                 /* End of pure uop copied from bytecodes for constant evaluation */
-                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectBorrow(res_stackref));
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
@@ -437,7 +437,7 @@
                 }
                 res_stackref = PyStackRef_FromPyObjectSteal(res_o);
                 /* End of pure uop copied from bytecodes for constant evaluation */
-                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectBorrow(res_stackref));
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
@@ -502,7 +502,7 @@
                     JUMP_TO_LABEL(pop_2_error);
                 }
                 /* End of pure uop copied from bytecodes for constant evaluation */
-                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectBorrow(res_stackref));
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
@@ -547,7 +547,7 @@
                     JUMP_TO_LABEL(pop_2_error);
                 }
                 /* End of pure uop copied from bytecodes for constant evaluation */
-                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectBorrow(res_stackref));
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
@@ -592,7 +592,7 @@
                     JUMP_TO_LABEL(pop_2_error);
                 }
                 /* End of pure uop copied from bytecodes for constant evaluation */
-                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectBorrow(res_stackref));
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
@@ -637,7 +637,7 @@
                 }
                 res_stackref = PyStackRef_FromPyObjectSteal(res_o);
                 /* End of pure uop copied from bytecodes for constant evaluation */
-                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectBorrow(res_stackref));
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());

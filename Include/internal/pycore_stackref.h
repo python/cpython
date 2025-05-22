@@ -374,7 +374,6 @@ PyStackRef_FromPyObjectBorrow(PyObject *obj)
 }
 #define PyStackRef_FromPyObjectBorrow(obj) PyStackRef_FromPyObjectBorrow(_PyObject_CAST(obj))
 
-
 #define PyStackRef_CLOSE(REF)                                        \
         do {                                                            \
             _PyStackRef _close_tmp = (REF);                             \
