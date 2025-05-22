@@ -321,7 +321,7 @@ class OpcodeStats:
     def is_specializable(self, opcode: str) -> bool:
         return "specializable" in self._get_stats_for_opcode(opcode)
 
-    def get_specialized_total_counts(self) -> tuple[int, int, int]:
+    def get_specialized_total_counts(self) -> tuple[int, int, int, int]:
         basic = 0
         specialized_hits = 0
         specialized_misses = 0
@@ -450,7 +450,7 @@ class Stats:
             gc_stats[gen_n][name] = value
         return gc_stats
 
-    def get_optimization_stats(self) -> dict[str, tuple[int, int | None]]:
+    def get_optimization_stats(self) -> dict[Doc, tuple[int, int | None]]:
         if "Optimization attempts" not in self._data:
             return {}
 
@@ -528,7 +528,7 @@ class Stats:
             ),
         }
 
-    def get_optimizer_stats(self) -> dict[str, tuple[int, int | None]]:
+    def get_optimizer_stats(self) -> dict[Doc, tuple[int, int | None]]:
         attempts = self._data["Optimization optimizer attempts"]
         successes = self._data["Optimization optimizer successes"]
         no_memory = self._data["Optimization optimizer failure no memory"]
@@ -1362,7 +1362,7 @@ def optimization_section() -> Section:
 
 
 def rare_event_section() -> Section:
-    def calc_rare_event_table(stats: Stats) -> Table:
+    def calc_rare_event_table(stats: Stats) -> Rows:
         DOCS = {
             "set class": "Setting an object's class, `obj.__class__ = ...`",
             "set bases": "Setting the bases of a class, `cls.__bases__ = ...`",
@@ -1493,7 +1493,7 @@ def output_markdown(
             print("Stats gathered on:", date.today(), file=out)
 
 
-def output_stats(inputs: list[Path], json_output=str | None):
+def output_stats(inputs: list[Path], json_output: str | None):
     match len(inputs):
         case 1:
             data = load_raw_data(Path(inputs[0]))
