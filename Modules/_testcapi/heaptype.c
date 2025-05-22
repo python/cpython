@@ -521,6 +521,13 @@ error:
     return NULL;
 }
 
+static PyObject *
+pytype_getmodulebydef(PyObject *self, PyObject *type)
+{
+    PyObject *mod = PyType_GetModuleByDef((PyTypeObject *)type, _testcapimodule);
+    return Py_XNewRef(mod);
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"pytype_fromspec_meta",    pytype_fromspec_meta,            METH_O},
@@ -538,6 +545,7 @@ static PyMethodDef TestMethods[] = {
     {"create_type_with_token", create_type_with_token, METH_VARARGS},
     {"get_tp_token", get_tp_token, METH_O},
     {"pytype_getbasebytoken", pytype_getbasebytoken, METH_VARARGS},
+    {"pytype_getmodulebydef", pytype_getmodulebydef, METH_O},
     {NULL},
 };
 

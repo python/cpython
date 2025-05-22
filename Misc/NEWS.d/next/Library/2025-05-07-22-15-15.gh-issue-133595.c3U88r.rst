@@ -1,0 +1,7 @@
+Clean up :class:`sqlite3.Connection` APIs. All parameters of
+:func:`sqlite3.connect` except *database* are now keyword-only. The first
+three parameters of methods :meth:`~sqlite3.Connection.create_function` and
+:meth:`~sqlite3.Connection.create_aggregate` are now positional-only. The
+first parameter of methods :meth:`~sqlite3.Connection.set_authorizer`,
+:meth:`~sqlite3.Connection.set_progress_handler` and
+:meth:`~sqlite3.Connection.set_trace_callback` is now positional-only.

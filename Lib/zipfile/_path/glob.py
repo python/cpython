@@ -37,9 +37,9 @@ class Translator:
         Apply '(?s:)' to create a non-matching group that
         matches newlines (valid on Unix).
 
-        Append '\Z' to imply fullmatch even when match is used.
+        Append '\z' to imply fullmatch even when match is used.
         """
-        return rf'(?s:{pattern})\Z'
+        return rf'(?s:{pattern})\z'
 
     def match_dirs(self, pattern):
         """
