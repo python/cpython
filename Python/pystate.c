@@ -3291,9 +3291,9 @@ PyThreadState_Ensure(PyInterpreterRef interp_ref)
     if (fresh_tstate == NULL) {
         return -1;
     }
+    fresh_tstate->ensure_counter = 1;
 
     if (attached_tstate != NULL) {
-        fresh_tstate->ensure_counter = 1;
         fresh_tstate->prior_ensure = PyThreadState_Swap(fresh_tstate);
     } else {
         _PyThreadState_Attach(fresh_tstate);
