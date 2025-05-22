@@ -2278,7 +2278,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
                 /* Start of pure uop copied from bytecodes for constant evaluation */
                 res_stackref = body(foo);
                 /* End of pure uop copied from bytecodes for constant evaluation */
-                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectBorrow(res_stackref));
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 stack_pointer[-1] = res;
             }
             else {
@@ -2325,7 +2325,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
                     res_stackref = 1;
                 }
                 /* End of pure uop copied from bytecodes for constant evaluation */
-                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectBorrow(res_stackref));
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 stack_pointer[-1] = res;
             }
             else {
