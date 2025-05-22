@@ -436,13 +436,13 @@ optionally followed by an import of the module::
 
 .. note::
 
-   If you define *static* extension types rather than heap-allocated types,
-   the module can cause the same problems as the legacy single-phase
-   initialization when removing entries from ``sys.modules`` or importing
-   compiled modules into multiple interpreters within a process
-   (or following a :c:func:`fork` without an intervening :c:func:`exec`).
-   In this case, at least the module should reject subinterpreters by using
-   a :c:type:`PyModuleDef_Slot` (``Py_mod_multiple_interpreters``).
+   If you declare a global variable or a local static one, the module can
+   cause the same problems as the legacy single-phase initialization when
+   removing entries from ``sys.modules`` or importing compiled modules into
+   multiple interpreters within a process (or following a :c:func:`fork` without an
+   intervening :c:func:`exec`).  In this case, at least the module should
+   stop supporting subinterpreters through a :c:type:`PyModuleDef_Slot`
+   (:c:data:`Py_mod_multiple_interpreters`).
 
 A more substantial example module is included in the Python source distribution
 as :file:`Modules/xxlimited.c`.  This file may be used as a template or simply
@@ -1279,6 +1279,8 @@ function must take care of initializing the C API pointer array::
 
    static PyModuleDef_Slot spam_module_slots[] = {
        {Py_mod_exec, spam_module_exec},
+       // Just use this while using a local static variable
+       {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
        {0, NULL}
    };
 
