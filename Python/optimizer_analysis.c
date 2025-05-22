@@ -611,30 +611,23 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 //     _LOAD_FAST + _POP_TWO_LOAD_CONST_INLINE_BORROW + _POP_TOP
                 // ...becomes:
                 //     _NOP + _POP_TOP + _NOP
-                again:
-                while (op_without_pop[opcode]) {
+                while (op_without_pop[opcode] || opcode == _POP_CALL || opcode == _POP_CALL_LOAD_CONST_INLINE_BORROW) {
                     _PyUOpInstruction *last = &buffer[pc - 1];
                     while (op_skip[last->opcode]) {
                         last--;
                     }
-                    if (!op_without_push[last->opcode]) {
-                        break;
+                    if (op_without_push[last->opcode]) {
+                        last->opcode = op_without_push[last->opcode];
+                        opcode = buffer[pc].opcode = op_without_pop[opcode];
+                        if (op_without_pop[last->opcode]) {
+                            opcode = last->opcode;
+                            pc = last - buffer;
+                        }
                     }
-                    last->opcode = op_without_push[last->opcode];
-                    opcode = buffer[pc].opcode = op_without_pop[opcode];
-                    if (op_without_pop[last->opcode]) {
-                        opcode = last->opcode;
-                        pc = last - buffer;
-                    }
-                }
-                // Handle _POP_CALL and _POP_CALL_LOAD_CONST_INLINE_BORROW separately.
-                // This looks for a preceding _PUSH_NULL instruction and simplifies to _POP_TOP.
-                if (opcode == _POP_CALL || opcode == _POP_CALL_LOAD_CONST_INLINE_BORROW) {
-                    _PyUOpInstruction *last = &buffer[pc - 1];
-                    while (op_skip[last->opcode]) {
-                        last--;
-                    }
-                    if (last->opcode == _PUSH_NULL) {
+                    else if (last->opcode == _PUSH_NULL) {
+                        // Handle _POP_CALL and _POP_CALL_LOAD_CONST_INLINE_BORROW separately.
+                        // This looks for a preceding _PUSH_NULL instruction and
+                        // simplifies to _POP_TOP(_LOAD_CONST_INLINE_BORROW).
                         last->opcode = _NOP;
                         if (opcode == _POP_CALL) {
                             opcode = buffer[pc].opcode = _POP_TOP;
@@ -642,12 +635,8 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                         else {
                             opcode = buffer[pc].opcode = _POP_TOP_LOAD_CONST_INLINE_BORROW;
                         }
-                        opcode = buffer[pc].opcode = _POP_TOP;
-                        if (op_without_pop[last->opcode]) {
-                            opcode = last->opcode;
-                            pc = last - buffer;
-                        }
-                        goto again;
+                    } else {
+                        break;
                     }
                 }
                 /* _PUSH_FRAME doesn't escape or error, but it
