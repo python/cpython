@@ -1037,7 +1037,7 @@ class date:
         "Construct a date from a POSIX timestamp (like time.time())."
         if t is None:
             raise TypeError("'NoneType' object cannot be interpreted as an integer")
-        if t < 0 and sys.platform.startswith("win"):
+        if t < 0 and os.name == 'nt':
             # Windows converters throw an OSError for negative values.
             y, m, d, hh, mm, ss, weekday, jday, dst = _time.localtime(0)
             result = cls(y, m, d)
@@ -1869,7 +1869,7 @@ class datetime(date):
             us += 1000000
 
         converter = _time.gmtime if utc else _time.localtime
-        if t < 0 and sys.platform.startswith("win"):
+        if t < 0 and os.name == 'nt':
             # Windows converters throw an OSError for negative values.
             y, m, d, hh, mm, ss, weekday, jday, dst = converter(0)
             result = cls(y, m, d, hh, mm, ss, 0, tz)
@@ -1887,7 +1887,7 @@ class datetime(date):
             # thus we can't perform fold detection for values of time less
             # than the max time fold. See comments in _datetimemodule's
             # version of this method for more details.
-            if t < max_fold_seconds and sys.platform.startswith("win"):
+            if t < max_fold_seconds and os.name == 'nt':
                 return result
 
             y, m, d, hh, mm, ss = converter(t - max_fold_seconds)[:6]
