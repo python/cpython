@@ -100,8 +100,13 @@ class WorkerContext(_thread.WorkerContext):
                 excdata = _interpqueues.get(self.resultsid)
             except _interpqueues.QueueNotFoundError:
                 raise  # re-raise
-            except _interpqueues.QueueError:
-                continue
+            except _interpqueues.QueueError as exc:
+                if exc.__cause__ is not None or exc.__context__ is not None:
+                    raise  # re-raise
+                if str(exc).endswith(' is empty'):
+                    continue
+                else:
+                    raise  # re-raise
             except ModuleNotFoundError:
                 # interpreters.queues doesn't exist, which means
                 # QueueEmpty doesn't.  Act as though it does.
