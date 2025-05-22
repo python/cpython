@@ -3273,12 +3273,12 @@ date_fromtimestamp(PyObject *cls, PyObject *obj)
         PyObject *result = NULL;
         PyObject *delta = new_delta(0, (int)t, 0, normalize);
         if (delta == NULL) {
-            Py_XDECREF(date);
+            Py_DECREF(date);
             return NULL;
         }
         result = add_date_timedelta(PyDate_CAST(date), PyDelta_CAST(delta), negate);
-        Py_XDECREF(delta);
-        Py_XDECREF(date);
+        Py_DECREF(delta);
+        Py_DECREF(date);
         return result;
     }
 #endif
@@ -5573,12 +5573,12 @@ datetime_from_timestamp(PyObject *cls, TM_FUNC f, PyObject *timestamp,
         PyObject *result = NULL;
         PyObject *delta = new_delta(0, (int)timet, us, normalize);
         if (delta == NULL) {
-            Py_XDECREF(dt);
+            Py_DECREF(dt);
             return NULL;
         }
         result = add_datetime_timedelta(PyDateTime_CAST(dt), PyDelta_CAST(delta), factor);
-        Py_XDECREF(delta);
-        Py_XDECREF(dt);
+        Py_DECREF(delta);
+        Py_DECREF(dt);
         return result;
     }
 #endif
