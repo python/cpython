@@ -2014,7 +2014,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
 
-    // Wrap up non-daemon native threads
+    // Wait for the interpreter's reference count to reach zero
     wait_for_native_shutdown(tstate->interp);
 
     // Make any remaining pending calls.
@@ -2433,7 +2433,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
 
-    // Wrap up non-daemon native threads
+    // Wait for the interpreter's reference count to reach zero
     wait_for_native_shutdown(tstate->interp);
 
     // Make any remaining pending calls.
