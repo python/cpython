@@ -528,7 +528,10 @@ dummy_func(void) {
     }
 
     op(_LOAD_SMALL_INT, (-- value)) {
-        PyObject *val = PyLong_FromLong(this_instr->oparg);
+        PyObject *val = PyLong_FromLong(oparg);
+        assert(val);
+        assert(_Py_IsImmortal(val));
+        REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
         value = sym_new_const(ctx, val);
     }
 
