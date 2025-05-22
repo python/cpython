@@ -3497,6 +3497,7 @@ wait_for_native_shutdown(PyInterpreterState *interp)
         }
 
         if (PyErr_CheckSignals()) {
+            PyErr_Print();
             // The user CTRL+C'd us, bail out without waiting for a reference
             // count of zero.
             //
