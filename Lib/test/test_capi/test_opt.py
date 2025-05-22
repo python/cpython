@@ -2007,7 +2007,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
         self.assertNotIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
-
     def test_call_list_append(self):
         def testfunc(n):
             a = []
