@@ -613,7 +613,8 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 //     _NOP + _POP_TOP + _NOP
                 while (op_without_pop[opcode] ||
                        opcode == _POP_CALL ||
-                       opcode == _POP_CALL_LOAD_CONST_INLINE_BORROW) {
+                       opcode == _POP_CALL_LOAD_CONST_INLINE_BORROW)
+                {
                     _PyUOpInstruction *last = &buffer[pc - 1];
                     while (op_skip[last->opcode]) {
                         last--;
