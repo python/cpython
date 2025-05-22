@@ -198,10 +198,7 @@ _get_CDict(ZstdDict *self, int compressionLevel)
         }
 
         /* Add PyCapsule object to self->c_dicts if not already inserted */
-        PyObject *capsule_dict;
-        int ret = PyDict_SetDefaultRef(self->c_dicts, level, capsule,
-                                       &capsule_dict);
-        Py_XDECREF(capsule_dict);
+        int ret = PyDict_SetDefaultRef(self->c_dicts, level, capsule, NULL);
         Py_DECREF(capsule);
         if (ret < 0) {
             goto error;
