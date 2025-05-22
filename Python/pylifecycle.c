@@ -3488,7 +3488,24 @@ wait_for_native_shutdown(PyInterpreterState *interp)
     }
     PyMutex_Unlock(&finalizing->mutex);
 
-    PyEvent_Wait(&finalizing->finished);
+    PyTime_t wait_ns = 1000 * 1000; // 1 millisecond
+
+    while (true) {
+        if (PyEvent_WaitTimed(&finalizing->finished, wait_ns, 1)) {
+            // Event set
+            break;
+        }
+
+        if (PyErr_CheckSignals()) {
+            // The user CTRL+C'd us, bail out without waiting for a reference
+            // count of zero.
+            //
+            // This will probably cause threads to crash, but maybe that's
+            // better than a deadlock. It might be worth intentionally
+            // leaking subinterpreters to prevent some crashes here.
+            break;
+        }
+    }
 }
 
 int Py_AtExit(void (*func)(void))
