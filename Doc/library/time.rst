@@ -295,7 +295,7 @@ Functions
 
    * On Windows, call ``QueryPerformanceCounter()`` and
      ``QueryPerformanceFrequency()``.
-   * On macOS, call ``mach_absolute_time()`` and ``mach_timebase_info()``.
+   * On macOS, call ``clock_gettime(CLOCK_MONOTONIC_RAW)`` if available, otherwise call ``mach_absolute_time()`` and ``mach_timebase_info()``.
    * On HP-UX, call ``gethrtime()``.
    * Call ``clock_gettime(CLOCK_HIGHRES)`` if available.
    * Otherwise, call ``clock_gettime(CLOCK_MONOTONIC)``.

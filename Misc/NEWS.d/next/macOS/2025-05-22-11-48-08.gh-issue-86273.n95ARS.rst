@@ -1,0 +1,3 @@
+On macOS >= 10.12, use :func:`clock_gettime` with
+:data:`CLOCK_MONOTONIC_RAW` for :func:`time.monotonic`. Patch by John Keith
+Hohm.

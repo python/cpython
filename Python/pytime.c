@@ -12,7 +12,7 @@
 #  include <winsock2.h>           // struct timeval
 #endif
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) && !defined(CLOCK_MONOTONIC_RAW)
 #  include <mach/mach_time.h>     // mach_absolute_time(), mach_timebase_info()
 
 #if defined(__APPLE__) && defined(__has_builtin)
@@ -933,7 +933,7 @@ py_get_system_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
     struct timespec ts;
 #endif
 
-#if !defined(HAVE_CLOCK_GETTIME) || defined(__APPLE__)
+#if !defined(HAVE_CLOCK_GETTIME) || (defined(__APPLE__) && !defined(CLOCK_MONOTONIC_RAW))
     struct timeval tv;
 #endif
 
@@ -1090,7 +1090,7 @@ py_get_win_perf_counter(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 #endif  // MS_WINDOWS
 
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && !defined(CLOCK_MONOTONIC_RAW)
 static PyStatus
 py_mach_timebase_info(_PyTimeFraction *base)
 {
@@ -1125,7 +1125,7 @@ _PyTime_Init(struct _Py_time_runtime_state *state)
 {
 #ifdef MS_WINDOWS
     return py_win_perf_counter_frequency(&state->base);
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) && !defined(CLOCK_MONOTONIC_RAW)
     return py_mach_timebase_info(&state->base);
 #else
     return PyStatus_Ok();
@@ -1146,7 +1146,7 @@ py_get_monotonic_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
     if (py_get_win_perf_counter(tp, info, raise_exc) < 0) {
         return -1;
     }
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) && !defined(CLOCK_MONOTONIC_RAW)
     if (info) {
         info->implementation = "mach_absolute_time()";
         info->resolution = _PyTimeFraction_Resolution(&_PyRuntime.time.base);
@@ -1185,6 +1185,9 @@ py_get_monotonic_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 #ifdef CLOCK_HIGHRES
     const clockid_t clk_id = CLOCK_HIGHRES;
     const char *implementation = "clock_gettime(CLOCK_HIGHRES)";
+#elif defined(__APPLE__) && defined(CLOCK_MONOTONIC_RAW)
+    const clockid_t clk_id = CLOCK_MONOTONIC_RAW;
+    const char *implementation = "clock_gettime(CLOCK_MONOTONIC_RAW)";
 #else
     const clockid_t clk_id = CLOCK_MONOTONIC;
     const char *implementation = "clock_gettime(CLOCK_MONOTONIC)";
