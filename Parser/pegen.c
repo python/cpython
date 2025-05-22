@@ -1,7 +1,10 @@
 #include <Python.h>
 #include "pycore_ast.h"           // _PyAST_Validate(),
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_parser.h"        // _PYPEGEN_NSTATISTICS
 #include "pycore_pyerrors.h"      // PyExc_IncompleteInputError
+#include "pycore_runtime.h"     // _PyRuntime
+#include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal
 #include <errcode.h>
 
 #include "lexer/lexer.h"
@@ -111,7 +114,7 @@ init_normalization(Parser *p)
     if (p->normalize) {
         return 1;
     }
-    p->normalize = _PyImport_GetModuleAttrString("unicodedata", "normalize");
+    p->normalize = PyImport_ImportModuleAttrString("unicodedata", "normalize");
     if (!p->normalize)
     {
         return 0;
@@ -191,7 +194,7 @@ initialize_token(Parser *p, Token *parser_token, struct token *new_token, int to
     parser_token->metadata = NULL;
     if (new_token->metadata != NULL) {
         if (_PyArena_AddPyObject(p->arena, new_token->metadata) < 0) {
-            Py_DECREF(parser_token->metadata);
+            Py_DECREF(new_token->metadata);
             return -1;
         }
         parser_token->metadata = new_token->metadata;
@@ -403,11 +406,14 @@ _PyPegen_lookahead_with_int(int positive, Token *(func)(Parser *, int), Parser *
     return (res != NULL) == positive;
 }
 
-int
+// gh-111178: Use _Py_NO_SANITIZE_UNDEFINED to disable sanitizer checks on
+// undefined behavior (UBsan) in this function, rather than changing 'func'
+// callback API.
+int _Py_NO_SANITIZE_UNDEFINED
 _PyPegen_lookahead(int positive, void *(func)(Parser *), Parser *p)
 {
     int mark = p->mark;
-    void *res = (void*)func(p);
+    void *res = func(p);
     p->mark = mark;
     return (res != NULL) == positive;
 }
@@ -509,8 +515,6 @@ _PyPegen_new_identifier(Parser *p, const char *n)
     if (!id) {
         goto error;
     }
-    /* PyUnicode_DecodeUTF8 should always return a ready string. */
-    assert(PyUnicode_IS_READY(id));
     /* Check whether there are non-ASCII characters in the
        identifier; if so, normalize to NFKC. */
     if (!PyUnicode_IS_ASCII(id))
@@ -544,6 +548,21 @@ _PyPegen_new_identifier(Parser *p, const char *n)
             goto error;
         }
         id = id2;
+    }
+    static const char * const forbidden[] = {
+        "None",
+        "True",
+        "False",
+        NULL
+    };
+    for (int i = 0; forbidden[i] != NULL; i++) {
+        if (_PyUnicode_EqualToASCIIString(id, forbidden[i])) {
+            PyErr_Format(PyExc_ValueError,
+                         "identifier field can't represent '%s' constant",
+                         forbidden[i]);
+            Py_DECREF(id);
+            goto error;
+        }
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyUnicode_InternImmortal(interp, &id);
@@ -795,7 +814,7 @@ compute_parser_flags(PyCompilerFlags *flags)
 
 Parser *
 _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
-                    int feature_version, int *errcode, PyArena *arena)
+                    int feature_version, int *errcode, const char* source, PyArena *arena)
 {
     Parser *p = PyMem_Malloc(sizeof(Parser));
     if (p == NULL) {
@@ -843,6 +862,10 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->known_err_token = NULL;
     p->level = 0;
     p->call_invalid_rules = 0;
+    p->last_stmt_location.lineno = 0;
+    p->last_stmt_location.col_offset = 0;
+    p->last_stmt_location.end_lineno = 0;
+    p->last_stmt_location.end_col_offset = 0;
 #ifdef Py_DEBUG
     p->debug = _Py_GetConfig()->parser_debug;
 #endif
@@ -864,6 +887,10 @@ _PyPegen_Parser_Free(Parser *p)
 static void
 reset_parser_state_for_error_pass(Parser *p)
 {
+    p->last_stmt_location.lineno = 0;
+    p->last_stmt_location.col_offset = 0;
+    p->last_stmt_location.end_lineno = 0;
+    p->last_stmt_location.end_col_offset = 0;
     for (int i = 0; i < p->fill; i++) {
         p->tokens[i]->memo = NULL;
     }
@@ -878,6 +905,51 @@ static inline int
 _is_end_of_source(Parser *p) {
     int err = p->tok->done;
     return err == E_EOF || err == E_EOFS || err == E_EOLS;
+}
+
+static void
+_PyPegen_set_syntax_error_metadata(Parser *p) {
+    PyObject *exc = PyErr_GetRaisedException();
+    if (!exc || !PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_SyntaxError)) {
+        PyErr_SetRaisedException(exc);
+        return;
+    }
+    const char *source = NULL;
+    if (p->tok->str != NULL) {
+        source = p->tok->str;
+    }
+    if (!source && p->tok->fp_interactive && p->tok->interactive_src_start) {
+        source = p->tok->interactive_src_start;
+    }
+    PyObject* the_source = NULL;
+    if (source) {
+        if (p->tok->encoding == NULL) {
+            the_source = PyUnicode_FromString(source);
+        } else {
+            the_source = PyUnicode_Decode(source, strlen(source), p->tok->encoding, NULL);
+        }
+    }
+    if (!the_source) {
+        PyErr_Clear();
+        the_source = Py_None;
+        Py_INCREF(the_source);
+    }
+    PyObject* metadata = Py_BuildValue(
+        "(iiN)",
+        p->last_stmt_location.lineno,
+        p->last_stmt_location.col_offset,
+        the_source // N gives ownership to metadata
+    );
+    if (!metadata) {
+        Py_DECREF(the_source);
+        PyErr_Clear();
+        return;
+    }
+    PySyntaxErrorObject *syntax_error = (PySyntaxErrorObject *)exc;
+
+    Py_XDECREF(syntax_error->metadata);
+    syntax_error->metadata = metadata;
+    PyErr_SetRaisedException(exc);
 }
 
 void *
@@ -903,6 +975,11 @@ _PyPegen_run_parser(Parser *p)
         // Set SyntaxErrors accordingly depending on the parser/tokenizer status at the failure
         // point.
         _Pypegen_set_syntax_error(p, last_token);
+
+        // Set the metadata in the exception from p->last_stmt_location
+        if (PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+            _PyPegen_set_syntax_error_metadata(p);
+        }
        return NULL;
     }
 
@@ -951,7 +1028,7 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
 
     int parser_flags = compute_parser_flags(flags);
     Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, PY_MINOR_VERSION,
-                                    errcode, arena);
+                                    errcode, NULL, arena);
     if (p == NULL) {
         goto error;
     }
@@ -1001,7 +1078,7 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     int feature_version = flags && (flags->cf_flags & PyCF_ONLY_AST) ?
         flags->cf_feature_version : PY_MINOR_VERSION;
     Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, feature_version,
-                                    NULL, arena);
+                                    NULL, str, arena);
     if (p == NULL) {
         goto error;
     }

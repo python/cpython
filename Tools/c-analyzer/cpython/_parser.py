@@ -70,9 +70,7 @@ Python/thread_pthread.h
 Python/thread_pthread_stubs.h
 
 # only huge constants (safe but parsing is slow)
-Modules/_ssl_data_31.h
-Modules/_ssl_data_300.h
-Modules/_ssl_data_111.h
+Modules/_ssl_data_*.h
 Modules/cjkcodecs/mappings_*.h
 Modules/unicodedata_db.h
 Modules/unicodename_db.h
@@ -128,6 +126,7 @@ Modules/sha1module.c	Modules/_hacl/include
 Modules/sha2module.c	Modules/_hacl/include
 Modules/sha3module.c	Modules/_hacl/include
 Modules/blake2module.c	Modules/_hacl/include
+Modules/hmacmodule.c	Modules/_hacl/include
 Objects/stringlib/*.h	Objects
 
 # possible system-installed headers, just in case

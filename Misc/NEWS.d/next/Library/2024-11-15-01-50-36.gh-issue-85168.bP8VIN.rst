@@ -1,4 +1,0 @@
-Fix issue where :func:`urllib.request.url2pathname` and
-:func:`~urllib.request.pathname2url` always used UTF-8 when quoting and
-unquoting file URIs. They now use the :term:`filesystem encoding and error
-handler`.

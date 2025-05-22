@@ -173,16 +173,20 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         # listening socket has triggered an EVENT_READ. There may be multiple
         # connections waiting for an .accept() so it is called in a loop.
         # See https://bugs.python.org/issue27906 for more details.
-        for _ in range(backlog):
+        for _ in range(backlog + 1):
             try:
                 conn, addr = sock.accept()
                 if self._debug:
                     logger.debug("%r got a new connection from %r: %r",
                                  server, addr, conn)
                 conn.setblocking(False)
-            except (BlockingIOError, InterruptedError, ConnectionAbortedError):
-                # Early exit because the socket accept buffer is empty.
-                return None
+            except ConnectionAbortedError:
+                # Discard connections that were aborted before accept().
+                continue
+            except (BlockingIOError, InterruptedError):
+                # Early exit because of a signal or
+                # the socket accept buffer is empty.
+                return
             except OSError as exc:
                 # There's nowhere to send the error, so just log it.
                 if exc.errno in (errno.EMFILE, errno.ENFILE,
@@ -1175,15 +1179,19 @@ class _SelectorSocketTransport(_SelectorTransport):
         # If the entire buffer couldn't be written, register a write handler
         if self._buffer:
             self._loop._add_writer(self._sock_fd, self._write_ready)
+            self._maybe_pause_protocol()
 
     def can_write_eof(self):
         return True
 
     def _call_connection_lost(self, exc):
-        super()._call_connection_lost(exc)
-        if self._empty_waiter is not None:
-            self._empty_waiter.set_exception(
-                ConnectionError("Connection is closed by peer"))
+        try:
+            super()._call_connection_lost(exc)
+        finally:
+            self._write_ready = None
+            if self._empty_waiter is not None:
+                self._empty_waiter.set_exception(
+                    ConnectionError("Connection is closed by peer"))
 
     def _make_empty_waiter(self):
         if self._empty_waiter is not None:
@@ -1198,7 +1206,6 @@ class _SelectorSocketTransport(_SelectorTransport):
 
     def close(self):
         self._read_ready_cb = None
-        self._write_ready = None
         super().close()
 
 

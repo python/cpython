@@ -2,11 +2,27 @@
 #   include <alloca.h>
 #endif
 
+#include <stdbool.h>
+
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
+#include "pycore_critical_section.h"
+#include "pycore_pyatomic_ft_wrappers.h"
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-#   include "../_complex.h"       // complex
+// Do we support C99 complex types in ffi?
+// For Apple's libffi, this must be determined at runtime (see gh-128156).
+#if defined(Py_FFI_SUPPORT_C_COMPLEX)
+#   if USING_APPLE_OS_LIBFFI && defined(__has_builtin)
+#       if __has_builtin(__builtin_available)
+#           define Py_FFI_COMPLEX_AVAILABLE __builtin_available(macOS 10.15, *)
+#       else
+#           define Py_FFI_COMPLEX_AVAILABLE 1
+#       endif
+#   else
+#       define Py_FFI_COMPLEX_AVAILABLE 1
+#   endif
+#else
+#   define Py_FFI_COMPLEX_AVAILABLE 0
 #endif
 
 #ifndef MS_WIN32
@@ -66,8 +82,6 @@ typedef struct {
 #ifdef MS_WIN32
     PyTypeObject *PyComError_Type;
 #endif
-    /* This dict maps ctypes types to POINTER types */
-    PyObject *_ctypes_ptrtype_cache;
     /* a callable object used for unpickling:
        strong reference to _ctypes._unpickle() function */
     PyObject *_unpickle;
@@ -112,9 +126,21 @@ extern PyType_Spec cfield_spec;
 extern PyType_Spec cthunk_spec;
 
 typedef struct tagPyCArgObject PyCArgObject;
+#define _PyCArgObject_CAST(op)  ((PyCArgObject *)(op))
+
 typedef struct tagCDataObject CDataObject;
-typedef PyObject *(* GETFUNC)(void *, Py_ssize_t size);
-typedef PyObject *(* SETFUNC)(void *, PyObject *value, Py_ssize_t size);
+#define _CDataObject_CAST(op)   ((CDataObject *)(op))
+
+// GETFUNC: convert the C value at *ptr* to Python object, return the object
+// SETFUNC: write content of the PyObject *value* to the location at *ptr*;
+//   return a new reference to either *value*, or None for simple types
+//   (see _CTYPES_DEBUG_KEEP).
+// Note that the *size* arg can have different meanings depending on context:
+//     for string-like arrays it's the size in bytes
+//     for int-style fields it's either the type size, or bitfiled info
+//         that can be unpacked using the LOW_BIT & NUM_BITS macros.
+typedef PyObject *(* GETFUNC)(void *ptr, Py_ssize_t size);
+typedef PyObject *(* SETFUNC)(void *ptr, PyObject *value, Py_ssize_t size);
 typedef PyCArgObject *(* PARAMFUNC)(ctypes_state *st, CDataObject *obj);
 
 /* A default buffer in CDataObject, which can be used for small C types.  If
@@ -167,6 +193,8 @@ typedef struct {
     ffi_type *ffi_restype;
     ffi_type *atypes[1];
 } CThunkObject;
+
+#define _CThunkObject_CAST(op)          ((CThunkObject *)(op))
 #define CThunk_CheckExact(st, v)        Py_IS_TYPE(v, st->PyCThunk_Type)
 
 typedef struct {
@@ -199,6 +227,8 @@ typedef struct {
 #endif
     PyObject *paramflags;
 } PyCFuncPtrObject;
+
+#define _PyCFuncPtrObject_CAST(op)  ((PyCFuncPtrObject *)(op))
 
 extern int PyCStructUnionType_update_stginfo(PyObject *fields, PyObject *type, int isStruct);
 extern int PyType_stginfo(PyTypeObject *self, Py_ssize_t *psize, Py_ssize_t *palign, Py_ssize_t *plength);
@@ -239,26 +269,53 @@ extern CThunkObject *_ctypes_alloc_callback(ctypes_state *st,
 /* a table entry describing a predefined ctypes type */
 struct fielddesc {
     char code;
+    ffi_type *pffi_type; /* always statically allocated */
     SETFUNC setfunc;
     GETFUNC getfunc;
-    ffi_type *pffi_type; /* always statically allocated */
     SETFUNC setfunc_swapped;
     GETFUNC getfunc_swapped;
 };
 
+// Get all single-character type codes (for use in error messages)
+extern char *_ctypes_get_simple_type_chars(void);
+
 typedef struct CFieldObject {
     PyObject_HEAD
-    Py_ssize_t offset;
-    Py_ssize_t size;
-    Py_ssize_t index;                   /* Index into CDataObject's
-                                       object array */
+
+    /* byte size & offset
+     * For bit fields, this identifies a chunk of memory that the bits are
+     *  extracted from. The entire chunk needs to be contained in the enclosing
+     *  struct/union.
+     * byte_size is the same as the underlying ctype size (and thus it is
+     *  redundant and could be eliminated).
+     * Note that byte_offset might not be aligned to proto's alignment.
+     */
+    Py_ssize_t byte_offset;
+    Py_ssize_t byte_size;
+
+    Py_ssize_t index;                   /* Index into CDataObject's object array */
     PyObject *proto;                    /* underlying ctype; must have StgInfo */
     GETFUNC getfunc;                    /* getter function if proto is NULL */
     SETFUNC setfunc;                    /* setter function if proto is NULL */
-    int anonymous;
+    bool anonymous: 1;
+
+    /* If this is a bit field, bitfield_size must be positive.
+     *   bitfield_size and bit_offset specify the field inside the chunk of
+     *   memory identified by byte_offset & byte_size.
+     * Otherwise, these are both zero.
+     *
+     * Note that for NON-bitfields:
+     *  - `bit_size` (user-facing Python attribute) `is byte_size*8`
+     *  - `bitfield_size` (this) is zero
+     * Hence the different name.
+     */
+    uint8_t bitfield_size;
+    uint8_t bit_offset;
 
     PyObject *name;                     /* exact PyUnicode */
 } CFieldObject;
+
+#define _CFieldObject_CAST(op)  ((CFieldObject *)(op))
 
 /****************************************************************
  StgInfo
@@ -317,7 +374,7 @@ typedef struct CFieldObject {
 typedef struct {
     int initialized;
     Py_ssize_t size;            /* number of bytes */
-    Py_ssize_t align;           /* alignment requirements */
+    Py_ssize_t align;           /* alignment reqwuirements */
     Py_ssize_t length;          /* number of fields */
     ffi_type ffi_type_pointer;
     PyObject *proto;            /* Only for Pointer/ArrayObject */
@@ -330,19 +387,71 @@ typedef struct {
     PyObject *converters;       /* tuple([t.from_param for t in argtypes]) */
     PyObject *restype;          /* CDataObject or NULL */
     PyObject *checker;
+    PyObject *pointer_type;     /* __pointer_type__ attribute;
+                                   arbitrary object or NULL */
     PyObject *module;
     int flags;                  /* calling convention and such */
+#ifdef Py_GIL_DISABLED
+    PyMutex mutex;              /* critical section mutex */
+#endif
+    uint8_t dict_final;
 
     /* pep3118 fields, pointers need PyMem_Free */
     char *format;
     int ndim;
     Py_ssize_t *shape;
-/*      Py_ssize_t *strides;    */ /* unused in ctypes */
-/*      Py_ssize_t *suboffsets; */ /* unused in ctypes */
+    /*      Py_ssize_t *strides;    */ /* unused in ctypes */
+    /*      Py_ssize_t *suboffsets; */ /* unused in ctypes */
 } StgInfo;
+
+
+/*
+    To ensure thread safety in the free threading build, the `STGINFO_LOCK` and
+    `STGINFO_UNLOCK` macros use critical sections to protect against concurrent
+    modifications to `StgInfo` and assignment of the `dict_final` field. Once
+    `dict_final` is set, `StgInfo` is treated as read-only, and no further
+    modifications are allowed. This approach allows most read operations to
+    proceed without acquiring the critical section lock.
+
+    The `dict_final` field is written only after all other modifications to
+    `StgInfo` are complete. The reads and writes of `dict_final` use the
+    sequentially consistent memory ordering to ensure that all other fields are
+    visible to other threads before the `dict_final` bit is set.
+*/
+
+#define STGINFO_LOCK(stginfo)   Py_BEGIN_CRITICAL_SECTION_MUT(&(stginfo)->mutex)
+#define STGINFO_UNLOCK()        Py_END_CRITICAL_SECTION()
+
+static inline uint8_t
+stginfo_get_dict_final(StgInfo *info)
+{
+    return FT_ATOMIC_LOAD_UINT8(info->dict_final);
+}
+
+static inline void
+stginfo_set_dict_final_lock_held(StgInfo *info)
+{
+    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&info->mutex);
+    FT_ATOMIC_STORE_UINT8(info->dict_final, 1);
+}
+
+
+// Set the `dict_final` bit in StgInfo. It checks if the bit is already set
+// and in that avoids acquiring the critical section (general case).
+static inline void
+stginfo_set_dict_final(StgInfo *info)
+{
+    if (stginfo_get_dict_final(info) == 1) {
+        return;
+    }
+    STGINFO_LOCK(info);
+    stginfo_set_dict_final_lock_held(info);
+    STGINFO_UNLOCK();
+}
 
 extern int PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info);
 extern void ctype_clear_stginfo(StgInfo *info);
+extern void ctype_free_stginfo_members(StgInfo *info);
 
 typedef int(* PPROC)(void);
 
@@ -369,8 +478,6 @@ PyObject *_ctypes_callproc(ctypes_state *st,
 #define TYPEFLAG_ISPOINTER 0x100
 #define TYPEFLAG_HASPOINTER 0x200
 
-#define DICTFLAG_FINAL 0x1000
-
 struct tagPyCArgObject {
     PyObject_HEAD
     ffi_type *pffi_type;
@@ -382,19 +489,19 @@ struct tagPyCArgObject {
         int i;
         long l;
         long long q;
-        long double D;
+        long double g;
         double d;
         float f;
         void *p;
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-        double complex C;
-        float complex E;
-        long double complex F;
-#endif
+        double D[2];
+        float F[2];
+        long double G[2];
     } value;
     PyObject *obj;
     Py_ssize_t size; /* for the 'V' tag */
 };
+
+#define _PyCArgObject_CAST(op)  ((PyCArgObject *)(op))
 
 #define PyCArg_CheckExact(st, v)        Py_IS_TYPE(v, st->PyCArg_Type)
 extern PyCArgObject *PyCArgObject_new(ctypes_state *st);
@@ -427,6 +534,8 @@ extern PyObject *PyCData_FromBaseObj(ctypes_state *st, PyObject *type,
 extern int _ctypes_simple_instance(ctypes_state *st, PyObject *obj);
 
 PyObject *_ctypes_get_errobj(ctypes_state *st, int **pspace);
+
+extern void _ctypes_init_fielddesc(void);
 
 #ifdef USING_MALLOC_CLOSURE_DOT_C
 void Py_ffi_closure_free(void *p);
@@ -529,6 +638,7 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
     if (!module) {
         return NULL;
     }
+    info->pointer_type = NULL;
     info->module = Py_NewRef(module);
 
     info->initialized = 1;

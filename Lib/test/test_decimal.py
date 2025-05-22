@@ -24,6 +24,7 @@ you're working through IDLE, you can import this test module and call test()
 with the corresponding argument.
 """
 
+import logging
 import math
 import os, sys
 import operator
@@ -44,6 +45,7 @@ from test.support import warnings_helper
 import random
 import inspect
 import threading
+import contextvars
 
 
 if sys.platform == 'darwin':
@@ -752,7 +754,7 @@ class ExplicitConstructionTest:
         for v in [-2**63-1, -2**63, -2**31-1, -2**31, 0,
                    2**31-1, 2**31, 2**63-1, 2**63]:
             d = nc.create_decimal(v)
-            self.assertTrue(isinstance(d, Decimal))
+            self.assertIsInstance(d, Decimal)
             self.assertEqual(int(d), v)
 
         nc.prec = 3
@@ -1081,6 +1083,11 @@ class FormatTest:
             (',%', '123.456789', '12,345.6789%'),
             (',e', '123456', '1.23456e+5'),
             (',E', '123456', '1.23456E+5'),
+            # ... with '_' instead
+            ('_', '1234567', '1_234_567'),
+            ('07_', '1234.56', '1_234.56'),
+            ('_', '1.23456789', '1.23456789'),
+            ('_%', '123.456789', '12_345.6789%'),
 
             # negative zero: default behavior
             ('.1f', '-0', '-0.0'),
@@ -1725,8 +1732,13 @@ class ThreadingTest:
         self.finish1 = threading.Event()
         self.finish2 = threading.Event()
 
-        th1 = threading.Thread(target=thfunc1, args=(self,))
-        th2 = threading.Thread(target=thfunc2, args=(self,))
+        # This test wants to start threads with an empty context, no matter
+        # the setting of sys.flags.thread_inherit_context.  We pass the
+        # 'context' argument explicitly with an empty context instance.
+        th1 = threading.Thread(target=thfunc1, args=(self,),
+                               context=contextvars.Context())
+        th2 = threading.Thread(target=thfunc2, args=(self,),
+                               context=contextvars.Context())
 
         th1.start()
         th2.start()
@@ -2590,8 +2602,8 @@ class PythonAPItests:
     def test_abc(self):
         Decimal = self.decimal.Decimal
 
-        self.assertTrue(issubclass(Decimal, numbers.Number))
-        self.assertFalse(issubclass(Decimal, numbers.Real))
+        self.assertIsSubclass(Decimal, numbers.Number)
+        self.assertNotIsSubclass(Decimal, numbers.Real)
         self.assertIsInstance(Decimal(0), numbers.Number)
         self.assertNotIsInstance(Decimal(0), numbers.Real)
 
@@ -2690,7 +2702,7 @@ class PythonAPItests:
             def __init__(self, _):
                 self.x = 'y'
 
-        self.assertTrue(issubclass(MyDecimal, Decimal))
+        self.assertIsSubclass(MyDecimal, Decimal)
 
         r = MyDecimal.from_float(0.1)
         self.assertEqual(type(r), MyDecimal)
@@ -2908,31 +2920,31 @@ class PythonAPItests:
         Rounded = decimal.Rounded
         Clamped = decimal.Clamped
 
-        self.assertTrue(issubclass(DecimalException, ArithmeticError))
+        self.assertIsSubclass(DecimalException, ArithmeticError)
 
-        self.assertTrue(issubclass(InvalidOperation, DecimalException))
-        self.assertTrue(issubclass(FloatOperation, DecimalException))
-        self.assertTrue(issubclass(FloatOperation, TypeError))
-        self.assertTrue(issubclass(DivisionByZero, DecimalException))
-        self.assertTrue(issubclass(DivisionByZero, ZeroDivisionError))
-        self.assertTrue(issubclass(Overflow, Rounded))
-        self.assertTrue(issubclass(Overflow, Inexact))
-        self.assertTrue(issubclass(Overflow, DecimalException))
-        self.assertTrue(issubclass(Underflow, Inexact))
-        self.assertTrue(issubclass(Underflow, Rounded))
-        self.assertTrue(issubclass(Underflow, Subnormal))
-        self.assertTrue(issubclass(Underflow, DecimalException))
+        self.assertIsSubclass(InvalidOperation, DecimalException)
+        self.assertIsSubclass(FloatOperation, DecimalException)
+        self.assertIsSubclass(FloatOperation, TypeError)
+        self.assertIsSubclass(DivisionByZero, DecimalException)
+        self.assertIsSubclass(DivisionByZero, ZeroDivisionError)
+        self.assertIsSubclass(Overflow, Rounded)
+        self.assertIsSubclass(Overflow, Inexact)
+        self.assertIsSubclass(Overflow, DecimalException)
+        self.assertIsSubclass(Underflow, Inexact)
+        self.assertIsSubclass(Underflow, Rounded)
+        self.assertIsSubclass(Underflow, Subnormal)
+        self.assertIsSubclass(Underflow, DecimalException)
 
-        self.assertTrue(issubclass(Subnormal, DecimalException))
-        self.assertTrue(issubclass(Inexact, DecimalException))
-        self.assertTrue(issubclass(Rounded, DecimalException))
-        self.assertTrue(issubclass(Clamped, DecimalException))
+        self.assertIsSubclass(Subnormal, DecimalException)
+        self.assertIsSubclass(Inexact, DecimalException)
+        self.assertIsSubclass(Rounded, DecimalException)
+        self.assertIsSubclass(Clamped, DecimalException)
 
-        self.assertTrue(issubclass(decimal.ConversionSyntax, InvalidOperation))
-        self.assertTrue(issubclass(decimal.DivisionImpossible, InvalidOperation))
-        self.assertTrue(issubclass(decimal.DivisionUndefined, InvalidOperation))
-        self.assertTrue(issubclass(decimal.DivisionUndefined, ZeroDivisionError))
-        self.assertTrue(issubclass(decimal.InvalidContext, InvalidOperation))
+        self.assertIsSubclass(decimal.ConversionSyntax, InvalidOperation)
+        self.assertIsSubclass(decimal.DivisionImpossible, InvalidOperation)
+        self.assertIsSubclass(decimal.DivisionUndefined, InvalidOperation)
+        self.assertIsSubclass(decimal.DivisionUndefined, ZeroDivisionError)
+        self.assertIsSubclass(decimal.InvalidContext, InvalidOperation)
 
 @requires_cdecimal
 class CPythonAPItests(PythonAPItests, unittest.TestCase):
@@ -4387,6 +4399,51 @@ class CContextSubclassing(ContextSubclassing, unittest.TestCase):
 class PyContextSubclassing(ContextSubclassing, unittest.TestCase):
     decimal = P
 
+class IEEEContexts:
+
+    def test_ieee_context(self):
+        # issue 8786: Add support for IEEE 754 contexts to decimal module.
+        IEEEContext = self.decimal.IEEEContext
+
+        def assert_rest(self, context):
+            self.assertEqual(context.clamp, 1)
+            assert_signals(self, context, 'traps', [])
+            assert_signals(self, context, 'flags', [])
+
+        c = IEEEContext(32)
+        self.assertEqual(c.prec, 7)
+        self.assertEqual(c.Emax, 96)
+        self.assertEqual(c.Emin, -95)
+        assert_rest(self, c)
+
+        c = IEEEContext(64)
+        self.assertEqual(c.prec, 16)
+        self.assertEqual(c.Emax, 384)
+        self.assertEqual(c.Emin, -383)
+        assert_rest(self, c)
+
+        c = IEEEContext(128)
+        self.assertEqual(c.prec, 34)
+        self.assertEqual(c.Emax, 6144)
+        self.assertEqual(c.Emin, -6143)
+        assert_rest(self, c)
+
+        # Invalid values
+        self.assertRaises(ValueError, IEEEContext, -1)
+        self.assertRaises(ValueError, IEEEContext, 123)
+        self.assertRaises(ValueError, IEEEContext, 1024)
+
+    def test_constants(self):
+        # IEEEContext
+        IEEE_CONTEXT_MAX_BITS = self.decimal.IEEE_CONTEXT_MAX_BITS
+        self.assertIn(IEEE_CONTEXT_MAX_BITS, {256, 512})
+
+@requires_cdecimal
+class CIEEEContexts(IEEEContexts, unittest.TestCase):
+    decimal = C
+class PyIEEEContexts(IEEEContexts, unittest.TestCase):
+    decimal = P
+
 @skip_if_extra_functionality
 @requires_cdecimal
 class CheckAttributes(unittest.TestCase):
@@ -4398,6 +4455,7 @@ class CheckAttributes(unittest.TestCase):
         self.assertEqual(C.MAX_EMAX, P.MAX_EMAX)
         self.assertEqual(C.MIN_EMIN, P.MIN_EMIN)
         self.assertEqual(C.MIN_ETINY, P.MIN_ETINY)
+        self.assertEqual(C.IEEE_CONTEXT_MAX_BITS, P.IEEE_CONTEXT_MAX_BITS)
 
         self.assertTrue(C.HAVE_THREADS is True or C.HAVE_THREADS is False)
         self.assertTrue(P.HAVE_THREADS is True or P.HAVE_THREADS is False)
@@ -4481,6 +4539,13 @@ class Coverage:
             self.assertIs(Decimal("NaN").fma(7, 1).is_nan(), True)
             # three arg power
             self.assertEqual(pow(Decimal(10), 2, 7), 2)
+            self.assertEqual(pow(10, Decimal(2), 7), 2)
+            if self.decimal == C:
+                self.assertEqual(pow(10, 2, Decimal(7)), 2)
+            else:
+                # XXX: There is no special method to dispatch on the
+                # third arg of three-arg power.
+                self.assertRaises(TypeError, pow, 10, 2, Decimal(7))
             # exp
             self.assertEqual(Decimal("1.01").exp(), 3)
             # is_normal
@@ -4875,42 +4940,6 @@ class CFunctionality(unittest.TestCase):
     """Extra functionality in _decimal"""
 
     @requires_extra_functionality
-    def test_c_ieee_context(self):
-        # issue 8786: Add support for IEEE 754 contexts to decimal module.
-        IEEEContext = C.IEEEContext
-        DECIMAL32 = C.DECIMAL32
-        DECIMAL64 = C.DECIMAL64
-        DECIMAL128 = C.DECIMAL128
-
-        def assert_rest(self, context):
-            self.assertEqual(context.clamp, 1)
-            assert_signals(self, context, 'traps', [])
-            assert_signals(self, context, 'flags', [])
-
-        c = IEEEContext(DECIMAL32)
-        self.assertEqual(c.prec, 7)
-        self.assertEqual(c.Emax, 96)
-        self.assertEqual(c.Emin, -95)
-        assert_rest(self, c)
-
-        c = IEEEContext(DECIMAL64)
-        self.assertEqual(c.prec, 16)
-        self.assertEqual(c.Emax, 384)
-        self.assertEqual(c.Emin, -383)
-        assert_rest(self, c)
-
-        c = IEEEContext(DECIMAL128)
-        self.assertEqual(c.prec, 34)
-        self.assertEqual(c.Emax, 6144)
-        self.assertEqual(c.Emin, -6143)
-        assert_rest(self, c)
-
-        # Invalid values
-        self.assertRaises(OverflowError, IEEEContext, 2**63)
-        self.assertRaises(ValueError, IEEEContext, -1)
-        self.assertRaises(ValueError, IEEEContext, 1024)
-
-    @requires_extra_functionality
     def test_c_context(self):
         Context = C.Context
 
@@ -4929,12 +4958,6 @@ class CFunctionality(unittest.TestCase):
             C.DecFloatOperation, C.DecOverflow, C.DecRounded,
             C.DecSubnormal, C.DecUnderflow
         )
-
-        # IEEEContext
-        self.assertEqual(C.DECIMAL32, 32)
-        self.assertEqual(C.DECIMAL64, 64)
-        self.assertEqual(C.DECIMAL128, 128)
-        self.assertEqual(C.IEEE_CONTEXT_MAX_BITS, 512)
 
         # Conditions
         for i, v in enumerate(cond):
@@ -5946,8 +5969,9 @@ def tearDownModule():
     if C: C.setcontext(ORIGINAL_CONTEXT[C].copy())
     P.setcontext(ORIGINAL_CONTEXT[P].copy())
     if not C:
-        warnings.warn('C tests skipped: no module named _decimal.',
-                      UserWarning)
+        logging.getLogger(__name__).warning(
+            'C tests skipped: no module named _decimal.'
+        )
     if not orig_sys_decimal is sys.modules['decimal']:
         raise TestFailed("Internal error: unbalanced number of changes to "
                          "sys.modules['decimal'].")

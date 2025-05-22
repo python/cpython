@@ -1,10 +1,11 @@
-from test import support
-from test.support import import_helper, cpython_only
-gdbm = import_helper.import_module("dbm.gnu") #skip if not supported
-import unittest
 import os
-from test.support.os_helper import TESTFN, TESTFN_NONASCII, unlink, FakePath
+import unittest
+from test import support
+from test.support import cpython_only, import_helper
+from test.support.os_helper import (TESTFN, TESTFN_NONASCII, FakePath,
+                                    create_empty_file, temp_dir, unlink)
 
+gdbm = import_helper.import_module("dbm.gnu")  # skip if not supported
 
 filename = TESTFN
 
@@ -205,6 +206,16 @@ class TestGdbm(unittest.TestCase):
                 self.assertNotIn(k, db)
             self.assertEqual(len(db), 0)
 
+    @support.run_with_locale(
+        'LC_ALL',
+        'fr_FR.iso88591', 'ja_JP.sjis', 'zh_CN.gbk',
+        'fr_FR.utf8', 'en_US.utf8',
+        '',
+    )
+    def test_localized_error(self):
+        with temp_dir() as d:
+            create_empty_file(os.path.join(d, 'test'))
+            self.assertRaises(gdbm.error, gdbm.open, filename, 'r')
 
 
 if __name__ == '__main__':

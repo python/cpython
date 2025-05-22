@@ -145,12 +145,13 @@ There are a few functions specific to Python functions.
 
 .. c:type:: PyFunction_WatchEvent
 
-   Enumeration of possible function watcher events:
-   - ``PyFunction_EVENT_CREATE``
-   - ``PyFunction_EVENT_DESTROY``
-   - ``PyFunction_EVENT_MODIFY_CODE``
-   - ``PyFunction_EVENT_MODIFY_DEFAULTS``
-   - ``PyFunction_EVENT_MODIFY_KWDEFAULTS``
+    Enumeration of possible function watcher events:
+
+    - ``PyFunction_EVENT_CREATE``
+    - ``PyFunction_EVENT_DESTROY``
+    - ``PyFunction_EVENT_MODIFY_CODE``
+    - ``PyFunction_EVENT_MODIFY_DEFAULTS``
+    - ``PyFunction_EVENT_MODIFY_KWDEFAULTS``
 
    .. versionadded:: 3.12
 

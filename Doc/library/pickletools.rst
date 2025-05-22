@@ -19,7 +19,7 @@ ordinary users of the :mod:`pickle` module probably won't find the
 
 .. _pickletools-cli:
 
-Command line usage
+Command-line usage
 ------------------
 
 .. versionadded:: 3.2
@@ -48,7 +48,7 @@ For example, with a tuple ``(1, 2)`` pickled in file ``x.pickle``:
         9: .    STOP
     highest protocol among opcodes = 2
 
-Command line options
+Command-line options
 ^^^^^^^^^^^^^^^^^^^^
 
 .. program:: pickletools
@@ -72,12 +72,16 @@ Command line options
 
 .. option:: -p, --preamble=<preamble>
 
-   When more than one pickle file are specified, print given preamble
+   When more than one pickle file is specified, print given preamble
    before each disassembly.
 
+.. option:: pickle_file
+
+   A pickle file to read, or ``-`` to indicate reading from standard input.
 
 
-Programmatic Interface
+
+Programmatic interface
 ----------------------
 
 

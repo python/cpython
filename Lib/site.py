@@ -73,8 +73,9 @@ import sys
 import os
 import builtins
 import _sitebuiltins
-import io
+import _io as io
 import stat
+import errno
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
@@ -92,6 +93,12 @@ USER_BASE = None
 def _trace(message):
     if sys.flags.verbose:
         print(message, file=sys.stderr)
+
+
+def _warn(*args, **kwargs):
+    import warnings
+
+    warnings.warn(*args, **kwargs)
 
 
 def makepath(*paths):
@@ -572,10 +579,15 @@ def register_readline():
         def write_history():
             try:
                 readline_module.write_history_file(history)
-            except (FileNotFoundError, PermissionError):
+            except FileNotFoundError, PermissionError:
                 # home directory does not exist or is not writable
                 # https://bugs.python.org/issue19891
                 pass
+            except OSError:
+                if errno.EROFS:
+                    pass  # gh-128066: read-only file system
+                else:
+                    raise
 
         atexit.register(write_history)
 
@@ -619,17 +631,17 @@ def venv(known_paths):
                     elif key == 'home':
                         sys._home = value
 
-        sys.prefix = sys.exec_prefix = site_prefix
+        if sys.prefix != site_prefix:
+            _warn(f'Unexpected value in sys.prefix, expected {site_prefix}, got {sys.prefix}', RuntimeWarning)
+        if sys.exec_prefix != site_prefix:
+            _warn(f'Unexpected value in sys.exec_prefix, expected {site_prefix}, got {sys.exec_prefix}', RuntimeWarning)
 
         # Doing this here ensures venv takes precedence over user-site
         addsitepackages(known_paths, [sys.prefix])
 
-        # addsitepackages will process site_prefix again if its in PREFIXES,
-        # but that's ok; known_paths will prevent anything being added twice
         if system_site == "true":
-            PREFIXES.insert(0, sys.prefix)
+            PREFIXES += [sys.base_prefix, sys.base_exec_prefix]
         else:
-            PREFIXES = [sys.prefix]
             ENABLE_USER_SITE = False
 
     return known_paths

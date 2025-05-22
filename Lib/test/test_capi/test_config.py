@@ -55,7 +55,9 @@ class CAPITests(unittest.TestCase):
             ("filesystem_errors", str, None),
             ("hash_seed", int, None),
             ("home", str | None, None),
-            ("import_time", bool, None),
+            ("thread_inherit_context", int, None),
+            ("context_aware_warnings", int, None),
+            ("import_time", int, None),
             ("inspect", bool, None),
             ("install_signal_handlers", bool, None),
             ("int_max_str_digits", int, None),
@@ -74,6 +76,7 @@ class CAPITests(unittest.TestCase):
             ("program_name", str, None),
             ("pycache_prefix", str | None, "pycache_prefix"),
             ("quiet", bool, None),
+            ("remote_debug", int, None),
             ("run_command", str | None, None),
             ("run_filename", str | None, None),
             ("run_module", str | None, None),
@@ -98,7 +101,7 @@ class CAPITests(unittest.TestCase):
         ]
         if support.Py_DEBUG:
             options.append(("run_presite", str | None, None))
-        if sysconfig.get_config_var('Py_GIL_DISABLED'):
+        if support.Py_GIL_DISABLED:
             options.append(("enable_gil", int, None))
             options.append(("tlbc_enabled", int, None))
         if support.MS_WINDOWS:
@@ -109,6 +112,10 @@ class CAPITests(unittest.TestCase):
         if Py_STATS:
             options.extend((
                 ("_pystats", bool, None),
+            ))
+        if support.is_apple:
+            options.extend((
+                ("use_system_logger", bool, None),
             ))
 
         for name, option_type, sys_attr in options:
@@ -166,7 +173,7 @@ class CAPITests(unittest.TestCase):
             ("warn_default_encoding", "warn_default_encoding", False),
             ("safe_path", "safe_path", False),
             ("int_max_str_digits", "int_max_str_digits", False),
-            # "gil" is tested below
+            # "gil", "thread_inherit_context" and "context_aware_warnings" are tested below
         ):
             with self.subTest(flag=flag, name=name, negate=negate):
                 value = config_get(name)
@@ -178,10 +185,16 @@ class CAPITests(unittest.TestCase):
                          config_get('use_hash_seed') == 0
                          or config_get('hash_seed') != 0)
 
-        if sysconfig.get_config_var('Py_GIL_DISABLED'):
+        if support.Py_GIL_DISABLED:
             value = config_get('enable_gil')
             expected = (value if value != -1 else None)
             self.assertEqual(sys.flags.gil, expected)
+
+        expected_inherit_context = 1 if support.Py_GIL_DISABLED else 0
+        self.assertEqual(sys.flags.thread_inherit_context, expected_inherit_context)
+
+        expected_safe_warnings = 1 if support.Py_GIL_DISABLED else 0
+        self.assertEqual(sys.flags.context_aware_warnings, expected_safe_warnings)
 
     def test_config_get_non_existent(self):
         # Test PyConfig_Get() on non-existent option name
@@ -362,12 +375,23 @@ class CAPITests(unittest.TestCase):
                 finally:
                     config_set(name, old_value)
 
+    def test_config_set_cpu_count(self):
+        config_get = _testcapi.config_get
+        config_set = _testcapi.config_set
+
+        old_value = config_get('cpu_count')
+        try:
+            config_set('cpu_count', 123)
+            self.assertEqual(os.cpu_count(), 123)
+        finally:
+            config_set('cpu_count', old_value)
+
     def test_config_set_read_only(self):
         # Test PyConfig_Set() on read-only options
         config_set = _testcapi.config_set
         for name, value in (
             ("allocator", 0),  # PyPreConfig member
-            ("cpu_count", 8),
+            ("perf_profiling", 8),
             ("dev_mode", True),
             ("filesystem_encoding", "utf-8"),
         ):

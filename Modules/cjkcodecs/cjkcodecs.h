@@ -13,7 +13,6 @@
 
 #include "Python.h"
 #include "multibytecodec.h"
-#include "pycore_import.h"        // _PyImport_GetModuleAttrString()
 
 
 /* a unicode "undefined" code point */
@@ -299,7 +298,7 @@ add_codecs(cjkcodecs_module_state *st)                          \
 static PyObject *
 getmultibytecodec(void)
 {
-    return _PyImport_GetModuleAttrString("_multibytecodec", "__create_codec");
+    return PyImport_ImportModuleAttrString("_multibytecodec", "__create_codec");
 }
 
 static void
@@ -496,7 +495,7 @@ _cjk_free(void *mod)
 }
 
 static struct PyMethodDef _cjk_methods[] = {
-    {"getcodec", (PyCFunction)getcodec, METH_O, ""},
+    {"getcodec", getcodec, METH_O, ""},
     {NULL, NULL},
 };
 

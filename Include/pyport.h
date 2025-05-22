@@ -36,6 +36,16 @@
 // Macro to use the more powerful/dangerous C-style cast even in C++.
 #define _Py_CAST(type, expr) ((type)(expr))
 
+// Cast a function to another function type T.
+//
+// The macro first casts the function to the "void func(void)" type
+// to prevent compiler warnings.
+//
+// Note that using this cast only prevents the compiler from emitting
+// warnings, but does not prevent an undefined behavior at runtime if
+// the original function signature is not respected.
+#define _Py_FUNC_CAST(T, func) _Py_CAST(T, _Py_CAST(void(*)(void), (func)))
+
 // Static inline functions should use _Py_NULL rather than using directly NULL
 // to prevent C++ compiler warnings. On C23 and newer and on C++11 and newer,
 // _Py_NULL is defined as nullptr.
@@ -565,27 +575,45 @@ extern "C" {
 #  if __has_feature(memory_sanitizer)
 #    if !defined(_Py_MEMORY_SANITIZER)
 #      define _Py_MEMORY_SANITIZER
+#      define _Py_NO_SANITIZE_MEMORY __attribute__((no_sanitize_memory))
 #    endif
 #  endif
 #  if __has_feature(address_sanitizer)
 #    if !defined(_Py_ADDRESS_SANITIZER)
 #      define _Py_ADDRESS_SANITIZER
+#      define _Py_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
 #    endif
 #  endif
 #  if __has_feature(thread_sanitizer)
 #    if !defined(_Py_THREAD_SANITIZER)
 #      define _Py_THREAD_SANITIZER
+#      define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
 #    endif
 #  endif
 #elif defined(__GNUC__)
 #  if defined(__SANITIZE_ADDRESS__)
 #    define _Py_ADDRESS_SANITIZER
+#    define _Py_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
 #  endif
 #  if defined(__SANITIZE_THREAD__)
 #    define _Py_THREAD_SANITIZER
+#    define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
+#  elif  __GNUC__ > 5 || (__GNUC__ == 5 && __GNUC_MINOR__ >= 1)
+     // TSAN is supported since GCC 5.1, but __SANITIZE_THREAD__ macro
+     // is provided only since GCC 7.
+#    define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
 #  endif
 #endif
 
+#ifndef _Py_NO_SANITIZE_ADDRESS
+#  define _Py_NO_SANITIZE_ADDRESS
+#endif
+#ifndef _Py_NO_SANITIZE_THREAD
+#  define _Py_NO_SANITIZE_THREAD
+#endif
+#ifndef _Py_NO_SANITIZE_MEMORY
+#  define _Py_NO_SANITIZE_MEMORY
+#endif
 
 /* AIX has __bool__ redefined in it's system header file. */
 #if defined(_AIX) && defined(__bool__)
@@ -625,11 +653,51 @@ extern "C" {
 //     case 2: code; break;
 //     }
 //
-// __attribute__((fallthrough)) was introduced in GCC 7.
-#if _Py__has_attribute(fallthrough)
+// __attribute__((fallthrough)) was introduced in GCC 7 and Clang 10 /
+// Apple Clang 12.0. Earlier Clang versions support only the C++11
+// style fallthrough attribute, not the GCC extension syntax used here,
+// and __has_attribute(fallthrough) evaluates to 1.
+#if _Py__has_attribute(fallthrough) && (!defined(__clang__) || \
+    (!defined(__apple_build_version__) && __clang_major__ >= 10) || \
+    (defined(__apple_build_version__) && __clang_major__ >= 12))
 #  define _Py_FALLTHROUGH __attribute__((fallthrough))
 #else
 #  define _Py_FALLTHROUGH do { } while (0)
 #endif
+
+
+// _Py_NO_SANITIZE_UNDEFINED(): Disable Undefined Behavior sanitizer (UBsan)
+// on a function.
+//
+// Clang and GCC 9.0+ use __attribute__((no_sanitize("undefined"))).
+// GCC 4.9+ uses __attribute__((no_sanitize_undefined)).
+#if defined(__has_feature)
+#  if __has_feature(undefined_behavior_sanitizer)
+#    define _Py_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
+#  endif
+#endif
+#if !defined(_Py_NO_SANITIZE_UNDEFINED) && defined(__GNUC__) \
+    && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 9))
+#  define _Py_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize_undefined))
+#endif
+#ifndef _Py_NO_SANITIZE_UNDEFINED
+#  define _Py_NO_SANITIZE_UNDEFINED
+#endif
+
+
+// _Py_NONSTRING: The nonstring variable attribute specifies that an object or
+// member declaration with type array of char, signed char, or unsigned char,
+// or pointer to such a type is intended to store character arrays that do not
+// necessarily contain a terminating NUL.
+//
+// Usage:
+//
+//   char name [8] _Py_NONSTRING;
+#if _Py__has_attribute(nonstring)
+#  define _Py_NONSTRING __attribute__((nonstring))
+#else
+#  define _Py_NONSTRING
+#endif
+
 
 #endif /* Py_PYPORT_H */

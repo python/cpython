@@ -5,14 +5,18 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_Vector()
 #include "pycore_compile.h"       // _PyAST_Compile()
+#include "pycore_fileutils.h"     // _PyFile_Flush
+#include "pycore_floatobject.h"   // _PyFloat_ExactDealloc()
+#include "pycore_interp.h"        // _PyInterpreterState_GetConfig()
 #include "pycore_long.h"          // _PyLong_CompactValue
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _Py_AddToAllObjects()
 #include "pycore_pyerrors.h"      // _PyErr_NoMemory()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pythonrun.h"     // _Py_SourceAsString()
-#include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_sysmodule.h"     // _PySys_GetRequiredAttr()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_cell.h"          // PyCell_GetRef()
 
 #include "clinic/bltinmodule.c.h"
 
@@ -209,7 +213,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         PyObject *margs[3] = {name, bases, ns};
         cls = PyObject_VectorcallDict(meta, margs, 3, mkw);
         if (cls != NULL && PyType_Check(cls) && PyCell_Check(cell)) {
-            PyObject *cell_cls = PyCell_GET(cell);
+            PyObject *cell_cls = PyCell_GetRef((PyCellObject *)cell);
             if (cell_cls != cls) {
                 if (cell_cls == NULL) {
                     const char *msg =
@@ -221,8 +225,12 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
                         "__class__ set to %.200R defining %.200R as %.200R";
                     PyErr_Format(PyExc_TypeError, msg, cell_cls, name, cls);
                 }
+                Py_XDECREF(cell_cls);
                 Py_SETREF(cls, NULL);
                 goto error;
+            }
+            else {
+                Py_DECREF(cell_cls);
             }
         }
     }
@@ -457,18 +465,16 @@ builtin_callable(PyObject *module, PyObject *obj)
 static PyObject *
 builtin_breakpoint(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *keywords)
 {
-    PyObject *hook = PySys_GetObject("breakpointhook");
-
+    PyObject *hook = _PySys_GetRequiredAttrString("breakpointhook");
     if (hook == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "lost sys.breakpointhook");
         return NULL;
     }
 
     if (PySys_Audit("builtins.breakpoint", "O", hook) < 0) {
+        Py_DECREF(hook);
         return NULL;
     }
 
-    Py_INCREF(hook);
     PyObject *retval = PyObject_Vectorcall(hook, args, nargs, keywords);
     Py_DECREF(hook);
     return retval;
@@ -488,6 +494,8 @@ typedef struct {
     PyObject *func;
     PyObject *it;
 } filterobject;
+
+#define _filterobject_CAST(op)      ((filterobject *)(op))
 
 static PyObject *
 filter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -554,27 +562,28 @@ filter_vectorcall(PyObject *type, PyObject * const*args,
 }
 
 static void
-filter_dealloc(filterobject *lz)
+filter_dealloc(PyObject *self)
 {
+    filterobject *lz = _filterobject_CAST(self);
     PyObject_GC_UnTrack(lz);
-    Py_TRASHCAN_BEGIN(lz, filter_dealloc)
     Py_XDECREF(lz->func);
     Py_XDECREF(lz->it);
     Py_TYPE(lz)->tp_free(lz);
-    Py_TRASHCAN_END
 }
 
 static int
-filter_traverse(filterobject *lz, visitproc visit, void *arg)
+filter_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    filterobject *lz = _filterobject_CAST(self);
     Py_VISIT(lz->it);
     Py_VISIT(lz->func);
     return 0;
 }
 
 static PyObject *
-filter_next(filterobject *lz)
+filter_next(PyObject *self)
 {
+    filterobject *lz = _filterobject_CAST(self);
     PyObject *item;
     PyObject *it = lz->it;
     long ok;
@@ -608,15 +617,16 @@ filter_next(filterobject *lz)
 }
 
 static PyObject *
-filter_reduce(filterobject *lz, PyObject *Py_UNUSED(ignored))
+filter_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    filterobject *lz = _filterobject_CAST(self);
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->func, lz->it);
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyMethodDef filter_methods[] = {
-    {"__reduce__", _PyCFunction_CAST(filter_reduce), METH_NOARGS, reduce_doc},
+    {"__reduce__", filter_reduce, METH_NOARGS, reduce_doc},
     {NULL,           NULL}           /* sentinel */
 };
 
@@ -633,7 +643,7 @@ PyTypeObject PyFilter_Type = {
     sizeof(filterobject),               /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /* methods */
-    (destructor)filter_dealloc,         /* tp_dealloc */
+    filter_dealloc,                     /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -651,12 +661,12 @@ PyTypeObject PyFilter_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
     filter_doc,                         /* tp_doc */
-    (traverseproc)filter_traverse,      /* tp_traverse */
+    filter_traverse,                    /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)filter_next,          /* tp_iternext */
+    filter_next,                        /* tp_iternext */
     filter_methods,                     /* tp_methods */
     0,                                  /* tp_members */
     0,                                  /* tp_getset */
@@ -669,7 +679,7 @@ PyTypeObject PyFilter_Type = {
     PyType_GenericAlloc,                /* tp_alloc */
     filter_new,                         /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
-    .tp_vectorcall = (vectorcallfunc)filter_vectorcall
+    .tp_vectorcall = filter_vectorcall
 };
 
 
@@ -823,42 +833,35 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     if (is_ast == -1)
         goto error;
     if (is_ast) {
-        if ((flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST) {
-            // return an un-optimized AST
-            result = Py_NewRef(source);
+        PyArena *arena = _PyArena_New();
+        if (arena == NULL) {
+            goto error;
         }
-        else {
-            // Return an optimized AST or code object
 
-            PyArena *arena = _PyArena_New();
-            if (arena == NULL) {
+        if (flags & PyCF_ONLY_AST) {
+            mod_ty mod = PyAST_obj2mod(source, arena, compile_mode);
+            if (mod == NULL || !_PyAST_Validate(mod)) {
+                _PyArena_Free(arena);
                 goto error;
             }
-
-            if (flags & PyCF_ONLY_AST) {
-                mod_ty mod = PyAST_obj2mod(source, arena, compile_mode);
-                if (mod == NULL || !_PyAST_Validate(mod)) {
-                    _PyArena_Free(arena);
-                    goto error;
-                }
-                if (_PyCompile_AstOptimize(mod, filename, &cf, optimize,
-                                           arena) < 0) {
-                    _PyArena_Free(arena);
-                    goto error;
-                }
-                result = PyAST_mod2obj(mod);
+            int syntax_check_only = ((flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST); /* unoptiomized AST */
+            if (_PyCompile_AstPreprocess(mod, filename, &cf, optimize,
+                                           arena, syntax_check_only) < 0) {
+                _PyArena_Free(arena);
+                goto error;
             }
-            else {
-                mod_ty mod = PyAST_obj2mod(source, arena, compile_mode);
-                if (mod == NULL || !_PyAST_Validate(mod)) {
-                    _PyArena_Free(arena);
-                    goto error;
-                }
-                result = (PyObject*)_PyAST_Compile(mod, filename,
-                                                   &cf, optimize, arena);
-            }
-            _PyArena_Free(arena);
+            result = PyAST_mod2obj(mod);
         }
+        else {
+            mod_ty mod = PyAST_obj2mod(source, arena, compile_mode);
+            if (mod == NULL || !_PyAST_Validate(mod)) {
+                _PyArena_Free(arena);
+                goto error;
+            }
+            result = (PyObject*)_PyAST_Compile(mod, filename,
+                                               &cf, optimize, arena);
+        }
+        _PyArena_Free(arena);
         goto finally;
     }
 
@@ -1164,6 +1167,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         if (closure != NULL) {
             PyErr_SetString(PyExc_TypeError,
                 "closure can only be used when source is a code object");
+            goto error;
         }
         PyObject *source_copy;
         const char *str;
@@ -1291,8 +1295,8 @@ This is guaranteed to be unique among simultaneously existing objects.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_id(PyModuleDef *self, PyObject *v)
-/*[clinic end generated code: output=0aa640785f697f65 input=5a534136419631f4]*/
+builtin_id_impl(PyModuleDef *self, PyObject *v)
+/*[clinic end generated code: output=4908a6782ed343e9 input=5a534136419631f4]*/
 {
     PyObject *id = PyLong_FromVoidPtr(v);
 
@@ -1313,6 +1317,8 @@ typedef struct {
     PyObject *func;
     int strict;
 } mapobject;
+
+#define _mapobject_CAST(op)     ((mapobject *)(op))
 
 static PyObject *
 map_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -1417,8 +1423,9 @@ map_vectorcall(PyObject *type, PyObject * const*args,
 }
 
 static void
-map_dealloc(mapobject *lz)
+map_dealloc(PyObject *self)
 {
+    mapobject *lz = _mapobject_CAST(self);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->iters);
     Py_XDECREF(lz->func);
@@ -1426,16 +1433,18 @@ map_dealloc(mapobject *lz)
 }
 
 static int
-map_traverse(mapobject *lz, visitproc visit, void *arg)
+map_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    mapobject *lz = _mapobject_CAST(self);
     Py_VISIT(lz->iters);
     Py_VISIT(lz->func);
     return 0;
 }
 
 static PyObject *
-map_next(mapobject *lz)
+map_next(PyObject *self)
 {
+    mapobject *lz = _mapobject_CAST(self);
     Py_ssize_t i;
     PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
     PyObject **stack;
@@ -1518,8 +1527,9 @@ check:
 }
 
 static PyObject *
-map_reduce(mapobject *lz, PyObject *Py_UNUSED(ignored))
+map_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    mapobject *lz = _mapobject_CAST(self);
     Py_ssize_t numargs = PyTuple_GET_SIZE(lz->iters);
     PyObject *args = PyTuple_New(numargs+1);
     Py_ssize_t i;
@@ -1540,19 +1550,20 @@ map_reduce(mapobject *lz, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
 
 static PyObject *
-map_setstate(mapobject *lz, PyObject *state)
+map_setstate(PyObject *self, PyObject *state)
 {
     int strict = PyObject_IsTrue(state);
     if (strict < 0) {
         return NULL;
     }
+    mapobject *lz = _mapobject_CAST(self);
     lz->strict = strict;
     Py_RETURN_NONE;
 }
 
 static PyMethodDef map_methods[] = {
-    {"__reduce__", _PyCFunction_CAST(map_reduce), METH_NOARGS, reduce_doc},
-    {"__setstate__", _PyCFunction_CAST(map_setstate), METH_O, setstate_doc},
+    {"__reduce__", map_reduce, METH_NOARGS, reduce_doc},
+    {"__setstate__", map_setstate, METH_O, setstate_doc},
     {NULL,           NULL}           /* sentinel */
 };
 
@@ -1573,7 +1584,7 @@ PyTypeObject PyMap_Type = {
     sizeof(mapobject),                  /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /* methods */
-    (destructor)map_dealloc,            /* tp_dealloc */
+    map_dealloc,                        /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -1591,12 +1602,12 @@ PyTypeObject PyMap_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
     map_doc,                            /* tp_doc */
-    (traverseproc)map_traverse,         /* tp_traverse */
+    map_traverse,                       /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)map_next,     /* tp_iternext */
+    map_next,                           /* tp_iternext */
     map_methods,                        /* tp_methods */
     0,                                  /* tp_members */
     0,                                  /* tp_getset */
@@ -1609,7 +1620,7 @@ PyTypeObject PyMap_Type = {
     PyType_GenericAlloc,                /* tp_alloc */
     map_new,                            /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
-    .tp_vectorcall = (vectorcallfunc)map_vectorcall
+    .tp_vectorcall = map_vectorcall
 };
 
 
@@ -1825,6 +1836,9 @@ builtin_anext_impl(PyObject *module, PyObject *aiterator,
     }
 
     awaitable = (*t->tp_as_async->am_anext)(aiterator);
+    if (awaitable == NULL) {
+        return NULL;
+    }
     if (default_value == NULL) {
         return awaitable;
     }
@@ -2150,17 +2164,19 @@ builtin_print_impl(PyObject *module, PyObject * const *args,
     int i, err;
 
     if (file == Py_None) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        file = _PySys_GetAttr(tstate, &_Py_ID(stdout));
+        file = _PySys_GetRequiredAttr(&_Py_ID(stdout));
         if (file == NULL) {
-            PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
             return NULL;
         }
 
         /* sys.stdout may be None when FILE* stdout isn't connected */
         if (file == Py_None) {
+            Py_DECREF(file);
             Py_RETURN_NONE;
         }
+    }
+    else {
+        Py_INCREF(file);
     }
 
     if (sep == Py_None) {
@@ -2170,6 +2186,7 @@ builtin_print_impl(PyObject *module, PyObject * const *args,
         PyErr_Format(PyExc_TypeError,
                      "sep must be None or a string, not %.200s",
                      Py_TYPE(sep)->tp_name);
+        Py_DECREF(file);
         return NULL;
     }
     if (end == Py_None) {
@@ -2179,6 +2196,7 @@ builtin_print_impl(PyObject *module, PyObject * const *args,
         PyErr_Format(PyExc_TypeError,
                      "end must be None or a string, not %.200s",
                      Py_TYPE(end)->tp_name);
+        Py_DECREF(file);
         return NULL;
     }
 
@@ -2191,11 +2209,13 @@ builtin_print_impl(PyObject *module, PyObject * const *args,
                 err = PyFile_WriteObject(sep, file, Py_PRINT_RAW);
             }
             if (err) {
+                Py_DECREF(file);
                 return NULL;
             }
         }
         err = PyFile_WriteObject(args[i], file, Py_PRINT_RAW);
         if (err) {
+            Py_DECREF(file);
             return NULL;
         }
     }
@@ -2207,14 +2227,17 @@ builtin_print_impl(PyObject *module, PyObject * const *args,
         err = PyFile_WriteObject(end, file, Py_PRINT_RAW);
     }
     if (err) {
+        Py_DECREF(file);
         return NULL;
     }
 
     if (flush) {
         if (_PyFile_Flush(file) < 0) {
+            Py_DECREF(file);
             return NULL;
         }
     }
+    Py_DECREF(file);
 
     Py_RETURN_NONE;
 }
@@ -2239,36 +2262,41 @@ static PyObject *
 builtin_input_impl(PyObject *module, PyObject *prompt)
 /*[clinic end generated code: output=83db5a191e7a0d60 input=159c46d4ae40977e]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *fin = _PySys_GetAttr(
-        tstate, &_Py_ID(stdin));
-    PyObject *fout = _PySys_GetAttr(
-        tstate, &_Py_ID(stdout));
-    PyObject *ferr = _PySys_GetAttr(
-        tstate, &_Py_ID(stderr));
+    PyObject *fin = NULL;
+    PyObject *fout = NULL;
+    PyObject *ferr = NULL;
     PyObject *tmp;
     long fd;
     int tty;
 
     /* Check that stdin/out/err are intact */
-    if (fin == NULL || fin == Py_None) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "input(): lost sys.stdin");
-        return NULL;
+    fin = _PySys_GetRequiredAttr(&_Py_ID(stdin));
+    if (fin == NULL) {
+        goto error;
     }
-    if (fout == NULL || fout == Py_None) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "input(): lost sys.stdout");
-        return NULL;
+    if (fin == Py_None) {
+        PyErr_SetString(PyExc_RuntimeError, "lost sys.stdin");
+        goto error;
     }
-    if (ferr == NULL || ferr == Py_None) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "input(): lost sys.stderr");
-        return NULL;
+    fout = _PySys_GetRequiredAttr(&_Py_ID(stdout));
+    if (fout == NULL) {
+        goto error;
+    }
+    if (fout == Py_None) {
+        PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
+        goto error;
+    }
+    ferr = _PySys_GetRequiredAttr(&_Py_ID(stderr));
+    if (ferr == NULL) {
+        goto error;
+    }
+    if (ferr == Py_None) {
+        PyErr_SetString(PyExc_RuntimeError, "lost sys.stderr");
+        goto error;
     }
 
     if (PySys_Audit("builtins.input", "O", prompt ? prompt : Py_None) < 0) {
-        return NULL;
+        goto error;
     }
 
     /* First of all, flush stderr */
@@ -2287,8 +2315,9 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
     else {
         fd = PyLong_AsLong(tmp);
         Py_DECREF(tmp);
-        if (fd < 0 && PyErr_Occurred())
-            return NULL;
+        if (fd < 0 && PyErr_Occurred()) {
+            goto error;
+        }
         tty = fd == fileno(stdin) && isatty(fd);
     }
     if (tty) {
@@ -2301,7 +2330,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
             fd = PyLong_AsLong(tmp);
             Py_DECREF(tmp);
             if (fd < 0 && PyErr_Occurred())
-                return NULL;
+                goto error;
             tty = fd == fileno(stdout) && isatty(fd);
         }
     }
@@ -2429,10 +2458,13 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
 
         if (result != NULL) {
             if (PySys_Audit("builtins.input/result", "O", result) < 0) {
-                return NULL;
+                goto error;
             }
         }
 
+        Py_DECREF(fin);
+        Py_DECREF(fout);
+        Py_DECREF(ferr);
         return result;
 
     _readline_errors:
@@ -2442,7 +2474,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         Py_XDECREF(stdout_errors);
         Py_XDECREF(po);
         if (tty)
-            return NULL;
+            goto error;
 
         PyErr_Clear();
     }
@@ -2450,12 +2482,22 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
     /* Fallback if we're not interactive */
     if (prompt != NULL) {
         if (PyFile_WriteObject(prompt, fout, Py_PRINT_RAW) != 0)
-            return NULL;
+            goto error;
     }
     if (_PyFile_Flush(fout) < 0) {
         PyErr_Clear();
     }
-    return PyFile_GetLine(fin, -1);
+    tmp = PyFile_GetLine(fin, -1);
+    Py_DECREF(fin);
+    Py_DECREF(fout);
+    Py_DECREF(ferr);
+    return tmp;
+
+error:
+    Py_XDECREF(fin);
+    Py_XDECREF(fout);
+    Py_XDECREF(ferr);
+    return NULL;
 }
 
 
@@ -2494,22 +2536,19 @@ static PyObject *
 builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
 /*[clinic end generated code: output=ff0d9dd176c02ede input=275678471d7aca15]*/
 {
-    PyObject *round, *result;
-
-    round = _PyObject_LookupSpecial(number, &_Py_ID(__round__));
-    if (round == NULL) {
-        if (!PyErr_Occurred())
-            PyErr_Format(PyExc_TypeError,
-                         "type %.100s doesn't define __round__ method",
-                         Py_TYPE(number)->tp_name);
-        return NULL;
+    PyObject *result;
+    if (ndigits == Py_None) {
+        result = _PyObject_MaybeCallSpecialNoArgs(number, &_Py_ID(__round__));
     }
-
-    if (ndigits == Py_None)
-        result = _PyObject_CallNoArgs(round);
-    else
-        result = PyObject_CallOneArg(round, ndigits);
-    Py_DECREF(round);
+    else {
+        result = _PyObject_MaybeCallSpecialOneArg(number, &_Py_ID(__round__),
+                                                  ndigits);
+    }
+    if (result == NULL && !PyErr_Occurred()) {
+        PyErr_Format(PyExc_TypeError,
+                     "type %.100s doesn't define __round__ method",
+                     Py_TYPE(number)->tp_name);
+    }
     return result;
 }
 
@@ -2829,7 +2868,6 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 double value = PyLong_AsDouble(item);
                 if (value != -1.0 || !PyErr_Occurred()) {
                     re_sum = cs_add(re_sum, value);
-                    im_sum.hi += 0.0;
                     Py_DECREF(item);
                     continue;
                 }
@@ -2842,7 +2880,6 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
             if (PyFloat_Check(item)) {
                 double value = PyFloat_AS_DOUBLE(item);
                 re_sum = cs_add(re_sum, value);
-                im_sum.hi += 0.0;
                 _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
                 continue;
             }
@@ -2962,6 +2999,8 @@ typedef struct {
     int strict;
 } zipobject;
 
+#define _zipobject_CAST(op)     ((zipobject *)(op))
+
 static PyObject *
 zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -3030,8 +3069,9 @@ zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static void
-zip_dealloc(zipobject *lz)
+zip_dealloc(PyObject *self)
 {
+    zipobject *lz = _zipobject_CAST(self);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->ittuple);
     Py_XDECREF(lz->result);
@@ -3039,16 +3079,19 @@ zip_dealloc(zipobject *lz)
 }
 
 static int
-zip_traverse(zipobject *lz, visitproc visit, void *arg)
+zip_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    zipobject *lz = _zipobject_CAST(self);
     Py_VISIT(lz->ittuple);
     Py_VISIT(lz->result);
     return 0;
 }
 
 static PyObject *
-zip_next(zipobject *lz)
+zip_next(PyObject *self)
 {
+    zipobject *lz = _zipobject_CAST(self);
+
     Py_ssize_t i;
     Py_ssize_t tuplesize = lz->tuplesize;
     PyObject *result = lz->result;
@@ -3077,9 +3120,7 @@ zip_next(zipobject *lz)
         }
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
-        }
+        _PyTuple_Recycle(result);
     } else {
         result = PyTuple_New(tuplesize);
         if (result == NULL)
@@ -3138,8 +3179,9 @@ check:
 }
 
 static PyObject *
-zip_reduce(zipobject *lz, PyObject *Py_UNUSED(ignored))
+zip_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    zipobject *lz = _zipobject_CAST(self);
     /* Just recreate the zip with the internal iterator tuple */
     if (lz->strict) {
         return PyTuple_Pack(3, Py_TYPE(lz), lz->ittuple, Py_True);
@@ -3148,19 +3190,20 @@ zip_reduce(zipobject *lz, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-zip_setstate(zipobject *lz, PyObject *state)
+zip_setstate(PyObject *self, PyObject *state)
 {
     int strict = PyObject_IsTrue(state);
     if (strict < 0) {
         return NULL;
     }
+    zipobject *lz = _zipobject_CAST(self);
     lz->strict = strict;
     Py_RETURN_NONE;
 }
 
 static PyMethodDef zip_methods[] = {
-    {"__reduce__", _PyCFunction_CAST(zip_reduce), METH_NOARGS, reduce_doc},
-    {"__setstate__", _PyCFunction_CAST(zip_setstate), METH_O, setstate_doc},
+    {"__reduce__", zip_reduce, METH_NOARGS, reduce_doc},
+    {"__setstate__", zip_setstate, METH_O, setstate_doc},
     {NULL}  /* sentinel */
 };
 
@@ -3185,7 +3228,7 @@ PyTypeObject PyZip_Type = {
     sizeof(zipobject),                  /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /* methods */
-    (destructor)zip_dealloc,            /* tp_dealloc */
+    zip_dealloc,                        /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -3203,12 +3246,12 @@ PyTypeObject PyZip_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
     zip_doc,                            /* tp_doc */
-    (traverseproc)zip_traverse,    /* tp_traverse */
+    zip_traverse,                       /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)zip_next,     /* tp_iternext */
+    zip_next,                           /* tp_iternext */
     zip_methods,                        /* tp_methods */
     0,                                  /* tp_members */
     0,                                  /* tp_getset */

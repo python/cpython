@@ -5,7 +5,7 @@ import weakref
 
 from ast import Or
 from functools import partial
-from threading import Thread
+from threading import Barrier, Thread
 from unittest import TestCase
 
 try:
@@ -74,6 +74,7 @@ class TestDict(TestCase):
             last = -1
             while True:
                 if CUR == last:
+                    time.sleep(0.001)
                     continue
                 elif CUR == OBJECT_COUNT:
                     break
@@ -142,6 +143,27 @@ class TestDict(TestCase):
             for ref in thread_list:
                 self.assertIsNone(ref())
 
+    def test_racing_get_set_dict(self):
+        """Races getting and setting a dict should be thread safe"""
+        THREAD_COUNT = 10
+        barrier = Barrier(THREAD_COUNT)
+        def work(d):
+            barrier.wait()
+            for _ in range(1000):
+                d[10] = 0
+                d.get(10, None)
+                _ = d[10]
+
+        d = {}
+        worker_threads = []
+        for ii in range(THREAD_COUNT):
+            worker_threads.append(Thread(target=work, args=[d]))
+        for t in worker_threads:
+            t.start()
+        for t in worker_threads:
+            t.join()
+
+
     def test_racing_set_object_dict(self):
         """Races assigning to __dict__ should be thread safe"""
         class C: pass
@@ -206,6 +228,22 @@ class TestDict(TestCase):
 
             self.assertEqual(count, 0)
 
+    def test_racing_object_get_set_dict(self):
+        e = Exception()
+
+        def writer():
+            for i in range(10000):
+                e.__dict__ = {1:2}
+
+        def reader():
+            for i in range(10000):
+                e.__dict__
+
+        t1 = Thread(target=writer)
+        t2 = Thread(target=reader)
+
+        with threading_helper.start_threads([t1, t2]):
+            pass
 
 if __name__ == "__main__":
     unittest.main()

@@ -40,7 +40,7 @@ The :func:`get_annotations` function is the main entry point for
 retrieving annotations. Given a function, class, or module, it returns
 an annotations dictionary in the requested format. This module also provides
 functionality for working directly with the :term:`annotate function`
-that is used to evaluate annotations, such as :func:`get_annotate_function`
+that is used to evaluate annotations, such as :func:`get_annotate_from_class_namespace`
 and :func:`call_annotate_function`, as well as the
 :func:`call_evaluate_function` function for working with
 :term:`evaluate functions <evaluate function>`.
@@ -127,16 +127,27 @@ Classes
 
       Values are the result of evaluating the annotation expressions.
 
-   .. attribute:: FORWARDREF
+   .. attribute:: VALUE_WITH_FAKE_GLOBALS
       :value: 2
+
+      Special value used to signal that an annotate function is being
+      evaluated in a special environment with fake globals. When passed this
+      value, annotate functions should either return the same value as for
+      the :attr:`Format.VALUE` format, or raise :exc:`NotImplementedError`
+      to signal that they do not support execution in this environment.
+      This format is only used internally and should not be passed to
+      the functions in this module.
+
+   .. attribute:: FORWARDREF
+      :value: 3
 
       Values are real annotation values (as per :attr:`Format.VALUE` format)
       for defined values, and :class:`ForwardRef` proxies for undefined
-      values. Real objects may contain references to, :class:`ForwardRef`
+      values. Real objects may contain references to :class:`ForwardRef`
       proxy objects.
 
    .. attribute:: STRING
-      :value: 3
+      :value: 4
 
       Values are the text string of the annotation as it appears in the
       source code, up to modifications including, but not restricted to,
@@ -161,14 +172,37 @@ Classes
       :class:`~ForwardRef`. The string may not be exactly equivalent
       to the original source.
 
-   .. method:: evaluate(*, globals=None, locals=None, type_params=None, owner=None)
+   .. method:: evaluate(*, owner=None, globals=None, locals=None, type_params=None, format=Format.VALUE)
 
       Evaluate the forward reference, returning its value.
 
-      This may throw an exception, such as :exc:`NameError`, if the forward
-      reference refers to names that do not exist. The arguments to this
+      If the *format* argument is :attr:`~Format.VALUE` (the default),
+      this method may throw an exception, such as :exc:`NameError`, if the forward
+      reference refers to a name that cannot be resolved. The arguments to this
       method can be used to provide bindings for names that would otherwise
-      be undefined.
+      be undefined. If the *format* argument is :attr:`~Format.FORWARDREF`,
+      the method will never throw an exception, but may return a :class:`~ForwardRef`
+      instance. For example, if the forward reference object contains the code
+      ``list[undefined]``, where ``undefined`` is a name that is not defined,
+      evaluating it with the :attr:`~Format.FORWARDREF` format will return
+      ``list[ForwardRef('undefined')]``. If the *format* argument is
+      :attr:`~Format.STRING`, the method will return :attr:`~ForwardRef.__forward_arg__`.
+
+      The *owner* parameter provides the preferred mechanism for passing scope
+      information to this method. The owner of a :class:`~ForwardRef` is the
+      object that contains the annotation from which the :class:`~ForwardRef`
+      derives, such as a module object, type object, or function object.
+
+      The *globals*, *locals*, and *type_params* parameters provide a more precise
+      mechanism for influencing the names that are available when the :class:`~ForwardRef`
+      is evaluated. *globals* and *locals* are passed to :func:`eval`, representing
+      the global and local namespaces in which the name is evaluated.
+      The *type_params* parameter is relevant for objects created using the native
+      syntax for :ref:`generic classes <generic-classes>` and :ref:`functions <generic-functions>`.
+      It is a tuple of :ref:`type parameters <type-params>` that are in scope
+      while the forward reference is being evaluated. For example, if evaluating a
+      :class:`~ForwardRef` retrieved from an annotation found in the class namespace
+      of a generic class ``C``, *type_params* should be set to ``C.__type_params__``.
 
       :class:`~ForwardRef` instances returned by :func:`get_annotations`
       retain references to information about the scope they originated from,
@@ -176,20 +210,6 @@ Classes
       evaluate such objects. :class:`~ForwardRef` instances created by other
       means may not have any information about their scope, so passing
       arguments to this method may be necessary to evaluate them successfully.
-
-      *globals* and *locals* are passed to :func:`eval`, representing
-      the global and local namespaces in which the name is evaluated.
-      *type_params*, if given, must be a tuple of
-      :ref:`type parameters <type-params>` that are in scope while the forward
-      reference is being evaluated. *owner* is the object that owns the
-      annotation from which the forward reference derives, usually a function,
-      class, or module.
-
-      .. important::
-
-         Once a :class:`~ForwardRef` instance has been evaluated, it caches
-         the evaluated value, and future calls to :meth:`evaluate` will return
-         the cached value, regardless of the parameters passed in.
 
    .. versionadded:: 3.14
 
@@ -201,7 +221,7 @@ Functions
 
    Convert an annotations dict containing runtime values to a
    dict containing only strings. If the values are not already strings,
-   they are converted using :func:`value_to_string`.
+   they are converted using :func:`type_repr`.
    This is meant as a helper for user-provided
    annotate functions that support the :attr:`~Format.STRING` format but
    do not have access to the code creating the annotations.
@@ -287,15 +307,13 @@ Functions
 
    .. versionadded:: 3.14
 
-.. function:: get_annotate_function(obj)
+.. function:: get_annotate_from_class_namespace(namespace)
 
-   Retrieve the :term:`annotate function` for *obj*. Return :const:`!None`
-   if *obj* does not have an annotate function.
-
-   This is usually equivalent to accessing the :attr:`~object.__annotate__`
-   attribute of *obj*, but direct access to the attribute may return the wrong
-   object in certain situations involving metaclasses. This function should be
-   used instead of accessing the attribute directly.
+   Retrieve the :term:`annotate function` from a class namespace dictionary *namespace*.
+   Return :const:`!None` if the namespace does not contain an annotate function.
+   This is primarily useful before the class has been fully created (e.g., in a metaclass);
+   after the class exists, the annotate function can be retrieved with ``cls.__annotate__``.
+   See :ref:`below <annotationlib-metaclass>` for an example using this function in a metaclass.
 
    .. versionadded:: 3.14
 
@@ -304,11 +322,22 @@ Functions
    Compute the annotations dict for an object.
 
    *obj* may be a callable, class, module, or other object with
-   :attr:`~object.__annotate__` and :attr:`~object.__annotations__` attributes.
-   Passing in an object of any other type raises :exc:`TypeError`.
+   :attr:`~object.__annotate__` or :attr:`~object.__annotations__` attributes.
+   Passing any other object raises :exc:`TypeError`.
 
    The *format* parameter controls the format in which annotations are returned,
    and must be a member of the :class:`Format` enum or its integer equivalent.
+   The different formats work as follows:
+
+   * VALUE: :attr:`!object.__annotations__` is tried first; if that does not exist,
+     the :attr:`!object.__annotate__` function is called if it exists.
+   * FORWARDREF: If :attr:`!object.__annotations__` exists and can be evaluated successfully,
+     it is used; otherwise, the :attr:`!object.__annotate__` function is called. If it
+     does not exist either, :attr:`!object.__annotations__` is tried again and any error
+     from accessing it is re-raised.
+   * STRING: If :attr:`!object.__annotate__` exists, it is called first;
+     otherwise, :attr:`!object.__annotations__` is used and stringified
+     using :func:`annotations_to_string`.
 
    Returns a dict. :func:`!get_annotations` returns a new dict every time
    it's called; calling it twice on the same object will return two
@@ -369,7 +398,7 @@ Functions
 
    .. versionadded:: 3.14
 
-.. function:: value_to_string(value)
+.. function:: type_repr(value)
 
    Convert an arbitrary Python value to a format suitable for use by the
    :attr:`~Format.STRING` format. This calls :func:`repr` for most
@@ -383,3 +412,190 @@ Functions
 
    .. versionadded:: 3.14
 
+
+Recipes
+-------
+
+.. _annotationlib-metaclass:
+
+Using annotations in a metaclass
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A :ref:`metaclass <metaclasses>` may want to inspect or even modify the annotations
+in a class body during class creation. Doing so requires retrieving annotations
+from the class namespace dictionary. For classes created with
+``from __future__ import annotations``, the annotations will be in the ``__annotations__``
+key of the dictionary. For other classes with annotations,
+:func:`get_annotate_from_class_namespace` can be used to get the
+annotate function, and :func:`call_annotate_function` can be used to call it and
+retrieve the annotations. Using the :attr:`~Format.FORWARDREF` format will usually
+be best, because this allows the annotations to refer to names that cannot yet be
+resolved when the class is created.
+
+To modify the annotations, it is best to create a wrapper annotate function
+that calls the original annotate function, makes any necessary adjustments, and
+returns the result.
+
+Below is an example of a metaclass that filters out all :class:`typing.ClassVar`
+annotations from the class and puts them in a separate attribute:
+
+.. code-block:: python
+
+   import annotationlib
+   import typing
+
+   class ClassVarSeparator(type):
+      def __new__(mcls, name, bases, ns):
+         if "__annotations__" in ns:  # from __future__ import annotations
+            annotations = ns["__annotations__"]
+            classvar_keys = {
+               key for key, value in annotations.items()
+               # Use string comparison for simplicity; a more robust solution
+               # could use annotationlib.ForwardRef.evaluate
+               if value.startswith("ClassVar")
+            }
+            classvars = {key: annotations[key] for key in classvar_keys}
+            ns["__annotations__"] = {
+               key: value for key, value in annotations.items()
+               if key not in classvar_keys
+            }
+            wrapped_annotate = None
+         elif annotate := annotationlib.get_annotate_from_class_namespace(ns):
+            annotations = annotationlib.call_annotate_function(
+               annotate, format=annotationlib.Format.FORWARDREF
+            )
+            classvar_keys = {
+               key for key, value in annotations.items()
+               if typing.get_origin(value) is typing.ClassVar
+            }
+            classvars = {key: annotations[key] for key in classvar_keys}
+
+            def wrapped_annotate(format):
+               annos = annotationlib.call_annotate_function(annotate, format, owner=typ)
+               return {key: value for key, value in annos.items() if key not in classvar_keys}
+
+         else:  # no annotations
+            classvars = {}
+            wrapped_annotate = None
+         typ = super().__new__(mcls, name, bases, ns)
+
+         if wrapped_annotate is not None:
+            # Wrap the original __annotate__ with a wrapper that removes ClassVars
+            typ.__annotate__ = wrapped_annotate
+         typ.classvars = classvars  # Store the ClassVars in a separate attribute
+         return typ
+
+
+Limitations of the ``STRING`` format
+------------------------------------
+
+The :attr:`~Format.STRING` format is meant to approximate the source code
+of the annotation, but the implementation strategy used means that it is not
+always possible to recover the exact source code.
+
+First, the stringifier of course cannot recover any information that is not present in
+the compiled code, including comments, whitespace, parenthesization, and operations that
+get simplified by the compiler.
+
+Second, the stringifier can intercept almost all operations that involve names looked
+up in some scope, but it cannot intercept operations that operate fully on constants.
+As a corollary, this also means it is not safe to request the ``STRING`` format on
+untrusted code: Python is powerful enough that it is possible to achieve arbitrary
+code execution even with no access to any globals or builtins. For example:
+
+.. code-block:: pycon
+
+  >>> def f(x: (1).__class__.__base__.__subclasses__()[-1].__init__.__builtins__["print"]("Hello world")): pass
+  ...
+  >>> annotationlib.get_annotations(f, format=annotationlib.Format.SOURCE)
+  Hello world
+  {'x': 'None'}
+
+.. note::
+   This particular example works as of the time of writing, but it relies on
+   implementation details and is not guaranteed to work in the future.
+
+Among the different kinds of expressions that exist in Python,
+as represented by the :mod:`ast` module, some expressions are supported,
+meaning that the ``STRING`` format can generally recover the original source code;
+others are unsupported, meaning that they may result in incorrect output or an error.
+
+The following are supported (sometimes with caveats):
+
+* :class:`ast.BinOp`
+* :class:`ast.UnaryOp`
+
+  * :class:`ast.Invert` (``~``), :class:`ast.UAdd` (``+``), and :class:`ast.USub` (``-``) are supported
+  * :class:`ast.Not` (``not``) is not supported
+
+* :class:`ast.Dict` (except when using ``**`` unpacking)
+* :class:`ast.Set`
+* :class:`ast.Compare`
+
+  * :class:`ast.Eq` and :class:`ast.NotEq` are supported
+  * :class:`ast.Lt`, :class:`ast.LtE`, :class:`ast.Gt`, and :class:`ast.GtE` are supported, but the operand may be flipped
+  * :class:`ast.Is`, :class:`ast.IsNot`, :class:`ast.In`, and :class:`ast.NotIn` are not supported
+
+* :class:`ast.Call` (except when using ``**`` unpacking)
+* :class:`ast.Constant` (though not the exact representation of the constant; for example, escape
+  sequences in strings are lost; hexadecimal numbers are converted to decimal)
+* :class:`ast.Attribute` (assuming the value is not a constant)
+* :class:`ast.Subscript` (assuming the value is not a constant)
+* :class:`ast.Starred` (``*`` unpacking)
+* :class:`ast.Name`
+* :class:`ast.List`
+* :class:`ast.Tuple`
+* :class:`ast.Slice`
+
+The following are unsupported, but throw an informative error when encountered by the
+stringifier:
+
+* :class:`ast.FormattedValue` (f-strings; error is not detected if conversion specifiers like ``!r``
+  are used)
+* :class:`ast.JoinedStr` (f-strings)
+
+The following are unsupported and result in incorrect output:
+
+* :class:`ast.BoolOp` (``and`` and ``or``)
+* :class:`ast.IfExp`
+* :class:`ast.Lambda`
+* :class:`ast.ListComp`
+* :class:`ast.SetComp`
+* :class:`ast.DictComp`
+* :class:`ast.GeneratorExp`
+
+The following are disallowed in annotation scopes and therefore not relevant:
+
+* :class:`ast.NamedExpr` (``:=``)
+* :class:`ast.Await`
+* :class:`ast.Yield`
+* :class:`ast.YieldFrom`
+
+
+Limitations of the ``FORWARDREF`` format
+----------------------------------------
+
+The :attr:`~Format.FORWARDREF` format aims to produce real values as much
+as possible, with anything that cannot be resolved replaced with
+:class:`ForwardRef` objects. It is affected by broadly the same Limitations
+as the :attr:`~Format.STRING` format: annotations that perform operations on
+literals or that use unsupported expression types may raise exceptions when
+evaluated using the :attr:`~Format.FORWARDREF` format.
+
+Below are a few examples of the behavior with unsupported expressions:
+
+.. code-block:: pycon
+
+   >>> from annotationlib import get_annotations, Format
+   >>> def zerodiv(x: 1 / 0): ...
+   >>> get_annotations(zerodiv, format=Format.STRING)
+   Traceback (most recent call last):
+     ...
+   ZeroDivisionError: division by zero
+   >>> get_annotations(zerodiv, format=Format.FORWARDREF)
+   Traceback (most recent call last):
+     ...
+   ZeroDivisionError: division by zero
+   >>> def ifexp(x: 1 if y else 0): ...
+   >>> get_annotations(ifexp, format=Format.STRING)
+   {'x': '1'}

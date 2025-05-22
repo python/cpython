@@ -11,14 +11,21 @@ on:
 permissions:
   contents: read
 
+env:
+  FORCE_COLOR: 1
+
 jobs:
   build:
     name: installer for ${{ inputs.arch }}
-    runs-on: windows-latest
+    runs-on: ${{ inputs.arch == 'arm64' && 'windows-11-arm' || 'windows-latest' }}
     timeout-minutes: 60
     env:
+      ARCH: ${{ inputs.arch }}
       IncludeFreethreaded: true
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Build CPython installer
-      run: .\Tools\msi\build.bat --doc -${{ inputs.arch }}
+      run: ./Tools/msi/build.bat --doc -"${ARCH}"
+      shell: bash
