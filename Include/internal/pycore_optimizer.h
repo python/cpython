@@ -258,7 +258,6 @@ typedef struct _JitOptContext {
 
 extern bool _Py_uop_sym_is_null(JitOptSymbol *sym);
 extern bool _Py_uop_sym_is_not_null(JitOptSymbol *sym);
-extern bool _Py_uop_sym_is_const(JitOptContext *ctx, JitOptSymbol *sym);
 extern PyObject *_Py_uop_sym_get_const(JitOptContext *ctx, JitOptSymbol *sym);
 extern JitOptSymbol *_Py_uop_sym_new_unknown(JitOptContext *ctx);
 extern JitOptSymbol *_Py_uop_sym_new_not_null(JitOptContext *ctx);
@@ -266,7 +265,6 @@ extern JitOptSymbol *_Py_uop_sym_new_type(
     JitOptContext *ctx, PyTypeObject *typ);
 extern JitOptSymbol *_Py_uop_sym_new_const(JitOptContext *ctx, PyObject *const_val);
 extern JitOptSymbol *_Py_uop_sym_new_null(JitOptContext *ctx);
-extern bool _Py_uop_sym_has_type(JitOptSymbol *sym);
 extern bool _Py_uop_sym_matches_type(JitOptSymbol *sym, PyTypeObject *typ);
 extern bool _Py_uop_sym_matches_type_version(JitOptSymbol *sym, unsigned int version);
 extern void _Py_uop_sym_set_null(JitOptContext *ctx, JitOptSymbol *sym);

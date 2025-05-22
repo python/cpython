@@ -104,24 +104,6 @@ _Py_uop_sym_is_not_null(JitOptSymbol *sym) {
 }
 
 bool
-_Py_uop_sym_is_const(JitOptContext *ctx, JitOptSymbol *sym)
-{
-    if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
-        return true;
-    }
-    if (sym->tag == JIT_SYM_TRUTHINESS_TAG) {
-        JitOptSymbol *value = allocation_base(ctx) + sym->truthiness.value;
-        int truthiness = _Py_uop_sym_truthiness(ctx, value);
-        if (truthiness < 0) {
-            return false;
-        }
-        make_const(sym, (truthiness ^ sym->truthiness.invert) ? Py_True : Py_False);
-        return true;
-    }
-    return false;
-}
-
-bool
 _Py_uop_sym_is_null(JitOptSymbol *sym)
 {
     return sym->tag == JIT_SYM_NULL_TAG;
@@ -305,7 +287,7 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptSymbol *sym, PyObject *const_val
             return;
         case JIT_SYM_TRUTHINESS_TAG:
             if (!PyBool_Check(const_val) ||
-                (_Py_uop_sym_is_const(ctx, sym) &&
+                (_Py_uop_sym_get_const(ctx, sym) != NULL &&
                  _Py_uop_sym_get_const(ctx, sym) != const_val))
             {
                 sym_set_bottom(ctx, sym);
@@ -457,26 +439,6 @@ _Py_uop_sym_get_type_version(JitOptSymbol *sym)
             return PyTuple_Type.tp_version_tag;
         case JIT_SYM_TRUTHINESS_TAG:
             return PyBool_Type.tp_version_tag;
-    }
-    Py_UNREACHABLE();
-}
-
-bool
-_Py_uop_sym_has_type(JitOptSymbol *sym)
-{
-    JitSymType tag = sym->tag;
-    switch(tag) {
-        case JIT_SYM_NULL_TAG:
-        case JIT_SYM_TYPE_VERSION_TAG:
-        case JIT_SYM_BOTTOM_TAG:
-        case JIT_SYM_NON_NULL_TAG:
-        case JIT_SYM_UNKNOWN_TAG:
-            return false;
-        case JIT_SYM_KNOWN_CLASS_TAG:
-        case JIT_SYM_KNOWN_VALUE_TAG:
-        case JIT_SYM_TUPLE_TAG:
-        case JIT_SYM_TRUTHINESS_TAG:
-            return true;
     }
     Py_UNREACHABLE();
 }
@@ -763,7 +725,6 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(!_Py_uop_sym_is_null(sym), "top is NULL");
     TEST_PREDICATE(!_Py_uop_sym_is_not_null(sym), "top is not NULL");
     TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyLong_Type), "top matches a type");
-    TEST_PREDICATE(!_Py_uop_sym_is_const(ctx, sym), "top is a constant");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, sym) == NULL, "top as constant is not NULL");
     TEST_PREDICATE(!_Py_uop_sym_is_bottom(sym), "top is bottom");
 
@@ -774,7 +735,6 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(!_Py_uop_sym_is_null(sym), "bottom is NULL is not false");
     TEST_PREDICATE(!_Py_uop_sym_is_not_null(sym), "bottom is not NULL is not false");
     TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyLong_Type), "bottom matches a type");
-    TEST_PREDICATE(!_Py_uop_sym_is_const(ctx, sym), "bottom is a constant is not false");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, sym) == NULL, "bottom as constant is not NULL");
     TEST_PREDICATE(_Py_uop_sym_is_bottom(sym), "bottom isn't bottom");
 
@@ -786,7 +746,6 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(_Py_uop_sym_is_not_null(sym), "int isn't not NULL");
     TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "int isn't int");
     TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyFloat_Type), "int matches float");
-    TEST_PREDICATE(!_Py_uop_sym_is_const(ctx, sym), "int is a constant");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, sym) == NULL, "int as constant is not NULL");
 
     _Py_uop_sym_set_type(ctx, sym, &PyLong_Type);  // Should be a no-op
@@ -813,7 +772,6 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(_Py_uop_sym_is_not_null(sym), "42 isn't not NULL");
     TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "42 isn't an int");
     TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyFloat_Type), "42 matches float");
-    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, sym), "42 is not a constant");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, sym) != NULL, "42 as constant is NULL");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, sym) == val_42, "42 as constant isn't 42");
     TEST_PREDICATE(_Py_uop_sym_is_immortal(sym), "42 is not immortal");
@@ -867,16 +825,12 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     sym = _Py_uop_sym_new_truthiness(ctx, value, false);
     TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyBool_Type), "truthiness is not boolean");
     TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, sym) == -1, "truthiness is not unknown");
-    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, sym) == false, "truthiness is constant");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, sym) == NULL, "truthiness is not NULL");
-    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, value) == false, "value is constant");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, value) == NULL, "value is not NULL");
     _Py_uop_sym_set_const(ctx, sym, Py_False);
     TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyBool_Type), "truthiness is not boolean");
     TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, sym) == 0, "truthiness is not True");
-    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, sym) == true, "truthiness is not constant");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, sym) == Py_False, "truthiness is not False");
-    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, value) == true, "value is not constant");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, value) == Py_True, "value is not True");
     _Py_uop_abstractcontext_fini(ctx);
     Py_DECREF(val_42);

@@ -316,7 +316,6 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 
 /* Shortened forms for convenience, used in optimizer_bytecodes.c */
 #define sym_is_not_null _Py_uop_sym_is_not_null
-#define sym_is_const _Py_uop_sym_is_const
 #define sym_get_const _Py_uop_sym_get_const
 #define sym_new_unknown _Py_uop_sym_new_unknown
 #define sym_new_not_null _Py_uop_sym_new_not_null
@@ -324,7 +323,6 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_is_null _Py_uop_sym_is_null
 #define sym_new_const _Py_uop_sym_new_const
 #define sym_new_null _Py_uop_sym_new_null
-#define sym_has_type _Py_uop_sym_has_type
 #define sym_get_type _Py_uop_sym_get_type
 #define sym_matches_type _Py_uop_sym_matches_type
 #define sym_matches_type_version _Py_uop_sym_matches_type_version
