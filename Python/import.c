@@ -839,15 +839,9 @@ _PyImport_SetDLOpenFlags(PyInterpreterState *interp, int new_val)
 /* Common implementation for _imp.exec_dynamic and _imp.exec_builtin */
 static int
 exec_builtin_or_dynamic(PyObject *mod) {
-    PyModuleDef *def;
     void *state;
 
     if (!PyModule_Check(mod)) {
-        return 0;
-    }
-
-    def = PyModule_GetDef(mod);
-    if (def == NULL) {
         return 0;
     }
 
@@ -857,7 +851,7 @@ exec_builtin_or_dynamic(PyObject *mod) {
         return 0;
     }
 
-    return PyModule_ExecDef(mod, def);
+    return PyModule_Exec(mod);
 }
 
 

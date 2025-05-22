@@ -22,7 +22,7 @@ typedef struct {
     PyObject_HEAD
     PyObject *md_dict;
     // The PyModuleDef used to define the module, if any.
-    // (used to be `md_def` when all extension modules had one)
+    // (used to be `md_def`; renamed because all uses need inspection)
     PyModuleDef *md_def_or_null;
     void *md_state;
     PyObject *md_weaklist;
