@@ -1,16 +1,17 @@
 import os
 import base64
-import contextlib
 import gettext
 import unittest
+import unittest.mock
+from functools import partial
 
 from test import support
+from test.support import cpython_only, os_helper
+from test.support.import_helper import ensure_lazy_imports
 
 
 # TODO:
 #  - Add new tests, for example for "dgettext"
-#  - Remove dummy tests, for example testing for single and double quotes
-#    has no sense, it would have if we were testing a parser (i.e. pygettext)
 #  - Tests should have only one assert.
 
 GNU_MO_DATA = b'''\
@@ -36,6 +37,9 @@ ZyB6cmZmbnRyIHBuZ255YnQgeXZvZW5lbC4ASGF5ICVzIGZpY2hlcm8gKGNvbnRleHQpAEhheSAl
 cyBmaWNoZXJvcyAoY29udGV4dCkAYmFjb24Ad2luayB3aW5rIChpbiAibXkgY29udGV4dCIpAHdp
 bmsgd2luayAoaW4gIm15IG90aGVyIGNvbnRleHQiKQB3aW5rIHdpbmsA
 '''
+
+# .mo file with an invalid magic number
+GNU_MO_DATA_BAD_MAGIC_NUMBER = base64.b64encode(b'ABCD')
 
 # This data contains an invalid major version number (5)
 # An unexpected major version number should be treated as an error when
@@ -85,6 +89,49 @@ IHNiZSBsYmhlIENsZ3ViYSBjZWJ0ZW56ZiBvbCBjZWJpdnF2YXQgbmEgdmFncmVzbnByIGdiIGd1
 ciBUQUgKdHJnZ3JrZyB6cmZmbnRyIHBuZ255YnQgeXZvZW5lbC4AYmFjb24Ad2luayB3aW5rAA==
 '''
 
+# Corrupt .mo file
+# Generated from
+#
+# msgid "foo"
+# msgstr "bar"
+#
+# with msgfmt --no-hash
+#
+# The translation offset is changed to 0xFFFFFFFF,
+# making it larger than the file size, which should
+# raise an error when parsing.
+GNU_MO_DATA_CORRUPT = base64.b64encode(bytes([
+    0xDE, 0x12, 0x04, 0x95,  # Magic
+    0x00, 0x00, 0x00, 0x00,  # Version
+    0x01, 0x00, 0x00, 0x00,  # Message count
+    0x1C, 0x00, 0x00, 0x00,  # Message offset
+    0x24, 0x00, 0x00, 0x00,  # Translation offset
+    0x00, 0x00, 0x00, 0x00,  # Hash table size
+    0x2C, 0x00, 0x00, 0x00,  # Hash table offset
+    0x03, 0x00, 0x00, 0x00,  # 1st message length
+    0x2C, 0x00, 0x00, 0x00,  # 1st message offset
+    0x03, 0x00, 0x00, 0x00,  # 1st trans length
+    0xFF, 0xFF, 0xFF, 0xFF,  # 1st trans offset (Modified to make it invalid)
+    0x66, 0x6F, 0x6F, 0x00,  # Message data
+    0x62, 0x61, 0x72, 0x00,  # Message data
+]))
+
+
+GNU_MO_DATA_BIG_ENDIAN = base64.b64encode(bytes([
+    0x95, 0x04, 0x12, 0xDE,  # Magic
+    0x00, 0x00, 0x00, 0x00,  # Version
+    0x00, 0x00, 0x00, 0x01,  # Message count
+    0x00, 0x00, 0x00, 0x1C,  # Message offset
+    0x00, 0x00, 0x00, 0x24,  # Translation offset
+    0x00, 0x00, 0x00, 0x00,  # Hash table size
+    0x00, 0x00, 0x00, 0x2C,  # Hash table offset
+    0x00, 0x00, 0x00, 0x03,  # 1st message length
+    0x00, 0x00, 0x00, 0x2C,  # 1st message offset
+    0x00, 0x00, 0x00, 0x03,  # 1st trans length
+    0x00, 0x00, 0x00, 0x30,  # 1st trans offset
+    0x66, 0x6F, 0x6F, 0x00,  # Message data
+    0x62, 0x61, 0x72, 0x00,  # Message data
+]))
 
 UMO_DATA = b'''\
 3hIElQAAAAADAAAAHAAAADQAAAAAAAAAAAAAAAAAAABMAAAABAAAAE0AAAAQAAAAUgAAAA8BAABj
@@ -109,34 +156,50 @@ bGUKR2VuZXJhdGVkLUJ5OiBweWdldHRleHQucHkgMS4zCgA=
 
 LOCALEDIR = os.path.join('xx', 'LC_MESSAGES')
 MOFILE = os.path.join(LOCALEDIR, 'gettext.mo')
+MOFILE_BAD_MAGIC_NUMBER = os.path.join(LOCALEDIR, 'gettext_bad_magic_number.mo')
 MOFILE_BAD_MAJOR_VERSION = os.path.join(LOCALEDIR, 'gettext_bad_major_version.mo')
 MOFILE_BAD_MINOR_VERSION = os.path.join(LOCALEDIR, 'gettext_bad_minor_version.mo')
+MOFILE_CORRUPT = os.path.join(LOCALEDIR, 'gettext_corrupt.mo')
+MOFILE_BIG_ENDIAN = os.path.join(LOCALEDIR, 'gettext_big_endian.mo')
 UMOFILE = os.path.join(LOCALEDIR, 'ugettext.mo')
 MMOFILE = os.path.join(LOCALEDIR, 'metadata.mo')
 
 
+def reset_gettext():
+    gettext._localedirs.clear()
+    gettext._current_domain = 'messages'
+    gettext._translations.clear()
+
+
 class GettextBaseTest(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
+        cls.addClassCleanup(os_helper.rmtree, os.path.split(LOCALEDIR)[0])
         if not os.path.isdir(LOCALEDIR):
             os.makedirs(LOCALEDIR)
         with open(MOFILE, 'wb') as fp:
             fp.write(base64.decodebytes(GNU_MO_DATA))
+        with open(MOFILE_BAD_MAGIC_NUMBER, 'wb') as fp:
+            fp.write(base64.decodebytes(GNU_MO_DATA_BAD_MAGIC_NUMBER))
         with open(MOFILE_BAD_MAJOR_VERSION, 'wb') as fp:
             fp.write(base64.decodebytes(GNU_MO_DATA_BAD_MAJOR_VERSION))
         with open(MOFILE_BAD_MINOR_VERSION, 'wb') as fp:
             fp.write(base64.decodebytes(GNU_MO_DATA_BAD_MINOR_VERSION))
+        with open(MOFILE_CORRUPT, 'wb') as fp:
+            fp.write(base64.decodebytes(GNU_MO_DATA_CORRUPT))
+        with open(MOFILE_BIG_ENDIAN, 'wb') as fp:
+            fp.write(base64.decodebytes(GNU_MO_DATA_BIG_ENDIAN))
         with open(UMOFILE, 'wb') as fp:
             fp.write(base64.decodebytes(UMO_DATA))
         with open(MMOFILE, 'wb') as fp:
             fp.write(base64.decodebytes(MMO_DATA))
-        self.env = support.EnvironmentVarGuard()
-        self.env['LANGUAGE'] = 'xx'
-        gettext._translations.clear()
 
-    def tearDown(self):
-        self.env.__exit__()
-        del self.env
-        support.rmtree(os.path.split(LOCALEDIR)[0])
+    def setUp(self):
+        self.env = self.enterContext(os_helper.EnvironmentVarGuard())
+        self.env['LANGUAGE'] = 'xx'
+        reset_gettext()
+        self.addCleanup(reset_gettext)
+
 
 GNU_MO_DATA_ISSUE_17898 = b'''\
 3hIElQAAAAABAAAAHAAAACQAAAAAAAAAAAAAAAAAAAAsAAAAggAAAC0AAAAAUGx1cmFsLUZvcm1z
@@ -167,30 +230,6 @@ class GettextTestCase1(GettextBaseTest):
         eq(pgettext('my other context', 'nudge nudge'),
            'wink wink (in "my other context")')
 
-    def test_double_quotes(self):
-        eq = self.assertEqual
-        # double quotes
-        eq(_("albatross"), 'albatross')
-        eq(_("mullusk"), 'bacon')
-        eq(_(r"Raymond Luxury Yach-t"), 'Throatwobbler Mangrove')
-        eq(_(r"nudge nudge"), 'wink wink')
-
-    def test_triple_single_quotes(self):
-        eq = self.assertEqual
-        # triple single quotes
-        eq(_('''albatross'''), 'albatross')
-        eq(_('''mullusk'''), 'bacon')
-        eq(_(r'''Raymond Luxury Yach-t'''), 'Throatwobbler Mangrove')
-        eq(_(r'''nudge nudge'''), 'wink wink')
-
-    def test_triple_double_quotes(self):
-        eq = self.assertEqual
-        # triple double quotes
-        eq(_("""albatross"""), 'albatross')
-        eq(_("""mullusk"""), 'bacon')
-        eq(_(r"""Raymond Luxury Yach-t"""), 'Throatwobbler Mangrove')
-        eq(_(r"""nudge nudge"""), 'wink wink')
-
     def test_multiline_strings(self):
         eq = self.assertEqual
         # multiline strings
@@ -203,6 +242,7 @@ trggrkg zrffntr pngnybt yvoenel.''')
 
     def test_the_alternative_interface(self):
         eq = self.assertEqual
+        neq = self.assertNotEqual
         # test the alternative interface
         with open(self.mofile, 'rb') as fp:
             t = gettext.GNUTranslations(fp)
@@ -214,12 +254,13 @@ trggrkg zrffntr pngnybt yvoenel.''')
         eq(_('mullusk'), 'bacon')
         # Test installation of other methods
         import builtins
-        t.install(names=["gettext", "lgettext"])
+        t.install(names=["gettext", "ngettext"])
         eq(_, t.gettext)
         eq(builtins.gettext, t.gettext)
-        eq(lgettext, t.lgettext)
+        eq(ngettext, t.ngettext)
+        neq(pgettext, t.pgettext)
         del builtins.gettext
-        del builtins.lgettext
+        del builtins.ngettext
 
 
 class GettextTestCase2(GettextBaseTest):
@@ -238,6 +279,16 @@ class GettextTestCase2(GettextBaseTest):
     def test_textdomain(self):
         self.assertEqual(gettext.textdomain(), 'gettext')
 
+    def test_bad_magic_number(self):
+        with open(MOFILE_BAD_MAGIC_NUMBER, 'rb') as fp:
+            with self.assertRaises(OSError) as cm:
+                gettext.GNUTranslations(fp)
+
+            exception = cm.exception
+            self.assertEqual(exception.errno, 0)
+            self.assertEqual(exception.strerror, "Bad magic number")
+            self.assertEqual(exception.filename, MOFILE_BAD_MAGIC_NUMBER)
+
     def test_bad_major_version(self):
         with open(MOFILE_BAD_MAJOR_VERSION, 'rb') as fp:
             with self.assertRaises(OSError) as cm:
@@ -252,6 +303,22 @@ class GettextTestCase2(GettextBaseTest):
         with open(MOFILE_BAD_MINOR_VERSION, 'rb') as fp:
             # Check that no error is thrown with a bad minor version number
             gettext.GNUTranslations(fp)
+
+    def test_corrupt_file(self):
+        with open(MOFILE_CORRUPT, 'rb') as fp:
+            with self.assertRaises(OSError) as cm:
+                gettext.GNUTranslations(fp)
+
+            exception = cm.exception
+            self.assertEqual(exception.errno, 0)
+            self.assertEqual(exception.strerror, "File is corrupt")
+            self.assertEqual(exception.filename, MOFILE_CORRUPT)
+
+    def test_big_endian_file(self):
+        with open(MOFILE_BIG_ENDIAN, 'rb') as fp:
+            t = gettext.GNUTranslations(fp)
+
+        self.assertEqual(t.gettext('foo'), 'bar')
 
     def test_some_translations(self):
         eq = self.assertEqual
@@ -275,30 +342,6 @@ class GettextTestCase2(GettextBaseTest):
         eq(gettext.dpgettext('gettext', 'my other context', 'nudge nudge'),
            'wink wink (in "my other context")')
 
-    def test_double_quotes(self):
-        eq = self.assertEqual
-        # double quotes
-        eq(self._("albatross"), 'albatross')
-        eq(self._("mullusk"), 'bacon')
-        eq(self._(r"Raymond Luxury Yach-t"), 'Throatwobbler Mangrove')
-        eq(self._(r"nudge nudge"), 'wink wink')
-
-    def test_triple_single_quotes(self):
-        eq = self.assertEqual
-        # triple single quotes
-        eq(self._('''albatross'''), 'albatross')
-        eq(self._('''mullusk'''), 'bacon')
-        eq(self._(r'''Raymond Luxury Yach-t'''), 'Throatwobbler Mangrove')
-        eq(self._(r'''nudge nudge'''), 'wink wink')
-
-    def test_triple_double_quotes(self):
-        eq = self.assertEqual
-        # triple double quotes
-        eq(self._("""albatross"""), 'albatross')
-        eq(self._("""mullusk"""), 'bacon')
-        eq(self._(r"""Raymond Luxury Yach-t"""), 'Throatwobbler Mangrove')
-        eq(self._(r"""nudge nudge"""), 'wink wink')
-
     def test_multiline_strings(self):
         eq = self.assertEqual
         # multiline strings
@@ -310,47 +353,139 @@ fhccbeg sbe lbhe Clguba cebtenzf ol cebivqvat na vagresnpr gb gur TAH
 trggrkg zrffntr pngnybt yvoenel.''')
 
 
-class PluralFormsTestCase(GettextBaseTest):
+class PluralFormsTests:
+
+    def _test_plural_forms(self, ngettext, gettext,
+                           singular, plural, tsingular, tplural,
+                           numbers_only=True):
+        x = ngettext(singular, plural, 1)
+        self.assertEqual(x, tsingular)
+        x = ngettext(singular, plural, 2)
+        self.assertEqual(x, tplural)
+        x = gettext(singular)
+        self.assertEqual(x, tsingular)
+
+        lineno = self._test_plural_forms.__code__.co_firstlineno + 12
+        with self.assertWarns(DeprecationWarning) as cm:
+            x = ngettext(singular, plural, 1.0)
+        self.assertEqual(cm.filename, __file__)
+        self.assertEqual(cm.lineno, lineno)
+        self.assertEqual(x, tsingular)
+        with self.assertWarns(DeprecationWarning) as cm:
+            x = ngettext(singular, plural, 1.1)
+        self.assertEqual(cm.filename, __file__)
+        self.assertEqual(cm.lineno, lineno + 5)
+        self.assertEqual(x, tplural)
+
+        if numbers_only:
+            with self.assertRaises(TypeError):
+                ngettext(singular, plural, None)
+        else:
+            with self.assertWarns(DeprecationWarning) as cm:
+                x = ngettext(singular, plural, None)
+            self.assertEqual(x, tplural)
+
+    def test_plural_forms(self):
+        self._test_plural_forms(
+            self.ngettext, self.gettext,
+            'There is %s file', 'There are %s files',
+            'Hay %s fichero', 'Hay %s ficheros')
+        self._test_plural_forms(
+            self.ngettext, self.gettext,
+            '%d file deleted', '%d files deleted',
+            '%d file deleted', '%d files deleted')
+
+    def test_plural_context_forms(self):
+        ngettext = partial(self.npgettext, 'With context')
+        gettext = partial(self.pgettext, 'With context')
+        self._test_plural_forms(
+            ngettext, gettext,
+            'There is %s file', 'There are %s files',
+            'Hay %s fichero (context)', 'Hay %s ficheros (context)')
+        self._test_plural_forms(
+            ngettext, gettext,
+            '%d file deleted', '%d files deleted',
+            '%d file deleted', '%d files deleted')
+
+    def test_plural_wrong_context_forms(self):
+        self._test_plural_forms(
+            partial(self.npgettext, 'Unknown context'),
+            partial(self.pgettext, 'Unknown context'),
+            'There is %s file', 'There are %s files',
+            'There is %s file', 'There are %s files')
+
+
+class GNUTranslationsPluralFormsTestCase(PluralFormsTests, GettextBaseTest):
     def setUp(self):
         GettextBaseTest.setUp(self)
-        self.mofile = MOFILE
+        # Set up the bindings
+        gettext.bindtextdomain('gettext', os.curdir)
+        gettext.textdomain('gettext')
 
-    def test_plural_forms1(self):
-        eq = self.assertEqual
-        x = gettext.ngettext('There is %s file', 'There are %s files', 1)
-        eq(x, 'Hay %s fichero')
-        x = gettext.ngettext('There is %s file', 'There are %s files', 2)
-        eq(x, 'Hay %s ficheros')
+        self.gettext = gettext.gettext
+        self.ngettext = gettext.ngettext
+        self.pgettext = gettext.pgettext
+        self.npgettext = gettext.npgettext
 
-    def test_plural_context_forms1(self):
-        eq = self.assertEqual
-        x = gettext.npgettext('With context',
-                              'There is %s file', 'There are %s files', 1)
-        eq(x, 'Hay %s fichero (context)')
-        x = gettext.npgettext('With context',
-                              'There is %s file', 'There are %s files', 2)
-        eq(x, 'Hay %s ficheros (context)')
 
-    def test_plural_forms2(self):
-        eq = self.assertEqual
-        with open(self.mofile, 'rb') as fp:
+class GNUTranslationsWithDomainPluralFormsTestCase(PluralFormsTests, GettextBaseTest):
+    def setUp(self):
+        GettextBaseTest.setUp(self)
+        # Set up the bindings
+        gettext.bindtextdomain('gettext', os.curdir)
+
+        self.gettext = partial(gettext.dgettext, 'gettext')
+        self.ngettext = partial(gettext.dngettext, 'gettext')
+        self.pgettext = partial(gettext.dpgettext, 'gettext')
+        self.npgettext = partial(gettext.dnpgettext, 'gettext')
+
+    def test_plural_forms_wrong_domain(self):
+        self._test_plural_forms(
+            partial(gettext.dngettext, 'unknown'),
+            partial(gettext.dgettext, 'unknown'),
+            'There is %s file', 'There are %s files',
+            'There is %s file', 'There are %s files',
+            numbers_only=False)
+
+    def test_plural_context_forms_wrong_domain(self):
+        self._test_plural_forms(
+            partial(gettext.dnpgettext, 'unknown', 'With context'),
+            partial(gettext.dpgettext, 'unknown', 'With context'),
+            'There is %s file', 'There are %s files',
+            'There is %s file', 'There are %s files',
+            numbers_only=False)
+
+
+class GNUTranslationsClassPluralFormsTestCase(PluralFormsTests, GettextBaseTest):
+    def setUp(self):
+        GettextBaseTest.setUp(self)
+        with open(MOFILE, 'rb') as fp:
             t = gettext.GNUTranslations(fp)
-        x = t.ngettext('There is %s file', 'There are %s files', 1)
-        eq(x, 'Hay %s fichero')
-        x = t.ngettext('There is %s file', 'There are %s files', 2)
-        eq(x, 'Hay %s ficheros')
 
-    def test_plural_context_forms2(self):
-        eq = self.assertEqual
-        with open(self.mofile, 'rb') as fp:
-            t = gettext.GNUTranslations(fp)
-        x = t.npgettext('With context',
-                        'There is %s file', 'There are %s files', 1)
-        eq(x, 'Hay %s fichero (context)')
-        x = t.npgettext('With context',
-                        'There is %s file', 'There are %s files', 2)
-        eq(x, 'Hay %s ficheros (context)')
+        self.gettext = t.gettext
+        self.ngettext = t.ngettext
+        self.pgettext = t.pgettext
+        self.npgettext = t.npgettext
 
+    def test_plural_forms_null_translations(self):
+        t = gettext.NullTranslations()
+        self._test_plural_forms(
+            t.ngettext, t.gettext,
+            'There is %s file', 'There are %s files',
+            'There is %s file', 'There are %s files',
+            numbers_only=False)
+
+    def test_plural_context_forms_null_translations(self):
+        t = gettext.NullTranslations()
+        self._test_plural_forms(
+            partial(t.npgettext, 'With context'),
+            partial(t.pgettext, 'With context'),
+            'There is %s file', 'There are %s files',
+            'There is %s file', 'There are %s files',
+            numbers_only=False)
+
+
+class PluralFormsInternalTestCase(unittest.TestCase):
     # Examples from http://www.gnu.org/software/gettext/manual/gettext.html
 
     def test_ja(self):
@@ -432,6 +567,7 @@ class PluralFormsTestCase(GettextBaseTest):
         s = ''.join([ str(f(x)) for x in range(200) ])
         eq(s, "01233333333444444444444444444444444444444444444444444444444444444444444444444444444444444444444444445553333333344444444444444444444444444444444444444444444444444444444444444444444444444444444444444444")
 
+    @support.skip_wasi_stack_overflow()
     def test_security(self):
         raises = self.assertRaises
         # Test for a dangerous expression
@@ -465,11 +601,17 @@ class PluralFormsTestCase(GettextBaseTest):
     def test_invalid_syntax(self):
         invalid_expressions = [
             'x>1', '(n>1', 'n>1)', '42**42**42', '0xa', '1.0', '1e2',
-            'n>0x1', '+n', '-n', 'n()', 'n(1)', '1+', 'nn', 'n n',
+            'n>0x1', '+n', '-n', 'n()', 'n(1)', '1+', 'nn', 'n n', 'n ? 1 2'
         ]
         for expr in invalid_expressions:
             with self.assertRaises(ValueError):
                 gettext.c2py(expr)
+
+    def test_negation(self):
+        f = gettext.c2py('!!!n')
+        self.assertEqual(f(0), 1)
+        self.assertEqual(f(1), 0)
+        self.assertEqual(f(2), 0)
 
     def test_nested_condition_operator(self):
         self.assertEqual(gettext.c2py('n?1?2:3:4')(0), 4)
@@ -499,180 +641,6 @@ class PluralFormsTestCase(GettextBaseTest):
         self.assertRaises(TypeError, f, b'2')
         self.assertRaises(TypeError, f, [])
         self.assertRaises(TypeError, f, object())
-
-
-class LGettextTestCase(GettextBaseTest):
-    def setUp(self):
-        GettextBaseTest.setUp(self)
-        self.mofile = MOFILE
-
-    @contextlib.contextmanager
-    def assertDeprecated(self, name):
-        with self.assertWarnsRegex(DeprecationWarning,
-                                   fr'^{name}\(\) is deprecated'):
-            yield
-
-    def test_lgettext(self):
-        lgettext = gettext.lgettext
-        ldgettext = gettext.ldgettext
-        with self.assertDeprecated('lgettext'):
-            self.assertEqual(lgettext('mullusk'), b'bacon')
-        with self.assertDeprecated('lgettext'):
-            self.assertEqual(lgettext('spam'), b'spam')
-        with self.assertDeprecated('ldgettext'):
-            self.assertEqual(ldgettext('gettext', 'mullusk'), b'bacon')
-        with self.assertDeprecated('ldgettext'):
-            self.assertEqual(ldgettext('gettext', 'spam'), b'spam')
-
-    def test_lgettext_2(self):
-        with open(self.mofile, 'rb') as fp:
-            t = gettext.GNUTranslations(fp)
-        lgettext = t.lgettext
-        with self.assertDeprecated('lgettext'):
-            self.assertEqual(lgettext('mullusk'), b'bacon')
-        with self.assertDeprecated('lgettext'):
-            self.assertEqual(lgettext('spam'), b'spam')
-
-    def test_lgettext_bind_textdomain_codeset(self):
-        lgettext = gettext.lgettext
-        ldgettext = gettext.ldgettext
-        with self.assertDeprecated('bind_textdomain_codeset'):
-            saved_codeset = gettext.bind_textdomain_codeset('gettext')
-        try:
-            with self.assertDeprecated('bind_textdomain_codeset'):
-                gettext.bind_textdomain_codeset('gettext', 'utf-16')
-            with self.assertDeprecated('lgettext'):
-                self.assertEqual(lgettext('mullusk'), 'bacon'.encode('utf-16'))
-            with self.assertDeprecated('lgettext'):
-                self.assertEqual(lgettext('spam'), 'spam'.encode('utf-16'))
-            with self.assertDeprecated('ldgettext'):
-                self.assertEqual(ldgettext('gettext', 'mullusk'), 'bacon'.encode('utf-16'))
-            with self.assertDeprecated('ldgettext'):
-                self.assertEqual(ldgettext('gettext', 'spam'), 'spam'.encode('utf-16'))
-        finally:
-            del gettext._localecodesets['gettext']
-            with self.assertDeprecated('bind_textdomain_codeset'):
-                gettext.bind_textdomain_codeset('gettext', saved_codeset)
-
-    def test_lgettext_output_encoding(self):
-        with open(self.mofile, 'rb') as fp:
-            t = gettext.GNUTranslations(fp)
-        lgettext = t.lgettext
-        with self.assertDeprecated('set_output_charset'):
-            t.set_output_charset('utf-16')
-        with self.assertDeprecated('lgettext'):
-            self.assertEqual(lgettext('mullusk'), 'bacon'.encode('utf-16'))
-        with self.assertDeprecated('lgettext'):
-            self.assertEqual(lgettext('spam'), 'spam'.encode('utf-16'))
-
-    def test_lngettext(self):
-        lngettext = gettext.lngettext
-        ldngettext = gettext.ldngettext
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s file', 'There are %s files', 1)
-        self.assertEqual(x, b'Hay %s fichero')
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s file', 'There are %s files', 2)
-        self.assertEqual(x, b'Hay %s ficheros')
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s directory', 'There are %s directories', 1)
-        self.assertEqual(x, b'There is %s directory')
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s directory', 'There are %s directories', 2)
-        self.assertEqual(x, b'There are %s directories')
-        with self.assertDeprecated('ldngettext'):
-            x = ldngettext('gettext', 'There is %s file', 'There are %s files', 1)
-        self.assertEqual(x, b'Hay %s fichero')
-        with self.assertDeprecated('ldngettext'):
-            x = ldngettext('gettext', 'There is %s file', 'There are %s files', 2)
-        self.assertEqual(x, b'Hay %s ficheros')
-        with self.assertDeprecated('ldngettext'):
-            x = ldngettext('gettext', 'There is %s directory', 'There are %s directories', 1)
-        self.assertEqual(x, b'There is %s directory')
-        with self.assertDeprecated('ldngettext'):
-            x = ldngettext('gettext', 'There is %s directory', 'There are %s directories', 2)
-        self.assertEqual(x, b'There are %s directories')
-
-    def test_lngettext_2(self):
-        with open(self.mofile, 'rb') as fp:
-            t = gettext.GNUTranslations(fp)
-        lngettext = t.lngettext
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s file', 'There are %s files', 1)
-        self.assertEqual(x, b'Hay %s fichero')
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s file', 'There are %s files', 2)
-        self.assertEqual(x, b'Hay %s ficheros')
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s directory', 'There are %s directories', 1)
-        self.assertEqual(x, b'There is %s directory')
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s directory', 'There are %s directories', 2)
-        self.assertEqual(x, b'There are %s directories')
-
-    def test_lngettext_bind_textdomain_codeset(self):
-        lngettext = gettext.lngettext
-        ldngettext = gettext.ldngettext
-        with self.assertDeprecated('bind_textdomain_codeset'):
-            saved_codeset = gettext.bind_textdomain_codeset('gettext')
-        try:
-            with self.assertDeprecated('bind_textdomain_codeset'):
-                gettext.bind_textdomain_codeset('gettext', 'utf-16')
-            with self.assertDeprecated('lngettext'):
-                x = lngettext('There is %s file', 'There are %s files', 1)
-            self.assertEqual(x, 'Hay %s fichero'.encode('utf-16'))
-            with self.assertDeprecated('lngettext'):
-                x = lngettext('There is %s file', 'There are %s files', 2)
-            self.assertEqual(x, 'Hay %s ficheros'.encode('utf-16'))
-            with self.assertDeprecated('lngettext'):
-                x = lngettext('There is %s directory', 'There are %s directories', 1)
-            self.assertEqual(x, 'There is %s directory'.encode('utf-16'))
-            with self.assertDeprecated('lngettext'):
-                x = lngettext('There is %s directory', 'There are %s directories', 2)
-            self.assertEqual(x, 'There are %s directories'.encode('utf-16'))
-            with self.assertDeprecated('ldngettext'):
-                x = ldngettext('gettext', 'There is %s file', 'There are %s files', 1)
-            self.assertEqual(x, 'Hay %s fichero'.encode('utf-16'))
-            with self.assertDeprecated('ldngettext'):
-                x = ldngettext('gettext', 'There is %s file', 'There are %s files', 2)
-            self.assertEqual(x, 'Hay %s ficheros'.encode('utf-16'))
-            with self.assertDeprecated('ldngettext'):
-                x = ldngettext('gettext', 'There is %s directory', 'There are %s directories', 1)
-            self.assertEqual(x, 'There is %s directory'.encode('utf-16'))
-            with self.assertDeprecated('ldngettext'):
-                x = ldngettext('gettext', 'There is %s directory', 'There are %s directories', 2)
-            self.assertEqual(x, 'There are %s directories'.encode('utf-16'))
-        finally:
-            del gettext._localecodesets['gettext']
-            with self.assertDeprecated('bind_textdomain_codeset'):
-                gettext.bind_textdomain_codeset('gettext', saved_codeset)
-
-    def test_lngettext_output_encoding(self):
-        with open(self.mofile, 'rb') as fp:
-            t = gettext.GNUTranslations(fp)
-        lngettext = t.lngettext
-        with self.assertDeprecated('set_output_charset'):
-            t.set_output_charset('utf-16')
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s file', 'There are %s files', 1)
-        self.assertEqual(x, 'Hay %s fichero'.encode('utf-16'))
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s file', 'There are %s files', 2)
-        self.assertEqual(x, 'Hay %s ficheros'.encode('utf-16'))
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s directory', 'There are %s directories', 1)
-        self.assertEqual(x, 'There is %s directory'.encode('utf-16'))
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s directory', 'There are %s directories', 2)
-        self.assertEqual(x, 'There are %s directories'.encode('utf-16'))
-
-    def test_output_encoding(self):
-        with open(self.mofile, 'rb') as fp:
-            t = gettext.GNUTranslations(fp)
-        with self.assertDeprecated('set_output_charset'):
-            t.set_output_charset('utf-16')
-        with self.assertDeprecated('output_charset'):
-            self.assertEqual(t.output_charset(), 'utf-16')
 
 
 class GNUTranslationParsingTest(GettextBaseTest):
@@ -806,21 +774,167 @@ class GettextCacheTestCase(GettextBaseTest):
         self.assertEqual(len(gettext._translations), 2)
         self.assertEqual(t.__class__, DummyGNUTranslations)
 
-        # Test deprecated parameter codeset
-        with self.assertWarnsRegex(DeprecationWarning, 'parameter codeset'):
-            t = gettext.translation('gettext', self.localedir,
-                                    class_=DummyGNUTranslations,
-                                    codeset='utf-16')
-        self.assertEqual(len(gettext._translations), 2)
-        self.assertEqual(t.__class__, DummyGNUTranslations)
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(t.output_charset(), 'utf-16')
+
+class FallbackTranslations(gettext.NullTranslations):
+    def gettext(self, message):
+        return f'gettext: {message}'
+
+    def ngettext(self, msgid1, msgid2, n):
+        return f'ngettext: {msgid1}, {msgid2}, {n}'
+
+    def pgettext(self, context, message):
+        return f'pgettext: {context}, {message}'
+
+    def npgettext(self, context, msgid1, msgid2, n):
+        return f'npgettext: {context}, {msgid1}, {msgid2}, {n}'
+
+
+class FallbackTestCase(GettextBaseTest):
+    def test_null_translations_fallback(self):
+        t = gettext.NullTranslations()
+        t.add_fallback(FallbackTranslations())
+        self.assertEqual(t.gettext('foo'), 'gettext: foo')
+        self.assertEqual(t.ngettext('foo', 'foos', 1),
+                         'ngettext: foo, foos, 1')
+        self.assertEqual(t.pgettext('context', 'foo'),
+                         'pgettext: context, foo')
+        self.assertEqual(t.npgettext('context', 'foo', 'foos', 1),
+                         'npgettext: context, foo, foos, 1')
+
+    def test_gnu_translations_fallback(self):
+        with open(MOFILE, 'rb') as fp:
+            t = gettext.GNUTranslations(fp)
+        t.add_fallback(FallbackTranslations())
+        self.assertEqual(t.gettext('foo'), 'gettext: foo')
+        self.assertEqual(t.ngettext('foo', 'foos', 1),
+                         'ngettext: foo, foos, 1')
+        self.assertEqual(t.pgettext('context', 'foo'),
+                         'pgettext: context, foo')
+        self.assertEqual(t.npgettext('context', 'foo', 'foos', 1),
+                         'npgettext: context, foo, foos, 1')
+
+    def test_nested_fallbacks(self):
+        class NestedFallback(gettext.NullTranslations):
+            def gettext(self, message):
+                if message == 'foo':
+                    return 'fallback'
+                return super().gettext(message)
+
+        fallback1 = NestedFallback()
+        fallback2 = FallbackTranslations()
+        t = gettext.NullTranslations()
+        t.add_fallback(fallback1)
+        t.add_fallback(fallback2)
+
+        self.assertEqual(fallback1.gettext('bar'), 'gettext: bar')
+        self.assertEqual(t.gettext('foo'), 'fallback')
+        self.assertEqual(t.gettext('bar'), 'gettext: bar')
+
+
+class ExpandLangTestCase(unittest.TestCase):
+    def test_expand_lang(self):
+        # Test all combinations of territory, charset and
+        # modifier (locale extension)
+        locales = {
+            'cs': ['cs'],
+            'cs_CZ': ['cs_CZ', 'cs'],
+            'cs.ISO8859-2': ['cs.ISO8859-2', 'cs'],
+            'cs@euro': ['cs@euro', 'cs'],
+            'cs_CZ.ISO8859-2': ['cs_CZ.ISO8859-2', 'cs_CZ', 'cs.ISO8859-2',
+                                'cs'],
+            'cs_CZ@euro': ['cs_CZ@euro', 'cs@euro', 'cs_CZ', 'cs'],
+            'cs.ISO8859-2@euro': ['cs.ISO8859-2@euro', 'cs@euro',
+                                  'cs.ISO8859-2', 'cs'],
+            'cs_CZ.ISO8859-2@euro': ['cs_CZ.ISO8859-2@euro', 'cs_CZ@euro',
+                                     'cs.ISO8859-2@euro', 'cs@euro',
+                                     'cs_CZ.ISO8859-2', 'cs_CZ',
+                                     'cs.ISO8859-2', 'cs'],
+        }
+        for locale, expanded in locales.items():
+            with self.subTest(locale=locale):
+                with unittest.mock.patch("locale.normalize",
+                                         return_value=locale):
+                    self.assertEqual(gettext._expand_lang(locale), expanded)
+
+
+class FindTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.env = self.enterContext(os_helper.EnvironmentVarGuard())
+        self.tempdir = self.enterContext(os_helper.temp_cwd())
+
+        for key in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
+            self.env.unset(key)
+
+    def create_mo_file(self, lang):
+        locale_dir = os.path.join(self.tempdir, "locale")
+        mofile_dir = os.path.join(locale_dir, lang, "LC_MESSAGES")
+        os.makedirs(mofile_dir)
+        mo_file = os.path.join(mofile_dir, "mofile.mo")
+        with open(mo_file, "wb") as f:
+            f.write(GNU_MO_DATA)
+        return mo_file
+
+    def test_find_with_env_vars(self):
+        # test that find correctly finds the environment variables
+        # when languages are not supplied
+        mo_file = self.create_mo_file("ga_IE")
+        for var in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
+            self.env.set(var, 'ga_IE')
+            result = gettext.find("mofile",
+                                  localedir=os.path.join(self.tempdir, "locale"))
+            self.assertEqual(result, mo_file)
+            self.env.unset(var)
+
+    def test_find_with_languages(self):
+        # test that passed languages are used
+        self.env.set('LANGUAGE', 'pt_BR')
+        mo_file = self.create_mo_file("ga_IE")
+
+        result = gettext.find("mofile",
+                              localedir=os.path.join(self.tempdir, "locale"),
+                              languages=['ga_IE'])
+        self.assertEqual(result, mo_file)
+
+    @unittest.mock.patch('gettext._expand_lang')
+    def test_find_with_no_lang(self, patch_expand_lang):
+        # no language can be found
+        gettext.find('foo')
+        patch_expand_lang.assert_called_with('C')
+
+    @unittest.mock.patch('gettext._expand_lang')
+    def test_find_with_c(self, patch_expand_lang):
+        # 'C' is already in languages
+        self.env.set('LANGUAGE', 'C')
+        gettext.find('foo')
+        patch_expand_lang.assert_called_with('C')
+
+    def test_find_all(self):
+        # test that all are returned when all is set
+        paths = []
+        for lang in ["ga_IE", "es_ES"]:
+            paths.append(self.create_mo_file(lang))
+        result = gettext.find('mofile',
+                              localedir=os.path.join(self.tempdir, "locale"),
+                              languages=["ga_IE", "es_ES"], all=True)
+        self.assertEqual(sorted(result), sorted(paths))
+
+    def test_find_deduplication(self):
+        # test that find removes duplicate languages
+        mo_file = [self.create_mo_file('ga_IE')]
+        result = gettext.find("mofile", localedir=os.path.join(self.tempdir, "locale"),
+                              languages=['ga_IE', 'ga_IE'], all=True)
+        self.assertEqual(result, mo_file)
 
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {'c2py', 'ENOENT'}
-        support.check__all__(self, gettext, blacklist=blacklist)
+        support.check__all__(self, gettext,
+                             not_exported={'c2py', 'ENOENT'})
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("gettext", {"re", "warnings", "locale"})
 
 
 if __name__ == '__main__':

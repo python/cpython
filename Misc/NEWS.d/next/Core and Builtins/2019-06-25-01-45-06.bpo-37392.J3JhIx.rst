@@ -1,4 +1,0 @@
-Remove ``sys.getcheckinterval()`` and ``sys.setcheckinterval()`` functions.
-They were deprecated since Python 3.2. Use :func:`sys.getswitchinterval` and
-:func:`sys.setswitchinterval` instead. Remove also ``check_interval`` field of
-the ``PyInterpreterState`` structure.

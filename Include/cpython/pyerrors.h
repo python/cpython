@@ -2,15 +2,11 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Error objects */
 
 /* PyException_HEAD defines the initial segment of every exception class. */
 #define PyException_HEAD PyObject_HEAD PyObject *dict;\
-             PyObject *args; PyObject *traceback;\
+             PyObject *args; PyObject *notes; PyObject *traceback;\
              PyObject *context; PyObject *cause;\
              char suppress_context;
 
@@ -21,11 +17,20 @@ typedef struct {
 typedef struct {
     PyException_HEAD
     PyObject *msg;
+    PyObject *excs;
+} PyBaseExceptionGroupObject;
+
+typedef struct {
+    PyException_HEAD
+    PyObject *msg;
     PyObject *filename;
     PyObject *lineno;
     PyObject *offset;
+    PyObject *end_lineno;
+    PyObject *end_offset;
     PyObject *text;
     PyObject *print_file_and_line;
+    PyObject *metadata;
 } PySyntaxErrorObject;
 
 typedef struct {
@@ -33,6 +38,7 @@ typedef struct {
     PyObject *msg;
     PyObject *name;
     PyObject *path;
+    PyObject *name_from;
 } PyImportErrorObject;
 
 typedef struct {
@@ -66,76 +72,36 @@ typedef struct {
     PyObject *value;
 } PyStopIterationObject;
 
+typedef struct {
+    PyException_HEAD
+    PyObject *name;
+} PyNameErrorObject;
+
+typedef struct {
+    PyException_HEAD
+    PyObject *obj;
+    PyObject *name;
+} PyAttributeErrorObject;
+
 /* Compatibility typedefs */
 typedef PyOSErrorObject PyEnvironmentErrorObject;
 #ifdef MS_WINDOWS
 typedef PyOSErrorObject PyWindowsErrorObject;
 #endif
 
-/* Error handling definitions */
-
-PyAPI_FUNC(void) _PyErr_SetKeyError(PyObject *);
-_PyErr_StackItem *_PyErr_GetTopmostException(PyThreadState *tstate);
-
 /* Context manipulation (PEP 3134) */
 
-PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
-
-/* */
-
-#define PyExceptionClass_Name(x)  (((PyTypeObject*)(x))->tp_name)
-
-/* Convenience functions */
-
-#ifdef MS_WINDOWS
-Py_DEPRECATED(3.3)
-PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithUnicodeFilename(
-    PyObject *, const Py_UNICODE *);
-#endif /* MS_WINDOWS */
-
-/* Like PyErr_Format(), but saves current exception as __context__ and
-   __cause__.
- */
-PyAPI_FUNC(PyObject *) _PyErr_FormatFromCause(
-    PyObject *exception,
-    const char *format,   /* ASCII-encoded string  */
-    ...
-    );
-
-#ifdef MS_WINDOWS
-/* XXX redeclare to use WSTRING */
-Py_DEPRECATED(3.3)
-PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErrWithUnicodeFilename(
-    int, const Py_UNICODE *);
-Py_DEPRECATED(3.3)
-PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErrWithUnicodeFilename(
-    PyObject *,int, const Py_UNICODE *);
-#endif
+PyAPI_FUNC(void) _PyErr_ChainExceptions1(PyObject *);
 
 /* In exceptions.c */
 
-/* Helper that attempts to replace the current exception with one of the
- * same type but with a prefix added to the exception text. The resulting
- * exception description looks like:
- *
- *     prefix (exc_type: original_exc_str)
- *
- * Only some exceptions can be safely replaced. If the function determines
- * it isn't safe to perform the replacement, it will leave the original
- * unmodified exception in place.
- *
- * Returns a borrowed reference to the new exception (if any), NULL if the
- * existing exception was left in place.
- */
-PyAPI_FUNC(PyObject *) _PyErr_TrySetFromCause(
-    const char *prefix_format,   /* ASCII-encoded string  */
-    ...
-    );
+PyAPI_FUNC(PyObject*) PyUnstable_Exc_PrepReraiseStar(
+     PyObject *orig,
+     PyObject *excs);
 
 /* In signalmodule.c */
 
-int PySignal_SetWakeupFd(int fd);
-PyAPI_FUNC(int) _PyErr_CheckSignals(void);
+PyAPI_FUNC(int) PySignal_SetWakeupFd(int fd);
 
 /* Support for adding program text to SyntaxErrors */
 
@@ -144,39 +110,23 @@ PyAPI_FUNC(void) PyErr_SyntaxLocationObject(
     int lineno,
     int col_offset);
 
+PyAPI_FUNC(void) PyErr_RangedSyntaxLocationObject(
+    PyObject *filename,
+    int lineno,
+    int col_offset,
+    int end_lineno,
+    int end_col_offset);
+
 PyAPI_FUNC(PyObject *) PyErr_ProgramTextObject(
     PyObject *filename,
     int lineno);
 
-/* Create a UnicodeEncodeError object */
-Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject *) PyUnicodeEncodeError_Create(
-    const char *encoding,       /* UTF-8 encoded string */
-    const Py_UNICODE *object,
-    Py_ssize_t length,
-    Py_ssize_t start,
-    Py_ssize_t end,
-    const char *reason          /* UTF-8 encoded string */
-    );
+PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalErrorFunc(
+    const char *func,
+    const char *message);
 
-/* Create a UnicodeTranslateError object */
-Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject *) PyUnicodeTranslateError_Create(
-    const Py_UNICODE *object,
-    Py_ssize_t length,
-    Py_ssize_t start,
-    Py_ssize_t end,
-    const char *reason          /* UTF-8 encoded string */
-    );
-PyAPI_FUNC(PyObject *) _PyUnicodeTranslateError_Create(
-    PyObject *object,
-    Py_ssize_t start,
-    Py_ssize_t end,
-    const char *reason          /* UTF-8 encoded string */
-    );
+PyAPI_FUNC(void) PyErr_FormatUnraisable(const char *, ...);
 
-PyAPI_FUNC(void) _PyErr_WriteUnraisableMsg(
-    const char *err_msg,
-    PyObject *obj);
+PyAPI_DATA(PyObject *) PyExc_PythonFinalizationError;
 
-#ifdef __cplusplus
-}
-#endif
+#define Py_FatalError(message) _Py_FatalErrorFunc(__func__, (message))

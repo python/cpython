@@ -1,3 +1,0 @@
-Deprecate xml.etree.ElementTree.Element.copy() in favor of copy.copy().
-
-Patch by Gordon P. Hemsley

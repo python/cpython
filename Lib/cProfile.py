@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 """Python interface for the 'lsprof' profiler.
    Compatible with the 'profile' module.
 """
@@ -7,6 +5,9 @@
 __all__ = ["run", "runctx", "Profile"]
 
 import _lsprof
+import importlib.machinery
+import importlib.util
+import io
 import profile as _pyprofile
 
 # ____________________________________________________________
@@ -39,7 +40,9 @@ class Profile(_lsprof.Profiler):
 
     def print_stats(self, sort=-1):
         import pstats
-        pstats.Stats(self).strip_dirs().sort_stats(sort).print_stats()
+        if not isinstance(sort, tuple):
+            sort = (sort,)
+        pstats.Stats(self).strip_dirs().sort_stats(*sort).print_stats()
 
     def dump_stats(self, file):
         import marshal
@@ -140,7 +143,7 @@ def main():
         help="Save stats to <outfile>", default=None)
     parser.add_option('-s', '--sort', dest="sort",
         help="Sort order when printing to stdout, based on pstats.Stats class",
-        default=-1,
+        default=2,
         choices=sorted(pstats.Stats.sort_arg_dict_default))
     parser.add_option('-m', dest="module", action="store_true",
         help="Profile a library module", default=False)
@@ -152,6 +155,11 @@ def main():
     (options, args) = parser.parse_args()
     sys.argv[:] = args
 
+    # The script that we're profiling may chdir, so capture the absolute path
+    # to the output file at startup.
+    if options.outfile is not None:
+        options.outfile = os.path.abspath(options.outfile)
+
     if len(args) > 0:
         if options.module:
             code = "run_module(modname, run_name='__main__')"
@@ -162,15 +170,32 @@ def main():
         else:
             progname = args[0]
             sys.path.insert(0, os.path.dirname(progname))
-            with open(progname, 'rb') as fp:
+            with io.open_code(progname) as fp:
                 code = compile(fp.read(), progname, 'exec')
-            globs = {
-                '__file__': progname,
-                '__name__': '__main__',
+            spec = importlib.machinery.ModuleSpec(name='__main__', loader=None,
+                                                  origin=progname)
+            module = importlib.util.module_from_spec(spec)
+            # Set __main__ so that importing __main__ in the profiled code will
+            # return the same namespace that the code is executing under.
+            sys.modules['__main__'] = module
+            # Ensure that we're using the same __dict__ instance as the module
+            # for the global variables so that updates to globals are reflected
+            # in the module's namespace.
+            globs = module.__dict__
+            globs.update({
+                '__spec__': spec,
+                '__file__': spec.origin,
+                '__name__': spec.name,
                 '__package__': None,
                 '__cached__': None,
-            }
-        runctx(code, globs, None, options.outfile, options.sort)
+            })
+
+        try:
+            runctx(code, globs, None, options.outfile, options.sort)
+        except BrokenPipeError as exc:
+            # Prevent "Exception ignored" during interpreter shutdown.
+            sys.stdout = None
+            sys.exit(exc.errno)
     else:
         parser.print_usage()
     return parser

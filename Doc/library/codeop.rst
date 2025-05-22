@@ -1,5 +1,5 @@
-:mod:`codeop` --- Compile Python code
-=====================================
+:mod:`!codeop` --- Compile Python code
+======================================
 
 .. module:: codeop
    :synopsis: Compile (possibly incomplete) Python code.
@@ -19,10 +19,10 @@ module instead.
 
 There are two parts to this job:
 
-#. Being able to tell if a line of input completes a Python  statement: in
+#. Being able to tell if a line of input completes a Python statement: in
    short, telling whether to print '``>>>``' or '``...``' next.
 
-#. Remembering which future statements the user has entered, so  subsequent
+#. Remembering which future statements the user has entered, so subsequent
    input can be compiled with these in effect.
 
 The :mod:`codeop` module provides a way of doing each of these things, and a way
@@ -33,9 +33,9 @@ To do just the former:
 .. function:: compile_command(source, filename="<input>", symbol="single")
 
    Tries to compile *source*, which should be a string of Python code and return a
-   code object if *source* is valid Python code. In that case, the filename
+   code object if *source* is valid Python code.  In that case, the filename
    attribute of the code object will be *filename*, which defaults to
-   ``'<input>'``. Returns ``None`` if *source* is *not* valid Python code, but is a
+   ``'<input>'``.  Returns ``None`` if *source* is *not* valid Python code, but is a
    prefix of valid Python code.
 
    If there is a problem with *source*, an exception will be raised.
@@ -43,8 +43,9 @@ To do just the former:
    :exc:`OverflowError` or :exc:`ValueError` if there is an invalid literal.
 
    The *symbol* argument determines whether *source* is compiled as a statement
-   (``'single'``, the default) or as an :term:`expression` (``'eval'``).  Any
-   other value will cause :exc:`ValueError` to  be raised.
+   (``'single'``, the default), as a sequence of :term:`statement` (``'exec'``) or
+   as an :term:`expression` (``'eval'``).  Any other value will
+   cause :exc:`ValueError` to be raised.
 
    .. note::
 
@@ -57,7 +58,7 @@ To do just the former:
 
 .. class:: Compile()
 
-   Instances of this class have :meth:`__call__` methods identical in signature to
+   Instances of this class have :meth:`~object.__call__` methods identical in signature to
    the built-in function :func:`compile`, but with the difference that if the
    instance compiles program text containing a :mod:`__future__` statement, the
    instance 'remembers' and compiles all subsequent program texts with the
@@ -66,7 +67,7 @@ To do just the former:
 
 .. class:: CommandCompiler()
 
-   Instances of this class have :meth:`__call__` methods identical in signature to
+   Instances of this class have :meth:`~object.__call__` methods identical in signature to
    :func:`compile_command`; the difference is that if the instance compiles program
-   text containing a ``__future__`` statement, the instance 'remembers' and
+   text containing a :mod:`__future__` statement, the instance 'remembers' and
    compiles all subsequent program texts with the statement in force.

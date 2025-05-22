@@ -79,7 +79,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <PropertyGroup>
-    <TargetExt>.pyd</TargetExt>
+    <TargetExt>$(PyStdlibPydExt)</TargetExt>
   </PropertyGroup>
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -94,7 +94,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>..\Modules\expat;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;USE_PYEXPAT_CAPI;XML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;XML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -106,7 +106,6 @@
     <ClInclude Include="..\Modules\expat\iasciitab.h" />
     <ClInclude Include="..\Modules\expat\internal.h" />
     <ClInclude Include="..\Modules\expat\latin1tab.h" />
-    <ClInclude Include="..\Modules\expat\macconfig.h" />
     <ClInclude Include="..\Modules\expat\nametab.h" />
     <ClInclude Include="..\Modules\expat\pyexpatns.h" />
     <ClInclude Include="..\Modules\expat\utf8tab.h" />
@@ -116,7 +115,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_elementtree.c" />
-    <ClCompile Include="..\Modules\expat\loadlibrary.c" />
     <ClCompile Include="..\Modules\expat\xmlparse.c" />
     <ClCompile Include="..\Modules\expat\xmlrole.c" />
     <ClCompile Include="..\Modules\expat\xmltok.c" />

@@ -1,2 +1,0 @@
-Deprecated accepting floats with integral value (like ``5.0``) in
-:func:`math.factorial`.

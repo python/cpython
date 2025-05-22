@@ -1,1 +1,0 @@
-Replace deprecated method "random.choose" with "random.choice" in "test_pkg_import.py".

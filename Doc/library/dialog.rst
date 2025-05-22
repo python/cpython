@@ -27,15 +27,15 @@ functions for creating simple modal dialogs to get a value from the user.
 
    The base class for custom dialogs.
 
-    .. method:: body(master)
+   .. method:: body(master)
 
-       Override to construct the dialog's interface and return the widget that
-       should have initial focus.
+      Override to construct the dialog's interface and return the widget that
+      should have initial focus.
 
-    .. method:: buttonbox()
+   .. method:: buttonbox()
 
-       Default behaviour adds OK and Cancel buttons. Override for custom button
-       layouts.
+      Default behaviour adds OK and Cancel buttons. Override for custom button
+      layouts.
 
 
 
@@ -73,7 +73,7 @@ listed below:
 
  | *defaultextension* - default extension to append to file (save dialogs)
 
- | *multiple* - when True, selection of multiple items is allowed
+ | *multiple* - when true, selection of multiple items is allowed
 
 
 **Static factory functions**
@@ -198,7 +198,7 @@ These do not emulate the native look-and-feel of the platform.
    A subclass of FileDialog that creates a dialog window for selecting a
    destination file.
 
-    .. method:: ok_command()
+   .. method:: ok_command()
 
       Test whether or not the selection points to a valid file that is not a
       directory. Confirmation is required if an already existing file is

@@ -1,5 +1,0 @@
-Adds audit events for :mod:`ensurepip`, :mod:`ftplib`, :mod:`glob`,
-:mod:`imaplib`, :mod:`nntplib`, :mod:`pdb`, :mod:`poplib`, :mod:`shutil`,
-:mod:`smtplib`, :mod:`sqlite3`, :mod:`subprocess`, :mod:`telnetlib`,
-:mod:`tempfile` and :mod:`webbrowser`, as well as :func:`os.listdir`,
-:func:`os.scandir` and :func:`breakpoint`.

@@ -1,2 +1,0 @@
-Renamed and documented `test.bytecode_helper` as `test.support.bytecode_helper`.
-Patch by Joannah Nanjekye.

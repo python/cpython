@@ -1,2 +1,0 @@
-:meth:`writelines` method of :class:`io.BytesIO` is now slightly faster
-when many small lines are passed. Patch by Sergey Fedoseev.

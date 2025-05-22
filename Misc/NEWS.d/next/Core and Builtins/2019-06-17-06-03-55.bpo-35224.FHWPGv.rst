@@ -1,2 +1,0 @@
-Reverse evaluation order of key: value in dict comprehensions as proposed in PEP 572.
-I.e. in ``{k: v for ...}``, ``k`` will be evaluated before ``v``.

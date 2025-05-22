@@ -1,1 +1,0 @@
-Change the format of feature_version to be a (major, minor) tuple.

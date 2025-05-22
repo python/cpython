@@ -8,7 +8,11 @@ extern "C" {
 
 PyAPI_DATA(PyObject) _Py_EllipsisObject; /* Don't use this directly */
 
-#define Py_Ellipsis (&_Py_EllipsisObject)
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030D0000
+#  define Py_Ellipsis Py_GetConstantBorrowed(Py_CONSTANT_ELLIPSIS)
+#else
+#  define Py_Ellipsis (&_Py_EllipsisObject)
+#endif
 
 /* Slice object interface */
 
@@ -28,7 +32,7 @@ typedef struct {
 PyAPI_DATA(PyTypeObject) PySlice_Type;
 PyAPI_DATA(PyTypeObject) PyEllipsis_Type;
 
-#define PySlice_Check(op) (Py_TYPE(op) == &PySlice_Type)
+#define PySlice_Check(op) Py_IS_TYPE((op), &PySlice_Type)
 
 PyAPI_FUNC(PyObject *) PySlice_New(PyObject* start, PyObject* stop,
                                   PyObject* step);

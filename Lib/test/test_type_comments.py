@@ -66,6 +66,14 @@ with context() as a:  # type: int
     pass
 """
 
+parenthesized_withstmt = """\
+with (a as b):  # type: int
+    pass
+
+with (a, b):  # type: int
+    pass
+"""
+
 vardecl = """\
 a = 0  # type: int
 """
@@ -260,8 +268,8 @@ class TypeCommentTests(unittest.TestCase):
         self.assertEqual(tree.body[1].type_comment, None)
 
     def test_asyncvar(self):
-        for tree in self.parse_all(asyncvar, maxver=6):
-            pass
+        with self.assertRaises(SyntaxError):
+            self.classic_parse(asyncvar)
 
     def test_asynccomp(self):
         for tree in self.parse_all(asynccomp, minver=6):
@@ -272,7 +280,7 @@ class TypeCommentTests(unittest.TestCase):
             pass
 
     def test_fstring(self):
-        for tree in self.parse_all(fstring, minver=6):
+        for tree in self.parse_all(fstring):
             pass
 
     def test_underscorednumber(self):
@@ -300,6 +308,14 @@ class TypeCommentTests(unittest.TestCase):
         tree = self.classic_parse(withstmt)
         self.assertEqual(tree.body[0].type_comment, None)
 
+    def test_parenthesized_withstmt(self):
+        for tree in self.parse_all(parenthesized_withstmt):
+            self.assertEqual(tree.body[0].type_comment, "int")
+            self.assertEqual(tree.body[1].type_comment, "int")
+        tree = self.classic_parse(parenthesized_withstmt)
+        self.assertEqual(tree.body[0].type_comment, None)
+        self.assertEqual(tree.body[1].type_comment, None)
+
     def test_vardecl(self):
         for tree in self.parse_all(vardecl):
             self.assertEqual(tree.body[0].type_comment, "int")
@@ -322,13 +338,13 @@ class TypeCommentTests(unittest.TestCase):
         self.assertEqual(tree.type_ignores, [])
 
     def test_longargs(self):
-        for tree in self.parse_all(longargs):
+        for tree in self.parse_all(longargs, minver=8):
             for t in tree.body:
                 # The expected args are encoded in the function name
                 todo = set(t.name[1:])
                 self.assertEqual(len(t.args.args) + len(t.args.posonlyargs),
                                  len(todo) - bool(t.args.vararg) - bool(t.args.kwarg))
-                self.assertTrue(t.name.startswith('f'), t.name)
+                self.assertStartsWith(t.name, 'f')
                 for index, c in enumerate(t.name[1:]):
                     todo.remove(c)
                     if c == 'v':
@@ -390,13 +406,21 @@ class TypeCommentTests(unittest.TestCase):
         arg = tree.argtypes[0]
         self.assertEqual(arg.id, "int")
         self.assertEqual(tree.returns.value.id, "List")
-        self.assertEqual(tree.returns.slice.value.id, "str")
+        self.assertEqual(tree.returns.slice.id, "str")
 
         tree = parse_func_type_input("(int, *str, **Any) -> float")
         self.assertEqual(tree.argtypes[0].id, "int")
         self.assertEqual(tree.argtypes[1].id, "str")
         self.assertEqual(tree.argtypes[2].id, "Any")
         self.assertEqual(tree.returns.id, "float")
+
+        tree = parse_func_type_input("(*int) -> None")
+        self.assertEqual(tree.argtypes[0].id, "int")
+        tree = parse_func_type_input("(**int) -> None")
+        self.assertEqual(tree.argtypes[0].id, "int")
+        tree = parse_func_type_input("(*int, **str) -> None")
+        self.assertEqual(tree.argtypes[0].id, "int")
+        self.assertEqual(tree.argtypes[1].id, "str")
 
         with self.assertRaises(SyntaxError):
             tree = parse_func_type_input("(int, *str, *Any) -> float")

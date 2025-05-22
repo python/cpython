@@ -1,9 +1,10 @@
-from .. import util
+from test.test_importlib import util
 
 from importlib import machinery
 import sys
 import types
 import unittest
+import warnings
 
 PKG_NAME = 'fine'
 SUBMOD_NAME = 'fine.bogus'
@@ -27,11 +28,6 @@ class BadSpecFinderLoader:
 
 
 class BadLoaderFinder:
-    @classmethod
-    def find_module(cls, fullname, path):
-        if fullname == SUBMOD_NAME:
-            return cls
-
     @classmethod
     def load_module(cls, fullname):
         if fullname == SUBMOD_NAME:
@@ -99,6 +95,36 @@ class APITest:
 
 class OldAPITests(APITest):
     bad_finder_loader = BadLoaderFinder
+
+    def test_raises_ModuleNotFoundError(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_raises_ModuleNotFoundError()
+
+    def test_name_requires_rparition(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_name_requires_rparition()
+
+    def test_negative_level(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_negative_level()
+
+    def test_nonexistent_fromlist_entry(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_nonexistent_fromlist_entry()
+
+    def test_fromlist_load_error_propagates(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_fromlist_load_error_propagates
+
+    def test_blocked_fromlist(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_blocked_fromlist()
 
 
 (Frozen_OldAPITests,

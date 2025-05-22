@@ -1,3 +1,0 @@
-The new function :c:func:`PyCode_NewWithPosOnlyArgs` allows to create
-code objects like :c:func:`PyCode_New`, but with an extra *posonlyargcount*
-parameter for indicating the number of positonal-only arguments.

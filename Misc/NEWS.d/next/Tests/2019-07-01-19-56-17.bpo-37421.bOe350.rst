@@ -1,4 +1,0 @@
-urllib.request tests now call :func:`~urllib.request.urlcleanup` to remove
-temporary files created by ``urlretrieve()`` tests and to clear the ``_opener``
-global variable set by ``urlopen()`` and functions calling indirectly
-``urlopen()``.

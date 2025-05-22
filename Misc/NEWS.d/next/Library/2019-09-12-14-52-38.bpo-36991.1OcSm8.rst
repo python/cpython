@@ -1,2 +1,0 @@
-Fixes a potential incorrect AttributeError exception escaping
-ZipFile.extract() in some unsupported input error situations.
