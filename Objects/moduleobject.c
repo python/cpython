@@ -8,7 +8,7 @@
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
-#include "pycore_moduleobject.h"  // _PyModule_GetDef()
+#include "pycore_moduleobject.h"  // _PyModule_GetDefOrNull()
 #include "pycore_object.h"        // _PyType_AllocNoTrack
 #include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -1110,8 +1110,9 @@ module_dealloc(PyObject *self)
 
     Py_XDECREF(m->md_dict);
     Py_XDECREF(m->md_name);
-    if (m->md_state != NULL)
+    if (m->md_state != NULL) {
         PyMem_Free(m->md_state);
+    }
     Py_TYPE(m)->tp_free((PyObject *)m);
 }
 
@@ -1447,8 +1448,9 @@ module_clear(PyObject *self)
                                    m->md_name ? " " : "",
                                    m->md_name, "");
         }
-        if (res)
+        if (res) {
             return res;
+        }
     }
     Py_CLEAR(m->md_dict);
     return 0;
