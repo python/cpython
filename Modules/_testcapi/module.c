@@ -53,6 +53,27 @@ module_from_slots_size(PyObject *self, PyObject *spec)
     return mod;
 }
 
+static PyObject *
+a_method(PyObject *self, PyObject *arg)
+{
+    return PyTuple_Pack(2, self, arg);
+}
+
+static PyMethodDef a_methoddef_array[] = {
+    {"a_method", a_method, METH_O},
+    {0},
+};
+
+static PyObject *
+module_from_slots_methods(PyObject *self, PyObject *spec)
+{
+    PyModuleDef_Slot slots[] = {
+        {Py_mod_methods, a_methoddef_array},
+        {0},
+    };
+    return PyModule_FromSlotsAndSpec(slots, spec);
+}
+
 
 static int
 slot_from_object(PyObject *obj)
@@ -121,6 +142,7 @@ static PyMethodDef test_methods[] = {
     {"module_from_slots_name", module_from_slots_name, METH_O},
     {"module_from_slots_doc", module_from_slots_doc, METH_O},
     {"module_from_slots_size", module_from_slots_size, METH_O},
+    {"module_from_slots_methods", module_from_slots_methods, METH_O},
     {"module_from_slots_repeat_slot", module_from_slots_repeat_slot, METH_O},
     {"module_from_slots_null_slot", module_from_slots_null_slot, METH_O},
     {"module_from_def_slot", module_from_def_slot, METH_O},

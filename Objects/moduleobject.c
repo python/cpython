@@ -460,6 +460,7 @@ module_from_def_and_spec(
             COPY_SLOT_TO_DEFLIKE(Py_mod_name, char*, m_name);
             COPY_SLOT_TO_DEFLIKE(Py_mod_doc, char*, m_doc);
             COPY_SLOT_TO_DEFLIKE(Py_mod_size, Py_ssize_t, m_size);
+            COPY_SLOT_TO_DEFLIKE(Py_mod_methods, PyMethodDef*, m_methods);
 #undef COPY_SLOT_TO_DEFLIKE
             default:
                 assert(cur_slot->slot < 0 || cur_slot->slot > _Py_mod_LAST_SLOT);
