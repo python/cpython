@@ -3443,7 +3443,7 @@ channelsmod_get_channel_defaults(PyObject *self, PyObject *args, PyObject *kwds)
     }
     int64_t cid = cid_data.cid;
 
-    struct _channeldefaults defaults;
+    struct _channeldefaults defaults = {0};
     int err = channel_get_defaults(&_globals.channels, cid, &defaults);
     if (handle_channel_error(err, self, cid)) {
         return NULL;
