@@ -158,7 +158,7 @@ class _RLock:
         except KeyError:
             pass
         return "<%s %s.%s object owner=%r count=%d at %s>" % (
-            "locked" if self._block.locked() else "unlocked",
+            "locked" if self.locked() else "unlocked",
             self.__class__.__module__,
             self.__class__.__qualname__,
             owner,
