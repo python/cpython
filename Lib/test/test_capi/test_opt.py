@@ -2166,7 +2166,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_LOAD_SMALL_INT", uops)
 
 def global_identity(x):
     return x
