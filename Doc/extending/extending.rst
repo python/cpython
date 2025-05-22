@@ -20,10 +20,6 @@ source file by including the header ``"Python.h"``.
 The compilation of an extension module depends on its intended use as well as on
 your system setup; details are given in later chapters.
 
-.. note::
-
-   The documentation is based on multi-phase initialization (:PEP:`489`)
-   since Python 3.14.  See :file:`Modules/xxmodule.c` for more examples.
 
 .. note::
 
