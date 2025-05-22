@@ -23,6 +23,13 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
         mod = _testcapi.module_from_slots_name(FakeSpec())
         self.assertIsInstance(mod, types.ModuleType)
         self.assertEqual(mod.__name__, 'testmod')
+        self.assertEqual(mod.__doc__, None)
+
+    def test_doc(self):
+        mod = _testcapi.module_from_slots_doc(FakeSpec())
+        self.assertIsInstance(mod, types.ModuleType)
+        self.assertEqual(mod.__name__, 'testmod')
+        self.assertEqual(mod.__doc__, 'the docstring')
 
     def test_def_name(self):
         with self.assertRaises(SystemError) as cm:

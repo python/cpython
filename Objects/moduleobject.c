@@ -431,23 +431,28 @@ module_from_def_and_spec(
                     goto error;
                 }
                 break;
-            case Py_mod_name:
-                if (original_def) {
-                    PyErr_Format(
-                       PyExc_SystemError,
-                       "module %s: Py_mod_name used with PyModuleDef",
-                       name);
-                    goto error;
-                }
-                if (def_like->m_name) {
-                    PyErr_Format(
-                       PyExc_SystemError,
-                       "module %s: Py_mod_name slot repeated",
-                       name);
-                    goto error;
-                }
-                def_like->m_name = cur_slot->value;
-                break;
+#define COPY_SLOT_TO_DEFLIKE(SLOT, TYPE, DEST)                          \
+            case SLOT:                                                  \
+                if (original_def) {                                     \
+                    PyErr_Format(                                       \
+                       PyExc_SystemError,                               \
+                       "module %s: " #SLOT " used with PyModuleDef",    \
+                       name);                                           \
+                    goto error;                                         \
+                }                                                       \
+                if (def_like->DEST) {                                   \
+                    PyErr_Format(                                       \
+                       PyExc_SystemError,                               \
+                       "module %s: " #SLOT " slot repeated",            \
+                       name);                                           \
+                    goto error;                                         \
+                }                                                       \
+                def_like->DEST = (TYPE)(cur_slot->value);               \
+                break;                                                  \
+            /////////////////////////////////////////////////////////////
+            COPY_SLOT_TO_DEFLIKE(Py_mod_name, char*, m_name);
+            COPY_SLOT_TO_DEFLIKE(Py_mod_doc, char*, m_doc);
+#undef COPY_SLOT_TO_DEFLIKE
             default:
                 assert(cur_slot->slot < 0 || cur_slot->slot > _Py_mod_LAST_SLOT);
                 PyErr_Format(
