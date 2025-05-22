@@ -1,0 +1,2 @@
+Teach :mod:`plistlib` to load and dump ``NSDate.distantPast`` represented as
+year 0. Patch by John Keith Hohm

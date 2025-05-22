@@ -900,6 +900,20 @@ class TestPlistlib(unittest.TestCase):
             expected = dt.astimezone(datetime.UTC).replace(tzinfo=None)
             self.assertEqual(parsed, expected)
 
+    def test_round_trip_distant_past(self):
+        # Issue #85255: NSDate.distantPast is represented as year 0.
+        before = b"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>applicationDate</key>
+	<date>0000-12-30T00:00:00Z</date>
+</dict>
+</plist>
+"""
+        after = plistlib.dumps(plistlib.loads(before, fmt=plistlib.FMT_XML))
+        self.assertEqual(before, after)
+
 
 class TestBinaryPlistlib(unittest.TestCase):
 
