@@ -56,6 +56,9 @@ _PyModule_IsExtension(PyObject *obj)
     }
     PyModuleObject *module = (PyModuleObject*)obj;
 
+    if (module->md_exec) {
+        return 1;
+    }
     PyModuleDef *def = module->md_def_or_null;
     return (def != NULL && def->m_methods != NULL);
 }
