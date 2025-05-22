@@ -300,7 +300,7 @@ typedef struct _interpreter_weakref {
 
 PyAPI_FUNC(PyInterpreterWeakRef) PyInterpreterWeakRef_Get(void);
 PyAPI_FUNC(PyInterpreterWeakRef) PyInterpreterWeakRef_Dup(PyInterpreterWeakRef wref);
-PyAPI_FUNC(PyInterpreterRef) PyInterpreterWeakRef_AsStrong(PyInterpreterWeakRef wref);
+PyAPI_FUNC(int) PyInterpreterWeakRef_AsStrong(PyInterpreterWeakRef wref, PyInterpreterRef *strong_ptr);
 PyAPI_FUNC(void) PyInterpreterWeakRef_Close(PyInterpreterWeakRef wref);
 
 // Exports for '_testcapi' shared extension

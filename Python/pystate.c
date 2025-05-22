@@ -3256,6 +3256,7 @@ PyInterpreterRef_Dup(PyInterpreterRef ref)
     return (PyInterpreterRef)interp;
 }
 
+#undef PyInterpreterRef_Close
 void
 PyInterpreterRef_Close(PyInterpreterRef ref)
 {
@@ -3263,12 +3264,36 @@ PyInterpreterRef_Close(PyInterpreterRef ref)
     decref_interpreter(ref);
 }
 
-PyInterpreterState *
-PyInterpreterState_Lookup(int64_t interp_id)
+
+PyInterpreterWeakRef
+PyInterpreterWeakRef_Get(void)
 {
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterWeakRef wref = { interp->id };
+    return wref;
+}
+
+PyInterpreterWeakRef
+PyInterpreterWeakRef_Dup(PyInterpreterWeakRef wref)
+{
+    return wref;
+}
+
+void
+PyInterpreterWeakRef_Close(PyInterpreterWeakRef wref)
+{
+    return;
+}
+
+int
+PyInterpreterWeakRef_AsStrong(PyInterpreterWeakRef wref, PyInterpreterRef *strong_ptr)
+{
+    assert(strong_ptr != NULL);
+    int64_t interp_id = wref.id;
     PyInterpreterState *interp = _PyInterpreterState_LookUpIDNoErr(interp_id);
     if (interp == NULL) {
-        return NULL;
+        *strong_ptr = 0;
+        return -1;
     }
     HEAD_LOCK(&_PyRuntime); // Prevent deletion
     struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
@@ -3282,8 +3307,9 @@ PyInterpreterState_Lookup(int64_t interp_id)
     }
     PyMutex_Unlock(mutex);
     HEAD_UNLOCK(&_PyRuntime);
+    *strong_ptr = (PyInterpreterRef)interp;
 
-    return interp;
+    return 0;
 }
 
 int
