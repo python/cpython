@@ -61,12 +61,6 @@ typedef struct _stack_chunk {
     PyObject * data[1]; /* Variable sized */
 } _PyStackChunk;
 
-typedef struct _ensured_tstate {
-    struct _ensured_tstate *next;
-    PyThreadState *prior_tstate;
-    uint8_t was_daemon;
-} _Py_ensured_tstate;
-
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -213,10 +207,11 @@ struct _ts {
     PyObject *threading_local_sentinel;
     _PyRemoteDebuggerSupport remote_debugger_support;
 
-    /* Whether this thread hangs when the interpreter is finalizing. */
-    uint8_t daemon;
+    /* Number of nested PyThreadState_Ensure() calls on this thread state */
+    Py_ssize_t ensure_counter;
 
-    _Py_ensured_tstate *ensured;
+    /* Thread state that was active before PyThreadState_Ensure() was called. */
+    PyThreadState *prior_ensure;
 };
 
 /* other API */
@@ -279,6 +274,7 @@ PyAPI_FUNC(PyInterpreterRef) PyInterpreterRef_Get(void);
 PyAPI_FUNC(PyInterpreterRef) PyInterpreterRef_Dup(PyInterpreterRef ref);
 PyAPI_FUNC(int) PyInterpreterState_AsStrong(PyInterpreterState *interp, PyInterpreterRef *strong_ptr);
 PyAPI_FUNC(void) PyInterpreterRef_Close(PyInterpreterRef ref);
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterRef_AsInterpreter(PyInterpreterRef ref);
 
 #define PyInterpreterRef_Close(ref) do {    \
     PyInterpreterRef_Close(ref);            \
@@ -301,6 +297,6 @@ PyAPI_FUNC(void) PyInterpreterWeakRef_Close(PyInterpreterWeakRef wref);
 PyAPI_FUNC(Py_ssize_t) _PyInterpreterState_Refcount(PyInterpreterState *interp);
 PyAPI_FUNC(void) _PyInterpreterState_Incref(PyInterpreterState *interp);
 
-PyAPI_FUNC(int) PyThreadState_Ensure(PyInterpreterState *interp);
+PyAPI_FUNC(int) PyThreadState_Ensure(PyInterpreterRef interp_ref);
 
 PyAPI_FUNC(void) PyThreadState_Release(void);

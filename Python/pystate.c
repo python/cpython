@@ -3188,6 +3188,13 @@ PyInterpreterRef_Close(PyInterpreterRef ref)
     decref_interpreter(interp);
 }
 
+PyInterpreterState *
+PyInterpreterRef_AsInterpreter(PyInterpreterRef ref)
+{
+    PyInterpreterState *interp = ref_as_interp(ref);
+    return interp;
+}
+
 PyInterpreterWeakRef
 PyInterpreterWeakRef_Get(void)
 {
@@ -3260,13 +3267,56 @@ PyInterpreterState_AsStrong(PyInterpreterState *interp, PyInterpreterRef *strong
 }
 
 int
-PyThreadState_Ensure(PyInterpreterState *interp)
+PyThreadState_Ensure(PyInterpreterRef interp_ref)
 {
+    PyInterpreterState *interp = ref_as_interp(interp_ref);
+    PyThreadState *attached_tstate = current_fast_get();
+    if (attached_tstate != NULL && attached_tstate->interp == interp) {
+        /* Yay! We already have an attached thread state that matches. */
+        ++attached_tstate->ensure_counter;
+        return 0;
+    }
+
+    PyThreadState *detached_gilstate = gilstate_get();
+    if (detached_gilstate != NULL && detached_gilstate->interp == interp) {
+        /* There's a detached thread state that works. */
+        assert(attached_tstate == NULL);
+        ++detached_gilstate->ensure_counter;
+        _PyThreadState_Attach(detached_gilstate);
+        return 0;
+    }
+
+    PyThreadState *fresh_tstate = _PyThreadState_NewBound(interp,
+                                                          _PyThreadState_WHENCE_GILSTATE);
+    if (fresh_tstate == NULL) {
+        return -1;
+    }
+
+    if (attached_tstate != NULL) {
+        fresh_tstate->ensure_counter = 1;
+        fresh_tstate->prior_ensure = PyThreadState_Swap(fresh_tstate);
+    } else {
+        _PyThreadState_Attach(fresh_tstate);
+    }
+
     return 0;
 }
 
 void
 PyThreadState_Release(void)
 {
+    PyThreadState *tstate = current_fast_get();
+    _Py_EnsureTstateNotNULL(tstate);
+    Py_ssize_t remaining = --tstate->ensure_counter;
+    if (remaining < 0) {
+        Py_FatalError("PyThreadState_Release() called more times than PyThreadState_Ensure()");
+    }
+    if (remaining == 0) {
+        PyThreadState *to_restore = tstate->prior_ensure;
+        PyThreadState_Clear(tstate);
+        PyThreadState_Swap(to_restore);
+        PyThreadState_Delete(tstate);
+    }
+
     return;
 }
