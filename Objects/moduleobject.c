@@ -726,6 +726,19 @@ PyModule_GetDict(PyObject *m)
     return _PyModule_GetDict(m);  // borrowed reference
 }
 
+int
+PyModule_GetSize(PyObject *m, Py_ssize_t *size_p)
+{
+    *size_p = -1;
+    if (!PyModule_Check(m)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    PyModuleObject *mod = (PyModuleObject *)m;
+    *size_p = mod->md_size;
+    return 0;
+}
+
 PyObject*
 PyModule_GetNameObject(PyObject *mod)
 {
