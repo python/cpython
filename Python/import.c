@@ -743,7 +743,7 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
        A. noop
 
 
-    ...for multi-phase init modules:
+    ...for multi-phase init modules from PyModInit_* (PyModuleDef):
 
     (6). every time:
        A. _imp_create_dynamic_impl() -> import_find_extension()  (not found)
@@ -753,6 +753,9 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
        E.   import_run_extension() -> _PyImport_RunModInitFunc()
        F.     _PyImport_RunModInitFunc():  call <module init func>
        G.   import_run_extension() -> PyModule_FromDefAndSpec()
+
+       PyModule_FromDefAndSpec():
+
        H.      PyModule_FromDefAndSpec(): gather/check moduledef slots
        I.      if there's a Py_mod_create slot:
                  1. PyModule_FromDefAndSpec():  call its function
@@ -765,10 +768,29 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
     (10). every time:
        A. _imp_exec_dynamic_impl() -> exec_builtin_or_dynamic()
        B.   if mod->md_state == NULL (including if m_size == 0):
-            1. exec_builtin_or_dynamic() -> PyModule_ExecDef()
-            2.   PyModule_ExecDef():  allocate mod->md_state
+            1. exec_builtin_or_dynamic() -> PyModule_Exec()
+            2.   PyModule_Exec():  allocate mod->md_state
             3.   if there's a Py_mod_exec slot:
-                 1. PyModule_ExecDef():  call its function
+                 1. PyModule_Exec():  call its function
+
+
+    ...for multi-phase init modules from PyModExport_* (slots array):
+
+    (6). every time:
+
+       A. _imp_create_dynamic_impl() -> import_find_extension()  (not found)
+       B. _imp_create_dynamic_impl() -> _PyImport_GetModInitFunc()
+       C.   _PyImport_GetModInitFunc():  load <module export func>
+       D. _imp_create_dynamic_impl() -> import_run_modexport()
+       E.     import_run_modexport():  call <module init func>
+       F.   import_run_modexport() -> PyModule_FromSlotsAndSpec()
+       G.     PyModule_FromSlotsAndSpec(): create temporary PyModuleDef-like
+       H.       PyModule_FromSlotsAndSpec() -> PyModule_FromDefAndSpec()
+
+       (PyModule_FromDefAndSpec behaves as for PyModInit_*, above)
+
+    (10). every time: as for PyModInit_*, above
+
  */
 
 
@@ -1959,6 +1981,42 @@ import_find_extension(PyThreadState *tstate,
     }
 
     return mod;
+}
+
+static PyObject *
+import_run_modexport(PyThreadState *tstate, PyModExportFunction ex0,
+                     struct _Py_ext_module_loader_info *info,
+                     PyObject *spec)
+{
+    /* This is like import_run_extension, but avoids interpreter switching
+     * and code for for single-phase modules.
+     */
+    PyModuleDef_Slot *slots = ex0(spec);
+    if (!slots) {
+        if (!PyErr_Occurred()) {
+            PyErr_Format(
+                PyExc_SystemError,
+                "slot export function for module %s failed without setting an exception",
+                info->name);
+        }
+        return NULL;
+    }
+    if (PyErr_Occurred()) {
+        PyErr_Format(
+            PyExc_SystemError,
+            "slot export function for module %s raised unreported exception",
+            info->name);
+    }
+    PyObject *result = PyModule_FromSlotsAndSpec(slots, spec);
+    if (!result) {
+        return NULL;
+    }
+    assert(PyModule_Check(result));
+    PyModuleObject *mod = (PyModuleObject *)result;
+    if (mod && !mod->md_token) {
+        mod->md_token = slots;
+    }
+    return result;
 }
 
 static PyObject *
@@ -4701,7 +4759,13 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         fp = NULL;
     }
 
-    PyModInitFunction p0 = _PyImport_GetModInitFunc(&info, fp);
+    PyModInitFunction p0 = NULL;
+    PyModExportFunction ex0 = NULL;
+    _PyImport_GetModInitFunc2(&info, fp, &p0, &ex0);
+    if (ex0) {
+        mod = import_run_modexport(tstate, ex0, &info, spec);
+        goto cleanup;
+    }
     if (p0 == NULL) {
         goto finally;
     }
@@ -4723,6 +4787,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     }
 #endif
 
+cleanup:
     // XXX Shouldn't this happen in the error cases too (i.e. in "finally")?
     if (fp) {
         fclose(fp);
