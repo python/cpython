@@ -1279,8 +1279,6 @@ function must take care of initializing the C API pointer array::
 
    static PyModuleDef_Slot spam_module_slots[] = {
        {Py_mod_exec, spam_module_exec},
-       // Just use this while using a local static variable
-       {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
        {0, NULL}
    };
 
