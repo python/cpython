@@ -2323,7 +2323,7 @@ const char *THREAD_CODE = "import time\n"
                    "fib(10)";
 
 typedef struct {
-    PyInterpreterState *interp;
+    PyInterpreterRef ref;
     int done;
 } ThreadData;
 
@@ -2331,12 +2331,12 @@ static void
 do_tstate_ensure(void *arg)
 {
     ThreadData *data = (ThreadData *)arg;
-    int res = PyThreadState_Ensure(data->interp);
+    int res = PyThreadState_Ensure(data->ref);
     assert(res == 0);
-    PyThreadState_Ensure(PyInterpreterState_Hold());
-    PyThreadState_Ensure(PyInterpreterState_Hold());
+    PyThreadState_Ensure(data->ref);
+    PyThreadState_Ensure(data->ref);
     PyGILState_STATE gstate = PyGILState_Ensure();
-    PyThreadState_Ensure(PyInterpreterState_Hold());
+    PyThreadState_Ensure(data->ref);
     res = PyRun_SimpleString(THREAD_CODE);
     PyThreadState_Release();
     PyGILState_Release(gstate);
@@ -2344,19 +2344,21 @@ do_tstate_ensure(void *arg)
     PyThreadState_Release();
     assert(res == 0);
     PyThreadState_Release();
+    PyInterpreterRef_Close(data->ref);
     data->done = 1;
 }
 
 static int
 test_thread_state_ensure(void)
 {
-    _testembed_Py_InitializeFromConfig();
+    _testembed_initialize();
     PyThread_handle_t handle;
     PyThread_ident_t ident;
-    ThreadData data = { PyInterpreterState_Hold() };
+    PyInterpreterRef ref = PyInterpreterRef_Get();
+    ThreadData data = { ref };
     if (PyThread_start_joinable_thread(do_tstate_ensure, &data,
                                        &ident, &handle) < 0) {
-        PyInterpreterState_Release(data.interp);
+        PyInterpreterRef_Close(ref);
         return -1;
     }
     Py_Finalize();

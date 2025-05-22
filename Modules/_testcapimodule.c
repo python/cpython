@@ -2550,37 +2550,46 @@ static PyObject *
 test_interp_refcount(PyObject *self, PyObject *unused)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterRef ref1;
+    PyInterpreterRef ref2;
 
     // Reference counts are technically 0 by default
     assert(_PyInterpreterState_Refcount(interp) == 0);
-    PyInterpreterState *held = PyInterpreterState_Hold();
+    ref1 = PyInterpreterRef_Get();
     assert(_PyInterpreterState_Refcount(interp) == 1);
-    held = PyInterpreterState_Hold();
+    ref2 = PyInterpreterRef_Get();
     assert(_PyInterpreterState_Refcount(interp) == 2);
-    PyInterpreterState_Release(held);
+    PyInterpreterRef_Close(ref1);
     assert(_PyInterpreterState_Refcount(interp) == 1);
-    PyInterpreterState_Release(held);
+    PyInterpreterRef_Close(ref2);
+    assert(_PyInterpreterState_Refcount(interp) == 0);
+
+    ref1 = PyInterpreterRef_Get();
+    ref2 = PyInterpreterRef_Dup(ref1);
+    assert(_PyInterpreterState_Refcount(interp) == 2);
+    assert(PyInterpreterRef_AsInterpreter(ref1) == interp);
+    assert(PyInterpreterRef_AsInterpreter(ref2) == interp);
+    PyInterpreterRef_Close(ref1);
+    PyInterpreterRef_Close(ref2);
     assert(_PyInterpreterState_Refcount(interp) == 0);
 
     Py_RETURN_NONE;
 }
 
 static PyObject *
-test_interp_lookup(PyObject *self, PyObject *unused)
+test_interp_weak_ref(PyObject *self, PyObject *unused)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterWeakRef wref = PyInterpreterWeakRef_Get();
     assert(_PyInterpreterState_Refcount(interp) == 0);
-    int64_t interp_id = PyInterpreterState_GetID(interp);
-    PyInterpreterState *ref = PyInterpreterState_Lookup(interp_id);
-    assert(ref == interp);
+
+    PyInterpreterRef ref;
+    int res = PyInterpreterWeakRef_AsStrong(wref, &ref);
+    assert(res == 0);
+    assert(PyInterpreterRef_AsInterpreter(ref) == interp);
     assert(_PyInterpreterState_Refcount(interp) == 1);
-    PyInterpreterState_Release(ref);
-    assert(PyInterpreterState_Lookup(10000) == NULL);
-    Py_BEGIN_ALLOW_THREADS;
-    ref = PyInterpreterState_Lookup(interp_id);
-    assert(ref == interp);
-    PyInterpreterState_Release(ref);
-    Py_END_ALLOW_THREADS;
+    PyInterpreterWeakRef_Close(wref);
+    PyInterpreterRef_Close(ref);
 
     Py_RETURN_NONE;
 }
@@ -2589,20 +2598,20 @@ static PyObject *
 test_interp_ensure(PyObject *self, PyObject *unused)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterRef ref = PyInterpreterRef_Get();
     PyThreadState *save_tstate = PyThreadState_Swap(NULL);
     PyThreadState *tstate = Py_NewInterpreter();
+    PyInterpreterRef sub_ref = PyInterpreterRef_Get();
     PyInterpreterState *subinterp = PyThreadState_GetInterpreter(tstate);
 
     for (int i = 0; i < 10; ++i) {
-        _PyInterpreterState_Incref(interp);
-        int res = PyThreadState_Ensure(interp);
+        int res = PyThreadState_Ensure(sub_ref);
         assert(res == 0);
         assert(PyInterpreterState_Get() == interp);
     }
 
     for (int i = 0; i < 10; ++i) {
-        _PyInterpreterState_Incref(subinterp);
-        int res = PyThreadState_Ensure(subinterp);
+        int res = PyThreadState_Ensure(sub_ref);
         assert(res == 0);
         assert(PyInterpreterState_Get() == subinterp);
     }
@@ -2610,6 +2619,9 @@ test_interp_ensure(PyObject *self, PyObject *unused)
     for (int i = 0; i < 20; ++i) {
         PyThreadState_Release();
     }
+
+    PyInterpreterRef_Close(ref);
+    PyInterpreterRef_Close(sub_ref);
 
     PyThreadState_Swap(save_tstate);
     Py_RETURN_NONE;
@@ -2710,7 +2722,7 @@ static PyMethodDef TestMethods[] = {
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
     {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
     {"test_interp_refcount", test_interp_refcount, METH_NOARGS},
-    {"test_interp_lookup", test_interp_lookup, METH_NOARGS},
+    {"test_interp_weak_ref", test_interp_weak_ref, METH_NOARGS},
     {"test_interp_ensure", test_interp_ensure, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
