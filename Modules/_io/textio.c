@@ -1622,8 +1622,8 @@ _textiowrapper_writeflush(textio *self)
        NOTE: this code relies on GIL / @critical_section. It needs to ensure
        state is "safe" before/after calls to other Python code.
 
-       In particular _textiowrapper_writeflush() calls buffer.write(). That will
-       modify self->pending_bytes.
+       In particular during calls to `buffer.write` self->pending_bytes may be
+       modified by other threads.
 
        At the end of this function either pending_bytes needs to be NULL _or_
        there needs to be an exception.
