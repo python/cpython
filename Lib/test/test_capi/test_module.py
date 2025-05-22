@@ -9,6 +9,10 @@ _testcapi = import_helper.import_module('_testcapi')
 class FakeSpec:
     name = 'testmod'
 
+DEF_SLOTS = (
+    'Py_mod_name', 'Py_mod_doc', 'Py_mod_size',
+)
+
 
 class TestModFromSlotsAndSpec(unittest.TestCase):
     def test_empty(self):
@@ -38,13 +42,20 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
         self.assertEqual(mod.__doc__, None)
         self.assertEqual(mod.size, 123)
 
-    def test_def_name(self):
-        with self.assertRaises(SystemError) as cm:
-            _testcapi.module_from_def_name(FakeSpec())
-        self.assertIn("Py_mod_name", str(cm.exception),)
-        self.assertIn("PyModuleDef", str(cm.exception), )
+    def test_def_slot(self):
+        """Slots that replace PyModuleDef fields can't be used with PyModuleDef
+        """
+        for name in 'Py_mod_name', 'Py_mod_doc':
+            with self.subTest(name):
+                spec = FakeSpec()
+                spec._test_slot_id = getattr(_testcapi, name)
+                with self.assertRaises(SystemError) as cm:
+                    _testcapi.module_from_def_slot(spec)
+                self.assertIn(name, str(cm.exception),)
+                self.assertIn("PyModuleDef", str(cm.exception), )
 
-    def test_repeated_new_slot(self):
+    def test_repeated_def_slot(self):
+        """Slots that replace PyModuleDef fields can't be repeated"""
         for name in 'Py_mod_name', 'Py_mod_doc':
             with self.subTest(name):
                 spec = FakeSpec()
@@ -54,7 +65,8 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
                 self.assertIn(name, str(cm.exception),)
                 self.assertIn("repeated", str(cm.exception), )
 
-    def test_null_name(self):
+    def test_null_def_slot(self):
+        """Slots that replace PyModuleDef fields can't be NULL"""
         for name in 'Py_mod_name', 'Py_mod_doc':
             with self.subTest(name):
                 spec = FakeSpec()

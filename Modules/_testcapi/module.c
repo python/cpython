@@ -53,35 +53,41 @@ module_from_slots_size(PyObject *self, PyObject *spec)
     return mod;
 }
 
-static PyObject *
-module_from_slots_repeat_slot(PyObject *self, PyObject *spec)
+
+static int
+slot_from_object(PyObject *obj)
 {
-    PyObject *slot_id_obj = PyObject_GetAttrString(spec, "_test_slot_id");
+    PyObject *slot_id_obj = PyObject_GetAttrString(obj, "_test_slot_id");
     if (slot_id_obj == NULL) {
-        return NULL;
+        return -1;
     }
     int slot_id = PyLong_AsLong(slot_id_obj);
     if (PyErr_Occurred()) {
+        return -1;
+    }
+    return slot_id;
+}
+
+static PyObject *
+module_from_slots_repeat_slot(PyObject *self, PyObject *spec)
+{
+    int slot_id = slot_from_object(spec);
+    if (slot_id < 0) {
         return NULL;
     }
     PyModuleDef_Slot slots[] = {
-        {slot_id, "currently ignored..."},
-        {slot_id, "currently ignored..."},
+        {slot_id, "anything"},
+        {slot_id, "anything else"},
         {0},
     };
     return PyModule_FromSlotsAndSpec(slots, spec);
 }
 
-
 static PyObject *
 module_from_slots_null_slot(PyObject *self, PyObject *spec)
 {
-    PyObject *slot_id_obj = PyObject_GetAttrString(spec, "_test_slot_id");
-    if (slot_id_obj == NULL) {
-        return NULL;
-    }
-    int slot_id = PyLong_AsLong(slot_id_obj);
-    if (PyErr_Occurred()) {
+    int slot_id = slot_from_object(spec);
+    if (slot_id < 0) {
         return NULL;
     }
     PyModuleDef_Slot slots[] = {
@@ -92,10 +98,14 @@ module_from_slots_null_slot(PyObject *self, PyObject *spec)
 }
 
 static PyObject *
-module_from_def_name(PyObject *self, PyObject *spec)
+module_from_def_slot(PyObject *self, PyObject *spec)
 {
+    int slot_id = slot_from_object(spec);
+    if (slot_id < 0) {
+        return NULL;
+    }
     PyModuleDef_Slot slots[] = {
-        {Py_mod_name, "currently ignored..."},
+        {slot_id, "anything"},
         {0},
     };
     PyModuleDef def = {
@@ -113,7 +123,7 @@ static PyMethodDef test_methods[] = {
     {"module_from_slots_size", module_from_slots_size, METH_O},
     {"module_from_slots_repeat_slot", module_from_slots_repeat_slot, METH_O},
     {"module_from_slots_null_slot", module_from_slots_null_slot, METH_O},
-    {"module_from_def_name", module_from_def_name, METH_O},
+    {"module_from_def_slot", module_from_def_slot, METH_O},
     {NULL},
 };
 
