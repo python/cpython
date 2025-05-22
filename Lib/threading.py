@@ -165,7 +165,7 @@ class _RLock:
         except KeyError:
             pass
         return "<%s %s.%s object owner=%r count=%d at %s>" % (
-            "locked" if self._block.locked() else "unlocked",
+            "locked" if self.locked() else "unlocked",
             self.__class__.__module__,
             self.__class__.__qualname__,
             owner,
@@ -244,7 +244,7 @@ class _RLock:
 
     def locked(self):
         """Return whether this object is locked."""
-        return self._count > 0
+        return self._block.locked()
 
     # Internal methods used by condition variables
 
