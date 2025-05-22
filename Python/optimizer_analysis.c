@@ -572,7 +572,7 @@ const uint16_t op_without_pop[MAX_UOP_ID + 1] = {
     [_POP_CALL_TWO] = _POP_CALL_ONE,
     [_POP_CALL_ONE] = _POP_CALL,
     // The following two instructions are handled separately in remove_unneeded_uops.
-    // The TOS for both is null so calling _POP_TOP (which closes the stackref) is not safe. 
+    // The TOS for both is null so calling _POP_TOP (which closes the stackref) is not safe.
     // [_POP_CALL] = _POP_TOP,
     // [_POP_CALL_LOAD_CONST_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
 };
