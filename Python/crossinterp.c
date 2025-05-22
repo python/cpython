@@ -1795,6 +1795,7 @@ typedef struct _sharednsitem {
     // in a different interpreter to release the XI data.
 } _PyXI_namespace_item;
 
+#ifndef NDEBUG
 static int
 _sharednsitem_is_initialized(_PyXI_namespace_item *item)
 {
@@ -1803,6 +1804,7 @@ _sharednsitem_is_initialized(_PyXI_namespace_item *item)
     }
     return 0;
 }
+#endif
 
 static int
 _sharednsitem_init(_PyXI_namespace_item *item, PyObject *key)
@@ -1839,6 +1841,7 @@ _sharednsitem_set_value(_PyXI_namespace_item *item, PyObject *value)
         return -1;
     }
     PyThreadState *tstate = PyThreadState_Get();
+    // XXX Use _PyObject_GetXIDataWithFallback()?
     if (_PyObject_GetXIDataNoFallback(tstate, value, item->xidata) != 0) {
         PyMem_RawFree(item->xidata);
         item->xidata = NULL;
@@ -1913,156 +1916,212 @@ _sharednsitem_apply(_PyXI_namespace_item *item, PyObject *ns, PyObject *dflt)
     return res;
 }
 
-struct _sharedns {
-    Py_ssize_t len;
-    _PyXI_namespace_item *items;
-};
+
+typedef struct {
+    Py_ssize_t maxitems;
+    Py_ssize_t numnames;
+    Py_ssize_t numvalues;
+    _PyXI_namespace_item items[1];
+} _PyXI_namespace;
+
+#ifndef NDEBUG
+static int
+_sharedns_check_counts(_PyXI_namespace *ns)
+{
+    if (ns->maxitems <= 0) {
+        return 0;
+    }
+    if (ns->numnames < 0) {
+        return 0;
+    }
+    if (ns->numnames > ns->maxitems) {
+        return 0;
+    }
+    if (ns->numvalues < 0) {
+        return 0;
+    }
+    if (ns->numvalues > ns->numnames) {
+        return 0;
+    }
+    return 1;
+}
+
+static int
+_sharedns_check_consistency(_PyXI_namespace *ns)
+{
+    if (!_sharedns_check_counts(ns)) {
+        return 0;
+    }
+
+    Py_ssize_t i = 0;
+    _PyXI_namespace_item *item;
+    if (ns->numvalues > 0) {
+        item = &ns->items[0];
+        if (!_sharednsitem_is_initialized(item)) {
+            return 0;
+        }
+        int64_t interpid0 = -1;
+        if (!_sharednsitem_has_value(item, &interpid0)) {
+            return 0;
+        }
+        i += 1;
+        for (; i < ns->numvalues; i++) {
+            item = &ns->items[i];
+            if (!_sharednsitem_is_initialized(item)) {
+                return 0;
+            }
+            int64_t interpid = -1;
+            if (!_sharednsitem_has_value(item, &interpid)) {
+                return 0;
+            }
+            if (interpid != interpid0) {
+                return 0;
+            }
+        }
+    }
+    for (; i < ns->numnames; i++) {
+        item = &ns->items[i];
+        if (!_sharednsitem_is_initialized(item)) {
+            return 0;
+        }
+        if (_sharednsitem_has_value(item, NULL)) {
+            return 0;
+        }
+    }
+    for (; i < ns->maxitems; i++) {
+        item = &ns->items[i];
+        if (_sharednsitem_is_initialized(item)) {
+            return 0;
+        }
+        if (_sharednsitem_has_value(item, NULL)) {
+            return 0;
+        }
+    }
+    return 1;
+}
+#endif
 
 static _PyXI_namespace *
-_sharedns_new(void)
+_sharedns_alloc(Py_ssize_t maxitems)
 {
-    _PyXI_namespace *ns = PyMem_RawCalloc(sizeof(_PyXI_namespace), 1);
+    if (maxitems < 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_BadInternalCall();
+        }
+        return NULL;
+    }
+    else if (maxitems == 0) {
+        PyErr_SetString(PyExc_ValueError, "empty namespaces not allowed");
+        return NULL;
+    }
+
+    // Check for overflow.
+    size_t fixedsize = sizeof(_PyXI_namespace) - sizeof(_PyXI_namespace_item);
+    if ((size_t)maxitems >
+        ((size_t)PY_SSIZE_T_MAX - fixedsize) / sizeof(_PyXI_namespace_item))
+    {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    // Allocate the value, including items.
+    size_t size = fixedsize + sizeof(_PyXI_namespace_item) * maxitems;
+
+    _PyXI_namespace *ns = PyMem_RawCalloc(size, 1);
     if (ns == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    *ns = (_PyXI_namespace){ 0 };
+    ns->maxitems = maxitems;
+    assert(_sharedns_check_consistency(ns));
     return ns;
-}
-
-static int
-_sharedns_is_initialized(_PyXI_namespace *ns)
-{
-    if (ns->len == 0) {
-        assert(ns->items == NULL);
-        return 0;
-    }
-
-    assert(ns->len > 0);
-    assert(ns->items != NULL);
-    assert(_sharednsitem_is_initialized(&ns->items[0]));
-    assert(ns->len == 1
-           || _sharednsitem_is_initialized(&ns->items[ns->len - 1]));
-    return 1;
-}
-
-#define HAS_COMPLETE_DATA 1
-#define HAS_PARTIAL_DATA 2
-
-static int
-_sharedns_has_xidata(_PyXI_namespace *ns, int64_t *p_interpid)
-{
-    // We expect _PyXI_namespace to always be initialized.
-    assert(_sharedns_is_initialized(ns));
-    int res = 0;
-    _PyXI_namespace_item *item0 = &ns->items[0];
-    if (!_sharednsitem_is_initialized(item0)) {
-        return 0;
-    }
-    int64_t interpid0 = -1;
-    if (!_sharednsitem_has_value(item0, &interpid0)) {
-        return 0;
-    }
-    if (ns->len > 1) {
-        // At this point we know it is has at least partial data.
-        _PyXI_namespace_item *itemN = &ns->items[ns->len-1];
-        if (!_sharednsitem_is_initialized(itemN)) {
-            res = HAS_PARTIAL_DATA;
-            goto finally;
-        }
-        int64_t interpidN = -1;
-        if (!_sharednsitem_has_value(itemN, &interpidN)) {
-            res = HAS_PARTIAL_DATA;
-            goto finally;
-        }
-        assert(interpidN == interpid0);
-    }
-    res = HAS_COMPLETE_DATA;
-    *p_interpid = interpid0;
-
-finally:
-    return res;
-}
-
-static void
-_sharedns_clear(_PyXI_namespace *ns)
-{
-    if (!_sharedns_is_initialized(ns)) {
-        return;
-    }
-
-    // If the cross-interpreter data were allocated as part of
-    // _PyXI_namespace_item (instead of dynamically), this is where
-    // we would need verify that we are clearing the items in the
-    // correct interpreter, to avoid a race with releasing the XI data
-    // via a pending call.  See _sharedns_has_xidata().
-    for (Py_ssize_t i=0; i < ns->len; i++) {
-        _sharednsitem_clear(&ns->items[i]);
-    }
-    PyMem_RawFree(ns->items);
-    ns->items = NULL;
-    ns->len = 0;
 }
 
 static void
 _sharedns_free(_PyXI_namespace *ns)
 {
-    _sharedns_clear(ns);
+    // If we weren't always dynamically allocating the cross-interpreter
+    // data in each item then we would need to use a pending call
+    // to call _sharedns_free(), to avoid the race between freeing
+    // the shared namespace and releasing the XI data.
+    assert(_sharedns_check_counts(ns));
+    Py_ssize_t i = 0;
+    _PyXI_namespace_item *item;
+    if (ns->numvalues > 0) {
+        // One or more items may have interpreter-specific data.
+#ifndef NDEBUG
+        int64_t interpid = PyInterpreterState_GetID(PyInterpreterState_Get());
+        int64_t interpid_i;
+#endif
+        for (; i < ns->numvalues; i++) {
+            item = &ns->items[i];
+            assert(_sharednsitem_is_initialized(item));
+            // While we do want to ensure consistency across items,
+            // technically they don't need to match the current
+            // interpreter.  However, we keep the constraint for
+            // simplicity, by giving _PyXI_FreeNamespace() the exclusive
+            // responsibility of dealing with the owning interpreter.
+            assert(_sharednsitem_has_value(item, &interpid_i));
+            assert(interpid_i == interpid);
+            _sharednsitem_clear(item);
+        }
+    }
+    for (; i < ns->numnames; i++) {
+        item = &ns->items[i];
+        assert(_sharednsitem_is_initialized(item));
+        assert(!_sharednsitem_has_value(item, NULL));
+        _sharednsitem_clear(item);
+    }
+#ifndef NDEBUG
+    for (; i < ns->maxitems; i++) {
+        item = &ns->items[i];
+        assert(!_sharednsitem_is_initialized(item));
+        assert(!_sharednsitem_has_value(item, NULL));
+    }
+#endif
+
     PyMem_RawFree(ns);
 }
 
-static int
-_sharedns_init(_PyXI_namespace *ns, PyObject *names)
+static _PyXI_namespace *
+_create_sharedns(PyObject *names)
 {
-    assert(!_sharedns_is_initialized(ns));
     assert(names != NULL);
-    Py_ssize_t len = PyDict_CheckExact(names)
+    Py_ssize_t numnames = PyDict_CheckExact(names)
         ? PyDict_Size(names)
         : PySequence_Size(names);
-    if (len < 0) {
-        return -1;
-    }
-    if (len == 0) {
-        PyErr_SetString(PyExc_ValueError, "empty namespaces not allowed");
-        return -1;
-    }
-    assert(len > 0);
 
-    // Allocate the items.
-    _PyXI_namespace_item *items =
-            PyMem_RawCalloc(sizeof(struct _sharednsitem), len);
-    if (items == NULL) {
-        PyErr_NoMemory();
-        return -1;
+    _PyXI_namespace *ns = _sharedns_alloc(numnames);
+    if (ns == NULL) {
+        return NULL;
     }
+    _PyXI_namespace_item *items = ns->items;
 
     // Fill in the names.
-    Py_ssize_t i = -1;
     if (PyDict_CheckExact(names)) {
+        Py_ssize_t i = 0;
         Py_ssize_t pos = 0;
-        for (i=0; i < len; i++) {
-            PyObject *key;
-            if (!PyDict_Next(names, &pos, &key, NULL)) {
-                // This should not be possible.
-                assert(0);
+        PyObject *name;
+        while(PyDict_Next(names, &pos, &name, NULL)) {
+            if (_sharednsitem_init(&items[i], name) < 0) {
                 goto error;
             }
-            if (_sharednsitem_init(&items[i], key) < 0) {
-                goto error;
-            }
+            ns->numnames += 1;
+            i += 1;
         }
     }
     else if (PySequence_Check(names)) {
-        for (i=0; i < len; i++) {
-            PyObject *key = PySequence_GetItem(names, i);
-            if (key == NULL) {
+        for (Py_ssize_t i = 0; i < numnames; i++) {
+            PyObject *name = PySequence_GetItem(names, i);
+            if (name == NULL) {
                 goto error;
             }
-            int res = _sharednsitem_init(&items[i], key);
-            Py_DECREF(key);
+            int res = _sharednsitem_init(&items[i], name);
+            Py_DECREF(name);
             if (res < 0) {
                 goto error;
             }
+            ns->numnames += 1;
         }
     }
     else {
@@ -2070,140 +2129,79 @@ _sharedns_init(_PyXI_namespace *ns, PyObject *names)
                         "non-sequence namespace not supported");
         goto error;
     }
-
-    ns->items = items;
-    ns->len = len;
-    assert(_sharedns_is_initialized(ns));
-    return 0;
-
-error:
-    for (Py_ssize_t j=0; j < i; j++) {
-        _sharednsitem_clear(&items[j]);
-    }
-    PyMem_RawFree(items);
-    assert(!_sharedns_is_initialized(ns));
-    return -1;
-}
-
-void
-_PyXI_FreeNamespace(_PyXI_namespace *ns)
-{
-    if (!_sharedns_is_initialized(ns)) {
-        return;
-    }
-
-    int64_t interpid = -1;
-    if (!_sharedns_has_xidata(ns, &interpid)) {
-        _sharedns_free(ns);
-        return;
-    }
-
-    if (interpid == PyInterpreterState_GetID(PyInterpreterState_Get())) {
-        _sharedns_free(ns);
-    }
-    else {
-        // If we weren't always dynamically allocating the cross-interpreter
-        // data in each item then we would need to using a pending call
-        // to call _sharedns_free(), to avoid the race between freeing
-        // the shared namespace and releasing the XI data.
-        _sharedns_free(ns);
-    }
-}
-
-_PyXI_namespace *
-_PyXI_NamespaceFromNames(PyObject *names)
-{
-    if (names == NULL || names == Py_None) {
-        return NULL;
-    }
-
-    _PyXI_namespace *ns = _sharedns_new();
-    if (ns == NULL) {
-        return NULL;
-    }
-
-    if (_sharedns_init(ns, names) < 0) {
-        PyMem_RawFree(ns);
-        if (PySequence_Size(names) == 0) {
-            PyErr_Clear();
-        }
-        return NULL;
-    }
-
-    return ns;
-}
-
-#ifndef NDEBUG
-static int _session_is_active(_PyXI_session *);
-#endif
-static void _propagate_not_shareable_error(_PyXI_session *);
-
-int
-_PyXI_FillNamespaceFromDict(_PyXI_namespace *ns, PyObject *nsobj,
-                            _PyXI_session *session)
-{
-    // session must be entered already, if provided.
-    assert(session == NULL || _session_is_active(session));
-    assert(_sharedns_is_initialized(ns));
-    for (Py_ssize_t i=0; i < ns->len; i++) {
-        _PyXI_namespace_item *item = &ns->items[i];
-        if (_sharednsitem_copy_from_ns(item, nsobj) < 0) {
-            _propagate_not_shareable_error(session);
-            // Clear out the ones we set so far.
-            for (Py_ssize_t j=0; j < i; j++) {
-                _sharednsitem_clear_value(&ns->items[j]);
-            }
-            return -1;
-        }
-    }
-    return 0;
-}
-
-// All items are expected to be shareable.
-static _PyXI_namespace *
-_PyXI_NamespaceFromDict(PyObject *nsobj, _PyXI_session *session)
-{
-    // session must be entered already, if provided.
-    assert(session == NULL || _session_is_active(session));
-    if (nsobj == NULL || nsobj == Py_None) {
-        return NULL;
-    }
-    if (!PyDict_CheckExact(nsobj)) {
-        PyErr_SetString(PyExc_TypeError, "expected a dict");
-        return NULL;
-    }
-
-    _PyXI_namespace *ns = _sharedns_new();
-    if (ns == NULL) {
-        return NULL;
-    }
-
-    if (_sharedns_init(ns, nsobj) < 0) {
-        if (PyDict_Size(nsobj) == 0) {
-            PyMem_RawFree(ns);
-            PyErr_Clear();
-            return NULL;
-        }
-        goto error;
-    }
-
-    if (_PyXI_FillNamespaceFromDict(ns, nsobj, session) < 0) {
-        goto error;
-    }
-
+    assert(ns->numnames == ns->maxitems);
     return ns;
 
 error:
-    assert(PyErr_Occurred()
-           || (session != NULL && session->error_override != NULL));
     _sharedns_free(ns);
     return NULL;
 }
 
-int
-_PyXI_ApplyNamespace(_PyXI_namespace *ns, PyObject *nsobj, PyObject *dflt)
+static void _propagate_not_shareable_error(_PyXI_session *);
+
+static int
+_fill_sharedns(_PyXI_namespace *ns, PyObject *nsobj, _PyXI_session *session)
 {
-    for (Py_ssize_t i=0; i < ns->len; i++) {
+    // All items are expected to be shareable.
+    assert(_sharedns_check_counts(ns));
+    assert(ns->numnames == ns->maxitems);
+    assert(ns->numvalues == 0);
+    for (Py_ssize_t i=0; i < ns->maxitems; i++) {
+        if (_sharednsitem_copy_from_ns(&ns->items[i], nsobj) < 0) {
+            _propagate_not_shareable_error(session);
+            // Clear out the ones we set so far.
+            for (Py_ssize_t j=0; j < i; j++) {
+                _sharednsitem_clear_value(&ns->items[j]);
+                ns->numvalues -= 1;
+            }
+            return -1;
+        }
+        ns->numvalues += 1;
+    }
+    return 0;
+}
+
+static int
+_sharedns_free_pending(void *data)
+{
+    _sharedns_free((_PyXI_namespace *)data);
+    return 0;
+}
+
+static void
+_destroy_sharedns(_PyXI_namespace *ns)
+{
+    assert(_sharedns_check_counts(ns));
+    assert(ns->numnames == ns->maxitems);
+    if (ns->numvalues == 0) {
+        _sharedns_free(ns);
+        return;
+    }
+
+    int64_t interpid0;
+    if (!_sharednsitem_has_value(&ns->items[0], &interpid0)) {
+        // This shouldn't have been possible.
+        // We can deal with it in _sharedns_free().
+        _sharedns_free(ns);
+        return;
+    }
+    PyInterpreterState *interp = _PyInterpreterState_LookUpID(interpid0);
+    if (interp == PyInterpreterState_Get()) {
+        _sharedns_free(ns);
+        return;
+    }
+
+    // One or more items may have interpreter-specific data.
+    // Currently the xidata for each value is dynamically allocated,
+    // so technically we don't need to worry about that.
+    // However, explicitly adding a pending call here is simpler.
+    (void)_Py_CallInInterpreter(interp, _sharedns_free_pending, ns);
+}
+
+static int
+_apply_sharedns(_PyXI_namespace *ns, PyObject *nsobj, PyObject *dflt)
+{
+    for (Py_ssize_t i=0; i < ns->maxitems; i++) {
         if (_sharednsitem_apply(&ns->items[i], nsobj, dflt) != 0) {
             return -1;
         }
@@ -2212,9 +2210,79 @@ _PyXI_ApplyNamespace(_PyXI_namespace *ns, PyObject *nsobj, PyObject *dflt)
 }
 
 
-/**********************/
-/* high-level helpers */
-/**********************/
+/*********************************/
+/* switched-interpreter sessions */
+/*********************************/
+
+struct xi_session {
+#define SESSION_UNUSED 0
+#define SESSION_ACTIVE 1
+    int status;
+    int switched;
+
+    // Once a session has been entered, this is the tstate that was
+    // current before the session.  If it is different from cur_tstate
+    // then we must have switched interpreters.  Either way, this will
+    // be the current tstate once we exit the session.
+    PyThreadState *prev_tstate;
+    // Once a session has been entered, this is the current tstate.
+    // It must be current when the session exits.
+    PyThreadState *init_tstate;
+    // This is true if init_tstate needs cleanup during exit.
+    int own_init_tstate;
+
+    // This is true if, while entering the session, init_thread took
+    // "ownership" of the interpreter's __main__ module.  This means
+    // it is the only thread that is allowed to run code there.
+    // (Caveat: for now, users may still run exec() against the
+    // __main__ module's dict, though that isn't advisable.)
+    int running;
+    // This is a cached reference to the __dict__ of the entered
+    // interpreter's __main__ module.  It is looked up when at the
+    // beginning of the session as a convenience.
+    PyObject *main_ns;
+
+    // This is set if the interpreter is entered and raised an exception
+    // that needs to be handled in some special way during exit.
+    _PyXI_errcode *error_override;
+    // This is set if exit captured an exception to propagate.
+    _PyXI_error *error;
+
+    // -- pre-allocated memory --
+    _PyXI_error _error;
+    _PyXI_errcode _error_override;
+};
+
+
+_PyXI_session *
+_PyXI_NewSession(void)
+{
+    _PyXI_session *session = PyMem_RawCalloc(1, sizeof(_PyXI_session));
+    if (session == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    return session;
+}
+
+void
+_PyXI_FreeSession(_PyXI_session *session)
+{
+    assert(session->status == SESSION_UNUSED);
+    PyMem_RawFree(session);
+}
+
+
+static inline int
+_session_is_active(_PyXI_session *session)
+{
+    return session->status == SESSION_ACTIVE;
+}
+
+static int _ensure_main_ns(_PyXI_session *);
+static inline void _session_set_error(_PyXI_session *, _PyXI_errcode);
+static void _capture_current_exception(_PyXI_session *);
+
 
 /* enter/exit a cross-interpreter session */
 
@@ -2222,6 +2290,7 @@ static void
 _enter_session(_PyXI_session *session, PyInterpreterState *interp)
 {
     // Set here and cleared in _exit_session().
+    assert(session->status == SESSION_UNUSED);
     assert(!session->own_init_tstate);
     assert(session->init_tstate == NULL);
     assert(session->prev_tstate == NULL);
@@ -2236,15 +2305,22 @@ _enter_session(_PyXI_session *session, PyInterpreterState *interp)
     // Switch to interpreter.
     PyThreadState *tstate = PyThreadState_Get();
     PyThreadState *prev = tstate;
-    if (interp != tstate->interp) {
+    int same_interp = (interp == tstate->interp);
+    if (!same_interp) {
         tstate = _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_EXEC);
         // XXX Possible GILState issues?
-        session->prev_tstate = PyThreadState_Swap(tstate);
-        assert(session->prev_tstate == prev);
-        session->own_init_tstate = 1;
+        PyThreadState *swapped = PyThreadState_Swap(tstate);
+        assert(swapped == prev);
+        (void)swapped;
     }
-    session->init_tstate = tstate;
-    session->prev_tstate = prev;
+
+    *session = (_PyXI_session){
+        .status = SESSION_ACTIVE,
+        .switched = !same_interp,
+        .init_tstate = tstate,
+        .prev_tstate = prev,
+        .own_init_tstate = !same_interp,
+    };
 }
 
 static void
@@ -2255,9 +2331,7 @@ _exit_session(_PyXI_session *session)
     assert(PyThreadState_Get() == tstate);
 
     // Release any of the entered interpreters resources.
-    if (session->main_ns != NULL) {
-        Py_CLEAR(session->main_ns);
-    }
+    Py_CLEAR(session->main_ns);
 
     // Ensure this thread no longer owns __main__.
     if (session->running) {
@@ -2278,17 +2352,15 @@ _exit_session(_PyXI_session *session)
     else {
         assert(!session->own_init_tstate);
     }
-    session->prev_tstate = NULL;
-    session->init_tstate = NULL;
-}
 
-#ifndef NDEBUG
-static int
-_session_is_active(_PyXI_session *session)
-{
-    return (session->init_tstate != NULL);
+    // For now the error data persists past the exit.
+    *session = (_PyXI_session){
+        .error_override = session->error_override,
+        .error = session->error,
+        ._error = session->_error,
+        ._error_override = session->_error_override,
+    };
 }
-#endif
 
 static void
 _propagate_not_shareable_error(_PyXI_session *session)
@@ -2305,10 +2377,101 @@ _propagate_not_shareable_error(_PyXI_session *session)
     }
     if (PyErr_ExceptionMatches(exctype)) {
         // We want to propagate the exception directly.
-        session->_error_override = _PyXI_ERR_NOT_SHAREABLE;
-        session->error_override = &session->_error_override;
+        _session_set_error(session, _PyXI_ERR_NOT_SHAREABLE);
     }
 }
+
+PyObject *
+_PyXI_ApplyCapturedException(_PyXI_session *session)
+{
+    assert(!PyErr_Occurred());
+    assert(session->error != NULL);
+    PyObject *res = _PyXI_ApplyError(session->error);
+    assert((res == NULL) != (PyErr_Occurred() == NULL));
+    session->error = NULL;
+    return res;
+}
+
+int
+_PyXI_HasCapturedException(_PyXI_session *session)
+{
+    return session->error != NULL;
+}
+
+int
+_PyXI_Enter(_PyXI_session *session,
+            PyInterpreterState *interp, PyObject *nsupdates)
+{
+    // Convert the attrs for cross-interpreter use.
+    _PyXI_namespace *sharedns = NULL;
+    if (nsupdates != NULL) {
+        Py_ssize_t len = PyDict_Size(nsupdates);
+        if (len < 0) {
+            return -1;
+        }
+        if (len > 0) {
+            sharedns = _create_sharedns(nsupdates);
+            if (sharedns == NULL) {
+                return -1;
+            }
+            if (_fill_sharedns(sharedns, nsupdates, NULL) < 0) {
+                assert(session->error == NULL);
+                _destroy_sharedns(sharedns);
+                return -1;
+            }
+        }
+    }
+
+    // Switch to the requested interpreter (if necessary).
+    _enter_session(session, interp);
+    _PyXI_errcode errcode = _PyXI_ERR_UNCAUGHT_EXCEPTION;
+
+    // Ensure this thread owns __main__.
+    if (_PyInterpreterState_SetRunningMain(interp) < 0) {
+        // In the case where we didn't switch interpreters, it would
+        // be more efficient to leave the exception in place and return
+        // immediately.  However, life is simpler if we don't.
+        errcode = _PyXI_ERR_ALREADY_RUNNING;
+        goto error;
+    }
+    session->running = 1;
+
+    // Apply the cross-interpreter data.
+    if (sharedns != NULL) {
+        if (_ensure_main_ns(session) < 0) {
+            errcode = _PyXI_ERR_MAIN_NS_FAILURE;
+            goto error;
+        }
+        if (_apply_sharedns(sharedns, session->main_ns, NULL) < 0) {
+            errcode = _PyXI_ERR_APPLY_NS_FAILURE;
+            goto error;
+        }
+        _destroy_sharedns(sharedns);
+    }
+
+    errcode = _PyXI_ERR_NO_ERROR;
+    assert(!PyErr_Occurred());
+    return 0;
+
+error:
+    // We want to propagate all exceptions here directly (best effort).
+    _session_set_error(session, errcode);
+    _exit_session(session);
+    if (sharedns != NULL) {
+        _destroy_sharedns(sharedns);
+    }
+    return -1;
+}
+
+void
+_PyXI_Exit(_PyXI_session *session)
+{
+    _capture_current_exception(session);
+    _exit_session(session);
+}
+
+
+/* in an active cross-interpreter session */
 
 static void
 _capture_current_exception(_PyXI_session *session)
@@ -2371,100 +2534,55 @@ _capture_current_exception(_PyXI_session *session)
 
     // Finished!
     assert(!PyErr_Occurred());
-    session->error  = err;
+    session->error = err;
 }
 
-PyObject *
-_PyXI_ApplyCapturedException(_PyXI_session *session)
+static inline void
+_session_set_error(_PyXI_session *session, _PyXI_errcode errcode)
 {
-    assert(!PyErr_Occurred());
-    assert(session->error != NULL);
-    PyObject *res = _PyXI_ApplyError(session->error);
-    assert((res == NULL) != (PyErr_Occurred() == NULL));
-    session->error = NULL;
-    return res;
-}
-
-int
-_PyXI_HasCapturedException(_PyXI_session *session)
-{
-    return session->error != NULL;
-}
-
-int
-_PyXI_Enter(_PyXI_session *session,
-            PyInterpreterState *interp, PyObject *nsupdates)
-{
-    // Convert the attrs for cross-interpreter use.
-    _PyXI_namespace *sharedns = NULL;
-    if (nsupdates != NULL) {
-        sharedns = _PyXI_NamespaceFromDict(nsupdates, NULL);
-        if (sharedns == NULL && PyErr_Occurred()) {
-            assert(session->error == NULL);
-            return -1;
-        }
+    assert(_session_is_active(session));
+    assert(PyErr_Occurred());
+    if (errcode != _PyXI_ERR_UNCAUGHT_EXCEPTION) {
+        session->_error_override = errcode;
+        session->error_override = &session->_error_override;
     }
+    _capture_current_exception(session);
+}
 
-    // Switch to the requested interpreter (if necessary).
-    _enter_session(session, interp);
-    PyThreadState *session_tstate = session->init_tstate;
-    _PyXI_errcode errcode = _PyXI_ERR_UNCAUGHT_EXCEPTION;
-
-    // Ensure this thread owns __main__.
-    if (_PyInterpreterState_SetRunningMain(interp) < 0) {
-        // In the case where we didn't switch interpreters, it would
-        // be more efficient to leave the exception in place and return
-        // immediately.  However, life is simpler if we don't.
-        errcode = _PyXI_ERR_ALREADY_RUNNING;
-        goto error;
+static int
+_ensure_main_ns(_PyXI_session *session)
+{
+    assert(_session_is_active(session));
+    if (session->main_ns != NULL) {
+        return 0;
     }
-    session->running = 1;
-
     // Cache __main__.__dict__.
-    PyObject *main_mod = _Py_GetMainModule(session_tstate);
+    PyObject *main_mod = _Py_GetMainModule(session->init_tstate);
     if (_Py_CheckMainModule(main_mod) < 0) {
-        errcode = _PyXI_ERR_MAIN_NS_FAILURE;
-        goto error;
+        return -1;
     }
     PyObject *ns = PyModule_GetDict(main_mod);  // borrowed
     Py_DECREF(main_mod);
     if (ns == NULL) {
-        errcode = _PyXI_ERR_MAIN_NS_FAILURE;
-        goto error;
+        return -1;
     }
     session->main_ns = Py_NewRef(ns);
-
-    // Apply the cross-interpreter data.
-    if (sharedns != NULL) {
-        if (_PyXI_ApplyNamespace(sharedns, ns, NULL) < 0) {
-            errcode = _PyXI_ERR_APPLY_NS_FAILURE;
-            goto error;
-        }
-        _PyXI_FreeNamespace(sharedns);
-    }
-
-    errcode = _PyXI_ERR_NO_ERROR;
-    assert(!PyErr_Occurred());
     return 0;
-
-error:
-    assert(PyErr_Occurred());
-    // We want to propagate all exceptions here directly (best effort).
-    assert(errcode != _PyXI_ERR_UNCAUGHT_EXCEPTION);
-    session->error_override = &errcode;
-    _capture_current_exception(session);
-    _exit_session(session);
-    if (sharedns != NULL) {
-        _PyXI_FreeNamespace(sharedns);
-    }
-    return -1;
 }
 
-void
-_PyXI_Exit(_PyXI_session *session)
+PyObject *
+_PyXI_GetMainNamespace(_PyXI_session *session)
 {
-    _capture_current_exception(session);
-    _exit_session(session);
+    if (!_session_is_active(session)) {
+        PyErr_SetString(PyExc_RuntimeError, "session not active");
+        return NULL;
+    }
+    if (_ensure_main_ns(session) < 0) {
+        _session_set_error(session, _PyXI_ERR_MAIN_NS_FAILURE);
+        _capture_current_exception(session);
+        return NULL;
+    }
+    return session->main_ns;
 }
 
 

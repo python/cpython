@@ -5287,23 +5287,71 @@ dummy_func(
             value = PyStackRef_FromPyObjectBorrow(ptr);
         }
 
-        tier2 pure op (_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
+        tier2 op(_POP_CALL, (callable, null --)) {
+            (void)null; // Silence compiler warnings about unused variables
+            DEAD(null);
+            PyStackRef_CLOSE(callable);
+        }
+
+        tier2 op(_POP_CALL_ONE, (callable, null, pop --)) {
             PyStackRef_CLOSE(pop);
-            value = PyStackRef_FromPyObjectBorrow(ptr);
+            (void)null; // Silence compiler warnings about unused variables
+            DEAD(null);
+            PyStackRef_CLOSE(callable);
         }
 
-        tier2 pure op(_POP_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, pop1, pop2 -- value)) {
-            PyStackRef_CLOSE(pop2);
-            PyStackRef_CLOSE(pop1);
-            value = PyStackRef_FromPyObjectBorrow(ptr);
-        }
-
-        tier2 pure op(_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, pop1, pop2 -- value)) {
+        tier2 op(_POP_CALL_TWO, (callable, null, pop1, pop2 --)) {
             PyStackRef_CLOSE(pop2);
             PyStackRef_CLOSE(pop1);
             (void)null; // Silence compiler warnings about unused variables
             DEAD(null);
             PyStackRef_CLOSE(callable);
+        }
+
+        tier2 op(_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
+            PyStackRef_CLOSE(pop);
+            value = PyStackRef_FromPyObjectBorrow(ptr);
+        }
+
+        tier2 op(_POP_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, pop1, pop2 -- value)) {
+            PyStackRef_CLOSE(pop2);
+            PyStackRef_CLOSE(pop1);
+            value = PyStackRef_FromPyObjectBorrow(ptr);
+        }
+
+        tier2 op(_POP_CALL_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null -- value)) {
+            (void)null; // Silence compiler warnings about unused variables
+            DEAD(null);
+            PyStackRef_CLOSE(callable);
+            value = PyStackRef_FromPyObjectBorrow(ptr);
+        }
+
+        tier2 op(_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, pop -- value)) {
+            PyStackRef_CLOSE(pop);
+            (void)null; // Silence compiler warnings about unused variables
+            DEAD(null);
+            PyStackRef_CLOSE(callable);
+            value = PyStackRef_FromPyObjectBorrow(ptr);
+        }
+
+        tier2 op(_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, pop1, pop2 -- value)) {
+            PyStackRef_CLOSE(pop2);
+            PyStackRef_CLOSE(pop1);
+            (void)null; // Silence compiler warnings about unused variables
+            DEAD(null);
+            PyStackRef_CLOSE(callable);
+            value = PyStackRef_FromPyObjectBorrow(ptr);
+        }
+
+        tier2 op(_LOAD_CONST_UNDER_INLINE, (ptr/4, old -- value, new)) {
+            new = old;
+            DEAD(old);
+            value = PyStackRef_FromPyObjectNew(ptr);
+        }
+
+        tier2 op(_LOAD_CONST_UNDER_INLINE_BORROW, (ptr/4, old -- value, new)) {
+            new = old;
+            DEAD(old);
             value = PyStackRef_FromPyObjectBorrow(ptr);
         }
 
