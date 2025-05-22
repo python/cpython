@@ -283,13 +283,15 @@ PyModule_Create2(PyModuleDef* module, int module_api_version)
 }
 
 static void
-module_set_def(PyModuleObject *md, PyModuleDef *def)
+module_copy_members_from_deflike(
+    PyModuleObject *md,
+    PyModuleDef *def_like /* not necessarily a valid Python object */)
 {
-    md->md_def_or_null = def;
-    md->md_size = def->m_size;
-    md->md_traverse = def->m_traverse;
-    md->md_clear = def->m_clear;
-    md->md_free = def->m_free;
+    /* def may not be a valid PyObject*, see */
+    md->md_size = def_like->m_size;
+    md->md_traverse = def_like->m_traverse;
+    md->md_clear = def_like->m_clear;
+    md->md_free = def_like->m_free;
 }
 
 PyObject *
@@ -338,7 +340,8 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
             return NULL;
         }
     }
-    module_set_def(m, module);
+    m->md_def_or_null = module;
+    module_copy_members_from_deflike(m, module);
 #ifdef Py_GIL_DISABLED
     m->md_gil = Py_MOD_GIL_USED;
 #endif
@@ -346,7 +349,11 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
 }
 
 PyObject *
-PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_version)
+module_from_def_and_spec(
+    PyModuleDef* def_like, /* not necessarily a valid Python object */
+    PyObject *spec,
+    int module_api_version,
+    PyModuleDef* original_def /* NULL if not defined by a def */)
 {
     PyModuleDef_Slot* cur_slot;
     PyObject *(*create)(PyObject *, PyModuleDef*) = NULL;
@@ -361,8 +368,6 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     int ret;
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
-    PyModuleDef_Init(def);
-
     nameobj = PyObject_GetAttrString(spec, "name");
     if (nameobj == NULL) {
         return NULL;
@@ -376,7 +381,7 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
         goto error;
     }
 
-    if (def->m_size < 0) {
+    if (def_like->m_size < 0) {
         PyErr_Format(
             PyExc_SystemError,
             "module %s: m_size may not be negative for multi-phase initialization",
@@ -384,7 +389,7 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
         goto error;
     }
 
-    for (cur_slot = def->m_slots; cur_slot && cur_slot->slot; cur_slot++) {
+    for (cur_slot = def_like->m_slots; cur_slot && cur_slot->slot; cur_slot++) {
         switch (cur_slot->slot) {
             case Py_mod_create:
                 if (create) {
@@ -457,7 +462,7 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     }
 
     if (create) {
-        m = create(spec, def);
+        m = create(spec, def_like);
         if (m == NULL) {
             if (!PyErr_Occurred()) {
                 PyErr_Format(
@@ -483,15 +488,21 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     }
 
     if (PyModule_Check(m)) {
-        ((PyModuleObject*)m)->md_state = NULL;
-        module_set_def(((PyModuleObject*)m), def);
+        PyModuleObject *mod = (PyModuleObject*)m;
+        mod->md_state = NULL;
+        module_copy_members_from_deflike(mod, def_like);
+        if (original_def) {
+            mod->md_def_or_null = original_def;
+        }
 #ifdef Py_GIL_DISABLED
-        ((PyModuleObject*)m)->md_gil = gil_slot;
+        mod->md_gil = gil_slot;
 #else
         (void)gil_slot;
 #endif
     } else {
-        if (def->m_size > 0 || def->m_traverse || def->m_clear || def->m_free) {
+        if (def_like->m_size > 0 || def_like->m_traverse || def_like->m_clear
+            || def_like->m_free)
+        {
             PyErr_Format(
                 PyExc_SystemError,
                 "module %s is not a module object, but requests module state",
@@ -508,15 +519,15 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
         }
     }
 
-    if (def->m_methods != NULL) {
-        ret = _add_methods_to_object(m, nameobj, def->m_methods);
+    if (def_like->m_methods != NULL) {
+        ret = _add_methods_to_object(m, nameobj, def_like->m_methods);
         if (ret != 0) {
             goto error;
         }
     }
 
-    if (def->m_doc != NULL) {
-        ret = PyModule_SetDocString(m, def->m_doc);
+    if (def_like->m_doc != NULL) {
+        ret = PyModule_SetDocString(m, def_like->m_doc);
         if (ret != 0) {
             goto error;
         }
@@ -529,6 +540,13 @@ error:
     Py_DECREF(nameobj);
     Py_XDECREF(m);
     return NULL;
+}
+
+PyObject *
+PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_version)
+{
+    PyModuleDef_Init(def);
+    return module_from_def_and_spec(def, spec, module_api_version, def);
 }
 
 PyObject *
@@ -550,7 +568,8 @@ PyModule_FromSlotsAndSpec(PyModuleDef_Slot *slots, PyObject *spec)
     // Fill in enough of a PyModuleDef to pass to common machinery
     PyModuleDef def_like = {.m_slots = slots};
 
-    result = PyModule_FromDefAndSpec2(&def_like, spec, 3);
+    result = module_from_def_and_spec(&def_like, spec, PYTHON_API_VERSION,
+                                      NULL);
 finally:
     Py_XDECREF(nameobj);
     return result;
