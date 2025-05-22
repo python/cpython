@@ -3802,7 +3802,7 @@ class LocaleCodecTest(unittest.TestCase):
                     with self.assertRaises(RuntimeError) as cm:
                         self.decode(encoded, errors)
                     errmsg = str(cm.exception)
-                    self.assertTrue(errmsg.startswith("decode error: "), errmsg)
+                    self.assertStartsWith(errmsg, "decode error: ")
                 else:
                     decoded = self.decode(encoded, errors)
                     self.assertEqual(decoded, expected)
