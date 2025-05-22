@@ -1587,7 +1587,7 @@ _textiowrapper_prepend(textio *self, PyObject *unwritten)
 
     if (self->pending_bytes == NULL) {
         self->pending_bytes = unwritten;
-        assert(self->pending_bytes == 0);
+        assert(self->pending_bytes_count == 0);
         self->pending_bytes_count += PyBytes_GET_SIZE(unwritten);
     }
     else if (!PyList_CheckExact(self->pending_bytes)) {
@@ -1901,12 +1901,11 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     // Flush the buffer before adding b to the buffer if b is not small.
     // https://github.com/python/cpython/issues/87426
     if (bytes_len >= self->chunk_size) {
-        /* writeflush works to ensure all data written.
+        /* writeflush ensures one pending_bytes is written.
 
            Additional data may be written to the TextIO when the lock is
-           released while calling buffer.write (and show up in
-           pending_bytes). When that happens, flush again to avoid copying
-           the current bytes. */
+           released while calling buffer.write (and show up in pending_bytes).
+           When that happens, flush again to avoid copying the current bytes. */
         while (self->pending_bytes != NULL) {
             if (_textiowrapper_writeflush(self) < 0) {
                 Py_DECREF(b);
