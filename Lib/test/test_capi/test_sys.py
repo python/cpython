@@ -28,8 +28,10 @@ class CAPITest(unittest.TestCase):
         with support.swap_attr(sys, '\U0001f40d', 42):
             self.assertEqual(sys_getattr('\U0001f40d'), 42)
 
-        with self.assertRaisesRegex(RuntimeError, r'lost sys\.nonexisting'):
-            sys_getattr('nonexisting')
+        with self.assertRaisesRegex(RuntimeError, r'lost sys\.nonexistent'):
+            sys_getattr('nonexistent')
+        with self.assertRaisesRegex(RuntimeError, r'lost sys\.\U0001f40d'):
+            sys_getattr('\U0001f40d')
         self.assertRaises(TypeError, sys_getattr, 1)
         self.assertRaises(TypeError, sys_getattr, [])
         # CRASHES sys_getattr(NULL)
@@ -43,8 +45,10 @@ class CAPITest(unittest.TestCase):
         with support.swap_attr(sys, '\U0001f40d', 42):
             self.assertEqual(getattrstring('\U0001f40d'.encode()), 42)
 
-        with self.assertRaisesRegex(RuntimeError, r'lost sys\.nonexisting'):
-            getattrstring(b'nonexisting')
+        with self.assertRaisesRegex(RuntimeError, r'lost sys\.nonexistent'):
+            getattrstring(b'nonexistent')
+        with self.assertRaisesRegex(RuntimeError, r'lost sys\.\U0001f40d'):
+            getattrstring('\U0001f40d'.encode())
         self.assertRaises(UnicodeDecodeError, getattrstring, b'\xff')
         # CRASHES getattrstring(NULL)
 
@@ -57,7 +61,8 @@ class CAPITest(unittest.TestCase):
         with support.swap_attr(sys, '\U0001f40d', 42):
             self.assertEqual(getoptionalattr('\U0001f40d'), 42)
 
-        self.assertIs(getoptionalattr('nonexisting'), AttributeError)
+        self.assertIs(getoptionalattr('nonexistent'), AttributeError)
+        self.assertIs(getoptionalattr('\U0001f40d'), AttributeError)
         self.assertRaises(TypeError, getoptionalattr, 1)
         self.assertRaises(TypeError, getoptionalattr, [])
         # CRASHES getoptionalattr(NULL)
@@ -71,7 +76,8 @@ class CAPITest(unittest.TestCase):
         with support.swap_attr(sys, '\U0001f40d', 42):
             self.assertEqual(getoptionalattrstring('\U0001f40d'.encode()), 42)
 
-        self.assertIs(getoptionalattrstring(b'nonexisting'), AttributeError)
+        self.assertIs(getoptionalattrstring(b'nonexistent'), AttributeError)
+        self.assertIs(getoptionalattrstring('\U0001f40d'.encode()), AttributeError)
         self.assertRaises(UnicodeDecodeError, getoptionalattrstring, b'\xff')
         # CRASHES getoptionalattrstring(NULL)
 
@@ -85,7 +91,7 @@ class CAPITest(unittest.TestCase):
         with support.swap_attr(sys, '\U0001f40d', 42):
             self.assertEqual(getobject('\U0001f40d'.encode()), 42)
 
-        self.assertIs(getobject(b'nonexisting'), AttributeError)
+        self.assertIs(getobject(b'nonexistent'), AttributeError)
         with support.catch_unraisable_exception() as cm:
             self.assertIs(getobject(b'\xff'), AttributeError)
             self.assertEqual(cm.unraisable.exc_type, UnicodeDecodeError)
