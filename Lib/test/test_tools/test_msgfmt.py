@@ -33,7 +33,7 @@ with imports_under_tool("i18n"):
 
 
 def compile_many_messages(mo_file, *po_files):
-    assert_python_ok(msgfmt, '-o', mo_file, *po_files)
+    assert_python_ok(msgfmt_py, '-o', mo_file, *po_files)
 
 
 def compile_messages(po_file, mo_file):
@@ -291,7 +291,7 @@ class MultiInputTest(unittest.TestCase):
         Unix endings (lf)
         """
         with temp_cwd(None):
-            assert_python_ok(msgfmt, '-o', 'file12.mo',
+            assert_python_ok(msgfmt_py, '-o', 'file12.mo',
                              data_dir / 'file1_fr_crlf.po',
                              data_dir / 'file2_fr_lf.po')
             self.assertTrue(filecmp.cmp(data_dir / 'file12_fr.mo',
@@ -303,7 +303,7 @@ class MultiInputTest(unittest.TestCase):
         with temp_cwd(None):
             shutil.copy(data_dir / 'file1_fr_crlf.po', '.')
             shutil.copy(data_dir / 'file2_fr_lf.po', '.')
-            assert_python_ok(msgfmt, 'file1_fr_crlf.po', 'file2_fr_lf.po')
+            assert_python_ok(msgfmt_py, 'file1_fr_crlf.po', 'file2_fr_lf.po')
             self.assertTrue(filecmp.cmp(data_dir / 'file1_fr_crlf.mo',
                                         'file1_fr_crlf.mo'))
             self.assertTrue(filecmp.cmp(data_dir / 'file2_fr_lf.mo',
@@ -314,13 +314,13 @@ class PONamesTest(unittest.TestCase):
     def test_no_extension(self):
         with temp_cwd(None):
             shutil.copy(data_dir / 'file1_fr_crlf.po', 'file1.fr.po')
-            assert_python_ok(msgfmt, 'file1.fr')
+            assert_python_ok(msgfmt_py, 'file1.fr')
             self.assertTrue(os.path.exists('file1.fr.mo'))
 
     def test_wrong_extension(self):
         with temp_cwd(None):
             shutil.copy(data_dir / 'file1_fr_crlf.po', 'file1_fr.pox')
-            assert_python_failure(msgfmt, 'file1_fr.pox')
+            assert_python_failure(msgfmt_py, 'file1_fr.pox')
             self.assertFalse(os.path.exists('file1_fr.mo'))
             self.assertFalse(os.path.exists('file1_fr.pox.mo'))
 
@@ -328,7 +328,7 @@ class PONamesTest(unittest.TestCase):
     def test_MAJ_on_Windows(self):
         with temp_cwd(None):
             shutil.copy(data_dir / 'file1_fr_crlf.po', 'File1.PO')
-            assert_python_ok(msgfmt, 'FIle1.Po')
+            assert_python_ok(msgfmt_py, 'FIle1.Po')
             self.assertTrue(os.path.exists('file1.mo'))
 
 
