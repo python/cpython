@@ -375,6 +375,23 @@ eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
     }
 }
 
+static JitOptSymbol *
+lookup_attr(JitOptContext *ctx, _PyUOpInstruction *this_instr,
+            PyTypeObject *type, PyObject *name, uint16_t immortal,
+            uint16_t mortal)
+{
+    // The cached value may be dead, so we need to do the lookup again... :(
+    if (type && PyType_Check(type)) {
+        PyObject *lookup = _PyType_Lookup(type, name);
+        if (lookup) {
+            int opcode = _Py_IsImmortal(lookup) ? immortal : mortal;
+            REPLACE_OP(this_instr, opcode, 0, (uintptr_t)lookup);
+            return sym_new_const(ctx, lookup);
+        }
+    }
+    return sym_new_not_null(ctx);
+}
+
 /* _PUSH_FRAME/_RETURN_VALUE's operand can be 0, a PyFunctionObject *, or a
  * PyCodeObject *. Retrieve the code object if possible.
  */
@@ -527,6 +544,8 @@ const uint16_t op_without_push[MAX_UOP_ID + 1] = {
     [_COPY] = _NOP,
     [_LOAD_CONST_INLINE] = _NOP,
     [_LOAD_CONST_INLINE_BORROW] = _NOP,
+    [_LOAD_CONST_UNDER_INLINE] = _POP_TOP_LOAD_CONST_INLINE,
+    [_LOAD_CONST_UNDER_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
     [_LOAD_FAST] = _NOP,
     [_LOAD_FAST_BORROW] = _NOP,
     [_LOAD_SMALL_INT] = _NOP,
@@ -535,10 +554,16 @@ const uint16_t op_without_push[MAX_UOP_ID + 1] = {
     [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TWO,
 };
 
+const bool op_skip[MAX_UOP_ID + 1] = {
+    [_NOP] = true,
+    [_CHECK_VALIDITY] = true,
+};
+
 const uint16_t op_without_pop[MAX_UOP_ID + 1] = {
     [_POP_TOP] = _NOP,
     [_POP_TOP_LOAD_CONST_INLINE] = _LOAD_CONST_INLINE,
     [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _LOAD_CONST_INLINE_BORROW,
+    [_POP_TWO] = _POP_TOP,
     [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
 };
 
@@ -578,7 +603,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 //     _NOP + _POP_TOP + _NOP
                 while (op_without_pop[opcode]) {
                     _PyUOpInstruction *last = &buffer[pc - 1];
-                    while (last->opcode == _NOP) {
+                    while (op_skip[last->opcode]) {
                         last--;
                     }
                     if (!op_without_push[last->opcode]) {
@@ -586,6 +611,10 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     }
                     last->opcode = op_without_push[last->opcode];
                     opcode = buffer[pc].opcode = op_without_pop[opcode];
+                    if (op_without_pop[last->opcode]) {
+                        opcode = last->opcode;
+                        pc = last - buffer;
+                    }
                 }
                 /* _PUSH_FRAME doesn't escape or error, but it
                  * does need the IP for the return address */

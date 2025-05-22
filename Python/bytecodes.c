@@ -5293,6 +5293,18 @@ dummy_func(
             value = PyStackRef_FromPyObjectBorrow(ptr);
         }
 
+        tier2 op(_LOAD_CONST_UNDER_INLINE, (ptr/4, old -- value, new)) {
+            new = old;
+            DEAD(old);
+            value = PyStackRef_FromPyObjectNew(ptr);
+        }
+
+        tier2 op(_LOAD_CONST_UNDER_INLINE_BORROW, (ptr/4, old -- value, new)) {
+            new = old;
+            DEAD(old);
+            value = PyStackRef_FromPyObjectBorrow(ptr);
+        }
+
         tier2 op(_CHECK_FUNCTION, (func_version/2 -- )) {
             assert(PyStackRef_FunctionCheck(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
