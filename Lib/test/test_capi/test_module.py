@@ -23,3 +23,7 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
         mod = _testcapi.module_from_slots_name(FakeSpec())
         self.assertIsInstance(mod, types.ModuleType)
         self.assertEqual(mod.__name__, 'testmod')
+
+    def test_repeat_name(self):
+        with self.assertRaises(SystemError):
+            _testcapi.module_from_slots_repeat_name(FakeSpec())
