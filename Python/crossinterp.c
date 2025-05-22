@@ -1795,6 +1795,7 @@ typedef struct _sharednsitem {
     // in a different interpreter to release the XI data.
 } _PyXI_namespace_item;
 
+#ifndef NDEBUG
 static int
 _sharednsitem_is_initialized(_PyXI_namespace_item *item)
 {
@@ -1803,6 +1804,7 @@ _sharednsitem_is_initialized(_PyXI_namespace_item *item)
     }
     return 0;
 }
+#endif
 
 static int
 _sharednsitem_init(_PyXI_namespace_item *item, PyObject *key)
