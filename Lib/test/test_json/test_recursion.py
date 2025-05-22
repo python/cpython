@@ -69,6 +69,7 @@ class TestRecursion:
 
 
     @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_highly_nested_objects_decoding(self):
         very_deep = 200000
         # test that loading highly-nested objects doesn't segfault when C
@@ -98,6 +99,7 @@ class TestRecursion:
                 self.dumps(d)
 
     @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_endless_recursion(self):
         # See #12051
         class EndlessJSONEncoder(self.json.JSONEncoder):
