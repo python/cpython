@@ -1,2 +1,2 @@
 In addition to space, tab, and empty string, quote arguments containing
-``:&<>^|`` on Windows. Patch by John Keith Hohm.
+``&<>^|`` on Windows. Patch by John Keith Hohm.
