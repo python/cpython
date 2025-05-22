@@ -130,7 +130,6 @@ complete listing.
            .m_base = PyModuleDef_HEAD_INIT,
            .m_name = "spam",
            .m_size = 0,
-           .m_slots = spam_module_slots,
            ...
        };
 

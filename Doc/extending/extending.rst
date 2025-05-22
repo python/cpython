@@ -259,14 +259,6 @@ with an exception object::
 
    static PyModuleDef_Slot spam_module_slots[] = {
        {Py_mod_exec, spam_module_exec},
-   #ifdef Py_mod_multiple_interpreters
-       // signal that this module can be imported in isolated subinterpreters
-       {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-   #endif
-   #ifdef Py_mod_gil
-       // signal that this module supports running without an active GIL
-       {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-   #endif
        {0, NULL}
    };
 
@@ -484,15 +476,15 @@ optionally followed by an import of the module::
 .. note::
 
    If you define *static* extension types rather than heap-allocated types,
-   the module can create the same problems as the legacy single-phase
+   the module can cause the same problems as the legacy single-phase
    initialization when removing entries from ``sys.modules`` or importing
    compiled modules into multiple interpreters within a process
    (or following a :c:func:`fork` without an intervening :c:func:`exec`).
-   In this case, at least the :c:data:`Py_mod_multiple_interpreters` slot
-   in the examples should be ``Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED``.
+   In this case, at least the module should reject subinterpreters by using
+   a :c:type:`PyModuleDef_Slot` (``Py_mod_multiple_interpreters``).
 
 A more substantial example module is included in the Python source distribution
-as :file:`Modules/xxlimited.c`.  This file may be used as a  template or simply
+as :file:`Modules/xxlimited.c`.  This file may be used as a template or simply
 read as an example.
 
 .. _compilation:
@@ -834,22 +826,11 @@ Philbrick (philbrick@hks.com)::
        {NULL, NULL, 0, NULL}   /* sentinel */
    };
 
-   static PyModuleDef_Slot keywdarg_slots[] = {
-   #ifdef Py_mod_multiple_interpreters
-       {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-   #endif
-   #ifdef Py_mod_gil
-       {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-   #endif
-       {0, NULL}
-   };
-
    static struct PyModuleDef keywdarg_module = {
        .m_base = PyModuleDef_HEAD_INIT,
        .m_name = "keywdarg",
        .m_size = 0,
        .m_methods = keywdarg_methods,
-       .m_slots = keywdarg_slots,
    };
 
    PyMODINIT_FUNC
@@ -1343,12 +1324,6 @@ function must take care of initializing the C API pointer array::
 
    static PyModuleDef_Slot spam_module_slots[] = {
        {Py_mod_exec, spam_module_exec},
-   #ifdef Py_mod_multiple_interpreters
-       {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-   #endif
-   #ifdef Py_mod_gil
-       {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-   #endif
        {0, NULL}
    };
 
@@ -1426,12 +1401,6 @@ like this::
 
    static PyModuleDef_Slot client_module_slots[] = {
        {Py_mod_exec, client_module_exec},
-   #ifdef Py_mod_multiple_interpreters
-       {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-   #endif
-   #ifdef Py_mod_gil
-       {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-   #endif
        {0, NULL}
    };
 
