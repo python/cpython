@@ -80,8 +80,8 @@ PySys_GetAttr(PyObject *name)
 {
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
-                     "attribute name must be string, not '%.200s'",
-                     Py_TYPE(name)->tp_name);
+                     "attribute name must be string, not '%T'",
+                     name);
         return NULL;
     }
     PyThreadState *tstate = _PyThreadState_GET();
@@ -118,8 +118,8 @@ PySys_GetOptionalAttr(PyObject *name, PyObject **value)
 {
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
-                     "attribute name must be string, not '%.200s'",
-                     Py_TYPE(name)->tp_name);
+                     "attribute name must be string, not '%T'",
+                     name);
         *value = NULL;
         return -1;
     }
