@@ -3,8 +3,16 @@ import base64
 import binascii
 import os
 from array import array
+from test.support import cpython_only
 from test.support import os_helper
 from test.support import script_helper
+from test.support.import_helper import ensure_lazy_imports
+
+
+class LazyImportTest(unittest.TestCase):
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("base64", {"re", "getopt"})
 
 
 class LegacyBase64TestCase(unittest.TestCase):

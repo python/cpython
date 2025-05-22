@@ -19,14 +19,11 @@
 #include "pycore_opcode_utils.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_uop_metadata.h"
-#include "pycore_dict.h"
 #include "pycore_long.h"
 #include "pycore_interpframe.h"  // _PyFrame_GetCode
 #include "pycore_optimizer.h"
 #include "pycore_object.h"
-#include "pycore_dict.h"
 #include "pycore_function.h"
-#include "pycore_uop_metadata.h"
 #include "pycore_uop_ids.h"
 #include "pycore_range.h"
 
@@ -526,6 +523,25 @@ error:
 
 }
 
+const uint16_t op_without_push[MAX_UOP_ID + 1] = {
+    [_COPY] = _NOP,
+    [_LOAD_CONST_INLINE] = _NOP,
+    [_LOAD_CONST_INLINE_BORROW] = _NOP,
+    [_LOAD_FAST] = _NOP,
+    [_LOAD_FAST_BORROW] = _NOP,
+    [_LOAD_SMALL_INT] = _NOP,
+    [_POP_TOP_LOAD_CONST_INLINE] = _POP_TOP,
+    [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _POP_TOP,
+    [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TWO,
+};
+
+const uint16_t op_without_pop[MAX_UOP_ID + 1] = {
+    [_POP_TOP] = _NOP,
+    [_POP_TOP_LOAD_CONST_INLINE] = _LOAD_CONST_INLINE,
+    [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _LOAD_CONST_INLINE_BORROW,
+    [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
+};
+
 
 static int
 remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
@@ -554,31 +570,23 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     buffer[pc].opcode = _NOP;
                 }
                 break;
-            case _POP_TOP:
-            {
-                _PyUOpInstruction *last = &buffer[pc-1];
-                while (last->opcode == _NOP) {
-                    last--;
-                }
-                if (last->opcode == _LOAD_CONST_INLINE  ||
-                    last->opcode == _LOAD_CONST_INLINE_BORROW ||
-                    last->opcode == _LOAD_FAST ||
-                    last->opcode == _LOAD_FAST_BORROW ||
-                    last->opcode == _COPY
-                ) {
-                    last->opcode = _NOP;
-                    buffer[pc].opcode = _NOP;
-                }
-                if (last->opcode == _REPLACE_WITH_TRUE) {
-                    last->opcode = _NOP;
-                }
-                break;
-            }
-            case _JUMP_TO_TOP:
-            case _EXIT_TRACE:
-                return pc + 1;
             default:
             {
+                // Cancel out pushes and pops, repeatedly. So:
+                //     _LOAD_FAST + _POP_TWO_LOAD_CONST_INLINE_BORROW + _POP_TOP
+                // ...becomes:
+                //     _NOP + _POP_TOP + _NOP
+                while (op_without_pop[opcode]) {
+                    _PyUOpInstruction *last = &buffer[pc - 1];
+                    while (last->opcode == _NOP) {
+                        last--;
+                    }
+                    if (!op_without_push[last->opcode]) {
+                        break;
+                    }
+                    last->opcode = op_without_push[last->opcode];
+                    opcode = buffer[pc].opcode = op_without_pop[opcode];
+                }
                 /* _PUSH_FRAME doesn't escape or error, but it
                  * does need the IP for the return address */
                 bool needs_ip = opcode == _PUSH_FRAME;
@@ -591,7 +599,11 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     buffer[last_set_ip].opcode = _SET_IP;
                     last_set_ip = -1;
                 }
+                break;
             }
+            case _JUMP_TO_TOP:
+            case _EXIT_TRACE:
+                return pc + 1;
         }
     }
     Py_UNREACHABLE();

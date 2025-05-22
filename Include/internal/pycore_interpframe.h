@@ -18,6 +18,7 @@ extern "C" {
     ((int)((IF)->instr_ptr - _PyFrame_GetBytecode((IF))))
 
 static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
+    assert(!PyStackRef_IsNull(f->f_executable));
     PyObject *executable = PyStackRef_AsPyObjectBorrow(f->f_executable);
     assert(PyCode_Check(executable));
     return (PyCodeObject *)executable;
@@ -47,13 +48,13 @@ static inline _PyStackRef *_PyFrame_Stackbase(_PyInterpreterFrame *f) {
 }
 
 static inline _PyStackRef _PyFrame_StackPeek(_PyInterpreterFrame *f) {
-    assert(f->stackpointer >  f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus);
+    assert(f->stackpointer > _PyFrame_Stackbase(f));
     assert(!PyStackRef_IsNull(f->stackpointer[-1]));
     return f->stackpointer[-1];
 }
 
 static inline _PyStackRef _PyFrame_StackPop(_PyInterpreterFrame *f) {
-    assert(f->stackpointer >  f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus);
+    assert(f->stackpointer > _PyFrame_Stackbase(f));
     f->stackpointer--;
     return *f->stackpointer;
 }

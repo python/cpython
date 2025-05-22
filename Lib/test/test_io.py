@@ -445,6 +445,25 @@ class IOTest(unittest.TestCase):
             self.assertRaises(exc, fp.seek, 1, self.SEEK_CUR)
             self.assertRaises(exc, fp.seek, -1, self.SEEK_END)
 
+    @support.cpython_only
+    def test_startup_optimization(self):
+        # gh-132952: Test that `io` is not imported at startup and that the
+        # __module__ of UnsupportedOperation is set to "io".
+        assert_python_ok("-S", "-c", textwrap.dedent(
+            """
+            import sys
+            assert "io" not in sys.modules
+            try:
+                sys.stdin.truncate()
+            except Exception as e:
+                typ = type(e)
+                assert typ.__module__ == "io", (typ, typ.__module__)
+                assert typ.__name__ == "UnsupportedOperation", (typ, typ.__name__)
+            else:
+                raise AssertionError("Expected UnsupportedOperation")
+            """
+        ))
+
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_optional_abilities(self):
         # Test for OSError when optional APIs are not supported
@@ -553,7 +572,7 @@ class IOTest(unittest.TestCase):
         for [test, abilities] in tests:
             with self.subTest(test):
                 if test == pipe_writer and not threading_helper.can_start_thread:
-                    skipTest()
+                    self.skipTest("Need threads")
                 with test() as obj:
                     do_test(test, obj, abilities)
 
@@ -899,7 +918,7 @@ class IOTest(unittest.TestCase):
         def badopener(fname, flags):
             return -1
         with self.assertRaises(ValueError) as cm:
-            open('non-existent', 'r', opener=badopener)
+            self.open('non-existent', 'r', opener=badopener)
         self.assertEqual(str(cm.exception), 'opener returned -1')
 
     def test_bad_opener_other_negative(self):
@@ -907,7 +926,7 @@ class IOTest(unittest.TestCase):
         def badopener(fname, flags):
             return -2
         with self.assertRaises(ValueError) as cm:
-            open('non-existent', 'r', opener=badopener)
+            self.open('non-existent', 'r', opener=badopener)
         self.assertEqual(str(cm.exception), 'opener returned -2')
 
     def test_opener_invalid_fd(self):
@@ -1353,6 +1372,28 @@ class CommonBufferedTests:
         x = self.MockRawIO()
         with self.assertRaises(AttributeError):
             buf.raw = x
+
+    def test_pickling_subclass(self):
+        global MyBufferedIO
+        class MyBufferedIO(self.tp):
+            def __init__(self, raw, tag):
+                super().__init__(raw)
+                self.tag = tag
+            def __getstate__(self):
+                return self.tag, self.raw.getvalue()
+            def __setstate__(slf, state):
+                tag, value = state
+                slf.__init__(self.BytesIO(value), tag)
+
+        raw = self.BytesIO(b'data')
+        buf = MyBufferedIO(raw, tag='ham')
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=proto):
+                pickled = pickle.dumps(buf, proto)
+                newbuf = pickle.loads(pickled)
+                self.assertEqual(newbuf.raw.getvalue(), b'data')
+                self.assertEqual(newbuf.tag, 'ham')
+        del MyBufferedIO
 
 
 class SizeofTest:
@@ -3931,6 +3972,28 @@ class TextIOWrapperTest(unittest.TestCase):
         f.write(res)
         self.assertEqual(res + f.readline(), 'foo\nbar\n')
 
+    def test_pickling_subclass(self):
+        global MyTextIO
+        class MyTextIO(self.TextIOWrapper):
+            def __init__(self, raw, tag):
+                super().__init__(raw)
+                self.tag = tag
+            def __getstate__(self):
+                return self.tag, self.buffer.getvalue()
+            def __setstate__(slf, state):
+                tag, value = state
+                slf.__init__(self.BytesIO(value), tag)
+
+        raw = self.BytesIO(b'data')
+        txt = MyTextIO(raw, 'ham')
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=proto):
+                pickled = pickle.dumps(txt, proto)
+                newtxt = pickle.loads(pickled)
+                self.assertEqual(newtxt.buffer.getvalue(), b'data')
+                self.assertEqual(newtxt.tag, 'ham')
+        del MyTextIO
+
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_read_non_blocking(self):
         import os
@@ -4354,7 +4417,7 @@ class MiscIOTest(unittest.TestCase):
         self._check_abc_inheritance(io)
 
     def _check_warn_on_dealloc(self, *args, **kwargs):
-        f = open(*args, **kwargs)
+        f = self.open(*args, **kwargs)
         r = repr(f)
         with self.assertWarns(ResourceWarning) as cm:
             f = None
@@ -4383,7 +4446,7 @@ class MiscIOTest(unittest.TestCase):
         r, w = os.pipe()
         fds += r, w
         with warnings_helper.check_no_resource_warning(self):
-            open(r, *args, closefd=False, **kwargs)
+            self.open(r, *args, closefd=False, **kwargs)
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_warn_on_dealloc_fd(self):
