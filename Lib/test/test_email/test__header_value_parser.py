@@ -1035,10 +1035,6 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(len(phrase), 4)
         self.assertEqual(phrase[3].comments, ['with trailing comment'])
 
-    def get_phrase_cfws_only_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_phrase(' (foo) ')
-
     # get_local_part
 
     def test_get_local_part_simple(self):
