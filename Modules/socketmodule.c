@@ -1495,7 +1495,7 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
 #elif defined(__FreeBSD__)
             const char *node = _BT_HCI_MEMB(a, node);
             size_t len = strnlen(node, sizeof(_BT_HCI_MEMB(a, node)));
-            return PyBytes_FromStringAndSize(node, (Py_ssize_t)len);
+            return PyUnicode_FromStringAndSize(node, (Py_ssize_t)len);
 #else
             return makebdaddr(&_BT_HCI_MEMB(a, bdaddr));
 #endif
@@ -2075,36 +2075,25 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 return 0;
             }
             _BT_HCI_MEMB(addr, dev) = dev;
-#elif defined(__FreeBSD__)
-            if (!PyBytes_Check(args)) {
+#else
+            const char *straddr;
+            if (!PyArg_Parse(args, "s", &straddr)) {
                 PyErr_Format(PyExc_OSError, "%s: "
-                             "wrong node format", caller);
+                             "wrong format", caller);
                 return 0;
             }
-            const char *straddr = PyBytes_AS_STRING(args);
-            size_t len = PyBytes_GET_SIZE(args);
-            if (strlen(straddr) != len) {
-                PyErr_Format(PyExc_ValueError, "%s: "
-                             "node contains embedded null character", caller);
-                return 0;
-            }
-            if (len > sizeof(_BT_HCI_MEMB(addr, node))) {
+# if defined(__FreeBSD__)
+            if (strlen(straddr) > sizeof(_BT_HCI_MEMB(addr, node))) {
                 PyErr_Format(PyExc_ValueError, "%s: "
                              "node too long", caller);
                 return 0;
             }
             strncpy(_BT_HCI_MEMB(addr, node), straddr,
                     sizeof(_BT_HCI_MEMB(addr, node)));
-#else
-            const char *straddr;
-            if (!PyBytes_Check(args)) {
-                PyErr_Format(PyExc_OSError, "%s: "
-                             "wrong format", caller);
-                return 0;
-            }
-            straddr = PyBytes_AS_STRING(args);
+# else
             if (setbdaddr(straddr, &_BT_HCI_MEMB(addr, bdaddr)) < 0)
                 return 0;
+# endif
 #endif
             *len_ret = sizeof *addr;
             return 1;
@@ -2117,12 +2106,22 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             struct sockaddr_sco *addr = &addrbuf->bt_sco;
             memset(addr, 0, sizeof(struct sockaddr_sco));
             _BT_SCO_MEMB(addr, family) = AF_BLUETOOTH;
-            if (!PyBytes_Check(args)) {
+
+            if (PyBytes_Check(args)) {
+                if (!PyArg_Parse(args, "y", &straddr)) {
+                    return 0;
+                }
+            }
+            else if (PyUnicode_Check(args)) {
+                if (!PyArg_Parse(args, "s", &straddr)) {
+                    return 0;
+                }
+            }
+            else {
                 PyErr_Format(PyExc_OSError,
                              "%s(): wrong format", caller);
                 return 0;
             }
-            straddr = PyBytes_AS_STRING(args);
             if (setbdaddr(straddr, &_BT_SCO_MEMB(addr, bdaddr)) < 0)
                 return 0;
 
@@ -8158,7 +8157,7 @@ socket_exec(PyObject *m)
 #endif
 #if defined(HAVE_LINUX_CAN_RAW_H) || defined(HAVE_NETCAN_CAN_H)
     ADD_INT_MACRO(m, CAN_RAW_FILTER);
-#ifdef CAN_RAW_ERR_FILTER
+#ifdef HAVE_LINUX_CAN_RAW_H
     ADD_INT_MACRO(m, CAN_RAW_ERR_FILTER);
 #endif
     ADD_INT_MACRO(m, CAN_RAW_LOOPBACK);

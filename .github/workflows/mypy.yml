@@ -8,9 +8,17 @@ on:
   pull_request:
     paths:
       - ".github/workflows/mypy.yml"
+      - "Lib/_colorize.py"
       - "Lib/_pyrepl/**"
       - "Lib/test/libregrtest/**"
+      - "Lib/tomllib/**"
+      - "Misc/mypy/**"
+      - "Tools/build/compute-changes.py"
+      - "Tools/build/deepfreeze.py"
       - "Tools/build/generate_sbom.py"
+      - "Tools/build/verify_ensurepip_wheels.py"
+      - "Tools/build/update_file.py"
+      - "Tools/build/umarshal.py"
       - "Tools/cases_generator/**"
       - "Tools/clinic/**"
       - "Tools/jit/**"
@@ -42,6 +50,7 @@ jobs:
         target: [
           "Lib/_pyrepl",
           "Lib/test/libregrtest",
+          "Lib/tomllib",
           "Tools/build",
           "Tools/cases_generator",
           "Tools/clinic",

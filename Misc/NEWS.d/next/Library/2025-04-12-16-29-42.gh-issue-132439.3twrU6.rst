@@ -1,0 +1,2 @@
+Fix ``PyREPL`` on Windows: characters entered via AltGr are swallowed.
+Patch by Chris Eibl.

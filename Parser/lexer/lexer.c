@@ -140,7 +140,7 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
         for (i = 0, j = 0; i < input_length; i++) {
             if (tok_mode->last_expr_buffer[i] == '#') {
                 // Skip characters until newline or end of string
-                while (tok_mode->last_expr_buffer[i] != '\0' && i < input_length) {
+                while (i < input_length && tok_mode->last_expr_buffer[i] != '\0') {
                     if (tok_mode->last_expr_buffer[i] == '\n') {
                         result[j++] = tok_mode->last_expr_buffer[i];
                         break;
@@ -1347,6 +1347,14 @@ f_string_middle:
             // it means that the format spec ends here and we should
             // return to the regular mode.
             if (in_format_spec && c == '\n') {
+                if (current_tok->f_string_quote_size == 1) {
+                    return MAKE_TOKEN(
+                        _PyTokenizer_syntaxerror(
+                            tok,
+                            "f-string: newlines are not allowed in format specifiers for single quoted f-strings"
+                        )
+                    );
+                }
                 tok_backup(tok, c);
                 TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
                 current_tok->in_format_spec = 0;

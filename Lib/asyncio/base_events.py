@@ -458,18 +458,24 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Create a Future object attached to the loop."""
         return futures.Future(loop=self)
 
-    def create_task(self, coro, **kwargs):
+    def create_task(self, coro, *, name=None, context=None, **kwargs):
         """Schedule a coroutine object.
 
         Return a task object.
         """
         self._check_closed()
         if self._task_factory is not None:
-            return self._task_factory(self, coro, **kwargs)
+            if context is not None:
+                kwargs["context"] = context
 
-        task = tasks.Task(coro, loop=self, **kwargs)
-        if task._source_traceback:
-            del task._source_traceback[-1]
+            task = self._task_factory(self, coro, **kwargs)
+            task.set_name(name)
+
+        else:
+            task = tasks.Task(coro, loop=self, name=name, context=context, **kwargs)
+            if task._source_traceback:
+                del task._source_traceback[-1]
+
         try:
             return task
         finally:
@@ -1877,6 +1883,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         - 'protocol' (optional): Protocol instance;
         - 'transport' (optional): Transport instance;
         - 'socket' (optional): Socket instance;
+        - 'source_traceback' (optional): Traceback of the source;
+        - 'handle_traceback' (optional): Traceback of the handle;
         - 'asyncgen' (optional): Asynchronous generator that caused
                                  the exception.
 

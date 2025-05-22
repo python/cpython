@@ -158,7 +158,7 @@ class urlopen_FileTests(unittest.TestCase, ExtraAssertions):
         finally:
             f.close()
         self.pathname = os_helper.TESTFN
-        self.quoted_pathname = urllib.parse.quote(self.pathname)
+        self.quoted_pathname = urllib.parse.quote(os.fsencode(self.pathname))
         self.returned_obj = urlopen("file:%s" % self.quoted_pathname)
 
     def tearDown(self):
