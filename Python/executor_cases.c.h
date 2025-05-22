@@ -539,6 +539,24 @@
             break;
         }
 
+        case _POP_TWO: {
+            _PyStackRef tos;
+            _PyStackRef nos;
+            tos = stack_pointer[-1];
+            nos = stack_pointer[-2];
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(tos);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(nos);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            break;
+        }
+
         case _PUSH_NULL: {
             _PyStackRef res;
             res = PyStackRef_NULL;
