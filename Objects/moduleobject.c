@@ -29,8 +29,8 @@ static PyMemberDef module_members[] = {
 
 static void
 assert_def_missing_or_redundant(PyModuleObject *m) {
-    if (m->md_def) {
-#define DO_ASSERT(F) assert (m->md_def->m_ ## F == m->md_ ## F);
+    if (m->md_def_or_null) {
+#define DO_ASSERT(F) assert (m->md_def_or_null->m_ ## F == m->md_ ## F);
         DO_ASSERT(size);
         DO_ASSERT(traverse);
         DO_ASSERT(clear);
@@ -56,7 +56,7 @@ _PyModule_IsExtension(PyObject *obj)
     }
     PyModuleObject *module = (PyModuleObject*)obj;
 
-    PyModuleDef *def = module->md_def;
+    PyModuleDef *def = module->md_def_or_null;
     return (def != NULL && def->m_methods != NULL);
 }
 
@@ -158,7 +158,7 @@ new_module_notrack(PyTypeObject *mt)
     m = (PyModuleObject *)_PyType_AllocNoTrack(mt, 0);
     if (m == NULL)
         return NULL;
-    m->md_def = NULL;
+    m->md_def_or_null = NULL;
     m->md_state = NULL;
     m->md_weaklist = NULL;
     m->md_name = NULL;
@@ -285,7 +285,7 @@ PyModule_Create2(PyModuleDef* module, int module_api_version)
 static void
 module_set_def(PyModuleObject *md, PyModuleDef *def)
 {
-    md->md_def = def;
+    md->md_def_or_null = def;
     md->md_size = def->m_size;
     md->md_traverse = def->m_traverse;
     md->md_clear = def->m_clear;
@@ -818,7 +818,7 @@ PyModule_GetDef(PyObject* m)
         PyErr_BadArgument();
         return NULL;
     }
-    return _PyModule_GetDef(m);
+    return _PyModule_GetDefOrNull(m);
 }
 
 void*
@@ -944,10 +944,9 @@ module_dealloc(PyObject *self)
 
     assert_def_missing_or_redundant(m);
     /* bpo-39824: Don't call m_free() if m_size > 0 and md_state=NULL */
-    if (m->md_def && m->md_def->m_free
-        && (m->md_def->m_size <= 0 || m->md_state != NULL))
+    if (m->md_free && (m->md_size <= 0 || m->md_state != NULL))
     {
-        m->md_def->m_free(m);
+        m->md_free(m);
     }
 
     Py_XDECREF(m->md_dict);
@@ -1263,10 +1262,9 @@ module_traverse(PyObject *self, visitproc visit, void *arg)
 
     assert_def_missing_or_redundant(m);
     /* bpo-39824: Don't call m_traverse() if m_size > 0 and md_state=NULL */
-    if (m->md_def && m->md_def->m_traverse
-        && (m->md_def->m_size <= 0 || m->md_state != NULL))
+    if (m->md_traverse && (m->md_size <= 0 || m->md_state != NULL))
     {
-        int res = m->md_def->m_traverse((PyObject*)m, visit, arg);
+        int res = m->md_traverse((PyObject*)m, visit, arg);
         if (res)
             return res;
     }
@@ -1282,10 +1280,9 @@ module_clear(PyObject *self)
 
     assert_def_missing_or_redundant(m);
     /* bpo-39824: Don't call m_clear() if m_size > 0 and md_state=NULL */
-    if (m->md_def && m->md_def->m_clear
-        && (m->md_def->m_size <= 0 || m->md_state != NULL))
+    if (m->md_clear && (m->md_size <= 0 || m->md_state != NULL))
     {
-        int res = m->md_def->m_clear((PyObject*)m);
+        int res = m->md_clear((PyObject*)m);
         if (PyErr_Occurred()) {
             PyErr_FormatUnraisable("Exception ignored in m_clear of module%s%V",
                                    m->md_name ? " " : "",

@@ -19,7 +19,9 @@ extern int _PyModule_IsExtension(PyObject *obj);
 typedef struct {
     PyObject_HEAD
     PyObject *md_dict;
-    PyModuleDef *md_def;
+    // The PyModuleDef used to define the module, if any.
+    // (used to be `md_def` when all extension modules had one)
+    PyModuleDef *md_def_or_null;
     void *md_state;
     PyObject *md_weaklist;
     // for logging purposes after md_dict is cleared
@@ -35,9 +37,9 @@ typedef struct {
     int (*md_exec)(PyObject *);
 } PyModuleObject;
 
-static inline PyModuleDef* _PyModule_GetDef(PyObject *mod) {
+static inline PyModuleDef* _PyModule_GetDefOrNull(PyObject *mod) {
     assert(PyModule_Check(mod));
-    return ((PyModuleObject *)mod)->md_def;
+    return ((PyModuleObject *)mod)->md_def_or_null;
 }
 
 static inline void* _PyModule_GetState(PyObject* mod) {

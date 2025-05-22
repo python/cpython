@@ -496,7 +496,7 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
             goto error;
         }
 
-        res.def = _PyModule_GetDef(m);
+        res.def = _PyModule_GetDefOrNull(m);
         if (res.def == NULL) {
             PyErr_Clear();
             _Py_ext_module_loader_result_set_error(

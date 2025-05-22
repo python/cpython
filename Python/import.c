@@ -1801,7 +1801,7 @@ finish_singlephase_extension(PyThreadState *tstate, PyObject *mod,
                              PyObject *name, PyObject *modules)
 {
     assert(mod != NULL && PyModule_Check(mod));
-    assert(cached->def == _PyModule_GetDef(mod));
+    assert(cached->def == _PyModule_GetDefOrNull(mod));
 
     Py_ssize_t index = _get_cached_module_index(cached);
     if (_modules_by_index_set(tstate->interp, index, mod) < 0) {
@@ -1879,8 +1879,8 @@ reload_singlephase_extension(PyThreadState *tstate,
          * due to violating interpreter isolation.
          * See the note in set_cached_m_dict().
          * Until that is solved, we leave md_def set to NULL. */
-        assert(_PyModule_GetDef(mod) == NULL
-               || _PyModule_GetDef(mod) == def);
+        assert(_PyModule_GetDefOrNull(mod) == NULL
+               || _PyModule_GetDefOrNull(mod) == def);
     }
     else {
         assert(cached->m_dict == NULL);
@@ -2253,9 +2253,11 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
         return -1;
     }
 
-    PyModuleDef *def = PyModule_GetDef(mod);
+    PyModuleDef *def = _PyModule_GetDefOrNull(mod);
     if (def == NULL) {
-        PyErr_BadInternalCall();
+        if (!PyErr_Occurred()) {
+            PyErr_BadInternalCall();
+        }
         goto finally;
     }
 
@@ -2336,8 +2338,8 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         assert(!_PyErr_Occurred(tstate));
         assert(cached != NULL);
         /* The module might not have md_def set in certain reload cases. */
-        assert(_PyModule_GetDef(mod) == NULL
-                || cached->def == _PyModule_GetDef(mod));
+        assert(_PyModule_GetDefOrNull(mod) == NULL
+                || cached->def == _PyModule_GetDefOrNull(mod));
         assert_singlephase(cached);
         goto finally;
     }
@@ -4666,8 +4668,8 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         assert(!_PyErr_Occurred(tstate));
         assert(cached != NULL);
         /* The module might not have md_def set in certain reload cases. */
-        assert(_PyModule_GetDef(mod) == NULL
-                || cached->def == _PyModule_GetDef(mod));
+        assert(_PyModule_GetDefOrNull(mod) == NULL
+                || cached->def == _PyModule_GetDefOrNull(mod));
         assert_singlephase(cached);
         goto finally;
     }
