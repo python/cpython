@@ -965,11 +965,10 @@ dummy_func(void) {
             // inst is not an instance of any of them.
 
             int length = sym_tuple_length(cls);
-            bool all_items_known = true;
-            PyObject *out = NULL;
-            if (length >= 0) {
-                // We cannot do anything about tuples with unknown (length == -1)
-
+            if (length != -1) {
+                // We cannot do anything about tuples with unknown length
+                bool all_items_known = true;
+                PyObject *out = NULL;
                 for (int i = 0; i < length; i++) {
                     JitOptSymbol *item = sym_tuple_getitem(ctx, cls, i);
                     if (!sym_has_type(item)) {

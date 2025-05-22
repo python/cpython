@@ -2216,9 +2216,9 @@
             }
             else if (inst_type && sym_matches_type(cls, &PyTuple_Type)) {
                 int length = sym_tuple_length(cls);
-                bool all_items_known = true;
-                PyObject *out = NULL;
-                if (length >= 0) {
+                if (length != -1) {
+                    bool all_items_known = true;
+                    PyObject *out = NULL;
                     for (int i = 0; i < length; i++) {
                         JitOptSymbol *item = sym_tuple_getitem(ctx, cls, i);
                         if (!sym_has_type(item)) {
@@ -2243,7 +2243,7 @@
                     }
                 }
             }
-            #undef sym_is_subtype
+            #undef sym_IS_SUBTYPE
             stack_pointer[-4] = res;
             stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
