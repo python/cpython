@@ -2301,7 +2301,7 @@ The C-API provides a basic mutual exclusion lock.
       should not be used to make concurrency control decisions, as the lock
       state may change immediately after the check.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 .. _python-critical-section-api:
 
