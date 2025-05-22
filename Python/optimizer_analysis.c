@@ -638,7 +638,8 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                         else {
                             opcode = buffer[pc].opcode = _POP_TOP_LOAD_CONST_INLINE_BORROW;
                         }
-                    } else {
+                    }
+                    else {
                         break;
                     }
                 }
