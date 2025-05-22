@@ -2105,13 +2105,72 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertIn("_GUARD_IS_TRUE_POP", uops)
 
-    def test_call_isinstance_tuple_of_classes(self):
+    def test_call_isinstance_tuple_of_classes_is_true(self):
         def testfunc(n):
             x = 0
             for _ in range(n):
-                # A tuple of classes is currently not optimized,
-                # so this is only narrowed to bool:
                 y = isinstance(42, (int, str))
+                if y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+        self.assertIn("_BUILD_TUPLE", uops)
+        self.assertIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_call_isinstance_tuple_of_classes_is_false(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = isinstance(42, (bool, str))
+                if not y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertNotIn("_GUARD_IS_FALSE_POP", uops)
+        self.assertIn("_BUILD_TUPLE", uops)
+        self.assertIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_call_isinstance_tuple_of_classes_true_unknown(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                # One of the classes is unknown, but we can still
+                # narrow to True
+                y = isinstance(42, (eval('str'), int))
+                if y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+        self.assertIn("_BUILD_TUPLE", uops)
+        self.assertIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_call_isinstance_tuple_of_classes_unknown_not_narrowed(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                # One of the classes is unknown, so we can't narrow
+                # to True or False, only bool
+                y = isinstance(42, (str, eval('int')))
                 if y:
                     x += 1
             return x
@@ -2123,6 +2182,27 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertIn("_GUARD_IS_TRUE_POP", uops)
+
+    def test_call_isinstance_empty_tuple(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = isinstance(42, ())
+                if not y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertNotIn("_GUARD_IS_FALSE_POP", uops)
+        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_isinstance_metaclass(self):
         class EvenNumberMeta(type):

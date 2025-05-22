@@ -2201,17 +2201,49 @@
             JitOptSymbol *res;
             cls = stack_pointer[-1];
             instance = stack_pointer[-2];
+            #define sym_IS_SUBTYPE(inst, cls) ((inst) == (cls) || PyType_IsSubtype(inst, cls))
+
             res = sym_new_type(ctx, &PyBool_Type);
             PyTypeObject *inst_type = sym_get_type(instance);
             PyTypeObject *cls_o = (PyTypeObject *)sym_get_const(ctx, cls);
             if (inst_type && cls_o && sym_matches_type(cls, &PyType_Type)) {
                 PyObject *out = Py_False;
-                if (inst_type == cls_o || PyType_IsSubtype(inst_type, cls_o)) {
+                if (sym_IS_SUBTYPE(inst_type, cls_o)) {
                     out = Py_True;
                 }
                 sym_set_const(res, out);
                 REPLACE_OP(this_instr, _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
             }
+            else if (inst_type && sym_matches_type(cls, &PyTuple_Type)) {
+                int length = sym_tuple_length(cls);
+                bool all_items_known = true;
+                PyObject *out = NULL;
+                if (length >= 0) {
+                    for (int i = 0; i < length; i++) {
+                        JitOptSymbol *item = sym_tuple_getitem(ctx, cls, i);
+                        if (!sym_has_type(item)) {
+                            all_items_known = false;
+                            continue;
+                        }
+                        PyTypeObject *cls_o = (PyTypeObject *)sym_get_const(ctx, item);
+                        if (cls_o &&
+                            sym_matches_type(item, &PyType_Type) &&
+                            sym_IS_SUBTYPE(inst_type, cls_o))
+                        {
+                            out = Py_True;
+                            break;
+                        }
+                    }
+                    if (!out && all_items_known) {
+                        out = Py_False;
+                    }
+                    if (out) {
+                        sym_set_const(res, out);
+                        REPLACE_OP(this_instr, _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
+                    }
+                }
+            }
+            #undef sym_is_subtype
             stack_pointer[-4] = res;
             stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
