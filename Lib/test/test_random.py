@@ -1411,6 +1411,7 @@ class TestModule(unittest.TestCase):
 
 
 class CommandLineTest(unittest.TestCase):
+    @support.force_not_colorized
     def test_parse_args(self):
         args, help_text = random._parse_args(shlex.split("--choice a b c"))
         self.assertEqual(args.choice, ["a", "b", "c"])

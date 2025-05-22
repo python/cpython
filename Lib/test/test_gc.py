@@ -7,7 +7,7 @@ from test.support import (verbose, refcount_test,
                           Py_GIL_DISABLED)
 from test.support.import_helper import import_module
 from test.support.os_helper import temp_dir, TESTFN, unlink
-from test.support.script_helper import assert_python_ok, make_script
+from test.support.script_helper import assert_python_ok, make_script, run_test_script
 from test.support import threading_helper, gc_threshold
 
 import gc
@@ -300,7 +300,7 @@ class GCTests(unittest.TestCase):
         # We're mostly just checking that this doesn't crash.
         rc, stdout, stderr = assert_python_ok("-c", code)
         self.assertEqual(rc, 0)
-        self.assertRegex(stdout, rb"""\A\s*func=<function  at \S+>\s*\Z""")
+        self.assertRegex(stdout, rb"""\A\s*func=<function  at \S+>\s*\z""")
         self.assertFalse(stderr)
 
     @refcount_test
@@ -1127,64 +1127,14 @@ class GCTests(unittest.TestCase):
 
 
 class IncrementalGCTests(unittest.TestCase):
-
-    def setUp(self):
-        # Reenable GC as it is disabled module-wide
-        gc.enable()
-
-    def tearDown(self):
-        gc.disable()
-
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     @requires_gil_enabled("Free threading does not support incremental GC")
-    # Use small increments to emulate longer running process in a shorter time
-    @gc_threshold(200, 10)
     def test_incremental_gc_handles_fast_cycle_creation(self):
-
-        class LinkedList:
-
-            #Use slots to reduce number of implicit objects
-            __slots__ = "next", "prev", "surprise"
-
-            def __init__(self, next=None, prev=None):
-                self.next = next
-                if next is not None:
-                    next.prev = self
-                self.prev = prev
-                if prev is not None:
-                    prev.next = self
-
-        def make_ll(depth):
-            head = LinkedList()
-            for i in range(depth):
-                head = LinkedList(head, head.prev)
-            return head
-
-        head = make_ll(1000)
-        count = 1000
-
-        # There will be some objects we aren't counting,
-        # e.g. the gc stats dicts. This test checks
-        # that the counts don't grow, so we try to
-        # correct for the uncounted objects
-        # This is just an estimate.
-        CORRECTION = 20
-
-        enabled = gc.isenabled()
-        gc.enable()
-        olds = []
-        initial_heap_size = _testinternalcapi.get_tracked_heap_size()
-        for i in range(20_000):
-            newhead = make_ll(20)
-            count += 20
-            newhead.surprise = head
-            olds.append(newhead)
-            if len(olds) == 20:
-                new_objects = _testinternalcapi.get_tracked_heap_size() - initial_heap_size
-                self.assertLess(new_objects, 27_000, f"Heap growing. Reached limit after {i} iterations")
-                del olds[:]
-        if not enabled:
-            gc.disable()
+        # Run this test in a fresh process.  The number of alive objects (which can
+        # be from unit tests run before this one) can influence how quickly cyclic
+        # garbage is found.
+        script = support.findfile("_test_gc_fast_cycles.py")
+        run_test_script(script)
 
 
 class GCCallbackTests(unittest.TestCase):

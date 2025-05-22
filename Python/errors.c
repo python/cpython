@@ -21,11 +21,6 @@
 #endif
 
 
-/* Forward declarations */
-static PyObject *
-_PyErr_FormatV(PyThreadState *tstate, PyObject *exception,
-               const char *format, va_list vargs);
-
 void
 _PyErr_SetRaisedException(PyThreadState *tstate, PyObject *exc)
 {
@@ -699,12 +694,11 @@ _PyErr_ChainExceptions(PyObject *typ, PyObject *val, PyObject *tb)
    The caller is responsible for ensuring that this call won't create
    any cycles in the exception context chain. */
 void
-_PyErr_ChainExceptions1(PyObject *exc)
+_PyErr_ChainExceptions1Tstate(PyThreadState *tstate, PyObject *exc)
 {
     if (exc == NULL) {
         return;
     }
-    PyThreadState *tstate = _PyThreadState_GET();
     if (_PyErr_Occurred(tstate)) {
         PyObject *exc2 = _PyErr_GetRaisedException(tstate);
         PyException_SetContext(exc2, exc);
@@ -713,6 +707,13 @@ _PyErr_ChainExceptions1(PyObject *exc)
     else {
         _PyErr_SetRaisedException(tstate, exc);
     }
+}
+
+void
+_PyErr_ChainExceptions1(PyObject *exc)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyErr_ChainExceptions1Tstate(tstate, exc);
 }
 
 /* If the current thread is handling an exception (exc_info is ), set this
@@ -1061,15 +1062,14 @@ PyObject *PyErr_SetFromWindowsErrWithFilename(
 #endif /* MS_WINDOWS */
 
 static PyObject *
-_PyErr_SetImportErrorSubclassWithNameFrom(
-    PyObject *exception, PyObject *msg,
+new_importerror(
+    PyThreadState *tstate, PyObject *exctype, PyObject *msg,
     PyObject *name, PyObject *path, PyObject* from_name)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    int issubclass;
-    PyObject *kwargs, *error;
+    PyObject *exc = NULL;
+    PyObject *kwargs = NULL;
 
-    issubclass = PyObject_IsSubclass(exception, PyExc_ImportError);
+    int issubclass = PyObject_IsSubclass(exctype, PyExc_ImportError);
     if (issubclass < 0) {
         return NULL;
     }
@@ -1095,29 +1095,38 @@ _PyErr_SetImportErrorSubclassWithNameFrom(
         from_name = Py_None;
     }
 
-
     kwargs = PyDict_New();
     if (kwargs == NULL) {
         return NULL;
     }
     if (PyDict_SetItemString(kwargs, "name", name) < 0) {
-        goto done;
+        goto finally;
     }
     if (PyDict_SetItemString(kwargs, "path", path) < 0) {
-        goto done;
+        goto finally;
     }
     if (PyDict_SetItemString(kwargs, "name_from", from_name) < 0) {
-        goto done;
+        goto finally;
     }
+    exc = PyObject_VectorcallDict(exctype, &msg, 1, kwargs);
 
-    error = PyObject_VectorcallDict(exception, &msg, 1, kwargs);
+finally:
+    Py_DECREF(kwargs);
+    return exc;
+}
+
+static PyObject *
+_PyErr_SetImportErrorSubclassWithNameFrom(
+    PyObject *exception, PyObject *msg,
+    PyObject *name, PyObject *path, PyObject* from_name)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *error = new_importerror(
+                        tstate, exception, msg, name, path, from_name);
     if (error != NULL) {
         _PyErr_SetObject(tstate, (PyObject *)Py_TYPE(error), error);
         Py_DECREF(error);
     }
-
-done:
-    Py_DECREF(kwargs);
     return NULL;
 }
 
@@ -1139,6 +1148,29 @@ PyObject *
 PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
 {
     return PyErr_SetImportErrorSubclass(PyExc_ImportError, msg, name, path);
+}
+
+int
+_PyErr_SetModuleNotFoundError(PyObject *name)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (name == NULL) {
+        _PyErr_SetString(tstate, PyExc_TypeError, "expected a name argument");
+        return -1;
+    }
+    PyObject *msg = PyUnicode_FromFormat("%S module not found", name);
+    if (msg == NULL) {
+        return -1;
+    }
+    PyObject *exctype = PyExc_ModuleNotFoundError;
+    PyObject *exc = new_importerror(tstate, exctype, msg, name, NULL, NULL);
+    Py_DECREF(msg);
+    if (exc == NULL) {
+        return -1;
+    }
+    _PyErr_SetObject(tstate, exctype, exc);
+    Py_DECREF(exc);
+    return 0;
 }
 
 void
@@ -1164,7 +1196,7 @@ PyErr_BadInternalCall(void)
 #define PyErr_BadInternalCall() _PyErr_BadInternalCall(__FILE__, __LINE__)
 
 
-static PyObject *
+PyObject *
 _PyErr_FormatV(PyThreadState *tstate, PyObject *exception,
                const char *format, va_list vargs)
 {

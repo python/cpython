@@ -8,7 +8,8 @@ import unittest
 from unittest.mock import MagicMock
 
 from test.support import (requires, verbose, SaveSignals, cpython_only,
-                          check_disallow_instantiation, MISSING_C_DOCSTRINGS)
+                          check_disallow_instantiation, MISSING_C_DOCSTRINGS,
+                          gc_collect)
 from test.support.import_helper import import_module
 
 # Optionally test curses module.  This currently requires that the
@@ -129,6 +130,9 @@ class TestCurses(unittest.TestCase):
         curses.use_env(False)
         curses.use_env(True)
 
+    def test_error(self):
+        self.assertIsSubclass(curses.error, Exception)
+
     def test_create_windows(self):
         win = curses.newwin(5, 10)
         self.assertEqual(win.getbegyx(), (0, 0))
@@ -180,6 +184,14 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(win3.getbegyx(), (4, 8))
         self.assertEqual(win3.getparyx(), (2, 1))
         self.assertEqual(win3.getmaxyx(), (6, 11))
+
+    def test_subwindows_references(self):
+        win = curses.newwin(5, 10)
+        win2 = win.subwin(3, 7)
+        del win
+        gc_collect()
+        del win2
+        gc_collect()
 
     def test_move_cursor(self):
         stdscr = self.stdscr
@@ -751,7 +763,6 @@ class TestCurses(unittest.TestCase):
         curses.nl(False)
         curses.nl()
 
-
     def test_input_options(self):
         stdscr = self.stdscr
 
@@ -943,9 +954,6 @@ class TestCurses(unittest.TestCase):
 
     @requires_colors
     def test_pair_content(self):
-        if not hasattr(curses, 'use_default_colors'):
-            self.assertEqual(curses.pair_content(0),
-                             (curses.COLOR_WHITE, curses.COLOR_BLACK))
         curses.pair_content(0)
         maxpair = self.get_pair_limit() - 1
         if maxpair > 0:
@@ -990,13 +998,27 @@ class TestCurses(unittest.TestCase):
     @requires_curses_func('use_default_colors')
     @requires_colors
     def test_use_default_colors(self):
-        old = curses.pair_content(0)
         try:
             curses.use_default_colors()
         except curses.error:
             self.skipTest('cannot change color (use_default_colors() failed)')
         self.assertEqual(curses.pair_content(0), (-1, -1))
-        self.assertIn(old, [(curses.COLOR_WHITE, curses.COLOR_BLACK), (-1, -1), (0, 0)])
+
+    @requires_curses_func('assume_default_colors')
+    @requires_colors
+    def test_assume_default_colors(self):
+        try:
+            curses.assume_default_colors(-1, -1)
+        except curses.error:
+            self.skipTest('cannot change color (assume_default_colors() failed)')
+        self.assertEqual(curses.pair_content(0), (-1, -1))
+        curses.assume_default_colors(curses.COLOR_YELLOW, curses.COLOR_BLUE)
+        self.assertEqual(curses.pair_content(0), (curses.COLOR_YELLOW, curses.COLOR_BLUE))
+        curses.assume_default_colors(curses.COLOR_RED, -1)
+        self.assertEqual(curses.pair_content(0), (curses.COLOR_RED, -1))
+        curses.assume_default_colors(-1, curses.COLOR_GREEN)
+        self.assertEqual(curses.pair_content(0), (-1, curses.COLOR_GREEN))
+        curses.assume_default_colors(-1, -1)
 
     def test_keyname(self):
         # TODO: key_name()

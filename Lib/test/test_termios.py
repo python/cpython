@@ -2,8 +2,10 @@ import errno
 import os
 import sys
 import tempfile
+import threading
 import unittest
 from test import support
+from test.support import threading_helper
 from test.support.import_helper import import_module
 
 termios = import_module('termios')
@@ -13,8 +15,8 @@ termios = import_module('termios')
 class TestFunctions(unittest.TestCase):
 
     def setUp(self):
-        master_fd, self.fd = os.openpty()
-        self.addCleanup(os.close, master_fd)
+        self.master_fd, self.fd = os.openpty()
+        self.addCleanup(os.close, self.master_fd)
         self.stream = self.enterContext(open(self.fd, 'wb', buffering=0))
         tmp = self.enterContext(tempfile.TemporaryFile(mode='wb', buffering=0))
         self.bad_fd = tmp.fileno()
@@ -147,6 +149,31 @@ class TestFunctions(unittest.TestCase):
         self.assertRaises(TypeError, termios.tcflush, object(), termios.TCIFLUSH)
         self.assertRaises(TypeError, termios.tcflush, self.fd)
 
+    def test_tcflush_clear_input_or_output(self):
+        wfd = self.fd
+        rfd = self.master_fd
+        # The data is buffered in the input buffer on Linux, and in
+        # the output buffer on other platforms.
+        inbuf = sys.platform in ('linux', 'android')
+
+        os.write(wfd, b'abcdef')
+        self.assertEqual(os.read(rfd, 2), b'ab')
+        if inbuf:
+            # don't flush input
+            termios.tcflush(rfd, termios.TCOFLUSH)
+        else:
+            # don't flush output
+            termios.tcflush(wfd, termios.TCIFLUSH)
+        self.assertEqual(os.read(rfd, 2), b'cd')
+        if inbuf:
+            # flush input
+            termios.tcflush(rfd, termios.TCIFLUSH)
+        else:
+            # flush output
+            termios.tcflush(wfd, termios.TCOFLUSH)
+        os.write(wfd, b'ABCDEF')
+        self.assertEqual(os.read(rfd, 1024), b'ABCDEF')
+
     @support.skip_android_selinux('tcflow')
     def test_tcflow(self):
         termios.tcflow(self.fd, termios.TCOOFF)
@@ -164,6 +191,35 @@ class TestFunctions(unittest.TestCase):
         self.assertRaises(OverflowError, termios.tcflow, 2**1000, termios.TCOON)
         self.assertRaises(TypeError, termios.tcflow, object(), termios.TCOON)
         self.assertRaises(TypeError, termios.tcflow, self.fd)
+
+    @support.skip_android_selinux('tcflow')
+    @unittest.skipUnless(sys.platform in ('linux', 'android'), 'only works on Linux')
+    def test_tcflow_suspend_and_resume_output(self):
+        wfd = self.fd
+        rfd = self.master_fd
+        write_suspended = threading.Event()
+        write_finished = threading.Event()
+
+        def writer():
+            os.write(wfd, b'abc')
+            self.assertTrue(write_suspended.wait(support.SHORT_TIMEOUT))
+            os.write(wfd, b'def')
+            write_finished.set()
+
+        with threading_helper.start_threads([threading.Thread(target=writer)]):
+            self.assertEqual(os.read(rfd, 3), b'abc')
+            try:
+                try:
+                    termios.tcflow(wfd, termios.TCOOFF)
+                finally:
+                    write_suspended.set()
+                self.assertFalse(write_finished.wait(0.5),
+                                 'output was not suspended')
+            finally:
+                termios.tcflow(wfd, termios.TCOON)
+            self.assertTrue(write_finished.wait(support.SHORT_TIMEOUT),
+                            'output was not resumed')
+            self.assertEqual(os.read(rfd, 1024), b'def')
 
     def test_tcgetwinsize(self):
         size = termios.tcgetwinsize(self.fd)

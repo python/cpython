@@ -1,14 +1,25 @@
-"""Unit tests for the with statement specified in PEP 343."""
+"""Unit tests for the 'with/async with' statements specified in PEP 343/492."""
 
 
 __author__ = "Mike Bland"
 __email__ = "mbland at acm dot org"
 
+import re
 import sys
 import traceback
 import unittest
 from collections import deque
 from contextlib import _GeneratorContextManager, contextmanager, nullcontext
+
+
+def do_with(obj):
+    with obj:
+        pass
+
+
+async def do_async_with(obj):
+    async with obj:
+        pass
 
 
 class MockContextManager(_GeneratorContextManager):
@@ -110,34 +121,77 @@ class FailureTestCase(unittest.TestCase):
             with foo: pass
         self.assertRaises(NameError, fooNotDeclared)
 
-    def testEnterAttributeError1(self):
-        class LacksEnter(object):
-            def __exit__(self, type, value, traceback):
-                pass
+    def testEnterAttributeError(self):
+        class LacksEnter:
+            def __exit__(self, type, value, traceback): ...
 
-        def fooLacksEnter():
-            foo = LacksEnter()
-            with foo: pass
-        self.assertRaisesRegex(TypeError, 'the context manager', fooLacksEnter)
-
-    def testEnterAttributeError2(self):
-        class LacksEnterAndExit(object):
-            pass
-
-        def fooLacksEnterAndExit():
-            foo = LacksEnterAndExit()
-            with foo: pass
-        self.assertRaisesRegex(TypeError, 'the context manager', fooLacksEnterAndExit)
+        with self.assertRaisesRegex(TypeError, re.escape((
+            "object does not support the context manager protocol "
+            "(missed __enter__ method)"
+        ))):
+            do_with(LacksEnter())
 
     def testExitAttributeError(self):
-        class LacksExit(object):
-            def __enter__(self):
-                pass
+        class LacksExit:
+            def __enter__(self): ...
 
-        def fooLacksExit():
-            foo = LacksExit()
-            with foo: pass
-        self.assertRaisesRegex(TypeError, 'the context manager.*__exit__', fooLacksExit)
+        msg = re.escape((
+            "object does not support the context manager protocol "
+            "(missed __exit__ method)"
+        ))
+        # a missing __exit__ is reported missing before a missing __enter__
+        with self.assertRaisesRegex(TypeError, msg):
+            do_with(object())
+        with self.assertRaisesRegex(TypeError, msg):
+            do_with(LacksExit())
+
+    def testWithForAsyncManager(self):
+        class AsyncManager:
+            async def __aenter__(self): ...
+            async def __aexit__(self, type, value, traceback): ...
+
+        with self.assertRaisesRegex(TypeError, re.escape((
+            "object does not support the context manager protocol "
+            "(missed __exit__ method) but it supports the asynchronous "
+            "context manager protocol. Did you mean to use 'async with'?"
+        ))):
+            do_with(AsyncManager())
+
+    def testAsyncEnterAttributeError(self):
+        class LacksAsyncEnter:
+            async def __aexit__(self, type, value, traceback): ...
+
+        with self.assertRaisesRegex(TypeError, re.escape((
+            "object does not support the asynchronous context manager protocol "
+            "(missed __aenter__ method)"
+        ))):
+            do_async_with(LacksAsyncEnter()).send(None)
+
+    def testAsyncExitAttributeError(self):
+        class LacksAsyncExit:
+            async def __aenter__(self): ...
+
+        msg = re.escape((
+            "object does not support the asynchronous context manager protocol "
+            "(missed __aexit__ method)"
+        ))
+        # a missing __aexit__ is reported missing before a missing __aenter__
+        with self.assertRaisesRegex(TypeError, msg):
+            do_async_with(object()).send(None)
+        with self.assertRaisesRegex(TypeError, msg):
+            do_async_with(LacksAsyncExit()).send(None)
+
+    def testAsyncWithForSyncManager(self):
+        class SyncManager:
+            def __enter__(self): ...
+            def __exit__(self, type, value, traceback): ...
+
+        with self.assertRaisesRegex(TypeError, re.escape((
+            "object does not support the asynchronous context manager protocol "
+            "(missed __aexit__ method) but it supports the context manager "
+            "protocol. Did you mean to use 'with'?"
+        ))):
+            do_async_with(SyncManager()).send(None)
 
     def assertRaisesSyntaxError(self, codestr):
         def shouldRaiseSyntaxError(s):
@@ -174,7 +228,7 @@ class FailureTestCase(unittest.TestCase):
             # Ruff complains that we're redefining `self.foo` here,
             # but the whole point of the test is to check that `self.foo`
             # is *not* redefined (because `__enter__` raises)
-            with ct as self.foo:  # ruff: noqa: F811
+            with ct as self.foo:  # noqa: F811
                 pass
         self.assertRaises(RuntimeError, shouldThrow)
         self.assertEqual(self.foo, None)
@@ -189,6 +243,7 @@ class FailureTestCase(unittest.TestCase):
             with ExitThrows():
                 pass
         self.assertRaises(RuntimeError, shouldThrow)
+
 
 class ContextmanagerAssertionMixin(object):
 

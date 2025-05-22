@@ -765,6 +765,13 @@ some (including a hanging indent).'''
 # of IndentTestCase!
 class DedentTestCase(unittest.TestCase):
 
+    def test_type_error(self):
+        with self.assertRaisesRegex(TypeError, "expected str object, not"):
+            dedent(0)
+
+        with self.assertRaisesRegex(TypeError, "expected str object, not"):
+            dedent(b'')
+
     def assertUnchanged(self, text):
         """assert that dedent() has no effect on 'text'"""
         self.assertEqual(text, dedent(text))
