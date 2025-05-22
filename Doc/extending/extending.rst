@@ -20,7 +20,6 @@ source file by including the header ``"Python.h"``.
 The compilation of an extension module depends on its intended use as well as on
 your system setup; details are given in later chapters.
 
-
 .. note::
 
    The C extension interface is specific to CPython, and extension modules do
@@ -485,6 +484,10 @@ optionally followed by an import of the module::
    (or following a :c:func:`fork` without an intervening :c:func:`exec`).
    In this case, at least the :c:data:`Py_mod_multiple_interpreters` slot
    in the examples should be ``Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED``.
+
+A more substantial example module is included in the Python source distribution
+as :file:`Modules/xxlimited.c`.  This file may be used as a  template or simply
+read as an example.
 
 .. _compilation:
 
