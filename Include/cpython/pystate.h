@@ -277,22 +277,35 @@ PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
     PyInterpreterState *interp,
     _PyFrameEvalFunction eval_frame);
 
-/* Similar to PyInterpreterState_Get(), but returns the interpreter with an
- * incremented reference count. PyInterpreterState_Delete() won't delete the
- * full interpreter structure until the reference is released by
- * PyThreadState_Ensure() or PyInterpreterState_Release(). */
-PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Hold(void);
+/* Strong interpreter references */
 
-PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Lookup(int64_t interp_id);
+typedef uintptr_t PyInterpreterRef;
 
-/* Release a reference to an interpreter incremented by PyInterpreterState_Hold() */
-PyAPI_FUNC(void) PyInterpreterState_Release(PyInterpreterState *interp);
+PyAPI_FUNC(PyInterpreterRef) PyInterpreterRef_Get(void);
+PyAPI_FUNC(PyInterpreterRef) PyInterpreterRef_Dup(PyInterpreterRef ref);
+PyAPI_FUNC(PyInterpreterRef) PyInterpreterState_AsStrong(PyInterpreterState *interp);
+PyAPI_FUNC(void) PyInterpreterRef_Close(PyInterpreterRef ref);
+
+#define PyInterpreterRef_Close(ref) do {    \
+    PyInterpreterRef_Close(ref);            \
+    ref = 0;                                \
+} while (0);                                \
+
+/* Weak interpreter references */
+
+typedef struct _interpreter_weakref {
+    int64_t id;
+    Py_ssize_t refcount;
+} PyInterpreterWeakRef;
+
+PyAPI_FUNC(PyInterpreterWeakRef) PyInterpreterWeakRef_Get(void);
+PyAPI_FUNC(PyInterpreterWeakRef) PyInterpreterWeakRef_Dup(PyInterpreterWeakRef wref);
+PyAPI_FUNC(PyInterpreterRef) PyInterpreterWeakRef_AsStrong(PyInterpreterWeakRef wref);
+PyAPI_FUNC(void) PyInterpreterWeakRef_Close(PyInterpreterWeakRef wref);
 
 // Exports for '_testcapi' shared extension
 PyAPI_FUNC(Py_ssize_t) _PyInterpreterState_Refcount(PyInterpreterState *interp);
 PyAPI_FUNC(void) _PyInterpreterState_Incref(PyInterpreterState *interp);
-
-PyAPI_FUNC(int) PyThreadState_SetDaemon(int daemon);
 
 PyAPI_FUNC(int) PyThreadState_Ensure(PyInterpreterState *interp);
 

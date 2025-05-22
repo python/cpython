@@ -3229,12 +3229,38 @@ _PyInterpreterState_Incref(PyInterpreterState *interp)
     _Py_atomic_add_ssize(&interp->threads.finalizing.countdown, 1);
 }
 
-PyInterpreterState *
-PyInterpreterState_Hold(void)
+static PyInterpreterState *
+ref_as_interp(PyInterpreterRef ref)
+{
+    PyInterpreterState *interp = (PyInterpreterState *)ref;
+    if (interp == NULL) {
+        Py_FatalError("Got a null interpreter reference, likely due to use after close.");
+    }
+
+    return interp;
+}
+
+PyInterpreterRef
+PyInterpreterRef_Get(void)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     _PyInterpreterState_Incref(interp);
-    return interp;
+    return (PyInterpreterRef)interp;
+}
+
+PyInterpreterRef
+PyInterpreterRef_Dup(PyInterpreterRef ref)
+{
+    PyInterpreterState *interp = ref_as_interp(ref);
+    _PyInterpreterState_Incref(interp);
+    return (PyInterpreterRef)interp;
+}
+
+void
+PyInterpreterRef_Close(PyInterpreterRef ref)
+{
+    PyInterpreterState *interp = ref_as_interp(ref);
+    decref_interpreter(ref);
 }
 
 PyInterpreterState *
@@ -3258,13 +3284,6 @@ PyInterpreterState_Lookup(int64_t interp_id)
     HEAD_UNLOCK(&_PyRuntime);
 
     return interp;
-}
-
-void
-PyInterpreterState_Release(PyInterpreterState *interp)
-{
-    assert(interp != NULL);
-    decref_interpreter(interp);
 }
 
 int
