@@ -31,6 +31,13 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
         self.assertEqual(mod.__name__, 'testmod')
         self.assertEqual(mod.__doc__, 'the docstring')
 
+    def test_size(self):
+        mod = _testcapi.module_from_slots_size(FakeSpec())
+        self.assertIsInstance(mod, types.ModuleType)
+        self.assertEqual(mod.__name__, 'testmod')
+        self.assertEqual(mod.__doc__, None)
+        self.assertEqual(mod.size, 123)
+
     def test_def_name(self):
         with self.assertRaises(SystemError) as cm:
             _testcapi.module_from_def_name(FakeSpec())
