@@ -11,6 +11,7 @@ class FakeSpec:
 
 DEF_SLOTS = (
     'Py_mod_name', 'Py_mod_doc', 'Py_mod_size', 'Py_mod_methods',
+    'Py_mod_traverse', 'Py_mod_clear', 'Py_mod_free',
 )
 
 
@@ -48,6 +49,12 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
         self.assertEqual(mod.__name__, 'testmod')
         self.assertEqual(mod.__doc__, None)
         self.assertEqual(mod.a_method(456), (mod, 456))
+
+    def test_gc(self):
+        mod = _testcapi.module_from_slots_gc(FakeSpec())
+        self.assertIsInstance(mod, types.ModuleType)
+        self.assertEqual(mod.__name__, 'testmod')
+        self.assertEqual(mod.__doc__, None)
 
     def test_def_slot(self):
         """Slots that replace PyModuleDef fields can't be used with PyModuleDef

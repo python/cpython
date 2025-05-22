@@ -74,6 +74,37 @@ module_from_slots_methods(PyObject *self, PyObject *spec)
     return PyModule_FromSlotsAndSpec(slots, spec);
 }
 
+static int trivial_traverse(PyObject *self, visitproc visit, void *arg) {
+    return 0;
+}
+static int trivial_clear(PyObject *self) { return 0; }
+static void trivial_free(void *self) { }
+
+static PyObject *
+module_from_slots_gc(PyObject *self, PyObject *spec)
+{
+    PyModuleDef_Slot slots[] = {
+        {Py_mod_traverse, trivial_traverse},
+        {Py_mod_clear, trivial_clear},
+        {Py_mod_free, trivial_free},
+        {0},
+    };
+    PyObject *mod = PyModule_FromSlotsAndSpec(slots, spec);
+    if (!mod) {
+        return NULL;
+    }
+    traverseproc traverse;
+    inquiry clear;
+    freefunc free;
+    if (_PyModule_GetGCHooks(mod, &traverse, &clear, &free) < 0) {
+        return NULL;
+    }
+    assert(traverse == &trivial_traverse);
+    assert(clear == &trivial_clear);
+    assert(free == &trivial_free);
+    return mod;
+}
+
 
 static int
 slot_from_object(PyObject *obj)
@@ -143,6 +174,7 @@ static PyMethodDef test_methods[] = {
     {"module_from_slots_doc", module_from_slots_doc, METH_O},
     {"module_from_slots_size", module_from_slots_size, METH_O},
     {"module_from_slots_methods", module_from_slots_methods, METH_O},
+    {"module_from_slots_gc", module_from_slots_gc, METH_O},
     {"module_from_slots_repeat_slot", module_from_slots_repeat_slot, METH_O},
     {"module_from_slots_null_slot", module_from_slots_null_slot, METH_O},
     {"module_from_def_slot", module_from_def_slot, METH_O},

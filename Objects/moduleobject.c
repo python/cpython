@@ -461,6 +461,9 @@ module_from_def_and_spec(
             COPY_SLOT_TO_DEFLIKE(Py_mod_doc, char*, m_doc);
             COPY_SLOT_TO_DEFLIKE(Py_mod_size, Py_ssize_t, m_size);
             COPY_SLOT_TO_DEFLIKE(Py_mod_methods, PyMethodDef*, m_methods);
+            COPY_SLOT_TO_DEFLIKE(Py_mod_traverse, traverseproc, m_traverse);
+            COPY_SLOT_TO_DEFLIKE(Py_mod_clear, inquiry, m_clear);
+            COPY_SLOT_TO_DEFLIKE(Py_mod_free, freefunc, m_free);
 #undef COPY_SLOT_TO_DEFLIKE
             default:
                 assert(cur_slot->slot < 0 || cur_slot->slot > _Py_mod_LAST_SLOT);
@@ -738,6 +741,21 @@ PyModule_GetSize(PyObject *m, Py_ssize_t *size_p)
     }
     PyModuleObject *mod = (PyModuleObject *)m;
     *size_p = mod->md_size;
+    return 0;
+}
+
+int
+_PyModule_GetGCHooks(PyObject *m, traverseproc *traverse,
+                     inquiry *clear, freefunc *free)
+{
+    if (!PyModule_Check(m)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    PyModuleObject *mod = (PyModuleObject *)m;
+    *traverse = mod->md_traverse;
+    *clear = mod->md_clear;
+    *free = mod->md_free;
     return 0;
 }
 
