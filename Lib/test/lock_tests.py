@@ -340,7 +340,7 @@ class RLockTests(BaseLockTests):
     def test_repr_count(self):
         # see gh-134322: check that count values are correct:
         # when a rlock is just created,
-        # in a secondary thread when rlock is acquired in the main thread.
+        # in a second thread when rlock is acquired in the main thread.
         lock = self.locktype()
         self.assertIn("count=0", repr(lock))
         self.assertIn("<unlocked", repr(lock))
@@ -349,13 +349,13 @@ class RLockTests(BaseLockTests):
         self.assertIn("count=2", repr(lock))
         self.assertIn("<locked", repr(lock))
 
-        l = []
-        def acquire():
-            l.append(repr(lock))
-        with Bunch(acquire, 1):
+        result = []
+        def call_repr():
+            result.append(repr(lock))
+        with Bunch(call_repr, 1):
             pass
-        self.assertIn("count=2", l[0])
-        self.assertIn("<locked", l[0])
+        self.assertIn("count=2", result[0])
+        self.assertIn("<locked", result[0])
 
     def test_reacquire(self):
         lock = self.locktype()
