@@ -1893,7 +1893,8 @@ class ZipFile:
             # get the info object
             zinfo = self.getinfo(zinfo_or_arcname)
 
-        return self._remove_members({zinfo})
+        with self._lock:
+            return self._remove_members({zinfo})
 
     @classmethod
     def _sanitize_windows_name(cls, arcname, pathsep):
