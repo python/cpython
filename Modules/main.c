@@ -269,13 +269,14 @@ error:
 
 
 static int
-pymain_start_pyrepl_no_main(void)
+pymain_start_pyrepl(int pythonstartup)
 {
     int res = 0;
     PyObject *console = NULL;
     PyObject *empty_tuple = NULL;
     PyObject *kwargs = NULL;
     PyObject *console_result = NULL;
+    PyObject *main_module = NULL;
 
     PyObject *pyrepl = PyImport_ImportModule("_pyrepl.main");
     if (pyrepl == NULL) {
@@ -299,7 +300,13 @@ pymain_start_pyrepl_no_main(void)
         res = pymain_exit_err_print();
         goto done;
     }
-    if (!PyDict_SetItemString(kwargs, "pythonstartup", _PyLong_GetOne())) {
+    main_module = PyImport_AddModuleRef("__main__");
+    if (main_module == NULL) {
+        res = pymain_exit_err_print();
+        goto done;
+    }
+    if (!PyDict_SetItemString(kwargs, "mainmodule", main_module)
+        && !PyDict_SetItemString(kwargs, "pythonstartup", pythonstartup ? Py_True : Py_False)) {
         console_result = PyObject_Call(console, empty_tuple, kwargs);
         if (console_result == NULL) {
             res = pymain_exit_err_print();
@@ -311,6 +318,7 @@ done:
     Py_XDECREF(empty_tuple);
     Py_XDECREF(console);
     Py_XDECREF(pyrepl);
+    Py_XDECREF(main_module);
     return res;
 }
 
@@ -562,7 +570,7 @@ pymain_run_stdin(PyConfig *config)
         int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
         return (run != 0);
     }
-    return pymain_run_module(L"_pyrepl", 0);
+    return pymain_start_pyrepl(0);
 }
 
 
@@ -595,7 +603,7 @@ pymain_repl(PyConfig *config, int *exitcode)
         *exitcode = (run != 0);
         return;
     }
-    int run = pymain_start_pyrepl_no_main();
+    int run = pymain_start_pyrepl(1);
     *exitcode = (run != 0);
     return;
 }

@@ -180,7 +180,7 @@ class IsUniquelyReferencedTest(unittest.TestCase):
         self.assertTrue(_testcapi.is_uniquely_referenced(object()))
         self.assertTrue(_testcapi.is_uniquely_referenced([]))
         # Immortals
-        self.assertFalse(_testcapi.is_uniquely_referenced("spanish inquisition"))
+        self.assertFalse(_testcapi.is_uniquely_referenced(()))
         self.assertFalse(_testcapi.is_uniquely_referenced(42))
         # CRASHES is_uniquely_referenced(NULL)
 

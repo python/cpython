@@ -79,7 +79,7 @@ Quick Reference
    | :c:member:`~PyTypeObject.tp_setattro`          | :c:type:`setattrofunc`            | __setattr__,      | X | X |   | G |
    |                                                |                                   | __delattr__       |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_as_buffer`         | :c:type:`PyBufferProcs` *         |                   |   |   |   | % |
+   | :c:member:`~PyTypeObject.tp_as_buffer`         | :c:type:`PyBufferProcs` *         | :ref:`sub-slots`  |   |   |   | % |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_flags`             | unsigned long                     |                   | X | X |   | ? |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
@@ -325,9 +325,10 @@ sub-slots
    +---------------------------------------------------------+-----------------------------------+---------------+
    |                                                                                                             |
    +---------------------------------------------------------+-----------------------------------+---------------+
-   | :c:member:`~PyBufferProcs.bf_getbuffer`                 | :c:func:`getbufferproc`           |               |
+   | :c:member:`~PyBufferProcs.bf_getbuffer`                 | :c:func:`getbufferproc`           | __buffer__    |
    +---------------------------------------------------------+-----------------------------------+---------------+
-   | :c:member:`~PyBufferProcs.bf_releasebuffer`             | :c:func:`releasebufferproc`       |               |
+   | :c:member:`~PyBufferProcs.bf_releasebuffer`             | :c:func:`releasebufferproc`       | __release_\   |
+   |                                                         |                                   | buffer\__     |
    +---------------------------------------------------------+-----------------------------------+---------------+
 
 .. _slot-typedefs-table:
