@@ -217,7 +217,7 @@ with an exception object::
    spam_module_exec(PyObject *m)
    {
        SpamError = PyErr_NewException("spam.error", NULL, NULL);
-       if (PyModule_AddObjectRef(m, "error", SpamError) < 0) {
+       if (PyModule_AddObjectRef(m, "SpamError", SpamError) < 0) {
            return -1;
        }
 
