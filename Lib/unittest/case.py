@@ -1631,7 +1631,7 @@ class _SubTest(TestCase):
         return "{} {}".format(self.test_case, self._subDescription())
 
 
-class _SubTestCleanupHelper():
+class _SubTestCleanupHelper:
     """
     Helper class to manage cleanups and context managers inside subTest blocks,
     without exposing full TestCase functionality.
@@ -1642,7 +1642,8 @@ class _SubTestCleanupHelper():
         self._subtest = subtest
         self._outcome = outcome
 
-    def _callCleanup(self, function, /, *args, **kwargs):
+    @staticmethod
+    def _callCleanup(function, /, *args, **kwargs):
         function(*args, **kwargs)
 
     def addCleanup(self, function, /, *args, **kwargs):

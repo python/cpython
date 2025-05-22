@@ -1487,6 +1487,12 @@ class TestSubTestCleanups(unittest.TestCase):
         TestSubTestCleanups._active_events_list = self.events
         TestSubTestCleanups._active_instance = self
 
+    def tearDown(self):
+        if hasattr(TestSubTestCleanups, '_active_events_list'):
+            del TestSubTestCleanups._active_events_list
+        if hasattr(TestSubTestCleanups, '_active_instance'):
+            del TestSubTestCleanups._active_instance
+
     @classmethod
     def _get_events(cls):
         return cls._active_events_list
@@ -1646,11 +1652,6 @@ class TestSubTestCleanups(unittest.TestCase):
         ]
         self.assertEqual(self.events, expected_events)
 
-    def tearDown(self):
-        if hasattr(TestSubTestCleanups, '_active_events_list'):
-            del TestSubTestCleanups._active_events_list
-        if hasattr(TestSubTestCleanups, '_active_instance'):
-            del TestSubTestCleanups._active_instance
 
 if __name__ == "__main__":
     unittest.main()
