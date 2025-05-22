@@ -124,6 +124,11 @@ class BaseLockTests(BaseTestCase):
         lock = self.locktype()
         del lock
 
+    def test_constructor_noargs(self):
+        self.assertRaises(TypeError, self.locktype, 1)
+        self.assertRaises(TypeError, self.locktype, x=1)
+        self.assertRaises(TypeError, self.locktype, 1, x=2)
+
     def test_repr(self):
         lock = self.locktype()
         self.assertRegex(repr(lock), "<unlocked .* object (.*)?at .*>")
@@ -364,6 +369,24 @@ class RLockTests(BaseLockTests):
         self.assertTrue(lock.locked())
         lock.release()
         self.assertFalse(lock.locked())
+
+    def test_locked_with_2threads(self):
+        # see gh-134323: check that a rlock which
+        # is acquired in a different thread,
+        # is still locked in the main thread.
+        result = []
+        rlock = self.locktype()
+        self.assertFalse(rlock.locked())
+        def acquire():
+            result.append(rlock.locked())
+            rlock.acquire()
+            result.append(rlock.locked())
+
+        with Bunch(acquire, 1):
+            pass
+        self.assertTrue(rlock.locked())
+        self.assertFalse(result[0])
+        self.assertTrue(result[1])
 
     def test_release_save_unacquired(self):
         # Cannot _release_save an unacquired lock
