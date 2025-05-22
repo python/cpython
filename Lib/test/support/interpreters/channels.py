@@ -6,7 +6,8 @@ from . import _crossinterp
 
 # aliases:
 from _interpchannels import (
-    ChannelError, ChannelNotFoundError, ChannelEmptyError,
+    ChannelError, ChannelNotFoundError, ChannelClosedError,  # noqa: F401
+    ChannelEmptyError, ChannelNotEmptyError,  # noqa: F401
 )
 from ._crossinterp import (
     UNBOUND_ERROR, UNBOUND_REMOVE,
