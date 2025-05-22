@@ -4,31 +4,28 @@
 // Test PyModule_* API
 
 static PyObject *
-module_from_slots_and_spec(PyObject *self, PyObject *args)
+module_from_slots_empty(PyObject *self, PyObject *spec)
 {
-    PyObject *spec;
-    PyObject *py_slots;
-    if(PyArg_UnpackTuple(args, "module_from_slots_and_spec", 2, 2,
-                         &py_slots, &spec) < 1)
-    {
-        return NULL;
-    }
-    assert(PyList_Check(py_slots));
-    Py_ssize_t n_slots = PyList_GET_SIZE(py_slots);
-    PyModuleDef_Slot *slots = PyMem_Calloc(n_slots + 1,
-                                           sizeof(PyModuleDef_Slot));
-    if (!slots) {
-        return PyErr_NoMemory();
-    }
+    PyModuleDef_Slot slots[] = {
+        {0},
+    };
+    return PyModule_FromSlotsAndSpec(slots, spec);
+}
 
-    PyObject *result = PyModule_FromSlotsAndSpec(slots, spec);
-    PyMem_Free(slots);
-    return result;
+static PyObject *
+module_from_slots_name(PyObject *self, PyObject *spec)
+{
+    PyModuleDef_Slot slots[] = {
+        {Py_mod_name, "currently ignored..."},
+        {0},
+    };
+    return PyModule_FromSlotsAndSpec(slots, spec);
 }
 
 
 static PyMethodDef test_methods[] = {
-    {"module_from_slots_and_spec", module_from_slots_and_spec, METH_VARARGS},
+    {"module_from_slots_empty", module_from_slots_empty, METH_O},
+    {"module_from_slots_name", module_from_slots_name, METH_O},
     {NULL},
 };
 
