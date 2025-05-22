@@ -1116,7 +1116,7 @@ static PyObject *
 rlock_locked(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     rlockobject *self = rlockobject_CAST(op);
-    int is_locked = _PyRecursiveMutex_IsLockedByCurrentThread(&self->lock);
+    int is_locked = rlock_locked_impl(self);
     return PyBool_FromLong(is_locked);
 }
 
