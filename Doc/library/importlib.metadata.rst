@@ -122,7 +122,7 @@ Entry points
 
    Returns a :class:`EntryPoints` instance describing entry points for the
    current environment. Any given keyword parameters are passed to the
-   :meth:`!~EntryPoints.select` method for comparison to the attributes of
+   :meth:`!select` method for comparison to the attributes of
    the individual entry point definitions.
 
    Note: it is not currently possible to query for entry points based on
@@ -133,7 +133,7 @@ Entry points
 
    Details of a collection of installed entry points.
 
-   Also provides a ``.groups`` attribute that reports all identifed entry
+   Also provides a ``.groups`` attribute that reports all identified entry
    point groups, and a ``.names`` attribute that reports all identified entry
    point names.
 
@@ -158,7 +158,7 @@ attributes for convenience::
     >>> sorted(eps.groups)  # doctest: +SKIP
     ['console_scripts', 'distutils.commands', 'distutils.setup_keywords', 'egg_info.writers', 'setuptools.installation']
 
-:class:`!EntryPoints` has a :meth:`!~EntryPoints.select` method to select entry points
+:class:`!EntryPoints` has a :meth:`!select` method to select entry points
 matching specific properties. Select entry points in the
 ``console_scripts`` group::
 
@@ -229,10 +229,10 @@ Distribution metadata
 .. class:: PackageMetadata
 
    A concrete implementation of the
-    `PackageMetadata protocol <https://importlib-metadata.readthedocs.io/en/latest/api.html#importlib_metadata.PackageMetadata>`_.
+   `PackageMetadata protocol <https://importlib-metadata.readthedocs.io/en/latest/api.html#importlib_metadata.PackageMetadata>`_.
 
-    In addition to providing the defined protocol methods and attributes, subscripting
-    the instance is equivalent to calling the :meth:`!~PackageMetadata.get` method.
+   In addition to providing the defined protocol methods and attributes, subscripting
+   the instance is equivalent to calling the :meth:`!get` method.
 
 Every `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_
 includes some metadata, which you can extract using the :func:`!metadata` function::
@@ -245,7 +245,7 @@ the values are returned unparsed from the distribution metadata::
     >>> wheel_metadata['Requires-Python']  # doctest: +SKIP
     '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
 
-:class:`PackageMetadata` also presents a :attr:`!~PackageMetadata.json` attribute that returns
+:class:`PackageMetadata` also presents a :attr:`!json` attribute that returns
 all the metadata in a JSON-compatible form per :PEP:`566`::
 
     >>> wheel_metadata.json['requires_python']
@@ -268,8 +268,9 @@ Distribution versions
 
 .. function:: version(distribution_name)
 
-   Return the installed distribution package version for the named
-   distribution package.
+   Return the installed distribution package
+   `version <https://packaging.python.org/en/latest/specifications/core-metadata/#version>`__
+   for the named distribution package.
 
    Raises :exc:`PackageNotFoundError` if the named distribution
    package is not installed in the current Python environment.
@@ -296,7 +297,7 @@ Distribution files
    package is not installed in the current Python environment.
 
    Returns :const:`None` if the distribution is found but the installation
-   database records reporting the files associated with the distribuion package
+   database records reporting the files associated with the distribution package
    are missing.
 
 .. class:: PackagePath
@@ -331,7 +332,7 @@ Once you have the file, you can also read its contents::
             return s.encode('utf-8')
         return s
 
-You can also use the :meth:`!~PackagePath.locate` method to get the absolute
+You can also use the :meth:`!locate` method to get the absolute
 path to the file::
 
     >>> util.locate()  # doctest: +SKIP
@@ -375,7 +376,7 @@ Mapping import to distribution packages
 .. function:: packages_distributions()
 
    Return a mapping from the top level module and import package
-   names found via :attr:`sys.meta_path` to the names of the distribution
+   names found via :data:`sys.meta_path` to the names of the distribution
    packages (if any) that provide the corresponding files.
 
    To allow for namespace packages (which may have members provided by
@@ -421,7 +422,7 @@ While the module level API described above is the most common and convenient usa
 you can get all of that information from the :class:`!Distribution` class.
 :class:`!Distribution` is an abstract object that represents the metadata for
 a Python `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_.
-You can get the concreate :class:`!Distribution` subclass instance for an installed
+You can get the concrete :class:`!Distribution` subclass instance for an installed
 distribution package by calling the :func:`distribution` function::
 
     >>> from importlib.metadata import distribution  # doctest: +SKIP
@@ -559,7 +560,7 @@ path.
 
 ``DatabaseDistribution``, then, would look something like::
 
-    class DatabaseDistribution(importlib.metadata.Distributon):
+    class DatabaseDistribution(importlib.metadata.Distribution):
         def __init__(self, record):
             self.record = record
 

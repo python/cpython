@@ -67,8 +67,7 @@ The :mod:`urllib.request` module defines the following functions:
    the response headers as it is specified in the documentation for
    :class:`~http.client.HTTPResponse`.
 
-   For FTP, file, and data URLs and requests explicitly handled by legacy
-   :class:`URLopener` and :class:`FancyURLopener` classes, this function
+   For FTP, file, and data URLs, this function
    returns a :class:`urllib.response.addinfourl` object.
 
    Raises :exc:`~urllib.error.URLError` on protocol errors.
@@ -147,18 +146,73 @@ The :mod:`urllib.request` module defines the following functions:
    attribute to modify its position in the handlers list.
 
 
-.. function:: pathname2url(path)
+.. function:: pathname2url(path, *, add_scheme=False)
 
-   Convert the pathname *path* from the local syntax for a path to the form used in
-   the path component of a URL.  This does not produce a complete URL.  The return
-   value will already be quoted using the :func:`~urllib.parse.quote` function.
+   Convert the given local path to a ``file:`` URL. This function uses
+   :func:`~urllib.parse.quote` function to encode the path.
+
+   If *add_scheme* is false (the default), the return value omits the
+   ``file:`` scheme prefix. Set *add_scheme* to true to return a complete URL.
+
+   This example shows the function being used on Windows::
+
+      >>> from urllib.request import pathname2url
+      >>> path = 'C:\\Program Files'
+      >>> pathname2url(path, add_scheme=True)
+      'file:///C:/Program%20Files'
+
+   .. versionchanged:: 3.14
+      Windows drive letters are no longer converted to uppercase, and ``:``
+      characters not following a drive letter no longer cause an
+      :exc:`OSError` exception to be raised on Windows.
+
+   .. versionchanged:: 3.14
+      Paths beginning with a slash are converted to URLs with authority
+      sections. For example, the path ``/etc/hosts`` is converted to
+      the URL ``///etc/hosts``.
+
+   .. versionchanged:: 3.14
+      The *add_scheme* parameter was added.
 
 
-.. function:: url2pathname(path)
+.. function:: url2pathname(url, *, require_scheme=False, resolve_host=False)
 
-   Convert the path component *path* from a percent-encoded URL to the local syntax for a
-   path.  This does not accept a complete URL.  This function uses
-   :func:`~urllib.parse.unquote` to decode *path*.
+   Convert the given ``file:`` URL to a local path. This function uses
+   :func:`~urllib.parse.unquote` to decode the URL.
+
+   If *require_scheme* is false (the default), the given value should omit a
+   ``file:`` scheme prefix. If *require_scheme* is set to true, the given
+   value should include the prefix; a :exc:`~urllib.error.URLError` is raised
+   if it doesn't.
+
+   The URL authority is discarded if it is empty, ``localhost``, or the local
+   hostname. Otherwise, if *resolve_host* is set to true, the authority is
+   resolved using :func:`socket.gethostbyname` and discarded if it matches a
+   local IP address (as per :rfc:`RFC 8089 §3 <8089#section-3>`). If the
+   authority is still unhandled, then on Windows a UNC path is returned, and
+   on other platforms a :exc:`~urllib.error.URLError` is raised.
+
+   This example shows the function being used on Windows::
+
+      >>> from urllib.request import url2pathname
+      >>> url = 'file:///C:/Program%20Files'
+      >>> url2pathname(url, require_scheme=True)
+      'C:\\Program Files'
+
+   .. versionchanged:: 3.14
+      Windows drive letters are no longer converted to uppercase, and ``:``
+      characters not following a drive letter no longer cause an
+      :exc:`OSError` exception to be raised on Windows.
+
+   .. versionchanged:: 3.14
+      The URL authority is discarded if it matches the local hostname.
+      Otherwise, if the authority isn't empty or ``localhost``, then on
+      Windows a UNC path is returned (as before), and on other platforms a
+      :exc:`~urllib.error.URLError` is raised.
+
+   .. versionchanged:: 3.14
+      The *require_scheme* and *resolve_host* parameters were added.
+
 
 .. function:: getproxies()
 
@@ -385,6 +439,9 @@ The following classes are provided:
    compatible with :class:`HTTPPasswordMgr`; refer to section
    :ref:`http-password-mgr` for information on the interface that must be
    supported.
+
+   .. versionchanged:: 3.14
+      Added support for HTTP digest authentication algorithm ``SHA-256``.
 
 
 .. class:: HTTPDigestAuthHandler(password_mgr=None)
@@ -1064,7 +1121,7 @@ HTTPHandler Objects
 .. method:: HTTPHandler.http_open(req)
 
    Send an HTTP request, which can be either GET or POST, depending on
-   ``req.has_data()``.
+   ``req.data``.
 
 
 .. _https-handler-objects:
@@ -1076,7 +1133,7 @@ HTTPSHandler Objects
 .. method:: HTTPSHandler.https_open(req)
 
    Send an HTTPS request, which can be either GET or POST, depending on
-   ``req.has_data()``.
+   ``req.data``.
 
 
 .. _file-handler-objects:
@@ -1185,17 +1242,13 @@ In addition to the examples below, more examples are given in
 :ref:`urllib-howto`.
 
 This example gets the python.org main page and displays the first 300 bytes of
-it. ::
+it::
 
    >>> import urllib.request
    >>> with urllib.request.urlopen('http://www.python.org/') as f:
    ...     print(f.read(300))
    ...
-   b'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">\n\n\n<html
-   xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">\n\n<head>\n
-   <meta http-equiv="content-type" content="text/html; charset=utf-8" />\n
-   <title>Python Programming '
+   b'<!doctype html>\n<!--[if lt IE 7]>   <html class="no-js ie6 lt-ie7 lt-ie8 lt-ie9">   <![endif]-->\n<!--[if IE 7]>      <html class="no-js ie7 lt-ie8 lt-ie9">          <![endif]-->\n<!--[if IE 8]>      <html class="no-js ie8 lt-ie9">
 
 Note that urlopen returns a bytes object.  This is because there is no way
 for urlopen to automatically determine the encoding of the byte stream
@@ -1203,27 +1256,35 @@ it receives from the HTTP server. In general, a program will decode
 the returned bytes object to string once it determines or guesses
 the appropriate encoding.
 
-The following W3C document, https://www.w3.org/International/O-charset\ , lists
-the various ways in which an (X)HTML or an XML document could have specified its
+The following HTML spec document, https://html.spec.whatwg.org/#charset, lists
+the various ways in which an HTML or an XML document could have specified its
 encoding information.
 
+For additional information, see the W3C document: https://www.w3.org/International/questions/qa-html-encoding-declarations.
+
 As the python.org website uses *utf-8* encoding as specified in its meta tag, we
-will use the same for decoding the bytes object. ::
+will use the same for decoding the bytes object::
 
    >>> with urllib.request.urlopen('http://www.python.org/') as f:
    ...     print(f.read(100).decode('utf-8'))
    ...
-   <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-   "http://www.w3.org/TR/xhtml1/DTD/xhtm
+   <!doctype html>
+   <!--[if lt IE 7]>   <html class="no-js ie6 lt-ie7 lt-ie8 lt-ie9">   <![endif]-->
+   <!-
 
 It is also possible to achieve the same result without using the
-:term:`context manager` approach. ::
+:term:`context manager` approach::
 
    >>> import urllib.request
    >>> f = urllib.request.urlopen('http://www.python.org/')
-   >>> print(f.read(100).decode('utf-8'))
-   <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-   "http://www.w3.org/TR/xhtml1/DTD/xhtm
+   >>> try:
+   ...     print(f.read(100).decode('utf-8'))
+   ... finally:
+   ...     f.close()
+   ...
+   <!doctype html>
+   <!--[if lt IE 7]>   <html class="no-js ie6 lt-ie7 lt-ie8 lt-ie9">   <![endif]-->
+   <!--
 
 In the following example, we are sending a data-stream to the stdin of a CGI
 and reading the data it returns to us. Note that this example will only work
@@ -1266,7 +1327,8 @@ Use of Basic HTTP Authentication::
    opener = urllib.request.build_opener(auth_handler)
    # ...and install it globally so it can be used with urlopen.
    urllib.request.install_opener(opener)
-   urllib.request.urlopen('http://www.example.com/login.html')
+   with urllib.request.urlopen('http://www.example.com/login.html') as f:
+       print(f.read().decode('utf-8'))
 
 :func:`build_opener` provides many handlers by default, including a
 :class:`ProxyHandler`.  By default, :class:`ProxyHandler` uses the environment
@@ -1284,7 +1346,8 @@ programmatically supplied proxy URLs, and adds proxy authorization support with
 
    opener = urllib.request.build_opener(proxy_handler, proxy_auth_handler)
    # This time, rather than install the OpenerDirector, we use it directly:
-   opener.open('http://www.example.com/login.html')
+   with opener.open('http://www.example.com/login.html') as f:
+      print(f.read().decode('utf-8'))
 
 Adding HTTP headers:
 
@@ -1295,7 +1358,9 @@ Use the *headers* argument to the :class:`Request` constructor, or::
    req.add_header('Referer', 'http://www.python.org/')
    # Customize the default User-Agent header value:
    req.add_header('User-Agent', 'urllib-example/0.1 (Contact: . . .)')
-   r = urllib.request.urlopen(req)
+   with urllib.request.urlopen(req) as f:
+       print(f.read().decode('utf-8'))
+
 
 :class:`OpenerDirector` automatically adds a :mailheader:`User-Agent` header to
 every :class:`Request`.  To change this::
@@ -1303,7 +1368,8 @@ every :class:`Request`.  To change this::
    import urllib.request
    opener = urllib.request.build_opener()
    opener.addheaders = [('User-agent', 'Mozilla/5.0')]
-   opener.open('http://www.example.com/')
+   with opener.open('http://www.example.com/') as f:
+      print(f.read().decode('utf-8'))
 
 Also, remember that a few standard headers (:mailheader:`Content-Length`,
 :mailheader:`Content-Type` and :mailheader:`Host`)
@@ -1339,7 +1405,7 @@ environment settings::
 
    >>> import urllib.request
    >>> proxies = {'http': 'http://proxy.example.com:8080/'}
-   >>> opener = urllib.request.FancyURLopener(proxies)
+   >>> opener = urllib.request.build_opener(urllib.request.ProxyHandler(proxies))
    >>> with opener.open("http://www.python.org") as f:
    ...     f.read().decode('utf-8')
    ...
@@ -1347,7 +1413,7 @@ environment settings::
 The following example uses no proxies at all, overriding environment settings::
 
    >>> import urllib.request
-   >>> opener = urllib.request.FancyURLopener({})
+   >>> opener = urllib.request.build_opener(urllib.request.ProxyHandler({}}))
    >>> with opener.open("http://www.python.org/") as f:
    ...     f.read().decode('utf-8')
    ...
@@ -1412,121 +1478,6 @@ some point in the future.
    Cleans up temporary files that may have been left behind by previous
    calls to :func:`urlretrieve`.
 
-.. class:: URLopener(proxies=None, **x509)
-
-   .. deprecated:: 3.3
-
-   Base class for opening and reading URLs.  Unless you need to support opening
-   objects using schemes other than :file:`http:`, :file:`ftp:`, or :file:`file:`,
-   you probably want to use :class:`FancyURLopener`.
-
-   By default, the :class:`URLopener` class sends a :mailheader:`User-Agent` header
-   of ``urllib/VVV``, where *VVV* is the :mod:`urllib` version number.
-   Applications can define their own :mailheader:`User-Agent` header by subclassing
-   :class:`URLopener` or :class:`FancyURLopener` and setting the class attribute
-   :attr:`version` to an appropriate string value in the subclass definition.
-
-   The optional *proxies* parameter should be a dictionary mapping scheme names to
-   proxy URLs, where an empty dictionary turns proxies off completely.  Its default
-   value is ``None``, in which case environmental proxy settings will be used if
-   present, as discussed in the definition of :func:`urlopen`, above.
-
-   Additional keyword parameters, collected in *x509*, may be used for
-   authentication of the client when using the :file:`https:` scheme.  The keywords
-   *key_file* and *cert_file* are supported to provide an  SSL key and certificate;
-   both are needed to support client authentication.
-
-   :class:`URLopener` objects will raise an :exc:`OSError` exception if the server
-   returns an error code.
-
-   .. method:: open(fullurl, data=None)
-
-      Open *fullurl* using the appropriate protocol.  This method sets up cache and
-      proxy information, then calls the appropriate open method with its input
-      arguments.  If the scheme is not recognized, :meth:`open_unknown` is called.
-      The *data* argument has the same meaning as the *data* argument of
-      :func:`urlopen`.
-
-      This method always quotes *fullurl* using :func:`~urllib.parse.quote`.
-
-   .. method:: open_unknown(fullurl, data=None)
-
-      Overridable interface to open unknown URL types.
-
-
-   .. method:: retrieve(url, filename=None, reporthook=None, data=None)
-
-      Retrieves the contents of *url* and places it in *filename*.  The return value
-      is a tuple consisting of a local filename and either an
-      :class:`email.message.Message` object containing the response headers (for remote
-      URLs) or ``None`` (for local URLs).  The caller must then open and read the
-      contents of *filename*.  If *filename* is not given and the URL refers to a
-      local file, the input filename is returned.  If the URL is non-local and
-      *filename* is not given, the filename is the output of :func:`tempfile.mktemp`
-      with a suffix that matches the suffix of the last path component of the input
-      URL.  If *reporthook* is given, it must be a function accepting three numeric
-      parameters: A chunk number, the maximum size chunks are read in and the total size of the download
-      (-1 if unknown).  It will be called once at the start and after each chunk of data is read from the
-      network.  *reporthook* is ignored for local URLs.
-
-      If the *url* uses the :file:`http:` scheme identifier, the optional *data*
-      argument may be given to specify a ``POST`` request (normally the request type
-      is ``GET``).  The *data* argument must in standard
-      :mimetype:`application/x-www-form-urlencoded` format; see the
-      :func:`urllib.parse.urlencode` function.
-
-
-   .. attribute:: version
-
-      Variable that specifies the user agent of the opener object.  To get
-      :mod:`urllib` to tell servers that it is a particular user agent, set this in a
-      subclass as a class variable or in the constructor before calling the base
-      constructor.
-
-
-.. class:: FancyURLopener(...)
-
-   .. deprecated:: 3.3
-
-   :class:`FancyURLopener` subclasses :class:`URLopener` providing default handling
-   for the following HTTP response codes: 301, 302, 303, 307 and 401.  For the 30x
-   response codes listed above, the :mailheader:`Location` header is used to fetch
-   the actual URL.  For 401 response codes (authentication required), basic HTTP
-   authentication is performed.  For the 30x response codes, recursion is bounded
-   by the value of the *maxtries* attribute, which defaults to 10.
-
-   For all other response codes, the method :meth:`~BaseHandler.http_error_default` is called
-   which you can override in subclasses to handle the error appropriately.
-
-   .. note::
-
-      According to the letter of :rfc:`2616`, 301 and 302 responses to POST requests
-      must not be automatically redirected without confirmation by the user.  In
-      reality, browsers do allow automatic redirection of these responses, changing
-      the POST to a GET, and :mod:`urllib` reproduces this behaviour.
-
-   The parameters to the constructor are the same as those for :class:`URLopener`.
-
-   .. note::
-
-      When performing basic authentication, a :class:`FancyURLopener` instance calls
-      its :meth:`prompt_user_passwd` method.  The default implementation asks the
-      users for the required information on the controlling terminal.  A subclass may
-      override this method to support more appropriate behavior if needed.
-
-   The :class:`FancyURLopener` class offers one additional method that should be
-   overloaded to provide the appropriate behavior:
-
-   .. method:: prompt_user_passwd(host, realm)
-
-      Return information needed to authenticate the user at the given host in the
-      specified security realm.  The return value should be a tuple, ``(user,
-      password)``, which can be used for basic authentication.
-
-      The implementation prompts for this information on the terminal; an application
-      should override this method to use an appropriate interaction model in the local
-      environment.
-
 
 :mod:`urllib.request` Restrictions
 ----------------------------------
@@ -1578,8 +1529,7 @@ some point in the future.
   you try to fetch a file whose read permissions make it inaccessible; the FTP
   code will try to read it, fail with a 550 error, and then perform a directory
   listing for the unreadable file. If fine-grained control is needed, consider
-  using the :mod:`ftplib` module, subclassing :class:`FancyURLopener`, or changing
-  *_urlopener* to meet your needs.
+  using the :mod:`ftplib` module.
 
 
 

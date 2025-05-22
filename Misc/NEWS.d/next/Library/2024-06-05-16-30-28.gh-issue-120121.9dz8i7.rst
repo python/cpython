@@ -1,1 +1,0 @@
-Add :exc:`concurrent.futures.InvalidStateError` to module's ``__all__``.

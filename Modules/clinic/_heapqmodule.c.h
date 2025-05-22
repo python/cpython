@@ -175,96 +175,166 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_heapq__heappop_max__doc__,
-"_heappop_max($module, heap, /)\n"
+PyDoc_STRVAR(_heapq_heappush_max__doc__,
+"heappush_max($module, heap, item, /)\n"
 "--\n"
 "\n"
-"Maxheap variant of heappop.");
+"Push item onto max heap, maintaining the heap invariant.");
 
-#define _HEAPQ__HEAPPOP_MAX_METHODDEF    \
-    {"_heappop_max", (PyCFunction)_heapq__heappop_max, METH_O, _heapq__heappop_max__doc__},
-
-static PyObject *
-_heapq__heappop_max_impl(PyObject *module, PyObject *heap);
+#define _HEAPQ_HEAPPUSH_MAX_METHODDEF    \
+    {"heappush_max", _PyCFunction_CAST(_heapq_heappush_max), METH_FASTCALL, _heapq_heappush_max__doc__},
 
 static PyObject *
-_heapq__heappop_max(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    PyObject *heap;
-
-    if (!PyList_Check(arg)) {
-        _PyArg_BadArgument("_heappop_max", "argument", "list", arg);
-        goto exit;
-    }
-    heap = arg;
-    return_value = _heapq__heappop_max_impl(module, heap);
-
-exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(_heapq__heapreplace_max__doc__,
-"_heapreplace_max($module, heap, item, /)\n"
-"--\n"
-"\n"
-"Maxheap variant of heapreplace.");
-
-#define _HEAPQ__HEAPREPLACE_MAX_METHODDEF    \
-    {"_heapreplace_max", _PyCFunction_CAST(_heapq__heapreplace_max), METH_FASTCALL, _heapq__heapreplace_max__doc__},
+_heapq_heappush_max_impl(PyObject *module, PyObject *heap, PyObject *item);
 
 static PyObject *
-_heapq__heapreplace_max_impl(PyObject *module, PyObject *heap,
-                             PyObject *item);
-
-static PyObject *
-_heapq__heapreplace_max(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+_heapq_heappush_max(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *heap;
     PyObject *item;
 
-    if (!_PyArg_CheckPositional("_heapreplace_max", nargs, 2, 2)) {
+    if (!_PyArg_CheckPositional("heappush_max", nargs, 2, 2)) {
         goto exit;
     }
     if (!PyList_Check(args[0])) {
-        _PyArg_BadArgument("_heapreplace_max", "argument 1", "list", args[0]);
+        _PyArg_BadArgument("heappush_max", "argument 1", "list", args[0]);
         goto exit;
     }
     heap = args[0];
     item = args[1];
-    return_value = _heapq__heapreplace_max_impl(module, heap, item);
+    return_value = _heapq_heappush_max_impl(module, heap, item);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_heapq__heapify_max__doc__,
-"_heapify_max($module, heap, /)\n"
+PyDoc_STRVAR(_heapq_heappop_max__doc__,
+"heappop_max($module, heap, /)\n"
 "--\n"
 "\n"
-"Maxheap variant of heapify.");
+"Maxheap variant of heappop.");
 
-#define _HEAPQ__HEAPIFY_MAX_METHODDEF    \
-    {"_heapify_max", (PyCFunction)_heapq__heapify_max, METH_O, _heapq__heapify_max__doc__},
-
-static PyObject *
-_heapq__heapify_max_impl(PyObject *module, PyObject *heap);
+#define _HEAPQ_HEAPPOP_MAX_METHODDEF    \
+    {"heappop_max", (PyCFunction)_heapq_heappop_max, METH_O, _heapq_heappop_max__doc__},
 
 static PyObject *
-_heapq__heapify_max(PyObject *module, PyObject *arg)
+_heapq_heappop_max_impl(PyObject *module, PyObject *heap);
+
+static PyObject *
+_heapq_heappop_max(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *heap;
 
     if (!PyList_Check(arg)) {
-        _PyArg_BadArgument("_heapify_max", "argument", "list", arg);
+        _PyArg_BadArgument("heappop_max", "argument", "list", arg);
         goto exit;
     }
     heap = arg;
-    return_value = _heapq__heapify_max_impl(module, heap);
+    return_value = _heapq_heappop_max_impl(module, heap);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=05f2afdf3bc54c9d input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_heapq_heapreplace_max__doc__,
+"heapreplace_max($module, heap, item, /)\n"
+"--\n"
+"\n"
+"Maxheap variant of heapreplace.");
+
+#define _HEAPQ_HEAPREPLACE_MAX_METHODDEF    \
+    {"heapreplace_max", _PyCFunction_CAST(_heapq_heapreplace_max), METH_FASTCALL, _heapq_heapreplace_max__doc__},
+
+static PyObject *
+_heapq_heapreplace_max_impl(PyObject *module, PyObject *heap, PyObject *item);
+
+static PyObject *
+_heapq_heapreplace_max(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *heap;
+    PyObject *item;
+
+    if (!_PyArg_CheckPositional("heapreplace_max", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyList_Check(args[0])) {
+        _PyArg_BadArgument("heapreplace_max", "argument 1", "list", args[0]);
+        goto exit;
+    }
+    heap = args[0];
+    item = args[1];
+    return_value = _heapq_heapreplace_max_impl(module, heap, item);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_heapq_heapify_max__doc__,
+"heapify_max($module, heap, /)\n"
+"--\n"
+"\n"
+"Maxheap variant of heapify.");
+
+#define _HEAPQ_HEAPIFY_MAX_METHODDEF    \
+    {"heapify_max", (PyCFunction)_heapq_heapify_max, METH_O, _heapq_heapify_max__doc__},
+
+static PyObject *
+_heapq_heapify_max_impl(PyObject *module, PyObject *heap);
+
+static PyObject *
+_heapq_heapify_max(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *heap;
+
+    if (!PyList_Check(arg)) {
+        _PyArg_BadArgument("heapify_max", "argument", "list", arg);
+        goto exit;
+    }
+    heap = arg;
+    return_value = _heapq_heapify_max_impl(module, heap);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_heapq_heappushpop_max__doc__,
+"heappushpop_max($module, heap, item, /)\n"
+"--\n"
+"\n"
+"Maxheap variant of heappushpop.\n"
+"\n"
+"The combined action runs more efficiently than heappush_max() followed by\n"
+"a separate call to heappop_max().");
+
+#define _HEAPQ_HEAPPUSHPOP_MAX_METHODDEF    \
+    {"heappushpop_max", _PyCFunction_CAST(_heapq_heappushpop_max), METH_FASTCALL, _heapq_heappushpop_max__doc__},
+
+static PyObject *
+_heapq_heappushpop_max_impl(PyObject *module, PyObject *heap, PyObject *item);
+
+static PyObject *
+_heapq_heappushpop_max(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *heap;
+    PyObject *item;
+
+    if (!_PyArg_CheckPositional("heappushpop_max", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyList_Check(args[0])) {
+        _PyArg_BadArgument("heappushpop_max", "argument 1", "list", args[0]);
+        goto exit;
+    }
+    heap = args[0];
+    item = args[1];
+    return_value = _heapq_heappushpop_max_impl(module, heap, item);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=f55d8595ce150c76 input=a9049054013a1b77]*/

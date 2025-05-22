@@ -104,6 +104,8 @@ typedef struct {
     bool strict;
 } batchedobject;
 
+#define batchedobject_CAST(op)  ((batchedobject *)(op))
+
 /*[clinic input]
 @classmethod
 itertools.batched.__new__ as batched_new
@@ -165,8 +167,9 @@ batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n,
 }
 
 static void
-batched_dealloc(batchedobject *bo)
+batched_dealloc(PyObject *op)
 {
+    batchedobject *bo = batchedobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(bo);
     PyObject_GC_UnTrack(bo);
     Py_XDECREF(bo->it);
@@ -175,23 +178,25 @@ batched_dealloc(batchedobject *bo)
 }
 
 static int
-batched_traverse(batchedobject *bo, visitproc visit, void *arg)
+batched_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    batchedobject *bo = batchedobject_CAST(op);
     Py_VISIT(Py_TYPE(bo));
     Py_VISIT(bo->it);
     return 0;
 }
 
 static PyObject *
-batched_next(batchedobject *bo)
+batched_next(PyObject *op)
 {
+    batchedobject *bo = batchedobject_CAST(op);
     Py_ssize_t i;
-    Py_ssize_t n = bo->batch_size;
+    Py_ssize_t n = FT_ATOMIC_LOAD_SSIZE_RELAXED(bo->batch_size);
     PyObject *it = bo->it;
     PyObject *item;
     PyObject *result;
 
-    if (it == NULL) {
+    if (n < 0) {
         return NULL;
     }
     result = PyTuple_New(n);
@@ -213,19 +218,28 @@ batched_next(batchedobject *bo)
     if (PyErr_Occurred()) {
         if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
             /* Input raised an exception other than StopIteration */
+            FT_ATOMIC_STORE_SSIZE_RELAXED(bo->batch_size, -1);
+#ifndef Py_GIL_DISABLED
             Py_CLEAR(bo->it);
+#endif
             Py_DECREF(result);
             return NULL;
         }
         PyErr_Clear();
     }
     if (i == 0) {
+        FT_ATOMIC_STORE_SSIZE_RELAXED(bo->batch_size, -1);
+#ifndef Py_GIL_DISABLED
         Py_CLEAR(bo->it);
+#endif
         Py_DECREF(result);
         return NULL;
     }
     if (bo->strict) {
+        FT_ATOMIC_STORE_SSIZE_RELAXED(bo->batch_size, -1);
+#ifndef Py_GIL_DISABLED
         Py_CLEAR(bo->it);
+#endif
         Py_DECREF(result);
         PyErr_SetString(PyExc_ValueError, "batched(): incomplete batch");
         return NULL;
@@ -265,6 +279,8 @@ typedef struct {
     PyObject *result;
 } pairwiseobject;
 
+#define pairwiseobject_CAST(op) ((pairwiseobject *)(op))
+
 /*[clinic input]
 @classmethod
 itertools.pairwise.__new__ as pairwise_new
@@ -303,8 +319,9 @@ pairwise_new_impl(PyTypeObject *type, PyObject *iterable)
 }
 
 static void
-pairwise_dealloc(pairwiseobject *po)
+pairwise_dealloc(PyObject *op)
 {
+    pairwiseobject *po = pairwiseobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(po);
     PyObject_GC_UnTrack(po);
     Py_XDECREF(po->it);
@@ -315,8 +332,9 @@ pairwise_dealloc(pairwiseobject *po)
 }
 
 static int
-pairwise_traverse(pairwiseobject *po, visitproc visit, void *arg)
+pairwise_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    pairwiseobject *po = pairwiseobject_CAST(op);
     Py_VISIT(Py_TYPE(po));
     Py_VISIT(po->it);
     Py_VISIT(po->old);
@@ -325,8 +343,9 @@ pairwise_traverse(pairwiseobject *po, visitproc visit, void *arg)
 }
 
 static PyObject *
-pairwise_next(pairwiseobject *po)
+pairwise_next(PyObject *op)
 {
+    pairwiseobject *po = pairwiseobject_CAST(op);
     PyObject *it = po->it;
     PyObject *old = po->old;
     PyObject *new, *result;
@@ -367,9 +386,7 @@ pairwise_next(pairwiseobject *po)
         Py_DECREF(last_new);
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
-        }
+        _PyTuple_Recycle(result);
     }
     else {
         result = PyTuple_New(2);
@@ -419,6 +436,8 @@ typedef struct {
     itertools_state *state;
 } groupbyobject;
 
+#define groupbyobject_CAST(op)  ((groupbyobject *)(op))
+
 static PyObject *_grouper_create(groupbyobject *, PyObject *);
 
 /*[clinic input]
@@ -458,8 +477,9 @@ itertools_groupby_impl(PyTypeObject *type, PyObject *it, PyObject *keyfunc)
 }
 
 static void
-groupby_dealloc(groupbyobject *gbo)
+groupby_dealloc(PyObject *op)
 {
+    groupbyobject *gbo = groupbyobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(gbo);
     PyObject_GC_UnTrack(gbo);
     Py_XDECREF(gbo->it);
@@ -472,8 +492,9 @@ groupby_dealloc(groupbyobject *gbo)
 }
 
 static int
-groupby_traverse(groupbyobject *gbo, visitproc visit, void *arg)
+groupby_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    groupbyobject *gbo = groupbyobject_CAST(op);
     Py_VISIT(Py_TYPE(gbo));
     Py_VISIT(gbo->it);
     Py_VISIT(gbo->keyfunc);
@@ -510,9 +531,10 @@ groupby_step(groupbyobject *gbo)
 }
 
 static PyObject *
-groupby_next(groupbyobject *gbo)
+groupby_next(PyObject *op)
 {
     PyObject *r, *grouper;
+    groupbyobject *gbo = groupbyobject_CAST(op);
 
     gbo->currgrouper = NULL;
     /* skip to next iteration group */
@@ -574,6 +596,8 @@ typedef struct {
     PyObject *tgtkey;
 } _grouperobject;
 
+#define _grouperobject_CAST(op) ((_grouperobject *)(op))
+
 /*[clinic input]
 @classmethod
 itertools._grouper.__new__
@@ -588,7 +612,7 @@ itertools__grouper_impl(PyTypeObject *type, PyObject *parent,
                         PyObject *tgtkey)
 /*[clinic end generated code: output=462efb1cdebb5914 input=afe05eb477118f12]*/
 {
-    return _grouper_create((groupbyobject*) parent, tgtkey);
+    return _grouper_create(groupbyobject_CAST(parent), tgtkey);
 }
 
 static PyObject *
@@ -607,8 +631,9 @@ _grouper_create(groupbyobject *parent, PyObject *tgtkey)
 }
 
 static void
-_grouper_dealloc(_grouperobject *igo)
+_grouper_dealloc(PyObject *op)
 {
+    _grouperobject *igo = _grouperobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(igo);
     PyObject_GC_UnTrack(igo);
     Py_DECREF(igo->parent);
@@ -618,8 +643,9 @@ _grouper_dealloc(_grouperobject *igo)
 }
 
 static int
-_grouper_traverse(_grouperobject *igo, visitproc visit, void *arg)
+_grouper_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    _grouperobject *igo = _grouperobject_CAST(op);
     Py_VISIT(Py_TYPE(igo));
     Py_VISIT(igo->parent);
     Py_VISIT(igo->tgtkey);
@@ -627,9 +653,10 @@ _grouper_traverse(_grouperobject *igo, visitproc visit, void *arg)
 }
 
 static PyObject *
-_grouper_next(_grouperobject *igo)
+_grouper_next(PyObject *op)
 {
-    groupbyobject *gbo = (groupbyobject *)igo->parent;
+    _grouperobject *igo = _grouperobject_CAST(op);
+    groupbyobject *gbo = groupbyobject_CAST(igo->parent);
     PyObject *r;
     int rcmp;
 
@@ -694,6 +721,8 @@ typedef struct {
     PyObject *(values[LINKCELLS]);
 } teedataobject;
 
+#define teedataobject_CAST(op)  ((teedataobject *)(op))
+
 typedef struct {
     PyObject_HEAD
     teedataobject *dataobj;
@@ -701,6 +730,8 @@ typedef struct {
     PyObject *weakreflist;
     itertools_state *state;
 } teeobject;
+
+#define teeobject_CAST(op)  ((teeobject *)(op))
 
 static PyObject *
 teedataobject_newinternal(itertools_state *state, PyObject *it)
@@ -755,9 +786,10 @@ teedataobject_getitem(teedataobject *tdo, int i)
 }
 
 static int
-teedataobject_traverse(teedataobject *tdo, visitproc visit, void * arg)
+teedataobject_traverse(PyObject *op, visitproc visit, void * arg)
 {
     int i;
+    teedataobject *tdo = teedataobject_CAST(op);
 
     Py_VISIT(Py_TYPE(tdo));
     Py_VISIT(tdo->it);
@@ -771,18 +803,20 @@ static void
 teedataobject_safe_decref(PyObject *obj)
 {
     while (obj && Py_REFCNT(obj) == 1) {
-        PyObject *nextlink = ((teedataobject *)obj)->nextlink;
-        ((teedataobject *)obj)->nextlink = NULL;
+        teedataobject *tmp = teedataobject_CAST(obj);
+        PyObject *nextlink = tmp->nextlink;
+        tmp->nextlink = NULL;
         Py_SETREF(obj, nextlink);
     }
     Py_XDECREF(obj);
 }
 
 static int
-teedataobject_clear(teedataobject *tdo)
+teedataobject_clear(PyObject *op)
 {
     int i;
     PyObject *tmp;
+    teedataobject *tdo = teedataobject_CAST(op);
 
     Py_CLEAR(tdo->it);
     for (i=0 ; i<tdo->numread ; i++)
@@ -794,12 +828,12 @@ teedataobject_clear(teedataobject *tdo)
 }
 
 static void
-teedataobject_dealloc(teedataobject *tdo)
+teedataobject_dealloc(PyObject *op)
 {
-    PyTypeObject *tp = Py_TYPE(tdo);
-    PyObject_GC_UnTrack(tdo);
-    teedataobject_clear(tdo);
-    PyObject_GC_Del(tdo);
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
+    (void)teedataobject_clear(op);
+    PyObject_GC_Del(op);
     Py_DECREF(tp);
 }
 
@@ -878,8 +912,9 @@ static PyType_Spec teedataobject_spec = {
 
 
 static PyObject *
-tee_next(teeobject *to)
+tee_next(PyObject *op)
 {
+    teeobject *to = teeobject_CAST(op);
     PyObject *value, *link;
 
     if (to->index >= LINKCELLS) {
@@ -897,27 +932,34 @@ tee_next(teeobject *to)
 }
 
 static int
-tee_traverse(teeobject *to, visitproc visit, void *arg)
+tee_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    teeobject *to = teeobject_CAST(op);
     Py_VISIT(Py_TYPE(to));
     Py_VISIT((PyObject *)to->dataobj);
     return 0;
 }
 
-static PyObject *
-tee_copy(teeobject *to, PyObject *Py_UNUSED(ignored))
+static teeobject *
+tee_copy_impl(teeobject *to)
 {
-    teeobject *newto;
-
-    newto = PyObject_GC_New(teeobject, Py_TYPE(to));
-    if (newto == NULL)
+    teeobject *newto = PyObject_GC_New(teeobject, Py_TYPE(to));
+    if (newto == NULL) {
         return NULL;
-    newto->dataobj = (teedataobject*)Py_NewRef(to->dataobj);
+    }
+    newto->dataobj = (teedataobject *)Py_NewRef(to->dataobj);
     newto->index = to->index;
     newto->weakreflist = NULL;
     newto->state = to->state;
     PyObject_GC_Track(newto);
-    return (PyObject *)newto;
+    return newto;
+}
+
+static inline PyObject *
+tee_copy(PyObject *op, PyObject *Py_UNUSED(ignored))
+{
+    teeobject *to = teeobject_CAST(op);
+    return (PyObject *)tee_copy_impl(to);
 }
 
 PyDoc_STRVAR(teecopy_doc, "Returns an independent iterator.");
@@ -932,7 +974,7 @@ tee_fromiterable(itertools_state *state, PyObject *iterable)
     if (it == NULL)
         return NULL;
     if (PyObject_TypeCheck(it, state->tee_type)) {
-        to = (teeobject *)tee_copy((teeobject *)it, NULL);
+        to = tee_copy_impl((teeobject *)it);  // 'it' can be fast casted
         goto done;
     }
 
@@ -973,26 +1015,27 @@ itertools__tee_impl(PyTypeObject *type, PyObject *iterable)
 }
 
 static int
-tee_clear(teeobject *to)
+tee_clear(PyObject *op)
 {
+    teeobject *to = teeobject_CAST(op);
     if (to->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) to);
+        PyObject_ClearWeakRefs(op);
     Py_CLEAR(to->dataobj);
     return 0;
 }
 
 static void
-tee_dealloc(teeobject *to)
+tee_dealloc(PyObject *op)
 {
-    PyTypeObject *tp = Py_TYPE(to);
-    PyObject_GC_UnTrack(to);
-    tee_clear(to);
-    PyObject_GC_Del(to);
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
+    (void)tee_clear(op);
+    PyObject_GC_Del(op);
     Py_DECREF(tp);
 }
 
 static PyMethodDef tee_methods[] = {
-    {"__copy__",        (PyCFunction)tee_copy,     METH_NOARGS, teecopy_doc},
+    {"__copy__", tee_copy, METH_NOARGS, teecopy_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -1063,7 +1106,7 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
 
     PyTuple_SET_ITEM(result, 0, to);
     for (i = 1; i < n; i++) {
-        to = tee_copy((teeobject *)to, NULL);
+        to = tee_copy(to, NULL);
         if (to == NULL) {
             Py_DECREF(result);
             return NULL;
@@ -1083,6 +1126,8 @@ typedef struct {
     Py_ssize_t index;
     int firstpass;
 } cycleobject;
+
+#define cycleobject_CAST(op)    ((cycleobject *)(op))
 
 /*[clinic input]
 @classmethod
@@ -1127,8 +1172,9 @@ itertools_cycle_impl(PyTypeObject *type, PyObject *iterable)
 }
 
 static void
-cycle_dealloc(cycleobject *lz)
+cycle_dealloc(PyObject *op)
 {
+    cycleobject *lz = cycleobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->it);
@@ -1138,8 +1184,9 @@ cycle_dealloc(cycleobject *lz)
 }
 
 static int
-cycle_traverse(cycleobject *lz, visitproc visit, void *arg)
+cycle_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    cycleobject *lz = cycleobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->it);
     Py_VISIT(lz->saved);
@@ -1147,8 +1194,9 @@ cycle_traverse(cycleobject *lz, visitproc visit, void *arg)
 }
 
 static PyObject *
-cycle_next(cycleobject *lz)
+cycle_next(PyObject *op)
 {
+    cycleobject *lz = cycleobject_CAST(op);
     PyObject *item;
 
     if (lz->it != NULL) {
@@ -1206,6 +1254,8 @@ typedef struct {
     long start;
 } dropwhileobject;
 
+#define dropwhileobject_CAST(op)    ((dropwhileobject *)(op))
+
 /*[clinic input]
 @classmethod
 itertools.dropwhile.__new__
@@ -1243,8 +1293,9 @@ itertools_dropwhile_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
 }
 
 static void
-dropwhile_dealloc(dropwhileobject *lz)
+dropwhile_dealloc(PyObject *op)
 {
+    dropwhileobject *lz = dropwhileobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->func);
@@ -1254,8 +1305,9 @@ dropwhile_dealloc(dropwhileobject *lz)
 }
 
 static int
-dropwhile_traverse(dropwhileobject *lz, visitproc visit, void *arg)
+dropwhile_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    dropwhileobject *lz = dropwhileobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->it);
     Py_VISIT(lz->func);
@@ -1263,8 +1315,9 @@ dropwhile_traverse(dropwhileobject *lz, visitproc visit, void *arg)
 }
 
 static PyObject *
-dropwhile_next(dropwhileobject *lz)
+dropwhile_next(PyObject *op)
 {
+    dropwhileobject *lz = dropwhileobject_CAST(op);
     PyObject *item, *good;
     PyObject *it = lz->it;
     long ok;
@@ -1325,6 +1378,8 @@ typedef struct {
     long stop;
 } takewhileobject;
 
+#define takewhileobject_CAST(op)    ((takewhileobject *)(op))
+
 /*[clinic input]
 @classmethod
 itertools.takewhile.__new__
@@ -1360,8 +1415,9 @@ itertools_takewhile_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
 }
 
 static void
-takewhile_dealloc(takewhileobject *lz)
+takewhile_dealloc(PyObject *op)
 {
+    takewhileobject *lz = takewhileobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->func);
@@ -1371,8 +1427,9 @@ takewhile_dealloc(takewhileobject *lz)
 }
 
 static int
-takewhile_traverse(takewhileobject *lz, visitproc visit, void *arg)
+takewhile_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    takewhileobject *lz = takewhileobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->it);
     Py_VISIT(lz->func);
@@ -1380,8 +1437,9 @@ takewhile_traverse(takewhileobject *lz, visitproc visit, void *arg)
 }
 
 static PyObject *
-takewhile_next(takewhileobject *lz)
+takewhile_next(PyObject *op)
 {
+    takewhileobject *lz = takewhileobject_CAST(op);
     PyObject *item, *good;
     PyObject *it = lz->it;
     long ok;
@@ -1439,6 +1497,8 @@ typedef struct {
     Py_ssize_t step;
     Py_ssize_t cnt;
 } isliceobject;
+
+#define isliceobject_CAST(op)   ((isliceobject *)(op))
 
 static PyObject *
 islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -1528,8 +1588,9 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static void
-islice_dealloc(isliceobject *lz)
+islice_dealloc(PyObject *op)
 {
+    isliceobject *lz = isliceobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->it);
@@ -1538,16 +1599,18 @@ islice_dealloc(isliceobject *lz)
 }
 
 static int
-islice_traverse(isliceobject *lz, visitproc visit, void *arg)
+islice_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    isliceobject *lz = isliceobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->it);
     return 0;
 }
 
 static PyObject *
-islice_next(isliceobject *lz)
+islice_next(PyObject *op)
 {
+    isliceobject *lz = isliceobject_CAST(op);
     PyObject *item;
     PyObject *it = lz->it;
     Py_ssize_t stop = lz->stop;
@@ -1624,6 +1687,8 @@ typedef struct {
     PyObject *it;
 } starmapobject;
 
+#define starmapobject_CAST(op)  ((starmapobject *)(op))
+
 /*[clinic input]
 @classmethod
 itertools.starmap.__new__
@@ -1658,8 +1723,9 @@ itertools_starmap_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
 }
 
 static void
-starmap_dealloc(starmapobject *lz)
+starmap_dealloc(PyObject *op)
 {
+    starmapobject *lz = starmapobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->func);
@@ -1669,8 +1735,9 @@ starmap_dealloc(starmapobject *lz)
 }
 
 static int
-starmap_traverse(starmapobject *lz, visitproc visit, void *arg)
+starmap_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    starmapobject *lz = starmapobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->it);
     Py_VISIT(lz->func);
@@ -1678,8 +1745,9 @@ starmap_traverse(starmapobject *lz, visitproc visit, void *arg)
 }
 
 static PyObject *
-starmap_next(starmapobject *lz)
+starmap_next(PyObject *op)
 {
+    starmapobject *lz = starmapobject_CAST(op);
     PyObject *args;
     PyObject *result;
     PyObject *it = lz->it;
@@ -1728,6 +1796,8 @@ typedef struct {
     PyObject *active;                   /* Currently running input iterator */
 } chainobject;
 
+#define chainobject_CAST(op)    ((chainobject *)(op))
+
 static PyObject *
 chain_new_internal(PyTypeObject *type, PyObject *source)
 {
@@ -1771,8 +1841,8 @@ Alternative chain() constructor taking a single iterable argument that evaluates
 [clinic start generated code]*/
 
 static PyObject *
-itertools_chain_from_iterable(PyTypeObject *type, PyObject *arg)
-/*[clinic end generated code: output=667ae7a7f7b68654 input=72c39e3a2ca3be85]*/
+itertools_chain_from_iterable_impl(PyTypeObject *type, PyObject *arg)
+/*[clinic end generated code: output=3d7ea7d46b9e43f5 input=72c39e3a2ca3be85]*/
 {
     PyObject *source;
 
@@ -1784,8 +1854,9 @@ itertools_chain_from_iterable(PyTypeObject *type, PyObject *arg)
 }
 
 static void
-chain_dealloc(chainobject *lz)
+chain_dealloc(PyObject *op)
 {
+    chainobject *lz = chainobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->active);
@@ -1795,8 +1866,9 @@ chain_dealloc(chainobject *lz)
 }
 
 static int
-chain_traverse(chainobject *lz, visitproc visit, void *arg)
+chain_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    chainobject *lz = chainobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->source);
     Py_VISIT(lz->active);
@@ -1804,8 +1876,9 @@ chain_traverse(chainobject *lz, visitproc visit, void *arg)
 }
 
 static PyObject *
-chain_next(chainobject *lz)
+chain_next(PyObject *op)
 {
+    chainobject *lz = chainobject_CAST(op);
     PyObject *item;
 
     /* lz->source is the iterator of iterables. If it's NULL, we've already
@@ -1887,6 +1960,8 @@ typedef struct {
     PyObject *result;       /* most recently returned result tuple */
     int stopped;            /* set to 1 when the iterator is exhausted */
 } productobject;
+
+#define productobject_CAST(op)  ((productobject *)(op))
 
 static PyObject *
 product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -1972,21 +2047,22 @@ error:
 }
 
 static void
-product_dealloc(productobject *lz)
+product_dealloc(PyObject *op)
 {
+    productobject *lz = productobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->pools);
     Py_XDECREF(lz->result);
-    if (lz->indices != NULL)
-        PyMem_Free(lz->indices);
+    PyMem_Free(lz->indices);
     tp->tp_free(lz);
     Py_DECREF(tp);
 }
 
 static PyObject *
-product_sizeof(productobject *lz, void *unused)
+product_sizeof(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    productobject *lz = productobject_CAST(op);
     size_t res = _PyObject_SIZE(Py_TYPE(lz));
     res += (size_t)PyTuple_GET_SIZE(lz->pools) * sizeof(Py_ssize_t);
     return PyLong_FromSize_t(res);
@@ -1995,8 +2071,9 @@ product_sizeof(productobject *lz, void *unused)
 PyDoc_STRVAR(sizeof_doc, "Returns size in memory, in bytes.");
 
 static int
-product_traverse(productobject *lz, visitproc visit, void *arg)
+product_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    productobject *lz = productobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->pools);
     Py_VISIT(lz->result);
@@ -2004,8 +2081,9 @@ product_traverse(productobject *lz, visitproc visit, void *arg)
 }
 
 static PyObject *
-product_next(productobject *lz)
+product_next(PyObject *op)
 {
+    productobject *lz = productobject_CAST(op);
     PyObject *pool;
     PyObject *elem;
     PyObject *oldelem;
@@ -2046,8 +2124,8 @@ product_next(productobject *lz)
         }
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        else if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
+        else {
+            _PyTuple_Recycle(result);
         }
         /* Now, we've got the only copy so we can update it in-place */
         assert (npools==0 || Py_REFCNT(result) == 1);
@@ -2090,8 +2168,7 @@ empty:
 }
 
 static PyMethodDef product_methods[] = {
-    {"__sizeof__",      (PyCFunction)product_sizeof,      METH_NOARGS,
-     sizeof_doc},
+    {"__sizeof__", product_sizeof, METH_NOARGS, sizeof_doc},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -2143,6 +2220,7 @@ typedef struct {
     int stopped;            /* set to 1 when the iterator is exhausted */
 } combinationsobject;
 
+#define combinationsobject_CAST(op) ((combinationsobject *)(op))
 
 /*[clinic input]
 @classmethod
@@ -2204,29 +2282,31 @@ error:
 }
 
 static void
-combinations_dealloc(combinationsobject *co)
+combinations_dealloc(PyObject *op)
 {
+    combinationsobject *co = combinationsobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(co);
     PyObject_GC_UnTrack(co);
     Py_XDECREF(co->pool);
     Py_XDECREF(co->result);
-    if (co->indices != NULL)
-        PyMem_Free(co->indices);
+    PyMem_Free(co->indices);
     tp->tp_free(co);
     Py_DECREF(tp);
 }
 
 static PyObject *
-combinations_sizeof(combinationsobject *co, void *unused)
+combinations_sizeof(PyObject *op, PyObject *Py_UNUSED(args))
 {
+    combinationsobject *co = combinationsobject_CAST(op);
     size_t res = _PyObject_SIZE(Py_TYPE(co));
     res += (size_t)co->r * sizeof(Py_ssize_t);
     return PyLong_FromSize_t(res);
 }
 
 static int
-combinations_traverse(combinationsobject *co, visitproc visit, void *arg)
+combinations_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    combinationsobject *co = combinationsobject_CAST(op);
     Py_VISIT(Py_TYPE(co));
     Py_VISIT(co->pool);
     Py_VISIT(co->result);
@@ -2234,8 +2314,9 @@ combinations_traverse(combinationsobject *co, visitproc visit, void *arg)
 }
 
 static PyObject *
-combinations_next(combinationsobject *co)
+combinations_next(PyObject *op)
 {
+    combinationsobject *co = combinationsobject_CAST(op);
     PyObject *elem;
     PyObject *oldelem;
     PyObject *pool = co->pool;
@@ -2272,8 +2353,8 @@ combinations_next(combinationsobject *co)
         }
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        else if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
+        else {
+            _PyTuple_Recycle(result);
         }
         /* Now, we've got the only copy so we can update it in-place
          * CPython's empty tuple is a singleton and cached in
@@ -2319,8 +2400,7 @@ empty:
 }
 
 static PyMethodDef combinations_methods[] = {
-    {"__sizeof__",      (PyCFunction)combinations_sizeof,      METH_NOARGS,
-     sizeof_doc},
+    {"__sizeof__", combinations_sizeof, METH_NOARGS, sizeof_doc},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -2383,6 +2463,8 @@ typedef struct {
     int stopped;            /* set to 1 when the cwr iterator is exhausted */
 } cwrobject;
 
+#define cwrobject_CAST(op)  ((cwrobject *)(op))
+
 /*[clinic input]
 @classmethod
 itertools.combinations_with_replacement.__new__
@@ -2444,29 +2526,31 @@ error:
 }
 
 static void
-cwr_dealloc(cwrobject *co)
+cwr_dealloc(PyObject *op)
 {
+    cwrobject *co = cwrobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(co);
     PyObject_GC_UnTrack(co);
     Py_XDECREF(co->pool);
     Py_XDECREF(co->result);
-    if (co->indices != NULL)
-        PyMem_Free(co->indices);
+    PyMem_Free(co->indices);
     tp->tp_free(co);
     Py_DECREF(tp);
 }
 
 static PyObject *
-cwr_sizeof(cwrobject *co, void *unused)
+cwr_sizeof(PyObject *op, PyObject *Py_UNUSED(args))
 {
+    cwrobject *co = cwrobject_CAST(op);
     size_t res = _PyObject_SIZE(Py_TYPE(co));
     res += (size_t)co->r * sizeof(Py_ssize_t);
     return PyLong_FromSize_t(res);
 }
 
 static int
-cwr_traverse(cwrobject *co, visitproc visit, void *arg)
+cwr_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    cwrobject *co = cwrobject_CAST(op);
     Py_VISIT(Py_TYPE(co));
     Py_VISIT(co->pool);
     Py_VISIT(co->result);
@@ -2474,8 +2558,9 @@ cwr_traverse(cwrobject *co, visitproc visit, void *arg)
 }
 
 static PyObject *
-cwr_next(cwrobject *co)
+cwr_next(PyObject *op)
 {
+    cwrobject *co = cwrobject_CAST(op);
     PyObject *elem;
     PyObject *oldelem;
     PyObject *pool = co->pool;
@@ -2514,8 +2599,8 @@ cwr_next(cwrobject *co)
         }
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        else if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
+        else {
+            _PyTuple_Recycle(result);
         }
         /* Now, we've got the only copy so we can update it in-place CPython's
            empty tuple is a singleton and cached in PyTuple's freelist. */
@@ -2553,8 +2638,7 @@ empty:
 }
 
 static PyMethodDef cwr_methods[] = {
-    {"__sizeof__",      (PyCFunction)cwr_sizeof,      METH_NOARGS,
-     sizeof_doc},
+    {"__sizeof__", cwr_sizeof, METH_NOARGS, sizeof_doc},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -2617,6 +2701,8 @@ typedef struct {
     Py_ssize_t r;           /* size of result tuple */
     int stopped;            /* set to 1 when the iterator is exhausted */
 } permutationsobject;
+
+#define permutationsobject_CAST(op) ((permutationsobject *)(op))
 
 /*[clinic input]
 @classmethod
@@ -2697,8 +2783,9 @@ error:
 }
 
 static void
-permutations_dealloc(permutationsobject *po)
+permutations_dealloc(PyObject *op)
 {
+    permutationsobject *po = permutationsobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(po);
     PyObject_GC_UnTrack(po);
     Py_XDECREF(po->pool);
@@ -2710,8 +2797,9 @@ permutations_dealloc(permutationsobject *po)
 }
 
 static PyObject *
-permutations_sizeof(permutationsobject *po, void *unused)
+permutations_sizeof(PyObject *op, PyObject *Py_UNUSED(args))
 {
+    permutationsobject *po = permutationsobject_CAST(op);
     size_t res = _PyObject_SIZE(Py_TYPE(po));
     res += (size_t)PyTuple_GET_SIZE(po->pool) * sizeof(Py_ssize_t);
     res += (size_t)po->r * sizeof(Py_ssize_t);
@@ -2719,8 +2807,9 @@ permutations_sizeof(permutationsobject *po, void *unused)
 }
 
 static int
-permutations_traverse(permutationsobject *po, visitproc visit, void *arg)
+permutations_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    permutationsobject *po = permutationsobject_CAST(op);
     Py_VISIT(Py_TYPE(po));
     Py_VISIT(po->pool);
     Py_VISIT(po->result);
@@ -2728,8 +2817,9 @@ permutations_traverse(permutationsobject *po, visitproc visit, void *arg)
 }
 
 static PyObject *
-permutations_next(permutationsobject *po)
+permutations_next(PyObject *op)
 {
+    permutationsobject *po = permutationsobject_CAST(op);
     PyObject *elem;
     PyObject *oldelem;
     PyObject *pool = po->pool;
@@ -2770,8 +2860,8 @@ permutations_next(permutationsobject *po)
         }
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        else if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
+        else {
+            _PyTuple_Recycle(result);
         }
         /* Now, we've got the only copy so we can update it in-place */
         assert(r == 0 || Py_REFCNT(result) == 1);
@@ -2818,8 +2908,7 @@ empty:
 }
 
 static PyMethodDef permuations_methods[] = {
-    {"__sizeof__",      (PyCFunction)permutations_sizeof,      METH_NOARGS,
-     sizeof_doc},
+    {"__sizeof__", permutations_sizeof, METH_NOARGS, sizeof_doc},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -2855,6 +2944,8 @@ typedef struct {
     PyObject *initial;
     itertools_state *state;
 } accumulateobject;
+
+#define accumulateobject_CAST(op)   ((accumulateobject *)(op))
 
 /*[clinic input]
 @classmethod
@@ -2897,8 +2988,9 @@ itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
 }
 
 static void
-accumulate_dealloc(accumulateobject *lz)
+accumulate_dealloc(PyObject *op)
 {
+    accumulateobject *lz = accumulateobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->binop);
@@ -2910,8 +3002,9 @@ accumulate_dealloc(accumulateobject *lz)
 }
 
 static int
-accumulate_traverse(accumulateobject *lz, visitproc visit, void *arg)
+accumulate_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    accumulateobject *lz = accumulateobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->binop);
     Py_VISIT(lz->it);
@@ -2921,8 +3014,9 @@ accumulate_traverse(accumulateobject *lz, visitproc visit, void *arg)
 }
 
 static PyObject *
-accumulate_next(accumulateobject *lz)
+accumulate_next(PyObject *op)
 {
+    accumulateobject *lz = accumulateobject_CAST(op);
     PyObject *val, *newtotal;
 
     if (lz->initial != Py_None) {
@@ -2988,6 +3082,8 @@ typedef struct {
     PyObject *selectors;
 } compressobject;
 
+#define compressobject_CAST(op) ((compressobject *)(op))
+
 /*[clinic input]
 @classmethod
 itertools.compress.__new__
@@ -3028,8 +3124,9 @@ fail:
 }
 
 static void
-compress_dealloc(compressobject *lz)
+compress_dealloc(PyObject *op)
 {
+    compressobject *lz = compressobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->data);
@@ -3039,8 +3136,9 @@ compress_dealloc(compressobject *lz)
 }
 
 static int
-compress_traverse(compressobject *lz, visitproc visit, void *arg)
+compress_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    compressobject *lz = compressobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->data);
     Py_VISIT(lz->selectors);
@@ -3048,8 +3146,9 @@ compress_traverse(compressobject *lz, visitproc visit, void *arg)
 }
 
 static PyObject *
-compress_next(compressobject *lz)
+compress_next(PyObject *op)
 {
+    compressobject *lz = compressobject_CAST(op);
     PyObject *data = lz->data, *selectors = lz->selectors;
     PyObject *datum, *selector;
     PyObject *(*datanext)(PyObject *) = *Py_TYPE(data)->tp_iternext;
@@ -3112,6 +3211,8 @@ typedef struct {
     PyObject *it;
 } filterfalseobject;
 
+#define filterfalseobject_CAST(op)  ((filterfalseobject *)(op))
+
 /*[clinic input]
 @classmethod
 itertools.filterfalse.__new__
@@ -3148,8 +3249,9 @@ itertools_filterfalse_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
 }
 
 static void
-filterfalse_dealloc(filterfalseobject *lz)
+filterfalse_dealloc(PyObject *op)
 {
+    filterfalseobject *lz = filterfalseobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->func);
@@ -3159,8 +3261,9 @@ filterfalse_dealloc(filterfalseobject *lz)
 }
 
 static int
-filterfalse_traverse(filterfalseobject *lz, visitproc visit, void *arg)
+filterfalse_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    filterfalseobject *lz = filterfalseobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->it);
     Py_VISIT(lz->func);
@@ -3168,8 +3271,9 @@ filterfalse_traverse(filterfalseobject *lz, visitproc visit, void *arg)
 }
 
 static PyObject *
-filterfalse_next(filterfalseobject *lz)
+filterfalse_next(PyObject *op)
 {
+    filterfalseobject *lz = filterfalseobject_CAST(op);
     PyObject *item;
     PyObject *it = lz->it;
     long ok;
@@ -3231,11 +3335,13 @@ typedef struct {
     PyObject *long_step;
 } countobject;
 
+#define countobject_CAST(op)    ((countobject *)(op))
+
 /* Counting logic and invariants:
 
 fast_mode:  when cnt an integer < PY_SSIZE_T_MAX and no step is specified.
 
-    assert(cnt != PY_SSIZE_T_MAX && long_cnt == NULL && long_step==PyLong(1));
+    assert(long_cnt == NULL && long_step==PyLong(1));
     Advances with:  cnt += 1
     When count hits PY_SSIZE_T_MAX, switch to slow_mode.
 
@@ -3322,7 +3428,7 @@ itertools_count_impl(PyTypeObject *type, PyObject *long_cnt,
     else
         cnt = PY_SSIZE_T_MAX;
 
-    assert((cnt != PY_SSIZE_T_MAX && long_cnt == NULL && fast_mode) ||
+    assert((long_cnt == NULL && fast_mode) ||
            (cnt == PY_SSIZE_T_MAX && long_cnt != NULL && !fast_mode));
     assert(!fast_mode ||
            (PyLong_Check(long_step) && PyLong_AS_LONG(long_step) == 1));
@@ -3342,8 +3448,9 @@ itertools_count_impl(PyTypeObject *type, PyObject *long_cnt,
 }
 
 static void
-count_dealloc(countobject *lz)
+count_dealloc(PyObject *op)
 {
+    countobject *lz = countobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->long_cnt);
@@ -3353,8 +3460,9 @@ count_dealloc(countobject *lz)
 }
 
 static int
-count_traverse(countobject *lz, visitproc visit, void *arg)
+count_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    countobject *lz = countobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->long_cnt);
     Py_VISIT(lz->long_step);
@@ -3384,8 +3492,9 @@ count_nextlong(countobject *lz)
 }
 
 static PyObject *
-count_next(countobject *lz)
+count_next(PyObject *op)
 {
+    countobject *lz = countobject_CAST(op);
 #ifndef Py_GIL_DISABLED
     if (lz->cnt == PY_SSIZE_T_MAX)
         return count_nextlong(lz);
@@ -3413,9 +3522,10 @@ count_next(countobject *lz)
 }
 
 static PyObject *
-count_repr(countobject *lz)
+count_repr(PyObject *op)
 {
-    if (lz->cnt != PY_SSIZE_T_MAX)
+    countobject *lz = countobject_CAST(op);
+    if (lz->long_cnt == NULL)
         return PyUnicode_FromFormat("%s(%zd)",
                                     _PyType_Name(Py_TYPE(lz)), lz->cnt);
 
@@ -3466,6 +3576,8 @@ typedef struct {
     Py_ssize_t cnt;
 } repeatobject;
 
+#define repeatobject_CAST(op)   ((repeatobject *)(op))
+
 static PyObject *
 repeat_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -3493,8 +3605,9 @@ repeat_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static void
-repeat_dealloc(repeatobject *ro)
+repeat_dealloc(PyObject *op)
 {
+    repeatobject *ro = repeatobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(ro);
     PyObject_GC_UnTrack(ro);
     Py_XDECREF(ro->element);
@@ -3503,26 +3616,33 @@ repeat_dealloc(repeatobject *ro)
 }
 
 static int
-repeat_traverse(repeatobject *ro, visitproc visit, void *arg)
+repeat_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    repeatobject *ro = repeatobject_CAST(op);
     Py_VISIT(Py_TYPE(ro));
     Py_VISIT(ro->element);
     return 0;
 }
 
 static PyObject *
-repeat_next(repeatobject *ro)
+repeat_next(PyObject *op)
 {
-    if (ro->cnt == 0)
+    repeatobject *ro = repeatobject_CAST(op);
+    Py_ssize_t cnt = FT_ATOMIC_LOAD_SSIZE_RELAXED(ro->cnt);
+    if (cnt == 0) {
         return NULL;
-    if (ro->cnt > 0)
-        ro->cnt--;
+    }
+    if (cnt > 0) {
+        cnt--;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(ro->cnt, cnt);
+    }
     return Py_NewRef(ro->element);
 }
 
 static PyObject *
-repeat_repr(repeatobject *ro)
+repeat_repr(PyObject *op)
 {
+    repeatobject *ro = repeatobject_CAST(op);
     if (ro->cnt == -1)
         return PyUnicode_FromFormat("%s(%R)",
                                     _PyType_Name(Py_TYPE(ro)), ro->element);
@@ -3533,8 +3653,9 @@ repeat_repr(repeatobject *ro)
 }
 
 static PyObject *
-repeat_len(repeatobject *ro, PyObject *Py_UNUSED(ignored))
+repeat_len(PyObject *op, PyObject *Py_UNUSED(args))
 {
+    repeatobject *ro = repeatobject_CAST(op);
     if (ro->cnt == -1) {
         PyErr_SetString(PyExc_TypeError, "len() of unsized object");
         return NULL;
@@ -3545,7 +3666,7 @@ repeat_len(repeatobject *ro, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyMethodDef repeat_methods[] = {
-    {"__length_hint__", (PyCFunction)repeat_len, METH_NOARGS, length_hint_doc},
+    {"__length_hint__", repeat_len, METH_NOARGS, length_hint_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -3587,6 +3708,8 @@ typedef struct {
     PyObject *result;
     PyObject *fillvalue;
 } ziplongestobject;
+
+#define ziplongestobject_CAST(op)   ((ziplongestobject *)(op))
 
 static PyObject *
 zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -3657,8 +3780,9 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static void
-zip_longest_dealloc(ziplongestobject *lz)
+zip_longest_dealloc(PyObject *op)
 {
+    ziplongestobject *lz = ziplongestobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->ittuple);
@@ -3669,8 +3793,9 @@ zip_longest_dealloc(ziplongestobject *lz)
 }
 
 static int
-zip_longest_traverse(ziplongestobject *lz, visitproc visit, void *arg)
+zip_longest_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    ziplongestobject *lz = ziplongestobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->ittuple);
     Py_VISIT(lz->result);
@@ -3679,8 +3804,9 @@ zip_longest_traverse(ziplongestobject *lz, visitproc visit, void *arg)
 }
 
 static PyObject *
-zip_longest_next(ziplongestobject *lz)
+zip_longest_next(PyObject *op)
 {
+    ziplongestobject *lz = ziplongestobject_CAST(op);
     Py_ssize_t i;
     Py_ssize_t tuplesize = lz->tuplesize;
     PyObject *result = lz->result;
@@ -3719,9 +3845,7 @@ zip_longest_next(ziplongestobject *lz)
         }
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
-        }
+        _PyTuple_Recycle(result);
     } else {
         result = PyTuple_New(tuplesize);
         if (result == NULL)

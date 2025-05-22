@@ -1,1 +1,0 @@
-Improve the accuracy of :mod:`bdb`'s check for the possibility of breakpoint in a frame. This makes it possible to disable unnecessary events in functions.

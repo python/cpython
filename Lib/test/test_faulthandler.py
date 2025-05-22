@@ -7,7 +7,7 @@ import signal
 import subprocess
 import sys
 from test import support
-from test.support import os_helper, script_helper, is_android, MS_WINDOWS
+from test.support import os_helper, script_helper, is_android, MS_WINDOWS, threading_helper
 import tempfile
 import unittest
 from textwrap import dedent
@@ -21,6 +21,16 @@ if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
 TIMEOUT = 0.5
+
+STACK_HEADER_STR = r'Stack (most recent call first):'
+
+# Regular expressions
+STACK_HEADER = re.escape(STACK_HEADER_STR)
+THREAD_NAME = r'( \[.*\])?'
+THREAD_ID = fr'Thread 0x[0-9a-f]+{THREAD_NAME}'
+THREAD_HEADER = fr'{THREAD_ID} \(most recent call first\):'
+CURRENT_THREAD_ID = fr'Current thread 0x[0-9a-f]+{THREAD_NAME}'
+CURRENT_THREAD_HEADER = fr'{CURRENT_THREAD_ID} \(most recent call first\):'
 
 
 def expected_traceback(lineno1, lineno2, header, min_count=1):
@@ -44,6 +54,13 @@ def temporary_filename():
         yield filename
     finally:
         os_helper.unlink(filename)
+
+
+ADDRESS_EXPR = "0x[0-9a-f]+"
+C_STACK_REGEX = [
+    r"Current thread's C stack trace \(most recent call first\):",
+    fr'(  Binary file ".+"(, at .*(\+|-){ADDRESS_EXPR})? \[{ADDRESS_EXPR}\])|(<.+>)'
+]
 
 class FaultHandlerTests(unittest.TestCase):
 
@@ -93,6 +110,7 @@ class FaultHandlerTests(unittest.TestCase):
                     fd=None, know_current_thread=True,
                     py_fatal_error=False,
                     garbage_collecting=False,
+                    c_stack=True,
                     function='<module>'):
         """
         Check that the fault handler for fatal errors is enabled and check the
@@ -100,21 +118,32 @@ class FaultHandlerTests(unittest.TestCase):
 
         Raise an error if the output doesn't match the expected format.
         """
-        if all_threads:
+        all_threads_disabled = (
+            all_threads
+            and (not sys._is_gil_enabled())
+        )
+        if all_threads and not all_threads_disabled:
             if know_current_thread:
-                header = 'Current thread 0x[0-9a-f]+'
+                header = CURRENT_THREAD_HEADER
             else:
-                header = 'Thread 0x[0-9a-f]+'
+                header = THREAD_HEADER
         else:
-            header = 'Stack'
+            header = STACK_HEADER
         regex = [f'^{fatal_error}']
         if py_fatal_error:
             regex.append("Python runtime state: initialized")
         regex.append('')
-        regex.append(fr'{header} \(most recent call first\):')
-        if garbage_collecting:
-            regex.append('  Garbage-collecting')
-        regex.append(fr'  File "<string>", line {lineno} in {function}')
+        if all_threads_disabled and not py_fatal_error:
+            regex.append("<Cannot show all threads while the GIL is disabled>")
+        regex.append(fr'{header}')
+        if support.Py_GIL_DISABLED and py_fatal_error and not know_current_thread:
+            regex.append("  <tstate is freed>")
+        else:
+            if garbage_collecting and not all_threads_disabled:
+                regex.append('  Garbage-collecting')
+            regex.append(fr'  File "<string>", line {lineno} in {function}')
+        if c_stack:
+            regex.extend(C_STACK_REGEX)
         regex = '\n'.join(regex)
 
         if other_regex:
@@ -136,29 +165,6 @@ class FaultHandlerTests(unittest.TestCase):
     def check_windows_exception(self, code, line_number, name_regex, **kw):
         fatal_error = 'Windows fatal exception: %s' % name_regex
         self.check_error(code, line_number, fatal_error, **kw)
-
-    @unittest.skipIf(sys.platform.startswith('aix'),
-                     "the first page of memory is a mapped read-only on AIX")
-    def test_read_null(self):
-        if not MS_WINDOWS:
-            self.check_fatal_error("""
-                import faulthandler
-                faulthandler.enable()
-                faulthandler._read_null()
-                """,
-                3,
-                # Issue #12700: Read NULL raises SIGILL on Mac OS X Lion
-                '(?:Segmentation fault'
-                    '|Bus error'
-                    '|Illegal instruction)')
-        else:
-            self.check_windows_exception("""
-                import faulthandler
-                faulthandler.enable()
-                faulthandler._read_null()
-                """,
-                3,
-                'access violation')
 
     @skip_segfault_on_android
     def test_sigsegv(self):
@@ -218,6 +224,7 @@ class FaultHandlerTests(unittest.TestCase):
             func='faulthandler_fatal_error_thread',
             py_fatal_error=True)
 
+    @support.skip_if_sanitizer("TSAN itercepts SIGABRT", thread=True)
     def test_sigabrt(self):
         self.check_fatal_error("""
             import faulthandler
@@ -229,6 +236,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == 'win32',
                      "SIGFPE cannot be caught on Windows")
+    @support.skip_if_sanitizer("TSAN itercepts SIGFPE", thread=True)
     def test_sigfpe(self):
         self.check_fatal_error("""
             import faulthandler
@@ -240,6 +248,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     @unittest.skipUnless(hasattr(signal, 'SIGBUS'), 'need signal.SIGBUS')
+    @support.skip_if_sanitizer("TSAN itercepts SIGBUS", thread=True)
     @skip_segfault_on_android
     def test_sigbus(self):
         self.check_fatal_error("""
@@ -254,6 +263,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     @unittest.skipUnless(hasattr(signal, 'SIGILL'), 'need signal.SIGILL')
+    @support.skip_if_sanitizer("TSAN itercepts SIGILL", thread=True)
     @skip_segfault_on_android
     def test_sigill(self):
         self.check_fatal_error("""
@@ -485,7 +495,7 @@ class FaultHandlerTests(unittest.TestCase):
         else:
             lineno = 14
         expected = [
-            'Stack (most recent call first):',
+            f'{STACK_HEADER_STR}',
             '  File "<string>", line %s in funcB' % lineno,
             '  File "<string>", line 17 in funcA',
             '  File "<string>", line 19 in <module>'
@@ -523,7 +533,7 @@ class FaultHandlerTests(unittest.TestCase):
             func_name=func_name,
         )
         expected = [
-            'Stack (most recent call first):',
+            f'{STACK_HEADER_STR}',
             '  File "<string>", line 4 in %s' % truncated,
             '  File "<string>", line 6 in <module>'
         ]
@@ -577,18 +587,18 @@ class FaultHandlerTests(unittest.TestCase):
             lineno = 10
         # When the traceback is dumped, the waiter thread may be in the
         # `self.running.set()` call or in `self.stop.wait()`.
-        regex = r"""
-            ^Thread 0x[0-9a-f]+ \(most recent call first\):
+        regex = fr"""
+            ^{THREAD_HEADER}
             (?:  File ".*threading.py", line [0-9]+ in [_a-z]+
             ){{1,3}}  File "<string>", line (?:22|23) in run
               File ".*threading.py", line [0-9]+ in _bootstrap_inner
               File ".*threading.py", line [0-9]+ in _bootstrap
 
-            Current thread 0x[0-9a-f]+ \(most recent call first\):
+            {CURRENT_THREAD_HEADER}
               File "<string>", line {lineno} in dump
               File "<string>", line 28 in <module>$
             """
-        regex = dedent(regex.format(lineno=lineno)).strip()
+        regex = dedent(regex).strip()
         self.assertRegex(output, regex)
         self.assertEqual(exitcode, 0)
 
@@ -654,7 +664,8 @@ class FaultHandlerTests(unittest.TestCase):
             count = loops
             if repeat:
                 count *= 2
-            header = r'Timeout \(%s\)!\nThread 0x[0-9a-f]+ \(most recent call first\):\n' % timeout_str
+            header = (fr'Timeout \({timeout_str}\)!\n'
+                      fr'{THREAD_HEADER}\n')
             regex = expected_traceback(17, 26, header, min_count=count)
             self.assertRegex(trace, regex)
         else:
@@ -755,9 +766,9 @@ class FaultHandlerTests(unittest.TestCase):
         trace = '\n'.join(trace)
         if not unregister:
             if all_threads:
-                regex = r'Current thread 0x[0-9a-f]+ \(most recent call first\):\n'
+                regex = fr'{CURRENT_THREAD_HEADER}\n'
             else:
-                regex = r'Stack \(most recent call first\):\n'
+                regex = fr'{STACK_HEADER}\n'
             regex = expected_traceback(14, 32, regex)
             self.assertRegex(trace, regex)
         else:
@@ -786,6 +797,7 @@ class FaultHandlerTests(unittest.TestCase):
     def test_register_threads(self):
         self.check_register(all_threads=True)
 
+    @support.skip_if_sanitizer("gh-129825: hangs under TSAN", thread=True)
     def test_register_chain(self):
         self.check_register(chain=True)
 
@@ -896,6 +908,64 @@ class FaultHandlerTests(unittest.TestCase):
         self.assertEqual(output, [])
         self.assertEqual(exitcode, 0)
 
+    @threading_helper.requires_working_threading()
+    @unittest.skipUnless(support.Py_GIL_DISABLED, "only meaningful if the GIL is disabled")
+    def test_free_threaded_dump_traceback(self):
+        # gh-128400: Other threads need to be paused to invoke faulthandler
+        code = dedent("""
+        import faulthandler
+        from threading import Thread, Event
+
+        class Waiter(Thread):
+            def __init__(self):
+                Thread.__init__(self)
+                self.running = Event()
+                self.stop = Event()
+
+            def run(self):
+                self.running.set()
+                self.stop.wait()
+
+        for _ in range(100):
+            waiter = Waiter()
+            waiter.start()
+            waiter.running.wait()
+            faulthandler.dump_traceback(all_threads=True)
+            waiter.stop.set()
+            waiter.join()
+        """)
+        _, exitcode = self.get_output(code)
+        self.assertEqual(exitcode, 0)
+
+    def check_c_stack(self, output):
+        starting_line = output.pop(0)
+        self.assertRegex(starting_line, C_STACK_REGEX[0])
+        self.assertGreater(len(output), 0)
+
+        for line in output:
+            with self.subTest(line=line):
+                if line != '':  # Ignore trailing or leading newlines
+                    self.assertRegex(line, C_STACK_REGEX[1])
+
+
+    def test_dump_c_stack(self):
+        code = dedent("""
+        import faulthandler
+        faulthandler.dump_c_stack()
+        """)
+        output, exitcode = self.get_output(code)
+        self.assertEqual(exitcode, 0)
+        self.check_c_stack(output)
+
+
+    def test_dump_c_stack_file(self):
+        import tempfile
+
+        with tempfile.TemporaryFile("w+") as tmp:
+            faulthandler.dump_c_stack(file=tmp)
+            tmp.flush()  # Just in case
+            tmp.seek(0)
+            self.check_c_stack(tmp.read().split("\n"))
 
 if __name__ == "__main__":
     unittest.main()

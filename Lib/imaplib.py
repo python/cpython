@@ -19,8 +19,9 @@ Public functions:       Internaldate2tuple
 # GET/SETQUOTA contributed by Andreas Zeidler <az@kreativkombinat.de> June 2002.
 # PROXYAUTH contributed by Rick Holbert <holbert.13@osu.edu> November 2002.
 # GET/SETANNOTATION contributed by Tomas Lindroos <skitta@abo.fi> June 2005.
+# IDLE contributed by Forest <forestix@nom.one> August 2024.
 
-__version__ = "2.58"
+__version__ = "2.59"
 
 import binascii, errno, random, re, socket, subprocess, sys, time, calendar
 from datetime import datetime, timezone, timedelta
@@ -74,6 +75,7 @@ Commands = {
         'GETANNOTATION':('AUTH', 'SELECTED'),
         'GETQUOTA':     ('AUTH', 'SELECTED'),
         'GETQUOTAROOT': ('AUTH', 'SELECTED'),
+        'IDLE':         ('AUTH', 'SELECTED'),
         'MYRIGHTS':     ('AUTH', 'SELECTED'),
         'LIST':         ('AUTH', 'SELECTED'),
         'LOGIN':        ('NONAUTH',),
@@ -184,6 +186,7 @@ class IMAP4:
     class error(Exception): pass    # Logical errors - debug required
     class abort(error): pass        # Service errors - close and retry
     class readonly(abort): pass     # Mailbox status changed to READ-ONLY
+    class _responsetimeout(TimeoutError): pass # No response during IDLE
 
     def __init__(self, host='', port=IMAP4_PORT, timeout=None):
         self.debug = Debug
@@ -192,10 +195,13 @@ class IMAP4:
         self.tagged_commands = {}       # Tagged commands awaiting response
         self.untagged_responses = {}    # {typ: [data, ...], ...}
         self.continuation_response = '' # Last continuation response
+        self._idle_responses = []       # Response queue for idle iteration
+        self._idle_capture = False      # Whether to queue responses for idle
         self.is_readonly = False        # READ-ONLY desired state
         self.tagnum = 0
         self._tls_established = False
         self._mode_ascii()
+        self._readbuf = []
 
         # Open socket to server.
 
@@ -310,17 +316,97 @@ class IMAP4:
         self.host = host
         self.port = port
         self.sock = self._create_socket(timeout)
-        self.file = self.sock.makefile('rb')
+        self._file = self.sock.makefile('rb')
+
+
+    @property
+    def file(self):
+        # The old 'file' attribute is no longer used now that we do our own
+        # read() and readline() buffering, with which it conflicts.
+        # As an undocumented interface, it should never have been accessed by
+        # external code, and therefore does not warrant deprecation.
+        # Nevertheless, we provide this property for now, to avoid suddenly
+        # breaking any code in the wild that might have been using it in a
+        # harmless way.
+        import warnings
+        warnings.warn(
+            'IMAP4.file is unsupported, can cause errors, and may be removed.',
+            RuntimeWarning,
+            stacklevel=2)
+        return self._file
 
 
     def read(self, size):
         """Read 'size' bytes from remote."""
-        return self.file.read(size)
+        # We need buffered read() to continue working after socket timeouts,
+        # since we use them during IDLE. Unfortunately, the standard library's
+        # SocketIO implementation makes this impossible, by setting a permanent
+        # error condition instead of letting the caller decide how to handle a
+        # timeout. We therefore implement our own buffered read().
+        # https://github.com/python/cpython/issues/51571
+        #
+        # Reading in chunks instead of delegating to a single
+        # BufferedReader.read() call also means we avoid its preallocation
+        # of an unreasonably large memory block if a malicious server claims
+        # it will send a huge literal without actually sending one.
+        # https://github.com/python/cpython/issues/119511
+
+        parts = []
+
+        while size > 0:
+
+            if len(parts) < len(self._readbuf):
+                buf = self._readbuf[len(parts)]
+            else:
+                try:
+                    buf = self.sock.recv(DEFAULT_BUFFER_SIZE)
+                except ConnectionError:
+                    break
+                if not buf:
+                    break
+                self._readbuf.append(buf)
+
+            if len(buf) >= size:
+                parts.append(buf[:size])
+                self._readbuf = [buf[size:]] + self._readbuf[len(parts):]
+                break
+            parts.append(buf)
+            size -= len(buf)
+
+        return b''.join(parts)
 
 
     def readline(self):
         """Read line from remote."""
-        line = self.file.readline(_MAXLINE + 1)
+        # The comment in read() explains why we implement our own readline().
+
+        LF = b'\n'
+        parts = []
+        length = 0
+
+        while length < _MAXLINE:
+
+            if len(parts) < len(self._readbuf):
+                buf = self._readbuf[len(parts)]
+            else:
+                try:
+                    buf = self.sock.recv(DEFAULT_BUFFER_SIZE)
+                except ConnectionError:
+                    break
+                if not buf:
+                    break
+                self._readbuf.append(buf)
+
+            pos = buf.find(LF)
+            if pos != -1:
+                pos += 1
+                parts.append(buf[:pos])
+                self._readbuf = [buf[pos:]] + self._readbuf[len(parts):]
+                break
+            parts.append(buf)
+            length += len(buf)
+
+        line = b''.join(parts)
         if len(line) > _MAXLINE:
             raise self.error("got more than %d bytes" % _MAXLINE)
         return line
@@ -334,7 +420,7 @@ class IMAP4:
 
     def shutdown(self):
         """Close I/O established in "open"."""
-        self.file.close()
+        self._file.close()
         try:
             self.sock.shutdown(socket.SHUT_RDWR)
         except OSError as exc:
@@ -588,6 +674,19 @@ class IMAP4:
         return typ, [quotaroot, quota]
 
 
+    def idle(self, duration=None):
+        """Return an iterable IDLE context manager producing untagged responses.
+        If the argument is not None, limit iteration to 'duration' seconds.
+
+        with M.idle(duration=29 * 60) as idler:
+            for typ, data in idler:
+                print(typ, data)
+
+        Note: 'duration' requires a socket connection (not IMAP4_stream).
+        """
+        return Idler(self, duration)
+
+
     def list(self, directory='""', pattern='*'):
         """List mailbox names in directory matching pattern.
 
@@ -821,7 +920,7 @@ class IMAP4:
         if typ == 'OK':
             self.sock = ssl_context.wrap_socket(self.sock,
                                                 server_hostname=self.host)
-            self.file = self.sock.makefile('rb')
+            self._file = self.sock.makefile('rb')
             self._tls_established = True
             self._get_capabilities()
         else:
@@ -944,6 +1043,24 @@ class IMAP4:
     def _append_untagged(self, typ, dat):
         if dat is None:
             dat = b''
+
+        # During idle, queue untagged responses for delivery via iteration
+        if self._idle_capture:
+            # Responses containing literal strings are passed to us one data
+            # fragment at a time, while others arrive in a single call.
+            if (not self._idle_responses or
+                isinstance(self._idle_responses[-1][1][-1], bytes)):
+                # We are not continuing a fragmented response; start a new one
+                self._idle_responses.append((typ, [dat]))
+            else:
+                # We are continuing a fragmented response; append the fragment
+                response = self._idle_responses[-1]
+                assert response[0] == typ
+                response[1].append(dat)
+            if __debug__ and self.debug >= 5:
+                self._mesg(f'idle: queue untagged {typ} {dat!r}')
+            return
+
         ur = self.untagged_responses
         if __debug__:
             if self.debug >= 5:
@@ -1065,14 +1182,29 @@ class IMAP4:
         self.capabilities = tuple(dat.split())
 
 
-    def _get_response(self):
+    def _get_response(self, start_timeout=False):
 
         # Read response and store.
         #
         # Returns None for continuation responses,
         # otherwise first response line received.
+        #
+        # If start_timeout is given, temporarily uses it as a socket
+        # timeout while waiting for the start of a response, raising
+        # _responsetimeout if one doesn't arrive. (Used by Idler.)
 
-        resp = self._get_line()
+        if start_timeout is not False and self.sock:
+            assert start_timeout is None or start_timeout > 0
+            saved_timeout = self.sock.gettimeout()
+            self.sock.settimeout(start_timeout)
+            try:
+                resp = self._get_line()
+            except TimeoutError as err:
+                raise self._responsetimeout from err
+            finally:
+                self.sock.settimeout(saved_timeout)
+        else:
+            resp = self._get_line()
 
         # Command completion response?
 
@@ -1279,6 +1411,199 @@ class IMAP4:
                 n -= 1
 
 
+class Idler:
+    """Iterable IDLE context manager: start IDLE & produce untagged responses.
+
+    An object of this type is returned by the IMAP4.idle() method.
+
+    Note: The name and structure of this class are subject to change.
+    """
+
+    def __init__(self, imap, duration=None):
+        if 'IDLE' not in imap.capabilities:
+            raise imap.error("Server does not support IMAP4 IDLE")
+        if duration is not None and not imap.sock:
+            # IMAP4_stream pipes don't support timeouts
+            raise imap.error('duration requires a socket connection')
+        self._duration = duration
+        self._deadline = None
+        self._imap = imap
+        self._tag = None
+        self._saved_state = None
+
+    def __enter__(self):
+        imap = self._imap
+        assert not imap._idle_responses
+        assert not imap._idle_capture
+
+        if __debug__ and imap.debug >= 4:
+            imap._mesg(f'idle start duration={self._duration}')
+
+        # Start capturing untagged responses before sending IDLE,
+        # so we can deliver via iteration any that arrive while
+        # the IDLE command continuation request is still pending.
+        imap._idle_capture = True
+
+        try:
+            self._tag = imap._command('IDLE')
+            # As with any command, the server is allowed to send us unrelated,
+            # untagged responses before acting on IDLE.  These lines will be
+            # returned by _get_response().  When the server is ready, it will
+            # send an IDLE continuation request, indicated by _get_response()
+            # returning None.  We therefore process responses in a loop until
+            # this occurs.
+            while resp := imap._get_response():
+                if imap.tagged_commands[self._tag]:
+                    typ, data = imap.tagged_commands.pop(self._tag)
+                    if typ == 'NO':
+                        raise imap.error(f'idle denied: {data}')
+                    raise imap.abort(f'unexpected status response: {resp}')
+
+            if __debug__ and imap.debug >= 4:
+                prompt = imap.continuation_response
+                imap._mesg(f'idle continuation prompt: {prompt}')
+        except BaseException:
+            imap._idle_capture = False
+            raise
+
+        if self._duration is not None:
+            self._deadline = time.monotonic() + self._duration
+
+        self._saved_state = imap.state
+        imap.state = 'IDLING'
+
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        imap = self._imap
+
+        if __debug__ and imap.debug >= 4:
+            imap._mesg('idle done')
+        imap.state = self._saved_state
+
+        # Stop intercepting untagged responses before sending DONE,
+        # since we can no longer deliver them via iteration.
+        imap._idle_capture = False
+
+        # If we captured untagged responses while the IDLE command
+        # continuation request was still pending, but the user did not
+        # iterate over them before exiting IDLE, we must put them
+        # someplace where the user can retrieve them.  The only
+        # sensible place for this is the untagged_responses dict,
+        # despite its unfortunate inability to preserve the relative
+        # order of different response types.
+        if leftovers := len(imap._idle_responses):
+            if __debug__ and imap.debug >= 4:
+                imap._mesg(f'idle quit with {leftovers} leftover responses')
+            while imap._idle_responses:
+                typ, data = imap._idle_responses.pop(0)
+                # Append one fragment at a time, just as _get_response() does
+                for datum in data:
+                    imap._append_untagged(typ, datum)
+
+        try:
+            imap.send(b'DONE' + CRLF)
+            status, [msg] = imap._command_complete('IDLE', self._tag)
+            if __debug__ and imap.debug >= 4:
+                imap._mesg(f'idle status: {status} {msg!r}')
+        except OSError:
+            if not exc_type:
+                raise
+
+        return False  # Do not suppress context body exceptions
+
+    def __iter__(self):
+        return self
+
+    def _pop(self, timeout, default=('', None)):
+        # Get the next response, or a default value on timeout.
+        # The timeout arg can be an int or float, or None for no timeout.
+        # Timeouts require a socket connection (not IMAP4_stream).
+        # This method ignores self._duration.
+
+        # Historical Note:
+        # The timeout was originally implemented using select() after
+        # checking for the presence of already-buffered data.
+        # That allowed timeouts on pipe connetions like IMAP4_stream.
+        # However, it seemed possible that SSL data arriving without any
+        # IMAP data afterward could cause select() to indicate available
+        # application data when there was none, leading to a read() call
+        # that would block with no timeout. It was unclear under what
+        # conditions this would happen in practice. Our implementation was
+        # changed to use socket timeouts instead of select(), just to be
+        # safe.
+
+        imap = self._imap
+        if imap.state != 'IDLING':
+            raise imap.error('_pop() only works during IDLE')
+
+        if imap._idle_responses:
+            # Response is ready to return to the user
+            resp = imap._idle_responses.pop(0)
+            if __debug__ and imap.debug >= 4:
+                imap._mesg(f'idle _pop({timeout}) de-queued {resp[0]}')
+            return resp
+
+        if __debug__ and imap.debug >= 4:
+            imap._mesg(f'idle _pop({timeout}) reading')
+
+        if timeout is not None:
+            if timeout <= 0:
+                return default
+            timeout = float(timeout)  # Required by socket.settimeout()
+
+        try:
+            imap._get_response(timeout)  # Reads line, calls _append_untagged()
+        except IMAP4._responsetimeout:
+            if __debug__ and imap.debug >= 4:
+                imap._mesg(f'idle _pop({timeout}) done')
+            return default
+
+        resp = imap._idle_responses.pop(0)
+
+        if __debug__ and imap.debug >= 4:
+            imap._mesg(f'idle _pop({timeout}) read {resp[0]}')
+        return resp
+
+    def __next__(self):
+        imap = self._imap
+
+        if self._duration is None:
+            timeout = None
+        else:
+            timeout = self._deadline - time.monotonic()
+        typ, data = self._pop(timeout)
+
+        if not typ:
+            if __debug__ and imap.debug >= 4:
+                imap._mesg('idle iterator exhausted')
+            raise StopIteration
+
+        return typ, data
+
+    def burst(self, interval=0.1):
+        """Yield a burst of responses no more than 'interval' seconds apart.
+
+        with M.idle() as idler:
+            # get a response and any others following by < 0.1 seconds
+            batch = list(idler.burst())
+            print(f'processing {len(batch)} responses...')
+            print(batch)
+
+        Note: This generator requires a socket connection (not IMAP4_stream).
+        """
+        if not self._imap.sock:
+            raise self._imap.error('burst() requires a socket connection')
+
+        try:
+            yield next(self)
+        except StopIteration:
+            return
+
+        while response := self._pop(interval, None):
+            yield response
+
+
 if HAVE_SSL:
 
     class IMAP4_SSL(IMAP4):
@@ -1346,7 +1671,7 @@ class IMAP4_stream(IMAP4):
         self.host = None        # For compatibility with parent class
         self.port = None
         self.sock = None
-        self.file = None
+        self._file = None
         self.process = subprocess.Popen(self.command,
             bufsize=DEFAULT_BUFFER_SIZE,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,

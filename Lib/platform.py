@@ -29,8 +29,9 @@
 #
 #    History:
 #
-#    <see CVS and SVN checkin messages for history>
+#    <see checkin messages for history>
 #
+#    1.0.9 - added invalidate_caches() function to invalidate cached values
 #    1.0.8 - changed Windows support to read version from kernel32.dll
 #    1.0.7 - added DEV_NULL
 #    1.0.6 - added linux_distribution()
@@ -109,7 +110,7 @@ __copyright__ = """
 
 """
 
-__version__ = '1.0.8'
+__version__ = '1.1.0'
 
 import collections
 import os
@@ -188,22 +189,25 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
             # sys.executable is not set.
             return lib, version
 
-    libc_search = re.compile(b'(__libc_init)'
-                          b'|'
-                          b'(GLIBC_([0-9.]+))'
-                          b'|'
-                          br'(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)', re.ASCII)
+    libc_search = re.compile(br"""
+          (__libc_init)
+        | (GLIBC_([0-9.]+))
+        | (libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)
+        | (musl-([0-9.]+))
+        """,
+        re.ASCII | re.VERBOSE)
 
     V = _comparable_version
     # We use os.path.realpath()
     # here to work around problems with Cygwin not being
     # able to open symlinks for reading
     executable = os.path.realpath(executable)
+    ver = None
     with open(executable, 'rb') as f:
         binary = f.read(chunksize)
         pos = 0
         while pos < len(binary):
-            if b'libc' in binary or b'GLIBC' in binary:
+            if b'libc' in binary or b'GLIBC' in binary or b'musl' in binary:
                 m = libc_search.search(binary, pos)
             else:
                 m = None
@@ -215,7 +219,7 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
                     continue
                 if not m:
                     break
-            libcinit, glibc, glibcversion, so, threads, soversion = [
+            libcinit, glibc, glibcversion, so, threads, soversion, musl, muslversion = [
                 s.decode('latin1') if s is not None else s
                 for s in m.groups()]
             if libcinit and not lib:
@@ -223,18 +227,22 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
             elif glibc:
                 if lib != 'glibc':
                     lib = 'glibc'
-                    version = glibcversion
-                elif V(glibcversion) > V(version):
-                    version = glibcversion
+                    ver = glibcversion
+                elif V(glibcversion) > V(ver):
+                    ver = glibcversion
             elif so:
                 if lib != 'glibc':
                     lib = 'libc'
-                    if soversion and (not version or V(soversion) > V(version)):
-                        version = soversion
-                    if threads and version[-len(threads):] != threads:
-                        version = version + threads
+                    if soversion and (not ver or V(soversion) > V(ver)):
+                        ver = soversion
+                    if threads and ver[-len(threads):] != threads:
+                        ver = ver + threads
+            elif musl:
+                lib = 'musl'
+                if not ver or V(muslversion) > V(ver):
+                    ver = muslversion
             pos = m.end()
-    return lib, version
+    return lib, version if ver is None else ver
 
 def _norm_version(version, build=''):
 
@@ -352,7 +360,8 @@ _WIN32_CLIENT_RELEASES = [
 ]
 
 _WIN32_SERVER_RELEASES = [
-    ((10, 1, 0), "post2022Server"),
+    ((10, 1, 0), "post2025Server"),
+    ((10, 0, 26100), "2025Server"),
     ((10, 0, 20348), "2022Server"),
     ((10, 0, 17763), "2019Server"),
     ((6, 4, 0), "2016Server"),
@@ -517,53 +526,6 @@ def ios_ver(system="", release="", model="", is_simulator=False):
             return IOSVersionInfo(*result)
 
     return IOSVersionInfo(system, release, model, is_simulator)
-
-
-def _java_getprop(name, default):
-    """This private helper is deprecated in 3.13 and will be removed in 3.15"""
-    from java.lang import System
-    try:
-        value = System.getProperty(name)
-        if value is None:
-            return default
-        return value
-    except AttributeError:
-        return default
-
-def java_ver(release='', vendor='', vminfo=('', '', ''), osinfo=('', '', '')):
-
-    """ Version interface for Jython.
-
-        Returns a tuple (release, vendor, vminfo, osinfo) with vminfo being
-        a tuple (vm_name, vm_release, vm_vendor) and osinfo being a
-        tuple (os_name, os_version, os_arch).
-
-        Values which cannot be determined are set to the defaults
-        given as parameters (which all default to '').
-
-    """
-    import warnings
-    warnings._deprecated('java_ver', remove=(3, 15))
-    # Import the needed APIs
-    try:
-        import java.lang  # noqa: F401
-    except ImportError:
-        return release, vendor, vminfo, osinfo
-
-    vendor = _java_getprop('java.vendor', vendor)
-    release = _java_getprop('java.version', release)
-    vm_name, vm_release, vm_vendor = vminfo
-    vm_name = _java_getprop('java.vm.name', vm_name)
-    vm_vendor = _java_getprop('java.vm.vendor', vm_vendor)
-    vm_release = _java_getprop('java.vm.version', vm_release)
-    vminfo = vm_name, vm_release, vm_vendor
-    os_name, os_version, os_arch = osinfo
-    os_arch = _java_getprop('java.os.arch', os_arch)
-    os_name = _java_getprop('java.os.name', os_name)
-    os_version = _java_getprop('java.os.version', os_version)
-    osinfo = os_name, os_version, os_arch
-
-    return release, vendor, vminfo, osinfo
 
 
 AndroidVer = collections.namedtuple(
@@ -1025,13 +987,6 @@ def uname():
                     version = '16bit'
             system = 'Windows'
 
-        elif system[:4] == 'java':
-            release, vendor, vminfo, osinfo = java_ver()
-            system = 'Java'
-            version = ', '.join(vminfo)
-            if not version:
-                version = vendor
-
     # System specific extensions
     if system == 'OpenVMS':
         # OpenVMS seems to have release and version mixed up
@@ -1361,15 +1316,6 @@ def platform(aliased=False, terse=False):
         platform = _platform(system, release, machine, processor,
                              'with',
                              libcname+libcversion)
-    elif system == 'Java':
-        # Java platforms
-        r, v, vminfo, (os_name, os_version, os_arch) = java_ver()
-        if terse or not os_name:
-            platform = _platform(system, release, version)
-        else:
-            platform = _platform(system, release, version,
-                                 'on',
-                                 os_name, os_version, os_arch)
 
     else:
         # Generic handler
@@ -1441,11 +1387,55 @@ def freedesktop_os_release():
     return _os_release_cache.copy()
 
 
+def invalidate_caches():
+    """Invalidate the cached results."""
+    global _uname_cache
+    _uname_cache = None
+
+    global _os_release_cache
+    _os_release_cache = None
+
+    _sys_version_cache.clear()
+    _platform_cache.clear()
+
+
 ### Command line interface
 
-if __name__ == '__main__':
-    # Default is to print the aliased verbose platform string
-    terse = ('terse' in sys.argv or '--terse' in sys.argv)
-    aliased = (not 'nonaliased' in sys.argv and not '--nonaliased' in sys.argv)
+def _parse_args(args: list[str] | None):
+    import argparse
+
+    parser = argparse.ArgumentParser(color=True)
+    parser.add_argument("args", nargs="*", choices=["nonaliased", "terse"])
+    parser.add_argument(
+        "--terse",
+        action="store_true",
+        help=(
+            "return only the absolute minimum information needed "
+            "to identify the platform"
+        ),
+    )
+    parser.add_argument(
+        "--nonaliased",
+        dest="aliased",
+        action="store_false",
+        help=(
+            "disable system/OS name aliasing. If aliasing is enabled, "
+            "some platforms report system names different from "
+            "their common names, e.g. SunOS is reported as Solaris"
+        ),
+    )
+
+    return parser.parse_args(args)
+
+
+def _main(args: list[str] | None = None):
+    args = _parse_args(args)
+
+    terse = args.terse or ("terse" in args.args)
+    aliased = args.aliased and ('nonaliased' not in args.args)
+
     print(platform(aliased, terse))
-    sys.exit(0)
+
+
+if __name__ == "__main__":
+    _main()

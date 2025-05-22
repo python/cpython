@@ -1,1 +1,0 @@
-``webbrowser`` honors OS preferred browser on Linux when its desktop entry name contains the text of a known browser name.

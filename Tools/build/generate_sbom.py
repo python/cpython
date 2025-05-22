@@ -1,14 +1,17 @@
 """Tool for generating Software Bill of Materials (SBOM) for Python's dependencies"""
-import os
-import re
+
+import glob
 import hashlib
 import json
-import glob
-from pathlib import Path, PurePosixPath, PureWindowsPath
+import os
+import re
 import subprocess
 import sys
-import urllib.request
+import time
 import typing
+import urllib.error
+import urllib.request
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 CPYTHON_ROOT_DIR = Path(__file__).parent.parent.parent
 
@@ -59,6 +62,8 @@ PACKAGE_TO_FILES = {
         include=["Modules/expat/**"],
         exclude=[
             "Modules/expat/expat_config.h",
+            "Modules/expat/pyexpatns.h",
+            "Modules/expat/refresh.sh",
         ]
     ),
     "macholib": PackageFiles(
@@ -158,6 +163,21 @@ def get_externals() -> list[str]:
     return externals
 
 
+def download_with_retries(download_location: str,
+                          max_retries: int = 5,
+                          base_delay: float = 2.0) -> typing.Any:
+    """Download a file with exponential backoff retry."""
+    for attempt in range(max_retries):
+        try:
+            resp = urllib.request.urlopen(download_location)
+        except urllib.error.URLError as ex:
+            if attempt == max_retries:
+                raise ex
+            time.sleep(base_delay**attempt)
+        else:
+            return resp
+
+
 def check_sbom_packages(sbom_data: dict[str, typing.Any]) -> None:
     """Make a bunch of assertions about the SBOM package data to ensure it's consistent."""
 
@@ -172,7 +192,7 @@ def check_sbom_packages(sbom_data: dict[str, typing.Any]) -> None:
         # and that the download URL is valid.
         if "checksums" not in package or "CI" in os.environ:
             download_location = package["downloadLocation"]
-            resp = urllib.request.urlopen(download_location)
+            resp = download_with_retries(download_location)
             error_if(resp.status != 200, f"Couldn't access URL: {download_location}'")
 
             package["checksums"] = [{
@@ -218,11 +238,37 @@ def check_sbom_packages(sbom_data: dict[str, typing.Any]) -> None:
                 "HACL* SBOM version doesn't match value in 'Modules/_hacl/refresh.sh'"
             )
 
+        # libexpat specifies its expected rev in a refresh script.
+        if package["name"] == "libexpat":
+            libexpat_refresh_sh = (CPYTHON_ROOT_DIR / "Modules/expat/refresh.sh").read_text()
+            libexpat_expected_version_match = re.search(
+                r"expected_libexpat_version=\"([0-9]+\.[0-9]+\.[0-9]+)\"",
+                libexpat_refresh_sh
+            )
+            libexpat_expected_sha256_match = re.search(
+                r"expected_libexpat_sha256=\"[a-f0-9]{40}\"",
+                libexpat_refresh_sh
+            )
+            libexpat_expected_version = libexpat_expected_version_match and libexpat_expected_version_match.group(1)
+            libexpat_expected_sha256 = libexpat_expected_sha256_match and libexpat_expected_sha256_match.group(1)
+
+            error_if(
+                libexpat_expected_version != version,
+                "libexpat SBOM version doesn't match value in 'Modules/expat/refresh.sh'"
+            )
+            error_if(
+                package["checksums"] != [{
+                    "algorithm": "SHA256",
+                    "checksumValue": libexpat_expected_sha256
+                }],
+                "libexpat SBOM checksum doesn't match value in 'Modules/expat/refresh.sh'"
+            )
+
         # License must be on the approved list for SPDX.
         license_concluded = package["licenseConcluded"]
         error_if(
             license_concluded != "NOASSERTION",
-            f"License identifier must be 'NOASSERTION'"
+            "License identifier must be 'NOASSERTION'"
         )
 
 

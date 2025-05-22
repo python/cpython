@@ -26,12 +26,11 @@ Misc variables:
 from types import FunctionType
 from copyreg import dispatch_table
 from copyreg import _extension_registry, _inverted_registry, _extension_cache
-from itertools import islice
+from itertools import batched
 from functools import partial
 import sys
 from sys import maxsize
 from struct import pack, unpack
-import re
 import io
 import codecs
 import _compat_pickle
@@ -188,7 +187,7 @@ BYTEARRAY8       = b'\x96'  # push bytearray
 NEXT_BUFFER      = b'\x97'  # push next out-of-band buffer
 READONLY_BUFFER  = b'\x98'  # make top of stack readonly
 
-__all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$", x)])
+__all__.extend(x for x in dir() if x.isupper() and not x.startswith('_'))
 
 
 class _Framer:
@@ -548,10 +547,11 @@ class _Pickler:
         self.framer.commit_frame()
 
         # Check for persistent id (defined by a subclass)
-        pid = self.persistent_id(obj)
-        if pid is not None and save_persistent_id:
-            self.save_pers(pid)
-            return
+        if save_persistent_id:
+            pid = self.persistent_id(obj)
+            if pid is not None:
+                self.save_pers(pid)
+                return
 
         # Check the memo
         x = self.memo.get(id(obj))
@@ -1033,31 +1033,26 @@ class _Pickler:
                 write(APPEND)
             return
 
-        it = iter(items)
         start = 0
-        while True:
-            tmp = list(islice(it, self._BATCHSIZE))
-            n = len(tmp)
-            if n > 1:
+        for batch in batched(items, self._BATCHSIZE):
+            batch_len = len(batch)
+            if batch_len != 1:
                 write(MARK)
-                for i, x in enumerate(tmp, start):
+                for i, x in enumerate(batch, start):
                     try:
                         save(x)
                     except BaseException as exc:
                         exc.add_note(f'when serializing {_T(obj)} item {i}')
                         raise
                 write(APPENDS)
-            elif n:
+            else:
                 try:
-                    save(tmp[0])
+                    save(batch[0])
                 except BaseException as exc:
                     exc.add_note(f'when serializing {_T(obj)} item {start}')
                     raise
                 write(APPEND)
-            # else tmp is empty, and we're done
-            if n < self._BATCHSIZE:
-                return
-            start += n
+            start += batch_len
 
     def save_dict(self, obj):
         if self.bin:
@@ -1086,13 +1081,10 @@ class _Pickler:
                 write(SETITEM)
             return
 
-        it = iter(items)
-        while True:
-            tmp = list(islice(it, self._BATCHSIZE))
-            n = len(tmp)
-            if n > 1:
+        for batch in batched(items, self._BATCHSIZE):
+            if len(batch) != 1:
                 write(MARK)
-                for k, v in tmp:
+                for k, v in batch:
                     save(k)
                     try:
                         save(v)
@@ -1100,8 +1092,8 @@ class _Pickler:
                         exc.add_note(f'when serializing {_T(obj)} item {k!r}')
                         raise
                 write(SETITEMS)
-            elif n:
-                k, v = tmp[0]
+            else:
+                k, v = batch[0]
                 save(k)
                 try:
                     save(v)
@@ -1109,9 +1101,6 @@ class _Pickler:
                     exc.add_note(f'when serializing {_T(obj)} item {k!r}')
                     raise
                 write(SETITEM)
-            # else tmp is empty, and we're done
-            if n < self._BATCHSIZE:
-                return
 
     def save_set(self, obj):
         save = self.save
@@ -1124,21 +1113,15 @@ class _Pickler:
         write(EMPTY_SET)
         self.memoize(obj)
 
-        it = iter(obj)
-        while True:
-            batch = list(islice(it, self._BATCHSIZE))
-            n = len(batch)
-            if n > 0:
-                write(MARK)
-                try:
-                    for item in batch:
-                        save(item)
-                except BaseException as exc:
-                    exc.add_note(f'when serializing {_T(obj)} element')
-                    raise
-                write(ADDITEMS)
-            if n < self._BATCHSIZE:
-                return
+        for batch in batched(obj, self._BATCHSIZE):
+            write(MARK)
+            try:
+                for item in batch:
+                    save(item)
+            except BaseException as exc:
+                exc.add_note(f'when serializing {_T(obj)} element')
+                raise
+            write(ADDITEMS)
     dispatch[set] = save_set
 
     def save_frozenset(self, obj):
@@ -1403,7 +1386,7 @@ class _Unpickler:
         elif data == TRUE[1:]:
             val = True
         else:
-            val = int(data, 0)
+            val = int(data)
         self.append(val)
     dispatch[INT[0]] = load_int
 
@@ -1423,7 +1406,7 @@ class _Unpickler:
         val = self.readline()[:-1]
         if val and val[-1] == b'L'[0]:
             val = val[:-1]
-        self.append(int(val, 0))
+        self.append(int(val))
     dispatch[LONG[0]] = load_long
 
     def load_long1(self):
@@ -1923,36 +1906,26 @@ except ImportError:
     Pickler, Unpickler = _Pickler, _Unpickler
     dump, dumps, load, loads = _dump, _dumps, _load, _loads
 
-# Doctest
-def _test():
-    import doctest
-    return doctest.testmod()
 
-if __name__ == "__main__":
+def _main(args=None):
     import argparse
+    import pprint
     parser = argparse.ArgumentParser(
-        description='display contents of the pickle files')
+        description='display contents of the pickle files',
+        color=True,
+    )
     parser.add_argument(
         'pickle_file',
-        nargs='*', help='the pickle file')
-    parser.add_argument(
-        '-t', '--test', action='store_true',
-        help='run self-test suite')
-    parser.add_argument(
-        '-v', action='store_true',
-        help='run verbosely; only affects self-test run')
-    args = parser.parse_args()
-    if args.test:
-        _test()
-    else:
-        if not args.pickle_file:
-            parser.print_help()
+        nargs='+', help='the pickle file')
+    args = parser.parse_args(args)
+    for fn in args.pickle_file:
+        if fn == '-':
+            obj = load(sys.stdin.buffer)
         else:
-            import pprint
-            for fn in args.pickle_file:
-                if fn == '-':
-                    obj = load(sys.stdin.buffer)
-                else:
-                    with open(fn, 'rb') as f:
-                        obj = load(f)
-                pprint.pprint(obj)
+            with open(fn, 'rb') as f:
+                obj = load(f)
+        pprint.pprint(obj)
+
+
+if __name__ == "__main__":
+    _main()

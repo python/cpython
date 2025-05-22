@@ -196,7 +196,7 @@ class ProgressTests(MemoryDatabaseMixin, unittest.TestCase):
         con.execute("select 1 union select 2 union select 3").fetchall()
         self.assertEqual(action, 0, "progress handler was not cleared")
 
-    @with_tracebacks(ZeroDivisionError, name="bad_progress")
+    @with_tracebacks(ZeroDivisionError, msg_regex="bad_progress")
     def test_error_in_progress_handler(self):
         def bad_progress():
             1 / 0
@@ -206,7 +206,7 @@ class ProgressTests(MemoryDatabaseMixin, unittest.TestCase):
                 create table foo(a, b)
                 """)
 
-    @with_tracebacks(ZeroDivisionError, name="bad_progress")
+    @with_tracebacks(ZeroDivisionError, msg_regex="bad_progress")
     def test_error_in_progress_handler_result(self):
         class BadBool:
             def __bool__(self):
@@ -220,16 +220,9 @@ class ProgressTests(MemoryDatabaseMixin, unittest.TestCase):
                 """)
 
     def test_progress_handler_keyword_args(self):
-        regex = (
-            r"Passing keyword argument 'progress_handler' to "
-            r"_sqlite3.Connection.set_progress_handler\(\) is deprecated. "
-            r"Parameter 'progress_handler' will become positional-only in "
-            r"Python 3.15."
-        )
-
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+        with self.assertRaisesRegex(TypeError,
+                'takes at least 1 positional argument'):
             self.con.set_progress_handler(progress_handler=lambda: None, n=1)
-        self.assertEqual(cm.filename, __file__)
 
 
 class TraceCallbackTests(MemoryDatabaseMixin, unittest.TestCase):
@@ -353,16 +346,9 @@ class TraceCallbackTests(MemoryDatabaseMixin, unittest.TestCase):
             cx.execute("select 1")
 
     def test_trace_keyword_args(self):
-        regex = (
-            r"Passing keyword argument 'trace_callback' to "
-            r"_sqlite3.Connection.set_trace_callback\(\) is deprecated. "
-            r"Parameter 'trace_callback' will become positional-only in "
-            r"Python 3.15."
-        )
-
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+        with self.assertRaisesRegex(TypeError,
+                'takes exactly 1 positional argument'):
             self.con.set_trace_callback(trace_callback=lambda: None)
-        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":
