@@ -8,7 +8,7 @@ __name__ = "datetime"
 
 import time as _time
 import math as _math
-import sys
+import os
 from operator import index as _index
 
 def _cmp(x, y):
