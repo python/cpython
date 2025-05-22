@@ -3261,9 +3261,8 @@ void
 PyInterpreterRef_Close(PyInterpreterRef ref)
 {
     PyInterpreterState *interp = ref_as_interp(ref);
-    decref_interpreter(ref);
+    decref_interpreter(interp);
 }
-
 
 PyInterpreterWeakRef
 PyInterpreterWeakRef_Get(void)
@@ -3285,31 +3284,55 @@ PyInterpreterWeakRef_Close(PyInterpreterWeakRef wref)
     return;
 }
 
-int
-PyInterpreterWeakRef_AsStrong(PyInterpreterWeakRef wref, PyInterpreterRef *strong_ptr)
+static int
+try_acquire_strong_ref(PyInterpreterState *interp, PyInterpreterRef *strong_ptr)
 {
-    assert(strong_ptr != NULL);
-    int64_t interp_id = wref.id;
-    PyInterpreterState *interp = _PyInterpreterState_LookUpIDNoErr(interp_id);
-    if (interp == NULL) {
-        *strong_ptr = 0;
-        return -1;
-    }
-    HEAD_LOCK(&_PyRuntime); // Prevent deletion
     struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
     PyMutex *mutex = &finalizing->mutex;
     PyMutex_Lock(mutex); // Synchronize TOCTOU with the event flag
     if (_PyEvent_IsSet(&finalizing->finished)) {
         /* Interpreter has already finished threads */
-        interp = NULL;
+        *strong_ptr = 0;
+        return -1;
     } else {
         _Py_atomic_add_ssize(&finalizing->countdown, 1);
     }
     PyMutex_Unlock(mutex);
-    HEAD_UNLOCK(&_PyRuntime);
     *strong_ptr = (PyInterpreterRef)interp;
-
     return 0;
+}
+
+int
+PyInterpreterWeakRef_AsStrong(PyInterpreterWeakRef wref, PyInterpreterRef *strong_ptr)
+{
+    assert(strong_ptr != NULL);
+    int64_t interp_id = wref.id;
+    /* Interpreters cannot be deleted while we hold the runtime lock. */
+    _PyRuntimeState *runtime = &_PyRuntime;
+    HEAD_LOCK(runtime);
+    PyInterpreterState *interp = interp_look_up_id(runtime, interp_id);
+    if (interp == NULL) {
+        HEAD_UNLOCK(runtime);
+        *strong_ptr = 0;
+        return -1;
+    }
+
+    int res = try_acquire_strong_ref(interp, strong_ptr);
+    HEAD_UNLOCK(runtime);
+    return res;
+}
+
+int
+PyInterpreterState_AsStrong(PyInterpreterState *interp, PyInterpreterRef *strong_ptr)
+{
+    assert(interp != NULL);
+    assert(strong_ptr != NULL);
+    _PyRuntimeState *runtime = &_PyRuntime;
+    HEAD_LOCK(runtime);
+    int res = try_acquire_strong_ref(interp, strong_ptr);
+    HEAD_UNLOCK(runtime);
+
+    return res;
 }
 
 int
@@ -3321,5 +3344,5 @@ PyThreadState_Ensure(PyInterpreterState *interp)
 void
 PyThreadState_Release(void)
 {
-    return 0;
+    return;
 }

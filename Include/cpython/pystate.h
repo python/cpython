@@ -283,7 +283,7 @@ typedef uintptr_t PyInterpreterRef;
 
 PyAPI_FUNC(PyInterpreterRef) PyInterpreterRef_Get(void);
 PyAPI_FUNC(PyInterpreterRef) PyInterpreterRef_Dup(PyInterpreterRef ref);
-PyAPI_FUNC(PyInterpreterRef) PyInterpreterState_AsStrong(PyInterpreterState *interp);
+PyAPI_FUNC(int) PyInterpreterState_AsStrong(PyInterpreterState *interp, PyInterpreterRef *strong_ptr);
 PyAPI_FUNC(void) PyInterpreterRef_Close(PyInterpreterRef ref);
 
 #define PyInterpreterRef_Close(ref) do {    \
