@@ -1022,6 +1022,11 @@ rlock_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
+static int
+rlock_locked_impl(rlockobject *self)
+{
+    return PyMutex_IsLocked(&self->lock.mutex);
+}
 
 static void
 rlock_dealloc(PyObject *self)
@@ -1111,7 +1116,7 @@ static PyObject *
 rlock_locked(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     rlockobject *self = rlockobject_CAST(op);
-    int is_locked = _PyRecursiveMutex_IsLockedByCurrentThread(&self->lock);
+    int is_locked = rlock_locked_impl(self);
     return PyBool_FromLong(is_locked);
 }
 
@@ -1219,10 +1224,17 @@ rlock_repr(PyObject *op)
 {
     rlockobject *self = rlockobject_CAST(op);
     PyThread_ident_t owner = self->lock.thread;
-    size_t count = self->lock.level + 1;
+    int locked = rlock_locked_impl(self);
+    size_t count;
+    if (locked) {
+        count = self->lock.level + 1;
+    }
+    else {
+        count = 0;
+    }
     return PyUnicode_FromFormat(
         "<%s %s object owner=%" PY_FORMAT_THREAD_IDENT_T " count=%zu at %p>",
-        owner ? "locked" : "unlocked",
+        locked ? "locked" : "unlocked",
         Py_TYPE(self)->tp_name, owner,
         count, self);
 }
