@@ -152,12 +152,12 @@ static PyTypeObject CustomType = {
 };
 
 static int
-custom_module_exec(PyObject *mod)
+custom_module_exec(PyObject *m)
 {
     if (PyType_Ready(&CustomType) < 0)
         return -1;
 
-    if (PyModule_AddObjectRef(mod, "Custom", (PyObject *)&CustomType) < 0) {
+    if (PyModule_AddObjectRef(m, "Custom", (PyObject *) &CustomType) < 0) {
         return -1;
     }
 
@@ -166,7 +166,6 @@ custom_module_exec(PyObject *mod)
 
 static PyModuleDef_Slot custom_module_slots[] = {
     {Py_mod_exec, custom_module_exec},
-    // Just use this while using static types
     {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
     {0, NULL}
 };

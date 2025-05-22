@@ -42,13 +42,13 @@ static PyTypeObject SubListType = {
 };
 
 static int
-sublist_module_exec(PyObject *mod)
+sublist_module_exec(PyObject *m)
 {
     SubListType.tp_base = &PyList_Type;
     if (PyType_Ready(&SubListType) < 0)
         return -1;
 
-    if (PyModule_AddObjectRef(mod, "SubList", (PyObject *)&SubListType) < 0) {
+    if (PyModule_AddObjectRef(m, "SubList", (PyObject *) &SubListType) < 0) {
         return -1;
     }
 
@@ -57,7 +57,6 @@ sublist_module_exec(PyObject *mod)
 
 static PyModuleDef_Slot sublist_module_slots[] = {
     {Py_mod_exec, sublist_module_exec},
-    // Just use this while using static types
     {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
     {0, NULL}
 };

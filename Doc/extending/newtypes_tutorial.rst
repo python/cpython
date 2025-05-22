@@ -180,7 +180,7 @@ This initializes the :class:`!Custom` type, filling in a number of members
 to the appropriate default values, including :c:member:`~PyObject.ob_type` that we initially
 set to ``NULL``. ::
 
-   if (PyModule_AddObjectRef(mod, "Custom", (PyObject *)&CustomType) < 0) {
+   if (PyModule_AddObjectRef(m, "Custom", (PyObject *) &CustomType) < 0) {
        return -1;
    }
 
@@ -878,13 +878,13 @@ issues, you can't fill that field directly with a reference to
 function::
 
    static int
-   sublist_module_exec(PyObject *mod)
+   sublist_module_exec(PyObject *m)
    {
        SubListType.tp_base = &PyList_Type;
        if (PyType_Ready(&SubListType) < 0)
            return -1;
 
-       if (PyModule_AddObjectRef(mod, "SubList", (PyObject *)&SubListType) < 0) {
+       if (PyModule_AddObjectRef(m, "SubList", (PyObject *) &SubListType) < 0) {
            return -1;
        }
 

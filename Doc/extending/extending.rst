@@ -204,57 +204,24 @@ value must be in a particular range or must satisfy other conditions,
 :c:data:`PyExc_ValueError` is appropriate.
 
 You can also define a new exception that is unique to your module. For this, you
-usually declare an object variable in the module's state and initialize it
-in the module's :c:data:`Py_mod_exec` function (:c:func:`!spam_module_exec`)
+usually declare a static object variable at the beginning of your file::
+
+   static PyObject *SpamError;
+
+and initialize it in the module's :c:data:`Py_mod_exec` function
+(:c:func:`!spam_module_exec`)
+
 with an exception object::
 
-   typedef struct {
-       PyObject *SpamError;
-   } spam_state;
-
    static int
-   spam_module_exec(PyObject *module)
+   spam_module_exec(PyObject *m)
    {
-       spam_state *state = PyModule_GetState(module);
-       if (state == NULL) {
+       SpamError = PyErr_NewException("spam.error", NULL, NULL);
+       if (PyModule_AddObjectRef(m, "error", SpamError) < 0) {
            return -1;
-       }
-
-       state->SpamError = PyErr_NewException("spam.error", NULL, NULL);
-       if (state->SpamError == NULL) {
-           return -1;
-       }
-       if (PyModule_AddObjectRef(module, "SpamError", state->SpamError) < 0) {
-           return -1;  // followed by spam_module_free() then Py_CLEAR()
        }
 
        return 0;
-   }
-
-   static int
-   spam_module_traverse(PyObject *module, visitproc visit, void *arg) {
-       spam_state *state = PyModule_GetState(module);
-       if (state == NULL) {
-           return -1;
-       }
-       Py_VISIT(st->SpamError);
-       return 0;
-   }
-
-   static int
-   spam_module_clear(PyObject *module) {
-       spam_state *state = PyModule_GetState(module);
-       if (state == NULL) {
-           return -1;
-       }
-       Py_CLEAR(st->SpamError);
-       return 0;
-   }
-
-   static void
-   spam_module_free(void *module)
-   {
-       (void)spam_module_clear((PyObject *)module);
    }
 
    static PyModuleDef_Slot spam_module_slots[] = {
@@ -265,11 +232,8 @@ with an exception object::
    static struct PyModuleDef spam_module = {
        .m_base = PyModuleDef_HEAD_INIT,
        .m_name = "spam",
-       .m_size = sizeof(spam_state),  // size of per-module state
+       .m_size = 0,  // non-negative
        .m_slots = spam_module_slots,
-       .m_traverse = spam_module_traverse,
-       .m_clear = spam_module_clear,
-       .m_free = spam_module_free,
    };
 
    PyMODINIT_FUNC
@@ -306,10 +270,7 @@ call to :c:func:`PyErr_SetString` as shown below::
            return NULL;
        sts = system(command);
        if (sts < 0) {
-           spam_state *state = PyModule_GetState(self);
-           if (state != NULL) {
-               PyErr_SetString(state->SpamError, "System command failed");
-           }
+           PyErr_SetString(SpamError, "System command failed");
            return NULL;
        }
        return PyLong_FromLong(sts);
@@ -1297,25 +1258,19 @@ The ``#define`` is used to tell the header file that it is being included in the
 exporting module, not a client module. Finally, the module's initialization
 function must take care of initializing the C API pointer array::
 
-   typedef struct {
-       void *PySpam_API[PySpam_API_pointers];
-   } spam_state;
-
    static int
-   spam_module_exec(PyObject *module)
+   spam_module_exec(PyObject *m)
    {
-       spam_state *state = PyModule_GetState(module);
-       if (state == NULL) {
-           return -1;
-       }
+       static void *PySpam_API[PySpam_API_pointers];
+       PyObject *c_api_object;
 
        /* Initialize the C API pointer array */
-       state->PySpam_API[PySpam_System_NUM] = PySpam_System;
+       PySpam_API[PySpam_System_NUM] = (void *)PySpam_System;
 
        /* Create a Capsule containing the API pointer array's address */
-       PyObject *capi = PyCapsule_New(state->PySpam_API, "spam._C_API", NULL);
-       if (PyModule_Add(module, "_C_API", capi) < 0) {
-           Py_CLEAR(capi);
+       c_api_object = PyCapsule_New((void *)PySpam_API, "spam._C_API", NULL);
+
+       if (PyModule_Add(m, "_C_API", c_api_object) < 0) {
            return -1;
        }
 
@@ -1330,7 +1285,7 @@ function must take care of initializing the C API pointer array::
    static struct PyModuleDef spam_module = {
        .m_base = PyModuleDef_HEAD_INIT,
        .m_name = "spam",
-       .m_size = sizeof(spam_state),
+       .m_size = 0,
        .m_slots = spam_module_slots,
    };
 
@@ -1339,6 +1294,9 @@ function must take care of initializing the C API pointer array::
    {
        return PyModuleDef_Init(&spam_module);
    }
+
+Note that ``PySpam_API`` is declared ``static``; otherwise the pointer
+array would disappear when :c:func:`!PyInit_spam` terminates!
 
 The bulk of the work is in the header file :file:`spammodule.h`, which looks
 like this::
@@ -1368,8 +1326,20 @@ like this::
    #else
    /* This section is used in modules that use spammodule's API */
 
+   static void **PySpam_API;
+
    #define PySpam_System \
     (*(PySpam_System_RETURN (*)PySpam_System_PROTO) PySpam_API[PySpam_System_NUM])
+
+   /* Return -1 on error, 0 on success.
+    * PyCapsule_Import will set an exception if there's an error.
+    */
+   static int
+   import_spam(void)
+   {
+       PySpam_API = (void **)PyCapsule_Import("spam._C_API", 0);
+       return (PySpam_API != NULL) ? 0 : -1;
+   }
 
    #endif
 
@@ -1379,22 +1349,15 @@ like this::
 
    #endif /* !defined(Py_SPAMMODULE_H) */
 
-
-   typedef struct {
-       void **PySpam_API;
-   } client_state;
+All that a client module must do in order to have access to the function
+:c:func:`!PySpam_System` is to call the function (or rather macro)
+:c:func:`!import_spam` in its initialization function::
 
    static int
-   client_module_exec(PyObject *module)
+   client_module_exec(PyObject *m)
    {
-       client_state *state = PyModule_GetState(module);
-       if (state == NULL) {
+       if (import_spam() < 0)
            return -1;
-       }
-       state->PySpam_API = (void **)PyCapsule_Import("spam._C_API", 0);
-       if (state->PySpam_API == NULL) {
-           return -1;
-       }
        /* additional initialization can happen here */
        return 0;
    }
@@ -1407,7 +1370,7 @@ like this::
    static struct PyModuleDef client_module = {
        .m_base = PyModuleDef_HEAD_INIT,
        .m_name = "client",
-       .m_size = sizeof(client_state),
+       .m_size = 0,
        .m_slots = client_module_slots,
    };
 
