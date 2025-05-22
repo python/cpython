@@ -287,10 +287,7 @@ class RunPyMixin:
         venv_exe = (venv / ("python_d.exe" if DEBUG_BUILD else "python.exe"))
         venv_exe.touch()
         try:
-            yield venv_exe, {
-                "SystemRoot": os.environ.get("SystemRoot"),
-                "VIRTUAL_ENV": str(venv.parent),
-            }
+            yield venv_exe, {"VIRTUAL_ENV": str(venv.parent)}
         finally:
             shutil.rmtree(venv)
 
