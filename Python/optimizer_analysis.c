@@ -571,10 +571,11 @@ const uint16_t op_without_pop[MAX_UOP_ID + 1] = {
     [_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW] = _POP_CALL_LOAD_CONST_INLINE_BORROW,
     [_POP_CALL_TWO] = _POP_CALL_ONE,
     [_POP_CALL_ONE] = _POP_CALL,
-    // The following two instructions are handled separately in remove_unneeded_uops.
-    // The TOS for both is null so calling _POP_TOP (which closes the stackref) is not safe.
-    // [_POP_CALL] = _POP_TOP,
-    // [_POP_CALL_LOAD_CONST_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
+};
+
+const uint16_t op_without_pop_null[MAX_UOP_ID + 1] = {
+    [_POP_CALL] = _POP_TOP,
+    [_POP_CALL_LOAD_CONST_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
 };
 
 
@@ -611,9 +612,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 //     _LOAD_FAST + _POP_TWO_LOAD_CONST_INLINE_BORROW + _POP_TOP
                 // ...becomes:
                 //     _NOP + _POP_TOP + _NOP
-                while (op_without_pop[opcode] ||
-                       opcode == _POP_CALL ||
-                       opcode == _POP_CALL_LOAD_CONST_INLINE_BORROW)
+                while (op_without_pop[opcode] || op_without_pop_null[opcode])
                 {
                     _PyUOpInstruction *last = &buffer[pc - 1];
                     while (op_skip[last->opcode]) {
@@ -632,12 +631,8 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                         // This looks for a preceding _PUSH_NULL instruction and
                         // simplifies to _POP_TOP(_LOAD_CONST_INLINE_BORROW).
                         last->opcode = _NOP;
-                        if (opcode == _POP_CALL) {
-                            opcode = buffer[pc].opcode = _POP_TOP;
-                        }
-                        else {
-                            opcode = buffer[pc].opcode = _POP_TOP_LOAD_CONST_INLINE_BORROW;
-                        }
+                        opcode = buffer[pc].opcode = op_without_pop_null[opcode];
+                        assert(opcode);
                     }
                     else {
                         break;
