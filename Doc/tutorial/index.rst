@@ -5,8 +5,8 @@
 ######################
 
 .. Tip:: This tutorial is designed for
-   *programmers that are new to the Python language*,
-   **not** *beginners who are new to programming*.
+   *programmers* that are new to the Python language,
+   **not** *beginners* who are new to programming.
 
 Python is an easy to learn, powerful programming language. It has efficient
 high-level data structures and a simple but effective approach to
