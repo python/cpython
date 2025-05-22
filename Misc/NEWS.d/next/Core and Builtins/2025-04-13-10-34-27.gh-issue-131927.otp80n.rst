@@ -1,0 +1,3 @@
+Compiler warnings originating from the same module and line number are now
+only emitted once, matching the behaviour of warnings emitted from user
+code. This can also be configured with :mod:`warnings` filters.

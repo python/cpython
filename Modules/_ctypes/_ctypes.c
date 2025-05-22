@@ -1280,34 +1280,24 @@ PyCPointerType_set_type_impl(PyTypeObject *self, PyTypeObject *cls,
                              PyObject *type)
 /*[clinic end generated code: output=51459d8f429a70ac input=67e1e8df921f123e]*/
 {
-    PyObject *attrdict = PyType_GetDict(self);
-    if (!attrdict) {
-        return NULL;
-    }
     ctypes_state *st = get_module_state_by_class(cls);
     StgInfo *info;
     if (PyStgInfo_FromType(st, (PyObject *)self, &info) < 0) {
-        Py_DECREF(attrdict);
         return NULL;
     }
     if (!info) {
         PyErr_SetString(PyExc_TypeError,
                         "abstract class");
-        Py_DECREF(attrdict);
         return NULL;
     }
 
     if (PyCPointerType_SetProto(st, info, type) < 0) {
-        Py_DECREF(attrdict);
         return NULL;
     }
 
-    if (-1 == PyDict_SetItem(attrdict, &_Py_ID(_type_), type)) {
-        Py_DECREF(attrdict);
+    if (PyObject_SetAttr((PyObject *)self, &_Py_ID(_type_), type) < 0) {
         return NULL;
     }
-
-    Py_DECREF(attrdict);
     Py_RETURN_NONE;
 }
 

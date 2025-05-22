@@ -1968,7 +1968,11 @@ class AbstractPicklingErrorTests:
 
     def test_nested_lookup_error(self):
         # Nested name does not exist
-        obj = REX('AbstractPickleTests.spam')
+        global TestGlobal
+        class TestGlobal:
+            class A:
+                pass
+        obj = REX('TestGlobal.A.B.C')
         obj.__module__ = __name__
         for proto in protocols:
             with self.subTest(proto=proto):
@@ -1983,9 +1987,11 @@ class AbstractPicklingErrorTests:
 
     def test_wrong_object_lookup_error(self):
         # Name is bound to different object
-        obj = REX('AbstractPickleTests')
+        global TestGlobal
+        class TestGlobal:
+            pass
+        obj = REX('TestGlobal')
         obj.__module__ = __name__
-        AbstractPickleTests.ham = []
         for proto in protocols:
             with self.subTest(proto=proto):
                 with self.assertRaises(pickle.PicklingError):

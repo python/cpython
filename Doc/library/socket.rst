@@ -147,9 +147,8 @@ created.  Socket addresses are represented as follows:
 
     - On Linux it accepts a tuple ``(device_id,)`` where ``device_id``
       is an integer specifying the number of the Bluetooth device.
-    - On FreeBSD, NetBSD and DragonFly BSD it accepts ``bdaddr`` where ``bdaddr``
-      is a :class:`bytes` object containing the Bluetooth address in a
-      string format. (ex. ``b'12:23:34:45:56:67'``)
+    - On FreeBSD, NetBSD and DragonFly BSD it accepts ``bdaddr``
+      where ``bdaddr`` is the Bluetooth address as a string.
 
     .. versionchanged:: 3.2
        NetBSD and DragonFlyBSD support added.
@@ -157,10 +156,10 @@ created.  Socket addresses are represented as follows:
     .. versionchanged:: 3.13.3
        FreeBSD support added.
 
-  - :const:`BTPROTO_SCO` accepts ``bdaddr`` where ``bdaddr`` is a
-    :class:`bytes` object containing the Bluetooth address in a
-    string format. (ex. ``b'12:23:34:45:56:67'``) This protocol is not
-    supported under FreeBSD.
+  - :const:`BTPROTO_SCO` accepts ``bdaddr`` where ``bdaddr`` is
+    the Bluetooth address as a string or a :class:`bytes` object.
+    (ex. ``'12:23:34:45:56:67'`` or ``b'12:23:34:45:56:67'``)
+    This protocol is not supported under FreeBSD.
 
 - :const:`AF_ALG` is a Linux-only socket based interface to Kernel
   cryptography. An algorithm socket is configured with a tuple of two to four
@@ -343,10 +342,10 @@ Exceptions
 Constants
 ^^^^^^^^^
 
-   The AF_* and SOCK_* constants are now :class:`AddressFamily` and
-   :class:`SocketKind` :class:`.IntEnum` collections.
+The AF_* and SOCK_* constants are now :class:`AddressFamily` and
+:class:`SocketKind` :class:`.IntEnum` collections.
 
-   .. versionadded:: 3.4
+.. versionadded:: 3.4
 
 .. data:: AF_UNIX
           AF_INET
@@ -470,6 +469,9 @@ Constants
 
    .. versionchanged:: 3.11
       NetBSD support was added.
+
+   .. versionchanged:: next
+      Restored missing ``CAN_RAW_ERR_FILTER`` on Linux.
 
 .. data:: CAN_BCM
           CAN_BCM_*
@@ -667,9 +669,9 @@ Constants
    Constant to optimize CPU locality, to be used in conjunction with
    :data:`SO_REUSEPORT`.
 
-  .. versionadded:: 3.11
+   .. versionadded:: 3.11
 
-  .. availability:: Linux >= 3.9
+   .. availability:: Linux >= 3.9
 
 .. data:: AF_HYPERV
           HV_PROTOCOL_RAW

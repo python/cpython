@@ -1,0 +1,2 @@
+Fix a bug that was allowing newlines inconsitently in format specifiers for
+single-quoted f-strings. Patch by Pablo Galindo.

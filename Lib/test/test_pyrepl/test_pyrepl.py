@@ -10,10 +10,10 @@ import sys
 import tempfile
 from unittest import TestCase, skipUnless, skipIf
 from unittest.mock import patch
-from test.support import force_not_colorized, make_clean_env
-from test.support import SHORT_TIMEOUT
+from test.support import force_not_colorized, make_clean_env, Py_DEBUG
+from test.support import SHORT_TIMEOUT, STDLIB_DIR
 from test.support.import_helper import import_module
-from test.support.os_helper import unlink
+from test.support.os_helper import EnvironmentVarGuard, unlink
 
 from .support import (
     FakeConsole,
@@ -43,6 +43,7 @@ class ReplTestCase(TestCase):
         *,
         cmdline_args: list[str] | None = None,
         cwd: str | None = None,
+        skip: bool = False,
     ) -> tuple[str, int]:
         temp_dir = None
         if cwd is None:
@@ -50,7 +51,7 @@ class ReplTestCase(TestCase):
             cwd = temp_dir.name
         try:
             return self._run_repl(
-                repl_input, env=env, cmdline_args=cmdline_args, cwd=cwd
+                repl_input, env=env, cmdline_args=cmdline_args, cwd=cwd, skip=skip,
             )
         finally:
             if temp_dir is not None:
@@ -63,6 +64,7 @@ class ReplTestCase(TestCase):
         env: dict | None,
         cmdline_args: list[str] | None,
         cwd: str,
+        skip: bool,
     ) -> tuple[str, int]:
         assert pty
         master_fd, slave_fd = pty.openpty()
@@ -119,7 +121,10 @@ class ReplTestCase(TestCase):
         except subprocess.TimeoutExpired:
             process.kill()
             exit_code = process.wait()
-        return "".join(output), exit_code
+        output = "".join(output)
+        if skip and "can't use pyrepl" in output:
+            self.skipTest("pyrepl not available")
+        return output, exit_code
 
 
 class TestCursorPosition(TestCase):
@@ -437,6 +442,11 @@ class TestPyReplAutoindent(TestCase):
             "    "
         )
         # fmt: on
+
+        events = code_to_events(input_code)
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
 
     def test_auto_indent_continuation(self):
         # auto indenting according to previous user indentation
@@ -1082,9 +1092,7 @@ class TestMain(ReplTestCase):
     def test_exposed_globals_in_repl(self):
         pre = "['__annotations__', '__builtins__'"
         post = "'__loader__', '__name__', '__package__', '__spec__']"
-        output, exit_code = self.run_repl(["sorted(dir())", "exit()"])
-        if "can't use pyrepl" in output:
-            self.skipTest("pyrepl not available")
+        output, exit_code = self.run_repl(["sorted(dir())", "exit()"], skip=True)
         self.assertEqual(exit_code, 0)
 
         # if `__main__` is not a file (impossible with pyrepl)
@@ -1136,6 +1144,7 @@ class TestMain(ReplTestCase):
                     commands,
                     cmdline_args=[str(mod)],
                     env=clean_env,
+                    skip=True,
                 )
             elif as_module:
                 output, exit_code = self.run_repl(
@@ -1143,12 +1152,10 @@ class TestMain(ReplTestCase):
                     cmdline_args=["-m", "blue.calx"],
                     env=clean_env,
                     cwd=td,
+                    skip=True,
                 )
             else:
                 self.fail("Choose one of as_file or as_module")
-
-        if "can't use pyrepl" in output:
-            self.skipTest("pyrepl not available")
 
         self.assertEqual(exit_code, 0)
         for var, expected in expectations.items():
@@ -1187,9 +1194,7 @@ class TestMain(ReplTestCase):
                     "exit()\n")
 
         env.pop("PYTHON_BASIC_REPL", None)
-        output, exit_code = self.run_repl(commands, env=env)
-        if "can\'t use pyrepl" in output:
-            self.skipTest("pyrepl not available")
+        output, exit_code = self.run_repl(commands, env=env, skip=True)
         self.assertEqual(exit_code, 0)
         self.assertIn("True", output)
         self.assertNotIn("False", output)
@@ -1217,6 +1222,31 @@ class TestMain(ReplTestCase):
         self.assertNotIn("Traceback", output)
 
     @force_not_colorized
+    def test_no_pyrepl_source_in_exc(self):
+        # Avoid using _pyrepl/__main__.py in traceback reports
+        # See https://github.com/python/cpython/issues/129098.
+        pyrepl_main_file = os.path.join(STDLIB_DIR, "_pyrepl", "__main__.py")
+        self.assertTrue(os.path.exists(pyrepl_main_file), pyrepl_main_file)
+        with open(pyrepl_main_file) as fp:
+            excluded_lines = fp.readlines()
+        excluded_lines = list(filter(None, map(str.strip, excluded_lines)))
+
+        for filename in ['?', 'unknown-filename', '<foo>', '<...>']:
+            self._test_no_pyrepl_source_in_exc(filename, excluded_lines)
+
+    def _test_no_pyrepl_source_in_exc(self, filename, excluded_lines):
+        with EnvironmentVarGuard() as env, self.subTest(filename=filename):
+            env.unset("PYTHON_BASIC_REPL")
+            commands = (f"eval(compile('spam', {filename!r}, 'eval'))\n"
+                        f"exit()\n")
+            output, _ = self.run_repl(commands, env=env)
+            self.assertIn("Traceback (most recent call last)", output)
+            self.assertIn("NameError: name 'spam' is not defined", output)
+            for line in excluded_lines:
+                with self.subTest(line=line):
+                    self.assertNotIn(line, output)
+
+    @force_not_colorized
     def test_bad_sys_excepthook_doesnt_crash_pyrepl(self):
         env = os.environ.copy()
         commands = ("import sys\n"
@@ -1231,9 +1261,7 @@ class TestMain(ReplTestCase):
             self.assertIn("division by zero", output)
             self.assertEqual(exitcode, 0)
         env.pop("PYTHON_BASIC_REPL", None)
-        output, exit_code = self.run_repl(commands, env=env)
-        if "can\'t use pyrepl" in output:
-            self.skipTest("pyrepl not available")
+        output, exit_code = self.run_repl(commands, env=env, skip=True)
         check(output, exit_code)
 
         env["PYTHON_BASIC_REPL"] = "1"
@@ -1271,9 +1299,7 @@ class TestMain(ReplTestCase):
     def test_correct_filename_in_syntaxerrors(self):
         env = os.environ.copy()
         commands = "a b c\nexit()\n"
-        output, exit_code = self.run_repl(commands, env=env)
-        if "can't use pyrepl" in output:
-            self.skipTest("pyrepl not available")
+        output, exit_code = self.run_repl(commands, env=env, skip=True)
         self.assertIn("SyntaxError: invalid syntax", output)
         self.assertIn("<python-input-0>", output)
         commands = " b\nexit()\n"
@@ -1300,9 +1326,7 @@ class TestMain(ReplTestCase):
                     env.pop("PYTHON_BASIC_REPL", None)
                 with self.subTest(set_tracebacklimit=set_tracebacklimit,
                                   basic_repl=basic_repl):
-                    output, exit_code = self.run_repl(commands, env=env)
-                    if "can't use pyrepl" in output:
-                        self.skipTest("pyrepl not available")
+                    output, exit_code = self.run_repl(commands, env=env, skip=True)
                     self.assertIn("in x1", output)
                     if set_tracebacklimit:
                         self.assertNotIn("in x2", output)
@@ -1356,3 +1380,16 @@ class TestMain(ReplTestCase):
         # Extra stuff (newline and `exit` rewrites) are necessary
         # because of how run_repl works.
         self.assertNotIn(">>> \n>>> >>>", cleaned_output)
+
+    @skipUnless(Py_DEBUG, '-X showrefcount requires a Python debug build')
+    def test_showrefcount(self):
+        env = os.environ.copy()
+        env.pop("PYTHON_BASIC_REPL", "")
+        output, _ = self.run_repl("1\n1+2\nexit()\n", cmdline_args=['-Xshowrefcount'], env=env)
+        matches = re.findall(r'\[-?\d+ refs, \d+ blocks\]', output)
+        self.assertEqual(len(matches), 3)
+
+        env["PYTHON_BASIC_REPL"] = "1"
+        output, _ = self.run_repl("1\n1+2\nexit()\n", cmdline_args=['-Xshowrefcount'], env=env)
+        matches = re.findall(r'\[-?\d+ refs, \d+ blocks\]', output)
+        self.assertEqual(len(matches), 3)

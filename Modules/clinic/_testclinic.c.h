@@ -194,6 +194,64 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(bool_converter_c_default__doc__,
+"bool_converter_c_default($module, a=True, b=False, c=True, d=x, /)\n"
+"--\n"
+"\n");
+
+#define BOOL_CONVERTER_C_DEFAULT_METHODDEF    \
+    {"bool_converter_c_default", _PyCFunction_CAST(bool_converter_c_default), METH_FASTCALL, bool_converter_c_default__doc__},
+
+static PyObject *
+bool_converter_c_default_impl(PyObject *module, int a, int b, int c, int d);
+
+static PyObject *
+bool_converter_c_default(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int a = 1;
+    int b = 0;
+    int c = -2;
+    int d = -3;
+
+    if (!_PyArg_CheckPositional("bool_converter_c_default", nargs, 0, 4)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    a = PyObject_IsTrue(args[0]);
+    if (a < 0) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    b = PyObject_IsTrue(args[1]);
+    if (b < 0) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    c = PyObject_IsTrue(args[2]);
+    if (c < 0) {
+        goto exit;
+    }
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    d = PyObject_IsTrue(args[3]);
+    if (d < 0) {
+        goto exit;
+    }
+skip_optional:
+    return_value = bool_converter_c_default_impl(module, a, b, c, d);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(char_converter__doc__,
 "char_converter($module, a=b\'A\', b=b\'\\x07\', c=b\'\\x08\', d=b\'\\t\', e=b\'\\n\',\n"
 "               f=b\'\\x0b\', g=b\'\\x0c\', h=b\'\\r\', i=b\'\"\', j=b\"\'\", k=b\'?\',\n"
@@ -3327,4 +3385,4 @@ _testclinic_TestClass_get_defining_class_arg(PyObject *self, PyTypeObject *cls, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=52b0a0d6e5c291f1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c556818496a3ec72 input=a9049054013a1b77]*/

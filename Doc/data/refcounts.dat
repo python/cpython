@@ -2756,6 +2756,12 @@ PyUnicode_FromFormatV:PyObject*::+1:
 PyUnicode_FromFormatV:const char*:format::
 PyUnicode_FromFormatV:va_list:args::
 
+PyUnicode_FromOrdinal:PyObject*::+1:
+PyUnicode_FromOrdinal:int:ordinal::
+
+PyUnicode_BuildEncodingMap:PyObject*::+1:
+PyUnicode_BuildEncodingMap:PyObject*:string:::
+
 PyUnicode_GetDefaultEncoding:const char*:::
 PyUnicode_GetDefaultEncoding::void::
 
