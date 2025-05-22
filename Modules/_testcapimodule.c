@@ -2605,7 +2605,7 @@ test_interp_ensure(PyObject *self, PyObject *unused)
     PyInterpreterState *subinterp = PyThreadState_GetInterpreter(tstate);
 
     for (int i = 0; i < 10; ++i) {
-        int res = PyThreadState_Ensure(sub_ref);
+        int res = PyThreadState_Ensure(ref);
         assert(res == 0);
         assert(PyInterpreterState_Get() == interp);
     }
