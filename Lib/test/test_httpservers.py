@@ -411,42 +411,120 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         reader.close()
         return body
 
+    def check_list_dir_dirname(self, dirname, quotedname=None):
+        fullpath = os.path.join(self.tempdir, dirname)
+        try:
+            os.mkdir(os.path.join(self.tempdir, dirname))
+        except (OSError, UnicodeEncodeError):
+            self.skipTest(f'Can not create directory {dirname!a} '
+                          f'on current file system')
+
+        if quotedname is None:
+            quotedname = urllib.parse.quote(dirname, errors='surrogatepass')
+        response = self.request(self.base_url + '/' + quotedname + '/')
+        body = self.check_status_and_reason(response, HTTPStatus.OK)
+        displaypath = html.escape(f'{self.base_url}/{dirname}/', quote=False)
+        enc = sys.getfilesystemencoding()
+        prefix = f'listing for {displaypath}</'.encode(enc, 'surrogateescape')
+        self.assertIn(prefix + b'title>', body)
+        self.assertIn(prefix + b'h1>', body)
+
+    def check_list_dir_filename(self, filename):
+        fullpath = os.path.join(self.tempdir, filename)
+        content = ascii(fullpath).encode() + (os_helper.TESTFN_UNDECODABLE or b'\xff')
+        try:
+            with open(fullpath, 'wb') as f:
+                f.write(content)
+        except OSError:
+            self.skipTest(f'Can not create file {filename!a} '
+                          f'on current file system')
+
+        response = self.request(self.base_url + '/')
+        body = self.check_status_and_reason(response, HTTPStatus.OK)
+        quotedname = urllib.parse.quote(filename, errors='surrogatepass')
+        enc = response.headers.get_content_charset()
+        self.assertIsNotNone(enc)
+        self.assertIn((f'href="{quotedname}"').encode('ascii'), body)
+        displayname = html.escape(filename, quote=False)
+        self.assertIn(f'>{displayname}<'.encode(enc, 'surrogateescape'), body)
+
+        response = self.request(self.base_url + '/' + quotedname)
+        self.check_status_and_reason(response, HTTPStatus.OK, data=content)
+
+    @unittest.skipUnless(os_helper.TESTFN_NONASCII,
+                         'need os_helper.TESTFN_NONASCII')
+    def test_list_dir_nonascii_dirname(self):
+        dirname = os_helper.TESTFN_NONASCII + '.dir'
+        self.check_list_dir_dirname(dirname)
+
+    @unittest.skipUnless(os_helper.TESTFN_NONASCII,
+                         'need os_helper.TESTFN_NONASCII')
+    def test_list_dir_nonascii_filename(self):
+        filename = os_helper.TESTFN_NONASCII + '.txt'
+        self.check_list_dir_filename(filename)
+
     @unittest.skipIf(is_apple,
                      'undecodable name cannot always be decoded on Apple platforms')
     @unittest.skipIf(sys.platform == 'win32',
                      'undecodable name cannot be decoded on win32')
     @unittest.skipUnless(os_helper.TESTFN_UNDECODABLE,
                          'need os_helper.TESTFN_UNDECODABLE')
-    def test_undecodable_filename(self):
-        enc = sys.getfilesystemencoding()
-        filename = os.fsdecode(os_helper.TESTFN_UNDECODABLE) + '.txt'
-        with open(os.path.join(self.tempdir, filename), 'wb') as f:
-            f.write(os_helper.TESTFN_UNDECODABLE)
-        response = self.request(self.base_url + '/')
-        if is_apple:
-            # On Apple platforms the HFS+ filesystem replaces bytes that
-            # aren't valid UTF-8 into a percent-encoded value.
-            for name in os.listdir(self.tempdir):
-                if name != 'test':  # Ignore a filename created in setUp().
-                    filename = name
-                    break
-        body = self.check_status_and_reason(response, HTTPStatus.OK)
-        quotedname = urllib.parse.quote(filename, errors='surrogatepass')
-        self.assertIn(('href="%s"' % quotedname)
-                      .encode(enc, 'surrogateescape'), body)
-        self.assertIn(('>%s<' % html.escape(filename, quote=False))
-                      .encode(enc, 'surrogateescape'), body)
-        response = self.request(self.base_url + '/' + quotedname)
-        self.check_status_and_reason(response, HTTPStatus.OK,
-                                     data=os_helper.TESTFN_UNDECODABLE)
+    def test_list_dir_undecodable_dirname(self):
+        dirname = os.fsdecode(os_helper.TESTFN_UNDECODABLE) + '.dir'
+        self.check_list_dir_dirname(dirname)
 
-    def test_undecodable_parameter(self):
-        # sanity check using a valid parameter
+    @unittest.skipIf(is_apple,
+                     'undecodable name cannot always be decoded on Apple platforms')
+    @unittest.skipIf(sys.platform == 'win32',
+                     'undecodable name cannot be decoded on win32')
+    @unittest.skipUnless(os_helper.TESTFN_UNDECODABLE,
+                         'need os_helper.TESTFN_UNDECODABLE')
+    def test_list_dir_undecodable_filename(self):
+        filename = os.fsdecode(os_helper.TESTFN_UNDECODABLE) + '.txt'
+        self.check_list_dir_filename(filename)
+
+    def test_list_dir_undecodable_dirname2(self):
+        dirname = '\ufffd.dir'
+        self.check_list_dir_dirname(dirname, quotedname='%ff.dir')
+
+    @unittest.skipUnless(os_helper.TESTFN_UNENCODABLE,
+                         'need os_helper.TESTFN_UNENCODABLE')
+    def test_list_dir_unencodable_dirname(self):
+        dirname = os_helper.TESTFN_UNENCODABLE + '.dir'
+        self.check_list_dir_dirname(dirname)
+
+    @unittest.skipUnless(os_helper.TESTFN_UNENCODABLE,
+                         'need os_helper.TESTFN_UNENCODABLE')
+    def test_list_dir_unencodable_filename(self):
+        filename = os_helper.TESTFN_UNENCODABLE + '.txt'
+        self.check_list_dir_filename(filename)
+
+    def test_list_dir_escape_dirname(self):
+        # Characters that need special treating in URL or HTML.
+        for name in ('q?', 'f#', '&amp;', '&amp', '<i>', '"dq"', "'sq'",
+                     '%A4', '%E2%82%AC'):
+            with self.subTest(name=name):
+                dirname = name + '.dir'
+                self.check_list_dir_dirname(dirname,
+                        quotedname=urllib.parse.quote(dirname, safe='&<>\'"'))
+
+    def test_list_dir_escape_filename(self):
+        # Characters that need special treating in URL or HTML.
+        for name in ('q?', 'f#', '&amp;', '&amp', '<i>', '"dq"', "'sq'",
+                     '%A4', '%E2%82%AC'):
+            with self.subTest(name=name):
+                filename = name + '.txt'
+                self.check_list_dir_filename(filename)
+                os_helper.unlink(os.path.join(self.tempdir, filename))
+
+    def test_list_dir_with_query_and_fragment(self):
+        prefix = f'listing for {self.base_url}/</'.encode('latin1')
+        response = self.request(self.base_url + '/#123').read()
+        self.assertIn(prefix + b'title>', response)
+        self.assertIn(prefix + b'h1>', response)
         response = self.request(self.base_url + '/?x=123').read()
-        self.assertRegex(response, rf'listing for {self.base_url}/\?x=123'.encode('latin1'))
-        # now the bogus encoding
-        response = self.request(self.base_url + '/?x=%bb').read()
-        self.assertRegex(response, rf'listing for {self.base_url}/\?x=\xef\xbf\xbd'.encode('latin1'))
+        self.assertIn(prefix + b'title>', response)
+        self.assertIn(prefix + b'h1>', response)
 
     def test_get_dir_redirect_location_domain_injection_bug(self):
         """Ensure //evil.co/..%2f../../X does not put //evil.co/ in Location.
@@ -504,10 +582,19 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         # check for trailing "/" which should return 404. See Issue17324
         response = self.request(self.base_url + '/test/')
         self.check_status_and_reason(response, HTTPStatus.NOT_FOUND)
+        response = self.request(self.base_url + '/test%2f')
+        self.check_status_and_reason(response, HTTPStatus.NOT_FOUND)
+        response = self.request(self.base_url + '/test%2F')
+        self.check_status_and_reason(response, HTTPStatus.NOT_FOUND)
         response = self.request(self.base_url + '/')
+        self.check_status_and_reason(response, HTTPStatus.OK)
+        response = self.request(self.base_url + '%2f')
+        self.check_status_and_reason(response, HTTPStatus.OK)
+        response = self.request(self.base_url + '%2F')
         self.check_status_and_reason(response, HTTPStatus.OK)
         response = self.request(self.base_url)
         self.check_status_and_reason(response, HTTPStatus.MOVED_PERMANENTLY)
+        self.assertEqual(response.getheader("Location"), self.base_url + "/")
         self.assertEqual(response.getheader("Content-Length"), "0")
         response = self.request(self.base_url + '/?hi=2')
         self.check_status_and_reason(response, HTTPStatus.OK)
@@ -613,33 +700,14 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.check_status_and_reason(response, HTTPStatus.OK)
         response = self.request(self.tempdir_name)
         self.check_status_and_reason(response, HTTPStatus.MOVED_PERMANENTLY)
+        self.assertEqual(response.getheader("Location"),
+                         self.tempdir_name + "/")
         response = self.request(self.tempdir_name + '/?hi=2')
         self.check_status_and_reason(response, HTTPStatus.OK)
         response = self.request(self.tempdir_name + '?hi=1')
         self.check_status_and_reason(response, HTTPStatus.MOVED_PERMANENTLY)
         self.assertEqual(response.getheader("Location"),
                          self.tempdir_name + "/?hi=1")
-
-    def test_html_escape_filename(self):
-        filename = '<test&>.txt'
-        fullpath = os.path.join(self.tempdir, filename)
-
-        try:
-            open(fullpath, 'wb').close()
-        except OSError:
-            raise unittest.SkipTest('Can not create file %s on current file '
-                                    'system' % filename)
-
-        try:
-            response = self.request(self.base_url + '/')
-            body = self.check_status_and_reason(response, HTTPStatus.OK)
-            enc = response.headers.get_content_charset()
-        finally:
-            os.unlink(fullpath)  # avoid affecting test_undecodable_filename
-
-        self.assertIsNotNone(enc)
-        html_text = '>%s<' % html.escape(filename, quote=False)
-        self.assertIn(html_text.encode(enc), body)
 
 
 cgi_file1 = """\

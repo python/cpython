@@ -25,11 +25,13 @@ it:
   `android-sdk/cmdline-tools/latest`.
 * `export ANDROID_HOME=/path/to/android-sdk`
 
-The `android.py` script also requires the following commands to be on the `PATH`:
+The `android.py` script will automatically use the SDK's `sdkmanager` to install
+any packages it needs.
+
+The script also requires the following commands to be on the `PATH`:
 
 * `curl`
 * `java` (or set the `JAVA_HOME` environment variable)
-* `tar`
 
 
 ## Building
@@ -97,7 +99,7 @@ similar to the `Android` directory of the CPython source tree.
 The Python test suite can be run on Linux, macOS, or Windows:
 
 * On Linux, the emulator needs access to the KVM virtualization interface, and
-  a DISPLAY environment variable pointing at an X server.
+  a DISPLAY environment variable pointing at an X server. Xvfb is acceptable.
 
 The test suite can usually be run on a device with 2 GB of RAM, but this is
 borderline, so you may need to increase it to 4 GB. As of Android

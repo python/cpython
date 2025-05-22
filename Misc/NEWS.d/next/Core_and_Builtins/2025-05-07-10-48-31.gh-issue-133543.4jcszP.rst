@@ -1,0 +1,2 @@
+Fix a possible memory leak that could occur when directly accessing instance
+dictionaries (``__dict__``) that later become part of a reference cycle.

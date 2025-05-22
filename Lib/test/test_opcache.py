@@ -1155,6 +1155,24 @@ class TestInstanceDict(unittest.TestCase):
             {'a':1, 'b':2}
         )
 
+    def test_store_attr_with_hint(self):
+        # gh-133441: Regression test for STORE_ATTR_WITH_HINT bytecode
+        class Node:
+            def __init__(self):
+                self.parents = {}
+
+            def __setstate__(self, data_dict):
+                self.__dict__ = data_dict
+                self.parents = {}
+
+        class Dict(dict):
+            pass
+
+        obj = Node()
+        obj.__setstate__({'parents': {}})
+        obj.__setstate__({'parents': {}})
+        obj.__setstate__(Dict({'parents': {}}))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -238,7 +238,7 @@ class Stencil:
                 addend=-4,
             ) as hole:
                 # jmp qword ptr [rip]
-                jump = b"\x48\xFF\x25\x00\x00\x00\x00"
+                jump = b"\x48\xff\x25\x00\x00\x00\x00"
                 offset -= 3
             case Hole(
                 offset=offset,
@@ -248,7 +248,7 @@ class Stencil:
                 addend=-4,
             ) as hole:
                 # jmp 5
-                jump = b"\xE9\x00\x00\x00\x00"
+                jump = b"\xe9\x00\x00\x00\x00"
                 offset -= 1
             case Hole(
                 offset=offset,
@@ -268,7 +268,7 @@ class Stencil:
             ) as hole:
                 assert _signed(addend) == -4
                 # jmp qword ptr [rip]
-                jump = b"\xFF\x25\x00\x00\x00\x00"
+                jump = b"\xff\x25\x00\x00\x00\x00"
                 offset -= 2
             case _:
                 return

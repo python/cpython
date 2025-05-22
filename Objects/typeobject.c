@@ -439,10 +439,11 @@ _PyType_GetBases(PyTypeObject *self)
 static inline void
 set_tp_bases(PyTypeObject *self, PyObject *bases, int initial)
 {
-    assert(PyTuple_CheckExact(bases));
+    assert(PyTuple_Check(bases));
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         // XXX tp_bases can probably be statically allocated for each
         // static builtin type.
+        assert(PyTuple_CheckExact(bases));
         assert(initial);
         assert(self->tp_bases == NULL);
         if (PyTuple_GET_SIZE(bases) == 0) {
@@ -5163,7 +5164,6 @@ is_dunder_name(PyObject *name)
 static PyObject *
 update_cache(struct type_cache_entry *entry, PyObject *name, unsigned int version_tag, PyObject *value)
 {
-    _Py_atomic_store_uint32_relaxed(&entry->version, version_tag);
     _Py_atomic_store_ptr_relaxed(&entry->value, value); /* borrowed */
     assert(_PyASCIIObject_CAST(name)->hash != -1);
     OBJECT_STAT_INC_COND(type_cache_collisions, entry->name != Py_None && entry->name != name);
@@ -5171,6 +5171,12 @@ update_cache(struct type_cache_entry *entry, PyObject *name, unsigned int versio
     // exact unicode object or Py_None so it's safe to do so.
     PyObject *old_name = entry->name;
     _Py_atomic_store_ptr_relaxed(&entry->name, Py_NewRef(name));
+    // We must write the version last to avoid _Py_TryXGetStackRef()
+    // operating on an invalid (already deallocated) value inside
+    // _PyType_LookupRefAndVersion().  If we write the version first then a
+    // reader could pass the "entry_version == type_version" check but could
+    // be using the old entry value.
+    _Py_atomic_store_uint32_release(&entry->version, version_tag);
     return old_name;
 }
 
@@ -5234,7 +5240,7 @@ _PyType_LookupRef(PyTypeObject *type, PyObject *name)
     // synchronize-with other writing threads by doing an acquire load on the sequence
     while (1) {
         uint32_t sequence = _PySeqLock_BeginRead(&entry->sequence);
-        uint32_t entry_version = _Py_atomic_load_uint32_relaxed(&entry->version);
+        uint32_t entry_version = _Py_atomic_load_uint32_acquire(&entry->version);
         uint32_t type_version = _Py_atomic_load_uint32_acquire(&type->tp_version_tag);
         if (entry_version == type_version &&
             _Py_atomic_load_ptr_relaxed(&entry->name) == name) {
@@ -5280,11 +5286,14 @@ _PyType_LookupRef(PyTypeObject *type, PyObject *name)
     int has_version = 0;
     int version = 0;
     BEGIN_TYPE_LOCK();
-    res = find_name_in_mro(type, name, &error);
+    // We must assign the version before doing the lookup.  If
+    // find_name_in_mro() blocks and releases the critical section
+    // then the type version can change.
     if (MCACHE_CACHEABLE_NAME(name)) {
         has_version = assign_version_tag(interp, type);
         version = type->tp_version_tag;
     }
+    res = find_name_in_mro(type, name, &error);
     END_TYPE_LOCK();
 
     /* Only put NULL results into cache if there was no error. */
