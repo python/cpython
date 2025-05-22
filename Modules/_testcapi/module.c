@@ -44,6 +44,15 @@ module_from_slots_repeat_name(PyObject *self, PyObject *spec)
 }
 
 
+static PyObject *
+module_from_slots_null_name(PyObject *self, PyObject *spec)
+{
+    PyModuleDef_Slot slots[] = {
+        {Py_mod_name, NULL},
+        {0},
+    };
+    return PyModule_FromSlotsAndSpec(slots, spec);
+}
 
 static PyObject *
 module_from_def_name(PyObject *self, PyObject *spec)
@@ -65,6 +74,7 @@ static PyMethodDef test_methods[] = {
     {"module_from_slots_name", module_from_slots_name, METH_O},
     {"module_from_slots_doc", module_from_slots_doc, METH_O},
     {"module_from_slots_repeat_name", module_from_slots_repeat_name, METH_O},
+    {"module_from_slots_null_name", module_from_slots_null_name, METH_O},
     {"module_from_def_name", module_from_def_name, METH_O},
     {NULL},
 };

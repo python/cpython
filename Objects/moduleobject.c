@@ -433,6 +433,13 @@ module_from_def_and_spec(
                 break;
 #define COPY_SLOT_TO_DEFLIKE(SLOT, TYPE, DEST)                          \
             case SLOT:                                                  \
+                if (!(TYPE)(cur_slot->value)) {                         \
+                    PyErr_Format(                                       \
+                       PyExc_SystemError,                               \
+                       "module %s: " #SLOT " must not be NULL",         \
+                       name);                                           \
+                    goto error;                                         \
+                }                                                       \
                 if (original_def) {                                     \
                     PyErr_Format(                                       \
                        PyExc_SystemError,                               \

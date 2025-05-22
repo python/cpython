@@ -42,3 +42,9 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
             _testcapi.module_from_slots_repeat_name(FakeSpec())
         self.assertIn("Py_mod_name", str(cm.exception),)
         self.assertIn("repeated", str(cm.exception), )
+
+    def test_null_name(self):
+        with self.assertRaises(SystemError) as cm:
+            _testcapi.module_from_slots_null_name(FakeSpec())
+        self.assertIn("Py_mod_name", str(cm.exception),)
+        self.assertIn("NULL", str(cm.exception), )
