@@ -1772,7 +1772,7 @@ queuesmod_get_queue_defaults(PyObject *self, PyObject *args, PyObject *kwds)
     }
     int64_t qid = qidarg.id;
 
-    struct _queuedefaults defaults;
+    struct _queuedefaults defaults = {0};
     int err = queue_get_defaults(&_globals.queues, qid, &defaults);
     if (handle_queue_error(err, self, qid)) {
         return NULL;

@@ -335,24 +335,9 @@ typedef struct _sharedexception {
 PyAPI_FUNC(PyObject *) _PyXI_ApplyError(_PyXI_error *err);
 
 
-typedef struct xi_session _PyXI_session;
-typedef struct _sharedns _PyXI_namespace;
-
-PyAPI_FUNC(void) _PyXI_FreeNamespace(_PyXI_namespace *ns);
-PyAPI_FUNC(_PyXI_namespace *) _PyXI_NamespaceFromNames(PyObject *names);
-PyAPI_FUNC(int) _PyXI_FillNamespaceFromDict(
-    _PyXI_namespace *ns,
-    PyObject *nsobj,
-    _PyXI_session *session);
-PyAPI_FUNC(int) _PyXI_ApplyNamespace(
-    _PyXI_namespace *ns,
-    PyObject *nsobj,
-    PyObject *dflt);
-
-
 // A cross-interpreter session involves entering an interpreter
-// (_PyXI_Enter()), doing some work with it, and finally exiting
-// that interpreter (_PyXI_Exit()).
+// with _PyXI_Enter(), doing some work with it, and finally exiting
+// that interpreter with _PyXI_Exit().
 //
 // At the boundaries of the session, both entering and exiting,
 // data may be exchanged between the previous interpreter and the
@@ -360,45 +345,18 @@ PyAPI_FUNC(int) _PyXI_ApplyNamespace(
 // isolation between interpreters.  This includes setting objects
 // in the target's __main__ module on the way in, and capturing
 // uncaught exceptions on the way out.
-struct xi_session {
-    // Once a session has been entered, this is the tstate that was
-    // current before the session.  If it is different from cur_tstate
-    // then we must have switched interpreters.  Either way, this will
-    // be the current tstate once we exit the session.
-    PyThreadState *prev_tstate;
-    // Once a session has been entered, this is the current tstate.
-    // It must be current when the session exits.
-    PyThreadState *init_tstate;
-    // This is true if init_tstate needs cleanup during exit.
-    int own_init_tstate;
+typedef struct xi_session _PyXI_session;
 
-    // This is true if, while entering the session, init_thread took
-    // "ownership" of the interpreter's __main__ module.  This means
-    // it is the only thread that is allowed to run code there.
-    // (Caveat: for now, users may still run exec() against the
-    // __main__ module's dict, though that isn't advisable.)
-    int running;
-    // This is a cached reference to the __dict__ of the entered
-    // interpreter's __main__ module.  It is looked up when at the
-    // beginning of the session as a convenience.
-    PyObject *main_ns;
-
-    // This is set if the interpreter is entered and raised an exception
-    // that needs to be handled in some special way during exit.
-    _PyXI_errcode *error_override;
-    // This is set if exit captured an exception to propagate.
-    _PyXI_error *error;
-
-    // -- pre-allocated memory --
-    _PyXI_error _error;
-    _PyXI_errcode _error_override;
-};
+PyAPI_FUNC(_PyXI_session *) _PyXI_NewSession(void);
+PyAPI_FUNC(void) _PyXI_FreeSession(_PyXI_session *);
 
 PyAPI_FUNC(int) _PyXI_Enter(
     _PyXI_session *session,
     PyInterpreterState *interp,
     PyObject *nsupdates);
 PyAPI_FUNC(void) _PyXI_Exit(_PyXI_session *session);
+
+PyAPI_FUNC(PyObject *) _PyXI_GetMainNamespace(_PyXI_session *);
 
 PyAPI_FUNC(PyObject *) _PyXI_ApplyCapturedException(_PyXI_session *session);
 PyAPI_FUNC(int) _PyXI_HasCapturedException(_PyXI_session *session);

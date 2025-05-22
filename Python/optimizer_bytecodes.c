@@ -551,6 +551,14 @@ dummy_func(void) {
         value = sym_new_const(ctx, ptr);
     }
 
+    op(_POP_CALL_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused -- value)) {
+        value = sym_new_const(ctx, ptr);
+    }
+
+    op(_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused, unused -- value)) {
+        value = sym_new_const(ctx, ptr);
+    }
+
     op(_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused, unused, unused -- value)) {
         value = sym_new_const(ctx, ptr);
     }

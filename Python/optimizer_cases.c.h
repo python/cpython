@@ -2612,6 +2612,24 @@
             break;
         }
 
+        case _POP_CALL: {
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _POP_CALL_ONE: {
+            stack_pointer += -3;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _POP_CALL_TWO: {
+            stack_pointer += -4;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _POP_TOP_LOAD_CONST_INLINE_BORROW: {
             JitOptSymbol *value;
             PyObject *ptr = (PyObject *)this_instr->operand0;
@@ -2625,6 +2643,26 @@
             value = sym_new_not_null(ctx);
             stack_pointer[-2] = value;
             stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _POP_CALL_LOAD_CONST_INLINE_BORROW: {
+            JitOptSymbol *value;
+            PyObject *ptr = (PyObject *)this_instr->operand0;
+            value = sym_new_const(ctx, ptr);
+            stack_pointer[-2] = value;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW: {
+            JitOptSymbol *value;
+            PyObject *ptr = (PyObject *)this_instr->operand0;
+            value = sym_new_const(ctx, ptr);
+            stack_pointer[-3] = value;
+            stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
