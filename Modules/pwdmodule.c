@@ -9,7 +9,6 @@
 
 #include "Python.h"
 #include "posixmodule.h"
-#include "listobject.h"           // PyList_Size/PyList_GetItem
 
 #include <errno.h>                // ERANGE
 #include <pwd.h>                  // getpwuid()
