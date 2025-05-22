@@ -259,8 +259,14 @@ with an exception object::
 
    static PyModuleDef_Slot spam_module_slots[] = {
        {Py_mod_exec, spam_module_exec},
+   #ifdef Py_mod_multiple_interpreters
+       // signal that this module can be imported in isolated subinterpreters
        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+   #endif
+   #ifdef Py_mod_gil
+       // signal that this module supports running without an active GIL
        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+   #endif
        {0, NULL}
    };
 
@@ -829,8 +835,12 @@ Philbrick (philbrick@hks.com)::
    };
 
    static PyModuleDef_Slot keywdarg_slots[] = {
+   #ifdef Py_mod_multiple_interpreters
        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+   #endif
+   #ifdef Py_mod_gil
        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+   #endif
        {0, NULL}
    };
 
@@ -1333,8 +1343,12 @@ function must take care of initializing the C API pointer array::
 
    static PyModuleDef_Slot spam_module_slots[] = {
        {Py_mod_exec, spam_module_exec},
+   #ifdef Py_mod_multiple_interpreters
        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+   #endif
+   #ifdef Py_mod_gil
        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+   #endif
        {0, NULL}
    };
 
@@ -1412,8 +1426,12 @@ like this::
 
    static PyModuleDef_Slot client_module_slots[] = {
        {Py_mod_exec, client_module_exec},
+   #ifdef Py_mod_multiple_interpreters
        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+   #endif
+   #ifdef Py_mod_gil
        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+   #endif
        {0, NULL}
    };
 

@@ -185,9 +185,13 @@ custom_module_exec(PyObject *mod)
 
 static PyModuleDef_Slot custom_module_slots[] = {
     {Py_mod_exec, custom_module_exec},
+#ifdef Py_mod_multiple_interpreters
     // Py_MOD_PER_INTERPRETER_GIL_SUPPORTED requires heaptypes
     {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
+#endif
+#ifdef Py_mod_gil
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
     {0, NULL}
 };
 
