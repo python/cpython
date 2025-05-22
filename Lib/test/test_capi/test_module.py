@@ -37,14 +37,22 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
         self.assertIn("Py_mod_name", str(cm.exception),)
         self.assertIn("PyModuleDef", str(cm.exception), )
 
-    def test_repeat_name(self):
-        with self.assertRaises(SystemError) as cm:
-            _testcapi.module_from_slots_repeat_name(FakeSpec())
-        self.assertIn("Py_mod_name", str(cm.exception),)
-        self.assertIn("repeated", str(cm.exception), )
+    def test_repeated_new_slot(self):
+        for name in 'Py_mod_name', 'Py_mod_doc':
+            with self.subTest(name):
+                spec = FakeSpec()
+                spec._test_slot_id = getattr(_testcapi, name)
+                with self.assertRaises(SystemError) as cm:
+                    _testcapi.module_from_slots_repeat_slot(spec)
+                self.assertIn(name, str(cm.exception),)
+                self.assertIn("repeated", str(cm.exception), )
 
     def test_null_name(self):
-        with self.assertRaises(SystemError) as cm:
-            _testcapi.module_from_slots_null_name(FakeSpec())
-        self.assertIn("Py_mod_name", str(cm.exception),)
-        self.assertIn("NULL", str(cm.exception), )
+        for name in 'Py_mod_name', 'Py_mod_doc':
+            with self.subTest(name):
+                spec = FakeSpec()
+                spec._test_slot_id = getattr(_testcapi, name)
+                with self.assertRaises(SystemError) as cm:
+                    _testcapi.module_from_slots_null_slot(spec)
+                self.assertIn(name, str(cm.exception),)
+                self.assertIn("NULL", str(cm.exception), )
