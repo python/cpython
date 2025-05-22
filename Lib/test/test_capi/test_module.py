@@ -69,6 +69,13 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
         self.assertEqual(mod.__doc__, None)
         self.assertEqual(mod.a_number, 456)
 
+    def test_create(self):
+        spec = FakeSpec()
+        spec._gimme_this = "not a module object"
+        mod = _testcapi.module_from_slots_create(spec)
+        self.assertIsInstance(mod, str)
+        self.assertEqual(mod, "not a module object")
+
     def test_def_slot(self):
         """Slots that replace PyModuleDef fields can't be used with PyModuleDef
         """
@@ -78,8 +85,8 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
                 spec._test_slot_id = getattr(_testcapi, name)
                 with self.assertRaises(SystemError) as cm:
                     _testcapi.module_from_def_slot(spec)
-                self.assertIn(name, str(cm.exception),)
-                self.assertIn("PyModuleDef", str(cm.exception), )
+                self.assertIn(name, str(cm.exception))
+                self.assertIn("PyModuleDef", str(cm.exception))
 
     def test_repeated_def_slot(self):
         """Slots that replace PyModuleDef fields can't be repeated"""
@@ -89,8 +96,8 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
                 spec._test_slot_id = getattr(_testcapi, name)
                 with self.assertRaises(SystemError) as cm:
                     _testcapi.module_from_slots_repeat_slot(spec)
-                self.assertIn(name, str(cm.exception),)
-                self.assertIn("repeated", str(cm.exception), )
+                self.assertIn(name, str(cm.exception))
+                self.assertIn("more than one", str(cm.exception))
 
     def test_null_def_slot(self):
         """Slots that replace PyModuleDef fields can't be NULL"""
@@ -100,5 +107,5 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
                 spec._test_slot_id = getattr(_testcapi, name)
                 with self.assertRaises(SystemError) as cm:
                     _testcapi.module_from_slots_null_slot(spec)
-                self.assertIn(name, str(cm.exception),)
-                self.assertIn("NULL", str(cm.exception), )
+                self.assertIn(name, str(cm.exception))
+                self.assertIn("NULL", str(cm.exception))

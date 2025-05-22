@@ -160,6 +160,23 @@ module_from_slots_exec(PyObject *self, PyObject *spec)
     return mod;
 }
 
+static PyObject *
+create_attr_from_spec(PyObject *spec, PyObject *def)
+{
+    assert(!def);
+    return PyObject_GetAttrString(spec, "_gimme_this");
+}
+
+static PyObject *
+module_from_slots_create(PyObject *self, PyObject *spec)
+{
+    PyModuleDef_Slot slots[] = {
+        {Py_mod_create, create_attr_from_spec},
+        {0},
+    };
+    return PyModule_FromSlotsAndSpec(slots, spec);
+}
+
 
 static int
 slot_from_object(PyObject *obj)
@@ -232,6 +249,7 @@ static PyMethodDef test_methods[] = {
     {"module_from_slots_gc", module_from_slots_gc, METH_O},
     {"module_from_slots_token", module_from_slots_token, METH_O},
     {"module_from_slots_exec", module_from_slots_exec, METH_O},
+    {"module_from_slots_create", module_from_slots_create, METH_O},
     {"module_from_slots_repeat_slot", module_from_slots_repeat_slot, METH_O},
     {"module_from_slots_null_slot", module_from_slots_null_slot, METH_O},
     {"module_from_def_slot", module_from_def_slot, METH_O},
