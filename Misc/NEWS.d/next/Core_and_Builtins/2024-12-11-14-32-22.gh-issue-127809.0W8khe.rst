@@ -1,2 +1,0 @@
-Fix an issue where the experimental JIT may infer an incorrect result type
-for exponentiation (``**`` and ``**=``), leading to bugs or crashes.

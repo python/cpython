@@ -1,2 +1,0 @@
-Usage of the unified Apple System Log APIs was disabled when the minimum
-macOS version is earlier than 10.12.

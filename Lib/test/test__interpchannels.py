@@ -6,7 +6,7 @@ import threading
 import time
 import unittest
 
-from test.support import import_helper
+from test.support import import_helper, skip_if_sanitizer
 
 _channels = import_helper.import_module('_interpchannels')
 from test.support.interpreters import _crossinterp
@@ -365,6 +365,7 @@ class ChannelIDTests(TestBase):
         #self.assertIsNot(got, obj)
 
 
+@skip_if_sanitizer('gh-129824: race on _waiting_release', thread=True)
 class ChannelTests(TestBase):
 
     def test_create_cid(self):

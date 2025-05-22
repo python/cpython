@@ -10,16 +10,22 @@ Run this module to regenerate the files:
 """
 
 import unittest
-from test.support import import_helper
+from test.support import import_helper, verbose
 import re
 from dataclasses import dataclass
 from functools import cached_property
+import sys
 
 import ctypes
 from ctypes import Structure, Union
 from ctypes import sizeof, alignment, pointer, string_at
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
+from test.test_ctypes._support import StructCheckMixin
+
+# A 64-bit number where each nibble (hex digit) is different and
+# has 2-3 bits set.
+TEST_PATTERN = 0xae7596db
 
 # ctypes erases the difference between `c_int` and e.g.`c_int16`.
 # To keep it, we'll use custom subclasses with the C name stashed in `_c_name`:
@@ -119,18 +125,21 @@ class Nested(Structure):
 class Packed1(Structure):
     _fields_ = [('a', c_int8), ('b', c_int64)]
     _pack_ = 1
+    _layout_ = 'ms'
 
 
 @register()
 class Packed2(Structure):
     _fields_ = [('a', c_int8), ('b', c_int64)]
     _pack_ = 2
+    _layout_ = 'ms'
 
 
 @register()
 class Packed3(Structure):
     _fields_ = [('a', c_int8), ('b', c_int64)]
     _pack_ = 4
+    _layout_ = 'ms'
 
 
 @register()
@@ -149,6 +158,7 @@ class Packed4(Structure):
 
     _fields_ = [('a', c_int8), ('b', c_int64)]
     _pack_ = 8
+    _layout_ = 'ms'
 
 @register()
 class X86_32EdgeCase(Structure):
@@ -360,6 +370,7 @@ class Example_gh_95496(Structure):
 @register()
 class Example_gh_84039_bad(Structure):
     _pack_ = 1
+    _layout_ = 'ms'
     _fields_ = [("a0", c_uint8, 1),
                 ("a1", c_uint8, 1),
                 ("a2", c_uint8, 1),
@@ -374,6 +385,7 @@ class Example_gh_84039_bad(Structure):
 @register()
 class Example_gh_84039_good_a(Structure):
     _pack_ = 1
+    _layout_ = 'ms'
     _fields_ = [("a0", c_uint8, 1),
                 ("a1", c_uint8, 1),
                 ("a2", c_uint8, 1),
@@ -386,6 +398,7 @@ class Example_gh_84039_good_a(Structure):
 @register()
 class Example_gh_84039_good(Structure):
     _pack_ = 1
+    _layout_ = 'ms'
     _fields_ = [("a", Example_gh_84039_good_a),
                 ("b0", c_uint16, 4),
                 ("b1", c_uint16, 12)]
@@ -393,6 +406,7 @@ class Example_gh_84039_good(Structure):
 @register()
 class Example_gh_73939(Structure):
     _pack_ = 1
+    _layout_ = 'ms'
     _fields_ = [("P", c_uint16),
                 ("L", c_uint16, 9),
                 ("Pro", c_uint16, 1),
@@ -413,6 +427,7 @@ class Example_gh_86098(Structure):
 @register()
 class Example_gh_86098_pack(Structure):
     _pack_ = 1
+    _layout_ = 'ms'
     _fields_ = [("a", c_uint8, 8),
                 ("b", c_uint8, 8),
                 ("c", c_uint32, 16)]
@@ -426,7 +441,7 @@ class AnonBitfields(Structure):
     _fields_ = [("_", X), ('y', c_byte)]
 
 
-class GeneratedTest(unittest.TestCase):
+class GeneratedTest(unittest.TestCase, StructCheckMixin):
     def test_generated_data(self):
         """Check that a ctypes struct/union matches its C equivalent.
 
@@ -443,11 +458,12 @@ class GeneratedTest(unittest.TestCase):
         - None
         - reason to skip the test (str)
 
-        This does depend on the C compiler keeping padding bits zero.
+        This does depend on the C compiler keeping padding bits unchanged.
         Common compilers seem to do so.
         """
         for name, cls in TESTCASES.items():
             with self.subTest(name=name):
+                self.check_struct_or_union(cls)
                 if _maybe_skip := getattr(cls, '_maybe_skip', None):
                     _maybe_skip()
                 expected = iter(_ctypes_test.get_generated_test_data(name))
@@ -461,7 +477,7 @@ class GeneratedTest(unittest.TestCase):
                 obj = cls()
                 ptr = pointer(obj)
                 for field in iterfields(cls):
-                    for value in -1, 1, 0:
+                    for value in -1, 1, TEST_PATTERN, 0:
                         with self.subTest(field=field.full_name, value=value):
                             field.set_to(obj, value)
                             py_mem = string_at(ptr, sizeof(obj))
@@ -471,6 +487,17 @@ class GeneratedTest(unittest.TestCase):
                                 lines, requires = dump_ctype(cls)
                                 m = "\n".join([str(field), 'in:', *lines])
                                 self.assertEqual(py_mem.hex(), c_mem.hex(), m)
+
+                            descriptor = field.descriptor
+                            field_mem = py_mem[
+                                field.byte_offset
+                                : field.byte_offset + descriptor.byte_size]
+                            field_int = int.from_bytes(field_mem, sys.byteorder)
+                            mask = (1 << descriptor.bit_size) - 1
+                            self.assertEqual(
+                                (field_int >> descriptor.bit_offset) & mask,
+                                value & mask)
+
 
 
 # The rest of this file is generating C code from a ctypes type.
@@ -510,7 +537,7 @@ def dump_ctype(tp, struct_or_union_tag='', variable_name='', semi=''):
             pushes.append(f'#pragma pack(push, {pack})')
             pops.append(f'#pragma pack(pop)')
         layout = getattr(tp, '_layout_', None)
-        if layout == 'ms' or pack:
+        if layout == 'ms':
             # The 'ms_struct' attribute only works on x86 and PowerPC
             requires.add(
                 'defined(MS_WIN32) || ('
@@ -569,6 +596,8 @@ class FieldInfo:
     bits: int | None  # number if this is a bit field
     parent_type: type
     parent: 'FieldInfo' #| None
+    descriptor: object
+    byte_offset: int
 
     @cached_property
     def attr_path(self):
@@ -600,10 +629,6 @@ class FieldInfo:
         else:
             return self.parent
 
-    @cached_property
-    def descriptor(self):
-        return getattr(self.parent_type, self.name)
-
     def __repr__(self):
         qname = f'{self.root.parent_type.__name__}.{self.full_name}'
         try:
@@ -621,7 +646,11 @@ def iterfields(tp, parent=None):
     else:
         for fielddesc in fields:
             f_name, f_tp, f_bits = unpack_field_desc(*fielddesc)
-            sub = FieldInfo(f_name, f_tp, f_bits, tp, parent)
+            descriptor = getattr(tp, f_name)
+            byte_offset = descriptor.byte_offset
+            if parent:
+                byte_offset += parent.byte_offset
+            sub = FieldInfo(f_name, f_tp, f_bits, tp, parent, descriptor, byte_offset)
             yield from iterfields(f_tp, sub)
 
 
@@ -629,10 +658,9 @@ if __name__ == '__main__':
     # Dump C source to stdout
     def output(string):
         print(re.compile(r'^ +$', re.MULTILINE).sub('', string).lstrip('\n'))
+    output("/* Generated by Lib/test/test_ctypes/test_generated_structs.py */")
+    output(f"#define TEST_PATTERN {TEST_PATTERN}")
     output("""
-        /* Generated by Lib/test/test_ctypes/test_generated_structs.py */
-
-
         // Append VALUE to the result.
         #define APPEND(ITEM) {                          \\
             PyObject *item = ITEM;                      \\
@@ -657,12 +685,13 @@ if __name__ == '__main__':
                 (char*)&value, sizeof(value)));         \\
         }
 
-        // Set a field to -1, 1 and 0; append a snapshot of the memory
+        // Set a field to test values; append a snapshot of the memory
         // after each of the operations.
-        #define TEST_FIELD(TYPE, TARGET) {              \\
-            SET_AND_APPEND(TYPE, TARGET, -1)            \\
-            SET_AND_APPEND(TYPE, TARGET, 1)             \\
-            SET_AND_APPEND(TYPE, TARGET, 0)             \\
+        #define TEST_FIELD(TYPE, TARGET) {                    \\
+            SET_AND_APPEND(TYPE, TARGET, -1)                  \\
+            SET_AND_APPEND(TYPE, TARGET, 1)                   \\
+            SET_AND_APPEND(TYPE, TARGET, (TYPE)TEST_PATTERN)  \\
+            SET_AND_APPEND(TYPE, TARGET, 0)                   \\
         }
 
         #if defined(__GNUC__) || defined(__clang__)
@@ -696,7 +725,8 @@ if __name__ == '__main__':
             output('                ' + line)
         typename = f'{struct_or_union(cls)} {name}'
         output(f"""
-                {typename} value = {{0}};
+                {typename} value;
+                memset(&value, 0, sizeof(value));
                 APPEND(PyUnicode_FromString({c_str_repr(name)}));
                 APPEND(PyLong_FromLong(sizeof({typename})));
                 APPEND(PyLong_FromLong(_Alignof({typename})));

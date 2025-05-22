@@ -1,2 +1,0 @@
-Fix crash when using :func:`faulthandler.dump_traceback` while other threads
-are active on the :term:`free threaded <free threading>` build.

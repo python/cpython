@@ -1,2 +1,0 @@
-Add macros :c:func:`Py_PACK_VERSION` and :c:func:`Py_PACK_FULL_VERSION` for
-bit-packing Python version numbers.

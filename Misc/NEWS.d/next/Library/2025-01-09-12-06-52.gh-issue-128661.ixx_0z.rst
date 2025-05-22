@@ -1,2 +1,0 @@
-Fixes :func:`typing.evaluate_forward_ref` not showing deprecation when
-``type_params`` arg is not passed.

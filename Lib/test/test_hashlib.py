@@ -10,16 +10,18 @@ import hashlib
 import importlib
 import io
 import itertools
+import logging
 import os
 import sys
 import sysconfig
+import tempfile
 import threading
 import unittest
 import warnings
 from test import support
 from test.support import _4G, bigmemtest
+from test.support import hashlib_helper
 from test.support.import_helper import import_fresh_module
-from test.support import os_helper
 from test.support import requires_resource
 from test.support import threading_helper
 from http.client import HTTPException
@@ -61,10 +63,12 @@ except ImportError:
 
 requires_blake2 = unittest.skipUnless(_blake2, 'requires _blake2')
 
-# bpo-46913: Don't test the _sha3 extension on a Python UBSAN build
-# TODO(gh-99108): Revisit this after _sha3 uses HACL*.
-SKIP_SHA3 = support.check_sanitizer(ub=True)
-requires_sha3 = unittest.skipUnless(not SKIP_SHA3, 'requires _sha3')
+try:
+    import _sha3
+except ImportError:
+    _sha3 = None
+
+requires_sha3 = unittest.skipUnless(_sha3, 'requires _sha3')
 
 
 def hexstr(s):
@@ -113,7 +117,11 @@ class HashLibTestCase(unittest.TestCase):
             return importlib.import_module(module_name)
         except ModuleNotFoundError as error:
             if self._warn_on_extension_import and module_name in builtin_hashes:
-                warnings.warn(f'Did a C extension fail to compile? {error}')
+                logging.getLogger(__name__).warning(
+                    'Did a C extension fail to compile? %s',
+                    error,
+                    exc_info=error,
+                )
         return None
 
     def __init__(self, *args, **kwargs):
@@ -127,8 +135,6 @@ class HashLibTestCase(unittest.TestCase):
 
         self.constructors_to_test = {}
         for algorithm in algorithms:
-            if SKIP_SHA3 and algorithm.startswith('sha3_'):
-                continue
             self.constructors_to_test[algorithm] = set()
 
         # For each algorithm, test the direct constructor and the use
@@ -175,19 +181,17 @@ class HashLibTestCase(unittest.TestCase):
             add_builtin_constructor('sha256')
             add_builtin_constructor('sha384')
             add_builtin_constructor('sha512')
+        _sha3 = self._conditional_import_module('_sha3')
+        if _sha3:
+            add_builtin_constructor('sha3_224')
+            add_builtin_constructor('sha3_256')
+            add_builtin_constructor('sha3_384')
+            add_builtin_constructor('sha3_512')
+            add_builtin_constructor('shake_128')
+            add_builtin_constructor('shake_256')
         if _blake2:
             add_builtin_constructor('blake2s')
             add_builtin_constructor('blake2b')
-
-        if not SKIP_SHA3:
-            _sha3 = self._conditional_import_module('_sha3')
-            if _sha3:
-                add_builtin_constructor('sha3_224')
-                add_builtin_constructor('sha3_256')
-                add_builtin_constructor('sha3_384')
-                add_builtin_constructor('sha3_512')
-                add_builtin_constructor('shake_128')
-                add_builtin_constructor('shake_256')
 
         super(HashLibTestCase, self).__init__(*args, **kwargs)
 
@@ -253,6 +257,7 @@ class HashLibTestCase(unittest.TestCase):
     def test_new_upper_to_lower(self):
         self.assertEqual(hashlib.new("SHA256").name, "sha256")
 
+    @support.thread_unsafe("modifies sys.modules")
     def test_get_builtin_constructor(self):
         get_builtin_constructor = getattr(hashlib,
                                           '__get_builtin_constructor')
@@ -414,21 +419,18 @@ class HashLibTestCase(unittest.TestCase):
         digests = [name]
         digests.extend(self.constructors_to_test[name])
 
-        with open(os_helper.TESTFN, "wb") as f:
+        with tempfile.TemporaryFile() as f:
             f.write(data)
 
-        try:
             for digest in digests:
                 buf = io.BytesIO(data)
                 buf.seek(0)
                 self.assertEqual(
                     hashlib.file_digest(buf, digest).hexdigest(), hexdigest
                 )
-                with open(os_helper.TESTFN, "rb") as f:
-                    digestobj = hashlib.file_digest(f, digest)
+                f.seek(0)
+                digestobj = hashlib.file_digest(f, digest)
                 self.assertEqual(digestobj.hexdigest(), hexdigest)
-        finally:
-            os.unlink(os_helper.TESTFN)
 
     def check_no_unicode(self, algorithm_name):
         # Unicode objects are not allowed as input.
@@ -910,10 +912,13 @@ class HashLibTestCase(unittest.TestCase):
 
     def test_gil(self):
         # Check things work fine with an input larger than the size required
-        # for multithreaded operation (which is hardwired to 2048).
-        gil_minsize = 2048
-
+        # for multithreaded operation. Currently, all cryptographic modules
+        # have the same constant value (2048) but in the future it might not
+        # be the case.
+        mods = ['_md5', '_sha1', '_sha2', '_sha3', '_blake2', '_hashlib']
+        gil_minsize = hashlib_helper.find_gil_minsize(mods)
         for cons in self.hash_constructors:
+            # constructors belong to one of the above modules
             m = cons(usedforsecurity=False)
             m.update(b'1')
             m.update(b'#' * gil_minsize)
@@ -922,6 +927,8 @@ class HashLibTestCase(unittest.TestCase):
             m = cons(b'x' * gil_minsize, usedforsecurity=False)
             m.update(b'1')
 
+    def test_sha256_gil(self):
+        gil_minsize = hashlib_helper.find_gil_minsize(['_sha2', '_hashlib'])
         m = hashlib.sha256()
         m.update(b'1')
         m.update(b'#' * gil_minsize)
@@ -1172,29 +1179,38 @@ class KDFTests(unittest.TestCase):
     def test_file_digest(self):
         data = b'a' * 65536
         d1 = hashlib.sha256()
-        self.addCleanup(os.unlink, os_helper.TESTFN)
-        with open(os_helper.TESTFN, "wb") as f:
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
             for _ in range(10):
                 d1.update(data)
-                f.write(data)
+                fp.write(data)
+            fp.close()
 
-        with open(os_helper.TESTFN, "rb") as f:
-            d2 = hashlib.file_digest(f, hashlib.sha256)
+            with open(fp.name, "rb") as f:
+                d2 = hashlib.file_digest(f, hashlib.sha256)
 
-        self.assertEqual(d1.hexdigest(), d2.hexdigest())
-        self.assertEqual(d1.name, d2.name)
-        self.assertIs(type(d1), type(d2))
+            self.assertEqual(d1.hexdigest(), d2.hexdigest())
+            self.assertEqual(d1.name, d2.name)
+            self.assertIs(type(d1), type(d2))
+
+            with self.assertRaises(ValueError):
+                with open(fp.name, "r") as f:
+                    hashlib.file_digest(f, "sha256")
+
+            with self.assertRaises(ValueError):
+                with open(fp.name, "wb") as f:
+                    hashlib.file_digest(f, "sha256")
 
         with self.assertRaises(ValueError):
             hashlib.file_digest(None, "sha256")
 
-        with self.assertRaises(ValueError):
-            with open(os_helper.TESTFN, "r") as f:
-                hashlib.file_digest(f, "sha256")
+        class NonBlocking:
+            def readinto(self, buf):
+                return None
+            def readable(self):
+                return True
 
-        with self.assertRaises(ValueError):
-            with open(os_helper.TESTFN, "wb") as f:
-                hashlib.file_digest(f, "sha256")
+        with self.assertRaises(BlockingIOError):
+            hashlib.file_digest(NonBlocking(), hashlib.sha256)
 
 
 if __name__ == "__main__":
