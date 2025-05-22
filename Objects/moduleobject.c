@@ -442,7 +442,7 @@ module_from_def_and_spec(
                 if (def_like->m_name) {
                     PyErr_Format(
                        PyExc_SystemError,
-                       "module %s has more than one 'gil' slot",
+                       "module %s: Py_mod_name slot repeated",
                        name);
                     goto error;
                 }

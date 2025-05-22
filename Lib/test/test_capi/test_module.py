@@ -24,6 +24,14 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
         self.assertIsInstance(mod, types.ModuleType)
         self.assertEqual(mod.__name__, 'testmod')
 
+    def test_def_name(self):
+        with self.assertRaises(SystemError) as cm:
+            _testcapi.module_from_def_name(FakeSpec())
+        self.assertIn("Py_mod_name", str(cm.exception),)
+        self.assertIn("PyModuleDef", str(cm.exception), )
+
     def test_repeat_name(self):
-        with self.assertRaises(SystemError):
+        with self.assertRaises(SystemError) as cm:
             _testcapi.module_from_slots_repeat_name(FakeSpec())
+        self.assertIn("Py_mod_name", str(cm.exception),)
+        self.assertIn("repeated", str(cm.exception), )

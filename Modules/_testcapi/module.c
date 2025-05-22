@@ -34,10 +34,27 @@ module_from_slots_repeat_name(PyObject *self, PyObject *spec)
 }
 
 
+
+static PyObject *
+module_from_def_name(PyObject *self, PyObject *spec)
+{
+    PyModuleDef_Slot slots[] = {
+        {Py_mod_name, "currently ignored..."},
+        {0},
+    };
+    PyModuleDef def = {
+        PyModuleDef_HEAD_INIT,
+        .m_name = "currently ignored",
+        .m_slots = slots,
+    };
+    return PyModule_FromDefAndSpec(&def, spec);
+}
+
 static PyMethodDef test_methods[] = {
     {"module_from_slots_empty", module_from_slots_empty, METH_O},
     {"module_from_slots_name", module_from_slots_name, METH_O},
     {"module_from_slots_repeat_name", module_from_slots_repeat_name, METH_O},
+    {"module_from_def_name", module_from_def_name, METH_O},
     {NULL},
 };
 
