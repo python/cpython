@@ -147,6 +147,8 @@ Python can manipulate text (represented by type :class:`str`, so-called
 "``Yay! :)``". They can be enclosed in single quotes (``'...'``) or double
 quotes (``"..."``) with the same result [#]_.
 
+.. code-block:: pycon
+
    >>> 'spam eggs'  # single quotes
    'spam eggs'
    >>> "Paris rabbit got your back :)! Yay!"  # double quotes

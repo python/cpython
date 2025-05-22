@@ -9,6 +9,7 @@ import sysconfig
 import tempfile
 import textwrap
 import unittest
+import warnings
 from test import support
 from test.support import os_helper
 from test.support import force_not_colorized
@@ -38,7 +39,8 @@ class CmdLineTest(unittest.TestCase):
 
     def verify_valid_flag(self, cmd_line):
         rc, out, err = assert_python_ok(cmd_line)
-        self.assertTrue(out == b'' or out.endswith(b'\n'))
+        if out != b'':
+            self.assertEndsWith(out, b'\n')
         self.assertNotIn(b'Traceback', out)
         self.assertNotIn(b'Traceback', err)
         return out
@@ -88,8 +90,8 @@ class CmdLineTest(unittest.TestCase):
         version = ('Python %d.%d' % sys.version_info[:2]).encode("ascii")
         for switch in '-V', '--version', '-VV':
             rc, out, err = assert_python_ok(switch)
-            self.assertFalse(err.startswith(version))
-            self.assertTrue(out.startswith(version))
+            self.assertNotStartsWith(err, version)
+            self.assertStartsWith(out, version)
 
     def test_verbose(self):
         # -v causes imports to write to stderr.  If the write to
@@ -379,7 +381,7 @@ class CmdLineTest(unittest.TestCase):
         p.stdin.flush()
         data, rc = _kill_python_and_exit_code(p)
         self.assertEqual(rc, 0)
-        self.assertTrue(data.startswith(b'x'), data)
+        self.assertStartsWith(data, b'x')
 
     def test_large_PYTHONPATH(self):
         path1 = "ABCDE" * 100
@@ -936,14 +938,20 @@ class CmdLineTest(unittest.TestCase):
     @unittest.skipUnless(sysconfig.get_config_var('Py_TRACE_REFS'), "Requires --with-trace-refs build option")
     def test_python_dump_refs(self):
         code = 'import sys; sys._clear_type_cache()'
-        rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFS='1')
+        # TODO: Remove warnings context manager once sys._clear_type_cache is removed
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFS='1')
         self.assertEqual(rc, 0)
 
     @unittest.skipUnless(sysconfig.get_config_var('Py_TRACE_REFS'), "Requires --with-trace-refs build option")
     def test_python_dump_refs_file(self):
         with tempfile.NamedTemporaryFile() as dump_file:
             code = 'import sys; sys._clear_type_cache()'
-            rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFSFILE=dump_file.name)
+            # TODO: Remove warnings context manager once sys._clear_type_cache is removed
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFSFILE=dump_file.name)
             self.assertEqual(rc, 0)
             with open(dump_file.name, 'r') as file:
                 contents = file.read()
@@ -965,10 +973,25 @@ class CmdLineTest(unittest.TestCase):
 
     @unittest.skipUnless(support.MS_WINDOWS, 'Test only applicable on Windows')
     def test_python_legacy_windows_stdio(self):
-        code = "import sys; print(sys.stdin.encoding, sys.stdout.encoding)"
-        expected = 'cp'
-        rc, out, err = assert_python_ok('-c', code, PYTHONLEGACYWINDOWSSTDIO='1')
-        self.assertIn(expected.encode(), out)
+        # Test that _WindowsConsoleIO is used when PYTHONLEGACYWINDOWSSTDIO
+        # is not set.
+        # We cannot use PIPE becase it prevents creating new console.
+        # So we use exit code.
+        code = "import sys; sys.exit(type(sys.stdout.buffer.raw).__name__ != '_WindowsConsoleIO')"
+        env = os.environ.copy()
+        env["PYTHONLEGACYWINDOWSSTDIO"] = ""
+        p = subprocess.run([sys.executable, "-c", code],
+                           creationflags=subprocess.CREATE_NEW_CONSOLE,
+                           env=env)
+        self.assertEqual(p.returncode, 0)
+
+        # Then test that FIleIO is used when PYTHONLEGACYWINDOWSSTDIO is set.
+        code = "import sys; sys.exit(type(sys.stdout.buffer.raw).__name__ != 'FileIO')"
+        env["PYTHONLEGACYWINDOWSSTDIO"] = "1"
+        p = subprocess.run([sys.executable, "-c", code],
+                           creationflags=subprocess.CREATE_NEW_CONSOLE,
+                           env=env)
+        self.assertEqual(p.returncode, 0)
 
     @unittest.skipIf("-fsanitize" in sysconfig.get_config_vars().get('PY_CFLAGS', ()),
                      "PYTHONMALLOCSTATS doesn't work with ASAN")
@@ -1017,7 +1040,7 @@ class CmdLineTest(unittest.TestCase):
                               stderr=subprocess.PIPE,
                               text=True)
         err_msg = "Unknown option: --unknown-option\nusage: "
-        self.assertTrue(proc.stderr.startswith(err_msg), proc.stderr)
+        self.assertStartsWith(proc.stderr, err_msg)
         self.assertNotEqual(proc.returncode, 0)
 
     def test_int_max_str_digits(self):
@@ -1150,6 +1173,24 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
         res = assert_python_ok('-c', code, PYTHON_CPU_COUNT='default')
         self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
+
+    def test_import_time(self):
+        # os is not imported at startup
+        code = 'import os; import os'
+
+        for case in 'importtime', 'importtime=1', 'importtime=true':
+            res = assert_python_ok('-X', case, '-c', code)
+            res_err = res.err.decode('utf-8')
+            self.assertRegex(res_err, r'import time: \s*\d+ \| \s*\d+ \| \s*os')
+            self.assertNotRegex(res_err, r'import time: cached\s* \| cached\s* \| os')
+
+        res = assert_python_ok('-X', 'importtime=2', '-c', code)
+        res_err = res.err.decode('utf-8')
+        self.assertRegex(res_err, r'import time: \s*\d+ \| \s*\d+ \| \s*os')
+        self.assertRegex(res_err, r'import time: cached\s* \| cached\s* \| os')
+
+        assert_python_failure('-X', 'importtime=-1', '-c', code)
+        assert_python_failure('-X', 'importtime=3', '-c', code)
 
     def res2int(self, res):
         out = res.out.strip().decode("utf-8")
