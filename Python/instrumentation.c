@@ -2559,7 +2559,7 @@ PyObject *_Py_CreateMonitoringObject(void)
     if (err) goto error;
     PyObject *val = PyLong_FromLong(PY_MONITORING_DEBUGGER_ID);
     assert(val != NULL); /* Regression test for PyLong_FromLong which can return
-                            NULL in the general case. But now it can't return 
+                            NULL in the general case. But now it can't return
                             NULL for arguments of small int type. */
     err = PyObject_SetAttrString(mod, "DEBUGGER_ID", val);
     Py_DECREF(val);
