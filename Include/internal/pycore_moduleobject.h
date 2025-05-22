@@ -16,6 +16,8 @@ extern int _PyModule_IsPossiblyShadowing(PyObject *);
 
 extern int _PyModule_IsExtension(PyObject *obj);
 
+typedef int (*_Py_modexecfunc)(PyObject *);
+
 typedef struct {
     PyObject_HEAD
     PyObject *md_dict;
@@ -34,7 +36,7 @@ typedef struct {
     inquiry md_clear;
     freefunc md_free;
     void *md_token;
-    int (*md_exec)(PyObject *);
+    _Py_modexecfunc md_exec;  /* only set if md_def_or_null is NULL */
 } PyModuleObject;
 
 static inline PyModuleDef* _PyModule_GetDefOrNull(PyObject *mod) {

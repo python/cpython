@@ -367,6 +367,7 @@ module_from_def_and_spec(
     const char *name;
     int ret;
     void *token = NULL;
+    _Py_modexecfunc m_exec = NULL;
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     nameobj = PyObject_GetAttrString(spec, "name");
@@ -391,6 +392,32 @@ module_from_def_and_spec(
     }
 
     for (cur_slot = def_like->m_slots; cur_slot && cur_slot->slot; cur_slot++) {
+        // Macro to copy a non-NULL, non-repeatable slot that's unusable with
+        // PyModuleDef. The destination must be initially NULL.
+#define COPY_COMMON_SLOT(SLOT, TYPE, DEST)                          \
+        if (!(TYPE)(cur_slot->value)) {                             \
+            PyErr_Format(                                           \
+                PyExc_SystemError,                                  \
+                "module %s: " #SLOT " must not be NULL",            \
+                name);                                              \
+            goto error;                                             \
+        }                                                           \
+        if (original_def) {                                         \
+            PyErr_Format(                                           \
+                PyExc_SystemError,                                  \
+                "module %s: " #SLOT " used with PyModuleDef",       \
+                name);                                              \
+            goto error;                                             \
+        }                                                           \
+        if (DEST) {                                                 \
+            PyErr_Format(                                           \
+                PyExc_SystemError,                                  \
+                "module %s: " #SLOT " slot repeated",               \
+                name);                                              \
+            goto error;                                             \
+        }                                                           \
+        DEST = (TYPE)(cur_slot->value);                             \
+        /////////////////////////////////////////////////////////////
         switch (cur_slot->slot) {
             case Py_mod_create:
                 if (create) {
@@ -404,6 +431,9 @@ module_from_def_and_spec(
                 break;
             case Py_mod_exec:
                 has_execution_slots = 1;
+                if (!original_def) {
+                    COPY_COMMON_SLOT(Py_mod_exec, _Py_modexecfunc, m_exec);
+                }
                 break;
             case Py_mod_multiple_interpreters:
                 if (has_multiple_interpreters_slot) {
@@ -432,43 +462,32 @@ module_from_def_and_spec(
                     goto error;
                 }
                 break;
-#define COPY_SLOT_TO_DEFLIKE(SLOT, TYPE, DEST)                          \
-            case SLOT:                                                  \
-                if (!(TYPE)(cur_slot->value)) {                         \
-                    PyErr_Format(                                       \
-                       PyExc_SystemError,                               \
-                       "module %s: " #SLOT " must not be NULL",         \
-                       name);                                           \
-                    goto error;                                         \
-                }                                                       \
-                if (original_def) {                                     \
-                    PyErr_Format(                                       \
-                       PyExc_SystemError,                               \
-                       "module %s: " #SLOT " used with PyModuleDef",    \
-                       name);                                           \
-                    goto error;                                         \
-                }                                                       \
-                if (DEST) {                                             \
-                    PyErr_Format(                                       \
-                       PyExc_SystemError,                               \
-                       "module %s: " #SLOT " slot repeated",            \
-                       name);                                           \
-                    goto error;                                         \
-                }                                                       \
-                DEST = (TYPE)(cur_slot->value);                         \
-                break;                                                  \
-            /////////////////////////////////////////////////////////////
-            COPY_SLOT_TO_DEFLIKE(Py_mod_name, char*, def_like->m_name);
-            COPY_SLOT_TO_DEFLIKE(Py_mod_doc, char*, def_like->m_doc);
-            COPY_SLOT_TO_DEFLIKE(Py_mod_size, Py_ssize_t, def_like->m_size);
-            COPY_SLOT_TO_DEFLIKE(Py_mod_methods, PyMethodDef*,
+            case Py_mod_name:
+                COPY_COMMON_SLOT(Py_mod_name, char*, def_like->m_name);
+                break;
+            case Py_mod_doc:
+                COPY_COMMON_SLOT(Py_mod_doc, char*, def_like->m_doc);
+                break;
+            case Py_mod_size:
+                COPY_COMMON_SLOT(Py_mod_size, Py_ssize_t, def_like->m_size);
+                break;
+            case Py_mod_methods:
+                COPY_COMMON_SLOT(Py_mod_methods, PyMethodDef*,
                                  def_like->m_methods);
-            COPY_SLOT_TO_DEFLIKE(Py_mod_traverse, traverseproc,
+                break;
+            case Py_mod_traverse:
+                COPY_COMMON_SLOT(Py_mod_traverse, traverseproc,
                                  def_like->m_traverse);
-            COPY_SLOT_TO_DEFLIKE(Py_mod_clear, inquiry, def_like->m_clear);
-            COPY_SLOT_TO_DEFLIKE(Py_mod_free, freefunc, def_like->m_free);
-            COPY_SLOT_TO_DEFLIKE(Py_mod_token, void*, token);
-#undef COPY_SLOT_TO_DEFLIKE
+                break;
+            case Py_mod_clear:
+                COPY_COMMON_SLOT(Py_mod_clear, inquiry, def_like->m_clear);
+                break;
+            case Py_mod_free:
+                COPY_COMMON_SLOT(Py_mod_free, freefunc, def_like->m_free);
+                break;
+            case Py_mod_token:
+                COPY_COMMON_SLOT(Py_mod_token, void*, token);
+                break;
             default:
                 assert(cur_slot->slot < 0 || cur_slot->slot > _Py_mod_LAST_SLOT);
                 PyErr_Format(
@@ -477,6 +496,7 @@ module_from_def_and_spec(
                     name, cur_slot->slot);
                 goto error;
         }
+#undef COPY_COMMON_SLOT
     }
 
     /* By default, multi-phase init modules are expected
@@ -544,6 +564,7 @@ module_from_def_and_spec(
         else {
             mod->md_token = token;
         }
+        mod->md_exec = m_exec;
     } else {
         if (def_like->m_size > 0 || def_like->m_traverse || def_like->m_clear
             || def_like->m_free)
