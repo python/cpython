@@ -2293,7 +2293,7 @@ The C-API provides a basic mutual exclusion lock.
 
 .. c:function:: int PyMutex_IsLocked(PyMutex *m)
 
-   Returns one if the mutex *m* is currently locked, zero otherwise.
+   Returns non-zero if the mutex *m* is currently locked, zero otherwise.
 
    .. note::
 
