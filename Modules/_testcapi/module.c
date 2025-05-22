@@ -45,9 +45,11 @@ module_from_slots_size(PyObject *self, PyObject *spec)
     }
     Py_ssize_t size;
     if (PyModule_GetSize(mod, &size) < 0) {
+        Py_DECREF(mod);
         return NULL;
     }
     if (PyModule_AddIntConstant(mod, "size", size) < 0) {
+        Py_DECREF(mod);
         return NULL;
     }
     return mod;
@@ -97,11 +99,34 @@ module_from_slots_gc(PyObject *self, PyObject *spec)
     inquiry clear;
     freefunc free;
     if (_PyModule_GetGCHooks(mod, &traverse, &clear, &free) < 0) {
+        Py_DECREF(mod);
         return NULL;
     }
     assert(traverse == &trivial_traverse);
     assert(clear == &trivial_clear);
     assert(free == &trivial_free);
+    return mod;
+}
+
+static char test_token;
+
+static PyObject *
+module_from_slots_token(PyObject *self, PyObject *spec)
+{
+    PyModuleDef_Slot slots[] = {
+        {Py_mod_token, &test_token},
+        {0},
+    };
+    PyObject *mod = PyModule_FromSlotsAndSpec(slots, spec);
+    if (!mod) {
+        return NULL;
+    }
+    void *got_token;
+    if (PyModule_GetToken(mod, &got_token) < 0) {
+        Py_DECREF(mod);
+        return NULL;
+    }
+    assert(got_token == &test_token);
     return mod;
 }
 
@@ -175,6 +200,7 @@ static PyMethodDef test_methods[] = {
     {"module_from_slots_size", module_from_slots_size, METH_O},
     {"module_from_slots_methods", module_from_slots_methods, METH_O},
     {"module_from_slots_gc", module_from_slots_gc, METH_O},
+    {"module_from_slots_token", module_from_slots_token, METH_O},
     {"module_from_slots_repeat_slot", module_from_slots_repeat_slot, METH_O},
     {"module_from_slots_null_slot", module_from_slots_null_slot, METH_O},
     {"module_from_def_slot", module_from_def_slot, METH_O},

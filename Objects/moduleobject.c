@@ -366,6 +366,7 @@ module_from_def_and_spec(
     int has_execution_slots = 0;
     const char *name;
     int ret;
+    void *token = NULL;
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     nameobj = PyObject_GetAttrString(spec, "name");
@@ -447,23 +448,26 @@ module_from_def_and_spec(
                        name);                                           \
                     goto error;                                         \
                 }                                                       \
-                if (def_like->DEST) {                                   \
+                if (DEST) {                                             \
                     PyErr_Format(                                       \
                        PyExc_SystemError,                               \
                        "module %s: " #SLOT " slot repeated",            \
                        name);                                           \
                     goto error;                                         \
                 }                                                       \
-                def_like->DEST = (TYPE)(cur_slot->value);               \
+                DEST = (TYPE)(cur_slot->value);                         \
                 break;                                                  \
             /////////////////////////////////////////////////////////////
-            COPY_SLOT_TO_DEFLIKE(Py_mod_name, char*, m_name);
-            COPY_SLOT_TO_DEFLIKE(Py_mod_doc, char*, m_doc);
-            COPY_SLOT_TO_DEFLIKE(Py_mod_size, Py_ssize_t, m_size);
-            COPY_SLOT_TO_DEFLIKE(Py_mod_methods, PyMethodDef*, m_methods);
-            COPY_SLOT_TO_DEFLIKE(Py_mod_traverse, traverseproc, m_traverse);
-            COPY_SLOT_TO_DEFLIKE(Py_mod_clear, inquiry, m_clear);
-            COPY_SLOT_TO_DEFLIKE(Py_mod_free, freefunc, m_free);
+            COPY_SLOT_TO_DEFLIKE(Py_mod_name, char*, def_like->m_name);
+            COPY_SLOT_TO_DEFLIKE(Py_mod_doc, char*, def_like->m_doc);
+            COPY_SLOT_TO_DEFLIKE(Py_mod_size, Py_ssize_t, def_like->m_size);
+            COPY_SLOT_TO_DEFLIKE(Py_mod_methods, PyMethodDef*,
+                                 def_like->m_methods);
+            COPY_SLOT_TO_DEFLIKE(Py_mod_traverse, traverseproc,
+                                 def_like->m_traverse);
+            COPY_SLOT_TO_DEFLIKE(Py_mod_clear, inquiry, def_like->m_clear);
+            COPY_SLOT_TO_DEFLIKE(Py_mod_free, freefunc, def_like->m_free);
+            COPY_SLOT_TO_DEFLIKE(Py_mod_token, void*, token);
 #undef COPY_SLOT_TO_DEFLIKE
             default:
                 assert(cur_slot->slot < 0 || cur_slot->slot > _Py_mod_LAST_SLOT);
@@ -533,6 +537,13 @@ module_from_def_and_spec(
 #else
         (void)gil_slot;
 #endif
+        if (original_def) {
+            mod->md_token = original_def;
+            assert (!token);
+        }
+        else {
+            mod->md_token = token;
+        }
     } else {
         if (def_like->m_size > 0 || def_like->m_traverse || def_like->m_clear
             || def_like->m_free)
@@ -547,6 +558,14 @@ module_from_def_and_spec(
             PyErr_Format(
                 PyExc_SystemError,
                 "module %s specifies execution slots, but did not create "
+                    "a ModuleType instance",
+                name);
+            goto error;
+        }
+        if (token) {
+            PyErr_Format(
+                PyExc_SystemError,
+                "module %s specifies a token, but did not create "
                     "a ModuleType instance",
                 name);
             goto error;
@@ -741,6 +760,19 @@ PyModule_GetSize(PyObject *m, Py_ssize_t *size_p)
     }
     PyModuleObject *mod = (PyModuleObject *)m;
     *size_p = mod->md_size;
+    return 0;
+}
+
+int
+PyModule_GetToken(PyObject *m, void **token_p)
+{
+    *token_p = NULL;
+    if (!PyModule_Check(m)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    PyModuleObject *mod = (PyModuleObject *)m;
+    *token_p = mod->md_token;
     return 0;
 }
 

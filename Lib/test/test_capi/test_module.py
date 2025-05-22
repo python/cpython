@@ -11,7 +11,7 @@ class FakeSpec:
 
 DEF_SLOTS = (
     'Py_mod_name', 'Py_mod_doc', 'Py_mod_size', 'Py_mod_methods',
-    'Py_mod_traverse', 'Py_mod_clear', 'Py_mod_free',
+    'Py_mod_traverse', 'Py_mod_clear', 'Py_mod_free', 'Py_mod_token',
 )
 
 
@@ -52,6 +52,12 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
 
     def test_gc(self):
         mod = _testcapi.module_from_slots_gc(FakeSpec())
+        self.assertIsInstance(mod, types.ModuleType)
+        self.assertEqual(mod.__name__, 'testmod')
+        self.assertEqual(mod.__doc__, None)
+
+    def test_token(self):
+        mod = _testcapi.module_from_slots_token(FakeSpec())
         self.assertIsInstance(mod, types.ModuleType)
         self.assertEqual(mod.__name__, 'testmod')
         self.assertEqual(mod.__doc__, None)

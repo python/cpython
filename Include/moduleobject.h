@@ -123,6 +123,7 @@ PyAPI_FUNC(int) PyUnstable_Module_SetGIL(PyObject *module, void *gil);
 PyAPI_FUNC(PyObject *) PyModule_FromSlotsAndSpec(PyModuleDef_Slot *,
                                                  PyObject *spec);
 PyAPI_FUNC(int) PyModule_GetSize(PyObject *mod, Py_ssize_t *size_p);
+PyAPI_FUNC(int) PyModule_GetToken(PyObject *, void **token_p);
 #endif
 
 #ifndef _Py_OPAQUE_PYOBJECT
