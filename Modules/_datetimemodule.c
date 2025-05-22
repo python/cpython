@@ -3262,16 +3262,13 @@ date_fromtimestamp(PyObject *cls, PyObject *obj)
         if (_PyTime_localtime(0, &tm) != 0)
             return NULL;
 
-        int normalize = 1, negate = 0;
-        PyObject *date = new_date_subclass_ex(tm.tm_year + 1900,
-                                              tm.tm_mon + 1,
-                                              tm.tm_mday,
-                                              cls);
+        int negate = 0;
+        PyObject *date = date_fromtimestamp(cls, _PyLong_GetZero());
         if (date == NULL) {
             return NULL;
         }
         PyObject *result = NULL;
-        PyObject *delta = new_delta(0, (int)t, 0, normalize);
+        PyObject *delta = PyObject_CallFunction((PyObject*)&DELTA_TYPE(NO_STATE), "iO", 0, obj);
         if (delta == NULL) {
             Py_DECREF(date);
             return NULL;
@@ -5565,13 +5562,13 @@ datetime_from_timestamp(PyObject *cls, TM_FUNC f, PyObject *timestamp,
 
 #ifdef MS_WINDOWS
     if (timet < 0) {
-        int normalize = 1, factor = 1;
+        int factor = 1;
         PyObject *dt = datetime_from_timet_and_us(cls, f, 0, 0, tzinfo);
         if (dt == NULL) {
             return NULL;
         }
         PyObject *result = NULL;
-        PyObject *delta = new_delta(0, (int)timet, us, normalize);
+        PyObject *delta = PyObject_CallFunction((PyObject*)&DELTA_TYPE(NO_STATE), "iO", 0, timestamp);
         if (delta == NULL) {
             Py_DECREF(dt);
             return NULL;
