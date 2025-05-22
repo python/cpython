@@ -1099,9 +1099,10 @@ Miscellaneous
    If the ``freeze_support()`` line is omitted then trying to run the frozen
    executable will raise :exc:`RuntimeError`.
 
-   Calling ``freeze_support()`` has no effect when the start method is not *spawn*. In addition, if the module is being run
-   normally by the Python interpreter (the program has not been
-   frozen), then ``freeze_support()`` has no effect.
+   Calling ``freeze_support()`` has no effect when the start method is not
+   *spawn*. In addition, if the module is being run normally by the Python
+   interpreter (the program has not been frozen), then ``freeze_support()``
+   has no effect.
 
 .. function:: get_all_start_methods()
 
