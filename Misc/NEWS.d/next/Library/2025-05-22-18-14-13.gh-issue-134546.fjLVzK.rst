@@ -1,0 +1,1 @@
+Fix ``PermissionError`` when reading remote exec script from ``-m pdb -p``.
