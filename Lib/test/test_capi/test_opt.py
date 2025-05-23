@@ -1707,10 +1707,10 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertEqual(uops.count("_GUARD_NOS_LIST"), 0)
-        self.assertEqual(uops.count("_STORE_SUBSCR_LIST_INT__NO_DECREF_INPUTS"), 1)
+        self.assertEqual(uops.count("_STORE_SUBSCR_LIST_INT"), 1)
         self.assertEqual(uops.count("_GUARD_TOS_LIST"), 0)
         self.assertEqual(uops.count("_UNPACK_SEQUENCE_LIST"), 1)
-        self.assertEqual(uops.count("_BINARY_OP_SUBSCR_LIST_INT__NO_DECREF_INPUTS"), 1)
+        self.assertEqual(uops.count("_BINARY_OP_SUBSCR_LIST_INT"), 1)
         self.assertEqual(uops.count("_TO_BOOL_LIST"), 1)
 
     def test_remove_guard_for_known_type_set(self):

@@ -617,22 +617,6 @@
         }
 
         case _BINARY_OP_SUBSCR_LIST_INT: {
-            JitOptSymbol *sub_st;
-            JitOptSymbol *list_st;
-            JitOptSymbol *res;
-            sub_st = stack_pointer[-1];
-            list_st = stack_pointer[-2];
-            if (sym_is_skip_refcount(ctx, list_st) && sym_is_skip_refcount(ctx, sub_st)) {
-                REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
-            }
-            res = sym_new_not_null(ctx);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _BINARY_OP_SUBSCR_LIST_INT__NO_DECREF_INPUTS: {
             JitOptSymbol *res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
@@ -775,19 +759,6 @@
         }
 
         case _STORE_SUBSCR_LIST_INT: {
-            JitOptSymbol *sub_st;
-            JitOptSymbol *list_st;
-            sub_st = stack_pointer[-1];
-            list_st = stack_pointer[-2];
-            if (sym_is_skip_refcount(ctx, list_st) && sym_is_skip_refcount(ctx, sub_st)) {
-                REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
-            }
-            stack_pointer += -3;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _STORE_SUBSCR_LIST_INT__NO_DECREF_INPUTS: {
             stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
             break;

@@ -907,32 +907,6 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        op(_BINARY_OP_SUBSCR_LIST_INT__NO_DECREF_INPUTS, (list_st, sub_st -- res)) {
-            PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
-            PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
-
-            assert(PyLong_CheckExact(sub));
-            assert(PyList_CheckExact(list));
-
-            // Deopt unless 0 <= sub < PyList_Size(list)
-            DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub));
-            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
-#ifdef Py_GIL_DISABLED
-            PyObject *res_o = _PyList_GetItemRef((PyListObject*)list, index);
-                DEOPT_IF(res_o == NULL);
-                STAT_INC(BINARY_OP, hit);
-                res = PyStackRef_FromPyObjectSteal(res_o);
-#else
-            DEOPT_IF(index >= PyList_GET_SIZE(list));
-            STAT_INC(BINARY_OP, hit);
-            PyObject *res_o = PyList_GET_ITEM(list, index);
-            assert(res_o != NULL);
-            res = PyStackRef_FromPyObjectNew(res_o);
-#endif
-            STAT_INC(BINARY_OP, hit);
-            INPUTS_DEAD();
-        }
-
         macro(BINARY_OP_SUBSCR_LIST_SLICE) =
             _GUARD_TOS_SLICE + _GUARD_NOS_LIST + unused/5 + _BINARY_OP_SUBSCR_LIST_SLICE;
 
@@ -1132,34 +1106,6 @@ dummy_func(
             PyStackRef_CLOSE_SPECIALIZED(sub_st, _PyLong_ExactDealloc);
             DEAD(sub_st);
             PyStackRef_CLOSE(list_st);
-            Py_DECREF(old_value);
-        }
-
-        op(_STORE_SUBSCR_LIST_INT__NO_DECREF_INPUTS, (value, list_st, sub_st -- )) {
-            PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
-            PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
-
-            assert(PyLong_CheckExact(sub));
-            assert(PyList_CheckExact(list));
-
-            // Ensure nonnegative, zero-or-one-digit ints.
-            DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub));
-            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
-            DEOPT_IF(!LOCK_OBJECT(list));
-            // Ensure index < len(list)
-            if (index >= PyList_GET_SIZE(list)) {
-                UNLOCK_OBJECT(list);
-                DEOPT_IF(true);
-            }
-            STAT_INC(STORE_SUBSCR, hit);
-
-            PyObject *old_value = PyList_GET_ITEM(list, index);
-            FT_ATOMIC_STORE_PTR_RELEASE(_PyList_ITEMS(list)[index],
-                                        PyStackRef_AsPyObjectSteal(value));
-            assert(old_value != NULL);
-            UNLOCK_OBJECT(list);  // unlock before decrefs!
-            DEAD(sub_st);
-            DEAD(list_st);
             Py_DECREF(old_value);
         }
 

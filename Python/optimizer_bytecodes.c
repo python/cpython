@@ -104,15 +104,6 @@ dummy_func(void) {
         GETLOCAL(oparg) = value;
     }
 
-    op(_STORE_SUBSCR_LIST_INT, (value, list_st, sub_st -- )) {
-        // Can't move this to the optimizer generator for now, as it requires list_st and sub_st
-        // to be borrowed, but not value.
-        // Alternatively, we could just stricten it and require all to be borrowed.
-        if (sym_is_skip_refcount(ctx, list_st) && sym_is_skip_refcount(ctx, sub_st)) {
-            REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
-        }
-    }
-
     op(_PUSH_NULL, (-- res)) {
         res = sym_new_null(ctx);
     }
@@ -401,14 +392,6 @@ dummy_func(void) {
     op(_BINARY_OP_SUBSCR_INIT_CALL, (container, sub, getitem  -- new_frame: _Py_UOpsAbstractFrame *)) {
         new_frame = NULL;
         ctx->done = true;
-    }
-
-    op(_BINARY_OP_SUBSCR_LIST_INT, (list_st, sub_st -- res)) {
-        // TODO (gh-134584): Move this to the optimizer generator.
-        if (sym_is_skip_refcount(ctx, list_st) && sym_is_skip_refcount(ctx, sub_st)) {
-            REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
-        }
-        res = sym_new_not_null(ctx);
     }
 
     op(_BINARY_OP_SUBSCR_STR_INT, (str_st, sub_st -- res)) {
