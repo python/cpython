@@ -839,16 +839,9 @@ class TestInterpreterExec(TestBase):
             interp.exec(10)
 
     def test_bytes_for_script(self):
-        r, w = self.pipe()
-        RAN = b'R'
-        DONE = b'D'
         interp = interpreters.create()
-        interp.exec(f"""if True:
-            import os
-            os.write({w}, {RAN!r})
-            """)
-        os.write(w, DONE)
-        self.assertEqual(os.read(r, 1), RAN)
+        with self.assertRaises(TypeError):
+            interp.exec(b'print("spam")')
 
     def test_with_background_threads_still_running(self):
         r_interp, w_interp = self.pipe()
@@ -1017,6 +1010,8 @@ class TestInterpreterCall(TestBase):
 
         for i, (callable, args, kwargs) in enumerate([
             (call_func_noop, (), {}),
+            (call_func_return_shareable, (), {}),
+            (call_func_return_not_shareable, (), {}),
             (Spam.noop, (), {}),
         ]):
             with self.subTest(f'success case #{i+1}'):
@@ -1041,8 +1036,6 @@ class TestInterpreterCall(TestBase):
             (call_func_complex, ('custom', 'spam!'), {}),
             (call_func_complex, ('custom-inner', 'eggs!'), {}),
             (call_func_complex, ('???',), {'exc': ValueError('spam')}),
-            (call_func_return_shareable, (), {}),
-            (call_func_return_not_shareable, (), {}),
         ]):
             with self.subTest(f'invalid case #{i+1}'):
                 with self.assertRaises(Exception):
@@ -1058,6 +1051,8 @@ class TestInterpreterCall(TestBase):
 
         for i, (callable, args, kwargs) in enumerate([
             (call_func_noop, (), {}),
+            (call_func_return_shareable, (), {}),
+            (call_func_return_not_shareable, (), {}),
             (Spam.noop, (), {}),
         ]):
             with self.subTest(f'success case #{i+1}'):
@@ -1084,8 +1079,6 @@ class TestInterpreterCall(TestBase):
             (call_func_complex, ('custom', 'spam!'), {}),
             (call_func_complex, ('custom-inner', 'eggs!'), {}),
             (call_func_complex, ('???',), {'exc': ValueError('spam')}),
-            (call_func_return_shareable, (), {}),
-            (call_func_return_not_shareable, (), {}),
         ]):
             with self.subTest(f'invalid case #{i+1}'):
                 if args or kwargs:
@@ -1625,8 +1618,8 @@ class LowLevelTests(TestBase):
     def test_call(self):
         with self.subTest('no args'):
             interpid = _interpreters.create()
-            with self.assertRaises(ValueError):
-                _interpreters.call(interpid, call_func_return_shareable)
+            exc = _interpreters.call(interpid, call_func_return_shareable)
+            self.assertIs(exc, None)
 
         with self.subTest('uncaught exception'):
             interpid = _interpreters.create()
