@@ -651,6 +651,39 @@ class TestModuleCleanUp(unittest.TestCase):
         self.assertEqual(str(e.exception), 'CleanUpExc')
         self.assertEqual(unittest.case._module_cleanups, [])
 
+    def test_doModuleCleanup_with_multiple_errors_in_addModuleCleanup(self):
+        def module_cleanup_bad1():
+            raise TypeError('CleanUpExc1')
+
+        def module_cleanup_bad2():
+            raise ValueError('CleanUpExc2')
+
+        class Module(object):
+            unittest.addModuleCleanup(module_cleanup_bad1)
+            unittest.addModuleCleanup(module_cleanup_bad2)
+        with self.assertRaises(ExceptionGroup) as e:
+            unittest.case.doModuleCleanups()
+        e = e.exception
+        self.assertEqual(str(e), 'module cleanup failed (2 sub-exceptions)')
+        self.assertEqual(str(e.exceptions[0]), 'CleanUpExc2')
+        self.assertEqual(str(e.exceptions[1]), 'CleanUpExc1')
+
+    def test_doModuleCleanup_with_exception_group_in_addModuleCleanup(self):
+        def module_cleanup_bad():
+            raise ExceptionGroup('CleanUpExc', [TypeError('CleanUpExc1'),
+                                                ValueError('CleanUpExc2')])
+
+        class Module(object):
+            unittest.addModuleCleanup(module_cleanup_bad)
+        with self.assertRaises(ExceptionGroup) as e:
+            unittest.case.doModuleCleanups()
+        e = e.exception
+        self.assertEqual(str(e), 'module cleanup failed (1 sub-exception)')
+        e = e.exceptions[0]
+        self.assertEqual(str(e), 'CleanUpExc (2 sub-exceptions)')
+        self.assertEqual(str(e.exceptions[0]), 'CleanUpExc1')
+        self.assertEqual(str(e.exceptions[1]), 'CleanUpExc2')
+
     def test_addModuleCleanup_arg_errors(self):
         cleanups = []
         def cleanup(*args, **kwargs):
