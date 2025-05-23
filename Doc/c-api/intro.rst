@@ -864,9 +864,6 @@ of Python can be supported by updating the tool, and your code will often use
 newer and more efficient APIs automatically. Some tools also support compiling
 for other implementations of Python from a single set of sources.
 
-Directly coding against the CPython C API should, in most cases, be your last
-resort rather than the first.
-
 These projects are not supported by the same people who maintain Python, and
 issues need to be raised with the projects directly. Remember to check that the
 project is still maintained and supported, as the list above may become
