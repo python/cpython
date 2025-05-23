@@ -147,6 +147,8 @@ Python can manipulate text (represented by type :class:`str`, so-called
 "``Yay! :)``". They can be enclosed in single quotes (``'...'``) or double
 quotes (``"..."``) with the same result [#]_.
 
+.. code-block:: pycon
+
    >>> 'spam eggs'  # single quotes
    'spam eggs'
    >>> "Paris rabbit got your back :)! Yay!"  # double quotes
@@ -195,7 +197,7 @@ an odd number of ``\`` characters; see
 and workarounds.
 
 String literals can span multiple lines.  One way is using triple-quotes:
-``"""..."""`` or ``'''...'''``.  End of lines are automatically
+``"""..."""`` or ``'''...'''``.  End-of-line characters are automatically
 included in the string, but it's possible to prevent this by adding a ``\`` at
 the end of the line.  In the following example, the initial newline is not
 included::

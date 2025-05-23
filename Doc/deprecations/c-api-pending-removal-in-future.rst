@@ -18,14 +18,6 @@ although there is currently no date scheduled for their removal.
   Use :c:func:`PyOS_AfterFork_Child` instead.
 * :c:func:`PySlice_GetIndicesEx`:
   Use :c:func:`PySlice_Unpack` and :c:func:`PySlice_AdjustIndices` instead.
-* :c:func:`!PyUnicode_AsDecodedObject`:
-  Use :c:func:`PyCodec_Decode` instead.
-* :c:func:`!PyUnicode_AsDecodedUnicode`:
-  Use :c:func:`PyCodec_Decode` instead.
-* :c:func:`!PyUnicode_AsEncodedObject`:
-  Use :c:func:`PyCodec_Encode` instead.
-* :c:func:`!PyUnicode_AsEncodedUnicode`:
-  Use :c:func:`PyCodec_Encode` instead.
 * :c:func:`PyUnicode_READY`:
   Unneeded since Python 3.12
 * :c:func:`!PyErr_Display`:
@@ -34,7 +26,6 @@ although there is currently no date scheduled for their removal.
   Use :c:func:`!_PyErr_ChainExceptions1` instead.
 * :c:member:`!PyBytesObject.ob_shash` member:
   call :c:func:`PyObject_Hash` instead.
-* :c:member:`!PyDictObject.ma_version_tag` member.
 * Thread Local Storage (TLS) API:
 
   * :c:func:`PyThread_create_key`:

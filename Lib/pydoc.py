@@ -53,6 +53,7 @@ Richard Chamberlain, for the first implementation of textdoc.
 #     the current directory is changed with os.chdir(), an incorrect
 #     path will be displayed.
 
+import ast
 import __future__
 import builtins
 import importlib._bootstrap
@@ -67,6 +68,7 @@ import platform
 import re
 import sys
 import sysconfig
+import textwrap
 import time
 import tokenize
 import urllib.parse
@@ -244,7 +246,7 @@ def parentname(object, modname):
     if necessary) or module."""
     if '.' in object.__qualname__:
         name = object.__qualname__.rpartition('.')[0]
-        if object.__module__ != modname:
+        if object.__module__ != modname and object.__module__ is not None:
             return object.__module__ + '.' + name
         else:
             return name
@@ -329,7 +331,8 @@ def visiblename(name, all=None, obj=None):
                 '__date__', '__doc__', '__file__', '__spec__',
                 '__loader__', '__module__', '__name__', '__package__',
                 '__path__', '__qualname__', '__slots__', '__version__',
-                '__static_attributes__', '__firstlineno__'}:
+                '__static_attributes__', '__firstlineno__',
+                '__annotate_func__', '__annotations_cache__'}:
         return 0
     # Private names are hidden, but special names are displayed.
     if name.startswith('__') and name.endswith('__'): return 1
@@ -384,21 +387,29 @@ def ispackage(path):
     return False
 
 def source_synopsis(file):
-    line = file.readline()
-    while line[:1] == '#' or not line.strip():
-        line = file.readline()
-        if not line: break
-    line = line.strip()
-    if line[:4] == 'r"""': line = line[1:]
-    if line[:3] == '"""':
-        line = line[3:]
-        if line[-1:] == '\\': line = line[:-1]
-        while not line.strip():
-            line = file.readline()
-            if not line: break
-        result = line.split('"""')[0].strip()
-    else: result = None
-    return result
+    """Return the one-line summary of a file object, if present"""
+
+    string = ''
+    try:
+        tokens = tokenize.generate_tokens(file.readline)
+        for tok_type, tok_string, _, _, _ in tokens:
+            if tok_type == tokenize.STRING:
+                string += tok_string
+            elif tok_type == tokenize.NEWLINE:
+                with warnings.catch_warnings():
+                    # Ignore the "invalid escape sequence" warning.
+                    warnings.simplefilter("ignore", SyntaxWarning)
+                    docstring = ast.literal_eval(string)
+                if not isinstance(docstring, str):
+                    return None
+                return docstring.strip().split('\n')[0].strip()
+            elif tok_type == tokenize.OP and tok_string in ('(', ')'):
+                string += tok_string
+            elif tok_type not in (tokenize.COMMENT, tokenize.NL, tokenize.ENCODING):
+                return None
+    except (tokenize.TokenError, UnicodeDecodeError, SyntaxError):
+        return None
+    return None
 
 def synopsis(filename, cache={}):
     """Get the one-line summary out of a module file."""
@@ -1426,7 +1437,8 @@ location listed above.
         # List the built-in subclasses, if any:
         subclasses = sorted(
             (str(cls.__name__) for cls in type.__subclasses__(object)
-             if not cls.__name__.startswith("_") and cls.__module__ == "builtins"),
+             if (not cls.__name__.startswith("_") and
+                 getattr(cls, '__module__', '') == "builtins")),
             key=str.lower
         )
         no_of_subclasses = len(subclasses)
@@ -1798,6 +1810,37 @@ def writedocs(dir, pkgpath='', done=None):
         writedoc(modname)
     return
 
+
+def _introdoc():
+    import textwrap
+    ver = '%d.%d' % sys.version_info[:2]
+    if os.environ.get('PYTHON_BASIC_REPL'):
+        pyrepl_keys = ''
+    else:
+        # Additional help for keyboard shortcuts if enhanced REPL is used.
+        pyrepl_keys = '''
+        You can use the following keyboard shortcuts at the main interpreter prompt.
+        F1: enter interactive help, F2: enter history browsing mode, F3: enter paste
+        mode (press again to exit).
+        '''
+    return textwrap.dedent(f'''\
+        Welcome to Python {ver}'s help utility! If this is your first time using
+        Python, you should definitely check out the tutorial at
+        https://docs.python.org/{ver}/tutorial/.
+
+        Enter the name of any module, keyword, or topic to get help on writing
+        Python programs and using Python modules.  To get a list of available
+        modules, keywords, symbols, or topics, enter "modules", "keywords",
+        "symbols", or "topics".
+        {pyrepl_keys}
+        Each module also comes with a one-line summary of what it does; to list
+        the modules whose name or summary contain a given string such as "spam",
+        enter "modules spam".
+
+        To quit this help utility and return to the interpreter,
+        enter "q", "quit" or "exit".
+    ''')
+
 class Helper:
 
     # These dictionaries map a topic name to either an alias, or a tuple
@@ -2064,26 +2107,10 @@ has the same effect as typing a particular string at the help> prompt.
         self.output.write('\n')
 
     def intro(self):
-        self.output.write('''\
-Welcome to Python {0}'s help utility! If this is your first time using
-Python, you should definitely check out the tutorial at
-https://docs.python.org/{0}/tutorial/.
-
-Enter the name of any module, keyword, or topic to get help on writing
-Python programs and using Python modules.  To get a list of available
-modules, keywords, symbols, or topics, enter "modules", "keywords",
-"symbols", or "topics".
-
-Each module also comes with a one-line summary of what it does; to list
-the modules whose name or summary contain a given string such as "spam",
-enter "modules spam".
-
-To quit this help utility and return to the interpreter,
-enter "q", "quit" or "exit".
-'''.format('%d.%d' % sys.version_info[:2]))
+        self.output.write(_introdoc())
 
     def list(self, items, columns=4, width=80):
-        items = list(sorted(items))
+        items = sorted(items)
         colw = width // columns
         rows = (len(items) + columns - 1) // columns
         for row in range(rows):
@@ -2115,7 +2142,7 @@ to. Enter any symbol to get more help.
 Here is a list of available topics.  Enter any topic name to get more help.
 
 ''')
-        self.list(self.topics.keys())
+        self.list(self.topics.keys(), columns=3)
 
     def showtopic(self, topic, more_xrefs=''):
         try:

@@ -38,13 +38,13 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
-
+#include "pycore_unicodeobject.h" // for Argument Clinic
 
 
 #ifndef WINDOWS_LEAN_AND_MEAN
-#define WINDOWS_LEAN_AND_MEAN
+#  define WINDOWS_LEAN_AND_MEAN
 #endif
-#include "windows.h"
+#include <windows.h>
 #include <winioctl.h>
 #include <crtdbg.h>
 #include "winreparse.h"
@@ -144,14 +144,17 @@ typedef struct {
     Py_buffer write_buffer;
 } OverlappedObject;
 
+#define OverlappedObject_CAST(op)   ((OverlappedObject *)(op))
+
 /*
 Note: tp_clear (overlapped_clear) is not implemented because it
 requires cancelling the IO operation if it's pending and the cancellation is
 quite complex and can fail (see: overlapped_dealloc).
 */
 static int
-overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
+overlapped_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    OverlappedObject *self = OverlappedObject_CAST(op);
     Py_VISIT(self->read_buffer);
     Py_VISIT(self->write_buffer.obj);
     Py_VISIT(Py_TYPE(self));
@@ -159,10 +162,11 @@ overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
 }
 
 static void
-overlapped_dealloc(OverlappedObject *self)
+overlapped_dealloc(PyObject *op)
 {
     DWORD bytes;
     int err = GetLastError();
+    OverlappedObject *self = OverlappedObject_CAST(op);
 
     PyObject_GC_UnTrack(self);
     if (self->pending) {
@@ -171,17 +175,16 @@ overlapped_dealloc(OverlappedObject *self)
         {
             /* The operation is no longer pending -- nothing to do. */
         }
-        else if (_Py_IsInterpreterFinalizing(_PyInterpreterState_GET()))
-        {
+        else if (_Py_IsInterpreterFinalizing(_PyInterpreterState_GET())) {
             /* The operation is still pending -- give a warning.  This
                will probably only happen on Windows XP. */
             PyErr_SetString(PyExc_PythonFinalizationError,
                             "I/O operations still in flight while destroying "
                             "Overlapped object, the process may crash");
-            PyErr_WriteUnraisable(NULL);
+            PyErr_FormatUnraisable("Exception ignored while deallocating "
+                                   "overlapped operation %R", self);
         }
-        else
-        {
+        else {
             /* The operation is still pending, but the process is
                probably about to exit, so we need not worry too much
                about memory leaks.  Leaking self prevents a potential
@@ -606,7 +609,7 @@ _winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
         /* overallocate by a few array elements */
         LUID_AND_ATTRIBUTES privs[4];
     } tp, previousTp;
-    int previousTpSize = 0;
+    DWORD previousTpSize = 0;
 
     /* Reparse data buffer */
     const USHORT prefix_len = 4;
@@ -1048,7 +1051,7 @@ getenvironment(PyObject* environment)
     }
 
     normalized_environment = normalize_environment(environment);
-    if (normalize_environment == NULL) {
+    if (normalized_environment == NULL) {
         return NULL;
     }
 
@@ -1570,6 +1573,7 @@ static PyObject *
 _winapi_GetLongPathName_impl(PyObject *module, LPCWSTR path)
 /*[clinic end generated code: output=c4774b080275a2d0 input=9872e211e3a4a88f]*/
 {
+#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
     DWORD cchBuffer;
     PyObject *result = NULL;
 
@@ -1593,6 +1597,9 @@ _winapi_GetLongPathName_impl(PyObject *module, LPCWSTR path)
         PyErr_SetFromWindowsErr(0);
     }
     return result;
+#else
+    return PyUnicode_FromWideChar(path, -1);
+#endif
 }
 
 /*[clinic input]
@@ -1626,8 +1633,10 @@ _winapi_GetModuleFileName_impl(PyObject *module, HMODULE module_handle)
     if (! result)
         return PyErr_SetFromWindowsErr(GetLastError());
 
-    return PyUnicode_FromWideChar(filename, wcslen(filename));
+    return PyUnicode_FromWideChar(filename, -1);
 }
+
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
 /*[clinic input]
 _winapi.GetShortPathName
@@ -1670,6 +1679,8 @@ _winapi_GetShortPathName_impl(PyObject *module, LPCWSTR path)
     }
     return result;
 }
+
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
 
 /*[clinic input]
 _winapi.GetStdHandle -> HANDLE
@@ -2880,6 +2891,7 @@ _winapi_NeedCurrentDirectoryForExePath_impl(PyObject *module,
                                             LPCWSTR exe_name)
 /*[clinic end generated code: output=a65ec879502b58fc input=972aac88a1ec2f00]*/
 {
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
     BOOL result;
 
     Py_BEGIN_ALLOW_THREADS
@@ -2887,6 +2899,9 @@ _winapi_NeedCurrentDirectoryForExePath_impl(PyObject *module,
     Py_END_ALLOW_THREADS
 
     return result;
+#else
+    return TRUE;
+#endif
 }
 
 
@@ -3216,7 +3231,7 @@ winapi_clear(PyObject *module)
 static void
 winapi_free(void *module)
 {
-    winapi_clear((PyObject *)module);
+    (void)winapi_clear((PyObject *)module);
 }
 
 static struct PyModuleDef winapi_module = {

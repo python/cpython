@@ -1,6 +1,7 @@
 """ Tests for the internal type cache in CPython. """
-import unittest
 import dis
+import unittest
+import warnings
 from test import support
 from test.support import import_helper, requires_specialization, requires_specialization_ft
 try:
@@ -16,6 +17,10 @@ type_assign_specific_version_unsafe = _testinternalcapi.type_assign_specific_ver
 type_assign_version = _testcapi.type_assign_version
 type_modified = _testcapi.type_modified
 
+def clear_type_cache():
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        _clear_type_cache()
 
 @support.cpython_only
 @unittest.skipIf(_clear_type_cache is None, "requires sys._clear_type_cache")
@@ -38,7 +43,7 @@ class TypeCacheTests(unittest.TestCase):
         append_result = all_version_tags.append
         assertNotEqual = self.assertNotEqual
         for _ in range(30):
-            _clear_type_cache()
+            clear_type_cache()
             X = type('Y', (), {})
             X.x = 1
             X.x
@@ -78,7 +83,7 @@ class TypeCacheTests(unittest.TestCase):
         new_version = type_get_version(C)
         self.assertEqual(new_version, orig_version + 5)
 
-        _clear_type_cache()
+        clear_type_cache()
 
     def test_per_class_limit(self):
         class C:
@@ -112,7 +117,7 @@ class TypeCacheTests(unittest.TestCase):
 @support.cpython_only
 class TypeCacheWithSpecializationTests(unittest.TestCase):
     def tearDown(self):
-        _clear_type_cache()
+        clear_type_cache()
 
     def _assign_valid_version_or_skip(self, type_):
         type_modified(type_)
@@ -131,7 +136,7 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
         return set(instr.opname for instr in dis.Bytecode(func, adaptive=True))
 
     def _check_specialization(self, func, arg, opname, *, should_specialize):
-        for _ in range(100):
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             func(arg)
 
         if should_specialize:

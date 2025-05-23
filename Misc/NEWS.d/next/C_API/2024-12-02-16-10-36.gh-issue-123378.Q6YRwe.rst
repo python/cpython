@@ -1,6 +1,0 @@
-Ensure that the value of :attr:`UnicodeEncodeError.end <UnicodeError.end>`
-retrieved by :c:func:`PyUnicodeEncodeError_GetEnd` lies in ``[min(1, objlen),
-max(min(1, objlen), objlen)]`` where *objlen* is the length of
-:attr:`UnicodeEncodeError.object <UnicodeError.object>`. Similar arguments
-apply to :exc:`UnicodeDecodeError` and :exc:`UnicodeTranslateError` and their
-corresponding C interface. Patch by Bénédikt Tran.

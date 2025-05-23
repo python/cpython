@@ -1,3 +1,4 @@
+import sys
 import collections.abc
 import concurrent.futures
 import contextvars
@@ -91,6 +92,15 @@ class ContextTest(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'any arguments'):
             contextvars.Context(a=1)
         contextvars.Context(**{})
+
+    def test_context_new_unhashable_str_subclass(self):
+        # gh-132002: it used to crash on unhashable str subtypes.
+        class weird_str(str):
+            def __eq__(self, other):
+                pass
+
+        with self.assertRaisesRegex(TypeError, 'unhashable type'):
+            contextvars.ContextVar(weird_str())
 
     def test_context_typerrors_1(self):
         ctx = contextvars.Context()
@@ -382,6 +392,169 @@ class ContextTest(unittest.TestCase):
         finally:
             tp.shutdown()
         self.assertEqual(results, list(range(10)))
+
+    @isolated_context
+    @threading_helper.requires_working_threading()
+    def test_context_thread_inherit(self):
+        import threading
+
+        cvar = contextvars.ContextVar('cvar')
+
+        def run_context_none():
+            if sys.flags.thread_inherit_context:
+                expected = 1
+            else:
+                expected = None
+            self.assertEqual(cvar.get(None), expected)
+
+        # By default, context is inherited based on the
+        # sys.flags.thread_inherit_context option.
+        cvar.set(1)
+        thread = threading.Thread(target=run_context_none)
+        thread.start()
+        thread.join()
+
+        # Passing 'None' explicitly should have same behaviour as not
+        # passing parameter.
+        thread = threading.Thread(target=run_context_none, context=None)
+        thread.start()
+        thread.join()
+
+        # An explicit Context value can also be passed
+        custom_ctx = contextvars.Context()
+        custom_var = None
+
+        def setup_context():
+            nonlocal custom_var
+            custom_var = contextvars.ContextVar('custom')
+            custom_var.set(2)
+
+        custom_ctx.run(setup_context)
+
+        def run_custom():
+            self.assertEqual(custom_var.get(), 2)
+
+        thread = threading.Thread(target=run_custom, context=custom_ctx)
+        thread.start()
+        thread.join()
+
+        # You can also pass a new Context() object to start with an empty context
+        def run_empty():
+            with self.assertRaises(LookupError):
+                cvar.get()
+
+        thread = threading.Thread(target=run_empty, context=contextvars.Context())
+        thread.start()
+        thread.join()
+
+    def test_token_contextmanager_with_default(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            with c.set(36):
+                self.assertEqual(c.get(), 36)
+
+            self.assertEqual(c.get(), 42)
+
+        ctx.run(fun)
+
+    def test_token_contextmanager_without_default(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c')
+
+        def fun():
+            with c.set(36):
+                self.assertEqual(c.get(), 36)
+
+            with self.assertRaisesRegex(LookupError, "<ContextVar name='c'"):
+                c.get()
+
+        ctx.run(fun)
+
+    def test_token_contextmanager_on_exception(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            with c.set(36):
+                self.assertEqual(c.get(), 36)
+                raise ValueError("custom exception")
+
+            self.assertEqual(c.get(), 42)
+
+        with self.assertRaisesRegex(ValueError, "custom exception"):
+            ctx.run(fun)
+
+    def test_token_contextmanager_reentrant(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            token = c.set(36)
+            with self.assertRaisesRegex(
+                    RuntimeError,
+                    "<Token .+ has already been used once"
+            ):
+                with token:
+                    with token:
+                        self.assertEqual(c.get(), 36)
+
+            self.assertEqual(c.get(), 42)
+
+        ctx.run(fun)
+
+    def test_token_contextmanager_multiple_c_set(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            with c.set(36):
+                self.assertEqual(c.get(), 36)
+                c.set(24)
+                self.assertEqual(c.get(), 24)
+                c.set(12)
+                self.assertEqual(c.get(), 12)
+
+            self.assertEqual(c.get(), 42)
+
+        ctx.run(fun)
+
+    def test_token_contextmanager_with_explicit_reset_the_same_token(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            with self.assertRaisesRegex(
+                    RuntimeError,
+                    "<Token .+ has already been used once"
+            ):
+                with c.set(36) as token:
+                    self.assertEqual(c.get(), 36)
+                    c.reset(token)
+
+                    self.assertEqual(c.get(), 42)
+
+            self.assertEqual(c.get(), 42)
+
+        ctx.run(fun)
+
+    def test_token_contextmanager_with_explicit_reset_another_token(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            with c.set(36):
+                self.assertEqual(c.get(), 36)
+
+                token = c.set(24)
+                self.assertEqual(c.get(), 24)
+                c.reset(token)
+                self.assertEqual(c.get(), 36)
+
+            self.assertEqual(c.get(), 42)
+
+        ctx.run(fun)
 
 
 # HAMT Tests

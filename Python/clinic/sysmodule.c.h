@@ -31,9 +31,11 @@ sys_addaudithook(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(hook), },
     };
     #undef NUM_KEYWORDS
@@ -373,6 +375,36 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys__is_immortal__doc__,
+"_is_immortal($module, op, /)\n"
+"--\n"
+"\n"
+"Return True if the given object is \"immortal\" per PEP 683.\n"
+"\n"
+"This function should be used for specialized purposes only.");
+
+#define SYS__IS_IMMORTAL_METHODDEF    \
+    {"_is_immortal", (PyCFunction)sys__is_immortal, METH_O, sys__is_immortal__doc__},
+
+static int
+sys__is_immortal_impl(PyObject *module, PyObject *op);
+
+static PyObject *
+sys__is_immortal(PyObject *module, PyObject *op)
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = sys__is_immortal_impl(module, op);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys_settrace__doc__,
 "settrace($module, function, /)\n"
 "--\n"
@@ -589,9 +621,11 @@ sys_set_coroutine_origin_tracking_depth(PyObject *module, PyObject *const *args,
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(depth), },
     };
     #undef NUM_KEYWORDS
@@ -891,9 +925,11 @@ sys_set_int_max_str_digits(PyObject *module, PyObject *const *args, Py_ssize_t n
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(maxdigits), },
     };
     #undef NUM_KEYWORDS
@@ -1041,9 +1077,11 @@ sys_getunicodeinternedsize(PyObject *module, PyObject *const *args, Py_ssize_t n
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(_only_immortal), },
     };
     #undef NUM_KEYWORDS
@@ -1481,6 +1519,162 @@ sys_is_stack_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_is_stack_trampoline_active_impl(module);
 }
 
+PyDoc_STRVAR(sys_is_remote_debug_enabled__doc__,
+"is_remote_debug_enabled($module, /)\n"
+"--\n"
+"\n"
+"Return True if remote debugging is enabled, False otherwise.");
+
+#define SYS_IS_REMOTE_DEBUG_ENABLED_METHODDEF    \
+    {"is_remote_debug_enabled", (PyCFunction)sys_is_remote_debug_enabled, METH_NOARGS, sys_is_remote_debug_enabled__doc__},
+
+static PyObject *
+sys_is_remote_debug_enabled_impl(PyObject *module);
+
+static PyObject *
+sys_is_remote_debug_enabled(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys_is_remote_debug_enabled_impl(module);
+}
+
+PyDoc_STRVAR(sys_remote_exec__doc__,
+"remote_exec($module, /, pid, script)\n"
+"--\n"
+"\n"
+"Executes a file containing Python code in a given remote Python process.\n"
+"\n"
+"This function returns immediately, and the code will be executed by the\n"
+"target process\'s main thread at the next available opportunity, similarly\n"
+"to how signals are handled. There is no interface to determine when the\n"
+"code has been executed. The caller is responsible for making sure that\n"
+"the file still exists whenever the remote process tries to read it and that\n"
+"it hasn\'t been overwritten.\n"
+"\n"
+"The remote process must be running a CPython interpreter of the same major\n"
+"and minor version as the local process. If either the local or remote\n"
+"interpreter is pre-release (alpha, beta, or release candidate) then the\n"
+"local and remote interpreters must be the same exact version.\n"
+"\n"
+"Args:\n"
+"     pid (int): The process ID of the target Python process.\n"
+"     script (str|bytes): The path to a file containing\n"
+"         the Python code to be executed.");
+
+#define SYS_REMOTE_EXEC_METHODDEF    \
+    {"remote_exec", _PyCFunction_CAST(sys_remote_exec), METH_FASTCALL|METH_KEYWORDS, sys_remote_exec__doc__},
+
+static PyObject *
+sys_remote_exec_impl(PyObject *module, int pid, PyObject *script);
+
+static PyObject *
+sys_remote_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(pid), &_Py_ID(script), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"pid", "script", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "remote_exec",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    int pid;
+    PyObject *script;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    pid = PyLong_AsInt(args[0]);
+    if (pid == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    script = args[1];
+    return_value = sys_remote_exec_impl(module, pid, script);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(sys__dump_tracelets__doc__,
+"_dump_tracelets($module, /, outpath)\n"
+"--\n"
+"\n"
+"Dump the graph of tracelets in graphviz format");
+
+#define SYS__DUMP_TRACELETS_METHODDEF    \
+    {"_dump_tracelets", _PyCFunction_CAST(sys__dump_tracelets), METH_FASTCALL|METH_KEYWORDS, sys__dump_tracelets__doc__},
+
+static PyObject *
+sys__dump_tracelets_impl(PyObject *module, PyObject *outpath);
+
+static PyObject *
+sys__dump_tracelets(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(outpath), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"outpath", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_dump_tracelets",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *outpath;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    outpath = args[0];
+    return_value = sys__dump_tracelets_impl(module, outpath);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys__getframemodulename__doc__,
 "_getframemodulename($module, /, depth=0)\n"
 "--\n"
@@ -1509,9 +1703,11 @@ sys__getframemodulename(PyObject *module, PyObject *const *args, Py_ssize_t narg
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(depth), },
     };
     #undef NUM_KEYWORDS
@@ -1625,6 +1821,90 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_jit_is_available__doc__,
+"is_available($module, /)\n"
+"--\n"
+"\n"
+"Return True if the current Python executable supports JIT compilation, and False otherwise.");
+
+#define _JIT_IS_AVAILABLE_METHODDEF    \
+    {"is_available", (PyCFunction)_jit_is_available, METH_NOARGS, _jit_is_available__doc__},
+
+static int
+_jit_is_available_impl(PyObject *module);
+
+static PyObject *
+_jit_is_available(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = _jit_is_available_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_jit_is_enabled__doc__,
+"is_enabled($module, /)\n"
+"--\n"
+"\n"
+"Return True if JIT compilation is enabled for the current Python process (implies sys._jit.is_available()), and False otherwise.");
+
+#define _JIT_IS_ENABLED_METHODDEF    \
+    {"is_enabled", (PyCFunction)_jit_is_enabled, METH_NOARGS, _jit_is_enabled__doc__},
+
+static int
+_jit_is_enabled_impl(PyObject *module);
+
+static PyObject *
+_jit_is_enabled(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = _jit_is_enabled_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_jit_is_active__doc__,
+"is_active($module, /)\n"
+"--\n"
+"\n"
+"Return True if the topmost Python frame is currently executing JIT code (implies sys._jit.is_enabled()), and False otherwise.");
+
+#define _JIT_IS_ACTIVE_METHODDEF    \
+    {"is_active", (PyCFunction)_jit_is_active, METH_NOARGS, _jit_is_active__doc__},
+
+static int
+_jit_is_active_impl(PyObject *module);
+
+static PyObject *
+_jit_is_active(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = _jit_is_active_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
     #define SYS_GETWINDOWSVERSION_METHODDEF
 #endif /* !defined(SYS_GETWINDOWSVERSION_METHODDEF) */
@@ -1668,4 +1948,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=6d4f6cd20419b675 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=449d16326e69dcf6 input=a9049054013a1b77]*/

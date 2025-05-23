@@ -888,6 +888,7 @@
     added = '3.2'
 [function.PyImport_ImportModuleNoBlock]
     added = '3.2'
+    abi_only = true
 [function.PyImport_ReloadModule]
     added = '3.2'
 [function.PyInterpreterState_Clear]
@@ -1462,14 +1463,18 @@
     added = '3.2'
 [function.PyUnicode_AsDecodedObject]
     added = '3.2'
+    abi_only = true
 [function.PyUnicode_AsDecodedUnicode]
     added = '3.2'
+    abi_only = true
 [function.PyUnicode_AsEncodedObject]
     added = '3.2'
+    abi_only = true
 [function.PyUnicode_AsEncodedString]
     added = '3.2'
 [function.PyUnicode_AsEncodedUnicode]
     added = '3.2'
+    abi_only = true
 [function.PyUnicode_AsLatin1String]
     added = '3.2'
 [function.PyUnicode_AsRawUnicodeEscapeString]
@@ -1632,18 +1637,24 @@
     added = '3.2'
 [function.Py_GetExecPrefix]
     added = '3.2'
+    abi_only = true
 [function.Py_GetPath]
     added = '3.2'
+    abi_only = true
 [function.Py_GetPlatform]
     added = '3.2'
 [function.Py_GetPrefix]
     added = '3.2'
+    abi_only = true
 [function.Py_GetProgramFullPath]
     added = '3.2'
+    abi_only = true
 [function.Py_GetProgramName]
     added = '3.2'
+    abi_only = true
 [function.Py_GetPythonHome]
     added = '3.2'
+    abi_only = true
 [function.Py_GetRecursionLimit]
     added = '3.2'
 [function.Py_GetVersion]
@@ -2528,6 +2539,26 @@
     added = '3.14'
 [function.PyLong_AsUInt64]
     added = '3.14'
+[function.PyLong_AsNativeBytes]
+    added = '3.14'
+[function.PyLong_FromNativeBytes]
+    added = '3.14'
+[function.PyLong_FromUnsignedNativeBytes]
+    added = '3.14'
+[const.Py_ASNATIVEBYTES_DEFAULTS]
+    added = '3.14'
+[const.Py_ASNATIVEBYTES_BIG_ENDIAN]
+    added = '3.14'
+[const.Py_ASNATIVEBYTES_LITTLE_ENDIAN]
+    added = '3.14'
+[const.Py_ASNATIVEBYTES_NATIVE_ENDIAN]
+    added = '3.14'
+[const.Py_ASNATIVEBYTES_UNSIGNED_BUFFER]
+    added = '3.14'
+[const.Py_ASNATIVEBYTES_REJECT_NEGATIVE]
+    added = '3.14'
+[const.Py_ASNATIVEBYTES_ALLOW_INDEX]
+    added = '3.14'
 [const.Py_tp_vectorcall]
     added = '3.14'
 [function.PyType_GetBaseByToken]
@@ -2539,4 +2570,8 @@
 [function.PyUnicode_Equal]
     added = '3.14'
 [function.PyType_Freeze]
+    added = '3.14'
+[function.Py_PACK_FULL_VERSION]
+    added = '3.14'
+[function.Py_PACK_VERSION]
     added = '3.14'

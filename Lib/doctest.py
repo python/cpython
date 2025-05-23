@@ -1558,7 +1558,7 @@ class DocTestRunner:
         save_displayhook = sys.displayhook
         sys.displayhook = sys.__displayhook__
         saved_can_colorize = _colorize.can_colorize
-        _colorize.can_colorize = lambda: False
+        _colorize.can_colorize = lambda *args, **kwargs: False
         color_variables = {"PYTHON_COLORS": None, "FORCE_COLOR": None}
         for key in color_variables:
             color_variables[key] = os.environ.pop(key, None)
@@ -2870,7 +2870,7 @@ __test__ = {"_TestClass": _TestClass,
 def _test():
     import argparse
 
-    parser = argparse.ArgumentParser(description="doctest runner")
+    parser = argparse.ArgumentParser(description="doctest runner", color=True)
     parser.add_argument('-v', '--verbose', action='store_true', default=False,
                         help='print very verbose output for all tests')
     parser.add_argument('-o', '--option', action='append',

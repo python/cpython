@@ -132,7 +132,7 @@ ContStr = group(StringPrefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*" +
                 group("'", r'\\\r?\n'),
                 StringPrefix + r'"[^\n"\\]*(?:\\.[^\n"\\]*)*' +
                 group('"', r'\\\r?\n'))
-PseudoExtras = group(r'\\\r?\n|\Z', Comment, Triple)
+PseudoExtras = group(r'\\\r?\n|\z', Comment, Triple)
 PseudoToken = Whitespace + group(PseudoExtras, Number, Funny, ContStr, Name)
 
 # For a given string prefix plus quotes, endpats maps it to a regex
@@ -169,6 +169,7 @@ class Untokenizer:
         self.prev_row = 1
         self.prev_col = 0
         self.prev_type = None
+        self.prev_line = ""
         self.encoding = None
 
     def add_whitespace(self, start):
@@ -176,13 +177,27 @@ class Untokenizer:
         if row < self.prev_row or row == self.prev_row and col < self.prev_col:
             raise ValueError("start ({},{}) precedes previous end ({},{})"
                              .format(row, col, self.prev_row, self.prev_col))
-        row_offset = row - self.prev_row
-        if row_offset:
-            self.tokens.append("\\\n" * row_offset)
-            self.prev_col = 0
+        self.add_backslash_continuation(start)
         col_offset = col - self.prev_col
         if col_offset:
             self.tokens.append(" " * col_offset)
+
+    def add_backslash_continuation(self, start):
+        """Add backslash continuation characters if the row has increased
+        without encountering a newline token.
+
+        This also inserts the correct amount of whitespace before the backslash.
+        """
+        row = start[0]
+        row_offset = row - self.prev_row
+        if row_offset == 0:
+            return
+
+        newline = '\r\n' if self.prev_line.endswith('\r\n') else '\n'
+        line = self.prev_line.rstrip('\\\r\n')
+        ws = ''.join(_itertools.takewhile(str.isspace, reversed(line)))
+        self.tokens.append(ws + f"\\{newline}" * row_offset)
+        self.prev_col = 0
 
     def escape_brackets(self, token):
         characters = []
@@ -236,15 +251,13 @@ class Untokenizer:
                     self.tokens.append(indent)
                     self.prev_col = len(indent)
                 startline = False
-            elif tok_type == FSTRING_MIDDLE:
+            elif tok_type in {FSTRING_MIDDLE, TSTRING_MIDDLE}:
                 if '{' in token or '}' in token:
                     token = self.escape_brackets(token)
                     last_line = token.splitlines()[-1]
                     end_line, end_col = end
                     extra_chars = last_line.count("{{") + last_line.count("}}")
                     end = (end_line, end_col + extra_chars)
-            elif tok_type in (STRING, FSTRING_START) and self.prev_type in (STRING, FSTRING_END):
-                self.tokens.append(" ")
 
             self.add_whitespace(start)
             self.tokens.append(token)
@@ -253,6 +266,7 @@ class Untokenizer:
                 self.prev_row += 1
                 self.prev_col = 0
             self.prev_type = tok_type
+            self.prev_line = line
         return "".join(self.tokens)
 
     def compat(self, token, iterable):
@@ -294,7 +308,7 @@ class Untokenizer:
             elif startline and indents:
                 toks_append(indents[-1])
                 startline = False
-            elif toknum == FSTRING_MIDDLE:
+            elif toknum in {FSTRING_MIDDLE, TSTRING_MIDDLE}:
                 tokval = self.escape_brackets(tokval)
 
             # Insert a space between two consecutive brackets if we are in an f-string
@@ -318,16 +332,10 @@ def untokenize(iterable):
     with at least two elements, a token number and token value.  If
     only two tokens are passed, the resulting output is poor.
 
-    Round-trip invariant for full input:
-        Untokenized source will match input source exactly
-
-    Round-trip invariant for limited input:
-        # Output bytes will tokenize back to the input
-        t1 = [tok[:2] for tok in tokenize(f.readline)]
-        newcode = untokenize(t1)
-        readline = BytesIO(newcode).readline
-        t2 = [tok[:2] for tok in tokenize(readline)]
-        assert t1 == t2
+    The result is guaranteed to tokenize back to match the input so
+    that the conversion is lossless and round-trips are assured.
+    The guarantee applies only to the token type and token string as
+    the spacing between tokens (column positions) may change.
     """
     ut = Untokenizer()
     out = ut.untokenize(iterable)
@@ -491,7 +499,7 @@ def generate_tokens(readline):
     """
     return _generate_tokens_from_c_tokenizer(readline, extra_tokens=True)
 
-def main():
+def _main(args=None):
     import argparse
 
     # Helper error handling routines
@@ -510,13 +518,13 @@ def main():
         sys.exit(1)
 
     # Parse the arguments and options
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     parser.add_argument(dest='filename', nargs='?',
                         metavar='filename.py',
                         help='the file to tokenize; defaults to stdin')
     parser.add_argument('-e', '--exact', dest='exact', action='store_true',
                         help='display token names using the exact type')
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     try:
         # Tokenize the input
@@ -581,4 +589,4 @@ def _generate_tokens_from_c_tokenizer(source, encoding=None, extra_tokens=False)
 
 
 if __name__ == "__main__":
-    main()
+    _main()
