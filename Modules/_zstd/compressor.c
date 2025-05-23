@@ -169,7 +169,6 @@ _get_CDict(ZstdDict *self, int compressionLevel)
     /* Get PyCapsule object from self->c_dicts */
     ret = PyDict_GetItemRef(self->c_dicts, level, &capsule);
     if (ret < 0) {
-        Py_XDECREF(capsule);
         goto error;
     }
     if (capsule == NULL) {
