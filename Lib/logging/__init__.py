@@ -1155,6 +1155,10 @@ class StreamHandler(Handler):
             self.flush()
         except RecursionError:  # See issue 36272
             raise
+        except BrokenPipeError:
+            devnull = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(devnull, sys.stdout.fileno())
+            sys.exit(1)
         except Exception:
             self.handleError(record)
 
