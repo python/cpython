@@ -244,8 +244,8 @@ is out of range for the C type.
 For unsigned integer formats, the
 most significant bits are silently truncated when the receiving field is too
 small to receive the value, and :exc:`DeprecationWarning` is emitted when
-the value is larger than the maximal value for the corresponding C type or less than the
-minimal value for the corresponding signed integer type.
+the value is larger than the maximal value for the C type or less than
+the minimal value for the corresponding signed integer type of the same size.
 
 ``b`` (:class:`int`) [unsigned char]
    Convert a nonnegative Python integer to an unsigned tiny integer, stored in a C
@@ -313,8 +313,8 @@ minimal value for the corresponding signed integer type.
 
    For unsigned integer formats ``B``, ``H``, ``I``, ``k`` and ``K``,
    :exc:`DeprecationWarning` is emitted when the value is larger than
-   the maximal value for the corresponding C type or less than the minimal value for
-   the corresponding signed integer type.
+   the maximal value for the C type or less than the minimal value for
+   the corresponding signed integer type of the same size.
 
 
 Other objects
