@@ -933,7 +933,7 @@ PyCursesWindow_dealloc(PyObject *self)
     PyCursesWindowObject *wo = (PyCursesWindowObject *)self;
     if (wo->win != stdscr && wo->win != NULL) {
         if (delwin(wo->win) == ERR) {
-            PyErr_FormatUnraisable("delwin() error ignored");
+            PyErr_FormatUnraisable("Exception ignored in delwin()");
         }
     }
     if (wo->encoding != NULL) {
@@ -1348,7 +1348,6 @@ _curses_window_bkgdset_impl(PyCursesWindowObject *self, PyObject *ch,
     if (!PyCurses_ConvertToChtype(self, ch, &bkgd))
         return NULL;
 
-    // wbkgdset() is a void function
     wbkgdset(self->win, bkgd | attr);
     Py_RETURN_NONE;
 }
@@ -1689,7 +1688,6 @@ static PyObject *
 _curses_window_enclose_impl(PyCursesWindowObject *self, int y, int x)
 /*[clinic end generated code: output=8679beef50502648 input=4fd3355d723f7bc9]*/
 {
-    // wenclose() returns always return a boolean
     return PyBool_FromLong(wenclose(self->win, y, x));
 }
 #endif
@@ -5000,7 +4998,6 @@ static PyObject *
 _curses_use_env_impl(PyObject *module, int flag)
 /*[clinic end generated code: output=b2c445e435c0b164 input=06ac30948f2d78e4]*/
 {
-    // use_env() is a void function
     use_env(flag);
     Py_RETURN_NONE;
 }
