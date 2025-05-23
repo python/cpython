@@ -36,7 +36,7 @@ class URI(unittest.TestCase):
         )
         for path, normalized in dataset:
             with self.subTest(path=path, normalized=normalized):
-                self.assertTrue(_normalize_uri(path).endswith(normalized))
+                self.assertEndsWith(_normalize_uri(path), normalized)
 
     @unittest.skipUnless(sys.platform == "win32", "requires Windows")
     def test_uri_windows(self):
@@ -55,7 +55,7 @@ class URI(unittest.TestCase):
             with self.subTest(path=path, normalized=normalized):
                 if not Path(path).is_absolute():
                     self.skipTest(f"skipping relative path: {path!r}")
-                self.assertTrue(_normalize_uri(path).endswith(normalized))
+                self.assertEndsWith(_normalize_uri(path), normalized)
 
 
 class ReadOnly(_SQLiteDbmTests):
