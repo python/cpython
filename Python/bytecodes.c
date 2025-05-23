@@ -678,7 +678,7 @@ dummy_func(
         }
 
 
-        pure op(_BINARY_OP_MULTIPLY_FLOAT__NO_INPUT_DECREF, (left, right -- res)) {
+        pure op(_BINARY_OP_MULTIPLY_FLOAT__NO_DECREF_INPUTS, (left, right -- res)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(PyFloat_CheckExact(left_o));
@@ -693,7 +693,7 @@ dummy_func(
             ERROR_IF(PyStackRef_IsNull(res));
         }
 
-        pure op(_BINARY_OP_ADD_FLOAT__NO_INPUT_DECREF, (left, right -- res)) {
+        pure op(_BINARY_OP_ADD_FLOAT__NO_DECREF_INPUTS, (left, right -- res)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(PyFloat_CheckExact(left_o));
@@ -708,7 +708,7 @@ dummy_func(
             ERROR_IF(PyStackRef_IsNull(res));
         }
 
-        pure op(_BINARY_OP_SUBTRACT_FLOAT__NO_INPUT_DECREF, (left, right -- res)) {
+        pure op(_BINARY_OP_SUBTRACT_FLOAT__NO_DECREF_INPUTS, (left, right -- res)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(PyFloat_CheckExact(left_o));
@@ -907,7 +907,7 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        op(_BINARY_OP_SUBSCR_LIST_INT__NO_INPUT_DECREF, (list_st, sub_st -- res)) {
+        op(_BINARY_OP_SUBSCR_LIST_INT__NO_DECREF_INPUTS, (list_st, sub_st -- res)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
 
@@ -1135,7 +1135,7 @@ dummy_func(
             Py_DECREF(old_value);
         }
 
-        op(_STORE_SUBSCR_LIST_INT__NO_INPUT_DECREF, (value, list_st, sub_st -- )) {
+        op(_STORE_SUBSCR_LIST_INT__NO_DECREF_INPUTS, (value, list_st, sub_st -- )) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
 

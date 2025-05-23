@@ -509,7 +509,7 @@
             break;
         }
 
-        case _BINARY_OP_MULTIPLY_FLOAT__NO_INPUT_DECREF: {
+        case _BINARY_OP_MULTIPLY_FLOAT__NO_DECREF_INPUTS: {
             JitOptSymbol *res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
@@ -518,7 +518,7 @@
             break;
         }
 
-        case _BINARY_OP_ADD_FLOAT__NO_INPUT_DECREF: {
+        case _BINARY_OP_ADD_FLOAT__NO_DECREF_INPUTS: {
             JitOptSymbol *res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
@@ -527,7 +527,7 @@
             break;
         }
 
-        case _BINARY_OP_SUBTRACT_FLOAT__NO_INPUT_DECREF: {
+        case _BINARY_OP_SUBTRACT_FLOAT__NO_DECREF_INPUTS: {
             JitOptSymbol *res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
@@ -632,7 +632,7 @@
             break;
         }
 
-        case _BINARY_OP_SUBSCR_LIST_INT__NO_INPUT_DECREF: {
+        case _BINARY_OP_SUBSCR_LIST_INT__NO_DECREF_INPUTS: {
             JitOptSymbol *res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
@@ -787,7 +787,7 @@
             break;
         }
 
-        case _STORE_SUBSCR_LIST_INT__NO_INPUT_DECREF: {
+        case _STORE_SUBSCR_LIST_INT__NO_DECREF_INPUTS: {
             stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
             break;

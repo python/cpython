@@ -678,7 +678,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(len(guard_nos_float_count), 1)
         # TODO gh-115506: this assertion may change after propagating constants.
         # We'll also need to verify that propagation actually occurs.
-        self.assertIn("_BINARY_OP_ADD_FLOAT__NO_INPUT_DECREF", uops)
+        self.assertIn("_BINARY_OP_ADD_FLOAT__NO_DECREF_INPUTS", uops)
 
     def test_float_subtract_constant_propagation(self):
         def testfunc(n):
@@ -700,7 +700,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(len(guard_nos_float_count), 1)
         # TODO gh-115506: this assertion may change after propagating constants.
         # We'll also need to verify that propagation actually occurs.
-        self.assertIn("_BINARY_OP_SUBTRACT_FLOAT__NO_INPUT_DECREF", uops)
+        self.assertIn("_BINARY_OP_SUBTRACT_FLOAT__NO_DECREF_INPUTS", uops)
 
     def test_float_multiply_constant_propagation(self):
         def testfunc(n):
@@ -722,7 +722,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(len(guard_nos_float_count), 1)
         # TODO gh-115506: this assertion may change after propagating constants.
         # We'll also need to verify that propagation actually occurs.
-        self.assertIn("_BINARY_OP_MULTIPLY_FLOAT__NO_INPUT_DECREF", uops)
+        self.assertIn("_BINARY_OP_MULTIPLY_FLOAT__NO_DECREF_INPUTS", uops)
 
     def test_add_unicode_propagation(self):
         def testfunc(n):
@@ -1707,10 +1707,10 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertEqual(uops.count("_GUARD_NOS_LIST"), 0)
-        self.assertEqual(uops.count("_STORE_SUBSCR_LIST_INT"), 1)
+        self.assertEqual(uops.count("_STORE_SUBSCR_LIST_INT__NO_DECREF_INPUTS"), 1)
         self.assertEqual(uops.count("_GUARD_TOS_LIST"), 0)
         self.assertEqual(uops.count("_UNPACK_SEQUENCE_LIST"), 1)
-        self.assertEqual(uops.count("_BINARY_OP_SUBSCR_LIST_INT"), 1)
+        self.assertEqual(uops.count("_BINARY_OP_SUBSCR_LIST_INT__NO_DECREF_INPUTS"), 1)
         self.assertEqual(uops.count("_TO_BOOL_LIST"), 1)
 
     def test_remove_guard_for_known_type_set(self):
@@ -2231,7 +2231,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertAlmostEqual(res, TIER2_THRESHOLD * (0.1 + 0.1))
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_BINARY_OP_ADD_FLOAT__NO_INPUT_DECREF", uops)
+        self.assertIn("_BINARY_OP_ADD_FLOAT__NO_DECREF_INPUTS", uops)
 
 
 def global_identity(x):

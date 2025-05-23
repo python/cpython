@@ -1043,7 +1043,7 @@
             break;
         }
 
-        case _BINARY_OP_MULTIPLY_FLOAT__NO_INPUT_DECREF: {
+        case _BINARY_OP_MULTIPLY_FLOAT__NO_DECREF_INPUTS: {
             _PyStackRef right;
             _PyStackRef left;
             _PyStackRef res;
@@ -1070,7 +1070,7 @@
             break;
         }
 
-        case _BINARY_OP_ADD_FLOAT__NO_INPUT_DECREF: {
+        case _BINARY_OP_ADD_FLOAT__NO_DECREF_INPUTS: {
             _PyStackRef right;
             _PyStackRef left;
             _PyStackRef res;
@@ -1097,7 +1097,7 @@
             break;
         }
 
-        case _BINARY_OP_SUBTRACT_FLOAT__NO_INPUT_DECREF: {
+        case _BINARY_OP_SUBTRACT_FLOAT__NO_DECREF_INPUTS: {
             _PyStackRef right;
             _PyStackRef left;
             _PyStackRef res;
@@ -1384,7 +1384,7 @@
             break;
         }
 
-        case _BINARY_OP_SUBSCR_LIST_INT__NO_INPUT_DECREF: {
+        case _BINARY_OP_SUBSCR_LIST_INT__NO_DECREF_INPUTS: {
             _PyStackRef sub_st;
             _PyStackRef list_st;
             _PyStackRef res;
@@ -1785,7 +1785,7 @@
             break;
         }
 
-        case _STORE_SUBSCR_LIST_INT__NO_INPUT_DECREF: {
+        case _STORE_SUBSCR_LIST_INT__NO_DECREF_INPUTS: {
             _PyStackRef sub_st;
             _PyStackRef list_st;
             _PyStackRef value;
