@@ -93,24 +93,23 @@ _zstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
             /* Check key type */
             if (Py_TYPE(key) == mod_state->DParameter_type) {
                 PyErr_SetString(PyExc_TypeError,
-                                "Key of compression option dict should "
-                                "NOT be DecompressionParameter.");
+                                "Key of compression options dict should "
+                                "NOT be a DecompressionParameter attribute.");
                 return -1;
             }
 
             int key_v = PyLong_AsInt(key);
             if (key_v == -1 && PyErr_Occurred()) {
                 PyErr_SetString(PyExc_ValueError,
-                                "Key of options dict should be a CompressionParameter attribute.");
+                                "Key of options dict should be either a "
+                                "CompressionParameter attribute or an int.");
                 return -1;
             }
 
-            // TODO(emmatyping): check bounds when there is a value error here for better
-            // error message?
             int value_v = PyLong_AsInt(value);
             if (value_v == -1 && PyErr_Occurred()) {
                 PyErr_SetString(PyExc_ValueError,
-                                "Value of option dict should be an int.");
+                                "Value of options dict should be an int.");
                 return -1;
             }
 
