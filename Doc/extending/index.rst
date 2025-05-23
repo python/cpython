@@ -26,7 +26,7 @@ Recommended third party tools
 =============================
 
 This guide only covers the basic tools for creating extensions provided
-as part of this version of CPython. :ref:`Recommended third party tools
+as part of this version of CPython. Some :ref:`third party tools
 <c-api-tools>` offer both simpler and more sophisticated approaches to creating
 C and C++ extensions for Python.
 
