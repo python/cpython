@@ -6,7 +6,6 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_zstd_ZstdDict_new__doc__,
@@ -118,13 +117,7 @@ _zstd_ZstdDict_as_digested_dict_get_impl(ZstdDict *self);
 static PyObject *
 _zstd_ZstdDict_as_digested_dict_get(PyObject *self, void *Py_UNUSED(context))
 {
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _zstd_ZstdDict_as_digested_dict_get_impl((ZstdDict *)self);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
+    return _zstd_ZstdDict_as_digested_dict_get_impl((ZstdDict *)self);
 }
 
 PyDoc_STRVAR(_zstd_ZstdDict_as_undigested_dict__doc__,
@@ -156,13 +149,7 @@ _zstd_ZstdDict_as_undigested_dict_get_impl(ZstdDict *self);
 static PyObject *
 _zstd_ZstdDict_as_undigested_dict_get(PyObject *self, void *Py_UNUSED(context))
 {
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _zstd_ZstdDict_as_undigested_dict_get_impl((ZstdDict *)self);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
+    return _zstd_ZstdDict_as_undigested_dict_get_impl((ZstdDict *)self);
 }
 
 PyDoc_STRVAR(_zstd_ZstdDict_as_prefix__doc__,
@@ -194,12 +181,6 @@ _zstd_ZstdDict_as_prefix_get_impl(ZstdDict *self);
 static PyObject *
 _zstd_ZstdDict_as_prefix_get(PyObject *self, void *Py_UNUSED(context))
 {
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _zstd_ZstdDict_as_prefix_get_impl((ZstdDict *)self);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
+    return _zstd_ZstdDict_as_prefix_get_impl((ZstdDict *)self);
 }
-/*[clinic end generated code: output=bfb31c1187477afd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8692eabee4e0d1fe input=a9049054013a1b77]*/
