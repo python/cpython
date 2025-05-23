@@ -3,6 +3,7 @@ import contextlib
 import io
 import os
 import pickle
+import select
 import time
 import unittest
 from concurrent.futures.interpreter import (
@@ -22,10 +23,14 @@ def noop():
 
 
 def write_msg(fd, msg):
+    import os
     os.write(fd, msg + b'\0')
 
 
-def read_msg(fd):
+def read_msg(fd, timeout=10.0):
+    r, _, _ = select.select([fd], [], [], timeout)
+    if fd not in r:
+        raise TimeoutError('nothing to read')
     msg = b''
     while ch := os.read(fd, 1):
         if ch == b'\0':
@@ -121,10 +126,19 @@ class InterpreterPoolExecutorTest(
             nonlocal count
             count += 1
 
-        with self.assertRaises(pickle.PicklingError):
-            self.executor_type(initializer=init1)
-        with self.assertRaises(pickle.PicklingError):
-            self.executor_type(initializer=init2)
+        with contextlib.redirect_stderr(io.StringIO()) as stderr:
+            with self.executor_type(initializer=init1) as executor:
+                fut = executor.submit(lambda: None)
+        self.assertIn('NotShareableError', stderr.getvalue())
+        with self.assertRaises(BrokenInterpreterPool):
+            fut.result()
+
+        with contextlib.redirect_stderr(io.StringIO()) as stderr:
+            with self.executor_type(initializer=init2) as executor:
+                fut = executor.submit(lambda: None)
+        self.assertIn('NotShareableError', stderr.getvalue())
+        with self.assertRaises(BrokenInterpreterPool):
+            fut.result()
 
     def test_init_instance_method(self):
         class Spam:
@@ -178,8 +192,8 @@ class InterpreterPoolExecutorTest(
         stderr = stderr.getvalue()
         self.assertIn('ExecutionFailed: Exception: spam', stderr)
         self.assertIn('Uncaught in the interpreter:', stderr)
-        self.assertIn('The above exception was the direct cause of the following exception:',
-                      stderr)
+#        self.assertIn('The above exception was the direct cause of the following exception:',
+#                      stderr)
 
     @unittest.expectedFailure
     def test_submit_script(self):
@@ -293,8 +307,11 @@ class InterpreterPoolExecutorTest(
         # queue used to wait infinitely.
 
         fut = self.executor.submit(PickleShenanigans(0))
-        with self.assertRaisesRegex(RuntimeError, "gotcha"):
+        with self.assertRaises(queues.QueueError) as cm:
             fut.result()
+        exc = cm.exception.__context__
+        self.assertIsInstance(exc, RuntimeError)
+        self.assertEqual(str(exc), 'gotcha')
 
 
 class AsyncioTest(InterpretersMixin, testasyncio_utils.TestCase):

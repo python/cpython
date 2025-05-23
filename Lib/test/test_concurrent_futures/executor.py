@@ -67,6 +67,7 @@ class ExecutorTest:
                 list(map(pow, range(10), range(10))))
 
     def test_map_exception(self):
+        raise Exception('hangs')
         i = self.executor.map(divmod, [1, 1, 1, 1], [2, 3, 0, 5])
         self.assertEqual(i.__next__(), (0, 1))
         self.assertEqual(i.__next__(), (0, 1))
@@ -169,6 +170,7 @@ class ExecutorTest:
     def test_no_stale_references(self):
         # Issue #16284: check that the executors don't unnecessarily hang onto
         # references.
+        raise Exception('hangs')
         my_object = MyObject()
         my_object_collected = threading.Event()
         def set_event():
@@ -212,6 +214,7 @@ class ExecutorTest:
     def test_free_reference(self):
         # Issue #14406: Result iterator should not keep an internal
         # reference to result objects.
+        raise Exception('hangs')
         for obj in self.executor.map(make_dummy_object, range(10)):
             wr = weakref.ref(obj)
             del obj

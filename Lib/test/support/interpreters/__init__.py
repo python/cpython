@@ -226,7 +226,13 @@ class Interpreter:
         if excinfo is not None:
             raise ExecutionFailed(excinfo)
 
-    def call(self, callable, /):
+    def _call(self, callable, args, kwargs):
+        res, excinfo = _interpreters.call(self._id, callable, args, kwargs, restrict=True)
+        if excinfo is not None:
+            raise ExecutionFailed(excinfo)
+        return res
+
+    def call(self, callable, /, *args, **kwargs):
         """Call the object in the interpreter with given args/kwargs.
 
         Only functions that take no arguments and have no closure
@@ -239,20 +245,13 @@ class Interpreter:
         and an ExecutionFailed exception is raised, much like what
         happens with Interpreter.exec().
         """
-        # XXX Support args and kwargs.
-        # XXX Support arbitrary callables.
-        # XXX Support returning the return value (e.g. via pickle).
-        excinfo = _interpreters.call(self._id, callable, restrict=True)
-        if excinfo is not None:
-            raise ExecutionFailed(excinfo)
+        return self._call(callable, args, kwargs)
 
-    def call_in_thread(self, callable, /):
+    def call_in_thread(self, callable, /, *args, **kwargs):
         """Return a new thread that calls the object in the interpreter.
 
         The return value and any raised exception are discarded.
         """
-        def task():
-            self.call(callable)
-        t = threading.Thread(target=task)
+        t = threading.Thread(target=self._call, args=(callable, args, kwargs))
         t.start()
         return t
