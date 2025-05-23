@@ -2491,6 +2491,42 @@ class SubinterpImportTests(unittest.TestCase):
 
         self.assertEqual(module.__name__, modname)
 
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    def test_from_modexport_null(self):
+        modname = '_test_from_modexport_null'
+        filename = _testmultiphase.__file__
+        with self.assertRaises(SystemError):
+            import_extension_from_file(modname, filename,
+                                       put_in_sys_modules=False)
+
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    def test_from_modexport_exception(self):
+        modname = '_test_from_modexport_exception'
+        filename = _testmultiphase.__file__
+        with self.assertRaises(ValueError):
+            import_extension_from_file(modname, filename,
+                                       put_in_sys_modules=False)
+
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    def test_from_modexport_create_nonmodule(self):
+        modname = '_test_from_modexport_create_nonmodule'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(modname, filename,
+                                            put_in_sys_modules=False)
+        self.assertIsInstance(module, str)
+
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    def test_from_modexport_smoke(self):
+        # General positive test for sundry features
+        # (PyModule_FromSlotsAndSpec tests exercise test these more carefully)
+        modname = '_test_from_modexport_smoke'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(modname, filename,
+                                            put_in_sys_modules=False)
+        self.assertEqual(module.__doc__, "the expected docstring")
+        self.assertEqual(module.number, 147)
+        self.assertEqual(module.get_state_int(), 258)
+
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     def test_python_compat(self):
         module = 'threading'
