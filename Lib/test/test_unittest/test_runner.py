@@ -646,9 +646,11 @@ class TestModuleCleanUp(unittest.TestCase):
                          [(module_cleanup_good, (1, 2, 3),
                            dict(four='hello', five='goodbye')),
                           (module_cleanup_bad, (), {})])
-        with self.assertRaises(CustomError) as e:
+        with self.assertRaises(Exception) as e:
             unittest.case.doModuleCleanups()
-        self.assertEqual(str(e.exception), 'CleanUpExc')
+        e = e.exception
+        self.assertEqual(str(e), 'module cleanup failed (1 sub-exception)')
+        self.assertEqual(str(e.exceptions[0]), 'CleanUpExc')
         self.assertEqual(unittest.case._module_cleanups, [])
 
     def test_doModuleCleanup_with_multiple_errors_in_addModuleCleanup(self):
@@ -658,7 +660,7 @@ class TestModuleCleanUp(unittest.TestCase):
         def module_cleanup_bad2():
             raise ValueError('CleanUpExc2')
 
-        class Module(object):
+        class Module:
             unittest.addModuleCleanup(module_cleanup_bad1)
             unittest.addModuleCleanup(module_cleanup_bad2)
         with self.assertRaises(ExceptionGroup) as e:
@@ -673,7 +675,7 @@ class TestModuleCleanUp(unittest.TestCase):
             raise ExceptionGroup('CleanUpExc', [TypeError('CleanUpExc1'),
                                                 ValueError('CleanUpExc2')])
 
-        class Module(object):
+        class Module:
             unittest.addModuleCleanup(module_cleanup_bad)
         with self.assertRaises(ExceptionGroup) as e:
             unittest.case.doModuleCleanups()
@@ -904,9 +906,11 @@ class TestModuleCleanUp(unittest.TestCase):
         ordering = []
         blowUp = True
         suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestableTest)
-        with self.assertRaises(CustomError) as cm:
+        with self.assertRaises(Exception) as cm:
             suite.debug()
-        self.assertEqual(str(cm.exception), 'CleanUpExc')
+        e = cm.exception
+        self.assertEqual(str(e), 'module cleanup failed (1 sub-exception)')
+        self.assertEqual(str(e.exceptions[0]), 'CleanUpExc')
         self.assertEqual(ordering, ['setUpModule', 'setUpClass', 'test',
                                     'tearDownClass', 'tearDownModule', 'cleanup_exc'])
         self.assertEqual(unittest.case._module_cleanups, [])

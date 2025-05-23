@@ -149,8 +149,6 @@ def doModuleCleanups():
         except Exception as exc:
             exceptions.append(exc)
     if exceptions:
-        if len(exceptions) == 1 and not isinstance(exceptions[0], ExceptionGroup):
-            raise exceptions[0]
         raise ExceptionGroup('module cleanup failed', exceptions)
 
 
