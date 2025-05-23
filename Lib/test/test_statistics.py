@@ -2355,6 +2355,7 @@ class TestGeometricMean(unittest.TestCase):
 
 class TestKDE(unittest.TestCase):
 
+    @support.requires_resource('cpu')
     def test_kde(self):
         kde = statistics.kde
         StatisticsError = statistics.StatisticsError
