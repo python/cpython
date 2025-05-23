@@ -3,6 +3,10 @@
 
 // Test PyModule_* API
 
+/* unittest Cases that use these functions are in:
+ * Lib/test/test_capi/test_module.py
+ */
+
 static PyObject *
 module_from_slots_empty(PyObject *self, PyObject *spec)
 {
@@ -10,6 +14,12 @@ module_from_slots_empty(PyObject *self, PyObject *spec)
         {0},
     };
     return PyModule_FromSlotsAndSpec(slots, spec);
+}
+
+static PyObject *
+module_from_slots_null(PyObject *self, PyObject *spec)
+{
+    return PyModule_FromSlotsAndSpec(NULL, spec);
 }
 
 static PyObject *
@@ -242,6 +252,7 @@ module_from_def_slot(PyObject *self, PyObject *spec)
 
 static PyMethodDef test_methods[] = {
     {"module_from_slots_empty", module_from_slots_empty, METH_O},
+    {"module_from_slots_null", module_from_slots_null, METH_O},
     {"module_from_slots_name", module_from_slots_name, METH_O},
     {"module_from_slots_doc", module_from_slots_doc, METH_O},
     {"module_from_slots_size", module_from_slots_size, METH_O},

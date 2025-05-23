@@ -629,29 +629,18 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
 PyObject *
 PyModule_FromSlotsAndSpec(PyModuleDef_Slot *slots, PyObject *spec)
 {
-    PyObject *result = NULL;
     if (!slots) {
-        PyErr_BadArgument();
+        PyErr_Format(
+            PyExc_SystemError,
+            "PyModule_FromSlotsAndSpec called with NULL slots");
+        return NULL;
     }
-    PyObject *nameobj = PyObject_GetAttrString(spec, "name");
-    if (nameobj == NULL) {
-        goto finally;
-    }
-    const char *name = PyUnicode_AsUTF8(nameobj);
-    if (name == NULL) {
-        goto finally;
-    }
-
     // Fill in enough of a PyModuleDef to pass to common machinery
     PyModuleDef def_like = {.m_slots = slots};
 
-    result = module_from_def_and_spec(&def_like, spec, PYTHON_API_VERSION,
-                                      NULL);
-finally:
-    Py_XDECREF(nameobj);
-    return result;
+    return module_from_def_and_spec(&def_like, spec, PYTHON_API_VERSION,
+                                    NULL);
 }
-
 
 #ifdef Py_GIL_DISABLED
 int

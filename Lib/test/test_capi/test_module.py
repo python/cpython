@@ -14,12 +14,25 @@ DEF_SLOTS = (
     'Py_mod_traverse', 'Py_mod_clear', 'Py_mod_free', 'Py_mod_token',
 )
 
+# The C functions used by this module are in:
+#   Modules/_testcapi/module.c
 
 class TestModFromSlotsAndSpec(unittest.TestCase):
     def test_empty(self):
         mod = _testcapi.module_from_slots_empty(FakeSpec())
         self.assertIsInstance(mod, types.ModuleType)
         self.assertEqual(mod.__name__, 'testmod')
+
+    def test_null_slots(self):
+        with self.assertRaises(SystemError):
+            _testcapi.module_from_slots_null(FakeSpec())
+
+    def test_none_spec(self):
+        # The spec currently must contain a name
+        with self.assertRaises(AttributeError):
+            _testcapi.module_from_slots_empty(None)
+        with self.assertRaises(AttributeError):
+            _testcapi.module_from_slots_name(None)
 
     def test_name(self):
         # Py_mod_name (and PyModuleDef.m_name) are currently ignored when
