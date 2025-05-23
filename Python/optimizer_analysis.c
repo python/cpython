@@ -558,6 +558,7 @@ const uint16_t op_without_push[MAX_UOP_ID + 1] = {
 const bool op_skip[MAX_UOP_ID + 1] = {
     [_NOP] = true,
     [_CHECK_VALIDITY] = true,
+    [_CHECK_PERIODIC] = true,
     [_SET_IP] = true,
 };
 
@@ -617,7 +618,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     while (op_skip[last->opcode]) {
                         last--;
                     }
-                    if (op_without_push[last->opcode]) {
+                    if (op_without_push[last->opcode] && op_without_pop[opcode]) {
                         last->opcode = op_without_push[last->opcode];
                         opcode = buffer[pc].opcode = op_without_pop[opcode];
                         if (op_without_pop[last->opcode]) {
