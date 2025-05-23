@@ -360,9 +360,6 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
 #  define Py_C_STACK_SIZE 1200000
 #elif defined(__sparc__)
 #  define Py_C_STACK_SIZE 1600000
-#elif defined(__wasi__)
-   /* Web assembly has two stacks, so this isn't really the stack depth */
-#  define Py_C_STACK_SIZE 131072  // wasi-libc DEFAULT_STACK_SIZE
 #elif defined(__hppa__) || defined(__powerpc64__)
 #  define Py_C_STACK_SIZE 2000000
 #else
