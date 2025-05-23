@@ -1788,8 +1788,14 @@ expression support in the :mod:`re` module).
 
    Return centered in a string of length *width*. Padding is done using the
    specified *fillchar* (default is an ASCII space). The original string is
-   returned if *width* is less than or equal to ``len(s)``.
+   returned if *width* is less than or equal to ``len(s)``.  For example::
 
+      >>> 'Python'.center(10)
+      '  Python  '
+      >>> 'Python'.center(10, '-')
+      '--Python--'
+      >>> 'Python'.center(4)
+      'Python'
 
 
 .. method:: str.count(sub[, start[, end]])
