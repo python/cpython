@@ -439,9 +439,6 @@ _Py_uop_sym_new_const_steal(JitOptContext *ctx, PyObject *const_val)
     JitOptSymbol *res = _Py_uop_sym_new_const(ctx, const_val);
     // Decref once because sym_new_const increfs it.
     Py_DECREF(const_val);
-    // Decref it another time, because we are a steal operation.
-    // (Ownership now belongs to the symbol).
-    Py_DECREF(const_val);
     return res;
 }
 
