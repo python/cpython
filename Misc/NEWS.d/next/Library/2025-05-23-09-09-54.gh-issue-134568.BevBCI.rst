@@ -1,0 +1,1 @@
+:class:`logging.StreamHandler` now handles :exc:`BrokenPipeError` when the output is cut short by piping to the ``head`` utility.
