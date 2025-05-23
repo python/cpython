@@ -2011,10 +2011,11 @@ import_run_modexport(PyThreadState *tstate, PyModExportFunction ex0,
     if (!result) {
         return NULL;
     }
-    assert(PyModule_Check(result));
-    PyModuleObject *mod = (PyModuleObject *)result;
-    if (mod && !mod->md_token) {
-        mod->md_token = slots;
+    if (PyModule_Check(result)) {
+        PyModuleObject *mod = (PyModuleObject *)result;
+        if (mod && !mod->md_token) {
+            mod->md_token = slots;
+        }
     }
     return result;
 }
