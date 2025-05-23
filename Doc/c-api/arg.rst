@@ -244,7 +244,7 @@ is out of range for the C type.
 For unsigned integer formats, the
 most significant bits are silently truncated when the receiving field is too
 small to receive the value, and :exc:`DeprecationWarning` is emitted when
-the value is larger than the maximal value the C type or less than the
+the value is larger than the maximal value for the corresponding C type or less than the
 minimal value for the corresponding signed integer type.
 
 ``b`` (:class:`int`) [unsigned char]
@@ -313,7 +313,7 @@ minimal value for the corresponding signed integer type.
 
    For unsigned integer formats ``B``, ``H``, ``I``, ``k`` and ``K``,
    :exc:`DeprecationWarning` is emitted when the value is larger than
-   the maximal value the C type or less than the minimal value for
+   the maximal value for the corresponding C type or less than the minimal value for
    the corresponding signed integer type.
 
 
