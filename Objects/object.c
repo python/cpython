@@ -1670,7 +1670,6 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
 {
     int meth_found = 0;
 
-    int ret = 0;
     assert(PyStackRef_IsNull(*method));
 
     PyTypeObject *tp = Py_TYPE(obj);
@@ -1703,7 +1702,7 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
                 if (value != NULL) {
                     *method = PyStackRef_FromPyObjectSteal(value);
                 }
-                goto exit;
+                return 0;
             }
         }
     }
@@ -1713,7 +1712,7 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
         if (attr != NULL) {
            PyStackRef_CLEAR(*method);
            *method = PyStackRef_FromPyObjectSteal(attr);
-           goto exit;
+           return 0;
         }
         dict = NULL;
     }
@@ -1740,16 +1739,15 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
             if (value != NULL) {
                 *method = PyStackRef_FromPyObjectSteal(value);
             }
-            goto exit;
+            return 0;
         }
         // not found
         Py_DECREF(dict);
     }
 
     if (meth_found) {
-        ret = 1;
         assert(!PyStackRef_IsNull(*method));
-        goto exit;
+        return 1;
     }
 
     if (f != NULL) {
@@ -1758,12 +1756,12 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
         if (value) {
             *method = PyStackRef_FromPyObjectSteal(value);
         }
-        goto exit;
+        return 0;
     }
 
     if (descr != NULL) {
         assert(!PyStackRef_IsNull(*method));
-        goto exit;
+        return 0;
     }
 
     PyErr_Format(PyExc_AttributeError,
@@ -1771,9 +1769,8 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
                  tp->tp_name, name);
 
     _PyObject_SetAttributeErrorContext(obj, name);
-    PyStackRef_CLEAR(*method);
-exit:
-    return ret;
+    assert(PyStackRef_IsNull(*method));
+    return 0;
 }
 
 

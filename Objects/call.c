@@ -871,11 +871,14 @@ PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ...)
         return null_error(tstate);
     }
 
-    PyObject *callable = NULL;
-    int is_method = _PyObject_GetMethod(obj, name, &callable);
-    if (callable == NULL) {
+    _PyCStackRef method;
+    _PyThreadState_PushCStackRef(tstate, &method);
+    int is_method = _PyObject_GetMethodStackRef(tstate, obj, name, &method.ref);
+    if (PyStackRef_IsNull(method.ref)) {
+        _PyThreadState_PopCStackRef(tstate, &method);
         return NULL;
     }
+    PyObject *callable = PyStackRef_AsPyObjectBorrow(method.ref);
     obj = is_method ? obj : NULL;
 
     va_list vargs;
@@ -883,7 +886,7 @@ PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ...)
     PyObject *result = object_vacall(tstate, obj, callable, vargs);
     va_end(vargs);
 
-    Py_DECREF(callable);
+    _PyThreadState_PopCStackRef(tstate, &method);
     return result;
 }
 
@@ -900,12 +903,15 @@ _PyObject_CallMethodIdObjArgs(PyObject *obj, _Py_Identifier *name, ...)
     if (!oname) {
         return NULL;
     }
-
-    PyObject *callable = NULL;
-    int is_method = _PyObject_GetMethod(obj, oname, &callable);
-    if (callable == NULL) {
+    _PyCStackRef method;
+    _PyThreadState_PushCStackRef(tstate, &method);
+    int is_method = _PyObject_GetMethodStackRef(tstate, obj, oname, &method.ref);
+    if (PyStackRef_IsNull(method.ref)) {
+        _PyThreadState_PopCStackRef(tstate, &method);
         return NULL;
     }
+    PyObject *callable = PyStackRef_AsPyObjectBorrow(method.ref);
+
     obj = is_method ? obj : NULL;
 
     va_list vargs;
@@ -913,7 +919,7 @@ _PyObject_CallMethodIdObjArgs(PyObject *obj, _Py_Identifier *name, ...)
     PyObject *result = object_vacall(tstate, obj, callable, vargs);
     va_end(vargs);
 
-    Py_DECREF(callable);
+    _PyThreadState_PopCStackRef(tstate, &method);
     return result;
 }
 
