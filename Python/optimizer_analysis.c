@@ -342,6 +342,9 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_tuple_length _Py_uop_sym_tuple_length
 #define sym_is_immortal _Py_uop_sym_is_immortal
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
+#define sym_set_skip_refcount _Py_uop_sym_set_skip_refcount
+#define sym_set_dont_skip_refcount _Py_uop_sym_set_dont_skip_refcount
+#define sym_is_skip_refcount _Py_uop_sym_is_skip_refcount
 
 static int
 optimize_to_bool(
@@ -439,6 +442,13 @@ get_code_with_logging(_PyUOpInstruction *op)
     }
     return co;
 }
+
+// TODO (gh-134584) generate most of this table automatically
+const uint16_t op_without_decref_inputs[MAX_UOP_ID + 1] = {
+    [_BINARY_OP_MULTIPLY_FLOAT] = _BINARY_OP_MULTIPLY_FLOAT__NO_INPUT_DECREF,
+    [_BINARY_OP_ADD_FLOAT] = _BINARY_OP_ADD_FLOAT__NO_INPUT_DECREF,
+    [_BINARY_OP_SUBTRACT_FLOAT] = _BINARY_OP_SUBTRACT_FLOAT__NO_INPUT_DECREF,
+};
 
 /* 1 for success, 0 for not ready, cannot error at the moment. */
 static int

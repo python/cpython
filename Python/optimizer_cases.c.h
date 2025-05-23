@@ -31,6 +31,7 @@
             if (sym_is_null(value)) {
                 ctx->done = true;
             }
+            sym_set_dont_skip_refcount(ctx, value);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -40,6 +41,7 @@
         case _LOAD_FAST: {
             JitOptSymbol *value;
             value = GETLOCAL(oparg);
+            sym_set_dont_skip_refcount(ctx, value);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -49,6 +51,7 @@
         case _LOAD_FAST_BORROW: {
             JitOptSymbol *value;
             value = GETLOCAL(oparg);
+            sym_set_skip_refcount(ctx, value);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -60,6 +63,7 @@
             value = GETLOCAL(oparg);
             JitOptSymbol *temp = sym_new_null(ctx);
             GETLOCAL(oparg) = temp;
+            sym_set_dont_skip_refcount(ctx, value);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -434,6 +438,9 @@
                 res = sym_new_type(ctx, &PyFloat_Type);
                 stack_pointer += -1;
             }
+            if (sym_is_skip_refcount(ctx, left) && sym_is_skip_refcount(ctx, right)) {
+                REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
+            }
             stack_pointer[-1] = res;
             break;
         }
@@ -462,6 +469,9 @@
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
                 stack_pointer += -1;
+            }
+            if (sym_is_skip_refcount(ctx, left) && sym_is_skip_refcount(ctx, right)) {
+                REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
             }
             stack_pointer[-1] = res;
             break;
@@ -492,7 +502,37 @@
                 res = sym_new_type(ctx, &PyFloat_Type);
                 stack_pointer += -1;
             }
+            if (sym_is_skip_refcount(ctx, left) && sym_is_skip_refcount(ctx, right)) {
+                REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
+            }
             stack_pointer[-1] = res;
+            break;
+        }
+
+        case _BINARY_OP_MULTIPLY_FLOAT__NO_INPUT_DECREF: {
+            JitOptSymbol *res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _BINARY_OP_ADD_FLOAT__NO_INPUT_DECREF: {
+            JitOptSymbol *res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _BINARY_OP_SUBTRACT_FLOAT__NO_INPUT_DECREF: {
+            JitOptSymbol *res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 

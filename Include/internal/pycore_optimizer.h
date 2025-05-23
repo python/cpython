@@ -180,38 +180,63 @@ typedef enum _JitSymType {
     JIT_SYM_TRUTHINESS_TAG = 9,
 } JitSymType;
 
+#define DONT_SKIP_REFCOUNT 0
+#define SKIP_REFCOUNT 1
+
 typedef struct _jit_opt_known_class {
-    uint8_t tag;
+    struct {
+        uint8_t tag;
+        uint8_t skip_refcount;
+    };
     uint32_t version;
     PyTypeObject *type;
 } JitOptKnownClass;
 
 typedef struct _jit_opt_known_version {
-    uint8_t tag;
+    struct {
+        uint8_t tag;
+        uint8_t skip_refcount;
+    };
     uint32_t version;
 } JitOptKnownVersion;
 
 typedef struct _jit_opt_known_value {
-    uint8_t tag;
+    struct {
+        uint8_t tag;
+        uint8_t skip_refcount;
+    };
     PyObject *value;
 } JitOptKnownValue;
 
 #define MAX_SYMBOLIC_TUPLE_SIZE 7
 
 typedef struct _jit_opt_tuple {
-    uint8_t tag;
+    struct {
+        uint8_t tag;
+        uint8_t skip_refcount;
+    };
     uint8_t length;
     uint16_t items[MAX_SYMBOLIC_TUPLE_SIZE];
 } JitOptTuple;
 
 typedef struct {
-    uint8_t tag;
+    struct {
+        uint8_t tag;
+        uint8_t skip_refcount;
+    };
     bool invert;
     uint16_t value;
 } JitOptTruthiness;
 
 typedef union _jit_opt_symbol {
-    uint8_t tag;
+    struct {
+        uint8_t tag;
+        // Whether this object skips refcount on the stack
+        // (using the _PyStackRef API), or not.
+        // 0 - normal refcounting
+        // 1 - skip refcounting
+        int8_t skip_refcount;
+    };
     JitOptKnownClass cls;
     JitOptKnownValue value;
     JitOptKnownVersion version;
@@ -282,6 +307,10 @@ extern JitOptSymbol *_Py_uop_sym_new_tuple(JitOptContext *ctx, int size, JitOptS
 extern JitOptSymbol *_Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptSymbol *sym, int item);
 extern int _Py_uop_sym_tuple_length(JitOptSymbol *sym);
 extern JitOptSymbol *_Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptSymbol *value, bool truthy);
+
+extern void _Py_uop_sym_set_dont_skip_refcount(JitOptContext *ctx, JitOptSymbol *sym);
+extern bool _Py_uop_sym_is_skip_refcount(JitOptContext *ctx, JitOptSymbol *sym);
+extern void _Py_uop_sym_set_skip_refcount(JitOptContext *ctx, JitOptSymbol *sym);
 
 extern void _Py_uop_abstractcontext_init(JitOptContext *ctx);
 extern void _Py_uop_abstractcontext_fini(JitOptContext *ctx);

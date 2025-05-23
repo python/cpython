@@ -99,6 +99,7 @@ sym_new(JitOptContext *ctx)
     }
     ctx->t_arena.ty_curr_number++;
     self->tag = JIT_SYM_UNKNOWN_TAG;
+    self->skip_refcount = DONT_SKIP_REFCOUNT;
     return self;
 }
 
@@ -106,6 +107,9 @@ static void make_const(JitOptSymbol *sym, PyObject *val)
 {
     sym->tag = JIT_SYM_KNOWN_VALUE_TAG;
     sym->value.value = Py_NewRef(val);
+    // Constants don't need to be refcounted, as they are always
+    // kept alive by co_consts.
+    sym->skip_refcount = SKIP_REFCOUNT;
 }
 
 static inline void
@@ -379,6 +383,25 @@ _Py_uop_sym_set_non_null(JitOptContext *ctx, JitOptSymbol *sym)
     else if (sym->tag == JIT_SYM_NULL_TAG) {
         sym_set_bottom(ctx, sym);
     }
+}
+
+void
+_Py_uop_sym_set_skip_refcount(JitOptContext *ctx, JitOptSymbol *sym)
+{
+   sym->skip_refcount = SKIP_REFCOUNT;
+}
+
+void
+_Py_uop_sym_set_dont_skip_refcount(JitOptContext *ctx, JitOptSymbol *sym)
+{
+   sym->skip_refcount = DONT_SKIP_REFCOUNT;
+}
+
+bool
+_Py_uop_sym_is_skip_refcount(JitOptContext *ctx, JitOptSymbol *sym)
+{
+    assert(sym->skip_refcount == SKIP_REFCOUNT || sym->skip_refcount == DONT_SKIP_REFCOUNT);
+    return sym->skip_refcount == SKIP_REFCOUNT;
 }
 
 
@@ -709,7 +732,7 @@ _Py_uop_abstractcontext_fini(JitOptContext *ctx)
 void
 _Py_uop_abstractcontext_init(JitOptContext *ctx)
 {
-    static_assert(sizeof(JitOptSymbol) <= 2 * sizeof(uint64_t), "JitOptSymbol has grown");
+    static_assert(sizeof(JitOptSymbol) <= 3 * sizeof(uint64_t), "JitOptSymbol has grown");
     ctx->limit = ctx->locals_and_stack + MAX_ABSTRACT_INTERP_SIZE;
     ctx->n_consumed = ctx->locals_and_stack;
 #ifdef Py_DEBUG // Aids debugging a little. There should never be NULL in the abstract interpreter.
@@ -771,6 +794,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     if (sym == NULL) {
         goto fail;
     }
+    TEST_PREDICATE(!_Py_uop_sym_is_skip_refcount(ctx, sym), "top is refcounted");
     TEST_PREDICATE(!_Py_uop_sym_is_null(sym), "top is NULL");
     TEST_PREDICATE(!_Py_uop_sym_is_not_null(sym), "top is not NULL");
     TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyLong_Type), "top matches a type");
@@ -819,6 +843,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
         goto fail;
     }
     _Py_uop_sym_set_const(ctx, sym, val_42);
+    TEST_PREDICATE(_Py_uop_sym_is_skip_refcount(ctx, sym), "42 isn't refcounted");
     TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, sym) == 1, "bool(42) is not True");
     TEST_PREDICATE(!_Py_uop_sym_is_null(sym), "42 is NULL");
     TEST_PREDICATE(_Py_uop_sym_is_not_null(sym), "42 isn't not NULL");
@@ -847,8 +872,16 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     _Py_uop_sym_set_const(ctx, sym, val_43);  // Should make it bottom
     TEST_PREDICATE(_Py_uop_sym_is_bottom(sym), "(42 and 43) isn't bottom");
 
+    sym = _Py_uop_sym_new_type(ctx, &PyLong_Type);
+    if (sym == NULL) {
+        goto fail;
+    }
+    TEST_PREDICATE(!_Py_uop_sym_is_skip_refcount(ctx, sym), "type should be refcounted");
+    _Py_uop_sym_set_skip_refcount(ctx, sym);
+    TEST_PREDICATE(_Py_uop_sym_is_skip_refcount(ctx, sym), "type should not be refcounted");
 
     sym = _Py_uop_sym_new_const(ctx, Py_None);
+    TEST_PREDICATE(_Py_uop_sym_is_skip_refcount(ctx, sym), "None should not be refcounted");
     TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, sym) == 0, "bool(None) is not False");
     sym = _Py_uop_sym_new_const(ctx, Py_False);
     TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, sym) == 0, "bool(False) is not False");
