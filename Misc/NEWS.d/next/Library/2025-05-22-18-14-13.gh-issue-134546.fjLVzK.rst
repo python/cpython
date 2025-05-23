@@ -1,1 +1,1 @@
-Fix ``PermissionError`` when reading remote exec script from ``-m pdb -p``.
+Ensure :func:`pdb.attach` script is readable by remote Python process.
