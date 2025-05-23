@@ -395,7 +395,7 @@ The wheels, shared libraries, and binaries are indicated by a ``t`` suffix.
 * `pypa/manylinux <https://github.com/pypa/manylinux>`_ supports the
   free-threaded build, with the ``t`` suffix, such as ``python3.13t``.
 * `pypa/cibuildwheel <https://github.com/pypa/cibuildwheel>`_ supports the
-  free-threaded build if you set 
+  free-threaded build if you set
   `CIBW_ENABLE to cpython-freethreading <https://cibuildwheel.pypa.io/en/stable/options/#enable>`_.
 
 Limited C API and Stable ABI
