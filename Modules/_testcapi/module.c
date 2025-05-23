@@ -46,7 +46,7 @@ static PyObject *
 module_from_slots_size(PyObject *self, PyObject *spec)
 {
     PyModuleDef_Slot slots[] = {
-        {Py_mod_size, (void*)123},
+        {Py_mod_state_size, (void*)123},
         {0},
     };
     PyObject *mod = PyModule_FromSlotsAndSpec(slots, spec);
@@ -96,9 +96,9 @@ static PyObject *
 module_from_slots_gc(PyObject *self, PyObject *spec)
 {
     PyModuleDef_Slot slots[] = {
-        {Py_mod_traverse, trivial_traverse},
-        {Py_mod_clear, trivial_clear},
-        {Py_mod_free, trivial_free},
+        {Py_mod_state_traverse, trivial_traverse},
+        {Py_mod_state_clear, trivial_clear},
+        {Py_mod_state_free, trivial_free},
         {0},
     };
     PyObject *mod = PyModule_FromSlotsAndSpec(slots, spec);
@@ -277,11 +277,11 @@ _PyTestCapi_Init_Module(PyObject *m)
     ADD_INT_MACRO(Py_mod_gil);
     ADD_INT_MACRO(Py_mod_name);
     ADD_INT_MACRO(Py_mod_doc);
-    ADD_INT_MACRO(Py_mod_size);
+    ADD_INT_MACRO(Py_mod_state_size);
     ADD_INT_MACRO(Py_mod_methods);
-    ADD_INT_MACRO(Py_mod_traverse);
-    ADD_INT_MACRO(Py_mod_clear);
-    ADD_INT_MACRO(Py_mod_free);
+    ADD_INT_MACRO(Py_mod_state_traverse);
+    ADD_INT_MACRO(Py_mod_state_clear);
+    ADD_INT_MACRO(Py_mod_state_free);
     ADD_INT_MACRO(Py_mod_token);
 #undef ADD_INT_MACRO
     return PyModule_AddFunctions(m, test_methods);

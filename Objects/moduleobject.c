@@ -471,22 +471,25 @@ module_from_def_and_spec(
             case Py_mod_doc:
                 COPY_COMMON_SLOT(Py_mod_doc, char*, def_like->m_doc);
                 break;
-            case Py_mod_size:
-                COPY_COMMON_SLOT(Py_mod_size, Py_ssize_t, def_like->m_size);
+            case Py_mod_state_size:
+                COPY_COMMON_SLOT(Py_mod_state_size, Py_ssize_t,
+                                 def_like->m_size);
                 break;
             case Py_mod_methods:
                 COPY_COMMON_SLOT(Py_mod_methods, PyMethodDef*,
                                  def_like->m_methods);
                 break;
-            case Py_mod_traverse:
-                COPY_COMMON_SLOT(Py_mod_traverse, traverseproc,
+            case Py_mod_state_traverse:
+                COPY_COMMON_SLOT(Py_mod_state_traverse, traverseproc,
                                  def_like->m_traverse);
                 break;
-            case Py_mod_clear:
-                COPY_COMMON_SLOT(Py_mod_clear, inquiry, def_like->m_clear);
+            case Py_mod_state_clear:
+                COPY_COMMON_SLOT(Py_mod_state_clear, inquiry,
+                                 def_like->m_clear);
                 break;
-            case Py_mod_free:
-                COPY_COMMON_SLOT(Py_mod_free, freefunc, def_like->m_free);
+            case Py_mod_state_free:
+                COPY_COMMON_SLOT(Py_mod_state_free, freefunc,
+                                 def_like->m_free);
                 break;
             case Py_mod_token:
                 COPY_COMMON_SLOT(Py_mod_token, void*, token);

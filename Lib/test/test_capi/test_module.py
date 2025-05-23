@@ -10,8 +10,9 @@ class FakeSpec:
     name = 'testmod'
 
 DEF_SLOTS = (
-    'Py_mod_name', 'Py_mod_doc', 'Py_mod_size', 'Py_mod_methods',
-    'Py_mod_traverse', 'Py_mod_clear', 'Py_mod_free', 'Py_mod_token',
+    'Py_mod_name', 'Py_mod_doc', 'Py_mod_state_size', 'Py_mod_methods',
+    'Py_mod_state_traverse', 'Py_mod_state_clear', 'Py_mod_state_free',
+    'Py_mod_token',
 )
 
 # The C functions used by this module are in:
