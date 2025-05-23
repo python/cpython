@@ -2868,11 +2868,11 @@ class PatternReprTests(unittest.TestCase):
         pattern = 'Very %spattern' % ('long ' * 1000)
         r = repr(re.compile(pattern))
         self.assertLess(len(r), 300)
-        self.assertEqual(r[:30], "re.compile('Very long long lon")
+        self.assertStartsWith(r, "re.compile('Very long long lon")
         r = repr(re.compile(pattern, re.I))
         self.assertLess(len(r), 300)
-        self.assertEqual(r[:30], "re.compile('Very long long lon")
-        self.assertEqual(r[-16:], ", re.IGNORECASE)")
+        self.assertStartsWith(r, "re.compile('Very long long lon")
+        self.assertEndsWith(r, ", re.IGNORECASE)")
 
     def test_flags_repr(self):
         self.assertEqual(repr(re.I), "re.IGNORECASE")
@@ -2951,7 +2951,7 @@ class ImplementationTest(unittest.TestCase):
                 self.assertEqual(mod.__name__, name)
                 self.assertEqual(mod.__package__, '')
                 for attr in deprecated[name]:
-                    self.assertTrue(hasattr(mod, attr))
+                    self.assertHasAttr(mod, attr)
                 del sys.modules[name]
 
     @cpython_only
