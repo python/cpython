@@ -2410,6 +2410,7 @@ static PyTypeObject* static_types[] = {
     &_PyContextTokenMissing_Type,
     &_PyCoroWrapper_Type,
     &_Py_GenericAliasIterType,
+    &_PyGenWrapper_Type,
     &_PyHamtItems_Type,
     &_PyHamtKeys_Type,
     &_PyHamtValues_Type,
