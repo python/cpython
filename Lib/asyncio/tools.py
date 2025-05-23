@@ -19,7 +19,7 @@ class CycleFoundException(Exception):
             self,
             cycles: list[list[int]],
             id2name: dict[int, str],
-            ) -> None:
+        ) -> None:
         super().__init__(cycles, id2name)
         self.cycles = cycles
         self.id2name = id2name
