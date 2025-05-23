@@ -155,8 +155,9 @@ _get_CDict(ZstdDict *self, int compressionLevel)
 {
     assert(PyMutex_IsLocked(&self->lock));
     PyObject *level = NULL;
-    PyObject *capsule;
+    PyObject *capsule = NULL;
     ZSTD_CDict *cdict;
+    int ret;
 
 
     /* int level object */
@@ -166,11 +167,12 @@ _get_CDict(ZstdDict *self, int compressionLevel)
     }
 
     /* Get PyCapsule object from self->c_dicts */
-    capsule = PyDict_GetItemWithError(self->c_dicts, level);
+    ret = PyDict_GetItemRef(self->c_dicts, level, &capsule);
+    if (ret < 0) {
+        Py_XDECREF(capsule);
+        goto error;
+    }
     if (capsule == NULL) {
-        if (PyErr_Occurred()) {
-            goto error;
-        }
         /* Create ZSTD_CDict instance */
         char *dict_buffer = PyBytes_AS_STRING(self->dict_content);
         Py_ssize_t dict_len = Py_SIZE(self->dict_content);
@@ -197,9 +199,8 @@ _get_CDict(ZstdDict *self, int compressionLevel)
             goto error;
         }
 
-        /* Add PyCapsule object to self->c_dicts if not already inserted */
-        int ret = PyDict_SetDefaultRef(self->c_dicts, level, capsule, NULL);
-        Py_DECREF(capsule);
+        /* Add PyCapsule object to self->c_dicts */
+        ret = PyDict_SetItem(self->c_dicts, level, capsule);
         if (ret < 0) {
             goto error;
         }
@@ -214,6 +215,7 @@ error:
     cdict = NULL;
 success:
     Py_XDECREF(level);
+    Py_XDECREF(capsule);
     return cdict;
 }
 
@@ -422,6 +424,7 @@ static PyObject *
 compress_lock_held(ZstdCompressor *self, Py_buffer *data,
                    ZSTD_EndDirective end_directive)
 {
+    assert(PyMutex_IsLocked(&self->lock));
     ZSTD_inBuffer in;
     ZSTD_outBuffer out;
     _BlocksOutputBuffer buffer = {.list = NULL};
@@ -504,6 +507,7 @@ mt_continue_should_break(ZSTD_inBuffer *in, ZSTD_outBuffer *out)
 static PyObject *
 compress_mt_continue_lock_held(ZstdCompressor *self, Py_buffer *data)
 {
+    assert(PyMutex_IsLocked(&self->lock));
     ZSTD_inBuffer in;
     ZSTD_outBuffer out;
     _BlocksOutputBuffer buffer = {.list = NULL};

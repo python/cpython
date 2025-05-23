@@ -343,6 +343,7 @@ error:
 static void
 decompressor_reset_session_lock_held(ZstdDecompressor *self)
 {
+    assert(PyMutex_IsLocked(&self->lock));
 
     /* Reset variables */
     self->in_begin = 0;
@@ -362,6 +363,7 @@ static PyObject *
 stream_decompress_lock_held(ZstdDecompressor *self, Py_buffer *data,
                             Py_ssize_t max_length)
 {
+    assert(PyMutex_IsLocked(&self->lock));
     ZSTD_inBuffer in;
     PyObject *ret = NULL;
     int use_input_buffer;
