@@ -4,8 +4,6 @@ import gettext
 import unittest
 import unittest.mock
 from functools import partial
-import tempfile
-import shutil
 
 from test import support
 from test.support import cpython_only, os_helper
@@ -939,17 +937,13 @@ class MiscTestCase(unittest.TestCase):
 
 
 class DGettextTest(unittest.TestCase):
-    """Test dgettext() function, which allows translations from specific domains."""
 
     def setUp(self):
-        """Set up a specific test domain and environment for dgettext tests."""
-        self.localedir = tempfile.mkdtemp()
-        self.addCleanup(shutil.rmtree, self.localedir)
+        self.localedir = self.enterContext(os_helper.temp_dir())
         self.domain = 'gettext_domain'
         self.mofile = self.setup_dgettext_test_env()
 
     def setup_dgettext_test_env(self):
-        """Create a mo file for dgettext testing."""
         os.makedirs(os.path.join(self.localedir, 'en', 'LC_MESSAGES'), exist_ok=True)
         mofile = os.path.join(self.localedir, 'en', 'LC_MESSAGES', f'{self.domain}.mo')
         with open(mofile, 'wb') as fp:
@@ -957,7 +951,6 @@ class DGettextTest(unittest.TestCase):
         return mofile
 
     def test_dgettext_found_translation(self):
-        """Test dgettext finds translation in specified domain."""
         gettext.bindtextdomain(self.domain, self.localedir)
         with unittest.mock.patch('gettext.dgettext') as mock_dgettext:
             mock_dgettext.return_value = 'test message translation'
@@ -965,19 +958,15 @@ class DGettextTest(unittest.TestCase):
             self.assertEqual(result, 'test message translation')
 
     def test_dgettext_missing_translation(self):
-        """Test dgettext returns msgid when translation is missing."""
         gettext.bindtextdomain(self.domain, self.localedir)
         result = gettext.dgettext(self.domain, 'missing message')
         self.assertEqual(result, 'missing message')
 
     def test_dgettext_non_existent_domain(self):
-        """Test dgettext returns msgid when domain doesn't exist."""
         result = gettext.dgettext('nonexistent_domain', 'test message')
         self.assertEqual(result, 'test message')
 
     def test_dgettext_empty_domain(self):
-        """Test dgettext behavior with empty domain."""
-        current_domain = gettext.textdomain()
         result = gettext.dgettext('', 'test message')
         expected = gettext.gettext('test message')
         self.assertEqual(result, expected)
