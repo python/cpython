@@ -8,15 +8,23 @@ on:
   pull_request:
     paths:
       - ".github/workflows/mypy.yml"
+      - "Lib/_colorize.py"
       - "Lib/_pyrepl/**"
       - "Lib/test/libregrtest/**"
+      - "Lib/tomllib/**"
+      - "Misc/mypy/**"
+      - "Tools/build/compute-changes.py"
+      - "Tools/build/deepfreeze.py"
       - "Tools/build/generate_sbom.py"
+      - "Tools/build/generate-build-details.py"
+      - "Tools/build/verify_ensurepip_wheels.py"
+      - "Tools/build/update_file.py"
+      - "Tools/build/umarshal.py"
       - "Tools/cases_generator/**"
       - "Tools/clinic/**"
       - "Tools/jit/**"
       - "Tools/peg_generator/**"
       - "Tools/requirements-dev.txt"
-      - "Tools/wasm/**"
   workflow_dispatch:
 
 permissions:
@@ -33,28 +41,31 @@ concurrency:
 
 jobs:
   mypy:
+    name: Run mypy on ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
         target: [
           "Lib/_pyrepl",
           "Lib/test/libregrtest",
+          "Lib/tomllib",
           "Tools/build",
           "Tools/cases_generator",
           "Tools/clinic",
           "Tools/jit",
           "Tools/peg_generator",
-          "Tools/wasm",
         ]
-    name: Run mypy on ${{ matrix.target }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
           cache: pip
           cache-dependency-path: Tools/requirements-dev.txt
       - run: pip install -r Tools/requirements-dev.txt
+      - run: python3 Misc/mypy/make_symlinks.py --symlink
       - run: mypy --config-file ${{ matrix.target }}/mypy.ini

@@ -1,7 +1,7 @@
 import contextlib
 from lexer import Token
 from typing import TextIO, Iterator
-
+from io import StringIO
 
 class CWriter:
     "A writer that understands tokens and how to format C code"
@@ -15,6 +15,12 @@ class CWriter:
         self.line_directives = line_directives
         self.last_token = None
         self.newline = True
+        self.pending_spill = False
+        self.pending_reload = False
+
+    @staticmethod
+    def null() -> "CWriter":
+        return CWriter(StringIO(), 0, False)
 
     def set_position(self, tkn: Token) -> None:
         if self.last_token is not None:
@@ -33,6 +39,7 @@ class CWriter:
         self.newline = False
 
     def emit_at(self, txt: str, where: Token) -> None:
+        self.maybe_write_spill()
         self.set_position(where)
         self.out.write(txt)
 
@@ -92,7 +99,7 @@ class CWriter:
         self.maybe_dedent(tkn.text)
         self.set_position(tkn)
         self.emit_text(tkn.text)
-        if tkn.kind == "CMACRO":
+        if tkn.kind.startswith("CMACRO"):
             self.newline = True
         self.maybe_indent(tkn.text)
 
@@ -109,6 +116,7 @@ class CWriter:
         self.last_token = None
 
     def emit(self, txt: str | Token) -> None:
+        self.maybe_write_spill()
         if isinstance(txt, Token):
             self.emit_token(txt)
         elif isinstance(txt, str):
@@ -121,6 +129,28 @@ class CWriter:
             self.out.write("\n")
         self.newline = True
         self.last_token = None
+
+    def emit_spill(self) -> None:
+        if self.pending_reload:
+            self.pending_reload = False
+            return
+        assert not self.pending_spill
+        self.pending_spill = True
+
+    def maybe_write_spill(self) -> None:
+        if self.pending_spill:
+            self.pending_spill = False
+            self.emit_str("_PyFrame_SetStackPointer(frame, stack_pointer);\n")
+        elif self.pending_reload:
+            self.pending_reload = False
+            self.emit_str("stack_pointer = _PyFrame_GetStackPointer(frame);\n")
+
+    def emit_reload(self) -> None:
+        if self.pending_spill:
+            self.pending_spill = False
+            return
+        assert not self.pending_reload
+        self.pending_reload = True
 
     @contextlib.contextmanager
     def header_guard(self, name: str) -> Iterator[None]:

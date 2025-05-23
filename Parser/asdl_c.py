@@ -738,7 +738,7 @@ class SequenceConstructorVisitor(EmitVisitor):
 class PyTypesDeclareVisitor(PickleVisitor):
 
     def visitProduct(self, prod, name):
-        self.emit("static PyObject* ast2obj_%s(struct ast_state *state, struct validator *vstate, void*);" % name, 0)
+        self.emit("static PyObject* ast2obj_%s(struct ast_state *state, void*);" % name, 0)
         if prod.attributes:
             self.emit("static const char * const %s_attributes[] = {" % name, 0)
             for a in prod.attributes:
@@ -759,7 +759,7 @@ class PyTypesDeclareVisitor(PickleVisitor):
         ptype = "void*"
         if is_simple(sum):
             ptype = get_c_type(name)
-        self.emit("static PyObject* ast2obj_%s(struct ast_state *state, struct validator *vstate, %s);" % (name, ptype), 0)
+        self.emit("static PyObject* ast2obj_%s(struct ast_state *state, %s);" % (name, ptype), 0)
         for t in sum.types:
             self.visitConstructor(t, name)
 
@@ -1244,6 +1244,32 @@ ast_type_replace_check(PyObject *self,
             Py_DECREF(unused);
         }
     }
+
+    // Discard fields from 'expecting' that default to None
+    PyObject *field_types = NULL;
+    if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self),
+                                 &_Py_ID(_field_types),
+                                 &field_types) < 0)
+    {
+        Py_DECREF(expecting);
+        return -1;
+    }
+    if (field_types != NULL) {
+        Py_ssize_t pos = 0;
+        PyObject *field_name, *field_type;
+        while (PyDict_Next(field_types, &pos, &field_name, &field_type)) {
+            if (_PyUnion_Check(field_type)) {
+                // optional field
+                if (PySet_Discard(expecting, field_name) < 0) {
+                    Py_DECREF(expecting);
+                    Py_DECREF(field_types);
+                    return -1;
+                }
+            }
+        }
+        Py_DECREF(field_types);
+    }
+
     // Now 'expecting' contains the fields or attributes
     // that would not be filled inside ast_type_replace().
     Py_ssize_t m = PySet_GET_SIZE(expecting);
@@ -1462,10 +1488,11 @@ ast_repr_list(PyObject *list, int depth)
         return PyObject_Repr(list);
     }
 
-    _PyUnicodeWriter writer;
-    _PyUnicodeWriter_Init(&writer);
-    writer.overallocate = 1;
     PyObject *items[2] = {NULL, NULL};
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        goto error;
+    }
 
     items[0] = PySequence_GetItem(list, 0);
     if (!items[0]) {
@@ -1479,52 +1506,54 @@ ast_repr_list(PyObject *list, int depth)
     }
 
     bool is_list = PyList_Check(list);
-    if (_PyUnicodeWriter_WriteChar(&writer, is_list ? '[' : '(') < 0) {
+    if (PyUnicodeWriter_WriteChar(writer, is_list ? '[' : '(') < 0) {
         goto error;
     }
 
     for (Py_ssize_t i = 0; i < Py_MIN(length, 2); i++) {
-        PyObject *item = items[i];
-        PyObject *item_repr;
-
-        if (PyType_IsSubtype(Py_TYPE(item), (PyTypeObject *)state->AST_type)) {
-            item_repr = ast_repr_max_depth((AST_object*)item, depth - 1);
-        } else {
-            item_repr = PyObject_Repr(item);
-        }
-        if (!item_repr) {
-            goto error;
-        }
         if (i > 0) {
-            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0) {
+            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
                 goto error;
             }
         }
-        if (_PyUnicodeWriter_WriteStr(&writer, item_repr) < 0) {
-            Py_DECREF(item_repr);
-            goto error;
-        }
-        if (i == 0 && length > 2) {
-            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ...", 5) < 0) {
+
+        PyObject *item = items[i];
+        if (PyType_IsSubtype(Py_TYPE(item), (PyTypeObject *)state->AST_type)) {
+            PyObject *item_repr;
+            item_repr = ast_repr_max_depth((AST_object*)item, depth - 1);
+            if (!item_repr) {
+                goto error;
+            }
+            if (PyUnicodeWriter_WriteStr(writer, item_repr) < 0) {
                 Py_DECREF(item_repr);
                 goto error;
             }
+            Py_DECREF(item_repr);
+        } else {
+            if (PyUnicodeWriter_WriteRepr(writer, item) < 0) {
+                goto error;
+            }
         }
-        Py_DECREF(item_repr);
+
+        if (i == 0 && length > 2) {
+            if (PyUnicodeWriter_WriteUTF8(writer, ", ...", 5) < 0) {
+                goto error;
+            }
+        }
     }
 
-    if (_PyUnicodeWriter_WriteChar(&writer, is_list ? ']' : ')') < 0) {
+    if (PyUnicodeWriter_WriteChar(writer, is_list ? ']' : ')') < 0) {
         goto error;
     }
 
     Py_XDECREF(items[0]);
     Py_XDECREF(items[1]);
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
 
 error:
     Py_XDECREF(items[0]);
     Py_XDECREF(items[1]);
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     return NULL;
 }
 
@@ -1568,14 +1597,15 @@ ast_repr_max_depth(AST_object *self, int depth)
     }
 
     const char* tp_name = Py_TYPE(self)->tp_name;
-    _PyUnicodeWriter writer;
-    _PyUnicodeWriter_Init(&writer);
-    writer.overallocate = 1;
-
-    if (_PyUnicodeWriter_WriteASCIIString(&writer, tp_name, strlen(tp_name)) < 0) {
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
         goto error;
     }
-    if (_PyUnicodeWriter_WriteChar(&writer, '(') < 0) {
+
+    if (PyUnicodeWriter_WriteUTF8(writer, tp_name, -1) < 0) {
+        goto error;
+    }
+    if (PyUnicodeWriter_WriteChar(writer, '(') < 0) {
         goto error;
     }
 
@@ -1610,13 +1640,13 @@ ast_repr_max_depth(AST_object *self, int depth)
         }
 
         if (i > 0) {
-            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0) {
+            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
                 Py_DECREF(name);
                 Py_DECREF(value_repr);
                 goto error;
             }
         }
-        if (_PyUnicodeWriter_WriteStr(&writer, name) < 0) {
+        if (PyUnicodeWriter_WriteStr(writer, name) < 0) {
             Py_DECREF(name);
             Py_DECREF(value_repr);
             goto error;
@@ -1624,11 +1654,11 @@ ast_repr_max_depth(AST_object *self, int depth)
 
         Py_DECREF(name);
 
-        if (_PyUnicodeWriter_WriteChar(&writer, '=') < 0) {
+        if (PyUnicodeWriter_WriteChar(writer, '=') < 0) {
             Py_DECREF(value_repr);
             goto error;
         }
-        if (_PyUnicodeWriter_WriteStr(&writer, value_repr) < 0) {
+        if (PyUnicodeWriter_WriteStr(writer, value_repr) < 0) {
             Py_DECREF(value_repr);
             goto error;
         }
@@ -1636,17 +1666,17 @@ ast_repr_max_depth(AST_object *self, int depth)
         Py_DECREF(value_repr);
     }
 
-    if (_PyUnicodeWriter_WriteChar(&writer, ')') < 0) {
+    if (PyUnicodeWriter_WriteChar(writer, ')') < 0) {
         goto error;
     }
     Py_ReprLeave((PyObject *)self);
     Py_DECREF(fields);
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
 
 error:
     Py_ReprLeave((PyObject *)self);
     Py_DECREF(fields);
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     return NULL;
 }
 
@@ -1730,8 +1760,8 @@ add_attributes(struct ast_state *state, PyObject *type, const char * const *attr
 
 /* Conversion AST -> Python */
 
-static PyObject* ast2obj_list(struct ast_state *state, struct validator *vstate, asdl_seq *seq,
-                              PyObject* (*func)(struct ast_state *state, struct validator *vstate, void*))
+static PyObject* ast2obj_list(struct ast_state *state, asdl_seq *seq,
+                              PyObject* (*func)(struct ast_state *state, void*))
 {
     Py_ssize_t i, n = asdl_seq_LEN(seq);
     PyObject *result = PyList_New(n);
@@ -1739,7 +1769,7 @@ static PyObject* ast2obj_list(struct ast_state *state, struct validator *vstate,
     if (!result)
         return NULL;
     for (i = 0; i < n; i++) {
-        value = func(state, vstate, asdl_seq_GET_UNTYPED(seq, i));
+        value = func(state, asdl_seq_GET_UNTYPED(seq, i));
         if (!value) {
             Py_DECREF(result);
             return NULL;
@@ -1749,7 +1779,7 @@ static PyObject* ast2obj_list(struct ast_state *state, struct validator *vstate,
     return result;
 }
 
-static PyObject* ast2obj_object(struct ast_state *Py_UNUSED(state), struct validator *Py_UNUSED(vstate), void *o)
+static PyObject* ast2obj_object(struct ast_state *Py_UNUSED(state), void *o)
 {
     PyObject *op = (PyObject*)o;
     if (!op) {
@@ -1761,7 +1791,7 @@ static PyObject* ast2obj_object(struct ast_state *Py_UNUSED(state), struct valid
 #define ast2obj_identifier ast2obj_object
 #define ast2obj_string ast2obj_object
 
-static PyObject* ast2obj_int(struct ast_state *Py_UNUSED(state), struct validator *Py_UNUSED(vstate), long b)
+static PyObject* ast2obj_int(struct ast_state *Py_UNUSED(state), long b)
 {
     return PyLong_FromLong(b);
 }
@@ -2010,7 +2040,7 @@ class ObjVisitor(PickleVisitor):
     def func_begin(self, name):
         ctype = get_c_type(name)
         self.emit("PyObject*", 0)
-        self.emit("ast2obj_%s(struct ast_state *state, struct validator *vstate, void* _o)" % (name), 0)
+        self.emit("ast2obj_%s(struct ast_state *state, void* _o)" % (name), 0)
         self.emit("{", 0)
         self.emit("%s o = (%s)_o;" % (ctype, ctype), 1)
         self.emit("PyObject *result = NULL, *value = NULL;", 1)
@@ -2018,17 +2048,15 @@ class ObjVisitor(PickleVisitor):
         self.emit('if (!o) {', 1)
         self.emit("Py_RETURN_NONE;", 2)
         self.emit("}", 1)
-        self.emit("if (++vstate->recursion_depth > vstate->recursion_limit) {", 1)
-        self.emit("PyErr_SetString(PyExc_RecursionError,", 2)
-        self.emit('"maximum recursion depth exceeded during ast construction");', 3)
+        self.emit('if (Py_EnterRecursiveCall("during  ast construction")) {', 1)
         self.emit("return NULL;", 2)
         self.emit("}", 1)
 
     def func_end(self):
-        self.emit("vstate->recursion_depth--;", 1)
+        self.emit("Py_LeaveRecursiveCall();", 1)
         self.emit("return result;", 1)
         self.emit("failed:", 0)
-        self.emit("vstate->recursion_depth--;", 1)
+        self.emit("Py_LeaveRecursiveCall();", 1)
         self.emit("Py_XDECREF(value);", 1)
         self.emit("Py_XDECREF(result);", 1)
         self.emit("return NULL;", 1)
@@ -2046,7 +2074,7 @@ class ObjVisitor(PickleVisitor):
             self.visitConstructor(t, i + 1, name)
         self.emit("}", 1)
         for a in sum.attributes:
-            self.emit("value = ast2obj_%s(state, vstate, o->%s);" % (a.type, a.name), 1)
+            self.emit("value = ast2obj_%s(state, o->%s);" % (a.type, a.name), 1)
             self.emit("if (!value) goto failed;", 1)
             self.emit('if (PyObject_SetAttr(result, state->%s, value) < 0)' % a.name, 1)
             self.emit('goto failed;', 2)
@@ -2054,7 +2082,7 @@ class ObjVisitor(PickleVisitor):
         self.func_end()
 
     def simpleSum(self, sum, name):
-        self.emit("PyObject* ast2obj_%s(struct ast_state *state, struct validator *vstate, %s_ty o)" % (name, name), 0)
+        self.emit("PyObject* ast2obj_%s(struct ast_state *state, %s_ty o)" % (name, name), 0)
         self.emit("{", 0)
         self.emit("switch(o) {", 1)
         for t in sum.types:
@@ -2072,7 +2100,7 @@ class ObjVisitor(PickleVisitor):
         for field in prod.fields:
             self.visitField(field, name, 1, True)
         for a in prod.attributes:
-            self.emit("value = ast2obj_%s(state, vstate, o->%s);" % (a.type, a.name), 1)
+            self.emit("value = ast2obj_%s(state, o->%s);" % (a.type, a.name), 1)
             self.emit("if (!value) goto failed;", 1)
             self.emit("if (PyObject_SetAttr(result, state->%s, value) < 0)" % a.name, 1)
             self.emit('goto failed;', 2)
@@ -2113,7 +2141,7 @@ class ObjVisitor(PickleVisitor):
                 self.emit("for(i = 0; i < n; i++)", depth+1)
                 # This cannot fail, so no need for error handling
                 self.emit(
-                    "PyList_SET_ITEM(value, i, ast2obj_{0}(state, vstate, ({0}_ty)asdl_seq_GET({1}, i)));".format(
+                    "PyList_SET_ITEM(value, i, ast2obj_{0}(state, ({0}_ty)asdl_seq_GET({1}, i)));".format(
                         field.type,
                         value
                     ),
@@ -2122,9 +2150,9 @@ class ObjVisitor(PickleVisitor):
                 )
                 self.emit("}", depth)
             else:
-                self.emit("value = ast2obj_list(state, vstate, (asdl_seq*)%s, ast2obj_%s);" % (value, field.type), depth)
+                self.emit("value = ast2obj_list(state, (asdl_seq*)%s, ast2obj_%s);" % (value, field.type), depth)
         else:
-            self.emit("value = ast2obj_%s(state, vstate, %s);" % (field.type, value), depth, reflow=False)
+            self.emit("value = ast2obj_%s(state, %s);" % (field.type, value), depth, reflow=False)
 
 
 class PartingShots(StaticVisitor):
@@ -2136,37 +2164,41 @@ PyObject* PyAST_mod2obj(mod_ty t)
     if (state == NULL) {
         return NULL;
     }
+    PyObject *result = ast2obj_mod(state, t);
 
-    int starting_recursion_depth;
-    /* Be careful here to prevent overflow. */
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (!tstate) {
-        return NULL;
-    }
-    struct validator vstate;
-    vstate.recursion_limit = Py_C_RECURSION_LIMIT;
-    int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
-    starting_recursion_depth = recursion_depth;
-    vstate.recursion_depth = starting_recursion_depth;
-
-    PyObject *result = ast2obj_mod(state, &vstate, t);
-
-    /* Check that the recursion depth counting balanced correctly */
-    if (result && vstate.recursion_depth != starting_recursion_depth) {
-        PyErr_Format(PyExc_SystemError,
-            "AST constructor recursion depth mismatch (before=%d, after=%d)",
-            starting_recursion_depth, vstate.recursion_depth);
-        return NULL;
-    }
     return result;
 }
 
 /* mode is 0 for "exec", 1 for "eval" and 2 for "single" input */
-mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
+int PyAst_CheckMode(PyObject *ast, int mode)
 {
     const char * const req_name[] = {"Module", "Expression", "Interactive"};
-    int isinstance;
 
+    struct ast_state *state = get_ast_state();
+    if (state == NULL) {
+        return -1;
+    }
+
+    PyObject *req_type[3];
+    req_type[0] = state->Module_type;
+    req_type[1] = state->Expression_type;
+    req_type[2] = state->Interactive_type;
+
+    assert(0 <= mode && mode <= 2);
+    int isinstance = PyObject_IsInstance(ast, req_type[mode]);
+    if (isinstance == -1) {
+        return -1;
+    }
+    if (!isinstance) {
+        PyErr_Format(PyExc_TypeError, "expected %s node, got %.400s",
+                     req_name[mode], _PyType_Name(Py_TYPE(ast)));
+        return -1;
+    }
+    return 0;
+}
+
+mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
+{
     if (PySys_Audit("compile", "OO", ast, Py_None) < 0) {
         return NULL;
     }
@@ -2176,19 +2208,7 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
         return NULL;
     }
 
-    PyObject *req_type[3];
-    req_type[0] = state->Module_type;
-    req_type[1] = state->Expression_type;
-    req_type[2] = state->Interactive_type;
-
-    assert(0 <= mode && mode <= 2);
-
-    isinstance = PyObject_IsInstance(ast, req_type[mode]);
-    if (isinstance == -1)
-        return NULL;
-    if (!isinstance) {
-        PyErr_Format(PyExc_TypeError, "expected %s node, got %.400s",
-                     req_name[mode], _PyType_Name(Py_TYPE(ast)));
+    if (PyAst_CheckMode(ast, mode) < 0) {
         return NULL;
     }
 
@@ -2279,20 +2299,16 @@ def generate_module_def(mod, metadata, f, internal_h):
         #include "Python.h"
         #include "pycore_ast.h"
         #include "pycore_ast_state.h"     // struct ast_state
-        #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
+        #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
         #include "pycore_lock.h"          // _PyOnceFlag
-        #include "pycore_interp.h"        // _PyInterpreterState.ast
         #include "pycore_modsupport.h"    // _PyArg_NoPositional()
         #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-        #include "pycore_setobject.h"     // _PySet_NextEntry(), _PySet_Update()
+        #include "pycore_runtime.h"       // _Py_ID()
+        #include "pycore_setobject.h"     // _PySet_NextEntry()
         #include "pycore_unionobject.h"   // _Py_union_type_or
-        #include "structmember.h"
-        #include <stddef.h>
 
-        struct validator {
-            int recursion_depth;            /* current recursion depth */
-            int recursion_limit;            /* recursion limit */
-        };
+        #include <stddef.h>               // offsetof()
+
 
         // Forward declaration
         static int init_types(void *arg);
@@ -2352,6 +2368,7 @@ def write_header(mod, metadata, f):
     f.write(textwrap.dedent("""
 
         PyObject* PyAST_mod2obj(mod_ty t);
+        int PyAst_CheckMode(PyObject *ast, int mode);
         mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);
         int PyAST_Check(PyObject* obj);
 
@@ -2377,7 +2394,7 @@ def write_internal_h_header(mod, f):
         #ifndef Py_INTERNAL_AST_STATE_H
         #define Py_INTERNAL_AST_STATE_H
 
-        #include "pycore_lock.h"    // _PyOnceFlag
+        #include "pycore_lock.h"          // _PyOnceFlag
 
         #ifdef __cplusplus
         extern "C" {

@@ -6,12 +6,10 @@
 # The contents of this file are pickled, so don't put values in the namespace
 # that aren't pickleable (module imports are okay, they're removed automatically).
 
-import importlib
 import os
 import sys
-import time
-
-import sphinx
+from importlib import import_module
+from importlib.util import find_spec
 
 # Make our custom extensions available to Sphinx
 sys.path.append(os.path.abspath('tools/extensions'))
@@ -28,8 +26,14 @@ extensions = [
     'audit_events',
     'availability',
     'c_annotations',
+    'changes',
     'glossary_search',
+    'grammar_snippet',
+    'implementation_detail',
+    'issue_role',
     'lexers',
+    'misc_news',
+    'pydoc_topics',
     'pyspecific',
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
@@ -37,19 +41,17 @@ extensions = [
 ]
 
 # Skip if downstream redistributors haven't installed them
-try:
-    import notfound.extension  # noqa: F401
-except ImportError:
-    pass
-else:
-    extensions.append('notfound.extension')
-try:
-    import sphinxext.opengraph  # noqa: F401
-except ImportError:
-    pass
-else:
-    extensions.append('sphinxext.opengraph')
-
+_OPTIONAL_EXTENSIONS = (
+    'notfound.extension',
+    'sphinxext.opengraph',
+)
+for optional_ext in _OPTIONAL_EXTENSIONS:
+    try:
+        if find_spec(optional_ext) is not None:
+            extensions.append(optional_ext)
+    except (ImportError, ValueError):
+        pass
+del _OPTIONAL_EXTENSIONS
 
 doctest_global_setup = '''
 try:
@@ -67,20 +69,24 @@ manpages_url = 'https://manpages.debian.org/{path}'
 
 # General substitutions.
 project = 'Python'
-if sphinx.version_info[:2] >= (8, 1):
-    copyright = "2001-%Y, Python Software Foundation"
-else:
-    copyright = f"2001-{time.strftime('%Y')}, Python Software Foundation"
+copyright = "2001 Python Software Foundation"
 
 # We look for the Include/patchlevel.h file in the current Python source tree
 # and replace the values accordingly.
 # See Doc/tools/extensions/patchlevel.py
-version, release = importlib.import_module('patchlevel').get_version_info()
+version, release = import_module('patchlevel').get_version_info()
 
 rst_epilog = f"""
 .. |python_version_literal| replace:: ``Python {version}``
 .. |python_x_dot_y_literal| replace:: ``python{version}``
 .. |usr_local_bin_python_x_dot_y_literal| replace:: ``/usr/local/bin/python{version}``
+
+.. Apparently this how you hack together a formatted link:
+   (https://www.docutils.org/docs/ref/rst/directives.html#replacement-text)
+.. |FORCE_COLOR| replace:: ``FORCE_COLOR``
+.. _FORCE_COLOR: https://force-color.org/
+.. |NO_COLOR| replace:: ``NO_COLOR``
+.. _NO_COLOR: https://no-color.org/
 """
 
 # There are two options for replacing |today|. Either, you set today to some
@@ -93,13 +99,12 @@ today_fmt = '%B %d, %Y'
 highlight_language = 'python3'
 
 # Minimum version of sphinx required
-needs_sphinx = '7.2.6'
+# Keep this version in sync with ``Doc/requirements.txt``.
+needs_sphinx = '8.2.0'
 
 # Create table of contents entries for domain objects (e.g. functions, classes,
 # attributes, etc.). Default is True.
-toc_object_entries = True
-# Hide parents to tidy up long entries in sidebar
-toc_object_entries_show_parents = 'hide'
+toc_object_entries = False
 
 # Ignore any .rst files in the includes/ directory;
 # they're embedded in pages but not rendered as individual pages.
@@ -303,7 +308,6 @@ nitpick_ignore += [
     ('py:attr', '__annotations__'),
     ('py:meth', '__missing__'),
     ('py:attr', '__wrapped__'),
-    ('py:attr', 'decimal.Context.clamp'),
     ('py:meth', 'index'),  # list.index, tuple.index, etc.
 ]
 
@@ -374,13 +378,7 @@ html_context = {
 
 # This 'Last updated on:' timestamp is inserted at the bottom of every page.
 html_last_updated_fmt = '%b %d, %Y (%H:%M UTC)'
-if sphinx.version_info[:2] >= (8, 1):
-    html_last_updated_use_utc = True
-else:
-    html_time = int(os.environ.get('SOURCE_DATE_EPOCH', time.time()))
-    html_last_updated_fmt = time.strftime(
-        html_last_updated_fmt, time.gmtime(html_time)
-    )
+html_last_updated_use_utc = True
 
 # Path to find HTML templates to override theme
 templates_path = ['tools/templates']
@@ -564,8 +562,6 @@ linkcheck_allowed_redirects = {
     r'https://github.com/python/cpython/tree/.*': 'https://github.com/python/cpython/blob/.*',
     # Intentional HTTP use at Misc/NEWS.d/3.5.0a1.rst
     r'http://www.python.org/$': 'https://www.python.org/$',
-    # Used in license page, keep as is
-    r'https://www.zope.org/': r'https://www.zope.dev/',
     # Microsoft's redirects to learn.microsoft.com
     r'https://msdn.microsoft.com/.*': 'https://learn.microsoft.com/.*',
     r'https://docs.microsoft.com/.*': 'https://learn.microsoft.com/.*',
@@ -617,16 +613,6 @@ extlinks = {
 }
 extlinks_detect_hardcoded_links = True
 
-if sphinx.version_info[:2] < (8, 1):
-    # Sphinx 8.1 has in-built CVE and CWE roles.
-    extlinks |= {
-        "cve": (
-            "https://www.cve.org/CVERecord?id=CVE-%s",
-            "CVE-%s",
-        ),
-        "cwe": ("https://cwe.mitre.org/data/definitions/%s.html", "CWE-%s"),
-    }
-
 # Options for c_annotations extension
 # -----------------------------------
 
@@ -637,11 +623,19 @@ stable_abi_file = 'data/stable_abi.dat'
 # Options for sphinxext-opengraph
 # -------------------------------
 
-ogp_site_url = 'https://docs.python.org/3/'
+ogp_canonical_url = 'https://docs.python.org/3/'
 ogp_site_name = 'Python documentation'
-ogp_image = '_static/og-image.png'
+ogp_social_cards = {  # Used when matplotlib is installed
+    'image': '_static/og-image.png',
+    'line_color': '#3776ab',
+}
 ogp_custom_meta_tags = [
-    '<meta property="og:image:width" content="200" />',
-    '<meta property="og:image:height" content="200" />',
-    '<meta name="theme-color" content="#3776ab" />',
+    '<meta name="theme-color" content="#3776ab">',
 ]
+if 'create-social-cards' not in tags:  # noqa: F821
+    # Define a static preview image when not creating social cards
+    ogp_image = '_static/og-image.png'
+    ogp_custom_meta_tags += [
+        '<meta property="og:image:width" content="200">',
+        '<meta property="og:image:height" content="200">',
+    ]

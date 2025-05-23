@@ -368,8 +368,8 @@ The :mod:`functools` module defines the following functions:
 
    If :data:`Placeholder` sentinels are present in *args*, they will be filled first
    when :func:`!partial` is called. This makes it possible to pre-fill any positional
-   argument with a call to :func:`!partial`; without :data:`!Placeholder`, only the
-   first positional argument can be pre-filled.
+   argument with a call to :func:`!partial`; without :data:`!Placeholder`,
+   only the chosen number of leading positional arguments can be pre-filled.
 
    If any :data:`!Placeholder` sentinels are present, all must be filled at call time:
 
@@ -403,8 +403,7 @@ The :mod:`functools` module defines the following functions:
       >>> remove_first_dear(message)
       'Hello, dear world!'
 
-   :data:`!Placeholder` has no special treatment when used in a keyword
-   argument to :func:`!partial`.
+   :data:`!Placeholder` cannot be passed to :func:`!partial` as a keyword argument.
 
    .. versionchanged:: 3.14
       Added support for :data:`Placeholder` in positional arguments.
@@ -453,7 +452,7 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.4
 
 
-.. function:: reduce(function, iterable[, initial], /)
+.. function:: reduce(function, iterable, /[, initial])
 
    Apply *function* of two arguments cumulatively to the items of *iterable*, from
    left to right, so as to reduce the iterable to a single value.  For example,
@@ -468,7 +467,7 @@ The :mod:`functools` module defines the following functions:
 
       initial_missing = object()
 
-      def reduce(function, iterable, initial=initial_missing, /):
+      def reduce(function, iterable, /, initial=initial_missing):
           it = iter(iterable)
           if initial is initial_missing:
               value = next(it)
@@ -480,6 +479,9 @@ The :mod:`functools` module defines the following functions:
 
    See :func:`itertools.accumulate` for an iterator that yields all intermediate
    values.
+
+   .. versionchanged:: 3.14
+      *initial* is now supported as a keyword argument.
 
 .. decorator:: singledispatch
 
@@ -515,7 +517,7 @@ The :mod:`functools` module defines the following functions:
      ...     for i, elem in enumerate(arg):
      ...         print(i, elem)
 
-   :data:`types.UnionType` and :data:`typing.Union` can also be used::
+   :class:`typing.Union` can also be used::
 
     >>> @fun.register
     ... def _(arg: int | float, verbose=False):
@@ -651,8 +653,8 @@ The :mod:`functools` module defines the following functions:
       The :func:`register` attribute now supports using type annotations.
 
    .. versionchanged:: 3.11
-      The :func:`register` attribute now supports :data:`types.UnionType`
-      and :data:`typing.Union` as type annotations.
+      The :func:`register` attribute now supports
+      :class:`typing.Union` as a type annotation.
 
 
 .. class:: singledispatchmethod(func)

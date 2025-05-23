@@ -1,13 +1,16 @@
-
-#include <stdbool.h>
-
 #include "Python.h"
+#include "opcode.h"
+#include "pycore_c_array.h"       // _Py_CArray_EnsureCapacity
 #include "pycore_flowgraph.h"
 #include "pycore_compile.h"
+#include "pycore_intrinsics.h"
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
+#include "pycore_long.h"          // _PY_IS_SMALL_INT()
 
 #include "pycore_opcode_utils.h"
 #include "pycore_opcode_metadata.h" // OPCODE_HAS_ARG, etc
+
+#include <stdbool.h>
 
 
 #undef SUCCESS
@@ -123,6 +126,12 @@ is_jump(cfg_instr *i)
         _instr__ptr_->i_oparg = 0; \
     } while (0);
 
+#define INSTR_SET_LOC(I, LOC) \
+    do { \
+        cfg_instr *_instr__ptr_ = (I); \
+        _instr__ptr_->i_loc = (LOC); \
+    } while (0);
+
 /***** Blocks *****/
 
 /* Returns the offset of the next instruction in the current block's
@@ -133,13 +142,16 @@ static int
 basicblock_next_instr(basicblock *b)
 {
     assert(b != NULL);
-    RETURN_IF_ERROR(
-        _PyCompile_EnsureArrayLargeEnough(
-            b->b_iused + 1,
-            (void**)&b->b_instr,
-            &b->b_ialloc,
-            DEFAULT_BLOCK_SIZE,
-            sizeof(cfg_instr)));
+    _Py_c_array_t array = {
+        .array = (void*)b->b_instr,
+        .allocated_entries = b->b_ialloc,
+        .item_size = sizeof(cfg_instr),
+        .initial_num_entries = DEFAULT_BLOCK_SIZE,
+    };
+
+    RETURN_IF_ERROR(_Py_CArray_EnsureCapacity(&array, b->b_iused + 1));
+    b->b_instr = array.array;
+    b->b_ialloc = array.allocated_entries;
     return b->b_iused++;
 }
 
@@ -283,7 +295,7 @@ dump_instr(cfg_instr *i)
 static inline int
 basicblock_returns(const basicblock *b) {
     cfg_instr *last = basicblock_last_instr(b);
-    return last && last->i_opcode == RETURN_VALUE;
+    return last && IS_RETURN_OPCODE(last->i_opcode);
 }
 
 static void
@@ -522,14 +534,15 @@ no_redundant_jumps(cfg_builder *g) {
 static int
 normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     cfg_instr *last = basicblock_last_instr(b);
-    if (last == NULL || !is_jump(last) ||
-        IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
+    if (last == NULL || !IS_CONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
         return SUCCESS;
     }
     assert(!IS_ASSEMBLER_OPCODE(last->i_opcode));
 
     bool is_forward = last->i_target->b_visited == 0;
     if (is_forward) {
+        RETURN_IF_ERROR(
+            basicblock_addop(b, NOT_TAKEN, 0, last->i_loc));
         return SUCCESS;
     }
 
@@ -558,7 +571,10 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
         return ERROR;
     }
     RETURN_IF_ERROR(
+        basicblock_addop(backwards_jump, NOT_TAKEN, 0, last->i_loc));
+    RETURN_IF_ERROR(
         basicblock_add_jump(backwards_jump, JUMP, target, last->i_loc));
+    backwards_jump->b_startdepth = target->b_startdepth;
     last->i_opcode = reversed_opcode;
     last->i_target = b->b_next;
 
@@ -733,7 +749,7 @@ make_cfg_traversal_stack(basicblock *entryblock) {
     return stack;
 }
 
-/* Return the stack effect of opcode with argument oparg.
+/* Compute the stack effects of opcode with argument oparg.
 
    Some opcodes have different stack effect when jump to the target and
    when not jump. The 'jump' parameter specifies the case:
@@ -742,25 +758,32 @@ make_cfg_traversal_stack(basicblock *entryblock) {
    * 1 -- when jump
    * -1 -- maximal
  */
+typedef struct {
+    /* The stack effect of the instruction. */
+    int net;
+} stack_effects;
+
 Py_LOCAL(int)
-stack_effect(int opcode, int oparg, int jump)
+get_stack_effects(int opcode, int oparg, int jump, stack_effects *effects)
 {
     if (opcode < 0) {
-        return PY_INVALID_STACK_EFFECT;
+        return -1;
     }
     if ((opcode <= MAX_REAL_OPCODE) && (_PyOpcode_Deopt[opcode] != opcode)) {
         // Specialized instructions are not supported.
-        return PY_INVALID_STACK_EFFECT;
+        return -1;
     }
     int popped = _PyOpcode_num_popped(opcode, oparg);
     int pushed = _PyOpcode_num_pushed(opcode, oparg);
     if (popped < 0 || pushed < 0) {
-        return PY_INVALID_STACK_EFFECT;
+        return -1;
     }
     if (IS_BLOCK_PUSH_OPCODE(opcode) && !jump) {
+        effects->net = 0;
         return 0;
     }
-    return pushed - popped;
+    effects->net = pushed - popped;
+    return 0;
 }
 
 Py_LOCAL_INLINE(int)
@@ -807,35 +830,30 @@ calculate_stackdepth(cfg_builder *g)
         basicblock *next = b->b_next;
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
-            int effect = stack_effect(instr->i_opcode, instr->i_oparg, 0);
-            if (effect == PY_INVALID_STACK_EFFECT) {
+            stack_effects effects;
+            if (get_stack_effects(instr->i_opcode, instr->i_oparg, 0, &effects) < 0) {
                 PyErr_Format(PyExc_SystemError,
                              "Invalid stack effect for opcode=%d, arg=%i",
                              instr->i_opcode, instr->i_oparg);
                 goto error;
             }
-            int new_depth = depth + effect;
+            int new_depth = depth + effects.net;
             if (new_depth < 0) {
-               PyErr_Format(PyExc_ValueError,
-                            "Invalid CFG, stack underflow");
-               goto error;
+                PyErr_Format(PyExc_ValueError,
+                             "Invalid CFG, stack underflow");
+                goto error;
             }
-            if (new_depth > maxdepth) {
-                maxdepth = new_depth;
-            }
-            if (HAS_TARGET(instr->i_opcode)) {
-                effect = stack_effect(instr->i_opcode, instr->i_oparg, 1);
-                if (effect == PY_INVALID_STACK_EFFECT) {
+            maxdepth = Py_MAX(maxdepth, depth);
+            if (HAS_TARGET(instr->i_opcode) && instr->i_opcode != END_ASYNC_FOR) {
+                if (get_stack_effects(instr->i_opcode, instr->i_oparg, 1, &effects) < 0) {
                     PyErr_Format(PyExc_SystemError,
                                  "Invalid stack effect for opcode=%d, arg=%i",
                                  instr->i_opcode, instr->i_oparg);
                     goto error;
                 }
-                int target_depth = depth + effect;
+                int target_depth = depth + effects.net;
                 assert(target_depth >= 0); /* invalid code or bug in stackdepth() */
-                if (target_depth > maxdepth) {
-                    maxdepth = target_depth;
-                }
+                maxdepth = Py_MAX(maxdepth, depth);
                 if (stackdepth_push(&sp, instr->i_target, target_depth) < 0) {
                     goto error;
                 }
@@ -1055,8 +1073,8 @@ basicblock_remove_redundant_nops(basicblock *bb) {
                     location next_loc = NO_LOCATION;
                     for (int next_i=0; next_i < next->b_iused; next_i++) {
                         cfg_instr *instr = &next->b_instr[next_i];
-                        if (instr->i_opcode == NOP && instr->i_loc.lineno == NO_LOCATION.lineno) {
-                            /* Skip over NOPs without location, they will be removed */
+                        if (instr->i_opcode == NOP && instr->i_loc.lineno < 0) {
+                            /* Skip over NOPs without a location, they will be removed */
                             continue;
                         }
                         next_loc = instr->i_loc;
@@ -1270,6 +1288,7 @@ loads_const(int opcode)
     return OPCODE_HAS_CONST(opcode) || opcode == LOAD_SMALL_INT;
 }
 
+/* Returns new reference */
 static PyObject*
 get_const_value(int opcode, int oparg, PyObject *co_consts)
 {
@@ -1320,6 +1339,93 @@ add_const(PyObject *newconst, PyObject *consts, PyObject *const_cache)
     return (int)index;
 }
 
+/*
+  Traverse the instructions of the basic block backwards from index "start", skipping over NOPs.
+  Try to collect "size" number of consecutive instructions that load constants into the array "instrs".
+  Caller must make sure that length of "instrs" is sufficient to fit in at least "size" instructions.
+
+  Return boolean indicating whether "size" such instructions were found.
+*/
+static bool
+get_const_loading_instrs(basicblock *bb, int start, cfg_instr **instrs, int size)
+{
+    assert(start < bb->b_iused);
+    assert(size >= 0);
+    assert(size <= _PY_STACK_USE_GUIDELINE);
+
+    for (; start >= 0 && size > 0; start--) {
+        cfg_instr *instr = &bb->b_instr[start];
+        if (instr->i_opcode == NOP) {
+            continue;
+        }
+        if (!loads_const(instr->i_opcode)) {
+            return false;
+        }
+        instrs[--size] = instr;
+    }
+
+    return size == 0;
+}
+
+/*
+  Change every instruction in "instrs" NOP and set its location to NO_LOCATION.
+  Caller must make sure "instrs" has at least "size" elements.
+*/
+static void
+nop_out(cfg_instr **instrs, int size)
+{
+    for (int i = 0; i < size; i++) {
+        cfg_instr *instr = instrs[i];
+        assert(instr->i_opcode != NOP);
+        INSTR_SET_OP0(instr, NOP);
+        INSTR_SET_LOC(instr, NO_LOCATION);
+    }
+}
+
+/* Does not steal reference to "newconst".
+   Return 1 if changed instruction to LOAD_SMALL_INT.
+   Return 0 if could not change instruction to LOAD_SMALL_INT.
+   Return -1 on error.
+*/
+static int
+maybe_instr_make_load_smallint(cfg_instr *instr, PyObject *newconst,
+                               PyObject *consts, PyObject *const_cache)
+{
+    if (PyLong_CheckExact(newconst)) {
+        int overflow;
+        long val = PyLong_AsLongAndOverflow(newconst, &overflow);
+        if (val == -1 && PyErr_Occurred()) {
+            return -1;
+        }
+        if (!overflow && _PY_IS_SMALL_INT(val)) {
+            assert(_Py_IsImmortal(newconst));
+            INSTR_SET_OP1(instr, LOAD_SMALL_INT, (int)val);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+
+/* Steals reference to "newconst" */
+static int
+instr_make_load_const(cfg_instr *instr, PyObject *newconst,
+                      PyObject *consts, PyObject *const_cache)
+{
+    int res = maybe_instr_make_load_smallint(instr, newconst, consts, const_cache);
+    if (res < 0) {
+        Py_DECREF(newconst);
+        return ERROR;
+    }
+    if (res > 0) {
+        return SUCCESS;
+    }
+    int oparg = add_const(newconst, consts, const_cache);
+    RETURN_IF_ERROR(oparg);
+    INSTR_SET_OP1(instr, LOAD_CONST, oparg);
+    return SUCCESS;
+}
+
 /* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cn, BUILD_TUPLE n
    with    LOAD_CONST (c1, c2, ... cn).
    The consts table must still be in list form so that the
@@ -1327,45 +1433,518 @@ add_const(PyObject *newconst, PyObject *consts, PyObject *const_cache)
    Called with codestr pointing to the first LOAD_CONST.
 */
 static int
-fold_tuple_on_constants(PyObject *const_cache,
-                        cfg_instr *inst,
-                        int n, PyObject *consts)
+fold_tuple_of_constants(basicblock *bb, int i, PyObject *consts, PyObject *const_cache)
 {
     /* Pre-conditions */
     assert(PyDict_CheckExact(const_cache));
     assert(PyList_CheckExact(consts));
-    assert(inst[n].i_opcode == BUILD_TUPLE);
-    assert(inst[n].i_oparg == n);
 
-    for (int i = 0; i < n; i++) {
-        if (!loads_const(inst[i].i_opcode)) {
-            return SUCCESS;
-        }
+    cfg_instr *instr = &bb->b_instr[i];
+    assert(instr->i_opcode == BUILD_TUPLE);
+
+    int seq_size = instr->i_oparg;
+    if (seq_size > _PY_STACK_USE_GUIDELINE) {
+        return SUCCESS;
     }
 
-    /* Buildup new tuple of constants */
-    PyObject *newconst = PyTuple_New(n);
-    if (newconst == NULL) {
+    cfg_instr *const_instrs[_PY_STACK_USE_GUIDELINE];
+    if (!get_const_loading_instrs(bb, i-1, const_instrs, seq_size)) {
+        /* not a const sequence */
+        return SUCCESS;
+    }
+
+    PyObject *const_tuple = PyTuple_New((Py_ssize_t)seq_size);
+    if (const_tuple == NULL) {
         return ERROR;
     }
-    for (int i = 0; i < n; i++) {
-        int op = inst[i].i_opcode;
-        int arg = inst[i].i_oparg;
-        PyObject *constant = get_const_value(op, arg, consts);
-        if (constant == NULL) {
+
+    for (int i = 0; i < seq_size; i++) {
+        cfg_instr *inst = const_instrs[i];
+        assert(loads_const(inst->i_opcode));
+        PyObject *element = get_const_value(inst->i_opcode, inst->i_oparg, consts);
+        if (element == NULL) {
+            Py_DECREF(const_tuple);
             return ERROR;
         }
-        PyTuple_SET_ITEM(newconst, i, constant);
+        PyTuple_SET_ITEM(const_tuple, i, element);
     }
-    int index = add_const(newconst, consts, const_cache);
-    if (index < 0) {
+
+    nop_out(const_instrs, seq_size);
+    return instr_make_load_const(instr, const_tuple, consts, const_cache);
+}
+
+/* Replace:
+    BUILD_LIST 0
+    LOAD_CONST c1
+    LIST_APPEND 1
+    LOAD_CONST c2
+    LIST_APPEND 1
+    ...
+    LOAD_CONST cN
+    LIST_APPEND 1
+    CALL_INTRINSIC_1 INTRINSIC_LIST_TO_TUPLE
+   with:
+    LOAD_CONST (c1, c2, ... cN)
+*/
+static int
+fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
+                                      PyObject *consts, PyObject *const_cache)
+{
+    assert(PyDict_CheckExact(const_cache));
+    assert(PyList_CheckExact(consts));
+    assert(i >= 0);
+    assert(i < bb->b_iused);
+
+    cfg_instr *intrinsic = &bb->b_instr[i];
+    assert(intrinsic->i_opcode == CALL_INTRINSIC_1);
+    assert(intrinsic->i_oparg == INTRINSIC_LIST_TO_TUPLE);
+
+    int consts_found = 0;
+    bool expect_append = true;
+
+    for (int pos = i - 1; pos >= 0; pos--) {
+        cfg_instr *instr = &bb->b_instr[pos];
+        int opcode = instr->i_opcode;
+        int oparg = instr->i_oparg;
+
+        if (opcode == NOP) {
+            continue;
+        }
+
+        if (opcode == BUILD_LIST && oparg == 0) {
+            if (!expect_append) {
+                /* Not a sequence start. */
+                return SUCCESS;
+            }
+
+            /* Sequence start, we are done. */
+            PyObject *newconst = PyTuple_New((Py_ssize_t)consts_found);
+            if (newconst == NULL) {
+                return ERROR;
+            }
+
+            for (int newpos = i - 1; newpos >= pos; newpos--) {
+                instr = &bb->b_instr[newpos];
+                if (instr->i_opcode == NOP) {
+                    continue;
+                }
+                if (loads_const(instr->i_opcode)) {
+                    PyObject *constant = get_const_value(instr->i_opcode, instr->i_oparg, consts);
+                    if (constant == NULL) {
+                        Py_DECREF(newconst);
+                        return ERROR;
+                    }
+                    assert(consts_found > 0);
+                    PyTuple_SET_ITEM(newconst, --consts_found, constant);
+                }
+                nop_out(&instr, 1);
+            }
+            assert(consts_found == 0);
+            return instr_make_load_const(intrinsic, newconst, consts, const_cache);
+        }
+
+        if (expect_append) {
+            if (opcode != LIST_APPEND || oparg != 1) {
+                return SUCCESS;
+            }
+        }
+        else {
+            if (!loads_const(opcode)) {
+                return SUCCESS;
+            }
+            consts_found++;
+        }
+
+        expect_append = !expect_append;
+    }
+
+    /* Did not find sequence start. */
+    return SUCCESS;
+}
+
+#define MIN_CONST_SEQUENCE_SIZE 3
+/*
+Optimize lists and sets for:
+    1. "for" loop, comprehension or "in"/"not in" tests:
+           Change literal list or set of constants into constant
+           tuple or frozenset respectively. Change list of
+           non-constants into tuple.
+    2. Constant literal lists/set with length >= MIN_CONST_SEQUENCE_SIZE:
+           Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cN, BUILD_LIST N
+           with BUILD_LIST 0, LOAD_CONST (c1, c2, ... cN), LIST_EXTEND 1,
+           or BUILD_SET & SET_UPDATE respectively.
+*/
+static int
+optimize_lists_and_sets(basicblock *bb, int i, int nextop,
+                        PyObject *consts, PyObject *const_cache)
+{
+    assert(PyDict_CheckExact(const_cache));
+    assert(PyList_CheckExact(consts));
+
+    cfg_instr *instr = &bb->b_instr[i];
+    assert(instr->i_opcode == BUILD_LIST || instr->i_opcode == BUILD_SET);
+
+    bool contains_or_iter = nextop == GET_ITER || nextop == CONTAINS_OP;
+    int seq_size = instr->i_oparg;
+    if (seq_size > _PY_STACK_USE_GUIDELINE ||
+        (seq_size < MIN_CONST_SEQUENCE_SIZE && !contains_or_iter))
+    {
+        return SUCCESS;
+    }
+
+    cfg_instr *const_instrs[_PY_STACK_USE_GUIDELINE];
+    if (!get_const_loading_instrs(bb, i-1, const_instrs, seq_size)) {  /* not a const sequence */
+        if (contains_or_iter && instr->i_opcode == BUILD_LIST) {
+            /* iterate over a tuple instead of list */
+            INSTR_SET_OP1(instr, BUILD_TUPLE, instr->i_oparg);
+        }
+        return SUCCESS;
+    }
+
+    PyObject *const_result = PyTuple_New((Py_ssize_t)seq_size);
+    if (const_result == NULL) {
         return ERROR;
     }
-    for (int i = 0; i < n; i++) {
-        INSTR_SET_OP0(&inst[i], NOP);
+
+    for (int i = 0; i < seq_size; i++) {
+        cfg_instr *inst = const_instrs[i];
+        assert(loads_const(inst->i_opcode));
+        PyObject *element = get_const_value(inst->i_opcode, inst->i_oparg, consts);
+        if (element == NULL) {
+            Py_DECREF(const_result);
+            return ERROR;
+        }
+        PyTuple_SET_ITEM(const_result, i, element);
     }
-    INSTR_SET_OP1(&inst[n], LOAD_CONST, index);
+
+    if (instr->i_opcode == BUILD_SET) {
+        PyObject *frozenset = PyFrozenSet_New(const_result);
+        if (frozenset == NULL) {
+            Py_DECREF(const_result);
+            return ERROR;
+        }
+        Py_SETREF(const_result, frozenset);
+    }
+
+    int index = add_const(const_result, consts, const_cache);
+    RETURN_IF_ERROR(index);
+    nop_out(const_instrs, seq_size);
+
+    if (contains_or_iter) {
+        INSTR_SET_OP1(instr, LOAD_CONST, index);
+    }
+    else {
+        assert(i >= 2);
+        assert(instr->i_opcode == BUILD_LIST || instr->i_opcode == BUILD_SET);
+
+        INSTR_SET_LOC(&bb->b_instr[i-2], instr->i_loc);
+
+        INSTR_SET_OP1(&bb->b_instr[i-2], instr->i_opcode, 0);
+        INSTR_SET_OP1(&bb->b_instr[i-1], LOAD_CONST, index);
+        INSTR_SET_OP1(&bb->b_instr[i], instr->i_opcode == BUILD_LIST ? LIST_EXTEND : SET_UPDATE, 1);
+    }
     return SUCCESS;
+}
+
+/* Check whether the total number of items in the (possibly nested) collection obj exceeds
+ * limit. Return a negative number if it does, and a non-negative number otherwise.
+ * Used to avoid creating constants which are slow to hash.
+ */
+static Py_ssize_t
+const_folding_check_complexity(PyObject *obj, Py_ssize_t limit)
+{
+    if (PyTuple_Check(obj)) {
+        Py_ssize_t i;
+        limit -= PyTuple_GET_SIZE(obj);
+        for (i = 0; limit >= 0 && i < PyTuple_GET_SIZE(obj); i++) {
+            limit = const_folding_check_complexity(PyTuple_GET_ITEM(obj, i), limit);
+            if (limit < 0) {
+                return limit;
+            }
+        }
+    }
+    return limit;
+}
+
+#define MAX_INT_SIZE           128  /* bits */
+#define MAX_COLLECTION_SIZE    256  /* items */
+#define MAX_STR_SIZE          4096  /* characters */
+#define MAX_TOTAL_ITEMS       1024  /* including nested collections */
+
+static PyObject *
+const_folding_safe_multiply(PyObject *v, PyObject *w)
+{
+    if (PyLong_Check(v) && PyLong_Check(w) &&
+        !_PyLong_IsZero((PyLongObject *)v) && !_PyLong_IsZero((PyLongObject *)w)
+    ) {
+        int64_t vbits = _PyLong_NumBits(v);
+        int64_t wbits = _PyLong_NumBits(w);
+        assert(vbits >= 0);
+        assert(wbits >= 0);
+        if (vbits + wbits > MAX_INT_SIZE) {
+            return NULL;
+        }
+    }
+    else if (PyLong_Check(v) && PyTuple_Check(w)) {
+        Py_ssize_t size = PyTuple_GET_SIZE(w);
+        if (size) {
+            long n = PyLong_AsLong(v);
+            if (n < 0 || n > MAX_COLLECTION_SIZE / size) {
+                return NULL;
+            }
+            if (n && const_folding_check_complexity(w, MAX_TOTAL_ITEMS / n) < 0) {
+                return NULL;
+            }
+        }
+    }
+    else if (PyLong_Check(v) && (PyUnicode_Check(w) || PyBytes_Check(w))) {
+        Py_ssize_t size = PyUnicode_Check(w) ? PyUnicode_GET_LENGTH(w) :
+                                               PyBytes_GET_SIZE(w);
+        if (size) {
+            long n = PyLong_AsLong(v);
+            if (n < 0 || n > MAX_STR_SIZE / size) {
+                return NULL;
+            }
+        }
+    }
+    else if (PyLong_Check(w) &&
+             (PyTuple_Check(v) || PyUnicode_Check(v) || PyBytes_Check(v)))
+    {
+        return const_folding_safe_multiply(w, v);
+    }
+
+    return PyNumber_Multiply(v, w);
+}
+
+static PyObject *
+const_folding_safe_power(PyObject *v, PyObject *w)
+{
+    if (PyLong_Check(v) && PyLong_Check(w) &&
+        !_PyLong_IsZero((PyLongObject *)v) && _PyLong_IsPositive((PyLongObject *)w)
+    ) {
+        int64_t vbits = _PyLong_NumBits(v);
+        size_t wbits = PyLong_AsSize_t(w);
+        assert(vbits >= 0);
+        if (wbits == (size_t)-1) {
+            return NULL;
+        }
+        if ((uint64_t)vbits > MAX_INT_SIZE / wbits) {
+            return NULL;
+        }
+    }
+
+    return PyNumber_Power(v, w, Py_None);
+}
+
+static PyObject *
+const_folding_safe_lshift(PyObject *v, PyObject *w)
+{
+    if (PyLong_Check(v) && PyLong_Check(w) &&
+        !_PyLong_IsZero((PyLongObject *)v) && !_PyLong_IsZero((PyLongObject *)w)
+    ) {
+        int64_t vbits = _PyLong_NumBits(v);
+        size_t wbits = PyLong_AsSize_t(w);
+        assert(vbits >= 0);
+        if (wbits == (size_t)-1) {
+            return NULL;
+        }
+        if (wbits > MAX_INT_SIZE || (uint64_t)vbits > MAX_INT_SIZE - wbits) {
+            return NULL;
+        }
+    }
+
+    return PyNumber_Lshift(v, w);
+}
+
+static PyObject *
+const_folding_safe_mod(PyObject *v, PyObject *w)
+{
+    if (PyUnicode_Check(v) || PyBytes_Check(v)) {
+        return NULL;
+    }
+
+    return PyNumber_Remainder(v, w);
+}
+
+static PyObject *
+eval_const_binop(PyObject *left, int op, PyObject *right)
+{
+    assert(left != NULL && right != NULL);
+    assert(op >= 0 && op <= NB_OPARG_LAST);
+
+    PyObject *result = NULL;
+    switch (op) {
+        case NB_ADD:
+            result = PyNumber_Add(left, right);
+            break;
+        case NB_SUBTRACT:
+            result = PyNumber_Subtract(left, right);
+            break;
+        case NB_MULTIPLY:
+            result = const_folding_safe_multiply(left, right);
+            break;
+        case NB_TRUE_DIVIDE:
+            result = PyNumber_TrueDivide(left, right);
+            break;
+        case NB_FLOOR_DIVIDE:
+            result = PyNumber_FloorDivide(left, right);
+            break;
+        case NB_REMAINDER:
+            result = const_folding_safe_mod(left, right);
+            break;
+        case NB_POWER:
+            result = const_folding_safe_power(left, right);
+            break;
+        case NB_LSHIFT:
+            result = const_folding_safe_lshift(left, right);
+            break;
+        case NB_RSHIFT:
+            result = PyNumber_Rshift(left, right);
+            break;
+        case NB_OR:
+            result = PyNumber_Or(left, right);
+            break;
+        case NB_XOR:
+            result = PyNumber_Xor(left, right);
+            break;
+        case NB_AND:
+            result = PyNumber_And(left, right);
+            break;
+        case NB_SUBSCR:
+            result = PyObject_GetItem(left, right);
+            break;
+        case NB_MATRIX_MULTIPLY:
+            // No builtin constants implement matrix multiplication
+            break;
+        default:
+            Py_UNREACHABLE();
+    }
+    return result;
+}
+
+static int
+fold_const_binop(basicblock *bb, int i, PyObject *consts, PyObject *const_cache)
+{
+    #define BINOP_OPERAND_COUNT 2
+    assert(PyDict_CheckExact(const_cache));
+    assert(PyList_CheckExact(consts));
+
+    cfg_instr *binop = &bb->b_instr[i];
+    assert(binop->i_opcode == BINARY_OP);
+
+    cfg_instr *operands_instrs[BINOP_OPERAND_COUNT];
+    if (!get_const_loading_instrs(bb, i-1, operands_instrs, BINOP_OPERAND_COUNT)) {
+        /* not a const sequence */
+        return SUCCESS;
+    }
+
+    cfg_instr *lhs_instr = operands_instrs[0];
+    assert(loads_const(lhs_instr->i_opcode));
+    PyObject *lhs = get_const_value(lhs_instr->i_opcode, lhs_instr->i_oparg, consts);
+    if (lhs == NULL) {
+        return ERROR;
+    }
+
+    cfg_instr *rhs_instr = operands_instrs[1];
+    assert(loads_const(rhs_instr->i_opcode));
+    PyObject *rhs = get_const_value(rhs_instr->i_opcode, rhs_instr->i_oparg, consts);
+    if (rhs == NULL) {
+        Py_DECREF(lhs);
+        return ERROR;
+    }
+
+    PyObject *newconst = eval_const_binop(lhs, binop->i_oparg, rhs);
+    Py_DECREF(lhs);
+    Py_DECREF(rhs);
+    if (newconst == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
+            return ERROR;
+        }
+        PyErr_Clear();
+        return SUCCESS;
+    }
+
+    nop_out(operands_instrs, BINOP_OPERAND_COUNT);
+    return instr_make_load_const(binop, newconst, consts, const_cache);
+}
+
+static PyObject *
+eval_const_unaryop(PyObject *operand, int opcode, int oparg)
+{
+    assert(operand != NULL);
+    assert(
+        opcode == UNARY_NEGATIVE ||
+        opcode == UNARY_INVERT ||
+        opcode == UNARY_NOT ||
+        (opcode == CALL_INTRINSIC_1 && oparg == INTRINSIC_UNARY_POSITIVE)
+    );
+    PyObject *result;
+    switch (opcode) {
+        case UNARY_NEGATIVE:
+            result = PyNumber_Negative(operand);
+            break;
+        case UNARY_INVERT:
+            result = PyNumber_Invert(operand);
+            break;
+        case UNARY_NOT: {
+            int r = PyObject_IsTrue(operand);
+            if (r < 0) {
+                return NULL;
+            }
+            result = PyBool_FromLong(!r);
+            break;
+        }
+        case CALL_INTRINSIC_1:
+            if (oparg != INTRINSIC_UNARY_POSITIVE) {
+                Py_UNREACHABLE();
+            }
+            result = PyNumber_Positive(operand);
+            break;
+        default:
+            Py_UNREACHABLE();
+    }
+    return result;
+}
+
+static int
+fold_const_unaryop(basicblock *bb, int i, PyObject *consts, PyObject *const_cache)
+{
+    #define UNARYOP_OPERAND_COUNT 1
+    assert(PyDict_CheckExact(const_cache));
+    assert(PyList_CheckExact(consts));
+    cfg_instr *unaryop = &bb->b_instr[i];
+
+    cfg_instr *operand_instr;
+    if (!get_const_loading_instrs(bb, i-1, &operand_instr, UNARYOP_OPERAND_COUNT)) {
+        /* not a const */
+        return SUCCESS;
+    }
+
+    assert(loads_const(operand_instr->i_opcode));
+    PyObject *operand = get_const_value(
+        operand_instr->i_opcode,
+        operand_instr->i_oparg,
+        consts
+    );
+    if (operand == NULL) {
+        return ERROR;
+    }
+
+    PyObject *newconst = eval_const_unaryop(operand, unaryop->i_opcode, unaryop->i_oparg);
+    Py_DECREF(operand);
+    if (newconst == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
+            return ERROR;
+        }
+        PyErr_Clear();
+        return SUCCESS;
+    }
+
+    if (unaryop->i_opcode == UNARY_NOT) {
+        assert(PyBool_Check(newconst));
+    }
+    nop_out(&operand_instr, UNARYOP_OPERAND_COUNT);
+    return instr_make_load_const(unaryop, newconst, consts, const_cache);
 }
 
 #define VISITED (-1)
@@ -1568,6 +2147,14 @@ basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb, PyObject *
     int oparg = 0;
     for (int i = 0; i < bb->b_iused; i++) {
         cfg_instr *inst = &bb->b_instr[i];
+        if (inst->i_opcode == LOAD_CONST) {
+            PyObject *constant = get_const_value(inst->i_opcode, inst->i_oparg, consts);
+            int res = maybe_instr_make_load_smallint(inst, constant, consts, const_cache);
+            Py_DECREF(constant);
+            if (res < 0) {
+                return ERROR;
+            }
+        }
         bool is_copy_of_load_const = (opcode == LOAD_CONST &&
                                       inst->i_opcode == COPY &&
                                       inst->i_oparg == 1);
@@ -1729,11 +2316,11 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                             continue;
                     }
                 }
-                if (i >= oparg) {
-                    if (fold_tuple_on_constants(const_cache, inst-oparg, oparg, consts)) {
-                        goto error;
-                    }
-                }
+                RETURN_IF_ERROR(fold_tuple_of_constants(bb, i, consts, const_cache));
+                break;
+            case BUILD_LIST:
+            case BUILD_SET:
+                RETURN_IF_ERROR(optimize_lists_and_sets(bb, i, nextop, consts, const_cache));
                 break;
             case POP_JUMP_IF_NOT_NONE:
             case POP_JUMP_IF_NONE:
@@ -1840,6 +2427,13 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                     INSTR_SET_OP1(&bb->b_instr[i + 1], opcode, oparg);
                     continue;
                 }
+                if (nextop == UNARY_NOT) {
+                    INSTR_SET_OP0(inst, NOP);
+                    int inverted = oparg ^ 1;
+                    assert(inverted == 0 || inverted == 1);
+                    INSTR_SET_OP1(&bb->b_instr[i + 1], opcode, inverted);
+                    continue;
+                }
                 break;
             case TO_BOOL:
                 if (nextop == TO_BOOL) {
@@ -1858,6 +2452,26 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                     INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
                     continue;
                 }
+                _Py_FALLTHROUGH;
+            case UNARY_INVERT:
+            case UNARY_NEGATIVE:
+                RETURN_IF_ERROR(fold_const_unaryop(bb, i, consts, const_cache));
+                break;
+            case CALL_INTRINSIC_1:
+                if (oparg == INTRINSIC_LIST_TO_TUPLE) {
+                    if (nextop == GET_ITER) {
+                        INSTR_SET_OP0(inst, NOP);
+                    }
+                    else {
+                        RETURN_IF_ERROR(fold_constant_intrinsic_list_to_tuple(bb, i, consts, const_cache));
+                    }
+                }
+                else if (oparg == INTRINSIC_UNARY_POSITIVE) {
+                    RETURN_IF_ERROR(fold_const_unaryop(bb, i, consts, const_cache));
+                }
+                break;
+            case BINARY_OP:
+                RETURN_IF_ERROR(fold_const_binop(bb, i, consts, const_cache));
                 break;
         }
     }
@@ -1966,6 +2580,427 @@ insert_superinstructions(cfg_builder *g)
     int res = remove_redundant_nops(g);
     assert(no_redundant_nops(g));
     return res;
+}
+
+#define NOT_LOCAL -1
+#define DUMMY_INSTR -1
+
+typedef struct {
+    // Index of instruction that produced the reference or DUMMY_INSTR.
+    int instr;
+
+    // The local to which the reference refers or NOT_LOCAL.
+    int local;
+} ref;
+
+typedef struct {
+    ref *refs;
+    Py_ssize_t size;
+    Py_ssize_t capacity;
+} ref_stack;
+
+static int
+ref_stack_push(ref_stack *stack, ref r)
+{
+    if (stack->size == stack->capacity) {
+        Py_ssize_t new_cap = Py_MAX(32, stack->capacity * 2);
+        ref *refs = PyMem_Realloc(stack->refs, sizeof(*stack->refs) * new_cap);
+        if (refs == NULL) {
+            PyErr_NoMemory();
+            return -1;
+        }
+        stack->refs = refs;
+        stack->capacity = new_cap;
+    }
+    stack->refs[stack->size] = r;
+    stack->size++;
+    return 0;
+}
+
+static ref
+ref_stack_pop(ref_stack *stack)
+{
+    assert(stack->size > 0);
+    stack->size--;
+    ref r = stack->refs[stack->size];
+    return r;
+}
+
+static void
+ref_stack_swap_top(ref_stack *stack, Py_ssize_t off)
+{
+    Py_ssize_t idx = stack->size - off;
+    assert(idx >= 0 && idx < stack->size);
+    ref tmp = stack->refs[idx];
+    stack->refs[idx] = stack->refs[stack->size - 1];
+    stack->refs[stack->size - 1] = tmp;
+}
+
+static ref
+ref_stack_at(ref_stack *stack, Py_ssize_t idx)
+{
+    assert(idx >= 0 && idx < stack->size);
+    return stack->refs[idx];
+}
+
+static void
+ref_stack_clear(ref_stack *stack)
+{
+    stack->size = 0;
+}
+
+static void
+ref_stack_fini(ref_stack *stack)
+{
+    if (stack->refs != NULL) {
+        PyMem_Free(stack->refs);
+    }
+    stack->refs = NULL;
+    stack->capacity = 0;
+    stack->size = 0;
+}
+
+typedef enum {
+    // The loaded reference is still on the stack when the local is killed
+    SUPPORT_KILLED  = 1,
+    // The loaded reference is stored into a local
+    STORED_AS_LOCAL = 2,
+    // The loaded reference is still on the stack at the end of the basic block
+    REF_UNCONSUMED  = 4,
+} LoadFastInstrFlag;
+
+static void
+kill_local(uint8_t *instr_flags, ref_stack *refs, int local)
+{
+    for (Py_ssize_t i = 0; i < refs->size; i++) {
+        ref r = ref_stack_at(refs, i);
+        if (r.local == local) {
+            assert(r.instr >= 0);
+            instr_flags[r.instr] |= SUPPORT_KILLED;
+        }
+    }
+}
+
+static void
+store_local(uint8_t *instr_flags, ref_stack *refs, int local, ref r)
+{
+    kill_local(instr_flags, refs, local);
+    if (r.instr != DUMMY_INSTR) {
+        instr_flags[r.instr] |= STORED_AS_LOCAL;
+    }
+}
+
+static void
+load_fast_push_block(basicblock ***sp, basicblock *target,
+                     Py_ssize_t start_depth)
+{
+    assert(target->b_startdepth >= 0 && target->b_startdepth == start_depth);
+    if (!target->b_visited) {
+        target->b_visited = 1;
+        *(*sp)++ = target;
+    }
+}
+
+/*
+ * Strength reduce LOAD_FAST{_LOAD_FAST} instructions into faster variants that
+ * load borrowed references onto the operand stack.
+ *
+ * This is only safe when we can prove that the reference in the frame outlives
+ * the borrowed reference produced by the instruction. We make this tractable
+ * by enforcing the following lifetimes:
+ *
+ * 1. Borrowed references loaded onto the operand stack live until the end of
+ *    the instruction that consumes them from the stack. Any borrowed
+ *    references that would escape into the heap (e.g. into frame objects or
+ *    generators) are converted into new, strong references.
+ *
+ * 2. Locals live until they are either killed by an instruction
+ *    (e.g. STORE_FAST) or the frame is unwound. Any local that is overwritten
+ *    via `f_locals` is added to a tuple owned by the frame object.
+ *
+ * To simplify the problem of detecting which supporting references in the
+ * frame are killed by instructions that overwrite locals, we only allow
+ * borrowed references to be stored as a local in the frame if they were passed
+ * as an argument. {RETURN,YIELD}_VALUE convert borrowed references into new,
+ * strong references.
+ *
+ * Using the above, we can optimize any LOAD_FAST{_LOAD_FAST} instructions
+ * that meet the following criteria:
+ *
+ * 1. The produced reference must be consumed from the stack before the
+ *    supporting reference in the frame is killed.
+ *
+ * 2. The produced reference cannot be stored as a local.
+ *
+ * We use abstract interpretation to identify instructions that meet these
+ * criteria. For each basic block, we simulate the effect the bytecode has on a
+ * stack of abstract references and note any instructions that violate the
+ * criteria above. Once we've processed all the instructions in a block, any
+ * non-violating LOAD_FAST{_LOAD_FAST} can be optimized.
+ */
+static int
+optimize_load_fast(cfg_builder *g)
+{
+    int status;
+    ref_stack refs = {0};
+    int max_instrs = 0;
+    basicblock *entryblock = g->g_entryblock;
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        max_instrs = Py_MAX(max_instrs, b->b_iused);
+    }
+    size_t instr_flags_size = max_instrs * sizeof(uint8_t);
+    uint8_t *instr_flags = PyMem_Malloc(instr_flags_size);
+    if (instr_flags == NULL) {
+        PyErr_NoMemory();
+        return ERROR;
+    }
+    basicblock **blocks = make_cfg_traversal_stack(entryblock);
+    if (blocks == NULL) {
+        status = ERROR;
+        goto done;
+    }
+    basicblock **sp = blocks;
+    *sp = entryblock;
+    sp++;
+    entryblock->b_startdepth = 0;
+    entryblock->b_visited = 1;
+
+    #define PUSH_REF(instr, local)                \
+        do {                                      \
+            if (ref_stack_push(&refs, (ref){(instr), (local)}) < 0) { \
+                status = ERROR;                   \
+                goto done;                        \
+            }                                     \
+        } while(0)
+
+    while (sp != blocks) {
+        basicblock *block = *--sp;
+        assert(block->b_startdepth > -1);
+
+        // Reset per-block state.
+        memset(instr_flags, 0, block->b_iused * sizeof(*instr_flags));
+
+        // Reset the stack of refs. We don't track references on the stack
+        // across basic blocks, but the bytecode will expect their
+        // presence. Add dummy references as necessary.
+        ref_stack_clear(&refs);
+        for (int i = 0; i < block->b_startdepth; i++) {
+            PUSH_REF(DUMMY_INSTR, NOT_LOCAL);
+        }
+
+        for (int i = 0; i < block->b_iused; i++) {
+            cfg_instr *instr = &block->b_instr[i];
+            int opcode = instr->i_opcode;
+            int oparg = instr->i_oparg;
+            assert(opcode != EXTENDED_ARG);
+            switch (opcode) {
+                // Opcodes that load and store locals
+                case DELETE_FAST: {
+                    kill_local(instr_flags, &refs, oparg);
+                    break;
+                }
+
+                case LOAD_FAST: {
+                    PUSH_REF(i, oparg);
+                    break;
+                }
+
+                case LOAD_FAST_AND_CLEAR: {
+                    kill_local(instr_flags, &refs, oparg);
+                    PUSH_REF(i, oparg);
+                    break;
+                }
+
+                case LOAD_FAST_LOAD_FAST: {
+                    PUSH_REF(i, oparg >> 4);
+                    PUSH_REF(i, oparg & 15);
+                    break;
+                }
+
+                case STORE_FAST: {
+                    ref r = ref_stack_pop(&refs);
+                    store_local(instr_flags, &refs, oparg, r);
+                    break;
+                }
+
+                case STORE_FAST_LOAD_FAST: {
+                    // STORE_FAST
+                    ref r = ref_stack_pop(&refs);
+                    store_local(instr_flags, &refs, oparg >> 4, r);
+                    // LOAD_FAST
+                    PUSH_REF(i, oparg & 15);
+                    break;
+                }
+
+                case STORE_FAST_STORE_FAST: {
+                    // STORE_FAST
+                    ref r = ref_stack_pop(&refs);
+                    store_local(instr_flags, &refs, oparg >> 4, r);
+                    // STORE_FAST
+                    r = ref_stack_pop(&refs);
+                    store_local(instr_flags, &refs, oparg & 15, r);
+                    break;
+                }
+
+                // Opcodes that shuffle values on the stack
+                case COPY: {
+                    assert(oparg > 0);
+                    Py_ssize_t idx = refs.size - oparg;
+                    ref r = ref_stack_at(&refs, idx);
+                    PUSH_REF(r.instr, r.local);
+                    break;
+                }
+
+                case SWAP: {
+                    assert(oparg >= 2);
+                    ref_stack_swap_top(&refs, oparg);
+                    break;
+                }
+
+                // We treat opcodes that do not consume all of their inputs on
+                // a case by case basis, as we have no generic way of knowing
+                // how many inputs should be left on the stack.
+
+                // Opcodes that consume no inputs
+                case GET_ANEXT:
+                case GET_LEN:
+                case IMPORT_FROM:
+                case MATCH_KEYS:
+                case MATCH_MAPPING:
+                case MATCH_SEQUENCE:
+                case WITH_EXCEPT_START: {
+                    int num_popped = _PyOpcode_num_popped(opcode, oparg);
+                    int num_pushed = _PyOpcode_num_pushed(opcode, oparg);
+                    int net_pushed = num_pushed - num_popped;
+                    assert(net_pushed >= 0);
+                    for (int i = 0; i < net_pushed; i++) {
+                        PUSH_REF(i, NOT_LOCAL);
+                    }
+                    break;
+                }
+
+                // Opcodes that consume some inputs and push no new values
+                case DICT_MERGE:
+                case DICT_UPDATE:
+                case LIST_APPEND:
+                case LIST_EXTEND:
+                case MAP_ADD:
+                case RERAISE:
+                case SET_ADD:
+                case SET_UPDATE: {
+                    int num_popped = _PyOpcode_num_popped(opcode, oparg);
+                    int num_pushed = _PyOpcode_num_pushed(opcode, oparg);
+                    int net_popped = num_popped - num_pushed;
+                    assert(net_popped > 0);
+                    for (int i = 0; i < net_popped; i++) {
+                        ref_stack_pop(&refs);
+                    }
+                    break;
+                }
+
+                // Opcodes that consume some inputs and push new values
+                case CHECK_EXC_MATCH: {
+                    ref_stack_pop(&refs);
+                    PUSH_REF(i, NOT_LOCAL);
+                    break;
+                }
+
+                case FOR_ITER: {
+                    load_fast_push_block(&sp, instr->i_target, refs.size + 1);
+                    PUSH_REF(i, NOT_LOCAL);
+                    break;
+                }
+
+                case LOAD_ATTR:
+                case LOAD_SUPER_ATTR: {
+                    ref self = ref_stack_pop(&refs);
+                    if (opcode == LOAD_SUPER_ATTR) {
+                        ref_stack_pop(&refs);
+                        ref_stack_pop(&refs);
+                    }
+                    PUSH_REF(i, NOT_LOCAL);
+                    if (oparg & 1) {
+                        // A method call; conservatively assume that self is pushed
+                        // back onto the stack
+                        PUSH_REF(self.instr, self.local);
+                    }
+                    break;
+                }
+
+                case SEND: {
+                    load_fast_push_block(&sp, instr->i_target, refs.size);
+                    ref_stack_pop(&refs);
+                    PUSH_REF(i, NOT_LOCAL);
+                    break;
+                }
+
+                // Opcodes that consume all of their inputs
+                default: {
+                    int num_popped = _PyOpcode_num_popped(opcode, oparg);
+                    int num_pushed = _PyOpcode_num_pushed(opcode, oparg);
+                    if (HAS_TARGET(instr->i_opcode)) {
+                        load_fast_push_block(&sp, instr->i_target, refs.size - num_popped + num_pushed);
+                    }
+                    if (!IS_BLOCK_PUSH_OPCODE(instr->i_opcode)) {
+                        // Block push opcodes only affect the stack when jumping
+                        // to the target.
+                        for (int j = 0; j < num_popped; j++) {
+                            ref_stack_pop(&refs);
+                        }
+                        for (int j = 0; j < num_pushed; j++) {
+                            PUSH_REF(i, NOT_LOCAL);
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+
+        // Push fallthrough block
+        cfg_instr *term = basicblock_last_instr(block);
+        if (term != NULL && block->b_next != NULL &&
+            !(IS_UNCONDITIONAL_JUMP_OPCODE(term->i_opcode) ||
+              IS_SCOPE_EXIT_OPCODE(term->i_opcode))) {
+            assert(BB_HAS_FALLTHROUGH(block));
+            load_fast_push_block(&sp, block->b_next, refs.size);
+        }
+
+        // Mark instructions that produce values that are on the stack at the
+        // end of the basic block
+        for (Py_ssize_t i = 0; i < refs.size; i++) {
+            ref r = ref_stack_at(&refs, i);
+            if (r.instr != -1) {
+                instr_flags[r.instr] |= REF_UNCONSUMED;
+            }
+        }
+
+        // Optimize instructions
+        for (int i = 0; i < block->b_iused; i++) {
+            if (!instr_flags[i]) {
+                cfg_instr *instr = &block->b_instr[i];
+                switch (instr->i_opcode) {
+                    case LOAD_FAST:
+                        instr->i_opcode = LOAD_FAST_BORROW;
+                        break;
+                    case LOAD_FAST_LOAD_FAST:
+                        instr->i_opcode = LOAD_FAST_BORROW_LOAD_FAST_BORROW;
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+    }
+
+    #undef PUSH_REF
+
+    status = SUCCESS;
+
+done:
+    ref_stack_fini(&refs);
+    PyMem_Free(instr_flags);
+    PyMem_Free(blocks);
+    return status;
 }
 
 // helper functions for add_checks_for_loads_of_unknown_variables
@@ -2530,7 +3565,7 @@ propagate_line_numbers(basicblock *entryblock) {
 
         location prev_location = NO_LOCATION;
         for (int i = 0; i < b->b_iused; i++) {
-            if (b->b_instr[i].i_loc.lineno < 0) {
+            if (b->b_instr[i].i_loc.lineno == NO_LOCATION.lineno) {
                 b->b_instr[i].i_loc = prev_location;
             }
             else {
@@ -2539,7 +3574,7 @@ propagate_line_numbers(basicblock *entryblock) {
         }
         if (BB_HAS_FALLTHROUGH(b) && b->b_next->b_predecessors == 1) {
             if (b->b_next->b_iused > 0) {
-                if (b->b_next->b_instr[0].i_loc.lineno < 0) {
+                if (b->b_next->b_instr[0].i_loc.lineno == NO_LOCATION.lineno) {
                     b->b_next->b_instr[0].i_loc = prev_location;
                 }
             }
@@ -2547,7 +3582,7 @@ propagate_line_numbers(basicblock *entryblock) {
         if (is_jump(last)) {
             basicblock *target = last->i_target;
             if (target->b_predecessors == 1) {
-                if (target->b_instr[0].i_loc.lineno < 0) {
+                if (target->b_instr[0].i_loc.lineno == NO_LOCATION.lineno) {
                     target->b_instr[0].i_loc = prev_location;
                 }
             }
@@ -2817,16 +3852,38 @@ _PyCfg_FromInstructionSequence(_PyInstructionSequence *seq)
             seq->s_instrs[instr->i_oparg].i_target = 1;
         }
     }
+    int offset = 0;
     for (int i = 0; i < seq->s_used; i++) {
         _PyInstruction *instr = &seq->s_instrs[i];
+        if (instr->i_opcode == ANNOTATIONS_PLACEHOLDER) {
+            if (seq->s_annotations_code != NULL) {
+                assert(seq->s_annotations_code->s_labelmap_size == 0
+                    && seq->s_annotations_code->s_nested == NULL);
+                for (int j = 0; j < seq->s_annotations_code->s_used; j++) {
+                    _PyInstruction *ann_instr = &seq->s_annotations_code->s_instrs[j];
+                    assert(!HAS_TARGET(ann_instr->i_opcode));
+                    if (_PyCfgBuilder_Addop(g, ann_instr->i_opcode, ann_instr->i_oparg, ann_instr->i_loc) < 0) {
+                        goto error;
+                    }
+                }
+                offset += seq->s_annotations_code->s_used - 1;
+            }
+            else {
+                offset -= 1;
+            }
+            continue;
+        }
         if (instr->i_target) {
-            jump_target_label lbl_ = {i};
+            jump_target_label lbl_ = {i + offset};
             if (_PyCfgBuilder_UseLabel(g, lbl_) < 0) {
                 goto error;
             }
         }
         int opcode = instr->i_opcode;
         int oparg = instr->i_oparg;
+        if (HAS_TARGET(opcode)) {
+            oparg += offset;
+        }
         if (_PyCfgBuilder_Addop(g, opcode, oparg, instr->i_loc) < 0) {
             goto error;
         }
@@ -2912,6 +3969,11 @@ _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
     RETURN_IF_ERROR(normalize_jumps(g));
     assert(no_redundant_jumps(g));
 
+    /* Can't modify the bytecode after inserting instructions that produce
+     * borrowed references.
+     */
+    RETURN_IF_ERROR(optimize_load_fast(g));
+
     /* Can't modify the bytecode after computing jump offsets. */
     if (_PyCfg_ToInstructionSequence(g, seq) < 0) {
         return ERROR;
@@ -2936,13 +3998,21 @@ _PyCfg_JumpLabelsToTargets(cfg_builder *g)
 int
 PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump)
 {
-    return stack_effect(opcode, oparg, jump);
+    stack_effects effs;
+    if (get_stack_effects(opcode, oparg, jump, &effs) < 0) {
+        return PY_INVALID_STACK_EFFECT;
+    }
+    return effs.net;
 }
 
 int
 PyCompile_OpcodeStackEffect(int opcode, int oparg)
 {
-    return stack_effect(opcode, oparg, -1);
+    stack_effects effs;
+    if (get_stack_effects(opcode, oparg, -1, &effs) < 0) {
+        return PY_INVALID_STACK_EFFECT;
+    }
+    return effs.net;
 }
 
 /* Access to compiler optimizations for unit tests.
@@ -2987,6 +4057,15 @@ _PyCompile_OptimizeCfg(PyObject *seq, PyObject *consts, int nlocals)
                                 nparams, firstlineno) < 0) {
         goto error;
     }
+
+    if (calculate_stackdepth(g) == ERROR) {
+        goto error;
+    }
+
+    if (optimize_load_fast(g) != SUCCESS) {
+        goto error;
+    }
+
     res = cfg_to_instruction_sequence(g);
 error:
     Py_DECREF(const_cache);

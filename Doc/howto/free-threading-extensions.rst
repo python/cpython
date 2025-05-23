@@ -23,6 +23,14 @@ You can use it to enable code that only runs under the free-threaded build::
     /* code that only runs in the free-threaded build */
     #endif
 
+.. note::
+
+   On Windows, this macro is not defined automatically, but must be specified
+   to the compiler when building. The :func:`sysconfig.get_config_var` function
+   can be used to determine whether the current running interpreter had the
+   macro defined.
+
+
 Module Initialization
 =====================
 
@@ -96,8 +104,10 @@ Most of the C API is thread-safe, but there are some exceptions.
 
 * **Struct Fields**: Accessing fields in Python C API objects or structs
   directly is not thread-safe if the field may be concurrently modified.
-* **Macros**: Accessor macros like :c:macro:`PyList_GET_ITEM` and
-  :c:macro:`PyList_SET_ITEM` do not perform any error checking or locking.
+* **Macros**: Accessor macros like :c:macro:`PyList_GET_ITEM`,
+  :c:macro:`PyList_SET_ITEM`, and macros like
+  :c:macro:`PySequence_Fast_GET_SIZE` that use the object returned by
+  :c:func:`PySequence_Fast` do not perform any error checking or locking.
   These macros are not thread-safe if the container object may be modified
   concurrently.
 * **Borrowed References**: C API functions that return
@@ -166,6 +176,8 @@ that return :term:`strong references <strong reference>`.
 | :c:func:`PyWeakref_GET_OBJECT`    | :c:func:`PyWeakref_GetRef`        |
 +-----------------------------------+-----------------------------------+
 | :c:func:`PyImport_AddModule`      | :c:func:`PyImport_AddModuleRef`   |
++-----------------------------------+-----------------------------------+
+| :c:func:`PyCell_GET`              | :c:func:`PyCell_Get`              |
 +-----------------------------------+-----------------------------------+
 
 Not all APIs that return borrowed references are problematic.  For
@@ -237,6 +249,141 @@ depend on your extension, but some common patterns include:
   to thread local storage. C11 and C++11 provide the ``thread_local`` or
   ``_Thread_local`` for
   `thread-local storage <https://en.cppreference.com/w/c/language/storage_duration>`_.
+
+
+Critical Sections
+=================
+
+.. _critical-sections:
+
+In the free-threaded build, CPython provides a mechanism called "critical
+sections" to protect data that would otherwise be protected by the GIL.
+While extension authors may not interact with the internal critical section
+implementation directly, understanding their behavior is crucial when using
+certain C API functions or managing shared state in the free-threaded build.
+
+What Are Critical Sections?
+...........................
+
+Conceptually, critical sections act as a deadlock avoidance layer built on
+top of simple mutexes. Each thread maintains a stack of active critical
+sections. When a thread needs to acquire a lock associated with a critical
+section (e.g., implicitly when calling a thread-safe C API function like
+:c:func:`PyDict_SetItem`, or explicitly using macros), it attempts to acquire
+the underlying mutex.
+
+Using Critical Sections
+.......................
+
+The primary APIs for using critical sections are:
+
+* :c:macro:`Py_BEGIN_CRITICAL_SECTION` and :c:macro:`Py_END_CRITICAL_SECTION` -
+  For locking a single object
+
+* :c:macro:`Py_BEGIN_CRITICAL_SECTION2` and :c:macro:`Py_END_CRITICAL_SECTION2`
+  - For locking two objects simultaneously
+
+These macros must be used in matching pairs and must appear in the same C
+scope, since they establish a new local scope.  These macros are no-ops in
+non-free-threaded builds, so they can be safely added to code that needs to
+support both build types.
+
+A common use of a critical section would be to lock an object while accessing
+an internal attribute of it.  For example, if an extension type has an internal
+count field, you could use a critical section while reading or writing that
+field::
+
+    // read the count, returns new reference to internal count value
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(obj);
+    result = Py_NewRef(obj->count);
+    Py_END_CRITICAL_SECTION();
+    return result;
+
+    // write the count, consumes reference from new_count
+    Py_BEGIN_CRITICAL_SECTION(obj);
+    obj->count = new_count;
+    Py_END_CRITICAL_SECTION();
+
+
+How Critical Sections Work
+..........................
+
+Unlike traditional locks, critical sections do not guarantee exclusive access
+throughout their entire duration. If a thread would block while holding a
+critical section (e.g., by acquiring another lock or performing I/O), the
+critical section is temporarily suspended—all locks are released—and then
+resumed when the blocking operation completes.
+
+This behavior is similar to what happens with the GIL when a thread makes a
+blocking call. The key differences are:
+
+* Critical sections operate on a per-object basis rather than globally
+
+* Critical sections follow a stack discipline within each thread (the "begin" and
+  "end" macros enforce this since they must be paired and within the same scope)
+
+* Critical sections automatically release and reacquire locks around potential
+  blocking operations
+
+Deadlock Avoidance
+..................
+
+Critical sections help avoid deadlocks in two ways:
+
+1. If a thread tries to acquire a lock that's already held by another thread,
+   it first suspends all of its active critical sections, temporarily releasing
+   their locks
+
+2. When the blocking operation completes, only the top-most critical section is
+   reacquired first
+
+This means you cannot rely on nested critical sections to lock multiple objects
+at once, as the inner critical section may suspend the outer ones. Instead, use
+:c:macro:`Py_BEGIN_CRITICAL_SECTION2` to lock two objects simultaneously.
+
+Note that the locks described above are only :c:type:`!PyMutex` based locks.
+The critical section implementation does not know about or affect other locking
+mechanisms that might be in use, like POSIX mutexes.  Also note that while
+blocking on any :c:type:`!PyMutex` causes the critical sections to be
+suspended, only the mutexes that are part of the critical sections are
+released.  If :c:type:`!PyMutex` is used without a critical section, it will
+not be released and therefore does not get the same deadlock avoidance.
+
+Important Considerations
+........................
+
+* Critical sections may temporarily release their locks, allowing other threads
+  to modify the protected data. Be careful about making assumptions about the
+  state of the data after operations that might block.
+
+* Because locks can be temporarily released (suspended), entering a critical
+  section does not guarantee exclusive access to the protected resource
+  throughout the section's duration. If code within a critical section calls
+  another function that blocks (e.g., acquires another lock, performs blocking
+  I/O), all locks held by the thread via critical sections will be released.
+  This is similar to how the GIL can be released during blocking calls.
+
+* Only the lock(s) associated with the most recently entered (top-most)
+  critical section are guaranteed to be held at any given time. Locks for
+  outer, nested critical sections might have been suspended.
+
+* You can lock at most two objects simultaneously with these APIs. If you need
+  to lock more objects, you'll need to restructure your code.
+
+* While critical sections will not deadlock if you attempt to lock the same
+  object twice, they are less efficient than purpose-built reentrant locks for
+  this use case.
+
+* When using :c:macro:`Py_BEGIN_CRITICAL_SECTION2`, the order of the objects
+  doesn't affect correctness (the implementation handles deadlock avoidance),
+  but it's good practice to always lock objects in a consistent order.
+
+* Remember that the critical section macros are primarily for protecting access
+  to *Python objects* that might be involved in internal CPython operations
+  susceptible to the deadlock scenarios described above. For protecting purely
+  internal extension state, standard mutexes or other synchronization
+  primitives might be more appropriate.
 
 
 Building Extensions for the Free-Threaded Build

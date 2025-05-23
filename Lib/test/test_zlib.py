@@ -505,20 +505,16 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
 
         for sync in sync_opt:
             for level in range(10):
-                try:
+                with self.subTest(sync=sync, level=level):
                     obj = zlib.compressobj( level )
                     a = obj.compress( data[:3000] )
                     b = obj.flush( sync )
                     c = obj.compress( data[3000:] )
                     d = obj.flush()
-                except:
-                    print("Error for flush mode={}, level={}"
-                          .format(sync, level))
-                    raise
-                self.assertEqual(zlib.decompress(b''.join([a,b,c,d])),
-                                 data, ("Decompress failed: flush "
-                                        "mode=%i, level=%i") % (sync, level))
-                del obj
+                    self.assertEqual(zlib.decompress(b''.join([a,b,c,d])),
+                                     data, ("Decompress failed: flush "
+                                            "mode=%i, level=%i") % (sync, level))
+                    del obj
 
     @unittest.skipUnless(hasattr(zlib, 'Z_SYNC_FLUSH'),
                          'requires zlib.Z_SYNC_FLUSH')

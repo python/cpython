@@ -6,8 +6,9 @@
 
 .. versionadded:: 3.2
 
-**Source code:** :source:`Lib/concurrent/futures/thread.py`
-and :source:`Lib/concurrent/futures/process.py`
+**Source code:** :source:`Lib/concurrent/futures/thread.py`,
+:source:`Lib/concurrent/futures/process.py`,
+and :source:`Lib/concurrent/futures/interpreter.py`
 
 --------------
 
@@ -40,11 +41,14 @@ Executor Objects
              future = executor.submit(pow, 323, 1235)
              print(future.result())
 
-   .. method:: map(fn, *iterables, timeout=None, chunksize=1)
+   .. method:: map(fn, *iterables, timeout=None, chunksize=1, buffersize=None)
 
       Similar to :func:`map(fn, *iterables) <map>` except:
 
-      * the *iterables* are collected immediately rather than lazily;
+      * The *iterables* are collected immediately rather than lazily, unless a
+        *buffersize* is specified to limit the number of submitted tasks whose
+        results have not yet been yielded. If the buffer is full, iteration over
+        the *iterables* pauses until a result is yielded from the buffer.
 
       * *fn* is executed asynchronously and several calls to
         *fn* may be made concurrently.
@@ -68,7 +72,10 @@ Executor Objects
       *chunksize* has no effect.
 
       .. versionchanged:: 3.5
-         Added the *chunksize* argument.
+         Added the *chunksize* parameter.
+
+      .. versionchanged:: 3.14
+         Added the *buffersize* parameter.
 
    .. method:: shutdown(wait=True, *, cancel_futures=False)
 
@@ -252,7 +259,7 @@ This results in several benefits that help balance the extra effort,
 including true multi-core parallelism,  For example, code written
 this way can make it easier to reason about concurrency.  Another
 major benefit is that you don't have to deal with several of the
-big pain points of using threads, like nrace conditions.
+big pain points of using threads, like race conditions.
 
 Each worker's interpreter is isolated from all the other interpreters.
 "Isolated" means each interpreter has its own runtime state and
@@ -292,7 +299,7 @@ the bytes over a shared :mod:`socket <socket>` or
 
    The optional *initializer* and *initargs* arguments have the same
    meaning as for :class:`!ThreadPoolExecutor`: the initializer is run
-   when each worker is created, though in this case it is run.in
+   when each worker is created, though in this case it is run in
    the worker's interpreter.  The executor serializes the *initializer*
    and *initargs* using :mod:`pickle` when sending them to the worker's
    interpreter.
@@ -414,6 +421,30 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
       :ref:`multiprocessing-start-methods`) changed away from *fork*. If you
       require the *fork* start method for :class:`ProcessPoolExecutor` you must
       explicitly pass ``mp_context=multiprocessing.get_context("fork")``.
+
+   .. method:: terminate_workers()
+
+      Attempt to terminate all living worker processes immediately by calling
+      :meth:`Process.terminate <multiprocessing.Process.terminate>` on each of them.
+      Internally, it will also call :meth:`Executor.shutdown` to ensure that all
+      other resources associated with the executor are freed.
+
+      After calling this method the caller should no longer submit tasks to the
+      executor.
+
+      .. versionadded:: 3.14
+
+   .. method:: kill_workers()
+
+      Attempt to kill all living worker processes immediately by calling
+      :meth:`Process.kill <multiprocessing.Process.kill>` on each of them.
+      Internally, it will also call :meth:`Executor.shutdown` to ensure that all
+      other resources associated with the executor are freed.
+
+      After calling this method the caller should no longer submit tasks to the
+      executor.
+
+      .. versionadded:: 3.14
 
 .. _processpoolexecutor-example:
 
@@ -690,7 +721,7 @@ Exception classes
    of a :class:`~concurrent.futures.InterpreterPoolExecutor`
    has failed initializing.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. exception:: ExecutionFailed
 
@@ -699,7 +730,7 @@ Exception classes
    :meth:`~concurrent.futures.Executor.submit` when there's an uncaught
    exception from the submitted task.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. currentmodule:: concurrent.futures.process
 

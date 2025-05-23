@@ -252,15 +252,6 @@ Improved error messages
   the canonical |NO_COLOR|_ and |FORCE_COLOR|_ environment variables.
   (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
 
-.. Apparently this how you hack together a formatted link:
-   (https://www.docutils.org/docs/ref/rst/directives.html#replacement-text)
-
-.. |FORCE_COLOR| replace:: ``FORCE_COLOR``
-.. _FORCE_COLOR: https://force-color.org/
-
-.. |NO_COLOR| replace:: ``NO_COLOR``
-.. _NO_COLOR: https://no-color.org/
-
 * A common mistake is to write a script with the same name as a
   standard library module. When this results in errors, we now
   display a more helpful error message:
@@ -334,7 +325,7 @@ enabled at runtime using the environment variable :envvar:`PYTHON_GIL` or
 the command-line option :option:`-X gil=1`.
 
 To check if the current interpreter supports free-threading, :option:`python -VV <-V>`
-and :attr:`sys.version` contain "experimental free-threading build".
+and :data:`sys.version` contain "experimental free-threading build".
 The new :func:`!sys._is_gil_enabled` function can be used to check whether
 the GIL is actually disabled in the running process.
 
@@ -739,6 +730,22 @@ asyncio
   never awaited).
   (Contributed by Arthur Tacca and Jason Zhang in :gh:`115957`.)
 
+* The function and methods named ``create_task`` have received a new
+  ``**kwargs`` argument that is passed through to the task constructor.
+  This change was accidentally added in 3.13.3,
+  and broke the API contract for custom task factories.
+  Several third-party task factories implemented workarounds for this.
+  In 3.13.4 and later releases the old factory contract is honored
+  once again (until 3.14).
+  To keep the workarounds working, the extra ``**kwargs`` argument still
+  allows passing additional keyword arguments to :class:`~asyncio.Task`
+  and to custom task factories.
+
+  This affects the following function and methods:
+  :meth:`asyncio.create_task`,
+  :meth:`asyncio.loop.create_task`,
+  :meth:`asyncio.TaskGroup.create_task`.
+  (Contributed by Thomas Grainger in :gh:`128307`.)
 
 base64
 ------
@@ -887,6 +894,13 @@ email
   to check if the *strict* parameter is available.
   (Contributed by Thomas Dwyer and Victor Stinner for :gh:`102988` to improve
   the :cve:`2023-27043` fix.)
+
+
+enum
+----
+
+* :class:`~enum.EnumDict` has been made public to better support subclassing
+  :class:`~enum.EnumType`.
 
 
 fractions
@@ -1064,7 +1078,7 @@ os
   which makes the newly spawned process use the current process environment.
   (Contributed by Jakub Kulik in :gh:`113119`.)
 
-* :func:`~os.posix_spawn` can now use the :attr:`~os.POSIX_SPAWN_CLOSEFROM`
+* :func:`~os.posix_spawn` can now use the :const:`~os.POSIX_SPAWN_CLOSEFROM`
   attribute in the *file_actions* parameter on platforms that support
   :c:func:`!posix_spawn_file_actions_addclosefrom_np`.
   (Contributed by Jakub Kulik in :gh:`113117`.)
@@ -1501,8 +1515,20 @@ All of the following modules were deprecated in Python 3.11,
 and are now removed:
 
 * :mod:`!aifc`
+
+  * :pypi:`standard-aifc`:
+    Use the redistribution of ``aifc`` library from PyPI.
+
 * :mod:`!audioop`
+
+  * :pypi:`audioop-lts`:
+    Use ``audioop-lts`` library from PyPI.
+
 * :mod:`!chunk`
+
+  * :pypi:`standard-chunk`:
+    Use the redistribution of ``chunk`` library from PyPI.
+
 * :mod:`!cgi` and :mod:`!cgitb`
 
   * :class:`!cgi.FieldStorage` can typically be replaced with
@@ -1533,6 +1559,9 @@ and are now removed:
     For example, the :class:`email.message.EmailMessage`
     and :class:`email.message.Message` classes.
 
+  * :pypi:`standard-cgi`: and :pypi:`standard-cgitb`:
+    Use the redistribution of ``cgi`` and ``cgitb`` library from PyPI.
+
 * :mod:`!crypt` and the private :mod:`!_crypt` extension.
   The :mod:`hashlib` module may be an appropriate replacement
   when simply hashing a value is required.
@@ -1551,6 +1580,8 @@ and are now removed:
     Fork of the :mod:`!crypt` module,
     wrapper to the :manpage:`crypt_r(3)` library call
     and associated functionality.
+  * :pypi:`standard-crypt` and :pypi:`deprecated-crypt-alternative`:
+    Use the redistribution of ``crypt`` and reimplementation of ``_crypt`` libraries from PyPI.
 
 * :mod:`!imghdr`:
   The :pypi:`filetype`, :pypi:`puremagic`, or :pypi:`python-magic` libraries
@@ -1558,27 +1589,64 @@ and are now removed:
   For example, the :func:`!puremagic.what` function can be used
   to replace the :func:`!imghdr.what` function for all file formats
   that were supported by :mod:`!imghdr`.
+
+  * :pypi:`standard-imghdr`:
+    Use the redistribution of ``imghdr`` library from PyPI.
+
 * :mod:`!mailcap`:
   Use the :mod:`mimetypes` module instead.
+
+  * :pypi:`standard-mailcap`:
+    Use the redistribution of ``mailcap`` library from PyPI.
+
 * :mod:`!msilib`
 * :mod:`!nis`
 * :mod:`!nntplib`:
   Use the :pypi:`pynntp` library from PyPI instead.
+
+  * :pypi:`standard-nntplib`:
+    Use the redistribution of ``nntplib`` library from PyPI.
+
 * :mod:`!ossaudiodev`:
   For audio playback, use the :pypi:`pygame` library from PyPI instead.
 * :mod:`!pipes`:
   Use the :mod:`subprocess` module instead.
+  Use :func:`shlex.quote` to replace the undocumented ``pipes.quote``
+  function.
+
+  * :pypi:`standard-pipes`:
+    Use the redistribution of ``pipes`` library from PyPI.
+
 * :mod:`!sndhdr`:
   The :pypi:`filetype`, :pypi:`puremagic`, or :pypi:`python-magic` libraries
   should be used as replacements.
+
+  * :pypi:`standard-sndhdr`:
+    Use the redistribution of ``sndhdr`` library from PyPI.
+
 * :mod:`!spwd`:
   Use the :pypi:`python-pam` library from PyPI instead.
 * :mod:`!sunau`
+
+  * :pypi:`standard-sunau`:
+    Use the redistribution of ``sunau`` library from PyPI.
+
 * :mod:`!telnetlib`,
   Use the :pypi:`telnetlib3` or :pypi:`Exscript` libraries from PyPI instead.
+
+  * :pypi:`standard-telnetlib`:
+    Use the redistribution of ``telnetlib`` library from PyPI.
+
 * :mod:`!uu`:
   Use the :mod:`base64` module instead, as a modern alternative.
+
+  * :pypi:`standard-uu`:
+    Use the redistribution of ``uu`` library from PyPI.
+
 * :mod:`!xdrlib`
+
+  * :pypi:`standard-xdrlib`:
+    Use the redistribution of ``xdrlib`` library from PyPI.
 
 (Contributed by Victor Stinner and Zachary Ware in :gh:`104773` and :gh:`104780`.)
 
@@ -1646,6 +1714,22 @@ opcode
   but were neither documented nor exposed through :mod:`dis`,
   and were not intended to be used externally.
   (Contributed by Irit Katriel in :gh:`105481`.)
+
+
+optparse
+--------
+
+* This module is no longer considered :term:`soft deprecated`.
+  While :mod:`argparse` remains preferred for new projects that
+  aren't using a third party command line argument processing
+  library, there are aspects of the way ``argparse`` works that
+  mean the lower level ``optparse`` module may provide a better
+  foundation for *writing* argument processing libraries, and
+  for implementing command line applications which adhere more
+  strictly than ``argparse`` does to various Unix command line
+  processing conventions that originate in the behaviour of the
+  C :c:func:`!getopt` function .
+  (Contributed by Alyssa Coghlan and Serhiy Storchaka in :gh:`126180`.)
 
 
 pathlib
@@ -1787,14 +1871,6 @@ New Deprecations
     Check membership in :data:`~dis.hasarg` instead.
     (Contributed by Irit Katriel in :gh:`109319`.)
 
-* :mod:`getopt` and :mod:`optparse`:
-
-  * Both modules are now :term:`soft deprecated`,
-    with :mod:`argparse` preferred for new projects.
-    This is a new soft-deprecation for the :mod:`!getopt` module,
-    whereas the :mod:`!optparse` module was already *de facto* soft deprecated.
-    (Contributed by Victor Stinner in :gh:`106535`.)
-
 * :mod:`gettext`:
 
   * Deprecate non-integer numbers as arguments to functions and methods
@@ -1811,7 +1887,7 @@ New Deprecations
 
 * :mod:`http.server`:
 
-  * Deprecate :class:`~http.server.CGIHTTPRequestHandler`,
+  * Deprecate :class:`!CGIHTTPRequestHandler`,
     to be removed in Python 3.15.
     Process-based CGI HTTP servers have been out of favor for a very long time.
     This code was outdated, unmaintained, and rarely used.
@@ -1848,7 +1924,7 @@ New Deprecations
 
 * :mod:`platform`:
 
-  * Deprecate :func:`~platform.java_ver`,
+  * Deprecate :func:`!platform.java_ver`,
     to be removed in Python 3.15.
     This function is only useful for Jython support, has a confusing API,
     and is largely untested.
@@ -1935,8 +2011,7 @@ New Deprecations
 
 * :mod:`wave`:
 
-  * Deprecate the :meth:`~wave.Wave_read.getmark`, :meth:`!setmark`,
-    and :meth:`~wave.Wave_read.getmarkers` methods of
+  * Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()`` methods of
     the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes,
     to be removed in Python 3.15.
     (Contributed by Victor Stinner in :gh:`105096`.)
@@ -1948,6 +2023,8 @@ New Deprecations
 .. include:: ../deprecations/pending-removal-in-3.15.rst
 
 .. include:: ../deprecations/pending-removal-in-3.16.rst
+
+.. include:: ../deprecations/pending-removal-in-3.17.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
 
@@ -1978,7 +2055,7 @@ New Features
   * :c:func:`PyMonitoring_FireCallEvent`
   * :c:func:`PyMonitoring_FireLineEvent`
   * :c:func:`PyMonitoring_FireJumpEvent`
-  * :c:func:`PyMonitoring_FireBranchEvent`
+  * ``PyMonitoring_FireBranchEvent``
   * :c:func:`PyMonitoring_FireCReturnEvent`
   * :c:func:`PyMonitoring_FirePyThrowEvent`
   * :c:func:`PyMonitoring_FireRaiseEvent`
@@ -2415,17 +2492,17 @@ Deprecated C APIs
 
   * :c:func:`PySys_ResetWarnOptions`:
     Clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
-  * :c:func:`Py_GetExecPrefix`:
+  * :c:func:`!Py_GetExecPrefix`:
     Get :data:`sys.exec_prefix` instead.
-  * :c:func:`Py_GetPath`:
+  * :c:func:`!Py_GetPath`:
     Get :data:`sys.path` instead.
-  * :c:func:`Py_GetPrefix`:
+  * :c:func:`!Py_GetPrefix`:
     Get :data:`sys.prefix` instead.
-  * :c:func:`Py_GetProgramFullPath`:
+  * :c:func:`!Py_GetProgramFullPath`:
     Get :data:`sys.executable` instead.
-  * :c:func:`Py_GetProgramName`:
+  * :c:func:`!Py_GetProgramName`:
     Get :data:`sys.executable` instead.
-  * :c:func:`Py_GetPythonHome`:
+  * :c:func:`!Py_GetPythonHome`:
     Get :c:member:`PyConfig.home`
     or the :envvar:`PYTHONHOME` environment variable instead.
 
@@ -2437,7 +2514,7 @@ Deprecated C APIs
   which return a :term:`borrowed reference`.
   (Soft deprecated as part of :pep:`667`.)
 
-* Deprecate the :c:func:`PyImport_ImportModuleNoBlock` function,
+* Deprecate the :c:func:`!PyImport_ImportModuleNoBlock` function,
   which is just an alias to :c:func:`PyImport_ImportModule` since Python 3.3.
   (Contributed by Victor Stinner in :gh:`105396`.)
 
@@ -2468,6 +2545,8 @@ Deprecated C APIs
 .. include:: ../deprecations/c-api-pending-removal-in-3.14.rst
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
 
 .. include:: ../deprecations/c-api-pending-removal-in-future.rst
 
@@ -2697,6 +2776,33 @@ Changes in the C API
   * :c:func:`!PyFrame_LocalsToFast` no longer has any effect.
     Calling this function is redundant now that :c:func:`PyFrame_GetLocals`
     returns a write-through proxy for :term:`optimized scopes <optimized scope>`.
+
+* Python 3.13 removed many private functions. Some of them can be replaced using these
+  alternatives:
+
+  * ``_PyDict_Pop()``: :c:func:`PyDict_Pop` or :c:func:`PyDict_PopString`;
+  * ``_PyDict_GetItemWithError()``: :c:func:`PyDict_GetItemRef`;
+  * ``_PyErr_WriteUnraisableMsg()``:  :c:func:`PyErr_FormatUnraisable`;
+  * ``_PyEval_SetTrace()``: :c:func:`PyEval_SetTrace` or :c:func:`PyEval_SetTraceAllThreads`;
+  * ``_PyList_Extend()``: :c:func:`PyList_Extend`;
+  * ``_PyLong_AsInt()``: :c:func:`PyLong_AsInt`;
+  * ``_PyMem_RawStrdup()``: ``strdup()``;
+  * ``_PyMem_Strdup()``: ``strdup()``;
+  * ``_PyObject_ClearManagedDict()``: :c:func:`PyObject_ClearManagedDict`;
+  * ``_PyObject_VisitManagedDict()``: :c:func:`PyObject_VisitManagedDict`;
+  * ``_PyThreadState_UncheckedGet()``: :c:func:`PyThreadState_GetUnchecked()`;
+  * ``_PyTime_AsSecondsDouble()``: :c:func:`PyTime_AsSecondsDouble`;
+  * ``_PyTime_GetMonotonicClock()``: :c:func:`PyTime_Monotonic` or :c:func:`PyTime_MonotonicRaw`;
+  * ``_PyTime_GetPerfCounter()``: :c:func:`PyTime_PerfCounter` or :c:func:`PyTime_PerfCounterRaw`;
+  * ``_PyTime_GetSystemClock()``: :c:func:`PyTime_Time` or :c:func:`PyTime_TimeRaw`;
+  * ``_PyTime_MAX``: :c:var:`PyTime_MAX`;
+  * ``_PyTime_MIN``: :c:var:`PyTime_MIN`;
+  * ``_PyTime_t``: :c:type:`PyTime_t`;
+  * ``_Py_HashPointer()``: :c:func:`Py_HashPointer`;
+  * ``_Py_IsFinalizing()``: :c:func:`Py_IsFinalizing`.
+
+  The `pythoncapi-compat project`_ can be used to get most of these new
+  functions on Python 3.12 and older.
 
 Regression Test Changes
 =======================

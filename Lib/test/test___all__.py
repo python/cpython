@@ -37,6 +37,7 @@ class AllTest(unittest.TestCase):
             (".* (module|package)", DeprecationWarning),
             (".* (module|package)", PendingDeprecationWarning),
             ("", ResourceWarning),
+            ("", SyntaxWarning),
             quiet=True):
             try:
                 exec("import %s" % modname, names)
@@ -52,6 +53,7 @@ class AllTest(unittest.TestCase):
             with warnings_helper.check_warnings(
                 ("", DeprecationWarning),
                 ("", ResourceWarning),
+                ("", SyntaxWarning),
                 quiet=True):
                 try:
                     exec("from %s import *" % modname, names)

@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.7.1
+    rev: v0.11.8
     hooks:
       - id: ruff
         name: Run Ruff (lint) on Doc/
@@ -11,9 +11,9 @@ repos:
         args: [--exit-non-zero-on-fix]
         files: ^Lib/test/
       - id: ruff
-        name: Run Ruff (lint) on Tools/build/check_warnings.py
+        name: Run Ruff (lint) on Tools/build/
         args: [--exit-non-zero-on-fix, --config=Tools/build/.ruff.toml]
-        files: ^Tools/build/check_warnings.py
+        files: ^Tools/build/
       - id: ruff
         name: Run Ruff (lint) on Argument Clinic
         args: [--exit-non-zero-on-fix, --config=Tools/clinic/.ruff.toml]
@@ -22,19 +22,17 @@ repos:
         name: Run Ruff (format) on Doc/
         args: [--check]
         files: ^Doc/
+      - id: ruff-format
+        name: Run Ruff (format) on Tools/build/check_warnings.py
+        args: [--check, --config=Tools/build/.ruff.toml]
+        files: ^Tools/build/check_warnings.py
 
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 24.10.0
+    rev: 25.1.0
     hooks:
-      - id: black
-        name: Run Black on Tools/build/check_warnings.py
-        files: ^Tools/build/check_warnings.py
-        language_version: python3.12
-        args: [--line-length=79]
       - id: black
         name: Run Black on Tools/jit/
         files: ^Tools/jit/
-        language_version: python3.12
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -49,21 +47,25 @@ repos:
         exclude: Lib/test/tokenizedata/coding20731.py
       - id: trailing-whitespace
         types_or: [c, inc, python, rst]
+      - id: trailing-whitespace
+        files: '\.(gram)$'
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.29.4
+    rev: 0.33.0
     hooks:
       - id: check-dependabot
       - id: check-github-workflows
+      - id: check-readthedocs
 
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.3
+    rev: v1.7.7
     hooks:
       - id: actionlint
-        args: [
-          -ignore=1st argument of function call is not assignable,
-          -ignore=SC2(015|038|086|091|097|098|129|155),
-        ]
+
+  - repo: https://github.com/woodruffw/zizmor-pre-commit
+    rev: v1.6.0
+    hooks:
+      - id: zizmor
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
     rev: v1.0.0

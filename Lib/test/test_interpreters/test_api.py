@@ -693,8 +693,7 @@ class TestInterpreterPrepareMain(TestBase):
 
     def test_not_shareable(self):
         interp = interpreters.create()
-        # XXX TypeError?
-        with self.assertRaises(ValueError):
+        with self.assertRaises(interpreters.NotShareableError):
             interp.prepare_main(spam={'spam': 'eggs', 'foo': 'bar'})
 
         # Make sure neither was actually bound.
@@ -1453,6 +1452,14 @@ class LowLevelTests(TestBase):
             self.assertFalse(
                 self.interp_exists(interpid))
 
+        with self.subTest('basic C-API'):
+            interpid = _testinternalcapi.create_interpreter()
+            self.assertTrue(
+                self.interp_exists(interpid))
+            _testinternalcapi.destroy_interpreter(interpid, basic=True)
+            self.assertFalse(
+                self.interp_exists(interpid))
+
     def test_get_config(self):
         # This test overlaps with
         # test.test_capi.test_misc.InterpreterConfigTests.
@@ -1648,6 +1655,10 @@ class LowLevelTests(TestBase):
             self.assertIs(after1, None)
             self.assertIs(after2, None)
             self.assertEqual(after3.type.__name__, 'AssertionError')
+
+            with self.assertRaises(ValueError):
+                # GH-127165: Embedded NULL characters broke the lookup
+                _interpreters.set___main___attrs(interpid, {"\x00": 1})
 
         with self.subTest('from C-API'):
             with self.interpreter_from_capi() as interpid:

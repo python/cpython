@@ -1,3 +1,4 @@
+import sys
 import ast
 import contextlib
 import re
@@ -75,6 +76,16 @@ class RuleCheckingVisitor(GrammarVisitor):
     def __init__(self, rules: Dict[str, Rule], tokens: Set[str]):
         self.rules = rules
         self.tokens = tokens
+        # If python < 3.12 add the virtual fstring tokens
+        if sys.version_info < (3, 12):
+            self.tokens.add("FSTRING_START")
+            self.tokens.add("FSTRING_END")
+            self.tokens.add("FSTRING_MIDDLE")
+        # If python < 3.14 add the virtual tstring tokens
+        if sys.version_info < (3, 14, 0, 'beta', 1):
+            self.tokens.add("TSTRING_START")
+            self.tokens.add("TSTRING_END")
+            self.tokens.add("TSTRING_MIDDLE")
 
     def visit_NameLeaf(self, node: NameLeaf) -> None:
         if node.value not in self.rules and node.value not in self.tokens:

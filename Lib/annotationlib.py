@@ -3,7 +3,6 @@
 import ast
 import builtins
 import enum
-import functools
 import keyword
 import sys
 import types
@@ -13,38 +12,37 @@ __all__ = [
     "ForwardRef",
     "call_annotate_function",
     "call_evaluate_function",
-    "get_annotate_function",
+    "get_annotate_from_class_namespace",
     "get_annotations",
     "annotations_to_string",
-    "value_to_string",
+    "type_repr",
 ]
 
 
 class Format(enum.IntEnum):
     VALUE = 1
-    FORWARDREF = 2
-    STRING = 3
+    VALUE_WITH_FAKE_GLOBALS = 2
+    FORWARDREF = 3
+    STRING = 4
 
 
-_Union = None
 _sentinel = object()
 
 # Slots shared by ForwardRef and _Stringifier. The __forward__ names must be
 # preserved for compatibility with the old typing.ForwardRef class. The remaining
 # names are private.
 _SLOTS = (
-    "__forward_evaluated__",
-    "__forward_value__",
     "__forward_is_argument__",
     "__forward_is_class__",
     "__forward_module__",
     "__weakref__",
     "__arg__",
-    "__ast_node__",
-    "__code__",
     "__globals__",
-    "__owner__",
+    "__extra_names__",
+    "__code__",
+    "__ast_node__",
     "__cell__",
+    "__owner__",
     "__stringifier_dict__",
 )
 
@@ -77,36 +75,50 @@ class ForwardRef:
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
 
         self.__arg__ = arg
-        self.__forward_evaluated__ = False
-        self.__forward_value__ = None
         self.__forward_is_argument__ = is_argument
         self.__forward_is_class__ = is_class
         self.__forward_module__ = module
-        self.__code__ = None
-        self.__ast_node__ = None
+        self.__owner__ = owner
+        # These are always set to None here but may be non-None if a ForwardRef
+        # is created through __class__ assignment on a _Stringifier object.
         self.__globals__ = None
         self.__cell__ = None
-        self.__owner__ = owner
+        self.__extra_names__ = None
+        # These are initially None but serve as a cache and may be set to a non-None
+        # value later.
+        self.__code__ = None
+        self.__ast_node__ = None
 
     def __init_subclass__(cls, /, *args, **kwds):
         raise TypeError("Cannot subclass ForwardRef")
 
-    def evaluate(self, *, globals=None, locals=None, type_params=None, owner=None):
+    def evaluate(
+        self,
+        *,
+        globals=None,
+        locals=None,
+        type_params=None,
+        owner=None,
+        format=Format.VALUE,
+    ):
         """Evaluate the forward reference and return the value.
 
         If the forward reference cannot be evaluated, raise an exception.
         """
-        if self.__forward_evaluated__:
-            return self.__forward_value__
+        match format:
+            case Format.STRING:
+                return self.__forward_arg__
+            case Format.VALUE:
+                is_forwardref_format = False
+            case Format.FORWARDREF:
+                is_forwardref_format = True
+            case _:
+                raise NotImplementedError(format)
         if self.__cell__ is not None:
             try:
-                value = self.__cell__.cell_contents
+                return self.__cell__.cell_contents
             except ValueError:
                 pass
-            else:
-                self.__forward_evaluated__ = True
-                self.__forward_value__ = value
-                return value
         if owner is None:
             owner = self.__owner__
 
@@ -158,23 +170,42 @@ class ForwardRef:
                 if not self.__forward_is_class__ or param_name not in globals:
                     globals[param_name] = param
                     locals.pop(param_name, None)
+        if self.__extra_names__:
+            locals = {**locals, **self.__extra_names__}
 
         arg = self.__forward_arg__
         if arg.isidentifier() and not keyword.iskeyword(arg):
             if arg in locals:
-                value = locals[arg]
+                return locals[arg]
             elif arg in globals:
-                value = globals[arg]
+                return globals[arg]
             elif hasattr(builtins, arg):
                 return getattr(builtins, arg)
+            elif is_forwardref_format:
+                return self
             else:
                 raise NameError(arg)
         else:
             code = self.__forward_code__
-            value = eval(code, globals=globals, locals=locals)
-        self.__forward_evaluated__ = True
-        self.__forward_value__ = value
-        return value
+            try:
+                return eval(code, globals=globals, locals=locals)
+            except Exception:
+                if not is_forwardref_format:
+                    raise
+            new_locals = _StringifierDict(
+                {**builtins.__dict__, **locals},
+                globals=globals,
+                owner=owner,
+                is_class=self.__forward_is_class__,
+                format=format,
+            )
+            try:
+                result = eval(code, globals=globals, locals=new_locals)
+            except Exception:
+                return self
+            else:
+                new_locals.transmogrify()
+                return result
 
     def _evaluate(self, globalns, localns, type_params=_sentinel, *, recursive_guard):
         import typing
@@ -231,37 +262,50 @@ class ForwardRef:
     def __eq__(self, other):
         if not isinstance(other, ForwardRef):
             return NotImplemented
-        if self.__forward_evaluated__ and other.__forward_evaluated__:
-            return (
-                self.__forward_arg__ == other.__forward_arg__
-                and self.__forward_value__ == other.__forward_value__
-            )
         return (
             self.__forward_arg__ == other.__forward_arg__
             and self.__forward_module__ == other.__forward_module__
+            # Use "is" here because we use id() for this in __hash__
+            # because dictionaries are not hashable.
+            and self.__globals__ is other.__globals__
+            and self.__forward_is_class__ == other.__forward_is_class__
+            and self.__cell__ == other.__cell__
+            and self.__owner__ == other.__owner__
+            and (
+                (tuple(sorted(self.__extra_names__.items())) if self.__extra_names__ else None) ==
+                (tuple(sorted(other.__extra_names__.items())) if other.__extra_names__ else None)
+            )
         )
 
     def __hash__(self):
-        return hash((self.__forward_arg__, self.__forward_module__))
+        return hash((
+            self.__forward_arg__,
+            self.__forward_module__,
+            id(self.__globals__),  # dictionaries are not hashable, so hash by identity
+            self.__forward_is_class__,
+            self.__cell__,
+            self.__owner__,
+            tuple(sorted(self.__extra_names__.items())) if self.__extra_names__ else None,
+        ))
 
     def __or__(self, other):
-        global _Union
-        if _Union is None:
-            from typing import Union as _Union
-        return _Union[self, other]
+        return types.UnionType[self, other]
 
     def __ror__(self, other):
-        global _Union
-        if _Union is None:
-            from typing import Union as _Union
-        return _Union[other, self]
+        return types.UnionType[other, self]
 
     def __repr__(self):
-        if self.__forward_module__ is None:
-            module_repr = ""
-        else:
-            module_repr = f", module={self.__forward_module__!r}"
-        return f"ForwardRef({self.__forward_arg__!r}{module_repr})"
+        extra = []
+        if self.__forward_module__ is not None:
+            extra.append(f", module={self.__forward_module__!r}")
+        if self.__forward_is_class__:
+            extra.append(", is_class=True")
+        if self.__owner__ is not None:
+            extra.append(f", owner={self.__owner__!r}")
+        return f"ForwardRef({self.__forward_arg__!r}{''.join(extra)})"
+
+
+_Template = type(t"")
 
 
 class _Stringifier:
@@ -278,19 +322,19 @@ class _Stringifier:
         cell=None,
         *,
         stringifier_dict,
+        extra_names=None,
     ):
         # Either an AST node or a simple str (for the common case where a ForwardRef
         # represent a single name).
         assert isinstance(node, (ast.AST, str))
         self.__arg__ = None
-        self.__forward_evaluated__ = False
-        self.__forward_value__ = None
         self.__forward_is_argument__ = False
         self.__forward_is_class__ = is_class
         self.__forward_module__ = None
         self.__code__ = None
         self.__ast_node__ = node
         self.__globals__ = globals
+        self.__extra_names__ = extra_names
         self.__cell__ = cell
         self.__owner__ = owner
         self.__stringifier_dict__ = stringifier_dict
@@ -298,28 +342,65 @@ class _Stringifier:
     def __convert_to_ast(self, other):
         if isinstance(other, _Stringifier):
             if isinstance(other.__ast_node__, str):
-                return ast.Name(id=other.__ast_node__)
-            return other.__ast_node__
-        elif isinstance(other, slice):
-            return ast.Slice(
-                lower=(
-                    self.__convert_to_ast(other.start)
-                    if other.start is not None
-                    else None
-                ),
-                upper=(
-                    self.__convert_to_ast(other.stop)
-                    if other.stop is not None
-                    else None
-                ),
-                step=(
-                    self.__convert_to_ast(other.step)
-                    if other.step is not None
-                    else None
-                ),
-            )
+                return ast.Name(id=other.__ast_node__), other.__extra_names__
+            return other.__ast_node__, other.__extra_names__
+        elif type(other) is _Template:
+            return _template_to_ast(other), None
+        elif (
+            # In STRING format we don't bother with the create_unique_name() dance;
+            # it's better to emit the repr() of the object instead of an opaque name.
+            self.__stringifier_dict__.format == Format.STRING
+            or other is None
+            or type(other) in (str, int, float, bool, complex)
+        ):
+            return ast.Constant(value=other), None
+        elif type(other) is dict:
+            extra_names = {}
+            keys = []
+            values = []
+            for key, value in other.items():
+                new_key, new_extra_names = self.__convert_to_ast(key)
+                if new_extra_names is not None:
+                    extra_names.update(new_extra_names)
+                keys.append(new_key)
+                new_value, new_extra_names = self.__convert_to_ast(value)
+                if new_extra_names is not None:
+                    extra_names.update(new_extra_names)
+                values.append(new_value)
+            return ast.Dict(keys, values), extra_names
+        elif type(other) in (list, tuple, set):
+            extra_names = {}
+            elts = []
+            for elt in other:
+                new_elt, new_extra_names = self.__convert_to_ast(elt)
+                if new_extra_names is not None:
+                    extra_names.update(new_extra_names)
+                elts.append(new_elt)
+            ast_class = {list: ast.List, tuple: ast.Tuple, set: ast.Set}[type(other)]
+            return ast_class(elts), extra_names
         else:
-            return ast.Constant(value=other)
+            name = self.__stringifier_dict__.create_unique_name()
+            return ast.Name(id=name), {name: other}
+
+    def __convert_to_ast_getitem(self, other):
+        if isinstance(other, slice):
+            extra_names = {}
+
+            def conv(obj):
+                if obj is None:
+                    return None
+                new_obj, new_extra_names = self.__convert_to_ast(obj)
+                if new_extra_names is not None:
+                    extra_names.update(new_extra_names)
+                return new_obj
+
+            return ast.Slice(
+                lower=conv(other.start),
+                upper=conv(other.stop),
+                step=conv(other.step),
+            ), extra_names
+        else:
+            return self.__convert_to_ast(other)
 
     def __get_ast(self):
         node = self.__ast_node__
@@ -327,13 +408,19 @@ class _Stringifier:
             return ast.Name(id=node)
         return node
 
-    def __make_new(self, node):
+    def __make_new(self, node, extra_names=None):
+        new_extra_names = {}
+        if self.__extra_names__ is not None:
+            new_extra_names.update(self.__extra_names__)
+        if extra_names is not None:
+            new_extra_names.update(extra_names)
         stringifier = _Stringifier(
             node,
             self.__globals__,
             self.__owner__,
             self.__forward_is_class__,
             stringifier_dict=self.__stringifier_dict__,
+            extra_names=new_extra_names or None,
         )
         self.__stringifier_dict__.stringifiers.append(stringifier)
         return stringifier
@@ -349,27 +436,37 @@ class _Stringifier:
         if self.__ast_node__ == "__classdict__":
             raise KeyError
         if isinstance(other, tuple):
-            elts = [self.__convert_to_ast(elt) for elt in other]
+            extra_names = {}
+            elts = []
+            for elt in other:
+                new_elt, new_extra_names = self.__convert_to_ast_getitem(elt)
+                if new_extra_names is not None:
+                    extra_names.update(new_extra_names)
+                elts.append(new_elt)
             other = ast.Tuple(elts)
         else:
-            other = self.__convert_to_ast(other)
+            other, extra_names = self.__convert_to_ast_getitem(other)
         assert isinstance(other, ast.AST), repr(other)
-        return self.__make_new(ast.Subscript(self.__get_ast(), other))
+        return self.__make_new(ast.Subscript(self.__get_ast(), other), extra_names)
 
     def __getattr__(self, attr):
         return self.__make_new(ast.Attribute(self.__get_ast(), attr))
 
     def __call__(self, *args, **kwargs):
-        return self.__make_new(
-            ast.Call(
-                self.__get_ast(),
-                [self.__convert_to_ast(arg) for arg in args],
-                [
-                    ast.keyword(key, self.__convert_to_ast(value))
-                    for key, value in kwargs.items()
-                ],
-            )
-        )
+        extra_names = {}
+        ast_args = []
+        for arg in args:
+            new_arg, new_extra_names = self.__convert_to_ast(arg)
+            if new_extra_names is not None:
+                extra_names.update(new_extra_names)
+            ast_args.append(new_arg)
+        ast_kwargs = []
+        for key, value in kwargs.items():
+            new_value, new_extra_names = self.__convert_to_ast(value)
+            if new_extra_names is not None:
+                extra_names.update(new_extra_names)
+            ast_kwargs.append(ast.keyword(key, new_value))
+        return self.__make_new(ast.Call(self.__get_ast(), ast_args, ast_kwargs), extra_names)
 
     def __iter__(self):
         yield self.__make_new(ast.Starred(self.__get_ast()))
@@ -384,8 +481,9 @@ class _Stringifier:
 
     def _make_binop(op: ast.AST):
         def binop(self, other):
+            rhs, extra_names = self.__convert_to_ast(other)
             return self.__make_new(
-                ast.BinOp(self.__get_ast(), op, self.__convert_to_ast(other))
+                ast.BinOp(self.__get_ast(), op, rhs), extra_names
             )
 
         return binop
@@ -408,8 +506,9 @@ class _Stringifier:
 
     def _make_rbinop(op: ast.AST):
         def rbinop(self, other):
+            new_other, extra_names = self.__convert_to_ast(other)
             return self.__make_new(
-                ast.BinOp(self.__convert_to_ast(other), op, self.__get_ast())
+                ast.BinOp(new_other, op, self.__get_ast()), extra_names
             )
 
         return rbinop
@@ -432,12 +531,14 @@ class _Stringifier:
 
     def _make_compare(op):
         def compare(self, other):
+            rhs, extra_names = self.__convert_to_ast(other)
             return self.__make_new(
                 ast.Compare(
                     left=self.__get_ast(),
                     ops=[op],
-                    comparators=[self.__convert_to_ast(other)],
-                )
+                    comparators=[rhs],
+                ),
+                extra_names,
             )
 
         return compare
@@ -464,14 +565,42 @@ class _Stringifier:
     del _make_unary_op
 
 
+def _template_to_ast(template):
+    values = []
+    for part in template:
+        match part:
+            case str():
+                values.append(ast.Constant(value=part))
+            # Interpolation, but we don't want to import the string module
+            case _:
+                interp = ast.Interpolation(
+                    str=part.expression,
+                    value=ast.parse(part.expression),
+                    conversion=(
+                        ord(part.conversion)
+                        if part.conversion is not None
+                        else -1
+                    ),
+                    format_spec=(
+                        ast.Constant(value=part.format_spec)
+                        if part.format_spec != ""
+                        else None
+                    ),
+                )
+                values.append(interp)
+    return ast.TemplateStr(values=values)
+
+
 class _StringifierDict(dict):
-    def __init__(self, namespace, globals=None, owner=None, is_class=False):
+    def __init__(self, namespace, *, globals=None, owner=None, is_class=False, format):
         super().__init__(namespace)
         self.namespace = namespace
         self.globals = globals
         self.owner = owner
         self.is_class = is_class
         self.stringifiers = []
+        self.next_id = 1
+        self.format = format
 
     def __missing__(self, key):
         fwdref = _Stringifier(
@@ -483,6 +612,19 @@ class _StringifierDict(dict):
         )
         self.stringifiers.append(fwdref)
         return fwdref
+
+    def transmogrify(self):
+        for obj in self.stringifiers:
+            obj.__class__ = ForwardRef
+            obj.__stringifier_dict__ = None  # not needed for ForwardRef
+            if isinstance(obj.__ast_node__, str):
+                obj.__arg__ = obj.__ast_node__
+                obj.__ast_node__ = None
+
+    def create_unique_name(self):
+        name = f"__annotationlib_name_{self.next_id}__"
+        self.next_id += 1
+        return name
 
 
 def call_evaluate_function(evaluate, format, *, owner=None):
@@ -513,6 +655,8 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
     on the generated ForwardRef objects.
 
     """
+    if format == Format.VALUE_WITH_FAKE_GLOBALS:
+        raise ValueError("The VALUE_WITH_FAKE_GLOBALS format is for internal use only")
     try:
         return annotate(format)
     except NotImplementedError:
@@ -525,20 +669,11 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         # possibly constants if the annotate function uses them directly). We then
         # convert each of those into a string to get an approximation of the
         # original source.
-        globals = _StringifierDict({})
-        if annotate.__closure__:
-            freevars = annotate.__code__.co_freevars
-            new_closure = []
-            for i, cell in enumerate(annotate.__closure__):
-                if i < len(freevars):
-                    name = freevars[i]
-                else:
-                    name = "__cell__"
-                fwdref = _Stringifier(name, stringifier_dict=globals)
-                new_closure.append(types.CellType(fwdref))
-            closure = tuple(new_closure)
-        else:
-            closure = None
+        globals = _StringifierDict({}, format=format)
+        is_class = isinstance(owner, type)
+        closure = _build_closure(
+            annotate, owner, is_class, globals, allow_evaluation=False
+        )
         func = types.FunctionType(
             annotate.__code__,
             globals,
@@ -546,11 +681,11 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             argdefs=annotate.__defaults__,
             kwdefaults=annotate.__kwdefaults__,
         )
-        annos = func(Format.VALUE)
+        annos = func(Format.VALUE_WITH_FAKE_GLOBALS)
         if _is_evaluate:
-            return annos if isinstance(annos, str) else repr(annos)
+            return _stringify_single(annos)
         return {
-            key: val if isinstance(val, str) else repr(val)
+            key: _stringify_single(val)
             for key, val in annos.items()
         }
     elif format == Format.FORWARDREF:
@@ -573,33 +708,16 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         # that returns a bool and an defined set of attributes.
         namespace = {**annotate.__builtins__, **annotate.__globals__}
         is_class = isinstance(owner, type)
-        globals = _StringifierDict(namespace, annotate.__globals__, owner, is_class)
-        if annotate.__closure__:
-            freevars = annotate.__code__.co_freevars
-            new_closure = []
-            for i, cell in enumerate(annotate.__closure__):
-                try:
-                    cell.cell_contents
-                except ValueError:
-                    if i < len(freevars):
-                        name = freevars[i]
-                    else:
-                        name = "__cell__"
-                    fwdref = _Stringifier(
-                        name,
-                        cell=cell,
-                        owner=owner,
-                        globals=annotate.__globals__,
-                        is_class=is_class,
-                        stringifier_dict=globals,
-                    )
-                    globals.stringifiers.append(fwdref)
-                    new_closure.append(types.CellType(fwdref))
-                else:
-                    new_closure.append(cell)
-            closure = tuple(new_closure)
-        else:
-            closure = None
+        globals = _StringifierDict(
+            namespace,
+            globals=annotate.__globals__,
+            owner=owner,
+            is_class=is_class,
+            format=format,
+        )
+        closure = _build_closure(
+            annotate, owner, is_class, globals, allow_evaluation=True
+        )
         func = types.FunctionType(
             annotate.__code__,
             globals,
@@ -607,14 +725,49 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             argdefs=annotate.__defaults__,
             kwdefaults=annotate.__kwdefaults__,
         )
-        result = func(Format.VALUE)
-        for obj in globals.stringifiers:
-            obj.__class__ = ForwardRef
-            obj.__stringifier_dict__ = None  # not needed for ForwardRef
-            if isinstance(obj.__ast_node__, str):
-                obj.__arg__ = obj.__ast_node__
-                obj.__ast_node__ = None
-        return result
+        try:
+            result = func(Format.VALUE_WITH_FAKE_GLOBALS)
+        except Exception:
+            pass
+        else:
+            globals.transmogrify()
+            return result
+
+        # Try again, but do not provide any globals. This allows us to return
+        # a value in certain cases where an exception gets raised during evaluation.
+        globals = _StringifierDict(
+            {},
+            globals=annotate.__globals__,
+            owner=owner,
+            is_class=is_class,
+            format=format,
+        )
+        closure = _build_closure(
+            annotate, owner, is_class, globals, allow_evaluation=False
+        )
+        func = types.FunctionType(
+            annotate.__code__,
+            globals,
+            closure=closure,
+            argdefs=annotate.__defaults__,
+            kwdefaults=annotate.__kwdefaults__,
+        )
+        result = func(Format.VALUE_WITH_FAKE_GLOBALS)
+        globals.transmogrify()
+        if _is_evaluate:
+            if isinstance(result, ForwardRef):
+                return result.evaluate(format=Format.FORWARDREF)
+            else:
+                return result
+        else:
+            return {
+                key: (
+                    val.evaluate(format=Format.FORWARDREF)
+                    if isinstance(val, ForwardRef)
+                    else val
+                )
+                for key, val in result.items()
+            }
     elif format == Format.VALUE:
         # Should be impossible because __annotate__ functions must not raise
         # NotImplementedError for this format.
@@ -623,29 +776,61 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         raise ValueError(f"Invalid format: {format!r}")
 
 
-# We use the descriptors from builtins.type instead of accessing
-# .__annotations__ and .__annotate__ directly on class objects, because
-# otherwise we could get wrong results in some cases involving metaclasses.
-# See PEP 749.
-_BASE_GET_ANNOTATE = type.__dict__["__annotate__"].__get__
-_BASE_GET_ANNOTATIONS = type.__dict__["__annotations__"].__get__
+def _build_closure(annotate, owner, is_class, stringifier_dict, *, allow_evaluation):
+    if not annotate.__closure__:
+        return None
+    freevars = annotate.__code__.co_freevars
+    new_closure = []
+    for i, cell in enumerate(annotate.__closure__):
+        if i < len(freevars):
+            name = freevars[i]
+        else:
+            name = "__cell__"
+        new_cell = None
+        if allow_evaluation:
+            try:
+                cell.cell_contents
+            except ValueError:
+                pass
+            else:
+                new_cell = cell
+        if new_cell is None:
+            fwdref = _Stringifier(
+                name,
+                cell=cell,
+                owner=owner,
+                globals=annotate.__globals__,
+                is_class=is_class,
+                stringifier_dict=stringifier_dict,
+            )
+            stringifier_dict.stringifiers.append(fwdref)
+            new_cell = types.CellType(fwdref)
+        new_closure.append(new_cell)
+    return tuple(new_closure)
 
 
-def get_annotate_function(obj):
-    """Get the __annotate__ function for an object.
+def _stringify_single(anno):
+    if anno is ...:
+        return "..."
+    # We have to handle str specially to support PEP 563 stringified annotations.
+    elif isinstance(anno, str):
+        return anno
+    elif isinstance(anno, _Template):
+        return ast.unparse(_template_to_ast(anno))
+    else:
+        return repr(anno)
 
-    obj may be a function, class, or module, or a user-defined type with
-    an `__annotate__` attribute.
 
-    Returns the __annotate__ function or None.
+def get_annotate_from_class_namespace(obj):
+    """Retrieve the annotate function from a class namespace dictionary.
+
+    Return None if the namespace does not contain an annotate function.
+    This is useful in metaclass ``__new__`` methods to retrieve the annotate function.
     """
-    if isinstance(obj, type):
-        try:
-            return _BASE_GET_ANNOTATE(obj)
-        except AttributeError:
-            # AttributeError is raised for static types.
-            return None
-    return getattr(obj, "__annotate__", None)
+    try:
+        return obj["__annotate__"]
+    except KeyError:
+        return obj.get("__annotate_func__", None)
 
 
 def get_annotations(
@@ -653,12 +838,18 @@ def get_annotations(
 ):
     """Compute the annotations dict for an object.
 
-    obj may be a callable, class, or module.
-    Passing in an object of any other type raises TypeError.
+    obj may be a callable, class, module, or other object with
+    __annotate__ or __annotations__ attributes.
+    Passing any other object raises TypeError.
 
-    Returns a dict.  get_annotations() returns a new dict every time
-    it's called; calling it twice on the same object will return two
-    different but equivalent dicts.
+    The *format* parameter controls the format in which annotations are returned,
+    and must be a member of the Format enum or its integer equivalent.
+    For the VALUE format, the __annotations__ is tried first; if it
+    does not exist, the __annotate__ function is called. The
+    FORWARDREF format uses __annotations__ if it exists and can be
+    evaluated, and otherwise falls back to calling the __annotate__ function.
+    The SOURCE format tries __annotate__ first, and falls back to
+    using __annotations__, stringified using annotations_to_string().
 
     This function handles several details for you:
 
@@ -700,34 +891,47 @@ def get_annotations(
 
     match format:
         case Format.VALUE:
-            # For VALUE, we only look at __annotations__
+            # For VALUE, we first look at __annotations__
             ann = _get_dunder_annotations(obj)
+
+            # If it's not there, try __annotate__ instead
+            if ann is None:
+                ann = _get_and_call_annotate(obj, format)
         case Format.FORWARDREF:
             # For FORWARDREF, we use __annotations__ if it exists
             try:
-                return dict(_get_dunder_annotations(obj))
-            except NameError:
+                ann = _get_dunder_annotations(obj)
+            except Exception:
                 pass
+            else:
+                if ann is not None:
+                    return dict(ann)
 
             # But if __annotations__ threw a NameError, we try calling __annotate__
             ann = _get_and_call_annotate(obj, format)
-            if ann is not None:
-                return ann
-
-            # If that didn't work either, we have a very weird object: evaluating
-            # __annotations__ threw NameError and there is no __annotate__. In that case,
-            # we fall back to trying __annotations__ again.
-            return dict(_get_dunder_annotations(obj))
+            if ann is None:
+                # If that didn't work either, we have a very weird object: evaluating
+                # __annotations__ threw NameError and there is no __annotate__. In that case,
+                # we fall back to trying __annotations__ again.
+                ann = _get_dunder_annotations(obj)
         case Format.STRING:
             # For STRING, we try to call __annotate__
             ann = _get_and_call_annotate(obj, format)
             if ann is not None:
-                return ann
+                return dict(ann)
             # But if we didn't get it, we use __annotations__ instead.
             ann = _get_dunder_annotations(obj)
-            return annotations_to_string(ann)
+            if ann is not None:
+                return annotations_to_string(ann)
+        case Format.VALUE_WITH_FAKE_GLOBALS:
+            raise ValueError("The VALUE_WITH_FAKE_GLOBALS format is for internal use only")
         case _:
             raise ValueError(f"Unsupported format {format!r}")
+
+    if ann is None:
+        if isinstance(obj, type) or callable(obj):
+            return {}
+        raise TypeError(f"{obj!r} does not have annotations")
 
     if not ann:
         return {}
@@ -757,19 +961,18 @@ def get_annotations(
         obj_globals = getattr(obj, "__globals__", None)
         obj_locals = None
         unwrap = obj
-    elif ann is not None:
-        obj_globals = obj_locals = unwrap = None
     else:
-        raise TypeError(f"{obj!r} is not a module, class, or callable.")
+        obj_globals = obj_locals = unwrap = None
 
     if unwrap is not None:
         while True:
             if hasattr(unwrap, "__wrapped__"):
                 unwrap = unwrap.__wrapped__
                 continue
-            if isinstance(unwrap, functools.partial):
-                unwrap = unwrap.func
-                continue
+            if functools := sys.modules.get("functools"):
+                if isinstance(unwrap, functools.partial):
+                    unwrap = unwrap.func
+                    continue
             break
         if hasattr(unwrap, "__globals__"):
             obj_globals = unwrap.__globals__
@@ -794,55 +997,60 @@ def get_annotations(
     return return_value
 
 
-def value_to_string(value):
+def type_repr(value):
     """Convert a Python value to a format suitable for use with the STRING format.
 
-    This is inteded as a helper for tools that support the STRING format but do
+    This is intended as a helper for tools that support the STRING format but do
     not have access to the code that originally produced the annotations. It uses
     repr() for most objects.
 
     """
-    if isinstance(value, type):
+    if isinstance(value, (type, types.FunctionType, types.BuiltinFunctionType)):
         if value.__module__ == "builtins":
             return value.__qualname__
         return f"{value.__module__}.{value.__qualname__}"
+    elif isinstance(value, _Template):
+        tree = _template_to_ast(value)
+        return ast.unparse(tree)
     if value is ...:
         return "..."
-    if isinstance(value, (types.FunctionType, types.BuiltinFunctionType)):
-        return value.__name__
     return repr(value)
 
 
 def annotations_to_string(annotations):
-    """Convert an annotation dict containing values to approximately the STRING format."""
+    """Convert an annotation dict containing values to approximately the STRING format.
+
+    Always returns a fresh a dictionary.
+    """
     return {
-        n: t if isinstance(t, str) else value_to_string(t)
+        n: t if isinstance(t, str) else type_repr(t)
         for n, t in annotations.items()
     }
 
 
 def _get_and_call_annotate(obj, format):
-    annotate = get_annotate_function(obj)
+    """Get the __annotate__ function and call it.
+
+    May not return a fresh dictionary.
+    """
+    annotate = getattr(obj, "__annotate__", None)
     if annotate is not None:
         ann = call_annotate_function(annotate, format, owner=obj)
         if not isinstance(ann, dict):
             raise ValueError(f"{obj!r}.__annotate__ returned a non-dict")
-        return dict(ann)
+        return ann
     return None
 
 
 def _get_dunder_annotations(obj):
-    if isinstance(obj, type):
-        try:
-            ann = _BASE_GET_ANNOTATIONS(obj)
-        except AttributeError:
-            # For static types, the descriptor raises AttributeError.
-            return {}
-    else:
-        ann = getattr(obj, "__annotations__", None)
-        if ann is None:
-            return {}
+    """Return the annotations for an object, checking that it is a dictionary.
+
+    Does not return a fresh dictionary.
+    """
+    ann = getattr(obj, "__annotations__", None)
+    if ann is None:
+        return None
 
     if not isinstance(ann, dict):
         raise ValueError(f"{obj!r}.__annotations__ is neither a dict nor None")
-    return dict(ann)
+    return ann

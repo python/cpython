@@ -8,7 +8,7 @@
 
 This module provides access to some variables used or maintained by the
 interpreter and to functions that interact strongly with the interpreter. It is
-always available.
+always available. Unless explicitly noted otherwise, all variables are read-only.
 
 
 .. data:: abiflags
@@ -130,27 +130,26 @@ always available.
 
 .. data:: base_exec_prefix
 
-   Set during Python startup, before ``site.py`` is run, to the same value as
-   :data:`exec_prefix`. If not running in a
-   :ref:`virtual environment <venv-def>`, the values will stay the same; if
-   ``site.py`` finds that a virtual environment is in use, the values of
-   :data:`prefix` and :data:`exec_prefix` will be changed to point to the
-   virtual environment, whereas :data:`base_prefix` and
-   :data:`base_exec_prefix` will remain pointing to the base Python
-   installation (the one which the virtual environment was created from).
+   Equivalent to :data:`exec_prefix`, but referring to the base Python installation.
+
+   When running under :ref:`sys-path-init-virtual-environments`,
+   :data:`exec_prefix` gets overwritten to the virtual environment prefix.
+   :data:`base_exec_prefix`, conversely, does not change, and always points to
+   the base Python installation.
+   Refer to :ref:`sys-path-init-virtual-environments` for more information.
 
    .. versionadded:: 3.3
 
 
 .. data:: base_prefix
 
-   Set during Python startup, before ``site.py`` is run, to the same value as
-   :data:`prefix`. If not running in a :ref:`virtual environment <venv-def>`, the values
-   will stay the same; if ``site.py`` finds that a virtual environment is in
-   use, the values of :data:`prefix` and :data:`exec_prefix` will be changed to
-   point to the virtual environment, whereas :data:`base_prefix` and
-   :data:`base_exec_prefix` will remain pointing to the base Python
-   installation (the one which the virtual environment was created from).
+   Equivalent to :data:`prefix`, but referring to the base Python installation.
+
+   When running under :ref:`virtual environment <venv-def>`,
+   :data:`prefix` gets overwritten to the virtual environment prefix.
+   :data:`base_prefix`, conversely, does not change, and always points to
+   the base Python installation.
+   Refer to :ref:`sys-path-init-virtual-environments` for more information.
 
    .. versionadded:: 3.3
 
@@ -483,11 +482,19 @@ always available.
 
    .. note::
 
-      If a :ref:`virtual environment <venv-def>` is in effect, this
-      value will be changed in ``site.py`` to point to the virtual environment.
-      The value for the Python installation will still be available, via
-      :data:`base_exec_prefix`.
+      If a :ref:`virtual environment <venv-def>` is in effect, this :data:`exec_prefix`
+      will point to the virtual environment. The value for the Python installation
+      will still be available, via :data:`base_exec_prefix`.
+      Refer to :ref:`sys-path-init-virtual-environments` for more information.
 
+   .. versionchanged:: 3.14
+
+      When running under a :ref:`virtual environment <venv-def>`,
+      :data:`prefix` and :data:`exec_prefix` are now set to the virtual
+      environment prefix by the :ref:`path initialization <sys-path-init>`,
+      instead of :mod:`site`. This means that :data:`prefix` and
+      :data:`exec_prefix` always point to the virtual environment, even when
+      :mod:`site` is disabled (:option:`-S`).
 
 .. data:: executable
 
@@ -528,7 +535,8 @@ always available.
 .. data:: flags
 
    The :term:`named tuple` *flags* exposes the status of command line
-   flags. The attributes are read only.
+   flags.  Flags should only be accessed only by name and not by index.  The
+   attributes are read only.
 
    .. list-table::
 
@@ -587,6 +595,18 @@ always available.
       * - .. attribute:: flags.warn_default_encoding
         - :option:`-X warn_default_encoding <-X>`
 
+      * - .. attribute:: flags.gil
+        - :option:`-X gil <-X>` and :envvar:`PYTHON_GIL`
+
+      * - .. attribute:: flags.thread_inherit_context
+        - :option:`-X thread_inherit_context <-X>` and
+          :envvar:`PYTHON_THREAD_INHERIT_CONTEXT`
+
+      * - .. attribute:: flags.context_aware_warnings
+        - :option:`-X context_aware_warnings <-X>` and
+          :envvar:`PYTHON_CONTEXT_AWARE_WARNINGS`
+
+
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
 
@@ -612,6 +632,15 @@ always available.
 
    .. versionchanged:: 3.11
       Added the ``int_max_str_digits`` attribute.
+
+   .. versionchanged:: 3.13
+      Added the ``gil`` attribute.
+
+   .. versionchanged:: 3.14
+      Added the ``thread_inherit_context`` attribute.
+
+   .. versionchanged:: 3.14
+      Added the ``context_aware_warnings`` attribute.
 
 
 .. data:: float_info
@@ -764,8 +793,8 @@ always available.
 
 .. function:: getdefaultencoding()
 
-   Return the name of the current default string encoding used by the Unicode
-   implementation.
+   Return ``'utf-8'``. This is the name of the default string encoding, used
+   in methods like :meth:`str.encode`.
 
 
 .. function:: getdlopenflags()
@@ -848,6 +877,11 @@ always available.
    reflect the actual number of references.  Consequently, do not rely
    on the returned value to be accurate, other than a value of 0 or 1.
 
+   .. impl-detail::
+
+      :term:`Immortal <immortal>` objects with a large reference count can be
+      identified via :func:`_is_immortal`.
+
    .. versionchanged:: 3.12
       Immortal objects have very large refcounts that do not match
       the actual number of references to the object.
@@ -883,7 +917,7 @@ always available.
 
 .. function:: getswitchinterval()
 
-   Return the interpreter's "thread switch interval"; see
+   Return the interpreter's "thread switch interval" in seconds; see
    :func:`setswitchinterval`.
 
    .. versionadded:: 3.2
@@ -944,7 +978,7 @@ always available.
       This function should be used for specialized purposes only.
       It is not guaranteed to exist in all implementations of Python.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
 
       The result may include objects from other interpreters.
 
@@ -1235,6 +1269,9 @@ always available.
 
    .. versionadded:: 3.13
 
+   .. impl-detail::
+
+      It is not guaranteed to exist in all implementations of Python.
 
 .. function:: is_finalizing()
 
@@ -1244,6 +1281,64 @@ always available.
    See also the :exc:`PythonFinalizationError` exception.
 
    .. versionadded:: 3.5
+
+.. data:: _jit
+
+   Utilities for observing just-in-time compilation.
+
+   .. impl-detail::
+
+      JIT compilation is an *experimental implementation detail* of CPython.
+      ``sys._jit`` is not guaranteed to exist or behave the same way in all
+      Python implementations, versions, or build configurations.
+
+   .. versionadded:: 3.14
+
+   .. function:: _jit.is_available()
+
+      Return ``True`` if the current Python executable supports JIT compilation,
+      and ``False`` otherwise.  This can be controlled by building CPython with
+      the ``--experimental-jit`` option on Windows, and the
+      :option:`--enable-experimental-jit` option on all other platforms.
+
+   .. function:: _jit.is_enabled()
+
+      Return ``True`` if JIT compilation is enabled for the current Python
+      process (implies :func:`sys._jit.is_available`), and ``False`` otherwise.
+      If JIT compilation is available, this can be controlled by setting the
+      :envvar:`PYTHON_JIT` environment variable to ``0`` (disabled) or ``1``
+      (enabled) at interpreter startup.
+
+   .. function:: _jit.is_active()
+
+      Return ``True`` if the topmost Python frame is currently executing JIT
+      code (implies :func:`sys._jit.is_enabled`), and ``False`` otherwise.
+
+      .. note::
+
+         This function is intended for testing and debugging the JIT itself.
+         It should be avoided for any other purpose.
+
+      .. note::
+
+         Due to the nature of tracing JIT compilers, repeated calls to this
+         function may give surprising results. For example, branching on its
+         return value will likely lead to unexpected behavior (if doing so
+         causes JIT code to be entered or exited):
+
+         .. code-block:: pycon
+
+            >>> for warmup in range(BIG_NUMBER):
+            ...     # This line is "hot", and is eventually JIT-compiled:
+            ...     if sys._jit.is_active():
+            ...         # This line is "cold", and is run in the interpreter:
+            ...         assert sys._jit.is_active()
+            ...
+            Traceback (most recent call last):
+              File "<stdin>", line 5, in <module>
+                assert sys._jit.is_active()
+                       ~~~~~~~~~~~~~~~~~~^^
+            AssertionError
 
 .. data:: last_exc
 
@@ -1256,6 +1351,24 @@ always available.
    module for more information.)
 
    .. versionadded:: 3.12
+
+.. function:: _is_immortal(op)
+
+   Return :const:`True` if the given object is :term:`immortal`, :const:`False`
+   otherwise.
+
+   .. note::
+
+      Objects that are immortal (and thus return ``True`` upon being passed
+      to this function) are not guaranteed to be immortal in future versions,
+      and vice versa for mortal objects.
+
+   .. versionadded:: 3.14
+
+   .. impl-detail::
+
+      This function should be used for specialized purposes only.
+      It is not guaranteed to exist in all implementations of Python.
 
 .. function:: _is_interned(string)
 
@@ -1415,6 +1528,7 @@ always available.
    AIX              ``'aix'``
    Android          ``'android'``
    Emscripten       ``'emscripten'``
+   FreeBSD          ``'freebsd'``
    iOS              ``'ios'``
    Linux            ``'linux'``
    macOS            ``'darwin'``
@@ -1425,12 +1539,12 @@ always available.
 
    On Unix systems not listed in the table, the value is the lowercased OS name
    as returned by ``uname -s``, with the first part of the version as returned by
-   ``uname -r`` appended, e.g. ``'sunos5'`` or ``'freebsd8'``, *at the time
-   when Python was built*.  Unless you want to test for a specific system
-   version, it is therefore recommended to use the following idiom::
+   ``uname -r`` appended, e.g. ``'sunos5'``, *at the time when Python was built*.
+   Unless you want to test for a specific system version, it is therefore
+   recommended to use the following idiom::
 
-      if sys.platform.startswith('freebsd'):
-          # FreeBSD-specific code here...
+      if sys.platform.startswith('sunos'):
+          # SunOS-specific code here...
 
    .. versionchanged:: 3.3
       On Linux, :data:`sys.platform` doesn't contain the major version anymore.
@@ -1443,6 +1557,10 @@ always available.
    .. versionchanged:: 3.13
       On Android, :data:`sys.platform` now returns ``'android'`` rather than
       ``'linux'``.
+
+   .. versionchanged:: 3.14
+      On FreeBSD, :data:`sys.platform` doesn't contain the major version anymore.
+      It is always ``'freebsd'``, instead of ``'freebsd13'`` or ``'freebsd14'``.
 
    .. seealso::
 
@@ -1483,10 +1601,21 @@ always available.
    argument to the :program:`configure` script.  See
    :ref:`installation_paths` for derived paths.
 
-   .. note:: If a :ref:`virtual environment <venv-def>` is in effect, this
-      value will be changed in ``site.py`` to point to the virtual
-      environment. The value for the Python installation will still be
-      available, via :data:`base_prefix`.
+   .. note::
+
+      If a :ref:`virtual environment <venv-def>` is in effect, this :data:`prefix`
+      will point to the virtual environment. The value for the Python installation
+      will still be available, via :data:`base_prefix`.
+      Refer to :ref:`sys-path-init-virtual-environments` for more information.
+
+   .. versionchanged:: 3.14
+
+      When running under a :ref:`virtual environment <venv-def>`,
+      :data:`prefix` and :data:`exec_prefix` are now set to the virtual
+      environment prefix by the :ref:`path initialization <sys-path-init>`,
+      instead of :mod:`site`. This means that :data:`prefix` and
+      :data:`exec_prefix` always point to the virtual environment, even when
+      :mod:`site` is disabled (:option:`-S`).
 
 
 .. data:: ps1
@@ -1785,6 +1914,28 @@ always available.
    .. availability:: Linux.
 
    .. versionadded:: 3.12
+
+
+.. function:: remote_exec(pid, script)
+
+   Executes *script*, a file containing Python code in the remote
+   process with the given *pid*.
+
+   This function returns immediately, and the code will be executed by the
+   target process's main thread at the next available opportunity, similarly
+   to how signals are handled. There is no interface to determine when the
+   code has been executed. The caller is responsible for making sure that
+   the file still exists whenever the remote process tries to read it and that
+   it hasn't been overwritten.
+
+   The remote process must be running a CPython interpreter of the same major
+   and minor version as the local process. If either the local or remote
+   interpreter is pre-release (alpha, beta, or release candidate) then the
+   local and remote interpreters must be the same exact version.
+
+   .. availability:: Unix, Windows.
+   .. versionadded:: 3.14
+
 
 .. function:: _enablelegacywindowsfsencoding()
 

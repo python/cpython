@@ -7,59 +7,26 @@
 
 PyAPI_FUNC(PyObject*) PyLong_FromUnicodeObject(PyObject *u, int base);
 
-#define Py_ASNATIVEBYTES_DEFAULTS -1
-#define Py_ASNATIVEBYTES_BIG_ENDIAN 0
-#define Py_ASNATIVEBYTES_LITTLE_ENDIAN 1
-#define Py_ASNATIVEBYTES_NATIVE_ENDIAN 3
-#define Py_ASNATIVEBYTES_UNSIGNED_BUFFER 4
-#define Py_ASNATIVEBYTES_REJECT_NEGATIVE 8
-#define Py_ASNATIVEBYTES_ALLOW_INDEX 16
-
-/* PyLong_AsNativeBytes: Copy the integer value to a native variable.
-   buffer points to the first byte of the variable.
-   n_bytes is the number of bytes available in the buffer. Pass 0 to request
-   the required size for the value.
-   flags is a bitfield of the following flags:
-   * 1 - little endian
-   * 2 - native endian
-   * 4 - unsigned destination (e.g. don't reject copying 255 into one byte)
-   * 8 - raise an exception for negative inputs
-   * 16 - call __index__ on non-int types
-   If flags is -1 (all bits set), native endian is used, value truncation
-   behaves most like C (allows negative inputs and allow MSB set), and non-int
-   objects will raise a TypeError.
-   Big endian mode will write the most significant byte into the address
-   directly referenced by buffer; little endian will write the least significant
-   byte into that address.
-
-   If an exception is raised, returns a negative value.
-   Otherwise, returns the number of bytes that are required to store the value.
-   To check that the full value is represented, ensure that the return value is
-   equal or less than n_bytes.
-   All n_bytes are guaranteed to be written (unless an exception occurs), and
-   so ignoring a positive return value is the equivalent of a downcast in C.
-   In cases where the full value could not be represented, the returned value
-   may be larger than necessary - this function is not an accurate way to
-   calculate the bit length of an integer object.
-   */
-PyAPI_FUNC(Py_ssize_t) PyLong_AsNativeBytes(PyObject* v, void* buffer,
-    Py_ssize_t n_bytes, int flags);
-
-/* PyLong_FromNativeBytes: Create an int value from a native integer
-   n_bytes is the number of bytes to read from the buffer. Passing 0 will
-   always produce the zero int.
-   PyLong_FromUnsignedNativeBytes always produces a non-negative int.
-   flags is the same as for PyLong_AsNativeBytes, but only supports selecting
-   the endianness or forcing an unsigned buffer.
-
-   Returns the int object, or NULL with an exception set. */
-PyAPI_FUNC(PyObject*) PyLong_FromNativeBytes(const void* buffer, size_t n_bytes,
-    int flags);
-PyAPI_FUNC(PyObject*) PyLong_FromUnsignedNativeBytes(const void* buffer,
-    size_t n_bytes, int flags);
-
 PyAPI_FUNC(int) PyUnstable_Long_IsCompact(const PyLongObject* op);
 PyAPI_FUNC(Py_ssize_t) PyUnstable_Long_CompactValue(const PyLongObject* op);
+
+/* PyLong_IsPositive.  Check if the integer object is positive.
+
+   - On success, return 1 if *obj is positive, and 0 otherwise.
+   - On failure, set an exception, and return -1. */
+PyAPI_FUNC(int) PyLong_IsPositive(PyObject *obj);
+
+/* PyLong_IsNegative.  Check if the integer object is negative.
+
+   - On success, return 1 if *obj is negative, and 0 otherwise.
+   - On failure, set an exception, and return -1. */
+PyAPI_FUNC(int) PyLong_IsNegative(PyObject *obj);
+
+/* PyLong_IsZero.  Check if the integer object is zero.
+
+   - On success, return 1 if *obj is zero, and 0 if it is non-zero.
+   - On failure, set an exception, and return -1. */
+PyAPI_FUNC(int) PyLong_IsZero(PyObject *obj);
 
 /* PyLong_GetSign.  Get the sign of an integer object:
    0, -1 or +1 for zero, negative or positive integer, respectively.
@@ -68,7 +35,7 @@ PyAPI_FUNC(Py_ssize_t) PyUnstable_Long_CompactValue(const PyLongObject* op);
    - On failure, set an exception, and return -1. */
 PyAPI_FUNC(int) PyLong_GetSign(PyObject *v, int *sign);
 
-PyAPI_FUNC(int) _PyLong_Sign(PyObject *v);
+Py_DEPRECATED(3.14) PyAPI_FUNC(int) _PyLong_Sign(PyObject *v);
 
 /* _PyLong_NumBits.  Return the number of bits needed to represent the
    absolute value of a long.  For example, this returns 1 for 1 and -1, 2

@@ -146,6 +146,8 @@ def collect_sys(info_add):
         text = 'No (sys.getobjects() missing)'
     info_add('build.Py_TRACE_REFS', text)
 
+    info_add('sys.is_remote_debug_enabled', sys.is_remote_debug_enabled())
+
 
 def collect_platform(info_add):
     import platform
@@ -528,6 +530,7 @@ def collect_sysconfig(info_add):
         'Py_DEBUG',
         'Py_ENABLE_SHARED',
         'Py_GIL_DISABLED',
+        'Py_REMOTE_DEBUG',
         'SHELL',
         'SOABI',
         'TEST_MODULES',
@@ -651,8 +654,18 @@ def collect_zlib(info_add):
     except ImportError:
         return
 
-    attributes = ('ZLIB_VERSION', 'ZLIB_RUNTIME_VERSION')
+    attributes = ('ZLIB_VERSION', 'ZLIB_RUNTIME_VERSION', 'ZLIBNG_VERSION')
     copy_attributes(info_add, zlib, 'zlib.%s', attributes)
+
+
+def collect_zstd(info_add):
+    try:
+        import _zstd
+    except ImportError:
+        return
+
+    attributes = ('zstd_version',)
+    copy_attributes(info_add, _zstd, 'zstd.%s', attributes)
 
 
 def collect_expat(info_add):
@@ -684,7 +697,6 @@ def collect_testcapi(info_add):
     for name in (
         'LONG_MAX',         # always 32-bit on Windows, 64-bit on 64-bit Unix
         'PY_SSIZE_T_MAX',
-        'Py_C_RECURSION_LIMIT',
         'SIZEOF_TIME_T',    # 32-bit or 64-bit depending on the platform
         'SIZEOF_WCHAR_T',   # 16-bit or 32-bit depending on the platform
     ):
@@ -1049,6 +1061,7 @@ def collect_info(info):
         collect_tkinter,
         collect_windows,
         collect_zlib,
+        collect_zstd,
         collect_libregrtest_utils,
 
         # Collecting from tests should be last as they have side effects.

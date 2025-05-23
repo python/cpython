@@ -301,10 +301,8 @@ class TimeRE(dict):
             'V': r"(?P<V>5[0-3]|0[1-9]|[1-4]\d|\d)",
             # W is set below by using 'U'
             'y': r"(?P<y>\d\d)",
-            #XXX: Does 'Y' need to worry about having less or more than
-            #     4 digits?
             'Y': r"(?P<Y>\d\d\d\d)",
-            'z': r"(?P<z>[+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?|(?-i:Z))",
+            'z': r"(?P<z>([+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?)|(?-i:Z))?",
             'A': self.__seqToRE(self.locale_time.f_weekday, 'A'),
             'a': self.__seqToRE(self.locale_time.a_weekday, 'a'),
             'B': self.__seqToRE(self.locale_time.f_month[1:], 'B'),
@@ -367,7 +365,7 @@ class TimeRE(dict):
                     nonlocal day_of_month_in_format
                     day_of_month_in_format = True
             return self[format_char]
-        format = re_sub(r'%(O?.)', repl, format)
+        format = re_sub(r'%([OE]?\\?.?)', repl, format)
         if day_of_month_in_format and not year_in_format:
             import warnings
             warnings.warn("""\
@@ -441,14 +439,13 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             # \\, in which case it was a stray % but with a space after it
             except KeyError as err:
                 bad_directive = err.args[0]
-                if bad_directive == "\\":
-                    bad_directive = "%"
                 del err
+                bad_directive = bad_directive.replace('\\s', '')
+                if not bad_directive:
+                    raise ValueError("stray %% in format '%s'" % format) from None
+                bad_directive = bad_directive.replace('\\', '', 1)
                 raise ValueError("'%s' is a bad directive in format '%s'" %
                                     (bad_directive, format)) from None
-            # IndexError only occurs when the format string is "%"
-            except IndexError:
-                raise ValueError("stray %% in format '%s'" % format) from None
             _regex_cache[format] = format_regex
     found = format_regex.match(data_string)
     if not found:
@@ -551,27 +548,28 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             iso_week = int(found_dict['V'])
         elif group_key == 'z':
             z = found_dict['z']
-            if z == 'Z':
-                gmtoff = 0
-            else:
-                if z[3] == ':':
-                    z = z[:3] + z[4:]
-                    if len(z) > 5:
-                        if z[5] != ':':
-                            msg = f"Inconsistent use of : in {found_dict['z']}"
-                            raise ValueError(msg)
-                        z = z[:5] + z[6:]
-                hours = int(z[1:3])
-                minutes = int(z[3:5])
-                seconds = int(z[5:7] or 0)
-                gmtoff = (hours * 60 * 60) + (minutes * 60) + seconds
-                gmtoff_remainder = z[8:]
-                # Pad to always return microseconds.
-                gmtoff_remainder_padding = "0" * (6 - len(gmtoff_remainder))
-                gmtoff_fraction = int(gmtoff_remainder + gmtoff_remainder_padding)
-                if z.startswith("-"):
-                    gmtoff = -gmtoff
-                    gmtoff_fraction = -gmtoff_fraction
+            if z:
+                if z == 'Z':
+                    gmtoff = 0
+                else:
+                    if z[3] == ':':
+                        z = z[:3] + z[4:]
+                        if len(z) > 5:
+                            if z[5] != ':':
+                                msg = f"Inconsistent use of : in {found_dict['z']}"
+                                raise ValueError(msg)
+                            z = z[:5] + z[6:]
+                    hours = int(z[1:3])
+                    minutes = int(z[3:5])
+                    seconds = int(z[5:7] or 0)
+                    gmtoff = (hours * 60 * 60) + (minutes * 60) + seconds
+                    gmtoff_remainder = z[8:]
+                    # Pad to always return microseconds.
+                    gmtoff_remainder_padding = "0" * (6 - len(gmtoff_remainder))
+                    gmtoff_fraction = int(gmtoff_remainder + gmtoff_remainder_padding)
+                    if z.startswith("-"):
+                        gmtoff = -gmtoff
+                        gmtoff_fraction = -gmtoff_fraction
         elif group_key == 'Z':
             # Since -1 is default value only need to worry about setting tz if
             # it can be something other than -1.

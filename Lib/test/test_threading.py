@@ -5,7 +5,7 @@ Tests for the threading module.
 import test.support
 from test.support import threading_helper, requires_subprocess, requires_gil_enabled
 from test.support import verbose, cpython_only, os_helper
-from test.support.import_helper import import_module
+from test.support.import_helper import ensure_lazy_imports, import_module
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import force_not_colorized
 
@@ -119,6 +119,10 @@ class BaseTestCase(unittest.TestCase):
 
 class ThreadTests(BaseTestCase):
     maxDiff = 9999
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("threading", {"functools", "warnings"})
 
     @cpython_only
     def test_name(self):
@@ -526,7 +530,8 @@ class ThreadTests(BaseTestCase):
         finally:
             sys.setswitchinterval(old_interval)
 
-    def test_join_from_multiple_threads(self):
+    @support.bigmemtest(size=20, memuse=72*2**20, dry_run=False)
+    def test_join_from_multiple_threads(self, size):
         # Thread.join() should be thread-safe
         errors = []
 
@@ -1171,6 +1176,112 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(out.strip(), b"OK")
         self.assertIn(b"can't create new thread at interpreter shutdown", err)
 
+    def test_join_daemon_thread_in_finalization(self):
+        # gh-123940: Py_Finalize() prevents other threads from running Python
+        # code, so join() can not succeed unless the thread is already done.
+        # (Non-Python threads, that is `threading._DummyThread`, can't be
+        # joined at all.)
+        # We raise an exception rather than hang.
+        for timeout in (None, 10):
+            with self.subTest(timeout=timeout):
+                code = textwrap.dedent(f"""
+                    import threading
+
+
+                    def loop():
+                        while True:
+                            pass
+
+
+                    class Cycle:
+                        def __init__(self):
+                            self.self_ref = self
+                            self.thr = threading.Thread(
+                                target=loop, daemon=True)
+                            self.thr.start()
+
+                        def __del__(self):
+                            assert self.thr.is_alive()
+                            try:
+                                self.thr.join(timeout={timeout})
+                            except PythonFinalizationError:
+                                assert self.thr.is_alive()
+                                print('got the correct exception!')
+
+                    # Cycle holds a reference to itself, which ensures it is
+                    # cleaned up during the GC that runs after daemon threads
+                    # have been forced to exit during finalization.
+                    Cycle()
+                """)
+                rc, out, err = assert_python_ok("-c", code)
+                self.assertEqual(err, b"")
+                self.assertIn(b"got the correct exception", out)
+
+    def test_join_finished_daemon_thread_in_finalization(self):
+        # (see previous test)
+        # If the thread is already finished, join() succeeds.
+        code = textwrap.dedent("""
+            import threading
+            done = threading.Event()
+
+            def set_event():
+                done.set()
+
+            class Cycle:
+                def __init__(self):
+                    self.self_ref = self
+                    self.thr = threading.Thread(target=set_event, daemon=True)
+                    self.thr.start()
+                    self.thr.join()
+
+                def __del__(self):
+                    assert done.is_set()
+                    assert not self.thr.is_alive()
+                    self.thr.join()
+                    assert not self.thr.is_alive()
+                    print('all clear!')
+
+            Cycle()
+        """)
+        rc, out, err = assert_python_ok("-c", code)
+        self.assertEqual(err, b"")
+        self.assertIn(b"all clear", out)
+
+    def test_start_new_thread_failed(self):
+        # gh-109746: if Python fails to start newly created thread
+        # due to failure of underlying PyThread_start_new_thread() call,
+        # its state should be removed from interpreter' thread states list
+        # to avoid its double cleanup
+        try:
+            from resource import setrlimit, RLIMIT_NPROC
+        except ImportError as err:
+            self.skipTest(err)  # RLIMIT_NPROC is specific to Linux and BSD
+        code = """if 1:
+            import resource
+            import _thread
+
+            def f():
+                print("shouldn't be printed")
+
+            limits = resource.getrlimit(resource.RLIMIT_NPROC)
+            [_, hard] = limits
+            resource.setrlimit(resource.RLIMIT_NPROC, (0, hard))
+
+            try:
+                handle = _thread.start_joinable_thread(f)
+            except RuntimeError:
+                print('ok')
+            else:
+                print('!skip!')
+                handle.join()
+        """
+        _, out, err = assert_python_ok("-u", "-c", code)
+        out = out.strip()
+        if b'!skip!' in out:
+            self.skipTest('RLIMIT_NPROC had no effect; probably superuser')
+        self.assertEqual(out, b'ok')
+        self.assertEqual(err, b'')
+
     @cpython_only
     def test_finalize_daemon_thread_hang(self):
         if support.check_sanitizer(thread=True, memory=True):
@@ -1240,6 +1351,35 @@ class ThreadTests(BaseTestCase):
             sys.exit(1)
         ''')
         assert_python_ok("-c", script)
+
+    @skip_unless_reliable_fork
+    @unittest.skipUnless(hasattr(threading, 'get_native_id'), "test needs threading.get_native_id()")
+    def test_native_id_after_fork(self):
+        script = """if True:
+            import threading
+            import os
+            from test import support
+
+            parent_thread_native_id = threading.current_thread().native_id
+            print(parent_thread_native_id, flush=True)
+            assert parent_thread_native_id == threading.get_native_id()
+            childpid = os.fork()
+            if childpid == 0:
+                print(threading.current_thread().native_id, flush=True)
+                assert threading.current_thread().native_id == threading.get_native_id()
+            else:
+                try:
+                    assert parent_thread_native_id == threading.current_thread().native_id
+                    assert parent_thread_native_id == threading.get_native_id()
+                finally:
+                    support.wait_process(childpid, exitcode=0)
+            """
+        rc, out, err = assert_python_ok('-c', script)
+        self.assertEqual(rc, 0)
+        self.assertEqual(err, b"")
+        native_ids = out.strip().splitlines()
+        self.assertEqual(len(native_ids), 2)
+        self.assertNotEqual(native_ids[0], native_ids[1])
 
 class ThreadJoinOnShutdown(BaseTestCase):
 
@@ -1321,7 +1461,8 @@ class ThreadJoinOnShutdown(BaseTestCase):
         self._run_and_join(script)
 
     @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
-    def test_4_daemon_threads(self):
+    @support.bigmemtest(size=40, memuse=70*2**20, dry_run=False)
+    def test_4_daemon_threads(self, size):
         # Check that a daemon thread cannot crash the interpreter on shutdown
         # by manipulating internal structures that are being disposed of in
         # the main thread.
@@ -2025,8 +2166,7 @@ class CRLockTests(lock_tests.RLockTests):
         ]
         for args, kwargs in arg_types:
             with self.subTest(args=args, kwargs=kwargs):
-                with self.assertWarns(DeprecationWarning):
-                    threading.RLock(*args, **kwargs)
+                self.assertRaises(TypeError, threading.RLock, *args, **kwargs)
 
         # Subtypes with custom `__init__` are allowed (but, not recommended):
         class CustomRLock(self.locktype):
@@ -2043,6 +2183,9 @@ class EventTests(lock_tests.EventTests):
 class ConditionAsRLockTests(lock_tests.RLockTests):
     # Condition uses an RLock by default and exports its API.
     locktype = staticmethod(threading.Condition)
+
+    def test_constructor_noargs(self):
+        self.skipTest("Condition allows positional arguments")
 
     def test_recursion_count(self):
         self.skipTest("Condition does not expose _recursion_count()")
@@ -2068,6 +2211,110 @@ class MiscTestCase(unittest.TestCase):
         not_exported = {'currentThread', 'activeCount'}
         support.check__all__(self, threading, ('threading', '_thread'),
                              extra=extra, not_exported=not_exported)
+
+    @unittest.skipUnless(hasattr(_thread, 'set_name'), "missing _thread.set_name")
+    @unittest.skipUnless(hasattr(_thread, '_get_name'), "missing _thread._get_name")
+    def test_set_name(self):
+        # set_name() limit in bytes
+        truncate = getattr(_thread, "_NAME_MAXLEN", None)
+        limit = truncate or 100
+
+        tests = [
+            # test short ASCII name
+            "CustomName",
+
+            # test short non-ASCII name
+            "namé€",
+
+            # embedded null character: name is truncated
+            # at the first null character
+            "embed\0null",
+
+            # Test long ASCII names (not truncated)
+            "x" * limit,
+
+            # Test long ASCII names (truncated)
+            "x" * (limit + 10),
+
+            # Test long non-ASCII name (truncated)
+            "x" * (limit - 1) + "é€",
+
+            # Test long non-BMP names (truncated) creating surrogate pairs
+            # on Windows
+            "x" * (limit - 1) + "\U0010FFFF",
+            "x" * (limit - 2) + "\U0010FFFF" * 2,
+            "x" + "\U0001f40d" * limit,
+            "xx" + "\U0001f40d" * limit,
+            "xxx" + "\U0001f40d" * limit,
+            "xxxx" + "\U0001f40d" * limit,
+        ]
+        if os_helper.FS_NONASCII:
+            tests.append(f"nonascii:{os_helper.FS_NONASCII}")
+        if os_helper.TESTFN_UNENCODABLE:
+            tests.append(os_helper.TESTFN_UNENCODABLE)
+
+        if sys.platform.startswith("sunos"):
+            encoding = "utf-8"
+        else:
+            encoding = sys.getfilesystemencoding()
+
+        def work():
+            nonlocal work_name
+            work_name = _thread._get_name()
+
+        for name in tests:
+            if not support.MS_WINDOWS:
+                encoded = name.encode(encoding, "replace")
+                if b'\0' in encoded:
+                    encoded = encoded.split(b'\0', 1)[0]
+                if truncate is not None:
+                    encoded = encoded[:truncate]
+                if sys.platform.startswith("sunos"):
+                    expected = encoded.decode("utf-8", "surrogateescape")
+                else:
+                    expected = os.fsdecode(encoded)
+            else:
+                size = 0
+                chars = []
+                for ch in name:
+                    if ord(ch) > 0xFFFF:
+                        size += 2
+                    else:
+                        size += 1
+                    if size > truncate:
+                        break
+                    chars.append(ch)
+                expected = ''.join(chars)
+
+                if '\0' in expected:
+                    expected = expected.split('\0', 1)[0]
+
+            with self.subTest(name=name, expected=expected):
+                work_name = None
+                thread = threading.Thread(target=work, name=name)
+                thread.start()
+                thread.join()
+                self.assertEqual(work_name, expected,
+                                 f"{len(work_name)=} and {len(expected)=}")
+
+    @unittest.skipUnless(hasattr(_thread, 'set_name'), "missing _thread.set_name")
+    @unittest.skipUnless(hasattr(_thread, '_get_name'), "missing _thread._get_name")
+    def test_change_name(self):
+        # Change the name of a thread while the thread is running
+
+        name1 = None
+        name2 = None
+        def work():
+            nonlocal name1, name2
+            name1 = _thread._get_name()
+            threading.current_thread().name = "new name"
+            name2 = _thread._get_name()
+
+        thread = threading.Thread(target=work, name="name")
+        thread.start()
+        thread.join()
+        self.assertEqual(name1, "name")
+        self.assertEqual(name2, "new name")
 
 
 class InterruptMainTests(unittest.TestCase):

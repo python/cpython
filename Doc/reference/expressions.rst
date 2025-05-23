@@ -28,13 +28,12 @@ Arithmetic conversions
 .. index:: pair: arithmetic; conversion
 
 When a description of an arithmetic operator below uses the phrase "the numeric
-arguments are converted to a common type", this means that the operator
+arguments are converted to a common real type", this means that the operator
 implementation for built-in types works as follows:
 
-* If either argument is a complex number, the other is converted to complex;
+* If both arguments are complex numbers, no conversion is performed;
 
-* otherwise, if either argument is a floating-point number, the other is
-  converted to floating point;
+* if either argument is a complex or a floating-point number, the other is converted to a floating-point number;
 
 * otherwise, both must be integers and no conversion is necessary.
 
@@ -752,7 +751,8 @@ which are used to control the execution of a generator function.
 
 .. index:: pair: exception; StopAsyncIteration
 
-.. coroutinemethod:: agen.__anext__()
+.. method:: agen.__anext__()
+   :async:
 
    Returns an awaitable which when run starts to execute the asynchronous
    generator or resumes it at the last executed yield expression.  When an
@@ -769,7 +769,8 @@ which are used to control the execution of a generator function.
    This method is normally called implicitly by a :keyword:`async for` loop.
 
 
-.. coroutinemethod:: agen.asend(value)
+.. method:: agen.asend(value)
+   :async:
 
    Returns an awaitable which when run resumes the execution of the
    asynchronous generator. As with the :meth:`~generator.send` method for a
@@ -784,8 +785,9 @@ which are used to control the execution of a generator function.
    because there is no yield expression that could receive the value.
 
 
-.. coroutinemethod:: agen.athrow(value)
-                     agen.athrow(type[, value[, traceback]])
+.. method:: agen.athrow(value)
+            agen.athrow(type[, value[, traceback]])
+   :async:
 
    Returns an awaitable that raises an exception of type ``type`` at the point
    where the asynchronous generator was paused, and returns the next value
@@ -805,7 +807,8 @@ which are used to control the execution of a generator function.
 .. index:: pair: exception; GeneratorExit
 
 
-.. coroutinemethod:: agen.aclose()
+.. method:: agen.aclose()
+   :async:
 
    Returns an awaitable that when run will throw a :exc:`GeneratorExit` into
    the asynchronous generator function at the point where it was paused.
@@ -1156,7 +1159,8 @@ a user-defined function:
    first thing the code block will do is bind the formal parameters to the
    arguments; this is described in section :ref:`function`.  When the code block
    executes a :keyword:`return` statement, this specifies the return value of the
-   function call.
+   function call.  If execution reaches the end of the code block without
+   executing a :keyword:`return` statement, the return value is ``None``.
 
 a built-in function or method:
    .. index::
@@ -1322,11 +1326,15 @@ operators and one for additive operators:
 The ``*`` (multiplication) operator yields the product of its arguments.  The
 arguments must either both be numbers, or one argument must be an integer and
 the other must be a sequence. In the former case, the numbers are converted to a
-common type and then multiplied together.  In the latter case, sequence
+common real type and then multiplied together.  In the latter case, sequence
 repetition is performed; a negative repetition factor yields an empty sequence.
 
 This operation can be customized using the special :meth:`~object.__mul__` and
 :meth:`~object.__rmul__` methods.
+
+.. versionchanged:: 3.14
+   If only one operand is a complex number, the other operand is converted
+   to a floating-point number.
 
 .. index::
    single: matrix multiplication
@@ -1395,11 +1403,15 @@ floating-point number using the :func:`abs` function if appropriate.
 
 The ``+`` (addition) operator yields the sum of its arguments.  The arguments
 must either both be numbers or both be sequences of the same type.  In the
-former case, the numbers are converted to a common type and then added together.
+former case, the numbers are converted to a common real type and then added together.
 In the latter case, the sequences are concatenated.
 
 This operation can be customized using the special :meth:`~object.__add__` and
 :meth:`~object.__radd__` methods.
+
+.. versionchanged:: 3.14
+   If only one operand is a complex number, the other operand is converted
+   to a floating-point number.
 
 .. index::
    single: subtraction
@@ -1407,10 +1419,14 @@ This operation can be customized using the special :meth:`~object.__add__` and
    single: - (minus); binary operator
 
 The ``-`` (subtraction) operator yields the difference of its arguments.  The
-numeric arguments are first converted to a common type.
+numeric arguments are first converted to a common real type.
 
 This operation can be customized using the special :meth:`~object.__sub__` and
 :meth:`~object.__rsub__` methods.
+
+.. versionchanged:: 3.14
+   If only one operand is a complex number, the other operand is converted
+   to a floating-point number.
 
 
 .. _shifting:
@@ -1912,7 +1928,7 @@ Expression lists
    single: , (comma); expression list
 
 .. productionlist:: python-grammar
-   starred_expression: ["*"] `or_expr`
+   starred_expression: "*" `or_expr` | `expression`
    flexible_expression: `assignment_expression` | `starred_expression`
    flexible_expression_list: `flexible_expression` ("," `flexible_expression`)* [","]
    starred_expression_list: `starred_expression` ("," `starred_expression`)* [","]

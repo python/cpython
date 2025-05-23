@@ -6,7 +6,7 @@
 # Written by Nick Coghlan <ncoghlan at gmail.com>,
 # Raymond Hettinger <python at rcn.com>,
 # and Łukasz Langa <lukasz at langa.pl>.
-#   Copyright (C) 2006-2024 Python Software Foundation.
+#   Copyright (C) 2006 Python Software Foundation.
 # See C source code for _functools credits/copyright
 
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
@@ -236,7 +236,7 @@ _initial_missing = object()
 
 def reduce(function, sequence, initial=_initial_missing):
     """
-    reduce(function, iterable[, initial], /) -> value
+    reduce(function, iterable, /[, initial]) -> value
 
     Apply a function of two arguments cumulatively to the items of an iterable, from left to right.
 
@@ -263,11 +263,6 @@ def reduce(function, sequence, initial=_initial_missing):
         value = function(value, element)
 
     return value
-
-try:
-    from _functools import reduce
-except ImportError:
-    pass
 
 
 ################################################################################
@@ -328,6 +323,9 @@ def _partial_new(cls, func, /, *args, **keywords):
                             "or a descriptor")
     if args and args[-1] is Placeholder:
         raise TypeError("trailing Placeholders are not allowed")
+    for value in keywords.values():
+        if value is Placeholder:
+            raise TypeError("Placeholder cannot be passed as a keyword argument")
     if isinstance(func, base_cls):
         pto_phcount = func._phcount
         tot_args = func.args
@@ -433,6 +431,9 @@ class partial:
         self._phcount = phcount
         self._merger = merger
 
+    __class_getitem__ = classmethod(GenericAlias)
+
+
 try:
     from _functools import partial, Placeholder, _PlaceholderType
 except ImportError:
@@ -518,22 +519,6 @@ def _unwrap_partialmethod(func):
 
 _CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 
-class _HashedSeq(list):
-    """ This class guarantees that hash() will be called no more than once
-        per element.  This is important because the lru_cache() will hash
-        the key multiple times on a cache miss.
-
-    """
-
-    __slots__ = 'hashvalue'
-
-    def __init__(self, tup, hash=hash):
-        self[:] = tup
-        self.hashvalue = hash(tup)
-
-    def __hash__(self):
-        return self.hashvalue
-
 def _make_key(args, kwds, typed,
              kwd_mark = (object(),),
              fasttypes = {int, str},
@@ -563,7 +548,7 @@ def _make_key(args, kwds, typed,
             key += tuple(type(v) for v in kwds.values())
     elif len(key) == 1 and type(key[0]) in fasttypes:
         return key[0]
-    return _HashedSeq(key)
+    return key
 
 def lru_cache(maxsize=128, typed=False):
     """Least-recently-used cache decorator.
@@ -928,16 +913,11 @@ def singledispatch(func):
             dispatch_cache[cls] = impl
         return impl
 
-    def _is_union_type(cls):
-        from typing import get_origin, Union
-        return get_origin(cls) in {Union, UnionType}
-
     def _is_valid_dispatch_type(cls):
         if isinstance(cls, type):
             return True
-        from typing import get_args
-        return (_is_union_type(cls) and
-                all(isinstance(arg, type) for arg in get_args(cls)))
+        return (isinstance(cls, UnionType) and
+                all(isinstance(arg, type) for arg in cls.__args__))
 
     def register(cls, func=None):
         """generic_func.register(cls, func) -> func
@@ -969,7 +949,7 @@ def singledispatch(func):
             from annotationlib import Format, ForwardRef
             argname, cls = next(iter(get_type_hints(func, format=Format.FORWARDREF).items()))
             if not _is_valid_dispatch_type(cls):
-                if _is_union_type(cls):
+                if isinstance(cls, UnionType):
                     raise TypeError(
                         f"Invalid annotation for {argname!r}. "
                         f"{cls!r} not all arguments are classes."
@@ -985,10 +965,8 @@ def singledispatch(func):
                         f"{cls!r} is not a class."
                     )
 
-        if _is_union_type(cls):
-            from typing import get_args
-
-            for arg in get_args(cls):
+        if isinstance(cls, UnionType):
+            for arg in cls.__args__:
                 registry[arg] = func
         else:
             registry[cls] = func
@@ -1028,9 +1006,6 @@ class singledispatchmethod:
         self.dispatcher = singledispatch(func)
         self.func = func
 
-        import weakref # see comment in singledispatch function
-        self._method_cache = weakref.WeakKeyDictionary()
-
     def register(self, cls, method=None):
         """generic_method.register(cls, func) -> func
 
@@ -1039,36 +1014,76 @@ class singledispatchmethod:
         return self.dispatcher.register(cls, func=method)
 
     def __get__(self, obj, cls=None):
-        if self._method_cache is not None:
-            try:
-                _method = self._method_cache[obj]
-            except TypeError:
-                self._method_cache = None
-            except KeyError:
-                pass
-            else:
-                return _method
-
-        dispatch = self.dispatcher.dispatch
-        funcname = getattr(self.func, '__name__', 'singledispatchmethod method')
-        def _method(*args, **kwargs):
-            if not args:
-                raise TypeError(f'{funcname} requires at least '
-                                '1 positional argument')
-            return dispatch(args[0].__class__).__get__(obj, cls)(*args, **kwargs)
-
-        _method.__isabstractmethod__ = self.__isabstractmethod__
-        _method.register = self.register
-        update_wrapper(_method, self.func)
-
-        if self._method_cache is not None:
-            self._method_cache[obj] = _method
-
-        return _method
+        return _singledispatchmethod_get(self, obj, cls)
 
     @property
     def __isabstractmethod__(self):
         return getattr(self.func, '__isabstractmethod__', False)
+
+    def __repr__(self):
+        try:
+            name = self.func.__qualname__
+        except AttributeError:
+            try:
+                name = self.func.__name__
+            except AttributeError:
+                name = '?'
+        return f'<single dispatch method descriptor {name}>'
+
+class _singledispatchmethod_get:
+    def __init__(self, unbound, obj, cls):
+        self._unbound = unbound
+        self._dispatch = unbound.dispatcher.dispatch
+        self._obj = obj
+        self._cls = cls
+        # Set instance attributes which cannot be handled in __getattr__()
+        # because they conflict with type descriptors.
+        func = unbound.func
+        try:
+            self.__module__ = func.__module__
+        except AttributeError:
+            pass
+        try:
+            self.__doc__ = func.__doc__
+        except AttributeError:
+            pass
+
+    def __repr__(self):
+        try:
+            name = self.__qualname__
+        except AttributeError:
+            try:
+                name = self.__name__
+            except AttributeError:
+                name = '?'
+        if self._obj is not None:
+            return f'<bound single dispatch method {name} of {self._obj!r}>'
+        else:
+            return f'<single dispatch method {name}>'
+
+    def __call__(self, /, *args, **kwargs):
+        if not args:
+            funcname = getattr(self._unbound.func, '__name__',
+                               'singledispatchmethod method')
+            raise TypeError(f'{funcname} requires at least '
+                            '1 positional argument')
+        return self._dispatch(args[0].__class__).__get__(self._obj, self._cls)(*args, **kwargs)
+
+    def __getattr__(self, name):
+        # Resolve these attributes lazily to speed up creation of
+        # the _singledispatchmethod_get instance.
+        if name not in {'__name__', '__qualname__', '__isabstractmethod__',
+                        '__annotations__', '__type_params__'}:
+            raise AttributeError
+        return getattr(self._unbound.func, name)
+
+    @property
+    def __wrapped__(self):
+        return self._unbound.func
+
+    @property
+    def register(self):
+        return self._unbound.register
 
 
 ################################################################################
@@ -1121,3 +1136,31 @@ class cached_property:
         return val
 
     __class_getitem__ = classmethod(GenericAlias)
+
+def _warn_python_reduce_kwargs(py_reduce):
+    @wraps(py_reduce)
+    def wrapper(*args, **kwargs):
+        if 'function' in kwargs or 'sequence' in kwargs:
+            import os
+            import warnings
+            warnings.warn(
+                'Calling functools.reduce with keyword arguments '
+                '"function" or "sequence" '
+                'is deprecated in Python 3.14 and will be '
+                'forbidden in Python 3.16.',
+                DeprecationWarning,
+                skip_file_prefixes=(os.path.dirname(__file__),))
+        return py_reduce(*args, **kwargs)
+    return wrapper
+
+reduce = _warn_python_reduce_kwargs(reduce)
+del _warn_python_reduce_kwargs
+
+# The import of the C accelerated version of reduce() has been moved
+# here due to gh-121676. In Python 3.16, _warn_python_reduce_kwargs()
+# should be removed and the import block should be moved back right
+# after the definition of reduce().
+try:
+    from _functools import reduce
+except ImportError:
+    pass

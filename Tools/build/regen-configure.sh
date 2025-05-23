@@ -5,7 +5,7 @@ set -e -x
 # The check_autoconf_regen job of .github/workflows/build.yml must kept in
 # sync with this script. Use the same container image than the job so the job
 # doesn't need to run autoreconf in a container.
-IMAGE="ghcr.io/python/autoconf:2024.10.16.11360930377"
+IMAGE="ghcr.io/python/autoconf:2025.01.02.12581854023"
 AUTORECONF="autoreconf -ivf -Werror"
 
 WORK_DIR="/src"

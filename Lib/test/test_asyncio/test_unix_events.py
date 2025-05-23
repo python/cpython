@@ -10,11 +10,9 @@ import signal
 import socket
 import stat
 import sys
-import threading
 import time
 import unittest
 from unittest import mock
-import warnings
 
 from test import support
 from test.support import os_helper
@@ -27,13 +25,12 @@ if sys.platform == 'win32':
 
 
 import asyncio
-from asyncio import log
 from asyncio import unix_events
 from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 MOCK_ANY = mock.ANY
@@ -1195,8 +1192,7 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
         if pid == 0:
             # child
             try:
-                with self.assertWarns(DeprecationWarning):
-                    loop = asyncio.get_event_loop_policy().get_event_loop()
+                loop = asyncio.get_event_loop()
                 os.write(w, b'LOOP:' + str(id(loop)).encode())
             except RuntimeError:
                 os.write(w, b'NO LOOP')
@@ -1207,8 +1203,7 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
         else:
             # parent
             result = os.read(r, 100)
-            self.assertEqual(result[:5], b'LOOP:', result)
-            self.assertNotEqual(int(result[5:]), id(loop))
+            self.assertEqual(result, b'NO LOOP')
             wait_process(pid, exitcode=0)
 
     @hashlib_helper.requires_hashdigest('md5')

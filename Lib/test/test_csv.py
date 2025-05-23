@@ -1,4 +1,4 @@
-# Copyright (C) 2001,2002 Python Software Foundation
+# Copyright (C) 2001 Python Software Foundation
 # csv package unit tests
 
 import copy
@@ -10,7 +10,8 @@ import csv
 import gc
 import pickle
 from test import support
-from test.support import import_helper, check_disallow_instantiation
+from test.support import cpython_only, import_helper, check_disallow_instantiation
+from test.support.import_helper import ensure_lazy_imports
 from itertools import permutations
 from textwrap import dedent
 from collections import OrderedDict
@@ -1564,6 +1565,10 @@ class KeyOrderingTest(unittest.TestCase):
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         support.check__all__(self, csv, ('csv', '_csv'))
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("csv", {"re"})
 
     def test_subclassable(self):
         # issue 44089
