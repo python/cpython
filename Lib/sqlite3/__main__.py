@@ -61,7 +61,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
         if source[0] == ".":
             match source[1:].strip():
                 case "version":
-                    print(f"{sqlite3.sqlite_version}")
+                    print(sqlite3.sqlite_version)
                 case "help":
                     print("Enter SQL code and press enter.")
                 case "quit":
@@ -70,8 +70,9 @@ class SqliteInteractiveConsole(InteractiveConsole):
                     pass
                 case _ as unknown:
                     t = theme.traceback
-                    self.write(f'{t.type}Error{t.reset}:{t.message} unknown'
-                               f'command or invalid arguments:  "{unknown}".\n{t.reset}')
+                    print(f'{t.type}Error{t.reset}:{t.message} unknown command '
+                          f'or invalid arguments: "{unknown}"{t.reset}',
+                          file=sys.stderr)
         else:
             if not sqlite3.complete_statement(source):
                 return True
