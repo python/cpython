@@ -19,6 +19,9 @@ typedef struct {
     PyObject *dict_content;
     /* Dictionary id */
     uint32_t dict_id;
+
+    /* Lock to protect the digested dictionaries */
+    PyMutex lock;
 } ZstdDict;
 
 #endif  // !ZSTD_DICT_H
