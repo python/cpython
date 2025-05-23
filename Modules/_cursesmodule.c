@@ -2057,13 +2057,10 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
     const char *funcname;
 
     if (!group_right_1) {
-        // winch() should never return (chtype)ERR, but this cannot
-        // be guaranteed since this is an implementation detail.
         rtn = winch(self->win);
         funcname = "winch";
     }
     else {
-        // mvwinch() may return ERR (as a chtype) if the move fails.
         rtn = mvwinch(self->win, y, x);
         funcname = "mvwinch";
     }
