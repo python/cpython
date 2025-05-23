@@ -1440,7 +1440,10 @@ class AbstractRemoveTests:
                 for index in dups:
                     indexes = [index]
                     with self.subTest(dups=dups, remove=indexes):
-                        self._test_removing_members(files, indexes)
+                        import warnings
+                        with warnings.catch_warnings():
+                            warnings.simplefilter("ignore")
+                            self._test_removing_members(files, indexes)
 
     def test_non_physical(self):
         """Test underlying _remove_members() for non-physical removing."""
