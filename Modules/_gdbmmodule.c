@@ -81,6 +81,7 @@ typedef struct {
 #include "clinic/_gdbmmodule.c.h"
 
 #define check_gdbmobject_open(v, err)                                 \
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED((v))                   \
     if ((v)->di_dbm == NULL) {                                       \
         PyErr_SetString(err, "GDBM object has already been closed"); \
         return NULL;                                                 \
@@ -142,7 +143,7 @@ gdbm_dealloc(PyObject *op)
 }
 
 static Py_ssize_t
-gdbm_length(PyObject *op)
+gdbm_length_lock_held(PyObject *op)
 {
     gdbmobject *dp = _gdbmobject_CAST(op);
     _gdbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
@@ -188,8 +189,18 @@ gdbm_length(PyObject *op)
     return dp->di_size;
 }
 
+static Py_ssize_t
+gdbm_length(PyObject *op)
+{
+    Py_ssize_t result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = gdbm_length_lock_held(op);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 static int
-gdbm_bool(PyObject *op)
+gdbm_bool_lock_held(PyObject *op)
 {
     gdbmobject *dp = _gdbmobject_CAST(op);
     _gdbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
@@ -218,6 +229,16 @@ gdbm_bool(PyObject *op)
     return 1;
 }
 
+static int
+gdbm_bool(PyObject *op)
+{
+    int result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = gdbm_bool_lock_held(op);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 // Wrapper function for PyArg_Parse(o, "s#", &d.dptr, &d.size).
 // This function is needed to support PY_SSIZE_T_CLEAN.
 // Return 1 on success, same to PyArg_Parse().
@@ -240,7 +261,7 @@ parse_datum(PyObject *o, datum *d, const char *failmsg)
 }
 
 static PyObject *
-gdbm_subscript(PyObject *op, PyObject *key)
+gdbm_subscript_lock_held(PyObject *op, PyObject *key)
 {
     PyObject *v;
     datum drec, krec;
@@ -263,6 +284,16 @@ gdbm_subscript(PyObject *op, PyObject *key)
     v = PyBytes_FromStringAndSize(drec.dptr, drec.dsize);
     free(drec.dptr);
     return v;
+}
+
+static PyObject *
+gdbm_subscript(PyObject *op, PyObject *key)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = gdbm_subscript_lock_held(op, key);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 /*[clinic input]
@@ -290,7 +321,7 @@ _gdbm_gdbm_get_impl(gdbmobject *self, PyObject *key, PyObject *default_value)
 }
 
 static int
-gdbm_ass_sub(PyObject *op, PyObject *v, PyObject *w)
+gdbm_ass_sub_lock_held(PyObject *op, PyObject *v, PyObject *w)
 {
     datum krec, drec;
     const char *failmsg = "gdbm mappings have bytes or string indices only";
@@ -335,7 +366,18 @@ gdbm_ass_sub(PyObject *op, PyObject *v, PyObject *w)
     return 0;
 }
 
+static int
+gdbm_ass_sub(PyObject *op, PyObject *v, PyObject *w)
+{
+    int result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = gdbm_ass_sub_lock_held(op, v, w);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 /*[clinic input]
+@critical_section
 _gdbm.gdbm.setdefault
 
     key: object
@@ -348,7 +390,7 @@ Get value for key, or set it to default and return default if not present.
 static PyObject *
 _gdbm_gdbm_setdefault_impl(gdbmobject *self, PyObject *key,
                            PyObject *default_value)
-/*[clinic end generated code: output=f3246e880509f142 input=0db46b69e9680171]*/
+/*[clinic end generated code: output=f3246e880509f142 input=854374cd81ab51b6]*/
 {
     PyObject *res;
 
@@ -363,6 +405,7 @@ _gdbm_gdbm_setdefault_impl(gdbmobject *self, PyObject *key,
 }
 
 /*[clinic input]
+@critical_section
 _gdbm.gdbm.close
 
 Close the database.
@@ -370,7 +413,7 @@ Close the database.
 
 static PyObject *
 _gdbm_gdbm_close_impl(gdbmobject *self)
-/*[clinic end generated code: output=f5abb4d6bb9e52d5 input=0a203447379b45fd]*/
+/*[clinic end generated code: output=f5abb4d6bb9e52d5 input=56b604f4e77f533d]*/
 {
     if (self->di_dbm) {
         gdbm_close(self->di_dbm);
@@ -381,6 +424,7 @@ _gdbm_gdbm_close_impl(gdbmobject *self)
 
 /* XXX Should return a set or a set view */
 /*[clinic input]
+@critical_section
 _gdbm.gdbm.keys
 
     cls: defining_class
@@ -390,7 +434,7 @@ Get a list of all keys in the database.
 
 static PyObject *
 _gdbm_gdbm_keys_impl(gdbmobject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=c24b824e81404755 input=1428b7c79703d7d5]*/
+/*[clinic end generated code: output=c24b824e81404755 input=785988b1ea8f77e0]*/
 {
     PyObject *v, *item;
     datum key, nextkey;
@@ -432,7 +476,7 @@ _gdbm_gdbm_keys_impl(gdbmobject *self, PyTypeObject *cls)
 }
 
 static int
-gdbm_contains(PyObject *self, PyObject *arg)
+gdbm_contains_lock_held(PyObject *self, PyObject *arg)
 {
     gdbmobject *dp = (gdbmobject *)self;
     datum key;
@@ -463,7 +507,18 @@ gdbm_contains(PyObject *self, PyObject *arg)
     return gdbm_exists(dp->di_dbm, key);
 }
 
+static int
+gdbm_contains(PyObject *self, PyObject *arg)
+{
+    int result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = gdbm_contains_lock_held(self, arg);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 /*[clinic input]
+@critical_section
 _gdbm.gdbm.firstkey
 
     cls: defining_class
@@ -477,7 +532,7 @@ hash values, and won't be sorted by the key values.
 
 static PyObject *
 _gdbm_gdbm_firstkey_impl(gdbmobject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=139275e9c8b60827 input=ed8782a029a5d299]*/
+/*[clinic end generated code: output=139275e9c8b60827 input=aad5a7c886c542f5]*/
 {
     PyObject *v;
     datum key;
@@ -497,6 +552,7 @@ _gdbm_gdbm_firstkey_impl(gdbmobject *self, PyTypeObject *cls)
 }
 
 /*[clinic input]
+@critical_section
 _gdbm.gdbm.nextkey
 
     cls: defining_class
@@ -517,7 +573,7 @@ to create a list in memory that contains them all:
 static PyObject *
 _gdbm_gdbm_nextkey_impl(gdbmobject *self, PyTypeObject *cls, const char *key,
                         Py_ssize_t key_length)
-/*[clinic end generated code: output=c81a69300ef41766 input=365e297bc0b3db48]*/
+/*[clinic end generated code: output=c81a69300ef41766 input=181f1130d5bfeb1e]*/
 {
     PyObject *v;
     datum dbm_key, nextkey;
@@ -539,6 +595,7 @@ _gdbm_gdbm_nextkey_impl(gdbmobject *self, PyTypeObject *cls, const char *key,
 }
 
 /*[clinic input]
+@critical_section
 _gdbm.gdbm.reorganize
 
     cls: defining_class
@@ -554,7 +611,7 @@ kept and reused as new (key,value) pairs are added.
 
 static PyObject *
 _gdbm_gdbm_reorganize_impl(gdbmobject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=d77c69e8e3dd644a input=e1359faeef844e46]*/
+/*[clinic end generated code: output=d77c69e8e3dd644a input=3e3ca0d2ea787861]*/
 {
     _gdbm_state *state = PyType_GetModuleState(cls);
     assert(state != NULL);
@@ -573,6 +630,7 @@ _gdbm_gdbm_reorganize_impl(gdbmobject *self, PyTypeObject *cls)
 }
 
 /*[clinic input]
+@critical_section
 _gdbm.gdbm.sync
 
     cls: defining_class
@@ -585,7 +643,7 @@ any unwritten data to be written to the disk.
 
 static PyObject *
 _gdbm_gdbm_sync_impl(gdbmobject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=bb680a2035c3f592 input=3d749235f79b6f2a]*/
+/*[clinic end generated code: output=bb680a2035c3f592 input=6054385b071d238a]*/
 {
     _gdbm_state *state = PyType_GetModuleState(cls);
     assert(state != NULL);
@@ -595,6 +653,7 @@ _gdbm_gdbm_sync_impl(gdbmobject *self, PyTypeObject *cls)
 }
 
 /*[clinic input]
+@critical_section
 _gdbm.gdbm.clear
     cls: defining_class
     /
@@ -604,7 +663,7 @@ Remove all items from the database.
 
 static PyObject *
 _gdbm_gdbm_clear_impl(gdbmobject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=673577c573318661 input=34136d52fcdd4210]*/
+/*[clinic end generated code: output=673577c573318661 input=b17467adfe62f23d]*/
 {
     _gdbm_state *state = PyType_GetModuleState(cls);
     assert(state != NULL);

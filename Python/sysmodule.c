@@ -1643,6 +1643,7 @@ static PyObject *
 _sys_getwindowsversion_from_kernel32(void)
 {
 #ifndef MS_WINDOWS_DESKTOP
+    PyErr_SetString(PyExc_OSError, "cannot read version info on this platform");
     return NULL;
 #else
     HANDLE hKernel32;
@@ -1670,6 +1671,9 @@ _sys_getwindowsversion_from_kernel32(void)
         !GetFileVersionInfoW(kernel32_path, 0, verblock_size, verblock) ||
         !VerQueryValueW(verblock, L"", (LPVOID)&ffi, &ffi_len)) {
         PyErr_SetFromWindowsErr(0);
+        if (verblock) {
+            PyMem_RawFree(verblock);
+        }
         return NULL;
     }
 
@@ -2208,6 +2212,14 @@ static PyObject *
 sys__clear_type_cache_impl(PyObject *module)
 /*[clinic end generated code: output=20e48ca54a6f6971 input=127f3e04a8d9b555]*/
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "sys._clear_type_cache() is deprecated and"
+                     " scheduled for removal in a future version."
+                     " Use sys._clear_internal_caches() instead.",
+                     1) < 0)
+    {
+        return NULL;
+    }
     PyType_ClearCache();
     Py_RETURN_NONE;
 }
@@ -2432,66 +2444,12 @@ static PyObject *
 sys_is_remote_debug_enabled_impl(PyObject *module)
 /*[clinic end generated code: output=7ca3d38bdd5935eb input=7335c4a2fe8cf4f3]*/
 {
-#ifndef Py_REMOTE_DEBUG
+#if !defined(Py_REMOTE_DEBUG) || !defined(Py_SUPPORTS_REMOTE_DEBUG)
     Py_RETURN_FALSE;
 #else
     const PyConfig *config = _Py_GetConfig();
     return PyBool_FromLong(config->remote_debug);
 #endif
-}
-
-static PyObject *
-sys_remote_exec_unicode_path(PyObject *module, int pid, PyObject *script)
-{
-    const char *debugger_script_path = PyUnicode_AsUTF8(script);
-    if (debugger_script_path == NULL) {
-        return NULL;
-    }
-
-#ifdef MS_WINDOWS
-    // Use UTF-16 (wide char) version of the path for permission checks
-    wchar_t *debugger_script_path_w = PyUnicode_AsWideCharString(script, NULL);
-    if (debugger_script_path_w == NULL) {
-        return NULL;
-    }
-
-    // Check file attributes using wide character version (W) instead of ANSI (A)
-    DWORD attr = GetFileAttributesW(debugger_script_path_w);
-    PyMem_Free(debugger_script_path_w);
-    if (attr == INVALID_FILE_ATTRIBUTES) {
-        DWORD err = GetLastError();
-        if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) {
-            PyErr_SetString(PyExc_FileNotFoundError, "Script file does not exist");
-        }
-        else if (err == ERROR_ACCESS_DENIED) {
-            PyErr_SetString(PyExc_PermissionError, "Script file cannot be read");
-        }
-        else {
-            PyErr_SetFromWindowsErr(0);
-        }
-        return NULL;
-    }
-#else
-    if (access(debugger_script_path, F_OK | R_OK) != 0) {
-        switch (errno) {
-            case ENOENT:
-                PyErr_SetString(PyExc_FileNotFoundError, "Script file does not exist");
-                break;
-            case EACCES:
-                PyErr_SetString(PyExc_PermissionError, "Script file cannot be read");
-                break;
-            default:
-                PyErr_SetFromErrno(PyExc_OSError);
-        }
-        return NULL;
-    }
-#endif
-
-    if (_PySysRemoteDebug_SendExec(pid, 0, debugger_script_path) < 0) {
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -2524,13 +2482,65 @@ static PyObject *
 sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
 /*[clinic end generated code: output=7d94c56afe4a52c0 input=39908ca2c5fe1eb0]*/
 {
-    PyObject *ret = NULL;
     PyObject *path;
-    if (PyUnicode_FSDecoder(script, &path)) {
-        ret = sys_remote_exec_unicode_path(module, pid, path);
-        Py_DECREF(path);
+    const char *debugger_script_path;
+
+    if (PyUnicode_FSConverter(script, &path) == 0) {
+        return NULL;
     }
-    return ret;
+    debugger_script_path = PyBytes_AS_STRING(path);
+#ifdef MS_WINDOWS
+    PyObject *unicode_path;
+    if (PyUnicode_FSDecoder(path, &unicode_path) < 0) {
+        goto error;
+    }
+    // Use UTF-16 (wide char) version of the path for permission checks
+    wchar_t *debugger_script_path_w = PyUnicode_AsWideCharString(unicode_path, NULL);
+    Py_DECREF(unicode_path);
+    if (debugger_script_path_w == NULL) {
+        goto error;
+    }
+    DWORD attr = GetFileAttributesW(debugger_script_path_w);
+    if (attr == INVALID_FILE_ATTRIBUTES) {
+        DWORD err = GetLastError();
+        PyMem_Free(debugger_script_path_w);
+        if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) {
+            PyErr_SetString(PyExc_FileNotFoundError, "Script file does not exist");
+        }
+        else if (err == ERROR_ACCESS_DENIED) {
+            PyErr_SetString(PyExc_PermissionError, "Script file cannot be read");
+        }
+        else {
+            PyErr_SetFromWindowsErr(err);
+        }
+        goto error;
+    }
+    PyMem_Free(debugger_script_path_w);
+#else // MS_WINDOWS
+    if (access(debugger_script_path, F_OK | R_OK) != 0) {
+        switch (errno) {
+            case ENOENT:
+                PyErr_SetString(PyExc_FileNotFoundError, "Script file does not exist");
+                break;
+            case EACCES:
+                PyErr_SetString(PyExc_PermissionError, "Script file cannot be read");
+                break;
+            default:
+                PyErr_SetFromErrno(PyExc_OSError);
+        }
+        goto error;
+    }
+#endif // MS_WINDOWS
+    if (_PySysRemoteDebug_SendExec(pid, 0, debugger_script_path) < 0) {
+        goto error;
+    }
+
+    Py_DECREF(path);
+    Py_RETURN_NONE;
+
+error:
+    Py_DECREF(path);
+    return NULL;
 }
 
 
@@ -3978,6 +3988,71 @@ error:
 
 PyObject *_Py_CreateMonitoringObject(void);
 
+/*[clinic input]
+module _jit
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=10952f74d7bbd972]*/
+
+PyDoc_STRVAR(_jit_doc, "Utilities for observing just-in-time compilation.");
+
+/*[clinic input]
+_jit.is_available -> bool
+Return True if the current Python executable supports JIT compilation, and False otherwise.
+[clinic start generated code]*/
+
+static int
+_jit_is_available_impl(PyObject *module)
+/*[clinic end generated code: output=6849a9cd2ff4aac9 input=03add84aa8347cf1]*/
+{
+    (void)module;
+#ifdef _Py_TIER2
+    return true;
+#else
+    return false;
+#endif
+}
+
+/*[clinic input]
+_jit.is_enabled -> bool
+Return True if JIT compilation is enabled for the current Python process (implies sys._jit.is_available()), and False otherwise.
+[clinic start generated code]*/
+
+static int
+_jit_is_enabled_impl(PyObject *module)
+/*[clinic end generated code: output=55865f8de993fe42 input=02439394da8e873f]*/
+{
+    (void)module;
+    return _PyInterpreterState_GET()->jit;
+}
+
+/*[clinic input]
+_jit.is_active -> bool
+Return True if the topmost Python frame is currently executing JIT code (implies sys._jit.is_enabled()), and False otherwise.
+[clinic start generated code]*/
+
+static int
+_jit_is_active_impl(PyObject *module)
+/*[clinic end generated code: output=7facca06b10064d4 input=be2fcd8a269d9b72]*/
+{
+    (void)module;
+    return _PyThreadState_GET()->current_executor != NULL;
+}
+
+static PyMethodDef _jit_methods[] = {
+    _JIT_IS_AVAILABLE_METHODDEF
+    _JIT_IS_ENABLED_METHODDEF
+    _JIT_IS_ACTIVE_METHODDEF
+    {NULL}
+};
+
+static struct PyModuleDef _jit_module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "sys._jit",
+    .m_doc = _jit_doc,
+    .m_size = -1,
+    .m_methods = _jit_methods,
+};
+
 /* Create sys module without all attributes.
    _PySys_UpdateConfig() should be called later to add remaining attributes. */
 PyStatus
@@ -4036,6 +4111,16 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     int err = PyDict_SetItemString(sysdict, "monitoring", monitoring);
     Py_DECREF(monitoring);
     if (err < 0) {
+        goto error;
+    }
+
+    PyObject *_jit = _PyModule_CreateInitialized(&_jit_module, PYTHON_API_VERSION);
+    if (_jit == NULL) {
+        goto error;
+    }
+    err = PyDict_SetItemString(sysdict, "_jit", _jit);
+    Py_DECREF(_jit);
+    if (err) {
         goto error;
     }
 

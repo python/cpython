@@ -1,0 +1,1 @@
+Fixed test case ``test.test_annotationlib.TestStringFormat.test_displays`` which ensures proper handling of complex data structures (lists, sets, dictionaries, and tuples) in string annotations.

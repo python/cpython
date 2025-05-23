@@ -23,6 +23,15 @@ of Python objects.
 
    Use the :c:func:`Py_SET_REFCNT()` function to set an object reference count.
 
+   .. note::
+
+      On :term:`free threaded <free threading>` builds of Python, returning 1
+      isn't sufficient to determine if it's safe to treat *o* as having no
+      access by other threads. Use :c:func:`PyUnstable_Object_IsUniquelyReferenced`
+      for that instead.
+
+      See also the function :c:func:`PyUnstable_Object_IsUniqueReferencedTemporary()`.
+
    .. versionchanged:: 3.10
       :c:func:`Py_REFCNT()` is changed to the inline static function.
 

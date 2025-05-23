@@ -65,6 +65,19 @@ def object_lookup_special():
     for i in range(N):
         round(i / N)
 
+class MyContextManager:
+    def __enter__(self):
+        pass
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+
+@register_benchmark
+def context_manager():
+    N = 1000 * WORK_SCALE
+    for i in range(N):
+        with MyContextManager():
+            pass
+
 @register_benchmark
 def mult_constant():
     x = 1.0

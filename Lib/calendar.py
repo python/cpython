@@ -810,7 +810,7 @@ def timegm(tuple):
 
 def main(args=None):
     import argparse
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     textgroup = parser.add_argument_group('text only arguments')
     htmlgroup = parser.add_argument_group('html only arguments')
     textgroup.add_argument(
