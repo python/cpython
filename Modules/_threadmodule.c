@@ -298,7 +298,7 @@ _PyThread_AfterFork(struct _pythread_runtime_state *state)
 
         // Keep handles for threads that have not been started yet. They are
         // safe to start in the child process.
-        if (handle->state == THREAD_HANDLE_NOT_STARTED){
+        if (handle->state == THREAD_HANDLE_NOT_STARTED) {
             continue;
         }
 
