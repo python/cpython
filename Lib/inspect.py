@@ -2074,13 +2074,11 @@ def _signature_is_functionlike(obj):
     code = getattr(obj, '__code__', None)
     defaults = getattr(obj, '__defaults__', _void) # Important to use _void ...
     kwdefaults = getattr(obj, '__kwdefaults__', _void) # ... and not None here
-    annotations = getattr(obj, '__annotations__', None)
 
     return (isinstance(code, types.CodeType) and
             isinstance(name, str) and
             (defaults is None or isinstance(defaults, tuple)) and
-            (kwdefaults is None or isinstance(kwdefaults, dict)) and
-            (isinstance(annotations, (dict)) or annotations is None) )
+            (kwdefaults is None or isinstance(kwdefaults, dict)))
 
 
 def _signature_strip_non_python_syntax(signature):

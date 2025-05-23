@@ -3383,8 +3383,7 @@ def _connect(
             f"\nLocal pdb module's protocol version: {attach_ver}"
         )
     else:
-        remote_pdb.rcLines.extend(commands.splitlines())
-        remote_pdb.set_trace(frame=frame)
+        remote_pdb.set_trace(frame=frame, commands=commands.splitlines())
 
 
 def attach(pid, commands=()):
@@ -3490,7 +3489,8 @@ def help():
 _usage = """\
 Debug the Python program given by pyfile. Alternatively,
 an executable module or package to debug can be specified using
-the -m switch.
+the -m switch. You can also attach to a running Python process
+using the -p option with its PID.
 
 Initial commands are read from .pdbrc files in your home directory
 and in the current directory, if they exist.  Commands supplied with

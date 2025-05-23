@@ -393,7 +393,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(deterministic)
         STRUCT_FOR_ID(device)
         STRUCT_FOR_ID(dict)
-        STRUCT_FOR_ID(dict_content)
         STRUCT_FOR_ID(dictcomp)
         STRUCT_FOR_ID(difference_update)
         STRUCT_FOR_ID(digest)
