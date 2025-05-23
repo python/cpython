@@ -250,7 +250,6 @@ class DynamicClassAttribute:
 
 
 class _GeneratorWrapper:
-    # TODO: Implement this in C.
     def __init__(self, gen):
         self.__wrapped = gen
         self.__isgen = gen.__class__ is GeneratorType
@@ -305,7 +304,6 @@ def coroutine(func):
         # Check if 'func' is a generator function.
         # (0x20 == CO_GENERATOR)
         if co_flags & 0x20:
-            # TODO: Implement this in C.
             co = func.__code__
             # 0x100 == CO_ITERABLE_COROUTINE
             func.__code__ = co.replace(co_flags=co.co_flags | 0x100)
