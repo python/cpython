@@ -2979,6 +2979,11 @@ class TestType(unittest.TestCase):
         with self.assertRaises(TypeError):
             type('A', (B,), {'__slots__': '__weakref__'})
 
+    def test_type_unavailable_module(self):
+        ns = {}
+        exec("A = type('A', (), {})", ns)
+        self.assertIs(ns['A'].__module__, None)
+
     def test_namespace_order(self):
         # bpo-34320: namespace should preserve order
         od = collections.OrderedDict([('a', 1), ('b', 2)])
