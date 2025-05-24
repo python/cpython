@@ -432,10 +432,14 @@ PyCursesPanel_Dealloc(PyObject *self)
     tp = (PyObject *) Py_TYPE(po);
     obj = (PyObject *) panel_userptr(po->pan);
     if (obj) {
-        (void)set_panel_userptr(po->pan, NULL);
         Py_DECREF(obj);
+        if (set_panel_userptr(po->pan, NULL) == ERR) {
+            PyErr_FormatUnraisable("Exception ignored in set_panel_userptr()");
+        }
     }
-    (void)del_panel(po->pan);
+    if (del_panel(po->pan) == ERR) {
+        PyErr_FormatUnraisable("Exception ignored in del_panel()");
+    }
     if (po->wo != NULL) {
         Py_DECREF(po->wo);
         remove_lop(po);
