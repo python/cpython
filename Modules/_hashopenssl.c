@@ -396,7 +396,7 @@ get_openssl_evp_md_utf8name(const EVP_MD *md)
     return name;
 }
 
-static inline PyObject *
+static PyObject *
 get_openssl_evp_md_name(const EVP_MD *md)
 {
     const char *name = get_openssl_evp_md_utf8name(md);
