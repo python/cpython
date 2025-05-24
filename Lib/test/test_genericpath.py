@@ -320,6 +320,20 @@ class GenericTest:
                 fd2 = fp2.fileno()
                 self.assertTrue(self.pathmodule.sameopenfile(fd1, fd2))
 
+    def test_all_but_last(self):
+        ALL_BUT_LAST = self.pathmodule.ALL_BUT_LAST
+        self.assertEqual(repr(ALL_BUT_LAST), 'ALL_BUT_LAST')
+        self.assertTrue(ALL_BUT_LAST)
+        import copy
+        self.assertIs(copy.copy(ALL_BUT_LAST), ALL_BUT_LAST)
+        self.assertIs(copy.deepcopy(ALL_BUT_LAST), ALL_BUT_LAST)
+        import pickle
+        for proto in range(pickle.HIGHEST_PROTOCOL+1):
+            with self.subTest(protocol=proto):
+                pickled = pickle.dumps(ALL_BUT_LAST, proto)
+                unpickled = pickle.loads(pickled)
+                self.assertIs(unpickled, ALL_BUT_LAST)
+
 
 class TestGenericTest(GenericTest, unittest.TestCase):
     # Issue 16852: GenericTest can't inherit from unittest.TestCase
