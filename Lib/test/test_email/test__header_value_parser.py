@@ -463,6 +463,19 @@ class TestParser(TestParserMixin, TestEmailBase):
                                 [errors.NonPrintableDefect], ')')
         self.assertEqual(ptext.defects[0].non_printables[0], '\x00')
 
+    def test_get_qp_ctext_close_paren_only(self):
+        self._test_get_x(parser.get_qp_ctext,
+                        ')', '', ' ', [], ')')
+
+    def test_get_qp_ctext_open_paren_only(self):
+        self._test_get_x(parser.get_qp_ctext,
+                        '(', '', ' ', [], '(')
+
+    def test_get_qp_ctext_no_end_char(self):
+        self._test_get_x(parser.get_qp_ctext,
+                        '', '', ' ', [], '')
+
+
     # get_qcontent
 
     def test_get_qcontent_only(self):
@@ -502,6 +515,14 @@ class TestParser(TestParserMixin, TestEmailBase):
                                 'foo\x00fg"', 'foo\x00fg', 'foo\x00fg',
                                 [errors.NonPrintableDefect], '"')
         self.assertEqual(ptext.defects[0].non_printables[0], '\x00')
+
+    def test_get_qcontent_empty(self):
+        self._test_get_x(parser.get_qcontent,
+                         '"', '', '', [], '"')
+
+    def test_get_qcontent_no_end_char(self):
+        self._test_get_x(parser.get_qcontent,
+                         '', '', '', [], '')
 
     # get_atext
 
@@ -1282,6 +1303,18 @@ class TestParser(TestParserMixin, TestEmailBase):
     def test_get_dtext_open_bracket_mid_word(self):
         self._test_get_x(parser.get_dtext,
                         'foo[bar', 'foo', 'foo', [], '[bar')
+
+    def test_get_dtext_open_bracket_only(self):
+        self._test_get_x(parser.get_dtext,
+                        '[', '', '', [], '[')
+
+    def test_get_dtext_close_bracket_only(self):
+        self._test_get_x(parser.get_dtext,
+                        ']', '', '', [], ']')
+
+    def test_get_dtext_empty(self):
+        self._test_get_x(parser.get_dtext,
+                        '', '', '', [], '')
 
     # get_domain_literal
 
