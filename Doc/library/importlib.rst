@@ -393,17 +393,22 @@ ABC hierarchy::
     .. method:: get_data(path)
        :abstractmethod:
 
-        An abstract method to return the bytes for the data located at *path*.
-        Loaders that have a file-like storage back-end
-        that allows storing arbitrary data
-        can implement this abstract method to give direct access
-        to the data stored. :exc:`OSError` is to be raised if the *path* cannot
-        be found. The *path* is expected to be constructed using a module's
-        :attr:`~module.__file__` attribute or an item from a package's
-        :attr:`~module.__path__`.
+       An abstract method to return the bytes for the data located at *path*.
+       Loaders that have a file-like storage back-end that allows storing
+       arbitrary data can implement this abstract method to give direct
+       access to the data stored. The *path* is expected to be constructed
+       using a module's :attr:`~module.__file__` attribute or an item from
+       a package's :attr:`~module.__path__` attribute.
 
-        .. versionchanged:: 3.4
-           Raises :exc:`OSError` instead of :exc:`NotImplementedError`.
+       If the *path* cannot be handled, either :exc:`OSError` or :exc:`ValueError`
+       is to be raised. In most cases, these will be raised by the underlying
+       operating system interfaces rather than directly (e.g., :exc:`OSError`
+       would be raised when attempting to access a valid but nonexistent
+       filesystem path, while attempting to access a path containing a NUL
+       byte would raise :exc:`ValueError`).
+
+       .. versionchanged:: 3.4
+          Raise :exc:`OSError` by default instead of :exc:`NotImplementedError`.
 
 
 .. class:: InspectLoader
@@ -537,6 +542,8 @@ ABC hierarchy::
 
       Reads *path* as a binary file and returns the bytes from it.
 
+      If the *path* cannot be handled, this raises an :exc:`OSError`
+      or a :exc:`ValueError` depending on the reason.
 
 .. class:: SourceLoader
 
@@ -568,12 +575,15 @@ ABC hierarchy::
         - ``'size'`` (optional): the size in bytes of the source code.
 
         Any other keys in the dictionary are ignored, to allow for future
-        extensions. If the path cannot be handled, :exc:`OSError` is raised.
+        extensions.
+
+        As for :meth:`ResourecLoader.get_data`, either :exc:`OSError` or
+        :exc:`ValueError` is to be raised if the *path* cannot be handled.
 
         .. versionadded:: 3.3
 
         .. versionchanged:: 3.4
-           Raise :exc:`OSError` instead of :exc:`NotImplementedError`.
+           Raise :exc:`OSError` by default instead of :exc:`NotImplementedError`.
 
     .. method:: path_mtime(path)
 
@@ -583,10 +593,10 @@ ABC hierarchy::
         .. deprecated:: 3.3
            This method is deprecated in favour of :meth:`path_stats`.  You don't
            have to implement it, but it is still available for compatibility
-           purposes. Raise :exc:`OSError` if the path cannot be handled.
+           purposes.
 
         .. versionchanged:: 3.4
-           Raise :exc:`OSError` instead of :exc:`NotImplementedError`.
+           Raise :exc:`OSError` by default instead of :exc:`NotImplementedError`.
 
     .. method:: set_data(path, data)
 
@@ -596,7 +606,7 @@ ABC hierarchy::
 
         When writing to the path fails because the path is read-only
         (:const:`errno.EACCES`/:exc:`PermissionError`), do not propagate the
-        exception.
+        exception. Other exceptions should still be propagated.
 
         .. versionchanged:: 3.4
            No longer raises :exc:`NotImplementedError` when called.
