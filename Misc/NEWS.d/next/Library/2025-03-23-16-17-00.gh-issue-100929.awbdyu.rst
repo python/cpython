@@ -1,0 +1,2 @@
+Add ``%F`` format code to :func:`time.strptime` and :func:`datetime.datetime.strptime`
+which allows for optional microseconds.

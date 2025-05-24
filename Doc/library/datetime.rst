@@ -1171,6 +1171,9 @@ Other constructors, all class methods:
          >>> when.strftime("%B %d")  # doctest: +SKIP
          'February 29'
 
+   .. versionchanged::
+      Added the ``%F`` directive.
+
 
 Class attributes:
 
@@ -2613,6 +2616,9 @@ convenience. These parameters all correspond to ISO 8601 date values.
 |           | (empty string if the object is | +06:34:15,             |       |
 |           | naive).                        | -03:07:12.345216       |       |
 +-----------+--------------------------------+------------------------+-------+
+| ``%F``    | Optional microseconds as a     | (empty), .000003,      | \(11) |
+|           | decimal number.                | .123456, .3            |       |
++-----------+--------------------------------+------------------------+-------+
 
 These may not be available on all platforms when used with the :meth:`~.datetime.strftime`
 method. The ISO 8601 year and ISO 8601 week directives are not interchangeable
@@ -2784,6 +2790,10 @@ Notes:
       a day of month without a year now emit a
       :exc:`DeprecationWarning`. In 3.15 or later we may change this into
       an error or change the default year to a leap year. See :gh:`70647`.
+
+(11)
+  The ``%F`` directive can only be used with :meth:`~.datetime.strptime`
+  and :meth:`~.time.strptime`.
 
 .. rubric:: Footnotes
 
