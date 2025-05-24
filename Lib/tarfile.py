@@ -2410,7 +2410,9 @@ class TarFile(object):
         for tarinfo, dirpath, original_ino, original_dev in directories:
             dirstat = os.stat(dirpath, follow_symlinks=False)
             if (dirstat.st_ino != original_ino or
-                dirstat.st_dev != original_dev):
+                dirstat.st_dev != original_dev or
+                not stat.S_ISDIR(dirstat.st_mode) # just in case the inode was reused
+            ):
                 self._dbg(1, "tarfile: Directory renamed before its " \
                      "attributes could be extracted %r" % dirpath)
                 continue
