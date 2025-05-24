@@ -1367,6 +1367,322 @@ class _ZipWriteFile(io.BufferedIOBase):
             self._zipfile._writing = False
 
 
+class _ZipRepacker:
+    """Class for ZipFile repacking."""
+    def __init__(self, debug=0):
+        self.debug = debug  # Level of printing: 0 through 3
+
+    def repack(self, zfile):
+        """
+        Repack the ZIP file, removing unrecorded local file entries and random
+        bytes not listed in the central directory.
+
+        Assumes that local file entries are written consecutively without gaps.
+
+        Truncation is applied in two phases:
+
+        1. Before the first recorded file entry:
+            - If a sequence of valid local file entries (starting with
+              `PK\x03\x04`) is found leading up to the first recorded entry,
+              it is truncated.
+            - Otherwise, all leading bytes are preserved (e.g., in cases such
+              as self-extracting code or embedded ZIP libraries).
+
+        2. Between or after the recorded entries:
+            - Any data between two recorded entries, or after the last recorded
+              entry but before the central directory, is removed—regardless of
+              whether it resembles a valid entry.
+
+        ### Examples
+
+        Truncation before first recorded entry:
+
+            [random bytes]
+            [unrecorded local file entry 1]
+            [unrecorded local file entry 2]
+            [random bytes]
+            <- truncation start
+            [unrecorded local file entry 3]
+            [unrecorded local file entry 4]
+            <- truncation end
+            [recorded local file entry 1]
+            ...
+            [central directory]
+
+        Truncation between recorded entries:
+
+            ...
+            [recorded local file entry 5]
+            <- truncation start
+            [random bytes]
+            [unrecorded local file entry]
+            [random bytes]
+            <- truncation end
+            [recorded local file entry 6]
+            ...
+            [recorded local file entry n]
+            <- truncation start
+            [unrecorded local file entry]
+            <- truncation end
+            [central directory]
+
+        No truncation case:
+
+            [unrecorded local file entry 1]
+            [unrecorded local file entry 2]
+            ...
+            [unrecorded local file entry n]
+            [random bytes]
+            [recorded local file entry 1]
+            ...
+        """
+        with zfile._lock:
+            self._repack(zfile)
+
+    def _repack(self, zfile, *, chunk_size=2**20):
+        fp = zfile.fp
+
+        # get a sorted filelist by header offset, in case the dir order
+        # doesn't match the actual entry order
+        filelist = sorted(zfile.filelist, key=lambda x: x.header_offset)
+
+        # calculate the starting entry offset (bytes to skip)
+        entry_offset = 0
+
+        try:
+            data_offset = filelist[0].header_offset
+        except IndexError:
+            data_offset = zfile.start_dir
+
+        if data_offset > 0:
+            if self.debug > 2:
+                print('scanning file signatures before:', data_offset)
+            for pos in self._iter_scan_signature(fp, stringFileHeader, 0, data_offset):
+                if self._starts_consecutive_file_entries(fp, pos, data_offset):
+                    entry_offset = data_offset - pos
+                    break
+
+        # move file entries
+        for i, info in enumerate(filelist):
+            # get the total size of the entry
+            try:
+                offset = filelist[i + 1].header_offset
+            except IndexError:
+                offset = zfile.start_dir
+            entry_size = offset - info.header_offset
+
+            used_entry_size = self._calc_local_file_entry_size(fp, info)
+
+            # update the header and move entry data to the new position
+            if entry_offset > 0:
+                old_header_offset = info.header_offset
+                info.header_offset -= entry_offset
+                read_size = 0
+                while read_size < used_entry_size:
+                    fp.seek(old_header_offset + read_size)
+                    data = fp.read(min(used_entry_size - read_size, chunk_size))
+                    fp.seek(info.header_offset + read_size)
+                    fp.write(data)
+                    fp.flush()
+                    read_size += len(data)
+
+            if info._end_offset is not None:
+                info._end_offset = info.header_offset + used_entry_size
+
+            # update entry_offset for subsequent files to follow
+            if used_entry_size < entry_size:
+                entry_offset += entry_size - used_entry_size
+
+        # Avoid missing entry if entries have a duplicated name.
+        # Reverse the order as NameToInfo normally stores the last added one.
+        for info in reversed(zfile.filelist):
+            zfile.NameToInfo.setdefault(info.filename, info)
+
+        # update state
+        zfile.start_dir -= entry_offset
+        zfile._didModify = True
+
+    def _iter_scan_signature(self, fp, signature, start_offset, end_offset, chunk_size=4096):
+        sig_len = len(signature)
+        remainder = b''
+        pos = start_offset
+
+        fp.seek(start_offset)
+        while pos < end_offset:
+            read_size = min(chunk_size, end_offset - pos)
+            chunk = remainder + fp.read(read_size)
+            if not chunk:
+                break
+
+            idx = 0
+            while True:
+                idx = chunk.find(signature, idx)
+                if idx == -1 or idx + sig_len > len(chunk):
+                    break
+
+                abs_pos = pos - len(remainder) + idx
+                yield abs_pos
+                idx += 1
+
+            remainder = chunk[-(sig_len - 1):]
+            pos += read_size
+
+    def _starts_consecutive_file_entries(self, fp, start_offset, end_offset):
+        offset = start_offset
+
+        while offset < end_offset:
+            if self.debug > 2:
+                print('checking local file entry:', offset)
+
+            fp.seek(offset)
+            try:
+                fheader = self._read_local_file_header(fp)
+            except BadZipFile:
+                return False
+
+            # Create a dummy ZipInfo to utilize parsing.
+            # Flush only the required information.
+            zinfo = ZipInfo()
+            zinfo.header_offset = offset
+            zinfo.flag_bits = fheader[_FH_GENERAL_PURPOSE_FLAG_BITS]
+            zinfo.compress_size = fheader[_FH_COMPRESSED_SIZE]
+            zinfo.file_size = fheader[_FH_UNCOMPRESSED_SIZE]
+            zinfo.CRC = fheader[_FH_CRC]
+
+            filename = fp.read(fheader[_FH_FILENAME_LENGTH])
+            zinfo.extra = fp.read(fheader[_FH_EXTRA_FIELD_LENGTH])
+            pos = fp.tell()
+
+            if pos > end_offset:
+                return False
+
+            try:
+                zinfo._decodeExtra(crc32(filename))  # parse zip64
+            except BadZipFile:
+                return False
+
+            data_descriptor_size = 0
+
+            if zinfo.flag_bits & _MASK_USE_DATA_DESCRIPTOR:
+                # According to the spec, these fields should be zero when data
+                # descriptor is used. Otherwise treat as a false positive on
+                # random bytes to return early, as scanning for data descriptor
+                # is rather intensive.
+                if not (zinfo.CRC == zinfo.compress_size == zinfo.file_size == 0):
+                    return False
+
+                zip64 = (
+                    fheader[_FH_UNCOMPRESSED_SIZE] == 0xffffffff or
+                    fheader[_FH_COMPRESSED_SIZE] == 0xffffffff
+                )
+
+                dd = self._scan_data_descriptor(fp, pos, end_offset, zip64)
+
+                if dd is None:
+                    return False
+
+                crc, compress_size, file_size, data_descriptor_size = dd
+                zinfo.CRC = crc
+                zinfo.compress_size = compress_size
+                zinfo.file_size = file_size
+
+            offset += (
+                sizeFileHeader +
+                fheader[_FH_FILENAME_LENGTH] + fheader[_FH_EXTRA_FIELD_LENGTH] +
+                zinfo.compress_size +
+                data_descriptor_size
+            )
+
+            if self.debug > 2:
+                print('next', offset)
+
+        return offset == end_offset
+
+    def _read_local_file_header(self, fp):
+        fheader = fp.read(sizeFileHeader)
+        if len(fheader) != sizeFileHeader:
+            raise BadZipFile("Truncated file header")
+        fheader = struct.unpack(structFileHeader, fheader)
+        if fheader[_FH_SIGNATURE] != stringFileHeader:
+            raise BadZipFile("Bad magic number for file header")
+        return fheader
+
+    def _scan_data_descriptor(self, fp, offset, end_offset, zip64):
+        dd_fmt = '<LLQQ' if zip64 else '<LLLL'
+        dd_size = struct.calcsize(dd_fmt)
+
+        # scan for signature and take the first valid descriptor
+        for pos in self._iter_scan_signature(
+            fp, struct.pack('<L', _DD_SIGNATURE), offset, end_offset
+        ):
+            fp.seek(pos)
+            dd = fp.read(dd_size)
+            _, crc, compress_size, file_size = struct.unpack(dd_fmt, dd)
+
+            # @TODO: also check CRC to better guard from a false positive?
+            if pos - offset != compress_size:
+                continue
+
+            return crc, compress_size, file_size, dd_size
+
+        return self._scan_data_descriptor_no_sig(fp, offset, end_offset, zip64)
+
+    def _scan_data_descriptor_no_sig(self, fp, offset, end_offset, zip64, chunk_size=8192):
+        dd_fmt = '<LQQ' if zip64 else '<LLL'
+        dd_size = struct.calcsize(dd_fmt)
+
+        base = offset
+        remainder = b''
+
+        while base < end_offset:
+            fp.seek(base)
+            chunk = remainder + fp.read(min(chunk_size, end_offset - base))
+            if not chunk:
+                break
+
+            scan_limit = len(chunk) - dd_size + 1
+            mv = memoryview(chunk)
+            for i in range(scan_limit):
+                dd = mv[i:i + dd_size]
+                try:
+                    crc, compress_size, file_size = struct.unpack(dd_fmt, dd)
+                except struct.error:
+                    continue
+                if (base + i) - offset != compress_size:
+                    continue
+
+                return crc, compress_size, file_size, dd_size
+
+            remainder = chunk[-(dd_size - 1):]
+            base += scan_limit
+
+        return None
+
+    def _calc_local_file_entry_size(self, fp, zinfo):
+        fp.seek(zinfo.header_offset)
+        fheader = self._read_local_file_header(fp)
+
+        if zinfo.flag_bits & _MASK_USE_DATA_DESCRIPTOR:
+            zip64 = fheader[_FH_UNCOMPRESSED_SIZE] == 0xffffffff
+            dd_fmt = '<LLQQ' if zip64 else '<LLLL'
+            fp.seek(
+                fheader[_FH_FILENAME_LENGTH] + fheader[_FH_EXTRA_FIELD_LENGTH] +
+                zinfo.compress_size,
+                os.SEEK_CUR,
+            )
+            if fp.read(struct.calcsize('<L')) != struct.pack('<L', _DD_SIGNATURE):
+                dd_fmt = '<LQQ' if zip64 else '<LLL'
+            dd_size = struct.calcsize(dd_fmt)
+        else:
+            dd_size = 0
+
+        return (
+            sizeFileHeader +
+            fheader[_FH_FILENAME_LENGTH] + fheader[_FH_EXTRA_FIELD_LENGTH] +
+            zinfo.compress_size +
+            dd_size
+        )
+
 
 class ZipFile:
     """ Class with methods to open, read, write, close, list zip files.
@@ -1865,6 +2181,64 @@ class ZipFile:
 
         for zipinfo in members:
             self._extract_member(zipinfo, path, pwd)
+
+    def remove(self, zinfo_or_arcname):
+        """Remove a member from the archive."""
+        if self.mode not in ('w', 'x', 'a'):
+            raise ValueError("remove() requires mode 'w', 'x', or 'a'")
+        if not self.fp:
+            raise ValueError(
+                "Attempt to write to ZIP archive that was already closed")
+        if self._writing:
+            raise ValueError(
+                "Can't write to ZIP archive while an open writing handle exists."
+            )
+
+        with self._lock:
+            # get the zinfo
+            # raise KeyError if arcname does not exist
+            if isinstance(zinfo_or_arcname, ZipInfo):
+                zinfo = zinfo_or_arcname
+                if zinfo not in self.filelist:
+                    raise KeyError('There is no item %r in the archive' % zinfo)
+            else:
+                zinfo = self.getinfo(zinfo_or_arcname)
+
+            self.filelist.remove(zinfo)
+
+            try:
+                del self.NameToInfo[zinfo.filename]
+            except KeyError:
+                pass
+
+            # Avoid missing entry if there is another entry having the same name,
+            # to prevent an error on `testzip()`.
+            # Reverse the order as NameToInfo normally stores the last added one.
+            for zi in reversed(self.filelist):
+                if zi.filename == zinfo.filename:
+                    self.NameToInfo.setdefault(zi.filename, zi)
+                    break
+
+            self._didModify = True
+
+    def repack(self, **opts):
+        """Repack a zip file, removing non-referenced file entries.
+
+        The archive must be opened with mode 'a', as mode 'w'/'x' do not
+        truncate the file when closed. This cannot be simplely changed as
+        they may be used on an unseekable file buffer, which disallows
+        truncation."""
+        if self.mode != 'a':
+            raise ValueError("repack() requires mode 'a'")
+        if not self.fp:
+            raise ValueError(
+                "Attempt to write to ZIP archive that was already closed")
+        if self._writing:
+            raise ValueError(
+                "Can't write to ZIP archive while an open writing handle exists"
+            )
+
+        _ZipRepacker(**opts).repack(self)
 
     @classmethod
     def _sanitize_windows_name(cls, arcname, pathsep):
