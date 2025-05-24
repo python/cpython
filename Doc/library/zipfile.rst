@@ -518,6 +518,29 @@ ZipFile Objects
    .. versionadded:: 3.11
 
 
+.. method:: ZipFile.remove(zinfo_or_arcname)
+
+   Removes a member from the archive.  *zinfo_or_arcname* is either the full
+   path of the member, or a :class:`ZipInfo` instance.
+
+   The archive must be opened with mode ``'w'``, ``'x'`` or ``'a'``.
+
+   Calling :meth:`remove` on a closed ZipFile will raise a :exc:`ValueError`.
+
+   .. versionadded:: next
+
+
+.. method:: ZipFile.repack()
+
+   Repack a zip file and physically remove non-referenced file entries.
+
+   The archive must be opened with mode ``'a'``.
+
+   Calling :meth:`repack` on a closed ZipFile will raise a :exc:`ValueError`.
+
+   .. versionadded:: next
+
+
 The following data attributes are also available:
 
 .. attribute:: ZipFile.filename
