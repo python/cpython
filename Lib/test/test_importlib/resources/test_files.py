@@ -1,3 +1,7 @@
+import os
+import pathlib
+import py_compile
+import shutil
 import textwrap
 import unittest
 import warnings
@@ -7,6 +11,7 @@ import contextlib
 from importlib import resources
 from importlib.resources.abc import Traversable
 from . import util
+from test.support import os_helper, import_helper
 
 
 @contextlib.contextmanager
@@ -117,8 +122,8 @@ class ModuleFilesZipTests(DirectSpec, util.ZipSetup, ModulesFiles, unittest.Test
 
 class ImplicitContextFiles:
     set_val = textwrap.dedent(
-        """
-        import importlib.resources as res
+        f"""
+        import {resources.__name__} as res
         val = res.files().joinpath('res.txt').read_text(encoding='utf-8')
         """
     )
@@ -126,6 +131,10 @@ class ImplicitContextFiles:
         'somepkg': {
             '__init__.py': set_val,
             'submod.py': set_val,
+            'res.txt': 'resources are the best',
+        },
+        'frozenpkg': {
+            '__init__.py': set_val.replace(resources.__name__, 'c_resources'),
             'res.txt': 'resources are the best',
         },
     }
@@ -141,6 +150,32 @@ class ImplicitContextFiles:
         Without any parameter, files() will infer the location as the caller.
         """
         assert importlib.import_module('somepkg.submod').val == 'resources are the best'
+
+    def _compile_importlib(self):
+        """
+        Make a compiled-only copy of the importlib resources package.
+        """
+        bin_site = self.fixtures.enter_context(os_helper.temp_dir())
+        c_resources = pathlib.Path(bin_site, 'c_resources')
+        sources = pathlib.Path(resources.__file__).parent
+        shutil.copytree(sources, c_resources, ignore=lambda *_: ['__pycache__'])
+
+        for dirpath, _, filenames in os.walk(c_resources):
+            for filename in filenames:
+                source_path = pathlib.Path(dirpath) / filename
+                cfile = source_path.with_suffix('.pyc')
+                py_compile.compile(source_path, cfile)
+                pathlib.Path.unlink(source_path)
+        self.fixtures.enter_context(import_helper.DirsOnSysPath(bin_site))
+
+    def test_implicit_files_with_compiled_importlib(self):
+        """
+        Caller detection works for compiled-only resources module.
+
+        python/cpython#123085
+        """
+        self._compile_importlib()
+        assert importlib.import_module('frozenpkg').val == 'resources are the best'
 
 
 class ImplicitContextFilesDiskTests(
