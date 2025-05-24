@@ -2449,7 +2449,8 @@ Py_EndInterpreter(PyThreadState *tstate)
     _Py_FinishPendingCalls(tstate);
 
     _PyAtExit_Call(tstate->interp);
-    _PyEval_StopTheWorld(interp);
+    _PyRuntimeState *runtime = interp->runtime;
+    _PyEval_StopTheWorldAll(runtime);
     /* Remaining daemon threads will automatically exit
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
     _PyInterpreterState_SetFinalizing(interp, tstate);
@@ -2459,7 +2460,7 @@ Py_EndInterpreter(PyThreadState *tstate)
         _PyThreadState_SetShuttingDown(p);
     }
 
-    _PyEval_StartTheWorld(interp);
+    _PyEval_StartTheWorldAll(runtime);
     _PyThreadState_DeleteList(list, /*is_after_fork=*/0);
 
     // XXX Call something like _PyImport_Disable() here?
