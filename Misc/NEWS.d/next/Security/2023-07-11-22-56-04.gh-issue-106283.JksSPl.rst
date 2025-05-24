@@ -1,0 +1,4 @@
+This commit implements what was described in the discussion in #106283, which includes:
+* Distribute the timeout parameter across the entire list of resolved hosts
+* 2 second minimum timeout per resolved host
+* 2 second minimum timeout only enforced if large enough (overriding 2s rule)
