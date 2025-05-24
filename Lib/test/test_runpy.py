@@ -798,7 +798,7 @@ class TestExit(unittest.TestCase):
         cmd = [sys.executable, '-E', *cmd]
         proc = subprocess.run(cmd, *args, **kwargs, text=True, stderr=subprocess.PIPE)
         stderr = traceback.strip_exc_timestamps(proc.stderr)
-        self.assertTrue(stderr.endswith("\nKeyboardInterrupt\n"), stderr)
+        self.assertEndsWith(stderr, "\nKeyboardInterrupt\n")
         self.assertEqual(proc.returncode, self.EXPECTED_CODE)
 
     def test_pymain_run_file(self):

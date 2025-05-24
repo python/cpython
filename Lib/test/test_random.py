@@ -1411,30 +1411,31 @@ class TestModule(unittest.TestCase):
 
 
 class CommandLineTest(unittest.TestCase):
+    @support.force_not_colorized
     def test_parse_args(self):
         args, help_text = random._parse_args(shlex.split("--choice a b c"))
         self.assertEqual(args.choice, ["a", "b", "c"])
-        self.assertTrue(help_text.startswith("usage: "))
+        self.assertStartsWith(help_text, "usage: ")
 
         args, help_text = random._parse_args(shlex.split("--integer 5"))
         self.assertEqual(args.integer, 5)
-        self.assertTrue(help_text.startswith("usage: "))
+        self.assertStartsWith(help_text, "usage: ")
 
         args, help_text = random._parse_args(shlex.split("--float 2.5"))
         self.assertEqual(args.float, 2.5)
-        self.assertTrue(help_text.startswith("usage: "))
+        self.assertStartsWith(help_text, "usage: ")
 
         args, help_text = random._parse_args(shlex.split("a b c"))
         self.assertEqual(args.input, ["a", "b", "c"])
-        self.assertTrue(help_text.startswith("usage: "))
+        self.assertStartsWith(help_text, "usage: ")
 
         args, help_text = random._parse_args(shlex.split("5"))
         self.assertEqual(args.input, ["5"])
-        self.assertTrue(help_text.startswith("usage: "))
+        self.assertStartsWith(help_text, "usage: ")
 
         args, help_text = random._parse_args(shlex.split("2.5"))
         self.assertEqual(args.input, ["2.5"])
-        self.assertTrue(help_text.startswith("usage: "))
+        self.assertStartsWith(help_text, "usage: ")
 
     def test_main(self):
         for command, expected in [

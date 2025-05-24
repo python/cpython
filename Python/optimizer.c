@@ -204,16 +204,74 @@ get_oparg(PyObject *self, PyObject *Py_UNUSED(ignored))
 static int executor_clear(PyObject *executor);
 static void unlink_executor(_PyExecutorObject *executor);
 
+
+static void
+free_executor(_PyExecutorObject *self)
+{
+#ifdef _Py_JIT
+    _PyJIT_Free(self);
+#endif
+    PyObject_GC_Del(self);
+}
+
+void
+_Py_ClearExecutorDeletionList(PyInterpreterState *interp)
+{
+    _PyRuntimeState *runtime = &_PyRuntime;
+    HEAD_LOCK(runtime);
+    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
+    HEAD_UNLOCK(runtime);
+    while (ts) {
+        _PyExecutorObject *current = (_PyExecutorObject *)ts->current_executor;
+        if (current != NULL) {
+            /* Anything in this list will be unlinked, so we can reuse the
+             * linked field as a reachability marker. */
+            current->vm_data.linked = 1;
+        }
+        HEAD_LOCK(runtime);
+        ts = PyThreadState_Next(ts);
+        HEAD_UNLOCK(runtime);
+    }
+    _PyExecutorObject **prev_to_next_ptr = &interp->executor_deletion_list_head;
+    _PyExecutorObject *exec = *prev_to_next_ptr;
+    while (exec != NULL) {
+        if (exec->vm_data.linked) {
+            // This executor is currently executing
+            exec->vm_data.linked = 0;
+            prev_to_next_ptr = &exec->vm_data.links.next;
+        }
+        else {
+            *prev_to_next_ptr = exec->vm_data.links.next;
+            free_executor(exec);
+        }
+        exec = *prev_to_next_ptr;
+    }
+    interp->executor_deletion_list_remaining_capacity = EXECUTOR_DELETE_LIST_MAX;
+}
+
+static void
+add_to_pending_deletion_list(_PyExecutorObject *self)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    self->vm_data.links.next = interp->executor_deletion_list_head;
+    interp->executor_deletion_list_head = self;
+    if (interp->executor_deletion_list_remaining_capacity > 0) {
+        interp->executor_deletion_list_remaining_capacity--;
+    }
+    else {
+        _Py_ClearExecutorDeletionList(interp);
+    }
+}
+
 static void
 uop_dealloc(PyObject *op) {
     _PyExecutorObject *self = _PyExecutorObject_CAST(op);
     _PyObject_GC_UNTRACK(self);
     assert(self->vm_data.code == NULL);
     unlink_executor(self);
-#ifdef _Py_JIT
-    _PyJIT_Free(self);
-#endif
-    PyObject_GC_Del(self);
+    // Once unlinked it becomes impossible to invalidate an executor, so do it here.
+    self->vm_data.valid = 0;
+    add_to_pending_deletion_list(self);
 }
 
 const char *
