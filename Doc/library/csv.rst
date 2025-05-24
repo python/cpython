@@ -333,6 +333,9 @@ The :mod:`csv` module defines the following constants:
 
    Instructs :class:`reader` objects to convert all non-quoted fields to type *float*.
 
+   ```True``` and ```False``` are numeric types in Python so using this option will
+   not quote them.
+
 
 .. data:: QUOTE_NONE
 
