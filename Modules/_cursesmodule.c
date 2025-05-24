@@ -1857,9 +1857,9 @@ PyDoc_STRVAR(_curses_window_getstr__doc__,
 static PyObject *
 PyCursesWindow_getstr(PyObject *op, PyObject *args)
 {
-    const unsigned int max_buf_size = 2048;
     PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
     int rtn, use_xy = 0, y = 0, x = 0;
+    unsigned int max_buf_size = 2048;
     unsigned int n = max_buf_size - 1;
     PyObject *res;
 
@@ -2047,9 +2047,9 @@ PyDoc_STRVAR(_curses_window_instr__doc__,
 static PyObject *
 PyCursesWindow_instr(PyObject *op, PyObject *args)
 {
-    const unsigned int max_buf_size = 2048;
     PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
     int rtn, use_xy = 0, y = 0, x = 0;
+    unsigned int max_buf_size = 2048;
     unsigned int n = max_buf_size - 1;
     PyObject *res;
 
