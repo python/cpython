@@ -313,7 +313,7 @@ extern int _PyDict_CheckConsistency(PyObject *mp, int check_content);
 // Fast inlined version of PyType_HasFeature()
 static inline int
 _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
-    return ((FT_ATOMIC_LOAD_ULONG_RELAXED(type->tp_flags) & feature) != 0);
+    return ((type->tp_flags) & feature) != 0;
 }
 
 extern void _PyType_InitCache(PyInterpreterState *interp);
