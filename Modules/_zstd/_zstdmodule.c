@@ -37,10 +37,12 @@ set_zstd_error(const _zstd_state* const state,
             break;
 
         case ERR_LOAD_D_DICT:
-            msg = "Unable to load Zstandard dictionary or prefix for decompression: %s";
+            msg = "Unable to load Zstandard dictionary or prefix for "
+                  "decompression: %s";
             break;
         case ERR_LOAD_C_DICT:
-            msg = "Unable to load Zstandard dictionary or prefix for compression: %s";
+            msg = "Unable to load Zstandard dictionary or prefix for "
+                  "compression: %s";
             break;
 
         case ERR_GET_C_BOUNDS:

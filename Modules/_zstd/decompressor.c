@@ -718,9 +718,10 @@ PyDoc_STRVAR(ZstdDecompressor_eof_doc,
 "after that, an EOFError exception will be raised.");
 
 PyDoc_STRVAR(ZstdDecompressor_needs_input_doc,
-"If the max_length output limit in .decompress() method has been reached, and\n"
-"the decompressor has (or may has) unconsumed input data, it will be set to\n"
-"False. In this case, pass b'' to .decompress() method may output further data.");
+"If the max_length output limit in .decompress() method has been reached,\n"
+"and the decompressor has (or may has) unconsumed input data, it will be set\n"
+"to False. In this case, passing b'' to the .decompress() method may output\n"
+"further data.");
 
 static PyMemberDef ZstdDecompressor_members[] = {
     {"eof", Py_T_BOOL, offsetof(ZstdDecompressor, eof),
