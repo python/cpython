@@ -22,6 +22,10 @@
 #  include <stropts.h>            // I_FLUSHBAND
 #endif
 
+#define GUARDSZ 8
+// NUL followed by random bytes.
+static const char guard[GUARDSZ] _Py_NONSTRING = "\x00\xfa\x69\xc4\x67\xa3\x6c\x58";
+
 /*[clinic input]
 module fcntl
 [clinic start generated code]*/
@@ -54,27 +58,46 @@ static PyObject *
 fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
 /*[clinic end generated code: output=888fc93b51c295bd input=7955340198e5f334]*/
 {
-    unsigned int int_arg = 0;
     int ret;
-    char *str;
-    Py_ssize_t len;
-    char buf[1024];
     int async_err = 0;
 
     if (PySys_Audit("fcntl.fcntl", "iiO", fd, code, arg ? arg : Py_None) < 0) {
         return NULL;
     }
 
-    if (arg != NULL) {
-        int parse_result;
-
-        if (PyArg_Parse(arg, "s#", &str, &len)) {
-            if ((size_t)len > sizeof buf) {
-                PyErr_SetString(PyExc_ValueError,
-                                "fcntl string arg too long");
+    if (arg == NULL || PyIndex_Check(arg)) {
+        unsigned int int_arg = 0;
+        if (arg != NULL) {
+            if (!PyArg_Parse(arg, "I", &int_arg)) {
                 return NULL;
             }
-            memcpy(buf, str, len);
+        }
+
+        do {
+            Py_BEGIN_ALLOW_THREADS
+            ret = fcntl(fd, code, (int)int_arg);
+            Py_END_ALLOW_THREADS
+        } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+        if (ret < 0) {
+            return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
+        }
+        return PyLong_FromLong(ret);
+    }
+    if (PyUnicode_Check(arg) || PyObject_CheckBuffer(arg)) {
+        Py_buffer view;
+#define FCNTL_BUFSZ 1024
+        /* argument plus NUL byte plus guard to detect a buffer overflow */
+        char buf[FCNTL_BUFSZ+GUARDSZ];
+
+        if (!PyArg_Parse(arg, "s*", &view)) {
+            return NULL;
+        }
+        Py_ssize_t len = view.len;
+        if (len <= FCNTL_BUFSZ) {
+            memcpy(buf, view.buf, len);
+            memcpy(buf + len, guard, GUARDSZ);
+            PyBuffer_Release(&view);
+
             do {
                 Py_BEGIN_ALLOW_THREADS
                 ret = fcntl(fd, code, buf);
@@ -83,28 +106,47 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
             if (ret < 0) {
                 return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
             }
+            if (memcmp(buf + len, guard, GUARDSZ) != 0) {
+                PyErr_SetString(PyExc_SystemError, "buffer overflow");
+                return NULL;
+            }
             return PyBytes_FromStringAndSize(buf, len);
         }
+        else {
+            PyObject *result = PyBytes_FromStringAndSize(NULL, len);
+            if (result == NULL) {
+                PyBuffer_Release(&view);
+                return NULL;
+            }
+            char *ptr = PyBytes_AsString(result);
+            memcpy(ptr, view.buf, len);
+            PyBuffer_Release(&view);
 
-        PyErr_Clear();
-        parse_result = PyArg_Parse(arg,
-            "I;fcntl requires a file or file descriptor,"
-            " an integer and optionally a third integer or a string",
-            &int_arg);
-        if (!parse_result) {
-          return NULL;
+            do {
+                Py_BEGIN_ALLOW_THREADS
+                ret = fcntl(fd, code, ptr);
+                Py_END_ALLOW_THREADS
+            } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+            if (ret < 0) {
+                if (async_err) {
+                    PyErr_SetFromErrno(PyExc_OSError);
+                }
+                Py_DECREF(result);
+                return NULL;
+            }
+            if (ptr[len] != '\0') {
+                PyErr_SetString(PyExc_SystemError, "buffer overflow");
+                return NULL;
+            }
+            return result;
         }
+#undef FCNTL_BUFSZ
     }
-
-    do {
-        Py_BEGIN_ALLOW_THREADS
-        ret = fcntl(fd, code, (int)int_arg);
-        Py_END_ALLOW_THREADS
-    } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-    if (ret < 0) {
-        return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
-    }
-    return PyLong_FromLong((long)ret);
+    PyErr_Format(PyExc_TypeError,
+                 "fcntl() argument 3 must be an integer, "
+                 "a bytes-like object, or a string, not %T",
+                 arg);
+    return NULL;
 }
 
 
@@ -113,7 +155,7 @@ fcntl.ioctl
 
     fd: fildes
     request as code: unsigned_long(bitwise=True)
-    arg as ob_arg: object(c_default='NULL') = 0
+    arg: object(c_default='NULL') = 0
     mutate_flag as mutate_arg: bool = True
     /
 
@@ -148,11 +190,10 @@ code.
 [clinic start generated code]*/
 
 static PyObject *
-fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code,
-                 PyObject *ob_arg, int mutate_arg)
-/*[clinic end generated code: output=3d8eb6828666cea1 input=cee70f6a27311e58]*/
+fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
+                 int mutate_arg)
+/*[clinic end generated code: output=f72baba2454d7a62 input=9c6cca5e2c339622]*/
 {
-#define IOCTL_BUFSZ 1024
     /* We use the unsigned non-checked 'I' format for the 'code' parameter
        because the system expects it to be a 32bit bit field value
        regardless of it being passed as an int or unsigned long on
@@ -163,114 +204,131 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code,
        in their unsigned long ioctl codes this will break and need
        special casing based on the platform being built on.
      */
-    int arg = 0;
     int ret;
-    Py_buffer pstr;
-    char *str;
-    Py_ssize_t len;
-    char buf[IOCTL_BUFSZ+1];  /* argument plus NUL byte */
+    int async_err = 0;
 
-    if (PySys_Audit("fcntl.ioctl", "ikO", fd, code,
-                    ob_arg ? ob_arg : Py_None) < 0) {
+    if (PySys_Audit("fcntl.ioctl", "ikO", fd, code, arg ? arg : Py_None) < 0) {
         return NULL;
     }
 
-    if (ob_arg != NULL) {
-        if (PyArg_Parse(ob_arg, "w*:ioctl", &pstr)) {
-            char *arg;
-            str = pstr.buf;
-            len = pstr.len;
-
-            if (mutate_arg) {
-                if (len <= IOCTL_BUFSZ) {
-                    memcpy(buf, str, len);
-                    buf[len] = '\0';
-                    arg = buf;
-                }
-                else {
-                    arg = str;
-                }
+    if (arg == NULL || PyIndex_Check(arg)) {
+        int int_arg = 0;
+        if (arg != NULL) {
+            if (!PyArg_Parse(arg, "i", &int_arg)) {
+                return NULL;
             }
-            else {
-                if (len > IOCTL_BUFSZ) {
-                    PyBuffer_Release(&pstr);
-                    PyErr_SetString(PyExc_ValueError,
-                        "ioctl string arg too long");
+        }
+
+        do {
+            Py_BEGIN_ALLOW_THREADS
+            ret = ioctl(fd, code, int_arg);
+            Py_END_ALLOW_THREADS
+        } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+        if (ret < 0) {
+            return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
+        }
+        return PyLong_FromLong(ret);
+    }
+    if (PyUnicode_Check(arg) || PyObject_CheckBuffer(arg)) {
+        Py_buffer view;
+#define IOCTL_BUFSZ 1024
+        /* argument plus NUL byte plus guard to detect a buffer overflow */
+        char buf[IOCTL_BUFSZ+GUARDSZ];
+        if (mutate_arg && !PyBytes_Check(arg) && !PyUnicode_Check(arg)) {
+            if (PyObject_GetBuffer(arg, &view, PyBUF_WRITABLE) == 0) {
+                Py_ssize_t len = view.len;
+                void *ptr = view.buf;
+                if (len <= IOCTL_BUFSZ) {
+                    memcpy(buf, ptr, len);
+                    memcpy(buf + len, guard, GUARDSZ);
+                    ptr = buf;
+                }
+                do {
+                    Py_BEGIN_ALLOW_THREADS
+                    ret = ioctl(fd, code, ptr);
+                    Py_END_ALLOW_THREADS
+                } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+                if (ret < 0) {
+                    if (!async_err) {
+                        PyErr_SetFromErrno(PyExc_OSError);
+                    }
+                    PyBuffer_Release(&view);
                     return NULL;
                 }
-                else {
-                    memcpy(buf, str, len);
-                    buf[len] = '\0';
-                    arg = buf;
+                if (ptr == buf) {
+                    memcpy(view.buf, buf, len);
                 }
-            }
-            if (buf == arg) {
-                Py_BEGIN_ALLOW_THREADS /* think array.resize() */
-                ret = ioctl(fd, code, arg);
-                Py_END_ALLOW_THREADS
-            }
-            else {
-                ret = ioctl(fd, code, arg);
-            }
-            if (mutate_arg && (len <= IOCTL_BUFSZ)) {
-                memcpy(str, buf, len);
-            }
-            if (ret < 0) {
-                PyErr_SetFromErrno(PyExc_OSError);
-                PyBuffer_Release(&pstr);
-                return NULL;
-            }
-            PyBuffer_Release(&pstr);
-            if (mutate_arg) {
+                PyBuffer_Release(&view);
+                if (ptr == buf && memcmp(buf + len, guard, GUARDSZ) != 0) {
+                    PyErr_SetString(PyExc_SystemError, "buffer overflow");
+                    return NULL;
+                }
                 return PyLong_FromLong(ret);
             }
-            else {
-                return PyBytes_FromStringAndSize(buf, len);
+            if (!PyErr_ExceptionMatches(PyExc_BufferError)) {
+                return NULL;
             }
+            PyErr_Clear();
         }
 
-        PyErr_Clear();
-        if (PyArg_Parse(ob_arg, "s*:ioctl", &pstr)) {
-            str = pstr.buf;
-            len = pstr.len;
-            if (len > IOCTL_BUFSZ) {
-                PyBuffer_Release(&pstr);
-                PyErr_SetString(PyExc_ValueError,
-                                "ioctl string arg too long");
-                return NULL;
-            }
-            memcpy(buf, str, len);
-            buf[len] = '\0';
-            Py_BEGIN_ALLOW_THREADS
-            ret = ioctl(fd, code, buf);
-            Py_END_ALLOW_THREADS
+        if (!PyArg_Parse(arg, "s*", &view)) {
+            return NULL;
+        }
+        Py_ssize_t len = view.len;
+        if (len <= IOCTL_BUFSZ) {
+            memcpy(buf, view.buf, len);
+            memcpy(buf + len, guard, GUARDSZ);
+            PyBuffer_Release(&view);
+
+            do {
+                Py_BEGIN_ALLOW_THREADS
+                ret = ioctl(fd, code, buf);
+                Py_END_ALLOW_THREADS
+            } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
             if (ret < 0) {
-                PyErr_SetFromErrno(PyExc_OSError);
-                PyBuffer_Release(&pstr);
+                return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
+            }
+            if (memcmp(buf + len, guard, GUARDSZ) != 0) {
+                PyErr_SetString(PyExc_SystemError, "buffer overflow");
                 return NULL;
             }
-            PyBuffer_Release(&pstr);
             return PyBytes_FromStringAndSize(buf, len);
         }
+        else {
+            PyObject *result = PyBytes_FromStringAndSize(NULL, len);
+            if (result == NULL) {
+                PyBuffer_Release(&view);
+                return NULL;
+            }
+            char *ptr = PyBytes_AsString(result);
+            memcpy(ptr, view.buf, len);
+            PyBuffer_Release(&view);
 
-        PyErr_Clear();
-        if (!PyArg_Parse(ob_arg,
-             "i;ioctl requires a file or file descriptor,"
-             " an integer and optionally an integer or buffer argument",
-             &arg)) {
-          return NULL;
+            do {
+                Py_BEGIN_ALLOW_THREADS
+                ret = ioctl(fd, code, ptr);
+                Py_END_ALLOW_THREADS
+            } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+            if (ret < 0) {
+                if (async_err) {
+                    PyErr_SetFromErrno(PyExc_OSError);
+                }
+                Py_DECREF(result);
+                return NULL;
+            }
+            if (ptr[len] != '\0') {
+                PyErr_SetString(PyExc_SystemError, "buffer overflow");
+                return NULL;
+            }
+            return result;
         }
-        // Fall-through to outside the 'if' statement.
-    }
-    Py_BEGIN_ALLOW_THREADS
-    ret = ioctl(fd, code, arg);
-    Py_END_ALLOW_THREADS
-    if (ret < 0) {
-        PyErr_SetFromErrno(PyExc_OSError);
-        return NULL;
-    }
-    return PyLong_FromLong((long)ret);
 #undef IOCTL_BUFSZ
+    }
+    PyErr_Format(PyExc_TypeError,
+                 "ioctl() argument 3 must be an integer, "
+                 "a bytes-like object, or a string, not %T",
+                 arg);
+    return NULL;
 }
 
 /*[clinic input]
@@ -564,6 +622,9 @@ all_ins(PyObject* m)
 #endif
 #ifdef F_NOTIFY
     if (PyModule_AddIntMacro(m, F_NOTIFY)) return -1;
+#endif
+#ifdef F_DUPFD_QUERY
+    if (PyModule_AddIntMacro(m, F_DUPFD_QUERY)) return -1;
 #endif
 /* Old BSD flock(). */
 #ifdef F_EXLCK

@@ -120,7 +120,7 @@ class TestNullDlsym(unittest.TestCase):
             # Assert that the IFUNC was called
             self.assertEqual(os.read(pipe_r, 2), b'OK')
 
-
+@test.support.thread_unsafe('setlocale is not thread-safe')
 @unittest.skipUnless(os.name != 'nt', 'test requires dlerror() calls')
 class TestLocalization(unittest.TestCase):
 

@@ -30,8 +30,9 @@ import functools
 import os
 import sys
 import code
+import warnings
 
-from .readline import _get_reader, multiline_input
+from .readline import _get_reader, multiline_input, append_history_file
 
 
 _error: tuple[type[Exception], ...] | type[Exception]
@@ -144,6 +145,10 @@ def run_multiline_interactive_console(
             input_name = f"<python-input-{input_n}>"
             more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")  # type: ignore[call-arg]
             assert not more
+            try:
+                append_history_file()
+            except (FileNotFoundError, PermissionError, OSError) as e:
+                warnings.warn(f"failed to open the history file for writing: {e}")
             input_n += 1
         except KeyboardInterrupt:
             r = _get_reader()
@@ -152,9 +157,13 @@ def run_multiline_interactive_console(
             r.pos = len(r.get_unicode())
             r.dirty = True
             r.refresh()
-            r.in_bracketed_paste = False
             console.write("\nKeyboardInterrupt\n")
             console.resetbuffer()
         except MemoryError:
             console.write("\nMemoryError\n")
+            console.resetbuffer()
+        except SystemExit:
+            raise
+        except:
+            console.showtraceback()
             console.resetbuffer()

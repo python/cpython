@@ -9,6 +9,7 @@ import json
 import textwrap
 from copy import copy
 
+from test import support
 from test.support import (
     captured_stdout,
     is_android,
@@ -455,20 +456,20 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         library = sysconfig.get_config_var('LIBRARY')
         ldlibrary = sysconfig.get_config_var('LDLIBRARY')
         major, minor = sys.version_info[:2]
-        if sys.platform == 'win32':
-            self.assertTrue(library.startswith(f'python{major}{minor}'))
-            self.assertTrue(library.endswith('.dll'))
+        abiflags = sysconfig.get_config_var('ABIFLAGS')
+        if sys.platform.startswith('win'):
+            self.assertEqual(library, f'python{major}{minor}{abiflags}.dll')
             self.assertEqual(library, ldlibrary)
         elif is_apple_mobile:
             framework = sysconfig.get_config_var('PYTHONFRAMEWORK')
             self.assertEqual(ldlibrary, f"{framework}.framework/{framework}")
         else:
-            self.assertTrue(library.startswith(f'libpython{major}.{minor}'))
-            self.assertTrue(library.endswith('.a'))
+            self.assertStartsWith(library, f'libpython{major}.{minor}')
+            self.assertEndsWith(library, '.a')
             if sys.platform == 'darwin' and sys._framework:
                 self.skipTest('gh-110824: skip LDLIBRARY test for framework build')
             else:
-                self.assertTrue(ldlibrary.startswith(f'libpython{major}.{minor}'))
+                self.assertStartsWith(ldlibrary, f'libpython{major}.{minor}')
 
     @unittest.skipUnless(sys.platform == "darwin", "test only relevant on MacOSX")
     @requires_subprocess()
@@ -592,6 +593,63 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         self.assertTrue(suffix.endswith('-darwin.so'), suffix)
 
+    def test_always_set_py_debug(self):
+        self.assertIn('Py_DEBUG', sysconfig.get_config_vars())
+        Py_DEBUG = sysconfig.get_config_var('Py_DEBUG')
+        self.assertIn(Py_DEBUG, (0, 1))
+        self.assertEqual(Py_DEBUG, support.Py_DEBUG)
+
+    def test_always_set_py_gil_disabled(self):
+        self.assertIn('Py_GIL_DISABLED', sysconfig.get_config_vars())
+        Py_GIL_DISABLED = sysconfig.get_config_var('Py_GIL_DISABLED')
+        self.assertIn(Py_GIL_DISABLED, (0, 1))
+        self.assertEqual(Py_GIL_DISABLED, support.Py_GIL_DISABLED)
+
+    def test_abiflags(self):
+        # If this test fails on some platforms, maintainers should update the
+        # test to make it pass, rather than changing the definition of ABIFLAGS.
+        self.assertIn('abiflags', sysconfig.get_config_vars())
+        self.assertIn('ABIFLAGS', sysconfig.get_config_vars())
+        abiflags = sysconfig.get_config_var('abiflags')
+        ABIFLAGS = sysconfig.get_config_var('ABIFLAGS')
+        self.assertIsInstance(abiflags, str)
+        self.assertIsInstance(ABIFLAGS, str)
+        self.assertIn(abiflags, ABIFLAGS)
+        if os.name == 'nt':
+            self.assertEqual(abiflags, '')
+
+        if not sys.platform.startswith('win'):
+            valid_abiflags = ('', 't', 'd', 'td')
+        else:
+            # Windows uses '_d' rather than 'd'; see also test_abi_debug below
+            valid_abiflags = ('', 't', '_d', 't_d')
+
+        self.assertIn(ABIFLAGS, valid_abiflags)
+
+    def test_abi_debug(self):
+        ABIFLAGS = sysconfig.get_config_var('ABIFLAGS')
+        if support.Py_DEBUG:
+            self.assertIn('d', ABIFLAGS)
+        else:
+            self.assertNotIn('d', ABIFLAGS)
+
+        # The 'd' flag should always be the last one on Windows.
+        # On Windows, the debug flag is used differently with a underscore prefix.
+        # For example, `python{X}.{Y}td` on Unix and `python{X}.{Y}t_d.exe` on Windows.
+        if support.Py_DEBUG and sys.platform.startswith('win'):
+            self.assertEndsWith(ABIFLAGS, '_d')
+
+    def test_abi_thread(self):
+        abi_thread = sysconfig.get_config_var('abi_thread')
+        ABIFLAGS = sysconfig.get_config_var('ABIFLAGS')
+        self.assertIsInstance(abi_thread, str)
+        if support.Py_GIL_DISABLED:
+            self.assertEqual(abi_thread, 't')
+            self.assertIn('t', ABIFLAGS)
+        else:
+            self.assertEqual(abi_thread, '')
+            self.assertNotIn('t', ABIFLAGS)
+
     @requires_subprocess()
     def test_makefile_overwrites_config_vars(self):
         script = textwrap.dedent("""
@@ -643,7 +701,8 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
 
         system_config_vars = get_config_vars()
 
-        ignore_keys = set()
+        # Keys dependent on uncontrollable external context
+        ignore_keys = {'userbase'}
         # Keys dependent on Python being run outside the build directrory
         if sysconfig.is_python_build():
             ignore_keys |= {'srcdir'}

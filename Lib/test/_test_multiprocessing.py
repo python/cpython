@@ -513,14 +513,27 @@ class _TestProcess(BaseTestCase):
         time.sleep(100)
 
     @classmethod
+    def _sleep_some_event(cls, event):
+        event.set()
+        time.sleep(100)
+
+    @classmethod
+    def _sleep_no_int_handler(cls, event):
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        cls._sleep_some_event(event)
+
+    @classmethod
     def _test_sleep(cls, delay):
         time.sleep(delay)
 
-    def _kill_process(self, meth):
+    def _kill_process(self, meth, target=None):
         if self.TYPE == 'threads':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
 
-        p = self.Process(target=self._sleep_some)
+        event = self.Event()
+        if not target:
+            target = self._sleep_some_event
+        p = self.Process(target=target, args=(event,))
         p.daemon = True
         p.start()
 
@@ -538,8 +551,11 @@ class _TestProcess(BaseTestCase):
         self.assertTimingAlmostEqual(join.elapsed, 0.0)
         self.assertEqual(p.is_alive(), True)
 
-        # XXX maybe terminating too soon causes the problems on Gentoo...
-        time.sleep(1)
+        timeout = support.SHORT_TIMEOUT
+        if not event.wait(timeout):
+            p.terminate()
+            p.join()
+            self.fail(f"event not signaled in {timeout} seconds")
 
         meth(p)
 
@@ -566,6 +582,19 @@ class _TestProcess(BaseTestCase):
         p.join()
 
         return p.exitcode
+
+    @unittest.skipIf(os.name == 'nt', "POSIX only")
+    def test_interrupt(self):
+        exitcode = self._kill_process(multiprocessing.Process.interrupt)
+        self.assertEqual(exitcode, 1)
+        # exit code 1 is hard-coded for uncaught exceptions
+        # (KeyboardInterrupt in this case)
+        # in multiprocessing.BaseProcess._bootstrap
+
+    @unittest.skipIf(os.name == 'nt', "POSIX only")
+    def test_interrupt_no_handler(self):
+        exitcode = self._kill_process(multiprocessing.Process.interrupt, target=self._sleep_no_int_handler)
+        self.assertEqual(exitcode, -signal.SIGINT)
 
     def test_terminate(self):
         exitcode = self._kill_process(multiprocessing.Process.terminate)
@@ -1486,9 +1515,33 @@ class _TestLock(BaseTestCase):
     def test_lock(self):
         lock = self.Lock()
         self.assertEqual(lock.acquire(), True)
+        self.assertTrue(lock.locked())
         self.assertEqual(lock.acquire(False), False)
         self.assertEqual(lock.release(), None)
+        self.assertFalse(lock.locked())
         self.assertRaises((ValueError, threading.ThreadError), lock.release)
+
+    @classmethod
+    def _test_lock_locked_2processes(cls, lock, event, res):
+        lock.acquire()
+        res.value = lock.locked()
+        event.set()
+
+    @unittest.skipUnless(HAS_SHAREDCTYPES, 'needs sharedctypes')
+    def test_lock_locked_2processes(self):
+        if self.TYPE != 'processes':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        lock = self.Lock()
+        event = self.Event()
+        res = self.Value('b', 0)
+        p = self.Process(target=self._test_lock_locked_2processes,
+                         args=(lock, event, res))
+        p.start()
+        event.wait()
+        self.assertTrue(lock.locked())
+        self.assertTrue(res.value)
+        p.join()
 
     @staticmethod
     def _acquire_release(lock, timeout, l=None, n=1):
@@ -1549,16 +1602,40 @@ class _TestLock(BaseTestCase):
     def test_rlock(self):
         lock = self.RLock()
         self.assertEqual(lock.acquire(), True)
+        self.assertTrue(lock.locked())
         self.assertEqual(lock.acquire(), True)
         self.assertEqual(lock.acquire(), True)
         self.assertEqual(lock.release(), None)
+        self.assertTrue(lock.locked())
         self.assertEqual(lock.release(), None)
         self.assertEqual(lock.release(), None)
+        self.assertFalse(lock.locked())
         self.assertRaises((AssertionError, RuntimeError), lock.release)
 
+    @unittest.skipUnless(HAS_SHAREDCTYPES, 'needs sharedctypes')
+    def test_rlock_locked_2processes(self):
+        if self.TYPE != 'processes':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        rlock = self.RLock()
+        event = self.Event()
+        res = self.Value('b', 0)
+        # target is the same as for the test_lock_locked_2processes test.
+        p = self.Process(target=self._test_lock_locked_2processes,
+                         args=(rlock, event, res))
+        p.start()
+        event.wait()
+        self.assertTrue(rlock.locked())
+        self.assertTrue(res.value)
+        p.join()
+
     def test_lock_context(self):
-        with self.Lock():
-            pass
+        with self.Lock() as locked:
+            self.assertTrue(locked)
+
+    def test_rlock_context(self):
+        with self.RLock() as locked:
+            self.assertTrue(locked)
 
 
 class _TestSemaphore(BaseTestCase):
@@ -2397,6 +2474,12 @@ class _TestValue(BaseTestCase):
         self.assertNotHasAttr(arr5, 'get_lock')
         self.assertNotHasAttr(arr5, 'get_obj')
 
+    @unittest.skipIf(c_int is None, "requires _ctypes")
+    def test_invalid_typecode(self):
+        with self.assertRaisesRegex(TypeError, 'bad typecode'):
+            self.Value('x', None)
+        with self.assertRaisesRegex(TypeError, 'bad typecode'):
+            self.RawValue('x', None)
 
 class _TestArray(BaseTestCase):
 
@@ -2477,6 +2560,12 @@ class _TestArray(BaseTestCase):
         self.assertNotHasAttr(arr5, 'get_lock')
         self.assertNotHasAttr(arr5, 'get_obj')
 
+    @unittest.skipIf(c_int is None, "requires _ctypes")
+    def test_invalid_typecode(self):
+        with self.assertRaisesRegex(TypeError, 'bad typecode'):
+            self.Array('x', [])
+        with self.assertRaisesRegex(TypeError, 'bad typecode'):
+            self.RawArray('x', [])
 #
 #
 #
@@ -6254,6 +6343,7 @@ class TestSyncManagerTypes(unittest.TestCase):
     @classmethod
     def _test_lock(cls, obj):
         obj.acquire()
+        obj.locked()
 
     def test_lock(self, lname="Lock"):
         o = getattr(self.manager, lname)()
@@ -6265,8 +6355,9 @@ class TestSyncManagerTypes(unittest.TestCase):
     def _test_rlock(cls, obj):
         obj.acquire()
         obj.release()
+        obj.locked()
 
-    def test_rlock(self, lname="Lock"):
+    def test_rlock(self, lname="RLock"):
         o = getattr(self.manager, lname)()
         self.run_worker(self._test_rlock, o)
 

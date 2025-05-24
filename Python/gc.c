@@ -493,6 +493,7 @@ update_refs(PyGC_Head *containers)
         next = GC_NEXT(gc);
         PyObject *op = FROM_GC(gc);
         if (_Py_IsImmortal(op)) {
+            assert(!_Py_IsStaticImmortal(op));
             _PyObject_GC_UNTRACK(op);
            gc = next;
            continue;
@@ -544,6 +545,13 @@ visit_decref(PyObject *op, void *parent)
 int
 _PyGC_VisitStackRef(_PyStackRef *ref, visitproc visit, void *arg)
 {
+    // This is a bit tricky! We want to ignore stackrefs with embedded
+    // refcounts when computing the incoming references, but otherwise treat
+    // them like normal.
+    assert(!PyStackRef_IsTaggedInt(*ref));
+    if (!PyStackRef_RefcountOnObject(*ref) && (visit == visit_decref)) {
+        return 0;
+    }
     Py_VISIT(PyStackRef_AsPyObjectBorrow(*ref));
     return 0;
 }
@@ -554,7 +562,9 @@ _PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg)
     _PyStackRef *ref = _PyFrame_GetLocalsArray(frame);
     /* locals and stack */
     for (; ref < frame->stackpointer; ref++) {
-        Py_VISIT(PyStackRef_AsPyObjectBorrow(*ref));
+        if (!PyStackRef_IsTaggedInt(*ref)) {
+            _Py_VISIT_STACKREF(*ref);
+        }
     }
     return 0;
 }
@@ -1489,8 +1499,11 @@ mark_stacks(PyInterpreterState *interp, PyGC_Head *visited, int visited_space, b
             objects_marked += move_to_reachable(func, &reachable, visited_space);
             while (sp > locals) {
                 sp--;
+                if (PyStackRef_IsNullOrInt(*sp)) {
+                    continue;
+                }
                 PyObject *op = PyStackRef_AsPyObjectBorrow(*sp);
-                if (op == NULL || _Py_IsImmortal(op)) {
+                if (_Py_IsImmortal(op)) {
                     continue;
                 }
                 if (_PyObject_IS_GC(op)) {
@@ -2195,9 +2208,8 @@ void
 PyObject_GC_UnTrack(void *op_raw)
 {
     PyObject *op = _PyObject_CAST(op_raw);
-    /* Obscure:  the Py_TRASHCAN mechanism requires that we be able to
-     * call PyObject_GC_UnTrack twice on an object.
-     */
+    /* The code for some objects, such as tuples, is a bit
+     * sloppy about when the object is tracked and untracked. */
     if (_PyObject_GC_IS_TRACKED(op)) {
         _PyObject_GC_UNTRACK(op);
     }

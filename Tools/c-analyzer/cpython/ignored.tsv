@@ -56,7 +56,7 @@ Python/pyhash.c	-	_Py_HashSecret	-
 Python/parking_lot.c	-	buckets	-
 
 ## data needed for introspecting asyncio state from debuggers and profilers
-Modules/_asynciomodule.c	-	AsyncioDebug	-
+Modules/_asynciomodule.c	-	_AsyncioDebug	-
 
 
 ##################################
@@ -166,6 +166,7 @@ Python/sysmodule.c	-	_preinit_xoptions	-
 # thread-safety
 # XXX need race protection?
 Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	-
+Modules/faulthandler.c	faulthandler_dump_c_stack	reentrant	-
 Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
 Python/pylifecycle.c	fatal_error	reentrant	-
 
@@ -308,6 +309,7 @@ Modules/cmathmodule.c	-	tanh_special_values	-
 Modules/config.c	-	_PyImport_Inittab	-
 Modules/faulthandler.c	-	faulthandler_handlers	-
 Modules/getnameinfo.c	-	gni_afdl	-
+Modules/hmacmodule.c	-	py_hmac_static_hinfo	-
 Modules/posixmodule.c	os_getxattr_impl	buffer_sizes	-
 Modules/posixmodule.c	os_listxattr_impl	buffer_sizes	-
 Modules/posixmodule.c	-	posix_constants_confstr	-
@@ -347,7 +349,6 @@ Objects/unicodeobject.c	unicode_translate_call_errorhandler	argparse	-
 Parser/parser.c	-	reserved_keywords	-
 Parser/parser.c	-	soft_keywords	-
 Parser/lexer/lexer.c	-	type_comment_prefix	-
-Python/ast_opt.c	fold_unaryop	ops	-
 Python/ceval.c	-	_PyEval_BinaryOps	-
 Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS	-
 Python/codecs.c	-	Py_hexdigits	-
@@ -746,6 +747,7 @@ Modules/expat/xmlrole.c	-	error	-
 ## other
 Modules/_io/_iomodule.c	-	_PyIO_Module	-
 Modules/_sqlite/module.c	-	_sqlite3module	-
+Modules/_zstd/_zstdmodule.c	-	_zstdmodule	-
 Modules/clinic/md5module.c.h	_md5_md5	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrgid	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrnam	_keywords	-

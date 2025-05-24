@@ -28,7 +28,6 @@ static PyObject *
 print_expr(PyThreadState* Py_UNUSED(ignored), PyObject *value)
 {
     PyObject *hook = _PySys_GetRequiredAttr(&_Py_ID(displayhook));
-    // Can't use ERROR_IF here.
     if (hook == NULL) {
         return NULL;
     }
