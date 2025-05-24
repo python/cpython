@@ -529,42 +529,54 @@ _run_in_interpreter(PyInterpreterState *interp,
                     PyObject **p_excinfo)
 {
     assert(!PyErr_Occurred());
-    _PyXI_session session = {0};
+    _PyXI_session *session = _PyXI_NewSession();
+    if (session == NULL) {
+        return -1;
+    }
 
     // Prep and switch interpreters.
-    if (_PyXI_Enter(&session, interp, shareables) < 0) {
+    if (_PyXI_Enter(session, interp, shareables) < 0) {
         if (PyErr_Occurred()) {
             // If an error occured at this step, it means that interp
             // was not prepared and switched.
+            _PyXI_FreeSession(session);
             return -1;
         }
         // Now, apply the error from another interpreter:
-        PyObject *excinfo = _PyXI_ApplyError(session.error);
+        PyObject *excinfo = _PyXI_ApplyCapturedException(session);
         if (excinfo != NULL) {
             *p_excinfo = excinfo;
         }
         assert(PyErr_Occurred());
+        _PyXI_FreeSession(session);
         return -1;
     }
 
     // Run the script.
-    int res = _run_script(session.main_ns, codestr, codestrlen, flags);
+    int res = -1;
+    PyObject *mainns = _PyXI_GetMainNamespace(session);
+    if (mainns == NULL) {
+        goto finally;
+    }
+    res = _run_script(mainns, codestr, codestrlen, flags);
 
+finally:
     // Clean up and switch back.
-    _PyXI_Exit(&session);
+    _PyXI_Exit(session);
 
     // Propagate any exception out to the caller.
     assert(!PyErr_Occurred());
     if (res < 0) {
-        PyObject *excinfo = _PyXI_ApplyCapturedException(&session);
+        PyObject *excinfo = _PyXI_ApplyCapturedException(session);
         if (excinfo != NULL) {
             *p_excinfo = excinfo;
         }
     }
     else {
-        assert(!_PyXI_HasCapturedException(&session));
+        assert(!_PyXI_HasCapturedException(session));
     }
 
+    _PyXI_FreeSession(session);
     return res;
 }
 
@@ -909,22 +921,27 @@ interp_set___main___attrs(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
 
-    _PyXI_session session = {0};
+    _PyXI_session *session = _PyXI_NewSession();
+    if (session == NULL) {
+        return NULL;
+    }
 
     // Prep and switch interpreters, including apply the updates.
-    if (_PyXI_Enter(&session, interp, updates) < 0) {
+    if (_PyXI_Enter(session, interp, updates) < 0) {
         if (!PyErr_Occurred()) {
-            _PyXI_ApplyCapturedException(&session);
+            _PyXI_ApplyCapturedException(session);
             assert(PyErr_Occurred());
         }
         else {
-            assert(!_PyXI_HasCapturedException(&session));
+            assert(!_PyXI_HasCapturedException(session));
         }
+        _PyXI_FreeSession(session);
         return NULL;
     }
 
     // Clean up and switch back.
-    _PyXI_Exit(&session);
+    _PyXI_Exit(session);
+    _PyXI_FreeSession(session);
 
     Py_RETURN_NONE;
 }

@@ -68,7 +68,7 @@
 
         case _LOAD_CONST: {
             JitOptSymbol *value;
-            PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
+            PyObject *val = PyTuple_GET_ITEM(co->co_consts, oparg);
             REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
             value = sym_new_const(ctx, val);
             stack_pointer[0] = value;
@@ -79,7 +79,10 @@
 
         case _LOAD_SMALL_INT: {
             JitOptSymbol *value;
-            PyObject *val = PyLong_FromLong(this_instr->oparg);
+            PyObject *val = PyLong_FromLong(oparg);
+            assert(val);
+            assert(_Py_IsImmortal(val));
+            REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
             value = sym_new_const(ctx, val);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -1171,7 +1174,7 @@
             self_or_null = &stack_pointer[0];
             (void)owner;
             attr = sym_new_not_null(ctx);
-            if (oparg &1) {
+            if (oparg & 1) {
                 self_or_null[0] = sym_new_unknown(ctx);
             }
             stack_pointer[-1] = attr;
@@ -1281,10 +1284,16 @@
         }
 
         case _LOAD_ATTR_CLASS: {
+            JitOptSymbol *owner;
             JitOptSymbol *attr;
+            owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand0;
-            attr = sym_new_not_null(ctx);
             (void)descr;
+            PyTypeObject *type = (PyTypeObject *)sym_get_const(ctx, owner);
+            PyObject *name = PyTuple_GET_ITEM(co->co_names, oparg >> 1);
+            attr = lookup_attr(ctx, this_instr, type, name,
+                           _POP_TOP_LOAD_CONST_INLINE_BORROW,
+                           _POP_TOP_LOAD_CONST_INLINE);
             stack_pointer[-1] = attr;
             break;
         }
@@ -1698,7 +1707,11 @@
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand0;
             (void)descr;
-            attr = sym_new_not_null(ctx);
+            PyTypeObject *type = sym_get_type(owner);
+            PyObject *name = PyTuple_GET_ITEM(co->co_names, oparg >> 1);
+            attr = lookup_attr(ctx, this_instr, type, name,
+                           _LOAD_CONST_UNDER_INLINE_BORROW,
+                           _LOAD_CONST_UNDER_INLINE);
             self = owner;
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
@@ -1714,7 +1727,11 @@
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand0;
             (void)descr;
-            attr = sym_new_not_null(ctx);
+            PyTypeObject *type = sym_get_type(owner);
+            PyObject *name = PyTuple_GET_ITEM(co->co_names, oparg >> 1);
+            attr = lookup_attr(ctx, this_instr, type, name,
+                           _LOAD_CONST_UNDER_INLINE_BORROW,
+                           _LOAD_CONST_UNDER_INLINE);
             self = owner;
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
@@ -1724,15 +1741,31 @@
         }
 
         case _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES: {
+            JitOptSymbol *owner;
             JitOptSymbol *attr;
-            attr = sym_new_not_null(ctx);
+            owner = stack_pointer[-1];
+            PyObject *descr = (PyObject *)this_instr->operand0;
+            (void)descr;
+            PyTypeObject *type = sym_get_type(owner);
+            PyObject *name = PyTuple_GET_ITEM(co->co_names, oparg >> 1);
+            attr = lookup_attr(ctx, this_instr, type, name,
+                           _POP_TOP_LOAD_CONST_INLINE_BORROW,
+                           _POP_TOP_LOAD_CONST_INLINE);
             stack_pointer[-1] = attr;
             break;
         }
 
         case _LOAD_ATTR_NONDESCRIPTOR_NO_DICT: {
+            JitOptSymbol *owner;
             JitOptSymbol *attr;
-            attr = sym_new_not_null(ctx);
+            owner = stack_pointer[-1];
+            PyObject *descr = (PyObject *)this_instr->operand0;
+            (void)descr;
+            PyTypeObject *type = sym_get_type(owner);
+            PyObject *name = PyTuple_GET_ITEM(co->co_names, oparg >> 1);
+            attr = lookup_attr(ctx, this_instr, type, name,
+                           _POP_TOP_LOAD_CONST_INLINE_BORROW,
+                           _POP_TOP_LOAD_CONST_INLINE);
             stack_pointer[-1] = attr;
             break;
         }
@@ -1748,7 +1781,11 @@
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand0;
             (void)descr;
-            attr = sym_new_not_null(ctx);
+            PyTypeObject *type = sym_get_type(owner);
+            PyObject *name = PyTuple_GET_ITEM(co->co_names, oparg >> 1);
+            attr = lookup_attr(ctx, this_instr, type, name,
+                           _LOAD_CONST_UNDER_INLINE_BORROW,
+                           _LOAD_CONST_UNDER_INLINE);
             self = owner;
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
@@ -2564,6 +2601,24 @@
             break;
         }
 
+        case _POP_CALL: {
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _POP_CALL_ONE: {
+            stack_pointer += -3;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _POP_CALL_TWO: {
+            stack_pointer += -4;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _POP_TOP_LOAD_CONST_INLINE_BORROW: {
             JitOptSymbol *value;
             PyObject *ptr = (PyObject *)this_instr->operand0;
@@ -2581,12 +2636,56 @@
             break;
         }
 
+        case _POP_CALL_LOAD_CONST_INLINE_BORROW: {
+            JitOptSymbol *value;
+            PyObject *ptr = (PyObject *)this_instr->operand0;
+            value = sym_new_const(ctx, ptr);
+            stack_pointer[-2] = value;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW: {
+            JitOptSymbol *value;
+            PyObject *ptr = (PyObject *)this_instr->operand0;
+            value = sym_new_const(ctx, ptr);
+            stack_pointer[-3] = value;
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW: {
             JitOptSymbol *value;
             PyObject *ptr = (PyObject *)this_instr->operand0;
             value = sym_new_const(ctx, ptr);
             stack_pointer[-4] = value;
             stack_pointer += -3;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_CONST_UNDER_INLINE: {
+            JitOptSymbol *value;
+            JitOptSymbol *new;
+            value = sym_new_not_null(ctx);
+            new = sym_new_not_null(ctx);
+            stack_pointer[-1] = value;
+            stack_pointer[0] = new;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_CONST_UNDER_INLINE_BORROW: {
+            JitOptSymbol *value;
+            JitOptSymbol *new;
+            value = sym_new_not_null(ctx);
+            new = sym_new_not_null(ctx);
+            stack_pointer[-1] = value;
+            stack_pointer[0] = new;
+            stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }

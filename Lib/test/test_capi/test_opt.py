@@ -1280,8 +1280,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         self.assertEqual(res, TIER2_THRESHOLD * 6 + 1)
         call = opnames.index("_CALL_BUILTIN_FAST")
-        load_attr_top = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", 0, call)
-        load_attr_bottom = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", call)
+        load_attr_top = opnames.index("_POP_TOP_LOAD_CONST_INLINE_BORROW", 0, call)
+        load_attr_bottom = opnames.index("_POP_TOP_LOAD_CONST_INLINE_BORROW", call)
         self.assertEqual(opnames[:load_attr_top].count("_GUARD_TYPE_VERSION"), 1)
         self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 2)
 
@@ -1303,8 +1303,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         self.assertEqual(res, TIER2_THRESHOLD * 2)
         call = opnames.index("_CALL_BUILTIN_FAST_WITH_KEYWORDS")
-        load_attr_top = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", 0, call)
-        load_attr_bottom = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", call)
+        load_attr_top = opnames.index("_POP_TOP_LOAD_CONST_INLINE_BORROW", 0, call)
+        load_attr_bottom = opnames.index("_POP_TOP_LOAD_CONST_INLINE_BORROW", call)
         self.assertEqual(opnames[:load_attr_top].count("_GUARD_TYPE_VERSION"), 1)
         self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 2)
 
@@ -2002,7 +2002,10 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_GUARD_THIRD_NULL", uops)
         self.assertNotIn("_GUARD_CALLABLE_ISINSTANCE", uops)
-        self.assertIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_list_append(self):
         def testfunc(n):
@@ -2035,7 +2038,10 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
-        self.assertIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_isinstance_is_false(self):
         def testfunc(n):
@@ -2053,7 +2059,10 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertNotIn("_GUARD_IS_FALSE_POP", uops)
-        self.assertIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_isinstance_subclass(self):
         def testfunc(n):
@@ -2071,7 +2080,10 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
-        self.assertIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_isinstance_unknown_object(self):
         def testfunc(n):
@@ -2155,6 +2167,57 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_GUARD_TYPE_VERSION", uops)
         self.assertNotIn("_CHECK_ATTR_CLASS", uops)
+
+    def test_load_small_int(self):
+        def testfunc(n):
+            x = 0
+            for i in range(n):
+                x += 1
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_LOAD_SMALL_INT", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_cached_attributes(self):
+        class C:
+            A = 1
+            def m(self):
+                return 1
+        class D:
+            __slots__ = ()
+            A = 1
+            def m(self):
+                return 1
+        class E(Exception):
+            def m(self):
+                return 1
+        def f(n):
+            x = 0
+            c = C()
+            d = D()
+            e = E()
+            for _ in range(n):
+                x += C.A  # _LOAD_ATTR_CLASS
+                x += c.A  # _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES
+                x += d.A  # _LOAD_ATTR_NONDESCRIPTOR_NO_DICT
+                x += c.m()  # _LOAD_ATTR_METHOD_WITH_VALUES
+                x += d.m()  # _LOAD_ATTR_METHOD_NO_DICT
+                x += e.m()  # _LOAD_ATTR_METHOD_LAZY_DICT
+            return x
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, 6 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_LOAD_ATTR_CLASS", uops)
+        self.assertNotIn("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", uops)
+        self.assertNotIn("_LOAD_ATTR_NONDESCRIPTOR_NO_DICT", uops)
+        self.assertNotIn("_LOAD_ATTR_METHOD_WITH_VALUES", uops)
+        self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
+        self.assertNotIn("_LOAD_ATTR_METHOD_LAZY_DICT", uops)
 
 
 def global_identity(x):
