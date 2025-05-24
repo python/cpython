@@ -1691,7 +1691,9 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
     // search functions, so this is done after everything else is initialized.
     PyObject *mod = PyImport_ImportModule("encodings");
     if (mod == NULL) {
-        return PyStatus_Error("Failed to import encodings module");
+        return PyStatus_Error("Failed to import encodings module. "
+                              "Your environment probably has misconfigured variables! "
+                              "Please check PYTHONHOME otherwise refer to `--help-env`");
     }
     Py_DECREF(mod);
 
