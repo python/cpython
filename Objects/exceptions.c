@@ -264,16 +264,29 @@ static PyObject *
 BaseException___reduce___impl(PyBaseExceptionObject *self)
 /*[clinic end generated code: output=af87c1247ef98748 input=283be5a10d9c964f]*/
 {
-    if (!self->dict) {
-        self->dict = PyDict_New();
-        if (self->dict == NULL) {
+    PyObject *dict = NULL;
+
+    /* Only create and include a dict if we have a timestamp to store or
+     * if the exception already has custom attributes in its dict. */
+    if (self->timestamp_ns > 0 || (self->dict && PyDict_GET_SIZE(self->dict) > 0)) {
+        if (!self->dict) {
+            self->dict = PyDict_New();
+            if (self->dict == NULL) {
+                return NULL;
+            }
+        }
+        if (!BaseException_add_timestamp_to_dict(self, self->dict)) {
             return NULL;
         }
+        dict = self->dict;
     }
-    if (!BaseException_add_timestamp_to_dict(self, self->dict)) {
-        return NULL;
+
+    /* Include dict in the pickle tuple only if we have one with content */
+    if (dict) {
+        return PyTuple_Pack(3, Py_TYPE(self), self->args, dict);
+    } else {
+        return PyTuple_Pack(2, Py_TYPE(self), self->args);
     }
-    return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
 }
 
 /*
@@ -1904,8 +1917,20 @@ ImportError_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyObject *state = ImportError_getstate(self);
     if (state == NULL)
         return NULL;
+
     PyBaseExceptionObject *exc = PyBaseExceptionObject_CAST(self);
-    res = PyTuple_Pack(3, Py_TYPE(self), exc->args, state);
+    PyImportErrorObject *import_exc = PyImportErrorObject_CAST(self);
+
+    /* Only include state dict if it has content beyond an empty timestamp */
+    bool has_content = (exc->timestamp_ns > 0 ||
+                       import_exc->name || import_exc->path || import_exc->name_from ||
+                       (import_exc->dict && PyDict_GET_SIZE(import_exc->dict) > 0));
+
+    if (has_content) {
+        res = PyTuple_Pack(3, Py_TYPE(self), exc->args, state);
+    } else {
+        res = PyTuple_Pack(2, Py_TYPE(self), exc->args);
+    }
     Py_DECREF(state);
     return res;
 }
@@ -2334,15 +2359,29 @@ OSError_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
     } else
         Py_INCREF(args);
 
-    if (!self->dict) {
-        self->dict = PyDict_New();
+    PyObject *dict = NULL;
+    PyBaseExceptionObject *base_self = (PyBaseExceptionObject*)self;
+
+    /* Only create and include a dict if we have a timestamp to store or
+     * if the exception already has custom attributes in its dict. */
+    if (base_self->timestamp_ns > 0 || (self->dict && PyDict_GET_SIZE(self->dict) > 0)) {
+        if (!self->dict) {
+            self->dict = PyDict_New();
+        }
+        if (!self->dict ||
+            !BaseException_add_timestamp_to_dict(base_self, self->dict)) {
+            Py_DECREF(args);
+            return NULL;
+        }
+        dict = self->dict;
     }
-    if (!self->dict ||
-        !BaseException_add_timestamp_to_dict((PyBaseExceptionObject*)self, self->dict)) {
-        Py_DECREF(args);
-        return NULL;
+
+    /* Include dict in the pickle tuple only if we have one with content */
+    if (dict) {
+        res = PyTuple_Pack(3, Py_TYPE(self), args, dict);
+    } else {
+        res = PyTuple_Pack(2, Py_TYPE(self), args);
     }
-    res = PyTuple_Pack(3, Py_TYPE(self), args, self->dict);
     Py_DECREF(args);
     return res;
 }
@@ -2635,24 +2674,14 @@ AttributeError_getstate(PyObject *op, PyObject *Py_UNUSED(ignored))
     if (dict == NULL) {
         return NULL;
     }
-    if (self->name || self->args) {
-        if (self->name && PyDict_SetItemString(dict, "name", self->name) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
-        /* We specifically are not pickling the obj attribute since there are many
-        cases where it is unlikely to be picklable. See GH-103352.
-        */
-        if (self->args && PyDict_SetItemString(dict, "args", self->args) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
-        return dict;
-    }
+
+    /* Always add timestamp first if present */
     if (!BaseException_add_timestamp_to_dict((PyBaseExceptionObject*)self, dict)) {
         Py_DECREF(dict);
         return NULL;
     }
+
+    /* Add AttributeError-specific attributes */
     if (self->name && PyDict_SetItemString(dict, "name", self->name) < 0) {
         Py_DECREF(dict);
         return NULL;
@@ -2676,6 +2705,9 @@ AttributeError_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
     }
 
     PyAttributeErrorObject *self = PyAttributeErrorObject_CAST(op);
+
+    /* AttributeError always includes state dict for compatibility with Python 3.13 behavior.
+     * The getstate method always includes 'args' in the returned dict. */
     PyObject *return_value = PyTuple_Pack(3, Py_TYPE(self), self->args, state);
     Py_DECREF(state);
     return return_value;
