@@ -1861,7 +1861,7 @@ PyCursesWindow_getstr(PyObject *op, PyObject *args)
     PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
     int rtn, use_xy = 0, y = 0, x = 0;
     unsigned int n = max_buf_size - 1;
-    PyObject *result;
+    PyObject *res;
 
     if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
                                            "_curses.window.instr"))
@@ -1870,11 +1870,11 @@ PyCursesWindow_getstr(PyObject *op, PyObject *args)
     }
 
     n = Py_MIN(n, max_buf_size - 1);
-    result = PyBytes_FromStringAndSize(NULL, n + 1);
-    if (result == NULL) {
+    res = PyBytes_FromStringAndSize(NULL, n + 1);
+    if (res == NULL) {
         return NULL;
     }
-    char *buf = PyBytes_AS_STRING(result);
+    char *buf = PyBytes_AS_STRING(res);
 
     if (use_xy) {
         Py_BEGIN_ALLOW_THREADS
@@ -1894,11 +1894,11 @@ PyCursesWindow_getstr(PyObject *op, PyObject *args)
     }
 
     if (rtn == ERR) {
-        Py_DECREF(result);
+        Py_DECREF(res);
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
-    _PyBytes_Resize(&result, strlen(buf));  // result is set to NULL on failure
-    return result;
+    _PyBytes_Resize(&res, strlen(buf));  // 'res' is set to NULL on failure
+    return res;
 }
 
 /*[clinic input]
@@ -2051,7 +2051,7 @@ PyCursesWindow_instr(PyObject *op, PyObject *args)
     PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
     int rtn, use_xy = 0, y = 0, x = 0;
     unsigned int n = max_buf_size - 1;
-    PyObject *result;
+    PyObject *res;
 
     if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
                                            "_curses.window.instr"))
@@ -2060,11 +2060,11 @@ PyCursesWindow_instr(PyObject *op, PyObject *args)
     }
 
     n = Py_MIN(n, max_buf_size - 1);
-    result = PyBytes_FromStringAndSize(NULL, n + 1);
-    if (result == NULL) {
+    res = PyBytes_FromStringAndSize(NULL, n + 1);
+    if (res == NULL) {
         return NULL;
     }
-    char *buf = PyBytes_AS_STRING(result);
+    char *buf = PyBytes_AS_STRING(res);
 
     if (use_xy) {
         rtn = mvwinnstr(self->win, y, x, buf, n);
@@ -2074,11 +2074,11 @@ PyCursesWindow_instr(PyObject *op, PyObject *args)
     }
 
     if (rtn == ERR) {
-        Py_DECREF(result);
+        Py_DECREF(res);
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
-    _PyBytes_Resize(&result, strlen(buf));  // result is set to NULL on failure
-    return result;
+    _PyBytes_Resize(&res, strlen(buf));  // 'res' is set to NULL on failure
+    return res;
 }
 
 /*[clinic input]
