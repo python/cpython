@@ -68,6 +68,12 @@ terms of the MIT license. A copy of the license can be found in the file
 #else
 #define mi_decl_cold
 #endif
+
+#if (defined(__GNUC__) && defined(__THROW))
+#define mi_decl_throw           __THROW
+#else
+#define mi_decl_throw
+#endif
 #endif
 
 // ------------------------------------------------------
@@ -602,7 +608,7 @@ struct mi_heap_s {
 
 #if (MI_DEBUG)
 // use our own assertion to print without memory allocation
-mi_decl_noreturn mi_decl_cold
+mi_decl_noreturn mi_decl_cold mi_decl_throw
 void _mi_assert_fail(const char* assertion, const char* fname, unsigned int line, const char* func);
 #define mi_assert(expr)     ((expr) ? (void)0 : _mi_assert_fail(#expr,__FILE__,__LINE__,__func__))
 #else
