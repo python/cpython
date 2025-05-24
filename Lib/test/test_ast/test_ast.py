@@ -3292,6 +3292,7 @@ class CommandLineTests(unittest.TestCase):
         expect = self.text_normalize(expect)
         self.assertEqual(res, expect)
 
+    @support.requires_resource('cpu')
     def test_invocation(self):
         # test various combinations of parameters
         base_flags = (
