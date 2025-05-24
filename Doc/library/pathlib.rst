@@ -1210,9 +1210,10 @@ Querying file type and status
    any filesystem queries.
 
    To fetch up-to-date information, it's best to call :meth:`Path.is_dir`,
-   :meth:`~Path.is_file` and :meth:`~Path.is_symlink` rather than methods of
-   this attribute. There is no way to reset the cache; instead you can create
-   a new path object with an empty info cache via ``p = Path(p)``.
+   :meth:`~Path.is_file`, :meth:`~Path.is_symlink`, and
+   :meth:`~Path.is_junction` rather than methods of this attribute. There is
+   no way to reset the cache; instead you can create a new path object with an
+   empty info cache via ``p = Path(p)``.
 
    .. versionadded:: 3.14
 
@@ -1992,3 +1993,8 @@ The :mod:`pathlib.types` module provides types for static type checking.
       Return ``True`` if the path is a symbolic link (even if broken); return
       ``False`` if the path is a directory or any kind of file, or if it
       doesn't exist.
+
+   .. method:: is_junction()
+
+      Return ``True`` if the path is a junction; return ``False`` for any
+      other type of file. Currently only Windows supports junctions.
