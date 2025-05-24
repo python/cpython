@@ -82,10 +82,10 @@
  */
 
 typedef enum Py_hash_type {
-    Py_ht_evp_md,               // usedforsecurity=True / default
-    Py_ht_evp_md_nosecurity,    // usedforsecurity=False
-    Py_ht_mac,                  // HMAC
-    Py_ht_pbkdf2,               // PKBDF2
+    Py_ht_evp,              // usedforsecurity=True / default
+    Py_ht_evp_nosecurity,   // usedforsecurity=False
+    Py_ht_mac,              // HMAC
+    Py_ht_pbkdf2,           // PKBDF2
 } Py_hash_type;
 
 typedef struct {
@@ -416,7 +416,7 @@ get_openssl_evp_md_by_utf8name(PyObject *module, const char *name,
 
     if (entry != NULL) {
         switch (py_ht) {
-        case Py_ht_evp_md:
+        case Py_ht_evp:
         case Py_ht_mac:
         case Py_ht_pbkdf2:
             digest = FT_ATOMIC_LOAD_PTR_RELAXED(entry->evp_md);
@@ -430,7 +430,7 @@ get_openssl_evp_md_by_utf8name(PyObject *module, const char *name,
 #endif
             }
             break;
-        case Py_ht_evp_md_nosecurity:
+        case Py_ht_evp_nosecurity:
             digest = FT_ATOMIC_LOAD_PTR_RELAXED(entry->evp_md_nosecurity);
             if (digest == NULL) {
                 digest = PY_EVP_MD_fetch(entry->ossl_name, "-fips");
@@ -453,12 +453,12 @@ get_openssl_evp_md_by_utf8name(PyObject *module, const char *name,
     } else {
         // Fall back for looking up an unindexed OpenSSL specific name.
         switch (py_ht) {
-        case Py_ht_evp_md:
+        case Py_ht_evp:
         case Py_ht_mac:
         case Py_ht_pbkdf2:
             digest = PY_EVP_MD_fetch(name, NULL);
             break;
-        case Py_ht_evp_md_nosecurity:
+        case Py_ht_evp_nosecurity:
             digest = PY_EVP_MD_fetch(name, "-fips");
             break;
         }
@@ -979,7 +979,7 @@ _hashlib_HASH(PyObject *module, const char *digestname, PyObject *data_obj,
     }
 
     digest = get_openssl_evp_md_by_utf8name(
-        module, digestname, usedforsecurity ? Py_ht_evp_md : Py_ht_evp_md_nosecurity
+        module, digestname, usedforsecurity ? Py_ht_evp : Py_ht_evp_nosecurity
     );
     if (digest == NULL) {
         goto exit;
