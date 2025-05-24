@@ -152,7 +152,7 @@ from dataclasses import dataclass, field
 from io import BytesIO
 from operator import itemgetter
 
-__version__ = '1.5'
+__version__ = '3.15'
 
 
 # The normal pot-file header. msgmerge and Emacs's po-mode work better if it's
@@ -387,7 +387,7 @@ def unparse_spec(name, spec):
             parts.append(f'{pos + 1}c')
         else:
             parts.append(str(pos + 1))
-    return f'{name}:{','.join(parts)}'
+    return f'{name}:{",".join(parts)}'
 
 
 def process_keywords(keywords, *, no_default_keywords):
