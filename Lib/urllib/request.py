@@ -1879,8 +1879,8 @@ def getproxies_environment():
                 proxies[proxy_name] = value
     # CVE-2016-1000110 - If we are running as CGI script, forget HTTP_PROXY
     # (non-all-lowercase) as it may be set from the web server by a "Proxy:"
-    # header from the client
-    # If "proxy" is lowercase, it will still be used thanks to the next block
+    # header from the client.
+    # The below check it and only accepts the lowercase "_proxy"
     if 'REQUEST_METHOD' in os.environ:
         proxies.pop('http', None)
     for name, value, proxy_name in environment:
@@ -2110,7 +2110,7 @@ elif os.name == 'nt':
         """
         return getproxies_environment() or getproxies_registry()
 
-    def proxy_bypass_registry(host):
+    def getproxy_bypass_registry():
         try:
             import winreg
         except ImportError:
@@ -2128,20 +2128,26 @@ elif os.name == 'nt':
             return False
         if not proxyEnable or not proxyOverride:
             return False
-        return _proxy_bypass_winreg_override(host, proxyOverride)
 
-    def proxy_bypass(host):
+        return proxyOverride
+
+    def proxy_bypass_registry(host, proxy_override=None):
+        if proxy_override := proxy_override or getproxy_bypass_registry():
+            return _proxy_bypass_winreg_override(host, proxy_override)
+        return False
+
+    def proxy_bypass(host, env_proxies=None, proxy_override=None):
         """Return True, if host should be bypassed.
 
         Checks proxy settings gathered from the environment, if specified,
         or the registry.
 
         """
-        proxies = getproxies_environment()
-        if proxies:
+        if proxies := env_proxies or getproxies_environment():
             return proxy_bypass_environment(host, proxies)
         else:
-            return proxy_bypass_registry(host)
+            proxy_override = proxy_override or getproxy_bypass_registry()
+            return proxy_bypass_registry(host, proxy_override)
 
 else:
     # By default use environment variables
