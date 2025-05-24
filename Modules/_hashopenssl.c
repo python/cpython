@@ -81,12 +81,12 @@
  * py_alias as keys.
  */
 
-enum Py_hash_type {
+typedef enum Py_hash_type {
     Py_ht_evp,            // usedforsecurity=True / default
     Py_ht_evp_nosecurity, // usedforsecurity=False
     Py_ht_mac,            // HMAC
     Py_ht_pbkdf2,         // PKBDF2
-};
+} Py_hash_type;
 
 typedef struct {
     const char *py_name;
@@ -398,7 +398,7 @@ py_digest_name(const EVP_MD *md)
 
 /* Get EVP_MD by HID and purpose */
 static PY_EVP_MD*
-py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
+py_digest_by_name(PyObject *module, const char *name, Py_hash_type py_ht)
 {
     PY_EVP_MD *digest = NULL;
     PY_EVP_MD *other_digest = NULL;
@@ -472,7 +472,7 @@ py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
  * on error returns NULL with exception set.
  */
 static PY_EVP_MD*
-py_digest_by_digestmod(PyObject *module, PyObject *digestmod, enum Py_hash_type py_ht) {
+py_digest_by_digestmod(PyObject *module, PyObject *digestmod, Py_hash_type py_ht) {
     PyObject *name_obj = NULL;
     const char *name;
 
