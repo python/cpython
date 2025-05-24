@@ -37,9 +37,6 @@ import codecs
 __version__ = "1.2"
 
 
-MESSAGES = {}
-
-
 def usage(code, msg=''):
     print(__doc__, file=sys.stderr)
     if msg:
@@ -47,29 +44,27 @@ def usage(code, msg=''):
     sys.exit(code)
 
 
-def add(ctxt, id, str, fuzzy):
+def add(messages, ctxt, id, str, fuzzy):
     "Add a non-fuzzy translation to the dictionary."
-    global MESSAGES
     if not fuzzy and str:
         if ctxt is None:
-            MESSAGES[id] = str
+            messages[id] = str
         else:
-            MESSAGES[b"%b\x04%b" % (ctxt, id)] = str
+            messages[b"%b\x04%b" % (ctxt, id)] = str
 
 
-def generate():
+def generate(messages):
     "Return the generated output."
-    global MESSAGES
     # the keys are sorted in the .mo file
-    keys = sorted(MESSAGES.keys())
+    keys = sorted(messages.keys())
     offsets = []
     ids = strs = b''
     for id in keys:
         # For each string, we need size and file offset.  Each string is NUL
         # terminated; the NUL does not count into the size.
-        offsets.append((len(ids), len(id), len(strs), len(MESSAGES[id])))
+        offsets.append((len(ids), len(id), len(strs), len(messages[id])))
         ids += id + b'\0'
-        strs += MESSAGES[id] + b'\0'
+        strs += messages[id] + b'\0'
     output = ''
     # The header is 7 32-bit unsigned integers.  We don't use hash tables, so
     # the keys start right after the index tables.
@@ -99,6 +94,7 @@ def generate():
 
 
 def make(filename, outfile):
+    messages = {}
     ID = 1
     STR = 2
     CTXT = 3
@@ -140,7 +136,7 @@ def make(filename, outfile):
         lno += 1
         # If we get a comment line after a msgstr, this is a new entry
         if l[0] == '#' and section == STR:
-            add(msgctxt, msgid, msgstr, fuzzy)
+            add(messages, msgctxt, msgid, msgstr, fuzzy)
             section = msgctxt = None
             fuzzy = 0
         # Record a fuzzy mark
@@ -152,7 +148,7 @@ def make(filename, outfile):
         # Now we are in a msgid or msgctxt section, output previous section
         if l.startswith('msgctxt'):
             if section == STR:
-                add(msgctxt, msgid, msgstr, fuzzy)
+                add(messages, msgctxt, msgid, msgstr, fuzzy)
             section = CTXT
             l = l[7:]
             msgctxt = b''
@@ -169,7 +165,7 @@ def make(filename, outfile):
                     charset = p.parsestr(msgstr.decode(encoding)).get_content_charset()
                     if charset:
                         encoding = charset
-                add(msgctxt, msgid, msgstr, fuzzy)
+                add(messages, msgctxt, msgid, msgstr, fuzzy)
                 msgctxt = None
             section = ID
             l = l[5:]
@@ -219,10 +215,10 @@ def make(filename, outfile):
             sys.exit(1)
     # Add last entry
     if section == STR:
-        add(msgctxt, msgid, msgstr, fuzzy)
+        add(messages, msgctxt, msgid, msgstr, fuzzy)
 
     # Compute output
-    output = generate()
+    output = generate(messages)
 
     try:
         with open(outfile,"wb") as f:
