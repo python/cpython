@@ -11,7 +11,6 @@ from test.support.import_helper import ensure_lazy_imports
 
 
 # TODO:
-#  - Add new tests, for example for "dgettext"
 #  - Tests should have only one assert.
 
 GNU_MO_DATA = b'''\
@@ -935,6 +934,42 @@ class MiscTestCase(unittest.TestCase):
     @cpython_only
     def test_lazy_import(self):
         ensure_lazy_imports("gettext", {"re", "warnings", "locale"})
+
+
+class DGettextTest(unittest.TestCase):
+
+    def setUp(self):
+        self.localedir = self.enterContext(os_helper.temp_dir())
+        self.domain = 'gettext_domain'
+        self.mofile = self.setup_dgettext_test_env()
+
+    def setup_dgettext_test_env(self):
+        os.makedirs(os.path.join(self.localedir, 'en', 'LC_MESSAGES'), exist_ok=True)
+        mofile = os.path.join(self.localedir, 'en', 'LC_MESSAGES', f'{self.domain}.mo')
+        with open(mofile, 'wb') as fp:
+            fp.write(b'\x00\x00\x00\x00')
+        return mofile
+
+    def test_dgettext_found_translation(self):
+        gettext.bindtextdomain(self.domain, self.localedir)
+        with unittest.mock.patch('gettext.dgettext') as mock_dgettext:
+            mock_dgettext.return_value = 'test message translation'
+            result = gettext.dgettext(self.domain, 'test message')
+            self.assertEqual(result, 'test message translation')
+
+    def test_dgettext_missing_translation(self):
+        gettext.bindtextdomain(self.domain, self.localedir)
+        result = gettext.dgettext(self.domain, 'missing message')
+        self.assertEqual(result, 'missing message')
+
+    def test_dgettext_non_existent_domain(self):
+        result = gettext.dgettext('nonexistent_domain', 'test message')
+        self.assertEqual(result, 'test message')
+
+    def test_dgettext_empty_domain(self):
+        result = gettext.dgettext('', 'test message')
+        expected = gettext.gettext('test message')
+        self.assertEqual(result, expected)
 
 
 if __name__ == '__main__':
