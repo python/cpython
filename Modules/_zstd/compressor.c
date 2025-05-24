@@ -138,7 +138,7 @@ _zstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
         }
         return 0;
     }
-    PyErr_Format(PyExc_TypeError, 
+    PyErr_Format(PyExc_TypeError,
                  "Invalid type for %s. Expected %s", arg_name, arg_type);
     return -1;
 }
