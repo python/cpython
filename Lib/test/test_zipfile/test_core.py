@@ -1390,18 +1390,20 @@ class RepackHelperMixin:
         return zinfos
 
 class AbstractRemoveTests(RepackHelperMixin):
-    def test_remove_by_name(self):
-        test_files = [
+    @classmethod
+    def setUpClass(self):
+        self.test_files = [
             ('file0.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
             ('file1.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
             ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
         ]
 
+    def test_remove_by_name(self):
         for i in range(0, 3):
-            with self.subTest(i=i, filename=test_files[i][0]):
-                zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
+            with self.subTest(i=i, filename=self.test_files[i][0]):
+                zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
-                    zh.remove(test_files[i][0])
+                    zh.remove(self.test_files[i][0])
 
                     # check infolist
                     self.assertEqual(
@@ -1411,21 +1413,15 @@ class AbstractRemoveTests(RepackHelperMixin):
 
                     # check NameToInfo cache
                     with self.assertRaises(KeyError):
-                        zh.getinfo(test_files[i][0])
+                        zh.getinfo(self.test_files[i][0])
 
                     # make sure the zip file is still valid
                     self.assertIsNone(zh.testzip())
 
     def test_remove_by_zinfo(self):
-        test_files = [
-            ('file0.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
-            ('file1.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
-            ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
-        ]
-
         for i in range(0, 3):
-            with self.subTest(i=i, filename=test_files[i][0]):
-                zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
+            with self.subTest(i=i, filename=self.test_files[i][0]):
+                zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     zh.remove(zh.infolist()[i])
 
@@ -1437,31 +1433,19 @@ class AbstractRemoveTests(RepackHelperMixin):
 
                     # check NameToInfo cache
                     with self.assertRaises(KeyError):
-                        zh.getinfo(test_files[i][0])
+                        zh.getinfo(self.test_files[i][0])
 
                     # make sure the zip file is still valid
                     self.assertIsNone(zh.testzip())
 
     def test_remove_by_name_nonexist(self):
-        test_files = [
-            ('file0.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
-            ('file1.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
-            ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
-        ]
-
-        zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
+        zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files)
         with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
             with self.assertRaises(KeyError):
                 zh.remove('nonexist.txt')
 
     def test_remove_by_zinfo_nonexist(self):
-        test_files = [
-            ('file0.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
-            ('file1.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
-            ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
-        ]
-
-        zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
+        zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files)
         with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
             with self.assertRaises(KeyError):
                 zh.remove(zipfile.ZipInfo('nonexist.txt'))
@@ -1583,15 +1567,9 @@ class AbstractRemoveTests(RepackHelperMixin):
                 self.assertIsNone(zh.testzip())
 
     def test_remove_zip64(self):
-        test_files = [
-            ('pre.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
-            ('datafile', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
-            ('post.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
-        ]
-
         for i in range(0, 3):
-            with self.subTest(i=i, filename=test_files[i][0]):
-                zinfos = self._prepare_zip_from_test_files(TESTFN, test_files, force_zip64=True)
+            with self.subTest(i=i, filename=self.test_files[i][0]):
+                zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files, force_zip64=True)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     zh.remove(zh.infolist()[i])
 
@@ -1603,7 +1581,7 @@ class AbstractRemoveTests(RepackHelperMixin):
 
                     # check NameToInfo cache
                     with self.assertRaises(KeyError):
-                        zh.getinfo(test_files[i][0])
+                        zh.getinfo(self.test_files[i][0])
 
                     # make sure the zip file is still valid
                     self.assertIsNone(zh.testzip())
@@ -1655,28 +1633,30 @@ class ZstdRemoveTests(AbstractRemoveTests, unittest.TestCase):
     compression = zipfile.ZIP_ZSTANDARD
 
 class AbstractRepackTests(RepackHelperMixin):
-    def test_repack_basic(self):
-        """Should remove local file entries for deleted files."""
-        test_files = [
+    @classmethod
+    def setUpClass(self):
+        self.test_files = [
             ('file0.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
             ('file1.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
             ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
         ]
 
-        ln = len(test_files)
+    def test_repack_basic(self):
+        """Should remove local file entries for deleted files."""
+        ln = len(self.test_files)
         iii = (ii for n in range(1, ln + 1) for ii in itertools.combinations(range(ln), n))
         for ii in iii:
             with self.subTest(remove=ii):
                 # calculate the expected results
-                _test_files = [data for j, data in enumerate(test_files) if j not in ii]
-                expected_zinfos = self._prepare_zip_from_test_files(TESTFN, _test_files)
+                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
+                expected_zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
-                zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
+                zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     for i in ii:
-                        zh.remove(test_files[i][0])
+                        zh.remove(self.test_files[i][0])
                     zh.repack()
 
                     # check infolist
@@ -1693,28 +1673,22 @@ class AbstractRepackTests(RepackHelperMixin):
 
     def test_repack_bytes_before_first_file(self):
         """Should preserve random bytes before the first recorded local file entry."""
-        test_files = [
-            ('file0.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
-            ('file1.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
-            ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
-        ]
-
         for ii in ([], [0], [0, 1], [0, 1, 2]):
             with self.subTest(remove=ii):
                 # calculate the expected results
-                _test_files = [data for j, data in enumerate(test_files) if j not in ii]
+                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
                 with open(TESTFN, 'wb') as fh:
                     fh.write(b'dummy ')
-                    expected_zinfos = self._prepare_zip_from_test_files(fh, _test_files)
+                    expected_zinfos = self._prepare_zip_from_test_files(fh, test_files)
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
                 with open(TESTFN, 'wb') as fh:
                     fh.write(b'dummy ')
-                    zinfos = self._prepare_zip_from_test_files(fh, test_files)
+                    zinfos = self._prepare_zip_from_test_files(fh, self.test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     for i in ii:
-                        zh.remove(test_files[i][0])
+                        zh.remove(self.test_files[i][0])
                     zh.repack()
 
                     # check infolist
@@ -1732,28 +1706,22 @@ class AbstractRepackTests(RepackHelperMixin):
     def test_repack_magic_before_first_file(self):
         """Should preserve random signature bytes not forming a valid file entry
         before the first recorded local file entry."""
-        test_files = [
-            ('file0.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
-            ('file1.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
-            ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
-        ]
-
         for ii in ([], [0], [0, 1], [0, 1, 2]):
             with self.subTest(remove=ii):
                 # calculate the expected results
-                _test_files = [data for j, data in enumerate(test_files) if j not in ii]
+                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
                 with open(TESTFN, 'wb') as fh:
                     fh.write(b'PK\003\004 ')
-                    expected_zinfos = self._prepare_zip_from_test_files(fh, _test_files)
+                    expected_zinfos = self._prepare_zip_from_test_files(fh, test_files)
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
                 with open(TESTFN, 'wb') as fh:
                     fh.write(b'PK\003\004 ')
-                    zinfos = self._prepare_zip_from_test_files(fh, test_files)
+                    zinfos = self._prepare_zip_from_test_files(fh, self.test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     for i in ii:
-                        zh.remove(test_files[i][0])
+                        zh.remove(self.test_files[i][0])
                     zh.repack()
 
                     # check infolist
@@ -1775,21 +1743,15 @@ class AbstractRepackTests(RepackHelperMixin):
         This may happen whan a self-extractor contains an uncompressed ZIP
         library. (simulated by writing a ZIP file in this test)
         """
-        test_files = [
-            ('file0.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
-            ('file1.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
-            ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
-        ]
-
         for ii in ([], [0], [0, 1], [0, 1, 2]):
             with self.subTest(remove=ii):
                 # calculate the expected results
-                _test_files = [data for j, data in enumerate(test_files) if j not in ii]
+                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
                 with open(TESTFN, 'wb') as fh:
                     with zipfile.ZipFile(fh, 'w') as zh:
                         zh.writestr('file.txt', b'dummy')
                     fh.write(b' ')
-                    expected_zinfos = self._prepare_zip_from_test_files(fh, _test_files)
+                    expected_zinfos = self._prepare_zip_from_test_files(fh, test_files)
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
@@ -1797,10 +1759,10 @@ class AbstractRepackTests(RepackHelperMixin):
                     with zipfile.ZipFile(fh, 'w') as zh:
                         zh.writestr('file.txt', b'dummy')
                     fh.write(b' ')
-                    zinfos = self._prepare_zip_from_test_files(fh, test_files)
+                    zinfos = self._prepare_zip_from_test_files(fh, self.test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     for i in ii:
-                        zh.remove(test_files[i][0])
+                        zh.remove(self.test_files[i][0])
                     zh.repack()
 
                     # check infolist
@@ -1817,24 +1779,18 @@ class AbstractRepackTests(RepackHelperMixin):
 
     def test_repack_zip64(self):
         """Should correctly handle file entries with zip64."""
-        test_files = [
-            ('pre.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
-            ('datafile', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
-            ('post.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
-        ]
-
         for ii in ([0], [0, 1], [1], [2]):
             with self.subTest(remove=ii):
                 # calculate the expected results
-                _test_files = [data for j, data in enumerate(test_files) if j not in ii]
-                expected_zinfos = self._prepare_zip_from_test_files(TESTFN, _test_files, force_zip64=True)
+                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
+                expected_zinfos = self._prepare_zip_from_test_files(TESTFN, test_files, force_zip64=True)
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
-                zinfos = self._prepare_zip_from_test_files(TESTFN, test_files, force_zip64=True)
+                zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files, force_zip64=True)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     for i in ii:
-                        zh.remove(test_files[i][0])
+                        zh.remove(self.test_files[i][0])
                     zh.repack()
 
                     # check infolist
@@ -1851,30 +1807,24 @@ class AbstractRepackTests(RepackHelperMixin):
 
     def test_repack_data_descriptor(self):
         """Should correctly handle file entries using data descriptor."""
-        test_files = [
-            ('file0.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
-            ('file1.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
-            ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
-        ]
-
         for ii in ([0], [0, 1], [1], [2]):
             with self.subTest(remove=ii):
                 # calculate the expected results
-                _test_files = [data for j, data in enumerate(test_files) if j not in ii]
+                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
                 with open(TESTFN, 'wb') as fh:
-                    expected_zinfos = self._prepare_zip_from_test_files(Unseekable(fh), _test_files)
+                    expected_zinfos = self._prepare_zip_from_test_files(Unseekable(fh), test_files)
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
                 with open(TESTFN, 'wb') as fh:
-                    zinfos = self._prepare_zip_from_test_files(Unseekable(fh), test_files)
+                    zinfos = self._prepare_zip_from_test_files(Unseekable(fh), self.test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     # make sure data descriptor bit is really set (by making zipfile unseekable)
                     for zi in zh.infolist():
                         self.assertTrue(zi.flag_bits & 8, f'data descriptor not used: {zi.filename}')
 
                     for i in ii:
-                        zh.remove(test_files[i][0])
+                        zh.remove(self.test_files[i][0])
                     zh.repack()
 
                     # check infolist
@@ -1891,30 +1841,24 @@ class AbstractRepackTests(RepackHelperMixin):
 
     def test_repack_data_descriptor_and_zip64(self):
         """Should correctly handle file entries using data descriptor and zip64."""
-        test_files = [
-            ('file0.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
-            ('file1.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
-            ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
-        ]
-
         for ii in ([0], [0, 1], [1], [2]):
             with self.subTest(remove=ii):
                 # calculate the expected results
-                _test_files = [data for j, data in enumerate(test_files) if j not in ii]
+                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
                 with open(TESTFN, 'wb') as fh:
-                    expected_zinfos = self._prepare_zip_from_test_files(Unseekable(fh), _test_files, force_zip64=True)
+                    expected_zinfos = self._prepare_zip_from_test_files(Unseekable(fh), test_files, force_zip64=True)
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
                 with open(TESTFN, 'wb') as fh:
-                    zinfos = self._prepare_zip_from_test_files(Unseekable(fh), test_files, force_zip64=True)
+                    zinfos = self._prepare_zip_from_test_files(Unseekable(fh), self.test_files, force_zip64=True)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     # make sure data descriptor bit is really set (by making zipfile unseekable)
                     for zi in zh.infolist():
                         self.assertTrue(zi.flag_bits & 8, f'data descriptor not used: {zi.filename}')
 
                     for i in ii:
-                        zh.remove(test_files[i][0])
+                        zh.remove(self.test_files[i][0])
                     zh.repack()
 
                     # check infolist
@@ -1931,32 +1875,26 @@ class AbstractRepackTests(RepackHelperMixin):
 
     def test_repack_data_descriptor_no_sig(self):
         """Should correctly handle file entries using data descriptor without signature."""
-        test_files = [
-            ('file0.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
-            ('file1.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
-            ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
-        ]
-
         for ii in ([0], [0, 1], [1], [2]):
             with self.subTest(remove=ii):
                 # calculate the expected results
-                _test_files = [data for j, data in enumerate(test_files) if j not in ii]
+                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
                 with open(TESTFN, 'wb') as fh:
                     with mock.patch('zipfile.struct.pack', side_effect=struct_pack_no_dd_sig):
-                        expected_zinfos = self._prepare_zip_from_test_files(Unseekable(fh), _test_files)
+                        expected_zinfos = self._prepare_zip_from_test_files(Unseekable(fh), test_files)
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
                 with open(TESTFN, 'wb') as fh:
                     with mock.patch('zipfile.struct.pack', side_effect=struct_pack_no_dd_sig):
-                        zinfos = self._prepare_zip_from_test_files(Unseekable(fh), test_files)
+                        zinfos = self._prepare_zip_from_test_files(Unseekable(fh), self.test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     # make sure data descriptor bit is really set (by making zipfile unseekable)
                     for zi in zh.infolist():
                         self.assertTrue(zi.flag_bits & 8, f'data descriptor flag not set: {zi.filename}')
 
                     for i in ii:
-                        zh.remove(test_files[i][0])
+                        zh.remove(self.test_files[i][0])
                     zh.repack()
 
                     # check infolist
@@ -1973,32 +1911,26 @@ class AbstractRepackTests(RepackHelperMixin):
 
     def test_repack_data_descriptor_no_sig_and_zip64(self):
         """Should correctly handle file entries using data descriptor without signature and zip64."""
-        test_files = [
-            ('file0.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
-            ('file1.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
-            ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
-        ]
-
         for ii in ([0], [0, 1], [1], [2]):
             with self.subTest(remove=ii):
                 # calculate the expected results
-                _test_files = [data for j, data in enumerate(test_files) if j not in ii]
+                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
                 with open(TESTFN, 'wb') as fh:
                     with mock.patch('zipfile.struct.pack', side_effect=struct_pack_no_dd_sig):
-                        expected_zinfos = self._prepare_zip_from_test_files(Unseekable(fh), _test_files, force_zip64=True)
+                        expected_zinfos = self._prepare_zip_from_test_files(Unseekable(fh), test_files, force_zip64=True)
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
                 with open(TESTFN, 'wb') as fh:
                     with mock.patch('zipfile.struct.pack', side_effect=struct_pack_no_dd_sig):
-                        zinfos = self._prepare_zip_from_test_files(Unseekable(fh), test_files, force_zip64=True)
+                        zinfos = self._prepare_zip_from_test_files(Unseekable(fh), self.test_files, force_zip64=True)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     # make sure data descriptor bit is really set (by making zipfile unseekable)
                     for zi in zh.infolist():
                         self.assertTrue(zi.flag_bits & 8, f'data descriptor flag not set: {zi.filename}')
 
                     for i in ii:
-                        zh.remove(test_files[i][0])
+                        zh.remove(self.test_files[i][0])
                     zh.repack()
 
                     # check infolist
