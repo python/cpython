@@ -308,6 +308,15 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         requestline = str(self.raw_requestline, 'iso-8859-1')
         requestline = requestline.rstrip('\r\n')
         self.requestline = requestline
+
+        # Detect TLS handshake attempt (common when browser forces HTTPS)
+        if self.raw_requestline[0] == 0x16:  # First TLS handshake bytes
+            self.requestline = "[TLS handshake bytes]"
+            self.send_error(
+                HTTPStatus.BAD_REQUEST,
+                "Unsupported protocol: HTTPS is not available")
+            return False
+
         words = requestline.split()
         if len(words) == 0:
             return False
