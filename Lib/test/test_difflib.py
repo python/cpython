@@ -255,21 +255,21 @@ class TestSFpatches(unittest.TestCase):
         html_diff = difflib.HtmlDiff()
         output = html_diff.make_file(patch914575_from1.splitlines(),
                                      patch914575_to1.splitlines())
-        self.assertIn('content="text/html; charset=utf-8"', output)
+        self.assertIn('charset="utf-8"', output)
 
     def test_make_file_iso88591_charset(self):
         html_diff = difflib.HtmlDiff()
         output = html_diff.make_file(patch914575_from1.splitlines(),
                                      patch914575_to1.splitlines(),
                                      charset='iso-8859-1')
-        self.assertIn('content="text/html; charset=iso-8859-1"', output)
+        self.assertIn('charset="iso-8859-1"', output)
 
     def test_make_file_usascii_charset_with_nonascii_input(self):
         html_diff = difflib.HtmlDiff()
         output = html_diff.make_file(patch914575_nonascii_from1.splitlines(),
                                      patch914575_nonascii_to1.splitlines(),
                                      charset='us-ascii')
-        self.assertIn('content="text/html; charset=us-ascii"', output)
+        self.assertIn('charset="us-ascii"', output)
         self.assertIn('&#305;mpl&#305;c&#305;t', output)
 
 class TestDiffer(unittest.TestCase):
