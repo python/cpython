@@ -731,10 +731,11 @@ message objects.
 
    .. attribute:: defects
 
-      The *defects* attribute contains a list of all the problems found when
-      parsing this message.  See :mod:`email.errors` for a detailed description
-      of the possible parsing defects.
-
+      The *defects* attribute contains a list of problems found when parsing
+      this message, excluding defects in message headers, as they are parsed
+      and detected only when accessed. See :mod:`email.errors` for a detailed
+      description of the possible parsing defects and :attr:`BaseHeader.defects
+      <email.headerregistry.BaseHeader.defects>` for defects in headers.
 
 .. class:: MIMEPart(policy=default)
 
