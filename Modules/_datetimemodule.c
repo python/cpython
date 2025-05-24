@@ -6869,6 +6869,20 @@ datetime_timestamp(PyObject *op, PyObject *Py_UNUSED(dummy))
         result = delta_total_seconds(delta, NULL);
         Py_DECREF(delta);
     }
+#ifdef MS_WINDOWS
+    else if (GET_YEAR(self) < 1970) {
+        PyObject *naive_epoch = new_datetime(1970, 1, 1, 0, 0, 0, 0, Py_None, 0);
+        if (naive_epoch == NULL) {
+            return NULL;
+        }
+        PyObject *delta = datetime_subtract(op, naive_epoch);
+        Py_DECREF(naive_epoch);
+        if (delta == NULL)
+            return NULL;
+        result = delta_total_seconds(delta, NULL);
+        Py_DECREF(delta);
+    }
+#endif
     else {
         long long seconds;
         seconds = local_to_seconds(GET_YEAR(self),
