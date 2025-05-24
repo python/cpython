@@ -9404,7 +9404,7 @@ printf "%s\n" "$BOLT_INSTRUMENT_FLAGS" >&6; }
 printf %s "checking BOLT_APPLY_FLAGS... " >&6; }
 if test -z "${BOLT_APPLY_FLAGS}"
 then
-  BOLT_APPLY_FLAGS=" ${BOLT_COMMON_FLAGS} -reorder-blocks=ext-tsp -reorder-functions=cdsort -split-functions -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot "
+  BOLT_APPLY_FLAGS=" ${BOLT_COMMON_FLAGS} -reorder-blocks=ext-tsp -reorder-functions=cdsort -split-functions -split-all-cold -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot "
 
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $BOLT_APPLY_FLAGS" >&5
