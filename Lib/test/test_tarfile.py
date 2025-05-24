@@ -1680,10 +1680,8 @@ class WriteTest(WriteTestBase, unittest.TestCase):
                 tar.addfile(tarinfo)
 
     @unittest.skipUnless(os_helper.can_symlink(), 'requires symlink support')
-    @unittest.mock.patch('os.chown')
-    @unittest.mock.patch('os.utime')
     @unittest.mock.patch('os.chmod')
-    def test_deferred_directory_attributes_update(self, mock_chmod, mock_utime, mock_chown):
+    def test_deferred_directory_attributes_update(self, mock_chmod):
         # Regression test for gh-127987: setting attributes on arbitrary files
         tempdir = os.path.join(TEMPDIR, 'test127987')
         def mock_chmod_side_effect(path, mode, **kwargs):
