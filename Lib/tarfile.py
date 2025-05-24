@@ -2399,7 +2399,7 @@ class TarFile(object):
                 # if it was changed during extraction.
                 dirpath = os.path.join(path, tarinfo.name)
                 dirpath = self._transform_destination_path(dirpath)
-                targetstat = os.stat(dirpath)
+                targetstat = os.stat(dirpath, follow_symlinks=False)
                 directories.append((tarinfo, dirpath, targetstat.st_ino,
                                     targetstat.st_dev))
 
@@ -2408,7 +2408,7 @@ class TarFile(object):
 
         # Set correct owner, mtime and filemode on directories.
         for tarinfo, dirpath, original_ino, original_dev in directories:
-            dirstat = os.stat(dirpath)
+            dirstat = os.stat(dirpath, follow_symlinks=False)
             if (dirstat.st_ino != original_ino or
                 dirstat.st_dev != original_dev):
                 self._dbg(1, "tarfile: Directory renamed before its " \
