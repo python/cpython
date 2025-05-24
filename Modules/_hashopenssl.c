@@ -512,7 +512,7 @@ get_openssl_evp_md(PyObject *module, PyObject *digestmod,
 }
 
 static HASHobject *
-_hashlib_HASH_alloc(PyTypeObject *type)
+new_hash_object(PyTypeObject *type)
 {
     HASHobject *retval = PyObject_New(HASHobject, type);
     if (retval == NULL) {
@@ -586,7 +586,7 @@ _hashlib_HASH_copy_impl(HASHobject *self)
 {
     HASHobject *newobj;
 
-    if ((newobj = _hashlib_HASH_alloc(Py_TYPE(self))) == NULL)
+    if ((newobj = new_hash_object(Py_TYPE(self))) == NULL)
         return NULL;
 
     if (!_hashlib_HASH_copy_locked(self, newobj->ctx)) {
@@ -992,7 +992,7 @@ _hashlib_HASH(PyObject *module, const char *digestname, PyObject *data_obj,
         type = get_hashlib_state(module)->HASH_type;
     }
 
-    self = _hashlib_HASH_alloc(type);
+    self = new_hash_object(type);
     if (self == NULL) {
         goto exit;
     }
