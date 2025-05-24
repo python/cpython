@@ -8,6 +8,22 @@
 #  error "Python's source code assumes C's unsigned char is an 8-bit type"
 #endif
 
+/*
+ * Disable keywords and operators that are not recognized by CLion.
+ *
+ * This is only a temporary solution until CLion correctly supports them.
+ */
+#ifdef __JETBRAINS_IDE__
+/*
+ * Prevents false positives in CLion's static analysis which incorrectly
+ * detects _Atomic(size_t) and _Atomic(uintptr_t) as duplicated declarations
+ * of size_t and uintptr_t respectively.
+ */
+#define _Atomic(x)  x
+
+/* Ignore C99 TLS extension '__thread' keyword. */
+#define __thread
+#endif
 
 // Preprocessor check for a builtin preprocessor function. Always return 0
 // if __has_builtin() macro is not defined.
