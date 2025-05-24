@@ -1844,7 +1844,7 @@ curses_clinic_parse_optional_xy_n(PyObject *args,
 }
 
 PyDoc_STRVAR(_curses_window_getstr__doc__,
-"getstr([[y, x,] n=1023])\n"
+"getstr([[y, x,] n=2047])\n"
 "Read a string from the user, with primitive line editing capacity.\n"
 "\n"
 "  y\n"
@@ -1857,41 +1857,48 @@ PyDoc_STRVAR(_curses_window_getstr__doc__,
 static PyObject *
 PyCursesWindow_getstr(PyObject *op, PyObject *args)
 {
+    const unsigned int max_buf_size = 2048;
     PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
-    int use_xy = 0, y = 0, x = 0;
-    unsigned int n = 1023;
-    char rtn[1024]; /* This should be big enough.. I hope */
-    int rtn2;
+    int rtn, use_xy = 0, y = 0, x = 0;
+    unsigned int n = max_buf_size - 1;
+    PyObject *result;
 
     if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
-                                           "_curses.window.getstr"))
+                                           "_curses.window.instr"))
     {
         return NULL;
     }
 
-    n = Py_MIN(n, 1023);
+    n = Py_MIN(n, max_buf_size - 1);
+    result = PyBytes_FromStringAndSize(NULL, n + 1);
+    if (result == NULL) {
+        return NULL;
+    }
+    char *buf = PyBytes_AS_STRING(result);
+
     if (use_xy) {
         Py_BEGIN_ALLOW_THREADS
 #ifdef STRICT_SYSV_CURSES
-        if (wmove(self->win, y, x) == ERR) {
-            rtn2 = ERR;
-        }
-        else {
-            rtn2 = wgetnstr(self->win, rtn, n);
-        }
+        rtn = wmove(self->win, y, x) == ERR
+            ? ERR
+            : wgetnstr(self->win, buf, n);
 #else
-        rtn2 = mvwgetnstr(self->win, y, x, rtn, n);
+        rtn = mvwgetnstr(self->win, y, x, buf, n);
 #endif
         Py_END_ALLOW_THREADS
     }
     else {
         Py_BEGIN_ALLOW_THREADS
-        rtn2 = wgetnstr(self->win, rtn, n);
+        rtn = wgetnstr(self->win, buf, n);
         Py_END_ALLOW_THREADS
     }
-    if (rtn2 == ERR)
-        rtn[0] = 0;
-    return PyBytes_FromString(rtn);
+
+    if (rtn == ERR) {
+        Py_DECREF(result);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
+    _PyBytes_Resize(&result, strlen(buf));  // result is set to NULL on failure
+    return result;
 }
 
 /*[clinic input]
@@ -2022,7 +2029,7 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
 }
 
 PyDoc_STRVAR(_curses_window_instr__doc__,
-"instr([y, x,] n=1023)\n"
+"instr([y, x,] n=2047)\n"
 "Return a string of characters, extracted from the window.\n"
 "\n"
 "  y\n"
@@ -2040,11 +2047,11 @@ PyDoc_STRVAR(_curses_window_instr__doc__,
 static PyObject *
 PyCursesWindow_instr(PyObject *op, PyObject *args)
 {
+    const unsigned int max_buf_size = 2048;
     PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
-    int use_xy = 0, y = 0, x = 0;
-    unsigned int n = 1023;
-    char rtn[1024]; /* This should be big enough.. I hope */
-    int rtn2;
+    int rtn, use_xy = 0, y = 0, x = 0;
+    unsigned int n = max_buf_size - 1;
+    PyObject *result;
 
     if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
                                            "_curses.window.instr"))
@@ -2052,16 +2059,26 @@ PyCursesWindow_instr(PyObject *op, PyObject *args)
         return NULL;
     }
 
-    n = Py_MIN(n, 1023);
+    n = Py_MIN(n, max_buf_size - 1);
+    result = PyBytes_FromStringAndSize(NULL, n + 1);
+    if (result == NULL) {
+        return NULL;
+    }
+    char *buf = PyBytes_AS_STRING(result);
+
     if (use_xy) {
-        rtn2 = mvwinnstr(self->win, y, x, rtn, n);
+        rtn = mvwinnstr(self->win, y, x, buf, n);
     }
     else {
-        rtn2 = winnstr(self->win, rtn, n);
+        rtn = winnstr(self->win, buf, n);
     }
-    if (rtn2 == ERR)
-        rtn[0] = 0;
-    return PyBytes_FromString(rtn);
+
+    if (rtn == ERR) {
+        Py_DECREF(result);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
+    _PyBytes_Resize(&result, strlen(buf));  // result is set to NULL on failure
+    return result;
 }
 
 /*[clinic input]
