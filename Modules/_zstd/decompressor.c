@@ -68,10 +68,8 @@ _get_DDict(ZstdDict *self)
 
     if (self->d_dict == NULL) {
         /* Create ZSTD_DDict instance from dictionary content */
-        char *dict_buffer = self->dict_buffer;
-        Py_ssize_t dict_len = self->dict_len;
         Py_BEGIN_ALLOW_THREADS
-        ret = ZSTD_createDDict(dict_buffer, dict_len);
+        ret = ZSTD_createDDict(self->dict_buffer, self->dict_len);
         Py_END_ALLOW_THREADS
         self->d_dict = ret;
 

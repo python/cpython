@@ -46,12 +46,21 @@ _zstd_ZstdDict_new_impl(PyTypeObject *type, Py_buffer *dict_content,
                         int is_raw)
 /*[clinic end generated code: output=685b7406a48b0949 input=9e8c493e31c98383]*/
 {
+    /* All dictionaries must be at least 8 bytes */
+    if (dict_content->len < 8) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Zstandard dictionary content should at least "
+                        "8 bytes.");
+        goto error;
+    }
+
     ZstdDict* self = PyObject_GC_New(ZstdDict, type);
     if (self == NULL) {
         return NULL;
     }
 
     self->d_dict = NULL;
+    self->dict_buffer = NULL;
     self->dict_id = 0;
     self->lock = (PyMutex){0};
 
@@ -61,36 +70,20 @@ _zstd_ZstdDict_new_impl(PyTypeObject *type, Py_buffer *dict_content,
         goto error;
     }
 
-    /* Check dict_content's type */
-    if (dict_content == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "dict_content argument should be bytes-like object.");
-        goto error;
-    }
-
-    self->dict_buffer = PyMem_RawMalloc(dict_content->len);
+    self->dict_buffer = PyMem_Malloc(dict_content->len);
     if (!self->dict_buffer) {
+        Py_DECREF(self);
         return PyErr_NoMemory();
     }
     memcpy(self->dict_buffer, dict_content->buf, dict_content->len);
     self->dict_len = dict_content->len;
 
-    /* Both ordinary and "raw content" dictionaries must be 8 bytes minimum */
-    if (self->dict_len < 8) {
-        PyErr_SetString(PyExc_ValueError,
-                        "Zstandard dictionary content should at least "
-                        "8 bytes.");
-        goto error;
-    }
-
     /* Get dict_id, 0 means "raw content" dictionary. */
-    self->dict_id = ZSTD_getDictID_fromDict(
-                                    self->dict_buffer, self->dict_len);
+    self->dict_id = ZSTD_getDictID_fromDict(self->dict_buffer, self->dict_len);
 
     /* Check validity for ordinary dictionary */
     if (!is_raw && self->dict_id == 0) {
-        char *msg = "Invalid Zstandard dictionary and is_raw not set.\n";
-        PyErr_SetString(PyExc_ValueError, msg);
+        PyErr_SetString(PyExc_ValueError, "invalid Zstandard dictionary.");
         goto error;
     }
 
@@ -100,7 +93,6 @@ _zstd_ZstdDict_new_impl(PyTypeObject *type, Py_buffer *dict_content,
 
 error:
     Py_XDECREF(self);
-    PyObject_GC_Del(self);
     return NULL;
 }
 
@@ -118,8 +110,8 @@ ZstdDict_dealloc(PyObject *ob)
 
     assert(!PyMutex_IsLocked(&self->lock));
 
-    /* Release dict_buffer after Free ZSTD_CDict/ZSTD_DDict instances */
-    PyMem_RawFree(self->dict_buffer);
+    /* Release dict_buffer after freeing ZSTD_CDict/ZSTD_DDict instances */
+    PyMem_Free(self->dict_buffer);
     Py_CLEAR(self->c_dicts);
 
     PyTypeObject *tp = Py_TYPE(self);
@@ -135,11 +127,11 @@ PyDoc_STRVAR(ZstdDict_dictid_doc,
 "without any restrictions on format or content.");
 
 static PyObject *
-ZstdDict_str(PyObject *ob)
+ZstdDict_repr(PyObject *ob)
 {
     ZstdDict *dict = ZstdDict_CAST(ob);
     return PyUnicode_FromFormat("<ZstdDict dict_id=%u dict_size=%zd>",
-                                dict->dict_id, dict->dict_len);
+                                (unsigned int)dict->dict_id, dict->dict_len);
 }
 
 static PyMemberDef ZstdDict_members[] = {
@@ -252,15 +244,24 @@ ZstdDict_traverse(PyObject *ob, visitproc visit, void *arg)
     return 0;
 }
 
+static int
+ZstdDict_clear(PyObject *ob)
+{
+    ZstdDict *self = ZstdDict_CAST(ob);
+    Py_CLEAR(self->c_dicts);
+    return 0;
+}
+
 static PyType_Slot zstddict_slots[] = {
     {Py_tp_members, ZstdDict_members},
     {Py_tp_getset, ZstdDict_getset},
     {Py_tp_new, _zstd_ZstdDict_new},
     {Py_tp_dealloc, ZstdDict_dealloc},
-    {Py_tp_str, ZstdDict_str},
+    {Py_tp_repr, ZstdDict_repr},
     {Py_tp_doc, (void *)_zstd_ZstdDict_new__doc__},
     {Py_sq_length, ZstdDict_length},
     {Py_tp_traverse, ZstdDict_traverse},
+    {Py_tp_clear, ZstdDict_clear},
     {0, 0}
 };
 
