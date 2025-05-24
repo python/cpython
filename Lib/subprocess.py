@@ -618,7 +618,7 @@ def list2cmdline(seq):
         if result:
             result.append(' ')
 
-        needquote = (" " in arg) or ("\t" in arg) or not arg
+        needquote = not arg or not set(" \t&<>^|").isdisjoint(arg)
         if needquote:
             result.append('"')
 
