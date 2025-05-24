@@ -389,9 +389,8 @@ get_openssl_evp_md_utf8name(const EVP_MD *md)
          * names for several algorithms.
          */
         name = OBJ_nid2ln(nid);
-        if (name == NULL) {
+        if (name == NULL)
             name = OBJ_nid2sn(nid);
-        }
     }
     return name;
 }
