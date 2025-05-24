@@ -285,7 +285,6 @@ typedef struct {
     PyMutex mutex;      /* OpenSSL context lock */
 } HASHobject;
 
-#define HASHXOFobject HASHobject
 #define HASHobject_CAST(op) ((HASHobject *)(op))
 
 typedef struct {
@@ -302,10 +301,10 @@ typedef struct {
 /*[clinic input]
 module _hashlib
 class _hashlib.HASH "HASHobject *" "((_hashlibstate *)PyModule_GetState(module))->EVPtype"
-class _hashlib.HASHXOF "HASHXOFobject *" "((_hashlibstate *)PyModule_GetState(module))->EVPXOFtype"
+class _hashlib.HASHXOF "HASHobject *" "((_hashlibstate *)PyModule_GetState(module))->EVPXOFtype"
 class _hashlib.HMAC "HMACobject *" "((_hashlibstate *)PyModule_GetState(module))->HMACtype"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=466d7751ac96b4b1]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4f6b8873ed13d1ff]*/
 
 
 /* LCOV_EXCL_START */
@@ -821,8 +820,8 @@ Return the digest value as a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_HASHXOF_digest_impl(HASHXOFobject *self, Py_ssize_t length)
-/*[clinic end generated code: output=a9ecbb885b3054a5 input=3eb034ce03c55b21]*/
+_hashlib_HASHXOF_digest_impl(HASHobject *self, Py_ssize_t length)
+/*[clinic end generated code: output=dcb09335dd2fe908 input=3eb034ce03c55b21]*/
 {
     EVP_MD_CTX *temp_ctx;
     PyObject *retval = PyBytes_FromStringAndSize(NULL, length);
@@ -867,8 +866,8 @@ Return the digest value as a string of hexadecimal digits.
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_HASHXOF_hexdigest_impl(HASHXOFobject *self, Py_ssize_t length)
-/*[clinic end generated code: output=1fe78f301ff7e28f input=0e58f7238adb7ab8]*/
+_hashlib_HASHXOF_hexdigest_impl(HASHobject *self, Py_ssize_t length)
+/*[clinic end generated code: output=519431cafa014f39 input=0e58f7238adb7ab8]*/
 {
     unsigned char *digest;
     EVP_MD_CTX *temp_ctx;
@@ -954,7 +953,7 @@ static PyType_Slot HASHXOFobject_type_slots[] = {
 
 static PyType_Spec HASHXOFobject_type_spec = {
     .name = "_hashlib.HASHXOF",
-    .basicsize = sizeof(HASHXOFobject),
+    .basicsize = sizeof(HASHobject),
     .flags = (
         Py_TPFLAGS_DEFAULT
         | Py_TPFLAGS_BASETYPE

@@ -98,7 +98,7 @@ PyDoc_STRVAR(_hashlib_HASHXOF_digest__doc__,
     {"digest", _PyCFunction_CAST(_hashlib_HASHXOF_digest), METH_FASTCALL|METH_KEYWORDS, _hashlib_HASHXOF_digest__doc__},
 
 static PyObject *
-_hashlib_HASHXOF_digest_impl(HASHXOFobject *self, Py_ssize_t length);
+_hashlib_HASHXOF_digest_impl(HASHobject *self, Py_ssize_t length);
 
 static PyObject *
 _hashlib_HASHXOF_digest(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -151,7 +151,7 @@ _hashlib_HASHXOF_digest(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         }
         length = ival;
     }
-    return_value = _hashlib_HASHXOF_digest_impl((HASHXOFobject *)self, length);
+    return_value = _hashlib_HASHXOF_digest_impl((HASHobject *)self, length);
 
 exit:
     return return_value;
@@ -171,7 +171,7 @@ PyDoc_STRVAR(_hashlib_HASHXOF_hexdigest__doc__,
     {"hexdigest", _PyCFunction_CAST(_hashlib_HASHXOF_hexdigest), METH_FASTCALL|METH_KEYWORDS, _hashlib_HASHXOF_hexdigest__doc__},
 
 static PyObject *
-_hashlib_HASHXOF_hexdigest_impl(HASHXOFobject *self, Py_ssize_t length);
+_hashlib_HASHXOF_hexdigest_impl(HASHobject *self, Py_ssize_t length);
 
 static PyObject *
 _hashlib_HASHXOF_hexdigest(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -224,7 +224,7 @@ _hashlib_HASHXOF_hexdigest(PyObject *self, PyObject *const *args, Py_ssize_t nar
         }
         length = ival;
     }
-    return_value = _hashlib_HASHXOF_hexdigest_impl((HASHXOFobject *)self, length);
+    return_value = _hashlib_HASHXOF_hexdigest_impl((HASHobject *)self, length);
 
 exit:
     return return_value;
@@ -1883,4 +1883,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=8a65f61e4546540e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dc03b64435166a64 input=a9049054013a1b77]*/
