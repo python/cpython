@@ -1,0 +1,1 @@
+ZIP archive entries containing two dots ".." in their name caused shutil's unpack_archive method to silently skip these files during extraction. This has been fixed, shutil's unpack_archive method now generates the same results as Python's own extractall method in the zipfile module, or the Linux unzip tool.
