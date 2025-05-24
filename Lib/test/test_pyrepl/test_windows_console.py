@@ -24,6 +24,7 @@ try:
         MOVE_UP,
         MOVE_DOWN,
         ERASE_IN_LINE,
+        CLEAR,
     )
     import _pyrepl.windows_console as wc
 except ImportError:
@@ -102,7 +103,7 @@ class WindowsConsoleTests(TestCase):
 
         console.height = 20
         console.width = 80
-        console.getheightwidth = MagicMock(lambda _: (20, 80))
+        console.getheightwidth = MagicMock(return_value=(20, 80))
 
         def same_reader(_):
             return reader
@@ -117,9 +118,8 @@ class WindowsConsoleTests(TestCase):
             prepare_console=same_console,
         )
 
-        con.out.write.assert_any_call(self.move_right(2))
-        con.out.write.assert_any_call(self.move_up(2))
-        con.out.write.assert_any_call(b"567890")
+        con.out.write.assert_any_call(self.clear())
+        con.out.write.assert_any_call(b"1234567890")
 
         con.restore()
 
@@ -130,7 +130,7 @@ class WindowsConsoleTests(TestCase):
 
         console.height = 20
         console.width = 4
-        console.getheightwidth = MagicMock(lambda _: (20, 4))
+        console.getheightwidth = MagicMock(return_value=(20, 4))
 
         def same_reader(_):
             return reader
@@ -264,7 +264,7 @@ class WindowsConsoleTests(TestCase):
         reader, console = self.handle_events_short(events)
 
         console.height = 2
-        console.getheightwidth = MagicMock(lambda _: (2, 80))
+        console.getheightwidth = MagicMock(return_value=(2, 80))
 
         def same_reader(_):
             return reader
@@ -280,11 +280,13 @@ class WindowsConsoleTests(TestCase):
         )
         con.out.write.assert_has_calls(
             [
-                call(self.move_left(5)),
+                call(self.clear()),
+                call(b"\n"),
                 call(self.move_up()),
                 call(b"def f():"),
-                call(self.move_left(3)),
+                call(self.move_left(8)),
                 call(self.move_down()),
+                call(b"  foo")
             ]
         )
         console.restore()
@@ -302,7 +304,7 @@ class WindowsConsoleTests(TestCase):
         reader, console = self.handle_events_height_3(events)
 
         console.height = 1
-        console.getheightwidth = MagicMock(lambda _: (1, 80))
+        console.getheightwidth = MagicMock(return_value=(1, 80))
 
         def same_reader(_):
             return reader
@@ -318,9 +320,7 @@ class WindowsConsoleTests(TestCase):
         )
         con.out.write.assert_has_calls(
             [
-                call(self.move_left(5)),
-                call(self.move_up()),
-                call(self.erase_in_line()),
+                call(self.clear()),
                 call(b"  foo"),
             ]
         )
@@ -342,6 +342,9 @@ class WindowsConsoleTests(TestCase):
     def erase_in_line(self):
         return ERASE_IN_LINE.encode("utf8")
 
+    def clear(self):
+        return CLEAR.encode("utf8")
+
     def test_multiline_ctrl_z(self):
         # see gh-126332
         code = "abcdefghi"
@@ -356,6 +359,86 @@ class WindowsConsoleTests(TestCase):
         reader, con = self.handle_events_narrow(events)
         self.assertEqual(reader.cxy, (2, 3))
         con.restore()
+
+    def test_resize_screen_larger(self):
+        # fmt: off
+        code = (
+            "def f():\n"
+            "  foo = 123456789\n"
+            "  bar = 'baz'"
+        )
+        # fmt: on
+
+        events = itertools.chain(code_to_events(code))
+        reader, console = self.handle_events_narrow(events)
+
+        console.width = 80
+        console.getheightwidth = MagicMock(return_value=(100, 80))
+
+        def same_reader(_):
+            return reader
+
+        def same_console(events):
+            console.get_event = MagicMock(side_effect=events)
+            return console
+
+        _, con = handle_all_events(
+            [Event(evt="resize", data=None)],
+            prepare_reader=same_reader,
+            prepare_console=same_console,
+        )
+        self.assertListEqual(
+            con.screen,
+            [
+                "def f():",
+                "  foo = 123456789",
+                "  bar = 'baz'"
+            ]
+        )
+
+    def test_resize_screen_smaller(self):
+        # fmt: off
+        code = (
+            "def f():\n"
+            "  foo = 123456789\n"
+            "  bar = 'baz'"
+        )
+        # fmt: on
+
+        events = itertools.chain(code_to_events(code))
+        reader, console = self.handle_events(events)
+
+        console.width = 5
+        console.getheightwidth = MagicMock(return_value=(100, 5))
+
+        def same_reader(_):
+            return reader
+
+        def same_console(events):
+            console.get_event = MagicMock(side_effect=events)
+            return console
+
+        _, con = handle_all_events(
+            [Event(evt="resize", data=None)],
+            prepare_reader=same_reader,
+            prepare_console=same_console,
+        )
+        self.assertListEqual(
+            con.screen,
+            [
+                "def \\",
+                "f():",
+                "  fo\\",
+                "o = \\",
+                "1234\\",
+                "5678\\",
+                "9",
+                "  ba\\",
+                "r = \\",
+                "'baz\\",
+                "'"
+            ]
+        )
 
 
 class WindowsConsoleGetEventTests(TestCase):
