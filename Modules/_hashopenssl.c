@@ -406,7 +406,7 @@ get_openssl_evp_md_name(const EVP_MD *md)
 /* Get EVP_MD by HID and purpose */
 static PY_EVP_MD *
 get_openssl_evp_md_by_utf8name(PyObject *module, const char *name,
-                               Py_hash_type hash_type)
+                               Py_hash_type py_ht)
 {
     PY_EVP_MD *digest = NULL;
     PY_EVP_MD *other_digest = NULL;
@@ -416,7 +416,7 @@ get_openssl_evp_md_by_utf8name(PyObject *module, const char *name,
     );
 
     if (entry != NULL) {
-        switch (hash_type) {
+        switch (py_ht) {
         case Py_ht_evp_md:
         case Py_ht_mac:
         case Py_ht_pbkdf2:
@@ -453,7 +453,7 @@ get_openssl_evp_md_by_utf8name(PyObject *module, const char *name,
         }
     } else {
         // Fall back for looking up an unindexed OpenSSL specific name.
-        switch (hash_type) {
+        switch (py_ht) {
         case Py_ht_evp_md:
         case Py_ht_mac:
         case Py_ht_pbkdf2:
@@ -481,7 +481,7 @@ get_openssl_evp_md_by_utf8name(PyObject *module, const char *name,
  */
 static PY_EVP_MD *
 get_openssl_evp_md(PyObject *module, PyObject *digestmod,
-                   Py_hash_type hash_type)
+                   Py_hash_type py_ht)
 {
     PyObject *name_obj = NULL;
     const char *name;
@@ -508,7 +508,7 @@ get_openssl_evp_md(PyObject *module, PyObject *digestmod,
         return NULL;
     }
 
-    return get_openssl_evp_md_by_utf8name(module, name, hash_type);
+    return get_openssl_evp_md_by_utf8name(module, name, py_ht);
 }
 
 static HASHobject *
