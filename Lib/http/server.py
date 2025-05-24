@@ -1320,8 +1320,8 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     HandlerClass.protocol_version = protocol
 
     if tls_cert:
-        server = ThreadingHTTPSServer(addr, HandlerClass, certfile=tls_cert,
-                                      keyfile=tls_key, password=tls_password)
+        server = ServerClass(addr, HandlerClass, certfile=tls_cert,
+                             keyfile=tls_key, password=tls_password)
     else:
         server = ServerClass(addr, HandlerClass)
 
@@ -1387,7 +1387,7 @@ if __name__ == '__main__':
         handler_class = SimpleHTTPRequestHandler
 
     # ensure dual-stack is not disabled; ref #38907
-    class DualStackServer(ThreadingHTTPServer):
+    class DualStackServerMixin:
 
         def server_bind(self):
             # suppress exception when protocol is IPv4
@@ -1400,9 +1400,16 @@ if __name__ == '__main__':
             self.RequestHandlerClass(request, client_address, self,
                                      directory=args.directory)
 
+    class HTTPDualStackServer(DualStackServerMixin, ThreadingHTTPServer):
+        pass
+    class HTTPSDualStackServer(DualStackServerMixin, ThreadingHTTPSServer):
+        pass
+
+    ServerClass = HTTPSDualStackServer if args.tls_cert else HTTPDualStackServer
+
     test(
         HandlerClass=handler_class,
-        ServerClass=DualStackServer,
+        ServerClass=ServerClass,
         port=args.port,
         bind=args.bind,
         protocol=args.protocol,
