@@ -710,11 +710,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         return task
 
     def _get_pid_from_process(self, process):
-        """process could be a subprocess.Popen, multiprocessing.Process or a pid
+        """process could evaluate to any object with a `process` attribute or an integer
         """
-        # They are not used elsewhere so do a lazy import
-        from multiprocessing import Process
-        from subprocess import Popen
 
         try:
             process = self._getval(process)
@@ -722,13 +719,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             # Error message is already displayed
             return None
 
-        if isinstance(process, (Process, Popen)):
-            return process.pid
-        elif isinstance(process, int):
-            return process
+        pid = getattr(process, "pid", process)
 
-        self.error(f"Invalid process {process}")
-        return None
+        if not isinstance(pid, int):
+            self.error(f"Invalid process {process!r}")
+            return None
+
+        return pid 
 
     def interaction(self, frame, tb_or_exc):
         # Restore the previous signal handler at the Pdb prompt.
@@ -1982,13 +1979,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     complete_debug = _complete_expression
 
-    def do_attach(self, process):
+    def do_attach(self, arg):
         """attach process
 
-        Attach to process, which can be a subprocess.Popen,
-        multiprocessing.Process or a pid.
+        Attach to process, which can be any object that has a pid
+        attribute or a process ID.
         """
-        pid = self._get_pid_from_process(process)
+        pid = self._get_pid_from_process(arg)
 
         if pid is not None:
             self.message(f"Attaching to process {pid}")
@@ -2780,6 +2777,7 @@ class _PdbServer(Pdb):
                 # needs to know it for multi-line editing.
                 pass
             case {"attach": int()}:
+                # Ask the client to attach to the given process ID.
                 pass
             case _:
                 raise AssertionError(
@@ -3441,6 +3439,12 @@ def _connect(
 
 def attach(pid, commands=()):
     """Attach to a running process with the given PID."""
+
+    if threading.current_thread() is not threading.main_thread():
+        raise RuntimeError(
+            "pdb.attach() must be called from the main thread"
+        )
+
     with ExitStack() as stack:
         server = stack.enter_context(
             closing(socket.create_server(("localhost", 0)))

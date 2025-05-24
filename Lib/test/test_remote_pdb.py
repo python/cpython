@@ -1600,6 +1600,17 @@ class PdbAttachTestCase(unittest.TestCase):
         self.assertNotIn("while x == 1", output["client"]["stdout"])
         self.assertIn("while x == 1", re.sub("\x1b[^m]*m", "", output["client"]["stdout"]))
 
+    def test_attach_from_worker_thread(self):
+        # Test attaching from a worker thread
+        def worker():
+            with self.assertRaises(RuntimeError):
+                # We are not allowed to attach from a thread that's not main
+                pdb.attach(1234)
+
+        thread = threading.Thread(target=worker)
+        thread.start()
+        thread.join()
+
 
 @unittest.skipIf(not sys.is_remote_debug_enabled(), "Remote debugging is not enabled")
 @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux" and sys.platform != "win32",
