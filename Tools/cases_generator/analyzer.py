@@ -182,7 +182,7 @@ class Uop:
     properties: Properties
     _size: int = -1
     implicitly_created: bool = False
-    replicated = 0
+    replicated: int = 0
     replicates: "Uop | None" = None
     # Size of the instruction(s), only set for uops containing the INSTRUCTION_SIZE macro
     instruction_size: int | None = None
@@ -866,6 +866,11 @@ def make_uop(
     inputs: list[parser.InputEffect],
     uops: dict[str, Uop],
 ) -> Uop:
+    replicated = 0
+    for anno in op.annotations:
+        if anno.startswith("replicate"):
+            replicated = int(anno[10:-1])
+            break
     result = Uop(
         name=name,
         context=op.context,
@@ -875,12 +880,9 @@ def make_uop(
         local_stores=find_variable_stores(op),
         body=op.block,
         properties=compute_properties(op),
+        replicated=replicated,
     )
-    for anno in op.annotations:
-        if anno.startswith("replicate"):
-            result.replicated = int(anno[10:-1])
-            break
-    else:
+    if result.replicated == 0:
         return result
     for oparg in range(result.replicated):
         name_x = name + "_" + str(oparg)
