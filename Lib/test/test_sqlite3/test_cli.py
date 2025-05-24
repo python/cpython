@@ -117,6 +117,38 @@ class InteractiveSession(unittest.TestCase):
         self.assertEqual(out.count(self.PS2), 0)
         self.assertIn(sqlite3.sqlite_version, out)
 
+    def test_interact_help(self):
+        out, err = self.run_cli(commands=(".help",))
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 2)
+        self.assertEqual(out.count(self.PS2), 0)
+        self.assertIn("version", out)
+        self.assertIn("quit", out)
+        self.assertIn("Documented commands (type .help <command>):", out)
+
+        out, err = self.run_cli(commands=(".help help unknown", ".help unknown help"))
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 3)
+        self.assertEqual(out.count(self.PS2), 0)
+        self.assertEqual(out.count("Usage: .help [-all] [command]"), 1)
+        self.assertEqual(err.count("No help for 'unknown'"), 1)
+
+        out, err = self.run_cli(commands=(".help -all",))
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 2)
+        self.assertEqual(out.count(self.PS2), 0)
+        self.assertEqual(out.count(".help [-all] [command]\n"), 1)
+        self.assertEqual(out.count(".q(uit)\n"), 1)
+        self.assertEqual(out.count(".version\n"), 1)
+
+        out, err = self.run_cli(commands=(".help --all",))
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 2)
+        self.assertEqual(out.count(self.PS2), 0)
+        self.assertEqual(out.count(".help [-all] [command]\n"), 1)
+        self.assertEqual(out.count(".q(uit)\n"), 1)
+        self.assertEqual(out.count(".version\n"), 1)
+
     def test_interact_empty_source(self):
         out, err = self.run_cli(commands=("", " "))
         self.assertIn(self.MEMORY_DB_MSG, err)
