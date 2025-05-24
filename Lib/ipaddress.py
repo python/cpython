@@ -1661,7 +1661,8 @@ class _BaseV6:
         if not ip_str:
             raise AddressValueError('Address cannot be empty')
         if len(ip_str) > 39:
-            msg = "At most 39 characters expected in %r" % (ip_str,)
+            msg = ("At most 39 characters expected in "
+                   f"{ip_str[:14]!r}({len(ip_str)-28} chars elided){ip_str[-14:]!r}")
             raise AddressValueError(msg)
 
         # We want to allow more parts than the max to be 'split'

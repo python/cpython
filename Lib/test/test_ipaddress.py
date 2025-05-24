@@ -399,8 +399,8 @@ class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
 
     def test_bad_address_split_v6_too_long(self):
         def assertBadSplit(addr):
-            msg = "At most 39 characters expected in %r"
-            with self.assertAddressError(msg, addr.split('%')[0]):
+            msg = r"At most 39 characters expected in %s"
+            with self.assertAddressError(msg, repr(re.escape(addr[:14]))):
                 ipaddress.IPv6Address(addr)
 
         # Long IPv6 address
