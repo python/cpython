@@ -70,6 +70,7 @@ Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 
 import email.parser
 import email.message
+import email.header
 import errno
 import http
 import io
@@ -1307,7 +1308,11 @@ class HTTPConnection:
         values = list(values)
         for i, one_value in enumerate(values):
             if hasattr(one_value, 'encode'):
-                values[i] = one_value.encode('latin-1')
+                try:
+                    values[i] = one_value.encode('latin-1')
+                except UnicodeEncodeError:
+                    hdr = email.header.Header(one_value, 'utf-8')
+                    values[i] = hdr.encode().encode('ascii')
             elif isinstance(one_value, int):
                 values[i] = str(one_value).encode('ascii')
 
