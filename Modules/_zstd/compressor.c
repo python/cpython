@@ -714,8 +714,6 @@ PyDoc_STRVAR(ZstdCompressor_last_mode_doc,
 static PyMemberDef ZstdCompressor_members[] = {
     {"last_mode", Py_T_INT, offsetof(ZstdCompressor, last_mode),
      Py_READONLY, ZstdCompressor_last_mode_doc},
-    {"compression_level", Py_T_INT, offsetof(ZstdCompressor, compression_level),
-     Py_READONLY, NULL},
     {NULL}
 };
 
