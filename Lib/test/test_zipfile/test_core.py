@@ -1587,31 +1587,68 @@ class AbstractRemoveTests(RepackHelperMixin):
                     self.assertIsNone(zh.testzip())
 
     def test_remove_validate(self):
-        file = 'datafile.txt'
-        data = b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'
-
         # closed: error out and do nothing
-        with zipfile.ZipFile(TESTFN, 'w') as zh:
-            zh.writestr(file, data)
+        zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files)
         with zipfile.ZipFile(TESTFN, 'a') as zh:
             zh.close()
             with self.assertRaises(ValueError):
-                zh.remove(file)
+                zh.remove(self.test_files[0][0])
 
         # writing: error out and do nothing
-        with zipfile.ZipFile(TESTFN, 'w') as zh:
-            zh.writestr(file, data)
+        zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files)
         with zipfile.ZipFile(TESTFN, 'a') as zh:
             with zh.open('newfile.txt', 'w') as fh:
                 with self.assertRaises(ValueError):
-                    zh.remove(file)
+                    zh.remove(self.test_files[0][0])
 
         # mode 'r': error out and do nothing
-        with zipfile.ZipFile(TESTFN, 'w') as zh:
-            zh.writestr(file, data)
+        zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files)
         with zipfile.ZipFile(TESTFN, 'r') as zh:
             with self.assertRaises(ValueError):
-                zh.remove(file)
+                zh.remove(self.test_files[0][0])
+
+    def test_remove_mode_w(self):
+        with zipfile.ZipFile(TESTFN, 'w') as zh:
+            for file, data in self.test_files:
+                zh.writestr(file, data)
+            zinfos = [ComparableZipInfo(zi) for zi in zh.infolist()]
+
+            zh.remove(self.test_files[0][0])
+
+            # check infolist
+            self.assertEqual(
+                [ComparableZipInfo(zi) for zi in zh.infolist()],
+                [zinfos[1], zinfos[2]],
+            )
+
+            # check NameToInfo cache
+            with self.assertRaises(KeyError):
+                zh.getinfo(self.test_files[0][0])
+
+            # make sure the zip file is still valid
+            self.assertIsNone(zh.testzip())
+
+    def test_remove_mode_x(self):
+        os.remove(TESTFN)
+        with zipfile.ZipFile(TESTFN, 'w') as zh:
+            for file, data in self.test_files:
+                zh.writestr(file, data)
+            zinfos = [ComparableZipInfo(zi) for zi in zh.infolist()]
+
+            zh.remove(self.test_files[0][0])
+
+            # check infolist
+            self.assertEqual(
+                [ComparableZipInfo(zi) for zi in zh.infolist()],
+                [zinfos[1], zinfos[2]],
+            )
+
+            # check NameToInfo cache
+            with self.assertRaises(KeyError):
+                zh.getinfo(self.test_files[0][0])
+
+            # make sure the zip file is still valid
+            self.assertIsNone(zh.testzip())
 
 class StoredRemoveTests(AbstractRemoveTests, unittest.TestCase):
     compression = zipfile.ZIP_STORED
