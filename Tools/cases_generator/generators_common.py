@@ -140,6 +140,7 @@ class Emitter:
     ) -> bool:
         if storage.spilled:
             raise analysis_error("stack_pointer needs reloading before dispatch", tkn)
+        storage.stack.flush(self.out)
         self.emit(tkn)
         return False
 

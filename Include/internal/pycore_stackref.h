@@ -232,6 +232,9 @@ extern intptr_t PyStackRef_UntagInt(_PyStackRef ref);
 
 extern _PyStackRef PyStackRef_TagInt(intptr_t i);
 
+/* Increments a tagged int, but does not check for overflow */
+extern _PyStackRef PyStackRef_IncrementTaggedIntNoOverflow(_PyStackRef ref);
+
 extern bool
 PyStackRef_IsNullOrInt(_PyStackRef ref);
 
@@ -259,6 +262,14 @@ PyStackRef_UntagInt(_PyStackRef i)
     assert(PyStackRef_IsTaggedInt(i));
     intptr_t val = (intptr_t)i.bits;
     return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, val, 2);
+}
+
+
+static inline _PyStackRef
+PyStackRef_IncrementTaggedIntNoOverflow(_PyStackRef ref)
+{
+    assert(ref.bits != (uintptr_t)-1); // Deosn't overflow
+    return (_PyStackRef){ .bits = ref.bits + 4 };
 }
 
 
@@ -678,7 +689,13 @@ PyStackRef_XCLOSE(_PyStackRef ref)
 
 #endif // !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
 
-#define PyStackRef_TYPE(stackref) Py_TYPE(PyStackRef_AsPyObjectBorrow(stackref))
+static inline PyTypeObject *
+PyStackRef_TYPE(_PyStackRef stackref) {
+    if (PyStackRef_IsTaggedInt(stackref)) {
+        return &PyLong_Type;
+    }
+    return Py_TYPE(PyStackRef_AsPyObjectBorrow(stackref));
+}
 
 // Converts a PyStackRef back to a PyObject *, converting the
 // stackref to a new reference.
@@ -689,36 +706,54 @@ PyStackRef_XCLOSE(_PyStackRef ref)
 static inline bool
 PyStackRef_GenCheck(_PyStackRef stackref)
 {
+    if (PyStackRef_IsTaggedInt(stackref)) {
+        return false;
+    }
     return PyGen_Check(PyStackRef_AsPyObjectBorrow(stackref));
 }
 
 static inline bool
 PyStackRef_BoolCheck(_PyStackRef stackref)
 {
+    if (PyStackRef_IsTaggedInt(stackref)) {
+        return false;
+    }
     return PyBool_Check(PyStackRef_AsPyObjectBorrow(stackref));
 }
 
 static inline bool
 PyStackRef_LongCheck(_PyStackRef stackref)
 {
+    if (PyStackRef_IsTaggedInt(stackref)) {
+        return true;
+    }
     return PyLong_Check(PyStackRef_AsPyObjectBorrow(stackref));
 }
 
 static inline bool
 PyStackRef_ExceptionInstanceCheck(_PyStackRef stackref)
 {
+    if (PyStackRef_IsTaggedInt(stackref)) {
+        return false;
+    }
     return PyExceptionInstance_Check(PyStackRef_AsPyObjectBorrow(stackref));
 }
 
 static inline bool
 PyStackRef_CodeCheck(_PyStackRef stackref)
 {
+    if (PyStackRef_IsTaggedInt(stackref)) {
+        return false;
+    }
     return PyCode_Check(PyStackRef_AsPyObjectBorrow(stackref));
 }
 
 static inline bool
 PyStackRef_FunctionCheck(_PyStackRef stackref)
 {
+    if (PyStackRef_IsTaggedInt(stackref)) {
+        return false;
+    }
     return PyFunction_Check(PyStackRef_AsPyObjectBorrow(stackref));
 }
 
