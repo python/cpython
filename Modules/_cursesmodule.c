@@ -1880,8 +1880,8 @@ PyCursesWindow_getstr(PyObject *op, PyObject *args)
         Py_BEGIN_ALLOW_THREADS
 #ifdef STRICT_SYSV_CURSES
         rtn = wmove(self->win, y, x) == ERR
-            ? ERR
-            : wgetnstr(self->win, buf, n);
+                ? ERR
+                : wgetnstr(self->win, buf, n);
 #else
         rtn = mvwgetnstr(self->win, y, x, buf, n);
 #endif
