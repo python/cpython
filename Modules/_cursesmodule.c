@@ -1660,7 +1660,7 @@ _curses_window_getbkgd_impl(PyCursesWindowObject *self)
 }
 
 /*[clinic input]
-_curses.window.getch -> int
+_curses.window.getch
 
     [
     y: int
@@ -1677,10 +1677,10 @@ keypad keys and so on return numbers higher than 256.  In no-delay mode, -1
 is returned if there is no input, else getch() waits until a key is pressed.
 [clinic start generated code]*/
 
-static int
+static PyObject *
 _curses_window_getch_impl(PyCursesWindowObject *self, int group_right_1,
                           int y, int x)
-/*[clinic end generated code: output=980aa6af0c0ca387 input=bb24ebfb379f991f]*/
+/*[clinic end generated code: output=e1639e87d545e676 input=73f350336b1ee8c8]*/
 {
     int rtn;
 
@@ -1693,7 +1693,30 @@ _curses_window_getch_impl(PyCursesWindowObject *self, int group_right_1,
     }
     Py_END_ALLOW_THREADS
 
-    return rtn;
+    if (rtn == ERR) {
+        // We suppress ERR returned by wgetch() in nodelay mode
+        // after we handled possible interruption signals.
+        if (PyErr_CheckSignals()) {
+            return NULL;
+        }
+        // ERR is an implementation detail, so to be on the safe side,
+        // we forcibly set the return value to -1 as documented above.
+        rtn = -1;
+    }
+    return PyLong_FromLong(rtn);
+}
+
+static PyObject *
+curses_check_signals_on_input_error(PyCursesWindowObject *self,
+                                    const char *curses_funcname,
+                                    const char *python_funcname)
+{
+    if (!PyErr_CheckSignals() && !PyErr_Occurred()) {
+        cursesmodule_state *state = get_cursesmodule_state_by_win(self);
+        PyErr_Format(state->error, "%s() (called by %s()): no input",
+                     curses_funcname, python_funcname);
+    }
+    return NULL;
 }
 
 /*[clinic input]
@@ -1731,14 +1754,9 @@ _curses_window_getkey_impl(PyCursesWindowObject *self, int group_right_1,
     Py_END_ALLOW_THREADS
 
     if (rtn == ERR) {
-        /* getch() returns ERR in nodelay mode */
-        PyErr_CheckSignals();
-        if (!PyErr_Occurred()) {
-            cursesmodule_state *state = get_cursesmodule_state_by_win(self);
-            const char *funcname = group_right_1 ? "mvwgetch" : "wgetch";
-            PyErr_Format(state->error, "getkey(): %s(): no input", funcname);
-        }
-        return NULL;
+        /* wgetch() returns ERR in nodelay mode */
+        const char *funcname = group_right_1 ? "mvwgetch" : "wgetch";
+        return curses_check_signals_on_input_error(self, funcname, "getkey");
     } else if (rtn <= 255) {
 #ifdef NCURSES_VERSION_MAJOR
 #if NCURSES_VERSION_MAJOR*100+NCURSES_VERSION_MINOR <= 507
@@ -1791,14 +1809,9 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
     Py_END_ALLOW_THREADS
 
     if (ct == ERR) {
-        if (PyErr_CheckSignals())
-            return NULL;
-
-        /* get_wch() returns ERR in nodelay mode */
-        cursesmodule_state *state = get_cursesmodule_state_by_win(self);
+        /* wget_wch() returns ERR in nodelay mode */
         const char *funcname = group_right_1 ? "mvwget_wch" : "wget_wch";
-        PyErr_Format(state->error, "get_wch(): %s(): no input", funcname);
-        return NULL;
+        return curses_check_signals_on_input_error(self, funcname, "get_wch");
     }
     if (ct == KEY_CODE_YES)
         return PyLong_FromLong(rtn);
