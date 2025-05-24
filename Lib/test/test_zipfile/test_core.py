@@ -1704,17 +1704,13 @@ class AbstractRepackTests(RepackHelperMixin):
                 # calculate the expected results
                 _test_files = [data for j, data in enumerate(test_files) if j not in ii]
                 with open(TESTFN, 'wb') as fh:
-                    fh.write(b'dummy')
-                with open(TESTFN, 'r+b') as fh:
-                    fh.seek(0, 2)
+                    fh.write(b'dummy ')
                     expected_zinfos = self._prepare_zip_from_test_files(fh, _test_files)
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
                 with open(TESTFN, 'wb') as fh:
-                    fh.write(b'dummy')
-                with open(TESTFN, 'r+b') as fh:
-                    fh.seek(0, 2)
+                    fh.write(b'dummy ')
                     zinfos = self._prepare_zip_from_test_files(fh, test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     for i in ii:
@@ -1748,16 +1744,12 @@ class AbstractRepackTests(RepackHelperMixin):
                 _test_files = [data for j, data in enumerate(test_files) if j not in ii]
                 with open(TESTFN, 'wb') as fh:
                     fh.write(b'PK\003\004 ')
-                with open(TESTFN, 'r+b') as fh:
-                    fh.seek(0, 2)
                     expected_zinfos = self._prepare_zip_from_test_files(fh, _test_files)
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
                 with open(TESTFN, 'wb') as fh:
                     fh.write(b'PK\003\004 ')
-                with open(TESTFN, 'r+b') as fh:
-                    fh.seek(0, 2)
                     zinfos = self._prepare_zip_from_test_files(fh, test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     for i in ii:
@@ -1777,7 +1769,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 self.assertEqual(os.path.getsize(TESTFN), expected_size)
 
     def test_repack_file_entry_before_first_file(self):
-        """Should preserve seeming valid file entries not forming consecutive
+        """Should preserve seemingly valid file entries not forming consecutive
         valid file entries until the first recorded local file entry.
 
         This may happen whan a self-extractor contains an uncompressed ZIP
@@ -1797,8 +1789,6 @@ class AbstractRepackTests(RepackHelperMixin):
                     with zipfile.ZipFile(fh, 'w') as zh:
                         zh.writestr('file.txt', b'dummy')
                     fh.write(b' ')
-                with open(TESTFN, 'r+b') as fh:
-                    fh.seek(0, 2)
                     expected_zinfos = self._prepare_zip_from_test_files(fh, _test_files)
                 expected_size = os.path.getsize(TESTFN)
 
@@ -1807,8 +1797,6 @@ class AbstractRepackTests(RepackHelperMixin):
                     with zipfile.ZipFile(fh, 'w') as zh:
                         zh.writestr('file.txt', b'dummy')
                     fh.write(b' ')
-                with open(TESTFN, 'r+b') as fh:
-                    fh.seek(0, 2)
                     zinfos = self._prepare_zip_from_test_files(fh, test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     for i in ii:
