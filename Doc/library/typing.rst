@@ -281,6 +281,7 @@ callables, the :data:`Concatenate` operator may be used.  They
 take the form ``Callable[ParamSpecVariable, ReturnType]`` and
 ``Callable[Concatenate[Arg1Type, Arg2Type, ..., ParamSpecVariable], ReturnType]``
 respectively.
+To copy the call from one function to another use :func:`copy_func_params`.
 
 .. versionchanged:: 3.10
    ``Callable`` now supports :class:`ParamSpec` and :data:`Concatenate`.
@@ -2903,6 +2904,45 @@ Functions and decorators
    signals that the return value has the designated type, but at
    runtime we intentionally don't check anything (we want this
    to be as fast as possible).
+
+.. decorator:: copy_func_params(source_func)
+
+   Cast the decorated function's call signature to the *source_func*'s.
+
+   Use this decorator enhancing an upstream function while keeping its
+   call signature.
+   Returns the original function with the *source_func*'s call signature.
+
+   Usage::
+
+      from typing import copy_func_params, Any
+
+      def upstream_func(a: int, b: float, *, double: bool = False) -> float:
+         ...
+
+      @copy_func_params(upstream_func)
+      def enhanced(
+         a: int, b: float, *args: Any, double: bool = False, **kwargs: Any
+      ) -> str:
+         ...
+
+   .. note::
+
+    Include ``*args`` and ``**kwargs`` in the signature of the decorated
+    function in order to avoid a :py:class:`TypeError` when the call signature of
+    *source_func* changes.
+
+   .. versionadded:: 3.14
+
+
+.. decorator:: copy_method_params(source_method)
+
+   Cast the decorated method's call signature to the source_method's
+
+   Same as :py:func:`copy_func_params` but intended to be used with methods.
+   It keeps the first argument (``self``/``cls``) of the decorated method.
+
+   .. versionadded:: 3.14
 
 .. function:: assert_type(val, typ, /)
 
