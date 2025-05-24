@@ -311,6 +311,23 @@ Compressing and decompressing data in memory
    *preset* and *filters* arguments.
 
 
+.. function:: crc32(data, value=0)
+
+   .. index::
+      single: Cyclic Redundancy Check
+      single: checksum; Cyclic Redundancy Check
+
+   Computes a CRC (Cyclic Redundancy Check) checksum of *data*. The
+   result is a positive integer, less than :math:`2^32`. If *value* is present, it is used
+   as the starting value of the checksum; otherwise, a default value of 0
+   is used.  Passing in *value* allows computing a running checksum over the
+   concatenation of several inputs.  The algorithm is not cryptographically
+   strong, and should not be used for authentication or digital signatures.  Since
+   the algorithm is designed for use as a checksum algorithm, it is not suitable
+   for use as a general hash algorithm.
+
+   .. versionadded:: next
+
 .. function:: decompress(data, format=FORMAT_AUTO, memlimit=None, filters=None)
 
    Decompress *data* (a :class:`bytes` object), returning the uncompressed data
