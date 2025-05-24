@@ -1680,6 +1680,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
                 tar.addfile(tarinfo)
 
     @unittest.skipUnless(os_helper.can_symlink(), 'requires symlink support')
+    @unittest.skipUnless(hasattr(os, 'chmod'), "missing os.chmod")
     @unittest.mock.patch('os.chmod')
     def test_deferred_directory_attributes_update(self, mock_chmod):
         # Regression test for gh-127987: setting attributes on arbitrary files
