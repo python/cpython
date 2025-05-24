@@ -7,7 +7,9 @@ import os
 import re
 import subprocess
 import sys
+import time
 import typing
+import urllib.error
 import urllib.request
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
@@ -161,6 +163,21 @@ def get_externals() -> list[str]:
     return externals
 
 
+def download_with_retries(download_location: str,
+                          max_retries: int = 5,
+                          base_delay: float = 2.0) -> typing.Any:
+    """Download a file with exponential backoff retry."""
+    for attempt in range(max_retries):
+        try:
+            resp = urllib.request.urlopen(download_location)
+        except urllib.error.URLError as ex:
+            if attempt == max_retries:
+                raise ex
+            time.sleep(base_delay**attempt)
+        else:
+            return resp
+
+
 def check_sbom_packages(sbom_data: dict[str, typing.Any]) -> None:
     """Make a bunch of assertions about the SBOM package data to ensure it's consistent."""
 
@@ -175,7 +192,7 @@ def check_sbom_packages(sbom_data: dict[str, typing.Any]) -> None:
         # and that the download URL is valid.
         if "checksums" not in package or "CI" in os.environ:
             download_location = package["downloadLocation"]
-            resp = urllib.request.urlopen(download_location)
+            resp = download_with_retries(download_location)
             error_if(resp.status != 200, f"Couldn't access URL: {download_location}'")
 
             package["checksums"] = [{
