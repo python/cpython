@@ -13,8 +13,8 @@
 
 /* Don't warn about deprecated functions, */
 #ifndef OPENSSL_API_COMPAT
-  // 0x10101000L == 1.1.1, 30000 == 3.0.0
-  #define OPENSSL_API_COMPAT 0x10101000L
+// 0x10101000L == 1.1.1, 30000 == 3.0.0
+#  define OPENSSL_API_COMPAT 0x10101000L
 #endif
 #define OPENSSL_NO_DEPRECATED 1
 
@@ -189,17 +189,20 @@ static const py_hashentry_t py_hashes[] = {
 };
 
 static Py_uhash_t
-py_hashentry_t_hash_name(const void *key) {
+py_hashentry_t_hash_name(const void *key)
+{
     return Py_HashBuffer(key, strlen((const char *)key));
 }
 
 static int
-py_hashentry_t_compare_name(const void *key1, const void *key2) {
+py_hashentry_t_compare_name(const void *key1, const void *key2)
+{
     return strcmp((const char *)key1, (const char *)key2) == 0;
 }
 
 static void
-py_hashentry_t_destroy_value(void *entry) {
+py_hashentry_t_destroy_value(void *entry)
+{
     py_hashentry_t *h = (py_hashentry_t *)entry;
     if (--(h->refcnt) == 0) {
         if (h->evp_md != NULL) {
@@ -215,7 +218,8 @@ py_hashentry_t_destroy_value(void *entry) {
 }
 
 static _Py_hashtable_t *
-py_hashentry_table_new(void) {
+py_hashentry_table_new(void)
+{
     _Py_hashtable_t *ht = _Py_hashtable_new_full(
         py_hashentry_t_hash_name,
         py_hashentry_t_compare_name,
@@ -234,14 +238,14 @@ py_hashentry_table_new(void) {
         }
         memcpy(entry, h, sizeof(py_hashentry_t));
 
-        if (_Py_hashtable_set(ht, (const void*)entry->py_name, (void*)entry) < 0) {
+        if (_Py_hashtable_set(ht, (const void *)entry->py_name, (void *)entry) < 0) {
             PyMem_Free(entry);
             goto error;
         }
         entry->refcnt = 1;
 
         if (h->py_alias != NULL) {
-            if (_Py_hashtable_set(ht, (const void*)entry->py_alias, (void*)entry) < 0) {
+            if (_Py_hashtable_set(ht, (const void *)entry->py_alias, (void *)entry) < 0) {
                 PyMem_Free(entry);
                 goto error;
             }
@@ -250,7 +254,7 @@ py_hashentry_table_new(void) {
     }
 
     return ht;
-  error:
+error:
     _Py_hashtable_destroy(ht);
     return NULL;
 }
@@ -269,7 +273,7 @@ typedef struct {
     _Py_hashtable_t *hashtable;
 } _hashlibstate;
 
-static inline _hashlibstate*
+static inline _hashlibstate *
 get_hashlib_state(PyObject *module)
 {
     void *state = PyModule_GetState(module);
@@ -412,38 +416,36 @@ get_openssl_evp_md_by_utf8name(PyObject *module, const char *name,
     PY_EVP_MD *digest = NULL;
     PY_EVP_MD *other_digest = NULL;
     _hashlibstate *state = get_hashlib_state(module);
-    py_hashentry_t *entry = (py_hashentry_t *)_Py_hashtable_get(
-        state->hashtable, (const void*)name
-    );
+    py_hashentry_t *entry = _Py_hashtable_get(state->hashtable, name);
 
     if (entry != NULL) {
         switch (hash_type) {
-        case Py_ht_evp_md:
-        case Py_ht_mac:
-        case Py_ht_pbkdf2:
-            digest = FT_ATOMIC_LOAD_PTR_RELAXED(entry->evp_md);
-            if (digest == NULL) {
-                digest = PY_EVP_MD_fetch(entry->ossl_name, NULL);
+            case Py_ht_evp_md:
+            case Py_ht_mac:
+            case Py_ht_pbkdf2:
+                digest = FT_ATOMIC_LOAD_PTR_RELAXED(entry->evp_md);
+                if (digest == NULL) {
+                    digest = PY_EVP_MD_fetch(entry->ossl_name, NULL);
 #ifdef Py_GIL_DISABLED
-                // exchange just in case another thread did same thing at same time
-                other_digest = _Py_atomic_exchange_ptr(&entry->evp_md, (void *)digest);
+                    // exchange just in case another thread did same thing at same time
+                    other_digest = _Py_atomic_exchange_ptr(&entry->evp, (void *)digest);
 #else
-                entry->evp_md = digest;
+                    entry->evp_md = digest;
 #endif
-            }
-            break;
-        case Py_ht_evp_md_nosecurity:
-            digest = FT_ATOMIC_LOAD_PTR_RELAXED(entry->evp_md_nosecurity);
-            if (digest == NULL) {
-                digest = PY_EVP_MD_fetch(entry->ossl_name, "-fips");
+                }
+                break;
+            case Py_ht_evp_md_nosecurity:
+                digest = FT_ATOMIC_LOAD_PTR_RELAXED(entry->evp_md_nosecurity);
+                if (digest == NULL) {
+                    digest = PY_EVP_MD_fetch(entry->ossl_name, "-fips");
 #ifdef Py_GIL_DISABLED
-                // exchange just in case another thread did same thing at same time
-                other_digest = _Py_atomic_exchange_ptr(&entry->evp_md_nosecurity, (void *)digest);
+                    // exchange just in case another thread did same thing at same time
+                    other_digest = _Py_atomic_exchange_ptr(&entry->evp_nosecurity, (void *)digest);
 #else
-                entry->evp_md_nosecurity = digest;
+                    entry->evp_md_nosecurity = digest;
 #endif
-            }
-            break;
+                }
+                break;
         }
         // if another thread same thing at same time make sure we got same ptr
         assert(other_digest == NULL || other_digest == digest);
@@ -452,17 +454,18 @@ get_openssl_evp_md_by_utf8name(PyObject *module, const char *name,
                 PY_EVP_MD_up_ref(digest);
             }
         }
-    } else {
+    }
+    else {
         // Fall back for looking up an unindexed OpenSSL specific name.
         switch (hash_type) {
-        case Py_ht_evp_md:
-        case Py_ht_mac:
-        case Py_ht_pbkdf2:
-            digest = PY_EVP_MD_fetch(name, NULL);
-            break;
-        case Py_ht_evp_md_nosecurity:
-            digest = PY_EVP_MD_fetch(name, "-fips");
-            break;
+            case Py_ht_evp_md:
+            case Py_ht_mac:
+            case Py_ht_pbkdf2:
+                digest = PY_EVP_MD_fetch(name, NULL);
+                break;
+            case Py_ht_evp_md_nosecurity:
+                digest = PY_EVP_MD_fetch(name, "-fips");
+                break;
         }
     }
     if (digest == NULL) {
@@ -489,7 +492,8 @@ get_openssl_evp_md(PyObject *module, PyObject *digestmod,
 
     if (PyUnicode_Check(digestmod)) {
         name_obj = digestmod;
-    } else {
+    }
+    else {
         _hashlibstate *state = get_hashlib_state(module);
         // borrowed ref
         name_obj = PyDict_GetItemWithError(state->constructs, digestmod);
@@ -537,11 +541,13 @@ _hashlib_HASH_hash(HASHobject *self, const void *vp, Py_ssize_t len)
     unsigned int process;
     const unsigned char *cp = (const unsigned char *)vp;
     while (0 < len) {
-        if (len > (Py_ssize_t)MUNCH_SIZE)
+        if (len > (Py_ssize_t)MUNCH_SIZE) {
             process = MUNCH_SIZE;
-        else
+        }
+        else {
             process = Py_SAFE_DOWNCAST(len, Py_ssize_t, unsigned int);
-        if (!EVP_DigestUpdate(self->ctx, (const void*)cp, process)) {
+        }
+        if (!EVP_DigestUpdate(self->ctx, (const void *)cp, process)) {
             notify_ssl_error_occurred();
             return -1;
         }
@@ -587,8 +593,9 @@ _hashlib_HASH_copy_impl(HASHobject *self)
 {
     HASHobject *newobj;
 
-    if ((newobj = _hashlib_HASH_alloc(Py_TYPE(self))) == NULL)
+    if ((newobj = _hashlib_HASH_alloc(Py_TYPE(self))) == NULL) {
         return NULL;
+    }
 
     if (!_hashlib_HASH_copy_locked(self, newobj->ctx)) {
         Py_DECREF(newobj);
@@ -703,14 +710,16 @@ _hashlib_HASH_update_impl(HASHobject *self, PyObject *obj)
         result = _hashlib_HASH_hash(self, view.buf, view.len);
         PyMutex_Unlock(&self->mutex);
         Py_END_ALLOW_THREADS
-    } else {
+    }
+    else {
         result = _hashlib_HASH_hash(self, view.buf, view.len);
     }
 
     PyBuffer_Release(&view);
 
-    if (result == -1)
+    if (result == -1) {
         return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -754,7 +763,7 @@ static PyGetSetDef HASH_getsets[] = {
     {"digest_size", _hashlib_HASH_get_digestsize, NULL, NULL, NULL},
     {"block_size", _hashlib_HASH_get_blocksize, NULL, NULL, NULL},
     {"name", _hashlib_HASH_get_name, NULL, NULL, PyDoc_STR("algorithm name.")},
-    {NULL}  /* Sentinel */
+    {NULL}  /* sentinel */
 };
 
 
@@ -842,7 +851,7 @@ _hashlib_HASHXOF_digest_impl(HASHXOFobject *self, Py_ssize_t length)
         goto error;
     }
     if (!EVP_DigestFinalXOF(temp_ctx,
-                            (unsigned char*)PyBytes_AS_STRING(retval),
+                            (unsigned char *)PyBytes_AS_STRING(retval),
                             length))
     {
         goto error;
@@ -874,7 +883,7 @@ _hashlib_HASHXOF_hexdigest_impl(HASHXOFobject *self, Py_ssize_t length)
     EVP_MD_CTX *temp_ctx;
     PyObject *retval;
 
-    digest = (unsigned char*)PyMem_Malloc(length);
+    digest = (unsigned char *)PyMem_Malloc(length);
     if (digest == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -924,7 +933,7 @@ _hashlib_HASHXOF_digest_size(PyObject *Py_UNUSED(self),
 
 static PyGetSetDef HASHXOFobject_getsets[] = {
     {"digest_size", _hashlib_HASHXOF_digest_size, NULL, NULL, NULL},
-    {NULL}  /* Sentinel */
+    {NULL}  /* sentinel */
 };
 
 PyDoc_STRVAR(HASHXOFobject_type_doc,
@@ -971,7 +980,7 @@ static PyObject *
 _hashlib_HASH(PyObject *module, const char *digestname, PyObject *data_obj,
               int usedforsecurity)
 {
-    Py_buffer view = { 0 };
+    Py_buffer view = {0};
     PY_EVP_MD *digest = NULL;
     PyTypeObject *type;
     HASHobject *self = NULL;
@@ -989,7 +998,8 @@ _hashlib_HASH(PyObject *module, const char *digestname, PyObject *data_obj,
 
     if ((EVP_MD_flags(digest) & EVP_MD_FLAG_XOF) == EVP_MD_FLAG_XOF) {
         type = get_hashlib_state(module)->HASHXOF_type;
-    } else {
+    }
+    else {
         type = get_hashlib_state(module)->HASH_type;
     }
 
@@ -1020,7 +1030,8 @@ _hashlib_HASH(PyObject *module, const char *digestname, PyObject *data_obj,
             Py_BEGIN_ALLOW_THREADS
             result = _hashlib_HASH_hash(self, view.buf, view.len);
             Py_END_ALLOW_THREADS
-        } else {
+        }
+        else {
             result = _hashlib_HASH_hash(self, view.buf, view.len);
         }
         if (result == -1) {
@@ -1361,7 +1372,8 @@ pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
 
     if (dklen_obj == Py_None) {
         dklen = EVP_MD_size(digest);
-    } else {
+    }
+    else {
         dklen = PyLong_AsLong(dklen_obj);
         if ((dklen == -1) && PyErr_Occurred()) {
             goto end;
@@ -1473,7 +1485,7 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
         raise_ssl_error(PyExc_ValueError,
                         "Invalid parameter combination for n, r, p, maxmem.");
         return NULL;
-   }
+    }
 
     key_obj = PyBytes_FromStringAndSize(NULL, dklen);
     if (key_obj == NULL) {
@@ -1483,7 +1495,7 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
 
     Py_BEGIN_ALLOW_THREADS
     retval = EVP_PBE_scrypt(
-        (const char*)password->buf, (size_t)password->len,
+        (const char *)password->buf, (size_t)password->len,
         (const unsigned char *)salt->buf, (size_t)salt->len,
         n, r, p, maxmem,
         (unsigned char *)key, (size_t)dklen
@@ -1552,13 +1564,13 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
         notify_ssl_error_occurred();
         return NULL;
     }
-    return PyBytes_FromStringAndSize((const char*)md, md_len);
+    return PyBytes_FromStringAndSize((const char *)md, md_len);
 }
 
 /* OpenSSL-based HMAC implementation
  */
 
-static int _hmac_update(HMACobject*, PyObject*);
+static int _hmac_update(HMACobject *, PyObject *);
 
 static const EVP_MD *
 _hashlib_hmac_get_md(HMACobject *self)
@@ -1639,7 +1651,9 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
     return (PyObject *)self;
 
 error:
-    if (ctx) HMAC_CTX_free(ctx);
+    if (ctx) {
+        HMAC_CTX_free(ctx);
+    }
     Py_XDECREF(self);
     return NULL;
 }
@@ -1690,7 +1704,8 @@ _hmac_update(HMACobject *self, PyObject *obj)
                         (size_t)view.len);
         PyMutex_Unlock(&self->mutex);
         Py_END_ALLOW_THREADS
-    } else {
+    }
+    else {
         r = HMAC_Update(self->ctx,
                         (const unsigned char *)view.buf,
                         (size_t)view.len);
@@ -1900,7 +1915,7 @@ static PyGetSetDef HMAC_getset[] = {
     {"digest_size", _hashlib_hmac_get_digest_size, NULL, NULL, NULL},
     {"block_size", _hashlib_hmac_get_block_size, NULL, NULL, NULL},
     {"name", _hashlib_hmac_get_name, NULL, NULL, NULL},
-    {NULL}  /* Sentinel */
+    {NULL}  /* sentinel */
 };
 
 
@@ -1964,7 +1979,8 @@ _openssl_hash_name_mapper(const EVP_MD *md, const char *from,
     py_name = get_openssl_evp_md_name(md);
     if (py_name == NULL) {
         state->error = 1;
-    } else {
+    }
+    else {
         if (PySet_Add(state->set, py_name) != 0) {
             state->error = 1;
         }
@@ -2041,7 +2057,7 @@ _hashlib_get_fips_mode_impl(PyObject *module)
 
 static int
 _tscmp(const unsigned char *a, const unsigned char *b,
-        Py_ssize_t len_a, Py_ssize_t len_b)
+       Py_ssize_t len_a, Py_ssize_t len_b)
 {
     /* loop count depends on length of b. Might leak very little timing
      * information if sizes are different.
@@ -2090,7 +2106,7 @@ _hashlib_compare_digest_impl(PyObject *module, PyObject *a, PyObject *b)
     int rc;
 
     /* ASCII unicode string */
-    if(PyUnicode_Check(a) && PyUnicode_Check(b)) {
+    if (PyUnicode_Check(a) && PyUnicode_Check(b)) {
         if (!PyUnicode_IS_ASCII(a) || !PyUnicode_IS_ASCII(b)) {
             PyErr_SetString(PyExc_TypeError,
                             "comparing strings with non-ASCII characters is "
@@ -2138,8 +2154,8 @@ _hashlib_compare_digest_impl(PyObject *module, PyObject *a, PyObject *b)
             return NULL;
         }
 
-        rc = _tscmp((const unsigned char*)view_a.buf,
-                    (const unsigned char*)view_b.buf,
+        rc = _tscmp((const unsigned char *)view_a.buf,
+                    (const unsigned char *)view_b.buf,
                     view_a.len,
                     view_b.len);
 
@@ -2172,7 +2188,7 @@ static struct PyMethodDef EVP_functions[] = {
     _HASHLIB_OPENSSL_SHA3_512_METHODDEF
     _HASHLIB_OPENSSL_SHAKE_128_METHODDEF
     _HASHLIB_OPENSSL_SHAKE_256_METHODDEF
-    {NULL,      NULL}            /* Sentinel */
+    {NULL, NULL}  /* sentinel */
 };
 
 
@@ -2314,7 +2330,7 @@ hashlib_init_constructors(PyObject *module)
         if (name_obj == NULL) {
             return -1;
         }
-        func  = PyObject_GetAttrString(module, fdef->ml_name);
+        func = PyObject_GetAttrString(module, fdef->ml_name);
         if (func == NULL) {
             Py_DECREF(name_obj);
             return -1;
