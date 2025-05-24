@@ -1,6 +1,7 @@
 import sys
 import builtins as bltns
 from types import MappingProxyType, DynamicClassAttribute
+from abc import ABCMeta
 
 
 __all__ = [
@@ -457,7 +458,7 @@ class EnumDict(dict):
 _EnumDict = EnumDict        # keep private name for backwards compatibility
 
 
-class EnumType(type):
+class EnumType(ABCMeta):
     """
     Metaclass for Enum
     """
@@ -1775,7 +1776,7 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
             body['__rand__'] = Flag.__rand__
             body['__invert__'] = Flag.__invert__
         for name, obj in cls.__dict__.items():
-            if name in ('__dict__', '__weakref__'):
+            if name in ('__dict__', '__weakref__', '_abc_impl'):
                 continue
             if _is_dunder(name) or _is_private(cls_name, name) or _is_sunder(name) or _is_descriptor(obj):
                 body[name] = obj
@@ -2043,7 +2044,7 @@ def _test_simple_enum(checked_enum, simple_enum):
                 )
         for key in set(checked_keys + simple_keys):
             if key in ('__module__', '_member_map_', '_value2member_map_', '__doc__',
-                       '__static_attributes__', '__firstlineno__'):
+                       '__static_attributes__', '__firstlineno__', '_abc_impl'):
                 # keys known to be different, or very long
                 continue
             elif key in member_names:
