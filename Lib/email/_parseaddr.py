@@ -349,6 +349,8 @@ class AddrlistClass:
             elif self.field[self.pos] == '@':
                 self.pos += 1
                 expectroute = True
+            elif self.field[self.pos] == ',':
+                self.pos += 1
             elif self.field[self.pos] == ':':
                 self.pos += 1
             else:
