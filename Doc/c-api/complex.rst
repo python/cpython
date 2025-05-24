@@ -153,6 +153,13 @@ Complex Numbers as Python Objects
    .. versionchanged:: 3.13
       Use :meth:`~object.__complex__` if available.
 
+.. c:function:: PyObject* PyComplex_FromString(PyObject *str)
+
+   Create a Python complex number object from the string value in *str* or
+   return ``NULL`` with an exception set on error.
+
+   .. versionadded:: next
+
 .. c:function:: Py_complex PyComplex_AsCComplex(PyObject *op)
 
    Return the :c:type:`Py_complex` value of the complex number *op*.
