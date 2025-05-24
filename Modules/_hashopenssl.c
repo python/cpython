@@ -292,7 +292,7 @@ typedef struct {
     HMAC_CTX *ctx;            /* OpenSSL hmac context */
     // Prevents undefined behavior via multiple threads entering the C API.
     bool use_mutex;
-    PyMutex mutex; /* HMAC context lock */
+    PyMutex mutex;  /* HMAC context lock */
 } HMACobject;
 
 #define HMACobject_CAST(op) ((HMACobject *)(op))
