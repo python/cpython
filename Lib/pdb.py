@@ -67,6 +67,7 @@ Debugger commands
 
 import os
 import io
+import platform
 import re
 import sys
 import cmd
@@ -3503,6 +3504,80 @@ To let the script run until an exception occurs, use "-c continue".
 To let the script run up to a given line X in the debugged file, use
 "-c 'until X'"."""
 
+LINUX_PERMISSION_HELP_TEXT = """
+Error: The specified process cannot be attached to due to insufficient
+permissions.
+
+This could be because the tracer lacks the required capability
+(CAP_SYS_PTRACE), or because the process is already being traced. Additionally,
+security restrictions may prevent attaching to processes you cannot signal, or
+those running with set-user-ID/set-group-ID.
+
+If you are trying to attach to a process you own, you can try the following:
+
+* Re-run the command with elevated privileges, for example: 'sudo -E !!'
+
+* Temporarily relax ptrace restrictions for the current session (until reboot)
+by running:
+    echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+
+Note: Disabling ptrace scope reduces system hardening and should only be done
+in trusted environments.
+"""
+
+MACOS_PERMISSION_HELP_TEXT = """
+Error: The specified process cannot be attached to due to insufficient
+permissions.
+
+Try re-running the command with elevated privileges (e.g., using 'sudo'):
+
+    sudo python -m pdb -p <PID>
+
+Note: Security restrictions may block debugging even for processes you own
+unless run with root privileges.
+"""
+
+WINDOWS_PERMISSION_HELP_TEXT = """
+Error: The specified process cannot be attached to due to insufficient
+permissions.
+
+Try running the command prompt or terminal as Administrator and re-run the
+command.
+
+Note: Some processes may still be inaccessible without special privileges such
+as 'SeDebugPrivilege', even when running as Administrator.
+
+To adjust file or folder permissions:
+
+1. Right-click the file or folder and select "Properties".
+2. Go to the "Security" tab. At the top, you'll see a list of users and groups
+   with current access.
+3. Click "Edit" to change permissions.
+4. In the "Group or user names" section, select your user account.
+5. In the "Permissions" section below, check "Read" or "Full control" as needed.
+6. Click "Apply", then "OK" to confirm changes.
+"""
+
+def exit_with_permission_help_text():
+    """
+    Prints platform-specific permission help text and exits the program.
+
+    This function is called when a PermissionError is encountered while trying
+    to attach to a process.
+    """
+    system = platform.system()
+    if system == "Linux":
+        print(LINUX_PERMISSION_HELP_TEXT)
+    elif system == "Darwin":
+        print(MACOS_PERMISSION_HELP_TEXT)
+    elif system == "Windows":
+        print(WINDOWS_PERMISSION_HELP_TEXT)
+    else:
+        print(
+            "Permission denied when trying to attach to the process. "
+            "Make sure you have sufficient privileges."
+        )
+    sys.exit(1)
 
 def main():
     import argparse
@@ -3537,7 +3612,10 @@ def main():
         opts = parser.parse_args()
         if opts.module:
             parser.error("argument -m: not allowed with argument --pid")
-        attach(opts.pid, opts.commands)
+        try:
+            attach(opts.pid, opts.commands)
+        except PermissionError as e:
+            exit_with_permission_help_text()
         return
     elif opts.module:
         # If a module is being debugged, we consider the arguments after "-m module" to
