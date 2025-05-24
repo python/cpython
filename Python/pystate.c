@@ -1294,12 +1294,8 @@ interp_look_up_id(_PyRuntimeState *runtime, int64_t requested_id)
     return NULL;
 }
 
-/* Return the interpreter state with the given ID.
-
-   Fail with RuntimeError if the interpreter is not found. */
-
 PyInterpreterState *
-_PyInterpreterState_LookUpID(int64_t requested_id)
+_PyInterpreterState_LookUpIDNoErr(int64_t requested_id)
 {
     PyInterpreterState *interp = NULL;
     if (requested_id >= 0) {
@@ -1308,6 +1304,18 @@ _PyInterpreterState_LookUpID(int64_t requested_id)
         interp = interp_look_up_id(runtime, requested_id);
         HEAD_UNLOCK(runtime);
     }
+    return interp;
+}
+
+/* Return the interpreter state with the given ID.
+
+   Fail with RuntimeError if the interpreter is not found. */
+
+PyInterpreterState *
+_PyInterpreterState_LookUpID(int64_t requested_id)
+{
+    assert(_PyThreadState_GET() != NULL);
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDNoErr(requested_id);
     if (interp == NULL && !PyErr_Occurred()) {
         PyErr_Format(PyExc_InterpreterNotFoundError,
                      "unrecognized interpreter ID %lld", requested_id);
@@ -1522,7 +1530,6 @@ new_threadstate(PyInterpreterState *interp, int whence)
         return NULL;
     }
 #endif
-
     /* We serialize concurrent creation to protect global state. */
     HEAD_LOCK(interp->runtime);
 
@@ -1725,6 +1732,26 @@ PyThreadState_Clear(PyThreadState *tstate)
 
 static void
 decrement_stoptheworld_countdown(struct _stoptheworld_state *stw);
+
+static int
+shutting_down_natives(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+    return _Py_atomic_load_int_relaxed(&interp->threads.finalizing.shutting_down);
+}
+
+static void
+decref_interpreter(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+    struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
+    Py_ssize_t old = _Py_atomic_add_ssize(&finalizing->countdown, -1);
+    if (old == 1 && shutting_down_natives(interp)) {
+        _PyEvent_Notify(&finalizing->finished);
+    } else if (old <= 0) {
+        Py_FatalError("interpreter has negative reference count");
+    }
+}
 
 /* Common code for PyThreadState_Delete() and PyThreadState_DeleteCurrent() */
 static void
@@ -3108,4 +3135,188 @@ _Py_GetMainConfig(void)
         return NULL;
     }
     return _PyInterpreterState_GetConfig(interp);
+}
+
+Py_ssize_t
+_PyInterpreterState_Refcount(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+    Py_ssize_t refcount = _Py_atomic_load_ssize_relaxed(&interp->threads.finalizing.countdown);
+    return refcount;
+}
+
+void
+_PyInterpreterState_Incref(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+    assert(_Py_atomic_load_ssize_relaxed(&interp->threads.finalizing.countdown) >= 0);
+    _Py_atomic_add_ssize(&interp->threads.finalizing.countdown, 1);
+}
+
+static PyInterpreterState *
+ref_as_interp(PyInterpreterRef ref)
+{
+    PyInterpreterState *interp = (PyInterpreterState *)ref;
+    if (interp == NULL) {
+        Py_FatalError("Got a null interpreter reference, likely due to use after close.");
+    }
+
+    return interp;
+}
+
+PyInterpreterRef
+PyInterpreterRef_Get(void)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _PyInterpreterState_Incref(interp);
+    return (PyInterpreterRef)interp;
+}
+
+PyInterpreterRef
+PyInterpreterRef_Dup(PyInterpreterRef ref)
+{
+    PyInterpreterState *interp = ref_as_interp(ref);
+    _PyInterpreterState_Incref(interp);
+    return (PyInterpreterRef)interp;
+}
+
+#undef PyInterpreterRef_Close
+void
+PyInterpreterRef_Close(PyInterpreterRef ref)
+{
+    PyInterpreterState *interp = ref_as_interp(ref);
+    decref_interpreter(interp);
+}
+
+PyInterpreterState *
+PyInterpreterRef_AsInterpreter(PyInterpreterRef ref)
+{
+    PyInterpreterState *interp = ref_as_interp(ref);
+    return interp;
+}
+
+PyInterpreterWeakRef
+PyInterpreterWeakRef_Get(void)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterWeakRef wref = { interp->id };
+    return wref;
+}
+
+PyInterpreterWeakRef
+PyInterpreterWeakRef_Dup(PyInterpreterWeakRef wref)
+{
+    return wref;
+}
+
+void
+PyInterpreterWeakRef_Close(PyInterpreterWeakRef wref)
+{
+    return;
+}
+
+static int
+try_acquire_strong_ref(PyInterpreterState *interp, PyInterpreterRef *strong_ptr)
+{
+    struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
+    PyMutex *mutex = &finalizing->mutex;
+    PyMutex_Lock(mutex); // Synchronize TOCTOU with the event flag
+    if (_PyEvent_IsSet(&finalizing->finished)) {
+        /* Interpreter has already finished threads */
+        *strong_ptr = 0;
+        return -1;
+    } else {
+        _Py_atomic_add_ssize(&finalizing->countdown, 1);
+    }
+    PyMutex_Unlock(mutex);
+    *strong_ptr = (PyInterpreterRef)interp;
+    return 0;
+}
+
+int
+PyInterpreterWeakRef_AsStrong(PyInterpreterWeakRef wref, PyInterpreterRef *strong_ptr)
+{
+    assert(strong_ptr != NULL);
+    int64_t interp_id = wref.id;
+    /* Interpreters cannot be deleted while we hold the runtime lock. */
+    _PyRuntimeState *runtime = &_PyRuntime;
+    HEAD_LOCK(runtime);
+    PyInterpreterState *interp = interp_look_up_id(runtime, interp_id);
+    if (interp == NULL) {
+        HEAD_UNLOCK(runtime);
+        *strong_ptr = 0;
+        return -1;
+    }
+
+    int res = try_acquire_strong_ref(interp, strong_ptr);
+    HEAD_UNLOCK(runtime);
+    return res;
+}
+
+int
+PyInterpreterState_AsStrong(PyInterpreterState *interp, PyInterpreterRef *strong_ptr)
+{
+    assert(interp != NULL);
+    assert(strong_ptr != NULL);
+    _PyRuntimeState *runtime = &_PyRuntime;
+    HEAD_LOCK(runtime);
+    int res = try_acquire_strong_ref(interp, strong_ptr);
+    HEAD_UNLOCK(runtime);
+
+    return res;
+}
+
+int
+PyThreadState_Ensure(PyInterpreterRef interp_ref)
+{
+    PyInterpreterState *interp = ref_as_interp(interp_ref);
+    PyThreadState *attached_tstate = current_fast_get();
+    if (attached_tstate != NULL && attached_tstate->interp == interp) {
+        /* Yay! We already have an attached thread state that matches. */
+        ++attached_tstate->ensure_counter;
+        return 0;
+    }
+
+    PyThreadState *detached_gilstate = gilstate_get();
+    if (detached_gilstate != NULL && detached_gilstate->interp == interp) {
+        /* There's a detached thread state that works. */
+        assert(attached_tstate == NULL);
+        ++detached_gilstate->ensure_counter;
+        _PyThreadState_Attach(detached_gilstate);
+        return 0;
+    }
+
+    PyThreadState *fresh_tstate = _PyThreadState_NewBound(interp,
+                                                          _PyThreadState_WHENCE_GILSTATE);
+    if (fresh_tstate == NULL) {
+        return -1;
+    }
+    fresh_tstate->ensure_counter = 1;
+
+    if (attached_tstate != NULL) {
+        fresh_tstate->prior_ensure = PyThreadState_Swap(fresh_tstate);
+    } else {
+        _PyThreadState_Attach(fresh_tstate);
+    }
+
+    return 0;
+}
+
+void
+PyThreadState_Release(void)
+{
+    PyThreadState *tstate = current_fast_get();
+    _Py_EnsureTstateNotNULL(tstate);
+    Py_ssize_t remaining = --tstate->ensure_counter;
+    if (remaining < 0) {
+        Py_FatalError("PyThreadState_Release() called more times than PyThreadState_Ensure()");
+    }
+    if (remaining == 0) {
+        PyThreadState *to_restore = tstate->prior_ensure;
+        PyThreadState_Clear(tstate);
+        PyThreadState_Swap(to_restore);
+        PyThreadState_Delete(tstate);
+    }
+
+    return;
 }
