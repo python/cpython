@@ -76,7 +76,7 @@ _get_DDict(ZstdDict *self)
         self->d_dict = ret;
 
         if (self->d_dict == NULL) {
-            _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
+            _zstd_state* mod_state = PyType_GetModuleState(Py_TYPE(self));
             if (mod_state != NULL) {
                 PyErr_SetString(mod_state->ZstdError,
                                 "Failed to create a ZSTD_DDict instance from "
@@ -95,7 +95,7 @@ _zstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
     size_t zstd_ret;
     PyObject *key, *value;
     Py_ssize_t pos;
-    _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
+    _zstd_state* mod_state = PyType_GetModuleState(Py_TYPE(self));
     if (mod_state == NULL) {
         return -1;
     }
@@ -191,7 +191,7 @@ _zstd_load_impl(ZstdDecompressor *self, ZstdDict *zd,
 static int
 _zstd_load_d_dict(ZstdDecompressor *self, PyObject *dict)
 {
-    _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
+    _zstd_state* mod_state = PyType_GetModuleState(Py_TYPE(self));
     if (mod_state == NULL) {
         return -1;
     }
@@ -224,9 +224,9 @@ _zstd_load_d_dict(ZstdDecompressor *self, PyObject *dict)
         else if (ret > 0) {
             /* type == -1 may indicate an error. */
             type = PyLong_AsInt(PyTuple_GET_ITEM(dict, 1));
-            if (type == DICT_TYPE_DIGESTED ||
-                type == DICT_TYPE_UNDIGESTED ||
-                type == DICT_TYPE_PREFIX)
+            if (type == DICT_TYPE_DIGESTED
+                || type == DICT_TYPE_UNDIGESTED
+                || type == DICT_TYPE_PREFIX)
             {
                 assert(type >= 0);
                 zd = (ZstdDict*)PyTuple_GET_ITEM(dict, 0);
@@ -291,7 +291,7 @@ decompress_lock_held(ZstdDecompressor *self, ZSTD_inBuffer *in,
 
         /* Check error */
         if (ZSTD_isError(zstd_ret)) {
-            _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
+            _zstd_state* mod_state = PyType_GetModuleState(Py_TYPE(self));
             if (mod_state != NULL) {
                 set_zstd_error(mod_state, ERR_DECOMPRESS, zstd_ret);
             }
@@ -369,7 +369,8 @@ stream_decompress_lock_held(ZstdDecompressor *self, Py_buffer *data,
 
     /* Check .eof flag */
     if (self->eof) {
-        PyErr_SetString(PyExc_EOFError, "Already at the end of a Zstandard frame.");
+        PyErr_SetString(PyExc_EOFError,
+                        "Already at the end of a Zstandard frame.");
         assert(ret == NULL);
         return NULL;
     }
@@ -486,8 +487,8 @@ stream_decompress_lock_held(ZstdDecompressor *self, Py_buffer *data,
         if (!use_input_buffer) {
             /* Discard buffer if it's too small
                (resizing it may needlessly copy the current contents) */
-            if (self->input_buffer != NULL &&
-                self->input_buffer_size < data_size)
+            if (self->input_buffer != NULL
+                && self->input_buffer_size < data_size)
             {
                 PyMem_Free(self->input_buffer);
                 self->input_buffer = NULL;
@@ -565,7 +566,7 @@ _zstd_ZstdDecompressor_new_impl(PyTypeObject *type, PyObject *zstd_dict,
     /* Decompression context */
     self->dctx = ZSTD_createDCtx();
     if (self->dctx == NULL) {
-        _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
+        _zstd_state* mod_state = PyType_GetModuleState(Py_TYPE(self));
         if (mod_state != NULL) {
             PyErr_SetString(mod_state->ZstdError,
                             "Unable to create ZSTD_DCtx instance.");
@@ -717,9 +718,10 @@ PyDoc_STRVAR(ZstdDecompressor_eof_doc,
 "after that, an EOFError exception will be raised.");
 
 PyDoc_STRVAR(ZstdDecompressor_needs_input_doc,
-"If the max_length output limit in .decompress() method has been reached, and\n"
-"the decompressor has (or may has) unconsumed input data, it will be set to\n"
-"False. In this case, pass b'' to .decompress() method may output further data.");
+"If the max_length output limit in .decompress() method has been reached,\n"
+"and the decompressor has (or may has) unconsumed input data, it will be set\n"
+"to False. In this case, passing b'' to the .decompress() method may output\n"
+"further data.");
 
 static PyMemberDef ZstdDecompressor_members[] = {
     {"eof", Py_T_BOOL, offsetof(ZstdDecompressor, eof),
