@@ -468,6 +468,30 @@ class Test_TextTestResult(unittest.TestCase):
                 'testGetDescriptionWithoutDocstring (' + __name__ +
                 '.Test_TextTestResult.testGetDescriptionWithoutDocstring)')
 
+    def testCustomGetNameWithoutDocstring(self):
+        class CustomGetNameTextTestResult(unittest.TextTestResult):
+            def getName(self, test):
+                return test.id()
+
+        result = CustomGetNameTextTestResult(None, True, 1)
+        expected_test_name = __name__ + ".Test_TextTestResult.testCustomGetNameWithoutDocstring"
+        self.assertEqual(result.getName(self), expected_test_name)
+        self.assertEqual(result.getDescription(self), expected_test_name)
+
+    def testCustomGetNameWithDocstring(self):
+        """Test docstring."""
+        class CustomGetNameTextTestResult(unittest.TextTestResult):
+            def getName(self, test):
+                return test.id()
+
+        result = CustomGetNameTextTestResult(None, True, 1)
+        expected_test_name = __name__ + ".Test_TextTestResult.testCustomGetNameWithDocstring"
+        self.assertEqual(result.getName(self), expected_test_name)
+        self.assertEqual(
+            result.getDescription(self),
+            expected_test_name + "\nTest docstring.",
+        )
+
     def testGetSubTestDescriptionWithoutDocstring(self):
         with self.subTest(foo=1, bar=2):
             result = unittest.TextTestResult(None, True, 1)
