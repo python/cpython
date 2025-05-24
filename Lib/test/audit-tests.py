@@ -311,10 +311,10 @@ def test_ctypes_call_function():
 
     with TestHook() as hook:
         _ctypes.call_function(ctypes._memmove_addr, (0, 0, 0))
-        assert ("ctypes.call_function", (ctypes._memmove_addr, (0, 0, 0))) in hook.seen
+        assert ("ctypes.call_function", (ctypes._memmove_addr, (0, 0, 0))) in hook.seen, f"{ctypes._memmove_addr=} {hook.seen=}"
 
         ctypes.CFUNCTYPE(ctypes.c_voidp)(ctypes._memset_addr)(1, 0, 0)
-        assert ("ctypes.call_function", (ctypes._memset_addr, (1, 0, 0))) in hook.seen
+        assert ("ctypes.call_function", (ctypes._memset_addr, (1, 0, 0))) in hook.seen, f"{ctypes._memset_addr=} {hook.seen=}"
 
     with TestHook() as hook:
         ctypes.cast(ctypes.c_voidp(0), ctypes.POINTER(ctypes.c_char))
