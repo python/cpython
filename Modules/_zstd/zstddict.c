@@ -74,13 +74,15 @@ _zstd_ZstdDict_new_impl(PyTypeObject *type, PyObject *dict_content,
        at least 8 bytes */
     if (Py_SIZE(self->dict_content) < 8) {
         PyErr_SetString(PyExc_ValueError,
-                        "Zstandard dictionary content should at least 8 bytes.");
+                        "Zstandard dictionary content should at least "
+                        "8 bytes.");
         goto error;
     }
 
     /* Get dict_id, 0 means "raw content" dictionary. */
-    self->dict_id = ZSTD_getDictID_fromDict(PyBytes_AS_STRING(self->dict_content),
-                                            Py_SIZE(self->dict_content));
+    self->dict_id = ZSTD_getDictID_fromDict(
+                                    PyBytes_AS_STRING(self->dict_content),
+                                    Py_SIZE(self->dict_content));
 
     /* Check validity for ordinary dictionary */
     if (!is_raw && self->dict_id == 0) {
@@ -141,8 +143,10 @@ ZstdDict_str(PyObject *ob)
 }
 
 static PyMemberDef ZstdDict_members[] = {
-    {"dict_id", Py_T_UINT, offsetof(ZstdDict, dict_id), Py_READONLY, ZstdDict_dictid_doc},
-    {"dict_content", Py_T_OBJECT_EX, offsetof(ZstdDict, dict_content), Py_READONLY, ZstdDict_dictcontent_doc},
+    {"dict_id", Py_T_UINT, offsetof(ZstdDict, dict_id), Py_READONLY,
+     ZstdDict_dictid_doc},
+    {"dict_content", Py_T_OBJECT_EX, offsetof(ZstdDict, dict_content),
+     Py_READONLY, ZstdDict_dictcontent_doc},
     {NULL}
 };
 
@@ -152,7 +156,9 @@ _zstd.ZstdDict.as_digested_dict
 
 Load as a digested dictionary to compressor.
 
-Pass this attribute as zstd_dict argument: compress(dat, zstd_dict=zd.as_digested_dict)
+Pass this attribute as zstd_dict argument:
+compress(dat, zstd_dict=zd.as_digested_dict)
+
 1. Some advanced compression parameters of compressor may be overridden
    by parameters of digested dictionary.
 2. ZstdDict has a digested dictionaries cache for each compression level.
@@ -163,7 +169,7 @@ Pass this attribute as zstd_dict argument: compress(dat, zstd_dict=zd.as_digeste
 
 static PyObject *
 _zstd_ZstdDict_as_digested_dict_get_impl(ZstdDict *self)
-/*[clinic end generated code: output=09b086e7a7320dbb input=10cd2b6165931b77]*/
+/*[clinic end generated code: output=09b086e7a7320dbb input=ee45e1b4a48f6f2c]*/
 {
     return Py_BuildValue("Oi", self, DICT_TYPE_DIGESTED);
 }
@@ -174,7 +180,9 @@ _zstd.ZstdDict.as_undigested_dict
 
 Load as an undigested dictionary to compressor.
 
-Pass this attribute as zstd_dict argument: compress(dat, zstd_dict=zd.as_undigested_dict)
+Pass this attribute as zstd_dict argument:
+compress(dat, zstd_dict=zd.as_undigested_dict)
+
 1. The advanced compression parameters of compressor will not be overridden.
 2. Loading an undigested dictionary is costly. If load an undigested dictionary
    multiple times, consider reusing a compressor object.
@@ -183,7 +191,7 @@ Pass this attribute as zstd_dict argument: compress(dat, zstd_dict=zd.as_undiges
 
 static PyObject *
 _zstd_ZstdDict_as_undigested_dict_get_impl(ZstdDict *self)
-/*[clinic end generated code: output=43c7a989e6d4253a input=11e5f5df690a85b4]*/
+/*[clinic end generated code: output=43c7a989e6d4253a input=d39210eedec76fed]*/
 {
     return Py_BuildValue("Oi", self, DICT_TYPE_UNDIGESTED);
 }
@@ -194,7 +202,9 @@ _zstd.ZstdDict.as_prefix
 
 Load as a prefix to compressor/decompressor.
 
-Pass this attribute as zstd_dict argument: compress(dat, zstd_dict=zd.as_prefix)
+Pass this attribute as zstd_dict argument:
+compress(dat, zstd_dict=zd.as_prefix)
+
 1. Prefix is compatible with long distance matching, while dictionary is not.
 2. It only works for the first frame, then the compressor/decompressor will
    return to no prefix state.
@@ -203,7 +213,7 @@ Pass this attribute as zstd_dict argument: compress(dat, zstd_dict=zd.as_prefix)
 
 static PyObject *
 _zstd_ZstdDict_as_prefix_get_impl(ZstdDict *self)
-/*[clinic end generated code: output=6f7130c356595a16 input=b028e0ae6ec4292b]*/
+/*[clinic end generated code: output=6f7130c356595a16 input=d59757b0b5a9551a]*/
 {
     return Py_BuildValue("Oi", self, DICT_TYPE_PREFIX);
 }
