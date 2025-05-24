@@ -745,6 +745,12 @@ The :mod:`multiprocessing` package mostly replicates the API of the
        >>> p.exitcode == -signal.SIGTERM
        True
 
+   .. attribute:: closed
+
+      Boolean indicating whether the process has been closed via :meth:`close`.
+
+      .. versionadded:: 3.14
+
 .. exception:: ProcessError
 
    The base class of all :mod:`multiprocessing` exceptions.
