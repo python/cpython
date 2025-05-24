@@ -74,6 +74,7 @@ import errno
 import http
 import io
 import re
+import select
 import socket
 import sys
 import collections.abc
@@ -320,15 +321,16 @@ class HTTPResponse(io.BufferedIOBase):
             raise BadStatusLine(line)
         return version, status, reason
 
-    def begin(self):
+    def begin(self, ignore_100_continue=True):
         if self.headers is not None:
             # we've already started reading the response
             return
 
         # read until we get a non-100 response
+        # (unless caller has requested return of 100 responses)
         while True:
             version, status, reason = self._read_status()
-            if status != CONTINUE:
+            if not (ignore_100_continue and status == CONTINUE):
                 break
             # skip the header from the 100 response
             skipped_headers = _read_headers(self.fp)
@@ -864,13 +866,15 @@ class HTTPConnection:
         return None
 
     def __init__(self, host, port=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-                 source_address=None, blocksize=8192):
+                 source_address=None, blocksize=8192, continue_timeout=2.5):
         self.timeout = timeout
+        self.continue_timeout = continue_timeout
         self.source_address = source_address
         self.blocksize = blocksize
         self.sock = None
         self._buffer = []
         self.__response = None
+        self.__pending_response = None
         self.__state = _CS_IDLE
         self._method = None
         self._tunnel_host = None
@@ -882,9 +886,10 @@ class HTTPConnection:
 
         self._validate_host(self.host)
 
-        # This is stored as an instance variable to allow unit
-        # tests to replace it with a suitable mockup
+        # These are stored as instance variables to allow unit
+        # tests to replace them with a suitable mockup
         self._create_connection = socket.create_connection
+        self._select = select.select
 
     def set_tunnel(self, host, port=None, headers=None):
         """Set up host and port for HTTP CONNECT tunnelling.
@@ -1020,6 +1025,10 @@ class HTTPConnection:
                 self.sock = None
                 sock.close()   # close it manually... there may be other refs
         finally:
+            pending_response = self.__pending_response
+            if pending_response:
+                self.__pending_response = None
+                pending_response.close()
             response = self.__response
             if response:
                 self.__response = None
@@ -1080,7 +1089,8 @@ class HTTPConnection:
                 datablock = datablock.encode("iso-8859-1")
             yield datablock
 
-    def _send_output(self, message_body=None, encode_chunked=False):
+    def _send_output(self, message_body=None, encode_chunked=False,
+                     expect_continue=False):
         """Send the currently buffered request and clear the buffer.
 
         Appends an extra \\r\\n to the buffer.
@@ -1092,6 +1102,23 @@ class HTTPConnection:
         self.send(msg)
 
         if message_body is not None:
+            if expect_continue and not self.__response:
+                read_ready, _, _ = self._select([self.sock], [], [],
+                                                self.continue_timeout)
+                if read_ready:
+                    if self.debuglevel > 0:
+                        response = self.response_class(self.sock,
+                                                       self.debuglevel,
+                                                       method=self._method)
+                    else:
+                        response = self.response_class(self.sock,
+                                                       method=self._method)
+                    response.begin(ignore_100_continue=False)
+                    if response.code != CONTINUE:
+                        # Break without sending the body
+                        self.__pending_response = response
+                        return
+                    response.close()
 
             # create a consistent interface to message_body
             if hasattr(message_body, 'read'):
@@ -1318,7 +1345,8 @@ class HTTPConnection:
         header = header + b': ' + value
         self._output(header)
 
-    def endheaders(self, message_body=None, *, encode_chunked=False):
+    def endheaders(self, message_body=None, *, encode_chunked=False,
+                   expect_continue=False):
         """Indicate that the last header line has been sent to the server.
 
         This method sends the request to the server.  The optional message_body
@@ -1329,7 +1357,8 @@ class HTTPConnection:
             self.__state = _CS_REQ_SENT
         else:
             raise CannotSendHeader()
-        self._send_output(message_body, encode_chunked=encode_chunked)
+        self._send_output(message_body, encode_chunked=encode_chunked,
+                          expect_continue=expect_continue)
 
     def request(self, method, url, body=None, headers={}, *,
                 encode_chunked=False):
@@ -1374,20 +1403,33 @@ class HTTPConnection:
         else:
             encode_chunked = False
 
+        # If the Expect: 100-continue header is set, we will try to honor it
+        # (if possible). We can only do so if 1) the request has a body, and
+        # 2) there is no current incomplete response (since we need to read
+        # the response stream to check if the code is 100 or not)
+        expect_continue = (
+            body and not self.__response
+            and 'expect' in header_names
+            and '100-continue' in {v.lower() for k, v in headers.items()
+                                   if k.lower() == 'expect'}
+        )
+
         for hdr, value in headers.items():
             self.putheader(hdr, value)
         if isinstance(body, str):
             # RFC 2616 Section 3.7.1 says that text default has a
             # default charset of iso-8859-1.
             body = _encode(body, 'body')
-        self.endheaders(body, encode_chunked=encode_chunked)
+        self.endheaders(body, encode_chunked=encode_chunked,
+                        expect_continue=expect_continue)
 
-    def getresponse(self):
+    def getresponse(self, ignore_100_continue=True):
         """Get the response from the server.
 
         If the HTTPConnection is in the correct state, returns an
-        instance of HTTPResponse or of whatever object is returned by
-        the response_class variable.
+        instance of HTTPResponse or of whatever object is returned by the
+        response_class variable. The connection will wait for a response other
+        than code 100 ('Continue') unless ignore_100_continue is set to False.
 
         If a request has not been sent or if a previous response has
         not be handled, ResponseNotReady is raised.  If the HTTP
@@ -1418,7 +1460,10 @@ class HTTPConnection:
         if self.__state != _CS_REQ_SENT or self.__response:
             raise ResponseNotReady(self.__state)
 
-        if self.debuglevel > 0:
+        if self.__pending_response:
+            response = self.__pending_response
+            self.__pending_response = None
+        elif self.debuglevel > 0:
             response = self.response_class(self.sock, self.debuglevel,
                                            method=self._method)
         else:
@@ -1426,19 +1471,21 @@ class HTTPConnection:
 
         try:
             try:
-                response.begin()
+                response.begin(ignore_100_continue=ignore_100_continue)
             except ConnectionError:
                 self.close()
                 raise
             assert response.will_close != _UNKNOWN
-            self.__state = _CS_IDLE
+            if response.code != 100:
+                # Code 100 is effectively 'not a response' for this purpose
+                self.__state = _CS_IDLE
 
-            if response.will_close:
-                # this effectively passes the connection to the response
-                self.close()
-            else:
-                # remember this, so we can tell when it is complete
-                self.__response = response
+                if response.will_close:
+                    # this effectively passes the connection to the response
+                    self.close()
+                else:
+                    # remember this, so we can tell when it is complete
+                    self.__response = response
 
             return response
         except:
