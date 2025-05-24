@@ -455,6 +455,33 @@ class BaseSelectorTestCase:
 
     @unittest.skipUnless(hasattr(signal, "alarm"),
                          "signal.alarm() required for this test")
+    def test_select_interrupted_error_exc(self):
+        s = self.SELECTOR()
+        self.addCleanup(s.close)
+
+        rd, wr = self.make_socketpair()
+
+        def handler(*args):
+            raise InterruptedError
+
+        orig_alrm_handler = signal.signal(signal.SIGALRM, handler)
+        self.addCleanup(signal.signal, signal.SIGALRM, orig_alrm_handler)
+
+        try:
+            signal.alarm(1)
+
+            s.register(rd, selectors.EVENT_READ)
+            t = time()
+            # select() is interrupted by a signal which raises an exception
+            with self.assertRaises(InterruptedError):
+                s.select(30)
+            # select() was interrupted before the timeout of 30 seconds
+            self.assertLess(time() - t, 5.0)
+        finally:
+            signal.alarm(0)
+
+    @unittest.skipUnless(hasattr(signal, "alarm"),
+                         "signal.alarm() required for this test")
     def test_select_interrupt_noraise(self):
         s = self.SELECTOR()
         self.addCleanup(s.close)
