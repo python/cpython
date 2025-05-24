@@ -1372,6 +1372,10 @@ class _ZipRepacker:
     def __init__(self, debug=0):
         self.debug = debug  # Level of printing: 0 through 3
 
+    def _debug(self, level, *msg):
+        if self.debug >= level:
+            print(*msg)
+
     def repack(self, zfile):
         """
         Repack the ZIP file, removing unrecorded local file entries and random
@@ -1497,11 +1501,9 @@ class _ZipRepacker:
     def _calc_initial_entry_offset(self, fp, data_offset):
         checked_offsets = set()
         if data_offset > 0:
-            if self.debug > 2:
-                print('scanning file signatures before:', data_offset)
+            self._debug(3, 'scanning file signatures before:', data_offset)
             for pos in self._iter_scan_signature(fp, stringFileHeader, 0, data_offset):
-                if self.debug > 2:
-                    print('checking file signature at:', pos)
+                self._debug(3, 'checking file signature at:', pos)
                 if self._validate_local_file_entry_sequence(fp, pos, data_offset, checked_offsets):
                     return data_offset - pos
         return 0
@@ -1535,15 +1537,13 @@ class _ZipRepacker:
         offset = start_offset
 
         while offset < end_offset:
-            if self.debug > 2:
-                print('checking local file entry at:', offset)
+            self._debug(3, 'checking local file entry at:', offset)
 
             # Cache checked offsets to improve performance by failing
             # subsequent (possible) file entry offsets early. They are
             # rechecked only when proven false eventually.
             if offset in checked_offsets:
-                if self.debug > 2:
-                    print('skipping checked:', offset)
+                self._debug(3, 'skipping checked:', offset)
                 return False
             else:
                 checked_offsets.add(offset)
