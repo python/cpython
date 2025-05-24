@@ -6,7 +6,6 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_zstd_ZstdDict_new__doc__,
@@ -90,7 +89,9 @@ exit:
 PyDoc_STRVAR(_zstd_ZstdDict_as_digested_dict__doc__,
 "Load as a digested dictionary to compressor.\n"
 "\n"
-"Pass this attribute as zstd_dict argument: compress(dat, zstd_dict=zd.as_digested_dict)\n"
+"Pass this attribute as zstd_dict argument:\n"
+"compress(dat, zstd_dict=zd.as_digested_dict)\n"
+"\n"
 "1. Some advanced compression parameters of compressor may be overridden\n"
 "   by parameters of digested dictionary.\n"
 "2. ZstdDict has a digested dictionaries cache for each compression level.\n"
@@ -118,19 +119,15 @@ _zstd_ZstdDict_as_digested_dict_get_impl(ZstdDict *self);
 static PyObject *
 _zstd_ZstdDict_as_digested_dict_get(PyObject *self, void *Py_UNUSED(context))
 {
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _zstd_ZstdDict_as_digested_dict_get_impl((ZstdDict *)self);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
+    return _zstd_ZstdDict_as_digested_dict_get_impl((ZstdDict *)self);
 }
 
 PyDoc_STRVAR(_zstd_ZstdDict_as_undigested_dict__doc__,
 "Load as an undigested dictionary to compressor.\n"
 "\n"
-"Pass this attribute as zstd_dict argument: compress(dat, zstd_dict=zd.as_undigested_dict)\n"
+"Pass this attribute as zstd_dict argument:\n"
+"compress(dat, zstd_dict=zd.as_undigested_dict)\n"
+"\n"
 "1. The advanced compression parameters of compressor will not be overridden.\n"
 "2. Loading an undigested dictionary is costly. If load an undigested dictionary\n"
 "   multiple times, consider reusing a compressor object.\n"
@@ -156,19 +153,15 @@ _zstd_ZstdDict_as_undigested_dict_get_impl(ZstdDict *self);
 static PyObject *
 _zstd_ZstdDict_as_undigested_dict_get(PyObject *self, void *Py_UNUSED(context))
 {
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _zstd_ZstdDict_as_undigested_dict_get_impl((ZstdDict *)self);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
+    return _zstd_ZstdDict_as_undigested_dict_get_impl((ZstdDict *)self);
 }
 
 PyDoc_STRVAR(_zstd_ZstdDict_as_prefix__doc__,
 "Load as a prefix to compressor/decompressor.\n"
 "\n"
-"Pass this attribute as zstd_dict argument: compress(dat, zstd_dict=zd.as_prefix)\n"
+"Pass this attribute as zstd_dict argument:\n"
+"compress(dat, zstd_dict=zd.as_prefix)\n"
+"\n"
 "1. Prefix is compatible with long distance matching, while dictionary is not.\n"
 "2. It only works for the first frame, then the compressor/decompressor will\n"
 "   return to no prefix state.\n"
@@ -194,12 +187,6 @@ _zstd_ZstdDict_as_prefix_get_impl(ZstdDict *self);
 static PyObject *
 _zstd_ZstdDict_as_prefix_get(PyObject *self, void *Py_UNUSED(context))
 {
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _zstd_ZstdDict_as_prefix_get_impl((ZstdDict *)self);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
+    return _zstd_ZstdDict_as_prefix_get_impl((ZstdDict *)self);
 }
-/*[clinic end generated code: output=bfb31c1187477afd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=47b12b5848b53ed8 input=a9049054013a1b77]*/
