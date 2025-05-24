@@ -730,6 +730,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__sub__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__subclasscheck__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__subclasshook__));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__timestamp_ns__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__truediv__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__trunc__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__type_params__));
@@ -773,6 +774,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_loop));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_needs_com_addref_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_only_immortal));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_print_exception_bltin));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_restype_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_showwarnmsg));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_shutdown));
@@ -781,6 +783,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_strptime_datetime_date));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_strptime_datetime_datetime));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_strptime_datetime_time));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_timestamp_formatter));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_type_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_uninitialized_submodules));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_warn_unawaited_coroutine));
