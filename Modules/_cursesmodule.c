@@ -1447,7 +1447,7 @@ _curses_window_box_impl(PyCursesWindowObject *self, int group_right_1,
             return NULL;
         }
     }
-    return curses_window_check_err(self, box(self->win,ch1,ch2), "box", NULL);
+    return curses_window_check_err(self, box(self->win, ch1, ch2), "box", NULL);
 }
 
 #if defined(HAVE_NCURSES_H) || defined(MVWDELCH_IS_EXPRESSION)
