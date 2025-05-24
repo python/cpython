@@ -1,0 +1,4 @@
+Removed implicit fallback to the buildled copy of the ``libmpdec`` library.
+Now this should be explicitly enabled with :option:`--with-system-libmpdec`
+set to ``no`` or with :option:`!--without-system-libmpdec`.  Patch by Sergey
+B Kirpichev.
