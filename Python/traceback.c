@@ -9,7 +9,6 @@
 #include "pycore_interpframe.h"   // _PyFrame_GetCode()
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
 #include "pycore_traceback.h"     // EXCEPTION_TB_HEADER
 
 #include "frameobject.h"          // PyFrame_New()
@@ -399,7 +398,7 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
     taillen = strlen(tail);
 
     PyThreadState *tstate = _PyThreadState_GET();
-    if (_PySys_GetOptionalAttr(&_Py_ID(path), &syspath) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(path), &syspath) < 0) {
         PyErr_Clear();
         goto error;
     }
@@ -777,7 +776,7 @@ _PyTraceBack_Print(PyObject *v, const char *header, PyObject *f)
         PyErr_BadInternalCall();
         return -1;
     }
-    if (_PySys_GetOptionalAttrString("tracebacklimit", &limitv) < 0) {
+    if (PySys_GetOptionalAttrString("tracebacklimit", &limitv) < 0) {
         return -1;
     }
     else if (limitv != NULL && PyLong_Check(limitv)) {

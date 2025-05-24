@@ -497,15 +497,12 @@ error:
 static int
 pymain_run_interactive_hook(int *exitcode)
 {
-    PyObject *hook = PyImport_ImportModuleAttrString("sys",
-                                                     "__interactivehook__");
-    if (hook == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            // no sys.__interactivehook__ attribute
-            PyErr_Clear();
-            return 0;
-        }
+    PyObject *hook;
+    if (PySys_GetOptionalAttrString("__interactivehook__", &hook) < 0) {
         goto error;
+    }
+    if (hook == NULL) {
+        return 0;
     }
 
     if (PySys_Audit("cpython.run_interactivehook", "O", hook) < 0) {

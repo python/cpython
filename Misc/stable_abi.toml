@@ -2575,3 +2575,11 @@
     added = '3.14'
 [function.Py_PACK_VERSION]
     added = '3.14'
+[function.PySys_GetAttr]
+    added = '3.15'
+[function.PySys_GetAttrString]
+    added = '3.15'
+[function.PySys_GetOptionalAttr]
+    added = '3.15'
+[function.PySys_GetOptionalAttrString]
+    added = '3.15'

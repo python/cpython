@@ -782,7 +782,7 @@ _lsprof_Profiler_enable_impl(ProfilerObject *self, int subcalls,
         return NULL;
     }
 
-    PyObject* monitoring = PyImport_ImportModuleAttrString("sys", "monitoring");
+    PyObject* monitoring = PySys_GetAttrString("monitoring");
     if (!monitoring) {
         return NULL;
     }
@@ -864,7 +864,7 @@ _lsprof_Profiler_disable_impl(ProfilerObject *self)
     }
     if (self->flags & POF_ENABLED) {
         PyObject* result = NULL;
-        PyObject* monitoring = PyImport_ImportModuleAttrString("sys", "monitoring");
+        PyObject* monitoring = PySys_GetAttrString("monitoring");
 
         if (!monitoring) {
             return NULL;
@@ -983,7 +983,7 @@ profiler_init_impl(ProfilerObject *self, PyObject *timer, double timeunit,
     Py_XSETREF(self->externalTimer, Py_XNewRef(timer));
     self->tool_id = PY_MONITORING_PROFILER_ID;
 
-    PyObject* monitoring = PyImport_ImportModuleAttrString("sys", "monitoring");
+    PyObject* monitoring = PySys_GetAttrString("monitoring");
     if (!monitoring) {
         return -1;
     }
