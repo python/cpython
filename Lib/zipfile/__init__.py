@@ -1500,7 +1500,9 @@ class _ZipRepacker:
             if self.debug > 2:
                 print('scanning file signatures before:', data_offset)
             for pos in self._iter_scan_signature(fp, stringFileHeader, 0, data_offset):
-                if self._starts_consecutive_file_entries(fp, pos, data_offset, checked_offsets):
+                if self.debug > 2:
+                    print('checking file signature at:', pos)
+                if self._validate_local_file_entry_sequence(fp, pos, data_offset, checked_offsets):
                     return data_offset - pos
         return 0
 
@@ -1529,12 +1531,12 @@ class _ZipRepacker:
             remainder = chunk[-(sig_len - 1):]
             pos += read_size
 
-    def _starts_consecutive_file_entries(self, fp, start_offset, end_offset, checked_offsets):
+    def _validate_local_file_entry_sequence(self, fp, start_offset, end_offset, checked_offsets):
         offset = start_offset
 
         while offset < end_offset:
             if self.debug > 2:
-                print('checking local file entry:', offset)
+                print('checking local file entry at:', offset)
 
             # Cache checked offsets to improve performance by failing
             # subsequent (possible) file entry offsets early. They are
@@ -1546,69 +1548,72 @@ class _ZipRepacker:
             else:
                 checked_offsets.add(offset)
 
-            fp.seek(offset)
-            try:
-                fheader = self._read_local_file_header(fp)
-            except BadZipFile:
+            entry_size = self._validate_local_file_entry(fp, offset, end_offset)
+            if entry_size is None:
                 return False
-
-            # Create a dummy ZipInfo to utilize parsing.
-            # Flush only the required information.
-            zinfo = ZipInfo()
-            zinfo.header_offset = offset
-            zinfo.flag_bits = fheader[_FH_GENERAL_PURPOSE_FLAG_BITS]
-            zinfo.compress_size = fheader[_FH_COMPRESSED_SIZE]
-            zinfo.file_size = fheader[_FH_UNCOMPRESSED_SIZE]
-            zinfo.CRC = fheader[_FH_CRC]
-
-            filename = fp.read(fheader[_FH_FILENAME_LENGTH])
-            zinfo.extra = fp.read(fheader[_FH_EXTRA_FIELD_LENGTH])
-            pos = fp.tell()
-
-            if pos > end_offset:
-                return False
-
-            try:
-                zinfo._decodeExtra(crc32(filename))  # parse zip64
-            except BadZipFile:
-                return False
-
-            data_descriptor_size = 0
-
-            if zinfo.flag_bits & _MASK_USE_DATA_DESCRIPTOR:
-                # According to the spec, these fields should be zero when data
-                # descriptor is used. Otherwise treat as a false positive on
-                # random bytes to return early, as scanning for data descriptor
-                # is rather intensive.
-                if not (zinfo.CRC == zinfo.compress_size == zinfo.file_size == 0):
-                    return False
-
-                zip64 = (
-                    fheader[_FH_UNCOMPRESSED_SIZE] == 0xffffffff or
-                    fheader[_FH_COMPRESSED_SIZE] == 0xffffffff
-                )
-
-                dd = self._scan_data_descriptor(fp, pos, end_offset, zip64)
-
-                if dd is None:
-                    return False
-
-                crc, compress_size, file_size, data_descriptor_size = dd
-                zinfo.CRC = crc
-                zinfo.compress_size = compress_size
-                zinfo.file_size = file_size
-
-            offset += (
-                sizeFileHeader +
-                fheader[_FH_FILENAME_LENGTH] + fheader[_FH_EXTRA_FIELD_LENGTH] +
-                zinfo.compress_size +
-                data_descriptor_size
-            )
-
-            if self.debug > 2:
-                print('next', offset)
+            offset += entry_size
 
         return offset == end_offset
+
+    def _validate_local_file_entry(self, fp, offset, end_offset):
+        fp.seek(offset)
+        try:
+            fheader = self._read_local_file_header(fp)
+        except BadZipFile:
+            return None
+
+        # Create a dummy ZipInfo to utilize parsing.
+        # Flush only the required information.
+        zinfo = ZipInfo()
+        zinfo.header_offset = offset
+        zinfo.flag_bits = fheader[_FH_GENERAL_PURPOSE_FLAG_BITS]
+        zinfo.compress_size = fheader[_FH_COMPRESSED_SIZE]
+        zinfo.file_size = fheader[_FH_UNCOMPRESSED_SIZE]
+        zinfo.CRC = fheader[_FH_CRC]
+
+        filename = fp.read(fheader[_FH_FILENAME_LENGTH])
+        zinfo.extra = fp.read(fheader[_FH_EXTRA_FIELD_LENGTH])
+        pos = fp.tell()
+
+        if pos > end_offset:
+            return None
+
+        try:
+            zinfo._decodeExtra(crc32(filename))  # parse zip64
+        except BadZipFile:
+            return None
+
+        data_descriptor_size = 0
+
+        if zinfo.flag_bits & _MASK_USE_DATA_DESCRIPTOR:
+            # According to the spec, these fields should be zero when data
+            # descriptor is used. Otherwise treat as a false positive on
+            # random bytes to return early, as scanning for data descriptor
+            # is rather intensive.
+            if not (zinfo.CRC == zinfo.compress_size == zinfo.file_size == 0):
+                return None
+
+            zip64 = (
+                fheader[_FH_UNCOMPRESSED_SIZE] == 0xffffffff or
+                fheader[_FH_COMPRESSED_SIZE] == 0xffffffff
+            )
+
+            dd = self._scan_data_descriptor(fp, pos, end_offset, zip64)
+
+            if dd is None:
+                return None
+
+            crc, compress_size, file_size, data_descriptor_size = dd
+            zinfo.CRC = crc
+            zinfo.compress_size = compress_size
+            zinfo.file_size = file_size
+
+        return (
+            sizeFileHeader +
+            fheader[_FH_FILENAME_LENGTH] + fheader[_FH_EXTRA_FIELD_LENGTH] +
+            zinfo.compress_size +
+            data_descriptor_size
+        )
 
     def _read_local_file_header(self, fp):
         fheader = fp.read(sizeFileHeader)
