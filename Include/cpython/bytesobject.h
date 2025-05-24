@@ -5,7 +5,7 @@
 typedef struct {
     PyObject_VAR_HEAD
     Py_DEPRECATED(3.11) Py_hash_t ob_shash;
-    char ob_sval[1];
+    unsigned char ob_sval[1];
 
     /* Invariants:
      *     ob_sval contains space for 'ob_size+1' elements.
@@ -20,7 +20,7 @@ PyAPI_FUNC(int) _PyBytes_Resize(PyObject **, Py_ssize_t);
 #define _PyBytes_CAST(op) \
     (assert(PyBytes_Check(op)), _Py_CAST(PyBytesObject*, op))
 
-static inline char* PyBytes_AS_STRING(PyObject *op)
+static inline unsigned char* PyBytes_AS_STRING(PyObject *op)
 {
     return _PyBytes_CAST(op)->ob_sval;
 }
