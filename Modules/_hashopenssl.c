@@ -38,6 +38,10 @@
 
 #include <stdbool.h>
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#  define Py_HAS_OPENSSL3_SUPPORT
+#endif
+
 #ifndef OPENSSL_THREADS
 #  error "OPENSSL_THREADS is not defined, Python requires thread-safe OpenSSL"
 #endif
@@ -55,7 +59,7 @@
 #define PY_OPENSSL_HAS_BLAKE2 1
 #endif
 
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#ifdef Py_HAS_OPENSSL3_SUPPORT
 #define PY_EVP_MD EVP_MD
 #define PY_EVP_MD_fetch(algorithm, properties) EVP_MD_fetch(NULL, algorithm, properties)
 #define PY_EVP_MD_up_ref(md) EVP_MD_up_ref(md)
@@ -1926,7 +1930,7 @@ typedef struct _internal_name_mapper_state {
 
 /* A callback function to pass to OpenSSL's OBJ_NAME_do_all(...) */
 static void
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#ifdef Py_HAS_OPENSSL3_SUPPORT
 _openssl_hash_name_mapper(EVP_MD *md, void *arg)
 #else
 _openssl_hash_name_mapper(const EVP_MD *md, const char *from,
@@ -1966,7 +1970,7 @@ hashlib_md_meth_names(PyObject *module)
         return -1;
     }
 
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#ifdef Py_HAS_OPENSSL3_SUPPORT
     // get algorithms from all activated providers in default context
     EVP_MD_do_all_provided(NULL, &_openssl_hash_name_mapper, &state);
 #else
@@ -1999,7 +2003,7 @@ _hashlib_get_fips_mode_impl(PyObject *module)
 /*[clinic end generated code: output=87eece1bab4d3fa9 input=2db61538c41c6fef]*/
 
 {
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#ifdef Py_HAS_OPENSSL3_SUPPORT
     return EVP_default_properties_is_fips_enabled(NULL);
 #else
     ERR_clear_error();
