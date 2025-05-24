@@ -222,4 +222,4 @@ _zstd_ZstdDict_as_prefix_get(PyObject *self, void *Py_UNUSED(context))
 {
     return _zstd_ZstdDict_as_prefix_get_impl((ZstdDict *)self);
 }
-/*[clinic end generated code: output=0418adb04c9d85a7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4696cbc722e5fdfc input=a9049054013a1b77]*/
