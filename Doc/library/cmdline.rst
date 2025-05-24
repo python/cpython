@@ -1,3 +1,5 @@
+.. _library-cmdline:
+
 ++++++++++++++++++++++++++++++++++++
 Modules command-line interface (CLI)
 ++++++++++++++++++++++++++++++++++++
@@ -27,7 +29,7 @@ The following modules have a command-line interface.
 * :mod:`pdb`
 * :ref:`pickle <pickle-cli>`
 * :ref:`pickletools <pickletools-cli>`
-* :mod:`platform`
+* :ref:`platform <platform-cli>`
 * :mod:`poplib`
 * :ref:`profile <profile-cli>`
 * :mod:`pstats`

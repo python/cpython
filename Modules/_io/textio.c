@@ -1185,7 +1185,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     }
 
     /* Check we have been asked for a real text encoding */
-    codec_info = _PyCodec_LookupTextEncoding(encoding, "codecs.open()");
+    codec_info = _PyCodec_LookupTextEncoding(encoding, NULL);
     if (codec_info == NULL) {
         Py_CLEAR(self->encoding);
         goto error;
@@ -1324,8 +1324,7 @@ textiowrapper_change_encoding(textio *self, PyObject *encoding,
     }
 
     // Create new encoder & decoder
-    PyObject *codec_info = _PyCodec_LookupTextEncoding(
-        c_encoding, "codecs.open()");
+    PyObject *codec_info = _PyCodec_LookupTextEncoding(c_encoding, NULL);
     if (codec_info == NULL) {
         Py_DECREF(encoding);
         Py_DECREF(errors);
@@ -3367,8 +3366,7 @@ static PyMethodDef textiowrapper_methods[] = {
     _IO_TEXTIOWRAPPER_TELL_METHODDEF
     _IO_TEXTIOWRAPPER_TRUNCATE_METHODDEF
 
-    {"__reduce__", _PyIOBase_cannot_pickle, METH_NOARGS},
-    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_O},
+    {"__getstate__", _PyIOBase_cannot_pickle, METH_NOARGS},
     {NULL, NULL}
 };
 
