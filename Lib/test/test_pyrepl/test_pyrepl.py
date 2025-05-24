@@ -926,6 +926,7 @@ class TestPyReplModuleCompleter(TestCase):
     def prepare_reader(self, events, namespace):
         console = FakeConsole(events)
         config = ReadlineConfig()
+        config.module_completer = ModuleCompleter(namespace)
         config.readline_completer = rlcompleter.Completer(namespace).complete
         reader = ReadlineAlikeReader(console=console, config=config)
         return reader
@@ -1022,13 +1023,15 @@ class TestPyReplModuleCompleter(TestCase):
 
     def test_relative_import_completions(self):
         cases = (
-            ("from .readl\t\n", "from .readline"),
-            ("from . import readl\t\n", "from . import readline"),
+            (None, "from .readl\t\n", "from .readl"),
+            (None, "from . import readl\t\n", "from . import readl"),
+            ("_pyrepl", "from .readl\t\n", "from .readline"),
+            ("_pyrepl", "from . import readl\t\n", "from . import readline"),
         )
-        for code, expected in cases:
+        for package, code, expected in cases:
             with self.subTest(code=code):
                 events = code_to_events(code)
-                reader = self.prepare_reader(events, namespace={})
+                reader = self.prepare_reader(events, namespace={"__package__": package})
                 output = reader.readline()
                 self.assertEqual(output, expected)
 
@@ -1397,7 +1400,7 @@ class TestMain(ReplTestCase):
             )
 
     @force_not_colorized
-    def _run_repl_globals_test(self, expectations, *, as_file=False, as_module=False):
+    def _run_repl_globals_test(self, expectations, *, as_file=False, as_module=False, pythonstartup=False):
         clean_env = make_clean_env()
         clean_env["NO_COLOR"] = "1"  # force_not_colorized doesn't touch subprocesses
 
@@ -1406,9 +1409,13 @@ class TestMain(ReplTestCase):
             blue.mkdir()
             mod = blue / "calx.py"
             mod.write_text("FOO = 42", encoding="utf-8")
+            startup = blue / "startup.py"
+            startup.write_text("BAR = 64", encoding="utf-8")
             commands = [
                 "print(f'^{" + var + "=}')" for var in expectations
             ] + ["exit()"]
+            if pythonstartup:
+                clean_env["PYTHONSTARTUP"] = str(startup)
             if as_file and as_module:
                 self.fail("as_file and as_module are mutually exclusive")
             elif as_file:
@@ -1427,7 +1434,13 @@ class TestMain(ReplTestCase):
                     skip=True,
                 )
             else:
-                self.fail("Choose one of as_file or as_module")
+                output, exit_code = self.run_repl(
+                    commands,
+                    cmdline_args=[],
+                    env=clean_env,
+                    cwd=td,
+                    skip=True,
+                )
 
         self.assertEqual(exit_code, 0)
         for var, expected in expectations.items():
@@ -1440,6 +1453,23 @@ class TestMain(ReplTestCase):
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
+    def test_globals_initialized_as_default(self):
+        expectations = {
+            "__name__": "'__main__'",
+            "__package__": "None",
+            # "__file__" is missing in -i, like in the basic REPL
+        }
+        self._run_repl_globals_test(expectations)
+
+    def test_globals_initialized_from_pythonstartup(self):
+        expectations = {
+            "BAR": "64",
+            "__name__": "'__main__'",
+            "__package__": "None",
+            # "__file__" is missing in -i, like in the basic REPL
+        }
+        self._run_repl_globals_test(expectations, pythonstartup=True)
+
     def test_inspect_keeps_globals_from_inspected_file(self):
         expectations = {
             "FOO": "42",
@@ -1448,6 +1478,16 @@ class TestMain(ReplTestCase):
             # "__file__" is missing in -i, like in the basic REPL
         }
         self._run_repl_globals_test(expectations, as_file=True)
+
+    def test_inspect_keeps_globals_from_inspected_file_with_pythonstartup(self):
+        expectations = {
+            "FOO": "42",
+            "BAR": "64",
+            "__name__": "'__main__'",
+            "__package__": "None",
+            # "__file__" is missing in -i, like in the basic REPL
+        }
+        self._run_repl_globals_test(expectations, as_file=True, pythonstartup=True)
 
     def test_inspect_keeps_globals_from_inspected_module(self):
         expectations = {
@@ -1458,26 +1498,32 @@ class TestMain(ReplTestCase):
         }
         self._run_repl_globals_test(expectations, as_module=True)
 
+    def test_inspect_keeps_globals_from_inspected_module_with_pythonstartup(self):
+        expectations = {
+            "FOO": "42",
+            "BAR": "64",
+            "__name__": "'__main__'",
+            "__package__": "'blue'",
+            "__file__": re.compile(r"^'.*calx.py'$"),
+        }
+        self._run_repl_globals_test(expectations, as_module=True, pythonstartup=True)
+
     @force_not_colorized
     def test_python_basic_repl(self):
         env = os.environ.copy()
-        commands = ("from test.support import initialized_with_pyrepl\n"
-                    "initialized_with_pyrepl()\n"
-                    "exit()\n")
-
+        pyrepl_commands = "clear\nexit()\n"
         env.pop("PYTHON_BASIC_REPL", None)
-        output, exit_code = self.run_repl(commands, env=env, skip=True)
+        output, exit_code = self.run_repl(pyrepl_commands, env=env, skip=True)
         self.assertEqual(exit_code, 0)
-        self.assertIn("True", output)
-        self.assertNotIn("False", output)
         self.assertNotIn("Exception", output)
+        self.assertNotIn("NameError", output)
         self.assertNotIn("Traceback", output)
 
+        basic_commands = "help\nexit()\n"
         env["PYTHON_BASIC_REPL"] = "1"
-        output, exit_code = self.run_repl(commands, env=env)
+        output, exit_code = self.run_repl(basic_commands, env=env)
         self.assertEqual(exit_code, 0)
-        self.assertIn("False", output)
-        self.assertNotIn("True", output)
+        self.assertIn("Type help() for interactive help", output)
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
