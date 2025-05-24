@@ -1782,7 +1782,7 @@ convertenviron(void)
             return NULL;
         }
 #ifdef MS_WINDOWS
-        v = PyUnicode_FromWideChar(p+1, wcslen(p+1));
+        v = PyUnicode_FromWideChar(p+1, -1);
 #else
         v = PyBytes_FromStringAndSize(p+1, strlen(p+1));
 #endif
@@ -5052,7 +5052,7 @@ os__getfullpathname_impl(PyObject *module, path_t *path)
         return PyErr_NoMemory();
     }
 
-    PyObject *str = PyUnicode_FromWideChar(abspath, wcslen(abspath));
+    PyObject *str = PyUnicode_FromWideChar(abspath, -1);
     PyMem_RawFree(abspath);
     if (str == NULL) {
         return NULL;
@@ -5168,7 +5168,7 @@ os__findfirstfile_impl(PyObject *module, path_t *path)
     }
 
     wRealFileName = wFileData.cFileName;
-    result = PyUnicode_FromWideChar(wRealFileName, wcslen(wRealFileName));
+    result = PyUnicode_FromWideChar(wRealFileName, -1);
     FindClose(hFindFile);
     return result;
 }
@@ -5212,7 +5212,7 @@ os__getvolumepathname_impl(PyObject *module, path_t *path)
         result = win32_error_object("_getvolumepathname", path->object);
         goto exit;
     }
-    result = PyUnicode_FromWideChar(mountpath, wcslen(mountpath));
+    result = PyUnicode_FromWideChar(mountpath, -1);
     if (PyBytes_Check(path->object))
         Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
 
@@ -5736,6 +5736,9 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
 
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
+    // For API sets that don't support these APIs, we have no choice
+    // but to silently create a directory with default ACL.
+#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
     if (mode == 0700 /* 0o700 */) {
         ULONG sdSize;
         pSecAttr = &secAttr;
@@ -5751,6 +5754,7 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
             error = GetLastError();
         }
     }
+#endif
     if (!error) {
         result = CreateDirectoryW(path->wide, pSecAttr);
         if (secAttr.lpSecurityDescriptor &&

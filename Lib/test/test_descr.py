@@ -409,7 +409,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
 
     def test_python_dicts(self):
         # Testing Python subclass of dict...
-        self.assertTrue(issubclass(dict, dict))
+        self.assertIsSubclass(dict, dict)
         self.assertIsInstance({}, dict)
         d = dict()
         self.assertEqual(d, {})
@@ -433,7 +433,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                 self.state = state
             def getstate(self):
                 return self.state
-        self.assertTrue(issubclass(C, dict))
+        self.assertIsSubclass(C, dict)
         a1 = C(12)
         self.assertEqual(a1.state, 12)
         a2 = C(foo=1, bar=2)
@@ -1048,15 +1048,15 @@ class ClassPropertiesAndMethods(unittest.TestCase):
 
         m = types.ModuleType("m")
         self.assertTrue(m.__class__ is types.ModuleType)
-        self.assertFalse(hasattr(m, "a"))
+        self.assertNotHasAttr(m, "a")
 
         m.__class__ = SubType
         self.assertTrue(m.__class__ is SubType)
-        self.assertTrue(hasattr(m, "a"))
+        self.assertHasAttr(m, "a")
 
         m.__class__ = types.ModuleType
         self.assertTrue(m.__class__ is types.ModuleType)
-        self.assertFalse(hasattr(m, "a"))
+        self.assertNotHasAttr(m, "a")
 
         # Make sure that builtin immutable objects don't support __class__
         # assignment, because the object instances may be interned.
@@ -1780,7 +1780,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         class E: # *not* subclassing from C
             foo = C.foo
         self.assertEqual(E().foo.__func__, C.foo) # i.e., unbound
-        self.assertTrue(repr(C.foo.__get__(C())).startswith("<bound method "))
+        self.assertStartsWith(repr(C.foo.__get__(C())), "<bound method ")
 
     def test_compattr(self):
         # Testing computed attributes...
@@ -2058,7 +2058,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         class E(object):
             foo = C.foo
         self.assertEqual(E().foo.__func__, C.foo) # i.e., unbound
-        self.assertTrue(repr(C.foo.__get__(C(1))).startswith("<bound method "))
+        self.assertStartsWith(repr(C.foo.__get__(C(1))), "<bound method ")
 
     @support.impl_detail("testing error message from implementation")
     def test_methods_in_c(self):
@@ -3943,6 +3943,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         del C.__del__
 
     @unittest.skipIf(support.is_emscripten, "Seems to works in Pyodide?")
+    @support.skip_wasi_stack_overflow()
     def test_slots_trash(self):
         # Testing slot trash...
         # Deallocating deeply nested slotted trash caused stack overflows
@@ -4523,6 +4524,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         del o
 
     @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
     @support.requires_resource('cpu')
     def test_wrapper_segfault(self):
         # SF 927248: deeply nested wrappers could cause stack overflow
@@ -4867,6 +4869,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                 deque.append(thing, thing)
 
     @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_repr_as_str(self):
         # Issue #11603: crash or infinite loop when rebinding __str__ as
         # __repr__.
@@ -5194,8 +5197,8 @@ class DictProxyTests(unittest.TestCase):
         # We can't blindly compare with the repr of another dict as ordering
         # of keys and values is arbitrary and may differ.
         r = repr(self.C.__dict__)
-        self.assertTrue(r.startswith('mappingproxy('), r)
-        self.assertTrue(r.endswith(')'), r)
+        self.assertStartsWith(r, 'mappingproxy(')
+        self.assertEndsWith(r, ')')
         for k, v in self.C.__dict__.items():
             self.assertIn('{!r}: {!r}'.format(k, v), r)
 

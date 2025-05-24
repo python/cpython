@@ -77,16 +77,8 @@ module _ctypes
 #include <mach-o/dyld.h>
 #endif
 
-#ifdef MS_WIN32
-#include <malloc.h>
-#endif
-
 #include <ffi.h>
 #include "ctypes.h"
-#ifdef HAVE_ALLOCA_H
-/* AIX needs alloca.h for alloca() */
-#include <alloca.h>
-#endif
 
 #ifdef _Py_MEMORY_SANITIZER
 #include <sanitizer/msan_interface.h>
@@ -1389,7 +1381,7 @@ static PyObject *format_error(PyObject *self, PyObject *args)
         code = GetLastError();
     lpMsgBuf = FormatError(code);
     if (lpMsgBuf) {
-        result = PyUnicode_FromWideChar(lpMsgBuf, wcslen(lpMsgBuf));
+        result = PyUnicode_FromWideChar(lpMsgBuf, -1);
         LocalFree(lpMsgBuf);
     } else {
         result = PyUnicode_FromString("<no description>");

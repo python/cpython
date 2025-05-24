@@ -919,8 +919,36 @@ Note that the ``PyGILState_*`` functions assume there is only one global
 interpreter (created automatically by :c:func:`Py_Initialize`).  Python
 supports the creation of additional interpreters (using
 :c:func:`Py_NewInterpreter`), but mixing multiple interpreters and the
-``PyGILState_*`` API is unsupported.
+``PyGILState_*`` API is unsupported. This is because :c:func:`PyGILState_Ensure`
+and similar functions default to :term:`attaching <attached thread state>` a
+:term:`thread state` for the main interpreter, meaning that the thread can't safely
+interact with the calling subinterpreter.
 
+Supporting subinterpreters in non-Python threads
+------------------------------------------------
+
+If you would like to support subinterpreters with non-Python created threads, you
+must use the ``PyThreadState_*`` API instead of the traditional ``PyGILState_*``
+API.
+
+In particular, you must store the interpreter state from the calling
+function and pass it to :c:func:`PyThreadState_New`, which will ensure that
+the :term:`thread state` is targeting the correct interpreter::
+
+   /* The return value of PyInterpreterState_Get() from the
+      function that created this thread. */
+   PyInterpreterState *interp = ThreadData->interp;
+   PyThreadState *tstate = PyThreadState_New(interp);
+   PyThreadState_Swap(tstate);
+
+   /* GIL of the subinterpreter is now held.
+      Perform Python actions here. */
+   result = CallSomeFunction();
+   /* evaluate result or handle exception */
+
+   /* Destroy the thread state. No Python API allowed beyond this point. */
+   PyThreadState_Clear(tstate);
+   PyThreadState_DeleteCurrent();
 
 .. _fork-and-threads:
 
@@ -1097,6 +1125,10 @@ code, or when embedding the Python interpreter:
    .. seealso:
       :c:func:`PyEval_ReleaseThread`
 
+   .. note::
+      Similar to :c:func:`PyGILState_Ensure`, this function will hang the
+      thread if the runtime is finalizing.
+
 
 The following functions use thread-local storage, and are not compatible
 with sub-interpreters:
@@ -1123,10 +1155,10 @@ with sub-interpreters:
    When the function returns, there will be an :term:`attached thread state`
    and the thread will be able to call arbitrary Python code.  Failure is a fatal error.
 
-   .. note::
-      Calling this function from a thread when the runtime is finalizing will
-      hang the thread until the program exits, even if the thread was not
-      created by Python.  Refer to
+   .. warning::
+      Calling this function when the runtime is finalizing is unsafe. Doing
+      so will either hang the thread until the program ends, or fully crash
+      the interpreter in rare cases. Refer to
       :ref:`cautions-regarding-runtime-finalization` for more details.
 
    .. versionchanged:: 3.14
@@ -1143,7 +1175,6 @@ with sub-interpreters:
    Every call to :c:func:`PyGILState_Ensure` must be matched by a call to
    :c:func:`PyGILState_Release` on the same thread.
 
-
 .. c:function:: PyThreadState* PyGILState_GetThisThreadState()
 
    Get the :term:`attached thread state` for this thread.  May return ``NULL`` if no
@@ -1151,19 +1182,29 @@ with sub-interpreters:
    always has such a thread-state, even if no auto-thread-state call has been
    made on the main thread.  This is mainly a helper/diagnostic function.
 
-   .. seealso: :c:func:`PyThreadState_Get``
+   .. note::
+      This function does not account for :term:`thread states <thread state>` created
+      by something other than :c:func:`PyGILState_Ensure` (such as :c:func:`PyThreadState_New`).
+      Prefer :c:func:`PyThreadState_Get` or :c:func:`PyThreadState_GetUnchecked`
+      for most cases.
 
+   .. seealso: :c:func:`PyThreadState_Get``
 
 .. c:function:: int PyGILState_Check()
 
    Return ``1`` if the current thread is holding the :term:`GIL` and ``0`` otherwise.
    This function can be called from any thread at any time.
-   Only if it has had its Python thread state initialized and currently is
-   holding the :term:`GIL` will it return ``1``.
+   Only if it has had its :term:`thread state <attached thread state>` initialized
+   via :c:func:`PyGILState_Ensure` will it return ``1``.
    This is mainly a helper/diagnostic function.  It can be useful
    for example in callback contexts or memory allocation functions when
    knowing that the :term:`GIL` is locked can allow the caller to perform sensitive
    actions or otherwise behave differently.
+
+   .. note::
+      If the current Python process has ever created a subinterpreter, this
+      function will *always* return ``1``. Prefer :c:func:`PyThreadState_GetUnchecked`
+      for most cases.
 
    .. versionadded:: 3.4
 

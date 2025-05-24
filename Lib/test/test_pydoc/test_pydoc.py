@@ -1380,7 +1380,7 @@ class PydocImportTest(PydocBaseTest):
             helper('modules garbage')
         result = help_io.getvalue()
 
-        self.assertTrue(result.startswith(expected))
+        self.assertStartsWith(result, expected)
 
     def test_importfile(self):
         try:

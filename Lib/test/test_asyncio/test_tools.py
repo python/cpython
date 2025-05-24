@@ -791,21 +791,21 @@ class TestAsyncioToolsBasic(unittest.TestCase):
 class TestAsyncioToolsEdgeCases(unittest.TestCase):
 
     def test_task_awaits_self(self):
-        """A task directly awaits itself – should raise a cycle."""
+        """A task directly awaits itself - should raise a cycle."""
         input_ = [(1, [(1, "Self-Awaiter", [[["loopback"], 1]])])]
         with self.assertRaises(tools.CycleFoundException) as ctx:
             tools.build_async_tree(input_)
         self.assertIn([1, 1], ctx.exception.cycles)
 
     def test_task_with_missing_awaiter_id(self):
-        """Awaiter ID not in task list – should not crash, just show 'Unknown'."""
+        """Awaiter ID not in task list - should not crash, just show 'Unknown'."""
         input_ = [(1, [(1, "Task-A", [[["coro"], 999]])])]  # 999 not defined
         table = tools.build_task_table(input_)
         self.assertEqual(len(table), 1)
         self.assertEqual(table[0][4], "Unknown")
 
     def test_duplicate_coroutine_frames(self):
-        """Same coroutine frame repeated under a parent – should deduplicate."""
+        """Same coroutine frame repeated under a parent - should deduplicate."""
         input_ = [
             (
                 1,
@@ -829,7 +829,7 @@ class TestAsyncioToolsEdgeCases(unittest.TestCase):
         self.assertIn("Task-1", flat)
 
     def test_task_with_no_name(self):
-        """Task with no name in id2name – should still render with fallback."""
+        """Task with no name in id2name - should still render with fallback."""
         input_ = [(1, [(1, "root", [[["f1"], 2]]), (2, None, [])])]
         # If name is None, fallback to string should not crash
         tree = tools.build_async_tree(input_)

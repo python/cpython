@@ -1218,30 +1218,30 @@ static inline int run_remote_debugger_source(PyObject *source)
 
 // Note that this function is inline to avoid creating a PLT entry
 // that would be an easy target for a ROP gadget.
-static inline void run_remote_debugger_script(const char *path)
+static inline void run_remote_debugger_script(PyObject *path)
 {
-    if (0 != PySys_Audit("remote_debugger_script", "s", path)) {
+    if (0 != PySys_Audit("remote_debugger_script", "O", path)) {
         PyErr_FormatUnraisable(
-            "Audit hook failed for remote debugger script %s", path);
+            "Audit hook failed for remote debugger script %U", path);
         return;
     }
 
     // Open the debugger script with the open code hook, and reopen the
     // resulting file object to get a C FILE* object.
-    PyObject* fileobj = PyFile_OpenCode(path);
+    PyObject* fileobj = PyFile_OpenCodeObject(path);
     if (!fileobj) {
-        PyErr_FormatUnraisable("Can't open debugger script %s", path);
+        PyErr_FormatUnraisable("Can't open debugger script %U", path);
         return;
     }
 
     PyObject* source = PyObject_CallMethodNoArgs(fileobj, &_Py_ID(read));
     if (!source) {
-        PyErr_FormatUnraisable("Error reading debugger script %s", path);
+        PyErr_FormatUnraisable("Error reading debugger script %U", path);
     }
 
     PyObject* res = PyObject_CallMethodNoArgs(fileobj, &_Py_ID(close));
     if (!res) {
-        PyErr_FormatUnraisable("Error closing debugger script %s", path);
+        PyErr_FormatUnraisable("Error closing debugger script %U", path);
     } else {
         Py_DECREF(res);
     }
@@ -1249,7 +1249,7 @@ static inline void run_remote_debugger_script(const char *path)
 
     if (source) {
         if (0 != run_remote_debugger_source(source)) {
-            PyErr_FormatUnraisable("Error executing debugger script %s", path);
+            PyErr_FormatUnraisable("Error executing debugger script %U", path);
         }
         Py_DECREF(source);
     }
@@ -1278,7 +1278,14 @@ int _PyRunRemoteDebugger(PyThreadState *tstate)
                 pathsz);
             path[pathsz - 1] = '\0';
             if (*path) {
-                run_remote_debugger_script(path);
+                PyObject *path_obj = PyUnicode_DecodeFSDefault(path);
+                if (path_obj == NULL) {
+                    PyErr_FormatUnraisable("Can't decode debugger script");
+                }
+                else {
+                    run_remote_debugger_script(path_obj);
+                    Py_DECREF(path_obj);
+                }
             }
             PyMem_Free(path);
         }

@@ -13,11 +13,17 @@ class NodeType(Enum):
     TASK = 2
 
 
-@dataclass(frozen=True)
 class CycleFoundException(Exception):
     """Raised when there is a cycle when drawing the call tree."""
-    cycles: list[list[int]]
-    id2name: dict[int, str]
+    def __init__(
+            self,
+            cycles: list[list[int]],
+            id2name: dict[int, str],
+        ) -> None:
+        super().__init__(cycles, id2name)
+        self.cycles = cycles
+        self.id2name = id2name
+
 
 
 # ─── indexing helpers ───────────────────────────────────────────

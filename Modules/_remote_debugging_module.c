@@ -1556,7 +1556,7 @@ get_stack_trace(PyObject* self, PyObject* args)
                     &address_of_current_frame)
             < 0)
         {
-            Py_DECREF(result);
+            Py_CLEAR(result);
             goto result_err;
         }
 
@@ -1565,7 +1565,7 @@ get_stack_trace(PyObject* self, PyObject* args)
         }
 
         if (PyList_Append(result, frame_info) == -1) {
-            Py_DECREF(result);
+            Py_CLEAR(result);
             goto result_err;
         }
 
@@ -1765,7 +1765,7 @@ result_err:
 
 static PyMethodDef methods[] = {
     {"get_stack_trace", get_stack_trace, METH_VARARGS,
-        "Get the Python stack from a given pod"},
+        "Get the Python stack from a given pid"},
     {"get_async_stack_trace", get_async_stack_trace, METH_VARARGS,
         "Get the asyncio stack from a given pid"},
     {"get_all_awaited_by", get_all_awaited_by, METH_VARARGS,

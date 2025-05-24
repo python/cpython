@@ -28,8 +28,9 @@ except ImportError:
 
 from pathlib._os import (
     PathInfo, DirEntryInfo,
+    magic_open, vfspath,
     ensure_different_files, ensure_distinct_paths,
-    copyfile2, copyfileobj, magic_open, copy_info,
+    copyfile2, copyfileobj, copy_info,
 )
 
 
@@ -1164,12 +1165,12 @@ class Path(PurePath):
         # os.symlink() incorrectly creates a file-symlink on Windows. Avoid
         # this by passing *target_is_dir* to os.symlink() on Windows.
         def _copy_from_symlink(self, source, preserve_metadata=False):
-            os.symlink(str(source.readlink()), self, source.info.is_dir())
+            os.symlink(vfspath(source.readlink()), self, source.info.is_dir())
             if preserve_metadata:
                 copy_info(source.info, self, follow_symlinks=False)
     else:
         def _copy_from_symlink(self, source, preserve_metadata=False):
-            os.symlink(str(source.readlink()), self)
+            os.symlink(vfspath(source.readlink()), self)
             if preserve_metadata:
                 copy_info(source.info, self, follow_symlinks=False)
 

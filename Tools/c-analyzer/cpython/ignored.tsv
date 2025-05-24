@@ -191,6 +191,7 @@ Python/pyfpe.c	-	PyFPE_counter	-
 
 Python/import.c	-	pkgcontext	-
 Python/pystate.c	-	_Py_tss_tstate	-
+Python/pystate.c	-	_Py_tss_gilstate	-
 
 ##-----------------------
 ## should be const

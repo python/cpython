@@ -17,6 +17,7 @@ class _zstd.ZstdDict "ZstdDict *" "&zstd_dict_type_spec"
 #include "_zstdmodule.h"
 #include "zstddict.h"
 #include "clinic/zstddict.c.h"
+#include "internal/pycore_lock.h" // PyMutex_IsLocked
 
 #include <zstd.h>                 // ZSTD_freeDDict(), ZSTD_getDictID_fromDict()
 
@@ -51,6 +52,8 @@ _zstd_ZstdDict_new_impl(PyTypeObject *type, Py_buffer *dict_content,
     }
 
     self->d_dict = NULL;
+    self->dict_id = 0;
+    self->lock = (PyMutex){0};
 
     /* ZSTD_CDict dict */
     self->c_dicts = PyDict_New();
@@ -75,12 +78,14 @@ _zstd_ZstdDict_new_impl(PyTypeObject *type, Py_buffer *dict_content,
     /* Both ordinary and "raw content" dictionaries must be 8 bytes minimum */
     if (self->dict_len < 8) {
         PyErr_SetString(PyExc_ValueError,
-                        "Zstandard dictionary content should at least 8 bytes.");
+                        "Zstandard dictionary content should at least "
+                        "8 bytes.");
         goto error;
     }
 
     /* Get dict_id, 0 means "raw content" dictionary. */
-    self->dict_id = ZSTD_getDictID_fromDict(self->dict_buffer, self->dict_len);
+    self->dict_id = ZSTD_getDictID_fromDict(
+                                    self->dict_buffer, self->dict_len);
 
     /* Check validity for ordinary dictionary */
     if (!is_raw && self->dict_id == 0) {
@@ -94,6 +99,7 @@ _zstd_ZstdDict_new_impl(PyTypeObject *type, Py_buffer *dict_content,
     return (PyObject*)self;
 
 error:
+    Py_XDECREF(self);
     PyObject_GC_Del(self);
     return NULL;
 }
@@ -106,7 +112,11 @@ ZstdDict_dealloc(PyObject *ob)
     PyObject_GC_UnTrack(self);
 
     /* Free ZSTD_DDict instance */
-    ZSTD_freeDDict(self->d_dict);
+    if (self->d_dict) {
+        ZSTD_freeDDict(self->d_dict);
+    }
+
+    assert(!PyMutex_IsLocked(&self->lock));
 
     /* Release dict_buffer after Free ZSTD_CDict/ZSTD_DDict instances */
     PyMem_RawFree(self->dict_buffer);
@@ -152,13 +162,14 @@ _zstd_ZstdDict_dict_content_get_impl(ZstdDict *self)
 }
 
 /*[clinic input]
-@critical_section
 @getter
 _zstd.ZstdDict.as_digested_dict
 
 Load as a digested dictionary to compressor.
 
-Pass this attribute as zstd_dict argument: compress(dat, zstd_dict=zd.as_digested_dict)
+Pass this attribute as zstd_dict argument:
+compress(dat, zstd_dict=zd.as_digested_dict)
+
 1. Some advanced compression parameters of compressor may be overridden
    by parameters of digested dictionary.
 2. ZstdDict has a digested dictionaries cache for each compression level.
@@ -169,19 +180,20 @@ Pass this attribute as zstd_dict argument: compress(dat, zstd_dict=zd.as_digeste
 
 static PyObject *
 _zstd_ZstdDict_as_digested_dict_get_impl(ZstdDict *self)
-/*[clinic end generated code: output=09b086e7a7320dbb input=585448c79f31f74a]*/
+/*[clinic end generated code: output=09b086e7a7320dbb input=ee45e1b4a48f6f2c]*/
 {
     return Py_BuildValue("Oi", self, DICT_TYPE_DIGESTED);
 }
 
 /*[clinic input]
-@critical_section
 @getter
 _zstd.ZstdDict.as_undigested_dict
 
 Load as an undigested dictionary to compressor.
 
-Pass this attribute as zstd_dict argument: compress(dat, zstd_dict=zd.as_undigested_dict)
+Pass this attribute as zstd_dict argument:
+compress(dat, zstd_dict=zd.as_undigested_dict)
+
 1. The advanced compression parameters of compressor will not be overridden.
 2. Loading an undigested dictionary is costly. If load an undigested dictionary
    multiple times, consider reusing a compressor object.
@@ -190,19 +202,20 @@ Pass this attribute as zstd_dict argument: compress(dat, zstd_dict=zd.as_undiges
 
 static PyObject *
 _zstd_ZstdDict_as_undigested_dict_get_impl(ZstdDict *self)
-/*[clinic end generated code: output=43c7a989e6d4253a input=022b0829ffb1c220]*/
+/*[clinic end generated code: output=43c7a989e6d4253a input=d39210eedec76fed]*/
 {
     return Py_BuildValue("Oi", self, DICT_TYPE_UNDIGESTED);
 }
 
 /*[clinic input]
-@critical_section
 @getter
 _zstd.ZstdDict.as_prefix
 
 Load as a prefix to compressor/decompressor.
 
-Pass this attribute as zstd_dict argument: compress(dat, zstd_dict=zd.as_prefix)
+Pass this attribute as zstd_dict argument:
+compress(dat, zstd_dict=zd.as_prefix)
+
 1. Prefix is compatible with long distance matching, while dictionary is not.
 2. It only works for the first frame, then the compressor/decompressor will
    return to no prefix state.
@@ -211,7 +224,7 @@ Pass this attribute as zstd_dict argument: compress(dat, zstd_dict=zd.as_prefix)
 
 static PyObject *
 _zstd_ZstdDict_as_prefix_get_impl(ZstdDict *self)
-/*[clinic end generated code: output=6f7130c356595a16 input=09fb82a6a5407e87]*/
+/*[clinic end generated code: output=6f7130c356595a16 input=d59757b0b5a9551a]*/
 {
     return Py_BuildValue("Oi", self, DICT_TYPE_PREFIX);
 }

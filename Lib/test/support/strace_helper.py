@@ -38,7 +38,7 @@ class StraceResult:
 
         This assumes the program under inspection doesn't print any non-utf8
         strings which would mix into the strace output."""
-        decoded_events = self.event_bytes.decode('utf-8')
+        decoded_events = self.event_bytes.decode('utf-8', 'surrogateescape')
         matches = [
             _syscall_regex.match(event)
             for event in decoded_events.splitlines()

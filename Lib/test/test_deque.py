@@ -838,7 +838,7 @@ class TestSubclass(unittest.TestCase):
                     self.assertEqual(list(d), list(e))
                     self.assertEqual(e.x, d.x)
                     self.assertEqual(e.z, d.z)
-                    self.assertFalse(hasattr(e, 'y'))
+                    self.assertNotHasAttr(e, 'y')
 
     def test_pickle_recursive(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):

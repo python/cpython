@@ -123,7 +123,7 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
     if has_static_library:
         data['libpython']['static'] = os.path.join(LIBDIR, LIBRARY)
 
-    data['c_api']['include'] = INCLUDEDIR
+    data['c_api']['headers'] = INCLUDEDIR
     if LIBPC:
         data['c_api']['pkgconfig_path'] = LIBPC
 

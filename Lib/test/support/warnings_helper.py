@@ -23,8 +23,7 @@ def check_syntax_warning(testcase, statement, errtext='',
     testcase.assertEqual(len(warns), 1, warns)
 
     warn, = warns
-    testcase.assertTrue(issubclass(warn.category, SyntaxWarning),
-                        warn.category)
+    testcase.assertIsSubclass(warn.category, SyntaxWarning)
     if errtext:
         testcase.assertRegex(str(warn.message), errtext)
     testcase.assertEqual(warn.filename, '<testcase>')

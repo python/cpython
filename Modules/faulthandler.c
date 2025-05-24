@@ -1069,18 +1069,6 @@ faulthandler_suppress_crash_report(void)
 #endif
 }
 
-static PyObject* _Py_NO_SANITIZE_UNDEFINED
-faulthandler_read_null(PyObject *self, PyObject *args)
-{
-    volatile int *x;
-    volatile int y;
-
-    faulthandler_suppress_crash_report();
-    x = NULL;
-    y = *x;
-    return PyLong_FromLong(y);
-
-}
 
 static void
 faulthandler_raise_sigsegv(void)
@@ -1158,23 +1146,12 @@ faulthandler_fatal_error_c_thread(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject* _Py_NO_SANITIZE_UNDEFINED
+static PyObject*
 faulthandler_sigfpe(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     faulthandler_suppress_crash_report();
-
-    /* Do an integer division by zero: raise a SIGFPE on Intel CPU, but not on
-       PowerPC. Use volatile to disable compile-time optimizations. */
-    volatile int x = 1, y = 0, z;
-    z = x / y;
-
-    /* If the division by zero didn't raise a SIGFPE (e.g. on PowerPC),
-       raise it manually. */
     raise(SIGFPE);
-
-    /* This line is never reached, but we pretend to make something with z
-       to silence a compiler warning. */
-    return PyLong_FromLong(z);
+    Py_UNREACHABLE();
 }
 
 static PyObject *
@@ -1316,10 +1293,6 @@ static PyMethodDef module_methods[] = {
                "Unregister the handler of the signal "
                "'signum' registered by register().")},
 #endif
-    {"_read_null", faulthandler_read_null, METH_NOARGS,
-     PyDoc_STR("_read_null($module, /)\n--\n\n"
-               "Read from NULL, raise "
-               "a SIGSEGV or SIGBUS signal depending on the platform.")},
     {"_sigsegv", faulthandler_sigsegv, METH_VARARGS,
      PyDoc_STR("_sigsegv($module, release_gil=False, /)\n--\n\n"
                "Raise a SIGSEGV signal.")},

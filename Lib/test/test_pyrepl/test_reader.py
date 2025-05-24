@@ -517,6 +517,37 @@ class TestReaderInColor(ScreenEqualMixin, TestCase):
         self.assert_screen_equal(reader, code, clean=True)
         self.assert_screen_equal(reader, expected)
 
+    def test_syntax_highlighting_literal_brace_in_fstring_or_tstring(self):
+        code = dedent(
+            """\
+            f"{{"
+            f"}}"
+            f"a{{b"
+            f"a}}b"
+            f"a{{b}}c"
+            t"a{{b}}c"
+            f"{{{0}}}"
+            f"{ {0} }"
+            """
+        )
+        expected = dedent(
+            """\
+            {s}f"{z}{s}<<{z}{s}"{z}
+            {s}f"{z}{s}>>{z}{s}"{z}
+            {s}f"{z}{s}a<<{z}{s}b{z}{s}"{z}
+            {s}f"{z}{s}a>>{z}{s}b{z}{s}"{z}
+            {s}f"{z}{s}a<<{z}{s}b>>{z}{s}c{z}{s}"{z}
+            {s}t"{z}{s}a<<{z}{s}b>>{z}{s}c{z}{s}"{z}
+            {s}f"{z}{s}<<{z}{o}<{z}{n}0{z}{o}>{z}{s}>>{z}{s}"{z}
+            {s}f"{z}{o}<{z} {o}<{z}{n}0{z}{o}>{z} {o}>{z}{s}"{z}
+            """
+        ).format(**colors).replace("<", "{").replace(">", "}")
+        events = code_to_events(code)
+        reader, _ = handle_all_events(events)
+        self.assert_screen_equal(reader, code, clean=True)
+        self.maxDiff=None
+        self.assert_screen_equal(reader, expected)
+
     def test_control_characters(self):
         code = 'flag = "🏳️‍🌈"'
         events = code_to_events(code)

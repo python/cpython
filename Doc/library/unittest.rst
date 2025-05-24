@@ -109,7 +109,7 @@ Here is a short script to test three string methods::
       unittest.main()
 
 
-A testcase is created by subclassing :class:`unittest.TestCase`.  The three
+A test case is created by subclassing :class:`unittest.TestCase`.  The three
 individual tests are defined with methods whose names start with the letters
 ``test``.  This naming convention informs the test runner about which methods
 represent tests.

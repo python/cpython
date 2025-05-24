@@ -361,7 +361,7 @@ Creating Futures and Tasks
 
    .. versionadded:: 3.5.2
 
-.. method:: loop.create_task(coro, *, name=None, context=None, eager_start=None)
+.. method:: loop.create_task(coro, *, name=None, context=None, eager_start=None, **kwargs)
 
    Schedule the execution of :ref:`coroutine <coroutine>` *coro*.
    Return a :class:`Task` object.
@@ -369,6 +369,10 @@ Creating Futures and Tasks
    Third-party event loops can use their own subclass of :class:`Task`
    for interoperability. In this case, the result type is a subclass
    of :class:`Task`.
+
+   The full function signature is largely the same as that of the
+   :class:`Task` constructor (or factory) - all of the keyword arguments to
+   this function are passed through to that interface.
 
    If the *name* argument is provided and not ``None``, it is set as
    the name of the task using :meth:`Task.set_name`.
@@ -388,8 +392,15 @@ Creating Futures and Tasks
    .. versionchanged:: 3.11
       Added the *context* parameter.
 
+   .. versionchanged:: 3.13.3
+      Added ``kwargs`` which passes on arbitrary extra parameters, including  ``name`` and ``context``.
+
+   .. versionchanged:: 3.13.4
+      Rolled back the change that passes on *name* and *context* (if it is None),
+      while still passing on other arbitrary keyword arguments (to avoid breaking backwards compatibility with 3.13.3).
+
    .. versionchanged:: 3.14
-      Added the *eager_start* parameter.
+      All *kwargs* are now passed on. The *eager_start* parameter works with eager task factories.
 
 .. method:: loop.set_task_factory(factory)
 
@@ -401,6 +412,16 @@ Creating Futures and Tasks
    ``(loop, coro, **kwargs)``, where *loop* is a reference to the active
    event loop, and *coro* is a coroutine object.  The callable
    must pass on all *kwargs*, and return a :class:`asyncio.Task`-compatible object.
+
+   .. versionchanged:: 3.13.3
+      Required that all *kwargs* are passed on to :class:`asyncio.Task`.
+
+   .. versionchanged:: 3.13.4
+      *name* is no longer passed to task factories. *context* is no longer passed
+      to task factories if it is ``None``.
+
+      .. versionchanged:: 3.14
+         *name* and *context* are now unconditionally passed on to task factories again.
 
 .. method:: loop.get_task_factory()
 
