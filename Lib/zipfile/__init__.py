@@ -1446,21 +1446,13 @@ class _ZipRepacker:
         # doesn't match the actual entry order
         filelist = sorted(zfile.filelist, key=lambda x: x.header_offset)
 
-        # calculate the starting entry offset (bytes to skip)
-        entry_offset = 0
-
         try:
             data_offset = filelist[0].header_offset
         except IndexError:
             data_offset = zfile.start_dir
 
-        if data_offset > 0:
-            if self.debug > 2:
-                print('scanning file signatures before:', data_offset)
-            for pos in self._iter_scan_signature(fp, stringFileHeader, 0, data_offset):
-                if self._starts_consecutive_file_entries(fp, pos, data_offset):
-                    entry_offset = data_offset - pos
-                    break
+        # calculate the starting entry offset (bytes to skip)
+        entry_offset = self._calc_initial_entry_offset(fp, data_offset)
 
         # move file entries
         for i, info in enumerate(filelist):
@@ -1501,6 +1493,15 @@ class _ZipRepacker:
         # update state
         zfile.start_dir -= entry_offset
         zfile._didModify = True
+
+    def _calc_initial_entry_offset(self, fp, data_offset):
+        if data_offset > 0:
+            if self.debug > 2:
+                print('scanning file signatures before:', data_offset)
+            for pos in self._iter_scan_signature(fp, stringFileHeader, 0, data_offset):
+                if self._starts_consecutive_file_entries(fp, pos, data_offset):
+                    return data_offset - pos
+        return 0
 
     def _iter_scan_signature(self, fp, signature, start_offset, end_offset, chunk_size=4096):
         sig_len = len(signature)
