@@ -2731,8 +2731,7 @@ class MiscTest(unittest.TestCase):
         with ArchiveMaker() as arc:
             arc.add('x', symlink_to='.')
             arc.add('x', type=tarfile.DIRTYPE, mode='?rwsrwsrwt')
-            arc.add('x', symlink_to=('y/' + '../' + outside_tree_dir))
-            arc.add('y/', symlink_to=('../' * len(tempdir.split(os.path.sep))))
+            arc.add('x', symlink_to=outside_tree_dir)
 
         os.makedirs(outside_tree_dir)
         try:
