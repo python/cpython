@@ -1787,6 +1787,8 @@ class AbstractRepackTests(RepackHelperMixin):
                 with open(TESTFN, 'wb') as fh:
                     with zipfile.ZipFile(fh, 'w') as zh:
                         zh.writestr('file.txt', b'dummy')
+                        zh.writestr('file2.txt', b'dummy')
+                        zh.writestr('file3.txt', b'dummy')
                     fh.write(b' ')
                     expected_zinfos = self._prepare_zip_from_test_files(fh, test_files)
                 expected_size = os.path.getsize(TESTFN)
@@ -1795,6 +1797,8 @@ class AbstractRepackTests(RepackHelperMixin):
                 with open(TESTFN, 'wb') as fh:
                     with zipfile.ZipFile(fh, 'w') as zh:
                         zh.writestr('file.txt', b'dummy')
+                        zh.writestr('file2.txt', b'dummy')
+                        zh.writestr('file3.txt', b'dummy')
                     fh.write(b' ')
                     zinfos = self._prepare_zip_from_test_files(fh, self.test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:

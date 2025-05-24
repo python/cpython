@@ -1495,11 +1495,12 @@ class _ZipRepacker:
         zfile._didModify = True
 
     def _calc_initial_entry_offset(self, fp, data_offset):
+        checked_offsets = set()
         if data_offset > 0:
             if self.debug > 2:
                 print('scanning file signatures before:', data_offset)
             for pos in self._iter_scan_signature(fp, stringFileHeader, 0, data_offset):
-                if self._starts_consecutive_file_entries(fp, pos, data_offset):
+                if self._starts_consecutive_file_entries(fp, pos, data_offset, checked_offsets):
                     return data_offset - pos
         return 0
 
@@ -1528,12 +1529,22 @@ class _ZipRepacker:
             remainder = chunk[-(sig_len - 1):]
             pos += read_size
 
-    def _starts_consecutive_file_entries(self, fp, start_offset, end_offset):
+    def _starts_consecutive_file_entries(self, fp, start_offset, end_offset, checked_offsets):
         offset = start_offset
 
         while offset < end_offset:
             if self.debug > 2:
                 print('checking local file entry:', offset)
+
+            # Cache checked offsets to improve performance by failing
+            # subsequent (possible) file entry offsets early. They are
+            # rechecked only when proven false eventually.
+            if offset in checked_offsets:
+                if self.debug > 2:
+                    print('skipping checked:', offset)
+                return False
+            else:
+                checked_offsets.add(offset)
 
             fp.seek(offset)
             try:
