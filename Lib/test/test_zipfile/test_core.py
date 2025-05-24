@@ -496,7 +496,7 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
         self.make_test_archive(f, compression)
         with zipfile.ZipFile(f, "r") as zipfp:
             zinfo = zipfp.getinfo('strfile')
-            self.assertEqual(zinfo.external_attr, 0o600 << 16)
+            self.assertEqual(zinfo.external_attr, 0o100600 << 16)
 
             zinfo2 = zipfp.getinfo('written-open-w')
             self.assertEqual(zinfo2.external_attr, 0o600 << 16)
@@ -2290,8 +2290,8 @@ class OtherTests(unittest.TestCase):
             zi = zipfile.ZipInfo(base_filename)._for_archive(zf)
             self.assertEqual(zi.compress_level, 1)
             self.assertEqual(zi.compress_type, zipfile.ZIP_STORED)
-            # ?rw- --- ---
-            filemode = stat.S_IRUSR | stat.S_IWUSR
+            # - rw- --- ---
+            filemode = stat.S_IFREG | stat.S_IRUSR | stat.S_IWUSR
             # filemode is stored as the highest 16 bits of external_attr
             self.assertEqual(zi.external_attr >> 16, filemode)
             self.assertEqual(zi.external_attr & 0xFF, 0)  # no MS-DOS flag
