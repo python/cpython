@@ -1695,8 +1695,8 @@ class WriteTest(WriteTestBase, unittest.TestCase):
         with ArchiveMaker() as arc:
             arc.add('x', symlink_to='.')
             arc.add('x', type=tarfile.DIRTYPE, mode='?rwsrwsrwt')
-            arc.add('x', symlink_to=('y/' * 99 + '../' * 99 + outside_tree_dir))
-            arc.add('y/' * 99, symlink_to=('../' * 98))
+            arc.add('x', symlink_to=('y/' + '../' + outside_tree_dir))
+            arc.add('y/', symlink_to=('../' * len(tempdir.split(os.path.sep))))
 
         os.makedirs(outside_tree_dir)
         try:
