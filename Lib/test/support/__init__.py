@@ -1101,7 +1101,6 @@ class _MemoryWatchdog:
         self.started = False
 
     def start(self):
-        import warnings
         try:
             f = open(self.procfile, 'r')
         except OSError as e:
@@ -2728,7 +2727,7 @@ def iter_builtin_types():
     # Fall back to making a best-effort guess.
     if hasattr(object, '__flags__'):
         # Look for any type object with the Py_TPFLAGS_STATIC_BUILTIN flag set.
-        import datetime
+        import datetime  # noqa: F401
         seen = set()
         for cls, subs in walk_class_hierarchy(object):
             if cls in seen:

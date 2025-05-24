@@ -2516,7 +2516,7 @@ class SubinterpreterTests(unittest.TestCase):
             from test.support import interpreters
         except ModuleNotFoundError:
             raise unittest.SkipTest('subinterpreters required')
-        import test.support.interpreters.channels
+        import test.support.interpreters.channels  # noqa: F401
 
     @cpython_only
     @no_rerun('channels (and queues) might have a refleak; see gh-122199')

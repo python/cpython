@@ -28,7 +28,6 @@ import logging
 import math
 import os, sys
 import operator
-import warnings
 import pickle, copy
 import unittest
 import numbers

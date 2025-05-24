@@ -17,7 +17,6 @@ import sysconfig
 import tempfile
 import threading
 import unittest
-import warnings
 from test import support
 from test.support import _4G, bigmemtest
 from test.support import hashlib_helper
