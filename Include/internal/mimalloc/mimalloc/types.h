@@ -58,6 +58,16 @@ terms of the MIT license. A copy of the license can be found in the file
 #else
 #define mi_decl_noreturn
 #endif
+
+/*
+ * 'cold' attribute seems to have been fully supported since GCC 4.x.
+ * See https://github.com/gcc-mirror/gcc/commit/52bf96d2f299e9e6.
+ */
+#if (defined(__GNUC__) && (__GNUC__ >= 4)) || defined(__clang__)
+#define mi_decl_cold            __attribute__((cold))
+#else
+#define mi_decl_cold
+#endif
 #endif
 
 // ------------------------------------------------------
@@ -592,7 +602,8 @@ struct mi_heap_s {
 
 #if (MI_DEBUG)
 // use our own assertion to print without memory allocation
-mi_decl_noreturn void _mi_assert_fail(const char* assertion, const char* fname, unsigned int line, const char* func);
+mi_decl_noreturn mi_decl_cold
+void _mi_assert_fail(const char* assertion, const char* fname, unsigned int line, const char* func);
 #define mi_assert(expr)     ((expr) ? (void)0 : _mi_assert_fail(#expr,__FILE__,__LINE__,__func__))
 #else
 #define mi_assert(x)
