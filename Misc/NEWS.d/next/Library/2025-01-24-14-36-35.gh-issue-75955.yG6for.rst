@@ -1,0 +1,1 @@
+Add optional parameter ``blocking_factor`` to :func:`tarfile.TarFile`.
