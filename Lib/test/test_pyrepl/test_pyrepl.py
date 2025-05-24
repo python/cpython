@@ -918,7 +918,14 @@ class TestPyReplCompleter(TestCase):
 
 class TestPyReplModuleCompleter(TestCase):
     def setUp(self):
+        import importlib
+        # Make iter_modules() search only the standard library.
+        # This makes the test more reliable in case there are
+        # other user packages/scripts on PYTHONPATH which can
+        # interfere with the completions.
+        lib_path = os.path.dirname(importlib.__path__[0])
         self._saved_sys_path = sys.path
+        sys.path = [lib_path]
 
     def tearDown(self):
         sys.path = self._saved_sys_path
@@ -932,14 +939,6 @@ class TestPyReplModuleCompleter(TestCase):
         return reader
 
     def test_import_completions(self):
-        import importlib
-        # Make iter_modules() search only the standard library.
-        # This makes the test more reliable in case there are
-        # other user packages/scripts on PYTHONPATH which can
-        # intefere with the completions.
-        lib_path = os.path.dirname(importlib.__path__[0])
-        sys.path = [lib_path]
-
         cases = (
             ("import path\t\n", "import pathlib"),
             ("import importlib.\t\tres\t\n", "import importlib.resources"),
@@ -1044,6 +1043,19 @@ class TestPyReplModuleCompleter(TestCase):
             ("import valid\t\n", "import valid_name"),
             # 'invalid-name' contains a dash and should not be completed
             ("import invalid\t\n", "import invalid"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    def test_no_fallback_on_regular_completion(self):
+        cases = (
+            ("import pri\t\n", "import pri"),
+            ("from pri\t\n", "from pri"),
+            ("from typing import Na\t\n", "from typing import Na"),
         )
         for code, expected in cases:
             with self.subTest(code=code):
