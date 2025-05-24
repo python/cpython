@@ -597,6 +597,8 @@ def extract_from_snapshots():
         'messages.py': (),
         'fileloc.py': ('--docstrings',),
         'docstrings.py': ('--docstrings',),
+        ('docstrings.py', 'skipdocstrings.py', 'testfile.py', 'docstrings.pot'): ('--docstrings',
+             f'--exclude-docstrings={DATA_DIR}{os.path.sep}skipdocstrings.txt'),
         'comments.py': ('--add-comments=i18n:',),
         'custom_keywords.py': ('--keyword=foo', '--keyword=nfoo:1,2',
                                '--keyword=pfoo:1c,2',
@@ -614,18 +616,20 @@ def extract_from_snapshots():
 
     for filename, args in snapshots.items():
         if isinstance(filename, tuple):
-            filename, output_file = filename
+            *filenames, output_file = filename
             output_file = DATA_DIR / output_file
-            input_file = DATA_DIR / filename
+            input_files = [DATA_DIR / file for file in filenames]
         else:
-            input_file = DATA_DIR / filename
-            output_file = input_file.with_suffix('.pot')
-        contents = input_file.read_bytes()
+            input_files = [DATA_DIR / filename]
+            output_file = input_files[0].with_suffix('.pot')
+
         with temp_cwd(None):
-            Path(input_file.name).write_bytes(contents)
+            for input_file in input_files:
+                contents = input_file.read_bytes()
+                Path(input_file.name).write_bytes(contents)
             assert_python_ok('-Xutf8', Test_pygettext.script, *args,
-                             input_file.name)
-            yield (input_file, output_file,
+                             *[file.name for file in input_files])
+            yield (input_files, output_file,
                    Path('messages.pot').read_text(encoding='utf-8'))
 
 
