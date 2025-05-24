@@ -13,6 +13,7 @@ import struct
 import sys
 import threading
 import time
+import datetime
 
 try:
     import zlib # We may need its compression method
@@ -440,11 +441,13 @@ class ZipInfo:
         # Terminate the file name at the first null byte and
         # ensure paths always use forward slashes as the directory separator.
         filename = _sanitize_filename(filename)
-
         self.filename = filename        # Normalized file name
-        self.date_time = date_time      # year, month, day, hour, min, sec
 
-        if date_time[0] < 1980:
+        # Use current time if year parameter is set to zero or None
+        self.date_time = date_time      # year, month, day, hour, min, sec
+        if not self.date_time[0]:
+            self.date_time = datetime.datetime.now().timetuple()
+        if self.date_time[0] < 1980:
             raise ValueError('ZIP does not support timestamps before 1980')
 
         # Standard values:
@@ -1648,6 +1651,19 @@ class ZipFile:
 
         return info
 
+    def newinfo(self, name):
+        """Return new instance of ZipInfo for file 'name'.
+        It will be set to the currently configured compression algorithm of this archive.
+        The timestamp for the new file will be set to the current time.
+        """
+        info = ZipInfo(name, [None]) # passing None defaults to now instead of 1980
+        if self.compression is not None:
+            info.compress_type = self.compression
+        if self.compresslevel is not None:
+            info.compress_level = self.compresslevel
+
+        return info
+
     def setpassword(self, pwd):
         """Set default password for encrypted files."""
         if pwd and not isinstance(pwd, bytes):
@@ -1710,9 +1726,7 @@ class ZipFile:
             # 'name' is already an info object
             zinfo = name
         elif mode == 'w':
-            zinfo = ZipInfo(name)
-            zinfo.compress_type = self.compression
-            zinfo.compress_level = self.compresslevel
+            zinfo = self.newinfo(name)
         else:
             # Get info object for name
             zinfo = self.getinfo(name)
