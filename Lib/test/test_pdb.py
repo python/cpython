@@ -2200,7 +2200,7 @@ if not SKIP_CORO_TESTS:
             > <doctest test.test_pdb.test_pdb_await_support[2]>(4)main()
             -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
             (Pdb) await non_exist()
-            *** NameError: name 'non_exist' is not defined
+            *** NameError: name 'non_exist' is not defined...
             > <doctest test.test_pdb.test_pdb_await_support[2]>(4)main()
             -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
             (Pdb) s
