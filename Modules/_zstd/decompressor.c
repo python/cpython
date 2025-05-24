@@ -88,13 +88,9 @@ _get_DDict(ZstdDict *self)
     return self->d_dict;
 }
 
-/* Set decompression parameters to decompression context */
 static int
 _zstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
 {
-    size_t zstd_ret;
-    PyObject *key, *value;
-    Py_ssize_t pos;
     _zstd_state* mod_state = PyType_GetModuleState(Py_TYPE(self));
     if (mod_state == NULL) {
         return -1;
@@ -102,38 +98,43 @@ _zstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
 
     if (!PyDict_Check(options)) {
         PyErr_SetString(PyExc_TypeError,
-                        "options argument should be dict object.");
+                        "invalid type for options, expected dict");
         return -1;
     }
 
-    pos = 0;
+    Py_ssize_t pos = 0;
+    PyObject *key, *value;
     while (PyDict_Next(options, &pos, &key, &value)) {
         /* Check key type */
         if (Py_TYPE(key) == mod_state->CParameter_type) {
             PyErr_SetString(PyExc_TypeError,
-                            "Key of decompression options dict should "
-                            "NOT be a CompressionParameter attribute.");
+                "compression options dictionary key must not be a "
+                "CompressionParameter attribute");
             return -1;
         }
 
-        /* Both key & value should be 32-bit signed int */
+        Py_INCREF(key);
         int key_v = PyLong_AsInt(key);
         if (key_v == -1 && PyErr_Occurred()) {
-            PyErr_SetString(PyExc_ValueError,
-                            "Key of options dict should be either a "
-                            "DecompressionParameter attribute or an int.");
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_SetString(PyExc_ValueError,
+                                "dictionary key must be less than 2**31");
+            }
             return -1;
         }
 
+        Py_INCREF(value);
         int value_v = PyLong_AsInt(value);
         if (value_v == -1 && PyErr_Occurred()) {
-            PyErr_SetString(PyExc_ValueError,
-                            "Value of options dict should be an int.");
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_SetString(PyExc_ValueError,
+                                "dictionary value must be less than 2**31");
+            }
             return -1;
         }
 
         /* Set parameter to compression context */
-        zstd_ret = ZSTD_DCtx_setParameter(self->dctx, key_v, value_v);
+        size_t zstd_ret = ZSTD_DCtx_setParameter(self->dctx, key_v, value_v);
 
         /* Check error */
         if (ZSTD_isError(zstd_ret)) {
@@ -583,7 +584,7 @@ _zstd_ZstdDecompressor_new_impl(PyTypeObject *type, PyObject *zstd_dict,
         self->dict = zstd_dict;
     }
 
-    /* Set option to decompression context */
+    /* Set options dictionary */
     if (options != Py_None) {
         if (_zstd_set_d_parameters(self, options) < 0) {
             goto error;

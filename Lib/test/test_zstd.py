@@ -198,11 +198,15 @@ class CompressorTestCase(unittest.TestCase):
 
         # valid compression level range is [-(1<<17), 22]
         with self.assertRaises(ValueError):
+            ZstdCompressor(23)
+        with self.assertRaises(ValueError):
+            ZstdCompressor(-(1<<17)-1)
+        with self.assertRaises(ValueError):
             ZstdCompressor(2**31)
         with self.assertRaises(ValueError):
-            ZstdCompressor(level=-(2**31))
+            ZstdCompressor(level=-(2**1000))
         with self.assertRaises(ValueError):
-            ZstdCompressor(options={2**31: 100})
+            ZstdCompressor(level=(2**1000))
 
         with self.assertRaises(ZstdError):
             ZstdCompressor(options={CompressionParameter.window_log: 100})
@@ -262,15 +266,22 @@ class CompressorTestCase(unittest.TestCase):
         d1[CompressionParameter.ldm_bucket_size_log] = 2**31
         self.assertRaises(ValueError, ZstdCompressor, options=d1)
 
-        # clamp compressionLevel
+        # out of bounds compression level
         level_min, level_max = CompressionParameter.compression_level.bounds()
         with self.assertRaises(ValueError):
             compress(b'', level_max+1)
         with self.assertRaises(ValueError):
             compress(b'', level_min-1)
-
-        compress(b'', options={CompressionParameter.compression_level:level_max+1})
-        compress(b'', options={CompressionParameter.compression_level:level_min-1})
+        with self.assertRaises(ValueError):
+            compress(b'', 2**1000)
+        with self.assertRaises(ValueError):
+            compress(b'', -(2**1000))
+        with self.assertRaises(ValueError):
+            compress(b'', options={
+                CompressionParameter.compression_level: level_max+1})
+        with self.assertRaises(ValueError):
+            compress(b'', options={
+                CompressionParameter.compression_level: level_min-1})
 
         # zstd lib doesn't support MT compression
         if not SUPPORT_MULTITHREADING:
@@ -390,12 +401,22 @@ class DecompressorTestCase(unittest.TestCase):
         self.assertRaises(TypeError, ZstdDecompressor, options=b'abc')
 
         with self.assertRaises(ValueError):
-            ZstdDecompressor(options={2**31 : 100})
+            ZstdDecompressor(options={2**31: 100})
+        with self.assertRaises(ValueError):
+            ZstdDecompressor(options={2**1000: 100})
+        with self.assertRaises(ValueError):
+            ZstdDecompressor(options={-(2**31)-1: 100})
+        with self.assertRaises(ValueError):
+            ZstdDecompressor(options={-(2**1000): 100})
+        with self.assertRaises(ValueError):
+            ZstdDecompressor(options={0: 2**32})
+        with self.assertRaises(ValueError):
+            ZstdDecompressor(options={0: -(2**1000)})
 
         with self.assertRaises(ZstdError):
-            ZstdDecompressor(options={DecompressionParameter.window_log_max:100})
+            ZstdDecompressor(options={DecompressionParameter.window_log_max: 100})
         with self.assertRaises(ZstdError):
-            ZstdDecompressor(options={3333 : 100})
+            ZstdDecompressor(options={3333: 100})
 
         empty = compress(b'')
         lzd = ZstdDecompressor()
@@ -419,6 +440,20 @@ class DecompressorTestCase(unittest.TestCase):
                 (r'Error when setting zstd decompression parameter "window_log_max", '
                  r'it should \d+ <= value <= \d+, provided value is 100\. '
                  r'\((?:32|64)-bit build\)')):
+            decompress(b'', options=options)
+
+        # out of bounds deecompression parameter
+        options[DecompressionParameter.window_log_max] = 2**31
+        with self.assertRaises(ValueError):
+            decompress(b'', options=options)
+        options[DecompressionParameter.window_log_max] = -(2**32)-1
+        with self.assertRaises(ValueError):
+            decompress(b'', options=options)
+        options[DecompressionParameter.window_log_max] = 2**1000
+        with self.assertRaises(ValueError):
+            decompress(b'', options=options)
+        options[DecompressionParameter.window_log_max] = -(2**1000)
+        with self.assertRaises(ValueError):
             decompress(b'', options=options)
 
     def test_unknown_decompression_parameter(self):
@@ -1430,11 +1465,11 @@ class FileTestCase(unittest.TestCase):
             ZstdFile(io.BytesIO(COMPRESSED_100_PLUS_32KB), "rw")
 
         with self.assertRaisesRegex(TypeError,
-                                    r"NOT be a CompressionParameter"):
+                                    r"not be a CompressionParameter"):
             ZstdFile(io.BytesIO(), 'rb',
                      options={CompressionParameter.compression_level:5})
         with self.assertRaisesRegex(TypeError,
-                                    r"NOT be a DecompressionParameter"):
+                                    r"not be a DecompressionParameter"):
             ZstdFile(io.BytesIO(), 'wb',
                      options={DecompressionParameter.window_log_max:21})
 
@@ -1473,7 +1508,7 @@ class FileTestCase(unittest.TestCase):
             tmp_f.write(DAT_130K_C)
             filename = tmp_f.name
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             ZstdFile(filename, options={'a':'b'})
 
         # for PyPy

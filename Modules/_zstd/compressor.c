@@ -49,32 +49,32 @@ typedef struct {
 #include "clinic/compressor.c.h"
 
 static int
-_zstd_set_c_level(ZstdCompressor *self, const Py_ssize_t level)
+_zstd_set_c_level(ZstdCompressor *self, const int level)
 {
     /* Set integer compression level */
-    const int min_level = ZSTD_minCLevel();
-    const int max_level = ZSTD_maxCLevel();
+    int min_level = ZSTD_minCLevel();
+    int max_level = ZSTD_maxCLevel();
     if (level < min_level || level > max_level) {
         PyErr_Format(PyExc_ValueError,
-            "compression level %zd not in valid range %d <= level <= %d.",
+        "%zd not in valid range %d <= compression level <= %d.",
             level, min_level, max_level);
         return -1;
     }
 
     /* Save for generating ZSTD_CDICT */
-    self->compression_level = (int)level;
+    self->compression_level = level;
 
     /* Set compressionLevel to compression context */
-    const size_t zstd_ret = ZSTD_CCtx_setParameter(
-        self->cctx, ZSTD_c_compressionLevel, (int)level);
+    size_t zstd_ret = ZSTD_CCtx_setParameter(
+        self->cctx, ZSTD_c_compressionLevel, level);
 
     /* Check error */
     if (ZSTD_isError(zstd_ret)) {
-        const _zstd_state* const st = PyType_GetModuleState(Py_TYPE(self));
-        if (st == NULL) {
+        _zstd_state* mod_state = PyType_GetModuleState(Py_TYPE(self));
+        if (mod_state == NULL) {
             return -1;
         }
-        set_zstd_error(st, ERR_SET_C_LEVEL, zstd_ret);
+        set_zstd_error(mod_state, ERR_SET_C_LEVEL, zstd_ret);
         return -1;
     }
     return 0;
@@ -83,14 +83,14 @@ _zstd_set_c_level(ZstdCompressor *self, const Py_ssize_t level)
 static int
 _zstd_set_c_parameters(ZstdCompressor *self, PyObject *options)
 {
-    /* Set options dict */
-    _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
+    _zstd_state* mod_state = PyType_GetModuleState(Py_TYPE(self));
     if (mod_state == NULL) {
         return -1;
     }
 
     if (!PyDict_Check(options)) {
-        PyErr_Format(PyExc_TypeError, "invalid type for options, expected dict");
+        PyErr_Format(PyExc_TypeError,
+                     "invalid type for options, expected dict");
         return -1;
     }
 
@@ -100,32 +100,38 @@ _zstd_set_c_parameters(ZstdCompressor *self, PyObject *options)
         /* Check key type */
         if (Py_TYPE(key) == mod_state->DParameter_type) {
             PyErr_SetString(PyExc_TypeError,
-                            "key should NOT be DecompressionParameter.");
+                "compression options dictionary key must not be a "
+                "DecompressionParameter attribute");
             return -1;
         }
 
-        const int key_v = PyLong_AsInt(key);
+        Py_INCREF(key);
+        int key_v = PyLong_AsInt(key);
         if (key_v == -1 && PyErr_Occurred()) {
-            PyErr_SetString(PyExc_ValueError,
-                            "key should be either a "
-                                "CompressionParameter attribute or an int.");
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_SetString(PyExc_ValueError,
+                                "dictionary key must be less than 2**31");
+            }
             return -1;
         }
 
-        // TODO(emmatyping): check bounds when there is a value error here for better
-        // error message?
+        Py_INCREF(value);
         int value_v = PyLong_AsInt(value);
         if (value_v == -1 && PyErr_Occurred()) {
-            PyErr_SetString(PyExc_ValueError,
-                            "options dict value should be an int.");
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_SetString(PyExc_ValueError,
+                                "dictionary value must be less than 2**31");
+            }
             return -1;
         }
 
         if (key_v == ZSTD_c_compressionLevel) {
-            /* Save for generating ZSTD_CDICT */
-            self->compression_level = value_v;
+            if (_zstd_set_c_level(self, value_v) < 0) {
+                return -1;
+            }
+            continue;
         }
-        else if (key_v == ZSTD_c_nbWorkers) {
+        if (key_v == ZSTD_c_nbWorkers) {
             /* From the zstd library docs:
                1. When nbWorkers >= 1, triggers asynchronous mode when
                   used with ZSTD_compressStream2().
@@ -138,7 +144,7 @@ _zstd_set_c_parameters(ZstdCompressor *self, PyObject *options)
         }
 
         /* Set parameter to compression context */
-        const size_t zstd_ret = ZSTD_CCtx_setParameter(self->cctx, key_v, value_v);
+        size_t zstd_ret = ZSTD_CCtx_setParameter(self->cctx, key_v, value_v);
         if (ZSTD_isError(zstd_ret)) {
             set_parameter_error(mod_state, 1, key_v, value_v);
             return -1;
@@ -323,7 +329,7 @@ _zstd_load_c_dict(ZstdCompressor *self, PyObject *dict)
 /*[clinic input]
 @classmethod
 _zstd.ZstdCompressor.__new__ as _zstd_ZstdCompressor_new
-    level: Py_ssize_t(c_default='PY_SSIZE_T_MIN', accept={int, NoneType}) = None
+    level: object = None
         The compression level to use. Defaults to COMPRESSION_LEVEL_DEFAULT.
     options: object = None
         A dict object that contains advanced compression parameters.
@@ -337,9 +343,9 @@ function instead.
 [clinic start generated code]*/
 
 static PyObject *
-_zstd_ZstdCompressor_new_impl(PyTypeObject *type, Py_ssize_t level,
+_zstd_ZstdCompressor_new_impl(PyTypeObject *type, PyObject *level,
                               PyObject *options, PyObject *zstd_dict)
-/*[clinic end generated code: output=a857ec0dc29fc5e2 input=9899740b24d11319]*/
+/*[clinic end generated code: output=cdef61eafecac3d7 input=92de0211ae20ffdc]*/
 {
     ZstdCompressor* self = PyObject_GC_New(ZstdCompressor, type);
     if (self == NULL) {
@@ -364,19 +370,34 @@ _zstd_ZstdCompressor_new_impl(PyTypeObject *type, Py_ssize_t level,
     /* Last mode */
     self->last_mode = ZSTD_e_end;
 
-    if (level != PY_SSIZE_T_MIN && options != Py_None) {
+    if (level != Py_None && options != Py_None) {
         PyErr_SetString(PyExc_RuntimeError,
                         "Only one of level or options should be used.");
         goto error;
     }
 
-    /* Set compressLevel/options to compression context */
-    if (level != PY_SSIZE_T_MIN) {
-        if (_zstd_set_c_level(self, level) < 0) {
+    /* Set compression level */
+    if (level != Py_None) {
+        if (!PyLong_Check(level)) {
+            PyErr_SetString(PyExc_TypeError,
+                "invalid type for level, expected int");
+            goto error;
+        }
+        int level_v = PyLong_AsInt(level);
+        if (level_v == -1 && PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_Format(PyExc_ValueError,
+                    "%zd not in valid range %d <= compression level <= %d.",
+                    level, ZSTD_minCLevel(), ZSTD_maxCLevel());
+            }
+            goto error;
+        }
+        if (_zstd_set_c_level(self, level_v) < 0) {
             goto error;
         }
     }
 
+    /* Set options dictionary */
     if (options != Py_None) {
         if (_zstd_set_c_parameters(self, options) < 0) {
             goto error;
@@ -693,6 +714,8 @@ PyDoc_STRVAR(ZstdCompressor_last_mode_doc,
 static PyMemberDef ZstdCompressor_members[] = {
     {"last_mode", Py_T_INT, offsetof(ZstdCompressor, last_mode),
      Py_READONLY, ZstdCompressor_last_mode_doc},
+    {"compression_level", Py_T_INT, offsetof(ZstdCompressor, compression_level),
+     Py_READONLY, NULL},
     {NULL}
 };
 
