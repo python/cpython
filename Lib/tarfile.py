@@ -2516,16 +2516,18 @@ class TarFile(object):
             # blkdev, etc.), return None instead of a file object.
             return None
 
+    def _transform_destination_path(self, targetpath):
+        # Build the destination pathname, replacing
+        # forward slashes to platform specific separators.
+        targetpath = targetpath.rstrip("/")
+        return targetpath.replace("/", os.sep)
+
     def _extract_member(self, tarinfo, targetpath, set_attrs=True,
                         numeric_owner=False):
         """Extract the TarInfo object tarinfo to a physical
            file called targetpath.
         """
-        # Fetch the TarInfo object for the given name
-        # and build the destination pathname, replacing
-        # forward slashes to platform specific separators.
-        targetpath = targetpath.rstrip("/")
-        targetpath = targetpath.replace("/", os.sep)
+        targetpath = self._transform_destination_path(targetpath)
 
         # Create all upper directories.
         upperdirs = os.path.dirname(targetpath)
