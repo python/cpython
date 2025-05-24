@@ -691,7 +691,7 @@ class TestInterpreterClose(TestBase):
             import time
 
             def task():
-                time.sleep(100)
+                time.sleep(3)
 
             threads = [threading.Thread(target=task, daemon=True) for _ in range(3)]
             for t in threads:
