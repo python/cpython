@@ -1,6 +1,7 @@
 """
 Shared utilities for traceback timestamps tests.
 """
+
 import json
 import sys
 
@@ -8,14 +9,15 @@ import sys
 def get_builtin_exception_types():
     """Get all built-in exception types from the exception hierarchy."""
     exceptions = []
-    
+
     def collect_exceptions(exc_class):
-        if (hasattr(__builtins__, exc_class.__name__) and
-            issubclass(exc_class, BaseException)):
+        if hasattr(__builtins__, exc_class.__name__) and issubclass(
+            exc_class, BaseException
+        ):
             exceptions.append(exc_class.__name__)
         for subclass in exc_class.__subclasses__():
             collect_exceptions(subclass)
-    
+
     collect_exceptions(BaseException)
     return sorted(exceptions)
 
@@ -26,26 +28,44 @@ def create_exception_instance(exc_class_name):
     if hasattr(__builtins__, exc_class_name):
         exc_class = getattr(__builtins__, exc_class_name)
     else:
-        exc_class = getattr(sys.modules['builtins'], exc_class_name)
-    
+        exc_class = getattr(sys.modules["builtins"], exc_class_name)
+
     # Create exception with appropriate arguments
-    if exc_class_name in ('OSError', 'IOError', 'PermissionError', 'FileNotFoundError', 
-                          'FileExistsError', 'IsADirectoryError', 'NotADirectoryError',
-                          'InterruptedError', 'ChildProcessError', 'ConnectionError',
-                          'BrokenPipeError', 'ConnectionAbortedError', 'ConnectionRefusedError',
-                          'ConnectionResetError', 'ProcessLookupError', 'TimeoutError'):
+    if exc_class_name in (
+        "OSError",
+        "IOError",
+        "PermissionError",
+        "FileNotFoundError",
+        "FileExistsError",
+        "IsADirectoryError",
+        "NotADirectoryError",
+        "InterruptedError",
+        "ChildProcessError",
+        "ConnectionError",
+        "BrokenPipeError",
+        "ConnectionAbortedError",
+        "ConnectionRefusedError",
+        "ConnectionResetError",
+        "ProcessLookupError",
+        "TimeoutError",
+    ):
         return exc_class(2, "No such file or directory")
-    elif exc_class_name == 'UnicodeDecodeError':
-        return exc_class('utf-8', b'\xff', 0, 1, 'invalid start byte')
-    elif exc_class_name == 'UnicodeEncodeError':
-        return exc_class('ascii', '\u1234', 0, 1, 'ordinal not in range')
-    elif exc_class_name == 'UnicodeTranslateError':
-        return exc_class('\u1234', 0, 1, 'character maps to <undefined>')
-    elif exc_class_name in ('SyntaxError', 'IndentationError', 'TabError'):
+    elif exc_class_name == "UnicodeDecodeError":
+        return exc_class("utf-8", b"\xff", 0, 1, "invalid start byte")
+    elif exc_class_name == "UnicodeEncodeError":
+        return exc_class("ascii", "\u1234", 0, 1, "ordinal not in range")
+    elif exc_class_name == "UnicodeTranslateError":
+        return exc_class("\u1234", 0, 1, "character maps to <undefined>")
+    elif exc_class_name in ("SyntaxError", "IndentationError", "TabError"):
         return exc_class("invalid syntax", ("test.py", 1, 1, "bad code"))
-    elif exc_class_name == 'SystemExit':
+    elif exc_class_name == "SystemExit":
         return exc_class(0)
-    elif exc_class_name in ('KeyboardInterrupt', 'StopIteration', 'StopAsyncIteration', 'GeneratorExit'):
+    elif exc_class_name in (
+        "KeyboardInterrupt",
+        "StopIteration",
+        "StopAsyncIteration",
+        "GeneratorExit",
+    ):
         return exc_class()
     else:
         try:
@@ -57,18 +77,18 @@ def create_exception_instance(exc_class_name):
 def run_subprocess_test(script_code, args, xopts=None, env_vars=None):
     """Run a test script in subprocess and return parsed JSON result."""
     from test.support import script_helper
-    
+
     cmd_args = []
     if xopts:
         for opt in xopts:
             cmd_args.extend(["-X", opt])
     cmd_args.extend(["-c", script_code])
     cmd_args.extend(args)
-    
+
     kwargs = {}
     if env_vars:
         kwargs.update(env_vars)
-    
+
     result = script_helper.assert_python_ok(*cmd_args, **kwargs)
     return json.loads(result.out.decode())
 
@@ -112,7 +132,7 @@ def create_exception_instance(exc_class_name):
 '''
 
 
-PICKLE_TEST_SCRIPT = f'''
+PICKLE_TEST_SCRIPT = f"""
 import pickle
 import sys
 import json
@@ -148,10 +168,10 @@ if __name__ == "__main__":
     exc_name = sys.argv[1]
     with_timestamps = len(sys.argv) > 2 and sys.argv[2] == 'with_timestamps'
     test_exception_pickle(exc_name, with_timestamps)
-'''
+"""
 
 
-TIMESTAMP_TEST_SCRIPT = f'''
+TIMESTAMP_TEST_SCRIPT = f"""
 import sys
 import json
 import traceback
@@ -188,4 +208,4 @@ def test_exception_timestamp(exc_class_name):
 if __name__ == "__main__":
     exc_name = sys.argv[1]
     test_exception_timestamp(exc_name)
-'''
+"""

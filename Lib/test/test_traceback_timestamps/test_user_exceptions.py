@@ -1,12 +1,13 @@
 """
 Tests for user-derived exception classes with timestamp feature.
 """
+
 import json
 import unittest
 from test.support import script_helper
 
 
-USER_EXCEPTION_SCRIPT = '''
+USER_EXCEPTION_SCRIPT = """
 import pickle
 import sys
 import json
@@ -55,7 +56,7 @@ def test_user_exception(exc_class_name):
 
 if __name__ == "__main__":
     test_user_exception(sys.argv[1])
-'''
+"""
 
 
 class UserExceptionTests(unittest.TestCase):
@@ -63,50 +64,76 @@ class UserExceptionTests(unittest.TestCase):
 
     def test_user_derived_exceptions_without_timestamps(self):
         """Test user-derived exception classes without timestamps."""
-        user_exceptions = ['MyBaseException', 'MyException', 'MyOSError']
-        expected_bases = {'MyBaseException': 'BaseException', 'MyException': 'Exception', 'MyOSError': 'OSError'}
-        
-        for exc_name in user_exceptions:
-            with self.subTest(exception_type=exc_name):
-                result = script_helper.assert_python_ok("-c", USER_EXCEPTION_SCRIPT, exc_name)
-                output = json.loads(result.out.decode())
-                
-                self.assertNotIn('error', output, f"Error with {exc_name}: {output.get('error', 'Unknown')}")
-                self.assertEqual(output['exception_type'], exc_name)
-                self.assertEqual(output['base_class'], expected_bases[exc_name])
-                self.assertTrue(output['has_custom_data'])
-                self.assertTrue(output['has_extra_attr'])
-                self.assertEqual(output['extra_attr_value'], 'extra_value')
-                if output['has_timestamp']:
-                    self.assertEqual(output['timestamp_value'], 0)
-                self.assertTrue(output['is_instance_of_base'])
+        user_exceptions = ["MyBaseException", "MyException", "MyOSError"]
+        expected_bases = {
+            "MyBaseException": "BaseException",
+            "MyException": "Exception",
+            "MyOSError": "OSError",
+        }
 
-    def test_user_derived_exceptions_with_timestamps(self):
-        """Test user-derived exception classes with timestamps."""
-        user_exceptions = ['MyBaseException', 'MyException', 'MyOSError']
-        expected_bases = {'MyBaseException': 'BaseException', 'MyException': 'Exception', 'MyOSError': 'OSError'}
-        
         for exc_name in user_exceptions:
             with self.subTest(exception_type=exc_name):
                 result = script_helper.assert_python_ok(
-                    "-X", "traceback_timestamps=us", "-c", USER_EXCEPTION_SCRIPT, exc_name
+                    "-c", USER_EXCEPTION_SCRIPT, exc_name
                 )
                 output = json.loads(result.out.decode())
-                
-                self.assertNotIn('error', output, f"Error with {exc_name}: {output.get('error', 'Unknown')}")
-                self.assertEqual(output['exception_type'], exc_name)
-                self.assertEqual(output['base_class'], expected_bases[exc_name])
-                self.assertTrue(output['has_custom_data'])
-                self.assertTrue(output['has_extra_attr'])
-                self.assertEqual(output['extra_attr_value'], 'extra_value')
-                self.assertTrue(output['has_timestamp'])
-                self.assertIsNotNone(output['timestamp_value'])
-                self.assertGreater(output['timestamp_value'], 0)
-                self.assertTrue(output['is_instance_of_base'])
+
+                self.assertNotIn(
+                    "error",
+                    output,
+                    f"Error with {exc_name}: {output.get('error', 'Unknown')}",
+                )
+                self.assertEqual(output["exception_type"], exc_name)
+                self.assertEqual(
+                    output["base_class"], expected_bases[exc_name]
+                )
+                self.assertTrue(output["has_custom_data"])
+                self.assertTrue(output["has_extra_attr"])
+                self.assertEqual(output["extra_attr_value"], "extra_value")
+                if output["has_timestamp"]:
+                    self.assertEqual(output["timestamp_value"], 0)
+                self.assertTrue(output["is_instance_of_base"])
+
+    def test_user_derived_exceptions_with_timestamps(self):
+        """Test user-derived exception classes with timestamps."""
+        user_exceptions = ["MyBaseException", "MyException", "MyOSError"]
+        expected_bases = {
+            "MyBaseException": "BaseException",
+            "MyException": "Exception",
+            "MyOSError": "OSError",
+        }
+
+        for exc_name in user_exceptions:
+            with self.subTest(exception_type=exc_name):
+                result = script_helper.assert_python_ok(
+                    "-X",
+                    "traceback_timestamps=us",
+                    "-c",
+                    USER_EXCEPTION_SCRIPT,
+                    exc_name,
+                )
+                output = json.loads(result.out.decode())
+
+                self.assertNotIn(
+                    "error",
+                    output,
+                    f"Error with {exc_name}: {output.get('error', 'Unknown')}",
+                )
+                self.assertEqual(output["exception_type"], exc_name)
+                self.assertEqual(
+                    output["base_class"], expected_bases[exc_name]
+                )
+                self.assertTrue(output["has_custom_data"])
+                self.assertTrue(output["has_extra_attr"])
+                self.assertEqual(output["extra_attr_value"], "extra_value")
+                self.assertTrue(output["has_timestamp"])
+                self.assertIsNotNone(output["timestamp_value"])
+                self.assertGreater(output["timestamp_value"], 0)
+                self.assertTrue(output["is_instance_of_base"])
 
     def test_inheritance_chain_preservation(self):
         """Test that inheritance chain is preserved through pickle/unpickle."""
-        inheritance_script = '''
+        inheritance_script = """
 import pickle, json
 class MyBaseException(BaseException): pass
 class MySpecificException(MyBaseException):
@@ -122,16 +149,16 @@ result = {
     'level_value': getattr(unpickled, 'level', None)
 }
 print(json.dumps(result))
-'''
-        
+"""
+
         result = script_helper.assert_python_ok("-c", inheritance_script)
         output = json.loads(result.out.decode())
-        
-        self.assertTrue(output['is_instance_of_MySpecificException'])
-        self.assertTrue(output['is_instance_of_MyBaseException'])
-        self.assertTrue(output['is_instance_of_BaseException'])
-        self.assertTrue(output['has_level_attr'])
-        self.assertEqual(output['level_value'], 'specific')
+
+        self.assertTrue(output["is_instance_of_MySpecificException"])
+        self.assertTrue(output["is_instance_of_MyBaseException"])
+        self.assertTrue(output["is_instance_of_BaseException"])
+        self.assertTrue(output["has_level_attr"])
+        self.assertEqual(output["level_value"], "specific")
 
 
 if __name__ == "__main__":
