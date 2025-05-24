@@ -1449,6 +1449,32 @@ Glossary
       A computer defined entirely in software.  Python's virtual machine
       executes the :term:`bytecode` emitted by the bytecode compiler.
 
+   whitespace
+      Characters that represent horizontal or vertical space.
+      In an ASCII context, Python recognizes these characters as whitespace:
+
+      +-----------+-----------------+
+      |  ``' '``  | space           |
+      +-----------+-----------------+
+      | ``'\t'``  | tab             |
+      +-----------+-----------------+
+      | ``'\n'``  | newline         |
+      +-----------+-----------------+
+      | ``'\v'``  | vertical tab    |
+      +-----------+-----------------+
+      | ``'\f'``  | form feed       |
+      +-----------+-----------------+
+      | ``'\r'``  | carriage return |
+      +-----------+-----------------+
+
+      In a Unicode context, whitespace characters are the
+      characters defined in the `Unicode Character Database
+      <https://www.unicode.org/reports/tr44/>`_ as "Other" or "Separator"
+      and those with bidirectional property being one of "WS," "B," or "S."
+
+      For example, this is used to :meth:`~str.split` or :meth:`~str.strip`
+      strings.
+
    Zen of Python
       Listing of Python design principles and philosophies that are helpful in
       understanding and using the language.  The listing can be found by typing
