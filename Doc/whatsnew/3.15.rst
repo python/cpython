@@ -78,6 +78,9 @@ Other language changes
 * Several error messages incorrectly using the term "argument" have been corrected.
   (Contributed by Stan Ulbrych in :gh:`133382`.)
 
+* Unraisable exceptions are now highlighted with color by default. This can be
+  controlled by :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Peter Bierma in :gh:`134170`.)
 
 
 New modules
