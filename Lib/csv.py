@@ -89,19 +89,20 @@ class Dialect:
 
     This must be subclassed (see csv.excel).  Valid attributes are:
     delimiter, quotechar, escapechar, doublequote, skipinitialspace,
-    lineterminator, quoting.
+    lineterminator, quoting, strict.
 
     """
     _name = ""
     _valid = False
     # placeholders
-    delimiter = None
-    quotechar = None
+    delimiter = ','
+    quotechar = '"'
     escapechar = None
-    doublequote = None
-    skipinitialspace = None
-    lineterminator = None
-    quoting = None
+    doublequote = True
+    skipinitialspace = False
+    lineterminator = '\r\n'
+    quoting = QUOTE_MINIMAL
+    strict = False
 
     def __init__(self):
         if self.__class__ != Dialect:
