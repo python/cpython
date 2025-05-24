@@ -2169,10 +2169,20 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
     sys_module_dict = sys.modules.copy()
 
     def parse_name(node):
-        assert isinstance(node, ast.arg)
-        if node.annotation is not None:
-            raise ValueError("Annotations are not currently supported")
         return node.arg
+
+    def parse_annotation(annotation):
+        if annotation:
+            expr = ast.unparse(annotation)
+            try:
+                value = eval(expr, module_dict)
+            except NameError:
+                try:
+                    value = eval(expr, sys_module_dict)
+                except NameError:
+                    raise ValueError
+            return value
+        return empty
 
     def wrap_value(s):
         try:
@@ -2221,6 +2231,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
             raise ValueError
 
     def p(name_node, default_node, default=empty):
+        assert isinstance(name_node, ast.arg)
         name = parse_name(name_node)
         if default_node and default_node is not _empty:
             try:
@@ -2228,7 +2239,11 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
                 default = ast.literal_eval(default_node)
             except ValueError:
                 raise ValueError("{!r} builtin has invalid signature".format(obj)) from None
-        parameters.append(Parameter(name, kind, default=default, annotation=empty))
+        try:
+            annotation = parse_annotation(name_node.annotation)
+        except ValueError:
+            raise ValueError("{!r} builtin has invalid signature".format(obj)) from None
+        parameters.append(Parameter(name, kind, default=default, annotation=annotation))
 
     # non-keyword-only parameters
     total_non_kw_args = len(f.args.posonlyargs) + len(f.args.args)
@@ -2275,7 +2290,12 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
             p = parameters[0].replace(kind=Parameter.POSITIONAL_ONLY)
             parameters[0] = p
 
-    return cls(parameters, return_annotation=cls.empty)
+    try:
+        return_annotation = parse_annotation(f.returns)
+    except ValueError:
+        raise ValueError("{!r} builtin has invalid signature".format(obj)) from None
+
+    return cls(parameters, return_annotation=return_annotation)
 
 
 def _signature_from_builtin(cls, func, skip_bound_arg=True):
