@@ -94,8 +94,8 @@ typedef struct {
     const char *ossl_name;
     int ossl_nid;
     int refcnt;
-    PY_EVP_MD *evp_md;
-    PY_EVP_MD *evp_md_nosecurity;
+    PY_EVP_MD *evp;
+    PY_EVP_MD *evp_nosecurity;
 } py_hashentry_t;
 
 // Fundamental to TLS, assumed always present in any libcrypto:
@@ -202,13 +202,13 @@ static void
 py_hashentry_t_destroy_value(void *entry) {
     py_hashentry_t *h = (py_hashentry_t *)entry;
     if (--(h->refcnt) == 0) {
-        if (h->evp_md != NULL) {
-            PY_EVP_MD_free(h->evp_md);
-            h->evp_md = NULL;
+        if (h->evp != NULL) {
+            PY_EVP_MD_free(h->evp);
+            h->evp = NULL;
         }
-        if (h->evp_md_nosecurity != NULL) {
-            PY_EVP_MD_free(h->evp_md_nosecurity);
-            h->evp_md_nosecurity = NULL;
+        if (h->evp_nosecurity != NULL) {
+            PY_EVP_MD_free(h->evp_nosecurity);
+            h->evp_nosecurity = NULL;
         }
         PyMem_Free(entry);
     }
@@ -419,26 +419,26 @@ get_openssl_evp_md_by_utf8name(PyObject *module, const char *name,
         case Py_ht_evp:
         case Py_ht_mac:
         case Py_ht_pbkdf2:
-            digest = FT_ATOMIC_LOAD_PTR_RELAXED(entry->evp_md);
+            digest = FT_ATOMIC_LOAD_PTR_RELAXED(entry->evp);
             if (digest == NULL) {
                 digest = PY_EVP_MD_fetch(entry->ossl_name, NULL);
 #ifdef Py_GIL_DISABLED
                 // exchange just in case another thread did same thing at same time
-                other_digest = _Py_atomic_exchange_ptr(&entry->evp_md, (void *)digest);
+                other_digest = _Py_atomic_exchange_ptr(&entry->evp, (void *)digest);
 #else
-                entry->evp_md = digest;
+                entry->evp = digest;
 #endif
             }
             break;
         case Py_ht_evp_nosecurity:
-            digest = FT_ATOMIC_LOAD_PTR_RELAXED(entry->evp_md_nosecurity);
+            digest = FT_ATOMIC_LOAD_PTR_RELAXED(entry->evp_nosecurity);
             if (digest == NULL) {
                 digest = PY_EVP_MD_fetch(entry->ossl_name, "-fips");
 #ifdef Py_GIL_DISABLED
                 // exchange just in case another thread did same thing at same time
-                other_digest = _Py_atomic_exchange_ptr(&entry->evp_md_nosecurity, (void *)digest);
+                other_digest = _Py_atomic_exchange_ptr(&entry->evp_nosecurity, (void *)digest);
 #else
-                entry->evp_md_nosecurity = digest;
+                entry->evp_nosecurity = digest;
 #endif
             }
             break;
