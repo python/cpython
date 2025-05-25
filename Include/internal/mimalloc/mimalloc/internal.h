@@ -634,10 +634,10 @@ static inline mi_block_t* mi_block_nextx( const void* null, const mi_block_t* bl
   mi_track_mem_defined(block,sizeof(mi_block_t));
   mi_block_t* next;
   #ifdef MI_ENCODE_FREELIST
-  next = (mi_block_t*)mi_ptr_decode(null, block->next, keys);
+  next = (mi_block_t*)mi_ptr_decode(null, mi_atomic_load_relaxed(&block->next), keys);
   #else
   MI_UNUSED(keys); MI_UNUSED(null);
-  next = (mi_block_t*)block->next;
+  next = (mi_block_t*)mi_atomic_load_relaxed(&block->next);
   #endif
   mi_track_mem_noaccess(block,sizeof(mi_block_t));
   return next;
@@ -646,10 +646,10 @@ static inline mi_block_t* mi_block_nextx( const void* null, const mi_block_t* bl
 static inline void mi_block_set_nextx(const void* null, mi_block_t* block, const mi_block_t* next, const uintptr_t* keys) {
   mi_track_mem_undefined(block,sizeof(mi_block_t));
   #ifdef MI_ENCODE_FREELIST
-  block->next = mi_ptr_encode(null, next, keys);
+  mi_atomic_store_relaxed(&block->next, mi_ptr_encode(null, next, keys));
   #else
   MI_UNUSED(keys); MI_UNUSED(null);
-  block->next = (mi_encoded_t)next;
+  mi_atomic_store_relaxed(&block->next, (mi_encoded_t)next);
   #endif
   mi_track_mem_noaccess(block,sizeof(mi_block_t));
 }

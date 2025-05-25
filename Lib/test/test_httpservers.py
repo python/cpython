@@ -1457,72 +1457,58 @@ class CommandLineTestCase(unittest.TestCase):
 
 class CommandLineRunTimeTestCase(unittest.TestCase):
     served_data = os.urandom(32)
-    served_file_name = 'served_filename'
+    served_filename = 'served_filename'
     tls_cert = certdata_file('ssl_cert.pem')
     tls_key = certdata_file('ssl_key.pem')
-    tls_password = 'somepass'
+    tls_password = b'somepass'
+    tls_password_file = 'ssl_key_password'
 
     def setUp(self):
         super().setUp()
-        with open(self.served_file_name, 'wb') as f:
+        server_dir_context = os_helper.temp_cwd()
+        server_dir = self.enterContext(server_dir_context)
+        with open(self.served_filename, 'wb') as f:
             f.write(self.served_data)
-        self.addCleanup(os_helper.unlink, self.served_file_name)
-        self.tls_password_file = tempfile.mktemp()
         with open(self.tls_password_file, 'wb') as f:
-            f.write(self.tls_password.encode())
-        self.addCleanup(os_helper.unlink, self.tls_password_file)
+            f.write(self.tls_password)
 
-    def fetch_file(self, path):
-        context = ssl.create_default_context()
-        # allow self-signed certificates
-        context.check_hostname = False
-        context.verify_mode = ssl.CERT_NONE
+    def fetch_file(self, path, context=None):
         req = urllib.request.Request(path, method='GET')
         with urllib.request.urlopen(req, context=context) as res:
             return res.read()
 
     def parse_cli_output(self, output):
-        matches = re.search(r'\((https?)://([^/:]+):(\d+)/?\)', output)
-        if matches is None:
+        match = re.search(r'Serving (HTTP|HTTPS) on (.+) port (\d+)', output)
+        if match is None:
             return None, None, None
-        return matches.group(1), matches.group(2), int(matches.group(3))
+        return match.group(1).lower(), match.group(2), int(match.group(3))
 
-    def wait_for_server(self, proc, protocol, port, bind, timeout=50):
-        """Check the server process output.
-
-        Return True if the server was successfully started
-        and is listening on the given port and bind address.
-        """
-        while timeout > 0:
-            line = proc.stdout.readline()
-            if not line:
-                time.sleep(0.1)
-                timeout -= 1
-                continue
-            protocol_, host_, port_ = self.parse_cli_output(line)
-            if not protocol_ or not host_ or not port_:
-                time.sleep(0.1)
-                timeout -= 1
-                continue
-            if protocol_ == protocol and host_ == bind and port_ == port:
-                return True
-            break
-        return False
+    def wait_for_server(self, proc, protocol, bind, port):
+        """Check that the server has been successfully started."""
+        line = proc.stdout.readline().strip()
+        if support.verbose:
+            print()
+            print('python -m http.server: ', line)
+        return self.parse_cli_output(line) == (protocol, bind, port)
 
     def test_http_client(self):
-        port = find_unused_port()
-        bind = '127.0.0.1'
+        bind, port = '127.0.0.1', find_unused_port()
         proc = spawn_python('-u', '-m', 'http.server', str(port), '-b', bind,
                             bufsize=1, text=True)
         self.addCleanup(kill_python, proc)
         self.addCleanup(proc.terminate)
-        self.assertTrue(self.wait_for_server(proc, 'http', port, bind))
-        res = self.fetch_file(f'http://{bind}:{port}/{self.served_file_name}')
+        self.assertTrue(self.wait_for_server(proc, 'http', bind, port))
+        res = self.fetch_file(f'http://{bind}:{port}/{self.served_filename}')
         self.assertEqual(res, self.served_data)
 
+    @unittest.skipIf(ssl is None, "requires ssl")
     def test_https_client(self):
-        port = find_unused_port()
-        bind = '127.0.0.1'
+        context = ssl.create_default_context()
+        # allow self-signed certificates
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+
+        bind, port = '127.0.0.1', find_unused_port()
         proc = spawn_python('-u', '-m', 'http.server', str(port), '-b', bind,
                             '--tls-cert', self.tls_cert,
                             '--tls-key', self.tls_key,
@@ -1530,8 +1516,9 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
                             bufsize=1, text=True)
         self.addCleanup(kill_python, proc)
         self.addCleanup(proc.terminate)
-        self.assertTrue(self.wait_for_server(proc, 'https', port, bind))
-        res = self.fetch_file(f'https://{bind}:{port}/{self.served_file_name}')
+        self.assertTrue(self.wait_for_server(proc, 'https', bind, port))
+        url = f'https://{bind}:{port}/{self.served_filename}'
+        res = self.fetch_file(url, context=context)
         self.assertEqual(res, self.served_data)
 
 

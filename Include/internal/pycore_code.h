@@ -451,6 +451,9 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 #define ADAPTIVE_COOLDOWN_BACKOFF 0
 
 // Can't assert this in pycore_backoff.h because of header order dependencies
+#if JUMP_BACKWARD_INITIAL_VALUE <= ADAPTIVE_COOLDOWN_VALUE
+#  error  "JIT threshold value should be larger than adaptive cooldown value"
+#endif
 #if SIDE_EXIT_INITIAL_VALUE <= ADAPTIVE_COOLDOWN_VALUE
 #  error  "Cold exit value should be larger than adaptive cooldown value"
 #endif
