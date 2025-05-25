@@ -2233,6 +2233,18 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_TO_BOOL_LIST", uops)
         self.assertNotIn("_GUARD_TOS_LIST", uops)
 
+    def test_remove_guard_for_slice_tuple(self):
+        def f(n):
+            for i in range(n):
+                false = i == TIER2_THRESHOLD
+                a, b = (1, 2, 3)[: false + 2]
+
+        _, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_UNPACK_SEQUENCE_TWO_TUPLE", uops)
+        self.assertNotIn("_GUARD_TOS_TUPLE", uops)
+
 
 def global_identity(x):
     return x
