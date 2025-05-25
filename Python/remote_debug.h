@@ -146,7 +146,7 @@ _Py_RemoteDebug_InitProcHandle(proc_handle_t *handle, pid_t pid) {
         return -1;
     }
 #endif
-    handle->page_size = getpagesize();
+    handle->page_size = get_page_size();
     for (int i = 0; i < MAX_PAGES; i++) {
         handle->pages[i].data = NULL;
         handle->pages[i].valid = 0;
