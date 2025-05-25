@@ -2395,7 +2395,7 @@ Example output:
             # First subtask (sub_main_2) and what it's waiting for
             [
                 [("c1", "script.py", 23)],
-                "sub_main_2", 
+                "sub_main_2",
                 [...]
             ],
             # Second subtask and its waiters
