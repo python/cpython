@@ -44,6 +44,16 @@ The available exception and functions in this module are:
    .. versionchanged:: 3.0
       The result is always unsigned.
 
+.. function:: adler32_combine(adler1, adler2, len2, /)
+
+   Combine two Adler-32 checksums into one.
+
+   Given an Adler-32 check value *adler1* of a sequence A and an Adler-32 check
+   value *adler2* of a sequence B of length *len2*, the returned checksum
+   is the Adler-32 check value of A and B concatenated.
+
+   .. versionadded:: next
+
 .. function:: compress(data, /, level=-1, wbits=MAX_WBITS)
 
    Compresses the bytes in *data*, returning a bytes object containing compressed data.
@@ -135,6 +145,16 @@ The available exception and functions in this module are:
 
    .. versionchanged:: 3.0
       The result is always unsigned.
+
+.. function:: crc32_combine(crc1, crc2, len2, /)
+
+   Combine two CRC-32 checksums into one.
+
+   Given a CRC-32 check value *crc1* of a sequence A and a CRC-32 check
+   value *crc2* of a sequence B of length *len2*, the returned checksum
+   is the CRC-32 check value of A and B concatenated.
+
+   .. versionadded:: next
 
 .. function:: decompress(data, /, wbits=MAX_WBITS, bufsize=DEF_BUF_SIZE)
 
