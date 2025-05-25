@@ -5,14 +5,11 @@
 # SPDX-FileCopyrightText: Copyright (c) 2015-2021 MagicStack Inc.  http://magic.io
 
 __all__ = (
-    "_AbstractEventLoopPolicy",
     "AbstractEventLoop",
     "AbstractServer",
     "Handle",
     "TimerHandle",
-    "_get_event_loop_policy",
     "get_event_loop_policy",
-    "_set_event_loop_policy",
     "set_event_loop_policy",
     "get_event_loop",
     "set_event_loop",
