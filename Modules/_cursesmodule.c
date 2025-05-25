@@ -933,6 +933,7 @@ PyCursesWindow_dealloc(PyObject *self)
     PyCursesWindowObject *wo = (PyCursesWindowObject *)self;
     if (wo->win != stdscr && wo->win != NULL) {
         if (delwin(wo->win) == ERR) {
+            curses_window_set_error(wo, "delwin", "__del__");
             PyErr_FormatUnraisable("Exception ignored in delwin()");
         }
     }
