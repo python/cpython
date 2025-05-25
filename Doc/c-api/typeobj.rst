@@ -1187,7 +1187,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    .. c:macro:: Py_TPFLAGS_MANAGED_DICT
 
-      This bit indicates that instances of the class have a `~object.__dict__`
+      This bit indicates that instances of the class have a :attr:`~object.__dict__`
       attribute, and that the space for the dictionary is managed by the VM.
 
       If this flag is set, :c:macro:`Py_TPFLAGS_HAVE_GC` should also be set.
