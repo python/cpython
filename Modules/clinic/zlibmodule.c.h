@@ -1044,6 +1044,61 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(zlib_adler32_combine__doc__,
+"adler32_combine($module, adler1, adler2, blen, /)\n"
+"--\n"
+"\n"
+"Combine two Adler-32 check values into one.\n"
+"\n"
+"  adler1\n"
+"    Adler-32 check value for sequence A\n"
+"  adler2\n"
+"    Adler-32 check value for sequence B\n"
+"  blen\n"
+"    Length of sequence B\n"
+"\n"
+"Given an Adler-32 check value \'adler1\' of a sequence A and an Adler-32 check\n"
+"value \'adler2\' of a sequence B of length \'blen\', the returned checksum\n"
+"is the Adler-32 check value of A and B concatenated.");
+
+#define ZLIB_ADLER32_COMBINE_METHODDEF    \
+    {"adler32_combine", _PyCFunction_CAST(zlib_adler32_combine), METH_FASTCALL, zlib_adler32_combine__doc__},
+
+static unsigned int
+zlib_adler32_combine_impl(PyObject *module, unsigned int adler1,
+                          unsigned int adler2, PyObject *blen);
+
+static PyObject *
+zlib_adler32_combine(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    unsigned int adler1;
+    unsigned int adler2;
+    PyObject *blen;
+    unsigned int _return_value;
+
+    if (!_PyArg_CheckPositional("adler32_combine", nargs, 3, 3)) {
+        goto exit;
+    }
+    adler1 = (unsigned int)PyLong_AsUnsignedLongMask(args[0]);
+    if (adler1 == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    adler2 = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
+    if (adler2 == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    blen = args[2];
+    _return_value = zlib_adler32_combine_impl(module, adler1, adler2, blen);
+    if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(zlib_crc32__doc__,
 "crc32($module, data, value=0, /)\n"
 "--\n"
@@ -1098,6 +1153,61 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(zlib_crc32_combine__doc__,
+"crc32_combine($module, crc1, crc2, blen, /)\n"
+"--\n"
+"\n"
+"Combine two CRC-32 check values into one.\n"
+"\n"
+"  crc1\n"
+"    CRC-32 check value for sequence A\n"
+"  crc2\n"
+"    CRC-32 check value for sequence B\n"
+"  blen\n"
+"    Length of sequence B\n"
+"\n"
+"Given a CRC-32 check value \'crc1\' of a sequence A and a CRC-32 check\n"
+"value \'crc2\' of a sequence B of length \'blen\', the returned checksum\n"
+"is the CRC-32 check value of A and B concatenated.");
+
+#define ZLIB_CRC32_COMBINE_METHODDEF    \
+    {"crc32_combine", _PyCFunction_CAST(zlib_crc32_combine), METH_FASTCALL, zlib_crc32_combine__doc__},
+
+static unsigned int
+zlib_crc32_combine_impl(PyObject *module, unsigned int crc1,
+                        unsigned int crc2, PyObject *blen);
+
+static PyObject *
+zlib_crc32_combine(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    unsigned int crc1;
+    unsigned int crc2;
+    PyObject *blen;
+    unsigned int _return_value;
+
+    if (!_PyArg_CheckPositional("crc32_combine", nargs, 3, 3)) {
+        goto exit;
+    }
+    crc1 = (unsigned int)PyLong_AsUnsignedLongMask(args[0]);
+    if (crc1 == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    crc2 = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
+    if (crc2 == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    blen = args[2];
+    _return_value = zlib_crc32_combine_impl(module, crc1, crc2, blen);
+    if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
+
+exit:
+    return return_value;
+}
+
 #ifndef ZLIB_COMPRESS_COPY_METHODDEF
     #define ZLIB_COMPRESS_COPY_METHODDEF
 #endif /* !defined(ZLIB_COMPRESS_COPY_METHODDEF) */
@@ -1121,4 +1231,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=33938c7613a8c1c7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=342d8f887bd913e6 input=a9049054013a1b77]*/
