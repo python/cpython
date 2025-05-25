@@ -104,9 +104,9 @@ def create_exception_instance(exc_class_name):
         exc_class = getattr(__builtins__, exc_class_name)
     else:
         exc_class = getattr(sys.modules['builtins'], exc_class_name)
-    
+
     # Create exception with appropriate arguments
-    if exc_class_name in ('OSError', 'IOError', 'PermissionError', 'FileNotFoundError', 
+    if exc_class_name in ('OSError', 'IOError', 'PermissionError', 'FileNotFoundError',
                           'FileExistsError', 'IsADirectoryError', 'NotADirectoryError',
                           'InterruptedError', 'ChildProcessError', 'ConnectionError',
                           'BrokenPipeError', 'ConnectionAbortedError', 'ConnectionRefusedError',
@@ -143,13 +143,13 @@ def test_exception_pickle(exc_class_name, with_timestamps=False):
     try:
         exc = create_exception_instance(exc_class_name)
         exc.custom_attr = "custom_value"
-        
+
         if with_timestamps:
             exc.__timestamp_ns__ = 1234567890123456789
-        
+
         pickled_data = pickle.dumps(exc, protocol=0)
         unpickled_exc = pickle.loads(pickled_data)
-        
+
         result = {{
             'exception_type': type(unpickled_exc).__name__,
             'message': str(unpickled_exc),
@@ -159,7 +159,7 @@ def test_exception_pickle(exc_class_name, with_timestamps=False):
             'timestamp_value': getattr(unpickled_exc, '__timestamp_ns__', None),
         }}
         print(json.dumps(result))
-        
+
     except Exception as e:
         error_result = {{'error': str(e), 'error_type': type(e).__name__}}
         print(json.dumps(error_result))
@@ -186,11 +186,11 @@ def test_exception_timestamp(exc_class_name):
         except BaseException as exc:
             has_timestamp = hasattr(exc, '__timestamp_ns__')
             timestamp_value = getattr(exc, '__timestamp_ns__', None)
-            
+
             traceback_io = io.StringIO()
             traceback.print_exc(file=traceback_io)
             traceback_output = traceback_io.getvalue()
-            
+
             result = {{
                 'exception_type': type(exc).__name__,
                 'has_timestamp_attr': has_timestamp,
@@ -200,7 +200,7 @@ def test_exception_timestamp(exc_class_name):
                 'traceback_output': traceback_output
             }}
             print(json.dumps(result))
-        
+
     except Exception as e:
         error_result = {{'error': str(e), 'error_type': type(e).__name__}}
         print(json.dumps(error_result))

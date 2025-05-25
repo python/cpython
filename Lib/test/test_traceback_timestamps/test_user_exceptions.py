@@ -35,10 +35,10 @@ def test_user_exception(exc_class_name):
         exc_class = globals()[exc_class_name]
         exc = exc_class(2, "No such file or directory") if exc_class_name == 'MyOSError' else exc_class()
         exc.extra_attr = "extra_value"
-        
+
         pickled_data = pickle.dumps(exc, protocol=0)
         unpickled_exc = pickle.loads(pickled_data)
-        
+
         result = {
             'exception_type': type(unpickled_exc).__name__,
             'base_class': type(unpickled_exc).__bases__[0].__name__,
@@ -50,7 +50,7 @@ def test_user_exception(exc_class_name):
             'is_instance_of_base': isinstance(unpickled_exc, exc_class.__bases__[0])
         }
         print(json.dumps(result))
-        
+
     except Exception as e:
         print(json.dumps({'error': str(e), 'error_type': type(e).__name__}))
 
