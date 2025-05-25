@@ -1586,23 +1586,22 @@ class AbstractRemoveTests(RepackHelperMixin):
                     # make sure the zip file is still valid
                     self.assertIsNone(zh.testzip())
 
-    def test_remove_validate(self):
-        # closed: error out and do nothing
-        zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files)
+    def test_remove_closed(self):
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
         with zipfile.ZipFile(TESTFN, 'a') as zh:
             zh.close()
             with self.assertRaises(ValueError):
                 zh.remove(self.test_files[0][0])
 
-        # writing: error out and do nothing
-        zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files)
+    def test_remove_writing(self):
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
         with zipfile.ZipFile(TESTFN, 'a') as zh:
             with zh.open('newfile.txt', 'w') as fh:
                 with self.assertRaises(ValueError):
                     zh.remove(self.test_files[0][0])
 
-        # mode 'r': error out and do nothing
-        zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files)
+    def test_remove_mode_r(self):
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
         with zipfile.ZipFile(TESTFN, 'r') as zh:
             with self.assertRaises(ValueError):
                 zh.remove(self.test_files[0][0])
@@ -1629,8 +1628,8 @@ class AbstractRemoveTests(RepackHelperMixin):
             self.assertIsNone(zh.testzip())
 
     def test_remove_mode_x(self):
-        os.remove(TESTFN)
-        with zipfile.ZipFile(TESTFN, 'w') as zh:
+        unlink(TESTFN)
+        with zipfile.ZipFile(TESTFN, 'x') as zh:
             for file, data in self.test_files:
                 zh.writestr(file, data)
             zinfos = [ComparableZipInfo(zi) for zi in zh.infolist()]
@@ -2025,45 +2024,46 @@ class AbstractRepackTests(RepackHelperMixin):
                 # check file size
                 self.assertEqual(os.path.getsize(TESTFN), expected_size)
 
-    def test_repack_validate(self):
-        file = 'datafile.txt'
-        data = b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'
-
-        # closed: error out and do nothing
-        with zipfile.ZipFile(TESTFN, 'w') as zh:
-            zh.writestr(file, data)
+    @mock.patch('zipfile._ZipRepacker')
+    def test_repack_closed(self, m_repack):
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
         with zipfile.ZipFile(TESTFN, 'a') as zh:
             zh.close()
             with self.assertRaises(ValueError):
                 zh.repack()
+        m_repack.assert_not_called()
 
-        # writing: error out and do nothing
-        with zipfile.ZipFile(TESTFN, 'w') as zh:
-            zh.writestr(file, data)
+    @mock.patch('zipfile._ZipRepacker')
+    def test_repack_writing(self, m_repack):
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
         with zipfile.ZipFile(TESTFN, 'a') as zh:
             with zh.open('newfile.txt', 'w') as fh:
                 with self.assertRaises(ValueError):
                     zh.repack()
+        m_repack.assert_not_called()
 
-        # mode 'r': error out and do nothing
-        with zipfile.ZipFile(TESTFN, 'w') as zh:
-            zh.writestr(file, data)
+    @mock.patch('zipfile._ZipRepacker')
+    def test_repack_mode_r(self, m_repack):
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
         with zipfile.ZipFile(TESTFN, 'r') as zh:
             with self.assertRaises(ValueError):
                 zh.repack()
+        m_repack.assert_not_called()
 
-        # mode 'w': error out and do nothing
-        with zipfile.ZipFile(TESTFN, 'w') as zh:
-            zh.writestr(file, data)
+    @mock.patch('zipfile._ZipRepacker')
+    def test_repack_mode_w(self, m_repack):
         with zipfile.ZipFile(TESTFN, 'w') as zh:
             with self.assertRaises(ValueError):
                 zh.repack()
+        m_repack.assert_not_called()
 
-        # mode 'x': error out and do nothing
-        os.remove(TESTFN)
+    @mock.patch('zipfile._ZipRepacker')
+    def test_repack_mode_x(self, m_repack):
+        unlink(TESTFN)
         with zipfile.ZipFile(TESTFN, 'x') as zh:
             with self.assertRaises(ValueError):
                 zh.repack()
+        m_repack.assert_not_called()
 
 class StoredRepackTests(AbstractRepackTests, unittest.TestCase):
     compression = zipfile.ZIP_STORED
