@@ -100,10 +100,10 @@ ssl
 zlib
 ----
 
-* Allow to combine two Adler-32 checksums via :func:`~zlib.adler32_combine`.
+* Allow combining two Adler-32 checksums via :func:`~zlib.adler32_combine`.
   (Contributed by Callum Attryde and Bénédikt Tran in :gh:`134635`.)
 
-* Allow to combine two CRC-32 checksums via :func:`~zlib.crc32_combine`.
+* Allow combining two CRC-32 checksums via :func:`~zlib.crc32_combine`.
   (Contributed by Bénédikt Tran in :gh:`134635`.)
 
 
