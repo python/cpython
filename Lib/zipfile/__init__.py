@@ -1369,9 +1369,10 @@ class _ZipWriteFile(io.BufferedIOBase):
 
 class _ZipRepacker:
     """Class for ZipFile repacking."""
-    def __init__(self, *, chunk_size=2**20, debug=0):
+    def __init__(self, *, chunk_size=2**20, strict_descriptor=False, debug=0):
         self.debug = debug  # Level of printing: 0 through 3
         self.chunk_size = chunk_size
+        self.strict_descriptor = strict_descriptor
 
     def _debug(self, level, *msg):
         if self.debug >= level:
@@ -1593,7 +1594,7 @@ class _ZipRepacker:
             )
 
             dd = self._scan_data_descriptor(fp, pos, end_offset, zip64)
-            if dd is None:
+            if dd is None and not self.strict_descriptor:
                 dd = self._scan_data_descriptor_no_sig(fp, pos, end_offset, zip64)
             if dd is None:
                 return None

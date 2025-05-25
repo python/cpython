@@ -1950,6 +1950,45 @@ class AbstractRepackTests(RepackHelperMixin):
                 # check file size
                 self.assertEqual(os.path.getsize(TESTFN), expected_size)
 
+    def test_repack_data_descriptor_no_sig_strict(self):
+        """Should skip data descriptor without signature when `strict_descriptor` is set."""
+        for ii in ([0], [0, 1]):
+            with self.subTest(remove=ii):
+                # calculate the expected results
+                with open(TESTFN, 'wb') as fh:
+                    with mock.patch('zipfile.struct.pack', side_effect=struct_pack_no_dd_sig):
+                        self._prepare_zip_from_test_files(Unseekable(fh), self.test_files)
+                with zipfile.ZipFile(TESTFN, 'a') as zh:
+                    for i in ii:
+                        zh.remove(self.test_files[i][0])
+                    expected_zinfos = [ComparableZipInfo(zi) for zi in zh.infolist()]
+                expected_size = os.path.getsize(TESTFN)
+
+                # do the removal and check the result
+                with open(TESTFN, 'wb') as fh:
+                    with mock.patch('zipfile.struct.pack', side_effect=struct_pack_no_dd_sig):
+                        zinfos = self._prepare_zip_from_test_files(Unseekable(fh), self.test_files)
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    # make sure data descriptor bit is really set (by making zipfile unseekable)
+                    for zi in zh.infolist():
+                        self.assertTrue(zi.flag_bits & 8, f'data descriptor flag not set: {zi.filename}')
+
+                    for i in ii:
+                        zh.remove(self.test_files[i][0])
+                    zh.repack(strict_descriptor=True)
+
+                    # check infolist
+                    self.assertEqual(
+                        [ComparableZipInfo(zi) for zi in zh.infolist()],
+                        expected_zinfos,
+                    )
+
+                    # make sure the zip file is still valid
+                    self.assertIsNone(zh.testzip())
+
+                # check file size
+                self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
     def test_repack_data_descriptor_no_sig_and_zip64(self):
         """Should correctly handle file entries using data descriptor without signature and zip64."""
         for ii in ([0], [0, 1], [1], [2]):
