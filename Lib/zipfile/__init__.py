@@ -1452,24 +1452,39 @@ class _ZipRepacker:
         # doesn't match the actual entry order
         filelist = sorted(zfile.filelist, key=lambda x: x.header_offset)
 
-        try:
-            data_offset = filelist[0].header_offset
-        except IndexError:
-            data_offset = zfile.start_dir
-
-        # calculate the starting entry offset (bytes to skip)
-        entry_offset = self._calc_initial_entry_offset(fp, data_offset)
-
-        # move file entries
+        # calculate each entry size and validate
+        entry_size_list = []
+        used_entry_size_list = []
         for i, zinfo in enumerate(filelist):
-            # get the total size of the entry
             try:
                 offset = filelist[i + 1].header_offset
             except IndexError:
                 offset = zfile.start_dir
             entry_size = offset - zinfo.header_offset
 
+            # may raise on an invalid local file header
             used_entry_size = self._calc_local_file_entry_size(fp, zinfo)
+
+            self._debug(3, i, zinfo.orig_filename, entry_size, used_entry_size)
+            if used_entry_size > entry_size:
+                raise BadZipFile(
+                    f"Overlapped entries: {zinfo.orig_filename!r} "
+                    f"(possible zip bomb)")
+
+            entry_size_list.append(entry_size)
+            used_entry_size_list.append(used_entry_size)
+
+        # calculate the starting entry offset (bytes to skip)
+        try:
+            data_offset = filelist[0].header_offset
+        except IndexError:
+            data_offset = zfile.start_dir
+        entry_offset = self._calc_initial_entry_offset(fp, data_offset)
+
+        # move file entries
+        for i, zinfo in enumerate(filelist):
+            entry_size = entry_size_list[i]
+            used_entry_size = used_entry_size_list[i]
 
             # update the header and move entry data to the new position
             if entry_offset > 0:

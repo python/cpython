@@ -2024,6 +2024,21 @@ class AbstractRepackTests(RepackHelperMixin):
                 # check file size
                 self.assertEqual(os.path.getsize(TESTFN), expected_size)
 
+    def test_repack_overlapping_blocks(self):
+        for ii in ([0], [1], [2]):
+            with self.subTest(remove=ii):
+                self._prepare_zip_from_test_files(TESTFN, self.test_files)
+                with open(TESTFN, 'r+b') as fh:
+                    with zipfile.ZipFile(fh, 'a') as zh:
+                        zh.writestr('file.txt', b'dummy')
+                        for i in ii:
+                            zh.infolist()[i].file_size += 50
+                            zh.infolist()[i].compress_size += 50
+
+                with zipfile.ZipFile(TESTFN, 'a') as zh:
+                    with self.assertRaises(zipfile.BadZipFile):
+                        zh.repack()
+
     @mock.patch('zipfile._ZipRepacker')
     def test_repack_closed(self, m_repack):
         self._prepare_zip_from_test_files(TESTFN, self.test_files)
