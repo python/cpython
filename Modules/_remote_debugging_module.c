@@ -826,54 +826,62 @@ parse_task(
     int recurse_task
 ) {
     char is_task;
-    int err = read_char(
+    PyObject* result = NULL;
+    PyObject* awaited_by = NULL;
+    int err;
+
+    err = read_char(
         &unwinder->handle,
         task_address + unwinder->async_debug_offsets.asyncio_task_object.task_is_task,
         &is_task);
     if (err) {
-        return -1;
+        goto error;
     }
 
-    PyObject* result = NULL;
     if (is_task) {
         result = create_task_result(unwinder, task_address, recurse_task);
         if (!result) {
-            return -1;
+            goto error;
         }
     } else {
         result = PyList_New(0);
         if (result == NULL) {
-            return -1;
+            goto error;
         }
     }
 
     if (PyList_Append(render_to, result)) {
-        Py_DECREF(result);
-        return -1;
+        goto error;
     }
 
     if (recurse_task) {
-        PyObject *awaited_by = PyList_New(0);
+        awaited_by = PyList_New(0);
         if (awaited_by == NULL) {
-            Py_DECREF(result);
-            return -1;
+            goto error;
         }
+
         if (PyList_Append(result, awaited_by)) {
-            Py_DECREF(awaited_by);
-            Py_DECREF(result);
-            return -1;
+            goto error;
         }
-        /* we can operate on a borrowed one to simplify cleanup */
         Py_DECREF(awaited_by);
 
+        /* awaited_by is borrowed from 'result' to simplify cleanup */
         if (parse_task_awaited_by(unwinder, task_address, awaited_by, 1) < 0) {
-            Py_DECREF(result);
-            return -1;
+            // Clear the pointer so the cleanup doesn't try to decref it since
+            // it's borrowed from 'result' and will be decrefed when result is
+            // deleted.
+            awaited_by = NULL;
+            goto error;
         }
     }
     Py_DECREF(result);
 
     return 0;
+
+error:
+    Py_XDECREF(result);
+    Py_XDECREF(awaited_by);
+    return -1;
 }
 
 static int
