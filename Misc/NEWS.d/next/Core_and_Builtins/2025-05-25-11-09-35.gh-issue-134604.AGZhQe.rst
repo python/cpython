@@ -1,0 +1,1 @@
+Fix crash when using :mod:`tracemalloc` with sub-interpreters.
