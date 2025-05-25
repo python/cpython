@@ -3,6 +3,7 @@ import os
 import pickle
 from textwrap import dedent
 import threading
+import tracemalloc
 import unittest
 
 from test import support
@@ -1096,6 +1097,35 @@ class RunFuncTests(TestBase):
                 assert spam
             with self.assertRaises(ValueError):
                 _interpreters.run_func(self.id, script)
+
+
+class TestTracemallocWithInterpreters(TestBase):
+    def setUp(self):
+        if tracemalloc.is_tracing():
+            self.skipTest("tracemalloc must be stopped before the test")
+
+        tracemalloc.start(1)
+
+    def tearDown(self):
+        tracemalloc.stop()
+        super().tearDown()
+
+    def test_trace_interp_start_frames(self):
+        interpid = _interpreters.create()
+        # check that tracing captures frames created by the new interpreter
+        self.assertNotEqual(
+            tracemalloc.take_snapshot().statistics("filename"),
+            []
+        )
+        _interpreters.destroy(interpid)
+
+    def test_trace_interp_frames(self):
+        interpid = _interpreters.create()
+        _interpreters.run_string(interpid, "def f(): ...")
+        stats = tracemalloc.take_snapshot().statistics("filename")
+        # check that the last frame is the string run in the interpreter
+        self.assertEqual(stats[-1].traceback._frames[0][0], "<string>")
+        _interpreters.destroy(interpid)
 
 
 if __name__ == '__main__':
