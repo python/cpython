@@ -41,29 +41,37 @@
 #define GET_MEMBER(type, obj, offset) (*(type*)((char*)(obj) + (offset)))
 
 /* Size macros for opaque buffers */
-#define SIZEOF_UNICODE_OBJ sizeof(PyUnicodeObject)
 #define SIZEOF_BYTES_OBJ sizeof(PyBytesObject)
-#define SIZEOF_INTERP_FRAME sizeof(_PyInterpreterFrame)
-#define SIZEOF_GEN_OBJ sizeof(PyGenObject)
-#define SIZEOF_SET_OBJ sizeof(PySetObject)
-#define SIZEOF_TYPE_OBJ sizeof(PyTypeObject)
-#define SIZEOF_TASK_OBJ 4096
-#define SIZEOF_PYOBJECT sizeof(PyObject)
-#define SIZEOF_LLIST_NODE sizeof(struct llist_node)
-#define SIZEOF_THREAD_STATE sizeof(PyThreadState)
 #define SIZEOF_CODE_OBJ sizeof(PyCodeObject)
+#define SIZEOF_GEN_OBJ sizeof(PyGenObject)
+#define SIZEOF_INTERP_FRAME sizeof(_PyInterpreterFrame)
+#define SIZEOF_LLIST_NODE sizeof(struct llist_node)
+#define SIZEOF_PAGE_CACHE_ENTRY sizeof(page_cache_entry_t)
+#define SIZEOF_PYOBJECT sizeof(PyObject)
+#define SIZEOF_SET_OBJ sizeof(PySetObject)
+#define SIZEOF_TASK_OBJ 4096
+#define SIZEOF_THREAD_STATE sizeof(PyThreadState)
+#define SIZEOF_TYPE_OBJ sizeof(PyTypeObject)
+#define SIZEOF_UNICODE_OBJ sizeof(PyUnicodeObject)
 
 // Calculate the minimum buffer size needed to read interpreter state fields
 // We need to read code_object_generation and potentially tlbc_generation
+#ifndef MAX
+#define _MAX(a, b) ((a) > (b) ? (a) : (b))
+#else
+#define _MAX(a, b) MAX(a, b)
+#endif
+
 #ifdef Py_GIL_DISABLED
-#define INTERP_STATE_MIN_SIZE MAX(MAX(offsetof(PyInterpreterState, _code_object_generation) + sizeof(uint64_t), \
+#define INTERP_STATE_MIN_SIZE _MAX(_MAX(offsetof(PyInterpreterState, _code_object_generation) + sizeof(uint64_t), \
                                       offsetof(PyInterpreterState, tlbc_indices.tlbc_generation) + sizeof(uint32_t)), \
                                   offsetof(PyInterpreterState, threads.head) + sizeof(void*))
 #else
-#define INTERP_STATE_MIN_SIZE MAX(offsetof(PyInterpreterState, _code_object_generation) + sizeof(uint64_t), \
+#define INTERP_STATE_MIN_SIZE _MAX(offsetof(PyInterpreterState, _code_object_generation) + sizeof(uint64_t), \
                                   offsetof(PyInterpreterState, threads.head) + sizeof(void*))
 #endif
-#define INTERP_STATE_BUFFER_SIZE MAX(INTERP_STATE_MIN_SIZE, 256)
+#define INTERP_STATE_BUFFER_SIZE _MAX(INTERP_STATE_MIN_SIZE, 256)
+#undef _MAX
 
 
 
@@ -392,7 +400,7 @@ read_py_long(
     unsigned int shift = PYLONG_BITS_IN_DIGIT;
 
     // Read the entire PyLongObject at once
-    char long_obj[unwinder->debug_offsets.long_object.size];
+    char long_obj[SIZEOF_LONG_OBJ];
     int bytes_read = _Py_RemoteDebug_PagedReadRemoteMemory(
         &unwinder->handle,
         address,
@@ -531,7 +539,7 @@ parse_task_name(
     uintptr_t task_address
 ) {
     // Read the entire TaskObj at once
-    char task_obj[unwinder->async_debug_offsets.asyncio_task_object.size];
+    char task_obj[SIZEOF_TASK_OBJ];
     int err = _Py_RemoteDebug_PagedReadRemoteMemory(
         &unwinder->handle,
         task_address,
@@ -594,7 +602,7 @@ static int parse_task_awaited_by(
     int recurse_task
 ) {
     // Read the entire TaskObj at once
-    char task_obj[unwinder->async_debug_offsets.asyncio_task_object.size];
+    char task_obj[SIZEOF_TASK_OBJ];
     if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, task_address,
                                               unwinder->async_debug_offsets.asyncio_task_object.size,
                                               task_obj) < 0) {
@@ -745,7 +753,7 @@ create_task_result(
     PyObject* result = NULL;
     PyObject *call_stack = NULL;
     PyObject *tn = NULL;
-    char task_obj[unwinder->async_debug_offsets.asyncio_task_object.size];
+    char task_obj[SIZEOF_TASK_OBJ];
     uintptr_t coro_addr;
 
     result = PyList_New(0);

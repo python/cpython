@@ -106,7 +106,7 @@ typedef struct {
     HANDLE hProcess;
 #endif
     page_cache_entry_t pages[MAX_PAGES];
-    int page_size;
+    Py_ssize_t page_size;
 } proc_handle_t;
 
 static void
