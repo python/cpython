@@ -33,8 +33,14 @@ Python:
 
 .. c:var:: PyTypeObject PyUnicode_Type
 
-   This instance of :c:type:`PyTypeObject` represents the Python Unicode type.  It
-   is exposed to Python code as :py:class:`str`.
+   This instance of :c:type:`PyTypeObject` represents the Python Unicode type.
+   It is exposed to Python code as :py:class:`str`.
+
+
+.. c:var:: PyTypeObject PyUnicodeIter_Type
+
+   This instance of :c:type:`PyTypeObject` represents the Python Unicode
+   iterator type. It is used to iterate over Unicode string objects.
 
 
 .. c:type:: Py_UCS4
@@ -639,6 +645,17 @@ APIs:
    difference being that it decrements the reference count of *right* by one.
 
 
+.. c:function:: PyObject* PyUnicode_BuildEncodingMap(PyObject* string)
+
+   Return a mapping suitable for decoding a custom single-byte encoding.
+   Given a Unicode string *string* of up to 256 characters representing an encoding
+   table, returns either a compact internal mapping object or a dictionary
+   mapping character ordinals to byte values. Raises a :exc:`TypeError` and
+   return ``NULL`` on invalid input.
+
+   .. versionadded:: 3.2
+
+
 .. c:function:: const char* PyUnicode_GetDefaultEncoding(void)
 
    Return the name of the default string encoding, ``"utf-8"``.
@@ -672,6 +689,21 @@ APIs:
    See :c:func:`PyUnicode_New` for details.
 
    .. versionadded:: 3.3
+
+
+.. c:function:: int PyUnicode_Resize(PyObject **unicode, Py_ssize_t length);
+
+   Resize a Unicode object *\*unicode* to the new *length* in code points.
+
+   Try to resize the string in place (which is usually faster than allocating
+   a new string and copying characters), or create a new string.
+
+   *\*unicode* is modified to point to the new (resized) object and ``0`` is
+   returned on success. Otherwise, ``-1`` is returned and an exception is set,
+   and *\*unicode* is left untouched.
+
+   The function doesn't check string content, the result may not be a
+   string in canonical representation.
 
 
 .. c:function:: Py_ssize_t PyUnicode_Fill(PyObject *unicode, Py_ssize_t start, \
@@ -1010,6 +1042,17 @@ generic ones are documented for simplicity.
 
 Generic Codecs
 """"""""""""""
+
+The following macro is provided:
+
+
+.. c:macro:: Py_UNICODE_REPLACEMENT_CHARACTER
+
+   The Unicode code point ``U+FFFD`` (replacement character).
+
+   This Unicode character is used as the replacement character during
+   decoding if the *errors* argument is set to "replace".
+
 
 These are the generic codec APIs:
 

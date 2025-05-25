@@ -606,22 +606,6 @@ f'''__{
     FSTRING_MIDDLE '__'          (6, 1) (6, 3)
     FSTRING_END "'''"         (6, 3) (6, 6)
     """)
-        self.check_tokenize("""\
-f'__{
-    x:d
-}__'""", """\
-    FSTRING_START "f'"          (1, 0) (1, 2)
-    FSTRING_MIDDLE '__'          (1, 2) (1, 4)
-    OP         '{'           (1, 4) (1, 5)
-    NL         '\\n'          (1, 5) (1, 6)
-    NAME       'x'           (2, 4) (2, 5)
-    OP         ':'           (2, 5) (2, 6)
-    FSTRING_MIDDLE 'd'           (2, 6) (2, 7)
-    NL         '\\n'          (2, 7) (2, 8)
-    OP         '}'           (3, 0) (3, 1)
-    FSTRING_MIDDLE '__'          (3, 1) (3, 3)
-    FSTRING_END "'"           (3, 3) (3, 4)
-    """)
 
         self.check_tokenize("""\
     '''Autorzy, którzy tą jednostkę mają wpisani jako AKTUALNA -- czyli
@@ -1991,6 +1975,10 @@ if 1:
         for case in cases:
             self.check_roundtrip(case)
 
+        self.check_roundtrip(r"t'{ {}}'")
+        self.check_roundtrip(r"t'{f'{ {}}'}{ {}}'")
+        self.check_roundtrip(r"f'{t'{ {}}'}{ {}}'")
+
 
     def test_continuation(self):
         # Balancing continuation
@@ -2471,21 +2459,6 @@ f'''__{
     RBRACE     '}'           (6, 0) (6, 1)
     FSTRING_MIDDLE '__'          (6, 1) (6, 3)
     FSTRING_END "'''"         (6, 3) (6, 6)
-    """)
-
-        self.check_tokenize("""\
-f'__{
-    x:d
-}__'""", """\
-    FSTRING_START "f'"          (1, 0) (1, 2)
-    FSTRING_MIDDLE '__'          (1, 2) (1, 4)
-    LBRACE     '{'           (1, 4) (1, 5)
-    NAME       'x'           (2, 4) (2, 5)
-    COLON      ':'           (2, 5) (2, 6)
-    FSTRING_MIDDLE 'd'           (2, 6) (2, 7)
-    RBRACE     '}'           (3, 0) (3, 1)
-    FSTRING_MIDDLE '__'          (3, 1) (3, 3)
-    FSTRING_END "'"           (3, 3) (3, 4)
     """)
 
     def test_function(self):
@@ -3041,6 +3014,10 @@ async def f():
             "'''sdfsdf''",
             "("*1000+"a"+")"*1000,
             "]",
+            """\
+            f'__{
+                x:d
+            }__'""",
         ]:
             with self.subTest(case=case):
                 self.assertRaises(tokenize.TokenError, get_tokens, case)

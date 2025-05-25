@@ -1446,7 +1446,8 @@ class HandlerTests(unittest.TestCase):
                              [tup[0:2] for tup in o.calls])
 
     def test_proxy_no_proxy(self):
-        os.environ['no_proxy'] = 'python.org'
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env['no_proxy'] = 'python.org'
         o = OpenerDirector()
         ph = urllib.request.ProxyHandler(dict(http="proxy.example.com"))
         o.add_handler(ph)
@@ -1458,10 +1459,10 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(req.host, "www.python.org")
         o.open(req)
         self.assertEqual(req.host, "www.python.org")
-        del os.environ['no_proxy']
 
     def test_proxy_no_proxy_all(self):
-        os.environ['no_proxy'] = '*'
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env['no_proxy'] = '*'
         o = OpenerDirector()
         ph = urllib.request.ProxyHandler(dict(http="proxy.example.com"))
         o.add_handler(ph)
@@ -1469,7 +1470,6 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(req.host, "www.python.org")
         o.open(req)
         self.assertEqual(req.host, "www.python.org")
-        del os.environ['no_proxy']
 
     def test_proxy_https(self):
         o = OpenerDirector()

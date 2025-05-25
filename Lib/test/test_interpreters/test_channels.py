@@ -377,11 +377,11 @@ class TestSendRecv(TestBase):
             if not unbound:
                 extraargs = ''
             elif unbound is channels.UNBOUND:
-                extraargs = ', unbound=channels.UNBOUND'
+                extraargs = ', unbounditems=channels.UNBOUND'
             elif unbound is channels.UNBOUND_ERROR:
-                extraargs = ', unbound=channels.UNBOUND_ERROR'
+                extraargs = ', unbounditems=channels.UNBOUND_ERROR'
             elif unbound is channels.UNBOUND_REMOVE:
-                extraargs = ', unbound=channels.UNBOUND_REMOVE'
+                extraargs = ', unbounditems=channels.UNBOUND_REMOVE'
             else:
                 raise NotImplementedError(repr(unbound))
             interp = interpreters.create()
@@ -454,11 +454,11 @@ class TestSendRecv(TestBase):
             with self.assertRaises(channels.ChannelEmptyError):
                 rch.recv_nowait()
 
-            sch.send_nowait(b'ham', unbound=channels.UNBOUND_REMOVE)
+            sch.send_nowait(b'ham', unbounditems=channels.UNBOUND_REMOVE)
             self.assertEqual(_channels.get_count(rch.id), 1)
             interp = common(rch, sch, channels.UNBOUND_REMOVE, 1)
             self.assertEqual(_channels.get_count(rch.id), 3)
-            sch.send_nowait(42, unbound=channels.UNBOUND_REMOVE)
+            sch.send_nowait(42, unbounditems=channels.UNBOUND_REMOVE)
             self.assertEqual(_channels.get_count(rch.id), 4)
             del interp
             self.assertEqual(_channels.get_count(rch.id), 2)
@@ -484,11 +484,11 @@ class TestSendRecv(TestBase):
         _run_output(interp, dedent(f"""
             from test.support.interpreters import channels
             sch = channels.SendChannel({sch.id})
-            sch.send_nowait(1, unbound=channels.UNBOUND)
-            sch.send_nowait(2, unbound=channels.UNBOUND_ERROR)
+            sch.send_nowait(1, unbounditems=channels.UNBOUND)
+            sch.send_nowait(2, unbounditems=channels.UNBOUND_ERROR)
             sch.send_nowait(3)
-            sch.send_nowait(4, unbound=channels.UNBOUND_REMOVE)
-            sch.send_nowait(5, unbound=channels.UNBOUND)
+            sch.send_nowait(4, unbounditems=channels.UNBOUND_REMOVE)
+            sch.send_nowait(5, unbounditems=channels.UNBOUND)
             """))
         self.assertEqual(_channels.get_count(rch.id), 5)
 
@@ -522,8 +522,8 @@ class TestSendRecv(TestBase):
             rch = channels.RecvChannel({rch.id})
             sch = channels.SendChannel({sch.id})
             obj1 = rch.recv()
-            sch.send_nowait(2, unbound=channels.UNBOUND)
-            sch.send_nowait(obj1, unbound=channels.UNBOUND_REMOVE)
+            sch.send_nowait(2, unbounditems=channels.UNBOUND)
+            sch.send_nowait(obj1, unbounditems=channels.UNBOUND_REMOVE)
             """))
         _run_output(interp2, dedent(f"""
             from test.support.interpreters import channels
@@ -535,21 +535,21 @@ class TestSendRecv(TestBase):
         self.assertEqual(_channels.get_count(rch.id), 0)
         sch.send_nowait(3)
         _run_output(interp1, dedent("""
-            sch.send_nowait(4, unbound=channels.UNBOUND)
+            sch.send_nowait(4, unbounditems=channels.UNBOUND)
             # interp closed here
-            sch.send_nowait(5, unbound=channels.UNBOUND_REMOVE)
-            sch.send_nowait(6, unbound=channels.UNBOUND)
+            sch.send_nowait(5, unbounditems=channels.UNBOUND_REMOVE)
+            sch.send_nowait(6, unbounditems=channels.UNBOUND)
             """))
         _run_output(interp2, dedent("""
-            sch.send_nowait(7, unbound=channels.UNBOUND_ERROR)
+            sch.send_nowait(7, unbounditems=channels.UNBOUND_ERROR)
             # interp closed here
-            sch.send_nowait(obj1, unbound=channels.UNBOUND_ERROR)
-            sch.send_nowait(obj2, unbound=channels.UNBOUND_REMOVE)
-            sch.send_nowait(8, unbound=channels.UNBOUND)
+            sch.send_nowait(obj1, unbounditems=channels.UNBOUND_ERROR)
+            sch.send_nowait(obj2, unbounditems=channels.UNBOUND_REMOVE)
+            sch.send_nowait(8, unbounditems=channels.UNBOUND)
             """))
         _run_output(interp1, dedent("""
-            sch.send_nowait(9, unbound=channels.UNBOUND_REMOVE)
-            sch.send_nowait(10, unbound=channels.UNBOUND)
+            sch.send_nowait(9, unbounditems=channels.UNBOUND_REMOVE)
+            sch.send_nowait(10, unbounditems=channels.UNBOUND)
             """))
         self.assertEqual(_channels.get_count(rch.id), 10)
 

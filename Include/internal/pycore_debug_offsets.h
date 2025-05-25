@@ -52,14 +52,18 @@ extern "C" {
 #ifdef Py_GIL_DISABLED
 # define _Py_Debug_gilruntimestate_enabled offsetof(struct _gil_runtime_state, enabled)
 # define _Py_Debug_Free_Threaded 1
+# define _Py_Debug_code_object_co_tlbc offsetof(PyCodeObject, co_tlbc)
+# define _Py_Debug_interpreter_frame_tlbc_index offsetof(_PyInterpreterFrame, tlbc_index)
 #else
 # define _Py_Debug_gilruntimestate_enabled 0
 # define _Py_Debug_Free_Threaded 0
+# define _Py_Debug_code_object_co_tlbc 0
+# define _Py_Debug_interpreter_frame_tlbc_index 0
 #endif
 
 
 typedef struct _Py_DebugOffsets {
-    char cookie[8];
+    char cookie[8] _Py_NONSTRING;
     uint64_t version;
     uint64_t free_threaded;
     // Runtime state offset;
@@ -109,6 +113,7 @@ typedef struct _Py_DebugOffsets {
         uint64_t localsplus;
         uint64_t owner;
         uint64_t stackpointer;
+        uint64_t tlbc_index;
     } interpreter_frame;
 
     // Code object offset;
@@ -123,6 +128,7 @@ typedef struct _Py_DebugOffsets {
         uint64_t localsplusnames;
         uint64_t localspluskinds;
         uint64_t co_code_adaptive;
+        uint64_t co_tlbc;
     } code_object;
 
     // PyObject offset;
@@ -265,6 +271,7 @@ typedef struct _Py_DebugOffsets {
         .localsplus = offsetof(_PyInterpreterFrame, localsplus), \
         .owner = offsetof(_PyInterpreterFrame, owner), \
         .stackpointer = offsetof(_PyInterpreterFrame, stackpointer), \
+        .tlbc_index = _Py_Debug_interpreter_frame_tlbc_index, \
     }, \
     .code_object = { \
         .size = sizeof(PyCodeObject), \
@@ -277,6 +284,7 @@ typedef struct _Py_DebugOffsets {
         .localsplusnames = offsetof(PyCodeObject, co_localsplusnames), \
         .localspluskinds = offsetof(PyCodeObject, co_localspluskinds), \
         .co_code_adaptive = offsetof(PyCodeObject, co_code_adaptive), \
+        .co_tlbc = _Py_Debug_code_object_co_tlbc, \
     }, \
     .pyobject = { \
         .size = sizeof(PyObject), \
