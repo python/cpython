@@ -8896,11 +8896,11 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
         type_add_flags(self, _Py_TPFLAGS_STATIC_BUILTIN);
         type_add_flags(self, Py_TPFLAGS_IMMUTABLETYPE);
 
-        unsigned int version;
-        if (!get_next_global_version(&version)) {
-            assert(0 && "we have run out of version numbers");
-        }
         if (self->tp_version_tag == 0) {
+            unsigned int version;
+            if (!get_next_global_version(&version)) {
+                assert(0 && "we have run out of version numbers");
+            }
             _PyType_SetVersion(self, version);
         }
     }
