@@ -2124,6 +2124,9 @@ _Py_Finalize(_PyRuntimeState *runtime)
     _PyImport_FiniExternal(tstate->interp);
     finalize_modules(tstate);
 
+    /* Clean up any lingering subinterpreters. */
+    finalize_subinterpreters();
+
     /* Print debug stats if any */
     _PyEval_Fini();
 
@@ -2154,11 +2157,6 @@ _Py_Finalize(_PyRuntimeState *runtime)
     /* Disable tracemalloc after all Python objects have been destroyed,
        so it is possible to use tracemalloc in objects destructor. */
     _PyTraceMalloc_Fini();
-
-    /* Clean up any lingering subinterpreters. It is important this happens
-       AFTER tracemalloc finalizes, as tracemalloc may hold references to
-       frame data in other interpreters. */
-    finalize_subinterpreters();
 
     /* Finalize any remaining import state */
     // XXX Move these up to where finalize_modules() is currently.
