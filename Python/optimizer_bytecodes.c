@@ -1217,11 +1217,10 @@ dummy_func(void) {
     }
 
     op(_BINARY_SLICE, (container, start, stop -- res)) {
-        // Slicing a string always returns a string.
-        // TODO: We can apply this to lists and tuples as well.
-        //       We'll start with string to simplify the process.
+        // Slicing a string/list always returns the same type.
         PyTypeObject *type = sym_get_type(container);
-        if (type == &PyUnicode_Type) {
+        if (type == &PyUnicode_Type ||
+            type == &PyList_Type) {
             res = sym_new_type(ctx, type);
         } else {
             res = sym_new_not_null(ctx);

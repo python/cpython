@@ -2217,6 +2217,22 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
         self.assertNotIn("_LOAD_ATTR_METHOD_LAZY_DICT", uops)
 
+    def test_remove_guard_for_slice_list(self):
+        def f(n):
+            for i in range(n):
+                false = i == TIER2_THRESHOLD
+                sliced = [1, 2, 3][:false]
+                if sliced:
+                    return 1
+            return 0
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, 0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_TO_BOOL_LIST", uops)
+        self.assertNotIn("_GUARD_TOS_LIST", uops)
+
 
 def global_identity(x):
     return x
