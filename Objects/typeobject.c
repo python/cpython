@@ -8898,7 +8898,7 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
 
         unsigned int version;
         if (!get_next_global_version(&version)) {
-            assert("we have run out of version numbers");
+            assert(0 && "we have run out of version numbers");
         }
         if (self->tp_version_tag == 0) {
             _PyType_SetVersion(self, version);
