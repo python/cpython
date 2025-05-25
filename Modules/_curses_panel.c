@@ -434,11 +434,13 @@ PyCursesPanel_Dealloc(PyObject *self)
     if (obj) {
         Py_DECREF(obj);
         if (set_panel_userptr(po->pan, NULL) == ERR) {
-            PyErr_FormatUnraisable("Exception ignored in set_panel_userptr()");
+            curses_panel_panel_set_error(po, "set_panel_userptr", "__del__");
+            PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
         }
     }
     if (del_panel(po->pan) == ERR) {
-        PyErr_FormatUnraisable("Exception ignored in del_panel()");
+        curses_panel_panel_set_error(po, "del_panel", "__del__");
+        PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
     }
     if (po->wo != NULL) {
         Py_DECREF(po->wo);
