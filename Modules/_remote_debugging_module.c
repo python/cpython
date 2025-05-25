@@ -53,6 +53,7 @@
 #define SIZEOF_THREAD_STATE sizeof(PyThreadState)
 #define SIZEOF_TYPE_OBJ sizeof(PyTypeObject)
 #define SIZEOF_UNICODE_OBJ sizeof(PyUnicodeObject)
+#define SIZEOF_LONG_OBJ sizeof(PyLongObject)
 
 // Calculate the minimum buffer size needed to read interpreter state fields
 // We need to read code_object_generation and potentially tlbc_generation
