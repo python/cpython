@@ -73,19 +73,71 @@ extern "C" {
 #    define HAVE_PROCESS_VM_READV 0
 #endif
 
+static inline size_t
+get_page_size(void) {
+    size_t page_size = 0;
+    if (page_size == 0) {
+#ifdef MS_WINDOWS
+        SYSTEM_INFO si;
+        GetSystemInfo(&si);
+        page_size = si.dwPageSize;
+#else
+        page_size = (size_t)getpagesize();
+#endif
+    }
+    return page_size;
+}
+
+typedef struct page_cache_entry {
+    uintptr_t page_addr; // page-aligned base address
+    char *data;
+    int valid;
+    struct page_cache_entry *next;
+} page_cache_entry_t;
+
+#define MAX_PAGES 1024
+
 // Define a platform-independent process handle structure
 typedef struct {
     pid_t pid;
-#ifdef MS_WINDOWS
+#if defined(__APPLE__)
+    mach_port_t task;
+#elif defined(MS_WINDOWS)
     HANDLE hProcess;
 #endif
+    page_cache_entry_t pages[MAX_PAGES];
+    Py_ssize_t page_size;
 } proc_handle_t;
+
+static void
+_Py_RemoteDebug_FreePageCache(proc_handle_t *handle)
+{
+    for (int i = 0; i < MAX_PAGES; i++) {
+        PyMem_RawFree(handle->pages[i].data);
+        handle->pages[i].data = NULL;
+        handle->pages[i].valid = 0;
+    }
+}
+
+void
+_Py_RemoteDebug_ClearCache(proc_handle_t *handle)
+{
+    for (int i = 0; i < MAX_PAGES; i++) {
+        handle->pages[i].valid = 0;
+    }
+}
+
+#if defined(__APPLE__) && TARGET_OS_OSX
+static mach_port_t pid_to_task(pid_t pid);
+#endif
 
 // Initialize the process handle
 static int
 _Py_RemoteDebug_InitProcHandle(proc_handle_t *handle, pid_t pid) {
     handle->pid = pid;
-#ifdef MS_WINDOWS
+#if defined(__APPLE__)
+    handle->task = pid_to_task(handle->pid);
+#elif defined(MS_WINDOWS)
     handle->hProcess = OpenProcess(
         PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION | PROCESS_QUERY_INFORMATION,
         FALSE, pid);
@@ -94,6 +146,11 @@ _Py_RemoteDebug_InitProcHandle(proc_handle_t *handle, pid_t pid) {
         return -1;
     }
 #endif
+    handle->page_size = get_page_size();
+    for (int i = 0; i < MAX_PAGES; i++) {
+        handle->pages[i].data = NULL;
+        handle->pages[i].valid = 0;
+    }
     return 0;
 }
 
@@ -107,6 +164,7 @@ _Py_RemoteDebug_CleanupProcHandle(proc_handle_t *handle) {
     }
 #endif
     handle->pid = 0;
+    _Py_RemoteDebug_FreePageCache(handle);
 }
 
 #if defined(__APPLE__) && TARGET_OS_OSX
@@ -755,7 +813,7 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
 #elif defined(__APPLE__) && TARGET_OS_OSX
     Py_ssize_t result = -1;
     kern_return_t kr = mach_vm_read_overwrite(
-        pid_to_task(handle->pid),
+        handle->task,
         (mach_vm_address_t)remote_address,
         len,
         (mach_vm_address_t)dst,
@@ -778,6 +836,59 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
 #else
     Py_UNREACHABLE();
 #endif
+}
+
+int
+_Py_RemoteDebug_PagedReadRemoteMemory(proc_handle_t *handle,
+                                      uintptr_t addr,
+                                      size_t size,
+                                      void *out)
+{
+    size_t page_size = handle->page_size;
+    uintptr_t page_base = addr & ~(page_size - 1);
+    size_t offset_in_page = addr - page_base;
+
+    if (offset_in_page + size > page_size) {
+        return _Py_RemoteDebug_ReadRemoteMemory(handle, addr, size, out);
+    }
+
+    // Search for valid cached page
+    for (int i = 0; i < MAX_PAGES; i++) {
+        page_cache_entry_t *entry = &handle->pages[i];
+        if (entry->valid && entry->page_addr == page_base) {
+            memcpy(out, entry->data + offset_in_page, size);
+            return 0;
+        }
+    }
+
+    // Find reusable slot
+    for (int i = 0; i < MAX_PAGES; i++) {
+        page_cache_entry_t *entry = &handle->pages[i];
+        if (!entry->valid) {
+            if (entry->data == NULL) {
+                entry->data = PyMem_RawMalloc(page_size);
+                if (entry->data == NULL) {
+                    PyErr_NoMemory();
+                    return -1;
+                }
+            }
+
+            if (_Py_RemoteDebug_ReadRemoteMemory(handle, page_base, page_size, entry->data) < 0) {
+                // Try to just copy the exact ammount as a fallback
+                PyErr_Clear();
+                goto fallback;
+            }
+
+            entry->page_addr = page_base;
+            entry->valid = 1;
+            memcpy(out, entry->data + offset_in_page, size);
+            return 0;
+        }
+    }
+
+fallback:
+    // Cache full — fallback to uncached read
+    return _Py_RemoteDebug_ReadRemoteMemory(handle, addr, size, out);
 }
 
 static int
