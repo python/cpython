@@ -32,19 +32,24 @@ skip_if_not_supported = unittest.skipIf(
     "Test only runs on Linux, Windows and MacOS",
 )
 
+
 def get_stack_trace(pid):
     unwinder = RemoteUnwinder(pid, all_threads=True)
     return unwinder.get_stack_trace()
+
 
 def get_async_stack_trace(pid):
     unwinder = RemoteUnwinder(pid)
     return unwinder.get_async_stack_trace()
 
+
 def get_all_awaited_by(pid):
     unwinder = RemoteUnwinder(pid)
     return unwinder.get_all_awaited_by()
 
+
 class TestGetStackTrace(unittest.TestCase):
+    maxDiff = None
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -65,13 +70,16 @@ class TestGetStackTrace(unittest.TestCase):
                 for x in range(100):
                     if x == 50:
                         baz()
+
             def baz():
                 foo()
 
             def foo():
-                sock.sendall(b"ready"); time.sleep(10_000)  # same line number
+                sock.sendall(b"ready:thread\\n"); time.sleep(10_000)  # same line number
 
-            t = threading.Thread(target=bar); t.start(); t.join()
+            t = threading.Thread(target=bar)
+            t.start()
+            sock.sendall(b"ready:main\\n"); t.join()  # same line number
             """
         )
         stack_trace = None
@@ -92,8 +100,9 @@ class TestGetStackTrace(unittest.TestCase):
                 p = subprocess.Popen([sys.executable, script_name])
                 client_socket, _ = server_socket.accept()
                 server_socket.close()
-                response = client_socket.recv(1024)
-                self.assertEqual(response, b"ready")
+                response = b""
+                while b"ready:main" not in response or b"ready:thread" not in response:
+                    response += client_socket.recv(1024)
                 stack_trace = get_stack_trace(p.pid)
             except PermissionError:
                 self.skipTest("Insufficient permissions to read the stack trace")
@@ -105,14 +114,14 @@ class TestGetStackTrace(unittest.TestCase):
                 p.wait(timeout=SHORT_TIMEOUT)
 
             thread_expected_stack_trace = [
-                ("foo", script_name, 14),
-                ("baz", script_name, 11),
+                ("foo", script_name, 15),
+                ("baz", script_name, 12),
                 ("bar", script_name, 9),
                 ('Thread.run', threading.__file__, ANY)
             ]
             main_thread_stack_trace = [
                 (ANY, threading.__file__, ANY),
-                ("<module>", script_name, 16),
+                ("<module>", script_name, 19),
             ]
             self.assertEqual(stack_trace, [
                 (ANY, thread_expected_stack_trace),
