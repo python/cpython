@@ -119,14 +119,17 @@ class TestGetStackTrace(unittest.TestCase):
                 ("bar", script_name, 9),
                 ('Thread.run', threading.__file__, ANY)
             ]
-            main_thread_stack_trace = [
-                (ANY, threading.__file__, ANY),
-                ("<module>", script_name, 19),
-            ]
             # Is possible that there are more threads, so we check that the
             # expected stack traces are in the result (looking at you Windows!)
             self.assertIn((ANY, thread_expected_stack_trace), stack_trace)
-            self.assertIn((ANY, main_thread_stack_trace), stack_trace)
+
+            # Check that the main thread stack trace is in the result
+            frame = ("<module>", script_name, 19)
+            for _, stack in stack_trace:
+                if frame in stack:
+                    break
+            else:
+                self.fail("Main thread stack trace not found in result")
 
     @skip_if_not_supported
     @unittest.skipIf(

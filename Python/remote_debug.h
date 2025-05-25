@@ -75,7 +75,7 @@ extern "C" {
 
 static inline size_t
 get_page_size(void) {
-    static size_t page_size = 0;
+    size_t page_size = 0;
     if (page_size == 0) {
 #ifdef MS_WINDOWS
         SYSTEM_INFO si;
