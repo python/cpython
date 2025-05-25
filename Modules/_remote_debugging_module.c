@@ -1232,7 +1232,8 @@ parse_code_object(proc_handle_t *handle,
                   uintptr_t address,
                   uintptr_t instruction_pointer,
                   uintptr_t *previous_frame,
-                  _Py_hashtable_t *code_object_cache)
+                  _Py_hashtable_t *code_object_cache,
+                  int32_t tlbc_index)
 {
     void *key = (void *)address;
     CachedCodeMetadata *meta = NULL;
@@ -1242,6 +1243,14 @@ parse_code_object(proc_handle_t *handle,
     PyObject *lineno = NULL;
     PyObject *tuple = NULL;
 
+#ifdef Py_GIL_DISABLED
+    // In free threading builds, code object addresses might have the low bit set
+    // as a flag, so we need to mask it off to get the real address
+    uintptr_t real_address = address & (~1);
+#else
+    uintptr_t real_address = address;
+#endif
+
     if (code_object_cache != NULL) {
         meta = _Py_hashtable_get(code_object_cache, key);
     }
@@ -1249,7 +1258,7 @@ parse_code_object(proc_handle_t *handle,
     if (meta == NULL) {
         char code_object[offsets->code_object.size];
         if (_Py_RemoteDebug_PagedReadRemoteMemory(
-                handle, address, offsets->code_object.size, code_object) < 0)
+                handle, real_address, offsets->code_object.size, code_object) < 0)
         {
             goto error;
         }
@@ -1281,7 +1290,7 @@ parse_code_object(proc_handle_t *handle,
         meta->file_name = file;
         meta->linetable = linetable;
         meta->first_lineno = GET_MEMBER(int, code_object, offsets->code_object.firstlineno);
-        meta->addr_code_adaptive = address + offsets->code_object.co_code_adaptive;
+        meta->addr_code_adaptive = real_address + offsets->code_object.co_code_adaptive;
 
         if (code_object_cache && _Py_hashtable_set(code_object_cache, key, meta) < 0) {
             cached_code_metadata_destroy(meta);
@@ -1295,7 +1304,48 @@ parse_code_object(proc_handle_t *handle,
     }
 
     uintptr_t ip = instruction_pointer;
-    ptrdiff_t addrq = (uint16_t *)ip - (uint16_t *)meta->addr_code_adaptive;
+    ptrdiff_t addrq;
+    
+#ifdef Py_GIL_DISABLED
+    // In free threading builds, we need to handle thread-local bytecode (TLBC)
+    // The instruction pointer might point to TLBC, so we need to calculate the offset
+    // relative to the correct bytecode base
+    if (offsets->code_object.co_tlbc != 0) {
+        // Try to read the TLBC array to get the correct bytecode base
+        uintptr_t tlbc_array_addr = real_address + offsets->code_object.co_tlbc;
+        uintptr_t tlbc_array_ptr;
+        
+        if (read_ptr(handle, tlbc_array_addr, &tlbc_array_ptr) == 0 && tlbc_array_ptr != 0) {
+            // Read the TLBC array size
+            Py_ssize_t tlbc_size;
+            if (_Py_RemoteDebug_PagedReadRemoteMemory(handle, tlbc_array_ptr, sizeof(tlbc_size), &tlbc_size) == 0 && tlbc_size > 0) {
+                // Check if the instruction pointer falls within any TLBC range
+                for (Py_ssize_t i = 0; i < tlbc_size; i++) {
+                    uintptr_t tlbc_entry_addr = tlbc_array_ptr + sizeof(Py_ssize_t) + (i * sizeof(void*));
+                    uintptr_t tlbc_bytecode_addr;
+                    
+                    if (read_ptr(handle, tlbc_entry_addr, &tlbc_bytecode_addr) == 0 && tlbc_bytecode_addr != 0) {
+                        // Check if IP is within this TLBC range (rough estimate)
+                        if (ip >= tlbc_bytecode_addr && ip < tlbc_bytecode_addr + 0x10000) {
+                            addrq = (uint16_t *)ip - (uint16_t *)tlbc_bytecode_addr;
+                            goto found_offset;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Fall back to main bytecode
+    addrq = (uint16_t *)ip - (uint16_t *)meta->addr_code_adaptive;
+    
+found_offset:
+    (void)tlbc_index; // Suppress unused parameter warning
+#else
+    // Non-free-threaded build, always use the main bytecode
+    (void)tlbc_index; // Suppress unused parameter warning
+    addrq = (uint16_t *)ip - (uint16_t *)meta->addr_code_adaptive;
+#endif
 
     LocationInfo info = {0};
     bool ok = parse_linetable(addrq, PyBytes_AS_STRING(meta->linetable),
@@ -1481,9 +1531,17 @@ parse_frame_from_chunks(
 
     uintptr_t instruction_pointer = GET_MEMBER(uintptr_t, frame, offsets->interpreter_frame.instr_ptr);
 
+    // Get tlbc_index for free threading builds
+    int32_t tlbc_index = 0;
+#ifdef Py_GIL_DISABLED
+    if (offsets->interpreter_frame.tlbc_index != 0) {
+        tlbc_index = GET_MEMBER(int32_t, frame, offsets->interpreter_frame.tlbc_index);
+    }
+#endif
+
     return parse_code_object(
         handle, result, offsets, GET_MEMBER(uintptr_t, frame, offsets->interpreter_frame.executable),
-        instruction_pointer, previous_frame, code_object_cache);
+        instruction_pointer, previous_frame, code_object_cache, tlbc_index);
 }
 
 /* ============================================================================
@@ -1750,9 +1808,17 @@ parse_frame_object(
 
     uintptr_t instruction_pointer = GET_MEMBER(uintptr_t, frame, offsets->interpreter_frame.instr_ptr);
 
+    // Get tlbc_index for free threading builds
+    int32_t tlbc_index = 0;
+#ifdef Py_GIL_DISABLED
+    if (offsets->interpreter_frame.tlbc_index != 0) {
+        tlbc_index = GET_MEMBER(int32_t, frame, offsets->interpreter_frame.tlbc_index);
+    }
+#endif
+
     return parse_code_object(
         handle, result, offsets, GET_MEMBER(uintptr_t, frame, offsets->interpreter_frame.executable),
-        instruction_pointer, previous_frame, code_object_cache);
+        instruction_pointer, previous_frame, code_object_cache, tlbc_index);
 }
 
 static int
@@ -1792,6 +1858,8 @@ parse_async_frame_object(
     }
 
     *code_object = GET_MEMBER(uintptr_t, frame, offsets->interpreter_frame.executable);
+    // Strip tag bits for consistent comparison
+    *code_object &= ~Py_TAG_BITS;
 
     assert(code_object != NULL);
     if ((void*)*code_object == NULL) {
@@ -1800,8 +1868,16 @@ parse_async_frame_object(
 
     uintptr_t instruction_pointer = GET_MEMBER(uintptr_t, frame, offsets->interpreter_frame.instr_ptr);
 
+    // Get tlbc_index for free threading builds
+    int32_t tlbc_index = 0;
+#ifdef Py_GIL_DISABLED
+    if (offsets->interpreter_frame.tlbc_index != 0) {
+        tlbc_index = GET_MEMBER(int32_t, frame, offsets->interpreter_frame.tlbc_index);
+    }
+#endif
+
     if (parse_code_object(
-        handle, result, offsets, *code_object, instruction_pointer, previous_frame, code_object_cache)) {
+        handle, result, offsets, *code_object, instruction_pointer, previous_frame, code_object_cache, tlbc_index)) {
         return -1;
     }
 
@@ -2418,7 +2494,7 @@ _remote_debugging_exec(PyObject *m)
         return -1;
     }
 #ifdef Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED);
+    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
 #endif
     int rc = PyModule_AddIntConstant(m, "PROCESS_VM_READV_SUPPORTED", HAVE_PROCESS_VM_READV);
     if (rc < 0) {
