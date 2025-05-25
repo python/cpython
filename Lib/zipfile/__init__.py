@@ -1484,11 +1484,6 @@ class _ZipRepacker:
             if used_entry_size < entry_size:
                 entry_offset += entry_size - used_entry_size
 
-        # Avoid missing entry if entries have a duplicated name.
-        # Reverse the order as NameToInfo normally stores the last added one.
-        for info in reversed(zfile.filelist):
-            zfile.NameToInfo.setdefault(info.filename, info)
-
         # update state
         zfile.start_dir -= entry_offset
         zfile._didModify = True
