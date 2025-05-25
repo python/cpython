@@ -116,7 +116,7 @@ class TestGetStackTrace(unittest.TestCase):
             ]
             self.assertEqual(stack_trace, [
                 (ANY, thread_expected_stack_trace),
-                (ANY, main_thread_stack_trace), 
+                (ANY, main_thread_stack_trace),
             ])
 
     @skip_if_not_supported

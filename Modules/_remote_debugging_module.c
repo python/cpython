@@ -778,7 +778,7 @@ create_task_result(
     PyObject *tn = NULL;
     char task_obj[async_offsets->asyncio_task_object.size];
     uintptr_t coro_addr;
-    
+
     result = PyList_New(0);
     if (result == NULL) {
         goto error;
@@ -788,7 +788,7 @@ create_task_result(
     if (call_stack == NULL) {
         goto error;
     }
-    
+
     if (PyList_Append(result, call_stack)) {
         goto error;
     }
@@ -802,7 +802,7 @@ create_task_result(
     if (tn == NULL) {
         goto error;
     }
-    
+
     if (PyList_Append(result, tn)) {
         goto error;
     }
@@ -823,7 +823,7 @@ create_task_result(
         if (call_stack == NULL) {
             goto error;
         }
-        
+
         if (parse_coro_chain(handle, offsets, async_offsets, coro_addr,
                              call_stack, code_object_cache) < 0) {
             Py_DECREF(call_stack);
@@ -1005,14 +1005,14 @@ setup_async_result_structure(PyObject **result, PyObject **calls)
     if (*result == NULL) {
         return -1;
     }
-    
+
     *calls = PyList_New(0);
     if (*calls == NULL) {
         Py_DECREF(*result);
         *result = NULL;
         return -1;
     }
-    
+
     if (PyList_SetItem(*result, 0, *calls)) { /* steals ref to 'calls' */
         Py_DECREF(*calls);
         Py_DECREF(*result);
@@ -1020,7 +1020,7 @@ setup_async_result_structure(PyObject **result, PyObject **calls)
         *calls = NULL;
         return -1;
     }
-    
+
     return 0;
 }
 
@@ -1031,12 +1031,12 @@ add_task_info_to_result(
     uintptr_t running_task_addr
 ) {
     PyObject *tn = parse_task_name(
-        &self->handle, &self->debug_offsets, &self->async_debug_offsets, 
+        &self->handle, &self->debug_offsets, &self->async_debug_offsets,
         running_task_addr);
     if (tn == NULL) {
         return -1;
     }
-    
+
     if (PyList_Append(result, tn)) {
         Py_DECREF(tn);
         return -1;
@@ -1047,7 +1047,7 @@ add_task_info_to_result(
     if (awaited_by == NULL) {
         return -1;
     }
-    
+
     if (PyList_Append(result, awaited_by)) {
         Py_DECREF(awaited_by);
         return -1;
@@ -1100,7 +1100,7 @@ process_single_task_node(
     PyTuple_SET_ITEM(result_item, 0, task_id);  // steals ref
     PyTuple_SET_ITEM(result_item, 1, tn);  // steals ref
     PyTuple_SET_ITEM(result_item, 2, current_awaited_by);  // steals ref
-    
+
     // References transferred to tuple
     task_id = NULL;
     tn = NULL;
@@ -1305,7 +1305,7 @@ parse_code_object(proc_handle_t *handle,
 
     uintptr_t ip = instruction_pointer;
     ptrdiff_t addrq;
-    
+
 #ifdef Py_GIL_DISABLED
     // In free threading builds, we need to handle thread-local bytecode (TLBC)
     // The instruction pointer might point to TLBC, so we need to calculate the offset
@@ -1314,7 +1314,7 @@ parse_code_object(proc_handle_t *handle,
         // Try to read the TLBC array to get the correct bytecode base
         uintptr_t tlbc_array_addr = real_address + offsets->code_object.co_tlbc;
         uintptr_t tlbc_array_ptr;
-        
+
         if (read_ptr(handle, tlbc_array_addr, &tlbc_array_ptr) == 0 && tlbc_array_ptr != 0) {
             // Read the TLBC array size
             Py_ssize_t tlbc_size;
@@ -1323,7 +1323,7 @@ parse_code_object(proc_handle_t *handle,
                 for (Py_ssize_t i = 0; i < tlbc_size; i++) {
                     uintptr_t tlbc_entry_addr = tlbc_array_ptr + sizeof(Py_ssize_t) + (i * sizeof(void*));
                     uintptr_t tlbc_bytecode_addr;
-                    
+
                     if (read_ptr(handle, tlbc_entry_addr, &tlbc_bytecode_addr) == 0 && tlbc_bytecode_addr != 0) {
                         // Check if IP is within this TLBC range (rough estimate)
                         if (ip >= tlbc_bytecode_addr && ip < tlbc_bytecode_addr + 0x10000) {
@@ -1335,10 +1335,10 @@ parse_code_object(proc_handle_t *handle,
             }
         }
     }
-    
+
     // Fall back to main bytecode
     addrq = (uint16_t *)ip - (uint16_t *)meta->addr_code_adaptive;
-    
+
 found_offset:
     (void)tlbc_index; // Suppress unused parameter warning
 #else
@@ -1403,7 +1403,7 @@ process_single_stack_chunk(
 ) {
     // Start with default size assumption
     size_t current_size = _PY_DATA_STACK_CHUNK_SIZE;
-    
+
     char *this_chunk = PyMem_RawMalloc(current_size);
     if (!this_chunk) {
         PyErr_NoMemory();
@@ -1423,7 +1423,7 @@ process_single_stack_chunk(
             PyErr_NoMemory();
             return -1;
         }
-        
+
         if (_Py_RemoteDebug_PagedReadRemoteMemory(handle, chunk_addr, actual_size, this_chunk) < 0) {
             PyMem_RawFree(this_chunk);
             return -1;
@@ -1447,7 +1447,7 @@ copy_stack_chunks(proc_handle_t *handle,
     StackChunkInfo *chunks = NULL;
     size_t count = 0;
     size_t max_chunks = 16;
-    
+
     if (read_ptr(handle, tstate_addr + offsets->thread_state.datastack_chunk, &chunk_addr)) {
         return -1;
     }
@@ -1728,7 +1728,7 @@ find_running_task_and_coro(
 ) {
     *running_task_addr = (uintptr_t)NULL;
     if (find_running_task(
-        &self->handle, self->runtime_start_address, 
+        &self->handle, self->runtime_start_address,
         &self->debug_offsets, &self->async_debug_offsets,
         running_task_addr) < 0) {
         chain_exceptions(PyExc_RuntimeError, "Failed to find running task");
@@ -1950,14 +1950,14 @@ append_awaited_by_for_thread(
 ) {
     char task_node[SIZEOF_LLIST_NODE];
 
-    if (_Py_RemoteDebug_PagedReadRemoteMemory(handle, head_addr, 
+    if (_Py_RemoteDebug_PagedReadRemoteMemory(handle, head_addr,
                                               sizeof(task_node), task_node) < 0) {
         return -1;
     }
 
     size_t iteration_count = 0;
     const size_t MAX_ITERATIONS = 2 << 15;  // A reasonable upper bound
-    
+
     while (GET_MEMBER(uintptr_t, task_node, debug_offsets->llist_node.next) != head_addr) {
         if (++iteration_count > MAX_ITERATIONS) {
             PyErr_SetString(PyExc_RuntimeError, "Task list appears corrupted");
@@ -2069,10 +2069,10 @@ process_frame_chain(
         }
 
         // Try chunks first, fallback to direct memory read
-        if (parse_frame_from_chunks(handle, &frame, offsets, frame_addr, 
+        if (parse_frame_from_chunks(handle, &frame, offsets, frame_addr,
                                     &next_frame_addr, chunks, code_object_cache) < 0) {
             PyErr_Clear();
-            if (parse_frame_object(handle, &frame, offsets, frame_addr, 
+            if (parse_frame_object(handle, &frame, offsets, frame_addr,
                                    &next_frame_addr, code_object_cache) < 0) {
                 return -1;
             }
@@ -2133,7 +2133,7 @@ unwind_stack_for_thread(
         goto error;
     }
 
-    if (process_frame_chain(handle, offsets, frame_addr, &chunks, 
+    if (process_frame_chain(handle, offsets, frame_addr, &chunks,
                             code_object_cache, frame_info) < 0) {
         goto error;
     }
@@ -2407,13 +2407,13 @@ _remote_debugging_RemoteUnwinder_get_async_stack_trace_impl(RemoteUnwinderObject
 
     PyObject *result = NULL;
     PyObject *calls = NULL;
-    
+
     if (setup_async_result_structure(&result, &calls) < 0) {
         goto cleanup;
     }
 
     uintptr_t running_task_addr, running_coro_addr, running_task_code_obj;
-    if (find_running_task_and_coro(self, &running_task_addr, 
+    if (find_running_task_and_coro(self, &running_task_addr,
                                    &running_coro_addr, &running_task_code_obj) < 0) {
         goto cleanup;
     }
