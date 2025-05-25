@@ -89,6 +89,12 @@ New modules
 Improved modules
 ================
 
+os.path
+-------
+
+* Add support of the all-but-last mode in :func:`~os.path.realpath`.
+  (Contributed by Serhiy Storchaka in :gh:`71189`.)
+
 ssl
 ---
 

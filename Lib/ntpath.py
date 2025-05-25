@@ -29,7 +29,7 @@ __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext"
            "abspath","curdir","pardir","sep","pathsep","defpath","altsep",
            "extsep","devnull","realpath","supports_unicode_filenames","relpath",
            "samefile", "sameopenfile", "samestat", "commonpath", "isjunction",
-           "isdevdrive"]
+           "isdevdrive", 'ALL_BUT_LAST']
 
 def _get_bothseps(path):
     if isinstance(path, bytes):
@@ -736,7 +736,13 @@ else:
             path = normpath(path)
         except OSError as ex:
             if strict:
-                raise
+                if strict is not ALL_BUT_LAST or not isinstance(ex, FileNotFoundError):
+                    raise
+                dirname, basename = split(path)
+                if not basename:
+                    dirname, basename = split(path)
+                if not isdir(dirname):
+                    raise
             initial_winerror = ex.winerror
             path = _getfinalpathname_nonstrict(path)
         # The path returned by _getfinalpathname will always start with \\?\ -

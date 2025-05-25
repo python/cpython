@@ -36,7 +36,7 @@ __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext"
            "samefile","sameopenfile","samestat",
            "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
            "devnull","realpath","supports_unicode_filenames","relpath",
-           "commonpath", "isjunction","isdevdrive"]
+           "commonpath", "isjunction","isdevdrive", 'ALL_BUT_LAST']
 
 
 def _get_sep(path):
@@ -404,13 +404,13 @@ symbolic links encountered in the path."""
         getcwd = os.getcwd
     return _realpath(filename, strict, sep, curdir, pardir, getcwd)
 
-def _realpath(filename, strict=False, sep=sep, curdir=curdir, pardir=pardir,
+def _realpath(filename, strict, sep=sep, curdir=curdir, pardir=pardir,
               getcwd=os.getcwd, lstat=os.lstat, readlink=os.readlink, maxlinks=None):
     # The stack of unresolved path parts. When popped, a special value of None
     # indicates that a symlink target has been resolved, and that the original
     # symlink path can be retrieved by popping again. The [::-1] slice is a
     # very fast way of spelling list(reversed(...)).
-    rest = filename.split(sep)[::-1]
+    rest = filename.rstrip(sep).split(sep)[::-1]
 
     # Number of unprocessed parts in 'rest'. This can differ from len(rest)
     # later, because 'rest' might contain markers for unresolved symlinks.
@@ -419,6 +419,7 @@ def _realpath(filename, strict=False, sep=sep, curdir=curdir, pardir=pardir,
     # The resolved path, which is absolute throughout this function.
     # Note: getcwd() returns a normalized and symlink-free path.
     path = sep if filename.startswith(sep) else getcwd()
+    trailing_sep = filename.endswith(sep)
 
     # Mapping from symlink paths to *fully resolved* symlink targets. If a
     # symlink is encountered but not yet resolved, the value is None. This is
@@ -451,7 +452,8 @@ def _realpath(filename, strict=False, sep=sep, curdir=curdir, pardir=pardir,
         try:
             st_mode = lstat(newpath).st_mode
             if not stat.S_ISLNK(st_mode):
-                if strict and part_count and not stat.S_ISDIR(st_mode):
+                if (strict and (part_count or trailing_sep)
+                    and not stat.S_ISDIR(st_mode)):
                     raise OSError(errno.ENOTDIR, os.strerror(errno.ENOTDIR),
                                   newpath)
                 path = newpath
@@ -477,6 +479,14 @@ def _realpath(filename, strict=False, sep=sep, curdir=curdir, pardir=pardir,
                 path = newpath
                 continue
             target = readlink(newpath)
+        except FileNotFoundError:
+            if not part_count and strict is ALL_BUT_LAST:
+                path = newpath
+                continue
+            if strict:
+                raise
+            path = newpath
+            continue
         except OSError:
             if strict:
                 raise
