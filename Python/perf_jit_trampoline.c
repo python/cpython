@@ -372,6 +372,9 @@ enum {
 #elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
     DWRF_REG_SP = 31,
     DWRF_REG_RA = 30,
+#elif defined(__riscv)
+    DWRF_REG_RA = 1,
+    DWRF_REG_SP = 2,
 #else
 #    error "Unsupported target architecture"
 #endif
@@ -478,7 +481,7 @@ elf_init_ehframe(ELFObjectContext* ctx)
                  DWRF_U8(DWRF_CFA_advance_loc | 6);
                  DWRF_U8(DWRF_CFA_def_cfa_offset); DWRF_UV(8);
     /* Extra registers saved for JIT-compiled code. */
-#elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
+#elif (defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)) || defined(__riscv)
                  DWRF_U8(DWRF_CFA_advance_loc | 1);
                  DWRF_U8(DWRF_CFA_def_cfa_offset); DWRF_UV(16);
                  DWRF_U8(DWRF_CFA_offset | 29); DWRF_UV(2);
