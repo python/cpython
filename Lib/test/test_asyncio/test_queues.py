@@ -6,7 +6,7 @@ from types import GenericAlias
 
 
 def tearDownModule():
-    asyncio._set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 class QueueBasicTests(unittest.IsolatedAsyncioTestCase):
