@@ -8487,6 +8487,36 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(Child.__required_keys__, frozenset(['a']))
         self.assertEqual(Child.__optional_keys__, frozenset())
 
+    def test_inheritance_pep563(self):
+        def _make_td(future, class_name, annos, base, extra_names=None):
+            lines = []
+            if future:
+                lines.append('from __future__ import annotations')
+            lines.append('from typing import TypedDict')
+            lines.append(f'class {class_name}({base}):')
+            for name, anno in annos.items():
+                lines.append(f'    {name}: {anno}')
+            code = '\n'.join(lines)
+            ns = run_code(code, extra_names)
+            return ns[class_name]
+
+        for base_future in (True, False):
+            for child_future in (True, False):
+                with self.subTest(base_future=base_future, child_future=child_future):
+                    base = _make_td(
+                        base_future, "Base", {"base": "int"}, "TypedDict"
+                    )
+                    self.assertIsNotNone(base.__annotate__)
+                    child = _make_td(
+                        child_future, "Child", {"child": "int"}, "Base", {"Base": base}
+                    )
+                    base_anno = ForwardRef("int", module="builtins") if base_future else int
+                    child_anno = ForwardRef("int", module="builtins") if child_future else int
+                    self.assertEqual(base.__annotations__, {'base': base_anno})
+                    self.assertEqual(
+                        child.__annotations__, {'child': child_anno, 'base': base_anno}
+                    )
+
     def test_required_notrequired_keys(self):
         self.assertEqual(NontotalMovie.__required_keys__,
                          frozenset({"title"}))

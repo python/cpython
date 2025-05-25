@@ -695,8 +695,8 @@ class TestPEP590(unittest.TestCase):
         UnaffectedType2 = _testcapi.make_vectorcall_class(SuperType)
 
         # Aside: Quickly check that the C helper actually made derived types
-        self.assertTrue(issubclass(UnaffectedType1, DerivedType))
-        self.assertTrue(issubclass(UnaffectedType2, SuperType))
+        self.assertIsSubclass(UnaffectedType1, DerivedType)
+        self.assertIsSubclass(UnaffectedType2, SuperType)
 
         # Initial state: tp_call
         self.assertEqual(instance(), "tp_call")
