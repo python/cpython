@@ -427,14 +427,10 @@ add_keyword_tuple(PyObject *module)
             goto error;
         }
         if (PyTuple_SetItem(keywords, i, kwd) < 0) {
-            Py_DECREF(kwd);
             goto error;
         }
     }
-    if (PyModule_Add(module, "SQLITE_KEYWORDS", keywords) < 0) {
-        goto error;
-    }
-    return 0;
+    return PyModule_Add(module, "SQLITE_KEYWORDS", keywords);
 
 error:
     Py_XDECREF(keywords);
