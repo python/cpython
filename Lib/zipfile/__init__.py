@@ -1442,10 +1442,6 @@ class _ZipRepacker:
             [recorded local file entry 1]
             ...
         """
-        with zfile._lock:
-            self._repack(zfile)
-
-    def _repack(self, zfile):
         fp = zfile.fp
 
         # get a sorted filelist by header offset, in case the dir order
@@ -2271,7 +2267,12 @@ class ZipFile:
                 "Can't write to ZIP archive while an open writing handle exists"
             )
 
-        _ZipRepacker(**opts).repack(self)
+        with self._lock:
+            self._writing = True
+            try:
+                _ZipRepacker(**opts).repack(self)
+            finally:
+                self._writing = False
 
     @classmethod
     def _sanitize_windows_name(cls, arcname, pathsep):
