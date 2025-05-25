@@ -173,6 +173,14 @@ class ChecksumCombineMixin:
             res = self.combine(chk_a, chk_b, len(b))
             self.assertEqual(res, self.checksum(a + b))
 
+    def test_combine_no_iv_invalid_length(self):
+        a, _, chk_a = self.get_random_data(32)
+        b, _, chk_b = self.get_random_data(64)
+        checksum = self.checksum(a + b)
+        for invalid_len in [1, len(a), 48, len(b) + 1, 191]:
+            invalid_res = self.combine(chk_a, chk_b, invalid_len)
+            self.assertNotEqual(invalid_res, checksum)
+
     def test_combine_with_iv(self):
         for _ in range(self.N):
             a, iv_a, chk_a_with_iv = self.get_random_data(32, iv=-1)
