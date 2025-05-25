@@ -77,7 +77,13 @@ static inline size_t
 get_page_size(void) {
     static size_t page_size = 0;
     if (page_size == 0) {
+#ifdef MS_WINDOWS
+        SYSTEM_INFO si;
+        GetSystemInfo(&si);
+        page_size = si.dwPageSize;
+#else
         page_size = (size_t)getpagesize();
+#endif
     }
     return page_size;
 }
