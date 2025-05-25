@@ -8,6 +8,8 @@
 #include "Python.h"
 #include "pycore_code.h"          // _PyCode_HAS_EXECUTORS()
 #include "pycore_crossinterp.h"   // _PyXIData_t
+#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
+#include "pycore_function.h"      // _PyFunction_VerifyStateless()
 #include "pycore_interp.h"        // _PyInterpreterState_IDIncref()
 #include "pycore_modsupport.h"    // _PyArg_BadArgument()
 #include "pycore_namespace.h"     // _PyNamespace_New()
@@ -286,7 +288,7 @@ register_memoryview_xid(PyObject *mod, PyTypeObject **p_state)
     *p_state = cls;
 
     // Register XID for the builtin memoryview type.
-    if (ensure_xid_class(&PyMemoryView_Type, _pybuffer_shared) < 0) {
+    if (ensure_xid_class(&PyMemoryView_Type, GETDATA(_pybuffer_shared)) < 0) {
         return -1;
     }
     // We don't ever bother un-registering memoryview.
@@ -374,34 +376,17 @@ check_code_str(PyUnicodeObject *text)
     return NULL;
 }
 
-static const char *
-check_code_object(PyCodeObject *code)
+#ifndef NDEBUG
+static int
+code_has_args(PyCodeObject *code)
 {
     assert(code != NULL);
-    if (code->co_argcount > 0
+    return (code->co_argcount > 0
         || code->co_posonlyargcount > 0
         || code->co_kwonlyargcount > 0
-        || code->co_flags & (CO_VARARGS | CO_VARKEYWORDS))
-    {
-        return "arguments not supported";
-    }
-    if (code->co_ncellvars > 0) {
-        return "closures not supported";
-    }
-    // We trust that no code objects under co_consts have unbound cell vars.
-
-    if (_PyCode_HAS_EXECUTORS(code) || _PyCode_HAS_INSTRUMENTATION(code)) {
-        return "only basic functions are supported";
-    }
-    if (code->_co_monitoring != NULL) {
-        return "only basic functions are supported";
-    }
-    if (code->co_extra != NULL) {
-        return "only basic functions are supported";
-    }
-
-    return NULL;
+        || code->co_flags & (CO_VARARGS | CO_VARKEYWORDS));
 }
+#endif
 
 #define RUN_TEXT 1
 #define RUN_CODE 2
@@ -429,8 +414,10 @@ get_code_str(PyObject *arg, Py_ssize_t *len_p, PyObject **bytes_p, int *flags_p)
         flags = RUN_TEXT;
     }
     else {
-        assert(PyCode_Check(arg)
-               && (check_code_object((PyCodeObject *)arg) == NULL));
+        assert(PyCode_Check(arg));
+        assert(_PyCode_VerifyStateless(
+            PyThreadState_Get(), (PyCodeObject *)arg, NULL, NULL, NULL) == 0);
+        assert(!code_has_args((PyCodeObject *)arg));
         flags = RUN_CODE;
 
         // Serialize the code object.
@@ -542,42 +529,54 @@ _run_in_interpreter(PyInterpreterState *interp,
                     PyObject **p_excinfo)
 {
     assert(!PyErr_Occurred());
-    _PyXI_session session = {0};
+    _PyXI_session *session = _PyXI_NewSession();
+    if (session == NULL) {
+        return -1;
+    }
 
     // Prep and switch interpreters.
-    if (_PyXI_Enter(&session, interp, shareables) < 0) {
+    if (_PyXI_Enter(session, interp, shareables) < 0) {
         if (PyErr_Occurred()) {
             // If an error occured at this step, it means that interp
             // was not prepared and switched.
+            _PyXI_FreeSession(session);
             return -1;
         }
         // Now, apply the error from another interpreter:
-        PyObject *excinfo = _PyXI_ApplyError(session.error);
+        PyObject *excinfo = _PyXI_ApplyCapturedException(session);
         if (excinfo != NULL) {
             *p_excinfo = excinfo;
         }
         assert(PyErr_Occurred());
+        _PyXI_FreeSession(session);
         return -1;
     }
 
     // Run the script.
-    int res = _run_script(session.main_ns, codestr, codestrlen, flags);
+    int res = -1;
+    PyObject *mainns = _PyXI_GetMainNamespace(session);
+    if (mainns == NULL) {
+        goto finally;
+    }
+    res = _run_script(mainns, codestr, codestrlen, flags);
 
+finally:
     // Clean up and switch back.
-    _PyXI_Exit(&session);
+    _PyXI_Exit(session);
 
     // Propagate any exception out to the caller.
     assert(!PyErr_Occurred());
     if (res < 0) {
-        PyObject *excinfo = _PyXI_ApplyCapturedException(&session);
+        PyObject *excinfo = _PyXI_ApplyCapturedException(session);
         if (excinfo != NULL) {
             *p_excinfo = excinfo;
         }
     }
     else {
-        assert(!_PyXI_HasCapturedException(&session));
+        assert(!_PyXI_HasCapturedException(session));
     }
 
+    _PyXI_FreeSession(session);
     return res;
 }
 
@@ -922,22 +921,27 @@ interp_set___main___attrs(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
 
-    _PyXI_session session = {0};
+    _PyXI_session *session = _PyXI_NewSession();
+    if (session == NULL) {
+        return NULL;
+    }
 
     // Prep and switch interpreters, including apply the updates.
-    if (_PyXI_Enter(&session, interp, updates) < 0) {
+    if (_PyXI_Enter(session, interp, updates) < 0) {
         if (!PyErr_Occurred()) {
-            _PyXI_ApplyCapturedException(&session);
+            _PyXI_ApplyCapturedException(session);
             assert(PyErr_Occurred());
         }
         else {
-            assert(!_PyXI_HasCapturedException(&session));
+            assert(!_PyXI_HasCapturedException(session));
         }
+        _PyXI_FreeSession(session);
         return NULL;
     }
 
     // Clean up and switch back.
-    _PyXI_Exit(&session);
+    _PyXI_Exit(session);
+    _PyXI_FreeSession(session);
 
     Py_RETURN_NONE;
 }
@@ -949,7 +953,8 @@ Bind the given attributes in the interpreter's __main__ module.");
 
 
 static PyUnicodeObject *
-convert_script_arg(PyObject *arg, const char *fname, const char *displayname,
+convert_script_arg(PyThreadState *tstate,
+                   PyObject *arg, const char *fname, const char *displayname,
                    const char *expected)
 {
     PyUnicodeObject *str = NULL;
@@ -968,8 +973,8 @@ convert_script_arg(PyObject *arg, const char *fname, const char *displayname,
     const char *err = check_code_str(str);
     if (err != NULL) {
         Py_DECREF(str);
-        PyErr_Format(PyExc_ValueError,
-                     "%.200s(): bad script text (%s)", fname, err);
+        _PyErr_Format(tstate, PyExc_ValueError,
+                      "%.200s(): bad script text (%s)", fname, err);
         return NULL;
     }
 
@@ -977,51 +982,44 @@ convert_script_arg(PyObject *arg, const char *fname, const char *displayname,
 }
 
 static PyCodeObject *
-convert_code_arg(PyObject *arg, const char *fname, const char *displayname,
+convert_code_arg(PyThreadState *tstate,
+                 PyObject *arg, const char *fname, const char *displayname,
                  const char *expected)
 {
-    const char *kind = NULL;
+    PyObject *cause;
     PyCodeObject *code = NULL;
     if (PyFunction_Check(arg)) {
-        if (PyFunction_GetClosure(arg) != NULL) {
-            PyErr_Format(PyExc_ValueError,
-                         "%.200s(): closures not supported", fname);
-            return NULL;
+        // For now we allow globals, so we can't use
+        // _PyFunction_VerifyStateless().
+        PyObject *codeobj = PyFunction_GetCode(arg);
+        if (_PyCode_VerifyStateless(
+                    tstate, (PyCodeObject *)codeobj, NULL, NULL, NULL) < 0) {
+            goto chained;
         }
-        code = (PyCodeObject *)PyFunction_GetCode(arg);
-        if (code == NULL) {
-            if (PyErr_Occurred()) {
-                // This chains.
-                PyErr_Format(PyExc_ValueError,
-                             "%.200s(): bad func", fname);
-            }
-            else {
-                PyErr_Format(PyExc_ValueError,
-                             "%.200s(): func.__code__ missing", fname);
-            }
-            return NULL;
-        }
-        Py_INCREF(code);
-        kind = "func";
+        code = (PyCodeObject *)Py_NewRef(codeobj);
     }
     else if (PyCode_Check(arg)) {
+        if (_PyCode_VerifyStateless(
+                    tstate, (PyCodeObject *)arg, NULL, NULL, NULL) < 0) {
+            goto chained;
+        }
         code = (PyCodeObject *)Py_NewRef(arg);
-        kind = "code object";
     }
     else {
         _PyArg_BadArgument(fname, displayname, expected, arg);
         return NULL;
     }
 
-    const char *err = check_code_object(code);
-    if (err != NULL) {
-        Py_DECREF(code);
-        PyErr_Format(PyExc_ValueError,
-                     "%.200s(): bad %s (%s)", fname, kind, err);
-        return NULL;
-    }
-
     return code;
+
+chained:
+    cause = _PyErr_GetRaisedException(tstate);
+    assert(cause != NULL);
+    _PyArg_BadArgument(fname, displayname, expected, arg);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
+    PyException_SetCause(exc, cause);
+    _PyErr_SetRaisedException(tstate, exc);
+    return NULL;
 }
 
 static int
@@ -1057,12 +1055,14 @@ _interp_exec(PyObject *self, PyInterpreterState *interp,
 static PyObject *
 interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
 {
+#define FUNCNAME MODULE_NAME_STR ".exec"
+    PyThreadState *tstate = _PyThreadState_GET();
     static char *kwlist[] = {"id", "code", "shared", "restrict", NULL};
     PyObject *id, *code;
     PyObject *shared = NULL;
     int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OO|O$p:" MODULE_NAME_STR ".exec", kwlist,
+                                     "OO|O$p:" FUNCNAME, kwlist,
                                      &id, &code, &shared, &restricted))
     {
         return NULL;
@@ -1077,12 +1077,12 @@ interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
 
     const char *expected = "a string, a function, or a code object";
     if (PyUnicode_Check(code)) {
-         code = (PyObject *)convert_script_arg(code, MODULE_NAME_STR ".exec",
-                                               "argument 2", expected);
+        code = (PyObject *)convert_script_arg(tstate, code, FUNCNAME,
+                                              "argument 2", expected);
     }
     else {
-         code = (PyObject *)convert_code_arg(code, MODULE_NAME_STR ".exec",
-                                             "argument 2", expected);
+        code = (PyObject *)convert_code_arg(tstate, code, FUNCNAME,
+                                            "argument 2", expected);
     }
     if (code == NULL) {
         return NULL;
@@ -1096,6 +1096,7 @@ interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
         return excinfo;
     }
     Py_RETURN_NONE;
+#undef FUNCNAME
 }
 
 PyDoc_STRVAR(exec_doc,
@@ -1118,13 +1119,15 @@ is ignored, including its __globals__ dict.");
 static PyObject *
 interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
 {
+#define FUNCNAME MODULE_NAME_STR ".run_string"
+    PyThreadState *tstate = _PyThreadState_GET();
     static char *kwlist[] = {"id", "script", "shared", "restrict", NULL};
     PyObject *id, *script;
     PyObject *shared = NULL;
     int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OU|O$p:" MODULE_NAME_STR ".run_string",
-                                     kwlist, &id, &script, &shared, &restricted))
+                                     "OU|O$p:" FUNCNAME, kwlist,
+                                     &id, &script, &shared, &restricted))
     {
         return NULL;
     }
@@ -1136,7 +1139,7 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    script = (PyObject *)convert_script_arg(script, MODULE_NAME_STR ".run_string",
+    script = (PyObject *)convert_script_arg(tstate, script, FUNCNAME,
                                             "argument 2", "a string");
     if (script == NULL) {
         return NULL;
@@ -1150,6 +1153,7 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
         return excinfo;
     }
     Py_RETURN_NONE;
+#undef FUNCNAME
 }
 
 PyDoc_STRVAR(run_string_doc,
@@ -1162,13 +1166,15 @@ Execute the provided string in the identified interpreter.\n\
 static PyObject *
 interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
 {
+#define FUNCNAME MODULE_NAME_STR ".run_func"
+    PyThreadState *tstate = _PyThreadState_GET();
     static char *kwlist[] = {"id", "func", "shared", "restrict", NULL};
     PyObject *id, *func;
     PyObject *shared = NULL;
     int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OO|O$p:" MODULE_NAME_STR ".run_func",
-                                     kwlist, &id, &func, &shared, &restricted))
+                                     "OO|O$p:" FUNCNAME, kwlist,
+                                     &id, &func, &shared, &restricted))
     {
         return NULL;
     }
@@ -1180,7 +1186,7 @@ interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyCodeObject *code = convert_code_arg(func, MODULE_NAME_STR ".exec",
+    PyCodeObject *code = convert_code_arg(tstate, func, FUNCNAME,
                                           "argument 2",
                                           "a function or a code object");
     if (code == NULL) {
@@ -1195,6 +1201,7 @@ interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
         return excinfo;
     }
     Py_RETURN_NONE;
+#undef FUNCNAME
 }
 
 PyDoc_STRVAR(run_func_doc,
@@ -1209,6 +1216,8 @@ are not supported.  Methods and other callables are not supported either.\n\
 static PyObject *
 interp_call(PyObject *self, PyObject *args, PyObject *kwds)
 {
+#define FUNCNAME MODULE_NAME_STR ".call"
+    PyThreadState *tstate = _PyThreadState_GET();
     static char *kwlist[] = {"id", "callable", "args", "kwargs",
                              "restrict", NULL};
     PyObject *id, *callable;
@@ -1216,7 +1225,7 @@ interp_call(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *kwargs_obj = NULL;
     int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OO|OO$p:" MODULE_NAME_STR ".call", kwlist,
+                                     "OO|OO$p:" FUNCNAME, kwlist,
                                      &id, &callable, &args_obj, &kwargs_obj,
                                      &restricted))
     {
@@ -1231,15 +1240,15 @@ interp_call(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     if (args_obj != NULL) {
-        PyErr_SetString(PyExc_ValueError, "got unexpected args");
+        _PyErr_SetString(tstate, PyExc_ValueError, "got unexpected args");
         return NULL;
     }
     if (kwargs_obj != NULL) {
-        PyErr_SetString(PyExc_ValueError, "got unexpected kwargs");
+        _PyErr_SetString(tstate, PyExc_ValueError, "got unexpected kwargs");
         return NULL;
     }
 
-    PyObject *code = (PyObject *)convert_code_arg(callable, MODULE_NAME_STR ".call",
+    PyObject *code = (PyObject *)convert_code_arg(tstate, callable, FUNCNAME,
                                                   "argument 2", "a function");
     if (code == NULL) {
         return NULL;
@@ -1253,6 +1262,7 @@ interp_call(PyObject *self, PyObject *args, PyObject *kwds)
         return excinfo;
     }
     Py_RETURN_NONE;
+#undef FUNCNAME
 }
 
 PyDoc_STRVAR(call_doc,

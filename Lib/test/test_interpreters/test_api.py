@@ -1452,6 +1452,14 @@ class LowLevelTests(TestBase):
             self.assertFalse(
                 self.interp_exists(interpid))
 
+        with self.subTest('basic C-API'):
+            interpid = _testinternalcapi.create_interpreter()
+            self.assertTrue(
+                self.interp_exists(interpid))
+            _testinternalcapi.destroy_interpreter(interpid, basic=True)
+            self.assertFalse(
+                self.interp_exists(interpid))
+
     def test_get_config(self):
         # This test overlaps with
         # test.test_capi.test_misc.InterpreterConfigTests.
