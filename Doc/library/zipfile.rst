@@ -520,8 +520,15 @@ ZipFile Objects
 
 .. method:: ZipFile.remove(zinfo_or_arcname)
 
-   Removes a member from the archive.  *zinfo_or_arcname* is either the full
-   path of the member, or a :class:`ZipInfo` instance.
+   Removes a member from the archive.  *zinfo_or_arcname* may be the full path
+   of the member or a :class:`ZipInfo` instance.
+
+   If multiple members share the same full path, only one is removed when
+   a path is provided.
+
+   This does not physically remove the local file entry from the archive;
+   the ZIP file size remains unchanged. Use :meth:`ZipFile.repack` afterwards
+   to reclaim space.
 
    The archive must be opened with mode ``'w'``, ``'x'`` or ``'a'``.
 
@@ -530,9 +537,20 @@ ZipFile Objects
    .. versionadded:: next
 
 
-.. method:: ZipFile.repack()
+.. method:: ZipFile.repack(*, strict_descriptor=False[, chunk_size])
 
-   Repack a zip file and physically remove non-referenced file entries.
+   Rewrites the archive to remove local file entries that are no longer
+   referenced, shrinking the ZIP file size.
+
+   ``strict_descriptor=True`` can be provided to skip the slower scan for an
+   unsigned data descriptor (deprecated in the latest ZIP specification and is
+   only used by legacy tools) when checking for bytes resembling a valid local
+   file entry before the first referenced entry.  This improves performance,
+   but may cause some stale local file entries to be preserved, as any entry
+   using an unsigned descriptor cannot be detected.
+
+   *chunk_size* may be specified to control the buffer size when moving
+   entry data (default is 1 MiB).
 
    The archive must be opened with mode ``'a'``.
 
