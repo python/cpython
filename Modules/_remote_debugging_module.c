@@ -631,7 +631,7 @@ handle_yield_from_frame(
     PyObject *render_to
 ) {
     // Read the entire interpreter frame at once
-    char iframe[10000];
+    char iframe[SIZEOF_INTERP_FRAME];
     int err = _Py_RemoteDebug_PagedReadRemoteMemory(
         &unwinder->handle,
         gi_iframe_addr,
