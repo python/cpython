@@ -7297,7 +7297,8 @@ class EvaluateForwardRefTests(BaseTestCase):
         with self.assertRaises(NameError):
             typing.evaluate_forward_ref(ref)
 
-        # Now should pick up the globals of this module
+        # We default to the globals of `owner`,
+        # so it no longer raises `NameError`
         self.assertIs(
             typing.evaluate_forward_ref(ref, owner=Loop), A
         )
