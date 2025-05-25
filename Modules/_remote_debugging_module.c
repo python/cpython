@@ -729,7 +729,7 @@ parse_coro_chain(
     }
     Py_DECREF(name);
 
-    if (GET_MEMBER(char, gen_object, unwinder->debug_offsets.gen_object.gi_frame_state) == FRAME_SUSPENDED_YIELD_FROM) {
+    if (GET_MEMBER(int8_t, gen_object, unwinder->debug_offsets.gen_object.gi_frame_state) == FRAME_SUSPENDED_YIELD_FROM) {
         return handle_yield_from_frame(unwinder, gi_iframe_addr, gen_type_addr, render_to);
     }
 
