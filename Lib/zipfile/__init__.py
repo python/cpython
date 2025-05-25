@@ -1461,24 +1461,24 @@ class _ZipRepacker:
         entry_offset = self._calc_initial_entry_offset(fp, data_offset)
 
         # move file entries
-        for i, info in enumerate(filelist):
+        for i, zinfo in enumerate(filelist):
             # get the total size of the entry
             try:
                 offset = filelist[i + 1].header_offset
             except IndexError:
                 offset = zfile.start_dir
-            entry_size = offset - info.header_offset
+            entry_size = offset - zinfo.header_offset
 
-            used_entry_size = self._calc_local_file_entry_size(fp, info)
+            used_entry_size = self._calc_local_file_entry_size(fp, zinfo)
 
             # update the header and move entry data to the new position
             if entry_offset > 0:
-                old_header_offset = info.header_offset
-                info.header_offset -= entry_offset
-                self._move_entry_data(fp, old_header_offset, info.header_offset, used_entry_size)
+                old_header_offset = zinfo.header_offset
+                zinfo.header_offset -= entry_offset
+                self._move_entry_data(fp, old_header_offset, zinfo.header_offset, used_entry_size)
 
-            if info._end_offset is not None:
-                info._end_offset = info.header_offset + used_entry_size
+            if zinfo._end_offset is not None:
+                zinfo._end_offset = zinfo.header_offset + used_entry_size
 
             # update entry_offset for subsequent files to follow
             if used_entry_size < entry_size:
