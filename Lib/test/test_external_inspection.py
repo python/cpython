@@ -123,10 +123,10 @@ class TestGetStackTrace(unittest.TestCase):
                 (ANY, threading.__file__, ANY),
                 ("<module>", script_name, 19),
             ]
-            self.assertEqual(stack_trace, [
-                (ANY, thread_expected_stack_trace),
-                (ANY, main_thread_stack_trace),
-            ])
+            # Is possible that there are more threads, so we check that the
+            # expected stack traces are in the result (looking at you Windows!)
+            self.assertIn((ANY, thread_expected_stack_trace), stack_trace)
+            self.assertIn((ANY, main_thread_stack_trace), stack_trace)
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -726,9 +726,16 @@ class TestGetStackTrace(unittest.TestCase):
     )
     def test_self_trace(self):
         stack_trace = get_stack_trace(os.getpid())
-        self.assertEqual(stack_trace[0][0], threading.get_native_id())
+        # Is possible that there are more threads, so we check that the
+        # expected stack traces are in the result (looking at you Windows!)
+        this_tread_stack = None
+        for thread_id, stack in stack_trace:
+            if thread_id == threading.get_native_id():
+                this_tread_stack = stack
+                break
+        self.assertIsNotNone(this_tread_stack)
         self.assertEqual(
-            stack_trace[0][1][:2],
+            stack[:2],
             [
                 (
                     "get_stack_trace",
