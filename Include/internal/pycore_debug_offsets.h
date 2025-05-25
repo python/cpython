@@ -89,6 +89,7 @@ typedef struct _Py_DebugOffsets {
         uint64_t gil_runtime_state_enabled;
         uint64_t gil_runtime_state_locked;
         uint64_t gil_runtime_state_holder;
+        uint64_t code_object_generation;
     } interpreter_state;
 
     // Thread state offset;
@@ -216,6 +217,11 @@ typedef struct _Py_DebugOffsets {
         uint64_t gi_frame_state;
     } gen_object;
 
+    struct _llist_node {
+        uint64_t next;
+        uint64_t prev;
+    } llist_node;
+
     struct _debugger_support {
         uint64_t eval_breaker;
         uint64_t remote_debugger_support;
@@ -251,6 +257,7 @@ typedef struct _Py_DebugOffsets {
         .gil_runtime_state_enabled = _Py_Debug_gilruntimestate_enabled, \
         .gil_runtime_state_locked = offsetof(PyInterpreterState, _gil.locked), \
         .gil_runtime_state_holder = offsetof(PyInterpreterState, _gil.last_holder), \
+        .code_object_generation = offsetof(PyInterpreterState, _code_object_generation), \
     }, \
     .thread_state = { \
         .size = sizeof(PyThreadState), \
@@ -346,6 +353,10 @@ typedef struct _Py_DebugOffsets {
         .gi_name = offsetof(PyGenObject, gi_name), \
         .gi_iframe = offsetof(PyGenObject, gi_iframe), \
         .gi_frame_state = offsetof(PyGenObject, gi_frame_state), \
+    }, \
+    .llist_node = { \
+        .next = offsetof(struct llist_node, next), \
+        .prev = offsetof(struct llist_node, prev), \
     }, \
     .debugger_support = { \
         .eval_breaker = offsetof(PyThreadState, eval_breaker), \

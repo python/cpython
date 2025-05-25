@@ -4,6 +4,7 @@ import textwrap
 import importlib
 import sys
 import socket
+import threading
 from asyncio import staggered, taskgroups
 from unittest.mock import ANY
 from test.support import os_helper, SHORT_TIMEOUT, busy_retry
@@ -16,9 +17,7 @@ PROCESS_VM_READV_SUPPORTED = False
 
 try:
     from _remote_debugging import PROCESS_VM_READV_SUPPORTED
-    from _remote_debugging import get_stack_trace
-    from _remote_debugging import get_async_stack_trace
-    from _remote_debugging import get_all_awaited_by
+    from _remote_debugging import RemoteUnwinder
 except ImportError:
     raise unittest.SkipTest("Test only runs when _remote_debugging is available")
 
@@ -33,6 +32,17 @@ skip_if_not_supported = unittest.skipIf(
     "Test only runs on Linux, Windows and MacOS",
 )
 
+def get_stack_trace(pid):
+    unwinder = RemoteUnwinder(pid, all_threads=True)
+    return unwinder.get_stack_trace()
+
+def get_async_stack_trace(pid):
+    unwinder = RemoteUnwinder(pid)
+    return unwinder.get_async_stack_trace()
+
+def get_all_awaited_by(pid):
+    unwinder = RemoteUnwinder(pid)
+    return unwinder.get_all_awaited_by()
 
 class TestGetStackTrace(unittest.TestCase):
 
@@ -46,7 +56,7 @@ class TestGetStackTrace(unittest.TestCase):
         port = find_unused_port()
         script = textwrap.dedent(
             f"""\
-            import time, sys, socket
+            import time, sys, socket, threading
             # Connect to the test process
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect(('localhost', {port}))
@@ -61,7 +71,7 @@ class TestGetStackTrace(unittest.TestCase):
             def foo():
                 sock.sendall(b"ready"); time.sleep(10_000)  # same line number
 
-            bar()
+            t = threading.Thread(target=bar); t.start(); t.join()
             """
         )
         stack_trace = None
@@ -94,13 +104,20 @@ class TestGetStackTrace(unittest.TestCase):
                 p.terminate()
                 p.wait(timeout=SHORT_TIMEOUT)
 
-            expected_stack_trace = [
+            thread_expected_stack_trace = [
                 ("foo", script_name, 14),
                 ("baz", script_name, 11),
                 ("bar", script_name, 9),
+                ('Thread.run', threading.__file__, ANY)
+            ]
+            main_thread_stack_trace = [
+                (ANY, threading.__file__, ANY),
                 ("<module>", script_name, 16),
             ]
-            self.assertEqual(stack_trace, expected_stack_trace)
+            self.assertEqual(stack_trace, [
+                (ANY, thread_expected_stack_trace),
+                (ANY, main_thread_stack_trace), 
+            ])
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -700,13 +717,21 @@ class TestGetStackTrace(unittest.TestCase):
     )
     def test_self_trace(self):
         stack_trace = get_stack_trace(os.getpid())
+        self.assertEqual(stack_trace[0][0], threading.get_native_id())
         self.assertEqual(
-            stack_trace[0],
-            (
-                "TestGetStackTrace.test_self_trace",
-                __file__,
-                self.test_self_trace.__code__.co_firstlineno + 6,
-            ),
+            stack_trace[0][1][:2],
+            [
+                (
+                    "get_stack_trace",
+                    __file__,
+                    get_stack_trace.__code__.co_firstlineno + 2,
+                ),
+                (
+                    "TestGetStackTrace.test_self_trace",
+                    __file__,
+                    self.test_self_trace.__code__.co_firstlineno + 6,
+                ),
+            ]
         )
 
 

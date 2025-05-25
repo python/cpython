@@ -843,6 +843,8 @@ struct _is {
     /* The per-interpreter GIL, which might not be used. */
     struct _gil_runtime_state _gil;
 
+    uint64_t _code_object_generation;
+
      /* ---------- IMPORTANT ---------------------------
      The fields above this line are declared as early as
      possible to facilitate out-of-process observability
