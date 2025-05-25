@@ -126,20 +126,20 @@ set_reentrant(int reentrant)
 
 
 static Py_uhash_t
-hashtable_hash_pyobject(const void *key)
+hashtable_hash_filename(const void *key)
 {
-    PyObject *obj = (PyObject *)key;
-    return PyObject_Hash(obj);
+    char *obj = (char *)key;
+    return Py_HashBuffer(obj, strlen(obj));
 }
 
 
 static int
 hashtable_compare_unicode(const void *key1, const void *key2)
 {
-    PyObject *obj1 = (PyObject *)key1;
-    PyObject *obj2 = (PyObject *)key2;
+    char *obj1 = (char *)key1;
+    char *obj2 = (char *)key2;
     if (obj1 != NULL && obj2 != NULL) {
-        return (PyUnicode_Compare(obj1, obj2) == 0);
+        return (strcmp(obj1, obj2) == 0);
     }
     else {
         return obj1 == obj2;
@@ -209,8 +209,7 @@ hashtable_compare_traceback(const void *key1, const void *key2)
         if (frame1->lineno != frame2->lineno) {
             return 0;
         }
-        if (frame1->filename != frame2->filename) {
-            assert(PyUnicode_Compare(frame1->filename, frame2->filename) != 0);
+        if (strcmp(frame1->filename, frame2->filename) != 0) {
             return 0;
         }
     }
@@ -222,7 +221,7 @@ static void
 tracemalloc_get_frame(_PyInterpreterFrame *pyframe, frame_t *frame)
 {
     assert(PyStackRef_CodeCheck(pyframe->f_executable));
-    frame->filename = &_Py_STR(anon_unknown);
+    frame->filename = "<unknown>";
 
     int lineno = PyUnstable_InterpreterFrame_GetLine(pyframe);
     if (lineno < 0) {
@@ -230,7 +229,7 @@ tracemalloc_get_frame(_PyInterpreterFrame *pyframe, frame_t *frame)
     }
     frame->lineno = (unsigned int)lineno;
 
-    PyObject *filename = filename = _PyFrame_GetCode(pyframe)->co_filename;
+    PyObject *filename = _PyFrame_GetCode(pyframe)->co_filename;
     if (filename == NULL) {
 #ifdef TRACE_DEBUG
         tracemalloc_error("failed to get the filename of the code object");
@@ -245,18 +244,42 @@ tracemalloc_get_frame(_PyInterpreterFrame *pyframe, frame_t *frame)
         return;
     }
 
+    /* Copy filename to be held by tracemalloc. Subinterpreter frames may
+       disappear at any time, so instead of holding a reference, we must copy
+       the filename to ensure we don't lose it. */
+    Py_ssize_t filename_len;
+    const char *frame_filename = PyUnicode_AsUTF8AndSize(filename,
+                                                         &filename_len);
+    if (frame_filename == NULL) {
+#ifdef TRACE_DEBUG
+        tracemalloc_error("Could not convert filename to UTF8");
+#endif
+        return;
+    }
+
     /* intern the filename */
+    char *filename_copy;
     _Py_hashtable_entry_t *entry;
-    entry = _Py_hashtable_get_entry(tracemalloc_filenames, filename);
+
+    entry = _Py_hashtable_get_entry(tracemalloc_filenames, frame_filename);
     if (entry != NULL) {
-        filename = (PyObject *)entry->key;
+        filename_copy = (char *)entry->key;
     }
     else {
-        /* tracemalloc_filenames is responsible to keep a reference
-           to the filename */
-        if (_Py_hashtable_set(tracemalloc_filenames, Py_NewRef(filename),
+        /* tracemalloc_filenames is responsible for keeping a copy
+           of the filename */
+        filename_copy = (char*)raw_malloc(filename_len + 1);
+        if (filename_copy == NULL) {
+#ifdef TRACE_DEBUG
+            tracemalloc_error("filename copy allocation failed");
+#endif
+            return;
+        }
+
+        strcpy(filename_copy, frame_filename);
+        if (_Py_hashtable_set(tracemalloc_filenames, filename_copy,
                               NULL) < 0) {
-            Py_DECREF(filename);
+            raw_free(filename_copy);
 #ifdef TRACE_DEBUG
             tracemalloc_error("failed to intern the filename");
 #endif
@@ -265,7 +288,7 @@ tracemalloc_get_frame(_PyInterpreterFrame *pyframe, frame_t *frame)
     }
 
     /* the tracemalloc_filenames table keeps a reference to the filename */
-    frame->filename = filename;
+    frame->filename = filename_copy;
 }
 
 
@@ -281,7 +304,8 @@ traceback_hash(traceback_t *traceback)
     x = 0x345678UL;
     frame = traceback->frames;
     while (--len >= 0) {
-        y = (Py_uhash_t)PyObject_Hash(frame->filename);
+        y = (Py_uhash_t)Py_HashBuffer(frame->filename,
+                                      strlen(frame->filename));
         y ^= (Py_uhash_t)frame->lineno;
         frame++;
 
@@ -699,18 +723,8 @@ tracemalloc_raw_realloc(void *ctx, void *ptr, size_t new_size)
 
 
 static void
-tracemalloc_clear_filename(void *value)
-{
-    PyObject *filename = (PyObject *)value;
-    Py_DECREF(filename);
-}
-
-
-static void
 tracemalloc_clear_traces_unlocked(void)
 {
-    // Clearing tracemalloc_filenames requires the GIL to call Py_DECREF()
-    _Py_AssertHoldsTstate();
 
     set_reentrant(1);
 
@@ -737,9 +751,9 @@ _PyTraceMalloc_Init(void)
         return _PyStatus_NO_MEMORY();
     }
 
-    tracemalloc_filenames = hashtable_new(hashtable_hash_pyobject,
+    tracemalloc_filenames = hashtable_new(hashtable_hash_filename,
                                           hashtable_compare_unicode,
-                                          tracemalloc_clear_filename, NULL);
+                                          raw_free, NULL);
 
     tracemalloc_tracebacks = hashtable_new(hashtable_hash_traceback,
                                            hashtable_compare_traceback,
@@ -756,8 +770,7 @@ _PyTraceMalloc_Init(void)
 
     tracemalloc_empty_traceback.nframe = 1;
     tracemalloc_empty_traceback.total_nframe = 1;
-    /* borrowed reference */
-    tracemalloc_empty_traceback.frames[0].filename = &_Py_STR(anon_unknown);
+    tracemalloc_empty_traceback.frames[0].filename = "<unknown>";
     tracemalloc_empty_traceback.frames[0].lineno = 0;
     tracemalloc_empty_traceback.hash = traceback_hash(&tracemalloc_empty_traceback);
 
@@ -888,7 +901,8 @@ frame_to_pyobject(frame_t *frame)
         return NULL;
     }
 
-    PyTuple_SET_ITEM(frame_obj, 0, Py_NewRef(frame->filename));
+    PyObject *filename = PyUnicode_FromString(frame->filename);
+    PyTuple_SET_ITEM(frame_obj, 0, filename);
 
     PyObject *lineno_obj = PyLong_FromUnsignedLong(frame->lineno);
     if (lineno_obj == NULL) {
@@ -1144,7 +1158,7 @@ static void
 _PyMem_DumpFrame(int fd, frame_t * frame)
 {
     PUTS(fd, "  File \"");
-    _Py_DumpASCII(fd, frame->filename);
+    PUTS(fd, frame->filename);
     PUTS(fd, "\", line ");
     _Py_DumpDecimal(fd, frame->lineno);
     PUTS(fd, "\n");

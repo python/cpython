@@ -43,7 +43,7 @@ __attribute__((packed))
 tracemalloc_frame {
     /* filename cannot be NULL: "<unknown>" is used if the Python frame
        filename is NULL */
-    PyObject *filename;
+    char *filename;
     unsigned int lineno;
 };
 #ifdef _MSC_VER
