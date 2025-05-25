@@ -725,7 +725,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.error(f"Invalid process {process!r}")
             return None
 
-        return pid 
+        return pid
 
     def interaction(self, frame, tb_or_exc):
         # Restore the previous signal handler at the Pdb prompt.
