@@ -1593,7 +1593,8 @@ class _ZipRepacker:
             )
 
             dd = self._scan_data_descriptor(fp, pos, end_offset, zip64)
-
+            if dd is None:
+                dd = self._scan_data_descriptor_no_sig(fp, pos, end_offset, zip64)
             if dd is None:
                 return None
 
@@ -1636,7 +1637,7 @@ class _ZipRepacker:
 
             return crc, compress_size, file_size, dd_size
 
-        return self._scan_data_descriptor_no_sig(fp, offset, end_offset, zip64)
+        return None
 
     def _scan_data_descriptor_no_sig(self, fp, offset, end_offset, zip64, chunk_size=8192):
         dd_fmt = '<LQQ' if zip64 else '<LLL'
