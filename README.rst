@@ -200,8 +200,8 @@ intend to install multiple versions using the same prefix you must decide which
 version (if any) is your "primary" version.  Install that version using
 ``make install``.  Install all other versions using ``make altinstall``.
 
-For example, if you want to install Python 2.7, 3.6, and 3.14 with 3.14 being the
-primary version, you would execute ``make install`` in your 3.14 build directory
+For example, if you want to install Python 2.7, 3.6, and 3.15 with 3.15 being the
+primary version, you would execute ``make install`` in your 3.15 build directory
 and ``make altinstall`` in the others.
 
 
