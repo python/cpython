@@ -7,6 +7,7 @@ import unittest
 
 from test import support
 from test.support import import_helper
+from test.support.script_helper import assert_python_ok
 # Raise SkipTest if subinterpreters not supported.
 _interpreters = import_helper.import_module('_interpreters')
 from test.support import Py_GIL_DISABLED
@@ -675,6 +676,13 @@ class TestInterpreterClose(TestBase):
         self.assertEqual(os.read(r_interp, 1), FINISHED)
 
     def test_remaining_daemon_threads(self):
+        # Daemon threads leak reference by nature, because they hang threads
+        # without allowing them to do cleanup (i.e., release refs).
+        # To prevent that from messing up the refleak hunter and whatnot, we
+        # run this in a subprocess.
+        code = '''if True:
+        import _interpreters
+        import types
         interp = _interpreters.create(
             types.SimpleNamespace(
                 use_main_obmalloc=False,
@@ -698,6 +706,8 @@ class TestInterpreterClose(TestBase):
                 t.start()
             """)
         _interpreters.destroy(interp)
+        '''
+        assert_python_ok('-c', code)
 
 
 class TestInterpreterPrepareMain(TestBase):
