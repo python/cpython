@@ -58,21 +58,18 @@
 // Calculate the minimum buffer size needed to read interpreter state fields
 // We need to read code_object_generation and potentially tlbc_generation
 #ifndef MAX
-#define _MAX(a, b) ((a) > (b) ? (a) : (b))
-#else
-#define _MAX(a, b) MAX(a, b)
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
 
 #ifdef Py_GIL_DISABLED
-#define INTERP_STATE_MIN_SIZE _MAX(_MAX(offsetof(PyInterpreterState, _code_object_generation) + sizeof(uint64_t), \
+#define INTERP_STATE_MIN_SIZE MAX(MAX(offsetof(PyInterpreterState, _code_object_generation) + sizeof(uint64_t), \
                                       offsetof(PyInterpreterState, tlbc_indices.tlbc_generation) + sizeof(uint32_t)), \
                                   offsetof(PyInterpreterState, threads.head) + sizeof(void*))
 #else
-#define INTERP_STATE_MIN_SIZE _MAX(offsetof(PyInterpreterState, _code_object_generation) + sizeof(uint64_t), \
+#define INTERP_STATE_MIN_SIZE MAX(offsetof(PyInterpreterState, _code_object_generation) + sizeof(uint64_t), \
                                   offsetof(PyInterpreterState, threads.head) + sizeof(void*))
 #endif
-#define INTERP_STATE_BUFFER_SIZE _MAX(INTERP_STATE_MIN_SIZE, 256)
-#undef _MAX
+#define INTERP_STATE_BUFFER_SIZE MAX(INTERP_STATE_MIN_SIZE, 256)
 
 
 
