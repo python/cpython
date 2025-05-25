@@ -1706,19 +1706,6 @@ _curses_window_getch_impl(PyCursesWindowObject *self, int group_right_1,
     return PyLong_FromLong(rtn);
 }
 
-static PyObject *
-curses_check_signals_on_input_error(PyCursesWindowObject *self,
-                                    const char *curses_funcname,
-                                    const char *python_funcname)
-{
-    if (!PyErr_CheckSignals() && !PyErr_Occurred()) {
-        cursesmodule_state *state = get_cursesmodule_state_by_win(self);
-        PyErr_Format(state->error, "%s() (called by %s()): no input",
-                     curses_funcname, python_funcname);
-    }
-    return NULL;
-}
-
 /*[clinic input]
 _curses.window.getkey
 
@@ -1754,9 +1741,14 @@ _curses_window_getkey_impl(PyCursesWindowObject *self, int group_right_1,
     Py_END_ALLOW_THREADS
 
     if (rtn == ERR) {
-        /* wgetch() returns ERR in nodelay mode */
-        const char *funcname = group_right_1 ? "mvwgetch" : "wgetch";
-        return curses_check_signals_on_input_error(self, funcname, "getkey");
+        /* getch() returns ERR in nodelay mode */
+        PyErr_CheckSignals();
+        if (!PyErr_Occurred()) {
+            cursesmodule_state *state = get_cursesmodule_state_by_win(self);
+            const char *funcname = group_right_1 ? "mvwgetch" : "wgetch";
+            PyErr_Format(state->error, "getkey(): %s(): no input", funcname);
+        }
+        return NULL;
     } else if (rtn <= 255) {
 #ifdef NCURSES_VERSION_MAJOR
 #if NCURSES_VERSION_MAJOR*100+NCURSES_VERSION_MINOR <= 507
@@ -1809,9 +1801,14 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
     Py_END_ALLOW_THREADS
 
     if (ct == ERR) {
-        /* wget_wch() returns ERR in nodelay mode */
+        if (PyErr_CheckSignals())
+            return NULL;
+
+        /* get_wch() returns ERR in nodelay mode */
+        cursesmodule_state *state = get_cursesmodule_state_by_win(self);
         const char *funcname = group_right_1 ? "mvwget_wch" : "wget_wch";
-        return curses_check_signals_on_input_error(self, funcname, "get_wch");
+        PyErr_Format(state->error, "get_wch(): %s(): no input", funcname);
+        return NULL;
     }
     if (ct == KEY_CODE_YES)
         return PyLong_FromLong(rtn);
