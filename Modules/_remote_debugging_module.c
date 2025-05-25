@@ -2173,13 +2173,26 @@ _remote_debugging.RemoteUnwinder.__init__
     *
     all_threads: bool = False
 
-Something
+Initialize a new RemoteUnwinder object for debugging a remote Python process.
+
+Args:
+    pid: Process ID of the target Python process to debug
+    all_threads: If True, initialize state for all threads in the process.
+                If False, only initialize for the main thread.
+
+The RemoteUnwinder provides functionality to inspect and debug a running Python
+process, including examining thread states, stack frames and other runtime data.
+
+Raises:
+    PermissionError: If access to the target process is denied
+    OSError: If unable to attach to the target process or access its memory
+    RuntimeError: If unable to read debug information from the target process
 [clinic start generated code]*/
 
 static int
 _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
                                                int pid, int all_threads)
-/*[clinic end generated code: output=b8027cb247092081 input=1076d886433b1988]*/
+/*[clinic end generated code: output=b8027cb247092081 input=6a2056b04e6f050e]*/
 {
     if (_Py_RemoteDebug_InitProcHandle(&self->handle, pid) < 0) {
         return -1;
@@ -2246,12 +2259,38 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 /*[clinic input]
 @critical_section
 _remote_debugging.RemoteUnwinder.get_stack_trace
-Blah blah blah
+
+Returns a list of stack traces for all threads in the target process.
+
+Each element in the returned list is a tuple of (thread_id, frame_list), where:
+- thread_id is the OS thread identifier
+- frame_list is a list of tuples (function_name, filename, line_number) representing
+  the Python stack frames for that thread, ordered from most recent to oldest
+
+Example:
+    [
+        (1234, [
+            ('process_data', 'worker.py', 127),
+            ('run_worker', 'worker.py', 45),
+            ('main', 'app.py', 23)
+        ]),
+        (1235, [
+            ('handle_request', 'server.py', 89),
+            ('serve_forever', 'server.py', 52)
+        ])
+    ]
+
+Raises:
+    RuntimeError: If there is an error copying memory from the target process
+    OSError: If there is an error accessing the target process
+    PermissionError: If access to the target process is denied
+    UnicodeDecodeError: If there is an error decoding strings from the target process
+
 [clinic start generated code]*/
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=666192b90c69d567 input=aa504416483c9467]*/
+/*[clinic end generated code: output=666192b90c69d567 input=331dbe370578badf]*/
 {
     PyObject* result = NULL;
     // Read interpreter state into opaque buffer
@@ -2325,12 +2364,50 @@ exit:
 /*[clinic input]
 @critical_section
 _remote_debugging.RemoteUnwinder.get_all_awaited_by
-Get all tasks and their awaited_by from the remote process
+
+Get all tasks and their awaited_by relationships from the remote process.
+
+This provides a tree structure showing which tasks are waiting for other tasks.
+
+For each task, returns:
+1. The call stack frames leading to where the task is currently executing
+2. The name of the task
+3. A list of tasks that this task is waiting for, with their own frames/names/etc
+
+Returns a list of [frames, task_name, subtasks] where:
+- frames: List of (func_name, filename, lineno) showing the call stack
+- task_name: String identifier for the task
+- subtasks: List of tasks being awaited by this task, in same format
+
+Raises:
+    RuntimeError: If AsyncioDebug section is not available in the remote process
+    MemoryError: If memory allocation fails
+    OSError: If reading from the remote process fails
+
+Example output:
+[
+    # Task c2_root waiting for two subtasks
+    [
+        # Call stack of c2_root
+        [("c5", "script.py", 10), ("c4", "script.py", 14)],
+        "c2_root",
+        [
+            # First subtask (sub_main_2) and what it's waiting for
+            [
+                [("c1", "script.py", 23)],
+                "sub_main_2", 
+                [...]
+            ],
+            # Second subtask and its waiters
+            [...]
+        ]
+    ]
+]
 [clinic start generated code]*/
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_all_awaited_by_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=6a49cd345e8aec53 input=40a62dc4725b295e]*/
+/*[clinic end generated code: output=6a49cd345e8aec53 input=6c898813ac0bee74]*/
 {
     if (!self->async_debug_offsets_available) {
         PyErr_SetString(PyExc_RuntimeError, "AsyncioDebug section not available");
@@ -2409,12 +2486,33 @@ result_err:
 /*[clinic input]
 @critical_section
 _remote_debugging.RemoteUnwinder.get_async_stack_trace
-Get the asyncio stack from the remote process
+
+Returns information about the currently running async task and its stack trace.
+
+Returns a tuple of (task_info, stack_frames) where:
+- task_info is a tuple of (task_id, task_name) identifying the task
+- stack_frames is a list of tuples (function_name, filename, line_number) representing
+  the Python stack frames for the task, ordered from most recent to oldest
+
+Example:
+    ((4345585712, 'Task-1'), [
+        ('run_echo_server', 'server.py', 127),
+        ('serve_forever', 'server.py', 45),
+        ('main', 'app.py', 23)
+    ])
+
+Raises:
+    RuntimeError: If AsyncioDebug section is not available in the target process
+    RuntimeError: If there is an error copying memory from the target process
+    OSError: If there is an error accessing the target process
+    PermissionError: If access to the target process is denied
+    UnicodeDecodeError: If there is an error decoding strings from the target process
+
 [clinic start generated code]*/
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_async_stack_trace_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=6433d52b55e87bbe input=a94e61c351cc4eed]*/
+/*[clinic end generated code: output=6433d52b55e87bbe input=11b7150c59d4c60f]*/
 {
     if (!self->async_debug_offsets_available) {
         PyErr_SetString(PyExc_RuntimeError, "AsyncioDebug section not available");

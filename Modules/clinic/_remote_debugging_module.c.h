@@ -13,7 +13,20 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder___init____doc__,
 "RemoteUnwinder(pid, *, all_threads=False)\n"
 "--\n"
 "\n"
-"Something");
+"Initialize a new RemoteUnwinder object for debugging a remote Python process.\n"
+"\n"
+"Args:\n"
+"    pid: Process ID of the target Python process to debug\n"
+"    all_threads: If True, initialize state for all threads in the process.\n"
+"                If False, only initialize for the main thread.\n"
+"\n"
+"The RemoteUnwinder provides functionality to inspect and debug a running Python\n"
+"process, including examining thread states, stack frames and other runtime data.\n"
+"\n"
+"Raises:\n"
+"    PermissionError: If access to the target process is denied\n"
+"    OSError: If unable to attach to the target process or access its memory\n"
+"    RuntimeError: If unable to read debug information from the target process");
 
 static int
 _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
@@ -84,7 +97,31 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_stack_trace__doc__,
 "get_stack_trace($self, /)\n"
 "--\n"
 "\n"
-"Blah blah blah");
+"Returns a list of stack traces for all threads in the target process.\n"
+"\n"
+"Each element in the returned list is a tuple of (thread_id, frame_list), where:\n"
+"- thread_id is the OS thread identifier\n"
+"- frame_list is a list of tuples (function_name, filename, line_number) representing\n"
+"  the Python stack frames for that thread, ordered from most recent to oldest\n"
+"\n"
+"Example:\n"
+"    [\n"
+"        (1234, [\n"
+"            (\'process_data\', \'worker.py\', 127),\n"
+"            (\'run_worker\', \'worker.py\', 45),\n"
+"            (\'main\', \'app.py\', 23)\n"
+"        ]),\n"
+"        (1235, [\n"
+"            (\'handle_request\', \'server.py\', 89),\n"
+"            (\'serve_forever\', \'server.py\', 52)\n"
+"        ])\n"
+"    ]\n"
+"\n"
+"Raises:\n"
+"    RuntimeError: If there is an error copying memory from the target process\n"
+"    OSError: If there is an error accessing the target process\n"
+"    PermissionError: If access to the target process is denied\n"
+"    UnicodeDecodeError: If there is an error decoding strings from the target process");
 
 #define _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_STACK_TRACE_METHODDEF    \
     {"get_stack_trace", (PyCFunction)_remote_debugging_RemoteUnwinder_get_stack_trace, METH_NOARGS, _remote_debugging_RemoteUnwinder_get_stack_trace__doc__},
@@ -108,7 +145,40 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_all_awaited_by__doc__,
 "get_all_awaited_by($self, /)\n"
 "--\n"
 "\n"
-"Get all tasks and their awaited_by from the remote process");
+"Get all tasks and their awaited_by relationships from the remote process.\n"
+"\n"
+"This provides a tree structure showing which tasks are waiting for other tasks.\n"
+"\n"
+"For each task, returns:\n"
+"1. The call stack frames leading to where the task is currently executing\n"
+"2. The name of the task\n"
+"3. A list of tasks that this task is waiting for, with their own frames/names/etc\n"
+"\n"
+"Returns a list of [frames, task_name, subtasks] where:\n"
+"- frames: List of (func_name, filename, lineno) showing the call stack\n"
+"- task_name: String identifier for the task\n"
+"- subtasks: List of tasks being awaited by this task, in same format\n"
+"\n"
+"Raises:\n"
+"    RuntimeError: If AsyncioDebug section is not available in the remote process\n"
+"    MemoryError: If memory allocation fails\n"
+"    OSError: If reading from the remote process fails\n"
+"\n"
+"Example output:\n"
+"[\n"
+"    [\n"
+"        [(\"c5\", \"script.py\", 10), (\"c4\", \"script.py\", 14)],\n"
+"        \"c2_root\",\n"
+"        [\n"
+"            [\n"
+"                [(\"c1\", \"script.py\", 23)],\n"
+"                \"sub_main_2\",\n"
+"                [...]\n"
+"            ],\n"
+"            [...]\n"
+"        ]\n"
+"    ]\n"
+"]");
 
 #define _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_ALL_AWAITED_BY_METHODDEF    \
     {"get_all_awaited_by", (PyCFunction)_remote_debugging_RemoteUnwinder_get_all_awaited_by, METH_NOARGS, _remote_debugging_RemoteUnwinder_get_all_awaited_by__doc__},
@@ -132,7 +202,26 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_async_stack_trace__doc__,
 "get_async_stack_trace($self, /)\n"
 "--\n"
 "\n"
-"Get the asyncio stack from the remote process");
+"Returns information about the currently running async task and its stack trace.\n"
+"\n"
+"Returns a tuple of (task_info, stack_frames) where:\n"
+"- task_info is a tuple of (task_id, task_name) identifying the task\n"
+"- stack_frames is a list of tuples (function_name, filename, line_number) representing\n"
+"  the Python stack frames for the task, ordered from most recent to oldest\n"
+"\n"
+"Example:\n"
+"    ((4345585712, \'Task-1\'), [\n"
+"        (\'run_echo_server\', \'server.py\', 127),\n"
+"        (\'serve_forever\', \'server.py\', 45),\n"
+"        (\'main\', \'app.py\', 23)\n"
+"    ])\n"
+"\n"
+"Raises:\n"
+"    RuntimeError: If AsyncioDebug section is not available in the target process\n"
+"    RuntimeError: If there is an error copying memory from the target process\n"
+"    OSError: If there is an error accessing the target process\n"
+"    PermissionError: If access to the target process is denied\n"
+"    UnicodeDecodeError: If there is an error decoding strings from the target process");
 
 #define _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_ASYNC_STACK_TRACE_METHODDEF    \
     {"get_async_stack_trace", (PyCFunction)_remote_debugging_RemoteUnwinder_get_async_stack_trace, METH_NOARGS, _remote_debugging_RemoteUnwinder_get_async_stack_trace__doc__},
@@ -151,4 +240,4 @@ _remote_debugging_RemoteUnwinder_get_async_stack_trace(PyObject *self, PyObject 
 
     return return_value;
 }
-/*[clinic end generated code: output=90c412b99a4f973f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=654772085f1f4bf6 input=a9049054013a1b77]*/
