@@ -936,39 +936,47 @@ class MiscTestCase(unittest.TestCase):
         ensure_lazy_imports("gettext", {"re", "warnings", "locale"})
 
 
-class DGettextTest(unittest.TestCase):
+class DGettextTest(GettextBaseTest):
 
     def setUp(self):
-        self.localedir = self.enterContext(os_helper.temp_dir())
-        self.domain = 'gettext_domain'
-        self.mofile = self.setup_dgettext_test_env()
-
-    def setup_dgettext_test_env(self):
-        os.makedirs(os.path.join(self.localedir, 'en', 'LC_MESSAGES'), exist_ok=True)
-        mofile = os.path.join(self.localedir, 'en', 'LC_MESSAGES', f'{self.domain}.mo')
-        with open(mofile, 'wb') as fp:
-            fp.write(b'\x00\x00\x00\x00')
-        return mofile
+        GettextBaseTest.setUp(self)
+        gettext.bindtextdomain('gettext', os.curdir)
 
     def test_dgettext_found_translation(self):
-        gettext.bindtextdomain(self.domain, self.localedir)
-        with unittest.mock.patch('gettext.dgettext') as mock_dgettext:
-            mock_dgettext.return_value = 'test message translation'
-            result = gettext.dgettext(self.domain, 'test message')
-            self.assertEqual(result, 'test message translation')
+        result = gettext.dgettext('gettext', 'mullusk')
+        self.assertEqual(result, 'bacon')
 
-    def test_dgettext_missing_translation(self):
-        gettext.bindtextdomain(self.domain, self.localedir)
-        result = gettext.dgettext(self.domain, 'missing message')
-        self.assertEqual(result, 'missing message')
+    def test_dgettext_fallback_cases(self):
+        test_cases = [
+            ('gettext', 'missing message'),
+            ('nonexistent_domain', 'mullusk'),
+            ('', 'mullusk'),
+        ]
+        for domain, message in test_cases:
+            with self.subTest(domain=domain, message=message):
+                result = gettext.dgettext(domain, message)
+                if domain == '':
+                    expected = gettext.gettext(message)
+                else:
+                    expected = message
+                self.assertEqual(result, expected)
 
-    def test_dgettext_non_existent_domain(self):
-        result = gettext.dgettext('nonexistent_domain', 'test message')
-        self.assertEqual(result, 'test message')
+    def test_dgettext_luxury_yacht_translation(self):
+        result = gettext.dgettext('gettext', 'Raymond Luxury Yach-t')
+        self.assertEqual(result, 'Throatwobbler Mangrove')
 
-    def test_dgettext_empty_domain(self):
-        result = gettext.dgettext('', 'test message')
-        expected = gettext.gettext('test message')
+    def test_dgettext_nudge_nudge_translation(self):
+        result = gettext.dgettext('gettext', 'nudge nudge')
+        self.assertEqual(result, 'wink wink')
+
+    def test_dgettext_multiline_translation(self):
+        message = '''This module provides internationalization and localization
+support for your Python programs by providing an interface to the GNU
+gettext message catalog library.'''
+        expected = '''Guvf zbqhyr cebivqrf vagreangvbanyvmngvba naq ybpnyvmngvba
+fhccbeg sbe lbhe Clguba cebtenzf ol cebivqvat na vagresnpr gb gur TAH
+trggrkg zrffntr pngnybt yvoenel.'''
+        result = gettext.dgettext('gettext', message)
         self.assertEqual(result, expected)
 
 
