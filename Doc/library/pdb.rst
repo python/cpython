@@ -702,7 +702,8 @@ can be overridden by the local file.
 .. pdbcommand:: attach process
 
    Attach to a running process.  The *process* argument could be either a
-   :class:`subprocess.Popen`, :class:`multiprocessing.Process` or a process ID.
+   process ID, or any object that has a ``pid`` attribute like
+   :class:`subprocess.Popen` or :class:`multiprocessing.Process`.
 
    .. versionadded:: 3.15
 
