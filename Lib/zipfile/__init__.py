@@ -1369,8 +1369,9 @@ class _ZipWriteFile(io.BufferedIOBase):
 
 class _ZipRepacker:
     """Class for ZipFile repacking."""
-    def __init__(self, debug=0):
+    def __init__(self, *, chunk_size=2**20, debug=0):
         self.debug = debug  # Level of printing: 0 through 3
+        self.chunk_size = chunk_size
 
     def _debug(self, level, *msg):
         if self.debug >= level:
@@ -1443,7 +1444,7 @@ class _ZipRepacker:
         with zfile._lock:
             self._repack(zfile)
 
-    def _repack(self, zfile, *, chunk_size=2**20):
+    def _repack(self, zfile):
         fp = zfile.fp
 
         # get a sorted filelist by header offset, in case the dir order
@@ -1473,14 +1474,7 @@ class _ZipRepacker:
             if entry_offset > 0:
                 old_header_offset = info.header_offset
                 info.header_offset -= entry_offset
-                read_size = 0
-                while read_size < used_entry_size:
-                    fp.seek(old_header_offset + read_size)
-                    data = fp.read(min(used_entry_size - read_size, chunk_size))
-                    fp.seek(info.header_offset + read_size)
-                    fp.write(data)
-                    fp.flush()
-                    read_size += len(data)
+                self._move_entry_data(fp, old_header_offset, info.header_offset, used_entry_size)
 
             if info._end_offset is not None:
                 info._end_offset = info.header_offset + used_entry_size
@@ -1699,6 +1693,16 @@ class _ZipRepacker:
             zinfo.compress_size +
             dd_size
         )
+
+    def _move_entry_data(self, fp, old_offset, new_offset, size):
+        read_size = 0
+        while read_size < size:
+            fp.seek(old_offset + read_size)
+            data = fp.read(min(size - read_size, self.chunk_size))
+            fp.seek(new_offset + read_size)
+            fp.write(data)
+            fp.flush()
+            read_size += len(data)
 
 
 class ZipFile:
