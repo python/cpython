@@ -1,0 +1,2 @@
+Access and update ``_PyRuntime.types.next_version_tag`` in a thread-safe
+manner.
