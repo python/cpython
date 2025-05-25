@@ -136,7 +136,7 @@ What's New
 ----------
 
 We have a comprehensive overview of the changes in the `What's New in Python
-3.14 <https://docs.python.org/3.14/whatsnew/3.14.html>`_ document.  For a more
+3.15 <https://docs.python.org/3.15/whatsnew/3.15.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
 <https://github.com/python/cpython/tree/main/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
@@ -149,7 +149,7 @@ entitled "Installing multiple versions".
 Documentation
 -------------
 
-`Documentation for Python 3.14 <https://docs.python.org/3.14/>`_ is online,
+`Documentation for Python 3.15 <https://docs.python.org/3.15/>`_ is online,
 updated daily.
 
 It can also be downloaded in many formats for faster access.  The documentation
@@ -208,7 +208,7 @@ and ``make altinstall`` in the others.
 Release Schedule
 ----------------
 
-See `PEP 745 <https://peps.python.org/pep-0745/>`__ for Python 3.14 release details.
+See `PEP 790 <https://peps.python.org/pep-0790/>`__ for Python 3.15 release details.
 
 
 Copyright and License Information
