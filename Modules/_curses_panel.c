@@ -438,7 +438,7 @@ PyCursesPanel_Dealloc(PyObject *self)
             PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
         }
     }
-    if (del_panel(po->pan) == ERR) {
+    if (del_panel(po->pan) == ERR && !PyErr_Occurred()) {
         curses_panel_panel_set_error(po, "del_panel", "__del__");
         PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
     }
