@@ -1975,6 +1975,10 @@ if 1:
         for case in cases:
             self.check_roundtrip(case)
 
+        self.check_roundtrip(r"t'{ {}}'")
+        self.check_roundtrip(r"t'{f'{ {}}'}{ {}}'")
+        self.check_roundtrip(r"f'{t'{ {}}'}{ {}}'")
+
 
     def test_continuation(self):
         # Balancing continuation
