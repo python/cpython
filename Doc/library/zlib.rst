@@ -48,9 +48,13 @@ The available exception and functions in this module are:
 
    Combine two Adler-32 checksums into one.
 
-   Given an Adler-32 check value *adler1* of a sequence A and an Adler-32 check
-   value *adler2* of a sequence B of length *len2*, the returned checksum
-   is the Adler-32 check value of A and B concatenated.
+   Given the Adler-32 checksum *adler1* of a sequence ``A`` and the
+   Adler-32 checksum *adler2* of a sequence ``B`` of length *len2*,
+   return the Adler-32 checksum of ``A`` and ``B`` concatenated.
+
+   This function is typically useful to combine Adler-32 checksums
+   that were concurrently computed. To compute checksums from a stream
+   of chunks, use :func:`adler32` sequentially instead.
 
    .. versionadded:: next
 
@@ -150,9 +154,13 @@ The available exception and functions in this module are:
 
    Combine two CRC-32 checksums into one.
 
-   Given a CRC-32 check value *crc1* of a sequence A and a CRC-32 check
-   value *crc2* of a sequence B of length *len2*, the returned checksum
-   is the CRC-32 check value of A and B concatenated.
+   Given the CRC-32 checksum *crc1* of a sequence ``A`` and the
+   CRC-32 checksum *crc2* of a sequence ``B`` of length *len2*,
+   return the CRC-32 checksum of ``A`` and ``B`` concatenated.
+
+   This function is typically useful to combine CRC-32 checksums
+   that were concurrently computed. To compute checksums from a
+   stream of chunks, use :func:`crc32` sequentially instead.
 
    .. versionadded:: next
 
