@@ -54,11 +54,13 @@ extern "C" {
 # define _Py_Debug_Free_Threaded 1
 # define _Py_Debug_code_object_co_tlbc offsetof(PyCodeObject, co_tlbc)
 # define _Py_Debug_interpreter_frame_tlbc_index offsetof(_PyInterpreterFrame, tlbc_index)
+# define _Py_Debug_interpreter_state_tlbc_generation offsetof(PyInterpreterState, tlbc_indices.tlbc_generation)
 #else
 # define _Py_Debug_gilruntimestate_enabled 0
 # define _Py_Debug_Free_Threaded 0
 # define _Py_Debug_code_object_co_tlbc 0
 # define _Py_Debug_interpreter_frame_tlbc_index 0
+# define _Py_Debug_interpreter_state_tlbc_generation 0
 #endif
 
 
@@ -90,6 +92,7 @@ typedef struct _Py_DebugOffsets {
         uint64_t gil_runtime_state_locked;
         uint64_t gil_runtime_state_holder;
         uint64_t code_object_generation;
+        uint64_t tlbc_generation;
     } interpreter_state;
 
     // Thread state offset;
@@ -258,6 +261,7 @@ typedef struct _Py_DebugOffsets {
         .gil_runtime_state_locked = offsetof(PyInterpreterState, _gil.locked), \
         .gil_runtime_state_holder = offsetof(PyInterpreterState, _gil.last_holder), \
         .code_object_generation = offsetof(PyInterpreterState, _code_object_generation), \
+        .tlbc_generation = _Py_Debug_interpreter_state_tlbc_generation, \
     }, \
     .thread_state = { \
         .size = sizeof(PyThreadState), \

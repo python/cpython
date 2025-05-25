@@ -779,6 +779,9 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         Py_CLEAR(interp->monitoring_tool_names[t]);
     }
     interp->_code_object_generation = 0;
+#ifdef Py_GIL_DISABLED
+    interp->tlbc_indices.tlbc_generation = 0;
+#endif
 
     PyConfig_Clear(&interp->config);
     _PyCodec_Fini(interp);
