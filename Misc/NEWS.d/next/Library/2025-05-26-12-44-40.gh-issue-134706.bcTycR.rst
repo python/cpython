@@ -1,0 +1,3 @@
+:meth:`codecs.StreamWriter.write` and
+:meth:`codecs.StreamReaderWriter.write` now return the number of characters
+or bytes written.
