@@ -34,17 +34,17 @@ skip_if_not_supported = unittest.skipIf(
 
 
 def get_stack_trace(pid):
-    unwinder = RemoteUnwinder(pid, all_threads=True)
+    unwinder = RemoteUnwinder(pid, all_threads=True, debug=True)
     return unwinder.get_stack_trace()
 
 
 def get_async_stack_trace(pid):
-    unwinder = RemoteUnwinder(pid)
+    unwinder = RemoteUnwinder(pid, debug=True)
     return unwinder.get_async_stack_trace()
 
 
 def get_all_awaited_by(pid):
-    unwinder = RemoteUnwinder(pid)
+    unwinder = RemoteUnwinder(pid, debug=True)
     return unwinder.get_all_awaited_by()
 
 
