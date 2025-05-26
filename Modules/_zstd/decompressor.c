@@ -97,8 +97,9 @@ _zstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
     }
 
     if (!PyDict_Check(options)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "invalid type for options, expected dict");
+        PyErr_Format(PyExc_TypeError,
+             "ZstdDecompressor() argument 'options' must be dict, not %T",
+             options);
         return -1;
     }
 
@@ -114,22 +115,16 @@ _zstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
         }
 
         Py_INCREF(key);
+        Py_INCREF(value);
         int key_v = PyLong_AsInt(key);
+        Py_DECREF(key);
         if (key_v == -1 && PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
-                PyErr_SetString(PyExc_ValueError,
-                                "dictionary key must be less than 2**31");
-            }
             return -1;
         }
 
-        Py_INCREF(value);
         int value_v = PyLong_AsInt(value);
+        Py_DECREF(value);
         if (value_v == -1 && PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
-                PyErr_SetString(PyExc_ValueError,
-                                "dictionary value must be less than 2**31");
-            }
             return -1;
         }
 

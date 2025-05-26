@@ -49,14 +49,14 @@ typedef struct {
 #include "clinic/compressor.c.h"
 
 static int
-_zstd_set_c_level(ZstdCompressor *self, const int level)
+_zstd_set_c_level(ZstdCompressor *self, int level)
 {
     /* Set integer compression level */
     int min_level = ZSTD_minCLevel();
     int max_level = ZSTD_maxCLevel();
     if (level < min_level || level > max_level) {
         PyErr_Format(PyExc_ValueError,
-        "%zd not in valid range %d <= compression level <= %d.",
+        "%d not in valid range %d <= compression level <= %d.",
             level, min_level, max_level);
         return -1;
     }
@@ -90,7 +90,8 @@ _zstd_set_c_parameters(ZstdCompressor *self, PyObject *options)
 
     if (!PyDict_Check(options)) {
         PyErr_Format(PyExc_TypeError,
-                     "invalid type for options, expected dict");
+             "ZstdCompressor() argument 'options' must be dict, not %T",
+             options);
         return -1;
     }
 
@@ -106,22 +107,16 @@ _zstd_set_c_parameters(ZstdCompressor *self, PyObject *options)
         }
 
         Py_INCREF(key);
+        Py_INCREF(value);
         int key_v = PyLong_AsInt(key);
+        Py_DECREF(key);
         if (key_v == -1 && PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
-                PyErr_SetString(PyExc_ValueError,
-                                "dictionary key must be less than 2**31");
-            }
             return -1;
         }
 
-        Py_INCREF(value);
         int value_v = PyLong_AsInt(value);
+        Py_DECREF(value);
         if (value_v == -1 && PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
-                PyErr_SetString(PyExc_ValueError,
-                                "dictionary value must be less than 2**31");
-            }
             return -1;
         }
 
@@ -145,6 +140,8 @@ _zstd_set_c_parameters(ZstdCompressor *self, PyObject *options)
 
         /* Set parameter to compression context */
         size_t zstd_ret = ZSTD_CCtx_setParameter(self->cctx, key_v, value_v);
+
+        /* Check error */
         if (ZSTD_isError(zstd_ret)) {
             set_parameter_error(mod_state, 1, key_v, value_v);
             return -1;
@@ -371,7 +368,7 @@ _zstd_ZstdCompressor_new_impl(PyTypeObject *type, PyObject *level,
     self->last_mode = ZSTD_e_end;
 
     if (level != Py_None && options != Py_None) {
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_TypeError,
                         "Only one of level or options should be used.");
         goto error;
     }
@@ -387,8 +384,8 @@ _zstd_ZstdCompressor_new_impl(PyTypeObject *type, PyObject *level,
         if (level_v == -1 && PyErr_Occurred()) {
             if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
                 PyErr_Format(PyExc_ValueError,
-                    "%zd not in valid range %d <= compression level <= %d.",
-                    level, ZSTD_minCLevel(), ZSTD_maxCLevel());
+                    "compression level not in valid range %d <= level <= %d.",
+                    ZSTD_minCLevel(), ZSTD_maxCLevel());
             }
             goto error;
         }
