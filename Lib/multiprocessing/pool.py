@@ -788,7 +788,8 @@ class ApplyResult(object):
         try:
             return callback(args)
         except Exception as e:
-            args = threading.ExceptHookArgs([type(e), e, e.__traceback__, None])
+            args = threading.ExceptHookArgs([type(e), e, e.__traceback__,
+                                             threading.current_thread()])
             threading.excepthook(args)
             del args
 
