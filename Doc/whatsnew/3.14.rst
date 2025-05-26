@@ -2505,7 +2505,7 @@ Changes in the Python API
   See :ref:`above <whatsnew314-typing-union>` for more details.
   (Contributed by Jelle Zijlstra in :gh:`105499`.)
 
-* The behavior of annotations has changed in various ways; see
+* The runtime behavior of annotations has changed in various ways; see
   :ref:`above <whatsnew314-pep649>` for details. While most code that interacts
   with annotations should continue to work, some undocumented details may behave
   differently.
