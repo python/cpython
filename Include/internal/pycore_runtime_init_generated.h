@@ -890,6 +890,7 @@ extern "C" {
     INIT_ID(data), \
     INIT_ID(database), \
     INIT_ID(day), \
+    INIT_ID(debug), \
     INIT_ID(decode), \
     INIT_ID(decoder), \
     INIT_ID(default), \

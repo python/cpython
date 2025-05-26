@@ -173,11 +173,8 @@ _get_CDict(ZstdDict *self, int compressionLevel)
     }
     if (capsule == NULL) {
         /* Create ZSTD_CDict instance */
-        char *dict_buffer = PyBytes_AS_STRING(self->dict_content);
-        Py_ssize_t dict_len = Py_SIZE(self->dict_content);
         Py_BEGIN_ALLOW_THREADS
-        cdict = ZSTD_createCDict(dict_buffer,
-                                 dict_len,
+        cdict = ZSTD_createCDict(self->dict_buffer, self->dict_len,
                                  compressionLevel);
         Py_END_ALLOW_THREADS
 
@@ -236,17 +233,13 @@ _zstd_load_impl(ZstdCompressor *self, ZstdDict *zd,
     else if (type == DICT_TYPE_UNDIGESTED) {
         /* Load a dictionary.
            It doesn't override compression context's parameters. */
-        zstd_ret = ZSTD_CCtx_loadDictionary(
-                            self->cctx,
-                            PyBytes_AS_STRING(zd->dict_content),
-                            Py_SIZE(zd->dict_content));
+        zstd_ret = ZSTD_CCtx_loadDictionary(self->cctx, zd->dict_buffer,
+                                            zd->dict_len);
     }
     else if (type == DICT_TYPE_PREFIX) {
         /* Load a prefix */
-        zstd_ret = ZSTD_CCtx_refPrefix(
-                            self->cctx,
-                            PyBytes_AS_STRING(zd->dict_content),
-                            Py_SIZE(zd->dict_content));
+        zstd_ret = ZSTD_CCtx_refPrefix(self->cctx, zd->dict_buffer,
+                                       zd->dict_len);
     }
     else {
         Py_UNREACHABLE();

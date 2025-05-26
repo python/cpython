@@ -383,6 +383,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(data)
         STRUCT_FOR_ID(database)
         STRUCT_FOR_ID(day)
+        STRUCT_FOR_ID(debug)
         STRUCT_FOR_ID(decode)
         STRUCT_FOR_ID(decoder)
         STRUCT_FOR_ID(default)
