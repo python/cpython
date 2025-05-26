@@ -75,6 +75,7 @@ import dis
 import code
 import glob
 import json
+import stat
 import token
 import types
 import atexit
@@ -3418,6 +3419,8 @@ def attach(pid, commands=()):
             )
         )
         connect_script.close()
+        orig_mode = os.stat(connect_script.name).st_mode
+        os.chmod(connect_script.name, orig_mode | stat.S_IROTH | stat.S_IRGRP)
         sys.remote_exec(pid, connect_script.name)
 
         # TODO Add a timeout? Or don't bother since the user can ^C?
