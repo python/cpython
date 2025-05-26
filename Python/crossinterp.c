@@ -908,8 +908,15 @@ get_script_xidata(PyThreadState *tstate, PyObject *obj, int pure,
             }
             goto error;
         }
+#ifdef Py_GIL_DISABLED
+        // Don't immortalize code constants to avoid memory leaks.
+        ((_PyThreadStateImpl *)tstate)->suppress_co_const_immortalization++;
+#endif
         code = Py_CompileStringExFlags(
                     script, filename, Py_file_input, &cf, optimize);
+#ifdef Py_GIL_DISABLED
+        ((_PyThreadStateImpl *)tstate)->suppress_co_const_immortalization--;
+#endif
         Py_XDECREF(ref);
         if (code == NULL) {
             goto error;
@@ -1795,6 +1802,7 @@ typedef struct _sharednsitem {
     // in a different interpreter to release the XI data.
 } _PyXI_namespace_item;
 
+#ifndef NDEBUG
 static int
 _sharednsitem_is_initialized(_PyXI_namespace_item *item)
 {
@@ -1803,6 +1811,7 @@ _sharednsitem_is_initialized(_PyXI_namespace_item *item)
     }
     return 0;
 }
+#endif
 
 static int
 _sharednsitem_init(_PyXI_namespace_item *item, PyObject *key)

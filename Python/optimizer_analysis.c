@@ -552,11 +552,14 @@ const uint16_t op_without_push[MAX_UOP_ID + 1] = {
     [_POP_TOP_LOAD_CONST_INLINE] = _POP_TOP,
     [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _POP_TOP,
     [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TWO,
+    [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW] = _POP_CALL_TWO,
 };
 
 const bool op_skip[MAX_UOP_ID + 1] = {
     [_NOP] = true,
     [_CHECK_VALIDITY] = true,
+    [_CHECK_PERIODIC] = true,
+    [_SET_IP] = true,
 };
 
 const uint16_t op_without_pop[MAX_UOP_ID + 1] = {
@@ -565,6 +568,15 @@ const uint16_t op_without_pop[MAX_UOP_ID + 1] = {
     [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _LOAD_CONST_INLINE_BORROW,
     [_POP_TWO] = _POP_TOP,
     [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
+    [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW] = _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW,
+    [_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW] = _POP_CALL_LOAD_CONST_INLINE_BORROW,
+    [_POP_CALL_TWO] = _POP_CALL_ONE,
+    [_POP_CALL_ONE] = _POP_CALL,
+};
+
+const uint16_t op_without_pop_null[MAX_UOP_ID + 1] = {
+    [_POP_CALL] = _POP_TOP,
+    [_POP_CALL_LOAD_CONST_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
 };
 
 
@@ -601,19 +613,29 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 //     _LOAD_FAST + _POP_TWO_LOAD_CONST_INLINE_BORROW + _POP_TOP
                 // ...becomes:
                 //     _NOP + _POP_TOP + _NOP
-                while (op_without_pop[opcode]) {
+                while (op_without_pop[opcode] || op_without_pop_null[opcode]) {
                     _PyUOpInstruction *last = &buffer[pc - 1];
                     while (op_skip[last->opcode]) {
                         last--;
                     }
-                    if (!op_without_push[last->opcode]) {
-                        break;
+                    if (op_without_push[last->opcode] && op_without_pop[opcode]) {
+                        last->opcode = op_without_push[last->opcode];
+                        opcode = buffer[pc].opcode = op_without_pop[opcode];
+                        if (op_without_pop[last->opcode]) {
+                            opcode = last->opcode;
+                            pc = last - buffer;
+                        }
                     }
-                    last->opcode = op_without_push[last->opcode];
-                    opcode = buffer[pc].opcode = op_without_pop[opcode];
-                    if (op_without_pop[last->opcode]) {
-                        opcode = last->opcode;
-                        pc = last - buffer;
+                    else if (last->opcode == _PUSH_NULL) {
+                        // Handle _POP_CALL and _POP_CALL_LOAD_CONST_INLINE_BORROW separately.
+                        // This looks for a preceding _PUSH_NULL instruction and
+                        // simplifies to _POP_TOP(_LOAD_CONST_INLINE_BORROW).
+                        last->opcode = _NOP;
+                        opcode = buffer[pc].opcode = op_without_pop_null[opcode];
+                        assert(opcode);
+                    }
+                    else {
+                        break;
                     }
                 }
                 /* _PUSH_FRAME doesn't escape or error, but it

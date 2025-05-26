@@ -3943,6 +3943,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         del C.__del__
 
     @unittest.skipIf(support.is_emscripten, "Seems to works in Pyodide?")
+    @support.skip_wasi_stack_overflow()
     def test_slots_trash(self):
         # Testing slot trash...
         # Deallocating deeply nested slotted trash caused stack overflows
@@ -4868,6 +4869,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                 deque.append(thing, thing)
 
     @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_repr_as_str(self):
         # Issue #11603: crash or infinite loop when rebinding __str__ as
         # __repr__.

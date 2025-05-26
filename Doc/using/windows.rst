@@ -504,6 +504,14 @@ configuration option.
    installing and uninstalling.
 
 
+.. _Add-AppxPackage: https://learn.microsoft.com/powershell/module/appx/add-appxpackage
+
+.. _Remove-AppxPackage: https://learn.microsoft.com/powershell/module/appx/remove-appxpackage
+
+.. _Add-AppxProvisionedPackage: https://learn.microsoft.com/powershell/module/dism/add-appxprovisionedpackage
+
+.. _PackageManager: https://learn.microsoft.com/uwp/api/windows.management.deployment.packagemanager
+
 .. _pymanager-advancedinstall:
 
 Advanced Installation
@@ -559,12 +567,10 @@ downloaded MSIX can be installed by launching or using the commands below.
 
 .. code-block:: powershell
 
-   $> winget download 9NQ7512CXL7T -e --skip-license --accept-package-agreements --disable-interactivity
+   $> winget download 9NQ7512CXL7T -e --skip-license --accept-package-agreements --accept-source-agreements
 
 To programmatically install or uninstall an MSIX using only PowerShell, the
-`Add-AppxPackage <https://learn.microsoft.com/powershell/module/appx/add-appxpackage>`_
-and `Remove-AppxPackage <https://learn.microsoft.com/powershell/module/appx/remove-appxpackage>`_
-PowerShell cmdlets are recommended:
+`Add-AppxPackage`_ and `Remove-AppxPackage`_ PowerShell cmdlets are recommended:
 
 .. code-block:: powershell
 
@@ -572,18 +578,33 @@ PowerShell cmdlets are recommended:
    ...
    $> Get-AppxPackage PythonSoftwareFoundation.PythonManager | Remove-AppxPackage
 
-The native APIs for package management may be found on the Windows
-`PackageManager <https://learn.microsoft.com/uwp/api/windows.management.deployment.packagemanager>`_
-class. The :func:`!AddPackageAsync` method installs for the current user, or use
-:func:`!StagePackageAsync` followed by :func:`!ProvisionPackageForAllUsersAsync`
-to install the Python install manager for all users from the MSIX package. Users
-will still need to install their own copies of Python itself, as there is no way
-to trigger those installs without being a logged in user.
+The latest release can be downloaded and installed by Windows by passing the
+AppInstaller file to the Add-AppxPackage command. This installs using the MSIX
+on python.org, and is only recommended for cases where installing via the Store
+(interactively or using WinGet) is not possible.
+
+.. code-block:: powershell
+
+   $> Add-AppxPackage -AppInstallerFile https://www.python.org/ftp/python/pymanager/pymanager.appinstaller
+
+Other tools and APIs may also be used to provision an MSIX package for all users
+on a machine, but Python does not consider this a supported scenario. We suggest
+looking into the PowerShell `Add-AppxProvisionedPackage`_ cmdlet, the native
+Windows `PackageManager`_ class, or the documentation and support for your
+deployment tool.
+
+Regardless of the install method, users will still need to install their own
+copies of Python itself, as there is no way to trigger those installs without
+being a logged in user. When using the MSIX, the latest version of Python will
+be available for all users to install without network access.
 
 Note that the MSIX downloadable from the Store and from the Python website are
 subtly different and cannot be installed at the same time. Wherever possible,
-we suggest using the above commands to download the package from the Store to
-reduce the risk of setting up conflicting installs.
+we suggest using the above WinGet commands to download the package from the
+Store to reduce the risk of setting up conflicting installs. There are no
+licensing restrictions on the Python install manager that would prevent using
+the Store package in this way.
+
 
 .. _pymanager-admin-config:
 
