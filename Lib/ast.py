@@ -151,7 +151,7 @@ def dump(
                     not show_empty
                     and (value is None or value == [])
                     # Special cases:
-                    # `Constant(value=None)` and `MatchSingleton(value=None) and `MatchStar(name=None)`
+                    # `Constant(value=None)` and `MatchSingleton(value=None)` and `MatchStar(name=None)`
                     and not isinstance(node, (Constant, MatchSingleton, MatchStar))
                 ):
                     args_buffer.append(repr(value))
