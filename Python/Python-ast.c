@@ -4752,12 +4752,7 @@ add_ast_annotations(struct ast_state *state)
     if (!MatchStar_annotations) return 0;
     {
         PyObject *type = (PyObject *)&PyUnicode_Type;
-        type = _Py_union_type_or(type, Py_None);
-        cond = type != NULL;
-        if (!cond) {
-            Py_DECREF(MatchStar_annotations);
-            return 0;
-        }
+        Py_INCREF(type);
         cond = PyDict_SetItemString(MatchStar_annotations, "name", type) == 0;
         Py_DECREF(type);
         if (!cond) {
@@ -6247,7 +6242,7 @@ init_types(struct ast_state *state)
         "        | MatchSequence(pattern* patterns)\n"
         "        | MatchMapping(expr* keys, pattern* patterns, identifier? rest)\n"
         "        | MatchClass(expr cls, pattern* patterns, identifier* kwd_attrs, pattern* kwd_patterns)\n"
-        "        | MatchStar(identifier? name)\n"
+        "        | MatchStar(identifier name)\n"
         "        | MatchAs(pattern? pattern, identifier? name)\n"
         "        | MatchOr(pattern* patterns)");
     if (!state->pattern_type) return -1;
@@ -6282,10 +6277,8 @@ init_types(struct ast_state *state)
     if (!state->MatchClass_type) return -1;
     state->MatchStar_type = make_type(state, "MatchStar", state->pattern_type,
                                       MatchStar_fields, 1,
-        "MatchStar(identifier? name)");
+        "MatchStar(identifier name)");
     if (!state->MatchStar_type) return -1;
-    if (PyObject_SetAttr(state->MatchStar_type, state->name, Py_None) == -1)
-        return -1;
     state->MatchAs_type = make_type(state, "MatchAs", state->pattern_type,
                                     MatchAs_fields, 2,
         "MatchAs(pattern? pattern, identifier? name)");
@@ -8065,6 +8058,11 @@ _PyAST_MatchStar(identifier name, int lineno, int col_offset, int end_lineno,
                  int end_col_offset, PyArena *arena)
 {
     pattern_ty p;
+    if (!name) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field 'name' is required for MatchStar");
+        return NULL;
+    }
     p = (pattern_ty)_PyArena_Malloc(arena, sizeof(*p));
     if (!p)
         return NULL;
@@ -16746,9 +16744,9 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
         if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
             return -1;
         }
-        if (tmp == NULL || tmp == Py_None) {
-            Py_CLEAR(tmp);
-            name = NULL;
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from MatchStar");
+            return -1;
         }
         else {
             int res;
