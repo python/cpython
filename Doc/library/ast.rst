@@ -1570,7 +1570,7 @@ Pattern matching
                         match_case(
                             pattern=MatchSequence(
                                 patterns=[
-                                    MatchStar()]),
+                                    MatchStar(None)]),
                             body=[
                                 Expr(
                                     value=Constant(value=Ellipsis))])])])

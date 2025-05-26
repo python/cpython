@@ -2398,7 +2398,7 @@ class ASTValidatorTests(unittest.TestCase):
         ),
         ast.MatchClass(
             name_carter,
-            patterns=[ast.MatchStar()],
+            patterns=[ast.MatchStar(None)],
             kwd_attrs=[],
             kwd_patterns=[]
         ),
@@ -2406,7 +2406,7 @@ class ASTValidatorTests(unittest.TestCase):
             name_carter,
             patterns=[],
             kwd_attrs=[],
-            kwd_patterns=[ast.MatchStar()]
+            kwd_patterns=[ast.MatchStar(None)]
         ),
         ast.MatchClass(
             constant_true,  # invalid name
