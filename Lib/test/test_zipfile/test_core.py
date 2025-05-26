@@ -1590,9 +1590,9 @@ class AbstractRemoveTests(RepackHelperMixin):
                     with self.assertRaises(KeyError):
                         zh.getinfo(self.test_files[i][0])
 
-            # make sure the zip file is still valid
-            with zipfile.ZipFile(TESTFN) as zh:
-                self.assertIsNone(zh.testzip())
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
 
     def test_remove_closed(self):
         self._prepare_zip_from_test_files(TESTFN, self.test_files)
@@ -1861,9 +1861,9 @@ class AbstractRepackTests(RepackHelperMixin):
                 # check file size
                 self.assertEqual(os.path.getsize(TESTFN), expected_size)
 
-            # make sure the zip file is still valid
-            with zipfile.ZipFile(TESTFN) as zh:
-                self.assertIsNone(zh.testzip())
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
 
     def test_repack_zip64(self):
         """Should correctly handle file entries with zip64."""
@@ -2158,9 +2158,9 @@ class AbstractRepackTests(RepackHelperMixin):
 
     def test_repack_removed_bytes_between_files(self):
         """Should not remove bytes between local file entries."""
-        # calculate the expected results
         for ii in ([0], [1], [2]):
             with self.subTest(removed=ii):
+                # calculate the expected results
                 expected_zinfos = []
                 with open(TESTFN, 'wb') as fh:
                     with zipfile.ZipFile(fh, 'w', self.compression) as zh:
@@ -2198,7 +2198,6 @@ class AbstractRepackTests(RepackHelperMixin):
 
     def test_repack_removed_bad_removed_zinfos(self):
         """Should raise when providing non-removed zinfos."""
-        # calculate the expected results
         for ii in ([0], [1], [2]):
             with self.subTest(removed=ii):
                 self._prepare_zip_from_test_files(TESTFN, self.test_files)
