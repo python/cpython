@@ -1895,7 +1895,7 @@ zlib.adler32_combine -> unsigned_int
     adler2: unsigned_int(bitwise=True)
         Adler-32 checksum for sequence B
 
-    len2: object
+    len2: object(subclass_of='&PyLong_Type')
         Length of sequence B
     /
 
@@ -1909,7 +1909,7 @@ return the Adler-32 checksum of A and B concatenated.
 static unsigned int
 zlib_adler32_combine_impl(PyObject *module, unsigned int adler1,
                           unsigned int adler2, PyObject *len2)
-/*[clinic end generated code: output=61842cefb16afb1b input=6fc6ff7cff42a2f2]*/
+/*[clinic end generated code: output=61842cefb16afb1b input=51bb045c95130c6f]*/
 {
 #if defined(Z_WANT64)
     z_off64_t len = convert_to_z_off_t(len2);
@@ -1980,7 +1980,7 @@ zlib.crc32_combine -> unsigned_int
     crc2: unsigned_int(bitwise=True)
         CRC-32 checksum for sequence B
 
-    len2: object
+    len2: object(subclass_of='&PyLong_Type')
         Length of sequence B
     /
 
@@ -1994,7 +1994,7 @@ return the CRC-32 checksum of A and B concatenated.
 static unsigned int
 zlib_crc32_combine_impl(PyObject *module, unsigned int crc1,
                         unsigned int crc2, PyObject *len2)
-/*[clinic end generated code: output=c4def907c602e6eb input=322bf6345c88161f]*/
+/*[clinic end generated code: output=c4def907c602e6eb input=9c8a065d9040dc66]*/
 {
 #if defined(Z_WANT64)
     z_off64_t len = convert_to_z_off_t(len2);

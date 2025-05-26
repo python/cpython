@@ -1088,6 +1088,10 @@ zlib_adler32_combine(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (adler2 == (unsigned int)-1 && PyErr_Occurred()) {
         goto exit;
     }
+    if (!PyLong_Check(args[2])) {
+        _PyArg_BadArgument("adler32_combine", "argument 3", "int", args[2]);
+        goto exit;
+    }
     len2 = args[2];
     _return_value = zlib_adler32_combine_impl(module, adler1, adler2, len2);
     if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
@@ -1197,6 +1201,10 @@ zlib_crc32_combine(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (crc2 == (unsigned int)-1 && PyErr_Occurred()) {
         goto exit;
     }
+    if (!PyLong_Check(args[2])) {
+        _PyArg_BadArgument("crc32_combine", "argument 3", "int", args[2]);
+        goto exit;
+    }
     len2 = args[2];
     _return_value = zlib_crc32_combine_impl(module, crc1, crc2, len2);
     if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
@@ -1231,4 +1239,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=ba385aa7547e2c47 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3f7692eb3b5d5a0c input=a9049054013a1b77]*/
