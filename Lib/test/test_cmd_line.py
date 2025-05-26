@@ -316,7 +316,8 @@ class CmdLineTest(unittest.TestCase):
         )
         test_args = [valid_utf8, invalid_utf8]
 
-        for run_cmd in (run_default, run_c_locale, run_utf8_mode, run_no_utf8_mode):
+        for run_cmd in (run_default, run_c_locale, run_utf8_mode,
+                        run_no_utf8_mode):
             with self.subTest(run_cmd=run_cmd):
                 for arg in test_args:
                     proc = run_cmd(arg)
