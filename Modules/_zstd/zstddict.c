@@ -49,8 +49,8 @@ _zstd_ZstdDict_new_impl(PyTypeObject *type, Py_buffer *dict_content,
     /* All dictionaries must be at least 8 bytes */
     if (dict_content->len < 8) {
         PyErr_SetString(PyExc_ValueError,
-                        "Zstandard dictionary content should at least "
-                        "8 bytes.");
+                        "Zstandard dictionary content must be longer "
+                        "than eight bytes.");
         goto error;
     }
 
@@ -72,8 +72,8 @@ _zstd_ZstdDict_new_impl(PyTypeObject *type, Py_buffer *dict_content,
 
     self->dict_buffer = PyMem_Malloc(dict_content->len);
     if (!self->dict_buffer) {
-        Py_DECREF(self);
-        return PyErr_NoMemory();
+        PyErr_NoMemory();
+        goto error;
     }
     memcpy(self->dict_buffer, dict_content->buf, dict_content->len);
     self->dict_len = dict_content->len;
