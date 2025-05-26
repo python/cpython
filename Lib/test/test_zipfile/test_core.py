@@ -1776,7 +1776,7 @@ class AbstractRepackTests(RepackHelperMixin):
         """Should preserve seemingly valid file entries not forming consecutive
         valid file entries until the first recorded local file entry.
 
-        This may happen whan a self-extractor contains an uncompressed ZIP
+        This may happen when a self-extractor contains an uncompressed ZIP
         library. (simulated by writing a ZIP file in this test)
         """
         for ii in ([], [0], [0, 1], [0, 1, 2]):
