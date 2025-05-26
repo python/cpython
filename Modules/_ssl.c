@@ -891,13 +891,15 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->server_hostname = NULL;
     self->err = err;
     self->exc = NULL;
+    self->tstate_mutex = (PyMutex){0};
 
     /* Make sure the SSL error state is initialized */
     ERR_clear_error();
 
-    PySSL_BEGIN_ALLOW_THREADS(self)
+    Py_BEGIN_ALLOW_THREADS
     self->ssl = SSL_new(ctx);
-    PySSL_END_ALLOW_THREADS(self)
+    Py_END_ALLOW_THREADS
+    _PySSL_FIX_ERRNO;
     if (self->ssl == NULL) {
         Py_DECREF(self);
         _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
@@ -3203,6 +3205,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     self->psk_client_callback = NULL;
     self->psk_server_callback = NULL;
 #endif
+    self->tstate_mutex = (PyMutex){0};
 
     /* Don't check host name by default */
     if (proto_version == PY_SSL_VERSION_TLS_CLIENT) {

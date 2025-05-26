@@ -140,13 +140,15 @@ _PySSL_keylog_callback(const SSL *ssl, const char *line)
      * critical debug helper.
      */
 
-    PySSL_BEGIN_ALLOW_THREADS(ssl_obj)
+    assert(PyMutex_IsLocked(&ssl_obj->tstate_mutex));
+    Py_BEGIN_ALLOW_THREADS
     PyThread_acquire_lock(lock, 1);
     res = BIO_printf(ssl_obj->ctx->keylog_bio, "%s\n", line);
     e = errno;
     (void)BIO_flush(ssl_obj->ctx->keylog_bio);
     PyThread_release_lock(lock);
-    PySSL_END_ALLOW_THREADS(ssl_obj)
+    Py_END_ALLOW_THREADS
+    _PySSL_FIX_ERRNO;
 
     if (res == -1) {
         errno = e;
