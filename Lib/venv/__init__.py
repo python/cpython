@@ -313,11 +313,8 @@ class EnvBuilder:
             copier(context.executable, path)
             if not os.path.islink(path):
                 os.chmod(path, 0o755)
-
-            suffixes = ['python', 'python3', f'python3.{sys.version_info[1]}']
-            if sys.version_info[:2] == (3, 14):
-                suffixes.append('𝜋thon')
-            for suffix in suffixes:
+            for suffix in ('python', 'python3',
+                           f'python3.{sys.version_info[1]}'):
                 path = os.path.join(binpath, suffix)
                 if not os.path.exists(path):
                     # Issue 18807: make copies if
