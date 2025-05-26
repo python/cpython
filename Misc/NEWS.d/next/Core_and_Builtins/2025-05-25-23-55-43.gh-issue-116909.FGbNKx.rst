@@ -1,2 +1,1 @@
-Access and update ``_PyRuntime.types.next_version_tag`` in a thread-safe
-manner.
+Fix crash upon importing a static type in a subinterpreter.
