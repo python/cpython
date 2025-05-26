@@ -1248,7 +1248,7 @@ class ContextTests(unittest.TestCase):
         ctx = ssl.create_default_context()
 
         def race():
-            ctx.load_cert_chain("./Lib/test/certdata/keycert.pem")
+            ctx.load_cert_chain(CERTFILE)
 
         threads = [threading.Thread(target=race) for _ in range(8)]
         with threading_helper.catch_threading_exception() as cm:
