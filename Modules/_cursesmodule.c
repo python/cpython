@@ -392,9 +392,9 @@ _PyCursesStatefulCheckFunction(PyObject *module,
  */
 
 /*
- * Return None if 'code' is OK. Otherwise, set an exception
- * using curses_set_error() and the remaining arguments, and
- * return NULL.
+ * Return None if 'code' is different from ERR (implementation-defined).
+ * Otherwise, set an exception using curses_set_error() and the remaining
+ * arguments, and return NULL.
  */
 static PyObject *
 curses_check_err(PyObject *module, int code,
@@ -402,7 +402,6 @@ curses_check_err(PyObject *module, int code,
                  const char *python_funcname)
 {
     if (code != ERR) {
-        assert(code == OK);
         Py_RETURN_NONE;
     }
     curses_set_error(module, curses_funcname, python_funcname);
@@ -416,7 +415,6 @@ curses_window_check_err(PyCursesWindowObject *win, int code,
                         const char *python_funcname)
 {
     if (code != ERR) {
-        assert(code == OK);
         Py_RETURN_NONE;
     }
     curses_window_set_error(win, curses_funcname, python_funcname);
@@ -1431,32 +1429,27 @@ int py_mvwdelch(WINDOW *w, int y, int x)
 
 /* chgat, added by Fabian Kreutz <fabian.kreutz at gmx.net> */
 #ifdef HAVE_CURSES_WCHGAT
-/*[-clinic input]
-_curses.window.chgat
 
-    [
-    y: int
-        Y-coordinate.
-    x: int
-        X-coordinate.
-    ]
+PyDoc_STRVAR(_curses_window_chgat__doc__,
+"chgat([y, x,] [n=-1,] attr)\n"
+"Set the attributes of characters.\n"
+"\n"
+"  y\n"
+"    Y-coordinate.\n"
+"  x\n"
+"    X-coordinate.\n"
+"  n\n"
+"    Number of characters.\n"
+"  attr\n"
+"    Attributes for characters.\n"
+"\n"
+"Set the attributes of num characters at the current cursor position, or at\n"
+"position (y, x) if supplied.  If no value of num is given or num = -1, the\n"
+"attribute will be set on all the characters to the end of the line.  This\n"
+"function does not move the cursor.  The changed line will be touched using\n"
+"the touchline() method so that the contents will be redisplayed by the next\n"
+"window refresh.");
 
-    n: int = -1
-        Number of characters.
-
-    attr: long
-        Attributes for characters.
-    /
-
-Set the attributes of characters.
-
-Set the attributes of num characters at the current cursor position, or at
-position (y, x) if supplied.  If no value of num is given or num = -1, the
-attribute will be set on all the characters to the end of the line.  This
-function does not move the cursor.  The changed line will be touched using
-the touchline() method so that the contents will be redisplayed by the next
-window refresh.
-[-clinic start generated code]*/
 static PyObject *
 PyCursesWindow_ChgAt(PyObject *op, PyObject *args)
 {
@@ -1483,19 +1476,20 @@ PyCursesWindow_ChgAt(PyObject *op, PyObject *args)
         attr = lattr;
         break;
     case 3:
-        if (!PyArg_ParseTuple(args,"iil;int,int,attr", &y, &x, &lattr))
+        if (!PyArg_ParseTuple(args,"iil;y,x,attr", &y, &x, &lattr))
             return NULL;
         attr = lattr;
         use_xy = TRUE;
         break;
     case 4:
-        if (!PyArg_ParseTuple(args,"iiil;int,int,n,attr", &y, &x, &num, &lattr))
+        if (!PyArg_ParseTuple(args,"iiil;y,x,n,attr", &y, &x, &num, &lattr))
             return NULL;
         attr = lattr;
         use_xy = TRUE;
         break;
     default:
-        PyErr_SetString(PyExc_TypeError, "chgat requires 1 to 4 arguments");
+        PyErr_SetString(PyExc_TypeError,
+                        "_curses.window.chgat requires 1 to 4 arguments");
         return NULL;
     }
 
@@ -1580,7 +1574,7 @@ _curses_window_derwin_impl(PyCursesWindowObject *self, int group_left_1,
     win = derwin(self->win,nlines,ncols,begin_y,begin_x);
 
     if (win == NULL) {
-        curses_window_set_error(self, "derwin", NULL);
+        curses_window_set_null_error(self, "derwin", NULL);
         return NULL;
     }
 
@@ -1809,84 +1803,102 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
 }
 #endif
 
-/*[-clinic input]
-_curses.window.getstr
+/*
+ * Helper function for parsing parameters from getstr() and instr().
+ * This function is necessary because Argument Clinic does not know
+ * how to handle nested optional groups with default values inside.
+ *
+ * Return 1 on success and 0 on failure, similar to PyArg_ParseTuple().
+ */
+static int
+curses_clinic_parse_optional_xy_n(PyObject *args,
+                                  int *y, int *x, unsigned int *n, int *use_xy,
+                                  const char *qualname)
+{
+    switch (PyTuple_GET_SIZE(args)) {
+        case 0: {
+            *use_xy = 0;
+            return 1;
+        }
+        case 1: {
+            *use_xy = 0;
+            return PyArg_ParseTuple(args, "O&;n",
+                                    _PyLong_UnsignedInt_Converter, n);
+        }
+        case 2: {
+            *use_xy = 1;
+            return PyArg_ParseTuple(args, "ii;y,x", y, x);
+        }
+        case 3: {
+            *use_xy = 1;
+            return PyArg_ParseTuple(args, "iiO&;y,x,n", y, x,
+                                    _PyLong_UnsignedInt_Converter, n);
+        }
+        default: {
+            *use_xy = 0;
+            PyErr_Format(PyExc_TypeError, "%s requires 0 to 3 arguments",
+                         qualname);
+            return 0;
+        }
+    }
+}
 
-    [
-    y: int
-        Y-coordinate.
-    x: int
-        X-coordinate.
-    ]
-    n: int = 1023
-        Maximal number of characters.
-    /
-
-Read a string from the user, with primitive line editing capacity.
-[-clinic start generated code]*/
+PyDoc_STRVAR(_curses_window_getstr__doc__,
+"getstr([[y, x,] n=2047])\n"
+"Read a string from the user, with primitive line editing capacity.\n"
+"\n"
+"  y\n"
+"    Y-coordinate.\n"
+"  x\n"
+"    X-coordinate.\n"
+"  n\n"
+"    Maximal number of characters.");
 
 static PyObject *
-PyCursesWindow_GetStr(PyObject *op, PyObject *args)
+PyCursesWindow_getstr(PyObject *op, PyObject *args)
 {
     PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
+    int rtn, use_xy = 0, y = 0, x = 0;
+    unsigned int max_buf_size = 2048;
+    unsigned int n = max_buf_size - 1;
+    PyObject *res;
 
-    int x, y, n;
-    char rtn[1024]; /* This should be big enough.. I hope */
-    int rtn2;
-
-    switch (PyTuple_Size(args)) {
-    case 0:
-        Py_BEGIN_ALLOW_THREADS
-        rtn2 = wgetnstr(self->win,rtn, 1023);
-        Py_END_ALLOW_THREADS
-        break;
-    case 1:
-        if (!PyArg_ParseTuple(args,"i;n", &n))
-            return NULL;
-        if (n < 0) {
-            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
-            return NULL;
-        }
-        Py_BEGIN_ALLOW_THREADS
-        rtn2 = wgetnstr(self->win, rtn, Py_MIN(n, 1023));
-        Py_END_ALLOW_THREADS
-        break;
-    case 2:
-        if (!PyArg_ParseTuple(args,"ii;y,x",&y,&x))
-            return NULL;
-        Py_BEGIN_ALLOW_THREADS
-#ifdef STRICT_SYSV_CURSES
-        rtn2 = wmove(self->win,y,x)==ERR ? ERR : wgetnstr(self->win, rtn, 1023);
-#else
-        rtn2 = mvwgetnstr(self->win,y,x,rtn, 1023);
-#endif
-        Py_END_ALLOW_THREADS
-        break;
-    case 3:
-        if (!PyArg_ParseTuple(args,"iii;y,x,n", &y, &x, &n))
-            return NULL;
-        if (n < 0) {
-            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
-            return NULL;
-        }
-#ifdef STRICT_SYSV_CURSES
-        Py_BEGIN_ALLOW_THREADS
-        rtn2 = wmove(self->win,y,x)==ERR ? ERR :
-        wgetnstr(self->win, rtn, Py_MIN(n, 1023));
-        Py_END_ALLOW_THREADS
-#else
-        Py_BEGIN_ALLOW_THREADS
-        rtn2 = mvwgetnstr(self->win, y, x, rtn, Py_MIN(n, 1023));
-        Py_END_ALLOW_THREADS
-#endif
-        break;
-    default:
-        PyErr_SetString(PyExc_TypeError, "getstr requires 0 to 3 arguments");
+    if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
+                                           "_curses.window.instr"))
+    {
         return NULL;
     }
-    if (rtn2 == ERR)
-        rtn[0] = 0;
-    return PyBytes_FromString(rtn);
+
+    n = Py_MIN(n, max_buf_size - 1);
+    res = PyBytes_FromStringAndSize(NULL, n + 1);
+    if (res == NULL) {
+        return NULL;
+    }
+    char *buf = PyBytes_AS_STRING(res);
+
+    if (use_xy) {
+        Py_BEGIN_ALLOW_THREADS
+#ifdef STRICT_SYSV_CURSES
+        rtn = wmove(self->win, y, x) == ERR
+                ? ERR
+                : wgetnstr(self->win, buf, n);
+#else
+        rtn = mvwgetnstr(self->win, y, x, buf, n);
+#endif
+        Py_END_ALLOW_THREADS
+    }
+    else {
+        Py_BEGIN_ALLOW_THREADS
+        rtn = wgetnstr(self->win, buf, n);
+        Py_END_ALLOW_THREADS
+    }
+
+    if (rtn == ERR) {
+        Py_DECREF(res);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
+    _PyBytes_Resize(&res, strlen(buf));  // 'res' is set to NULL on failure
+    return res;
 }
 
 /*[clinic input]
@@ -2016,69 +2028,57 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
     return rtn;
 }
 
-/*[-clinic input]
-_curses.window.instr
+PyDoc_STRVAR(_curses_window_instr__doc__,
+"instr([y, x,] n=2047)\n"
+"Return a string of characters, extracted from the window.\n"
+"\n"
+"  y\n"
+"    Y-coordinate.\n"
+"  x\n"
+"    X-coordinate.\n"
+"  n\n"
+"    Maximal number of characters.\n"
+"\n"
+"Return a string of characters, extracted from the window starting at the\n"
+"current cursor position, or at y, x if specified.  Attributes are stripped\n"
+"from the characters.  If n is specified, instr() returns a string at most\n"
+"n characters long (exclusive of the trailing NUL).");
 
-    [
-    y: int
-        Y-coordinate.
-    x: int
-        X-coordinate.
-    ]
-    n: int = 1023
-        Maximal number of characters.
-    /
-
-Return a string of characters, extracted from the window.
-
-Return a string of characters, extracted from the window starting at the
-current cursor position, or at y, x if specified.  Attributes are stripped
-from the characters.  If n is specified, instr() returns a string at most
-n characters long (exclusive of the trailing NUL).
-[-clinic start generated code]*/
 static PyObject *
-PyCursesWindow_InStr(PyObject *op, PyObject *args)
+PyCursesWindow_instr(PyObject *op, PyObject *args)
 {
     PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
+    int rtn, use_xy = 0, y = 0, x = 0;
+    unsigned int max_buf_size = 2048;
+    unsigned int n = max_buf_size - 1;
+    PyObject *res;
 
-    int x, y, n;
-    char rtn[1024]; /* This should be big enough.. I hope */
-    int rtn2;
-
-    switch (PyTuple_Size(args)) {
-    case 0:
-        rtn2 = winnstr(self->win,rtn, 1023);
-        break;
-    case 1:
-        if (!PyArg_ParseTuple(args,"i;n", &n))
-            return NULL;
-        if (n < 0) {
-            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
-            return NULL;
-        }
-        rtn2 = winnstr(self->win, rtn, Py_MIN(n, 1023));
-        break;
-    case 2:
-        if (!PyArg_ParseTuple(args,"ii;y,x",&y,&x))
-            return NULL;
-        rtn2 = mvwinnstr(self->win,y,x,rtn,1023);
-        break;
-    case 3:
-        if (!PyArg_ParseTuple(args, "iii;y,x,n", &y, &x, &n))
-            return NULL;
-        if (n < 0) {
-            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
-            return NULL;
-        }
-        rtn2 = mvwinnstr(self->win, y, x, rtn, Py_MIN(n,1023));
-        break;
-    default:
-        PyErr_SetString(PyExc_TypeError, "instr requires 0 or 3 arguments");
+    if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
+                                           "_curses.window.instr"))
+    {
         return NULL;
     }
-    if (rtn2 == ERR)
-        rtn[0] = 0;
-    return PyBytes_FromString(rtn);
+
+    n = Py_MIN(n, max_buf_size - 1);
+    res = PyBytes_FromStringAndSize(NULL, n + 1);
+    if (res == NULL) {
+        return NULL;
+    }
+    char *buf = PyBytes_AS_STRING(res);
+
+    if (use_xy) {
+        rtn = mvwinnstr(self->win, y, x, buf, n);
+    }
+    else {
+        rtn = winnstr(self->win, buf, n);
+    }
+
+    if (rtn == ERR) {
+        Py_DECREF(res);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
+    _PyBytes_Resize(&res, strlen(buf));  // 'res' is set to NULL on failure
+    return res;
 }
 
 /*[clinic input]
@@ -2820,7 +2820,10 @@ static PyMethodDef PyCursesWindow_methods[] = {
     _CURSES_WINDOW_ATTRSET_METHODDEF
     _CURSES_WINDOW_BKGD_METHODDEF
 #ifdef HAVE_CURSES_WCHGAT
-    {"chgat",           PyCursesWindow_ChgAt, METH_VARARGS},
+    {
+        "chgat", PyCursesWindow_ChgAt, METH_VARARGS,
+        _curses_window_chgat__doc__
+    },
 #endif
     _CURSES_WINDOW_BKGDSET_METHODDEF
     _CURSES_WINDOW_BORDER_METHODDEF
@@ -2843,7 +2846,10 @@ static PyMethodDef PyCursesWindow_methods[] = {
     _CURSES_WINDOW_GET_WCH_METHODDEF
     {"getmaxyx",        PyCursesWindow_getmaxyx, METH_NOARGS},
     {"getparyx",        PyCursesWindow_getparyx, METH_NOARGS},
-    {"getstr",          PyCursesWindow_GetStr, METH_VARARGS},
+    {
+        "getstr", PyCursesWindow_getstr, METH_VARARGS,
+        _curses_window_getstr__doc__
+    },
     {"getyx",           PyCursesWindow_getyx, METH_NOARGS},
     _CURSES_WINDOW_HLINE_METHODDEF
     {"idcok",           PyCursesWindow_idcok, METH_VARARGS},
@@ -2857,7 +2863,10 @@ static PyMethodDef PyCursesWindow_methods[] = {
     {"insertln",        PyCursesWindow_winsertln, METH_NOARGS},
     _CURSES_WINDOW_INSNSTR_METHODDEF
     _CURSES_WINDOW_INSSTR_METHODDEF
-    {"instr",           PyCursesWindow_InStr, METH_VARARGS},
+    {
+        "instr", PyCursesWindow_instr, METH_VARARGS,
+        _curses_window_instr__doc__
+    },
     _CURSES_WINDOW_IS_LINETOUCHED_METHODDEF
     {"is_wintouched",   PyCursesWindow_is_wintouched, METH_NOARGS},
     {"keypad",          PyCursesWindow_keypad, METH_VARARGS},

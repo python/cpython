@@ -112,7 +112,7 @@ def call(command, *, quiet, **kwargs):
 
 def build_platform():
     """The name of the build/host platform."""
-    # Can also be found via `config.guess`.`
+    # Can also be found via `config.guess`.
     return sysconfig.get_config_var("BUILD_GNU_TYPE")
 
 
@@ -126,6 +126,15 @@ def build_python_path():
                                     f"{BUILD_DIR}")
 
     return binary
+
+
+def build_python_is_pydebug():
+    """Find out if the build Python is a pydebug build."""
+    test = "import sys, test.support; sys.exit(test.support.Py_DEBUG)"
+    result = subprocess.run([build_python_path(), "-c", test],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+    return bool(result.returncode)
 
 
 @subdir(BUILD_DIR, clean_ok=True)
@@ -214,18 +223,15 @@ def configure_wasi_python(context, working_dir):
     lib_dirs = list(python_build_dir.glob("lib.*"))
     assert len(lib_dirs) == 1, f"Expected a single lib.* directory in {python_build_dir}"
     lib_dir = os.fsdecode(lib_dirs[0])
-    pydebug = lib_dir.endswith("-pydebug")
-    python_version = lib_dir.removesuffix("-pydebug").rpartition("-")[-1]
-    sysconfig_data = f"{wasi_build_dir}/build/lib.wasi-wasm32-{python_version}"
-    if pydebug:
-        sysconfig_data += "-pydebug"
+    python_version = lib_dir.rpartition("-")[-1]
+    sysconfig_data_dir = f"{wasi_build_dir}/build/lib.wasi-wasm32-{python_version}"
 
     # Use PYTHONPATH to include sysconfig data which must be anchored to the
     # WASI guest's `/` directory.
     args = {"GUEST_DIR": "/",
             "HOST_DIR": CHECKOUT,
             "ENV_VAR_NAME": "PYTHONPATH",
-            "ENV_VAR_VALUE": f"/{sysconfig_data}",
+            "ENV_VAR_VALUE": f"/{sysconfig_data_dir}",
             "PYTHON_WASM": working_dir / "python.wasm"}
     # Check dynamically for wasmtime in case it was specified manually via
     # `--host-runner`.
@@ -245,7 +251,7 @@ def configure_wasi_python(context, working_dir):
                     f"--host={context.host_triple}",
                     f"--build={build_platform()}",
                     f"--with-build-python={build_python}"]
-    if pydebug:
+    if build_python_is_pydebug():
         configure.append("--with-pydebug")
     if context.args:
         configure.extend(context.args)

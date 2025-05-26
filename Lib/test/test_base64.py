@@ -812,7 +812,7 @@ class BaseXYTestCase(unittest.TestCase):
             self.assertRaises(ValueError, f, 'with non-ascii \xcb')
 
     def test_ErrorHeritage(self):
-        self.assertTrue(issubclass(binascii.Error, ValueError))
+        self.assertIsSubclass(binascii.Error, ValueError)
 
     def test_RFC4648_test_cases(self):
         # test cases from RFC 4648 section 10
