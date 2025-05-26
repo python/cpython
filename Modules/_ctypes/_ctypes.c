@@ -3623,8 +3623,9 @@ atomic_xsetref(PyObject **field, PyObject *value)
 }
 /*
     This function atomically loads the reference from *field, and
-    tries to get a new reference to it. If the increment fails,
+    tries to get a new reference to it. If the incref fails,
     it acquires critical section of obj and returns a new reference to the *field.
+    In the general case, this avoids contention on acquiring the critical section.
 */
 static inline PyObject *
 atomic_xgetref(PyObject *obj, PyObject **field)
