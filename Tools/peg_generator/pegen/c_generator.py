@@ -488,21 +488,89 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         return groups
 
     def _setup_keywords(self) -> None:
-        n_keyword_lists = (
-            len(max(self.keywords.keys(), key=len)) + 1 if len(self.keywords) > 0 else 0
-        )
+        AMHARIC_TO_ENGLISH_KEYWORDS = {
+            "ሐሰት": "False",
+            "ምንም": "None",
+            "እውነት": "True",
+            "እና": "and",
+            "እንደ": "as",
+            "አረጋግጥ": "assert",
+            "አሲንክ": "async",
+            "ተጠባበቅ": "await",
+            "አቋርጥ": "break",
+            "ክፍል": "class",
+            "ቀጥል": "continue",
+            "ተግባር": "def",
+            "ሰርዝ": "del",
+            "ካልሆነ-ከሆነ": "elif",
+            "አለበለዚያ": "else",
+            "በስተቀር": "except",
+            "በመጨረሻ": "finally",
+            "ለእያንዳንዱ": "for",
+            "ከ": "from",
+            "አለምአቀፍ": "global",
+            "ከሆነ": "if",
+            "አስገባ": "import",
+            "ውስጥ": "in",
+            "ነው": "is",
+            "ላምዳ": "lambda",
+            "ከባቢያዊ-ያልሆነ": "nonlocal",
+            "አይደለም": "not",
+            "ወይም": "or",
+            "እለፍ": "pass",
+            "አስነሳ": "raise",
+            "መልስ": "return",
+            "ሞክር": "try",
+            "እስከ": "while",
+            "አብሮ": "with",
+            "አመንጭ": "yield",
+        }
+
+        all_keywords_with_types: Dict[str, int] = {}
+        # Populate with original English keywords
+        for keyword_str, keyword_type in self.keywords.items():
+            all_keywords_with_types[keyword_str] = keyword_type
+
+        # Add Amharic keywords, mapping them to the token types of their English counterparts
+        for amharic_keyword, english_keyword in AMHARIC_TO_ENGLISH_KEYWORDS.items():
+            if english_keyword in self.keywords:
+                token_type = self.keywords[english_keyword]
+                all_keywords_with_types[amharic_keyword] = token_type
+            # else:
+            #     # This case should ideally not happen if the mapping is correct
+            #     # and all English keywords are defined in the grammar.
+            #     # Consider logging a warning or error if necessary.
+            #     # print(f"Warning: English keyword '{english_keyword}' for Amharic '{amharic_keyword}' not found in self.keywords.")
+            #     pass
+
+        groups: Dict[int, List[Tuple[str, int]]] = {}
+        max_len_utf8 = 0
+        if not all_keywords_with_types: # Handle case with no keywords at all
+            n_keyword_lists = 0
+        else:
+            for keyword_str, keyword_type in all_keywords_with_types.items():
+                byte_length = len(keyword_str.encode('utf-8'))
+                if byte_length > max_len_utf8:
+                    max_len_utf8 = byte_length
+                if byte_length in groups:
+                    # Ensure no duplicate keyword strings are added to the same length group.
+                    # This check is simple; more robust might be needed if complex aliasing occurs.
+                    if not any(k_str == keyword_str for k_str, _ in groups[byte_length]):
+                        groups[byte_length].append((keyword_str, keyword_type))
+                else:
+                    groups[byte_length] = [(keyword_str, keyword_type)]
+            n_keyword_lists = max_len_utf8 + 1
+            
         self.print(f"static const int n_keyword_lists = {n_keyword_lists};")
-        groups = self._group_keywords_by_length()
         self.print("static KeywordToken *reserved_keywords[] = {")
         with self.indent():
-            num_groups = max(groups) + 1 if groups else 1
-            for keywords_length in range(num_groups):
-                if keywords_length not in groups.keys():
+            for keywords_length_utf8 in range(n_keyword_lists):
+                if keywords_length_utf8 not in groups:
                     self.print("(KeywordToken[]) {{NULL, -1}},")
                 else:
                     self.print("(KeywordToken[]) {")
                     with self.indent():
-                        for keyword_str, keyword_type in groups[keywords_length]:
+                        for keyword_str, keyword_type in groups[keywords_length_utf8]:
                             self.print(f'{{"{keyword_str}", {keyword_type}}},')
                         self.print("{NULL, -1},")
                     self.print("},")
