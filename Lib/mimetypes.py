@@ -89,7 +89,19 @@ class MimeTypes:
         If strict is true, information will be added to
         list of standard types, else to the list of non-standard
         types.
+
+        Valid extensions are empty or start with a '.'.
         """
+        if ext and not ext.startswith('.'):
+            from warnings import _deprecated
+
+            _deprecated(
+                "Undotted extensions",
+                "Using undotted extensions is deprecated and "
+                "will raise a ValueError in Python {remove}",
+                remove=(3, 16),
+            )
+
         if not type:
             return
         self.types_map[strict][ext] = type
@@ -466,6 +478,7 @@ def _default_mime_types():
         '.js'     : 'text/javascript',
         '.mjs'    : 'text/javascript',
         '.epub'   : 'application/epub+zip',
+        '.gz'     : 'application/gzip',
         '.json'   : 'application/json',
         '.webmanifest': 'application/manifest+json',
         '.doc'    : 'application/msword',
@@ -505,10 +518,13 @@ def _default_mime_types():
         '.pptx'   : 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
         '.xlsx'   : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         '.docx'   : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.rar'    : 'application/vnd.rar',
         '.wasm'   : 'application/wasm',
+        '.7z'     : 'application/x-7z-compressed',
         '.bcpio'  : 'application/x-bcpio',
         '.cpio'   : 'application/x-cpio',
         '.csh'    : 'application/x-csh',
+        '.deb'    : 'application/x-debian-package',
         '.dvi'    : 'application/x-dvi',
         '.gtar'   : 'application/x-gtar',
         '.hdf'    : 'application/x-hdf',
@@ -518,10 +534,12 @@ def _default_mime_types():
         '.cdf'    : 'application/x-netcdf',
         '.nc'     : 'application/x-netcdf',
         '.p12'    : 'application/x-pkcs12',
+        '.php'    : 'application/x-httpd-php',
         '.pfx'    : 'application/x-pkcs12',
         '.ram'    : 'application/x-pn-realaudio',
         '.pyc'    : 'application/x-python-code',
         '.pyo'    : 'application/x-python-code',
+        '.rpm'    : 'application/x-rpm',
         '.sh'     : 'application/x-sh',
         '.shar'   : 'application/x-shar',
         '.swf'    : 'application/x-shockwave-flash',
@@ -544,6 +562,8 @@ def _default_mime_types():
         '.rdf'    : 'application/xml',
         '.wsdl'   : 'application/xml',
         '.xpdl'   : 'application/xml',
+        '.yaml'   : 'application/yaml',
+        '.yml'    : 'application/yaml',
         '.zip'    : 'application/zip',
         '.3gp'    : 'audio/3gpp',
         '.3gpp'   : 'audio/3gpp',
@@ -609,6 +629,9 @@ def _default_mime_types():
         '.mht'    : 'message/rfc822',
         '.mhtml'  : 'message/rfc822',
         '.nws'    : 'message/rfc822',
+        '.gltf'   : 'model/gltf+json',
+        '.glb'    : 'model/gltf-binary',
+        '.stl'    : 'model/stl',
         '.css'    : 'text/css',
         '.csv'    : 'text/csv',
         '.html'   : 'text/html',
@@ -647,6 +670,8 @@ def _default_mime_types():
         '.qt'     : 'video/quicktime',
         '.webm'   : 'video/webm',
         '.avi'    : 'video/vnd.avi',
+        '.m4v'    : 'video/x-m4v',
+        '.wmv'    : 'video/x-ms-wmv',
         '.movie'  : 'video/x-sgi-movie',
         }
 
@@ -656,6 +681,7 @@ def _default_mime_types():
     # Please sort these too
     common_types = _common_types_default = {
         '.rtf' : 'application/rtf',
+        '.apk' : 'application/vnd.android.package-archive',
         '.midi': 'audio/midi',
         '.mid' : 'audio/midi',
         '.jpg' : 'image/jpg',
@@ -669,12 +695,12 @@ def _default_mime_types():
 _default_mime_types()
 
 
-def _main():
-    """Run the mimetypes command-line interface."""
-    import sys
+def _parse_args(args):
     from argparse import ArgumentParser
 
-    parser = ArgumentParser(description='map filename extensions to MIME types')
+    parser = ArgumentParser(
+        description='map filename extensions to MIME types', color=True
+    )
     parser.add_argument(
         '-e', '--extension',
         action='store_true',
@@ -686,23 +712,30 @@ def _main():
         help='additionally search for common but non-standard types'
     )
     parser.add_argument('type', nargs='+', help='a type to search')
-    args = parser.parse_args()
+    args = parser.parse_args(args)
+    return args, parser.format_help()
+
+
+def _main(args=None):
+    """Run the mimetypes command-line interface and return a text to print."""
+    import sys
+
+    args, help_text = _parse_args(args)
 
     if args.extension:
         for gtype in args.type:
             guess = guess_extension(gtype, not args.lenient)
             if guess:
-                print(guess)
-            else:
-                sys.exit(f"error: unknown type {gtype}")
+                return str(guess)
+            sys.exit(f"error: unknown type {gtype}")
     else:
         for gtype in args.type:
             guess, encoding = guess_type(gtype, not args.lenient)
             if guess:
-                print('type:', guess, 'encoding:', encoding)
-            else:
-                sys.exit(f"error: media type unknown for {gtype}")
+                return f"type: {guess} encoding: {encoding}"
+            sys.exit(f"error: media type unknown for {gtype}")
+    return help_text
 
 
 if __name__ == '__main__':
-    _main()
+    print(_main())

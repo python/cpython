@@ -1,11 +1,9 @@
 import contextlib
 import os
-import re
 import sys
 import tempfile
 import unittest
 
-from io import StringIO
 from test import support
 from test import test_tools
 
@@ -31,12 +29,11 @@ skip_if_different_mount_drives()
 
 test_tools.skip_if_missing("cases_generator")
 with test_tools.imports_under_tool("cases_generator"):
-    from analyzer import analyze_forest, StackItem
+    from analyzer import StackItem
     from cwriter import CWriter
     import parser
     from stack import Local, Stack
     import tier1_generator
-    import opcode_metadata_generator
     import optimizer_generator
 
 
@@ -68,13 +65,15 @@ class TestEffects(unittest.TestCase):
             StackItem("b", None, "oparg*4"),
             StackItem("c", None, "1"),
         ]
-        stack.pop(z)
-        stack.pop(y)
-        stack.pop(x)
+        null = CWriter.null()
+        stack.pop(z, null)
+        stack.pop(y, null)
+        stack.pop(x, null)
         for out in outputs:
             stack.push(Local.undefined(out))
         self.assertEqual(stack.base_offset.to_c(), "-1 - oparg - oparg*2")
-        self.assertEqual(stack.top_offset.to_c(), "1 - oparg - oparg*2 + oparg*4")
+        self.assertEqual(stack.physical_sp.to_c(), "0")
+        self.assertEqual(stack.logical_sp.to_c(), "1 - oparg - oparg*2 + oparg*4")
 
 
 class TestGeneratedCases(unittest.TestCase):
@@ -417,7 +416,7 @@ class TestGeneratedCases(unittest.TestCase):
     def test_error_if_plain(self):
         input = """
         inst(OP, (--)) {
-            ERROR_IF(cond, label);
+            ERROR_IF(cond);
         }
     """
         output = """
@@ -430,7 +429,7 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(OP);
             if (cond) {
-                JUMP_TO_LABEL(label);
+                JUMP_TO_LABEL(error);
             }
             DISPATCH();
         }
@@ -440,7 +439,7 @@ class TestGeneratedCases(unittest.TestCase):
     def test_error_if_plain_with_comment(self):
         input = """
         inst(OP, (--)) {
-            ERROR_IF(cond, label);  // Comment is ok
+            ERROR_IF(cond);  // Comment is ok
         }
     """
         output = """
@@ -453,9 +452,8 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(OP);
             if (cond) {
-                JUMP_TO_LABEL(label);
+                JUMP_TO_LABEL(error);
             }
-            // Comment is ok
             DISPATCH();
         }
     """
@@ -466,7 +464,7 @@ class TestGeneratedCases(unittest.TestCase):
         inst(OP, (left, right -- res)) {
             SPAM(left, right);
             INPUTS_DEAD();
-            ERROR_IF(cond, label);
+            ERROR_IF(cond);
             res = 0;
         }
     """
@@ -486,7 +484,7 @@ class TestGeneratedCases(unittest.TestCase):
             left = stack_pointer[-2];
             SPAM(left, right);
             if (cond) {
-                JUMP_TO_LABEL(pop_2_label);
+                JUMP_TO_LABEL(pop_2_error);
             }
             res = 0;
             stack_pointer[-2] = res;
@@ -502,7 +500,7 @@ class TestGeneratedCases(unittest.TestCase):
         inst(OP, (left, right -- res)) {
             res = SPAM(left, right);
             INPUTS_DEAD();
-            ERROR_IF(cond, label);
+            ERROR_IF(cond);
         }
     """
         output = """
@@ -521,7 +519,7 @@ class TestGeneratedCases(unittest.TestCase):
             left = stack_pointer[-2];
             res = SPAM(left, right);
             if (cond) {
-                JUMP_TO_LABEL(pop_2_label);
+                JUMP_TO_LABEL(pop_2_error);
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -584,7 +582,6 @@ class TestGeneratedCases(unittest.TestCase):
 
         LABEL(somewhere)
         {
-
         }
     """
         self.run_cases_test(input, output)
@@ -903,7 +900,7 @@ class TestGeneratedCases(unittest.TestCase):
         inst(OP, (extra, values[oparg] --)) {
             DEAD(extra);
             DEAD(values);
-            ERROR_IF(oparg == 0, somewhere);
+            ERROR_IF(oparg == 0);
         }
     """
         output = """
@@ -922,7 +919,7 @@ class TestGeneratedCases(unittest.TestCase):
             if (oparg == 0) {
                 stack_pointer += -1 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
-                JUMP_TO_LABEL(somewhere);
+                JUMP_TO_LABEL(error);
             }
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1319,7 +1316,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         op(THIRD, (j, k --)) {
             INPUTS_DEAD(); // Mark j and k as used
-            ERROR_IF(cond, error);
+            ERROR_IF(cond);
         }
 
         macro(TEST) = FIRST + SECOND + THIRD;
@@ -1349,7 +1346,6 @@ class TestGeneratedCases(unittest.TestCase):
             }
             // THIRD
             {
-                // Mark j and k as used
                 if (cond) {
                     JUMP_TO_LABEL(pop_2_error);
                 }
@@ -1370,7 +1366,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         op(SECOND, (a -- a, b)) {
             b = 1;
-            ERROR_IF(cond, error);
+            ERROR_IF(cond);
         }
 
         macro(TEST) = FIRST + SECOND;
@@ -1415,10 +1411,10 @@ class TestGeneratedCases(unittest.TestCase):
 
         input = """
         inst(OP1, ( --)) {
-            ERROR_IF(true, here);
+            ERROR_IF(true);
         }
         inst(OP2, ( --)) {
-            ERROR_IF(1, there);
+            ERROR_IF(1);
         }
         """
         output = """
@@ -1430,7 +1426,7 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
-            JUMP_TO_LABEL(here);
+            JUMP_TO_LABEL(error);
         }
 
         TARGET(OP2) {
@@ -1441,7 +1437,7 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP2);
-            JUMP_TO_LABEL(there);
+            JUMP_TO_LABEL(error);
         }
         """
         self.run_cases_test(input, output)
@@ -1717,7 +1713,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         input = """
         inst(OP, ( -- )) {
-            ERROR_IF(escaping_call(), error);
+            ERROR_IF(escaping_call());
         }
         """
         with self.assertRaises(SyntaxError):
@@ -1755,17 +1751,14 @@ class TestGeneratedCases(unittest.TestCase):
         output = """
         LABEL(other_label)
         {
-
         }
 
         LABEL(other_label2)
         {
-
         }
 
         LABEL(my_label)
         {
-            // Comment
             _PyFrame_SetStackPointer(frame, stack_pointer);
             do_thing();
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -1793,7 +1786,6 @@ class TestGeneratedCases(unittest.TestCase):
         output = """
         LABEL(one)
         {
-            /* STACK SPILLED */
             stack_pointer = _PyFrame_GetStackPointer(frame);
             JUMP_TO_LABEL(two);
         }
@@ -1849,7 +1841,6 @@ class TestGeneratedCases(unittest.TestCase):
         output = """
         LABEL(my_label_1)
         {
-            // Comment
             _PyFrame_SetStackPointer(frame, stack_pointer);
             do_thing1();
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -1858,7 +1849,6 @@ class TestGeneratedCases(unittest.TestCase):
 
         LABEL(my_label_2)
         {
-            // Comment
             _PyFrame_SetStackPointer(frame, stack_pointer);
             do_thing2();
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -1869,13 +1859,28 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_reassigning_live_inputs(self):
         input = """
-        inst(OP, (in -- )) {
+        inst(OP, (in -- in)) {
             in = 0;
-            DEAD(in);
         }
         """
-        with self.assertRaises(SyntaxError):
-            self.run_cases_test(input, "")
+
+        output = """
+        TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef in;
+            in = stack_pointer[-1];
+            in = 0;
+            stack_pointer[-1] = in;
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
 
     def test_reassigning_dead_inputs(self):
         input = """
@@ -2061,6 +2066,189 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, "All abstract uops"):
             self.run_cases_test(input, input2, output)
 
+    def test_validate_uop_input_length_mismatch(self):
+        input = """
+        op(OP, (arg1 -- out)) {
+            SPAM();
+        }
+        """
+        input2 = """
+        op(OP, (arg1, arg2 -- out)) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Must have the same number of inputs"):
+            self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_output_length_mismatch(self):
+        input = """
+        op(OP, (arg1 -- out)) {
+            SPAM();
+        }
+        """
+        input2 = """
+        op(OP, (arg1 -- out1, out2)) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Must have the same number of outputs"):
+            self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_input_name_mismatch(self):
+        input = """
+        op(OP, (foo -- out)) {
+            SPAM();
+        }
+        """
+        input2 = """
+        op(OP, (bar -- out)) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Inputs must have equal names"):
+            self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_output_name_mismatch(self):
+        input = """
+        op(OP, (arg1 -- foo)) {
+            SPAM();
+        }
+        """
+        input2 = """
+        op(OP, (arg1 -- bar)) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Outputs must have equal names"):
+            self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_unused_input(self):
+        input = """
+        op(OP, (unused -- )) {
+        }
+        """
+        input2 = """
+        op(OP, (foo -- )) {
+        }
+        """
+        output = """
+        case OP: {
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+        input = """
+        op(OP, (foo -- )) {
+        }
+        """
+        input2 = """
+        op(OP, (unused -- )) {
+        }
+        """
+        output = """
+        case OP: {
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_unused_output(self):
+        input = """
+        op(OP, ( -- unused)) {
+        }
+        """
+        input2 = """
+        op(OP, ( -- foo)) {
+            foo = NULL;
+        }
+        """
+        output = """
+        case OP: {
+            JitOptSymbol *foo;
+            foo = NULL;
+            stack_pointer[0] = foo;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+        input = """
+        op(OP, ( -- foo)) {
+            foo = NULL;
+        }
+        """
+        input2 = """
+        op(OP, ( -- unused)) {
+        }
+        """
+        output = """
+        case OP: {
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_input_size_mismatch(self):
+        input = """
+        op(OP, (arg1[2] -- )) {
+        }
+        """
+        input2 = """
+        op(OP, (arg1[4] -- )) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Inputs must have equal sizes"):
+            self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_output_size_mismatch(self):
+        input = """
+        op(OP, ( -- out[2])) {
+        }
+        """
+        input2 = """
+        op(OP, ( -- out[4])) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Outputs must have equal sizes"):
+            self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_unused_size_mismatch(self):
+        input = """
+        op(OP, (foo[2] -- )) {
+        }
+        """
+        input2 = """
+        op(OP, (unused[4] -- )) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Inputs must have equal sizes"):
+            self.run_cases_test(input, input2, output)
 
 if __name__ == "__main__":
     unittest.main()
