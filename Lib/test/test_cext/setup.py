@@ -45,6 +45,9 @@ def main():
     std = os.environ.get("CPYTHON_TEST_STD", "")
     module_name = os.environ["CPYTHON_TEST_EXT_NAME"]
     limited = bool(os.environ.get("CPYTHON_TEST_LIMITED", ""))
+    opaque = bool(os.environ.get("CPYTHON_TEST_OPAQUE_PYOBJECT", ""))
+
+    sources = [SOURCE]
 
     cflags = list(CFLAGS)
     cflags.append(f'-DMODULE_NAME={module_name}')
@@ -75,6 +78,12 @@ def main():
         version = sys.hexversion
         cflags.append(f'-DPy_LIMITED_API={version:#x}')
 
+    # Define _Py_OPAQUE_PYOBJECT macro
+    if opaque:
+        version = sys.hexversion
+        cflags.append(f'-D_Py_OPAQUE_PYOBJECT')
+        sources.append('create_moduledef.c')
+
     # On Windows, add PCbuild\amd64\ to include and library directories
     include_dirs = []
     library_dirs = []
@@ -99,7 +108,7 @@ def main():
 
     ext = Extension(
         module_name,
-        sources=[SOURCE],
+        sources=sources,
         extra_compile_args=cflags,
         include_dirs=include_dirs,
         library_dirs=library_dirs)
