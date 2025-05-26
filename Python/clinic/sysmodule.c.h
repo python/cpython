@@ -1821,6 +1821,36 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys__defer_refcount__doc__,
+"_defer_refcount($module, op, /)\n"
+"--\n"
+"\n"
+"Defer reference counting for the object, allowing for better scaling across multiple threads.\n"
+"\n"
+"This function should be used for specialized purposes only.");
+
+#define SYS__DEFER_REFCOUNT_METHODDEF    \
+    {"_defer_refcount", (PyCFunction)sys__defer_refcount, METH_O, sys__defer_refcount__doc__},
+
+static int
+sys__defer_refcount_impl(PyObject *module, PyObject *op);
+
+static PyObject *
+sys__defer_refcount(PyObject *module, PyObject *op)
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = sys__defer_refcount_impl(module, op);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_jit_is_available__doc__,
 "is_available($module, /)\n"
 "--\n"
@@ -1948,4 +1978,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=449d16326e69dcf6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e84ea46c0ecf9fa3 input=a9049054013a1b77]*/

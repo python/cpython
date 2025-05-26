@@ -950,6 +950,7 @@ lock_new_impl(PyTypeObject *type)
     if (self == NULL) {
         return NULL;
     }
+    _PyObject_SetDeferredRefcount((PyObject *)self);
     self->lock = (PyMutex){0};
     return (PyObject *)self;
 }
@@ -1221,6 +1222,7 @@ rlock_new_impl(PyTypeObject *type)
     if (self == NULL) {
         return NULL;
     }
+    _PyObject_SetDeferredRefcount((PyObject *)self);
     self->lock = (_PyRecursiveMutex){0};
     return (PyObject *) self;
 }
