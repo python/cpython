@@ -137,7 +137,7 @@ module Python
             | MatchMapping(expr* keys, pattern* patterns, identifier? rest)
             | MatchClass(expr cls, pattern* patterns, identifier* kwd_attrs, pattern* kwd_patterns)
 
-            | MatchStar(identifier? name)
+            | MatchStar(identifier name)
             -- The optional "rest" MatchMapping parameter handles capturing extra mapping keys
 
             | MatchAs(pattern? pattern, identifier? name)
