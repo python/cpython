@@ -35,7 +35,7 @@ extern "C" {
 #    include <sys/mman.h>
 #endif
 
-#if defined(__APPLE__) && TARGET_OS_OSX
+#if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
 #  include <libproc.h>
 #  include <mach-o/fat.h>
 #  include <mach-o/loader.h>
@@ -100,7 +100,7 @@ typedef struct page_cache_entry {
 // Define a platform-independent process handle structure
 typedef struct {
     pid_t pid;
-#if defined(__APPLE__)
+#if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
     mach_port_t task;
 #elif defined(MS_WINDOWS)
     HANDLE hProcess;
@@ -127,7 +127,7 @@ _Py_RemoteDebug_ClearCache(proc_handle_t *handle)
     }
 }
 
-#if defined(__APPLE__) && TARGET_OS_OSX
+#if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
 static mach_port_t pid_to_task(pid_t pid);
 #endif
 
@@ -135,7 +135,7 @@ static mach_port_t pid_to_task(pid_t pid);
 static int
 _Py_RemoteDebug_InitProcHandle(proc_handle_t *handle, pid_t pid) {
     handle->pid = pid;
-#if defined(__APPLE__)
+#if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
     handle->task = pid_to_task(handle->pid);
 #elif defined(MS_WINDOWS)
     handle->hProcess = OpenProcess(
@@ -167,7 +167,7 @@ _Py_RemoteDebug_CleanupProcHandle(proc_handle_t *handle) {
     _Py_RemoteDebug_FreePageCache(handle);
 }
 
-#if defined(__APPLE__) && TARGET_OS_OSX
+#if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
 
 static uintptr_t
 return_section_address64(
@@ -481,7 +481,7 @@ search_map_for_section(proc_handle_t *handle, const char* secname, const char* s
     return 0;
 }
 
-#endif // (__APPLE__ && TARGET_OS_OSX)
+#endif // (__APPLE__ && defined(TARGET_OS_OSX) && TARGET_OS_OSX)
 
 #if defined(__linux__) && HAVE_PROCESS_VM_READV
 static uintptr_t
@@ -759,7 +759,7 @@ _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
         PyErr_SetString(PyExc_RuntimeError, "Failed to find the PyRuntime section in the process.");
         _PyErr_ChainExceptions1(exc);
     }
-#elif defined(__APPLE__) && TARGET_OS_OSX
+#elif defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
     // On macOS, try libpython first, then fall back to python
     address = search_map_for_section(handle, "PyRuntime", "libpython");
     if (address == 0) {
@@ -810,7 +810,7 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
         result += read_bytes;
     } while ((size_t)read_bytes != local[0].iov_len);
     return 0;
-#elif defined(__APPLE__) && TARGET_OS_OSX
+#elif defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
     Py_ssize_t result = -1;
     kern_return_t kr = mach_vm_read_overwrite(
         handle->task,
