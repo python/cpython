@@ -51,7 +51,7 @@ _zstd_ZstdDict_new_impl(PyTypeObject *type, Py_buffer *dict_content,
         PyErr_SetString(PyExc_ValueError,
                         "Zstandard dictionary content must be longer "
                         "than eight bytes.");
-        goto error;
+        return NULL;
     }
 
     ZstdDict* self = PyObject_GC_New(ZstdDict, type);
