@@ -117,7 +117,7 @@ complete listing.
    item defined in the module file. Example::
 
        static struct PyModuleDef spam_module = {
-           PyModuleDef_HEAD_INIT,
+           .m_base = PyModuleDef_HEAD_INIT,
            .m_name = "spam",
            ...
        };
@@ -125,7 +125,7 @@ complete listing.
        PyMODINIT_FUNC
        PyInit_spam(void)
        {
-           return PyModule_Create(&spam_module);
+           return PyModuleDef_Init(&spam_module);
        }
 
 
