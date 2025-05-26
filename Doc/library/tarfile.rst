@@ -167,7 +167,7 @@ Some facts and figures:
    .. versionchanged:: 3.12
       The *compresslevel* keyword argument also works for streams.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       The *preset* keyword argument also works for streams.
 
 

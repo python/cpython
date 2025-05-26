@@ -560,6 +560,13 @@ class TestCallCache(TestBase):
         with self.assertRaises(TypeError):
             instantiate()
 
+    def test_recursion_check_for_general_calls(self):
+        def test(default=None):
+            return test()
+
+        with self.assertRaises(RecursionError):
+            test()
+
 
 def make_deferred_ref_count_obj():
     """Create an object that uses deferred reference counting.
@@ -576,7 +583,6 @@ class TestRacesDoNotCrash(TestBase):
     # Careful with these. Bigger numbers have a higher chance of catching bugs,
     # but you can also burn through a *ton* of type/dict/function versions:
     ITEMS = 1000
-    SMALL_ITEMS = 100
     LOOPS = 4
     WRITERS = 2
 
@@ -620,7 +626,7 @@ class TestRacesDoNotCrash(TestBase):
                 __getitem__ = lambda self, item: None
 
             items = []
-            for _ in range(self.SMALL_ITEMS):
+            for _ in range(self.ITEMS):
                 item = C()
                 items.append(item)
             return items
@@ -791,7 +797,7 @@ class TestRacesDoNotCrash(TestBase):
                 __getattribute__ = lambda self, name: None
 
             items = []
-            for _ in range(self.SMALL_ITEMS):
+            for _ in range(self.ITEMS):
                 item = C()
                 items.append(item)
             return items
@@ -1804,20 +1810,6 @@ class TestSpecializer(TestBase):
         self.assert_specialized(compare_op_str, "COMPARE_OP_STR")
         self.assert_no_opcode(compare_op_str, "COMPARE_OP")
 
-    @cpython_only
-    @requires_specialization_ft
-    def test_load_const(self):
-        def load_const():
-            def unused(): pass
-            # Currently, the empty tuple is immortal, and the otherwise
-            # unused nested function's code object is mortal. This test will
-            # have to use different values if either of that changes.
-            return ()
-
-        load_const()
-        self.assert_specialized(load_const, "LOAD_CONST_IMMORTAL")
-        self.assert_specialized(load_const, "LOAD_CONST_MORTAL")
-        self.assert_no_opcode(load_const, "LOAD_CONST")
 
     @cpython_only
     @requires_specialization_ft

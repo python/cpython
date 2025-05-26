@@ -1228,15 +1228,9 @@ Special attributes
        :attr:`__annotations__ attributes <object.__annotations__>`.
 
        For best practices on working with :attr:`~object.__annotations__`,
-       please see :mod:`annotationlib`.
-
-       .. caution::
-
-          Accessing the :attr:`!__annotations__` attribute of a class
-          object directly may yield incorrect results in the presence of
-          metaclasses. In addition, the attribute may not exist for
-          some classes. Use :func:`annotationlib.get_annotations` to
-          retrieve class annotations safely.
+       please see :mod:`annotationlib`. Where possible, use
+       :func:`annotationlib.get_annotations` instead of accessing this
+       attribute directly.
 
        .. versionchanged:: 3.14
           Annotations are now :ref:`lazily evaluated <lazy-evaluation>`.
@@ -1246,13 +1240,6 @@ Special attributes
      - The :term:`annotate function` for this class, or ``None``
        if the class has no annotations.
        See also: :attr:`__annotate__ attributes <object.__annotate__>`.
-
-       .. caution::
-
-          Accessing the :attr:`!__annotate__` attribute of a class
-          object directly may yield incorrect results in the presence of
-          metaclasses. Use :func:`annotationlib.get_annotate_function` to
-          retrieve the annotate function safely.
 
        .. versionadded:: 3.14
 
@@ -3359,7 +3346,7 @@ left undefined.
    argument if the three-argument version of the built-in :func:`pow` function
    is to be supported.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
 
       Three-argument :func:`pow` now try calling :meth:`~object.__rpow__` if necessary.
       Previously it was only called in two-argument :func:`!pow` and the binary
