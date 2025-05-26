@@ -12,10 +12,12 @@ Assignment statements in Python do not copy objects, they create bindings
 between a target and an object. For collections that are mutable or contain
 mutable items, a copy is sometimes needed so one can change one copy without
 changing the other. This module provides generic shallow and deep copy
-operations (explained below).
+operations (explained below), plus a replace (copy-with-modifications)
+operation that's implemented for certain immutable types.
 
 
-Interface summary:
+``copy`` and ``deepcopy``
+-------------------------
 
 .. function:: copy(obj)
 
@@ -27,28 +29,18 @@ Interface summary:
    Return a deep copy of *obj*.
 
 
-.. function:: replace(obj, /, **changes)
-
-   Creates a new object of the same type as *obj*, replacing fields with values
-   from *changes*.
-
-   .. versionadded:: 3.13
-
-
-.. exception:: Error
-
-   Raised for module specific errors.
-
 .. _shallow_vs_deep_copy:
 
-The difference between shallow and deep copying is only relevant for compound
-objects (objects that contain other objects, like lists or class instances):
+.. tip:: Shallow vs. Deep Copy
 
-* A *shallow copy* constructs a new compound object and then (to the extent
-  possible) inserts *references* into it to the objects found in the original.
+   The difference between shallow and deep copying is only relevant for compound
+   objects (objects that contain other objects, like lists or class instances):
 
-* A *deep copy* constructs a new compound object and then, recursively, inserts
-  *copies* into it of the objects found in the original.
+   * A *shallow copy* constructs a new compound object and then (to the extent
+     possible) inserts *references* into it to the objects found in the original.
+
+   * A *deep copy* constructs a new compound object and then, recursively,
+     inserts *copies* into it of the objects found in the original.
 
 Two problems often exist with deep copy operations that don't exist with shallow
 copy operations:
@@ -76,12 +68,26 @@ Shallow copies of dictionaries can be made using :meth:`dict.copy`, and
 of lists by assigning a slice of the entire list, for example,
 ``copied_list = original_list[:]``.
 
+
+Pickling
+~~~~~~~~
+
 .. index:: pair: module; pickle
 
 Classes can use the same interfaces to control copying that they use to control
 pickling.  See the description of module :mod:`pickle` for information on these
 methods.  In fact, the :mod:`copy` module uses the registered
 pickle functions from the :mod:`copyreg` module.
+
+.. seealso::
+
+   Module :mod:`pickle`
+      Discussion of the special methods used to support object state retrieval and
+      restoration.
+
+
+The copy protocol
+~~~~~~~~~~~~~~~~~
 
 .. index::
    single: __copy__() (copy protocol)
@@ -103,29 +109,51 @@ special methods :meth:`~object.__copy__` and :meth:`~object.__deepcopy__`.
 
    Called to implement the deep copy operation; it is passed one
    argument, the *memo* dictionary.  If the ``__deepcopy__`` implementation needs
-   to make a deep copy of a component, it should call the :func:`~copy.deepcopy` function
+   to make a deep copy of a component, it should call the :func:`!copy.deepcopy` function
    with the component as first argument and the *memo* dictionary as second argument.
    The *memo* dictionary should be treated as an opaque object.
 
 
+``replace``
+-----------
+
+.. function:: copy.replace(obj, /, **changes)
+
+   Return a new object of the same type as *obj*, replacing fields with values
+   from *changes*.
+
+   Function :func:`!copy.replace` is more limited
+   than :func:`~copy.copy` and :func:`~copy.deepcopy`,
+   and only supports named tuples created by :func:`~collections.namedtuple`,
+   :mod:`dataclasses`, and other classes which implement the replace protocol
+   (i.e. define a method :meth:`~object.__replace__`).
+
+   .. versionadded:: 3.13
+
+
+The replace protocol
+~~~~~~~~~~~~~~~~~~~~
+
 .. index::
    single: __replace__() (replace protocol)
 
-Function :func:`!copy.replace` is more limited
-than :func:`~copy.copy` and :func:`~copy.deepcopy`,
-and only supports named tuples created by :func:`~collections.namedtuple`,
-:mod:`dataclasses`, and other classes which define method :meth:`~object.__replace__`.
+In order for a class to define its own replace implementation, it can define
+the special method :meth:`~object.__replace__`.
+
 
 .. method:: object.__replace__(self, /, **changes)
    :noindexentry:
 
-   This method should create a new object of the same type,
+   Called to implement the replace operation; it is passed a set of changes
+   as keyword arguments. This method should create a new object of the same type,
    replacing fields with values from *changes*.
 
+   .. versionadded:: 3.13
 
-.. seealso::
 
-   Module :mod:`pickle`
-      Discussion of the special methods used to support object state retrieval and
-      restoration.
+Exceptions
+----------
 
+.. exception:: copy.Error
+
+   Raised for module specific errors.
