@@ -2491,6 +2491,24 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(address.all_mailboxes[0].domain, 'example.com')
         self.assertEqual(address.all_mailboxes[0].addr_spec, '"example example"@example.com')
 
+    def test_get_address_with_invalid_domain(self):
+        address = parser.get_address("<T@[")
+        self.assertEqual(len(address), 2)
+        self.assertEqual(address[0].token_type, 'address')
+        self.assertEqual(address[0].all_mailboxes[0].local_part, 'T')
+        self.assertEqual(address[0].all_mailboxes[0].domain, ']')
+        self.assertEqual(address[0].all_mailboxes[0].addr_spec, 'T@]')
+        self.assertEqual(str(address[0].all_defects[0]), "missing trailing '>' on angle-addr")
+        self.assertEqual(str(address[0].all_defects[1]), "end of input inside domain-literal")
+
+        address = parser.get_address("!an??:=m==fr2@[C")
+        self.assertEqual(len(address), 2)
+        self.assertEqual(address[0].token_type, 'address')
+        self.assertEqual(address[0].all_mailboxes[0].local_part, '=m==fr2')
+        self.assertEqual(address[0].all_mailboxes[0].domain, '[C]')
+        self.assertEqual(address[0].all_mailboxes[0].addr_spec, '=m==fr2@[C]')
+        self.assertEqual(str(address[0].all_defects[0]), "end of header in group")
+        self.assertEqual(str(address[0].all_defects[1]), "end of input inside domain-literal")
 
     # get_address_list
 
