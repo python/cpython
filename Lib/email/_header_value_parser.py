@@ -1594,9 +1594,9 @@ def get_domain_literal(value):
         raise errors.HeaderParseError("expected '[' at start of domain-literal "
                 "but found '{}'".format(value))
     value = value[1:]
+    domain_literal.append(ValueTerminal('[', 'domain-literal-start'))
     if _check_for_early_dl_end(value, domain_literal):
         return domain_literal, value
-    domain_literal.append(ValueTerminal('[', 'domain-literal-start'))
     if value[0] in WSP:
         token, value = get_fws(value)
         domain_literal.append(token)
