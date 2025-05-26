@@ -1846,6 +1846,7 @@ class AbstractRepackTests(RepackHelperMixin):
                         for i, (file, data) in enumerate(self.test_files):
                             zh.writestr(file, data)
                             fh.write(b' dummy bytes ')
+                            zh.start_dir = fh.tell()
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     for i in ii:
                         zh.remove(self.test_files[i][0])
@@ -2168,6 +2169,7 @@ class AbstractRepackTests(RepackHelperMixin):
                                 zh.writestr(file, data)
                                 expected_zinfos.append(ComparableZipInfo(zh.getinfo(file)))
                             fh.write(b' dummy bytes ')
+                            zh.start_dir = fh.tell()
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
@@ -2176,6 +2178,7 @@ class AbstractRepackTests(RepackHelperMixin):
                         for i, (file, data) in enumerate(self.test_files):
                             zh.writestr(file, data)
                             fh.write(b' dummy bytes ')
+                            zh.start_dir = fh.tell()
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     zinfos = [zh.remove(self.test_files[i][0]) for i in ii]
                     zh.repack(zinfos)
