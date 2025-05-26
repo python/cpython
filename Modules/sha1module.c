@@ -272,7 +272,7 @@ static PyType_Spec sha1_type_spec = {
 /*[clinic input]
 _sha1.sha1
 
-    string: object(c_default="NULL") = b''
+    data as string: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
 
@@ -281,7 +281,7 @@ Return a new SHA1 hash object; optionally initialized with a string.
 
 static PyObject *
 _sha1_sha1_impl(PyObject *module, PyObject *string, int usedforsecurity)
-/*[clinic end generated code: output=6f8b3af05126e18e input=bd54b68e2bf36a8a]*/
+/*[clinic end generated code: output=6f8b3af05126e18e input=d2fb411b7d21bf84]*/
 {
     SHA1object *new;
     Py_buffer buf;

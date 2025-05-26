@@ -656,7 +656,6 @@ error:
 @classmethod
 _blake2.blake2b.__new__ as py_blake2b_new
     data: object(c_default="NULL") = b''
-    /
     *
     digest_size: int(c_default="HACL_HASH_BLAKE2B_OUT_BYTES") = _blake2.blake2b.MAX_DIGEST_SIZE
     key: Py_buffer(c_default="NULL", py_default="b''") = None
@@ -680,7 +679,7 @@ py_blake2b_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
                     int fanout, int depth, unsigned long leaf_size,
                     unsigned long long node_offset, int node_depth,
                     int inner_size, int last_node, int usedforsecurity)
-/*[clinic end generated code: output=32bfd8f043c6896f input=8fee2b7b11428b2d]*/
+/*[clinic end generated code: output=32bfd8f043c6896f input=02d342d22847290e]*/
 {
     return py_blake2b_or_s_new(type, data, digest_size, key, salt, person, fanout, depth, leaf_size, node_offset, node_depth, inner_size, last_node, usedforsecurity);
 }
@@ -689,7 +688,6 @@ py_blake2b_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
 @classmethod
 _blake2.blake2s.__new__ as py_blake2s_new
     data: object(c_default="NULL") = b''
-    /
     *
     digest_size: int(c_default="HACL_HASH_BLAKE2S_OUT_BYTES") = _blake2.blake2s.MAX_DIGEST_SIZE
     key: Py_buffer(c_default="NULL", py_default="b''") = None
@@ -713,7 +711,7 @@ py_blake2s_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
                     int fanout, int depth, unsigned long leaf_size,
                     unsigned long long node_offset, int node_depth,
                     int inner_size, int last_node, int usedforsecurity)
-/*[clinic end generated code: output=556181f73905c686 input=8165a11980eac7f3]*/
+/*[clinic end generated code: output=556181f73905c686 input=d88d8c06e859b073]*/
 {
     return py_blake2b_or_s_new(type, data, digest_size, key, salt, person, fanout, depth, leaf_size, node_offset, node_depth, inner_size, last_node, usedforsecurity);
 }

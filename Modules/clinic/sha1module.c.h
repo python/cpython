@@ -89,7 +89,7 @@ SHA1Type_update(PyObject *self, PyObject *obj)
 }
 
 PyDoc_STRVAR(_sha1_sha1__doc__,
-"sha1($module, /, string=b\'\', *, usedforsecurity=True)\n"
+"sha1($module, /, data=b\'\', *, usedforsecurity=True)\n"
 "--\n"
 "\n"
 "Return a new SHA1 hash object; optionally initialized with a string.");
@@ -115,7 +115,7 @@ _sha1_sha1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
+        .ob_item = { &_Py_ID(data), &_Py_ID(usedforsecurity), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -124,7 +124,7 @@ _sha1_sha1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
+    static const char * const _keywords[] = {"data", "usedforsecurity", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "sha1",
@@ -164,4 +164,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=06161e87e2d645d4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=502c1fb83c3b8937 input=a9049054013a1b77]*/

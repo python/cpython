@@ -89,7 +89,7 @@ MD5Type_update(PyObject *self, PyObject *obj)
 }
 
 PyDoc_STRVAR(_md5_md5__doc__,
-"md5($module, /, string=b\'\', *, usedforsecurity=True)\n"
+"md5($module, /, data=b\'\', *, usedforsecurity=True)\n"
 "--\n"
 "\n"
 "Return a new MD5 hash object; optionally initialized with a string.");
@@ -115,7 +115,7 @@ _md5_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
+        .ob_item = { &_Py_ID(data), &_Py_ID(usedforsecurity), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -124,7 +124,7 @@ _md5_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
+    static const char * const _keywords[] = {"data", "usedforsecurity", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "md5",
@@ -164,4 +164,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=73f4d2034d9fcc63 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=61c7b186eb93923b input=a9049054013a1b77]*/

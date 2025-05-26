@@ -276,7 +276,7 @@ static PyType_Spec md5_type_spec = {
 /*[clinic input]
 _md5.md5
 
-    string: object(c_default="NULL") = b''
+    data as string: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
 
@@ -285,7 +285,7 @@ Return a new MD5 hash object; optionally initialized with a string.
 
 static PyObject *
 _md5_md5_impl(PyObject *module, PyObject *string, int usedforsecurity)
-/*[clinic end generated code: output=587071f76254a4ac input=7a144a1905636985]*/
+/*[clinic end generated code: output=587071f76254a4ac input=ec166f03425ece64]*/
 {
     MD5object *new;
     Py_buffer buf;
