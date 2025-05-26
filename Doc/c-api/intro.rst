@@ -846,7 +846,7 @@ Recommended third party tools
 =============================
 
 The following third party tools offer both simpler and more sophisticated
-approaches to creating C and C++ extensions for Python:
+approaches to creating C, C++ and Rust extensions for Python:
 
 * `Cython <https://cython.org/>`_
 * `cffi <https://cffi.readthedocs.io>`_
