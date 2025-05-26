@@ -1817,6 +1817,38 @@ class AbstractRepackTests(RepackHelperMixin):
                 # check file size
                 self.assertEqual(os.path.getsize(TESTFN), expected_size)
 
+    def test_repack_bytes_between_files(self):
+        """Should remove bytes between local file entries."""
+        for ii in ([1], [1, 2], [2]):
+            with self.subTest(remove=ii):
+                # calculate the expected results
+                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
+                expected_zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
+                expected_size = os.path.getsize(TESTFN)
+
+                # do the removal and check the result
+                with open(TESTFN, 'wb') as fh:
+                    with zipfile.ZipFile(fh, 'w', self.compression) as zh:
+                        for i, (file, data) in enumerate(self.test_files):
+                            zh.writestr(file, data)
+                            fh.write(b' dummy bytes ')
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    for i in ii:
+                        zh.remove(self.test_files[i][0])
+                    zh.repack()
+
+                    # check infolist
+                    self.assertEqual(
+                        [ComparableZipInfo(zi) for zi in zh.infolist()],
+                        expected_zinfos,
+                    )
+
+                    # make sure the zip file is still valid
+                    self.assertIsNone(zh.testzip())
+
+                # check file size
+                self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
     def test_repack_zip64(self):
         """Should correctly handle file entries with zip64."""
         for ii in ([0], [0, 1], [1], [2]):
