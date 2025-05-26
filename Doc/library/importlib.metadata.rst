@@ -489,8 +489,8 @@ This metadata finder search defaults to ``sys.path``, but varies slightly in how
        A :class:`!Context` gives a custom provider a means to
        solicit additional details from the callers of distribution discovery
        functions like :func:`distributions` or :meth:`Distribution.discover`
-       beyond :attr:`!name` and :attr:`!path` when searching for
-       distributions.
+       beyond :attr:`!.name` and :attr:`!.path` when searching
+       for distributions.
 
        For example, a provider could expose suites of packages in either a
        "public" or "private" ``realm``. A caller of distribution discovery
@@ -507,7 +507,7 @@ This metadata finder search defaults to ``sys.path``, but varies slightly in how
 
           Specific name for which a distribution finder should match.
 
-          A :attr:`!name` of ``None`` matches all distributions.
+          A :attr:`!.name` of ``None`` matches all distributions.
 
        .. attribute:: path
 
@@ -564,9 +564,11 @@ method::
         loading the metadata for packages for the indicated ``context``.
         """
 
-The :class:`DistributionFinder.Context` object provides :attr:`.path` and
-:attr:`.name` properties indicating the path to search and name to match and
-may supply other relevant context sought by the consumer.
+The :class:`DistributionFinder.Context` object provides
+:attr:`~DistributionFinder.Context.path` and
+:attr:`~DistributionFinder.Context.name` properties indicating the path to
+search and name to match and may supply other relevant context sought by the
+consumer.
 
 In practice, to support finding distribution package
 metadata in locations other than the file system, subclass
