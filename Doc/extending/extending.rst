@@ -1349,8 +1349,9 @@ All that a client module must do in order to have access to the function
    static int
    client_module_exec(PyObject *m)
    {
-       if (import_spam() < 0)
+       if (import_spam() < 0) {
            return -1;
+       }
        /* additional initialization can happen here */
        return 0;
    }
