@@ -1235,17 +1235,6 @@ class TestParser(TestParserMixin, TestEmailBase):
             '@example.com')
         self.assertEqual(local_part.local_part, r'\example\\ example')
 
-    def test_get_local_part_unicode_defect(self):
-        # Currently this only happens when parsing unicode, not when parsing
-        # stuff that was originally binary.
-        local_part = self._test_get_x(parser.get_local_part,
-            'exámple@example.com',
-            'exámple',
-            'exámple',
-            [errors.NonASCIILocalPartDefect],
-            '@example.com')
-        self.assertEqual(local_part.local_part, 'exámple')
-
     # get_dtext
 
     def test_get_dtext_only(self):

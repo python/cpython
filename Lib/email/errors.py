@@ -109,9 +109,9 @@ class ObsoleteHeaderDefect(HeaderDefect):
     """Header uses syntax declared obsolete by RFC 5322"""
 
 class NonASCIILocalPartDefect(HeaderDefect):
-    """local_part contains non-ASCII characters"""
-    # This defect only occurs during unicode parsing, not when
-    # parsing messages decoded from binary.
+    """Unused. Note: this error is deprecated and may be removed in the future."""
+    # RFC 6532 permits a non-ASCII local-part. _header_value_parser previously
+    # treated this as a parse-time defect (when parsing Unicode, but not bytes).
 
 class InvalidDateDefect(HeaderDefect):
     """Header has unparsable or invalid date"""
