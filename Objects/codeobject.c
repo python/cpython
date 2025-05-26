@@ -2618,18 +2618,6 @@ static PyMemberDef code_memberlist[] = {
 
 
 static PyObject *
-code_getlnotab(PyObject *self, void *closure)
-{
-    PyCodeObject *code = _PyCodeObject_CAST(self);
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "co_lnotab is deprecated, use co_lines instead.",
-                     1) < 0) {
-        return NULL;
-    }
-    return decode_linetable(code);
-}
-
-static PyObject *
 code_getvarnames(PyObject *self, void *closure)
 {
     PyCodeObject *code = _PyCodeObject_CAST(self);
@@ -2666,7 +2654,6 @@ code_getcode(PyObject *self, void *closure)
 }
 
 static PyGetSetDef code_getsetlist[] = {
-    {"co_lnotab",         code_getlnotab,       NULL, NULL},
     {"_co_code_adaptive", code_getcodeadaptive, NULL, NULL},
     // The following old names are kept for backward compatibility.
     {"co_varnames",       code_getvarnames,     NULL, NULL},
