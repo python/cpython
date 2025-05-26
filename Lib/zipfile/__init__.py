@@ -1378,7 +1378,7 @@ class _ZipRepacker:
         if self.debug >= level:
             print(*msg)
 
-    def repack(self, zfile):
+    def repack(self, zfile, removed=None):
         """
         Repack the ZIP file, removing unrecorded local file entries and random
         bytes not listed in the central directory.
@@ -1442,11 +1442,14 @@ class _ZipRepacker:
             [recorded local file entry 1]
             ...
         """
+        removed_zinfos = set(removed or ())
+
         fp = zfile.fp
 
         # get a sorted filelist by header offset, in case the dir order
         # doesn't match the actual entry order
-        filelist = sorted(zfile.filelist, key=lambda x: x.header_offset)
+        filelist = (*zfile.filelist, *removed_zinfos)
+        filelist = sorted(filelist, key=lambda x: x.header_offset)
 
         # calculate each entry size and validate
         entry_size_list = []
@@ -1464,18 +1467,20 @@ class _ZipRepacker:
             self._debug(3, i, zinfo.orig_filename, entry_size, used_entry_size)
             if used_entry_size > entry_size:
                 raise BadZipFile(
-                    f"Overlapped entries: {zinfo.orig_filename!r} "
-                    f"(possible zip bomb)")
+                    f"Overlapped entries: {zinfo.orig_filename!r} ")
 
             entry_size_list.append(entry_size)
             used_entry_size_list.append(used_entry_size)
 
         # calculate the starting entry offset (bytes to skip)
-        try:
-            data_offset = filelist[0].header_offset
-        except IndexError:
-            data_offset = zfile.start_dir
-        entry_offset = self._calc_initial_entry_offset(fp, data_offset)
+        if removed is None:
+            try:
+                data_offset = filelist[0].header_offset
+            except IndexError:
+                data_offset = zfile.start_dir
+            entry_offset = self._calc_initial_entry_offset(fp, data_offset)
+        else:
+            entry_offset = 0
 
         # move file entries
         for i, zinfo in enumerate(filelist):
@@ -1483,17 +1488,34 @@ class _ZipRepacker:
             used_entry_size = used_entry_size_list[i]
 
             # update the header and move entry data to the new position
-            if entry_offset > 0:
+            if zinfo in removed_zinfos:
                 old_header_offset = zinfo.header_offset
                 zinfo.header_offset -= entry_offset
-                self._move_entry_data(fp, old_header_offset, zinfo.header_offset, used_entry_size)
+                self._move_entry_data(
+                    fp,
+                    old_header_offset + used_entry_size,
+                    zinfo.header_offset,
+                    entry_size - used_entry_size
+                )
 
-            if zinfo._end_offset is not None:
-                zinfo._end_offset = zinfo.header_offset + used_entry_size
+                if zinfo._end_offset is not None:
+                    zinfo._end_offset = zinfo.header_offset
 
-            # update entry_offset for subsequent files to follow
-            if used_entry_size < entry_size:
-                entry_offset += entry_size - used_entry_size
+                # update entry_offset for subsequent files to follow
+                entry_offset += used_entry_size
+
+            else:
+                if entry_offset > 0:
+                    old_header_offset = zinfo.header_offset
+                    zinfo.header_offset -= entry_offset
+                    self._move_entry_data(fp, old_header_offset, zinfo.header_offset, used_entry_size)
+
+                if zinfo._end_offset is not None:
+                    zinfo._end_offset = zinfo.header_offset + used_entry_size
+
+                # update entry_offset for subsequent files to follow
+                if used_entry_size < entry_size:
+                    entry_offset += entry_size - used_entry_size
 
         # update state
         zfile.start_dir -= entry_offset
@@ -2250,7 +2272,9 @@ class ZipFile:
 
             self._didModify = True
 
-    def repack(self, **opts):
+        return zinfo
+
+    def repack(self, removed=None, **opts):
         """Repack a zip file, removing non-referenced file entries.
 
         The archive must be opened with mode 'a', as mode 'w'/'x' do not
@@ -2270,7 +2294,7 @@ class ZipFile:
         with self._lock:
             self._writing = True
             try:
-                _ZipRepacker(**opts).repack(self)
+                _ZipRepacker(**opts).repack(self, removed)
             finally:
                 self._writing = False
 

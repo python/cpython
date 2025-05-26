@@ -527,20 +527,33 @@ ZipFile Objects
    a path is provided.
 
    This does not physically remove the local file entry from the archive;
-   the ZIP file size remains unchanged. Use :meth:`ZipFile.repack` afterwards
+   the ZIP file size remains unchanged. Call :meth:`ZipFile.repack` afterwards
    to reclaim space.
 
    The archive must be opened with mode ``'w'``, ``'x'`` or ``'a'``.
+
+   Returns the removed :class:`ZipInfo` instance.
 
    Calling :meth:`remove` on a closed ZipFile will raise a :exc:`ValueError`.
 
    .. versionadded:: next
 
 
-.. method:: ZipFile.repack(*, strict_descriptor=False[, chunk_size])
+.. method:: ZipFile.repack(removed=None, *, \
+                           strict_descriptor=False[, chunk_size])
 
-   Rewrites the archive to remove local file entries that are no longer
-   referenced, shrinking the ZIP file size.
+   Rewrites the archive to remove stale local file entries, shrinking the ZIP
+   file size.
+
+   If *removed* is provided, it must be a sequence of :class:`ZipInfo` objects
+   representing removed entries; only their corresponding local file entries
+   will be removed.
+
+   If *removed* is not provided, local file entries no longer referenced in the
+   central directory will be removed. The algorithm assumes that local file
+   entries are stored consecutively. Extra bytes between entries will also be
+   removed. Data before the first referenced entry is preserved unless it
+   appears to be a sequence of consecutive local file entries.
 
    ``strict_descriptor=True`` can be provided to skip the slower scan for an
    unsigned data descriptor (deprecated in the latest ZIP specification and is
