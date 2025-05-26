@@ -1659,19 +1659,17 @@ _curses_window_getbkgd_impl(PyCursesWindowObject *self)
     return (long) getbkgd(self->win);
 }
 
-static PyObject *
+static void
 curses_check_signals_on_input_error(PyCursesWindowObject *self,
                                     const char *curses_funcname,
                                     const char *python_funcname)
 {
     assert(!PyErr_Occurred());
-    if (!PyErr_CheckSignals()) {
-        assert(!PyErr_Occurred());
+    if (PyErr_CheckSignals()) {
         cursesmodule_state *state = get_cursesmodule_state_by_win(self);
         PyErr_Format(state->error, "%s() (called by %s()): no input",
                      curses_funcname, python_funcname);
     }
-    return NULL;
 }
 
 /*[clinic input]
