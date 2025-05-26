@@ -1,11 +1,10 @@
 """Tools to analyze tasks running in asyncio programs."""
 
-from dataclasses import dataclass
 from collections import defaultdict
 from itertools import count
 from enum import Enum
 import sys
-from _remote_debugging import get_all_awaited_by
+from _remote_debugging import RemoteUnwinder
 
 
 class NodeType(Enum):
@@ -118,6 +117,11 @@ def _find_cycles(graph):
 
 
 # ─── PRINT TREE FUNCTION ───────────────────────────────────────
+def get_all_awaited_by(pid):
+    unwinder = RemoteUnwinder(pid)
+    return unwinder.get_all_awaited_by()
+
+
 def build_async_tree(result, task_emoji="(T)", cor_emoji=""):
     """
     Build a list of strings for pretty-print an async call tree.
