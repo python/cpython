@@ -1235,7 +1235,7 @@ Special attributes
        .. warning::
 
           Accessing the :attr:`!__annotations__` attribute directly
-          on a class object may return annotations for the wrong class
+          on a class object may return annotations for the wrong class, specifically
           in certain cases where the class, its base class, or a metaclass
           is defined under ``from __future__ import annotations``.
           See :pep:`749 <749#pep749-metaclasses>` for details.
