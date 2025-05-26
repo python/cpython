@@ -39,7 +39,8 @@ class CmdLineTest(unittest.TestCase):
 
     def verify_valid_flag(self, cmd_line):
         rc, out, err = assert_python_ok(cmd_line)
-        self.assertTrue(out == b'' or out.endswith(b'\n'))
+        if out != b'':
+            self.assertEndsWith(out, b'\n')
         self.assertNotIn(b'Traceback', out)
         self.assertNotIn(b'Traceback', err)
         return out
@@ -89,8 +90,8 @@ class CmdLineTest(unittest.TestCase):
         version = ('Python %d.%d' % sys.version_info[:2]).encode("ascii")
         for switch in '-V', '--version', '-VV':
             rc, out, err = assert_python_ok(switch)
-            self.assertFalse(err.startswith(version))
-            self.assertTrue(out.startswith(version))
+            self.assertNotStartsWith(err, version)
+            self.assertStartsWith(out, version)
 
     def test_verbose(self):
         # -v causes imports to write to stderr.  If the write to
@@ -384,7 +385,7 @@ class CmdLineTest(unittest.TestCase):
         p.stdin.flush()
         data, rc = _kill_python_and_exit_code(p)
         self.assertEqual(rc, 0)
-        self.assertTrue(data.startswith(b'x'), data)
+        self.assertStartsWith(data, b'x')
 
     def test_large_PYTHONPATH(self):
         path1 = "ABCDE" * 100
@@ -976,19 +977,25 @@ class CmdLineTest(unittest.TestCase):
 
     @unittest.skipUnless(support.MS_WINDOWS, 'Test only applicable on Windows')
     def test_python_legacy_windows_stdio(self):
-        def get_stderr_class(legacy_windows_stdio):
-            code = 'import sys; print(type(sys.stderr.buffer.raw))'
-            env = {'PYTHONLEGACYWINDOWSSTDIO': str(int(legacy_windows_stdio))}
-            # use stderr=None as legacy_windows_stdio doesn't affect pipes
-            p = spawn_python('-c', code, env=env, stderr=None)
-            out = kill_python(p).strip().decode('ascii', 'ignore')
-            return out.removeprefix("<class '").removesuffix("'>")
+        # Test that _WindowsConsoleIO is used when PYTHONLEGACYWINDOWSSTDIO
+        # is not set.
+        # We cannot use PIPE becase it prevents creating new console.
+        # So we use exit code.
+        code = "import sys; sys.exit(type(sys.stdout.buffer.raw).__name__ != '_WindowsConsoleIO')"
+        env = os.environ.copy()
+        env["PYTHONLEGACYWINDOWSSTDIO"] = ""
+        p = subprocess.run([sys.executable, "-c", code],
+                           creationflags=subprocess.CREATE_NEW_CONSOLE,
+                           env=env)
+        self.assertEqual(p.returncode, 0)
 
-        out = get_stderr_class(legacy_windows_stdio=True)
-        self.assertEqual('_io.FileIO', out)
-
-        out = get_stderr_class(legacy_windows_stdio=False)
-        self.assertEqual('_io._WindowsConsoleIO', out)
+        # Then test that FIleIO is used when PYTHONLEGACYWINDOWSSTDIO is set.
+        code = "import sys; sys.exit(type(sys.stdout.buffer.raw).__name__ != 'FileIO')"
+        env["PYTHONLEGACYWINDOWSSTDIO"] = "1"
+        p = subprocess.run([sys.executable, "-c", code],
+                           creationflags=subprocess.CREATE_NEW_CONSOLE,
+                           env=env)
+        self.assertEqual(p.returncode, 0)
 
     @unittest.skipIf("-fsanitize" in sysconfig.get_config_vars().get('PY_CFLAGS', ()),
                      "PYTHONMALLOCSTATS doesn't work with ASAN")
@@ -1037,7 +1044,7 @@ class CmdLineTest(unittest.TestCase):
                               stderr=subprocess.PIPE,
                               text=True)
         err_msg = "Unknown option: --unknown-option\nusage: "
-        self.assertTrue(proc.stderr.startswith(err_msg), proc.stderr)
+        self.assertStartsWith(proc.stderr, err_msg)
         self.assertNotEqual(proc.returncode, 0)
 
     def test_int_max_str_digits(self):

@@ -47,13 +47,7 @@ _ctypes_CType_Type___pointer_type___get_impl(PyObject *self);
 static PyObject *
 _ctypes_CType_Type___pointer_type___get(PyObject *self, void *Py_UNUSED(context))
 {
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _ctypes_CType_Type___pointer_type___get_impl(self);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
+    return _ctypes_CType_Type___pointer_type___get_impl(self);
 }
 
 #if !defined(_ctypes_CType_Type___pointer_type___DOCSTR)
@@ -74,9 +68,7 @@ _ctypes_CType_Type___pointer_type___set(PyObject *self, PyObject *value, void *P
 {
     int return_value;
 
-    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ctypes_CType_Type___pointer_type___set_impl(self, value);
-    Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
@@ -1050,4 +1042,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
-/*[clinic end generated code: output=f4bc2a77ec073b8a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=536c9bcf4e05913e input=a9049054013a1b77]*/

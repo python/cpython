@@ -1,13 +1,13 @@
 import collections.abc
 import types
 import unittest
-from test.support import skip_emscripten_stack_overflow, exceeds_recursion_limit
+from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow, exceeds_recursion_limit
 
 class TestExceptionGroupTypeHierarchy(unittest.TestCase):
     def test_exception_group_types(self):
-        self.assertTrue(issubclass(ExceptionGroup, Exception))
-        self.assertTrue(issubclass(ExceptionGroup, BaseExceptionGroup))
-        self.assertTrue(issubclass(BaseExceptionGroup, BaseException))
+        self.assertIsSubclass(ExceptionGroup, Exception)
+        self.assertIsSubclass(ExceptionGroup, BaseExceptionGroup)
+        self.assertIsSubclass(BaseExceptionGroup, BaseException)
 
     def test_exception_is_not_generic_type(self):
         with self.assertRaisesRegex(TypeError, 'Exception'):
@@ -465,12 +465,14 @@ class DeepRecursionInSplitAndSubgroup(unittest.TestCase):
         return e
 
     @skip_emscripten_stack_overflow()
+    @skip_wasi_stack_overflow()
     def test_deep_split(self):
         e = self.make_deep_eg()
         with self.assertRaises(RecursionError):
             e.split(TypeError)
 
     @skip_emscripten_stack_overflow()
+    @skip_wasi_stack_overflow()
     def test_deep_subgroup(self):
         e = self.make_deep_eg()
         with self.assertRaises(RecursionError):
@@ -812,8 +814,8 @@ class NestedExceptionGroupSplitTest(ExceptionGroupSplitTestBase):
         eg = ExceptionGroup("eg", [ValueError(1), TypeError(2)])
         eg.__notes__ = 123
         match, rest = eg.split(TypeError)
-        self.assertFalse(hasattr(match, '__notes__'))
-        self.assertFalse(hasattr(rest, '__notes__'))
+        self.assertNotHasAttr(match, '__notes__')
+        self.assertNotHasAttr(rest, '__notes__')
 
     def test_drive_invalid_return_value(self):
         class MyEg(ExceptionGroup):
