@@ -4570,13 +4570,9 @@ _build_result(PyObject *result, PyObject *callargs,
 static PyObject *
 PyCFuncPtr_call(PyObject *op, PyObject *inargs, PyObject *kwds)
 {
-    PyObject *restype;
-    PyObject *converters;
-    PyObject *checker;
-    PyObject *argtypes;
-    PyObject *result;
-    PyObject *callargs;
-    PyObject *errcheck;
+    PyObject *result = NULL;
+    PyObject *callargs = NULL;
+    PyObject *ret = NULL;
 #ifdef MS_WIN32
     IUnknown *piunk = NULL;
 #endif
@@ -4594,24 +4590,24 @@ PyCFuncPtr_call(PyObject *op, PyObject *inargs, PyObject *kwds)
     }
     assert(info); /* Cannot be NULL for PyCFuncPtrObject instances */
 
-    restype = atomic_xgetref(op, &self->restype);
+    PyObject *restype = atomic_xgetref(op, &self->restype);
     if (restype == NULL) {
         restype = Py_XNewRef(info->restype);
     }
-    converters = atomic_xgetref(op, &self->converters);
+    PyObject *converters = atomic_xgetref(op, &self->converters);
     if (converters == NULL) {
         converters = Py_XNewRef(info->converters);
     }
-    checker = atomic_xgetref(op, &self->checker);
+    PyObject *checker = atomic_xgetref(op, &self->checker);
     if (checker == NULL) {
         checker = Py_XNewRef(info->checker);
     }
-    argtypes = atomic_xgetref(op, &self->argtypes);
+    PyObject *argtypes = atomic_xgetref(op, &self->argtypes);
     if (argtypes == NULL) {
         argtypes = Py_XNewRef(info->argtypes);
     }
     /* later, we probably want to have an errcheck field in stginfo */
-    errcheck = atomic_xgetref(op, &self->errcheck);
+    PyObject *errcheck = atomic_xgetref(op, &self->errcheck);
 
     pProc = *(void **)self->b_ptr;
 #ifdef MS_WIN32
@@ -4620,47 +4616,27 @@ PyCFuncPtr_call(PyObject *op, PyObject *inargs, PyObject *kwds)
         CDataObject *this;
         this = (CDataObject *)PyTuple_GetItem(inargs, 0); /* borrowed ref! */
         if (!this) {
-            Py_XDECREF(restype);
-            Py_XDECREF(converters);
-            Py_XDECREF(checker);
-            Py_XDECREF(argtypes);
-            Py_XDECREF(errcheck);
             PyErr_SetString(PyExc_ValueError,
                             "native com method call without 'this' parameter");
-            return NULL;
+            goto finally;
         }
         if (!CDataObject_Check(st, this)) {
-            Py_XDECREF(restype);
-            Py_XDECREF(converters);
-            Py_XDECREF(checker);
-            Py_XDECREF(argtypes);
-            Py_XDECREF(errcheck);
             PyErr_SetString(PyExc_TypeError,
                             "Expected a COM this pointer as first argument");
-            return NULL;
+            goto finally;
         }
         /* there should be more checks? No, in Python */
         /* First arg is a pointer to an interface instance */
         if (!this->b_ptr || *(void **)this->b_ptr == NULL) {
-            Py_XDECREF(restype);
-            Py_XDECREF(converters);
-            Py_XDECREF(checker);
-            Py_XDECREF(argtypes);
-            Py_XDECREF(errcheck);
             PyErr_SetString(PyExc_ValueError,
                             "NULL COM pointer access");
-            return NULL;
+            goto finally;
         }
         piunk = *(IUnknown **)this->b_ptr;
         if (NULL == piunk->lpVtbl) {
-            Py_XDECREF(restype);
-            Py_XDECREF(converters);
-            Py_XDECREF(checker);
-            Py_XDECREF(argtypes);
-            Py_XDECREF(errcheck);
             PyErr_SetString(PyExc_ValueError,
                             "COM method call without VTable");
-            return NULL;
+            goto finally;
         }
         pProc = ((void **)piunk->lpVtbl)[self->index - 0x1000];
     }
@@ -4669,12 +4645,7 @@ PyCFuncPtr_call(PyObject *op, PyObject *inargs, PyObject *kwds)
                                inargs, kwds,
                                &outmask, &inoutmask, &numretvals);
     if (callargs == NULL) {
-        Py_XDECREF(restype);
-        Py_XDECREF(converters);
-        Py_XDECREF(checker);
-        Py_XDECREF(argtypes);
-        Py_XDECREF(errcheck);
-        return NULL;
+        goto finally;
     }
 
     if (converters) {
@@ -4689,31 +4660,21 @@ PyCFuncPtr_call(PyObject *op, PyObject *inargs, PyObject *kwds)
             */
             if (required > actual) {
                 Py_DECREF(callargs);
-                Py_XDECREF(restype);
-                Py_XDECREF(converters);
-                Py_XDECREF(checker);
-                Py_XDECREF(argtypes);
-                Py_XDECREF(errcheck);
                 PyErr_Format(PyExc_TypeError,
               "this function takes at least %d argument%s (%d given)",
                                  required,
                                  required == 1 ? "" : "s",
                                  actual);
-                return NULL;
+                goto finally;
             }
         } else if (required != actual) {
             Py_DECREF(callargs);
-            Py_XDECREF(restype);
-            Py_XDECREF(converters);
-            Py_XDECREF(checker);
-            Py_XDECREF(argtypes);
-            Py_XDECREF(errcheck);
             PyErr_Format(PyExc_TypeError,
                  "this function takes %d argument%s (%d given)",
                      required,
                      required == 1 ? "" : "s",
                      actual);
-            return NULL;
+            goto finally;
         }
     }
 
@@ -4744,22 +4705,19 @@ PyCFuncPtr_call(PyObject *op, PyObject *inargs, PyObject *kwds)
         if (v == NULL || v != callargs) {
             Py_DECREF(result);
             Py_DECREF(callargs);
-            Py_XDECREF(restype);
-            Py_XDECREF(converters);
-            Py_XDECREF(checker);
-            Py_XDECREF(argtypes);
-            Py_XDECREF(errcheck);
-            return v;
+            ret = v;
+            goto finally;
         }
         Py_DECREF(v);
     }
+    ret = _build_result(result, callargs, outmask, inoutmask, numretvals);
+finally:
     Py_XDECREF(restype);
     Py_XDECREF(converters);
     Py_XDECREF(checker);
     Py_XDECREF(argtypes);
     Py_XDECREF(errcheck);
-    return _build_result(result, callargs,
-                         outmask, inoutmask, numretvals);
+    return ret;
 }
 
 static int
