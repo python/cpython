@@ -1664,7 +1664,9 @@ curses_check_signals_on_input_error(PyCursesWindowObject *self,
                                     const char *curses_funcname,
                                     const char *python_funcname)
 {
-    if (!PyErr_CheckSignals() && !PyErr_Occurred()) {
+    assert(!PyErr_Occurred());
+    if (!PyErr_CheckSignals()) {
+        assert(!PyErr_Occurred());
         cursesmodule_state *state = get_cursesmodule_state_by_win(self);
         PyErr_Format(state->error, "%s() (called by %s()): no input",
                      curses_funcname, python_funcname);
