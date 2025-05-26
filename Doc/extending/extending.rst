@@ -204,31 +204,22 @@ value must be in a particular range or must satisfy other conditions,
 :c:data:`PyExc_ValueError` is appropriate.
 
 You can also define a new exception that is unique to your module.
-For this, you usually declare an object variable at in the module state::
+For this, you can declare a static global object variable at the beginning
+of the file::
 
-   typedef struct {
-       // ...
-       PyObject *SpamError;
-       // ...
-   } spam_state;
+   static PyObject *SpamError;
 
-and initialize it in the module's :c:data:`Py_mod_exec` function
-(:c:func:`!spam_module_exec`) with an exception object::
+and initialize it with an exception object in the module's
+:c:data:`Py_mod_exec` function (:c:func:`!spam_module_exec`)::
 
    static int
    spam_module_exec(PyObject *m)
    {
-       spam_state *state = PyModule_GetState(m);
-       if (state == NULL) {
+       SpamError = PyErr_NewException("spam.error", NULL, NULL);
+       if (PyModule_AddObjectRef(m, "SpamError", SpamError) < 0) {
            return -1;
        }
-       state->SpamError = PyErr_NewException("spam.error", NULL, NULL);
-       if (state->SpamError == NULL) {
-           return -1;
-       }
-       if (PyModule_AddType(m, (PyTypeObject *)state->SpamError) < 0) {
-           return -1;
-       }
+
        return 0;
    }
 
@@ -240,7 +231,7 @@ and initialize it in the module's :c:data:`Py_mod_exec` function
    static struct PyModuleDef spam_module = {
        .m_base = PyModuleDef_HEAD_INIT,
        .m_name = "spam",
-       .m_size = sizeof(spam_state),
+       .m_size = 0,  // non-negative
        .m_slots = spam_module_slots,
    };
 
