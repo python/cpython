@@ -13735,14 +13735,7 @@ else
 	LIBUUID_LIBS=$pkg_cv_LIBUUID_LIBS
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-<<<<<<< HEAD
 	            have_uuid=yes
-      printf "%s\n" "#define HAVE_UUID_H 1" >>confdefs.h
-
-      printf "%s\n" "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
-
-=======
-                    have_uuid=yes
       ac_cv_have_uuid_generate_time_safe=yes
       # The uuid.h file to include may be <uuid.h> *or* <uuid/uuid.h>.
       # Since pkg-config --cflags uuid may return -I/usr/include/uuid,
@@ -13753,7 +13746,6 @@ printf "%s\n" "yes" >&6; }
       # #include <uuid.h> can be written, *without* assuming extra
       # include path.
       ac_cv_have_uuid_h=yes
->>>>>>> 3bffada4672 (gh-132710: only use stable `_uuid.generate_time_safe()` to deduce MAC address (#132901))
 
 fi
 
@@ -13787,8 +13779,6 @@ done
 
 fi
 
-<<<<<<< HEAD
-=======
 if test "x$ac_cv_have_uuid_h" = xyes
 then :
   printf "%s\n" "#define HAVE_UUID_H 1" >>confdefs.h
@@ -13815,7 +13805,6 @@ if test "$ac_sys_system" = "NetBSD"; then
 
 fi
 
->>>>>>> 3bffada4672 (gh-132710: only use stable `_uuid.generate_time_safe()` to deduce MAC address (#132901))
 if test "x$have_uuid" = xmissing
 then :
   have_uuid=no
@@ -13853,8 +13842,8 @@ save_LIBS=$LIBS
 then :
 
 
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
     #include <inttypes.h>   // PRIu64
@@ -13891,8 +13880,7 @@ then :
 
 fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
-esac
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
 CFLAGS=$save_CFLAGS
@@ -13919,8 +13907,8 @@ save_LIBS=$LIBS
 then :
 
 
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
     #include <inttypes.h>   // PRIu64
@@ -13957,8 +13945,7 @@ then :
 
 fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
-esac
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
 CFLAGS=$save_CFLAGS
