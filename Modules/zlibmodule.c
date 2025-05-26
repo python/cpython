@@ -1901,15 +1901,15 @@ zlib.adler32_combine -> unsigned_int
 
 Combine two Adler-32 checksums into one.
 
-Given the Adler-32 checksum *adler1* of a sequence ``A`` and the
-Adler-32 checksum *adler2* of a sequence ``B`` of length *len2*,
-return the Adler-32 checksum of ``A`` and ``B`` concatenated.
+Given the Adler-32 checksum 'adler1' of a sequence A and the
+Adler-32 checksum 'adler2' of a sequence B of length 'len2',
+return the Adler-32 checksum of A and B concatenated.
 [clinic start generated code]*/
 
 static unsigned int
 zlib_adler32_combine_impl(PyObject *module, unsigned int adler1,
                           unsigned int adler2, PyObject *len2)
-/*[clinic end generated code: output=61842cefb16afb1b input=8a706b73cbe1a31b]*/
+/*[clinic end generated code: output=61842cefb16afb1b input=6fc6ff7cff42a2f2]*/
 {
 #if defined(Z_WANT64)
     z_off64_t len = convert_to_z_off_t(len2);
@@ -1986,15 +1986,15 @@ zlib.crc32_combine -> unsigned_int
 
 Combine two CRC-32 checksums into one.
 
-Given the CRC-32 checksum *crc1* of a sequence ``A`` and the
-CRC-32 checksum *crc2* of a sequence ``B`` of length *len2*,
-return the CRC-32 checksum of ``A`` and ``B`` concatenated.
+Given the CRC-32 checksum 'crc1' of a sequence A and the
+CRC-32 checksum 'crc2' of a sequence B of length 'len2',
+return the CRC-32 checksum of A and B concatenated.
 [clinic start generated code]*/
 
 static unsigned int
 zlib_crc32_combine_impl(PyObject *module, unsigned int crc1,
                         unsigned int crc2, PyObject *len2)
-/*[clinic end generated code: output=c4def907c602e6eb input=8eb70325fdee010d]*/
+/*[clinic end generated code: output=c4def907c602e6eb input=322bf6345c88161f]*/
 {
 #if defined(Z_WANT64)
     z_off64_t len = convert_to_z_off_t(len2);

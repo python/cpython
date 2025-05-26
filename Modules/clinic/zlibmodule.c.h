@@ -1057,9 +1057,9 @@ PyDoc_STRVAR(zlib_adler32_combine__doc__,
 "  len2\n"
 "    Length of sequence B\n"
 "\n"
-"Given the Adler-32 checksum *adler1* of a sequence ``A`` and the\n"
-"Adler-32 checksum *adler2* of a sequence ``B`` of length *len2*,\n"
-"return the Adler-32 checksum of ``A`` and ``B`` concatenated.");
+"Given the Adler-32 checksum \'adler1\' of a sequence A and the\n"
+"Adler-32 checksum \'adler2\' of a sequence B of length \'len2\',\n"
+"return the Adler-32 checksum of A and B concatenated.");
 
 #define ZLIB_ADLER32_COMBINE_METHODDEF    \
     {"adler32_combine", _PyCFunction_CAST(zlib_adler32_combine), METH_FASTCALL, zlib_adler32_combine__doc__},
@@ -1166,9 +1166,9 @@ PyDoc_STRVAR(zlib_crc32_combine__doc__,
 "  len2\n"
 "    Length of sequence B\n"
 "\n"
-"Given the CRC-32 checksum *crc1* of a sequence ``A`` and the\n"
-"CRC-32 checksum *crc2* of a sequence ``B`` of length *len2*,\n"
-"return the CRC-32 checksum of ``A`` and ``B`` concatenated.");
+"Given the CRC-32 checksum \'crc1\' of a sequence A and the\n"
+"CRC-32 checksum \'crc2\' of a sequence B of length \'len2\',\n"
+"return the CRC-32 checksum of A and B concatenated.");
 
 #define ZLIB_CRC32_COMBINE_METHODDEF    \
     {"crc32_combine", _PyCFunction_CAST(zlib_crc32_combine), METH_FASTCALL, zlib_crc32_combine__doc__},
@@ -1231,4 +1231,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=a903453b7d04f755 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ba385aa7547e2c47 input=a9049054013a1b77]*/
