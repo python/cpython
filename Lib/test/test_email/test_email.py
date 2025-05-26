@@ -389,7 +389,7 @@ class TestMessageAPI(TestEmailBase):
         msg = email.message_from_string("Content-Type: blarg; baz; boo\n")
         self.assertEqual(msg.get_param('baz'), '')
 
-    def test_continuation_sorting_no_typeerror(self):
+    def test_continuation_sorting_part_order(self):
         msg = email.message_from_string(
             "Content-Disposition: attachment; "
             "filename*=\"ignored\"; "
@@ -397,7 +397,15 @@ class TestMessageAPI(TestEmailBase):
             "filename*1*=\"bar.txt\"\n"
         )
         filename = msg.get_filename()
-        self.assertEqual(filename, 'foo bar.txtignored')
+        self.assertEqual(filename, 'foo bar.txt')
+    
+    def test_sorting_no_continuations(self):
+        msg = email.message_from_string(
+            "Content-Disposition: attachment; "
+            "filename*=\"bar.txt\"; "
+        )
+        filename = msg.get_filename()
+        self.assertEqual(filename, 'bar.txt')
 
     def test_missing_filename(self):
         msg = email.message_from_string("From: foo\n")
