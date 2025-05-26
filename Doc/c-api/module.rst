@@ -137,9 +137,15 @@ which export an initialization function), or compiled-in modules
 (where the initialization function is added using :c:func:`PyImport_AppendInittab`).
 See :ref:`building` or :ref:`extending-with-embedding` for details.
 
-The initialization function can either pass a module definition instance
-to :c:func:`PyModule_Create`, and return the resulting module object,
-or request "multi-phase initialization" by returning the definition struct itself.
+To perform ':ref:`multi-phase initialization <multi-phase-initialization>`'
+(:pep:`489`), the initialization function must return a pointer to the
+:c:type:`module definition struct <PyModuleDef>`.
+This allows Python to determine which capabilities the module supports *before*
+it is executed, as creation and initialization are split,
+similarly to the :py:meth:`!__new__` and :py:meth:`!__init__` on classes.
+
+The legacy method (prior to Python 3.5) to specify an extension module is
+':ref:`single-phase initialization <single-phase-initialization>`'.
 
 .. c:type:: PyModuleDef
 
@@ -189,7 +195,7 @@ or request "multi-phase initialization" by returning the definition struct itsel
 
       An array of slot definitions for multi-phase initialization, terminated by
       a ``{0, NULL}`` entry.
-      When using single-phase initialization, *m_slots* must be ``NULL``.
+      When using legacy single-phase initialization, *m_slots* must be ``NULL``.
 
       .. versionchanged:: 3.5
 
@@ -249,52 +255,22 @@ or request "multi-phase initialization" by returning the definition struct itsel
       .. versionchanged:: 3.9
          No longer called before the module state is allocated.
 
-Single-phase initialization
-...........................
-
-The module initialization function may create and return the module object
-directly. This is referred to as "single-phase initialization", and uses one
-of the following two module creation functions:
-
-.. c:function:: PyObject* PyModule_Create(PyModuleDef *def)
-
-   Create a new module object, given the definition in *def*.  This behaves
-   like :c:func:`PyModule_Create2` with *module_api_version* set to
-   :c:macro:`PYTHON_API_VERSION`.
-
-
-.. c:function:: PyObject* PyModule_Create2(PyModuleDef *def, int module_api_version)
-
-   Create a new module object, given the definition in *def*, assuming the
-   API version *module_api_version*.  If that version does not match the version
-   of the running interpreter, a :exc:`RuntimeWarning` is emitted.
-
-   Return ``NULL`` with an exception set on error.
-
-   .. note::
-
-      Most uses of this function should be using :c:func:`PyModule_Create`
-      instead; only use this if you are sure you need it.
-
-Before it is returned from in the initialization function, the resulting module
-object is typically populated using functions like :c:func:`PyModule_AddObjectRef`.
-
 .. _multi-phase-initialization:
 
 Multi-phase initialization
 ..........................
 
-An alternate way to specify extensions is to request "multi-phase initialization".
+The preferred method to specify extensions is to request "multi-phase initialization".
 Extension modules created this way behave more like Python modules: the
 initialization is split between the *creation phase*, when the module object
 is created, and the *execution phase*, when it is populated.
 The distinction is similar to the :py:meth:`!__new__` and :py:meth:`!__init__` methods
 of classes.
 
-Unlike modules created using single-phase initialization, these modules are not
-singletons: if the *sys.modules* entry is removed and the module is re-imported,
-a new module object is created, and the old module is subject to normal garbage
-collection -- as with Python modules.
+Unlike modules created using the legacy single-phase initialization mechanism,
+these modules are not singletons: if the *sys.modules* entry is removed and
+the module is re-imported, a new module object is created, and the old module
+is subject to normal garbage collection -- as with Python modules.
 By default, multiple modules created from the same definition should be
 independent: changes to one should not affect the others.
 This means that all state should be specific to the module object (using e.g.
@@ -447,6 +423,44 @@ The available slot types are:
    .. versionadded:: 3.13
 
 See :PEP:`489` for more details on multi-phase initialization.
+
+.. _single-phase-initialization:
+
+Single-phase initialization
+...........................
+
+.. attention::
+   Single-phase initialization is a legacy mechanism to initialize extension
+   modules, with known drawbacks and design flaws. Extension module authors
+   are encouraged to use multi-phase initialization instead.
+
+The module initialization function may create and return the module object
+directly. This is referred to as "single-phase initialization", and uses one
+of the following two module creation functions, returning the resulting
+module object:
+
+.. c:function:: PyObject* PyModule_Create(PyModuleDef *def)
+
+   Create a new module object, given the definition in *def*.  This behaves
+   like :c:func:`PyModule_Create2` with *module_api_version* set to
+   :c:macro:`PYTHON_API_VERSION`.
+
+
+.. c:function:: PyObject* PyModule_Create2(PyModuleDef *def, int module_api_version)
+
+   Create a new module object, given the definition in *def*, assuming the
+   API version *module_api_version*.  If that version does not match the version
+   of the running interpreter, a :exc:`RuntimeWarning` is emitted.
+
+   Return ``NULL`` with an exception set on error.
+
+   .. note::
+
+      Most uses of this function should be using :c:func:`PyModule_Create`
+      instead; only use this if you are sure you need it.
+
+Before it is returned from in the initialization function, the resulting module
+object is typically populated using functions like :c:func:`PyModule_AddObjectRef`.
 
 Low-level module creation functions
 ...................................
@@ -677,8 +691,8 @@ state:
    .. versionadded:: 3.13
 
 
-Module lookup
-^^^^^^^^^^^^^
+Module lookup (single-phase initialization)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Single-phase initialization creates singleton modules that can be looked up
 in the context of the current interpreter. This allows the module object to be
