@@ -1,0 +1,3 @@
+Fix :func:`ast.dump` with ``show_empty=True`` to properly display ``None``
+values for all AST node fields. Previously, some ``None`` values were not
+shown even when ``show_empty=True`` was specified. Patch by hunterhogan.
