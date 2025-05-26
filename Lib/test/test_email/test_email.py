@@ -398,7 +398,7 @@ class TestMessageAPI(TestEmailBase):
         )
         filename = msg.get_filename()
         self.assertEqual(filename, 'foo bar.txt')
-    
+
     def test_sorting_no_continuations(self):
         msg = email.message_from_string(
             "Content-Disposition: attachment; "
