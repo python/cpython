@@ -1,1 +1,0 @@
-:mod:`socket`: Fix code parsing AF_BLUETOOTH socket addresses.

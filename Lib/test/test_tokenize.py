@@ -1,6 +1,8 @@
 import contextlib
+import itertools
 import os
 import re
+import string
 import tempfile
 import token
 import tokenize
@@ -605,22 +607,6 @@ f'''__{
     OP         '}'           (6, 0) (6, 1)
     FSTRING_MIDDLE '__'          (6, 1) (6, 3)
     FSTRING_END "'''"         (6, 3) (6, 6)
-    """)
-        self.check_tokenize("""\
-f'__{
-    x:d
-}__'""", """\
-    FSTRING_START "f'"          (1, 0) (1, 2)
-    FSTRING_MIDDLE '__'          (1, 2) (1, 4)
-    OP         '{'           (1, 4) (1, 5)
-    NL         '\\n'          (1, 5) (1, 6)
-    NAME       'x'           (2, 4) (2, 5)
-    OP         ':'           (2, 5) (2, 6)
-    FSTRING_MIDDLE 'd'           (2, 6) (2, 7)
-    NL         '\\n'          (2, 7) (2, 8)
-    OP         '}'           (3, 0) (3, 1)
-    FSTRING_MIDDLE '__'          (3, 1) (3, 3)
-    FSTRING_END "'"           (3, 3) (3, 4)
     """)
 
         self.check_tokenize("""\
@@ -1991,6 +1977,10 @@ if 1:
         for case in cases:
             self.check_roundtrip(case)
 
+        self.check_roundtrip(r"t'{ {}}'")
+        self.check_roundtrip(r"t'{f'{ {}}'}{ {}}'")
+        self.check_roundtrip(r"f'{t'{ {}}'}{ {}}'")
+
 
     def test_continuation(self):
         # Balancing continuation
@@ -2471,21 +2461,6 @@ f'''__{
     RBRACE     '}'           (6, 0) (6, 1)
     FSTRING_MIDDLE '__'          (6, 1) (6, 3)
     FSTRING_END "'''"         (6, 3) (6, 6)
-    """)
-
-        self.check_tokenize("""\
-f'__{
-    x:d
-}__'""", """\
-    FSTRING_START "f'"          (1, 0) (1, 2)
-    FSTRING_MIDDLE '__'          (1, 2) (1, 4)
-    LBRACE     '{'           (1, 4) (1, 5)
-    NAME       'x'           (2, 4) (2, 5)
-    COLON      ':'           (2, 5) (2, 6)
-    FSTRING_MIDDLE 'd'           (2, 6) (2, 7)
-    RBRACE     '}'           (3, 0) (3, 1)
-    FSTRING_MIDDLE '__'          (3, 1) (3, 3)
-    FSTRING_END "'"           (3, 3) (3, 4)
     """)
 
     def test_function(self):
@@ -3041,6 +3016,10 @@ async def f():
             "'''sdfsdf''",
             "("*1000+"a"+")"*1000,
             "]",
+            """\
+            f'__{
+                x:d
+            }__'""",
         ]:
             with self.subTest(case=case):
                 self.assertRaises(tokenize.TokenError, get_tokens, case)
@@ -3259,6 +3238,60 @@ class CommandLineTest(unittest.TestCase):
         '''
         for flag in ['-e', '--exact']:
             self.check_output(source, expect, flag)
+
+
+class StringPrefixTest(unittest.TestCase):
+    def test_prefixes(self):
+        # Get the list of defined string prefixes.  I don't see an
+        # obvious documented way of doing this, but probably the best
+        # thing is to split apart tokenize.StringPrefix.
+
+        # Make sure StringPrefix begins and ends in parens.
+        self.assertEqual(tokenize.StringPrefix[0], '(')
+        self.assertEqual(tokenize.StringPrefix[-1], ')')
+
+        # Then split apart everything else by '|'.
+        defined_prefixes = set(tokenize.StringPrefix[1:-1].split('|'))
+
+        # Now compute the actual string prefixes, by exec-ing all
+        # valid prefix combinations, followed by an empty string.
+
+        # Try all prefix lengths until we find a length that has zero
+        # valid prefixes.  This will miss the case where for example
+        # there are no valid 3 character prefixes, but there are valid
+        # 4 character prefixes.  That seems extremely unlikely.
+
+        # Note that the empty prefix is being included, because length
+        # starts at 0.  That's expected, since StringPrefix includes
+        # the empty prefix.
+
+        valid_prefixes = set()
+        for length in itertools.count():
+            num_at_this_length = 0
+            for prefix in (
+                "".join(l) for l in list(itertools.combinations(string.ascii_lowercase, length))
+            ):
+                for t in itertools.permutations(prefix):
+                    for u in itertools.product(*[(c, c.upper()) for c in t]):
+                        p = ''.join(u)
+                        if p == "not":
+                            # 'not' can never be a string prefix,
+                            # because it's a valid expression: not ""
+                            continue
+                        try:
+                            eval(f'{p}""')
+
+                            # No syntax error, so p is a valid string
+                            # prefix.
+
+                            valid_prefixes.add(p)
+                            num_at_this_length += 1
+                        except SyntaxError:
+                            pass
+            if num_at_this_length == 0:
+                break
+
+        self.assertEqual(defined_prefixes, valid_prefixes)
 
 
 if __name__ == "__main__":

@@ -246,9 +246,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 3.0.15",
-              url="https://github.com/openssl/openssl/releases/download/openssl-3.0.15/openssl-3.0.15.tar.gz",
-              checksum='23c666d0edf20f14249b3d8f0368acaee9ab585b09e1de82107c66e1f3ec9533',
+              name="OpenSSL 3.0.16",
+              url="https://github.com/openssl/openssl/releases/download/openssl-3.0.16/openssl-3.0.16.tar.gz",
+              checksum='57e03c50feab5d31b152af2b764f10379aecd8ee92f16c985983ce4a99f7ef86',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -264,10 +264,10 @@ def library_recipes():
             tk_patches = ['backport_gh71383_fix.patch', 'tk868_on_10_8_10_9.patch', 'backport_gh110950_fix.patch']
 
         else:
-            tcl_tk_ver='8.6.15'
-            tcl_checksum='861e159753f2e2fbd6ec1484103715b0be56be3357522b858d3cbb5f893ffef1'
+            tcl_tk_ver='8.6.16'
+            tcl_checksum='91cb8fa61771c63c262efb553059b7c7ad6757afa5857af6265e4b0bdc2a14a5'
 
-            tk_checksum='550969f35379f952b3020f3ab7b9dd5bfd11c1ef7c9b7c6a75f5c49aca793fec'
+            tk_checksum='be9f94d3575d4b3099d84bc3c10de8994df2d7aa405208173c709cc404a7e5fe'
             tk_patches = []
 
 
