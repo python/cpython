@@ -892,6 +892,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(data));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(database));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(day));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(debug));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(decode));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(decoder));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(default));
