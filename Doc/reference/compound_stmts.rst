@@ -327,6 +327,10 @@ stored in the :mod:`sys` module is reset to its previous value::
    None
 
 
+.. versionchanged:: 3.14
+   Parentheses are no longer required around a tuple of exception types.
+
+
 .. index::
    pair: keyword; except_star
 
@@ -389,6 +393,8 @@ in the same :keyword:`try`.
 :keyword:`break`, :keyword:`continue` and :keyword:`return`
 cannot appear in an :keyword:`!except*` clause.
 
+.. versionchanged:: 3.14
+   Parentheses are no longer required around a tuple of exception types.
 
 .. index::
    pair: keyword; else
