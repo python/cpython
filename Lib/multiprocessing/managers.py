@@ -1234,7 +1234,7 @@ ArrayProxy = MakeProxyType('ArrayProxy', (
 
 BasePoolProxy = MakeProxyType('PoolProxy', (
     'apply', 'apply_async', 'close', 'imap', 'imap_unordered', 'join',
-    'map', 'map_async', 'starmap', 'starmap_async', 'terminate', '_check_error'
+    'map', 'map_async', 'starmap', 'starmap_async', 'terminate',
     ))
 BasePoolProxy._method_to_typeid_ = {
     'apply_async': 'AsyncResult',
@@ -1248,7 +1248,6 @@ class PoolProxy(BasePoolProxy):
         return self
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.terminate()
-        self._check_error(exc_val)
 
 #
 # Definition of SyncManager

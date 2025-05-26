@@ -7,7 +7,7 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
-__all__ = ['BrokenPoolError', 'CallbackError', 'Pool', 'ThreadPool']
+__all__ = ['Pool', 'ThreadPool']
 
 #
 # Imports
@@ -68,14 +68,6 @@ class ExceptionWithTraceback:
         self.tb = '\n"""\n%s"""' % tb
     def __reduce__(self):
         return rebuild_exc, (self.exc, self.tb)
-
-class BrokenPoolError(ExceptionGroup):
-    def __init__(self, msg, exc):
-        super().__init__(msg, exc)
-
-class CallbackError(ExceptionGroup):
-    def __init__(self, msg, exc):
-        super().__init__(msg, exc)
 
 def rebuild_exc(exc, tb):
     exc.__cause__ = RemoteTraceback(tb)
@@ -206,7 +198,6 @@ class Pool(object):
         self._maxtasksperchild = maxtasksperchild
         self._initializer = initializer
         self._initargs = initargs
-        self._errors = []
 
         if processes is None:
             processes = os.process_cpu_count() or 1
@@ -358,17 +349,8 @@ class Pool(object):
         self._quick_get = self._outqueue._reader.recv
 
     def _check_running(self):
-        self._check_error()
         if self._state != RUN:
             raise ValueError("Pool not running")
-
-    def _check_error(self, exc=None):
-        if self._errors:
-            errs = [CallbackError("callback raised", errs) for errs in self._errors]
-            if exc is not None and not isinstance(exc, CallbackError) \
-                               and not isinstance(exc, BrokenPoolError):
-                errs.append(exc)
-            raise BrokenPoolError("Callback(s) failed", errs) from None
 
     def apply(self, func, args=(), kwds={}):
         '''
@@ -755,11 +737,6 @@ class Pool(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.terminate()
-        self._check_error(exc_val)
-
-    def _error(self, error):
-        util.debug('callback error: %s', error)
-        self._errors.append(error)
 
 #
 # Class whose instances are returned by `Pool.apply_async()`
@@ -774,7 +751,6 @@ class ApplyResult(object):
         self._cache = pool._cache
         self._callback = callback
         self._error_callback = error_callback
-        self._cb_errors = []
         self._cache[self._job] = self
 
     def ready(self):
@@ -792,9 +768,7 @@ class ApplyResult(object):
         self.wait(timeout)
         if not self.ready():
             raise TimeoutError
-        if self._cb_errors:
-            raise CallbackError("callback raised", self._cb_errors)
-        elif self._success:
+        if self._success:
             return self._value
         else:
             raise self._value
@@ -802,20 +776,21 @@ class ApplyResult(object):
     def _set(self, i, obj):
         self._success, self._value = obj
         if self._callback and self._success:
-            try:
-                self._callback(self._value)
-            except Exception as e:
-                self._cb_errors = (e,)
-                self._pool._error(self._cb_errors)
+            self._handle_exceptions(self._callback, self._value)
         if self._error_callback and not self._success:
-            try:
-                self._error_callback(self._value)
-            except Exception as e:
-                self._cb_errors = (e, self._value)
-                self._pool._error(self._cb_errors)
+            self._handle_exceptions(self._error_callback, self._value)
         self._event.set()
         del self._cache[self._job]
         self._pool = None
+
+    @staticmethod
+    def _handle_exceptions(callback, args):
+        try:
+            return callback(args)
+        except Exception as e:
+            args = threading.ExceptHookArgs([type(e), e, e.__traceback__, None])
+            threading.excepthook(args)
+            del args
 
     __class_getitem__ = classmethod(types.GenericAlias)
 
@@ -847,11 +822,7 @@ class MapResult(ApplyResult):
             self._value[i*self._chunksize:(i+1)*self._chunksize] = result
             if self._number_left == 0:
                 if self._callback:
-                    try:
-                        self._callback(self._value)
-                    except Exception as e:
-                        self._cb_errors = (e,)
-                        self._pool._error(self._cb_errors)
+                    self._handle_exceptions(self._callback, self._value)
                 del self._cache[self._job]
                 self._event.set()
                 self._pool = None
@@ -863,11 +834,7 @@ class MapResult(ApplyResult):
             if self._number_left == 0:
                 # only consider the result ready once all jobs are done
                 if self._error_callback:
-                    try:
-                        self._error_callback(self._value)
-                    except Exception as e:
-                        self._cb_errors = (e, self._value)
-                        self._pool._error(self._cb_errors)
+                    self._handle_exceptions(self._error_callback, self._value)
                 del self._cache[self._job]
                 self._event.set()
                 self._pool = None

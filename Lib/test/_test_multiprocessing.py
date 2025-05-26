@@ -54,7 +54,6 @@ import multiprocessing.managers
 import multiprocessing.pool
 import multiprocessing.queues
 from multiprocessing.connection import wait
-from multiprocessing.pool import BrokenPoolError, CallbackError
 
 from multiprocessing import util
 
@@ -3173,122 +3172,8 @@ class _TestPool(BaseTestCase):
             pool = None
             support.gc_collect()
 
-    def test_callback_errors(self):
-        def _apply(pool, target, **kwargs):
-            return pool.apply_async(target, **kwargs)
-
-        def _map(pool, target, **kwargs):
-            return pool.map_async(target, range(5), **kwargs)
-
-        for func in [_apply, _map]:
-            with self.subTest(func=func):
-
-                # Fail upon trying to reuse a broken pool after callback failure:
-                # - BrokenPoolError containing:
-                #   - CallbackError containing:
-                #     - Error thrown from the callback
-                with self.assertRaises(BrokenPoolError) as pool_ctx:
-                    with self.Pool(1) as pool:
-                        res = func(pool, noop, callback=raising)
-                        with self.assertRaises(CallbackError) as res_ctx:
-                            res.get()
-                    self._check_subexceptions(res_ctx.exception, [KeyError])
-                    pool.apply_async(noop)
-                self._check_subexceptions(pool_ctx.exception, [CallbackError])
-                self._check_subexceptions(pool_ctx.exception.exceptions[0], [KeyError])
-
-                # Fail upon trying to reuse a broken pool after error callback failures:
-                # - BrokenPoolError containing:
-                #   - CallbackError containing:
-                #     - Error thrown from the callback
-                #     - Original error
-                with self.assertRaises(BrokenPoolError) as pool_ctx:
-                    with self.Pool(1) as pool:
-                        res = func(pool, raising2, error_callback=raising)
-                        with self.assertRaises(CallbackError) as res_ctx:
-                            res.get()
-                        self._check_subexceptions(res_ctx.exception,
-                                                  [KeyError, IndexError])
-                    pool.apply_async(noop)
-                self._check_subexceptions(pool_ctx.exception, [CallbackError])
-                self._check_subexceptions(pool_ctx.exception.exceptions[0],
-                                          [KeyError, IndexError])
-
-                # Exiting the context manager with a "normal" error and a failed callback
-                # - BrokenPoolError containing:
-                #   - CallbackError containing:
-                #     - Error thrown from the callback
-                #   - Exception that caused the context manager to exit
-                with self.assertRaises(BrokenPoolError) as pool_ctx:
-                    with self.Pool(1) as pool:
-                        res = func(pool, noop, callback=raising)
-                        with self.assertRaises(CallbackError) as res_ctx:
-                            res.get()
-                        raise IndexError()
-                self._check_subexceptions(pool_ctx.exception,
-                                          [CallbackError, IndexError])
-
-                # Exiting the context manager directly with a callback failure error
-                # - BrokenPoolError containing:
-                #   - CallbackError instance containing:
-                #     - Error thrown from the callback
-                # Note that only one instance of the error is present: it was
-                # *not* added again as it was above, since it is a CallbackError
-                with self.assertRaises(BrokenPoolError) as pool_ctx:
-                    with self.Pool(1) as pool:
-                        func(pool, noop, callback=raising).get()
-                self._check_subexceptions(pool_ctx.exception, [CallbackError])
-                self._check_subexceptions(pool_ctx.exception.exceptions[0], [KeyError])
-
-                # Exiting the context manager directly with a broken pool error
-                # - BrokenPoolError containing:
-                #   - CallbackError instance containing:
-                #     - Error thrown from the callback
-                # Note that only one instance of the error is present: it was
-                # *not* added again as it was above, since it is a BrokenPoolError
-                with self.assertRaises(BrokenPoolError) as pool_ctx:
-                    with self.Pool(1) as pool:
-                        try:
-                            func(pool, noop, callback=raising).get()
-                        except CallbackError:
-                            pass
-                        func(pool, noop, callback=raising)
-                self._check_subexceptions(pool_ctx.exception, [CallbackError])
-                self._check_subexceptions(pool_ctx.exception.exceptions[0], [KeyError])
-
-        # Skip this test for process-based parallelism as sharing the barrier will fail
-        if self.TYPE != 'processes':
-            with self.subTest(name="Multiple callback failures"):
-                # Fail with 3x callback failure:
-                # - BrokenPoolError containing:
-                #   - 3x CallbackError containing:
-                #     - Error thrown from the callback
-                with self.assertRaises(BrokenPoolError) as pool_ctx:
-                    kwds = {'barrier': self.Barrier(3)}
-                    with self.Pool(3) as pool:
-                        res = [pool.apply_async(noop, kwds=kwds, callback=raising)
-                               for _ in range(3)]
-                        for r in res:
-                            with self.assertRaises(CallbackError) as res_ctx:
-                                r.get()
-                self._check_subexceptions(pool_ctx.exception, [CallbackError] * 3)
-                for se in pool_ctx.exception.exceptions:
-                    self._check_subexceptions(se, [KeyError])
-
-    def _check_subexceptions(self, group, sub_types):
-        self.assertEqual(len(group.exceptions), len(sub_types))
-        for sub_exc, sub_type in zip(group.exceptions, sub_types):
-            self.assertIsInstance(sub_exc, sub_type)
-
-def noop(*args, barrier=None):
-    if barrier:
-        barrier.wait()
-
-def raising(*args):
+def raising():
     raise KeyError("key")
-
-def raising2(*args):
-    raise IndexError()
 
 def unpickleable_result():
     return lambda: 42
@@ -7080,8 +6965,7 @@ class ManagerMixin(BaseMixin):
                                   f"{multiprocessing.active_children()} "
                                   f"active children after {dt:.1f} seconds")
 
-        # Garbage collect to ensure otherwise unreferenced cycles are cleaned up
-        support.gc_collect()
+        gc.collect()                       # do garbage collection
         if cls.manager._number_of_objects() != 0:
             # This is not really an error since some tests do not
             # ensure that all processes which hold a reference to a
