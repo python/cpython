@@ -56,7 +56,7 @@ _zstd_set_c_level(ZstdCompressor *self, int level)
     int max_level = ZSTD_maxCLevel();
     if (level < min_level || level > max_level) {
         PyErr_Format(PyExc_ValueError,
-        "%d not in valid range %d <= compression level <= %d.",
+        "%d not in valid range %d <= compression level <= %d",
             level, min_level, max_level);
         return -1;
     }
@@ -111,6 +111,7 @@ _zstd_set_c_parameters(ZstdCompressor *self, PyObject *options)
         int key_v = PyLong_AsInt(key);
         Py_DECREF(key);
         if (key_v == -1 && PyErr_Occurred()) {
+            Py_DECREF(value);
             return -1;
         }
 
@@ -143,7 +144,7 @@ _zstd_set_c_parameters(ZstdCompressor *self, PyObject *options)
 
         /* Check error */
         if (ZSTD_isError(zstd_ret)) {
-            set_parameter_error(mod_state, 1, key_v, value_v);
+            set_parameter_error(1, key_v, value_v);
             return -1;
         }
     }
@@ -377,7 +378,7 @@ _zstd_ZstdCompressor_new_impl(PyTypeObject *type, PyObject *level,
         if (level_v == -1 && PyErr_Occurred()) {
             if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
                 PyErr_Format(PyExc_ValueError,
-                    "compression level not in valid range %d <= level <= %d.",
+                    "compression level not in valid range %d <= level <= %d",
                     ZSTD_minCLevel(), ZSTD_maxCLevel());
             }
             goto error;

@@ -131,7 +131,7 @@ _zstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
 
         /* Check error */
         if (ZSTD_isError(zstd_ret)) {
-            set_parameter_error(mod_state, 0, key_v, value_v);
+            set_parameter_error(0, key_v, value_v);
             return -1;
         }
     }
