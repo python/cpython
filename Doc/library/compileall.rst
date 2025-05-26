@@ -62,6 +62,13 @@ compile Python sources.
    recorded in the ``.pyc`` files.
    Cannot be combined with ``-d``.
 
+.. warning::
+   Removing the prefix makes paths relative to it.
+
+.. note::
+   - ``-s`` and ``-p`` can be used simultaneously.
+   - ``-p /`` can be used to make the path absolute.
+
 .. option:: -x regex
 
    regex is used to search the full path to each file considered for
