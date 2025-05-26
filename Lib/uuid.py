@@ -633,22 +633,24 @@ def _netstat_getnode():
 try:
     import _uuid
     _generate_time_safe = getattr(_uuid, "generate_time_safe", None)
+    _has_stable_extractable_node = _uuid.has_stable_extractable_node
     _UuidCreate = getattr(_uuid, "UuidCreate", None)
 except ImportError:
     _uuid = None
     _generate_time_safe = None
+    _has_stable_extractable_node = False
     _UuidCreate = None
 
 
 def _unix_getnode():
     """Get the hardware address on Unix using the _uuid extension module."""
-    if _generate_time_safe:
+    if _generate_time_safe and _has_stable_extractable_node:
         uuid_time, _ = _generate_time_safe()
         return UUID(bytes=uuid_time).node
 
 def _windll_getnode():
     """Get the hardware address on Windows using the _uuid extension module."""
-    if _UuidCreate:
+    if _UuidCreate and _has_stable_extractable_node:
         uuid_bytes = _UuidCreate()
         return UUID(bytes_le=uuid_bytes).node
 
