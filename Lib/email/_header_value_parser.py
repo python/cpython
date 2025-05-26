@@ -2846,8 +2846,8 @@ def _refold_parse_tree(parse_tree, *, policy):
                 want_encoding = False
             else:
                 raise errors.InvalidMailboxError(
-                    "Non-ASCII address requires policy with utf8=True:"
-                    " '{}'".format(part)
+                    f"Non-ASCII mailbox '{part}' is invalid"
+                    " under current policy setting (utf8=False)"
                 )
 
         if want_encoding and not wrap_as_ew_blocked:

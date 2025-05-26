@@ -306,7 +306,7 @@ class TestGeneratorBase:
                 msg['To'] = address
                 addr_spec = msg['To'].addresses[0].addr_spec
                 expected_error = (
-                    fr"(?i)(?=.*non-ascii)(?=.*utf8.*True)(?=.*{re.escape(addr_spec)})"
+                    fr"(?i)(?=.*non-ascii)(?=.*{re.escape(addr_spec)})(?=.*policy.*utf8)"
                 )
                 with self.assertRaisesRegex(
                     email.errors.InvalidMailboxError, expected_error
