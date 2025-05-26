@@ -53,8 +53,8 @@ The available exception and functions in this module are:
    return the Adler-32 checksum of ``A`` and ``B`` concatenated.
 
    This function is typically useful to combine Adler-32 checksums
-   that were concurrently computed. To compute checksums from a stream
-   of chunks, use :func:`adler32` sequentially instead.
+   that were concurrently computed. To compute checksums sequentially, use
+   :func:`adler32` with the running checksum as the ``value`` argument.
 
    .. versionadded:: next
 
@@ -159,8 +159,8 @@ The available exception and functions in this module are:
    return the CRC-32 checksum of ``A`` and ``B`` concatenated.
 
    This function is typically useful to combine CRC-32 checksums
-   that were concurrently computed. To compute checksums from a
-   stream of chunks, use :func:`crc32` sequentially instead.
+   that were concurrently computed. To compute checksums sequentially, use
+   :func:`crc32` with the running checksum as the ``value`` argument.
 
    .. versionadded:: next
 
