@@ -417,8 +417,9 @@ def decode_params(params):
         for name, continuations in rfc2231_params.items():
             value = []
             extended = False
-            # Sort by number
-            continuations.sort()
+            # Sort by number, treating None as greater than any integer.
+            # In Python 3, None cannot be compared to int, so use a tuple key.
+            continuations.sort(key=lambda x: (x[0] is None, x[0]))
             # And now append all values in numerical order, converting
             # %-encodings for the encoded segments.  If any of the
             # continuation names ends in a *, then the entire string, after

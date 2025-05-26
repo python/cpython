@@ -1,0 +1,2 @@
+:mod:`email`: Fix TypeError in email.utils.decode_params() when sorting RFC
+2231 continuations on Python 3.
