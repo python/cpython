@@ -1,0 +1,4 @@
+Fixed :class:`ast.MatchStar` to remove incorrect class-level default value
+for the ``name`` field.
+Fixed :func:`ast.dump` to show the ``name`` field of
+:class:`ast.MatchStar` when the value is ``None``.
