@@ -49,8 +49,8 @@ _zstd_ZstdDict_new_impl(PyTypeObject *type, Py_buffer *dict_content,
     /* All dictionaries must be at least 8 bytes */
     if (dict_content->len < 8) {
         PyErr_SetString(PyExc_ValueError,
-                        "Zstandard dictionary content must be longer "
-                        "than eight bytes.");
+                        "Zstandard dictionary content too short "
+                        "(must have at least eight bytes)");
         return NULL;
     }
 
@@ -89,7 +89,7 @@ _zstd_ZstdDict_new_impl(PyTypeObject *type, Py_buffer *dict_content,
 
     PyObject_GC_Track(self);
 
-    return (PyObject*)self;
+    return (PyObject *)self;
 
 error:
     Py_XDECREF(self);
