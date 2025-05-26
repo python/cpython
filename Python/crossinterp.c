@@ -908,8 +908,15 @@ get_script_xidata(PyThreadState *tstate, PyObject *obj, int pure,
             }
             goto error;
         }
+#ifdef Py_GIL_DISABLED
+        // Don't immortalize code constants to avoid memory leaks.
+        ((_PyThreadStateImpl *)tstate)->suppress_co_const_immortalization++;
+#endif
         code = Py_CompileStringExFlags(
                     script, filename, Py_file_input, &cf, optimize);
+#ifdef Py_GIL_DISABLED
+        ((_PyThreadStateImpl *)tstate)->suppress_co_const_immortalization--;
+#endif
         Py_XDECREF(ref);
         if (code == NULL) {
             goto error;
