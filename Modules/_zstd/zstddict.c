@@ -83,7 +83,7 @@ _zstd_ZstdDict_new_impl(PyTypeObject *type, Py_buffer *dict_content,
 
     /* Check validity for ordinary dictionary */
     if (!is_raw && self->dict_id == 0) {
-        PyErr_SetString(PyExc_ValueError, "invalid Zstandard dictionary.");
+        PyErr_SetString(PyExc_ValueError, "invalid Zstandard dictionary");
         goto error;
     }
 
