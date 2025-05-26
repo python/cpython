@@ -478,8 +478,8 @@ This metadata finder search defaults to ``sys.path``, but varies slightly in how
 
 .. class:: DistributionFinder
 
-   A :class:`~abc.MetaPathFinder` subclass capable of discovering installed
-   distributions.
+   A :class:`~importlib.abc.MetaPathFinder` subclass capable of discovering
+   installed distributions.
 
    Custom providers should implement this interface in order to
    supply metadata.
