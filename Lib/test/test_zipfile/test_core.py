@@ -1415,7 +1415,8 @@ class AbstractRemoveTests(RepackHelperMixin):
                     with self.assertRaises(KeyError):
                         zh.getinfo(self.test_files[i][0])
 
-                    # make sure the zip file is still valid
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
                     self.assertIsNone(zh.testzip())
 
     def test_remove_by_zinfo(self):
@@ -1435,7 +1436,8 @@ class AbstractRemoveTests(RepackHelperMixin):
                     with self.assertRaises(KeyError):
                         zh.getinfo(self.test_files[i][0])
 
-                    # make sure the zip file is still valid
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
                     self.assertIsNone(zh.testzip())
 
     def test_remove_by_name_nonexist(self):
@@ -1477,7 +1479,8 @@ class AbstractRemoveTests(RepackHelperMixin):
                     zinfos[0],
                 )
 
-                # make sure the zip file is still valid
+            # make sure the zip file is still valid
+            with zipfile.ZipFile(TESTFN) as zh:
                 self.assertIsNone(zh.testzip())
 
             zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
@@ -1495,7 +1498,8 @@ class AbstractRemoveTests(RepackHelperMixin):
                 with self.assertRaises(KeyError):
                     zh.getinfo('file.txt')
 
-                # make sure the zip file is still valid
+            # make sure the zip file is still valid
+            with zipfile.ZipFile(TESTFN) as zh:
                 self.assertIsNone(zh.testzip())
 
     def test_remove_by_zinfo_duplicated(self):
@@ -1525,7 +1529,8 @@ class AbstractRemoveTests(RepackHelperMixin):
                     zinfos[1],
                 )
 
-                # make sure the zip file is still valid
+            # make sure the zip file is still valid
+            with zipfile.ZipFile(TESTFN) as zh:
                 self.assertIsNone(zh.testzip())
 
             zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
@@ -1544,7 +1549,8 @@ class AbstractRemoveTests(RepackHelperMixin):
                     zinfos[0],
                 )
 
-                # make sure the zip file is still valid
+            # make sure the zip file is still valid
+            with zipfile.ZipFile(TESTFN) as zh:
                 self.assertIsNone(zh.testzip())
 
             zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
@@ -1563,7 +1569,8 @@ class AbstractRemoveTests(RepackHelperMixin):
                 with self.assertRaises(KeyError):
                     zh.getinfo('file.txt')
 
-                # make sure the zip file is still valid
+            # make sure the zip file is still valid
+            with zipfile.ZipFile(TESTFN) as zh:
                 self.assertIsNone(zh.testzip())
 
     def test_remove_zip64(self):
@@ -1583,8 +1590,9 @@ class AbstractRemoveTests(RepackHelperMixin):
                     with self.assertRaises(KeyError):
                         zh.getinfo(self.test_files[i][0])
 
-                    # make sure the zip file is still valid
-                    self.assertIsNone(zh.testzip())
+            # make sure the zip file is still valid
+            with zipfile.ZipFile(TESTFN) as zh:
+                self.assertIsNone(zh.testzip())
 
     def test_remove_closed(self):
         self._prepare_zip_from_test_files(TESTFN, self.test_files)
@@ -1624,7 +1632,8 @@ class AbstractRemoveTests(RepackHelperMixin):
             with self.assertRaises(KeyError):
                 zh.getinfo(self.test_files[0][0])
 
-            # make sure the zip file is still valid
+        # make sure the zip file is still valid
+        with zipfile.ZipFile(TESTFN) as zh:
             self.assertIsNone(zh.testzip())
 
     def test_remove_mode_x(self):
@@ -1646,7 +1655,8 @@ class AbstractRemoveTests(RepackHelperMixin):
             with self.assertRaises(KeyError):
                 zh.getinfo(self.test_files[0][0])
 
-            # make sure the zip file is still valid
+        # make sure the zip file is still valid
+        with zipfile.ZipFile(TESTFN) as zh:
             self.assertIsNone(zh.testzip())
 
 class StoredRemoveTests(AbstractRemoveTests, unittest.TestCase):
@@ -1701,11 +1711,12 @@ class AbstractRepackTests(RepackHelperMixin):
                         expected_zinfos,
                     )
 
-                    # make sure the zip file is still valid
-                    self.assertIsNone(zh.testzip())
-
                 # check file size
                 self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
 
     def test_repack_bytes_before_first_file(self):
         """Should preserve random bytes before the first recorded local file entry."""
@@ -1733,11 +1744,12 @@ class AbstractRepackTests(RepackHelperMixin):
                         expected_zinfos,
                     )
 
-                    # make sure the zip file is still valid
-                    self.assertIsNone(zh.testzip())
-
                 # check file size
                 self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
 
     def test_repack_magic_before_first_file(self):
         """Should preserve random signature bytes not forming a valid file entry
@@ -1766,11 +1778,12 @@ class AbstractRepackTests(RepackHelperMixin):
                         expected_zinfos,
                     )
 
-                    # make sure the zip file is still valid
-                    self.assertIsNone(zh.testzip())
-
                 # check file size
                 self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
 
     def test_repack_file_entry_before_first_file(self):
         """Should preserve seemingly valid file entries not forming consecutive
@@ -1811,11 +1824,12 @@ class AbstractRepackTests(RepackHelperMixin):
                         expected_zinfos,
                     )
 
-                    # make sure the zip file is still valid
-                    self.assertIsNone(zh.testzip())
-
                 # check file size
                 self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
 
     def test_repack_bytes_between_files(self):
         """Should remove bytes between local file entries."""
@@ -1843,11 +1857,12 @@ class AbstractRepackTests(RepackHelperMixin):
                         expected_zinfos,
                     )
 
-                    # make sure the zip file is still valid
-                    self.assertIsNone(zh.testzip())
-
                 # check file size
                 self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+            # make sure the zip file is still valid
+            with zipfile.ZipFile(TESTFN) as zh:
+                self.assertIsNone(zh.testzip())
 
     def test_repack_zip64(self):
         """Should correctly handle file entries with zip64."""
@@ -1871,11 +1886,12 @@ class AbstractRepackTests(RepackHelperMixin):
                         expected_zinfos,
                     )
 
-                    # make sure the zip file is still valid
-                    self.assertIsNone(zh.testzip())
-
                 # check file size
                 self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
 
     def test_repack_data_descriptor(self):
         """Should correctly handle file entries using data descriptor."""
@@ -1905,11 +1921,12 @@ class AbstractRepackTests(RepackHelperMixin):
                         expected_zinfos,
                     )
 
-                    # make sure the zip file is still valid
-                    self.assertIsNone(zh.testzip())
-
                 # check file size
                 self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
 
     def test_repack_data_descriptor_and_zip64(self):
         """Should correctly handle file entries using data descriptor and zip64."""
@@ -1939,11 +1956,12 @@ class AbstractRepackTests(RepackHelperMixin):
                         expected_zinfos,
                     )
 
-                    # make sure the zip file is still valid
-                    self.assertIsNone(zh.testzip())
-
                 # check file size
                 self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
 
     def test_repack_data_descriptor_no_sig(self):
         """Should correctly handle file entries using data descriptor without signature."""
@@ -1975,11 +1993,12 @@ class AbstractRepackTests(RepackHelperMixin):
                         expected_zinfos,
                     )
 
-                    # make sure the zip file is still valid
-                    self.assertIsNone(zh.testzip())
-
                 # check file size
                 self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
 
     def test_repack_data_descriptor_no_sig_strict(self):
         """Should skip data descriptor without signature when `strict_descriptor` is set."""
@@ -2014,11 +2033,12 @@ class AbstractRepackTests(RepackHelperMixin):
                         expected_zinfos,
                     )
 
-                    # make sure the zip file is still valid
-                    self.assertIsNone(zh.testzip())
-
                 # check file size
                 self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
 
     def test_repack_data_descriptor_no_sig_and_zip64(self):
         """Should correctly handle file entries using data descriptor without signature and zip64."""
@@ -2050,11 +2070,12 @@ class AbstractRepackTests(RepackHelperMixin):
                         expected_zinfos,
                     )
 
-                    # make sure the zip file is still valid
-                    self.assertIsNone(zh.testzip())
-
                 # check file size
                 self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
 
     def test_repack_overlapping_blocks(self):
         for ii in ([0], [1], [2]):
