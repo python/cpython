@@ -296,7 +296,12 @@ instance must be initialized with the following function:
    .. versionadded:: 3.5
 
 The *m_slots* member of the module definition must point to an array of
-``PyModuleDef_Slot`` structures:
+:c:type:`PyModuleDef_Slot` structures, terminated by a slot with id 0.
+
+See :PEP:`489` for more details on multi-phase initialization.
+
+Module slots
+............
 
 .. c:type:: PyModuleDef_Slot
 
@@ -309,8 +314,6 @@ The *m_slots* member of the module definition must point to an array of
       Value of the slot, whose meaning depends on the slot ID.
 
    .. versionadded:: 3.5
-
-The *m_slots* array must be terminated by a slot with id 0.
 
 The available slot types are:
 
@@ -421,8 +424,6 @@ The available slot types are:
    ``Py_MOD_GIL_USED``.
 
    .. versionadded:: 3.13
-
-See :PEP:`489` for more details on multi-phase initialization.
 
 .. _single-phase-initialization:
 
