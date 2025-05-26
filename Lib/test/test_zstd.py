@@ -12,7 +12,6 @@ import threading
 from test.support.import_helper import import_module
 from test.support import threading_helper
 from test.support import _1M
-from test.support import Py_GIL_DISABLED
 
 _zstd = import_module("_zstd")
 zstd = import_module("compression.zstd")
