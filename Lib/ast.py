@@ -145,9 +145,11 @@ def dump(
                     keywords = True
                     continue
                 if value is None and getattr(cls, name, ...) is None:
+                    if show_empty:
+                        args.append('%s=%s' % (name, value))
                     keywords = True
                     continue
-                if (
+                elif (
                     not show_empty
                     and (value is None or value == [])
                     # Special cases:
