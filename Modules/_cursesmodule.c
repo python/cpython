@@ -1659,7 +1659,7 @@ _curses_window_getbkgd_impl(PyCursesWindowObject *self)
     return (long) getbkgd(self->win);
 }
 
-static void
+static PyObject *
 curses_check_signals_on_input_error(PyCursesWindowObject *self,
                                     const char *curses_funcname,
                                     const char *python_funcname)
@@ -1670,6 +1670,7 @@ curses_check_signals_on_input_error(PyCursesWindowObject *self,
         PyErr_Format(state->error, "%s() (called by %s()): no input",
                      curses_funcname, python_funcname);
     }
+    return NULL;
 }
 
 /*[clinic input]
@@ -1746,8 +1747,7 @@ _curses_window_getkey_impl(PyCursesWindowObject *self, int group_right_1,
     if (rtn == ERR) {
         /* wgetch() returns ERR in nodelay mode */
         const char *funcname = group_right_1 ? "mvwgetch" : "wgetch";
-        curses_check_signals_on_input_error(self, funcname, "getkey");
-        return NULL;
+        return curses_check_signals_on_input_error(self, funcname, "getkey");
     } else if (rtn <= 255) {
 #ifdef NCURSES_VERSION_MAJOR
 #if NCURSES_VERSION_MAJOR*100+NCURSES_VERSION_MINOR <= 507
@@ -1802,8 +1802,7 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
     if (ct == ERR) {
         /* wget_wch() returns ERR in nodelay mode */
         const char *funcname = group_right_1 ? "mvwget_wch" : "wget_wch";
-        curses_check_signals_on_input_error(self, funcname, "get_wch");
-        return NULL;
+        return curses_check_signals_on_input_error(self, funcname, "get_wch");
     }
     if (ct == KEY_CODE_YES)
         return PyLong_FromLong(rtn);
