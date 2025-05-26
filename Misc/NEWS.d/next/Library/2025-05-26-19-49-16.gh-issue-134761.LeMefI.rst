@@ -1,0 +1,2 @@
+Improve performance when using :mod:`threading` primitives across multiple
+threads.
