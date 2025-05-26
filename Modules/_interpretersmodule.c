@@ -512,60 +512,78 @@ _interp_call_pack(PyThreadState *tstate, struct interp_call *call,
 }
 
 static int
-_make_call(struct interp_call *call, PyObject **p_result)
+_interp_call_unpack(struct interp_call *call,
+                    PyObject **p_func, PyObject **p_args, PyObject **p_kwargs)
 {
-    assert(call != NULL && call->func != NULL);
-    int res = -1;
-    PyObject *args = NULL;
-    PyObject *kwargs = NULL;
-    PyObject *resobj = NULL;
     // Unpack the func.
     PyObject *func = _PyXIData_NewObject(call->func);
     if (func == NULL) {
         return -1;
     }
     // Unpack the args.
+    PyObject *args;
     if (call->args == NULL) {
         args = PyTuple_New(0);
         if (args == NULL) {
-            goto finally;
+            Py_DECREF(func);
+            return -1;
         }
     }
     else {
         args = _PyXIData_NewObject(call->args);
         if (args == NULL) {
-            goto finally;
+            Py_DECREF(func);
+            return -1;
         }
         assert(PyTuple_Check(args));
     }
     // Unpack the kwargs.
+    PyObject *kwargs = NULL;
     if (call->kwargs != NULL) {
         kwargs = _PyXIData_NewObject(call->kwargs);
         if (kwargs == NULL) {
-            goto finally;
+            Py_DECREF(func);
+            Py_DECREF(args);
+            return -1;
         }
         assert(PyDict_Check(kwargs));
     }
-    // Make the call.
-    resobj = PyObject_Call(func, args, kwargs);
-    if (resobj == NULL) {
-        goto finally;
-    }
-    *p_result = resobj;
-    res = 0;
-
-finally:
-    Py_DECREF(func);
-    Py_XDECREF(args);
-    Py_XDECREF(kwargs);
-    return res;
+    *p_func = func;
+    *p_args = args;
+    *p_kwargs = kwargs;
+    return 0;
 }
 
 static int
-_run_script(_PyXIData_t *script, PyObject *ns)
+_make_call(struct interp_call *call, PyObject **p_result, int *p_badtarget)
+{
+    assert(call != NULL && call->func != NULL);
+
+    PyObject *func, *args, *kwargs;
+    if (_interp_call_unpack(call, &func, &args, &kwargs) < 0) {
+        *p_badtarget = 1;
+        return -1;
+    }
+    *p_badtarget = 0;
+
+    // Make the call.
+    PyObject *resobj = PyObject_Call(func, args, kwargs);
+    Py_DECREF(func);
+    Py_XDECREF(args);
+    Py_XDECREF(kwargs);
+    if (resobj == NULL) {
+        return -1;
+    }
+    *p_result = resobj;
+    return 0;
+}
+
+static int
+_run_script(_PyXIData_t *script, PyObject *ns, int *p_badtarget)
 {
     PyObject *code = _PyXIData_NewObject(script);
     if (code == NULL) {
+        *p_badtarget = 1;
         return -1;
     }
     PyObject *result = PyEval_EvalCode(code, ns, ns);
@@ -581,6 +599,7 @@ _run_script(_PyXIData_t *script, PyObject *ns)
 struct run_result {
     PyObject *result;
     PyObject *excinfo;
+    int badtarget;
 };
 
 static void
@@ -601,6 +620,7 @@ _run_in_interpreter(PyThreadState *tstate, PyInterpreterState *interp,
         return -1;
     }
     _PyXI_session_result result = {0};
+    int badtarget = 0;
 
     // Prep and switch interpreters.
     if (_PyXI_Enter(session, interp, shareables, &result) < 0) {
@@ -617,12 +637,12 @@ _run_in_interpreter(PyThreadState *tstate, PyInterpreterState *interp,
         if (mainns == NULL) {
             goto finally;
         }
-        res = _run_script(script, mainns);
+        res = _run_script(script, mainns, &badtarget);
     }
     else {
         assert(call != NULL);
         PyObject *resobj;
-        res = _make_call(call, &resobj);
+        res = _make_call(call, &resobj, &badtarget);
         if (res == 0) {
             (void)_PyXI_Preserve(session, "resobj", resobj);
             Py_DECREF(resobj);
@@ -635,9 +655,11 @@ finally:
     _PyXI_FreeSession(session);
     if (res < 0) {
         runres->excinfo = result.excinfo;
+        runres->badtarget = badtarget;
     }
     else if (result.excinfo != NULL) {
         runres->excinfo = result.excinfo;
+        runres->badtarget = badtarget;
         res = -1;
     }
     else {
@@ -1043,6 +1065,31 @@ unwrap_not_shareable(PyThreadState *tstate)
 }
 
 static PyObject *
+_handle_script_error(_PyXIData_t *script, struct run_result *runres)
+{
+    if (runres->excinfo == NULL) {
+        assert(PyErr_Occurred());
+        assert(!runres->badtarget);
+        return NULL;
+    }
+    assert(!PyErr_Occurred());
+    if (!runres->badtarget) {
+        return runres->excinfo;
+    }
+    PyObject *code = _PyXIData_NewObject(script);
+    if (code != NULL) {
+        // Either the problem is intermittent or only affects subinterpreters.
+        // This is highly unlikely.
+        return runres->excinfo;
+    }
+    assert(PyErr_Occurred());
+    PyThreadState *tstate = _PyThreadState_GET();
+    unwrap_not_shareable(tstate);
+    Py_DECREF(runres->excinfo);
+    return NULL;
+}
+
+static PyObject *
 interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
 {
 #define FUNCNAME MODULE_NAME_STR ".exec"
@@ -1080,7 +1127,7 @@ interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
     _PyXIData_Release(&xidata);
     if (res < 0) {
         assert((runres.excinfo == NULL) != (PyErr_Occurred() == NULL));
-        return runres.excinfo;
+        return _handle_script_error(&xidata, &runres);
     }
     Py_RETURN_NONE;
 #undef FUNCNAME
@@ -1144,7 +1191,7 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
     _PyXIData_Release(&xidata);
     if (res < 0) {
         assert((runres.excinfo == NULL) != (PyErr_Occurred() == NULL));
-        return runres.excinfo;
+        return _handle_script_error(&xidata, &runres);
     }
     Py_RETURN_NONE;
 #undef FUNCNAME
@@ -1207,7 +1254,7 @@ interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
     _PyXIData_Release(&xidata);
     if (res < 0) {
         assert((runres.excinfo == NULL) != (PyErr_Occurred() == NULL));
-        return runres.excinfo;
+        return _handle_script_error(&xidata, &runres);
     }
     Py_RETURN_NONE;
 #undef FUNCNAME
@@ -1221,6 +1268,32 @@ Code objects are also supported.  In both cases, closures and args\n\
 are not supported.  Methods and other callables are not supported either.\n\
 \n\
 (See " MODULE_NAME_STR ".exec().");
+
+static int
+handle_call_error(struct interp_call *call, struct run_result *runres)
+{
+    if (runres->excinfo == NULL) {
+        assert(PyErr_Occurred());
+        assert(!runres->badtarget);
+        return -1;
+    }
+    assert(!PyErr_Occurred());
+    if (!runres->badtarget) {
+        return 0;
+    }
+
+    PyObject *func, *args, *kwargs;
+    if (_interp_call_unpack(call, &func, &args, &kwargs) == 0) {
+        // Either the problem is intermittent or only affects subinterpreters.
+        // This is highly unlikely.
+        return 0;
+    }
+    assert(PyErr_Occurred());
+    PyThreadState *tstate = _PyThreadState_GET();
+    unwrap_not_shareable(tstate);
+    Py_CLEAR(runres->excinfo);
+    return -1;
+}
 
 static PyObject *
 interp_call(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1259,11 +1332,9 @@ interp_call(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *res_and_exc = NULL;
     struct run_result runres = {0};
     if (_run_in_interpreter(tstate, interp, NULL, &call, NULL, &runres) < 0) {
-        if (runres.excinfo == NULL) {
-            assert(_PyErr_Occurred(tstate));
+        if (handle_call_error(&call, &runres) < 0) {
             goto finally;
         }
-        assert(!_PyErr_Occurred(tstate));
     }
     assert(runres.result == NULL || runres.excinfo == NULL);
     res_and_exc = Py_BuildValue("OO",
