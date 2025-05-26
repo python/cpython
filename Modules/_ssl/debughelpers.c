@@ -192,6 +192,7 @@ _PySSLContext_set_keylog_filename(PyObject *op, PyObject *arg,
         Py_BEGIN_ALLOW_THREADS
         BIO_free_all(bio);
         Py_END_ALLOW_THREADS
+        _PySSL_FIX_ERRNO;
     }
 
     if (arg == Py_None) {

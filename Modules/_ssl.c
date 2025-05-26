@@ -899,7 +899,6 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     PySSL_BEGIN_ALLOW_THREADS(sslctx)
     self->ssl = SSL_new(ctx);
     PySSL_END_ALLOW_THREADS(sslctx)
-    _PySSL_FIX_ERRNO;
     if (self->ssl == NULL) {
         Py_DECREF(self);
         _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
