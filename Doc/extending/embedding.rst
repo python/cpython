@@ -251,7 +251,7 @@ Python extension.  For example::
        {NULL, NULL, 0, NULL}
    };
 
-   struct PyModuleDef emb_module = {
+   static struct PyModuleDef emb_module = {
        .m_base = PyModuleDef_HEAD_INIT,
        .m_name = "emb",
        .m_size = 0,

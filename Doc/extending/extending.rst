@@ -203,24 +203,32 @@ function usually raises :c:data:`PyExc_TypeError`.  If you have an argument whos
 value must be in a particular range or must satisfy other conditions,
 :c:data:`PyExc_ValueError` is appropriate.
 
-You can also define a new exception that is unique to your module. For this, you
-usually declare a static object variable at the beginning of your file::
+You can also define a new exception that is unique to your module.
+For this, you usually declare an object variable at in the module state::
 
-   static PyObject *SpamError;
+   typedef struct {
+       // ...
+       PyObject *SpamError;
+       // ...
+   } spam_state;
 
 and initialize it in the module's :c:data:`Py_mod_exec` function
-(:c:func:`!spam_module_exec`)
-
-with an exception object::
+(:c:func:`!spam_module_exec`) with an exception object::
 
    static int
    spam_module_exec(PyObject *m)
    {
-       SpamError = PyErr_NewException("spam.error", NULL, NULL);
-       if (PyModule_AddObjectRef(m, "SpamError", SpamError) < 0) {
+       spam_state *state = PyModule_GetState(m);
+       if (state == NULL) {
            return -1;
        }
-
+       state->SpamError = PyErr_NewException("spam.error", NULL, NULL);
+       if (state->SpamError == NULL) {
+           return -1;
+       }
+       if (PyModule_AddType(m, (PyTypeObject *)state->SpamError) < 0) {
+           return -1;
+       }
        return 0;
    }
 
@@ -232,7 +240,7 @@ with an exception object::
    static struct PyModuleDef spam_module = {
        .m_base = PyModuleDef_HEAD_INIT,
        .m_name = "spam",
-       .m_size = 0,  // non-negative
+       .m_size = sizeof(spam_state),
        .m_slots = spam_module_slots,
    };
 
@@ -436,17 +444,19 @@ optionally followed by an import of the module::
 
 .. note::
 
-   If you declare a global variable or a local static one, the module can
-   cause the same problems as the legacy single-phase initialization when
+   If you declare a global variable or a local static one, the module may
+   experience unintended side-effects on re-initialisation, for example when
    removing entries from ``sys.modules`` or importing compiled modules into
-   multiple interpreters within a process (or following a :c:func:`fork` without an
-   intervening :c:func:`exec`).  In this case, at least the module should
-   stop supporting subinterpreters through a :c:type:`PyModuleDef_Slot`
-   (:c:data:`Py_mod_multiple_interpreters`).
+   multiple interpreters within a process
+   (or following a :c:func:`fork` without an intervening :c:func:`exec`).
+   If module state is not yet fully :ref:`isolated <isolating-extensions-howto>`,
+   authors should consider marking the module as having no support for subinterpreters
+   (via :c:macro:`Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED`).
 
 A more substantial example module is included in the Python source distribution
 as :file:`Modules/xxlimited.c`.  This file may be used as a template or simply
 read as an example.
+
 
 .. _compilation:
 
@@ -1068,8 +1078,9 @@ why his :meth:`!__del__` methods would fail...
 
 The second case of problems with a borrowed reference is a variant involving
 threads.  Normally, multiple threads in the Python interpreter can't get in each
-other's way, because there is a global lock protecting Python's entire object
-space.  However, it is possible to temporarily release this lock using the macro
+other's way, because there is a :term:`global lock <global interpreter lock>`
+protecting Python's entire object space.
+However, it is possible to temporarily release this lock using the macro
 :c:macro:`Py_BEGIN_ALLOW_THREADS`, and to re-acquire it using
 :c:macro:`Py_END_ALLOW_THREADS`.  This is common around blocking I/O calls, to
 let other threads use the processor while waiting for the I/O to complete.
@@ -1255,8 +1266,8 @@ two more lines must be added::
    #include "spammodule.h"
 
 The ``#define`` is used to tell the header file that it is being included in the
-exporting module, not a client module. Finally, the module's initialization
-function must take care of initializing the C API pointer array::
+exporting module, not a client module. Finally, the module's :c:data:`mod_exec
+<Py_mod_exec>` function must take care of initializing the C API pointer array::
 
    static int
    spam_module_exec(PyObject *m)
@@ -1275,24 +1286,6 @@ function must take care of initializing the C API pointer array::
        }
 
        return 0;
-   }
-
-   static PyModuleDef_Slot spam_module_slots[] = {
-       {Py_mod_exec, spam_module_exec},
-       {0, NULL}
-   };
-
-   static struct PyModuleDef spam_module = {
-       .m_base = PyModuleDef_HEAD_INIT,
-       .m_name = "spam",
-       .m_size = 0,
-       .m_slots = spam_module_slots,
-   };
-
-   PyMODINIT_FUNC
-   PyInit_spam(void)
-   {
-       return PyModuleDef_Init(&spam_module);
    }
 
 Note that ``PySpam_API`` is declared ``static``; otherwise the pointer
@@ -1351,7 +1344,7 @@ like this::
 
 All that a client module must do in order to have access to the function
 :c:func:`!PySpam_System` is to call the function (or rather macro)
-:c:func:`!import_spam` in its initialization function::
+:c:func:`!import_spam` in its :c:data:`mod_exec <Py_mod_exec>` function::
 
    static int
    client_module_exec(PyObject *m)
@@ -1360,24 +1353,6 @@ All that a client module must do in order to have access to the function
            return -1;
        /* additional initialization can happen here */
        return 0;
-   }
-
-   static PyModuleDef_Slot client_module_slots[] = {
-       {Py_mod_exec, client_module_exec},
-       {0, NULL}
-   };
-
-   static struct PyModuleDef client_module = {
-       .m_base = PyModuleDef_HEAD_INIT,
-       .m_name = "client",
-       .m_size = 0,
-       .m_slots = client_module_slots,
-   };
-
-   PyMODINIT_FUNC
-   PyInit_client(void)
-   {
-       return PyModuleDef_Init(&client_module);
    }
 
 The main disadvantage of this approach is that the file :file:`spammodule.h` is

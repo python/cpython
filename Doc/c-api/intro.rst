@@ -129,7 +129,6 @@ complete listing.
        static struct PyModuleDef spam_module = {
            .m_base = PyModuleDef_HEAD_INIT,
            .m_name = "spam",
-           .m_size = 0,
            ...
        };
 

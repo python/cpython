@@ -55,8 +55,10 @@ from the previous chapter.  This file defines three things:
 #. How the :class:`!Custom` **type** behaves: this is the ``CustomType`` struct,
    which defines a set of flags and function pointers that the interpreter
    inspects when specific operations are requested.
-#. How to initialize the :mod:`!custom` module: this is the ``PyInit_custom``
-   function and the associated ``custommodule`` struct.
+#. How to define and execute the :mod:`!custom` module: this is the
+   ``PyInit_custom`` function and the associated ``custom_module`` struct for
+   defining the module, and the ``custom_module_exec`` function to set up
+   a fresh module object.
 
 The first bit is::
 
@@ -173,8 +175,9 @@ implementation provided by the API function :c:func:`PyType_GenericNew`. ::
 Everything else in the file should be familiar, except for some code in
 :c:func:`!custom_module_exec`::
 
-   if (PyType_Ready(&CustomType) < 0)
+   if (PyType_Ready(&CustomType) < 0) {
        return -1;
+   }
 
 This initializes the :class:`!Custom` type, filling in a number of members
 to the appropriate default values, including :c:member:`~PyObject.ob_type` that we initially

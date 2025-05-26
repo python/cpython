@@ -45,8 +45,9 @@ static int
 sublist_module_exec(PyObject *m)
 {
     SubListType.tp_base = &PyList_Type;
-    if (PyType_Ready(&SubListType) < 0)
+    if (PyType_Ready(&SubListType) < 0) {
         return -1;
+    }
 
     if (PyModule_AddObjectRef(m, "SubList", (PyObject *) &SubListType) < 0) {
         return -1;
