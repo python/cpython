@@ -12,7 +12,6 @@ from textwrap import dedent
 import threading
 import types
 import unittest
-import warnings
 
 from test import support
 
