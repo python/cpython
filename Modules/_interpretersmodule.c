@@ -316,15 +316,10 @@ get_module_state(PyObject *mod)
 }
 
 static module_state *
-_get_current_module_state(int force)
+_get_current_module_state(void)
 {
     PyObject *mod = _get_current_module();
     if (mod == NULL) {
-        if (!force) {
-            PyErr_SetString(PyExc_RuntimeError,
-                            MODULE_NAME_STR " module not imported yet");
-            return NULL;
-        }
         mod = PyImport_ImportModule(MODULE_NAME_STR);
         if (mod == NULL) {
             return NULL;
@@ -357,8 +352,7 @@ clear_module_state(module_state *state)
 static PyTypeObject *
 _get_current_xibufferview_type(void)
 {
-    int force = 1;
-    module_state *state = _get_current_module_state(force);
+    module_state *state = _get_current_module_state();
     if (state == NULL) {
         return NULL;
     }

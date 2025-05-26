@@ -3964,8 +3964,10 @@ PyImport_Import(PyObject *module_name)
     if (globals != NULL) {
         Py_INCREF(globals);
         builtins = PyObject_GetItem(globals, &_Py_ID(__builtins__));
-        if (builtins == NULL)
+        if (builtins == NULL) {
+            // XXX Fall back to interp->builtins or sys.modules['builtins']?
             goto err;
+        }
     }
     else {
         /* No globals -- use standard builtins, and fake globals */
