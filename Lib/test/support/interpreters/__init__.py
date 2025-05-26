@@ -235,13 +235,13 @@ class Interpreter:
     def call(self, callable, /, *args, **kwargs):
         """Call the object in the interpreter with given args/kwargs.
 
-        Only functions that take no arguments and have no closure
-        are supported.
-
-        The return value is discarded.
+        Nearly all callables, args, kwargs, and return values are
+        supported.  All "shareable" objects are supported, as are
+        "stateless" functions (meaning non-closures that do not use
+        any globals).  This method will fall back to pickle.
 
         If the callable raises an exception then the error display
-        (including full traceback) is send back between the interpreters
+        (including full traceback) is sent back between the interpreters
         and an ExecutionFailed exception is raised, much like what
         happens with Interpreter.exec().
         """
