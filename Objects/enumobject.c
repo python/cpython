@@ -5,6 +5,8 @@
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString
+#include "pycore_tuple.h"         // _PyTuple_Recycle()
 
 #include "clinic/enumobject.c.h"
 
@@ -23,6 +25,7 @@ typedef struct {
     PyObject* one;                 /* borrowed reference */
 } enumobject;
 
+#define _enumobject_CAST(op)    ((enumobject *)(op))
 
 /*[clinic input]
 @classmethod
@@ -150,8 +153,9 @@ enumerate_vectorcall(PyObject *type, PyObject *const *args,
 }
 
 static void
-enum_dealloc(enumobject *en)
+enum_dealloc(PyObject *op)
 {
+    enumobject *en = _enumobject_CAST(op);
     PyObject_GC_UnTrack(en);
     Py_XDECREF(en->en_sit);
     Py_XDECREF(en->en_result);
@@ -160,12 +164,34 @@ enum_dealloc(enumobject *en)
 }
 
 static int
-enum_traverse(enumobject *en, visitproc visit, void *arg)
+enum_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    enumobject *en = _enumobject_CAST(op);
     Py_VISIT(en->en_sit);
     Py_VISIT(en->en_result);
     Py_VISIT(en->en_longindex);
     return 0;
+}
+
+// increment en_longindex with lock held, return the next index to be used
+// or NULL on error
+static inline PyObject *
+increment_longindex_lock_held(enumobject *en)
+{
+    PyObject *next_index = en->en_longindex;
+    if (next_index == NULL) {
+        next_index = PyLong_FromSsize_t(PY_SSIZE_T_MAX);
+        if (next_index == NULL) {
+            return NULL;
+        }
+    }
+    assert(next_index != NULL);
+    PyObject *stepped_up = PyNumber_Add(next_index, en->one);
+    if (stepped_up == NULL) {
+        return NULL;
+    }
+    en->en_longindex = stepped_up;
+    return next_index;
 }
 
 static PyObject *
@@ -173,27 +199,19 @@ enum_next_long(enumobject *en, PyObject* next_item)
 {
     PyObject *result = en->en_result;
     PyObject *next_index;
-    PyObject *stepped_up;
     PyObject *old_index;
     PyObject *old_item;
 
-    if (en->en_longindex == NULL) {
-        en->en_longindex = PyLong_FromSsize_t(PY_SSIZE_T_MAX);
-        if (en->en_longindex == NULL) {
-            Py_DECREF(next_item);
-            return NULL;
-        }
-    }
-    next_index = en->en_longindex;
-    assert(next_index != NULL);
-    stepped_up = PyNumber_Add(next_index, en->one);
-    if (stepped_up == NULL) {
+
+    Py_BEGIN_CRITICAL_SECTION(en);
+    next_index = increment_longindex_lock_held(en);
+    Py_END_CRITICAL_SECTION();
+    if (next_index == NULL) {
         Py_DECREF(next_item);
         return NULL;
     }
-    en->en_longindex = stepped_up;
 
-    if (Py_REFCNT(result) == 1) {
+    if (_PyObject_IsUniquelyReferenced(result)) {
         Py_INCREF(result);
         old_index = PyTuple_GET_ITEM(result, 0);
         old_item = PyTuple_GET_ITEM(result, 1);
@@ -203,9 +221,7 @@ enum_next_long(enumobject *en, PyObject* next_item)
         Py_DECREF(old_item);
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
-        }
+        _PyTuple_Recycle(result);
         return result;
     }
     result = PyTuple_New(2);
@@ -220,8 +236,9 @@ enum_next_long(enumobject *en, PyObject* next_item)
 }
 
 static PyObject *
-enum_next(enumobject *en)
+enum_next(PyObject *op)
 {
+    enumobject *en = _enumobject_CAST(op);
     PyObject *next_index;
     PyObject *next_item;
     PyObject *result = en->en_result;
@@ -233,17 +250,18 @@ enum_next(enumobject *en)
     if (next_item == NULL)
         return NULL;
 
-    if (en->en_index == PY_SSIZE_T_MAX)
+    Py_ssize_t en_index = FT_ATOMIC_LOAD_SSIZE_RELAXED(en->en_index);
+    if (en_index == PY_SSIZE_T_MAX)
         return enum_next_long(en, next_item);
 
-    next_index = PyLong_FromSsize_t(en->en_index);
+    next_index = PyLong_FromSsize_t(en_index);
     if (next_index == NULL) {
         Py_DECREF(next_item);
         return NULL;
     }
-    en->en_index++;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(en->en_index, en_index + 1);
 
-    if (Py_REFCNT(result) == 1) {
+    if (_PyObject_IsUniquelyReferenced(result)) {
         Py_INCREF(result);
         old_index = PyTuple_GET_ITEM(result, 0);
         old_item = PyTuple_GET_ITEM(result, 1);
@@ -253,9 +271,7 @@ enum_next(enumobject *en)
         Py_DECREF(old_item);
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
-        }
+        _PyTuple_Recycle(result);
         return result;
     }
     result = PyTuple_New(2);
@@ -270,18 +286,23 @@ enum_next(enumobject *en)
 }
 
 static PyObject *
-enum_reduce(enumobject *en, PyObject *Py_UNUSED(ignored))
+enum_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    enumobject *en = _enumobject_CAST(op);
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(en);
     if (en->en_longindex != NULL)
-        return Py_BuildValue("O(OO)", Py_TYPE(en), en->en_sit, en->en_longindex);
+        result = Py_BuildValue("O(OO)", Py_TYPE(en), en->en_sit, en->en_longindex);
     else
-        return Py_BuildValue("O(On)", Py_TYPE(en), en->en_sit, en->en_index);
+        result = Py_BuildValue("O(On)", Py_TYPE(en), en->en_sit, en->en_index);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyMethodDef enum_methods[] = {
-    {"__reduce__", (PyCFunction)enum_reduce, METH_NOARGS, reduce_doc},
+    {"__reduce__", enum_reduce, METH_NOARGS, reduce_doc},
     {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
@@ -293,7 +314,7 @@ PyTypeObject PyEnum_Type = {
     sizeof(enumobject),             /* tp_basicsize */
     0,                              /* tp_itemsize */
     /* methods */
-    (destructor)enum_dealloc,       /* tp_dealloc */
+    enum_dealloc,                   /* tp_dealloc */
     0,                              /* tp_vectorcall_offset */
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */
@@ -311,12 +332,12 @@ PyTypeObject PyEnum_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,        /* tp_flags */
     enum_new__doc__,                /* tp_doc */
-    (traverseproc)enum_traverse,    /* tp_traverse */
+    enum_traverse,                  /* tp_traverse */
     0,                              /* tp_clear */
     0,                              /* tp_richcompare */
     0,                              /* tp_weaklistoffset */
     PyObject_SelfIter,              /* tp_iter */
-    (iternextfunc)enum_next,        /* tp_iternext */
+    enum_next,                      /* tp_iternext */
     enum_methods,                   /* tp_methods */
     0,                              /* tp_members */
     0,                              /* tp_getset */
@@ -329,7 +350,7 @@ PyTypeObject PyEnum_Type = {
     PyType_GenericAlloc,            /* tp_alloc */
     enum_new,                       /* tp_new */
     PyObject_GC_Del,                /* tp_free */
-    .tp_vectorcall = (vectorcallfunc)enumerate_vectorcall
+    .tp_vectorcall = enumerate_vectorcall
 };
 
 /* Reversed Object ***************************************************************/
@@ -339,6 +360,8 @@ typedef struct {
     Py_ssize_t      index;
     PyObject* seq;
 } reversedobject;
+
+#define _reversedobject_CAST(op)    ((reversedobject *)(op))
 
 /*[clinic input]
 @classmethod
@@ -411,73 +434,90 @@ reversed_vectorcall(PyObject *type, PyObject * const*args,
 }
 
 static void
-reversed_dealloc(reversedobject *ro)
+reversed_dealloc(PyObject *op)
 {
+    reversedobject *ro = _reversedobject_CAST(op);
     PyObject_GC_UnTrack(ro);
     Py_XDECREF(ro->seq);
     Py_TYPE(ro)->tp_free(ro);
 }
 
 static int
-reversed_traverse(reversedobject *ro, visitproc visit, void *arg)
+reversed_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    reversedobject *ro = _reversedobject_CAST(op);
     Py_VISIT(ro->seq);
     return 0;
 }
 
 static PyObject *
-reversed_next(reversedobject *ro)
+reversed_next(PyObject *op)
 {
+    reversedobject *ro = _reversedobject_CAST(op);
     PyObject *item;
-    Py_ssize_t index = ro->index;
+    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(ro->index);
 
     if (index >= 0) {
         item = PySequence_GetItem(ro->seq, index);
         if (item != NULL) {
-            ro->index--;
+            FT_ATOMIC_STORE_SSIZE_RELAXED(ro->index, index - 1);
             return item;
         }
         if (PyErr_ExceptionMatches(PyExc_IndexError) ||
             PyErr_ExceptionMatches(PyExc_StopIteration))
             PyErr_Clear();
     }
-    ro->index = -1;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(ro->index, -1);
+#ifndef Py_GIL_DISABLED
     Py_CLEAR(ro->seq);
+#endif
     return NULL;
 }
 
 static PyObject *
-reversed_len(reversedobject *ro, PyObject *Py_UNUSED(ignored))
+reversed_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    reversedobject *ro = _reversedobject_CAST(op);
     Py_ssize_t position, seqsize;
+    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(ro->index);
 
-    if (ro->seq == NULL)
+    if (index == -1)
         return PyLong_FromLong(0);
+    assert(ro->seq != NULL);
     seqsize = PySequence_Size(ro->seq);
     if (seqsize == -1)
         return NULL;
-    position = ro->index + 1;
+    position = index + 1;
     return PyLong_FromSsize_t((seqsize < position)  ?  0  :  position);
 }
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-reversed_reduce(reversedobject *ro, PyObject *Py_UNUSED(ignored))
+reversed_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    if (ro->seq)
+    reversedobject *ro = _reversedobject_CAST(op);
+    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(ro->index);
+    if (index != -1) {
         return Py_BuildValue("O(O)n", Py_TYPE(ro), ro->seq, ro->index);
-    else
+    }
+    else {
         return Py_BuildValue("O(())", Py_TYPE(ro));
+    }
 }
 
 static PyObject *
-reversed_setstate(reversedobject *ro, PyObject *state)
+reversed_setstate(PyObject *op, PyObject *state)
 {
+    reversedobject *ro = _reversedobject_CAST(op);
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
-    if (ro->seq != 0) {
+    Py_ssize_t ro_index = FT_ATOMIC_LOAD_SSIZE_RELAXED(ro->index);
+    // if the iterator is exhausted we do not set the state
+    // this is for backwards compatibility reasons. in practice this situation
+    // will not occur, see gh-120971
+    if (ro_index != -1) {
         Py_ssize_t n = PySequence_Size(ro->seq);
         if (n < 0)
             return NULL;
@@ -485,7 +525,7 @@ reversed_setstate(reversedobject *ro, PyObject *state)
             index = -1;
         else if (index > n-1)
             index = n-1;
-        ro->index = index;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(ro->index, index);
     }
     Py_RETURN_NONE;
 }
@@ -493,9 +533,9 @@ reversed_setstate(reversedobject *ro, PyObject *state)
 PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
 
 static PyMethodDef reversediter_methods[] = {
-    {"__length_hint__", (PyCFunction)reversed_len, METH_NOARGS, length_hint_doc},
-    {"__reduce__", (PyCFunction)reversed_reduce, METH_NOARGS, reduce_doc},
-    {"__setstate__", (PyCFunction)reversed_setstate, METH_O, setstate_doc},
+    {"__length_hint__", reversed_len, METH_NOARGS, length_hint_doc},
+    {"__reduce__", reversed_reduce, METH_NOARGS, reduce_doc},
+    {"__setstate__", reversed_setstate, METH_O, setstate_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -505,7 +545,7 @@ PyTypeObject PyReversed_Type = {
     sizeof(reversedobject),         /* tp_basicsize */
     0,                              /* tp_itemsize */
     /* methods */
-    (destructor)reversed_dealloc,   /* tp_dealloc */
+    reversed_dealloc,               /* tp_dealloc */
     0,                              /* tp_vectorcall_offset */
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */
@@ -523,12 +563,12 @@ PyTypeObject PyReversed_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,        /* tp_flags */
     reversed_new__doc__,            /* tp_doc */
-    (traverseproc)reversed_traverse,/* tp_traverse */
+    reversed_traverse,              /* tp_traverse */
     0,                              /* tp_clear */
     0,                              /* tp_richcompare */
     0,                              /* tp_weaklistoffset */
     PyObject_SelfIter,              /* tp_iter */
-    (iternextfunc)reversed_next,    /* tp_iternext */
+    reversed_next,                  /* tp_iternext */
     reversediter_methods,           /* tp_methods */
     0,                              /* tp_members */
     0,                              /* tp_getset */
@@ -541,5 +581,5 @@ PyTypeObject PyReversed_Type = {
     PyType_GenericAlloc,            /* tp_alloc */
     reversed_new,                   /* tp_new */
     PyObject_GC_Del,                /* tp_free */
-    .tp_vectorcall = (vectorcallfunc)reversed_vectorcall,
+    .tp_vectorcall = reversed_vectorcall,
 };

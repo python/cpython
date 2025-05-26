@@ -1,2 +1,0 @@
-Fix creating bitfields in :mod:`ctypes` structures and unions. Fields
-no longer overlap.

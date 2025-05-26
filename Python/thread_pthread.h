@@ -16,6 +16,7 @@
 #undef destructor
 #endif
 #include <signal.h>
+#include <unistd.h>             /* pause(), also getthrid() on OpenBSD */
 
 #if defined(__linux__)
 #   include <sys/syscall.h>     /* syscall(SYS_gettid) */
@@ -23,8 +24,6 @@
 #   include <pthread_np.h>      /* pthread_getthreadid_np() */
 #elif defined(__FreeBSD_kernel__)
 #   include <sys/syscall.h>     /* syscall(SYS_thr_self) */
-#elif defined(__OpenBSD__)
-#   include <unistd.h>          /* getthrid() */
 #elif defined(_AIX)
 #   include <sys/thread.h>      /* thread_self() */
 #elif defined(__NetBSD__)
@@ -307,6 +306,24 @@ do_start_joinable_thread(void (*func)(void *), void *arg, pthread_t* out_id)
     return 0;
 }
 
+/* Helper to convert pthread_t to PyThread_ident_t. POSIX allows pthread_t to be
+   non-arithmetic, e.g., musl typedefs it as a pointer. */
+static PyThread_ident_t
+_pthread_t_to_ident(pthread_t value) {
+// Cast through an integer type of the same size to avoid sign-extension.
+#if SIZEOF_PTHREAD_T == SIZEOF_VOID_P
+    return (uintptr_t) value;
+#elif SIZEOF_PTHREAD_T == SIZEOF_LONG
+    return (unsigned long) value;
+#elif SIZEOF_PTHREAD_T == SIZEOF_INT
+    return (unsigned int) value;
+#elif SIZEOF_PTHREAD_T == SIZEOF_LONG_LONG
+    return (unsigned long long) value;
+#else
+#error "Unsupported SIZEOF_PTHREAD_T value"
+#endif
+}
+
 int
 PyThread_start_joinable_thread(void (*func)(void *), void *arg,
                                PyThread_ident_t* ident, PyThread_handle_t* handle) {
@@ -314,9 +331,8 @@ PyThread_start_joinable_thread(void (*func)(void *), void *arg,
     if (do_start_joinable_thread(func, arg, &th)) {
         return -1;
     }
-    *ident = (PyThread_ident_t) th;
+    *ident = _pthread_t_to_ident(th);
     *handle = (PyThread_handle_t) th;
-    assert(th == (pthread_t) *ident);
     assert(th == (pthread_t) *handle);
     return 0;
 }
@@ -329,11 +345,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
         return PYTHREAD_INVALID_THREAD_ID;
     }
     pthread_detach(th);
-#if SIZEOF_PTHREAD_T <= SIZEOF_LONG
-    return (unsigned long) th;
-#else
-    return (unsigned long) *(unsigned long *) &th;
-#endif
+    return (unsigned long) _pthread_t_to_ident(th);;
 }
 
 int
@@ -358,8 +370,7 @@ PyThread_get_thread_ident_ex(void) {
     if (!initialized)
         PyThread_init_thread();
     threadid = pthread_self();
-    assert(threadid == (pthread_t) (PyThread_ident_t) threadid);
-    return (PyThread_ident_t) threadid;
+    return _pthread_t_to_ident(threadid);
 }
 
 unsigned long
@@ -417,6 +428,18 @@ PyThread_exit_thread(void)
 #else
     pthread_exit(0);
 #endif
+}
+
+void _Py_NO_RETURN
+PyThread_hang_thread(void)
+{
+    while (1) {
+#if defined(__wasi__)
+        sleep(9999999);  // WASI doesn't have pause() ?!
+#else
+        pause();
+#endif
+    }
 }
 
 #ifdef USE_SEMAPHORES

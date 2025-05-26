@@ -1,2 +1,0 @@
-Fix :func:`dataclasses.dataclass` not creating a ``__weakref__`` slot when
-subclassing :class:`typing.Generic`.

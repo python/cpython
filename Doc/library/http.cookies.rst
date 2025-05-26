@@ -98,7 +98,7 @@ Cookie Objects
 .. method:: BaseCookie.output(attrs=None, header='Set-Cookie:', sep='\r\n')
 
    Return a string representation suitable to be sent as HTTP headers. *attrs* and
-   *header* are sent to each :class:`Morsel`'s :meth:`output` method. *sep* is used
+   *header* are sent to each :class:`Morsel`'s :meth:`~Morsel.output` method. *sep* is used
    to join the headers together, and is by default the combination ``'\r\n'``
    (CRLF).
 
@@ -142,6 +142,7 @@ Morsel Objects
                     version
                     httponly
                     samesite
+                    partitioned
 
    The attribute :attr:`httponly` specifies that the cookie is only transferred
    in HTTP requests, and is not accessible through JavaScript. This is intended
@@ -150,6 +151,19 @@ Morsel Objects
    The attribute :attr:`samesite` specifies that the browser is not allowed to
    send the cookie along with cross-site requests. This helps to mitigate CSRF
    attacks. Valid values for this attribute are "Strict" and "Lax".
+
+   The attribute :attr:`partitioned` indicates to user agents that these
+   cross-site cookies *should* only be available in the same top-level context
+   that the cookie was first set in. For this to be accepted by the user agent,
+   you **must** also set ``Secure``.
+
+   In addition, it is recommended to use the ``__Host`` prefix when setting
+   partitioned cookies to make them bound to the hostname and not the
+   registrable domain. Read
+   `CHIPS (Cookies Having Independent Partitioned State)`_
+   for full details and examples.
+
+   .. _CHIPS (Cookies Having Independent Partitioned State): https://github.com/privacycg/CHIPS/blob/main/README.md
 
    The keys are case-insensitive and their default value is ``''``.
 
@@ -164,6 +178,9 @@ Morsel Objects
 
    .. versionchanged:: 3.8
       Added support for the :attr:`samesite` attribute.
+
+   .. versionchanged:: 3.14
+      Added support for the :attr:`partitioned` attribute.
 
 
 .. attribute:: Morsel.value

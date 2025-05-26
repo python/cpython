@@ -44,11 +44,19 @@ is possible to single step through the test files.  This is useful when
 doing memory analysis on the Python interpreter, which process tends to
 consume too many resources to run the full regression test non-stop.
 
--S is used to continue running tests after an aborted run.  It will
-maintain the order a standard run (ie, this assumes -r is not used).
+-S is used to resume running tests after an interrupted run.  It will
+maintain the order a standard run (i.e. it assumes -r is not used).
 This is useful after the tests have prematurely stopped for some external
-reason and you want to start running from where you left off rather
-than starting from the beginning.
+reason and you want to resume the run from where you left off rather
+than starting from the beginning. Note: this is different from --prioritize.
+
+--prioritize is used to influence the order of selected tests, such that
+the tests listed as an argument are executed first. This is especially
+useful when combined with -j and -r to pin the longest-running tests
+to start at the beginning of a test run. Pass --prioritize=test_a,test_b
+to make test_a run first, followed by test_b, and then the other tests.
+If test_a wasn't selected for execution by regular means, --prioritize will
+not make it execute.
 
 -f reads the names of tests from the file given as f's argument, one
 or more test names per line.  Whitespace is ignored.  Blank lines and
@@ -87,38 +95,40 @@ such as those requiring large file support or network connectivity.
 The argument is a comma-separated list of words indicating the
 resources to test.  Currently only the following are defined:
 
-    all -       Enable all special resources.
+    all -            Enable all special resources.
 
-    none -      Disable all special resources (this is the default).
+    none -           Disable all special resources (this is the default).
 
-    audio -     Tests that use the audio device.  (There are known
-                cases of broken audio drivers that can crash Python or
-                even the Linux kernel.)
+    audio -          Tests that use the audio device.  (There are known
+                     cases of broken audio drivers that can crash Python or
+                     even the Linux kernel.)
 
-    curses -    Tests that use curses and will modify the terminal's
-                state and output modes.
+    curses -         Tests that use curses and will modify the terminal's
+                     state and output modes.
 
-    largefile - It is okay to run some test that may create huge
-                files.  These tests can take a long time and may
-                consume >2 GiB of disk space temporarily.
+    largefile -      It is okay to run some test that may create huge
+                     files.  These tests can take a long time and may
+                     consume >2 GiB of disk space temporarily.
 
-    network -   It is okay to run tests that use external network
-                resource, e.g. testing SSL support for sockets.
+    extralargefile - Like 'largefile', but even larger (and slower).
 
-    decimal -   Test the decimal module against a large suite that
-                verifies compliance with standards.
+    network -        It is okay to run tests that use external network
+                     resource, e.g. testing SSL support for sockets.
 
-    cpu -       Used for certain CPU-heavy tests.
+    decimal -        Test the decimal module against a large suite that
+                     verifies compliance with standards.
 
-    walltime -  Long running but not CPU-bound tests.
+    cpu -            Used for certain CPU-heavy tests.
 
-    subprocess  Run all tests for the subprocess module.
+    walltime -       Long running but not CPU-bound tests.
 
-    urlfetch -  It is okay to download files required on testing.
+    subprocess       Run all tests for the subprocess module.
 
-    gui -       Run tests that require a running GUI.
+    urlfetch -       It is okay to download files required on testing.
 
-    tzdata -    Run tests that require timezone data.
+    gui -            Run tests that require a running GUI.
+
+    tzdata -         Run tests that require timezone data.
 
 To enable all resources except one, use '-uall,-<resource>'.  For
 example, to run all the tests except for the gui tests, give the
@@ -148,7 +158,7 @@ class Namespace(argparse.Namespace):
         self.randomize = False
         self.fromfile = None
         self.fail_env_changed = False
-        self.use_resources = None
+        self.use_resources: list[str] = []
         self.trace = False
         self.coverdir = 'coverage'
         self.runleaks = False
@@ -158,6 +168,7 @@ class Namespace(argparse.Namespace):
         self.print_slow = False
         self.random_seed = None
         self.use_mp = None
+        self.parallel_threads = None
         self.forever = False
         self.header = False
         self.failfast = False
@@ -165,6 +176,7 @@ class Namespace(argparse.Namespace):
         self.pgo = False
         self.pgo_extended = False
         self.tsan = False
+        self.tsan_parallel = False
         self.worker_json = None
         self.start = None
         self.timeout = None
@@ -232,7 +244,7 @@ def _create_parser():
                        help='wait for user input, e.g., allow a debugger '
                             'to be attached')
     group.add_argument('-S', '--start', metavar='START',
-                       help='the name of the test at which to start.' +
+                       help='resume an interrupted run at the following test.' +
                             more_details)
     group.add_argument('-p', '--python', metavar='PYTHON',
                        help='Command to run Python test subprocesses with.')
@@ -259,6 +271,10 @@ def _create_parser():
     group = parser.add_argument_group('Selecting tests')
     group.add_argument('-r', '--randomize', action='store_true',
                        help='randomize test execution order.' + more_details)
+    group.add_argument('--prioritize', metavar='TEST1,TEST2,...',
+                       action='append', type=priority_list,
+                       help='select these tests first, even if the order is'
+                            ' randomized.' + more_details)
     group.add_argument('-f', '--fromfile', metavar='FILE',
                        help='read names of tests to run from a file.' +
                             more_details)
@@ -314,6 +330,10 @@ def _create_parser():
                             'a single process, ignore -jN option, '
                             'and failed tests are also rerun sequentially '
                             'in the same process')
+    group.add_argument('--parallel-threads', metavar='PARALLEL_THREADS',
+                       type=int,
+                       help='run copies of each test in PARALLEL_THREADS at '
+                            'once')
     group.add_argument('-T', '--coverage', action='store_true',
                        dest='trace',
                        help='turn on code coverage tracing using the trace '
@@ -344,6 +364,9 @@ def _create_parser():
                        help='enable extended PGO training (slower training)')
     group.add_argument('--tsan', dest='tsan', action='store_true',
                        help='run a subset of test cases that are proper for the TSAN test')
+    group.add_argument('--tsan-parallel', action='store_true',
+                       help='run a subset of test cases that are appropriate '
+                            'for TSAN with `--parallel-threads=N`')
     group.add_argument('--fail-env-changed', action='store_true',
                        help='if a test file alters the environment, mark '
                             'the test as failed')
@@ -395,6 +418,10 @@ def resources_list(string):
     return u
 
 
+def priority_list(string):
+    return string.split(",")
+
+
 def _parse_args(args, **kwargs):
     # Defaults
     ns = Namespace()
@@ -403,8 +430,6 @@ def _parse_args(args, **kwargs):
             raise TypeError('%r is an invalid keyword argument '
                             'for this function' % k)
         setattr(ns, k, v)
-    if ns.use_resources is None:
-        ns.use_resources = []
 
     parser = _create_parser()
     # Issue #14191: argparse doesn't support "intermixed" positional and
@@ -541,5 +566,11 @@ def _parse_args(args, **kwargs):
                    "each (1:1).")
             print(msg, file=sys.stderr, flush=True)
             sys.exit(2)
+
+    ns.prioritize = [
+        test
+        for test_list in (ns.prioritize or ())
+        for test in test_list
+    ]
 
     return ns

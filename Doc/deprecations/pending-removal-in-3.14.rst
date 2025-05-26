@@ -1,4 +1,4 @@
-Pending Removal in Python 3.14
+Pending removal in Python 3.14
 ------------------------------
 
 * :mod:`argparse`: The *type*, *choices*, and *metavar* parameters
@@ -47,9 +47,6 @@ Pending Removal in Python 3.14
 * :mod:`email`: Deprecated the *isdst* parameter in :func:`email.utils.localtime`.
   (Contributed by Alan Williams in :gh:`72346`.)
 
-* :mod:`importlib`: ``__package__`` and ``__cached__`` will cease to be set or
-  taken into consideration by the import system (:gh:`97879`).
-
 * :mod:`importlib.abc` deprecated classes:
 
   * :class:`!importlib.abc.ResourceReader`
@@ -81,7 +78,7 @@ Pending Removal in Python 3.14
   :meth:`~pathlib.PurePath.relative_to`: passing additional arguments is
   deprecated.
 
-* :mod:`pkgutil`: :func:`~pkgutil.find_loader` and :func:`~pkgutil.get_loader`
+* :mod:`pkgutil`: :func:`!pkgutil.find_loader` and :func:`!pkgutil.get_loader`
   now raise :exc:`DeprecationWarning`;
   use :func:`importlib.util.find_spec` instead.
   (Contributed by Nikita Sobolev in :gh:`97850`.)
@@ -98,16 +95,6 @@ Pending Removal in Python 3.14
   * :meth:`~sqlite3.Cursor.execute` and :meth:`~sqlite3.Cursor.executemany`
     if :ref:`named placeholders <sqlite3-placeholders>` are used and
     *parameters* is a sequence instead of a :class:`dict`.
-
-  * date and datetime adapter, date and timestamp converter:
-    see the :mod:`sqlite3` documentation for suggested replacement recipes.
-
-* :class:`types.CodeType`: Accessing :attr:`~codeobject.co_lnotab` was
-  deprecated in :pep:`626`
-  since 3.10 and was planned to be removed in 3.12,
-  but it only got a proper :exc:`DeprecationWarning` in 3.12.
-  May be removed in 3.14.
-  (Contributed by Nikita Sobolev in :gh:`101866`.)
 
 * :mod:`typing`: :class:`!typing.ByteString`, deprecated since Python 3.9,
   now causes a :exc:`DeprecationWarning` to be emitted when it is used.

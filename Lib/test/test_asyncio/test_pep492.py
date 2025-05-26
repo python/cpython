@@ -11,7 +11,7 @@ from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 # Test that asyncio.iscoroutine() uses collections.abc.Coroutine

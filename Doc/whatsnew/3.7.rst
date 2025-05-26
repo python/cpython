@@ -353,7 +353,7 @@ module:
 
 The new functions return the number of nanoseconds as an integer value.
 
-`Measurements <https://peps.python.org/pep-0564/#annex-clocks-resolution-in-python>`_
+:pep:`Measurements <0564#annex-clocks-resolution-in-python>`
 show that on Linux and Windows the resolution of :func:`time.time_ns` is
 approximately 3 times better than that of :func:`time.time`.
 
@@ -2476,10 +2476,10 @@ avoiding possible problems use new functions :c:func:`PySlice_Unpack` and
 CPython bytecode changes
 ------------------------
 
-There are two new opcodes: :opcode:`LOAD_METHOD` and :opcode:`CALL_METHOD`.
+There are two new opcodes: :opcode:`LOAD_METHOD` and :opcode:`!CALL_METHOD`.
 (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)
 
-The :opcode:`STORE_ANNOTATION` opcode has been removed.
+The :opcode:`!STORE_ANNOTATION` opcode has been removed.
 (Contributed by Mark Shannon in :issue:`32550`.)
 
 

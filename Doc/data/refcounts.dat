@@ -180,7 +180,7 @@ PyCapsule_IsValid:const char*:name::
 PyCapsule_New:PyObject*::+1:
 PyCapsule_New:void*:pointer::
 PyCapsule_New:const char *:name::
-PyCapsule_New::void (* destructor)(PyObject* )::
+PyCapsule_New:void (*)(PyObject *):destructor::
 
 PyCapsule_SetContext:int:::
 PyCapsule_SetContext:PyObject*:self:0:
@@ -349,11 +349,11 @@ PyComplex_CheckExact:int:::
 PyComplex_CheckExact:PyObject*:p:0:
 
 PyComplex_FromCComplex:PyObject*::+1:
-PyComplex_FromCComplex::Py_complex v::
+PyComplex_FromCComplex:Py_complex:v::
 
 PyComplex_FromDoubles:PyObject*::+1:
-PyComplex_FromDoubles::double real::
-PyComplex_FromDoubles::double imag::
+PyComplex_FromDoubles:double:real::
+PyComplex_FromDoubles:double:imag::
 
 PyComplex_ImagAsDouble:double:::
 PyComplex_ImagAsDouble:PyObject*:op:0:
@@ -620,7 +620,9 @@ PyErr_GetExcInfo:PyObject**:pvalue:+1:
 PyErr_GetExcInfo:PyObject**:ptraceback:+1:
 
 PyErr_GetRaisedException:PyObject*::+1:
-PyErr_SetRaisedException::::
+
+PyErr_SetRaisedException:void:::
+PyErr_SetRaisedException:PyObject *:exc:0:stolen
 
 PyErr_GivenExceptionMatches:int:::
 PyErr_GivenExceptionMatches:PyObject*:given:0:
@@ -640,9 +642,9 @@ PyErr_NewExceptionWithDoc:PyObject*:dict:0:
 PyErr_NoMemory:PyObject*::null:
 
 PyErr_NormalizeException:void:::
-PyErr_NormalizeException:PyObject**:exc::???
-PyErr_NormalizeException:PyObject**:val::???
-PyErr_NormalizeException:PyObject**:tb::???
+PyErr_NormalizeException:PyObject**:exc:+1:???
+PyErr_NormalizeException:PyObject**:val:+1:???
+PyErr_NormalizeException:PyObject**:tb:+1:???
 
 PyErr_Occurred:PyObject*::0:
 
@@ -1091,9 +1093,6 @@ PyImport_ImportModuleLevelObject:PyObject*:locals:0:???
 PyImport_ImportModuleLevelObject:PyObject*:fromlist:0:???
 PyImport_ImportModuleLevelObject:int:level::
 
-PyImport_ImportModuleNoBlock:PyObject*::+1:
-PyImport_ImportModuleNoBlock:const char*:name::
-
 PyImport_ReloadModule:PyObject*::+1:
 PyImport_ReloadModule:PyObject*:m:0:
 
@@ -1284,6 +1283,26 @@ PyLong_FromUnsignedLong:unsignedlong:v::
 PyLong_FromVoidPtr:PyObject*::+1:
 PyLong_FromVoidPtr:void*:p::
 
+PyLong_IsPositive:int:::
+PyLong_IsPositive:PyObject*:obj:0:
+
+PyLong_IsNegative:int:::
+PyLong_IsNegative:PyObject*:obj:0:
+
+PyLong_IsZero:int:::
+PyLong_IsZero:PyObject*:obj:0:
+
+PyLong_GetSign:int:::
+PyLong_GetSign:PyObject*:v:0:
+PyLong_GetSign:int*:sign::
+
+PyLong_Export:int:::
+PyLong_Export:PyObject*:obj:0:
+PyLong_Export:PyLongExport*:export_long::
+
+PyLongWriter_Finish:PyObject*::+1:
+PyLongWriter_Finish:PyLongWriter*:writer::
+
 PyMapping_Check:int:::
 PyMapping_Check:PyObject*:o:0:
 
@@ -1301,7 +1320,7 @@ PyMapping_GetItemString:const char*:key::
 
 PyMapping_HasKey:int:::
 PyMapping_HasKey:PyObject*:o:0:
-PyMapping_HasKey:PyObject*:key::
+PyMapping_HasKey:PyObject*:key:0:
 
 PyMapping_HasKeyString:int:::
 PyMapping_HasKeyString:PyObject*:o:0:
@@ -1461,7 +1480,7 @@ PyModule_GetState:void*:::
 PyModule_GetState:PyObject*:module:0:
 
 PyModule_New:PyObject*::+1:
-PyModule_New::char* name::
+PyModule_New:char*:name::
 
 PyModule_NewObject:PyObject*::+1:
 PyModule_NewObject:PyObject*:name:+1:
@@ -1471,7 +1490,7 @@ PyModule_SetDocString:PyObject*:module:0:
 PyModule_SetDocString:const char*:docstring::
 
 PyModuleDef_Init:PyObject*::0:
-PyModuleDef_Init:PyModuleDef*:def:0:
+PyModuleDef_Init:PyModuleDef*:def::
 
 PyNumber_Absolute:PyObject*::+1:
 PyNumber_Absolute:PyObject*:o:0:
@@ -1834,6 +1853,9 @@ PyObject_RichCompareBool:PyObject*:o1:0:
 PyObject_RichCompareBool:PyObject*:o2:0:
 PyObject_RichCompareBool:int:opid::
 
+PyObject_SelfIter:PyObject*::+1:
+PyObject_SelfIter:PyObject*:obj:0:
+
 PyObject_SetAttr:int:::
 PyObject_SetAttr:PyObject*:o:0:
 PyObject_SetAttr:PyObject*:attr_name:0:
@@ -1971,10 +1993,10 @@ PyRun_StringFlags:PyObject*:locals:0:
 PyRun_StringFlags:PyCompilerFlags*:flags::
 
 PySeqIter_Check:int:::
-PySeqIter_Check::op::
+PySeqIter_Check:PyObject *:op:0:
 
 PySeqIter_New:PyObject*::+1:
-PySeqIter_New:PyObject*:seq::
+PySeqIter_New:PyObject*:seq:0:
 
 PySequence_Check:int:::
 PySequence_Check:PyObject*:o:0:
@@ -2408,7 +2430,7 @@ PyUnicode_GET_LENGTH:PyObject*:o:0:
 PyUnicode_KIND:int:::
 PyUnicode_KIND:PyObject*:o:0:
 
-PyUnicode_MAX_CHAR_VALUE::::
+PyUnicode_MAX_CHAR_VALUE:Py_UCS4:::
 PyUnicode_MAX_CHAR_VALUE:PyObject*:o:0:
 
 Py_UNICODE_ISALNUM:int:::
@@ -2475,7 +2497,7 @@ PyUnicode_FromWideChar:const wchar_t*:w::
 PyUnicode_FromWideChar:Py_ssize_t:size::
 
 PyUnicode_AsWideChar:Py_ssize_t:::
-PyUnicode_AsWideChar:PyObject*:*unicode:0:
+PyUnicode_AsWideChar:PyObject*:unicode:0:
 PyUnicode_AsWideChar:wchar_t*:w::
 PyUnicode_AsWideChar:Py_ssize_t:size::
 
@@ -2528,7 +2550,7 @@ PyUnicode_AsUTF8String:PyObject*:unicode:0:
 
 PyUnicode_AsUTF8AndSize:const char*:::
 PyUnicode_AsUTF8AndSize:PyObject*:unicode:0:
-PyUnicode_AsUTF8AndSize:Py_ssize_t*:size:0:
+PyUnicode_AsUTF8AndSize:Py_ssize_t*:size::
 
 PyUnicode_AsUTF8:const char*:::
 PyUnicode_AsUTF8:PyObject*:unicode:0:
@@ -2611,6 +2633,13 @@ PyUnicode_DecodeMBCSStateful:Py_ssize_t:size::
 PyUnicode_DecodeMBCSStateful:const char*:errors::
 PyUnicode_DecodeMBCSStateful:Py_ssize_t*:consumed::
 
+PyUnicode_DecodeCodePageStateful:PyObject*::+1:
+PyUnicode_DecodeCodePageStateful:int:code_page::
+PyUnicode_DecodeCodePageStateful:const char*:s::
+PyUnicode_DecodeCodePageStateful:Py_ssize_t:size::
+PyUnicode_DecodeCodePageStateful:const char*:errors::
+PyUnicode_DecodeCodePageStateful:Py_ssize_t*:consumed::
+
 PyUnicode_EncodeCodePage:PyObject*::+1:
 PyUnicode_EncodeCodePage:int:code_page::
 PyUnicode_EncodeCodePage:PyObject*:unicode:0:
@@ -2623,13 +2652,26 @@ PyUnicode_Concat:PyObject*::+1:
 PyUnicode_Concat:PyObject*:left:0:
 PyUnicode_Concat:PyObject*:right:0:
 
+PyUnicode_Partition:PyObject*::+1:
+PyUnicode_Partition:PyObject*:unicode:0:
+PyUnicode_Partition:PyObject*:sep:0:
+
+PyUnicode_RPartition:PyObject*::+1:
+PyUnicode_RPartition:PyObject*:unicode:0:
+PyUnicode_RPartition:PyObject*:sep:0:
+
+PyUnicode_RSplit:PyObject*::+1:
+PyUnicode_RSplit:PyObject*:unicode:0:
+PyUnicode_RSplit:PyObject*:sep:0:
+PyUnicode_RSplit:Py_ssize_t:maxsplit::
+
 PyUnicode_Split:PyObject*::+1:
-PyUnicode_Split:PyObject*:left:0:
-PyUnicode_Split:PyObject*:right:0:
+PyUnicode_Split:PyObject*:unicode:0:
+PyUnicode_Split:PyObject*:sep:0:
 PyUnicode_Split:Py_ssize_t:maxsplit::
 
 PyUnicode_Splitlines:PyObject*::+1:
-PyUnicode_Splitlines:PyObject*:s:0:
+PyUnicode_Splitlines:PyObject*:unicode:0:
 PyUnicode_Splitlines:int:keepend::
 
 PyUnicode_Translate:PyObject*::+1:
@@ -2725,6 +2767,23 @@ PyUnicode_FromFormatV:PyObject*::+1:
 PyUnicode_FromFormatV:const char*:format::
 PyUnicode_FromFormatV:va_list:args::
 
+PyUnicode_FromOrdinal:PyObject*::+1:
+PyUnicode_FromOrdinal:int:ordinal::
+
+PyUnicode_Append:void:::
+PyUnicode_Append:PyObject**:p_left:0:
+PyUnicode_Append:PyObject*:right::
+
+PyUnicode_AppendAndDel:void:::
+PyUnicode_AppendAndDel:PyObject**:p_left:0:
+PyUnicode_AppendAndDel:PyObject*:right:-1:
+
+PyUnicode_BuildEncodingMap:PyObject*::+1:
+PyUnicode_BuildEncodingMap:PyObject*:string:::
+
+PyUnicode_GetDefaultEncoding:const char*:::
+PyUnicode_GetDefaultEncoding::void::
+
 PyUnicode_GetLength:Py_ssize_t:::
 PyUnicode_GetLength:PyObject*:unicode:0:
 
@@ -2734,6 +2793,10 @@ PyUnicode_CopyCharacters:Py_ssize_t:to_start::
 PyUnicode_CopyCharacters:PyObject*:from:0:
 PyUnicode_CopyCharacters:Py_ssize_t:from_start::
 PyUnicode_CopyCharacters:Py_ssize_t:how_many::
+
+PyUnicode_Resize:int:::
+PyUnicode_Resize:PyObject**:unicode:0:
+PyUnicode_Resize:Py_ssize_t:length::
 
 PyUnicode_Fill:Py_ssize_t:::
 PyUnicode_Fill:PyObject*:unicode:0:
@@ -2851,13 +2914,13 @@ PyUnicodeDecodeError_SetStart:PyObject*:exc:0:
 PyUnicodeDecodeError_SetStart:Py_ssize_t:start::
 
 PyWeakref_Check:int:::
-PyWeakref_Check:PyObject*:ob::
+PyWeakref_Check:PyObject*:ob:0:
 
 PyWeakref_CheckProxy:int:::
-PyWeakref_CheckProxy:PyObject*:ob::
+PyWeakref_CheckProxy:PyObject*:ob:0:
 
 PyWeakref_CheckRef:int:::
-PyWeakref_CheckRef:PyObject*:ob::
+PyWeakref_CheckRef:PyObject*:ob:0:
 
 PyWeakref_GET_OBJECT:PyObject*::0:
 PyWeakref_GET_OBJECT:PyObject*:ref:0:
@@ -2944,17 +3007,7 @@ Py_GetCompiler:const char*:::
 
 Py_GetCopyright:const char*:::
 
-Py_GetExecPrefix:wchar_t*:::
-
-Py_GetPath:wchar_t*:::
-
 Py_GetPlatform:const char*:::
-
-Py_GetPrefix:wchar_t*:::
-
-Py_GetProgramFullPath:wchar_t*:::
-
-Py_GetProgramName:wchar_t*:::
 
 Py_GetVersion:const char*:::
 
@@ -3027,3 +3080,11 @@ _Py_c_quot:Py_complex:divisor::
 _Py_c_sum:Py_complex:::
 _Py_c_sum:Py_complex:left::
 _Py_c_sum:Py_complex:right::
+
+PyImport_ImportModuleAttr:PyObject*::+1:
+PyImport_ImportModuleAttr:PyObject*:mod_name:0:
+PyImport_ImportModuleAttr:PyObject*:attr_name:0:
+
+PyImport_ImportModuleAttrString:PyObject*::+1:
+PyImport_ImportModuleAttrString:const char *:mod_name::
+PyImport_ImportModuleAttrString:const char *:attr_name::
