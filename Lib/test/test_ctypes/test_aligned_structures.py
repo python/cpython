@@ -1,13 +1,13 @@
 from ctypes import (
     c_char, c_uint32, c_uint16, c_ubyte, c_byte, alignment, sizeof,
     BigEndianStructure, LittleEndianStructure,
-    BigEndianUnion, LittleEndianUnion,
+    BigEndianUnion, LittleEndianUnion, Structure,
 )
 import struct
 import unittest
+from ._support import StructCheckMixin
 
-
-class TestAlignedStructures(unittest.TestCase):
+class TestAlignedStructures(unittest.TestCase, StructCheckMixin):
     def test_aligned_string(self):
         for base, e in (
             (LittleEndianStructure, "<"),
@@ -19,12 +19,14 @@ class TestAlignedStructures(unittest.TestCase):
                 _fields_ = [
                     ('value', c_char * 12)
                 ]
+            self.check_struct(Aligned)
 
             class Main(base):
                 _fields_ = [
                     ('first', c_uint32),
                     ('string', Aligned),
                 ]
+            self.check_struct(Main)
 
             main = Main.from_buffer(data)
             self.assertEqual(main.first, 7)
@@ -46,12 +48,14 @@ class TestAlignedStructures(unittest.TestCase):
                     ("bool1", c_ubyte),
                     ("bool2", c_ubyte),
                 ]
+            self.check_struct(SomeBools)
             class Main(base):
                 _fields_ = [
                     ("x", c_ubyte),
                     ("y", SomeBools),
                     ("z", c_ubyte),
                 ]
+            self.check_struct(Main)
 
             main = Main.from_buffer(data)
             self.assertEqual(alignment(SomeBools), 4)
@@ -65,6 +69,41 @@ class TestAlignedStructures(unittest.TestCase):
             self.assertEqual(Main.z.offset, 8)
             self.assertEqual(main.z, 7)
 
+    def test_negative_align(self):
+        for base in (Structure, LittleEndianStructure, BigEndianStructure):
+            with (
+                self.subTest(base=base),
+                self.assertRaisesRegex(
+                    ValueError,
+                    '_align_ must be a non-negative integer',
+                )
+            ):
+                class MyStructure(base):
+                    _align_ = -1
+                    _fields_ = []
+
+    def test_zero_align_no_fields(self):
+        for base in (Structure, LittleEndianStructure, BigEndianStructure):
+            with self.subTest(base=base):
+                class MyStructure(base):
+                    _align_ = 0
+                    _fields_ = []
+
+                self.assertEqual(alignment(MyStructure), 1)
+                self.assertEqual(alignment(MyStructure()), 1)
+
+    def test_zero_align_with_fields(self):
+        for base in (Structure, LittleEndianStructure, BigEndianStructure):
+            with self.subTest(base=base):
+                class MyStructure(base):
+                    _align_ = 0
+                    _fields_ = [
+                        ("x", c_ubyte),
+                    ]
+
+                self.assertEqual(alignment(MyStructure), 1)
+                self.assertEqual(alignment(MyStructure()), 1)
+
     def test_oversized_structure(self):
         data = bytearray(b"\0" * 8)
         for base in (LittleEndianStructure, BigEndianStructure):
@@ -75,11 +114,13 @@ class TestAlignedStructures(unittest.TestCase):
                     ("bool2", c_ubyte),
                     ("bool3", c_ubyte),
                 ]
+            self.check_struct(SomeBoolsTooBig)
             class Main(base):
                 _fields_ = [
                     ("y", SomeBoolsTooBig),
                     ("z", c_uint32),
                 ]
+            self.check_struct(Main)
             with self.assertRaises(ValueError) as ctx:
                 Main.from_buffer(data)
                 self.assertEqual(
@@ -98,18 +139,21 @@ class TestAlignedStructures(unittest.TestCase):
                 _fields_ = [
                     ("x", c_uint32),
                 ]
+            self.check_struct(UnalignedSub)
 
             class AlignedStruct(UnalignedSub):
                 _align_ = 8
                 _fields_ = [
                     ("y", c_uint32),
                 ]
+            self.check_struct(AlignedStruct)
 
             class Main(base):
                 _fields_ = [
                     ("a", c_uint32),
                     ("b", AlignedStruct)
                 ]
+            self.check_struct(Main)
 
             main = Main.from_buffer(data)
             self.assertEqual(alignment(main.b), 8)
@@ -134,12 +178,14 @@ class TestAlignedStructures(unittest.TestCase):
                     ("a", c_uint32),
                     ("b", c_ubyte * 7),
                 ]
+            self.check_union(AlignedUnion)
 
             class Main(sbase):
                 _fields_ = [
                     ("first", c_uint32),
                     ("union", AlignedUnion),
                 ]
+            self.check_struct(Main)
 
             main = Main.from_buffer(data)
             self.assertEqual(main.first, 1)
@@ -162,18 +208,21 @@ class TestAlignedStructures(unittest.TestCase):
                     ("x", c_uint32),
                     ("y", c_uint32),
                 ]
+            self.check_struct(Sub)
 
             class MainUnion(ubase):
                 _fields_ = [
                     ("a", c_uint32),
                     ("b", Sub),
                 ]
+            self.check_union(MainUnion)
 
             class Main(sbase):
                 _fields_ = [
                     ("first", c_uint32),
                     ("union", MainUnion),
                 ]
+            self.check_struct(Main)
 
             main = Main.from_buffer(data)
             self.assertEqual(Main.first.size, 4)
@@ -198,17 +247,20 @@ class TestAlignedStructures(unittest.TestCase):
                     ("unsigned", c_ubyte),
                     ("signed", c_byte),
                 ]
+            self.check_union(SubUnion)
 
             class MainUnion(SubUnion):
                 _fields_ = [
                     ("num", c_uint32)
                 ]
+            self.check_union(SubUnion)
 
             class Main(sbase):
                 _fields_ = [
                     ("first", c_uint16),
                     ("union", MainUnion),
                 ]
+            self.check_struct(Main)
 
             main = Main.from_buffer(data)
             self.assertEqual(main.union.num, 0xD60102D7)
@@ -232,11 +284,13 @@ class TestAlignedStructures(unittest.TestCase):
                     ("unsigned", c_ubyte),
                     ("signed", c_byte),
                 ]
+            self.check_union(SubUnion)
 
             class Main(SubUnion):
                 _fields_ = [
                     ("num", c_uint32)
                 ]
+            self.check_struct(Main)
 
             main = Main.from_buffer(data)
             self.assertEqual(alignment(main), 8)
@@ -258,14 +312,17 @@ class TestAlignedStructures(unittest.TestCase):
                     ("x", c_uint16),
                     ("y", c_uint16),
                 ]
+            self.check_struct(Inner)
 
             class Main(sbase):
                 _pack_ = 1
+                _layout_ = "ms"
                 _fields_ = [
                     ("a", c_ubyte),
                     ("b", Inner),
                     ("c", c_ubyte),
                 ]
+            self.check_struct(Main)
 
             main = Main.from_buffer(data)
             self.assertEqual(sizeof(main), 10)

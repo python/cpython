@@ -237,7 +237,7 @@ class ModuleSpecMethodsTests:
         self.spec.loader = NewLoader()
         module = self.util.module_from_spec(self.spec)
         sys.modules[self.name] = module
-        self.assertFalse(hasattr(module, 'eggs'))
+        self.assertNotHasAttr(module, 'eggs')
         self.bootstrap._exec(self.spec, module)
 
         self.assertEqual(module.eggs, 1)
@@ -348,9 +348,9 @@ class ModuleSpecMethodsTests:
         self.assertIs(loaded.__loader__, self.spec.loader)
         self.assertEqual(loaded.__package__, self.spec.parent)
         self.assertIs(loaded.__spec__, self.spec)
-        self.assertFalse(hasattr(loaded, '__path__'))
-        self.assertFalse(hasattr(loaded, '__file__'))
-        self.assertFalse(hasattr(loaded, '__cached__'))
+        self.assertNotHasAttr(loaded, '__path__')
+        self.assertNotHasAttr(loaded, '__file__')
+        self.assertNotHasAttr(loaded, '__cached__')
 
 
 (Frozen_ModuleSpecMethodsTests,

@@ -1058,11 +1058,11 @@ checkShebang(SearchInfo *search)
         debug(L"# Failed to open %s for shebang parsing (0x%08X)\n",
               scriptFile, GetLastError());
         free(scriptFile);
-        return 0;
+        return RC_NO_SCRIPT;
     }
 
     DWORD bytesRead = 0;
-    char buffer[4096];
+    unsigned char buffer[4096];
     if (!ReadFile(hFile, buffer, sizeof(buffer), &bytesRead, NULL)) {
         debug(L"# Failed to read %s for shebang parsing (0x%08X)\n",
               scriptFile, GetLastError());
@@ -1075,7 +1075,7 @@ checkShebang(SearchInfo *search)
     free(scriptFile);
 
 
-    char *b = buffer;
+    unsigned char *b = buffer;
     bool onlyUtf8 = false;
     if (bytesRead > 3 && *b == 0xEF) {
         if (*++b == 0xBB && *++b == 0xBF) {
@@ -1096,13 +1096,13 @@ checkShebang(SearchInfo *search)
     ++b;
     --bytesRead;
     while (--bytesRead > 0 && isspace(*++b)) { }
-    char *start = b;
+    const unsigned char *start = b;
     while (--bytesRead > 0 && *++b != '\r' && *b != '\n') { }
     wchar_t *shebang;
     int shebangLength;
     // We add 1 when bytesRead==0, as in that case we hit EOF and b points
     // to the last character in the file, not the newline
-    int exitCode = _decodeShebang(search, start, (int)(b - start + (bytesRead == 0)), onlyUtf8, &shebang, &shebangLength);
+    int exitCode = _decodeShebang(search, (const char*)start, (int)(b - start + (bytesRead == 0)), onlyUtf8, &shebang, &shebangLength);
     if (exitCode) {
         return exitCode;
     }
@@ -2665,6 +2665,21 @@ performSearch(SearchInfo *search, EnvironmentInfo **envs)
     case RC_NO_SHEBANG:
     case RC_RECURSIVE_SHEBANG:
         break;
+    case RC_NO_SCRIPT:
+        if (!_comparePath(search->scriptFile, search->scriptFileLength, L"install", -1) ||
+            !_comparePath(search->scriptFile, search->scriptFileLength, L"uninstall", -1) ||
+            !_comparePath(search->scriptFile, search->scriptFileLength, L"list", -1) ||
+            !_comparePath(search->scriptFile, search->scriptFileLength, L"help", -1)) {
+            fprintf(
+                stderr,
+                "WARNING: The '%.*ls' command is unavailable because this is the legacy py.exe command.\n"
+                "If you have already installed the Python install manager, open Installed Apps and "
+                "remove 'Python Launcher' to enable the new py.exe command.\n",
+                search->scriptFileLength,
+                search->scriptFile
+            );
+        }
+        break;
     default:
         return exitCode;
     }
@@ -2760,7 +2775,7 @@ process(int argc, wchar_t ** argv)
     // We searched earlier, so if we didn't find anything, now we react
     exitCode = searchExitCode;
     // If none found, and if permitted, install it
-    if (exitCode == RC_NO_PYTHON && isEnvVarSet(L"PYLAUNCHER_ALLOW_INSTALL") ||
+    if (((exitCode == RC_NO_PYTHON) && isEnvVarSet(L"PYLAUNCHER_ALLOW_INSTALL")) ||
         isEnvVarSet(L"PYLAUNCHER_ALWAYS_INSTALL")) {
         exitCode = installEnvironment(&search);
         if (!exitCode) {

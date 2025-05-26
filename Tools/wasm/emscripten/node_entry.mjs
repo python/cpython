@@ -32,16 +32,27 @@ const thisProgramIndex = process.argv.findIndex((x) =>
 
 const settings = {
   preRun(Module) {
+    // Globally expose API object so we can access it if we raise on startup.
+    globalThis.Module = Module;
     mountDirectories(Module);
     Module.FS.chdir(process.cwd());
     Object.assign(Module.ENV, process.env);
+    delete Module.ENV.PATH;
   },
   // Ensure that sys.executable, sys._base_executable, etc point to python.sh
   // not to this file. To properly handle symlinks, python.sh needs to compute
   // its own path.
-  thisProgram: process.argv[thisProgramIndex],
+  thisProgram: process.argv[thisProgramIndex].slice(thisProgram.length),
   // After python.sh come the arguments thatthe user passed to python.sh.
   arguments: process.argv.slice(thisProgramIndex + 1),
 };
 
-await EmscriptenModule(settings);
+try {
+  await EmscriptenModule(settings);
+} catch(e) {
+  // Show JavaScript exception and traceback
+  console.warn(e);
+  // Show Python exception and traceback
+  Module.__Py_DumpTraceback(2, Module._PyGILState_GetThisThreadState());
+  process.exit(1);
+}

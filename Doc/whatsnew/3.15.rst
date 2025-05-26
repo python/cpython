@@ -1,0 +1,279 @@
+
+****************************
+  What's new in Python 3.15
+****************************
+
+:Editor: TBD
+
+.. Rules for maintenance:
+
+   * Anyone can add text to this document.  Do not spend very much time
+   on the wording of your changes, because your text will probably
+   get rewritten to some degree.
+
+   * The maintainer will go through Misc/NEWS periodically and add
+   changes; it's therefore more important to add your changes to
+   Misc/NEWS than to this file.
+
+   * This is not a complete list of every single change; completeness
+   is the purpose of Misc/NEWS.  Some changes I consider too small
+   or esoteric to include.  If such a change is added to the text,
+   I'll just remove it.  (This is another reason you shouldn't spend
+   too much time on writing your addition.)
+
+   * If you want to draw your new text to the attention of the
+   maintainer, add 'XXX' to the beginning of the paragraph or
+   section.
+
+   * It's OK to just add a fragmentary note about a change.  For
+   example: "XXX Describe the transmogrify() function added to the
+   socket module."  The maintainer will research the change and
+   write the necessary text.
+
+   * You can comment out your additions if you like, but it's not
+   necessary (especially when a final release is some months away).
+
+   * Credit the author of a patch or bugfix.   Just the name is
+   sufficient; the e-mail address isn't necessary.
+
+   * It's helpful to add the issue number as a comment:
+
+   XXX Describe the transmogrify() function added to the socket
+   module.
+   (Contributed by P.Y. Developer in :gh:`12345`.)
+
+   This saves the maintainer the effort of going through the VCS log
+   when researching a change.
+
+This article explains the new features in Python 3.15, compared to 3.14.
+
+For full details, see the :ref:`changelog <changelog>`.
+
+.. note::
+
+   Prerelease users should be aware that this document is currently in draft
+   form. It will be updated substantially as Python 3.15 moves towards release,
+   so it's worth checking back even after reading earlier versions.
+
+
+Summary --- release highlights
+==============================
+
+.. This section singles out the most important changes in Python 3.15.
+   Brevity is key.
+
+
+.. PEP-sized items next.
+
+
+
+New features
+============
+
+
+
+Other language changes
+======================
+
+* Several error messages incorrectly using the term "argument" have been corrected.
+  (Contributed by Stan Ulbrych in :gh:`133382`.)
+
+
+
+New modules
+===========
+
+* None yet.
+
+
+Improved modules
+================
+
+ssl
+---
+
+* Indicate through :data:`ssl.HAS_PSK_TLS13` whether the :mod:`ssl` module
+  supports "External PSKs" in TLSv1.3, as described in RFC 9258.
+  (Contributed by Will Childs-Klein in :gh:`133624`.)
+
+
+.. Add improved modules above alphabetically, not here at the end.
+
+Optimizations
+=============
+
+module_name
+-----------
+
+* TODO
+
+
+
+Deprecated
+==========
+
+* module_name:
+  TODO
+
+
+.. Add deprecations above alphabetically, not here at the end.
+
+Removed
+=======
+
+http.server
+-----------
+
+* Removed the :class:`!CGIHTTPRequestHandler` class
+  and the ``--cgi`` flag from the :program:`python -m http.server`
+  command-line interface. They were deprecated in Python 3.13.
+  (Contributed by Bénédikt Tran in :gh:`133810`.)
+
+
+platform
+--------
+
+* Removed the :func:`!platform.java_ver` function,
+  which was deprecated since Python 3.13.
+  (Contributed by Alexey Makridenko in :gh:`133604`.)
+
+
+sysconfig
+---------
+
+* Removed the *check_home* parameter of :func:`sysconfig.is_python_build`.
+  (Contributed by Filipe Laíns in :gh:`92897`.)
+
+
+threading
+---------
+
+* Remove support for arbitrary positional or keyword arguments in the C
+  implementation of :class:`~threading.RLock` objects. This was deprecated
+  in Python 3.14.
+  (Contributed by Bénédikt Tran in :gh:`134087`.)
+
+
+typing
+------
+
+* The undocumented keyword argument syntax for creating
+  :class:`~typing.NamedTuple` classes (for example,
+  ``Point = NamedTuple("Point", x=int, y=int)``) is no longer supported.
+  Use the class-based syntax or the functional syntax instead.
+  (Contributed by Bénédikt Tran in :gh:`133817`.)
+
+* Using ``TD = TypedDict("TD")`` or ``TD = TypedDict("TD", None)`` to
+  construct a :class:`~typing.TypedDict` type with zero field is no
+  longer supported. Use ``class TD(TypedDict): pass``
+  or ``TD = TypedDict("TD", {})`` instead.
+  (Contributed by Bénédikt Tran in :gh:`133823`.)
+
+
+wave
+----
+
+* Removed the ``getmark()``, ``setmark()`` and ``getmarkers()`` methods
+  of the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes,
+  which were deprecated since Python 3.13.
+  (Contributed by Bénédikt Tran in :gh:`133873`.)
+
+
+Porting to Python 3.15
+======================
+
+This section lists previously described changes and other bugfixes
+that may require changes to your code.
+
+
+Build changes
+=============
+
+
+C API changes
+=============
+
+New features
+------------
+
+* TODO
+
+Porting to Python 3.15
+----------------------
+
+* :class:`sqlite3.Connection` APIs has been cleaned up.
+
+  * All parameters of :func:`sqlite3.connect` except *database* are now keyword-only.
+  * The first three parameters of methods :meth:`~sqlite3.Connection.create_function`
+    and :meth:`~sqlite3.Connection.create_aggregate` are now positional-only.
+  * The first parameter of methods :meth:`~sqlite3.Connection.set_authorizer`,
+    :meth:`~sqlite3.Connection.set_progress_handler` and
+    :meth:`~sqlite3.Connection.set_trace_callback` is now positional-only.
+
+  (Contributed by Serhiy Storchaka in :gh:`133595`.)
+
+Deprecated C APIs
+-----------------
+
+* TODO
+
+.. Add C API deprecations above alphabetically, not here at the end.
+
+Removed C APIs
+--------------
+
+* Remove deprecated ``PyUnicode`` functions:
+
+  * :c:func:`!PyUnicode_AsDecodedObject`:
+    Use :c:func:`PyCodec_Decode` instead.
+  * :c:func:`!PyUnicode_AsDecodedUnicode`:
+    Use :c:func:`PyCodec_Decode` instead; Note that some codecs (for example, "base64")
+    may return a type other than :class:`str`, such as :class:`bytes`.
+  * :c:func:`!PyUnicode_AsEncodedObject`:
+    Use :c:func:`PyCodec_Encode` instead.
+  * :c:func:`!PyUnicode_AsEncodedUnicode`:
+    Use :c:func:`PyCodec_Encode` instead; Note that some codecs (for example, "base64")
+    may return a type other than :class:`bytes`, such as :class:`str`.
+
+  (Contributed by Stan Ulbrych in :gh:`133612`)
+
+* :c:func:`!PyImport_ImportModuleNoBlock`: deprecated alias
+  of :c:func:`PyImport_ImportModule`.
+  (Contributed by Bénédikt Tran in :gh:`133644`.)
+
+The following functions are removed in favor of :c:func:`PyConfig_Get`.
+The |pythoncapi_compat_project| can be used to get :c:func:`!PyConfig_Get`
+on Python 3.13 and older.
+
+* Python initialization functions:
+
+  * :c:func:`!Py_GetExecPrefix`:
+    use :c:func:`PyConfig_Get("base_exec_prefix") <PyConfig_Get>`
+    (:data:`sys.base_exec_prefix`) instead.
+    Use :c:func:`PyConfig_Get("exec_prefix") <PyConfig_Get>`
+    (:data:`sys.exec_prefix`) if :ref:`virtual environments <venv-def>`
+    need to be handled.
+  * :c:func:`!Py_GetPath`:
+    use :c:func:`PyConfig_Get("module_search_paths") <PyConfig_Get>`
+    (:data:`sys.path`) instead.
+  * :c:func:`!Py_GetPrefix`:
+    use :c:func:`PyConfig_Get("base_prefix") <PyConfig_Get>`
+    (:data:`sys.base_prefix`) instead.
+    Use :c:func:`PyConfig_Get("prefix") <PyConfig_Get>`
+    (:data:`sys.prefix`) if :ref:`virtual environments <venv-def>`
+    need to be handled.
+  * :c:func:`!Py_GetProgramFullPath`:
+    use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
+    (:data:`sys.executable`) instead.
+  * :c:func:`!Py_GetProgramName`:
+    use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
+    (:data:`sys.executable`) instead.
+  * :c:func:`!Py_GetPythonHome`:
+    use :c:func:`PyConfig_Get("home") <PyConfig_Get>` or the
+    :envvar:`PYTHONHOME` environment variable instead.
+
+  (Contributed by Bénédikt Tran in :gh:`133644`.)
+
+.. |pythoncapi_compat_project| replace:: |pythoncapi_compat_project_link|_
+.. |pythoncapi_compat_project_link| replace:: pythoncapi-compat project
+.. _pythoncapi_compat_project_link: https://github.com/python/pythoncapi-compat

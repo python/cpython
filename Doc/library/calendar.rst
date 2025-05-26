@@ -38,13 +38,33 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
    itself. This is the job of subclasses.
 
 
-   :class:`Calendar` instances have the following methods:
+   :class:`Calendar` instances have the following methods and attributes:
+
+   .. attribute:: firstweekday
+
+      The first weekday as an integer (0--6).
+
+      This property can also be set and read using
+      :meth:`~Calendar.setfirstweekday` and
+      :meth:`~Calendar.getfirstweekday` respectively.
+
+   .. method:: getfirstweekday()
+
+      Return an :class:`int` for the current first weekday (0--6).
+
+      Identical to reading the :attr:`~Calendar.firstweekday` property.
+
+   .. method:: setfirstweekday(firstweekday)
+
+      Set the first weekday to *firstweekday*, passed as an :class:`int` (0--6)
+
+      Identical to setting the :attr:`~Calendar.firstweekday` property.
 
    .. method:: iterweekdays()
 
       Return an iterator for the week day numbers that will be used for one
       week.  The first value from the iterator will be the same as the value of
-      the :attr:`firstweekday` property.
+      the :attr:`~Calendar.firstweekday` property.
 
 
    .. method:: itermonthdates(year, month)
@@ -138,6 +158,36 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    :class:`TextCalendar` instances have the following methods:
 
+
+   .. method:: formatday(theday, weekday, width)
+
+      Return a string representing a single day formatted with the given *width*.
+      If *theday* is ``0``, return a string of spaces of
+      the specified width, representing an empty day. The *weekday* parameter
+      is unused.
+
+   .. method:: formatweek(theweek, w=0)
+
+      Return a single week in a string with no newline. If *w* is provided, it
+      specifies the width of the date columns, which are centered. Depends
+      on the first weekday as specified in the constructor or set by the
+      :meth:`setfirstweekday` method.
+
+
+   .. method:: formatweekday(weekday, width)
+
+      Return a string representing the name of a single weekday formatted to
+      the specified *width*. The *weekday* parameter is an integer representing
+      the day of the week, where ``0`` is Monday and ``6`` is Sunday.
+
+
+   .. method:: formatweekheader(width)
+
+      Return a string containing the header row of weekday names, formatted
+      with the given *width* for each column. The names depend on the locale
+      settings and are padded to the specified width.
+
+
    .. method:: formatmonth(theyear, themonth, w=0, l=0)
 
       Return a month's calendar in a multi-line string. If *w* is provided, it
@@ -145,6 +195,14 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       given, it specifies the number of lines that each week will use. Depends
       on the first weekday as specified in the constructor or set by the
       :meth:`setfirstweekday` method.
+
+
+   .. method:: formatmonthname(theyear, themonth, width=0, withyear=True)
+
+      Return a string representing the month's name centered within the
+      specified *width*. If *withyear* is ``True``, include the year in the
+      output. The *theyear* and *themonth* parameters specify the year
+      and month for the name to be formatted respectively.
 
 
    .. method:: prmonth(theyear, themonth, w=0, l=0)
@@ -437,7 +495,7 @@ The :mod:`calendar` module exports the following data attributes:
 
    A sequence that represents the months of the year in the current locale.  This
    follows normal convention of January being month number 1, so it has a length of
-   13 and  ``month_name[0]`` is the empty string.
+   13 and ``month_name[0]`` is the empty string.
 
        >>> import calendar
        >>> list(calendar.month_name)
@@ -516,7 +574,7 @@ The :mod:`calendar` module defines the following exceptions:
 
 .. _calendar-cli:
 
-Command-Line Usage
+Command-line usage
 ------------------
 
 .. versionadded:: 2.5
@@ -654,6 +712,9 @@ The following options are accepted:
    The number of months printed per row.
    Defaults to 3.
 
+.. versionchanged:: 3.14
+   By default, today's date is highlighted in color and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
 
 *HTML-mode options:*
 

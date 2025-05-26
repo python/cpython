@@ -46,7 +46,6 @@ test runner
    a textual interface, or return a special value to indicate the results of
    executing the tests.
 
-
 .. seealso::
 
    Module :mod:`doctest`
@@ -110,7 +109,7 @@ Here is a short script to test three string methods::
       unittest.main()
 
 
-A testcase is created by subclassing :class:`unittest.TestCase`.  The three
+A test case is created by subclassing :class:`unittest.TestCase`.  The three
 individual tests are defined with methods whose names start with the letters
 ``test``.  This naming convention informs the test runner about which methods
 represent tests.
@@ -198,6 +197,9 @@ For a list of all the command-line options::
    In earlier versions it was only possible to run individual test methods and
    not modules or classes.
 
+.. versionadded:: 3.14
+   Output is colorized by default and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
 
 Command-line options
 ~~~~~~~~~~~~~~~~~~~~
@@ -881,6 +883,12 @@ Test cases
    | :meth:`assertNotIsInstance(a, b)        | ``not isinstance(a, b)``    | 3.2           |
    | <TestCase.assertNotIsInstance>`         |                             |               |
    +-----------------------------------------+-----------------------------+---------------+
+   | :meth:`assertIsSubclass(a, b)           | ``issubclass(a, b)``        | 3.14          |
+   | <TestCase.assertIsSubclass>`            |                             |               |
+   +-----------------------------------------+-----------------------------+---------------+
+   | :meth:`assertNotIsSubclass(a, b)        | ``not issubclass(a, b)``    | 3.14          |
+   | <TestCase.assertNotIsSubclass>`         |                             |               |
+   +-----------------------------------------+-----------------------------+---------------+
 
    All the assert methods accept a *msg* argument that, if specified, is used
    as the error message on failure (see also :data:`longMessage`).
@@ -958,6 +966,15 @@ Test cases
 
       .. versionadded:: 3.2
 
+
+   .. method:: assertIsSubclass(cls, superclass, msg=None)
+               assertNotIsSubclass(cls, superclass, msg=None)
+
+      Test that *cls* is (or is not) a subclass of *superclass* (which can be a
+      class or a tuple of classes, as supported by :func:`issubclass`).
+      To check for the exact type, use :func:`assertIs(cls, superclass) <assertIs>`.
+
+      .. versionadded:: 3.14
 
 
    It is also possible to check the production of exceptions, warnings, and
@@ -1208,6 +1225,24 @@ Test cases
    | <TestCase.assertCountEqual>`          | elements in the same number,   |              |
    |                                       | regardless of their order.     |              |
    +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertStartsWith(a, b)         | ``a.startswith(b)``            | 3.14         |
+   | <TestCase.assertStartsWith>`          |                                |              |
+   +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertNotStartsWith(a, b)      | ``not a.startswith(b)``        | 3.14         |
+   | <TestCase.assertNotStartsWith>`       |                                |              |
+   +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertEndsWith(a, b)           | ``a.endswith(b)``              | 3.14         |
+   | <TestCase.assertEndsWith>`            |                                |              |
+   +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertNotEndsWith(a, b)        | ``not a.endswith(b)``          | 3.14         |
+   | <TestCase.assertNotEndsWith>`         |                                |              |
+   +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertHasAttr(a, b)            | ``hastattr(a, b)``             | 3.14         |
+   | <TestCase.assertHasAttr>`             |                                |              |
+   +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertNotHasAttr(a, b)         | ``not hastattr(a, b)``         | 3.14         |
+   | <TestCase.assertNotHasAttr>`          |                                |              |
+   +---------------------------------------+--------------------------------+--------------+
 
 
    .. method:: assertAlmostEqual(first, second, places=7, msg=None, delta=None)
@@ -1275,6 +1310,34 @@ Test cases
       but works with sequences of unhashable objects as well.
 
       .. versionadded:: 3.2
+
+
+   .. method:: assertStartsWith(s, prefix, msg=None)
+   .. method:: assertNotStartsWith(s, prefix, msg=None)
+
+      Test that the Unicode or byte string *s* starts (or does not start)
+      with a *prefix*.
+      *prefix* can also be a tuple of strings to try.
+
+      .. versionadded:: 3.14
+
+
+   .. method:: assertEndsWith(s, suffix, msg=None)
+   .. method:: assertNotEndsWith(s, suffix, msg=None)
+
+      Test that the Unicode or byte string *s* ends (or does not end)
+      with a *suffix*.
+      *suffix* can also be a tuple of strings to try.
+
+      .. versionadded:: 3.14
+
+
+   .. method:: assertHasAttr(obj, name, msg=None)
+   .. method:: assertNotHasAttr(obj, name, msg=None)
+
+      Test that the object *obj* has (or has not) an attribute *name*.
+
+      .. versionadded:: 3.14
 
 
    .. _type-specific-methods:
@@ -1572,7 +1635,8 @@ Test cases
 
       .. versionadded:: 3.13
 
-   .. coroutinemethod:: asyncSetUp()
+   .. method:: asyncSetUp()
+      :async:
 
       Method called to prepare the test fixture. This is called after :meth:`setUp`.
       This is called immediately before calling the test method; other than
@@ -1580,7 +1644,8 @@ Test cases
       will be considered an error rather than a test failure. The default implementation
       does nothing.
 
-   .. coroutinemethod:: asyncTearDown()
+   .. method:: asyncTearDown()
+      :async:
 
       Method called immediately after the test method has been called and the
       result recorded.  This is called before :meth:`tearDown`. This is called even if
@@ -1596,7 +1661,8 @@ Test cases
 
       This method accepts a coroutine that can be used as a cleanup function.
 
-   .. coroutinemethod:: enterAsyncContext(cm)
+   .. method:: enterAsyncContext(cm)
+      :async:
 
       Enter the supplied :term:`asynchronous context manager`.  If successful,
       also add its :meth:`~object.__aexit__` method as a cleanup function by

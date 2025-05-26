@@ -1,4 +1,4 @@
-:mod:`!ast` --- Abstract Syntax Trees
+:mod:`!ast` --- Abstract syntax trees
 =====================================
 
 .. module:: ast
@@ -29,7 +29,7 @@ compiled into a Python code object using the built-in :func:`compile` function.
 
 .. _abstract-grammar:
 
-Abstract Grammar
+Abstract grammar
 ----------------
 
 The abstract grammar is currently defined as follows:
@@ -1190,7 +1190,7 @@ Control flow
 
    .. doctest::
 
-        >> print(ast.dump(ast.parse("""
+        >>> print(ast.dump(ast.parse("""
         ... while x:
         ...    ...
         ... else:
@@ -1761,6 +1761,43 @@ Pattern matching
 
    .. versionadded:: 3.10
 
+
+Type annotations
+^^^^^^^^^^^^^^^^
+
+.. class:: TypeIgnore(lineno, tag)
+
+   A ``# type: ignore`` comment located at *lineno*.
+   *tag* is the optional tag specified by the form ``# type: ignore <tag>``.
+
+   .. doctest::
+
+      >>> print(ast.dump(ast.parse('x = 1 # type: ignore', type_comments=True), indent=4))
+      Module(
+          body=[
+              Assign(
+                  targets=[
+                      Name(id='x', ctx=Store())],
+                  value=Constant(value=1))],
+          type_ignores=[
+              TypeIgnore(lineno=1, tag='')])
+      >>> print(ast.dump(ast.parse('x: bool = 1 # type: ignore[assignment]', type_comments=True), indent=4))
+      Module(
+          body=[
+              AnnAssign(
+                  target=Name(id='x', ctx=Store()),
+                  annotation=Name(id='bool', ctx=Load()),
+                  value=Constant(value=1),
+                  simple=1)],
+          type_ignores=[
+              TypeIgnore(lineno=1, tag='[assignment]')])
+
+   .. note::
+      :class:`!TypeIgnore` nodes are not generated when the *type_comments* parameter
+      is set to ``False`` (default).  See :func:`ast.parse` for more details.
+
+   .. versionadded:: 3.8
+
 .. _ast-type-params:
 
 Type parameters
@@ -1807,7 +1844,7 @@ aliases.
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse("type Alias[**P = (int, str)] = Callable[P, int]"), indent=4))
+        >>> print(ast.dump(ast.parse("type Alias[**P = [int, str]] = Callable[P, int]"), indent=4))
         Module(
             body=[
                 TypeAlias(
@@ -1815,7 +1852,7 @@ aliases.
                     type_params=[
                         ParamSpec(
                             name='P',
-                            default_value=Tuple(
+                            default_value=List(
                                 elts=[
                                     Name(id='int', ctx=Load()),
                                     Name(id='str', ctx=Load())],
@@ -2119,10 +2156,10 @@ Async and await
    of :class:`ast.operator`, :class:`ast.unaryop`, :class:`ast.cmpop`,
    :class:`ast.boolop` and :class:`ast.expr_context`) on the returned tree
    will be singletons. Changes to one will be reflected in all other
-   occurrences of the same value (e.g. :class:`ast.Add`).
+   occurrences of the same value (for example, :class:`ast.Add`).
 
 
-:mod:`ast` Helpers
+:mod:`ast` helpers
 ------------------
 
 Apart from the node classes, the :mod:`ast` module defines these utility functions
@@ -2447,7 +2484,7 @@ and classes for traversing abstract syntax trees:
 
 .. _ast-compiler-flags:
 
-Compiler Flags
+Compiler flags
 --------------
 
 The following flags may be passed to :func:`compile` in order to change
@@ -2496,7 +2533,7 @@ effects on the compilation of a program:
 
 .. _ast-cli:
 
-Command-Line Usage
+Command-line usage
 ------------------
 
 .. versionadded:: 3.9
@@ -2534,6 +2571,28 @@ The following options are accepted:
             --indent <indent>
 
    Indentation of nodes in AST (number of spaces).
+
+.. option:: --feature-version <version>
+
+   Python version in the format 3.x (for example, 3.10). Defaults to the
+   current version of the interpreter.
+
+   .. versionadded:: 3.14
+
+.. option:: -O <level>
+            --optimize <level>
+
+   Optimization level for parser. Defaults to no optimization.
+
+   .. versionadded:: 3.14
+
+.. option:: --show-empty
+
+   Show empty lists and fields that are ``None``. Defaults to not showing empty
+   objects.
+
+   .. versionadded:: 3.14
+
 
 If :file:`infile` is specified its contents are parsed to AST and dumped
 to stdout.  Otherwise, the content is read from stdin.

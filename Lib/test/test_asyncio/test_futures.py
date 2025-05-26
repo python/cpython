@@ -17,7 +17,7 @@ from test import support
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 def _fakefunc(f):
@@ -242,7 +242,7 @@ class BaseFutureTests:
 
     def test_future_cancel_message_getter(self):
         f = self._new_future(loop=self.loop)
-        self.assertTrue(hasattr(f, '_cancel_message'))
+        self.assertHasAttr(f, '_cancel_message')
         self.assertEqual(f._cancel_message, None)
 
         f.cancel('my message')
@@ -413,7 +413,7 @@ class BaseFutureTests:
     def test_copy_state(self):
         from asyncio.futures import _copy_future_state
 
-        f = self._new_future(loop=self.loop)
+        f = concurrent.futures.Future()
         f.set_result(10)
 
         newf = self._new_future(loop=self.loop)
@@ -421,7 +421,7 @@ class BaseFutureTests:
         self.assertTrue(newf.done())
         self.assertEqual(newf.result(), 10)
 
-        f_exception = self._new_future(loop=self.loop)
+        f_exception = concurrent.futures.Future()
         f_exception.set_exception(RuntimeError())
 
         newf_exception = self._new_future(loop=self.loop)
@@ -429,7 +429,7 @@ class BaseFutureTests:
         self.assertTrue(newf_exception.done())
         self.assertRaises(RuntimeError, newf_exception.result)
 
-        f_cancelled = self._new_future(loop=self.loop)
+        f_cancelled = concurrent.futures.Future()
         f_cancelled.cancel()
 
         newf_cancelled = self._new_future(loop=self.loop)
@@ -441,7 +441,7 @@ class BaseFutureTests:
         except BaseException as e:
             f_exc = e
 
-        f_conexc = self._new_future(loop=self.loop)
+        f_conexc = concurrent.futures.Future()
         f_conexc.set_exception(f_exc)
 
         newf_conexc = self._new_future(loop=self.loop)
@@ -453,6 +453,56 @@ class BaseFutureTests:
             newf_exc = e # assertRaises context manager drops the traceback
         newf_tb = ''.join(traceback.format_tb(newf_exc.__traceback__))
         self.assertEqual(newf_tb.count('raise concurrent.futures.InvalidStateError'), 1)
+
+    def test_copy_state_from_concurrent_futures(self):
+        """Test _copy_future_state from concurrent.futures.Future.
+
+        This tests the optimized path using _get_snapshot when available.
+        """
+        from asyncio.futures import _copy_future_state
+
+        # Test with a result
+        f_concurrent = concurrent.futures.Future()
+        f_concurrent.set_result(42)
+        f_asyncio = self._new_future(loop=self.loop)
+        _copy_future_state(f_concurrent, f_asyncio)
+        self.assertTrue(f_asyncio.done())
+        self.assertEqual(f_asyncio.result(), 42)
+
+        # Test with an exception
+        f_concurrent_exc = concurrent.futures.Future()
+        f_concurrent_exc.set_exception(ValueError("test exception"))
+        f_asyncio_exc = self._new_future(loop=self.loop)
+        _copy_future_state(f_concurrent_exc, f_asyncio_exc)
+        self.assertTrue(f_asyncio_exc.done())
+        with self.assertRaises(ValueError) as cm:
+            f_asyncio_exc.result()
+        self.assertEqual(str(cm.exception), "test exception")
+
+        # Test with cancelled state
+        f_concurrent_cancelled = concurrent.futures.Future()
+        f_concurrent_cancelled.cancel()
+        f_asyncio_cancelled = self._new_future(loop=self.loop)
+        _copy_future_state(f_concurrent_cancelled, f_asyncio_cancelled)
+        self.assertTrue(f_asyncio_cancelled.cancelled())
+
+        # Test that destination already cancelled prevents copy
+        f_concurrent_result = concurrent.futures.Future()
+        f_concurrent_result.set_result(10)
+        f_asyncio_precancelled = self._new_future(loop=self.loop)
+        f_asyncio_precancelled.cancel()
+        _copy_future_state(f_concurrent_result, f_asyncio_precancelled)
+        self.assertTrue(f_asyncio_precancelled.cancelled())
+
+        # Test exception type conversion
+        f_concurrent_invalid = concurrent.futures.Future()
+        f_concurrent_invalid.set_exception(concurrent.futures.InvalidStateError("invalid"))
+        f_asyncio_invalid = self._new_future(loop=self.loop)
+        _copy_future_state(f_concurrent_invalid, f_asyncio_invalid)
+        self.assertTrue(f_asyncio_invalid.done())
+        with self.assertRaises(asyncio.exceptions.InvalidStateError) as cm:
+            f_asyncio_invalid.result()
+        self.assertEqual(str(cm.exception), "invalid")
 
     def test_iter(self):
         fut = self._new_future(loop=self.loop)

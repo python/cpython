@@ -187,13 +187,24 @@ def test_monkeypatch():
 
 
 def test_open(testfn):
-    # SSLContext.load_dh_params uses _Py_fopen_obj rather than normal open()
+    # SSLContext.load_dh_params uses Py_fopen() rather than normal open()
     try:
         import ssl
 
         load_dh_params = ssl.create_default_context().load_dh_params
     except ImportError:
         load_dh_params = None
+
+    try:
+        import readline
+    except ImportError:
+        readline = None
+
+    def rl(name):
+        if readline:
+            return getattr(readline, name, None)
+        else:
+            return None
 
     # Try a range of "open" functions.
     # All of them should fail
@@ -204,11 +215,27 @@ def test_open(testfn):
             (open, 3, "wb"),
             (open, testfn, "w", -1, None, None, None, False, lambda *a: 1),
             (load_dh_params, testfn),
+            (rl("read_history_file"), testfn),
+            (rl("read_history_file"), None),
+            (rl("write_history_file"), testfn),
+            (rl("write_history_file"), None),
+            (rl("append_history_file"), 0, testfn),
+            (rl("append_history_file"), 0, None),
+            (rl("read_init_file"), testfn),
+            (rl("read_init_file"), None),
         ]:
             if not fn:
                 continue
             with assertRaises(RuntimeError):
-                fn(*args)
+                try:
+                    fn(*args)
+                except NotImplementedError:
+                    if fn == load_dh_params:
+                        # Not callable in some builds
+                        load_dh_params = None
+                        raise RuntimeError
+                    else:
+                        raise
 
     actual_mode = [(a[0], a[1]) for e, a in hook.seen if e == "open" and a[1]]
     actual_flag = [(a[0], a[2]) for e, a in hook.seen if e == "open" and not a[1]]
@@ -221,6 +248,14 @@ def test_open(testfn):
                 (3, "w"),
                 (testfn, "w"),
                 (testfn, "rb") if load_dh_params else None,
+                (testfn, "r") if readline else None,
+                ("~/.history", "r") if readline else None,
+                (testfn, "w") if readline else None,
+                ("~/.history", "w") if readline else None,
+                (testfn, "a") if rl("append_history_file") else None,
+                ("~/.history", "a") if rl("append_history_file") else None,
+                (testfn, "r") if readline else None,
+                ("<readline_init_file>", "r") if readline else None,
             ]
             if i is not None
         ],
@@ -268,6 +303,37 @@ def test_mmap():
     with TestHook() as hook:
         mmap.mmap(-1, 8)
         assertEqual(hook.seen[0][1][:2], (-1, 8))
+
+
+def test_ctypes_call_function():
+    import ctypes
+    import _ctypes
+
+    with TestHook() as hook:
+        _ctypes.call_function(ctypes._memmove_addr, (0, 0, 0))
+        assert ("ctypes.call_function", (ctypes._memmove_addr, (0, 0, 0))) in hook.seen, f"{ctypes._memmove_addr=} {hook.seen=}"
+
+        ctypes.CFUNCTYPE(ctypes.c_voidp)(ctypes._memset_addr)(1, 0, 0)
+        assert ("ctypes.call_function", (ctypes._memset_addr, (1, 0, 0))) in hook.seen, f"{ctypes._memset_addr=} {hook.seen=}"
+
+    with TestHook() as hook:
+        ctypes.cast(ctypes.c_voidp(0), ctypes.POINTER(ctypes.c_char))
+        assert "ctypes.call_function" in hook.seen_events
+
+    with TestHook() as hook:
+        ctypes.string_at(id("ctypes.string_at") + 40)
+        assert "ctypes.call_function" in hook.seen_events
+        assert "ctypes.string_at" in hook.seen_events
+
+
+def test_posixsubprocess():
+    import multiprocessing.util
+
+    exe = b"xxx"
+    args = [b"yyy", b"zzz"]
+    with TestHook() as hook:
+        multiprocessing.util.spawnv_passfds(exe, args, ())
+        assert ("_posixsubprocess.fork_exec", ([exe], args, None)) in hook.seen
 
 
 def test_excepthook():

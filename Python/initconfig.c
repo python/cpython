@@ -7,7 +7,8 @@
 #include "pycore_pathconfig.h"    // _Py_path_config
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromConfig()
-#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
+#include "pycore_pymem.h"         // _PyMem_DefaultRawMalloc()
+#include "pycore_pyhash.h"        // _Py_HashSecret
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pystats.h"       // _Py_StatsOn()
 #include "pycore_sysmodule.h"     // _PySys_SetIntMaxStrDigits()
@@ -22,6 +23,15 @@
 #  endif
 #  ifdef HAVE_FCNTL_H
 #    include <fcntl.h>            // O_BINARY
+#  endif
+#endif
+
+#ifdef __APPLE__
+/* Enable system log by default on non-macOS Apple platforms */
+#  if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+#define USE_SYSTEM_LOGGER_DEFAULT 1;
+#  else
+#define USE_SYSTEM_LOGGER_DEFAULT 0;
 #  endif
 #endif
 
@@ -100,6 +110,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(base_executable, WSTR_OPT, PUBLIC, SYS_ATTR("_base_executable")),
     SPEC(base_prefix, WSTR_OPT, PUBLIC, SYS_ATTR("base_prefix")),
     SPEC(bytes_warning, UINT, PUBLIC, SYS_FLAG(9)),
+    SPEC(cpu_count, INT, PUBLIC, NO_SYS),
     SPEC(exec_prefix, WSTR_OPT, PUBLIC, SYS_ATTR("exec_prefix")),
     SPEC(executable, WSTR_OPT, PUBLIC, SYS_ATTR("executable")),
     SPEC(inspect, BOOL, PUBLIC, SYS_FLAG(1)),
@@ -128,7 +139,6 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(check_hash_pycs_mode, WSTR, READ_ONLY, NO_SYS),
     SPEC(code_debug_ranges, BOOL, READ_ONLY, NO_SYS),
     SPEC(configure_c_stdio, BOOL, READ_ONLY, NO_SYS),
-    SPEC(cpu_count, INT, READ_ONLY, NO_SYS),
     SPEC(dev_mode, BOOL, READ_ONLY, NO_SYS),  // sys.flags.dev_mode
     SPEC(dump_refs, BOOL, READ_ONLY, NO_SYS),
     SPEC(dump_refs_file, WSTR_OPT, READ_ONLY, NO_SYS),
@@ -141,7 +151,9 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(filesystem_errors, WSTR, READ_ONLY, NO_SYS),
     SPEC(hash_seed, ULONG, READ_ONLY, NO_SYS),
     SPEC(home, WSTR_OPT, READ_ONLY, NO_SYS),
-    SPEC(import_time, BOOL, READ_ONLY, NO_SYS),
+    SPEC(thread_inherit_context, INT, READ_ONLY, NO_SYS),
+    SPEC(context_aware_warnings, INT, READ_ONLY, NO_SYS),
+    SPEC(import_time, UINT, READ_ONLY, NO_SYS),
     SPEC(install_signal_handlers, BOOL, READ_ONLY, NO_SYS),
     SPEC(isolated, BOOL, READ_ONLY, NO_SYS),  // sys.flags.isolated
 #ifdef MS_WINDOWS
@@ -152,6 +164,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(parse_argv, BOOL, READ_ONLY, NO_SYS),
     SPEC(pathconfig_warnings, BOOL, READ_ONLY, NO_SYS),
     SPEC(perf_profiling, UINT, READ_ONLY, NO_SYS),
+    SPEC(remote_debug, BOOL, READ_ONLY, NO_SYS),
     SPEC(program_name, WSTR, READ_ONLY, NO_SYS),
     SPEC(run_command, WSTR_OPT, READ_ONLY, NO_SYS),
     SPEC(run_filename, WSTR_OPT, READ_ONLY, NO_SYS),
@@ -168,6 +181,9 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(tracemalloc, UINT, READ_ONLY, NO_SYS),
     SPEC(use_frozen_modules, BOOL, READ_ONLY, NO_SYS),
     SPEC(use_hash_seed, BOOL, READ_ONLY, NO_SYS),
+#ifdef __APPLE__
+    SPEC(use_system_logger, BOOL, READ_ONLY, NO_SYS),
+#endif
     SPEC(user_site_directory, BOOL, READ_ONLY, NO_SYS),  // sys.flags.no_user_site
     SPEC(warn_default_encoding, BOOL, READ_ONLY, NO_SYS),
 
@@ -248,7 +264,7 @@ Options (and corresponding environment variables):\n\
 -h     : print this help message and exit (also -? or --help)\n\
 -i     : inspect interactively after running script; forces a prompt even\n\
          if stdin does not appear to be a terminal; also PYTHONINSPECT=x\n\
--I     : isolate Python from the user's environment (implies -E and -s)\n\
+-I     : isolate Python from the user's environment (implies -E, -P and -s)\n\
 -m mod : run library module as a script (terminates option list)\n\
 -O     : remove assert and __debug__-dependent statements; add .opt-1 before\n\
          .pyc extension; also PYTHONOPTIMIZE=x\n\
@@ -296,12 +312,16 @@ The following implementation-specific options are available:\n\
 "-X gil=[0|1]: enable (1) or disable (0) the GIL; also PYTHON_GIL\n"
 #endif
 "\
--X importtime: show how long each import takes; also PYTHONPROFILEIMPORTTIME\n\
+-X importtime[=2]: show how long each import takes; use -X importtime=2 to\
+         log imports of already-loaded modules; also PYTHONPROFILEIMPORTTIME\n\
 -X int_max_str_digits=N: limit the size of int<->str conversions;\n\
          0 disables the limit; also PYTHONINTMAXSTRDIGITS\n\
 -X no_debug_ranges: don't include extra location information in code objects;\n\
          also PYTHONNODEBUGRANGES\n\
 -X perf: support the Linux \"perf\" profiler; also PYTHONPERFSUPPORT=1\n\
+-X perf_jit: support the Linux \"perf\" profiler with DWARF support;\n\
+         also PYTHON_PERF_JIT_SUPPORT=1\n\
+-X disable-remote-debug: disable remote debugging; also PYTHON_DISABLE_REMOTE_DEBUG\n\
 "
 #ifdef Py_DEBUG
 "-X presite=MOD: import this module before site; also PYTHON_PRESITE\n"
@@ -322,6 +342,14 @@ The following implementation-specific options are available:\n\
          PYTHON_TLBC\n"
 #endif
 "\
+-X thread_inherit_context=[0|1]: enable (1) or disable (0) threads inheriting\n\
+         context vars by default; enabled by default in the free-threaded\n\
+         build and disabled otherwise; also PYTHON_THREAD_INHERIT_CONTEXT\n\
+-X context_aware_warnings=[0|1]: if true (1) then the warnings module will\n\
+         use a context variables; if false (0) then the warnings module will\n\
+         use module globals, which is not concurrent-safe; set to true for\n\
+         free-threaded builds and false otherwise; also\n\
+         PYTHON_CONTEXT_AWARE_WARNINGS\n\
 -X tracemalloc[=N]: trace Python memory allocations; N sets a traceback limit\n \
          of N frames (default: 1); also PYTHONTRACEMALLOC=N\n\
 -X utf8[=0|1]: enable (1) or disable (0) UTF-8 mode; also PYTHONUTF8\n\
@@ -409,6 +437,10 @@ static const char usage_envvars[] =
 #ifdef Py_GIL_DISABLED
 "PYTHON_TLBC     : when set to 0, disables thread-local bytecode (-X tlbc)\n"
 #endif
+"PYTHON_THREAD_INHERIT_CONTEXT: if true (1), threads inherit context vars\n"
+"                   (-X thread_inherit_context)\n"
+"PYTHON_CONTEXT_AWARE_WARNINGS: if true (1), enable thread-safe warnings module\n"
+"                   behaviour (-X context_aware_warnings)\n"
 "PYTHONTRACEMALLOC: trace Python memory allocations (-X tracemalloc)\n"
 "PYTHONUNBUFFERED: disable stdout/stderr buffering (-u)\n"
 "PYTHONUTF8      : control the UTF-8 mode (-X utf8)\n"
@@ -614,53 +646,87 @@ _PyWideStringList_CheckConsistency(const PyWideStringList *list)
 #endif   /* Py_DEBUG */
 
 
-void
-_PyWideStringList_Clear(PyWideStringList *list)
+static void
+_PyWideStringList_ClearEx(PyWideStringList *list,
+                          bool use_default_allocator)
 {
     assert(_PyWideStringList_CheckConsistency(list));
     for (Py_ssize_t i=0; i < list->length; i++) {
-        PyMem_RawFree(list->items[i]);
+        if (use_default_allocator) {
+            _PyMem_DefaultRawFree(list->items[i]);
+        }
+        else {
+            PyMem_RawFree(list->items[i]);
+        }
     }
-    PyMem_RawFree(list->items);
+    if (use_default_allocator) {
+        _PyMem_DefaultRawFree(list->items);
+    }
+    else {
+        PyMem_RawFree(list->items);
+    }
     list->length = 0;
     list->items = NULL;
 }
 
+void
+_PyWideStringList_Clear(PyWideStringList *list)
+{
+    _PyWideStringList_ClearEx(list, false);
+}
 
-int
-_PyWideStringList_Copy(PyWideStringList *list, const PyWideStringList *list2)
+static int
+_PyWideStringList_CopyEx(PyWideStringList *list,
+                         const PyWideStringList *list2,
+                         bool use_default_allocator)
 {
     assert(_PyWideStringList_CheckConsistency(list));
     assert(_PyWideStringList_CheckConsistency(list2));
 
     if (list2->length == 0) {
-        _PyWideStringList_Clear(list);
+        _PyWideStringList_ClearEx(list, use_default_allocator);
         return 0;
     }
 
     PyWideStringList copy = _PyWideStringList_INIT;
 
     size_t size = list2->length * sizeof(list2->items[0]);
-    copy.items = PyMem_RawMalloc(size);
+    if (use_default_allocator) {
+        copy.items = _PyMem_DefaultRawMalloc(size);
+    }
+    else {
+        copy.items = PyMem_RawMalloc(size);
+    }
     if (copy.items == NULL) {
         return -1;
     }
 
     for (Py_ssize_t i=0; i < list2->length; i++) {
-        wchar_t *item = _PyMem_RawWcsdup(list2->items[i]);
+        wchar_t *item;
+        if (use_default_allocator) {
+            item = _PyMem_DefaultRawWcsdup(list2->items[i]);
+        }
+        else {
+            item = _PyMem_RawWcsdup(list2->items[i]);
+        }
         if (item == NULL) {
-            _PyWideStringList_Clear(&copy);
+            _PyWideStringList_ClearEx(&copy, use_default_allocator);
             return -1;
         }
         copy.items[i] = item;
         copy.length = i + 1;
     }
 
-    _PyWideStringList_Clear(list);
+    _PyWideStringList_ClearEx(list, use_default_allocator);
     *list = copy;
     return 0;
 }
 
+int
+_PyWideStringList_Copy(PyWideStringList *list, const PyWideStringList *list2)
+{
+    return _PyWideStringList_CopyEx(list, list2, false);
+}
 
 PyStatus
 PyWideStringList_Insert(PyWideStringList *list,
@@ -784,12 +850,7 @@ _PyWideStringList_AsTuple(const PyWideStringList *list)
 void
 _Py_ClearArgcArgv(void)
 {
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    _PyWideStringList_Clear(&_PyRuntime.orig_argv);
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    _PyWideStringList_ClearEx(&_PyRuntime.orig_argv, true);
 }
 
 
@@ -797,17 +858,10 @@ static int
 _Py_SetArgcArgv(Py_ssize_t argc, wchar_t * const *argv)
 {
     const PyWideStringList argv_list = {.length = argc, .items = (wchar_t **)argv};
-    int res;
-
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     // XXX _PyRuntime.orig_argv only gets cleared by Py_Main(),
     // so it currently leaks for embedders.
-    res = _PyWideStringList_Copy(&_PyRuntime.orig_argv, &argv_list);
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    return res;
+    return _PyWideStringList_CopyEx(&_PyRuntime.orig_argv, &argv_list, true);
 }
 
 
@@ -884,6 +938,11 @@ config_check_consistency(const PyConfig *config)
     assert(config->cpu_count != 0);
     // config->use_frozen_modules is initialized later
     // by _PyConfig_InitImportConfig().
+    assert(config->thread_inherit_context >= 0);
+    assert(config->context_aware_warnings >= 0);
+#ifdef __APPLE__
+    assert(config->use_system_logger >= 0);
+#endif
 #ifdef Py_STATS
     assert(config->_pystats >= 0);
 #endif
@@ -946,6 +1005,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     memset(config, 0, sizeof(*config));
 
     config->_config_init = (int)_PyConfig_INIT_COMPAT;
+    config->import_time = -1;
     config->isolated = -1;
     config->use_environment = -1;
     config->dev_mode = -1;
@@ -954,6 +1014,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->faulthandler = -1;
     config->tracemalloc = -1;
     config->perf_profiling = -1;
+    config->remote_debug = -1;
     config->module_search_paths_set = 0;
     config->parse_argv = 0;
     config->site_import = -1;
@@ -987,6 +1048,16 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->code_debug_ranges = 1;
     config->cpu_count = -1;
 #ifdef Py_GIL_DISABLED
+    config->thread_inherit_context = 1;
+    config->context_aware_warnings = 1;
+#else
+    config->thread_inherit_context = 0;
+    config->context_aware_warnings = 0;
+#endif
+#ifdef __APPLE__
+    config->use_system_logger = USE_SYSTEM_LOGGER_DEFAULT;
+#endif
+#ifdef Py_GIL_DISABLED
     config->enable_gil = _PyConfig_GIL_DEFAULT;
     config->tlbc_enabled = 1;
 #endif
@@ -1014,6 +1085,16 @@ config_init_defaults(PyConfig *config)
     config->pathconfig_warnings = 1;
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
+#endif
+#ifdef Py_GIL_DISABLED
+    config->thread_inherit_context = 1;
+    config->context_aware_warnings = 1;
+#else
+    config->thread_inherit_context = 0;
+    config->context_aware_warnings = 0;
+#endif
+#ifdef __APPLE__
+    config->use_system_logger = USE_SYSTEM_LOGGER_DEFAULT;
 #endif
 }
 
@@ -1046,8 +1127,16 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->int_max_str_digits = _PY_LONG_DEFAULT_MAX_STR_DIGITS;
     config->safe_path = 1;
     config->pathconfig_warnings = 0;
+#ifdef Py_GIL_DISABLED
+    config->thread_inherit_context = 1;
+#else
+    config->thread_inherit_context = 0;
+#endif
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
+#endif
+#ifdef __APPLE__
+    config->use_system_logger = USE_SYSTEM_LOGGER_DEFAULT;
 #endif
 }
 
@@ -1873,6 +1962,58 @@ error:
 }
 
 static PyStatus
+config_init_thread_inherit_context(PyConfig *config)
+{
+    const char *env = config_get_env(config, "PYTHON_THREAD_INHERIT_CONTEXT");
+    if (env) {
+        int enabled;
+        if (_Py_str_to_int(env, &enabled) < 0 || (enabled < 0) || (enabled > 1)) {
+            return _PyStatus_ERR(
+                "PYTHON_THREAD_INHERIT_CONTEXT=N: N is missing or invalid");
+        }
+        config->thread_inherit_context = enabled;
+    }
+
+    const wchar_t *xoption = config_get_xoption(config, L"thread_inherit_context");
+    if (xoption) {
+        int enabled;
+        const wchar_t *sep = wcschr(xoption, L'=');
+        if (!sep || (config_wstr_to_int(sep + 1, &enabled) < 0) || (enabled < 0) || (enabled > 1)) {
+            return _PyStatus_ERR(
+                "-X thread_inherit_context=n: n is missing or invalid");
+        }
+        config->thread_inherit_context = enabled;
+    }
+    return _PyStatus_OK();
+}
+
+static PyStatus
+config_init_context_aware_warnings(PyConfig *config)
+{
+    const char *env = config_get_env(config, "PYTHON_CONTEXT_AWARE_WARNINGS");
+    if (env) {
+        int enabled;
+        if (_Py_str_to_int(env, &enabled) < 0 || (enabled < 0) || (enabled > 1)) {
+            return _PyStatus_ERR(
+                "PYTHON_CONTEXT_AWARE_WARNINGS=N: N is missing or invalid");
+        }
+        config->context_aware_warnings = enabled;
+    }
+
+    const wchar_t *xoption = config_get_xoption(config, L"context_aware_warnings");
+    if (xoption) {
+        int enabled;
+        const wchar_t *sep = wcschr(xoption, L'=');
+        if (!sep || (config_wstr_to_int(sep + 1, &enabled) < 0) || (enabled < 0) || (enabled > 1)) {
+            return _PyStatus_ERR(
+                "-X context_aware_warnings=n: n is missing or invalid");
+        }
+        config->context_aware_warnings = enabled;
+    }
+    return _PyStatus_OK();
+}
+
+static PyStatus
 config_init_tlbc(PyConfig *config)
 {
 #ifdef Py_GIL_DISABLED
@@ -1933,6 +2074,28 @@ config_init_perf_profiling(PyConfig *config)
         config->perf_profiling = 2;
     }
 
+    return _PyStatus_OK();
+
+}
+
+static PyStatus
+config_init_remote_debug(PyConfig *config)
+{
+#ifndef Py_REMOTE_DEBUG
+    config->remote_debug = 0;
+#else
+    int active = 1;
+    const char *env = Py_GETENV("PYTHON_DISABLE_REMOTE_DEBUG");
+    if (env) {
+        active = 0;
+    }
+    const wchar_t *xoption = config_get_xoption(config, L"disable-remote-debug");
+    if (xoption) {
+        active = 0;
+    }
+
+    config->remote_debug = active;
+#endif
     return _PyStatus_OK();
 
 }
@@ -2085,6 +2248,38 @@ config_init_run_presite(PyConfig *config)
 }
 #endif
 
+static PyStatus
+config_init_import_time(PyConfig *config)
+{
+    int importtime = 0;
+
+    const char *env = config_get_env(config, "PYTHONPROFILEIMPORTTIME");
+    if (env) {
+        if (_Py_str_to_int(env, &importtime) != 0) {
+            importtime = 1;
+        }
+        if (importtime < 0 || importtime > 2) {
+            return _PyStatus_ERR(
+                "PYTHONPROFILEIMPORTTIME: numeric values other than 1 and 2 "
+                "are reserved for future use.");
+        }
+    }
+
+    const wchar_t *x_value = config_get_xoption_value(config, L"importtime");
+    if (x_value) {
+        if (*x_value == 0 || config_wstr_to_int(x_value, &importtime) != 0) {
+            importtime = 1;
+        }
+        if (importtime < 0 || importtime > 2) {
+            return _PyStatus_ERR(
+                "-X importtime: values other than 1 and 2 "
+                "are reserved for future use.");
+        }
+    }
+
+    config->import_time = importtime;
+    return _PyStatus_OK();
+}
 
 static PyStatus
 config_read_complex_options(PyConfig *config)
@@ -2096,17 +2291,19 @@ config_read_complex_options(PyConfig *config)
             config->faulthandler = 1;
         }
     }
-    if (config_get_env(config, "PYTHONPROFILEIMPORTTIME")
-       || config_get_xoption(config, L"importtime")) {
-        config->import_time = 1;
-    }
-
     if (config_get_env(config, "PYTHONNODEBUGRANGES")
        || config_get_xoption(config, L"no_debug_ranges")) {
         config->code_debug_ranges = 0;
     }
 
     PyStatus status;
+    if (config->import_time < 0) {
+        status = config_init_import_time(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
     if (config->tracemalloc < 0) {
         status = config_init_tracemalloc(config);
         if (_PyStatus_EXCEPTION(status)) {
@@ -2116,6 +2313,13 @@ config_read_complex_options(PyConfig *config)
 
     if (config->perf_profiling < 0) {
         status = config_init_perf_profiling(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
+    if (config->remote_debug < 0) {
+        status = config_init_remote_debug(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -2150,6 +2354,16 @@ config_read_complex_options(PyConfig *config)
         }
     }
 #endif
+
+    status = config_init_thread_inherit_context(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = config_init_context_aware_warnings(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     status = config_init_tlbc(config);
     if (_PyStatus_EXCEPTION(status)) {
@@ -2482,6 +2696,9 @@ config_read(PyConfig *config, int compute_path_config)
     if (config->perf_profiling < 0) {
         config->perf_profiling = 0;
     }
+    if (config->remote_debug < 0) {
+        config->remote_debug = -1;
+    }
     if (config->use_hash_seed < 0) {
         config->use_hash_seed = 0;
         config->hash_seed = 0;
@@ -2744,8 +2961,6 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
         case 'X':
             /* option handled by _PyPreCmdline_Read() */
             break;
-
-        /* case 'J': reserved for Jython */
 
         case 'O':
             config->optimization_level++;
@@ -3431,10 +3646,13 @@ _Py_DumpPathConfig(PyThreadState *tstate)
 
 #define DUMP_SYS(NAME) \
         do { \
-            obj = PySys_GetObject(#NAME); \
             PySys_FormatStderr("  sys.%s = ", #NAME); \
+            if (_PySys_GetOptionalAttrString(#NAME, &obj) < 0) { \
+                PyErr_Clear(); \
+            } \
             if (obj != NULL) { \
                 PySys_FormatStderr("%A", obj); \
+                Py_DECREF(obj); \
             } \
             else { \
                 PySys_WriteStderr("(not set)"); \
@@ -3452,7 +3670,8 @@ _Py_DumpPathConfig(PyThreadState *tstate)
     DUMP_SYS(exec_prefix);
 #undef DUMP_SYS
 
-    PyObject *sys_path = PySys_GetObject("path");  /* borrowed reference */
+    PyObject *sys_path;
+    (void) _PySys_GetOptionalAttrString("path", &sys_path);
     if (sys_path != NULL && PyList_Check(sys_path)) {
         PySys_WriteStderr("  sys.path = [\n");
         Py_ssize_t len = PyList_GET_SIZE(sys_path);
@@ -3462,6 +3681,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
         }
         PySys_WriteStderr("  ]\n");
     }
+    Py_XDECREF(sys_path);
 
     _PyErr_SetRaisedException(tstate, exc);
 }
@@ -4071,22 +4291,10 @@ _PyConfig_CreateXOptionsDict(const PyConfig *config)
 }
 
 
-static PyObject*
-config_get_sys(const char *name)
-{
-    PyObject *value = PySys_GetObject(name);
-    if (value == NULL) {
-        PyErr_Format(PyExc_RuntimeError, "lost sys.%s", name);
-        return NULL;
-    }
-    return Py_NewRef(value);
-}
-
-
 static int
 config_get_sys_write_bytecode(const PyConfig *config, int *value)
 {
-    PyObject *attr = config_get_sys("dont_write_bytecode");
+    PyObject *attr = _PySys_GetRequiredAttrString("dont_write_bytecode");
     if (attr == NULL) {
         return -1;
     }
@@ -4107,7 +4315,7 @@ config_get(const PyConfig *config, const PyConfigSpec *spec,
 {
     if (use_sys) {
         if (spec->sys.attr != NULL) {
-            return config_get_sys(spec->sys.attr);
+            return _PySys_GetRequiredAttrString(spec->sys.attr);
         }
 
         if (strcmp(spec->name, "write_bytecode") == 0) {
@@ -4350,9 +4558,25 @@ error:
 }
 
 
+// Set PyConfig.ATTR integer member
+static int
+config_set_int_attr(const PyConfigSpec *spec, int value)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyConfig *config = &interp->config;
+    int *member = config_get_spec_member(config, spec);
+    *member = value;
+    return 0;
+}
+
+
 int
 PyConfig_Set(const char *name, PyObject *value)
 {
+    if (PySys_Audit("cpython.PyConfig_Set", "sO", name, value) < 0) {
+        return -1;
+    }
+
     const PyConfigSpec *spec = config_find_spec(name);
     if (spec == NULL) {
         spec = preconfig_find_spec(name);
@@ -4458,17 +4682,21 @@ PyConfig_Set(const char *name, PyObject *value)
         Py_UNREACHABLE();
     }
 
-
     if (spec->sys.attr != NULL) {
         // Set the sys attribute, but don't set PyInterpreterState.config
         // to keep the code simple.
         return PySys_SetObject(spec->sys.attr, value);
     }
-    else if (spec->sys.flag_index >= 0 && has_int_value) {
-        return config_set_sys_flag(spec, int_value);
-    }
-    else if (strcmp(spec->name, "int_max_str_digits") == 0 && has_int_value) {
-        return _PySys_SetIntMaxStrDigits(int_value);
+    else if (has_int_value) {
+        if (spec->sys.flag_index >= 0) {
+            return config_set_sys_flag(spec, int_value);
+        }
+        else if (strcmp(spec->name, "int_max_str_digits") == 0) {
+            return _PySys_SetIntMaxStrDigits(int_value);
+        }
+        else {
+            return config_set_int_attr(spec, int_value);
+        }
     }
 
 cannot_set:

@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _Py_CheckFunctionResult()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
+#include "pycore_freelist.h"
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -85,9 +86,12 @@ PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *c
                             "flag but no class");
             return NULL;
         }
-        PyCMethodObject *om = PyObject_GC_New(PyCMethodObject, &PyCMethod_Type);
+        PyCMethodObject *om = _Py_FREELIST_POP(PyCMethodObject, pycmethodobject);
         if (om == NULL) {
-            return NULL;
+            om = PyObject_GC_New(PyCMethodObject, &PyCMethod_Type);
+            if (om == NULL) {
+                return NULL;
+            }
         }
         om->mm_class = (PyTypeObject*)Py_NewRef(cls);
         op = (PyCFunctionObject *)om;
@@ -98,9 +102,12 @@ PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *c
                             "but no METH_METHOD flag");
             return NULL;
         }
-        op = PyObject_GC_New(PyCFunctionObject, &PyCFunction_Type);
+        op = _Py_FREELIST_POP(PyCFunctionObject, pycfunctionobject);
         if (op == NULL) {
-            return NULL;
+            op = PyObject_GC_New(PyCFunctionObject, &PyCFunction_Type);
+            if (op == NULL) {
+                return NULL;
+            }
         }
     }
 
@@ -159,20 +166,27 @@ static void
 meth_dealloc(PyObject *self)
 {
     PyCFunctionObject *m = _PyCFunctionObject_CAST(self);
-    // The Py_TRASHCAN mechanism requires that we be able to
-    // call PyObject_GC_UnTrack twice on an object.
     PyObject_GC_UnTrack(m);
-    Py_TRASHCAN_BEGIN(m, meth_dealloc);
     if (m->m_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*) m);
     }
+    // We need to access ml_flags here rather than later.
+    // `m->m_ml` might have the same lifetime
+    // as `m_self` when it's dynamically allocated.
+    int ml_flags = m->m_ml->ml_flags;
     // Dereference class before m_self: PyCFunction_GET_CLASS accesses
     // PyMethodDef m_ml, which could be kept alive by m_self
     Py_XDECREF(PyCFunction_GET_CLASS(m));
     Py_XDECREF(m->m_self);
     Py_XDECREF(m->m_module);
-    PyObject_GC_Del(m);
-    Py_TRASHCAN_END;
+    if (ml_flags & METH_METHOD) {
+        assert(Py_IS_TYPE(self, &PyCMethod_Type));
+        _Py_FREELIST_FREE(pycmethodobject, m, PyObject_GC_Del);
+    }
+    else {
+        assert(Py_IS_TYPE(self, &PyCFunction_Type));
+        _Py_FREELIST_FREE(pycfunctionobject, m, PyObject_GC_Del);
+    }
 }
 
 static PyObject *
@@ -331,7 +345,7 @@ meth_hash(PyObject *self)
 {
     PyCFunctionObject *a = _PyCFunctionObject_CAST(self);
     Py_hash_t x = PyObject_GenericHash(a->m_self);
-    Py_hash_t y = _Py_HashPointer((void*)(a->m_ml->ml_meth));
+    Py_hash_t y = Py_HashPointer((void*)(a->m_ml->ml_meth));
     x ^= y;
     if (x == -1) {
         x = -2;
@@ -549,7 +563,7 @@ cfunction_call(PyObject *func, PyObject *args, PyObject *kwargs)
     PyObject *result;
     if (flags & METH_KEYWORDS) {
         result = _PyCFunctionWithKeywords_TrampolineCall(
-            (*(PyCFunctionWithKeywords)(void(*)(void))meth),
+            *_PyCFunctionWithKeywords_CAST(meth),
             self, args, kwargs);
     }
     else {

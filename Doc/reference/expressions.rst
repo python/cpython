@@ -751,7 +751,8 @@ which are used to control the execution of a generator function.
 
 .. index:: pair: exception; StopAsyncIteration
 
-.. coroutinemethod:: agen.__anext__()
+.. method:: agen.__anext__()
+   :async:
 
    Returns an awaitable which when run starts to execute the asynchronous
    generator or resumes it at the last executed yield expression.  When an
@@ -768,7 +769,8 @@ which are used to control the execution of a generator function.
    This method is normally called implicitly by a :keyword:`async for` loop.
 
 
-.. coroutinemethod:: agen.asend(value)
+.. method:: agen.asend(value)
+   :async:
 
    Returns an awaitable which when run resumes the execution of the
    asynchronous generator. As with the :meth:`~generator.send` method for a
@@ -783,8 +785,9 @@ which are used to control the execution of a generator function.
    because there is no yield expression that could receive the value.
 
 
-.. coroutinemethod:: agen.athrow(value)
-                     agen.athrow(type[, value[, traceback]])
+.. method:: agen.athrow(value)
+            agen.athrow(type[, value[, traceback]])
+   :async:
 
    Returns an awaitable that raises an exception of type ``type`` at the point
    where the asynchronous generator was paused, and returns the next value
@@ -804,7 +807,8 @@ which are used to control the execution of a generator function.
 .. index:: pair: exception; GeneratorExit
 
 
-.. coroutinemethod:: agen.aclose()
+.. method:: agen.aclose()
+   :async:
 
    Returns an awaitable that when run will throw a :exc:`GeneratorExit` into
    the asynchronous generator function at the point where it was paused.
@@ -1924,7 +1928,7 @@ Expression lists
    single: , (comma); expression list
 
 .. productionlist:: python-grammar
-   starred_expression: ["*"] `or_expr`
+   starred_expression: "*" `or_expr` | `expression`
    flexible_expression: `assignment_expression` | `starred_expression`
    flexible_expression_list: `flexible_expression` ("," `flexible_expression`)* [","]
    starred_expression_list: `starred_expression` ("," `starred_expression`)* [","]

@@ -1,1 +1,0 @@
-Reading text from a non-blocking stream with ``read`` may now raise a :exc:`BlockingIOError` if the operation cannot immediately return bytes.

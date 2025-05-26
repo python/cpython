@@ -1038,11 +1038,9 @@ class Differ:
 # remaining is that perhaps it was really the case that " volatile"
 # was inserted after "private".  I can live with that <wink>.
 
-import re
-
-def IS_LINE_JUNK(line, pat=re.compile(r"\s*(?:#\s*)?$").match):
+def IS_LINE_JUNK(line, pat=None):
     r"""
-    Return True for ignorable line: iff `line` is blank or contains a single '#'.
+    Return True for ignorable line: if `line` is blank or contains a single '#'.
 
     Examples:
 
@@ -1054,6 +1052,11 @@ def IS_LINE_JUNK(line, pat=re.compile(r"\s*(?:#\s*)?$").match):
     False
     """
 
+    if pat is None:
+        # Default: match '#' or the empty string
+        return line.strip() in '#'
+   # Previous versions used the undocumented parameter 'pat' as a
+   # match function. Retain this behaviour for compatibility.
     return pat(line) is not None
 
 def IS_CHARACTER_JUNK(ch, ws=" \t"):
@@ -1632,13 +1635,22 @@ _file_template = """
 </html>"""
 
 _styles = """
-        table.diff {font-family:Courier; border:medium;}
+        :root {color-scheme: light dark}
+        table.diff {font-family: Menlo, Consolas, Monaco, Liberation Mono, Lucida Console, monospace; border:medium}
         .diff_header {background-color:#e0e0e0}
         td.diff_header {text-align:right}
         .diff_next {background-color:#c0c0c0}
-        .diff_add {background-color:#aaffaa}
+        .diff_add {background-color:palegreen}
         .diff_chg {background-color:#ffff77}
-        .diff_sub {background-color:#ffaaaa}"""
+        .diff_sub {background-color:#ffaaaa}
+
+        @media (prefers-color-scheme: dark) {
+            .diff_header {background-color:#666}
+            .diff_next {background-color:#393939}
+            .diff_add {background-color:darkgreen}
+            .diff_chg {background-color:#847415}
+            .diff_sub {background-color:darkred}
+        }"""
 
 _table_template = """
     <table class="diff" id="difflib_chg_%(prefix)s_top"
@@ -2018,7 +2030,6 @@ class HtmlDiff(object):
                      replace('\1','</span>'). \
                      replace('\t','&nbsp;')
 
-del re
 
 def restore(delta, which):
     r"""
@@ -2051,10 +2062,3 @@ def restore(delta, which):
     for line in delta:
         if line[:2] in prefixes:
             yield line[2:]
-
-def _test():
-    import doctest, difflib
-    return doctest.testmod(difflib)
-
-if __name__ == "__main__":
-    _test()

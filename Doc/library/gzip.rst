@@ -122,9 +122,7 @@ The module defines the following items:
    .. method:: peek(n)
 
       Read *n* uncompressed bytes without advancing the file position.
-      At most one single read on the compressed stream is done to satisfy
-      the call.  The number of bytes returned may be more or less than
-      requested.
+      The number of bytes returned may be more or less than requested.
 
       .. note:: While calling :meth:`peek` does not change the file position of
          the :class:`GzipFile`, it may change the position of the underlying
@@ -260,6 +258,10 @@ Example of how to GZIP compress a binary string::
       The basic data compression module needed to support the :program:`gzip` file
       format.
 
+   In case gzip (de)compression is a bottleneck, the `python-isal`_
+   package speeds up (de)compression with a mostly compatible API.
+
+   .. _python-isal: https://github.com/pycompression/python-isal
 
 .. program:: gzip
 

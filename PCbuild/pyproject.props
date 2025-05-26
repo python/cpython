@@ -10,9 +10,9 @@
     <Py_IntDir Condition="'$(Py_IntDir)' == ''">$(MSBuildThisFileDirectory)obj\</Py_IntDir>
     <IntDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)$(ArchName)_$(Configuration)\$(ProjectName)\</IntDir>
     <IntDir>$(IntDir.Replace(`\\`, `\`))</IntDir>
-    <!-- pyconfig.h is updated by pythoncore.vcxproj, so it's always in pythoncore's IntDir -->
-    <GeneratedPyConfigDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)$(ArchName)_$(Configuration)\pythoncore\</GeneratedPyConfigDir>
     <GeneratedFrozenModulesDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)_frozen\</GeneratedFrozenModulesDir>
+    <GeneratedZlibNgDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)$(ArchName)_$(Configuration)\zlib-ng\</GeneratedZlibNgDir>
+    <GeneratedJitStencilsDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)_$(Configuration)</GeneratedJitStencilsDir>
     <TargetName Condition="'$(TargetName)' == ''">$(ProjectName)</TargetName>
     <TargetName>$(TargetName)$(PyDebugExt)</TargetName>
     <GenerateManifest>false</GenerateManifest>
@@ -42,15 +42,18 @@
   <PropertyGroup>
     <_DebugPreprocessorDefinition>NDEBUG;</_DebugPreprocessorDefinition>
     <_DebugPreprocessorDefinition Condition="$(Configuration) == 'Debug'">_DEBUG;</_DebugPreprocessorDefinition>
+    <_PyStatsPreprocessorDefinition>PyStats;</_PyStatsPreprocessorDefinition>
+    <_PyStatsPreprocessorDefinition Condition="$(PySTATS) != ''">Py_STATS;</_PyStatsPreprocessorDefinition>
     <_PlatformPreprocessorDefinition>_WIN32;</_PlatformPreprocessorDefinition>
     <_PlatformPreprocessorDefinition Condition="$(Platform) == 'x64'">_WIN64;</_PlatformPreprocessorDefinition>
     <_PlatformPreprocessorDefinition Condition="$(Platform) == 'x64' and $(PlatformToolset) != 'ClangCL'">_M_X64;$(_PlatformPreprocessorDefinition)</_PlatformPreprocessorDefinition>
     <_Py3NamePreprocessorDefinition>PY3_DLLNAME=L"$(Py3DllName)$(PyDebugExt)";</_Py3NamePreprocessorDefinition>
+    <_FreeThreadedPreprocessorDefinition Condition="$(DisableGil) == 'true'">Py_GIL_DISABLED=1;</_FreeThreadedPreprocessorDefinition>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(PySourcePath)Include;$(PySourcePath)Include\internal;$(PySourcePath)Include\internal\mimalloc;$(GeneratedPyConfigDir);$(PySourcePath)PC;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;$(_Py3NamePreprocessorDefinition);$(_PlatformPreprocessorDefinition)$(_DebugPreprocessorDefinition)$(_PydPreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(PySourcePath)Include;$(PySourcePath)Include\internal;$(PySourcePath)Include\internal\mimalloc;$(PySourcePath)PC;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;$(_Py3NamePreprocessorDefinition)$(_PlatformPreprocessorDefinition)$(_DebugPreprocessorDefinition)$(_PyStatsPreprocessorDefinition)$(_PydPreprocessorDefinition)$(_FreeThreadedPreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(SupportPGO)' and ($(Configuration) == 'PGInstrument' or $(Configuration) == 'PGUpdate')">_Py_USING_PGO=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 
       <Optimization>MaxSpeed</Optimization>
@@ -67,8 +70,6 @@
       <ControlFlowGuard Condition="$(EnableControlFlowGuard) != ''">$(EnableControlFlowGuard)</ControlFlowGuard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">-Wno-deprecated-non-prototype -Wno-unused-label -Wno-pointer-sign -Wno-incompatible-pointer-types-discards-qualifiers -Wno-unused-function %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="$(Configuration) != 'Debug' and $(PlatformToolset) == 'ClangCL'">-flto %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="$(MSVCHasBrokenARM64Clamping) == 'true' and $(Platform) == 'ARM64'">-d2pattern-opt-disable:-932189325 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="$(MSVCHasBrokenARM64SignExtension) == 'true' and $(Platform) == 'ARM64'">-d2ssa-patterns-all- %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="$(GenerateSourceDependencies) == 'true'">/sourceDependencies "$(IntDir.Trim(`\`))" %(AdditionalOptions)</AdditionalOptions>
@@ -104,6 +105,7 @@
       <AdditionalOptions Condition="$(MSVCHasBrokenARM64Clamping) == 'true' and $(Platform) == 'ARM64'">-d2:-pattern-opt-disable:-932189325 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Lib>
+      <LinkTimeCodeGeneration>false</LinkTimeCodeGeneration>
       <LinkTimeCodeGeneration Condition="$(Configuration) == 'Release'">true</LinkTimeCodeGeneration>
       <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGInstrument'">true</LinkTimeCodeGeneration>
       <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGUpdate'">true</LinkTimeCodeGeneration>
@@ -124,6 +126,13 @@
       <ProxyFileName>$(MSBuildProjectName)_p.c</ProxyFileName>
     </Midl>
   </ItemDefinitionGroup>
+
+  <!--
+  We need the overridden OutDir (PropertyGroup Label="Globals"),
+  and want to be able to override some ClCompile parameters,
+  so this must not be included erlier.
+  -->
+  <Import Project="pyproject-clangcl.props" Condition="$(PlatformToolset) == 'ClangCL' and $(__PyprojectClangCl_Props_Imported) != 'true'" />
 
   <UsingTask TaskName="KillPython" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
     <ParameterGroup>
@@ -184,7 +193,7 @@ public override bool Execute() {
              Targets="CleanAll" />
   </Target>
 
-  <Target Name="CopyPGCFiles" BeforeTargets="PrepareForBuild" Condition="$(Configuration) == 'PGUpdate'">
+  <Target Name="CopyPGCFiles" BeforeTargets="PrepareForBuild" Condition="$(Configuration) == 'PGUpdate' and $(PlatformToolset) != 'ClangCL'">
     <ItemGroup>
       <_PGCFiles Include="$(OutDir)instrumented\$(TargetName)!*.pgc" />
       <_PGDFile Include="$(OutDir)instrumented\$(TargetName).pgd" />
@@ -192,7 +201,7 @@ public override bool Execute() {
     </ItemGroup>
     <Delete Files="@(_CopyFiles->'$(OutDir)%(Filename)%(Extension)')" />
     <Error Text="PGO run did not succeed (no $(TargetName)!*.pgc files) and there is no data to merge"
-           Condition="$(RequirePGCFiles) == 'true' and @(_PGCFiles) == ''" />
+           Condition="$(RequireProfileData) == 'true' and @(_PGCFiles) == ''" />
     <Copy SourceFiles="@(_CopyFiles)"
           DestinationFolder="$(OutDir)"
           UseHardLinksIfPossible="true"

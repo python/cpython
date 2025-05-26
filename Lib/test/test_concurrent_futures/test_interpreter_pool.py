@@ -3,7 +3,6 @@ import contextlib
 import io
 import os
 import pickle
-import sys
 import time
 import unittest
 from concurrent.futures.interpreter import (
@@ -311,7 +310,7 @@ class AsyncioTest(InterpretersMixin, testasyncio_utils.TestCase):
         # tests left a policy in place, just in case.
         policy = support.maybe_get_event_loop_policy()
         assert policy is None, policy
-        cls.addClassCleanup(lambda: asyncio.set_event_loop_policy(None))
+        cls.addClassCleanup(lambda: asyncio._set_event_loop_policy(None))
 
     def setUp(self):
         super().setUp()
