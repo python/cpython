@@ -3610,6 +3610,44 @@ generic_pycdata_new(ctypes_state *st,
   PyCFuncPtr_Type
 */
 
+static inline void
+atomic_xsetref(PyObject **field, PyObject *value)
+{
+#ifdef Py_GIL_DISABLED
+    PyObject *old = *field;
+    _Py_atomic_store_ptr(field, value);
+    Py_XDECREF(old);
+#else
+    Py_XSETREF(*field, value);
+#endif
+}
+/*
+    This function atomically loads the reference from *field, and
+    tries to get a new reference to it. If the increment fails,
+    it acquires critical section of obj and returns a new reference to the *field.
+*/
+static inline PyObject *
+atomic_xgetref(PyObject *obj, PyObject **field)
+{
+#ifdef Py_GIL_DISABLED
+    PyObject *value = _Py_atomic_load_ptr(field);
+    if (value == NULL) {
+        return NULL;
+    }
+    if (_Py_TryIncrefCompare(field, value)) {
+        return value;
+    }
+    Py_BEGIN_CRITICAL_SECTION(obj);
+    value = Py_XNewRef(*field);
+    Py_END_CRITICAL_SECTION();
+    return value;
+#else
+    return Py_XNewRef(*field);
+#endif
+}
+
+
+
 /*[clinic input]
 @critical_section
 @setter
@@ -3626,7 +3664,7 @@ _ctypes_CFuncPtr_errcheck_set_impl(PyCFuncPtrObject *self, PyObject *value)
         return -1;
     }
     Py_XINCREF(value);
-    Py_XSETREF(self->errcheck, value);
+    atomic_xsetref(&self->errcheck, value);
     return 0;
 }
 
@@ -3658,12 +3696,10 @@ static int
 _ctypes_CFuncPtr_restype_set_impl(PyCFuncPtrObject *self, PyObject *value)
 /*[clinic end generated code: output=0be0a086abbabf18 input=683c3bef4562ccc6]*/
 {
-    PyObject *checker, *oldchecker;
+    PyObject *checker;
     if (value == NULL) {
-        oldchecker = self->checker;
-        self->checker = NULL;
-        Py_CLEAR(self->restype);
-        Py_XDECREF(oldchecker);
+        atomic_xsetref(&self->restype, NULL);
+        atomic_xsetref(&self->checker, NULL);
         return 0;
     }
     ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
@@ -3679,11 +3715,9 @@ _ctypes_CFuncPtr_restype_set_impl(PyCFuncPtrObject *self, PyObject *value)
     if (PyObject_GetOptionalAttr(value, &_Py_ID(_check_retval_), &checker) < 0) {
         return -1;
     }
-    oldchecker = self->checker;
-    self->checker = checker;
     Py_INCREF(value);
-    Py_XSETREF(self->restype, value);
-    Py_XDECREF(oldchecker);
+    atomic_xsetref(&self->checker, checker);
+    atomic_xsetref(&self->restype, value);
     return 0;
 }
 
@@ -3728,16 +3762,16 @@ _ctypes_CFuncPtr_argtypes_set_impl(PyCFuncPtrObject *self, PyObject *value)
     PyObject *converters;
 
     if (value == NULL || value == Py_None) {
-        Py_CLEAR(self->converters);
-        Py_CLEAR(self->argtypes);
+        atomic_xsetref(&self->argtypes, NULL);
+        atomic_xsetref(&self->converters, NULL);
     } else {
         ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
         converters = converters_from_argtypes(st, value);
         if (!converters)
             return -1;
-        Py_XSETREF(self->converters, converters);
+        atomic_xsetref(&self->converters, converters);
         Py_INCREF(value);
-        Py_XSETREF(self->argtypes, value);
+        atomic_xsetref(&self->argtypes, value);
     }
     return 0;
 }
@@ -4533,9 +4567,8 @@ _build_result(PyObject *result, PyObject *callargs,
 }
 
 static PyObject *
-PyCFuncPtr_call_lock_held(PyObject *op, PyObject *inargs, PyObject *kwds)
+PyCFuncPtr_call(PyObject *op, PyObject *inargs, PyObject *kwds)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     PyObject *restype;
     PyObject *converters;
     PyObject *checker;
@@ -4560,13 +4593,24 @@ PyCFuncPtr_call_lock_held(PyObject *op, PyObject *inargs, PyObject *kwds)
     }
     assert(info); /* Cannot be NULL for PyCFuncPtrObject instances */
 
-    restype = self->restype ? self->restype : info->restype;
-    converters = self->converters ? self->converters : info->converters;
-    checker = self->checker ? self->checker : info->checker;
-    argtypes = self->argtypes ? self->argtypes : info->argtypes;
-/* later, we probably want to have an errcheck field in stginfo */
-    errcheck = self->errcheck /* ? self->errcheck : info->errcheck */;
-
+    restype = atomic_xgetref(op, &self->restype);
+    if (restype == NULL) {
+        restype = Py_XNewRef(info->restype);
+    }
+    converters = atomic_xgetref(op, &self->converters);
+    if (converters == NULL) {
+        converters = Py_XNewRef(info->converters);
+    }
+    checker = atomic_xgetref(op, &self->checker);
+    if (checker == NULL) {
+        checker = Py_XNewRef(info->checker);
+    }
+    argtypes = atomic_xgetref(op, &self->argtypes);
+    if (argtypes == NULL) {
+        argtypes = Py_XNewRef(info->argtypes);
+    }
+    /* later, we probably want to have an errcheck field in stginfo */
+    errcheck = atomic_xgetref(op, &self->errcheck);
 
     pProc = *(void **)self->b_ptr;
 #ifdef MS_WIN32
@@ -4575,11 +4619,21 @@ PyCFuncPtr_call_lock_held(PyObject *op, PyObject *inargs, PyObject *kwds)
         CDataObject *this;
         this = (CDataObject *)PyTuple_GetItem(inargs, 0); /* borrowed ref! */
         if (!this) {
+            Py_XDECREF(restype);
+            Py_XDECREF(converters);
+            Py_XDECREF(checker);
+            Py_XDECREF(argtypes);
+            Py_XDECREF(errcheck);
             PyErr_SetString(PyExc_ValueError,
                             "native com method call without 'this' parameter");
             return NULL;
         }
         if (!CDataObject_Check(st, this)) {
+            Py_XDECREF(restype);
+            Py_XDECREF(converters);
+            Py_XDECREF(checker);
+            Py_XDECREF(argtypes);
+            Py_XDECREF(errcheck);
             PyErr_SetString(PyExc_TypeError,
                             "Expected a COM this pointer as first argument");
             return NULL;
@@ -4587,12 +4641,22 @@ PyCFuncPtr_call_lock_held(PyObject *op, PyObject *inargs, PyObject *kwds)
         /* there should be more checks? No, in Python */
         /* First arg is a pointer to an interface instance */
         if (!this->b_ptr || *(void **)this->b_ptr == NULL) {
+            Py_XDECREF(restype);
+            Py_XDECREF(converters);
+            Py_XDECREF(checker);
+            Py_XDECREF(argtypes);
+            Py_XDECREF(errcheck);
             PyErr_SetString(PyExc_ValueError,
                             "NULL COM pointer access");
             return NULL;
         }
         piunk = *(IUnknown **)this->b_ptr;
         if (NULL == piunk->lpVtbl) {
+            Py_XDECREF(restype);
+            Py_XDECREF(converters);
+            Py_XDECREF(checker);
+            Py_XDECREF(argtypes);
+            Py_XDECREF(errcheck);
             PyErr_SetString(PyExc_ValueError,
                             "COM method call without VTable");
             return NULL;
@@ -4603,8 +4667,14 @@ PyCFuncPtr_call_lock_held(PyObject *op, PyObject *inargs, PyObject *kwds)
     callargs = _build_callargs(st, self, argtypes,
                                inargs, kwds,
                                &outmask, &inoutmask, &numretvals);
-    if (callargs == NULL)
+    if (callargs == NULL) {
+        Py_XDECREF(restype);
+        Py_XDECREF(converters);
+        Py_XDECREF(checker);
+        Py_XDECREF(argtypes);
+        Py_XDECREF(errcheck);
         return NULL;
+    }
 
     if (converters) {
         int required = Py_SAFE_DOWNCAST(PyTuple_GET_SIZE(converters),
@@ -4618,6 +4688,11 @@ PyCFuncPtr_call_lock_held(PyObject *op, PyObject *inargs, PyObject *kwds)
             */
             if (required > actual) {
                 Py_DECREF(callargs);
+                Py_XDECREF(restype);
+                Py_XDECREF(converters);
+                Py_XDECREF(checker);
+                Py_XDECREF(argtypes);
+                Py_XDECREF(errcheck);
                 PyErr_Format(PyExc_TypeError,
               "this function takes at least %d argument%s (%d given)",
                                  required,
@@ -4627,6 +4702,11 @@ PyCFuncPtr_call_lock_held(PyObject *op, PyObject *inargs, PyObject *kwds)
             }
         } else if (required != actual) {
             Py_DECREF(callargs);
+            Py_XDECREF(restype);
+            Py_XDECREF(converters);
+            Py_XDECREF(checker);
+            Py_XDECREF(argtypes);
+            Py_XDECREF(errcheck);
             PyErr_Format(PyExc_TypeError,
                  "this function takes %d argument%s (%d given)",
                      required,
@@ -4663,23 +4743,22 @@ PyCFuncPtr_call_lock_held(PyObject *op, PyObject *inargs, PyObject *kwds)
         if (v == NULL || v != callargs) {
             Py_DECREF(result);
             Py_DECREF(callargs);
+            Py_XDECREF(restype);
+            Py_XDECREF(converters);
+            Py_XDECREF(checker);
+            Py_XDECREF(argtypes);
+            Py_XDECREF(errcheck);
             return v;
         }
         Py_DECREF(v);
     }
-
+    Py_XDECREF(restype);
+    Py_XDECREF(converters);
+    Py_XDECREF(checker);
+    Py_XDECREF(argtypes);
+    Py_XDECREF(errcheck);
     return _build_result(result, callargs,
                          outmask, inoutmask, numretvals);
-}
-
-static PyObject *
-PyCFuncPtr_call(PyObject *op, PyObject *inargs, PyObject *kwds)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = PyCFuncPtr_call_lock_held(op, inargs, kwds);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 static int
