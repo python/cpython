@@ -100,7 +100,7 @@ typedef struct page_cache_entry {
 // Define a platform-independent process handle structure
 typedef struct {
     pid_t pid;
-#if defined(__APPLE__)
+#if defined(__APPLE__) && TARGET_OS_OSX
     mach_port_t task;
 #elif defined(MS_WINDOWS)
     HANDLE hProcess;
@@ -135,7 +135,7 @@ static mach_port_t pid_to_task(pid_t pid);
 static int
 _Py_RemoteDebug_InitProcHandle(proc_handle_t *handle, pid_t pid) {
     handle->pid = pid;
-#if defined(__APPLE__)
+#if defined(__APPLE__) && TARGET_OS_OSX
     handle->task = pid_to_task(handle->pid);
 #elif defined(MS_WINDOWS)
     handle->hProcess = OpenProcess(
