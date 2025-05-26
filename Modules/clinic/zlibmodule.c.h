@@ -1045,28 +1045,28 @@ exit:
 }
 
 PyDoc_STRVAR(zlib_adler32_combine__doc__,
-"adler32_combine($module, adler1, adler2, blen, /)\n"
+"adler32_combine($module, adler1, adler2, len2, /)\n"
 "--\n"
 "\n"
-"Combine two Adler-32 check values into one.\n"
+"Combine two Adler-32 checksums into one.\n"
 "\n"
 "  adler1\n"
-"    Adler-32 check value for sequence A\n"
+"    Adler-32 checksum for sequence A\n"
 "  adler2\n"
-"    Adler-32 check value for sequence B\n"
-"  blen\n"
+"    Adler-32 checksum for sequence B\n"
+"  len2\n"
 "    Length of sequence B\n"
 "\n"
-"Given an Adler-32 check value \'adler1\' of a sequence A and an Adler-32 check\n"
-"value \'adler2\' of a sequence B of length \'blen\', the returned checksum\n"
-"is the Adler-32 check value of A and B concatenated.");
+"Given the Adler-32 checksum *adler1* of a sequence ``A`` and the\n"
+"Adler-32 checksum *adler2* of a sequence ``B`` of length *len2*,\n"
+"return the Adler-32 checksum of ``A`` and ``B`` concatenated.");
 
 #define ZLIB_ADLER32_COMBINE_METHODDEF    \
     {"adler32_combine", _PyCFunction_CAST(zlib_adler32_combine), METH_FASTCALL, zlib_adler32_combine__doc__},
 
 static unsigned int
 zlib_adler32_combine_impl(PyObject *module, unsigned int adler1,
-                          unsigned int adler2, PyObject *blen);
+                          unsigned int adler2, PyObject *len2);
 
 static PyObject *
 zlib_adler32_combine(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -1074,7 +1074,7 @@ zlib_adler32_combine(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     unsigned int adler1;
     unsigned int adler2;
-    PyObject *blen;
+    PyObject *len2;
     unsigned int _return_value;
 
     if (!_PyArg_CheckPositional("adler32_combine", nargs, 3, 3)) {
@@ -1088,8 +1088,8 @@ zlib_adler32_combine(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (adler2 == (unsigned int)-1 && PyErr_Occurred()) {
         goto exit;
     }
-    blen = args[2];
-    _return_value = zlib_adler32_combine_impl(module, adler1, adler2, blen);
+    len2 = args[2];
+    _return_value = zlib_adler32_combine_impl(module, adler1, adler2, len2);
     if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -1154,28 +1154,28 @@ exit:
 }
 
 PyDoc_STRVAR(zlib_crc32_combine__doc__,
-"crc32_combine($module, crc1, crc2, blen, /)\n"
+"crc32_combine($module, crc1, crc2, len2, /)\n"
 "--\n"
 "\n"
-"Combine two CRC-32 check values into one.\n"
+"Combine two CRC-32 checksums into one.\n"
 "\n"
 "  crc1\n"
-"    CRC-32 check value for sequence A\n"
+"    CRC-32 checksum for sequence A\n"
 "  crc2\n"
-"    CRC-32 check value for sequence B\n"
-"  blen\n"
+"    CRC-32 checksum for sequence B\n"
+"  len2\n"
 "    Length of sequence B\n"
 "\n"
-"Given a CRC-32 check value \'crc1\' of a sequence A and a CRC-32 check\n"
-"value \'crc2\' of a sequence B of length \'blen\', the returned checksum\n"
-"is the CRC-32 check value of A and B concatenated.");
+"Given the CRC-32 checksum *crc1* of a sequence ``A`` and the\n"
+"CRC-32 checksum *crc2* of a sequence ``B`` of length *len2*,\n"
+"return the CRC-32 checksum of ``A`` and ``B`` concatenated.");
 
 #define ZLIB_CRC32_COMBINE_METHODDEF    \
     {"crc32_combine", _PyCFunction_CAST(zlib_crc32_combine), METH_FASTCALL, zlib_crc32_combine__doc__},
 
 static unsigned int
 zlib_crc32_combine_impl(PyObject *module, unsigned int crc1,
-                        unsigned int crc2, PyObject *blen);
+                        unsigned int crc2, PyObject *len2);
 
 static PyObject *
 zlib_crc32_combine(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -1183,7 +1183,7 @@ zlib_crc32_combine(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     unsigned int crc1;
     unsigned int crc2;
-    PyObject *blen;
+    PyObject *len2;
     unsigned int _return_value;
 
     if (!_PyArg_CheckPositional("crc32_combine", nargs, 3, 3)) {
@@ -1197,8 +1197,8 @@ zlib_crc32_combine(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (crc2 == (unsigned int)-1 && PyErr_Occurred()) {
         goto exit;
     }
-    blen = args[2];
-    _return_value = zlib_crc32_combine_impl(module, crc1, crc2, blen);
+    len2 = args[2];
+    _return_value = zlib_crc32_combine_impl(module, crc1, crc2, len2);
     if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -1231,4 +1231,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=342d8f887bd913e6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a903453b7d04f755 input=a9049054013a1b77]*/

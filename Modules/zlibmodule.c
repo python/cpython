@@ -1890,31 +1890,31 @@ zlib_adler32_impl(PyObject *module, Py_buffer *data, unsigned int value)
 zlib.adler32_combine -> unsigned_int
 
     adler1: unsigned_int(bitwise=True)
-        Adler-32 check value for sequence A
+        Adler-32 checksum for sequence A
 
     adler2: unsigned_int(bitwise=True)
-        Adler-32 check value for sequence B
+        Adler-32 checksum for sequence B
 
-    blen: object
+    len2: object
         Length of sequence B
     /
 
-Combine two Adler-32 check values into one.
+Combine two Adler-32 checksums into one.
 
-Given an Adler-32 check value 'adler1' of a sequence A and an Adler-32 check
-value 'adler2' of a sequence B of length 'blen', the returned checksum
-is the Adler-32 check value of A and B concatenated.
+Given the Adler-32 checksum *adler1* of a sequence ``A`` and the
+Adler-32 checksum *adler2* of a sequence ``B`` of length *len2*,
+return the Adler-32 checksum of ``A`` and ``B`` concatenated.
 [clinic start generated code]*/
 
 static unsigned int
 zlib_adler32_combine_impl(PyObject *module, unsigned int adler1,
-                          unsigned int adler2, PyObject *blen)
-/*[clinic end generated code: output=57aee1d70f5e2908 input=29005ae6aaa024b3]*/
+                          unsigned int adler2, PyObject *len2)
+/*[clinic end generated code: output=61842cefb16afb1b input=8a706b73cbe1a31b]*/
 {
 #if defined(Z_WANT64)
-    z_off64_t len = convert_to_z_off_t(blen);
+    z_off64_t len = convert_to_z_off_t(len2);
 #else
-    z_off_t len = convert_to_z_off_t(blen);
+    z_off_t len = convert_to_z_off_t(len2);
 #endif
     if (PyErr_Occurred()) {
         return (unsigned int)-1;
@@ -1975,31 +1975,31 @@ zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
 zlib.crc32_combine -> unsigned_int
 
     crc1: unsigned_int(bitwise=True)
-        CRC-32 check value for sequence A
+        CRC-32 checksum for sequence A
 
     crc2: unsigned_int(bitwise=True)
-        CRC-32 check value for sequence B
+        CRC-32 checksum for sequence B
 
-    blen: object
+    len2: object
         Length of sequence B
     /
 
-Combine two CRC-32 check values into one.
+Combine two CRC-32 checksums into one.
 
-Given a CRC-32 check value 'crc1' of a sequence A and a CRC-32 check
-value 'crc2' of a sequence B of length 'blen', the returned checksum
-is the CRC-32 check value of A and B concatenated.
+Given the CRC-32 checksum *crc1* of a sequence ``A`` and the
+CRC-32 checksum *crc2* of a sequence ``B`` of length *len2*,
+return the CRC-32 checksum of ``A`` and ``B`` concatenated.
 [clinic start generated code]*/
 
 static unsigned int
 zlib_crc32_combine_impl(PyObject *module, unsigned int crc1,
-                        unsigned int crc2, PyObject *blen)
-/*[clinic end generated code: output=dece978b27e8eada input=4d394ee4d80aa35a]*/
+                        unsigned int crc2, PyObject *len2)
+/*[clinic end generated code: output=c4def907c602e6eb input=8eb70325fdee010d]*/
 {
 #if defined(Z_WANT64)
-    z_off64_t len = convert_to_z_off_t(blen);
+    z_off64_t len = convert_to_z_off_t(len2);
 #else
-    z_off_t len = convert_to_z_off_t(blen);
+    z_off_t len = convert_to_z_off_t(len2);
 #endif
     if (PyErr_Occurred()) {
         return (unsigned int)-1;
@@ -2072,11 +2072,11 @@ PyDoc_STRVAR(zlib_module_documentation,
 "zlib library, which is based on GNU zip.\n"
 "\n"
 "adler32(string[, start]) -- Compute an Adler-32 checksum.\n"
-"adler32_combine(adler1, adler2, len2) -- Combine two Adler-32 checksums.\n"
+"adler32_combine(adler1, adler2, len2, /) -- Combine two Adler-32 checksums.\n"
 "compress(data[, level]) -- Compress data, with compression level 0-9 or -1.\n"
 "compressobj([level[, ...]]) -- Return a compressor object.\n"
 "crc32(string[, start]) -- Compute a CRC-32 checksum.\n"
-"crc32_combine(crc1, crc2, len2) -- Combine two CRC-32 checksums.\n"
+"crc32_combine(crc1, crc2, len2, /) -- Combine two CRC-32 checksums.\n"
 "decompress(string,[wbits],[bufsize]) -- Decompresses a compressed string.\n"
 "decompressobj([wbits[, zdict]]) -- Return a decompressor object.\n"
 "\n"
