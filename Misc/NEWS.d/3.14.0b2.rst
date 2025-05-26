@@ -1,0 +1,766 @@
+.. date: 2025-05-20-21-43-20
+.. gh-issue: 130727
+.. nonce: -69t4D
+.. release date: 2025-05-26
+.. section: Windows
+
+Fix a race in internal calls into WMI that can result in an "invalid handle"
+exception under high load. Patch by Chris Eibl.
+
+..
+
+.. date: 2025-05-19-03-02-04
+.. gh-issue: 76023
+.. nonce: vHOf6M
+.. section: Windows
+
+Make :func:`os.path.realpath` ignore Windows error 1005 when in non-strict
+mode.
+
+..
+
+.. date: 2025-05-13-13-25-27
+.. gh-issue: 133779
+.. nonce: -YcTBz
+.. section: Windows
+
+Reverts the change to generate different :file:`pyconfig.h` files based on
+compiler settings, as it was frequently causing extension builds to break.
+In particular, the ``Py_GIL_DISABLED`` preprocessor variable must now always
+be defined explicitly when compiling for the experimental free-threaded
+runtime. The :func:`sysconfig.get_config_var` function can be used to
+determine whether the current runtime was compiled with that flag or not.
+
+..
+
+.. date: 2025-05-08-19-07-26
+.. gh-issue: 133626
+.. nonce: yFTKYK
+.. section: Windows
+
+Ensures packages are not accidentally bundled into the traditional
+installer.
+
+..
+
+.. date: 2025-05-19-14-57-46
+.. gh-issue: 134215
+.. nonce: sbdDK6
+.. section: Tools/Demos
+
+:term:`REPL` import autocomplete only suggests private modules when
+explicitly specified.
+
+..
+
+.. date: 2025-05-09-14-54-48
+.. gh-issue: 133744
+.. nonce: LCquu0
+.. section: Tests
+
+Fix multiprocessing interrupt test. Add an event to synchronize the parent
+process with the child process: wait until the child process starts
+sleeping. Patch by Victor Stinner.
+
+..
+
+.. date: 2025-05-09-04-11-06
+.. gh-issue: 133682
+.. nonce: -_lwo3
+.. section: Tests
+
+Fixed test case ``test.test_annotationlib.TestStringFormat.test_displays``
+which ensures proper handling of complex data structures (lists, sets,
+dictionaries, and tuples) in string annotations.
+
+..
+
+.. date: 2025-05-08-15-06-01
+.. gh-issue: 133639
+.. nonce: 50-kbV
+.. section: Tests
+
+Fix ``TestPyReplAutoindent.test_auto_indent_default()`` doesn't run
+``input_code``.
+
+..
+
+.. date: 2025-05-09-20-22-54
+.. gh-issue: 133767
+.. nonce: kN2i3Q
+.. section: Security
+
+Fix use-after-free in the "unicode-escape" decoder with a non-"strict" error
+handler.
+
+..
+
+.. date: 2025-01-14-11-19-07
+.. gh-issue: 128840
+.. nonce: M1doZW
+.. section: Security
+
+Short-circuit the processing of long IPv6 addresses early in
+:mod:`ipaddress` to prevent excessive memory consumption and a minor
+denial-of-service.
+
+..
+
+.. date: 2025-05-26-12-31-08
+.. gh-issue: 132710
+.. nonce: ApU3TZ
+.. section: Library
+
+If possible, ensure that :func:`uuid.getnode` returns the same result even
+across different processes. Previously, the result was constant only within
+the same process. Patch by Bénédikt Tran.
+
+..
+
+.. date: 2025-05-24-03-10-36
+.. gh-issue: 80334
+.. nonce: z21cMa
+.. section: Library
+
+:func:`multiprocessing.freeze_support` now checks for work on any "spawn"
+start method platform rather than only on Windows.
+
+..
+
+.. date: 2025-05-23-23-43-39
+.. gh-issue: 134582
+.. nonce: 9POq3l
+.. section: Library
+
+Fix tokenize.untokenize() round-trip errors related to t-strings braces
+escaping
+
+..
+
+.. date: 2025-05-22-18-14-13
+.. gh-issue: 134546
+.. nonce: fjLVzK
+.. section: Library
+
+Ensure :mod:`pdb` remote debugging script is readable by remote Python
+process.
+
+..
+
+.. date: 2025-05-22-14-12-53
+.. gh-issue: 134451
+.. nonce: M1rD-j
+.. section: Library
+
+Converted ``asyncio.tools.CycleFoundException`` from dataclass to a regular
+exception type.
+
+..
+
+.. date: 2025-05-22-13-10-32
+.. gh-issue: 114177
+.. nonce: 3TYUJ3
+.. section: Library
+
+Fix :mod:`asyncio` to not close subprocess pipes which would otherwise error
+out when the event loop is already closed.
+
+..
+
+.. date: 2025-05-20-21-45-58
+.. gh-issue: 90871
+.. nonce: Gkvtp6
+.. section: Library
+
+Fixed an off by one error concerning the backlog parameter in
+:meth:`~asyncio.loop.create_unix_server`. Contributed by Christian Harries.
+
+..
+
+.. date: 2025-05-20-19-16-30
+.. gh-issue: 134323
+.. nonce: ZQZGvw
+.. section: Library
+
+Fix the :meth:`threading.RLock.locked` method.
+
+..
+
+.. date: 2025-05-20-15-13-43
+.. gh-issue: 86802
+.. nonce: trF7TM
+.. section: Library
+
+Fixed asyncio memory leak in cancelled shield tasks. For shielded tasks
+where the shield was cancelled, log potential exceptions through the
+exception handler. Contributed by Christian Harries.
+
+..
+
+.. date: 2025-05-19-20-59-06
+.. gh-issue: 134209
+.. nonce: anhTcF
+.. section: Library
+
+:mod:`curses`: The :meth:`curses.window.instr` and
+:meth:`curses.window.getstr` methods now allocate their internal buffer on
+the heap instead of the stack; in addition, the max buffer size is increased
+from 1023 to 2047.
+
+..
+
+.. date: 2025-05-19-15-05-24
+.. gh-issue: 134235
+.. nonce: pz9PwV
+.. section: Library
+
+Updated tab completion on REPL to include builtin modules. Contributed by
+Tom Wang, Hunter Young
+
+..
+
+.. date: 2025-05-19-10-32-11
+.. gh-issue: 134152
+.. nonce: INJC2j
+.. section: Library
+
+Fixed :exc:`UnboundLocalError` that could occur during :mod:`email` header
+parsing if an expected trailing delimiter is missing in some contexts.
+
+..
+
+.. date: 2025-05-18-13-23-29
+.. gh-issue: 134168
+.. nonce: hgx3Xg
+.. section: Library
+
+:mod:`http.server`: Fix IPv6 address binding and :option:`--directory
+<http.server --directory>` handling when using HTTPS.
+
+..
+
+.. date: 2025-05-18-12-48-39
+.. gh-issue: 62184
+.. nonce: y11l10
+.. section: Library
+
+Remove import of C implementation of :class:`io.FileIO` from Python
+implementation which has its own implementation
+
+..
+
+.. date: 2025-05-17-20-23-57
+.. gh-issue: 133982
+.. nonce: smS7au
+.. section: Library
+
+Emit :exc:`RuntimeWarning` in the Python implementation of :mod:`io` when
+the :term:`file-like object <file object>` is not closed explicitly in the
+presence of multiple I/O layers.
+
+..
+
+.. date: 2025-05-17-18-08-35
+.. gh-issue: 133890
+.. nonce: onn9_X
+.. section: Library
+
+The :mod:`tarfile` module now handles :exc:`UnicodeEncodeError` in the same
+way as :exc:`OSError` when cannot extract a member.
+
+..
+
+.. date: 2025-05-17-13-46-20
+.. gh-issue: 134097
+.. nonce: fgkjE1
+.. section: Library
+
+Fix interaction of the new :term:`REPL` and :option:`-X showrefcount <-X>`
+command line option.
+
+..
+
+.. date: 2025-05-17-12-40-12
+.. gh-issue: 133889
+.. nonce: Eh-zO4
+.. section: Library
+
+The generated directory listing page in
+:class:`http.server.SimpleHTTPRequestHandler` now only shows the decoded
+path component of the requested URL, and not the query and fragment.
+
+..
+
+.. date: 2025-05-16-20-10-25
+.. gh-issue: 134098
+.. nonce: YyTkKr
+.. section: Library
+
+Fix handling paths that end with a percent-encoded slash (``%2f`` or
+``%2F``) in :class:`http.server.SimpleHTTPRequestHandler`.
+
+..
+
+.. date: 2025-05-16-12-40-37
+.. gh-issue: 132124
+.. nonce: T_5Odx
+.. section: Library
+
+On POSIX-compliant systems, :func:`!multiprocessing.util.get_temp_dir` now
+ignores :envvar:`TMPDIR` (and similar environment variables) if the path
+length of ``AF_UNIX`` socket files exceeds the platform-specific maximum
+length when using the :ref:`forkserver
+<multiprocessing-start-method-forkserver>` start method. Patch by Bénédikt
+Tran.
+
+..
+
+.. date: 2025-05-15-14-27-01
+.. gh-issue: 134062
+.. nonce: fRbJet
+.. section: Library
+
+:mod:`ipaddress`: fix collisions in :meth:`~object.__hash__` for
+:class:`~ipaddress.IPv4Network` and :class:`~ipaddress.IPv6Network` objects.
+
+..
+
+.. date: 2025-05-13-18-54-56
+.. gh-issue: 133970
+.. nonce: 6G-Oi6
+.. section: Library
+
+Make :class:`!string.templatelib.Template` and
+:class:`!string.templatelib.Interpolation` generic.
+
+..
+
+.. date: 2025-05-13-18-21-59
+.. gh-issue: 71253
+.. nonce: -3Sf_K
+.. section: Library
+
+Raise :exc:`ValueError` in :func:`open` if *opener* returns a negative
+file-descriptor in the Python implementation of :mod:`io` to match the C
+implementation.
+
+..
+
+.. date: 2025-05-12-20-38-57
+.. gh-issue: 133960
+.. nonce: Aee79f
+.. section: Library
+
+Simplify and improve :func:`typing.evaluate_forward_ref`. It now no longer
+raises errors on certain invalid types. In several situations, it is now
+able to evaluate forward references that were previously unsupported.
+
+..
+
+.. date: 2025-05-12-06-52-10
+.. gh-issue: 133925
+.. nonce: elInBY
+.. section: Library
+
+Make the private class ``typing._UnionGenericAlias`` hashable.
+
+..
+
+.. date: 2025-05-10-12-06-55
+.. gh-issue: 133653
+.. nonce: Gb2aG4
+.. section: Library
+
+Fix :class:`argparse.ArgumentParser` with the *formatter_class* argument.
+Fix TypeError when *formatter_class* is a custom subclass of
+:class:`!HelpFormatter`. Fix TypeError when *formatter_class* is not a
+subclass of :class:`!HelpFormatter` and non-standard *prefix_char* is used.
+Fix support of colorizing when *formatter_class* is not a subclass of
+:class:`!HelpFormatter`.
+
+..
+
+.. date: 2025-05-09-20-59-24
+.. gh-issue: 132641
+.. nonce: 3qTw44
+.. section: Library
+
+Fixed a race in :func:`functools.lru_cache` under free-threading.
+
+..
+
+.. date: 2025-05-09-19-05-24
+.. gh-issue: 133783
+.. nonce: 1voCnR
+.. section: Library
+
+Fix bug with applying :func:`copy.replace` to :mod:`ast` objects. Attributes
+that default to ``None`` were incorrectly treated as required for manually
+created AST nodes.
+
+..
+
+.. date: 2025-05-09-18-29-25
+.. gh-issue: 133684
+.. nonce: Y1DFSt
+.. section: Library
+
+Fix bug where :func:`annotationlib.get_annotations` would return the wrong
+result for certain classes that are part of a class hierarchy where ``from
+__future__ import annotations`` is used.
+
+..
+
+.. date: 2025-05-09-15-50-00
+.. gh-issue: 77057
+.. nonce: fV8SU-
+.. section: Library
+
+Fix handling of invalid markup declarations in
+:class:`html.parser.HTMLParser`.
+
+..
+
+.. date: 2025-05-09-09-10-34
+.. gh-issue: 130328
+.. nonce: s9h4By
+.. section: Library
+
+Speedup pasting in ``PyREPL`` on Windows in a legacy console. Patch by Chris
+Eibl.
+
+..
+
+.. date: 2025-05-09-08-49-03
+.. gh-issue: 133701
+.. nonce: KI8tGz
+.. section: Library
+
+Fix bug where :class:`typing.TypedDict` classes defined under ``from
+__future__ import annotations`` and inheriting from another ``TypedDict``
+had an incorrect ``__annotations__`` attribute.
+
+..
+
+.. date: 2025-05-07-19-16-41
+.. gh-issue: 133581
+.. nonce: kERUCJ
+.. section: Library
+
+Improve unparsing of t-strings in :func:`ast.unparse` and ``from __future__
+import annotations``. Empty t-strings now round-trip correctly and
+formatting in interpolations is preserved. Patch by Jelle Zijlstra.
+
+..
+
+.. date: 2025-05-06-22-54-37
+.. gh-issue: 133551
+.. nonce: rfy1tJ
+.. section: Library
+
+Support t-strings (:pep:`750`) in :mod:`annotationlib`. Patch by Jelle
+Zijlstra.
+
+..
+
+.. date: 2025-05-05-22-11-24
+.. gh-issue: 133439
+.. nonce: LpmyFz
+.. section: Library
+
+Fix dot commands with trailing spaces are mistaken for multi-line SQL
+statements in the sqlite3 command-line interface.
+
+..
+
+.. date: 2025-05-04-17-04-55
+.. gh-issue: 132493
+.. nonce: huirKi
+.. section: Library
+
+Avoid accessing ``__annotations__`` unnecessarily in
+:func:`inspect.signature`.
+
+..
+
+.. date: 2025-04-29-11-48-46
+.. gh-issue: 132876
+.. nonce: lyTQGZ
+.. section: Library
+
+``ldexp()`` on Windows doesn't round subnormal results before Windows 11,
+but should.  Python's :func:`math.ldexp` wrapper now does round them, so
+results may change slightly, in rare cases of very small results, on Windows
+versions before 11.
+
+..
+
+.. date: 2025-04-26-15-50-12
+.. gh-issue: 133009
+.. nonce: etBuz5
+.. section: Library
+
+:mod:`xml.etree.ElementTree`: Fix a crash in :meth:`Element.__deepcopy__
+<object.__deepcopy__>` when the element is concurrently mutated. Patch by
+Bénédikt Tran.
+
+..
+
+.. date: 2025-03-30-16-42-38
+.. gh-issue: 91555
+.. nonce: ShVtwW
+.. section: Library
+
+Ignore log messages generated during handling of log messages, to avoid
+deadlock or infinite recursion.
+
+..
+
+.. date: 2024-10-28-06-54-22
+.. gh-issue: 125028
+.. nonce: GEY8Ws
+.. section: Library
+
+:data:`functools.Placeholder` cannot be passed to :func:`functools.partial`
+as a keyword argument.
+
+..
+
+.. date: 2023-02-13-21-56-38
+.. gh-issue: 62824
+.. nonce: CBZzX3
+.. section: Library
+
+Fix aliases for ``iso8859_8`` encoding. Patch by Dave Goncalves.
+
+..
+
+.. date: 2023-02-13-21-41-34
+.. gh-issue: 86155
+.. nonce: ppIGSC
+.. section: Library
+
+:meth:`html.parser.HTMLParser.close` no longer loses data when the
+``<script>`` tag is not closed. Patch by Waylan Limberg.
+
+..
+
+.. date: 2022-07-24-20-56-32
+.. gh-issue: 69426
+.. nonce: unccw7
+.. section: Library
+
+Fix :class:`html.parser.HTMLParser` to not unescape character entities in
+attribute values if they are followed by an ASCII alphanumeric or an equals
+sign.
+
+..
+
+.. bpo: 28494
+.. date: 2017-12-30-18-21-00
+.. nonce: Dt_Wks
+.. section: Library
+
+Improve Zip file validation false positive rate in
+:func:`zipfile.is_zipfile`.
+
+..
+
+.. date: 2025-05-22-14-48-19
+.. gh-issue: 134381
+.. nonce: 2BXhth
+.. section: Core and Builtins
+
+Fix :exc:`RuntimeError` when using a not-started :class:`threading.Thread`
+after calling :func:`os.fork`
+
+..
+
+.. date: 2025-05-21-18-02-56
+.. gh-issue: 127960
+.. nonce: W3J_2X
+.. section: Core and Builtins
+
+PyREPL interactive shell no longer starts with ``__package__`` and
+``__file__`` global names set to ``_pyrepl`` package internals. Contributed
+by Yuichiro Tachibana.
+
+..
+
+.. date: 2025-05-21-15-14-32
+.. gh-issue: 130397
+.. nonce: aG6EON
+.. section: Core and Builtins
+
+Remove special-casing for C stack depth limits for WASI. Due to
+WebAssembly's built-in stack protection this does not pose a security
+concern.
+
+..
+
+.. date: 2025-05-20-14-41-50
+.. gh-issue: 128066
+.. nonce: qzzGfv
+.. section: Core and Builtins
+
+Fixes an edge case where PyREPL improperly threw an error when Python is
+invoked on a read only filesystem while trying to write history file
+entries.
+
+..
+
+.. date: 2025-05-18-14-33-23
+.. gh-issue: 69605
+.. nonce: ZMO49F
+.. section: Core and Builtins
+
+When auto-completing an import in the :term:`REPL`, finding no candidates
+now issues no suggestion, rather than suggestions from the current
+namespace.
+
+..
+
+.. date: 2025-05-17-20-44-51
+.. gh-issue: 134158
+.. nonce: ewLNLp
+.. section: Core and Builtins
+
+Fix coloring of double braces in f-strings and t-strings in the
+:term:`REPL`.
+
+..
+
+.. date: 2025-05-16-20-59-12
+.. gh-issue: 134119
+.. nonce: w8expI
+.. section: Core and Builtins
+
+Fix crash when calling :func:`next` on an exhausted template string
+iterator. Patch by Jelle Zijlstra.
+
+..
+
+.. date: 2025-05-16-17-25-52
+.. gh-issue: 134100
+.. nonce: 5-FbLK
+.. section: Core and Builtins
+
+Fix a use-after-free bug that occurs when an imported module isn't in
+:data:`sys.modules` after its initial import. Patch by Nico-Posada.
+
+..
+
+.. date: 2025-05-15-11-38-16
+.. gh-issue: 133999
+.. nonce: uBZ8uS
+.. section: Core and Builtins
+
+Fix :exc:`SyntaxError` regression in :keyword:`except` parsing after
+:gh:`123440`.
+
+..
+
+.. date: 2025-05-11-13-40-42
+.. gh-issue: 133886
+.. nonce: ryBAyo
+.. section: Core and Builtins
+
+Fix :func:`sys.remote_exec` for non-ASCII paths in non-UTF-8 locales and
+non-UTF-8 paths in UTF-8 locales.
+
+..
+
+.. date: 2025-05-10-17-12-27
+.. gh-issue: 133703
+.. nonce: bVM-re
+.. section: Core and Builtins
+
+Fix hashtable in dict can be bigger than intended in some situations.
+
+..
+
+.. date: 2025-05-09-18-11-21
+.. gh-issue: 133778
+.. nonce: pWEV3t
+.. section: Core and Builtins
+
+Fix bug where assigning to the :attr:`~type.__annotations__` attributes of
+classes defined under ``from __future__ import annotations`` had no effect.
+
+..
+
+.. date: 2025-05-08-13-48-02
+.. gh-issue: 132762
+.. nonce: tKbygC
+.. section: Core and Builtins
+
+:meth:`~dict.fromkeys` no longer loops forever when adding a small set of
+keys to a large base dict. Patch by Angela Liss.
+
+..
+
+.. date: 2025-05-07-23-26-53
+.. gh-issue: 133541
+.. nonce: bHIC55
+.. section: Core and Builtins
+
+Inconsistent indentation in user input crashed the new REPL when syntax
+highlighting was active. This is now fixed.
+
+..
+
+.. date: 2025-05-06-15-01-41
+.. gh-issue: 133516
+.. nonce: RqWVf2
+.. section: Core and Builtins
+
+Raise :exc:`ValueError` when constants ``True``, ``False`` or ``None`` are
+used as an identifier after NFKC normalization.
+
+..
+
+.. date: 2025-04-19-17-16-46
+.. gh-issue: 132542
+.. nonce: 7T_TY_
+.. section: Core and Builtins
+
+Update :attr:`Thread.native_id <threading.Thread.native_id>` after
+:manpage:`fork(2)` to ensure accuracy. Patch by Noam Cohen.
+
+..
+
+.. date: 2025-05-17-14-41-21
+.. gh-issue: 134144
+.. nonce: xVpZik
+.. section: C API
+
+Fix crash when calling :c:func:`Py_EndInterpreter` with a :term:`thread
+state` that isn't the initial thread for the interpreter.
+
+..
+
+.. date: 2025-05-21-19-46-28
+.. gh-issue: 134455
+.. nonce: vdwlrq
+.. section: Build
+
+Fixed ``build-details.json`` generation to use the correct ``c_api.headers``
+as defined in :pep:`739`, instead of ``c_api.include``.
+
+..
+
+.. date: 2025-04-30-10-22-08
+.. gh-issue: 131769
+.. nonce: H0oy5x
+.. section: Build
+
+Fix detecting when the build Python in a cross-build is a pydebug build.
+
+..
+
+.. date: 2025-04-16-09-38-48
+.. gh-issue: 117088
+.. nonce: EFt_5c
+.. section: Build
+
+AIX linker don't support -h option, so avoid it through platform check
