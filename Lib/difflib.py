@@ -1620,7 +1620,7 @@ _file_template = """
 <head>
     <meta charset="%(charset)s">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Diff Comparison</title>
+    <title>Diff comparison</title>
     <style>%(styles)s
     </style>
 </head>
