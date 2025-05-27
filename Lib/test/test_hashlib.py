@@ -263,7 +263,7 @@ class HashLibTestCase(unittest.TestCase):
             "and support for 'string' keyword parameter "
             "is slated for removal in a future version."
         )
-        duplicated_param = re.escape("got multiple values for argument")
+        duplicated_param = re.escape("given by name ('data') and position")
         for constructor in self.hash_constructors:
             with self.subTest(constructor.__name__):
                 with self.assertRaisesRegex(TypeError, conflicting_call):
