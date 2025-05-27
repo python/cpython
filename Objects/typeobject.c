@@ -2065,18 +2065,45 @@ type_set_annotations(PyObject *tp, PyObject *value, void *Py_UNUSED(closure))
         return -1;
     }
 
-    int result;
     PyObject *dict = PyType_GetDict(type);
-    if (value != NULL) {
-        /* set */
-        result = PyDict_SetItem(dict, &_Py_ID(__annotations_cache__), value);
-    } else {
-        /* delete */
-        result = PyDict_Pop(dict, &_Py_ID(__annotations_cache__), NULL);
-        if (result == 0) {
-            PyErr_SetString(PyExc_AttributeError, "__annotations__");
+    int result = PyDict_ContainsString(dict, "__annotations__");
+    if (result < 0) {
+        Py_DECREF(dict);
+        return -1;
+    }
+    if (result) {
+        // If __annotations__ is currently in the dict, we update it,
+        if (value != NULL) {
+            result = PyDict_SetItem(dict, &_Py_ID(__annotations__), value);
+        } else {
+            result = PyDict_Pop(dict, &_Py_ID(__annotations__), NULL);
+            if (result == 0) {
+                // Somebody else just deleted it?
+                PyErr_SetString(PyExc_AttributeError, "__annotations__");
+                Py_DECREF(dict);
+                return -1;
+            }
+        }
+        if (result < 0) {
             Py_DECREF(dict);
             return -1;
+        }
+        // Also clear __annotations_cache__ just in case.
+        result = PyDict_Pop(dict, &_Py_ID(__annotations_cache__), NULL);
+    }
+    else {
+        // Else we update only __annotations_cache__.
+        if (value != NULL) {
+            /* set */
+            result = PyDict_SetItem(dict, &_Py_ID(__annotations_cache__), value);
+        } else {
+            /* delete */
+            result = PyDict_Pop(dict, &_Py_ID(__annotations_cache__), NULL);
+            if (result == 0) {
+                PyErr_SetString(PyExc_AttributeError, "__annotations__");
+                Py_DECREF(dict);
+                return -1;
+            }
         }
     }
     if (result < 0) {

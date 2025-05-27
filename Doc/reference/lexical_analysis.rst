@@ -489,8 +489,9 @@ String literals are described by the following lexical definitions:
 
 .. productionlist:: python-grammar
    stringliteral: [`stringprefix`](`shortstring` | `longstring`)
-   stringprefix: "r" | "u" | "R" | "U" | "f" | "F"
+   stringprefix: "r" | "u" | "R" | "U" | "f" | "F" | "t" | "T"
                : | "fr" | "Fr" | "fR" | "FR" | "rf" | "rF" | "Rf" | "RF"
+               : | "tr" | "Tr" | "tR" | "TR" | "rt" | "rT" | "Rt" | "RT"
    shortstring: "'" `shortstringitem`* "'" | '"' `shortstringitem`* '"'
    longstring: "'''" `longstringitem`* "'''" | '"""' `longstringitem`* '"""'
    shortstringitem: `shortstringchar` | `stringescapeseq`
