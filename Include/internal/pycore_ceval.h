@@ -208,7 +208,7 @@ PyAPI_FUNC(int) _Py_CheckRecursiveCall(
     PyThreadState *tstate,
     const char *where);
 
-int _Py_CheckRecursiveCallPy(
+PyAPI_FUNC(int) _Py_CheckRecursiveCallPy(
     PyThreadState *tstate);
 
 static inline int _Py_EnterRecursiveCallTstate(PyThreadState *tstate,
