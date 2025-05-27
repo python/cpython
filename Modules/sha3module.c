@@ -105,17 +105,25 @@ sha3_update(Hacl_Hash_SHA3_state_t *state, uint8_t *buf, Py_ssize_t len)
 /*[clinic input]
 @classmethod
 _sha3.sha3_224.__new__ as py_sha3_new
-    data: object(c_default="NULL") = b''
+
+    data as data_obj: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string: object(c_default="NULL") = None
 
 Return a new SHA3 hash object.
 [clinic start generated code]*/
 
 static PyObject *
-py_sha3_new_impl(PyTypeObject *type, PyObject *data, int usedforsecurity)
-/*[clinic end generated code: output=90409addc5d5e8b0 input=8fe65cf6aec6af90]*/
+py_sha3_new_impl(PyTypeObject *type, PyObject *data_obj, int usedforsecurity,
+                 PyObject *string)
+/*[clinic end generated code: output=dcec1eca20395f2a input=c106e0b4e2d67d58]*/
 {
+    PyObject *data;
+    if (_Py_hashlib_data_argument(&data, data_obj, string) < 0) {
+        return NULL;
+    }
+
     Py_buffer buf = {NULL, NULL};
     SHA3State *state = _PyType_GetModuleState(type);
     SHA3object *self = newSHA3object(type);

@@ -76,3 +76,29 @@
  * to allow the user to optimize based on the platform they're using. */
 #define HASHLIB_GIL_MINSIZE 2048
 
+static inline int
+_Py_hashlib_data_argument(PyObject **res, PyObject *data, PyObject *string)
+{
+    if (data != NULL && string == NULL) {
+        *res = data;
+        return 1;
+    }
+    else if (data == NULL && string != NULL) {
+        *res = string;
+        return 1;
+    }
+    else if (data == NULL && string == NULL) {
+        // fast path when no data is given
+        assert(!PyErr_Occurred());
+        *res = NULL;
+        return 0;
+    }
+    else {
+        *res = NULL;
+        PyErr_SetString(PyExc_TypeError,
+                        "'data' and 'string' are mutually exclusive "
+                        "and support for 'string' keyword parameter "
+                        "is slated for removal in a future version.");
+        return -1;
+    }
+}

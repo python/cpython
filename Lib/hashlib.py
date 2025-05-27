@@ -141,18 +141,39 @@ def __get_openssl_constructor(name):
         return __get_builtin_constructor(name)
 
 
-def __py_new(name, data=b'', **kwargs):
+def __data_argument(funcname, data_sentinel, kwargs):
+    if '__data_sentinel' in kwargs:
+        raise TypeError("'__data_sentinel' is not a valid keyword argument")
+    if 'data' in kwargs and 'string' in kwargs:
+        raise TypeError("'data' and 'string' are mutually exclusive "
+                        "and support for 'string' keyword parameter "
+                        "is slated for removal in a future version.")
+    if data_sentinel is None:
+        if 'data' in kwargs:
+            # new(name, data=...)
+            return kwargs.pop('data')
+        elif 'string' in kwargs:
+            # new(name, string=...)
+            return kwargs.pop('string')
+        return b''
+    # new(name, data)
+    return data_sentinel
+
+
+def __py_new(name, __data_sentinel=None, **kwargs):
     """new(name, data=b'', **kwargs) - Return a new hashing object using the
     named algorithm; optionally initialized with data (which must be
     a bytes-like object).
     """
+    data = __data_argument('__py_new', __data_sentinel, kwargs)
     return __get_builtin_constructor(name)(data, **kwargs)
 
 
-def __hash_new(name, data=b'', **kwargs):
+def __hash_new(name, __data_sentinel=None, **kwargs):
     """new(name, data=b'') - Return a new hashing object using the named algorithm;
     optionally initialized with data (which must be a bytes-like object).
     """
+    data = __data_argument('__hash_new', __data_sentinel, kwargs)
     if name in __block_openssl_constructor:
         # Prefer our builtin blake2 implementation.
         return __get_builtin_constructor(name)(data, **kwargs)

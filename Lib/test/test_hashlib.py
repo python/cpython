@@ -12,6 +12,7 @@ import io
 import itertools
 import logging
 import os
+import re
 import sys
 import sysconfig
 import tempfile
@@ -140,11 +141,12 @@ class HashLibTestCase(unittest.TestCase):
         # of hashlib.new given the algorithm name.
         for algorithm, constructors in self.constructors_to_test.items():
             constructors.add(getattr(hashlib, algorithm))
-            def _test_algorithm_via_hashlib_new(data=None, _alg=algorithm, **kwargs):
-                if data is None:
+            def c(_data=None, _alg=algorithm, **kwargs):
+                if _data is None:
                     return hashlib.new(_alg, **kwargs)
-                return hashlib.new(_alg, data, **kwargs)
-            constructors.add(_test_algorithm_via_hashlib_new)
+                return hashlib.new(_alg, _data, **kwargs)
+            c.__name__ = f'do_test_algorithm_via_hashlib_new_{algorithm}'
+            constructors.add(c)
 
         _hashlib = self._conditional_import_module('_hashlib')
         self._hashlib = _hashlib
@@ -251,8 +253,25 @@ class HashLibTestCase(unittest.TestCase):
 
     def test_clinic_signature(self):
         for constructor in self.hash_constructors:
-            with self.subTest(constructor):
+            with self.subTest(constructor.__name__):
                 constructor(data=b'')
+                constructor(string=b'')  # should be deprecated in the future
+
+    def test_clinic_signature_errors(self):
+        conflicting_call = re.escape(
+            "'data' and 'string' are mutually exclusive "
+            "and support for 'string' keyword parameter "
+            "is slated for removal in a future version."
+        )
+        duplicated_param = re.escape("given by name ('data') and position")
+        for constructor in self.hash_constructors:
+            with self.subTest(constructor.__name__):
+                with self.assertRaisesRegex(TypeError, conflicting_call):
+                    constructor(b'', string=b'')
+                with self.assertRaisesRegex(TypeError, conflicting_call):
+                    constructor(data=b'', string=b'')
+            with self.assertRaisesRegex(TypeError, duplicated_param):
+                constructor(b'', data=b'')
 
     def test_unknown_hash(self):
         self.assertRaises(ValueError, hashlib.new, 'spam spam spam spam spam')
@@ -723,7 +742,6 @@ class HashLibTestCase(unittest.TestCase):
         self.assertRaises(ValueError, constructor, node_offset=-1)
         self.assertRaises(OverflowError, constructor, node_offset=max_offset+1)
 
-        self.assertRaises(TypeError, constructor, string=b'')
         self.assertRaises(TypeError, constructor, '')
 
         constructor(

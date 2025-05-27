@@ -10,13 +10,14 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(py_sha3_new__doc__,
-"sha3_224(data=b\'\', *, usedforsecurity=True)\n"
+"sha3_224(data=b\'\', *, usedforsecurity=True, string=None)\n"
 "--\n"
 "\n"
 "Return a new SHA3 hash object.");
 
 static PyObject *
-py_sha3_new_impl(PyTypeObject *type, PyObject *data, int usedforsecurity);
+py_sha3_new_impl(PyTypeObject *type, PyObject *data_obj, int usedforsecurity,
+                 PyObject *string);
 
 static PyObject *
 py_sha3_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -24,7 +25,7 @@ py_sha3_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -33,7 +34,7 @@ py_sha3_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(data), &_Py_ID(usedforsecurity), },
+        .ob_item = { &_Py_ID(data), &_Py_ID(usedforsecurity), &_Py_ID(string), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -42,19 +43,20 @@ py_sha3_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"data", "usedforsecurity", NULL};
+    static const char * const _keywords[] = {"data", "usedforsecurity", "string", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "sha3_224",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
-    PyObject *data = NULL;
+    PyObject *data_obj = NULL;
     int usedforsecurity = 1;
+    PyObject *string = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
             /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -65,7 +67,7 @@ py_sha3_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto skip_optional_pos;
     }
     if (fastargs[0]) {
-        data = fastargs[0];
+        data_obj = fastargs[0];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -74,12 +76,18 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    usedforsecurity = PyObject_IsTrue(fastargs[1]);
-    if (usedforsecurity < 0) {
-        goto exit;
+    if (fastargs[1]) {
+        usedforsecurity = PyObject_IsTrue(fastargs[1]);
+        if (usedforsecurity < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
+    string = fastargs[2];
 skip_optional_kwonly:
-    return_value = py_sha3_new_impl(type, data, usedforsecurity);
+    return_value = py_sha3_new_impl(type, data_obj, usedforsecurity, string);
 
 exit:
     return return_value;
@@ -280,4 +288,4 @@ _sha3_shake_128_hexdigest(PyObject *self, PyObject *const *args, Py_ssize_t narg
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=76a0edf4f4958587 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=65e437799472b89f input=a9049054013a1b77]*/
