@@ -23,10 +23,10 @@ instance. See :ref:`initializing-modules` for details.
 .. highlight:: python
 
 For modules with ASCII-only names, the function must be named
-``PyInit_<modulename>``, with ``<modulename>`` replaced by the name of the
-module. When using :ref:`multi-phase-initialization`, non-ASCII module names
+:samp:`PyInit_{<name>}`, with ``<name>`` replaced by the name of the module.
+When using :ref:`multi-phase-initialization`, non-ASCII module names
 are allowed. In this case, the initialization function name is
-``PyInitU_<modulename>``, with ``<modulename>`` encoded using Python's
+:samp:`PyInitU_{<name>}`, with ``<name>`` encoded using Python's
 *punycode* encoding with hyphens replaced by underscores. In Python::
 
     def initfunc_name(name):

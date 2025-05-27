@@ -357,7 +357,7 @@ class ExceptionTests(unittest.TestCase):
             except TypeError as err:
                 co = err.__traceback__.tb_frame.f_code
                 self.assertEqual(co.co_name, "test_capi1")
-                self.assertTrue(co.co_filename.endswith('test_exceptions.py'))
+                self.assertEndsWith(co.co_filename, 'test_exceptions.py')
             else:
                 self.fail("Expected exception")
 
@@ -369,7 +369,7 @@ class ExceptionTests(unittest.TestCase):
                 tb = err.__traceback__.tb_next
                 co = tb.tb_frame.f_code
                 self.assertEqual(co.co_name, "__init__")
-                self.assertTrue(co.co_filename.endswith('test_exceptions.py'))
+                self.assertEndsWith(co.co_filename, 'test_exceptions.py')
                 co2 = tb.tb_frame.f_back.f_code
                 self.assertEqual(co2.co_name, "test_capi2")
             else:
@@ -598,7 +598,7 @@ class ExceptionTests(unittest.TestCase):
     def test_notes(self):
         for e in [BaseException(1), Exception(2), ValueError(3)]:
             with self.subTest(e=e):
-                self.assertFalse(hasattr(e, '__notes__'))
+                self.assertNotHasAttr(e, '__notes__')
                 e.add_note("My Note")
                 self.assertEqual(e.__notes__, ["My Note"])
 
@@ -610,7 +610,7 @@ class ExceptionTests(unittest.TestCase):
                 self.assertEqual(e.__notes__, ["My Note", "Your Note"])
 
                 del e.__notes__
-                self.assertFalse(hasattr(e, '__notes__'))
+                self.assertNotHasAttr(e, '__notes__')
 
                 e.add_note("Our Note")
                 self.assertEqual(e.__notes__, ["Our Note"])
@@ -1429,6 +1429,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertIn("maximum recursion depth exceeded", str(exc))
 
     @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
     @cpython_only
     @support.requires_resource('cpu')
     def test_trashcan_recursion(self):
@@ -1626,7 +1627,7 @@ class ExceptionTests(unittest.TestCase):
         # test basic usage of PyErr_NewException
         error1 = _testcapi.make_exception_with_doc("_testcapi.error1")
         self.assertIs(type(error1), type)
-        self.assertTrue(issubclass(error1, Exception))
+        self.assertIsSubclass(error1, Exception)
         self.assertIsNone(error1.__doc__)
 
         # test with given docstring
@@ -1636,21 +1637,21 @@ class ExceptionTests(unittest.TestCase):
         # test with explicit base (without docstring)
         error3 = _testcapi.make_exception_with_doc("_testcapi.error3",
                                                    base=error2)
-        self.assertTrue(issubclass(error3, error2))
+        self.assertIsSubclass(error3, error2)
 
         # test with explicit base tuple
         class C(object):
             pass
         error4 = _testcapi.make_exception_with_doc("_testcapi.error4", doc4,
                                                    (error3, C))
-        self.assertTrue(issubclass(error4, error3))
-        self.assertTrue(issubclass(error4, C))
+        self.assertIsSubclass(error4, error3)
+        self.assertIsSubclass(error4, C)
         self.assertEqual(error4.__doc__, doc4)
 
         # test with explicit dictionary
         error5 = _testcapi.make_exception_with_doc("_testcapi.error5", "",
                                                    error4, {'a': 1})
-        self.assertTrue(issubclass(error5, error4))
+        self.assertIsSubclass(error5, error4)
         self.assertEqual(error5.a, 1)
         self.assertEqual(error5.__doc__, "")
 
@@ -1743,7 +1744,7 @@ class ExceptionTests(unittest.TestCase):
                     self.assertIn("<exception str() failed>", report)
                 else:
                     self.assertIn("test message", report)
-                self.assertTrue(report.endswith("\n"))
+                self.assertEndsWith(report, "\n")
 
     @cpython_only
     # Python built with Py_TRACE_REFS fail with a fatal error in

@@ -1280,8 +1280,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         self.assertEqual(res, TIER2_THRESHOLD * 6 + 1)
         call = opnames.index("_CALL_BUILTIN_FAST")
-        load_attr_top = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", 0, call)
-        load_attr_bottom = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", call)
+        load_attr_top = opnames.index("_POP_TOP_LOAD_CONST_INLINE_BORROW", 0, call)
+        load_attr_bottom = opnames.index("_POP_TOP_LOAD_CONST_INLINE_BORROW", call)
         self.assertEqual(opnames[:load_attr_top].count("_GUARD_TYPE_VERSION"), 1)
         self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 2)
 
@@ -1303,8 +1303,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         self.assertEqual(res, TIER2_THRESHOLD * 2)
         call = opnames.index("_CALL_BUILTIN_FAST_WITH_KEYWORDS")
-        load_attr_top = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", 0, call)
-        load_attr_bottom = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", call)
+        load_attr_top = opnames.index("_POP_TOP_LOAD_CONST_INLINE_BORROW", 0, call)
+        load_attr_bottom = opnames.index("_POP_TOP_LOAD_CONST_INLINE_BORROW", call)
         self.assertEqual(opnames[:load_attr_top].count("_GUARD_TYPE_VERSION"), 1)
         self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 2)
 
@@ -1925,6 +1925,50 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertNotIn("_GUARD_TOS_INT", uops)
 
+    def test_get_len_with_const_tuple(self):
+        def testfunc(n):
+            x = 0.0
+            for _ in range(n):
+                match (1, 2, 3, 4):
+                    case [_, _, _, _]:
+                        x += 1.0
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(int(res), TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+        self.assertNotIn("_GUARD_NOS_INT", uops)
+        self.assertNotIn("_GET_LEN", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_get_len_with_non_const_tuple(self):
+        def testfunc(n):
+            x = 0.0
+            for _ in range(n):
+                match object(), object():
+                    case [_, _]:
+                        x += 1.0
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(int(res), TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+        self.assertNotIn("_GUARD_NOS_INT", uops)
+        self.assertNotIn("_GET_LEN", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_get_len_with_non_tuple(self):
+        def testfunc(n):
+            x = 0.0
+            for _ in range(n):
+                match [1, 2, 3, 4]:
+                    case [_, _, _, _]:
+                        x += 1.0
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(int(res), TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+        self.assertNotIn("_GUARD_NOS_INT", uops)
+        self.assertIn("_GET_LEN", uops)
+
     def test_binary_op_subscr_tuple_int(self):
         def testfunc(n):
             x = 0
@@ -1955,9 +1999,225 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_GUARD_THIRD_NULL", uops)
         self.assertNotIn("_GUARD_CALLABLE_ISINSTANCE", uops)
+        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_call_list_append(self):
+        def testfunc(n):
+            a = []
+            for i in range(n):
+                a.append(i)
+            return sum(a)
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, sum(range(TIER2_THRESHOLD)))
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_LIST_APPEND", uops)
+        # We should remove these in the future
+        self.assertIn("_GUARD_NOS_LIST", uops)
+        self.assertIn("_GUARD_CALLABLE_LIST_APPEND", uops)
+
+    def test_call_isinstance_is_true(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = isinstance(42, int)
+                if y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_call_isinstance_is_false(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = isinstance(42, str)
+                if not y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertNotIn("_GUARD_IS_FALSE_POP", uops)
+        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_call_isinstance_subclass(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = isinstance(True, int)
+                if y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_call_isinstance_unknown_object(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                # The optimizer doesn't know the return type here:
+                bar = eval("42")
+                # This will only narrow to bool:
+                y = isinstance(bar, int)
+                if y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertIn("_GUARD_IS_TRUE_POP", uops)
+
+    def test_call_isinstance_tuple_of_classes(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                # A tuple of classes is currently not optimized,
+                # so this is only narrowed to bool:
+                y = isinstance(42, (int, str))
+                if y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertIn("_GUARD_IS_TRUE_POP", uops)
+
+    def test_call_isinstance_metaclass(self):
+        class EvenNumberMeta(type):
+            def __instancecheck__(self, number):
+                return number % 2 == 0
+
+        class EvenNumber(metaclass=EvenNumberMeta):
+            pass
+
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                # Only narrowed to bool
+                y = isinstance(42, EvenNumber)
+                if y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertIn("_GUARD_IS_TRUE_POP", uops)
+
+    def test_set_type_version_sets_type(self):
+        class C:
+            A = 1
+
+        def testfunc(n):
+            x = 0
+            c = C()
+            for _ in range(n):
+                x += c.A  # Guarded.
+                x += type(c).A  # Unguarded!
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 2 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_GUARD_TYPE_VERSION", uops)
+        self.assertNotIn("_CHECK_ATTR_CLASS", uops)
+
+    def test_load_small_int(self):
+        def testfunc(n):
+            x = 0
+            for i in range(n):
+                x += 1
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_LOAD_SMALL_INT", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_cached_attributes(self):
+        class C:
+            A = 1
+            def m(self):
+                return 1
+        class D:
+            __slots__ = ()
+            A = 1
+            def m(self):
+                return 1
+        class E(Exception):
+            def m(self):
+                return 1
+        def f(n):
+            x = 0
+            c = C()
+            d = D()
+            e = E()
+            for _ in range(n):
+                x += C.A  # _LOAD_ATTR_CLASS
+                x += c.A  # _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES
+                x += d.A  # _LOAD_ATTR_NONDESCRIPTOR_NO_DICT
+                x += c.m()  # _LOAD_ATTR_METHOD_WITH_VALUES
+                x += d.m()  # _LOAD_ATTR_METHOD_NO_DICT
+                x += e.m()  # _LOAD_ATTR_METHOD_LAZY_DICT
+            return x
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, 6 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_LOAD_ATTR_CLASS", uops)
+        self.assertNotIn("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", uops)
+        self.assertNotIn("_LOAD_ATTR_NONDESCRIPTOR_NO_DICT", uops)
+        self.assertNotIn("_LOAD_ATTR_METHOD_WITH_VALUES", uops)
+        self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
+        self.assertNotIn("_LOAD_ATTR_METHOD_LAZY_DICT", uops)
 
 
 def global_identity(x):

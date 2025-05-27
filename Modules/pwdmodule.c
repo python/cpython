@@ -301,18 +301,33 @@ pwd_getpwall_impl(PyObject *module)
     struct passwd *p;
     if ((d = PyList_New(0)) == NULL)
         return NULL;
+
+#ifdef Py_GIL_DISABLED
+    static PyMutex getpwall_mutex = {0};
+    PyMutex_Lock(&getpwall_mutex);
+#endif
+    int failure = 0;
+    PyObject *v = NULL;
     setpwent();
     while ((p = getpwent()) != NULL) {
-        PyObject *v = mkpwent(module, p);
+        v = mkpwent(module, p);
         if (v == NULL || PyList_Append(d, v) != 0) {
-            Py_XDECREF(v);
-            Py_DECREF(d);
-            endpwent();
-            return NULL;
+            /* NOTE: cannot dec-ref here, while holding the mutex. */
+            failure = 1;
+            goto done;
         }
         Py_DECREF(v);
     }
+
+done:
     endpwent();
+#ifdef Py_GIL_DISABLED
+    PyMutex_Unlock(&getpwall_mutex);
+#endif
+    if (failure) {
+        Py_XDECREF(v);
+        Py_CLEAR(d);
+    }
     return d;
 }
 #endif

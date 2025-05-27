@@ -57,7 +57,7 @@ class DisplayHookTest(unittest.TestCase):
             dh(None)
 
         self.assertEqual(out.getvalue(), "")
-        self.assertTrue(not hasattr(builtins, "_"))
+        self.assertNotHasAttr(builtins, "_")
 
         # sys.displayhook() requires arguments
         self.assertRaises(TypeError, dh)
@@ -172,7 +172,7 @@ class ExceptHookTest(unittest.TestCase):
             with support.captured_stderr() as err:
                 sys.__excepthook__(*sys.exc_info())
 
-        self.assertTrue(err.getvalue().endswith("ValueError: 42\n"))
+        self.assertEndsWith(err.getvalue(), "ValueError: 42\n")
 
         self.assertRaises(TypeError, sys.__excepthook__)
 
@@ -192,7 +192,7 @@ class ExceptHookTest(unittest.TestCase):
         err = err.getvalue()
         self.assertIn("""  File "b'bytes_filename'", line 123\n""", err)
         self.assertIn("""    text\n""", err)
-        self.assertTrue(err.endswith("SyntaxError: msg\n"))
+        self.assertEndsWith(err, "SyntaxError: msg\n")
 
     def test_excepthook(self):
         with test.support.captured_output("stderr") as stderr:
@@ -269,8 +269,7 @@ class SysModuleTest(unittest.TestCase):
             rc, out, err = assert_python_failure('-c', code, **env_vars)
             self.assertEqual(rc, 1)
             self.assertEqual(out, b'')
-            self.assertTrue(err.startswith(expected),
-                "%s doesn't start with %s" % (ascii(err), ascii(expected)))
+            self.assertStartsWith(err, expected)
 
         # test that stderr buffer is flushed before the exit message is written
         # into stderr
@@ -437,7 +436,7 @@ class SysModuleTest(unittest.TestCase):
     @unittest.skipUnless(hasattr(sys, "setdlopenflags"),
                          'test needs sys.setdlopenflags()')
     def test_dlopenflags(self):
-        self.assertTrue(hasattr(sys, "getdlopenflags"))
+        self.assertHasAttr(sys, "getdlopenflags")
         self.assertRaises(TypeError, sys.getdlopenflags, 42)
         oldflags = sys.getdlopenflags()
         self.assertRaises(TypeError, sys.setdlopenflags)
@@ -623,8 +622,7 @@ class SysModuleTest(unittest.TestCase):
             # And the next record must be for g456().
             filename, lineno, funcname, sourceline = stack[i+1]
             self.assertEqual(funcname, "g456")
-            self.assertTrue((sourceline.startswith("if leave_g.wait(") or
-                             sourceline.startswith("g_raised.set()")))
+            self.assertStartsWith(sourceline, ("if leave_g.wait(", "g_raised.set()"))
         finally:
             # Reap the spawned thread.
             leave_g.set()
@@ -860,7 +858,7 @@ class SysModuleTest(unittest.TestCase):
                  "hash_randomization", "isolated", "dev_mode", "utf8_mode",
                  "warn_default_encoding", "safe_path", "int_max_str_digits")
         for attr in attrs:
-            self.assertTrue(hasattr(sys.flags, attr), attr)
+            self.assertHasAttr(sys.flags, attr)
             attr_type = bool if attr in ("dev_mode", "safe_path") else int
             self.assertEqual(type(getattr(sys.flags, attr)), attr_type, attr)
         self.assertTrue(repr(sys.flags))
@@ -1072,10 +1070,10 @@ class SysModuleTest(unittest.TestCase):
 
         levels = {'alpha': 0xA, 'beta': 0xB, 'candidate': 0xC, 'final': 0xF}
 
-        self.assertTrue(hasattr(sys.implementation, 'name'))
-        self.assertTrue(hasattr(sys.implementation, 'version'))
-        self.assertTrue(hasattr(sys.implementation, 'hexversion'))
-        self.assertTrue(hasattr(sys.implementation, 'cache_tag'))
+        self.assertHasAttr(sys.implementation, 'name')
+        self.assertHasAttr(sys.implementation, 'version')
+        self.assertHasAttr(sys.implementation, 'hexversion')
+        self.assertHasAttr(sys.implementation, 'cache_tag')
 
         version = sys.implementation.version
         self.assertEqual(version[:2], (version.major, version.minor))
@@ -1419,7 +1417,7 @@ class UnraisableHookTest(unittest.TestCase):
                 else:
                     self.assertIn("ValueError", report)
                     self.assertIn("del is broken", report)
-                self.assertTrue(report.endswith("\n"))
+                self.assertEndsWith(report, "\n")
 
     def test_original_unraisablehook_exception_qualname(self):
         # See bpo-41031, bpo-45083.

@@ -211,6 +211,10 @@ Classes
       means may not have any information about their scope, so passing
       arguments to this method may be necessary to evaluate them successfully.
 
+      If no *owner*, *globals*, *locals*, or *type_params* are provided and the
+      :class:`~ForwardRef` does not contain information about its origin,
+      empty globals and locals dictionaries are used.
+
    .. versionadded:: 3.14
 
 

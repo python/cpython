@@ -12,6 +12,7 @@ object types.
 .. toctree::
 
    allocation.rst
+   lifecycle.rst
    structures.rst
    typeobj.rst
    gcsupport.rst

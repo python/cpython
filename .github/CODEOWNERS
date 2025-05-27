@@ -331,3 +331,8 @@ Modules/_xxtestfuzz/          @ammaraskar
 **/*templateobject*           @lysnikolaou
 **/*templatelib*              @lysnikolaou
 **/*tstring*                  @lysnikolaou
+
+# Remote debugging
+Python/remote_debug.h         @pablogsal
+Python/remote_debugging.c     @pablogsal
+Modules/_remote_debugging_module.c @pablogsal @ambv @1st1

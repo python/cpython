@@ -726,6 +726,10 @@ typedef struct _PyIndexPool {
 
     // Next index to allocate if no free indices are available
     int32_t next_index;
+
+    // Generation counter incremented on thread creation/destruction
+    // Used for TLBC cache invalidation in remote debugging
+    uint32_t tlbc_generation;
 } _PyIndexPool;
 
 typedef union _Py_unique_id_entry {
@@ -842,6 +846,8 @@ struct _is {
 
     /* The per-interpreter GIL, which might not be used. */
     struct _gil_runtime_state _gil;
+
+    uint64_t _code_object_generation;
 
      /* ---------- IMPORTANT ---------------------------
      The fields above this line are declared as early as

@@ -49,6 +49,10 @@ assistance from third party tools. It is intended primarily for creators
 of those tools, rather than being a recommended way to create your own
 C extensions.
 
+.. seealso::
+
+   :pep:`489` -- Multi-phase extension module initialization
+
 .. toctree::
    :maxdepth: 2
    :numbered:

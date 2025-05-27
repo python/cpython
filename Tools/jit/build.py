@@ -8,7 +8,6 @@ import sys
 import _targets
 
 if __name__ == "__main__":
-    out = pathlib.Path.cwd().resolve()
     comment = f"$ {shlex.join([pathlib.Path(sys.executable).name] + sys.argv)}"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -24,6 +23,20 @@ if __name__ == "__main__":
         "-f", "--force", action="store_true", help="force the entire JIT to be rebuilt"
     )
     parser.add_argument(
+        "-o",
+        "--output-dir",
+        help="where to output generated files",
+        required=True,
+        type=lambda p: pathlib.Path(p).resolve(),
+    )
+    parser.add_argument(
+        "-p",
+        "--pyconfig-dir",
+        help="where to find pyconfig.h",
+        required=True,
+        type=lambda p: pathlib.Path(p).resolve(),
+    )
+    parser.add_argument(
         "-v", "--verbose", action="store_true", help="echo commands as they are run"
     )
     args = parser.parse_args()
@@ -31,13 +44,13 @@ if __name__ == "__main__":
         target.debug = args.debug
         target.force = args.force
         target.verbose = args.verbose
+        target.pyconfig_dir = args.pyconfig_dir
         target.build(
-            out,
             comment=comment,
-            stencils_h=f"jit_stencils-{target.triple}.h",
             force=args.force,
+            jit_stencils=args.output_dir / f"jit_stencils-{target.triple}.h",
         )
-    jit_stencils_h = out / "jit_stencils.h"
+    jit_stencils_h = args.output_dir / "jit_stencils.h"
     lines = [f"// {comment}\n"]
     guard = "#if"
     for target in args.target:

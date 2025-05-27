@@ -611,10 +611,10 @@ class CompatPickleTests(unittest.TestCase):
             with self.subTest(((module3, name3), (module2, name2))):
                 if (module2, name2) == ('exceptions', 'OSError'):
                     attr = getattribute(module3, name3)
-                    self.assertTrue(issubclass(attr, OSError))
+                    self.assertIsSubclass(attr, OSError)
                 elif (module2, name2) == ('exceptions', 'ImportError'):
                     attr = getattribute(module3, name3)
-                    self.assertTrue(issubclass(attr, ImportError))
+                    self.assertIsSubclass(attr, ImportError)
                 else:
                     module, name = mapping(module2, name2)
                     if module3[:1] != '_':

@@ -1,0 +1,2 @@
+Remove import of C implementation of :class:`io.FileIO` from Python
+implementation which has its own implementation

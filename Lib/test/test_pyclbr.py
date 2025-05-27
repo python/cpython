@@ -103,7 +103,7 @@ class PyclbrTest(TestCase):
         for name, value in dict.items():
             if name in ignore:
                 continue
-            self.assertHasAttr(module, name, ignore)
+            self.assertHasAttr(module, name)
             py_item = getattr(module, name)
             if isinstance(value, pyclbr.Function):
                 self.assertIsInstance(py_item, (FunctionType, BuiltinFunctionType))

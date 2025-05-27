@@ -6,7 +6,6 @@ import subprocess
 import sys
 import unittest
 import webbrowser
-from functools import partial
 from test import support
 from test.support import import_helper
 from test.support import is_apple_mobile

@@ -284,7 +284,7 @@ a file or file-like object.
    Example:
 
       >>> import io, hashlib, hmac
-      >>> with open(hashlib.__file__, "rb") as f:
+      >>> with open("library/hashlib.rst", "rb") as f:
       ...     digest = hashlib.file_digest(f, "sha256")
       ...
       >>> digest.hexdigest()  # doctest: +ELLIPSIS

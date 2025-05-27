@@ -1,5 +1,17 @@
-#if defined (__SVR4) && defined (__sun)
+/* Get a definition of alloca(). */
+#if (defined (__SVR4) && defined (__sun)) || defined(HAVE_ALLOCA_H)
 #   include <alloca.h>
+#elif defined(MS_WIN32)
+#   include <malloc.h>
+#endif
+
+/* If the system does not define alloca(), we have to hope for a compiler builtin. */
+#ifndef alloca
+#   if defined __GNUC__ || (__clang_major__ >= 4)
+#      define alloca __builtin_alloca
+#   else
+#     error "Could not define alloca() on your platform."
+#   endif
 #endif
 
 #include <stdbool.h>

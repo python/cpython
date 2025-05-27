@@ -17,7 +17,6 @@ import sysconfig
 import tempfile
 import threading
 import unittest
-import warnings
 from test import support
 from test.support import _4G, bigmemtest
 from test.support import hashlib_helper
@@ -152,8 +151,8 @@ class HashLibTestCase(unittest.TestCase):
         if _hashlib:
             # These algorithms should always be present when this module
             # is compiled.  If not, something was compiled wrong.
-            self.assertTrue(hasattr(_hashlib, 'openssl_md5'))
-            self.assertTrue(hasattr(_hashlib, 'openssl_sha1'))
+            self.assertHasAttr(_hashlib, 'openssl_md5')
+            self.assertHasAttr(_hashlib, 'openssl_sha1')
             for algorithm, constructors in self.constructors_to_test.items():
                 constructor = getattr(_hashlib, 'openssl_'+algorithm, None)
                 if constructor:

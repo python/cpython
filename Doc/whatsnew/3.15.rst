@@ -97,6 +97,16 @@ ssl
   (Contributed by Will Childs-Klein in :gh:`133624`.)
 
 
+zlib
+----
+
+* Allow combining two Adler-32 checksums via :func:`~zlib.adler32_combine`.
+  (Contributed by Callum Attryde and Bénédikt Tran in :gh:`134635`.)
+
+* Allow combining two CRC-32 checksums via :func:`~zlib.crc32_combine`.
+  (Contributed by Bénédikt Tran in :gh:`134635`.)
+
+
 .. Add improved modules above alphabetically, not here at the end.
 
 Optimizations

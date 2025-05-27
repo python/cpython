@@ -12,7 +12,7 @@ except ImportError:
 
 from test import support
 from test.support.bytecode_helper import (
-    BytecodeTestCase, CfgOptimizationTestCase, CompilationStepTestCase)
+    BytecodeTestCase, CfgOptimizationTestCase)
 
 
 def compile_pattern_with_fast_locals(pattern):
@@ -316,7 +316,7 @@ class TestTranforms(BytecodeTestCase):
             return -(1.0-1.0)
 
         for instr in dis.get_instructions(negzero):
-            self.assertFalse(instr.opname.startswith('UNARY_'))
+            self.assertNotStartsWith(instr.opname, 'UNARY_')
         self.check_lnotab(negzero)
 
     def test_constant_folding_binop(self):

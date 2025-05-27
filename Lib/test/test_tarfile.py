@@ -1650,7 +1650,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
             try:
                 for t in tar:
                     if t.name != ".":
-                        self.assertTrue(t.name.startswith("./"), t.name)
+                        self.assertStartsWith(t.name, "./")
             finally:
                 tar.close()
 

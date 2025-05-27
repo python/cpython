@@ -8,6 +8,7 @@
 #include <Python.h>
 #include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
 #include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_lock.h"          // PyEvent
 #include "pycore_pythread.h"      // PyThread_start_joinable_thread()
 #include "pycore_import.h"        // _PyImport_FrozenBootstrap
 #include <inttypes.h>
@@ -2312,6 +2313,32 @@ test_get_incomplete_frame(void)
     return result;
 }
 
+static void
+do_gilstate_ensure(void *event_ptr)
+{
+    PyEvent *event = (PyEvent *)event_ptr;
+    // Signal to the calling thread that we've started
+    _PyEvent_Notify(event);
+    PyGILState_Ensure(); // This should hang
+    assert(NULL);
+}
+
+static int
+test_gilstate_after_finalization(void)
+{
+    _testembed_initialize();
+    Py_Finalize();
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    PyEvent event = {0};
+    if (PyThread_start_joinable_thread(&do_gilstate_ensure, &event, &ident, &handle) < 0) {
+        return -1;
+    }
+    PyEvent_Wait(&event);
+    // We're now pretty confident that the thread went for
+    // PyGILState_Ensure(), but that means it got hung.
+    return PyThread_detach_thread(handle);
+}
 
 /* *********************************************************
  * List of test cases and the function that implements it.
@@ -2402,7 +2429,7 @@ static struct TestCase TestCases[] = {
     {"test_frozenmain", test_frozenmain},
 #endif
     {"test_get_incomplete_frame", test_get_incomplete_frame},
-
+    {"test_gilstate_after_finalization", test_gilstate_after_finalization},
     {NULL, NULL}
 };
 

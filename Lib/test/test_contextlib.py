@@ -48,23 +48,23 @@ class TestAbstractContextManager(unittest.TestCase):
             def __exit__(self, exc_type, exc_value, traceback):
                 return None
 
-        self.assertTrue(issubclass(ManagerFromScratch, AbstractContextManager))
+        self.assertIsSubclass(ManagerFromScratch, AbstractContextManager)
 
         class DefaultEnter(AbstractContextManager):
             def __exit__(self, *args):
                 super().__exit__(*args)
 
-        self.assertTrue(issubclass(DefaultEnter, AbstractContextManager))
+        self.assertIsSubclass(DefaultEnter, AbstractContextManager)
 
         class NoEnter(ManagerFromScratch):
             __enter__ = None
 
-        self.assertFalse(issubclass(NoEnter, AbstractContextManager))
+        self.assertNotIsSubclass(NoEnter, AbstractContextManager)
 
         class NoExit(ManagerFromScratch):
             __exit__ = None
 
-        self.assertFalse(issubclass(NoExit, AbstractContextManager))
+        self.assertNotIsSubclass(NoExit, AbstractContextManager)
 
 
 class ContextManagerTestCase(unittest.TestCase):

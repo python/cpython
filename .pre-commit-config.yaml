@@ -43,12 +43,14 @@ repos:
         exclude: ^Lib/test/test_tomllib/
       - id: check-yaml
       - id: end-of-file-fixer
-        types: [python]
+        types_or: [python, yaml]
         exclude: Lib/test/tokenizedata/coding20731.py
+      - id: end-of-file-fixer
+        files: '^\.github/CODEOWNERS$'
       - id: trailing-whitespace
-        types_or: [c, inc, python, rst]
+        types_or: [c, inc, python, rst, yaml]
       - id: trailing-whitespace
-        files: '\.(gram)$'
+        files: '^\.github/CODEOWNERS|\.(gram)$'
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.33.0

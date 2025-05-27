@@ -1,0 +1,3 @@
+Emit :exc:`RuntimeWarning` in the Python implementation of :mod:`io` when
+the :term:`file-like object <file object>` is not closed explicitly in the
+presence of multiple I/O layers.

@@ -17,8 +17,8 @@ if TYPE_CHECKING:
 
 
 def make_default_module_completer() -> ModuleCompleter:
-    # Inside pyrepl, __package__ is set to '_pyrepl'
-    return ModuleCompleter(namespace={'__package__': '_pyrepl'})
+    # Inside pyrepl, __package__ is set to None by default
+    return ModuleCompleter(namespace={'__package__': None})
 
 
 class ModuleCompleter:
@@ -42,11 +42,11 @@ class ModuleCompleter:
         self._global_cache: list[pkgutil.ModuleInfo] = []
         self._curr_sys_path: list[str] = sys.path[:]
 
-    def get_completions(self, line: str) -> list[str]:
+    def get_completions(self, line: str) -> list[str] | None:
         """Return the next possible import completions for 'line'."""
         result = ImportParser(line).parse()
         if not result:
-            return []
+            return None
         try:
             return self.complete(*result)
         except Exception:
@@ -81,8 +81,11 @@ class ModuleCompleter:
     def _find_modules(self, path: str, prefix: str) -> list[str]:
         if not path:
             # Top-level import (e.g. `import foo<tab>`` or `from foo<tab>`)`
-            return [name for _, name, _ in self.global_cache
-                    if name.startswith(prefix)]
+            builtin_modules = [name for name in sys.builtin_module_names
+                               if self.is_suggestion_match(name, prefix)]
+            third_party_modules = [module.name for module in self.global_cache
+                                   if self.is_suggestion_match(module.name, prefix)]
+            return sorted(builtin_modules + third_party_modules)
 
         if path.startswith('.'):
             # Convert relative path to absolute path
@@ -97,7 +100,14 @@ class ModuleCompleter:
                        if mod_info.ispkg and mod_info.name == segment]
             modules = self.iter_submodules(modules)
         return [module.name for module in modules
-                if module.name.startswith(prefix)]
+                if self.is_suggestion_match(module.name, prefix)]
+
+    def is_suggestion_match(self, module_name: str, prefix: str) -> bool:
+        if prefix:
+            return module_name.startswith(prefix)
+        # For consistency with attribute completion, which
+        # does not suggest private attributes unless requested.
+        return not module_name.startswith("_")
 
     def iter_submodules(self, parent_modules: list[pkgutil.ModuleInfo]) -> Iterator[pkgutil.ModuleInfo]:
         """Iterate over all submodules of the given parent modules."""

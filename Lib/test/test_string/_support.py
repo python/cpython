@@ -1,4 +1,3 @@
-import unittest
 from string.templatelib import Interpolation
 
 

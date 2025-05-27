@@ -2364,6 +2364,8 @@ free_monitoring_data(_PyCoMonitoringData *data)
 static void
 code_dealloc(PyObject *self)
 {
+    PyThreadState *tstate = PyThreadState_GET();
+    _Py_atomic_add_uint64(&tstate->interp->_code_object_generation, 1);
     PyCodeObject *co = _PyCodeObject_CAST(self);
     _PyObject_ResurrectStart(self);
     notify_code_watchers(PY_CODE_EVENT_DESTROY, co);

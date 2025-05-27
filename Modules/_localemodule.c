@@ -692,7 +692,17 @@ _locale_nl_langinfo_impl(PyObject *module, int item)
             result = result != NULL ? result : "";
             char *oldloc = NULL;
             if (langinfo_constants[i].category != LC_CTYPE
-                && !is_all_ascii(result)
+                && (
+#ifdef __GLIBC__
+                    // gh-133740: Always change the locale for ALT_DIGITS and ERA
+#  ifdef ALT_DIGITS
+                    item == ALT_DIGITS ||
+#  endif
+#  ifdef ERA
+                    item == ERA ||
+#  endif
+#endif
+                    !is_all_ascii(result))
                 && change_locale(langinfo_constants[i].category, &oldloc) < 0)
             {
                 return NULL;

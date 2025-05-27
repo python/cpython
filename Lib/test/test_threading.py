@@ -1253,7 +1253,7 @@ class ThreadTests(BaseTestCase):
         # its state should be removed from interpreter' thread states list
         # to avoid its double cleanup
         try:
-            from resource import setrlimit, RLIMIT_NPROC
+            from resource import setrlimit, RLIMIT_NPROC  # noqa: F401
         except ImportError as err:
             self.skipTest(err)  # RLIMIT_NPROC is specific to Linux and BSD
         code = """if 1:
@@ -1351,6 +1351,35 @@ class ThreadTests(BaseTestCase):
             sys.exit(1)
         ''')
         assert_python_ok("-c", script)
+
+    @skip_unless_reliable_fork
+    @unittest.skipUnless(hasattr(threading, 'get_native_id'), "test needs threading.get_native_id()")
+    def test_native_id_after_fork(self):
+        script = """if True:
+            import threading
+            import os
+            from test import support
+
+            parent_thread_native_id = threading.current_thread().native_id
+            print(parent_thread_native_id, flush=True)
+            assert parent_thread_native_id == threading.get_native_id()
+            childpid = os.fork()
+            if childpid == 0:
+                print(threading.current_thread().native_id, flush=True)
+                assert threading.current_thread().native_id == threading.get_native_id()
+            else:
+                try:
+                    assert parent_thread_native_id == threading.current_thread().native_id
+                    assert parent_thread_native_id == threading.get_native_id()
+                finally:
+                    support.wait_process(childpid, exitcode=0)
+            """
+        rc, out, err = assert_python_ok('-c', script)
+        self.assertEqual(rc, 0)
+        self.assertEqual(err, b"")
+        native_ids = out.strip().splitlines()
+        self.assertEqual(len(native_ids), 2)
+        self.assertNotEqual(native_ids[0], native_ids[1])
 
 class ThreadJoinOnShutdown(BaseTestCase):
 
