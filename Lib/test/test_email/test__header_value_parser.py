@@ -2505,6 +2505,7 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(len(address.all_mailboxes), 1)
         self.assertEqual(address.all_mailboxes[0].domain, '[]')
         self.assertEqual(address.all_mailboxes[0].local_part, 'T')
+        self.assertEqual(address.all_mailboxes[0].token_type, 'invalid-mailbox')
         self.assertEqual(address[0].token_type, 'invalid-mailbox')
 
         address = self._test_get_x(parser.get_address,
@@ -2520,6 +2521,7 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(len(address.all_mailboxes), 1)
         self.assertEqual(address.all_mailboxes[0].domain, '[C]')
         self.assertEqual(address.all_mailboxes[0].local_part, '=m==fr2')
+        self.assertEqual(address.all_mailboxes[0].token_type, 'invalid-mailbox')
         self.assertEqual(address[0].token_type, 'group')
 
     # get_address_list
