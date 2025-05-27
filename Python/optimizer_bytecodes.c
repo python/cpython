@@ -80,24 +80,24 @@ dummy_func(void) {
         if (sym_is_null(value)) {
             ctx->done = true;
         }
-        sym_set_dont_skip_refcount(ctx, value);
+        sym_set_strong_ref_might_be_this_sym(ctx, value);
     }
 
     op(_LOAD_FAST, (-- value)) {
         value = GETLOCAL(oparg);
-        sym_set_dont_skip_refcount(ctx, value);
+        sym_set_strong_ref_might_be_this_sym(ctx, value);
     }
 
     op(_LOAD_FAST_BORROW, (-- value)) {
         value = GETLOCAL(oparg);
-        sym_set_skip_refcount(ctx, value);
+        sym_set_strong_ref_is_held_by_someone_else(ctx, value);
     }
 
     op(_LOAD_FAST_AND_CLEAR, (-- value)) {
         value = GETLOCAL(oparg);
         JitOptSymbol *temp = sym_new_null(ctx);
         GETLOCAL(oparg) = temp;
-        sym_set_dont_skip_refcount(ctx, value);
+        sym_set_strong_ref_might_be_this_sym(ctx, value);
     }
 
     op(_STORE_FAST, (value --)) {
@@ -301,7 +301,7 @@ dummy_func(void) {
             res = sym_new_type(ctx, &PyFloat_Type);
         }
         // TODO (gh-134584): Move this to the optimizer generator.
-        if (sym_is_skip_refcount(ctx, left) && sym_is_skip_refcount(ctx, right)) {
+        if (sym_is_strong_ref_held_by_someone_else(ctx, left) && sym_is_strong_ref_held_by_someone_else(ctx, right)) {
             REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
         }
     }
@@ -325,7 +325,7 @@ dummy_func(void) {
             res = sym_new_type(ctx, &PyFloat_Type);
         }
         // TODO (gh-134584): Move this to the optimizer generator.
-        if (sym_is_skip_refcount(ctx, left) && sym_is_skip_refcount(ctx, right)) {
+        if (sym_is_strong_ref_held_by_someone_else(ctx, left) && sym_is_strong_ref_held_by_someone_else(ctx, right)) {
             REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
         }
     }
@@ -349,7 +349,7 @@ dummy_func(void) {
             res = sym_new_type(ctx, &PyFloat_Type);
         }
         // TODO (gh-134584): Move this to the optimizer generator.
-        if (sym_is_skip_refcount(ctx, left) && sym_is_skip_refcount(ctx, right)) {
+        if (sym_is_strong_ref_held_by_someone_else(ctx, left) && sym_is_strong_ref_held_by_someone_else(ctx, right)) {
             REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
         }
     }
