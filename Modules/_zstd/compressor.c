@@ -489,7 +489,7 @@ error:
     return NULL;
 }
 
-#ifdef Py_DEBUG
+#ifndef NDEBUG
 static inline int
 mt_continue_should_break(ZSTD_inBuffer *in, ZSTD_outBuffer *out)
 {
