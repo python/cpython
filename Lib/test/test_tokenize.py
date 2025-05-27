@@ -3241,39 +3241,40 @@ class CommandLineTest(unittest.TestCase):
 
 
 class StringPrefixTest(unittest.TestCase):
-    def test_prefixes(self):
-        # Get the list of defined string prefixes.  I don't see an
-        # obvious documented way of doing this, but probably the best
-        # thing is to split apart tokenize.StringPrefix.
+    @staticmethod
+    def determine_valid_prefixes():
+        # Try all lengths until we find a length that has zero valid
+        # prefixes.  This will miss the case where for example there
+        # are no valid 3 character prefixes, but there are valid 4
+        # character prefixes.  That seems unlikely.
 
-        # Make sure StringPrefix begins and ends in parens.
-        self.assertEqual(tokenize.StringPrefix[0], '(')
-        self.assertEqual(tokenize.StringPrefix[-1], ')')
+        single_char_valid_prefixes = set()
 
-        # Then split apart everything else by '|'.
-        defined_prefixes = set(tokenize.StringPrefix[1:-1].split('|'))
+        # Find all of the single character string prefixes. Just get
+        # the lowercase version, we'll deal with combinations of upper
+        # and lower case later.  I'm using this logic just in case
+        # some uppercase-only prefix is added.
+        for letter in itertools.chain(string.ascii_lowercase, string.ascii_uppercase):
+            try:
+                eval(f'{letter}""')
+                single_char_valid_prefixes.add(letter.lower())
+            except SyntaxError:
+                pass
 
-        # Now compute the actual string prefixes, by exec-ing all
-        # valid prefix combinations, followed by an empty string.
-
-        # Try all prefix lengths until we find a length that has zero
-        # valid prefixes.  This will miss the case where for example
-        # there are no valid 3 character prefixes, but there are valid
-        # 4 character prefixes.  That seems extremely unlikely.
-
-        # Note that the empty prefix is being included, because length
-        # starts at 0.  That's expected, since StringPrefix includes
-        # the empty prefix.
-
+        # This logic assumes that all combinations of valid prefixes only use
+        # the characters that are valid single character prefixes.  That seems
+        # like a valid assumption, but if it ever changes this will need
+        # adjusting.
         valid_prefixes = set()
         for length in itertools.count():
             num_at_this_length = 0
             for prefix in (
-                "".join(l) for l in list(itertools.combinations(string.ascii_lowercase, length))
+                "".join(l)
+                for l in itertools.combinations(single_char_valid_prefixes, length)
             ):
                 for t in itertools.permutations(prefix):
                     for u in itertools.product(*[(c, c.upper()) for c in t]):
-                        p = ''.join(u)
+                        p = "".join(u)
                         if p == "not":
                             # 'not' can never be a string prefix,
                             # because it's a valid expression: not ""
@@ -3289,9 +3290,26 @@ class StringPrefixTest(unittest.TestCase):
                         except SyntaxError:
                             pass
             if num_at_this_length == 0:
-                break
+                return valid_prefixes
 
-        self.assertEqual(defined_prefixes, valid_prefixes)
+
+    def test_prefixes(self):
+        # Get the list of defined string prefixes.  I don't see an
+        # obvious documented way of doing this, but probably the best
+        # thing is to split apart tokenize.StringPrefix.
+
+        # Make sure StringPrefix begins and ends in parens.  We're
+        # assuming it's of the form "(a|b|ab)", if a, b, and cd are
+        # valid string prefixes.
+        self.assertEqual(tokenize.StringPrefix[0], '(')
+        self.assertEqual(tokenize.StringPrefix[-1], ')')
+
+        # Then split apart everything else by '|'.
+        defined_prefixes = set(tokenize.StringPrefix[1:-1].split('|'))
+
+        # Now compute the actual allowed string prefixes and compare
+        # to what is defined in the tokenize module.
+        self.assertEqual(defined_prefixes, self.determine_valid_prefixes())
 
 
 if __name__ == "__main__":
