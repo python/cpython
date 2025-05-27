@@ -1117,7 +1117,7 @@ class StreamHandler(Handler):
 
     terminator = '\n'
 
-    def __init__(self, stream=None):
+    def __init__(self, encoding="utf-8", stream=None):
         """
         Initialize the handler.
 
