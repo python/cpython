@@ -136,6 +136,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
             }
             if (ptr[len] != '\0') {
                 PyErr_SetString(PyExc_SystemError, "buffer overflow");
+                Py_DECREF(result);
                 return NULL;
             }
             return result;
@@ -318,6 +319,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
             }
             if (ptr[len] != '\0') {
                 PyErr_SetString(PyExc_SystemError, "buffer overflow");
+                Py_DECREF(result);
                 return NULL;
             }
             return result;
