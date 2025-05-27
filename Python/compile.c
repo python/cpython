@@ -5811,7 +5811,9 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 
     outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
     if (is_inlined) {
-        VISIT(c, expr, outermost->iter);
+        if (compiler_visit_expr(c, outermost->iter) < 0) {
+            goto error;
+        }
         if (push_inlined_comprehension_state(c, loc, entry, &inline_state)) {
             goto error;
         }
