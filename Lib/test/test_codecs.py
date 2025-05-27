@@ -1987,7 +1987,7 @@ class StreamWriterTest(unittest.TestCase):
 
     def test_write(self):
         bio = io.BytesIO()
-        assert self.writer(bio).write("Hällo") == 6
+        self.assertEqual(self.writer(bio).write("Hällo"), 6)
         self.assertEqual(bio.getvalue(), b'H\xc3\xa4llo')
 
     def test_copy(self):
@@ -2014,7 +2014,7 @@ class StreamReaderWriterTest(unittest.TestCase):
     def test_write(self):
         bio = io.BytesIO()
         f = codecs.StreamReaderWriter(bio, self.reader, self.writer)
-        assert f.write("Hällo") == 6
+        self.assertEqual(f.write("Hällo"), 6)
         self.assertEqual(bio.getvalue(), b'H\xc3\xa4llo')
 
     def test_copy(self):
