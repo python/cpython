@@ -733,23 +733,13 @@ PyDoc_STRVAR(_curses_window_getbkgd__doc__,
 #define _CURSES_WINDOW_GETBKGD_METHODDEF    \
     {"getbkgd", (PyCFunction)_curses_window_getbkgd, METH_NOARGS, _curses_window_getbkgd__doc__},
 
-static long
+static PyObject *
 _curses_window_getbkgd_impl(PyCursesWindowObject *self);
 
 static PyObject *
 _curses_window_getbkgd(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-    long _return_value;
-
-    _return_value = _curses_window_getbkgd_impl((PyCursesWindowObject *)self);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromLong(_return_value);
-
-exit:
-    return return_value;
+    return _curses_window_getbkgd_impl((PyCursesWindowObject *)self);
 }
 
 PyDoc_STRVAR(_curses_window_getch__doc__,
@@ -1050,7 +1040,7 @@ PyDoc_STRVAR(_curses_window_inch__doc__,
 #define _CURSES_WINDOW_INCH_METHODDEF    \
     {"inch", (PyCFunction)_curses_window_inch, METH_VARARGS, _curses_window_inch__doc__},
 
-static unsigned long
+static PyObject *
 _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
                          int y, int x);
 
@@ -1061,7 +1051,6 @@ _curses_window_inch(PyObject *self, PyObject *args)
     int group_right_1 = 0;
     int y = 0;
     int x = 0;
-    unsigned long _return_value;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 0:
@@ -1076,11 +1065,7 @@ _curses_window_inch(PyObject *self, PyObject *args)
             PyErr_SetString(PyExc_TypeError, "_curses.window.inch requires 0 to 2 arguments");
             goto exit;
     }
-    _return_value = _curses_window_inch_impl((PyCursesWindowObject *)self, group_right_1, y, x);
-    if ((_return_value == (unsigned long)-1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromUnsignedLong(_return_value);
+    return_value = _curses_window_inch_impl((PyCursesWindowObject *)self, group_right_1, y, x);
 
 exit:
     return return_value;
@@ -4435,4 +4420,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=7753612d7613903c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a083473003179b30 input=a9049054013a1b77]*/
