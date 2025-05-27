@@ -127,9 +127,8 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
     def test_c_api(self):
         value = self.key('c_api')
         self.assertTrue(os.path.exists(os.path.join(value['headers'], 'Python.h')))
-        if 'pkgconfig_path' in value:
-            version = sysconfig.get_config_var('VERSION')
-            self.assertTrue(os.path.exists(os.path.join(value['pkgconfig_path'], f'python-{version}.pc')))
+        version = sysconfig.get_config_var('VERSION')
+        self.assertTrue(os.path.exists(os.path.join(value['pkgconfig_path'], f'python-{version}.pc')))
 
 
 if __name__ == '__main__':
