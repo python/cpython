@@ -302,8 +302,13 @@ using :c:func:`PyModule_GetState`), or its contents (such as the module's
 :attr:`~object.__dict__` or individual classes created with :c:func:`PyType_FromSpec`).
 
 All modules created using multi-phase initialization are expected to support
-:ref:`sub-interpreters <sub-interpreter-support>`. Making sure multiple modules
-are independent is typically enough to achieve this.
+:ref:`sub-interpreters <sub-interpreter-support>`.
+Typically, extensions ensure this in one of these ways:
+
+- :ref:`isolating module instances <isolating-extensions-howto>`,
+- :ref:`raising an error on repeated initialization <isolating-extensions-optout>`, or
+- limiting a module to the main interpreter using
+  :c:data:`Py_mod_multiple_interpreters`.
 
 To request multi-phase initialization, the initialization function
 (PyInit_modulename) returns a :c:type:`PyModuleDef` instance with non-empty
