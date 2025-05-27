@@ -58,12 +58,12 @@ compile Python sources.
 .. option:: -s strip_prefix
 
    Removing the prefix makes paths relative to it.
+   You can remove (``s``) the given prefix of paths recorded in the ``.pyc`` files.
    Can be used with ``p``
 
 .. option:: -p prepend_prefix
 
-   Remove (``-s``) or append (``-p``) the given prefix of paths
-   recorded in the ``.pyc`` files.
+   You can append (``-p``) the given prefix of paths recorded in the ``.pyc`` files.
    Cannot be combined with ``-d``.
    Can be used with ``s``
    ``-p /`` can be used to make the path absolute.
