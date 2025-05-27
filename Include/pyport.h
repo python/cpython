@@ -384,6 +384,14 @@ extern "C" {
 #  define Py_NO_INLINE
 #endif
 
+// FT_NO_INLINE
+// Disable inlining of a function only in the free-threaded build.
+#if defined(Py_GIL_DISABLED)
+# define FT_NO_INLINE Py_NO_INLINE
+#else
+# define FT_NO_INLINE
+#endif
+
 #include "exports.h"
 
 #ifdef Py_LIMITED_API
