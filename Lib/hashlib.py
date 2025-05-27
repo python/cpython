@@ -142,9 +142,7 @@ def __get_openssl_constructor(name):
 
 
 def __data_argument(funcname, data_sentinel, kwargs):
-    if '__data_sentinel' in kwargs:
-        raise TypeError(f"{funcname}(): got an unexpected keyword "
-                        f"parameter '__data_sentinel'")
+    assert '__data_sentinel' not in kwargs
     if 'data' in kwargs and 'string' in kwargs:
         raise TypeError(f"{funcname}(): 'data' and 'string' are mutually exclusive "
                         f"and support for 'string' keyword parameter is slated for "
