@@ -216,7 +216,7 @@ and initialize it by calling :c:func:`PyErr_NewException` in the module's
 
 Since :c:data:`!SpamError` is a global variable, each call to the
 :c:data:`Py_mod_exec` function would overwrite it.
-It is not very common to load multiple copies of a module, so for now,
+For now, let's avoid the issue:
 we will block repeated initialization by raising an
 :py:exc:`ImportError`::
 
