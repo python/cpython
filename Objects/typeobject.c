@@ -1178,7 +1178,11 @@ type_modified_unlocked(PyTypeObject *type)
        needed.
      */
     ASSERT_NEW_TYPE_OR_LOCKED(type);
+#ifdef Py_GIL_DISABLED
+    // This function is re-entrant and it's not safe to call it
+    // with the world stopped.
     assert(!types_world_is_stopped());
+#endif
     if (type->tp_version_tag == 0) {
         return;
     }
