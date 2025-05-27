@@ -102,7 +102,7 @@ class TestFail:
         with self.assertRaisesRegex(TypeError,
                 'Object of type module is not JSON serializable') as cm:
             self.dumps(sys)
-        self.assertFalse(hasattr(cm.exception, '__notes__'))
+        self.assertNotHasAttr(cm.exception, '__notes__')
 
         with self.assertRaises(TypeError) as cm:
             self.dumps([1, [2, 3, sys]])

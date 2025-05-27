@@ -1253,7 +1253,7 @@ class ThreadTests(BaseTestCase):
         # its state should be removed from interpreter' thread states list
         # to avoid its double cleanup
         try:
-            from resource import setrlimit, RLIMIT_NPROC
+            from resource import setrlimit, RLIMIT_NPROC  # noqa: F401
         except ImportError as err:
             self.skipTest(err)  # RLIMIT_NPROC is specific to Linux and BSD
         code = """if 1:
@@ -1353,6 +1353,7 @@ class ThreadTests(BaseTestCase):
         assert_python_ok("-c", script)
 
     @skip_unless_reliable_fork
+    @unittest.skipUnless(hasattr(threading, 'get_native_id'), "test needs threading.get_native_id()")
     def test_native_id_after_fork(self):
         script = """if True:
             import threading

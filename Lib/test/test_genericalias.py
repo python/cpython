@@ -236,13 +236,13 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(repr(x2), 'tuple[*tuple[int, str]]')
         x3 = tuple[*tuple[int, ...]]
         self.assertEqual(repr(x3), 'tuple[*tuple[int, ...]]')
-        self.assertTrue(repr(MyList[int]).endswith('.BaseTest.test_repr.<locals>.MyList[int]'))
+        self.assertEndsWith(repr(MyList[int]), '.BaseTest.test_repr.<locals>.MyList[int]')
         self.assertEqual(repr(list[str]()), '[]')  # instances should keep their normal repr
 
         # gh-105488
-        self.assertTrue(repr(MyGeneric[int]).endswith('MyGeneric[int]'))
-        self.assertTrue(repr(MyGeneric[[]]).endswith('MyGeneric[[]]'))
-        self.assertTrue(repr(MyGeneric[[int, str]]).endswith('MyGeneric[[int, str]]'))
+        self.assertEndsWith(repr(MyGeneric[int]), 'MyGeneric[int]')
+        self.assertEndsWith(repr(MyGeneric[[]]), 'MyGeneric[[]]')
+        self.assertEndsWith(repr(MyGeneric[[int, str]]), 'MyGeneric[[int, str]]')
 
     def test_exposed_type(self):
         import types
@@ -362,7 +362,7 @@ class BaseTest(unittest.TestCase):
 
     def test_issubclass(self):
         class L(list): ...
-        self.assertTrue(issubclass(L, list))
+        self.assertIsSubclass(L, list)
         with self.assertRaises(TypeError):
             issubclass(L, list[str])
 
