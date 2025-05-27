@@ -79,7 +79,7 @@ Quick Reference
    | :c:member:`~PyTypeObject.tp_setattro`          | :c:type:`setattrofunc`            | __setattr__,      | X | X |   | G |
    |                                                |                                   | __delattr__       |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_as_buffer`         | :c:type:`PyBufferProcs` *         |                   |   |   |   | % |
+   | :c:member:`~PyTypeObject.tp_as_buffer`         | :c:type:`PyBufferProcs` *         | :ref:`sub-slots`  |   |   |   | % |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_flags`             | unsigned long                     |                   | X | X |   | ? |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
@@ -325,9 +325,10 @@ sub-slots
    +---------------------------------------------------------+-----------------------------------+---------------+
    |                                                                                                             |
    +---------------------------------------------------------+-----------------------------------+---------------+
-   | :c:member:`~PyBufferProcs.bf_getbuffer`                 | :c:func:`getbufferproc`           |               |
+   | :c:member:`~PyBufferProcs.bf_getbuffer`                 | :c:func:`getbufferproc`           | __buffer__    |
    +---------------------------------------------------------+-----------------------------------+---------------+
-   | :c:member:`~PyBufferProcs.bf_releasebuffer`             | :c:func:`releasebufferproc`       |               |
+   | :c:member:`~PyBufferProcs.bf_releasebuffer`             | :c:func:`releasebufferproc`       | __release_\   |
+   |                                                         |                                   | buffer\__     |
    +---------------------------------------------------------+-----------------------------------+---------------+
 
 .. _slot-typedefs-table:
@@ -1237,7 +1238,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    .. c:macro:: Py_TPFLAGS_MANAGED_DICT
 
-      This bit indicates that instances of the class have a `~object.__dict__`
+      This bit indicates that instances of the class have a :attr:`~object.__dict__`
       attribute, and that the space for the dictionary is managed by the VM.
 
       If this flag is set, :c:macro:`Py_TPFLAGS_HAVE_GC` should also be set.
