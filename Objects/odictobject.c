@@ -1182,6 +1182,9 @@ OrderedDict_popitem_impl(PyODictObject *self, int last)
 PyDoc_STRVAR(odict_keys__doc__, "");
 
 static PyObject * odictkeys_new(PyObject *od, PyObject *Py_UNUSED(ignored));  /* forward */
+static int
+_PyODict_SetItem_KnownHash_LockHeld(PyObject *od, PyObject *key, PyObject *value,
+                                    Py_hash_t hash); /* forward */
 
 /* values() */
 
@@ -1218,7 +1221,7 @@ static PyObject *
 OrderedDict_clear_impl(PyODictObject *self)
 /*[clinic end generated code: output=a1a76d1322f556c5 input=08b12322e74c535c]*/
 {
-    PyDict_Clear((PyObject *)self);
+    _PyDict_Clear_LockHeld((PyDictObject *)self);
     _odict_clear_nodes(self);
     Py_RETURN_NONE;
 }
@@ -1260,8 +1263,8 @@ OrderedDict_copy_impl(PyObject *od)
                     PyErr_SetObject(PyExc_KeyError, key);
                 goto fail;
             }
-            if (_PyODict_SetItem_KnownHash((PyObject *)od_copy, key, value,
-                                           _odictnode_HASH(node)) != 0)
+            if (_PyODict_SetItem_KnownHash_LockHeld((PyObject *)od_copy, key, value,
+                                                    _odictnode_HASH(node)) != 0)
                 goto fail;
         }
     }
