@@ -702,8 +702,8 @@ _PyFunction_FromXIData(_PyXIData_t *xidata)
         return NULL;
     }
     PyThreadState *tstate = _PyThreadState_GET();
-    if (PyDict_SetItemString(globals, "__builtins__",
-                             tstate->interp->builtins) < 0)
+    if (PyDict_SetItem(globals, &_Py_ID(__builtins__),
+                       tstate->interp->builtins) < 0)
     {
         Py_DECREF(code);
         Py_DECREF(globals);
