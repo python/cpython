@@ -94,11 +94,6 @@ WIN32 is still required for the locale module.
 #endif
 #endif /* Py_BUILD_CORE || Py_BUILD_CORE_BUILTIN || Py_BUILD_CORE_MODULE */
 
-/* _DEBUG implies Py_DEBUG */
-#ifdef _DEBUG
-#  define Py_DEBUG 1
-#endif
-
 /* Define to 1 when compiling for experimental free-threaded builds */
 #ifdef Py_GIL_DISABLED
 /* We undefine if it was set to zero because all later checks are #ifdef.
