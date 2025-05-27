@@ -2062,7 +2062,7 @@ gc_should_collect_mem_usage(GCState *gcstate)
         // 70,000 new container objects.
         return true;
     }
-    Py_ssize_t last_mem = gcstate->last_mem;
+    Py_ssize_t last_mem = _Py_atomic_load_ssize_relaxed(&gcstate->last_mem);
     Py_ssize_t mem_threshold = Py_MAX(last_mem / 10, 128);
     if ((mem - last_mem) > mem_threshold) {
         // The process memory usage has increased too much, do a collection.
@@ -2245,7 +2245,8 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
 
     // Store the current memory usage, can be smaller now if breaking cycles
     // freed some memory.
-    state->gcstate->last_mem = get_process_mem_usage();
+    Py_ssize_t last_mem = get_process_mem_usage();
+    _Py_atomic_store_ssize_relaxed(&state->gcstate->last_mem, last_mem);
 
     // Append objects with legacy finalizers to the "gc.garbage" list.
     handle_legacy_finalizers(state);

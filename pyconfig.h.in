@@ -1584,6 +1584,9 @@
 /* Define if uuid_generate_time_safe() exists. */
 #undef HAVE_UUID_GENERATE_TIME_SAFE
 
+/* Define if uuid_generate_time_safe() is able to deduce a MAC address. */
+#undef HAVE_UUID_GENERATE_TIME_SAFE_STABLE_MAC
+
 /* Define to 1 if you have the <uuid.h> header file. */
 #undef HAVE_UUID_H
 
@@ -1630,11 +1633,17 @@
 /* Define to 1 if you have the 'writev' function. */
 #undef HAVE_WRITEV
 
+/* Define to 1 if you have the <zdict.h> header file. */
+#undef HAVE_ZDICT_H
+
 /* Define if the zlib library has inflateCopy */
 #undef HAVE_ZLIB_COPY
 
 /* Define to 1 if you have the <zlib.h> header file. */
 #undef HAVE_ZLIB_H
+
+/* Define to 1 if you have the <zstd.h> header file. */
+#undef HAVE_ZSTD_H
 
 /* Define to 1 if you have the '_getpty' function. */
 #undef HAVE__GETPTY

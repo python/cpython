@@ -373,9 +373,6 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
 #  define Py_C_STACK_SIZE 1200000
 #elif defined(__sparc__)
 #  define Py_C_STACK_SIZE 1600000
-#elif defined(__wasi__)
-   /* Web assembly has two stacks, so this isn't really the stack depth */
-#  define Py_C_STACK_SIZE 131072  // wasi-libc DEFAULT_STACK_SIZE
 #elif defined(__hppa__) || defined(__powerpc64__)
 #  define Py_C_STACK_SIZE 2000000
 #else
@@ -3440,6 +3437,26 @@ _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *na
                     NAME_ERROR_MSG, name);
     }
     return value;
+}
+
+_PyStackRef
+_PyForIter_NextWithIndex(PyObject *seq, _PyStackRef index)
+{
+    assert(PyStackRef_IsTaggedInt(index));
+    assert(PyTuple_CheckExact(seq) || PyList_CheckExact(seq));
+    intptr_t i = PyStackRef_UntagInt(index);
+    if (PyTuple_CheckExact(seq)) {
+        size_t size = PyTuple_GET_SIZE(seq);
+        if ((size_t)i >= size) {
+            return PyStackRef_NULL;
+        }
+        return PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq, i));
+    }
+    PyObject *item = _PyList_GetItemRef((PyListObject *)seq, i);
+    if (item == NULL) {
+        return PyStackRef_NULL;
+    }
+    return PyStackRef_FromPyObjectSteal(item);
 }
 
 /* Check if a 'cls' provides the given special method. */

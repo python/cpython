@@ -12,7 +12,6 @@ import threading
 from test.support.import_helper import import_module
 from test.support import threading_helper
 from test.support import _1M
-from test.support import Py_GIL_DISABLED
 
 _zstd = import_module("_zstd")
 zstd = import_module("compression.zstd")
@@ -281,15 +280,15 @@ class CompressorTestCase(unittest.TestCase):
         with self.assertRaisesRegex(ZstdError,
                 (r'Error when setting zstd compression parameter "window_log", '
                  r'it should \d+ <= value <= \d+, provided value is 100\. '
-                 r'\(zstd v\d\.\d\.\d, (?:32|64)-bit build\)')):
+                 r'\((?:32|64)-bit build\)')):
             compress(b'', options=option)
 
     def test_unknown_compression_parameter(self):
         KEY = 100001234
         option = {CompressionParameter.compression_level: 10,
                   KEY: 200000000}
-        pattern = r'Zstd compression parameter.*?"unknown parameter \(key %d\)"' \
-                  % KEY
+        pattern = (r'Invalid zstd compression parameter.*?'
+                   fr'"unknown parameter \(key {KEY}\)"')
         with self.assertRaisesRegex(ZstdError, pattern):
             ZstdCompressor(options=option)
 
@@ -413,15 +412,15 @@ class DecompressorTestCase(unittest.TestCase):
         with self.assertRaisesRegex(ZstdError,
                 (r'Error when setting zstd decompression parameter "window_log_max", '
                  r'it should \d+ <= value <= \d+, provided value is 100\. '
-                 r'\(zstd v\d\.\d\.\d, (?:32|64)-bit build\)')):
+                 r'\((?:32|64)-bit build\)')):
             decompress(b'', options=options)
 
     def test_unknown_decompression_parameter(self):
         KEY = 100001234
         options = {DecompressionParameter.window_log_max: DecompressionParameter.window_log_max.bounds()[1],
                   KEY: 200000000}
-        pattern = r'Zstd decompression parameter.*?"unknown parameter \(key %d\)"' \
-                  % KEY
+        pattern = (r'Invalid zstd decompression parameter.*?'
+                   fr'"unknown parameter \(key {KEY}\)"')
         with self.assertRaisesRegex(ZstdError, pattern):
             ZstdDecompressor(options=options)
 
@@ -507,7 +506,7 @@ class DecompressorTestCase(unittest.TestCase):
         self.assertFalse(d.needs_input)
 
     def test_decompressor_arg(self):
-        zd = ZstdDict(b'12345678', True)
+        zd = ZstdDict(b'12345678', is_raw=True)
 
         with self.assertRaises(TypeError):
             d = ZstdDecompressor(zstd_dict={})
@@ -1021,6 +1020,10 @@ class DecompressorFlagsTestCase(unittest.TestCase):
 class ZstdDictTestCase(unittest.TestCase):
 
     def test_is_raw(self):
+        # must be passed as a keyword argument
+        with self.assertRaises(TypeError):
+            ZstdDict(bytes(8), True)
+
         # content < 8
         b = b'1234567'
         with self.assertRaises(ValueError):
@@ -1068,9 +1071,9 @@ class ZstdDictTestCase(unittest.TestCase):
 
         # corrupted
         zd = ZstdDict(dict_content, is_raw=False)
-        with self.assertRaisesRegex(ZstdError, r'ZSTD_CDict.*?corrupted'):
+        with self.assertRaisesRegex(ZstdError, r'ZSTD_CDict.*?content\.$'):
             ZstdCompressor(zstd_dict=zd.as_digested_dict)
-        with self.assertRaisesRegex(ZstdError, r'ZSTD_DDict.*?corrupted'):
+        with self.assertRaisesRegex(ZstdError, r'ZSTD_DDict.*?content\.$'):
             ZstdDecompressor(zd)
 
         # wrong type
@@ -1096,7 +1099,7 @@ class ZstdDictTestCase(unittest.TestCase):
 
 
         TRAINED_DICT = train_dict(SAMPLES, DICT_SIZE1)
-        ZstdDict(TRAINED_DICT.dict_content, False)
+        ZstdDict(TRAINED_DICT.dict_content, is_raw=False)
 
         self.assertNotEqual(TRAINED_DICT.dict_id, 0)
         self.assertGreater(len(TRAINED_DICT.dict_content), 0)
@@ -1174,43 +1177,43 @@ class ZstdDictTestCase(unittest.TestCase):
     def test_train_dict_c(self):
         # argument wrong type
         with self.assertRaises(TypeError):
-            _zstd._train_dict({}, (), 100)
+            _zstd.train_dict({}, (), 100)
         with self.assertRaises(TypeError):
-            _zstd._train_dict(b'', 99, 100)
+            _zstd.train_dict(b'', 99, 100)
         with self.assertRaises(TypeError):
-            _zstd._train_dict(b'', (), 100.1)
+            _zstd.train_dict(b'', (), 100.1)
 
         # size > size_t
         with self.assertRaises(ValueError):
-            _zstd._train_dict(b'', (2**64+1,), 100)
+            _zstd.train_dict(b'', (2**64+1,), 100)
 
         # dict_size <= 0
         with self.assertRaises(ValueError):
-            _zstd._train_dict(b'', (), 0)
+            _zstd.train_dict(b'', (), 0)
 
     def test_finalize_dict_c(self):
         with self.assertRaises(TypeError):
-            _zstd._finalize_dict(1, 2, 3, 4, 5)
+            _zstd.finalize_dict(1, 2, 3, 4, 5)
 
         # argument wrong type
         with self.assertRaises(TypeError):
-            _zstd._finalize_dict({}, b'', (), 100, 5)
+            _zstd.finalize_dict({}, b'', (), 100, 5)
         with self.assertRaises(TypeError):
-            _zstd._finalize_dict(TRAINED_DICT.dict_content, {}, (), 100, 5)
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, {}, (), 100, 5)
         with self.assertRaises(TypeError):
-            _zstd._finalize_dict(TRAINED_DICT.dict_content, b'', 99, 100, 5)
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', 99, 100, 5)
         with self.assertRaises(TypeError):
-            _zstd._finalize_dict(TRAINED_DICT.dict_content, b'', (), 100.1, 5)
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', (), 100.1, 5)
         with self.assertRaises(TypeError):
-            _zstd._finalize_dict(TRAINED_DICT.dict_content, b'', (), 100, 5.1)
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', (), 100, 5.1)
 
         # size > size_t
         with self.assertRaises(ValueError):
-            _zstd._finalize_dict(TRAINED_DICT.dict_content, b'', (2**64+1,), 100, 5)
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', (2**64+1,), 100, 5)
 
         # dict_size <= 0
         with self.assertRaises(ValueError):
-            _zstd._finalize_dict(TRAINED_DICT.dict_content, b'', (), 0, 5)
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', (), 0, 5)
 
     def test_train_buffer_protocol_samples(self):
         def _nbytes(dat):
@@ -1232,25 +1235,25 @@ class ZstdDictTestCase(unittest.TestCase):
         # wrong size list
         with self.assertRaisesRegex(ValueError,
                 "The samples size tuple doesn't match the concatenation's size"):
-            _zstd._train_dict(concatenation, tuple(wrong_size_lst), 100*_1K)
+            _zstd.train_dict(concatenation, tuple(wrong_size_lst), 100*_1K)
 
         # correct size list
-        _zstd._train_dict(concatenation, tuple(correct_size_lst), 3*_1K)
+        _zstd.train_dict(concatenation, tuple(correct_size_lst), 3*_1K)
 
         # wrong size list
         with self.assertRaisesRegex(ValueError,
                 "The samples size tuple doesn't match the concatenation's size"):
-            _zstd._finalize_dict(TRAINED_DICT.dict_content,
+            _zstd.finalize_dict(TRAINED_DICT.dict_content,
                                   concatenation, tuple(wrong_size_lst), 300*_1K, 5)
 
         # correct size list
-        _zstd._finalize_dict(TRAINED_DICT.dict_content,
+        _zstd.finalize_dict(TRAINED_DICT.dict_content,
                               concatenation, tuple(correct_size_lst), 300*_1K, 5)
 
     def test_as_prefix(self):
         # V1
         V1 = THIS_FILE_BYTES
-        zd = ZstdDict(V1, True)
+        zd = ZstdDict(V1, is_raw=True)
 
         # V2
         mid = len(V1) // 2
@@ -1266,7 +1269,7 @@ class ZstdDictTestCase(unittest.TestCase):
         self.assertEqual(decompress(dat, zd.as_prefix), V2)
 
         # use wrong prefix
-        zd2 = ZstdDict(SAMPLES[0], True)
+        zd2 = ZstdDict(SAMPLES[0], is_raw=True)
         try:
             decompressed = decompress(dat, zd2.as_prefix)
         except ZstdError: # expected
@@ -1420,11 +1423,12 @@ class FileTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             ZstdFile(io.BytesIO(COMPRESSED_100_PLUS_32KB), "rw")
 
-        with self.assertRaisesRegex(TypeError, r"NOT be CompressionParameter"):
+        with self.assertRaisesRegex(TypeError,
+                                    r"NOT be a CompressionParameter"):
             ZstdFile(io.BytesIO(), 'rb',
                      options={CompressionParameter.compression_level:5})
         with self.assertRaisesRegex(TypeError,
-                                    r"NOT be DecompressionParameter"):
+                                    r"NOT be a DecompressionParameter"):
             ZstdFile(io.BytesIO(), 'wb',
                      options={DecompressionParameter.window_log_max:21})
 
@@ -1682,10 +1686,10 @@ class FileTestCase(unittest.TestCase):
 
         # Trailing data isn't a valid compressed stream
         with ZstdFile(io.BytesIO(self.FRAME_42 + b'12345')) as f:
-            self.assertEqual(f.read(), self.DECOMPRESSED_42)
+            self.assertRaises(ZstdError, f.read)
 
         with ZstdFile(io.BytesIO(SKIPPABLE_FRAME + b'12345')) as f:
-            self.assertEqual(f.read(), b'')
+            self.assertRaises(ZstdError, f.read)
 
     def test_read_truncated(self):
         # Drop stream epilogue: 4 bytes checksum
@@ -2428,7 +2432,6 @@ class OpenTestCase(unittest.TestCase):
 
 class FreeThreadingMethodTests(unittest.TestCase):
 
-    @unittest.skipUnless(Py_GIL_DISABLED, 'this test can only possibly fail with GIL disabled')
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     def test_compress_locking(self):
@@ -2465,7 +2468,6 @@ class FreeThreadingMethodTests(unittest.TestCase):
         actual = b''.join(output) + rest2
         self.assertEqual(expected, actual)
 
-    @unittest.skipUnless(Py_GIL_DISABLED, 'this test can only possibly fail with GIL disabled')
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     def test_decompress_locking(self):
@@ -2501,6 +2503,59 @@ class FreeThreadingMethodTests(unittest.TestCase):
         actual = b''.join(output)
         self.assertEqual(expected, actual)
 
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_compress_shared_dict(self):
+        num_threads = 8
+
+        def run_method(b):
+            level = threading.get_ident() % 4
+            # sync threads to increase chance of contention on
+            # capsule storing dictionary levels
+            b.wait()
+            ZstdCompressor(level=level,
+                           zstd_dict=TRAINED_DICT.as_digested_dict)
+            b.wait()
+            ZstdCompressor(level=level,
+                           zstd_dict=TRAINED_DICT.as_undigested_dict)
+            b.wait()
+            ZstdCompressor(level=level,
+                           zstd_dict=TRAINED_DICT.as_prefix)
+        threads = []
+
+        b = threading.Barrier(num_threads)
+        for i in range(num_threads):
+            thread = threading.Thread(target=run_method, args=(b,))
+
+            threads.append(thread)
+
+        with threading_helper.start_threads(threads):
+            pass
+
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_decompress_shared_dict(self):
+        num_threads = 8
+
+        def run_method(b):
+            # sync threads to increase chance of contention on
+            # decompression dictionary
+            b.wait()
+            ZstdDecompressor(zstd_dict=TRAINED_DICT.as_digested_dict)
+            b.wait()
+            ZstdDecompressor(zstd_dict=TRAINED_DICT.as_undigested_dict)
+            b.wait()
+            ZstdDecompressor(zstd_dict=TRAINED_DICT.as_prefix)
+        threads = []
+
+        b = threading.Barrier(num_threads)
+        for i in range(num_threads):
+            thread = threading.Thread(target=run_method, args=(b,))
+
+            threads.append(thread)
+
+        with threading_helper.start_threads(threads):
+            pass
 
 
 if __name__ == "__main__":

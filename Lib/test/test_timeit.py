@@ -222,8 +222,8 @@ class TestTimeit(unittest.TestCase):
     def assert_exc_string(self, exc_string, expected_exc_name):
         exc_lines = exc_string.splitlines()
         self.assertGreater(len(exc_lines), 2)
-        self.assertTrue(exc_lines[0].startswith('Traceback'))
-        self.assertTrue(exc_lines[-1].startswith(expected_exc_name))
+        self.assertStartsWith(exc_lines[0], 'Traceback')
+        self.assertStartsWith(exc_lines[-1], expected_exc_name)
 
     def test_print_exc(self):
         s = io.StringIO()

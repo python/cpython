@@ -1788,8 +1788,14 @@ expression support in the :mod:`re` module).
 
    Return centered in a string of length *width*. Padding is done using the
    specified *fillchar* (default is an ASCII space). The original string is
-   returned if *width* is less than or equal to ``len(s)``.
+   returned if *width* is less than or equal to ``len(s)``.  For example::
 
+      >>> 'Python'.center(10)
+      '  Python  '
+      >>> 'Python'.center(10, '-')
+      '--Python--'
+      >>> 'Python'.center(4)
+      'Python'
 
 
 .. method:: str.count(sub[, start[, end]])
@@ -1799,8 +1805,18 @@ expression support in the :mod:`re` module).
    interpreted as in slice notation.
 
    If *sub* is empty, returns the number of empty strings between characters
-   which is the length of the string plus one.
+   which is the length of the string plus one. For example::
 
+      >>> 'spam, spam, spam'.count('spam')
+      3
+      >>> 'spam, spam, spam'.count('spam', 5)
+      2
+      >>> 'spam, spam, spam'.count('spam', 5, 10)
+      1
+      >>> 'spam, spam, spam'.count('eggs')
+      0
+      >>> 'spam, spam, spam'.count('')
+      17
 
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
@@ -2012,7 +2028,7 @@ expression support in the :mod:`re` module).
 
 .. method:: str.isprintable()
 
-   Return true if all characters in the string are printable, false if it
+   Return ``True`` if all characters in the string are printable, ``False`` if it
    contains at least one non-printable character.
 
    Here "printable" means the character is suitable for :func:`repr` to use in
@@ -2268,6 +2284,18 @@ expression support in the :mod:`re` module).
       ['1', '2 3']
       >>> '   1   2   3   '.split()
       ['1', '2', '3']
+
+   If *sep* is not specified or is ``None`` and  *maxsplit* is ``0``, only
+   leading runs of consecutive whitespace are considered.
+
+   For example::
+
+      >>> "".split(None, 0)
+      []
+      >>> "   ".split(None, 0)
+      []
+      >>> "   foo   ".split(maxsplit=0)
+      ['foo   ']
 
 
 .. index::
