@@ -356,15 +356,15 @@ Different events will provide the callback function with different arguments, as
 
 * :monitoring-event:`PY_START` and :monitoring-event:`PY_RESUME`::
 
-    func(code: CodeType, instruction_offset: int) -> DISABLE | Any
+    func(code: CodeType, instruction_offset: int) -> object  # DISABLE | Any
 
 * :monitoring-event:`PY_RETURN` and :monitoring-event:`PY_YIELD`::
 
-    func(code: CodeType, instruction_offset: int, retval: object) -> DISABLE | Any
+    func(code: CodeType, instruction_offset: int, retval: object) -> object  # DISABLE | Any
 
-* :monitoring-event:`CALL`, :monitoring-event:`C_RAISE` and :monitoring-event:`C_RETURN`::
+* :monitoring-event:`CALL`, :monitoring-event:`C_RAISE` and :monitoring-event:`C_RETURN` (*arg0* can be :data:`MISSING`)::
 
-    func(code: CodeType, instruction_offset: int, callable: object, arg0: object | MISSING) -> DISABLE | Any
+    func(code: CodeType, instruction_offset: int, callable: object, arg0: object) -> object  # DISABLE | Any
 
   *code* represents the code object where the call is being made, while
   *callable* is the object that is about to be called (and thus
@@ -378,7 +378,7 @@ Different events will provide the callback function with different arguments, as
 * :monitoring-event:`RAISE`, :monitoring-event:`RERAISE`, :monitoring-event:`EXCEPTION_HANDLED`,
   :monitoring-event:`PY_UNWIND`, :monitoring-event:`PY_THROW` and :monitoring-event:`STOP_ITERATION`::
 
-    func(code: CodeType, instruction_offset: int, exception: BaseException) -> DISABLE | Any
+    func(code: CodeType, instruction_offset: int, exception: BaseException) -> object  # DISABLE | Any
 
 * :monitoring-event:`LINE`::
 
@@ -386,10 +386,10 @@ Different events will provide the callback function with different arguments, as
 
 * :monitoring-event:`BRANCH_LEFT`, :monitoring-event:`BRANCH_RIGHT` and :monitoring-event:`JUMP`::
 
-    func(code: CodeType, instruction_offset: int, destination_offset: int) -> DISABLE | Any
+    func(code: CodeType, instruction_offset: int, destination_offset: int) -> object  # DISABLE | Any
 
   Note that the *destination_offset* is where the code will next execute.
 
 * :monitoring-event:`INSTRUCTION`::
 
-    func(code: CodeType, instruction_offset: int) -> DISABLE | Any
+    func(code: CodeType, instruction_offset: int) -> object  # DISABLE | Any
