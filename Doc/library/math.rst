@@ -10,6 +10,9 @@
 
 --------------
 
+This module provides access to common mathematical functions and constants,
+including those defined by the C standard.
+
 These functions cannot be used with complex numbers; use the functions of the
 same name from the :mod:`cmath` module if you require support for complex
 numbers.  The distinction between functions which support complex numbers and
