@@ -2912,6 +2912,7 @@ _Py_Specialize_ForIter(_PyStackRef iter, _PyStackRef null_or_index, _Py_CODEUNIT
 
     if (PyStackRef_IsNull(null_or_index)) {
 #ifdef Py_GIL_DISABLED
+        PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
         // Only specialize for uniquely referenced iterators, so that we know
         // they're only referenced by this one thread. This is more limiting
         // than we need (even `it = iter(mylist); for item in it:` won't get

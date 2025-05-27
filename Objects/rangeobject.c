@@ -160,8 +160,9 @@ int
 _PyRange_IsSimpleCompact(PyObject *range) {
     assert(PyRange_Check(range));
     rangeobject *r = (rangeobject*)range;
-    if (r->start == _PyLong_GetZero() && r->step == _PyLong_GetOne() &&
-        _PyLong_IsNonNegativeCompact((PyLongObject *)r->stop)
+    if (_PyLong_IsCompact((PyLongObject *)r->start) &&
+        _PyLong_IsCompact((PyLongObject *)r->stop) &&
+        r->step == _PyLong_GetOne()
     ) {
         return 1;
     }
@@ -169,11 +170,19 @@ _PyRange_IsSimpleCompact(PyObject *range) {
 }
 
 Py_ssize_t
+_PyRange_GetStartIfCompact(PyObject *range) {
+    assert(PyRange_Check(range));
+    rangeobject *r = (rangeobject*)range;
+    assert(_PyLong_IsCompact((PyLongObject *)r->start));
+    return _PyLong_CompactValue((PyLongObject *)r->start);
+}
+
+Py_ssize_t
 _PyRange_GetStopIfCompact(PyObject *range) {
     assert(PyRange_Check(range));
     rangeobject *r = (rangeobject*)range;
-    assert(_PyLong_IsNonNegativeCompact((PyLongObject *)r->stop));
-    return _PyLong_GetNonNegativeCompactValue((PyLongObject *)r->stop);
+    assert(_PyLong_IsCompact((PyLongObject *)r->stop));
+    return _PyLong_CompactValue((PyLongObject *)r->stop);
 }
 
 PyDoc_STRVAR(range_doc,

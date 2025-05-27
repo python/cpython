@@ -4202,6 +4202,9 @@
             else {
                 PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iterable);
                 if (tp == &PyRange_Type && _PyRange_IsSimpleCompact(iter_o)) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    Py_ssize_t start = _PyRange_GetStartIfCompact(iter_o);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
                     Py_ssize_t stop = _PyRange_GetStopIfCompact(iter_o);
                     stack_pointer += -1;
                     assert(WITHIN_STACK_BOUNDS());
@@ -4209,7 +4212,7 @@
                     PyStackRef_CLOSE(iterable);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     iter = PyStackRef_TagInt(stop);
-                    index_or_null = PyStackRef_TagInt(0);
+                    index_or_null = PyStackRef_TagInt(start);
                 }
                 else {
                     _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -4486,7 +4489,7 @@
             _PyStackRef iter;
             null_or_index = stack_pointer[-1];
             iter = stack_pointer[-2];
-            if (PyStackRef_Is(iter, null_or_index)) {
+            if (!PyStackRef_TaggedIntLessThan(null_or_index, iter)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }

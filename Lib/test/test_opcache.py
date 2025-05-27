@@ -1832,15 +1832,6 @@ class TestSpecializer(TestBase):
         self.assert_specialized(for_iter_tuple, "FOR_ITER_TUPLE")
         self.assert_no_opcode(for_iter_tuple, "FOR_ITER")
 
-        r = range(10)
-        def for_iter_range():
-            for i in r:
-                self.assertIn(i, r)
-
-        for_iter_range()
-        self.assert_specialized(for_iter_range, "FOR_ITER_RANGE")
-        self.assert_no_opcode(for_iter_range, "FOR_ITER")
-
         def for_iter_generator():
             for i in (i for i in range(10)):
                 i + 1
@@ -1848,6 +1839,44 @@ class TestSpecializer(TestBase):
         for_iter_generator()
         self.assert_specialized(for_iter_generator, "FOR_ITER_GEN")
         self.assert_no_opcode(for_iter_generator, "FOR_ITER")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_for_iter_range(self):
+        r = range(10)
+        def for_iter1():
+            for i in r:
+                self.assertIn(i, r)
+
+        for_iter1()
+        self.assert_specialized(for_iter1, "FOR_ITER_RANGE")
+        self.assert_no_opcode(for_iter1, "FOR_ITER")
+
+        r = range(-10, 0)
+        def for_iter2():
+            for i in r:
+                self.assertIn(i, r)
+
+        for_iter2()
+        self.assert_specialized(for_iter2, "FOR_ITER_RANGE")
+        self.assert_no_opcode(for_iter2, "FOR_ITER")
+
+        r = range(100_000, 100_010)
+        def for_iter3():
+            for i in r:
+                self.assertIn(i, r)
+
+        for_iter3()
+        self.assert_specialized(for_iter3, "FOR_ITER_RANGE")
+        self.assert_no_opcode(for_iter3, "FOR_ITER")
+
+        r = range((1 << 65), (1 << 65)+10)
+        def for_iter4():
+            for i in r:
+                self.assertIn(i, r)
+
+        for_iter4()
+        self.assert_specialized(for_iter4, "FOR_ITER")
 
 
 if __name__ == "__main__":

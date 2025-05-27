@@ -202,6 +202,14 @@ _PyStackRef PyStackRef_TagInt(intptr_t i)
     return (_PyStackRef){ .index = (i << 1) + 1 };
 }
 
+bool
+PyStackRef_TaggedIntLessThan(_PyStackRef a, _PyStackRef b)
+{
+    assert(PyStackRef_IsTaggedInt(a));
+    assert(PyStackRef_IsTaggedInt(b));
+    return a.bits < b.bits;
+}
+
 intptr_t
 PyStackRef_UntagInt(_PyStackRef i)
 {

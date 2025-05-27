@@ -101,6 +101,14 @@ PyStackRef_IsTaggedInt(_PyStackRef ref)
     return (ref.index & 1) == 1;
 }
 
+static inline bool
+PyStackRef_TaggedIntLessThan(_PyStackRef a, _PyStackRef b)
+{
+    assert(PyStackRef_IsTaggedInt(a));
+    assert(PyStackRef_IsTaggedInt(b));
+    return ((intptr_t)a.bits) < ((intptr_t)b.bits);
+}
+
 static inline PyObject *
 _PyStackRef_AsPyObjectBorrow(_PyStackRef ref, const char *filename, int linenumber)
 {
@@ -272,6 +280,14 @@ PyStackRef_IncrementTaggedIntNoOverflow(_PyStackRef ref)
     assert((ref.bits & Py_TAG_BITS) == Py_INT_TAG); // Is tagged int
     assert((ref.bits & (~Py_TAG_BITS)) != (INT_MAX & (~Py_TAG_BITS))); // Isn't about to overflow
     return (_PyStackRef){ .bits = ref.bits + 4 };
+}
+
+static inline bool
+PyStackRef_TaggedIntLessThan(_PyStackRef a, _PyStackRef b)
+{
+    assert(PyStackRef_IsTaggedInt(a));
+    assert(PyStackRef_IsTaggedInt(b));
+    return ((intptr_t)a.bits) < ((intptr_t)b.bits);
 }
 
 #define PyStackRef_IsDeferredOrTaggedInt(ref) (((ref).bits & Py_TAG_REFCNT) != 0)
