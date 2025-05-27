@@ -3839,7 +3839,7 @@ apply_slot_updates(slot_update_t *updates)
 }
 
 static void
-apply_slot_updates_world_stopped(slot_update_t *updates)
+apply_type_slot_updates(slot_update_t *updates)
 {
     // This must be done carefully to avoid data races and deadlocks.  We
     // have just updated the type __dict__, while holding TYPE_LOCK.  We have
@@ -6402,7 +6402,7 @@ update_slot_after_setattr(PyTypeObject *type, PyObject *name)
         return -1;
     }
     if (queued_updates.head->n > 0) {
-        apply_slot_updates_world_stopped(&queued_updates);
+        apply_type_slot_updates(&queued_updates);
         ASSERT_TYPE_LOCK_HELD();
         // should never allocate another chunk
         assert(chunk.prev == NULL);
@@ -11718,7 +11718,7 @@ update_all_slots(PyTypeObject* type)
         }
     }
     if (queued_updates.head != NULL) {
-        apply_slot_updates_world_stopped(&queued_updates);
+        apply_type_slot_updates(&queued_updates);
         ASSERT_TYPE_LOCK_HELD();
         slot_update_free_chunks(&queued_updates);
     }
