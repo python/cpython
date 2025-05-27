@@ -36,7 +36,7 @@ PyAPI_FUNC(void) PyMutex_Lock(PyMutex *m);
 // exported function for unlocking the mutex
 PyAPI_FUNC(void) PyMutex_Unlock(PyMutex *m);
 
-// exported function for unlocking the mutex
+// exported function for checking if the mutex is locked
 PyAPI_FUNC(int) PyMutex_IsLocked(PyMutex *m);
 
 // Locks the mutex.
