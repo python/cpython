@@ -3112,7 +3112,9 @@ class TransformCodecTest(unittest.TestCase):
         encodings_dir = os.path.dirname(encodings.__file__)
         for value in encodings.aliases.aliases.values():
             codec_file = os.path.join(encodings_dir, value + ".py")
-            self.assertTrue(os.path.isfile(codec_file),
+            pyc_file = codec_file + "c"
+            self.assertTrue(os.path.isfile(codec_file)
+                            or os.path.isfile(pyc_file),
                             "Codec file not found: " + codec_file)
 
     def test_quopri_stateless(self):
