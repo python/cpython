@@ -56,7 +56,7 @@ _zstd_set_c_level(ZstdCompressor *self, int level)
     int max_level = ZSTD_maxCLevel();
     if (level < min_level || level > max_level) {
         PyErr_Format(PyExc_ValueError,
-        "%d not in valid range %d <= compression level <= %d",
+        "compression level %d not in valid range %d <= level <= %d",
             level, min_level, max_level);
         return -1;
     }

@@ -153,8 +153,9 @@ set_parameter_error(int is_compress, int key_v, int value_v)
 
     /* Error message */
     PyErr_Format(PyExc_ValueError,
-        "%d not in valid range %d <= value <= %d for %s parameter '%s'",
-        value_v, bounds.lowerBound, bounds.upperBound, type, name);
+        "%s parameter '%s' received an illegal value %d; "
+        "the valid range is %d <= value <= %d",
+        type, name, value_v, bounds.lowerBound, bounds.upperBound);
 }
 
 static inline _zstd_state*

@@ -200,7 +200,7 @@ class CompressorTestCase(unittest.TestCase):
         self.assertRaises(TypeError, ZstdCompressor, zstd_dict={1: 2, 3: 4})
 
         # valid range for compression level is [-(1<<17), 22]
-        msg = '{} not in valid range -131072 <= compression level <= 22'
+        msg = 'compression level {} not in valid range -131072 <= level <= 22'
         with self.assertRaisesRegex(ValueError, msg.format(C_INT_MAX)):
             ZstdCompressor(C_INT_MAX)
         with self.assertRaisesRegex(ValueError, msg.format(C_INT_MIN)):
@@ -304,8 +304,8 @@ class CompressorTestCase(unittest.TestCase):
         option = {CompressionParameter.window_log:100}
         with self.assertRaisesRegex(
             ValueError,
-            r"100 not in valid range \d+ <= value <= \d+ for compression "
-            r"parameter 'window_log'",
+            "compression parameter 'window_log' received an illegal value 100; "
+            r'the valid range is \d+ <= value <= \d+',
         ):
             compress(b'', options=option)
 
@@ -451,8 +451,8 @@ class DecompressorTestCase(unittest.TestCase):
         options = {DecompressionParameter.window_log_max:100}
         with self.assertRaisesRegex(
             ValueError,
-            r"100 not in valid range \d+ <= value <= \d+ for decompression "
-            r"parameter 'window_log_max'",
+            "decompression parameter 'window_log_max' received an illegal value 100; "
+            r'the valid range is \d+ <= value <= \d+',
         ):
             decompress(b'', options=options)
 
