@@ -180,8 +180,8 @@ typedef enum _JitSymType {
     JIT_SYM_TRUTHINESS_TAG = 9,
 } JitSymType;
 
-#define WE_MIGHT_BE_THE_ONLY_STRONG_REF 0
-#define SOMEONE_ELSE_HAS_A_VALID_STRONG_REF 1
+#define DONT_SKIP_REFCOUNT 0
+#define SKIP_REFCOUNT 1
 
 typedef struct _jit_opt_known_class {
     struct {
@@ -231,9 +231,11 @@ typedef struct {
 typedef union _jit_opt_symbol {
     struct {
         uint8_t tag;
-        // Whether this object has a strong reference
-        // being held to it by someone else.
-        int8_t strong_ref_held_by_someone_else;
+        // Whether this object skips refcount on the stack
+        // (using the _PyStackRef API), or not.
+        // 0 - normal refcounting
+        // 1 - skip refcounting
+        int8_t skip_refcount;
     };
     JitOptKnownClass cls;
     JitOptKnownValue value;
@@ -306,9 +308,9 @@ extern JitOptSymbol *_Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptSymbol 
 extern int _Py_uop_sym_tuple_length(JitOptSymbol *sym);
 extern JitOptSymbol *_Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptSymbol *value, bool truthy);
 
-extern void _Py_uop_sym_set_strong_ref_might_be_this_sym(JitOptContext *ctx, JitOptSymbol *sym);
-extern bool _Py_uop_sym_is_strong_ref_held_by_someone_else(JitOptContext *ctx, JitOptSymbol *sym);
-extern void _Py_uop_sym_set_strong_ref_is_held_by_someone_else(JitOptContext *ctx, JitOptSymbol *sym);
+extern void _Py_uop_sym_set_dont_skip_refcount(JitOptContext *ctx, JitOptSymbol *sym);
+extern bool _Py_uop_sym_is_skip_refcount(JitOptContext *ctx, JitOptSymbol *sym);
+extern void _Py_uop_sym_set_skip_refcount(JitOptContext *ctx, JitOptSymbol *sym);
 
 extern void _Py_uop_abstractcontext_init(JitOptContext *ctx);
 extern void _Py_uop_abstractcontext_fini(JitOptContext *ctx);

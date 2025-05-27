@@ -99,7 +99,7 @@ sym_new(JitOptContext *ctx)
     }
     ctx->t_arena.ty_curr_number++;
     self->tag = JIT_SYM_UNKNOWN_TAG;
-    self->strong_ref_held_by_someone_else = WE_MIGHT_BE_THE_ONLY_STRONG_REF;
+    self->skip_refcount = DONT_SKIP_REFCOUNT;
     return self;
 }
 
@@ -109,7 +109,7 @@ static void make_const(JitOptSymbol *sym, PyObject *val)
     sym->value.value = Py_NewRef(val);
     // Constants don't need to be refcounted, as they are always
     // kept alive by co_consts.
-    sym->strong_ref_held_by_someone_else = SOMEONE_ELSE_HAS_A_VALID_STRONG_REF;
+    sym->skip_refcount = SKIP_REFCOUNT;
 }
 
 static inline void
@@ -386,23 +386,22 @@ _Py_uop_sym_set_non_null(JitOptContext *ctx, JitOptSymbol *sym)
 }
 
 void
-_Py_uop_sym_set_strong_ref_is_held_by_someone_else(JitOptContext *ctx, JitOptSymbol *sym)
+_Py_uop_sym_set_skip_refcount(JitOptContext *ctx, JitOptSymbol *sym)
 {
-   sym->strong_ref_held_by_someone_else = SOMEONE_ELSE_HAS_A_VALID_STRONG_REF;
+   sym->skip_refcount = SKIP_REFCOUNT;
 }
 
 void
-_Py_uop_sym_set_strong_ref_might_be_this_sym(JitOptContext *ctx, JitOptSymbol *sym)
+_Py_uop_sym_set_dont_skip_refcount(JitOptContext *ctx, JitOptSymbol *sym)
 {
-   sym->strong_ref_held_by_someone_else = WE_MIGHT_BE_THE_ONLY_STRONG_REF;
+   sym->skip_refcount = DONT_SKIP_REFCOUNT;
 }
 
 bool
-_Py_uop_sym_is_strong_ref_held_by_someone_else(JitOptContext *ctx, JitOptSymbol *sym)
+_Py_uop_sym_is_skip_refcount(JitOptContext *ctx, JitOptSymbol *sym)
 {
-    assert(sym->strong_ref_held_by_someone_else == SOMEONE_ELSE_HAS_A_VALID_STRONG_REF ||
-        sym->strong_ref_held_by_someone_else == WE_MIGHT_BE_THE_ONLY_STRONG_REF);
-    return sym->strong_ref_held_by_someone_else == SOMEONE_ELSE_HAS_A_VALID_STRONG_REF;
+    assert(sym->skip_refcount == SKIP_REFCOUNT || sym->skip_refcount == DONT_SKIP_REFCOUNT);
+    return sym->skip_refcount == SKIP_REFCOUNT;
 }
 
 
@@ -795,7 +794,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     if (sym == NULL) {
         goto fail;
     }
-    TEST_PREDICATE(!_Py_uop_sym_is_strong_ref_held_by_someone_else(ctx, sym), "top is refcounted");
+    TEST_PREDICATE(!_Py_uop_sym_is_skip_refcount(ctx, sym), "top is refcounted");
     TEST_PREDICATE(!_Py_uop_sym_is_null(sym), "top is NULL");
     TEST_PREDICATE(!_Py_uop_sym_is_not_null(sym), "top is not NULL");
     TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyLong_Type), "top matches a type");
@@ -844,7 +843,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
         goto fail;
     }
     _Py_uop_sym_set_const(ctx, sym, val_42);
-    TEST_PREDICATE(_Py_uop_sym_is_strong_ref_held_by_someone_else(ctx, sym), "42 isn't refcounted");
+    TEST_PREDICATE(_Py_uop_sym_is_skip_refcount(ctx, sym), "42 isn't refcounted");
     TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, sym) == 1, "bool(42) is not True");
     TEST_PREDICATE(!_Py_uop_sym_is_null(sym), "42 is NULL");
     TEST_PREDICATE(_Py_uop_sym_is_not_null(sym), "42 isn't not NULL");
@@ -877,12 +876,12 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     if (sym == NULL) {
         goto fail;
     }
-    TEST_PREDICATE(!_Py_uop_sym_is_strong_ref_held_by_someone_else(ctx, sym), "type should be refcounted");
-    _Py_uop_sym_set_strong_ref_is_held_by_someone_else(ctx, sym);
-    TEST_PREDICATE(_Py_uop_sym_is_strong_ref_held_by_someone_else(ctx, sym), "type should not be refcounted");
+    TEST_PREDICATE(!_Py_uop_sym_is_skip_refcount(ctx, sym), "type should be refcounted");
+    _Py_uop_sym_set_skip_refcount(ctx, sym);
+    TEST_PREDICATE(_Py_uop_sym_is_skip_refcount(ctx, sym), "type should not be refcounted");
 
     sym = _Py_uop_sym_new_const(ctx, Py_None);
-    TEST_PREDICATE(_Py_uop_sym_is_strong_ref_held_by_someone_else(ctx, sym), "None should not be refcounted");
+    TEST_PREDICATE(_Py_uop_sym_is_skip_refcount(ctx, sym), "None should not be refcounted");
     TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, sym) == 0, "bool(None) is not False");
     sym = _Py_uop_sym_new_const(ctx, Py_False);
     TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, sym) == 0, "bool(False) is not False");
