@@ -1178,6 +1178,7 @@ type_modified_unlocked(PyTypeObject *type)
        needed.
      */
     ASSERT_NEW_TYPE_OR_LOCKED(type);
+    assert(!types_world_is_stopped());
     if (type->tp_version_tag == 0) {
         return;
     }
