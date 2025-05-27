@@ -247,7 +247,7 @@ PyStackRef_IsNullOrInt(_PyStackRef ref);
 static inline bool
 PyStackRef_IsTaggedInt(_PyStackRef i)
 {
-    return (i.bits & Py_INT_TAG) == Py_INT_TAG;
+    return (i.bits & Py_TAG_BITS) == Py_INT_TAG;
 }
 
 static inline _PyStackRef
@@ -274,6 +274,7 @@ PyStackRef_IncrementTaggedIntNoOverflow(_PyStackRef ref)
     return (_PyStackRef){ .bits = ref.bits + 4 };
 }
 
+#define PyStackRef_IsDeferredOrTaggedInt(ref) (((ref).bits & Py_TAG_REFCNT) != 0)
 
 #ifdef Py_GIL_DISABLED
 
@@ -407,7 +408,7 @@ static inline _PyStackRef
 PyStackRef_DUP(_PyStackRef stackref)
 {
     assert(!PyStackRef_IsNull(stackref));
-    if (PyStackRef_IsDeferred(stackref)) {
+    if (PyStackRef_IsDeferredOrTaggedInt(stackref)) {
         return stackref;
     }
     Py_INCREF(PyStackRef_AsPyObjectBorrow(stackref));
