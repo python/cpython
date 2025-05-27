@@ -12,7 +12,6 @@ import threading
 from test.support.import_helper import import_module
 from test.support import threading_helper
 from test.support import _1M
-from test.support import Py_GIL_DISABLED
 
 _zstd = import_module("_zstd")
 zstd = import_module("compression.zstd")
@@ -1424,11 +1423,12 @@ class FileTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             ZstdFile(io.BytesIO(COMPRESSED_100_PLUS_32KB), "rw")
 
-        with self.assertRaisesRegex(TypeError, r"NOT be CompressionParameter"):
+        with self.assertRaisesRegex(TypeError,
+                                    r"NOT be a CompressionParameter"):
             ZstdFile(io.BytesIO(), 'rb',
                      options={CompressionParameter.compression_level:5})
         with self.assertRaisesRegex(TypeError,
-                                    r"NOT be DecompressionParameter"):
+                                    r"NOT be a DecompressionParameter"):
             ZstdFile(io.BytesIO(), 'wb',
                      options={DecompressionParameter.window_log_max:21})
 

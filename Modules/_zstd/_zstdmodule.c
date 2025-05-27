@@ -28,41 +28,42 @@ set_zstd_error(const _zstd_state* const state,
     char *msg;
     assert(ZSTD_isError(zstd_ret));
 
-    switch (type)
-    {
-    case ERR_DECOMPRESS:
-        msg = "Unable to decompress Zstandard data: %s";
-        break;
-    case ERR_COMPRESS:
-        msg = "Unable to compress Zstandard data: %s";
-        break;
+    switch (type) {
+        case ERR_DECOMPRESS:
+            msg = "Unable to decompress Zstandard data: %s";
+            break;
+        case ERR_COMPRESS:
+            msg = "Unable to compress Zstandard data: %s";
+            break;
 
-    case ERR_LOAD_D_DICT:
-        msg = "Unable to load Zstandard dictionary or prefix for decompression: %s";
-        break;
-    case ERR_LOAD_C_DICT:
-        msg = "Unable to load Zstandard dictionary or prefix for compression: %s";
-        break;
+        case ERR_LOAD_D_DICT:
+            msg = "Unable to load Zstandard dictionary or prefix for "
+                  "decompression: %s";
+            break;
+        case ERR_LOAD_C_DICT:
+            msg = "Unable to load Zstandard dictionary or prefix for "
+                  "compression: %s";
+            break;
 
-    case ERR_GET_C_BOUNDS:
-        msg = "Unable to get zstd compression parameter bounds: %s";
-        break;
-    case ERR_GET_D_BOUNDS:
-        msg = "Unable to get zstd decompression parameter bounds: %s";
-        break;
-    case ERR_SET_C_LEVEL:
-        msg = "Unable to set zstd compression level: %s";
-        break;
+        case ERR_GET_C_BOUNDS:
+            msg = "Unable to get zstd compression parameter bounds: %s";
+            break;
+        case ERR_GET_D_BOUNDS:
+            msg = "Unable to get zstd decompression parameter bounds: %s";
+            break;
+        case ERR_SET_C_LEVEL:
+            msg = "Unable to set zstd compression level: %s";
+            break;
 
-    case ERR_TRAIN_DICT:
-        msg = "Unable to train the Zstandard dictionary: %s";
-        break;
-    case ERR_FINALIZE_DICT:
-        msg = "Unable to finalize the Zstandard dictionary: %s";
-        break;
+        case ERR_TRAIN_DICT:
+            msg = "Unable to train the Zstandard dictionary: %s";
+            break;
+        case ERR_FINALIZE_DICT:
+            msg = "Unable to finalize the Zstandard dictionary: %s";
+            break;
 
-    default:
-        Py_UNREACHABLE();
+        default:
+            Py_UNREACHABLE();
     }
     PyErr_Format(state->ZstdError, msg, ZSTD_getErrorName(zstd_ret));
 }
@@ -183,7 +184,7 @@ calculate_samples_stats(PyBytesObject *samples_bytes, PyObject *samples_sizes,
     chunks_number = Py_SIZE(samples_sizes);
     if ((size_t) chunks_number > UINT32_MAX) {
         PyErr_Format(PyExc_ValueError,
-                        "The number of samples should be <= %u.", UINT32_MAX);
+                     "The number of samples should be <= %u.", UINT32_MAX);
         return -1;
     }
 
@@ -200,8 +201,8 @@ calculate_samples_stats(PyBytesObject *samples_bytes, PyObject *samples_sizes,
         (*chunk_sizes)[i] = PyLong_AsSize_t(size);
         if ((*chunk_sizes)[i] == (size_t)-1 && PyErr_Occurred()) {
             PyErr_Format(PyExc_ValueError,
-                            "Items in samples_sizes should be an int "
-                            "object, with a value between 0 and %u.", SIZE_MAX);
+                         "Items in samples_sizes should be an int "
+                         "object, with a value between 0 and %u.", SIZE_MAX);
             return -1;
         }
         sizes_sum += (*chunk_sizes)[i];
@@ -209,7 +210,8 @@ calculate_samples_stats(PyBytesObject *samples_bytes, PyObject *samples_sizes,
 
     if (sizes_sum != Py_SIZE(samples_bytes)) {
         PyErr_SetString(PyExc_ValueError,
-                        "The samples size tuple doesn't match the concatenation's size.");
+                        "The samples size tuple doesn't match the "
+                        "concatenation's size.");
         return -1;
     }
     return chunks_number;
@@ -242,15 +244,15 @@ _zstd_train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
 
     /* Check arguments */
     if (dict_size <= 0) {
-        PyErr_SetString(PyExc_ValueError, "dict_size argument should be positive number.");
+        PyErr_SetString(PyExc_ValueError,
+                        "dict_size argument should be positive number.");
         return NULL;
     }
 
     /* Check that the samples are valid and get their sizes */
     chunks_number = calculate_samples_stats(samples_bytes, samples_sizes,
                                             &chunk_sizes);
-    if (chunks_number < 0)
-    {
+    if (chunks_number < 0) {
         goto error;
     }
 
@@ -271,7 +273,7 @@ _zstd_train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
 
     /* Check Zstandard dict error */
     if (ZDICT_isError(zstd_ret)) {
-        _zstd_state* const mod_state = get_zstd_state(module);
+        _zstd_state* mod_state = get_zstd_state(module);
         set_zstd_error(mod_state, ERR_TRAIN_DICT, zstd_ret);
         goto error;
     }
@@ -324,15 +326,15 @@ _zstd_finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
 
     /* Check arguments */
     if (dict_size <= 0) {
-        PyErr_SetString(PyExc_ValueError, "dict_size argument should be positive number.");
+        PyErr_SetString(PyExc_ValueError,
+                        "dict_size argument should be positive number.");
         return NULL;
     }
 
     /* Check that the samples are valid and get their sizes */
     chunks_number = calculate_samples_stats(samples_bytes, samples_sizes,
                                             &chunk_sizes);
-    if (chunks_number < 0)
-    {
+    if (chunks_number < 0) {
         goto error;
     }
 
@@ -355,14 +357,15 @@ _zstd_finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
     Py_BEGIN_ALLOW_THREADS
     zstd_ret = ZDICT_finalizeDictionary(
                         PyBytes_AS_STRING(dst_dict_bytes), dict_size,
-                        PyBytes_AS_STRING(custom_dict_bytes), Py_SIZE(custom_dict_bytes),
+                        PyBytes_AS_STRING(custom_dict_bytes),
+                        Py_SIZE(custom_dict_bytes),
                         PyBytes_AS_STRING(samples_bytes), chunk_sizes,
                         (uint32_t)chunks_number, params);
     Py_END_ALLOW_THREADS
 
     /* Check Zstandard dict error */
     if (ZDICT_isError(zstd_ret)) {
-        _zstd_state* const mod_state = get_zstd_state(module);
+        _zstd_state* mod_state = get_zstd_state(module);
         set_zstd_error(mod_state, ERR_FINALIZE_DICT, zstd_ret);
         goto error;
     }
@@ -402,7 +405,7 @@ _zstd_get_param_bounds_impl(PyObject *module, int parameter, int is_compress)
     if (is_compress) {
         bound = ZSTD_cParam_getBounds(parameter);
         if (ZSTD_isError(bound.error)) {
-            _zstd_state* const mod_state = get_zstd_state(module);
+            _zstd_state* mod_state = get_zstd_state(module);
             set_zstd_error(mod_state, ERR_GET_C_BOUNDS, bound.error);
             return NULL;
         }
@@ -410,7 +413,7 @@ _zstd_get_param_bounds_impl(PyObject *module, int parameter, int is_compress)
     else {
         bound = ZSTD_dParam_getBounds(parameter);
         if (ZSTD_isError(bound.error)) {
-            _zstd_state* const mod_state = get_zstd_state(module);
+            _zstd_state* mod_state = get_zstd_state(module);
             set_zstd_error(mod_state, ERR_GET_D_BOUNDS, bound.error);
             return NULL;
         }
@@ -435,9 +438,10 @@ _zstd_get_frame_size_impl(PyObject *module, Py_buffer *frame_buffer)
 {
     size_t frame_size;
 
-    frame_size = ZSTD_findFrameCompressedSize(frame_buffer->buf, frame_buffer->len);
+    frame_size = ZSTD_findFrameCompressedSize(frame_buffer->buf,
+                                              frame_buffer->len);
     if (ZSTD_isError(frame_size)) {
-        _zstd_state* const mod_state = get_zstd_state(module);
+        _zstd_state* mod_state = get_zstd_state(module);
         PyErr_Format(mod_state->ZstdError,
             "Error when finding the compressed size of a Zstandard frame. "
             "Ensure the frame_buffer argument starts from the "
@@ -473,7 +477,7 @@ _zstd_get_frame_info_impl(PyObject *module, Py_buffer *frame_buffer)
     /* #define ZSTD_CONTENTSIZE_UNKNOWN (0ULL - 1)
        #define ZSTD_CONTENTSIZE_ERROR   (0ULL - 2) */
     if (decompressed_size == ZSTD_CONTENTSIZE_ERROR) {
-        _zstd_state* const mod_state = get_zstd_state(module);
+        _zstd_state* mod_state = get_zstd_state(module);
         PyErr_SetString(mod_state->ZstdError,
             "Error when getting information from the header of "
             "a Zstandard frame. Ensure the frame_buffer argument "
@@ -508,7 +512,7 @@ _zstd_set_parameter_types_impl(PyObject *module, PyObject *c_parameter_type,
                                PyObject *d_parameter_type)
 /*[clinic end generated code: output=f3313b1294f19502 input=75d7a953580fae5f]*/
 {
-    _zstd_state* const mod_state = get_zstd_state(module);
+    _zstd_state* mod_state = get_zstd_state(module);
 
     if (!PyType_Check(c_parameter_type) || !PyType_Check(d_parameter_type)) {
         PyErr_SetString(PyExc_ValueError,
@@ -568,7 +572,7 @@ do {                                                                         \
     Py_DECREF(v);                                                            \
 } while (0)
 
-    _zstd_state* const mod_state = get_zstd_state(m);
+    _zstd_state* mod_state = get_zstd_state(m);
 
     /* Reusable objects & variables */
     mod_state->CParameter_type = NULL;
@@ -674,7 +678,7 @@ do {                                                                         \
 static int
 _zstd_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    _zstd_state* const mod_state = get_zstd_state(module);
+    _zstd_state* mod_state = get_zstd_state(module);
 
     Py_VISIT(mod_state->ZstdDict_type);
     Py_VISIT(mod_state->ZstdCompressor_type);
@@ -691,7 +695,7 @@ _zstd_traverse(PyObject *module, visitproc visit, void *arg)
 static int
 _zstd_clear(PyObject *module)
 {
-    _zstd_state* const mod_state = get_zstd_state(module);
+    _zstd_state* mod_state = get_zstd_state(module);
 
     Py_CLEAR(mod_state->ZstdDict_type);
     Py_CLEAR(mod_state->ZstdCompressor_type);
