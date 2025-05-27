@@ -1985,6 +1985,11 @@ class StreamWriterTest(unittest.TestCase):
     def setUp(self):
         self.writer = codecs.getwriter('utf-8')
 
+    def test_write(self):
+        bio = io.BytesIO()
+        assert self.writer(bio).write("Hällo") == 6
+        self.assertEqual(bio.getvalue(), b'H\xc3\xa4llo')
+
     def test_copy(self):
         f = self.writer(Queue(b''))
         with self.assertRaisesRegex(TypeError, 'StreamWriter'):
@@ -2005,6 +2010,12 @@ class StreamReaderWriterTest(unittest.TestCase):
     def setUp(self):
         self.reader = codecs.getreader('latin1')
         self.writer = codecs.getwriter('utf-8')
+
+    def test_write(self):
+        bio = io.BytesIO()
+        f = codecs.StreamReaderWriter(bio, self.reader, self.writer)
+        assert f.write("Hällo") == 6
+        self.assertEqual(bio.getvalue(), b'H\xc3\xa4llo')
 
     def test_copy(self):
         f = codecs.StreamReaderWriter(Queue(b''), self.reader, self.writer)
