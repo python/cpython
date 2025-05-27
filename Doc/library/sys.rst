@@ -290,6 +290,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       This function is specific to CPython.  The exact output format is not
       defined here, and may change.
 
+
 .. data:: dllhandle
 
    Integer specifying the handle of the Python DLL.
