@@ -6,8 +6,8 @@ from . import _crossinterp
 
 # aliases:
 from _interpchannels import (
-    ChannelError, ChannelNotFoundError, ChannelClosedError,
-    ChannelEmptyError, ChannelNotEmptyError,
+    ChannelError, ChannelNotFoundError, ChannelClosedError,  # noqa: F401
+    ChannelEmptyError, ChannelNotEmptyError,  # noqa: F401
 )
 from ._crossinterp import (
     UNBOUND_ERROR, UNBOUND_REMOVE,
@@ -69,7 +69,7 @@ def list_all():
         if not hasattr(send, '_unboundop'):
             send._set_unbound(unboundop)
         else:
-            assert send._unbound[0] == op
+            assert send._unbound[0] == unboundop
         channels.append(chan)
     return channels
 
