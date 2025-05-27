@@ -370,6 +370,7 @@ class ListTest(list_tests.CommonTest):
            iterable doesn't prematurely free the iterable"""
 
         def foo(x):
+            self.assertEqual(sys.getrefcount(x), 1)
             r = 0
             for i in x:
                 r += i

@@ -392,7 +392,7 @@ PyStackRef_FromPyObjectBorrow(PyObject *obj)
         do {                                                            \
             _PyStackRef _close_tmp = (REF);                             \
             assert(!PyStackRef_IsNull(_close_tmp));                     \
-            if (!PyStackRef_IsDeferred(_close_tmp)) {                   \
+            if (!PyStackRef_IsDeferredOrTaggedInt(_close_tmp)) {                   \
                 Py_DECREF(PyStackRef_AsPyObjectBorrow(_close_tmp));     \
             }                                                           \
         } while (0)
@@ -704,23 +704,20 @@ PyStackRef_TYPE(_PyStackRef stackref) {
 
 // StackRef type checks
 
-static inline bool
-PyStackRef_GenCheck(_PyStackRef stackref)
-{
-    if (PyStackRef_IsTaggedInt(stackref)) {
-        return false;
+#define STACKREF_CHECK_FUNC(T) \
+    static inline bool \
+    PyStackRef_ ## T ## Check(_PyStackRef stackref) { \
+        if (PyStackRef_IsTaggedInt(stackref)) { \
+            return false; \
+        } \
+        return Py ## T ## _Check(PyStackRef_AsPyObjectBorrow(stackref)); \
     }
-    return PyGen_Check(PyStackRef_AsPyObjectBorrow(stackref));
-}
 
-static inline bool
-PyStackRef_BoolCheck(_PyStackRef stackref)
-{
-    if (PyStackRef_IsTaggedInt(stackref)) {
-        return false;
-    }
-    return PyBool_Check(PyStackRef_AsPyObjectBorrow(stackref));
-}
+STACKREF_CHECK_FUNC(Gen)
+STACKREF_CHECK_FUNC(Bool)
+STACKREF_CHECK_FUNC(ExceptionInstance)
+STACKREF_CHECK_FUNC(Code)
+STACKREF_CHECK_FUNC(Function)
 
 static inline bool
 PyStackRef_LongCheck(_PyStackRef stackref)
@@ -729,33 +726,6 @@ PyStackRef_LongCheck(_PyStackRef stackref)
         return true;
     }
     return PyLong_Check(PyStackRef_AsPyObjectBorrow(stackref));
-}
-
-static inline bool
-PyStackRef_ExceptionInstanceCheck(_PyStackRef stackref)
-{
-    if (PyStackRef_IsTaggedInt(stackref)) {
-        return false;
-    }
-    return PyExceptionInstance_Check(PyStackRef_AsPyObjectBorrow(stackref));
-}
-
-static inline bool
-PyStackRef_CodeCheck(_PyStackRef stackref)
-{
-    if (PyStackRef_IsTaggedInt(stackref)) {
-        return false;
-    }
-    return PyCode_Check(PyStackRef_AsPyObjectBorrow(stackref));
-}
-
-static inline bool
-PyStackRef_FunctionCheck(_PyStackRef stackref)
-{
-    if (PyStackRef_IsTaggedInt(stackref)) {
-        return false;
-    }
-    return PyFunction_Check(PyStackRef_AsPyObjectBorrow(stackref));
 }
 
 static inline void
