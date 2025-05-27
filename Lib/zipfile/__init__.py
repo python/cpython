@@ -1380,67 +1380,71 @@ class _ZipRepacker:
 
     def repack(self, zfile, removed=None):
         """
-        Repack the ZIP file, removing unrecorded local file entries and random
-        bytes not listed in the central directory.
+        Repack the ZIP file, stripping unreferenced local file entries.
 
-        Assumes that local file entries are written consecutively without gaps.
+        Assumes that local file entries are stored consecutively, with no gaps
+        or overlaps.
 
-        Truncation is applied in two phases:
+        Stripping occurs in two phases:
 
         1. Before the first recorded file entry:
             - If a sequence of valid local file entries (starting with
-              `PK\x03\x04`) is found leading up to the first recorded entry,
-              it is truncated.
+              `PK\x03\x04`) is found immediately before the first recorded
+              entry, it is stripped.
             - Otherwise, all leading bytes are preserved (e.g., in cases such
-              as self-extracting code or embedded ZIP libraries).
+              as self-extracting archives or embedded ZIP payloads).
 
         2. Between or after the recorded entries:
-            - Any data between two recorded entries, or after the last recorded
-              entry but before the central directory, is removed—regardless of
-              whether it resembles a valid entry.
+            - Any bytes between two recorded entries, or between the last
+              recorded and the central directory, are removed—regardless of
+              whether they resemble valid entries.
 
-        ### Examples
+        Examples:
 
-        Truncation before first recorded entry:
+        Stripping before first recorded entry:
 
             [random bytes]
-            [unrecorded local file entry 1]
-            [unrecorded local file entry 2]
+            [unreferenced local file entry 1]
+            [unreferenced local file entry 2]
             [random bytes]
-            <- truncation start
-            [unrecorded local file entry 3]
-            [unrecorded local file entry 4]
-            <- truncation end
+            <-- stripping start
+            [unreferenced local file entry 3]
+            [unreferenced local file entry 4]
+            <-- stripping end
             [recorded local file entry 1]
             ...
             [central directory]
 
-        Truncation between recorded entries:
+        Stripping between recorded entries:
 
             ...
             [recorded local file entry 5]
-            <- truncation start
+            <-- stripping start
             [random bytes]
-            [unrecorded local file entry]
+            [unreferenced local file entry]
             [random bytes]
-            <- truncation end
+            <-- stripping end
             [recorded local file entry 6]
             ...
             [recorded local file entry n]
-            <- truncation start
-            [unrecorded local file entry]
-            <- truncation end
+            <-- stripping start
+            [unreferenced local file entry]
+            <-- stripping end
             [central directory]
 
-        No truncation case:
+        No stripping:
 
-            [unrecorded local file entry 1]
-            [unrecorded local file entry 2]
+            [unreferenced local file entry 1]
+            [unreferenced local file entry 2]
             ...
-            [unrecorded local file entry n]
+            [unreferenced local file entry n]
             [random bytes]
             [recorded local file entry 1]
             ...
+
+        removed: None or a sequence of ZipInfo instances representing removed
+                 entries. When provided, only their corresponding local file
+                 entries are stripped.
         """
         removed_zinfos = set(removed or ())
 
