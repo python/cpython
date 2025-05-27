@@ -2,7 +2,7 @@ import asyncio
 import contextlib
 import io
 import os
-import select
+import sys
 import time
 import unittest
 from concurrent.futures.interpreter import (
@@ -17,6 +17,46 @@ from .executor import ExecutorTest, mul
 from .util import BaseTestCase, InterpreterPoolMixin, setup_module
 
 
+WINDOWS = sys.platform.startswith('win')
+
+
+@contextlib.contextmanager
+def nonblocking(fd):
+    blocking = os.get_blocking(fd)
+    if blocking:
+        os.set_blocking(fd, False)
+    try:
+        yield
+    finally:
+        if blocking:
+            os.set_blocking(fd, blocking)
+
+
+def read_file_with_timeout(fd, nbytes, timeout):
+    with nonblocking(fd):
+        end = time.time() + timeout
+        try:
+            return os.read(fd, nbytes)
+        except BlockingIOError:
+            pass
+        while time.time() < end:
+            try:
+                return os.read(fd, nbytes)
+            except BlockingIOError:
+                continue
+        else:
+            raise TimeoutError('nothing to read')
+
+
+if not WINDOWS:
+    import select
+    def read_file_with_timeout(fd, nbytes, timeout):
+        r, _, _ = select.select([fd], [], [], timeout)
+        if fd not in r:
+            raise TimeoutError('nothing to read')
+        return os.read(fd, nbytes)
+
+
 def noop():
     pass
 
@@ -27,14 +67,12 @@ def write_msg(fd, msg):
 
 
 def read_msg(fd, timeout=10.0):
-    r, _, _ = select.select([fd], [], [], timeout)
-    if fd not in r:
-        raise TimeoutError('nothing to read')
     msg = b''
-    while ch := os.read(fd, 1):
-        if ch == b'\0':
-            return msg
+    ch = read_file_with_timeout(fd, 1, timeout)
+    while ch != b'\0':
         msg += ch
+        ch = os.read(fd, 1)
+    return msg
 
 
 def get_current_name():
