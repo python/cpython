@@ -155,8 +155,15 @@ def __data_argument(funcname, data_sentinel, kwargs):
             # new(name, string=...)
             return kwargs.pop('string')
         return b''
-    # new(name, data)
-    return data_sentinel
+    else:
+        if 'data' in kwargs:
+            # new(name, data, data=...)
+            raise TypeError(f"{funcname}(): got multiple values for argument 'data'")
+        if 'string' in kwargs:
+            # new(name, data, string=...)
+            raise TypeError(f"{funcname}(): got multiple values for argument 'string'")
+        # new(name, data)
+        return data_sentinel
 
 
 def __py_new(name, __data_sentinel=None, **kwargs):
