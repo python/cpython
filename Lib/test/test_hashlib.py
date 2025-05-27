@@ -264,6 +264,10 @@ class HashLibTestCase(unittest.TestCase):
             "is slated for removal in a future version."
         )
         duplicated_param = re.escape("given by name ('data') and position")
+        # Depending on whether we call hashlib.__py_new, hashlib.__hash_new,
+        # or _hashlib.new(), we have different errors as the C implementation
+        # does not need an additional sentinel.
+        duplicated_param = f"{conflicting_call}|{duplicated_param}"
         for constructor in self.hash_constructors:
             with self.subTest(constructor.__name__):
                 with self.assertRaisesRegex(TypeError, conflicting_call):
