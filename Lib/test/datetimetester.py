@@ -183,7 +183,7 @@ class TestTZInfo(unittest.TestCase):
             def __init__(self, offset, name):
                 self.__offset = offset
                 self.__name = name
-        self.assertTrue(issubclass(NotEnough, tzinfo))
+        self.assertIsSubclass(NotEnough, tzinfo)
         ne = NotEnough(3, "NotByALongShot")
         self.assertIsInstance(ne, tzinfo)
 
@@ -232,7 +232,7 @@ class TestTZInfo(unittest.TestCase):
                 self.assertIs(type(derived), otype)
                 self.assertEqual(derived.utcoffset(None), offset)
                 self.assertEqual(derived.tzname(None), oname)
-                self.assertFalse(hasattr(derived, 'spam'))
+                self.assertNotHasAttr(derived, 'spam')
 
     def test_issue23600(self):
         DSTDIFF = DSTOFFSET = timedelta(hours=1)
@@ -813,7 +813,7 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
 
             # Verify td -> string -> td identity.
             s = repr(td)
-            self.assertTrue(s.startswith('datetime.'))
+            self.assertStartsWith(s, 'datetime.')
             s = s[9:]
             td2 = eval(s)
             self.assertEqual(td, td2)
@@ -1231,7 +1231,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                    self.theclass.today()):
             # Verify dt -> string -> date identity.
             s = repr(dt)
-            self.assertTrue(s.startswith('datetime.'))
+            self.assertStartsWith(s, 'datetime.')
             s = s[9:]
             dt2 = eval(s)
             self.assertEqual(dt, dt2)
@@ -2218,7 +2218,7 @@ class TestDateTime(TestDate):
                    self.theclass.now()):
             # Verify dt -> string -> datetime identity.
             s = repr(dt)
-            self.assertTrue(s.startswith('datetime.'))
+            self.assertStartsWith(s, 'datetime.')
             s = s[9:]
             dt2 = eval(s)
             self.assertEqual(dt, dt2)
@@ -3687,7 +3687,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
 
         # Verify t -> string -> time identity.
         s = repr(t)
-        self.assertTrue(s.startswith('datetime.'))
+        self.assertStartsWith(s, 'datetime.')
         s = s[9:]
         t2 = eval(s)
         self.assertEqual(t, t2)

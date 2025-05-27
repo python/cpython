@@ -2929,12 +2929,6 @@ def make_clean_env() -> dict[str, str]:
     return clean_env
 
 
-def initialized_with_pyrepl():
-    """Detect whether PyREPL was used during Python initialization."""
-    # If the main module has a __file__ attribute it's a Python module, which means PyREPL.
-    return hasattr(sys.modules["__main__"], "__file__")
-
-
 WINDOWS_STATUS = {
     0xC0000005: "STATUS_ACCESS_VIOLATION",
     0xC00000FD: "STATUS_STACK_OVERFLOW",
