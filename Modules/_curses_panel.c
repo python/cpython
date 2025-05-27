@@ -287,7 +287,10 @@ insert_lop(PyCursesPanelObject *po)
     return 0;
 }
 
-/* Remove the panel object from lop */
+/* Remove the panel object from lop.
+ *
+ * Return -1 on error but do NOT set an exception; otherwise return 0.
+ */
 static int
 remove_lop(PyCursesPanelObject *po)
 {
@@ -301,7 +304,6 @@ remove_lop(PyCursesPanelObject *po)
     }
     while (temp->next == NULL || temp->next->po != po) {
         if (temp->next == NULL) {
-            curses_panel_notfound_error("remove_lop", NULL);
             return -1;
         }
         temp = temp->next;
@@ -445,6 +447,7 @@ PyCursesPanel_Dealloc(PyObject *self)
     if (po->wo != NULL) {
         Py_DECREF(po->wo);
         if (remove_lop(po) < 0) {
+            PyErr_Format(PyExc_RuntimeError, "__del__: no panel object to delete");
             PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
         }
     }
