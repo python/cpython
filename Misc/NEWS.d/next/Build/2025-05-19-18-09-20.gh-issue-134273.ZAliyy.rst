@@ -1,1 +1,1 @@
-Respect CFLAGS set during configure during JIT builds
+Add support for configuring compiler flags for the JIT with CFLAGS_JIT
