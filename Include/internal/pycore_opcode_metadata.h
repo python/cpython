@@ -205,15 +205,15 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case FORMAT_WITH_SPEC:
             return 2;
         case FOR_ITER:
-            return 1;
+            return 2;
         case FOR_ITER_GEN:
-            return 1;
+            return 2;
         case FOR_ITER_LIST:
-            return 1;
+            return 2;
         case FOR_ITER_RANGE:
-            return 1;
+            return 2;
         case FOR_ITER_TUPLE:
-            return 1;
+            return 2;
         case GET_AITER:
             return 1;
         case GET_ANEXT:
@@ -239,11 +239,11 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case INSTRUMENTED_END_ASYNC_FOR:
             return 2;
         case INSTRUMENTED_END_FOR:
-            return 2;
+            return 3;
         case INSTRUMENTED_END_SEND:
             return 2;
         case INSTRUMENTED_FOR_ITER:
-            return 1;
+            return 2;
         case INSTRUMENTED_INSTRUCTION:
             return 0;
         case INSTRUMENTED_JUMP_BACKWARD:
@@ -257,7 +257,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case INSTRUMENTED_NOT_TAKEN:
             return 0;
         case INSTRUMENTED_POP_ITER:
-            return 1;
+            return 2;
         case INSTRUMENTED_POP_JUMP_IF_FALSE:
             return 1;
         case INSTRUMENTED_POP_JUMP_IF_NONE:
@@ -395,7 +395,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case POP_EXCEPT:
             return 1;
         case POP_ITER:
-            return 1;
+            return 2;
         case POP_JUMP_IF_FALSE:
             return 1;
         case POP_JUMP_IF_NONE:
@@ -688,15 +688,15 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case FORMAT_WITH_SPEC:
             return 1;
         case FOR_ITER:
-            return 2;
+            return 3;
         case FOR_ITER_GEN:
-            return 1;
+            return 2;
         case FOR_ITER_LIST:
-            return 2;
+            return 3;
         case FOR_ITER_RANGE:
-            return 2;
+            return 3;
         case FOR_ITER_TUPLE:
-            return 2;
+            return 3;
         case GET_AITER:
             return 1;
         case GET_ANEXT:
@@ -704,7 +704,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case GET_AWAITABLE:
             return 1;
         case GET_ITER:
-            return 1;
+            return 2;
         case GET_LEN:
             return 2;
         case GET_YIELD_FROM_ITER:
@@ -722,11 +722,11 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case INSTRUMENTED_END_ASYNC_FOR:
             return 0;
         case INSTRUMENTED_END_FOR:
-            return 1;
+            return 2;
         case INSTRUMENTED_END_SEND:
             return 1;
         case INSTRUMENTED_FOR_ITER:
-            return 2;
+            return 3;
         case INSTRUMENTED_INSTRUCTION:
             return 0;
         case INSTRUMENTED_JUMP_BACKWARD:
@@ -1157,7 +1157,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [FOR_ITER_GEN] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_DEOPT_FLAG },
     [FOR_ITER_LIST] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_DEOPT_FLAG | HAS_EXIT_FLAG | HAS_ESCAPES_FLAG },
     [FOR_ITER_RANGE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG },
-    [FOR_ITER_TUPLE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_EXIT_FLAG | HAS_ESCAPES_FLAG },
+    [FOR_ITER_TUPLE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_EXIT_FLAG },
     [GET_AITER] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [GET_ANEXT] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [GET_AWAITABLE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
@@ -1242,7 +1242,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [NOP] = { true, INSTR_FMT_IX, HAS_PURE_FLAG },
     [NOT_TAKEN] = { true, INSTR_FMT_IX, HAS_PURE_FLAG },
     [POP_EXCEPT] = { true, INSTR_FMT_IX, HAS_ESCAPES_FLAG },
-    [POP_ITER] = { true, INSTR_FMT_IX, HAS_ESCAPES_FLAG | HAS_PURE_FLAG },
+    [POP_ITER] = { true, INSTR_FMT_IX, HAS_ESCAPES_FLAG },
     [POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [POP_JUMP_IF_NONE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_ESCAPES_FLAG },
     [POP_JUMP_IF_NOT_NONE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_ESCAPES_FLAG },
@@ -1453,7 +1453,7 @@ _PyOpcode_macro_expansion[256] = {
     [NOP] = { .nuops = 1, .uops = { { _NOP, OPARG_SIMPLE, 0 } } },
     [NOT_TAKEN] = { .nuops = 1, .uops = { { _NOP, OPARG_SIMPLE, 0 } } },
     [POP_EXCEPT] = { .nuops = 1, .uops = { { _POP_EXCEPT, OPARG_SIMPLE, 0 } } },
-    [POP_ITER] = { .nuops = 1, .uops = { { _POP_TOP, OPARG_SIMPLE, 0 } } },
+    [POP_ITER] = { .nuops = 1, .uops = { { _POP_ITER, OPARG_SIMPLE, 0 } } },
     [POP_JUMP_IF_FALSE] = { .nuops = 1, .uops = { { _POP_JUMP_IF_FALSE, OPARG_REPLACED, 1 } } },
     [POP_JUMP_IF_NONE] = { .nuops = 2, .uops = { { _IS_NONE, OPARG_SIMPLE, 1 }, { _POP_JUMP_IF_TRUE, OPARG_REPLACED, 1 } } },
     [POP_JUMP_IF_NOT_NONE] = { .nuops = 2, .uops = { { _IS_NONE, OPARG_SIMPLE, 1 }, { _POP_JUMP_IF_FALSE, OPARG_REPLACED, 1 } } },
