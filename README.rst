@@ -135,7 +135,7 @@ libraries for additional performance gains.
 What's New
 ----------
 
-We have a comprehensive overview of the changes in the `What's New in Python
+We have a comprehensive overview of the changes in the `What's new in Python
 3.15 <https://docs.python.org/3.15/whatsnew/3.15.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
 <https://github.com/python/cpython/tree/main/Misc/NEWS.d>`_, but a full
