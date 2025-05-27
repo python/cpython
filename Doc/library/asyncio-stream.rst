@@ -203,7 +203,7 @@ and work with streams:
       Added the *ssl_shutdown_timeout* parameter.
 
    .. versionchanged:: 3.13
-      Added the *cleanup_socket* parameter with a default value of ``True``.
+      Added the *cleanup_socket* parameter.
 
 
 StreamReader
