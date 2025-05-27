@@ -64,7 +64,7 @@ compile Python sources.
 
 .. option:: -p prepend_prefix
 
-   Append the given prefix to paths recorded in the ``.pyc`` files.
+   Prepend the given prefix to paths recorded in the ``.pyc`` files.
    Use ``-p /`` to make the paths absolute.
 
    This option can be used with ``-s`` but not with ``-d``.
