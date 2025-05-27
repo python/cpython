@@ -2054,6 +2054,14 @@ parse_async_frame_object(
 
     *previous_frame = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.previous);
 
+    *code_object = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.executable);
+    // Strip tag bits for consistent comparison
+    *code_object &= ~Py_TAG_BITS;
+    assert(code_object != NULL);
+    if ((void*)*code_object == NULL) {
+        return 0;
+    }
+
     if (GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) == FRAME_OWNED_BY_CSTACK ||
         GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) == FRAME_OWNED_BY_INTERPRETER) {
         return 0;  // C frame
@@ -2065,15 +2073,6 @@ parse_async_frame_object(
                     GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner));
         set_exception_cause(unwinder, PyExc_RuntimeError, "Unhandled frame owner type in async frame");
         return -1;
-    }
-
-    *code_object = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.executable);
-    // Strip tag bits for consistent comparison
-    *code_object &= ~Py_TAG_BITS;
-
-    assert(code_object != NULL);
-    if ((void*)*code_object == NULL) {
-        return 0;
     }
 
     uintptr_t instruction_pointer = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.instr_ptr);
