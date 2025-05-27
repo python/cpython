@@ -268,7 +268,7 @@ needed to ensure that it will not be discarded, causing :c:data:`!SpamError` to
 become a dangling pointer. Should it become a dangling pointer, C code which
 raises the exception could cause a core dump or other unintended side effects.
 
-Also note that there is no :c:func:`Py_DECREF` call to remove this reference.
+For now, the :c:func:`Py_DECREF` call to remove this reference is missing.
 Even when the Python interpreter shuts down, :c:data:`!SpamError` will not be
 garbage-collected. It will "leak".
 We did, however, ensure that this will happen at most once per process.
