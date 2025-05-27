@@ -108,6 +108,8 @@ def compile_c_extension(
     extra_compile_args.append("-DPy_BUILD_CORE_MODULE")
     # Define _Py_TEST_PEGEN to not call PyAST_Validate() in Parser/pegen.c
     extra_compile_args.append("-D_Py_TEST_PEGEN")
+    if sys.platform == "win32" and sysconfig.get_config_var("Py_GIL_DISABLED"):
+        extra_compile_args.append("-DPy_GIL_DISABLED")
     extra_link_args = get_extra_flags("LDFLAGS", "PY_LDFLAGS_NODIST")
     if keep_asserts:
         extra_compile_args.append("-UNDEBUG")

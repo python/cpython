@@ -980,8 +980,8 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     HandlerClass.protocol_version = protocol
 
     if tls_cert:
-        server = ThreadingHTTPSServer(addr, HandlerClass, certfile=tls_cert,
-                                      keyfile=tls_key, password=tls_password)
+        server = ServerClass(addr, HandlerClass, certfile=tls_cert,
+                             keyfile=tls_key, password=tls_password)
     else:
         server = ServerClass(addr, HandlerClass)
 
@@ -1000,7 +1000,7 @@ def test(HandlerClass=BaseHTTPRequestHandler,
             sys.exit(0)
 
 
-if __name__ == '__main__':
+def _main(args=None):
     import argparse
     import contextlib
 
@@ -1024,7 +1024,7 @@ if __name__ == '__main__':
     parser.add_argument('port', default=8000, type=int, nargs='?',
                         help='bind to this port '
                              '(default: %(default)s)')
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     if not args.tls_cert and args.tls_key:
         parser.error("--tls-key requires --tls-cert to be set")
@@ -1041,7 +1041,7 @@ if __name__ == '__main__':
             parser.error(f"Failed to read TLS password file: {e}")
 
     # ensure dual-stack is not disabled; ref #38907
-    class DualStackServer(ThreadingHTTPServer):
+    class DualStackServerMixin:
 
         def server_bind(self):
             # suppress exception when protocol is IPv4
@@ -1054,9 +1054,16 @@ if __name__ == '__main__':
             self.RequestHandlerClass(request, client_address, self,
                                      directory=args.directory)
 
+    class HTTPDualStackServer(DualStackServerMixin, ThreadingHTTPServer):
+        pass
+    class HTTPSDualStackServer(DualStackServerMixin, ThreadingHTTPSServer):
+        pass
+
+    ServerClass = HTTPSDualStackServer if args.tls_cert else HTTPDualStackServer
+
     test(
         HandlerClass=SimpleHTTPRequestHandler,
-        ServerClass=DualStackServer,
+        ServerClass=ServerClass,
         port=args.port,
         bind=args.bind,
         protocol=args.protocol,
@@ -1064,3 +1071,7 @@ if __name__ == '__main__':
         tls_key=args.tls_key,
         tls_password=tls_key_password,
     )
+
+
+if __name__ == '__main__':
+    _main()
