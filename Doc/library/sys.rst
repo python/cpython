@@ -290,26 +290,6 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       This function is specific to CPython.  The exact output format is not
       defined here, and may change.
 
-.. function:: _defer_refcount(op)
-
-   Enable deferred reference counting on *op*, mitigating reference count
-   contention on :term:`free threaded <free threading>` builds of Python.
-
-   Return :const:`True` if deferred reference counting was enabled on *op*,
-   and :const:`False` otherwise.
-
-   .. versionadded:: next
-
-   .. impl-detail::
-
-      This function should be used for specialized purposes only.
-      It is not guaranteed to exist in all implementations of Python.
-
-   .. seealso::
-
-      :c:func:`PyUnstable_Object_EnableDeferredRefcount`
-
-
 .. data:: dllhandle
 
    Integer specifying the handle of the Python DLL.
