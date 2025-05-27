@@ -4115,6 +4115,8 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             self.fail("shouldn't be able to create inheritance cycles")
 
     def test_assign_bases_many_subclasses(self):
+        # This is intended to check that typeobject.c:queue_slot_update() can
+        # handle updating many subclasses when a slot method is re-assigned.
         class A:
             x = 'hello'
             def __call__(self):
