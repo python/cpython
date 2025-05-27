@@ -1221,16 +1221,12 @@ static PyObject *
 OrderedDict_clear_impl(PyODictObject *self)
 /*[clinic end generated code: output=a1a76d1322f556c5 input=08b12322e74c535c]*/
 {
-    _PyDict_Clear_LockHeld((PyDictObject *)self);
+    _PyDict_Clear_LockHeld((PyObject *)self);
     _odict_clear_nodes(self);
     Py_RETURN_NONE;
 }
 
 /* copy() */
-
-/* forward */
-static int _PyODict_SetItem_KnownHash(PyObject *, PyObject *, PyObject *,
-                                      Py_hash_t);
 
 /*[clinic input]
 @critical_section
@@ -1637,16 +1633,6 @@ _PyODict_SetItem_KnownHash_LockHeld(PyObject *od, PyObject *key, PyObject *value
     return res;
 }
 
-static int
-_PyODict_SetItem_KnownHash(PyObject *od, PyObject *key, PyObject *value,
-                           Py_hash_t hash)
-{
-    int res;
-    Py_BEGIN_CRITICAL_SECTION(od);
-    res = _PyODict_SetItem_KnownHash_LockHeld(od, key, value, hash);
-    Py_END_CRITICAL_SECTION();
-    return res;
-}
 
 static int
 PyODict_SetItem_LockHeld(PyObject *od, PyObject *key, PyObject *value)
