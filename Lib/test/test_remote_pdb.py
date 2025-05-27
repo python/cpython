@@ -815,6 +815,18 @@ class PdbClientTestCase(unittest.TestCase):
             expected_state={"state": "interact"},
         )
 
+    def test_client_attach(self):
+        with unittest.mock.patch("pdb.attach") as mock_attach:
+            incoming = [
+                ("server", {"attach": 1234}),
+            ]
+            self.do_test(
+                incoming=incoming,
+                expected_outgoing=[],
+                expected_stdout_substring="Attaching to process 1234",
+            )
+            mock_attach.assert_called_once_with(1234)
+
 
 class RemotePdbTestCase(unittest.TestCase):
     """Tests for the _PdbServer class."""
@@ -952,6 +964,15 @@ class RemotePdbTestCase(unittest.TestCase):
                 self.pdb.commands[1],
                 ["_pdbcmd_silence_frame_status", "print('hi')"],
             )
+
+    def test_server_attach(self):
+        self.sockfile.add_input({"reply": "attach 1234"})
+        self.sockfile.add_input({"signal": "EOF"})
+
+        self.pdb.cmdloop()
+
+        outputs = self.sockfile.get_output()
+        self.assertEqual(outputs[2], {"attach": 1234})
 
     def test_detach(self):
         """Test the detach method."""
@@ -1573,6 +1594,178 @@ class PdbAttachTestCase(unittest.TestCase):
         self.assertIn("\x1b", output["client"]["stdout"])
         self.assertNotIn("while x == 1", output["client"]["stdout"])
         self.assertIn("while x == 1", re.sub("\x1b[^m]*m", "", output["client"]["stdout"]))
+
+    def test_attach_from_worker_thread(self):
+        # Test attaching from a worker thread
+        def worker():
+            with self.assertRaises(RuntimeError):
+                # We are not allowed to attach from a thread that's not main
+                pdb.attach(1234)
+
+        thread = threading.Thread(target=worker)
+        thread.start()
+        thread.join()
+
+
+@unittest.skipIf(not sys.is_remote_debug_enabled(), "Remote debugging is not enabled")
+@unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux" and sys.platform != "win32",
+                    "Test only runs on Linux, Windows and MacOS")
+@cpython_only
+@requires_subprocess()
+class PdbAttachCommand(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        # We need to do a quick test to see if we have the permission to remote
+        # execute the code. If not, just skip the whole test.
+        script_path = TESTFN + "script.py"
+        remote_path = TESTFN + "remote.py"
+        script = textwrap.dedent("""
+            import time
+            print("ready", flush=True)
+            while True:
+                print('hello')
+                time.sleep(0.1)
+        """)
+
+        with open(script_path, "w") as f:
+            f.write(script)
+
+        with open(remote_path, "w") as f:
+            f.write("pass\n")
+
+        with subprocess.Popen(
+            [sys.executable, script_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        ) as proc:
+            try:
+                proc.stdout.readline()
+                sys.remote_exec(proc.pid, remote_path)
+            except PermissionError:
+                print("raise")
+                # Skip the test if we don't have permission to execute remote code
+                raise unittest.SkipTest("We don't have permission to execute remote code")
+            finally:
+                os.unlink(script_path)
+                os.unlink(remote_path)
+                proc.terminate()
+
+    def do_test(self, target, commands):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = textwrap.dedent(target)
+            target_path = os.path.join(tmpdir, "target.py")
+            with open(target_path, "wt") as f:
+                f.write(target)
+
+            script = textwrap.dedent(
+                f"""
+                import subprocess
+                import sys
+                process = subprocess.Popen([sys.executable, {target_path!r}],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+                breakpoint()
+                """)
+            script_path = os.path.join(tmpdir, "script.py")
+
+            with open(script_path, "wt") as f:
+                f.write(script)
+
+            process = subprocess.Popen(
+                [sys.executable, script_path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                stdin=subprocess.PIPE,
+                text=True
+            )
+
+            self.addCleanup(process.terminate)
+
+            self.addCleanup(process.stdout.close)
+            self.addCleanup(process.stderr.close)
+
+            stdout, stderr = process.communicate(textwrap.dedent(commands),
+                                                 timeout=SHORT_TIMEOUT)
+
+            return stdout, stderr
+
+    def test_attach_simple(self):
+        """Test basic attach command"""
+        target = """
+            block = True
+            import time
+            while block:
+                time.sleep(0.2)
+            def test_function():
+                x = 42
+                return x
+            test_function()
+        """
+
+        commands = """
+            attach process
+            block = False
+            b test_function
+            c
+            n
+            p x + 42
+            quit
+            continue
+        """
+        stdout, _ = self.do_test(target, commands)
+        self.assertIn("84", stdout)
+
+    def test_attach_multiprocessing(self):
+        """Spawn a process with multiprocessing and attach to it."""
+        target = """
+            block = True
+            import time
+            import multiprocessing
+
+            def worker(queue):
+                block = True
+                queue.put(0)
+                while block:
+                    time.sleep(0.2)
+                queue.put(42)
+
+            def test_function(queue):
+                data = queue.get()
+                return data
+
+            if __name__ == '__main__':
+                while block:
+                    time.sleep(0.2)
+
+                queue = multiprocessing.Queue()
+                p = multiprocessing.Process(target=worker, args=(queue,))
+                p.start()
+                queue.get()
+                test_function(queue)
+                p.join()
+        """
+
+        commands = """
+            attach process
+            block = False
+            b test_function
+            c
+            attach p
+            block = False
+            q
+            n
+            p data + 42
+            quit
+            continue
+        """
+        stdout, _ = self.do_test(target, commands)
+        self.assertIn("84", stdout)
+
+
 
 if __name__ == "__main__":
     unittest.main()

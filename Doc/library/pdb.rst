@@ -717,6 +717,14 @@ can be overridden by the local file.
       :pdbcmd:`interact` directs its output to the debugger's
       output channel rather than :data:`sys.stderr`.
 
+.. pdbcommand:: attach process
+
+   Attach to a running process.  The *process* argument could be either a
+   process ID, or any object that has a ``pid`` attribute like
+   :class:`subprocess.Popen` or :class:`multiprocessing.Process`.
+
+   .. versionadded:: 3.15
+
 .. _debugger-aliases:
 
 .. pdbcommand:: alias [name [command]]
