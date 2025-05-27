@@ -705,6 +705,7 @@ _PyFunction_FromXIData(_PyXIData_t *xidata)
     if (PyDict_SetItemString(globals, "__builtins__",
                              tstate->interp->builtins) < 0)
     {
+        Py_DECREF(code);
         Py_DECREF(globals);
         return NULL;
     }
