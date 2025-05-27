@@ -2290,6 +2290,7 @@ class CoroutineTest(unittest.TestCase):
 
         self.assertEqual(run_async(run()), ([], [1,2]))
 
+
 @unittest.skipIf(
     support.is_emscripten or support.is_wasi,
     "asyncio does not work under Emscripten/WASI yet."
