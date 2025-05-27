@@ -3114,7 +3114,7 @@ class TransformCodecTest(unittest.TestCase):
         for value in encodings.aliases.aliases.values():
             codec_mod = f"encodings.{value}"
             self.assertIsNotNone(importlib.util.find_spec(codec_mod),
-                                 "Codec module not found: " + codec_mod)
+                                 f"Codec module not found: {codec_mod}")
 
     def test_quopri_stateless(self):
         # Should encode with quotetabs=True
