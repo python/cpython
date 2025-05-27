@@ -583,7 +583,6 @@ class TestRacesDoNotCrash(TestBase):
     # Careful with these. Bigger numbers have a higher chance of catching bugs,
     # but you can also burn through a *ton* of type/dict/function versions:
     ITEMS = 1000
-    SMALL_ITEMS = 100
     LOOPS = 4
     WRITERS = 2
 
@@ -627,7 +626,7 @@ class TestRacesDoNotCrash(TestBase):
                 __getitem__ = lambda self, item: None
 
             items = []
-            for _ in range(self.SMALL_ITEMS):
+            for _ in range(self.ITEMS):
                 item = C()
                 items.append(item)
             return items
@@ -798,7 +797,7 @@ class TestRacesDoNotCrash(TestBase):
                 __getattribute__ = lambda self, name: None
 
             items = []
-            for _ in range(self.SMALL_ITEMS):
+            for _ in range(self.ITEMS):
                 item = C()
                 items.append(item)
             return items
