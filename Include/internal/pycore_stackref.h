@@ -242,6 +242,7 @@ PyStackRef_IsNullOrInt(_PyStackRef ref);
 
 #define Py_INT_TAG 3
 #define Py_TAG_REFCNT 1
+#define Py_TAG_BITS 3
 
 static inline bool
 PyStackRef_IsTaggedInt(_PyStackRef i)
@@ -268,7 +269,8 @@ PyStackRef_UntagInt(_PyStackRef i)
 static inline _PyStackRef
 PyStackRef_IncrementTaggedIntNoOverflow(_PyStackRef ref)
 {
-    assert(ref.bits != (uintptr_t)-1); // Deosn't overflow
+    assert((ref.bits & Py_TAG_BITS) == Py_INT_TAG); // Is tagged int
+    assert((ref.bits & (~Py_TAG_BITS)) != (INT_MAX & (~Py_TAG_BITS))); // Isn't about to overflow
     return (_PyStackRef){ .bits = ref.bits + 4 };
 }
 
@@ -278,7 +280,6 @@ PyStackRef_IncrementTaggedIntNoOverflow(_PyStackRef ref)
 #define Py_TAG_DEFERRED Py_TAG_REFCNT
 
 #define Py_TAG_PTR      ((uintptr_t)0)
-#define Py_TAG_BITS     ((uintptr_t)1)
 
 
 static const _PyStackRef PyStackRef_NULL = { .bits = Py_TAG_DEFERRED};
@@ -453,7 +454,6 @@ PyStackRef_AsStrongReference(_PyStackRef stackref)
 /* References to immortal objects always have their tag bit set to Py_TAG_REFCNT
  * as they can (must) have their reclamation deferred */
 
-#define Py_TAG_BITS 3
 #if _Py_IMMORTAL_FLAGS != Py_TAG_REFCNT
 #  error "_Py_IMMORTAL_FLAGS != Py_TAG_REFCNT"
 #endif
