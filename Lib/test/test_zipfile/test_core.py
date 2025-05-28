@@ -1398,6 +1398,9 @@ class AbstractRemoveTests(RepackHelperMixin):
             ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
         ]
 
+    def tearDown(self):
+        unlink(TESTFN)
+
     def test_remove_by_name(self):
         for i in range(0, 3):
             with self.subTest(i=i, filename=self.test_files[i][0]):
@@ -1637,7 +1640,6 @@ class AbstractRemoveTests(RepackHelperMixin):
             self.assertIsNone(zh.testzip())
 
     def test_remove_mode_x(self):
-        unlink(TESTFN)
         with zipfile.ZipFile(TESTFN, 'x') as zh:
             for file, data in self.test_files:
                 zh.writestr(file, data)
@@ -1686,6 +1688,9 @@ class AbstractRepackTests(RepackHelperMixin):
             ('file1.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
             ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
         ]
+
+    def tearDown(self):
+        unlink(TESTFN)
 
     def test_repack_basic(self):
         """Should remove local file entries for deleted files."""
@@ -2241,7 +2246,6 @@ class AbstractRepackTests(RepackHelperMixin):
 
     @mock.patch('zipfile._ZipRepacker')
     def test_repack_mode_x(self, m_repack):
-        unlink(TESTFN)
         with zipfile.ZipFile(TESTFN, 'x') as zh:
             with self.assertRaises(ValueError):
                 zh.repack()
