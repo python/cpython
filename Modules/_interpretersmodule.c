@@ -8,6 +8,7 @@
 #include "Python.h"
 #include "pycore_code.h"          // _PyCode_HAS_EXECUTORS()
 #include "pycore_crossinterp.h"   // _PyXIData_t
+#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_interp.h"        // _PyInterpreterState_IDIncref()
 #include "pycore_modsupport.h"    // _PyArg_BadArgument()
 #include "pycore_namespace.h"     // _PyNamespace_New()
@@ -63,7 +64,7 @@ is_running_main(PyInterpreterState *interp)
     // using this module for the main interpreter is doing so through
     // the main program.  Thus we can make this extra check.  This benefits
     // applications that embed Python but haven't been updated yet
-    // to call_PyInterpreterState_SetRunningMain().
+    // to call _PyInterpreterState_SetRunningMain().
     if (_Py_IsMainInterpreter(interp)) {
         return 1;
     }
@@ -73,44 +74,92 @@ is_running_main(PyInterpreterState *interp)
 
 /* Cross-interpreter Buffer Views *******************************************/
 
-// XXX Release when the original interpreter is destroyed.
+/* When a memoryview object is "shared" between interpreters,
+ * its underlying "buffer" memory is actually shared, rather than just
+ * copied.  This facilitates efficient use of that data where otherwise
+ * interpreters are strictly isolated.  However, this also means that
+ * the underlying data is subject to the complexities of thread-safety,
+ * which the user must manage carefully.
+ *
+ * When the memoryview is "shared", it is essentially copied in the same
+ * way as PyMemory_FromObject() does, but in another interpreter.
+ * The Py_buffer value is copied like normal, including the "buf" pointer,
+ * with one key exception.
+ *
+ * When a Py_buffer is released and it holds a reference to an object,
+ * that object gets a chance to call its bf_releasebuffer() (if any)
+ * before the object is decref'ed.  The same is true with the memoryview
+ * tp_dealloc, which essentially calls PyBuffer_Release().
+ *
+ * The problem for a Py_buffer shared between two interpreters is that
+ * the naive approach breaks interpreter isolation.  Operations on an
+ * object must only happen while that object's interpreter is active.
+ * If the copied mv->view.obj pointed to the original memoryview then
+ * the PyBuffer_Release() would happen under the wrong interpreter.
+ *
+ * To work around this, we set mv->view.obj on the copied memoryview
+ * to a wrapper object with the only job of releasing the original
+ * buffer in a cross-interpreter-safe way.
+ */
+
+// XXX Note that there is still an issue to sort out, where the original
+// interpreter is destroyed but code in another interpreter is still
+// using dependent buffers.  Using such buffers segfaults.  This will
+// require a careful fix.  In the meantime, users will have to be
+// diligent about avoiding the problematic situation.
 
 typedef struct {
-    PyObject_HEAD
+    PyObject base;
     Py_buffer *view;
     int64_t interpid;
-} XIBufferViewObject;
-
-#define XIBufferViewObject_CAST(op) ((XIBufferViewObject *)(op))
+} xibufferview;
 
 static PyObject *
-xibufferview_from_xid(PyTypeObject *cls, _PyXIData_t *data)
+xibufferview_from_buffer(PyTypeObject *cls, Py_buffer *view, int64_t interpid)
 {
-    assert(_PyXIData_DATA(data) != NULL);
-    assert(_PyXIData_OBJ(data) == NULL);
-    assert(_PyXIData_INTERPID(data) >= 0);
-    XIBufferViewObject *self = PyObject_Malloc(sizeof(XIBufferViewObject));
-    if (self == NULL) {
+    assert(interpid >= 0);
+
+    Py_buffer *copied = PyMem_RawMalloc(sizeof(Py_buffer));
+    if (copied == NULL) {
         return NULL;
     }
-    PyObject_Init((PyObject *)self, cls);
-    self->view = (Py_buffer *)_PyXIData_DATA(data);
-    self->interpid = _PyXIData_INTERPID(data);
+    /* This steals the view->obj reference  */
+    *copied = *view;
+
+    xibufferview *self = PyObject_Malloc(sizeof(xibufferview));
+    if (self == NULL) {
+        PyMem_RawFree(copied);
+        return NULL;
+    }
+    PyObject_Init(&self->base, cls);
+    *self = (xibufferview){
+        .base = self->base,
+        .view = copied,
+        .interpid = interpid,
+    };
     return (PyObject *)self;
 }
 
 static void
 xibufferview_dealloc(PyObject *op)
 {
-    XIBufferViewObject *self = XIBufferViewObject_CAST(op);
-    PyInterpreterState *interp = _PyInterpreterState_LookUpID(self->interpid);
-    /* If the interpreter is no longer alive then we have problems,
-       since other objects may be using the buffer still. */
-    assert(interp != NULL);
-
-    if (_PyBuffer_ReleaseInInterpreterAndRawFree(interp, self->view) < 0) {
-        // XXX Emit a warning?
-        PyErr_Clear();
+    xibufferview *self = (xibufferview *)op;
+    if (self->view != NULL) {
+        PyInterpreterState *interp =
+                        _PyInterpreterState_LookUpID(self->interpid);
+        if (interp == NULL) {
+            /* The interpreter is no longer alive. */
+            PyErr_Clear();
+            PyMem_RawFree(self->view);
+        }
+        else {
+            if (_PyBuffer_ReleaseInInterpreterAndRawFree(interp,
+                                                         self->view) < 0)
+            {
+                // XXX Emit a warning?
+                PyErr_Clear();
+            }
+        }
     }
 
     PyTypeObject *tp = Py_TYPE(self);
@@ -129,8 +178,9 @@ xibufferview_getbuf(PyObject *op, Py_buffer *view, int flags)
 {
     /* Only PyMemoryView_FromObject() should ever call this,
        via _memoryview_from_xid() below. */
-    XIBufferViewObject *self = XIBufferViewObject_CAST(op);
+    xibufferview *self = (xibufferview *)op;
     *view = *self->view;
+    /* This is the workaround mentioned earlier. */
     view->obj = op;
     // XXX Should we leave it alone?
     view->internal = NULL;
@@ -146,7 +196,7 @@ static PyType_Slot XIBufferViewType_slots[] = {
 
 static PyType_Spec XIBufferViewType_spec = {
     .name = MODULE_NAME_STR ".CrossInterpreterBufferView",
-    .basicsize = sizeof(XIBufferViewObject),
+    .basicsize = sizeof(xibufferview),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = XIBufferViewType_slots,
@@ -155,32 +205,68 @@ static PyType_Spec XIBufferViewType_spec = {
 
 static PyTypeObject * _get_current_xibufferview_type(void);
 
+
+struct xibuffer {
+    Py_buffer view;
+    int used;
+};
+
 static PyObject *
 _memoryview_from_xid(_PyXIData_t *data)
 {
+    assert(_PyXIData_DATA(data) != NULL);
+    assert(_PyXIData_OBJ(data) == NULL);
+    assert(_PyXIData_INTERPID(data) >= 0);
+    struct xibuffer *view = (struct xibuffer *)_PyXIData_DATA(data);
+    assert(!view->used);
+
     PyTypeObject *cls = _get_current_xibufferview_type();
     if (cls == NULL) {
         return NULL;
     }
-    PyObject *obj = xibufferview_from_xid(cls, data);
+
+    PyObject *obj = xibufferview_from_buffer(
+                        cls, &view->view, _PyXIData_INTERPID(data));
     if (obj == NULL) {
         return NULL;
     }
-    return PyMemoryView_FromObject(obj);
+    PyObject *res = PyMemoryView_FromObject(obj);
+    if (res == NULL) {
+        Py_DECREF(obj);
+        return NULL;
+    }
+    view->used = 1;
+    return res;
+}
+
+static void
+_pybuffer_shared_free(void* data)
+{
+    struct xibuffer *view = (struct xibuffer *)data;
+    if (!view->used) {
+        PyBuffer_Release(&view->view);
+    }
+    PyMem_RawFree(data);
 }
 
 static int
-_memoryview_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
+_pybuffer_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
-    Py_buffer *view = PyMem_RawMalloc(sizeof(Py_buffer));
+    struct xibuffer *view = PyMem_RawMalloc(sizeof(struct xibuffer));
     if (view == NULL) {
         return -1;
     }
-    if (PyObject_GetBuffer(obj, view, PyBUF_FULL_RO) < 0) {
+    view->used = 0;
+    /* This will increment the memoryview's export count, which won't get
+     * decremented until the view sent to other interpreters is released. */
+    if (PyObject_GetBuffer(obj, &view->view, PyBUF_FULL_RO) < 0) {
         PyMem_RawFree(view);
         return -1;
     }
+    /* The view holds a reference to the object, so we don't worry
+     * about also tracking it on the cross-interpreter data. */
     _PyXIData_Init(data, tstate->interp, view, NULL, _memoryview_from_xid);
+    data->free = _pybuffer_shared_free;
     return 0;
 }
 
@@ -201,7 +287,7 @@ register_memoryview_xid(PyObject *mod, PyTypeObject **p_state)
     *p_state = cls;
 
     // Register XID for the builtin memoryview type.
-    if (ensure_xid_class(&PyMemoryView_Type, _memoryview_shared) < 0) {
+    if (ensure_xid_class(&PyMemoryView_Type, GETDATA(_pybuffer_shared)) < 0) {
         return -1;
     }
     // We don't ever bother un-registering memoryview.
@@ -274,96 +360,6 @@ _get_current_xibufferview_type(void)
 }
 
 
-/* Python code **************************************************************/
-
-static const char *
-check_code_str(PyUnicodeObject *text)
-{
-    assert(text != NULL);
-    if (PyUnicode_GET_LENGTH(text) == 0) {
-        return "too short";
-    }
-
-    // XXX Verify that it parses?
-
-    return NULL;
-}
-
-static const char *
-check_code_object(PyCodeObject *code)
-{
-    assert(code != NULL);
-    if (code->co_argcount > 0
-        || code->co_posonlyargcount > 0
-        || code->co_kwonlyargcount > 0
-        || code->co_flags & (CO_VARARGS | CO_VARKEYWORDS))
-    {
-        return "arguments not supported";
-    }
-    if (code->co_ncellvars > 0) {
-        return "closures not supported";
-    }
-    // We trust that no code objects under co_consts have unbound cell vars.
-
-    if (_PyCode_HAS_EXECUTORS(code) || _PyCode_HAS_INSTRUMENTATION(code)) {
-        return "only basic functions are supported";
-    }
-    if (code->_co_monitoring != NULL) {
-        return "only basic functions are supported";
-    }
-    if (code->co_extra != NULL) {
-        return "only basic functions are supported";
-    }
-
-    return NULL;
-}
-
-#define RUN_TEXT 1
-#define RUN_CODE 2
-
-static const char *
-get_code_str(PyObject *arg, Py_ssize_t *len_p, PyObject **bytes_p, int *flags_p)
-{
-    const char *codestr = NULL;
-    Py_ssize_t len = -1;
-    PyObject *bytes_obj = NULL;
-    int flags = 0;
-
-    if (PyUnicode_Check(arg)) {
-        assert(PyUnicode_Check(arg)
-               && (check_code_str((PyUnicodeObject *)arg) == NULL));
-        codestr = PyUnicode_AsUTF8AndSize(arg, &len);
-        if (codestr == NULL) {
-            return NULL;
-        }
-        if (strlen(codestr) != (size_t)len) {
-            PyErr_SetString(PyExc_ValueError,
-                            "source code string cannot contain null bytes");
-            return NULL;
-        }
-        flags = RUN_TEXT;
-    }
-    else {
-        assert(PyCode_Check(arg)
-               && (check_code_object((PyCodeObject *)arg) == NULL));
-        flags = RUN_CODE;
-
-        // Serialize the code object.
-        bytes_obj = PyMarshal_WriteObjectToString(arg, Py_MARSHAL_VERSION);
-        if (bytes_obj == NULL) {
-            return NULL;
-        }
-        codestr = PyBytes_AS_STRING(bytes_obj);
-        len = PyBytes_GET_SIZE(bytes_obj);
-    }
-
-    *flags_p = flags;
-    *bytes_p = bytes_obj;
-    *len_p = len;
-    return codestr;
-}
-
-
 /* interpreter-specific code ************************************************/
 
 static int
@@ -427,22 +423,14 @@ config_from_object(PyObject *configobj, PyInterpreterConfig *config)
 
 
 static int
-_run_script(PyObject *ns, const char *codestr, Py_ssize_t codestrlen, int flags)
+_run_script(_PyXIData_t *script, PyObject *ns)
 {
-    PyObject *result = NULL;
-    if (flags & RUN_TEXT) {
-        result = PyRun_StringFlags(codestr, Py_file_input, ns, ns, NULL);
+    PyObject *code = _PyXIData_NewObject(script);
+    if (code == NULL) {
+        return -1;
     }
-    else if (flags & RUN_CODE) {
-        PyObject *code = PyMarshal_ReadObjectFromString(codestr, codestrlen);
-        if (code != NULL) {
-            result = PyEval_EvalCode(code, ns, ns);
-            Py_DECREF(code);
-        }
-    }
-    else {
-        Py_UNREACHABLE();
-    }
+    PyObject *result = PyEval_EvalCode(code, ns, ns);
+    Py_DECREF(code);
     if (result == NULL) {
         return -1;
     }
@@ -451,48 +439,59 @@ _run_script(PyObject *ns, const char *codestr, Py_ssize_t codestrlen, int flags)
 }
 
 static int
-_run_in_interpreter(PyInterpreterState *interp,
-                    const char *codestr, Py_ssize_t codestrlen,
-                    PyObject *shareables, int flags,
+_exec_in_interpreter(PyThreadState *tstate, PyInterpreterState *interp,
+                    _PyXIData_t *script, PyObject *shareables,
                     PyObject **p_excinfo)
 {
-    assert(!PyErr_Occurred());
-    _PyXI_session session = {0};
+    assert(!_PyErr_Occurred(tstate));
+    _PyXI_session *session = _PyXI_NewSession();
+    if (session == NULL) {
+        return -1;
+    }
 
     // Prep and switch interpreters.
-    if (_PyXI_Enter(&session, interp, shareables) < 0) {
-        if (PyErr_Occurred()) {
+    if (_PyXI_Enter(session, interp, shareables) < 0) {
+        if (_PyErr_Occurred(tstate)) {
             // If an error occured at this step, it means that interp
             // was not prepared and switched.
+            _PyXI_FreeSession(session);
             return -1;
         }
         // Now, apply the error from another interpreter:
-        PyObject *excinfo = _PyXI_ApplyError(session.error);
+        PyObject *excinfo = _PyXI_ApplyCapturedException(session);
         if (excinfo != NULL) {
             *p_excinfo = excinfo;
         }
         assert(PyErr_Occurred());
+        _PyXI_FreeSession(session);
         return -1;
     }
 
     // Run the script.
-    int res = _run_script(session.main_ns, codestr, codestrlen, flags);
+    int res = -1;
+    PyObject *mainns = _PyXI_GetMainNamespace(session);
+    if (mainns == NULL) {
+        goto finally;
+    }
+    res = _run_script(script, mainns);
 
+finally:
     // Clean up and switch back.
-    _PyXI_Exit(&session);
+    _PyXI_Exit(session);
 
     // Propagate any exception out to the caller.
     assert(!PyErr_Occurred());
     if (res < 0) {
-        PyObject *excinfo = _PyXI_ApplyCapturedException(&session);
+        PyObject *excinfo = _PyXI_ApplyCapturedException(session);
         if (excinfo != NULL) {
             *p_excinfo = excinfo;
         }
     }
     else {
-        assert(!_PyXI_HasCapturedException(&session));
+        assert(!_PyXI_HasCapturedException(session));
     }
 
+    _PyXI_FreeSession(session);
     return res;
 }
 
@@ -837,22 +836,27 @@ interp_set___main___attrs(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
 
-    _PyXI_session session = {0};
+    _PyXI_session *session = _PyXI_NewSession();
+    if (session == NULL) {
+        return NULL;
+    }
 
     // Prep and switch interpreters, including apply the updates.
-    if (_PyXI_Enter(&session, interp, updates) < 0) {
+    if (_PyXI_Enter(session, interp, updates) < 0) {
         if (!PyErr_Occurred()) {
-            _PyXI_ApplyCapturedException(&session);
+            _PyXI_ApplyCapturedException(session);
             assert(PyErr_Occurred());
         }
         else {
-            assert(!_PyXI_HasCapturedException(&session));
+            assert(!_PyXI_HasCapturedException(session));
         }
+        _PyXI_FreeSession(session);
         return NULL;
     }
 
     // Clean up and switch back.
-    _PyXI_Exit(&session);
+    _PyXI_Exit(session);
+    _PyXI_FreeSession(session);
 
     Py_RETURN_NONE;
 }
@@ -863,122 +867,38 @@ PyDoc_STRVAR(set___main___attrs_doc,
 Bind the given attributes in the interpreter's __main__ module.");
 
 
-static PyUnicodeObject *
-convert_script_arg(PyObject *arg, const char *fname, const char *displayname,
-                   const char *expected)
+static void
+unwrap_not_shareable(PyThreadState *tstate)
 {
-    PyUnicodeObject *str = NULL;
-    if (PyUnicode_CheckExact(arg)) {
-        str = (PyUnicodeObject *)Py_NewRef(arg);
+    PyObject *exctype = _PyXIData_GetNotShareableErrorType(tstate);
+    if (!_PyErr_ExceptionMatches(tstate, exctype)) {
+        return;
     }
-    else if (PyUnicode_Check(arg)) {
-        // XXX str = PyUnicode_FromObject(arg);
-        str = (PyUnicodeObject *)Py_NewRef(arg);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
+    PyObject *cause = PyException_GetCause(exc);
+    if (cause != NULL) {
+        Py_DECREF(exc);
+        exc = cause;
     }
     else {
-        _PyArg_BadArgument(fname, displayname, expected, arg);
-        return NULL;
+        assert(PyException_GetContext(exc) == NULL);
     }
-
-    const char *err = check_code_str(str);
-    if (err != NULL) {
-        Py_DECREF(str);
-        PyErr_Format(PyExc_ValueError,
-                     "%.200s(): bad script text (%s)", fname, err);
-        return NULL;
-    }
-
-    return str;
-}
-
-static PyCodeObject *
-convert_code_arg(PyObject *arg, const char *fname, const char *displayname,
-                 const char *expected)
-{
-    const char *kind = NULL;
-    PyCodeObject *code = NULL;
-    if (PyFunction_Check(arg)) {
-        if (PyFunction_GetClosure(arg) != NULL) {
-            PyErr_Format(PyExc_ValueError,
-                         "%.200s(): closures not supported", fname);
-            return NULL;
-        }
-        code = (PyCodeObject *)PyFunction_GetCode(arg);
-        if (code == NULL) {
-            if (PyErr_Occurred()) {
-                // This chains.
-                PyErr_Format(PyExc_ValueError,
-                             "%.200s(): bad func", fname);
-            }
-            else {
-                PyErr_Format(PyExc_ValueError,
-                             "%.200s(): func.__code__ missing", fname);
-            }
-            return NULL;
-        }
-        Py_INCREF(code);
-        kind = "func";
-    }
-    else if (PyCode_Check(arg)) {
-        code = (PyCodeObject *)Py_NewRef(arg);
-        kind = "code object";
-    }
-    else {
-        _PyArg_BadArgument(fname, displayname, expected, arg);
-        return NULL;
-    }
-
-    const char *err = check_code_object(code);
-    if (err != NULL) {
-        Py_DECREF(code);
-        PyErr_Format(PyExc_ValueError,
-                     "%.200s(): bad %s (%s)", fname, kind, err);
-        return NULL;
-    }
-
-    return code;
-}
-
-static int
-_interp_exec(PyObject *self, PyInterpreterState *interp,
-             PyObject *code_arg, PyObject *shared_arg, PyObject **p_excinfo)
-{
-    if (shared_arg != NULL && !PyDict_CheckExact(shared_arg)) {
-        PyErr_SetString(PyExc_TypeError, "expected 'shared' to be a dict");
-        return -1;
-    }
-
-    // Extract code.
-    Py_ssize_t codestrlen = -1;
-    PyObject *bytes_obj = NULL;
-    int flags = 0;
-    const char *codestr = get_code_str(code_arg,
-                                       &codestrlen, &bytes_obj, &flags);
-    if (codestr == NULL) {
-        return -1;
-    }
-
-    // Run the code in the interpreter.
-    int res = _run_in_interpreter(interp, codestr, codestrlen,
-                                  shared_arg, flags, p_excinfo);
-    Py_XDECREF(bytes_obj);
-    if (res < 0) {
-        return -1;
-    }
-
-    return 0;
+    _PyErr_SetRaisedException(tstate, exc);
 }
 
 static PyObject *
 interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
 {
+#define FUNCNAME MODULE_NAME_STR ".exec"
+    PyThreadState *tstate = _PyThreadState_GET();
     static char *kwlist[] = {"id", "code", "shared", "restrict", NULL};
     PyObject *id, *code;
     PyObject *shared = NULL;
     int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OO|O$p:" MODULE_NAME_STR ".exec", kwlist,
-                                     &id, &code, &shared, &restricted))
+                                     "OO|O!$p:" FUNCNAME, kwlist,
+                                     &id, &code, &PyDict_Type, &shared,
+                                     &restricted))
     {
         return NULL;
     }
@@ -990,27 +910,23 @@ interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    const char *expected = "a string, a function, or a code object";
-    if (PyUnicode_Check(code)) {
-         code = (PyObject *)convert_script_arg(code, MODULE_NAME_STR ".exec",
-                                               "argument 2", expected);
-    }
-    else {
-         code = (PyObject *)convert_code_arg(code, MODULE_NAME_STR ".exec",
-                                             "argument 2", expected);
-    }
-    if (code == NULL) {
+    // We don't need the script to be "pure", which means it can use
+    // global variables.  They will be resolved against __main__.
+    _PyXIData_t xidata = {0};
+    if (_PyCode_GetScriptXIData(tstate, code, &xidata) < 0) {
+        unwrap_not_shareable(tstate);
         return NULL;
     }
 
     PyObject *excinfo = NULL;
-    int res = _interp_exec(self, interp, code, shared, &excinfo);
-    Py_DECREF(code);
+    int res = _exec_in_interpreter(tstate, interp, &xidata, shared, &excinfo);
+    _PyXIData_Release(&xidata);
     if (res < 0) {
         assert((excinfo == NULL) != (PyErr_Occurred() == NULL));
         return excinfo;
     }
     Py_RETURN_NONE;
+#undef FUNCNAME
 }
 
 PyDoc_STRVAR(exec_doc,
@@ -1031,8 +947,127 @@ If a function is provided, its code object is used and all its state\n\
 is ignored, including its __globals__ dict.");
 
 static PyObject *
+interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
+{
+#define FUNCNAME MODULE_NAME_STR ".run_string"
+    PyThreadState *tstate = _PyThreadState_GET();
+    static char *kwlist[] = {"id", "script", "shared", "restrict", NULL};
+    PyObject *id, *script;
+    PyObject *shared = NULL;
+    int restricted = 0;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "OU|O!$p:" FUNCNAME, kwlist,
+                                     &id, &script, &PyDict_Type, &shared,
+                                     &restricted))
+    {
+        return NULL;
+    }
+
+    int reqready = 1;
+    PyInterpreterState *interp = \
+            resolve_interp(id, restricted, reqready, "run a string in");
+    if (interp == NULL) {
+        return NULL;
+    }
+
+    if (PyFunction_Check(script) || PyCode_Check(script)) {
+        _PyArg_BadArgument(FUNCNAME, "argument 2", "a string", script);
+        return NULL;
+    }
+
+    _PyXIData_t xidata = {0};
+    if (_PyCode_GetScriptXIData(tstate, script, &xidata) < 0) {
+        unwrap_not_shareable(tstate);
+        return NULL;
+    }
+
+    PyObject *excinfo = NULL;
+    int res = _exec_in_interpreter(tstate, interp, &xidata, shared, &excinfo);
+    _PyXIData_Release(&xidata);
+    if (res < 0) {
+        assert((excinfo == NULL) != (PyErr_Occurred() == NULL));
+        return excinfo;
+    }
+    Py_RETURN_NONE;
+#undef FUNCNAME
+}
+
+PyDoc_STRVAR(run_string_doc,
+"run_string(id, script, shared=None, *, restrict=False)\n\
+\n\
+Execute the provided string in the identified interpreter.\n\
+\n\
+(See " MODULE_NAME_STR ".exec().");
+
+static PyObject *
+interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
+{
+#define FUNCNAME MODULE_NAME_STR ".run_func"
+    PyThreadState *tstate = _PyThreadState_GET();
+    static char *kwlist[] = {"id", "func", "shared", "restrict", NULL};
+    PyObject *id, *func;
+    PyObject *shared = NULL;
+    int restricted = 0;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "OO|O!$p:" FUNCNAME, kwlist,
+                                     &id, &func, &PyDict_Type, &shared,
+                                     &restricted))
+    {
+        return NULL;
+    }
+
+    int reqready = 1;
+    PyInterpreterState *interp = \
+            resolve_interp(id, restricted, reqready, "run a function in");
+    if (interp == NULL) {
+        return NULL;
+    }
+
+    // We don't worry about checking globals.  They will be resolved
+    // against __main__.
+    PyObject *code;
+    if (PyFunction_Check(func)) {
+        code = PyFunction_GET_CODE(func);
+    }
+    else if (PyCode_Check(func)) {
+        code = func;
+    }
+    else {
+        _PyArg_BadArgument(FUNCNAME, "argument 2", "a function", func);
+        return NULL;
+    }
+
+    _PyXIData_t xidata = {0};
+    if (_PyCode_GetScriptXIData(tstate, code, &xidata) < 0) {
+        unwrap_not_shareable(tstate);
+        return NULL;
+    }
+
+    PyObject *excinfo = NULL;
+    int res = _exec_in_interpreter(tstate, interp, &xidata, shared, &excinfo);
+    _PyXIData_Release(&xidata);
+    if (res < 0) {
+        assert((excinfo == NULL) != (PyErr_Occurred() == NULL));
+        return excinfo;
+    }
+    Py_RETURN_NONE;
+#undef FUNCNAME
+}
+
+PyDoc_STRVAR(run_func_doc,
+"run_func(id, func, shared=None, *, restrict=False)\n\
+\n\
+Execute the body of the provided function in the identified interpreter.\n\
+Code objects are also supported.  In both cases, closures and args\n\
+are not supported.  Methods and other callables are not supported either.\n\
+\n\
+(See " MODULE_NAME_STR ".exec().");
+
+static PyObject *
 interp_call(PyObject *self, PyObject *args, PyObject *kwds)
 {
+#define FUNCNAME MODULE_NAME_STR ".call"
+    PyThreadState *tstate = _PyThreadState_GET();
     static char *kwlist[] = {"id", "callable", "args", "kwargs",
                              "restrict", NULL};
     PyObject *id, *callable;
@@ -1040,7 +1075,7 @@ interp_call(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *kwargs_obj = NULL;
     int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OO|OO$p:" MODULE_NAME_STR ".call", kwlist,
+                                     "OO|OO$p:" FUNCNAME, kwlist,
                                      &id, &callable, &args_obj, &kwargs_obj,
                                      &restricted))
     {
@@ -1055,28 +1090,29 @@ interp_call(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     if (args_obj != NULL) {
-        PyErr_SetString(PyExc_ValueError, "got unexpected args");
+        _PyErr_SetString(tstate, PyExc_ValueError, "got unexpected args");
         return NULL;
     }
     if (kwargs_obj != NULL) {
-        PyErr_SetString(PyExc_ValueError, "got unexpected kwargs");
+        _PyErr_SetString(tstate, PyExc_ValueError, "got unexpected kwargs");
         return NULL;
     }
 
-    PyObject *code = (PyObject *)convert_code_arg(callable, MODULE_NAME_STR ".call",
-                                                  "argument 2", "a function");
-    if (code == NULL) {
+    _PyXIData_t xidata = {0};
+    if (_PyCode_GetPureScriptXIData(tstate, callable, &xidata) < 0) {
+        unwrap_not_shareable(tstate);
         return NULL;
     }
 
     PyObject *excinfo = NULL;
-    int res = _interp_exec(self, interp, code, NULL, &excinfo);
-    Py_DECREF(code);
+    int res = _exec_in_interpreter(tstate, interp, &xidata, NULL, &excinfo);
+    _PyXIData_Release(&xidata);
     if (res < 0) {
         assert((excinfo == NULL) != (PyErr_Occurred() == NULL));
         return excinfo;
     }
     Py_RETURN_NONE;
+#undef FUNCNAME
 }
 
 PyDoc_STRVAR(call_doc,
@@ -1091,97 +1127,6 @@ no arguments.\n\
 The function's code object is used and all its state\n\
 is ignored, including its __globals__ dict.");
 
-static PyObject *
-interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    static char *kwlist[] = {"id", "script", "shared", "restrict", NULL};
-    PyObject *id, *script;
-    PyObject *shared = NULL;
-    int restricted = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OU|O$p:" MODULE_NAME_STR ".run_string",
-                                     kwlist, &id, &script, &shared, &restricted))
-    {
-        return NULL;
-    }
-
-    int reqready = 1;
-    PyInterpreterState *interp = \
-            resolve_interp(id, restricted, reqready, "run a string in");
-    if (interp == NULL) {
-        return NULL;
-    }
-
-    script = (PyObject *)convert_script_arg(script, MODULE_NAME_STR ".run_string",
-                                            "argument 2", "a string");
-    if (script == NULL) {
-        return NULL;
-    }
-
-    PyObject *excinfo = NULL;
-    int res = _interp_exec(self, interp, script, shared, &excinfo);
-    Py_DECREF(script);
-    if (res < 0) {
-        assert((excinfo == NULL) != (PyErr_Occurred() == NULL));
-        return excinfo;
-    }
-    Py_RETURN_NONE;
-}
-
-PyDoc_STRVAR(run_string_doc,
-"run_string(id, script, shared=None, *, restrict=False)\n\
-\n\
-Execute the provided string in the identified interpreter.\n\
-\n\
-(See " MODULE_NAME_STR ".exec().");
-
-static PyObject *
-interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    static char *kwlist[] = {"id", "func", "shared", "restrict", NULL};
-    PyObject *id, *func;
-    PyObject *shared = NULL;
-    int restricted = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OO|O$p:" MODULE_NAME_STR ".run_func",
-                                     kwlist, &id, &func, &shared, &restricted))
-    {
-        return NULL;
-    }
-
-    int reqready = 1;
-    PyInterpreterState *interp = \
-            resolve_interp(id, restricted, reqready, "run a function in");
-    if (interp == NULL) {
-        return NULL;
-    }
-
-    PyCodeObject *code = convert_code_arg(func, MODULE_NAME_STR ".exec",
-                                          "argument 2",
-                                          "a function or a code object");
-    if (code == NULL) {
-        return NULL;
-    }
-
-    PyObject *excinfo = NULL;
-    int res = _interp_exec(self, interp, (PyObject *)code, shared, &excinfo);
-    Py_DECREF(code);
-    if (res < 0) {
-        assert((excinfo == NULL) != (PyErr_Occurred() == NULL));
-        return excinfo;
-    }
-    Py_RETURN_NONE;
-}
-
-PyDoc_STRVAR(run_func_doc,
-"run_func(id, func, shared=None, *, restrict=False)\n\
-\n\
-Execute the body of the provided function in the identified interpreter.\n\
-Code objects are also supported.  In both cases, closures and args\n\
-are not supported.  Methods and other callables are not supported either.\n\
-\n\
-(See " MODULE_NAME_STR ".exec().");
-
 
 static PyObject *
 object_is_shareable(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1193,13 +1138,8 @@ object_is_shareable(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    _PyXIData_lookup_context_t ctx;
-    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
-        return NULL;
-    }
-
-    if (_PyObject_CheckXIData(&ctx, obj) == 0) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (_PyObject_CheckXIData(tstate, obj) == 0) {
         Py_RETURN_TRUE;
     }
     PyErr_Clear();
@@ -1492,13 +1432,8 @@ The 'interpreters' module provides a more convenient interface.");
 static int
 module_exec(PyObject *mod)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyThreadState *tstate = _PyThreadState_GET();
     module_state *state = get_module_state(mod);
-
-    _PyXIData_lookup_context_t ctx;
-    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
-        return -1;
-    }
 
 #define ADD_WHENCE(NAME) \
     if (PyModule_AddIntConstant(mod, "WHENCE_" #NAME,                   \
@@ -1521,7 +1456,8 @@ module_exec(PyObject *mod)
     if (PyModule_AddType(mod, (PyTypeObject *)PyExc_InterpreterNotFoundError) < 0) {
         goto error;
     }
-    if (PyModule_AddType(mod, (PyTypeObject *)ctx.PyExc_NotShareableError) < 0) {
+    PyObject *exctype = _PyXIData_GetNotShareableErrorType(tstate);
+    if (PyModule_AddType(mod, (PyTypeObject *)exctype) < 0) {
         goto error;
     }
 

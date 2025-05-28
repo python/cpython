@@ -63,7 +63,7 @@ module Python
          | UnaryOp(unaryop op, expr operand)
          | Lambda(arguments args, expr body)
          | IfExp(expr test, expr body, expr orelse)
-         | Dict(expr* keys, expr* values)
+         | Dict(expr?* keys, expr* values)
          | Set(expr* elts)
          | ListComp(expr elt, comprehension* generators)
          | SetComp(expr elt, comprehension* generators)
@@ -78,7 +78,9 @@ module Python
          | Compare(expr left, cmpop* ops, expr* comparators)
          | Call(expr func, expr* args, keyword* keywords)
          | FormattedValue(expr value, int conversion, expr? format_spec)
+         | Interpolation(expr value, constant str, int conversion, expr? format_spec)
          | JoinedStr(expr* values)
+         | TemplateStr(expr* values)
          | Constant(constant value, string? kind)
 
          -- the following expression can appear in assignment context

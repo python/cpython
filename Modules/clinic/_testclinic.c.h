@@ -1038,7 +1038,7 @@ unsigned_long_converter(PyObject *module, PyObject *const *args, Py_ssize_t narg
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (!PyLong_Check(args[2])) {
+    if (!PyIndex_Check(args[2])) {
         _PyArg_BadArgument("unsigned_long_converter", "argument 3", "int", args[2]);
         goto exit;
     }
@@ -1122,7 +1122,7 @@ unsigned_long_long_converter(PyObject *module, PyObject *const *args, Py_ssize_t
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (!PyLong_Check(args[2])) {
+    if (!PyIndex_Check(args[2])) {
         _PyArg_BadArgument("unsigned_long_long_converter", "argument 3", "int", args[2]);
         goto exit;
     }
@@ -4481,4 +4481,4 @@ _testclinic_TestClass_posonly_poskw_varpos_array_no_fastcall(PyObject *type, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b57b94aeba0882b4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=84ffc31f27215baa input=a9049054013a1b77]*/
