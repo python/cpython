@@ -4105,13 +4105,14 @@ PyType_SUPPORTS_WEAKREFS(PyTypeObject *type)
 
 /* Determine the most derived metatype. */
 PyTypeObject *
-_PyType_CalculateMetaclass(PyTypeObject *metatype, PyObject *bases)
+_PyType_CalculateMetaclass(PyTypeObject *metatype,
+                            PyObject *bases,
+                            PyObject *name)
 {
     Py_ssize_t i, nbases;
     PyTypeObject *winner;
     PyObject *tmp;
     PyTypeObject *tmptype;
-
     /* Determine the proper metatype to deal with this,
        and check for metatype conflicts while we're at it.
        Note that if some other metatype wins to contract,
@@ -4129,7 +4130,6 @@ _PyType_CalculateMetaclass(PyTypeObject *metatype, PyObject *bases)
             continue;
         }
         /* else: */
-        /* Construct improved error message */
         PyObject *declared_meta_name = NULL;
         PyObject *base_class_name = NULL;
         PyObject *base_meta_name = NULL;
@@ -4141,12 +4141,13 @@ _PyType_CalculateMetaclass(PyTypeObject *metatype, PyObject *bases)
 
         if (declared_meta_name && base_class_name && base_meta_name) {
             format_result = PyUnicode_FromFormat(
-                "Metaclass conflict while defining class:\n"
+                "Metaclass conflict while defining class: '%U'\n"
                 "- Declared metaclass: '%U'\n"
                 "- Incompatible base class: '%U'\n"
                 "- That base is derived from metaclass: '%U'\n"
                 "All base classes must be based on classes derived from the same "
                 "metaclass or a subclass thereof.",
+                name,
                 declared_meta_name,
                 base_class_name,
                 base_meta_name
@@ -4949,7 +4950,7 @@ type_new_get_bases(type_new_ctx *ctx, PyObject **type)
 
     // Search the bases for the proper metatype to deal with this
     PyTypeObject *winner;
-    winner = _PyType_CalculateMetaclass(ctx->metatype, ctx->bases);
+    winner = _PyType_CalculateMetaclass(ctx->metatype, ctx->bases, ctx->name);
     if (winner == NULL) {
         return -1;
     }
@@ -5365,10 +5366,19 @@ PyType_FromMetaclass(
     if (!metaclass) {
         metaclass = &PyType_Type;
     }
-    metaclass = _PyType_CalculateMetaclass(metaclass, bases);
+    /* Get resolve the name from 'spec' */
+    PyObject *name = NULL;
+    if (spec && spec->name) {
+        name = PyUnicode_FromString(spec->name);
+    }
+
+    metaclass = _PyType_CalculateMetaclass(metaclass, bases, name);
     if (metaclass == NULL) {
         goto finally;
     }
+    /* Remove name again */
+    Py_XDECREF(name);
+
     if (!PyType_Check(metaclass)) {
         PyErr_Format(PyExc_TypeError,
                      "Metaclass '%R' is not a subclass of 'type'.",

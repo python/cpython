@@ -169,7 +169,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         /* meta is really a class, so check for a more derived
            metaclass, or possible metaclass conflicts: */
         winner = (PyObject *)_PyType_CalculateMetaclass((PyTypeObject *)meta,
-                                                        bases);
+                                                        bases,name);
         if (winner == NULL) {
             goto error;
         }
