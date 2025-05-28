@@ -181,7 +181,6 @@ typedef enum _JitSymType {
     JIT_SYM_TRUTHINESS_TAG = 9,
 } JitSymType;
 
-
 typedef struct _jit_opt_known_class {
     uint8_t tag;
     uint32_t version;
