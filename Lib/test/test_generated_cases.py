@@ -2301,7 +2301,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo -- res)) {
-            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);        
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
             res = sym_new_known(ctx, foo);
         }
         """
