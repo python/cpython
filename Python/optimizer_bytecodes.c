@@ -9,32 +9,32 @@
 typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 
 /* Shortened forms for convenience */
-#define sym_is_not_null _Py_uop_sym_is_not_null
-#define sym_is_const _Py_uop_sym_is_const
-#define sym_get_const _Py_uop_sym_get_const
-#define sym_new_unknown _Py_uop_sym_new_unknown
-#define sym_new_not_null _Py_uop_sym_new_not_null
-#define sym_new_type _Py_uop_sym_new_type
-#define sym_is_null _Py_uop_sym_is_null
-#define sym_new_const _Py_uop_sym_new_const
-#define sym_new_null _Py_uop_sym_new_null
-#define sym_matches_type _Py_uop_sym_matches_type
-#define sym_matches_type_version _Py_uop_sym_matches_type_version
-#define sym_get_type _Py_uop_sym_get_type
-#define sym_has_type _Py_uop_sym_has_type
-#define sym_set_null(SYM) _Py_uop_sym_set_null(ctx, SYM)
-#define sym_set_non_null(SYM) _Py_uop_sym_set_non_null(ctx, SYM)
-#define sym_set_type(SYM, TYPE) _Py_uop_sym_set_type(ctx, SYM, TYPE)
-#define sym_set_type_version(SYM, VERSION) _Py_uop_sym_set_type_version(ctx, SYM, VERSION)
-#define sym_set_const(SYM, CNST) _Py_uop_sym_set_const(ctx, SYM, CNST)
-#define sym_is_bottom _Py_uop_sym_is_bottom
+#define ref_is_not_null _Py_uop_ref_is_not_null
+#define ref_is_const _Py_uop_ref_is_const
+#define ref_get_const _Py_uop_ref_get_const
+#define ref_new_unknown _Py_uop_ref_new_unknown
+#define ref_new_not_null _Py_uop_ref_new_not_null
+#define ref_new_type _Py_uop_ref_new_type
+#define ref_is_null _Py_uop_ref_is_null
+#define ref_new_const _Py_uop_ref_new_const
+#define ref_new_null _Py_uop_ref_new_null
+#define ref_matches_type _Py_uop_ref_matches_type
+#define ref_matches_type_version _Py_uop_ref_matches_type_version
+#define ref_get_type _Py_uop_ref_get_type
+#define ref_has_type _Py_uop_ref_has_type
+#define ref_set_null(SYM) _Py_uop_ref_set_null(ctx, SYM)
+#define ref_set_non_null(SYM) _Py_uop_ref_set_non_null(ctx, SYM)
+#define ref_set_type(SYM, TYPE) _Py_uop_ref_set_type(ctx, SYM, TYPE)
+#define ref_set_type_version(SYM, VERSION) _Py_uop_ref_set_type_version(ctx, SYM, VERSION)
+#define ref_set_const(SYM, CNST) _Py_uop_ref_set_const(ctx, SYM, CNST)
+#define ref_is_bottom _Py_uop_ref_is_bottom
 #define frame_new _Py_uop_frame_new
 #define frame_pop _Py_uop_frame_pop
-#define sym_new_tuple _Py_uop_sym_new_tuple
-#define sym_tuple_getitem _Py_uop_sym_tuple_getitem
-#define sym_tuple_length _Py_uop_sym_tuple_length
-#define sym_is_immortal _Py_uop_sym_is_immortal
-#define sym_new_truthiness _Py_uop_sym_new_truthiness
+#define ref_new_tuple _Py_uop_ref_new_tuple
+#define ref_tuple_getitem _Py_uop_ref_tuple_getitem
+#define ref_tuple_length _Py_uop_ref_tuple_length
+#define ref_is_immortal _Py_uop_ref_is_immortal
+#define ref_new_truthiness _Py_uop_ref_new_truthiness
 
 extern int
 optimize_to_bool(
@@ -77,27 +77,23 @@ dummy_func(void) {
     op(_LOAD_FAST_CHECK, (-- value)) {
         value = GETLOCAL(oparg);
         // We guarantee this will error - just bail and don't optimize it.
-        if (sym_is_null(value)) {
+        if (ref_is_null(value)) {
             ctx->done = true;
         }
-        sym_set_dont_skip_refcount(ctx, value);
     }
 
     op(_LOAD_FAST, (-- value)) {
         value = GETLOCAL(oparg);
-        sym_set_dont_skip_refcount(ctx, value);
     }
 
     op(_LOAD_FAST_BORROW, (-- value)) {
-        value = GETLOCAL(oparg);
-        sym_set_skip_refcount(ctx, value);
+        value = PyJitRef_Borrow(GETLOCAL(oparg));
     }
 
     op(_LOAD_FAST_AND_CLEAR, (-- value)) {
         value = GETLOCAL(oparg);
-        JitOptSymbol *temp = sym_new_null(ctx);
+        JitOptRef temp = ref_new_null(ctx);
         GETLOCAL(oparg) = temp;
-        sym_set_dont_skip_refcount(ctx, value);
     }
 
     op(_STORE_FAST, (value --)) {
@@ -105,38 +101,38 @@ dummy_func(void) {
     }
 
     op(_PUSH_NULL, (-- res)) {
-        res = sym_new_null(ctx);
+        res = ref_new_null(ctx);
     }
 
     op(_GUARD_TOS_INT, (value -- value)) {
-        if (sym_matches_type(value, &PyLong_Type)) {
+        if (ref_matches_type(value, &PyLong_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_type(value, &PyLong_Type);
+        ref_set_type(value, &PyLong_Type);
     }
 
     op(_GUARD_NOS_INT, (left, unused -- left, unused)) {
-        if (sym_matches_type(left, &PyLong_Type)) {
+        if (ref_matches_type(left, &PyLong_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_type(left, &PyLong_Type);
+        ref_set_type(left, &PyLong_Type);
     }
 
     op(_CHECK_ATTR_CLASS, (type_version/2, owner -- owner)) {
         PyObject *type = (PyObject *)_PyType_LookupByVersion(type_version);
         if (type) {
-            if (type == sym_get_const(ctx, owner)) {
+            if (type == ref_get_const(ctx, owner)) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
             else {
-                sym_set_const(owner, type);
+                ref_set_const(owner, type);
             }
         }
     }
 
     op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
         assert(type_version);
-        if (sym_matches_type_version(owner, type_version)) {
+        if (ref_matches_type_version(owner, type_version)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         } else {
             // add watcher so that whenever the type changes we invalidate this
@@ -148,7 +144,7 @@ dummy_func(void) {
                 // if it wasn't this means that the type version was previously set to something else
                 // and we set the owner to bottom, so we don't need to add a watcher because we must have
                 // already added one earlier.
-                if (sym_set_type_version(owner, type_version)) {
+                if (ref_set_type_version(owner, type_version)) {
                     PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
                     _Py_BloomFilter_Add(dependencies, type);
                 }
@@ -158,27 +154,27 @@ dummy_func(void) {
     }
 
     op(_GUARD_TOS_FLOAT, (value -- value)) {
-        if (sym_matches_type(value, &PyFloat_Type)) {
+        if (ref_matches_type(value, &PyFloat_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_type(value, &PyFloat_Type);
+        ref_set_type(value, &PyFloat_Type);
     }
 
     op(_GUARD_NOS_FLOAT, (left, unused -- left, unused)) {
-        if (sym_matches_type(left, &PyFloat_Type)) {
+        if (ref_matches_type(left, &PyFloat_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_type(left, &PyFloat_Type);
+        ref_set_type(left, &PyFloat_Type);
     }
 
     op(_BINARY_OP, (lhs, rhs -- res)) {
-        bool lhs_int = sym_matches_type(lhs, &PyLong_Type);
-        bool rhs_int = sym_matches_type(rhs, &PyLong_Type);
-        bool lhs_float = sym_matches_type(lhs, &PyFloat_Type);
-        bool rhs_float = sym_matches_type(rhs, &PyFloat_Type);
+        bool lhs_int = ref_matches_type(lhs, &PyLong_Type);
+        bool rhs_int = ref_matches_type(rhs, &PyLong_Type);
+        bool lhs_float = ref_matches_type(lhs, &PyFloat_Type);
+        bool rhs_float = ref_matches_type(rhs, &PyFloat_Type);
         if (!((lhs_int || lhs_float) && (rhs_int || rhs_float))) {
             // There's something other than an int or float involved:
-            res = sym_new_unknown(ctx);
+            res = ref_new_unknown(ctx);
         }
         else if (oparg == NB_POWER || oparg == NB_INPLACE_POWER) {
             // This one's fun... the *type* of the result depends on the
@@ -195,195 +191,195 @@ dummy_func(void) {
             if (rhs_float) {
                 // Case D, E, F, or G... can't know without the sign of the LHS
                 // or whether the RHS is whole, which isn't worth the effort:
-                res = sym_new_unknown(ctx);
+                res = ref_new_unknown(ctx);
             }
             else if (lhs_float) {
                 // Case C:
-                res = sym_new_type(ctx, &PyFloat_Type);
+                res = ref_new_type(ctx, &PyFloat_Type);
             }
-            else if (!sym_is_const(ctx, rhs)) {
+            else if (!ref_is_const(ctx, rhs)) {
                 // Case A or B... can't know without the sign of the RHS:
-                res = sym_new_unknown(ctx);
+                res = ref_new_unknown(ctx);
             }
-            else if (_PyLong_IsNegative((PyLongObject *)sym_get_const(ctx, rhs))) {
+            else if (_PyLong_IsNegative((PyLongObject *)ref_get_const(ctx, rhs))) {
                 // Case B:
-                res = sym_new_type(ctx, &PyFloat_Type);
+                res = ref_new_type(ctx, &PyFloat_Type);
             }
             else {
                 // Case A:
-                res = sym_new_type(ctx, &PyLong_Type);
+                res = ref_new_type(ctx, &PyLong_Type);
             }
         }
         else if (oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE) {
-            res = sym_new_type(ctx, &PyFloat_Type);
+            res = ref_new_type(ctx, &PyFloat_Type);
         }
         else if (lhs_int && rhs_int) {
-            res = sym_new_type(ctx, &PyLong_Type);
+            res = ref_new_type(ctx, &PyLong_Type);
         }
         else {
-            res = sym_new_type(ctx, &PyFloat_Type);
+            res = ref_new_type(ctx, &PyFloat_Type);
         }
     }
 
     op(_BINARY_OP_ADD_INT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-            assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-            PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(ctx, left),
-                                         (PyLongObject *)sym_get_const(ctx, right));
+        if (ref_is_const(ctx, left) && ref_is_const(ctx, right)) {
+            assert(PyLong_CheckExact(ref_get_const(ctx, left)));
+            assert(PyLong_CheckExact(ref_get_const(ctx, right)));
+            PyObject *temp = _PyLong_Add((PyLongObject *)ref_get_const(ctx, left),
+                                         (PyLongObject *)ref_get_const(ctx, right));
             if (temp == NULL) {
                 goto error;
             }
-            res = sym_new_const(ctx, temp);
+            res = ref_new_const(ctx, temp);
             Py_DECREF(temp);
             // TODO gh-115506:
             // replace opcode with constant propagated one and add tests!
         }
         else {
-            res = sym_new_type(ctx, &PyLong_Type);
+            res = ref_new_type(ctx, &PyLong_Type);
         }
     }
 
     op(_BINARY_OP_SUBTRACT_INT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-            assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-            PyObject *temp = _PyLong_Subtract((PyLongObject *)sym_get_const(ctx, left),
-                                              (PyLongObject *)sym_get_const(ctx, right));
+        if (ref_is_const(ctx, left) && ref_is_const(ctx, right)) {
+            assert(PyLong_CheckExact(ref_get_const(ctx, left)));
+            assert(PyLong_CheckExact(ref_get_const(ctx, right)));
+            PyObject *temp = _PyLong_Subtract((PyLongObject *)ref_get_const(ctx, left),
+                                              (PyLongObject *)ref_get_const(ctx, right));
             if (temp == NULL) {
                 goto error;
             }
-            res = sym_new_const(ctx, temp);
+            res = ref_new_const(ctx, temp);
             Py_DECREF(temp);
             // TODO gh-115506:
             // replace opcode with constant propagated one and add tests!
         }
         else {
-            res = sym_new_type(ctx, &PyLong_Type);
+            res = ref_new_type(ctx, &PyLong_Type);
         }
     }
 
     op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-            assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-            PyObject *temp = _PyLong_Multiply((PyLongObject *)sym_get_const(ctx, left),
-                                              (PyLongObject *)sym_get_const(ctx, right));
+        if (ref_is_const(ctx, left) && ref_is_const(ctx, right)) {
+            assert(PyLong_CheckExact(ref_get_const(ctx, left)));
+            assert(PyLong_CheckExact(ref_get_const(ctx, right)));
+            PyObject *temp = _PyLong_Multiply((PyLongObject *)ref_get_const(ctx, left),
+                                              (PyLongObject *)ref_get_const(ctx, right));
             if (temp == NULL) {
                 goto error;
             }
-            res = sym_new_const(ctx, temp);
+            res = ref_new_const(ctx, temp);
             Py_DECREF(temp);
             // TODO gh-115506:
             // replace opcode with constant propagated one and add tests!
         }
         else {
-            res = sym_new_type(ctx, &PyLong_Type);
+            res = ref_new_type(ctx, &PyLong_Type);
         }
     }
 
     op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
-            assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
+        if (ref_is_const(ctx, left) && ref_is_const(ctx, right)) {
+            assert(PyFloat_CheckExact(ref_get_const(ctx, left)));
+            assert(PyFloat_CheckExact(ref_get_const(ctx, right)));
             PyObject *temp = PyFloat_FromDouble(
-                PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) +
-                PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
+                PyFloat_AS_DOUBLE(ref_get_const(ctx, left)) +
+                PyFloat_AS_DOUBLE(ref_get_const(ctx, right)));
             if (temp == NULL) {
                 goto error;
             }
-            res = sym_new_const(ctx, temp);
+            res = ref_new_const(ctx, temp);
             Py_DECREF(temp);
             // TODO gh-115506:
             // replace opcode with constant propagated one and update tests!
         }
         else {
-            res = sym_new_type(ctx, &PyFloat_Type);
+            res = ref_new_type(ctx, &PyFloat_Type);
         }
         // TODO (gh-134584): Move this to the optimizer generator.
-        if (sym_is_skip_refcount(ctx, left) && sym_is_skip_refcount(ctx, right)) {
+        if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
             REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
         }
     }
 
     op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
-            assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
+        if (ref_is_const(ctx, left) && ref_is_const(ctx, right)) {
+            assert(PyFloat_CheckExact(ref_get_const(ctx, left)));
+            assert(PyFloat_CheckExact(ref_get_const(ctx, right)));
             PyObject *temp = PyFloat_FromDouble(
-                PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) -
-                PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
+                PyFloat_AS_DOUBLE(ref_get_const(ctx, left)) -
+                PyFloat_AS_DOUBLE(ref_get_const(ctx, right)));
             if (temp == NULL) {
                 goto error;
             }
-            res = sym_new_const(ctx, temp);
+            res = ref_new_const(ctx, temp);
             Py_DECREF(temp);
             // TODO gh-115506:
             // replace opcode with constant propagated one and update tests!
         }
         else {
-            res = sym_new_type(ctx, &PyFloat_Type);
+            res = ref_new_type(ctx, &PyFloat_Type);
         }
         // TODO (gh-134584): Move this to the optimizer generator.
-        if (sym_is_skip_refcount(ctx, left) && sym_is_skip_refcount(ctx, right)) {
+        if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
             REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
         }
     }
 
     op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
-            assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
+        if (ref_is_const(ctx, left) && ref_is_const(ctx, right)) {
+            assert(PyFloat_CheckExact(ref_get_const(ctx, left)));
+            assert(PyFloat_CheckExact(ref_get_const(ctx, right)));
             PyObject *temp = PyFloat_FromDouble(
-                PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) *
-                PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
+                PyFloat_AS_DOUBLE(ref_get_const(ctx, left)) *
+                PyFloat_AS_DOUBLE(ref_get_const(ctx, right)));
             if (temp == NULL) {
                 goto error;
             }
-            res = sym_new_const(ctx, temp);
+            res = ref_new_const(ctx, temp);
             Py_DECREF(temp);
             // TODO gh-115506:
             // replace opcode with constant propagated one and update tests!
         }
         else {
-            res = sym_new_type(ctx, &PyFloat_Type);
+            res = ref_new_type(ctx, &PyFloat_Type);
         }
         // TODO (gh-134584): Move this to the optimizer generator.
-        if (sym_is_skip_refcount(ctx, left) && sym_is_skip_refcount(ctx, right)) {
+        if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
             REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
         }
     }
 
     op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            assert(PyUnicode_CheckExact(sym_get_const(ctx, left)));
-            assert(PyUnicode_CheckExact(sym_get_const(ctx, right)));
-            PyObject *temp = PyUnicode_Concat(sym_get_const(ctx, left), sym_get_const(ctx, right));
+        if (ref_is_const(ctx, left) && ref_is_const(ctx, right)) {
+            assert(PyUnicode_CheckExact(ref_get_const(ctx, left)));
+            assert(PyUnicode_CheckExact(ref_get_const(ctx, right)));
+            PyObject *temp = PyUnicode_Concat(ref_get_const(ctx, left), ref_get_const(ctx, right));
             if (temp == NULL) {
                 goto error;
             }
-            res = sym_new_const(ctx, temp);
+            res = ref_new_const(ctx, temp);
             Py_DECREF(temp);
         }
         else {
-            res = sym_new_type(ctx, &PyUnicode_Type);
+            res = ref_new_type(ctx, &PyUnicode_Type);
         }
     }
 
     op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right -- )) {
-        JitOptSymbol *res;
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            assert(PyUnicode_CheckExact(sym_get_const(ctx, left)));
-            assert(PyUnicode_CheckExact(sym_get_const(ctx, right)));
-            PyObject *temp = PyUnicode_Concat(sym_get_const(ctx, left), sym_get_const(ctx, right));
+        JitOptRef res;
+        if (ref_is_const(ctx, left) && ref_is_const(ctx, right)) {
+            assert(PyUnicode_CheckExact(ref_get_const(ctx, left)));
+            assert(PyUnicode_CheckExact(ref_get_const(ctx, right)));
+            PyObject *temp = PyUnicode_Concat(ref_get_const(ctx, left), ref_get_const(ctx, right));
             if (temp == NULL) {
                 goto error;
             }
-            res = sym_new_const(ctx, temp);
+            res = ref_new_const(ctx, temp);
             Py_DECREF(temp);
         }
         else {
-            res = sym_new_type(ctx, &PyUnicode_Type);
+            res = ref_new_type(ctx, &PyUnicode_Type);
         }
         // _STORE_FAST:
         GETLOCAL(this_instr->operand0) = res;
@@ -395,109 +391,109 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_SUBSCR_STR_INT, (str_st, sub_st -- res)) {
-        res = sym_new_type(ctx, &PyUnicode_Type);
+        res = ref_new_type(ctx, &PyUnicode_Type);
     }
 
     op(_BINARY_OP_SUBSCR_TUPLE_INT, (tuple_st, sub_st -- res)) {
-        assert(sym_matches_type(tuple_st, &PyTuple_Type));
-        if (sym_is_const(ctx, sub_st)) {
-            assert(PyLong_CheckExact(sym_get_const(ctx, sub_st)));
-            long index = PyLong_AsLong(sym_get_const(ctx, sub_st));
+        assert(ref_matches_type(tuple_st, &PyTuple_Type));
+        if (ref_is_const(ctx, sub_st)) {
+            assert(PyLong_CheckExact(ref_get_const(ctx, sub_st)));
+            long index = PyLong_AsLong(ref_get_const(ctx, sub_st));
             assert(index >= 0);
-            int tuple_length = sym_tuple_length(tuple_st);
+            int tuple_length = ref_tuple_length(tuple_st);
             if (tuple_length == -1) {
                 // Unknown length
-                res = sym_new_not_null(ctx);
+                res = ref_new_not_null(ctx);
             }
             else {
                 assert(index < tuple_length);
-                res = sym_tuple_getitem(ctx, tuple_st, index);
+                res = ref_tuple_getitem(ctx, tuple_st, index);
             }
         }
         else {
-            res = sym_new_not_null(ctx);
+            res = ref_new_not_null(ctx);
         }
     }
 
     op(_TO_BOOL, (value -- res)) {
         int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
         if (!already_bool) {
-            res = sym_new_truthiness(ctx, value, true);
+            res = ref_new_truthiness(ctx, value, true);
         }
     }
 
     op(_TO_BOOL_BOOL, (value -- value)) {
         int already_bool = optimize_to_bool(this_instr, ctx, value, &value);
         if (!already_bool) {
-            sym_set_type(value, &PyBool_Type);
-            value = sym_new_truthiness(ctx, value, true);
+            ref_set_type(value, &PyBool_Type);
+            value = ref_new_truthiness(ctx, value, true);
         }
     }
 
     op(_TO_BOOL_INT, (value -- res)) {
         int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
         if (!already_bool) {
-            sym_set_type(value, &PyLong_Type);
-            res = sym_new_truthiness(ctx, value, true);
+            ref_set_type(value, &PyLong_Type);
+            res = ref_new_truthiness(ctx, value, true);
         }
     }
 
     op(_TO_BOOL_LIST, (value -- res)) {
         int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
         if (!already_bool) {
-            res = sym_new_type(ctx, &PyBool_Type);
+            res = ref_new_type(ctx, &PyBool_Type);
         }
     }
 
     op(_TO_BOOL_NONE, (value -- res)) {
         int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
         if (!already_bool) {
-            sym_set_const(value, Py_None);
-            res = sym_new_const(ctx, Py_False);
+            ref_set_const(value, Py_None);
+            res = ref_new_const(ctx, Py_False);
         }
     }
 
     op(_GUARD_NOS_UNICODE, (nos, unused -- nos, unused)) {
-        if (sym_matches_type(nos, &PyUnicode_Type)) {
+        if (ref_matches_type(nos, &PyUnicode_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_type(nos, &PyUnicode_Type);
+        ref_set_type(nos, &PyUnicode_Type);
     }
 
     op(_GUARD_TOS_UNICODE, (value -- value)) {
-        if (sym_matches_type(value, &PyUnicode_Type)) {
+        if (ref_matches_type(value, &PyUnicode_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_type(value, &PyUnicode_Type);
+        ref_set_type(value, &PyUnicode_Type);
     }
 
     op(_TO_BOOL_STR, (value -- res)) {
         int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
         if (!already_bool) {
-            res = sym_new_truthiness(ctx, value, true);
+            res = ref_new_truthiness(ctx, value, true);
         }
     }
 
     op(_UNARY_NOT, (value -- res)) {
-        sym_set_type(value, &PyBool_Type);
-        res = sym_new_truthiness(ctx, value, false);
+        ref_set_type(value, &PyBool_Type);
+        res = ref_new_truthiness(ctx, value, false);
     }
 
     op(_COMPARE_OP, (left, right -- res)) {
         if (oparg & 16) {
-            res = sym_new_type(ctx, &PyBool_Type);
+            res = ref_new_type(ctx, &PyBool_Type);
         }
         else {
-            res = _Py_uop_sym_new_not_null(ctx);
+            res = _Py_uop_ref_new_not_null(ctx);
         }
     }
 
     op(_COMPARE_OP_INT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-            assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-            PyObject *tmp = PyObject_RichCompare(sym_get_const(ctx, left),
-                                                 sym_get_const(ctx, right),
+        if (ref_is_const(ctx, left) && ref_is_const(ctx, right)) {
+            assert(PyLong_CheckExact(ref_get_const(ctx, left)));
+            assert(PyLong_CheckExact(ref_get_const(ctx, right)));
+            PyObject *tmp = PyObject_RichCompare(ref_get_const(ctx, left),
+                                                 ref_get_const(ctx, right),
                                                  oparg >> 5);
             if (tmp == NULL) {
                 goto error;
@@ -505,42 +501,42 @@ dummy_func(void) {
             assert(PyBool_Check(tmp));
             assert(_Py_IsImmortal(tmp));
             REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)tmp);
-            res = sym_new_const(ctx, tmp);
+            res = ref_new_const(ctx, tmp);
             Py_DECREF(tmp);
         }
         else {
-            res = sym_new_type(ctx, &PyBool_Type);
+            res = ref_new_type(ctx, &PyBool_Type);
         }
     }
 
     op(_COMPARE_OP_FLOAT, (left, right -- res)) {
-        res = sym_new_type(ctx, &PyBool_Type);
+        res = ref_new_type(ctx, &PyBool_Type);
     }
 
     op(_COMPARE_OP_STR, (left, right -- res)) {
-        res = sym_new_type(ctx, &PyBool_Type);
+        res = ref_new_type(ctx, &PyBool_Type);
     }
 
     op(_IS_OP, (left, right -- b)) {
-        b = sym_new_type(ctx, &PyBool_Type);
+        b = ref_new_type(ctx, &PyBool_Type);
     }
 
     op(_CONTAINS_OP, (left, right -- b)) {
-        b = sym_new_type(ctx, &PyBool_Type);
+        b = ref_new_type(ctx, &PyBool_Type);
     }
 
     op(_CONTAINS_OP_SET, (left, right -- b)) {
-        b = sym_new_type(ctx, &PyBool_Type);
+        b = ref_new_type(ctx, &PyBool_Type);
     }
 
     op(_CONTAINS_OP_DICT, (left, right -- b)) {
-        b = sym_new_type(ctx, &PyBool_Type);
+        b = ref_new_type(ctx, &PyBool_Type);
     }
 
     op(_LOAD_CONST, (-- value)) {
         PyObject *val = PyTuple_GET_ITEM(co->co_consts, oparg);
         REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
-        value = sym_new_const(ctx, val);
+        value = PyJitRef_Borrow(ref_new_const(ctx, val));
     }
 
     op(_LOAD_SMALL_INT, (-- value)) {
@@ -548,35 +544,35 @@ dummy_func(void) {
         assert(val);
         assert(_Py_IsImmortal(val));
         REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
-        value = sym_new_const(ctx, val);
+        value = PyJitRef_Borrow(ref_new_const(ctx, val));
     }
 
     op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
-        value = sym_new_const(ctx, ptr);
+        value = PyJitRef_Borrow(ref_new_const(ctx, ptr));
     }
 
     op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
-        value = sym_new_const(ctx, ptr);
+        value = PyJitRef_Borrow(ref_new_const(ctx, ptr));
     }
 
     op(_POP_TOP_LOAD_CONST_INLINE, (ptr/4, pop -- value)) {
-        value = sym_new_const(ctx, ptr);
+        value = PyJitRef_Borrow(ref_new_const(ctx, ptr));
     }
 
     op(_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
-        value = sym_new_const(ctx, ptr);
+        value = PyJitRef_Borrow(ref_new_const(ctx, ptr));
     }
 
     op(_POP_CALL_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused -- value)) {
-        value = sym_new_const(ctx, ptr);
+        value = PyJitRef_Borrow(ref_new_const(ctx, ptr));
     }
 
     op(_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused, unused -- value)) {
-        value = sym_new_const(ctx, ptr);
+        value = PyJitRef_Borrow(ref_new_const(ctx, ptr));
     }
 
     op(_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused, unused, unused -- value)) {
-        value = sym_new_const(ctx, ptr);
+        value = PyJitRef_Borrow(ref_new_const(ctx, ptr));
     }
 
     op(_COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
@@ -585,23 +581,23 @@ dummy_func(void) {
     }
 
     op(_SWAP, (bottom, unused[oparg-2], top -- bottom, unused[oparg-2], top)) {
-        JitOptSymbol *temp = bottom;
+        JitOptRef temp = bottom;
         bottom = top;
         top = temp;
         assert(oparg >= 2);
     }
 
     op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr)) {
-        attr = sym_new_not_null(ctx);
+        attr = ref_new_not_null(ctx);
         (void)offset;
     }
 
     op(_LOAD_ATTR_MODULE, (dict_version/2, index/1, owner -- attr)) {
         (void)dict_version;
         (void)index;
-        attr = NULL;
-        if (sym_is_const(ctx, owner)) {
-            PyModuleObject *mod = (PyModuleObject *)sym_get_const(ctx, owner);
+        attr = PyJitRef_NULL;
+        if (ref_is_const(ctx, owner)) {
+            PyModuleObject *mod = (PyModuleObject *)ref_get_const(ctx, owner);
             if (PyModule_CheckExact(mod)) {
                 PyObject *dict = mod->md_dict;
                 uint64_t watched_mutations = get_mutations(dict);
@@ -609,20 +605,20 @@ dummy_func(void) {
                     PyDict_Watch(GLOBALS_WATCHER_ID, dict);
                     _Py_BloomFilter_Add(dependencies, dict);
                     PyObject *res = convert_global_to_const(this_instr, dict, true);
-                    attr = sym_new_const(ctx, res);
+                    attr = ref_new_const(ctx, res);
                 }
             }
         }
-        if (attr == NULL) {
+        if (PyJitRef_IsNull(attr)) {
             /* No conversion made. We don't know what `attr` is. */
-            attr = sym_new_not_null(ctx);
+            attr = ref_new_not_null(ctx);
         }
     }
 
     op (_PUSH_NULL_CONDITIONAL, ( -- null[oparg & 1])) {
         if (oparg & 1) {
             REPLACE_OP(this_instr, _PUSH_NULL, 0, 0);
-            null[0] = sym_new_null(ctx);
+            null[0] = ref_new_null(ctx);
         }
         else {
             REPLACE_OP(this_instr, _NOP, 0, 0);
@@ -631,25 +627,25 @@ dummy_func(void) {
 
     op(_LOAD_ATTR, (owner -- attr, self_or_null[oparg&1])) {
         (void)owner;
-        attr = sym_new_not_null(ctx);
+        attr = ref_new_not_null(ctx);
         if (oparg & 1) {
-            self_or_null[0] = sym_new_unknown(ctx);
+            self_or_null[0] = ref_new_unknown(ctx);
         }
     }
 
     op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr)) {
-        attr = sym_new_not_null(ctx);
+        attr = ref_new_not_null(ctx);
         (void)hint;
     }
 
     op(_LOAD_ATTR_SLOT, (index/1, owner -- attr)) {
-        attr = sym_new_not_null(ctx);
+        attr = ref_new_not_null(ctx);
         (void)index;
     }
 
     op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr)) {
         (void)descr;
-        PyTypeObject *type = (PyTypeObject *)sym_get_const(ctx, owner);
+        PyTypeObject *type = (PyTypeObject *)ref_get_const(ctx, owner);
         PyObject *name = PyTuple_GET_ITEM(co->co_names, oparg >> 1);
         attr = lookup_attr(ctx, this_instr, type, name,
                            _POP_TOP_LOAD_CONST_INLINE_BORROW,
@@ -658,7 +654,7 @@ dummy_func(void) {
 
     op(_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, (descr/4, owner -- attr)) {
         (void)descr;
-        PyTypeObject *type = sym_get_type(owner);
+        PyTypeObject *type = ref_get_type(owner);
         PyObject *name = PyTuple_GET_ITEM(co->co_names, oparg >> 1);
         attr = lookup_attr(ctx, this_instr, type, name,
                            _POP_TOP_LOAD_CONST_INLINE_BORROW,
@@ -667,7 +663,7 @@ dummy_func(void) {
 
     op(_LOAD_ATTR_NONDESCRIPTOR_NO_DICT, (descr/4, owner -- attr)) {
         (void)descr;
-        PyTypeObject *type = sym_get_type(owner);
+        PyTypeObject *type = ref_get_type(owner);
         PyObject *name = PyTuple_GET_ITEM(co->co_names, oparg >> 1);
         attr = lookup_attr(ctx, this_instr, type, name,
                            _POP_TOP_LOAD_CONST_INLINE_BORROW,
@@ -676,7 +672,7 @@ dummy_func(void) {
 
     op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self)) {
         (void)descr;
-        PyTypeObject *type = sym_get_type(owner);
+        PyTypeObject *type = ref_get_type(owner);
         PyObject *name = PyTuple_GET_ITEM(co->co_names, oparg >> 1);
         attr = lookup_attr(ctx, this_instr, type, name,
                            _LOAD_CONST_UNDER_INLINE_BORROW,
@@ -686,7 +682,7 @@ dummy_func(void) {
 
     op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self)) {
         (void)descr;
-        PyTypeObject *type = sym_get_type(owner);
+        PyTypeObject *type = ref_get_type(owner);
         PyObject *name = PyTuple_GET_ITEM(co->co_names, oparg >> 1);
         attr = lookup_attr(ctx, this_instr, type, name,
                            _LOAD_CONST_UNDER_INLINE_BORROW,
@@ -696,7 +692,7 @@ dummy_func(void) {
 
     op(_LOAD_ATTR_METHOD_LAZY_DICT, (descr/4, owner -- attr, self)) {
         (void)descr;
-        PyTypeObject *type = sym_get_type(owner);
+        PyTypeObject *type = ref_get_type(owner);
         PyObject *name = PyTuple_GET_ITEM(co->co_names, oparg >> 1);
         attr = lookup_attr(ctx, this_instr, type, name,
                            _LOAD_CONST_UNDER_INLINE_BORROW,
@@ -711,26 +707,26 @@ dummy_func(void) {
     }
 
     op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
-        callable = sym_new_not_null(ctx);
-        self_or_null = sym_new_not_null(ctx);
+        callable = ref_new_not_null(ctx);
+        self_or_null = ref_new_not_null(ctx);
     }
 
     op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
-        if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyFunction_Type)) {
-            assert(PyFunction_Check(sym_get_const(ctx, callable)));
+        if (ref_is_const(ctx, callable) && ref_matches_type(callable, &PyFunction_Type)) {
+            assert(PyFunction_Check(ref_get_const(ctx, callable)));
             REPLACE_OP(this_instr, _CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
-            this_instr->operand1 = (uintptr_t)sym_get_const(ctx, callable);
+            this_instr->operand1 = (uintptr_t)ref_get_const(ctx, callable);
         }
-        sym_set_type(callable, &PyFunction_Type);
+        ref_set_type(callable, &PyFunction_Type);
     }
 
     op(_CHECK_FUNCTION_EXACT_ARGS, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
-        assert(sym_matches_type(callable, &PyFunction_Type));
-        if (sym_is_const(ctx, callable)) {
-            if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
-                PyFunctionObject *func = (PyFunctionObject *)sym_get_const(ctx, callable);
+        assert(ref_matches_type(callable, &PyFunction_Type));
+        if (ref_is_const(ctx, callable)) {
+            if (ref_is_null(self_or_null) || ref_is_not_null(self_or_null)) {
+                PyFunctionObject *func = (PyFunctionObject *)ref_get_const(ctx, callable);
                 PyCodeObject *co = (PyCodeObject *)func->func_code;
-                if (co->co_argcount == oparg + !sym_is_null(self_or_null)) {
+                if (co->co_argcount == oparg + !ref_is_null(self_or_null)) {
                     REPLACE_OP(this_instr, _NOP, 0 ,0);
                 }
             }
@@ -738,8 +734,8 @@ dummy_func(void) {
     }
 
     op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
-        sym_set_null(null);
-        sym_set_type(callable, &PyMethod_Type);
+        ref_set_null(null);
+        ref_set_type(callable, &PyMethod_Type);
     }
 
     op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
@@ -756,13 +752,13 @@ dummy_func(void) {
 
         assert(self_or_null != NULL);
         assert(args != NULL);
-        if (sym_is_not_null(self_or_null)) {
+        if (ref_is_not_null(self_or_null)) {
             // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in VM
             args--;
             argcount++;
         }
 
-        if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
+        if (ref_is_null(self_or_null) || ref_is_not_null(self_or_null)) {
             new_frame = frame_new(ctx, co, 0, args, argcount);
         } else {
             new_frame = frame_new(ctx, co, 0, NULL, 0);
@@ -772,8 +768,8 @@ dummy_func(void) {
 
     op(_MAYBE_EXPAND_METHOD, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
         (void)args;
-        callable = sym_new_not_null(ctx);
-        self_or_null = sym_new_not_null(ctx);
+        callable = ref_new_not_null(ctx);
+        self_or_null = ref_new_not_null(ctx);
     }
 
     op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
@@ -796,8 +792,8 @@ dummy_func(void) {
     op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
         (void)type_version;
         (void)args;
-        callable = sym_new_not_null(ctx);
-        self_or_null = sym_new_not_null(ctx);
+        callable = ref_new_not_null(ctx);
+        self_or_null = ref_new_not_null(ctx);
     }
 
     op(_CREATE_INIT_FRAME, (init, self, args[oparg] -- init_frame: _Py_UOpsAbstractFrame *)) {
@@ -806,7 +802,7 @@ dummy_func(void) {
     }
 
     op(_RETURN_VALUE, (retval -- res)) {
-        JitOptSymbol *temp = retval;
+        JitOptRef temp = retval;
         DEAD(retval);
         SAVE_STACK();
         ctx->frame->stack_pointer = stack_pointer;
@@ -835,7 +831,7 @@ dummy_func(void) {
         ctx->frame->stack_pointer = stack_pointer;
         frame_pop(ctx);
         stack_pointer = ctx->frame->stack_pointer;
-        res = sym_new_unknown(ctx);
+        res = ref_new_unknown(ctx);
 
         /* Stack space handling */
         assert(corresponding_check_stack == NULL);
@@ -853,7 +849,7 @@ dummy_func(void) {
     }
 
     op(_YIELD_VALUE, (unused -- value)) {
-        value = sym_new_unknown(ctx);
+        value = ref_new_unknown(ctx);
     }
 
     op(_FOR_ITER_GEN_FRAME, (unused, unused -- unused, unused, gen_frame: _Py_UOpsAbstractFrame*)) {
@@ -917,7 +913,7 @@ dummy_func(void) {
         (void)top;
         /* This has to be done manually */
         for (int i = 0; i < oparg; i++) {
-            values[i] = sym_new_unknown(ctx);
+            values[i] = ref_new_unknown(ctx);
         }
     }
 
@@ -926,40 +922,40 @@ dummy_func(void) {
         /* This has to be done manually */
         int totalargs = (oparg & 0xFF) + (oparg >> 8) + 1;
         for (int i = 0; i < totalargs; i++) {
-            values[i] = sym_new_unknown(ctx);
+            values[i] = ref_new_unknown(ctx);
         }
     }
 
     op(_ITER_NEXT_RANGE, (iter, null_or_index -- iter, null_or_index, next)) {
-       next = sym_new_type(ctx, &PyLong_Type);
+       next = ref_new_type(ctx, &PyLong_Type);
     }
 
     op(_CALL_TYPE_1, (unused, unused, arg -- res)) {
-        if (sym_has_type(arg)) {
-            res = sym_new_const(ctx, (PyObject *)sym_get_type(arg));
+        if (ref_has_type(arg)) {
+            res = ref_new_const(ctx, (PyObject *)ref_get_type(arg));
         }
         else {
-            res = sym_new_not_null(ctx);
+            res = ref_new_not_null(ctx);
         }
     }
 
     op(_CALL_STR_1, (unused, unused, arg -- res)) {
-        if (sym_matches_type(arg, &PyUnicode_Type)) {
+        if (ref_matches_type(arg, &PyUnicode_Type)) {
             // e.g. str('foo') or str(foo) where foo is known to be a string
             res = arg;
         }
         else {
-            res = sym_new_type(ctx, &PyUnicode_Type);
+            res = ref_new_type(ctx, &PyUnicode_Type);
         }
     }
 
     op(_CALL_ISINSTANCE, (unused, unused, instance, cls -- res)) {
         // the result is always a bool, but sometimes we can
         // narrow it down to True or False
-        res = sym_new_type(ctx, &PyBool_Type);
-        PyTypeObject *inst_type = sym_get_type(instance);
-        PyTypeObject *cls_o = (PyTypeObject *)sym_get_const(ctx, cls);
-        if (inst_type && cls_o && sym_matches_type(cls, &PyType_Type)) {
+        res = ref_new_type(ctx, &PyBool_Type);
+        PyTypeObject *inst_type = ref_get_type(instance);
+        PyTypeObject *cls_o = (PyTypeObject *)ref_get_const(ctx, cls);
+        if (inst_type && cls_o && ref_matches_type(cls, &PyType_Type)) {
             // isinstance(inst, cls) where both inst and cls have
             // known types, meaning we can deduce either True or False
 
@@ -968,50 +964,50 @@ dummy_func(void) {
             if (inst_type == cls_o || PyType_IsSubtype(inst_type, cls_o)) {
                 out = Py_True;
             }
-            sym_set_const(res, out);
+            ref_set_const(res, out);
             REPLACE_OP(this_instr, _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
         }
     }
 
     op(_GUARD_IS_TRUE_POP, (flag -- )) {
-        if (sym_is_const(ctx, flag)) {
-            PyObject *value = sym_get_const(ctx, flag);
+        if (ref_is_const(ctx, flag)) {
+            PyObject *value = ref_get_const(ctx, flag);
             assert(value != NULL);
             eliminate_pop_guard(this_instr, value != Py_True);
         }
-        sym_set_const(flag, Py_True);
+        ref_set_const(flag, Py_True);
     }
 
     op(_GUARD_IS_FALSE_POP, (flag -- )) {
-        if (sym_is_const(ctx, flag)) {
-            PyObject *value = sym_get_const(ctx, flag);
+        if (ref_is_const(ctx, flag)) {
+            PyObject *value = ref_get_const(ctx, flag);
             assert(value != NULL);
             eliminate_pop_guard(this_instr, value != Py_False);
         }
-        sym_set_const(flag, Py_False);
+        ref_set_const(flag, Py_False);
     }
 
     op(_GUARD_IS_NONE_POP, (val -- )) {
-        if (sym_is_const(ctx, val)) {
-            PyObject *value = sym_get_const(ctx, val);
+        if (ref_is_const(ctx, val)) {
+            PyObject *value = ref_get_const(ctx, val);
             assert(value != NULL);
             eliminate_pop_guard(this_instr, !Py_IsNone(value));
         }
-        else if (sym_has_type(val)) {
-            assert(!sym_matches_type(val, &_PyNone_Type));
+        else if (ref_has_type(val)) {
+            assert(!ref_matches_type(val, &_PyNone_Type));
             eliminate_pop_guard(this_instr, true);
         }
-        sym_set_const(val, Py_None);
+        ref_set_const(val, Py_None);
     }
 
     op(_GUARD_IS_NOT_NONE_POP, (val -- )) {
-        if (sym_is_const(ctx, val)) {
-            PyObject *value = sym_get_const(ctx, val);
+        if (ref_is_const(ctx, val)) {
+            PyObject *value = ref_get_const(ctx, val);
             assert(value != NULL);
             eliminate_pop_guard(this_instr, Py_IsNone(value));
         }
-        else if (sym_has_type(val)) {
-            assert(!sym_matches_type(val, &_PyNone_Type));
+        else if (ref_has_type(val)) {
+            assert(!ref_matches_type(val, &_PyNone_Type));
             eliminate_pop_guard(this_instr, false);
         }
     }
@@ -1025,13 +1021,13 @@ dummy_func(void) {
     }
 
     op(_INSERT_NULL, (self -- method_and_self[2])) {
-        method_and_self[0] = sym_new_null(ctx);
+        method_and_self[0] = ref_new_null(ctx);
         method_and_self[1] = self;
     }
 
     op(_LOAD_SPECIAL, (method_and_self[2] -- method_and_self[2])) {
-        method_and_self[0] = sym_new_not_null(ctx);
-        method_and_self[1] = sym_new_unknown(ctx);
+        method_and_self[0] = ref_new_not_null(ctx);
+        method_and_self[1] = ref_new_unknown(ctx);
     }
 
     op(_JUMP_TO_TOP, (--)) {
@@ -1045,154 +1041,154 @@ dummy_func(void) {
 
     op(_REPLACE_WITH_TRUE, (value -- res)) {
         REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
-        res = sym_new_const(ctx, Py_True);
+        res = ref_new_const(ctx, Py_True);
     }
 
     op(_BUILD_TUPLE, (values[oparg] -- tup)) {
-        tup = sym_new_tuple(ctx, oparg, values);
+        tup = ref_new_tuple(ctx, oparg, values);
     }
 
     op(_BUILD_LIST, (values[oparg] -- list)) {
-        list = sym_new_type(ctx, &PyList_Type);
+        list = ref_new_type(ctx, &PyList_Type);
     }
 
     op(_BUILD_SLICE, (args[oparg] -- slice)) {
-        slice = sym_new_type(ctx, &PySlice_Type);
+        slice = ref_new_type(ctx, &PySlice_Type);
     }
 
     op(_BUILD_MAP, (values[oparg*2] -- map)) {
-        map = sym_new_type(ctx, &PyDict_Type);
+        map = ref_new_type(ctx, &PyDict_Type);
     }
 
     op(_BUILD_STRING, (pieces[oparg] -- str)) {
-        str = sym_new_type(ctx, &PyUnicode_Type);
+        str = ref_new_type(ctx, &PyUnicode_Type);
     }
 
     op(_BUILD_SET, (values[oparg] -- set)) {
-        set = sym_new_type(ctx, &PySet_Type);
+        set = ref_new_type(ctx, &PySet_Type);
     }
 
     op(_UNPACK_SEQUENCE_TWO_TUPLE, (seq -- val1, val0)) {
-        val0 = sym_tuple_getitem(ctx, seq, 0);
-        val1 = sym_tuple_getitem(ctx, seq, 1);
+        val0 = ref_tuple_getitem(ctx, seq, 0);
+        val1 = ref_tuple_getitem(ctx, seq, 1);
     }
 
     op(_UNPACK_SEQUENCE_TUPLE, (seq -- values[oparg])) {
         for (int i = 0; i < oparg; i++) {
-            values[i] = sym_tuple_getitem(ctx, seq, oparg - i - 1);
+            values[i] = ref_tuple_getitem(ctx, seq, oparg - i - 1);
         }
     }
 
     op(_CALL_TUPLE_1, (callable, null, arg -- res)) {
-        if (sym_matches_type(arg, &PyTuple_Type)) {
+        if (ref_matches_type(arg, &PyTuple_Type)) {
             // e.g. tuple((1, 2)) or tuple(foo) where foo is known to be a tuple
             res = arg;
         }
         else {
-            res = sym_new_type(ctx, &PyTuple_Type);
+            res = ref_new_type(ctx, &PyTuple_Type);
         }
     }
 
     op(_GUARD_TOS_LIST, (tos -- tos)) {
-        if (sym_matches_type(tos, &PyList_Type)) {
+        if (ref_matches_type(tos, &PyList_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_type(tos, &PyList_Type);
+        ref_set_type(tos, &PyList_Type);
     }
 
     op(_GUARD_NOS_LIST, (nos, unused -- nos, unused)) {
-        if (sym_matches_type(nos, &PyList_Type)) {
+        if (ref_matches_type(nos, &PyList_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_type(nos, &PyList_Type);
+        ref_set_type(nos, &PyList_Type);
     }
 
     op(_GUARD_TOS_TUPLE, (tos -- tos)) {
-        if (sym_matches_type(tos, &PyTuple_Type)) {
+        if (ref_matches_type(tos, &PyTuple_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_type(tos, &PyTuple_Type);
+        ref_set_type(tos, &PyTuple_Type);
     }
 
     op(_GUARD_NOS_TUPLE, (nos, unused -- nos, unused)) {
-        if (sym_matches_type(nos, &PyTuple_Type)) {
+        if (ref_matches_type(nos, &PyTuple_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_type(nos, &PyTuple_Type);
+        ref_set_type(nos, &PyTuple_Type);
     }
 
     op(_GUARD_TOS_DICT, (tos -- tos)) {
-        if (sym_matches_type(tos, &PyDict_Type)) {
+        if (ref_matches_type(tos, &PyDict_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_type(tos, &PyDict_Type);
+        ref_set_type(tos, &PyDict_Type);
     }
 
     op(_GUARD_NOS_DICT, (nos, unused -- nos, unused)) {
-        if (sym_matches_type(nos, &PyDict_Type)) {
+        if (ref_matches_type(nos, &PyDict_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_type(nos, &PyDict_Type);
+        ref_set_type(nos, &PyDict_Type);
     }
 
     op(_GUARD_TOS_ANY_SET, (tos -- tos)) {
-        if (sym_matches_type(tos, &PySet_Type) ||
-            sym_matches_type(tos, &PyFrozenSet_Type))
+        if (ref_matches_type(tos, &PySet_Type) ||
+            ref_matches_type(tos, &PyFrozenSet_Type))
         {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
     }
 
     op(_GUARD_NOS_NULL, (null, unused -- null, unused)) {
-        if (sym_is_null(null)) {
+        if (ref_is_null(null)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_null(null);
+        ref_set_null(null);
     }
 
     op(_GUARD_NOS_NOT_NULL, (nos, unused -- nos, unused)) {
-        if (sym_is_not_null(nos)) {
+        if (ref_is_not_null(nos)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_non_null(nos);
+        ref_set_non_null(nos);
     }
 
     op(_GUARD_THIRD_NULL, (null, unused, unused -- null, unused, unused)) {
-        if (sym_is_null(null)) {
+        if (ref_is_null(null)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_null(null);
+        ref_set_null(null);
     }
 
     op(_GUARD_CALLABLE_TYPE_1, (callable, unused, unused -- callable, unused, unused)) {
-        if (sym_get_const(ctx, callable) == (PyObject *)&PyType_Type) {
+        if (ref_get_const(ctx, callable) == (PyObject *)&PyType_Type) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_const(callable, (PyObject *)&PyType_Type);
+        ref_set_const(callable, (PyObject *)&PyType_Type);
     }
 
     op(_GUARD_CALLABLE_TUPLE_1, (callable, unused, unused -- callable, unused, unused)) {
-        if (sym_get_const(ctx, callable) == (PyObject *)&PyTuple_Type) {
+        if (ref_get_const(ctx, callable) == (PyObject *)&PyTuple_Type) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_const(callable, (PyObject *)&PyTuple_Type);
+        ref_set_const(callable, (PyObject *)&PyTuple_Type);
     }
 
     op(_GUARD_CALLABLE_STR_1, (callable, unused, unused -- callable, unused, unused)) {
-        if (sym_get_const(ctx, callable) == (PyObject *)&PyUnicode_Type) {
+        if (ref_get_const(ctx, callable) == (PyObject *)&PyUnicode_Type) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_const(callable, (PyObject *)&PyUnicode_Type);
+        ref_set_const(callable, (PyObject *)&PyUnicode_Type);
     }
 
     op(_CALL_LEN, (unused, unused, unused -- res)) {
-        res = sym_new_type(ctx, &PyLong_Type);
+        res = ref_new_type(ctx, &PyLong_Type);
     }
 
     op(_GET_LEN, (obj -- obj, len)) {
-        int tuple_length = sym_tuple_length(obj);
+        int tuple_length = ref_tuple_length(obj);
         if (tuple_length == -1) {
-            len = sym_new_type(ctx, &PyLong_Type);
+            len = ref_new_type(ctx, &PyLong_Type);
         }
         else {
             assert(tuple_length >= 0);
@@ -1203,33 +1199,33 @@ dummy_func(void) {
             if (_Py_IsImmortal(temp)) {
                 REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
             }
-            len = sym_new_const(ctx, temp);
+            len = ref_new_const(ctx, temp);
             Py_DECREF(temp);
         }
     }
 
     op(_GUARD_CALLABLE_LEN, (callable, unused, unused -- callable, unused, unused)) {
         PyObject *len = _PyInterpreterState_GET()->callable_cache.len;
-        if (sym_get_const(ctx, callable) == len) {
+        if (ref_get_const(ctx, callable) == len) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_const(callable, len);
+        ref_set_const(callable, len);
     }
 
     op(_GUARD_CALLABLE_ISINSTANCE, (callable, unused, unused, unused -- callable, unused, unused, unused)) {
         PyObject *isinstance = _PyInterpreterState_GET()->callable_cache.isinstance;
-        if (sym_get_const(ctx, callable) == isinstance) {
+        if (ref_get_const(ctx, callable) == isinstance) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_const(callable, isinstance);
+        ref_set_const(callable, isinstance);
     }
 
     op(_GUARD_CALLABLE_LIST_APPEND, (callable, unused, unused -- callable, unused, unused)) {
         PyObject *list_append = _PyInterpreterState_GET()->callable_cache.list_append;
-        if (sym_get_const(ctx, callable) == list_append) {
+        if (ref_get_const(ctx, callable) == list_append) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_const(callable, list_append);
+        ref_set_const(callable, list_append);
     }
 
 // END BYTECODES //

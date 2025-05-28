@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_typedefs.h"      // _PyInterpreterFrame
 #include "pycore_uop_ids.h"
+#include "pycore_stackref.h"
 #include <stdbool.h>
 
 
@@ -180,13 +181,10 @@ typedef enum _JitSymType {
     JIT_SYM_TRUTHINESS_TAG = 9,
 } JitSymType;
 
-#define DONT_SKIP_REFCOUNT 0
-#define SKIP_REFCOUNT 1
 
 typedef struct _jit_opt_known_class {
     struct {
         uint8_t tag;
-        uint8_t skip_refcount;
     };
     uint32_t version;
     PyTypeObject *type;
@@ -195,7 +193,6 @@ typedef struct _jit_opt_known_class {
 typedef struct _jit_opt_known_version {
     struct {
         uint8_t tag;
-        uint8_t skip_refcount;
     };
     uint32_t version;
 } JitOptKnownVersion;
@@ -203,7 +200,6 @@ typedef struct _jit_opt_known_version {
 typedef struct _jit_opt_known_value {
     struct {
         uint8_t tag;
-        uint8_t skip_refcount;
     };
     PyObject *value;
 } JitOptKnownValue;
@@ -213,7 +209,6 @@ typedef struct _jit_opt_known_value {
 typedef struct _jit_opt_tuple {
     struct {
         uint8_t tag;
-        uint8_t skip_refcount;
     };
     uint8_t length;
     uint16_t items[MAX_SYMBOLIC_TUPLE_SIZE];
@@ -222,7 +217,6 @@ typedef struct _jit_opt_tuple {
 typedef struct {
     struct {
         uint8_t tag;
-        uint8_t skip_refcount;
     };
     bool invert;
     uint16_t value;
@@ -231,11 +225,6 @@ typedef struct {
 typedef union _jit_opt_symbol {
     struct {
         uint8_t tag;
-        // Whether this object skips refcount on the stack
-        // (using the _PyStackRef API), or not.
-        // 0 - normal refcounting
-        // 1 - skip refcounting
-        int8_t skip_refcount;
     };
     JitOptKnownClass cls;
     JitOptKnownValue value;
@@ -245,15 +234,65 @@ typedef union _jit_opt_symbol {
 } JitOptSymbol;
 
 
+// This mimics the _PyStackRef API
+typedef union {
+    uintptr_t bits;
+} JitOptRef;
+
+#define JIT_BITS_TO_PTR(REF) ((JitOptSymbol *)((REF).bits))
+#define JIT_BITS_TO_PTR_MASKED(REF) ((JitOptSymbol *)(((REF).bits) & (~Py_TAG_REFCNT)))
+
+static inline JitOptSymbol *
+PyJitRef_AsSymbolBorrow(JitOptRef ref)
+{
+    return JIT_BITS_TO_PTR_MASKED(ref);
+}
+
+bool _Py_uop_sym_is_immortal(JitOptSymbol *sym);
+
+static inline JitOptRef
+PyJitRef_FromSymbolSteal(JitOptSymbol *sym)
+{
+    if (sym == NULL || _Py_uop_sym_is_immortal(sym)) {
+        return (JitOptRef){.bits=(uintptr_t)sym | Py_TAG_REFCNT};
+    }
+    return (JitOptRef){.bits=(uintptr_t)sym};
+}
+
+static inline JitOptRef
+PyJitRef_FromSymbolBorrow(JitOptSymbol *sym)
+{
+    return (JitOptRef){.bits=(uintptr_t)sym | Py_TAG_REFCNT};
+}
+
+static inline JitOptRef
+PyJitRef_Borrow(JitOptRef ref)
+{
+    return (JitOptRef){ .bits = ref.bits | Py_TAG_REFCNT };
+}
+
+static const JitOptRef PyJitRef_NULL = { .bits = PyStackRef_NULL_BITS };
+
+static inline bool
+PyJitRef_IsNull(JitOptRef ref)
+{
+    return ref.bits == PyStackRef_NULL_BITS;
+}
+
+static inline int
+PyJitRef_IsBorrowed(JitOptRef ref)
+{
+    return (ref.bits & Py_TAG_REFCNT) == Py_TAG_REFCNT;
+}
 
 struct _Py_UOpsAbstractFrame {
     // Max stacklen
     int stack_len;
     int locals_len;
 
-    JitOptSymbol **stack_pointer;
-    JitOptSymbol **stack;
-    JitOptSymbol **locals;
+    JitOptRef *stack_pointer;
+    JitOptRef *stack;
+    JitOptRef *locals;
 };
 
 typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
@@ -276,41 +315,36 @@ typedef struct _JitOptContext {
     // Arena for the symbolic types.
     ty_arena t_arena;
 
-    JitOptSymbol **n_consumed;
-    JitOptSymbol **limit;
-    JitOptSymbol *locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
+    JitOptRef *n_consumed;
+    JitOptRef *limit;
+    JitOptRef locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
 } JitOptContext;
 
-extern bool _Py_uop_sym_is_null(JitOptSymbol *sym);
-extern bool _Py_uop_sym_is_not_null(JitOptSymbol *sym);
-extern bool _Py_uop_sym_is_const(JitOptContext *ctx, JitOptSymbol *sym);
-extern PyObject *_Py_uop_sym_get_const(JitOptContext *ctx, JitOptSymbol *sym);
-extern JitOptSymbol *_Py_uop_sym_new_unknown(JitOptContext *ctx);
-extern JitOptSymbol *_Py_uop_sym_new_not_null(JitOptContext *ctx);
-extern JitOptSymbol *_Py_uop_sym_new_type(
+extern bool _Py_uop_ref_is_null(JitOptRef sym);
+extern bool _Py_uop_ref_is_not_null(JitOptRef sym);
+extern bool _Py_uop_ref_is_const(JitOptContext *ctx, JitOptRef sym);
+extern PyObject *_Py_uop_ref_get_const(JitOptContext *ctx, JitOptRef sym);
+extern JitOptRef _Py_uop_ref_new_unknown(JitOptContext *ctx);
+extern JitOptRef _Py_uop_ref_new_not_null(JitOptContext *ctx);
+extern JitOptRef _Py_uop_ref_new_type(
     JitOptContext *ctx, PyTypeObject *typ);
-extern JitOptSymbol *_Py_uop_sym_new_const(JitOptContext *ctx, PyObject *const_val);
-extern JitOptSymbol *_Py_uop_sym_new_null(JitOptContext *ctx);
-extern bool _Py_uop_sym_has_type(JitOptSymbol *sym);
-extern bool _Py_uop_sym_matches_type(JitOptSymbol *sym, PyTypeObject *typ);
-extern bool _Py_uop_sym_matches_type_version(JitOptSymbol *sym, unsigned int version);
-extern void _Py_uop_sym_set_null(JitOptContext *ctx, JitOptSymbol *sym);
-extern void _Py_uop_sym_set_non_null(JitOptContext *ctx, JitOptSymbol *sym);
-extern void _Py_uop_sym_set_type(JitOptContext *ctx, JitOptSymbol *sym, PyTypeObject *typ);
-extern bool _Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptSymbol *sym, unsigned int version);
-extern void _Py_uop_sym_set_const(JitOptContext *ctx, JitOptSymbol *sym, PyObject *const_val);
-extern bool _Py_uop_sym_is_bottom(JitOptSymbol *sym);
-extern int _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptSymbol *sym);
-extern PyTypeObject *_Py_uop_sym_get_type(JitOptSymbol *sym);
-extern bool _Py_uop_sym_is_immortal(JitOptSymbol *sym);
-extern JitOptSymbol *_Py_uop_sym_new_tuple(JitOptContext *ctx, int size, JitOptSymbol **args);
-extern JitOptSymbol *_Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptSymbol *sym, int item);
-extern int _Py_uop_sym_tuple_length(JitOptSymbol *sym);
-extern JitOptSymbol *_Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptSymbol *value, bool truthy);
-
-extern void _Py_uop_sym_set_dont_skip_refcount(JitOptContext *ctx, JitOptSymbol *sym);
-extern bool _Py_uop_sym_is_skip_refcount(JitOptContext *ctx, JitOptSymbol *sym);
-extern void _Py_uop_sym_set_skip_refcount(JitOptContext *ctx, JitOptSymbol *sym);
+extern JitOptRef _Py_uop_ref_new_const(JitOptContext *ctx, PyObject *const_val);
+extern JitOptRef _Py_uop_ref_new_null(JitOptContext *ctx);
+extern bool _Py_uop_ref_has_type(JitOptRef sym);
+extern bool _Py_uop_ref_matches_type(JitOptRef sym, PyTypeObject *typ);
+extern bool _Py_uop_ref_matches_type_version(JitOptRef sym, unsigned int version);
+extern void _Py_uop_ref_set_null(JitOptContext *ctx, JitOptRef sym);
+extern void _Py_uop_ref_set_non_null(JitOptContext *ctx, JitOptRef sym);
+extern void _Py_uop_ref_set_type(JitOptContext *ctx, JitOptRef sym, PyTypeObject *typ);
+extern bool _Py_uop_ref_set_type_version(JitOptContext *ctx, JitOptRef sym, unsigned int version);
+extern void _Py_uop_ref_set_const(JitOptContext *ctx, JitOptRef sym, PyObject *const_val);
+extern bool _Py_uop_ref_is_bottom(JitOptRef sym);
+extern int _Py_uop_ref_truthiness(JitOptContext *ctx, JitOptRef sym);
+extern PyTypeObject *_Py_uop_ref_get_type(JitOptRef sym);
+extern JitOptRef _Py_uop_ref_new_tuple(JitOptContext *ctx, int size, JitOptRef *args);
+extern JitOptRef _Py_uop_ref_tuple_getitem(JitOptContext *ctx, JitOptRef sym, int item);
+extern int _Py_uop_ref_tuple_length(JitOptRef sym);
+extern JitOptRef _Py_uop_ref_new_truthiness(JitOptContext *ctx, JitOptRef value, bool truthy);
 
 extern void _Py_uop_abstractcontext_init(JitOptContext *ctx);
 extern void _Py_uop_abstractcontext_fini(JitOptContext *ctx);
@@ -319,7 +353,7 @@ extern _Py_UOpsAbstractFrame *_Py_uop_frame_new(
     JitOptContext *ctx,
     PyCodeObject *co,
     int curr_stackentries,
-    JitOptSymbol **args,
+    JitOptRef *args,
     int arg_len);
 extern int _Py_uop_frame_pop(JitOptContext *ctx);
 

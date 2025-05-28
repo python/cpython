@@ -72,10 +72,10 @@ def validate_uop(override: Uop, uop: Uop) -> None:
 
 def type_name(var: StackItem) -> str:
     if var.is_array():
-        return "JitOptSymbol **"
+        return "JitOptRef *"
     if var.type:
         return var.type
-    return "JitOptSymbol *"
+    return "JitOptRef "
 
 
 def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
@@ -124,15 +124,15 @@ def emit_default(out: CWriter, uop: Uop, stack: Stack) -> None:
             local.in_local = True
             if var.is_array():
                 if var.size == "1":
-                    out.emit(f"{var.name}[0] = sym_new_not_null(ctx);\n")
+                    out.emit(f"{var.name}[0] = ref_new_not_null(ctx);\n")
                 else:
                     out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-                    out.emit(f"{var.name}[_i] = sym_new_not_null(ctx);\n")
+                    out.emit(f"{var.name}[_i] = ref_new_not_null(ctx);\n")
                     out.emit("}\n")
             elif var.name == "null":
-                out.emit(f"{var.name} = sym_new_null(ctx);\n")
+                out.emit(f"{var.name} = ref_new_null(ctx);\n")
             else:
-                out.emit(f"{var.name} = sym_new_not_null(ctx);\n")
+                out.emit(f"{var.name} = ref_new_not_null(ctx);\n")
 
 
 class OptimizerEmitter(Emitter):
@@ -230,7 +230,7 @@ def generate_abstract_interpreter(
             declare_variables(override, out, skip_inputs=False)
         else:
             declare_variables(uop, out, skip_inputs=True)
-        stack = Stack(extract_bits=False, cast_type="JitOptSymbol *")
+        stack = Stack(extract_bits=True)
         write_uop(override, uop, out, stack, debug, skip_inputs=(override is None))
         out.start_line()
         out.emit("break;\n")
