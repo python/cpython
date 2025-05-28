@@ -202,6 +202,7 @@ or any other SQLite browser, including the SQLite CLI.
          While reorganizing, as much as two times the size of the original database is required
          in free disk space. However, be aware that this factor changes for each :mod:`dbm` submodule.
 
+      .. versionadded:: next
 
 :mod:`dbm.gnu` --- GNU database manager
 ---------------------------------------
@@ -495,3 +496,5 @@ The :mod:`!dbm.dumb` module defines the following:
       .. note::
          While reorganizing, no additional free disk space is required. However, be aware
          that this factor changes for each :mod:`dbm` submodule.
+
+      .. versionadded:: next

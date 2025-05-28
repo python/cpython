@@ -83,6 +83,8 @@ Two additional methods are supported:
    Calls :meth:`sync` and attempts to shrink space used on disk by removing empty
    space resulting from deletions.
 
+   .. versionadded:: next
+
 .. method:: Shelf.close()
 
    Synchronize and close the persistent *dict* object.  Operations on a closed
