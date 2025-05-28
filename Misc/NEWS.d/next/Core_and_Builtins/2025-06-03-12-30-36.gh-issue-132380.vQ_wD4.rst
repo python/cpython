@@ -1,0 +1,4 @@
+When doing a type attribute lookup, do not acquire ``TYPE_LOCK`` unless we need
+to assign a new type version.  While doing the MRO lookup, we don't need to
+hold the lock.  This reduces lock contention, expecially when looking up
+attributes that are not in the type lookup cache.
