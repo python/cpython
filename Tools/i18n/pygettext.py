@@ -152,6 +152,7 @@ from dataclasses import dataclass, field
 from io import BytesIO
 from operator import itemgetter
 
+# Update this to the current python version when modifying this script.
 __version__ = '3.15'
 
 
