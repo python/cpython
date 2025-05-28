@@ -200,12 +200,12 @@ class CompressorTestCase(unittest.TestCase):
         self.assertRaises(TypeError, ZstdCompressor, zstd_dict={1: 2, 3: 4})
 
         # valid range for compression level is [-(1<<17), 22]
-        msg = 'illegal compression level {}; the valid range is [-131072, 22]'
+        msg = r'illegal compression level {}; the valid range is \[-131072, 22\]'
         with self.assertRaisesRegex(ValueError, msg.format(C_INT_MAX)):
             ZstdCompressor(C_INT_MAX)
         with self.assertRaisesRegex(ValueError, msg.format(C_INT_MIN)):
             ZstdCompressor(C_INT_MIN)
-        msg = 'illegal compression level; the valid range is [-131072, 22]'
+        msg = r'illegal compression level; the valid range is \[-131072, 22\]'
         with self.assertRaisesRegex(ValueError, msg):
             ZstdCompressor(level=-(2**1000))
         with self.assertRaisesRegex(ValueError, msg):
