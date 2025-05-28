@@ -140,7 +140,7 @@ class AnyDBMTestCase:
         with dbm.open(_fname, 'r') as d:
             # Early stopping.
             if not hasattr(d, 'reorganize'):
-                self.skipTest(f"method reorganize not available this dbm submodule")
+                self.skipTest("method reorganize not available this dbm submodule")
 
             self.assertRaises(dbm.error, lambda: d.reorganize())
 
@@ -149,7 +149,7 @@ class AnyDBMTestCase:
         with dbm.open(_fname, 'c') as d:
             # Early stopping.
             if not hasattr(d, 'reorganize'):
-                self.skipTest(f"method reorganize not available this dbm submodule")
+                self.skipTest("method reorganize not available this dbm submodule")
 
             keys_before = sorted(d.keys())
             values_before = [d[k] for k in keys_before]
@@ -175,7 +175,7 @@ class AnyDBMTestCase:
         with dbm.open(_fname, 'n') as f:
             # Early stopping.
             if not hasattr(f, 'reorganize'):
-                self.skipTest(f"method reorganize not available this dbm submodule")
+                self.skipTest("method reorganize not available this dbm submodule")
 
             for k in self._dict:
                 f[k.encode('ascii')] = self._dict[k] * 100000
