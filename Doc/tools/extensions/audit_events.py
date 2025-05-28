@@ -258,7 +258,7 @@ def setup(app: Sphinx):
     app.connect("env-purge-doc", audit_events_purge)
     app.connect("env-merge-info", audit_events_merge)
     return {
-        "version": "1.0",
+        "version": "2.0",
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }
