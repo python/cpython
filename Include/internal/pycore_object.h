@@ -1007,6 +1007,8 @@ enum _PyAnnotateFormat {
     _Py_ANNOTATE_FORMAT_STRING = 4,
 };
 
+int _PyObject_SetDict(PyObject *obj, PyObject *value);
+
 #ifdef __cplusplus
 }
 #endif
