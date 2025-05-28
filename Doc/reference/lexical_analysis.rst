@@ -939,11 +939,6 @@ Numeric literals do not include a sign; a phrase like ``-1`` is
 actually an expression composed of the unary operator '``-``' and the literal
 ``1``.
 
-Similarly, there are no complex literals; the expression ``1+2j`` is composed
-of the :ref:`integer literal <integers>` ``1``,
-the :ref:`operator <operators>` '``+``',
-and the :ref:`imaginary literal <imaginary>` ``2j``.
-
 
 .. index::
    single: 0b; integer literal
@@ -1091,18 +1086,55 @@ lexical definitions:
 Imaginary literals
 ^^^^^^^^^^^^^^^^^^
 
-Imaginary literals are described by the following lexical definitions:
+There are no complex literals.
+Instead, :ref:`complex numbers <typesnumeric>` can be written
+as adding the complex number's real part and imaginary part.
 
-.. productionlist:: python-grammar
+For example, the imaginary number 3.1+4\ *i* can be written as adding the
+real number 3.1 to the imaginary number 4\ *i*.
+In Python, the imaginary unit is written ``j`` rather than *i* to prevent
+confusion with a traditional short name for an index variable::
+
+   3.1+4j
+
+This is an expression composed
+of the :ref:`float literal <floating>` ``3.1``,
+the :ref:`operator <operators>` '``+``',
+and the :ref:`imaginary literal <imaginary>` ``4j``.
+Since these are three separate tokens, whitespace is allowed between them::
+
+   3.1 + 4j
+
+The ``j`` suffix, however, may not be separated from the numeric part
+of the imaginary literal.
+
+The numeric part has the same syntax as a floating-point literal.
+Thus, the following are valid imaginary literals::
+
+   3.14j
+   10.j
+   .001j
+   1e100j
+   3.14e-10j
+   3.14_15_93j
+
+If the number only has an integer part, the decimal point can be omitted.
+The number is still evaluated as a floating-point number, not an integer::
+
+   10j
+   0j
+   1000000000000000000000000j   # equivalent to 1e+24j
+
+The ``j`` suffix is case-insensitive::
+
+   3.14J   # equivalent to 3.14j
+
+Formally, imaginary literals are described by the following lexical definition:
+
+.. grammar-snippet::
+   :group: python-grammar
+
    imagnumber: (`floatnumber` | `digitpart`) ("j" | "J")
-
-An imaginary literal yields a complex number with a real part of 0.0.  Complex
-numbers are represented as a pair of floating-point numbers and have the same
-restrictions on their range.  To create a complex number with a nonzero real
-part, add a floating-point number to it, e.g., ``(3+4j)``.  Some examples of
-imaginary literals::
-
-   3.14j   10.j    10j     .001j   1e100j   3.14e-10j   3.14_15_93j
 
 
 .. _operators:
