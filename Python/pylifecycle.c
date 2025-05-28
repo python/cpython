@@ -98,7 +98,7 @@ static PyStatus init_android_streams(PyThreadState *tstate);
 static PyStatus init_apple_streams(PyThreadState *tstate);
 #endif
 static void wait_for_thread_shutdown(PyThreadState *tstate);
-static void wait_for_native_shutdown(PyInterpreterState *interp);
+static void wait_for_interp_references(PyInterpreterState *interp);
 static void finalize_subinterpreters(void);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
@@ -2025,7 +2025,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
     wait_for_thread_shutdown(tstate);
 
     // Wait for the interpreter's reference count to reach zero
-    wait_for_native_shutdown(tstate->interp);
+    wait_for_interp_references(tstate->interp);
 
     // Make any remaining pending calls.
     _Py_FinishPendingCalls(tstate);
@@ -2444,7 +2444,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     wait_for_thread_shutdown(tstate);
 
     // Wait for the interpreter's reference count to reach zero
-    wait_for_native_shutdown(tstate->interp);
+    wait_for_interp_references(tstate->interp);
 
     // Make any remaining pending calls.
     _Py_FinishPendingCalls(tstate);
@@ -3472,10 +3472,10 @@ wait_for_thread_shutdown(PyThreadState *tstate)
     Py_DECREF(threading);
 }
 
-/* Wait for all non-daemon native threads to finish.
+/* Wait for the interpreter's reference count to reach zero.
    See PEP 788. */
 static void
-wait_for_native_shutdown(PyInterpreterState *interp)
+wait_for_interp_references(PyInterpreterState *interp)
 {
     assert(interp != NULL);
     struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
