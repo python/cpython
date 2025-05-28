@@ -10,12 +10,8 @@ import zipfile
 from urllib.request import urlretrieve
 
 
-def retrieve_with_retries(download_location,
-                          output_path,
-                          reporthook,
-                          max_retries = 7,
-                          base_delay = 2.25,
-                          max_jitter = 1.0):
+def retrieve_with_retries(download_location, output_path, reporthook,
+                          max_retries=7, base_delay=2.25, max_jitter=1.0):
     """Download a file with exponential backoff retry and save to disk."""
     for attempt in range(max_retries):
         try:
