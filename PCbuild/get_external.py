@@ -1,12 +1,37 @@
 #!/usr/bin/env python3
 
 import argparse
+import html
 import os
 import pathlib
+import random
 import sys
 import time
 import zipfile
 from urllib.request import urlretrieve
+
+
+def retrieve_with_retries(download_location,
+                          output_path,
+                          reporthook,
+                          max_retries = 7,
+                          base_delay = 2.25,
+                          max_jitter = 1.0):
+    """Download a file with exponential backoff retry and save to disk."""
+    for attempt in range(max_retries):
+        try:
+            resp = urlretrieve(
+                download_location,
+                output_path,
+                reporthook=reporthook,
+            )
+        except ConnectionError as ex:
+            if attempt == max_retries:
+                msg = f"Download from {download_location} failed."
+                raise OSError(msg) from ex
+            time.sleep(base_delay**attempt + random.uniform(0, max_jitter))
+        else:
+            return resp
 
 
 def fetch_zip(commit_hash, zip_dir, *, org='python', binary=False, verbose):
@@ -16,10 +41,10 @@ def fetch_zip(commit_hash, zip_dir, *, org='python', binary=False, verbose):
     if verbose:
         reporthook = print
     zip_dir.mkdir(parents=True, exist_ok=True)
-    filename, headers = urlretrieve(
+    filename, _headers = retrieve_with_retries(
         url,
         zip_dir / f'{commit_hash}.zip',
-        reporthook=reporthook,
+        reporthook
     )
     return filename
 
