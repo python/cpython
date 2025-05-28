@@ -2258,6 +2258,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo -- res)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
             res = sym_new_known(ctx, foo);
         }
         """
@@ -2272,9 +2273,9 @@ class TestGeneratedAbstractCases(unittest.TestCase):
                 JitOptSymbol *foo_sym = foo;
                 _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
                 _PyStackRef res_stackref;
-                /* Start of pure uop copied from bytecodes for constant evaluation */
+                /* Start of uop copied from bytecodes for constant evaluation */
                 res_stackref = body(foo);
-                /* End of pure uop copied from bytecodes for constant evaluation */
+                /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 stack_pointer[-1] = res;
             }
@@ -2300,6 +2301,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo -- res)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);        
             res = sym_new_known(ctx, foo);
         }
         """
@@ -2314,14 +2316,14 @@ class TestGeneratedAbstractCases(unittest.TestCase):
                 JitOptSymbol *foo_sym = foo;
                 _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
                 _PyStackRef res_stackref;
-                /* Start of pure uop copied from bytecodes for constant evaluation */
+                /* Start of uop copied from bytecodes for constant evaluation */
                 if (foo) {
                     res_stackref = body(foo);
                 }
                 else {
                     res_stackref = 1;
                 }
-                /* End of pure uop copied from bytecodes for constant evaluation */
+                /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 stack_pointer[-1] = res;
             }
@@ -2347,6 +2349,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo[2] -- res)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo[2]);
             res = sym_new_unknown(ctx);
         }
         """

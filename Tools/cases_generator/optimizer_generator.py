@@ -150,7 +150,8 @@ class OptimizerEmitter(Emitter):
 
     def __init__(self, out: CWriter, labels: dict[str, Label]):
         super().__init__(out, labels)
-        self._replacers["REPLACE_OPCODE_IF_EVALUTES_PURE"] = self.replace_opcode_if_evaluates_pure
+        self._replacers["REPLACE_OPCODE_IF_EVALUATES_PURE"] = self.replace_opcode_if_evaluates_pure
+        self.is_abstract = True
 
     def emit_save(self, storage: Storage) -> None:
         storage.flush(self.out)
@@ -224,10 +225,10 @@ def write_uop_pure_evaluation_region_header(
     # No reference management of outputs needed.
     for var in storage.outputs:
         var.in_local = True
-    emitter.emit("/* Start of pure uop copied from bytecodes for constant evaluation */\n")
-    emitter.emit_tokens(uop, storage, inst=None, emit_braces=False, is_abstract=True)
+    emitter.emit("/* Start of uop copied from bytecodes for constant evaluation */\n")
+    emitter.emit_tokens(uop, storage, inst=None, emit_braces=False)
     out.start_line()
-    emitter.emit("/* End of pure uop copied from bytecodes for constant evaluation */\n")
+    emitter.emit("/* End of uop copied from bytecodes for constant evaluation */\n")
     # Finally, assign back the output stackrefs to symbolics.
     for outp in uop.stack.outputs:
         # All new stackrefs are created from new references.
@@ -277,14 +278,13 @@ def write_uop(
             # No reference management of inputs needed.
             for var in storage.inputs:  # type: ignore[possibly-undefined]
                 var.in_local = False
-            replace_opcode_if_evaluates_pure = uop_variable_used(override, "REPLACE_OPCODE_IF_EVALUTES_PURE")
+            replace_opcode_if_evaluates_pure = uop_variable_used(override, "REPLACE_OPCODE_IF_EVALUATES_PURE")
             if replace_opcode_if_evaluates_pure:
                 write_uop_pure_evaluation_region_header(uop, out, stack)
             out.start_line()
             if override:
                 emitter = OptimizerEmitter(out, {})
-                _, storage = emitter.emit_tokens(override, storage, inst=None,
-                                                 emit_braces=False, is_abstract=True)
+                _, storage = emitter.emit_tokens(override, storage, inst=None, emit_braces=False)
                 storage.flush(out)
             else:
                 emit_default(out, uop, stack)
