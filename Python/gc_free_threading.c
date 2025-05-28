@@ -1170,6 +1170,26 @@ has_legacy_finalizer(PyObject *op)
     return Py_TYPE(op)->tp_del != NULL;
 }
 
+static void
+maybe_enable_deferred_refcount(PyObject *op)
+{
+    assert(op != NULL);
+    if (has_legacy_finalizer(op)) {
+        // Objects with finalizers would be broken by
+        // deferred reference counting.
+        return;
+    }
+
+    uint8_t bits = op->ob_gc_bits;
+    if ((bits & _PyGC_BITS_DEFERRED) != 0) {
+        // This object already has deferred refcounting
+        return;
+    }
+
+    op->ob_gc_bits |= _PyGC_BITS_DEFERRED;
+    op->ob_ref_shared += _Py_REF_SHARED(_Py_REF_DEFERRED, 0);
+}
+
 static bool
 scan_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
                   void *block, size_t block_size, void *args)
@@ -1198,6 +1218,11 @@ scan_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
             worklist_push(&state->unreachable, op);
         }
         return true;
+    } else if (_Py_REF_SHARED(Py_REFCNT(op), 0) >= 3) {
+        // Objects with 3 or more shared references are candidates
+        // for deferred reference counting.
+        // This probably needs tuning.
+        maybe_enable_deferred_refcount(op);
     }
 
     if (state->reason == _Py_GC_REASON_SHUTDOWN) {
