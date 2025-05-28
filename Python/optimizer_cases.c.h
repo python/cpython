@@ -126,6 +126,12 @@
             break;
         }
 
+        case _POP_ITER: {
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _END_SEND: {
             JitOptSymbol *val;
             val = sym_new_not_null(ctx);
@@ -1557,8 +1563,13 @@
 
         case _GET_ITER: {
             JitOptSymbol *iter;
+            JitOptSymbol *index_or_null;
             iter = sym_new_not_null(ctx);
+            index_or_null = sym_new_not_null(ctx);
             stack_pointer[-1] = iter;
+            stack_pointer[0] = index_or_null;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -1604,6 +1615,12 @@
         }
 
         case _ITER_CHECK_TUPLE: {
+            JitOptSymbol *iter;
+            iter = stack_pointer[-2];
+            if (sym_matches_type(iter, &PyTuple_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_type(iter, &PyTuple_Type);
             break;
         }
 
