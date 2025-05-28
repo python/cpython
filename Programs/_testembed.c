@@ -2354,7 +2354,10 @@ test_thread_state_ensure(void)
     _testembed_initialize();
     PyThread_handle_t handle;
     PyThread_ident_t ident;
-    PyInterpreterRef ref = PyInterpreterRef_Get();
+    PyInterpreterRef ref;
+    if (PyInterpreterRef_Get(&ref) < 0) {
+        return -1;
+    };
     ThreadData data = { ref };
     if (PyThread_start_joinable_thread(do_tstate_ensure, &data,
                                        &ident, &handle) < 0) {

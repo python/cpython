@@ -2546,6 +2546,16 @@ toggle_reftrace_printer(PyObject *ob, PyObject *arg)
     Py_RETURN_NONE;
 }
 
+static PyInterpreterRef
+get_strong_ref(void)
+{
+    PyInterpreterRef ref;
+    if (PyInterpreterRef_Get(&ref) < 0) {
+        Py_FatalError("strong reference should not have failed");
+    }
+    return ref;
+}
+
 static PyObject *
 test_interp_refcount(PyObject *self, PyObject *unused)
 {
@@ -2555,16 +2565,16 @@ test_interp_refcount(PyObject *self, PyObject *unused)
 
     // Reference counts are technically 0 by default
     assert(_PyInterpreterState_Refcount(interp) == 0);
-    ref1 = PyInterpreterRef_Get();
+    ref1 = get_strong_ref();
     assert(_PyInterpreterState_Refcount(interp) == 1);
-    ref2 = PyInterpreterRef_Get();
+    ref2 = get_strong_ref();
     assert(_PyInterpreterState_Refcount(interp) == 2);
     PyInterpreterRef_Close(ref1);
     assert(_PyInterpreterState_Refcount(interp) == 1);
     PyInterpreterRef_Close(ref2);
     assert(_PyInterpreterState_Refcount(interp) == 0);
 
-    ref1 = PyInterpreterRef_Get();
+    ref1 = get_strong_ref();
     ref2 = PyInterpreterRef_Dup(ref1);
     assert(_PyInterpreterState_Refcount(interp) == 2);
     assert(PyInterpreterRef_AsInterpreter(ref1) == interp);
@@ -2580,7 +2590,10 @@ static PyObject *
 test_interp_weak_ref(PyObject *self, PyObject *unused)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    PyInterpreterWeakRef wref = PyInterpreterWeakRef_Get();
+    PyInterpreterWeakRef wref;
+    if (PyInterpreterWeakRef_Get(&wref) < 0) {
+        return NULL;
+    }
     assert(_PyInterpreterState_Refcount(interp) == 0);
 
     PyInterpreterRef ref;
@@ -2598,10 +2611,10 @@ static PyObject *
 test_interp_ensure(PyObject *self, PyObject *unused)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    PyInterpreterRef ref = PyInterpreterRef_Get();
+    PyInterpreterRef ref = get_strong_ref();
     PyThreadState *save_tstate = PyThreadState_Swap(NULL);
     PyThreadState *tstate = Py_NewInterpreter();
-    PyInterpreterRef sub_ref = PyInterpreterRef_Get();
+    PyInterpreterRef sub_ref = get_strong_ref();
     PyInterpreterState *subinterp = PyThreadState_GetInterpreter(tstate);
 
     for (int i = 0; i < 10; ++i) {

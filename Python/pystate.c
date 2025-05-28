@@ -3145,12 +3145,22 @@ _PyInterpreterState_Refcount(PyInterpreterState *interp)
     return refcount;
 }
 
-void
+int
 _PyInterpreterState_Incref(PyInterpreterState *interp)
 {
     assert(interp != NULL);
-    assert(_Py_atomic_load_ssize_relaxed(&interp->threads.finalizing.countdown) >= 0);
+    struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
+    assert(_Py_atomic_load_ssize_relaxed(&finalizing->countdown) >= 0);
+    PyMutex *mutex = &finalizing->mutex;
+    PyMutex_Lock(mutex);
+    if (_PyEvent_IsSet(&finalizing->finished)) {
+        PyMutex_Unlock(mutex);
+        return -1;
+    }
+
     _Py_atomic_add_ssize(&interp->threads.finalizing.countdown, 1);
+    PyMutex_Unlock(mutex);
+    return 0;
 }
 
 static PyInterpreterState *
@@ -3164,19 +3174,29 @@ ref_as_interp(PyInterpreterRef ref)
     return interp;
 }
 
-PyInterpreterRef
-PyInterpreterRef_Get(void)
+int
+PyInterpreterRef_Get(PyInterpreterRef *ref_ptr)
 {
+    assert(ref_ptr != NULL);
     PyInterpreterState *interp = PyInterpreterState_Get();
-    _PyInterpreterState_Incref(interp);
-    return (PyInterpreterRef)interp;
+    if (_PyInterpreterState_Incref(interp) < 0) {
+        PyErr_SetString(PyExc_PythonFinalizationError,
+                        "Cannot acquire strong interpreter references anymore");
+        return -1;
+    }
+    *ref_ptr = (PyInterpreterRef)interp;
+    return 0;
 }
 
 PyInterpreterRef
 PyInterpreterRef_Dup(PyInterpreterRef ref)
 {
     PyInterpreterState *interp = ref_as_interp(ref);
-    _PyInterpreterState_Incref(interp);
+    int res = _PyInterpreterState_Incref(interp);
+    (void)res;
+    // We already hold a strong reference, so it shouldn't be possible
+    // for the interpreter to be at a point where references don't work anymore
+    assert(res == 0);
     return (PyInterpreterRef)interp;
 }
 
@@ -3195,24 +3215,48 @@ PyInterpreterRef_AsInterpreter(PyInterpreterRef ref)
     return interp;
 }
 
-PyInterpreterWeakRef
-PyInterpreterWeakRef_Get(void)
+int
+PyInterpreterWeakRef_Get(PyInterpreterWeakRef *wref_ptr)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    PyInterpreterWeakRef wref = { interp->id };
+    _PyInterpreterWeakRef *wref = PyMem_RawMalloc(sizeof(_PyInterpreterWeakRef));
+    if (wref == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    wref->refcount = 1;
+    wref->id = interp->id;
+    *wref_ptr = (PyInterpreterWeakRef)wref;
+    return 0;
+}
+
+static _PyInterpreterWeakRef *
+wref_handle_as_ptr(PyInterpreterWeakRef wref_handle)
+{
+    _PyInterpreterWeakRef *wref = (_PyInterpreterWeakRef *)wref_handle;
+    if (wref == NULL) {
+        Py_FatalError("Got a null weak interpreter reference, likely due to use after close.");
+    }
+
     return wref;
 }
 
 PyInterpreterWeakRef
-PyInterpreterWeakRef_Dup(PyInterpreterWeakRef wref)
+PyInterpreterWeakRef_Dup(PyInterpreterWeakRef wref_handle)
 {
+    _PyInterpreterWeakRef *wref = wref_handle_as_ptr(wref_handle);
+    ++wref->refcount;
     return wref;
 }
 
+#undef PyInterpreterWeakRef_Close
 void
-PyInterpreterWeakRef_Close(PyInterpreterWeakRef wref)
+PyInterpreterWeakRef_Close(PyInterpreterWeakRef wref_handle)
 {
-    return;
+    _PyInterpreterWeakRef *wref = wref_handle_as_ptr(wref_handle);
+    if (--wref->refcount == 0) {
+        PyMem_RawFree(wref);
+    }
 }
 
 static int
@@ -3234,10 +3278,11 @@ try_acquire_strong_ref(PyInterpreterState *interp, PyInterpreterRef *strong_ptr)
 }
 
 int
-PyInterpreterWeakRef_AsStrong(PyInterpreterWeakRef wref, PyInterpreterRef *strong_ptr)
+PyInterpreterWeakRef_AsStrong(PyInterpreterWeakRef wref_handle, PyInterpreterRef *strong_ptr)
 {
     assert(strong_ptr != NULL);
-    int64_t interp_id = wref.id;
+    _PyInterpreterWeakRef *wref = wref_handle_as_ptr(wref_handle);
+    int64_t interp_id = wref->id;
     /* Interpreters cannot be deleted while we hold the runtime lock. */
     _PyRuntimeState *runtime = &_PyRuntime;
     HEAD_LOCK(runtime);
@@ -3254,13 +3299,12 @@ PyInterpreterWeakRef_AsStrong(PyInterpreterWeakRef wref, PyInterpreterRef *stron
 }
 
 int
-PyInterpreterState_AsStrong(PyInterpreterState *interp, PyInterpreterRef *strong_ptr)
+PyInterpreterRef_Main(PyInterpreterRef *strong_ptr)
 {
-    assert(interp != NULL);
     assert(strong_ptr != NULL);
     _PyRuntimeState *runtime = &_PyRuntime;
     HEAD_LOCK(runtime);
-    int res = try_acquire_strong_ref(interp, strong_ptr);
+    int res = try_acquire_strong_ref(&runtime->_main_interpreter, strong_ptr);
     HEAD_UNLOCK(runtime);
 
     return res;
