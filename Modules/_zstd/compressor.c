@@ -56,7 +56,7 @@ _zstd_set_c_level(ZstdCompressor *self, int level)
     int max_level = ZSTD_maxCLevel();
     if (level < min_level || level > max_level) {
         PyErr_Format(PyExc_ValueError,
-        "compression level %d not in valid range %d <= level <= %d",
+        "illegal compression level %d; the valid range is [%d, %d]",
             level, min_level, max_level);
         return -1;
     }
@@ -378,7 +378,7 @@ _zstd_ZstdCompressor_new_impl(PyTypeObject *type, PyObject *level,
         if (level_v == -1 && PyErr_Occurred()) {
             if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
                 PyErr_Format(PyExc_ValueError,
-                    "compression level not in valid range %d <= level <= %d",
+                    "illegal compression level; the valid range is [%d, %d]",
                     ZSTD_minCLevel(), ZSTD_maxCLevel());
             }
             goto error;

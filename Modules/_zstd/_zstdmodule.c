@@ -154,7 +154,7 @@ set_parameter_error(int is_compress, int key_v, int value_v)
     /* Error message */
     PyErr_Format(PyExc_ValueError,
         "%s parameter '%s' received an illegal value %d; "
-        "the valid range is %d <= value <= %d",
+        "the valid range is [%d, %d]",
         type, name, value_v, bounds.lowerBound, bounds.upperBound);
 }
 

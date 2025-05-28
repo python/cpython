@@ -200,16 +200,16 @@ class CompressorTestCase(unittest.TestCase):
         self.assertRaises(TypeError, ZstdCompressor, zstd_dict={1: 2, 3: 4})
 
         # valid range for compression level is [-(1<<17), 22]
-        msg = 'compression level {} not in valid range -131072 <= level <= 22'
+        msg = 'illegal compression level {}; the valid range is [-131072, 22]'
         with self.assertRaisesRegex(ValueError, msg.format(C_INT_MAX)):
             ZstdCompressor(C_INT_MAX)
         with self.assertRaisesRegex(ValueError, msg.format(C_INT_MIN)):
             ZstdCompressor(C_INT_MIN)
-        msg = 'compression level not in valid range -131072 <= level <= 22'
+        msg = 'illegal compression level; the valid range is [-131072, 22]'
         with self.assertRaisesRegex(ValueError, msg):
             ZstdCompressor(level=-(2**1000))
         with self.assertRaisesRegex(ValueError, msg):
-            ZstdCompressor(level=(2**1000))
+            ZstdCompressor(level=2**1000)
 
         with self.assertRaises(ValueError):
             ZstdCompressor(options={CompressionParameter.window_log: 100})
@@ -305,7 +305,7 @@ class CompressorTestCase(unittest.TestCase):
         with self.assertRaisesRegex(
             ValueError,
             "compression parameter 'window_log' received an illegal value 100; "
-            r'the valid range is \d+ <= value <= \d+',
+            r'the valid range is \[\d+, \d+\]',
         ):
             compress(b'', options=option)
 
@@ -439,10 +439,17 @@ class DecompressorTestCase(unittest.TestCase):
 
         d1 = d.copy()
         # larger than signed int
+        d1[DecompressionParameter.window_log_max] = 2**1000
+        with self.assertRaises(OverflowError):
+            ZstdDecompressor(None, d1)
+        # smaller than signed int
+        d1[DecompressionParameter.window_log_max] = -(2**1000)
+        with self.assertRaises(OverflowError):
+            ZstdDecompressor(None, d1)
+
         d1[DecompressionParameter.window_log_max] = C_INT_MAX
         with self.assertRaises(ValueError):
             ZstdDecompressor(None, d1)
-        # smaller than signed int
         d1[DecompressionParameter.window_log_max] = C_INT_MIN
         with self.assertRaises(ValueError):
             ZstdDecompressor(None, d1)
@@ -452,7 +459,7 @@ class DecompressorTestCase(unittest.TestCase):
         with self.assertRaisesRegex(
             ValueError,
             "decompression parameter 'window_log_max' received an illegal value 100; "
-            r'the valid range is \d+ <= value <= \d+',
+            r'the valid range is \[\d+, \d+\]',
         ):
             decompress(b'', options=options)
 
