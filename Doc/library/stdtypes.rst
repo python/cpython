@@ -1214,6 +1214,8 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 | ``s[i] = x``                 | item *i* of *s* is replaced by |                     |
 |                              | *x*                            |                     |
 +------------------------------+--------------------------------+---------------------+
+| ``del s[i]``                 | removes item *i* of *s*        |                     |
++------------------------------+--------------------------------+---------------------+
 | ``s[i:j] = t``               | slice of *s* from *i* to *j*   |                     |
 |                              | is replaced by the contents of |                     |
 |                              | the iterable *t*               |                     |
