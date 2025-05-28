@@ -1619,14 +1619,11 @@ class _ZipRepacker:
             # According to the spec, these fields should be zero when data
             # descriptor is used. Otherwise treat as a false positive on
             # random bytes to return early, as scanning for data descriptor
-            # is rather intensive.
+            # is rather expensive.
             if not (zinfo.CRC == zinfo.compress_size == zinfo.file_size == 0):
                 return None
 
-            zip64 = (
-                fheader[_FH_UNCOMPRESSED_SIZE] == 0xffffffff or
-                fheader[_FH_COMPRESSED_SIZE] == 0xffffffff
-            )
+            zip64 = fheader[_FH_UNCOMPRESSED_SIZE] == 0xffffffff
 
             dd = self._scan_data_descriptor(fp, pos, end_offset, zip64)
             if dd is None and not self.strict_descriptor:
