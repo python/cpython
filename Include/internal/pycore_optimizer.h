@@ -258,7 +258,7 @@ PyJitRef_Borrow(JitOptRef ref)
     return (JitOptRef){ .bits = ref.bits | Py_TAG_REFCNT };
 }
 
-static const JitOptRef PyJitRef_NULL = { .bits = PyStackRef_NULL_BITS };
+static const JitOptRef PyJitRef_NULL = (JitOptRef){.bits = PyStackRef_NULL.bits};
 
 static inline bool
 PyJitRef_IsNull(JitOptRef ref)
