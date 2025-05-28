@@ -1,11 +1,9 @@
 import contextlib
 import os
-import re
 import sys
 import tempfile
 import unittest
 
-from io import StringIO
 from test import support
 from test import test_tools
 
@@ -31,12 +29,11 @@ skip_if_different_mount_drives()
 
 test_tools.skip_if_missing("cases_generator")
 with test_tools.imports_under_tool("cases_generator"):
-    from analyzer import analyze_forest, StackItem
+    from analyzer import StackItem
     from cwriter import CWriter
     import parser
     from stack import Local, Stack
     import tier1_generator
-    import opcode_metadata_generator
     import optimizer_generator
 
 

@@ -66,6 +66,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_POP_TWO] = HAS_ESCAPES_FLAG,
     [_PUSH_NULL] = HAS_PURE_FLAG,
     [_END_FOR] = HAS_ESCAPES_FLAG | HAS_NO_SAVE_IP_FLAG,
+    [_POP_ITER] = HAS_ESCAPES_FLAG,
     [_END_SEND] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
     [_UNARY_NEGATIVE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_UNARY_NOT] = HAS_PURE_FLAG,
@@ -205,7 +206,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_FOR_ITER_TIER_TWO] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_ITER_CHECK_LIST] = HAS_EXIT_FLAG,
     [_GUARD_NOT_EXHAUSTED_LIST] = HAS_EXIT_FLAG,
-    [_ITER_NEXT_LIST_TIER_TWO] = HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
+    [_ITER_NEXT_LIST_TIER_TWO] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_ITER_CHECK_TUPLE] = HAS_EXIT_FLAG,
     [_GUARD_NOT_EXHAUSTED_TUPLE] = HAS_EXIT_FLAG,
     [_ITER_NEXT_TUPLE] = 0,
@@ -569,6 +570,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_POP_CALL_TWO] = "_POP_CALL_TWO",
     [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW] = "_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW",
     [_POP_EXCEPT] = "_POP_EXCEPT",
+    [_POP_ITER] = "_POP_ITER",
     [_POP_TOP] = "_POP_TOP",
     [_POP_TOP_LOAD_CONST_INLINE] = "_POP_TOP_LOAD_CONST_INLINE",
     [_POP_TOP_LOAD_CONST_INLINE_BORROW] = "_POP_TOP_LOAD_CONST_INLINE_BORROW",
@@ -730,6 +732,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _END_FOR:
             return 1;
+        case _POP_ITER:
+            return 2;
         case _END_SEND:
             return 2;
         case _UNARY_NEGATIVE:
