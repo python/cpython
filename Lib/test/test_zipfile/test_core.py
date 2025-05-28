@@ -1391,8 +1391,8 @@ class RepackHelperMixin:
 
 class AbstractRemoveTests(RepackHelperMixin):
     @classmethod
-    def setUpClass(self):
-        self.test_files = [
+    def setUpClass(cls):
+        cls.test_files = [
             ('file0.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
             ('file1.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
             ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
@@ -1682,8 +1682,8 @@ class ZstdRemoveTests(AbstractRemoveTests, unittest.TestCase):
 
 class AbstractRepackTests(RepackHelperMixin):
     @classmethod
-    def setUpClass(self):
-        self.test_files = [
+    def setUpClass(cls):
+        cls.test_files = [
             ('file0.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
             ('file1.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
             ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),

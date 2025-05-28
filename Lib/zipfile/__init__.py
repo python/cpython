@@ -1498,7 +1498,7 @@ class _ZipRepacker:
             if zinfo in removed_zinfos:
                 old_header_offset = zinfo.header_offset
                 zinfo.header_offset -= entry_offset
-                self._move_entry_data(
+                self._copy_bytes(
                     fp,
                     old_header_offset + used_entry_size,
                     zinfo.header_offset,
@@ -1515,7 +1515,7 @@ class _ZipRepacker:
                 if entry_offset > 0:
                     old_header_offset = zinfo.header_offset
                     zinfo.header_offset -= entry_offset
-                    self._move_entry_data(fp, old_header_offset, zinfo.header_offset, used_entry_size)
+                    self._copy_bytes(fp, old_header_offset, zinfo.header_offset, used_entry_size)
 
                 if zinfo._end_offset is not None:
                     zinfo._end_offset = zinfo.header_offset + used_entry_size
@@ -1731,7 +1731,7 @@ class _ZipRepacker:
             dd_size
         )
 
-    def _move_entry_data(self, fp, old_offset, new_offset, size):
+    def _copy_bytes(self, fp, old_offset, new_offset, size):
         read_size = 0
         while read_size < size:
             fp.seek(old_offset + read_size)
