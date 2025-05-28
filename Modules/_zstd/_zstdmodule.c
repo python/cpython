@@ -103,16 +103,13 @@ static const ParameterInfo dp_list[] = {
 };
 
 void
-set_parameter_error(const _zstd_state* const state, int is_compress,
-                    int key_v, int value_v)
+set_parameter_error(int is_compress, int key_v, int value_v)
 {
     ParameterInfo const *list;
     int list_size;
-    char const *name;
     char *type;
     ZSTD_bounds bounds;
-    int i;
-    char pos_msg[128];
+    char pos_msg[64];
 
     if (is_compress) {
         list = cp_list;
@@ -126,8 +123,8 @@ set_parameter_error(const _zstd_state* const state, int is_compress,
     }
 
     /* Find parameter's name */
-    name = NULL;
-    for (i = 0; i < list_size; i++) {
+    char const *name = NULL;
+    for (int i = 0; i < list_size; i++) {
         if (key_v == (list+i)->parameter) {
             name = (list+i)->parameter_name;
             break;
@@ -149,20 +146,16 @@ set_parameter_error(const _zstd_state* const state, int is_compress,
         bounds = ZSTD_dParam_getBounds(key_v);
     }
     if (ZSTD_isError(bounds.error)) {
-        PyErr_Format(state->ZstdError,
-                     "Invalid zstd %s parameter \"%s\".",
+        PyErr_Format(PyExc_ValueError, "invalid %s parameter '%s'",
                      type, name);
         return;
     }
 
     /* Error message */
-    PyErr_Format(state->ZstdError,
-                 "Error when setting zstd %s parameter \"%s\", it "
-                 "should %d <= value <= %d, provided value is %d. "
-                 "(%d-bit build)",
-                 type, name,
-                 bounds.lowerBound, bounds.upperBound, value_v,
-                 8*(int)sizeof(Py_ssize_t));
+    PyErr_Format(PyExc_ValueError,
+        "%s parameter '%s' received an illegal value %d; "
+        "the valid range is [%d, %d]",
+        type, name, value_v, bounds.lowerBound, bounds.upperBound);
 }
 
 static inline _zstd_state*
