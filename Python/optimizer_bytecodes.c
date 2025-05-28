@@ -840,7 +840,7 @@ dummy_func(void) {
         value = sym_new_unknown(ctx);
     }
 
-    op(_FOR_ITER_GEN_FRAME, (unused -- unused, gen_frame: _Py_UOpsAbstractFrame*)) {
+    op(_FOR_ITER_GEN_FRAME, (unused, unused -- unused, unused, gen_frame: _Py_UOpsAbstractFrame*)) {
         gen_frame = NULL;
         /* We are about to hit the end of the trace */
         ctx->done = true;
@@ -914,7 +914,14 @@ dummy_func(void) {
         }
     }
 
-    op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
+    op(_ITER_CHECK_TUPLE, (iter, null_or_index -- iter, null_or_index)) {
+        if (sym_matches_type(iter, &PyTuple_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_type(iter, &PyTuple_Type);
+    }
+
+    op(_ITER_NEXT_RANGE, (iter, null_or_index -- iter, null_or_index, next)) {
        next = sym_new_type(ctx, &PyLong_Type);
     }
 
