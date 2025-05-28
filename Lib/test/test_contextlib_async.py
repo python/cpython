@@ -77,23 +77,23 @@ class TestAbstractAsyncContextManager(unittest.TestCase):
             async def __aexit__(self, exc_type, exc_value, traceback):
                 return None
 
-        self.assertTrue(issubclass(ManagerFromScratch, AbstractAsyncContextManager))
+        self.assertIsSubclass(ManagerFromScratch, AbstractAsyncContextManager)
 
         class DefaultEnter(AbstractAsyncContextManager):
             async def __aexit__(self, *args):
                 await super().__aexit__(*args)
 
-        self.assertTrue(issubclass(DefaultEnter, AbstractAsyncContextManager))
+        self.assertIsSubclass(DefaultEnter, AbstractAsyncContextManager)
 
         class NoneAenter(ManagerFromScratch):
             __aenter__ = None
 
-        self.assertFalse(issubclass(NoneAenter, AbstractAsyncContextManager))
+        self.assertNotIsSubclass(NoneAenter, AbstractAsyncContextManager)
 
         class NoneAexit(ManagerFromScratch):
             __aexit__ = None
 
-        self.assertFalse(issubclass(NoneAexit, AbstractAsyncContextManager))
+        self.assertNotIsSubclass(NoneAexit, AbstractAsyncContextManager)
 
 
 class AsyncContextManagerTestCase(unittest.TestCase):
