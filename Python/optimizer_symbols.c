@@ -396,7 +396,7 @@ _Py_uop_ref_set_non_null(JitOptContext *ctx, JitOptRef ref)
     }
 }
 
-JitOptRef 
+JitOptRef
 _Py_uop_ref_new_unknown(JitOptContext *ctx)
 {
     JitOptSymbol *res = sym_new(ctx);
@@ -406,7 +406,7 @@ _Py_uop_ref_new_unknown(JitOptContext *ctx)
     return PyJitRef_FromSymbolSteal(res);
 }
 
-JitOptRef 
+JitOptRef
 _Py_uop_ref_new_not_null(JitOptContext *ctx)
 {
     JitOptSymbol *res = sym_new(ctx);
@@ -417,7 +417,7 @@ _Py_uop_ref_new_not_null(JitOptContext *ctx)
     return PyJitRef_FromSymbolSteal(res);
 }
 
-JitOptRef 
+JitOptRef
 _Py_uop_ref_new_type(JitOptContext *ctx, PyTypeObject *typ)
 {
     JitOptSymbol *res = sym_new(ctx);
@@ -430,7 +430,7 @@ _Py_uop_ref_new_type(JitOptContext *ctx, PyTypeObject *typ)
 }
 
 // Adds a new reference to const_val, owned by the symbol.
-JitOptRef 
+JitOptRef
 _Py_uop_ref_new_const(JitOptContext *ctx, PyObject *const_val)
 {
     assert(const_val != NULL);
@@ -443,7 +443,7 @@ _Py_uop_ref_new_const(JitOptContext *ctx, PyObject *const_val)
     return ref;
 }
 
-JitOptRef 
+JitOptRef
 _Py_uop_ref_new_null(JitOptContext *ctx)
 {
     JitOptSymbol *null_sym = sym_new(ctx);
@@ -574,7 +574,7 @@ _Py_uop_ref_truthiness(JitOptContext *ctx, JitOptRef ref)
     return -1;
 }
 
-JitOptRef 
+JitOptRef
 _Py_uop_ref_new_tuple(JitOptContext *ctx, int size, JitOptRef *args)
 {
     JitOptSymbol *res = sym_new(ctx);
@@ -595,7 +595,7 @@ _Py_uop_ref_new_tuple(JitOptContext *ctx, int size, JitOptRef *args)
     return PyJitRef_FromSymbolSteal(res);
 }
 
-JitOptRef 
+JitOptRef
 _Py_uop_ref_tuple_getitem(JitOptContext *ctx, JitOptRef ref, int item)
 {
     JitOptSymbol *sym = PyJitRef_AsSymbolBorrow(ref);
@@ -651,7 +651,7 @@ _Py_uop_ref_is_immortal(JitOptRef ref)
     return _Py_uop_sym_is_immortal(sym);
 }
 
-JitOptRef 
+JitOptRef
 _Py_uop_ref_new_truthiness(JitOptContext *ctx, JitOptRef ref, bool truthy)
 {
     JitOptSymbol *value = PyJitRef_AsSymbolBorrow(ref);
