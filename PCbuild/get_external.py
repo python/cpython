@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import html
 import os
 import pathlib
 import random
