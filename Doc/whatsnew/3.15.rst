@@ -89,6 +89,22 @@ New modules
 Improved modules
 ================
 
+dbm
+---
+
+* Added new :meth:`!reorganize` methods to :mod:`dbm.dumb` and :mod:`dbm.sqlite3`
+  which allow to recover unused free space previously occupied by deleted entries.
+  (Contributed by Andrea Oliveri in :gh:`134004`.)
+
+
+shelve
+------
+
+* Added new :meth:`!reorganize` method to :mod:`shelve` used to recover unused free
+  space previously occupied by deleted entries.
+  (Contributed by Andrea Oliveri in :gh:`134004`.)
+
+
 ssl
 ---
 
