@@ -214,10 +214,10 @@ and initialize it by calling :c:func:`PyErr_NewException` in the module's
 
    SpamError = PyErr_NewException("spam.error", NULL, NULL);
 
-Since :c:data:`!SpamError` is a global variable, each call to the
-:c:data:`Py_mod_exec` function would overwrite it.
-For now, let's avoid the issue:
-we will block repeated initialization by raising an
+Since :c:data:`!SpamError` is a global variable, it will be overwitten every time
+the module is reinitialized, when the :c:data:`Py_mod_exec` function is called.
+
+For now, let's avoid the issue: we will block repeated initialization by raising an
 :py:exc:`ImportError`::
 
    static PyObject *SpamError = NULL;
@@ -269,8 +269,8 @@ become a dangling pointer. Should it become a dangling pointer, C code which
 raises the exception could cause a core dump or other unintended side effects.
 
 For now, the :c:func:`Py_DECREF` call to remove this reference is missing.
-Even when the Python interpreter shuts down, :c:data:`!SpamError` will not be
-garbage-collected. It will "leak".
+Even when the Python interpreter shuts down, the global :c:data:`!SpamError`
+variable will not be garbage-collected. It will "leak".
 We did, however, ensure that this will happen at most once per process.
 
 We discuss the use of :c:macro:`PyMODINIT_FUNC` as a function return type later in this
