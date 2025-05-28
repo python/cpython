@@ -4272,6 +4272,35 @@
             break;
         }
 
+        case _GET_ITER_RANGE: {
+            _PyStackRef iter;
+            _PyStackRef stop;
+            _PyStackRef index;
+            iter = stack_pointer[-1];
+            PyTypeObject *tp = PyStackRef_TYPE(iter);
+            if (tp != &PyRange_Type) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            if (!_PyRange_IsSimpleCompact(iter_o)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            index = PyStackRef_TagInt(_PyRange_GetStartIfCompact(iter_o));
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            stop = PyStackRef_TagInt(_PyRange_GetStopIfCompact(iter_o));
+            stack_pointer[-1] = stop;
+            stack_pointer[0] = index;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(iter);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            break;
+        }
+
         case _GET_YIELD_FROM_ITER: {
             _PyStackRef iterable;
             _PyStackRef iter;

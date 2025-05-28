@@ -1852,7 +1852,7 @@ class TestSpecializer(TestBase):
         self.assert_specialized(for_iter1, "FOR_ITER_RANGE")
         self.assert_no_opcode(for_iter1, "FOR_ITER")
 
-        r = range(-10, 0)
+        r = range(-20, -10)
         def for_iter2():
             for i in r:
                 self.assertIn(i, r)
@@ -1878,6 +1878,55 @@ class TestSpecializer(TestBase):
         for_iter4()
         self.assert_specialized(for_iter4, "FOR_ITER")
 
+    @cpython_only
+    @requires_specialization_ft
+    def test_get_iter(self):
+
+        L = list(range(2))
+        def for_iter_list():
+            n = 0
+            while n < _testinternalcapi.SPECIALIZATION_THRESHOLD:
+                n += 1
+                for i in L:
+                    self.assertIn(i, L)
+
+        for_iter_list()
+        self.assert_specialized(for_iter_list, "GET_ITER_LIST_OR_TUPLE")
+        self.assert_no_opcode(for_iter_list, "GET_ITER")
+
+        t = tuple(range(2))
+        def for_iter_tuple():
+            n = 0
+            while n < _testinternalcapi.SPECIALIZATION_THRESHOLD:
+                n += 1
+                for i in t:
+                    self.assertIn(i, t)
+
+        for_iter_tuple()
+        self.assert_specialized(for_iter_tuple, "GET_ITER_LIST_OR_TUPLE")
+        self.assert_no_opcode(for_iter_tuple, "GET_ITER")
+
+        def for_iter_generator():
+            n = 0
+            while n < _testinternalcapi.SPECIALIZATION_THRESHOLD:
+                n += 1
+                for i in (i for i in range(2)):
+                    i + 1
+
+        for_iter_generator()
+        self.assert_specialized(for_iter_generator, "GET_ITER_SELF")
+        self.assert_no_opcode(for_iter_generator, "GET_ITER")
+
+        def for_iter_range():
+            n = 0
+            while n < _testinternalcapi.SPECIALIZATION_THRESHOLD:
+                n += 1
+                for i in range(2):
+                    i + 1
+
+        for_iter_range()
+        self.assert_specialized(for_iter_range, "GET_ITER_RANGE")
+        self.assert_no_opcode(for_iter_range, "GET_ITER")
 
 if __name__ == "__main__":
     unittest.main()

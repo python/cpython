@@ -17,6 +17,7 @@
 #include "pycore_uop_ids.h"       // MAX_UOP_ID
 #include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
 #include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
+#include "pycore_range.h"         // _PyRange_IsSimpleCompact()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_unicodeobject.h" // _PyUnicodeASCIIIter_Type
 
@@ -3186,6 +3187,12 @@ _Py_Specialize_GetIter(_PyStackRef iterable, _Py_CODEUNIT *instr)
     if (tp == &PyList_Type || tp == &PyTuple_Type) {
         specialize(instr, GET_ITER_LIST_OR_TUPLE);
         return;
+    }
+    if (tp == &PyRange_Type) {
+        if (_PyRange_IsSimpleCompact(PyStackRef_AsPyObjectBorrow(iterable))) {
+            specialize(instr, GET_ITER_RANGE);
+            return;
+        }
     }
 #ifdef Py_STATS
     _Py_GatherStats_GetIter(iterable);

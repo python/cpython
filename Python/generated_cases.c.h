@@ -6295,6 +6295,48 @@
             DISPATCH();
         }
 
+        TARGET(GET_ITER_RANGE) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = GET_ITER_RANGE;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 2;
+            INSTRUCTION_STATS(GET_ITER_RANGE);
+            static_assert(1 == 1, "incorrect cache size");
+            _PyStackRef iter;
+            _PyStackRef stop;
+            _PyStackRef index;
+            /* Skip 1 cache entry */
+            iter = stack_pointer[-1];
+            PyTypeObject *tp = PyStackRef_TYPE(iter);
+            if (tp != &PyRange_Type) {
+                UPDATE_MISS_STATS(GET_ITER);
+                assert(_PyOpcode_Deopt[opcode] == (GET_ITER));
+                JUMP_TO_PREDICTED(GET_ITER);
+            }
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            if (!_PyRange_IsSimpleCompact(iter_o)) {
+                UPDATE_MISS_STATS(GET_ITER);
+                assert(_PyOpcode_Deopt[opcode] == (GET_ITER));
+                JUMP_TO_PREDICTED(GET_ITER);
+            }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            index = PyStackRef_TagInt(_PyRange_GetStartIfCompact(iter_o));
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            stop = PyStackRef_TagInt(_PyRange_GetStopIfCompact(iter_o));
+            stack_pointer[-1] = stop;
+            stack_pointer[0] = index;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(iter);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            DISPATCH();
+        }
+
         TARGET(GET_ITER_SELF) {
             #if Py_TAIL_CALL_INTERP
             int opcode = GET_ITER_SELF;

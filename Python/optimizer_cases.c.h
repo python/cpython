@@ -1591,6 +1591,18 @@
             break;
         }
 
+        case _GET_ITER_RANGE: {
+            JitOptSymbol *stop;
+            JitOptSymbol *index;
+            stop = sym_new_not_null(ctx);
+            index = sym_new_not_null(ctx);
+            stack_pointer[-1] = stop;
+            stack_pointer[0] = index;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _GET_YIELD_FROM_ITER: {
             JitOptSymbol *iter;
             iter = sym_new_not_null(ctx);

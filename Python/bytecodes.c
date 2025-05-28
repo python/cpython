@@ -3052,6 +3052,7 @@ dummy_func(
         family(GET_ITER, 1) = {
             GET_ITER_LIST_OR_TUPLE,
             GET_ITER_SELF,
+            GET_ITER_RANGE,
         };
 
         specializing op(_SPECIALIZE_GET_ITER, (counter/1, iter -- iter)) {
@@ -3110,6 +3111,16 @@ dummy_func(
                 DEOPT_IF(tp != &PyTuple_Type);
             }
             index0 = PyStackRef_TagInt(0);
+        }
+
+        inst(GET_ITER_RANGE, (unused/1, iter -- stop, index)) {
+            PyTypeObject *tp = PyStackRef_TYPE(iter);
+            DEOPT_IF(tp != &PyRange_Type);
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            DEOPT_IF(!_PyRange_IsSimpleCompact(iter_o));
+            index = PyStackRef_TagInt(_PyRange_GetStartIfCompact(iter_o));
+            stop = PyStackRef_TagInt(_PyRange_GetStopIfCompact(iter_o));
+            PyStackRef_CLOSE(iter);
         }
 
         inst(GET_YIELD_FROM_ITER, (iterable -- iter)) {
