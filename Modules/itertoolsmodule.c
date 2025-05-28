@@ -1219,13 +1219,14 @@ cycle_next(PyObject *op)
     }
     if (PyList_GET_SIZE(lz->saved) == 0)
         return NULL;
-    item = PyList_GET_ITEM(lz->saved, index);
+    item = PyList_GetItemRef(lz->saved, index);
+    assert(item);
     index++;
     if (index >= PyList_GET_SIZE(lz->saved)) {
         index = 0;
     }
     FT_ATOMIC_STORE_SSIZE_RELAXED(lz->index, index);
-    return Py_NewRef(item);
+    return item;
 }
 
 static PyType_Slot cycle_slots[] = {
