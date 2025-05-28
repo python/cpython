@@ -436,17 +436,16 @@ struct interp_call {
 static void
 _interp_call_clear(struct interp_call *call)
 {
-    struct interp_call temp = *call;
+    if (call->func != NULL) {
+        _PyXIData_Clear(NULL, call->func);
+    }
+    if (call->args != NULL) {
+        _PyXIData_Clear(NULL, call->args);
+    }
+    if (call->kwargs != NULL) {
+        _PyXIData_Clear(NULL, call->kwargs);
+    }
     *call = (struct interp_call){0};
-    if (temp.func != NULL) {
-        _PyXIData_Clear(NULL, temp.func);
-    }
-    if (temp.args != NULL) {
-        _PyXIData_Clear(NULL, temp.args);
-    }
-    if (temp.kwargs != NULL) {
-        _PyXIData_Clear(NULL, temp.kwargs);
-    }
 }
 
 static int
@@ -467,9 +466,9 @@ _interp_call_pack(PyThreadState *tstate, struct interp_call *call,
         PyObject *exc = _PyErr_GetRaisedException(tstate);
         if (_PyPickle_GetXIData(tstate, func, &call->_preallocated.func) < 0) {
             _PyErr_SetRaisedException(tstate, exc);
-//unwrap_not_shareable(tstate);
             return -1;
         }
+        Py_DECREF(exc);
     }
     call->func = &call->_preallocated.func;
     // Handle the args.
@@ -482,6 +481,7 @@ _interp_call_pack(PyThreadState *tstate, struct interp_call *call,
             if (_PyObject_GetXIData(
                     tstate, args, fallback, &call->_preallocated.args) < 0)
             {
+                _interp_call_clear(call);
                 return -1;
             }
             call->args = &call->_preallocated.args;
@@ -497,6 +497,7 @@ _interp_call_pack(PyThreadState *tstate, struct interp_call *call,
             if (_PyObject_GetXIData(
                     tstate, kwargs, fallback, &call->_preallocated.kwargs) < 0)
             {
+                _interp_call_clear(call);
                 return -1;
             }
             call->kwargs = &call->_preallocated.kwargs;
@@ -648,11 +649,11 @@ finally:
     (void)_PyXI_Exit(session, &result);
     _PyXI_FreeSession(session);
     if (res < 0) {
-        runres->excinfo = result.excinfo;
+        runres->excinfo = Py_NewRef(result.excinfo);
         runres->badtarget = badtarget;
     }
     else if (result.excinfo != NULL) {
-        runres->excinfo = result.excinfo;
+        runres->excinfo = Py_NewRef(result.excinfo);
         runres->badtarget = badtarget;
         res = -1;
     }
@@ -662,6 +663,7 @@ finally:
             res = -1;
         }
     }
+    _PyXI_ClearResult(&result);
     return res;
 }
 
@@ -1276,12 +1278,16 @@ handle_call_error(struct interp_call *call, struct run_result *runres)
         return 0;
     }
 
+    // Handle the case where _PyXIData_NewObject() fails.
     PyObject *func, *args, *kwargs;
     if (_interp_call_unpack(call, &func, &args, &kwargs) == 0) {
         // Either the problem is intermittent or only affects subinterpreters.
         // This is highly unlikely.
         return 0;
     }
+    Py_DECREF(func);
+    Py_XDECREF(args);
+    Py_XDECREF(kwargs);
     assert(PyErr_Occurred());
     PyThreadState *tstate = _PyThreadState_GET();
     unwrap_not_shareable(tstate);

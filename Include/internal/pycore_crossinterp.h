@@ -354,6 +354,7 @@ typedef struct {
     PyObject *preserved;
     PyObject *excinfo;
 } _PyXI_session_result;
+PyAPI_FUNC(void) _PyXI_ClearResult(_PyXI_session_result *);
 
 PyAPI_FUNC(int) _PyXI_Enter(
     _PyXI_session *session,

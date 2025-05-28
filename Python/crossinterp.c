@@ -2765,6 +2765,13 @@ _PyXI_GetPreserved(_PyXI_session_result *result, const char *name)
     return value;
 }
 
+void
+_PyXI_ClearResult(_PyXI_session_result *result)
+{
+    Py_CLEAR(result->preserved);
+    Py_CLEAR(result->excinfo);
+}
+
 
 /*********************/
 /* runtime lifecycle */
