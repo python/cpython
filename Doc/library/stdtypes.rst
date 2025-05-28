@@ -1220,7 +1220,8 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 |                              | is replaced by the contents of |                     |
 |                              | the iterable *t*               |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``del s[i:j]``               | same as ``s[i:j] = []``        |                     |
+| ``del s[i:j]``               | removes the elements of s[i:j] |                     |
+|                              | (same as ``s[i:j] = []``)      |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s[i:j:k] = t``             | the elements of ``s[i:j:k]``   | \(1)                |
 |                              | are replaced by those of *t*   |                     |
