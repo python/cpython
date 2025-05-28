@@ -306,8 +306,8 @@ or after after Python runtime reinitialization
 In these cases, sharing Python objects between module instances would likely
 cause crashes or undefined behavior.
 
-To avoid such issues, multiple modules created from the same definition should
-be *isolated*: changes to one should not affect the others,
+To avoid such issues, each instance of an extension module should
+be *isolated*: changes to one instance should not implicitly affect the others,
 and all state, including references to Python objects, should be specific to
 a particular module instance.
 See :ref:`isolating-extensions-howto` for more details and a practical guide.
