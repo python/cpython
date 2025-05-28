@@ -141,51 +141,29 @@ def __get_openssl_constructor(name):
         return __get_builtin_constructor(name)
 
 
-def __data_argument(funcname, data_sentinel, kwargs):
-    assert '__data_sentinel' not in kwargs
-    if 'data' in kwargs and 'string' in kwargs or (
-        data_sentinel is not None and ('data' in kwargs or 'string' in kwargs)
-    ):
-        raise TypeError(f"{funcname}(): 'data' and 'string' are mutually exclusive "
-                        f"and support for 'string' keyword parameter is slated for "
-                        f"removal in a future version.")
-    if data_sentinel is None:
-        if 'data' in kwargs:
-            # new(name, data=...)
-            return kwargs.pop('data')
-        elif 'string' in kwargs:
-            # new(name, string=...)
-            return kwargs.pop('string')
-        return b''
-    # new(name, data)
-    return data_sentinel
-
-
-def __py_new(name, __data_sentinel=None, **kwargs):
+def __py_new(name, *args, **kwargs):
     """new(name, data=b'', **kwargs) - Return a new hashing object using the
     named algorithm; optionally initialized with data (which must be
     a bytes-like object).
     """
-    data = __data_argument('__py_new', __data_sentinel, kwargs)
-    return __get_builtin_constructor(name)(data, **kwargs)
+    return __get_builtin_constructor(name)(*args, **kwargs)
 
 
-def __hash_new(name, __data_sentinel=None, **kwargs):
+def __hash_new(name, *args, **kwargs):
     """new(name, data=b'') - Return a new hashing object using the named algorithm;
     optionally initialized with data (which must be a bytes-like object).
     """
-    data = __data_argument('__hash_new', __data_sentinel, kwargs)
     if name in __block_openssl_constructor:
         # Prefer our builtin blake2 implementation.
-        return __get_builtin_constructor(name)(data, **kwargs)
+        return __get_builtin_constructor(name)(*args, **kwargs)
     try:
-        return _hashlib.new(name, data, **kwargs)
+        return _hashlib.new(name, *args, **kwargs)
     except ValueError:
         # If the _hashlib module (OpenSSL) doesn't support the named
         # hash, try using our builtin implementations.
         # This allows for SHA224/256 and SHA384/512 support even though
         # the OpenSSL library prior to 0.9.8 doesn't provide them.
-        return __get_builtin_constructor(name)(data)
+        return __get_builtin_constructor(name)(*args, **kwargs)
 
 
 try:

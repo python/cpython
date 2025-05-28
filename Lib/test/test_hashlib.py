@@ -141,10 +141,8 @@ class HashLibTestCase(unittest.TestCase):
         # of hashlib.new given the algorithm name.
         for algorithm, constructors in self.constructors_to_test.items():
             constructors.add(getattr(hashlib, algorithm))
-            def c(_data=None, _alg=algorithm, **kwargs):
-                if _data is None:
-                    return hashlib.new(_alg, **kwargs)
-                return hashlib.new(_alg, _data, **kwargs)
+            def c(*args, __algorithm_name=algorithm, **kwargs):
+                return hashlib.new(__algorithm_name, *args, **kwargs)
             c.__name__ = f'do_test_algorithm_via_hashlib_new_{algorithm}'
             constructors.add(c)
 
@@ -254,28 +252,52 @@ class HashLibTestCase(unittest.TestCase):
     def test_clinic_signature(self):
         for constructor in self.hash_constructors:
             with self.subTest(constructor.__name__):
+                constructor(b'')
                 constructor(data=b'')
                 constructor(string=b'')  # should be deprecated in the future
 
     def test_clinic_signature_errors(self):
+        nomsg = b''
+        mymsg = b'msg'
         conflicting_call = re.escape(
             "'data' and 'string' are mutually exclusive "
             "and support for 'string' keyword parameter "
             "is slated for removal in a future version."
         )
         duplicated_param = re.escape("given by name ('data') and position")
-        # Depending on whether we call hashlib.__py_new, hashlib.__hash_new,
-        # or _hashlib.new(), we have different errors as the C implementation
-        # does not need an additional sentinel.
-        duplicated_param = f"{conflicting_call}|{duplicated_param}"
-        for constructor in self.hash_constructors:
-            with self.subTest(constructor.__name__):
-                with self.assertRaisesRegex(TypeError, conflicting_call):
-                    constructor(b'', string=b'')
-                with self.assertRaisesRegex(TypeError, conflicting_call):
-                    constructor(data=b'', string=b'')
-            with self.assertRaisesRegex(TypeError, duplicated_param):
-                constructor(b'', data=b'')
+        unexpected_param = re.escape("got an unexpected keyword argument '_'")
+        for args, kwds, errmsg in [
+            # Reject duplicated arguments before unknown keyword arguments.
+            ((nomsg,), dict(data=nomsg, _=nomsg), duplicated_param),
+            ((mymsg,), dict(data=nomsg, _=nomsg), duplicated_param),
+            # Reject duplicated arguments before conflicting ones.
+            *itertools.product(
+                [[nomsg], [mymsg]],
+                [dict(data=nomsg), dict(data=nomsg, string=nomsg)],
+                [duplicated_param]
+            ),
+            # Reject unknown keyword arguments before conflicting ones.
+            *itertools.product(
+                [()],
+                [
+                    dict(_=None),
+                    dict(data=nomsg, _=None),
+                    dict(string=nomsg, _=None),
+                    dict(string=nomsg, data=nomsg, _=None),
+                ],
+                [unexpected_param]
+            ),
+            ((nomsg,), dict(_=None), unexpected_param),
+            ((mymsg,), dict(_=None), unexpected_param),
+            # Reject conflicting arguments.
+            [(nomsg,), dict(string=nomsg), conflicting_call],
+            [(mymsg,), dict(string=nomsg), conflicting_call],
+            [(), dict(data=nomsg, string=nomsg), conflicting_call],
+        ]:
+            for constructor in self.hash_constructors:
+                with self.subTest(constructor.__name__, args=args, kwds=kwds):
+                    with self.assertRaisesRegex(TypeError, errmsg):
+                        constructor(*args, **kwds)
 
     def test_unknown_hash(self):
         self.assertRaises(ValueError, hashlib.new, 'spam spam spam spam spam')

@@ -1057,7 +1057,7 @@ _hashlib.new as _hashlib_HASH_new
     data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
-    string: object(py_default="None") = NULL
+    string: object(c_default="NULL") = None
 
 Return a new hash object using the named algorithm.
 
@@ -1070,7 +1070,7 @@ The MD5 and SHA1 algorithms are always supported.
 static PyObject *
 _hashlib_HASH_new_impl(PyObject *module, const char *name, PyObject *data,
                        int usedforsecurity, PyObject *string)
-/*[clinic end generated code: output=b905aaf9840c1bbd input=72aba089ec2f0daf]*/
+/*[clinic end generated code: output=b905aaf9840c1bbd input=c34af6c6e696d44e]*/
 {
     CALL_HASHLIB_NEW(module, name, data, string, usedforsecurity);
 }
