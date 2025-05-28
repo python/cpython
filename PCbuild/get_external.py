@@ -3,7 +3,6 @@
 import argparse
 import os
 import pathlib
-import random
 import sys
 import time
 import zipfile
@@ -11,7 +10,7 @@ from urllib.request import urlretrieve
 
 
 def retrieve_with_retries(download_location, output_path, reporthook,
-                          max_retries=7, base_delay=2.25, max_jitter=1.0):
+                          max_retries=7):
     """Download a file with exponential backoff retry and save to disk."""
     for attempt in range(max_retries):
         try:
@@ -24,7 +23,7 @@ def retrieve_with_retries(download_location, output_path, reporthook,
             if attempt == max_retries:
                 msg = f"Download from {download_location} failed."
                 raise OSError(msg) from ex
-            time.sleep(base_delay**attempt + random.uniform(0, max_jitter))
+            time.sleep(2.25**attempt)
         else:
             return resp
 
