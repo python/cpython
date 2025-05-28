@@ -352,6 +352,10 @@ module, supports rotation of disk log files.
       Outputs the record to the file, catering for rollover as described
       previously.
 
+   .. method:: shouldRollover(record)
+
+      See if the supplied record would cause the file to exceed the configured size limit.
+
 .. _timed-rotating-file-handler:
 
 TimedRotatingFileHandler
@@ -459,7 +463,11 @@ timed intervals.
    .. method:: getFilesToDelete()
 
       Returns a list of filenames which should be deleted as part of rollover. These
-      are the absolute paths of the oldest backup log files written by the handler.
+
+   .. method:: shouldRollover(record)
+
+      See if enough time has passed for a rollover to occur and if it has, compute
+      the next rollover time.
 
 .. _socket-handler:
 
