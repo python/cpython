@@ -362,8 +362,6 @@
                 assert(WITHIN_STACK_BOUNDS());
             }
             else {
-                (void)(left);
-                (void)(right);
                 res = sym_new_type(ctx, &PyLong_Type);
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
@@ -407,8 +405,6 @@
                 assert(WITHIN_STACK_BOUNDS());
             }
             else {
-                (void)(left);
-                (void)(right);
                 res = sym_new_type(ctx, &PyLong_Type);
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
@@ -452,8 +448,6 @@
                 assert(WITHIN_STACK_BOUNDS());
             }
             else {
-                (void)(left);
-                (void)(right);
                 res = sym_new_type(ctx, &PyLong_Type);
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
@@ -517,8 +511,6 @@
                 assert(WITHIN_STACK_BOUNDS());
             }
             else {
-                (void)(left);
-                (void)(right);
                 res = sym_new_type(ctx, &PyFloat_Type);
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
@@ -562,8 +554,6 @@
                 assert(WITHIN_STACK_BOUNDS());
             }
             else {
-                (void)(left);
-                (void)(right);
                 res = sym_new_type(ctx, &PyFloat_Type);
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
@@ -607,8 +597,6 @@
                 assert(WITHIN_STACK_BOUNDS());
             }
             else {
-                (void)(left);
-                (void)(right);
                 res = sym_new_type(ctx, &PyFloat_Type);
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
@@ -652,8 +640,6 @@
                 assert(WITHIN_STACK_BOUNDS());
             }
             else {
-                (void)(left);
-                (void)(right);
                 res = sym_new_type(ctx, &PyUnicode_Type);
                 stack_pointer[-2] = res;
                 stack_pointer += -1;

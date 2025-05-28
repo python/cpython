@@ -15,6 +15,7 @@ from analyzer import (
     analysis_error,
     CodeSection,
     Label,
+    uop_variable_used,
 )
 from generators_common import (
     DEFAULT_INPUT,
@@ -22,6 +23,7 @@ from generators_common import (
     write_header,
     Emitter,
     TokenIterator,
+    skip_to,
 )
 from cwriter import CWriter
 from typing import TextIO
@@ -146,6 +148,10 @@ def emit_default(out: CWriter, uop: Uop, stack: Stack) -> None:
 
 class OptimizerEmitter(Emitter):
 
+    def __init__(self, out: CWriter, labels: dict[str, Label]):
+        super().__init__(out, labels)
+        self._replacers["REPLACE_OPCODE_IF_EVALUTES_PURE"] = self.replace_opcode_if_evaluates_pure
+
     def emit_save(self, storage: Storage) -> None:
         storage.flush(self.out)
 
@@ -156,6 +162,16 @@ class OptimizerEmitter(Emitter):
         self.out.emit(goto)
         self.out.emit(label)
 
+    def replace_opcode_if_evaluates_pure(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        skip_to(tkn_iter, "SEMI")
+        return True
 
 class OptimizerConstantEmitter(OptimizerEmitter):
     def __init__(self, out: CWriter, labels: dict[str, Label], uop: Uop):
@@ -240,7 +256,7 @@ def write_uop(
     stack = Stack(extract_bits=False, cast_type="JitOptSymbol *")
     try:
         out.start_line()
-        if override or uop.properties.pure:
+        if override:
             storage = Storage.for_uop(stack, prototype, out, check_liveness=False)
         if debug:
             args = []
@@ -257,11 +273,12 @@ def write_uop(
                         type = f"uint{cache.size*16}_t "
                         cast = f"uint{cache.size*16}_t"
                     out.emit(f"{type}{cache.name} = ({cast})this_instr->operand0;\n")
-        if override or uop.properties.pure:
+        if override:
             # No reference management of inputs needed.
             for var in storage.inputs:  # type: ignore[possibly-undefined]
                 var.in_local = False
-            if uop.properties.pure:
+            replace_opcode_if_evaluates_pure = uop_variable_used(override, "REPLACE_OPCODE_IF_EVALUTES_PURE")
+            if replace_opcode_if_evaluates_pure:
                 write_uop_pure_evaluation_region_header(uop, out, stack)
             out.start_line()
             if override:
@@ -272,7 +289,7 @@ def write_uop(
             else:
                 emit_default(out, uop, stack)
             out.start_line()
-            if uop.properties.pure:
+            if replace_opcode_if_evaluates_pure:
                 write_uop_pure_evaluation_region_footer(out)
         else:
             emit_default(out, uop, stack)
@@ -319,7 +336,7 @@ def generate_abstract_interpreter(
         if override:
             declare_variables(override, out, skip_inputs=False)
         else:
-            declare_variables(uop, out, skip_inputs=not uop.properties.pure)
+            declare_variables(uop, out, skip_inputs=True)
         write_uop(override, uop, out, debug)
         out.start_line()
         out.emit("break;\n")

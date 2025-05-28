@@ -222,58 +222,37 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_ADD_INT, (left, right -- res)) {
-        // We need to tell the cases generator that it's being used by the constant generator.
-        // We should fix this in the cases generator.
-        (void)(left);
-        (void)(right);
+        REPLACE_OPCODE_IF_EVALUTES_PURE(left, right);
         res = sym_new_type(ctx, &PyLong_Type);
     }
 
     op(_BINARY_OP_SUBTRACT_INT, (left, right -- res)) {
-        // We need to tell the cases generator that it's being used by the constant generator.
-        // We should fix this in the cases generator.
-        (void)(left);
-        (void)(right);
+        REPLACE_OPCODE_IF_EVALUTES_PURE(left, right);
         res = sym_new_type(ctx, &PyLong_Type);
     }
 
     op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
-        // We need to tell the cases generator that it's being used by the constant generator.
-        // We should fix this in the cases generator.
-        (void)(left);
-        (void)(right);
+        REPLACE_OPCODE_IF_EVALUTES_PURE(left, right);
         res = sym_new_type(ctx, &PyLong_Type);
     }
 
     op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
-        // We need to tell the cases generator that it's being used by the constant generator.
-        // We should fix this in the cases generator.
-        (void)(left);
-        (void)(right);
+        REPLACE_OPCODE_IF_EVALUTES_PURE(left, right);
         res = sym_new_type(ctx, &PyFloat_Type);
     }
 
     op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
-        // We need to tell the cases generator that it's being used by the constant generator.
-        // We should fix this in the cases generator.
-        (void)(left);
-        (void)(right);
+        REPLACE_OPCODE_IF_EVALUTES_PURE(left, right);
         res = sym_new_type(ctx, &PyFloat_Type);
     }
 
     op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
-        // We need to tell the cases generator that it's being used by the constant generator.
-        // We should fix this in the cases generator.
-        (void)(left);
-        (void)(right);
+        REPLACE_OPCODE_IF_EVALUTES_PURE(left, right);
         res = sym_new_type(ctx, &PyFloat_Type);
     }
 
     op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {
-        // We need to tell the cases generator that it's being used here.
-        // We should fix this in the cases generator.
-        (void)(left);
-        (void)(right);
+        REPLACE_OPCODE_IF_EVALUTES_PURE(left, right);
         res = sym_new_type(ctx, &PyUnicode_Type);
     }
 
@@ -386,6 +365,7 @@ dummy_func(void) {
     }
 
     op(_UNARY_NOT, (value -- res)) {
+        REPLACE_OPCODE_IF_EVALUTES_PURE(value);
         sym_set_type(value, &PyBool_Type);
         res = sym_new_truthiness(ctx, value, false);
     }
