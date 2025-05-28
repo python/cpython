@@ -2562,5 +2562,19 @@ class SubinterpreterTests(unittest.TestCase):
         self.assertEqual(interp_results, {})
 
 
+class TestMetaclassConflict(unittest.TestCase):
+    def test_metaclass_conflict_message(self):
+        class MetaFoo(type): pass
+        class MetaBar(type): pass
+        class Bar(metaclass=MetaBar): pass
+        with self.assertRaises(TypeError) as cm:
+            class Foo(Bar, metaclass=MetaFoo): pass
+        msg = str(cm.exception)
+        self.assertIn("Metaclass conflict", msg)
+        self.assertIn("MetaFoo", msg)
+        self.assertIn("MetaBar", msg)
+        self.assertIn("Bar", msg)
+
+
 if __name__ == '__main__':
     unittest.main()

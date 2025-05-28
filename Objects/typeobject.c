@@ -4129,11 +4129,43 @@ _PyType_CalculateMetaclass(PyTypeObject *metatype, PyObject *bases)
             continue;
         }
         /* else: */
-        PyErr_SetString(PyExc_TypeError,
-                        "metaclass conflict: "
-                        "the metaclass of a derived class "
-                        "must be a (non-strict) subclass "
-                        "of the metaclasses of all its bases");
+        /* Construct improved error message */
+        PyObject *declared_meta_name = NULL;
+        PyObject *base_class_name = NULL;
+        PyObject *base_meta_name = NULL;
+        PyObject *format_result = NULL;
+
+        declared_meta_name = PyObject_GetAttrString((PyObject *)winner, "__name__");
+        base_class_name = PyObject_GetAttrString(tmp, "__name__");
+        base_meta_name = PyObject_GetAttrString((PyObject *)tmptype, "__name__");
+
+        if (declared_meta_name && base_class_name && base_meta_name) {
+            format_result = PyUnicode_FromFormat(
+                "Metaclass conflict while defining class:\n"
+                "- Declared metaclass: '%U'\n"
+                "- Incompatible base class: '%U'\n"
+                "- That base is derived from metaclass: '%U'\n"
+                "All base classes must be based on classes derived from the same "
+                "metaclass or a subclass thereof.",
+                declared_meta_name,
+                base_class_name,
+                base_meta_name
+            );
+            if (format_result) {
+                PyErr_SetObject(PyExc_TypeError, format_result);
+                Py_DECREF(format_result);
+            }
+        } else {
+            /* fallback */
+            PyErr_SetString(PyExc_TypeError,
+                "metaclass conflict: "
+                "the metaclass of a derived class must be a (non-strict) "
+                "subclass of the metaclasses of all its bases");
+        }
+
+        Py_XDECREF(declared_meta_name);
+        Py_XDECREF(base_class_name);
+        Py_XDECREF(base_meta_name);
         return NULL;
     }
     return winner;
