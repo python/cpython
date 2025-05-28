@@ -1651,12 +1651,12 @@
         }
 
         case _ITER_CHECK_TUPLE: {
-            JitOptSymbol *iter;
+            JitOptRef iter;
             iter = stack_pointer[-2];
-            if (sym_matches_type(iter, &PyTuple_Type)) {
+            if (ref_matches_type(iter, &PyTuple_Type)) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
-            sym_set_type(iter, &PyTuple_Type);
+            ref_set_type(iter, &PyTuple_Type);
             break;
         }
 

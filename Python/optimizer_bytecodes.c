@@ -927,10 +927,10 @@ dummy_func(void) {
     }
 
     op(_ITER_CHECK_TUPLE, (iter, null_or_index -- iter, null_or_index)) {
-        if (sym_matches_type(iter, &PyTuple_Type)) {
+        if (ref_matches_type(iter, &PyTuple_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_type(iter, &PyTuple_Type);
+        ref_set_type(iter, &PyTuple_Type);
     }
 
     op(_ITER_NEXT_RANGE, (iter, null_or_index -- iter, null_or_index, next)) {
