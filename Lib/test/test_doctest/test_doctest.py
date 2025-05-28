@@ -2383,6 +2383,36 @@ def test_DocTestSuite():
        modified the test globals, which are a copy of the
        sample_doctest module dictionary.  The test globals are
        automatically cleared for us after a test.
+
+       We can also provide a custom test case class:
+
+         >>> class CustomDocTestCase(doctest.DocTestCase):
+         ...     def __init__(self, test, **options):
+         ...         super().__init__(test, **options)
+         ...         self.custom_attr = "custom_value"
+         ...     def runTest(self):
+         ...         self.assertEqual(self.custom_attr, "custom_value")
+         ...         super().runTest()
+
+         >>> suite = doctest.DocTestSuite('test.test_doctest.sample_doctest',
+         ...                              test_case=CustomDocTestCase)
+         >>> result = suite.run(unittest.TestResult())
+         >>> result
+         <unittest.result.TestResult run=9 errors=0 failures=4>
+
+       We can also provide both a custom test case class and a custom runner class:
+
+         >>> class CustomDocTestRunner(doctest.DocTestRunner):
+         ...     def __init__(self, **options):
+         ...         super().__init__(**options)
+         ...         self.custom_attr = "custom_runner"
+         >>> suite = doctest.DocTestSuite('test.test_doctest.sample_doctest',
+         ...                              test_case=CustomDocTestCase,
+         ...                              runner=CustomDocTestRunner)
+         >>> result = suite.run(unittest.TestResult())
+         >>> result
+         <unittest.result.TestResult run=9 errors=0 failures=4>
+
        """
 
 def test_DocFileSuite():
@@ -2542,6 +2572,38 @@ def test_DocFileSuite():
          ...                              encoding='utf-8')
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=3 errors=0 failures=2>
+
+       We can also provide a custom test case class:
+
+         >>> class CustomDocTestCase(doctest.DocFileCase):
+         ...     def __init__(self, test, **options):
+         ...         super().__init__(test, **options)
+         ...         self.custom_attr = "custom_value"
+         ...     def runTest(self):
+         ...         self.assertEqual(self.custom_attr, "custom_value")
+         ...         super().runTest()
+
+         >>> suite = doctest.DocFileSuite('test_doctest.txt',
+         ...                              globs={'favorite_color': 'blue'},
+         ...                              test_case=CustomDocTestCase)
+         >>> result = suite.run(unittest.TestResult())
+         >>> result
+         <unittest.result.TestResult run=1 errors=0 failures=0>
+
+       We can also provide both a custom test case class and a custom runner class:
+
+         >>> class CustomDocTestRunner(doctest.DocTestRunner):
+         ...     def __init__(self, **options):
+         ...         super().__init__(**options)
+         ...         self.custom_attr = "custom_runner"
+
+         >>> suite = doctest.DocFileSuite('test_doctest.txt',
+         ...                              globs={'favorite_color': 'blue'},
+         ...                              test_case=CustomDocTestCase,
+         ...                              runner=CustomDocTestRunner)
+         >>> result = suite.run(unittest.TestResult())
+         >>> result
+         <unittest.result.TestResult run=1 errors=0 failures=0>
 
        """
 

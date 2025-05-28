@@ -1,0 +1,1 @@
+Add support for custom test case and runner classes in :func:`doctest.DocTestSuite` and :func:`doctest.DocFileSuite`. This allows users to extend doctest functionality by providing their own test case and runner implementations through the new ``test_case`` and ``runner`` parameters.

@@ -2275,7 +2275,7 @@ def set_unittest_reportflags(flags):
 class DocTestCase(unittest.TestCase):
 
     def __init__(self, test, optionflags=0, setUp=None, tearDown=None,
-                 checker=None):
+                 checker=None, runner=DocTestRunner):
 
         unittest.TestCase.__init__(self)
         self._dt_optionflags = optionflags
@@ -2283,6 +2283,7 @@ class DocTestCase(unittest.TestCase):
         self._dt_test = test
         self._dt_setUp = setUp
         self._dt_tearDown = tearDown
+        self._dt_runner = runner
 
     def setUp(self):
         test = self._dt_test
@@ -2312,7 +2313,7 @@ class DocTestCase(unittest.TestCase):
             # so add the default reporting flags
             optionflags |= _unittest_reportflags
 
-        runner = DocTestRunner(optionflags=optionflags,
+        runner = self._dt_runner(optionflags=optionflags,
                                checker=self._dt_checker, verbose=False)
 
         try:
@@ -2460,7 +2461,7 @@ class _DocTestSuite(unittest.TestSuite):
 
 
 def DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None,
-                 **options):
+                 test_case=DocTestCase, runner=DocTestRunner, **options):
     """
     Convert doctest tests for a module to a unittest test suite.
 
@@ -2494,6 +2495,12 @@ def DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None,
 
     optionflags
        A set of doctest option flags expressed as an integer.
+
+    test_case
+       A custom optional DocTestCase class to use for test cases.
+
+    runner
+       A custom optional DocTestRunner class to use for running tests.
     """
 
     if test_finder is None:
@@ -2519,7 +2526,7 @@ def DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None,
             if filename[-4:] == ".pyc":
                 filename = filename[:-1]
             test.filename = filename
-        suite.addTest(DocTestCase(test, **options))
+        suite.addTest(test_case(test, runner=runner, **options))
 
     return suite
 
@@ -2538,7 +2545,8 @@ class DocFileCase(DocTestCase):
 
 def DocFileTest(path, module_relative=True, package=None,
                 globs=None, parser=DocTestParser(),
-                encoding=None, **options):
+                encoding=None, test_case=DocFileCase,
+                runner=DocTestRunner, **options):
     if globs is None:
         globs = {}
     else:
@@ -2560,7 +2568,7 @@ def DocFileTest(path, module_relative=True, package=None,
 
     # Convert it to a test, and wrap it in a DocFileCase.
     test = parser.get_doctest(doc, globs, name, path, 0)
-    return DocFileCase(test, **options)
+    return test_case(test, runner=runner, **options)
 
 def DocFileSuite(*paths, **kw):
     """A unittest suite for one or more doctest files.
@@ -2617,6 +2625,12 @@ def DocFileSuite(*paths, **kw):
 
     encoding
       An encoding that will be used to convert the files to unicode.
+
+    test_case
+      A custom DocFileCase subclass to use for the tests.
+
+    runner
+      A custom DocTestRunner subclass to use for running the tests.
     """
     suite = _DocTestSuite()
 
@@ -2626,8 +2640,17 @@ def DocFileSuite(*paths, **kw):
     if kw.get('module_relative', True):
         kw['package'] = _normalize_module(kw.get('package'))
 
+    test_case = kw.pop('test_case', DocFileCase)
+    runner = kw.pop('runner', DocTestRunner)
+
     for path in paths:
-        suite.addTest(DocFileTest(path, **kw))
+        test_instance = DocFileTest(
+            path=path,
+            test_case=test_case,
+            runner=runner,
+            **kw
+        )
+        suite.addTest(test_instance)
 
     return suite
 
