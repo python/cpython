@@ -294,12 +294,12 @@ The distinction is similar to the :py:meth:`~object.__new__` and
 Unlike modules created using single-phase initialization, these modules are not
 singletons.
 For example, if the :py:attr:`sys.modules` entry is removed and the module
-is re-imported, a new module object is created, and, typically, populated with
-fresh method and class objects.
+is re-imported, a new module object is created, and typically populated with
+fresh method and type objects.
 The old module is subject to normal garbage collection.
 This mirrors the behavior of pure-Python modules.
 
-Additional module instances may also be created in
+Additional module instances may be created in
 :ref:`sub-interpreters <sub-interpreter-support>`
 or after after Python runtime reinitialization
 (:c:func:`Py_Finalize` and :c:func:`Py_Initialize`).
@@ -312,7 +312,7 @@ and all state, including references to Python objects, should be specific to
 a particular module instance.
 See :ref:`isolating-extensions-howto` for more details and a practical guide.
 
-A simpler way to avoid the issues is
+A simpler way to avoid these issues is
 :ref:`raising an error on repeated initialization <isolating-extensions-optout>`.
 
 All modules created using multi-phase initialization are expected to support
