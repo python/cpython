@@ -1985,7 +1985,7 @@
                 ctx->done = true;
                 break;
             }
-            assert(self_or_null != NULL);
+            assert(!PyJitRef_IsNull(self_or_null));
             assert(args != NULL);
             if (ref_is_not_null(self_or_null)) {
                 args--;

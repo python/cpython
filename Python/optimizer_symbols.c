@@ -745,7 +745,7 @@ _Py_uop_abstractcontext_init(JitOptContext *ctx)
     ctx->n_consumed = ctx->locals_and_stack;
 #ifdef Py_DEBUG // Aids debugging a little. There should never be NULL in the abstract interpreter.
     for (int i = 0 ; i < MAX_ABSTRACT_INTERP_SIZE; i++) {
-        ctx->locals_and_stack[i] = NULL;
+        ctx->locals_and_stack[i] = PyJitRef_NULL;
     }
 #endif
 

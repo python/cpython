@@ -750,7 +750,7 @@ dummy_func(void) {
         }
 
 
-        assert(self_or_null != NULL);
+        assert(!PyJitRef_IsNull(self_or_null));
         assert(args != NULL);
         if (ref_is_not_null(self_or_null)) {
             // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in VM
