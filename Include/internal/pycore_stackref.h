@@ -278,7 +278,7 @@ static inline _PyStackRef
 PyStackRef_IncrementTaggedIntNoOverflow(_PyStackRef ref)
 {
     assert((ref.bits & Py_TAG_BITS) == Py_INT_TAG); // Is tagged int
-    assert((ref.bits & (~Py_TAG_BITS)) != (INT_MAX & (~Py_TAG_BITS))); // Isn't about to overflow
+    assert((ref.bits & (~Py_TAG_BITS)) != (INTPTR_MAX & (~Py_TAG_BITS))); // Isn't about to overflow
     return (_PyStackRef){ .bits = ref.bits + 4 };
 }
 
