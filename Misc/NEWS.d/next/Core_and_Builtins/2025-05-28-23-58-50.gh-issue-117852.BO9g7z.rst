@@ -1,0 +1,1 @@
+Check :meth:`asyncgen.athrow` arguments immediately on instantiation.
