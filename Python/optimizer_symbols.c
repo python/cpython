@@ -196,7 +196,6 @@ _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptSymbol *sym)
     return (typ == &PyLong_Type) ||
            (typ == &PyUnicode_Type) ||
            (typ == &PyFloat_Type) ||
-           (typ == &PyDict_Type) ||
            (typ == &PyTuple_Type);
 }
 
