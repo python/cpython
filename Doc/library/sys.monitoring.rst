@@ -352,19 +352,21 @@ Callback function arguments
    that there are no arguments to the call.
 
 When an active event occurs, the registered callback function is called.
+Callback functions returning any object other than :data:`DISABLE` will have no effect.
 Different events will provide the callback function with different arguments, as follows:
 
 * :monitoring-event:`PY_START` and :monitoring-event:`PY_RESUME`::
 
-    func(code: CodeType, instruction_offset: int) -> object  # DISABLE | Any
+    func(code: CodeType, instruction_offset: int) -> object
 
 * :monitoring-event:`PY_RETURN` and :monitoring-event:`PY_YIELD`::
 
-    func(code: CodeType, instruction_offset: int, retval: object) -> object  # DISABLE | Any
+    func(code: CodeType, instruction_offset: int, retval: object) -> object
 
-* :monitoring-event:`CALL`, :monitoring-event:`C_RAISE` and :monitoring-event:`C_RETURN` (*arg0* can be :data:`MISSING`)::
+* :monitoring-event:`CALL`, :monitoring-event:`C_RAISE` and :monitoring-event:`C_RETURN`
+  (*arg0* can be :data:`MISSING` specifically)::
 
-    func(code: CodeType, instruction_offset: int, callable: object, arg0: object) -> object  # DISABLE | Any
+    func(code: CodeType, instruction_offset: int, callable: object, arg0: object) -> object
 
   *code* represents the code object where the call is being made, while
   *callable* is the object that is about to be called (and thus
@@ -378,18 +380,18 @@ Different events will provide the callback function with different arguments, as
 * :monitoring-event:`RAISE`, :monitoring-event:`RERAISE`, :monitoring-event:`EXCEPTION_HANDLED`,
   :monitoring-event:`PY_UNWIND`, :monitoring-event:`PY_THROW` and :monitoring-event:`STOP_ITERATION`::
 
-    func(code: CodeType, instruction_offset: int, exception: BaseException) -> object  # DISABLE | Any
+    func(code: CodeType, instruction_offset: int, exception: BaseException) -> object
 
 * :monitoring-event:`LINE`::
 
-    func(code: CodeType, line_number: int) -> DISABLE | Any
+    func(code: CodeType, line_number: int) -> object
 
 * :monitoring-event:`BRANCH_LEFT`, :monitoring-event:`BRANCH_RIGHT` and :monitoring-event:`JUMP`::
 
-    func(code: CodeType, instruction_offset: int, destination_offset: int) -> object  # DISABLE | Any
+    func(code: CodeType, instruction_offset: int, destination_offset: int) -> object
 
   Note that the *destination_offset* is where the code will next execute.
 
 * :monitoring-event:`INSTRUCTION`::
 
-    func(code: CodeType, instruction_offset: int) -> object  # DISABLE | Any
+    func(code: CodeType, instruction_offset: int) -> object
