@@ -282,12 +282,9 @@ def write_uop(
             if replace_opcode_if_evaluates_pure:
                 write_uop_pure_evaluation_region_header(uop, out, stack)
             out.start_line()
-            if override:
-                emitter = OptimizerEmitter(out, {})
-                _, storage = emitter.emit_tokens(override, storage, inst=None, emit_braces=False)
-                storage.flush(out)
-            else:
-                emit_default(out, uop, stack)
+            emitter = OptimizerEmitter(out, {})
+            _, storage = emitter.emit_tokens(override, storage, inst=None, emit_braces=False)
+            storage.flush(out)
             out.start_line()
             if replace_opcode_if_evaluates_pure:
                 write_uop_pure_evaluation_region_footer(out)
