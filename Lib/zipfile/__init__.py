@@ -1369,7 +1369,7 @@ class _ZipWriteFile(io.BufferedIOBase):
 
 class _ZipRepacker:
     """Class for ZipFile repacking."""
-    def __init__(self, *, chunk_size=2**20, strict_descriptor=False, debug=0):
+    def __init__(self, *, strict_descriptor=False, chunk_size=2**20, debug=0):
         self.debug = debug  # Level of printing: 0 through 3
         self.chunk_size = chunk_size
         self.strict_descriptor = strict_descriptor
