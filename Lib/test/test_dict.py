@@ -301,7 +301,7 @@ class DictTest(unittest.TestCase):
 
             def __eq__(self, other):
                 # Create an object that shares the same PyDictKeysObject as
-                # the dict
+                # the obj.__dict__.
                 obj2 = MyClass()
                 obj2.a = "a"
                 obj2.b = "b"
