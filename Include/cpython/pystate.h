@@ -279,11 +279,11 @@ PyAPI_FUNC(PyInterpreterState *) PyInterpreterRef_AsInterpreter(PyInterpreterRef
 #define PyInterpreterRef_Close(ref) do {    \
     PyInterpreterRef_Close(ref);            \
     ref = 0;                                \
-} while (0);
+} while (0)
 
 /* Weak interpreter references */
 
-typedef struct _interpreter_weakref {
+typedef struct _PyInterpreterWeakRef {
     int64_t id;
     Py_ssize_t refcount;
 } _PyInterpreterWeakRef;
@@ -298,7 +298,7 @@ PyAPI_FUNC(void) PyInterpreterWeakRef_Close(PyInterpreterWeakRef wref);
 #define PyInterpreterWeakRef_Close(ref) do {    \
     PyInterpreterWeakRef_Close(ref);            \
     ref = 0;                                    \
-} while (0);
+} while (0)
 
 // Exports for '_testcapi' shared extension
 PyAPI_FUNC(Py_ssize_t) _PyInterpreterState_Refcount(PyInterpreterState *interp);

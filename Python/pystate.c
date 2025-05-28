@@ -3141,8 +3141,7 @@ Py_ssize_t
 _PyInterpreterState_Refcount(PyInterpreterState *interp)
 {
     assert(interp != NULL);
-    Py_ssize_t refcount = _Py_atomic_load_ssize_relaxed(&interp->threads.finalizing.countdown);
-    return refcount;
+    return _Py_atomic_load_ssize_relaxed(&interp->threads.finalizing.countdown);
 }
 
 int
@@ -3168,7 +3167,7 @@ ref_as_interp(PyInterpreterRef ref)
 {
     PyInterpreterState *interp = (PyInterpreterState *)ref;
     if (interp == NULL) {
-        Py_FatalError("Got a null interpreter reference, likely due to use after close.");
+        Py_FatalError("Got a null interpreter reference, likely due to use after PyInterpreterRef_Close()");
     }
 
     return interp;
@@ -3235,7 +3234,7 @@ wref_handle_as_ptr(PyInterpreterWeakRef wref_handle)
 {
     _PyInterpreterWeakRef *wref = (_PyInterpreterWeakRef *)wref_handle;
     if (wref == NULL) {
-        Py_FatalError("Got a null weak interpreter reference, likely due to use after close.");
+        Py_FatalError("Got a null weak interpreter reference, likely due to use after PyInterpreterWeakRef_Close()");
     }
 
     return wref;
@@ -3269,7 +3268,8 @@ try_acquire_strong_ref(PyInterpreterState *interp, PyInterpreterRef *strong_ptr)
         /* Interpreter has already finished threads */
         *strong_ptr = 0;
         return -1;
-    } else {
+    }
+    else {
         _Py_atomic_add_ssize(&finalizing->countdown, 1);
     }
     PyMutex_Unlock(mutex);

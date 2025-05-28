@@ -2313,7 +2313,9 @@ test_get_incomplete_frame(void)
     return result;
 }
 
-const char *THREAD_CODE = "import time\n"
+const char *THREAD_CODE = \
+     "import time\n"
+     ...
                    "time.sleep(0.2)\n"
                    "def fib(n):\n"
                    "  if n <= 1:\n"
