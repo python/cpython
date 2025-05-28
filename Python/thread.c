@@ -119,7 +119,7 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
 
     _PyLockFlags flags = _Py_LOCK_DONT_DETACH;
     if (intr_flag) {
-        flags |= _PY_LOCK_HANDLE_SIGNALS;
+        flags |= _PY_FAIL_IF_INTERRUPTED;
     }
 
     return _PyMutex_LockTimed((PyMutex *)lock, timeout, flags);
