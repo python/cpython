@@ -85,7 +85,7 @@ class StatsTestCase(unittest.TestCase):
     def test_sort_stats_string(self):
         for sort_name in ['calls', 'ncalls', 'cumtime', 'cumulative',
                     'filename', 'line', 'module', 'name', 'nfl', 'pcalls',
-                    'stdname', 'time', 'tottime']:
+                    'stdname', 'time', 'tottime', 'cumpercall', 'totalpercall']:
             self.stats.sort_stats(sort_name)
             self.assertEqual(self.stats.sort_type,
                              self.stats.sort_arg_dict_default[sort_name][-1])
