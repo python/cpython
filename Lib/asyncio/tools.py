@@ -219,9 +219,13 @@ def display_awaited_by_tasks_table(pid: int, format_: TaskTableOutputFormat = Ta
 
     tasks = _get_awaited_by_tasks(pid)
     table = build_task_table(tasks)
-    if format_ != TaskTableOutputFormat.table:
+    if format_ == TaskTableOutputFormat.table:
+        _display_awaited_by_tasks_table(table)
+    else:
         _display_awaited_by_tasks_csv(table, format_)
-        return
+
+
+def _display_awaited_by_tasks_table(table) -> None:
     # Print the table in a simple tabular format
     print(
         f"{_header[0]:<10} {_header[1]:<20} {_header[2]:<20} {_header[3]:<50} {_header[4]:<20} {_header[5]:<15}"
