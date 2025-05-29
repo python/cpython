@@ -2412,7 +2412,6 @@ _exit_session(_PyXI_session *session)
     assert(session->error.info == NULL);
     assert(session->error.override == _PyXI_ERR_NO_ERROR);
 
-    // For now the error data persists past the exit.
     *session = (_PyXI_session){0};
 }
 
