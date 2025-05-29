@@ -550,17 +550,21 @@ ZipFile Objects
    will be removed.
 
    If *removed* is not provided, local file entries no longer referenced in the
-   central directory will be removed. The algorithm assumes that local file
-   entries are stored consecutively. Extra bytes between entries will also be
-   removed. Data before the first referenced entry is preserved unless it
-   appears to be a sequence of consecutive local file entries.
+   central directory will be removed.  The algorithm assumes that local file
+   entries are stored consecutively:
+   #. Data before the first referenced entry is removed only when it appears to
+      be a sequence of consecutive entries with no extra following bytes; extra
+      preceeding bytes are preserved.
+   #. Data between referenced entries is removed only when it appears to
+      be a sequence of consecutive entries with no extra preceding bytes; extra
+      following bytes are preserved.
 
    ``strict_descriptor=True`` can be provided to skip the slower scan for an
    unsigned data descriptor (deprecated in the latest ZIP specification and is
    only used by legacy tools) when checking for bytes resembling a valid local
-   file entry before the first referenced entry.  This improves performance,
-   but may cause some stale local file entries to be preserved, as any entry
-   using an unsigned descriptor cannot be detected.
+   file entry.  This improves performance, but may cause some stale local file
+   entries to be preserved, as any entry using an unsigned descriptor cannot
+   be detected.
 
    *chunk_size* may be specified to control the buffer size when moving
    entry data (default is 1 MiB).

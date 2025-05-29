@@ -1385,66 +1385,78 @@ class _ZipRepacker:
         Assumes that local file entries are stored consecutively, with no gaps
         or overlaps.
 
-        Stripping occurs in two phases:
+        Behavior:
 
-        1. Before the first recorded file entry:
-            - If a sequence of valid local file entries (starting with
-              `PK\x03\x04`) is found immediately before the first recorded
-              entry, it is stripped.
-            - Otherwise, all leading bytes are preserved (e.g., in cases such
-              as self-extracting archives or embedded ZIP payloads).
+        1. If any referenced entry overlaps with another, a `BadZipFile` error
+           is raised since safe repacking cannot be guaranteed.
 
-        2. Between or after the recorded entries:
-            - Any bytes between two recorded entries, or between the last
-              recorded and the central directory, are removed—regardless of
-              whether they resemble valid entries.
+        2. Data before the first referenced entry is stripped only when it
+           appears to be a sequence of consecutive entries with no extra
+           following bytes; extra preceeding bytes are preserved.
+
+        3. Data between referenced entries is stripped only when it appears to
+           be a sequence of consecutive entries with no extra preceding bytes;
+           extra following bytes are preserved.
+
+        4. This is to prevent an unexpected data removal (false positive),
+           though a false negative may happen in certain rare cases.
 
         Examples:
 
-        Stripping before first recorded entry:
+        Stripping before the first referenced entry:
 
-            [random bytes]
-            [unreferenced local file entry 1]
-            [unreferenced local file entry 2]
-            [random bytes]
-            <-- stripping start
-            [unreferenced local file entry 3]
-            [unreferenced local file entry 4]
-            <-- stripping end
-            [recorded local file entry 1]
-            ...
-            [central directory]
-
-        Stripping between recorded entries:
-
-            ...
-            [recorded local file entry 5]
-            <-- stripping start
             [random bytes]
             [unreferenced local file entry]
             [random bytes]
-            <-- stripping end
-            [recorded local file entry 6]
-            ...
-            [recorded local file entry n]
             <-- stripping start
             [unreferenced local file entry]
+            [unreferenced local file entry]
             <-- stripping end
-            [central directory]
+            [local file entry 1] (or central directory)
+            ...
+
+        Stripping between referenced entries:
+
+            ...
+            [local file entry]
+            <-- stripping start
+            [unreferenced local file entry]
+            [unreferenced local file entry]
+            <-- stripping end
+            [random bytes]
+            [unreferenced local file entry]
+            [random bytes]
+            [local file entry] (or central directory)
+            ...
 
         No stripping:
 
-            [unreferenced local file entry 1]
-            [unreferenced local file entry 2]
-            ...
-            [unreferenced local file entry n]
+            [unreferenced local file entry]
             [random bytes]
-            [recorded local file entry 1]
+            [local file entry 1] (or central directory)
             ...
 
-        removed: None or a sequence of ZipInfo instances representing removed
-                 entries. When provided, only their corresponding local file
-                 entries are stripped.
+        No stripping:
+
+            ...
+            [local file entry]
+            [random bytes]
+            [unreferenced local file entry]
+            [local file entry] (or central directory)
+            ...
+
+        Side effects:
+            - Modifies the ZIP file in place.
+            - Updates zfile.start_dir to account for removed data.
+            - Sets zfile._didModify to True.
+            - Adjusts header_offset and _end_offset of referenced ZipInfo
+              instances.
+
+        Parameters:
+            zfile: A ZipFile object representing the archive to repack.
+            removed: Optional. A sequence of ZipInfo instances representing
+                the previously removed entries. When provided, only their
+                corresponding local file entries are stripped.
         """
         removed_zinfos = set(removed or ())
 
@@ -1512,17 +1524,34 @@ class _ZipRepacker:
                 entry_offset += used_entry_size
 
             else:
+                old_header_offset = zinfo.header_offset
+                zinfo.header_offset -= entry_offset
+
                 if entry_offset > 0:
-                    old_header_offset = zinfo.header_offset
-                    zinfo.header_offset -= entry_offset
                     self._copy_bytes(fp, old_header_offset, zinfo.header_offset, used_entry_size)
 
-                if zinfo._end_offset is not None:
-                    zinfo._end_offset = zinfo.header_offset + used_entry_size
-
-                # update entry_offset for subsequent files to follow
                 if used_entry_size < entry_size:
-                    entry_offset += entry_size - used_entry_size
+                    stale_entry_size = self._validate_local_file_entry_sequence(
+                        fp,
+                        old_header_offset + used_entry_size,
+                        old_header_offset + entry_size,
+                    )
+                else:
+                    stale_entry_size = 0
+
+                if stale_entry_size > 0:
+                    self._copy_bytes(
+                        fp,
+                        old_header_offset + used_entry_size + stale_entry_size,
+                        zinfo.header_offset + used_entry_size,
+                        entry_size - used_entry_size - stale_entry_size,
+                    )
+
+                    # update entry_offset for subsequent files to follow
+                    entry_offset += stale_entry_size
+
+                if zinfo._end_offset is not None:
+                    zinfo._end_offset = zinfo.header_offset + entry_size - stale_entry_size
 
         # update state
         zfile.start_dir -= entry_offset

@@ -1836,22 +1836,31 @@ class AbstractRepackTests(RepackHelperMixin):
                 with zipfile.ZipFile(TESTFN) as zh:
                     self.assertIsNone(zh.testzip())
 
-    def test_repack_bytes_between_files(self):
-        """Should remove bytes between local file entries."""
+    def test_repack_bytes_before_removed_files(self):
+        """Should preserve if there are bytes before stale local file entries."""
         for ii in ([1], [1, 2], [2]):
             with self.subTest(remove=ii):
                 # calculate the expected results
-                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
-                expected_zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
+                with open(TESTFN, 'wb') as fh:
+                    with zipfile.ZipFile(fh, 'w', self.compression) as zh:
+                        for i, (file, data) in enumerate(self.test_files):
+                            if i == ii[0]:
+                                fh.write(b' dummy bytes ')
+                                zh.start_dir = fh.tell()
+                            zh.writestr(file, data)
+                        for i in ii:
+                            zh.remove(self.test_files[i][0])
+                        expected_zinfos = [ComparableZipInfo(zi) for zi in zh.infolist()]
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
                 with open(TESTFN, 'wb') as fh:
                     with zipfile.ZipFile(fh, 'w', self.compression) as zh:
                         for i, (file, data) in enumerate(self.test_files):
+                            if i == ii[0]:
+                                fh.write(b' dummy bytes ')
+                                zh.start_dir = fh.tell()
                             zh.writestr(file, data)
-                            fh.write(b' dummy bytes ')
-                            zh.start_dir = fh.tell()
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     for i in ii:
                         zh.remove(self.test_files[i][0])
@@ -1869,6 +1878,87 @@ class AbstractRepackTests(RepackHelperMixin):
                 # make sure the zip file is still valid
                 with zipfile.ZipFile(TESTFN) as zh:
                     self.assertIsNone(zh.testzip())
+
+    def test_repack_bytes_after_removed_files(self):
+        """Should keep extra bytes if there are bytes after stale local file entries."""
+        for ii in ([1], [1, 2], [2]):
+            with self.subTest(remove=ii):
+                # calculate the expected results
+                with open(TESTFN, 'wb') as fh:
+                    with zipfile.ZipFile(fh, 'w', self.compression) as zh:
+                        for i, (file, data) in enumerate(self.test_files):
+                            if i not in ii:
+                                zh.writestr(file, data)
+                            if i == ii[-1]:
+                                fh.write(b' dummy bytes ')
+                                zh.start_dir = fh.tell()
+                        expected_zinfos = [ComparableZipInfo(zi) for zi in zh.infolist()]
+                expected_size = os.path.getsize(TESTFN)
+
+                # do the removal and check the result
+                with open(TESTFN, 'wb') as fh:
+                    with zipfile.ZipFile(fh, 'w', self.compression) as zh:
+                        for i, (file, data) in enumerate(self.test_files):
+                            zh.writestr(file, data)
+                            if i == ii[-1]:
+                                fh.write(b' dummy bytes ')
+                                zh.start_dir = fh.tell()
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    for i in ii:
+                        zh.remove(self.test_files[i][0])
+                    zh.repack()
+
+                    # check infolist
+                    self.assertEqual(
+                        [ComparableZipInfo(zi) for zi in zh.infolist()],
+                        expected_zinfos,
+                    )
+
+                # check file size
+                self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
+
+    def test_repack_bytes_between_removed_files(self):
+        """Should strip only local file entries before random bytes."""
+        # calculate the expected results
+        with open(TESTFN, 'wb') as fh:
+            with zipfile.ZipFile(fh, 'w', self.compression) as zh:
+                zh.writestr(*self.test_files[0])
+                fh.write(b' dummy bytes ')
+                zh.start_dir = fh.tell()
+                zh.writestr(*self.test_files[2])
+                zh.remove(self.test_files[2][0])
+                expected_zinfos = [ComparableZipInfo(zi) for zi in zh.infolist()]
+        expected_size = os.path.getsize(TESTFN)
+
+        # do the removal and check the result
+        with open(TESTFN, 'wb') as fh:
+            with zipfile.ZipFile(fh, 'w', self.compression) as zh:
+                zh.writestr(*self.test_files[0])
+                zh.writestr(*self.test_files[1])
+                fh.write(b' dummy bytes ')
+                zh.start_dir = fh.tell()
+                zh.writestr(*self.test_files[2])
+        with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+            zh.remove(self.test_files[1][0])
+            zh.remove(self.test_files[2][0])
+            zh.repack()
+
+            # check infolist
+            self.assertEqual(
+                [ComparableZipInfo(zi) for zi in zh.infolist()],
+                expected_zinfos,
+            )
+
+        # check file size
+        self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+        # make sure the zip file is still valid
+        with zipfile.ZipFile(TESTFN) as zh:
+            self.assertIsNone(zh.testzip())
 
     def test_repack_zip64(self):
         """Should correctly handle file entries with zip64."""
@@ -2011,7 +2101,7 @@ class AbstractRepackTests(RepackHelperMixin):
         if self.compression not in (zipfile.ZIP_STORED, zipfile.ZIP_LZMA):
             self.skipTest('require unsupported decompression method')
 
-        for ii in ([0], [0, 1]):
+        for ii in ([0], [0, 1], [1], [2]):
             with self.subTest(remove=ii):
                 # calculate the expected results
                 with open(TESTFN, 'wb') as fh:
@@ -2055,7 +2145,7 @@ class AbstractRepackTests(RepackHelperMixin):
         if self.compression in (zipfile.ZIP_STORED, zipfile.ZIP_LZMA):
             self.skipTest('require supported decompression method')
 
-        for ii in ([0], [0, 1]):
+        for ii in ([0], [0, 1], [1], [2]):
             with self.subTest(remove=ii):
                 # calculate the expected results
                 test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
