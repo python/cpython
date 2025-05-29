@@ -1218,8 +1218,8 @@ scan_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
             worklist_push(&state->unreachable, op);
         }
         return true;
-    } else if (_Py_REF_SHARED(Py_REFCNT(op), 0) >= 3) {
-        // Objects with 3 or more shared references are candidates
+    } else if (_Py_REF_SHARED(op->ob_ref_shared, 0) >= 3) {
+        // Objects with 10 or more shared references are candidates
         // for deferred reference counting.
         // This probably needs tuning.
         maybe_enable_deferred_refcount(op);
