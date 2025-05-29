@@ -300,10 +300,6 @@ PyAPI_FUNC(void) PyInterpreterWeakRef_Close(PyInterpreterWeakRef wref);
     ref = 0;                                    \
 } while (0)
 
-// Exports for '_testcapi' shared extension
-PyAPI_FUNC(Py_ssize_t) _PyInterpreterState_Refcount(PyInterpreterState *interp);
-PyAPI_FUNC(int) _PyInterpreterState_Incref(PyInterpreterState *interp);
-
 PyAPI_FUNC(int) PyThreadState_Ensure(PyInterpreterRef interp_ref);
 
 PyAPI_FUNC(void) PyThreadState_Release(void);
