@@ -3488,7 +3488,8 @@ wait_for_interp_references(PyInterpreterState *interp)
     }
     PyMutex_Unlock(&finalizing->mutex);
 
-    PyTime_t wait_ns = 1000 * 1000; // 1 millisecond
+    PyTime_t wait_max = 1000 * 1000 * 100; // 100 milliseconds
+    PyTime_t wait_ns = 1000; // 1 microsecond
 
     while (true) {
         if (PyEvent_WaitTimed(&finalizing->finished, wait_ns, 1)) {
@@ -3496,14 +3497,17 @@ wait_for_interp_references(PyInterpreterState *interp)
             break;
         }
 
+        wait_ns *= 2;
+        wait_ns = Py_MIN(wait_ns, wait_max);
+
         if (PyErr_CheckSignals()) {
             PyErr_Print();
-            // The user CTRL+C'd us, bail out without waiting for a reference
-            // count of zero.
-            //
-            // This will probably cause threads to crash, but maybe that's
-            // better than a deadlock. It might be worth intentionally
-            // leaking subinterpreters to prevent some crashes here.
+            /* The user CTRL+C'd us, bail out without waiting for a reference
+               count of zero.
+
+               This will probably cause threads to crash, but maybe that's
+               better than a deadlock. It might be worth intentionally
+               leaking subinterpreters to prevent some crashes here. */
             break;
         }
     }
