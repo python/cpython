@@ -1294,7 +1294,7 @@ interp_look_up_id(_PyRuntimeState *runtime, int64_t requested_id)
     return NULL;
 }
 
-PyInterpreterState *
+static PyInterpreterState *
 _PyInterpreterState_LookUpIDNoErr(int64_t requested_id)
 {
     PyInterpreterState *interp = NULL;
