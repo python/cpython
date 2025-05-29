@@ -1,1 +1,1 @@
-Made ``collections.abc.Mapping``'s keys, values, items views reversible by adding ``__reversed__`` method.
+Made :class:`collections.abc.Mapping`'s keys, values, items views reversible by adding the ``__reversed__`` method.
