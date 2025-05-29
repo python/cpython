@@ -1,0 +1,1 @@
+A DOS vulnerability in ``idlelib`` is fixed regarding string slicing.
