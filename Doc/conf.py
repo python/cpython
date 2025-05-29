@@ -36,6 +36,7 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
     'sphinx.ext.extlinks',
+    'sphinx_codeautolink',
 ]
 
 # Skip if downstream redistributors haven't installed them
@@ -404,6 +405,9 @@ html_use_opensearch = 'https://docs.python.org/' + version
 # Additional static files.
 html_static_path = ['_static', 'tools/static']
 
+# Additional CSS files.
+html_css_files = ["sphinx-codeautolink.css"]
+
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'python' + release.replace('.', '')
 
@@ -412,6 +416,25 @@ html_split_index = True
 
 # Split pot files one per reST file
 gettext_compact = False
+
+# Options for automatic links from code examples to reference documentation.
+# (https://sphinx-codeautolink.readthedocs.io/)
+codeautolink_warn_on_missing_inventory = False
+codeautolink_warn_on_failed_resolve = False
+codeautolink_custom_blocks = {
+    # https://sphinx-codeautolink.readthedocs.io/en/latest/examples.html#doctest-code-blocks
+    "pycon3": "sphinx_codeautolink.clean_pycon",
+}
+
+suppress_warnings = [
+    # "codeautolink",
+    "codeautolink.import_star",
+    "codeautolink.match_block",
+    "codeautolink.match_name",
+    "codeautolink.parse_block",
+    "config.cache",
+]
+
 
 # Options for LaTeX output
 # ------------------------
