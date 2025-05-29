@@ -1400,9 +1400,8 @@ class DocTestRunner:
                 exc_info = None
             except KeyboardInterrupt:
                 raise
-            except:
-                exc_info = sys.exc_info()
-                exc_info = (*exc_info[:2], exc_info[2].tb_next)
+            except BaseException as exc:
+                exc_info = type(exc), exc, exc.__traceback__.tb_next
                 self.debugger.set_continue() # ==== Example Finished ====
 
             got = self._fakeout.getvalue()  # the actual output
