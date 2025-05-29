@@ -518,6 +518,12 @@ mt_continue_should_break(ZSTD_inBuffer *in, ZSTD_outBuffer *out)
 {
     return in->size == in->pos && out->size != out->pos;
 }
+#else
+static inline int
+mt_continue_should_break(ZSTD_inBuffer *in, ZSTD_outBuffer *out)
+{
+    return 1;
+}
 #endif
 
 static PyObject *
