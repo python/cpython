@@ -1203,10 +1203,20 @@ class EditorWindow:
             self.apply_bindings(keydefs)
             for vevent in keydefs:
                 methodname = vevent.replace("-", "_")
-                while methodname[:1] == '<':
-                    methodname = methodname[1:]
-                while methodname[-1:] == '>':
-                    methodname = methodname[:-1]
+                stripl = 0
+                for char in methodname:
+                    if char == '<':
+                        stripl += 1
+                    else:
+                        break
+                methodname = methodname[stripl:]
+                stripr = 0
+                for char in methodname[::-1]:
+                    if char == '>':
+                        stripr -= 1
+                    else:
+                        break
+                methodname = methodname[:stripr]
                 methodname = methodname + "_event"
                 if hasattr(ins, methodname):
                     self.text.bind(vevent, getattr(ins, methodname))
