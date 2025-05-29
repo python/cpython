@@ -78,22 +78,11 @@ def subdir(*parts, create=False):
 
 def run(command, *, host=None, env=None, log=True, **kwargs):
     kwargs.setdefault("check", True)
-
     if env is None:
         env = os.environ.copy()
-    if host:
-        # The -I and -L arguments used when building Python should not be reused
-        # when building third-party extension modules, so pass them via the
-        # NODIST environment variables.
-        host_env = android_env(host)
-        for name in ["CFLAGS", "CXXFLAGS", "LDFLAGS"]:
-            flags = []
-            nodist = []
-            for word in host_env[name].split():
-                (nodist if word.startswith(("-I", "-L")) else flags).append(word)
-            host_env[name] = " ".join(flags)
-            host_env[f"{name}_NODIST"] = " ".join(nodist)
 
+    if host:
+        host_env = android_env(host)
         print_env(host_env)
         env.update(host_env)
 
