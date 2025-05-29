@@ -1486,7 +1486,7 @@ PyConfig
 
       Default: ``0``.
 
-     .. versionchanged:: next
+     .. versionchanged:: 3.14
 
         Added support for ``import_time = 2``
 
@@ -2111,7 +2111,7 @@ initialization::
 
         /* Specify sys.path explicitly */
         /* If you want to modify the default set of paths, finish
-           initialization first and then use PySys_GetObject("path") */
+           initialization first and then use PySys_GetAttrString("path") */
         config.module_search_paths_set = 1;
         status = PyWideStringList_Append(&config.module_search_paths,
                                          L"/path/to/stdlib");

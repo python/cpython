@@ -2358,7 +2358,7 @@ Data types
       :func:`POINTER` for corresponding ctypes data type. If a pointer type
       was not yet created, the attribute is missing.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
    Common instance variables of ctypes data types:
 
@@ -2756,7 +2756,7 @@ fields, or any other data types containing pointer type fields.
 
       This is only implemented for the MSVC-compatible memory layout.
 
-      .. deprecated-removed:: next 3.19
+      .. deprecated-removed:: 3.14 3.19
 
          For historical reasons, if :attr:`!_pack_` is non-zero,
          the MSVC-compatible layout will be used by default.
@@ -2799,7 +2799,7 @@ fields, or any other data types containing pointer type fields.
       :attr:`!_layout_` must already be defined when
       :attr:`~Structure._fields_` is assigned, otherwise it will have no effect.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
    .. attribute:: _anonymous_
 

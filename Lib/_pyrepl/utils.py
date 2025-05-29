@@ -23,9 +23,9 @@ IDENTIFIERS_AFTER = {"def", "class"}
 BUILTINS = {str(name) for name in dir(builtins) if not name.startswith('_')}
 
 
-def THEME():
+def THEME(**kwargs):
     # Not cached: the user can modify the theme inside the interactive session.
-    return _colorize.get_theme().syntax
+    return _colorize.get_theme(**kwargs).syntax
 
 
 class Span(NamedTuple):
@@ -41,9 +41,15 @@ class Span(NamedTuple):
 
     @classmethod
     def from_token(cls, token: TI, line_len: list[int]) -> Self:
+        end_offset = -1
+        if (token.type in {T.FSTRING_MIDDLE, T.TSTRING_MIDDLE}
+            and token.string.endswith(("{", "}"))):
+            # gh-134158: a visible trailing brace comes from a double brace in input
+            end_offset += 1
+
         return cls(
             line_len[token.start[0] - 1] + token.start[1],
-            line_len[token.end[0] - 1] + token.end[1] - 1,
+            line_len[token.end[0] - 1] + token.end[1] + end_offset,
         )
 
 
@@ -102,6 +108,8 @@ def gen_colors(buffer: str) -> Iterator[ColorSpan]:
         for color in gen_colors_from_token_stream(gen, line_lengths):
             yield color
             last_emitted = color
+    except SyntaxError:
+        return
     except tokenize.TokenError as te:
         yield from recover_unterminated_string(
             te, line_lengths, last_emitted, buffer
@@ -254,7 +262,10 @@ def is_soft_keyword_used(*tokens: TI | None) -> bool:
 
 
 def disp_str(
-    buffer: str, colors: list[ColorSpan] | None = None, start_index: int = 0
+    buffer: str,
+    colors: list[ColorSpan] | None = None,
+    start_index: int = 0,
+    force_color: bool = False,
 ) -> tuple[CharBuffer, CharWidths]:
     r"""Decompose the input buffer into a printable variant with applied colors.
 
@@ -295,7 +306,7 @@ def disp_str(
         # move past irrelevant spans
         colors.pop(0)
 
-    theme = THEME()
+    theme = THEME(force_color=force_color)
     pre_color = ""
     post_color = ""
     if colors and colors[0].span.start < start_index:

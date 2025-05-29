@@ -1292,7 +1292,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       ``sys._jit`` is not guaranteed to exist or behave the same way in all
       Python implementations, versions, or build configurations.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
    .. function:: _jit.is_available()
 

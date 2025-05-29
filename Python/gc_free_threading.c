@@ -1927,8 +1927,7 @@ get_process_mem_usage(void)
     }
 
 #elif __linux__
-    // Linux, use smaps_rollup (Kernel >= 4.4) for RSS + Swap
-    FILE* fp = fopen("/proc/self/smaps_rollup", "r");
+    FILE* fp = fopen("/proc/self/status", "r");
     if (fp == NULL) {
         return -1;
     }
@@ -1938,11 +1937,11 @@ get_process_mem_usage(void)
     long long swap_kb = -1;
 
     while (fgets(line_buffer, sizeof(line_buffer), fp) != NULL) {
-        if (rss_kb == -1 && strncmp(line_buffer, "Rss:", 4) == 0) {
-            sscanf(line_buffer + 4, "%lld", &rss_kb);
+        if (rss_kb == -1 && strncmp(line_buffer, "VmRSS:", 6) == 0) {
+            sscanf(line_buffer + 6, "%lld", &rss_kb);
         }
-        else if (swap_kb == -1 && strncmp(line_buffer, "Swap:", 5) == 0) {
-            sscanf(line_buffer + 5, "%lld", &swap_kb);
+        else if (swap_kb == -1 && strncmp(line_buffer, "VmSwap:", 7) == 0) {
+            sscanf(line_buffer + 7, "%lld", &swap_kb);
         }
         if (rss_kb != -1 && swap_kb != -1) {
             break; // Found both
@@ -2063,7 +2062,7 @@ gc_should_collect_mem_usage(GCState *gcstate)
         // 70,000 new container objects.
         return true;
     }
-    Py_ssize_t last_mem = gcstate->last_mem;
+    Py_ssize_t last_mem = _Py_atomic_load_ssize_relaxed(&gcstate->last_mem);
     Py_ssize_t mem_threshold = Py_MAX(last_mem / 10, 128);
     if ((mem - last_mem) > mem_threshold) {
         // The process memory usage has increased too much, do a collection.
@@ -2074,10 +2073,9 @@ gc_should_collect_mem_usage(GCState *gcstate)
         // clear the young object count so we don't check memory usage again
         // on the next call to gc_should_collect().
         PyMutex_Lock(&gcstate->mutex);
+        int young_count = _Py_atomic_exchange_int(&gcstate->young.count, 0);
         _Py_atomic_store_ssize_relaxed(&gcstate->deferred_count,
-                                       gcstate->deferred_count +
-                                           gcstate->young.count);
-        _Py_atomic_store_int(&gcstate->young.count, 0);
+                                       gcstate->deferred_count + young_count);
         PyMutex_Unlock(&gcstate->mutex);
         return false;
     }
@@ -2247,7 +2245,8 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
 
     // Store the current memory usage, can be smaller now if breaking cycles
     // freed some memory.
-    state->gcstate->last_mem = get_process_mem_usage();
+    Py_ssize_t last_mem = get_process_mem_usage();
+    _Py_atomic_store_ssize_relaxed(&state->gcstate->last_mem, last_mem);
 
     // Append objects with legacy finalizers to the "gc.garbage" list.
     handle_legacy_finalizers(state);
