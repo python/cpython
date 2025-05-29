@@ -3219,6 +3219,8 @@ int
 PyInterpreterWeakRef_Get(PyInterpreterWeakRef *wref_ptr)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
+    /* PyInterpreterWeakRef_Close() can be called without an attached thread
+       state, so we have to use the raw allocator. */
     _PyInterpreterWeakRef *wref = PyMem_RawMalloc(sizeof(_PyInterpreterWeakRef));
     if (wref == NULL) {
         PyErr_NoMemory();
