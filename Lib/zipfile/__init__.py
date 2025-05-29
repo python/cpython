@@ -1529,13 +1529,14 @@ class _ZipRepacker:
         zfile._didModify = True
 
     def _calc_initial_entry_offset(self, fp, data_offset):
-        checked_offsets = set()
+        checked_offsets = {}
         if data_offset > 0:
             self._debug(3, 'scanning file signatures before:', data_offset)
             for pos in self._iter_scan_signature(fp, stringFileHeader, 0, data_offset):
                 self._debug(3, 'checking file signature at:', pos)
-                if self._validate_local_file_entry_sequence(fp, pos, data_offset, checked_offsets):
-                    return data_offset - pos
+                entry_size = self._validate_local_file_entry_sequence(fp, pos, data_offset, checked_offsets)
+                if entry_size == data_offset - pos:
+                    return entry_size
         return 0
 
     def _iter_scan_signature(self, fp, signature, start_offset, end_offset, chunk_size=4096):
@@ -1569,21 +1570,20 @@ class _ZipRepacker:
         while offset < end_offset:
             self._debug(3, 'checking local file entry at:', offset)
 
-            # Cache checked offsets to improve performance by failing
-            # subsequent (possible) file entry offsets early. They are
-            # rechecked only when proven false eventually.
+            # Cache checked offsets to improve performance.
             if offset in checked_offsets:
-                self._debug(3, 'skipping checked:', offset)
-                return False
+                self._debug(3, 'read from checked cache:', offset)
+                entry_size = checked_offsets[offset]
             else:
-                checked_offsets.add(offset)
+                entry_size = self._validate_local_file_entry(fp, offset, end_offset)
+                checked_offsets[offset] = entry_size
 
-            entry_size = self._validate_local_file_entry(fp, offset, end_offset)
             if entry_size is None:
-                return False
+                break
+
             offset += entry_size
 
-        return offset == end_offset
+        return offset - start_offset
 
     def _validate_local_file_entry(self, fp, offset, end_offset):
         fp.seek(offset)
