@@ -2016,40 +2016,11 @@ PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
 int
 PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
 {
-    PyObject **dictptr = _PyObject_GetDictPtr(obj);
-    if (dictptr == NULL) {
-        if (_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_INLINE_VALUES) &&
-            _PyObject_GetManagedDict(obj) == NULL
-        ) {
-            /* Was unable to convert to dict */
-            PyErr_NoMemory();
-        }
-        else {
-            PyErr_SetString(PyExc_AttributeError,
-                            "This object has no __dict__");
-        }
-        return -1;
-    }
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "cannot delete __dict__");
         return -1;
     }
-    if (!PyDict_Check(value)) {
-        PyErr_Format(PyExc_TypeError,
-                     "__dict__ must be set to a dictionary, "
-                     "not a '%.200s'", Py_TYPE(value)->tp_name);
-        return -1;
-    }
-    Py_BEGIN_CRITICAL_SECTION(obj);
-    PyObject *olddict = *dictptr;
-    FT_ATOMIC_STORE_PTR_RELEASE(*dictptr, Py_NewRef(value));
-#ifdef Py_GIL_DISABLED
-    _PyObject_XDecRefDelayed(olddict);
-#else
-    Py_XDECREF(olddict);
-#endif
-    Py_END_CRITICAL_SECTION();
-    return 0;
+    return _PyObject_SetDict(obj, value);
 }
 
 

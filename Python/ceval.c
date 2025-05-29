@@ -2979,7 +2979,7 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     int is_possibly_shadowing_stdlib = 0;
     if (is_possibly_shadowing) {
         PyObject *stdlib_modules;
-        if (_PySys_GetOptionalAttrString("stdlib_module_names", &stdlib_modules) < 0) {
+        if (PySys_GetOptionalAttrString("stdlib_module_names", &stdlib_modules) < 0) {
             goto done;
         }
         if (stdlib_modules && PyAnySet_Check(stdlib_modules)) {

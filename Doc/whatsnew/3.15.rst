@@ -213,7 +213,10 @@ C API changes
 New features
 ------------
 
-* TODO
+* Add :c:func:`PySys_GetAttr`, :c:func:`PySys_GetAttrString`,
+  :c:func:`PySys_GetOptionalAttr`, and :c:func:`PySys_GetOptionalAttrString`
+  functions as replacements for :c:func:`PySys_GetObject`.
+  (Contributed by Serhiy Storchaka in :gh:`108512`.)
 
 Porting to Python 3.15
 ----------------------
