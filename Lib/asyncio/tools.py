@@ -236,7 +236,7 @@ def _display_awaited_by_tasks_csv(table, format_: TaskTableOutputFormat) -> None
         case TaskTableOutputFormat.csv:
             delimiter = ','
         case TaskTableOutputFormat.bsv:
-            delimiter = '🍌'
+            delimiter = '\N{BANANA}'
         case _:
             raise ValueError(f"Unknown output format: {format_}")
     csv_writer = csv.writer(sys.stdout, delimiter=delimiter)
