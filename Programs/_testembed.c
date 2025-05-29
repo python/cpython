@@ -2314,15 +2314,14 @@ test_get_incomplete_frame(void)
 }
 
 const char *THREAD_CODE = \
-     "import time\n"
-     ...
-                   "time.sleep(0.2)\n"
-                   "def fib(n):\n"
-                   "  if n <= 1:\n"
-                   "    return n\n"
-                   "  else:\n"
-                   "    return fib(n - 1) + fib(n - 2)\n"
-                   "fib(10)";
+    "import time\n"
+    "time.sleep(0.2)\n"
+    "def fib(n):\n"
+    "  if n <= 1:\n"
+    "    return n\n"
+    "  else:\n"
+    "    return fib(n - 1) + fib(n - 2)\n"
+    "fib(10)";
 
 typedef struct {
     PyInterpreterRef ref;
