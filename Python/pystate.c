@@ -1749,7 +1749,8 @@ decref_interpreter(PyInterpreterState *interp)
     if (old == 1 && shutting_down_natives(interp)) {
         _PyEvent_Notify(&finalizing->finished);
     } else if (old <= 0) {
-        Py_FatalError("interpreter has negative reference count");
+        Py_FatalError("interpreter has negative reference count, likely due"
+                      " to an extra PyInterpreterRef_Close()");
     }
 }
 
