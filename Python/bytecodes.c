@@ -3062,7 +3062,7 @@ dummy_func(
                 _Py_Specialize_GetIter(iter, next_instr);
                 DISPATCH_SAME_OPARG();
             }
-            OPCODE_DEFERRED_INC(FOR_ITER);
+            OPCODE_DEFERRED_INC(GET_ITER);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             #endif  /* ENABLE_SPECIALIZATION_FT */
         }

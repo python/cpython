@@ -6207,7 +6207,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     DISPATCH_SAME_OPARG();
                 }
-                OPCODE_DEFERRED_INC(FOR_ITER);
+                OPCODE_DEFERRED_INC(GET_ITER);
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 #endif  /* ENABLE_SPECIALIZATION_FT */
             }
