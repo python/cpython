@@ -209,6 +209,9 @@ class TaskTableOutputFormat(Enum):
     table = "table"
     csv = "csv"
     bsv = "bsv"
+    # As per the words of the asyncio 🍌SV spec lead:
+    # > 🍌SV is not just a format. It’s a lifestyle. A philosophy.
+    # https://www.youtube.com/watch?v=RrsVi1P6n0w
 
 
 _header = ('tid', 'task id', 'task name', 'coroutine chain', 'awaiter name', 'awaiter id')
