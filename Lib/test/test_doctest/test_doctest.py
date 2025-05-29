@@ -2411,9 +2411,6 @@ def test_DocTestSuite_errors():
          >>> result
          <unittest.result.TestResult run=4 errors=0 failures=4>
          >>> print(result.failures[0][1]) # doctest: +ELLIPSIS
-         Traceback (most recent call last):
-           File ...
-             raise self.failureException(self.format_failure(new.getvalue()))
          AssertionError: Failed doctest test for test.test_doctest.sample_doctest_errors
            File "...sample_doctest_errors.py", line 0, in sample_doctest_errors
          <BLANKLINE>
@@ -2431,21 +2428,12 @@ def test_DocTestSuite_errors():
              1/0
          Exception raised:
              Traceback (most recent call last):
-               File ...
-                 exec(compile(example.source, filename, "single",
-                 ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                              compileflags, True), test.globs)
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                File "<doctest test.test_doctest.sample_doctest_errors[1]>", line 1, in <module>
                  1/0
                  ~^~
              ZeroDivisionError: division by zero
          <BLANKLINE>
-         <BLANKLINE>
          >>> print(result.failures[1][1]) # doctest: +ELLIPSIS
-         Traceback (most recent call last):
-           File ...
-             raise self.failureException(self.format_failure(new.getvalue()))
          AssertionError: Failed doctest test for test.test_doctest.sample_doctest_errors.__test__.bad
            File "...sample_doctest_errors.py", line unknown line number, in bad
          <BLANKLINE>
@@ -2463,21 +2451,12 @@ def test_DocTestSuite_errors():
              1/0
          Exception raised:
              Traceback (most recent call last):
-               File ...
-                 exec(compile(example.source, filename, "single",
-                 ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                              compileflags, True), test.globs)
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                File "<doctest test.test_doctest.sample_doctest_errors.__test__.bad[1]>", line 1, in <module>
                  1/0
                  ~^~
              ZeroDivisionError: division by zero
          <BLANKLINE>
-         <BLANKLINE>
          >>> print(result.failures[2][1]) # doctest: +ELLIPSIS
-         Traceback (most recent call last):
-           File ...
-             raise self.failureException(self.format_failure(new.getvalue()))
          AssertionError: Failed doctest test for test.test_doctest.sample_doctest_errors.errors
            File "...sample_doctest_errors.py", line 14, in errors
          <BLANKLINE>
@@ -2495,11 +2474,6 @@ def test_DocTestSuite_errors():
              1/0
          Exception raised:
              Traceback (most recent call last):
-               File ...
-                 exec(compile(example.source, filename, "single",
-                 ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                              compileflags, True), test.globs)
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                File "<doctest test.test_doctest.sample_doctest_errors.errors[1]>", line 1, in <module>
                  1/0
                  ~^~
@@ -2510,11 +2484,6 @@ def test_DocTestSuite_errors():
              f()
          Exception raised:
              Traceback (most recent call last):
-               File ...
-                 exec(compile(example.source, filename, "single",
-                 ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                              compileflags, True), test.globs)
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                File "<doctest test.test_doctest.sample_doctest_errors.errors[3]>", line 1, in <module>
                  f()
                  ~^^
@@ -2528,11 +2497,6 @@ def test_DocTestSuite_errors():
              g()
          Exception raised:
              Traceback (most recent call last):
-               File ...
-                 exec(compile(example.source, filename, "single",
-                 ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                              compileflags, True), test.globs)
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                File "<doctest test.test_doctest.sample_doctest_errors.errors[4]>", line 1, in <module>
                  g()
                  ~^^
@@ -2541,11 +2505,7 @@ def test_DocTestSuite_errors():
                  ~~^^^
              IndexError: list index out of range
          <BLANKLINE>
-         <BLANKLINE>
          >>> print(result.failures[3][1]) # doctest: +ELLIPSIS
-         Traceback (most recent call last):
-           File ...
-             raise self.failureException(self.format_failure(new.getvalue()))
          AssertionError: Failed doctest test for test.test_doctest.sample_doctest_errors.syntax_error
            File "...sample_doctest_errors.py", line 29, in syntax_error
          <BLANKLINE>
@@ -2554,17 +2514,10 @@ def test_DocTestSuite_errors():
          Failed example:
              2+*3
          Exception raised:
-             Traceback (most recent call last):
-               File ...
-                 exec(compile(example.source, filename, "single",
-                      ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                              compileflags, True), test.globs)
-                              ^^^^^^^^^^^^^^^^^^^
                File "<doctest test.test_doctest.sample_doctest_errors.syntax_error[0]>", line 1
                  2+*3
                    ^
              SyntaxError: invalid syntax
-         <BLANKLINE>
          <BLANKLINE>
     """
 
@@ -2740,9 +2693,6 @@ def test_DocFileSuite_errors():
         >>> result
         <unittest.result.TestResult run=1 errors=0 failures=1>
         >>> print(result.failures[0][1]) # doctest: +ELLIPSIS
-        Traceback (most recent call last):
-          File ...
-            raise self.failureException(self.format_failure(new.getvalue()))
         AssertionError: Failed doctest test for test_doctest_errors.txt
           File "...test_doctest_errors.txt", line 0
         <BLANKLINE>
@@ -2760,11 +2710,6 @@ def test_DocFileSuite_errors():
             1/0
         Exception raised:
             Traceback (most recent call last):
-              File ...
-                exec(compile(example.source, filename, "single",
-                ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                             compileflags, True), test.globs)
-                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
               File "<doctest test_doctest_errors.txt[1]>", line 1, in <module>
                 1/0
                 ~^~
@@ -2775,11 +2720,6 @@ def test_DocFileSuite_errors():
             f()
         Exception raised:
             Traceback (most recent call last):
-              File ...
-                exec(compile(example.source, filename, "single",
-                ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                             compileflags, True), test.globs)
-                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
               File "<doctest test_doctest_errors.txt[3]>", line 1, in <module>
                 f()
                 ~^^
@@ -2792,17 +2732,10 @@ def test_DocFileSuite_errors():
         Failed example:
             2+*3
         Exception raised:
-            Traceback (most recent call last):
-              File ...
-                exec(compile(example.source, filename, "single",
-                     ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                             compileflags, True), test.globs)
-                             ^^^^^^^^^^^^^^^^^^^
               File "<doctest test_doctest_errors.txt[4]>", line 1
                 2+*3
                   ^
             SyntaxError: invalid syntax
-        <BLANKLINE>
         <BLANKLINE>
     """
 
@@ -2876,7 +2809,8 @@ def test_unittest_reportflags():
       >>> result
       <unittest.result.TestResult run=1 errors=0 failures=1>
       >>> print(result.failures[0][1]) # doctest: +ELLIPSIS
-      Traceback ...
+      AssertionError: Failed doctest test for test_doctest.txt
+      ...
       Failed example:
           favorite_color
       ...
@@ -2895,13 +2829,13 @@ def test_unittest_reportflags():
       >>> result
       <unittest.result.TestResult run=1 errors=0 failures=1>
       >>> print(result.failures[0][1]) # doctest: +ELLIPSIS
-      Traceback ...
+      AssertionError: Failed doctest test for test_doctest.txt
+      ...
       Failed example:
           favorite_color
       Exception raised:
           ...
           NameError: name 'favorite_color' is not defined
-      <BLANKLINE>
       <BLANKLINE>
 
     We get only the first failure.
@@ -2922,7 +2856,8 @@ def test_unittest_reportflags():
     the trailing whitespace using `\x20` in the diff below.
 
       >>> print(result.failures[0][1]) # doctest: +ELLIPSIS
-      Traceback ...
+      AssertionError: Failed doctest test for test_doctest.txt
+      ...
       Failed example:
           favorite_color
       ...
@@ -2936,7 +2871,6 @@ def test_unittest_reportflags():
           - <BLANKLINE>
           +\x20
             b
-      <BLANKLINE>
       <BLANKLINE>
 
 
@@ -3145,11 +3079,6 @@ Tests for error reporting in the testfile() function.
         1/0
     Exception raised:
         Traceback (most recent call last):
-          File ...
-            exec(compile(example.source, filename, "single",
-            ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                         compileflags, True), test.globs)
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
           File "<doctest test_doctest_errors.txt[1]>", line 1, in <module>
             1/0
             ~^~
@@ -3160,11 +3089,6 @@ Tests for error reporting in the testfile() function.
         f()
     Exception raised:
         Traceback (most recent call last):
-          File ...
-            exec(compile(example.source, filename, "single",
-            ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                         compileflags, True), test.globs)
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
           File "<doctest test_doctest_errors.txt[3]>", line 1, in <module>
             f()
             ~^^
@@ -3177,12 +3101,6 @@ Tests for error reporting in the testfile() function.
     Failed example:
         2+*3
     Exception raised:
-        Traceback (most recent call last):
-          File ...
-            exec(compile(example.source, filename, "single",
-                 ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                         compileflags, True), test.globs)
-                         ^^^^^^^^^^^^^^^^^^^
           File "<doctest test_doctest_errors.txt[4]>", line 1
             2+*3
               ^
@@ -3343,11 +3261,6 @@ Tests for error reporting in the testmod() function.
         1/0
     Exception raised:
         Traceback (most recent call last):
-          File ...
-            exec(compile(example.source, filename, "single",
-            ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                         compileflags, True), test.globs)
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
           File "<doctest test.test_doctest.sample_doctest_errors[1]>", line 1, in <module>
             1/0
             ~^~
@@ -3366,11 +3279,6 @@ Tests for error reporting in the testmod() function.
         1/0
     Exception raised:
         Traceback (most recent call last):
-          File ...
-            exec(compile(example.source, filename, "single",
-            ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                         compileflags, True), test.globs)
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
           File "<doctest test.test_doctest.sample_doctest_errors.__test__.bad[1]>", line 1, in <module>
             1/0
             ~^~
@@ -3389,11 +3297,6 @@ Tests for error reporting in the testmod() function.
         1/0
     Exception raised:
         Traceback (most recent call last):
-          File ...
-            exec(compile(example.source, filename, "single",
-            ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                         compileflags, True), test.globs)
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
           File "<doctest test.test_doctest.sample_doctest_errors.errors[1]>", line 1, in <module>
             1/0
             ~^~
@@ -3404,11 +3307,6 @@ Tests for error reporting in the testmod() function.
         f()
     Exception raised:
         Traceback (most recent call last):
-          File ...
-            exec(compile(example.source, filename, "single",
-            ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                         compileflags, True), test.globs)
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
           File "<doctest test.test_doctest.sample_doctest_errors.errors[3]>", line 1, in <module>
             f()
             ~^^
@@ -3422,11 +3320,6 @@ Tests for error reporting in the testmod() function.
         g()
     Exception raised:
         Traceback (most recent call last):
-          File ...
-            exec(compile(example.source, filename, "single",
-            ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                         compileflags, True), test.globs)
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
           File "<doctest test.test_doctest.sample_doctest_errors.errors[4]>", line 1, in <module>
             g()
             ~^^
@@ -3439,12 +3332,6 @@ Tests for error reporting in the testmod() function.
     Failed example:
         2+*3
     Exception raised:
-        Traceback (most recent call last):
-          File ...
-            exec(compile(example.source, filename, "single",
-                 ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                         compileflags, True), test.globs)
-                         ^^^^^^^^^^^^^^^^^^^
           File "<doctest test.test_doctest.sample_doctest_errors.syntax_error[0]>", line 1
             2+*3
               ^
@@ -3490,11 +3377,6 @@ Check doctest with a non-ascii filename:
         raise Exception('clé')
     Exception raised:
         Traceback (most recent call last):
-          File ...
-            exec(compile(example.source, filename, "single",
-            ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                         compileflags, True), test.globs)
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
           File "<doctest foo-bär@baz[0]>", line 1, in <module>
             raise Exception('clé')
         Exception: clé
