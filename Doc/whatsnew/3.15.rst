@@ -138,6 +138,14 @@ Deprecated
 Removed
 =======
 
+ctypes
+------
+
+* Removed the undocumented function :func:`!ctypes.SetPointerType`,
+  which has been deprecated since Python 3.13.
+  (Contributed by Bénédikt Tran in :gh:`133866`.)
+
+
 http.server
 -----------
 
@@ -217,6 +225,13 @@ New features
   :c:func:`PySys_GetOptionalAttr`, and :c:func:`PySys_GetOptionalAttrString`
   functions as replacements for :c:func:`PySys_GetObject`.
   (Contributed by Serhiy Storchaka in :gh:`108512`.)
+
+* Add :c:func:`PyUnicodeWriter_WriteASCII` function to write an ASCII string
+  into a :c:type:`PyUnicodeWriter`. The function is faster than
+  :c:func:`PyUnicodeWriter_WriteUTF8`, but has an undefined behavior if the
+  input string contains non-ASCII characters.
+  (Contributed by Victor Stinner in :gh:`133968`.)
+
 
 Porting to Python 3.15
 ----------------------
