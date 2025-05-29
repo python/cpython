@@ -382,8 +382,8 @@ Other functions
 
    Examples of returned values:
 
-   - linux-i586
-   - linux-alpha (?)
+   - linux-x86_64
+   - linux-aarch64
    - solaris-2.6-sun4u
 
    Windows will return one of:
