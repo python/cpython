@@ -1,0 +1,2 @@
+Fix zstd module build failed when people setup the argument without debug
+mode
