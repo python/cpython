@@ -57,6 +57,36 @@ def defined_in___main__(name, script, *, remove=False):
             mainns.pop(name, None)
 
 
+def build_excinfo(exctype, msg=None, formatted=None, errdisplay=None):
+    if isinstance(exctype, type):
+        assert issubclass(exctype, BaseException), exctype
+        exctype = types.SimpleNamespace(
+            __name__=exctype.__name__,
+            __qualname__=exctype.__qualname__,
+            __module__=exctype.__module__,
+        )
+    elif isinstance(exctype, str):
+        module, _, name = exctype.rpartition(exctype)
+        if not module and name in __builtins__:
+            module = 'builtins'
+        exctype = types.SimpleNamespace(
+            __name__=name,
+            __qualname__=exctype,
+            __module__=module or None,
+        )
+    else:
+        assert isinstance(exctype, types.SimpleNamespace)
+    assert msg is None or isinstance(msg, str), msg
+    assert formatted  is None or isinstance(formatted, str), formatted
+    assert errdisplay is None or isinstance(errdisplay, str), errdisplay
+    return types.SimpleNamespace(
+        type=exctype,
+        msg=msg,
+        formatted=formatted,
+        errdisplay=errdisplay,
+    )
+
+
 class ModuleTests(TestBase):
 
     def test_queue_aliases(self):
@@ -1121,7 +1151,7 @@ class TestInterpreterCall(TestBase):
 
         func = call_func_return_unpickleable
         with self.subTest('no args, returns unpickleable'):
-            with self.assert_fails_not_shareable():
+            with self.assertRaises(interpreters.NotShareableError):
                 interp.call(func)
 
     def test_stateless_func_returns_arg(self):
@@ -1318,7 +1348,7 @@ class TestInterpreterCall(TestBase):
 
         with self.subTest('pickleable, added dynamically'):
             with defined_in___main__(funcname, script) as arg:
-                with self.assert_fails_not_shareable():
+                with self.assertRaises(interpreters.NotShareableError):
                     interp.call(defs.spam_returns_arg, arg)
 
         with self.subTest('lying about __main__'):
@@ -1365,7 +1395,7 @@ class TestInterpreterCall(TestBase):
 
         func = get_call_func_closure
         with self.subTest(func):
-            with self.assert_fails_not_shareable():
+            with self.assertRaises(interpreters.NotShareableError):
                 interp.call(func, 42)
 
         func = get_call_func_closure(42)
@@ -1376,12 +1406,12 @@ class TestInterpreterCall(TestBase):
         func = call_func_complex
         op = 'closure'
         with self.subTest(f'{func} ({op})'):
-            with self.assert_fails_not_shareable():
+            with self.assertRaises(interpreters.NotShareableError):
                 interp.call(func, op, value='~~~')
 
         op = 'custom-inner'
         with self.subTest(f'{func} ({op})'):
-            with self.assert_fails_not_shareable():
+            with self.assertRaises(interpreters.NotShareableError):
                 interp.call(func, op, 'eggs!')
 
     def test_call_in_thread(self):
@@ -1924,18 +1954,14 @@ class LowLevelTests(TestBase):
             with results:
                 exc = _interpreters.exec(interpid, script)
                 out = results.stdout()
-            self.assertEqual(out, '')
-            self.assert_ns_equal(exc, types.SimpleNamespace(
-                type=types.SimpleNamespace(
-                    __name__='Exception',
-                    __qualname__='Exception',
-                    __module__='builtins',
-                ),
-                msg='uh-oh!',
+            expected = build_excinfo(
+                Exception, 'uh-oh!',
                 # We check these in other tests.
                 formatted=exc.formatted,
                 errdisplay=exc.errdisplay,
-            ))
+            )
+            self.assertEqual(out, '')
+            self.assert_ns_equal(exc, expected)
 
         with self.subTest('from C-API'):
             with self.interpreter_from_capi() as interpid:
@@ -1983,18 +2009,14 @@ class LowLevelTests(TestBase):
         with self.subTest('uncaught exception'):
             func = defs.spam_raises
             res, exc = _interpreters.call(interpid, func)
-            self.assertIsNone(res)
-            self.assertEqual(exc, types.SimpleNamespace(
-                type=types.SimpleNamespace(
-                    __name__='Exception',
-                    __qualname__='Exception',
-                    __module__='builtins',
-                ),
-                msg='spam!',
+            expected = build_excinfo(
+                Exception, 'spam!',
                 # We check these in other tests.
                 formatted=exc.formatted,
                 errdisplay=exc.errdisplay,
-            ))
+            )
+            self.assertIsNone(res)
+            self.assertEqual(exc, expected)
 
     @requires_test_modules
     def test_set___main___attrs(self):

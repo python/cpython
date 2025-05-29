@@ -317,7 +317,9 @@ typedef enum error_code {
     _PyXI_ERR_ALREADY_RUNNING = -4,
     _PyXI_ERR_MAIN_NS_FAILURE = -5,
     _PyXI_ERR_APPLY_NS_FAILURE = -6,
-    _PyXI_ERR_NOT_SHAREABLE = -7,
+    _PyXI_ERR_PRESERVE_FAILURE = -7,
+    _PyXI_ERR_EXC_PROPAGATION_FAILURE = -8,
+    _PyXI_ERR_NOT_SHAREABLE = -9,
 } _PyXI_errcode;
 
 
@@ -353,6 +355,7 @@ PyAPI_FUNC(void) _PyXI_FreeSession(_PyXI_session *);
 typedef struct {
     PyObject *preserved;
     PyObject *excinfo;
+    _PyXI_errcode errcode;
 } _PyXI_session_result;
 PyAPI_FUNC(void) _PyXI_ClearResult(_PyXI_session_result *);
 
@@ -361,11 +364,20 @@ PyAPI_FUNC(int) _PyXI_Enter(
     PyInterpreterState *interp,
     PyObject *nsupdates,
     _PyXI_session_result *);
-PyAPI_FUNC(int) _PyXI_Exit(_PyXI_session *, _PyXI_session_result *);
+PyAPI_FUNC(int) _PyXI_Exit(
+    _PyXI_session *,
+    _PyXI_errcode,
+    _PyXI_session_result *);
 
-PyAPI_FUNC(PyObject *) _PyXI_GetMainNamespace(_PyXI_session *);
+PyAPI_FUNC(PyObject *) _PyXI_GetMainNamespace(
+    _PyXI_session *,
+    _PyXI_errcode *);
 
-PyAPI_FUNC(int) _PyXI_Preserve(_PyXI_session *, const char *, PyObject *);
+PyAPI_FUNC(int) _PyXI_Preserve(
+    _PyXI_session *,
+    const char *,
+    PyObject *,
+    _PyXI_errcode *);
 PyAPI_FUNC(PyObject *) _PyXI_GetPreserved(_PyXI_session_result *, const char *);
 
 
