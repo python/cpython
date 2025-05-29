@@ -1643,8 +1643,4 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    from user input, prefer calling :c:func:`PyUnicode_FromString` and
    :c:func:`PyUnicode_InternInPlace` directly.
 
-   .. impl-detail::
-
-      Strings interned this way are made :term:`immortal`.
-
 
