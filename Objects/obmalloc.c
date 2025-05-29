@@ -1238,7 +1238,7 @@ work_queue_first(struct llist_node *head)
 }
 
 static void
-process_queue(struct llist_node *head, struct _qsbr_thread_state *qsbr,
+process_queue(struct llist_node *head, _PyThreadStateImpl *tstate,
               bool keep_empty, delayed_dealloc_cb cb, void *state)
 {
     while (!llist_empty(head)) {
@@ -1246,7 +1246,7 @@ process_queue(struct llist_node *head, struct _qsbr_thread_state *qsbr,
 
         if (buf->rd_idx < buf->wr_idx) {
             struct _mem_work_item *item = &buf->array[buf->rd_idx];
-            if (!_Py_qsbr_poll(qsbr, item->qsbr_goal)) {
+            if (!_Py_qsbr_poll(tstate->qsbr, item->qsbr_goal)) {
                 return;
             }
 
@@ -1270,11 +1270,11 @@ process_queue(struct llist_node *head, struct _qsbr_thread_state *qsbr,
 
 static void
 process_interp_queue(struct _Py_mem_interp_free_queue *queue,
-                     struct _qsbr_thread_state *qsbr, delayed_dealloc_cb cb,
+                     _PyThreadStateImpl *tstate, delayed_dealloc_cb cb,
                      void *state)
 {
     assert(PyMutex_IsLocked(&queue->mutex));
-    process_queue(&queue->head, qsbr, false, cb, state);
+    process_queue(&queue->head, tstate, false, cb, state);
 
     int more_work = !llist_empty(&queue->head);
     _Py_atomic_store_int_relaxed(&queue->has_work, more_work);
@@ -1282,7 +1282,7 @@ process_interp_queue(struct _Py_mem_interp_free_queue *queue,
 
 static void
 maybe_process_interp_queue(struct _Py_mem_interp_free_queue *queue,
-                           struct _qsbr_thread_state *qsbr, delayed_dealloc_cb cb,
+                           _PyThreadStateImpl *tstate, delayed_dealloc_cb cb,
                            void *state)
 {
     if (!_Py_atomic_load_int_relaxed(&queue->has_work)) {
@@ -1291,7 +1291,7 @@ maybe_process_interp_queue(struct _Py_mem_interp_free_queue *queue,
 
     // Try to acquire the lock, but don't block if it's already held.
     if (_PyMutex_LockTimed(&queue->mutex, 0, 0) == PY_LOCK_ACQUIRED) {
-        process_interp_queue(queue, qsbr, cb, state);
+        process_interp_queue(queue, tstate, cb, state);
         PyMutex_Unlock(&queue->mutex);
     }
 }
@@ -1303,10 +1303,10 @@ _PyMem_ProcessDelayed(PyThreadState *tstate)
     _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
 
     // Process thread-local work
-    process_queue(&tstate_impl->mem_free_queue, tstate_impl->qsbr, true, NULL, NULL);
+    process_queue(&tstate_impl->mem_free_queue, tstate_impl, true, NULL, NULL);
 
     // Process shared interpreter work
-    maybe_process_interp_queue(&interp->mem_free_queue, tstate_impl->qsbr, NULL, NULL);
+    maybe_process_interp_queue(&interp->mem_free_queue, tstate_impl, NULL, NULL);
 }
 
 void
@@ -1316,10 +1316,10 @@ _PyMem_ProcessDelayedNoDealloc(PyThreadState *tstate, delayed_dealloc_cb cb, voi
     _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
 
     // Process thread-local work
-    process_queue(&tstate_impl->mem_free_queue, tstate_impl->qsbr, true, cb, state);
+    process_queue(&tstate_impl->mem_free_queue, tstate_impl, true, cb, state);
 
     // Process shared interpreter work
-    maybe_process_interp_queue(&interp->mem_free_queue, tstate_impl->qsbr, cb, state);
+    maybe_process_interp_queue(&interp->mem_free_queue, tstate_impl, cb, state);
 }
 
 void
@@ -1348,7 +1348,7 @@ _PyMem_AbandonDelayed(PyThreadState *tstate)
 
     // Process the merged queue now (see gh-130794).
     _PyThreadStateImpl *this_tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
-    process_interp_queue(&interp->mem_free_queue, this_tstate->qsbr, NULL, NULL);
+    process_interp_queue(&interp->mem_free_queue, this_tstate, NULL, NULL);
 
     PyMutex_Unlock(&interp->mem_free_queue.mutex);
 

@@ -572,7 +572,7 @@ class IOTest(unittest.TestCase):
         for [test, abilities] in tests:
             with self.subTest(test):
                 if test == pipe_writer and not threading_helper.can_start_thread:
-                    skipTest()
+                    self.skipTest("Need threads")
                 with test() as obj:
                     do_test(test, obj, abilities)
 
@@ -902,7 +902,7 @@ class IOTest(unittest.TestCase):
             self.BytesIO()
         )
         for obj in test:
-            self.assertTrue(hasattr(obj, "__dict__"))
+            self.assertHasAttr(obj, "__dict__")
 
     def test_opener(self):
         with self.open(os_helper.TESTFN, "w", encoding="utf-8") as f:
@@ -918,7 +918,7 @@ class IOTest(unittest.TestCase):
         def badopener(fname, flags):
             return -1
         with self.assertRaises(ValueError) as cm:
-            open('non-existent', 'r', opener=badopener)
+            self.open('non-existent', 'r', opener=badopener)
         self.assertEqual(str(cm.exception), 'opener returned -1')
 
     def test_bad_opener_other_negative(self):
@@ -926,7 +926,7 @@ class IOTest(unittest.TestCase):
         def badopener(fname, flags):
             return -2
         with self.assertRaises(ValueError) as cm:
-            open('non-existent', 'r', opener=badopener)
+            self.open('non-existent', 'r', opener=badopener)
         self.assertEqual(str(cm.exception), 'opener returned -2')
 
     def test_opener_invalid_fd(self):
@@ -1117,7 +1117,7 @@ class TestIOCTypes(unittest.TestCase):
         def check_subs(types, base):
             for tp in types:
                 with self.subTest(tp=tp, base=base):
-                    self.assertTrue(issubclass(tp, base))
+                    self.assertIsSubclass(tp, base)
 
         def recursive_check(d):
             for k, v in d.items():
@@ -1870,7 +1870,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         flushed = b"".join(writer._write_stack)
         # At least (total - 8) bytes were implicitly flushed, perhaps more
         # depending on the implementation.
-        self.assertTrue(flushed.startswith(contents[:-8]), flushed)
+        self.assertStartsWith(flushed, contents[:-8])
 
     def check_writes(self, intermediate_func):
         # Lots of writes, test the flushed output is as expected.
@@ -1940,7 +1940,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         self.assertEqual(bufio.write(b"ABCDEFGHI"), 9)
         s = raw.pop_written()
         # Previously buffered bytes were flushed
-        self.assertTrue(s.startswith(b"01234567A"), s)
+        self.assertStartsWith(s, b"01234567A")
 
     def test_write_and_rewind(self):
         raw = self.BytesIO()
@@ -2236,7 +2236,7 @@ class BufferedRWPairTest(unittest.TestCase):
     def test_peek(self):
         pair = self.tp(self.BytesIO(b"abcdef"), self.MockRawIO())
 
-        self.assertTrue(pair.peek(3).startswith(b"abc"))
+        self.assertStartsWith(pair.peek(3), b"abc")
         self.assertEqual(pair.read(3), b"abc")
 
     def test_readable(self):
@@ -4417,7 +4417,7 @@ class MiscIOTest(unittest.TestCase):
         self._check_abc_inheritance(io)
 
     def _check_warn_on_dealloc(self, *args, **kwargs):
-        f = open(*args, **kwargs)
+        f = self.open(*args, **kwargs)
         r = repr(f)
         with self.assertWarns(ResourceWarning) as cm:
             f = None
@@ -4446,7 +4446,7 @@ class MiscIOTest(unittest.TestCase):
         r, w = os.pipe()
         fds += r, w
         with warnings_helper.check_no_resource_warning(self):
-            open(r, *args, closefd=False, **kwargs)
+            self.open(r, *args, closefd=False, **kwargs)
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_warn_on_dealloc_fd(self):
@@ -4618,10 +4618,8 @@ class MiscIOTest(unittest.TestCase):
         proc = assert_python_ok('-X', 'warn_default_encoding', '-c', code)
         warnings = proc.err.splitlines()
         self.assertEqual(len(warnings), 2)
-        self.assertTrue(
-            warnings[0].startswith(b"<string>:5: EncodingWarning: "))
-        self.assertTrue(
-            warnings[1].startswith(b"<string>:8: EncodingWarning: "))
+        self.assertStartsWith(warnings[0], b"<string>:5: EncodingWarning: ")
+        self.assertStartsWith(warnings[1], b"<string>:8: EncodingWarning: ")
 
     def test_text_encoding(self):
         # PEP 597, bpo-47000. io.text_encoding() returns "locale" or "utf-8"
@@ -4834,7 +4832,7 @@ class SignalsTest(unittest.TestCase):
                     os.read(r, len(data) * 100)
             exc = cm.exception
             if isinstance(exc, RuntimeError):
-                self.assertTrue(str(exc).startswith("reentrant call"), str(exc))
+                self.assertStartsWith(str(exc), "reentrant call")
         finally:
             signal.alarm(0)
             wio.close()
