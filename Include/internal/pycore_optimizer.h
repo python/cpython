@@ -258,7 +258,11 @@ PyJitRef_Borrow(JitOptRef ref)
     return (JitOptRef){ .bits = ref.bits | Py_TAG_REFCNT };
 }
 
-static const JitOptRef PyJitRef_NULL = (JitOptRef){.bits = PyStackRef_NULL.bits};
+#ifndef Py_GIL_DISABLED
+static const JitOptRef PyJitRef_NULL = (JitOptRef){.bits = PyStackRef_NULL_BITS};
+#else
+static const JitOptRef PyJitRef_NULL = (JitOptRef){.bits = Py_TAG_DEFERRED};
+#endif
 
 static inline bool
 PyJitRef_IsNull(JitOptRef ref)
