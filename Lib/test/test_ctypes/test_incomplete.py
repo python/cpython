@@ -1,6 +1,5 @@
 import ctypes
 import unittest
-import warnings
 from ctypes import Structure, POINTER, pointer, c_char_p
 
 # String-based "incomplete pointers" were implemented in ctypes 0.6.3 (2003, when
