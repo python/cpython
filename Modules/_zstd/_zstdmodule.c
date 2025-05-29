@@ -515,9 +515,9 @@ _zstd_set_parameter_types_impl(PyObject *module, PyObject *c_parameter_type,
     }
 
     Py_XSETREF(
-        mod_state->CParameter_type, Py_NewRef((PyTypeObject*)c_parameter_type));
+        mod_state->CParameter_type, (PyTypeObject*)Py_NewRef(c_parameter_type));
     Py_XSETREF(
-        mod_state->DParameter_type, Py_NewRef((PyTypeObject*)d_parameter_type));
+        mod_state->DParameter_type, (PyTypeObject*)Py_NewRef(d_parameter_type));
 
     Py_RETURN_NONE;
 }
