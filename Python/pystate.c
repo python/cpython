@@ -3174,16 +3174,16 @@ ref_as_interp(PyInterpreterRef ref)
 }
 
 int
-PyInterpreterRef_Get(PyInterpreterRef *ref_ptr)
+PyInterpreterRef_Get(PyInterpreterRef *ref)
 {
-    assert(ref_ptr != NULL);
+    assert(ref != NULL);
     PyInterpreterState *interp = PyInterpreterState_Get();
     if (_PyInterpreterState_Incref(interp) < 0) {
         PyErr_SetString(PyExc_PythonFinalizationError,
                         "Cannot acquire strong interpreter references anymore");
         return -1;
     }
-    *ref_ptr = (PyInterpreterRef)interp;
+    *ref = (PyInterpreterRef)interp;
     return 0;
 }
 
