@@ -267,7 +267,7 @@ static const JitOptRef PyJitRef_NULL = (JitOptRef){.bits = Py_TAG_DEFERRED};
 static inline bool
 PyJitRef_IsNull(JitOptRef ref)
 {
-    return ref.bits == PyStackRef_NULL_BITS;
+    return ref.bits == PyJitRef_NULL.bits;
 }
 
 static inline int
