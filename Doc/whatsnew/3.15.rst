@@ -226,6 +226,11 @@ New features
   functions as replacements for :c:func:`PySys_GetObject`.
   (Contributed by Serhiy Storchaka in :gh:`108512`.)
 
+* Add :c:type:`PyUnstable_Unicode_GET_CACHED_HASH` to get the cached hash of
+  a string. See the documentation for caveats.
+  (Contributed by Petr Viktorin in :gh:`131510`)
+
+
 Porting to Python 3.15
 ----------------------
 
