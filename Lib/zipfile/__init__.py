@@ -1564,19 +1564,21 @@ class _ZipRepacker:
             remainder = chunk[-(sig_len - 1):]
             pos += read_size
 
-    def _validate_local_file_entry_sequence(self, fp, start_offset, end_offset, checked_offsets):
+    def _validate_local_file_entry_sequence(self, fp, start_offset, end_offset, checked_offsets=None):
         offset = start_offset
 
         while offset < end_offset:
             self._debug(3, 'checking local file entry at:', offset)
 
             # Cache checked offsets to improve performance.
-            if offset in checked_offsets:
-                self._debug(3, 'read from checked cache:', offset)
+            try:
                 entry_size = checked_offsets[offset]
-            else:
+            except (KeyError, TypeError):
                 entry_size = self._validate_local_file_entry(fp, offset, end_offset)
-                checked_offsets[offset] = entry_size
+                if checked_offsets is not None:
+                    checked_offsets[offset] = entry_size
+            else:
+                self._debug(3, 'read from checked cache:', offset)
 
             if entry_size is None:
                 break
