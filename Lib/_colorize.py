@@ -172,7 +172,7 @@ class Argparse(ThemeSection):
     reset: str = ANSIColors.RESET
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Difflib(ThemeSection):
     """A 'git diff'-like theme for `difflib.unified_diff`."""
     added: str = ANSIColors.GREEN
@@ -183,7 +183,7 @@ class Difflib(ThemeSection):
     reset: str = ANSIColors.RESET
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Syntax(ThemeSection):
     prompt: str = ANSIColors.BOLD_MAGENTA
     keyword: str = ANSIColors.BOLD_BLUE
@@ -197,7 +197,7 @@ class Syntax(ThemeSection):
     reset: str = ANSIColors.RESET
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Traceback(ThemeSection):
     type: str = ANSIColors.BOLD_MAGENTA
     message: str = ANSIColors.MAGENTA
@@ -209,7 +209,7 @@ class Traceback(ThemeSection):
     reset: str = ANSIColors.RESET
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Unittest(ThemeSection):
     passed: str = ANSIColors.GREEN
     warn: str = ANSIColors.YELLOW
@@ -218,7 +218,7 @@ class Unittest(ThemeSection):
     reset: str = ANSIColors.RESET
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Theme:
     """A suite of themes for all sections of Python.
 
@@ -226,10 +226,10 @@ class Theme:
     below.
     """
     argparse: Argparse = field(default_factory=Argparse)
+    difflib: Difflib = field(default_factory=Difflib)
     syntax: Syntax = field(default_factory=Syntax)
     traceback: Traceback = field(default_factory=Traceback)
     unittest: Unittest = field(default_factory=Unittest)
-    difflib: Difflib = field(default_factory=Difflib)
 
     def copy_with(
         self,
