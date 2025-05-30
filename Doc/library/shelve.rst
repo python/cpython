@@ -257,7 +257,7 @@ Exceptions
 
    The *deserializer* and *serializer* arguments must be given together.
 
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
 
 .. seealso::
