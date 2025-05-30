@@ -202,7 +202,7 @@ access to internal read-only data of Unicode objects:
 
    This function never fails with an exception.
 
-   Note that there are no guarantees on when a object's hash is cached,
+   Note that there are no guarantees on when an object's hash is cached,
    and the (non-)existence of a cached hash does not imply that the string has
    any other properties.
 
