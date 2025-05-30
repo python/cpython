@@ -452,7 +452,7 @@ _exec_in_interpreter(PyThreadState *tstate, PyInterpreterState *interp,
     // Prep and switch interpreters.
     if (_PyXI_Enter(session, interp, shareables) < 0) {
         if (_PyErr_Occurred(tstate)) {
-            // If an error occured at this step, it means that interp
+            // If an error occurred at this step, it means that interp
             // was not prepared and switched.
             _PyXI_FreeSession(session);
             return -1;
