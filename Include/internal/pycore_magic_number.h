@@ -280,6 +280,7 @@ Known values:
     Python 3.15a0 3650 (Initial version)
     Python 3.15a1 3651 (Simplify LOAD_CONST)
     Python 3.15a1 3652 (Virtual iterators)
+    Python 3.15a1 3653 (Treat FORMAT_SIMPLE conservatively when optimizing LOAD_FAST)
 
 
     Python 3.16 will start with 3700

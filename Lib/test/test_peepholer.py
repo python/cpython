@@ -2614,6 +2614,29 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
         ]
         self.cfg_optimization_test(insts, expected, consts=[None])
 
+    def test_format_simple(self):
+        # FORMAT_SIMPLE will leave its operand on the stack if it's a unicode
+        # object. We treat it conservatively and assume that it always leaves
+        # its operand on the stack.
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("FORMAT_SIMPLE", None, 2),
+            ("STORE_FAST", 1, 3),
+        ]
+        self.check(insts, insts)
+
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("FORMAT_SIMPLE", None, 2),
+            ("POP_TOP", None, 3),
+        ]
+        expected = [
+            ("LOAD_FAST_BORROW", 0, 1),
+            ("FORMAT_SIMPLE", None, 2),
+            ("POP_TOP", None, 3),
+        ]
+        self.check(insts, expected)
+
     def test_del_in_finally(self):
         # This loads `obj` onto the stack, executes `del obj`, then returns the
         # `obj` from the stack. See gh-133371 for more details.
@@ -2629,6 +2652,14 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
         # interpreter finalization, so run it here manually.
         gc.collect()
         self.assertEqual(obj, [42])
+
+    def test_format_simple_unicode(self):
+        # Repro from gh-134889
+        def f():
+            var = f"{1}"
+            var = f"{var}"
+            return var
+        self.assertEqual(f(), "1")
 
 
 
