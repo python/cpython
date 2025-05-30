@@ -2,7 +2,7 @@
 file descriptors on stdout.
 
 Usage:
-fd_stats.py: check all file descriptors (up to 255)
+fd_status.py: check all file descriptors (up to 255)
 fd_status.py fd1 fd2 ...: check only specified file descriptors
 """
 
