@@ -197,7 +197,7 @@ access to internal read-only data of Unicode objects:
    cached and is immediately available, return it.
    Otherwise, return ``-1`` *without* setting an exception.
 
-   If *str* is not a string (that is, if :c:expr:`PyUnicode_Check(obj)`
+   If *str* is not a string (that is, if ``PyUnicode_Check(obj)``
    is false), the behavior is undefined.
 
    This function never fails with an exception.
