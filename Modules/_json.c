@@ -1622,15 +1622,6 @@ encoder_encode_float(PyEncoderObject *s, PyObject *obj)
 }
 
 static int
-_steal_accumulate(PyUnicodeWriter *writer, PyObject *stolen)
-{
-    /* Append stolen and then decrement its reference count */
-    int rval = PyUnicodeWriter_WriteStr(writer, stolen);
-    Py_DECREF(stolen);
-    return rval;
-}
-
-static int
 encoder_write_string(PyEncoderObject *s, PyUnicodeWriter *writer, PyObject *obj)
 {
     /* Return the JSON representation of a string */
@@ -1651,6 +1642,15 @@ encoder_write_string(PyEncoderObject *s, PyUnicodeWriter *writer, PyObject *obj)
         return -1;
     }
     return _steal_accumulate(writer, encoded);
+}
+
+static int
+_steal_accumulate(PyUnicodeWriter *writer, PyObject *stolen)
+{
+    /* Append stolen and then decrement its reference count */
+    int rval = PyUnicodeWriter_WriteStr(writer, stolen);
+    Py_DECREF(stolen);
+    return rval;
 }
 
 static int
