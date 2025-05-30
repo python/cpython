@@ -1628,8 +1628,14 @@ class _ZipRepacker:
             zip64 = fheader[_FH_UNCOMPRESSED_SIZE] == 0xffffffff
 
             dd = self._scan_data_descriptor(fp, pos, end_offset, zip64)
-            if dd is None and not self.strict_descriptor:
-                dd = self._scan_data_descriptor_no_sig(fp, pos, end_offset, zip64)
+            if dd is None:
+                dd = self._scan_data_descriptor_no_sig_by_decompression(
+                    fp, pos, end_offset, zip64, fheader[_FH_COMPRESSION_METHOD])
+                if dd is False:
+                    if not self.strict_descriptor:
+                        dd = self._scan_data_descriptor_no_sig(fp, pos, end_offset, zip64)
+                    else:
+                        dd = None
             if dd is None:
                 return None
 
@@ -1704,6 +1710,56 @@ class _ZipRepacker:
             base += scan_limit
 
         return None
+
+    def _scan_data_descriptor_no_sig_by_decompression(self, fp, offset, end_offset, zip64, method):
+        dd_fmt = '<LQQ' if zip64 else '<LLL'
+        dd_size = struct.calcsize(dd_fmt)
+
+        if offset + dd_size > end_offset:
+            return False
+
+        try:
+            decompressor = _get_decompressor(method)
+        except NotImplementedError:
+            return False
+
+        if decompressor is None:
+            return False
+
+        # Current LZMADecompressor is unreliable since it's `.eof` is usually
+        # not set as expected.
+        if isinstance(decompressor, LZMADecompressor):
+            return False
+
+        try:
+            pos = self._find_compression_end_offset(fp, offset, end_offset - dd_size, decompressor)
+        except Exception:
+            return None
+
+        fp.seek(pos)
+        dd = fp.read(dd_size)
+        crc, compress_size, file_size = struct.unpack(dd_fmt, dd)
+        if pos - offset != compress_size:
+            return None
+
+        return crc, compress_size, file_size, dd_size
+
+    def _find_compression_end_offset(self, fp, offset, end_offset, decompressor, chunk_size=4096):
+        fp.seek(offset)
+        read_size = 0
+        while True:
+            chunk = fp.read(min(chunk_size, end_offset - offset - read_size))
+            if not chunk:
+                raise EOFError('Unexpected EOF while decompressing')
+
+            # may raise on error
+            decompressor.decompress(chunk)
+
+            read_size += len(chunk)
+
+            if decompressor.eof:
+                unused_len = len(decompressor.unused_data)
+                return offset + read_size - unused_len
 
     def _calc_local_file_entry_size(self, fp, zinfo):
         fp.seek(zinfo.header_offset)
