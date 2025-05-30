@@ -71,9 +71,6 @@ _zstd_set_c_level(ZstdCompressor *self, int level)
     /* Check error */
     if (ZSTD_isError(zstd_ret)) {
         _zstd_state* mod_state = PyType_GetModuleState(Py_TYPE(self));
-        if (mod_state == NULL) {
-            return -1;
-        }
         set_zstd_error(mod_state, ERR_SET_C_LEVEL, zstd_ret);
         return -1;
     }
@@ -203,16 +200,16 @@ _get_CDict(ZstdDict *self, int compressionLevel)
             goto error;
         }
 
-        /* Add PyCapsule object to self->c_dicts */
-        ret = PyDict_SetItem(self->c_dicts, level, capsule);
+        /* Add PyCapsule object to self->c_dicts if it is not already present. */
+        PyObject *result;
+        ret = PyDict_SetDefaultRef(self->c_dicts, level, capsule, &result);
         if (ret < 0) {
             goto error;
         }
+        Py_DECREF(capsule);
+        capsule = result;
     }
-    else {
-        /* ZSTD_CDict instance already exists */
-        cdict = PyCapsule_GetPointer(capsule, NULL);
-    }
+    cdict = PyCapsule_GetPointer(capsule, NULL);
     goto success;
 
 error:
@@ -272,11 +269,7 @@ _zstd_load_c_dict(ZstdCompressor *self, PyObject *dict)
     int type, ret;
 
     /* Check ZstdDict */
-    ret = PyObject_IsInstance(dict, (PyObject*)mod_state->ZstdDict_type);
-    if (ret < 0) {
-        return -1;
-    }
-    else if (ret > 0) {
+    if (PyObject_TypeCheck(dict, mod_state->ZstdDict_type)) {
         /* When compressing, use undigested dictionary by default. */
         zd = (ZstdDict*)dict;
         type = DICT_TYPE_UNDIGESTED;
@@ -289,14 +282,14 @@ _zstd_load_c_dict(ZstdCompressor *self, PyObject *dict)
     /* Check (ZstdDict, type) */
     if (PyTuple_CheckExact(dict) && PyTuple_GET_SIZE(dict) == 2) {
         /* Check ZstdDict */
-        ret = PyObject_IsInstance(PyTuple_GET_ITEM(dict, 0),
-                                  (PyObject*)mod_state->ZstdDict_type);
-        if (ret < 0) {
-            return -1;
-        }
-        else if (ret > 0) {
-            /* type == -1 may indicate an error. */
+        if (PyObject_TypeCheck(PyTuple_GET_ITEM(dict, 0),
+                               mod_state->ZstdDict_type) &&
+            PyLong_Check(PyTuple_GET_ITEM(dict, 1)))
+        {
             type = PyLong_AsInt(PyTuple_GET_ITEM(dict, 1));
+            if (type == -1 && PyErr_Occurred()) {
+                return -1;
+            }
             if (type == DICT_TYPE_DIGESTED
                 || type == DICT_TYPE_UNDIGESTED
                 || type == DICT_TYPE_PREFIX)
@@ -481,9 +474,7 @@ compress_lock_held(ZstdCompressor *self, Py_buffer *data,
         /* Check error */
         if (ZSTD_isError(zstd_ret)) {
             _zstd_state* mod_state = PyType_GetModuleState(Py_TYPE(self));
-            if (mod_state != NULL) {
-                set_zstd_error(mod_state, ERR_COMPRESS, zstd_ret);
-            }
+            set_zstd_error(mod_state, ERR_COMPRESS, zstd_ret);
             goto error;
         }
 
@@ -553,9 +544,7 @@ compress_mt_continue_lock_held(ZstdCompressor *self, Py_buffer *data)
         /* Check error */
         if (ZSTD_isError(zstd_ret)) {
             _zstd_state* mod_state = PyType_GetModuleState(Py_TYPE(self));
-            if (mod_state != NULL) {
-                set_zstd_error(mod_state, ERR_COMPRESS, zstd_ret);
-            }
+            set_zstd_error(mod_state, ERR_COMPRESS, zstd_ret);
             goto error;
         }
 
