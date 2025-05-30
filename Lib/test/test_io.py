@@ -1064,13 +1064,13 @@ class IOTest(unittest.TestCase):
 
     @threading_helper.requires_working_threading()
     def test_write_readline_races(self):
-        N=2
-        COUNT=100
+        thread_count = 2
+        write_count = 100
 
         def writer(file, barrier):
             barrier.wait()
-            for _ in range(COUNT):
-                f.write("x")
+            for _ in range(write_count):
+                file.write("x")
 
         def reader(file, stopping):
             while not stopping.is_set():
@@ -1079,16 +1079,18 @@ class IOTest(unittest.TestCase):
 
         stopping = threading.Event()
         with self.open(os_helper.TESTFN, "w+") as f:
-            barrier = threading.Barrier(N)
+            barrier = threading.Barrier(thread_count)
             reader = threading.Thread(target=reader, args=(f, stopping))
             writers = [threading.Thread(target=writer, args=(f, barrier))
-                       for _ in range(N)]
+                       for _ in range(thread_count)]
             reader.start()
             with threading_helper.start_threads(writers):
                 pass
             stopping.set()
             reader.join()
-        assert(os.stat(os_helper.TESTFN).st_size == COUNT * N)
+
+        self.assertEqual(os.stat(os_helper.TESTFN).st_size,
+                         write_count * thread_count)
 
 
 class CIOTest(IOTest):

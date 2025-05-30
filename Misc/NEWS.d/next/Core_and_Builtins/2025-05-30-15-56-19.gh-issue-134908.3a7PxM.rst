@@ -1,1 +1,1 @@
-Protect ``textiowrapper_iternext`` with a critical section.
+Make iterating over lines in a text file thread safe in free threading.
