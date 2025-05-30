@@ -68,10 +68,8 @@ _get_DDict(ZstdDict *self)
 
     if (self->d_dict == NULL) {
         /* Create ZSTD_DDict instance from dictionary content */
-        char *dict_buffer = PyBytes_AS_STRING(self->dict_content);
-        Py_ssize_t dict_len = Py_SIZE(self->dict_content);
         Py_BEGIN_ALLOW_THREADS
-        ret = ZSTD_createDDict(dict_buffer, dict_len);
+        ret = ZSTD_createDDict(self->dict_buffer, self->dict_len);
         Py_END_ALLOW_THREADS
         self->d_dict = ret;
 
@@ -88,56 +86,52 @@ _get_DDict(ZstdDict *self)
     return self->d_dict;
 }
 
-/* Set decompression parameters to decompression context */
 static int
 _zstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
 {
-    size_t zstd_ret;
-    PyObject *key, *value;
-    Py_ssize_t pos;
     _zstd_state* mod_state = PyType_GetModuleState(Py_TYPE(self));
     if (mod_state == NULL) {
         return -1;
     }
 
     if (!PyDict_Check(options)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "options argument should be dict object.");
+        PyErr_Format(PyExc_TypeError,
+             "ZstdDecompressor() argument 'options' must be dict, not %T",
+             options);
         return -1;
     }
 
-    pos = 0;
+    Py_ssize_t pos = 0;
+    PyObject *key, *value;
     while (PyDict_Next(options, &pos, &key, &value)) {
         /* Check key type */
         if (Py_TYPE(key) == mod_state->CParameter_type) {
             PyErr_SetString(PyExc_TypeError,
-                            "Key of decompression options dict should "
-                            "NOT be a CompressionParameter attribute.");
+                "compression options dictionary key must not be a "
+                "CompressionParameter attribute");
             return -1;
         }
 
-        /* Both key & value should be 32-bit signed int */
+        Py_INCREF(key);
+        Py_INCREF(value);
         int key_v = PyLong_AsInt(key);
+        Py_DECREF(key);
         if (key_v == -1 && PyErr_Occurred()) {
-            PyErr_SetString(PyExc_ValueError,
-                            "Key of options dict should be either a "
-                            "DecompressionParameter attribute or an int.");
             return -1;
         }
 
         int value_v = PyLong_AsInt(value);
+        Py_DECREF(value);
         if (value_v == -1 && PyErr_Occurred()) {
-            PyErr_SetString(PyExc_ValueError,
-                            "Value of options dict should be an int.");
             return -1;
         }
 
         /* Set parameter to compression context */
-        zstd_ret = ZSTD_DCtx_setParameter(self->dctx, key_v, value_v);
+        size_t zstd_ret = ZSTD_DCtx_setParameter(self->dctx, key_v, value_v);
 
         /* Check error */
         if (ZSTD_isError(zstd_ret)) {
-            set_parameter_error(mod_state, 0, key_v, value_v);
+            set_parameter_error(0, key_v, value_v);
             return -1;
         }
     }
@@ -160,17 +154,13 @@ _zstd_load_impl(ZstdDecompressor *self, ZstdDict *zd,
     }
     else if (type == DICT_TYPE_UNDIGESTED) {
         /* Load a dictionary */
-        zstd_ret = ZSTD_DCtx_loadDictionary(
-                            self->dctx,
-                            PyBytes_AS_STRING(zd->dict_content),
-                            Py_SIZE(zd->dict_content));
+        zstd_ret = ZSTD_DCtx_loadDictionary(self->dctx, zd->dict_buffer,
+                                            zd->dict_len);
     }
     else if (type == DICT_TYPE_PREFIX) {
         /* Load a prefix */
-        zstd_ret = ZSTD_DCtx_refPrefix(
-                            self->dctx,
-                            PyBytes_AS_STRING(zd->dict_content),
-                            Py_SIZE(zd->dict_content));
+        zstd_ret = ZSTD_DCtx_refPrefix(self->dctx, zd->dict_buffer,
+                                       zd->dict_len);
     }
     else {
         /* Impossible code path */
@@ -583,7 +573,7 @@ _zstd_ZstdDecompressor_new_impl(PyTypeObject *type, PyObject *zstd_dict,
         self->dict = zstd_dict;
     }
 
-    /* Set option to decompression context */
+    /* Set options dictionary */
     if (options != Py_None) {
         if (_zstd_set_d_parameters(self, options) < 0) {
             goto error;
