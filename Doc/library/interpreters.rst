@@ -58,23 +58,22 @@ This module defines the following functions:
 
 .. function:: list_all()
 
-   -> [Interpreter]``
-   Get all existing interpreters.
+   Return a :class:`list` of :class:`Interpreter`,
+   one for each existing interpreter.
 
 .. function:: get_current()
 
-   -> Interpreter
-   Get the currently running interpreter.
+   Return an :class:`Interpreter` object for the currently running
+   interpreter.
 
 .. function:: get_main()
 
-   -> Interpreter
-   Get the main interpreter.
+   Return an :class:`Interpreter` object for the main interpreter.
 
 .. function:: create()
 
-   -> Interpreter
-   Initialize a new (idle) Python interpreter.
+   Initialize a new (idle) Python interpreter
+   and return a :class:`Interpreter` object for it.
 
 
 Interpreter objects
