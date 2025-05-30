@@ -128,7 +128,7 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
 void
 PyThread_release_lock(PyThread_type_lock lock)
 {
-    PyMutex_Unlock((PyMutex*)lock);
+    PyMutex_Unlock((PyMutex *)lock);
 }
 
 int
