@@ -77,8 +77,8 @@ def needs_symlinks(fn):
 
 class UnsupportedOperationTest(unittest.TestCase):
     def test_is_notimplemented(self):
-        self.assertTrue(issubclass(pathlib.UnsupportedOperation, NotImplementedError))
-        self.assertTrue(isinstance(pathlib.UnsupportedOperation(), NotImplementedError))
+        self.assertIsSubclass(pathlib.UnsupportedOperation, NotImplementedError)
+        self.assertIsInstance(pathlib.UnsupportedOperation(), NotImplementedError)
 
 
 class LazyImportTest(unittest.TestCase):
@@ -300,8 +300,8 @@ class PurePathTest(unittest.TestCase):
                 clsname = p.__class__.__name__
                 r = repr(p)
                 # The repr() is in the form ClassName("forward-slashes path").
-                self.assertTrue(r.startswith(clsname + '('), r)
-                self.assertTrue(r.endswith(')'), r)
+                self.assertStartsWith(r, clsname + '(')
+                self.assertEndsWith(r, ')')
                 inner = r[len(clsname) + 1 : -1]
                 self.assertEqual(eval(inner), p.as_posix())
 

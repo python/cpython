@@ -362,10 +362,10 @@ Exceptions
 Constants
 ^^^^^^^^^
 
-   The AF_* and SOCK_* constants are now :class:`AddressFamily` and
-   :class:`SocketKind` :class:`.IntEnum` collections.
+The AF_* and SOCK_* constants are now :class:`AddressFamily` and
+:class:`SocketKind` :class:`.IntEnum` collections.
 
-   .. versionadded:: 3.4
+.. versionadded:: 3.4
 
 .. data:: AF_UNIX
           AF_INET
@@ -773,9 +773,9 @@ Constants
    Constant to optimize CPU locality, to be used in conjunction with
    :data:`SO_REUSEPORT`.
 
-  .. versionadded:: 3.11
+   .. versionadded:: 3.11
 
-  .. availability:: Linux >= 3.9
+   .. availability:: Linux >= 3.9
 
 .. data:: SO_REUSEPORT_LB
 

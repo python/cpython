@@ -2916,6 +2916,11 @@ clear_lock_held(PyObject *op)
 }
 
 void
+_PyDict_Clear_LockHeld(PyObject *op) {
+    clear_lock_held(op);
+}
+
+void
 PyDict_Clear(PyObject *op)
 {
     Py_BEGIN_CRITICAL_SECTION(op);
