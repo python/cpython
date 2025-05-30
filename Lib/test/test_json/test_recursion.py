@@ -59,7 +59,8 @@ class TestRecursion:
         self.assertEqual(enc.encode(JSONTestObject), '"JSONTestObject"')
         enc.recurse = True
         try:
-            enc.encode(JSONTestObject)
+            with support.infinite_recursion(5000):
+                enc.encode(JSONTestObject)
         except ValueError as exc:
             self.assertEqual(exc.__notes__[:2],
                              ["when serializing list item 0",
