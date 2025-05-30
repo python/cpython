@@ -270,112 +270,111 @@ class TestCase(unittest.TestCase):
             return data.decode("utf-8")
 
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=5):
-                with shelve.BsdDbShelf(
-                    berkeleydb.btopen(self.fn),
-                    protocol=proto,
-                    serializer=serializer,
-                    deserializer=deserializer,
-                ) as s:
-                    bar = "bar"
-                    bytes_data = b"Hello, world!"
-                    bytearray_data = bytearray(b"\x00\x01\x02\x03\x04")
-                    array_data = array.array("i", [1, 2, 3, 4, 5])
+            with self.subTest(proto=proto), shelve.BsdDbShelf(
+                berkeleydb.btopen(self.fn),
+                protocol=proto,
+                serializer=serializer,
+                deserializer=deserializer,
+            ) as s:
+                bar = "bar"
+                bytes_data = b"Hello, world!"
+                bytearray_data = bytearray(b"\x00\x01\x02\x03\x04")
+                array_data = array.array("i", [1, 2, 3, 4, 5])
 
-                    s["foo"] = bar
-                    s["bytes_data"] = bytes_data
-                    s["bytearray_data"] = bytearray_data
-                    s["array_data"] = array_data
+                s["foo"] = bar
+                s["bytes_data"] = bytes_data
+                s["bytearray_data"] = bytearray_data
+                s["array_data"] = array_data
 
-                    if proto == 5:
-                        self.assertEqual(
-                            s["foo"], f"{len(type(bar).__name__)}"
-                        )
-                        self.assertEqual(
-                            s["bytes_data"],
-                            f"{len(type(bytes_data).__name__)}",
-                        )
-                        self.assertEqual(
-                            s["bytearray_data"],
-                            f"{len(type(bytearray_data).__name__)}",
-                        )
-                        self.assertEqual(
-                            s["array_data"],
-                            f"{len(type(array_data).__name__)}",
-                        )
+                if proto == 5:
+                    self.assertEqual(
+                        s["foo"], f"{len(type(bar).__name__)}"
+                    )
+                    self.assertEqual(
+                        s["bytes_data"],
+                        f"{len(type(bytes_data).__name__)}",
+                    )
+                    self.assertEqual(
+                        s["bytearray_data"],
+                        f"{len(type(bytearray_data).__name__)}",
+                    )
+                    self.assertEqual(
+                        s["array_data"],
+                        f"{len(type(array_data).__name__)}",
+                    )
 
-                        key, value = s.set_location(b"foo")
-                        self.assertEqual("foo", key)
-                        self.assertEqual(value, f"{len(type(bar).__name__)}")
+                    key, value = s.set_location(b"foo")
+                    self.assertEqual("foo", key)
+                    self.assertEqual(value, f"{len(type(bar).__name__)}")
 
-                        key, value = s.previous()
-                        self.assertEqual("bytes_data", key)
-                        self.assertEqual(
-                            value, f"{len(type(bytes_data).__name__)}"
-                        )
+                    key, value = s.previous()
+                    self.assertEqual("bytes_data", key)
+                    self.assertEqual(
+                        value, f"{len(type(bytes_data).__name__)}"
+                    )
 
-                        key, value = s.previous()
-                        self.assertEqual("bytearray_data", key)
-                        self.assertEqual(
-                            value, f"{len(type(bytearray_data).__name__)}"
-                        )
+                    key, value = s.previous()
+                    self.assertEqual("bytearray_data", key)
+                    self.assertEqual(
+                        value, f"{len(type(bytearray_data).__name__)}"
+                    )
 
-                        key, value = s.previous()
-                        self.assertEqual("array_data", key)
-                        self.assertEqual(
-                            value, f"{len(type(array_data).__name__)}"
-                        )
+                    key, value = s.previous()
+                    self.assertEqual("array_data", key)
+                    self.assertEqual(
+                        value, f"{len(type(array_data).__name__)}"
+                    )
 
-                        key, value = s.next()
-                        self.assertEqual("bytearray_data", key)
-                        self.assertEqual(
-                            value, f"{len(type(bytearray_data).__name__)}"
-                        )
+                    key, value = s.next()
+                    self.assertEqual("bytearray_data", key)
+                    self.assertEqual(
+                        value, f"{len(type(bytearray_data).__name__)}"
+                    )
 
-                        key, value = s.next()
-                        self.assertEqual("bytes_data", key)
-                        self.assertEqual(
-                            value, f"{len(type(bytes_data).__name__)}"
-                        )
+                    key, value = s.next()
+                    self.assertEqual("bytes_data", key)
+                    self.assertEqual(
+                        value, f"{len(type(bytes_data).__name__)}"
+                    )
 
-                        key, value = s.first()
-                        self.assertEqual("array_data", key)
-                        self.assertEqual(
-                            value, f"{len(type(array_data).__name__)}"
-                        )
-                    else:
-                        key, value = s.set_location(b"foo")
-                        self.assertEqual("foo", key)
-                        self.assertEqual(value, "str")
+                    key, value = s.first()
+                    self.assertEqual("array_data", key)
+                    self.assertEqual(
+                        value, f"{len(type(array_data).__name__)}"
+                    )
+                else:
+                    key, value = s.set_location(b"foo")
+                    self.assertEqual("foo", key)
+                    self.assertEqual(value, "str")
 
-                        key, value = s.previous()
-                        self.assertEqual("bytes_data", key)
-                        self.assertEqual(value, "bytes")
+                    key, value = s.previous()
+                    self.assertEqual("bytes_data", key)
+                    self.assertEqual(value, "bytes")
 
-                        key, value = s.previous()
-                        self.assertEqual("bytearray_data", key)
-                        self.assertEqual(value, "bytearray")
+                    key, value = s.previous()
+                    self.assertEqual("bytearray_data", key)
+                    self.assertEqual(value, "bytearray")
 
-                        key, value = s.previous()
-                        self.assertEqual("array_data", key)
-                        self.assertEqual(value, "array")
+                    key, value = s.previous()
+                    self.assertEqual("array_data", key)
+                    self.assertEqual(value, "array")
 
-                        key, value = s.next()
-                        self.assertEqual("bytearray_data", key)
-                        self.assertEqual(value, "bytearray")
+                    key, value = s.next()
+                    self.assertEqual("bytearray_data", key)
+                    self.assertEqual(value, "bytearray")
 
-                        key, value = s.next()
-                        self.assertEqual("bytes_data", key)
-                        self.assertEqual(value, "bytes")
+                    key, value = s.next()
+                    self.assertEqual("bytes_data", key)
+                    self.assertEqual(value, "bytes")
 
-                        key, value = s.first()
-                        self.assertEqual("array_data", key)
-                        self.assertEqual(value, "array")
+                    key, value = s.first()
+                    self.assertEqual("array_data", key)
+                    self.assertEqual(value, "array")
 
-                        self.assertEqual(s["foo"], "str")
-                        self.assertEqual(s["bytes_data"], "bytes")
-                        self.assertEqual(s["bytearray_data"], "bytearray")
-                        self.assertEqual(s["array_data"], "array")
+                    self.assertEqual(s["foo"], "str")
+                    self.assertEqual(s["bytes_data"], "bytes")
+                    self.assertEqual(s["bytearray_data"], "bytearray")
+                    self.assertEqual(s["array_data"], "array")
 
     def test_custom_incomplete_serializer_and_deserializer_bsd_db_shelf(self):
         berkeleydb = import_helper.import_module("berkeleydb")
