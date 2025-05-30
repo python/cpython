@@ -1366,16 +1366,14 @@ class EditorWindow:
         assert have > 0
         want = ((have - 1) // self.indentwidth) * self.indentwidth
 
+        # Debug prompt is multilined....
         ncharsdeleted = 0
-        have = len(chars.expandtabs(tabwidth))
-
         for i in range(len(chars) - 1, -1, -1):
+            have = len(chars.expandtabs(tabwidth))
             if have <= want or chars[i] not in " \t":
                 break
             ncharsdeleted += 1
-
         chars = chars[:len(chars) - ncharsdeleted]
-        have = len(chars.expandtabs(tabwidth))
 
         text.undo_block_start()
         text.delete("insert-%dc" % ncharsdeleted, "insert")
