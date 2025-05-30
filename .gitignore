@@ -170,3 +170,7 @@ Python/frozen_modules/MANIFEST
 # Ignore ./python binary on Unix but still look into ./Python/ directory.
 /python
 !/Python/
+
+# People's custom https://docs.anthropic.com/en/docs/claude-code/memory configs.
+/.claude/
+CLAUDE.local.md
