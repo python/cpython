@@ -413,28 +413,17 @@ class TestCase(unittest.TestCase):
         def serializer(obj, protocol=None):
             pass
 
-        with self.assertRaises(shelve.ShelveError):
-            shelve.Shelf({},
-                         protocol=2, writeback=False, serializer=serializer)
-
-        with self.assertRaises(shelve.ShelveError):
-            shelve.BsdDbShelf({},
-                              protocol=2,
-                              writeback=False, serializer=serializer)
+        kwargs = dict(protocol=2, writeback=False, serializer=serializer)
+        self.assertRaises(shelve.ShelveError, shelve.Shelf, {}, **kwargs)
+        self.assertRaises(shelve.ShelveError, shelve.BsdDbShelf, {}, **kwargs)
 
     def test_missing_custom_serializer(self):
         def deserializer(data):
             pass
 
-        with self.assertRaises(shelve.ShelveError):
-            shelve.Shelf({},
-                         protocol=2,
-                         writeback=False, deserializer=deserializer)
-
-        with self.assertRaises(shelve.ShelveError):
-            shelve.BsdDbShelf({},
-                              protocol=2,
-                              writeback=False, deserializer=deserializer)
+        kwargs = dict(protocol=2, writeback=False, deserializer=deserializer)
+        self.assertRaises(shelve.ShelveError, shelve.Shelf, {}, **kwargs)
+        self.assertRaises(shelve.ShelveError, shelve.BsdDbShelf, {}, **kwargs)
 
 
 class TestShelveBase:
