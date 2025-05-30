@@ -108,6 +108,8 @@ import _colorize  # Used in doctests
 from _colorize import ANSIColors, can_colorize
 
 
+__unittest = True
+
 class TestResults(namedtuple('TestResults', 'failed attempted')):
     def __new__(cls, failed, attempted, *, skipped=0):
         results = super().__new__(cls, failed, attempted)
@@ -1395,11 +1397,11 @@ class DocTestRunner:
                 exec(compile(example.source, filename, "single",
                              compileflags, True), test.globs)
                 self.debugger.set_continue() # ==== Example Finished ====
-                exception = None
+                exc_info = None
             except KeyboardInterrupt:
                 raise
-            except:
-                exception = sys.exc_info()
+            except BaseException as exc:
+                exc_info = type(exc), exc, exc.__traceback__.tb_next
                 self.debugger.set_continue() # ==== Example Finished ====
 
             got = self._fakeout.getvalue()  # the actual output
@@ -1408,21 +1410,21 @@ class DocTestRunner:
 
             # If the example executed without raising any exceptions,
             # verify its output.
-            if exception is None:
+            if exc_info is None:
                 if check(example.want, got, self.optionflags):
                     outcome = SUCCESS
 
             # The example raised an exception:  check if it was expected.
             else:
-                formatted_ex = traceback.format_exception_only(*exception[:2])
-                if issubclass(exception[0], SyntaxError):
+                formatted_ex = traceback.format_exception_only(*exc_info[:2])
+                if issubclass(exc_info[0], SyntaxError):
                     # SyntaxError / IndentationError is special:
                     # we don't care about the carets / suggestions / etc
                     # We only care about the error message and notes.
                     # They start with `SyntaxError:` (or any other class name)
                     exception_line_prefixes = (
-                        f"{exception[0].__qualname__}:",
-                        f"{exception[0].__module__}.{exception[0].__qualname__}:",
+                        f"{exc_info[0].__qualname__}:",
+                        f"{exc_info[0].__module__}.{exc_info[0].__qualname__}:",
                     )
                     exc_msg_index = next(
                         index
@@ -1433,7 +1435,7 @@ class DocTestRunner:
 
                 exc_msg = "".join(formatted_ex)
                 if not quiet:
-                    got += _exception_traceback(exception)
+                    got += _exception_traceback(exc_info)
 
                 # If `example.exc_msg` is None, then we weren't expecting
                 # an exception.
@@ -1462,7 +1464,7 @@ class DocTestRunner:
             elif outcome is BOOM:
                 if not quiet:
                     self.report_unexpected_exception(out, test, example,
-                                                     exception)
+                                                     exc_info)
                 failures += 1
             else:
                 assert False, ("unknown outcome", outcome)
@@ -2324,7 +2326,7 @@ class DocTestCase(unittest.TestCase):
             sys.stdout = old
 
         if results.failed:
-            raise self.failureException(self.format_failure(new.getvalue()))
+            raise self.failureException(self.format_failure(new.getvalue().rstrip('\n')))
 
     def format_failure(self, err):
         test = self._dt_test

@@ -8,7 +8,7 @@ import sys
 import unittest
 import warnings
 from test.support import (
-    is_apple, is_emscripten, os_helper, warnings_helper
+    is_apple, os_helper, warnings_helper
 )
 from test.support.script_helper import assert_python_ok
 from test.support.os_helper import FakePath
@@ -92,8 +92,8 @@ class GenericTest:
         for s1 in testlist:
             for s2 in testlist:
                 p = commonprefix([s1, s2])
-                self.assertTrue(s1.startswith(p))
-                self.assertTrue(s2.startswith(p))
+                self.assertStartsWith(s1, p)
+                self.assertStartsWith(s2, p)
                 if s1 != s2:
                     n = len(p)
                     self.assertNotEqual(s1[n:n+1], s2[n:n+1])
