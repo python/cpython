@@ -59,7 +59,7 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    .. versionchanged:: 3.11
       Accepts :term:`path-like object` for filename.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: next
       Accepts custom *serializer* and *deserializer* functions in place of
       :func:`pickle.dumps` and :func:`pickle.loads`.
 
@@ -168,7 +168,7 @@ Restrictions
       :const:`pickle.DEFAULT_PROTOCOL` is now used as the default pickle
       protocol.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: next
       Added the *serializer* and *deserializer* parameters.
 
 
@@ -187,7 +187,7 @@ Restrictions
    optional *protocol*, *writeback*, *keyencoding*, *serializer* and *deserializer*
    parameters have the same interpretation as in :func:`~shelve.open`.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: next
       Added the *serializer* and *deserializer* parameters.
 
 
@@ -200,10 +200,10 @@ Restrictions
    default, the file will be created and opened for both read and write.  The
    optional *flag* parameter has the same interpretation as for the
    :func:`.open` function.  The optional *protocol*, *writeback*, *serializer*
-   and *deserializer* parameters have the same interpretation as in the
+   and *deserializer* parameters have the same interpretation as in
    :func:`~shelve.open`.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: next
       Added the *serializer* and *deserializer* parameters.
 
 
