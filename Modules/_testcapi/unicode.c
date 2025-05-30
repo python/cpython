@@ -223,7 +223,7 @@ unicode_copycharacters(PyObject *self, PyObject *args)
 static PyObject*
 unicode_GET_CACHED_HASH(PyObject *self, PyObject *arg)
 {
-    return PyLong_FromLong((long)PyUnstable_Unicode_GET_CACHED_HASH(arg));
+    return PyLong_FromSSize_t(PyUnstable_Unicode_GET_CACHED_HASH(arg));
 }
 
 
