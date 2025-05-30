@@ -1062,6 +1062,34 @@ class IOTest(unittest.TestCase):
         # Silence destructor error
         R.flush = lambda self: None
 
+    @threading_helper.requires_working_threading()
+    def test_write_readline_races(self):
+        N=2
+        COUNT=100
+
+        def writer(file, barrier):
+            barrier.wait()
+            for _ in range(COUNT):
+                f.write("x")
+
+        def reader(file, stopping):
+            while not stopping.is_set():
+                for line in file:
+                    assert line == ""
+
+        stopping = threading.Event()
+        with self.open(os_helper.TESTFN, "w+") as f:
+            barrier = threading.Barrier(N)
+            reader = threading.Thread(target=reader, args=(f, stopping))
+            writers = [threading.Thread(target=writer, args=(f, barrier))
+                       for _ in range(N)]
+            reader.start()
+            with threading_helper.start_threads(writers):
+                pass
+            stopping.set()
+            reader.join()
+        assert(os.stat(os_helper.TESTFN).st_size == COUNT * N)
+
 
 class CIOTest(IOTest):
 
