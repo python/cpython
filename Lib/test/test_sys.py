@@ -729,7 +729,7 @@ class SysModuleTest(unittest.TestCase):
         info = sys.thread_info
         self.assertEqual(len(info), 3)
         self.assertIn(info.name, ('nt', 'pthread', 'pthread-stubs', 'solaris', None))
-        self.assertIn(info.lock, ('semaphore', 'mutex+cond', None))
+        self.assertIn(info.lock, ('pymutex', None))
         if sys.platform.startswith(("linux", "android", "freebsd")):
             self.assertEqual(info.name, "pthread")
         elif sys.platform == "win32":
