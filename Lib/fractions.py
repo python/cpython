@@ -64,7 +64,7 @@ _RATIONAL_FORMAT = re.compile(r"""
        (?:\.(?P<decimal>\d*|\d+(_\d+)*))?  # an optional fractional part
        (?:E(?P<exp>[-+]?\d+(_\d+)*))?      # and optional exponent
     )
-    \s*\Z                                  # and optional whitespace to finish
+    \s*\z                                  # and optional whitespace to finish
 """, re.VERBOSE | re.IGNORECASE)
 
 
@@ -238,11 +238,6 @@ class Fraction(numbers.Rational):
                 self._denominator = 1
                 return self
 
-            elif isinstance(numerator, numbers.Rational):
-                self._numerator = numerator.numerator
-                self._denominator = numerator.denominator
-                return self
-
             elif (isinstance(numerator, float) or
                   (not isinstance(numerator, type) and
                    hasattr(numerator, 'as_integer_ratio'))):
@@ -277,6 +272,11 @@ class Fraction(numbers.Rational):
                             denominator *= 10**-exp
                 if m.group('sign') == '-':
                     numerator = -numerator
+
+            elif isinstance(numerator, numbers.Rational):
+                self._numerator = numerator.numerator
+                self._denominator = numerator.denominator
+                return self
 
             else:
                 raise TypeError("argument should be a string or a Rational "

@@ -858,7 +858,7 @@ these rules.  The methods of :class:`Template` are:
 
    .. method:: is_valid()
 
-      Returns false if the template has invalid placeholders that will cause
+      Returns ``False`` if the template has invalid placeholders that will cause
       :meth:`substitute` to raise :exc:`ValueError`.
 
       .. versionadded:: 3.11

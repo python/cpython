@@ -216,6 +216,27 @@ the \'lazy\' dog.\n\
 '
         self.assertEqual(x, y)
 
+    def test_string_prefixes(self):
+        def check(s):
+            parsed = eval(s)
+            self.assertIs(type(parsed), str)
+            self.assertGreater(len(parsed), 0)
+
+        check("u'abc'")
+        check("r'abc\t'")
+        check("rf'abc\a {1 + 1}'")
+        check("fr'abc\a {1 + 1}'")
+
+    def test_bytes_prefixes(self):
+        def check(s):
+            parsed = eval(s)
+            self.assertIs(type(parsed), bytes)
+            self.assertGreater(len(parsed), 0)
+
+        check("b'abc'")
+        check("br'abc\t'")
+        check("rb'abc\a'")
+
     def test_ellipsis(self):
         x = ...
         self.assertTrue(x is Ellipsis)
