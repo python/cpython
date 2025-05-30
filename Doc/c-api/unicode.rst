@@ -1403,10 +1403,6 @@ the user settings on the machine running the codec.
    .. versionadded:: 3.3
 
 
-Methods & Slots
-"""""""""""""""
-
-
 .. _unicodemethodsandslots:
 
 Methods and Slot Functions
