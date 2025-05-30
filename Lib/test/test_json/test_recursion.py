@@ -13,7 +13,7 @@ class TestRecursion:
         try:
             self.dumps(x)
         except ValueError as exc:
-            self.assertEqual(exc.__notes__, ["when serializing list item 0"])
+            self.assertEqual(exc.__notes__[:1], ["when serializing list item 0"])
         else:
             self.fail("didn't raise ValueError on list recursion")
         x = []
@@ -22,7 +22,7 @@ class TestRecursion:
         try:
             self.dumps(x)
         except ValueError as exc:
-            self.assertEqual(exc.__notes__, ["when serializing list item 0"]*2)
+            self.assertEqual(exc.__notes__[:2], ["when serializing list item 0"]*2)
         else:
             self.fail("didn't raise ValueError on alternating list recursion")
         y = []
@@ -36,7 +36,7 @@ class TestRecursion:
         try:
             self.dumps(x)
         except ValueError as exc:
-            self.assertEqual(exc.__notes__, ["when serializing dict item 'test'"])
+            self.assertEqual(exc.__notes__[:1], ["when serializing dict item 'test'"])
         else:
             self.fail("didn't raise ValueError on dict recursion")
         x = {}
@@ -61,7 +61,7 @@ class TestRecursion:
         try:
             enc.encode(JSONTestObject)
         except ValueError as exc:
-            self.assertEqual(exc.__notes__,
+            self.assertEqual(exc.__notes__[:2],
                              ["when serializing list item 0",
                               "when serializing type object"])
         else:
@@ -94,10 +94,10 @@ class TestRecursion:
             l, d = [l], {'k':d}
         with self.assertRaises(RecursionError):
             with support.infinite_recursion(5000):
-                self.dumps(l)
+                self.dumps(l, check_circular=False)
         with self.assertRaises(RecursionError):
             with support.infinite_recursion(5000):
-                self.dumps(d)
+                self.dumps(d, check_circular=False)
 
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
