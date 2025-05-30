@@ -51,7 +51,7 @@ typedef struct _PyEncoderObject {
     char sort_keys;
     char skipkeys;
     int allow_nan;
-    PyObject * (*fast_encode)(PyObject *);
+    int (*fast_encode)(PyUnicodeWriter *, PyObject *);
 } PyEncoderObject;
 
 #define PyEncoderObject_CAST(op)    ((PyEncoderObject *)(op))
@@ -102,6 +102,8 @@ static PyObject *
 _encoded_const(PyObject *obj);
 static void
 raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end);
+static int
+_steal_accumulate(PyUnicodeWriter *writer, PyObject *stolen);
 static int
 encoder_write_string(PyEncoderObject *s, PyUnicodeWriter *writer, PyObject *obj);
 static PyObject *
@@ -209,8 +211,8 @@ ascii_escape_unicode(PyObject *pystr)
     return rval;
 }
 
-static PyObject *
-ascii_escape_unicode_ex(PyObject *pystr)
+static int
+write_escaped_ascii(PyUnicodeWriter *writer, PyObject *pystr)
 {
     /* Take a PyUnicode pystr and return a new ASCII-only escaped PyUnicode */
     Py_ssize_t i;
@@ -227,7 +229,7 @@ ascii_escape_unicode_ex(PyObject *pystr)
     kind = PyUnicode_KIND(pystr);
 
     /* Compute the output size */
-    for (i = 0, output_size = 0; i < input_chars; i++) {
+    for (i = 0, output_size = 2; i < input_chars; i++) {
         Py_UCS4 c = PyUnicode_READ(kind, input, i);
         Py_ssize_t d;
         if (S_CHAR(c)) {
@@ -244,22 +246,29 @@ ascii_escape_unicode_ex(PyObject *pystr)
         }
         if (output_size > PY_SSIZE_T_MAX - d) {
             PyErr_SetString(PyExc_OverflowError, "string is too long to escape");
-            return NULL;
+            return -1;
         }
         output_size += d;
     }
 
-    if (output_size == input_chars) {
+    if (output_size == input_chars + 2) {
         /* No need to escape anything */
-        return Py_NewRef(pystr);
+        if (PyUnicodeWriter_WriteChar(writer, '"') < 0) {
+            return -1;
+        }
+        if (PyUnicodeWriter_WriteStr(writer, pystr) < 0) {
+            return -1;
+        }
+        return PyUnicodeWriter_WriteChar(writer, '"');
     }
 
     rval = PyUnicode_New(output_size, 127);
     if (rval == NULL) {
-        return NULL;
+        return -1;
     }
     output = PyUnicode_1BYTE_DATA(rval);
     chars = 0;
+    output[chars++] = '"';
     for (i = 0; i < input_chars; i++) {
         Py_UCS4 c = PyUnicode_READ(kind, input, i);
         if (S_CHAR(c)) {
@@ -269,10 +278,11 @@ ascii_escape_unicode_ex(PyObject *pystr)
             chars = ascii_escape_unichar(c, output, chars);
         }
     }
+    output[chars++] = '"';
 #ifdef Py_DEBUG
     assert(_PyUnicode_CheckConsistency(rval, 1));
 #endif
-    return rval;
+    return _steal_accumulate(writer, rval);
 }
 
 static PyObject *
@@ -369,8 +379,8 @@ escape_unicode(PyObject *pystr)
     return rval;
 }
 
-static PyObject *
-escape_unicode_ex(PyObject *pystr)
+static int
+write_escaped_unicode(PyUnicodeWriter *writer, PyObject *pystr)
 {
     /* Take a PyUnicode pystr and return a new escaped PyUnicode */
     Py_ssize_t i;
@@ -388,7 +398,7 @@ escape_unicode_ex(PyObject *pystr)
     kind = PyUnicode_KIND(pystr);
 
     /* Compute the output size */
-    for (i = 0, output_size = 0; i < input_chars; i++) {
+    for (i = 0, output_size = 2; i < input_chars; i++) {
         Py_UCS4 c = PyUnicode_READ(kind, input, i);
         Py_ssize_t d;
         switch (c) {
@@ -404,24 +414,31 @@ escape_unicode_ex(PyObject *pystr)
         }
         if (output_size > PY_SSIZE_T_MAX - d) {
             PyErr_SetString(PyExc_OverflowError, "string is too long to escape");
-            return NULL;
+            return -1;
         }
         output_size += d;
     }
 
-    if (output_size == input_chars) {
+    if (output_size == input_chars + 2) {
         /* No need to escape anything */
-        return Py_NewRef(pystr);
+        if (PyUnicodeWriter_WriteChar(writer, '"') < 0) {
+            return -1;
+        }
+        if (PyUnicodeWriter_WriteStr(writer, pystr) < 0) {
+            return -1;
+        }
+        return PyUnicodeWriter_WriteChar(writer, '"');
     }
 
     rval = PyUnicode_New(output_size, maxchar);
     if (rval == NULL)
-        return NULL;
+        return -1;
 
     kind = PyUnicode_KIND(rval);
 
 #define ENCODE_OUTPUT do { \
         chars = 0; \
+        output[chars++] = '"'; \
         for (i = 0; i < input_chars; i++) { \
             Py_UCS4 c = PyUnicode_READ(kind, input, i); \
             switch (c) { \
@@ -445,6 +462,7 @@ escape_unicode_ex(PyObject *pystr)
                 } \
             } \
         } \
+        output[chars++] = '"'; \
     } while (0)
 
     if (kind == PyUnicode_1BYTE_KIND) {
@@ -463,7 +481,7 @@ escape_unicode_ex(PyObject *pystr)
 #ifdef Py_DEBUG
     assert(_PyUnicode_CheckConsistency(rval, 1));
 #endif
-    return rval;
+    return _steal_accumulate(writer, rval);
 }
 
 static void
@@ -1419,10 +1437,10 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (PyCFunction_Check(s->encoder)) {
         PyCFunction f = PyCFunction_GetFunction(s->encoder);
         if (f == py_encode_basestring_ascii) {
-            s->fast_encode = ascii_escape_unicode_ex;
+            s->fast_encode = write_escaped_ascii;
         }
         else if (f == py_encode_basestring) {
-            s->fast_encode = escape_unicode_ex;
+            s->fast_encode = write_escaped_unicode;
         }
     }
 
@@ -1619,17 +1637,7 @@ encoder_write_string(PyEncoderObject *s, PyUnicodeWriter *writer, PyObject *obj)
     PyObject *encoded;
 
     if (s->fast_encode) {
-        if (PyUnicodeWriter_WriteChar(writer, '"') < 0) {
-            return -1;
-        }
-        encoded = s->fast_encode(obj);
-        if (encoded == NULL) {
-            return -1;
-        }
-        if (_steal_accumulate(writer, encoded) < 0) {
-            return -1;
-        }
-        return PyUnicodeWriter_WriteChar(writer, '"');
+        return s->fast_encode(writer, obj);
     }
     encoded = PyObject_CallOneArg(s->encoder, obj);
     if (encoded == NULL) {
