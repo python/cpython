@@ -2944,6 +2944,16 @@ optimize_load_fast(cfg_builder *g)
                     break;
                 }
 
+                case SET_FUNCTION_ATTRIBUTE: {
+                    assert(_PyOpcode_num_popped(opcode, oparg) == 2);
+                    assert(_PyOpcode_num_pushed(opcode, oparg) == 1);
+                    ref func = ref_stack_pop(&refs);
+                    // Pop attr
+                    ref_stack_pop(&refs);
+                    PUSH_REF(func.instr, func.local);
+                    break;
+                }
+
                 // Opcodes that consume all of their inputs
                 default: {
                     int num_popped = _PyOpcode_num_popped(opcode, oparg);

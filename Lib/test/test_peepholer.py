@@ -2637,6 +2637,32 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
         ]
         self.check(insts, expected)
 
+    def test_set_function_attribute(self):
+        # SET_FUNCTION_ATTRIBUTE leaves the function on the stack
+        insts = [
+            ("LOAD_CONST", 0, 1),
+            ("LOAD_FAST", 0, 2),
+            ("SET_FUNCTION_ATTRIBUTE", 2, 3),
+            ("STORE_FAST", 1, 4),
+            ("LOAD_CONST", 0, 5),
+            ("RETURN_VALUE", None, 6)
+        ]
+        self.cfg_optimization_test(insts, insts, consts=[None])
+
+        insts = [
+            ("LOAD_CONST", 0, 1),
+            ("LOAD_FAST", 0, 2),
+            ("SET_FUNCTION_ATTRIBUTE", 2, 3),
+            ("RETURN_VALUE", None, 4)
+        ]
+        expected = [
+            ("LOAD_CONST", 0, 1),
+            ("LOAD_FAST_BORROW", 0, 2),
+            ("SET_FUNCTION_ATTRIBUTE", 2, 3),
+            ("RETURN_VALUE", None, 4)
+        ]
+        self.cfg_optimization_test(insts, expected, consts=[None])
+
     def test_del_in_finally(self):
         # This loads `obj` onto the stack, executes `del obj`, then returns the
         # `obj` from the stack. See gh-133371 for more details.
