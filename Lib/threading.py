@@ -123,7 +123,7 @@ def gettrace():
 
 Lock = _LockType
 
-def RLock(*args, **kwargs):
+def RLock():
     """Factory function that returns a new reentrant lock.
 
     A reentrant lock must be released by the thread that acquired it. Once a
@@ -132,16 +132,9 @@ def RLock(*args, **kwargs):
     acquired it.
 
     """
-    if args or kwargs:
-        import warnings
-        warnings.warn(
-            'Passing arguments to RLock is deprecated and will be removed in 3.15',
-            DeprecationWarning,
-            stacklevel=2,
-        )
     if _CRLock is None:
-        return _PyRLock(*args, **kwargs)
-    return _CRLock(*args, **kwargs)
+        return _PyRLock()
+    return _CRLock()
 
 class _RLock:
     """This class implements reentrant lock objects.
@@ -165,7 +158,7 @@ class _RLock:
         except KeyError:
             pass
         return "<%s %s.%s object owner=%r count=%d at %s>" % (
-            "locked" if self._block.locked() else "unlocked",
+            "locked" if self.locked() else "unlocked",
             self.__class__.__module__,
             self.__class__.__qualname__,
             owner,
@@ -244,7 +237,7 @@ class _RLock:
 
     def locked(self):
         """Return whether this object is locked."""
-        return self._count > 0
+        return self._block.locked()
 
     # Internal methods used by condition variables
 
@@ -951,6 +944,8 @@ class Thread:
             # This thread is alive.
             self._ident = new_ident
             assert self._os_thread_handle.ident == new_ident
+            if _HAVE_THREAD_NATIVE_ID:
+                self._set_native_id()
         else:
             # Otherwise, the thread is dead, Jim.  _PyThread_AfterFork()
             # already marked our handle done.

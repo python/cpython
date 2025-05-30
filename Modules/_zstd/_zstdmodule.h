@@ -49,7 +49,6 @@ set_zstd_error(const _zstd_state* const state,
                const error_type type, size_t zstd_ret);
 
 extern void
-set_parameter_error(const _zstd_state* const state, int is_compress,
-                    int key_v, int value_v);
+set_parameter_error(int is_compress, int key_v, int value_v);
 
 #endif  // !ZSTD_MODULE_H

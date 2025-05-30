@@ -20,10 +20,6 @@ This returns an instance of a class with the following public methods:
                          compression type ('not compressed' linear samples)
       getparams()     -- returns a namedtuple consisting of all of the
                          above in the above order
-      getmarkers()    -- returns None (for compatibility with the
-                         old aifc module)
-      getmark(id)     -- raises an error since the mark does not
-                         exist (for compatibility with the old aifc module)
       readframes(n)   -- returns at most n frames of audio
       rewind()        -- rewind to the beginning of the audio stream
       setpos(pos)     -- seek to the specified position
@@ -341,16 +337,6 @@ class Wave_read:
                        self.getframerate(), self.getnframes(),
                        self.getcomptype(), self.getcompname())
 
-    def getmarkers(self):
-        import warnings
-        warnings._deprecated("Wave_read.getmarkers", remove=(3, 15))
-        return None
-
-    def getmark(self, id):
-        import warnings
-        warnings._deprecated("Wave_read.getmark", remove=(3, 15))
-        raise Error('no marks')
-
     def setpos(self, pos):
         if pos < 0 or pos > self._nframes:
             raise Error('position not in range')
@@ -550,21 +536,6 @@ class Wave_write:
             raise Error('not all parameters set')
         return _wave_params(self._nchannels, self._sampwidth, self._framerate,
               self._nframes, self._comptype, self._compname)
-
-    def setmark(self, id, pos, name):
-        import warnings
-        warnings._deprecated("Wave_write.setmark", remove=(3, 15))
-        raise Error('setmark() not supported')
-
-    def getmark(self, id):
-        import warnings
-        warnings._deprecated("Wave_write.getmark", remove=(3, 15))
-        raise Error('no marks')
-
-    def getmarkers(self):
-        import warnings
-        warnings._deprecated("Wave_write.getmarkers", remove=(3, 15))
-        return None
 
     def tell(self):
         return self._nframeswritten
