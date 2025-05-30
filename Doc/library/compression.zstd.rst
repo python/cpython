@@ -621,7 +621,7 @@ Advanced parameter control
       header when known prior to compressing.
 
       This flag only takes effect under the following two scenarios:
-      
+
       * Calling :func:`compress` for one-shot compression
       * Providing all of the data to be compressed in the frame in a single
         :meth:`ZstdCompressor.compress` call, with the
