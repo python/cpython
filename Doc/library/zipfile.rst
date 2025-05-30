@@ -552,6 +552,7 @@ ZipFile Objects
    If *removed* is not provided, local file entries no longer referenced in the
    central directory will be removed.  The algorithm assumes that local file
    entries are stored consecutively:
+
    #. Data before the first referenced entry is removed only when it appears to
       be a sequence of consecutive entries with no extra following bytes; extra
       preceeding bytes are preserved.
