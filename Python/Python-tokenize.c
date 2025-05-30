@@ -239,8 +239,9 @@ _get_col_offsets(tokenizeriterobject *it, struct token token, const char *line_s
 }
 
 static PyObject *
-tokenizeriter_next(tokenizeriterobject *it)
+tokenizeriter_next(PyObject *op)
 {
+    tokenizeriterobject *it = (tokenizeriterobject*)op;
     PyObject* result = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(it);
@@ -263,7 +264,7 @@ tokenizeriter_next(tokenizeriterobject *it)
     }
     PyObject *str = NULL;
     if (token.start == NULL || token.end == NULL) {
-        str = PyUnicode_FromString("");
+        str = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
     else {
         str = PyUnicode_FromStringAndSize(token.start, token.end - token.start);
@@ -281,7 +282,7 @@ tokenizeriter_next(tokenizeriterobject *it)
     PyObject* line = NULL;
     int line_changed = 1;
     if (it->tok->tok_extra_tokens && is_trailing_token) {
-        line = PyUnicode_FromString("");
+        line = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     } else {
         Py_ssize_t size = it->tok->inp - line_start;
         if (size >= 1 && it->tok->implicit_newline) {
@@ -326,7 +327,7 @@ tokenizeriter_next(tokenizeriterobject *it)
         else if (type == NL) {
             if (it->tok->implicit_newline) {
                 Py_DECREF(str);
-                str = PyUnicode_FromString("");
+                str = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             }
         }
 
@@ -348,8 +349,9 @@ exit:
 }
 
 static void
-tokenizeriter_dealloc(tokenizeriterobject *it)
+tokenizeriter_dealloc(PyObject *op)
 {
+    tokenizeriterobject *it = (tokenizeriterobject*)op;
     PyTypeObject *tp = Py_TYPE(it);
     Py_XDECREF(it->last_line);
     _PyTokenizer_Free(it->tok);

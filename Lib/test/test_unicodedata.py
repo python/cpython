@@ -11,8 +11,14 @@ from http.client import HTTPException
 import sys
 import unicodedata
 import unittest
-from test.support import (open_urlresource, requires_resource, script_helper,
-                          cpython_only, check_disallow_instantiation)
+from test.support import (
+    open_urlresource,
+    requires_resource,
+    script_helper,
+    cpython_only,
+    check_disallow_instantiation,
+    force_not_colorized,
+)
 
 
 class UnicodeMethodsTest(unittest.TestCase):
@@ -277,6 +283,7 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         # Ensure that the type disallows instantiation (bpo-43916)
         check_disallow_instantiation(self, unicodedata.UCD)
 
+    @force_not_colorized
     def test_failed_import_during_compiling(self):
         # Issue 4367
         # Decoding \N escapes requires the unicodedata module. If it can't be
@@ -459,6 +466,29 @@ class NormalizationTest(unittest.TestCase):
     def test_bug_834676(self):
         # Check for bug 834676
         unicodedata.normalize('NFC', '\ud55c\uae00')
+
+    def test_normalize_return_type(self):
+        # gh-129569: normalize() return type must always be str
+        normalize = unicodedata.normalize
+
+        class MyStr(str):
+            pass
+
+        normalization_forms = ("NFC", "NFKC", "NFD", "NFKD")
+        input_strings = (
+            # normalized strings
+            "",
+            "ascii",
+            # unnormalized strings
+            "\u1e0b\u0323",
+            "\u0071\u0307\u0323",
+        )
+
+        for form in normalization_forms:
+            for input_str in input_strings:
+                with self.subTest(form=form, input_str=input_str):
+                    self.assertIs(type(normalize(form, input_str)), str)
+                    self.assertIs(type(normalize(form, MyStr(input_str))), str)
 
 
 if __name__ == "__main__":

@@ -1,1 +1,0 @@
-Print stack entry in :mod:`pdb` when and only when user input is needed.

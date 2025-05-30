@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2010 Python Software Foundation
+# Copyright (C) 2001 Python Software Foundation
 # Contact: email-sig@python.org
 # email package unit tests
 
@@ -210,8 +210,8 @@ class TestMessageAPI(TestEmailBase):
         self.assertEqual(msg.items()[0][1], 'multipart/form-data')
         # Trigger creation of boundary
         msg.as_string()
-        self.assertEqual(msg.items()[0][1][:33],
-                        'multipart/form-data; boundary="==')
+        self.assertStartsWith(msg.items()[0][1],
+                              'multipart/form-data; boundary="==')
         # XXX: there ought to be tests of the uniqueness of the boundary, too.
 
     def test_message_rfc822_only(self):
@@ -303,7 +303,7 @@ class TestMessageAPI(TestEmailBase):
         self.assertEqual(text, str(msg))
         fullrepr = msg.as_string(unixfrom=True)
         lines = fullrepr.split('\n')
-        self.assertTrue(lines[0].startswith('From '))
+        self.assertStartsWith(lines[0], 'From ')
         self.assertEqual(text, NL.join(lines[1:]))
 
     def test_as_string_policy(self):
@@ -372,7 +372,7 @@ class TestMessageAPI(TestEmailBase):
         self.assertEqual(data, bytes(msg))
         fullrepr = msg.as_bytes(unixfrom=True)
         lines = fullrepr.split(b'\n')
-        self.assertTrue(lines[0].startswith(b'From '))
+        self.assertStartsWith(lines[0], b'From ')
         self.assertEqual(data, b'\n'.join(lines[1:]))
 
     def test_as_bytes_policy(self):
@@ -728,6 +728,31 @@ class TestMessageAPI(TestEmailBase):
             "attachment; filename*=utf-8''Fu%C3%9Fballer%20%5Bfilename%5D.ppt",
             msg['Content-Disposition'])
 
+    def test_invalid_header_names(self):
+        invalid_headers = [
+            ('Invalid Header', 'contains space'),
+            ('Tab\tHeader', 'contains tab'),
+            ('Colon:Header', 'contains colon'),
+            ('', 'Empty name'),
+            (' LeadingSpace', 'starts with space'),
+            ('TrailingSpace ', 'ends with space'),
+            ('Header\x7F', 'Non-ASCII character'),
+            ('Header\x80', 'Extended ASCII'),
+        ]
+        for policy in (email.policy.default, email.policy.compat32):
+            for setter in (Message.__setitem__, Message.add_header):
+                for name, value in invalid_headers:
+                    self.do_test_invalid_header_names(
+                        policy, setter,name, value)
+
+    def do_test_invalid_header_names(self, policy, setter, name, value):
+        with self.subTest(policy=policy, setter=setter, name=name, value=value):
+            message = Message(policy=policy)
+            pattern = r'(?i)(?=.*invalid)(?=.*header)(?=.*name)'
+            with self.assertRaisesRegex(ValueError, pattern) as cm:
+                 setter(message, name, value)
+            self.assertIn(f"{name!r}", str(cm.exception))
+
     def test_binary_quopri_payload(self):
         for charset in ('latin-1', 'ascii'):
             msg = Message()
@@ -809,6 +834,16 @@ class TestMessageAPI(TestEmailBase):
 
             w4kgdGVzdGFiYwo=
             """))
+
+    def test_string_payload_with_base64_cte(self):
+        msg = email.message_from_string(textwrap.dedent("""\
+        Content-Transfer-Encoding: base64
+
+        SGVsbG8uIFRlc3Rpbmc=
+        """), policy=email.policy.default)
+        self.assertEqual(msg.get_payload(decode=True), b"Hello. Testing")
+        self.assertDefectsEqual(msg['content-transfer-encoding'].defects, [])
+
 
 
 # Test the email.encoders module
@@ -2193,7 +2228,7 @@ class TestNonConformant(TestEmailBase):
         msg = self._msgobj('msg_15.txt')
         # XXX We can probably eventually do better
         inner = msg.get_payload(0)
-        self.assertTrue(hasattr(inner, 'defects'))
+        self.assertHasAttr(inner, 'defects')
         self.assertEqual(len(inner.defects), 1)
         self.assertIsInstance(inner.defects[0],
                               errors.StartBoundaryNotFoundDefect)
@@ -2305,7 +2340,7 @@ counter to RFC 2822, there's no separating newline here
     # test_defect_handling
     def test_lying_multipart(self):
         msg = self._msgobj('msg_41.txt')
-        self.assertTrue(hasattr(msg, 'defects'))
+        self.assertHasAttr(msg, 'defects')
         self.assertEqual(len(msg.defects), 2)
         self.assertIsInstance(msg.defects[0],
                               errors.NoBoundaryInMultipartDefect)
@@ -2351,6 +2386,40 @@ counter to RFC 2822, there's no separating newline here
         self.assertEqual(msg.get_payload(), 'not a header\nTo: abc\n\nb\n')
         self.assertDefectsEqual(msg.defects,
                                 [errors.MissingHeaderBodySeparatorDefect])
+
+    def test_string_payload_with_extra_space_after_cte(self):
+        # https://github.com/python/cpython/issues/98188
+        cte = "base64 "
+        msg = email.message_from_string(textwrap.dedent(f"""\
+        Content-Transfer-Encoding: {cte}
+
+        SGVsbG8uIFRlc3Rpbmc=
+        """), policy=email.policy.default)
+        self.assertEqual(msg.get_payload(decode=True), b"Hello. Testing")
+        self.assertDefectsEqual(msg['content-transfer-encoding'].defects, [])
+
+    def test_string_payload_with_extra_text_after_cte(self):
+        msg = email.message_from_string(textwrap.dedent("""\
+        Content-Transfer-Encoding: base64 some text
+
+        SGVsbG8uIFRlc3Rpbmc=
+        """), policy=email.policy.default)
+        self.assertEqual(msg.get_payload(decode=True), b"Hello. Testing")
+        cte = msg['content-transfer-encoding']
+        self.assertDefectsEqual(cte.defects, [email.errors.InvalidHeaderDefect])
+
+    def test_string_payload_with_extra_space_after_cte_compat32(self):
+        cte = "base64 "
+        msg = email.message_from_string(textwrap.dedent(f"""\
+        Content-Transfer-Encoding: {cte}
+
+        SGVsbG8uIFRlc3Rpbmc=
+        """), policy=email.policy.compat32)
+        pasted_cte = msg['content-transfer-encoding']
+        self.assertEqual(pasted_cte, cte)
+        self.assertEqual(msg.get_payload(decode=True), b"Hello. Testing")
+        self.assertDefectsEqual(msg.defects, [])
+
 
 
 # Test RFC 2047 header encoding and decoding
@@ -3615,9 +3684,7 @@ multipart/report
     def test_make_msgid_default_domain(self):
         with patch('socket.getfqdn') as mock_getfqdn:
             mock_getfqdn.return_value = domain = 'pythontest.example.com'
-            self.assertTrue(
-                email.utils.make_msgid().endswith(
-                    '@' + domain + '>'))
+            self.assertEndsWith(email.utils.make_msgid(), '@' + domain + '>')
 
     def test_Generator_linend(self):
         # Issue 14645.
@@ -4084,7 +4151,7 @@ Here's the message body
             "--BOUNDARY--\n"
           )
         msg = email.message_from_string(m)
-        self.assertTrue(msg.get_payload(0).get_payload().endswith('\r\n'))
+        self.assertEndsWith(msg.get_payload(0).get_payload(), '\r\n')
 
 
 class Test8BitBytesHandling(TestEmailBase):

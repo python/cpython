@@ -9,29 +9,40 @@
 
 
 - (void)testPython {
-    // Arguments to pass into the test suite runner.
-    // argv[0] must identify the process; any subsequent arg
-    // will be handled as if it were an argument to `python -m test`
-    const char *argv[] = {
-        "iOSTestbed", // argv[0] is the process that is running.
-        "-uall",  // Enable all resources
-        "--single-process",  // always run all tests sequentially in a single process
-        "--rerun",  // Re-run failed tests in verbose mode
-        "-W",  // Display test output on failure
-        // To run a subset of tests, add the test names below; e.g.,
-        // "test_os",
-        // "test_sys",
-    };
-
-    // Start a Python interpreter.
+    const char **argv;
     int exit_code;
+    int failed;
     PyStatus status;
     PyPreConfig preconfig;
     PyConfig config;
+    PyObject *sys_module;
+    PyObject *sys_path_attr;
+    NSArray *test_args;
     NSString *python_home;
+    NSString *path;
     wchar_t *wtmp_str;
 
     NSString *resourcePath = [[NSBundle mainBundle] resourcePath];
+
+    // Set some other common environment indicators to disable color, as the
+    // Xcode log can't display color. Stdout will report that it is *not* a
+    // TTY.
+    setenv("NO_COLOR", "1", true);
+    setenv("PYTHON_COLORS", "0", true);
+
+    // Arguments to pass into the test suite runner.
+    // argv[0] must identify the process; any subsequent arg
+    // will be handled as if it were an argument to `python -m test`
+    test_args = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"TestArgs"];
+    if (test_args == NULL) {
+        NSLog(@"Unable to identify test arguments.");
+    }
+    argv = malloc(sizeof(char *) * ([test_args count] + 1));
+    argv[0] = "iOSTestbed";
+    for (int i = 1; i < [test_args count]; i++) {
+        argv[i] = [[test_args objectAtIndex:i] UTF8String];
+    }
+    NSLog(@"Test command: %@", test_args);
 
     // Generate an isolated Python configuration.
     NSLog(@"Configuring isolated Python...");
@@ -42,6 +53,8 @@
     // Enforce UTF-8 encoding for stderr, stdout, file-system encoding and locale.
     // See https://docs.python.org/3/library/os.html#python-utf-8-mode.
     preconfig.utf8_mode = 1;
+    // Use the system logger for stdout/err
+    config.use_system_logger = 1;
     // Don't buffer stdio. We want output to appears in the log immediately
     config.buffered_stdio = 0;
     // Don't write bytecode; we can't modify the app bundle
@@ -50,7 +63,7 @@
     // Ensure that signal handlers are installed
     config.install_signal_handlers = 1;
     // Run the test module.
-    config.run_module = Py_DecodeLocale("test", NULL);
+    config.run_module = Py_DecodeLocale([[test_args objectAtIndex:0] UTF8String], NULL);
     // For debugging - enable verbose mode.
     // config.verbose = 1;
 
@@ -83,7 +96,7 @@
     }
 
     NSLog(@"Configure argc/argv...");
-    status = PyConfig_SetBytesArgv(&config, sizeof(argv) / sizeof(char *), (char**) argv);
+    status = PyConfig_SetBytesArgv(&config, [test_args count], (char**) argv);
     if (PyStatus_Exception(status)) {
         XCTFail(@"Unable to configure argc/argv: %s", status.err_msg);
         PyConfig_Clear(&config);
@@ -98,11 +111,47 @@
         return;
     }
 
+    sys_module = PyImport_ImportModule("sys");
+    if (sys_module == NULL) {
+        XCTFail(@"Could not import sys module");
+        return;
+    }
+
+    sys_path_attr = PyObject_GetAttrString(sys_module, "path");
+    if (sys_path_attr == NULL) {
+        XCTFail(@"Could not access sys.path");
+        return;
+    }
+
+    // Add the app packages path
+    path = [NSString stringWithFormat:@"%@/app_packages", resourcePath, nil];
+    NSLog(@"App packages path: %@", path);
+    wtmp_str = Py_DecodeLocale([path UTF8String], NULL);
+    failed = PyList_Insert(sys_path_attr, 0, PyUnicode_FromString([path UTF8String]));
+    if (failed) {
+        XCTFail(@"Unable to add app packages to sys.path");
+        return;
+    }
+    PyMem_RawFree(wtmp_str);
+
+    path = [NSString stringWithFormat:@"%@/app", resourcePath, nil];
+    NSLog(@"App path: %@", path);
+    wtmp_str = Py_DecodeLocale([path UTF8String], NULL);
+    failed = PyList_Insert(sys_path_attr, 0, PyUnicode_FromString([path UTF8String]));
+    if (failed) {
+        XCTFail(@"Unable to add app to sys.path");
+        return;
+    }
+    PyMem_RawFree(wtmp_str);
+
+    // Ensure the working directory is the app folder.
+    chdir([path UTF8String]);
+
     // Start the test suite. Print a separator to differentiate Python startup logs from app logs
     NSLog(@"---------------------------------------------------------------------------");
 
     exit_code = Py_RunMain();
-    XCTAssertEqual(exit_code, 0, @"Python test suite did not pass");
+    XCTAssertEqual(exit_code, 0, @"Test suite did not pass");
 
     NSLog(@"---------------------------------------------------------------------------");
 

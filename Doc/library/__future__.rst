@@ -66,7 +66,7 @@ language using this mechanism:
 +------------------+-------------+--------------+---------------------------------------------+
 | annotations      | 3.7.0b1     | Never [1]_   | :pep:`563`:                                 |
 |                  |             |              | *Postponed evaluation of annotations*,      |
-|                  |             |              | :pep:`649`: *Deferred evalutation of        |
+|                  |             |              | :pep:`649`: *Deferred evaluation of         |
 |                  |             |              | annotations using descriptors*              |
 +------------------+-------------+--------------+---------------------------------------------+
 

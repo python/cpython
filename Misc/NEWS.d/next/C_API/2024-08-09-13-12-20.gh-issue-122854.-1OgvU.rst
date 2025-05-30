@@ -1,2 +1,0 @@
-Add :c:func:`Py_HashBuffer` to compute and return the hash value of a buffer.
-Patch by Antoine Pitrou and Victor Stinner.

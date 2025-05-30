@@ -3,8 +3,9 @@ Low-level OS functionality wrappers used by pathlib.
 """
 
 from errno import *
+from io import TextIOWrapper, text_encoding
+from stat import S_ISDIR, S_ISREG, S_ISLNK, S_IMODE
 import os
-import stat
 import sys
 try:
     import fcntl
@@ -101,13 +102,13 @@ else:
 
 
 if _winapi and hasattr(_winapi, 'CopyFile2'):
-    def copyfile(source, target):
+    def copyfile2(source, target):
         """
         Copy from one file to another using CopyFile2 (Windows only).
         """
         _winapi.CopyFile2(source, target, 0)
 else:
-    copyfile = None
+    copyfile2 = None
 
 
 def copyfileobj(source_f, target_f):
@@ -165,82 +166,145 @@ def copyfileobj(source_f, target_f):
         write_target(buf)
 
 
-# Kinds of metadata supported by the operating system.
-file_metadata_keys = {'mode', 'times_ns'}
-if hasattr(os.stat_result, 'st_flags'):
-    file_metadata_keys.add('flags')
-if hasattr(os, 'listxattr'):
-    file_metadata_keys.add('xattrs')
-file_metadata_keys = frozenset(file_metadata_keys)
-
-
-def read_file_metadata(path, keys=None, *, follow_symlinks=True):
+def magic_open(path, mode='r', buffering=-1, encoding=None, errors=None,
+               newline=None):
     """
-    Returns local path metadata as a dict with string keys.
+    Open the file pointed to by this path and return a file object, as
+    the built-in open() function does.
     """
-    if keys is None:
-        keys = file_metadata_keys
-    assert keys.issubset(file_metadata_keys)
-    result = {}
-    for key in keys:
-        if key == 'xattrs':
-            try:
-                result['xattrs'] = [
-                    (attr, os.getxattr(path, attr, follow_symlinks=follow_symlinks))
-                    for attr in os.listxattr(path, follow_symlinks=follow_symlinks)]
-            except OSError as err:
-                if err.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
-                    raise
-            continue
-        st = os.stat(path, follow_symlinks=follow_symlinks)
-        if key == 'mode':
-            result['mode'] = stat.S_IMODE(st.st_mode)
-        elif key == 'times_ns':
-            result['times_ns'] = st.st_atime_ns, st.st_mtime_ns
-        elif key == 'flags':
-            result['flags'] = st.st_flags
-    return result
+    text = 'b' not in mode
+    if text:
+        # Call io.text_encoding() here to ensure any warning is raised at an
+        # appropriate stack level.
+        encoding = text_encoding(encoding)
+    try:
+        return open(path, mode, buffering, encoding, errors, newline)
+    except TypeError:
+        pass
+    cls = type(path)
+    mode = ''.join(sorted(c for c in mode if c not in 'bt'))
+    if text:
+        try:
+            attr = getattr(cls, f'__open_{mode}__')
+        except AttributeError:
+            pass
+        else:
+            return attr(path, buffering, encoding, errors, newline)
+    elif encoding is not None:
+        raise ValueError("binary mode doesn't take an encoding argument")
+    elif errors is not None:
+        raise ValueError("binary mode doesn't take an errors argument")
+    elif newline is not None:
+        raise ValueError("binary mode doesn't take a newline argument")
+
+    try:
+        attr = getattr(cls, f'__open_{mode}b__')
+    except AttributeError:
+        pass
+    else:
+        stream = attr(path, buffering)
+        if text:
+            stream = TextIOWrapper(stream, encoding, errors, newline)
+        return stream
+
+    raise TypeError(f"{cls.__name__} can't be opened with mode {mode!r}")
 
 
-def write_file_metadata(path, metadata, *, follow_symlinks=True):
+def vfspath(path):
     """
-    Sets local path metadata from the given dict with string keys.
+    Return the string representation of a virtual path object.
     """
-    assert frozenset(metadata.keys()).issubset(file_metadata_keys)
-
-    def _nop(*args, ns=None, follow_symlinks=None):
+    try:
+        return os.fsdecode(path)
+    except TypeError:
         pass
 
-    if follow_symlinks:
-        # use the real function if it exists
-        def lookup(name):
-            return getattr(os, name, _nop)
-    else:
-        # use the real function only if it exists
-        # *and* it supports follow_symlinks
-        def lookup(name):
-            fn = getattr(os, name, _nop)
-            if fn in os.supports_follow_symlinks:
-                return fn
-            return _nop
+    path_type = type(path)
+    try:
+        return path_type.__vfspath__(path)
+    except AttributeError:
+        if hasattr(path_type, '__vfspath__'):
+            raise
 
-    times_ns = metadata.get('times_ns')
-    if times_ns is not None:
-        lookup("utime")(path, ns=times_ns, follow_symlinks=follow_symlinks)
+    raise TypeError("expected str, bytes, os.PathLike or JoinablePath "
+                    "object, not " + path_type.__name__)
+
+
+def ensure_distinct_paths(source, target):
+    """
+    Raise OSError(EINVAL) if the other path is within this path.
+    """
+    # Note: there is no straightforward, foolproof algorithm to determine
+    # if one directory is within another (a particularly perverse example
+    # would be a single network share mounted in one location via NFS, and
+    # in another location via CIFS), so we simply checks whether the
+    # other path is lexically equal to, or within, this path.
+    if source == target:
+        err = OSError(EINVAL, "Source and target are the same path")
+    elif source in target.parents:
+        err = OSError(EINVAL, "Source path is a parent of target path")
+    else:
+        return
+    err.filename = vfspath(source)
+    err.filename2 = vfspath(target)
+    raise err
+
+
+def ensure_different_files(source, target):
+    """
+    Raise OSError(EINVAL) if both paths refer to the same file.
+    """
+    try:
+        source_file_id = source.info._file_id
+        target_file_id = target.info._file_id
+    except AttributeError:
+        if source != target:
+            return
+    else:
+        try:
+            if source_file_id() != target_file_id():
+                return
+        except (OSError, ValueError):
+            return
+    err = OSError(EINVAL, "Source and target are the same file")
+    err.filename = vfspath(source)
+    err.filename2 = vfspath(target)
+    raise err
+
+
+def copy_info(info, target, follow_symlinks=True):
+    """Copy metadata from the given PathInfo to the given local path."""
+    copy_times_ns = (
+        hasattr(info, '_access_time_ns') and
+        hasattr(info, '_mod_time_ns') and
+        (follow_symlinks or os.utime in os.supports_follow_symlinks))
+    if copy_times_ns:
+        t0 = info._access_time_ns(follow_symlinks=follow_symlinks)
+        t1 = info._mod_time_ns(follow_symlinks=follow_symlinks)
+        os.utime(target, ns=(t0, t1), follow_symlinks=follow_symlinks)
+
     # We must copy extended attributes before the file is (potentially)
     # chmod()'ed read-only, otherwise setxattr() will error with -EACCES.
-    xattrs = metadata.get('xattrs')
-    if xattrs is not None:
+    copy_xattrs = (
+        hasattr(info, '_xattrs') and
+        hasattr(os, 'setxattr') and
+        (follow_symlinks or os.setxattr in os.supports_follow_symlinks))
+    if copy_xattrs:
+        xattrs = info._xattrs(follow_symlinks=follow_symlinks)
         for attr, value in xattrs:
             try:
-                os.setxattr(path, attr, value, follow_symlinks=follow_symlinks)
+                os.setxattr(target, attr, value, follow_symlinks=follow_symlinks)
             except OSError as e:
                 if e.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
                     raise
-    mode = metadata.get('mode')
-    if mode is not None:
+
+    copy_posix_permissions = (
+        hasattr(info, '_posix_permissions') and
+        (follow_symlinks or os.chmod in os.supports_follow_symlinks))
+    if copy_posix_permissions:
+        posix_permissions = info._posix_permissions(follow_symlinks=follow_symlinks)
         try:
-            lookup("chmod")(path, mode, follow_symlinks=follow_symlinks)
+            os.chmod(target, posix_permissions, follow_symlinks=follow_symlinks)
         except NotImplementedError:
             # if we got a NotImplementedError, it's because
             #   * follow_symlinks=False,
@@ -253,10 +317,234 @@ def write_file_metadata(path, metadata, *, follow_symlinks=True):
             # symlink.  give up, suppress the error.
             # (which is what shutil always did in this circumstance.)
             pass
-    flags = metadata.get('flags')
-    if flags is not None:
+
+    copy_bsd_flags = (
+        hasattr(info, '_bsd_flags') and
+        hasattr(os, 'chflags') and
+        (follow_symlinks or os.chflags in os.supports_follow_symlinks))
+    if copy_bsd_flags:
+        bsd_flags = info._bsd_flags(follow_symlinks=follow_symlinks)
         try:
-            lookup("chflags")(path, flags, follow_symlinks=follow_symlinks)
+            os.chflags(target, bsd_flags, follow_symlinks=follow_symlinks)
         except OSError as why:
             if why.errno not in (EOPNOTSUPP, ENOTSUP):
                 raise
+
+
+class _PathInfoBase:
+    __slots__ = ('_path', '_stat_result', '_lstat_result')
+
+    def __init__(self, path):
+        self._path = str(path)
+
+    def __repr__(self):
+        path_type = "WindowsPath" if os.name == "nt" else "PosixPath"
+        return f"<{path_type}.info>"
+
+    def _stat(self, *, follow_symlinks=True, ignore_errors=False):
+        """Return the status as an os.stat_result, or None if stat() fails and
+        ignore_errors is true."""
+        if follow_symlinks:
+            try:
+                result = self._stat_result
+            except AttributeError:
+                pass
+            else:
+                if ignore_errors or result is not None:
+                    return result
+            try:
+                self._stat_result = os.stat(self._path)
+            except (OSError, ValueError):
+                self._stat_result = None
+                if not ignore_errors:
+                    raise
+            return self._stat_result
+        else:
+            try:
+                result = self._lstat_result
+            except AttributeError:
+                pass
+            else:
+                if ignore_errors or result is not None:
+                    return result
+            try:
+                self._lstat_result = os.lstat(self._path)
+            except (OSError, ValueError):
+                self._lstat_result = None
+                if not ignore_errors:
+                    raise
+            return self._lstat_result
+
+    def _posix_permissions(self, *, follow_symlinks=True):
+        """Return the POSIX file permissions."""
+        return S_IMODE(self._stat(follow_symlinks=follow_symlinks).st_mode)
+
+    def _file_id(self, *, follow_symlinks=True):
+        """Returns the identifier of the file."""
+        st = self._stat(follow_symlinks=follow_symlinks)
+        return st.st_dev, st.st_ino
+
+    def _access_time_ns(self, *, follow_symlinks=True):
+        """Return the access time in nanoseconds."""
+        return self._stat(follow_symlinks=follow_symlinks).st_atime_ns
+
+    def _mod_time_ns(self, *, follow_symlinks=True):
+        """Return the modify time in nanoseconds."""
+        return self._stat(follow_symlinks=follow_symlinks).st_mtime_ns
+
+    if hasattr(os.stat_result, 'st_flags'):
+        def _bsd_flags(self, *, follow_symlinks=True):
+            """Return the flags."""
+            return self._stat(follow_symlinks=follow_symlinks).st_flags
+
+    if hasattr(os, 'listxattr'):
+        def _xattrs(self, *, follow_symlinks=True):
+            """Return the xattrs as a list of (attr, value) pairs, or an empty
+            list if extended attributes aren't supported."""
+            try:
+                return [
+                    (attr, os.getxattr(self._path, attr, follow_symlinks=follow_symlinks))
+                    for attr in os.listxattr(self._path, follow_symlinks=follow_symlinks)]
+            except OSError as err:
+                if err.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
+                    raise
+                return []
+
+
+class _WindowsPathInfo(_PathInfoBase):
+    """Implementation of pathlib.types.PathInfo that provides status
+    information for Windows paths. Don't try to construct it yourself."""
+    __slots__ = ('_exists', '_is_dir', '_is_file', '_is_symlink')
+
+    def exists(self, *, follow_symlinks=True):
+        """Whether this path exists."""
+        if not follow_symlinks and self.is_symlink():
+            return True
+        try:
+            return self._exists
+        except AttributeError:
+            if os.path.exists(self._path):
+                self._exists = True
+                return True
+            else:
+                self._exists = self._is_dir = self._is_file = False
+                return False
+
+    def is_dir(self, *, follow_symlinks=True):
+        """Whether this path is a directory."""
+        if not follow_symlinks and self.is_symlink():
+            return False
+        try:
+            return self._is_dir
+        except AttributeError:
+            if os.path.isdir(self._path):
+                self._is_dir = self._exists = True
+                return True
+            else:
+                self._is_dir = False
+                return False
+
+    def is_file(self, *, follow_symlinks=True):
+        """Whether this path is a regular file."""
+        if not follow_symlinks and self.is_symlink():
+            return False
+        try:
+            return self._is_file
+        except AttributeError:
+            if os.path.isfile(self._path):
+                self._is_file = self._exists = True
+                return True
+            else:
+                self._is_file = False
+                return False
+
+    def is_symlink(self):
+        """Whether this path is a symbolic link."""
+        try:
+            return self._is_symlink
+        except AttributeError:
+            self._is_symlink = os.path.islink(self._path)
+            return self._is_symlink
+
+
+class _PosixPathInfo(_PathInfoBase):
+    """Implementation of pathlib.types.PathInfo that provides status
+    information for POSIX paths. Don't try to construct it yourself."""
+    __slots__ = ()
+
+    def exists(self, *, follow_symlinks=True):
+        """Whether this path exists."""
+        st = self._stat(follow_symlinks=follow_symlinks, ignore_errors=True)
+        if st is None:
+            return False
+        return True
+
+    def is_dir(self, *, follow_symlinks=True):
+        """Whether this path is a directory."""
+        st = self._stat(follow_symlinks=follow_symlinks, ignore_errors=True)
+        if st is None:
+            return False
+        return S_ISDIR(st.st_mode)
+
+    def is_file(self, *, follow_symlinks=True):
+        """Whether this path is a regular file."""
+        st = self._stat(follow_symlinks=follow_symlinks, ignore_errors=True)
+        if st is None:
+            return False
+        return S_ISREG(st.st_mode)
+
+    def is_symlink(self):
+        """Whether this path is a symbolic link."""
+        st = self._stat(follow_symlinks=False, ignore_errors=True)
+        if st is None:
+            return False
+        return S_ISLNK(st.st_mode)
+
+
+PathInfo = _WindowsPathInfo if os.name == 'nt' else _PosixPathInfo
+
+
+class DirEntryInfo(_PathInfoBase):
+    """Implementation of pathlib.types.PathInfo that provides status
+    information by querying a wrapped os.DirEntry object. Don't try to
+    construct it yourself."""
+    __slots__ = ('_entry',)
+
+    def __init__(self, entry):
+        super().__init__(entry.path)
+        self._entry = entry
+
+    def _stat(self, *, follow_symlinks=True, ignore_errors=False):
+        try:
+            return self._entry.stat(follow_symlinks=follow_symlinks)
+        except OSError:
+            if not ignore_errors:
+                raise
+            return None
+
+    def exists(self, *, follow_symlinks=True):
+        """Whether this path exists."""
+        if not follow_symlinks:
+            return True
+        return self._stat(ignore_errors=True) is not None
+
+    def is_dir(self, *, follow_symlinks=True):
+        """Whether this path is a directory."""
+        try:
+            return self._entry.is_dir(follow_symlinks=follow_symlinks)
+        except OSError:
+            return False
+
+    def is_file(self, *, follow_symlinks=True):
+        """Whether this path is a regular file."""
+        try:
+            return self._entry.is_file(follow_symlinks=follow_symlinks)
+        except OSError:
+            return False
+
+    def is_symlink(self):
+        """Whether this path is a symbolic link."""
+        try:
+            return self._entry.is_symlink()
+        except OSError:
+            return False

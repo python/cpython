@@ -1,6 +1,5 @@
 import unittest
-import sys
-from collections import namedtuple
+import gc
 from test.support import import_helper
 
 _testcapi = import_helper.import_module('_testcapi')
@@ -256,6 +255,30 @@ class CAPITest(unittest.TestCase):
         # non-tuple
         self.assertRaises(SystemError, resize, [1, 2, 3], 0, False)
         self.assertRaises(SystemError, resize, NULL, 0, False)
+
+    def test_bug_59313(self):
+        # Before 3.14, the C-API function PySequence_Tuple
+        # would create incomplete tuples which were visible to
+        # the cycle GC, and this test would crash the interpeter.
+        TAG = object()
+        tuples = []
+
+        def referrer_tuples():
+            return [x for x in gc.get_referrers(TAG)
+                if isinstance(x, tuple)]
+
+        def my_iter():
+            nonlocal tuples
+            yield TAG    # 'tag' gets stored in the result tuple
+            tuples += referrer_tuples()
+            for x in range(10):
+                tuples += referrer_tuples()
+                # Prior to 3.13 would raise a SystemError when the tuple needs to be resized
+                yield x
+
+        self.assertEqual(tuple(my_iter()), (TAG, *range(10)))
+        self.assertEqual(tuples, [])
+
 
 if __name__ == "__main__":
     unittest.main()

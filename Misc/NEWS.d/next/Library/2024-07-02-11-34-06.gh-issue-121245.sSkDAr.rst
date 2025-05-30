@@ -1,2 +1,0 @@
-Fix a bug in the handling of the command history of the new :term:`REPL` that caused
-the history file to be wiped at REPL exit.

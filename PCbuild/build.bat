@@ -11,7 +11,7 @@ echo.directly to MSBuild may be passed.  If the argument contains an '=', the
 echo.entire argument must be quoted (e.g. `%~nx0 "/p:PlatformToolset=v141"`).
 echo.Alternatively you can put extra flags for MSBuild in a file named 
 echo.`msbuild.rsp` in the `PCbuild` directory, one flag per line. This file
-echo.will be picked automatically by MSBuild. Flags put in this file does not
+echo.will be picked automatically by MSBuild. Flags put in this file do not
 echo.need to be quoted. You can still use environment variables inside the 
 echo.response file.
 echo.
@@ -39,6 +39,8 @@ echo.  --regen        Regenerate all opcodes, grammar and tokens.
 echo.  --experimental-jit          Enable the experimental just-in-time compiler.
 echo.  --experimental-jit-off      Ditto but off by default (PYTHON_JIT=1 enables).
 echo.  --experimental-jit-interpreter  Enable the experimental Tier 2 interpreter.
+echo.  --pystats      Enable PyStats collection.
+echo.  --tail-call-interp  Enable tail-calling interpreter (requires LLVM 19 or higher).
 echo.
 echo.Available flags to avoid building certain modules.
 echo.These flags have no effect if '-e' is not given:
@@ -93,6 +95,9 @@ if "%~1"=="--experimental-jit" (set UseJIT=true) & (set UseTIER2=1) & shift & go
 if "%~1"=="--experimental-jit-off" (set UseJIT=true) & (set UseTIER2=3) & shift & goto CheckOpts
 if "%~1"=="--experimental-jit-interpreter" (set UseTIER2=4) & shift & goto CheckOpts
 if "%~1"=="--experimental-jit-interpreter-off" (set UseTIER2=6) & shift & goto CheckOpts
+if "%~1"=="--without-remote-debug" (set DisableRemoteDebug=true) & shift & goto CheckOpts
+if "%~1"=="--pystats" (set PyStats=1) & shift & goto CheckOpts
+if "%~1"=="--tail-call-interp" (set UseTailCallInterp=true) & shift & goto CheckOpts
 rem These use the actual property names used by MSBuild.  We could just let
 rem them in through the environment, but we specify them on the command line
 rem anyway for visibility so set defaults after this
@@ -106,6 +111,7 @@ if "%IncludeExternals%"=="" set IncludeExternals=true
 if "%IncludeCTypes%"=="" set IncludeCTypes=true
 if "%IncludeSSL%"=="" set IncludeSSL=true
 if "%IncludeTkinter%"=="" set IncludeTkinter=true
+if "%UseJIT%" NEQ "true" set IncludeLLVM=false
 
 if "%IncludeExternals%"=="true" call "%dir%get_externals.bat"
 
@@ -116,6 +122,13 @@ if "%do_pgo%" EQU "true" if "%platf%" EQU "x64" (
         echo.       and PROCESSOR_ARCHITEW6432 environment variables are correct.
         exit /b 1 
     )
+)
+
+if "%UseDisableGil%" EQU "true" if "%UseTIER2%" NEQ "" (
+    rem GH-133171: This configuration builds the JIT but never actually uses it,
+    rem which is surprising (and strictly worse than not building it at all):
+    echo.ERROR: --experimental-jit cannot be used with --disable-gil.
+    exit /b 1
 )
 
 if not exist "%GIT%" where git > "%TEMP%\git.loc" 2> nul && set /P GIT= < "%TEMP%\git.loc" & del "%TEMP%\git.loc"
@@ -186,6 +199,9 @@ echo on
  /p:UseTestMarker=%UseTestMarker% %GITProperty%^
  /p:UseJIT=%UseJIT%^
  /p:UseTIER2=%UseTIER2%^
+ /p:PyStats=%PyStats%^
+ /p:UseTailCallInterp=%UseTailCallInterp%^
+ /p:DisableRemoteDebug=%DisableRemoteDebug%^
  %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 @echo off

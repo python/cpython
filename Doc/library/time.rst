@@ -52,9 +52,13 @@ An explanation of some terminology and conventions is in order.
    single: Coordinated Universal Time
    single: Greenwich Mean Time
 
-* UTC is Coordinated Universal Time (formerly known as Greenwich Mean Time, or
-  GMT).  The acronym UTC is not a mistake but a compromise between English and
-  French.
+* UTC is `Coordinated Universal Time`_ and superseded `Greenwich Mean Time`_ or
+  GMT as the basis of international timekeeping. The acronym UTC is not a
+  mistake but conforms to an earlier, language-agnostic naming scheme for time
+  standards such as UT0, UT1, and UT2.
+
+.. _Coordinated Universal Time: https://en.wikipedia.org/wiki/Coordinated_Universal_Time
+.. _Greenwich Mean Time: https://en.wikipedia.org/wiki/Greenwich_Mean_Time
 
 .. index:: single: Daylight Saving Time
 
@@ -327,7 +331,7 @@ Functions
 
    .. impl-detail::
 
-      On CPython, use the same clock than :func:`time.monotonic` and is a
+      On CPython, use the same clock as :func:`time.monotonic` and is a
       monotonic clock, i.e. a clock that cannot go backwards.
 
    Use :func:`perf_counter_ns` to avoid the precision loss caused by the
@@ -339,7 +343,7 @@ Functions
       On Windows, the function is now system-wide.
 
    .. versionchanged:: 3.13
-      Use the same clock than :func:`time.monotonic`.
+      Use the same clock as :func:`time.monotonic`.
 
 
 .. function:: perf_counter_ns() -> int
@@ -385,19 +389,28 @@ Functions
    The suspension time may be longer than requested by an arbitrary amount,
    because of the scheduling of other activity in the system.
 
+   .. rubric:: Windows implementation
+
    On Windows, if *secs* is zero, the thread relinquishes the remainder of its
    time slice to any other thread that is ready to run. If there are no other
    threads ready to run, the function returns immediately, and the thread
    continues execution.  On Windows 8.1 and newer the implementation uses
    a `high-resolution timer
-   <https://docs.microsoft.com/en-us/windows-hardware/drivers/kernel/high-resolution-timers>`_
+   <https://learn.microsoft.com/windows-hardware/drivers/kernel/high-resolution-timers>`_
    which provides resolution of 100 nanoseconds. If *secs* is zero, ``Sleep(0)`` is used.
 
-   Unix implementation:
+   .. rubric:: Unix implementation
 
    * Use ``clock_nanosleep()`` if available (resolution: 1 nanosecond);
    * Or use ``nanosleep()`` if available (resolution: 1 nanosecond);
    * Or use ``select()`` (resolution: 1 microsecond).
+
+   .. note::
+
+      To emulate a "no-op", use :keyword:`pass` instead of ``time.sleep(0)``.
+
+      To voluntarily relinquish the CPU, specify a real-time :ref:`scheduling
+      policy <os-scheduling-policy>` and use :func:`os.sched_yield` instead.
 
    .. audit-event:: time.sleep secs
 
@@ -483,6 +496,9 @@ Functions
    |           |                                                |       |
    |           |                                                |       |
    +-----------+------------------------------------------------+-------+
+   | ``%u``    | Day of the week (Monday is 1; Sunday is 7)     |       |
+   |           | as a decimal number [1, 7].                    |       |
+   +-----------+------------------------------------------------+-------+
    | ``%w``    | Weekday as a decimal number [0(Sunday),6].     |       |
    |           |                                                |       |
    +-----------+------------------------------------------------+-------+
@@ -514,6 +530,16 @@ Functions
    +-----------+------------------------------------------------+-------+
    | ``%Z``    | Time zone name (no characters if no time zone  |       |
    |           | exists). Deprecated. [1]_                      |       |
+   +-----------+------------------------------------------------+-------+
+   | ``%G``    | ISO 8601 year (similar to ``%Y`` but follows   |       |
+   |           | the rules for the ISO 8601 calendar year).     |       |
+   |           | The year starts with the week that contains    |       |
+   |           | the first Thursday of the calendar year.       |       |
+   +-----------+------------------------------------------------+-------+
+   | ``%V``    | ISO 8601 week number (as a decimal number      |       |
+   |           | [01,53]). The first week of the year is the    |       |
+   |           | one that contains the first Thursday of the    |       |
+   |           | year. Weeks start on Monday.                   |       |
    +-----------+------------------------------------------------+-------+
    | ``%%``    | A literal ``'%'`` character.                   |       |
    +-----------+------------------------------------------------+-------+

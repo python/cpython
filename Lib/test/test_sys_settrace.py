@@ -6,8 +6,7 @@ import sys
 import difflib
 import gc
 from functools import wraps
-import asyncio
-from test.support import import_helper, requires_subprocess
+from test.support import import_helper, requires_subprocess, run_no_yield_async_fn
 import contextlib
 import os
 import tempfile
@@ -18,8 +17,6 @@ try:
     import _testinternalcapi
 except ImportError:
     _testinternalcapi = None
-
-support.requires_working_socket(module=True)
 
 class tracecontext:
     """Context manager that traces its enter and exit."""
@@ -923,20 +920,28 @@ class TraceTestCase(unittest.TestCase):
 
         def func():
             try:
-                2/0
-            except IndexError:
-                4
-            finally:
-                return 6
+                try:
+                    2/0
+                except IndexError:
+                    5
+                finally:
+                    7
+            except:
+                pass
+            return 10
 
         self.run_and_compare(func,
             [(0, 'call'),
              (1, 'line'),
              (2, 'line'),
-             (2, 'exception'),
              (3, 'line'),
-             (6, 'line'),
-             (6, 'return')])
+             (3, 'exception'),
+             (4, 'line'),
+             (7, 'line'),
+             (8, 'line'),
+             (9, 'line'),
+             (10, 'line'),
+             (10, 'return')])
 
     def test_finally_with_conditional(self):
 
@@ -2067,10 +2072,9 @@ class JumpTestCase(unittest.TestCase):
                 stack.enter_context(self.assertRaisesRegex(*error))
             if warning is not None:
                 stack.enter_context(self.assertWarnsRegex(*warning))
-            asyncio.run(func(output))
+            run_no_yield_async_fn(func, output)
 
         sys.settrace(None)
-        asyncio.set_event_loop_policy(None)
         self.compare_jump_output(expected, output)
 
     def jump_test(jumpFrom, jumpTo, expected, error=None, event='line', warning=None):
@@ -2230,21 +2234,6 @@ class JumpTestCase(unittest.TestCase):
             finally:
                 output.append(10)
             output.append(11)
-        output.append(12)
-
-    @jump_test(5, 11, [2, 4], (ValueError, 'comes after the current code block'))
-    def test_no_jump_over_return_try_finally_in_finally_block(output):
-        try:
-            output.append(2)
-        finally:
-            output.append(4)
-            output.append(5)
-            return
-            try:
-                output.append(8)
-            finally:
-                output.append(10)
-            pass
         output.append(12)
 
     @jump_test(3, 4, [1], (ValueError, 'after'))
@@ -2770,7 +2759,7 @@ class JumpTestCase(unittest.TestCase):
         finally:
             output.append(4)
             output.append(5)
-            return
+        return
         output.append(7)
 
     @jump_test(7, 4, [1, 6], (ValueError, 'into'))
@@ -3039,18 +3028,18 @@ class TestExtendedArgs(unittest.TestCase):
 
     def test_trace_lots_of_globals(self):
 
-        count = min(1000, int(support.get_c_recursion_limit() * 0.8))
+        count = 1000
 
         code = """if 1:
             def f():
                 return (
                     {}
                 )
-        """.format("\n+\n".join(f"var{i}\n" for i in range(count)))
+        """.format("\n,\n".join(f"var{i}\n" for i in range(count)))
         ns = {f"var{i}": i for i in range(count)}
         exec(code, ns)
         counts = self.count_traces(ns["f"])
-        self.assertEqual(counts, {'call': 1, 'line': count * 2, 'return': 1})
+        self.assertEqual(counts, {'call': 1, 'line': count * 2 + 1, 'return': 1})
 
 
 class TestEdgeCases(unittest.TestCase):
