@@ -1,4 +1,2 @@
-================
-Type: Enhancement
-Title: Add support for ``-nolinestop``, ``-all``, ``-overlap``, and ``-strictlimits`` options to ``tkinter.Text.search``
-Issue: :gh:`130693`
+Add support for ``-nolinestop``, ``-all``, ``-overlap``, and ``-strictlimits`` options to ``tkinter.Text.search``
+
