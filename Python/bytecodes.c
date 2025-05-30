@@ -1354,9 +1354,16 @@ dummy_func(
         }
 
         tier1 op(_YIELD_VALUE_EVENT, (val -- val)) {
+            PyObject *yielded = PyStackRef_AsPyObjectBorrow(val);
+            if (_PyAsyncGenWrappedValue_CheckExact(yielded))
+            {
+                /* gh-129013: Async generators have a special wrapper that they
+                   yield. Don't expose that to the user. */
+                yielded = _PyAsyncGenWrappedValue_CAST(yielded)->agw_val;
+            }
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_YIELD,
-                    frame, this_instr, PyStackRef_AsPyObjectBorrow(val));
+                    frame, this_instr, yielded);
             if (err) {
                 ERROR_NO_POP();
             }

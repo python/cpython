@@ -2157,6 +2157,30 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
         sys.monitoring.restart_events()
         sys.monitoring.set_events(0, 0)
 
+    @test.support.requires_working_socket()  # For asyncio
+    def test_yield_async_generator(self):
+        # gh-129013: Async generators have a special type that they
+        # use to yield values. This type shouldn't be exposed by PY_YIELD
+        # events.
+        asyncio = test.support.import_helper.import_module("asyncio")
+
+        async def gen():
+            yield 42
+
+        async def main():
+            async for _ in gen():
+                pass
+
+        def handle_yield(code, offset, value):
+            self.assertEqual(value, 42)
+
+        sys.monitoring.use_tool_id(0, "test")
+        sys.monitoring.register_callback(0, sys.monitoring.events.PY_YIELD, handle_yield)
+        sys.monitoring.set_events(0, sys.monitoring.events.PY_YIELD)
+
+        asyncio.run(main())
+        sys.monitoring.set_events(0, 0)
+
 
 class TestOptimizer(MonitoringTestBase, unittest.TestCase):
 
@@ -2403,3 +2427,6 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
 
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
+
+if __name__ == "__main__":
+    unittest.main()

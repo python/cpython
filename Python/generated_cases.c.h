@@ -7629,10 +7629,19 @@
             // _YIELD_VALUE_EVENT
             {
                 val = stack_pointer[-1];
+                PyObject *yielded = PyStackRef_AsPyObjectBorrow(val);
+                if (_PyAsyncGenWrappedValue_CheckExact(yielded))
+                {
+                    /* gh-129013: Async generators have a special wrapper that they
+                       yield. Don't expose that to the user. */
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    yielded = _PyAsyncGenWrappedValue_CAST(yielded)->agw_val;
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_YIELD,
-                    frame, this_instr, PyStackRef_AsPyObjectBorrow(val));
+                    frame, this_instr, yielded);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err) {
                     JUMP_TO_LABEL(error);

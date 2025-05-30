@@ -37,6 +37,17 @@ extern PyTypeObject _PyCoroWrapper_Type;
 extern PyTypeObject _PyAsyncGenWrappedValue_Type;
 extern PyTypeObject _PyAsyncGenAThrow_Type;
 
+typedef struct _PyAsyncGenWrappedValue {
+    PyObject_HEAD
+    PyObject *agw_val;
+} _PyAsyncGenWrappedValue;
+
+#define _PyAsyncGenWrappedValue_CheckExact(o) \
+                    Py_IS_TYPE(o, &_PyAsyncGenWrappedValue_Type)
+#define _PyAsyncGenWrappedValue_CAST(op) \
+    (assert(_PyAsyncGenWrappedValue_CheckExact(op)), \
+     _Py_CAST(_PyAsyncGenWrappedValue*, (op)))
+
 #ifdef __cplusplus
 }
 #endif
