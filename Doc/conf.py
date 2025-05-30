@@ -419,14 +419,15 @@ gettext_compact = False
 
 # Options for automatic links from code examples to reference documentation.
 # (https://sphinx-codeautolink.readthedocs.io/)
-codeautolink_warn_on_missing_inventory = False
-codeautolink_warn_on_failed_resolve = False
+# codeautolink_warn_on_missing_inventory = False
+# codeautolink_warn_on_failed_resolve = False
 codeautolink_custom_blocks = {
-    # https://sphinx-codeautolink.readthedocs.io/en/latest/examples.html#doctest-code-blocks
-    "pycon3": "sphinx_codeautolink.clean_pycon",
+    # https://sphinx-codeautolink.readthedocs.io/en/latest/reference.html#cleanup-functions
+    "pycon": "sphinx_codeautolink.clean_pycon",
 }
 
 suppress_warnings = [
+    # https://sphinx-codeautolink.readthedocs.io/en/latest/reference.html#warning-types
     # "codeautolink",
     "codeautolink.import_star",
     "codeautolink.match_block",
