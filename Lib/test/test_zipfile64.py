@@ -111,16 +111,16 @@ class TestRepack(unittest.TestCase):
                 (num, self.datacount)), file=sys.__stdout__)
                 sys.__stdout__.flush()
 
-    def test_clean_removed_large_file(self):
+    def test_strip_removed_large_file(self):
         """Should move the physical data of a file positioned after a large
         removed file without causing a memory issue."""
         # Try the temp file.  If we do TESTFN2, then it hogs
         # gigabytes of disk space for the duration of the test.
         with TemporaryFile() as f:
-            self._test_clean_removed_large_file(f)
+            self._test_strip_removed_large_file(f)
             self.assertFalse(f.closed)
 
-    def _test_clean_removed_large_file(self, f):
+    def _test_strip_removed_large_file(self, f):
         file = 'file.txt'
         file1 = 'largefile.txt'
         data = b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'
@@ -134,16 +134,16 @@ class TestRepack(unittest.TestCase):
             zh.repack()
             self.assertIsNone(zh.testzip())
 
-    def test_clean_removed_file_before_large_file(self):
+    def test_strip_removed_file_before_large_file(self):
         """Should move the physical data of a large file positioned after a
         removed file without causing a memory issue."""
         # Try the temp file.  If we do TESTFN2, then it hogs
         # gigabytes of disk space for the duration of the test.
         with TemporaryFile() as f:
-            self._test_clean_removed_file_before_large_file(f)
+            self._test_strip_removed_file_before_large_file(f)
             self.assertFalse(f.closed)
 
-    def _test_clean_removed_file_before_large_file(self, f):
+    def _test_strip_removed_file_before_large_file(self, f):
         file = 'file.txt'
         file1 = 'largefile.txt'
         data = b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'
@@ -157,16 +157,16 @@ class TestRepack(unittest.TestCase):
             zh.repack()
             self.assertIsNone(zh.testzip())
 
-    def test_clean_removed_large_file_with_dd(self):
+    def test_strip_removed_large_file_with_dd(self):
         """Should scan for the data descriptor of a removed large file without
         causing a memory issue."""
         # Try the temp file.  If we do TESTFN2, then it hogs
         # gigabytes of disk space for the duration of the test.
         with TemporaryFile() as f:
-            self._test_clean_removed_large_file_with_dd(f)
+            self._test_strip_removed_large_file_with_dd(f)
             self.assertFalse(f.closed)
 
-    def _test_clean_removed_large_file_with_dd(self, f):
+    def _test_strip_removed_large_file_with_dd(self, f):
         file = 'file.txt'
         file1 = 'largefile.txt'
         data = b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'
@@ -184,16 +184,16 @@ class TestRepack(unittest.TestCase):
             zh.repack()
             self.assertIsNone(zh.testzip())
 
-    def test_clean_removed_large_file_with_dd_no_sig(self):
+    def test_strip_removed_large_file_with_dd_no_sig(self):
         """Should scan for the data descriptor (without signature) of a removed
         large file without causing a memory issue."""
         # Try the temp file.  If we do TESTFN2, then it hogs
         # gigabytes of disk space for the duration of the test.
         with TemporaryFile() as f:
-            self._test_clean_removed_large_file_with_dd_no_sig(f)
+            self._test_strip_removed_large_file_with_dd_no_sig(f)
             self.assertFalse(f.closed)
 
-    def _test_clean_removed_large_file_with_dd_no_sig(self, f):
+    def _test_strip_removed_large_file_with_dd_no_sig(self, f):
         # Reduce data to 400 MiB for this test, as it's especially slow...
         self.datacount = 400*1024**2 // len(self.data)
 
