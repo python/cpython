@@ -447,7 +447,7 @@ PyCursesPanel_Dealloc(PyObject *self)
     if (po->wo != NULL) {
         Py_DECREF(po->wo);
         if (remove_lop(po) < 0) {
-            PyErr_Format(PyExc_RuntimeError, "__del__: no panel object to delete");
+            PyErr_SetString(PyExc_RuntimeError, "__del__: no panel object to delete");
             PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
         }
     }
