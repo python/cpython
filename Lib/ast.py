@@ -154,6 +154,12 @@ def dump(
                             if not keywords:
                                 args_buffer.append(repr(value))
                             continue
+                    elif isinstance(value, Load):
+                        field_type = cls._field_types.get(name, object)
+                        if field_type is expr_context:
+                            if not keywords:
+                                args_buffer.append(repr(value))
+                            continue
                     if not keywords:
                         args.extend(args_buffer)
                         args_buffer = []
