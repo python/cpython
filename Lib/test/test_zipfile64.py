@@ -13,6 +13,7 @@ support.requires(
 
 import zipfile, unittest
 import time
+import tracemalloc
 import sys
 import unittest.mock as mock
 
@@ -99,6 +100,9 @@ class TestRepack(unittest.TestCase):
         # It will contain enough copies of self.data to reach about 8 GiB.
         self.datacount = 8*1024**3 // len(self.data)
 
+        # memory usage should not exceed 10 MiB
+        self.allowed_memory = 10*1024**2
+
     def _write_large_file(self, fh):
         next_time = time.monotonic() + _PRINT_WORKING_MSG_INTERVAL
         for num in range(self.datacount):
@@ -117,8 +121,12 @@ class TestRepack(unittest.TestCase):
         # Try the temp file.  If we do TESTFN2, then it hogs
         # gigabytes of disk space for the duration of the test.
         with TemporaryFile() as f:
+            tracemalloc.start()
             self._test_strip_removed_large_file(f)
             self.assertFalse(f.closed)
+            current, peak = tracemalloc.get_traced_memory()
+            tracemalloc.stop()
+            self.assertLess(peak, self.allowed_memory)
 
     def _test_strip_removed_large_file(self, f):
         file = 'file.txt'
@@ -140,8 +148,12 @@ class TestRepack(unittest.TestCase):
         # Try the temp file.  If we do TESTFN2, then it hogs
         # gigabytes of disk space for the duration of the test.
         with TemporaryFile() as f:
+            tracemalloc.start()
             self._test_strip_removed_file_before_large_file(f)
             self.assertFalse(f.closed)
+            current, peak = tracemalloc.get_traced_memory()
+            tracemalloc.stop()
+            self.assertLess(peak, self.allowed_memory)
 
     def _test_strip_removed_file_before_large_file(self, f):
         file = 'file.txt'
@@ -163,8 +175,12 @@ class TestRepack(unittest.TestCase):
         # Try the temp file.  If we do TESTFN2, then it hogs
         # gigabytes of disk space for the duration of the test.
         with TemporaryFile() as f:
+            tracemalloc.start()
             self._test_strip_removed_large_file_with_dd(f)
             self.assertFalse(f.closed)
+            current, peak = tracemalloc.get_traced_memory()
+            tracemalloc.stop()
+            self.assertLess(peak, self.allowed_memory)
 
     def _test_strip_removed_large_file_with_dd(self, f):
         file = 'file.txt'
@@ -190,8 +206,12 @@ class TestRepack(unittest.TestCase):
         # Try the temp file.  If we do TESTFN2, then it hogs
         # gigabytes of disk space for the duration of the test.
         with TemporaryFile() as f:
+            tracemalloc.start()
             self._test_strip_removed_large_file_with_dd_no_sig(f)
             self.assertFalse(f.closed)
+            current, peak = tracemalloc.get_traced_memory()
+            tracemalloc.stop()
+            self.assertLess(peak, self.allowed_memory)
 
     def _test_strip_removed_large_file_with_dd_no_sig(self, f):
         # Reduce data to 400 MiB for this test, as it's especially slow...
