@@ -304,9 +304,9 @@ Module contents
 
     .. versionadded:: 3.10
 
-   - ``doc``: optional docstring for this field.
+   - *doc*: optional docstring for this field.
 
-    .. versionadded:: 3.13
+    .. versionadded:: 3.14
 
    If the default value of a field is specified by a call to
    :func:`!field`, then the class attribute for this field will be

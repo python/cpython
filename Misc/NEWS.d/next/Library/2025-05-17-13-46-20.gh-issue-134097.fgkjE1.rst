@@ -1,0 +1,1 @@
+Fix interaction of the new :term:`REPL` and :option:`-X showrefcount <-X>` command line option.

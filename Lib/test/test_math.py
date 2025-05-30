@@ -1214,6 +1214,12 @@ class MathTests(unittest.TestCase):
             self.assertEqual(math.ldexp(NINF, n), NINF)
             self.assertTrue(math.isnan(math.ldexp(NAN, n)))
 
+    @requires_IEEE_754
+    def testLdexp_denormal(self):
+        # Denormal output incorrectly rounded (truncated)
+        # on some Windows.
+        self.assertEqual(math.ldexp(6993274598585239, -1126), 1e-323)
+
     def testLog(self):
         self.assertRaises(TypeError, math.log)
         self.assertRaises(TypeError, math.log, 1, 2, 3)
@@ -2539,7 +2545,7 @@ class MathTests(unittest.TestCase):
                                     "expected a positive input$"):
             math.log(x)
         with self.assertRaisesRegex(ValueError,
-                                    f"expected a float or nonnegative integer, got {x}"):
+                                    f"expected a noninteger or positive integer, got {x}"):
             math.gamma(x)
         x = 1.0
         with self.assertRaisesRegex(ValueError,
