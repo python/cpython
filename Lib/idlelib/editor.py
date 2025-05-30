@@ -1368,11 +1368,18 @@ class EditorWindow:
 
         # Debug prompt is multilined....
         ncharsdeleted = 0
+        have = len(chars.expandtabs(tabwidth))
         for i in range(len(chars) - 1, -1, -1):
-            have = len(chars.expandtabs(tabwidth))
-            if have <= want or chars[i] not in " \t":
-                break
+            # ``Delete'' chars[i], and subtract count
+            # (since redoing expandtabs is O(n))
             ncharsdeleted += 1
+            if chars[i] == '\t':
+                have -= tabwidth
+            else:
+                have -= 1
+            if have <= want or chars[i-1] not in " \t":
+                break
+        # Perform the actual removal
         chars = chars[:len(chars) - ncharsdeleted]
 
         text.undo_block_start()
