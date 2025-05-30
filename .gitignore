@@ -173,3 +173,7 @@ Python/frozen_modules/MANIFEST
 
 # main branch only: ABI files are not checked/maintained.
 Doc/data/python*.abi
+
+# People's custom https://docs.anthropic.com/en/docs/claude-code/memory configs.
+/.claude/
+CLAUDE.local.md
