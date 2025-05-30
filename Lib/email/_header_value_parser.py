@@ -82,11 +82,13 @@ from email import utils
 
 WSP = set(' \t')
 CFWS_LEADER = WSP | set('(')
+CFWS_LEADER_WITH_DOT = CFWS_LEADER | set('.')
 SPECIALS = set(r'()<>@,:;.\"[]')
 ATOM_ENDS = SPECIALS | WSP
 DOT_ATOM_ENDS = ATOM_ENDS - set('.')
 # '.', '"', and '(' do not end phrases in order to support obs-phrase
 PHRASE_ENDS = SPECIALS - set('."(')
+PHRASE_ENDS_CHARS = r''.join(PHRASE_ENDS)
 TSPECIALS = (SPECIALS | set('/?=')) - set('.')
 TOKEN_ENDS = TSPECIALS | WSP
 ASPECIALS = TSPECIALS | set("*'%")
@@ -1300,6 +1302,12 @@ def get_cfws(value):
         cfws.append(token)
     return cfws, value
 
+def get_cfws_digits(value, leader_set):
+    ind = 0
+    while ind < len(value) and value[ind] not in leader_set:
+        ind += 1
+    return value[:ind], value[ind:]
+
 def get_quoted_string(value):
     """quoted-string = [CFWS] <bare-quoted-string> [CFWS]
 
@@ -1443,11 +1451,13 @@ def get_phrase(value):
         phrase.defects.append(errors.InvalidHeaderDefect(
             "phrase does not start with word"))
     while value and value[0] not in PHRASE_ENDS:
-        if value[0]=='.':
-            phrase.append(DOT)
-            phrase.defects.append(errors.ObsoleteHeaderDefect(
-                "period in 'phrase'"))
-            value = value[1:]
+        if value[0] == '.':
+            tmpvalue = value.lstrip('.')
+            for _ in range(len(value) - len(tmpvalue)):
+                phrase.append(DOT)
+                phrase.defects.append(errors.ObsoleteHeaderDefect(
+                    "period in 'phrase'"))
+            value = tmpvalue
         else:
             try:
                 token, value = get_word(value)
@@ -1460,6 +1470,20 @@ def get_phrase(value):
                     raise
             phrase.append(token)
     return phrase, value
+
+def _find_phrase(reslist, value, endchars):
+    # lstrip() should not strip stuff in 'endchars'
+    phrase_end_chars = ''.join(PHRASE_ENDS - set(endchars))
+    while value and value[0] not in endchars:
+        if value[0] in PHRASE_ENDS:
+            tmpvalue = value.lstrip(phrase_end_chars)
+            for i in range(len(value) - len(tmpvalue)):
+                reslist.append(ValueTerminal(value[i], 'misplaced-special'))
+            value = tmpvalue
+        else:
+            token, value = get_phrase(value)
+            reslist.append(token)
+    return value
 
 def get_local_part(value):
     """ local-part = dot-atom / quoted-string / obs-local-part
@@ -1842,14 +1866,7 @@ def get_invalid_mailbox(value, endchars):
 
     """
     invalid_mailbox = InvalidMailbox()
-    while value and value[0] not in endchars:
-        if value[0] in PHRASE_ENDS:
-            invalid_mailbox.append(ValueTerminal(value[0],
-                                                 'misplaced-special'))
-            value = value[1:]
-        else:
-            token, value = get_phrase(value)
-            invalid_mailbox.append(token)
+    value = _find_phrase(invalid_mailbox, value, endchars)
     return invalid_mailbox, value
 
 def get_mailbox_list(value):
@@ -2196,10 +2213,7 @@ def parse_mime_version(value):
         if not value:
             mime_version.defects.append(errors.HeaderMissingRequiredValue(
                 "Expected MIME version number but found only CFWS"))
-    digits = ''
-    while value and value[0] != '.' and value[0] not in CFWS_LEADER:
-        digits += value[0]
-        value = value[1:]
+    digits, value = get_cfws_digits(value, CFWS_LEADER_WITH_DOT)
     if not digits.isdigit():
         mime_version.defects.append(errors.InvalidHeaderDefect(
             "Expected MIME major version number but found {!r}".format(digits)))
@@ -2227,10 +2241,7 @@ def parse_mime_version(value):
             mime_version.defects.append(errors.InvalidHeaderDefect(
                 "Incomplete MIME version; found only major number"))
         return mime_version
-    digits = ''
-    while value and value[0] not in CFWS_LEADER:
-        digits += value[0]
-        value = value[1:]
+    digits, value = get_cfws_digits(value, CFWS_LEADER)
     if not digits.isdigit():
         mime_version.defects.append(errors.InvalidHeaderDefect(
             "Expected MIME minor version number but found {!r}".format(digits)))
@@ -2255,14 +2266,7 @@ def get_invalid_parameter(value):
 
     """
     invalid_parameter = InvalidParameter()
-    while value and value[0] != ';':
-        if value[0] in PHRASE_ENDS:
-            invalid_parameter.append(ValueTerminal(value[0],
-                                                   'misplaced-special'))
-            value = value[1:]
-        else:
-            token, value = get_phrase(value)
-            invalid_parameter.append(token)
+    value = _find_phrase(invalid_parameter, value, ';')
     return invalid_parameter, value
 
 def get_ttext(value):
@@ -2407,10 +2411,8 @@ def get_section(value):
     if not value or not value[0].isdigit():
         raise errors.HeaderParseError("Expected section number but "
                                       "found {}".format(value))
-    digits = ''
-    while value and value[0].isdigit():
-        digits += value[0]
-        value = value[1:]
+    ind = next((i for i, ch in enumerate(value) if not ch.isdigit()), 0)
+    digits, value = value[:ind], value[ind:]
     if digits[0] == '0' and digits != '0':
         section.defects.append(errors.InvalidHeaderDefect(
                 "section number has an invalid leading 0"))
@@ -2638,17 +2640,10 @@ def _find_mime_parameters(tokenlist, value):
     """Do our best to find the parameters in an invalid MIME header
 
     """
-    while value and value[0] != ';':
-        if value[0] in PHRASE_ENDS:
-            tokenlist.append(ValueTerminal(value[0], 'misplaced-special'))
-            value = value[1:]
-        else:
-            token, value = get_phrase(value)
-            tokenlist.append(token)
-    if not value:
-        return
-    tokenlist.append(ValueTerminal(';', 'parameter-separator'))
-    tokenlist.append(parse_mime_parameters(value[1:]))
+    value = _find_phrase(tokenlist, value, ';')
+    if value:
+        tokenlist.append(ValueTerminal(';', 'parameter-separator'))
+        tokenlist.append(parse_mime_parameters(value[1:]))
 
 def parse_content_type_header(value):
     """ maintype "/" subtype *( ";" parameter )
@@ -2757,12 +2752,16 @@ def parse_content_transfer_encoding_header(value):
     if not value:
         return cte_header
     while value:
-        cte_header.defects.append(errors.InvalidHeaderDefect(
-            "Extra text after content transfer encoding"))
         if value[0] in PHRASE_ENDS:
-            cte_header.append(ValueTerminal(value[0], 'misplaced-special'))
-            value = value[1:]
+            tmpvalue = value.lstrip(PHRASE_ENDS_CHARS)
+            for i in range(len(value) - len(tmpvalue)):
+                cte_header.defects.append(errors.InvalidHeaderDefect(
+                    "Extra text after content transfer encoding"))
+                cte_header.append(ValueTerminal(value[i], 'misplaced-special'))
+            value = tmpvalue
         else:
+            cte_header.defects.append(errors.InvalidHeaderDefect(
+                "Extra text after content transfer encoding"))
             token, value = get_phrase(value)
             cte_header.append(token)
     return cte_header

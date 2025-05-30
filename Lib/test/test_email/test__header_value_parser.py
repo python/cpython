@@ -2676,6 +2676,16 @@ class TestParser(TestParserMixin, TestEmailBase):
             ";foo", ";foo", ";foo", [errors.InvalidHeaderDefect]*3
         )
 
+    def test_invalid_content_transfer_encoding_misplaced_special(self):
+        cte = parser.parse_content_transfer_encoding_header("foo;;;;;")
+        self.assertEqual(len(cte), 6)
+        self.assertEqual(cte[0].value, "foo")
+        self.assertEqual(cte[0].token_type, "token")
+        self.assertEqual(cte[0].value, "foo")
+        self.assertEqual(cte[0].token_type, "token")
+        terminal = parser.ValueTerminal(";", "misplaced-special")
+        self.assertEqual(cte[1:], [terminal] * 5)
+
     # get_msg_id
 
     def test_get_msg_id_empty(self):
