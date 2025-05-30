@@ -194,39 +194,38 @@ class TestCase(unittest.TestCase):
                 )
 
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
-                with shelve.open(
-                    self.fn,
-                    protocol=proto,
-                    serializer=serializer,
-                    deserializer=deserializer,
-                ) as s:
-                    bar = "bar"
-                    bytes_data = b"Hello, world!"
-                    bytearray_data = bytearray(b"\x00\x01\x02\x03\x04")
-                    array_data = array.array("i", [1, 2, 3, 4, 5])
+            with self.subTest(proto=proto), shelve.open(
+                self.fn,
+                protocol=proto,
+                serializer=serializer,
+                deserializer=deserializer
+            ) as s:
+                bar = "bar"
+                bytes_data = b"Hello, world!"
+                bytearray_data = bytearray(b"\x00\x01\x02\x03\x04")
+                array_data = array.array("i", [1, 2, 3, 4, 5])
 
-                    s["foo"] = bar
-                    s["bytes_data"] = bytes_data
-                    s["bytearray_data"] = bytearray_data
-                    s["array_data"] = array_data
+                s["foo"] = bar
+                s["bytes_data"] = bytes_data
+                s["bytearray_data"] = bytearray_data
+                s["array_data"] = array_data
 
-                    if proto == 5:
-                        self.assertEqual(s["foo"], str(bar))
-                        self.assertEqual(s["bytes_data"], "Hello, world!")
-                        self.assertEqual(
-                            s["bytearray_data"], bytearray_data.decode()
-                        )
-                        self.assertEqual(
-                            s["array_data"], array_data.tobytes().decode()
-                        )
-                    else:
-                        self.assertEqual(s["foo"], "str")
-                        self.assertEqual(s["bytes_data"], "bytes")
-                        self.assertEqual(s["bytearray_data"], "bytearray")
-                        self.assertEqual(
-                            s["array_data"], array_data.tobytes().decode()
-                        )
+                if proto == 5:
+                    self.assertEqual(s["foo"], str(bar))
+                    self.assertEqual(s["bytes_data"], "Hello, world!")
+                    self.assertEqual(
+                        s["bytearray_data"], bytearray_data.decode()
+                    )
+                    self.assertEqual(
+                        s["array_data"], array_data.tobytes().decode()
+                    )
+                else:
+                    self.assertEqual(s["foo"], "str")
+                    self.assertEqual(s["bytes_data"], "bytes")
+                    self.assertEqual(s["bytearray_data"], "bytearray")
+                    self.assertEqual(
+                        s["array_data"], array_data.tobytes().decode()
+                    )
 
     def test_custom_incomplete_serializer_and_deserializer(self):
         dbm_sqlite3 = import_helper.import_module("dbm.sqlite3")
