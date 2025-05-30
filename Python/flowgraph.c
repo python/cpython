@@ -299,26 +299,34 @@ basicblock_returns(const basicblock *b) {
 }
 
 static void
-dump_basicblock(const basicblock *b)
+dump_basicblock(const basicblock *b, bool highlight)
 {
     const char *b_return = basicblock_returns(b) ? "return " : "";
+    if (highlight) {
+        fprintf(stderr, ">>> ");
+    }
     fprintf(stderr, "%d: [EH=%d CLD=%d WRM=%d NO_FT=%d %p] used: %d, depth: %d, preds: %d %s\n",
         b->b_label.id, b->b_except_handler, b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
         b->b_startdepth, b->b_predecessors, b_return);
+    int depth = b->b_startdepth;
     if (b->b_instr) {
         int i;
         for (i = 0; i < b->b_iused; i++) {
-            fprintf(stderr, "  [%02d] ", i);
+            fprintf(stderr, "  [%02d] depth: %d ", i, depth);
             dump_instr(b->b_instr + i);
+
+            int popped = _PyOpcode_num_popped(b->b_instr[i].i_opcode, b->b_instr[i].i_oparg);
+            int pushed = _PyOpcode_num_pushed(b->b_instr[i].i_opcode, b->b_instr[i].i_oparg);
+            depth += (pushed - popped);
         }
     }
 }
 
 void
-_PyCfgBuilder_DumpGraph(const basicblock *entryblock)
+_PyCfgBuilder_DumpGraph(const basicblock *entryblock, const basicblock *mark)
 {
     for (const basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        dump_basicblock(b);
+        dump_basicblock(b, b == mark);
     }
 }
 
@@ -2863,6 +2871,7 @@ optimize_load_fast(cfg_builder *g)
 
                 // Opcodes that consume no inputs
                 case GET_ANEXT:
+                case GET_ITER:
                 case GET_LEN:
                 case IMPORT_FROM:
                 case MATCH_KEYS:

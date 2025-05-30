@@ -153,6 +153,6 @@ Allocating Objects on the Heap
 
 .. seealso::
 
-   :c:func:`PyModule_Create`
+   :ref:`moduleobjects`
       To allocate and create extension modules.
 

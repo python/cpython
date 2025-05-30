@@ -120,7 +120,7 @@ class TestCase(unittest.TestCase):
         for param in inspect.signature(dataclass).parameters:
             if param == 'cls':
                 continue
-            self.assertTrue(hasattr(Some.__dataclass_params__, param), msg=param)
+            self.assertHasAttr(Some.__dataclass_params__, param)
 
     def test_named_init_params(self):
         @dataclass
@@ -671,7 +671,7 @@ class TestCase(unittest.TestCase):
 
         self.assertEqual(the_fields[0].name, 'x')
         self.assertEqual(the_fields[0].type, int)
-        self.assertFalse(hasattr(C, 'x'))
+        self.assertNotHasAttr(C, 'x')
         self.assertTrue (the_fields[0].init)
         self.assertTrue (the_fields[0].repr)
         self.assertEqual(the_fields[1].name, 'y')
@@ -681,7 +681,7 @@ class TestCase(unittest.TestCase):
         self.assertTrue (the_fields[1].repr)
         self.assertEqual(the_fields[2].name, 'z')
         self.assertEqual(the_fields[2].type, str)
-        self.assertFalse(hasattr(C, 'z'))
+        self.assertNotHasAttr(C, 'z')
         self.assertTrue (the_fields[2].init)
         self.assertFalse(the_fields[2].repr)
 
@@ -732,8 +732,8 @@ class TestCase(unittest.TestCase):
             z: object = default
             t: int = field(default=100)
 
-        self.assertFalse(hasattr(C, 'x'))
-        self.assertFalse(hasattr(C, 'y'))
+        self.assertNotHasAttr(C, 'x')
+        self.assertNotHasAttr(C, 'y')
         self.assertIs   (C.z, default)
         self.assertEqual(C.t, 100)
 
@@ -2912,10 +2912,10 @@ class TestFrozen(unittest.TestCase):
             pass
 
         c = C()
-        self.assertFalse(hasattr(c, 'i'))
+        self.assertNotHasAttr(c, 'i')
         with self.assertRaises(FrozenInstanceError):
             c.i = 5
-        self.assertFalse(hasattr(c, 'i'))
+        self.assertNotHasAttr(c, 'i')
         with self.assertRaises(FrozenInstanceError):
             del c.i
 
@@ -3144,7 +3144,7 @@ class TestFrozen(unittest.TestCase):
             del s.y
         self.assertEqual(s.y, 10)
         del s.cached
-        self.assertFalse(hasattr(s, 'cached'))
+        self.assertNotHasAttr(s, 'cached')
         with self.assertRaises(AttributeError) as cm:
             del s.cached
         self.assertNotIsInstance(cm.exception, FrozenInstanceError)
@@ -3158,12 +3158,12 @@ class TestFrozen(unittest.TestCase):
             pass
 
         s = S()
-        self.assertFalse(hasattr(s, 'x'))
+        self.assertNotHasAttr(s, 'x')
         s.x = 5
         self.assertEqual(s.x, 5)
 
         del s.x
-        self.assertFalse(hasattr(s, 'x'))
+        self.assertNotHasAttr(s, 'x')
         with self.assertRaises(AttributeError) as cm:
             del s.x
         self.assertNotIsInstance(cm.exception, FrozenInstanceError)
@@ -3393,8 +3393,8 @@ class TestSlots(unittest.TestCase):
         B = dataclass(A, slots=True)
         self.assertIsNot(A, B)
 
-        self.assertFalse(hasattr(A, "__slots__"))
-        self.assertTrue(hasattr(B, "__slots__"))
+        self.assertNotHasAttr(A, "__slots__")
+        self.assertHasAttr(B, "__slots__")
 
     # Can't be local to test_frozen_pickle.
     @dataclass(frozen=True, slots=True)
