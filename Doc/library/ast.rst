@@ -2428,8 +2428,8 @@ and classes for traversing abstract syntax trees:
    indents that many spaces per level.  If *indent* is a string (such as ``"\t"``),
    that string is used to indent each level.
 
-   Unless *show_empty* is true, optional empty lists and ``Load()`` values
-   will be omitted from the output.
+   If *show_empty* is false (the default), optional empty lists and
+   ``Load()`` values will be omitted from the output.
    Optional ``None`` values are always omitted.
 
    .. doctest::
