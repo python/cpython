@@ -23,6 +23,8 @@ multitasking). Here's an overview:
    queue.rst
    contextvars.rst
 
+Also see the :mod:`interpreters` module.
+
 
 The following are support modules for some of the above services:
 
