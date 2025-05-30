@@ -302,6 +302,7 @@ def expandvars(path):
         start = b'{'
         end = b'}'
         environ = getattr(os, 'environb', None)
+        join = b''.join
     else:
         if '$' not in path:
             return path
@@ -312,12 +313,16 @@ def expandvars(path):
         start = '{'
         end = '}'
         environ = os.environ
-    i = 0
+        join = ''.join
+
+    result = []
+    last = 0
     while True:
-        m = search(path, i)
+        m = search(path, last)
         if not m:
             break
         i, j = m.span(0)
+        result.append(path[last:i])
         name = m.group(1)
         if name.startswith(start) and name.endswith(end):
             name = name[1:-1]
@@ -327,13 +332,12 @@ def expandvars(path):
             else:
                 value = environ[name]
         except KeyError:
-            i = j
+            result.append(path[i:j])
         else:
-            tail = path[j:]
-            path = path[:i] + value
-            i = len(path)
-            path += tail
-    return path
+            result.append(value)
+        last = j
+    result.append(path[last:])
+    return join(result)
 
 
 # Normalize a path, e.g. A//B, A/./B and A/foo/../B all become A/B.

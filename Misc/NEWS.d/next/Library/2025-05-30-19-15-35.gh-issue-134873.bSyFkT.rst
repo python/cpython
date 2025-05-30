@@ -1,0 +1,1 @@
+Fix a DOS vulnerability in :mod:`posixpath` regarding string slicing.
