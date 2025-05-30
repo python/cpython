@@ -51,70 +51,112 @@ to keep in mind about using multiple interpreters:
 .. XXX Are there other relevant details to list?
 
 
-API Summary
------------
+Reference
+---------
 
-+----------------------------------+----------------------------------------------+
-| signature                        | description                                  |
-+==================================+==============================================+
-| ``list_all() -> [Interpreter]``  | Get all existing interpreters.               |
-+----------------------------------+----------------------------------------------+
-| ``get_current() -> Interpreter`` | Get the currently running interpreter.       |
-+----------------------------------+----------------------------------------------+
-| ``get_main() -> Interpreter``    | Get the main interpreter.                    |
-+----------------------------------+----------------------------------------------+
-| ``create() -> Interpreter``      | Initialize a new (idle) Python interpreter.  |
-+----------------------------------+----------------------------------------------+
+This module defines the following functions:
 
-|
+.. function:: list_all()
 
-+---------------------------------------------------+---------------------------------------------------+
-| signature                                         | description                                       |
-+===================================================+===================================================+
-| ``class Interpreter``                             | A single interpreter.                             |
-+---------------------------------------------------+---------------------------------------------------+
-| ``.id``                                           | The interpreter's ID (read-only).                 |
-+---------------------------------------------------+---------------------------------------------------+
-| ``.whence``                                       | Where the interpreter came from (read-only).      |
-+---------------------------------------------------+---------------------------------------------------+
-| ``.is_running() -> bool``                         | Is the interpreter currently executing code       |
-|                                                   | in its :mod:`!__main__` module?                   |
-+---------------------------------------------------+---------------------------------------------------+
-| ``.close()``                                      | Finalize and destroy the interpreter.             |
-+---------------------------------------------------+---------------------------------------------------+
-| ``.prepare_main(ns=None, **kwargs)``              | Bind "shareable" objects in :mod:`!__main__`.     |
-+---------------------------------------------------+---------------------------------------------------+
-| ``.exec(src_str, /, dedent=True)``                | | Run the given source code in the interpreter    |
-|                                                   | | (in the current thread).                        |
-+---------------------------------------------------+---------------------------------------------------+
-| ``.call(callable, /, *args, **kwargs)``           | | Run the given function in the interpreter       |
-|                                                   | | (in the current thread).                        |
-+---------------------------------------------------+---------------------------------------------------+
-| ``.call_in_thread(callable, /, *args, **kwargs)`` | | Run the given function in the interpreter       |
-|                                                   | | (in a new thread).                              |
-+---------------------------------------------------+---------------------------------------------------+
+   -> [Interpreter]``
+   Get all existing interpreters.
 
-Exceptions:
+.. function:: get_current()
 
-+--------------------------+------------------+---------------------------------------------------+
-| class                    | base class       | description                                       |
-+==========================+==================+===================================================+
-| InterpreterError         | Exception        | An interpreter-related error happened.            |
-+--------------------------+------------------+---------------------------------------------------+
-| InterpreterNotFoundError | InterpreterError | The targeted interpreter no longer exists.        |
-+--------------------------+------------------+---------------------------------------------------+
-| ExecutionFailed          | InterpreterError | The running code raised an uncaught exception.    |
-+--------------------------+------------------+---------------------------------------------------+
-| NotShareableError        | TypeError        | The object cannot be sent to another interpreter. |
-+--------------------------+------------------+---------------------------------------------------+
+   -> Interpreter
+   Get the currently running interpreter.
 
-.. XXX Document the ExecutionFailed attrs.
+.. function:: get_main()
+
+   -> Interpreter
+   Get the main interpreter.
+
+.. function:: create()
+
+   -> Interpreter
+   Initialize a new (idle) Python interpreter.
 
 
-.. XXX Add API summary for communicating between interpreters.
+Interpreter objects
+^^^^^^^^^^^^^^^^^^^
+
+.. class:: Interpreter(id)
+
+   A single interpreter in the current process.
+
+   Generally, :class:`Interpreter` shouldn't be called directly.
+   Instead, use :func:`create` or one of the other module functions.
+
+   .. attribute:: id
+
+      (read-only)
+
+      The interpreter's ID.
+
+   .. attribute:: whence
+
+      (read-only)
+
+      Where the interpreter came from.
+
+   .. method:: is_running()
+
+      Is the interpreter currently executing code in its
+      :mod:`!__main__` module?
+
+   .. method:: close()
+
+      Finalize and destroy the interpreter.
+
+   .. method:: prepare_main(ns=None, **kwargs)
+
+      Bind "shareable" objects in the interpreter's
+      :mod:`!__main__` module.
+
+   .. method:: exec(code, /, dedent=True)
+
+      Run the given source code in the interpreter (in the current thread).
+
+   .. method:: call(callable, /, *args, **kwargs)
+
+      Run the given function in the interpreter (in the current thread).
+
+   .. method:: call_in_thread(callable, /, *args, **kwargs)
+
+      Run the given function in the interpreter (in a new thread).
+
+Exceptions
+^^^^^^^^^^
+
+.. exception:: InterpreterError
+
+   This exception, a subclass of :exc:`Exception`, is raised when
+   an interpreter-related error happens.
+
+.. exception:: InterpreterNotFoundError
+
+   This exception, a subclass of :exc:`InterpreterError`, is raised when
+   the targeted interpreter no longer exists.
+
+.. exception:: ExecutionFailed
+
+   This exception, a subclass of :exc:`InterpreterError`, is raised when
+   the running code raised an uncaught exception.
+
+   .. attribute:: excinfo
+
+      A basic snapshot of the exception raised in the other interpreter.
+
+.. XXX Document the excinfoattrs?
+
+.. exception:: NotShareableError
+
+   This exception, a subclass of :exc:`TypeError`, is raised when
+   an object cannot be sent to another interpreter.
 
 
-.. _interp-examples:
+.. XXX Add functions for communicating between interpreters.
+
 
 Basic Usage
 -----------
@@ -149,12 +191,6 @@ Creating an interpreter and running code in it:
 
     t = interp.call_in_thread(run)
     t.join()
-
-
-.. XXX Describe module functions in more detail.
-
-
-.. XXX Describe module types in more detail.
 
 
 .. XXX Explain about object "sharing".

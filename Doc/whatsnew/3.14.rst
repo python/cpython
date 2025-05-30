@@ -163,7 +163,7 @@ for Python that were limited by the :term:`GIL`.
 Using multiple interpreters is similar in many ways to
 :mod:`multiprocessing`, in that they both provide isolated logical
 "processes" that can run in parallel, with no sharing by default.
-.  However, when using multiple interpreters, an application will use
+However, when using multiple interpreters, an application will use
 fewer system resources and will operate more efficiently (since it
 stays within the same process).  Think of multiple interpreters as
 having the isolation of processes with the efficiency of threads.
