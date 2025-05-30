@@ -5759,9 +5759,7 @@
                     next = _PyForIter_NextWithIndex(iter_o, null_or_index);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (PyStackRef_IsNull(next)) {
-                        null_or_index = PyStackRef_TagInt(-1);
                         JUMPBY(oparg + 1);
-                        stack_pointer[-1] = null_or_index;
                         DISPATCH();
                     }
                     null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
@@ -7070,6 +7068,7 @@
                     JUMPBY(oparg + 1);
                     DISPATCH();
                 }
+                null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
                 INSTRUMENTED_JUMP(this_instr, next_instr, PY_MONITORING_EVENT_BRANCH_LEFT);
             }
             else {
@@ -7099,6 +7098,7 @@
                     DISPATCH();
                 }
             }
+            stack_pointer[-1] = null_or_index;
             stack_pointer[0] = next;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
