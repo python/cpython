@@ -16,9 +16,10 @@ from stat import S_IFMT, S_ISDIR, S_ISREG, S_ISLNK
 from . import is_pypi
 
 if is_pypi:
-    from pathlib_abc import PathInfo, _ReadablePath, _WritablePath
+    from pathlib_abc import vfspath, PathInfo, _ReadablePath, _WritablePath
 else:
     from pathlib.types import PathInfo, _ReadablePath, _WritablePath
+    from pathlib._os import vfspath
 
 
 class ZipPathGround:
@@ -34,16 +35,16 @@ class ZipPathGround:
         root.zip_file.close()
 
     def create_file(self, path, data=b''):
-        path.zip_file.writestr(str(path), data)
+        path.zip_file.writestr(vfspath(path), data)
 
     def create_dir(self, path):
-        zip_info = zipfile.ZipInfo(str(path) + '/')
+        zip_info = zipfile.ZipInfo(vfspath(path) + '/')
         zip_info.external_attr |= stat.S_IFDIR << 16
         zip_info.external_attr |= stat.FILE_ATTRIBUTE_DIRECTORY
         path.zip_file.writestr(zip_info, '')
 
     def create_symlink(self, path, target):
-        zip_info = zipfile.ZipInfo(str(path))
+        zip_info = zipfile.ZipInfo(vfspath(path))
         zip_info.external_attr = stat.S_IFLNK << 16
         path.zip_file.writestr(zip_info, target.encode())
 
@@ -62,28 +63,28 @@ class ZipPathGround:
         self.create_symlink(p.joinpath('brokenLinkLoop'), 'brokenLinkLoop')
 
     def readtext(self, p):
-        with p.zip_file.open(str(p), 'r') as f:
+        with p.zip_file.open(vfspath(p), 'r') as f:
             f = io.TextIOWrapper(f, encoding='utf-8')
             return f.read()
 
     def readbytes(self, p):
-        with p.zip_file.open(str(p), 'r') as f:
+        with p.zip_file.open(vfspath(p), 'r') as f:
             return f.read()
 
     readlink = readtext
 
     def isdir(self, p):
-        path_str = str(p) + "/"
+        path_str = vfspath(p) + "/"
         return path_str in p.zip_file.NameToInfo
 
     def isfile(self, p):
-        info = p.zip_file.NameToInfo.get(str(p))
+        info = p.zip_file.NameToInfo.get(vfspath(p))
         if info is None:
             return False
         return not stat.S_ISLNK(info.external_attr >> 16)
 
     def islink(self, p):
-        info = p.zip_file.NameToInfo.get(str(p))
+        info = p.zip_file.NameToInfo.get(vfspath(p))
         if info is None:
             return False
         return stat.S_ISLNK(info.external_attr >> 16)
@@ -240,20 +241,20 @@ class ReadableZipPath(_ReadablePath):
             zip_file.filelist = ZipFileList(zip_file)
 
     def __hash__(self):
-        return hash((str(self), self.zip_file))
+        return hash((vfspath(self), self.zip_file))
 
     def __eq__(self, other):
         if not isinstance(other, ReadableZipPath):
             return NotImplemented
-        return str(self) == str(other) and self.zip_file is other.zip_file
+        return vfspath(self) == vfspath(other) and self.zip_file is other.zip_file
 
-    def __str__(self):
+    def __vfspath__(self):
         if not self._segments:
             return ''
         return self.parser.join(*self._segments)
 
     def __repr__(self):
-        return f'{type(self).__name__}({str(self)!r}, zip_file={self.zip_file!r})'
+        return f'{type(self).__name__}({vfspath(self)!r}, zip_file={self.zip_file!r})'
 
     def with_segments(self, *pathsegments):
         return type(self)(*pathsegments, zip_file=self.zip_file)
@@ -261,7 +262,7 @@ class ReadableZipPath(_ReadablePath):
     @property
     def info(self):
         tree = self.zip_file.filelist.tree
-        return tree.resolve(str(self), follow_symlinks=False)
+        return tree.resolve(vfspath(self), follow_symlinks=False)
 
     def __open_rb__(self, buffering=-1):
         info = self.info.resolve()
@@ -301,36 +302,36 @@ class WritableZipPath(_WritablePath):
         self.zip_file = zip_file
 
     def __hash__(self):
-        return hash((str(self), self.zip_file))
+        return hash((vfspath(self), self.zip_file))
 
     def __eq__(self, other):
         if not isinstance(other, WritableZipPath):
             return NotImplemented
-        return str(self) == str(other) and self.zip_file is other.zip_file
+        return vfspath(self) == vfspath(other) and self.zip_file is other.zip_file
 
-    def __str__(self):
+    def __vfspath__(self):
         if not self._segments:
             return ''
         return self.parser.join(*self._segments)
 
     def __repr__(self):
-        return f'{type(self).__name__}({str(self)!r}, zip_file={self.zip_file!r})'
+        return f'{type(self).__name__}({vfspath(self)!r}, zip_file={self.zip_file!r})'
 
     def with_segments(self, *pathsegments):
         return type(self)(*pathsegments, zip_file=self.zip_file)
 
     def __open_wb__(self, buffering=-1):
-        return self.zip_file.open(str(self), 'w')
+        return self.zip_file.open(vfspath(self), 'w')
 
     def mkdir(self, mode=0o777):
-        zinfo = zipfile.ZipInfo(str(self) + '/')
+        zinfo = zipfile.ZipInfo(vfspath(self) + '/')
         zinfo.external_attr |= stat.S_IFDIR << 16
         zinfo.external_attr |= stat.FILE_ATTRIBUTE_DIRECTORY
         self.zip_file.writestr(zinfo, '')
 
     def symlink_to(self, target, target_is_directory=False):
-        zinfo = zipfile.ZipInfo(str(self))
+        zinfo = zipfile.ZipInfo(vfspath(self))
         zinfo.external_attr = stat.S_IFLNK << 16
         if target_is_directory:
             zinfo.external_attr |= 0x10
-        self.zip_file.writestr(zinfo, str(target))
+        self.zip_file.writestr(zinfo, vfspath(target))

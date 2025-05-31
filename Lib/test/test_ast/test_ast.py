@@ -275,12 +275,12 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(alias.end_col_offset, 17)
 
     def test_base_classes(self):
-        self.assertTrue(issubclass(ast.For, ast.stmt))
-        self.assertTrue(issubclass(ast.Name, ast.expr))
-        self.assertTrue(issubclass(ast.stmt, ast.AST))
-        self.assertTrue(issubclass(ast.expr, ast.AST))
-        self.assertTrue(issubclass(ast.comprehension, ast.AST))
-        self.assertTrue(issubclass(ast.Gt, ast.AST))
+        self.assertIsSubclass(ast.For, ast.stmt)
+        self.assertIsSubclass(ast.Name, ast.expr)
+        self.assertIsSubclass(ast.stmt, ast.AST)
+        self.assertIsSubclass(ast.expr, ast.AST)
+        self.assertIsSubclass(ast.comprehension, ast.AST)
+        self.assertIsSubclass(ast.Gt, ast.AST)
 
     def test_field_attr_existence(self):
         for name, item in ast.__dict__.items():
@@ -1101,7 +1101,7 @@ class CopyTests(unittest.TestCase):
     def test_replace_interface(self):
         for klass in self.iter_ast_classes():
             with self.subTest(klass=klass):
-                self.assertTrue(hasattr(klass, '__replace__'))
+                self.assertHasAttr(klass, '__replace__')
 
             fields = set(klass._fields)
             with self.subTest(klass=klass, fields=fields):
@@ -1315,13 +1315,22 @@ class CopyTests(unittest.TestCase):
         self.assertIs(repl.id, 'y')
         self.assertIs(repl.ctx, context)
 
+    def test_replace_accept_missing_field_with_default(self):
+        node = ast.FunctionDef(name="foo", args=ast.arguments())
+        self.assertIs(node.returns, None)
+        self.assertEqual(node.decorator_list, [])
+        node2 = copy.replace(node, name="bar")
+        self.assertEqual(node2.name, "bar")
+        self.assertIs(node2.returns, None)
+        self.assertEqual(node2.decorator_list, [])
+
     def test_replace_reject_known_custom_instance_fields_commits(self):
         node = ast.parse('x').body[0].value
         node.extra = extra = object()  # add instance 'extra' field
         context = node.ctx
 
         # explicit rejection of known instance fields
-        self.assertTrue(hasattr(node, 'extra'))
+        self.assertHasAttr(node, 'extra')
         msg = "Name.__replace__ got an unexpected keyword argument 'extra'."
         with self.assertRaisesRegex(TypeError, re.escape(msg)):
             copy.replace(node, extra=1)
@@ -1535,15 +1544,39 @@ Module(
         )
 
         check_node(
+            ast.MatchSingleton(value=[]),
+            empty="MatchSingleton(value=[])",
+            full="MatchSingleton(value=[])",
+        )
+
+        check_node(
             ast.Constant(value=None),
             empty="Constant(value=None)",
             full="Constant(value=None)",
         )
 
         check_node(
+            ast.Constant(value=[]),
+            empty="Constant(value=[])",
+            full="Constant(value=[])",
+        )
+
+        check_node(
             ast.Constant(value=''),
             empty="Constant(value='')",
             full="Constant(value='')",
+        )
+
+        check_node(
+            ast.Interpolation(value=ast.Constant(42), str=None, conversion=-1),
+            empty="Interpolation(value=Constant(value=42), str=None, conversion=-1)",
+            full="Interpolation(value=Constant(value=42), str=None, conversion=-1)",
+        )
+
+        check_node(
+            ast.Interpolation(value=ast.Constant(42), str=[], conversion=-1),
+            empty="Interpolation(value=Constant(value=42), str=[], conversion=-1)",
+            full="Interpolation(value=Constant(value=42), str=[], conversion=-1)",
         )
 
         check_text(
@@ -3062,7 +3095,7 @@ class ASTConstructorTests(unittest.TestCase):
         with self.assertWarnsRegex(DeprecationWarning,
                                    r"FunctionDef\.__init__ missing 1 required positional argument: 'name'"):
             node = ast.FunctionDef(args=args)
-        self.assertFalse(hasattr(node, "name"))
+        self.assertNotHasAttr(node, "name")
         self.assertEqual(node.decorator_list, [])
         node = ast.FunctionDef(name='foo', args=args)
         self.assertEqual(node.name, 'foo')
@@ -3283,6 +3316,7 @@ class CommandLineTests(unittest.TestCase):
         expect = self.text_normalize(expect)
         self.assertEqual(res, expect)
 
+    @support.requires_resource('cpu')
     def test_invocation(self):
         # test various combinations of parameters
         base_flags = (

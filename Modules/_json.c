@@ -1476,13 +1476,13 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
     int rv;
 
     if (obj == Py_None) {
-      return PyUnicodeWriter_WriteUTF8(writer, "null", 4);
+      return PyUnicodeWriter_WriteASCII(writer, "null", 4);
     }
     else if (obj == Py_True) {
-      return PyUnicodeWriter_WriteUTF8(writer, "true", 4);
+      return PyUnicodeWriter_WriteASCII(writer, "true", 4);
     }
     else if (obj == Py_False) {
-      return PyUnicodeWriter_WriteUTF8(writer, "false", 5);
+      return PyUnicodeWriter_WriteASCII(writer, "false", 5);
     }
     else if (PyUnicode_Check(obj)) {
         PyObject *encoded = encoder_encode_string(s, obj);
@@ -1649,7 +1649,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
 
     if (PyDict_GET_SIZE(dct) == 0) {
         /* Fast path */
-        return PyUnicodeWriter_WriteUTF8(writer, "{}", 2);
+        return PyUnicodeWriter_WriteASCII(writer, "{}", 2);
     }
 
     if (s->markers != Py_None) {
@@ -1753,7 +1753,7 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
         return -1;
     if (PySequence_Fast_GET_SIZE(s_fast) == 0) {
         Py_DECREF(s_fast);
-        return PyUnicodeWriter_WriteUTF8(writer, "[]", 2);
+        return PyUnicodeWriter_WriteASCII(writer, "[]", 2);
     }
 
     if (s->markers != Py_None) {

@@ -76,12 +76,12 @@ module sys
 
 
 PyObject *
-_PySys_GetRequiredAttr(PyObject *name)
+PySys_GetAttr(PyObject *name)
 {
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
-                     "attribute name must be string, not '%.200s'",
-                     Py_TYPE(name)->tp_name);
+                     "attribute name must be string, not '%T'",
+                     name);
         return NULL;
     }
     PyThreadState *tstate = _PyThreadState_GET();
@@ -98,7 +98,7 @@ _PySys_GetRequiredAttr(PyObject *name)
 }
 
 PyObject *
-_PySys_GetRequiredAttrString(const char *name)
+PySys_GetAttrString(const char *name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *sysdict = tstate->interp->sysdict;
@@ -114,12 +114,12 @@ _PySys_GetRequiredAttrString(const char *name)
 }
 
 int
-_PySys_GetOptionalAttr(PyObject *name, PyObject **value)
+PySys_GetOptionalAttr(PyObject *name, PyObject **value)
 {
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
-                     "attribute name must be string, not '%.200s'",
-                     Py_TYPE(name)->tp_name);
+                     "attribute name must be string, not '%T'",
+                     name);
         *value = NULL;
         return -1;
     }
@@ -133,7 +133,7 @@ _PySys_GetOptionalAttr(PyObject *name, PyObject **value)
 }
 
 int
-_PySys_GetOptionalAttrString(const char *name, PyObject **value)
+PySys_GetOptionalAttrString(const char *name, PyObject **value)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *sysdict = tstate->interp->sysdict;
@@ -773,7 +773,7 @@ sys_displayhook(PyObject *module, PyObject *o)
     }
     if (PyObject_SetAttr(builtins, _Py_LATIN1_CHR('_'), Py_None) != 0)
         return NULL;
-    outf = _PySys_GetRequiredAttr(&_Py_ID(stdout));
+    outf = PySys_GetAttr(&_Py_ID(stdout));
     if (outf == NULL) {
         return NULL;
     }
@@ -1643,6 +1643,7 @@ static PyObject *
 _sys_getwindowsversion_from_kernel32(void)
 {
 #ifndef MS_WINDOWS_DESKTOP
+    PyErr_SetString(PyExc_OSError, "cannot read version info on this platform");
     return NULL;
 #else
     HANDLE hKernel32;
@@ -1670,6 +1671,9 @@ _sys_getwindowsversion_from_kernel32(void)
         !GetFileVersionInfoW(kernel32_path, 0, verblock_size, verblock) ||
         !VerQueryValueW(verblock, L"", (LPVOID)&ffi, &ffi_len)) {
         PyErr_SetFromWindowsErr(0);
+        if (verblock) {
+            PyMem_RawFree(verblock);
+        }
         return NULL;
     }
 
@@ -2448,60 +2452,6 @@ sys_is_remote_debug_enabled_impl(PyObject *module)
 #endif
 }
 
-static PyObject *
-sys_remote_exec_unicode_path(PyObject *module, int pid, PyObject *script)
-{
-    const char *debugger_script_path = PyUnicode_AsUTF8(script);
-    if (debugger_script_path == NULL) {
-        return NULL;
-    }
-
-#ifdef MS_WINDOWS
-    // Use UTF-16 (wide char) version of the path for permission checks
-    wchar_t *debugger_script_path_w = PyUnicode_AsWideCharString(script, NULL);
-    if (debugger_script_path_w == NULL) {
-        return NULL;
-    }
-
-    // Check file attributes using wide character version (W) instead of ANSI (A)
-    DWORD attr = GetFileAttributesW(debugger_script_path_w);
-    PyMem_Free(debugger_script_path_w);
-    if (attr == INVALID_FILE_ATTRIBUTES) {
-        DWORD err = GetLastError();
-        if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) {
-            PyErr_SetString(PyExc_FileNotFoundError, "Script file does not exist");
-        }
-        else if (err == ERROR_ACCESS_DENIED) {
-            PyErr_SetString(PyExc_PermissionError, "Script file cannot be read");
-        }
-        else {
-            PyErr_SetFromWindowsErr(0);
-        }
-        return NULL;
-    }
-#else
-    if (access(debugger_script_path, F_OK | R_OK) != 0) {
-        switch (errno) {
-            case ENOENT:
-                PyErr_SetString(PyExc_FileNotFoundError, "Script file does not exist");
-                break;
-            case EACCES:
-                PyErr_SetString(PyExc_PermissionError, "Script file cannot be read");
-                break;
-            default:
-                PyErr_SetFromErrno(PyExc_OSError);
-        }
-        return NULL;
-    }
-#endif
-
-    if (_PySysRemoteDebug_SendExec(pid, 0, debugger_script_path) < 0) {
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
-}
-
 /*[clinic input]
 sys.remote_exec
 
@@ -2532,13 +2482,65 @@ static PyObject *
 sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
 /*[clinic end generated code: output=7d94c56afe4a52c0 input=39908ca2c5fe1eb0]*/
 {
-    PyObject *ret = NULL;
     PyObject *path;
-    if (PyUnicode_FSDecoder(script, &path)) {
-        ret = sys_remote_exec_unicode_path(module, pid, path);
-        Py_DECREF(path);
+    const char *debugger_script_path;
+
+    if (PyUnicode_FSConverter(script, &path) == 0) {
+        return NULL;
     }
-    return ret;
+    debugger_script_path = PyBytes_AS_STRING(path);
+#ifdef MS_WINDOWS
+    PyObject *unicode_path;
+    if (PyUnicode_FSDecoder(path, &unicode_path) < 0) {
+        goto error;
+    }
+    // Use UTF-16 (wide char) version of the path for permission checks
+    wchar_t *debugger_script_path_w = PyUnicode_AsWideCharString(unicode_path, NULL);
+    Py_DECREF(unicode_path);
+    if (debugger_script_path_w == NULL) {
+        goto error;
+    }
+    DWORD attr = GetFileAttributesW(debugger_script_path_w);
+    if (attr == INVALID_FILE_ATTRIBUTES) {
+        DWORD err = GetLastError();
+        PyMem_Free(debugger_script_path_w);
+        if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) {
+            PyErr_SetString(PyExc_FileNotFoundError, "Script file does not exist");
+        }
+        else if (err == ERROR_ACCESS_DENIED) {
+            PyErr_SetString(PyExc_PermissionError, "Script file cannot be read");
+        }
+        else {
+            PyErr_SetFromWindowsErr(err);
+        }
+        goto error;
+    }
+    PyMem_Free(debugger_script_path_w);
+#else // MS_WINDOWS
+    if (access(debugger_script_path, F_OK | R_OK) != 0) {
+        switch (errno) {
+            case ENOENT:
+                PyErr_SetString(PyExc_FileNotFoundError, "Script file does not exist");
+                break;
+            case EACCES:
+                PyErr_SetString(PyExc_PermissionError, "Script file cannot be read");
+                break;
+            default:
+                PyErr_SetFromErrno(PyExc_OSError);
+        }
+        goto error;
+    }
+#endif // MS_WINDOWS
+    if (_PySysRemoteDebug_SendExec(pid, 0, debugger_script_path) < 0) {
+        goto error;
+    }
+
+    Py_DECREF(path);
+    Py_RETURN_NONE;
+
+error:
+    Py_DECREF(path);
+    return NULL;
 }
 
 
@@ -3003,7 +3005,7 @@ static PyObject *
 get_warnoptions(PyThreadState *tstate)
 {
     PyObject *warnoptions;
-    if (_PySys_GetOptionalAttr(&_Py_ID(warnoptions), &warnoptions) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(warnoptions), &warnoptions) < 0) {
         return NULL;
     }
     if (warnoptions == NULL || !PyList_Check(warnoptions)) {
@@ -3040,7 +3042,7 @@ PySys_ResetWarnOptions(void)
     }
 
     PyObject *warnoptions;
-    if (_PySys_GetOptionalAttr(&_Py_ID(warnoptions), &warnoptions) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(warnoptions), &warnoptions) < 0) {
         PyErr_Clear();
         return;
     }
@@ -3104,7 +3106,7 @@ PyAPI_FUNC(int)
 PySys_HasWarnOptions(void)
 {
     PyObject *warnoptions;
-    if (_PySys_GetOptionalAttr(&_Py_ID(warnoptions), &warnoptions) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(warnoptions), &warnoptions) < 0) {
         PyErr_Clear();
         return 0;
     }
@@ -3118,7 +3120,7 @@ static PyObject *
 get_xoptions(PyThreadState *tstate)
 {
     PyObject *xoptions;
-    if (_PySys_GetOptionalAttr(&_Py_ID(_xoptions), &xoptions) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(_xoptions), &xoptions) < 0) {
         return NULL;
     }
     if (xoptions == NULL || !PyDict_Check(xoptions)) {
@@ -3371,7 +3373,7 @@ sys_set_flag(PyObject *flags, Py_ssize_t pos, PyObject *value)
 int
 _PySys_SetFlagObj(Py_ssize_t pos, PyObject *value)
 {
-    PyObject *flags = _PySys_GetRequiredAttrString("flags");
+    PyObject *flags = PySys_GetAttrString("flags");
     if (flags == NULL) {
         return -1;
     }
@@ -3933,7 +3935,7 @@ _PySys_UpdateConfig(PyThreadState *tstate)
 #undef COPY_WSTR
 
     // sys.flags
-    PyObject *flags = _PySys_GetRequiredAttrString("flags");
+    PyObject *flags = PySys_GetAttrString("flags");
     if (flags == NULL) {
         return -1;
     }
@@ -4249,7 +4251,7 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
             }
 
             PyObject *sys_path;
-            if (_PySys_GetOptionalAttr(&_Py_ID(path), &sys_path) < 0) {
+            if (PySys_GetOptionalAttr(&_Py_ID(path), &sys_path) < 0) {
                 Py_FatalError("can't get sys.path");
             }
             else if (sys_path != NULL) {
@@ -4345,7 +4347,7 @@ sys_write(PyObject *key, FILE *fp, const char *format, va_list va)
 
     PyObject *exc = _PyErr_GetRaisedException(tstate);
     written = PyOS_vsnprintf(buffer, sizeof(buffer), format, va);
-    file = _PySys_GetRequiredAttr(key);
+    file = PySys_GetAttr(key);
     if (sys_pyfile_write(buffer, file) != 0) {
         _PyErr_Clear(tstate);
         fputs(buffer, fp);
@@ -4389,7 +4391,7 @@ sys_format(PyObject *key, FILE *fp, const char *format, va_list va)
     PyObject *exc = _PyErr_GetRaisedException(tstate);
     message = PyUnicode_FromFormatV(format, va);
     if (message != NULL) {
-        file = _PySys_GetRequiredAttr(key);
+        file = PySys_GetAttr(key);
         if (sys_pyfile_write_unicode(message, file) != 0) {
             _PyErr_Clear(tstate);
             utf8 = PyUnicode_AsUTF8(message);
