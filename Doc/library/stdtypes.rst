@@ -1151,8 +1151,7 @@ Notes:
    the start of the sequence rather than the start of the slice.
 
 (9)
-   If the sequence is empty or *i* is outside the sequence range, :exc:`IndexError`
-   will be raised.
+   An :exc:`IndexError` is raised if *i* is outside the sequence range.
 
 
 .. _typesseq-immutable:
