@@ -886,7 +886,14 @@ class SMTP:
             # the server refused all our recipients
             self._rset()
             raise SMTPRecipientsRefused(senderrs)
-        (code, resp) = self.data(msg)
+        try:
+            (code, resp) = self.data(msg)
+        except SMTPDataError as ex:
+            if ex.smtp_code == 421:
+                self.close()
+            else:
+                self._rset()
+            raise
         if code != 250:
             if code == 421:
                 self.close()
