@@ -1,0 +1,2 @@
+Allow using custom sys.displayhook's with doctest.  Patch by Sergey B
+Kirpichev.
