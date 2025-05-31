@@ -338,7 +338,7 @@ The :mod:`csv` module defines the following constants:
       or :class:`~enum.IntEnum`, have a string representation that cannot be
       converted to :class:`float`.
       They cannot be read in the :data:`QUOTE_NONNUMERIC` and
-      :data:`QUOTE_STRING` modes.
+      :data:`QUOTE_STRINGS` modes.
 
 .. data:: QUOTE_NONE
 
