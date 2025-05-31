@@ -1,8 +1,9 @@
 import difflib
-from test.support import findfile
+from test.support import findfile, REPO_ROOT
 import unittest
 import doctest
 import sys
+import os
 
 
 class TestWithAscii(unittest.TestCase):
@@ -591,6 +592,10 @@ def setUpModule():
 
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite(difflib))
+    tests.addTests(doctest.DocFileSuite(
+        os.path.join(REPO_ROOT, 'Doc/library/difflib.rst'),
+        module_relative=False,
+    ))
     return tests
 
 
