@@ -1508,7 +1508,7 @@ The :mod:`socket` module also offers various network-related services:
 
    .. availability:: Unix, not WASI.
 
-      Unix platforms supporting :meth:`~socket.sendmsg`
+      Unix platforms supporting :meth:`~socket.recvmsg`
       and :const:`SCM_RIGHTS` mechanism.
 
    .. versionadded:: 3.9
