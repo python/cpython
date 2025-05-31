@@ -292,6 +292,7 @@ class TestTranforms(BytecodeTestCase):
             ('---x', 'UNARY_NEGATIVE', None, False, None, None),
             ('~~~x', 'UNARY_INVERT', None, False, None, None),
             ('+++x', 'CALL_INTRINSIC_1', intrinsic_positive, False, None, None),
+            ('~True', 'UNARY_INVERT', None, False, None, None),
         ]
 
         for (
