@@ -947,19 +947,12 @@ class ZipExtFile(io.BufferedIOBase):
 
     def __init__(self, fileobj, mode, zipinfo, pwd=None,
                  close_fileobj=False):
+        self._zinfo = zipinfo
         self._fileobj = fileobj
         self._pwd = pwd
         self._close_fileobj = close_fileobj
 
         self._compress_type = zipinfo.compress_type
-        self._compress_left = zipinfo.compress_size
-        self._left = zipinfo.file_size
-
-        self._decompressor = _get_decompressor(self._compress_type)
-
-        self._eof = False
-        self._readbuffer = b''
-        self._offset = 0
 
         self.newlines = None
 
@@ -968,34 +961,20 @@ class ZipExtFile(io.BufferedIOBase):
 
         if hasattr(zipinfo, 'CRC'):
             self._expected_crc = zipinfo.CRC
-            self._running_crc = crc32(b'')
+            self._orig_start_crc = crc32(b'')
         else:
             self._expected_crc = None
+            self._orig_start_crc = None
 
         self._seekable = False
         try:
             if fileobj.seekable():
                 self._orig_compress_start = fileobj.tell()
-                self._orig_compress_size = zipinfo.compress_size
                 self._orig_file_size = zipinfo.file_size
-                self._orig_start_crc = self._running_crc
-                self._orig_crc = self._expected_crc
                 self._seekable = True
         except AttributeError:
             pass
-
-        self._decrypter = None
-        if pwd:
-            if zipinfo.flag_bits & _MASK_USE_DATA_DESCRIPTOR:
-                # compare against the file type from extended local headers
-                check_byte = (zipinfo._raw_time >> 8) & 0xff
-            else:
-                # compare against the CRC otherwise
-                check_byte = (zipinfo.CRC >> 24) & 0xff
-            h = self._init_decrypter()
-            if h != check_byte:
-                raise RuntimeError("Bad password for file %r" % zipinfo.orig_filename)
-
+        self._init_read()
 
     def _init_decrypter(self):
         self._decrypter = _ZipDecrypter(self._pwd)
@@ -1006,7 +985,30 @@ class ZipExtFile(io.BufferedIOBase):
         #  and is used to check the correctness of the password.
         header = self._fileobj.read(12)
         self._compress_left -= 12
-        return self._decrypter(header)[11]
+        h = self._decrypter(header)[11]
+
+        if self._zinfo.flag_bits & _MASK_USE_DATA_DESCRIPTOR:
+            # compare against the file type from extended local headers
+            check_byte = (self._zinfo._raw_time >> 8) & 0xff
+        else:
+            # compare against the CRC otherwise
+            check_byte = (self._zinfo.CRC >> 24) & 0xff
+        if h != check_byte:
+            raise RuntimeError("Bad password for file %r" % self._zinfo.orig_filename)
+        return h
+
+    def _init_read(self):
+        self._running_crc = self._orig_start_crc
+        self._compress_left = self._zinfo.compress_size
+        self._left = self._zinfo.file_size
+        self._readbuffer = b''
+        self._offset = 0
+        self._eof = False
+        if self._pwd:
+            self._init_decrypter()
+        else:
+            self._decrypter = None
+        self._decompressor = _get_decompressor(self._compress_type)
 
     def __repr__(self):
         result = ['<%s.%s' % (self.__class__.__module__,
@@ -1248,17 +1250,8 @@ class ZipExtFile(io.BufferedIOBase):
         elif read_offset < 0:
             # Position is before the current position. Reset the ZipExtFile
             self._fileobj.seek(self._orig_compress_start)
-            self._running_crc = self._orig_start_crc
-            self._expected_crc = self._orig_crc
-            self._compress_left = self._orig_compress_size
-            self._left = self._orig_file_size
-            self._readbuffer = b''
-            self._offset = 0
-            self._decompressor = _get_decompressor(self._compress_type)
-            self._eof = False
+            self._init_read()
             read_offset = new_pos
-            if self._decrypter is not None:
-                self._init_decrypter()
 
         while read_offset > 0:
             read_len = min(self.MAX_SEEK_READ, read_offset)
