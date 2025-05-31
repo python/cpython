@@ -1,0 +1,3 @@
+Handle exceptions thrown by callbacks passed to
+:class:`multiprocessing.pool.Pool` ``*_async`` methods, preventing them from
+breaking the pool.
