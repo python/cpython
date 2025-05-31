@@ -2776,6 +2776,16 @@ class IpaddrUnitTest(unittest.TestCase):
                          sixtofouraddr.sixtofour)
         self.assertFalse(bad_addr.sixtofour)
 
+    def testipv4_translation(self):
+        embedded_rfc6052 = ipaddress.ip_address('64:ff9b::172.29.45.100')
+        embedded_rfc8215 = ipaddress.ip_address('64:ff9b:1::172.29.45.100')
+        bad_addr = ipaddress.ip_address('2001:db8::172.29.45.100')
+        self.assertEqual(ipaddress.IPv4Address('172.29.45.100'),
+                         embedded_rfc6052.ipv4_translation)
+        self.assertEqual(ipaddress.IPv4Address('172.29.45.100'),
+                         embedded_rfc8215.ipv4_translation)
+        self.assertFalse(bad_addr.ipv4_translation)
+
     # issue41004 Hash collisions in IPv4Interface and IPv6Interface
     def testV4HashIsNotConstant(self):
         ipv4_address1 = ipaddress.IPv4Interface("1.2.3.4")
