@@ -111,6 +111,11 @@ responses = {v: v.phrase for v in http.HTTPStatus.__members__.values()}
 _MAXLINE = 65536
 _MAXHEADERS = 100
 
+# Data larger than this will be read in chunks, to prevent extreme
+# overallocation.
+_SAFE_BUF_SIZE = 1 << 20
+
+
 # Header name/value ABNF (http://tools.ietf.org/html/rfc7230#section-3.2)
 #
 # VCHAR          = %x21-7E
@@ -638,9 +643,14 @@ class HTTPResponse(io.BufferedIOBase):
         reading. If the bytes are truly not available (due to EOF), then the
         IncompleteRead exception can be used to detect the problem.
         """
-        data = self.fp.read(amt)
-        if len(data) < amt:
-            raise IncompleteRead(data, amt-len(data))
+        cursize = min(amt, _SAFE_BUF_SIZE)
+        data = self.fp.read(cursize)
+        while len(data) < amt:
+            if len(data) < cursize:
+                raise IncompleteRead(data, amt-len(data))
+            delta = min(cursize, amt - cursize)
+            data += self.fp.read(cursize)
+            cursize += delta
         return data
 
     def _safe_readinto(self, b):
