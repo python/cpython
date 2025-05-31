@@ -249,6 +249,7 @@ class HashLibTestCase(unittest.TestCase):
             self._hashlib.new("md5", usedforsecurity=False)
             self._hashlib.openssl_md5(usedforsecurity=False)
 
+    @unittest.skipIf(get_fips_mode(), "skip in FIPS mode")
     def test_clinic_signature(self):
         for constructor in self.hash_constructors:
             with self.subTest(constructor.__name__):
@@ -256,6 +257,17 @@ class HashLibTestCase(unittest.TestCase):
                 constructor(data=b'')
                 constructor(string=b'')  # should be deprecated in the future
 
+            digest_name = constructor(b'').name
+            with self.subTest(digest_name):
+                hashlib.new(digest_name, b'')
+                hashlib.new(digest_name, data=b'')
+                hashlib.new(digest_name, string=b'')
+                if self._hashlib:
+                    self._hashlib.new(digest_name, b'')
+                    self._hashlib.new(digest_name, data=b'')
+                    self._hashlib.new(digest_name, string=b'')
+
+    @unittest.skipIf(get_fips_mode(), "skip in FIPS mode")
     def test_clinic_signature_errors(self):
         nomsg = b''
         mymsg = b'msg'
@@ -295,9 +307,16 @@ class HashLibTestCase(unittest.TestCase):
             [(), dict(data=nomsg, string=nomsg), conflicting_call],
         ]:
             for constructor in self.hash_constructors:
+                digest_name = constructor(b'').name
                 with self.subTest(constructor.__name__, args=args, kwds=kwds):
                     with self.assertRaisesRegex(TypeError, errmsg):
                         constructor(*args, **kwds)
+                with self.subTest(digest_name, args=args, kwds=kwds):
+                    with self.assertRaisesRegex(TypeError, errmsg):
+                        hashlib.new(digest_name, *args, **kwds)
+                    if self._hashlib:
+                        with self.assertRaisesRegex(TypeError, errmsg):
+                            self._hashlib.new(digest_name, *args, **kwds)
 
     def test_unknown_hash(self):
         self.assertRaises(ValueError, hashlib.new, 'spam spam spam spam spam')
