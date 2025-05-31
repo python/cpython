@@ -24,11 +24,12 @@ read_memory(proc_handle_t *handle, uint64_t remote_address, size_t len, void* ds
     return _Py_RemoteDebug_ReadRemoteMemory(handle, remote_address, len, dst);
 }
 
-#if defined(__linux__)
+// Why is pwritev not guarded? Except on Android API level 23 (no longer
+// supported), HAVE_PROCESS_VM_READV is sufficient.
+#if defined(__linux__) && HAVE_PROCESS_VM_READV
 static int
 write_memory_fallback(proc_handle_t *handle, uintptr_t remote_address, size_t len, const void* src)
 {
-#ifdef HAVE_PWRITEV
     if (handle->memfd == -1) {
         if (open_proc_mem_fd(handle) < 0) {
             return -1;
@@ -53,10 +54,6 @@ write_memory_fallback(proc_handle_t *handle, uintptr_t remote_address, size_t le
         result += written;
     } while ((size_t)written != local[0].iov_len);
     return 0;
-#else
-    PyErr_SetFromErrno(PyExc_OSError);
-    return -1;
-#endif // HAVE_PWRITEV
 }
 #endif // __linux__
 

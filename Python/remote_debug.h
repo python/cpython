@@ -916,7 +916,8 @@ _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
     return address;
 }
 
-#if defined(__linux__) && (HAVE_PREADV || HAVE_PWRITEV)
+#if defined(__linux__) && HAVE_PROCESS_VM_READV
+
 static int
 open_proc_mem_fd(proc_handle_t *handle)
 {
@@ -927,18 +928,17 @@ open_proc_mem_fd(proc_handle_t *handle)
     if (handle->memfd == -1) {
         PyErr_SetFromErrno(PyExc_OSError);
         _set_debug_exception_cause(PyExc_OSError,
-                "failed to open file %s: %s", mem_file_path, strerror(errno));
+            "failed to open file %s: %s", mem_file_path, strerror(errno));
         return -1;
     }
     return 0;
 }
-#endif // __linux__
 
-#if defined(__linux__)
+// Why is pwritev not guarded? Except on Android API level 23 (no longer
+// supported), HAVE_PROCESS_VM_READV is sufficient.
 static int
 read_remote_memory_fallback(proc_handle_t *handle, uintptr_t remote_address, size_t len, void* dst)
 {
-#ifdef HAVE_PREADV
     if (handle->memfd == -1) {
         if (open_proc_mem_fd(handle) < 0) {
             return -1;
@@ -967,11 +967,8 @@ read_remote_memory_fallback(proc_handle_t *handle, uintptr_t remote_address, siz
         result += read_bytes;
     } while ((size_t)read_bytes != local[0].iov_len);
     return 0;
-#else
-    PyErr_SetFromErrno(PyExc_OSError);
-    return -1;
-#endif // HAVE_PREADV
 }
+
 #endif // __linux__
 
 // Platform-independent memory read function
