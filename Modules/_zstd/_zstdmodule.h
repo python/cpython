@@ -51,8 +51,8 @@ _Py_parse_zstd_dict(const _zstd_state *state,
 
 /* Format error message and set ZstdError. */
 extern void
-set_zstd_error(const _zstd_state* const state,
-               const error_type type, size_t zstd_ret);
+set_zstd_error(const _zstd_state *state,
+               error_type type, size_t zstd_ret);
 
 extern void
 set_parameter_error(int is_compress, int key_v, int value_v);

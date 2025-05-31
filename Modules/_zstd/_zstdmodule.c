@@ -57,10 +57,9 @@ _Py_parse_zstd_dict(const _zstd_state *state, PyObject *dict, int *ptype)
 
 /* Format error message and set ZstdError. */
 void
-set_zstd_error(const _zstd_state* const state,
-               error_type type, size_t zstd_ret)
+set_zstd_error(const _zstd_state *state, error_type type, size_t zstd_ret)
 {
-    char *msg;
+    const char *msg;
     assert(ZSTD_isError(zstd_ret));
 
     if (state == NULL) {
