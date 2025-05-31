@@ -2681,6 +2681,13 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
         ]
         self.cfg_optimization_test(insts, insts, consts=[None])
 
+    def test_push_exc_info(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("PUSH_EXC_INFO", None, 2),
+        ]
+        self.check(insts, insts)
+
     def test_del_in_finally(self):
         # This loads `obj` onto the stack, executes `del obj`, then returns the
         # `obj` from the stack. See gh-133371 for more details.
