@@ -70,8 +70,12 @@ class PosixTester(unittest.TestCase):
         NO_ARG_FUNCTIONS = [ "ctermid", "getcwd", "getcwdb", "uname",
                              "times", "getloadavg",
                              "getegid", "geteuid", "getgid", "getgroups",
-                             "getpid", "getpgrp", "getppid", "getuid", "sync",
+                             "getpid", "getpgrp", "getppid", "getuid",
                            ]
+        # gh-102184: Don't test sync() by default since it might cause heavy
+        # I/O and block for a long time.
+        if support.is_resource_enabled('largefile'):
+            NO_ARG_FUNCTIONS.append("sync")
 
         for name in NO_ARG_FUNCTIONS:
             posix_func = getattr(posix, name, None)
