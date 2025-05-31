@@ -788,13 +788,25 @@ Instance methods:
    .. versionchanged:: 3.9
       Result changed from a tuple to a :term:`named tuple`.
 
-.. method:: date.isoformat()
 
-   Return a string representing the date in ISO 8601 format, ``YYYY-MM-DD``::
+.. method:: date.isoformat(basic=False)
+
+   Return a string representing the date in:
+
+   - ISO 8601 extended format ``YYYY-MM-DD`` (the default), or
+   - ISO 8601 basic format ``YYYYMMDD`` via the *basic* argument.
+
+   Examples:
 
        >>> from datetime import date
        >>> date(2002, 12, 4).isoformat()
        '2002-12-04'
+       >>> date(2002, 12, 4).isoformat(basic=True)
+       '20021204'
+
+   .. versionchanged:: next
+      Added the *basic* parameter.
+
 
 .. method:: date.__str__()
 
@@ -1556,9 +1568,9 @@ Instance methods:
    and ``weekday``. The same as ``self.date().isocalendar()``.
 
 
-.. method:: datetime.isoformat(sep='T', timespec='auto')
+.. method:: datetime.isoformat(sep='T', timespec='auto', basic=False)
 
-   Return a string representing the date and time in ISO 8601 format:
+   Return a string representing the date and time in ISO 8601 extended format:
 
    - ``YYYY-MM-DDTHH:MM:SS.ffffff``, if :attr:`microsecond` is not 0
    - ``YYYY-MM-DDTHH:MM:SS``, if :attr:`microsecond` is 0
@@ -1570,13 +1582,20 @@ Instance methods:
      is not 0
    - ``YYYY-MM-DDTHH:MM:SS+HH:MM[:SS[.ffffff]]``,  if :attr:`microsecond` is 0
 
+   If *basic* is true, this uses the ISO 8601 basic format for the date,
+   time and offset components.
+
    Examples::
 
        >>> from datetime import datetime, timezone
        >>> datetime(2019, 5, 18, 15, 17, 8, 132263).isoformat()
        '2019-05-18T15:17:08.132263'
+       >>> datetime(2019, 5, 18, 15, 17, 8, 132263).isoformat(basic=True)
+       '20190518T151708.132263'
        >>> datetime(2019, 5, 18, 15, 17, tzinfo=timezone.utc).isoformat()
        '2019-05-18T15:17:00+00:00'
+       >>> datetime(2019, 5, 18, 15, 17, tzinfo=timezone.utc).isoformat(basic=True)
+       '20190518T151700+0000'
 
    The optional argument *sep* (default ``'T'``) is a one-character separator,
    placed between the date and time portions of the result. For example::
@@ -1622,6 +1641,9 @@ Instance methods:
 
    .. versionchanged:: 3.6
       Added the *timespec* parameter.
+
+   .. versionadded:: next
+      Added the *basic* parameter.
 
 
 .. method:: datetime.__str__()
@@ -1974,14 +1996,16 @@ Instance methods:
       Added the *fold* parameter.
 
 
-.. method:: time.isoformat(timespec='auto')
+.. method:: time.isoformat(timespec='auto', basic=False)
 
-   Return a string representing the time in ISO 8601 format, one of:
+   Return a string representing the time in ISO 8601 (extended) format, one of:
 
    - ``HH:MM:SS.ffffff``, if :attr:`microsecond` is not 0
    - ``HH:MM:SS``, if :attr:`microsecond` is 0
    - ``HH:MM:SS.ffffff+HH:MM[:SS[.ffffff]]``, if :meth:`utcoffset` does not return ``None``
    - ``HH:MM:SS+HH:MM[:SS[.ffffff]]``, if :attr:`microsecond` is 0 and :meth:`utcoffset` does not return ``None``
+
+   If *basic* is true, this uses the ISO 8601 basic format which omits the colons.
 
    The optional argument *timespec* specifies the number of additional
    components of the time to include (the default is ``'auto'``).
@@ -2016,6 +2040,9 @@ Instance methods:
 
    .. versionchanged:: 3.6
       Added the *timespec* parameter.
+
+   .. versionchanged:: next
+      Added the *basic* parameter.
 
 
 .. method:: time.__str__()
