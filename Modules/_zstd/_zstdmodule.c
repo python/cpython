@@ -7,7 +7,6 @@
 #include "Python.h"
 
 #include "_zstdmodule.h"
-#include "zstddict.h"
 
 #include <zstd.h>                 // ZSTD_*()
 #include <zdict.h>                // ZDICT_*()
@@ -19,6 +18,42 @@ module _zstd
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=4b5f5587aac15c14]*/
 #include "clinic/_zstdmodule.c.h"
 
+
+ZstdDict *
+_Py_parse_zstd_dict(const _zstd_state *state, PyObject *dict, int *ptype)
+{
+    if (state == NULL) {
+        return NULL;
+    }
+
+    /* Check ZstdDict */
+    if (PyObject_TypeCheck(dict, state->ZstdDict_type)) {
+        return (ZstdDict*)dict;
+    }
+
+    /* Check (ZstdDict, type) */
+    if (PyTuple_CheckExact(dict) && PyTuple_GET_SIZE(dict) == 2
+        && PyObject_TypeCheck(PyTuple_GET_ITEM(dict, 0), state->ZstdDict_type)
+        && PyLong_Check(PyTuple_GET_ITEM(dict, 1)))
+    {
+        int type = PyLong_AsInt(PyTuple_GET_ITEM(dict, 1));
+        if (type == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
+        if (type == DICT_TYPE_DIGESTED
+            || type == DICT_TYPE_UNDIGESTED
+            || type == DICT_TYPE_PREFIX)
+        {
+            *ptype = type;
+            return (ZstdDict*)PyTuple_GET_ITEM(dict, 0);
+        }
+    }
+
+    /* Wrong type */
+    PyErr_SetString(PyExc_TypeError,
+                    "zstd_dict argument should be ZstdDict object.");
+    return NULL;
+}
 
 /* Format error message and set ZstdError. */
 void

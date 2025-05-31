@@ -16,7 +16,6 @@ class _zstd.ZstdCompressor "ZstdCompressor *" "&zstd_compressor_type_spec"
 
 #include "_zstdmodule.h"
 #include "buffer.h"
-#include "zstddict.h"
 #include "internal/pycore_lock.h" // PyMutex_IsLocked
 
 #include <stddef.h>               // offsetof()
@@ -262,52 +261,17 @@ static int
 _zstd_load_c_dict(ZstdCompressor *self, PyObject *dict)
 {
     _zstd_state* mod_state = PyType_GetModuleState(Py_TYPE(self));
-    if (mod_state == NULL) {
+    /* When compressing, use undigested dictionary by default. */
+    int type = DICT_TYPE_UNDIGESTED;
+    ZstdDict *zd = _Py_parse_zstd_dict(mod_state, dict, &type);
+    if (zd == NULL) {
         return -1;
     }
-    ZstdDict *zd;
-    int type, ret;
-
-    /* Check ZstdDict */
-    if (PyObject_TypeCheck(dict, mod_state->ZstdDict_type)) {
-        /* When compressing, use undigested dictionary by default. */
-        zd = (ZstdDict*)dict;
-        type = DICT_TYPE_UNDIGESTED;
-        PyMutex_Lock(&zd->lock);
-        ret = _zstd_load_impl(self, zd, mod_state, type);
-        PyMutex_Unlock(&zd->lock);
-        return ret;
-    }
-
-    /* Check (ZstdDict, type) */
-    if (PyTuple_CheckExact(dict) && PyTuple_GET_SIZE(dict) == 2) {
-        /* Check ZstdDict */
-        if (PyObject_TypeCheck(PyTuple_GET_ITEM(dict, 0),
-                               mod_state->ZstdDict_type)
-            && PyLong_Check(PyTuple_GET_ITEM(dict, 1)))
-        {
-            type = PyLong_AsInt(PyTuple_GET_ITEM(dict, 1));
-            if (type == -1 && PyErr_Occurred()) {
-                return -1;
-            }
-            if (type == DICT_TYPE_DIGESTED
-                || type == DICT_TYPE_UNDIGESTED
-                || type == DICT_TYPE_PREFIX)
-            {
-                assert(type >= 0);
-                zd = (ZstdDict*)PyTuple_GET_ITEM(dict, 0);
-                PyMutex_Lock(&zd->lock);
-                ret = _zstd_load_impl(self, zd, mod_state, type);
-                PyMutex_Unlock(&zd->lock);
-                return ret;
-            }
-        }
-    }
-
-    /* Wrong type */
-    PyErr_SetString(PyExc_TypeError,
-                    "zstd_dict argument should be ZstdDict object.");
-    return -1;
+    int ret;
+    PyMutex_Lock(&zd->lock);
+    ret = _zstd_load_impl(self, zd, mod_state, type);
+    PyMutex_Unlock(&zd->lock);
+    return ret;
 }
 
 /*[clinic input]

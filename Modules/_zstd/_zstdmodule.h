@@ -5,6 +5,8 @@
 #ifndef ZSTD_MODULE_H
 #define ZSTD_MODULE_H
 
+#include "zstddict.h"
+
 /* Type specs */
 extern PyType_Spec zstd_dict_type_spec;
 extern PyType_Spec zstd_compressor_type_spec;
@@ -42,6 +44,10 @@ typedef enum {
     DICT_TYPE_UNDIGESTED = 1,
     DICT_TYPE_PREFIX = 2
 } dictionary_type;
+
+extern ZstdDict *
+_Py_parse_zstd_dict(const _zstd_state *state,
+                    PyObject *dict, int *type);
 
 /* Format error message and set ZstdError. */
 extern void
