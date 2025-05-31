@@ -2688,6 +2688,16 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
         ]
         self.check(insts, insts)
 
+    def test_load_special(self):
+        # LOAD_SPECIAL may leave self on the stack
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_SPECIAL", 0, 2),
+            ("STORE_FAST", 1, 3),
+        ]
+        self.check(insts, insts)
+
+
     def test_del_in_finally(self):
         # This loads `obj` onto the stack, executes `del obj`, then returns the
         # `obj` from the stack. See gh-133371 for more details.

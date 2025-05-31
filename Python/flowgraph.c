@@ -2948,6 +2948,7 @@ optimize_load_fast(cfg_builder *g)
                     break;
                 }
 
+                case LOAD_SPECIAL:
                 case PUSH_EXC_INFO: {
                     ref tos = ref_stack_pop(&refs);
                     PUSH_REF(i, NOT_LOCAL);
