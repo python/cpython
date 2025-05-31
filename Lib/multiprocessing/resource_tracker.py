@@ -299,8 +299,8 @@ def main(fd):
                         pass
                     else:
                         warnings.warn(
-                            f'resource_tracker: There appear to be '
-                            f'{len(rtype_cache)} leaked {rtype} objects to '
+                            f'resource_tracker: There appears to be '
+                            f'{len(rtype_cache)} leaked {rtype} object/s to '
                             f'clean up at shutdown: {rtype_cache}'
                         )
                 except Exception:
