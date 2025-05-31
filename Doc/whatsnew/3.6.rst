@@ -2173,7 +2173,7 @@ Changes in the Python API
 * :c:func:`PyErr_SetImportError` now sets :exc:`TypeError` when its **msg**
   argument is not set. Previously only ``NULL`` was returned.
 
-* The format of the :attr:`~codeobject.co_lnotab` attribute of code objects
+* The format of the :attr:`!codeobject.co_lnotab` attribute of code objects
   changed to support
   a negative line number delta. By default, Python does not emit bytecode with
   a negative line number delta. Functions using :attr:`frame.f_lineno`,

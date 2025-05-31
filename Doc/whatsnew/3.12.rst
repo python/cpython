@@ -1333,7 +1333,7 @@ Deprecated
   ``int``, convert to int explicitly: ``~int(x)``. (Contributed by Tim Hoffmann
   in :gh:`103487`.)
 
-* Accessing :attr:`~codeobject.co_lnotab` on code objects was deprecated in
+* Accessing :attr:`!codeobject.co_lnotab` on code objects was deprecated in
   Python 3.10 via :pep:`626`,
   but it only got a proper :exc:`DeprecationWarning` in 3.12.
   May be removed in 3.15.
