@@ -871,6 +871,10 @@ class MessageID(MsgID):
     token_type = 'message-id'
 
 
+class MessageIDList(TokenList):
+    token_type = "message-id-list"
+
+
 class InvalidMessageID(MessageID):
     token_type = 'invalid-message-id'
 
@@ -2151,6 +2155,23 @@ def get_msg_id(value):
     return msg_id, value
 
 
+def get_invalid_msg_id(value, endchars):
+    """ Read everything up to one of the chars in endchars, return InvalidMessageID
+    and rest of the value
+
+    """
+    invalid_msg_id = InvalidMessageID()
+    while value and value[0] not in endchars:
+        if value[0] in PHRASE_ENDS:
+            invalid_msg_id.append(ValueTerminal(value[0],
+                                                 'misplaced-special'))
+            value = value[1:]
+        else:
+            token, value = get_phrase(value)
+            invalid_msg_id.append(token)
+    return invalid_msg_id, value
+
+
 def parse_message_id(value):
     """message-id      =   "Message-ID:" msg-id CRLF
     """
@@ -2170,6 +2191,37 @@ def parse_message_id(value):
                 "Unexpected {!r}".format(value)))
 
     return message_id
+
+def parse_message_id_list(value):
+    """ in-reply-to     =   "In-Reply-To:" 1*msg-id CRLF
+        references      =   "References:" 1*msg-id CRLF
+    """
+
+    message_id_list = MessageIDList()
+
+    # ignore initial CFWS
+    if value and value[0] in CFWS_LEADER:
+        _, value = get_cfws(value)
+
+    # required at least one msg-id
+    if not value:
+        message_id_list.defects.append(errors.InvalidHeaderDefect(
+            "Empty message-id-list"
+        ))
+        return message_id_list
+
+    while value:
+        try:
+            token, value = get_msg_id(value)
+            message_id_list.append(MessageID([token]))
+        except errors.HeaderParseError:
+            token, value = get_invalid_msg_id(value, "<")
+            message_id_list.append(token)
+            message_id_list.defects.append(
+                errors.InvalidHeaderDefect("Invalid msg-id: {!r}".format(str(token))))
+
+
+    return message_id_list
 
 #
 # XXX: As I begin to add additional header parsers, I'm realizing we probably
