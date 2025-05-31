@@ -623,6 +623,13 @@ class TestCase(object):
                 )
             warnings.warn(msg, DeprecationWarning, stacklevel=3)
 
+    def _callCleanupAfterFailedSetup(self):
+        # Can be overriden for all classes with multipart setup,
+        # like in `IsolatedAsyncioTestCase`. This is useful when one
+        # part of the setup is successful, and the other one is not.
+        # Does nothing by default.
+        pass
+
     def _callTearDown(self):
         self.tearDown()
 
@@ -668,6 +675,8 @@ class TestCase(object):
                     outcome.expecting_failure = False
                     with outcome.testPartExecutor(self):
                         self._callTearDown()
+                else:
+                    self._callCleanupAfterFailedSetup()
                 self.doCleanups()
                 self._addDuration(result, (time.perf_counter() - start_time))
 
