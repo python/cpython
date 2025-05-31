@@ -19459,6 +19459,12 @@ then :
   printf "%s\n" "#define HAVE_GETLOGIN 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "getlogin_r" "ac_cv_func_getlogin_r"
+if test "x$ac_cv_func_getlogin_r" = xyes
+then :
+  printf "%s\n" "#define HAVE_GETLOGIN_R 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "getpeername" "ac_cv_func_getpeername"
 if test "x$ac_cv_func_getpeername" = xyes
 then :
@@ -23841,6 +23847,33 @@ printf "%s\n" "#define HAVE_SETGROUPS 1" >>confdefs.h
 fi
 
 
+
+
+ac_fn_check_decl "$LINENO" "MAXLOGNAME" "ac_cv_have_decl_MAXLOGNAME" "#include <sys/params.h>
+" "$ac_c_undeclared_builtin_options" "CFLAGS"
+if test "x$ac_cv_have_decl_MAXLOGNAME" = xyes
+then :
+
+printf "%s\n" "#define HAVE_MAXLOGNAME 1" >>confdefs.h
+
+fi
+
+ac_fn_check_decl "$LINENO" "UT_NAMESIZE" "ac_cv_have_decl_UT_NAMESIZE" "#include <utmp.h>
+" "$ac_c_undeclared_builtin_options" "CFLAGS"
+if test "x$ac_cv_have_decl_UT_NAMESIZE" = xyes
+then :
+  ac_have_decl=1
+else case e in #(
+  e) ac_have_decl=0 ;;
+esac
+fi
+printf "%s\n" "#define HAVE_DECL_UT_NAMESIZE $ac_have_decl" >>confdefs.h
+if test $ac_have_decl = 1
+then :
+
+printf "%s\n" "#define HAVE_UT_NAMESIZE 1" >>confdefs.h
+
+fi
 
 
 # check for openpty, login_tty, and forkpty
