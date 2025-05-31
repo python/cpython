@@ -75,7 +75,6 @@ def write_header(
 """
     )
 
-
 def emit_to(out: CWriter, tkn_iter: TokenIterator, end: str) -> Token:
     parens = 0
     for tkn in tkn_iter:
@@ -88,6 +87,16 @@ def emit_to(out: CWriter, tkn_iter: TokenIterator, end: str) -> Token:
         out.emit(tkn)
     raise analysis_error(f"Expecting {end}. Reached end of file", tkn)
 
+def skip_to(tkn_iter: TokenIterator, end: str) -> Token:
+    parens = 0
+    for tkn in tkn_iter:
+        if tkn.kind == end and parens == 0:
+            return tkn
+        if tkn.kind == "LPAREN":
+            parens += 1
+        if tkn.kind == "RPAREN":
+            parens -= 1
+    raise analysis_error(f"Expecting {end}. Reached end of file", tkn)
 
 ReplacementFunctionType = Callable[
     [Token, TokenIterator, CodeSection, Storage, Instruction | None], bool
@@ -108,6 +117,7 @@ class Emitter:
     out: CWriter
     labels: dict[str, Label]
     _replacers: dict[str, ReplacementFunctionType]
+    is_abstract: bool
 
     def __init__(self, out: CWriter, labels: dict[str, Label]):
         self._replacers = {
@@ -129,6 +139,31 @@ class Emitter:
         }
         self.out = out
         self.labels = labels
+        self.is_abstract = False
+
+    def emit_to_with_replacement(
+        self,
+        out: CWriter,
+        tkn_iter: TokenIterator,
+        end: str,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None
+    ) -> Token:
+        parens = 0
+        for tkn in tkn_iter:
+            if tkn.kind == end and parens == 0:
+                return tkn
+            if tkn.kind == "LPAREN":
+                parens += 1
+            if tkn.kind == "RPAREN":
+                parens -= 1
+            if tkn.text in self._replacers:
+                self._replacers[tkn.text](tkn, tkn_iter, uop, storage, inst)
+            else:
+                out.emit(tkn)
+        raise analysis_error(f"Expecting {end}. Reached end of file", tkn)
+
 
     def dispatch(
         self,
@@ -157,7 +192,7 @@ class Emitter:
         lparen = next(tkn_iter)
         assert lparen.kind == "LPAREN"
         first_tkn = tkn_iter.peek()
-        emit_to(self.out, tkn_iter, "RPAREN")
+        self.emit_to_with_replacement(self.out, tkn_iter, "RPAREN", uop, storage, inst)
         self.emit(") {\n")
         next(tkn_iter)  # Semi colon
         assert inst is not None
@@ -197,7 +232,7 @@ class Emitter:
         else:
             self.out.emit_at("if ", tkn)
             self.emit(lparen)
-            emit_to(self.out, tkn_iter, "RPAREN")
+            self.emit_to_with_replacement(self.out, tkn_iter, "RPAREN", uop, storage, inst)
             self.out.emit(") {\n")
         next(tkn_iter)  # Semi colon
         storage.clear_inputs("at ERROR_IF")
@@ -478,7 +513,7 @@ class Emitter:
         reachable = True
         tkn = stmt.contents[-1]
         try:
-            if stmt in uop.properties.escaping_calls:
+            if stmt in uop.properties.escaping_calls and not self.is_abstract:
                 escape = uop.properties.escaping_calls[stmt]
                 if escape.kills is not None:
                     self.stackref_kill(escape.kills, storage, True)
@@ -515,7 +550,7 @@ class Emitter:
                         self.out.emit(tkn)
                 else:
                     self.out.emit(tkn)
-            if stmt in uop.properties.escaping_calls:
+            if stmt in uop.properties.escaping_calls and not self.is_abstract:
                 self.emit_reload(storage)
             return reachable, None, storage
         except StackError as ex:
@@ -655,7 +690,7 @@ class Emitter:
         code: CodeSection,
         storage: Storage,
         inst: Instruction | None,
-        emit_braces: bool = True
+        emit_braces: bool = True,
     ) -> tuple[bool, Storage]:
         self.out.start_line()
         reachable, tkn, storage = self.emit_BlockStmt(code.body, code, storage, inst, emit_braces)

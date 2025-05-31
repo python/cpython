@@ -1969,12 +1969,12 @@ class TestGeneratedAbstractCases(unittest.TestCase):
 
     def test_overridden_abstract(self):
         input = """
-        pure op(OP, (--)) {
+        op(OP, (--)) {
             SPAM();
         }
         """
         input2 = """
-        pure op(OP, (--)) {
+        op(OP, (--)) {
             eggs();
         }
         """
@@ -1988,7 +1988,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
 
     def test_overridden_abstract_args(self):
         input = """
-        pure op(OP, (arg1 -- out)) {
+        op(OP, (arg1 -- out)) {
             out = SPAM(arg1);
         }
         op(OP2, (arg1 -- out)) {
@@ -2021,16 +2021,16 @@ class TestGeneratedAbstractCases(unittest.TestCase):
 
     def test_no_overridden_case(self):
         input = """
-        pure op(OP, (arg1 -- out)) {
+        op(OP, (arg1 -- out)) {
             out = SPAM(arg1);
         }
 
-        pure op(OP2, (arg1 -- out)) {
+        op(OP2, (arg1 -- out)) {
         }
 
         """
         input2 = """
-        pure op(OP2, (arg1 -- out)) {
+        op(OP2, (arg1 -- out)) {
             out = NULL;
         }
         """
@@ -2248,6 +2248,115 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         with self.assertRaisesRegex(SyntaxError,
                                     "Inputs must have equal sizes"):
+            self.run_cases_test(input, input2, output)
+
+    def test_pure_uop_body_copied_in(self):
+        input = """
+        pure op(OP, (foo -- res)) {
+            res = body(foo);
+        }
+        """
+        input2 = """
+        op(OP, (foo -- res)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            res = sym_new_known(ctx, foo);
+        }
+        """
+        output = """
+        case OP: {
+            JitOptSymbol *foo;
+            JitOptSymbol *res;
+            foo = stack_pointer[-1];
+            if (
+                sym_is_safe_const(ctx, foo)
+            ) {
+                JitOptSymbol *foo_sym = foo;
+                _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                res_stackref = body(foo);
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                stack_pointer[-1] = res;
+            }
+            else {
+                res = sym_new_known(ctx, foo);
+                stack_pointer[-1] = res;
+            }
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_pure_uop_body_copied_in_complex(self):
+        input = """
+        pure op(OP, (foo -- res)) {
+            if (foo) {
+                res = body(foo);
+            }
+            else {
+                res = 1;
+            }
+        }
+        """
+        input2 = """
+        op(OP, (foo -- res)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            res = sym_new_known(ctx, foo);
+        }
+        """
+        output = """
+        case OP: {
+            JitOptSymbol *foo;
+            JitOptSymbol *res;
+            foo = stack_pointer[-1];
+            if (
+                sym_is_safe_const(ctx, foo)
+            ) {
+                JitOptSymbol *foo_sym = foo;
+                _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                if (foo) {
+                    res_stackref = body(foo);
+                }
+                else {
+                    res_stackref = 1;
+                }
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                stack_pointer[-1] = res;
+            }
+            else {
+                res = sym_new_known(ctx, foo);
+                stack_pointer[-1] = res;
+            }
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_pure_uop_reject_array_effects(self):
+        input = """
+        pure op(OP, (foo[2] -- res)) {
+            if (foo) {
+                res = body(foo);
+            }
+            else {
+                res = 1;
+            }
+        }
+        """
+        input2 = """
+        op(OP, (foo[2] -- res)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo[2]);
+            res = sym_new_unknown(ctx);
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(AssertionError,
+                                    "Unsafe to convert a symbol to an array-like StackRef."):
             self.run_cases_test(input, input2, output)
 
 if __name__ == "__main__":

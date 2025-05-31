@@ -4,6 +4,7 @@ Writes the cases to optimizer_cases.c.h, which is #included in Python/optimizer_
 """
 
 import argparse
+import copy
 
 from analyzer import (
     Analysis,
@@ -12,6 +13,9 @@ from analyzer import (
     analyze_files,
     StackItem,
     analysis_error,
+    CodeSection,
+    Label,
+    uop_variable_used,
 )
 from generators_common import (
     DEFAULT_INPUT,
@@ -19,6 +23,7 @@ from generators_common import (
     write_header,
     Emitter,
     TokenIterator,
+    skip_to,
 )
 from cwriter import CWriter
 from typing import TextIO
@@ -77,6 +82,12 @@ def type_name(var: StackItem) -> str:
         return var.type
     return "JitOptSymbol *"
 
+def stackref_type_name(var: StackItem) -> str:
+    if var.is_array():
+        assert False, "Unsafe to convert a symbol to an array-like StackRef."
+    if var.type:
+        return var.type
+    return "_PyStackRef "
 
 def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
     variables = {"unused"}
@@ -137,6 +148,11 @@ def emit_default(out: CWriter, uop: Uop, stack: Stack) -> None:
 
 class OptimizerEmitter(Emitter):
 
+    def __init__(self, out: CWriter, labels: dict[str, Label]):
+        super().__init__(out, labels)
+        self._replacers["REPLACE_OPCODE_IF_EVALUATES_PURE"] = self.replace_opcode_if_evaluates_pure
+        self.is_abstract = True
+
     def emit_save(self, storage: Storage) -> None:
         storage.flush(self.out)
 
@@ -147,16 +163,98 @@ class OptimizerEmitter(Emitter):
         self.out.emit(goto)
         self.out.emit(label)
 
+    def replace_opcode_if_evaluates_pure(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        skip_to(tkn_iter, "SEMI")
+        return True
+
+class OptimizerConstantEmitter(OptimizerEmitter):
+    def __init__(self, out: CWriter, labels: dict[str, Label], uop: Uop):
+        super().__init__(out, labels)
+        # Replace all outputs to point to their stackref versions.
+        overrides = {
+            outp.name: self.emit_stackref_override for outp in uop.stack.outputs
+        }
+        self._replacers = {**self._replacers, **overrides}
+
+    def emit_stackref_override(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.out.emit(tkn)
+        self.out.emit("_stackref ")
+        return True
+
+def write_uop_pure_evaluation_region_header(
+    uop: Uop,
+    out: CWriter,
+    stack: Stack,
+) -> None:
+    emitter = OptimizerConstantEmitter(out, {}, uop)
+    emitter.emit("if (\n")
+    assert len(uop.stack.inputs) > 0, "Pure operations must have at least 1 input"
+    for inp in uop.stack.inputs[:-1]:
+        emitter.emit(f"sym_is_safe_const(ctx, {inp.name}) &&\n")
+    emitter.emit(f"sym_is_safe_const(ctx, {uop.stack.inputs[-1].name})\n")
+    emitter.emit(') {\n')
+    # Declare variables, before they are shadowed.
+    for inp in uop.stack.inputs:
+        if inp.used:
+            emitter.emit(f"{type_name(inp)}{inp.name}_sym = {inp.name};\n")
+    # Shadow the symbolic variables with stackrefs.
+    for inp in uop.stack.inputs:
+        if inp.used:
+            emitter.emit(f"{stackref_type_name(inp)}{inp.name} = sym_get_const_as_stackref(ctx, {inp.name}_sym);\n")
+    # Rename all output variables to stackref variant.
+    for outp in uop.stack.outputs:
+        assert not outp.is_array(), "Array output StackRefs not supported for pure ops."
+        emitter.emit(f"_PyStackRef {outp.name}_stackref;\n")
+    stack = copy.deepcopy(stack)
+
+    storage = Storage.for_uop(stack, uop, CWriter.null(), check_liveness=False)
+    # No reference management of outputs needed.
+    for var in storage.outputs:
+        var.in_local = True
+    emitter.emit("/* Start of uop copied from bytecodes for constant evaluation */\n")
+    emitter.emit_tokens(uop, storage, inst=None, emit_braces=False)
+    out.start_line()
+    emitter.emit("/* End of uop copied from bytecodes for constant evaluation */\n")
+    # Finally, assign back the output stackrefs to symbolics.
+    for outp in uop.stack.outputs:
+        # All new stackrefs are created from new references.
+        # That's how the stackref contract works.
+        if not outp.peek:
+            emitter.emit(f"{outp.name} = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal({outp.name}_stackref));\n")
+        else:
+            emitter.emit(f"{outp.name} = sym_new_const(ctx, PyStackRef_AsPyObjectBorrow({outp.name}_stackref));\n")
+    storage.flush(out)
+    emitter.emit("}\n")
+    emitter.emit("else {\n")
+
+def write_uop_pure_evaluation_region_footer(
+    out: CWriter,
+) -> None:
+    out.emit("}\n")
+
 def write_uop(
     override: Uop | None,
     uop: Uop,
     out: CWriter,
-    stack: Stack,
     debug: bool,
-    skip_inputs: bool,
 ) -> None:
     locals: dict[str, Local] = {}
     prototype = override if override else uop
+    stack = Stack(extract_bits=False, cast_type="JitOptSymbol *")
     try:
         out.start_line()
         if override:
@@ -177,13 +275,19 @@ def write_uop(
                         cast = f"uint{cache.size*16}_t"
                     out.emit(f"{type}{cache.name} = ({cast})this_instr->operand0;\n")
         if override:
-            emitter = OptimizerEmitter(out, {})
             # No reference management of inputs needed.
             for var in storage.inputs:  # type: ignore[possibly-undefined]
                 var.in_local = False
-            _, storage = emitter.emit_tokens(override, storage, None, False)
+            replace_opcode_if_evaluates_pure = uop_variable_used(override, "REPLACE_OPCODE_IF_EVALUATES_PURE")
+            if replace_opcode_if_evaluates_pure:
+                write_uop_pure_evaluation_region_header(uop, out, stack)
             out.start_line()
+            emitter = OptimizerEmitter(out, {})
+            _, storage = emitter.emit_tokens(override, storage, inst=None, emit_braces=False)
             storage.flush(out)
+            out.start_line()
+            if replace_opcode_if_evaluates_pure:
+                write_uop_pure_evaluation_region_footer(out)
         else:
             emit_default(out, uop, stack)
             out.start_line()
@@ -230,8 +334,7 @@ def generate_abstract_interpreter(
             declare_variables(override, out, skip_inputs=False)
         else:
             declare_variables(uop, out, skip_inputs=True)
-        stack = Stack(extract_bits=False, cast_type="JitOptSymbol *")
-        write_uop(override, uop, out, stack, debug, skip_inputs=(override is None))
+        write_uop(override, uop, out, debug)
         out.start_line()
         out.emit("break;\n")
         out.emit("}")
