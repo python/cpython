@@ -91,103 +91,9 @@ and options. By default, these flags are controlled by :ref:`command line
 options <using-on-interface-options>`.
 
 When a flag is set by an option, the value of the flag is the number of times
-that the option was set. For example, ``-b`` sets :c:data:`Py_BytesWarningFlag`
-to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
+that the option was set. For example, ``-b`` sets :c:member:`PyConfig.bytes_warning`
+to 1 and ``-bb`` sets :c:member:`PyConfig.bytes_warning` to 2.
 
-.. c:var:: int Py_BytesWarningFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.bytes_warning` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Issue a warning when comparing :class:`bytes` or :class:`bytearray` with
-   :class:`str` or :class:`bytes` with :class:`int`.  Issue an error if greater
-   or equal to ``2``.
-
-   Set by the :option:`-b` option.
-
-   .. deprecated-removed:: 3.12 3.15
-
-.. c:var:: int Py_DebugFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.parser_debug` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Turn on parser debugging output (for expert only, depending on compilation
-   options).
-
-   Set by the :option:`-d` option and the :envvar:`PYTHONDEBUG` environment
-   variable.
-
-   .. deprecated-removed:: 3.12 3.15
-
-.. c:var:: int Py_DontWriteBytecodeFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.write_bytecode` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   If set to non-zero, Python won't try to write ``.pyc`` files on the
-   import of source modules.
-
-   Set by the :option:`-B` option and the :envvar:`PYTHONDONTWRITEBYTECODE`
-   environment variable.
-
-   .. deprecated-removed:: 3.12 3.15
-
-.. c:var:: int Py_FrozenFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.pathconfig_warnings` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Private flag used by ``_freeze_module`` and ``frozenmain`` programs.
-
-   .. deprecated-removed:: 3.12 3.15
-
-.. c:var:: int Py_HashRandomizationFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.hash_seed` and :c:member:`PyConfig.use_hash_seed` should
-   be used instead, see :ref:`Python Initialization Configuration
-   <init-config>`.
-
-   Set to ``1`` if the :envvar:`PYTHONHASHSEED` environment variable is set to
-   a non-empty string.
-
-   If the flag is non-zero, read the :envvar:`PYTHONHASHSEED` environment
-   variable to initialize the secret hash seed.
-
-   .. deprecated-removed:: 3.12 3.15
-
-.. c:var:: int Py_IgnoreEnvironmentFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.use_environment` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Ignore all :envvar:`!PYTHON*` environment variables, e.g.
-   :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that might be set.
-
-   Set by the :option:`-E` and :option:`-I` options.
-
-   .. deprecated-removed:: 3.12 3.15
-
-.. c:var:: int Py_InspectFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.inspect` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   When a script is passed as first argument or the :option:`-c` option is used,
-   enter interactive mode after executing the script or the command, even when
-   :data:`sys.stdin` does not appear to be a terminal.
-
-   Set by the :option:`-i` option and the :envvar:`PYTHONINSPECT` environment
-   variable.
-
-   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_InteractiveFlag
 
@@ -196,141 +102,6 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    :ref:`Python Initialization Configuration <init-config>`.
 
    Set by the :option:`-i` option.
-
-   .. deprecated-removed:: 3.12 3.15
-
-.. c:var:: int Py_IsolatedFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.isolated` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Run Python in isolated mode. In isolated mode :data:`sys.path` contains
-   neither the script's directory nor the user's site-packages directory.
-
-   Set by the :option:`-I` option.
-
-   .. versionadded:: 3.4
-
-   .. deprecated-removed:: 3.12 3.15
-
-.. c:var:: int Py_LegacyWindowsFSEncodingFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyPreConfig.legacy_windows_fs_encoding` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   If the flag is non-zero, use the ``mbcs`` encoding with ``replace`` error
-   handler, instead of the UTF-8 encoding with ``surrogatepass`` error handler,
-   for the :term:`filesystem encoding and error handler`.
-
-   Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment
-   variable is set to a non-empty string.
-
-   See :pep:`529` for more details.
-
-   .. availability:: Windows.
-
-   .. deprecated-removed:: 3.12 3.15
-
-.. c:var:: int Py_LegacyWindowsStdioFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.legacy_windows_stdio` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   If the flag is non-zero, use :class:`io.FileIO` instead of
-   :class:`!io._WindowsConsoleIO` for :mod:`sys` standard streams.
-
-   Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSSTDIO` environment
-   variable is set to a non-empty string.
-
-   See :pep:`528` for more details.
-
-   .. availability:: Windows.
-
-   .. deprecated-removed:: 3.12 3.15
-
-.. c:var:: int Py_NoSiteFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.site_import` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Disable the import of the module :mod:`site` and the site-dependent
-   manipulations of :data:`sys.path` that it entails.  Also disable these
-   manipulations if :mod:`site` is explicitly imported later (call
-   :func:`site.main` if you want them to be triggered).
-
-   Set by the :option:`-S` option.
-
-   .. deprecated-removed:: 3.12 3.15
-
-.. c:var:: int Py_NoUserSiteDirectory
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.user_site_directory` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Don't add the :data:`user site-packages directory <site.USER_SITE>` to
-   :data:`sys.path`.
-
-   Set by the :option:`-s` and :option:`-I` options, and the
-   :envvar:`PYTHONNOUSERSITE` environment variable.
-
-   .. deprecated-removed:: 3.12 3.15
-
-.. c:var:: int Py_OptimizeFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.optimization_level` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Set by the :option:`-O` option and the :envvar:`PYTHONOPTIMIZE` environment
-   variable.
-
-   .. deprecated-removed:: 3.12 3.15
-
-.. c:var:: int Py_QuietFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.quiet` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Don't display the copyright and version messages even in interactive mode.
-
-   Set by the :option:`-q` option.
-
-   .. versionadded:: 3.2
-
-   .. deprecated-removed:: 3.12 3.15
-
-.. c:var:: int Py_UnbufferedStdioFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.buffered_stdio` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Force the stdout and stderr streams to be unbuffered.
-
-   Set by the :option:`-u` option and the :envvar:`PYTHONUNBUFFERED`
-   environment variable.
-
-   .. deprecated-removed:: 3.12 3.15
-
-.. c:var:: int Py_VerboseFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.verbose` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Print a message each time a module is initialized, showing the place
-   (filename or built-in module) from which it is loaded.  If greater or equal
-   to ``2``, print a message for each file that is checked for when
-   searching for a module. Also provides information on module cleanup at exit.
-
-   Set by the :option:`-v` option and the :envvar:`PYTHONVERBOSE` environment
-   variable.
 
    .. deprecated-removed:: 3.12 3.15
 
@@ -499,10 +270,11 @@ Initializing and finalizing the interpreter
 
    Note that if an otherwise unhandled :exc:`SystemExit` is raised, this
    function will not return ``1``, but exit the process, as long as
-   ``Py_InspectFlag`` is not set. If ``Py_InspectFlag`` is set, execution will
-   drop into the interactive Python prompt, at which point a second otherwise
-   unhandled :exc:`SystemExit` will still exit the process, while any other
-   means of exiting will set the return value as described above.
+   :c:member:`PyConfig.inspect` is not set. If :c:member:`!PyConfig.inspect`
+   is set, execution will drop into the interactive Python prompt, at which
+   point a second otherwise unhandled :exc:`SystemExit` will still exit the
+   process, while any other means of exiting will set the return value as
+   described above.
 
    In terms of the CPython runtime configuration APIs documented in the
    :ref:`runtime configuration <init-config>` section (and without accounting
