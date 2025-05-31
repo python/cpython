@@ -2246,7 +2246,7 @@ New Features
   (Contributed by Serhiy Storchaka in :gh:`110289`.)
 
 * Add the :c:func:`PyWeakref_GetRef` function
-  as an alternative to  :c:func:`PyWeakref_GetObject`
+  as an alternative to  :c:func:`!PyWeakref_GetObject`
   that returns a :term:`strong reference`
   or ``NULL`` if the referent is no longer live.
   (Contributed by Victor Stinner in :gh:`105927`.)
@@ -2531,8 +2531,8 @@ Deprecated C APIs
   are just aliases to :c:type:`!wchar_t`.
   (Contributed by Victor Stinner in :gh:`105156`.)
 
-* Deprecate the :c:func:`PyWeakref_GetObject` and
-  :c:func:`PyWeakref_GET_OBJECT` functions,
+* Deprecate the :c:func:`!PyWeakref_GetObject` and
+  :c:func:`!PyWeakref_GET_OBJECT` functions,
   which return a :term:`borrowed reference`.
   Replace them with the new :c:func:`PyWeakref_GetRef` function,
   which returns a :term:`strong reference`.

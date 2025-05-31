@@ -171,9 +171,9 @@ that return :term:`strong references <strong reference>`.
 +-----------------------------------+-----------------------------------+
 | :c:func:`PyDict_Next`             | none (see :ref:`PyDict_Next`)     |
 +-----------------------------------+-----------------------------------+
-| :c:func:`PyWeakref_GetObject`     | :c:func:`PyWeakref_GetRef`        |
+| :c:func:`!PyWeakref_GetObject`    | :c:func:`PyWeakref_GetRef`        |
 +-----------------------------------+-----------------------------------+
-| :c:func:`PyWeakref_GET_OBJECT`    | :c:func:`PyWeakref_GetRef`        |
+| :c:func:`!PyWeakref_GET_OBJECT`   | :c:func:`PyWeakref_GetRef`        |
 +-----------------------------------+-----------------------------------+
 | :c:func:`PyImport_AddModule`      | :c:func:`PyImport_AddModuleRef`   |
 +-----------------------------------+-----------------------------------+
