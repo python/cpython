@@ -2715,6 +2715,31 @@ class MiscTest(unittest.TestCase):
             str(excinfo.exception),
         )
 
+    @unittest.skipUnless(os_helper.can_symlink(), 'requires symlink support')
+    @unittest.skipUnless(hasattr(os, 'chmod'), "missing os.chmod")
+    @unittest.mock.patch('os.chmod')
+    def test_deferred_directory_attributes_update(self, mock_chmod):
+        # Regression test for gh-127987: setting attributes on arbitrary files
+        tempdir = os.path.join(TEMPDIR, 'test127987')
+        def mock_chmod_side_effect(path, mode, **kwargs):
+            target_path = os.path.realpath(path)
+            if os.path.commonpath([target_path, tempdir]) != tempdir:
+                raise Exception("should not try to chmod anything outside the destination", target_path)
+        mock_chmod.side_effect = mock_chmod_side_effect
+
+        outside_tree_dir = os.path.join(TEMPDIR, 'outside_tree_dir')
+        with ArchiveMaker() as arc:
+            arc.add('x', symlink_to='.')
+            arc.add('x', type=tarfile.DIRTYPE, mode='?rwsrwsrwt')
+            arc.add('x', symlink_to=outside_tree_dir)
+
+        os.makedirs(outside_tree_dir)
+        try:
+            arc.open().extractall(path=tempdir, filter='tar')
+        finally:
+            os_helper.rmtree(outside_tree_dir)
+            os_helper.rmtree(tempdir)
+
 
 class CommandLineTest(unittest.TestCase):
 
