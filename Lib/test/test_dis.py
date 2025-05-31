@@ -606,7 +606,7 @@ dis_asyncwith = """\
                 POP_TOP
         L1:     RESUME                   0
 
-%4d            LOAD_FAST_BORROW         0 (c)
+%4d            LOAD_FAST                0 (c)
                 COPY                     1
                 LOAD_SPECIAL             3 (__aexit__)
                 SWAP                     2
