@@ -134,8 +134,7 @@ Literals
 Python supports string and bytes literals and various numeric literals:
 
 .. productionlist:: python-grammar
-   literal: `stringliteral` | `bytesliteral`
-          : | `integer` | `floatnumber` | `imagnumber`
+   literal: `stringliteral` | `bytesliteral` | `NUMBER`
 
 Evaluation of a literal yields an object of the given type (string, bytes,
 integer, floating-point number, complex number) with the given value.  The value
