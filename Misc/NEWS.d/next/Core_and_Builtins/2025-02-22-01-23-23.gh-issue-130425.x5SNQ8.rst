@@ -1,0 +1,2 @@
+Add ``"Did you mean: 'attr'?"`` suggestion when using ``del obj.attr`` if ``attr``
+does not exist.
