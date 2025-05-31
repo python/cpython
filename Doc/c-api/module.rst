@@ -288,22 +288,40 @@ An alternate way to specify extensions is to request "multi-phase initialization
 Extension modules created this way behave more like Python modules: the
 initialization is split between the *creation phase*, when the module object
 is created, and the *execution phase*, when it is populated.
-The distinction is similar to the :py:meth:`!__new__` and :py:meth:`!__init__` methods
-of classes.
+The distinction is similar to the :py:meth:`~object.__new__` and
+:py:meth:`~object.__init__` methods of classes.
 
 Unlike modules created using single-phase initialization, these modules are not
-singletons: if the *sys.modules* entry is removed and the module is re-imported,
-a new module object is created, and the old module is subject to normal garbage
-collection -- as with Python modules.
-By default, multiple modules created from the same definition should be
-independent: changes to one should not affect the others.
-This means that all state should be specific to the module object (using e.g.
-using :c:func:`PyModule_GetState`), or its contents (such as the module's
-:attr:`~object.__dict__` or individual classes created with :c:func:`PyType_FromSpec`).
+singletons.
+For example, if the :py:attr:`sys.modules` entry is removed and the module
+is re-imported, a new module object is created, and typically populated with
+fresh method and type objects.
+The old module is subject to normal garbage collection.
+This mirrors the behavior of pure-Python modules.
+
+Additional module instances may be created in
+:ref:`sub-interpreters <sub-interpreter-support>`
+or after after Python runtime reinitialization
+(:c:func:`Py_Finalize` and :c:func:`Py_Initialize`).
+In these cases, sharing Python objects between module instances would likely
+cause crashes or undefined behavior.
+
+To avoid such issues, each instance of an extension module should
+be *isolated*: changes to one instance should not implicitly affect the others,
+and all state, including references to Python objects, should be specific to
+a particular module instance.
+See :ref:`isolating-extensions-howto` for more details and a practical guide.
+
+A simpler way to avoid these issues is
+:ref:`raising an error on repeated initialization <isolating-extensions-optout>`.
 
 All modules created using multi-phase initialization are expected to support
-:ref:`sub-interpreters <sub-interpreter-support>`. Making sure multiple modules
-are independent is typically enough to achieve this.
+:ref:`sub-interpreters <sub-interpreter-support>`, or otherwise explicitly
+signal a lack of support.
+This is usually achieved by isolation or blocking repeated initialization,
+as above.
+A module may also be limited to the main interpreter using
+the :c:data:`Py_mod_multiple_interpreters` slot.
 
 To request multi-phase initialization, the initialization function
 (PyInit_modulename) returns a :c:type:`PyModuleDef` instance with non-empty
