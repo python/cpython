@@ -338,11 +338,11 @@ The following flags can also be used in the *mode* argument of :func:`os.chmod`:
 
 .. data:: S_IREAD
 
-   Unix V7 synonym for :data:`S_IRUSR`.
+   Unix V7 synonym for :data:`S_IRUSR`, also used on Windows.
 
 .. data:: S_IWRITE
 
-   Unix V7 synonym for :data:`S_IWUSR`.
+   Unix V7 synonym for :data:`S_IWUSR`, also used on Windows.
 
 .. data:: S_IEXEC
 
