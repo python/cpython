@@ -1,0 +1,1 @@
+Avoid exiting the new REPL when there are non-string candidates for suggestions when errors occur.
