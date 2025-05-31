@@ -2546,6 +2546,101 @@ toggle_reftrace_printer(PyObject *ob, PyObject *arg)
     Py_RETURN_NONE;
 }
 
+static PyInterpreterRef
+get_strong_ref(void)
+{
+    PyInterpreterRef ref;
+    if (PyInterpreterRef_Get(&ref) < 0) {
+        Py_FatalError("strong reference should not have failed");
+    }
+    return ref;
+}
+
+static PyObject *
+test_interp_refcount(PyObject *self, PyObject *unused)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterRef ref1;
+    PyInterpreterRef ref2;
+
+    // Reference counts are technically 0 by default
+    assert(_PyInterpreterState_Refcount(interp) == 0);
+    ref1 = get_strong_ref();
+    assert(_PyInterpreterState_Refcount(interp) == 1);
+    ref2 = get_strong_ref();
+    assert(_PyInterpreterState_Refcount(interp) == 2);
+    PyInterpreterRef_Close(ref1);
+    assert(_PyInterpreterState_Refcount(interp) == 1);
+    PyInterpreterRef_Close(ref2);
+    assert(_PyInterpreterState_Refcount(interp) == 0);
+
+    ref1 = get_strong_ref();
+    ref2 = PyInterpreterRef_Dup(ref1);
+    assert(_PyInterpreterState_Refcount(interp) == 2);
+    assert(PyInterpreterRef_AsInterpreter(ref1) == interp);
+    assert(PyInterpreterRef_AsInterpreter(ref2) == interp);
+    PyInterpreterRef_Close(ref1);
+    PyInterpreterRef_Close(ref2);
+    assert(_PyInterpreterState_Refcount(interp) == 0);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_interp_weak_ref(PyObject *self, PyObject *unused)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterWeakRef wref;
+    if (PyInterpreterWeakRef_Get(&wref) < 0) {
+        return NULL;
+    }
+    assert(_PyInterpreterState_Refcount(interp) == 0);
+
+    PyInterpreterRef ref;
+    int res = PyInterpreterWeakRef_AsStrong(wref, &ref);
+    assert(res == 0);
+    assert(PyInterpreterRef_AsInterpreter(ref) == interp);
+    assert(_PyInterpreterState_Refcount(interp) == 1);
+    PyInterpreterWeakRef_Close(wref);
+    PyInterpreterRef_Close(ref);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_interp_ensure(PyObject *self, PyObject *unused)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterRef ref = get_strong_ref();
+    PyThreadState *save_tstate = PyThreadState_Swap(NULL);
+    PyThreadState *tstate = Py_NewInterpreter();
+    PyInterpreterRef sub_ref = get_strong_ref();
+    PyInterpreterState *subinterp = PyThreadState_GetInterpreter(tstate);
+
+    for (int i = 0; i < 10; ++i) {
+        int res = PyThreadState_Ensure(ref);
+        assert(res == 0);
+        assert(PyThreadState_GetUnchecked() != NULL);
+        assert(PyInterpreterState_Get() == interp);
+    }
+
+    for (int i = 0; i < 10; ++i) {
+        int res = PyThreadState_Ensure(sub_ref);
+        assert(res == 0);
+        assert(PyInterpreterState_Get() == subinterp);
+    }
+
+    for (int i = 0; i < 20; ++i) {
+        PyThreadState_Release();
+    }
+
+    PyInterpreterRef_Close(ref);
+    PyInterpreterRef_Close(sub_ref);
+
+    PyThreadState_Swap(save_tstate);
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -2640,6 +2735,9 @@ static PyMethodDef TestMethods[] = {
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
     {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
+    {"test_interp_refcount", test_interp_refcount, METH_NOARGS},
+    {"test_interp_weak_ref", test_interp_weak_ref, METH_NOARGS},
+    {"test_interp_ensure", test_interp_ensure, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
