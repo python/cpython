@@ -200,16 +200,16 @@ _get_CDict(ZstdDict *self, int compressionLevel)
             goto error;
         }
 
-        /* Add PyCapsule object to self->c_dicts if it is not already present. */
-        PyObject *result;
-        ret = PyDict_SetDefaultRef(self->c_dicts, level, capsule, &result);
+        /* Add PyCapsule object to self->c_dicts */
+        ret = PyDict_SetItem(self->c_dicts, level, capsule);
         if (ret < 0) {
             goto error;
         }
-        Py_DECREF(capsule);
-        capsule = result;
     }
-    cdict = PyCapsule_GetPointer(capsule, NULL);
+    else {
+        /* ZSTD_CDict instance already exists */
+        cdict = PyCapsule_GetPointer(capsule, NULL);
+    }
     goto success;
 
 error:

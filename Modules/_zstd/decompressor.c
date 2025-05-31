@@ -66,18 +66,14 @@ _get_DDict(ZstdDict *self)
         Py_BEGIN_ALLOW_THREADS
         ret = ZSTD_createDDict(self->dict_buffer, self->dict_len);
         Py_END_ALLOW_THREADS
-        if (self->d_dict != NULL) {
-            ZSTD_freeDDict(ret);
-        }
-        else {
-            self->d_dict = ret;
-            if (self->d_dict == NULL) {
-                _zstd_state* mod_state = PyType_GetModuleState(Py_TYPE(self));
-                if (mod_state != NULL) {
-                    PyErr_SetString(mod_state->ZstdError,
-                                    "Failed to create a ZSTD_DDict instance from "
-                                    "Zstandard dictionary content.");
-                }
+        self->d_dict = ret;
+
+        if (self->d_dict == NULL) {
+            _zstd_state* mod_state = PyType_GetModuleState(Py_TYPE(self));
+            if (mod_state != NULL) {
+                PyErr_SetString(mod_state->ZstdError,
+                                "Failed to create a ZSTD_DDict instance from "
+                                "Zstandard dictionary content.");
             }
         }
     }
