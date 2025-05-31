@@ -198,8 +198,8 @@ _zstd_load_d_dict(ZstdDecompressor *self, PyObject *dict)
     if (PyTuple_CheckExact(dict) && PyTuple_GET_SIZE(dict) == 2) {
         /* Check ZstdDict */
         if (PyObject_TypeCheck(PyTuple_GET_ITEM(dict, 0),
-                               mod_state->ZstdDict_type) &&
-            PyLong_Check(PyTuple_GET_ITEM(dict, 1)))
+                               mod_state->ZstdDict_type)
+            && PyLong_Check(PyTuple_GET_ITEM(dict, 1)))
         {
             type = PyLong_AsInt(PyTuple_GET_ITEM(dict, 1));
             if (type == -1 && PyErr_Occurred()) {
