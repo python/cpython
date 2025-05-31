@@ -224,9 +224,11 @@ list_sort(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(key), &_Py_ID(reverse), },
     };
     #undef NUM_KEYWORDS
@@ -466,4 +468,4 @@ list___reversed__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl((PyListObject *)self);
 }
-/*[clinic end generated code: output=bc45e43a621ac833 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ae13fc2b56dc27c2 input=a9049054013a1b77]*/

@@ -6,7 +6,53 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
+
+static PyObject *
+lock_new_impl(PyTypeObject *type);
+
+static PyObject *
+lock_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = clinic_state()->lock_type;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoPositional("lock", args)) {
+        goto exit;
+    }
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("lock", kwargs)) {
+        goto exit;
+    }
+    return_value = lock_new_impl(type);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+rlock_new_impl(PyTypeObject *type);
+
+static PyObject *
+rlock_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = clinic_state()->rlock_type;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoPositional("RLock", args)) {
+        goto exit;
+    }
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("RLock", kwargs)) {
+        goto exit;
+    }
+    return_value = rlock_new_impl(type);
+
+exit:
+    return return_value;
+}
 
 #if (defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP) || defined(MS_WINDOWS))
 
@@ -54,9 +100,11 @@ _thread_set_name(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(name), },
     };
     #undef NUM_KEYWORDS
@@ -101,4 +149,4 @@ exit:
 #ifndef _THREAD_SET_NAME_METHODDEF
     #define _THREAD_SET_NAME_METHODDEF
 #endif /* !defined(_THREAD_SET_NAME_METHODDEF) */
-/*[clinic end generated code: output=c7922811558d314f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b381ec5e313198e7 input=a9049054013a1b77]*/

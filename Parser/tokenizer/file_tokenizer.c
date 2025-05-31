@@ -275,7 +275,7 @@ tok_underflow_interactive(struct tok_state *tok) {
         return 0;
     }
 
-    if (tok->tok_mode_stack_index && !_PyLexer_update_fstring_expr(tok, 0)) {
+    if (tok->tok_mode_stack_index && !_PyLexer_update_ftstring_expr(tok, 0)) {
         return 0;
     }
     return 1;
@@ -322,7 +322,7 @@ tok_underflow_file(struct tok_state *tok) {
         tok->implicit_newline = 1;
     }
 
-    if (tok->tok_mode_stack_index && !_PyLexer_update_fstring_expr(tok, 0)) {
+    if (tok->tok_mode_stack_index && !_PyLexer_update_ftstring_expr(tok, 0)) {
         return 0;
     }
 

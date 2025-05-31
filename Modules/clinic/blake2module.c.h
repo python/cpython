@@ -35,9 +35,11 @@ py_blake2b_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(digest_size), &_Py_ID(key), &_Py_ID(salt), &_Py_ID(person), &_Py_ID(fanout), &_Py_ID(depth), &_Py_ID(leaf_size), &_Py_ID(node_offset), &_Py_ID(node_depth), &_Py_ID(inner_size), &_Py_ID(last_node), &_Py_ID(usedforsecurity), },
     };
     #undef NUM_KEYWORDS
@@ -230,9 +232,11 @@ py_blake2s_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(digest_size), &_Py_ID(key), &_Py_ID(salt), &_Py_ID(person), &_Py_ID(fanout), &_Py_ID(depth), &_Py_ID(leaf_size), &_Py_ID(node_offset), &_Py_ID(node_depth), &_Py_ID(inner_size), &_Py_ID(last_node), &_Py_ID(usedforsecurity), },
     };
     #undef NUM_KEYWORDS
@@ -474,4 +478,4 @@ _blake2_blake2b_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _blake2_blake2b_hexdigest_impl((Blake2Object *)self);
 }
-/*[clinic end generated code: output=b286a0d1be8729b0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d30e8293bd8e2950 input=a9049054013a1b77]*/

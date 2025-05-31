@@ -414,9 +414,11 @@ anextawaitable_proxy(anextawaitableobject *obj, char *meth, PyObject *arg)
     if (awaitable == NULL) {
         return NULL;
     }
-    // 'arg' may be a tuple (if coming from a METH_VARARGS method)
-    // or a single object (if coming from a METH_O method).
-    PyObject *ret = PyObject_CallMethod(awaitable, meth, "O", arg);
+    // When specified, 'arg' may be a tuple (if coming from a METH_VARARGS
+    // method) or a single object (if coming from a METH_O method).
+    PyObject *ret = arg == NULL
+        ? PyObject_CallMethod(awaitable, meth, NULL)
+        : PyObject_CallMethod(awaitable, meth, "O", arg);
     Py_DECREF(awaitable);
     if (ret != NULL) {
         return ret;
@@ -451,10 +453,10 @@ anextawaitable_throw(PyObject *op, PyObject *args)
 
 
 static PyObject *
-anextawaitable_close(PyObject *op, PyObject *args)
+anextawaitable_close(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     anextawaitableobject *obj = anextawaitableobject_CAST(op);
-    return anextawaitable_proxy(obj, "close", args);
+    return anextawaitable_proxy(obj, "close", NULL);
 }
 
 
@@ -480,7 +482,7 @@ PyDoc_STRVAR(close_doc,
 static PyMethodDef anextawaitable_methods[] = {
     {"send", anextawaitable_send, METH_O, send_doc},
     {"throw", anextawaitable_throw, METH_VARARGS, throw_doc},
-    {"close", anextawaitable_close, METH_VARARGS, close_doc},
+    {"close", anextawaitable_close, METH_NOARGS, close_doc},
     {NULL, NULL}        /* Sentinel */
 };
 
