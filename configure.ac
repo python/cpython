@@ -2129,6 +2129,29 @@ if test "$Py_BOLT" = 'true' ; then
   else
     AC_MSG_ERROR([merge-fdata is required for a --enable-bolt build but could not be found.])
   fi
+
+  py_bolt_icf_flag="-icf=safe"
+  AC_CACHE_CHECK(
+    [whether ${LLVM_BOLT} supports safe identical code folding],
+    [py_cv_bolt_icf_safe],
+    [
+      saved_cflags="$CFLAGS"
+      saved_ldflags="$LDFLAGS"
+      CFLAGS="$CFLAGS_NODIST"
+      LDFLAGS="$LDFLAGS_NODIST"
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([[]], [[]])],
+        [py_cv_bolt_icf_safe=no
+         ${LLVM_BOLT} -icf=safe -o conftest.bolt conftest$EXEEXT >&AS_MESSAGE_LOG_FD 2>&1 dnl
+         && py_cv_bolt_icf_safe=yes],
+        [AC_MSG_FAILURE([could not compile empty test program])])
+      CFLAGS="$saved_cflags"
+      LDFLAGS="$saved_ldflags"
+    ]
+  )
+  if test "$py_cv_bolt_icf_safe" = no; then
+    py_bolt_icf_flag=""
+  fi
 fi
 
 dnl Enable BOLT of libpython if built.
@@ -2184,7 +2207,7 @@ then
      -reorder-blocks=ext-tsp
      -reorder-functions=cdsort
      -split-functions
-     -icf=1
+     ${py_bolt_icf_flag}
      -inline-all
      -split-eh
      -reorder-functions-use-hot-size
