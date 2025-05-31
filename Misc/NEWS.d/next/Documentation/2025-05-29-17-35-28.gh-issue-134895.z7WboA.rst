@@ -1,0 +1,2 @@
+Add sphinx-codeautolink extension for reference links in code examples.
+Patch by Colin Marquardt.
