@@ -435,6 +435,7 @@ PYTHON_OBJS=	\
 		Python/codegen.o \
 		Python/compile.o \
 		Python/context.o \
+		Python/cpuinfo.o \
 		Python/critical_section.o \
 		Python/crossinterp.o \
 		Python/dynamic_annotations.o \
@@ -1294,6 +1295,9 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_complexobject.h \
 		$(srcdir)/Include/internal/pycore_condvar.h \
 		$(srcdir)/Include/internal/pycore_context.h \
+		$(srcdir)/Include/internal/pycore_cpuinfo.h \
+		$(srcdir)/Include/internal/pycore_cpuinfo_cpuid_features.h \
+		$(srcdir)/Include/internal/pycore_cpuinfo_xsave_features.h \
 		$(srcdir)/Include/internal/pycore_critical_section.h \
 		$(srcdir)/Include/internal/pycore_crossinterp.h \
 		$(srcdir)/Include/internal/pycore_crossinterp_data_registry.h \
