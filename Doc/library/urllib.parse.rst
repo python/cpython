@@ -638,8 +638,9 @@ task isn't already covered by the URL parsing functions above.
 
    The optional *encoding* and *errors* parameters specify how to deal with
    non-ASCII characters, as accepted by the :meth:`str.encode` method.
-   *encoding* defaults to ``'utf-8'``.
-   *errors* defaults to ``'strict'``, meaning unsupported characters raise a
+   Although these parameters default to ``None`` in the function signature,
+   when processing :class:`str` inputs, *encoding* effectively defaults to ``'utf-8'``
+   and *errors* to ``'strict'``, meaning unsupported characters raise a
    :class:`UnicodeEncodeError`.
    *encoding* and *errors* must not be supplied if *string* is a
    :class:`bytes`, or a :class:`TypeError` is raised.
