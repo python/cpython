@@ -11,7 +11,6 @@ from test.support.import_helper import ensure_lazy_imports
 
 
 # TODO:
-#  - Add new tests, for example for "dgettext"
 #  - Tests should have only one assert.
 
 GNU_MO_DATA = b'''\
@@ -935,6 +934,50 @@ class MiscTestCase(unittest.TestCase):
     @cpython_only
     def test_lazy_import(self):
         ensure_lazy_imports("gettext", {"re", "warnings", "locale"})
+
+
+class DGettextTest(GettextBaseTest):
+
+    def setUp(self):
+        GettextBaseTest.setUp(self)
+        gettext.bindtextdomain('gettext', os.curdir)
+
+    def test_dgettext_found_translation(self):
+        result = gettext.dgettext('gettext', 'mullusk')
+        self.assertEqual(result, 'bacon')
+
+    def test_dgettext_fallback_cases(self):
+        test_cases = [
+            ('gettext', 'missing message'),
+            ('nonexistent_domain', 'mullusk'),
+            ('', 'mullusk'),
+        ]
+        for domain, message in test_cases:
+            with self.subTest(domain=domain, message=message):
+                result = gettext.dgettext(domain, message)
+                if domain == '':
+                    expected = gettext.gettext(message)
+                else:
+                    expected = message
+                self.assertEqual(result, expected)
+
+    def test_dgettext_luxury_yacht_translation(self):
+        result = gettext.dgettext('gettext', 'Raymond Luxury Yach-t')
+        self.assertEqual(result, 'Throatwobbler Mangrove')
+
+    def test_dgettext_nudge_nudge_translation(self):
+        result = gettext.dgettext('gettext', 'nudge nudge')
+        self.assertEqual(result, 'wink wink')
+
+    def test_dgettext_multiline_translation(self):
+        message = '''This module provides internationalization and localization
+support for your Python programs by providing an interface to the GNU
+gettext message catalog library.'''
+        expected = '''Guvf zbqhyr cebivqrf vagreangvbanyvmngvba naq ybpnyvmngvba
+fhccbeg sbe lbhe Clguba cebtenzf ol cebivqvat na vagresnpr gb gur TAH
+trggrkg zrffntr pngnybt yvoenel.'''
+        result = gettext.dgettext('gettext', message)
+        self.assertEqual(result, expected)
 
 
 if __name__ == '__main__':
