@@ -661,7 +661,11 @@
     <ClCompile Include="..\Python\structmember.c" />
     <ClCompile Include="..\Python\symtable.c" />
     <ClCompile Include="..\Python\sysmodule.c">
-      <PreprocessorDefinitions>VPATH="$(PyVPath)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>
+        ARCH_NAME="$(ArchName)";
+        VPATH="$(PyVPath)";
+        %(PreprocessorDefinitions)
+      </PreprocessorDefinitions>
     </ClCompile>
     <ClCompile Include="..\Python\thread.c" />
     <ClCompile Include="..\Python\traceback.c" />
