@@ -3135,5 +3135,37 @@ class TestSetLocalTrace(TraceTestCase):
         sys.settrace(None)
 
 
+class TestTraceAtRecursionLimit(unittest.TestCase):
+    def setUp(self):
+        self.addCleanup(sys.settrace, sys.gettrace())
+
+    def test_does_not_crash(self):
+        # Moved from Lib/test/crashers as it does not crash anymore.
+        # This test ensures that the code does not start crashing again.
+        # Original comment:
+
+        # From http://bugs.python.org/issue6717
+
+        # A misbehaving trace hook can trigger a segfault by exceeding the recursion
+        # limit.
+        def x():
+            pass
+
+        def g(*args):
+            if True:
+                try:
+                    x()
+                except:
+                    pass
+            return g
+
+        def f():
+            f()
+
+        sys.settrace(g)
+        with self.assertRaises(RecursionError):
+            f()
+
+
 if __name__ == "__main__":
     unittest.main()
