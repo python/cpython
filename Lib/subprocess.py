@@ -2103,7 +2103,10 @@ class Popen:
             self._save_input(input)
 
             if self._input:
-                input_view = memoryview(self._input)
+                if not isinstance(self._input, memoryview):
+                    input_view = memoryview(self._input)
+                else:
+                    input_view = self._input.cast("b")  # byte input required
 
             with _PopenSelector() as selector:
                 if self.stdin and input:
@@ -2139,7 +2142,7 @@ class Popen:
                                 selector.unregister(key.fileobj)
                                 key.fileobj.close()
                             else:
-                                if self._input_offset >= len(self._input):
+                                if self._input_offset >= len(input_view):
                                     selector.unregister(key.fileobj)
                                     key.fileobj.close()
                         elif key.fileobj in (self.stdout, self.stderr):
