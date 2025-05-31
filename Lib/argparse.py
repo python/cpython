@@ -1534,7 +1534,7 @@ class _ActionsContainer(object):
         action_name = kwargs.get('action')
         action_class = self._pop_action_class(kwargs)
         if not callable(action_class):
-            raise ValueError('unknown action {action_class!r}')
+            raise ValueError(f'unknown action {action_class!r}')
         action = action_class(**kwargs)
 
         # raise an error if action for positional argument does not
