@@ -546,7 +546,8 @@ class CalendarTestCase(unittest.TestCase):
             self.assertEqual(value[::-1], list(reversed(value)))
 
     def test_months(self):
-        for attr in "month_name", "month_abbr":
+        for attr in ("month_name", "month_abbr", "standalone_month_name",
+                     "standalone_month_abbr"):
             value = getattr(calendar, attr)
             self.assertEqual(len(value), 13)
             self.assertEqual(len(value[:]), 13)
@@ -555,6 +556,16 @@ class CalendarTestCase(unittest.TestCase):
             self.assertEqual(len(set(value)), 13)
             # verify it "acts like a sequence" in two forms of iteration
             self.assertEqual(value[::-1], list(reversed(value)))
+
+    def test_standalone_month_name_and_abbr(self):
+        # Ensure that the standalone month names and abbreviations are
+        # equal to the regular month names and abbreviations for
+        # the "C" locale.
+        with calendar.different_locale("C"):
+            self.assertListEqual(list(calendar.month_name),
+                                 list(calendar.standalone_month_name))
+            self.assertListEqual(list(calendar.month_abbr),
+                                 list(calendar.standalone_month_abbr))
 
     def test_locale_text_calendar(self):
         try:
