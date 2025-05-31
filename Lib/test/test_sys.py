@@ -1299,6 +1299,7 @@ class SysModuleTest(unittest.TestCase):
         for name in sys.stdlib_module_names:
             self.assertIsInstance(name, str)
 
+    @unittest.skipUnless(hasattr(sys, '_stdlib_dir'), 'need sys._stdlib_dir')
     def test_stdlib_dir(self):
         os = import_helper.import_fresh_module('os')
         marker = getattr(os, '__file__', None)
