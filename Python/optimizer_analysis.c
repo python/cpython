@@ -315,51 +315,51 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     INST->operand0 = OPERAND;
 
 /* Shortened forms for convenience, used in optimizer_bytecodes.c */
-#define sym_is_not_null _Py_uop_sym_is_not_null
-#define sym_is_const _Py_uop_sym_is_const
-#define sym_get_const _Py_uop_sym_get_const
-#define sym_new_unknown _Py_uop_sym_new_unknown
-#define sym_new_not_null _Py_uop_sym_new_not_null
-#define sym_new_type _Py_uop_sym_new_type
-#define sym_is_null _Py_uop_sym_is_null
-#define sym_new_const _Py_uop_sym_new_const
-#define sym_new_null _Py_uop_sym_new_null
-#define sym_has_type _Py_uop_sym_has_type
-#define sym_get_type _Py_uop_sym_get_type
-#define sym_matches_type _Py_uop_sym_matches_type
-#define sym_matches_type_version _Py_uop_sym_matches_type_version
-#define sym_set_null(SYM) _Py_uop_sym_set_null(ctx, SYM)
-#define sym_set_non_null(SYM) _Py_uop_sym_set_non_null(ctx, SYM)
-#define sym_set_type(SYM, TYPE) _Py_uop_sym_set_type(ctx, SYM, TYPE)
-#define sym_set_type_version(SYM, VERSION) _Py_uop_sym_set_type_version(ctx, SYM, VERSION)
-#define sym_set_const(SYM, CNST) _Py_uop_sym_set_const(ctx, SYM, CNST)
-#define sym_is_bottom _Py_uop_sym_is_bottom
-#define sym_truthiness _Py_uop_sym_truthiness
+#define ref_is_not_null _Py_uop_ref_is_not_null
+#define ref_is_const _Py_uop_ref_is_const
+#define ref_get_const _Py_uop_ref_get_const
+#define ref_new_unknown _Py_uop_ref_new_unknown
+#define ref_new_not_null _Py_uop_ref_new_not_null
+#define ref_new_type _Py_uop_ref_new_type
+#define ref_is_null _Py_uop_ref_is_null
+#define ref_new_const _Py_uop_ref_new_const
+#define ref_new_null _Py_uop_ref_new_null
+#define ref_has_type _Py_uop_ref_has_type
+#define ref_get_type _Py_uop_ref_get_type
+#define ref_matches_type _Py_uop_ref_matches_type
+#define ref_matches_type_version _Py_uop_ref_matches_type_version
+#define ref_set_null(SYM) _Py_uop_ref_set_null(ctx, SYM)
+#define ref_set_non_null(SYM) _Py_uop_ref_set_non_null(ctx, SYM)
+#define ref_set_type(SYM, TYPE) _Py_uop_ref_set_type(ctx, SYM, TYPE)
+#define ref_set_type_version(SYM, VERSION) _Py_uop_ref_set_type_version(ctx, SYM, VERSION)
+#define ref_set_const(SYM, CNST) _Py_uop_ref_set_const(ctx, SYM, CNST)
+#define ref_is_bottom _Py_uop_ref_is_bottom
+#define ref_truthiness _Py_uop_ref_truthiness
 #define frame_new _Py_uop_frame_new
 #define frame_pop _Py_uop_frame_pop
-#define sym_new_tuple _Py_uop_sym_new_tuple
-#define sym_tuple_getitem _Py_uop_sym_tuple_getitem
-#define sym_tuple_length _Py_uop_sym_tuple_length
-#define sym_is_immortal _Py_uop_sym_is_immortal
-#define sym_new_truthiness _Py_uop_sym_new_truthiness
+#define ref_new_tuple _Py_uop_ref_new_tuple
+#define ref_tuple_getitem _Py_uop_ref_tuple_getitem
+#define ref_tuple_length _Py_uop_ref_tuple_length
+#define ref_is_immortal _Py_uop_ref_is_immortal
+#define ref_new_truthiness _Py_uop_ref_new_truthiness
 
 static int
 optimize_to_bool(
     _PyUOpInstruction *this_instr,
     JitOptContext *ctx,
-    JitOptSymbol *value,
-    JitOptSymbol **result_ptr)
+    JitOptRef value,
+    JitOptRef *result_ptr)
 {
-    if (sym_matches_type(value, &PyBool_Type)) {
+    if (ref_matches_type(value, &PyBool_Type)) {
         REPLACE_OP(this_instr, _NOP, 0, 0);
         *result_ptr = value;
         return 1;
     }
-    int truthiness = sym_truthiness(ctx, value);
+    int truthiness = ref_truthiness(ctx, value);
     if (truthiness >= 0) {
         PyObject *load = truthiness ? Py_True : Py_False;
         REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
-        *result_ptr = sym_new_const(ctx, load);
+        *result_ptr = ref_new_const(ctx, load);
         return 1;
     }
     return 0;
@@ -375,7 +375,7 @@ eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
     }
 }
 
-static JitOptSymbol *
+static JitOptRef
 lookup_attr(JitOptContext *ctx, _PyUOpInstruction *this_instr,
             PyTypeObject *type, PyObject *name, uint16_t immortal,
             uint16_t mortal)
@@ -386,10 +386,10 @@ lookup_attr(JitOptContext *ctx, _PyUOpInstruction *this_instr,
         if (lookup) {
             int opcode = _Py_IsImmortal(lookup) ? immortal : mortal;
             REPLACE_OP(this_instr, opcode, 0, (uintptr_t)lookup);
-            return sym_new_const(ctx, lookup);
+            return ref_new_const(ctx, lookup);
         }
     }
-    return sym_new_not_null(ctx);
+    return ref_new_not_null(ctx);
 }
 
 /* _PUSH_FRAME/_RETURN_VALUE's operand can be 0, a PyFunctionObject *, or a
@@ -440,6 +440,13 @@ get_code_with_logging(_PyUOpInstruction *op)
     return co;
 }
 
+// TODO (gh-134584) generate most of this table automatically
+const uint16_t op_without_decref_inputs[MAX_UOP_ID + 1] = {
+    [_BINARY_OP_MULTIPLY_FLOAT] = _BINARY_OP_MULTIPLY_FLOAT__NO_DECREF_INPUTS,
+    [_BINARY_OP_ADD_FLOAT] = _BINARY_OP_ADD_FLOAT__NO_DECREF_INPUTS,
+    [_BINARY_OP_SUBTRACT_FLOAT] = _BINARY_OP_SUBTRACT_FLOAT__NO_DECREF_INPUTS,
+};
+
 /* 1 for success, 0 for not ready, cannot error at the moment. */
 static int
 optimize_uops(
@@ -477,7 +484,7 @@ optimize_uops(
 
         int oparg = this_instr->oparg;
         opcode = this_instr->opcode;
-        JitOptSymbol **stack_pointer = ctx->frame->stack_pointer;
+        JitOptRef *stack_pointer = ctx->frame->stack_pointer;
 
 #ifdef Py_DEBUG
         if (get_lltrace() >= 3) {
