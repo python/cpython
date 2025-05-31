@@ -869,7 +869,11 @@ static void elf_init_ehframe(ELFObjectContext* ctx) {
          */
 #ifdef __x86_64__
         /* x86_64 calling convention unwinding rules */
+#  if defined(__CET__) && (__CET__ & 1)
+        DWRF_U8(DWRF_CFA_advance_loc | 8);    // Advance location by 8 bytes when CET protection is enabled
+#  else
         DWRF_U8(DWRF_CFA_advance_loc | 4);    // Advance location by 4 bytes
+#  endif
         DWRF_U8(DWRF_CFA_def_cfa_offset);     // Redefine CFA offset
         DWRF_UV(16);                          // New offset: SP + 16
         DWRF_U8(DWRF_CFA_advance_loc | 6);    // Advance location by 6 bytes
