@@ -38,8 +38,8 @@ def walk_packages(path=None, prefix='', onerror=None):
     """Yields ModuleInfo for all modules recursively
     on path, or, if path is None, all accessible modules.
 
-    'path' should be either None or a list of paths to look for
-    modules in.
+    'path' should be either None or a list of paths (List[str]) to search
+    for modules.
 
     'prefix' is a string to output on the front of every module name
     on output.
@@ -95,8 +95,8 @@ def iter_modules(path=None, prefix=''):
     """Yields ModuleInfo for all submodules on path,
     or, if path is None, all top-level modules on sys.path.
 
-    'path' should be either None or a list of paths to look for
-    modules in.
+    'path' should be either None or a list of paths (List[str]) to search
+    for modules.
 
     'prefix' is a string to output on the front of every module name
     on output.
@@ -104,8 +104,8 @@ def iter_modules(path=None, prefix=''):
     if path is None:
         importers = iter_importers()
     elif isinstance(path, str):
-        raise ValueError("path must be None or list of paths to look for "
-                        "modules in")
+        raise ValueError("path must be None or a list of paths (List[str]) to"
+                        " search for modules")
     else:
         importers = map(get_importer, path)
 
