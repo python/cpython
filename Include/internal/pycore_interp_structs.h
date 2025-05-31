@@ -155,6 +155,8 @@ struct atexit_state {
 
 /****** Garbage collector **********/
 
+#define _PyGC_PREV_SHIFT 2
+
 /* GC information is stored BEFORE the object structure. */
 typedef struct {
     // Tagged pointer to next object in the list.
@@ -163,8 +165,9 @@ typedef struct {
 
     // Tagged pointer to previous object in the list.
     // Lowest two bits are used for flags documented later.
+    // Those bits are made available by the struct's minimum alignment.
     uintptr_t _gc_prev;
-} PyGC_Head;
+} PyGC_Head Py_ALIGNED(1 << _PyGC_PREV_SHIFT);
 
 #define _PyGC_Head_UNUSED PyGC_Head
 
