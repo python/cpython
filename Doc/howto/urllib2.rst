@@ -246,6 +246,27 @@ codes in the 400--599 range.
 
 :attr:`http.server.BaseHTTPRequestHandler.responses` is a useful dictionary of
 response codes that shows all the response codes used by :rfc:`2616`.
+An excerpt from the dictionary is shown below ::
+
+    responses = {
+        ...
+        <HTTPStatus.OK: 200>: ('OK', 'Request fulfilled, document follows'),
+        ...
+        <HTTPStatus.FORBIDDEN: 403>: ('Forbidden',
+                                      'Request forbidden -- authorization will '
+                                      'not help'),
+        <HTTPStatus.NOT_FOUND: 404>: ('Not Found',
+                                      'Nothing matches the given URI'),
+        ...
+        <HTTPStatus.IM_A_TEAPOT: 418>: ("I'm a Teapot",
+                                        'Server refuses to brew coffee because '
+                                        'it is a teapot'),
+        ...
+        <HTTPStatus.SERVICE_UNAVAILABLE: 503>: ('Service Unavailable',
+                                                'The server cannot process the '
+                                                'request due to a high load'),
+        ...
+        }
 
 When an error is raised the server responds by returning an HTTP error code
 *and* an error page. You can use the :exc:`~urllib.error.HTTPError` instance as a response on the
