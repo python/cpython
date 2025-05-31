@@ -1623,7 +1623,7 @@ signal_module_exec(PyObject *m)
     modstate->ignore_handler = state->ignore_handler;  // borrowed ref
 
 #ifdef PYHAVE_ITIMER_ERROR
-    modstate->itimer_error = PyErr_NewException("signal.itimer_error",
+    modstate->itimer_error = PyErr_NewException("signal.ItimerError",
                                                 PyExc_OSError, NULL);
     if (modstate->itimer_error == NULL) {
         return -1;
