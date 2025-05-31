@@ -54,6 +54,10 @@ will print to standard output ::
    the submission of work to the underlying process pool to be separated from
    waiting for the results.
 
+   The :ref:`concurrency-howto` offers explanations about concurrency
+   and different concurrency models, along with examples for each
+   of those models.
+
 
 The :class:`Process` class
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
