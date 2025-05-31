@@ -857,6 +857,11 @@ class KeysView(MappingView, Set):
     def __iter__(self):
         yield from self._mapping
 
+    def __reversed__(self):
+        if not hasattr(self._mapping, '__reversed__'):
+            raise TypeError(f"'{self._mapping.__class__.__name__}' is not reversible")
+        yield from reversed(self._mapping)
+
 
 KeysView.register(dict_keys)
 
@@ -882,6 +887,12 @@ class ItemsView(MappingView, Set):
         for key in self._mapping:
             yield (key, self._mapping[key])
 
+    def __reversed__(self):
+        if not hasattr(self._mapping, '__reversed__'):
+            raise TypeError(f"'{self._mapping.__class__.__name__}' is not reversible")
+        for key in reversed(self._mapping):
+            yield (key, self._mapping[key])
+
 
 ItemsView.register(dict_items)
 
@@ -899,6 +910,12 @@ class ValuesView(MappingView, Collection):
 
     def __iter__(self):
         for key in self._mapping:
+            yield self._mapping[key]
+
+    def __reversed__(self):
+        if not hasattr(self._mapping, '__reversed__'):
+            raise TypeError(f"'{self._mapping.__class__.__name__}' is not reversible")
+        for key in reversed(self._mapping):
             yield self._mapping[key]
 
 
