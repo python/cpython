@@ -194,12 +194,23 @@ class JSONEncoder(object):
                 return encode_basestring_ascii(o)
             else:
                 return encode_basestring(o)
-        # This doesn't pass the iterator directly to ''.join() because the
-        # exceptions aren't as detailed.  The list call should be roughly
-        # equivalent to the PySequence_Fast that ''.join() would do.
-        chunks = self.iterencode(o, _one_shot=True)
-        if not isinstance(chunks, (list, tuple)):
-            chunks = list(chunks)
+
+        # There are tests for bad bool args
+        bool(self.check_circular)
+        try:
+            # This doesn't pass the iterator directly to ''.join() because the
+            # exceptions aren't as detailed.  The list call should be roughly
+            # equivalent to the PySequence_Fast that ''.join() would do.
+            chunks = self.iterencode(o, _one_shot=True)
+            if not isinstance(chunks, (list, tuple)):
+                chunks = list(chunks)
+        except RecursionError as exc:
+            if self.check_circular:
+                err = ValueError("Circular reference detected")
+                if notes := getattr(exc, "__notes__", None):
+                    err.__notes__ = notes
+                raise err
+            raise
         return ''.join(chunks)
 
     def iterencode(self, o, _one_shot=False):
@@ -212,10 +223,7 @@ class JSONEncoder(object):
                 mysocket.write(chunk)
 
         """
-        if self.check_circular:
-            markers = {}
-        else:
-            markers = None
+        markers = None
         if self.ensure_ascii:
             _encoder = encode_basestring_ascii
         else:
@@ -279,11 +287,6 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         if not lst:
             yield '[]'
             return
-        if markers is not None:
-            markerid = id(lst)
-            if markerid in markers:
-                raise ValueError("Circular reference detected")
-            markers[markerid] = lst
         buf = '['
         if _indent is not None:
             _current_indent_level += 1
@@ -331,18 +334,11 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             _current_indent_level -= 1
             yield '\n' + _indent * _current_indent_level
         yield ']'
-        if markers is not None:
-            del markers[markerid]
 
     def _iterencode_dict(dct, _current_indent_level):
         if not dct:
             yield '{}'
             return
-        if markers is not None:
-            markerid = id(dct)
-            if markerid in markers:
-                raise ValueError("Circular reference detected")
-            markers[markerid] = dct
         yield '{'
         if _indent is not None:
             _current_indent_level += 1
@@ -417,8 +413,6 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             _current_indent_level -= 1
             yield '\n' + _indent * _current_indent_level
         yield '}'
-        if markers is not None:
-            del markers[markerid]
 
     def _iterencode(o, _current_indent_level):
         if isinstance(o, str):
@@ -440,11 +434,6 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         elif isinstance(o, dict):
             yield from _iterencode_dict(o, _current_indent_level)
         else:
-            if markers is not None:
-                markerid = id(o)
-                if markerid in markers:
-                    raise ValueError("Circular reference detected")
-                markers[markerid] = o
             newobj = _default(o)
             try:
                 yield from _iterencode(newobj, _current_indent_level)
@@ -453,6 +442,4 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             except BaseException as exc:
                 exc.add_note(f'when serializing {type(o).__name__} object')
                 raise
-            if markers is not None:
-                del markers[markerid]
     return _iterencode
