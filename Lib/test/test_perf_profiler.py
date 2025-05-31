@@ -508,7 +508,7 @@ def _is_perf_version_at_least(major, minor):
     # a commit hash in the version string, like "6.12.9.g242e6068fd5c"
     try:
         output = subprocess.check_output(["perf", "--version"], text=True)
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    except (subprocess.CalledProcessError, FileNotFoundError, PermissionError):
         return False
     version = output.split()[2]
     version = version.split("-")[0]
