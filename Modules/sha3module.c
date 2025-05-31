@@ -105,18 +105,25 @@ sha3_update(Hacl_Hash_SHA3_state_t *state, uint8_t *buf, Py_ssize_t len)
 /*[clinic input]
 @classmethod
 _sha3.sha3_224.__new__ as py_sha3_new
-    data: object(c_default="NULL") = b''
-    /
+
+    data as data_obj: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string: object(c_default="NULL") = None
 
 Return a new SHA3 hash object.
 [clinic start generated code]*/
 
 static PyObject *
-py_sha3_new_impl(PyTypeObject *type, PyObject *data, int usedforsecurity)
-/*[clinic end generated code: output=90409addc5d5e8b0 input=637e5f8f6a93982a]*/
+py_sha3_new_impl(PyTypeObject *type, PyObject *data_obj, int usedforsecurity,
+                 PyObject *string)
+/*[clinic end generated code: output=dcec1eca20395f2a input=c106e0b4e2d67d58]*/
 {
+    PyObject *data;
+    if (_Py_hashlib_data_argument(&data, data_obj, string) < 0) {
+        return NULL;
+    }
+
     Py_buffer buf = {NULL, NULL};
     SHA3State *state = _PyType_GetModuleState(type);
     SHA3object *self = newSHA3object(type);
@@ -503,14 +510,13 @@ _SHAKE_digest(PyObject *op, unsigned long digestlen, int hex)
 _sha3.shake_128.digest
 
     length: unsigned_long
-    /
 
 Return the digest value as a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
 _sha3_shake_128_digest_impl(SHA3object *self, unsigned long length)
-/*[clinic end generated code: output=2313605e2f87bb8f input=418ef6a36d2e6082]*/
+/*[clinic end generated code: output=2313605e2f87bb8f input=93d6d6ff32904f18]*/
 {
     return _SHAKE_digest((PyObject *)self, length, 0);
 }
@@ -520,14 +526,13 @@ _sha3_shake_128_digest_impl(SHA3object *self, unsigned long length)
 _sha3.shake_128.hexdigest
 
     length: unsigned_long
-    /
 
 Return the digest value as a string of hexadecimal digits.
 [clinic start generated code]*/
 
 static PyObject *
 _sha3_shake_128_hexdigest_impl(SHA3object *self, unsigned long length)
-/*[clinic end generated code: output=bf8e2f1e490944a8 input=69fb29b0926ae321]*/
+/*[clinic end generated code: output=bf8e2f1e490944a8 input=562d74e7060b56ab]*/
 {
     return _SHAKE_digest((PyObject *)self, length, 1);
 }
