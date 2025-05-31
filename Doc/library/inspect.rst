@@ -1404,7 +1404,7 @@ is considered deprecated and may be removed in the future.
       def handle_stackframe_without_leak():
           frame = inspect.currentframe()
           try:
-              # do something with the frame
+              ...  # do something with the frame
           finally:
               del frame
 

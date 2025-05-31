@@ -708,7 +708,7 @@ not have to be) the original ``STACK[-2]``.
 
       rhs = STACK.pop()
       lhs = STACK.pop()
-      STACK.append(lhs op rhs)
+      STACK.append(lhs, op, rhs)
 
    .. versionadded:: 3.11
    .. versionchanged:: 3.14
