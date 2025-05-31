@@ -240,6 +240,11 @@ class UnicodeNamesTest(unittest.TestCase):
             x.decode, 'unicode-escape'
         )
 
+    def test_issue80667(self):
+        self.assertEqual(str(b'\\N{cjK UniFIeD idEogRAph-732B}', "unicode-escape"), '猫')
+        self.assertEqual(str(b'\\N{cjK UniFIeD idEogRAph-732b}', "unicode-escape"), '猫')
+        self.assertEqual(str(b'\\N{haNGul SYllABle WAe}', "unicode-escape"), '왜')
+
 
 if __name__ == "__main__":
     unittest.main()
