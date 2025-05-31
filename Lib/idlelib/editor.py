@@ -1203,10 +1203,7 @@ class EditorWindow:
             self.apply_bindings(keydefs)
             for vevent in keydefs:
                 methodname = vevent.replace("-", "_")
-                while methodname[:1] == '<':
-                    methodname = methodname[1:]
-                while methodname[-1:] == '>':
-                    methodname = methodname[:-1]
+                methodname = methodname.lstrip('<').rstrip('>')
                 methodname = methodname + "_event"
                 if hasattr(ins, methodname):
                     self.text.bind(vevent, getattr(ins, methodname))
@@ -1368,14 +1365,23 @@ class EditorWindow:
         have = len(chars.expandtabs(tabwidth))
         assert have > 0
         want = ((have - 1) // self.indentwidth) * self.indentwidth
+
         # Debug prompt is multilined....
         ncharsdeleted = 0
-        while True:
-            chars = chars[:-1]
-            ncharsdeleted = ncharsdeleted + 1
-            have = len(chars.expandtabs(tabwidth))
-            if have <= want or chars[-1] not in " \t":
+        have = len(chars.expandtabs(tabwidth))
+        for i in range(len(chars) - 1, -1, -1):
+            # ``Delete'' chars[i], and subtract count
+            # (since redoing expandtabs is O(n))
+            ncharsdeleted += 1
+            if chars[i] == '\t':
+                have -= tabwidth
+            else:
+                have -= 1
+            if have <= want or chars[i-1] not in " \t":
                 break
+        # Perform the actual removal
+        chars = chars[:len(chars) - ncharsdeleted]
+
         text.undo_block_start()
         text.delete("insert-%dc" % ncharsdeleted, "insert")
         if have < want:
