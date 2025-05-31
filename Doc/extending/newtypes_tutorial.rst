@@ -443,6 +443,18 @@ don't we have to do this?
 * when decrementing a reference count in a :c:member:`~PyTypeObject.tp_dealloc`
   handler on a type which doesn't support cyclic garbage collection [#]_.
 
+There is a much simpler way to reassign to ``self->first`` though, and that is by using :c:func:`Py_XSETREF` and :c:func:`Py_NewRef`::
+
+   if (first) {
+       Py_XSETREF(self->first, Py_NewRef(first));
+   }
+
+:c:func:`Py_XSETREF` automatically handles the assignment to ``self->first`` and the decrementing of its reference count using :c:func:`Py_XDECREF` (in the correct way that was shown earlier). :c:func:`Py_NewRef` automatically handles the incrementing of the reference count for ``first``. We can also apply this to ``self->last`` and ``last``::
+
+   if (last) {
+       Py_XSETREF(self->last, Py_NewRef(last));
+   }
+
 We want to expose our instance variables as attributes. There are a
 number of ways to do that. The simplest way is to define member definitions::
 
