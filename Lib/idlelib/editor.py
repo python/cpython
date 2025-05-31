@@ -453,7 +453,7 @@ class EditorWindow:
     * mainmenu.menudefs - a list of tuples, one for each menubar item.
       Each tuple pairs a lower-case name and list of dropdown items.
       Each item is a name, virtual event pair or None for separator.
-    * mainmenu.default_keydefs - maps events to keys.
+    * mainmenu.get_default_keydefs() - maps events to keys.
     * text.keydefs - same.
     * cls.menu_specs - menubar name, titlecase display form pairs
       with Alt-hotkey indicator.  A subset of menudefs items.
@@ -902,7 +902,8 @@ class EditorWindow:
         Leaves the default Tk Text keybindings.
         """
         # Called from configdialog.deactivate_current_config.
-        self.mainmenu.default_keydefs = keydefs = idleConf.GetCurrentKeySet()
+        keydefs = idleConf.GetCurrentKeySet()
+        self.mainmenu.set_default_keydefs(keydefs)
         for event, keylist in keydefs.items():
             self.text.event_delete(event, *keylist)
         for extensionName in self.get_standard_extension_names():
@@ -917,7 +918,8 @@ class EditorWindow:
         Also update hotkeys to current keyset.
         """
         # Called from configdialog.activate_config_changes.
-        self.mainmenu.default_keydefs = keydefs = idleConf.GetCurrentKeySet()
+        keydefs = idleConf.GetCurrentKeySet()
+        self.mainmenu.set_default_keydefs(keydefs)
         self.apply_bindings()
         for extensionName in self.get_standard_extension_names():
             xkeydefs = idleConf.GetExtensionBindings(extensionName)
@@ -1214,7 +1216,7 @@ class EditorWindow:
     def apply_bindings(self, keydefs=None):
         """Add events with keys to self.text."""
         if keydefs is None:
-            keydefs = self.mainmenu.default_keydefs
+            keydefs = self.mainmenu.get_default_keydefs()
         text = self.text
         text.keydefs = keydefs
         for event, keylist in keydefs.items():
@@ -1230,7 +1232,7 @@ class EditorWindow:
         if menudefs is None:
             menudefs = self.mainmenu.menudefs
         if keydefs is None:
-            keydefs = self.mainmenu.default_keydefs
+            keydefs = self.mainmenu.get_default_keydefs()
         menudict = self.menudict
         text = self.text
         for mname, entrylist in menudefs:
