@@ -1916,6 +1916,46 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             with self.assertRaises(IndexError):
                 self._testlimitedcapi.sequence_setitem(b, 0, Boom())
 
+    def test_mutating_index_inbounds(self):
+        # See gh-91153
+
+        class MutatesOnIndex:
+            new_ba: bytearray
+
+            def __init__(self):
+                self.ba = bytearray(0x180)
+
+            def __index__(self):
+                # Clear the original bytearray, mutating it during index assignment.
+                # If the internal buffers are held over this operation, they become dangling
+                # However, this will fail a bounds check as above (as the clear sets bounds to zero)
+                self.ba.clear()
+                # At this moment, the bytearray potentially has a dangling pointer
+                # Create a new bytearray to catch any writes
+                self.new_ba = bytearray(0x180)
+                # Ensure bounds check passes
+                self.ba.extend([0] * 0x180)
+                return 0
+
+        with self.subTest("skip_bounds_safety"):
+            instance = MutatesOnIndex()
+            instance.ba[instance] = ord("?")
+            self.assertEqual(instance.ba[0], ord("?"), "Assigned bytearray not altered")
+            self.assertEqual(instance.new_ba, bytearray(0x180), "Wrong object altered")
+
+        with self.subTest("skip_bounds_safety_capi"):
+            instance = MutatesOnIndex()
+            instance.ba[instance] = ord("?")
+            self._testlimitedcapi.sequence_setitem(instance.ba, instance, ord("?"))
+            self.assertEqual(instance.ba[0], ord("?"), "Assigned bytearray not altered")
+            self.assertEqual(instance.new_ba, bytearray(0x180), "Wrong object altered")
+
+        with self.subTest("skip_bounds_safety_slice"):
+            instance = MutatesOnIndex()
+            instance.ba[instance:1] = [ord("?")]
+            self.assertEqual(instance.ba[0], ord("?"), "Assigned bytearray not altered")
+            self.assertEqual(instance.new_ba, bytearray(0x180), "Wrong object altered")
+
 
 class AssortedBytesTest(unittest.TestCase):
     #
