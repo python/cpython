@@ -73,8 +73,7 @@ new_BLAKE2bObject(PyTypeObject *type)
 /*[clinic input]
 @classmethod
 _blake2.blake2b.__new__ as py_blake2b_new
-    data: object(c_default="NULL") = b''
-    /
+    data as data_obj: object(c_default="NULL") = b''
     *
     digest_size: int(c_default="BLAKE2B_OUTBYTES") = _blake2.blake2b.MAX_DIGEST_SIZE
     key: Py_buffer(c_default="NULL", py_default="b''") = None
@@ -88,20 +87,26 @@ _blake2.blake2b.__new__ as py_blake2b_new
     inner_size: int = 0
     last_node: bool = False
     usedforsecurity: bool = True
+    string: object(c_default="NULL") = None
 
 Return a new BLAKE2b hash object.
 [clinic start generated code]*/
 
 static PyObject *
-py_blake2b_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
+py_blake2b_new_impl(PyTypeObject *type, PyObject *data_obj, int digest_size,
                     Py_buffer *key, Py_buffer *salt, Py_buffer *person,
                     int fanout, int depth, unsigned long leaf_size,
                     unsigned long long node_offset, int node_depth,
-                    int inner_size, int last_node, int usedforsecurity)
-/*[clinic end generated code: output=32bfd8f043c6896f input=b947312abff46977]*/
+                    int inner_size, int last_node, int usedforsecurity,
+                    PyObject *string)
+/*[clinic end generated code: output=de64bd850606b6a0 input=a876354eae7e3c39]*/
 {
     BLAKE2bObject *self = NULL;
+    PyObject *data;
     Py_buffer buf;
+    if (_Py_hashlib_data_argument(&data, data_obj, string) < 0) {
+        return NULL;
+    }
 
     self = new_BLAKE2bObject(type);
     if (self == NULL) {
