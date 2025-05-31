@@ -223,7 +223,7 @@ class UnixConsole(Console):
         """
         self.encoding = encoding
 
-    def refresh(self, screen, c_xy):
+    def refresh(self, screen, c_xy, clear_to_end = False):
         """
         Refresh the console screen.
 
@@ -271,8 +271,9 @@ class UnixConsole(Console):
             self.posxy = 0, old_offset
             for i in range(old_offset - offset):
                 self.__write_code(self._ri)
-                oldscr.pop(-1)
                 oldscr.insert(0, "")
+                if len(oldscr) > height:
+                    oldscr.pop(-1)
         elif old_offset < offset and self._ind:
             self.__hide_cursor()
             self.__write_code(self._cup, self.height - 1, 0)
@@ -300,6 +301,12 @@ class UnixConsole(Console):
             self.__write_code(self._el)
             y += 1
 
+        if clear_to_end:
+            self.__move(wlen(newscr[-1]), len(newscr) - 1 + self.__offset)
+            self.posxy = wlen(newscr[-1]), len(newscr) - 1 + self.__offset
+            self.__write_code(b"\x1b[J") # clear to end of line
+            self.flushoutput()
+
         self.__show_cursor()
 
         self.screen = screen.copy()
@@ -320,6 +327,10 @@ class UnixConsole(Console):
             self.__move(x, y)
             self.posxy = x, y
             self.flushoutput()
+
+    def reset_cursor(self) -> None:
+        self.posxy = 0, self.__offset
+        self.__write_code(self._cup, 0, 0)
 
     def prepare(self):
         """
@@ -683,13 +694,18 @@ class UnixConsole(Console):
             self.__write(newline[x_pos])
             self.posxy = character_width + 1, y
 
+            if newline[-1] != oldline[-1]:
+                self.__move(self.width, y)
+                self.__write(newline[-1])
+                self.posxy = self.width - 1, y
+
         else:
             self.__hide_cursor()
             self.__move(x_coord, y)
             if wlen(oldline) > wlen(newline):
                 self.__write_code(self._el)
             self.__write(newline[x_pos:])
-            self.posxy = wlen(newline), y
+            self.posxy = min(wlen(newline), self.width - 1), y
 
         if "\x1b" in newline:
             # ANSI escape characters are present, so we can't assume
@@ -752,7 +768,6 @@ class UnixConsole(Console):
         self.__write_code(self._cup, y - self.__offset, x)
 
     def __sigwinch(self, signum, frame):
-        self.height, self.width = self.getheightwidth()
         self.event_queue.insert(Event("resize", None))
 
     def __hide_cursor(self):
