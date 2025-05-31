@@ -657,10 +657,10 @@ class ZipInfo:
         self.compress_type = archive.compression
         self.compress_level = archive.compresslevel
         if self.filename.endswith('/'):  # pragma: no cover
-            self.external_attr = 0o40775 << 16  # drwxrwxr-x
+            self.external_attr = (stat.S_IFDIR | 0o775) << 16  # drwxrwxr-x
             self.external_attr |= 0x10  # MS-DOS directory flag
         else:
-            self.external_attr = 0o600 << 16  # ?rw-------
+            self.external_attr = (stat.S_IFREG | 0o600) << 16  # -rw-------
         return self
 
     def is_dir(self):
@@ -2032,7 +2032,7 @@ class ZipFile:
             zinfo = ZipInfo(directory_name)
             zinfo.compress_size = 0
             zinfo.CRC = 0
-            zinfo.external_attr = ((0o40000 | mode) & 0xFFFF) << 16
+            zinfo.external_attr = ((stat.S_IFDIR | mode) & 0xFFFF) << 16
             zinfo.file_size = 0
             zinfo.external_attr |= 0x10
         else:
