@@ -1,0 +1,2 @@
+Add socketserver.BaseServer.write_to_self method, and call it from BaseServer.shutdown().
+Now serve_forever() loop wakes up immediately after shutdown() is called.
