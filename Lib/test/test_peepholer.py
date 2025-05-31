@@ -2663,6 +2663,24 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
         ]
         self.cfg_optimization_test(insts, expected, consts=[None])
 
+    def test_get_yield_from_iter(self):
+        # GET_YIELD_FROM_ITER may leave its operand on the stack
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("GET_YIELD_FROM_ITER", None, 2),
+            ("LOAD_CONST", 0, 3),
+            send := self.Label(),
+            ("SEND", end := self.Label(), 5),
+            ("YIELD_VALUE", 1, 6),
+            ("RESUME", 2, 7),
+            ("JUMP", send, 8),
+            end,
+            ("END_SEND", None, 9),
+            ("LOAD_CONST", 0, 10),
+            ("RETURN_VALUE", None, 11),
+        ]
+        self.cfg_optimization_test(insts, insts, consts=[None])
+
     def test_del_in_finally(self):
         # This loads `obj` onto the stack, executes `del obj`, then returns the
         # `obj` from the stack. See gh-133371 for more details.
