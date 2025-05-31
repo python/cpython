@@ -5429,6 +5429,7 @@ local(long long u)
 {
     struct tm local_time;
     time_t t;
+    long long old_u = u;
     u -= epoch;
     t = u;
     if (t != u) {
@@ -5438,7 +5439,14 @@ local(long long u)
     }
     if (_PyTime_localtime(t, &local_time) != 0)
         return -1;
-    return utc_to_seconds(local_time.tm_year + 1900,
+
+    // Check edge cases
+    int year = local_time.tm_year + 1900;
+    if (year < MINYEAR || year > MAXYEAR) {
+        Py_DECREF(year);
+        return old_u;
+    }
+    return utc_to_seconds(year,
                           local_time.tm_mon + 1,
                           local_time.tm_mday,
                           local_time.tm_hour,
