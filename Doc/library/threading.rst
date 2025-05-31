@@ -546,6 +546,13 @@ since it is impossible to detect the termination of alien threads.
    base class constructor (``Thread.__init__()``) before doing anything else to
    the thread.
 
+   .. note::
+
+      In Python, daemon threads do not prevent the program from exiting; they
+      are forcibly terminated when the main program terminates. A thread can be
+      designated as a daemon thread by setting *daemon* to ``True``, and daemon
+      threads do not require an explicit ``.join()`` call.
+
    .. versionchanged:: 3.3
       Added the *daemon* parameter.
 
