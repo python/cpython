@@ -823,15 +823,15 @@ _hashlib_HASHXOF_digest_impl(HASHobject *self, Py_ssize_t length)
 /*[clinic end generated code: output=dcb09335dd2fe908 input=3eb034ce03c55b21]*/
 {
     EVP_MD_CTX *temp_ctx;
-    PyObject *retval = PyBytes_FromStringAndSize(NULL, length);
 
-    if (retval == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(length);
+    if (writer == NULL) {
         return NULL;
     }
 
     temp_ctx = EVP_MD_CTX_new();
     if (temp_ctx == NULL) {
-        Py_DECREF(retval);
+        PyBytesWriter_Discard(writer);
         PyErr_NoMemory();
         return NULL;
     }
@@ -840,17 +840,17 @@ _hashlib_HASHXOF_digest_impl(HASHobject *self, Py_ssize_t length)
         goto error;
     }
     if (!EVP_DigestFinalXOF(temp_ctx,
-                            (unsigned char*)PyBytes_AS_STRING(retval),
+                            (unsigned char*)PyBytesWriter_GetData(writer),
                             length))
     {
         goto error;
     }
 
     EVP_MD_CTX_free(temp_ctx);
-    return retval;
+    return PyBytesWriter_Finish(writer);
 
 error:
-    Py_DECREF(retval);
+    PyBytesWriter_Discard(writer);
     EVP_MD_CTX_free(temp_ctx);
     notify_ssl_error_occurred();
     return NULL;
@@ -1450,8 +1450,6 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
                      long maxmem, long dklen)
 /*[clinic end generated code: output=d424bc3e8c6b9654 input=0c9a84230238fd79]*/
 {
-    PyObject *key_obj = NULL;
-    char *key;
     int retval;
 
     if (password->len > INT_MAX) {
@@ -1496,27 +1494,27 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
         return NULL;
    }
 
-    key_obj = PyBytes_FromStringAndSize(NULL, dklen);
-    if (key_obj == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(dklen);
+    if (writer == NULL) {
         return NULL;
     }
-    key = PyBytes_AS_STRING(key_obj);
+    unsigned char *key = PyBytesWriter_GetData(writer);
 
     Py_BEGIN_ALLOW_THREADS
     retval = EVP_PBE_scrypt(
         (const char*)password->buf, (size_t)password->len,
         (const unsigned char *)salt->buf, (size_t)salt->len,
         n, r, p, maxmem,
-        (unsigned char *)key, (size_t)dklen
+        key, (size_t)dklen
     );
     Py_END_ALLOW_THREADS
 
     if (!retval) {
-        Py_CLEAR(key_obj);
+        PyBytesWriter_Discard(writer);
         notify_ssl_error_occurred();
         return NULL;
     }
-    return key_obj;
+    return PyBytesWriter_Finish(writer);
 }
 #endif  /* PY_OPENSSL_HAS_SCRYPT */
 
