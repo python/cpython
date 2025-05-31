@@ -56,6 +56,7 @@ Iterator                        Arguments                       Results         
 :func:`groupby`                 iterable[, key]                 sub-iterators grouped by value of key(v)            ``groupby(['A','B','DEF'], len) → (1, A B) (3, DEF)``
 :func:`islice`                  seq, [start,] stop [, step]     elements from seq[start:stop:step]                  ``islice('ABCDEFG', 2, None) → C D E F G``
 :func:`pairwise`                iterable                        (p[0], p[1]), (p[1], p[2])                          ``pairwise('ABCDEFG') → AB BC CD DE EF FG``
+:func:`serialize`               iterable                        p0, p1, p2, ...                                     ``serialize([1,4,6]) → 1 4 6``
 :func:`starmap`                 func, seq                       func(\*seq[0]), func(\*seq[1]), ...                 ``starmap(pow, [(2,5), (3,2), (10,3)]) → 32 9 1000``
 :func:`takewhile`               predicate, seq                  seq[0], seq[1], until predicate fails               ``takewhile(lambda x: x<5, [1,4,6,3,8]) → 1 4``
 :func:`tee`                     it, n                           it1, it2, ... itn  splits one iterator into n       ``tee('ABC', 2) → A B C, A B C``
@@ -648,6 +649,19 @@ loops that truncate the stream.
       >>> list(map(pow, range(10), repeat(2)))
       [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 
+.. function:: serialize(iterable)
+
+   Make an iterator thread-safe. [TBD]
+
+   Roughly equivalent to::
+
+        class serialize(Iterator):
+            def __init__(self, it):
+                self._it = iter(it)
+                self._lock = Lock()
+            def __next__(self):
+                with self._lock:
+                    return next(self._it)
 
 .. function:: starmap(function, iterable)
 
