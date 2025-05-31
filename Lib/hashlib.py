@@ -141,29 +141,29 @@ def __get_openssl_constructor(name):
         return __get_builtin_constructor(name)
 
 
-def __py_new(name, data=b'', **kwargs):
+def __py_new(name, *args, **kwargs):
     """new(name, data=b'', **kwargs) - Return a new hashing object using the
     named algorithm; optionally initialized with data (which must be
     a bytes-like object).
     """
-    return __get_builtin_constructor(name)(data, **kwargs)
+    return __get_builtin_constructor(name)(*args, **kwargs)
 
 
-def __hash_new(name, data=b'', **kwargs):
+def __hash_new(name, *args, **kwargs):
     """new(name, data=b'') - Return a new hashing object using the named algorithm;
     optionally initialized with data (which must be a bytes-like object).
     """
     if name in __block_openssl_constructor:
         # Prefer our builtin blake2 implementation.
-        return __get_builtin_constructor(name)(data, **kwargs)
+        return __get_builtin_constructor(name)(*args, **kwargs)
     try:
-        return _hashlib.new(name, data, **kwargs)
+        return _hashlib.new(name, *args, **kwargs)
     except ValueError:
         # If the _hashlib module (OpenSSL) doesn't support the named
         # hash, try using our builtin implementations.
         # This allows for SHA224/256 and SHA384/512 support even though
         # the OpenSSL library prior to 0.9.8 doesn't provide them.
-        return __get_builtin_constructor(name)(data)
+        return __get_builtin_constructor(name)(*args, **kwargs)
 
 
 try:
