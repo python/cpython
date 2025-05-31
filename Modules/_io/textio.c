@@ -1578,6 +1578,8 @@ _io_TextIOWrapper_detach_impl(textio *self)
 static int
 _textiowrapper_writeflush(textio *self)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+
     if (self->pending_bytes == NULL)
         return 0;
 
@@ -3173,7 +3175,7 @@ _io_TextIOWrapper_close_impl(textio *self)
 }
 
 static PyObject *
-textiowrapper_iternext(PyObject *op)
+textiowrapper_iternext_locked(PyObject *op)
 {
     PyObject *line;
     textio *self = textio_CAST(op);
@@ -3208,6 +3210,16 @@ textiowrapper_iternext(PyObject *op)
     }
 
     return line;
+}
+
+static PyObject *
+textiowrapper_iternext(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = textiowrapper_iternext_locked(op);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 /*[clinic input]
