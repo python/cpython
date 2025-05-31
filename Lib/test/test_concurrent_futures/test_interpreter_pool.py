@@ -2,7 +2,7 @@ import asyncio
 import contextlib
 import io
 import os
-import pickle
+import sys
 import time
 import unittest
 from concurrent.futures.interpreter import (
@@ -17,20 +17,62 @@ from .executor import ExecutorTest, mul
 from .util import BaseTestCase, InterpreterPoolMixin, setup_module
 
 
+WINDOWS = sys.platform.startswith('win')
+
+
+@contextlib.contextmanager
+def nonblocking(fd):
+    blocking = os.get_blocking(fd)
+    if blocking:
+        os.set_blocking(fd, False)
+    try:
+        yield
+    finally:
+        if blocking:
+            os.set_blocking(fd, blocking)
+
+
+def read_file_with_timeout(fd, nbytes, timeout):
+    with nonblocking(fd):
+        end = time.time() + timeout
+        try:
+            return os.read(fd, nbytes)
+        except BlockingIOError:
+            pass
+        while time.time() < end:
+            try:
+                return os.read(fd, nbytes)
+            except BlockingIOError:
+                continue
+        else:
+            raise TimeoutError('nothing to read')
+
+
+if not WINDOWS:
+    import select
+    def read_file_with_timeout(fd, nbytes, timeout):
+        r, _, _ = select.select([fd], [], [], timeout)
+        if fd not in r:
+            raise TimeoutError('nothing to read')
+        return os.read(fd, nbytes)
+
+
 def noop():
     pass
 
 
 def write_msg(fd, msg):
+    import os
     os.write(fd, msg + b'\0')
 
 
-def read_msg(fd):
+def read_msg(fd, timeout=10.0):
     msg = b''
-    while ch := os.read(fd, 1):
-        if ch == b'\0':
-            return msg
+    ch = read_file_with_timeout(fd, 1, timeout)
+    while ch != b'\0':
         msg += ch
+        ch = os.read(fd, 1)
+    return msg
 
 
 def get_current_name():
@@ -121,10 +163,19 @@ class InterpreterPoolExecutorTest(
             nonlocal count
             count += 1
 
-        with self.assertRaises(pickle.PicklingError):
-            self.executor_type(initializer=init1)
-        with self.assertRaises(pickle.PicklingError):
-            self.executor_type(initializer=init2)
+        with contextlib.redirect_stderr(io.StringIO()) as stderr:
+            with self.executor_type(initializer=init1) as executor:
+                fut = executor.submit(lambda: None)
+        self.assertIn('NotShareableError', stderr.getvalue())
+        with self.assertRaises(BrokenInterpreterPool):
+            fut.result()
+
+        with contextlib.redirect_stderr(io.StringIO()) as stderr:
+            with self.executor_type(initializer=init2) as executor:
+                fut = executor.submit(lambda: None)
+        self.assertIn('NotShareableError', stderr.getvalue())
+        with self.assertRaises(BrokenInterpreterPool):
+            fut.result()
 
     def test_init_instance_method(self):
         class Spam:
@@ -132,8 +183,12 @@ class InterpreterPoolExecutorTest(
                 raise NotImplementedError
         spam = Spam()
 
-        with self.assertRaises(pickle.PicklingError):
-            self.executor_type(initializer=spam.initializer)
+        with contextlib.redirect_stderr(io.StringIO()) as stderr:
+            with self.executor_type(initializer=spam.initializer) as executor:
+                fut = executor.submit(lambda: None)
+        self.assertIn('NotShareableError', stderr.getvalue())
+        with self.assertRaises(BrokenInterpreterPool):
+            fut.result()
 
     def test_init_shared(self):
         msg = b'eggs'
@@ -178,8 +233,6 @@ class InterpreterPoolExecutorTest(
         stderr = stderr.getvalue()
         self.assertIn('ExecutionFailed: Exception: spam', stderr)
         self.assertIn('Uncaught in the interpreter:', stderr)
-        self.assertIn('The above exception was the direct cause of the following exception:',
-                      stderr)
 
     @unittest.expectedFailure
     def test_submit_script(self):
@@ -208,10 +261,14 @@ class InterpreterPoolExecutorTest(
             return spam
 
         executor = self.executor_type()
-        with self.assertRaises(pickle.PicklingError):
-            executor.submit(task1)
-        with self.assertRaises(pickle.PicklingError):
-            executor.submit(task2)
+
+        fut = executor.submit(task1)
+        with self.assertRaises(_interpreters.NotShareableError):
+            fut.result()
+
+        fut = executor.submit(task2)
+        with self.assertRaises(_interpreters.NotShareableError):
+            fut.result()
 
     def test_submit_local_instance(self):
         class Spam:
@@ -219,8 +276,9 @@ class InterpreterPoolExecutorTest(
                 self.value = True
 
         executor = self.executor_type()
-        with self.assertRaises(pickle.PicklingError):
-            executor.submit(Spam)
+        fut = executor.submit(Spam)
+        with self.assertRaises(_interpreters.NotShareableError):
+            fut.result()
 
     def test_submit_instance_method(self):
         class Spam:
@@ -229,8 +287,9 @@ class InterpreterPoolExecutorTest(
         spam = Spam()
 
         executor = self.executor_type()
-        with self.assertRaises(pickle.PicklingError):
-            executor.submit(spam.run)
+        fut = executor.submit(spam.run)
+        with self.assertRaises(_interpreters.NotShareableError):
+            fut.result()
 
     def test_submit_func_globals(self):
         executor = self.executor_type()
@@ -242,6 +301,7 @@ class InterpreterPoolExecutorTest(
 
     @unittest.expectedFailure
     def test_submit_exception_in_script(self):
+        # Scripts are not supported currently.
         fut = self.executor.submit('raise Exception("spam")')
         with self.assertRaises(Exception) as captured:
             fut.result()
@@ -289,12 +349,20 @@ class InterpreterPoolExecutorTest(
         executor.shutdown(wait=True)
 
     def test_pickle_errors_propagate(self):
-        # GH-125864: Pickle errors happen before the script tries to execute, so the
-        # queue used to wait infinitely.
-
+        # GH-125864: Pickle errors happen before the script tries to execute,
+        # so the queue used to wait infinitely.
         fut = self.executor.submit(PickleShenanigans(0))
-        with self.assertRaisesRegex(RuntimeError, "gotcha"):
+        expected = _interpreters.NotShareableError
+        with self.assertRaisesRegex(expected, 'unpickled'):
             fut.result()
+
+    def test_no_stale_references(self):
+        # Weak references don't cross between interpreters.
+        raise unittest.SkipTest('not applicable')
+
+    def test_free_reference(self):
+        # Weak references don't cross between interpreters.
+        raise unittest.SkipTest('not applicable')
 
 
 class AsyncioTest(InterpretersMixin, testasyncio_utils.TestCase):
