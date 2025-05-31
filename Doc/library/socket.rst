@@ -1492,7 +1492,7 @@ The :mod:`socket` module also offers various network-related services:
    The *fds* parameter is a sequence of file descriptors.
    Consult :meth:`~socket.sendmsg` for the documentation of these parameters.
 
-   .. availability:: Unix, Windows, not WASI.
+   .. availability:: Unix, not WASI.
 
       Unix platforms supporting :meth:`~socket.sendmsg`
       and :const:`SCM_RIGHTS` mechanism.
@@ -1506,9 +1506,9 @@ The :mod:`socket` module also offers various network-related services:
    Return ``(msg, list(fds), flags, addr)``.
    Consult :meth:`~socket.recvmsg` for the documentation of these parameters.
 
-   .. availability:: Unix, Windows, not WASI.
+   .. availability:: Unix, not WASI.
 
-      Unix platforms supporting :meth:`~socket.sendmsg`
+      Unix platforms supporting :meth:`~socket.recvmsg`
       and :const:`SCM_RIGHTS` mechanism.
 
    .. versionadded:: 3.9
