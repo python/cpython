@@ -1,0 +1,43 @@
+target-version = "py312"
+line-length = 79
+fix = true
+preview = true
+
+[lint]
+select = [
+    "I", # isort
+    "D204", # 1 blank line required after class docstring
+    "D205", # 1 blank line required between summary line and description
+    "D400", # First line should end with a period
+    "D401", # First line of docstring should be in imperative mood
+    "F", # Enable all pyflakes rules
+    "E", # Enable all pycodestyle error rules
+    "W", # Enable all pycodestyle warning rules
+    "UP", # Enable all pyupgrade rules
+    "RUF100", # Ban unused `# noqa` comments
+    "PGH003", # Use specific rule codes when ignoring type issues
+    "PGH004", # Use specific rule codes when using noqa
+    "C4", # flake8-comprehensions
+    "ISC", # flake8-implicit-str-concat
+    "TCH", # flake8-type-checking
+    "PTH", # flake8-use-pathlib
+    "PERF101", # unnecessary-list-cast
+    "PERF102", # incorrect-dict-iterator
+    "PERF401", # manual-list-comprehension
+    "PERF402", # manual-list-copy
+    "PERF403", # manual-dict-comprehension
+    "FURB101", # read-whole-file
+    "FURB103", # write-whole-file
+    "FURB110", # if-exp-instead-of-operator
+    "FURB113", # repeated-append
+    "FURB116", # f-string-number-format
+    "FURB129", # readlines-in-for
+    "FURB132", # check-and-remove-from-set
+    "FURB136", # if-expr-min-max
+    "FURB142", # for-loop-set-mutations
+    "FURB167", # regex-flag-alias
+    "FURB177", # implicit-cwd
+]
+
+[lint.pycodestyle]
+max-doc-length = 79
