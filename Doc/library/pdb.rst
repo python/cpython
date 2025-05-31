@@ -396,12 +396,20 @@ There are four preset *convenience variables*:
    pair: .pdbrc; file
    triple: debugger; configuration; file
 
-If a file :file:`.pdbrc` exists in the user's home directory or in the current
-directory, it is read with ``'utf-8'`` encoding and executed as if it had been
-typed at the debugger prompt, with the exception that empty lines and lines
-starting with ``#`` are ignored.  This is particularly useful for aliases.  If both
-files exist, the one in the home directory is read first and aliases defined there
-can be overridden by the local file.
+If a file :file:`.pdbrc` exists in any of the supported locations, it is read
+with ``'utf-8'`` encoding and executed as if it had been typed at the debugger
+prompt, with the exception that empty lines and lines starting with ``#`` are
+ignored.  This is particularly useful for aliases.  Supported locations for
+:file:`.pdbrc` file are
+
+1. ``$XDG_CONFIG_HOME/pdb`` (defaults to ``~/.config/pdb``, if environment
+   variable ``XDG_CONFIG_HOME`` is not set)
+2. User's home directory
+3. Current working directory
+
+If :file:`.pdbrc` files exist in multiple locations, they are processed in
+order, so that ``$XDG_CONFIG_HOME/pdb/.pdbrc`` is loaded first, and extended
+by :file:`.pdbrc` files in user's home and current directory.
 
 .. versionchanged:: 3.2
    :file:`.pdbrc` can now contain commands that continue debugging, such as
@@ -411,6 +419,10 @@ can be overridden by the local file.
 .. versionchanged:: 3.11
    :file:`.pdbrc` is now read with ``'utf-8'`` encoding. Previously, it was read
    with the system locale encoding.
+
+.. versionadded:: next
+   :file:`.pdbrc` is now searched in ``$XDG_CONFIG_HOME/pdb`` directory first.
+   Previously, this location was ignored.
 
 
 .. pdbcommand:: h(elp) [command]
