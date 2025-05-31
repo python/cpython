@@ -129,8 +129,15 @@ module_name
 Deprecated
 ==========
 
-* module_name:
-  TODO
+hashlib
+-------
+
+* Supporting the undocumented ``string`` keyword parameter in
+  :func:`~hashlib.new` and hash function constructors such as
+  :func:`~hashlib.md5` is deprecated and slated for removal in Python 3.17.
+  Use the ``data`` keyword parameter instead, or simply pass the data to hash
+  as a positional argument.
+  (Contributed by Bénédikt Tran in :gh:`134978`.)
 
 
 .. Add deprecations above alphabetically, not here at the end.
