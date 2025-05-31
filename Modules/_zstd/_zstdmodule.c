@@ -28,6 +28,9 @@ set_zstd_error(const _zstd_state* const state,
     char *msg;
     assert(ZSTD_isError(zstd_ret));
 
+    if (state == NULL) {
+        return;
+    }
     switch (type) {
         case ERR_DECOMPRESS:
             msg = "Unable to decompress Zstandard data: %s";
@@ -174,7 +177,7 @@ calculate_samples_stats(PyBytesObject *samples_bytes, PyObject *samples_sizes,
     Py_ssize_t sizes_sum;
     Py_ssize_t i;
 
-    chunks_number = Py_SIZE(samples_sizes);
+    chunks_number = PyTuple_GET_SIZE(samples_sizes);
     if ((size_t) chunks_number > UINT32_MAX) {
         PyErr_Format(PyExc_ValueError,
                      "The number of samples should be <= %u.", UINT32_MAX);
@@ -188,20 +191,24 @@ calculate_samples_stats(PyBytesObject *samples_bytes, PyObject *samples_sizes,
         return -1;
     }
 
-    sizes_sum = 0;
+    sizes_sum = PyBytes_GET_SIZE(samples_bytes);
     for (i = 0; i < chunks_number; i++) {
-        PyObject *size = PyTuple_GetItem(samples_sizes, i);
-        (*chunk_sizes)[i] = PyLong_AsSize_t(size);
-        if ((*chunk_sizes)[i] == (size_t)-1 && PyErr_Occurred()) {
-            PyErr_Format(PyExc_ValueError,
-                         "Items in samples_sizes should be an int "
-                         "object, with a value between 0 and %u.", SIZE_MAX);
+        size_t size = PyLong_AsSize_t(PyTuple_GET_ITEM(samples_sizes, i));
+        (*chunk_sizes)[i] = size;
+        if (size == (size_t)-1 && PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                goto sum_error;
+            }
             return -1;
         }
-        sizes_sum += (*chunk_sizes)[i];
+        if ((size_t)sizes_sum < size) {
+            goto sum_error;
+        }
+        sizes_sum -= size;
     }
 
-    if (sizes_sum != Py_SIZE(samples_bytes)) {
+    if (sizes_sum != 0) {
+sum_error:
         PyErr_SetString(PyExc_ValueError,
                         "The samples size tuple doesn't match the "
                         "concatenation's size.");
@@ -257,7 +264,7 @@ _zstd_train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
 
     /* Train the dictionary */
     char *dst_dict_buffer = PyBytes_AS_STRING(dst_dict_bytes);
-    char *samples_buffer = PyBytes_AS_STRING(samples_bytes);
+    const char *samples_buffer = PyBytes_AS_STRING(samples_bytes);
     Py_BEGIN_ALLOW_THREADS
     zstd_ret = ZDICT_trainFromBuffer(dst_dict_buffer, dict_size,
                                      samples_buffer,
@@ -507,17 +514,10 @@ _zstd_set_parameter_types_impl(PyObject *module, PyObject *c_parameter_type,
 {
     _zstd_state* mod_state = get_zstd_state(module);
 
-    if (!PyType_Check(c_parameter_type) || !PyType_Check(d_parameter_type)) {
-        PyErr_SetString(PyExc_ValueError,
-                        "The two arguments should be CompressionParameter and "
-                        "DecompressionParameter types.");
-        return NULL;
-    }
-
-    Py_XSETREF(
-        mod_state->CParameter_type, (PyTypeObject*)Py_NewRef(c_parameter_type));
-    Py_XSETREF(
-        mod_state->DParameter_type, (PyTypeObject*)Py_NewRef(d_parameter_type));
+    Py_INCREF(c_parameter_type);
+    Py_XSETREF(mod_state->CParameter_type, (PyTypeObject*)c_parameter_type);
+    Py_INCREF(d_parameter_type);
+    Py_XSETREF(mod_state->DParameter_type, (PyTypeObject*)d_parameter_type);
 
     Py_RETURN_NONE;
 }
@@ -580,7 +580,6 @@ do {                                                                         \
         return -1;
     }
     if (PyModule_AddType(m, (PyTypeObject *)mod_state->ZstdError) < 0) {
-        Py_DECREF(mod_state->ZstdError);
         return -1;
     }
 
