@@ -153,6 +153,14 @@ if __name__ == '__main__':
         "ps", help="Display a table of all pending tasks in a process"
     )
     ps.add_argument("pid", type=int, help="Process ID to inspect")
+    formats = [fmt.value for fmt in asyncio.tools.TaskTableOutputFormat]
+    big_secret = asyncio.tools.TaskTableOutputFormat.bsv.value
+    formats_to_show = [
+        fmt for fmt in formats if fmt != big_secret
+    ]
+    formats_to_show_str = f"{{{','.join(formats_to_show)}}}"
+    ps.add_argument("--format", choices=formats, default="table",
+                    metavar=formats_to_show_str)
     pstree = subparsers.add_parser(
         "pstree", help="Display a tree of all pending tasks in a process"
     )
@@ -160,7 +168,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     match args.command:
         case "ps":
-            asyncio.tools.display_awaited_by_tasks_table(args.pid)
+            asyncio.tools.display_awaited_by_tasks_table(args.pid, args.format)
             sys.exit(0)
         case "pstree":
             asyncio.tools.display_awaited_by_tasks_tree(args.pid)
