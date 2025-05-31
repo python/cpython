@@ -2138,10 +2138,14 @@ class GeneralModuleTests(unittest.TestCase):
         import _socket, enum
         CheckedAddressFamily = enum._old_convert_(
                 enum.IntEnum, 'AddressFamily', 'socket',
-                lambda C: C.isupper() and C.startswith('AF_'),
+                lambda C: C.startswith('AF_'),
                 source=_socket,
                 )
         enum._test_simple_enum(CheckedAddressFamily, socket.AddressFamily)
+
+    @unittest.skipUnless(hasattr(_socket, 'AF_DECnet'), 'AF_DECnet required.')
+    def test_addressfamily_enum_decnet(self):
+        assert hasattr(socket.AddressFamily, 'AF_DECnet')
 
     def test_socketkind_enum(self):
         import _socket, enum
