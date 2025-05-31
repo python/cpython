@@ -217,11 +217,15 @@ class TaskTableOutputFormat(Enum):
 _header = ('tid', 'task id', 'task name', 'coroutine chain', 'awaiter name', 'awaiter id')
 
 
-def display_awaited_by_tasks_table(pid: int, format_: TaskTableOutputFormat = TaskTableOutputFormat.table) -> None:
+def display_awaited_by_tasks_table(
+        pid: int,
+        format_: TaskTableOutputFormat | str = TaskTableOutputFormat.table
+    ) -> None:
     """Build and print a table of all pending tasks under `pid`."""
 
     tasks = _get_awaited_by_tasks(pid)
     table = build_task_table(tasks)
+    format_ = TaskTableOutputFormat(format_)
     if format_ == TaskTableOutputFormat.table:
         _display_awaited_by_tasks_table(table)
     else:
