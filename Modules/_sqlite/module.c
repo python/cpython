@@ -32,6 +32,7 @@
 #include "microprotocols.h"
 #include "row.h"
 #include "blob.h"
+#include "util.h"
 
 #if SQLITE_VERSION_NUMBER < 3015002
 #error "SQLite 3.15.2 or higher required"
@@ -405,6 +406,38 @@ pysqlite_error_name(int rc)
 }
 
 static int
+add_keyword_tuple(PyObject *module)
+{
+    int count = sqlite3_keyword_count();
+    PyObject *keywords = PyTuple_New(count);
+    if (keywords == NULL) {
+        goto error;
+    }
+    for (int i = 0; i < count; i++) {
+        const char *keyword;
+        int size;
+        int result = sqlite3_keyword_name(i, &keyword, &size);
+        if (result != SQLITE_OK) {
+            pysqlite_state *state = pysqlite_get_state(module);
+            set_error_from_code(state, result);
+            goto error;
+        }
+        PyObject *kwd = PyUnicode_FromStringAndSize(keyword, size);
+        if (!kwd) {
+            goto error;
+        }
+        if (PyTuple_SetItem(keywords, i, kwd) < 0) {
+            goto error;
+        }
+    }
+    return PyModule_Add(module, "SQLITE_KEYWORDS", keywords);
+
+error:
+    Py_XDECREF(keywords);
+    return -1;
+}
+
+static int
 add_integer_constants(PyObject *module) {
 #define ADD_INT(ival)                                           \
     do {                                                        \
@@ -699,6 +732,11 @@ module_exec(PyObject *module)
 
     /* Set integer constants */
     if (add_integer_constants(module) < 0) {
+        goto error;
+    }
+
+    /* Set the keyword tuple */
+    if (add_keyword_tuple(module) < 0) {
         goto error;
     }
 

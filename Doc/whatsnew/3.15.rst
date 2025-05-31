@@ -96,6 +96,14 @@ difflib
   class, and migrated the output to the HTML5 standard.
   (Contributed by Jiahao Li in :gh:`134580`.)
 
+
+sqlite3
+-------
+
+* Support keyword completion in the :mod:`sqlite3` command-line interface.
+  (Contributed by Long Tan in :gh:`133393`.)
+
+
 ssl
 ---
 
