@@ -1320,15 +1320,6 @@ gc_collect_young(PyThreadState *tstate,
     PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
     untrack_tuples(young);
     GC_STAT_ADD(0, collections, 1);
-#ifdef Py_STATS
-    {
-        Py_ssize_t count = 0;
-        PyGC_Head *gc;
-        for (gc = GC_NEXT(young); gc != young; gc = GC_NEXT(gc)) {
-            count++;
-        }
-    }
-#endif
 
     PyGC_Head survivors;
     gc_list_init(&survivors);
