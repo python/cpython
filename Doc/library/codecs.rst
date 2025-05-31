@@ -747,6 +747,9 @@ compatible with the Python codec registry.
 
       Writes the object's contents encoded to the stream.
 
+      .. versionchanged:: next
+         Returns the number of characters or bytes written to the stream.
+
 
    .. method:: writelines(list)
 

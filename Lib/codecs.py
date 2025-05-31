@@ -378,7 +378,7 @@ class StreamWriter(Codec):
         """ Writes the object's contents encoded to self.stream.
         """
         data, consumed = self.encode(object, self.errors)
-        self.stream.write(data)
+        return self.stream.write(data)
 
     def writelines(self, list):
 
