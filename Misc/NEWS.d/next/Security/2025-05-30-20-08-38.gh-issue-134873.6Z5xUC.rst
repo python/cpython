@@ -1,0 +1,2 @@
+Fix various HTTP header value parsing routines with worst-time
+quadratic-complexity. Patch by Bénédikt Tran.
