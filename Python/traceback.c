@@ -219,7 +219,7 @@ static PyMethodDef tb_methods[] = {
 };
 
 static PyMemberDef tb_memberlist[] = {
-    {"tb_frame",        _Py_T_OBJECT,       OFF(tb_frame),  Py_READONLY|Py_AUDIT_READ},
+    {"tb_frame",        Py_T_OBJECT_EX,       OFF(tb_frame),  Py_READONLY|Py_AUDIT_READ},
     {"tb_lasti",        Py_T_INT,          OFF(tb_lasti),  Py_READONLY},
     {NULL}      /* Sentinel */
 };

@@ -1821,8 +1821,8 @@ static PyMethodDef ZlibDecompressor_methods[] = {
 
 #define COMP_OFF(x) offsetof(compobject, x)
 static PyMemberDef Decomp_members[] = {
-    {"unused_data",     _Py_T_OBJECT, COMP_OFF(unused_data), Py_READONLY},
-    {"unconsumed_tail", _Py_T_OBJECT, COMP_OFF(unconsumed_tail), Py_READONLY},
+    {"unused_data",     Py_T_OBJECT_EX, COMP_OFF(unused_data), Py_READONLY},
+    {"unconsumed_tail", Py_T_OBJECT_EX, COMP_OFF(unconsumed_tail), Py_READONLY},
     {"eof",             Py_T_BOOL,   COMP_OFF(eof), Py_READONLY},
     {NULL},
 };
