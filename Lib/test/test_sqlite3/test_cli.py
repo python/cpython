@@ -207,6 +207,7 @@ class InteractiveSession(unittest.TestCase):
 
 
 @requires_subprocess()
+@force_not_colorized_test_class
 class CompletionTest(unittest.TestCase):
     PS1 = "sqlite> "
 
