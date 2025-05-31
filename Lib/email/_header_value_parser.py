@@ -89,6 +89,7 @@ DOT_ATOM_ENDS = ATOM_ENDS - set('.')
 # '.', '"', and '(' do not end phrases in order to support obs-phrase
 PHRASE_ENDS = SPECIALS - set('."(')
 PHRASE_ENDS_CHARS = r''.join(PHRASE_ENDS)
+PHRASE_ENDS_CHARS_NO_SEMICOLON = PHRASE_ENDS_CHARS.replace(';', '')
 TSPECIALS = (SPECIALS | set('/?=')) - set('.')
 TOKEN_ENDS = TSPECIALS | WSP
 ASPECIALS = TSPECIALS | set("*'%")
@@ -1453,10 +1454,11 @@ def get_phrase(value):
     while value and value[0] not in PHRASE_ENDS:
         if value[0] == '.':
             tmpvalue = value.lstrip('.')
-            for _ in range(len(value) - len(tmpvalue)):
-                phrase.append(DOT)
-                phrase.defects.append(errors.ObsoleteHeaderDefect(
-                    "period in 'phrase'"))
+            n = len(value) - len(tmpvalue)
+            phrase.extend(DOT for _ in range(n))
+            phrase.defects.extend(
+                errors.ObsoleteHeaderDefect("period in 'phrase'")
+                for _ in range(n))
             value = tmpvalue
         else:
             try:
@@ -1471,14 +1473,13 @@ def get_phrase(value):
             phrase.append(token)
     return phrase, value
 
-def _find_phrase(reslist, value, endchars):
-    # lstrip() should not strip stuff in 'endchars'
-    phrase_end_chars = ''.join(PHRASE_ENDS - set(endchars))
+def _find_phrase(reslist, value, phrase_ends, phrase_end_chars, endchars):
     while value and value[0] not in endchars:
-        if value[0] in PHRASE_ENDS:
+        if value[0] in phrase_ends:
             tmpvalue = value.lstrip(phrase_end_chars)
-            for i in range(len(value) - len(tmpvalue)):
-                reslist.append(ValueTerminal(value[i], 'misplaced-special'))
+            reslist.extend(
+                ValueTerminal(value[i], 'misplaced-special')
+                for i in range(len(value) - len(tmpvalue)))
             value = tmpvalue
         else:
             token, value = get_phrase(value)
@@ -1866,7 +1867,10 @@ def get_invalid_mailbox(value, endchars):
 
     """
     invalid_mailbox = InvalidMailbox()
-    value = _find_phrase(invalid_mailbox, value, endchars)
+    # lstrip() should not strip stuff in 'endchars'
+    phrase_end_chars = ''.join(PHRASE_ENDS - set(endchars))
+    value = _find_phrase(invalid_mailbox, value,
+                         PHRASE_ENDS, phrase_end_chars, endchars)
     return invalid_mailbox, value
 
 def get_mailbox_list(value):
@@ -2266,7 +2270,8 @@ def get_invalid_parameter(value):
 
     """
     invalid_parameter = InvalidParameter()
-    value = _find_phrase(invalid_parameter, value, ';')
+    value = _find_phrase(invalid_parameter, value,
+                         PHRASE_ENDS, PHRASE_ENDS_CHARS_NO_SEMICOLON, ';')
     return invalid_parameter, value
 
 def get_ttext(value):
@@ -2569,12 +2574,15 @@ def get_parameter(value):
         while value:
             if value[0] in WSP:
                 token, value = get_fws(value)
+                v.append(token)
             elif value[0] == '"':
-                token = ValueTerminal('"', 'DQUOTE')
-                value = value[1:]
+                tmpvalue = value.lstrip('"')
+                n = len(value) - len(tmpvalue)
+                v.extend((ValueTerminal('"', 'DQUOTE') for _ in range(n)))
+                value = tmpvalue
             else:
                 token, value = get_qcontent(value)
-            v.append(token)
+                v.append(token)
         token = v
     else:
         token, value = get_value(value)
@@ -2640,7 +2648,8 @@ def _find_mime_parameters(tokenlist, value):
     """Do our best to find the parameters in an invalid MIME header
 
     """
-    value = _find_phrase(tokenlist, value, ';')
+    value = _find_phrase(tokenlist, value,
+                         PHRASE_ENDS, PHRASE_ENDS_CHARS_NO_SEMICOLON, ';')
     if value:
         tokenlist.append(ValueTerminal(';', 'parameter-separator'))
         tokenlist.append(parse_mime_parameters(value[1:]))
