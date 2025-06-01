@@ -3305,6 +3305,12 @@ PyInterpreterRef_Main(PyInterpreterRef *strong_ptr)
     assert(strong_ptr != NULL);
     _PyRuntimeState *runtime = &_PyRuntime;
     HEAD_LOCK(runtime);
+    if (runtime->initialized == 0) {
+        // Main interpreter is not initialized.
+        // This can be the case before Py_Initialize(), or after Py_Finalize().
+        HEAD_UNLOCK(runtime);
+        return -1;
+    }
     int res = try_acquire_strong_ref(&runtime->_main_interpreter, strong_ptr);
     HEAD_UNLOCK(runtime);
 

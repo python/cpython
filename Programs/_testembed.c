@@ -2400,6 +2400,31 @@ test_gilstate_after_finalization(void)
     return PyThread_detach_thread(handle);
 }
 
+static int
+test_main_interpreter_ref(void)
+{
+    // It should not work before the runtime has started.
+    PyInterpreterRef ref;
+    int res = PyInterpreterRef_Main(&ref);
+    (void)res;
+    assert(res == -1);
+
+    _testembed_initialize();
+
+    // Main interpreter is initialized and ready.
+    res = PyInterpreterRef_Main(&ref);
+    assert(res == 0);
+    assert(PyInterpreterRef_AsInterpreter(ref) == PyInterpreterState_Main());
+    PyInterpreterRef_Close(ref);
+
+    Py_Finalize();
+
+    // Main interpreter is dead, we can no longer acquire references to it.
+    res = PyInterpreterRef_Main(&ref);
+    assert(res == -1);
+    return 0;
+}
+
 /* *********************************************************
  * List of test cases and the function that implements it.
  *
@@ -2491,6 +2516,7 @@ static struct TestCase TestCases[] = {
     {"test_get_incomplete_frame", test_get_incomplete_frame},
     {"test_thread_state_ensure", test_thread_state_ensure},
     {"test_gilstate_after_finalization", test_gilstate_after_finalization},
+    {"test_main_interpreter_ref", test_main_interpreter_ref},
     {NULL, NULL}
 };
 
