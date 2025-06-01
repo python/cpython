@@ -79,7 +79,7 @@ typedef struct {
     bool can_run_simd256;
 } Blake2State;
 
-static inline Blake2State*
+static inline Blake2State *
 blake2_get_state(PyObject *module)
 {
     void *state = _PyModule_GetState(module);
@@ -88,7 +88,7 @@ blake2_get_state(PyObject *module)
 }
 
 #if defined(HACL_CAN_COMPILE_SIMD128) || defined(HACL_CAN_COMPILE_SIMD256)
-static inline Blake2State*
+static inline Blake2State *
 blake2_get_state_from_type(PyTypeObject *module)
 {
     void *state = _PyType_GetModuleState(module);
@@ -201,28 +201,31 @@ blake2module_init_cpu_features(Blake2State *state)
 #endif
 }
 
-#define ADD_INT(d, name, value) do { \
-    PyObject *x = PyLong_FromLong(value); \
-    if (!x) \
-        return -1; \
-    if (PyDict_SetItemString(d, name, x) < 0) { \
-        Py_DECREF(x); \
-        return -1; \
-    } \
-    Py_DECREF(x); \
-} while(0)
-
-#define ADD_INT_CONST(NAME, VALUE) do { \
-    if (PyModule_AddIntConstant(m, NAME, VALUE) < 0) { \
-        return -1; \
-    } \
-} while (0)
-
 static int
 blake2_exec(PyObject *m)
 {
     Blake2State *st = blake2_get_state(m);
     blake2module_init_cpu_features(st);
+
+#define ADD_INT(DICT, NAME, VALUE)                      \
+    do {                                                \
+        PyObject *x = PyLong_FromLong(VALUE);           \
+        if (x == NULL) {                                \
+            return -1;                                  \
+        }                                               \
+        int rc = PyDict_SetItemString(DICT, NAME, x);   \
+        Py_DECREF(x);                                   \
+        if (rc < 0) {                                   \
+            return -1;                                  \
+        }                                               \
+    } while(0)
+
+#define ADD_INT_CONST(NAME, VALUE)                          \
+    do {                                                    \
+        if (PyModule_AddIntConstant(m, NAME, VALUE) < 0) {  \
+            return -1;                                      \
+        }                                                   \
+    } while (0)
 
     ADD_INT_CONST("_GIL_MINSIZE", HASHLIB_GIL_MINSIZE);
 
@@ -232,7 +235,6 @@ blake2_exec(PyObject *m)
     if (st->blake2b_type == NULL) {
         return -1;
     }
-    /* BLAKE2b */
     if (PyModule_AddType(m, st->blake2b_type) < 0) {
         return -1;
     }
@@ -252,9 +254,9 @@ blake2_exec(PyObject *m)
     st->blake2s_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         m, &blake2s_type_spec, NULL);
 
-    if (NULL == st->blake2s_type)
+    if (st->blake2s_type == NULL) {
         return -1;
-
+    }
     if (PyModule_AddType(m, st->blake2s_type) < 0) {
         return -1;
     }
@@ -270,11 +272,10 @@ blake2_exec(PyObject *m)
     ADD_INT_CONST("BLAKE2S_MAX_KEY_SIZE", HACL_HASH_BLAKE2S_KEY_BYTES);
     ADD_INT_CONST("BLAKE2S_MAX_DIGEST_SIZE", HACL_HASH_BLAKE2S_OUT_BYTES);
 
+#undef ADD_INT_CONST
+#undef ADD_INT
     return 0;
 }
-
-#undef ADD_INT
-#undef ADD_INT_CONST
 
 static PyModuleDef_Slot _blake2_slots[] = {
     {Py_mod_exec, blake2_exec},
@@ -315,16 +316,21 @@ PyInit__blake2(void)
 // set.
 typedef enum { Blake2s, Blake2b, Blake2s_128, Blake2b_256 } blake2_impl;
 
-static inline bool is_blake2b(blake2_impl impl) {
-  return impl == Blake2b || impl == Blake2b_256;
+static inline bool
+is_blake2b(blake2_impl impl)
+{
+    return impl == Blake2b || impl == Blake2b_256;
 }
 
-static inline bool is_blake2s(blake2_impl impl) {
-  return !is_blake2b(impl);
+static inline bool
+is_blake2s(blake2_impl impl)
+{
+    return impl == Blake2s || impl == Blake2s_128;
 }
 
 static inline blake2_impl
-type_to_impl(PyTypeObject *type) {
+type_to_impl(PyTypeObject *type)
+{
 #if defined(HACL_CAN_COMPILE_SIMD128) || defined(HACL_CAN_COMPILE_SIMD256)
     Blake2State *st = blake2_get_state_from_type(type);
 #endif
@@ -423,19 +429,23 @@ update(Blake2Object *self, uint8_t *buf, Py_ssize_t len)
         // otherwise this results in an unresolved symbol at link-time.
 #if HACL_CAN_COMPILE_SIMD256
         case Blake2b_256:
-            HACL_UPDATE(Hacl_Hash_Blake2b_Simd256_update,self->blake2b_256_state, buf, len);
+            HACL_UPDATE(Hacl_Hash_Blake2b_Simd256_update,
+                        self->blake2b_256_state, buf, len);
             return;
 #endif
 #if HACL_CAN_COMPILE_SIMD128
         case Blake2s_128:
-            HACL_UPDATE(Hacl_Hash_Blake2s_Simd128_update,self->blake2s_128_state, buf, len);
+            HACL_UPDATE(Hacl_Hash_Blake2s_Simd128_update,
+                        self->blake2s_128_state, buf, len);
             return;
 #endif
         case Blake2b:
-            HACL_UPDATE(Hacl_Hash_Blake2b_update,self->blake2b_state, buf, len);
+            HACL_UPDATE(Hacl_Hash_Blake2b_update,
+                        self->blake2b_state, buf, len);
             return;
         case Blake2s:
-            HACL_UPDATE(Hacl_Hash_Blake2s_update,self->blake2s_state, buf, len);
+            HACL_UPDATE(Hacl_Hash_Blake2s_update,
+                        self->blake2s_state, buf, len);
             return;
         default:
             Py_UNREACHABLE();
@@ -826,7 +836,8 @@ _blake2_blake2b_update_impl(Blake2Object *self, PyObject *data)
         update(self, buf.buf, buf.len);
         PyMutex_Unlock(&self->mutex);
         Py_END_ALLOW_THREADS
-    } else {
+    }
+    else {
         update(self, buf.buf, buf.len);
     }
 
@@ -1022,7 +1033,7 @@ static PyType_Slot blake2b_type_slots[] = {
     {Py_tp_methods, py_blake2b_methods},
     {Py_tp_getset, py_blake2b_getsetters},
     {Py_tp_new, py_blake2b_new},
-    {0,0}
+    {0, 0}
 };
 
 static PyType_Slot blake2s_type_slots[] = {
@@ -1035,12 +1046,12 @@ static PyType_Slot blake2s_type_slots[] = {
     // only the constructor differs, so that it can receive a clinic-generated
     // default digest length suitable for blake2s
     {Py_tp_new, py_blake2s_new},
-    {0,0}
+    {0, 0}
 };
 
 static PyType_Spec blake2b_type_spec = {
     .name = "_blake2.blake2b",
-    .basicsize =  sizeof(Blake2Object),
+    .basicsize = sizeof(Blake2Object),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE
              | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HEAPTYPE,
     .slots = blake2b_type_slots
@@ -1048,7 +1059,7 @@ static PyType_Spec blake2b_type_spec = {
 
 static PyType_Spec blake2s_type_spec = {
     .name = "_blake2.blake2s",
-    .basicsize =  sizeof(Blake2Object),
+    .basicsize = sizeof(Blake2Object),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE
              | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HEAPTYPE,
     .slots = blake2s_type_slots
