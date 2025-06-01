@@ -351,10 +351,10 @@ typedef struct {
     union {
         Hacl_Hash_Blake2s_state_t *blake2s_state;
         Hacl_Hash_Blake2b_state_t *blake2b_state;
-#ifdef HACL_CAN_COMPILE_SIMD128
+#if HACL_CAN_COMPILE_SIMD128
         Hacl_Hash_Blake2s_Simd128_state_t *blake2s_128_state;
 #endif
-#ifdef HACL_CAN_COMPILE_SIMD256
+#if HACL_CAN_COMPILE_SIMD256
         Hacl_Hash_Blake2b_Simd256_state_t *blake2b_256_state;
 #endif
     };
@@ -420,14 +420,14 @@ static void
 update(Blake2Object *self, uint8_t *buf, Py_ssize_t len)
 {
     switch (self->impl) {
-      // These need to be ifdef'd out otherwise it's an unresolved symbol at
-      // link-time.
-#ifdef HACL_CAN_COMPILE_SIMD256
+        // blake2b_256_state and blake2s_128_state must be if'd since
+        // otherwise this results in an unresolved symbol at link-time.
+#if HACL_CAN_COMPILE_SIMD256
         case Blake2b_256:
             HACL_UPDATE(Hacl_Hash_Blake2b_Simd256_update,self->blake2b_256_state, buf, len);
             return;
 #endif
-#ifdef HACL_CAN_COMPILE_SIMD128
+#if HACL_CAN_COMPILE_SIMD128
         case Blake2s_128:
             HACL_UPDATE(Hacl_Hash_Blake2s_Simd128_update,self->blake2s_128_state, buf, len);
             return;
