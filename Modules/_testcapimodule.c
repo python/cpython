@@ -2607,9 +2607,9 @@ test_interpreter_refs(PyObject *self, PyObject *unused)
 static PyObject *
 test_thread_state_ensure_nested(PyObject *self, PyObject *unused)
 {
+    PyInterpreterRef ref = get_strong_ref();
     PyThreadState *save_tstate = PyThreadState_Swap(NULL);
     assert(PyGILState_GetThisThreadState() == save_tstate);
-    PyInterpreterRef ref = get_strong_ref();
 
     for (int i = 0; i < 10; ++i) {
         // Test reactivation of the detached tstate.
@@ -2646,6 +2646,7 @@ test_thread_state_ensure_nested(PyObject *self, PyObject *unused)
 
     assert(PyThreadState_GetUnchecked() == NULL);
     PyInterpreterRef_Close(ref);
+    PyThreadState_Swap(save_tstate);
     Py_RETURN_NONE;
 }
 
