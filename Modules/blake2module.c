@@ -527,12 +527,11 @@ error:
 
 
 static PyObject *
-py_blake2b_or_s_new(PyTypeObject *type, PyObject *data, int digest_size,
-                    Py_buffer *key, Py_buffer *salt, Py_buffer *person,
-                    int fanout, int depth, unsigned long leaf_size,
-                    unsigned long long node_offset, int node_depth,
-                    int inner_size, int last_node, int usedforsecurity)
-
+py_blake2_new(PyTypeObject *type, PyObject *data, int digest_size,
+              Py_buffer *key, Py_buffer *salt, Py_buffer *person,
+              int fanout, int depth, unsigned long leaf_size,
+              unsigned long long node_offset, int node_depth,
+              int inner_size, int last_node, int usedforsecurity)
 {
     Blake2Object *self = NULL;
 
@@ -690,7 +689,9 @@ py_blake2b_new_impl(PyTypeObject *type, PyObject *data_obj, int digest_size,
     if (_Py_hashlib_data_argument(&data, data_obj, string) < 0) {
         return NULL;
     }
-    return py_blake2b_or_s_new(type, data, digest_size, key, salt, person, fanout, depth, leaf_size, node_offset, node_depth, inner_size, last_node, usedforsecurity);
+    return py_blake2_new(type, data, digest_size, key, salt, person,
+                         fanout, depth, leaf_size, node_offset, node_depth,
+                         inner_size, last_node, usedforsecurity);
 }
 
 /*[clinic input]
@@ -728,7 +729,9 @@ py_blake2s_new_impl(PyTypeObject *type, PyObject *data_obj, int digest_size,
     if (_Py_hashlib_data_argument(&data, data_obj, string) < 0) {
         return NULL;
     }
-    return py_blake2b_or_s_new(type, data, digest_size, key, salt, person, fanout, depth, leaf_size, node_offset, node_depth, inner_size, last_node, usedforsecurity);
+    return py_blake2_new(type, data, digest_size, key, salt, person,
+                         fanout, depth, leaf_size, node_offset, node_depth,
+                         inner_size, last_node, usedforsecurity);
 }
 
 static int
