@@ -1,21 +1,21 @@
-:mod:`intmath` --- Mathematical functions for integer numbers
+:mod:`intmath` --- integer-specific mathematics functions
 =============================================================
 
 .. module:: intmath
-   :synopsis: Mathematical functions for integer numbers.
+   :synopsis: Integer-specific mathematics functions.
 
 .. versionadded:: next
 
 --------------
 
-This module provides access to the mathematical functions for integer arguments.
+This module provides access to the mathematical functions defined for integer arguments.
 These functions accept integers and objects that implement the
 :meth:`~object.__index__` method which is used to convert the object to an integer
 number.  They cannot be used with floating-point numbers or complex
 numbers.
 
 The following functions are provided by this module.  All return values are
-integers.
+computed exactly and are integers.
 
 
 .. function:: comb(n, k)
@@ -30,14 +30,12 @@ integers.
    to the coefficient of k-th term in polynomial expansion of
    ``(1 + x)ⁿ``.
 
-   Raises :exc:`TypeError` if either of the arguments are not integers.
    Raises :exc:`ValueError` if either of the arguments are negative.
 
 
 .. function:: factorial(n)
 
-   Return *n* factorial as an integer.  Raises :exc:`ValueError` if *n* is not integral or
-   is negative.
+   Return factorial of the nonnegative integer *n*.
 
 
 .. function:: gcd(a, b)
@@ -81,7 +79,6 @@ integers.
    If *k* is not specified or is ``None``, then *k* defaults to *n*
    and the function returns ``n!``.
 
-   Raises :exc:`TypeError` if either of the arguments are not integers.
    Raises :exc:`ValueError` if either of the arguments are negative.
 
 
