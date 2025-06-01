@@ -37,6 +37,7 @@
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 #include "opcode.h"
+#include "pyerrors.h"
 
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()
@@ -3501,7 +3502,7 @@ wait_for_interp_references(PyInterpreterState *interp)
         wait_ns = Py_MIN(wait_ns, wait_max);
 
         if (PyErr_CheckSignals()) {
-            PyErr_Print();
+            PyErr_FormatUnraisable("Exception ignored while waiting on interpreter shutdown");
             /* The user CTRL+C'd us, bail out without waiting for a reference
                count of zero.
 
