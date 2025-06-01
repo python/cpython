@@ -1758,7 +1758,7 @@ class _ZipRepacker:
             return False
 
         try:
-            pos = self._find_compression_end_offset(fp, offset, end_offset - dd_size, decompressor)
+            pos = self._trace_compressed_block_end(fp, offset, end_offset - dd_size, decompressor)
         except Exception:
             return None
 
@@ -1770,7 +1770,7 @@ class _ZipRepacker:
 
         return crc, compress_size, file_size, dd_size
 
-    def _find_compression_end_offset(self, fp, offset, end_offset, decompressor, chunk_size=4096):
+    def _trace_compressed_block_end(self, fp, offset, end_offset, decompressor, chunk_size=4096):
         fp.seek(offset)
         read_size = 0
         while True:
