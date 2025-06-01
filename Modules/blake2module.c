@@ -13,7 +13,6 @@
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#include "pyconfig.h"
 #include "Python.h"
 #include "hashlib.h"
 #include "pycore_strhex.h"       // _Py_strhex()
@@ -133,13 +132,13 @@ static inline bool has_simd256(cpu_flags *flags) {
 #define HACL_CAN_COMPILE_VEC128 HACL_CAN_COMPILE_SIMD128
 #define HACL_CAN_COMPILE_VEC256 HACL_CAN_COMPILE_SIMD256
 
-#include "_hacl/Hacl_Hash_Blake2b.h"
 #include "_hacl/Hacl_Hash_Blake2s.h"
-#if HACL_CAN_COMPILE_SIMD256
-#include "_hacl/Hacl_Hash_Blake2b_Simd256.h"
-#endif
+#include "_hacl/Hacl_Hash_Blake2b.h"
 #if HACL_CAN_COMPILE_SIMD128
 #include "_hacl/Hacl_Hash_Blake2s_Simd128.h"
+#endif
+#if HACL_CAN_COMPILE_SIMD256
+#include "_hacl/Hacl_Hash_Blake2b_Simd256.h"
 #endif
 
 // MODULE TYPE SLOTS
