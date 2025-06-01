@@ -1064,6 +1064,8 @@ class IOTest(unittest.TestCase):
 
     @threading_helper.requires_working_threading()
     def test_write_readline_races(self):
+
+        # gh-134908: Concurrent iteration over a file caused races
         thread_count = 2
         write_count = 100
 
@@ -1075,7 +1077,7 @@ class IOTest(unittest.TestCase):
         def reader(file, stopping):
             while not stopping.is_set():
                 for line in file:
-                    assert line == ""
+                    self.assertEqual(line, "")
 
         stopping = threading.Event()
         with self.open(os_helper.TESTFN, "w+") as f:
@@ -1083,11 +1085,13 @@ class IOTest(unittest.TestCase):
             reader = threading.Thread(target=reader, args=(f, stopping))
             writers = [threading.Thread(target=writer, args=(f, barrier))
                        for _ in range(thread_count)]
-            reader.start()
-            with threading_helper.start_threads(writers):
-                pass
-            stopping.set()
-            reader.join()
+            with threading_helper.catch_threading_exception() as cm:
+                reader.start()
+                with threading_helper.start_threads(writers):
+                    pass
+                stopping.set()
+                reader.join()
+                self.assertIsNone(cm.exc_type)
 
         self.assertEqual(os.stat(os_helper.TESTFN).st_size,
                          write_count * thread_count)
