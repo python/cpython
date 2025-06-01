@@ -2588,7 +2588,6 @@ class ZipRepackerTests(unittest.TestCase):
 
     def test_scan_data_descriptor_no_sig_by_decompression(self):
         import zlib
-        import compression.zstd
         repacker = zipfile._ZipRepacker()
 
         for method in (
