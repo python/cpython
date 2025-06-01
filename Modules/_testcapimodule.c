@@ -14,6 +14,7 @@
 
 #include "frameobject.h"          // PyFrame_New()
 #include "marshal.h"              // PyMarshal_WriteLongToFile()
+#include "pyerrors.h"
 #include "pylifecycle.h"
 #include "pystate.h"
 
@@ -2656,6 +2657,10 @@ test_thread_state_ensure_crossinterp(PyObject *self, PyObject *unused)
     PyInterpreterRef ref = get_strong_ref();
     PyThreadState *save_tstate = PyThreadState_Swap(NULL);
     PyThreadState *interp_tstate = Py_NewInterpreter();
+    if (interp_tstate == NULL) {
+        PyInterpreterRef_Close(ref);
+        return PyErr_NoMemory();
+    }
 
     /* This should create a new thread state for the calling interpreter, *not*
        reactivate the old one. In a real-world scenario, this would arise in
@@ -2698,6 +2703,36 @@ test_thread_state_ensure_crossinterp(PyObject *self, PyObject *unused)
     Py_EndInterpreter(interp_tstate);
 
     PyInterpreterRef_Close(ref);
+    PyThreadState_Swap(save_tstate);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_weak_interpreter_ref_after_shutdown(PyObject *self, PyObject *unused)
+{
+    PyThreadState *save_tstate = PyThreadState_Swap(NULL);
+    PyInterpreterWeakRef wref;
+    PyThreadState *interp_tstate = Py_NewInterpreter();
+    if (interp_tstate == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    int res = PyInterpreterWeakRef_Get(&wref);
+    (void)res;
+    assert(res == 0);
+
+    // As a sanity check, ensure that the weakref actually works
+    PyInterpreterRef ref;
+    res = PyInterpreterWeakRef_AsStrong(wref, &ref);
+    assert(res == 0);
+    PyInterpreterRef_Close(ref);
+
+    // Now, destroy the interpreter and try to acquire a weak reference.
+    // It should fail.
+    Py_EndInterpreter(interp_tstate);
+    res = PyInterpreterWeakRef_AsStrong(wref, &ref);
+    assert(res == -1);
+
     PyThreadState_Swap(save_tstate);
     Py_RETURN_NONE;
 }
@@ -2799,6 +2834,7 @@ static PyMethodDef TestMethods[] = {
     {"test_interpreter_refs", test_interpreter_refs, METH_NOARGS},
     {"test_thread_state_ensure_nested", test_thread_state_ensure_nested, METH_NOARGS},
     {"test_thread_state_ensure_crossinterp", test_thread_state_ensure_crossinterp, METH_NOARGS},
+    {"test_weak_interpreter_ref_after_shutdown", test_weak_interpreter_ref_after_shutdown, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
