@@ -849,7 +849,7 @@ set_exc_value(double x)
     if (value) {
         PyObject_SetAttrString(exc, "value", value);
     }
-    Py_DECREF(value);
+    Py_XDECREF(value);
     PyErr_SetRaisedException(exc);
 }
 
