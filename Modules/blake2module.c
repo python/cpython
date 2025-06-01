@@ -70,8 +70,7 @@ static PyType_Spec blake2b_type_spec;
 static PyType_Spec blake2s_type_spec;
 
 PyDoc_STRVAR(blake2mod__doc__,
-"_blake2b provides BLAKE2b for hashlib\n"
-);
+             "_blake2 provides BLAKE2b and BLAKE2s for hashlib\n");
 
 typedef struct {
     PyTypeObject *blake2b_type;
