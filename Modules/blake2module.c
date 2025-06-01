@@ -960,38 +960,35 @@ py_blake2_clear(PyObject *op)
     // initializes the HACL* internal state to NULL before allocating
     // it. If an error occurs in the constructor, we should only free
     // states that were allocated (i.e. that are not NULL).
+#define BLAKE2_FREE(TYPE, STATE)                \
+    do {                                        \
+        if (STATE != NULL) {                    \
+            Hacl_Hash_ ## TYPE ## _free(STATE); \
+            STATE = NULL;                       \
+        }                                       \
+    } while (0)
+
     switch (self->impl) {
 #if HACL_CAN_COMPILE_SIMD256
         case Blake2b_256:
-            if (self->blake2b_256_state != NULL) {
-                Hacl_Hash_Blake2b_Simd256_free(self->blake2b_256_state);
-                self->blake2b_256_state = NULL;
-            }
+            BLAKE2_FREE(Blake2b_Simd256, self->blake2b_256_state);
             break;
 #endif
 #if HACL_CAN_COMPILE_SIMD128
         case Blake2s_128:
-            if (self->blake2s_128_state != NULL) {
-                Hacl_Hash_Blake2s_Simd128_free(self->blake2s_128_state);
-                self->blake2s_128_state = NULL;
-            }
+            BLAKE2_FREE(Blake2s_Simd128, self->blake2s_128_state);
             break;
 #endif
         case Blake2b:
-            if (self->blake2b_state != NULL) {
-                Hacl_Hash_Blake2b_free(self->blake2b_state);
-                self->blake2b_state = NULL;
-            }
+            BLAKE2_FREE(Blake2b, self->blake2b_state);
             break;
         case Blake2s:
-            if (self->blake2s_state != NULL) {
-                Hacl_Hash_Blake2s_free(self->blake2s_state);
-                self->blake2s_state = NULL;
-            }
+            BLAKE2_FREE(Blake2s, self->blake2s_state);
             break;
         default:
             Py_UNREACHABLE();
     }
+#undef BLAKE2_FREE
     return 0;
 }
 
