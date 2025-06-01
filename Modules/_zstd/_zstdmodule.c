@@ -51,7 +51,7 @@ _Py_parse_zstd_dict(const _zstd_state *state, PyObject *dict, int *ptype)
 
     /* Wrong type */
     PyErr_SetString(PyExc_TypeError,
-                    "zstd_dict argument should be ZstdDict object.");
+                    "zstd_dict argument should be a ZstdDict object.");
     return NULL;
 }
 
