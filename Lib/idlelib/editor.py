@@ -1365,7 +1365,6 @@ class EditorWindow:
         have = len(chars.expandtabs(tabwidth))
         assert have > 0
         want = ((have - 1) // self.indentwidth) * self.indentwidth
-
         # Debug prompt is multilined....
         ncharsdeleted = 0
         have = len(chars.expandtabs(tabwidth))
