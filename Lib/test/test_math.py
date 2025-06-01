@@ -2069,15 +2069,14 @@ class MathTests(unittest.TestCase):
 
             func = getattr(math, fn)
 
-            if 'invalid' in flags or 'divide-by-zero' in flags:
-                er = 'ValueError'
-            elif 'overflow' in flags:
+            if 'overflow' in flags:
                 er = 'OverflowError'
 
             try:
                 result = func(ar)
-            except ValueError:
-                result = 'ValueError'
+            except ValueError as exc:
+                self.assertTrue('invalid' in flags or 'divide-by-zero' in flags)
+                result = exc.value
             except OverflowError:
                 result = 'OverflowError'
 
@@ -2110,15 +2109,14 @@ class MathTests(unittest.TestCase):
         for id, fn, arg, expected, flags in parse_mtestfile(math_testcases):
             func = getattr(math, fn)
 
-            if 'invalid' in flags or 'divide-by-zero' in flags:
-                expected = 'ValueError'
-            elif 'overflow' in flags:
+            if 'overflow' in flags:
                 expected = 'OverflowError'
 
             try:
                 got = func(arg)
-            except ValueError:
-                got = 'ValueError'
+            except ValueError as exc:
+                got = exc.value
+                self.assertTrue('invalid' in flags or 'divide-by-zero' in flags)
             except OverflowError:
                 got = 'OverflowError'
 
