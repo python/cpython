@@ -1449,7 +1449,7 @@ class _ZipRepacker:
             - Modifies the ZIP file in place.
             - Updates zfile.start_dir to account for removed data.
             - Sets zfile._didModify to True.
-            - Adjusts header_offset and _end_offset of referenced ZipInfo
+            - Updates header_offset and _end_offset of referenced ZipInfo
               instances.
 
         Parameters:
@@ -1507,9 +1507,10 @@ class _ZipRepacker:
             used_entry_size = used_entry_size_list[i]
 
             # update the header and move entry data to the new position
+            old_header_offset = zinfo.header_offset
+            zinfo.header_offset -= entry_offset
+
             if zinfo in removed_zinfos:
-                old_header_offset = zinfo.header_offset
-                zinfo.header_offset -= entry_offset
                 self._copy_bytes(
                     fp,
                     old_header_offset + used_entry_size,
@@ -1517,16 +1518,10 @@ class _ZipRepacker:
                     entry_size - used_entry_size
                 )
 
-                if zinfo._end_offset is not None:
-                    zinfo._end_offset = zinfo.header_offset
-
                 # update entry_offset for subsequent files to follow
                 entry_offset += used_entry_size
 
             else:
-                old_header_offset = zinfo.header_offset
-                zinfo.header_offset -= entry_offset
-
                 if entry_offset > 0:
                     self._copy_bytes(fp, old_header_offset, zinfo.header_offset, used_entry_size)
 
@@ -1550,12 +1545,18 @@ class _ZipRepacker:
                     # update entry_offset for subsequent files to follow
                     entry_offset += stale_entry_size
 
-                if zinfo._end_offset is not None:
-                    zinfo._end_offset = zinfo.header_offset + entry_size - stale_entry_size
-
         # update state
         zfile.start_dir -= entry_offset
         zfile._didModify = True
+
+        end_offset = zfile.start_dir
+        for zinfo in reversed(filelist):
+            if zinfo in removed_zinfos:
+                zinfo._end_offset = None
+            else:
+                if zinfo._end_offset is not None:
+                    zinfo._end_offset = end_offset
+                end_offset = zinfo.header_offset
 
     def _calc_initial_entry_offset(self, fp, data_offset):
         checked_offsets = {}
