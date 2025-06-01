@@ -1,5 +1,5 @@
 :mod:`intmath` --- integer-specific mathematics functions
-=============================================================
+=========================================================
 
 .. module:: intmath
    :synopsis: Integer-specific mathematics functions.

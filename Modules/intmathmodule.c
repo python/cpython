@@ -685,7 +685,7 @@ Find n!.
 
 static PyObject *
 intmath_factorial(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=9a6c770c0b2a3603 input=d7d0785afa52dbd1]*/
+/*[clinic end generated code: output=9a6c770c0b2a3603 input=3861cbcc5842057f]*/
 {
     long x, two_valuation;
     int overflow;
@@ -1034,7 +1034,7 @@ Raises ValueError if either of the arguments are negative.
 
 static PyObject *
 intmath_perm_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=2293544c3bed417c input=6f27d76ca7e769fe]*/
+/*[clinic end generated code: output=2293544c3bed417c input=f9637e7171c40bec]*/
 {
     PyObject *result = NULL;
     int overflow, cmp;
@@ -1128,7 +1128,7 @@ Raises ValueError if either of the arguments are negative.
 
 static PyObject *
 intmath_comb_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=0182ad8aadc2d30a input=99746dbf70d1f992]*/
+/*[clinic end generated code: output=0182ad8aadc2d30a input=afe1bf86859c5c13]*/
 {
     PyObject *result = NULL, *temp;
     int overflow, cmp;

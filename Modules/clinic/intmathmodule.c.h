@@ -71,10 +71,7 @@ PyDoc_STRVAR(intmath_factorial__doc__,
 "factorial($module, n, /)\n"
 "--\n"
 "\n"
-"Find n!.\n"
-"\n"
-"Raise a TypeError if n is not an integer.\n"
-"Raise a ValueError if n is negative integer.");
+"Find n!.");
 
 #define INTMATH_FACTORIAL_METHODDEF    \
     {"factorial", (PyCFunction)intmath_factorial, METH_O, intmath_factorial__doc__},
@@ -91,7 +88,6 @@ PyDoc_STRVAR(intmath_perm__doc__,
 "If k is not specified or is None, then k defaults to n\n"
 "and the function returns n!.\n"
 "\n"
-"Raises TypeError if either of the arguments are not integers.\n"
 "Raises ValueError if either of the arguments are negative.");
 
 #define INTMATH_PERM_METHODDEF    \
@@ -135,7 +131,6 @@ PyDoc_STRVAR(intmath_comb__doc__,
 "to the coefficient of k-th term in polynomial expansion of the\n"
 "expression (1 + x)**n.\n"
 "\n"
-"Raises TypeError if either of the arguments are not integers.\n"
 "Raises ValueError if either of the arguments are negative.");
 
 #define INTMATH_COMB_METHODDEF    \
@@ -161,4 +156,4 @@ intmath_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1ae14f4be0f2a6ce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0ac3ed6e119d79de input=a9049054013a1b77]*/
