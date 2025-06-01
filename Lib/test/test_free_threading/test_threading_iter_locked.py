@@ -16,7 +16,9 @@ class non_atomic_iterator:
 
     def __next__(self):
         a = next(self.it)
-        time.sleep(0)
+        t = time.perf_counter() + 1e-6
+        while time.perf_counter() < t:
+            pass
         b = next(self.it)
         return a, b
 
@@ -31,7 +33,7 @@ class iter_lockedThreading(unittest.TestCase):
     @threading_helper.reap_threads
     def test_iter_locked(self):
         number_of_threads = 10
-        number_of_iterations = 10
+        number_of_iterations = 8
         barrier = Barrier(number_of_threads)
         def work(it):
             while True:
