@@ -1494,10 +1494,10 @@ class _ZipRepacker:
         # calculate the starting entry offset (bytes to skip)
         if removed is None:
             try:
-                data_offset = filelist[0].header_offset
+                offset = filelist[0].header_offset
             except IndexError:
-                data_offset = zfile.start_dir
-            entry_offset = self._calc_initial_entry_offset(fp, data_offset)
+                offset = zfile.start_dir
+            entry_offset = self._calc_initial_entry_offset(fp, offset)
         else:
             entry_offset = 0
 
@@ -1644,7 +1644,7 @@ class _ZipRepacker:
         except BadZipFile:
             return None
 
-        data_descriptor_size = 0
+        dd_size = 0
 
         if zinfo.flag_bits & _MASK_USE_DATA_DESCRIPTOR:
             # According to the spec, these fields should be zero when data
@@ -1668,16 +1668,13 @@ class _ZipRepacker:
             if dd is None:
                 return None
 
-            crc, compress_size, file_size, data_descriptor_size = dd
-            zinfo.CRC = crc
-            zinfo.compress_size = compress_size
-            zinfo.file_size = file_size
+            zinfo.CRC, zinfo.compress_size, zinfo.file_size, dd_size = dd
 
         return (
             sizeFileHeader +
             fheader[_FH_FILENAME_LENGTH] + fheader[_FH_EXTRA_FIELD_LENGTH] +
             zinfo.compress_size +
-            data_descriptor_size
+            dd_size
         )
 
     def _read_local_file_header(self, fp):

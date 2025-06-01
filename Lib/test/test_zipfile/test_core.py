@@ -1374,7 +1374,7 @@ def struct_pack_no_dd_sig(fmt, *values):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         if values[0] == zipfile._DD_SIGNATURE:
-            return _struct_pack(fmt[0:1] + fmt[2:], *values[1:])
+            return _struct_pack(fmt[:1] + fmt[2:], *values[1:])
     return _struct_pack(fmt, *values)
 
 class RepackHelperMixin:
