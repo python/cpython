@@ -747,6 +747,7 @@ static PyType_Spec ThreadHandle_Type_spec = {
 typedef struct {
     PyObject_HEAD
     PyObject *it;
+    PyMutex lock;
 } iter_locked_object;
 
 #define iter_locked_object_CAST(op)    ((iter_locked_object *)(op))
@@ -774,6 +775,7 @@ _thread_iter_locked_impl(PyTypeObject *type, PyObject *iterable)
         return NULL;
     }
     il->it = it;
+    il->lock = (PyMutex){0};
 
     return (PyObject *)il;
 }
@@ -804,14 +806,17 @@ iter_locked_next(PyObject *op)
     iter_locked_object *lz = iter_locked_object_CAST(op);
     PyObject *result = NULL;
 
-    Py_BEGIN_CRITICAL_SECTION(op);  // lock on op or lz->it?
+    // we cannot use Py_BEGIN_CRITICAL_SECTION as it is not available in the normal build
+    PyMutex_Lock(&(lz->lock));
+
     PyObject *it = lz->it;
     result = PyIter_Next(it);
     if (result == NULL) {
         /* Note:  StopIteration is already cleared by PyIter_Next() */
         /* If PyErr_Occurred() we will also return NULL*/
     }
-    Py_END_CRITICAL_SECTION();
+    PyMutex_Unlock(&(lz->lock));
+
     return result;
 }
 

@@ -1,3 +1,4 @@
+import time
 import unittest
 from threading import Thread, Barrier, iter_locked
 from test.support import threading_helper
@@ -15,6 +16,7 @@ class non_atomic_iterator:
 
     def __next__(self):
         a = next(self.it)
+        time.sleep(0)
         b = next(self.it)
         return a, b
 
