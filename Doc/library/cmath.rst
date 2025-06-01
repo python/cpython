@@ -38,10 +38,10 @@ the function is then applied to the result of the conversion.
       1.4142135623730951j
 
 
-Most functions computes and returns the C99 Annex G recommended result.  If the
+Most functions compute and return the C99 Annex G recommended result.  If the
 standard recommends raising ``FE_DIVBYZERO`` or ``FE_INVALID`` floating-point
-exceptions --- the :exc:`ValueError` is raised and recommended result available
-as the ``value`` attribute of the exception object.
+exceptions --- a :exc:`ValueError` is raised and the recommended result
+is available as the ``value`` attribute of the exception object.
 
 
 ====================================================  ============================================

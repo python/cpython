@@ -43,7 +43,7 @@ if (errno == EDOM) {
     if (value) {
         PyObject_SetAttrString(exc, "value", value);
     }
-    Py_DECREF(value);
+    Py_XDECREF(value);
     PyErr_SetRaisedException(exc);
     goto exit;
 }
@@ -907,7 +907,7 @@ cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj)
             if (value) {
                 PyObject_SetAttrString(exc, "value", value);
             }
-            Py_DECREF(value);
+            Py_XDECREF(value);
             PyErr_SetRaisedException(exc);
         }
         return ret;
