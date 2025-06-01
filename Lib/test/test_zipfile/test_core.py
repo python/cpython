@@ -2451,6 +2451,7 @@ class ZipRepackerTests(unittest.TestCase):
             [0, 5, 10, 15],
         )
 
+    @requires_zlib()
     def test_scan_data_descriptor(self):
         import zlib
         repacker = zipfile._ZipRepacker()
@@ -2520,6 +2521,7 @@ class ZipRepackerTests(unittest.TestCase):
             (zlib.crc32(b'dummy'), 5, 5, 16),
         )
 
+    @requires_zlib()
     def test_scan_data_descriptor_no_sig(self):
         import zlib
         repacker = zipfile._ZipRepacker()
@@ -2586,6 +2588,9 @@ class ZipRepackerTests(unittest.TestCase):
             (zlib.crc32(b'dummy'), 5, 5, 12),
         )
 
+    @requires_zlib()
+    @requires_bz2()
+    @requires_zstd()
     def test_scan_data_descriptor_no_sig_by_decompression(self):
         import zlib
         repacker = zipfile._ZipRepacker()
@@ -2686,6 +2691,9 @@ class ZipRepackerTests(unittest.TestCase):
                     False,
                 )
 
+    @requires_zlib()
+    @requires_bz2()
+    @requires_zstd()
     def test_trace_compressed_block_end(self):
         import zlib
         import compression.zstd
