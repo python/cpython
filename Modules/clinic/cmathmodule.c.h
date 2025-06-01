@@ -43,7 +43,7 @@ cmath_acos(PyObject *module, PyObject *arg)
         if (value) {
             PyObject_SetAttrString(exc, "value", value);
         }
-        Py_DECREF(value);
+        Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
         goto exit;
     }
@@ -94,7 +94,7 @@ cmath_acosh(PyObject *module, PyObject *arg)
         if (value) {
             PyObject_SetAttrString(exc, "value", value);
         }
-        Py_DECREF(value);
+        Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
         goto exit;
     }
@@ -145,7 +145,7 @@ cmath_asin(PyObject *module, PyObject *arg)
         if (value) {
             PyObject_SetAttrString(exc, "value", value);
         }
-        Py_DECREF(value);
+        Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
         goto exit;
     }
@@ -196,7 +196,7 @@ cmath_asinh(PyObject *module, PyObject *arg)
         if (value) {
             PyObject_SetAttrString(exc, "value", value);
         }
-        Py_DECREF(value);
+        Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
         goto exit;
     }
@@ -247,7 +247,7 @@ cmath_atan(PyObject *module, PyObject *arg)
         if (value) {
             PyObject_SetAttrString(exc, "value", value);
         }
-        Py_DECREF(value);
+        Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
         goto exit;
     }
@@ -298,7 +298,7 @@ cmath_atanh(PyObject *module, PyObject *arg)
         if (value) {
             PyObject_SetAttrString(exc, "value", value);
         }
-        Py_DECREF(value);
+        Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
         goto exit;
     }
@@ -349,7 +349,7 @@ cmath_cos(PyObject *module, PyObject *arg)
         if (value) {
             PyObject_SetAttrString(exc, "value", value);
         }
-        Py_DECREF(value);
+        Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
         goto exit;
     }
@@ -400,7 +400,7 @@ cmath_cosh(PyObject *module, PyObject *arg)
         if (value) {
             PyObject_SetAttrString(exc, "value", value);
         }
-        Py_DECREF(value);
+        Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
         goto exit;
     }
@@ -451,7 +451,7 @@ cmath_exp(PyObject *module, PyObject *arg)
         if (value) {
             PyObject_SetAttrString(exc, "value", value);
         }
-        Py_DECREF(value);
+        Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
         goto exit;
     }
@@ -502,7 +502,7 @@ cmath_log10(PyObject *module, PyObject *arg)
         if (value) {
             PyObject_SetAttrString(exc, "value", value);
         }
-        Py_DECREF(value);
+        Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
         goto exit;
     }
@@ -553,7 +553,7 @@ cmath_sin(PyObject *module, PyObject *arg)
         if (value) {
             PyObject_SetAttrString(exc, "value", value);
         }
-        Py_DECREF(value);
+        Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
         goto exit;
     }
@@ -604,7 +604,7 @@ cmath_sinh(PyObject *module, PyObject *arg)
         if (value) {
             PyObject_SetAttrString(exc, "value", value);
         }
-        Py_DECREF(value);
+        Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
         goto exit;
     }
@@ -655,7 +655,7 @@ cmath_sqrt(PyObject *module, PyObject *arg)
         if (value) {
             PyObject_SetAttrString(exc, "value", value);
         }
-        Py_DECREF(value);
+        Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
         goto exit;
     }
@@ -706,7 +706,7 @@ cmath_tan(PyObject *module, PyObject *arg)
         if (value) {
             PyObject_SetAttrString(exc, "value", value);
         }
-        Py_DECREF(value);
+        Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
         goto exit;
     }
@@ -757,7 +757,7 @@ cmath_tanh(PyObject *module, PyObject *arg)
         if (value) {
             PyObject_SetAttrString(exc, "value", value);
         }
-        Py_DECREF(value);
+        Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
         goto exit;
     }
@@ -923,7 +923,7 @@ cmath_rect(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         if (value) {
             PyObject_SetAttrString(exc, "value", value);
         }
-        Py_DECREF(value);
+        Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
         goto exit;
     }
@@ -1141,4 +1141,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=60c435806bc08ad3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=178870f279a7be14 input=a9049054013a1b77]*/

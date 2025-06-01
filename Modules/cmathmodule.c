@@ -56,7 +56,7 @@ else {
 }
 """.strip())
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=2d92b1a541ef42a3]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=25da698732cbffe0]*/
 
 #if (FLT_RADIX != 2 && FLT_RADIX != 16)
 #error "Modules/cmathmodule.c expects FLT_RADIX to be 2 or 16"
