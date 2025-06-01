@@ -836,6 +836,29 @@ _blake2_blake2b_update_impl(Blake2Object *self, PyObject *data)
     Py_RETURN_NONE;
 }
 
+static uint8_t
+blake2_blake2b_compute_digest(Blake2Object *self, uint8_t *digest)
+{
+    switch (self->impl) {
+#if HACL_CAN_COMPILE_SIMD256
+        case Blake2b_256:
+            return Hacl_Hash_Blake2b_Simd256_digest(
+                self->blake2b_256_state, digest);
+#endif
+#if HACL_CAN_COMPILE_SIMD128
+        case Blake2s_128:
+            return Hacl_Hash_Blake2s_Simd128_digest(
+                self->blake2s_128_state, digest);
+#endif
+        case Blake2b:
+            return Hacl_Hash_Blake2b_digest(self->blake2b_state, digest);
+        case Blake2s:
+            return Hacl_Hash_Blake2s_digest(self->blake2s_state, digest);
+        default:
+            Py_UNREACHABLE();
+    }
+}
+
 /*[clinic input]
 _blake2.blake2b.digest
 
@@ -846,30 +869,9 @@ static PyObject *
 _blake2_blake2b_digest_impl(Blake2Object *self)
 /*[clinic end generated code: output=31ab8ad477f4a2f7 input=7d21659e9c5fff02]*/
 {
-    uint8_t digest[HACL_HASH_BLAKE2B_OUT_BYTES];
-
+    uint8_t digest_length = 0, digest[HACL_HASH_BLAKE2B_OUT_BYTES];
     ENTER_HASHLIB(self);
-    uint8_t digest_length = 0;
-    switch (self->impl) {
-#if HACL_CAN_COMPILE_SIMD256
-        case Blake2b_256:
-            digest_length = Hacl_Hash_Blake2b_Simd256_digest(self->blake2b_256_state, digest);
-            break;
-#endif
-#if HACL_CAN_COMPILE_SIMD128
-        case Blake2s_128:
-            digest_length = Hacl_Hash_Blake2s_Simd128_digest(self->blake2s_128_state, digest);
-            break;
-#endif
-        case Blake2b:
-            digest_length = Hacl_Hash_Blake2b_digest(self->blake2b_state, digest);
-            break;
-        case Blake2s:
-            digest_length = Hacl_Hash_Blake2s_digest(self->blake2s_state, digest);
-            break;
-        default:
-            Py_UNREACHABLE();
-    }
+    digest_length = blake2_blake2b_compute_digest(self, digest);
     LEAVE_HASHLIB(self);
     return PyBytes_FromStringAndSize((const char *)digest, digest_length);
 }
@@ -884,30 +886,9 @@ static PyObject *
 _blake2_blake2b_hexdigest_impl(Blake2Object *self)
 /*[clinic end generated code: output=5ef54b138db6610a input=76930f6946351f56]*/
 {
-    uint8_t digest[HACL_HASH_BLAKE2B_OUT_BYTES];
-
+    uint8_t digest_length = 0, digest[HACL_HASH_BLAKE2B_OUT_BYTES];
     ENTER_HASHLIB(self);
-    uint8_t digest_length = 0;
-    switch (self->impl) {
-#if HACL_CAN_COMPILE_SIMD256
-        case Blake2b_256:
-            digest_length = Hacl_Hash_Blake2b_Simd256_digest(self->blake2b_256_state, digest);
-            break;
-#endif
-#if HACL_CAN_COMPILE_SIMD128
-        case Blake2s_128:
-            digest_length = Hacl_Hash_Blake2s_Simd128_digest(self->blake2s_128_state, digest);
-            break;
-#endif
-        case Blake2b:
-            digest_length = Hacl_Hash_Blake2b_digest(self->blake2b_state, digest);
-            break;
-        case Blake2s:
-            digest_length = Hacl_Hash_Blake2s_digest(self->blake2s_state, digest);
-            break;
-        default:
-            Py_UNREACHABLE();
-    }
+    digest_length = blake2_blake2b_compute_digest(self, digest);
     LEAVE_HASHLIB(self);
     return _Py_strhex((const char *)digest, digest_length);
 }
