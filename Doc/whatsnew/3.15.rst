@@ -89,6 +89,14 @@ New modules
 Improved modules
 ================
 
+dbm
+---
+
+* Add the ``'m'`` flag for :func:`dbm.gnu.open` which allows to disable
+  the use of :man:`mmap(2)`.
+  This may harm performance, but improve crash tolerance.
+  (Contributed by Serhiy Storchaka in :gh:`66234`.)
+
 difflib
 -------
 
