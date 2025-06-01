@@ -919,26 +919,34 @@ py_blake2b_get_block_size(PyObject *op, void *Py_UNUSED(closure))
 }
 
 
+static Hacl_Hash_Blake2b_index
+hacl_get_blake2_info(Blake2Object *self)
+{
+    switch (self->impl) {
+#if HACL_CAN_COMPILE_SIMD256
+        case Blake2b_256:
+            return Hacl_Hash_Blake2b_Simd256_info(self->blake2b_256_state);
+#endif
+#if HACL_CAN_COMPILE_SIMD128
+        case Blake2s_128:
+            return Hacl_Hash_Blake2s_Simd128_info(self->blake2s_128_state);
+#endif
+        case Blake2b:
+            return Hacl_Hash_Blake2b_info(self->blake2b_state);
+        case Blake2s:
+            return Hacl_Hash_Blake2s_info(self->blake2s_state);
+        default:
+            Py_UNREACHABLE();
+    }
+}
+
+
 static PyObject *
 py_blake2b_get_digest_size(PyObject *op, void *Py_UNUSED(closure))
 {
     Blake2Object *self = _Blake2Object_CAST(op);
-    switch (self->impl) {
-#if HACL_CAN_COMPILE_SIMD256
-        case Blake2b_256:
-            return PyLong_FromLong(Hacl_Hash_Blake2b_Simd256_info(self->blake2b_256_state).digest_length);
-#endif
-#if HACL_CAN_COMPILE_SIMD128
-        case Blake2s_128:
-            return PyLong_FromLong(Hacl_Hash_Blake2s_Simd128_info(self->blake2s_128_state).digest_length);
-#endif
-        case Blake2b:
-            return PyLong_FromLong(Hacl_Hash_Blake2b_info(self->blake2b_state).digest_length);
-        case Blake2s:
-            return PyLong_FromLong(Hacl_Hash_Blake2s_info(self->blake2s_state).digest_length);
-        default:
-            Py_UNREACHABLE();
-    }
+    Hacl_Hash_Blake2b_index info = hacl_get_blake2_info(self);
+    return PyLong_FromLong(info.digest_length);
 }
 
 
