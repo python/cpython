@@ -238,7 +238,7 @@ class RMenuTest(unittest.TestCase):
 
 
 class DeleteWantTest(unittest.TestCase):
-    
+
     def test_delete_trail_whitespace(self):
         with unittest.mock.patch.object(Editor, '__init__', return_value=None) as mock_init:
             ew = Editor()
