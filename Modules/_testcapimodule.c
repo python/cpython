@@ -2607,7 +2607,6 @@ test_interpreter_refs(PyObject *self, PyObject *unused)
 static PyObject *
 test_thread_state_ensure_nested(PyObject *self, PyObject *unused)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
     PyThreadState *save_tstate = PyThreadState_Swap(NULL);
     assert(PyGILState_GetThisThreadState() == save_tstate);
     PyInterpreterRef ref = get_strong_ref();
@@ -2647,6 +2646,7 @@ test_thread_state_ensure_nested(PyObject *self, PyObject *unused)
 
     assert(PyThreadState_GetUnchecked() == NULL);
     PyInterpreterRef_Close(ref);
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef TestMethods[] = {
