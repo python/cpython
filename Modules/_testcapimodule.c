@@ -2557,36 +2557,6 @@ get_strong_ref(void)
 }
 
 static PyObject *
-test_interp_refcount(PyObject *self, PyObject *unused)
-{
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    PyInterpreterRef ref1;
-    PyInterpreterRef ref2;
-
-    // Reference counts are technically 0 by default
-    assert(_PyInterpreterState_Refcount(interp) == 0);
-    ref1 = get_strong_ref();
-    assert(_PyInterpreterState_Refcount(interp) == 1);
-    ref2 = get_strong_ref();
-    assert(_PyInterpreterState_Refcount(interp) == 2);
-    PyInterpreterRef_Close(ref1);
-    assert(_PyInterpreterState_Refcount(interp) == 1);
-    PyInterpreterRef_Close(ref2);
-    assert(_PyInterpreterState_Refcount(interp) == 0);
-
-    ref1 = get_strong_ref();
-    ref2 = PyInterpreterRef_Dup(ref1);
-    assert(_PyInterpreterState_Refcount(interp) == 2);
-    assert(PyInterpreterRef_AsInterpreter(ref1) == interp);
-    assert(PyInterpreterRef_AsInterpreter(ref2) == interp);
-    PyInterpreterRef_Close(ref1);
-    PyInterpreterRef_Close(ref2);
-    assert(_PyInterpreterState_Refcount(interp) == 0);
-
-    Py_RETURN_NONE;
-}
-
-static PyObject *
 test_interp_weak_ref(PyObject *self, PyObject *unused)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
@@ -2600,7 +2570,6 @@ test_interp_weak_ref(PyObject *self, PyObject *unused)
     int res = PyInterpreterWeakRef_AsStrong(wref, &ref);
     assert(res == 0);
     assert(PyInterpreterRef_AsInterpreter(ref) == interp);
-    assert(_PyInterpreterState_Refcount(interp) == 1);
     PyInterpreterWeakRef_Close(wref);
     PyInterpreterRef_Close(ref);
 
@@ -2735,7 +2704,6 @@ static PyMethodDef TestMethods[] = {
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
     {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
-    {"test_interp_refcount", test_interp_refcount, METH_NOARGS},
     {"test_interp_weak_ref", test_interp_weak_ref, METH_NOARGS},
     {"test_interp_ensure", test_interp_ensure, METH_NOARGS},
     {NULL, NULL} /* sentinel */

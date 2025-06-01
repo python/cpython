@@ -2342,6 +2342,46 @@ incref_decref_delayed(PyObject *self, PyObject *op)
     Py_RETURN_NONE;
 }
 
+static PyInterpreterRef
+get_strong_ref(void)
+{
+    PyInterpreterRef ref;
+    if (PyInterpreterRef_Get(&ref) < 0) {
+        Py_FatalError("strong reference should not have failed");
+    }
+    return ref;
+}
+
+static PyObject *
+test_interp_refcount(PyObject *self, PyObject *unused)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterRef ref1;
+    PyInterpreterRef ref2;
+
+    // Reference counts are technically 0 by default
+    assert(_PyInterpreterState_Refcount(interp) == 0);
+    ref1 = get_strong_ref();
+    assert(_PyInterpreterState_Refcount(interp) == 1);
+    ref2 = get_strong_ref();
+    assert(_PyInterpreterState_Refcount(interp) == 2);
+    PyInterpreterRef_Close(ref1);
+    assert(_PyInterpreterState_Refcount(interp) == 1);
+    PyInterpreterRef_Close(ref2);
+    assert(_PyInterpreterState_Refcount(interp) == 0);
+
+    ref1 = get_strong_ref();
+    ref2 = PyInterpreterRef_Dup(ref1);
+    assert(_PyInterpreterState_Refcount(interp) == 2);
+    assert(PyInterpreterRef_AsInterpreter(ref1) == interp);
+    assert(PyInterpreterRef_AsInterpreter(ref2) == interp);
+    PyInterpreterRef_Close(ref1);
+    PyInterpreterRef_Close(ref2);
+    assert(_PyInterpreterState_Refcount(interp) == 0);
+
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -2444,6 +2484,7 @@ static PyMethodDef module_functions[] = {
     {"is_static_immortal", is_static_immortal, METH_O},
     {"incref_decref_delayed", incref_decref_delayed, METH_O},
     GET_NEXT_DICT_KEYS_VERSION_METHODDEF
+    {"test_interp_refcount", test_interp_refcount, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
