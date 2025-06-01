@@ -270,9 +270,9 @@ PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
 
 typedef uintptr_t PyInterpreterRef;
 
-PyAPI_FUNC(int) PyInterpreterRef_Get(PyInterpreterRef *ptr);
+PyAPI_FUNC(int) PyInterpreterRef_Get(PyInterpreterRef *ref);
 PyAPI_FUNC(PyInterpreterRef) PyInterpreterRef_Dup(PyInterpreterRef ref);
-PyAPI_FUNC(int) PyInterpreterRef_Main(PyInterpreterRef *strong_ptr);
+PyAPI_FUNC(int) PyInterpreterRef_Main(PyInterpreterRef *ref);
 PyAPI_FUNC(void) PyInterpreterRef_Close(PyInterpreterRef ref);
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterRef_AsInterpreter(PyInterpreterRef ref);
 
