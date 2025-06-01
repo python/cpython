@@ -681,9 +681,6 @@ intmath.factorial
     /
 
 Find n!.
-
-Raise a TypeError if n is not an integer.
-Raise a ValueError if n is negative integer.
 [clinic start generated code]*/
 
 static PyObject *
@@ -1032,7 +1029,6 @@ to zero when k > n.
 If k is not specified or is None, then k defaults to n
 and the function returns n!.
 
-Raises TypeError if either of the arguments are not integers.
 Raises ValueError if either of the arguments are negative.
 [clinic start generated code]*/
 
@@ -1126,7 +1122,6 @@ Also called the binomial coefficient because it is equivalent
 to the coefficient of k-th term in polynomial expansion of the
 expression (1 + x)**n.
 
-Raises TypeError if either of the arguments are not integers.
 Raises ValueError if either of the arguments are negative.
 
 [clinic start generated code]*/
