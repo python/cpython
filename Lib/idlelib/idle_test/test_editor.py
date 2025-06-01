@@ -274,7 +274,7 @@ class DeleteWantTest(unittest.TestCase):
             if have <= want or chars[-1] not in " \t":
                 break
         return chars
-    
+
     def do_tests(self):
         ew = Editor()
         for dat in self.data:
@@ -289,7 +289,7 @@ class DeleteWantTest(unittest.TestCase):
             initial_time_new = time.time()
             self.do_tests()
             time_new = time.time() - initial_time_new
-            
+
             with unittest.mock.patch.object(Editor, 'delete_trail_char_and_space', self.mock_delete_trail_char_and_space):
                 initial_time_old = time.time()
                 self.do_tests()
