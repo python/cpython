@@ -2451,16 +2451,14 @@ class ZipRepackerTests(unittest.TestCase):
             [0, 5, 10, 15],
         )
 
-    @requires_zlib()
     def test_scan_data_descriptor(self):
-        import zlib
         repacker = zipfile._ZipRepacker()
 
         # basic
         bytes_ = b'dummyPK\x07\x08\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00\x00'
         self.assertEqual(
             repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_), False),
-            (zlib.crc32(b'dummy'), 5, 5, 16),
+            (0x4ff4f23f, 5, 5, 16),
         )
 
         # return None if no signature
@@ -2488,7 +2486,7 @@ class ZipRepackerTests(unittest.TestCase):
         bytes_ = b'dummyPK\x07\x08\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00'
         self.assertEqual(
             repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_), True),
-            (zlib.crc32(b'dummy'), 5, 5, 24),
+            (0x4ff4f23f, 5, 5, 24),
         )
 
         # offset
@@ -2505,7 +2503,7 @@ class ZipRepackerTests(unittest.TestCase):
         )
         self.assertEqual(
             repacker._scan_data_descriptor(io.BytesIO(bytes_), 3, len(bytes_), False),
-            (zlib.crc32(b'dummy'), 5, 5, 16),
+            (0x4ff4f23f, 5, 5, 16),
         )
 
         # end_offset
@@ -2518,19 +2516,17 @@ class ZipRepackerTests(unittest.TestCase):
         bytes_ = b'dummyPK\x07\x08\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00\x00123'
         self.assertEqual(
             repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_) - 3, False),
-            (zlib.crc32(b'dummy'), 5, 5, 16),
+            (0x4ff4f23f, 5, 5, 16),
         )
 
-    @requires_zlib()
     def test_scan_data_descriptor_no_sig(self):
-        import zlib
         repacker = zipfile._ZipRepacker()
 
         # basic
         bytes_ = b'dummy\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00\x00'
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), False),
-            (zlib.crc32(b'dummy'), 5, 5, 12),
+            (0x4ff4f23f, 5, 5, 12),
         )
 
         # return None if compressed size not match
@@ -2544,7 +2540,7 @@ class ZipRepackerTests(unittest.TestCase):
         bytes_ = b'dummy\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00'
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), True),
-            (zlib.crc32(b'dummy'), 5, 5, 20),
+            (0x4ff4f23f, 5, 5, 20),
         )
 
         # offset
@@ -2561,7 +2557,7 @@ class ZipRepackerTests(unittest.TestCase):
         )
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 3, len(bytes_), False),
-            (zlib.crc32(b'dummy'), 5, 5, 12),
+            (0x4ff4f23f, 5, 5, 12),
         )
 
         # end_offset
@@ -2574,18 +2570,18 @@ class ZipRepackerTests(unittest.TestCase):
         bytes_ = b'dummy\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00\x00123'
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_) - 3, False),
-            (zlib.crc32(b'dummy'), 5, 5, 12),
+            (0x4ff4f23f, 5, 5, 12),
         )
 
         # chunk_size
         bytes_ = b'dummy\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00\x00'
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), False, 12),
-            (zlib.crc32(b'dummy'), 5, 5, 12),
+            (0x4ff4f23f, 5, 5, 12),
         )
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), False, 1),
-            (zlib.crc32(b'dummy'), 5, 5, 12),
+            (0x4ff4f23f, 5, 5, 12),
         )
 
     @requires_zlib()
@@ -2611,7 +2607,7 @@ class ZipRepackerTests(unittest.TestCase):
                 self.assertEqual(
                     repacker._scan_data_descriptor_no_sig_by_decompression(
                         io.BytesIO(bytes_), 0, len(bytes_), False, method),
-                    (zlib.crc32(b'dummy'), comp_len, 5, 12),
+                    (0x4ff4f23f, comp_len, 5, 12),
                 )
 
                 # return None if insufficient data length
@@ -2642,7 +2638,7 @@ class ZipRepackerTests(unittest.TestCase):
                 self.assertEqual(
                     repacker._scan_data_descriptor_no_sig_by_decompression(
                         io.BytesIO(bytes_), 0, len(bytes_), True, method),
-                    (zlib.crc32(b'dummy'), comp_len, 5, 20),
+                    (0x4ff4f23f, comp_len, 5, 20),
                 )
 
                 # offset
@@ -2657,7 +2653,7 @@ class ZipRepackerTests(unittest.TestCase):
                 self.assertEqual(
                     repacker._scan_data_descriptor_no_sig_by_decompression(
                         io.BytesIO(bytes_), 3, len(bytes_), False, method),
-                    (zlib.crc32(b'dummy'), comp_len, 5, 12),
+                    (0x4ff4f23f, comp_len, 5, 12),
                 )
 
                 # end_offset
@@ -2672,7 +2668,7 @@ class ZipRepackerTests(unittest.TestCase):
                 self.assertEqual(
                     repacker._scan_data_descriptor_no_sig_by_decompression(
                         io.BytesIO(bytes_), 0, len(bytes_) - 2, False, method),
-                    (zlib.crc32(b'dummy'), comp_len, 5, 12),
+                    (0x4ff4f23f, comp_len, 5, 12),
                 )
 
     def test_scan_data_descriptor_no_sig_by_decompression_invalid(self):
