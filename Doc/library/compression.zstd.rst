@@ -285,6 +285,13 @@ Compressing and decompressing data in memory
       :meth:`~.compress` will be written into a new frame and
       *cannot* reference past data.
 
+   .. attribute:: last_mode
+
+      The last mode passed to either :meth:`~.compress` or :meth:`~.flush`.
+      The value can be one of :attr:`~.CONTINUE`, :attr:`~.FLUSH_BLOCK`, or
+      :attr:`~.FLUSH_FRAME`. The initial value is :attr:`~.FLUSH_FRAME`,
+      signifying that the compressor is at the start of a new frame.
+
 
 .. class:: ZstdDecompressor(zstd_dict=None, options=None)
 
