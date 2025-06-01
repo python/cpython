@@ -247,6 +247,25 @@ Compressing and decompressing data in memory
       The *mode* argument is a :class:`ZstdCompressor` attribute, either
       :attr:`~.FLUSH_BLOCK`, or :attr:`~.FLUSH_FRAME`.
 
+   .. method:: set_pledged_input_size(size)
+
+      Specify the amount of uncompressed data *size* that will be provided for
+      the next frame. *size* will be written into the frame header of the next
+      frame unless :attr:`CompressionParameter.content_size_flag` is ``False``
+      or ``0``. A size of ``0`` means that the frame is empty. If *size* is
+      ``None``, the frame header will record the size as unknown.
+
+      If :attr:`~.last_mode` is not :attr:`~.FLUSH_FRAME`, a
+      :exc:`RuntimeError` is raised as the compressor is not at the start of
+      a frame. If the pledged size does not match the actual size of data
+      provided to :meth:`~.compress`, future calls to :meth:`~.compress` or
+      :meth:`~.flush` may raise :exc:`ZstdError` and the last chunk of data may
+      be lost.
+
+      After :meth:`~.flush` or :meth:`~.compress` are called with mode
+      :attr:`~.FLUSH_FRAME`, the next frame will default to have an unknown
+      size unless :meth:`!set_pledged_input_size` is called again.
+
    .. attribute:: CONTINUE
 
       Collect more data for compression, which may or may not generate output
@@ -620,12 +639,17 @@ Advanced parameter control
       Write the size of the data to be compressed into the Zstandard frame
       header when known prior to compressing.
 
-      This flag only takes effect under the following two scenarios:
+      This flag only takes effect under the following three scenarios:
 
       * Calling :func:`compress` for one-shot compression
       * Providing all of the data to be compressed in the frame in a single
         :meth:`ZstdCompressor.compress` call, with the
         :attr:`ZstdCompressor.FLUSH_FRAME` mode.
+      * Calling :meth:`ZstdCompressor.set_pledged_input_size` with the exact
+        amount of data that will be provided to the compressor prior to any
+        calls to :meth:`ZstdCompressor.compress` for the current frame.
+        :meth:`!ZstdCompressor.set_pledged_input_size` must be called for each
+        new frame.
 
       All other compression calls may not write the size information into the
       frame header.
