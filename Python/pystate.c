@@ -2789,17 +2789,15 @@ PyGILState_Ensure(void)
         assert(tcur->gilstate_counter == 1);
         tcur->gilstate_counter = 0;
         has_gil = 0; /* new thread state is never current */
+        PyInterpreterRef_Close(ref);
     }
     else {
         has_gil = holds_gil(tcur);
     }
 
     if (!has_gil) {
+        // XXX Do we need to protect this against finalization?
         PyEval_RestoreThread(tcur);
-    }
-
-    if (tcur == NULL) {
-        PyInterpreterRef_Close(ref);
     }
 
     /* Update our counter in the thread-state - no need for locks:
