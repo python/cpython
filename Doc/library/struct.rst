@@ -260,22 +260,15 @@ platform-dependent.
 +--------+--------------------------+--------------------+----------------+------------+
 | ``d``  | :c:expr:`double`         | float              | 8              | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
+| ``F``  | :c:expr:`float complex`  | complex            | 8              | \(10)      |
++--------+--------------------------+--------------------+----------------+------------+
+| ``D``  | :c:expr:`double complex` | complex            | 16             | \(10)      |
++--------+--------------------------+--------------------+----------------+------------+
 | ``s``  | :c:expr:`char[]`         | bytes              |                | \(9)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``p``  | :c:expr:`char[]`         | bytes              |                | \(8)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``P``  | :c:expr:`void \*`        | integer            |                | \(5)       |
-+--------+--------------------------+--------------------+----------------+------------+
-
-Additionally, if IEC 60559 compatible complex arithmetic (Annex G of the
-C11 standard) is supported, the following format characters are available:
-
-+--------+--------------------------+--------------------+----------------+------------+
-| Format | C Type                   | Python type        | Standard size  | Notes      |
-+========+==========================+====================+================+============+
-| ``F``  | :c:expr:`float complex`  | complex            | 8              | \(10)      |
-+--------+--------------------------+--------------------+----------------+------------+
-| ``D``  | :c:expr:`double complex` | complex            | 16             | \(10)      |
 +--------+--------------------------+--------------------+----------------+------------+
 
 .. versionchanged:: 3.3
@@ -364,9 +357,14 @@ Notes:
    ``'0c'`` means 0 characters).
 
 (10)
-   For the ``'E'`` and ``'C'`` format characters, the packed representation uses
+   For the ``'F'`` and ``'D'`` format characters, the packed representation uses
    the IEEE 754 binary32 and binary64 format for components of the complex
    number, regardless of the floating-point format used by the platform.
+   Note that complex types (``F`` and ``D``) are available unconditionally,
+   despite complex types being an optional feature in C.
+   As specified in the C11 standard, each complex type is represented by a
+   two-element C array containing, respectively, the real and imaginary parts.
+
 
 A format character may be preceded by an integral repeat count.  For example,
 the format string ``'4h'`` means exactly the same as ``'hhhh'``.

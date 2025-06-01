@@ -161,6 +161,8 @@ your terminal won't be left in a funny state on exception and you'll be
 able to read the exception's message and traceback.
 
 
+.. _windows-and-pads:
+
 Windows and Pads
 ================
 
