@@ -10,7 +10,6 @@
 #include "pycore_object_deferred.h" // _PyObject_SetDeferredRefcount()
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
-#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
 #include "pycore_time.h"          // _PyTime_FromSeconds()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
@@ -31,6 +30,7 @@ typedef struct {
     PyTypeObject *excepthook_type;
     PyTypeObject *iter_locked_type;
     PyTypeObject *lock_type;
+    PyTypeObject *rlock_type;
     PyTypeObject *local_type;
     PyTypeObject *local_dummy_type;
     PyTypeObject *thread_handle_type;
@@ -48,6 +48,17 @@ get_thread_state(PyObject *module)
     return (thread_module_state *)state;
 }
 
+static inline thread_module_state*
+get_thread_state_by_cls(PyTypeObject *cls)
+{
+    // Use PyType_GetModuleByDef() to handle (R)Lock subclasses.
+    PyObject *module = PyType_GetModuleByDef(cls, &thread_module);
+    if (module == NULL) {
+        return NULL;
+    }
+    return get_thread_state(module);
+}
+
 static inline thread_module_state *
 find_state_by_type(PyTypeObject *tp)
 {
@@ -57,6 +68,7 @@ find_state_by_type(PyTypeObject *tp)
 }
 
 #include "clinic/_threadmodule.c.h"
+
 
 #ifdef MS_WINDOWS
 typedef HRESULT (WINAPI *PF_GET_THREAD_DESCRIPTION)(HANDLE, PCWSTR*);
@@ -69,10 +81,15 @@ static PF_SET_THREAD_DESCRIPTION pSetThreadDescription = NULL;
 /*[clinic input]
 module _thread
 class _thread.iter_locked "iter_locked_object *" "find_state_by_type(type)->iter_locked_type"
+class _thread.lock "lockobject *" "clinic_state()->lock_type"
+class _thread.RLock "rlockobject *" "clinic_state()->rlock_type"
 
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=cc495aee1743488d]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6afac42991bc8469]*/
 
+#define clinic_state() get_thread_state_by_cls(type)
+#include "clinic/_threadmodule.c.h"
+#undef clinic_state
 
 // _ThreadHandle type
 
@@ -289,6 +306,12 @@ _PyThread_AfterFork(struct _pythread_runtime_state *state)
     llist_for_each_safe(node, &state->handles) {
         ThreadHandle *handle = llist_data(node, ThreadHandle, node);
         if (handle->ident == current) {
+            continue;
+        }
+
+        // Keep handles for threads that have not been started yet. They are
+        // safe to start in the child process.
+        if (handle->state == THREAD_HANDLE_NOT_STARTED) {
             continue;
         }
 
@@ -1024,25 +1047,21 @@ lock__at_fork_reinit(PyObject *op, PyObject *Py_UNUSED(dummy))
 }
 #endif  /* HAVE_FORK */
 
-static lockobject *newlockobject(PyObject *module);
+/*[clinic input]
+@classmethod
+_thread.lock.__new__ as lock_new
+[clinic start generated code]*/
 
 static PyObject *
-lock_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+lock_new_impl(PyTypeObject *type)
+/*[clinic end generated code: output=eab660d5a4c05c8a input=260208a4e277d250]*/
 {
-    // convert to AC?
-    if (!_PyArg_NoKeywords("lock", kwargs)) {
-        goto error;
+    lockobject *self = (lockobject *)type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
     }
-    if (!_PyArg_CheckPositional("lock", PyTuple_GET_SIZE(args), 0, 0)) {
-        goto error;
-    }
-
-    PyObject *module = PyType_GetModuleByDef(type, &thread_module);
-    assert(module != NULL);
-    return (PyObject *)newlockobject(module);
-
-error:
-    return NULL;
+    self->lock = (PyMutex){0};
+    return (PyObject *)self;
 }
 
 
@@ -1119,6 +1138,11 @@ rlock_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
+static int
+rlock_locked_impl(rlockobject *self)
+{
+    return PyMutex_IsLocked(&self->lock.mutex);
+}
 
 static void
 rlock_dealloc(PyObject *self)
@@ -1208,7 +1232,7 @@ static PyObject *
 rlock_locked(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     rlockobject *self = rlockobject_CAST(op);
-    int is_locked = _PyRecursiveMutex_IsLockedByCurrentThread(&self->lock);
+    int is_locked = rlock_locked_impl(self);
     return PyBool_FromLong(is_locked);
 }
 
@@ -1294,8 +1318,14 @@ PyDoc_STRVAR(rlock_is_owned_doc,
 \n\
 For internal use by `threading.Condition`.");
 
+/*[clinic input]
+@classmethod
+_thread.RLock.__new__ as rlock_new
+[clinic start generated code]*/
+
 static PyObject *
-rlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+rlock_new_impl(PyTypeObject *type)
+/*[clinic end generated code: output=bb4fb1edf6818df5 input=013591361bf1ac6e]*/
 {
     rlockobject *self = (rlockobject *) type->tp_alloc(type, 0);
     if (self == NULL) {
@@ -1310,10 +1340,17 @@ rlock_repr(PyObject *op)
 {
     rlockobject *self = rlockobject_CAST(op);
     PyThread_ident_t owner = self->lock.thread;
-    size_t count = self->lock.level + 1;
+    int locked = rlock_locked_impl(self);
+    size_t count;
+    if (locked) {
+        count = self->lock.level + 1;
+    }
+    else {
+        count = 0;
+    }
     return PyUnicode_FromFormat(
         "<%s %s object owner=%" PY_FORMAT_THREAD_IDENT_T " count=%zu at %p>",
-        owner ? "locked" : "unlocked",
+        locked ? "locked" : "unlocked",
         Py_TYPE(self)->tp_name, owner,
         count, self);
 }
@@ -1374,20 +1411,6 @@ static PyType_Spec rlock_type_spec = {
               Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_MANAGED_WEAKREF),
     .slots = rlock_type_slots,
 };
-
-static lockobject *
-newlockobject(PyObject *module)
-{
-    thread_module_state *state = get_thread_state(module);
-
-    PyTypeObject *type = state->lock_type;
-    lockobject *self = (lockobject *)type->tp_alloc(type, 0);
-    if (self == NULL) {
-        return NULL;
-    }
-    self->lock = (PyMutex){0};
-    return self;
-}
 
 /* Thread-local objects */
 
@@ -2143,7 +2166,8 @@ Note: the default signal handler for SIGINT raises ``KeyboardInterrupt``."
 static PyObject *
 thread_PyThread_allocate_lock(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return (PyObject *) newlockobject(module);
+    thread_module_state *state = get_thread_state(module);
+    return lock_new_impl(state->lock_type);
 }
 
 PyDoc_STRVAR(allocate_lock_doc,
@@ -2376,7 +2400,7 @@ thread_excepthook(PyObject *module, PyObject *args)
     PyObject *thread = PyStructSequence_GET_ITEM(args, 3);
 
     PyObject *file;
-    if (_PySys_GetOptionalAttr( &_Py_ID(stderr), &file) < 0) {
+    if (PySys_GetOptionalAttr( &_Py_ID(stderr), &file) < 0) {
         return NULL;
     }
     if (file == NULL || file == Py_None) {
@@ -2762,15 +2786,13 @@ thread_module_exec(PyObject *module)
     }
 
     // RLock
-    PyTypeObject *rlock_type = (PyTypeObject *)PyType_FromSpec(&rlock_type_spec);
-    if (rlock_type == NULL) {
+    state->rlock_type = (PyTypeObject *)PyType_FromModuleAndSpec(module, &rlock_type_spec, NULL);
+    if (state->rlock_type == NULL) {
         return -1;
     }
-    if (PyModule_AddType(module, rlock_type) < 0) {
-        Py_DECREF(rlock_type);
+    if (PyModule_AddType(module, state->rlock_type) < 0) {
         return -1;
     }
-    Py_DECREF(rlock_type);
 
     // Local dummy
     state->local_dummy_type = (PyTypeObject *)PyType_FromSpec(&local_dummy_type_spec);
@@ -2858,6 +2880,7 @@ thread_module_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->excepthook_type);
     Py_VISIT(state->iter_locked_type);
     Py_VISIT(state->lock_type);
+    Py_VISIT(state->rlock_type);
     Py_VISIT(state->local_type);
     Py_VISIT(state->local_dummy_type);
     Py_VISIT(state->thread_handle_type);
@@ -2871,6 +2894,7 @@ thread_module_clear(PyObject *module)
     Py_CLEAR(state->excepthook_type);
     Py_CLEAR(state->iter_locked_type);
     Py_CLEAR(state->lock_type);
+    Py_CLEAR(state->rlock_type);
     Py_CLEAR(state->local_type);
     Py_CLEAR(state->local_dummy_type);
     Py_CLEAR(state->thread_handle_type);

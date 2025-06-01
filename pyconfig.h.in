@@ -1584,6 +1584,9 @@
 /* Define if uuid_generate_time_safe() exists. */
 #undef HAVE_UUID_GENERATE_TIME_SAFE
 
+/* Define if uuid_generate_time_safe() is able to deduce a MAC address. */
+#undef HAVE_UUID_GENERATE_TIME_SAFE_STABLE_MAC
+
 /* Define to 1 if you have the <uuid.h> header file. */
 #undef HAVE_UUID_H
 

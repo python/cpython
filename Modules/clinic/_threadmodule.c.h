@@ -38,6 +38,52 @@ exit:
     return return_value;
 }
 
+static PyObject *
+lock_new_impl(PyTypeObject *type);
+
+static PyObject *
+lock_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = clinic_state()->lock_type;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoPositional("lock", args)) {
+        goto exit;
+    }
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("lock", kwargs)) {
+        goto exit;
+    }
+    return_value = lock_new_impl(type);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+rlock_new_impl(PyTypeObject *type);
+
+static PyObject *
+rlock_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = clinic_state()->rlock_type;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoPositional("RLock", args)) {
+        goto exit;
+    }
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("RLock", kwargs)) {
+        goto exit;
+    }
+    return_value = rlock_new_impl(type);
+
+exit:
+    return return_value;
+}
+
 #if (defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP) || defined(MS_WINDOWS))
 
 PyDoc_STRVAR(_thread__get_name__doc__,
@@ -133,4 +179,4 @@ exit:
 #ifndef _THREAD_SET_NAME_METHODDEF
     #define _THREAD_SET_NAME_METHODDEF
 #endif /* !defined(_THREAD_SET_NAME_METHODDEF) */
-/*[clinic end generated code: output=9555ccecaeb48d69 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4b4734946ddeabac input=a9049054013a1b77]*/
