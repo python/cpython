@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_io_BytesIO_readable__doc__,
@@ -96,11 +97,18 @@ _io_BytesIO_getbuffer_impl(bytesio *self, PyTypeObject *cls);
 static PyObject *
 _io_BytesIO_getbuffer(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "getbuffer() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _io_BytesIO_getbuffer_impl((bytesio *)self, cls);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io_BytesIO_getbuffer_impl((bytesio *)self, cls);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_io_BytesIO_getvalue__doc__,
@@ -118,7 +126,13 @@ _io_BytesIO_getvalue_impl(bytesio *self);
 static PyObject *
 _io_BytesIO_getvalue(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_BytesIO_getvalue_impl((bytesio *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io_BytesIO_getvalue_impl((bytesio *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io_BytesIO_isatty__doc__,
@@ -156,7 +170,13 @@ _io_BytesIO_tell_impl(bytesio *self);
 static PyObject *
 _io_BytesIO_tell(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_BytesIO_tell_impl((bytesio *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io_BytesIO_tell_impl((bytesio *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io_BytesIO_read__doc__,
@@ -190,7 +210,9 @@ _io_BytesIO_read(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_BytesIO_read_impl((bytesio *)self, size);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -227,7 +249,9 @@ _io_BytesIO_read1(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_BytesIO_read1_impl((bytesio *)self, size);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -265,7 +289,9 @@ _io_BytesIO_readline(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_BytesIO_readline_impl((bytesio *)self, size);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -301,7 +327,9 @@ _io_BytesIO_readlines(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     arg = args[0];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_BytesIO_readlines_impl((bytesio *)self, arg);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -332,7 +360,9 @@ _io_BytesIO_readinto(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("readinto", "argument", "read-write bytes-like object", arg);
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_BytesIO_readinto_impl((bytesio *)self, &buffer);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     /* Cleanup for buffer */
@@ -356,13 +386,13 @@ PyDoc_STRVAR(_io_BytesIO_truncate__doc__,
     {"truncate", _PyCFunction_CAST(_io_BytesIO_truncate), METH_FASTCALL, _io_BytesIO_truncate__doc__},
 
 static PyObject *
-_io_BytesIO_truncate_impl(bytesio *self, Py_ssize_t size);
+_io_BytesIO_truncate_impl(bytesio *self, PyObject *size);
 
 static PyObject *
 _io_BytesIO_truncate(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t size = ((bytesio *)self)->pos;
+    PyObject *size = Py_None;
 
     if (!_PyArg_CheckPositional("truncate", nargs, 0, 1)) {
         goto exit;
@@ -370,11 +400,11 @@ _io_BytesIO_truncate(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    if (!_Py_convert_optional_to_ssize_t(args[0], &size)) {
-        goto exit;
-    }
+    size = args[0];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_BytesIO_truncate_impl((bytesio *)self, size);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -428,7 +458,9 @@ _io_BytesIO_seek(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_BytesIO_seek_impl((bytesio *)self, pos, whence);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -453,7 +485,9 @@ _io_BytesIO_write(PyObject *self, PyObject *b)
 {
     PyObject *return_value = NULL;
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_BytesIO_write_impl((bytesio *)self, b);
+    Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
@@ -479,7 +513,9 @@ _io_BytesIO_writelines(PyObject *self, PyObject *lines)
 {
     PyObject *return_value = NULL;
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_BytesIO_writelines_impl((bytesio *)self, lines);
+    Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
@@ -499,7 +535,13 @@ _io_BytesIO_close_impl(bytesio *self);
 static PyObject *
 _io_BytesIO_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_BytesIO_close_impl((bytesio *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io_BytesIO_close_impl((bytesio *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io_BytesIO___init____doc__,
@@ -558,9 +600,11 @@ _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     initvalue = fastargs[0];
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_BytesIO___init___impl((bytesio *)self, initvalue);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6dbfd82f4e9d4ef3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=580205daa01def2e input=a9049054013a1b77]*/

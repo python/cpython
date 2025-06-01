@@ -13,13 +13,18 @@ on:
       - "Lib/test/libregrtest/**"
       - "Lib/tomllib/**"
       - "Misc/mypy/**"
+      - "Tools/build/compute-changes.py"
+      - "Tools/build/deepfreeze.py"
       - "Tools/build/generate_sbom.py"
+      - "Tools/build/generate-build-details.py"
+      - "Tools/build/verify_ensurepip_wheels.py"
+      - "Tools/build/update_file.py"
+      - "Tools/build/umarshal.py"
       - "Tools/cases_generator/**"
       - "Tools/clinic/**"
       - "Tools/jit/**"
       - "Tools/peg_generator/**"
       - "Tools/requirements-dev.txt"
-      - "Tools/wasm/**"
   workflow_dispatch:
 
 permissions:
@@ -51,7 +56,6 @@ jobs:
           "Tools/clinic",
           "Tools/jit",
           "Tools/peg_generator",
-          "Tools/wasm",
         ]
     steps:
       - uses: actions/checkout@v4

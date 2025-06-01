@@ -1,0 +1,2 @@
+Update :attr:`Thread.native_id <threading.Thread.native_id>` after
+:manpage:`fork(2)` to ensure accuracy. Patch by Noam Cohen.
