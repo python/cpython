@@ -2759,30 +2759,24 @@ PyGILState_Check(void)
 PyGILState_STATE
 PyGILState_Ensure(void)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-
     /* Note that we do not auto-init Python here - apart from
        potential races with 2 threads auto-initializing, pep-311
        spells out other issues.  Embedders are expected to have
        called Py_Initialize(). */
 
-    /* Ensure that _PyEval_InitThreads() and _PyGILState_Init() have been
-       called by Py_Initialize()
-
-       TODO: This isn't thread-safe. There's no protection here against
-       concurrent finalization of the interpreter; it's simply a guard
-       for *after* the interpreter has finalized.
-     */
-    if (!_PyEval_ThreadsInitialized() || runtime->gilstate.autoInterpreterState == NULL) {
-        PyThread_hang_thread();
-    }
-
     PyThreadState *tcur = gilstate_get();
     int has_gil;
+    PyInterpreterRef ref;
     if (tcur == NULL) {
         /* Create a new Python thread state for this thread */
         // XXX Use PyInterpreterState_EnsureThreadState()?
-        tcur = new_threadstate(runtime->gilstate.autoInterpreterState,
+        if (PyInterpreterRef_Main(&ref) < 0) {
+            // The main interpreter has finished, so we don't have
+            // any intepreter to make a thread state for. Hang the
+            // thread to act as failure.
+            PyThread_hang_thread();
+        }
+        tcur = new_threadstate(PyInterpreterRef_AsInterpreter(ref),
                                _PyThreadState_WHENCE_GILSTATE);
         if (tcur == NULL) {
             Py_FatalError("Couldn't create thread-state for new thread");
@@ -2802,6 +2796,10 @@ PyGILState_Ensure(void)
 
     if (!has_gil) {
         PyEval_RestoreThread(tcur);
+    }
+
+    if (tcur == NULL) {
+        PyInterpreterRef_Close(ref);
     }
 
     /* Update our counter in the thread-state - no need for locks:
