@@ -1738,12 +1738,6 @@ class _ZipRepacker:
         return None
 
     def _scan_data_descriptor_no_sig_by_decompression(self, fp, offset, end_offset, zip64, method):
-        dd_fmt = '<LQQ' if zip64 else '<LLL'
-        dd_size = struct.calcsize(dd_fmt)
-
-        if offset + dd_size > end_offset:
-            return False
-
         try:
             decompressor = _get_decompressor(method)
         except NotImplementedError:
@@ -1757,6 +1751,12 @@ class _ZipRepacker:
         if isinstance(decompressor, LZMADecompressor):
             return False
 
+        dd_fmt = '<LQQ' if zip64 else '<LLL'
+        dd_size = struct.calcsize(dd_fmt)
+
+        if end_offset - dd_size < offset:
+            return None
+
         try:
             pos = self._trace_compressed_block_end(fp, offset, end_offset - dd_size, decompressor)
         except Exception:
@@ -1764,7 +1764,10 @@ class _ZipRepacker:
 
         fp.seek(pos)
         dd = fp.read(dd_size)
-        crc, compress_size, file_size = struct.unpack(dd_fmt, dd)
+        try:
+            crc, compress_size, file_size = struct.unpack(dd_fmt, dd)
+        except struct.error:
+            return None
         if pos - offset != compress_size:
             return None
 
