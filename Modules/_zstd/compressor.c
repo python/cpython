@@ -690,9 +690,84 @@ _zstd_ZstdCompressor_flush_impl(ZstdCompressor *self, int mode)
     return ret;
 }
 
+
+/*[clinic input]
+_zstd.ZstdCompressor.set_pledged_input_size
+
+    size: object
+        The size of the uncompressed data to be provided to the compressor.
+    /
+
+Set the uncompressed content size to be written into the frame header.
+
+This method can be used to ensure the header of the frame about to be written
+includes the size of the data, unless CompressionParameter.content_size_flag is
+set to False. If .last_mode != .FLUSH_FRAME, then a RuntimeError is raised.
+
+It is important to ensure that the pledged data size matches the actual data
+size. If they do not match the compressed output data may be corrupted and the
+final chunk written may be lost.
+[clinic start generated code]*/
+
+static PyObject *
+_zstd_ZstdCompressor_set_pledged_input_size_impl(ZstdCompressor *self,
+                                                 PyObject *size)
+/*[clinic end generated code: output=2fb57610ee586d42 input=272a7881a3526dd1]*/
+{
+    uint64_t pledged_size;
+    size_t zstd_ret;
+    PyObject *ret;
+
+    /* Get size value */
+    if (size == Py_None) {
+        pledged_size = ZSTD_CONTENTSIZE_UNKNOWN;
+    } else {
+        pledged_size = PyLong_AsUnsignedLongLong(size);
+        if (pledged_size == (uint64_t)-1 && PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_Format(PyExc_ValueError,
+                             "size argument should be a positive int less "
+                             "than %ull", ZSTD_CONTENTSIZE_ERROR);
+            }
+            return NULL;
+        }
+    }
+
+    /* Thread-safe code */
+    PyMutex_Lock(&self->lock);
+
+    /* Check the current mode */
+    if (self->last_mode != ZSTD_e_end) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "._set_pledged_input_size() method must be called "
+                        "when (.last_mode == .FLUSH_FRAME).");
+        goto error;
+    }
+
+    /* Set pledged content size */
+    zstd_ret = ZSTD_CCtx_setPledgedSrcSize(self->cctx, pledged_size);
+    if (ZSTD_isError(zstd_ret)) {
+        _zstd_state* mod_state = PyType_GetModuleState(Py_TYPE(self));
+        set_zstd_error(mod_state, ERR_SET_PLEDGED_INPUT_SIZE, zstd_ret);
+        goto error;
+    }
+
+    /* Return None */
+    ret = Py_None;
+    Py_INCREF(ret);
+    goto success;
+
+error:
+    ret = NULL;
+success:
+    PyMutex_Unlock(&self->lock);
+    return ret;
+}
+
 static PyMethodDef ZstdCompressor_methods[] = {
     _ZSTD_ZSTDCOMPRESSOR_COMPRESS_METHODDEF
     _ZSTD_ZSTDCOMPRESSOR_FLUSH_METHODDEF
+    _ZSTD_ZSTDCOMPRESSOR_SET_PLEDGED_INPUT_SIZE_METHODDEF
     {NULL, NULL}
 };
 
