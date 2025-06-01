@@ -260,9 +260,8 @@ class DeleteWantTest(unittest.TestCase):
             (13, 4, "abcde\tabd\t "),
             (16, 4, "abcde\tabd\t \t"),
         ]),
-        ("\tabcd", [
-            (2, 4, ""),
-            (5, 4, "\ta"),
+        ("    ", [
+            (2, 2, "  "),
         ]),
     ]
 
@@ -274,30 +273,27 @@ class DeleteWantTest(unittest.TestCase):
             have = len(chars.expandtabs(tabwidth))
             if have <= want or chars[-1] not in " \t":
                 break
-        return ncharsdeleted, chars
+        return chars
+    
+    def do_tests(self):
+        ew = Editor()
+        for dat in self.data:
+            test_str = dat[0]
+            for da in dat[1]:
+                with self.subTest(want=da[0], tabwidth=da[1], input=test_str):
+                    res = ew.delete_trail_char_and_space(da[0], test_str, da[1])
+                    self.assertEqual(res, da[2])
 
     def test_delete_trail_char_and_space(self):
-        with unittest.mock.patch.object(Editor, '__init__', return_value=None) as mock_init:
+        with unittest.mock.patch.object(Editor, '__init__', return_value=None):
             initial_time_new = time.time()
-            ew = Editor()
-            for dat in self.data:
-                test_str = dat[0]
-                for da in dat[1]:
-                    with self.subTest(want=da[0], tabwidth=da[1], input=test_str):
-                        res_str = ew.delete_trail_char_and_space(da[0], test_str, da[1])[1]
-                        self.assertEqual(res_str, da[2])
+            self.do_tests()
             time_new = time.time() - initial_time_new
-
-            initial_time_old = time.time()
+            
             with unittest.mock.patch.object(Editor, 'delete_trail_char_and_space', self.mock_delete_trail_char_and_space):
-                ew = Editor()
-                for dat in self.data:
-                    test_str = dat[0]
-                    for da in dat[1]:
-                        with self.subTest(want=da[0], tabwidth=da[1], input=test_str):
-                            res_str = ew.delete_trail_char_and_space(da[0], test_str, da[1])[1]
-                            self.assertEqual(res_str, da[2])
-            time_old = time.time() - initial_time_old
+                initial_time_old = time.time()
+                self.do_tests()
+                time_old = time.time() - initial_time_old
 
             self.assertGreaterEqual(time_old / time_new, 10)
 

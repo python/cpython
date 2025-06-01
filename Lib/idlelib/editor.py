@@ -1354,7 +1354,7 @@ class EditorWindow:
             if chars[i] not in " \t":
                 ncharsretained = i + 1
         chars = chars[:ncharsretained]
-        return len(chars) - ncharsretained + 1, chars  # removal of last
+        return chars
 
     def smart_backspace_event(self, event):
         text = self.text
@@ -1384,7 +1384,9 @@ class EditorWindow:
         assert have > 0
         want = ((have - 1) // self.indentwidth) * self.indentwidth
         # Debug prompt is multilined....
-        ncharsdeleted, chars = self.delete_trail_char_and_space(want, chars, tabwidth)
+        oldchars = chars
+        chars = self.delete_trail_char_and_space(want, chars, tabwidth)
+        ncharsdeleted = len(oldchars) - len(chars)
         have = len(chars.expandtabs(tabwidth))
         text.undo_block_start()
         text.delete("insert-%dc" % ncharsdeleted, "insert")
