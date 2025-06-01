@@ -1573,25 +1573,24 @@ class _ZipRepacker:
         remainder = b''
         pos = start_offset
 
-        fp.seek(start_offset)
         while pos < end_offset:
-            read_size = min(chunk_size, end_offset - pos)
-            chunk = remainder + fp.read(read_size)
-            if not chunk:
-                break
+            # required for each loop since fp may be changed during each yield
+            fp.seek(pos)
 
+            chunk = remainder + fp.read(min(chunk_size, end_offset - pos))
+
+            delta = pos - len(remainder)
             idx = 0
             while True:
                 idx = chunk.find(signature, idx)
-                if idx == -1 or idx + sig_len > len(chunk):
+                if idx == -1:
                     break
 
-                abs_pos = pos - len(remainder) + idx
-                yield abs_pos
+                yield delta + idx
                 idx += 1
 
             remainder = chunk[-(sig_len - 1):]
-            pos += read_size
+            pos += chunk_size
 
     def _validate_local_file_entry_sequence(self, fp, start_offset, end_offset, checked_offsets=None):
         offset = start_offset
