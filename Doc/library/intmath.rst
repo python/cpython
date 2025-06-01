@@ -49,16 +49,6 @@ integers.
    returns ``0``.
 
 
-.. function:: ilog2(n)
-
-   Return the integer base 2 logarithm of the positive integer *n*. This is the
-   floor of the exact base 2 logarithm root of *n*, or equivalently the
-   greatest integer *k* such that
-   2\ :sup:`k` |nbsp| ≤ |nbsp| *n* |nbsp| < |nbsp| 2\ :sup:`k+1`.
-
-   It is equivalent to ``n.bit_length() - 1`` for positive *n*.
-
-
 .. function:: isqrt(n)
 
    Return the integer square root of the nonnegative integer *n*. This is the

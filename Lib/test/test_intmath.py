@@ -200,25 +200,6 @@ class IntMathTests(unittest.TestCase):
         self.assertRaises(TypeError, lcm, 120, 0, 84.0)
         self.assertEqual(lcm(MyIndexable(120), MyIndexable(84)), 840)
 
-    def test_ilog2(self):
-        ilog2 = self.module.ilog2
-        for value in range(1, 1000):
-            k = ilog2(value)
-            self.assertLessEqual(2**k, value)
-            self.assertLess(value, 2**(k+1))
-        self.assertRaises(ValueError, ilog2, 0)
-        self.assertRaises(ValueError, ilog2, -1)
-        self.assertRaises(ValueError, ilog2, -2**1000)
-
-        self.assertIntEqual(ilog2(True), 0)
-        self.assertIntEqual(ilog2(IntSubclass(5)), 2)
-        self.assertIntEqual(ilog2(MyIndexable(5)), 2)
-
-        self.assertRaises(TypeError, ilog2, 5.0)
-        self.assertRaises(TypeError, ilog2, Decimal('5'))
-        self.assertRaises(TypeError, ilog2, Fraction(5, 1))
-        self.assertRaises(TypeError, ilog2, '5')
-
     def test_isqrt(self):
         isqrt = self.module.isqrt
         # Test a variety of inputs, large and small.
@@ -405,7 +386,6 @@ class IntMathTests(unittest.TestCase):
 
 class MathTests(IntMathTests):
     import math as module
-    test_ilog2 = None
 
 
 if __name__ == '__main__':

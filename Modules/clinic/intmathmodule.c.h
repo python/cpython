@@ -58,15 +58,6 @@ intmath_lcm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     return return_value;
 }
 
-PyDoc_STRVAR(intmath_ilog2__doc__,
-"ilog2($module, n, /)\n"
-"--\n"
-"\n"
-"Return the integer part of the base 2 logarithm of the input.");
-
-#define INTMATH_ILOG2_METHODDEF    \
-    {"ilog2", (PyCFunction)intmath_ilog2, METH_O, intmath_ilog2__doc__},
-
 PyDoc_STRVAR(intmath_isqrt__doc__,
 "isqrt($module, n, /)\n"
 "--\n"
@@ -170,4 +161,4 @@ intmath_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f1ccee73fbc42c17 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1ae14f4be0f2a6ce input=a9049054013a1b77]*/

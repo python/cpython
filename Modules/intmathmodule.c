@@ -151,43 +151,6 @@ intmath_lcm_impl(PyObject *module, PyObject * const *args,
 }
 
 
-/*[clinic input]
-intmath.ilog2
-
-    n: object
-    /
-
-Return the integer part of the base 2 logarithm of the input.
-[clinic start generated code]*/
-
-static PyObject *
-intmath_ilog2(PyObject *module, PyObject *n)
-/*[clinic end generated code: output=5cd0b0553370e109 input=bf17dd4e720e922e]*/
-{
-    int64_t bits;
-
-    n = PyNumber_Index(n);
-    if (n == NULL) {
-        return NULL;
-    }
-
-    if (!_PyLong_IsPositive((PyLongObject *)n)) {
-        PyErr_SetString(
-            PyExc_ValueError,
-            "ilog2() argument must be positive");
-        Py_DECREF(n);
-        return NULL;
-    }
-
-    bits = _PyLong_NumBits(n);
-    Py_DECREF(n);
-    if (bits == -1) {
-        return NULL;
-    }
-    return PyLong_FromInt64(bits - 1);
-}
-
-
 /* Integer square root
 
 Given a nonnegative integer `n`, we want to compute the largest integer
@@ -1270,7 +1233,6 @@ static PyMethodDef intmath_methods[] = {
     INTMATH_COMB_METHODDEF
     INTMATH_FACTORIAL_METHODDEF
     INTMATH_GCD_METHODDEF
-    INTMATH_ILOG2_METHODDEF
     INTMATH_ISQRT_METHODDEF
     INTMATH_LCM_METHODDEF
     INTMATH_PERM_METHODDEF
