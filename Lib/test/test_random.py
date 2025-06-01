@@ -392,6 +392,8 @@ class TestBasicOps:
         self.assertRaises(TypeError, self.gen.getrandbits)
         self.assertRaises(TypeError, self.gen.getrandbits, 1, 2)
         self.assertRaises(ValueError, self.gen.getrandbits, -1)
+        self.assertRaises(OverflowError, self.gen.getrandbits, 1<<1000)
+        self.assertRaises(ValueError, self.gen.getrandbits, -1<<1000)
         self.assertRaises(TypeError, self.gen.getrandbits, 10.1)
 
     def test_pickling(self):
@@ -435,6 +437,8 @@ class TestBasicOps:
         self.assertRaises(TypeError, self.gen.randbytes)
         self.assertRaises(TypeError, self.gen.randbytes, 1, 2)
         self.assertRaises(ValueError, self.gen.randbytes, -1)
+        self.assertRaises(OverflowError, self.gen.randbytes, 1<<1000)
+        self.assertRaises((ValueError, OverflowError), self.gen.randbytes, -1<<1000)
         self.assertRaises(TypeError, self.gen.randbytes, 1.0)
 
     def test_mu_sigma_default_args(self):
@@ -806,6 +810,22 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         self.assertEqual(self.gen.getrandbits(100),
                          97904845777343510404718956115)
 
+    def test_getrandbits_2G_bits(self):
+        size = 2**31
+        self.gen.seed(1234567)
+        x = self.gen.getrandbits(size)
+        self.assertEqual(x.bit_length(), size)
+        self.assertEqual(x & (2**100-1), 890186470919986886340158459475)
+        self.assertEqual(x >> (size-100), 1226514312032729439655761284440)
+
+    @support.bigmemtest(size=2**32, memuse=1/8+2/15, dry_run=False)
+    def test_getrandbits_4G_bits(self, size):
+        self.gen.seed(1234568)
+        x = self.gen.getrandbits(size)
+        self.assertEqual(x.bit_length(), size)
+        self.assertEqual(x & (2**100-1), 287241425661104632871036099814)
+        self.assertEqual(x >> (size-100), 739728759900339699429794460738)
+
     def test_randrange_uses_getrandbits(self):
         # Verify use of getrandbits by randrange
         # Use same seed as in the cross-platform repeatability test
@@ -961,6 +981,14 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         for n in range(9):
             self.assertEqual(self.gen.randbytes(n),
                              gen2.getrandbits(n * 8).to_bytes(n, 'little'))
+
+    @support.bigmemtest(size=2**29, memuse=1+16/15, dry_run=False)
+    def test_randbytes_256M(self, size):
+        self.gen.seed(2849427419)
+        x = self.gen.randbytes(size)
+        self.assertEqual(len(x), size)
+        self.assertEqual(x[:12].hex(), 'f6fd9ae63855ab91ea238b4f')
+        self.assertEqual(x[-12:].hex(), '0e7af69a84ee99bf4a11becc')
 
     def test_sample_counts_equivalence(self):
         # Test the documented strong equivalence to a sample with repeated elements.
@@ -1415,27 +1443,27 @@ class CommandLineTest(unittest.TestCase):
     def test_parse_args(self):
         args, help_text = random._parse_args(shlex.split("--choice a b c"))
         self.assertEqual(args.choice, ["a", "b", "c"])
-        self.assertTrue(help_text.startswith("usage: "))
+        self.assertStartsWith(help_text, "usage: ")
 
         args, help_text = random._parse_args(shlex.split("--integer 5"))
         self.assertEqual(args.integer, 5)
-        self.assertTrue(help_text.startswith("usage: "))
+        self.assertStartsWith(help_text, "usage: ")
 
         args, help_text = random._parse_args(shlex.split("--float 2.5"))
         self.assertEqual(args.float, 2.5)
-        self.assertTrue(help_text.startswith("usage: "))
+        self.assertStartsWith(help_text, "usage: ")
 
         args, help_text = random._parse_args(shlex.split("a b c"))
         self.assertEqual(args.input, ["a", "b", "c"])
-        self.assertTrue(help_text.startswith("usage: "))
+        self.assertStartsWith(help_text, "usage: ")
 
         args, help_text = random._parse_args(shlex.split("5"))
         self.assertEqual(args.input, ["5"])
-        self.assertTrue(help_text.startswith("usage: "))
+        self.assertStartsWith(help_text, "usage: ")
 
         args, help_text = random._parse_args(shlex.split("2.5"))
         self.assertEqual(args.input, ["2.5"])
-        self.assertTrue(help_text.startswith("usage: "))
+        self.assertStartsWith(help_text, "usage: ")
 
     def test_main(self):
         for command, expected in [
