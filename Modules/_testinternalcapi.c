@@ -2382,6 +2382,27 @@ test_interp_refcount(PyObject *self, PyObject *unused)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_interp_weakref_incref(PyObject *self, PyObject *unused)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterWeakRef wref;
+    if (PyInterpreterWeakRef_Get(&wref) < 0) {
+        return NULL;
+    }
+    assert(_PyInterpreterState_Refcount(interp) == 0);
+
+    PyInterpreterRef ref;
+    int res = PyInterpreterWeakRef_AsStrong(wref, &ref);
+    assert(res == 0);
+    assert(PyInterpreterRef_AsInterpreter(ref) == interp);
+    assert(_PyInterpreterState_Refcount(interp) == 1);
+    PyInterpreterWeakRef_Close(wref);
+    PyInterpreterRef_Close(ref);
+
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -2485,6 +2506,7 @@ static PyMethodDef module_functions[] = {
     {"incref_decref_delayed", incref_decref_delayed, METH_O},
     GET_NEXT_DICT_KEYS_VERSION_METHODDEF
     {"test_interp_refcount", test_interp_refcount, METH_NOARGS},
+    {"test_interp_weakref_incref", test_interp_weakref_incref, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

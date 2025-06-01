@@ -2557,26 +2557,6 @@ get_strong_ref(void)
 }
 
 static PyObject *
-test_interp_weak_ref(PyObject *self, PyObject *unused)
-{
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    PyInterpreterWeakRef wref;
-    if (PyInterpreterWeakRef_Get(&wref) < 0) {
-        return NULL;
-    }
-    assert(_PyInterpreterState_Refcount(interp) == 0);
-
-    PyInterpreterRef ref;
-    int res = PyInterpreterWeakRef_AsStrong(wref, &ref);
-    assert(res == 0);
-    assert(PyInterpreterRef_AsInterpreter(ref) == interp);
-    PyInterpreterWeakRef_Close(wref);
-    PyInterpreterRef_Close(ref);
-
-    Py_RETURN_NONE;
-}
-
-static PyObject *
 test_interp_ensure(PyObject *self, PyObject *unused)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
@@ -2704,7 +2684,6 @@ static PyMethodDef TestMethods[] = {
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
     {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
-    {"test_interp_weak_ref", test_interp_weak_ref, METH_NOARGS},
     {"test_interp_ensure", test_interp_ensure, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
