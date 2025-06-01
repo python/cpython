@@ -1385,6 +1385,7 @@ class EditorWindow:
         want = ((have - 1) // self.indentwidth) * self.indentwidth
         # Debug prompt is multilined....
         ncharsdeleted, chars = self.delete_trail_char_and_space(want, chars, tabwidth)
+        have = len(chars.expandtabs(tabwidth))
         text.undo_block_start()
         text.delete("insert-%dc" % ncharsdeleted, "insert")
         if have < want:
