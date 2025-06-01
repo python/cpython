@@ -237,5 +237,16 @@ class RMenuTest(unittest.TestCase):
         pass
 
 
+class DeleteWantTest(unittest.TestCase):
+    
+    def test_delete_trail_whitespace(self):
+        test_str = "abcde" + 10000 * "\t" + 10000 * " "
+        res_str = Editor.delete_trail_whitespace(30000, test_str, 4)[1]
+        self.assertEqual(res_str, "abcde" + 7498 * "\t")
+        res_str = Editor.delete_trail_whitespace(41005, test_str, 4)[1]
+        self.assertEqual(res_str, "abcde" + 10000 * "\t" + 1000 * " ")
+        res_str = Editor.delete_trail_whitespace(4, test_str, 4)[1]
+        self.assertEqual(res_str, "abcd")
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

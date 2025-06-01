@@ -1338,6 +1338,23 @@ class EditorWindow:
                 self.usetabs = False
         self.set_tk_tabwidth(self.tabwidth)
 
+    @staticmethod
+    def delete_trail_whitespace(want, chars, tabwidth):
+        ncharsdeleted = 0
+        have = len(chars.expandtabs(tabwidth))
+        for i in range(len(chars) - 1, -1, -1):
+            # ``Delete'' chars[i], and subtract count
+            # (since redoing expandtabs is O(n))
+            ncharsdeleted += 1
+            if chars[i] == '\t':
+                have -= tabwidth
+            else:
+                have -= 1
+            if have <= want or chars[i-1] not in " \t":
+                break
+        chars = chars[:len(chars) - ncharsdeleted]
+        return ncharsdeleted, chars
+
     def smart_backspace_event(self, event):
         text = self.text
         first, last = self.get_selection_indices()
@@ -1366,19 +1383,7 @@ class EditorWindow:
         assert have > 0
         want = ((have - 1) // self.indentwidth) * self.indentwidth
         # Debug prompt is multilined....
-        ncharsdeleted = 0
-        have = len(chars.expandtabs(tabwidth))
-        for i in range(len(chars) - 1, -1, -1):
-            # ``Delete'' chars[i], and subtract count
-            # (since redoing expandtabs is O(n))
-            ncharsdeleted += 1
-            if chars[i] == '\t':
-                have -= tabwidth
-            else:
-                have -= 1
-            if have <= want or chars[i-1] not in " \t":
-                break
-        chars = chars[:len(chars) - ncharsdeleted]
+        ncharsdeleted, chars = TestWindow.delete_trail_whitespace(want, chars, tabwidth)
         text.undo_block_start()
         text.delete("insert-%dc" % ncharsdeleted, "insert")
         if have < want:
