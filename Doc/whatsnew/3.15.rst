@@ -138,6 +138,13 @@ Deprecated
 Removed
 =======
 
+calendar
+--------
+
+* The default *encoding* parameter value in :meth:`calendar.HTMLCalendar.formatyearpage`
+  is now utf-8.
+  (Contributed by Jiahao Li in :gh:`135001`.)
+
 ctypes
 ------
 
