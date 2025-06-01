@@ -1379,9 +1379,7 @@ class EditorWindow:
                 have -= 1
             if have <= want or chars[i-1] not in " \t":
                 break
-        # Perform the actual removal
         chars = chars[:len(chars) - ncharsdeleted]
-
         text.undo_block_start()
         text.delete("insert-%dc" % ncharsdeleted, "insert")
         if have < want:
