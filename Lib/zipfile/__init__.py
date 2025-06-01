@@ -219,7 +219,7 @@ class _Extra(bytes):
         # use memoryview for zero-copy slices
         rest = memoryview(data)
         while rest:
-            extra, rest = _Extra.read_one(rest)
+            extra, rest = cls.read_one(rest)
             yield extra
 
     @classmethod
