@@ -2365,6 +2365,9 @@ test_thread_state_ensure(void)
         PyInterpreterRef_Close(ref);
         return -1;
     }
+    // We hold a strong interpreter reference, so we don't
+    // have to worry about the interpreter shutting down before
+    // we finalize.
     Py_Finalize();
     assert(data.done == 1);
     return 0;
