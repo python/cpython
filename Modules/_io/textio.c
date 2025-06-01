@@ -3217,7 +3217,7 @@ textiowrapper_iternext(PyObject *op)
 {
     PyObject *result;
     Py_BEGIN_CRITICAL_SECTION(op);
-    result = textiowrapper_iternext_locked(op);
+    result = textiowrapper_iternext_lock_held(op);
     Py_END_CRITICAL_SECTION();
     return result;
 }
