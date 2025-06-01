@@ -14,9 +14,6 @@
 
 #include "frameobject.h"          // PyFrame_New()
 #include "marshal.h"              // PyMarshal_WriteLongToFile()
-#include "pyerrors.h"
-#include "pylifecycle.h"
-#include "pystate.h"
 
 #include <float.h>                // FLT_MAX
 #include <signal.h>

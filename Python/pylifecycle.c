@@ -13,7 +13,6 @@
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_global_objects_fini_generated.h"  // _PyStaticObjects_CheckRefcnt()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
-#include "pycore_interp_structs.h"
 #include "pycore_interpolation.h" // _PyInterpolation_InitTypes()
 #include "pycore_long.h"          // _PyLong_InitTypes()
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
@@ -37,7 +36,6 @@
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 #include "opcode.h"
-#include "pyerrors.h"
 
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()
