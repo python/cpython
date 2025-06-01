@@ -1339,20 +1339,22 @@ class EditorWindow:
         self.set_tk_tabwidth(self.tabwidth)
 
     def delete_trail_whitespace(self, want, chars, tabwidth):
-        ncharsdeleted = 0
-        have = len(chars.expandtabs(tabwidth))
-        for i in range(len(chars) - 1, -1, -1):
-            # ``Delete'' chars[i], and subtract count
-            # (since redoing expandtabs is O(n))
-            ncharsdeleted += 1
-            if chars[i] == '\t':
-                have -= tabwidth
+        current_pos = 0
+        ncharsretained = 0
+        for char in chars:
+            if char == '\t':
+                current_pos = (current_pos // tabwidth + 1) * tabwidth
             else:
-                have -= 1
-            if have <= want or chars[i-1] not in " \t":
+                current_pos += 1
+            ncharsretained += 1
+            if current_pos > want:
+                ncharsretained -= 1
                 break
-        chars = chars[:len(chars) - ncharsdeleted]
-        return ncharsdeleted, chars
+        for i in range(ncharsretained, len(chars)):
+            if chars[i] not in " \t":
+                ncharsretained = i + 1
+        chars = chars[:ncharsretained]
+        return len(chars) - ncharsretained, chars
 
     def smart_backspace_event(self, event):
         text = self.text
