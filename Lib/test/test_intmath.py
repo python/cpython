@@ -2,7 +2,7 @@ from decimal import Decimal
 from fractions import Fraction
 import unittest
 from test import support
-from test.support import import_helper
+
 
 class IntSubclass(int):
     pass
