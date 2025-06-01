@@ -18,7 +18,6 @@
 #  include <signal.h>             // SIGINT
 #endif
 
-
 // ThreadError is just an alias to PyExc_RuntimeError
 #define ThreadError PyExc_RuntimeError
 
@@ -59,14 +58,6 @@ get_thread_state_by_cls(PyTypeObject *cls)
     return get_thread_state(module);
 }
 
-static inline thread_module_state *
-find_state_by_type(PyTypeObject *tp)
-{
-    PyObject *mod = PyType_GetModuleByDef(tp, &thread_module);
-    assert(mod != NULL);
-    return get_thread_state(mod);
-}
-
 
 #ifdef MS_WINDOWS
 typedef HRESULT (WINAPI *PF_GET_THREAD_DESCRIPTION)(HANDLE, PCWSTR*);
@@ -78,12 +69,12 @@ static PF_SET_THREAD_DESCRIPTION pSetThreadDescription = NULL;
 
 /*[clinic input]
 module _thread
-class _thread.iter_locked "iter_locked_object *" "find_state_by_type(type)->iter_locked_type"
+class _thread.iter_locked "iter_locked_object *" "clinic_state()->iter_locked_type"
 class _thread.lock "lockobject *" "clinic_state()->lock_type"
 class _thread.RLock "rlockobject *" "clinic_state()->rlock_type"
 
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6afac42991bc8469]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=1a4bf65233f83eae]*/
 
 #define clinic_state() get_thread_state_by_cls(type)
 #include "clinic/_threadmodule.c.h"
