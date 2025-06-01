@@ -2342,16 +2342,6 @@ incref_decref_delayed(PyObject *self, PyObject *op)
     Py_RETURN_NONE;
 }
 
-static PyInterpreterRef
-get_strong_ref(void)
-{
-    PyInterpreterRef ref;
-    if (PyInterpreterRef_Get(&ref) < 0) {
-        Py_FatalError("strong reference should not have failed");
-    }
-    return ref;
-}
-
 #define NUM_REFS 100
 
 static PyObject *
