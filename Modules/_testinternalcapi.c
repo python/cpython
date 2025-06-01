@@ -2352,32 +2352,23 @@ get_strong_ref(void)
     return ref;
 }
 
+#define NUM_REFS 100
+
 static PyObject *
 test_interp_refcount(PyObject *self, PyObject *unused)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    PyInterpreterRef ref1;
-    PyInterpreterRef ref2;
+    assert(_PyInterpreterState_Refcount(interp) == 0);
+    PyInterpreterRef refs[NUM_REFS];
+    for (int i = 0; i < NUM_REFS; ++i) {
+        int res = PyInterpreterRef_Get(&refs[i]);
+        assert(_PyInterpreterState_Refcount(interp) == i + 1);
+    }
 
-    // Reference counts are technically 0 by default
-    assert(_PyInterpreterState_Refcount(interp) == 0);
-    ref1 = get_strong_ref();
-    assert(_PyInterpreterState_Refcount(interp) == 1);
-    ref2 = get_strong_ref();
-    assert(_PyInterpreterState_Refcount(interp) == 2);
-    PyInterpreterRef_Close(ref1);
-    assert(_PyInterpreterState_Refcount(interp) == 1);
-    PyInterpreterRef_Close(ref2);
-    assert(_PyInterpreterState_Refcount(interp) == 0);
-
-    ref1 = get_strong_ref();
-    ref2 = PyInterpreterRef_Dup(ref1);
-    assert(_PyInterpreterState_Refcount(interp) == 2);
-    assert(PyInterpreterRef_AsInterpreter(ref1) == interp);
-    assert(PyInterpreterRef_AsInterpreter(ref2) == interp);
-    PyInterpreterRef_Close(ref1);
-    PyInterpreterRef_Close(ref2);
-    assert(_PyInterpreterState_Refcount(interp) == 0);
+    for (int i = 0; i < NUM_REFS; ++i) {
+        PyInterpreterRef_Close(refs[i]);
+        assert(_PyInterpreterState_Refcount(interp) == (NUM_REFS - i));
+    }
 
     Py_RETURN_NONE;
 }
@@ -2392,16 +2383,25 @@ test_interp_weakref_incref(PyObject *self, PyObject *unused)
     }
     assert(_PyInterpreterState_Refcount(interp) == 0);
 
-    PyInterpreterRef ref;
-    int res = PyInterpreterWeakRef_AsStrong(wref, &ref);
-    assert(res == 0);
-    assert(PyInterpreterRef_AsInterpreter(ref) == interp);
-    assert(_PyInterpreterState_Refcount(interp) == 1);
-    PyInterpreterWeakRef_Close(wref);
-    PyInterpreterRef_Close(ref);
+    PyInterpreterRef refs[NUM_REFS];
 
+    for (int i = 0; i < NUM_REFS; ++i) {
+        int res = PyInterpreterWeakRef_AsStrong(wref, &refs[i]);
+        assert(res == 0);
+        assert(PyInterpreterRef_AsInterpreter(refs[i]) == interp);
+        assert(_PyInterpreterState_Refcount(interp) == i + 1);
+    }
+
+    for (int i = 0; i < NUM_REFS; ++i) {
+        PyInterpreterRef_Close(refs[i]);
+        assert(_PyInterpreterState_Refcount(interp) == (NUM_REFS - i));
+    }
+
+    PyInterpreterWeakRef_Close(wref);
     Py_RETURN_NONE;
 }
+
+#undef NUM_REFS
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
