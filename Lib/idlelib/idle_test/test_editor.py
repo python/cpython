@@ -1,4 +1,4 @@
-"Test editor, coverage 53%."
+"Test editor, coverage approximately 53%."
 
 from idlelib import editor
 import unittest
@@ -260,6 +260,10 @@ class DeleteWantTest(unittest.TestCase):
             (13, 4, "abcde\tabd\t "),
             (16, 4, "abcde\tabd\t \t"),
         ]),
+        ("\tabcd", [
+            (2, 4, ""),
+            (5, 4, "\ta"),
+        ]),
     ]
 
     def mock_delete_trail_char_and_space(self, want, chars, tabwidth):
@@ -279,7 +283,7 @@ class DeleteWantTest(unittest.TestCase):
             for dat in self.data:
                 test_str = dat[0]
                 for da in dat[1]:
-                    with self.subTest(want=da[0], tabwidth=da[1], input=repr(test_str)):
+                    with self.subTest(want=da[0], tabwidth=da[1], input=test_str):
                         res_str = ew.delete_trail_char_and_space(da[0], test_str, da[1])[1]
                         self.assertEqual(res_str, da[2])
             time_new = time.time() - initial_time_new
@@ -290,7 +294,7 @@ class DeleteWantTest(unittest.TestCase):
                 for dat in self.data:
                     test_str = dat[0]
                     for da in dat[1]:
-                        with self.subTest(want=da[0], tabwidth=da[1], input=repr(test_str)):
+                        with self.subTest(want=da[0], tabwidth=da[1], input=test_str):
                             res_str = ew.delete_trail_char_and_space(da[0], test_str, da[1])[1]
                             self.assertEqual(res_str, da[2])
             time_old = time.time() - initial_time_old
