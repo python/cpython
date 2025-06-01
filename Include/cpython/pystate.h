@@ -207,11 +207,19 @@ struct _ts {
     PyObject *threading_local_sentinel;
     _PyRemoteDebuggerSupport remote_debugger_support;
 
-    /* Number of nested PyThreadState_Ensure() calls on this thread state */
-    Py_ssize_t ensure_counter;
+    struct {
+        /* Number of nested PyThreadState_Ensure() calls on this thread state */
+        Py_ssize_t counter;
 
-    /* Thread state that was active before PyThreadState_Ensure() was called. */
-    PyThreadState *prior_ensure;
+        /* Thread state that was active before PyThreadState_Ensure() was called. */
+        PyThreadState *prior_tstate;
+
+        /* Should this thread state be deleted upon calling
+           PyThreadState_Release() (with the counter at 1)?
+
+           This is only true for thread states created by PyThreadState_Ensure() */
+        int delete_on_release;
+    } ensure;
 };
 
 /* other API */
