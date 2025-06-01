@@ -1712,30 +1712,28 @@ class _ZipRepacker:
         dd_fmt = '<LQQ' if zip64 else '<LLL'
         dd_size = struct.calcsize(dd_fmt)
 
-        base = offset
+        pos = offset
         remainder = b''
 
-        while base < end_offset:
-            fp.seek(base)
-            chunk = remainder + fp.read(min(chunk_size, end_offset - base))
-            if not chunk:
-                break
+        fp.seek(offset)
+        while pos < end_offset:
+            chunk = remainder + fp.read(min(chunk_size, end_offset - pos))
 
-            scan_limit = len(chunk) - dd_size + 1
+            delta = pos - len(remainder) - offset
             mv = memoryview(chunk)
-            for i in range(scan_limit):
+            for i in range(len(chunk) - dd_size + 1):
                 dd = mv[i:i + dd_size]
                 try:
                     crc, compress_size, file_size = struct.unpack(dd_fmt, dd)
                 except struct.error:
                     continue
-                if (base + i) - offset != compress_size:
+                if delta + i != compress_size:
                     continue
 
                 return crc, compress_size, file_size, dd_size
 
             remainder = chunk[-(dd_size - 1):]
-            base += scan_limit
+            pos += chunk_size
 
         return None
 
