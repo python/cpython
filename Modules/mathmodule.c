@@ -2903,25 +2903,25 @@ math_exec(PyObject *module)
         return -1;
     }
 
-    PyObject *imath = PyImport_ImportModule("imath");
-    if (!imath) {
+    PyObject *intmath = PyImport_ImportModule("intmath");
+    if (!intmath) {
         return -1;
     }
-#define IMPORT_FROM_IMATH(NAME) do {                            \
+#define IMPORT_FROM_INTMATH(NAME) do {                            \
         if (PyModule_Add(module, #NAME,                         \
-                PyObject_GetAttrString(imath, #NAME)) < 0) {    \
-            Py_DECREF(imath);                                   \
+                PyObject_GetAttrString(intmath, #NAME)) < 0) {    \
+            Py_DECREF(intmath);                                   \
             return -1;                                          \
         }                                                       \
     } while(0)
 
-    IMPORT_FROM_IMATH(comb);
-    IMPORT_FROM_IMATH(factorial);
-    IMPORT_FROM_IMATH(gcd);
-    IMPORT_FROM_IMATH(isqrt);
-    IMPORT_FROM_IMATH(lcm);
-    IMPORT_FROM_IMATH(perm);
-    Py_DECREF(imath);
+    IMPORT_FROM_INTMATH(comb);
+    IMPORT_FROM_INTMATH(factorial);
+    IMPORT_FROM_INTMATH(gcd);
+    IMPORT_FROM_INTMATH(isqrt);
+    IMPORT_FROM_INTMATH(lcm);
+    IMPORT_FROM_INTMATH(perm);
+    Py_DECREF(intmath);
     return 0;
 }
 

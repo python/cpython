@@ -83,8 +83,8 @@ Other language changes
 New modules
 ===========
 
-imath
------
+intmath
+-------
 
 This module provides access to the mathematical functions for integer arguments.
 (Contributed by Serhiy Storchaka in :gh:`81313`.)

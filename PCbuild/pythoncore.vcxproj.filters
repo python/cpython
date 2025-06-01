@@ -1049,7 +1049,7 @@
     <ClCompile Include="..\Modules\hmacmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\imathmodule.c">
+    <ClCompile Include="..\Modules\intmathmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\itertoolsmodule.c">

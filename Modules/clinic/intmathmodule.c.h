@@ -4,21 +4,21 @@ preserve
 
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
-PyDoc_STRVAR(imath_gcd__doc__,
+PyDoc_STRVAR(intmath_gcd__doc__,
 "gcd($module, /, *integers)\n"
 "--\n"
 "\n"
 "Greatest Common Divisor.");
 
-#define IMATH_GCD_METHODDEF    \
-    {"gcd", _PyCFunction_CAST(imath_gcd), METH_FASTCALL, imath_gcd__doc__},
+#define INTMATH_GCD_METHODDEF    \
+    {"gcd", _PyCFunction_CAST(intmath_gcd), METH_FASTCALL, intmath_gcd__doc__},
 
 static PyObject *
-imath_gcd_impl(PyObject *module, PyObject * const *args,
-               Py_ssize_t args_length);
+intmath_gcd_impl(PyObject *module, PyObject * const *args,
+                 Py_ssize_t args_length);
 
 static PyObject *
-imath_gcd(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+intmath_gcd(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject * const *__clinic_args;
@@ -26,26 +26,26 @@ imath_gcd(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 
     __clinic_args = args;
     args_length = nargs;
-    return_value = imath_gcd_impl(module, __clinic_args, args_length);
+    return_value = intmath_gcd_impl(module, __clinic_args, args_length);
 
     return return_value;
 }
 
-PyDoc_STRVAR(imath_lcm__doc__,
+PyDoc_STRVAR(intmath_lcm__doc__,
 "lcm($module, /, *integers)\n"
 "--\n"
 "\n"
 "Least Common Multiple.");
 
-#define IMATH_LCM_METHODDEF    \
-    {"lcm", _PyCFunction_CAST(imath_lcm), METH_FASTCALL, imath_lcm__doc__},
+#define INTMATH_LCM_METHODDEF    \
+    {"lcm", _PyCFunction_CAST(intmath_lcm), METH_FASTCALL, intmath_lcm__doc__},
 
 static PyObject *
-imath_lcm_impl(PyObject *module, PyObject * const *args,
-               Py_ssize_t args_length);
+intmath_lcm_impl(PyObject *module, PyObject * const *args,
+                 Py_ssize_t args_length);
 
 static PyObject *
-imath_lcm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+intmath_lcm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject * const *__clinic_args;
@@ -53,30 +53,30 @@ imath_lcm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 
     __clinic_args = args;
     args_length = nargs;
-    return_value = imath_lcm_impl(module, __clinic_args, args_length);
+    return_value = intmath_lcm_impl(module, __clinic_args, args_length);
 
     return return_value;
 }
 
-PyDoc_STRVAR(imath_ilog2__doc__,
+PyDoc_STRVAR(intmath_ilog2__doc__,
 "ilog2($module, n, /)\n"
 "--\n"
 "\n"
 "Return the integer part of the base 2 logarithm of the input.");
 
-#define IMATH_ILOG2_METHODDEF    \
-    {"ilog2", (PyCFunction)imath_ilog2, METH_O, imath_ilog2__doc__},
+#define INTMATH_ILOG2_METHODDEF    \
+    {"ilog2", (PyCFunction)intmath_ilog2, METH_O, intmath_ilog2__doc__},
 
-PyDoc_STRVAR(imath_isqrt__doc__,
+PyDoc_STRVAR(intmath_isqrt__doc__,
 "isqrt($module, n, /)\n"
 "--\n"
 "\n"
 "Return the integer part of the square root of the input.");
 
-#define IMATH_ISQRT_METHODDEF    \
-    {"isqrt", (PyCFunction)imath_isqrt, METH_O, imath_isqrt__doc__},
+#define INTMATH_ISQRT_METHODDEF    \
+    {"isqrt", (PyCFunction)intmath_isqrt, METH_O, intmath_isqrt__doc__},
 
-PyDoc_STRVAR(imath_factorial__doc__,
+PyDoc_STRVAR(intmath_factorial__doc__,
 "factorial($module, n, /)\n"
 "--\n"
 "\n"
@@ -85,10 +85,10 @@ PyDoc_STRVAR(imath_factorial__doc__,
 "Raise a TypeError if n is not an integer.\n"
 "Raise a ValueError if n is negative integer.");
 
-#define IMATH_FACTORIAL_METHODDEF    \
-    {"factorial", (PyCFunction)imath_factorial, METH_O, imath_factorial__doc__},
+#define INTMATH_FACTORIAL_METHODDEF    \
+    {"factorial", (PyCFunction)intmath_factorial, METH_O, intmath_factorial__doc__},
 
-PyDoc_STRVAR(imath_perm__doc__,
+PyDoc_STRVAR(intmath_perm__doc__,
 "perm($module, n, k=None, /)\n"
 "--\n"
 "\n"
@@ -103,14 +103,14 @@ PyDoc_STRVAR(imath_perm__doc__,
 "Raises TypeError if either of the arguments are not integers.\n"
 "Raises ValueError if either of the arguments are negative.");
 
-#define IMATH_PERM_METHODDEF    \
-    {"perm", _PyCFunction_CAST(imath_perm), METH_FASTCALL, imath_perm__doc__},
+#define INTMATH_PERM_METHODDEF    \
+    {"perm", _PyCFunction_CAST(intmath_perm), METH_FASTCALL, intmath_perm__doc__},
 
 static PyObject *
-imath_perm_impl(PyObject *module, PyObject *n, PyObject *k);
+intmath_perm_impl(PyObject *module, PyObject *n, PyObject *k);
 
 static PyObject *
-imath_perm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+intmath_perm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *n;
@@ -125,13 +125,13 @@ imath_perm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     k = args[1];
 skip_optional:
-    return_value = imath_perm_impl(module, n, k);
+    return_value = intmath_perm_impl(module, n, k);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(imath_comb__doc__,
+PyDoc_STRVAR(intmath_comb__doc__,
 "comb($module, n, k, /)\n"
 "--\n"
 "\n"
@@ -147,14 +147,14 @@ PyDoc_STRVAR(imath_comb__doc__,
 "Raises TypeError if either of the arguments are not integers.\n"
 "Raises ValueError if either of the arguments are negative.");
 
-#define IMATH_COMB_METHODDEF    \
-    {"comb", _PyCFunction_CAST(imath_comb), METH_FASTCALL, imath_comb__doc__},
+#define INTMATH_COMB_METHODDEF    \
+    {"comb", _PyCFunction_CAST(intmath_comb), METH_FASTCALL, intmath_comb__doc__},
 
 static PyObject *
-imath_comb_impl(PyObject *module, PyObject *n, PyObject *k);
+intmath_comb_impl(PyObject *module, PyObject *n, PyObject *k);
 
 static PyObject *
-imath_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+intmath_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *n;
@@ -165,9 +165,9 @@ imath_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     n = args[0];
     k = args[1];
-    return_value = imath_comb_impl(module, n, k);
+    return_value = intmath_comb_impl(module, n, k);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e097759f0d613679 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f1ccee73fbc42c17 input=a9049054013a1b77]*/

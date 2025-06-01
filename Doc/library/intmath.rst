@@ -1,7 +1,7 @@
-:mod:`imath` --- Mathematical functions for integer numbers
-===========================================================
+:mod:`intmath` --- Mathematical functions for integer numbers
+=============================================================
 
-.. module:: imath
+.. module:: intmath
    :synopsis: Mathematical functions for integer numbers.
 
 .. versionadded:: next

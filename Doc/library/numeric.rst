@@ -19,7 +19,7 @@ The following modules are documented in this chapter:
 
    numbers.rst
    math.rst
-   imath.rst
+   intmath.rst
    cmath.rst
    decimal.rst
    fractions.rst

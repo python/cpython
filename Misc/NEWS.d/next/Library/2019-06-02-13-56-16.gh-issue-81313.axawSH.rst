@@ -1,1 +1,1 @@
-Add the :mod:`imath` module.
+Add the :mod:`intmath` module.
