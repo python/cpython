@@ -13,8 +13,8 @@ end a multi-line command.
 
 .. only:: html
 
-   You can use the ``Copy`` button which appears when hovering over a code
-   example, and which strips prompts and omits output, to
+   You can use the ``Copy`` button (it appears in the upper-right corner
+   when hovering over a code example), which strips prompts and omits output, to
    easily copy and paste the input lines into your interpreter.
 
 .. index:: single: # (hash); comment
