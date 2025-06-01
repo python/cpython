@@ -249,6 +249,10 @@ class DeleteWantTest(unittest.TestCase):
             self.assertEqual(res_str, "abcde" + 10000 * "\t" + 1001 * " ")
             res_str = ew.delete_trail_whitespace(3, test_str, 4)[1]
             self.assertEqual(res_str, "abcde")
+            res_str = ew.delete_trail_whitespace(6, test_str, 4)[1]
+            self.assertEqual(res_str, "abcde")
+            res_str = ew.delete_trail_whitespace(30002, test_str, 4)[1]
+            self.assertEqual(res_str, "abcde" + 7499 * "\t")
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
