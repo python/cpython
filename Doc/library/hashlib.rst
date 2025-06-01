@@ -94,11 +94,11 @@ accessible by name via :func:`new`.  See :data:`algorithms_available`.
    OpenSSL does not provide we fall back to a verified implementation from
    the `HACL\* project`_.
 
-.. deprecated-removed:: 3.15 3.17
-   The undocumented ``string`` keyword parameter in :func:`new` and hash
-   function constructors such as :func:`md5` is deprecated.
-   Use the ``data`` keyword parameter instead, or simply pass the data to hash
-   as a positional argument.
+.. deprecated-removed:: 3.15 3.19
+   The undocumented ``string`` keyword parameter in :func:`!_hashlib.new`
+   and hash-named constructors such as :func:`!_md5.md5` is deprecated.
+   Prefer passing the initial data as a positional argument for maximum
+   backwards compatibility.
 
 
 Usage
