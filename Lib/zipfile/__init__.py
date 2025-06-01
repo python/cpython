@@ -1694,8 +1694,11 @@ class _ZipRepacker:
             fp, struct.pack('<L', _DD_SIGNATURE), offset, end_offset
         ):
             fp.seek(pos)
-            dd = fp.read(dd_size)
-            _, crc, compress_size, file_size = struct.unpack(dd_fmt, dd)
+            dd = fp.read(min(dd_size, end_offset - pos))
+            try:
+                _, crc, compress_size, file_size = struct.unpack(dd_fmt, dd)
+            except struct.error:
+                continue
 
             # @TODO: also check CRC to better guard from a false positive?
             if pos - offset != compress_size:
