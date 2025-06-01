@@ -809,9 +809,8 @@ iter_locked_next(PyObject *op)
     // we cannot use Py_BEGIN_CRITICAL_SECTION as it is not available in the normal build
     PyMutex_Lock(&(lz->lock));
 
-    PyObject *it = lz->it;
-    result = PyIter_Next(it);
-    if (result == NULL) {
+    int v = PyIter_NextItem(lz->it, &result);
+    if (v == -1) {
         /* Note:  StopIteration is already cleared by PyIter_Next() */
         /* If PyErr_Occurred() we will also return NULL*/
     }
