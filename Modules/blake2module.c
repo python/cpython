@@ -907,18 +907,16 @@ static PyObject *
 py_blake2b_get_name(PyObject *op, void *Py_UNUSED(closure))
 {
     Blake2Object *self = _Blake2Object_CAST(op);
-    return PyUnicode_FromString(is_blake2b(self->impl) ? "blake2b" : "blake2s");
+    return PyUnicode_FromString(BLAKE2_IMPLNAME(self));
 }
-
 
 
 static PyObject *
 py_blake2b_get_block_size(PyObject *op, void *Py_UNUSED(closure))
 {
     Blake2Object *self = _Blake2Object_CAST(op);
-    return PyLong_FromLong(is_blake2b(self->impl) ? HACL_HASH_BLAKE2B_BLOCK_BYTES : HACL_HASH_BLAKE2S_BLOCK_BYTES);
+    return PyLong_FromLong(GET_BLAKE2_CONST(self, BLOCK_BYTES));
 }
-
 
 
 static PyObject *
