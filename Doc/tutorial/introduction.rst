@@ -13,10 +13,8 @@ end a multi-line command.
 
 .. only:: html
 
-   You can toggle the display of prompts and output by clicking on ``>>>``
-   in the upper-right corner of an example box.  If you hide the prompts
-   and output for an example, then you can easily copy and paste the input
-   lines into your interpreter.
+   You can use the ``Copy`` button, which strips prompts and omits output, to
+   easily copy and paste the input lines into your interpreter.
 
 .. index:: single: # (hash); comment
 
