@@ -239,20 +239,41 @@ class RMenuTest(unittest.TestCase):
 
 class DeleteWantTest(unittest.TestCase):
 
-    def test_delete_trail_whitespace(self):
+    def test_delete_trail_char_and_space(self):
         with unittest.mock.patch.object(Editor, '__init__', return_value=None) as mock_init:
             ew = Editor()
+            
             test_str = "abcde" + 10000 * "\t" + 10000 * " "
-            res_str = ew.delete_trail_whitespace(30000, test_str, 4)[1]
+            res_str = ew.delete_trail_char_and_space(30000, test_str, 4)[1]
             self.assertEqual(res_str, "abcde" + 7499 * "\t")
-            res_str = ew.delete_trail_whitespace(41005, test_str, 4)[1]
+            res_str = ew.delete_trail_char_and_space(41005, test_str, 4)[1]
             self.assertEqual(res_str, "abcde" + 10000 * "\t" + 1001 * " ")
-            res_str = ew.delete_trail_whitespace(3, test_str, 4)[1]
+            res_str = ew.delete_trail_char_and_space(3, test_str, 4)[1]
             self.assertEqual(res_str, "abcde")
-            res_str = ew.delete_trail_whitespace(6, test_str, 4)[1]
+            res_str = ew.delete_trail_char_and_space(6, test_str, 4)[1]
             self.assertEqual(res_str, "abcde")
-            res_str = ew.delete_trail_whitespace(30002, test_str, 4)[1]
+            res_str = ew.delete_trail_char_and_space(30002, test_str, 4)[1]
             self.assertEqual(res_str, "abcde" + 7499 * "\t")
+            
+            test_str = "abcde\tabd\t\t"
+            res_str = ew.delete_trail_char_and_space(7, test_str, 4)[1]
+            self.assertEqual(res_str, "abcde\tabd")
+            res_str = ew.delete_trail_char_and_space(12, test_str, 4)[1]
+            self.assertEqual(res_str, "abcde\tabd\t")
+            res_str = ew.delete_trail_char_and_space(13, test_str, 4)[1]
+            self.assertEqual(res_str, "abcde\tabd\t")
+            res_str = ew.delete_trail_char_and_space(16, test_str, 4)[1]
+            self.assertEqual(res_str, "abcde\tabd\t")
+            
+            test_str = "abcde\tabd\t \ta"
+            res_str = ew.delete_trail_char_and_space(7, test_str, 4)[1]
+            self.assertEqual(res_str, "abcde\tabd")
+            res_str = ew.delete_trail_char_and_space(12, test_str, 4)[1]
+            self.assertEqual(res_str, "abcde\tabd\t")
+            res_str = ew.delete_trail_char_and_space(13, test_str, 4)[1]
+            self.assertEqual(res_str, "abcde\tabd\t ")
+            res_str = ew.delete_trail_char_and_space(16, test_str, 4)[1]
+            self.assertEqual(res_str, "abcde\tabd\t \t")
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
