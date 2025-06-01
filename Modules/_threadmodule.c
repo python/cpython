@@ -67,8 +67,6 @@ find_state_by_type(PyTypeObject *tp)
     return get_thread_state(mod);
 }
 
-#include "clinic/_threadmodule.c.h"
-
 
 #ifdef MS_WINDOWS
 typedef HRESULT (WINAPI *PF_GET_THREAD_DESCRIPTION)(HANDLE, PCWSTR*);
