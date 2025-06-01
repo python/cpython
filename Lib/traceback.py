@@ -1603,6 +1603,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
                 frame = tb.tb_frame
                 if 'self' in frame.f_locals and frame.f_locals['self'] is obj:
                     hide_underscored = False
+            d = [x for x in d if isinstance(x, str)]
             if hide_underscored:
                 d = [x for x in d if x[:1] != '_']
         except Exception:
@@ -1611,6 +1612,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
         try:
             mod = __import__(exc_value.name)
             d = dir(mod)
+            d = [x for x in d if isinstance(x, str)]
             if wrong_name[:1] != '_':
                 d = [x for x in d if x[:1] != '_']
         except Exception:
@@ -1628,6 +1630,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             + list(frame.f_globals)
             + list(frame.f_builtins)
         )
+        d = [x for x in d if isinstance(x, str)]
 
         # Check first if we are in a method and the instance
         # has the wrong name as attribute
