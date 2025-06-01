@@ -14,6 +14,8 @@
 
 #include "frameobject.h"          // PyFrame_New()
 #include "marshal.h"              // PyMarshal_WriteLongToFile()
+#include "pylifecycle.h"
+#include "pystate.h"
 
 #include <float.h>                // FLT_MAX
 #include <signal.h>
@@ -2556,38 +2558,95 @@ get_strong_ref(void)
     return ref;
 }
 
-static PyObject *
-test_interp_ensure(PyObject *self, PyObject *unused)
+static void
+test_interp_ref_common(void)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     PyInterpreterRef ref = get_strong_ref();
+    assert(PyInterpreterRef_AsInterpreter(ref) == interp);
+
+    PyInterpreterRef ref_2 = PyInterpreterRef_Dup(ref);
+    assert(PyInterpreterRef_AsInterpreter(ref_2) == interp);
+
+    // We can close the references in any order
+    PyInterpreterRef_Close(ref);
+    PyInterpreterRef_Close(ref_2);
+}
+
+static PyObject *
+test_interpreter_refs(PyObject *self, PyObject *unused)
+{
+    // Test the main interpreter
+    test_interp_ref_common();
+
+    // Test a (legacy) subinterpreter
     PyThreadState *save_tstate = PyThreadState_Swap(NULL);
-    PyThreadState *tstate = Py_NewInterpreter();
-    PyInterpreterRef sub_ref = get_strong_ref();
-    PyInterpreterState *subinterp = PyThreadState_GetInterpreter(tstate);
+    PyThreadState *interp_tstate = Py_NewInterpreter();
+    test_interp_ref_common();
+    Py_EndInterpreter(interp_tstate);
 
-    for (int i = 0; i < 10; ++i) {
-        int res = PyThreadState_Ensure(ref);
-        assert(res == 0);
-        assert(PyThreadState_GetUnchecked() != NULL);
-        assert(PyInterpreterState_Get() == interp);
+    // Test an isolated subinterpreter
+    PyInterpreterConfig config = {
+        .gil = PyInterpreterConfig_OWN_GIL,
+        .check_multi_interp_extensions = 1
+    };
+
+    PyThreadState *isolated_interp_tstate;
+    PyStatus status = Py_NewInterpreterFromConfig(&isolated_interp_tstate, &config);
+    if (PyStatus_Exception(status)) {
+        PyErr_SetString(PyExc_RuntimeError, "interpreter creation failed");
+        return NULL;
     }
 
-    for (int i = 0; i < 10; ++i) {
-        int res = PyThreadState_Ensure(sub_ref);
-        assert(res == 0);
-        assert(PyInterpreterState_Get() == subinterp);
-    }
+    test_interp_ref_common();
+    Py_EndInterpreter(isolated_interp_tstate);
+    PyThreadState_Swap(save_tstate);
+    Py_RETURN_NONE;
+}
 
-    for (int i = 0; i < 20; ++i) {
+static PyObject *
+test_thread_state_ensure_nested(PyObject *self, PyObject *unused)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyThreadState *save_tstate = PyThreadState_Swap(NULL);
+    assert(PyGILState_GetThisThreadState() == save_tstate);
+    PyInterpreterRef ref = get_strong_ref();
+
+    for (int i = 0; i < 10; ++i) {
+        // Test reactivation of the detached tstate.
+        if (PyThreadState_Ensure(ref) < 0) {
+            PyInterpreterRef_Close(ref);
+            return PyErr_NoMemory();
+        }
+
+        // No new thread state should've been created.
+        assert(PyThreadState_Get() == save_tstate);
         PyThreadState_Release();
     }
 
-    PyInterpreterRef_Close(ref);
-    PyInterpreterRef_Close(sub_ref);
+    assert(PyThreadState_GetUnchecked() == NULL);
 
-    PyThreadState_Swap(save_tstate);
-    Py_RETURN_NONE;
+    // Similarly, test ensuring with deep nesting and *then* releasing.
+    // If the (detached) gilstate matches the interpreter, then it shouldn't
+    // create a new thread state.
+    for (int i = 0; i < 10; ++i) {
+        if (PyThreadState_Ensure(ref) < 0) {
+            // This will technically leak other thread states, but it doesn't
+            // matter because this is a test.
+            PyInterpreterRef_Close(ref);
+            return PyErr_NoMemory();
+        }
+
+        assert(PyThreadState_Get() == save_tstate);
+    }
+
+    for (int i = 0; i < 10; ++i) {
+        assert(PyThreadState_Get() == save_tstate);
+        PyThreadState_Release();
+    }
+
+    assert(PyThreadState_GetUnchecked() == NULL);
+    PyInterpreterRef_Close(ref);
 }
 
 static PyMethodDef TestMethods[] = {
@@ -2684,7 +2743,8 @@ static PyMethodDef TestMethods[] = {
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
     {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
-    {"test_interp_ensure", test_interp_ensure, METH_NOARGS},
+    {"test_interpreter_refs", test_interpreter_refs, METH_NOARGS},
+    {"test_thread_state_ensure_nested", test_thread_state_ensure_nested, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
