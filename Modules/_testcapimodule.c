@@ -2650,6 +2650,58 @@ test_thread_state_ensure_nested(PyObject *self, PyObject *unused)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_thread_state_ensure_crossinterp(PyObject *self, PyObject *unused)
+{
+    PyInterpreterRef ref = get_strong_ref();
+    PyThreadState *save_tstate = PyThreadState_Swap(NULL);
+    PyThreadState *interp_tstate = Py_NewInterpreter();
+
+    /* This should create a new thread state for the calling interpreter, *not*
+       reactivate the old one. In a real-world scenario, this would arise in
+       something like this:
+
+       def some_func():
+           import something
+           # This re-enters the main interpreter, but we
+           # shouldn't have access to prior thread-locals.
+           something.call_something()
+
+       interp = interpreters.create()
+       interp.exec(some_func)
+       */
+    if (PyThreadState_Ensure(ref) < 0) {
+        PyInterpreterRef_Close(ref);
+        return PyErr_NoMemory();
+    }
+
+    PyThreadState *ensured_tstate = PyThreadState_Get();
+    assert(ensured_tstate != save_tstate);
+    assert(PyInterpreterState_Get() == PyInterpreterRef_AsInterpreter(ref));
+    assert(PyGILState_GetThisThreadState() == ensured_tstate);
+
+    // Now though, we should reactivate the thread state
+    if (PyThreadState_Ensure(ref) < 0) {
+        PyInterpreterRef_Close(ref);
+        return PyErr_NoMemory();
+    }
+
+    assert(PyThreadState_Get() == ensured_tstate);
+    PyThreadState_Release();
+
+    // Ensure that we're restoring the prior thread state
+    PyThreadState_Release();
+    assert(PyThreadState_Get() == interp_tstate);
+    assert(PyGILState_GetThisThreadState() == interp_tstate);
+
+    PyThreadState_Swap(interp_tstate);
+    Py_EndInterpreter(interp_tstate);
+
+    PyInterpreterRef_Close(ref);
+    PyThreadState_Swap(save_tstate);
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -2746,6 +2798,7 @@ static PyMethodDef TestMethods[] = {
     {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
     {"test_interpreter_refs", test_interpreter_refs, METH_NOARGS},
     {"test_thread_state_ensure_nested", test_thread_state_ensure_nested, METH_NOARGS},
+    {"test_thread_state_ensure_crossinterp", test_thread_state_ensure_crossinterp, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
