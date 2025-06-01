@@ -443,6 +443,89 @@ update(Blake2Object *self, uint8_t *buf, Py_ssize_t len)
     }
 }
 
+#define BLAKE2_IMPLNAME(SELF)   \
+    (is_blake2b((SELF)->impl) ? "blake2b" : "blake2s")
+#define GET_BLAKE2_CONST(SELF, NAME)    \
+    (is_blake2b((SELF)->impl)           \
+        ? HACL_HASH_BLAKE2B_ ## NAME    \
+        : HACL_HASH_BLAKE2S_ ## NAME)
+
+#define MAX_OUT_BYTES(SELF)         GET_BLAKE2_CONST(SELF, OUT_BYTES)
+#define MAX_SALT_LENGTH(SELF)       GET_BLAKE2_CONST(SELF, SALT_BYTES)
+#define MAX_KEY_BYTES(SELF)         GET_BLAKE2_CONST(SELF, KEY_BYTES)
+#define MAX_PERSONAL_BYTES(SELF)    GET_BLAKE2_CONST(SELF, PERSONAL_BYTES)
+
+static int
+py_blake2_validate_params(Blake2Object *self,
+                          int digest_size,
+                          Py_buffer *key, Py_buffer *salt, Py_buffer *person,
+                          int fanout, int depth, unsigned long leaf_size,
+                          unsigned long long node_offset, int node_depth,
+                          int inner_size)
+{
+    /* Validate digest size. */
+    if (digest_size <= 0 || (unsigned int)digest_size > MAX_OUT_BYTES(self)) {
+        PyErr_Format(
+            PyExc_ValueError,
+            "digest_size for %s must be between 1 and %d bytes, got %d",
+            BLAKE2_IMPLNAME(self), MAX_OUT_BYTES(self), digest_size
+        );
+        goto error;
+    }
+
+#define CHECK_LENGTH(NAME, VALUE, MAX)                                  \
+    do {                                                                \
+        if ((size_t)(VALUE) > (size_t)(MAX)) {                          \
+            PyErr_Format(PyExc_ValueError,                              \
+                         "maximum %s length is %zu bytes, got %zd",     \
+                         (NAME), (size_t)(MAX), (Py_ssize_t)(VALUE));   \
+            goto error;                                                 \
+        }                                                               \
+    } while (0)
+    /* Validate key parameter. */
+    if (key->obj && key->len) {
+        CHECK_LENGTH("key", key->len, MAX_KEY_BYTES(self));
+    }
+    /* Validate salt parameter. */
+    if (salt->obj && salt->len) {
+        CHECK_LENGTH("salt", salt->len, MAX_SALT_LENGTH(self));
+    }
+    /* Validate personalization parameter. */
+    if (person->obj && person->len) {
+        CHECK_LENGTH("person", person->len, MAX_PERSONAL_BYTES(self));
+    }
+#undef CHECK_LENGTH
+#define CHECK_TREE(NAME, VALUE, MIN, MAX)                           \
+    do {                                                            \
+        if ((VALUE) < (MIN) || (size_t)(VALUE) > (size_t)(MAX)) {   \
+            PyErr_Format(PyExc_ValueError,                          \
+                         "'%s' must be between %zu and %zu",        \
+                         (NAME), (size_t)(MIN), (size_t)(MAX));     \
+            goto error;                                             \
+        }                                                           \
+    } while (0)
+    /* Validate tree parameters. */
+    CHECK_TREE("fanout", fanout, 0, 255);
+    CHECK_TREE("depth", depth, 1, 255);
+    CHECK_TREE("node_depth", node_depth, 0, 255);
+    CHECK_TREE("inner_size", inner_size, 0, MAX_OUT_BYTES(self));
+#undef CHECK_TREE
+    if (leaf_size > 0xFFFFFFFFU) {
+        /* maximum: 2**32 - 1 */
+        PyErr_SetString(PyExc_OverflowError, "'leaf_size' is too large");
+        goto error;
+    }
+    if (is_blake2s(self->impl) && node_offset > 0xFFFFFFFFFFFFULL) {
+        /* maximum: 2**48 - 1 */
+        PyErr_SetString(PyExc_OverflowError, "'node_offset' is too large");
+        goto error;
+    }
+    return 0;
+error:
+    return -1;
+}
+
+
 static PyObject *
 py_blake2b_or_s_new(PyTypeObject *type, PyObject *data, int digest_size,
                     Py_buffer *key, Py_buffer *salt, Py_buffer *person,
@@ -452,7 +535,6 @@ py_blake2b_or_s_new(PyTypeObject *type, PyObject *data, int digest_size,
 
 {
     Blake2Object *self = NULL;
-    Py_buffer buf;
 
     self = new_Blake2Object(type);
     if (self == NULL) {
@@ -482,95 +564,30 @@ py_blake2b_or_s_new(PyTypeObject *type, PyObject *data, int digest_size,
         default:
             Py_UNREACHABLE();
     }
-    // Using Blake2b because we statically know that these are greater than the
-    // Blake2s sizes -- this avoids a VLA.
-    uint8_t salt_[HACL_HASH_BLAKE2B_SALT_BYTES] = { 0 };
-    uint8_t personal_[HACL_HASH_BLAKE2B_PERSONAL_BYTES] = { 0 };
-
-    /* Validate digest size. */
-    if (digest_size <= 0 ||
-        (unsigned) digest_size > (is_blake2b(self->impl) ? HACL_HASH_BLAKE2B_OUT_BYTES : HACL_HASH_BLAKE2S_OUT_BYTES))
-    {
-        PyErr_Format(PyExc_ValueError,
-                "digest_size for %s must be between 1 and %d bytes, here it is %d",
-                is_blake2b(self->impl) ? "Blake2b" : "Blake2s",
-                is_blake2b(self->impl) ? HACL_HASH_BLAKE2B_OUT_BYTES : HACL_HASH_BLAKE2S_OUT_BYTES,
-                digest_size);
-        goto error;
-    }
-
-    /* Validate salt parameter. */
-    if ((salt->obj != NULL) && salt->len) {
-        if ((size_t)salt->len > (is_blake2b(self->impl) ? HACL_HASH_BLAKE2B_SALT_BYTES : HACL_HASH_BLAKE2S_SALT_BYTES)) {
-            PyErr_Format(PyExc_ValueError,
-                "maximum salt length is %d bytes",
-                (is_blake2b(self->impl) ? HACL_HASH_BLAKE2B_SALT_BYTES : HACL_HASH_BLAKE2S_SALT_BYTES));
-            goto error;
-        }
-        memcpy(salt_, salt->buf, salt->len);
-    }
-
-    /* Validate personalization parameter. */
-    if ((person->obj != NULL) && person->len) {
-        if ((size_t)person->len > (is_blake2b(self->impl) ? HACL_HASH_BLAKE2B_PERSONAL_BYTES : HACL_HASH_BLAKE2S_PERSONAL_BYTES)) {
-            PyErr_Format(PyExc_ValueError,
-                "maximum person length is %d bytes",
-                (is_blake2b(self->impl) ? HACL_HASH_BLAKE2B_PERSONAL_BYTES : HACL_HASH_BLAKE2S_PERSONAL_BYTES));
-            goto error;
-        }
-        memcpy(personal_, person->buf, person->len);
-    }
-
-    /* Validate tree parameters. */
-    if (fanout < 0 || fanout > 255) {
-        PyErr_SetString(PyExc_ValueError,
-                "fanout must be between 0 and 255");
-        goto error;
-    }
-
-    if (depth <= 0 || depth > 255) {
-        PyErr_SetString(PyExc_ValueError,
-                "depth must be between 1 and 255");
-        goto error;
-    }
-
-    if (leaf_size > 0xFFFFFFFFU) {
-        PyErr_SetString(PyExc_OverflowError, "leaf_size is too large");
-        goto error;
-    }
-
-    if (is_blake2s(self->impl) && node_offset > 0xFFFFFFFFFFFFULL) {
-        /* maximum 2**48 - 1 */
-         PyErr_SetString(PyExc_OverflowError, "node_offset is too large");
-         goto error;
-     }
-
-    if (node_depth < 0 || node_depth > 255) {
-        PyErr_SetString(PyExc_ValueError,
-                "node_depth must be between 0 and 255");
-        goto error;
-    }
-
-    if (inner_size < 0 ||
-        (unsigned) inner_size > (is_blake2b(self->impl) ? HACL_HASH_BLAKE2B_OUT_BYTES : HACL_HASH_BLAKE2S_OUT_BYTES)) {
-        PyErr_Format(PyExc_ValueError,
-                "inner_size must be between 0 and is %d",
-                (is_blake2b(self->impl) ? HACL_HASH_BLAKE2B_OUT_BYTES : HACL_HASH_BLAKE2S_OUT_BYTES));
-        goto error;
-    }
-
-    /* Set key length. */
-    if ((key->obj != NULL) && key->len) {
-        if ((size_t)key->len > (is_blake2b(self->impl) ? HACL_HASH_BLAKE2B_KEY_BYTES : HACL_HASH_BLAKE2S_KEY_BYTES)) {
-            PyErr_Format(PyExc_ValueError,
-                "maximum key length is %d bytes",
-                (is_blake2b(self->impl) ? HACL_HASH_BLAKE2B_KEY_BYTES : HACL_HASH_BLAKE2S_KEY_BYTES));
-            goto error;
-        }
-    }
 
     // Unlike the state types, the parameters share a single (client-friendly)
     // structure.
+    if (py_blake2_validate_params(self,
+                                  digest_size,
+                                  key, salt, person,
+                                  fanout, depth, leaf_size,
+                                  node_offset, node_depth, inner_size) < 0)
+    {
+        goto error;
+    }
+
+    // Using Blake2b because we statically know that these are greater than the
+    // Blake2s sizes -- this avoids a VLA.
+    uint8_t salt_buffer[HACL_HASH_BLAKE2B_SALT_BYTES] = {0};
+    uint8_t personal_buffer[HACL_HASH_BLAKE2B_PERSONAL_BYTES] = {0};
+    if (salt->obj != NULL) {
+        assert(salt->buf != NULL);
+        memcpy(salt_buffer, salt->buf, salt->len);
+    }
+    if (person->obj != NULL) {
+        assert(person->buf != NULL);
+        memcpy(personal_buffer, person->buf, person->len);
+    }
 
     Hacl_Hash_Blake2b_blake2_params params = {
         .digest_length = digest_size,
@@ -581,55 +598,46 @@ py_blake2b_or_s_new(PyTypeObject *type, PyObject *data, int digest_size,
         .node_offset = node_offset,
         .node_depth = node_depth,
         .inner_length = inner_size,
-        .salt = salt_,
-        .personal = personal_
+        .salt = salt_buffer,
+        .personal = personal_buffer
     };
+
+#define BLAKE2_MALLOC(TYPE, STATE)                                  \
+    do {                                                            \
+        STATE = Hacl_Hash_ ## TYPE ## _malloc_with_params_and_key(  \
+                    &params, last_node, key->buf);                  \
+        if (STATE == NULL) {                                        \
+            (void)PyErr_NoMemory();                                 \
+            goto error;                                             \
+        }                                                           \
+    } while (0)
 
     switch (self->impl) {
 #if HACL_CAN_COMPILE_SIMD256
-        case Blake2b_256: {
-            self->blake2b_256_state = Hacl_Hash_Blake2b_Simd256_malloc_with_params_and_key(&params, last_node, key->buf);
-            if (self->blake2b_256_state == NULL) {
-                (void)PyErr_NoMemory();
-                goto error;
-            }
+        case Blake2b_256:
+            BLAKE2_MALLOC(Blake2b_Simd256, self->blake2b_256_state);
             break;
-        }
 #endif
 #if HACL_CAN_COMPILE_SIMD128
-        case Blake2s_128: {
-            self->blake2s_128_state = Hacl_Hash_Blake2s_Simd128_malloc_with_params_and_key(&params, last_node, key->buf);
-            if (self->blake2s_128_state == NULL) {
-                (void)PyErr_NoMemory();
-                goto error;
-            }
+        case Blake2s_128:
+            BLAKE2_MALLOC(Blake2s_Simd128, self->blake2s_128_state);
             break;
-        }
 #endif
-        case Blake2b: {
-            self->blake2b_state = Hacl_Hash_Blake2b_malloc_with_params_and_key(&params, last_node, key->buf);
-            if (self->blake2b_state == NULL) {
-                (void)PyErr_NoMemory();
-                goto error;
-            }
+        case Blake2b:
+            BLAKE2_MALLOC(Blake2b, self->blake2b_state);
             break;
-        }
-        case Blake2s: {
-            self->blake2s_state = Hacl_Hash_Blake2s_malloc_with_params_and_key(&params, last_node, key->buf);
-            if (self->blake2s_state == NULL) {
-                (void)PyErr_NoMemory();
-                goto error;
-            }
+        case Blake2s:
+            BLAKE2_MALLOC(Blake2s, self->blake2s_state);
             break;
-        }
         default:
             Py_UNREACHABLE();
     }
+#undef BLAKE2_MALLOC
 
     /* Process initial data if any. */
     if (data != NULL) {
+        Py_buffer buf;
         GET_BUFFER_VIEW_OR_ERROR(data, &buf, goto error);
-
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
             Py_BEGIN_ALLOW_THREADS
             update(self, buf.buf, buf.len);
