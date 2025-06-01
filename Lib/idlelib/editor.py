@@ -1338,8 +1338,7 @@ class EditorWindow:
                 self.usetabs = False
         self.set_tk_tabwidth(self.tabwidth)
 
-    @staticmethod
-    def delete_trail_whitespace(want, chars, tabwidth):
+    def delete_trail_whitespace(self, want, chars, tabwidth):
         ncharsdeleted = 0
         have = len(chars.expandtabs(tabwidth))
         for i in range(len(chars) - 1, -1, -1):
@@ -1383,7 +1382,7 @@ class EditorWindow:
         assert have > 0
         want = ((have - 1) // self.indentwidth) * self.indentwidth
         # Debug prompt is multilined....
-        ncharsdeleted, chars = TestWindow.delete_trail_whitespace(want, chars, tabwidth)
+        ncharsdeleted, chars = self.delete_trail_whitespace(want, chars, tabwidth)
         text.undo_block_start()
         text.delete("insert-%dc" % ncharsdeleted, "insert")
         if have < want:
