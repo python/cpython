@@ -764,7 +764,7 @@ _zstd_ZstdCompressor_set_pledged_input_size_impl(ZstdCompressor *self,
     if (self->last_mode != ZSTD_e_end) {
         PyErr_SetString(PyExc_RuntimeError,
                         "set_pledged_input_size() method must be called "
-                        "when (last_mode == FLUSH_FRAME)");
+                        "when last_mode == FLUSH_FRAME");
         goto error;
     }
 
