@@ -40,8 +40,8 @@ if (errno == EDOM) {
     PyObject *exc = PyErr_GetRaisedException();
     PyObject *value = PyComplex_FromCComplex(_return_value);
 
-    if (value) {
-        PyObject_SetAttrString(exc, "value", value);
+    if (!value || PyObject_SetAttrString(exc, "value", value)) {
+        PyErr_WriteUnraisable(NULL);
     }
     Py_XDECREF(value);
     PyErr_SetRaisedException(exc);
@@ -56,7 +56,7 @@ else {
 }
 """.strip())
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=25da698732cbffe0]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=e8ab0c05f14885e9]*/
 
 #if (FLT_RADIX != 2 && FLT_RADIX != 16)
 #error "Modules/cmathmodule.c expects FLT_RADIX to be 2 or 16"
@@ -904,8 +904,8 @@ cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj)
             PyObject *exc = PyErr_GetRaisedException();
             PyObject *value = PyComplex_FromCComplex(x);
 
-            if (value) {
-                PyObject_SetAttrString(exc, "value", value);
+            if (!value || PyObject_SetAttrString(exc, "value", value)) {
+                PyErr_WriteUnraisable(NULL);
             }
             Py_XDECREF(value);
             PyErr_SetRaisedException(exc);

@@ -40,8 +40,8 @@ cmath_acos(PyObject *module, PyObject *arg)
         PyObject *exc = PyErr_GetRaisedException();
         PyObject *value = PyComplex_FromCComplex(_return_value);
 
-        if (value) {
-            PyObject_SetAttrString(exc, "value", value);
+        if (!value || PyObject_SetAttrString(exc, "value", value)) {
+            PyErr_WriteUnraisable(NULL);
         }
         Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
@@ -91,8 +91,8 @@ cmath_acosh(PyObject *module, PyObject *arg)
         PyObject *exc = PyErr_GetRaisedException();
         PyObject *value = PyComplex_FromCComplex(_return_value);
 
-        if (value) {
-            PyObject_SetAttrString(exc, "value", value);
+        if (!value || PyObject_SetAttrString(exc, "value", value)) {
+            PyErr_WriteUnraisable(NULL);
         }
         Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
@@ -142,8 +142,8 @@ cmath_asin(PyObject *module, PyObject *arg)
         PyObject *exc = PyErr_GetRaisedException();
         PyObject *value = PyComplex_FromCComplex(_return_value);
 
-        if (value) {
-            PyObject_SetAttrString(exc, "value", value);
+        if (!value || PyObject_SetAttrString(exc, "value", value)) {
+            PyErr_WriteUnraisable(NULL);
         }
         Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
@@ -193,8 +193,8 @@ cmath_asinh(PyObject *module, PyObject *arg)
         PyObject *exc = PyErr_GetRaisedException();
         PyObject *value = PyComplex_FromCComplex(_return_value);
 
-        if (value) {
-            PyObject_SetAttrString(exc, "value", value);
+        if (!value || PyObject_SetAttrString(exc, "value", value)) {
+            PyErr_WriteUnraisable(NULL);
         }
         Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
@@ -244,8 +244,8 @@ cmath_atan(PyObject *module, PyObject *arg)
         PyObject *exc = PyErr_GetRaisedException();
         PyObject *value = PyComplex_FromCComplex(_return_value);
 
-        if (value) {
-            PyObject_SetAttrString(exc, "value", value);
+        if (!value || PyObject_SetAttrString(exc, "value", value)) {
+            PyErr_WriteUnraisable(NULL);
         }
         Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
@@ -295,8 +295,8 @@ cmath_atanh(PyObject *module, PyObject *arg)
         PyObject *exc = PyErr_GetRaisedException();
         PyObject *value = PyComplex_FromCComplex(_return_value);
 
-        if (value) {
-            PyObject_SetAttrString(exc, "value", value);
+        if (!value || PyObject_SetAttrString(exc, "value", value)) {
+            PyErr_WriteUnraisable(NULL);
         }
         Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
@@ -346,8 +346,8 @@ cmath_cos(PyObject *module, PyObject *arg)
         PyObject *exc = PyErr_GetRaisedException();
         PyObject *value = PyComplex_FromCComplex(_return_value);
 
-        if (value) {
-            PyObject_SetAttrString(exc, "value", value);
+        if (!value || PyObject_SetAttrString(exc, "value", value)) {
+            PyErr_WriteUnraisable(NULL);
         }
         Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
@@ -397,8 +397,8 @@ cmath_cosh(PyObject *module, PyObject *arg)
         PyObject *exc = PyErr_GetRaisedException();
         PyObject *value = PyComplex_FromCComplex(_return_value);
 
-        if (value) {
-            PyObject_SetAttrString(exc, "value", value);
+        if (!value || PyObject_SetAttrString(exc, "value", value)) {
+            PyErr_WriteUnraisable(NULL);
         }
         Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
@@ -448,8 +448,8 @@ cmath_exp(PyObject *module, PyObject *arg)
         PyObject *exc = PyErr_GetRaisedException();
         PyObject *value = PyComplex_FromCComplex(_return_value);
 
-        if (value) {
-            PyObject_SetAttrString(exc, "value", value);
+        if (!value || PyObject_SetAttrString(exc, "value", value)) {
+            PyErr_WriteUnraisable(NULL);
         }
         Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
@@ -499,8 +499,8 @@ cmath_log10(PyObject *module, PyObject *arg)
         PyObject *exc = PyErr_GetRaisedException();
         PyObject *value = PyComplex_FromCComplex(_return_value);
 
-        if (value) {
-            PyObject_SetAttrString(exc, "value", value);
+        if (!value || PyObject_SetAttrString(exc, "value", value)) {
+            PyErr_WriteUnraisable(NULL);
         }
         Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
@@ -550,8 +550,8 @@ cmath_sin(PyObject *module, PyObject *arg)
         PyObject *exc = PyErr_GetRaisedException();
         PyObject *value = PyComplex_FromCComplex(_return_value);
 
-        if (value) {
-            PyObject_SetAttrString(exc, "value", value);
+        if (!value || PyObject_SetAttrString(exc, "value", value)) {
+            PyErr_WriteUnraisable(NULL);
         }
         Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
@@ -601,8 +601,8 @@ cmath_sinh(PyObject *module, PyObject *arg)
         PyObject *exc = PyErr_GetRaisedException();
         PyObject *value = PyComplex_FromCComplex(_return_value);
 
-        if (value) {
-            PyObject_SetAttrString(exc, "value", value);
+        if (!value || PyObject_SetAttrString(exc, "value", value)) {
+            PyErr_WriteUnraisable(NULL);
         }
         Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
@@ -652,8 +652,8 @@ cmath_sqrt(PyObject *module, PyObject *arg)
         PyObject *exc = PyErr_GetRaisedException();
         PyObject *value = PyComplex_FromCComplex(_return_value);
 
-        if (value) {
-            PyObject_SetAttrString(exc, "value", value);
+        if (!value || PyObject_SetAttrString(exc, "value", value)) {
+            PyErr_WriteUnraisable(NULL);
         }
         Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
@@ -703,8 +703,8 @@ cmath_tan(PyObject *module, PyObject *arg)
         PyObject *exc = PyErr_GetRaisedException();
         PyObject *value = PyComplex_FromCComplex(_return_value);
 
-        if (value) {
-            PyObject_SetAttrString(exc, "value", value);
+        if (!value || PyObject_SetAttrString(exc, "value", value)) {
+            PyErr_WriteUnraisable(NULL);
         }
         Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
@@ -754,8 +754,8 @@ cmath_tanh(PyObject *module, PyObject *arg)
         PyObject *exc = PyErr_GetRaisedException();
         PyObject *value = PyComplex_FromCComplex(_return_value);
 
-        if (value) {
-            PyObject_SetAttrString(exc, "value", value);
+        if (!value || PyObject_SetAttrString(exc, "value", value)) {
+            PyErr_WriteUnraisable(NULL);
         }
         Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
@@ -920,8 +920,8 @@ cmath_rect(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         PyObject *exc = PyErr_GetRaisedException();
         PyObject *value = PyComplex_FromCComplex(_return_value);
 
-        if (value) {
-            PyObject_SetAttrString(exc, "value", value);
+        if (!value || PyObject_SetAttrString(exc, "value", value)) {
+            PyErr_WriteUnraisable(NULL);
         }
         Py_XDECREF(value);
         PyErr_SetRaisedException(exc);
@@ -1141,4 +1141,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=178870f279a7be14 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a3adfd04b5b20bc1 input=a9049054013a1b77]*/
