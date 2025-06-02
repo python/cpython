@@ -3847,8 +3847,9 @@ class TestExtractionFilters(unittest.TestCase):
                     exc = self.expect_exception(OSError)
                     if sys.platform == 'win32':
                         # 3: ERROR_PATH_NOT_FOUND
+                        # 5: ERROR_ACCESS_DENIED
                         # 206: ERROR_FILENAME_EXCED_RANGE
-                        self.assertIn(exc.winerror, (3, 206))
+                        self.assertIn(exc.winerror, (3, 5, 206))
                     else:
                         self.assertEqual(exc.errno, errno.ENAMETOOLONG)
                 else:
