@@ -321,7 +321,8 @@ do_mkvalue(const char **p_format, va_list *p_va)
             return PyLong_FromLongLong((long long)va_arg(*p_va, long long));
 
         case 'K':
-            return PyLong_FromUnsignedLongLong((long long)va_arg(*p_va, unsigned long long));
+            return PyLong_FromUnsignedLongLong(
+                va_arg(*p_va, unsigned long long));
 
         case 'u':
         {
@@ -668,5 +669,5 @@ Py_PACK_FULL_VERSION(int x, int y, int z, int level, int serial)
 uint32_t
 Py_PACK_VERSION(int x, int y)
 {
-    return Py_PACK_FULL_VERSION(x, y, 0, 0, 0);
+    return _Py_PACK_VERSION(x, y);
 }

@@ -138,11 +138,12 @@ Tools/unicode/data/
 # hendrikmuhs/ccache-action@v1
 /.ccache
 /cross-build/
-/jit_stencils.h
+/jit_stencils*.h
 /platform
 /profile-clean-stamp
 /profile-run-stamp
 /profile-bolt-stamp
+/profile-gen-stamp
 /pybuilddir.txt
 /pyconfig.h
 /python-config
@@ -170,5 +171,10 @@ Python/frozen_modules/MANIFEST
 /python
 !/Python/
 
+# People's custom https://docs.anthropic.com/en/docs/claude-code/memory configs.
+/.claude/
+CLAUDE.local.md
+
+#### main branch only stuff below this line, things to backport go above. ####
 # main branch only: ABI files are not checked/maintained.
 Doc/data/python*.abi

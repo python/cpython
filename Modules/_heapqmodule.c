@@ -480,9 +480,33 @@ siftup_max(PyListObject *heap, Py_ssize_t pos)
     return siftdown_max(heap, startpos, pos);
 }
 
+/*[clinic input]
+_heapq.heappush_max
+
+    heap: object(subclass_of='&PyList_Type')
+    item: object
+    /
+
+Push item onto max heap, maintaining the heap invariant.
+[clinic start generated code]*/
+
+static PyObject *
+_heapq_heappush_max_impl(PyObject *module, PyObject *heap, PyObject *item)
+/*[clinic end generated code: output=c869d5f9deb08277 input=4743d7db137b6e2b]*/
+{
+    if (PyList_Append(heap, item)) {
+        return NULL;
+    }
+
+    if (siftdown_max((PyListObject *)heap, 0, PyList_GET_SIZE(heap)-1)) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
 
 /*[clinic input]
-_heapq._heappop_max
+_heapq.heappop_max
 
     heap: object(subclass_of='&PyList_Type')
     /
@@ -491,14 +515,14 @@ Maxheap variant of heappop.
 [clinic start generated code]*/
 
 static PyObject *
-_heapq__heappop_max_impl(PyObject *module, PyObject *heap)
-/*[clinic end generated code: output=9e77aadd4e6a8760 input=362c06e1c7484793]*/
+_heapq_heappop_max_impl(PyObject *module, PyObject *heap)
+/*[clinic end generated code: output=2f051195ab404b77 input=e62b14016a5a26de]*/
 {
     return heappop_internal(heap, siftup_max);
 }
 
 /*[clinic input]
-_heapq._heapreplace_max
+_heapq.heapreplace_max
 
     heap: object(subclass_of='&PyList_Type')
     item: object
@@ -508,15 +532,14 @@ Maxheap variant of heapreplace.
 [clinic start generated code]*/
 
 static PyObject *
-_heapq__heapreplace_max_impl(PyObject *module, PyObject *heap,
-                             PyObject *item)
-/*[clinic end generated code: output=8ad7545e4a5e8adb input=f2dd27cbadb948d7]*/
+_heapq_heapreplace_max_impl(PyObject *module, PyObject *heap, PyObject *item)
+/*[clinic end generated code: output=8770778b5a9cbe9b input=21a3d28d757c881c]*/
 {
     return heapreplace_internal(heap, item, siftup_max);
 }
 
 /*[clinic input]
-_heapq._heapify_max
+_heapq.heapify_max
 
     heap: object(subclass_of='&PyList_Type')
     /
@@ -525,10 +548,59 @@ Maxheap variant of heapify.
 [clinic start generated code]*/
 
 static PyObject *
-_heapq__heapify_max_impl(PyObject *module, PyObject *heap)
-/*[clinic end generated code: output=2cb028beb4a8b65e input=c1f765ee69f124b8]*/
+_heapq_heapify_max_impl(PyObject *module, PyObject *heap)
+/*[clinic end generated code: output=8401af3856529807 input=edda4255728c431e]*/
 {
     return heapify_internal(heap, siftup_max);
+}
+
+/*[clinic input]
+_heapq.heappushpop_max
+
+    heap: object(subclass_of='&PyList_Type')
+    item: object
+    /
+
+Maxheap variant of heappushpop.
+
+The combined action runs more efficiently than heappush_max() followed by
+a separate call to heappop_max().
+[clinic start generated code]*/
+
+static PyObject *
+_heapq_heappushpop_max_impl(PyObject *module, PyObject *heap, PyObject *item)
+/*[clinic end generated code: output=ff0019f0941aca0d input=525a843013cbd6c0]*/
+{
+    PyObject *returnitem;
+    int cmp;
+
+    if (PyList_GET_SIZE(heap) == 0) {
+        return Py_NewRef(item);
+    }
+
+    PyObject *top = PyList_GET_ITEM(heap, 0);
+    Py_INCREF(top);
+    cmp = PyObject_RichCompareBool(item, top, Py_LT);
+    Py_DECREF(top);
+    if (cmp < 0) {
+        return NULL;
+    }
+    if (cmp == 0) {
+        return Py_NewRef(item);
+    }
+
+    if (PyList_GET_SIZE(heap) == 0) {
+        PyErr_SetString(PyExc_IndexError, "index out of range");
+        return NULL;
+    }
+
+    returnitem = PyList_GET_ITEM(heap, 0);
+    PyList_SET_ITEM(heap, 0, Py_NewRef(item));
+    if (siftup_max((PyListObject *)heap, 0) < 0) {
+        Py_DECREF(returnitem);
+        return NULL;
+    }
+    return returnitem;
 }
 
 static PyMethodDef heapq_methods[] = {
@@ -537,9 +609,13 @@ static PyMethodDef heapq_methods[] = {
     _HEAPQ_HEAPPOP_METHODDEF
     _HEAPQ_HEAPREPLACE_METHODDEF
     _HEAPQ_HEAPIFY_METHODDEF
-    _HEAPQ__HEAPPOP_MAX_METHODDEF
-    _HEAPQ__HEAPIFY_MAX_METHODDEF
-    _HEAPQ__HEAPREPLACE_MAX_METHODDEF
+
+    _HEAPQ_HEAPPUSH_MAX_METHODDEF
+    _HEAPQ_HEAPPUSHPOP_MAX_METHODDEF
+    _HEAPQ_HEAPPOP_MAX_METHODDEF
+    _HEAPQ_HEAPREPLACE_MAX_METHODDEF
+    _HEAPQ_HEAPIFY_MAX_METHODDEF
+
     {NULL, NULL}           /* sentinel */
 };
 
