@@ -3516,7 +3516,7 @@ class SendmsgStreamTests(SendmsgTests):
     # Linux supports MSG_DONTWAIT when sending, but in general, it
     # only works when receiving.  Could add other platforms if they
     # support it too.
-    @skipWithClientIf(sys.platform not in {"linux", "android"},
+    @skipWithClientIf(sys.platform not in {"linux", "android", "freebsd"},
                       "MSG_DONTWAIT not known to work on this platform when "
                       "sending")
     def testSendmsgDontWait(self):
@@ -7431,6 +7431,9 @@ class SendRecvFdsTests(unittest.TestCase):
             self._test_pipe(fds[0], wfd, MSG)
 
     @requireAttrs(socket, "MSG_DONTWAIT")
+    @unittest.skipIf(sys.platform in ("darwin",),
+                     "MSG_DONTWAIT not known to work on this platform when "
+                     "sending")
     def test_send_fds_dontwait(self):
         rfd, wfd = os.pipe()
         self.addCleanup(os.close, rfd)
