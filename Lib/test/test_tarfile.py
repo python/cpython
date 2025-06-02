@@ -4337,7 +4337,7 @@ class TestExtractionFilters(unittest.TestCase):
         # The 'tar' filter returns TarInfo objects with the same name/type.
         # (It can also fail for particularly "evil" input, but we don't have
         # that in the test archive.)
-        with tarfile.TarFile.open(tarname) as tar:
+        with tarfile.TarFile.open(tarname, encoding="iso8859-1") as tar:
             for tarinfo in tar.getmembers():
                 try:
                     filtered = tarfile.tar_filter(tarinfo, '')
@@ -4349,7 +4349,7 @@ class TestExtractionFilters(unittest.TestCase):
     def test_data_filter(self):
         # The 'data' filter either raises, or returns TarInfo with the same
         # name/type.
-        with tarfile.TarFile.open(tarname) as tar:
+        with tarfile.TarFile.open(tarname, encoding="iso8859-1") as tar:
             for tarinfo in tar.getmembers():
                 try:
                     filtered = tarfile.data_filter(tarinfo, '')
