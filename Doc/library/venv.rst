@@ -115,6 +115,10 @@ The command, if run with ``-h``, will show the available options::
 
    A required argument specifying the directory to create the environment in.
 
+.. option:: -h, --help
+
+   show the help message and exit
+
 .. option:: --system-site-packages
 
    Give the virtual environment access to the system site-packages directory.
