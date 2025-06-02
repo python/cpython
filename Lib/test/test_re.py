@@ -2,6 +2,7 @@ from test.support import (gc_collect, bigmemtest, _2G,
                           cpython_only, captured_stdout,
                           check_disallow_instantiation, linked_to_musl,
                           warnings_helper, SHORT_TIMEOUT, Stopwatch, requires_resource)
+import itertools
 import locale
 import re
 import string
@@ -610,31 +611,15 @@ class ReTests(unittest.TestCase):
 
     def test_match_getitem_slice(self):
         m = re.match(r"(a)(b)(c)", "abc")
-        self.assertEqual(m[:0], ())
-        self.assertEqual(m[:1], ("abc",))
-        self.assertEqual(m[:2], ("abc", "a"))
-        self.assertEqual(m[:3], ("abc", "a", "b"))
-        self.assertEqual(m[:4], ("abc", "a", "b", "c"))
-        self.assertEqual(m[0:], ("abc", "a", "b", "c"))
-        self.assertEqual(m[1:], ("a", "b", "c"))
-        self.assertEqual(m[2:], ("b", "c"))
-        self.assertEqual(m[3:], ("c",))
-        self.assertEqual(m[4:], ())
-        self.assertEqual(m[:-4], ())
-        self.assertEqual(m[:-3], ("abc",))
-        self.assertEqual(m[:-2], ("abc", "a"))
-        self.assertEqual(m[:-1], ("abc", "a", "b"))
-        self.assertEqual(m[-4:], ("abc", "a", "b", "c"))
-        self.assertEqual(m[-3:], ("a", "b", "c"))
-        self.assertEqual(m[-2:], ("b", "c"))
-        self.assertEqual(m[-1:], ("c",))
-        self.assertEqual(m[1:-1], ("a", "b"))
-        self.assertEqual(m[::-1], ("c", "b", "a", "abc"))
-        self.assertEqual(m[::4], ("abc",))
-        self.assertEqual(m[2:2], ())
-        self.assertEqual(m[3:1], ())
-        self.assertEqual(m[1:3], ("a", "b"))
-        self.assertEqual(m[-1::-2], ("c", "a"))
+        seq = ("abc", "a", "b", "c")
+        indices = [None, *range(-len(seq), len(seq) + 1)]
+        for start, end, step in itertools.product(
+            indices,
+            indices,
+            filter(lambda x: x != 0, indices), # slice step cannot be zero
+        ):
+            with self.subTest(start=start, end=end, step=step):
+                self.assertEqual(m[start:end:step], seq[start:end:step])
 
     def test_match_sequence(self):
         m = re.match(r"(a)(b)(c)", "abc")
@@ -664,52 +649,57 @@ class ReTests(unittest.TestCase):
             self.assertEqual(v, "123")
 
     def test_match_iter(self):
-        m = re.match(r"(a)(b)(c)", "abc")
-        it = iter(m)
+        it = iter(re.match(r"(a)(b)(c)", "abc"))
         self.assertEqual(next(it), "abc")
         self.assertEqual(next(it), "a")
         self.assertEqual(next(it), "b")
         self.assertEqual(next(it), "c")
-        with self.assertRaises(StopIteration):
-            next(it)
+        self.assertRaises(StopIteration, next, it)
 
     def test_match_index(self):
-        m = re.match(r"(a)(b)(c)", "abc")
-        self.assertEqual(m.index("abc"), 0)
+        m = re.match(r"(a)(b)(c)(b)", "abcb")
+        self.assertEqual(m.index("abcb"), 0)
         self.assertEqual(m.index("a"), 1)
         self.assertEqual(m.index("b"), 2)
         self.assertEqual(m.index("c"), 3)
         self.assertRaises(ValueError, m.index, "123")
 
         # With start index.
-        self.assertRaises(ValueError, m.index, "abc", 1)
         self.assertEqual(m.index("a", 1), 1)
         self.assertEqual(m.index("b", 1), 2)
         self.assertEqual(m.index("c", 1), 3)
+        self.assertRaises(ValueError, m.index, "abcb", 1)
         self.assertRaises(ValueError, m.index, "123", 1)
 
-        self.assertRaises(ValueError, m.index, "abc", 2)
-        self.assertRaises(ValueError, m.index, "a", 2)
         self.assertEqual(m.index("b", 2), 2)
         self.assertEqual(m.index("c", 2), 3)
+        self.assertRaises(ValueError, m.index, "abcb", 2)
+        self.assertRaises(ValueError, m.index, "a", 2)
         self.assertRaises(ValueError, m.index, "123", 2)
 
-        self.assertRaises(ValueError, m.index, "abc", 3)
-        self.assertRaises(ValueError, m.index, "a", 3)
-        self.assertRaises(ValueError, m.index, "b", 3)
+        self.assertEqual(m.index("b", 3), 4)
         self.assertEqual(m.index("c", 3), 3)
+        self.assertRaises(ValueError, m.index, "abcb", 3)
+        self.assertRaises(ValueError, m.index, "a", 3)
         self.assertRaises(ValueError, m.index, "123", 3)
 
-        self.assertRaises(ValueError, m.index, "abc", 4)
+        self.assertEqual(m.index("b", 4), 4)
+        self.assertRaises(ValueError, m.index, "abcb", 4)
         self.assertRaises(ValueError, m.index, "a", 4)
-        self.assertRaises(ValueError, m.index, "b", 4)
         self.assertRaises(ValueError, m.index, "c", 4)
         self.assertRaises(ValueError, m.index, "123", 4)
 
+        self.assertRaises(ValueError, m.index, "abcb", 5)
+        self.assertRaises(ValueError, m.index, "a", 5)
+        self.assertRaises(ValueError, m.index, "b", 5)
+        self.assertRaises(ValueError, m.index, "c", 5)
+        self.assertRaises(ValueError, m.index, "123", 5)
+
         # With start index and stop index.
-        self.assertRaises(ValueError, m.index, "b", 0, 2)
         self.assertEqual(m.index("b", 1, 3), 2)
         self.assertEqual(m.index("b", 2, 4), 2)
+        self.assertEqual(m.index("b", 3, 5), 4)
+        self.assertRaises(ValueError, m.index, "b", 0, 2)
         self.assertRaises(ValueError, m.index, "b", 3, 4)
         self.assertRaises(ValueError, m.index, "b", -1, 0)
 
@@ -748,7 +738,6 @@ class ReTests(unittest.TestCase):
                 self.assertEqual(day, "07")
             case _:
                 self.fail()
-
 
     def test_re_fullmatch(self):
         # Issue 16203: Proposal: add re.fullmatch() method.

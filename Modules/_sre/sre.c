@@ -2442,18 +2442,15 @@ static PyObject*
 match_item(PyObject *op, Py_ssize_t index)
 {
     MatchObject *self = _MatchObject_CAST(op);
-
     if (index < 0 || index >= self->groups) {
-        /* raise IndexError if we were given a bad group number */
         PyErr_SetString(PyExc_IndexError, "no such group");
         return NULL;
     }
-
     return match_getslice_by_index(self, index, Py_None);
 }
 
 static PyObject*
-match_getitem(PyObject *op, PyObject* item)
+match_subscript(PyObject *op, PyObject* item)
 {
     MatchObject *self = _MatchObject_CAST(op);
 
@@ -2492,7 +2489,7 @@ match_getitem(PyObject *op, PyObject* item)
             PyObject* index = PyDict_GetItemWithError(self->pattern->groupindex, item);
             if (index && PyLong_Check(index)) {
                 Py_ssize_t i = PyLong_AsSsize_t(index);
-                if (!PyErr_Occurred()) {
+                if (i != -1 || !PyErr_Occurred()) {
                     return match_item(op, i);
                 }
             }
@@ -2698,7 +2695,7 @@ _sre_SRE_Match_index_impl(MatchObject *self, PyObject *value,
                           Py_ssize_t start, Py_ssize_t stop)
 /*[clinic end generated code: output=846597f6f96f829c input=7f41b5a99e0ad88e]*/
 {
-    PySlice_AdjustIndices(self->groups, &start, &stop, 1);
+    (void)PySlice_AdjustIndices(self->groups, &start, &stop, 1);
 
     for (Py_ssize_t i = start; i < stop; i++) {
         PyObject* group = match_getslice_by_index(self, i, Py_None);
@@ -2732,9 +2729,8 @@ _sre_SRE_Match_count_impl(MatchObject *self, PyObject *value)
 /*[clinic end generated code: output=c0b81bdce5872620 input=b1f3372cfb4b8c74]*/
 {
     Py_ssize_t count = 0;
-    Py_ssize_t i;
 
-    for (i = 0; i < self->groups; i++) {
+    for (Py_ssize_t i = 0; i < self->groups; i++) {
         PyObject* group = match_getslice_by_index(self, i, Py_None);
         if (group == NULL) {
             return NULL;
@@ -3412,7 +3408,7 @@ static PyType_Slot match_slots[] = {
     {Py_sq_item, match_item},
 
     // Support group names provided as subscripts
-    {Py_mp_subscript, match_getitem},
+    {Py_mp_subscript, match_subscript},
 
     {0, NULL},
 };

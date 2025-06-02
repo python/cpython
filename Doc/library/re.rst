@@ -1590,6 +1590,7 @@ You can also destructure match objects with python's ``match`` statement::
    that if *group* did not contribute to the match, this is ``(-1, -1)``.
    *group* defaults to zero, the entire match.
 
+
 .. method:: Match.index(value, start=0, stop=sys.maxsize, /)
 
    Return the index of the first occurrence of the value among the matched groups.
@@ -1598,11 +1599,13 @@ You can also destructure match objects with python's ``match`` statement::
 
    .. versionadded:: next
 
+
 .. method:: Match.count(value, /)
 
    Return the number of occurrences of the value among the matched groups.
 
    .. versionadded:: next
+
 
 .. attribute:: Match.pos
 
