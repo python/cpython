@@ -615,6 +615,24 @@ Advanced parameter control
 
       A value of zero causes the value to be selected automatically.
 
+   .. attribute:: content_size_flag
+
+      Write the size of the data to be compressed into the Zstandard frame
+      header when known prior to compressing.
+
+      This flag only takes effect under the following two scenarios:
+
+      * Calling :func:`compress` for one-shot compression
+      * Providing all of the data to be compressed in the frame in a single
+        :meth:`ZstdCompressor.compress` call, with the
+        :attr:`ZstdCompressor.FLUSH_FRAME` mode.
+
+      All other compression calls may not write the size information into the
+      frame header.
+
+      ``True`` or ``1`` enable the content size flag while ``False`` or ``0``
+      disable it.
+
    .. attribute:: checksum_flag
 
       A four-byte checksum using XXHash64 of the uncompressed content is
