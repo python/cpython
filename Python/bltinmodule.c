@@ -5,13 +5,15 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_Vector()
 #include "pycore_compile.h"       // _PyAST_Compile()
+#include "pycore_fileutils.h"     // _PyFile_Flush
+#include "pycore_floatobject.h"   // _PyFloat_ExactDealloc()
+#include "pycore_interp.h"        // _PyInterpreterState_GetConfig()
 #include "pycore_long.h"          // _PyLong_CompactValue
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _Py_AddToAllObjects()
 #include "pycore_pyerrors.h"      // _PyErr_NoMemory()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pythonrun.h"     // _Py_SourceAsString()
-#include "pycore_sysmodule.h"     // _PySys_GetRequiredAttr()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_cell.h"          // PyCell_GetRef()
 
@@ -462,7 +464,7 @@ builtin_callable(PyObject *module, PyObject *obj)
 static PyObject *
 builtin_breakpoint(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *keywords)
 {
-    PyObject *hook = _PySys_GetRequiredAttrString("breakpointhook");
+    PyObject *hook = PySys_GetAttrString("breakpointhook");
     if (hook == NULL) {
         return NULL;
     }
@@ -563,11 +565,9 @@ filter_dealloc(PyObject *self)
 {
     filterobject *lz = _filterobject_CAST(self);
     PyObject_GC_UnTrack(lz);
-    Py_TRASHCAN_BEGIN(lz, filter_dealloc)
     Py_XDECREF(lz->func);
     Py_XDECREF(lz->it);
     Py_TYPE(lz)->tp_free(lz);
-    Py_TRASHCAN_END
 }
 
 static int
@@ -832,45 +832,35 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     if (is_ast == -1)
         goto error;
     if (is_ast) {
-        if ((flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST) {
-            if (PyAst_CheckMode(source, compile_mode) < 0) {
+        PyArena *arena = _PyArena_New();
+        if (arena == NULL) {
+            goto error;
+        }
+
+        if (flags & PyCF_ONLY_AST) {
+            mod_ty mod = PyAST_obj2mod(source, arena, compile_mode);
+            if (mod == NULL || !_PyAST_Validate(mod)) {
+                _PyArena_Free(arena);
                 goto error;
             }
-            // return an un-optimized AST
-            result = Py_NewRef(source);
+            int syntax_check_only = ((flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST); /* unoptiomized AST */
+            if (_PyCompile_AstPreprocess(mod, filename, &cf, optimize,
+                                           arena, syntax_check_only) < 0) {
+                _PyArena_Free(arena);
+                goto error;
+            }
+            result = PyAST_mod2obj(mod);
         }
         else {
-            // Return an optimized AST or code object
-
-            PyArena *arena = _PyArena_New();
-            if (arena == NULL) {
+            mod_ty mod = PyAST_obj2mod(source, arena, compile_mode);
+            if (mod == NULL || !_PyAST_Validate(mod)) {
+                _PyArena_Free(arena);
                 goto error;
             }
-
-            if (flags & PyCF_ONLY_AST) {
-                mod_ty mod = PyAST_obj2mod(source, arena, compile_mode);
-                if (mod == NULL || !_PyAST_Validate(mod)) {
-                    _PyArena_Free(arena);
-                    goto error;
-                }
-                if (_PyCompile_AstOptimize(mod, filename, &cf, optimize,
-                                           arena) < 0) {
-                    _PyArena_Free(arena);
-                    goto error;
-                }
-                result = PyAST_mod2obj(mod);
-            }
-            else {
-                mod_ty mod = PyAST_obj2mod(source, arena, compile_mode);
-                if (mod == NULL || !_PyAST_Validate(mod)) {
-                    _PyArena_Free(arena);
-                    goto error;
-                }
-                result = (PyObject*)_PyAST_Compile(mod, filename,
-                                                   &cf, optimize, arena);
-            }
-            _PyArena_Free(arena);
+            result = (PyObject*)_PyAST_Compile(mod, filename,
+                                               &cf, optimize, arena);
         }
+        _PyArena_Free(arena);
         goto finally;
     }
 
@@ -1176,6 +1166,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         if (closure != NULL) {
             PyErr_SetString(PyExc_TypeError,
                 "closure can only be used when source is a code object");
+            goto error;
         }
         PyObject *source_copy;
         const char *str;
@@ -1303,8 +1294,8 @@ This is guaranteed to be unique among simultaneously existing objects.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_id(PyModuleDef *self, PyObject *v)
-/*[clinic end generated code: output=0aa640785f697f65 input=5a534136419631f4]*/
+builtin_id_impl(PyModuleDef *self, PyObject *v)
+/*[clinic end generated code: output=4908a6782ed343e9 input=5a534136419631f4]*/
 {
     PyObject *id = PyLong_FromVoidPtr(v);
 
@@ -1844,6 +1835,9 @@ builtin_anext_impl(PyObject *module, PyObject *aiterator,
     }
 
     awaitable = (*t->tp_as_async->am_anext)(aiterator);
+    if (awaitable == NULL) {
+        return NULL;
+    }
     if (default_value == NULL) {
         return awaitable;
     }
@@ -2169,7 +2163,7 @@ builtin_print_impl(PyObject *module, PyObject * const *args,
     int i, err;
 
     if (file == Py_None) {
-        file = _PySys_GetRequiredAttr(&_Py_ID(stdout));
+        file = PySys_GetAttr(&_Py_ID(stdout));
         if (file == NULL) {
             return NULL;
         }
@@ -2275,7 +2269,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
     int tty;
 
     /* Check that stdin/out/err are intact */
-    fin = _PySys_GetRequiredAttr(&_Py_ID(stdin));
+    fin = PySys_GetAttr(&_Py_ID(stdin));
     if (fin == NULL) {
         goto error;
     }
@@ -2283,7 +2277,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         PyErr_SetString(PyExc_RuntimeError, "lost sys.stdin");
         goto error;
     }
-    fout = _PySys_GetRequiredAttr(&_Py_ID(stdout));
+    fout = PySys_GetAttr(&_Py_ID(stdout));
     if (fout == NULL) {
         goto error;
     }
@@ -2291,7 +2285,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
         goto error;
     }
-    ferr = _PySys_GetRequiredAttr(&_Py_ID(stderr));
+    ferr = PySys_GetAttr(&_Py_ID(stderr));
     if (ferr == NULL) {
         goto error;
     }
@@ -2541,22 +2535,19 @@ static PyObject *
 builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
 /*[clinic end generated code: output=ff0d9dd176c02ede input=275678471d7aca15]*/
 {
-    PyObject *round, *result;
-
-    round = _PyObject_LookupSpecial(number, &_Py_ID(__round__));
-    if (round == NULL) {
-        if (!PyErr_Occurred())
-            PyErr_Format(PyExc_TypeError,
-                         "type %.100s doesn't define __round__ method",
-                         Py_TYPE(number)->tp_name);
-        return NULL;
+    PyObject *result;
+    if (ndigits == Py_None) {
+        result = _PyObject_MaybeCallSpecialNoArgs(number, &_Py_ID(__round__));
     }
-
-    if (ndigits == Py_None)
-        result = _PyObject_CallNoArgs(round);
-    else
-        result = PyObject_CallOneArg(round, ndigits);
-    Py_DECREF(round);
+    else {
+        result = _PyObject_MaybeCallSpecialOneArg(number, &_Py_ID(__round__),
+                                                  ndigits);
+    }
+    if (result == NULL && !PyErr_Occurred()) {
+        PyErr_Format(PyExc_TypeError,
+                     "type %.100s doesn't define __round__ method",
+                     Py_TYPE(number)->tp_name);
+    }
     return result;
 }
 
@@ -3128,9 +3119,7 @@ zip_next(PyObject *self)
         }
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
-        }
+        _PyTuple_Recycle(result);
     } else {
         result = PyTuple_New(tuplesize);
         if (result == NULL)

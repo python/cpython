@@ -31,7 +31,7 @@ Copyright (C) 1994 Steen Lumholt.
 #endif
 
 #include "pycore_long.h"          // _PyLong_IsNegative()
-#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttrString()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8String
 
 #ifdef MS_WINDOWS
 #  include <windows.h>
@@ -145,7 +145,7 @@ _get_tcl_lib_path(void)
         int stat_return_value;
         PyObject *prefix;
 
-        (void) _PySys_GetOptionalAttrString("base_prefix", &prefix);
+        (void) PySys_GetOptionalAttrString("base_prefix", &prefix);
         if (prefix == NULL) {
             return NULL;
         }
@@ -2010,8 +2010,8 @@ _tkinter.tkapp.getint
 [clinic start generated code]*/
 
 static PyObject *
-_tkinter_tkapp_getint(TkappObject *self, PyObject *arg)
-/*[clinic end generated code: output=88cf293fae307cfe input=034026997c5b91f8]*/
+_tkinter_tkapp_getint_impl(TkappObject *self, PyObject *arg)
+/*[clinic end generated code: output=5f75d31b260d4086 input=034026997c5b91f8]*/
 {
     char *s;
     Tcl_Obj *value;
@@ -2055,8 +2055,8 @@ _tkinter.tkapp.getdouble
 [clinic start generated code]*/
 
 static PyObject *
-_tkinter_tkapp_getdouble(TkappObject *self, PyObject *arg)
-/*[clinic end generated code: output=c52b138bd8b956b9 input=22015729ce9ef7f8]*/
+_tkinter_tkapp_getdouble_impl(TkappObject *self, PyObject *arg)
+/*[clinic end generated code: output=432433f2f52b09b6 input=22015729ce9ef7f8]*/
 {
     char *s;
     double v;
@@ -2094,8 +2094,8 @@ _tkinter.tkapp.getboolean
 [clinic start generated code]*/
 
 static PyObject *
-_tkinter_tkapp_getboolean(TkappObject *self, PyObject *arg)
-/*[clinic end generated code: output=726a9ae445821d91 input=7f11248ef8f8776e]*/
+_tkinter_tkapp_getboolean_impl(TkappObject *self, PyObject *arg)
+/*[clinic end generated code: output=3b05597cf2bfbd9f input=7f11248ef8f8776e]*/
 {
     char *s;
     int v;
@@ -2258,8 +2258,8 @@ _tkinter.tkapp.splitlist
 [clinic start generated code]*/
 
 static PyObject *
-_tkinter_tkapp_splitlist(TkappObject *self, PyObject *arg)
-/*[clinic end generated code: output=13b51d34386d36fb input=2b2e13351e3c0b53]*/
+_tkinter_tkapp_splitlist_impl(TkappObject *self, PyObject *arg)
+/*[clinic end generated code: output=e517f462159c3000 input=2b2e13351e3c0b53]*/
 {
     char *list;
     Tcl_Size argc, i;
@@ -2676,8 +2676,8 @@ _tkinter.tkapp.deletefilehandler
 [clinic start generated code]*/
 
 static PyObject *
-_tkinter_tkapp_deletefilehandler(TkappObject *self, PyObject *file)
-/*[clinic end generated code: output=b53cc96ebf9476fd input=abbec19d66312e2a]*/
+_tkinter_tkapp_deletefilehandler_impl(TkappObject *self, PyObject *file)
+/*[clinic end generated code: output=30b2c6ed195b0410 input=abbec19d66312e2a]*/
 {
     int tfile;
 
@@ -3010,8 +3010,8 @@ Set the tracing function.
 [clinic start generated code]*/
 
 static PyObject *
-_tkinter_tkapp_settrace(TkappObject *self, PyObject *func)
-/*[clinic end generated code: output=847f6ebdf46e84fa input=31b260d46d3d018a]*/
+_tkinter_tkapp_settrace_impl(TkappObject *self, PyObject *func)
+/*[clinic end generated code: output=8c59938bc9005607 input=31b260d46d3d018a]*/
 {
     if (func == Py_None) {
         func = NULL;
@@ -3546,7 +3546,7 @@ PyInit__tkinter(void)
 
     /* This helps the dynamic loader; in Unicode aware Tcl versions
        it also helps Tcl find its encodings. */
-    (void) _PySys_GetOptionalAttrString("executable", &uexe);
+    (void) PySys_GetOptionalAttrString("executable", &uexe);
     if (uexe && PyUnicode_Check(uexe)) {   // sys.executable can be None
         cexe = PyUnicode_EncodeFSDefault(uexe);
         Py_DECREF(uexe);

@@ -413,7 +413,7 @@ Querying the error indicator
    own a reference to the return value, so you do not need to :c:func:`Py_DECREF`
    it.
 
-   The caller must hold the GIL.
+   The caller must have an :term:`attached thread state`.
 
    .. note::
 
@@ -675,7 +675,7 @@ Signal Handling
 
    .. note::
       This function is async-signal-safe.  It can be called without
-      the :term:`GIL` and from a C signal handler.
+      an :term:`attached thread state` and from a C signal handler.
 
 
 .. c:function:: int PyErr_SetInterruptEx(int signum)
@@ -702,7 +702,7 @@ Signal Handling
 
    .. note::
       This function is async-signal-safe.  It can be called without
-      the :term:`GIL` and from a C signal handler.
+      an :term:`attached thread state` and from a C signal handler.
 
    .. versionadded:: 3.10
 

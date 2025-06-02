@@ -18,6 +18,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_ReInitThreads()
 #include "pycore_fileutils.h"     // _Py_closerange()
+#include "pycore_import.h"        // _PyImport_AcquireLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
@@ -572,7 +573,11 @@ extern char *ctermid_r(char *);
 #  define HAVE_FACCESSAT_RUNTIME 1
 #  define HAVE_FCHMODAT_RUNTIME 1
 #  define HAVE_FCHOWNAT_RUNTIME 1
+#ifdef __wasi__
+#  define HAVE_LINKAT_RUNTIME 0
+# else
 #  define HAVE_LINKAT_RUNTIME 1
+# endif
 #  define HAVE_FDOPENDIR_RUNTIME 1
 #  define HAVE_MKDIRAT_RUNTIME 1
 #  define HAVE_RENAMEAT_RUNTIME 1
@@ -676,6 +681,14 @@ PyOS_AfterFork_Parent(void)
     run_at_forkers(interp->after_forkers_parent, 0);
 }
 
+static void
+reset_remotedebug_data(PyThreadState *tstate)
+{
+    tstate->remote_debugger_support.debugger_pending_call = 0;
+    memset(tstate->remote_debugger_support.debugger_script_path, 0, MAX_SCRIPT_PATH_SIZE);
+}
+
+
 void
 PyOS_AfterFork_Child(void)
 {
@@ -709,13 +722,15 @@ PyOS_AfterFork_Child(void)
         goto fatal_error;
     }
 
+    reset_remotedebug_data(tstate);
+
     // Remove the dead thread states. We "start the world" once we are the only
     // thread state left to undo the stop the world call in `PyOS_BeforeFork`.
     // That needs to happen before `_PyThreadState_DeleteList`, because that
     // may call destructors.
     PyThreadState *list = _PyThreadState_RemoveExcept(tstate);
     _PyEval_StartTheWorldAll(&_PyRuntime);
-    _PyThreadState_DeleteList(list);
+    _PyThreadState_DeleteList(list, /*is_after_fork=*/1);
 
     _PyImport_ReInitLock(tstate->interp);
     _PyImport_ReleaseLock(tstate->interp);
@@ -1024,21 +1039,34 @@ _PyLong_FromDev(dev_t dev)
 static int
 _Py_Dev_Converter(PyObject *obj, void *p)
 {
+    if (!PyLong_Check(obj)) {
+        obj = _PyNumber_Index(obj);
+        if (obj == NULL) {
+            return 0;
+        }
+    }
+    else {
+        Py_INCREF(obj);
+    }
+    assert(PyLong_Check(obj));
 #ifdef NODEV
-    if (PyLong_Check(obj) && _PyLong_IsNegative((PyLongObject *)obj)) {
+    if (_PyLong_IsNegative((PyLongObject *)obj)) {
         int overflow;
         long long result = PyLong_AsLongLongAndOverflow(obj, &overflow);
         if (result == -1 && PyErr_Occurred()) {
+            Py_DECREF(obj);
             return 0;
         }
         if (!overflow && result == (long long)NODEV) {
             *((dev_t *)p) = NODEV;
+            Py_DECREF(obj);
             return 1;
         }
     }
 #endif
 
     unsigned long long result = PyLong_AsUnsignedLongLong(obj);
+    Py_DECREF(obj);
     if (result == (unsigned long long)-1 && PyErr_Occurred()) {
         return 0;
     }
@@ -1754,7 +1782,7 @@ convertenviron(void)
             return NULL;
         }
 #ifdef MS_WINDOWS
-        v = PyUnicode_FromWideChar(p+1, wcslen(p+1));
+        v = PyUnicode_FromWideChar(p+1, -1);
 #else
         v = PyBytes_FromStringAndSize(p+1, strlen(p+1));
 #endif
@@ -4179,7 +4207,7 @@ posix_getcwd(int use_bytes)
        terminating \0. If the buffer is too small, len includes
        the space needed for the terminator. */
     if (len >= Py_ARRAY_LENGTH(wbuf)) {
-        if (len <= PY_SSIZE_T_MAX / sizeof(wchar_t)) {
+        if ((Py_ssize_t)len <= PY_SSIZE_T_MAX / sizeof(wchar_t)) {
             wbuf2 = PyMem_RawMalloc(len * sizeof(wchar_t));
         }
         else {
@@ -4322,7 +4350,7 @@ os.link
     *
     src_dir_fd : dir_fd = None
     dst_dir_fd : dir_fd = None
-    follow_symlinks: bool = True
+    follow_symlinks: bool(c_default="-1", py_default="(os.name != 'nt')") = PLACEHOLDER
 
 Create a hard link to a file.
 
@@ -4340,31 +4368,46 @@ src_dir_fd, dst_dir_fd, and follow_symlinks may not be implemented on your
 static PyObject *
 os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
              int dst_dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=7f00f6007fd5269a input=b0095ebbcbaa7e04]*/
+/*[clinic end generated code: output=7f00f6007fd5269a input=1d5e602d115fed7b]*/
 {
 #ifdef MS_WINDOWS
     BOOL result = FALSE;
 #else
     int result;
 #endif
-#if defined(HAVE_LINKAT)
-    int linkat_unavailable = 0;
-#endif
 
-#ifndef HAVE_LINKAT
-    if ((src_dir_fd != DEFAULT_DIR_FD) || (dst_dir_fd != DEFAULT_DIR_FD)) {
-        argument_unavailable_error("link", "src_dir_fd and dst_dir_fd");
-        return NULL;
+#ifdef HAVE_LINKAT
+    if (HAVE_LINKAT_RUNTIME) {
+        if (follow_symlinks < 0) {
+            follow_symlinks = 1;
+        }
     }
+    else
 #endif
-
-#ifndef MS_WINDOWS
-    if ((src->narrow && dst->wide) || (src->wide && dst->narrow)) {
-        PyErr_SetString(PyExc_NotImplementedError,
-                        "link: src and dst must be the same type");
-        return NULL;
+    {
+        if ((src_dir_fd != DEFAULT_DIR_FD) || (dst_dir_fd != DEFAULT_DIR_FD)) {
+            argument_unavailable_error("link", "src_dir_fd and dst_dir_fd");
+            return NULL;
+        }
+/* See issue 85527: link() on Linux works like linkat without AT_SYMLINK_FOLLOW,
+   but on Mac it works like linkat *with* AT_SYMLINK_FOLLOW. */
+#if defined(MS_WINDOWS) || defined(__linux__)
+        if (follow_symlinks == 1) {
+            argument_unavailable_error("link", "follow_symlinks=True");
+            return NULL;
+        }
+#elif defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__DragonFly__) || (defined(__sun) && defined(__SVR4))
+        if (follow_symlinks == 0) {
+            argument_unavailable_error("link", "follow_symlinks=False");
+            return NULL;
+        }
+#else
+        if (follow_symlinks >= 0) {
+            argument_unavailable_error("link", "follow_symlinks");
+            return NULL;
+        }
+#endif
     }
-#endif
 
     if (PySys_Audit("os.link", "OOii", src->object, dst->object,
                     src_dir_fd == DEFAULT_DIR_FD ? -1 : src_dir_fd,
@@ -4382,44 +4425,18 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
 #else
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_LINKAT
-    if ((src_dir_fd != DEFAULT_DIR_FD) ||
-        (dst_dir_fd != DEFAULT_DIR_FD) ||
-        (!follow_symlinks)) {
-
-        if (HAVE_LINKAT_RUNTIME) {
-
-            result = linkat(src_dir_fd, src->narrow,
-                dst_dir_fd, dst->narrow,
-                follow_symlinks ? AT_SYMLINK_FOLLOW : 0);
-
-        }
-#ifdef __APPLE__
-        else {
-            if (src_dir_fd == DEFAULT_DIR_FD && dst_dir_fd == DEFAULT_DIR_FD) {
-                /* See issue 41355: This matches the behaviour of !HAVE_LINKAT */
-                result = link(src->narrow, dst->narrow);
-            } else {
-                linkat_unavailable = 1;
-            }
-        }
-#endif
+    if (HAVE_LINKAT_RUNTIME) {
+        result = linkat(src_dir_fd, src->narrow,
+            dst_dir_fd, dst->narrow,
+            follow_symlinks ? AT_SYMLINK_FOLLOW : 0);
     }
     else
-#endif /* HAVE_LINKAT */
-        result = link(src->narrow, dst->narrow);
-    Py_END_ALLOW_THREADS
-
-#ifdef HAVE_LINKAT
-    if (linkat_unavailable) {
-        /* Either or both dir_fd arguments were specified */
-        if (src_dir_fd  != DEFAULT_DIR_FD) {
-            argument_unavailable_error("link", "src_dir_fd");
-        } else {
-            argument_unavailable_error("link", "dst_dir_fd");
-        }
-        return NULL;
-    }
 #endif
+    {
+        /* linkat not available */
+        result = link(src->narrow, dst->narrow);
+    }
+    Py_END_ALLOW_THREADS
 
     if (result)
         return path_error2(src, dst);
@@ -4681,7 +4698,7 @@ os_listdir_impl(PyObject *module, path_t *path)
 }
 
 
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
 /*[clinic input]
 os.listdrives
@@ -4729,6 +4746,10 @@ os_listdrives_impl(PyObject *module)
     }
     return result;
 }
+
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
+
+#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
 
 /*[clinic input]
 os.listvolumes
@@ -4791,6 +4812,9 @@ os_listvolumes_impl(PyObject *module)
     return result;
 }
 
+#endif /* MS_WINDOWS_APP || MS_WINDOWS_SYSTEM */
+
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
 /*[clinic input]
 os.listmounts
@@ -4871,6 +4895,9 @@ exit:
     return result;
 }
 
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
+
+#ifdef MS_WINDOWS
 
 /*[clinic input]
 os._path_isdevdrive
@@ -5025,7 +5052,7 @@ os__getfullpathname_impl(PyObject *module, path_t *path)
         return PyErr_NoMemory();
     }
 
-    PyObject *str = PyUnicode_FromWideChar(abspath, wcslen(abspath));
+    PyObject *str = PyUnicode_FromWideChar(abspath, -1);
     PyMem_RawFree(abspath);
     if (str == NULL) {
         return NULL;
@@ -5141,7 +5168,7 @@ os__findfirstfile_impl(PyObject *module, path_t *path)
     }
 
     wRealFileName = wFileData.cFileName;
-    result = PyUnicode_FromWideChar(wRealFileName, wcslen(wRealFileName));
+    result = PyUnicode_FromWideChar(wRealFileName, -1);
     FindClose(hFindFile);
     return result;
 }
@@ -5185,7 +5212,7 @@ os__getvolumepathname_impl(PyObject *module, path_t *path)
         result = win32_error_object("_getvolumepathname", path->object);
         goto exit;
     }
-    result = PyUnicode_FromWideChar(mountpath, wcslen(mountpath));
+    result = PyUnicode_FromWideChar(mountpath, -1);
     if (PyBytes_Check(path->object))
         Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
 
@@ -5371,7 +5398,7 @@ _testFileExistsByName(LPCWSTR path, BOOL followLinks)
                                      sizeof(info)))
     {
         if (!(info.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) ||
-            !followLinks && IsReparseTagNameSurrogate(info.ReparseTag))
+            (!followLinks && IsReparseTagNameSurrogate(info.ReparseTag)))
         {
             return TRUE;
         }
@@ -5695,7 +5722,6 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
     int result;
 #ifdef MS_WINDOWS
     int error = 0;
-    int pathError = 0;
     SECURITY_ATTRIBUTES secAttr = { sizeof(secAttr) };
     SECURITY_ATTRIBUTES *pSecAttr = NULL;
 #endif
@@ -5710,6 +5736,9 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
 
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
+    // For API sets that don't support these APIs, we have no choice
+    // but to silently create a directory with default ACL.
+#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
     if (mode == 0700 /* 0o700 */) {
         ULONG sdSize;
         pSecAttr = &secAttr;
@@ -5725,6 +5754,7 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
             error = GetLastError();
         }
     }
+#endif
     if (!error) {
         result = CreateDirectoryW(path->wide, pSecAttr);
         if (secAttr.lpSecurityDescriptor &&
@@ -5912,12 +5942,6 @@ internal_rename(path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd, int is
         return path_error2(src, dst);
 
 #else
-    if ((src->narrow && dst->wide) || (src->wide && dst->narrow)) {
-        PyErr_Format(PyExc_ValueError,
-                     "%s: src and dst must be the same type", function_name);
-        return NULL;
-    }
-
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_RENAMEAT
     if (dir_fd_specified) {
@@ -8489,7 +8513,7 @@ os_sched_setaffinity_impl(PyObject *module, pid_t pid, PyObject *mask)
 
     while ((item = PyIter_Next(iterator))) {
         long cpu;
-        if (!PyLong_Check(item)) {
+        if (!PyIndex_Check(item)) {
             PyErr_Format(PyExc_TypeError,
                         "expected an iterator of ints, "
                         "but iterator yielded %R",
@@ -9864,7 +9888,7 @@ os_setgroups(PyObject *module, PyObject *groups)
             PyMem_Free(grouplist);
             return NULL;
         }
-        if (!PyLong_Check(elem)) {
+        if (!PyIndex_Check(elem)) {
             PyErr_SetString(PyExc_TypeError,
                             "groups must be integers");
             Py_DECREF(elem);
@@ -10589,12 +10613,6 @@ os_symlink_impl(PyObject *module, path_t *src, path_t *dst,
         return path_error2(src, dst);
 
 #else
-
-    if ((src->narrow && dst->wide) || (src->wide && dst->narrow)) {
-        PyErr_SetString(PyExc_ValueError,
-            "symlink: src and dst must be the same type");
-        return NULL;
-    }
 
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_SYMLINKAT
@@ -13633,7 +13651,7 @@ conv_confname(PyObject *module, PyObject *arg, int *valuep, const char *tablenam
     }
 
     int success = 0;
-    if (!PyLong_Check(arg)) {
+    if (!PyIndex_Check(arg)) {
         PyErr_SetString(PyExc_TypeError,
             "configuration names must be strings or integers");
     } else {
@@ -16861,12 +16879,16 @@ static PyObject *
 os__supports_virtual_terminal_impl(PyObject *module)
 /*[clinic end generated code: output=bd0556a6d9d99fe6 input=0752c98e5d321542]*/
 {
+#ifdef HAVE_WINDOWS_CONSOLE_IO
     DWORD mode = 0;
     HANDLE handle = GetStdHandle(STD_ERROR_HANDLE);
     if (!GetConsoleMode(handle, &mode)) {
         Py_RETURN_FALSE;
     }
     return PyBool_FromLong(mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+#else
+    Py_RETURN_FALSE;
+#endif /* HAVE_WINDOWS_CONSOLE_IO */
 }
 #endif
 

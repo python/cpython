@@ -1,2 +1,0 @@
-Fix reference leaks in :func:`!_hashlib.hmac_new` and
-:func:`!_hashlib.hmac_digest`. Patch by Bénédikt Tran.

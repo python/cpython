@@ -1,1 +1,0 @@
-Fix a crash that occurs when calling :func:`locals` inside an inline comprehension that uses the same local variable as the outer frame scope where the variable is a free or cell var.

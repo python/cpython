@@ -2,7 +2,6 @@
 #define Py_INTERNAL_PYMEM_H
 
 #include "pycore_llist.h"           // struct llist_node
-#include "pycore_lock.h"            // PyMutex
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,34 +25,6 @@ PyAPI_FUNC(char*) _PyMem_Strdup(const char *str);
 
 // wcsdup() using PyMem_RawMalloc()
 extern wchar_t* _PyMem_RawWcsdup(const wchar_t *str);
-
-typedef struct {
-    /* We tag each block with an API ID in order to tag API violations */
-    char api_id;
-    PyMemAllocatorEx alloc;
-} debug_alloc_api_t;
-
-struct _pymem_allocators {
-    PyMutex mutex;
-    struct {
-        PyMemAllocatorEx raw;
-        PyMemAllocatorEx mem;
-        PyMemAllocatorEx obj;
-    } standard;
-    struct {
-        debug_alloc_api_t raw;
-        debug_alloc_api_t mem;
-        debug_alloc_api_t obj;
-    } debug;
-    int is_debug_enabled;
-    PyObjectArenaAllocator obj_arena;
-};
-
-struct _Py_mem_interp_free_queue {
-    int has_work;   // true if the queue is not empty
-    PyMutex mutex;  // protects the queue
-    struct llist_node head;  // queue of _mem_work_chunk items
-};
 
 /* Special bytes broadcast into debug memory blocks at appropriate times.
    Strings of these are unlikely to be valid addresses, floats, ints or

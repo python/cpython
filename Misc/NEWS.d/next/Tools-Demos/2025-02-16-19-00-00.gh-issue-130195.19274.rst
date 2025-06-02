@@ -1,1 +1,0 @@
-Add warning messages when ``pygettext`` unimplemented ``-a/--extract-all`` option is called.

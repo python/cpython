@@ -5,7 +5,7 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_lock.h"        // PyMutex
+#include "pycore_lock.h"        // PyMutex_LockFast()
 #include "pycore_pystate.h"     // _PyThreadState_GET()
 #include <stdint.h>
 

@@ -8,6 +8,7 @@ __author__ = "Steve Dower <steve.dower@python.org>"
 __version__ = "3.8"
 
 import argparse
+import json
 import os
 import shutil
 import sys
@@ -28,6 +29,7 @@ from .support.logging import *
 from .support.options import *
 from .support.pip import *
 from .support.props import *
+from .support.pymanager import *
 from .support.nuspec import *
 
 TEST_PYDS_ONLY = FileStemSet("xxlimited", "xxlimited_35", "_ctypes_test", "_test*")
@@ -265,7 +267,12 @@ def get_layout(ns):
     if ns.include_dev:
         for dest, src in rglob(ns.source / "Include", "**/*.h"):
             yield "include/{}".format(dest), src
-        yield "include/pyconfig.h", ns.build / "pyconfig.h"
+        # Support for layout of new and old releases.
+        pc = ns.source / "PC"
+        if (pc / "pyconfig.h.in").is_file():
+            yield "include/pyconfig.h", ns.build / "pyconfig.h"
+        else:
+            yield "include/pyconfig.h", pc / "pyconfig.h"
 
     for dest, src in get_tcltk_lib(ns):
         yield dest, src
@@ -302,6 +309,9 @@ def get_layout(ns):
             yield ns.include_cat.name, ns.include_cat
         else:
             yield "DLLs/{}".format(ns.include_cat.name), ns.include_cat
+
+    if ns.include_install_json or ns.include_install_embed_json or ns.include_install_test_json:
+        yield "__install__.json", ns.temp / "__install__.json"
 
 
 def _compile_one_py(src, dest, name, optimize, checked=True):
@@ -393,6 +403,22 @@ def generate_source_files(ns):
     if ns.include_pip:
         log_info("Extracting pip")
         extract_pip_files(ns)
+
+    if ns.include_install_json:
+        log_info("Generating __install__.json in {}", ns.temp)
+        ns.temp.mkdir(parents=True, exist_ok=True)
+        with open(ns.temp / "__install__.json", "w", encoding="utf-8") as f:
+            json.dump(calculate_install_json(ns), f, indent=2)
+    elif ns.include_install_embed_json:
+        log_info("Generating embeddable __install__.json in {}", ns.temp)
+        ns.temp.mkdir(parents=True, exist_ok=True)
+        with open(ns.temp / "__install__.json", "w", encoding="utf-8") as f:
+            json.dump(calculate_install_json(ns, for_embed=True), f, indent=2)
+    elif ns.include_install_test_json:
+        log_info("Generating test __install__.json in {}", ns.temp)
+        ns.temp.mkdir(parents=True, exist_ok=True)
+        with open(ns.temp / "__install__.json", "w", encoding="utf-8") as f:
+            json.dump(calculate_install_json(ns, for_test=True), f, indent=2)
 
 
 def _create_zip_file(ns):
@@ -627,6 +653,7 @@ def main():
     if ns.include_cat and not ns.include_cat.is_absolute():
         ns.include_cat = (Path.cwd() / ns.include_cat).resolve()
     if not ns.arch:
+        # TODO: Calculate arch from files in ns.build instead
         if sys.winver.endswith("-arm64"):
             ns.arch = "arm64"
         elif sys.winver.endswith("-32"):
@@ -657,7 +684,7 @@ Catalog: {ns.catalog}""",
     if ns.arch not in ("win32", "amd64", "arm32", "arm64"):
         log_error("--arch is not a valid value (win32, amd64, arm32, arm64)")
         return 4
-    if ns.arch in ("arm32", "arm64"):
+    if ns.arch == "arm32":
         for n in ("include_idle", "include_tcltk"):
             if getattr(ns, n):
                 log_warning(f"Disabling --{n.replace('_', '-')} on unsupported platform")

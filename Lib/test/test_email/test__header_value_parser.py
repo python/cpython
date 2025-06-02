@@ -463,6 +463,19 @@ class TestParser(TestParserMixin, TestEmailBase):
                                 [errors.NonPrintableDefect], ')')
         self.assertEqual(ptext.defects[0].non_printables[0], '\x00')
 
+    def test_get_qp_ctext_close_paren_only(self):
+        self._test_get_x(parser.get_qp_ctext,
+                        ')', '', ' ', [], ')')
+
+    def test_get_qp_ctext_open_paren_only(self):
+        self._test_get_x(parser.get_qp_ctext,
+                        '(', '', ' ', [], '(')
+
+    def test_get_qp_ctext_no_end_char(self):
+        self._test_get_x(parser.get_qp_ctext,
+                        '', '', ' ', [], '')
+
+
     # get_qcontent
 
     def test_get_qcontent_only(self):
@@ -502,6 +515,14 @@ class TestParser(TestParserMixin, TestEmailBase):
                                 'foo\x00fg"', 'foo\x00fg', 'foo\x00fg',
                                 [errors.NonPrintableDefect], '"')
         self.assertEqual(ptext.defects[0].non_printables[0], '\x00')
+
+    def test_get_qcontent_empty(self):
+        self._test_get_x(parser.get_qcontent,
+                         '"', '', '', [], '"')
+
+    def test_get_qcontent_no_end_char(self):
+        self._test_get_x(parser.get_qcontent,
+                         '', '', '', [], '')
 
     # get_atext
 
@@ -1282,6 +1303,18 @@ class TestParser(TestParserMixin, TestEmailBase):
     def test_get_dtext_open_bracket_mid_word(self):
         self._test_get_x(parser.get_dtext,
                         'foo[bar', 'foo', 'foo', [], '[bar')
+
+    def test_get_dtext_open_bracket_only(self):
+        self._test_get_x(parser.get_dtext,
+                        '[', '', '', [], '[')
+
+    def test_get_dtext_close_bracket_only(self):
+        self._test_get_x(parser.get_dtext,
+                        ']', '', '', [], ']')
+
+    def test_get_dtext_empty(self):
+        self._test_get_x(parser.get_dtext,
+                        '', '', '', [], '')
 
     # get_domain_literal
 
@@ -3075,6 +3108,31 @@ class TestFolding(TestEmailBase):
                 '"beißt" beißt <biter@example.com>')[0],
             '=?utf-8?q?H=C3=BCbsch?= Kaktus <beautiful@example.com>,\n'
                 ' =?utf-8?q?bei=C3=9Ft_bei=C3=9Ft?= <biter@example.com>\n')
+
+    def test_address_list_with_specials_in_encoded_word(self):
+        # An encoded-word parsed from a structured header must remain
+        # encoded when it contains specials. Regression for gh-121284.
+        policy = self.policy.clone(max_line_length=40)
+        cases = [
+            # (to, folded)
+            ('=?utf-8?q?A_v=C3=A9ry_long_name_with=2C_comma?= <to@example.com>',
+             'A =?utf-8?q?v=C3=A9ry_long_name_with?=\n'
+             ' =?utf-8?q?=2C?= comma <to@example.com>\n'),
+            ('=?utf-8?q?This_long_name_does_not_need_encoded=2Dword?= <to@example.com>',
+             'This long name does not need\n'
+             ' encoded-word <to@example.com>\n'),
+            ('"A véry long name with, comma" <to@example.com>',
+             # (This isn't the best fold point, but it's not invalid.)
+             'A =?utf-8?q?v=C3=A9ry_long_name_with?=\n'
+             ' =?utf-8?q?=2C?= comma <to@example.com>\n'),
+            ('"A véry long name containing a, comma" <to@example.com>',
+             'A =?utf-8?q?v=C3=A9ry?= long name\n'
+             ' containing =?utf-8?q?a=2C?= comma\n'
+             ' <to@example.com>\n'),
+        ]
+        for (to, folded) in cases:
+            with self.subTest(to=to):
+                self._test(parser.get_address_list(to)[0], folded, policy=policy)
 
     def test_address_list_with_list_separator_after_fold(self):
         a = 'x' * 66 + '@example.com'

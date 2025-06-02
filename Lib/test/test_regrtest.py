@@ -422,8 +422,7 @@ class ParseArgsTestCase(unittest.TestCase):
         # which has an unclear API
         with os_helper.EnvironmentVarGuard() as env:
             # Ignore SOURCE_DATE_EPOCH env var if it's set
-            if 'SOURCE_DATE_EPOCH' in env:
-                del env['SOURCE_DATE_EPOCH']
+            del env['SOURCE_DATE_EPOCH']
 
             regrtest = main.Regrtest(ns)
 
@@ -875,7 +874,10 @@ class ProgramsTestCase(BaseTestCase):
         self.run_tests(args)
 
     def run_batch(self, *args):
-        proc = self.run_command(args)
+        proc = self.run_command(args,
+                                # gh-133711: cmd.exe uses the OEM code page
+                                # to display the non-ASCII current directory
+                                errors="backslashreplace")
         self.check_output(proc.stdout)
 
     @unittest.skipUnless(sysconfig.is_python_build(),
@@ -2065,7 +2067,7 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, [testname],
                                   failed=[testname],
                                   parallel=True,
-                                  stats=TestStats(1, 1, 0))
+                                  stats=TestStats(1, 2, 1))
 
     def _check_random_seed(self, run_workers: bool):
         # gh-109276: When -r/--randomize is used, random.seed() is called
@@ -2547,4 +2549,5 @@ class TestColorized(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    setup.setup_process()
     unittest.main()

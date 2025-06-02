@@ -670,6 +670,25 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
       .. versionadded:: 3.3
 
+   .. method:: interrupt()
+
+      Terminate the process. Works on POSIX using the :py:const:`~signal.SIGINT` signal.
+      Behavior on Windows is undefined.
+
+      By default, this terminates the child process by raising :exc:`KeyboardInterrupt`.
+      This behavior can be altered by setting the respective signal handler in the child
+      process :func:`signal.signal` for :py:const:`~signal.SIGINT`.
+
+      Note: if the child process catches and discards :exc:`KeyboardInterrupt`, the
+      process will not be terminated.
+
+      Note: the default behavior will also set :attr:`exitcode` to ``1`` as if an
+      uncaught exception was raised in the child process. To have a different
+      :attr:`exitcode` you may simply catch :exc:`KeyboardInterrupt` and call
+      ``exit(your_code)``.
+
+      .. versionadded:: 3.14
+
    .. method:: terminate()
 
       Terminate the process.  On POSIX this is done using the :py:const:`~signal.SIGTERM` signal;
@@ -1062,7 +1081,7 @@ Miscellaneous
 .. function:: freeze_support()
 
    Add support for when a program which uses :mod:`multiprocessing` has been
-   frozen to produce a Windows executable.  (Has been tested with **py2exe**,
+   frozen to produce an executable.  (Has been tested with **py2exe**,
    **PyInstaller** and **cx_Freeze**.)
 
    One needs to call this function straight after the ``if __name__ ==
@@ -1080,10 +1099,10 @@ Miscellaneous
    If the ``freeze_support()`` line is omitted then trying to run the frozen
    executable will raise :exc:`RuntimeError`.
 
-   Calling ``freeze_support()`` has no effect when invoked on any operating
-   system other than Windows.  In addition, if the module is being run
-   normally by the Python interpreter on Windows (the program has not been
-   frozen), then ``freeze_support()`` has no effect.
+   Calling ``freeze_support()`` has no effect when the start method is not
+   *spawn*. In addition, if the module is being run normally by the Python
+   interpreter (the program has not been frozen), then ``freeze_support()``
+   has no effect.
 
 .. function:: get_all_start_methods()
 
@@ -1350,6 +1369,12 @@ object -- see :ref:`multiprocessing-managers`.
    A solitary difference from its close analog exists: its ``acquire`` method's
    first argument is named *block*, as is consistent with :meth:`Lock.acquire`.
 
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: 3.14
+
    .. note::
       On macOS, this is indistinguishable from :class:`Semaphore` because
       ``sem_getvalue()`` is not implemented on that platform.
@@ -1421,6 +1446,13 @@ object -- see :ref:`multiprocessing-managers`.
       when invoked on an unlocked lock, a :exc:`ValueError` is raised.
 
 
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: 3.14
+
+
 .. class:: RLock()
 
    A recursive lock object: a close analog of :class:`threading.RLock`.  A
@@ -1481,12 +1513,25 @@ object -- see :ref:`multiprocessing-managers`.
       differs from the implemented behavior in :meth:`threading.RLock.release`.
 
 
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: 3.14
+
+
 .. class:: Semaphore([value])
 
    A semaphore object: a close analog of :class:`threading.Semaphore`.
 
    A solitary difference from its close analog exists: its ``acquire`` method's
    first argument is named *block*, as is consistent with :meth:`Lock.acquire`.
+
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: 3.14
 
 .. note::
 
@@ -1953,7 +1998,7 @@ their parent process exits.  The manager classes are defined in the
 
       Create a shared :class:`set` object and return a proxy for it.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
          :class:`set` support was added.
 
    .. versionchanged:: 3.6

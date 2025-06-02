@@ -1,2 +1,0 @@
-The iOS testbed will now run successfully on a machine that has not
-previously run Xcode tests (such as CI configurations).

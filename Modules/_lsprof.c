@@ -7,6 +7,8 @@
 #include "pycore_ceval.h"         // _PyEval_SetProfile()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_time.h"          // _PyTime_FromLong()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #include "rotatingtree.h"
 
@@ -669,6 +671,7 @@ PyObject* get_cfunc_from_callable(PyObject* callable, PyObject* self_arg, PyObje
         PyObject *meth = Py_TYPE(callable)->tp_descr_get(
             callable, self_arg, (PyObject*)Py_TYPE(self_arg));
         if (meth == NULL) {
+            PyErr_Clear();
             return NULL;
         }
         if (PyCFunction_Check(meth)) {
@@ -779,7 +782,7 @@ _lsprof_Profiler_enable_impl(ProfilerObject *self, int subcalls,
         return NULL;
     }
 
-    PyObject* monitoring = PyImport_ImportModuleAttrString("sys", "monitoring");
+    PyObject* monitoring = PySys_GetAttrString("monitoring");
     if (!monitoring) {
         return NULL;
     }
@@ -861,7 +864,7 @@ _lsprof_Profiler_disable_impl(ProfilerObject *self)
     }
     if (self->flags & POF_ENABLED) {
         PyObject* result = NULL;
-        PyObject* monitoring = PyImport_ImportModuleAttrString("sys", "monitoring");
+        PyObject* monitoring = PySys_GetAttrString("monitoring");
 
         if (!monitoring) {
             return NULL;
@@ -980,7 +983,7 @@ profiler_init_impl(ProfilerObject *self, PyObject *timer, double timeunit,
     Py_XSETREF(self->externalTimer, Py_XNewRef(timer));
     self->tool_id = PY_MONITORING_PROFILER_ID;
 
-    PyObject* monitoring = PyImport_ImportModuleAttrString("sys", "monitoring");
+    PyObject* monitoring = PySys_GetAttrString("monitoring");
     if (!monitoring) {
         return -1;
     }

@@ -1,7 +1,9 @@
 import unittest
 from test.support import (cpython_only, is_wasi, requires_limited_api, Py_DEBUG,
-                          set_recursion_limit, skip_on_s390x, exceeds_recursion_limit, skip_emscripten_stack_overflow, skip_wasi_stack_overflow,
-                          skip_if_sanitizer, import_helper)
+                          set_recursion_limit, skip_on_s390x,
+                          skip_emscripten_stack_overflow,
+                          skip_wasi_stack_overflow, skip_if_sanitizer,
+                          import_helper)
 try:
     import _testcapi
 except ImportError:
@@ -693,8 +695,8 @@ class TestPEP590(unittest.TestCase):
         UnaffectedType2 = _testcapi.make_vectorcall_class(SuperType)
 
         # Aside: Quickly check that the C helper actually made derived types
-        self.assertTrue(issubclass(UnaffectedType1, DerivedType))
-        self.assertTrue(issubclass(UnaffectedType2, SuperType))
+        self.assertIsSubclass(UnaffectedType1, DerivedType)
+        self.assertIsSubclass(UnaffectedType2, SuperType)
 
         # Initial state: tp_call
         self.assertEqual(instance(), "tp_call")
