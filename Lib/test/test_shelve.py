@@ -174,24 +174,19 @@ class TestCase(unittest.TestCase):
             if isinstance(obj, (bytes, bytearray, str)):
                 if protocol == 5:
                     return obj
-                else:
-                    return type(obj).__name__
+                return type(obj).__name__
             elif isinstance(obj, array.array):
                 return obj.tobytes()
-            else:
-                raise TypeError(
-                    f"Unsupported type for serialization: {type(obj)}"
-                )
+            raise TypeError(f"Unsupported type for serialization: {type(obj)}")
 
         def deserializer(data):
             if isinstance(data, (bytes, bytearray, str)):
                 return data.decode("utf-8")
             elif isinstance(data, array.array):
                 return array.array("b", data)
-            else:
-                raise TypeError(
-                    f"Unsupported type for deserialization: {type(data)}"
-                )
+            raise TypeError(
+                f"Unsupported type for deserialization: {type(data)}"
+            )
 
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(proto=proto), shelve.open(
