@@ -1011,7 +1011,7 @@ if hasattr(_os, "fork"):
 def _parse_args(arg_list: list[str] | None):
     import argparse
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawTextHelpFormatter)
+        formatter_class=argparse.RawTextHelpFormatter, color=True)
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "-c", "--choice", nargs="+",

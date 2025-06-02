@@ -90,6 +90,7 @@ __all__ = [
     # "set_pre_input_hook",
     "set_startup_hook",
     "write_history_file",
+    "append_history_file",
     # ---- multiline extensions ----
     "multiline_input",
 ]
@@ -133,7 +134,8 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
         return "".join(b[p + 1 : self.pos])
 
     def get_completions(self, stem: str) -> list[str]:
-        if module_completions := self.get_module_completions():
+        module_completions = self.get_module_completions()
+        if module_completions is not None:
             return module_completions
         if len(stem) == 0 and self.more_lines is not None:
             b = self.buffer
@@ -164,7 +166,7 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
             result.sort()
         return result
 
-    def get_module_completions(self) -> list[str]:
+    def get_module_completions(self) -> list[str] | None:
         line = self.get_line()
         return self.config.module_completer.get_completions(line)
 
@@ -274,10 +276,6 @@ class maybe_accept(commands.Command):
         r: ReadlineAlikeReader
         r = self.reader  # type: ignore[assignment]
         r.dirty = True  # this is needed to hide the completion menu, if visible
-
-        if self.reader.in_bracketed_paste:
-            r.insert("\n")
-            return
 
         # if there are already several lines and the cursor
         # is not on the last one, always insert a new \n.
@@ -453,6 +451,7 @@ class _ReadlineWrapper:
                         del buffer[:]
                     if line:
                         history.append(line)
+        self.set_history_length(self.get_current_history_length())
 
     def write_history_file(self, filename: str = gethistoryfile()) -> None:
         maxlength = self.saved_history_length
@@ -463,6 +462,19 @@ class _ReadlineWrapper:
             for entry in history:
                 entry = entry.replace("\n", "\r\n")  # multiline history support
                 f.write(entry + "\n")
+
+    def append_history_file(self, filename: str = gethistoryfile()) -> None:
+        reader = self.get_reader()
+        saved_length = self.get_history_length()
+        length = self.get_current_history_length() - saved_length
+        history = reader.get_trimmed_history(length)
+        f = open(os.path.expanduser(filename), "a",
+                 encoding="utf-8", newline="\n")
+        with f:
+            for entry in history:
+                entry = entry.replace("\n", "\r\n")  # multiline history support
+                f.write(entry + "\n")
+        self.set_history_length(saved_length + length)
 
     def clear_history(self) -> None:
         del self.get_reader().history[:]
@@ -533,6 +545,7 @@ set_history_length = _wrapper.set_history_length
 get_current_history_length = _wrapper.get_current_history_length
 read_history_file = _wrapper.read_history_file
 write_history_file = _wrapper.write_history_file
+append_history_file = _wrapper.append_history_file
 clear_history = _wrapper.clear_history
 get_history_item = _wrapper.get_history_item
 remove_history_item = _wrapper.remove_history_item
@@ -594,6 +607,7 @@ def _setup(namespace: Mapping[str, Any]) -> None:
     # set up namespace in rlcompleter, which requires it to be a bona fide dict
     if not isinstance(namespace, dict):
         namespace = dict(namespace)
+    _wrapper.config.module_completer = ModuleCompleter(namespace)
     _wrapper.config.readline_completer = RLCompleter(namespace).complete
 
     # this is not really what readline.c does.  Better than nothing I guess

@@ -111,7 +111,7 @@ functions: :func:`fnmatch`, :func:`fnmatchcase`, :func:`.filter`.
       >>>
       >>> regex = fnmatch.translate('*.txt')
       >>> regex
-      '(?s:.*\\.txt)\\Z'
+      '(?s:.*\\.txt)\\z'
       >>> reobj = re.compile(regex)
       >>> reobj.match('foobar.txt')
       <re.Match object; span=(0, 10), match='foobar.txt'>
