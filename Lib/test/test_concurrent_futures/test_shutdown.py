@@ -358,7 +358,7 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         f1 = executor.submit(ProcessPoolShutdownTest._good_task_gh_132969, 1)
         f2 = executor.submit(ProcessPoolShutdownTest._failing_task_gh_132969, 2)
         f3 = executor.submit(ProcessPoolShutdownTest._good_task_gh_132969, 3)
-        result:int = 0
+        result = 0
         try:
             result += f1.result()
             result += f2.result()
