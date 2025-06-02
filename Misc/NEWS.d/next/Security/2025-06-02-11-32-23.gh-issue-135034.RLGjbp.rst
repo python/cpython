@@ -1,4 +1,3 @@
-cat Misc/NEWS.d/next/Security/2025-06-02-11-32-23.gh-issue-135034.RLGjbp.rst
 Fixes multiple issues that allowed ``tarfile`` extraction filters
 (``filter="data"`` and ``filter="tar"``) to be bypassed using crafted
 symlinks and hard links.
