@@ -696,9 +696,11 @@ def sortdict(dict):
     return "{%s}" % withcommas
 
 
-def run_code(code: str) -> dict[str, object]:
+def run_code(code: str, extra_names: dict[str, object] | None = None) -> dict[str, object]:
     """Run a piece of code after dedenting it, and return its global namespace."""
     ns = {}
+    if extra_names:
+        ns.update(extra_names)
     exec(textwrap.dedent(code), ns)
     return ns
 
@@ -1099,7 +1101,6 @@ class _MemoryWatchdog:
         self.started = False
 
     def start(self):
-        import warnings
         try:
             f = open(self.procfile, 'r')
         except OSError as e:
@@ -2726,7 +2727,7 @@ def iter_builtin_types():
     # Fall back to making a best-effort guess.
     if hasattr(object, '__flags__'):
         # Look for any type object with the Py_TPFLAGS_STATIC_BUILTIN flag set.
-        import datetime
+        import datetime  # noqa: F401
         seen = set()
         for cls, subs in walk_class_hierarchy(object):
             if cls in seen:
@@ -2925,12 +2926,6 @@ def make_clean_env() -> dict[str, str]:
     clean_env.pop("FORCE_COLOR", None)
     clean_env.pop("NO_COLOR", None)
     return clean_env
-
-
-def initialized_with_pyrepl():
-    """Detect whether PyREPL was used during Python initialization."""
-    # If the main module has a __file__ attribute it's a Python module, which means PyREPL.
-    return hasattr(sys.modules["__main__"], "__file__")
 
 
 WINDOWS_STATUS = {
