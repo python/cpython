@@ -7373,13 +7373,13 @@ class SendRecvFdsTests(unittest.TestCase):
             self._test_pipe(rfd, wfd, str(index).encode())
 
     def test_send_recv_fds_with_addrs(self):
-        sock1 = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-        sock2 = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
         rfd, wfd = os.pipe()
         self.addCleanup(os.close, rfd)
         self.addCleanup(os.close, wfd)
 
-        with tempfile.TemporaryDirectory() as tmpdir, sock1, sock2:
+        with tempfile.TemporaryDirectory() as tmpdir, \
+                socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM) as sock1, \
+                socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM) as sock2:
             sock1_addr = os.path.join(tmpdir, "sock1")
             sock2_addr = os.path.join(tmpdir, "sock2")
             sock1.bind(sock1_addr)
