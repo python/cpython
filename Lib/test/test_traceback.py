@@ -4188,6 +4188,15 @@ class SuggestionFormattingTestBase:
         self.assertNotIn("blech", actual)
         self.assertNotIn("oh no!", actual)
 
+    def test_attribute_error_with_non_string_candidates(self):
+        class T:
+            bluch = 1
+
+        instance = T()
+        instance.__dict__[0] = 1
+        actual = self.get_suggestion(instance, 'blich')
+        self.assertIn("bluch", actual)
+
     def test_attribute_error_with_bad_name(self):
         def raise_attribute_error_with_bad_name():
             raise AttributeError(name=12, obj=23)
@@ -4301,6 +4310,13 @@ class SuggestionFormattingTestBase:
         self.assertIn("'_bluch'", self.get_import_from_suggestion(code, '_luch'))
         self.assertNotIn("'_bluch'", self.get_import_from_suggestion(code, 'bluch'))
 
+    def test_import_from_suggestions_non_string(self):
+        modWithNonStringAttr = textwrap.dedent("""\
+            globals()[0] = 1
+            bluch = 1
+        """)
+        self.assertIn("'bluch'", self.get_import_from_suggestion(modWithNonStringAttr, 'blech'))
+
     def test_import_from_suggestions_do_not_trigger_for_long_attributes(self):
         code = "blech = None"
 
@@ -4396,6 +4412,14 @@ class SuggestionFormattingTestBase:
             print(eval("ZeroDivisionErrrrr", custom_globals))
         actual = self.get_suggestion(func)
         self.assertIn("'ZeroDivisionError'?", actual)
+
+    def test_name_error_suggestions_with_non_string_candidates(self):
+        def func():
+            abc = 1
+            globals()[0] = 1
+            abv
+        actual = self.get_suggestion(func)
+        self.assertIn("abc", actual)
 
     def test_name_error_suggestions_do_not_trigger_for_long_names(self):
         def func():
