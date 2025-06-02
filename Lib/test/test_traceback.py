@@ -4220,8 +4220,8 @@ class SuggestionFormattingTestBase:
 
         return mod_name
 
-    def get_import_from_suggestion(self, mod_dict, name):
-        modname = self.make_module(mod_dict)
+    def get_import_from_suggestion(self, code, name):
+        modname = self.make_module(code)
 
         def callable():
             try:
@@ -4404,8 +4404,9 @@ class SuggestionFormattingTestBase:
     def test_name_error_suggestions_with_non_string_candidates(self):
         def func():
             abc = 1
-            globals()[0] = 1
-            abv
+            custom_globals = globals().copy()
+            custom_globals[0] = 1
+            print(eval("abv", custom_globals, locals()))
         actual = self.get_suggestion(func)
         self.assertIn("abc", actual)
 
