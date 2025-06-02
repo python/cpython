@@ -1,2 +1,2 @@
-Fix various HTTP header value parsing routines with worst-time
-quadratic-complexity. Patch by Bénédikt Tran.
+Fix various HTTP header value parsing routines with worst-case
+quadratic time complexity. Patch by Bénédikt Tran.
