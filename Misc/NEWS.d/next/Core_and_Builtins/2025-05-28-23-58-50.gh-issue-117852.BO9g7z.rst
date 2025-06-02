@@ -1,1 +1,1 @@
-Check ``async_generator_athrow.athrow`` arguments immediately on instantiation.
+Fix argument checking of :meth:`~agen.athrow`.
