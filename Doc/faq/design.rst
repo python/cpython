@@ -420,10 +420,12 @@ strings representing the files in the current directory.  Functions which
 operate on this output would generally not break if you added another file or
 two to the directory.
 
-Tuples are immutable, meaning that once a tuple has been created, you can't
-replace any of its elements with a new value.  Lists are mutable, meaning that
-you can always change a list's elements.  Only immutable elements can be used as
-dictionary keys, and hence only tuples and not lists can be used as keys.
+Tuples are :term:`immutable`, meaning that once a tuple has been created, you can't
+replace any of its elements with a new value.  Lists are :term:`mutable`, meaning that
+you can always change a list's elements.  Only :term:`hashable` objects can
+be used as dictionary keys. Most immutable types are hashable, which is why
+tuples, but not lists, can be used as keys. Note, however, that a tuple is
+only hashable if all of its elements are hashable.
 
 
 How are lists implemented in CPython?

@@ -1283,7 +1283,7 @@ init_interp_main(PyThreadState *tstate)
     if (is_main_interp) {
         /* Initialize warnings. */
         PyObject *warnoptions;
-        if (_PySys_GetOptionalAttrString("warnoptions", &warnoptions) < 0) {
+        if (PySys_GetOptionalAttrString("warnoptions", &warnoptions) < 0) {
             return _PyStatus_ERR("can't initialize warnings");
         }
         if (warnoptions != NULL && PyList_Check(warnoptions) &&
@@ -1806,7 +1806,7 @@ flush_std_files(void)
     PyObject *file;
     int status = 0;
 
-    if (_PySys_GetOptionalAttr(&_Py_ID(stdout), &file) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(stdout), &file) < 0) {
         status = -1;
     }
     else if (file != NULL && file != Py_None && !file_is_closed(file)) {
@@ -1819,7 +1819,7 @@ flush_std_files(void)
     }
     Py_XDECREF(file);
 
-    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
         PyErr_Clear();
         status = -1;
     }
@@ -3046,7 +3046,7 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
     }
 
     PyObject *ferr;
-    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &ferr) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(stderr), &ferr) < 0) {
         _PyErr_Clear(tstate);
     }
     if (ferr == NULL || ferr == Py_None) {
