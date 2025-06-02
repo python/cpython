@@ -94,7 +94,7 @@ slot_tp_del(PyObject *self)
 
     PyObject *tp_del = PyUnicode_InternFromString("__tp_del__");
     if (tp_del == NULL) {
-        PyErr_WriteUnraisable(NULL);
+        PyErr_FormatUnraisable("Exception ignored while deallocating");
         PyErr_SetRaisedException(exc);
         return;
     }
@@ -104,10 +104,13 @@ slot_tp_del(PyObject *self)
     if (del != NULL) {
         res = PyObject_CallOneArg(del, self);
         Py_DECREF(del);
-        if (res == NULL)
-            PyErr_WriteUnraisable(del);
-        else
+        if (res == NULL) {
+            PyErr_FormatUnraisable("Exception ignored while calling "
+                                   "deallocator %R", del);
+        }
+        else {
             Py_DECREF(res);
+        }
     }
 
     /* Restore the saved exception. */
@@ -262,7 +265,7 @@ obj_extra_data_set(PyObject *self, PyObject *newval, void *Py_UNUSED(ignored))
 }
 
 static PyGetSetDef obj_extra_data_getset[] = {
-    {"extra", (getter)obj_extra_data_get, (setter)obj_extra_data_set, NULL},
+    {"extra", obj_extra_data_get, obj_extra_data_set, NULL},
     {NULL}
 };
 

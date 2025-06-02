@@ -164,7 +164,7 @@ Module contents
 
    - *match_args*: If true (the default is ``True``), the
      :attr:`~object.__match_args__` tuple will be created from the list of
-     parameters to the generated :meth:`~object.__init__` method (even if
+     non keyword-only parameters to the generated :meth:`~object.__init__` method (even if
      :meth:`!__init__` is not generated, see above).  If false, or if
      :attr:`!__match_args__` is already defined in the class, then
      :attr:`!__match_args__` will not be generated.
@@ -175,10 +175,11 @@ Module contents
      fields will be marked as keyword-only.  If a field is marked as
      keyword-only, then the only effect is that the :meth:`~object.__init__`
      parameter generated from a keyword-only field must be specified
-     with a keyword when :meth:`!__init__` is called.  There is no
-     effect on any other aspect of dataclasses.  See the
-     :term:`parameter` glossary entry for details.  Also see the
+     with a keyword when :meth:`!__init__` is called. See the :term:`parameter`
+     glossary entry for details.  Also see the
      :const:`KW_ONLY` section.
+
+     Keyword-only fields are not included in :attr:`!__match_args__`.
 
     .. versionadded:: 3.10
 
@@ -270,10 +271,11 @@ Module contents
      string returned by the generated :meth:`~object.__repr__` method.
 
    - *hash*: This can be a bool or ``None``.  If true, this field is
-     included in the generated :meth:`~object.__hash__` method.  If ``None`` (the
-     default), use the value of *compare*: this would normally be
-     the expected behavior.  A field should be considered in the hash
-     if it's used for comparisons.  Setting this value to anything
+     included in the generated :meth:`~object.__hash__` method.  If false,
+     this field is excluded from the generated :meth:`~object.__hash__`.
+     If ``None`` (the default), use the value of *compare*: this would
+     normally be the expected behavior, since a field should be included
+     in the hash if it's used for comparisons.  Setting this value to anything
      other than ``None`` is discouraged.
 
      One possible reason to set ``hash=False`` but ``compare=True``
@@ -298,11 +300,13 @@ Module contents
      This is used when the generated :meth:`~object.__init__` method's
      parameters are computed.
 
+     Keyword-only fields are also not included in :attr:`!__match_args__`.
+
     .. versionadded:: 3.10
 
-   - ``doc``: optional docstring for this field.
+   - *doc*: optional docstring for this field.
 
-    .. versionadded:: 3.13
+    .. versionadded:: 3.14
 
    If the default value of a field is specified by a call to
    :func:`!field`, then the class attribute for this field will be
@@ -339,6 +343,15 @@ Module contents
 
    Other attributes may exist, but they are private and must not be
    inspected or relied on.
+
+.. class:: InitVar
+
+   ``InitVar[T]`` type annotations describe variables that are :ref:`init-only
+   <dataclasses-init-only-variables>`. Fields annotated with :class:`!InitVar`
+   are considered pseudo-fields, and thus are neither returned by the
+   :func:`fields` function nor used in any way except adding them as
+   parameters to :meth:`~object.__init__` and an optional
+   :meth:`__post_init__`.
 
 .. function:: fields(class_or_instance)
 
@@ -596,8 +609,8 @@ Init-only variables
 
 Another place where :func:`@dataclass <dataclass>` inspects a type annotation is to
 determine if a field is an init-only variable.  It does this by seeing
-if the type of a field is of type ``dataclasses.InitVar``.  If a field
-is an ``InitVar``, it is considered a pseudo-field called an init-only
+if the type of a field is of type :class:`InitVar`.  If a field
+is an :class:`InitVar`, it is considered a pseudo-field called an init-only
 field.  As it is not a true field, it is not returned by the
 module-level :func:`fields` function.  Init-only fields are added as
 parameters to the generated :meth:`~object.__init__` method, and are passed to

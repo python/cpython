@@ -11,6 +11,7 @@ extern "C" {
 #include "pycore_object.h"               // PyManagedDictPointer
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_SSIZE_ACQUIRE
 #include "pycore_stackref.h"             // _PyStackRef
+#include "pycore_stats.h"
 
 // Unsafe flavor of PyDict_GetItemWithError(): no error checking
 extern PyObject* _PyDict_GetItemWithError(PyObject *dp, PyObject *key);
@@ -148,6 +149,12 @@ extern int _PyDict_Pop_KnownHash(
     PyObject *key,
     Py_hash_t hash,
     PyObject **result);
+
+extern void _PyDict_Clear_LockHeld(PyObject *op);
+
+#ifdef Py_GIL_DISABLED
+PyAPI_FUNC(void) _PyDict_EnsureSharedOnRead(PyDictObject *mp);
+#endif
 
 #define DKIX_EMPTY (-1)
 #define DKIX_DUMMY (-2)  /* Used internally */
@@ -347,8 +354,7 @@ PyDictObject *_PyObject_MaterializeManagedDict_LockHeld(PyObject *);
 static inline Py_ssize_t
 _PyDict_UniqueId(PyDictObject *mp)
 {
-    // Offset by one so that _ma_watcher_tag=0 represents an unassigned id
-    return (Py_ssize_t)(mp->_ma_watcher_tag >> DICT_UNIQUE_ID_SHIFT) - 1;
+    return (Py_ssize_t)(mp->_ma_watcher_tag >> DICT_UNIQUE_ID_SHIFT);
 }
 
 static inline void

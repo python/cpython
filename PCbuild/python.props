@@ -20,6 +20,16 @@
     <ICCBuild Condition="$(PlatformToolset.StartsWith(`Intel C++ Compiler`))">true</ICCBuild>
 
     <!--
+    This ensures, that in case of clang-cl bundled with VS
+    we find e.g. clang_rt.profile.lib in the correct bitness.
+    In case the user sets LLVMInstallDir and LLVMToolsVersion,
+    they are responsible to use the correct tool architecture.
+    For details please see GH-131473.
+    -->
+    <PreferredToolArchitecture Condition="$(LLVMInstallDir) == '' and $(PlatformToolset) == 'ClangCL' and $(Platform) == 'x64'">x64</PreferredToolArchitecture>
+    <PreferredToolArchitecture Condition="$(LLVMInstallDir) == '' and $(PlatformToolset) == 'ClangCL' and $(Platform) == 'Win32'">x86</PreferredToolArchitecture>
+
+    <!--
     Convincing MSVC/MSBuild to prefer our platform names is too difficult,
     so we define our own constant ArchName and use wherever we need it.
     -->
@@ -64,18 +74,20 @@
   <Import Project="$(ExternalProps)" Condition="$(ExternalProps) != '' and Exists('$(ExternalProps)')" />
 
   <PropertyGroup>
-    <sqlite3Dir Condition="$(sqlite3Dir) == ''">$(ExternalsDir)sqlite-3.45.3.0\</sqlite3Dir>
+    <sqlite3Dir Condition="$(sqlite3Dir) == ''">$(ExternalsDir)sqlite-3.49.1.0\</sqlite3Dir>
     <bz2Dir Condition="$(bz2Dir) == ''">$(ExternalsDir)bzip2-1.0.8\</bz2Dir>
     <lzmaDir Condition="$(lzmaDir) == ''">$(ExternalsDir)xz-5.2.5\</lzmaDir>
     <libffiDir Condition="$(libffiDir) == ''">$(ExternalsDir)libffi-3.4.4\</libffiDir>
     <libffiOutDir Condition="$(libffiOutDir) == ''">$(libffiDir)$(ArchName)\</libffiOutDir>
     <libffiIncludeDir Condition="$(libffiIncludeDir) == ''">$(libffiOutDir)include</libffiIncludeDir>
     <mpdecimalDir Condition="$(mpdecimalDir) == ''">$(ExternalsDir)\mpdecimal-4.0.0\</mpdecimalDir>
-    <opensslDir Condition="$(opensslDir) == ''">$(ExternalsDir)openssl-3.0.15\</opensslDir>
-    <opensslOutDir Condition="$(opensslOutDir) == ''">$(ExternalsDir)openssl-bin-3.0.15\$(ArchName)\</opensslOutDir>
+    <opensslDir Condition="$(opensslDir) == ''">$(ExternalsDir)openssl-3.0.16\</opensslDir>
+    <opensslOutDir Condition="$(opensslOutDir) == ''">$(ExternalsDir)openssl-bin-3.0.16.2\$(ArchName)\</opensslOutDir>
     <opensslIncludeDir Condition="$(opensslIncludeDir) == ''">$(opensslOutDir)include</opensslIncludeDir>
     <nasmDir Condition="$(nasmDir) == ''">$(ExternalsDir)\nasm-2.11.06\</nasmDir>
     <zlibDir Condition="$(zlibDir) == ''">$(ExternalsDir)\zlib-1.3.1\</zlibDir>
+    <zlibNgDir Condition="$(zlibNgDir) == ''">$(ExternalsDir)\zlib-ng-2.2.4\</zlibNgDir>
+    <zstdDir Condition="$(zstdDir) == ''">$(ExternalsDir)\zstd-1.5.7\</zstdDir>
   </PropertyGroup>
 
   <PropertyGroup>

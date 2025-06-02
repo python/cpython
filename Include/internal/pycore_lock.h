@@ -48,11 +48,14 @@ typedef enum _PyLockFlags {
 
     // Handle signals if interrupted while waiting on the lock.
     _PY_LOCK_HANDLE_SIGNALS = 2,
+
+    // Fail if interrupted by a signal while waiting on the lock.
+    _PY_FAIL_IF_INTERRUPTED = 4,
 } _PyLockFlags;
 
 // Lock a mutex with an optional timeout and additional options. See
 // _PyLockFlags for details.
-extern PyLockStatus
+extern PyAPI_FUNC(PyLockStatus)
 _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout_ns, _PyLockFlags flags);
 
 // Lock a mutex with additional options. See _PyLockFlags for details.

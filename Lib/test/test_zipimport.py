@@ -835,11 +835,11 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
             s = io.StringIO()
             print_tb(tb, 1, s)
-            self.assertTrue(s.getvalue().endswith(
+            self.assertEndsWith(s.getvalue(),
                 '    def do_raise(): raise TypeError\n'
                 '' if support.has_no_debug_ranges() else
                 '                    ^^^^^^^^^^^^^^^\n'
-            ))
+            )
         else:
             raise AssertionError("This ought to be impossible")
 
@@ -1038,7 +1038,6 @@ class BadFileZipImportTestCase(unittest.TestCase):
         self.assertZipFailure(TESTMOD)
 
     @unittest.skipIf(support.is_wasi, "mode 000 not supported.")
-    @unittest.skipIf(support.is_emscripten, "Fixed by emscripten-core/emscripten#23137, remove when next Emscripten release comes out")
     def testFileUnreadable(self):
         os_helper.unlink(TESTMOD)
         fd = os.open(TESTMOD, os.O_CREAT, 000)

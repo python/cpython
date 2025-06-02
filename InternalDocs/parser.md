@@ -97,7 +97,7 @@ Consequences of the ordered choice operator
 -------------------------------------------
 
 Although PEG may look like EBNF, its meaning is quite different. The fact
-that the alternatives are ordered in a PEG grammer (which is at the core of
+that the alternatives are ordered in a PEG grammar (which is at the core of
 how PEG parsers work) has deep consequences, other than removing ambiguity.
 
 If a rule has two alternatives and the first of them succeeds, the second one is

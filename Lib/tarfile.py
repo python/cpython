@@ -339,7 +339,7 @@ class _Stream:
     """
 
     def __init__(self, name, mode, comptype, fileobj, bufsize,
-                 compresslevel):
+                 compresslevel, preset):
         """Construct a _Stream object.
         """
         self._extfileobj = True
@@ -398,8 +398,18 @@ class _Stream:
                     self.cmp = lzma.LZMADecompressor()
                     self.exception = lzma.LZMAError
                 else:
-                    self.cmp = lzma.LZMACompressor()
-
+                    self.cmp = lzma.LZMACompressor(preset=preset)
+            elif comptype == "zst":
+                try:
+                    from compression import zstd
+                except ImportError:
+                    raise CompressionError("compression.zstd module is not available") from None
+                if mode == "r":
+                    self.dbuf = b""
+                    self.cmp = zstd.ZstdDecompressor()
+                    self.exception = zstd.ZstdError
+                else:
+                    self.cmp = zstd.ZstdCompressor()
             elif comptype != "tar":
                 raise CompressionError("unknown compression type %r" % comptype)
 
@@ -591,6 +601,8 @@ class _StreamProxy(object):
             return "bz2"
         elif self.buf.startswith((b"\x5d\x00\x00\x80", b"\xfd7zXZ")):
             return "xz"
+        elif self.buf.startswith(b"\x28\xb5\x2f\xfd"):
+            return "zst"
         else:
             return "tar"
 
@@ -1817,11 +1829,13 @@ class TarFile(object):
            'r:gz'       open for reading with gzip compression
            'r:bz2'      open for reading with bzip2 compression
            'r:xz'       open for reading with lzma compression
+           'r:zst'      open for reading with zstd compression
            'a' or 'a:'  open for appending, creating the file if necessary
            'w' or 'w:'  open for writing without compression
            'w:gz'       open for writing with gzip compression
            'w:bz2'      open for writing with bzip2 compression
            'w:xz'       open for writing with lzma compression
+           'w:zst'      open for writing with zstd compression
 
            'x' or 'x:'  create a tarfile exclusively without compression, raise
                         an exception if the file is already created
@@ -1831,16 +1845,20 @@ class TarFile(object):
                         if the file is already created
            'x:xz'       create an lzma compressed tarfile, raise an exception
                         if the file is already created
+           'x:zst'      create a zstd compressed tarfile, raise an exception
+                        if the file is already created
 
            'r|*'        open a stream of tar blocks with transparent compression
            'r|'         open an uncompressed stream of tar blocks for reading
            'r|gz'       open a gzip compressed stream of tar blocks
            'r|bz2'      open a bzip2 compressed stream of tar blocks
            'r|xz'       open an lzma compressed stream of tar blocks
+           'r|zst'      open a zstd compressed stream of tar blocks
            'w|'         open an uncompressed stream for writing
            'w|gz'       open a gzip compressed stream for writing
            'w|bz2'      open a bzip2 compressed stream for writing
            'w|xz'       open an lzma compressed stream for writing
+           'w|zst'      open a zstd compressed stream for writing
         """
 
         if not name and not fileobj:
@@ -1885,10 +1903,17 @@ class TarFile(object):
 
             if filemode not in ("r", "w"):
                 raise ValueError("mode must be 'r' or 'w'")
+            if "compresslevel" in kwargs and comptype not in ("gz", "bz2"):
+                raise ValueError(
+                    "compresslevel is only valid for w|gz and w|bz2 modes"
+                )
+            if "preset" in kwargs and comptype not in ("xz",):
+                raise ValueError("preset is only valid for w|xz mode")
 
             compresslevel = kwargs.pop("compresslevel", 9)
+            preset = kwargs.pop("preset", None)
             stream = _Stream(name, filemode, comptype, fileobj, bufsize,
-                             compresslevel)
+                             compresslevel, preset)
             try:
                 t = cls(name, filemode, stream, **kwargs)
             except:
@@ -1999,12 +2024,48 @@ class TarFile(object):
         t._extfileobj = False
         return t
 
+    @classmethod
+    def zstopen(cls, name, mode="r", fileobj=None, level=None, options=None,
+                zstd_dict=None, **kwargs):
+        """Open zstd compressed tar archive name for reading or writing.
+           Appending is not allowed.
+        """
+        if mode not in ("r", "w", "x"):
+            raise ValueError("mode must be 'r', 'w' or 'x'")
+
+        try:
+            from compression.zstd import ZstdFile, ZstdError
+        except ImportError:
+            raise CompressionError("compression.zstd module is not available") from None
+
+        fileobj = ZstdFile(
+            fileobj or name,
+            mode,
+            level=level,
+            options=options,
+            zstd_dict=zstd_dict
+        )
+
+        try:
+            t = cls.taropen(name, mode, fileobj, **kwargs)
+        except (ZstdError, EOFError) as e:
+            fileobj.close()
+            if mode == 'r':
+                raise ReadError("not a zstd file") from e
+            raise
+        except Exception:
+            fileobj.close()
+            raise
+        t._extfileobj = False
+        return t
+
     # All *open() methods are registered here.
     OPEN_METH = {
         "tar": "taropen",   # uncompressed tar
         "gz":  "gzopen",    # gzip compressed tar
         "bz2": "bz2open",   # bzip2 compressed tar
-        "xz":  "xzopen"     # lzma compressed tar
+        "xz":  "xzopen",    # lzma compressed tar
+        "zst": "zstopen",   # zstd compressed tar
     }
 
     #--------------------------------------------------------------------------
@@ -2378,7 +2439,7 @@ class TarFile(object):
         unfiltered = tarinfo
         try:
             tarinfo = filter_function(tarinfo, path)
-        except (OSError, FilterError) as e:
+        except (OSError, UnicodeEncodeError, FilterError) as e:
             self._handle_fatal_error(e)
         except ExtractError as e:
             self._handle_nonfatal_error(e)
@@ -2399,7 +2460,7 @@ class TarFile(object):
             self._extract_member(tarinfo, os.path.join(path, tarinfo.name),
                                  set_attrs=set_attrs,
                                  numeric_owner=numeric_owner)
-        except OSError as e:
+        except (OSError, UnicodeEncodeError) as e:
             self._handle_fatal_error(e)
         except ExtractError as e:
             self._handle_nonfatal_error(e)
@@ -2876,7 +2937,7 @@ def main():
     import argparse
 
     description = 'A simple command-line interface for tarfile module.'
-    parser = argparse.ArgumentParser(description=description)
+    parser = argparse.ArgumentParser(description=description, color=True)
     parser.add_argument('-v', '--verbose', action='store_true', default=False,
                         help='Verbose output')
     parser.add_argument('--filter', metavar='<filtername>',
@@ -2956,6 +3017,9 @@ def main():
             '.tbz': 'bz2',
             '.tbz2': 'bz2',
             '.tb2': 'bz2',
+            # zstd
+            '.zst': 'zst',
+            '.tzst': 'zst',
         }
         tar_mode = 'w:' + compressions[ext] if ext in compressions else 'w'
         tar_files = args.create
