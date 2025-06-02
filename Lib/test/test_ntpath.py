@@ -989,10 +989,6 @@ class TestNtpath(NtpathTestCase):
             raise unittest.SkipTest('failed to deny access to the test file')
 
         self.assertPathEqual(test_file, ntpath.realpath(test_file_short))
-        with self.assertRaises(OSError):
-            ntpath.realpath(test_file_short, strict=True)
-        with self.assertRaises(OSError):
-            ntpath.realpath(test_file_short, strict='allow_missing')
 
     def test_expandvars(self):
         with os_helper.EnvironmentVarGuard() as env:

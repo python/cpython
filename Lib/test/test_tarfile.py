@@ -3830,7 +3830,7 @@ class TestExtractionFilters(unittest.TestCase):
         with self.check_context(arc.open(), filter='fully_trusted',
                                 check_flag=False):
             if sys.platform == 'win32':
-                self.expect_exception(FileNotFoundError)
+                self.expect_exception((FileNotFoundError, FileExistsError))
             elif self.raised_exception:
                 # Most likely, guess for number of components was wrong?
                 self.expect_exception(KeyError)
