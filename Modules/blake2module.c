@@ -41,12 +41,12 @@
 
 #include <stdbool.h>
 
-// SIMD256 can't be compiled on macOS ARM64, and performance of SIMD128 isn't
+// SIMD256 can't be compiled on macOS and Linux ARM64, and performance of SIMD128 isn't
 // great; but when compiling a universal2 binary, autoconf will set
 // HACL_CAN_COMPILE_SIMD128 and HACL_CAN_COMPILE_SIMD256 because they *can* be
-// compiled on x86_64. If we're on macOS ARM64, disable these preprocessor
+// compiled on x86_64. If we're on macOS and Linux ARM6, disable these preprocessor
 // symbols.
-#if defined(__APPLE__) && defined(__arm64__)
+#if (defined(__APPLE__) || defined(__linux__)) && defined(__arm64__)
 #  undef HACL_CAN_COMPILE_SIMD128
 #  undef HACL_CAN_COMPILE_SIMD256
 #endif
