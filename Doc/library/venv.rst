@@ -112,7 +112,7 @@ The command, if run with ``-h``, will show the available options::
 
 .. option:: ENV_DIR
 
-     A required argument specifying the directory to create the environment in.
+   A required argument specifying the directory to create the environment in.
 
 .. option:: --system-site-packages
 
