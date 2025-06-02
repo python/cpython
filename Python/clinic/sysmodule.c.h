@@ -179,6 +179,69 @@ sys_exception(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_exception_impl(module);
 }
 
+PyDoc_STRVAR(sys__set_exception__doc__,
+"_set_exception($module, /, exception)\n"
+"--\n"
+"\n"
+"Set the current exception.\n"
+"\n"
+"Subsequent calls to sys.exception()/sys.exc_info() will return\n"
+"the provided exception until another exception is caught in the\n"
+"current thread or the execution stack returns to a frame where\n"
+"another exception is being handled.");
+
+#define SYS__SET_EXCEPTION_METHODDEF    \
+    {"_set_exception", _PyCFunction_CAST(sys__set_exception), METH_FASTCALL|METH_KEYWORDS, sys__set_exception__doc__},
+
+static PyObject *
+sys__set_exception_impl(PyObject *module, PyObject *exception);
+
+static PyObject *
+sys__set_exception(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(exception), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"exception", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_set_exception",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *exception;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    exception = args[0];
+    return_value = sys__set_exception_impl(module, exception);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys_exc_info__doc__,
 "exc_info($module, /)\n"
 "--\n"
@@ -1948,4 +2011,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=449d16326e69dcf6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=70d40f64811d9e39 input=a9049054013a1b77]*/
