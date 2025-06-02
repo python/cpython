@@ -3827,13 +3827,19 @@ class TestExtractionFilters(unittest.TestCase):
             # we can also create new files as well!
             arc.add("escape/newfile", content='new')
 
-        with self.check_context(arc.open(), filter='fully_trusted',
-                                check_flag=False):
+        with (self.subTest('fully_trusted'),
+              self.check_context(arc.open(), filter='fully_trusted',
+                                 check_flag=False)):
             if sys.platform == 'win32':
                 self.expect_exception((FileNotFoundError, FileExistsError))
             elif self.raised_exception:
                 # Most likely, guess for number of components was wrong?
-                self.expect_exception(KeyError)
+                try:
+                    raise self.raised_exception
+                except KeyError:
+                    pass
+                except OSError as exc:
+                    self.assertEqual(exc.errno, errno.ENAMETOOLONG)
             elif os_helper.can_symlink() and os_helper.can_hardlink():
                 self.expect_any_tree(component)
                 self.expect_file('flaglink', content='overwrite')
