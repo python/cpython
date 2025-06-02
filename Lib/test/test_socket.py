@@ -7431,20 +7431,27 @@ class SendRecvFdsTests(unittest.TestCase):
             self._test_pipe(fds[0], wfd, MSG)
 
     @requireAttrs(socket, "MSG_DONTWAIT")
-    @unittest.skipUnless(sys.platform in ("linux", "android"), "Linux specific test")
     def test_send_fds_dontwait(self):
         rfd, wfd = os.pipe()
         self.addCleanup(os.close, rfd)
         self.addCleanup(os.close, wfd)
 
-        sock1, sock2 = socket.socketpair(socket.AF_UNIX, socket.SOCK_DGRAM)
+        # use SOCK_STREAM instead of SOCK_DGRAM to support *BSD platforms
+        # ref: https://docs.python.org/3/library/asyncio-protocol.html#datagram-protocols
+        sock1, sock2 = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
         with sock1, sock2:
             sock1.setblocking(True)
             with self.assertRaises(BlockingIOError):
                 for _ in range(64 * 1024):
                     socket.send_fds(sock1, [MSG], [rfd], socket.MSG_DONTWAIT)
 
-            msg, fds, flags, addr = socket.recv_fds(sock2, len(MSG), 1)
+            if sys.platform.startswith("freebsd"):
+                # FreeBSD requires at least CMSG_LEN(2 * sizeof(int)), otherwise
+                # the cmsg will be truncated
+                recv_fds_len = 2
+            else:
+                recv_fds_len = 1
+            msg, fds, flags, addr = socket.recv_fds(sock2, len(MSG), recv_fds_len)
             self._cleanup_fds(fds)
 
         self.assertEqual(msg, MSG)
