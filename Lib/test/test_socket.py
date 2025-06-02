@@ -7378,8 +7378,8 @@ class SendRecvFdsTests(unittest.TestCase):
 
             socket.send_fds(sock1, [MSG], [rfd], address=sock2_addr)
             if sys.platform.startswith("freebsd"):
-                # FreeBSD requires at least CMSG_LEN(2 * sizeof(int)), otherwise
-                # the cmsg will be truncated
+                # FreeBSD requires at least CMSG_LEN(2*sizeof(int)),
+                # otherwise the access control message is truncated.
                 recv_fds_len = 2
             else:
                 recv_fds_len = 1
@@ -7449,8 +7449,8 @@ class SendRecvFdsTests(unittest.TestCase):
                     socket.send_fds(sock1, [MSG], [rfd], socket.MSG_DONTWAIT)
 
             if sys.platform.startswith("freebsd"):
-                # FreeBSD requires at least CMSG_LEN(2 * sizeof(int)), otherwise
-                # the cmsg will be truncated
+                # FreeBSD requires at least CMSG_LEN(2*sizeof(int)),
+                # otherwise the access control message is truncated.
                 recv_fds_len = 2
             else:
                 recv_fds_len = 1
