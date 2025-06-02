@@ -424,7 +424,7 @@ the :mod:`glob` module.)
    In particular, :exc:`FileNotFoundError` is raised if *path* does not exist,
    or another :exc:`OSError` if it is otherwise inaccessible.
 
-   If *strict* is the string `'allow_missing'`, errors other than
+   If *strict* is the string ``'allow_missing'``, errors other than
    :exc:`FileNotFoundError` are re-raised (as with ``strict=True``).
    Thus, the returned path will not contain any symbolic links, but the named
    file and some of its parent directories may be missing.

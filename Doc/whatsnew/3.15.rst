@@ -116,7 +116,7 @@ os.path
 -------
 
 * The *strict* parameter to :func:`os.path.realpath` accepts a new value,
-  `'allow_missing'`.
+  ``'allow_missing'``.
   If used, errors other than :exc:`FileNotFoundError` will be re-raised;
   the resulting path can be missing but it will be free of symlinks.
   (Contributed by Petr Viktorin for :cve:`2025-4517`.)

@@ -1079,7 +1079,7 @@ reused in custom filters:
 
   - Normalize link targets (:attr:`TarInfo.linkname`) using
     :func:`os.path.normpath`.
-    Note that this removes internal `..` components, which may change the
+    Note that this removes internal ``..`` components, which may change the
     meaning of the link if the path in :attr:`!TarInfo.linkname` traverses
     symbolic links.
 
