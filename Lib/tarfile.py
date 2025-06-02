@@ -781,7 +781,7 @@ _FILTER_ERRORS = (FilterError, OSError, ExtractError)
 def _get_filtered_attrs(member, dest_path, for_data=True):
     new_attrs = {}
     name = member.name
-    dest_path = os.path.realpath(dest_path, strict='allow_missing')
+    dest_path = os.path.realpath(dest_path, strict=os.path.ALLOW_MISSING)
     # Strip leading / (tar's directory separator) from filenames.
     # Include os.sep (target OS directory separator) as well.
     if name.startswith(('/', os.sep)):
@@ -792,7 +792,7 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
         raise AbsolutePathError(member)
     # Ensure we stay in the destination
     target_path = os.path.realpath(os.path.join(dest_path, name),
-                                   strict='allow_missing')
+                                   strict=os.path.ALLOW_MISSING)
     if os.path.commonpath([target_path, dest_path]) != dest_path:
         raise OutsideDestinationError(member, target_path)
     # Limit permissions (no high bits, and go-w)
@@ -840,7 +840,8 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
             else:
                 target_path = os.path.join(dest_path,
                                            member.linkname)
-            target_path = os.path.realpath(target_path, strict='allow_missing')
+            target_path = os.path.realpath(target_path,
+                                           strict=os.path.ALLOW_MISSING)
             if os.path.commonpath([target_path, dest_path]) != dest_path:
                 raise LinkOutsideDestinationError(member, target_path)
     return new_attrs

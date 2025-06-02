@@ -36,7 +36,7 @@ __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext"
            "samefile","sameopenfile","samestat",
            "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
            "devnull","realpath","supports_unicode_filenames","relpath",
-           "commonpath", "isjunction","isdevdrive"]
+           "commonpath", "isjunction","isdevdrive","ALLOW_MISSING"]
 
 
 def _get_sep(path):
@@ -402,7 +402,7 @@ symbolic links encountered in the path."""
         curdir = '.'
         pardir = '..'
         getcwd = os.getcwd
-    if strict == 'allow_missing':
+    if strict is ALLOW_MISSING:
         ignored_error = FileNotFoundError
         strict = True
     elif strict:

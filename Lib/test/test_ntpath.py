@@ -6,6 +6,7 @@ import subprocess
 import sys
 import unittest
 import warnings
+from ntpath import ALLOW_MISSING
 from test.support import TestFailed, cpython_only, os_helper
 from test.support.os_helper import FakePath
 from test import test_genericpath
@@ -505,15 +506,15 @@ class TestNtpath(NtpathTestCase):
 
     def test_realpath_curdir_missing_ok(self):
         expected = ntpath.normpath(os.getcwd())
-        tester("ntpath.realpath('.', strict='allow_missing')",
+        tester("ntpath.realpath('.', strict=ALLOW_MISSING)",
                expected)
-        tester("ntpath.realpath('./.', strict='allow_missing')",
+        tester("ntpath.realpath('./.', strict=ALLOW_MISSING)",
                expected)
-        tester("ntpath.realpath('/'.join(['.'] * 100), strict='allow_missing')",
+        tester("ntpath.realpath('/'.join(['.'] * 100), strict=ALLOW_MISSING)",
                expected)
-        tester("ntpath.realpath('.\\.', strict='allow_missing')",
+        tester("ntpath.realpath('.\\.', strict=ALLOW_MISSING)",
                expected)
-        tester("ntpath.realpath('\\'.join(['.'] * 100), strict='allow_missing')",
+        tester("ntpath.realpath('\\'.join(['.'] * 100), strict=ALLOW_MISSING)",
                expected)
 
     def test_realpath_pardir(self):
@@ -542,20 +543,20 @@ class TestNtpath(NtpathTestCase):
 
     def test_realpath_pardir_missing_ok(self):
         expected = ntpath.normpath(os.getcwd())
-        tester("ntpath.realpath('..', strict='allow_missing')",
+        tester("ntpath.realpath('..', strict=ALLOW_MISSING)",
                ntpath.dirname(expected))
-        tester("ntpath.realpath('../..', strict='allow_missing')",
+        tester("ntpath.realpath('../..', strict=ALLOW_MISSING)",
                ntpath.dirname(ntpath.dirname(expected)))
-        tester("ntpath.realpath('/'.join(['..'] * 50), strict='allow_missing')",
+        tester("ntpath.realpath('/'.join(['..'] * 50), strict=ALLOW_MISSING)",
                ntpath.splitdrive(expected)[0] + '\\')
-        tester("ntpath.realpath('..\\..', strict='allow_missing')",
+        tester("ntpath.realpath('..\\..', strict=ALLOW_MISSING)",
                ntpath.dirname(ntpath.dirname(expected)))
-        tester("ntpath.realpath('\\'.join(['..'] * 50), strict='allow_missing')",
+        tester("ntpath.realpath('\\'.join(['..'] * 50), strict=ALLOW_MISSING)",
                ntpath.splitdrive(expected)[0] + '\\')
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
-    @_parameterize({}, {'strict': True}, {'strict': 'allow_missing'})
+    @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
     def test_realpath_basic(self, kwargs):
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
         open(ABSTFN, "wb").close()
@@ -603,38 +604,38 @@ class TestNtpath(NtpathTestCase):
         self.assertEqual(realpath(path, strict=False), path)
         # gh-106242: Embedded nulls should raise OSError (not ValueError)
         self.assertRaises(OSError, realpath, path, strict=True)
-        self.assertRaises(OSError, realpath, path, strict='allow_missing')
+        self.assertRaises(OSError, realpath, path, strict=ALLOW_MISSING)
         path = ABSTFNb + b'\x00'
         self.assertEqual(realpath(path, strict=False), path)
         self.assertRaises(OSError, realpath, path, strict=True)
-        self.assertRaises(OSError, realpath, path, strict='allow_missing')
+        self.assertRaises(OSError, realpath, path, strict=ALLOW_MISSING)
         path = ABSTFN + '\\nonexistent\\x\x00'
         self.assertEqual(realpath(path, strict=False), path)
         self.assertRaises(OSError, realpath, path, strict=True)
-        self.assertRaises(OSError, realpath, path, strict='allow_missing')
+        self.assertRaises(OSError, realpath, path, strict=ALLOW_MISSING)
         path = ABSTFNb + b'\\nonexistent\\x\x00'
         self.assertEqual(realpath(path, strict=False), path)
         self.assertRaises(OSError, realpath, path, strict=True)
-        self.assertRaises(OSError, realpath, path, strict='allow_missing')
+        self.assertRaises(OSError, realpath, path, strict=ALLOW_MISSING)
         path = ABSTFN + '\x00\\..'
         self.assertEqual(realpath(path, strict=False), os.getcwd())
         self.assertEqual(realpath(path, strict=True), os.getcwd())
-        self.assertEqual(realpath(path, strict='allow_missing'), os.getcwd())
+        self.assertEqual(realpath(path, strict=ALLOW_MISSING), os.getcwd())
         path = ABSTFNb + b'\x00\\..'
         self.assertEqual(realpath(path, strict=False), os.getcwdb())
         self.assertEqual(realpath(path, strict=True), os.getcwdb())
-        self.assertEqual(realpath(path, strict='allow_missing'), os.getcwdb())
+        self.assertEqual(realpath(path, strict=ALLOW_MISSING), os.getcwdb())
         path = ABSTFN + '\\nonexistent\\x\x00\\..'
         self.assertEqual(realpath(path, strict=False), ABSTFN + '\\nonexistent')
         self.assertRaises(OSError, realpath, path, strict=True)
-        self.assertEqual(realpath(path, strict='allow_missing'), ABSTFN + '\\nonexistent')
+        self.assertEqual(realpath(path, strict=ALLOW_MISSING), ABSTFN + '\\nonexistent')
         path = ABSTFNb + b'\\nonexistent\\x\x00\\..'
         self.assertEqual(realpath(path, strict=False), ABSTFNb + b'\\nonexistent')
         self.assertRaises(OSError, realpath, path, strict=True)
-        self.assertEqual(realpath(path, strict='allow_missing'), ABSTFNb + b'\\nonexistent')
+        self.assertEqual(realpath(path, strict=ALLOW_MISSING), ABSTFNb + b'\\nonexistent')
 
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
-    @_parameterize({}, {'strict': True}, {'strict': 'allow_missing'})
+    @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
     def test_realpath_invalid_unicode_paths(self, kwargs):
         realpath = ntpath.realpath
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
@@ -654,7 +655,7 @@ class TestNtpath(NtpathTestCase):
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
-    @_parameterize({}, {'strict': True}, {'strict': 'allow_missing'})
+    @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
     def test_realpath_relative(self, kwargs):
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
         open(ABSTFN, "wb").close()
@@ -815,7 +816,7 @@ class TestNtpath(NtpathTestCase):
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_symlink_loops_raise(self):
-        # Symlink loops raise OSError in 'allow_missing' mode
+        # Symlink loops raise OSError in ALLOW_MISSING mode
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
         self.addCleanup(os_helper.unlink, ABSTFN)
         self.addCleanup(os_helper.unlink, ABSTFN + "1")
@@ -826,16 +827,16 @@ class TestNtpath(NtpathTestCase):
         self.addCleanup(os_helper.unlink, ABSTFN + "x")
 
         os.symlink(ABSTFN, ABSTFN)
-        self.assertRaises(OSError, ntpath.realpath, ABSTFN, strict='allow_missing')
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN, strict=ALLOW_MISSING)
 
         os.symlink(ABSTFN + "1", ABSTFN + "2")
         os.symlink(ABSTFN + "2", ABSTFN + "1")
         self.assertRaises(OSError, ntpath.realpath, ABSTFN + "1",
-                            strict='allow_missing')
+                            strict=ALLOW_MISSING)
         self.assertRaises(OSError, ntpath.realpath, ABSTFN + "2",
-                            strict='allow_missing')
+                            strict=ALLOW_MISSING)
         self.assertRaises(OSError, ntpath.realpath, ABSTFN + "1\\x",
-                            strict='allow_missing')
+                            strict=ALLOW_MISSING)
 
         # Windows eliminates '..' components before resolving links;
         # realpath is not expected to raise if this removes the loop.
@@ -851,24 +852,24 @@ class TestNtpath(NtpathTestCase):
         self.assertRaises(
             OSError, ntpath.realpath,
             ABSTFN + "1\\..\\" + ntpath.basename(ABSTFN) + "1",
-            strict='allow_missing')
+            strict=ALLOW_MISSING)
 
         os.symlink(ntpath.basename(ABSTFN) + "a\\b", ABSTFN + "a")
         self.assertRaises(OSError, ntpath.realpath, ABSTFN + "a",
-                            strict='allow_missing')
+                            strict=ALLOW_MISSING)
 
         os.symlink("..\\" + ntpath.basename(ntpath.dirname(ABSTFN))
                 + "\\" + ntpath.basename(ABSTFN) + "c", ABSTFN + "c")
         self.assertRaises(OSError, ntpath.realpath, ABSTFN + "c",
-                            strict='allow_missing')
+                            strict=ALLOW_MISSING)
 
         # Test using relative path as well.
         self.assertRaises(OSError, ntpath.realpath, ntpath.basename(ABSTFN),
-                            strict='allow_missing')
+                            strict=ALLOW_MISSING)
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
-    @_parameterize({}, {'strict': True}, {'strict': 'allow_missing'})
+    @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
     def test_realpath_symlink_prefix(self, kwargs):
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
         self.addCleanup(os_helper.unlink, ABSTFN + "3")
@@ -906,7 +907,7 @@ class TestNtpath(NtpathTestCase):
         tester("ntpath.realpath('NUL')", r'\\.\NUL')
         tester("ntpath.realpath('NUL', strict=False)", r'\\.\NUL')
         tester("ntpath.realpath('NUL', strict=True)", r'\\.\NUL')
-        tester("ntpath.realpath('NUL', strict='allow_missing')", r'\\.\NUL')
+        tester("ntpath.realpath('NUL', strict=ALLOW_MISSING)", r'\\.\NUL')
 
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     @unittest.skipUnless(HAVE_GETSHORTPATHNAME, 'need _getshortpathname')
@@ -930,7 +931,7 @@ class TestNtpath(NtpathTestCase):
 
         self.assertPathEqual(test_file_long, ntpath.realpath(test_file_short))
 
-        for kwargs in {}, {'strict': True}, {'strict': 'allow_missing'}:
+        for kwargs in {}, {'strict': True}, {'strict': ALLOW_MISSING}:
             with self.subTest(**kwargs):
                 with os_helper.change_cwd(test_dir_long):
                     self.assertPathEqual(

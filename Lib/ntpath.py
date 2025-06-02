@@ -29,7 +29,7 @@ __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext"
            "abspath","curdir","pardir","sep","pathsep","defpath","altsep",
            "extsep","devnull","realpath","supports_unicode_filenames","relpath",
            "samefile", "sameopenfile", "samestat", "commonpath", "isjunction",
-           "isdevdrive"]
+           "isdevdrive", "ALLOW_MISSING"]
 
 def _get_bothseps(path):
     if isinstance(path, bytes):
@@ -724,7 +724,7 @@ else:
                 return '\\\\.\\NUL'
         had_prefix = path.startswith(prefix)
 
-        if strict == 'allow_missing':
+        if strict is ALLOW_MISSING:
             ignored_error = FileNotFoundError
             strict = True
         elif strict:
