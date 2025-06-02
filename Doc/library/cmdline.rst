@@ -50,7 +50,7 @@ The following modules have a command-line interface.
 * :mod:`turtledemo`
 * :ref:`unittest <unittest-command-line-interface>`
 * :ref:`uuid <uuid-cli>`
-* :mod:`venv`
+* :ref:`venv <venv-cli>`
 * :ref:`webbrowser <webbrowser-cli>`
 * :ref:`zipapp <zipapp-command-line-interface>`
 * :ref:`zipfile <zipfile-commandline>`
