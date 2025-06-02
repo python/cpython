@@ -2241,7 +2241,6 @@ class TestObject:
         return args[0]
 
 test_object = TestObject()
-
 test_bound_method = TestObject.test.__get__(test_object)
 
 
