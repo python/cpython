@@ -1064,7 +1064,6 @@ class IOTest(unittest.TestCase):
 
     @threading_helper.requires_working_threading()
     def test_write_readline_races(self):
-
         # gh-134908: Concurrent iteration over a file caused races
         thread_count = 2
         write_count = 100
