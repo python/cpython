@@ -1,6 +1,6 @@
 Prevent the :class:`~concurrent.futures.ProcessPoolExecutor` executor thread,
 which remains running when :meth:`shutdown(wait=False)
-<concurrent.future.ProcessPoolExecutor.shutdown>`, from
+<concurrent.futures.ProcessPoolExecutor.shutdown>`, from
 attempting to adjust the pool's worker processes after the object state has already been reset during shutdown.
 A combination of conditions, including a worker process having terminated abormally,
 resulted in an exception and a potential hang when the still-running executor thread
