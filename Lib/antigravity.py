@@ -15,3 +15,7 @@ def geohash(latitude, longitude, datedow):
     h = hashlib.md5(datedow, usedforsecurity=False).hexdigest()
     p, q = [('%f' % float.fromhex('0.' + x)) for x in (h[:16], h[16:32])]
     print('%d%s %d%s' % (latitude, p[1:], longitude, q[1:]))
+
+def get_random_number():
+    return 4 #chosen by fair dice roll
+             #guaranteed to be random
