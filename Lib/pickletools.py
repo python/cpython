@@ -2177,7 +2177,8 @@ opcodes = [
       doc="""Indicate the beginning of a new frame.
 
       The unpickler may use this opcode to safely prefetch data from its
-      underlying stream.
+      underlying stream and prevents several small I/O reads during unpickling.
+      Frames shouldn't overlap with each other or split opcodes.
       """),
 
     # Ways to deal with persistent IDs.
