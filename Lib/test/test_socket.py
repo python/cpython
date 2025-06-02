@@ -7362,8 +7362,6 @@ class SendRecvFdsTests(unittest.TestCase):
         for index, ((_, wfd), rfd) in enumerate(zip(pipes, fds2)):
             self._test_pipe(rfd, wfd, str(index).encode())
 
-    @unittest.skipUnless(sys.platform in ("linux", "android", "darwin"),
-                         "works on Linux and macOS")
     def test_send_recv_fds_with_addrs(self):
         sock1 = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
         sock2 = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
@@ -7379,10 +7377,18 @@ class SendRecvFdsTests(unittest.TestCase):
             sock2.setblocking(False)
 
             socket.send_fds(sock1, [MSG], [rfd], address=sock2_addr)
-            msg, fds, flags, addr = socket.recv_fds(sock2, len(MSG), 1)
+            if sys.platform.startswith("freebsd"):
+                # FreeBSD requires at least CMSG_LEN(2 * sizeof(int)), otherwise
+                # the cmsg will be truncated
+                recv_fds_len = 2
+            else:
+                recv_fds_len = 1
+            msg, fds, flags, addr = socket.recv_fds(sock2, len(MSG), recv_fds_len)
             self._cleanup_fds(fds)
 
         self.assertEqual(msg, MSG)
+        if hasattr(socket, "MSG_CTRUNC"):
+            self.assertEqual(flags & socket.MSG_CTRUNC, 0)
         self.assertEqual(len(fds), 1)
         self.assertEqual(addr, sock1_addr)
 
@@ -7409,6 +7415,8 @@ class SendRecvFdsTests(unittest.TestCase):
             self.assertEqual(len(msg), peek_len)
             self.assertEqual(msg, MSG[:peek_len])
             self.assertEqual(flags & socket.MSG_TRUNC, socket.MSG_TRUNC)
+            if hasattr(socket, "MSG_CTRUNC"):
+                self.assertEqual(flags & socket.MSG_CTRUNC, 0)
             self.assertEqual(len(fds), 1)
             self._test_pipe(fds[0], wfd, MSG)
 
@@ -7417,6 +7425,8 @@ class SendRecvFdsTests(unittest.TestCase):
             self._cleanup_fds(fds)
 
             self.assertEqual(msg, MSG)
+            if hasattr(socket, "MSG_CTRUNC"):
+                self.assertEqual(flags & socket.MSG_CTRUNC, 0)
             self.assertEqual(len(fds), 1)
             self._test_pipe(fds[0], wfd, MSG)
 
