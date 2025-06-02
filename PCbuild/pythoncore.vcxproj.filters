@@ -219,19 +219,25 @@
     <ClInclude Include="..\Include\refcount.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\runtime_structs.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\setobject.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\sliceobject.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\stats.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\structmember.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\structseq.h">
+    <ClInclude Include="..\Include\structs.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\symtable.h">
+    <ClInclude Include="..\Include\structseq.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\sysmodule.h">
@@ -342,9 +348,6 @@
     <ClInclude Include="..\Include\pyhash.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Modules\hashtable.h">
-      <Filter>Modules</Filter>
-    </ClInclude>
     <ClInclude Include="..\Parser\pegen.h">
       <Filter>Parser</Filter>
     </ClInclude>
@@ -447,13 +450,7 @@
     <ClInclude Include="..\Include\cpython\object.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\cpython\parser_interface.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\cpython\picklebufobject.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\cpython\pyarena.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\pyatomic.h">
@@ -702,6 +699,18 @@
     <ClInclude Include="..\Include\internal\pycore_interp.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_interp_structs.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_interpframe.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_interpframe_structs.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_interpolation.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_intrinsics.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
@@ -804,6 +813,9 @@
     <ClInclude Include="..\Include\internal\pycore_runtime_init_generated.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_runtime_structs.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_semaphore.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -819,6 +831,9 @@
     <ClInclude Include="..\Include\internal\pycore_strhex.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_structs.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_sysmodule.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -826,6 +841,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_stackref.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_template.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_time.h">
@@ -844,6 +862,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_tuple.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_typedefs.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_typeobject.h">
@@ -903,7 +924,7 @@
     <ClInclude Include="$(zlibDir)\zconf.h">
       <Filter>Modules\zlib</Filter>
     </ClInclude>
-    <ClInclude Include="$(zlibDir)\zconf.in.h">
+    <ClInclude Include="$(zlibDir)\zconf.h.in">
       <Filter>Modules\zlib</Filter>
     </ClInclude>
     <ClInclude Include="$(zlibDir)\zlib.h">
@@ -944,6 +965,12 @@
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA3.c">
       <Filter>Modules</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\_hacl\Hacl_HMAC.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_hacl\Hacl_Streaming_HMAC.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\_heapqmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
@@ -977,6 +1004,9 @@
     <ClCompile Include="..\Modules\_statisticsmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\_typesmodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\_typingmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
@@ -998,6 +1028,9 @@
     <ClCompile Include="..\Modules\binascii.c">
       <Filter>Modules</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\blake2module.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\cmathmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
@@ -1011,6 +1044,9 @@
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\gcmodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\hmacmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\itertoolsmodule.c">
@@ -1274,6 +1310,9 @@
     <ClCompile Include="..\PC\msvcrtmodule.c">
       <Filter>PC</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\_contextvars.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\_warnings.c">
       <Filter>Python</Filter>
     </ClCompile>
@@ -1286,7 +1325,7 @@
     <ClCompile Include="..\Python\ast.c">
       <Filter>Python</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\ast_opt.c">
+    <ClCompile Include="..\Python\ast_preprocess.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\ast_unparse.c">
@@ -1475,6 +1514,9 @@
     <ClCompile Include="..\Python\pystrtod.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\remote_debugging.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\qsbr.c">
       <Filter>Python</Filter>
     </ClCompile>
@@ -1537,9 +1579,6 @@
     </ClCompile>
     <ClCompile Include="..\Objects\odictobject.c">
       <Filter>Objects</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\_contextvarsmodule.c">
-      <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="$(zlibDir)\adler32.c">
       <Filter>Modules\zlib</Filter>

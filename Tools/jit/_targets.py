@@ -23,8 +23,11 @@ TOOLS_JIT_BUILD = pathlib.Path(__file__).resolve()
 TOOLS_JIT = TOOLS_JIT_BUILD.parent
 TOOLS = TOOLS_JIT.parent
 CPYTHON = TOOLS.parent
+EXTERNALS = CPYTHON / "externals"
 PYTHON_EXECUTOR_CASES_C_H = CPYTHON / "Python" / "executor_cases.c.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
+
+ASYNCIO_RUNNER = asyncio.Runner()
 
 _S = typing.TypeVar("_S", _schema.COFFSection, _schema.ELFSection, _schema.MachOSection)
 _R = typing.TypeVar(
@@ -35,6 +38,7 @@ _R = typing.TypeVar(
 @dataclasses.dataclass
 class _Target(typing.Generic[_S, _R]):
     triple: str
+    condition: str
     _: dataclasses.KW_ONLY
     alignment: int = 1
     args: typing.Sequence[str] = ()
@@ -43,14 +47,24 @@ class _Target(typing.Generic[_S, _R]):
     debug: bool = False
     verbose: bool = False
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
+    pyconfig_dir: pathlib.Path = pathlib.Path.cwd().resolve()
 
-    def _compute_digest(self, out: pathlib.Path) -> str:
+    def _get_nop(self) -> bytes:
+        if re.fullmatch(r"aarch64-.*", self.triple):
+            nop = b"\x1f\x20\x03\xd5"
+        elif re.fullmatch(r"x86_64-.*|i686.*", self.triple):
+            nop = b"\x90"
+        else:
+            raise ValueError(f"NOP not defined for {self.triple}")
+        return nop
+
+    def _compute_digest(self) -> str:
         hasher = hashlib.sha256()
         hasher.update(self.triple.encode())
         hasher.update(self.debug.to_bytes())
         # These dependencies are also reflected in _JITSources in regen.targets:
         hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
-        hasher.update((out / "pyconfig.h").read_bytes())
+        hasher.update((self.pyconfig_dir / "pyconfig.h").read_bytes())
         for dirpath, _, filenames in sorted(os.walk(TOOLS_JIT)):
             for filename in filenames:
                 hasher.update(pathlib.Path(dirpath, filename).read_bytes())
@@ -61,10 +75,11 @@ class _Target(typing.Generic[_S, _R]):
         args = ["--disassemble", "--reloc", f"{path}"]
         output = await _llvm.maybe_run("llvm-objdump", args, echo=self.verbose)
         if output is not None:
+            # Make sure that full paths don't leak out (for reproducibility):
+            long, short = str(path), str(path.name)
             group.code.disassembly.extend(
-                line.expandtabs().strip()
+                line.expandtabs().strip().replace(long, short)
                 for line in output.splitlines()
-                if not line.isspace()
             )
         args = [
             "--elf-output-style=JSON",
@@ -90,16 +105,13 @@ class _Target(typing.Generic[_S, _R]):
         if group.data.body:
             line = f"0: {str(bytes(group.data.body)).removeprefix('b')}"
             group.data.disassembly.append(line)
-        group.process_relocations(
-            known_symbols=self.known_symbols, alignment=self.alignment
-        )
         return group
 
     def _handle_section(self, section: _S, group: _stencils.StencilGroup) -> None:
         raise NotImplementedError(type(self))
 
     def _handle_relocation(
-        self, base: int, relocation: _R, raw: bytes
+        self, base: int, relocation: _R, raw: bytes | bytearray
     ) -> _stencils.Hole:
         raise NotImplementedError(type(self))
 
@@ -114,7 +126,7 @@ class _Target(typing.Generic[_S, _R]):
             f"-D_JIT_OPCODE={opname}",
             "-D_PyJIT_ACTIVE",
             "-D_Py_JIT",
-            "-I.",
+            f"-I{self.pyconfig_dir}",
             f"-I{CPYTHON / 'Include'}",
             f"-I{CPYTHON / 'Include' / 'internal'}",
             f"-I{CPYTHON / 'Include' / 'internal' / 'mimalloc'}",
@@ -122,6 +134,10 @@ class _Target(typing.Generic[_S, _R]):
             f"-I{CPYTHON / 'Tools' / 'jit'}",
             "-O3",
             "-c",
+            # Shorten full absolute file paths in the generated code (like the
+            # __FILE__ macro and assert failure messages) for reproducibility:
+            f"-ffile-prefix-map={CPYTHON}=.",
+            f"-ffile-prefix-map={tempdir}=.",
             # This debug info isn't necessary, and bloats out the JIT'ed code.
             # We *may* be able to re-enable this, process it, and JIT it for a
             # nicer debugging experience... but that needs a lot more research:
@@ -167,27 +183,38 @@ class _Target(typing.Generic[_S, _R]):
                     c.write_text(template.replace("CASE", case))
                     coro = self._compile(opname, c, work)
                     tasks.append(group.create_task(coro, name=opname))
-        return {task.get_name(): task.result() for task in tasks}
+        stencil_groups = {task.get_name(): task.result() for task in tasks}
+        for stencil_group in stencil_groups.values():
+            stencil_group.process_relocations(
+                known_symbols=self.known_symbols,
+                alignment=self.alignment,
+                nop=self._get_nop(),
+            )
+        return stencil_groups
 
     def build(
-        self, out: pathlib.Path, *, comment: str = "", force: bool = False
+        self,
+        *,
+        comment: str = "",
+        force: bool = False,
+        jit_stencils: pathlib.Path,
     ) -> None:
         """Build jit_stencils.h in the given directory."""
+        jit_stencils.parent.mkdir(parents=True, exist_ok=True)
         if not self.stable:
             warning = f"JIT support for {self.triple} is still experimental!"
             request = "Please report any issues you encounter.".center(len(warning))
             outline = "=" * len(warning)
             print("\n".join(["", outline, warning, request, outline, ""]))
-        digest = f"// {self._compute_digest(out)}\n"
-        jit_stencils = out / "jit_stencils.h"
+        digest = f"// {self._compute_digest()}\n"
         if (
             not force
             and jit_stencils.exists()
             and jit_stencils.read_text().startswith(digest)
         ):
             return
-        stencil_groups = asyncio.run(self._build_stencils())
-        jit_stencils_new = out / "jit_stencils.h.new"
+        stencil_groups = ASYNCIO_RUNNER.run(self._build_stencils())
+        jit_stencils_new = jit_stencils.parent / "jit_stencils.h.new"
         try:
             with jit_stencils_new.open("w") as file:
                 file.write(digest)
@@ -250,7 +277,10 @@ class _COFF(
         return _stencils.symbol_to_value(name)
 
     def _handle_relocation(
-        self, base: int, relocation: _schema.COFFRelocation, raw: bytes
+        self,
+        base: int,
+        relocation: _schema.COFFRelocation,
+        raw: bytes | bytearray,
     ) -> _stencils.Hole:
         match relocation:
             case {
@@ -302,7 +332,11 @@ class _ELF(
         if section_type == "SHT_RELA":
             assert "SHF_INFO_LINK" in flags, flags
             assert not section["Symbols"]
-            value, base = group.symbols[section["Info"]]
+            maybe_symbol = group.symbols.get(section["Info"])
+            if maybe_symbol is None:
+                # These are relocations for a section we're not emitting. Skip:
+                return
+            value, base = maybe_symbol
             if value is _stencils.HoleValue.CODE:
                 stencil = group.code
             else:
@@ -341,7 +375,10 @@ class _ELF(
             }, section_type
 
     def _handle_relocation(
-        self, base: int, relocation: _schema.ELFRelocation, raw: bytes
+        self,
+        base: int,
+        relocation: _schema.ELFRelocation,
+        raw: bytes | bytearray,
     ) -> _stencils.Hole:
         symbol: str | None
         match relocation:
@@ -417,7 +454,10 @@ class _MachO(
             stencil.holes.append(hole)
 
     def _handle_relocation(
-        self, base: int, relocation: _schema.MachORelocation, raw: bytes
+        self,
+        base: int,
+        relocation: _schema.MachORelocation,
+        raw: bytes | bytearray,
     ) -> _stencils.Hole:
         symbol: str | None
         match relocation:
@@ -481,10 +521,12 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
     target: _COFF | _ELF | _MachO
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
-        target = _MachO(host, alignment=8, prefix="_")
+        condition = "defined(__aarch64__) && defined(__APPLE__)"
+        target = _MachO(host, condition, alignment=8, prefix="_")
     elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
-        args = ["-fms-runtime-lib=dll"]
-        target = _COFF(host, alignment=8, args=args)
+        args = ["-fms-runtime-lib=dll", "-fplt"]
+        condition = "defined(_M_ARM64)"
+        target = _COFF(host, condition, alignment=8, args=args)
     elif re.fullmatch(r"aarch64-.*-linux-gnu", host):
         args = [
             "-fpic",
@@ -492,22 +534,27 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
             # was required to disable them.
             "-mno-outline-atomics",
         ]
-        target = _ELF(host, alignment=8, args=args)
+        condition = "defined(__aarch64__) && defined(__linux__)"
+        target = _ELF(host, condition, alignment=8, args=args)
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
         args = [
             "-DPy_NO_ENABLE_SHARED",
             # __attribute__((preserve_none)) is not supported
             "-Wno-ignored-attributes",
         ]
-        target = _COFF(host, args=args, prefix="_")
+        condition = "defined(_M_IX86)"
+        target = _COFF(host, condition, args=args, prefix="_")
     elif re.fullmatch(r"x86_64-apple-darwin.*", host):
-        target = _MachO(host, prefix="_")
+        condition = "defined(__x86_64__) && defined(__APPLE__)"
+        target = _MachO(host, condition, prefix="_")
     elif re.fullmatch(r"x86_64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll"]
-        target = _COFF(host, args=args)
+        condition = "defined(_M_X64)"
+        target = _COFF(host, condition, args=args)
     elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
-        args = ["-fpic"]
-        target = _ELF(host, args=args)
+        args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0"]
+        condition = "defined(__x86_64__) && defined(__linux__)"
+        target = _ELF(host, condition, args=args)
     else:
         raise ValueError(host)
     return target

@@ -81,7 +81,7 @@ and a piece of C code describing its semantics:
     (definition | family | pseudo)+
 
   definition:
-    "inst" "(" NAME ["," stack_effect] ")" "{" C-code "}"
+    "inst" "(" NAME "," stack_effect ")" "{" C-code "}"
     |
     "op" "(" NAME "," stack_effect ")" "{" C-code "}"
     |
@@ -174,7 +174,7 @@ list of annotations and their meanings are as follows:
 * `override`. For external use by other interpreter definitions to override the current
    instruction definition.
 * `pure`. This instruction has no side effects.
-* 'tierN'. This instruction only used by tier N interpreter.
+* 'tierN'. This instruction is only used by the tier N interpreter.
 
 ### Special functions/macros
 
@@ -184,7 +184,7 @@ part of the DSL.
 Those include:
 
 * `DEOPT_IF(cond, instruction)`. Deoptimize if `cond` is met.
-* `ERROR_IF(cond, label)`. Jump to error handler at `label` if `cond` is true.
+* `ERROR_IF(cond)`. Jump to error handler if `cond` is true.
 * `DECREF_INPUTS()`. Generate `Py_DECREF()` calls for the input stack effects.
 * `SYNC_SP()`. Synchronizes the physical stack pointer with the stack effects.
 * `INSTRUCTION_SIZE`. Replaced with the size of the instruction which is equal
@@ -209,7 +209,7 @@ These requirements result in the following constraints on the use of
 2. Before the first `ERROR_IF`, all input values must be `DECREF`ed,
    and no objects may be allocated or `INCREF`ed, with the exception
    of attempting to create an object and checking for success using
-   `ERROR_IF(result == NULL, label)`. (TODO: Unclear what to do with
+   `ERROR_IF(result == NULL)`. (TODO: Unclear what to do with
    intermediate results.)
 3. No `DEOPT_IF` may follow an `ERROR_IF` in the same block.
 
@@ -221,14 +221,14 @@ two idioms are valid:
 
 - Use `goto error`.
 - Use a block containing the appropriate `DECREF` calls ending in
-  `ERROR_IF(true, error)`.
+  `ERROR_IF(true)`.
 
 An example of the latter would be:
 ```cc
     res = PyObject_Add(left, right);
     if (res == NULL) {
         DECREF_INPUTS();
-        ERROR_IF(true, error);
+        ERROR_IF(true);
     }
 ```
 
@@ -309,7 +309,7 @@ This might become (if it was an instruction):
 
 ### More examples
 
-For explanations see "Generating the interpreter" below.)
+For explanations see "Generating the interpreter" below.
 ```C
     op ( CHECK_HAS_INSTANCE_VALUES, (owner -- owner) ) {
         PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
@@ -346,7 +346,7 @@ For explanations see "Generating the interpreter" below.)
 ```C
     inst ( BUILD_TUPLE, (items[oparg] -- tuple) ) {
         tuple = _PyTuple_FromArraySteal(items, oparg);
-        ERROR_IF(tuple == NULL, error);
+        ERROR_IF(tuple == NULL);
     }
 ```
 ```C
@@ -371,7 +371,7 @@ For explanations see "Generating the interpreter" below.)
 
 A _family_ maps a specializable instruction to its specializations.
 
-Example: These opcodes all share the same instruction format):
+Example: These opcodes all share the same instruction format:
 ```C
     family(load_attr) = { LOAD_ATTR, LOAD_ATTR_INSTANCE_VALUE, LOAD_SLOT };
 ```
@@ -393,7 +393,7 @@ which can be easily inserted. What is more complex is ensuring the correct stack
 and not generating excess pops and pushes.
 
 For example, in `CHECK_HAS_INSTANCE_VALUES`, `owner` occurs in the input, so it cannot be
-redefined. Thus it doesn't need to written and can be read without adjusting the stack pointer.
+redefined. Thus, it doesn't need to be written and can be read without adjusting the stack pointer.
 The C code generated for `CHECK_HAS_INSTANCE_VALUES` would look something like:
 
 ```C
@@ -404,7 +404,7 @@ The C code generated for `CHECK_HAS_INSTANCE_VALUES` would look something like:
     }
 ```
 
-When combining ops together to form instructions, temporary values should be used,
+When combining ops to form instructions, temporary values should be used,
 rather than popping and pushing, such that `LOAD_ATTR_SLOT` would look something like:
 
 ```C

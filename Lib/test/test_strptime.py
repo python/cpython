@@ -79,9 +79,6 @@ class LocaleTime_Tests(unittest.TestCase):
         self.assertEqual(self.LT_ins.am_pm[position], strftime_output,
                          "AM/PM representation in the wrong position within the tuple")
 
-    @unittest.skipIf(
-        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
-    )
     def test_timezone(self):
         # Make sure timezone is correct
         timezone = time.strftime("%Z", self.time_tuple).lower()
@@ -223,16 +220,16 @@ class StrptimeTests(unittest.TestCase):
         # Make sure ValueError is raised when match fails or format is bad
         self.assertRaises(ValueError, _strptime._strptime_time, data_string="%d",
                           format="%A")
-        for bad_format in ("%", "% ", "%e"):
-            try:
+        for bad_format in ("%", "% ", "%\n"):
+            with self.assertRaisesRegex(ValueError, "stray % in format "):
                 _strptime._strptime_time("2005", bad_format)
-            except ValueError:
-                continue
-            except Exception as err:
-                self.fail("'%s' raised %s, not ValueError" %
-                            (bad_format, err.__class__.__name__))
-            else:
-                self.fail("'%s' did not raise ValueError" % bad_format)
+        for bad_format in ("%e", "%Oe", "%O", "%O ", "%Ee", "%E", "%E ",
+                           "%.", "%+", "%_", "%~", "%\\",
+                           "%O.", "%O+", "%O_", "%O~", "%O\\"):
+            directive = bad_format[1:].rstrip()
+            with self.assertRaisesRegex(ValueError,
+                    f"'{re.escape(directive)}' is a bad directive in format "):
+                _strptime._strptime_time("2005", bad_format)
 
         msg_week_no_year_or_weekday = r"ISO week directive '%V' must be used with " \
             r"the ISO year directive '%G' and a weekday directive " \
@@ -288,11 +285,11 @@ class StrptimeTests(unittest.TestCase):
         # check that this doesn't chain exceptions needlessly (see #17572)
         with self.assertRaises(ValueError) as e:
             _strptime._strptime_time('', '%D')
-        self.assertIs(e.exception.__suppress_context__, True)
-        # additional check for IndexError branch (issue #19545)
+        self.assertTrue(e.exception.__suppress_context__)
+        # additional check for stray % branch
         with self.assertRaises(ValueError) as e:
-            _strptime._strptime_time('19', '%Y %')
-        self.assertIsNone(e.exception.__context__)
+            _strptime._strptime_time('%', '%')
+        self.assertTrue(e.exception.__suppress_context__)
 
     def test_unconverteddata(self):
         # Check ValueError is raised when there is unconverted data
@@ -431,9 +428,6 @@ class StrptimeTests(unittest.TestCase):
         self.assertEqual("Inconsistent use of : in -01:3030", str(err.exception))
 
     @skip_if_buggy_ucrt_strfptime
-    @unittest.skipIf(
-        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
-    )
     def test_timezone(self):
         # Test timezone directives.
         # When gmtime() is used with %Z, entire result of strftime() is empty.
@@ -550,10 +544,7 @@ class StrptimeTests(unittest.TestCase):
         self.roundtrip('%x', slice(0, 3), time.localtime(now - 366*24*3600))
 
     # NB: Dates before 1969 do not roundtrip on many locales, including C.
-    @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "musl libc issue on Emscripten, bpo-46390"
-    )
+    @unittest.skipIf(support.linked_to_musl(), "musl libc issue, bpo-46390")
     @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'eu_ES', 'ar_AE', 'my_MM', 'shn_MM')
     def test_date_locale2(self):

@@ -1,4 +1,9 @@
+import contextlib
+import itertools
 import os
+import re
+import string
+import tempfile
 import token
 import tokenize
 import unittest
@@ -6,10 +11,13 @@ from io import BytesIO, StringIO
 from textwrap import dedent
 from unittest import TestCase, mock
 from test import support
-from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
-                               INVALID_UNDERSCORE_LITERALS)
 from test.support import os_helper
 from test.support.script_helper import run_test_script, make_script, run_python_until_end
+from test.support.numbers import (
+    VALID_UNDERSCORE_LITERALS,
+    INVALID_UNDERSCORE_LITERALS,
+)
+
 
 # Converts a source string into a list of textual representation
 # of the tokens such as:
@@ -599,22 +607,6 @@ f'''__{
     OP         '}'           (6, 0) (6, 1)
     FSTRING_MIDDLE '__'          (6, 1) (6, 3)
     FSTRING_END "'''"         (6, 3) (6, 6)
-    """)
-        self.check_tokenize("""\
-f'__{
-    x:d
-}__'""", """\
-    FSTRING_START "f'"          (1, 0) (1, 2)
-    FSTRING_MIDDLE '__'          (1, 2) (1, 4)
-    OP         '{'           (1, 4) (1, 5)
-    NL         '\\n'          (1, 5) (1, 6)
-    NAME       'x'           (2, 4) (2, 5)
-    OP         ':'           (2, 5) (2, 6)
-    FSTRING_MIDDLE 'd'           (2, 6) (2, 7)
-    NL         '\\n'          (2, 7) (2, 8)
-    OP         '}'           (3, 0) (3, 1)
-    FSTRING_MIDDLE '__'          (3, 1) (3, 3)
-    FSTRING_END "'"           (3, 3) (3, 4)
     """)
 
         self.check_tokenize("""\
@@ -1537,6 +1529,7 @@ class TestDetectEncoding(TestCase):
         self.assertEqual(encoding, 'utf-8')
         self.assertEqual(consumed_lines, [b'print("#coding=fake")'])
 
+    @support.thread_unsafe
     def test_open(self):
         filename = os_helper.TESTFN + '.py'
         self.addCleanup(os_helper.unlink, filename)
@@ -1819,6 +1812,22 @@ class UntokenizeTest(TestCase):
         self.assertEqual(tokenize.untokenize(iter(tokens)), b'Hello ')
 
 
+def contains_ambiguous_backslash(source):
+    """Return `True` if the source contains a backslash on a
+    line by itself. For example:
+
+    a = (1
+        \\
+    )
+
+    Code like this cannot be untokenized exactly. This is because
+    the tokenizer does not produce any tokens for the line containing
+    the backslash and so there is no way to know its indent.
+    """
+    pattern = re.compile(br'\n\s*\\\r?\n')
+    return pattern.search(source) is not None
+
+
 class TestRoundtrip(TestCase):
 
     def check_roundtrip(self, f):
@@ -1828,6 +1837,9 @@ class TestRoundtrip(TestCase):
         Both sequences are converted back to source code via
         tokenize.untokenize(), and the latter tokenized again to 2-tuples.
         The test fails if the 3 pair tokenizations do not match.
+
+        If the source code can be untokenized unambiguously, the
+        untokenized code must match the original code exactly.
 
         When untokenize bugs are fixed, untokenize with 5-tuples should
         reproduce code that does not contain a backslash continuation
@@ -1851,6 +1863,13 @@ class TestRoundtrip(TestCase):
         readline5 = iter(bytes_from5.splitlines(keepends=True)).__next__
         tokens2_from5 = [tok[:2] for tok in tokenize.tokenize(readline5)]
         self.assertEqual(tokens2_from5, tokens2)
+
+        if not contains_ambiguous_backslash(code):
+            # The BOM does not produce a token so there is no way to preserve it.
+            code_without_bom = code.removeprefix(b'\xef\xbb\xbf')
+            readline = iter(code_without_bom.splitlines(keepends=True)).__next__
+            untokenized_code = tokenize.untokenize(tokenize.tokenize(readline))
+            self.assertEqual(code_without_bom, untokenized_code)
 
     def check_line_extraction(self, f):
         if isinstance(f, str):
@@ -1957,6 +1976,10 @@ if 1:
 """ ]
         for case in cases:
             self.check_roundtrip(case)
+
+        self.check_roundtrip(r"t'{ {}}'")
+        self.check_roundtrip(r"t'{f'{ {}}'}{ {}}'")
+        self.check_roundtrip(r"f'{t'{ {}}'}{ {}}'")
 
 
     def test_continuation(self):
@@ -2438,21 +2461,6 @@ f'''__{
     RBRACE     '}'           (6, 0) (6, 1)
     FSTRING_MIDDLE '__'          (6, 1) (6, 3)
     FSTRING_END "'''"         (6, 3) (6, 6)
-    """)
-
-        self.check_tokenize("""\
-f'__{
-    x:d
-}__'""", """\
-    FSTRING_START "f'"          (1, 0) (1, 2)
-    FSTRING_MIDDLE '__'          (1, 2) (1, 4)
-    LBRACE     '{'           (1, 4) (1, 5)
-    NAME       'x'           (2, 4) (2, 5)
-    COLON      ':'           (2, 5) (2, 6)
-    FSTRING_MIDDLE 'd'           (2, 6) (2, 7)
-    RBRACE     '}'           (3, 0) (3, 1)
-    FSTRING_MIDDLE '__'          (3, 1) (3, 3)
-    FSTRING_END "'"           (3, 3) (3, 4)
     """)
 
     def test_function(self):
@@ -3008,10 +3016,15 @@ async def f():
             "'''sdfsdf''",
             "("*1000+"a"+")"*1000,
             "]",
+            """\
+            f'__{
+                x:d
+            }__'""",
         ]:
             with self.subTest(case=case):
                 self.assertRaises(tokenize.TokenError, get_tokens, case)
 
+    @support.skip_wasi_stack_overflow()
     def test_max_indent(self):
         MAXINDENT = 100
 
@@ -3147,6 +3160,156 @@ class CTokenizerBufferTests(unittest.TestCase):
         with os_helper.temp_dir() as temp_dir:
             file_name = make_script(temp_dir, 'foo', test_script)
             run_test_script(file_name)
+
+
+class CommandLineTest(unittest.TestCase):
+    def setUp(self):
+        self.filename = tempfile.mktemp()
+        self.addCleanup(os_helper.unlink, self.filename)
+
+    @staticmethod
+    def text_normalize(string):
+        """Dedent *string* and strip it from its surrounding whitespaces.
+
+        This method is used by the other utility functions so that any
+        string to write or to match against can be freely indented.
+        """
+        return re.sub(r'\s+', ' ', string).strip()
+
+    def set_source(self, content):
+        with open(self.filename, 'w') as fp:
+            fp.write(content)
+
+    def invoke_tokenize(self, *flags):
+        output = StringIO()
+        with contextlib.redirect_stdout(output):
+            tokenize._main(args=[*flags, self.filename])
+        return self.text_normalize(output.getvalue())
+
+    def check_output(self, source, expect, *flags):
+        with self.subTest(source=source, flags=flags):
+            self.set_source(source)
+            res = self.invoke_tokenize(*flags)
+            expect = self.text_normalize(expect)
+            self.assertListEqual(res.splitlines(), expect.splitlines())
+
+    def test_invocation(self):
+        # test various combinations of parameters
+        base_flags = ('-e', '--exact')
+
+        self.set_source('''
+            def f():
+                print(x)
+                return None
+        ''')
+
+        for flag in base_flags:
+            with self.subTest(args=flag):
+                _ = self.invoke_tokenize(flag)
+
+        with self.assertRaises(SystemExit):
+            # suppress argparse error message
+            with contextlib.redirect_stderr(StringIO()):
+                _ = self.invoke_tokenize('--unknown')
+
+    def test_without_flag(self):
+        # test 'python -m tokenize source.py'
+        source = 'a = 1'
+        expect = '''
+            0,0-0,0:            ENCODING       'utf-8'
+            1,0-1,1:            NAME           'a'
+            1,2-1,3:            OP             '='
+            1,4-1,5:            NUMBER         '1'
+            1,5-1,6:            NEWLINE        ''
+            2,0-2,0:            ENDMARKER      ''
+        '''
+        self.check_output(source, expect)
+
+    def test_exact_flag(self):
+        # test 'python -m tokenize -e/--exact source.py'
+        source = 'a = 1'
+        expect = '''
+            0,0-0,0:            ENCODING       'utf-8'
+            1,0-1,1:            NAME           'a'
+            1,2-1,3:            EQUAL          '='
+            1,4-1,5:            NUMBER         '1'
+            1,5-1,6:            NEWLINE        ''
+            2,0-2,0:            ENDMARKER      ''
+        '''
+        for flag in ['-e', '--exact']:
+            self.check_output(source, expect, flag)
+
+
+class StringPrefixTest(unittest.TestCase):
+    @staticmethod
+    def determine_valid_prefixes():
+        # Try all lengths until we find a length that has zero valid
+        # prefixes.  This will miss the case where for example there
+        # are no valid 3 character prefixes, but there are valid 4
+        # character prefixes.  That seems unlikely.
+
+        single_char_valid_prefixes = set()
+
+        # Find all of the single character string prefixes. Just get
+        # the lowercase version, we'll deal with combinations of upper
+        # and lower case later.  I'm using this logic just in case
+        # some uppercase-only prefix is added.
+        for letter in itertools.chain(string.ascii_lowercase, string.ascii_uppercase):
+            try:
+                eval(f'{letter}""')
+                single_char_valid_prefixes.add(letter.lower())
+            except SyntaxError:
+                pass
+
+        # This logic assumes that all combinations of valid prefixes only use
+        # the characters that are valid single character prefixes.  That seems
+        # like a valid assumption, but if it ever changes this will need
+        # adjusting.
+        valid_prefixes = set()
+        for length in itertools.count():
+            num_at_this_length = 0
+            for prefix in (
+                "".join(l)
+                for l in itertools.combinations(single_char_valid_prefixes, length)
+            ):
+                for t in itertools.permutations(prefix):
+                    for u in itertools.product(*[(c, c.upper()) for c in t]):
+                        p = "".join(u)
+                        if p == "not":
+                            # 'not' can never be a string prefix,
+                            # because it's a valid expression: not ""
+                            continue
+                        try:
+                            eval(f'{p}""')
+
+                            # No syntax error, so p is a valid string
+                            # prefix.
+
+                            valid_prefixes.add(p)
+                            num_at_this_length += 1
+                        except SyntaxError:
+                            pass
+            if num_at_this_length == 0:
+                return valid_prefixes
+
+
+    def test_prefixes(self):
+        # Get the list of defined string prefixes.  I don't see an
+        # obvious documented way of doing this, but probably the best
+        # thing is to split apart tokenize.StringPrefix.
+
+        # Make sure StringPrefix begins and ends in parens.  We're
+        # assuming it's of the form "(a|b|ab)", if a, b, and cd are
+        # valid string prefixes.
+        self.assertEqual(tokenize.StringPrefix[0], '(')
+        self.assertEqual(tokenize.StringPrefix[-1], ')')
+
+        # Then split apart everything else by '|'.
+        defined_prefixes = set(tokenize.StringPrefix[1:-1].split('|'))
+
+        # Now compute the actual allowed string prefixes and compare
+        # to what is defined in the tokenize module.
+        self.assertEqual(defined_prefixes, self.determine_valid_prefixes())
 
 
 if __name__ == "__main__":

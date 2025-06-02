@@ -2,7 +2,7 @@
 =====================================================================
 
 .. module:: decimal
-   :synopsis: Implementation of the General Decimal Arithmetic  Specification.
+   :synopsis: Implementation of the General Decimal Arithmetic Specification.
 
 .. moduleauthor:: Eric Price <eprice at tjhsst.edu>
 .. moduleauthor:: Facundo Batista <facundo at taniquetil.com.ar>
@@ -121,7 +121,7 @@ reset them before monitoring a calculation.
 
 .. _decimal-tutorial:
 
-Quick-start Tutorial
+Quick-start tutorial
 --------------------
 
 The usual start to using decimals is importing the module, viewing the current
@@ -367,6 +367,8 @@ Decimal objects
    appears above.  These include decimal digits from various other
    alphabets (for example, Arabic-Indic and Devanāgarī digits) along
    with the fullwidth digits ``'\uff10'`` through ``'\uff19'``.
+   Case is not significant, so, for example, ``inf``, ``Inf``, ``INFINITY``,
+   and ``iNfINity`` are all acceptable spellings for positive infinity.
 
    If *value* is a :class:`tuple`, it should have three components, a sign
    (``0`` for positive or ``1`` for negative), a :class:`tuple` of
@@ -1029,11 +1031,19 @@ function to temporarily change the active context.
    .. versionchanged:: 3.11
       :meth:`localcontext` now supports setting context attributes through the use of keyword arguments.
 
+.. function:: IEEEContext(bits)
+
+   Return a context object initialized to the proper values for one of the
+   IEEE interchange formats.  The argument must be a multiple of 32 and less
+   than :const:`IEEE_CONTEXT_MAX_BITS`.
+
+   .. versionadded:: 3.14
+
 New contexts can also be created using the :class:`Context` constructor
 described below. In addition, the module provides three pre-made contexts:
 
 
-.. class:: BasicContext
+.. data:: BasicContext
 
    This is a standard context defined by the General Decimal Arithmetic
    Specification.  Precision is set to nine.  Rounding is set to
@@ -1044,7 +1054,7 @@ described below. In addition, the module provides three pre-made contexts:
    Because many of the traps are enabled, this context is useful for debugging.
 
 
-.. class:: ExtendedContext
+.. data:: ExtendedContext
 
    This is a standard context defined by the General Decimal Arithmetic
    Specification.  Precision is set to nine.  Rounding is set to
@@ -1057,7 +1067,7 @@ described below. In addition, the module provides three pre-made contexts:
    presence of conditions that would otherwise halt the program.
 
 
-.. class:: DefaultContext
+.. data:: DefaultContext
 
    This context is used by the :class:`Context` constructor as a prototype for new
    contexts.  Changing a field (such a precision) has the effect of changing the
@@ -1086,40 +1096,52 @@ In addition to the three supplied contexts, new contexts can be created with the
    default values are copied from the :const:`DefaultContext`.  If the *flags*
    field is not specified or is :const:`None`, all flags are cleared.
 
-   *prec* is an integer in the range [``1``, :const:`MAX_PREC`] that sets
-   the precision for arithmetic operations in the context.
+   .. attribute:: prec
 
-   The *rounding* option is one of the constants listed in the section
-   `Rounding Modes`_.
+      An integer in the range [``1``, :const:`MAX_PREC`] that sets
+      the precision for arithmetic operations in the context.
 
-   The *traps* and *flags* fields list any signals to be set. Generally, new
-   contexts should only set traps and leave the flags clear.
+   .. attribute:: rounding
 
-   The *Emin* and *Emax* fields are integers specifying the outer limits allowable
-   for exponents. *Emin* must be in the range [:const:`MIN_EMIN`, ``0``],
-   *Emax* in the range [``0``, :const:`MAX_EMAX`].
+      One of the constants listed in the section `Rounding Modes`_.
 
-   The *capitals* field is either ``0`` or ``1`` (the default). If set to
-   ``1``, exponents are printed with a capital ``E``; otherwise, a
-   lowercase ``e`` is used: ``Decimal('6.02e+23')``.
+   .. attribute:: traps
+                  flags
 
-   The *clamp* field is either ``0`` (the default) or ``1``.
-   If set to ``1``, the exponent ``e`` of a :class:`Decimal`
-   instance representable in this context is strictly limited to the
-   range ``Emin - prec + 1 <= e <= Emax - prec + 1``.  If *clamp* is
-   ``0`` then a weaker condition holds: the adjusted exponent of
-   the :class:`Decimal` instance is at most :attr:`~Context.Emax`.  When *clamp* is
-   ``1``, a large normal number will, where possible, have its
-   exponent reduced and a corresponding number of zeros added to its
-   coefficient, in order to fit the exponent constraints; this
-   preserves the value of the number but loses information about
-   significant trailing zeros.  For example::
+      Lists of any signals to be set. Generally, new contexts should only set
+      traps and leave the flags clear.
 
-      >>> Context(prec=6, Emax=999, clamp=1).create_decimal('1.23e999')
-      Decimal('1.23000E+999')
+   .. attribute:: Emin
+                  Emax
 
-   A *clamp* value of ``1`` allows compatibility with the
-   fixed-width decimal interchange formats specified in IEEE 754.
+      Integers specifying the outer limits allowable for exponents. *Emin* must
+      be in the range [:const:`MIN_EMIN`, ``0``], *Emax* in the range
+      [``0``, :const:`MAX_EMAX`].
+
+   .. attribute:: capitals
+
+      Either ``0`` or ``1`` (the default). If set to
+      ``1``, exponents are printed with a capital ``E``; otherwise, a
+      lowercase ``e`` is used: ``Decimal('6.02e+23')``.
+
+   .. attribute:: clamp
+
+      Either ``0`` (the default) or ``1``.  If set to ``1``, the exponent ``e``
+      of a :class:`Decimal` instance representable in this context is strictly
+      limited to the range ``Emin - prec + 1 <= e <= Emax - prec + 1``.
+      If *clamp* is ``0`` then a weaker condition holds: the adjusted exponent of
+      the :class:`Decimal` instance is at most :attr:`~Context.Emax`.  When *clamp* is
+      ``1``, a large normal number will, where possible, have its
+      exponent reduced and a corresponding number of zeros added to its
+      coefficient, in order to fit the exponent constraints; this
+      preserves the value of the number but loses information about
+      significant trailing zeros.  For example::
+
+         >>> Context(prec=6, Emax=999, clamp=1).create_decimal('1.23e999')
+         Decimal('1.23000E+999')
+
+      A *clamp* value of ``1`` allows compatibility with the
+      fixed-width decimal interchange formats specified in IEEE 754.
 
    The :class:`Context` class defines several general purpose methods as well as
    a large number of methods for doing arithmetic directly in a given context.
@@ -1550,18 +1572,19 @@ Constants
 The constants in this section are only relevant for the C module. They
 are also included in the pure Python version for compatibility.
 
-+---------------------+---------------------+-------------------------------+
-|                     |       32-bit        |            64-bit             |
-+=====================+=====================+===============================+
-| .. data:: MAX_PREC  |    ``425000000``    |    ``999999999999999999``     |
-+---------------------+---------------------+-------------------------------+
-| .. data:: MAX_EMAX  |    ``425000000``    |    ``999999999999999999``     |
-+---------------------+---------------------+-------------------------------+
-| .. data:: MIN_EMIN  |    ``-425000000``   |    ``-999999999999999999``    |
-+---------------------+---------------------+-------------------------------+
-| .. data:: MIN_ETINY |    ``-849999999``   |    ``-1999999999999999997``   |
-+---------------------+---------------------+-------------------------------+
-
++---------------------------------+---------------------+-------------------------------+
+|                                 |       32-bit        |            64-bit             |
++=================================+=====================+===============================+
+| .. data:: MAX_PREC              |    ``425000000``    |    ``999999999999999999``     |
++---------------------------------+---------------------+-------------------------------+
+| .. data:: MAX_EMAX              |    ``425000000``    |    ``999999999999999999``     |
++---------------------------------+---------------------+-------------------------------+
+| .. data:: MIN_EMIN              |    ``-425000000``   |    ``-999999999999999999``    |
++---------------------------------+---------------------+-------------------------------+
+| .. data:: MIN_ETINY             |    ``-849999999``   |    ``-1999999999999999997``   |
++---------------------------------+---------------------+-------------------------------+
+| .. data:: IEEE_CONTEXT_MAX_BITS |    ``256``          |    ``512``                    |
++---------------------------------+---------------------+-------------------------------+
 
 .. data:: HAVE_THREADS
 
@@ -1758,7 +1781,7 @@ The following table summarizes the hierarchy of signals::
 
 .. _decimal-notes:
 
-Floating-Point Notes
+Floating-point notes
 --------------------
 
 
@@ -1884,13 +1907,20 @@ the current thread.
 
 If :func:`setcontext` has not been called before :func:`getcontext`, then
 :func:`getcontext` will automatically create a new context for use in the
-current thread.
+current thread.  New context objects have default values set from the
+:data:`decimal.DefaultContext` object.
 
-The new context is copied from a prototype context called *DefaultContext*. To
-control the defaults so that each thread will use the same values throughout the
-application, directly modify the *DefaultContext* object. This should be done
-*before* any threads are started so that there won't be a race condition between
-threads calling :func:`getcontext`. For example::
+The :data:`sys.flags.thread_inherit_context` flag affects the context for
+new threads.  If the flag is false, new threads will start with an empty
+context.  In this case, :func:`getcontext` will create a new context object
+when called and use the default values from *DefaultContext*.  If the flag
+is true, new threads will start with a copy of context from the caller of
+:meth:`threading.Thread.start`.
+
+To control the defaults so that each thread will use the same values throughout
+the application, directly modify the *DefaultContext* object. This should be
+done *before* any threads are started so that there won't be a race condition
+between threads calling :func:`getcontext`. For example::
 
    # Set applicationwide defaults for all threads about to be launched
    DefaultContext.prec = 12
@@ -2262,7 +2292,7 @@ value for :attr:`~Context.prec` as well [#]_::
     Decimal('904625697166532776746648320380374280103671755200316906558262375061821325312')
 
 
-For inexact results, :attr:`MAX_PREC` is far too large on 64-bit platforms and
+For inexact results, :const:`MAX_PREC` is far too large on 64-bit platforms and
 the available memory will be insufficient::
 
    >>> Decimal(1) / 3

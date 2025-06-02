@@ -11,7 +11,7 @@ from test.support.os_helper import TESTFN_UNDECODABLE, FS_NONASCII
 from .filter import set_match_tests
 from .runtests import RunTests
 from .utils import (
-    setup_unraisable_hook, setup_threading_excepthook, fix_umask,
+    setup_unraisable_hook, setup_threading_excepthook,
     adjust_rlimit_nofile)
 
 
@@ -26,8 +26,6 @@ def setup_test_dir(testdir: str | None) -> None:
 
 
 def setup_process() -> None:
-    fix_umask()
-
     assert sys.__stderr__ is not None, "sys.__stderr__ is None"
     try:
         stderr_fd = sys.__stderr__.fileno()
@@ -42,7 +40,7 @@ def setup_process() -> None:
         faulthandler.enable(all_threads=True, file=stderr_fd)
 
         # Display the Python traceback on SIGALRM or SIGUSR1 signal
-        signals = []
+        signals: list[signal.Signals] = []
         if hasattr(signal, 'SIGALRM'):
             signals.append(signal.SIGALRM)
         if hasattr(signal, 'SIGUSR1'):

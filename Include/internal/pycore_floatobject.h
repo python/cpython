@@ -17,20 +17,6 @@ extern PyStatus _PyFloat_InitTypes(PyInterpreterState *);
 extern void _PyFloat_FiniType(PyInterpreterState *);
 
 
-/* other API */
-
-enum _py_float_format_type {
-    _py_float_format_unknown,
-    _py_float_format_ieee_big_endian,
-    _py_float_format_ieee_little_endian,
-};
-
-struct _Py_float_runtime_state {
-    enum _py_float_format_type float_format;
-    enum _py_float_format_type double_format;
-};
-
-
 
 
 PyAPI_FUNC(void) _PyFloat_ExactDealloc(PyObject *op);
@@ -53,6 +39,8 @@ extern PyObject* _Py_string_to_number_with_underscores(
     PyObject *(*innerfunc)(const char *, Py_ssize_t, void *));
 
 extern double _Py_parse_inf_or_nan(const char *p, char **endptr);
+
+extern int _Py_convert_int_to_double(PyObject **v, double *dbl);
 
 
 #ifdef __cplusplus

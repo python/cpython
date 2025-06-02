@@ -6,33 +6,32 @@ on:
       config_hash:
         required: true
         type: string
-      options:
-        required: true
-        type: string
-      suppressions_path:
-        description: 'A repo relative path to the suppressions file'
-        required: true
-        type: string
-      tsan_logs_artifact_name:
-        description: 'Name of the TSAN logs artifact. Must be unique for each job.'
-        required: true
-        type: string
+      free-threading:
+        description: Whether to use free-threaded mode
+        required: false
+        type: boolean
+        default: false
+
+env:
+  FORCE_COLOR: 1
 
 jobs:
-  build_tsan_reusable:
+  build-tsan-reusable:
     name: 'Thread sanitizer'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Runner image version
-      run: echo "IMAGE_VERSION=${ImageVersion}" >> "$GITHUB_ENV"
+      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
     - name: Restore config.cache
       uses: actions/cache@v4
       with:
         path: config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}
-    - name: Install Dependencies
+        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ inputs.config_hash }}
+    - name: Install dependencies
       run: |
         sudo ./.github/workflows/posix-deps-apt.sh
         # Install clang-18
@@ -45,9 +44,13 @@ jobs:
         sudo update-alternatives --set clang++ /usr/bin/clang++-17
         # Reduce ASLR to avoid TSAN crashing
         sudo sysctl -w vm.mmap_rnd_bits=28
-    - name: TSAN Option Setup
+    - name: TSAN option setup
       run: |
-        echo "TSAN_OPTIONS=log_path=${GITHUB_WORKSPACE}/tsan_log suppressions=${GITHUB_WORKSPACE}/${{ inputs.suppressions_path }} handle_segv=0" >> "$GITHUB_ENV"
+        echo "TSAN_OPTIONS=log_path=${GITHUB_WORKSPACE}/tsan_log suppressions=${GITHUB_WORKSPACE}/Tools/tsan/suppressions${{
+            fromJSON(inputs.free-threading)
+            && '_free_threading'
+            || ''
+          }}.txt handle_segv=0" >> "$GITHUB_ENV"
         echo "CC=clang" >> "$GITHUB_ENV"
         echo "CXX=clang++" >> "$GITHUB_ENV"
     - name: Add ccache to PATH
@@ -59,13 +62,21 @@ jobs:
         save: ${{ github.event_name == 'push' }}
         max-size: "200M"
     - name: Configure CPython
-      run: ${{ inputs.options }}
+      run: >-
+        ./configure
+        --config-cache
+        --with-thread-sanitizer
+        --with-pydebug
+        ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
     - name: Build CPython
       run: make -j4
     - name: Display build info
       run: make pythoninfo
     - name: Tests
       run: ./python -m test --tsan -j4
+    - name: Parallel tests
+      if: fromJSON(inputs.free-threading)
+      run: ./python -m test --tsan-parallel --parallel-threads=4 -j4
     - name: Display TSAN logs
       if: always()
       run: find "${GITHUB_WORKSPACE}" -name 'tsan_log.*' | xargs head -n 1000
@@ -73,6 +84,11 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ inputs.tsan_logs_artifact_name }}
+        name: >-
+          tsan-logs-${{
+            fromJSON(inputs.free-threading)
+            && 'free-threading'
+            || 'default'
+          }}
         path: tsan_log.*
         if-no-files-found: ignore

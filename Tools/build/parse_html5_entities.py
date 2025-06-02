@@ -12,11 +12,11 @@ The page now contains the following note:
 Written by Ezio Melotti and Iuliia Proskurnia.
 """
 
+import json
 import os
 import sys
-import json
-from urllib.request import urlopen
 from html.entities import html5
+from urllib.request import urlopen
 
 SCRIPT_NAME = 'Tools/build/parse_html5_entities.py'
 PAGE_URL = 'https://html.spec.whatwg.org/multipage/named-characters.html'
@@ -40,20 +40,20 @@ def compare_dicts(old, new):
     """Compare the old and new dicts and print the differences."""
     added = new.keys() - old.keys()
     if added:
-        print('{} entitie(s) have been added:'.format(len(added)))
+        print(f'{len(added)} entitie(s) have been added:')
         for name in sorted(added):
-            print('  {!r}: {!r}'.format(name, new[name]))
+            print(f'  {name!r}: {new[name]!r}')
     removed = old.keys() - new.keys()
     if removed:
-        print('{} entitie(s) have been removed:'.format(len(removed)))
+        print(f'{len(removed)} entitie(s) have been removed:')
         for name in sorted(removed):
-            print('  {!r}: {!r}'.format(name, old[name]))
+            print(f'  {name!r}: {old[name]!r}')
     changed = set()
     for name in (old.keys() & new.keys()):
         if old[name] != new[name]:
             changed.add((name, old[name], new[name]))
     if changed:
-        print('{} entitie(s) have been modified:'.format(len(changed)))
+        print(f'{len(changed)} entitie(s) have been modified:')
         for item in sorted(changed):
             print('  {!r}: {!r} -> {!r}'.format(*item))
 
@@ -111,5 +111,5 @@ if __name__ == '__main__':
             print('The current dictionary is updated.')
         else:
             compare_dicts(html5, new_html5)
-            print('Run "./python {0} --patch" to update Lib/html/entities.html '
-                  'or "./python {0} --create" to see the generated ' 'dictionary.'.format(__file__))
+            print(f'Run "./python {__file__} --patch" to update Lib/html/entities.html '
+                  f'or "./python {__file__} --create" to see the generated dictionary.')

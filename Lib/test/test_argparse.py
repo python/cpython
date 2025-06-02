@@ -1,5 +1,6 @@
 # Author: Steven J. Bethard <steven.bethard@gmail.com>.
 
+import _colorize
 import contextlib
 import functools
 import inspect
@@ -2409,16 +2410,17 @@ class TestAddSubparsers(TestCase):
         self.assertRaises(ArgumentParserError, *args, **kwargs)
 
     def _get_parser(self, subparser_help=False, prefix_chars=None,
-                    aliases=False):
+                    aliases=False, usage=None):
         # create a parser with a subparsers argument
         if prefix_chars:
             parser = ErrorRaisingArgumentParser(
-                prog='PROG', description='main description', prefix_chars=prefix_chars)
+                prog='PROG', description='main description', usage=usage,
+                prefix_chars=prefix_chars)
             parser.add_argument(
                 prefix_chars[0] * 2 + 'foo', action='store_true', help='foo help')
         else:
             parser = ErrorRaisingArgumentParser(
-                prog='PROG', description='main description')
+                prog='PROG', description='main description', usage=usage)
             parser.add_argument(
                 '--foo', action='store_true', help='foo help')
         parser.add_argument(
@@ -2455,7 +2457,8 @@ class TestAddSubparsers(TestCase):
         parser2.add_argument('z', type=complex, nargs='*', help='z help')
 
         # add third sub-parser
-        parser3_kwargs = dict(description='3 description')
+        parser3_kwargs = dict(description='3 description',
+                              usage='PROG --foo bar 3 t ...')
         if subparser_help:
             parser3_kwargs['help'] = '3 help'
         parser3 = subparsers.add_parser('3', **parser3_kwargs)
@@ -2476,6 +2479,47 @@ class TestAddSubparsers(TestCase):
                          '0.5 1 -y', '0.5 2 -w']:
             args = args_str.split()
             self.assertArgumentParserError(self.parser.parse_args, args)
+
+    def test_parse_args_failures_details(self):
+        for args_str, usage_str, error_str in [
+            ('',
+             'usage: PROG [-h] [--foo] bar {1,2,3} ...',
+             'PROG: error: the following arguments are required: bar'),
+            ('0.5 1 -y',
+             'usage: PROG bar 1 [-h] [-w W] {a,b,c}',
+             'PROG bar 1: error: the following arguments are required: x'),
+            ('0.5 3',
+             'usage: PROG --foo bar 3 t ...',
+             'PROG bar 3: error: the following arguments are required: t'),
+        ]:
+            with self.subTest(args_str):
+                args = args_str.split()
+                with self.assertRaises(ArgumentParserError) as cm:
+                    self.parser.parse_args(args)
+                self.assertEqual(cm.exception.args[0], 'SystemExit')
+                self.assertEqual(cm.exception.args[2], f'{usage_str}\n{error_str}\n')
+
+    def test_parse_args_failures_details_custom_usage(self):
+        parser = self._get_parser(usage='PROG [--foo] bar 1 [-w W] {a,b,c}\n'
+                                 '       PROG --foo bar 3 t ...')
+        for args_str, usage_str, error_str in [
+            ('',
+             'usage: PROG [--foo] bar 1 [-w W] {a,b,c}\n'
+             '       PROG --foo bar 3 t ...',
+             'PROG: error: the following arguments are required: bar'),
+            ('0.5 1 -y',
+             'usage: PROG bar 1 [-h] [-w W] {a,b,c}',
+             'PROG bar 1: error: the following arguments are required: x'),
+            ('0.5 3',
+             'usage: PROG --foo bar 3 t ...',
+             'PROG bar 3: error: the following arguments are required: t'),
+        ]:
+            with self.subTest(args_str):
+                args = args_str.split()
+                with self.assertRaises(ArgumentParserError) as cm:
+                    parser.parse_args(args)
+                self.assertEqual(cm.exception.args[0], 'SystemExit')
+                self.assertEqual(cm.exception.args[2], f'{usage_str}\n{error_str}\n')
 
     def test_parse_args(self):
         # check some non-failure cases:
@@ -2954,6 +2998,13 @@ class TestGroupConstructor(TestCase):
         self.assertEqual(msg, str(cm.warning))
         self.assertEqual(cm.filename, __file__)
 
+    def test_nested_argument_group(self):
+        parser = argparse.ArgumentParser()
+        g = parser.add_argument_group()
+        self.assertRaisesRegex(ValueError,
+                                 'argument groups cannot be nested',
+                                 g.add_argument_group)
+
 # ===================
 # Parent parser tests
 # ===================
@@ -3253,6 +3304,14 @@ class TestMutuallyExclusiveGroupErrors(TestCase):
         group = parser.add_mutually_exclusive_group()
         with self.assertRaises(ValueError):
             parser.parse_args(['-h'])
+
+    def test_nested_mutex_groups(self):
+        parser = argparse.ArgumentParser(prog='PROG')
+        g = parser.add_mutually_exclusive_group()
+        g.add_argument("--spam")
+        self.assertRaisesRegex(ValueError,
+                               'mutually exclusive groups cannot be nested',
+                               g.add_mutually_exclusive_group)
 
 class MEMixin(object):
 
@@ -3620,55 +3679,6 @@ class TestMutuallyExclusiveOptionalsAndPositionalsMixed(MEMixin, TestCase):
           -b          b help
           -c          c help
         '''
-
-class TestMutuallyExclusiveNested(MEMixin, TestCase):
-
-    # Nesting mutually exclusive groups is an undocumented feature
-    # that came about by accident through inheritance and has been
-    # the source of many bugs. It is deprecated and this test should
-    # eventually be removed along with it.
-
-    def get_parser(self, required):
-        parser = ErrorRaisingArgumentParser(prog='PROG')
-        group = parser.add_mutually_exclusive_group(required=required)
-        group.add_argument('-a')
-        group.add_argument('-b')
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            group2 = group.add_mutually_exclusive_group(required=required)
-        group2.add_argument('-c')
-        group2.add_argument('-d')
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            group3 = group2.add_mutually_exclusive_group(required=required)
-        group3.add_argument('-e')
-        group3.add_argument('-f')
-        return parser
-
-    usage_when_not_required = '''\
-        usage: PROG [-h] [-a A | -b B | [-c C | -d D | [-e E | -f F]]]
-        '''
-    usage_when_required = '''\
-        usage: PROG [-h] (-a A | -b B | (-c C | -d D | (-e E | -f F)))
-        '''
-
-    help = '''\
-
-        options:
-          -h, --help  show this help message and exit
-          -a A
-          -b B
-          -c C
-          -d D
-          -e E
-          -f F
-        '''
-
-    # We are only interested in testing the behavior of format_usage().
-    test_failures_when_not_required = None
-    test_failures_when_required = None
-    test_successes_when_not_required = None
-    test_successes_when_required = None
 
 
 class TestMutuallyExclusiveOptionalOptional(MEMixin, TestCase):
@@ -4840,25 +4850,6 @@ class TestHelpUsageNoWhitespaceCrash(TestCase):
         usage = 'usage: PROG [-h]\n'
         self.assertEqual(parser.format_usage(), usage)
 
-    def test_nested_mutex_groups(self):
-        parser = argparse.ArgumentParser(prog='PROG')
-        g = parser.add_mutually_exclusive_group()
-        g.add_argument("--spam")
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            gg = g.add_mutually_exclusive_group()
-        gg.add_argument("--hax")
-        gg.add_argument("--hox", help=argparse.SUPPRESS)
-        gg.add_argument("--hex")
-        g.add_argument("--eggs")
-        parser.add_argument("--num")
-
-        usage = textwrap.dedent('''\
-        usage: PROG [-h] [--spam SPAM | [--hax HAX | --hex HEX] | --eggs EGGS]
-                    [--num NUM]
-        ''')
-        self.assertEqual(parser.format_usage(), usage)
-
     def test_long_mutex_groups_wrap(self):
         parser = argparse.ArgumentParser(prog='PROG')
         g = parser.add_mutually_exclusive_group()
@@ -5478,11 +5469,60 @@ class TestHelpMetavarTypeFormatter(HelpTestCase):
     version = ''
 
 
-class TestHelpUsageLongSubparserCommand(TestCase):
-    """Test that subparser commands are formatted correctly in help"""
+class TestHelpCustomHelpFormatter(TestCase):
     maxDiff = None
 
-    def test_parent_help(self):
+    def test_custom_formatter_function(self):
+        def custom_formatter(prog):
+            return argparse.RawTextHelpFormatter(prog, indent_increment=5)
+
+        parser = argparse.ArgumentParser(
+                prog='PROG',
+                prefix_chars='-+',
+                formatter_class=custom_formatter
+        )
+        parser.add_argument('+f', '++foo', help="foo help")
+        parser.add_argument('spam', help="spam help")
+
+        parser_help = parser.format_help()
+        self.assertEqual(parser_help, textwrap.dedent('''\
+            usage: PROG [-h] [+f FOO] spam
+
+            positional arguments:
+                 spam           spam help
+
+            options:
+                 -h, --help     show this help message and exit
+                 +f, ++foo FOO  foo help
+        '''))
+
+    def test_custom_formatter_class(self):
+        class CustomFormatter(argparse.RawTextHelpFormatter):
+            def __init__(self, prog):
+                super().__init__(prog, indent_increment=5)
+
+        parser = argparse.ArgumentParser(
+                prog='PROG',
+                prefix_chars='-+',
+                formatter_class=CustomFormatter
+        )
+        parser.add_argument('+f', '++foo', help="foo help")
+        parser.add_argument('spam', help="spam help")
+
+        parser_help = parser.format_help()
+        self.assertEqual(parser_help, textwrap.dedent('''\
+            usage: PROG [-h] [+f FOO] spam
+
+            positional arguments:
+                 spam           spam help
+
+            options:
+                 -h, --help     show this help message and exit
+                 +f, ++foo FOO  foo help
+        '''))
+
+    def test_usage_long_subparser_command(self):
+        """Test that subparser commands are formatted correctly in help"""
         def custom_formatter(prog):
             return argparse.RawTextHelpFormatter(prog, max_help_position=50)
 
@@ -6765,7 +6805,7 @@ class TestImportStar(TestCase):
 
     def test(self):
         for name in argparse.__all__:
-            self.assertTrue(hasattr(argparse, name))
+            self.assertHasAttr(argparse, name)
 
     def test_all_exports_everything_but_modules(self):
         items = [
@@ -6982,7 +7022,7 @@ class TestProgName(TestCase):
 
     def check_usage(self, expected, *args, **kwargs):
         res = script_helper.assert_python_ok('-Xutf8', *args, '-h', **kwargs)
-        self.assertEqual(res.out.splitlines()[0].decode(),
+        self.assertEqual(os.fsdecode(res.out.splitlines()[0]),
                          f'usage: {expected} [-h]')
 
     def test_script(self, compiled=False):
@@ -7054,6 +7094,245 @@ class TestTranslations(TestTranslationsBase):
 
     def test_translations(self):
         self.assertMsgidsEqual(argparse)
+
+
+# ===========
+# Color tests
+# ===========
+
+
+class TestColorized(TestCase):
+    maxDiff = None
+
+    def setUp(self):
+        super().setUp()
+        # Ensure color even if ran with NO_COLOR=1
+        _colorize.can_colorize = lambda *args, **kwargs: True
+        self.theme = _colorize.get_theme(force_color=True).argparse
+
+    def test_argparse_color(self):
+        # Arrange: create a parser with a bit of everything
+        parser = argparse.ArgumentParser(
+            color=True,
+            description="Colorful help",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+            prefix_chars="-+",
+            prog="PROG",
+        )
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument(
+            "-v", "--verbose", action="store_true", help="more spam"
+        )
+        group.add_argument(
+            "-q", "--quiet", action="store_true", help="less spam"
+        )
+        parser.add_argument("x", type=int, help="the base")
+        parser.add_argument(
+            "y", type=int, help="the exponent", deprecated=True
+        )
+        parser.add_argument(
+            "this_indeed_is_a_very_long_action_name",
+            type=int,
+            help="the exponent",
+        )
+        parser.add_argument(
+            "-o", "--optional1", action="store_true", deprecated=True
+        )
+        parser.add_argument("--optional2", help="pick one")
+        parser.add_argument("--optional3", choices=("X", "Y", "Z"))
+        parser.add_argument(
+            "--optional4", choices=("X", "Y", "Z"), help="pick one"
+        )
+        parser.add_argument(
+            "--optional5", choices=("X", "Y", "Z"), help="pick one"
+        )
+        parser.add_argument(
+            "--optional6", choices=("X", "Y", "Z"), help="pick one"
+        )
+        parser.add_argument(
+            "-p",
+            "--optional7",
+            choices=("Aaaaa", "Bbbbb", "Ccccc", "Ddddd"),
+            help="pick one",
+        )
+
+        parser.add_argument("+f")
+        parser.add_argument("++bar")
+        parser.add_argument("-+baz")
+        parser.add_argument("-c", "--count")
+
+        subparsers = parser.add_subparsers(
+            title="subcommands",
+            description="valid subcommands",
+            help="additional help",
+        )
+        subparsers.add_parser("sub1", deprecated=True, help="sub1 help")
+        sub2 = subparsers.add_parser("sub2", deprecated=True, help="sub2 help")
+        sub2.add_argument("--baz", choices=("X", "Y", "Z"), help="baz help")
+
+        prog = self.theme.prog
+        heading = self.theme.heading
+        long = self.theme.summary_long_option
+        short = self.theme.summary_short_option
+        label = self.theme.summary_label
+        pos = self.theme.summary_action
+        long_b = self.theme.long_option
+        short_b = self.theme.short_option
+        label_b = self.theme.label
+        pos_b = self.theme.action
+        reset = self.theme.reset
+
+        # Act
+        help_text = parser.format_help()
+
+        # Assert
+        self.assertEqual(
+            help_text,
+            textwrap.dedent(
+                f"""\
+                {heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] [{short}-v{reset} | {short}-q{reset}] [{short}-o{reset}] [{long}--optional2 {label}OPTIONAL2{reset}] [{long}--optional3 {label}{{X,Y,Z}}{reset}]
+                            [{long}--optional4 {label}{{X,Y,Z}}{reset}] [{long}--optional5 {label}{{X,Y,Z}}{reset}] [{long}--optional6 {label}{{X,Y,Z}}{reset}]
+                            [{short}-p {label}{{Aaaaa,Bbbbb,Ccccc,Ddddd}}{reset}] [{short}+f {label}F{reset}] [{long}++bar {label}BAR{reset}] [{long}-+baz {label}BAZ{reset}]
+                            [{short}-c {label}COUNT{reset}]
+                            {pos}x{reset} {pos}y{reset} {pos}this_indeed_is_a_very_long_action_name{reset} {pos}{{sub1,sub2}} ...{reset}
+
+                Colorful help
+
+                {heading}positional arguments:{reset}
+                  {pos_b}x{reset}                     the base
+                  {pos_b}y{reset}                     the exponent
+                  {pos_b}this_indeed_is_a_very_long_action_name{reset}
+                                        the exponent
+
+                {heading}options:{reset}
+                  {short_b}-h{reset}, {long_b}--help{reset}            show this help message and exit
+                  {short_b}-v{reset}, {long_b}--verbose{reset}         more spam (default: False)
+                  {short_b}-q{reset}, {long_b}--quiet{reset}           less spam (default: False)
+                  {short_b}-o{reset}, {long_b}--optional1{reset}
+                  {long_b}--optional2{reset} {label_b}OPTIONAL2{reset}
+                                        pick one (default: None)
+                  {long_b}--optional3{reset} {label_b}{{X,Y,Z}}{reset}
+                  {long_b}--optional4{reset} {label_b}{{X,Y,Z}}{reset}   pick one (default: None)
+                  {long_b}--optional5{reset} {label_b}{{X,Y,Z}}{reset}   pick one (default: None)
+                  {long_b}--optional6{reset} {label_b}{{X,Y,Z}}{reset}   pick one (default: None)
+                  {short_b}-p{reset}, {long_b}--optional7{reset} {label_b}{{Aaaaa,Bbbbb,Ccccc,Ddddd}}{reset}
+                                        pick one (default: None)
+                  {short_b}+f{reset} {label_b}F{reset}
+                  {long_b}++bar{reset} {label_b}BAR{reset}
+                  {long_b}-+baz{reset} {label_b}BAZ{reset}
+                  {short_b}-c{reset}, {long_b}--count{reset} {label_b}COUNT{reset}
+
+                {heading}subcommands:{reset}
+                  valid subcommands
+
+                  {pos_b}{{sub1,sub2}}{reset}           additional help
+                    {pos_b}sub1{reset}                sub1 help
+                    {pos_b}sub2{reset}                sub2 help
+                """
+            ),
+        )
+
+    def test_argparse_color_usage(self):
+        # Arrange
+        parser = argparse.ArgumentParser(
+            add_help=False,
+            color=True,
+            description="Test prog and usage colors",
+            prog="PROG",
+            usage="[prefix] %(prog)s [suffix]",
+        )
+        heading = self.theme.heading
+        prog = self.theme.prog
+        reset = self.theme.reset
+        usage = self.theme.prog_extra
+
+        # Act
+        help_text = parser.format_help()
+
+        # Assert
+        self.assertEqual(
+            help_text,
+            textwrap.dedent(
+                f"""\
+                {heading}usage: {reset}{usage}[prefix] {prog}PROG{reset}{usage} [suffix]{reset}
+
+                Test prog and usage colors
+                """
+            ),
+        )
+
+    def test_custom_formatter_function(self):
+        def custom_formatter(prog):
+            return argparse.RawTextHelpFormatter(prog, indent_increment=5)
+
+        parser = argparse.ArgumentParser(
+            prog="PROG",
+            prefix_chars="-+",
+            formatter_class=custom_formatter,
+            color=True,
+        )
+        parser.add_argument('+f', '++foo', help="foo help")
+        parser.add_argument('spam', help="spam help")
+
+        prog = self.theme.prog
+        heading = self.theme.heading
+        short = self.theme.summary_short_option
+        label = self.theme.summary_label
+        pos = self.theme.summary_action
+        long_b = self.theme.long_option
+        short_b = self.theme.short_option
+        label_b = self.theme.label
+        pos_b = self.theme.action
+        reset = self.theme.reset
+
+        parser_help = parser.format_help()
+        self.assertEqual(parser_help, textwrap.dedent(f'''\
+            {heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] [{short}+f {label}FOO{reset}] {pos}spam{reset}
+
+            {heading}positional arguments:{reset}
+                 {pos_b}spam{reset}               spam help
+
+            {heading}options:{reset}
+                 {short_b}-h{reset}, {long_b}--help{reset}         show this help message and exit
+                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}      foo help
+        '''))
+
+    def test_custom_formatter_class(self):
+        class CustomFormatter(argparse.RawTextHelpFormatter):
+            def __init__(self, prog):
+                super().__init__(prog, indent_increment=5)
+
+        parser = argparse.ArgumentParser(
+            prog="PROG",
+            prefix_chars="-+",
+            formatter_class=CustomFormatter,
+            color=True,
+        )
+        parser.add_argument('+f', '++foo', help="foo help")
+        parser.add_argument('spam', help="spam help")
+
+        prog = self.theme.prog
+        heading = self.theme.heading
+        short = self.theme.summary_short_option
+        label = self.theme.summary_label
+        pos = self.theme.summary_action
+        long_b = self.theme.long_option
+        short_b = self.theme.short_option
+        label_b = self.theme.label
+        pos_b = self.theme.action
+        reset = self.theme.reset
+
+        parser_help = parser.format_help()
+        self.assertEqual(parser_help, textwrap.dedent(f'''\
+            {heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] [{short}+f {label}FOO{reset}] {pos}spam{reset}
+
+            {heading}positional arguments:{reset}
+                 {pos_b}spam{reset}               spam help
+
+            {heading}options:{reset}
+                 {short_b}-h{reset}, {long_b}--help{reset}         show this help message and exit
+                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}      foo help
+        '''))
 
 
 def tearDownModule():

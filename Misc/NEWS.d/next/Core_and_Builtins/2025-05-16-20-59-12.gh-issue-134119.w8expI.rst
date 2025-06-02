@@ -1,0 +1,2 @@
+Fix crash when calling :func:`next` on an exhausted template string iterator.
+Patch by Jelle Zijlstra.

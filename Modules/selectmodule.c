@@ -14,7 +14,6 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
-#include "pycore_import.h"        // _PyImport_GetModuleAttrString()
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
 
 #include <stdbool.h>
@@ -440,6 +439,8 @@ typedef struct {
     int poll_running;
 } pollObject;
 
+#define pollObject_CAST(op) ((pollObject *)(op))
+
 /* Update the malloc'ed array of pollfds to match the dictionary
    contained within a pollObject.  Return 1 on success, 0 on an error.
 */
@@ -773,11 +774,13 @@ newPollObject(PyObject *module)
 }
 
 static void
-poll_dealloc(pollObject *self)
+poll_dealloc(PyObject *op)
 {
-    PyObject* type = (PyObject *)Py_TYPE(self);
-    if (self->ufds != NULL)
+    pollObject *self = pollObject_CAST(op);
+    PyTypeObject *type = Py_TYPE(self);
+    if (self->ufds != NULL) {
         PyMem_Free(self->ufds);
+    }
     Py_XDECREF(self->dict);
     PyObject_Free(self);
     Py_DECREF(type);
@@ -794,6 +797,8 @@ typedef struct {
     int n_fds;
     struct pollfd *fds;
 } devpollObject;
+
+#define devpollObject_CAST(op)  ((devpollObject *)(op))
 
 static PyObject *
 devpoll_err_closed(void)
@@ -1087,13 +1092,14 @@ select_devpoll_close_impl(devpollObject *self)
     Py_RETURN_NONE;
 }
 
-static PyObject*
-devpoll_get_closed(devpollObject *self, void *Py_UNUSED(ignored))
+static PyObject *
+devpoll_get_closed(PyObject *op, void *Py_UNUSED(closure))
 {
-    if (self->fd_devpoll < 0)
+    devpollObject *self = devpollObject_CAST(op);
+    if (self->fd_devpoll < 0) {
         Py_RETURN_TRUE;
-    else
-        Py_RETURN_FALSE;
+    }
+    Py_RETURN_FALSE;
 }
 
 /*[clinic input]
@@ -1113,7 +1119,7 @@ select_devpoll_fileno_impl(devpollObject *self)
 }
 
 static PyGetSetDef devpoll_getsetlist[] = {
-    {"closed", (getter)devpoll_get_closed, NULL,
+    {"closed", devpoll_get_closed, NULL,
      "True if the devpoll object is closed"},
     {0},
 };
@@ -1164,9 +1170,10 @@ newDevPollObject(PyObject *module)
 }
 
 static void
-devpoll_dealloc(devpollObject *self)
+devpoll_dealloc(PyObject *op)
 {
-    PyObject *type = (PyObject *)Py_TYPE(self);
+    devpollObject *self = devpollObject_CAST(op);
+    PyTypeObject *type = Py_TYPE(self);
     (void)devpoll_internal_close(self);
     PyMem_Free(self->fds);
     PyObject_Free(self);
@@ -1276,6 +1283,8 @@ typedef struct {
     SOCKET epfd;                        /* epoll control file descriptor */
 } pyEpoll_Object;
 
+#define pyEpoll_Object_CAST(op) ((pyEpoll_Object *)(op))
+
 static PyObject *
 pyepoll_err_closed(void)
 {
@@ -1378,13 +1387,14 @@ select_epoll_impl(PyTypeObject *type, int sizehint, int flags)
 
 
 static void
-pyepoll_dealloc(pyEpoll_Object *self)
+pyepoll_dealloc(PyObject *op)
 {
-    PyTypeObject* type = Py_TYPE(self);
+    pyEpoll_Object *self = pyEpoll_Object_CAST(op);
+    PyTypeObject *type = Py_TYPE(self);
     (void)pyepoll_internal_close(self);
     freefunc epoll_free = PyType_GetSlot(type, Py_tp_free);
-    epoll_free((PyObject *)self);
-    Py_DECREF((PyObject *)type);
+    epoll_free(self);
+    Py_DECREF(type);
 }
 
 /*[clinic input]
@@ -1409,13 +1419,14 @@ select_epoll_close_impl(pyEpoll_Object *self)
 }
 
 
-static PyObject*
-pyepoll_get_closed(pyEpoll_Object *self, void *Py_UNUSED(ignored))
+static PyObject *
+pyepoll_get_closed(PyObject *op, void *Py_UNUSED(closure))
 {
-    if (self->epfd < 0)
+    pyEpoll_Object *self = pyEpoll_Object_CAST(op);
+    if (self->epfd < 0) {
         Py_RETURN_TRUE;
-    else
-        Py_RETURN_FALSE;
+    }
+    Py_RETURN_FALSE;
 }
 
 /*[clinic input]
@@ -1708,7 +1719,7 @@ select_epoll___exit___impl(pyEpoll_Object *self, PyObject *exc_type,
 }
 
 static PyGetSetDef pyepoll_getsetlist[] = {
-    {"closed", (getter)pyepoll_get_closed, NULL,
+    {"closed", pyepoll_get_closed, NULL,
      "True if the epoll handler is closed"},
     {0},
 };
@@ -1778,12 +1789,15 @@ typedef struct {
     struct kevent e;
 } kqueue_event_Object;
 
-#define kqueue_event_Check(op, state) (PyObject_TypeCheck((op), state->kqueue_event_Type))
+#define kqueue_event_Object_CAST(op)    ((kqueue_event_Object *)(op))
+#define kqueue_event_Check(op, state)   (PyObject_TypeCheck((op), state->kqueue_event_Type))
 
 typedef struct kqueue_queue_Object {
     PyObject_HEAD
     SOCKET kqfd;                /* kqueue control fd */
 } kqueue_queue_Object;
+
+#define kqueue_queue_Object_CAST(op)    ((kqueue_queue_Object *)(op))
 
 #if (SIZEOF_UINTPTR_T != SIZEOF_VOID_P)
 #   error uintptr_t does not match void *!
@@ -1877,9 +1891,9 @@ static struct PyMemberDef kqueue_event_members[] = {
 #undef KQ_OFF
 
 static PyObject *
-
-kqueue_event_repr(kqueue_event_Object *s)
+kqueue_event_repr(PyObject *op)
 {
+    kqueue_event_Object *s = kqueue_event_Object_CAST(op);
     return PyUnicode_FromFormat(
         "<select.kevent ident=%zu filter=%d flags=0x%x fflags=0x%x "
         "data=0x%llx udata=%p>",
@@ -1888,7 +1902,7 @@ kqueue_event_repr(kqueue_event_Object *s)
 }
 
 static int
-kqueue_event_init(kqueue_event_Object *self, PyObject *args, PyObject *kwds)
+kqueue_event_init(PyObject *op, PyObject *args, PyObject *kwds)
 {
     PyObject *pfd;
     static char *kwlist[] = {"ident", "filter", "flags", "fflags",
@@ -1897,36 +1911,53 @@ kqueue_event_init(kqueue_event_Object *self, PyObject *args, PyObject *kwds)
                 FILTER_FMT_UNIT FLAGS_FMT_UNIT FFLAGS_FMT_UNIT DATA_FMT_UNIT
                 UINTPTRT_FMT_UNIT ":kevent";
 
+    kqueue_event_Object *self = kqueue_event_Object_CAST(op);
     EV_SET(&(self->e), 0, EVFILT_READ, EV_ADD, 0, 0, 0); /* defaults */
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, fmt, kwlist,
-        &pfd, &(self->e.filter), &(self->e.flags),
-        &(self->e.fflags), &(self->e.data), &(self->e.udata))) {
+                                     &pfd, &(self->e.filter),
+                                     &(self->e.flags), &(self->e.fflags),
+                                     &(self->e.data), &(self->e.udata)))
+    {
         return -1;
     }
 
-    if (PyLong_Check(pfd)) {
-        self->e.ident = PyLong_AsSize_t(pfd);
+    if (PyIndex_Check(pfd)) {
+        Py_ssize_t bytes = PyLong_AsNativeBytes(pfd,
+                &self->e.ident, sizeof(self->e.ident),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_REJECT_NEGATIVE |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (bytes < 0) {
+            return -1;
+        }
+        if ((size_t)bytes > sizeof(self->e.ident)) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "Python int too large for C kqueue event identifier");
+            return -1;
+        }
     }
     else {
         self->e.ident = PyObject_AsFileDescriptor(pfd);
-    }
-    if (PyErr_Occurred()) {
-        return -1;
+        if (PyErr_Occurred()) {
+            return -1;
+        }
     }
     return 0;
 }
 
 static PyObject *
-kqueue_event_richcompare(kqueue_event_Object *s, kqueue_event_Object *o,
-                         int op)
+kqueue_event_richcompare(PyObject *lhs, PyObject *rhs, int op)
 {
     int result;
+    kqueue_event_Object *s = kqueue_event_Object_CAST(lhs);
     _selectstate *state = _selectstate_by_type(Py_TYPE(s));
 
-    if (!kqueue_event_Check(o, state)) {
+    if (!kqueue_event_Check(rhs, state)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
+    kqueue_event_Object *o = (kqueue_event_Object *)rhs;  // fast cast
 
 #define CMP(a, b) ((a) != (b)) ? ((a) < (b) ? -1 : 1)
     result = CMP(s->e.ident, o->e.ident)
@@ -1966,8 +1997,8 @@ kqueue_queue_err_closed(void)
     return NULL;
 }
 
-static PyObject*
-kqueue_tracking_after_fork(PyObject *module) {
+static PyObject *
+kqueue_tracking_after_fork(PyObject *module, PyObject *Py_UNUSED(dummy)) {
     _selectstate *state = get_select_state(module);
     _kqueue_list_item *item = state->kqueue_open_list;
     state->kqueue_open_list = NULL;
@@ -1985,7 +2016,7 @@ kqueue_tracking_after_fork(PyObject *module) {
 }
 
 static PyMethodDef kqueue_tracking_after_fork_def = {
-    "kqueue_tracking_after_fork", (PyCFunction)kqueue_tracking_after_fork,
+    "kqueue_tracking_after_fork", kqueue_tracking_after_fork,
     METH_NOARGS, "Invalidate open select.kqueue objects after fork."
 };
 
@@ -1996,7 +2027,7 @@ kqueue_tracking_init(PyObject *module) {
     // Register a callback to invalidate kqueues with open fds after fork.
     PyObject *register_at_fork = NULL, *cb = NULL, *args = NULL,
              *kwargs = NULL, *result = NULL;
-    register_at_fork = _PyImport_GetModuleAttrString("posix",
+    register_at_fork = PyImport_ImportModuleAttrString("posix",
                                                      "register_at_fork");
     if (register_at_fork == NULL) {
         goto finally;
@@ -2174,10 +2205,11 @@ select_kqueue_impl(PyTypeObject *type)
 }
 
 static void
-kqueue_queue_finalize(kqueue_queue_Object *self)
+kqueue_queue_finalize(PyObject *op)
 {
-    PyObject* error = PyErr_GetRaisedException();
-    kqueue_queue_internal_close(self);
+    kqueue_queue_Object *self = kqueue_queue_Object_CAST(op);
+    PyObject *error = PyErr_GetRaisedException();
+    (void)kqueue_queue_internal_close(self);
     PyErr_SetRaisedException(error);
 }
 
@@ -2202,13 +2234,14 @@ select_kqueue_close_impl(kqueue_queue_Object *self)
     Py_RETURN_NONE;
 }
 
-static PyObject*
-kqueue_queue_get_closed(kqueue_queue_Object *self, void *Py_UNUSED(ignored))
+static PyObject *
+kqueue_queue_get_closed(PyObject *op, void *Py_UNUSED(closure))
 {
-    if (self->kqfd < 0)
+    kqueue_queue_Object *self = kqueue_queue_Object_CAST(op);
+    if (self->kqfd < 0) {
         Py_RETURN_TRUE;
-    else
-        Py_RETURN_FALSE;
+    }
+    Py_RETURN_FALSE;
 }
 
 /*[clinic input]
@@ -2415,7 +2448,7 @@ select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
 }
 
 static PyGetSetDef kqueue_queue_getsetlist[] = {
-    {"closed", (getter)kqueue_queue_get_closed, NULL,
+    {"closed", kqueue_queue_get_closed, NULL,
      "True if the kqueue handler is closed"},
     {0},
 };
@@ -2589,10 +2622,10 @@ _select_clear(PyObject *module)
 static void
 _select_free(void *module)
 {
-    _select_clear((PyObject *)module);
+    (void)_select_clear((PyObject *)module);
 }
 
-int
+static int
 _select_exec(PyObject *m)
 {
     _selectstate *state = get_select_state(m);
@@ -2714,6 +2747,10 @@ _select_exec(PyObject *m)
 #endif
 #ifdef EPOLLMSG
     ADD_INT(EPOLLMSG);
+#endif
+#ifdef EPOLLWAKEUP
+    /* Kernel 3.5+ */
+    ADD_INT(EPOLLWAKEUP);
 #endif
 
 #ifdef EPOLL_CLOEXEC
