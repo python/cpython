@@ -63,8 +63,6 @@ See :pep:`405` for more background on Python virtual environments.
 
 Creating virtual environments
 -----------------------------
-.. _venv-cli:
-.. program:: venv
 
 :ref:`Virtual environments <venv-def>` are created by executing the ``venv``
 module:
@@ -110,9 +108,12 @@ The command, if run with ``-h``, will show the available options::
    Once an environment has been created, you may wish to activate it, e.g. by
    sourcing an activate script in its bin directory.
 
+.. _venv-cli:
+.. program:: venv
+
 .. option:: ENV_DIR
 
-   A required argument specifying the directory to create the environment in.
+     A required argument specifying the directory to create the environment in.
 
 .. option:: --system-site-packages
 
