@@ -32,7 +32,6 @@ from sysconfig import (get_paths, get_platform, get_config_vars,
 from sysconfig.__main__ import _main, _parse_makefile, _get_pybuilddir, _get_json_data_name
 import _imp
 import _osx_support
-import _sysconfig
 
 
 HAS_USER_BASE = sysconfig._HAS_USER_BASE
@@ -186,7 +185,7 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         # The include directory on POSIX isn't exactly the same as before,
         # but it is "within"
         sysconfig_includedir = sysconfig.get_path('include', scheme='posix_venv', vars=vars)
-        self.assertTrue(sysconfig_includedir.startswith(incpath + os.sep))
+        self.assertStartsWith(sysconfig_includedir, incpath + os.sep)
 
     def test_nt_venv_scheme(self):
         # The following directories were hardcoded in the venv module
@@ -531,13 +530,10 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
             Python_h = os.path.join(srcdir, 'Include', 'Python.h')
             self.assertTrue(os.path.exists(Python_h), Python_h)
             # <srcdir>/PC/pyconfig.h.in always exists even if unused
-            pyconfig_h = os.path.join(srcdir, 'PC', 'pyconfig.h.in')
-            self.assertTrue(os.path.exists(pyconfig_h), pyconfig_h)
             pyconfig_h_in = os.path.join(srcdir, 'pyconfig.h.in')
             self.assertTrue(os.path.exists(pyconfig_h_in), pyconfig_h_in)
             if os.name == 'nt':
-                # <executable dir>/pyconfig.h exists on Windows in a build tree
-                pyconfig_h = os.path.join(sys.executable, '..', 'pyconfig.h')
+                pyconfig_h = os.path.join(srcdir, 'PC', 'pyconfig.h')
                 self.assertTrue(os.path.exists(pyconfig_h), pyconfig_h)
         elif os.name == 'posix':
             makefile_dir = os.path.dirname(sysconfig.get_makefile_filename())
@@ -572,8 +568,7 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
                 expected_suffixes = 'i386-linux-gnu.so', 'x86_64-linux-gnux32.so', 'i386-linux-musl.so'
             else: # 8 byte pointer size
                 expected_suffixes = 'x86_64-linux-gnu.so', 'x86_64-linux-musl.so'
-            self.assertTrue(suffix.endswith(expected_suffixes),
-                            f'unexpected suffix {suffix!r}')
+            self.assertEndsWith(suffix, expected_suffixes)
 
     @unittest.skipUnless(sys.platform == 'android', 'Android-specific test')
     def test_android_ext_suffix(self):
@@ -585,13 +580,12 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
             "aarch64": "aarch64-linux-android",
             "armv7l": "arm-linux-androideabi",
         }[machine]
-        self.assertTrue(suffix.endswith(f"-{expected_triplet}.so"),
-                        f"{machine=}, {suffix=}")
+        self.assertEndsWith(suffix, f"-{expected_triplet}.so")
 
     @unittest.skipUnless(sys.platform == 'darwin', 'OS X-specific test')
     def test_osx_ext_suffix(self):
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
-        self.assertTrue(suffix.endswith('-darwin.so'), suffix)
+        self.assertEndsWith(suffix, '-darwin.so')
 
     def test_always_set_py_debug(self):
         self.assertIn('Py_DEBUG', sysconfig.get_config_vars())
