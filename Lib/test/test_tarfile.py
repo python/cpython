@@ -3302,7 +3302,8 @@ class NoneInfoExtractTests(ReadTest):
             for p in pathlib.Path(directory).glob('**/*'))
         if self.extraction_filter in (None, 'data'):
             # The 'data' filter is expected to reject special files
-            got_paths.discard(pathlib.Path('ustar/fifotype'))
+            for path in 'ustar/fifotype', 'ustar/blktype', 'ustar/chrtype':
+                got_paths.discard(pathlib.Path(path))
         self.assertEqual(self.control_paths, got_paths)
 
     @contextmanager
