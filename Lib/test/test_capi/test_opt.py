@@ -2240,9 +2240,9 @@ class TestObject:
     def test(self, *args, **kwargs):
         return args[0]
 
-temp_object = TestObject()
+test_object = TestObject()
 
-test_bound_method = TestObject.test.__get__(temp_object)
+test_bound_method = TestObject.test.__get__(test_object)
 
 
 def global_identity(x):
