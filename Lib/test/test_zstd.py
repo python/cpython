@@ -1138,27 +1138,41 @@ class ZstdDictTestCase(unittest.TestCase):
             ZstdDecompressor(zd)
 
         # wrong type
-        with self.assertRaisesRegex(TypeError, r'should be ZstdDict object'):
-            ZstdCompressor(zstd_dict=(zd, b'123'))
-        with self.assertRaisesRegex(TypeError, r'should be ZstdDict object'):
+        with self.assertRaisesRegex(TypeError, r'should be a ZstdDict object'):
+            ZstdCompressor(zstd_dict=[zd, 1])
+        with self.assertRaisesRegex(TypeError, r'should be a ZstdDict object'):
+            ZstdCompressor(zstd_dict=(zd, 1.0))
+        with self.assertRaisesRegex(TypeError, r'should be a ZstdDict object'):
+            ZstdCompressor(zstd_dict=(zd,))
+        with self.assertRaisesRegex(TypeError, r'should be a ZstdDict object'):
             ZstdCompressor(zstd_dict=(zd, 1, 2))
-        with self.assertRaisesRegex(TypeError, r'should be ZstdDict object'):
+        with self.assertRaisesRegex(TypeError, r'should be a ZstdDict object'):
             ZstdCompressor(zstd_dict=(zd, -1))
-        with self.assertRaisesRegex(TypeError, r'should be ZstdDict object'):
+        with self.assertRaisesRegex(TypeError, r'should be a ZstdDict object'):
             ZstdCompressor(zstd_dict=(zd, 3))
+        with self.assertRaises(OverflowError):
+            ZstdCompressor(zstd_dict=(zd, 2**1000))
+        with self.assertRaises(OverflowError):
+            ZstdCompressor(zstd_dict=(zd, -2**1000))
 
-        with self.assertRaisesRegex(TypeError, r'should be ZstdDict object'):
-            ZstdDecompressor(zstd_dict=(zd, b'123'))
-        with self.assertRaisesRegex(TypeError, r'should be ZstdDict object'):
+        with self.assertRaisesRegex(TypeError, r'should be a ZstdDict object'):
+            ZstdDecompressor(zstd_dict=[zd, 1])
+        with self.assertRaisesRegex(TypeError, r'should be a ZstdDict object'):
+            ZstdDecompressor(zstd_dict=(zd, 1.0))
+        with self.assertRaisesRegex(TypeError, r'should be a ZstdDict object'):
+            ZstdDecompressor((zd,))
+        with self.assertRaisesRegex(TypeError, r'should be a ZstdDict object'):
             ZstdDecompressor((zd, 1, 2))
-        with self.assertRaisesRegex(TypeError, r'should be ZstdDict object'):
+        with self.assertRaisesRegex(TypeError, r'should be a ZstdDict object'):
             ZstdDecompressor((zd, -1))
-        with self.assertRaisesRegex(TypeError, r'should be ZstdDict object'):
+        with self.assertRaisesRegex(TypeError, r'should be a ZstdDict object'):
             ZstdDecompressor((zd, 3))
+        with self.assertRaises(OverflowError):
+            ZstdDecompressor((zd, 2**1000))
+        with self.assertRaises(OverflowError):
+            ZstdDecompressor((zd, -2**1000))
 
     def test_train_dict(self):
-
-
         TRAINED_DICT = train_dict(SAMPLES, DICT_SIZE1)
         ZstdDict(TRAINED_DICT.dict_content, is_raw=False)
 
@@ -1240,17 +1254,36 @@ class ZstdDictTestCase(unittest.TestCase):
         with self.assertRaises(TypeError):
             _zstd.train_dict({}, (), 100)
         with self.assertRaises(TypeError):
+            _zstd.train_dict(bytearray(), (), 100)
+        with self.assertRaises(TypeError):
             _zstd.train_dict(b'', 99, 100)
         with self.assertRaises(TypeError):
+            _zstd.train_dict(b'', [], 100)
+        with self.assertRaises(TypeError):
             _zstd.train_dict(b'', (), 100.1)
+        with self.assertRaises(TypeError):
+            _zstd.train_dict(b'', (99.1,), 100)
+        with self.assertRaises(ValueError):
+            _zstd.train_dict(b'abc', (4, -1), 100)
+        with self.assertRaises(ValueError):
+            _zstd.train_dict(b'abc', (2,), 100)
+        with self.assertRaises(ValueError):
+            _zstd.train_dict(b'', (99,), 100)
 
         # size > size_t
         with self.assertRaises(ValueError):
-            _zstd.train_dict(b'', (2**64+1,), 100)
+            _zstd.train_dict(b'', (2**1000,), 100)
+        with self.assertRaises(ValueError):
+            _zstd.train_dict(b'', (-2**1000,), 100)
 
         # dict_size <= 0
         with self.assertRaises(ValueError):
             _zstd.train_dict(b'', (), 0)
+        with self.assertRaises(ValueError):
+            _zstd.train_dict(b'', (), -1)
+
+        with self.assertRaises(ZstdError):
+            _zstd.train_dict(b'', (), 1)
 
     def test_finalize_dict_c(self):
         with self.assertRaises(TypeError):
@@ -1260,21 +1293,50 @@ class ZstdDictTestCase(unittest.TestCase):
         with self.assertRaises(TypeError):
             _zstd.finalize_dict({}, b'', (), 100, 5)
         with self.assertRaises(TypeError):
+            _zstd.finalize_dict(bytearray(TRAINED_DICT.dict_content), b'', (), 100, 5)
+        with self.assertRaises(TypeError):
             _zstd.finalize_dict(TRAINED_DICT.dict_content, {}, (), 100, 5)
         with self.assertRaises(TypeError):
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, bytearray(), (), 100, 5)
+        with self.assertRaises(TypeError):
             _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', 99, 100, 5)
+        with self.assertRaises(TypeError):
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', [], 100, 5)
         with self.assertRaises(TypeError):
             _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', (), 100.1, 5)
         with self.assertRaises(TypeError):
             _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', (), 100, 5.1)
 
+        with self.assertRaises(ValueError):
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'abc', (4, -1), 100, 5)
+        with self.assertRaises(ValueError):
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'abc', (2,), 100, 5)
+        with self.assertRaises(ValueError):
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', (99,), 100, 5)
+
         # size > size_t
         with self.assertRaises(ValueError):
-            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', (2**64+1,), 100, 5)
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', (2**1000,), 100, 5)
+        with self.assertRaises(ValueError):
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', (-2**1000,), 100, 5)
 
         # dict_size <= 0
         with self.assertRaises(ValueError):
             _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', (), 0, 5)
+        with self.assertRaises(ValueError):
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', (), -1, 5)
+        with self.assertRaises(OverflowError):
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', (), 2**1000, 5)
+        with self.assertRaises(OverflowError):
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', (), -2**1000, 5)
+
+        with self.assertRaises(OverflowError):
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', (), 100, 2**1000)
+        with self.assertRaises(OverflowError):
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', (), 100, -2**1000)
+
+        with self.assertRaises(ZstdError):
+            _zstd.finalize_dict(TRAINED_DICT.dict_content, b'', (), 100, 5)
 
     def test_train_buffer_protocol_samples(self):
         def _nbytes(dat):
