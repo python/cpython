@@ -3131,7 +3131,7 @@ static PyObject *
 math_isnormal_impl(PyObject *module, double x)
 /*[clinic end generated code: output=c7b302b5b89c3541 input=fdaa00c58aa7bc17]*/
 {
-    return PyBool_FromLong((long)isnormal(x));
+    return PyBool_FromLong(isnormal(x));
 }
 
 
@@ -3149,9 +3149,9 @@ math_issubnormal_impl(PyObject *module, double x)
 /*[clinic end generated code: output=4e76ac98ddcae761 input=9a20aba7107d0d95]*/
 {
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
-    return PyBool_FromLong((long)issubnormal(x));
+    return PyBool_FromLong(issubnormal(x));
 #else
-    return PyBool_FromLong((long)(isfinite(x) && x && !isnormal(x)));
+    return PyBool_FromLong(isfinite(x) && x && !isnormal(x));
 #endif
 }
 
