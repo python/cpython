@@ -105,6 +105,13 @@ difflib
   (Contributed by Jiahao Li in :gh:`134580`.)
 
 
+math
+----
+
+* Add :func:`math.isnormal` and :func:`math.issubnormal` functions.
+  (Contributed by Sergey B Kirpichev in :gh:`132908`.)
+
+
 shelve
 ------
 
@@ -146,8 +153,20 @@ module_name
 Deprecated
 ==========
 
-* module_name:
-  TODO
+hashlib
+-------
+
+* In hash function constructors such as :func:`~hashlib.new` or the
+  direct hash-named constructors such as :func:`~hashlib.md5` and
+  :func:`~hashlib.sha256`, their optional initial data parameter could
+  also be passed a keyword argument named ``data=`` or ``string=`` in
+  various :mod:`hashlib` implementations.
+
+  Support for the ``string`` keyword argument name is now deprecated and
+  is slated for removal in Python 3.19. Prefer passing the initial data as
+  a positional argument for maximum backwards compatibility.
+
+  (Contributed by Bénédikt Tran in :gh:`134978`.)
 
 
 .. Add deprecations above alphabetically, not here at the end.
