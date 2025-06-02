@@ -755,8 +755,8 @@ class ProcessPoolExecutor(_base.Executor):
                 self._executor_manager_thread_wakeup
 
     def _adjust_process_count(self):
-        # gh-132969: avoid error if shutdown(wait=False) is called and state is reset
-        # and leaving the executor still running
+        # gh-132969: avoid error when state is reset and executor is still running,
+        # which will happen when shutdown(wait=False) is called.
         if self._processes is None:
             return
 
