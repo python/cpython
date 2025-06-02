@@ -585,7 +585,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_CLOSE_SPECIALIZED",
     "PyStackRef_DUP",
     "PyStackRef_False",
-    "PyStackRef_FromPyObjectImmortal",
+    "PyStackRef_FromPyObjectBorrow",
     "PyStackRef_FromPyObjectNew",
     "PyStackRef_FromPyObjectSteal",
     "PyStackRef_IsExactly",
@@ -679,7 +679,10 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_IsTaggedInt",
     "PyStackRef_TagInt",
     "PyStackRef_UntagInt",
+    "PyStackRef_IncrementTaggedIntNoOverflow",
+    "PyStackRef_IsNullOrInt",
 )
+
 
 def check_escaping_calls(instr: parser.CodeDef, escapes: dict[SimpleStmt, EscapingCall]) -> None:
     error: lexer.Token | None = None
@@ -832,7 +835,7 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         )
     error_with_pop = has_error_with_pop(op)
     error_without_pop = has_error_without_pop(op)
-    escapes = bool(escaping_calls)
+    escapes = bool(escaping_calls) or variable_used(op, "DECREF_INPUTS")
     pure = False if isinstance(op, parser.LabelDef) else "pure" in op.annotations
     no_save_ip = False if isinstance(op, parser.LabelDef) else "no_save_ip" in op.annotations
     return Properties(

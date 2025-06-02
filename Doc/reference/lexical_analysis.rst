@@ -288,58 +288,81 @@ forms a legal token, when read from left to right.
 
 .. _identifiers:
 
-Identifiers and keywords
-========================
+Names (identifiers and keywords)
+================================
 
 .. index:: identifier, name
 
-Identifiers (also referred to as *names*) are described by the following lexical
-definitions.
+:data:`~token.NAME` tokens represent *identifiers*, *keywords*, and
+*soft keywords*.
 
-The syntax of identifiers in Python is based on the Unicode standard annex
-UAX-31, with elaboration and changes as defined below; see also :pep:`3131` for
-further details.
-
-Within the ASCII range (U+0001..U+007F), the valid characters for identifiers
-include the uppercase and lowercase letters ``A`` through
-``Z``, the underscore ``_`` and, except for the first character, the digits
+Within the ASCII range (U+0001..U+007F), the valid characters for names
+include the uppercase and lowercase letters (``A-Z`` and ``a-z``),
+the underscore ``_`` and, except for the first character, the digits
 ``0`` through ``9``.
-Python 3.0 introduced additional characters from outside the ASCII range (see
-:pep:`3131`).  For these characters, the classification uses the version of the
-Unicode Character Database as included in the :mod:`unicodedata` module.
 
-Identifiers are unlimited in length.  Case is significant.
+Names must contain at least one character, but have no upper length limit.
+Case is significant.
 
-.. productionlist:: python-grammar
-   identifier: `xid_start` `xid_continue`*
-   id_start: <all characters in general categories Lu, Ll, Lt, Lm, Lo, Nl, the underscore, and characters with the Other_ID_Start property>
-   id_continue: <all characters in `id_start`, plus characters in the categories Mn, Mc, Nd, Pc and others with the Other_ID_Continue property>
-   xid_start: <all characters in `id_start` whose NFKC normalization is in "id_start xid_continue*">
-   xid_continue: <all characters in `id_continue` whose NFKC normalization is in "id_continue*">
+Besides ``A-Z``, ``a-z``, ``_`` and ``0-9``, names can also use "letter-like"
+and "number-like" characters from outside the ASCII range, as detailed below.
 
-The Unicode category codes mentioned above stand for:
+All identifiers are converted into the `normalization form`_ NFKC while
+parsing; comparison of identifiers is based on NFKC.
 
-* *Lu* - uppercase letters
-* *Ll* - lowercase letters
-* *Lt* - titlecase letters
-* *Lm* - modifier letters
-* *Lo* - other letters
-* *Nl* - letter numbers
-* *Mn* - nonspacing marks
-* *Mc* - spacing combining marks
-* *Nd* - decimal numbers
-* *Pc* - connector punctuations
-* *Other_ID_Start* - explicit list of characters in `PropList.txt
-  <https://www.unicode.org/Public/16.0.0/ucd/PropList.txt>`_ to support backwards
-  compatibility
-* *Other_ID_Continue* - likewise
+Formally, the first character of a normalized identifier must belong to the
+set ``id_start``, which is the union of:
 
-All identifiers are converted into the normal form NFKC while parsing; comparison
-of identifiers is based on NFKC.
+* Unicode category ``<Lu>`` - uppercase letters (includes ``A`` to ``Z``)
+* Unicode category ``<Ll>`` - lowercase letters (includes ``a`` to ``z``)
+* Unicode category ``<Lt>`` - titlecase letters
+* Unicode category ``<Lm>`` - modifier letters
+* Unicode category ``<Lo>`` - other letters
+* Unicode category ``<Nl>`` - letter numbers
+* {``"_"``} - the underscore
+* ``<Other_ID_Start>`` - an explicit set of characters in `PropList.txt`_
+  to support backwards compatibility
 
-A non-normative HTML file listing all valid identifier characters for Unicode
-16.0.0 can be found at
-https://www.unicode.org/Public/16.0.0/ucd/DerivedCoreProperties.txt
+The remaining characters must belong to the set ``id_continue``, which is the
+union of:
+
+* all characters in ``id_start``
+* Unicode category ``<Nd>`` - decimal numbers (includes ``0`` to ``9``)
+* Unicode category ``<Pc>`` - connector punctuations
+* Unicode category ``<Mn>`` - nonspacing marks
+* Unicode category ``<Mc>`` - spacing combining marks
+* ``<Other_ID_Continue>`` - another explicit set of characters in
+  `PropList.txt`_ to support backwards compatibility
+
+Unicode categories use the version of the Unicode Character Database as
+included in the :mod:`unicodedata` module.
+
+These sets are based on the Unicode standard annex `UAX-31`_.
+See also :pep:`3131` for further details.
+
+Even more formally, names are described by the following lexical definitions:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   NAME:         `xid_start` `xid_continue`*
+   id_start:     <Lu> | <Ll> | <Lt> | <Lm> | <Lo> | <Nl> | "_" | <Other_ID_Start>
+   id_continue:  `id_start` | <Nd> | <Pc> | <Mn> | <Mc> | <Other_ID_Continue>
+   xid_start:    <all characters in `id_start` whose NFKC normalization is
+                  in (`id_start` `xid_continue`*)">
+   xid_continue: <all characters in `id_continue` whose NFKC normalization is
+                  in (`id_continue`*)">
+   identifier:   <`NAME`, except keywords>
+
+A non-normative listing of all valid identifier characters as defined by
+Unicode is available in the `DerivedCoreProperties.txt`_ file in the Unicode
+Character Database.
+
+
+.. _UAX-31: https://www.unicode.org/reports/tr31/
+.. _PropList.txt: https://www.unicode.org/Public/16.0.0/ucd/PropList.txt
+.. _DerivedCoreProperties.txt: https://www.unicode.org/Public/16.0.0/ucd/DerivedCoreProperties.txt
+.. _normalization form: https://www.unicode.org/reports/tr15/#Norm_Forms
 
 
 .. _keywords:
@@ -351,7 +374,7 @@ Keywords
    single: keyword
    single: reserved word
 
-The following identifiers are used as reserved words, or *keywords* of the
+The following names are used as reserved words, or *keywords* of the
 language, and cannot be used as ordinary identifiers.  They must be spelled
 exactly as written here:
 
@@ -375,17 +398,18 @@ Soft Keywords
 
 .. versionadded:: 3.10
 
-Some identifiers are only reserved under specific contexts. These are known as
-*soft keywords*.  The identifiers ``match``, ``case``, ``type`` and ``_`` can
-syntactically act as keywords in certain contexts,
+Some names are only reserved under specific contexts. These are known as
+*soft keywords*:
+
+- ``match``, ``case``, and ``_``, when used in the :keyword:`match` statement.
+- ``type``, when used in the :keyword:`type` statement.
+
+These syntactically act as keywords in their specific contexts,
 but this distinction is done at the parser level, not when tokenizing.
 
 As soft keywords, their use in the grammar is possible while still
 preserving compatibility with existing code that uses these names as
 identifier names.
-
-``match``, ``case``, and ``_`` are used in the :keyword:`match` statement.
-``type`` is used in the :keyword:`type` statement.
 
 .. versionchanged:: 3.12
    ``type`` is now a soft keyword.
@@ -465,8 +489,9 @@ String literals are described by the following lexical definitions:
 
 .. productionlist:: python-grammar
    stringliteral: [`stringprefix`](`shortstring` | `longstring`)
-   stringprefix: "r" | "u" | "R" | "U" | "f" | "F"
+   stringprefix: "r" | "u" | "R" | "U" | "f" | "F" | "t" | "T"
                : | "fr" | "Fr" | "fR" | "FR" | "rf" | "rF" | "Rf" | "RF"
+               : | "tr" | "Tr" | "tR" | "TR" | "rt" | "rT" | "Rt" | "RT"
    shortstring: "'" `shortstringitem`* "'" | '"' `shortstringitem`* '"'
    longstring: "'''" `longstringitem`* "'''" | '"""' `longstringitem`* '"""'
    shortstringitem: `shortstringchar` | `stringescapeseq`
