@@ -1124,7 +1124,7 @@ class CodecCallbackTest(unittest.TestCase):
             text = 'abc<def>ghi'*n
             text.translate(charmap)
 
-    def test_mutatingdecodehandler(self):
+    def test_mutating_decode_handler(self):
         baddata = [
             ("ascii", b"\xff"),
             ("utf-7", b"++"),
@@ -1158,6 +1158,40 @@ class CodecCallbackTest(unittest.TestCase):
         # will lead to an endless loop
         for (encoding, data) in baddata:
             self.assertEqual(data.decode(encoding, "test.mutating"), "\u4242")
+
+    def test_mutating_decode_handler_unicode_escape(self):
+        decode = codecs.unicode_escape_decode
+        def mutating(exc):
+            if isinstance(exc, UnicodeDecodeError):
+                r = data.get(exc.object[:exc.end])
+                if r is not None:
+                    exc.object = r[0] + exc.object[exc.end:]
+                    return ('\u0404', r[1])
+            raise AssertionError("don't know how to handle %r" % exc)
+
+        codecs.register_error('test.mutating2', mutating)
+        data = {
+            br'\x0': (b'\\', 0),
+            br'\x3': (b'xxx\\', 3),
+            br'\x5': (b'x\\', 1),
+        }
+        def check(input, expected, msg):
+            with self.assertWarns(DeprecationWarning) as cm:
+                self.assertEqual(decode(input, 'test.mutating2'), (expected, len(input)))
+            self.assertIn(msg, str(cm.warning))
+
+        check(br'\x0n\z', '\u0404\n\\z', r"invalid escape sequence '\z'")
+        check(br'\x0z', '\u0404\\z', r"invalid escape sequence '\z'")
+
+        check(br'\x3n\zr', '\u0404\n\\zr', r"invalid escape sequence '\z'")
+        check(br'\x3zr', '\u0404\\zr', r"invalid escape sequence '\z'")
+        check(br'\x3z5', '\u0404\\z5', r"invalid escape sequence '\z'")
+        check(memoryview(br'\x3z5x')[:-1], '\u0404\\z5', r"invalid escape sequence '\z'")
+        check(memoryview(br'\x3z5xy')[:-2], '\u0404\\z5', r"invalid escape sequence '\z'")
+
+        check(br'\x5n\z', '\u0404\n\\z', r"invalid escape sequence '\z'")
+        check(br'\x5z', '\u0404\\z', r"invalid escape sequence '\z'")
+        check(memoryview(br'\x5zy')[:-1], '\u0404\\z', r"invalid escape sequence '\z'")
 
     # issue32583
     def test_crashing_decode_handler(self):
