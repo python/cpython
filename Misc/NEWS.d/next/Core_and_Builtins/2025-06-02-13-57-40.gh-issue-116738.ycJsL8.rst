@@ -1,0 +1,1 @@
+Make methods on :class:`heapq` thread-safe when the GIL is disabled.
