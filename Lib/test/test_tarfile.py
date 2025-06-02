@@ -3800,6 +3800,8 @@ class TestExtractionFilters(unittest.TestCase):
                 component = 'd' * 55
             elif sys.platform == 'win32':
                 component = 'd' * 25
+            elif sys.platform == 'android':
+                component = 'd' * 25
             else:
                 component = 'd' * 247
             steps = "abcdefghijklmnop"
