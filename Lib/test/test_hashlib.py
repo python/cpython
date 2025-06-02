@@ -100,7 +100,7 @@ def read_vectors(hash_name):
 
 DEPRECATED_STRING_PARAMETER = re.escape(
     "the 'string' keyword parameter is deprecated since "
-    "Python 3.15 and slated for removal in Python 3.17; "
+    "Python 3.15 and slated for removal in Python 3.19; "
     "use the 'data' keyword parameter or pass the data "
     "to hash as a positional argument instead"
 )
