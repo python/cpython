@@ -3813,7 +3813,8 @@ class TestExtractionFilters(unittest.TestCase):
             # this link will never be expanded by
             # os.path.realpath(strict=False), nor anything after it.
             linkpath = os.path.join(*steps, "l"*254)
-            arc.add(linkpath, symlink_to=os.path.join(*".." * len(steps)))
+            parent_segments = [".."] * len(steps)
+            arc.add(linkpath, symlink_to=os.path.join(*parent_segments))
             # make a symlink outside to keep the tar command happy
             arc.add("escape", symlink_to=os.path.join(linkpath, ".."))
             # use the symlinks above, that are not checked, to create a hardlink
