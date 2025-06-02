@@ -258,7 +258,7 @@ Exceptions
 
    Exception raised when one of the arguments *deserializer* and *serializer*
    is missing in the :func:`~shelve.open`, :class:`Shelf`, :class:`BsdDbShelf`
-   and :class:`DbfilenameShelf`
+   and :class:`DbfilenameShelf`.
 
    The *deserializer* and *serializer* arguments must be given together.
 
