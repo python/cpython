@@ -3788,6 +3788,10 @@ class TestExtractionFilters(unittest.TestCase):
     @symlink_test
     def test_realpath_limit_attack(self):
         # (CVE-2025-4517)
+
+        if not os_helper.can_symlink():
+            raise SkipTest('requires symlinking ability')
+
         with ArchiveMaker() as arc:
             # populate the symlinks and dirs that expand in os.path.realpath()
             # The number is chosen so that in common cases, the unexpanded

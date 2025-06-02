@@ -964,11 +964,14 @@ class TestNtpath(NtpathTestCase):
         # Automatic generation of short names may be disabled on
         # NTFS volumes for the sake of performance.
         # They're not supported at all on ReFS and exFAT.
-        subprocess.run(
+        p = subprocess.run(
             # Try to set the short name manually.
             ['fsutil.exe', 'file', 'setShortName', test_file, 'LONGFI~1.TXT'],
             creationflags=subprocess.DETACHED_PROCESS
         )
+
+        if p.returncode:
+            raise unittest.SkipTest('failed to set short name')
 
         try:
             self.assertPathEqual(test_file, ntpath.realpath(test_file_short))
@@ -988,6 +991,7 @@ class TestNtpath(NtpathTestCase):
         self.assertPathEqual(test_file, ntpath.realpath(test_file_short))
         with self.assertRaises(OSError):
             ntpath.realpath(test_file_short, strict=True)
+        with self.assertRaises(OSError):
             ntpath.realpath(test_file_short, strict='allow_missing')
 
     def test_expandvars(self):
