@@ -1370,6 +1370,23 @@ class TestUopsOptimization(unittest.TestCase):
         # Removed guard
         self.assertNotIn("_CHECK_FUNCTION_EXACT_ARGS", uops)
 
+    def test_method_guards_removed_or_reduced(self):
+
+        def testfunc(n):
+            for i in range(n):
+                test_bound_method(i)
+
+
+        testfunc(TIER2_THRESHOLD)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_FRAME", uops)
+        # Strength reduced version
+        self.assertIn("_CHECK_FUNCTION_VERSION_INLINE", uops)
+        self.assertNotIn("_CHECK_METHOD_VERSION", uops)
+
     def test_jit_error_pops(self):
         """
         Tests that the correct number of pops are inserted into the
@@ -2218,6 +2235,14 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_LOAD_ATTR_METHOD_WITH_VALUES", uops)
         self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
         self.assertNotIn("_LOAD_ATTR_METHOD_LAZY_DICT", uops)
+
+class TestObject:
+    def test(self, *args, **kwargs):
+        return args[0]
+
+temp_object = TestObject()
+
+test_bound_method = TestObject.test.__get__(temp_object)
 
 
 def global_identity(x):
