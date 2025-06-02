@@ -23,8 +23,10 @@ TOOLS_JIT_BUILD = pathlib.Path(__file__).resolve()
 TOOLS_JIT = TOOLS_JIT_BUILD.parent
 TOOLS = TOOLS_JIT.parent
 CPYTHON = TOOLS.parent
+EXTERNALS = CPYTHON / "externals"
 PYTHON_EXECUTOR_CASES_C_H = CPYTHON / "Python" / "executor_cases.c.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
+
 ASYNCIO_RUNNER = asyncio.Runner()
 
 _S = typing.TypeVar("_S", _schema.COFFSection, _schema.ELFSection, _schema.MachOSection)
@@ -45,6 +47,7 @@ class _Target(typing.Generic[_S, _R]):
     debug: bool = False
     verbose: bool = False
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
+    pyconfig_dir: pathlib.Path = pathlib.Path.cwd().resolve()
 
     def _get_nop(self) -> bytes:
         if re.fullmatch(r"aarch64-.*", self.triple):
@@ -55,13 +58,13 @@ class _Target(typing.Generic[_S, _R]):
             raise ValueError(f"NOP not defined for {self.triple}")
         return nop
 
-    def _compute_digest(self, out: pathlib.Path) -> str:
+    def _compute_digest(self) -> str:
         hasher = hashlib.sha256()
         hasher.update(self.triple.encode())
         hasher.update(self.debug.to_bytes())
         # These dependencies are also reflected in _JITSources in regen.targets:
         hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
-        hasher.update((out / "pyconfig.h").read_bytes())
+        hasher.update((self.pyconfig_dir / "pyconfig.h").read_bytes())
         for dirpath, _, filenames in sorted(os.walk(TOOLS_JIT)):
             for filename in filenames:
                 hasher.update(pathlib.Path(dirpath, filename).read_bytes())
@@ -123,7 +126,7 @@ class _Target(typing.Generic[_S, _R]):
             f"-D_JIT_OPCODE={opname}",
             "-D_PyJIT_ACTIVE",
             "-D_Py_JIT",
-            "-I.",
+            f"-I{self.pyconfig_dir}",
             f"-I{CPYTHON / 'Include'}",
             f"-I{CPYTHON / 'Include' / 'internal'}",
             f"-I{CPYTHON / 'Include' / 'internal' / 'mimalloc'}",
@@ -191,20 +194,19 @@ class _Target(typing.Generic[_S, _R]):
 
     def build(
         self,
-        out: pathlib.Path,
         *,
         comment: str = "",
         force: bool = False,
-        stencils_h: str = "jit_stencils.h",
+        jit_stencils: pathlib.Path,
     ) -> None:
         """Build jit_stencils.h in the given directory."""
+        jit_stencils.parent.mkdir(parents=True, exist_ok=True)
         if not self.stable:
             warning = f"JIT support for {self.triple} is still experimental!"
             request = "Please report any issues you encounter.".center(len(warning))
             outline = "=" * len(warning)
             print("\n".join(["", outline, warning, request, outline, ""]))
-        digest = f"// {self._compute_digest(out)}\n"
-        jit_stencils = out / stencils_h
+        digest = f"// {self._compute_digest()}\n"
         if (
             not force
             and jit_stencils.exists()
@@ -212,7 +214,7 @@ class _Target(typing.Generic[_S, _R]):
         ):
             return
         stencil_groups = ASYNCIO_RUNNER.run(self._build_stencils())
-        jit_stencils_new = out / "jit_stencils.h.new"
+        jit_stencils_new = jit_stencils.parent / "jit_stencils.h.new"
         try:
             with jit_stencils_new.open("w") as file:
                 file.write(digest)
