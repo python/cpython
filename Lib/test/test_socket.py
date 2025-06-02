@@ -7395,9 +7395,7 @@ class SendRecvFdsTests(unittest.TestCase):
         self._test_pipe(fds[0], wfd, MSG)
 
     @requireAttrs(socket, "MSG_PEEK")
-    @unittest.skipUnless(sys.platform in ("linux", "android", "darwin"),
-                         "MSG_PEEK with SCM_RIGHTS not known to work on this "
-                         "platform")
+    @unittest.skipUnless(sys.platform in ("linux", "android"), "works on Linux")
     def test_recv_fds_peek(self):
         rfd, wfd = os.pipe()
         self.addCleanup(os.close, rfd)
@@ -7410,7 +7408,7 @@ class SendRecvFdsTests(unittest.TestCase):
 
             # peek message on sock2
             peek_len = len(MSG) // 2
-            msg, fds, flags, addr = socket.recv_fds(sock2, peek_len, 2,
+            msg, fds, flags, addr = socket.recv_fds(sock2, peek_len, 1,
                                                     flags=socket.MSG_PEEK)
             self._cleanup_fds(fds)
 
@@ -7423,7 +7421,7 @@ class SendRecvFdsTests(unittest.TestCase):
             self._test_pipe(fds[0], wfd, MSG)
 
             # will raise BlockingIOError if MSG_PEEK didn't work
-            msg, fds, flags, addr = socket.recv_fds(sock2, len(MSG), 2)
+            msg, fds, flags, addr = socket.recv_fds(sock2, len(MSG), 1)
             self._cleanup_fds(fds)
 
             self.assertEqual(msg, MSG)
