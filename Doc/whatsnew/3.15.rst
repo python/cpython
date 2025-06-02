@@ -105,6 +105,13 @@ difflib
   (Contributed by Jiahao Li in :gh:`134580`.)
 
 
+math
+----
+
+* Add :func:`math.isnormal` and :func:`math.issubnormal` functions.
+  (Contributed by Sergey B Kirpichev in :gh:`132908`.)
+
+
 shelve
 ------
 
