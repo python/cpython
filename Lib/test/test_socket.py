@@ -7339,6 +7339,16 @@ class SendRecvFdsTests(unittest.TestCase):
         data = os.read(rfd, 512)
         self.assertEqual(data, msg)
 
+    @staticmethod
+    def _recv_one_fd(sock, bufsize, flags=0):
+        if sys.platform.startswith("freebsd"):
+            # FreeBSD requires at least CMSG_LEN(2*sizeof(int)),
+            # otherwise the access control message is truncated.
+            max_fds = 2
+        else:
+            max_fds = 1
+        return socket.recv_fds(sock, bufsize, max_fds, flags)
+
     def testSendAndRecvFds(self):
         # send 10 file descriptors
         pipes = [os.pipe() for _ in range(10)]
@@ -7377,13 +7387,7 @@ class SendRecvFdsTests(unittest.TestCase):
             sock2.setblocking(False)
 
             socket.send_fds(sock1, [MSG], [rfd], address=sock2_addr)
-            if sys.platform.startswith("freebsd"):
-                # FreeBSD requires at least CMSG_LEN(2*sizeof(int)),
-                # otherwise the access control message is truncated.
-                recv_fds_len = 2
-            else:
-                recv_fds_len = 1
-            msg, fds, flags, addr = socket.recv_fds(sock2, len(MSG), recv_fds_len)
+            msg, fds, flags, addr = self._recv_one_fd(sock2, len(MSG))
             self._cleanup_fds(fds)
 
         self.assertEqual(msg, MSG)
@@ -7448,13 +7452,7 @@ class SendRecvFdsTests(unittest.TestCase):
                 for _ in range(64 * 1024):
                     socket.send_fds(sock1, [MSG], [rfd], socket.MSG_DONTWAIT)
 
-            if sys.platform.startswith("freebsd"):
-                # FreeBSD requires at least CMSG_LEN(2*sizeof(int)),
-                # otherwise the access control message is truncated.
-                recv_fds_len = 2
-            else:
-                recv_fds_len = 1
-            msg, fds, flags, addr = socket.recv_fds(sock2, len(MSG), recv_fds_len)
+            msg, fds, flags, addr = self._recv_one_fd(sock2, len(MSG))
             self._cleanup_fds(fds)
 
         self.assertEqual(msg, MSG)
