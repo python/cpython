@@ -1,0 +1,2 @@
+Provide C99 Annex F return values for :mod:`math`'s functions as the ``value``
+attribute of the :exc:`ValueError` exception object.  Patch by Sergey B Kirpichev.

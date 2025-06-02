@@ -840,6 +840,20 @@ math_lcm_impl(PyObject *module, PyObject * const *args,
 }
 
 
+static void
+set_exc_value(double x)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    PyObject *value = PyFloat_FromDouble(x);
+
+    if (value) {
+        PyObject_SetAttrString(exc, "value", value);
+    }
+    Py_XDECREF(value);
+    PyErr_SetRaisedException(exc);
+}
+
+
 /* Call is_error when errno != 0, and where x is the result libm
  * returned.  is_error will usually set up an exception and return
  * true (1), but may return false (0) without setting up an exception.
@@ -852,6 +866,7 @@ is_error(double x, int raise_edom)
     if (errno == EDOM) {
         if (raise_edom) {
             PyErr_SetString(PyExc_ValueError, "math domain error");
+            set_exc_value(x);
         }
     }
 
@@ -954,6 +969,7 @@ domain_err:
 	else {
 		PyErr_SetString(PyExc_ValueError, "math domain error");
 	}
+    set_exc_value(r);
     return NULL;
 }
 
@@ -979,6 +995,7 @@ math_1a(PyObject *arg, double (*func) (double), const char *err_msg)
                 PyMem_Free(buf);
             }
         }
+        set_exc_value(r);
         return NULL;
     }
     return PyFloat_FromDouble(r);
