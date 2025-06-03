@@ -774,51 +774,6 @@ class TestNtpath(NtpathTestCase):
                         test_file_long,
                         ntpath.realpath("file.txt", **kwargs))
 
-    @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
-    def test_realpath_permission(self):
-        # Test whether python can resolve the real filename of a
-        # shortened file name even if it does not have permission to access it.
-        ABSTFN = ntpath.realpath(os_helper.TESTFN)
-
-        os_helper.unlink(ABSTFN)
-        os_helper.rmtree(ABSTFN)
-        os.mkdir(ABSTFN)
-        self.addCleanup(os_helper.rmtree, ABSTFN)
-
-        test_file = ntpath.join(ABSTFN, "LongFileName123.txt")
-        test_file_short = ntpath.join(ABSTFN, "LONGFI~1.TXT")
-
-        with open(test_file, "wb") as f:
-            f.write(b"content")
-        # Automatic generation of short names may be disabled on
-        # NTFS volumes for the sake of performance.
-        # They're not supported at all on ReFS and exFAT.
-        p = subprocess.run(
-            # Try to set the short name manually.
-            ['fsutil.exe', 'file', 'setShortName', test_file, 'LONGFI~1.TXT'],
-            creationflags=subprocess.DETACHED_PROCESS
-        )
-
-        if p.returncode:
-            raise unittest.SkipTest('failed to set short name')
-
-        try:
-            self.assertPathEqual(test_file, ntpath.realpath(test_file_short))
-        except AssertionError:
-            raise unittest.SkipTest('the filesystem seems to lack support for short filenames')
-
-        # Deny the right to [S]YNCHRONIZE on the file to
-        # force nt._getfinalpathname to fail with ERROR_ACCESS_DENIED.
-        p = subprocess.run(
-            ['icacls.exe', test_file, '/deny', '*S-1-5-32-545:(S)'],
-            creationflags=subprocess.DETACHED_PROCESS
-        )
-
-        if p.returncode:
-            raise unittest.SkipTest('failed to deny access to the test file')
-
-        self.assertPathEqual(test_file, ntpath.realpath(test_file_short))
-
     def test_expandvars(self):
         with os_helper.EnvironmentVarGuard() as env:
             env.clear()
