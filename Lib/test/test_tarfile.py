@@ -2533,7 +2533,7 @@ class MiscTest(unittest.TestCase):
             "fully_trusted_filter", "data_filter",
             "tar_filter", "FilterError", "AbsoluteLinkError",
             "OutsideDestinationError", "SpecialFileError", "AbsolutePathError",
-            "LinkOutsideDestinationError",
+            "LinkOutsideDestinationError", "LinkFallbackError",
             }
         support.check__all__(self, tarfile, not_exported=not_exported)
 
