@@ -302,7 +302,7 @@ a file or file-like object.
 
    .. versionadded:: 3.11
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.13.4
       Now raises a :exc:`BlockingIOError` if the file is opened in blocking
       mode. Previously, spurious null bytes were added to the digest.
 

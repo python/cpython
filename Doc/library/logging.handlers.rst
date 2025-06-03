@@ -1180,7 +1180,7 @@ possible, while any potentially slow operations (such as sending an email via
       This starts up a background thread to monitor the queue for
       LogRecords to process.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.13.4
          Raises :exc:`RuntimeError` if called and the listener is already
          running.
 

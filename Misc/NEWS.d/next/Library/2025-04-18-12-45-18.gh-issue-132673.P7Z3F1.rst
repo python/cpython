@@ -1,2 +1,0 @@
-Fix a crash when using ``_align_ = 0`` and ``_fields_ = []`` in a
-:class:`ctypes.Structure`.

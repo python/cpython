@@ -470,7 +470,7 @@ The AF_* and SOCK_* constants are now :class:`AddressFamily` and
    .. versionchanged:: 3.11
       NetBSD support was added.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.13.4
       Restored missing ``CAN_RAW_ERR_FILTER`` on Linux.
 
 .. data:: CAN_BCM
