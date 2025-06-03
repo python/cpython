@@ -527,6 +527,15 @@ codegen_unwind_fblock(compiler *c, location *ploc,
         case COMPILE_FBLOCK_FOR_LOOP:
             /* Pop the iterator */
             if (preserve_tos) {
+                ADDOP_I(c, *ploc, SWAP, 3);
+            }
+            ADDOP(c, *ploc, POP_TOP);
+            ADDOP(c, *ploc, POP_TOP);
+            return SUCCESS;
+
+        case COMPILE_FBLOCK_ASYNC_FOR_LOOP:
+            /* Pop the iterator */
+            if (preserve_tos) {
                 ADDOP_I(c, *ploc, SWAP, 2);
             }
             ADDOP(c, *ploc, POP_TOP);
@@ -629,7 +638,8 @@ codegen_unwind_fblock_stack(compiler *c, location *ploc,
             c, *ploc, "'break', 'continue' and 'return' cannot appear in an except* block");
     }
     if (loop != NULL && (top->fb_type == COMPILE_FBLOCK_WHILE_LOOP ||
-                         top->fb_type == COMPILE_FBLOCK_FOR_LOOP)) {
+                         top->fb_type == COMPILE_FBLOCK_FOR_LOOP ||
+                         top->fb_type == COMPILE_FBLOCK_ASYNC_FOR_LOOP)) {
         *loop = top;
         return SUCCESS;
     }
@@ -2125,7 +2135,7 @@ codegen_async_for(compiler *c, stmt_ty s)
     ADDOP(c, LOC(s->v.AsyncFor.iter), GET_AITER);
 
     USE_LABEL(c, start);
-    RETURN_IF_ERROR(_PyCompile_PushFBlock(c, loc, COMPILE_FBLOCK_FOR_LOOP, start, end, NULL));
+    RETURN_IF_ERROR(_PyCompile_PushFBlock(c, loc, COMPILE_FBLOCK_ASYNC_FOR_LOOP, start, end, NULL));
 
     /* SETUP_FINALLY to guard the __anext__ call */
     ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
@@ -2142,7 +2152,7 @@ codegen_async_for(compiler *c, stmt_ty s)
     /* Mark jump as artificial */
     ADDOP_JUMP(c, NO_LOCATION, JUMP, start);
 
-    _PyCompile_PopFBlock(c, COMPILE_FBLOCK_FOR_LOOP, start);
+    _PyCompile_PopFBlock(c, COMPILE_FBLOCK_ASYNC_FOR_LOOP, start);
 
     /* Except block for __anext__ */
     USE_LABEL(c, except);
@@ -3895,10 +3905,11 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         NEW_JUMP_TARGET_LABEL(c, loop);
         NEW_JUMP_TARGET_LABEL(c, cleanup);
 
+        ADDOP(c, loc, PUSH_NULL); // Push NULL index for loop
         USE_LABEL(c, loop);
         ADDOP_JUMP(c, loc, FOR_ITER, cleanup);
         if (const_oparg == CONSTANT_BUILTIN_TUPLE) {
-            ADDOP_I(c, loc, LIST_APPEND, 2);
+            ADDOP_I(c, loc, LIST_APPEND, 3);
             ADDOP_JUMP(c, loc, JUMP, loop);
         }
         else {
@@ -4442,13 +4453,12 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
             }
             if (IS_JUMP_TARGET_LABEL(start)) {
                 VISIT(c, expr, gen->iter);
-                ADDOP(c, LOC(gen->iter), GET_ITER);
             }
         }
     }
 
     if (IS_JUMP_TARGET_LABEL(start)) {
-        depth++;
+        depth += 2;
         ADDOP(c, LOC(gen->iter), GET_ITER);
         USE_LABEL(c, start);
         ADDOP_JUMP(c, LOC(gen->iter), FOR_ITER, anchor);
@@ -4543,9 +4553,9 @@ codegen_async_comprehension_generator(compiler *c, location loc,
         else {
             /* Sub-iter - calculate on the fly */
             VISIT(c, expr, gen->iter);
-            ADDOP(c, LOC(gen->iter), GET_AITER);
         }
     }
+    ADDOP(c, LOC(gen->iter), GET_AITER);
 
     USE_LABEL(c, start);
     /* Runtime will push a block here, so we need to account for that */
@@ -4757,19 +4767,6 @@ pop_inlined_comprehension_state(compiler *c, location loc,
     return SUCCESS;
 }
 
-static inline int
-codegen_comprehension_iter(compiler *c, comprehension_ty comp)
-{
-    VISIT(c, expr, comp->iter);
-    if (comp->is_async) {
-        ADDOP(c, LOC(comp->iter), GET_AITER);
-    }
-    else {
-        ADDOP(c, LOC(comp->iter), GET_ITER);
-    }
-    return SUCCESS;
-}
-
 static int
 codegen_comprehension(compiler *c, expr_ty e, int type,
                       identifier name, asdl_comprehension_seq *generators, expr_ty elt,
@@ -4789,9 +4786,7 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
 
     outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
     if (is_inlined) {
-        if (codegen_comprehension_iter(c, outermost)) {
-            goto error;
-        }
+        VISIT(c, expr, outermost->iter);
         if (push_inlined_comprehension_state(c, loc, entry, &inline_state)) {
             goto error;
         }

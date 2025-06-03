@@ -57,6 +57,15 @@ def spam_with_globals_and_builtins():
     print(res)
 
 
+def spam_full_args(a, b, /, c, d, *args, e, f, **kwargs):
+    return (a, b, c, d, e, f, args, kwargs)
+
+
+def spam_full_args_with_defaults(a=-1, b=-2, /, c=-3, d=-4, *args,
+                                 e=-5, f=-6, **kwargs):
+    return (a, b, c, d, e, f, args, kwargs)
+
+
 def spam_args_attrs_and_builtins(a, b, /, c, d, *args, e, f, **kwargs):
     if args.__len__() > 2:
         return None
@@ -65,6 +74,10 @@ def spam_args_attrs_and_builtins(a, b, /, c, d, *args, e, f, **kwargs):
 
 def spam_returns_arg(x):
     return x
+
+
+def spam_raises():
+    raise Exception('spam!')
 
 
 def spam_with_inner_not_closure():
@@ -177,8 +190,11 @@ TOP_FUNCTIONS = [
     spam_minimal,
     spam_with_builtins,
     spam_with_globals_and_builtins,
+    spam_full_args,
+    spam_full_args_with_defaults,
     spam_args_attrs_and_builtins,
     spam_returns_arg,
+    spam_raises,
     spam_with_inner_not_closure,
     spam_with_inner_closure,
     spam_annotated,
@@ -219,8 +235,10 @@ STATELESS_FUNCTIONS = [
     spam,
     spam_minimal,
     spam_with_builtins,
+    spam_full_args,
     spam_args_attrs_and_builtins,
     spam_returns_arg,
+    spam_raises,
     spam_annotated,
     spam_with_inner_not_closure,
     spam_with_inner_closure,
@@ -238,6 +256,7 @@ STATELESS_FUNCTIONS = [
 STATELESS_CODE = [
     *STATELESS_FUNCTIONS,
     script_with_globals,
+    spam_full_args_with_defaults,
     spam_with_globals_and_builtins,
     spam_full,
 ]
@@ -248,6 +267,7 @@ PURE_SCRIPT_FUNCTIONS = [
     script_with_explicit_empty_return,
     spam_minimal,
     spam_with_builtins,
+    spam_raises,
     spam_with_inner_not_closure,
     spam_with_inner_closure,
 ]

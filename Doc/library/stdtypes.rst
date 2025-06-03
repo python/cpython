@@ -1214,6 +1214,8 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 | ``s[i] = x``                 | item *i* of *s* is replaced by |                     |
 |                              | *x*                            |                     |
 +------------------------------+--------------------------------+---------------------+
+| ``del s[i]``                 | removes item *i* of *s*        |                     |
++------------------------------+--------------------------------+---------------------+
 | ``s[i:j] = t``               | slice of *s* from *i* to *j*   |                     |
 |                              | is replaced by the contents of |                     |
 |                              | the iterable *t*               |                     |
@@ -1788,8 +1790,14 @@ expression support in the :mod:`re` module).
 
    Return centered in a string of length *width*. Padding is done using the
    specified *fillchar* (default is an ASCII space). The original string is
-   returned if *width* is less than or equal to ``len(s)``.
+   returned if *width* is less than or equal to ``len(s)``.  For example::
 
+      >>> 'Python'.center(10)
+      '  Python  '
+      >>> 'Python'.center(10, '-')
+      '--Python--'
+      >>> 'Python'.center(4)
+      'Python'
 
 
 .. method:: str.count(sub[, start[, end]])
@@ -1799,8 +1807,18 @@ expression support in the :mod:`re` module).
    interpreted as in slice notation.
 
    If *sub* is empty, returns the number of empty strings between characters
-   which is the length of the string plus one.
+   which is the length of the string plus one. For example::
 
+      >>> 'spam, spam, spam'.count('spam')
+      3
+      >>> 'spam, spam, spam'.count('spam', 5)
+      2
+      >>> 'spam, spam, spam'.count('spam', 5, 10)
+      1
+      >>> 'spam, spam, spam'.count('eggs')
+      0
+      >>> 'spam, spam, spam'.count('')
+      17
 
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
