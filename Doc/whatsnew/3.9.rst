@@ -1670,9 +1670,10 @@ Notable changes in 3.9.23
 os.path
 -------
 
-* The *strict* parameter to :func:`os.path.realpath` accepts a new value,
-  :data:`os.path.ALLOW_MISSING`.
-  If used, errors other than :exc:`FileNotFoundError` will be re-raised;
+* The *strict* parameter was backported to :func:`os.path.realpath` to
+  allow for ``tarfile`` to use it for security vulnerability mitigation.
+  In particular, when *strict* is set to :data:`os.path.ALLOW_MISSING`,
+  errors other than :exc:`FileNotFoundError` will be re-raised;
   the resulting path can be missing but it will be free of symlinks.
   (Contributed by Petr Viktorin for CVE 2025-4517.)
 
