@@ -2067,7 +2067,7 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, [testname],
                                   failed=[testname],
                                   parallel=True,
-                                  stats=TestStats(1, 1, 0))
+                                  stats=TestStats(1, 2, 1))
 
     def _check_random_seed(self, run_workers: bool):
         # gh-109276: When -r/--randomize is used, random.seed() is called
