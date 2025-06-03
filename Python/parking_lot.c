@@ -115,11 +115,12 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, PyTime_t timeout)
     HANDLE handles[2] = { sema->platform_sem, NULL };
     HANDLE sigint_event = NULL;
     DWORD count = 1;
-    if (_PyOS_IsMainThread()) {
+    if (_Py_IsMainThread()) {
         // gh-135099: Wait on the SIGINT event only in the main thread. Other
         // threads would ignore the result anyways, and accessing
-        //  `_PyOS_SigintEvent()` from non-main threads may race with
-        // interpreter shutdown, which closes the event handle.
+        // `_PyOS_SigintEvent()` from non-main threads may race with
+        // interpreter shutdown, which closes the event handle. Note that
+        // non-main interpreters will ignore the result.
         sigint_event = _PyOS_SigintEvent();
         if (sigint_event != NULL) {
             handles[1] = sigint_event;
