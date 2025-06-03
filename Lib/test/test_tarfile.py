@@ -3838,16 +3838,10 @@ class TestExtractionFilters(unittest.TestCase):
             if sys.platform == 'win32':
                 self.expect_exception((FileNotFoundError, FileExistsError))
             elif self.raised_exception:
-                # This block should never enter. This is left for debugging why
-                # there was an unexpected exception.
-                # Most likely, the guess for number of components was wrong?
-                try:
-                    raise self.raised_exception
-                except KeyError:
-                    pass
-                except OSError as exc:
-                    self.assertEqual(exc.errno, errno.ENAMETOOLONG)
-            elif os_helper.can_symlink() and os_helper.can_hardlink():
+                # Cannot symlink/hardlink: tarfile falls back to getmember()
+                self.expect_exception(KeyError)
+                # Otherwise, this block should never enter.
+            else:
                 self.expect_any_tree(component)
                 self.expect_file('flaglink', content='overwrite')
                 self.expect_file('../newfile', content='new')
@@ -3856,8 +3850,8 @@ class TestExtractionFilters(unittest.TestCase):
 
         for filter in 'tar', 'data':
             with self.subTest(filter), self.check_context(arc.open(), filter=filter):
-                if os_helper.can_hardlink():
-                    exc = self.expect_exception(OSError)
+                exc = self.expect_exception((OSError, KeyError))
+                if isinstance(exc, OSError):
                     if sys.platform == 'win32':
                         # 3: ERROR_PATH_NOT_FOUND
                         # 5: ERROR_ACCESS_DENIED
@@ -3865,8 +3859,6 @@ class TestExtractionFilters(unittest.TestCase):
                         self.assertIn(exc.winerror, (3, 5, 206))
                     else:
                         self.assertEqual(exc.errno, errno.ENAMETOOLONG)
-                else:
-                    self.expect_exception(KeyError)
 
     @symlink_test
     def test_parent_symlink2(self):
