@@ -18,6 +18,7 @@ Data members:
 #include "pycore_audit.h"         // _Py_AuditHookEntry
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_SetAsyncGenFinalizer()
+#include "pycore_object_deferred.h" // _PyObject_HasDeferredRefcount
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_import.h"        // _PyImport_SetDLOpenFlags()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
@@ -1095,6 +1096,19 @@ sys_get_object_tags(PyObject *module, PyObject *op)
             return NULL;
         }
     }
+
+    if (_PyObject_HasDeferredRefcount(op)) {
+        if (PyDict_SetItemString(dict, "deferred_refcount", Py_True) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+    }
+    else {
+        if (PyDict_SetItemString(dict, "deferred_refcount", Py_False) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+    }
     return dict;
 }
 
@@ -1120,6 +1134,9 @@ sys_set_object_tag_impl(PyObject *module, PyObject *object, const char *tag,
     }
     else if (strcmp(tag, "interned") == 0) {
         _PyUnicode_InternMortal(_PyInterpreterState_GET(), &object);
+    }
+    else if(strcmp(tag, "deferred_refcount") == 0) {
+        PyUnstable_Object_EnableDeferredRefcount(object);
     }
     Py_RETURN_NONE;
 }

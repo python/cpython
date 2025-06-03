@@ -787,7 +787,7 @@ class SysModuleTest(unittest.TestCase):
 
     @support.cpython_only
     def test_get_object_tags(self):
-        keys = ("immortal", "interned")
+        keys = ("immortal", "interned", "deferred_refcount")
         s = "foobar"
         tags = sys.get_object_tags(s)
         self.assertEqual(len(tags), len(keys))
@@ -796,7 +796,7 @@ class SysModuleTest(unittest.TestCase):
 
     @support.cpython_only
     def test_set_object_tags(self):
-        keys = ("immortal", "interned")
+        keys = ("immortal", "interned", "deferred_refcount")
         s = "should never interned before" + str(random.randrange(0, 10**9))
         origin_tags = sys.get_object_tags(s)
         for k in keys:
