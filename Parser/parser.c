@@ -14,7 +14,7 @@
 #    define MAXSTACK 4000
 #  endif
 #else
-#  define MAXSTACK 4000
+#  define MAXSTACK 6000
 #endif
 static const int n_keyword_lists = 9;
 static KeywordToken *reserved_keywords[] = {
