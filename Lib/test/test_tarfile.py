@@ -3793,18 +3793,20 @@ class TestExtractionFilters(unittest.TestCase):
 
         with ArchiveMaker() as arc:
             # populate the symlinks and dirs that expand in os.path.realpath()
-            # The number is chosen so that in common cases, the unexpanded
+            # The component length is chosen so that in common cases, the unexpanded
             # path fits in PATH_MAX, but it overflows when the final symlink
             # is expanded
-            if sys.platform == 'darwin':
-                component = 'd' * 55
-            elif sys.platform == 'win32':
-                component = 'd' * 25
-            elif sys.platform == 'android':
-                component = 'd' * 25
-            else:
-                component = 'd' * 247
             steps = "abcdefghijklmnop"
+            if sys.platform == 'win32':
+                component = 'd' * 25
+            elif 'PC_PATH_MAX' in os.pathconf_names:
+                max_path_len = os.pathconf(self.outerdir.parent, "PC_PATH_MAX")
+                path_sep_len = 1
+                dest_len = len(str(self.destdir)) + path_sep_len
+                component_len = (max_path_len - dest_len) // (len(steps) + path_sep_len)
+                component = 'd' * component_len
+            else:
+                raise NotImplementedError("Need to guess component length for {sys.platform}")
             path = ""
             step_path = ""
             for i in steps:
@@ -3836,7 +3838,9 @@ class TestExtractionFilters(unittest.TestCase):
             if sys.platform == 'win32':
                 self.expect_exception((FileNotFoundError, FileExistsError))
             elif self.raised_exception:
-                # Most likely, guess for number of components was wrong?
+                # This block should never enter. This is left for debugging why
+                # there was an unexpected exception.
+                # Most likely, the guess for number of components was wrong?
                 try:
                     raise self.raised_exception
                 except KeyError:
@@ -3851,7 +3855,7 @@ class TestExtractionFilters(unittest.TestCase):
                 self.expect_file('a', symlink_to=component)
 
         for filter in 'tar', 'data':
-            with self.subTest(filter), self.check_context(arc.open(), filter='tar'):
+            with self.subTest(filter), self.check_context(arc.open(), filter=filter):
                 if os_helper.can_hardlink():
                     exc = self.expect_exception(OSError)
                     if sys.platform == 'win32':
