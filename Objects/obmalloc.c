@@ -1141,8 +1141,27 @@ free_work_item(uintptr_t ptr, delayed_dealloc_cb cb, void *state)
     }
 }
 
+static int
+should_advance_qsbr(_PyThreadStateImpl *tstate, size_t size)
+{
+    // If the deferred memory exceeds 1 MiB, we force an advance in the
+    // shared QSBR sequence number to limit excess memory usage.
+    static const size_t QSBR_DEFERRED_LIMIT = 1024 * 1024;
+    if (size > QSBR_DEFERRED_LIMIT) {
+        tstate->qsbr->memory_deferred = 0;
+        return 1;
+    }
+
+    tstate->qsbr->memory_deferred += size;
+    if (tstate->qsbr->memory_deferred > QSBR_DEFERRED_LIMIT) {
+        tstate->qsbr->memory_deferred = 0;
+        return 1;
+    }
+    return 0;
+}
+
 static void
-free_delayed(uintptr_t ptr)
+free_delayed(uintptr_t ptr, size_t size)
 {
 #ifndef Py_GIL_DISABLED
     free_work_item(ptr, NULL, NULL);
@@ -1200,23 +1219,29 @@ free_delayed(uintptr_t ptr)
     }
 
     assert(buf != NULL && buf->wr_idx < WORK_ITEMS_PER_CHUNK);
-    uint64_t seq = _Py_qsbr_deferred_advance(tstate->qsbr);
+    uint64_t seq;
+    int force_advance = should_advance_qsbr(tstate, size);
+    if (force_advance) {
+        seq = _Py_qsbr_advance(tstate->qsbr->shared);
+    }
+    else {
+        seq = _Py_qsbr_deferred_advance(tstate->qsbr);
+    }
     buf->array[buf->wr_idx].ptr = ptr;
     buf->array[buf->wr_idx].qsbr_goal = seq;
     buf->wr_idx++;
-
-    if (buf->wr_idx == WORK_ITEMS_PER_CHUNK) {
+    if (buf->wr_idx == WORK_ITEMS_PER_CHUNK || force_advance) {
         _PyMem_ProcessDelayed((PyThreadState *)tstate);
     }
 #endif
 }
 
 void
-_PyMem_FreeDelayed(void *ptr)
+_PyMem_FreeDelayed(void *ptr, size_t size)
 {
     assert(!((uintptr_t)ptr & 0x01));
     if (ptr != NULL) {
-        free_delayed((uintptr_t)ptr);
+        free_delayed((uintptr_t)ptr, size);
     }
 }
 
@@ -1226,7 +1251,7 @@ _PyObject_XDecRefDelayed(PyObject *ptr)
 {
     assert(!((uintptr_t)ptr & 0x01));
     if (ptr != NULL) {
-        free_delayed(((uintptr_t)ptr)|0x01);
+        free_delayed(((uintptr_t)ptr)|0x01, 64);
     }
 }
 #endif

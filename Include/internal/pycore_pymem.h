@@ -88,7 +88,7 @@ extern wchar_t *_PyMem_DefaultRawWcsdup(const wchar_t *str);
 extern int _PyMem_DebugEnabled(void);
 
 // Enqueue a pointer to be freed possibly after some delay.
-extern void _PyMem_FreeDelayed(void *ptr);
+extern void _PyMem_FreeDelayed(void *ptr, size_t size);
 
 // Enqueue an object to be freed possibly after some delay
 #ifdef Py_GIL_DISABLED
