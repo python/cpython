@@ -472,10 +472,6 @@ class TestNtpath(NtpathTestCase):
             self.assertEqual(ABSTFN + "\0spam",
                                 ntpath.realpath(os_helper.TESTFN + "\0spam", **kwargs))
 
-        # gh-106242: Embedded nulls and non-strict fallback to abspath
-        self.assertEqual(ABSTFN + "\0spam",
-                         ntpath.realpath(os_helper.TESTFN + "\0spam", strict=False))
-
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_strict(self):
