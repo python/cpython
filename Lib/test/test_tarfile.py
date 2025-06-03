@@ -3299,7 +3299,7 @@ class TestExtractionFilters(unittest.TestCase):
     destdir = outerdir / 'dest'
 
     @contextmanager
-    def check_context(self, tar, filter, *, check_flag=True):
+    def check_context(self, tar, filter, *, check_flag=True, ignored_trees=()):
         """Extracts `tar` to `self.destdir` and allows checking the result
 
         If an error occurs, it must be checked using `expect_exception`
@@ -3312,6 +3312,10 @@ class TestExtractionFilters(unittest.TestCase):
         A file called 'flag' is made in outerdir (i.e. outside destdir)
         before extraction; it should not be altered nor should its contents
         be read/copied.
+
+        *ignored_trees* is a set of directories to remove (including their
+        contents) right after the archive is extracted. It is a workaround
+        for Path.glob() failing to get all files in Python 3.10 and below.
         """
         with support.temp_dir(self.outerdir):
             flag_path = self.outerdir / 'flag'
@@ -3323,6 +3327,8 @@ class TestExtractionFilters(unittest.TestCase):
                 self.reraise_exception = True
                 self.expected_paths = set()
             else:
+                for ignored_tree in ignored_trees:
+                    os_helper.rmtree((self.destdir / ignored_tree).resolve())
                 self.raised_exception = None
                 self.reraise_exception = False
                 self.expected_paths = set(self.outerdir.glob('**/*'))
@@ -3534,7 +3540,7 @@ class TestExtractionFilters(unittest.TestCase):
 
         with (self.subTest('fully_trusted'),
               self.check_context(arc.open(), filter='fully_trusted',
-                                 check_flag=False)):
+                                 check_flag=False, ignored_trees={component})):
             if sys.platform == 'win32':
                 self.expect_exception((FileNotFoundError, FileExistsError))
             elif self.raised_exception:
@@ -3542,7 +3548,6 @@ class TestExtractionFilters(unittest.TestCase):
                 self.expect_exception(KeyError)
                 # Otherwise, this block should never enter.
             else:
-                self.expect_any_tree(component)
                 self.expect_file('flaglink', content='overwrite')
                 self.expect_file('../newfile', content='new')
                 self.expect_file('escape', type=tarfile.SYMTYPE)
