@@ -2960,7 +2960,7 @@ _Py_Specialize_ForIter(_PyStackRef iter, _PyStackRef null_or_index, _Py_CODEUNIT
     }
 failure:
     SPECIALIZATION_FAIL(FOR_ITER,
-                        _PySpecialization_ClassifyIterator(iter_o));
+                        _PySpecialization_ClassifyIterator(PyStackRef_AsPyObjectBorrow(iter)));
     unspecialize(instr);
 }
 
