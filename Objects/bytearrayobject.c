@@ -709,8 +709,9 @@ bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *value
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     PyByteArrayObject *self = _PyByteArray_CAST(op);
     Py_ssize_t start, stop, step, slicelen;
-    // GH-91153: we cannot store a reference to the internal buffer here, as _getbytevalue might call into python code
-    // that could then invalidate it.
+    // Do not store a reference to the internal buffer since
+    // index.__index__() or _getbytevalue() may alter 'self'.
+    // See https://github.com/python/cpython/issues/91153.
 
     if (_PyIndex_Check(index)) {
         Py_ssize_t i = PyNumber_AsSsize_t(index, PyExc_IndexError);

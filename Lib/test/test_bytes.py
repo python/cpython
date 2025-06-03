@@ -1893,21 +1893,14 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         # See gh-91153
 
         class MutatesOnIndex:
-            new_ba: bytearray
 
             def __init__(self):
                 self.ba = bytearray(0x180)
 
             def __index__(self):
-                # Clear the original bytearray, mutating it during index assignment.
-                # If the internal buffers are held over this operation, they become dangling
-                # However, this will fail a bounds check as above (as the clear sets bounds to zero)
                 self.ba.clear()
-                # At this moment, the bytearray potentially has a dangling pointer
-                # Create a new bytearray to catch any writes
-                self.new_ba = bytearray(0x180)
-                # Ensure bounds check passes
-                self.ba.extend([0] * 0x180)
+                self.new_ba = bytearray(0x180)  # to catch out-of-bounds writes
+                self.ba.extend([0] * 0x180)     # to check bounds checks
                 return 0
 
         with self.subTest("skip_bounds_safety"):

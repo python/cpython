@@ -1,3 +1,1 @@
-Fix an issue where a :class:`bytearray` item assignment could crash or write
-to the wrong bytearray when resized by the new value's
-:meth:`~object.__index__` method.
+Fix a crash when a :class:`bytearray` is concurrently mutated during item assignment.
