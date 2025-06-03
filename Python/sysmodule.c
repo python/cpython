@@ -1108,6 +1108,7 @@ sys_set_object_tag_impl(PyObject *module, PyObject *object, const char *tag,
 {
     assert(object != NULL);
     if (strcmp(tag, "interned") == 0) {
+        Py_INCREF(object);
         _PyUnicode_InternMortal(_PyInterpreterState_GET(), &object);
     }
     else if(strcmp(tag, "deferred_refcount") == 0) {
