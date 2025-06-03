@@ -1,0 +1,2 @@
+Add :func:`sys.get_object_tags` and :func:`sys.set_object_tags` for handling
+CPython object implementation detail. Patch By Donghee Na.
