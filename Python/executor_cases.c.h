@@ -4347,11 +4347,11 @@
             _PyStackRef next;
             null_or_index = stack_pointer[-1];
             iter = stack_pointer[-2];
-            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             if (!PyStackRef_IsNull(null_or_index)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);

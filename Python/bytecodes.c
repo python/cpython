@@ -3226,9 +3226,8 @@ dummy_func(
         }
 
         op(_FOR_ITER_TIER_TWO, (iter, null_or_index -- iter, null_or_index, next)) {
-            /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
-            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             EXIT_IF(!PyStackRef_IsNull(null_or_index));
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
             if (next_o == NULL) {
                 if (_PyErr_Occurred(tstate)) {
