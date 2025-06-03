@@ -21907,9 +21907,8 @@ ac_fn_check_decl "$LINENO" "UT_NAMESIZE" "ac_cv_have_decl_UT_NAMESIZE" "#include
 if test "x$ac_cv_have_decl_UT_NAMESIZE" = xyes
 then :
   ac_have_decl=1
-else case e in #(
-  e) ac_have_decl=0 ;;
-esac
+else $as_nop
+  ac_have_decl=0
 fi
 printf "%s\n" "#define HAVE_DECL_UT_NAMESIZE $ac_have_decl" >>confdefs.h
 if test $ac_have_decl = 1

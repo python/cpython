@@ -258,7 +258,7 @@
    */
 #undef HAVE_DECL_TZNAME
 
-/* Define to 1 if you have the declaration of 'UT_NAMESIZE', and to 0 if you
+/* Define to 1 if you have the declaration of `UT_NAMESIZE', and to 0 if you
    don't. */
 #undef HAVE_DECL_UT_NAMESIZE
 
@@ -525,7 +525,7 @@
 /* Define to 1 if you have the `getlogin' function. */
 #undef HAVE_GETLOGIN
 
-/* Define to 1 if you have the 'getlogin_r' function. */
+/* Define to 1 if you have the `getlogin_r' function. */
 #undef HAVE_GETLOGIN_R
 
 /* Define to 1 if you have the `getnameinfo' function. */
