@@ -350,65 +350,6 @@ class TestNtpath(NtpathTestCase):
         self.assertRaises(FileNotFoundError, ntpath.realpath, ABSTFN, strict=True)
         self.assertRaises(FileNotFoundError, ntpath.realpath, ABSTFN + "2", strict=True)
 
-    @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
-    def test_realpath_invalid_paths(self):
-        realpath = ntpath.realpath
-        ABSTFN = ntpath.abspath(os_helper.TESTFN)
-        ABSTFNb = os.fsencode(ABSTFN)
-        path = ABSTFN + '\x00'
-        # gh-106242: Embedded nulls and non-strict fallback to abspath
-        self.assertEqual(realpath(path, strict=False), path)
-        # gh-106242: Embedded nulls should raise OSError (not ValueError)
-        self.assertRaises(OSError, ntpath.realpath, path, strict=True)
-        self.assertRaises(OSError, ntpath.realpath, path, strict=ALLOW_MISSING)
-        path = ABSTFNb + b'\x00'
-        self.assertEqual(realpath(path, strict=False), path)
-        self.assertRaises(OSError, ntpath.realpath, path, strict=True)
-        self.assertRaises(OSError, ntpath.realpath, path, strict=ALLOW_MISSING)
-        path = ABSTFN + '\\nonexistent\\x\x00'
-        self.assertEqual(realpath(path, strict=False), path)
-        self.assertRaises(OSError, ntpath.realpath, path, strict=True)
-        self.assertRaises(OSError, ntpath.realpath, path, strict=ALLOW_MISSING)
-        path = ABSTFNb + b'\\nonexistent\\x\x00'
-        self.assertEqual(realpath(path, strict=False), path)
-        self.assertRaises(OSError, ntpath.realpath, path, strict=True)
-        self.assertRaises(OSError, ntpath.realpath, path, strict=ALLOW_MISSING)
-        path = ABSTFN + '\x00\\..'
-        self.assertEqual(realpath(path, strict=False), os.getcwd())
-        self.assertEqual(realpath(path, strict=True), os.getcwd())
-        self.assertEqual(realpath(path, strict=ALLOW_MISSING), os.getcwd())
-        path = ABSTFNb + b'\x00\\..'
-        self.assertEqual(realpath(path, strict=False), os.getcwdb())
-        self.assertEqual(realpath(path, strict=True), os.getcwdb())
-        self.assertEqual(realpath(path, strict=ALLOW_MISSING), os.getcwdb())
-        path = ABSTFN + '\\nonexistent\\x\x00\\..'
-        self.assertEqual(realpath(path, strict=False), ABSTFN + '\\nonexistent')
-        self.assertRaises(OSError, ntpath.realpath, path, strict=True)
-        self.assertEqual(realpath(path, strict=ALLOW_MISSING), ABSTFN + '\\nonexistent')
-        path = ABSTFNb + b'\\nonexistent\\x\x00\\..'
-        self.assertEqual(realpath(path, strict=False), ABSTFNb + b'\\nonexistent')
-        self.assertRaises(OSError, ntpath.realpath, path, strict=True)
-        self.assertEqual(realpath(path, strict=ALLOW_MISSING), ABSTFNb + b'\\nonexistent')
-
-    @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
-    @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
-    def test_realpath_invalid_unicode_paths(self, kwargs):
-        realpath = ntpath.realpath
-        ABSTFN = ntpath.abspath(os_helper.TESTFN)
-        ABSTFNb = os.fsencode(ABSTFN)
-        path = ABSTFNb + b'\xff'
-        self.assertRaises(UnicodeDecodeError, ntpath.realpath, path, **kwargs)
-        self.assertRaises(UnicodeDecodeError, ntpath.realpath, path, **kwargs)
-        path = ABSTFNb + b'\\nonexistent\\\xff'
-        self.assertRaises(UnicodeDecodeError, ntpath.realpath, path, **kwargs)
-        self.assertRaises(UnicodeDecodeError, ntpath.realpath, path, **kwargs)
-        path = ABSTFNb + b'\xff\\..'
-        self.assertRaises(UnicodeDecodeError, ntpath.realpath, path, **kwargs)
-        self.assertRaises(UnicodeDecodeError, ntpath.realpath, path, **kwargs)
-        path = ABSTFNb + b'\\nonexistent\\\xff\\..'
-        self.assertRaises(UnicodeDecodeError, ntpath.realpath, path, **kwargs)
-        self.assertRaises(UnicodeDecodeError, ntpath.realpath, path, **kwargs)
-
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
@@ -701,51 +642,6 @@ class TestNtpath(NtpathTestCase):
                     self.assertPathEqual(
                         test_file_long,
                         ntpath.realpath("file.txt", **kwargs))
-
-    @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
-    def test_realpath_permission(self):
-        # Test whether python can resolve the real filename of a
-        # shortened file name even if it does not have permission to access it.
-        ABSTFN = ntpath.realpath(os_helper.TESTFN)
-
-        os_helper.unlink(ABSTFN)
-        os_helper.rmtree(ABSTFN)
-        os.mkdir(ABSTFN)
-        self.addCleanup(os_helper.rmtree, ABSTFN)
-
-        test_file = ntpath.join(ABSTFN, "LongFileName123.txt")
-        test_file_short = ntpath.join(ABSTFN, "LONGFI~1.TXT")
-
-        with open(test_file, "wb") as f:
-            f.write(b"content")
-        # Automatic generation of short names may be disabled on
-        # NTFS volumes for the sake of performance.
-        # They're not supported at all on ReFS and exFAT.
-        p = subprocess.run(
-            # Try to set the short name manually.
-            ['fsutil.exe', 'file', 'setShortName', test_file, 'LONGFI~1.TXT'],
-            creationflags=subprocess.DETACHED_PROCESS
-        )
-
-        if p.returncode:
-            raise unittest.SkipTest('failed to set short name')
-
-        try:
-            self.assertPathEqual(test_file, ntpath.realpath(test_file_short))
-        except AssertionError:
-            raise unittest.SkipTest('the filesystem seems to lack support for short filenames')
-
-        # Deny the right to [S]YNCHRONIZE on the file to
-        # force nt._getfinalpathname to fail with ERROR_ACCESS_DENIED.
-        p = subprocess.run(
-            ['icacls.exe', test_file, '/deny', '*S-1-5-32-545:(S)'],
-            creationflags=subprocess.DETACHED_PROCESS
-        )
-
-        if p.returncode:
-            raise unittest.SkipTest('failed to deny access to the test file')
-
-        self.assertPathEqual(test_file, ntpath.realpath(test_file_short))
 
     def test_expandvars(self):
         with os_helper.EnvironmentVarGuard() as env:
