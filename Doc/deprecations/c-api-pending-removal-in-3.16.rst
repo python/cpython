@@ -1,4 +1,4 @@
 Pending removal in Python 3.16
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* The bundled copy of ``libmpdecimal``.
+* The bundled copy of ``libmpdec``.

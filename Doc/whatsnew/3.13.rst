@@ -2594,7 +2594,7 @@ Build Changes
 
 * The :file:`configure` option :option:`--with-system-libmpdec`
   now defaults to ``yes``.
-  The bundled copy of ``libmpdecimal`` will be removed in Python 3.16.
+  The bundled copy of ``libmpdec`` will be removed in Python 3.16.
 
 * Python built with :file:`configure` :option:`--with-trace-refs`
   (tracing references) is now ABI compatible with the Python release build
