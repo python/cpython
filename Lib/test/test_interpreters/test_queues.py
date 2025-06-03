@@ -9,7 +9,6 @@ from test.support import import_helper, Py_DEBUG
 _queues = import_helper.import_module('_interpqueues')
 from test.support import interpreters
 from test.support.interpreters import queues, _crossinterp
-import test._crossinterp_definitions as defs
 from .utils import _run_output, TestBase as _TestBase
 
 

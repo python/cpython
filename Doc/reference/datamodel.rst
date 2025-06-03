@@ -1228,9 +1228,21 @@ Special attributes
        :attr:`__annotations__ attributes <object.__annotations__>`.
 
        For best practices on working with :attr:`~object.__annotations__`,
-       please see :mod:`annotationlib`. Where possible, use
+       please see :mod:`annotationlib`. Use
        :func:`annotationlib.get_annotations` instead of accessing this
        attribute directly.
+
+       .. warning::
+
+          Accessing the :attr:`!__annotations__` attribute directly
+          on a class object may return annotations for the wrong class, specifically
+          in certain cases where the class, its base class, or a metaclass
+          is defined under ``from __future__ import annotations``.
+          See :pep:`749 <749#pep749-metaclasses>` for details.
+
+          This attribute does not exist on certain builtin classes. On
+          user-defined classes without ``__annotations__``, it is an
+          empty dictionary.
 
        .. versionchanged:: 3.14
           Annotations are now :ref:`lazily evaluated <lazy-evaluation>`.

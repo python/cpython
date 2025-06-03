@@ -14052,6 +14052,7 @@ fi
 
 
 
+
 have_uuid=missing
 
        for ac_header in uuid.h
@@ -14060,6 +14061,7 @@ do :
 if test "x$ac_cv_header_uuid_h" = xyes
 then :
   printf "%s\n" "#define HAVE_UUID_H 1" >>confdefs.h
+
 
   for ac_func in uuid_create uuid_enc_be
 do :
@@ -14070,7 +14072,9 @@ then :
   cat >>confdefs.h <<_ACEOF
 #define `printf "%s\n" "HAVE_$ac_func" | sed "$as_sed_cpp"` 1
 _ACEOF
- have_uuid=yes
+
+    have_uuid=yes
+    ac_cv_have_uuid_h=yes
     LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
     LIBUUID_LIBS=${LIBUUID_LIBS-""}
 
@@ -14160,6 +14164,7 @@ if test "x$ac_cv_header_uuid_uuid_h" = xyes
 then :
   printf "%s\n" "#define HAVE_UUID_UUID_H 1" >>confdefs.h
 
+          ac_cv_have_uuid_uuid_h=yes
           py_check_lib_save_LIBS=$LIBS
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time in -luuid" >&5
 printf %s "checking for uuid_generate_time in -luuid... " >&6; }
@@ -14257,8 +14262,9 @@ fi
 printf "%s\n" "$ac_cv_lib_uuid_uuid_generate_time_safe" >&6; }
 if test "x$ac_cv_lib_uuid_uuid_generate_time_safe" = xyes
 then :
-  have_uuid=yes
-            printf "%s\n" "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
+
+            have_uuid=yes
+            ac_cv_have_uuid_generate_time_safe=yes
 
 fi
 
@@ -14302,6 +14308,7 @@ if test "x$ac_cv_header_uuid_uuid_h" = xyes
 then :
   printf "%s\n" "#define HAVE_UUID_UUID_H 1" >>confdefs.h
 
+          ac_cv_have_uuid_uuid_h=yes
           py_check_lib_save_LIBS=$LIBS
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time in -luuid" >&5
 printf %s "checking for uuid_generate_time in -luuid... " >&6; }
@@ -14399,8 +14406,9 @@ fi
 printf "%s\n" "$ac_cv_lib_uuid_uuid_generate_time_safe" >&6; }
 if test "x$ac_cv_lib_uuid_uuid_generate_time_safe" = xyes
 then :
-  have_uuid=yes
-            printf "%s\n" "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
+
+            have_uuid=yes
+            ac_cv_have_uuid_generate_time_safe=yes
 
 fi
 
@@ -14431,10 +14439,16 @@ else
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
                     have_uuid=yes
-      printf "%s\n" "#define HAVE_UUID_H 1" >>confdefs.h
-
-      printf "%s\n" "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
-
+      ac_cv_have_uuid_generate_time_safe=yes
+      # The uuid.h file to include may be <uuid.h> *or* <uuid/uuid.h>.
+      # Since pkg-config --cflags uuid may return -I/usr/include/uuid,
+      # it's possible to write '#include <uuid.h>' in _uuidmodule.c,
+      # assuming that the compiler flags are properly updated.
+      #
+      # Ideally, we should have defined HAVE_UUID_H if and only if
+      # #include <uuid.h> can be written, *without* assuming extra
+      # include path.
+      ac_cv_have_uuid_h=yes
 
 fi
 
@@ -14455,6 +14469,7 @@ if test "x$ac_cv_func_uuid_generate_time" = xyes
 then :
 
       have_uuid=yes
+      ac_cv_have_uuid_uuid_h=yes
       LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
       LIBUUID_LIBS=${LIBUUID_LIBS-""}
 
@@ -14464,6 +14479,24 @@ fi
 fi
 
 done
+
+fi
+
+if test "x$ac_cv_have_uuid_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_UUID_H 1" >>confdefs.h
+
+fi
+if test "x$ac_cv_have_uuid_uuid_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_UUID_UUID_H 1" >>confdefs.h
+
+fi
+if test "x$ac_cv_have_uuid_generate_time_safe" = xyes
+then :
+
+  printf "%s\n" "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
+
 
 fi
 
@@ -14478,6 +14511,164 @@ fi
 if test "x$have_uuid" = xmissing
 then :
   have_uuid=no
+fi
+
+# gh-132710: The UUID node is fetched by using libuuid when possible
+# and cached. While the node is constant within the same process,
+# different interpreters may have different values as libuuid may
+# randomize the node value if the latter cannot be deduced.
+#
+# Consumers may define HAVE_UUID_GENERATE_TIME_SAFE_STABLE_MAC
+# to indicate that libuuid is unstable and should not be relied
+# upon to deduce the MAC address.
+
+
+if test "$have_uuid" = "yes" -a "$HAVE_UUID_GENERATE_TIME_SAFE" = "1"
+then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if uuid_generate_time_safe() node value is stable" >&5
+printf %s "checking if uuid_generate_time_safe() node value is stable... " >&6; }
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+  # Be sure to add the extra include path if we used pkg-config
+  # as HAVE_UUID_H may be set even though <uuid.h> is only reachable
+  # by adding extra -I flags.
+  #
+  # If the following script does not compile, we simply assume that
+  # libuuid is missing.
+  CFLAGS="$CFLAGS $LIBUUID_CFLAGS"
+  LIBS="$LIBS $LIBUUID_LIBS"
+  if test "$cross_compiling" = yes
+then :
+
+
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    #include <inttypes.h>   // PRIu64
+    #include <stdint.h>     // uint64_t
+    #include <stdio.h>      // fopen(), fclose()
+
+    #ifdef HAVE_UUID_H
+    #include <uuid.h>
+    #else
+    #include <uuid/uuid.h>
+    #endif
+
+    #define ERR 1
+    int main(void) {
+        uuid_t uuid;  // unsigned char[16]
+        (void)uuid_generate_time_safe(uuid);
+        uint64_t node = 0;
+        for (size_t i = 0; i < 6; i++) {
+            node |= (uint64_t)uuid[15 - i] << (8 * i);
+        }
+        FILE *fp = fopen("conftest.out", "w");
+        if (fp == NULL) {
+            return ERR;
+        }
+        int rc = fprintf(fp, "%" PRIu64 "\n", node) >= 0;
+        rc |= fclose(fp);
+        return rc == 0 ? 0 : ERR;
+    }
+_ACEOF
+if ac_fn_c_try_run "$LINENO"
+then :
+
+      py_cv_uuid_node1=`cat conftest.out`
+
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
+esac
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+  # Be sure to add the extra include path if we used pkg-config
+  # as HAVE_UUID_H may be set even though <uuid.h> is only reachable
+  # by adding extra -I flags.
+  #
+  # If the following script does not compile, we simply assume that
+  # libuuid is missing.
+  CFLAGS="$CFLAGS $LIBUUID_CFLAGS"
+  LIBS="$LIBS $LIBUUID_LIBS"
+  if test "$cross_compiling" = yes
+then :
+
+
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    #include <inttypes.h>   // PRIu64
+    #include <stdint.h>     // uint64_t
+    #include <stdio.h>      // fopen(), fclose()
+
+    #ifdef HAVE_UUID_H
+    #include <uuid.h>
+    #else
+    #include <uuid/uuid.h>
+    #endif
+
+    #define ERR 1
+    int main(void) {
+        uuid_t uuid;  // unsigned char[16]
+        (void)uuid_generate_time_safe(uuid);
+        uint64_t node = 0;
+        for (size_t i = 0; i < 6; i++) {
+            node |= (uint64_t)uuid[15 - i] << (8 * i);
+        }
+        FILE *fp = fopen("conftest.out", "w");
+        if (fp == NULL) {
+            return ERR;
+        }
+        int rc = fprintf(fp, "%" PRIu64 "\n", node) >= 0;
+        rc |= fclose(fp);
+        return rc == 0 ? 0 : ERR;
+    }
+_ACEOF
+if ac_fn_c_try_run "$LINENO"
+then :
+
+      py_cv_uuid_node2=`cat conftest.out`
+
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
+esac
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+  if test -n "$py_cv_uuid_node1" -a "$py_cv_uuid_node1" = "$py_cv_uuid_node2"
+  then
+    printf "%s\n" "#define HAVE_UUID_GENERATE_TIME_SAFE_STABLE_MAC 1" >>confdefs.h
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: stable" >&5
+printf "%s\n" "stable" >&6; }
+  else
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: unstable" >&5
+printf "%s\n" "unstable" >&6; }
+  fi
 fi
 
 # 'Real Time' functions on Solaris
@@ -32366,6 +32557,14 @@ LIBHACL_CFLAGS="${LIBHACL_FLAG_I} ${LIBHACL_FLAG_D} \$(PY_STDMODULE_CFLAGS) \$(C
 LIBHACL_LDFLAGS=  # for now, no specific linker flags are needed
 
 
+if test "$UNIVERSAL_ARCHS" = "universal2" -o \
+   \( "$build_cpu" = "aarch64" -a "$build_vendor" = "apple" \)
+then
+  use_hacl_universal2_impl=yes
+else
+  use_hacl_universal2_impl=no
+fi
+
 # The SIMD files use aligned_alloc, which is not available on older versions of
 # Android.
 # The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
@@ -32419,7 +32618,7 @@ printf "%s\n" "#define HACL_CAN_COMPILE_SIMD128 1" >>confdefs.h
     # isn't great, so it's disabled on ARM64.
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for HACL* SIMD128 implementation" >&5
 printf %s "checking for HACL* SIMD128 implementation... " >&6; }
-    if test "$UNIVERSAL_ARCHS" == "universal2"; then
+    if test "$use_hacl_universal2_impl" = "yes"; then
       LIBHACL_BLAKE2_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o"
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: universal2" >&5
 printf "%s\n" "universal2" >&6; }
@@ -32496,7 +32695,7 @@ printf "%s\n" "#define HACL_CAN_COMPILE_SIMD256 1" >>confdefs.h
     # wrapped implementation if we're building for universal2.
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for HACL* SIMD256 implementation" >&5
 printf %s "checking for HACL* SIMD256 implementation... " >&6; }
-    if test "$UNIVERSAL_ARCHS" == "universal2"; then
+    if test "$use_hacl_universal2_impl" = "yes"; then
       LIBHACL_BLAKE2_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o"
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: universal2" >&5
 printf "%s\n" "universal2" >&6; }

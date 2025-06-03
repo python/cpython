@@ -74,7 +74,7 @@ deferred evaluation of annotations (:pep:`649`),
 and a new type of interpreter that uses tail calls.
 
 The library changes include the addition of a new :mod:`!annotationlib` module
-for introspecting and wrapping annotations (:pep:`649`),
+for introspecting and wrapping annotations (:pep:`749`),
 a new :mod:`!compression.zstd` module for Zstandard support (:pep:`784`),
 plus syntax highlighting in the REPL,
 as well as the usual deprecations and removals,
@@ -443,6 +443,10 @@ use only the documented functionality of the :mod:`annotationlib` module.
 In particular, do not read annotations directly from the namespace dictionary
 attribute of type objects. Use :func:`annotationlib.get_annotate_from_class_namespace`
 during class construction and :func:`annotationlib.get_annotations` afterwards.
+
+In previous releases, it was sometimes possible to access class annotations from
+an instance of an annotated class. This behavior was undocumented and accidental,
+and will no longer work in Python 3.14.
 
 ``from __future__ import annotations``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1450,7 +1454,7 @@ math
 ----
 
 * Added more detailed error messages for domain errors in the module.
-  (Contributed by by Charlie Zhao and Sergey B Kirpichev in :gh:`101410`.)
+  (Contributed by Charlie Zhao and Sergey B Kirpichev in :gh:`101410`.)
 
 
 mimetypes
@@ -2500,6 +2504,11 @@ Changes in the Python API
   causing changes in some behaviors.
   See :ref:`above <whatsnew314-typing-union>` for more details.
   (Contributed by Jelle Zijlstra in :gh:`105499`.)
+
+* The runtime behavior of annotations has changed in various ways; see
+  :ref:`above <whatsnew314-pep649>` for details. While most code that interacts
+  with annotations should continue to work, some undocumented details may behave
+  differently.
 
 
 Build changes
