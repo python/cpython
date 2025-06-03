@@ -1,1 +1,1 @@
-Make methods on :class:`heapq` thread-safe when the GIL is disabled.
+Make methods in :mod:`heapq` thread-safe on the :term:`free threaded <free threading>` build.
