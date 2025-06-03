@@ -404,6 +404,31 @@ class CompressorTestCase(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,
                                     r'should be a positive int less than \d+'):
             c.set_pledged_input_size(-300)
+        # overflow
+        with self.assertRaisesRegex(ValueError,
+                                    r'should be a positive int less than \d+'):
+            c.set_pledged_input_size(2**64)
+        # ZSTD_CONTENTSIZE_ERROR is invalid
+        with self.assertRaisesRegex(ValueError,
+                                    r'should be a positive int less than \d+'):
+            c.set_pledged_input_size(2**64-2)
+        # ZSTD_CONTENTSIZE_UNKNOWN should use None
+        with self.assertRaisesRegex(ValueError,
+                                    r'should be a positive int less than \d+'):
+            c.set_pledged_input_size(2**64-1)
+
+        # check valid values are settable
+        c.set_pledged_input_size(2**63)
+        c.set_pledged_input_size(2**64-3)
+
+        # check that zero means empty frame
+        c = ZstdCompressor(level=1)
+        c.set_pledged_input_size(0)
+        c.compress(b'')
+        dat = c.flush()
+        ret = get_frame_info(dat)
+        self.assertEqual(ret.decompressed_size, 0)
+
 
         # wrong mode
         c = ZstdCompressor(level=1)
