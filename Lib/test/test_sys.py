@@ -763,7 +763,7 @@ class SysModuleTest(unittest.TestCase):
 
         def _is_interned(obj):
             tags = sys.get_object_tags(obj)
-            return tags.get("interned", False)
+            return tags["interned"]
 
         s = "never interned before" + str(random.randrange(0, 10**9))
         self.assertTrue(sys.intern(s) is s)
@@ -873,7 +873,7 @@ class SysModuleTest(unittest.TestCase):
                     t = sys.intern(s)
                     '''))
                 tags = sys.get_object_tags(s)
-                self.assertTrue(tags.get("interned", False))
+                self.assertTrue(tags["interned"])
 
     def test_sys_flags(self):
         self.assertTrue(sys.flags)
