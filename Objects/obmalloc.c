@@ -1141,6 +1141,7 @@ free_work_item(uintptr_t ptr, delayed_dealloc_cb cb, void *state)
     }
 }
 
+#ifdef Py_GIL_DISABLED
 static int
 should_advance_qsbr(_PyThreadStateImpl *tstate, size_t size)
 {
@@ -1159,6 +1160,7 @@ should_advance_qsbr(_PyThreadStateImpl *tstate, size_t size)
     }
     return 0;
 }
+#endif
 
 static void
 free_delayed(uintptr_t ptr, size_t size)
