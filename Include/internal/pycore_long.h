@@ -207,15 +207,6 @@ _PyLong_IsNonNegativeCompact(const PyLongObject* op) {
 }
 
 
-/* Return the value of a non-negative compact as a machine int */
-static inline Py_ssize_t
-_PyLong_GetNonNegativeCompactValue(const PyLongObject* op) {
-    assert(PyLong_Check(op));
-    assert (_PyLong_IsNonNegativeCompact(op));
-    return op->long_value.ob_digit[0];
-}
-
-
 static inline int
 _PyLong_BothAreCompact(const PyLongObject* a, const PyLongObject* b) {
     assert(PyLong_Check(a));
