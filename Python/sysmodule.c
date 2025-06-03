@@ -1052,6 +1052,65 @@ sys__is_immortal_impl(PyObject *module, PyObject *op)
     return PyUnstable_IsImmortal(op);
 }
 
+
+/*[clinic input]
+sys.get_object_tags -> object
+
+  op: object
+  /
+Return the tags of the given object.
+[clinic start generated code]*/
+
+static PyObject *
+sys_get_object_tags(PyObject *module, PyObject *op)
+/*[clinic end generated code: output=a68da7f1805c9216 input=75993fb67096e2ff]*/
+{
+    assert(op != NULL);
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+    if (PyUnstable_IsImmortal(op)) {
+        if (PyDict_SetItemString(dict, "immortal", Py_True) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+    }
+    else {
+        if (PyDict_SetItemString(dict, "immortal", Py_False) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+    }
+
+    if (PyUnicode_CHECK_INTERNED(op)) {
+        if (PyDict_SetItemString(dict, "interned", Py_True) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+    }
+    else {
+        if (PyDict_SetItemString(dict, "interned", Py_False) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+    }
+
+    if (PyUnstable_Object_EnableDeferredRefcount(op)) {
+        if (PyDict_SetItemString(dict, "deferred_refcount", Py_True) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+    }
+    else {
+        if (PyDict_SetItemString(dict, "deferred_refcount", Py_False) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+    }
+    return dict;
+}
+
 /*
  * Cached interned string objects used for calling the profile and
  * trace functions.
@@ -2796,6 +2855,7 @@ static PyMethodDef sys_methods[] = {
     SYS__IS_IMMORTAL_METHODDEF
     SYS_INTERN_METHODDEF
     SYS__IS_INTERNED_METHODDEF
+    SYS_GET_OBJECT_TAGS_METHODDEF
     SYS_IS_FINALIZING_METHODDEF
     SYS_MDEBUG_METHODDEF
     SYS_SETSWITCHINTERVAL_METHODDEF

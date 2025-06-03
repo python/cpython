@@ -405,6 +405,15 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys_get_object_tags__doc__,
+"get_object_tags($module, op, /)\n"
+"--\n"
+"\n"
+"Return the tags of the given object.");
+
+#define SYS_GET_OBJECT_TAGS_METHODDEF    \
+    {"get_object_tags", (PyCFunction)sys_get_object_tags, METH_O, sys_get_object_tags__doc__},
+
 PyDoc_STRVAR(sys_settrace__doc__,
 "settrace($module, function, /)\n"
 "--\n"
@@ -1948,4 +1957,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=449d16326e69dcf6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9654d356bd94f235 input=a9049054013a1b77]*/
