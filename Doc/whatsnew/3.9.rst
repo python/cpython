@@ -1664,8 +1664,8 @@ email
   the CVE-2023-27043 fix.)
 
 
-Notable changes in 3.10.18
-==========================
+Notable changes in 3.9.23
+=========================
 
 os.path
 -------
