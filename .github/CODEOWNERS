@@ -284,6 +284,10 @@ Doc/howto/clinic.rst          @erlend-aasland
 Lib/interpreters/             @ericsnowcurrently
 Modules/_interp*module.c      @ericsnowcurrently
 Lib/test/test_interpreters/   @ericsnowcurrently
+Lib/test/test__interp*.py     @ericsnowcurrently
+Lib/test/support/channels.py  @ericsnowcurrently
+Lib/concurrent/futures/interpreter.py  @ericsnowcurrently
+Doc/library/interpreters.rst  @ericsnowcurrently
 
 # Android
 **/*Android*                  @mhsmith @freakboy3742
