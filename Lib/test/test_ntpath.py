@@ -350,6 +350,15 @@ class TestNtpath(NtpathTestCase):
         self.assertRaises(FileNotFoundError, ntpath.realpath, ABSTFN, strict=True)
         self.assertRaises(FileNotFoundError, ntpath.realpath, ABSTFN + "2", strict=True)
 
+    @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
+    def test_realpath_invalid_paths(self):
+        realpath = ntpath.realpath
+        ABSTFN = ntpath.abspath(os_helper.TESTFN)
+        ABSTFNb = os.fsencode(ABSTFN)
+        path = ABSTFN + '\x00'
+        # gh-106242: Embedded nulls and non-strict fallback to abspath
+        self.assertEqual(realpath(path, strict=False), path)
+        # gh-106242: Embedded nulls should raise OSError (not ValueError)
         self.assertRaises(OSError, ntpath.realpath, path, strict=True)
         self.assertRaises(OSError, ntpath.realpath, path, strict=ALLOW_MISSING)
         path = ABSTFNb + b'\x00'
