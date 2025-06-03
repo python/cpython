@@ -11,7 +11,7 @@ annotated by François Pinard, and converted to C by Raymond Hettinger.
 #endif
 
 #include "Python.h"
-#include "pycore_list.h"          // _PyList_ITEMS()
+#include "pycore_list.h"          // _PyList_ITEMS(), _PyList_AppendTakeRef()
 
 #include "clinic/_heapqmodule.c.h"
 
@@ -131,7 +131,9 @@ static PyObject *
 _heapq_heappush_impl(PyObject *module, PyObject *heap, PyObject *item)
 /*[clinic end generated code: output=912c094f47663935 input=f7a4f03ef8d52e67]*/
 {
-    if (PyList_Append(heap, item))
+    // In a free-threaded build, the heap is locked at this point.
+    // Therefore, calling _PyList_AppendTakeRef() is safe and no overhead.
+    if (_PyList_AppendTakeRef((PyListObject *)heap, Py_NewRef(item)))
         return NULL;
 
     if (siftdown((PyListObject *)heap, 0, PyList_GET_SIZE(heap)-1))
@@ -500,7 +502,9 @@ static PyObject *
 _heapq_heappush_max_impl(PyObject *module, PyObject *heap, PyObject *item)
 /*[clinic end generated code: output=c869d5f9deb08277 input=c437e3d1ff8dcb70]*/
 {
-    if (PyList_Append(heap, item)) {
+    // In a free-threaded build, the heap is locked at this point.
+    // Therefore, calling _PyList_AppendTakeRef() is safe and no overhead.
+    if (_PyList_AppendTakeRef((PyListObject *)heap, Py_NewRef(item))) {
         return NULL;
     }
 

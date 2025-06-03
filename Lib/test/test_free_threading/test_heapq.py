@@ -241,7 +241,7 @@ class TestHeapq(unittest.TestCase):
     @staticmethod
     def create_random_list(a: int, b: int, size: int) -> list[int]:
         """
-        Create a random list where elements are in the range a <= elem <= b
+        Create a list of random numbers between a and b (inclusive).
         """
         return [randint(-a, b) for _ in range(size)]
 
