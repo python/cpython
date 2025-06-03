@@ -500,11 +500,11 @@ class PosixPathTest(unittest.TestCase):
     @_parameterize({}, {'strict': ALLOW_MISSING})
     def test_realpath_missing_pardir(self, kwargs):
         try:
-            os.symlink(TESTFN + "1", TESTFN)
+            os.symlink(support.TESTFN + "1", support.TESTFN)
             self.assertEqual(
-                realpath("nonexistent/../" + TESTFN, **kwargs), ABSTFN + "1")
+                realpath("nonexistent/../" + support.TESTFN, **kwargs), ABSTFN + "1")
         finally:
-            support.unlink(TESTFN)
+            support.unlink(support.TESTFN)
 
     @support.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
