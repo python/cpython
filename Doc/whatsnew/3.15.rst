@@ -322,7 +322,9 @@ Porting to Python 3.15
 Deprecated C APIs
 -----------------
 
-* TODO
+* Calling :c:func:`PyObject_SetAttr` and :c:func:`PyObject_SetAttrString` with
+  ``NULL`` value and an exception set is now deprecated.
+  (Contributed by Victor Stinner in :gh:`135075`.)
 
 .. Add C API deprecations above alphabetically, not here at the end.
 
