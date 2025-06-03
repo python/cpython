@@ -3328,7 +3328,7 @@ class TestExtractionFilters(unittest.TestCase):
                 self.expected_paths = set()
             else:
                 for ignored_tree in ignored_trees:
-                    os_helper.rmtree((self.destdir / ignored_tree).resolve())
+                    support.rmtree((self.destdir / ignored_tree).resolve())
                 self.raised_exception = None
                 self.reraise_exception = False
                 self.expected_paths = set(self.outerdir.glob('**/*'))
