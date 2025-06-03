@@ -292,8 +292,6 @@ PyStackRef_TaggedIntLessThan(_PyStackRef a, _PyStackRef b)
 
 #define PyStackRef_IsDeferredOrTaggedInt(ref) (((ref).bits & Py_TAG_REFCNT) != 0)
 
-extern _PyStackRef PyStackRef_BoxInt(_PyStackRef i);
-
 #ifdef Py_GIL_DISABLED
 
 #define Py_TAG_DEFERRED Py_TAG_REFCNT
@@ -806,6 +804,20 @@ _Py_TryXGetStackRef(PyObject **src, _PyStackRef *out)
                 return vret;                                            \
         }                                                               \
     } while (0)
+
+
+static inline _PyStackRef
+PyStackRef_BoxInt(_PyStackRef i)
+{
+    assert(PyStackRef_IsTaggedInt(i));
+    intptr_t val = PyStackRef_UntagInt(i);
+    PyObject *boxed = PyLong_FromSsize_t(val);
+    if (boxed == NULL) {
+        return PyStackRef_NULL;
+    }
+    return PyStackRef_FromPyObjectSteal(boxed);
+}
+
 
 #ifdef __cplusplus
 }
