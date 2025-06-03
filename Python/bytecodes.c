@@ -3180,7 +3180,6 @@ dummy_func(
         }
 
         replaced op(_FOR_ITER, (iter, null_or_index -- iter, null_or_index, next)) {
-            /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
             if (PyStackRef_IsTaggedInt(null_or_index)) {
                 if (PyStackRef_IsTaggedInt(iter)) {
                     if (!PyStackRef_TaggedIntLessThan(null_or_index, iter)) {
@@ -3192,7 +3191,6 @@ dummy_func(
                     if (PyStackRef_IsNull(next)) {
                         ERROR_NO_POP();
                     }
-                    null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
                 }
                 else {
                     PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
@@ -3201,8 +3199,8 @@ dummy_func(
                         JUMPBY(oparg + 1);
                         DISPATCH();
                     }
-                    null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
                 }
+                null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
             }
             else {
                 PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
@@ -3263,7 +3261,6 @@ dummy_func(
                     if (PyStackRef_IsNull(next)) {
                         ERROR_NO_POP();
                     }
-                    null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
                 }
                 else {
                     PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);

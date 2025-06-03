@@ -5763,7 +5763,6 @@
                         if (PyStackRef_IsNull(next)) {
                             JUMP_TO_LABEL(error);
                         }
-                        null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
                     }
                     else {
                         PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
@@ -5774,8 +5773,8 @@
                             JUMPBY(oparg + 1);
                             DISPATCH();
                         }
-                        null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
                     }
+                    null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
                 }
                 else {
                     PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
@@ -7201,7 +7200,6 @@
                     if (PyStackRef_IsNull(next)) {
                         JUMP_TO_LABEL(error);
                     }
-                    null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
                 }
                 else {
                     PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
