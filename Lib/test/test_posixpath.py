@@ -860,6 +860,13 @@ class PosixPathTest(unittest.TestCase):
             self.assertEqual(realpath(ABSTFN, strict=True), ABSTFN)
             self.assertEqual(realpath(ABSTFN, strict=ALLOW_MISSING), ABSTFN)
 
+            try:
+                os.stat(ABSTFN)
+            except PermissionError:
+                pass
+            else:
+                self.skipTest('Cannot block permissions')
+
             self.assertEqual(realpath(ABSTFN + '/k', strict=False),
                              ABSTFN + '/k')
             self.assertRaises(PermissionError, realpath, ABSTFN + '/k',
