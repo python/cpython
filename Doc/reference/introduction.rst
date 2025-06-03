@@ -197,5 +197,5 @@ converted to tokens like :data:`token.INDENT` or :data:`~token.NEWLINE`.
 *Syntactic* definitions then use these tokens, rather than source characters.
 
 This documentation uses the same BNF grammar for both styles of definitions.
-All uses of BNF in the next chapter (“Lexical Analysis”) are lexical definitions;
+All uses of BNF in the next chapter (:ref:`lexical`) are lexical definitions;
 uses in subsequent chapters are syntactic definitions.
