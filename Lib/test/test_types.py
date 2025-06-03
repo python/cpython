@@ -2516,12 +2516,13 @@ class SubinterpreterTests(unittest.TestCase):
             import interpreters
         except ModuleNotFoundError:
             raise unittest.SkipTest('subinterpreters required')
-        import test.support.channels  # noqa: F401
+        from test.support import channels  # noqa: F401
+        cls.create_channel = staticmethod(channels.create)
 
     @cpython_only
     @no_rerun('channels (and queues) might have a refleak; see gh-122199')
     def test_static_types_inherited_slots(self):
-        rch, sch = test.support.channels.create()
+        rch, sch = self.create_channel()
 
         script = textwrap.dedent("""
             import test.support
