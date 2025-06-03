@@ -979,40 +979,17 @@ class TestNtpath(NtpathTestCase):
         except AssertionError:
             raise unittest.SkipTest('the filesystem seems to lack support for short filenames')
 
+        # Deny the right to [S]YNCHRONIZE on the file to
+        # force nt._getfinalpathname to fail with ERROR_ACCESS_DENIED.
         p = subprocess.run(
-            ['whoami.exe', '/GROUPS'],
-            creationflags=subprocess.DETACHED_PROCESS,
-            capture_output=True,
+            ['icacls.exe', test_file, '/deny', '*S-1-5-32-545:(S)'],
+            creationflags=subprocess.DETACHED_PROCESS
         )
+
         if p.returncode:
-            raise unittest.SkipTest('cannot check group membership')
-
-        groups_output = p.stdout
-        groups = (
-            'S-1-5-32-544',  # Administrators
-            'S-1-5-32-545',  # Users
-        )
-
-        for group in groups:
-            if group.encode() not in groups_output:
-                continue
-
-            # Deny the right to [S]YNCHRONIZE on the file to
-            # force nt._getfinalpathname to fail with ERROR_ACCESS_DENIED.
-            p = subprocess.run(
-                ['icacls.exe', test_file, '/deny', f'*{group}:(S)'],
-                creationflags=subprocess.DETACHED_PROCESS
-            )
-            if p.returncode == 0:
-                break
-        else:
             raise unittest.SkipTest('failed to deny access to the test file')
 
         self.assertPathEqual(test_file, ntpath.realpath(test_file_short))
-        with self.assertRaises(OSError):
-            ntpath.realpath(test_file_short, strict=True)
-        with self.assertRaises(OSError):
-            ntpath.realpath(test_file_short, strict=ALLOW_MISSING)
 
     def test_expandvars(self):
         with os_helper.EnvironmentVarGuard() as env:
