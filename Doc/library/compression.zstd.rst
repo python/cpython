@@ -253,18 +253,18 @@ Compressing and decompressing data in memory
       the next frame. *size* will be written into the frame header of the next
       frame unless :attr:`CompressionParameter.content_size_flag` is ``False``
       or ``0``. A size of ``0`` means that the frame is empty. If *size* is
-      ``None``, the frame header will record the size as unknown.
+      ``None``, the frame header will omit the frame size.
 
-      If :attr:`~.last_mode` is not :attr:`~.FLUSH_FRAME`, a
+      If :attr:`last_mode` is not :attr:`FLUSH_FRAME`, a
       :exc:`RuntimeError` is raised as the compressor is not at the start of
       a frame. If the pledged size does not match the actual size of data
       provided to :meth:`~.compress`, future calls to :meth:`~.compress` or
-      :meth:`~.flush` may raise :exc:`ZstdError` and the last chunk of data may
+      :meth:`flush` may raise :exc:`ZstdError` and the last chunk of data may
       be lost.
 
-      After :meth:`~.flush` or :meth:`~.compress` are called with mode
-      :attr:`~.FLUSH_FRAME`, the next frame will default to have an unknown
-      size unless :meth:`!set_pledged_input_size` is called again.
+      After :meth:`flush` or :meth:`~.compress` are called with mode
+      :attr:`FLUSH_FRAME`, the next frame will not include the frame size into
+      the header unless :meth:`!set_pledged_input_size` is called again.
 
    .. attribute:: CONTINUE
 
