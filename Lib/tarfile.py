@@ -2389,20 +2389,34 @@ class TarFile(object):
             tarinfo = self._get_extract_tarinfo(member, filter_function, path)
             if tarinfo is None:
                 continue
+            self._extract_one(tarinfo, path, set_attrs=not tarinfo.isdir(),
+                              numeric_owner=numeric_owner)
             if tarinfo.isdir():
                 # For directories, delay setting attributes until later,
                 # since permissions can interfere with extraction and
                 # extracting contents can reset mtime.
-                directories.append(tarinfo)
-            self._extract_one(tarinfo, path, set_attrs=not tarinfo.isdir(),
-                              numeric_owner=numeric_owner)
+                # We also the keep the original inode and device, to detect
+                # if it was changed during extraction.
+                dirpath = os.path.join(path, tarinfo.name)
+                dirpath = self._transform_destination_path(dirpath)
+                targetstat = os.stat(dirpath, follow_symlinks=False)
+                directories.append((tarinfo, dirpath, targetstat.st_ino,
+                                    targetstat.st_dev))
 
         # Reverse sort directories.
-        directories.sort(key=lambda a: a.name, reverse=True)
+        directories.sort(key=lambda a: a[0].name, reverse=True)
 
         # Set correct owner, mtime and filemode on directories.
-        for tarinfo in directories:
-            dirpath = os.path.join(path, tarinfo.name)
+        for tarinfo, dirpath, original_ino, original_dev in directories:
+            dirstat = os.stat(dirpath, follow_symlinks=False)
+            if (dirstat.st_ino != original_ino or
+                dirstat.st_dev != original_dev or
+                not stat.S_ISDIR(dirstat.st_mode) # just in case the inode was reused
+            ):
+                self._dbg(1, "tarfile: Directory renamed before its " \
+                     "attributes could be extracted %r" % dirpath)
+                continue
+
             try:
                 self.chown(tarinfo, dirpath, numeric_owner=numeric_owner)
                 self.utime(tarinfo, dirpath)
@@ -2516,16 +2530,18 @@ class TarFile(object):
             # blkdev, etc.), return None instead of a file object.
             return None
 
+    def _transform_destination_path(self, targetpath):
+        # Build the destination pathname, replacing
+        # forward slashes to platform specific separators.
+        targetpath = targetpath.rstrip("/")
+        return targetpath.replace("/", os.sep)
+
     def _extract_member(self, tarinfo, targetpath, set_attrs=True,
                         numeric_owner=False):
         """Extract the TarInfo object tarinfo to a physical
            file called targetpath.
         """
-        # Fetch the TarInfo object for the given name
-        # and build the destination pathname, replacing
-        # forward slashes to platform specific separators.
-        targetpath = targetpath.rstrip("/")
-        targetpath = targetpath.replace("/", os.sep)
+        targetpath = self._transform_destination_path(targetpath)
 
         # Create all upper directories.
         upperdirs = os.path.dirname(targetpath)
