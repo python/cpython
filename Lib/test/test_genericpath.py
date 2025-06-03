@@ -2,8 +2,10 @@
 Tests common to genericpath, ntpath and posixpath
 """
 
+import copy
 import genericpath
 import os
+import pickle
 import sys
 import unittest
 import warnings
@@ -320,19 +322,20 @@ class GenericTest:
                 fd2 = fp2.fileno()
                 self.assertTrue(self.pathmodule.sameopenfile(fd1, fd2))
 
-    def test_all_but_last(self):
-        ALL_BUT_LAST = self.pathmodule.ALL_BUT_LAST
-        self.assertEqual(repr(ALL_BUT_LAST), 'os.path.ALL_BUT_LAST')
-        self.assertTrue(ALL_BUT_LAST)
-        import copy
-        self.assertIs(copy.copy(ALL_BUT_LAST), ALL_BUT_LAST)
-        self.assertIs(copy.deepcopy(ALL_BUT_LAST), ALL_BUT_LAST)
-        import pickle
-        for proto in range(pickle.HIGHEST_PROTOCOL+1):
-            with self.subTest(protocol=proto):
-                pickled = pickle.dumps(ALL_BUT_LAST, proto)
-                unpickled = pickle.loads(pickled)
-                self.assertIs(unpickled, ALL_BUT_LAST)
+    def test_realpath_mode_values(self):
+        for name in 'ALL_BUT_LAST', 'ALLOW_MISSING':
+            with self.subTest(name):
+                mode = getattr(self.pathmodule, name)
+                self.assertEqual(repr(mode), 'os.path.' + name)
+                self.assertEqual(str(mode), 'os.path.' + name)
+                self.assertTrue(mode)
+                self.assertIs(copy.copy(mode), mode)
+                self.assertIs(copy.deepcopy(mode), mode)
+                for proto in range(pickle.HIGHEST_PROTOCOL+1):
+                    with self.subTest(protocol=proto):
+                        pickled = pickle.dumps(mode, proto)
+                        unpickled = pickle.loads(pickled)
+                        self.assertIs(unpickled, mode)
 
 
 class TestGenericTest(GenericTest, unittest.TestCase):

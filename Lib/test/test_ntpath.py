@@ -660,7 +660,7 @@ class TestNtpath(NtpathTestCase):
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
-    @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
+    @_parameterize({}, {'strict': True}, {'strict': ALL_BUT_LAST}, {'strict': ALLOW_MISSING})
     def test_realpath_relative(self, kwargs):
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
         open(ABSTFN, "wb").close()
@@ -893,7 +893,7 @@ class TestNtpath(NtpathTestCase):
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
-    @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
+    @_parameterize({}, {'strict': True}, {'strict': ALL_BUT_LAST}, {'strict': ALLOW_MISSING})
     def test_realpath_symlink_prefix(self, kwargs):
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
         self.addCleanup(os_helper.unlink, ABSTFN + "3")
@@ -931,6 +931,7 @@ class TestNtpath(NtpathTestCase):
         tester("ntpath.realpath('NUL')", r'\\.\NUL')
         tester("ntpath.realpath('NUL', strict=False)", r'\\.\NUL')
         tester("ntpath.realpath('NUL', strict=True)", r'\\.\NUL')
+        tester("ntpath.realpath('NUL', strict=ALL_BUT_LAST)", r'\\.\NUL')
         tester("ntpath.realpath('NUL', strict=ALLOW_MISSING)", r'\\.\NUL')
 
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
@@ -955,7 +956,7 @@ class TestNtpath(NtpathTestCase):
 
         self.assertPathEqual(test_file_long, ntpath.realpath(test_file_short))
 
-        for kwargs in {}, {'strict': True}, {'strict': ALLOW_MISSING}:
+        for kwargs in {}, {'strict': True}, {'strict': ALL_BUT_LAST}, {'strict': ALLOW_MISSING}:
             with self.subTest(**kwargs):
                 with os_helper.change_cwd(test_dir_long):
                     self.assertPathEqual(
@@ -1059,7 +1060,7 @@ class TestNtpath(NtpathTestCase):
         check("file/", ALL_BUT_LAST, "/file")
         check("file/", True, "/file")
         check("file/file2", False, "/file/file2")
-        check("file/file2", ALLOW_MISSING, FileNotFoundError)
+        check("file/file2", ALLOW_MISSING, "/file/file2")
         check("file/file2", ALL_BUT_LAST, FileNotFoundError)
         check("file/file2", True, FileNotFoundError)
         check("file/.", False, "/file")
@@ -1093,7 +1094,7 @@ class TestNtpath(NtpathTestCase):
         check("link/", ALL_BUT_LAST, "/file")
         check("link/", True, "/file")
         check("link/file2", False, "/file/file2")
-        check("link/file2", ALLOW_MISSING, FileNotFoundError)
+        check("link/file2", ALLOW_MISSING, "/file/file2")
         check("link/file2", ALL_BUT_LAST, FileNotFoundError)
         check("link/file2", True, FileNotFoundError)
         check("link/.", False, "/file")
