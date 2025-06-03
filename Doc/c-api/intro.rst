@@ -127,7 +127,7 @@ complete listing.
    item defined in the module file. Example::
 
        static struct PyModuleDef spam_module = {
-           PyModuleDef_HEAD_INIT,
+           .m_base = PyModuleDef_HEAD_INIT,
            .m_name = "spam",
            ...
        };
@@ -135,7 +135,7 @@ complete listing.
        PyMODINIT_FUNC
        PyInit_spam(void)
        {
-           return PyModule_Create(&spam_module);
+           return PyModuleDef_Init(&spam_module);
        }
 
 
@@ -838,3 +838,41 @@ after every statement run by the interpreter.)
 
 Please refer to :file:`Misc/SpecialBuilds.txt` in the Python source distribution
 for more detailed information.
+
+
+.. _c-api-tools:
+
+Recommended third party tools
+=============================
+
+The following third party tools offer both simpler and more sophisticated
+approaches to creating C, C++ and Rust extensions for Python:
+
+* `Cython <https://cython.org/>`_
+* `cffi <https://cffi.readthedocs.io>`_
+* `HPy <https://hpyproject.org/>`_
+* `nanobind <https://github.com/wjakob/nanobind>`_ (C++)
+* `Numba <https://numba.pydata.org/>`_
+* `pybind11 <https://pybind11.readthedocs.io/>`_ (C++)
+* `PyO3 <https://pyo3.rs/>`_ (Rust)
+* `SWIG <https://www.swig.org>`_
+
+Using tools such as these can help avoid writing code that is tightly bound to
+a particular version of CPython, avoid reference counting errors, and focus
+more on your own code than on using the CPython API. In general, new versions
+of Python can be supported by updating the tool, and your code will often use
+newer and more efficient APIs automatically. Some tools also support compiling
+for other implementations of Python from a single set of sources.
+
+These projects are not supported by the same people who maintain Python, and
+issues need to be raised with the projects directly. Remember to check that the
+project is still maintained and supported, as the list above may become
+outdated.
+
+.. seealso::
+
+   `Python Packaging User Guide: Binary Extensions <https://packaging.python.org/guides/packaging-binary-extensions/>`_
+      The Python Packaging User Guide not only covers several available
+      tools that simplify the creation of binary extensions, but also
+      discusses the various reasons why creating an extension module may be
+      desirable in the first place.

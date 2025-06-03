@@ -1915,6 +1915,10 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.run_embedded_interpreter("test_get_incomplete_frame")
 
 
+    def test_gilstate_after_finalization(self):
+        self.run_embedded_interpreter("test_gilstate_after_finalization")
+
+
 class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_unicode_id_init(self):
         # bpo-42882: Test that _PyUnicode_FromId() works

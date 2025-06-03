@@ -1045,6 +1045,9 @@ get_code_var_counts(PyObject *self, PyObject *_args, PyObject *_kwargs)
 #define SET_COUNT(DICT, STRUCT, NAME) \
     do { \
         PyObject *count = PyLong_FromLong(STRUCT.NAME); \
+        if (count == NULL) { \
+            goto error; \
+        } \
         int res = PyDict_SetItemString(DICT, #NAME, count); \
         Py_DECREF(count); \
         if (res < 0) { \
@@ -1991,7 +1994,14 @@ get_crossinterp_data(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     if (strcmp(mode, "xidata") == 0) {
-        if (_PyObject_GetXIData(tstate, obj, xidata) != 0) {
+        if (_PyObject_GetXIDataNoFallback(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
+    else if (strcmp(mode, "fallback") == 0) {
+        xidata_fallback_t fallback = _PyXIDATA_FULL_FALLBACK;
+        if (_PyObject_GetXIData(tstate, obj, fallback, xidata) != 0)
+        {
             goto error;
         }
     }
