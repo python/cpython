@@ -1206,6 +1206,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/unicodeobject.h \
 		$(srcdir)/Include/warnings.h \
 		$(srcdir)/Include/weakrefobject.h \
+		$(srcdir)/Python/remote_debug.h \
 		\
 		pyconfig.h \
 		$(PARSER_HEADERS) \

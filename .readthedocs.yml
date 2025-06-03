@@ -32,4 +32,3 @@ build:
     - make -C Doc venv html
     - mkdir _readthedocs
     - mv Doc/build/html _readthedocs/html
-
