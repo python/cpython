@@ -1112,6 +1112,7 @@ with_hash_algorithm
 with_tzpath
 with_libs
 with_system_expat
+with_libmpdec
 with_system_libmpdec
 with_decimal_contextvar
 enable_loadable_sqlite_extensions
@@ -1909,6 +1910,7 @@ Optional Packages:
   --with-libs='lib1 ...'  link against additional libs (default is no)
   --with-system-expat     build pyexpat module using an installed expat
                           library, see Doc/library/pyexpat.rst (default is no)
+  --with-libmpdec         build _decimal module (default is yes)
   --with-system-libmpdec  build _decimal module using an installed mpdecimal
                           library, see Doc/library/decimal.rst (default is
                           yes)
@@ -15753,6 +15755,19 @@ printf "%s\n" "#define Py_FFI_SUPPORT_C_COMPLEX 1" >>confdefs.h
 
 fi
 
+# Check for use of the libmpdec library
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-libmpdec" >&5
+printf %s "checking for --with-libmpdec... " >&6; }
+
+# Check whether --with-libmpdec was given.
+if test ${with_libmpdec+y}
+then :
+  withval=$with_libmpdec;
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_libmpdec" >&5
+printf "%s\n" "$with_libmpdec" >&6; }
+
 # Check for use of the system libmpdec library
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-system-libmpdec" >&5
 printf %s "checking for --with-system-libmpdec... " >&6; }
@@ -15761,7 +15776,7 @@ printf %s "checking for --with-system-libmpdec... " >&6; }
 # Check whether --with-system_libmpdec was given.
 if test ${with_system_libmpdec+y}
 then :
-  withval=$with_system_libmpdec; if test "x$with_system_libmpdec" = xno
+  withval=$with_system_libmpdec; if test "x$with_system_libmpdec" = xno && test "x$with_libmpdec" = xyes
 then :
   LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
           LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
@@ -15901,17 +15916,19 @@ LIBS=$save_LIBS
 
 
 fi
-if test "x$with_system_libmpdec" = xno
+if test "$with_system_libmpdec" = "no" && test "$with_libmpdec" = "yes"
 then :
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: the bundled copy of libmpdecimal is scheduled for removal in Python 3.16; consider using a system installed mpdecimal library." >&5
-printf "%s\n" "$as_me: WARNING: the bundled copy of libmpdecimal is scheduled for removal in Python 3.16; consider using a system installed mpdecimal library." >&2;}
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: the bundled copy of libmpdec is scheduled for removal in Python 3.16; consider using a system installed mpdecimal library." >&5
+printf "%s\n" "$as_me: WARNING: the bundled copy of libmpdec is scheduled for removal in Python 3.16; consider using a system installed mpdecimal library." >&2;}
 fi
 
-if test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"
+if test "$with_libmpdec" = "yes" && test "$have_mpdec" = "no"
 then :
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: no system libmpdecimal found; falling back to pure-Python version for the decimal module" >&5
-printf "%s\n" "$as_me: WARNING: no system libmpdecimal found; falling back to pure-Python version for the decimal module" >&2;}
-       py_cv_module__decimal=n/a
+  as_fn_error $? "no system libmpdec found; use --without-libmpdec to build Python with only pure-Python version for the decimal module" "$LINENO" 5
+fi
+if test "x$with_libmpdec" = xno
+then :
+  py_cv_module__decimal=n/a
 fi
 
 # Disable forced inlining in debug builds, see GH-94847

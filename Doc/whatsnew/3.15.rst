@@ -257,6 +257,8 @@ Build changes
 * Removed implicit fallback to the buildled copy of the ``libmpdec`` library.
   Now this should be explicitly enabled with :option:`--with-system-libmpdec`
   set to ``no`` or with :option:`!--without-system-libmpdec`.
+  The :option:`!--without-libmpdec` should be used to permit building of
+  the CPython without the ``_decimal`` module.
   (Contributed by Sergey B Kirpichev in :gh:`115119`.)
 
 

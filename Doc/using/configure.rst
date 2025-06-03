@@ -851,6 +851,12 @@ Libraries options
 
    .. seealso:: :option:`LIBMPDEC_CFLAGS` and :option:`LIBMPDEC_LIBS`.
 
+.. option:: --with-libmpdec
+
+   Whether build the ``_decimal`` extension module.
+
+   .. versionadded:: next
+
 .. option:: --with-readline=readline|editline
 
    Designate a backend library for the :mod:`readline` module.
