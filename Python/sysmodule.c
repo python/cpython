@@ -1071,44 +1071,23 @@ sys_get_object_tags(PyObject *module, PyObject *op)
     if (dict == NULL) {
         return NULL;
     }
-    if (PyUnstable_IsImmortal(op)) {
-        if (PyDict_SetItemString(dict, "immortal", Py_True) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
-    }
-    else {
-        if (PyDict_SetItemString(dict, "immortal", Py_False) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
+
+    if (PyDict_SetItemString(dict, "immortal", PyBool_FromLong(PyUnstable_IsImmortal(op))) < 0) {
+        Py_DECREF(dict);
+        return NULL;
     }
 
-    if (PyUnicode_Check(op) && PyUnicode_CHECK_INTERNED(op)) {
-        if (PyDict_SetItemString(dict, "interned", Py_True) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
-    }
-    else {
-        if (PyDict_SetItemString(dict, "interned", Py_False) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
+
+    if (PyDict_SetItemString(dict, "interned", PyBool_FromLong((PyUnicode_Check(op) && PyUnicode_CHECK_INTERNED(op)))) < 0) {
+        Py_DECREF(dict);
+        return NULL;
     }
 
-    if (_PyObject_HasDeferredRefcount(op)) {
-        if (PyDict_SetItemString(dict, "deferred_refcount", Py_True) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
+    if (PyDict_SetItemString(dict, "deferred_refcount", PyBool_FromLong(_PyObject_HasDeferredRefcount(op))) < 0) {
+        Py_DECREF(dict);
+        return NULL;
     }
-    else {
-        if (PyDict_SetItemString(dict, "deferred_refcount", Py_False) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
-    }
+
     return dict;
 }
 
