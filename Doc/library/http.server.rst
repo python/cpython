@@ -374,7 +374,7 @@ instantiation, of which this module provides three different variants:
    .. versionchanged:: 3.9
       The *directory* parameter accepts a :term:`path-like object`.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: next
       The *response_headers* parameter accepts an optional dictionary of
       additional HTTP headers to add to each response.
 
@@ -444,7 +444,7 @@ instantiation, of which this module provides three different variants:
       .. versionchanged:: 3.7
          Support of the ``'If-Modified-Since'`` header.
 
-      .. versionchanged:: 3.15
+      .. versionchanged:: next
          Support ``response_headers`` as an instance argument.
 
 The :class:`SimpleHTTPRequestHandler` class can be used in the following
@@ -559,7 +559,7 @@ The following options are accepted:
 
      Access-Control-Allow-Origin: *
 
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
 
 .. _http.server-security:
