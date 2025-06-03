@@ -1,5 +1,6 @@
 import ntpath
 import os
+import subprocess
 import sys
 import unittest
 import warnings
@@ -349,20 +350,20 @@ class TestNtpath(NtpathTestCase):
         self.assertRaises(FileNotFoundError, ntpath.realpath, ABSTFN, strict=True)
         self.assertRaises(FileNotFoundError, ntpath.realpath, ABSTFN + "2", strict=True)
 
-        self.assertRaises(OSError, realpath, path, strict=True)
-        self.assertRaises(OSError, realpath, path, strict=ALLOW_MISSING)
+        self.assertRaises(OSError, ntpath.realpath, path, strict=True)
+        self.assertRaises(OSError, ntpath.realpath, path, strict=ALLOW_MISSING)
         path = ABSTFNb + b'\x00'
         self.assertEqual(realpath(path, strict=False), path)
-        self.assertRaises(OSError, realpath, path, strict=True)
-        self.assertRaises(OSError, realpath, path, strict=ALLOW_MISSING)
+        self.assertRaises(OSError, ntpath.realpath, path, strict=True)
+        self.assertRaises(OSError, ntpath.realpath, path, strict=ALLOW_MISSING)
         path = ABSTFN + '\\nonexistent\\x\x00'
         self.assertEqual(realpath(path, strict=False), path)
-        self.assertRaises(OSError, realpath, path, strict=True)
-        self.assertRaises(OSError, realpath, path, strict=ALLOW_MISSING)
+        self.assertRaises(OSError, ntpath.realpath, path, strict=True)
+        self.assertRaises(OSError, ntpath.realpath, path, strict=ALLOW_MISSING)
         path = ABSTFNb + b'\\nonexistent\\x\x00'
         self.assertEqual(realpath(path, strict=False), path)
-        self.assertRaises(OSError, realpath, path, strict=True)
-        self.assertRaises(OSError, realpath, path, strict=ALLOW_MISSING)
+        self.assertRaises(OSError, ntpath.realpath, path, strict=True)
+        self.assertRaises(OSError, ntpath.realpath, path, strict=ALLOW_MISSING)
         path = ABSTFN + '\x00\\..'
         self.assertEqual(realpath(path, strict=False), os.getcwd())
         self.assertEqual(realpath(path, strict=True), os.getcwd())
@@ -373,11 +374,11 @@ class TestNtpath(NtpathTestCase):
         self.assertEqual(realpath(path, strict=ALLOW_MISSING), os.getcwdb())
         path = ABSTFN + '\\nonexistent\\x\x00\\..'
         self.assertEqual(realpath(path, strict=False), ABSTFN + '\\nonexistent')
-        self.assertRaises(OSError, realpath, path, strict=True)
+        self.assertRaises(OSError, ntpath.realpath, path, strict=True)
         self.assertEqual(realpath(path, strict=ALLOW_MISSING), ABSTFN + '\\nonexistent')
         path = ABSTFNb + b'\\nonexistent\\x\x00\\..'
         self.assertEqual(realpath(path, strict=False), ABSTFNb + b'\\nonexistent')
-        self.assertRaises(OSError, realpath, path, strict=True)
+        self.assertRaises(OSError, ntpath.realpath, path, strict=True)
         self.assertEqual(realpath(path, strict=ALLOW_MISSING), ABSTFNb + b'\\nonexistent')
 
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
@@ -387,17 +388,17 @@ class TestNtpath(NtpathTestCase):
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
         ABSTFNb = os.fsencode(ABSTFN)
         path = ABSTFNb + b'\xff'
-        self.assertRaises(UnicodeDecodeError, realpath, path, **kwargs)
-        self.assertRaises(UnicodeDecodeError, realpath, path, **kwargs)
+        self.assertRaises(UnicodeDecodeError, ntpath.realpath, path, **kwargs)
+        self.assertRaises(UnicodeDecodeError, ntpath.realpath, path, **kwargs)
         path = ABSTFNb + b'\\nonexistent\\\xff'
-        self.assertRaises(UnicodeDecodeError, realpath, path, **kwargs)
-        self.assertRaises(UnicodeDecodeError, realpath, path, **kwargs)
+        self.assertRaises(UnicodeDecodeError, ntpath.realpath, path, **kwargs)
+        self.assertRaises(UnicodeDecodeError, ntpath.realpath, path, **kwargs)
         path = ABSTFNb + b'\xff\\..'
-        self.assertRaises(UnicodeDecodeError, realpath, path, **kwargs)
-        self.assertRaises(UnicodeDecodeError, realpath, path, **kwargs)
+        self.assertRaises(UnicodeDecodeError, ntpath.realpath, path, **kwargs)
+        self.assertRaises(UnicodeDecodeError, ntpath.realpath, path, **kwargs)
         path = ABSTFNb + b'\\nonexistent\\\xff\\..'
-        self.assertRaises(UnicodeDecodeError, realpath, path, **kwargs)
-        self.assertRaises(UnicodeDecodeError, realpath, path, **kwargs)
+        self.assertRaises(UnicodeDecodeError, ntpath.realpath, path, **kwargs)
+        self.assertRaises(UnicodeDecodeError, ntpath.realpath, path, **kwargs)
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
