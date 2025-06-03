@@ -711,22 +711,6 @@ class PosixPathTest(unittest.TestCase):
     @skip_if_ABSTFN_contains_backslash
     @unittest.skipIf(os.chmod not in os.supports_follow_symlinks, "Can't set symlink permissions")
     @unittest.skipIf(sys.platform != "darwin", "only macOS requires read permission to readlink()")
-    def test_realpath_unreadable_symlink(self):
-        try:
-            os.symlink(ABSTFN+"1", ABSTFN)
-            os.chmod(ABSTFN, 0o000, follow_symlinks=False)
-            self.assertEqual(realpath(ABSTFN), ABSTFN)
-            self.assertEqual(realpath(ABSTFN + '/foo'), ABSTFN + '/foo')
-            self.assertEqual(realpath(ABSTFN + '/../foo'), dirname(ABSTFN) + '/foo')
-            self.assertEqual(realpath(ABSTFN + '/foo/..'), ABSTFN)
-        finally:
-            os.chmod(ABSTFN, 0o755, follow_symlinks=False)
-            os_helper.unlink(ABSTFN)
-
-    @os_helper.skip_unless_symlink
-    @skip_if_ABSTFN_contains_backslash
-    @unittest.skipIf(os.chmod not in os.supports_follow_symlinks, "Can't set symlink permissions")
-    @unittest.skipIf(sys.platform != "darwin", "only macOS requires read permission to readlink()")
     @_parameterize({'strict': True}, {'strict': ALLOW_MISSING})
     def test_realpath_unreadable_symlink_strict(self, kwargs):
         try:
