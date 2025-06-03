@@ -264,7 +264,12 @@ def setup_sdk():
     if not all((android_home / "licenses" / path).exists() for path in [
         "android-sdk-arm-dbt-license", "android-sdk-license"
     ]):
-        run([sdkmanager, "--licenses"], text=True, input="y\n" * 100)
+        run(
+            [sdkmanager, "--licenses"],
+            text=True,
+            capture_output=True,
+            input="y\n" * 100,
+        )
 
     # Gradle may install this automatically, but we can't rely on that because
     # we need to run adb within the logcat task.
@@ -542,6 +547,8 @@ async def gradle_task(context):
             ("Mode", mode), ("Module", module), ("Args", join_command(context.args))
         ] if value
     ]
+    if context.verbose >= 2:
+        args.append("--info")
     log("> " + join_command(args))
 
     try:
