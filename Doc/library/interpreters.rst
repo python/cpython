@@ -58,7 +58,7 @@ This module defines the following functions:
 
 .. function:: list_all()
 
-   Return a :class:`list` of :class:`Interpreter`,
+   Return a :class:`list` of :class:`Interpreter` objects,
    one for each existing interpreter.
 
 .. function:: get_current()
@@ -96,12 +96,12 @@ Interpreter objects
 
       (read-only)
 
-      Where the interpreter came from.
+      A string describing where the interpreter came from.
 
    .. method:: is_running()
 
-      Is the interpreter currently executing code in its
-      :mod:`!__main__` module?
+      Return ``True`` if the interpreter is currently executing code
+      in its :mod:`!__main__` module and ``False`` otherwise.
 
    .. method:: close()
 
@@ -118,7 +118,8 @@ Interpreter objects
 
    .. method:: call(callable, /, *args, **kwargs)
 
-      Run the given function in the interpreter (in the current thread).
+      Return the result of calling running the given function in the
+      interpreter (in the current thread).
 
    .. method:: call_in_thread(callable, /, *args, **kwargs)
 
@@ -160,9 +161,7 @@ Exceptions
 Basic Usage
 -----------
 
-Creating an interpreter and running code in it:
-
-::
+Creating an interpreter and running code in it::
 
     import interpreters
 

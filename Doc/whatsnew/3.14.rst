@@ -204,7 +204,7 @@ stopped sharing the :term:`GIL`.  Likewise, we expect to slowly see
 libraries on PyPI for high-level abstractions on top of interpreters.
 
 Regarding extension modules, work is in progress to update some PyPI
-projects, as well as tools like Cython, PyBind11, Nanobind, and Py03.
+projects, as well as tools like Cython, PyBind11, Nanobind, and PyO3.
 The steps for isolating an extension module are found at
 :ref:`isolating-extensions-howto`.  Isolating a module has a lot of
 overlap with what is required to support
@@ -214,6 +214,9 @@ support for multiple interpreters.
 
 Also added in 3.14: :ref:`concurrent.futures.InterpreterPoolExecutor
 <whatsnew314-concurrent-futures-interp-pool>`.
+
+.. seealso::
+   :pep:`734`.
 
 
 .. _whatsnew314-pep750:
