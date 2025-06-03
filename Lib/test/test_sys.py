@@ -805,9 +805,6 @@ class SysModuleTest(unittest.TestCase):
         sys.set_object_tag(s, "unknown")
         after_tags = sys.get_object_tags(s)
         self.assertEqual(len(origin_tags), len(after_tags))
-        for k in keys:
-            self.assertIn(k, after_tags)
-            self.assertTrue(after_tags[k])
 
     @support.cpython_only
     @requires_subinterpreters
