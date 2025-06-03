@@ -1228,7 +1228,7 @@ opcodes = [
 
       The same as INT, except that the literal ends with 'L', and always
       unpickles to a Python long.  There doesn't seem a real purpose to the
-      trailing 'L' and it's not required for Python 3.0 or higher.
+      trailing 'L', and it's not required for Python 3.0 or higher.
 
       Note that LONG takes time quadratic in the number of digits when
       unpickling (this is simply due to the nature of decimal->binary
