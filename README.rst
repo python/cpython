@@ -1,4 +1,4 @@
-This is Python version 3.9.22
+This is Python version 3.9.23
 =============================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=3.9
