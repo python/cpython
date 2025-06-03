@@ -110,7 +110,7 @@ bytes_types = pickle.bytes_types
 #
 # The second major set of additions is now called "protocol 1", and was called
 # "binary mode" before Python 2.3.  This added many opcodes with arguments
-# consisting of arbitrary bytes, including NULL bytes and unprintable "high bit"
+# consisting of arbitrary bytes, including NUL bytes and unprintable "high bit"
 # bytes.  Binary mode pickles can be substantially smaller than equivalent
 # text mode pickles, and sometimes faster too; e.g., BININT represents a 4-byte
 # int as 4 bytes following the opcode, which is cheaper to unpickle than the
@@ -1228,8 +1228,7 @@ opcodes = [
 
       The same as INT, except that the literal ends with 'L', and always
       unpickles to a Python long.  There doesn't seem a real purpose to the
-      trailing 'L', and the trailing 'L' is not required for Python 3.0 or
-      higher.
+      trailing 'L' and it's not required for Python 3.0 or higher.
 
       Note that LONG takes time quadratic in the number of digits when
       unpickling (this is simply due to the nature of decimal->binary

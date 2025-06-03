@@ -1,1 +1,0 @@
-Expanded the documentation for some opcodes in the :mod:`pickletools` module.
