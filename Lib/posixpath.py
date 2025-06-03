@@ -438,7 +438,9 @@ def _joinrealpath(path, rest, strict, seen):
         newpath = join(path, name)
         try:
             st = os.lstat(newpath)
-        except ignored_error:
+        except OSError:
+            if strict:
+                raise
             is_link = False
         else:
             is_link = stat.S_ISLNK(st.st_mode)
