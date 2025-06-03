@@ -1342,6 +1342,17 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(str(self.ipv6_scoped_interface.ip),
                          '2001:658:22a:cafe:200::1')
 
+    def testIPv6IPv4MappedStringRepresentation(self):
+        long_prefix = '0000:0000:0000:0000:0000:ffff:'
+        short_prefix = '::ffff:'
+        ipv4 = '1.2.3.4'
+        ipv6_ipv4_str = short_prefix + ipv4
+        ipv6_ipv4_addr = ipaddress.IPv6Address(ipv6_ipv4_str)
+        ipv6_ipv4_iface = ipaddress.IPv6Interface(ipv6_ipv4_str)
+        self.assertEqual(str(ipv6_ipv4_addr), ipv6_ipv4_str)
+        self.assertEqual(ipv6_ipv4_addr.exploded, long_prefix + ipv4)
+        self.assertEqual(str(ipv6_ipv4_iface.ip), ipv6_ipv4_str)
+
     def testGetScopeId(self):
         self.assertEqual(self.ipv6_address.scope_id,
                          None)
@@ -2622,12 +2633,42 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual('192.168.178.1', addr4.exploded)
 
     def testReversePointer(self):
-        addr1 = ipaddress.IPv4Address('127.0.0.1')
-        addr2 = ipaddress.IPv6Address('2001:db8::1')
-        self.assertEqual('1.0.0.127.in-addr.arpa', addr1.reverse_pointer)
-        self.assertEqual('1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.' +
-                         'b.d.0.1.0.0.2.ip6.arpa',
-                         addr2.reverse_pointer)
+        for addr_v4, expected in [
+            ('127.0.0.1', '1.0.0.127.in-addr.arpa'),
+            # test vector: https://www.rfc-editor.org/rfc/rfc1035, §3.5
+            ('10.2.0.52', '52.0.2.10.in-addr.arpa'),
+        ]:
+            with self.subTest('ipv4_reverse_pointer', addr=addr_v4):
+                addr = ipaddress.IPv4Address(addr_v4)
+                self.assertEqual(addr.reverse_pointer, expected)
+
+        for addr_v6, expected in [
+            (
+                '2001:db8::1', (
+                    '1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.'
+                    '0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.'
+                    'ip6.arpa'
+                )
+            ),
+            (
+                '::FFFF:192.168.1.35', (
+                    '3.2.1.0.8.a.0.c.f.f.f.f.0.0.0.0.'
+                    '0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.'
+                    'ip6.arpa'
+                )
+            ),
+            # test vector: https://www.rfc-editor.org/rfc/rfc3596, §2.5
+            (
+                '4321:0:1:2:3:4:567:89ab', (
+                    'b.a.9.8.7.6.5.0.4.0.0.0.3.0.0.0.'
+                    '2.0.0.0.1.0.0.0.0.0.0.0.1.2.3.4.'
+                    'ip6.arpa'
+                )
+             )
+        ]:
+            with self.subTest('ipv6_reverse_pointer', addr=addr_v6):
+                addr = ipaddress.IPv6Address(addr_v6)
+                self.assertEqual(addr.reverse_pointer, expected)
 
     def testIntRepresentation(self):
         self.assertEqual(16909060, int(self.ipv4_address))
