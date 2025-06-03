@@ -472,6 +472,11 @@ elf_init_ehframe(ELFObjectContext* ctx)
                  DWRF_U8(0); /* Augmentation data. */
     /* Registers saved in CFRAME. */
 #ifdef __x86_64__
+#  if defined(__CET__) && (__CET__ & 1)
+                 DWRF_U8(DWRF_CFA_advance_loc | 8);
+#  else
+                 DWRF_U8(DWRF_CFA_advance_loc | 4);
+#  endif
                  DWRF_U8(DWRF_CFA_advance_loc | 4);
                  DWRF_U8(DWRF_CFA_def_cfa_offset); DWRF_UV(16);
                  DWRF_U8(DWRF_CFA_advance_loc | 6);
