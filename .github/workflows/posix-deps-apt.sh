@@ -1,6 +1,8 @@
 #!/bin/sh
 
-# Workaround missing on ubuntu 24.04 libmpdec-dev
+# Workaround missing libmpdec-dev on ubuntu 24.04:
+# https://launchpad.net/~ondrej/+archive/ubuntu/php
+# https://deb.sury.org/
 sudo add-apt-repository ppa:ondrej/php
 
 apt-get update
