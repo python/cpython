@@ -447,7 +447,8 @@ the :mod:`glob` module.)
       The *strict* parameter was added.
 
    .. versionchanged:: next
-      The :py:data:`~ntpath.ALLOW_MISSING` value for *strict* parameter was added.
+      The :py:data:`~os.path.ALLOW_MISSING` value for the *strict* parameter
+      was added.
 
 .. data:: ALLOW_MISSING
 
