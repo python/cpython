@@ -1083,7 +1083,7 @@ sys_get_object_tags(PyObject *module, PyObject *op)
         }
     }
 
-    if (PyUnicode_CHECK_INTERNED(op)) {
+    if (PyUnicode_Check(op) && PyUnicode_CHECK_INTERNED(op)) {
         if (PyDict_SetItemString(dict, "interned", Py_True) < 0) {
             Py_DECREF(dict);
             return NULL;
@@ -1109,6 +1109,32 @@ sys_get_object_tags(PyObject *module, PyObject *op)
         }
     }
     return dict;
+}
+
+/*[clinic input]
+sys.set_object_tag -> object
+
+  object: object
+  tag: str
+  *
+  options: object = None
+
+Set the tags of the given object.
+[clinic start generated code]*/
+
+static PyObject *
+sys_set_object_tag_impl(PyObject *module, PyObject *object, const char *tag,
+                        PyObject *options)
+/*[clinic end generated code: output=b0fb5e9931feb4aa input=b64c9bd958c75f11]*/
+{
+    assert(object != NULL);
+    if (strcmp(tag, "immortal") == 0) {
+        _Py_SetImmortal(object);
+    }
+    else if (strcmp(tag, "interned") == 0) {
+        _PyUnicode_InternMortal(_PyInterpreterState_GET(), &object);
+    }
+    Py_RETURN_NONE;
 }
 
 /*
@@ -2856,6 +2882,7 @@ static PyMethodDef sys_methods[] = {
     SYS_INTERN_METHODDEF
     SYS__IS_INTERNED_METHODDEF
     SYS_GET_OBJECT_TAGS_METHODDEF
+    SYS_SET_OBJECT_TAG_METHODDEF
     SYS_IS_FINALIZING_METHODDEF
     SYS_MDEBUG_METHODDEF
     SYS_SETSWITCHINTERVAL_METHODDEF

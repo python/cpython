@@ -795,6 +795,20 @@ class SysModuleTest(unittest.TestCase):
             self.assertIn(k, tags)
 
     @support.cpython_only
+    def test_set_object_tags(self):
+        keys = ("immortal", "interned")
+        s = "should never interned before" + str(random.randrange(0, 10**9))
+        origin_tags = sys.get_object_tags(s)
+        for k in keys:
+            sys.set_object_tag(s, k)
+        sys.set_object_tag(s, "unknown")
+        after_tags = sys.get_object_tags(s)
+        self.assertEqual(len(origin_tags), len(after_tags))
+        for k in keys:
+            self.assertIn(k, after_tags)
+            self.assertTrue(after_tags[k])
+
+    @support.cpython_only
     @requires_subinterpreters
     def test_subinterp_intern_dynamically_allocated(self):
         # Implementation detail: Dynamically allocated strings
