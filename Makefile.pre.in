@@ -1165,6 +1165,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/unicodeobject.h \
 		$(srcdir)/Include/warnings.h \
 		$(srcdir)/Include/weakrefobject.h \
+		$(srcdir)/Python/remote_debug.h \
 		\
 		pyconfig.h \
 		$(PARSER_HEADERS) \
@@ -2417,8 +2418,7 @@ maninstall:	altmaninstall
 XMLLIBSUBDIRS=  xml xml/dom xml/etree xml/parsers xml/sax
 LIBSUBDIRS=	asyncio \
 		collections \
-		compression compression/bz2 compression/gzip compression/zstd \
-		compression/lzma compression/zlib compression/_common \
+		compression compression/_common compression/zstd \
 		concurrent concurrent/futures \
 		csv \
 		ctypes ctypes/macholib \

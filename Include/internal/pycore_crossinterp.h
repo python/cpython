@@ -131,7 +131,23 @@ PyAPI_FUNC(void) _PyXIData_Clear(PyInterpreterState *, _PyXIData_t *);
 
 /* getting cross-interpreter data */
 
-typedef int (*xidatafunc)(PyThreadState *tstate, PyObject *, _PyXIData_t *);
+typedef int xidata_fallback_t;
+#define _PyXIDATA_XIDATA_ONLY (0)
+#define _PyXIDATA_FULL_FALLBACK (1)
+
+// Technically, we don't need two different function types;
+// we could go with just the fallback one.  However, only container
+// types like tuple need it, so always having the extra arg would be
+// a bit unfortunate.  It's also nice to be able to clearly distinguish
+// between types that might call _PyObject_GetXIData() and those that won't.
+//
+typedef int (*xidatafunc)(PyThreadState *, PyObject *, _PyXIData_t *);
+typedef int (*xidatafbfunc)(
+        PyThreadState *, PyObject *, xidata_fallback_t, _PyXIData_t *);
+typedef struct {
+    xidatafunc basic;
+    xidatafbfunc fallback;
+} _PyXIData_getdata_t;
 
 PyAPI_FUNC(PyObject *) _PyXIData_GetNotShareableErrorType(PyThreadState *);
 PyAPI_FUNC(void) _PyXIData_SetNotShareableError(PyThreadState *, const char *);
@@ -140,16 +156,21 @@ PyAPI_FUNC(void) _PyXIData_FormatNotShareableError(
         const char *,
         ...);
 
-PyAPI_FUNC(xidatafunc) _PyXIData_Lookup(
+PyAPI_FUNC(_PyXIData_getdata_t) _PyXIData_Lookup(
         PyThreadState *,
         PyObject *);
 PyAPI_FUNC(int) _PyObject_CheckXIData(
         PyThreadState *,
         PyObject *);
 
+PyAPI_FUNC(int) _PyObject_GetXIDataNoFallback(
+        PyThreadState *,
+        PyObject *,
+        _PyXIData_t *);
 PyAPI_FUNC(int) _PyObject_GetXIData(
         PyThreadState *,
         PyObject *,
+        xidata_fallback_t,
         _PyXIData_t *);
 
 // _PyObject_GetXIData() for bytes
@@ -296,7 +317,9 @@ typedef enum error_code {
     _PyXI_ERR_ALREADY_RUNNING = -4,
     _PyXI_ERR_MAIN_NS_FAILURE = -5,
     _PyXI_ERR_APPLY_NS_FAILURE = -6,
-    _PyXI_ERR_NOT_SHAREABLE = -7,
+    _PyXI_ERR_PRESERVE_FAILURE = -7,
+    _PyXI_ERR_EXC_PROPAGATION_FAILURE = -8,
+    _PyXI_ERR_NOT_SHAREABLE = -9,
 } _PyXI_errcode;
 
 
@@ -314,24 +337,9 @@ typedef struct _sharedexception {
 PyAPI_FUNC(PyObject *) _PyXI_ApplyError(_PyXI_error *err);
 
 
-typedef struct xi_session _PyXI_session;
-typedef struct _sharedns _PyXI_namespace;
-
-PyAPI_FUNC(void) _PyXI_FreeNamespace(_PyXI_namespace *ns);
-PyAPI_FUNC(_PyXI_namespace *) _PyXI_NamespaceFromNames(PyObject *names);
-PyAPI_FUNC(int) _PyXI_FillNamespaceFromDict(
-    _PyXI_namespace *ns,
-    PyObject *nsobj,
-    _PyXI_session *session);
-PyAPI_FUNC(int) _PyXI_ApplyNamespace(
-    _PyXI_namespace *ns,
-    PyObject *nsobj,
-    PyObject *dflt);
-
-
 // A cross-interpreter session involves entering an interpreter
-// (_PyXI_Enter()), doing some work with it, and finally exiting
-// that interpreter (_PyXI_Exit()).
+// with _PyXI_Enter(), doing some work with it, and finally exiting
+// that interpreter with _PyXI_Exit().
 //
 // At the boundaries of the session, both entering and exiting,
 // data may be exchanged between the previous interpreter and the
@@ -339,48 +347,38 @@ PyAPI_FUNC(int) _PyXI_ApplyNamespace(
 // isolation between interpreters.  This includes setting objects
 // in the target's __main__ module on the way in, and capturing
 // uncaught exceptions on the way out.
-struct xi_session {
-    // Once a session has been entered, this is the tstate that was
-    // current before the session.  If it is different from cur_tstate
-    // then we must have switched interpreters.  Either way, this will
-    // be the current tstate once we exit the session.
-    PyThreadState *prev_tstate;
-    // Once a session has been entered, this is the current tstate.
-    // It must be current when the session exits.
-    PyThreadState *init_tstate;
-    // This is true if init_tstate needs cleanup during exit.
-    int own_init_tstate;
+typedef struct xi_session _PyXI_session;
 
-    // This is true if, while entering the session, init_thread took
-    // "ownership" of the interpreter's __main__ module.  This means
-    // it is the only thread that is allowed to run code there.
-    // (Caveat: for now, users may still run exec() against the
-    // __main__ module's dict, though that isn't advisable.)
-    int running;
-    // This is a cached reference to the __dict__ of the entered
-    // interpreter's __main__ module.  It is looked up when at the
-    // beginning of the session as a convenience.
-    PyObject *main_ns;
+PyAPI_FUNC(_PyXI_session *) _PyXI_NewSession(void);
+PyAPI_FUNC(void) _PyXI_FreeSession(_PyXI_session *);
 
-    // This is set if the interpreter is entered and raised an exception
-    // that needs to be handled in some special way during exit.
-    _PyXI_errcode *error_override;
-    // This is set if exit captured an exception to propagate.
-    _PyXI_error *error;
-
-    // -- pre-allocated memory --
-    _PyXI_error _error;
-    _PyXI_errcode _error_override;
-};
+typedef struct {
+    PyObject *preserved;
+    PyObject *excinfo;
+    _PyXI_errcode errcode;
+} _PyXI_session_result;
+PyAPI_FUNC(void) _PyXI_ClearResult(_PyXI_session_result *);
 
 PyAPI_FUNC(int) _PyXI_Enter(
     _PyXI_session *session,
     PyInterpreterState *interp,
-    PyObject *nsupdates);
-PyAPI_FUNC(void) _PyXI_Exit(_PyXI_session *session);
+    PyObject *nsupdates,
+    _PyXI_session_result *);
+PyAPI_FUNC(int) _PyXI_Exit(
+    _PyXI_session *,
+    _PyXI_errcode,
+    _PyXI_session_result *);
 
-PyAPI_FUNC(PyObject *) _PyXI_ApplyCapturedException(_PyXI_session *session);
-PyAPI_FUNC(int) _PyXI_HasCapturedException(_PyXI_session *session);
+PyAPI_FUNC(PyObject *) _PyXI_GetMainNamespace(
+    _PyXI_session *,
+    _PyXI_errcode *);
+
+PyAPI_FUNC(int) _PyXI_Preserve(
+    _PyXI_session *,
+    const char *,
+    PyObject *,
+    _PyXI_errcode *);
+PyAPI_FUNC(PyObject *) _PyXI_GetPreserved(_PyXI_session_result *, const char *);
 
 
 /*************/

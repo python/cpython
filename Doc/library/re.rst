@@ -991,8 +991,8 @@ Functions
    That way, separator components are always found at the same relative
    indices within the result list.
 
-   Empty matches for the pattern split the string only when not adjacent
-   to a previous empty match.
+   Adjacent empty matches are not possible, but an empty match can occur
+   immediately after a non-empty match.
 
    .. code:: pycon
 
@@ -1095,9 +1095,12 @@ Functions
 
    The optional argument *count* is the maximum number of pattern occurrences to be
    replaced; *count* must be a non-negative integer.  If omitted or zero, all
-   occurrences will be replaced. Empty matches for the pattern are replaced only
-   when not adjacent to a previous empty match, so ``sub('x*', '-', 'abxd')`` returns
-   ``'-a-b--d-'``.
+   occurrences will be replaced.
+
+   Adjacent empty matches are not possible, but an empty match can occur
+   immediately after a non-empty match.
+   As a result, ``sub('x*', '-', 'abxd')`` returns ``'-a-b--d-'``
+   instead of ``'-a-b-d-'``.
 
    .. index:: single: \g; in regular expressions
 
@@ -1128,8 +1131,7 @@ Functions
    .. versionchanged:: 3.7
       Unknown escapes in *repl* consisting of ``'\'`` and an ASCII letter
       now are errors.
-      Empty matches for the pattern are replaced when adjacent to a previous
-      non-empty match.
+      An empty match can occur immediately after a non-empty match.
 
    .. versionchanged:: 3.12
       Group *id* can only contain ASCII digits.
