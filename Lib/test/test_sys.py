@@ -800,6 +800,7 @@ class SysModuleTest(unittest.TestCase):
         s = "should never interned before" + str(random.randrange(0, 10**9))
         origin_tags = sys.get_object_tags(s)
         for k in keys:
+            self.assertFalse(origin_tags[k])
             sys.set_object_tag(s, k)
         sys.set_object_tag(s, "unknown")
         after_tags = sys.get_object_tags(s)
