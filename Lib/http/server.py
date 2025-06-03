@@ -118,7 +118,7 @@ class HTTPServer(socketserver.TCPServer):
     allow_reuse_port = True
 
     def __init__(self, *args, response_headers=None, **kwargs):
-        self.response_headers = response_headers if response_headers is not None else {}
+        self.response_headers = response_headers
         super().__init__(*args, **kwargs)
 
     def server_bind(self):
@@ -131,7 +131,10 @@ class HTTPServer(socketserver.TCPServer):
     def finish_request(self, request, client_address):
         """Finish one request by instantiating RequestHandlerClass."""
         args = (request, client_address, self)
-        kwargs = dict(response_headers=self.response_headers) if self.response_headers else dict()
+        kwargs = {}
+        response_headers = getattr(self, 'response_headers', None)
+        if response_headers:
+            kwargs['response_headers'] = self.response_headers
         self.RequestHandlerClass(*args, **kwargs)
 
 class ThreadingHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
