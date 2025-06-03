@@ -1107,10 +1107,7 @@ sys_set_object_tag_impl(PyObject *module, PyObject *object, const char *tag,
 /*[clinic end generated code: output=b0fb5e9931feb4aa input=b64c9bd958c75f11]*/
 {
     assert(object != NULL);
-    if (strcmp(tag, "immortal") == 0) {
-        _Py_SetImmortal(object);
-    }
-    else if (strcmp(tag, "interned") == 0) {
+    if (strcmp(tag, "interned") == 0) {
         _PyUnicode_InternMortal(_PyInterpreterState_GET(), &object);
     }
     else if(strcmp(tag, "deferred_refcount") == 0) {
