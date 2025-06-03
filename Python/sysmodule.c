@@ -1095,19 +1095,6 @@ sys_get_object_tags(PyObject *module, PyObject *op)
             return NULL;
         }
     }
-
-    if (PyUnstable_Object_EnableDeferredRefcount(op)) {
-        if (PyDict_SetItemString(dict, "deferred_refcount", Py_True) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
-    }
-    else {
-        if (PyDict_SetItemString(dict, "deferred_refcount", Py_False) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
-    }
     return dict;
 }
 

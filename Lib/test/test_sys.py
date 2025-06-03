@@ -787,7 +787,7 @@ class SysModuleTest(unittest.TestCase):
 
     @support.cpython_only
     def test_get_object_tags(self):
-        keys = ("immortal", "interned", "deferred_refcount")
+        keys = ("immortal", "interned")
         s = "foobar"
         tags = sys.get_object_tags(s)
         self.assertEqual(len(tags), len(keys))
