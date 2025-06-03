@@ -1077,7 +1077,6 @@ sys_get_object_tags(PyObject *module, PyObject *op)
         return NULL;
     }
 
-
     if (PyDict_SetItemString(dict, "interned", PyBool_FromLong((PyUnicode_Check(op) && PyUnicode_CHECK_INTERNED(op)))) < 0) {
         Py_DECREF(dict);
         return NULL;
