@@ -96,7 +96,7 @@ jobs:
     name: 'Check if generated files are up to date'
     # Don't use ubuntu-latest but a specific version to make the job
     # reproducible: to get the same tools versions (autoconf, aclocal, ...)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
@@ -118,6 +118,8 @@ jobs:
       - name: Install dependencies
         run: |
           sudo ./.github/workflows/posix-deps-apt.sh
+          sudo add-apt-repository ppa:ondrej/php
+          sudo apt update
           sudo apt-get -yq install libmpdec-dev
       - name: Add ccache to PATH
         run: echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
