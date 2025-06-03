@@ -472,23 +472,15 @@ class PosixPathTest(unittest.TestCase):
             self.assertRaises(UnicodeDecodeError, realpath, path, strict=ALLOW_MISSING)
         else:
             self.assertEqual(realpath(path, strict=False), path)
-            if support.is_wasi:
-                self.assertRaises(OSError, realpath, path, strict=True)
-                self.assertRaises(OSError, realpath, path, strict=ALLOW_MISSING)
-            else:
-                self.assertRaises(FileNotFoundError, realpath, path, strict=True)
-                self.assertEqual(realpath(path, strict=ALLOW_MISSING), path)
+            self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+            self.assertEqual(realpath(path, strict=ALLOW_MISSING), path)
         path = b'/nonexistent/\xff'
         if sys.platform == 'win32':
             self.assertRaises(UnicodeDecodeError, realpath, path, strict=False)
             self.assertRaises(UnicodeDecodeError, realpath, path, strict=ALLOW_MISSING)
         else:
             self.assertEqual(realpath(path, strict=False), path)
-        if support.is_wasi:
-            self.assertRaises(OSError, realpath, path, strict=True)
-            self.assertRaises(OSError, realpath, path, strict=ALLOW_MISSING)
-        else:
-            self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
 
     @unittest.skipUnless(hasattr(os, "symlink"),
                          "Missing symlink implementation")
