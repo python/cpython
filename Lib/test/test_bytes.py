@@ -1872,6 +1872,8 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(b3, b'xcxcxc')
 
     def test_mutating_index(self):
+        # bytearray slice assignment can call into python code
+        # that reallocates the internal buffer
         # See gh-91153
 
         class Boom:
@@ -1890,10 +1892,10 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
                 self._testlimitedcapi.sequence_setitem(b, 0, Boom())
 
     def test_mutating_index_inbounds(self):
-        # See gh-91153
+        # gh-91153 continued
+        # Ensure buffer is not broken even if length is correct
 
         class MutatesOnIndex:
-
             def __init__(self):
                 self.ba = bytearray(0x180)
 
