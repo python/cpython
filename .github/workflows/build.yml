@@ -116,11 +116,7 @@ jobs:
           # Include env.pythonLocation in key to avoid changes in environment when setup-python updates Python
           key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.build-context.outputs.config-hash }}-${{ env.pythonLocation }}
       - name: Install dependencies
-        run: |
-          sudo ./.github/workflows/posix-deps-apt.sh
-          sudo add-apt-repository ppa:ondrej/php
-          sudo apt update
-          sudo apt-get -yq install libmpdec-dev
+        run: sudo ./.github/workflows/posix-deps-apt.sh
       - name: Add ccache to PATH
         run: echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
       - name: Configure ccache action
