@@ -518,8 +518,6 @@ class Regrtest:
         )
 
     def _run_tests(self, selected: TestTuple, tests: TestList | None) -> int:
-        setup_process()
-
         if self.hunt_refleak and self.hunt_refleak.warmups < 3:
             msg = ("WARNING: Running tests with --huntrleaks/-R and "
                    "less than 3 warmup repetitions can give false positives!")
@@ -721,6 +719,8 @@ class Regrtest:
         self._execute_python(cmd, environ)
 
     def _init(self):
+        setup_process()
+
         if self.junit_filename and not os.path.isabs(self.junit_filename):
             self.junit_filename = os.path.abspath(self.junit_filename)
 
