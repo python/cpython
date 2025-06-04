@@ -131,7 +131,7 @@ _Py_RemoteDebug_FreePageCache(proc_handle_t *handle)
     }
 }
 
-void
+static void
 _Py_RemoteDebug_ClearCache(proc_handle_t *handle)
 {
     for (int i = 0; i < MAX_PAGES; i++) {
@@ -989,7 +989,7 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
 #endif
 }
 
-int
+static int
 _Py_RemoteDebug_PagedReadRemoteMemory(proc_handle_t *handle,
                                       uintptr_t addr,
                                       size_t size,
