@@ -55,14 +55,6 @@ class zstd_contentsize_converter(CConverter):
 [python start generated code]*/
 /*[python end generated code: output=da39a3ee5e6b4b0d input=0932c350d633c7de]*/
 
-static inline int
-raise_wrong_contentsize(void)
-{
-    PyErr_Format(PyExc_ValueError,
-                 "size argument should be a positive int less "
-                 "than %ull", ZSTD_CONTENTSIZE_ERROR);
-    return 0;
-}
 
 static int
 zstd_contentsize_converter(PyObject *size, unsigned long long *p)
@@ -81,13 +73,19 @@ zstd_contentsize_converter(PyObject *size, unsigned long long *p)
         if (pledged_size == (unsigned long long)-1 && PyErr_Occurred()) {
             *p = ZSTD_CONTENTSIZE_ERROR;
             if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
-                return raise_wrong_contentsize();
+                PyErr_Format(PyExc_ValueError,
+                             "size argument should be a positive int less "
+                             "than %ull", ZSTD_CONTENTSIZE_ERROR);
+                return 0;
             }
             return 0;
         }
         if (pledged_size >= ZSTD_CONTENTSIZE_ERROR) {
             *p = ZSTD_CONTENTSIZE_ERROR;
-            return raise_wrong_contentsize();
+            PyErr_Format(PyExc_ValueError,
+                         "size argument should be a positive int less "
+                         "than %ull", ZSTD_CONTENTSIZE_ERROR);
+            return 0;
         }
         *p = pledged_size;
     }
