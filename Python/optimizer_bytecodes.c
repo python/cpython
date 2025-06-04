@@ -296,7 +296,7 @@ dummy_func(void) {
         else {
             res = sym_new_type(ctx, &PyFloat_Type);
         }
-        // TODO (gh-134584): Move this to the optimizer generator.
+        // TODO (gh-134584): Refactor this to use another uop
         if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
             REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
         }
@@ -320,7 +320,7 @@ dummy_func(void) {
         else {
             res = sym_new_type(ctx, &PyFloat_Type);
         }
-        // TODO (gh-134584): Move this to the optimizer generator.
+        // TODO (gh-134584): Refactor this to use another uop
         if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
             REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
         }
@@ -344,7 +344,7 @@ dummy_func(void) {
         else {
             res = sym_new_type(ctx, &PyFloat_Type);
         }
-        // TODO (gh-134584): Move this to the optimizer generator.
+        // TODO (gh-134584): Refactor this to use another uop
         if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
             REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
         }
