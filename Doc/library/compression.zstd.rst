@@ -258,11 +258,11 @@ Compressing and decompressing data in memory
       If :attr:`last_mode` is not :attr:`FLUSH_FRAME`, a
       :exc:`RuntimeError` is raised as the compressor is not at the start of
       a frame. If the pledged size does not match the actual size of data
-      provided to :meth:`~.compress`, future calls to :meth:`~.compress` or
+      provided to :meth:`.compress`, future calls to :meth:`!compress` or
       :meth:`flush` may raise :exc:`ZstdError` and the last chunk of data may
       be lost.
 
-      After :meth:`flush` or :meth:`~.compress` are called with mode
+      After :meth:`flush` or :meth:`.compress` are called with mode
       :attr:`FLUSH_FRAME`, the next frame will not include the frame size into
       the header unless :meth:`!set_pledged_input_size` is called again.
 
