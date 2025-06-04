@@ -646,7 +646,7 @@ Advanced parameter control
       Write the size of the data to be compressed into the Zstandard frame
       header when known prior to compressing.
 
-      This flag only takes effect under the following three scenarios:
+      This flag only takes effect under the following scenarios:
 
       * Calling :func:`compress` for one-shot compression
       * Providing all of the data to be compressed in the frame in a single

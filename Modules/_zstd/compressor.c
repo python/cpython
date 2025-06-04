@@ -749,8 +749,8 @@ _zstd.ZstdCompressor.set_pledged_input_size
 Set the uncompressed content size to be written into the frame header.
 
 This method can be used to ensure the header of the frame about to be written
-includes the size of the data, unless CompressionParameter.content_size_flag is
-set to False. If last_mode != FLUSH_FRAME, then a RuntimeError is raised.
+includes the size of the data, unless the CompressionParameter.content_size_flag
+is set to False. If last_mode != FLUSH_FRAME, then a RuntimeError is raised.
 
 It is important to ensure that the pledged data size matches the actual data
 size. If they do not match the compressed output data may be corrupted and the
@@ -762,8 +762,6 @@ _zstd_ZstdCompressor_set_pledged_input_size_impl(ZstdCompressor *self,
                                                  unsigned long long size)
 /*[clinic end generated code: output=3a09e55cc0e3b4f9 input=563b9a1ddd4facc3]*/
 {
-    size_t zstd_ret;
-
     // Error occured while converting argument, should be unreachable
     assert(size != ZSTD_CONTENTSIZE_ERROR);
 
@@ -780,7 +778,7 @@ _zstd_ZstdCompressor_set_pledged_input_size_impl(ZstdCompressor *self,
     }
 
     /* Set pledged content size */
-    zstd_ret = ZSTD_CCtx_setPledgedSrcSize(self->cctx, size);
+    size_t zstd_ret = ZSTD_CCtx_setPledgedSrcSize(self->cctx, size);
     PyMutex_Unlock(&self->lock);
     if (ZSTD_isError(zstd_ret)) {
         _zstd_state* mod_state = PyType_GetModuleState(Py_TYPE(self));
