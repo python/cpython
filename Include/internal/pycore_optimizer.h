@@ -238,18 +238,18 @@ PyJitRef_AsSymbolBorrow(JitOptRef ref)
 bool _Py_uop_sym_is_immortal(JitOptSymbol *sym);
 
 static inline JitOptRef
-PyJitRef_FromSymbolSteal(JitOptSymbol *sym)
-{
-    if (sym == NULL || _Py_uop_sym_is_immortal(sym)) {
-        return (JitOptRef){.bits=(uintptr_t)sym | Py_TAG_REFCNT};
-    }
-    return (JitOptRef){.bits=(uintptr_t)sym};
-}
-
-static inline JitOptRef
 PyJitRef_FromSymbolBorrow(JitOptSymbol *sym)
 {
     return (JitOptRef){.bits=(uintptr_t)sym | Py_TAG_REFCNT};
+}
+
+static inline JitOptRef
+PyJitRef_FromSymbolSteal(JitOptSymbol *sym)
+{
+    if (sym == NULL || _Py_uop_sym_is_immortal(sym)) {
+        return PyJitRef_FromSymbolBorrow(sym);
+    }
+    return (JitOptRef){.bits=(uintptr_t)sym};
 }
 
 static inline JitOptRef
