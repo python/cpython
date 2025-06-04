@@ -265,7 +265,7 @@ Each worker's interpreter is isolated from all the other interpreters.
 "Isolated" means each interpreter has its own runtime state and
 operates completely independently.  For example, if you redirect
 :data:`sys.stdout` in one interpreter, it will not be automatically
-redirected any other interpreter.  If you import a module in one
+redirected to any other interpreter.  If you import a module in one
 interpreter, it is not automatically imported in any other.  You
 would need to import the module separately in interpreter where
 you need it.  In fact, each module imported in an interpreter is
