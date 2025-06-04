@@ -434,7 +434,7 @@ class CompressorTestCase(unittest.TestCase):
         c = ZstdCompressor(level=1)
         c.compress(b'123456')
         self.assertEqual(c.last_mode, c.CONTINUE)
-        with self.assertRaisesRegex(RuntimeError,
+        with self.assertRaisesRegex(ValueError,
                                     r'last_mode == FLUSH_FRAME'):
             c.set_pledged_input_size(300)
 

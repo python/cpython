@@ -770,7 +770,7 @@ _zstd_ZstdCompressor_set_pledged_input_size_impl(ZstdCompressor *self,
 
     /* Check the current mode */
     if (self->last_mode != ZSTD_e_end) {
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_ValueError,
                         "set_pledged_input_size() method must be called "
                         "when last_mode == FLUSH_FRAME");
         PyMutex_Unlock(&self->lock);
