@@ -1,5 +1,6 @@
 import faulthandler
 import gc
+import io
 import os
 import random
 import signal
@@ -55,6 +56,9 @@ def setup_process() -> None:
     # Set sys.stdout encoder error handler to backslashreplace,
     # similar to sys.stderr error handler, to avoid UnicodeEncodeError
     # when printing a traceback or any other non-encodable character.
+    #
+    # Use an assertion to fix mypy error.
+    assert isinstance(sys.stdout, io.TextIOWrapper)
     sys.stdout.reconfigure(errors="backslashreplace")
 
     # Some times __path__ and __file__ are not absolute (e.g. while running from
