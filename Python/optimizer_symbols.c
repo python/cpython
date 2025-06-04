@@ -91,7 +91,7 @@ out_of_space(JitOptContext *ctx)
 JitOptRef
 out_of_space_ref(JitOptContext *ctx)
 {
-    return PyJitRef_FromSymbolSteal(out_of_space(ctx));
+    return PyJitRef_Wrap(out_of_space(ctx));
 }
 
 static JitOptSymbol *
@@ -125,26 +125,26 @@ sym_set_bottom(JitOptContext *ctx, JitOptSymbol *sym)
 bool
 _Py_uop_sym_is_bottom(JitOptRef ref)
 {
-    JitOptSymbol *sym = PyJitRef_AsSymbolBorrow(ref);
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     return sym->tag == JIT_SYM_BOTTOM_TAG;
 }
 
 bool
 _Py_uop_sym_is_not_null(JitOptRef ref) {
-    JitOptSymbol *sym = PyJitRef_AsSymbolBorrow(ref);
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     return sym->tag == JIT_SYM_NON_NULL_TAG || sym->tag > JIT_SYM_BOTTOM_TAG;
 }
 
 bool
 _Py_uop_sym_is_const(JitOptContext *ctx, JitOptRef ref)
 {
-    JitOptSymbol *sym = PyJitRef_AsSymbolBorrow(ref);
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
         return true;
     }
     if (sym->tag == JIT_SYM_TRUTHINESS_TAG) {
         JitOptSymbol *value = allocation_base(ctx) + sym->truthiness.value;
-        int truthiness = _Py_uop_sym_truthiness(ctx, PyJitRef_FromSymbolSteal(value));
+        int truthiness = _Py_uop_sym_truthiness(ctx, PyJitRef_Wrap(value));
         if (truthiness < 0) {
             return false;
         }
@@ -157,20 +157,20 @@ _Py_uop_sym_is_const(JitOptContext *ctx, JitOptRef ref)
 bool
 _Py_uop_sym_is_null(JitOptRef ref)
 {
-    return PyJitRef_AsSymbolBorrow(ref)->tag == JIT_SYM_NULL_TAG;
+    return PyJitRef_Unwrap(ref)->tag == JIT_SYM_NULL_TAG;
 }
 
 
 PyObject *
 _Py_uop_sym_get_const(JitOptContext *ctx, JitOptRef ref)
 {
-    JitOptSymbol *sym = PyJitRef_AsSymbolBorrow(ref);
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
         return sym->value.value;
     }
     if (sym->tag == JIT_SYM_TRUTHINESS_TAG) {
         JitOptSymbol *value = allocation_base(ctx) + sym->truthiness.value;
-        int truthiness = _Py_uop_sym_truthiness(ctx, PyJitRef_FromSymbolSteal(value));
+        int truthiness = _Py_uop_sym_truthiness(ctx, PyJitRef_Wrap(value));
         if (truthiness < 0) {
             return NULL;
         }
@@ -184,7 +184,7 @@ _Py_uop_sym_get_const(JitOptContext *ctx, JitOptRef ref)
 void
 _Py_uop_sym_set_type(JitOptContext *ctx, JitOptRef ref, PyTypeObject *typ)
 {
-    JitOptSymbol *sym = PyJitRef_AsSymbolBorrow(ref);
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     JitSymType tag = sym->tag;
     switch(tag) {
         case JIT_SYM_NULL_TAG:
@@ -235,7 +235,7 @@ _Py_uop_sym_set_type(JitOptContext *ctx, JitOptRef ref, PyTypeObject *typ)
 bool
 _Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptRef ref, unsigned int version)
 {
-    JitOptSymbol *sym = PyJitRef_AsSymbolBorrow(ref);
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     PyTypeObject *type = _PyType_LookupByVersion(version);
     if (type) {
         _Py_uop_sym_set_type(ctx, ref, type);
@@ -293,7 +293,7 @@ _Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptRef ref, unsigned int ver
 void
 _Py_uop_sym_set_const(JitOptContext *ctx, JitOptRef ref, PyObject *const_val)
 {
-    JitOptSymbol *sym = PyJitRef_AsSymbolBorrow(ref);
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     JitSymType tag = sym->tag;
     switch(tag) {
         case JIT_SYM_NULL_TAG:
@@ -348,7 +348,8 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptRef ref, PyObject *const_val)
                 sym_set_bottom(ctx, sym);
                 return;
             }
-            JitOptRef value = PyJitRef_FromSymbolSteal(allocation_base(ctx) + sym->truthiness.value);
+            JitOptRef value = PyJitRef_Wrap(
+                allocation_base(ctx) + sym->truthiness.value);
             PyTypeObject *type = _Py_uop_sym_get_type(value);
             if (const_val == (sym->truthiness.invert ? Py_False : Py_True)) {
                 // value is truthy. This is only useful for bool:
@@ -375,7 +376,7 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptRef ref, PyObject *const_val)
 void
 _Py_uop_sym_set_null(JitOptContext *ctx, JitOptRef ref)
 {
-    JitOptSymbol *sym = PyJitRef_AsSymbolBorrow(ref);
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     if (sym->tag == JIT_SYM_UNKNOWN_TAG) {
         sym->tag = JIT_SYM_NULL_TAG;
     }
@@ -387,7 +388,7 @@ _Py_uop_sym_set_null(JitOptContext *ctx, JitOptRef ref)
 void
 _Py_uop_sym_set_non_null(JitOptContext *ctx, JitOptRef ref)
 {
-    JitOptSymbol *sym = PyJitRef_AsSymbolBorrow(ref);
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     if (sym->tag == JIT_SYM_UNKNOWN_TAG) {
         sym->tag = JIT_SYM_NON_NULL_TAG;
     }
@@ -403,7 +404,7 @@ _Py_uop_sym_new_unknown(JitOptContext *ctx)
     if (res == NULL) {
         return out_of_space_ref(ctx);
     }
-    return PyJitRef_FromSymbolSteal(res);
+    return PyJitRef_Wrap(res);
 }
 
 JitOptRef
@@ -414,7 +415,7 @@ _Py_uop_sym_new_not_null(JitOptContext *ctx)
         return out_of_space_ref(ctx);
     }
     res->tag = JIT_SYM_NON_NULL_TAG;
-    return PyJitRef_FromSymbolSteal(res);
+    return PyJitRef_Wrap(res);
 }
 
 JitOptRef
@@ -424,7 +425,7 @@ _Py_uop_sym_new_type(JitOptContext *ctx, PyTypeObject *typ)
     if (res == NULL) {
         return out_of_space_ref(ctx);
     }
-    JitOptRef ref = PyJitRef_FromSymbolSteal(res);
+    JitOptRef ref = PyJitRef_Wrap(res);
     _Py_uop_sym_set_type(ctx, ref, typ);
     return ref;
 }
@@ -438,7 +439,7 @@ _Py_uop_sym_new_const(JitOptContext *ctx, PyObject *const_val)
     if (res == NULL) {
         return out_of_space_ref(ctx);
     }
-    JitOptRef ref = PyJitRef_FromSymbolSteal(res);
+    JitOptRef ref = PyJitRef_Wrap(res);
     _Py_uop_sym_set_const(ctx, ref, const_val);
     return ref;
 }
@@ -450,7 +451,7 @@ _Py_uop_sym_new_null(JitOptContext *ctx)
     if (null_sym == NULL) {
         return out_of_space_ref(ctx);
     }
-    JitOptRef ref = PyJitRef_FromSymbolSteal(null_sym);
+    JitOptRef ref = PyJitRef_Wrap(null_sym);
     _Py_uop_sym_set_null(ctx, ref);
     return ref;
 }
@@ -458,7 +459,7 @@ _Py_uop_sym_new_null(JitOptContext *ctx)
 PyTypeObject *
 _Py_uop_sym_get_type(JitOptRef ref)
 {
-    JitOptSymbol *sym = PyJitRef_AsSymbolBorrow(ref);
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     JitSymType tag = sym->tag;
     switch(tag) {
         case JIT_SYM_NULL_TAG:
@@ -483,7 +484,7 @@ _Py_uop_sym_get_type(JitOptRef ref)
 unsigned int
 _Py_uop_sym_get_type_version(JitOptRef ref)
 {
-    JitOptSymbol *sym = PyJitRef_AsSymbolBorrow(ref);
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     JitSymType tag = sym->tag;
     switch(tag) {
         case JIT_SYM_NULL_TAG:
@@ -527,7 +528,7 @@ _Py_uop_sym_matches_type_version(JitOptRef sym, unsigned int version)
 int
 _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptRef ref)
 {
-    JitOptSymbol *sym = PyJitRef_AsSymbolBorrow(ref);
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     switch(sym->tag) {
         case JIT_SYM_NULL_TAG:
         case JIT_SYM_TYPE_VERSION_TAG:
@@ -548,7 +549,7 @@ _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptRef ref)
             ;
             JitOptSymbol *value = allocation_base(ctx) + sym->truthiness.value;
             int truthiness = _Py_uop_sym_truthiness(ctx,
-                                                    PyJitRef_FromSymbolBorrow(value));
+                                                    PyJitRef_Wrap(value));
             if (truthiness < 0) {
                 return truthiness;
             }
@@ -589,16 +590,16 @@ _Py_uop_sym_new_tuple(JitOptContext *ctx, int size, JitOptRef *args)
         res->tag = JIT_SYM_TUPLE_TAG;
         res->tuple.length = size;
         for (int i = 0; i < size; i++) {
-            res->tuple.items[i] = (uint16_t)(PyJitRef_AsSymbolBorrow(args[i]) - allocation_base(ctx));
+            res->tuple.items[i] = (uint16_t)(PyJitRef_Unwrap(args[i]) - allocation_base(ctx));
         }
     }
-    return PyJitRef_FromSymbolSteal(res);
+    return PyJitRef_Wrap(res);
 }
 
 JitOptRef
 _Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptRef ref, int item)
 {
-    JitOptSymbol *sym = PyJitRef_AsSymbolBorrow(ref);
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     assert(item >= 0);
     if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
         PyObject *tuple = sym->value.value;
@@ -607,7 +608,7 @@ _Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptRef ref, int item)
         }
     }
     else if (sym->tag == JIT_SYM_TUPLE_TAG && item < sym->tuple.length) {
-        return PyJitRef_FromSymbolSteal(allocation_base(ctx) + sym->tuple.items[item]);
+        return PyJitRef_Wrap(allocation_base(ctx) + sym->tuple.items[item]);
     }
     return _Py_uop_sym_new_not_null(ctx);
 }
@@ -615,7 +616,7 @@ _Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptRef ref, int item)
 int
 _Py_uop_sym_tuple_length(JitOptRef ref)
 {
-    JitOptSymbol *sym = PyJitRef_AsSymbolBorrow(ref);
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
         PyObject *tuple = sym->value.value;
         if (PyTuple_CheckExact(tuple)) {
@@ -647,14 +648,14 @@ _Py_uop_symbol_is_immortal(JitOptSymbol *sym)
 bool
 _Py_uop_sym_is_immortal(JitOptRef ref)
 {
-    JitOptSymbol *sym = PyJitRef_AsSymbolBorrow(ref);
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     return _Py_uop_symbol_is_immortal(sym);
 }
 
 JitOptRef
 _Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptRef ref, bool truthy)
 {
-    JitOptSymbol *value = PyJitRef_AsSymbolBorrow(ref);
+    JitOptSymbol *value = PyJitRef_Unwrap(ref);
     // It's clearer to invert this in the signature:
     bool invert = !truthy;
     if (value->tag == JIT_SYM_TRUTHINESS_TAG && value->truthiness.invert == invert) {
@@ -673,7 +674,7 @@ _Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptRef ref, bool truthy)
     else {
         make_const(res, (truthiness ^ invert) ? Py_True : Py_False);
     }
-    return PyJitRef_FromSymbolSteal(res);
+    return PyJitRef_Wrap(res);
 }
 
 // 0 on success, -1 on error.
@@ -809,7 +810,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, ref) == NULL, "top as constant is not NULL");
     TEST_PREDICATE(!_Py_uop_sym_is_bottom(ref), "top is bottom");
 
-    ref = PyJitRef_FromSymbolSteal(make_bottom(ctx));
+    ref = PyJitRef_Wrap(make_bottom(ctx));
     if (PyJitRef_IsNull(ref)) {
         goto fail;
     }
