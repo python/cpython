@@ -253,7 +253,9 @@ Compressing and decompressing data in memory
       the next frame. *size* will be written into the frame header of the next
       frame unless :attr:`CompressionParameter.content_size_flag` is ``False``
       or ``0``. A size of ``0`` means that the frame is empty. If *size* is
-      ``None``, the frame header will omit the frame size.
+      ``None``, the frame header will omit the frame size. Frames that include
+      the uncompressed data size require less memory to decompress, especially
+      at higher compression levels.
 
       If :attr:`last_mode` is not :attr:`FLUSH_FRAME`, a
       :exc:`RuntimeError` is raised as the compressor is not at the start of
