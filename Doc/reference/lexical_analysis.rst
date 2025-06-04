@@ -1086,31 +1086,34 @@ lexical definitions:
 Imaginary literals
 ^^^^^^^^^^^^^^^^^^
 
-There are no complex literals.
-Instead, :ref:`complex numbers <typesnumeric>` can be written
-as adding the complex number's real part and imaginary part.
+Python has :ref:`complex number <typesnumeric>` objects, but no complex
+literals.
+Instead, *imaginary literals* denote complex numbers with a zero
+real part.
 
-For example, the imaginary number 3.1+4\ *i* can be written as adding the
-real number 3.1 to the imaginary number 4\ *i*.
-In Python, the imaginary unit is written ``j`` rather than *i* to prevent
-confusion with a traditional short name for an index variable::
+For example, in math, the complex number 3+4.2\ *i* is written
+as the real number 3 added to the imaginary number 4.2\ *i*.
+Python uses a similar syntax, except the imaginary unit is written as ``j``
+rather than *i*::
 
-   3.1+4j
+   3+4.2j
 
 This is an expression composed
-of the :ref:`float literal <floating>` ``3.1``,
+of the :ref:`integer literal <integers>` ``3``,
 the :ref:`operator <operators>` '``+``',
-and the :ref:`imaginary literal <imaginary>` ``4j``.
+and the :ref:`imaginary literal <imaginary>` ``4.2j``.
 Since these are three separate tokens, whitespace is allowed between them::
 
-   3.1 + 4j
+   3 + 4.2j
 
-The ``j`` suffix, however, may not be separated from the numeric part
-of the imaginary literal.
+No whitespace is allowed *within* each token.
+In particular, the ``j`` suffix, may not be separated from the number
+before it.
 
-The numeric part has the same syntax as a floating-point literal.
+The number before the ``j`` has the same syntax as a floating-point literal.
 Thus, the following are valid imaginary literals::
 
+   4.2j
    3.14j
    10.j
    .001j
@@ -1118,14 +1121,16 @@ Thus, the following are valid imaginary literals::
    3.14e-10j
    3.14_15_93j
 
-If the number only has an integer part, the decimal point can be omitted.
+Unlike in a floating-point literal the decimal point can be omitted if the
+imaginary number only has an integer part.
 The number is still evaluated as a floating-point number, not an integer::
 
    10j
    0j
    1000000000000000000000000j   # equivalent to 1e+24j
 
-The ``j`` suffix is case-insensitive::
+The ``j`` suffix is case-insensitive.
+That means you can use ``J`` instead::
 
    3.14J   # equivalent to 3.14j
 
