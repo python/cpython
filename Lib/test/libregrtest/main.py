@@ -518,6 +518,8 @@ class Regrtest:
         )
 
     def _run_tests(self, selected: TestTuple, tests: TestList | None) -> int:
+        setup_process()
+
         if self.hunt_refleak and self.hunt_refleak.warmups < 3:
             msg = ("WARNING: Running tests with --huntrleaks/-R and "
                    "less than 3 warmup repetitions can give false positives!")
@@ -542,8 +544,6 @@ class Regrtest:
         runtests = self.create_run_tests(selected)
         self.first_runtests = runtests
         self.logger.set_tests(runtests)
-
-        setup_process()
 
         if (runtests.hunt_refleak is not None) and (not self.num_workers):
             # gh-109739: WindowsLoadTracker thread interferes with refleak check
@@ -721,11 +721,6 @@ class Regrtest:
         self._execute_python(cmd, environ)
 
     def _init(self):
-        # Set sys.stdout encoder error handler to backslashreplace,
-        # similar to sys.stderr error handler, to avoid UnicodeEncodeError
-        # when printing a traceback or any other non-encodable character.
-        sys.stdout.reconfigure(errors="backslashreplace")
-
         if self.junit_filename and not os.path.isabs(self.junit_filename):
             self.junit_filename = os.path.abspath(self.junit_filename)
 

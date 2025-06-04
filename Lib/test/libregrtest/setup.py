@@ -52,6 +52,11 @@ def setup_process() -> None:
 
     support.record_original_stdout(sys.stdout)
 
+    # Set sys.stdout encoder error handler to backslashreplace,
+    # similar to sys.stderr error handler, to avoid UnicodeEncodeError
+    # when printing a traceback or any other non-encodable character.
+    sys.stdout.reconfigure(errors="backslashreplace")
+
     # Some times __path__ and __file__ are not absolute (e.g. while running from
     # Lib/) and, if we change the CWD to run the tests in a temporary dir, some
     # imports might fail.  This affects only the modules imported before os.chdir().
