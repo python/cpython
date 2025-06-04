@@ -10,11 +10,11 @@ from random import shuffle, randint
 from test.support import threading_helper
 
 
-NTHREADS: int = 10
-OBJECT_COUNT: int = 5_000
+NTHREADS = 10
+OBJECT_COUNT = 5_000
 
 
-class HeapKind(Enum):
+class Heap(Enum):
     MIN = 1
     MAX = 2
 
@@ -28,28 +28,28 @@ class TestHeapq(unittest.TestCase):
         self.run_concurrently(
             worker_func=heapq.heapify, args=(heap,), nthreads=NTHREADS
         )
-        self.assertTrue(self.is_min_heap_property_satisfied(heap))
+        self.assertTrue(self.is_heap_property_satisfied(heap, Heap.MIN))
 
     def test_racing_heappush(self):
         heap = []
 
-        def heappush_func(heap: list[int]):
+        def heappush_func(heap):
             for item in reversed(range(OBJECT_COUNT)):
                 heapq.heappush(heap, item)
 
         self.run_concurrently(
             worker_func=heappush_func, args=(heap,), nthreads=NTHREADS
         )
-        self.assertTrue(self.is_min_heap_property_satisfied(heap))
+        self.assertTrue(self.is_heap_property_satisfied(heap, Heap.MIN))
 
     def test_racing_heappop(self):
-        heap = self.create_heap(OBJECT_COUNT, HeapKind.MIN)
+        heap = self.create_heap(OBJECT_COUNT, Heap.MIN)
 
         # Each thread pops (OBJECT_COUNT / NTHREADS) items
         self.assertEqual(OBJECT_COUNT % NTHREADS, 0)
         per_thread_pop_count = OBJECT_COUNT // NTHREADS
 
-        def heappop_func(heap: list[int], pop_count: int):
+        def heappop_func(heap, pop_count):
             local_list = []
             for _ in range(pop_count):
                 item = heapq.heappop(heap)
@@ -66,10 +66,10 @@ class TestHeapq(unittest.TestCase):
         self.assertEqual(len(heap), 0)
 
     def test_racing_heappushpop(self):
-        heap = self.create_heap(OBJECT_COUNT, HeapKind.MIN)
+        heap = self.create_heap(OBJECT_COUNT, Heap.MIN)
         pushpop_items = self.create_random_list(-5_000, 10_000, OBJECT_COUNT)
 
-        def heappushpop_func(heap: list[int], pushpop_items: list[int]):
+        def heappushpop_func(heap, pushpop_items):
             for item in pushpop_items:
                 popped_item = heapq.heappushpop(heap, item)
                 self.assertTrue(popped_item <= item)
@@ -80,13 +80,13 @@ class TestHeapq(unittest.TestCase):
             nthreads=NTHREADS,
         )
         self.assertEqual(len(heap), OBJECT_COUNT)
-        self.assertTrue(self.is_min_heap_property_satisfied(heap))
+        self.assertTrue(self.is_heap_property_satisfied(heap, Heap.MIN))
 
     def test_racing_heapreplace(self):
-        heap = self.create_heap(OBJECT_COUNT, HeapKind.MIN)
+        heap = self.create_heap(OBJECT_COUNT, Heap.MIN)
         replace_items = self.create_random_list(-5_000, 10_000, OBJECT_COUNT)
 
-        def heapreplace_func(heap: list[int], replace_items: list[int]):
+        def heapreplace_func(heap, replace_items):
             for item in replace_items:
                 popped_item = heapq.heapreplace(heap, item)
 
@@ -96,7 +96,7 @@ class TestHeapq(unittest.TestCase):
             nthreads=NTHREADS,
         )
         self.assertEqual(len(heap), OBJECT_COUNT)
-        self.assertTrue(self.is_min_heap_property_satisfied(heap))
+        self.assertTrue(self.is_heap_property_satisfied(heap, Heap.MIN))
 
     def test_racing_heapify_max(self):
         max_heap = list(range(OBJECT_COUNT))
@@ -105,28 +105,28 @@ class TestHeapq(unittest.TestCase):
         self.run_concurrently(
             worker_func=heapq.heapify_max, args=(max_heap,), nthreads=NTHREADS
         )
-        self.assertTrue(self.is_max_heap_property_satisfied(max_heap))
+        self.assertTrue(self.is_heap_property_satisfied(max_heap, Heap.MAX))
 
     def test_racing_heappush_max(self):
         max_heap = []
 
-        def heappush_max_func(max_heap: list[int]):
+        def heappush_max_func(max_heap):
             for item in range(OBJECT_COUNT):
                 heapq.heappush_max(max_heap, item)
 
         self.run_concurrently(
             worker_func=heappush_max_func, args=(max_heap,), nthreads=NTHREADS
         )
-        self.assertTrue(self.is_max_heap_property_satisfied(max_heap))
+        self.assertTrue(self.is_heap_property_satisfied(max_heap, Heap.MAX))
 
     def test_racing_heappop_max(self):
-        max_heap = self.create_heap(OBJECT_COUNT, HeapKind.MAX)
+        max_heap = self.create_heap(OBJECT_COUNT, Heap.MAX)
 
         # Each thread pops (OBJECT_COUNT / NTHREADS) items
         self.assertEqual(OBJECT_COUNT % NTHREADS, 0)
         per_thread_pop_count = OBJECT_COUNT // NTHREADS
 
-        def heappop_max_func(max_heap: list[int], pop_count: int):
+        def heappop_max_func(max_heap, pop_count):
             local_list = []
             for _ in range(pop_count):
                 item = heapq.heappop_max(max_heap)
@@ -143,12 +143,10 @@ class TestHeapq(unittest.TestCase):
         self.assertEqual(len(max_heap), 0)
 
     def test_racing_heappushpop_max(self):
-        max_heap = self.create_heap(OBJECT_COUNT, HeapKind.MAX)
+        max_heap = self.create_heap(OBJECT_COUNT, Heap.MAX)
         pushpop_items = self.create_random_list(-5_000, 10_000, OBJECT_COUNT)
 
-        def heappushpop_max_func(
-            max_heap: list[int], pushpop_items: list[int]
-        ):
+        def heappushpop_max_func(max_heap, pushpop_items):
             for item in pushpop_items:
                 popped_item = heapq.heappushpop_max(max_heap, item)
                 self.assertTrue(popped_item >= item)
@@ -159,15 +157,13 @@ class TestHeapq(unittest.TestCase):
             nthreads=NTHREADS,
         )
         self.assertEqual(len(max_heap), OBJECT_COUNT)
-        self.assertTrue(self.is_max_heap_property_satisfied(max_heap))
+        self.assertTrue(self.is_heap_property_satisfied(max_heap, Heap.MAX))
 
     def test_racing_heapreplace_max(self):
-        max_heap = self.create_heap(OBJECT_COUNT, HeapKind.MAX)
+        max_heap = self.create_heap(OBJECT_COUNT, Heap.MAX)
         replace_items = self.create_random_list(-5_000, 10_000, OBJECT_COUNT)
 
-        def heapreplace_max_func(
-            max_heap: list[int], replace_items: list[int]
-        ):
+        def heapreplace_max_func(max_heap, replace_items):
             for item in replace_items:
                 popped_item = heapq.heapreplace_max(max_heap, item)
 
@@ -177,30 +173,18 @@ class TestHeapq(unittest.TestCase):
             nthreads=NTHREADS,
         )
         self.assertEqual(len(max_heap), OBJECT_COUNT)
-        self.assertTrue(self.is_max_heap_property_satisfied(max_heap))
-
-    def is_min_heap_property_satisfied(self, heap: list[object]) -> bool:
-        """
-        The value of a parent node should be less than or equal to the
-        values of its children.
-        """
-        return self.is_heap_property_satisfied(heap, HeapKind.MIN)
-
-    def is_max_heap_property_satisfied(self, heap: list[object]) -> bool:
-        """
-        The value of a parent node should be greater than or equal to the
-        values of its children.
-        """
-        return self.is_heap_property_satisfied(heap, HeapKind.MAX)
+        self.assertTrue(self.is_heap_property_satisfied(max_heap, Heap.MAX))
 
     @staticmethod
-    def is_heap_property_satisfied(
-        heap: list[object], heap_kind: HeapKind
-    ) -> bool:
+    def is_heap_property_satisfied(heap, heap_kind):
         """
         Check if the heap property is satisfied.
+        MIN-Heap: The value of a parent node should be less than or equal to the
+        values of its children.
+        MAX-Heap: The value of a parent node should be greater than or equal to the
+        values of its children.
         """
-        op = operator.le if heap_kind == HeapKind.MIN else operator.ge
+        op = operator.le if heap_kind == Heap.MIN else operator.ge
         # position 0 has no parent
         for pos in range(1, len(heap)):
             parent_pos = (pos - 1) >> 1
@@ -210,28 +194,28 @@ class TestHeapq(unittest.TestCase):
         return True
 
     @staticmethod
-    def is_sorted_ascending(lst: list[object]) -> bool:
+    def is_sorted_ascending(lst):
         """
         Check if the list is sorted in ascending order (non-decreasing).
         """
         return all(lst[i - 1] <= lst[i] for i in range(1, len(lst)))
 
     @staticmethod
-    def is_sorted_descending(lst: list[object]) -> bool:
+    def is_sorted_descending(lst):
         """
         Check if the list is sorted in descending order (non-increasing).
         """
         return all(lst[i - 1] >= lst[i] for i in range(1, len(lst)))
 
     @staticmethod
-    def create_heap(size: int, heap_kind: HeapKind) -> list[int]:
+    def create_heap(size, heap_kind):
         """
         Create a min/max heap where elements are in the range (0, size - 1) and
         shuffled before heapify.
         """
         heap = list(range(OBJECT_COUNT))
         shuffle(heap)
-        if heap_kind == HeapKind.MIN:
+        if heap_kind == Heap.MIN:
             heapq.heapify(heap)
         else:
             heapq.heapify_max(heap)
@@ -239,7 +223,7 @@ class TestHeapq(unittest.TestCase):
         return heap
 
     @staticmethod
-    def create_random_list(a: int, b: int, size: int) -> list[int]:
+    def create_random_list(a, b, size):
         """
         Create a list of random numbers between a and b (inclusive).
         """
