@@ -2872,7 +2872,6 @@ class ThreadedTests(unittest.TestCase):
         # See GH-124984: OpenSSL is not thread safe.
         threads = []
 
-        warnings_filters = sys.flags.context_aware_warnings
         global USE_SAME_TEST_CONTEXT
         USE_SAME_TEST_CONTEXT = True
         try:
@@ -2883,7 +2882,7 @@ class ThreadedTests(unittest.TestCase):
                 self.test_crl_check,
                 functools.partial(
                     self.test_check_hostname_idn,
-                    warnings_filters=warnings_filters,
+                    warnings_filters=False,  # gh-126483
                 ),
                 self.test_wrong_cert_tls12,
                 self.test_wrong_cert_tls13,
