@@ -78,6 +78,19 @@ PyStackRef_IsNull(_PyStackRef ref)
     return ref.index == 0;
 }
 
+static inline bool
+PyStackRef_IsError(_PyStackRef ref)
+{
+    return ref.index == 2;
+}
+
+static inline bool
+PyStackRef_IsValid(_PyStackRef ref)
+{
+    /* Invalid values are ERROR and NULL */
+    return !PyStackRef_IsError(ref) && !PyStackRef_IsNull(ref);
+}
+
 static inline int
 PyStackRef_IsTrue(_PyStackRef ref)
 {
@@ -105,6 +118,7 @@ PyStackRef_IsTaggedInt(_PyStackRef ref)
 static inline PyObject *
 _PyStackRef_AsPyObjectBorrow(_PyStackRef ref, const char *filename, int linenumber)
 {
+    assert(!PyStackRef_IsError(ref));
     assert(!PyStackRef_IsTaggedInt(ref));
     _Py_stackref_record_borrow(ref, filename, linenumber);
     return _Py_stackref_get_object(ref);
@@ -156,6 +170,7 @@ _PyStackRef_CLOSE(_PyStackRef ref, const char *filename, int linenumber)
 static inline void
 _PyStackRef_XCLOSE(_PyStackRef ref, const char *filename, int linenumber)
 {
+    assert(!PyStackRef_IsError(ref));
     if (PyStackRef_IsNull(ref)) {
         return;
     }
@@ -166,6 +181,7 @@ _PyStackRef_XCLOSE(_PyStackRef ref, const char *filename, int linenumber)
 static inline _PyStackRef
 _PyStackRef_DUP(_PyStackRef ref, const char *filename, int linenumber)
 {
+    assert(!PyStackRef_IsError(ref));
     if (PyStackRef_IsTaggedInt(ref)) {
         return ref;
     }
@@ -246,6 +262,8 @@ PyStackRef_IsNullOrInt(_PyStackRef ref);
 #define Py_TAG_REFCNT 1
 #define Py_TAG_BITS 3
 
+static const _PyStackRef PyStackRef_ERROR = { .bits = Py_TAG_INVALID };
+
 static inline bool
 PyStackRef_IsError(_PyStackRef ref)
 {
@@ -299,7 +317,6 @@ PyStackRef_IncrementTaggedIntNoOverflow(_PyStackRef ref)
 
 
 static const _PyStackRef PyStackRef_NULL = { .bits = Py_TAG_DEFERRED};
-static const _PyStackRef PyStackRef_ERROR = { .bits = Py_TAG_INVALID};
 
 #define PyStackRef_IsNull(stackref) ((stackref).bits == PyStackRef_NULL.bits)
 #define PyStackRef_True ((_PyStackRef){.bits = ((uintptr_t)&_Py_TrueStruct) | Py_TAG_DEFERRED })
@@ -481,7 +498,6 @@ PyStackRef_AsStrongReference(_PyStackRef stackref)
 
 #define PyStackRef_NULL_BITS Py_TAG_REFCNT
 static const _PyStackRef PyStackRef_NULL = { .bits = PyStackRef_NULL_BITS };
-static const _PyStackRef PyStackRef_ERROR = { .bits = Py_TAG_INVALID };
 
 #define PyStackRef_IsNull(ref) ((ref).bits == PyStackRef_NULL_BITS)
 #define PyStackRef_True ((_PyStackRef){.bits = ((uintptr_t)&_Py_TrueStruct) | Py_TAG_REFCNT })
