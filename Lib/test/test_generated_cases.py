@@ -2012,7 +2012,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
 
         case OP2: {
             JitOptRef out;
-            out = ref_new_not_null(ctx);
+            out = sym_new_not_null(ctx);
             stack_pointer[-1] = out;
             break;
         }
@@ -2037,7 +2037,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         output = """
         case OP: {
             JitOptRef out;
-            out = ref_new_not_null(ctx);
+            out = sym_new_not_null(ctx);
             stack_pointer[-1] = out;
             break;
         }

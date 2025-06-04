@@ -124,15 +124,15 @@ def emit_default(out: CWriter, uop: Uop, stack: Stack) -> None:
             local.in_local = True
             if var.is_array():
                 if var.size == "1":
-                    out.emit(f"{var.name}[0] = ref_new_not_null(ctx);\n")
+                    out.emit(f"{var.name}[0] = sym_new_not_null(ctx);\n")
                 else:
                     out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-                    out.emit(f"{var.name}[_i] = ref_new_not_null(ctx);\n")
+                    out.emit(f"{var.name}[_i] = sym_new_not_null(ctx);\n")
                     out.emit("}\n")
             elif var.name == "null":
-                out.emit(f"{var.name} = ref_new_null(ctx);\n")
+                out.emit(f"{var.name} = sym_new_null(ctx);\n")
             else:
-                out.emit(f"{var.name} = ref_new_not_null(ctx);\n")
+                out.emit(f"{var.name} = sym_new_not_null(ctx);\n")
 
 
 class OptimizerEmitter(Emitter):

@@ -235,7 +235,7 @@ PyJitRef_AsSymbolBorrow(JitOptRef ref)
     return JIT_BITS_TO_PTR_MASKED(ref);
 }
 
-bool _Py_uop_sym_is_immortal(JitOptSymbol *sym);
+bool _Py_uop_symbol_is_immortal(JitOptSymbol *sym);
 
 static inline JitOptRef
 PyJitRef_FromSymbolBorrow(JitOptSymbol *sym)
@@ -246,7 +246,7 @@ PyJitRef_FromSymbolBorrow(JitOptSymbol *sym)
 static inline JitOptRef
 PyJitRef_FromSymbolSteal(JitOptSymbol *sym)
 {
-    if (sym == NULL || _Py_uop_sym_is_immortal(sym)) {
+    if (sym == NULL || _Py_uop_symbol_is_immortal(sym)) {
         return PyJitRef_FromSymbolBorrow(sym);
     }
     return (JitOptRef){.bits=(uintptr_t)sym};
@@ -311,31 +311,31 @@ typedef struct _JitOptContext {
     JitOptRef locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
 } JitOptContext;
 
-extern bool _Py_uop_ref_is_null(JitOptRef sym);
-extern bool _Py_uop_ref_is_not_null(JitOptRef sym);
-extern bool _Py_uop_ref_is_const(JitOptContext *ctx, JitOptRef sym);
-extern PyObject *_Py_uop_ref_get_const(JitOptContext *ctx, JitOptRef sym);
-extern JitOptRef _Py_uop_ref_new_unknown(JitOptContext *ctx);
-extern JitOptRef _Py_uop_ref_new_not_null(JitOptContext *ctx);
-extern JitOptRef _Py_uop_ref_new_type(
+extern bool _Py_uop_sym_is_null(JitOptRef sym);
+extern bool _Py_uop_sym_is_not_null(JitOptRef sym);
+extern bool _Py_uop_sym_is_const(JitOptContext *ctx, JitOptRef sym);
+extern PyObject *_Py_uop_sym_get_const(JitOptContext *ctx, JitOptRef sym);
+extern JitOptRef _Py_uop_sym_new_unknown(JitOptContext *ctx);
+extern JitOptRef _Py_uop_sym_new_not_null(JitOptContext *ctx);
+extern JitOptRef _Py_uop_sym_new_type(
     JitOptContext *ctx, PyTypeObject *typ);
-extern JitOptRef _Py_uop_ref_new_const(JitOptContext *ctx, PyObject *const_val);
-extern JitOptRef _Py_uop_ref_new_null(JitOptContext *ctx);
-extern bool _Py_uop_ref_has_type(JitOptRef sym);
-extern bool _Py_uop_ref_matches_type(JitOptRef sym, PyTypeObject *typ);
-extern bool _Py_uop_ref_matches_type_version(JitOptRef sym, unsigned int version);
-extern void _Py_uop_ref_set_null(JitOptContext *ctx, JitOptRef sym);
-extern void _Py_uop_ref_set_non_null(JitOptContext *ctx, JitOptRef sym);
-extern void _Py_uop_ref_set_type(JitOptContext *ctx, JitOptRef sym, PyTypeObject *typ);
-extern bool _Py_uop_ref_set_type_version(JitOptContext *ctx, JitOptRef sym, unsigned int version);
-extern void _Py_uop_ref_set_const(JitOptContext *ctx, JitOptRef sym, PyObject *const_val);
-extern bool _Py_uop_ref_is_bottom(JitOptRef sym);
-extern int _Py_uop_ref_truthiness(JitOptContext *ctx, JitOptRef sym);
-extern PyTypeObject *_Py_uop_ref_get_type(JitOptRef sym);
-extern JitOptRef _Py_uop_ref_new_tuple(JitOptContext *ctx, int size, JitOptRef *args);
-extern JitOptRef _Py_uop_ref_tuple_getitem(JitOptContext *ctx, JitOptRef sym, int item);
-extern int _Py_uop_ref_tuple_length(JitOptRef sym);
-extern JitOptRef _Py_uop_ref_new_truthiness(JitOptContext *ctx, JitOptRef value, bool truthy);
+extern JitOptRef _Py_uop_sym_new_const(JitOptContext *ctx, PyObject *const_val);
+extern JitOptRef _Py_uop_sym_new_null(JitOptContext *ctx);
+extern bool _Py_uop_sym_has_type(JitOptRef sym);
+extern bool _Py_uop_sym_matches_type(JitOptRef sym, PyTypeObject *typ);
+extern bool _Py_uop_sym_matches_type_version(JitOptRef sym, unsigned int version);
+extern void _Py_uop_sym_set_null(JitOptContext *ctx, JitOptRef sym);
+extern void _Py_uop_sym_set_non_null(JitOptContext *ctx, JitOptRef sym);
+extern void _Py_uop_sym_set_type(JitOptContext *ctx, JitOptRef sym, PyTypeObject *typ);
+extern bool _Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptRef sym, unsigned int version);
+extern void _Py_uop_sym_set_const(JitOptContext *ctx, JitOptRef sym, PyObject *const_val);
+extern bool _Py_uop_sym_is_bottom(JitOptRef sym);
+extern int _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptRef sym);
+extern PyTypeObject *_Py_uop_sym_get_type(JitOptRef sym);
+extern JitOptRef _Py_uop_sym_new_tuple(JitOptContext *ctx, int size, JitOptRef *args);
+extern JitOptRef _Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptRef sym, int item);
+extern int _Py_uop_sym_tuple_length(JitOptRef sym);
+extern JitOptRef _Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptRef value, bool truthy);
 
 extern void _Py_uop_abstractcontext_init(JitOptContext *ctx);
 extern void _Py_uop_abstractcontext_fini(JitOptContext *ctx);
