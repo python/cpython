@@ -263,8 +263,8 @@ PyDoc_STRVAR(_zstd_ZstdCompressor_set_pledged_input_size__doc__,
 "    The size of the uncompressed data to be provided to the compressor.\n"
 "\n"
 "This method can be used to ensure the header of the frame about to be written\n"
-"includes the size of the data, unless CompressionParameter.content_size_flag is\n"
-"set to False. If last_mode != FLUSH_FRAME, then a RuntimeError is raised.\n"
+"includes the size of the data, unless the CompressionParameter.content_size_flag\n"
+"is set to False. If last_mode != FLUSH_FRAME, then a RuntimeError is raised.\n"
 "\n"
 "It is important to ensure that the pledged data size matches the actual data\n"
 "size. If they do not match the compressed output data may be corrupted and the\n"
@@ -291,4 +291,4 @@ _zstd_ZstdCompressor_set_pledged_input_size(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=128a94ce706328e0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c1d5c2cf06a8becd input=a9049054013a1b77]*/

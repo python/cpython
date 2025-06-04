@@ -758,7 +758,7 @@ final chunk written may be lost.
 static PyObject *
 _zstd_ZstdCompressor_set_pledged_input_size_impl(ZstdCompressor *self,
                                                  unsigned long long size)
-/*[clinic end generated code: output=3a09e55cc0e3b4f9 input=563b9a1ddd4facc3]*/
+/*[clinic end generated code: output=3a09e55cc0e3b4f9 input=afd8a7d78cff2eb5]*/
 {
     // Error occured while converting argument, should be unreachable
     assert(size != ZSTD_CONTENTSIZE_ERROR);
