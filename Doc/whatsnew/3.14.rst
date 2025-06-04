@@ -342,15 +342,16 @@ For example the following expressions are now valid:
 .. code-block:: python
 
    try:
-       release_new_sleep_token_album()
-   except AlbumNotFound, SongsTooGoodToBeReleased:
-       print("Sorry, no new album this year.")
+       connect_to_server()
+   except TimeoutError, ConnectionRefusedError:
+       print("Network issue encountered.")
 
     # The same applies to except* (for exception groups):
+
    try:
-       release_new_sleep_token_album()
-   except* AlbumNotFound, SongsTooGoodToBeReleased:
-       print("Sorry, no new album this year.")
+       connect_to_server()
+   except* TimeoutError, ConnectionRefusedError:
+       print("Network issue encountered.")
 
 Check :pep:`758` for more details.
 
