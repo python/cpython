@@ -226,8 +226,9 @@ typedef union {
     uintptr_t bits;
 } JitOptRef;
 
-#define JIT_BITS_TO_PTR(REF) ((JitOptSymbol *)((REF).bits))
-#define JIT_BITS_TO_PTR_MASKED(REF) ((JitOptSymbol *)(((REF).bits) & (~Py_TAG_REFCNT)))
+#define REF_IS_BORROWED 1
+
+#define JIT_BITS_TO_PTR_MASKED(REF) ((JitOptSymbol *)(((REF).bits) & (~REF_IS_BORROWED)))
 
 static inline JitOptSymbol *
 PyJitRef_Unwrap(JitOptRef ref)
@@ -242,7 +243,7 @@ static inline JitOptRef
 PyJitRef_Wrap(JitOptSymbol *sym)
 {
     if (sym == NULL || _Py_uop_symbol_is_immortal(sym)) {
-        return (JitOptRef){.bits=(uintptr_t)sym | Py_TAG_REFCNT};
+        return (JitOptRef){.bits=(uintptr_t)sym | REF_IS_BORROWED};
     }
     return (JitOptRef){.bits=(uintptr_t)sym};
 }
@@ -250,14 +251,10 @@ PyJitRef_Wrap(JitOptSymbol *sym)
 static inline JitOptRef
 PyJitRef_Borrow(JitOptRef ref)
 {
-    return (JitOptRef){ .bits = ref.bits | Py_TAG_REFCNT };
+    return (JitOptRef){ .bits = ref.bits | REF_IS_BORROWED };
 }
 
-#ifndef Py_GIL_DISABLED
-static const JitOptRef PyJitRef_NULL = {.bits = PyStackRef_NULL_BITS};
-#else
-static const JitOptRef PyJitRef_NULL = {.bits = Py_TAG_DEFERRED};
-#endif
+static const JitOptRef PyJitRef_NULL = {.bits = REF_IS_BORROWED};
 
 static inline bool
 PyJitRef_IsNull(JitOptRef ref)
@@ -268,7 +265,7 @@ PyJitRef_IsNull(JitOptRef ref)
 static inline int
 PyJitRef_IsBorrowed(JitOptRef ref)
 {
-    return (ref.bits & Py_TAG_REFCNT) == Py_TAG_REFCNT;
+    return (ref.bits & REF_IS_BORROWED) == REF_IS_BORROWED;
 }
 
 struct _Py_UOpsAbstractFrame {
