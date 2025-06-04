@@ -305,10 +305,6 @@ the bytes over a shared :mod:`socket <socket>` or
    interpreter.
 
    .. note::
-      Functions defined in the ``__main__`` module cannot be pickled
-      and thus cannot be used.
-
-   .. note::
       The executor may replace uncaught exceptions from *initializer*
       with :class:`~concurrent.futures.interpreter.ExecutionFailed`.
 
@@ -325,10 +321,6 @@ the bytes over a shared :mod:`socket <socket>` or
 except the worker serializes the callable and arguments using
 :mod:`pickle` when sending them to its interpreter.  The worker
 likewise serializes the return value when sending it back.
-
-.. note::
-   Functions defined in the ``__main__`` module cannot be pickled
-   and thus cannot be used.
 
 When a worker's current task raises an uncaught exception, the worker
 always tries to preserve the exception as-is.  If that is successful
