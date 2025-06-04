@@ -129,11 +129,6 @@ The definition to the right of the colon uses the following syntax elements:
     :py:data:`~token.OP` token, that is, a :ref:`delimiter <delimiters>` or
     :ref:`operator <operators>`.
 
-* ``"a"..."z"``: Two literal characters separated by three dots mean a choice
-  of any single character in the given (inclusive) range of ASCII characters.
-* ``<...>``: A phrase between angular brackets gives an informal description
-  of the matched symbol (for example, ``<any ASCII character except "\">``),
-  or an abbreviation that is defined in nearby text (for example, ``<Lu>``).
 * ``e1 e2``: Items separated only by whitespace denote a sequence.
   Here, ``e1`` must be followed by ``e2``.
 * ``e1 | e2``: A vertical bar is used to separate alternatives.
@@ -149,6 +144,15 @@ The definition to the right of the colon uses the following syntax elements:
 * ``e?``: A question mark has exactly the same meaning as square brackets:
   the preceding item is optional.
 * ``(e)``: Parentheses are used for grouping.
+* ``"a"..."z"``: Two literal characters separated by three dots mean a choice
+  of any single character in the given (inclusive) range of ASCII characters.
+  This notation is only used in
+  :ref:`lexical definitions <notation-lexical-vs-syntactic>`.
+* ``<...>``: A phrase between angular brackets gives an informal description
+  of the matched symbol (for example, ``<any ASCII character except "\">``),
+  or an abbreviation that is defined in nearby text (for example, ``<Lu>``).
+  This notation is only used in
+  :ref:`lexical definitions <notation-lexical-vs-syntactic>`.
 
 The unary operators (``*``, ``+``, ``?``) bind as tightly as possible;
 the vertical bar (``|``) binds most loosely.
@@ -182,6 +186,11 @@ For example:
 This does *not* mean that there is an empty first alternative.
 
 .. index:: lexical definitions
+
+.. _notation-lexical-vs-syntactic:
+
+Lexical and Syntactic definitions
+---------------------------------
 
 There is some difference between *lexical* and *syntactic* analysis:
 the :term:`lexical analyzer` operates on the individual characters of the
