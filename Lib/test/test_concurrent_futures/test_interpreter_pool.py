@@ -10,6 +10,8 @@ from concurrent.futures.interpreter import (
 )
 import _interpreters
 from test import support
+from test.support import os_helper
+from test.support import script_helper
 import test.test_asyncio.utils as testasyncio_utils
 from test.support.interpreters import queues
 
@@ -154,6 +156,38 @@ class InterpreterPoolExecutorTest(
 
         self.assertEqual(before, b'\0')
         self.assertEqual(after, msg)
+
+    def test_init_with___main___global(self):
+        # See https://github.com/python/cpython/pull/133957#issuecomment-2927415311.
+        text = """if True:
+            from concurrent.futures import InterpreterPoolExecutor
+
+            INITIALIZER_STATUS = 'uninitialized'
+
+            def init(x):
+                global INITIALIZER_STATUS
+                INITIALIZER_STATUS = x
+                INITIALIZER_STATUS
+
+            def get_init_status():
+                return INITIALIZER_STATUS
+
+            if __name__ == "__main__":
+                exe = InterpreterPoolExecutor(initializer=init,
+                                              initargs=('initialized',))
+                fut = exe.submit(get_init_status)
+                print(fut.result())  # 'initialized'
+                exe.shutdown(wait=True)
+                print(INITIALIZER_STATUS)  # 'uninitialized'
+           """
+        with os_helper.temp_dir() as tempdir:
+            filename = script_helper.make_script(tempdir, 'my-script', text)
+            res = script_helper.assert_python_ok(filename)
+        stdout = res.out.decode('utf-8').strip()
+        self.assertEqual(stdout.splitlines(), [
+            'initialized',
+            'uninitialized',
+        ])
 
     def test_init_closure(self):
         count = 0

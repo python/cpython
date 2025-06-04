@@ -540,6 +540,50 @@ sync_module_clear(struct sync_module *data)
 }
 
 
+static PyObject *
+get_cached_module_ns(PyThreadState *tstate,
+                     const char *modname, const char *filename)
+{
+    // Load the module from the original file.
+    assert(filename != NULL);
+    PyObject *loaded = NULL;
+
+    const char *run_modname = modname;
+    if (strcmp(modname, "__main__") == 0) {
+        // We don't want to trigger "if __name__ == '__main__':".
+        run_modname = "<fake __main__>";
+    }
+
+    // First try the per-interpreter cache.
+    PyObject *interpns = PyInterpreterState_GetDict(tstate->interp);
+    assert(interpns != NULL);
+    PyObject *key = PyUnicode_FromFormat("CACHED_MODULE_NS_%s", modname);
+    if (key == NULL) {
+        return NULL;
+    }
+    if (PyDict_GetItemRef(interpns, key, &loaded) < 0) {
+        goto finally;
+    }
+    if (loaded != NULL) {
+        goto finally;
+    }
+
+    // It wasn't already loaded from file.
+    loaded = runpy_run_path(filename, run_modname);
+    if (loaded == NULL) {
+        goto finally;
+    }
+    if (PyDict_SetItem(interpns, key, loaded) < 0) {
+        Py_CLEAR(loaded);
+        goto finally;
+    }
+
+finally:
+    Py_DECREF(key);
+    return loaded;
+}
+
+
 struct _unpickle_context {
     PyThreadState *tstate;
     // We only special-case the __main__ module,
@@ -574,37 +618,40 @@ _unpickle_context_set_module(struct _unpickle_context *ctx,
     struct sync_module_result res = {0};
     struct sync_module_result *cached = NULL;
     const char *filename = NULL;
-    const char *run_modname = modname;
     if (strcmp(modname, "__main__") == 0) {
         cached = &ctx->main.cached;
         filename = ctx->main.filename;
-        // We don't want to trigger "if __name__ == '__main__':".
-        run_modname = "<fake __main__>";
     }
     else {
         res.failed = PyExc_NotImplementedError;
-        goto finally;
+        goto error;
     }
 
     res.module = import_get_module(ctx->tstate, modname);
     if (res.module == NULL) {
-        res.failed = _PyErr_GetRaisedException(ctx->tstate);
-        assert(res.failed != NULL);
-        goto finally;
+        goto error;
     }
 
+    // Load the module ns from the original file and cache it.
+    // Note that functions will use the cached ns for __globals__,
+    // not res.module.
     if (filename == NULL) {
-        Py_CLEAR(res.module);
         res.failed = PyExc_NotImplementedError;
-        goto finally;
+        goto error;
     }
-    res.loaded = runpy_run_path(filename, run_modname);
+    res.loaded = get_cached_module_ns(ctx->tstate, modname, filename);
     if (res.loaded == NULL) {
-        Py_CLEAR(res.module);
+        goto error;
+    }
+    goto finally;
+
+error:
+    Py_CLEAR(res.module);
+    if (res.failed == NULL) {
         res.failed = _PyErr_GetRaisedException(ctx->tstate);
         assert(res.failed != NULL);
-        goto finally;
     }
+    assert(!_PyErr_Occurred(ctx->tstate));
 
 finally:
     if (cached != NULL) {
@@ -629,7 +676,8 @@ _handle_unpickle_missing_attr(struct _unpickle_context *ctx, PyObject *exc)
     }
 
     // Get the module.
-    struct sync_module_result mod = _unpickle_context_get_module(ctx, info.modname);
+    struct sync_module_result mod =
+                    _unpickle_context_get_module(ctx, info.modname);
     if (mod.failed != NULL) {
         // It must have failed previously.
         return -1;
