@@ -1930,16 +1930,16 @@ Function and class definitions
 
 .. class:: arguments(posonlyargs, args, vararg, kwonlyargs, kw_defaults, kwarg, defaults)
 
-   The parameters for a function.
+   The parameters for the defined function.
 
    * ``posonlyargs``, ``args`` and ``kwonlyargs`` are lists of :class:`arg` nodes.
    * ``vararg`` and ``kwarg`` are single :class:`arg` nodes, referring to the
      ``*args, **kwargs`` parameters.
-   * ``kw_defaults`` is a list of default values for keyword-only parameters. If
+   * ``kw_defaults`` is the list of default values for keyword-only parameters. If
      one is ``None``, the corresponding argument is required.
-   * ``defaults`` is a list of default values for positional-only and
+   * ``defaults`` is the list of default values for positional-only and
      keyword-or-positional parameters.
-     If there are fewer defaults, they correspond to the last *n*
+     If there are fewer defaults than there are such parameters, the defaults correspond to the last *n*
      parameters.
 
 
