@@ -236,7 +236,7 @@ class TestHeapq(unittest.TestCase):
         barrier = Barrier(nthreads)
 
         def wrapper_func(*args):
-            # Wait for all threadss to reach this point before proceeding.
+            # Wait for all threads to reach this point before proceeding.
             barrier.wait()
             worker_func(*args)
 
