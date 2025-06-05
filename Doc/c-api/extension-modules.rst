@@ -21,7 +21,7 @@ and must be named after the module name plus an extension listed in
    Building, packaging and distributing extension modules is best done with
    third-party tools, and is out of scope of this document.
    One suitable tool is ``setuptools``, whose documentation can be found at
-   https://setuptools.readthedocs.io/en/latest/setuptools.html.
+   https://setuptools.pypa.io/en/latest/setuptools.html.
 
 Normally, the initialization function returns a module definition initialized
 using :c:func:`PyModuleDef_Init`.
@@ -60,7 +60,7 @@ This mirrors the behavior of pure-Python modules.
 
 Additional module instances may be created in
 :ref:`sub-interpreters <sub-interpreter-support>`
-or after after Python runtime reinitialization
+or after Python runtime reinitialization
 (:c:func:`Py_Finalize` and :c:func:`Py_Initialize`).
 In these cases, sharing Python objects between module instances would likely
 cause crashes or undefined behavior.
@@ -88,7 +88,7 @@ the :c:data:`Py_mod_multiple_interpreters` slot.
 Initialization function
 .......................
 
-The initialization function defined by an extension module have the
+The initialization function defined by an extension module has the
 following signature:
 
 .. c:function:: PyObject* PyInit_modulename(void)
@@ -167,7 +167,7 @@ using the following function:
    Return *def* cast to ``PyObject*``, or ``NULL`` if an error occurred.
 
    Calling this function is required for :ref:`multi-phase-initialization`.
-   It should not be used other contexts.
+   It should not be used in other contexts.
 
    Note that Python assumes that ``PyModuleDef`` structures are statically
    allocated.
