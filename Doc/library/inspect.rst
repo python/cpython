@@ -210,7 +210,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 +-----------------+-------------------+---------------------------+
 |                 | co_kwonlyargcount | number of keyword-only    |
 |                 |                   | parameters (not including |
-|                 |                   | var-positional parameter) |
+|                 |                   | var-keyword parameter)    |
 +-----------------+-------------------+---------------------------+
 |                 | co_name           | name with which this code |
 |                 |                   | object was defined        |
