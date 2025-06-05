@@ -1,5 +1,6 @@
 """sqlite3 CLI tests."""
 import sqlite3
+import sys
 import textwrap
 import unittest
 
@@ -240,8 +241,11 @@ class CompletionTest(unittest.TestCase):
         self.assertIn(b"SELECT", output)
         self.assertIn(b"(1,)", output)
 
+    @unittest.skipIf(sys.platform.startswith("freebsd"),
+                    "Two actual tabs are inserted when there are no matching"
+                    " completions on FreeBSD")
     def test_nothing_to_complete(self):
-        input = b"xyzzy\t\t\b\b\b\b\b.quit\n"
+        input = b"xyzzy\t\t\b\b\b\b\b\b\b.quit\n"
         # set NO_COLOR to disable coloring for self.PS1
         output = self.write_input(input, env={"NO_COLOR": "1"})
         output_lines = output.decode().splitlines()
