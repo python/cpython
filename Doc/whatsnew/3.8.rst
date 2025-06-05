@@ -1625,7 +1625,7 @@ Build and C API Changes
 
 * The new function :c:func:`!PyCode_NewWithPosOnlyArgs` allows to create
   code objects like :c:func:`!PyCode_New`, but with an extra *posonlyargcount*
-  parameter for indicating the number of positional-only arguments.
+  parameter for indicating the number of positional-only parameters.
   (Contributed by Pablo Galindo in :issue:`37221`.)
 
 * :c:func:`!Py_SetPath` now sets :data:`sys.executable` to the program full
@@ -2003,9 +2003,9 @@ Changes in the Python API
   in :issue:`36623`.)
 
 * :class:`types.CodeType` has a new parameter in the second position of the
-  constructor (*posonlyargcount*) to support positional-only arguments defined
+  constructor (*posonlyargcount*) to support positional-only parameters defined
   in :pep:`570`. The first argument (*argcount*) now represents the total
-  number of positional arguments (including positional-only arguments). The new
+  number of positional parameters (including positional-only parameters). The new
   ``replace()`` method of :class:`types.CodeType` can be used to make the code
   future-proof.
 

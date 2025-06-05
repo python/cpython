@@ -870,7 +870,7 @@ Only show stale code warning in :mod:`pdb` when we display source code.
 .. nonce: vZJ-Ns
 .. section: Library
 
-Deprecate passing keyword-only *prefix_chars* argument to
+Deprecate passing keyword *prefix_chars* argument to
 :meth:`argparse.ArgumentParser.add_argument_group`.
 
 ..

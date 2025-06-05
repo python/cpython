@@ -1443,7 +1443,7 @@ where the use of '**' creates a parameter specification::\n\
     type IntFunc[**P] = Callable[P, int]\n\
 \n\
 The following syntax creates a parameter specification that defaults\n\
-to a callable accepting two positional-only arguments of types int\n\
+to a callable accepting two positional arguments of types int\n\
 and str:\n\
 \n\
     type IntFuncDefault[**P = (int, str)] = Callable[P, int]\n\

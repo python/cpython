@@ -5431,8 +5431,8 @@ Remove ``Tools/scripts/h2py.py``: use cffi to access a C API in Python.
 .. nonce: zbTgy8
 .. section: Tools/Demos
 
-Argument Clinic now uses the argument name on errors with keyword-only
-argument instead of their position. Patch contributed by Rémi Lapeyre.
+Argument Clinic now uses the argument name on errors with arguments for keyword-only
+parameter instead of their position. Patch contributed by Rémi Lapeyre.
 
 ..
 

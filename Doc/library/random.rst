@@ -243,7 +243,7 @@ Functions for sequences
    contains repeats, then each occurrence is a possible selection in the sample.
 
    Repeated elements can be specified one at a time or with the optional
-   keyword-only *counts* parameter.  For example, ``sample(['red', 'blue'],
+   keyword argument *counts*.  For example, ``sample(['red', 'blue'],
    counts=[4, 2], k=5)`` is equivalent to ``sample(['red', 'red', 'red', 'red',
    'blue', 'blue'], k=5)``.
 

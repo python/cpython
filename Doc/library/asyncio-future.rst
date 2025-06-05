@@ -165,7 +165,7 @@ Future Object
       If the Future is already *done* when this method is called,
       the callback is scheduled with :meth:`loop.call_soon`.
 
-      An optional keyword-only *context* argument allows specifying a
+      An optional keyword argument *context* allows specifying a
       custom :class:`contextvars.Context` for the *callback* to run in.
       The current context is used when no *context* is provided.
 

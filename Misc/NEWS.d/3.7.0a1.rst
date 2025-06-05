@@ -4412,7 +4412,7 @@ invalid string-like object as a name.  Patch by Xiang Zhang.
 .. nonce: fQsEdn
 .. section: Library
 
-random.choices() now has k as a keyword-only argument to improve the
+:func:`random.choices` now has keyword-only parameter *k* to improve the
 readability of common cases and come into line with the signature used in
 other languages.
 

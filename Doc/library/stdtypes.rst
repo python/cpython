@@ -1340,7 +1340,7 @@ application).
       in a partially modified state).
 
       :meth:`sort` accepts two arguments that can only be passed by keyword
-      (:ref:`keyword-only arguments <keyword-only_parameter>`):
+      (:ref:`keyword-only parameters <keyword-only_parameter>`):
 
       *key* specifies a function of one argument that is used to extract a
       comparison key from each list element (for example, ``key=str.lower``).

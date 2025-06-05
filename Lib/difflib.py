@@ -811,7 +811,7 @@ class Differ:
         """
         Construct a text differencer, with optional filters.
 
-        The two optional keyword parameters are for filter functions:
+        The two optional keyword arguments are for filter functions:
 
         - `linejunk`: A function that should accept a single string argument,
           and return true iff the string is junk. The module-level function
@@ -1311,7 +1311,7 @@ def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK):
     r"""
     Compare `a` and `b` (lists of strings); return a `Differ`-style delta.
 
-    Optional keyword parameters `linejunk` and `charjunk` are for filter
+    Optional keyword arguments `linejunk` and `charjunk` are for filter
     functions, or can be None:
 
     - linejunk: A function that should accept a single string argument and

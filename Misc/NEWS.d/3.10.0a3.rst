@@ -754,7 +754,7 @@ conformance with the other platforms.
 The :func:`traceback.format_exception`,
 :func:`traceback.format_exception_only`, and
 :func:`traceback.print_exception` functions can now take an exception object
-as a positional-only argument.
+as a positional argument.
 
 ..
 

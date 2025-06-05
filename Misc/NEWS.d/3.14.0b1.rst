@@ -996,7 +996,7 @@ Add ability to specify name for :class:`!tkinter.OptionMenu` and
 .. nonce: 8uW0Wf
 .. section: Library
 
-Add keyword-only optional argument *echo_char* for :meth:`getpass.getpass`
+Add keyword-only parameter *echo_char* for :meth:`getpass.getpass`
 for optional visual keyboard feedback support. Patch by Semyon Moroz.
 
 ..

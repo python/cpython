@@ -241,7 +241,7 @@ even if we specify a fallback:
 One more thing to be aware of is that the parser-level :meth:`~ConfigParser.get` method
 provides a custom, more complex interface, maintained for backwards
 compatibility.  When using this method, a fallback value can be provided via
-the ``fallback`` keyword-only argument:
+the ``fallback`` keyword argument:
 
 .. doctest::
 

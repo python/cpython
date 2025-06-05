@@ -981,7 +981,7 @@ function.
       |                        | definition.                                  |
       +------------------------+----------------------------------------------+
 
-      Example: print all keyword-only arguments without default values:
+      Example: print all keyword-only parameters without default values:
 
       .. doctest::
 
@@ -1165,7 +1165,7 @@ Classes and functions
    Note that :func:`signature` and
    :ref:`Signature Object <inspect-signature-object>` provide the recommended
    API for callable introspection, and support additional behaviours (like
-   positional-only arguments) that are sometimes encountered in extension module
+   positional-only parameters) that are sometimes encountered in extension module
    APIs. This function is retained primarily for use in code that needs to
    maintain compatibility with the Python 2 ``inspect`` module API.
 

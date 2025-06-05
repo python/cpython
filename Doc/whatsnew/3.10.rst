@@ -1265,7 +1265,7 @@ and :const:`~os.O_NOFOLLOW_ANY` for macOS.
 os.path
 -------
 
-:func:`os.path.realpath` now accepts a *strict* keyword-only argument. When set
+:func:`os.path.realpath` now accepts a *strict* keyword argument. When set
 to ``True``, :exc:`OSError` is raised if a path doesn't exist or a symlink loop
 is encountered.
 (Contributed by Barney Gale in :issue:`43757`.)
@@ -1286,7 +1286,7 @@ order as :meth:`~pathlib.Path.symlink_to`.
 (Contributed by Barney Gale in :issue:`39950`.)
 
 :meth:`pathlib.Path.stat` and :meth:`~pathlib.Path.chmod` now accept a
-*follow_symlinks* keyword-only argument for consistency with corresponding
+*follow_symlinks* keyword argument for consistency with corresponding
 functions in the :mod:`os` module.
 (Contributed by Barney Gale in :issue:`39906`.)
 
@@ -1440,7 +1440,7 @@ traceback
 The :func:`~traceback.format_exception`,
 :func:`~traceback.format_exception_only`, and
 :func:`~traceback.print_exception` functions can now take an exception object
-as a positional-only argument.
+as a positional argument.
 (Contributed by Zackery Spytz and Matthias Bussonnier in :issue:`26389`.)
 
 types

@@ -610,7 +610,7 @@ methods:
    unpickling.
 
    You should implement this method if the :meth:`__new__` method of your
-   class requires keyword-only arguments.  Otherwise, it is recommended for
+   class has keyword-only parameters.  Otherwise, it is recommended for
    compatibility to implement :meth:`__getnewargs__`.
 
    .. versionchanged:: 3.6

@@ -591,7 +591,7 @@ for invalid escape sequences in string and bytes literals.
 .. section: Core and Builtins
 
 Fixed a crash in compiling string annotations containing a lambda with a
-keyword-only argument that doesn't have a default value.
+keyword-only parameter that doesn't have a default value.
 
 ..
 
