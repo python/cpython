@@ -78,6 +78,10 @@ def tester(fn, wantResult):
               %(str(fn), str(wantResult), repr(gotResult)))
 
 
+def _parameterize(*parameters):
+    return support.subTests('kwargs', parameters, _do_cleanups=True)
+
+
 class NtpathTestCase(unittest.TestCase):
     def assertPathEqual(self, path1, path2):
         if path1 == path2 or _norm(path1) == _norm(path2):
@@ -536,7 +540,7 @@ class TestNtpath(NtpathTestCase):
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
-    @support.subTests('kwargs', ({}, {'strict': True}, {'strict': ALLOW_MISSING}), _do_cleanups=True)
+    @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
     def test_realpath_basic(self, kwargs):
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
         open(ABSTFN, "wb").close()
@@ -615,7 +619,7 @@ class TestNtpath(NtpathTestCase):
         self.assertEqual(realpath(path, strict=ALLOW_MISSING), ABSTFNb + b'\\nonexistent')
 
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
-    @support.subTests('kwargs', ({}, {'strict': True}, {'strict': ALLOW_MISSING}))
+    @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
     def test_realpath_invalid_unicode_paths(self, kwargs):
         realpath = ntpath.realpath
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
@@ -635,7 +639,7 @@ class TestNtpath(NtpathTestCase):
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
-    @support.subTests('kwargs', ({}, {'strict': True}, {'strict': ALLOW_MISSING}), _do_cleanups=True)
+    @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
     def test_realpath_relative(self, kwargs):
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
         open(ABSTFN, "wb").close()
@@ -849,7 +853,7 @@ class TestNtpath(NtpathTestCase):
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
-    @support.subTests('kwargs', ({}, {'strict': True}, {'strict': ALLOW_MISSING}), _do_cleanups=True)
+    @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
     def test_realpath_symlink_prefix(self, kwargs):
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
         self.addCleanup(os_helper.unlink, ABSTFN + "3")

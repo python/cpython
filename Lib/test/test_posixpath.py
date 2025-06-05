@@ -35,6 +35,10 @@ def skip_if_ABSTFN_contains_backslash(test):
     return [test, unittest.skip(msg)(test)][found_backslash]
 
 
+def _parameterize(*parameters):
+    return support.subTests('kwargs', parameters)
+
+
 class PosixPathTest(unittest.TestCase):
 
     def setUp(self):
@@ -444,7 +448,7 @@ class PosixPathTest(unittest.TestCase):
                 self.assertEqual(result, expected)
 
     @skip_if_ABSTFN_contains_backslash
-    @support.subTests('kwargs', ({}, {'strict': True}, {'strict': ALLOW_MISSING}))
+    @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
     def test_realpath_curdir(self, kwargs):
         self.assertEqual(realpath('.', **kwargs), os.getcwd())
         self.assertEqual(realpath('./.', **kwargs), os.getcwd())
@@ -455,7 +459,7 @@ class PosixPathTest(unittest.TestCase):
         self.assertEqual(realpath(b'/'.join([b'.'] * 100), **kwargs), os.getcwdb())
 
     @skip_if_ABSTFN_contains_backslash
-    @support.subTests('kwargs', ({}, {'strict': True}, {'strict': ALLOW_MISSING}))
+    @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
     def test_realpath_pardir(self, kwargs):
         self.assertEqual(realpath('..', **kwargs), dirname(os.getcwd()))
         self.assertEqual(realpath('../..', **kwargs), dirname(dirname(os.getcwd())))
@@ -467,7 +471,7 @@ class PosixPathTest(unittest.TestCase):
 
     @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
-    @support.subTests('kwargs', ({}, {'strict': ALLOW_MISSING}))
+    @_parameterize({}, {'strict': ALLOW_MISSING})
     def test_realpath_basic(self, kwargs):
         # Basic operation.
         try:
@@ -585,7 +589,7 @@ class PosixPathTest(unittest.TestCase):
 
     @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
-    @support.subTests('kwargs', ({}, {'strict': ALLOW_MISSING}))
+    @_parameterize({}, {'strict': ALLOW_MISSING})
     def test_realpath_relative(self, kwargs):
         try:
             os.symlink(posixpath.relpath(ABSTFN+"1"), ABSTFN)
@@ -595,7 +599,7 @@ class PosixPathTest(unittest.TestCase):
 
     @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
-    @support.subTests('kwargs', ({}, {'strict': ALLOW_MISSING}))
+    @_parameterize({}, {'strict': ALLOW_MISSING})
     def test_realpath_missing_pardir(self, kwargs):
         try:
             os.symlink(TESTFN + "1", TESTFN)
@@ -647,7 +651,7 @@ class PosixPathTest(unittest.TestCase):
 
     @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
-    @support.subTests('kwargs', ({'strict': True}, {'strict': ALLOW_MISSING}))
+    @_parameterize({'strict': True}, {'strict': ALLOW_MISSING})
     def test_realpath_symlink_loops_strict(self, kwargs):
         # Bug #43757, raise OSError if we get into an infinite symlink loop in
         # the strict modes.
@@ -689,7 +693,7 @@ class PosixPathTest(unittest.TestCase):
 
     @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
-    @support.subTests('kwargs', ({}, {'strict': True}, {'strict': ALLOW_MISSING}))
+    @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
     def test_realpath_repeated_indirect_symlinks(self, kwargs):
         # Issue #6975.
         try:
@@ -704,7 +708,7 @@ class PosixPathTest(unittest.TestCase):
 
     @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
-    @support.subTests('kwargs', ({}, {'strict': True}, {'strict': ALLOW_MISSING}))
+    @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
     def test_realpath_deep_recursion(self, kwargs):
         depth = 10
         try:
@@ -724,7 +728,7 @@ class PosixPathTest(unittest.TestCase):
 
     @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
-    @support.subTests('kwargs', ({}, {'strict': ALLOW_MISSING}))
+    @_parameterize({}, {'strict': ALLOW_MISSING})
     def test_realpath_resolve_parents(self, kwargs):
         # We also need to resolve any symlinks in the parents of a relative
         # path passed to realpath. E.g.: current working directory is
@@ -745,7 +749,7 @@ class PosixPathTest(unittest.TestCase):
 
     @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
-    @support.subTests('kwargs', ({}, {'strict': True}, {'strict': ALLOW_MISSING}))
+    @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
     def test_realpath_resolve_before_normalizing(self, kwargs):
         # Bug #990669: Symbolic links should be resolved before we
         # normalize the path. E.g.: if we have directories 'a', 'k' and 'y'
@@ -774,7 +778,7 @@ class PosixPathTest(unittest.TestCase):
 
     @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
-    @support.subTests('kwargs', ({}, {'strict': True}, {'strict': ALLOW_MISSING}))
+    @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
     def test_realpath_resolve_first(self, kwargs):
         # Bug #1213894: The first component of the path, if not absolute,
         # must be resolved too.
@@ -812,7 +816,7 @@ class PosixPathTest(unittest.TestCase):
     @skip_if_ABSTFN_contains_backslash
     @unittest.skipIf(os.chmod not in os.supports_follow_symlinks, "Can't set symlink permissions")
     @unittest.skipIf(sys.platform != "darwin", "only macOS requires read permission to readlink()")
-    @support.subTests('kwargs', ({'strict': True}, {'strict': ALLOW_MISSING}))
+    @_parameterize({'strict': True}, {'strict': ALLOW_MISSING})
     def test_realpath_unreadable_symlink_strict(self, kwargs):
         try:
             os.symlink(ABSTFN+"1", ABSTFN)
@@ -1148,7 +1152,7 @@ class PathLikeTests(unittest.TestCase):
     def test_path_abspath(self):
         self.assertPathEqual(self.path.abspath)
 
-    @support.subTests('kwargs', ({}, {'strict': True}, {'strict': ALLOW_MISSING}))
+    @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
     def test_path_realpath(self, kwargs):
         self.assertPathEqual(self.path.realpath)
 
