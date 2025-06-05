@@ -735,7 +735,6 @@ module_exec(PyObject *module)
         goto error;
     }
 
-    /* Set the keyword tuple */
     if (add_keyword_tuple(module) < 0) {
         goto error;
     }
