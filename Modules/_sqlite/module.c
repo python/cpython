@@ -408,7 +408,7 @@ pysqlite_error_name(int rc)
 static int
 add_keyword_tuple(PyObject *module)
 {
-    if (sqlite3_libversion_number() < 3024000) {
+    #if SQLITE_VERSION_NUMBER < 3024000 {
         return 0;
     }
     int count = sqlite3_keyword_count();
