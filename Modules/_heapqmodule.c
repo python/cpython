@@ -133,7 +133,7 @@ _heapq_heappush_impl(PyObject *module, PyObject *heap, PyObject *item)
 {
     // In a free-threaded build, the heap is locked at this point.
     // Therefore, calling _PyList_AppendTakeRef() is safe and no overhead.
-    if (_PyList_AppendTakeRef((PyListObject *)heap, Py_NewRef(item)))
+    if (_PyList_AppendTakeRef((PyListObject *)heap, Py_XNewRef(item)))
         return NULL;
 
     if (siftdown((PyListObject *)heap, 0, PyList_GET_SIZE(heap)-1))
@@ -504,7 +504,7 @@ _heapq_heappush_max_impl(PyObject *module, PyObject *heap, PyObject *item)
 {
     // In a free-threaded build, the heap is locked at this point.
     // Therefore, calling _PyList_AppendTakeRef() is safe and no overhead.
-    if (_PyList_AppendTakeRef((PyListObject *)heap, Py_NewRef(item))) {
+    if (_PyList_AppendTakeRef((PyListObject *)heap, Py_XNewRef(item))) {
         return NULL;
     }
 

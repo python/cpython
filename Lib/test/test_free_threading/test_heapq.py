@@ -88,7 +88,7 @@ class TestHeapq(unittest.TestCase):
 
         def heapreplace_func(heap, replace_items):
             for item in replace_items:
-                popped_item = heapq.heapreplace(heap, item)
+                heapq.heapreplace(heap, item)
 
         self.run_concurrently(
             worker_func=heapreplace_func,
@@ -165,7 +165,7 @@ class TestHeapq(unittest.TestCase):
 
         def heapreplace_max_func(max_heap, replace_items):
             for item in replace_items:
-                popped_item = heapq.heapreplace_max(max_heap, item)
+                heapq.heapreplace_max(max_heap, item)
 
         self.run_concurrently(
             worker_func=heapreplace_max_func,
