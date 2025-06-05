@@ -1675,7 +1675,7 @@ That can still use %-formatting, as shown here::
     >>>
 
 Logging calls (``logger.debug()``, ``logger.info()`` etc.) only take
-positional arguments for the actual logging message itself, with keyword
+positional arguments for the logging message itself, with keyword
 arguments used only for determining options for how to handle the actual
 logging call (e.g. the ``exc_info`` keyword argument to indicate that
 traceback information should be logged, or the ``extra`` keyword argument
@@ -2732,7 +2732,7 @@ governs the formatting of logging messages for final output to logs, and is
 completely orthogonal to how an individual logging message is constructed.
 
 Logging calls (:meth:`~Logger.debug`, :meth:`~Logger.info` etc.) only take
-positional arguments for the actual logging message itself, with keyword
+positional arguments for the logging message itself, with keyword
 arguments used only for determining options for how to handle the logging call
 (e.g. the ``exc_info`` keyword argument to indicate that traceback information
 should be logged, or the ``extra`` keyword argument to indicate additional
