@@ -1236,6 +1236,7 @@ _Py_call_instrumentation_jump(
            event == PY_MONITORING_EVENT_BRANCH_RIGHT ||
            event == PY_MONITORING_EVENT_BRANCH_LEFT);
     int to = (int)(dest - _PyFrame_GetBytecode(frame));
+    assert(to <= INT_MAX / (int)sizeof(_Py_CODEUNIT));
     PyObject *to_obj = PyLong_FromLong(to * (int)sizeof(_Py_CODEUNIT));
     if (to_obj == NULL) {
         return NULL;
