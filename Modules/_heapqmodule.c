@@ -131,13 +131,20 @@ static PyObject *
 _heapq_heappush_impl(PyObject *module, PyObject *heap, PyObject *item)
 /*[clinic end generated code: output=912c094f47663935 input=f7a4f03ef8d52e67]*/
 {
+    if (item == NULL) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
     // In a free-threaded build, the heap is locked at this point.
     // Therefore, calling _PyList_AppendTakeRef() is safe and no overhead.
-    if (_PyList_AppendTakeRef((PyListObject *)heap, Py_XNewRef(item)))
+    if (_PyList_AppendTakeRef((PyListObject *)heap, Py_NewRef(item))) {
         return NULL;
+    }
 
-    if (siftdown((PyListObject *)heap, 0, PyList_GET_SIZE(heap)-1))
+    if (siftdown((PyListObject *)heap, 0, PyList_GET_SIZE(heap)-1)) {
         return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -502,9 +509,14 @@ static PyObject *
 _heapq_heappush_max_impl(PyObject *module, PyObject *heap, PyObject *item)
 /*[clinic end generated code: output=c869d5f9deb08277 input=c437e3d1ff8dcb70]*/
 {
+    if (item == NULL) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
     // In a free-threaded build, the heap is locked at this point.
     // Therefore, calling _PyList_AppendTakeRef() is safe and no overhead.
-    if (_PyList_AppendTakeRef((PyListObject *)heap, Py_XNewRef(item))) {
+    if (_PyList_AppendTakeRef((PyListObject *)heap, Py_NewRef(item))) {
         return NULL;
     }
 
