@@ -654,8 +654,13 @@ PyAPI_DATA(PyObject) _Py_NoneStruct; /* Don't use this directly */
 PyAPI_FUNC(int) Py_IsNone(PyObject *x);
 #define Py_IsNone(x) Py_Is((x), Py_None)
 
-/* Macro for returning Py_None from a function */
-#define Py_RETURN_NONE return Py_None
+/* Macro for returning Py_None from a function.
+ * Only treat Py_None as immortal in the limited C API 3.12 and newer. */
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030c0000
+#  define Py_RETURN_NONE return Py_NewRef(Py_None)
+#else
+#  define Py_RETURN_NONE return Py_None
+#endif
 
 /*
 Py_NotImplemented is a singleton used to signal that an operation is
