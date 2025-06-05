@@ -506,7 +506,7 @@ API Functions
 
 .. c:function:: int PyArg_Parse(PyObject *args, const char *format, ...)
 
-   Parse the argument of a function that takes a single positional parameter
+   Parse the argument of a function that takes a single positional argument
    into a local variable.  Returns true on success; on failure, it returns
    false and raises the appropriate exception.
 

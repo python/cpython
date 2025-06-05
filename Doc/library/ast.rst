@@ -1938,8 +1938,8 @@ Function and class definitions
    * ``kw_defaults`` is a list of default values for keyword-only parameters. If
      one is ``None``, the corresponding argument is required.
    * ``defaults`` is a list of default values for positional-only and
-     keyword-or-positional parameter.
-     If there are fewer defaults, they correspond to the last n
+     keyword-or-positional parameters.
+     If there are fewer defaults, they correspond to the last *n*
      parameters.
 
 
