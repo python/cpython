@@ -34,40 +34,13 @@ cmath_acos(PyObject *module, PyObject *arg)
     /* modifications for z */
     errno = 0;
     _return_value = cmath_acos_impl(module, z);
+    return_value = PyComplex_FromCComplex(_return_value);
     if (errno) {
-        PyObject *exc_type;
-        PyObject *exc_string;
-
-        if (errno == EDOM) {
-            exc_type = PyExc_ValueError;
-            exc_string = PyUnicode_FromString("math domain error");
+        if (return_value) {
+            set_cmath_error(return_value);
         }
-        else {
-            exc_type = PyExc_OverflowError;
-            exc_string = PyUnicode_FromString("math range error");
-        }
-        if (!exc_string) {
-            goto exit;
-        }
-        PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
-
-        Py_DECREF(exc_string);
-        if (!exc) {
-            goto exit;
-        }
-
-        PyObject *value = PyComplex_FromCComplex(_return_value);
-
-        if (!value || PyObject_SetAttrString(exc, "value", value)) {
-            Py_XDECREF(value);
-            goto exit;
-        }
-        Py_DECREF(value);
-        PyErr_SetRaisedException(exc);
+        return_value = NULL;
         goto exit;
-    }
-    else {
-        return_value = PyComplex_FromCComplex(_return_value);
     }
 
 exit:
@@ -100,40 +73,13 @@ cmath_acosh(PyObject *module, PyObject *arg)
     /* modifications for z */
     errno = 0;
     _return_value = cmath_acosh_impl(module, z);
+    return_value = PyComplex_FromCComplex(_return_value);
     if (errno) {
-        PyObject *exc_type;
-        PyObject *exc_string;
-
-        if (errno == EDOM) {
-            exc_type = PyExc_ValueError;
-            exc_string = PyUnicode_FromString("math domain error");
+        if (return_value) {
+            set_cmath_error(return_value);
         }
-        else {
-            exc_type = PyExc_OverflowError;
-            exc_string = PyUnicode_FromString("math range error");
-        }
-        if (!exc_string) {
-            goto exit;
-        }
-        PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
-
-        Py_DECREF(exc_string);
-        if (!exc) {
-            goto exit;
-        }
-
-        PyObject *value = PyComplex_FromCComplex(_return_value);
-
-        if (!value || PyObject_SetAttrString(exc, "value", value)) {
-            Py_XDECREF(value);
-            goto exit;
-        }
-        Py_DECREF(value);
-        PyErr_SetRaisedException(exc);
+        return_value = NULL;
         goto exit;
-    }
-    else {
-        return_value = PyComplex_FromCComplex(_return_value);
     }
 
 exit:
@@ -166,40 +112,13 @@ cmath_asin(PyObject *module, PyObject *arg)
     /* modifications for z */
     errno = 0;
     _return_value = cmath_asin_impl(module, z);
+    return_value = PyComplex_FromCComplex(_return_value);
     if (errno) {
-        PyObject *exc_type;
-        PyObject *exc_string;
-
-        if (errno == EDOM) {
-            exc_type = PyExc_ValueError;
-            exc_string = PyUnicode_FromString("math domain error");
+        if (return_value) {
+            set_cmath_error(return_value);
         }
-        else {
-            exc_type = PyExc_OverflowError;
-            exc_string = PyUnicode_FromString("math range error");
-        }
-        if (!exc_string) {
-            goto exit;
-        }
-        PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
-
-        Py_DECREF(exc_string);
-        if (!exc) {
-            goto exit;
-        }
-
-        PyObject *value = PyComplex_FromCComplex(_return_value);
-
-        if (!value || PyObject_SetAttrString(exc, "value", value)) {
-            Py_XDECREF(value);
-            goto exit;
-        }
-        Py_DECREF(value);
-        PyErr_SetRaisedException(exc);
+        return_value = NULL;
         goto exit;
-    }
-    else {
-        return_value = PyComplex_FromCComplex(_return_value);
     }
 
 exit:
@@ -232,40 +151,13 @@ cmath_asinh(PyObject *module, PyObject *arg)
     /* modifications for z */
     errno = 0;
     _return_value = cmath_asinh_impl(module, z);
+    return_value = PyComplex_FromCComplex(_return_value);
     if (errno) {
-        PyObject *exc_type;
-        PyObject *exc_string;
-
-        if (errno == EDOM) {
-            exc_type = PyExc_ValueError;
-            exc_string = PyUnicode_FromString("math domain error");
+        if (return_value) {
+            set_cmath_error(return_value);
         }
-        else {
-            exc_type = PyExc_OverflowError;
-            exc_string = PyUnicode_FromString("math range error");
-        }
-        if (!exc_string) {
-            goto exit;
-        }
-        PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
-
-        Py_DECREF(exc_string);
-        if (!exc) {
-            goto exit;
-        }
-
-        PyObject *value = PyComplex_FromCComplex(_return_value);
-
-        if (!value || PyObject_SetAttrString(exc, "value", value)) {
-            Py_XDECREF(value);
-            goto exit;
-        }
-        Py_DECREF(value);
-        PyErr_SetRaisedException(exc);
+        return_value = NULL;
         goto exit;
-    }
-    else {
-        return_value = PyComplex_FromCComplex(_return_value);
     }
 
 exit:
@@ -298,40 +190,13 @@ cmath_atan(PyObject *module, PyObject *arg)
     /* modifications for z */
     errno = 0;
     _return_value = cmath_atan_impl(module, z);
+    return_value = PyComplex_FromCComplex(_return_value);
     if (errno) {
-        PyObject *exc_type;
-        PyObject *exc_string;
-
-        if (errno == EDOM) {
-            exc_type = PyExc_ValueError;
-            exc_string = PyUnicode_FromString("math domain error");
+        if (return_value) {
+            set_cmath_error(return_value);
         }
-        else {
-            exc_type = PyExc_OverflowError;
-            exc_string = PyUnicode_FromString("math range error");
-        }
-        if (!exc_string) {
-            goto exit;
-        }
-        PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
-
-        Py_DECREF(exc_string);
-        if (!exc) {
-            goto exit;
-        }
-
-        PyObject *value = PyComplex_FromCComplex(_return_value);
-
-        if (!value || PyObject_SetAttrString(exc, "value", value)) {
-            Py_XDECREF(value);
-            goto exit;
-        }
-        Py_DECREF(value);
-        PyErr_SetRaisedException(exc);
+        return_value = NULL;
         goto exit;
-    }
-    else {
-        return_value = PyComplex_FromCComplex(_return_value);
     }
 
 exit:
@@ -364,40 +229,13 @@ cmath_atanh(PyObject *module, PyObject *arg)
     /* modifications for z */
     errno = 0;
     _return_value = cmath_atanh_impl(module, z);
+    return_value = PyComplex_FromCComplex(_return_value);
     if (errno) {
-        PyObject *exc_type;
-        PyObject *exc_string;
-
-        if (errno == EDOM) {
-            exc_type = PyExc_ValueError;
-            exc_string = PyUnicode_FromString("math domain error");
+        if (return_value) {
+            set_cmath_error(return_value);
         }
-        else {
-            exc_type = PyExc_OverflowError;
-            exc_string = PyUnicode_FromString("math range error");
-        }
-        if (!exc_string) {
-            goto exit;
-        }
-        PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
-
-        Py_DECREF(exc_string);
-        if (!exc) {
-            goto exit;
-        }
-
-        PyObject *value = PyComplex_FromCComplex(_return_value);
-
-        if (!value || PyObject_SetAttrString(exc, "value", value)) {
-            Py_XDECREF(value);
-            goto exit;
-        }
-        Py_DECREF(value);
-        PyErr_SetRaisedException(exc);
+        return_value = NULL;
         goto exit;
-    }
-    else {
-        return_value = PyComplex_FromCComplex(_return_value);
     }
 
 exit:
@@ -430,40 +268,13 @@ cmath_cos(PyObject *module, PyObject *arg)
     /* modifications for z */
     errno = 0;
     _return_value = cmath_cos_impl(module, z);
+    return_value = PyComplex_FromCComplex(_return_value);
     if (errno) {
-        PyObject *exc_type;
-        PyObject *exc_string;
-
-        if (errno == EDOM) {
-            exc_type = PyExc_ValueError;
-            exc_string = PyUnicode_FromString("math domain error");
+        if (return_value) {
+            set_cmath_error(return_value);
         }
-        else {
-            exc_type = PyExc_OverflowError;
-            exc_string = PyUnicode_FromString("math range error");
-        }
-        if (!exc_string) {
-            goto exit;
-        }
-        PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
-
-        Py_DECREF(exc_string);
-        if (!exc) {
-            goto exit;
-        }
-
-        PyObject *value = PyComplex_FromCComplex(_return_value);
-
-        if (!value || PyObject_SetAttrString(exc, "value", value)) {
-            Py_XDECREF(value);
-            goto exit;
-        }
-        Py_DECREF(value);
-        PyErr_SetRaisedException(exc);
+        return_value = NULL;
         goto exit;
-    }
-    else {
-        return_value = PyComplex_FromCComplex(_return_value);
     }
 
 exit:
@@ -496,40 +307,13 @@ cmath_cosh(PyObject *module, PyObject *arg)
     /* modifications for z */
     errno = 0;
     _return_value = cmath_cosh_impl(module, z);
+    return_value = PyComplex_FromCComplex(_return_value);
     if (errno) {
-        PyObject *exc_type;
-        PyObject *exc_string;
-
-        if (errno == EDOM) {
-            exc_type = PyExc_ValueError;
-            exc_string = PyUnicode_FromString("math domain error");
+        if (return_value) {
+            set_cmath_error(return_value);
         }
-        else {
-            exc_type = PyExc_OverflowError;
-            exc_string = PyUnicode_FromString("math range error");
-        }
-        if (!exc_string) {
-            goto exit;
-        }
-        PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
-
-        Py_DECREF(exc_string);
-        if (!exc) {
-            goto exit;
-        }
-
-        PyObject *value = PyComplex_FromCComplex(_return_value);
-
-        if (!value || PyObject_SetAttrString(exc, "value", value)) {
-            Py_XDECREF(value);
-            goto exit;
-        }
-        Py_DECREF(value);
-        PyErr_SetRaisedException(exc);
+        return_value = NULL;
         goto exit;
-    }
-    else {
-        return_value = PyComplex_FromCComplex(_return_value);
     }
 
 exit:
@@ -562,40 +346,13 @@ cmath_exp(PyObject *module, PyObject *arg)
     /* modifications for z */
     errno = 0;
     _return_value = cmath_exp_impl(module, z);
+    return_value = PyComplex_FromCComplex(_return_value);
     if (errno) {
-        PyObject *exc_type;
-        PyObject *exc_string;
-
-        if (errno == EDOM) {
-            exc_type = PyExc_ValueError;
-            exc_string = PyUnicode_FromString("math domain error");
+        if (return_value) {
+            set_cmath_error(return_value);
         }
-        else {
-            exc_type = PyExc_OverflowError;
-            exc_string = PyUnicode_FromString("math range error");
-        }
-        if (!exc_string) {
-            goto exit;
-        }
-        PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
-
-        Py_DECREF(exc_string);
-        if (!exc) {
-            goto exit;
-        }
-
-        PyObject *value = PyComplex_FromCComplex(_return_value);
-
-        if (!value || PyObject_SetAttrString(exc, "value", value)) {
-            Py_XDECREF(value);
-            goto exit;
-        }
-        Py_DECREF(value);
-        PyErr_SetRaisedException(exc);
+        return_value = NULL;
         goto exit;
-    }
-    else {
-        return_value = PyComplex_FromCComplex(_return_value);
     }
 
 exit:
@@ -628,40 +385,13 @@ cmath_log10(PyObject *module, PyObject *arg)
     /* modifications for z */
     errno = 0;
     _return_value = cmath_log10_impl(module, z);
+    return_value = PyComplex_FromCComplex(_return_value);
     if (errno) {
-        PyObject *exc_type;
-        PyObject *exc_string;
-
-        if (errno == EDOM) {
-            exc_type = PyExc_ValueError;
-            exc_string = PyUnicode_FromString("math domain error");
+        if (return_value) {
+            set_cmath_error(return_value);
         }
-        else {
-            exc_type = PyExc_OverflowError;
-            exc_string = PyUnicode_FromString("math range error");
-        }
-        if (!exc_string) {
-            goto exit;
-        }
-        PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
-
-        Py_DECREF(exc_string);
-        if (!exc) {
-            goto exit;
-        }
-
-        PyObject *value = PyComplex_FromCComplex(_return_value);
-
-        if (!value || PyObject_SetAttrString(exc, "value", value)) {
-            Py_XDECREF(value);
-            goto exit;
-        }
-        Py_DECREF(value);
-        PyErr_SetRaisedException(exc);
+        return_value = NULL;
         goto exit;
-    }
-    else {
-        return_value = PyComplex_FromCComplex(_return_value);
     }
 
 exit:
@@ -694,40 +424,13 @@ cmath_sin(PyObject *module, PyObject *arg)
     /* modifications for z */
     errno = 0;
     _return_value = cmath_sin_impl(module, z);
+    return_value = PyComplex_FromCComplex(_return_value);
     if (errno) {
-        PyObject *exc_type;
-        PyObject *exc_string;
-
-        if (errno == EDOM) {
-            exc_type = PyExc_ValueError;
-            exc_string = PyUnicode_FromString("math domain error");
+        if (return_value) {
+            set_cmath_error(return_value);
         }
-        else {
-            exc_type = PyExc_OverflowError;
-            exc_string = PyUnicode_FromString("math range error");
-        }
-        if (!exc_string) {
-            goto exit;
-        }
-        PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
-
-        Py_DECREF(exc_string);
-        if (!exc) {
-            goto exit;
-        }
-
-        PyObject *value = PyComplex_FromCComplex(_return_value);
-
-        if (!value || PyObject_SetAttrString(exc, "value", value)) {
-            Py_XDECREF(value);
-            goto exit;
-        }
-        Py_DECREF(value);
-        PyErr_SetRaisedException(exc);
+        return_value = NULL;
         goto exit;
-    }
-    else {
-        return_value = PyComplex_FromCComplex(_return_value);
     }
 
 exit:
@@ -760,40 +463,13 @@ cmath_sinh(PyObject *module, PyObject *arg)
     /* modifications for z */
     errno = 0;
     _return_value = cmath_sinh_impl(module, z);
+    return_value = PyComplex_FromCComplex(_return_value);
     if (errno) {
-        PyObject *exc_type;
-        PyObject *exc_string;
-
-        if (errno == EDOM) {
-            exc_type = PyExc_ValueError;
-            exc_string = PyUnicode_FromString("math domain error");
+        if (return_value) {
+            set_cmath_error(return_value);
         }
-        else {
-            exc_type = PyExc_OverflowError;
-            exc_string = PyUnicode_FromString("math range error");
-        }
-        if (!exc_string) {
-            goto exit;
-        }
-        PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
-
-        Py_DECREF(exc_string);
-        if (!exc) {
-            goto exit;
-        }
-
-        PyObject *value = PyComplex_FromCComplex(_return_value);
-
-        if (!value || PyObject_SetAttrString(exc, "value", value)) {
-            Py_XDECREF(value);
-            goto exit;
-        }
-        Py_DECREF(value);
-        PyErr_SetRaisedException(exc);
+        return_value = NULL;
         goto exit;
-    }
-    else {
-        return_value = PyComplex_FromCComplex(_return_value);
     }
 
 exit:
@@ -826,40 +502,13 @@ cmath_sqrt(PyObject *module, PyObject *arg)
     /* modifications for z */
     errno = 0;
     _return_value = cmath_sqrt_impl(module, z);
+    return_value = PyComplex_FromCComplex(_return_value);
     if (errno) {
-        PyObject *exc_type;
-        PyObject *exc_string;
-
-        if (errno == EDOM) {
-            exc_type = PyExc_ValueError;
-            exc_string = PyUnicode_FromString("math domain error");
+        if (return_value) {
+            set_cmath_error(return_value);
         }
-        else {
-            exc_type = PyExc_OverflowError;
-            exc_string = PyUnicode_FromString("math range error");
-        }
-        if (!exc_string) {
-            goto exit;
-        }
-        PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
-
-        Py_DECREF(exc_string);
-        if (!exc) {
-            goto exit;
-        }
-
-        PyObject *value = PyComplex_FromCComplex(_return_value);
-
-        if (!value || PyObject_SetAttrString(exc, "value", value)) {
-            Py_XDECREF(value);
-            goto exit;
-        }
-        Py_DECREF(value);
-        PyErr_SetRaisedException(exc);
+        return_value = NULL;
         goto exit;
-    }
-    else {
-        return_value = PyComplex_FromCComplex(_return_value);
     }
 
 exit:
@@ -892,40 +541,13 @@ cmath_tan(PyObject *module, PyObject *arg)
     /* modifications for z */
     errno = 0;
     _return_value = cmath_tan_impl(module, z);
+    return_value = PyComplex_FromCComplex(_return_value);
     if (errno) {
-        PyObject *exc_type;
-        PyObject *exc_string;
-
-        if (errno == EDOM) {
-            exc_type = PyExc_ValueError;
-            exc_string = PyUnicode_FromString("math domain error");
+        if (return_value) {
+            set_cmath_error(return_value);
         }
-        else {
-            exc_type = PyExc_OverflowError;
-            exc_string = PyUnicode_FromString("math range error");
-        }
-        if (!exc_string) {
-            goto exit;
-        }
-        PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
-
-        Py_DECREF(exc_string);
-        if (!exc) {
-            goto exit;
-        }
-
-        PyObject *value = PyComplex_FromCComplex(_return_value);
-
-        if (!value || PyObject_SetAttrString(exc, "value", value)) {
-            Py_XDECREF(value);
-            goto exit;
-        }
-        Py_DECREF(value);
-        PyErr_SetRaisedException(exc);
+        return_value = NULL;
         goto exit;
-    }
-    else {
-        return_value = PyComplex_FromCComplex(_return_value);
     }
 
 exit:
@@ -958,40 +580,13 @@ cmath_tanh(PyObject *module, PyObject *arg)
     /* modifications for z */
     errno = 0;
     _return_value = cmath_tanh_impl(module, z);
+    return_value = PyComplex_FromCComplex(_return_value);
     if (errno) {
-        PyObject *exc_type;
-        PyObject *exc_string;
-
-        if (errno == EDOM) {
-            exc_type = PyExc_ValueError;
-            exc_string = PyUnicode_FromString("math domain error");
+        if (return_value) {
+            set_cmath_error(return_value);
         }
-        else {
-            exc_type = PyExc_OverflowError;
-            exc_string = PyUnicode_FromString("math range error");
-        }
-        if (!exc_string) {
-            goto exit;
-        }
-        PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
-
-        Py_DECREF(exc_string);
-        if (!exc) {
-            goto exit;
-        }
-
-        PyObject *value = PyComplex_FromCComplex(_return_value);
-
-        if (!value || PyObject_SetAttrString(exc, "value", value)) {
-            Py_XDECREF(value);
-            goto exit;
-        }
-        Py_DECREF(value);
-        PyErr_SetRaisedException(exc);
+        return_value = NULL;
         goto exit;
-    }
-    else {
-        return_value = PyComplex_FromCComplex(_return_value);
     }
 
 exit:
@@ -1139,40 +734,13 @@ cmath_rect(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     _return_value = cmath_rect_impl(module, r, phi);
+    return_value = PyComplex_FromCComplex(_return_value);
     if (errno) {
-        PyObject *exc_type;
-        PyObject *exc_string;
-
-        if (errno == EDOM) {
-            exc_type = PyExc_ValueError;
-            exc_string = PyUnicode_FromString("math domain error");
+        if (return_value) {
+            set_cmath_error(return_value);
         }
-        else {
-            exc_type = PyExc_OverflowError;
-            exc_string = PyUnicode_FromString("math range error");
-        }
-        if (!exc_string) {
-            goto exit;
-        }
-        PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
-
-        Py_DECREF(exc_string);
-        if (!exc) {
-            goto exit;
-        }
-
-        PyObject *value = PyComplex_FromCComplex(_return_value);
-
-        if (!value || PyObject_SetAttrString(exc, "value", value)) {
-            Py_XDECREF(value);
-            goto exit;
-        }
-        Py_DECREF(value);
-        PyErr_SetRaisedException(exc);
+        return_value = NULL;
         goto exit;
-    }
-    else {
-        return_value = PyComplex_FromCComplex(_return_value);
     }
 
 exit:
@@ -1381,4 +949,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=29612ef4c43deb17 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1f9be4ea0ab6951b input=a9049054013a1b77]*/

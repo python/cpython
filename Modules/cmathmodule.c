@@ -16,6 +16,45 @@
 /* For _Py_log1p with workarounds for buggy handling of zeros. */
 #include "_math.h"
 
+static void
+set_cmath_error(PyObject *value)
+{
+    if (errno == EDOM || errno == ERANGE) {
+        PyObject *exc_type;
+        PyObject *exc_string;
+
+        if (errno == EDOM) {
+            exc_type = PyExc_ValueError;
+            exc_string = PyUnicode_FromString("math domain error");
+        }
+        else {
+            exc_type = PyExc_OverflowError;
+            exc_string = PyUnicode_FromString("math range error");
+        }
+        if (!exc_string) {
+            Py_DECREF(value);
+            return;
+        }
+        PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
+
+        Py_DECREF(exc_string);
+        if (!exc) {
+            Py_DECREF(value);
+            return;
+        }
+        if (PyObject_SetAttrString(exc, "value", value)) {
+            Py_DECREF(value);
+            return;
+        }
+        Py_DECREF(value);
+        PyErr_SetRaisedException(exc);
+    }
+    else { /* Unexpected math error */
+        Py_DECREF(value);
+        PyErr_SetFromErrno(PyExc_ValueError);
+    }
+}
+
 #include "clinic/cmathmodule.c.h"
 /*[clinic input]
 module cmath
@@ -34,44 +73,17 @@ class Py_complex_protected_return_converter(CReturnConverter):
     def render(self, function, data):
         self.declare(data)
         data.return_conversion.append("""
+return_value = PyComplex_FromCComplex(_return_value);
 if (errno) {
-    PyObject *exc_type;
-    PyObject *exc_string;
-
-    if (errno == EDOM) {
-        exc_type = PyExc_ValueError;
-        exc_string = PyUnicode_FromString("math domain error");
+    if (return_value) {
+        set_cmath_error(return_value);
     }
-    else {
-        exc_type = PyExc_OverflowError;
-        exc_string = PyUnicode_FromString("math range error");
-    }
-    if (!exc_string) {
-        goto exit;
-    }
-    PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
-
-    Py_DECREF(exc_string);
-    if (!exc) {
-        goto exit;
-    }
-
-    PyObject *value = PyComplex_FromCComplex(_return_value);
-
-    if (!value || PyObject_SetAttrString(exc, "value", value)) {
-        Py_XDECREF(value);
-        goto exit;
-    }
-    Py_DECREF(value);
-    PyErr_SetRaisedException(exc);
+    return_value = NULL;
     goto exit;
-}
-else {
-    return_value = PyComplex_FromCComplex(_return_value);
 }
 """.strip())
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=2d376a406b8883a3]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=fff1087cce9b4c85]*/
 
 #if (FLT_RADIX != 2 && FLT_RADIX != 16)
 #error "Modules/cmathmodule.c expects FLT_RADIX to be 2 or 16"
@@ -918,44 +930,16 @@ cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj)
         y = c_log(y);
         x = _Py_c_quot(x, y);
     }
+
+    PyObject *res = PyComplex_FromCComplex(x);
+
     if (errno) {
-        if (errno == EDOM || errno == ERANGE) {
-            PyObject *exc_type;
-            PyObject *exc_string;
-
-            if (errno == EDOM) {
-                exc_type = PyExc_ValueError;
-                exc_string = PyUnicode_FromString("math domain error");
-            }
-            else {
-                exc_type = PyExc_OverflowError;
-                exc_string = PyUnicode_FromString("math range error");
-            }
-            if (!exc_string) {
-                return NULL;
-            }
-            PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
-
-            Py_DECREF(exc_string);
-            if (!exc) {
-                return NULL;
-            }
-
-            PyObject *value = PyComplex_FromCComplex(x);
-
-            if (!value || PyObject_SetAttrString(exc, "value", value)) {
-                Py_XDECREF(value);
-                return NULL;
-            }
-            Py_DECREF(value);
-            PyErr_SetRaisedException(exc);
-        }
-        else { /* Unexpected math error */
-            PyErr_SetFromErrno(PyExc_ValueError);
+        if (res) {
+            set_cmath_error(res);
         }
         return NULL;
     }
-    return PyComplex_FromCComplex(x);
+    return res;
 }
 
 
@@ -1017,37 +1001,16 @@ cmath_polar_impl(PyObject *module, Py_complex z)
     errno = 0;
     phi = atan2(z.imag, z.real); /* should not cause any exception */
     r = _Py_c_abs(z); /* sets errno to ERANGE on overflow */
+
+    PyObject *res = Py_BuildValue("dd", r, phi);
+
     if (errno != 0) {
-        if (errno == ERANGE) {
-            PyObject *exc_type = PyExc_OverflowError;
-            PyObject *exc_string = PyUnicode_FromString("math range error");
-
-            if (!exc_string) {
-                return NULL;
-            }
-            PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
-
-            Py_DECREF(exc_string);
-            if (!exc) {
-                return NULL;
-            }
-
-            PyObject *value = Py_BuildValue("dd", r, phi);
-
-            if (!value || PyObject_SetAttrString(exc, "value", value)) {
-                Py_XDECREF(value);
-                return NULL;
-            }
-            Py_DECREF(value);
-            PyErr_SetRaisedException(exc);
-        }
-        else { /* Unexpected math error */
-            PyErr_SetFromErrno(PyExc_ValueError);
+        if (res) {
+            set_cmath_error(res);
         }
         return NULL;
     }
-    else
-        return Py_BuildValue("dd", r, phi);
+    return res;
 }
 
 /*
