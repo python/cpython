@@ -39,7 +39,7 @@ Uncaught in the interpreter:
 class WorkerContext(_thread.WorkerContext):
 
     @classmethod
-    def prepare(cls, initializer, initargs, shared):
+    def prepare(cls, initializer, initargs):
         def resolve_task(fn, args, kwargs):
             if isinstance(fn, str):
                 # XXX Circle back to this later.
@@ -58,12 +58,11 @@ class WorkerContext(_thread.WorkerContext):
         else:
             initdata = None
         def create_context():
-            return cls(initdata, shared)
+            return cls(initdata)
         return create_context, resolve_task
 
-    def __init__(self, initdata, shared=None):
+    def __init__(self, initdata):
         self.initdata = initdata
-        self.shared = dict(shared) if shared else None
         self.interpid = None
         self.resultsid = None
 
@@ -131,10 +130,6 @@ class WorkerContext(_thread.WorkerContext):
             maxsize = 0
             self.resultsid = _interpqueues.create(maxsize)
 
-            if self.shared:
-                _interpreters.set___main___attrs(
-                                    self.interpid, self.shared, restrict=True)
-
             if self.initdata:
                 self.run(self.initdata)
         except BaseException:
@@ -180,11 +175,11 @@ class InterpreterPoolExecutor(_thread.ThreadPoolExecutor):
     BROKEN = BrokenInterpreterPool
 
     @classmethod
-    def prepare_context(cls, initializer, initargs, shared):
-        return WorkerContext.prepare(initializer, initargs, shared)
+    def prepare_context(cls, initializer, initargs):
+        return WorkerContext.prepare(initializer, initargs)
 
     def __init__(self, max_workers=None, thread_name_prefix='',
-                 initializer=None, initargs=(), shared=None):
+                 initializer=None, initargs=()):
         """Initializes a new InterpreterPoolExecutor instance.
 
         Args:
@@ -194,8 +189,6 @@ class InterpreterPoolExecutor(_thread.ThreadPoolExecutor):
             initializer: A callable or script used to initialize
                 each worker interpreter.
             initargs: A tuple of arguments to pass to the initializer.
-            shared: A mapping of shareabled objects to be inserted into
-                each worker interpreter.
         """
         super().__init__(max_workers, thread_name_prefix,
-                         initializer, initargs, shared=shared)
+                         initializer, initargs)

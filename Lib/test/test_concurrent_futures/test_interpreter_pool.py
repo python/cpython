@@ -224,24 +224,6 @@ class InterpreterPoolExecutorTest(
         with self.assertRaises(BrokenInterpreterPool):
             fut.result()
 
-    def test_init_shared(self):
-        msg = b'eggs'
-        r, w = self.pipe()
-        script = f"""if True:
-            import os
-            if __name__ != '__main__':
-                import __main__
-                spam = __main__.spam
-            os.write({w}, spam + b'\\0')
-            """
-
-        executor = self.executor_type(shared={'spam': msg})
-        fut = executor.submit(exec, script)
-        fut.result()
-        after = read_msg(r)
-
-        self.assertEqual(after, msg)
-
     @unittest.expectedFailure
     def test_init_exception_in_script(self):
         executor = self.executor_type(initializer='raise Exception("spam")')
@@ -363,15 +345,38 @@ class InterpreterPoolExecutorTest(
 
     def test_saturation(self):
         blocker = queues.create()
-        executor = self.executor_type(4, shared=dict(blocker=blocker))
+        executor = self.executor_type(4)
 
         for i in range(15 * executor._max_workers):
-            executor.submit(exec, 'import __main__; __main__.blocker.get()')
-            #executor.submit('blocker.get()')
+            executor.submit(blocker.get)
         self.assertEqual(len(executor._threads), executor._max_workers)
         for i in range(15 * executor._max_workers):
             blocker.put_nowait(None)
         executor.shutdown(wait=True)
+
+    def test_blocking(self):
+        ready = queues.create()
+        blocker = queues.create()
+
+        def run(ready, blocker):
+            ready.put(None)
+            blocker.get()  # blocking
+
+        numtasks = 10
+        futures = []
+        executor = self.executor_type()
+        try:
+            for i in range(numtasks):
+                fut = executor.submit(run, ready, blocker)
+                futures.append(fut)
+            # Wait for them all to be ready.
+            for i in range(numtasks):
+                ready.get()  # blocking
+            # Unblock the workers.
+            for i in range(numtasks):
+                blocker.put_nowait(None)
+        finally:
+            executor.shutdown(wait=True)
 
     @support.requires_gil_enabled("gh-117344: test is flaky without the GIL")
     def test_idle_thread_reuse(self):

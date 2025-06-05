@@ -287,7 +287,7 @@ efficient alternative is to serialize with :mod:`pickle` and then send
 the bytes over a shared :mod:`socket <socket>` or
 :func:`pipe <os.pipe>`.
 
-.. class:: InterpreterPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=(), shared=None)
+.. class:: InterpreterPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=())
 
    A :class:`ThreadPoolExecutor` subclass that executes calls asynchronously
    using a pool of at most *max_workers* threads.  Each thread runs
@@ -307,13 +307,6 @@ the bytes over a shared :mod:`socket <socket>` or
    .. note::
       The executor may replace uncaught exceptions from *initializer*
       with :class:`~concurrent.futures.interpreter.ExecutionFailed`.
-
-   The optional *shared* argument is a :class:`dict` of objects that all
-   interpreters in the pool share.  The *shared* items are added to each
-   interpreter's ``__main__`` module.  Not all objects are shareable.
-   Shareable objects include the builtin singletons, :class:`str`
-   and :class:`bytes`, and :class:`memoryview`.  See :pep:`734`
-   for more info.
 
    Other caveats from parent :class:`ThreadPoolExecutor` apply here.
 
