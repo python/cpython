@@ -34,21 +34,36 @@ class Py_complex_protected_return_converter(CReturnConverter):
     def render(self, function, data):
         self.declare(data)
         data.return_conversion.append("""
-if (errno == EDOM) {
-    PyErr_SetString(PyExc_ValueError, "math domain error");
+if (errno) {
+    PyObject *exc_type;
+    PyObject *exc_string;
 
-    PyObject *exc = PyErr_GetRaisedException();
+    if (errno == EDOM) {
+        exc_type = PyExc_ValueError;
+        exc_string = PyUnicode_FromString("math domain error");
+    }
+    else {
+        exc_type = PyExc_OverflowError;
+        exc_string = PyUnicode_FromString("math range error");
+    }
+    if (!exc_string) {
+        goto exit;
+    }
+    PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
+
+    Py_DECREF(exc_string);
+    if (!exc) {
+        goto exit;
+    }
+
     PyObject *value = PyComplex_FromCComplex(_return_value);
 
     if (!value || PyObject_SetAttrString(exc, "value", value)) {
-        PyErr_WriteUnraisable(NULL);
+        Py_XDECREF(value);
+        goto exit;
     }
-    Py_XDECREF(value);
+    Py_DECREF(value);
     PyErr_SetRaisedException(exc);
-    goto exit;
-}
-else if (errno == ERANGE) {
-    PyErr_SetString(PyExc_OverflowError, "math range error");
     goto exit;
 }
 else {
@@ -56,7 +71,7 @@ else {
 }
 """.strip())
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=e8ab0c05f14885e9]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=2d376a406b8883a3]*/
 
 #if (FLT_RADIX != 2 && FLT_RADIX != 16)
 #error "Modules/cmathmodule.c expects FLT_RADIX to be 2 or 16"
@@ -898,19 +913,41 @@ cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj)
         x = _Py_c_quot(x, y);
     }
     if (errno) {
-        PyObject *ret = math_error();
+        if (errno == EDOM || errno == ERANGE) {
+            PyObject *exc_type;
+            PyObject *exc_string;
 
-        if (errno == EDOM) {
-            PyObject *exc = PyErr_GetRaisedException();
+            if (errno == EDOM) {
+                exc_type = PyExc_ValueError;
+                exc_string = PyUnicode_FromString("math domain error");
+            }
+            else {
+                exc_type = PyExc_OverflowError;
+                exc_string = PyUnicode_FromString("math range error");
+            }
+            if (!exc_string) {
+                return NULL;
+            }
+            PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
+
+            Py_DECREF(exc_string);
+            if (!exc) {
+                return NULL;
+            }
+
             PyObject *value = PyComplex_FromCComplex(x);
 
             if (!value || PyObject_SetAttrString(exc, "value", value)) {
-                PyErr_WriteUnraisable(NULL);
+                Py_XDECREF(value);
+                return NULL;
             }
-            Py_XDECREF(value);
+            Py_DECREF(value);
             PyErr_SetRaisedException(exc);
         }
-        return ret;
+        else { /* Unexpected math error */
+            PyErr_SetFromErrno(PyExc_ValueError);
+        }
+        return NULL;
     }
     return PyComplex_FromCComplex(x);
 }
@@ -974,8 +1011,35 @@ cmath_polar_impl(PyObject *module, Py_complex z)
     errno = 0;
     phi = atan2(z.imag, z.real); /* should not cause any exception */
     r = _Py_c_abs(z); /* sets errno to ERANGE on overflow */
-    if (errno != 0)
-        return math_error();
+    if (errno != 0) {
+        if (errno == ERANGE) {
+            PyObject *exc_type = PyExc_OverflowError;
+            PyObject *exc_string = PyUnicode_FromString("math range error");
+
+            if (!exc_string) {
+                return NULL;
+            }
+            PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
+
+            Py_DECREF(exc_string);
+            if (!exc) {
+                return NULL;
+            }
+
+            PyObject *value = Py_BuildValue("dd", r, phi);
+
+            if (!value || PyObject_SetAttrString(exc, "value", value)) {
+                Py_XDECREF(value);
+                return NULL;
+            }
+            Py_DECREF(value);
+            PyErr_SetRaisedException(exc);
+        }
+        else { /* Unexpected math error */
+            PyErr_SetFromErrno(PyExc_ValueError);
+        }
+        return NULL;
+    }
     else
         return Py_BuildValue("dd", r, phi);
 }
