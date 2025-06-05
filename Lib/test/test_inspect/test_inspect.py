@@ -2243,7 +2243,7 @@ class TestGetcallargsFunctions(unittest.TestCase):
         # kwonlydefaults and raises a wrong TypeError
         def f5(*, a): pass
         with self.assertRaisesRegex(TypeError,
-                                    'missing 1 required keyword-only'):
+                                    'missing 1 required keyword argument'):
             inspect.getcallargs(f5)
 
 
@@ -5405,7 +5405,7 @@ class TestSignatureBind(unittest.TestCase):
             self.call(test, 1, bar=2, spam='ham')
 
         with self.assertRaisesRegex(TypeError,
-                                     "missing a required keyword-only "
+                                     "missing a required keyword "
                                      "argument: 'bar'"):
             self.call(test, 1)
 
@@ -5462,7 +5462,7 @@ class TestSignatureBind(unittest.TestCase):
         self.assertEqual(self.call(test, 1, 2, c_po=4),
                          (1, 2, 3, 42, 50, {'c_po': 4}))
 
-        with self.assertRaisesRegex(TypeError, "missing a required positional-only argument: 'a_po'"):
+        with self.assertRaisesRegex(TypeError, "missing a required positional argument: 'a_po'"):
             self.call(test, a_po=1, b_po=2)
 
         def without_var_kwargs(c_po=3, d_po=4, /):
