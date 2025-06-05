@@ -4,7 +4,10 @@ _completion_matches = []
 
 
 def _complete(text, state):
-    from _sqlite3 import SQLITE_KEYWORDS
+    try:
+        from _sqlite3 import SQLITE_KEYWORDS
+    except ImportError:
+        SQLITE_KEYWORDS = ()
     global _completion_matches
     if state == 0:
         text_upper = text.upper()
@@ -19,7 +22,6 @@ def _complete(text, state):
 def enable_completer():
     try:
         import readline
-        from _sqlite3 import SQLITE_KEYWORDS
     except ImportError:
         yield
         return
