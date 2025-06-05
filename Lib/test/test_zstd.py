@@ -293,11 +293,11 @@ class CompressorTestCase(unittest.TestCase):
 
         # zstd lib doesn't support MT compression
         if not SUPPORT_MULTITHREADING:
-            with self.assertRaises(ZstdError):
+            with self.assertRaises(ValueError):
                 ZstdCompressor(options={CompressionParameter.nb_workers:4})
-            with self.assertRaises(ZstdError):
+            with self.assertRaises(ValueError):
                 ZstdCompressor(options={CompressionParameter.job_size:4})
-            with self.assertRaises(ZstdError):
+            with self.assertRaises(ValueError):
                 ZstdCompressor(options={CompressionParameter.overlap_log:4})
 
         # out of bounds error msg
