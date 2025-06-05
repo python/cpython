@@ -401,8 +401,8 @@ def iscode(object):
     """Return true if the object is a code object.
 
     Code objects provide these attributes:
-        co_argcount         number of arguments (not including *, ** args
-                            or keyword only arguments)
+        co_argcount         number of positional parameters (not including
+                            var-positional parameter)
         co_code             string of raw compiled bytecode
         co_cellvars         tuple of names of cell variables
         co_consts           tuple of constants used in the bytecode
@@ -413,8 +413,9 @@ def iscode(object):
                             | 256=iterable_coroutine | 512=async_generator
                             | 0x4000000=has_docstring
         co_freevars         tuple of names of free variables
-        co_posonlyargcount  number of positional only arguments
-        co_kwonlyargcount   number of keyword only arguments (not including ** arg)
+        co_posonlyargcount  number of positional-only parameters
+        co_kwonlyargcount   number of keyword-only parameters (not including
+                            var-keyword parameter)
         co_lnotab           encoded mapping of line numbers to bytecode indices
         co_name             name with which this code object was defined
         co_names            tuple of names other than arguments and function locals

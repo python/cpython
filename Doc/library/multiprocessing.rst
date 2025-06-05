@@ -1603,7 +1603,7 @@ inherited by child processes.
    automatically protected by a lock, so it will not necessarily be
    "process-safe".
 
-   Note that *lock* is a keyword only argument.
+   Note that *lock* is a keyword-only parameter.
 
    Note that an array of :data:`ctypes.c_char` has *value* and *raw*
    attributes which allow one to use it to store and retrieve strings.

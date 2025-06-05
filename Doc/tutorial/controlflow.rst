@@ -879,7 +879,7 @@ will always bind to the first parameter. For example::
     TypeError: foo() got multiple values for argument 'name'
     >>>
 
-But using ``/`` (positional only arguments), it is possible since it allows ``name`` as a positional argument and ``'name'`` as a key in the keyword arguments::
+But using ``/`` (positional-only parameters), it is possible since it allows ``name`` as a positional argument and ``'name'`` as a key in the keyword arguments::
 
     >>> def foo(name, /, **kwds):
     ...     return 'name' in kwds

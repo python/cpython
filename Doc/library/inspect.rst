@@ -172,10 +172,9 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 |                   | references to local       |
 |                 |                   | variables                 |
 +-----------------+-------------------+---------------------------+
-| code            | co_argcount       | number of arguments (not  |
-|                 |                   | including keyword only    |
-|                 |                   | arguments, \* or \*\*     |
-|                 |                   | args)                     |
+| code            | co_argcount       | number of positional      |
+|                 |                   | parameters (not including |
+|                 |                   | var-positional parameter) |
 +-----------------+-------------------+---------------------------+
 |                 | co_code           | string of raw compiled    |
 |                 |                   | bytecode                  |
@@ -206,12 +205,12 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 |                   | variables (referenced via |
 |                 |                   | a function's closure)     |
 +-----------------+-------------------+---------------------------+
-|                 | co_posonlyargcount| number of positional only |
-|                 |                   | arguments                 |
+|                 | co_posonlyargcount| number of positional-only |
+|                 |                   | parameters                |
 +-----------------+-------------------+---------------------------+
-|                 | co_kwonlyargcount | number of keyword only    |
-|                 |                   | arguments (not including  |
-|                 |                   | \*\* arg)                 |
+|                 | co_kwonlyargcount | number of keyword-only    |
+|                 |                   | parameters (not including |
+|                 |                   | var-positional parameter) |
 +-----------------+-------------------+---------------------------+
 |                 | co_name           | name with which this code |
 |                 |                   | object was defined        |
@@ -956,7 +955,7 @@ function.
       |    Name                | Meaning                                      |
       +========================+==============================================+
       | *POSITIONAL_ONLY*      | Value must be supplied as a positional       |
-      |                        | argument. Positional only parameters are     |
+      |                        | argument. Positional-only parameters are     |
       |                        | those which appear before a ``/`` entry (if  |
       |                        | present) in a Python function definition.    |
       +------------------------+----------------------------------------------+
@@ -971,7 +970,7 @@ function.
       |                        | Python function definition.                  |
       +------------------------+----------------------------------------------+
       | *KEYWORD_ONLY*         | Value must be supplied as a keyword argument.|
-      |                        | Keyword only parameters are those which      |
+      |                        | Keyword-only parameters are those which      |
       |                        | appear after a ``*`` or ``*args`` entry in a |
       |                        | Python function definition.                  |
       +------------------------+----------------------------------------------+
