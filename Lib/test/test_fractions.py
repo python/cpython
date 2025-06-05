@@ -1518,6 +1518,8 @@ class FractionTest(unittest.TestCase):
             (F(51, 1000), '.1f', '0.1'),
             (F(149, 1000), '.1f', '0.1'),
             (F(151, 1000), '.1f', '0.2'),
+            (F(22, 7), '.02f', '3.14'),  # issue gh-130662
+            (F(22, 7), '005.02f', '03.14'),
         ]
         for fraction, spec, expected in testcases:
             with self.subTest(fraction=fraction, spec=spec):
@@ -1616,12 +1618,6 @@ class FractionTest(unittest.TestCase):
             '=010%',
             '>00.2f',
             '>00f',
-            # Too many zeros - minimum width should not have leading zeros
-            '006f',
-            # Leading zeros in precision
-            '.010f',
-            '.02f',
-            '.000f',
             # Missing precision
             '.e',
             '.f',

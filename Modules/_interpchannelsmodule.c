@@ -254,10 +254,10 @@ _get_current_module_state(void)
 {
     PyObject *mod = _get_current_module();
     if (mod == NULL) {
-        // XXX import it?
-        PyErr_SetString(PyExc_RuntimeError,
-                        MODULE_NAME_STR " module not imported yet");
-        return NULL;
+        mod = PyImport_ImportModule(MODULE_NAME_STR);
+        if (mod == NULL) {
+            return NULL;
+        }
     }
     module_state *state = get_module_state(mod);
     Py_DECREF(mod);
