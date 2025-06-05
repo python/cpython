@@ -244,8 +244,8 @@ Modules/_interp*module.c      @ericsnowcurrently
 Lib/test/test_interpreters/   @ericsnowcurrently
 
 # Android
-**/*Android*                  @mhsmith
-**/*android*                  @mhsmith
+**/*Android*                  @mhsmith @freakboy3742
+**/*android*                  @mhsmith @freakboy3742
 
 # iOS (but not termios)
 **/iOS*                       @freakboy3742
