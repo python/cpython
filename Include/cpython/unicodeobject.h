@@ -47,6 +47,12 @@ static inline Py_UCS4 Py_UNICODE_LOW_SURROGATE(Py_UCS4 ch) {
 
 /* --- Unicode Type ------------------------------------------------------- */
 
+// Suppress known warning with _Py_ALIGN_AS; see gh-135183
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable: 5274)
+#endif
+
 /* ASCII-only strings created through PyUnicode_New use the PyASCIIObject
    structure. state.ascii and state.compact are set, and the data
    immediately follow the structure. utf8_length can be found
@@ -161,6 +167,11 @@ typedef struct {
 #endif
     } state;
 } PyASCIIObject;
+
+// Restore warning filter
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 /* Non-ASCII strings allocated through PyUnicode_New use the
    PyCompactUnicodeObject structure. state.compact is set, and the data
