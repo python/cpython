@@ -1493,7 +1493,7 @@ Cursor objects
       and there is no open transaction,
       a transaction is implicitly opened before executing *sql*.
 
-      .. changed:: 3.14
+      .. versionchanged:: 3.14
 
          :exc:`ProgrammingError` is emitted if
          :ref:`named placeholders <sqlite3-placeholders>` are used
@@ -1546,7 +1546,7 @@ Cursor objects
 
       .. _RETURNING clauses: https://www.sqlite.org/lang_returning.html
 
-      .. changed:: 3.14
+      .. versionchanged:: 3.14
 
          :exc:`ProgrammingError` is emitted if
          :ref:`named placeholders <sqlite3-placeholders>` are used
