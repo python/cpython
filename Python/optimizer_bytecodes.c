@@ -467,6 +467,26 @@ dummy_func(void) {
         res = sym_new_truthiness(ctx, value, false);
     }
 
+    op(_UNARY_INVERT, (value -- res)) {
+        if (sym_is_const(ctx, value)) {
+            PyObject *temp = PyNumber_Invert(sym_get_const(ctx, value));
+            if (temp == NULL) {
+                goto error;
+            }
+            if (_Py_IsImmortal(temp)) {
+                REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
+            }
+            res = sym_new_const(ctx, temp);
+            Py_DECREF(temp);
+        } else {
+            if (sym_matches_type(value, &PyLong_Type) || sym_matches_type(value, &PyBool_Type)) {
+                res = sym_new_type(ctx, &PyLong_Type);
+            } else {
+                res = sym_new_not_null(ctx);
+            }
+        }
+    }
+
     op(_COMPARE_OP, (left, right -- res)) {
         if (oparg & 16) {
             res = sym_new_type(ctx, &PyBool_Type);
