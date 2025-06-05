@@ -543,8 +543,6 @@ class Regrtest:
         self.first_runtests = runtests
         self.logger.set_tests(runtests)
 
-        setup_process()
-
         if (runtests.hunt_refleak is not None) and (not self.num_workers):
             # gh-109739: WindowsLoadTracker thread interferes with refleak check
             use_load_tracker = False
@@ -721,10 +719,7 @@ class Regrtest:
         self._execute_python(cmd, environ)
 
     def _init(self):
-        # Set sys.stdout encoder error handler to backslashreplace,
-        # similar to sys.stderr error handler, to avoid UnicodeEncodeError
-        # when printing a traceback or any other non-encodable character.
-        sys.stdout.reconfigure(errors="backslashreplace")
+        setup_process()
 
         if self.junit_filename and not os.path.isabs(self.junit_filename):
             self.junit_filename = os.path.abspath(self.junit_filename)
