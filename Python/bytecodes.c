@@ -3130,6 +3130,7 @@ dummy_func(
                 if (PyStackRef_IsError(item)) {
                     ERROR_NO_POP();
                 }
+                // Jump forward by oparg and skip the following END_FOR
                 JUMPBY(oparg + 1);
                 DISPATCH();
             }
@@ -3159,6 +3160,7 @@ dummy_func(
                 if (PyStackRef_IsError(item)) {
                     ERROR_NO_POP();
                 }
+                // Jump forward by oparg and skip the following END_FOR
                 JUMPBY(oparg + 1);
                 DISPATCH();
             }

@@ -843,7 +843,7 @@ dummy_func(void) {
     op(_GET_ITER, (iterable -- iter, index_or_null)) {
         if (sym_matches_type(iterable, &PyTuple_Type) || sym_matches_type(iterable, &PyList_Type)) {
             iter = iterable;
-            index_or_null = sym_new_type(ctx, &PyLong_Type);
+            index_or_null = sym_new_not_null(ctx);
         }
         else {
             iter = sym_new_not_null(ctx);

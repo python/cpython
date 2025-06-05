@@ -3475,7 +3475,7 @@ _PyStackRef _PyForIter_VirtualIteratorNext(PyThreadState* tstate, _PyInterpreter
                 _PyErr_Clear(tstate);
             }
             else {
-                 return PyStackRef_ERROR;
+                return PyStackRef_ERROR;
             }
         }
         return PyStackRef_NULL;
