@@ -937,8 +937,11 @@ dummy_func(void) {
     }
 
     op(_CALL_TYPE_1, (unused, unused, arg -- res)) {
-        if (sym_has_type(arg)) {
-            res = sym_new_const(ctx, (PyObject *)sym_get_type(arg));
+        PyObject* type = (PyObject *)sym_get_type(arg);
+        if (type) {
+            res = sym_new_const(ctx, type);
+            REPLACE_OP(this_instr, _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW, 0,
+                       (uintptr_t)type);
         }
         else {
             res = sym_new_not_null(ctx);

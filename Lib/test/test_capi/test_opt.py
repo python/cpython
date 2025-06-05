@@ -1778,7 +1778,23 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_UNICODE", uops)
         self.assertIn("_BINARY_OP_ADD_UNICODE", uops)
 
-    def test_call_type_1(self):
+    def test_call_type_1_guards_removed(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                foo = eval('42')
+                x += type(foo) is int
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_TYPE_1", uops)
+        self.assertNotIn("_GUARD_NOS_NULL", uops)
+        self.assertNotIn("_GUARD_CALLABLE_TYPE_1", uops)
+
+    def test_call_type_1_known_type(self):
         def testfunc(n):
             x = 0
             for _ in range(n):
@@ -1789,9 +1805,13 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_CALL_TYPE_1", uops)
-        self.assertNotIn("_GUARD_NOS_NULL", uops)
-        self.assertNotIn("_GUARD_CALLABLE_TYPE_1", uops)
+        # When the result of type(...) is known, _CALL_TYPE_1 is replaced with
+        # _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW which is optimized away in
+        # remove_unneeded_uops.
+        self.assertNotIn("_CALL_TYPE_1", uops)
+        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_type_1_result_is_const(self):
         def testfunc(n):
@@ -1806,7 +1826,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_CALL_TYPE_1", uops)
         self.assertNotIn("_GUARD_IS_NOT_NONE_POP", uops)
 
     def test_call_str_1(self):
