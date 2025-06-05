@@ -93,7 +93,7 @@ cmath
 -----
 
 * Provide C99 Annex G return values for :mod:`cmath`'s functions as the
-  ``value`` attribute of the :exc:`ValueError` exception object.
+  ``value`` attribute of exception objects.
   (Contributed by Sergey B Kirpichev in :gh:`133895`.)
 
 

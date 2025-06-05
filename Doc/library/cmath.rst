@@ -40,8 +40,10 @@ the function is then applied to the result of the conversion.
 
 Most functions compute and return the C99 Annex G recommended result.  If the
 standard recommends raising ``FE_DIVBYZERO`` or ``FE_INVALID`` floating-point
-exceptions --- a :exc:`ValueError` is raised and the recommended result
-is available as the ``value`` attribute of the exception object.
+exceptions --- a :exc:`ValueError` is raised and the recommended result is
+available as the ``value`` attribute of the exception object.  If range error
+occurs due to overflow in any component of the result --- a :exc:`OverflowError`
+is raised.
 
 
 ====================================================  ============================================
