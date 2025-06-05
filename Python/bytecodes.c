@@ -3130,7 +3130,6 @@ dummy_func(
             if (PyStackRef_IsTaggedInt(null_or_index)) {
                 next = _PyForIter_NextWithIndex(iter_o, null_or_index);
                 if (PyStackRef_IsNull(next)) {
-                    null_or_index = PyStackRef_TagInt(-1);
                     JUMPBY(oparg + 1);
                     DISPATCH();
                 }
@@ -3191,6 +3190,7 @@ dummy_func(
                     JUMPBY(oparg + 1);
                     DISPATCH();
                 }
+                null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
                 INSTRUMENTED_JUMP(this_instr, next_instr, PY_MONITORING_EVENT_BRANCH_LEFT);
             }
             else {

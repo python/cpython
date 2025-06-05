@@ -147,18 +147,22 @@ def dump(
                 if value is None and getattr(cls, name, ...) is None:
                     keywords = True
                     continue
-                if (
-                    not show_empty
-                    and (value is None or value == [])
-                    # Special cases:
-                    # `Constant(value=None)` and `MatchSingleton(value=None)`
-                    and not isinstance(node, (Constant, MatchSingleton))
-                ):
-                    args_buffer.append(repr(value))
-                    continue
-                elif not keywords:
-                    args.extend(args_buffer)
-                    args_buffer = []
+                if not show_empty:
+                    if value == []:
+                        field_type = cls._field_types.get(name, object)
+                        if getattr(field_type, '__origin__', ...) is list:
+                            if not keywords:
+                                args_buffer.append(repr(value))
+                            continue
+                    elif isinstance(value, Load):
+                        field_type = cls._field_types.get(name, object)
+                        if field_type is expr_context:
+                            if not keywords:
+                                args_buffer.append(repr(value))
+                            continue
+                    if not keywords:
+                        args.extend(args_buffer)
+                        args_buffer = []
                 value, simple = _format(value, level)
                 allsimple = allsimple and simple
                 if keywords:
