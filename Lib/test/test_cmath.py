@@ -327,8 +327,8 @@ class CMathTests(ComplexesAreIdenticalMixin, unittest.TestCase):
             elif 'overflow' in flags:
                 try:
                     actual = function(arg)
-                except OverflowError:
-                    continue
+                except OverflowError as exc:
+                    actual = exc.value if fn != 'polar' else complex(*exc.value)
                 else:
                     self.fail('OverflowError not raised in test '
                           '{}: {}(complex({!r}, {!r}))'.format(id, fn, ar, ai))
