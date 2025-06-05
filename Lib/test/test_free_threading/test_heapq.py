@@ -1,13 +1,13 @@
 import unittest
 
 import heapq
-import operator
 
 from enum import Enum
 from threading import Thread, Barrier
 from random import shuffle, randint
 
 from test.support import threading_helper
+from test import test_heapq
 
 
 NTHREADS = 10
@@ -21,6 +21,9 @@ class Heap(Enum):
 
 @threading_helper.requires_working_threading()
 class TestHeapq(unittest.TestCase):
+    def setUp(self):
+        self.test_heapq = test_heapq.TestHeapPython()
+
     def test_racing_heapify(self):
         heap = list(range(OBJECT_COUNT))
         shuffle(heap)
@@ -28,7 +31,7 @@ class TestHeapq(unittest.TestCase):
         self.run_concurrently(
             worker_func=heapq.heapify, args=(heap,), nthreads=NTHREADS
         )
-        self.assertTrue(self.is_heap_property_satisfied(heap, Heap.MIN))
+        self.test_heapq.check_invariant(heap)
 
     def test_racing_heappush(self):
         heap = []
@@ -40,7 +43,7 @@ class TestHeapq(unittest.TestCase):
         self.run_concurrently(
             worker_func=heappush_func, args=(heap,), nthreads=NTHREADS
         )
-        self.assertTrue(self.is_heap_property_satisfied(heap, Heap.MIN))
+        self.test_heapq.check_invariant(heap)
 
     def test_racing_heappop(self):
         heap = self.create_heap(OBJECT_COUNT, Heap.MIN)
@@ -80,7 +83,7 @@ class TestHeapq(unittest.TestCase):
             nthreads=NTHREADS,
         )
         self.assertEqual(len(heap), OBJECT_COUNT)
-        self.assertTrue(self.is_heap_property_satisfied(heap, Heap.MIN))
+        self.test_heapq.check_invariant(heap)
 
     def test_racing_heapreplace(self):
         heap = self.create_heap(OBJECT_COUNT, Heap.MIN)
@@ -96,7 +99,7 @@ class TestHeapq(unittest.TestCase):
             nthreads=NTHREADS,
         )
         self.assertEqual(len(heap), OBJECT_COUNT)
-        self.assertTrue(self.is_heap_property_satisfied(heap, Heap.MIN))
+        self.test_heapq.check_invariant(heap)
 
     def test_racing_heapify_max(self):
         max_heap = list(range(OBJECT_COUNT))
@@ -105,7 +108,7 @@ class TestHeapq(unittest.TestCase):
         self.run_concurrently(
             worker_func=heapq.heapify_max, args=(max_heap,), nthreads=NTHREADS
         )
-        self.assertTrue(self.is_heap_property_satisfied(max_heap, Heap.MAX))
+        self.test_heapq.check_max_invariant(max_heap)
 
     def test_racing_heappush_max(self):
         max_heap = []
@@ -117,7 +120,7 @@ class TestHeapq(unittest.TestCase):
         self.run_concurrently(
             worker_func=heappush_max_func, args=(max_heap,), nthreads=NTHREADS
         )
-        self.assertTrue(self.is_heap_property_satisfied(max_heap, Heap.MAX))
+        self.test_heapq.check_max_invariant(max_heap)
 
     def test_racing_heappop_max(self):
         max_heap = self.create_heap(OBJECT_COUNT, Heap.MAX)
@@ -157,7 +160,7 @@ class TestHeapq(unittest.TestCase):
             nthreads=NTHREADS,
         )
         self.assertEqual(len(max_heap), OBJECT_COUNT)
-        self.assertTrue(self.is_heap_property_satisfied(max_heap, Heap.MAX))
+        self.test_heapq.check_max_invariant(max_heap)
 
     def test_racing_heapreplace_max(self):
         max_heap = self.create_heap(OBJECT_COUNT, Heap.MAX)
@@ -173,25 +176,7 @@ class TestHeapq(unittest.TestCase):
             nthreads=NTHREADS,
         )
         self.assertEqual(len(max_heap), OBJECT_COUNT)
-        self.assertTrue(self.is_heap_property_satisfied(max_heap, Heap.MAX))
-
-    @staticmethod
-    def is_heap_property_satisfied(heap, heap_kind):
-        """
-        Check if the heap property is satisfied.
-        MIN-Heap: The value of a parent node should be less than or equal to the
-        values of its children.
-        MAX-Heap: The value of a parent node should be greater than or equal to the
-        values of its children.
-        """
-        op = operator.le if heap_kind == Heap.MIN else operator.ge
-        # position 0 has no parent
-        for pos in range(1, len(heap)):
-            parent_pos = (pos - 1) >> 1
-            if not op(heap[parent_pos], heap[pos]):
-                return False
-
-        return True
+        self.test_heapq.check_max_invariant(max_heap)
 
     @staticmethod
     def is_sorted_ascending(lst):
