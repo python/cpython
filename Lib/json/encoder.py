@@ -345,7 +345,6 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             _current_indent_level += 1
             newline_indent = '\n' + _indent * _current_indent_level
             item_separator = _item_separator + newline_indent
-            yield newline_indent
         else:
             newline_indent = None
             item_separator = _item_separator
@@ -378,6 +377,8 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                                 f'not {key.__class__.__name__}')
             if first:
                 first = False
+                if newline_indent is not None:
+                    yield newline_indent
             else:
                 yield item_separator
             yield _encoder(key)
@@ -404,7 +405,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 else:
                     chunks = _iterencode(value, _current_indent_level)
                 yield from chunks
-        if newline_indent is not None:
+        if not first and newline_indent is not None:
             _current_indent_level -= 1
             yield '\n' + _indent * _current_indent_level
         yield '}'
