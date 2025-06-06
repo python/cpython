@@ -1,4 +1,4 @@
-:mod:`concurrent.!interpreters` --- Multiple Interpreters in the Same Process
+:mod:`!concurrent.interpreters` --- Multiple Interpreters in the Same Process
 =============================================================================
 
 .. module:: concurrent.interpreters
