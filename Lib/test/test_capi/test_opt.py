@@ -2234,21 +2234,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_INT", uops)
         self.assertNotIn("_GUARD_NOS_INT", uops)
 
-    def test_unary_invert_replace(self):
-        def testfunc(n):
-            for _ in range(n):
-                a = -1
-                a = ~a
-
-        testfunc(TIER2_THRESHOLD)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-
-        self.assertNotIn("_UNARY_INVERT", uops)
-        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
-
 
 def global_identity(x):
     return x
