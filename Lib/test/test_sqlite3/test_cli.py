@@ -4,7 +4,6 @@ import sys
 import textwrap
 import unittest
 
-from _sqlite3 import SQLITE_KEYWORDS
 from sqlite3.__main__ import main as cli
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
@@ -209,35 +208,41 @@ class InteractiveSession(unittest.TestCase):
 
 @requires_subprocess()
 @force_not_colorized_test_class
-class CompletionTest(unittest.TestCase):
+class Completion(unittest.TestCase):
     PS1 = "sqlite> "
 
     @classmethod
     def setUpClass(cls):
+        _sqlite3 = import_module("_sqlite3")
+        if not hasattr(_sqlite3, "SQLITE_KEYWORDS"):
+            raise unittest.SkipTest("unable to determine SQLite keywords")
+
         readline = import_module("readline")
         if readline.backend == "editline":
             raise unittest.SkipTest("libedit readline is not supported")
 
-    def write_input(self, input, env=None):
+    def write_input(self, input_, env=None):
         script = textwrap.dedent("""
             import readline
-            readline.parse_and_bind("set colored-completion-prefix off")
-            from sqlite3.__main__ import main; main()
-        """)
-        return run_pty(script, input, env)
+            from sqlite3.__main__ import main
 
-    def test_keyword_completion(self):
+            readline.parse_and_bind("set colored-completion-prefix off")
+            main()
+        """)
+        return run_pty(script, input_, env)
+
+    def test_complete_sql_keywords(self):
         # List candidates starting with 'S', there should be multiple matches.
-        input = b"S\t\tEL\t 1;\n.quit\n"
-        output = self.write_input(input)
+        input_ = b"S\t\tEL\t 1;\n.quit\n"
+        output = self.write_input(input_)
         self.assertIn(b"SELECT", output)
         self.assertIn(b"SET", output)
         self.assertIn(b"SAVEPOINT", output)
         self.assertIn(b"(1,)", output)
 
-        # Keywords are completed in upper case for even lower case user input
-        input = b"sel\t\t 1;\n.quit\n"
-        output = self.write_input(input)
+        # Keywords are completed in upper case for even lower case user input.
+        input_ = b"sel\t\t 1;\n.quit\n"
+        output = self.write_input(input_)
         self.assertIn(b"SELECT", output)
         self.assertIn(b"(1,)", output)
 
@@ -245,40 +250,51 @@ class CompletionTest(unittest.TestCase):
                     "Two actual tabs are inserted when there are no matching"
                     " completions in the pseudo-terminal opened by run_pty()"
                     " on FreeBSD")
-    def test_nothing_to_complete(self):
-        input = b"xyzzy\t\t\b\b\b\b\b\b\b.quit\n"
-        # set NO_COLOR to disable coloring for self.PS1
-        output = self.write_input(input, env={"NO_COLOR": "1"})
-        output_lines = output.decode().splitlines()
-        line_num = next((i for i, line in enumerate(output_lines, 1)
-                         if line.startswith(f"{self.PS1}xyzzy")), -1)
+    def test_complete_no_match(self):
+        input_ = b"xyzzy\t\t\b\b\b\b\b\b\b.quit\n"
+        # Set NO_COLOR to disable coloring for self.PS1.
+        output = self.write_input(input_, env={"NO_COLOR": "1"})
+        lines = output.decode().splitlines()
+        indices = (
+            i for i, line in enumerate(lines, 1)
+            if line.startswith(f"{self.PS1}xyzzy")
+        )
+        line_num = next(indices, -1)
         self.assertNotEqual(line_num, -1)
-        # completions occupy lines, assert no extra lines when there is nothing
-        # to complete
-        self.assertEqual(line_num, len(output_lines))
+        # Completions occupy lines, assert no extra lines when there is nothing
+        # to complete.
+        self.assertEqual(line_num, len(lines))
 
-    def test_completion_for_nothing(self):
+    def test_complete_no_input(self):
+        from _sqlite3 import SQLITE_KEYWORDS
+
         script = textwrap.dedent("""
             import readline
+            from sqlite3.__main__ import main
+
+            # Configure readline to ...:
+            # - hide control sequences surrounding each candidate
+            # - hide "Display all xxx possibilities? (y or n)"
+            # - hide "--More--"
+            # - show candidates one per line
             readline.parse_and_bind("set colored-completion-prefix off")
-            # hide control sequences surrounding each candidate
             readline.parse_and_bind("set colored-stats off")
-            # hide "Display all xxx possibilities? (y or n)"
             readline.parse_and_bind("set completion-query-items 0")
-            # hide "--More--"
             readline.parse_and_bind("set page-completions off")
-            # show candidates one per line
             readline.parse_and_bind("set completion-display-width 0")
-            from sqlite3.__main__ import main; main()
+
+            main()
         """)
-        input = b"\t\t.quit\n"
-        output = run_pty(script, input, env={"NO_COLOR": "1"})
-        output_lines = output.decode().splitlines()
-        indices = [i for i, line in enumerate(output_lines)
-                   if line.startswith(self.PS1)]
+        input_ = b"\t\t.quit\n"
+        output = run_pty(script, input_, env={"NO_COLOR": "1"})
+        lines = output.decode().splitlines()
+        indices = [
+            i for i, line in enumerate(lines)
+            if line.startswith(self.PS1)
+        ]
         self.assertEqual(len(indices), 2)
-        start, end = indices[0] + 1, indices[1]
-        candidates = list(map(str.strip, output_lines[start:end]))
+        start, end = indices
+        candidates = [l.strip() for l in lines[start+1:end]]
         self.assertEqual(candidates, sorted(SQLITE_KEYWORDS))
 
 
