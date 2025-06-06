@@ -137,7 +137,7 @@ shelve
 sqlite3
 -------
 
-* Support keyword completion in the :mod:`sqlite3` command-line interface.
+* Support SQL keyword completion in the :mod:`sqlite3` command-line interface.
   (Contributed by Long Tan in :gh:`133393`.)
 
 
