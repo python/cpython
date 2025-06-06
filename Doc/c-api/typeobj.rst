@@ -701,7 +701,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
      }
 
    The dealloc handler itself must not raise an exception; if it hits an error
-   case it should call :c:func:`PyErr_WriteUnraisable` to log (and clear) an
+   case it should call :c:func:`PyErr_FormatUnraisable` to log (and clear) an
    unraisable exception.
 
    No guarantees are made about when an object is destroyed, except:
