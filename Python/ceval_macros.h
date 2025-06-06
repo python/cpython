@@ -41,12 +41,6 @@
  * the CFG.
  */
 
-#ifdef WITH_DTRACE
-#define OR_DTRACE_LINE | (PyDTrace_LINE_ENABLED() ? 255 : 0)
-#else
-#define OR_DTRACE_LINE
-#endif
-
 #ifdef HAVE_COMPUTED_GOTOS
     #ifndef USE_COMPUTED_GOTOS
     #define USE_COMPUTED_GOTOS 1
@@ -265,11 +259,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define LOCALS() frame->f_locals
 #define CONSTS() _PyFrame_GetCode(frame)->co_consts
 #define NAMES() _PyFrame_GetCode(frame)->co_names
-
-#define DTRACE_FUNCTION_ENTRY()  \
-    if (PyDTrace_FUNCTION_ENTRY_ENABLED()) { \
-        dtrace_function_entry(frame); \
-    }
 
 /* This takes a uint16_t instead of a _Py_BackoffCounter,
  * because it is used directly on the cache entry in generated code,
