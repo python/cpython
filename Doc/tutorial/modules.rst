@@ -36,7 +36,7 @@ called :file:`fibo.py` in the current directory with the following contents::
        print()
 
    def fib2(n):
-       """return Fibonacci series up to n"""
+       """Return Fibonacci series up to n."""
        result = []
        a, b = 0, 1
        while a < n:
