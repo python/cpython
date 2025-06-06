@@ -304,6 +304,10 @@ New features
   input string contains non-ASCII characters.
   (Contributed by Victor Stinner in :gh:`133968`.)
 
+* Add :c:type:`PyUnstable_Unicode_GET_CACHED_HASH` to get the cached hash of
+  a string. See the documentation for caveats.
+  (Contributed by Petr Viktorin in :gh:`131510`)
+
 
 Porting to Python 3.15
 ----------------------

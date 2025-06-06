@@ -424,6 +424,13 @@ xx_clear(PyObject *module)
     return 0;
 }
 
+static void
+xx_free(void *module)
+{
+    // allow xx_modexec to omit calling xx_clear on error
+    (void)xx_clear((PyObject *)module);
+}
+
 static struct PyModuleDef xxmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "xxlimited",
@@ -433,9 +440,7 @@ static struct PyModuleDef xxmodule = {
     .m_slots = xx_slots,
     .m_traverse = xx_traverse,
     .m_clear = xx_clear,
-    /* m_free is not necessary here: xx_clear clears all references,
-     * and the module state is deallocated along with the module.
-     */
+    .m_free = xx_free,
 };
 
 
