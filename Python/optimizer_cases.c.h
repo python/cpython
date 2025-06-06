@@ -1562,10 +1562,18 @@
         }
 
         case _GET_ITER: {
+            JitOptSymbol *iterable;
             JitOptSymbol *iter;
             JitOptSymbol *index_or_null;
-            iter = sym_new_not_null(ctx);
-            index_or_null = sym_new_not_null(ctx);
+            iterable = stack_pointer[-1];
+            if (sym_matches_type(iterable, &PyTuple_Type) || sym_matches_type(iterable, &PyList_Type)) {
+                iter = iterable;
+                index_or_null = sym_new_not_null(ctx);
+            }
+            else {
+                iter = sym_new_not_null(ctx);
+                index_or_null = sym_new_unknown(ctx);
+            }
             stack_pointer[-1] = iter;
             stack_pointer[0] = index_or_null;
             stack_pointer += 1;
