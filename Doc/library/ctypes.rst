@@ -718,8 +718,8 @@ item in the :attr:`~Structure._fields_` tuples::
    >>> print(Int.second_16)
    <ctypes.CField 'second_16' type=c_int, ofs=0, bit_size=16, bit_offset=16>
 
-It is important to note that bit field allocation and layout in memory is not
-defined as a C standard; its implementation is compiler-specific.
+It is important to note that bit field allocation and layout in memory are not
+defined as a C standard; their implementation is compiler-specific.
 By default, Python will attempt to match the behavior of a "native" compiler
 for the current platform.
 See the :attr:`~Structure._layout_` attribute for details on the default
