@@ -840,6 +840,17 @@ dummy_func(void) {
         value = sym_new_unknown(ctx);
     }
 
+    op(_GET_ITER, (iterable -- iter, index_or_null)) {
+        if (sym_matches_type(iterable, &PyTuple_Type) || sym_matches_type(iterable, &PyList_Type)) {
+            iter = iterable;
+            index_or_null = sym_new_not_null(ctx);
+        }
+        else {
+            iter = sym_new_not_null(ctx);
+            index_or_null = sym_new_unknown(ctx);
+        }
+    }
+
     op(_FOR_ITER_GEN_FRAME, (unused, unused -- unused, unused, gen_frame: _Py_UOpsAbstractFrame*)) {
         gen_frame = NULL;
         /* We are about to hit the end of the trace */
