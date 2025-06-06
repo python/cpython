@@ -157,9 +157,9 @@ class _Target(typing.Generic[_S, _R]):
             "-o",
             f"{o}",
             f"{c}",
+            *self.args,
             # Allow user-provided CFLAGS to override any defaults
             *shlex.split(self.cflags),
-            *self.args,
         ]
         await _llvm.run("clang", args, echo=self.verbose)
         return await self._parse(o)
