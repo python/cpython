@@ -135,7 +135,7 @@ Each of these separate copies is called an "interpreter".
 However, the feature has been available only through the C-API.
 
 That limitation is removed in the 3.14 release,
-with the new :mod:`interpreters` module!
+with the new :mod:`concurrent.interpreters` module!
 
 There are at least two notable reasons why using multiple interpreters
 is worth considering:

@@ -223,7 +223,8 @@ wait_for_lock(PyThread_type_lock mutex, PY_TIMEOUT_T timeout)
 static int
 ensure_highlevel_module_loaded(void)
 {
-    PyObject *highlevel = PyImport_ImportModule("interpreters.channels");
+    PyObject *highlevel =
+            PyImport_ImportModule("concurrent.interpreters._channels");
     if (highlevel == NULL) {
         PyErr_Clear();
         highlevel = PyImport_ImportModule("test.support.channels");

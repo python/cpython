@@ -17,7 +17,6 @@ overview:
    builtins.rst
    __main__.rst
    warnings.rst
-   interpreters.rst
    dataclasses.rst
    contextlib.rst
    abc.rst
@@ -28,3 +27,8 @@ overview:
    inspect.rst
    annotationlib.rst
    site.rst
+
+.. seealso::
+
+   * See the :mod:`concurrent.interpreters` module, which similarly
+     exposes core runtime functionality.

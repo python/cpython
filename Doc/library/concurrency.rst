@@ -18,12 +18,11 @@ multitasking). Here's an overview:
    multiprocessing.shared_memory.rst
    concurrent.rst
    concurrent.futures.rst
+   concurrent.interpreters.rst
    subprocess.rst
    sched.rst
    queue.rst
    contextvars.rst
-
-Also see the :mod:`interpreters` module.
 
 
 The following are support modules for some of the above services:

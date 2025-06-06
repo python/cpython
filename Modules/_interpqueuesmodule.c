@@ -136,7 +136,8 @@ idarg_int64_converter(PyObject *arg, void *ptr)
 static int
 ensure_highlevel_module_loaded(void)
 {
-    PyObject *highlevel = PyImport_ImportModule("interpreters._queues");
+    PyObject *highlevel =
+            PyImport_ImportModule("concurrent.interpreters._queues");
     if (highlevel == NULL) {
         return -1;
     }
@@ -295,7 +296,7 @@ add_QueueError(PyObject *mod)
 {
     module_state *state = get_module_state(mod);
 
-#define PREFIX "interpreters."
+#define PREFIX "concurrent.interpreters."
 #define ADD_EXCTYPE(NAME, BASE, DOC)                                    \
     assert(state->NAME == NULL);                                        \
     if (add_exctype(mod, &state->NAME, PREFIX #NAME, DOC, BASE) < 0) {  \

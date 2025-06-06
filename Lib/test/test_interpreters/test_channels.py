@@ -8,7 +8,7 @@ import time
 from test.support import import_helper
 # Raise SkipTest if subinterpreters not supported.
 _channels = import_helper.import_module('_interpchannels')
-import interpreters
+from concurrent import interpreters
 from test.support import channels
 from .utils import _run_output, TestBase
 

@@ -1,7 +1,7 @@
-:mod:`!interpreters` --- Multiple Interpreters in the Same Process
-==================================================================
+:mod:`concurrent.!interpreters` --- Multiple Interpreters in the Same Process
+=============================================================================
 
-.. module:: interpreters
+.. module:: concurrent.interpreters
    :synopsis: Multiple Interpreters in the Same Process
 
 .. moduleauthor:: Eric Snow <ericsnowcurrently@gmail.com>
@@ -9,7 +9,7 @@
 
 .. versionadded:: 3.14
 
-**Source code:** :source:`Lib/interpreters/__init__.py`
+**Source code:** :source:`Lib/concurrent/interpreters.py`
 
 --------------
 
@@ -17,8 +17,8 @@
 Introduction
 ------------
 
-The :mod:`!interpreters` module constructs higher-level interfaces
-on top of the lower level :mod:`!_interpreters` module.
+The :mod:`!concurrent.interpreters` module constructs higher-level
+interfaces on top of the lower level :mod:`!_interpreters` module.
 
 .. XXX Add references to the upcoming HOWTO docs in the seealso block.
 
@@ -167,7 +167,7 @@ Basic Usage
 
 Creating an interpreter and running code in it::
 
-    import interpreters
+    from concurrent import interpreters
 
     interp = interpreters.create()
 
