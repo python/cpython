@@ -21,13 +21,13 @@ from test import support, mock_socket
 from test.support import hashlib_helper
 from test.support import socket_helper
 from test.support import threading_helper
+from test.support import asyncore
 from unittest.mock import Mock
 
-import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import asyncore
-    import smtpd
+from . import smtpd
+
+
+support.requires_working_socket(module=True)
 
 HOST = socket_helper.HOST
 

@@ -1,0 +1,2 @@
+Fix issue where :meth:`pathlib.Path.glob` raised :exc:`OSError` when it
+encountered a symlink to an overly long path.

@@ -1,0 +1,1 @@
+Fixes venvs not working in bash on Windows across different disks

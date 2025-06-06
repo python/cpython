@@ -618,7 +618,7 @@ Removed from the :mod:`inspect` module:
   use the :func:`inspect.signature` function and :class:`Signature` object
   directly.
 
-* the undocumented ``Signature.from_callable`` and ``Signature.from_function``
+* the undocumented ``Signature.from_builtin`` and ``Signature.from_function``
   functions, deprecated since Python 3.5; use the
   :meth:`Signature.from_callable() <inspect.Signature.from_callable>` method
   instead.
@@ -699,16 +699,6 @@ instance ``f`` passes an ``isinstance(f, typing.SupportsInt)`` check.
 
 Adds support for HTTP 308 redirects to :mod:`urllib`. See :rfc:`7538` for
 details. Patch by Jochem Schulenklopper.
-
-..
-
-.. bpo: 10572
-.. date: 2021-01-07-01-25-38
-.. nonce: gEEZ9z
-.. section: Library
-
-Move :mod:`sqlite3` tests to ``/Lib/test/test_sqlite3``. Patch by Erlend E.
-Aasland.
 
 ..
 
@@ -953,6 +943,16 @@ compare normalized paths. Patch by Victor Stinner.
 Fix test_name_error_suggestions_do_not_trigger_for_too_many_locals() of
 test_exceptions if a directory name contains "a1" (like "Python-3.11.0a1"):
 use a stricter regular expression. Patch by Victor Stinner.
+
+..
+
+.. bpo: 10572
+.. date: 2021-01-07-01-25-38
+.. nonce: gEEZ9z
+.. section: Tests
+
+Rename :mod:`sqlite3` tests from ``test_sqlite`` to ``test_sqlite3``, and
+relocate them to ``Lib/test/test_sqlite3``. Patch by Erlend E. Aasland.
 
 ..
 

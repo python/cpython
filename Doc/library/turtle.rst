@@ -107,6 +107,7 @@ Turtle motion
       | :func:`right` | :func:`rt`
       | :func:`left` | :func:`lt`
       | :func:`goto` | :func:`setpos` | :func:`setposition`
+      | :func:`teleport`
       | :func:`setx`
       | :func:`sety`
       | :func:`setheading` | :func:`seth`
@@ -372,6 +373,44 @@ Turtle motion
        (0.00,0.00)
 
 
+.. function:: teleport(x, y=None, *, fill_gap=False)
+
+   :param x: a number or ``None``
+   :param y: a number or ``None``
+   :param fill_gap: a boolean
+
+   Move turtle to an absolute position. Unlike goto(x, y), a line will not
+   be drawn. The turtle's orientation does not change. If currently
+   filling, the polygon(s) teleported from will be filled after leaving,
+   and filling will begin again after teleporting. This can be disabled
+   with fill_gap=True, which makes the imaginary line traveled during
+   teleporting act as a fill barrier like in goto(x, y).
+
+   .. doctest::
+      :skipif: _tkinter is None
+      :hide:
+
+      >>> turtle.goto(0, 0)
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+       >>> tp = turtle.pos()
+       >>> tp
+       (0.00,0.00)
+       >>> turtle.teleport(60)
+       >>> turtle.pos()
+       (60.00,0.00)
+       >>> turtle.teleport(y=10)
+       >>> turtle.pos()
+       (60.00,10.00)
+       >>> turtle.teleport(20, 30)
+       >>> turtle.pos()
+       (20.00,30.00)
+
+   .. versionadded: 3.12
+
+
 .. function:: setx(x)
 
    :param x: a number (integer or float)
@@ -537,8 +576,7 @@ Turtle motion
       :skipif: _tkinter is None
 
       >>> turtle.color("blue")
-      >>> turtle.stamp()
-      11
+      >>> stamp_id = turtle.stamp()
       >>> turtle.fd(50)
 
 
@@ -575,15 +613,8 @@ Turtle motion
    .. doctest::
 
       >>> for i in range(8):
-      ...     turtle.stamp(); turtle.fd(30)
-      13
-      14
-      15
-      16
-      17
-      18
-      19
-      20
+      ...     unused_stamp_id = turtle.stamp()
+      ...     turtle.fd(30)
       >>> turtle.clearstamps(2)
       >>> turtle.clearstamps(-2)
       >>> turtle.clearstamps()
@@ -1214,7 +1245,7 @@ Appearance
    will be displayed stretched according to its stretchfactors: *stretch_wid* is
    stretchfactor perpendicular to its orientation, *stretch_len* is
    stretchfactor in direction of its orientation, *outline* determines the width
-   of the shapes's outline.
+   of the shape's outline.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1279,7 +1310,7 @@ Appearance
    (direction of movement).
 
    .. doctest::
-      :skipif: _tkinter is None
+      :skipif: _tkinter is None or 'always; deprecated method'
 
       >>> turtle.reset()
       >>> turtle.shape("circle")
@@ -1545,7 +1576,7 @@ below:
 
 1. Create an empty Shape object of type "compound".
 2. Add as many components to this object as desired, using the
-   :meth:`addcomponent` method.
+   :meth:`~Shape.addcomponent` method.
 
    For example:
 
@@ -2125,7 +2156,7 @@ Public classes
 
    :param cv: a :class:`tkinter.Canvas`
 
-   Provides screen oriented methods like :func:`setbg` etc. that are described
+   Provides screen oriented methods like :func:`bgcolor` etc. that are described
    above.
 
 .. class:: Screen()
@@ -2315,7 +2346,9 @@ of this module or which better fits to your needs, e.g. for use in a classroom,
 you can prepare a configuration file ``turtle.cfg`` which will be read at import
 time and modify the configuration according to its settings.
 
-The built in configuration would correspond to the following turtle.cfg::
+The built in configuration would correspond to the following ``turtle.cfg``:
+
+.. code-block:: ini
 
    width = 0.5
    height = 0.75
@@ -2340,15 +2373,15 @@ The built in configuration would correspond to the following turtle.cfg::
 
 Short explanation of selected entries:
 
-- The first four lines correspond to the arguments of the :meth:`Screen.setup`
+- The first four lines correspond to the arguments of the :func:`Screen.setup <setup>`
   method.
 - Line 5 and 6 correspond to the arguments of the method
-  :meth:`Screen.screensize`.
+  :func:`Screen.screensize <screensize>`.
 - *shape* can be any of the built-in shapes, e.g: arrow, turtle, etc.  For more
   info try ``help(shape)``.
-- If you want to use no fillcolor (i.e. make the turtle transparent), you have
+- If you want to use no fill color (i.e. make the turtle transparent), you have
   to write ``fillcolor = ""`` (but all nonempty strings must not have quotes in
-  the cfg-file).
+  the cfg file).
 - If you want to reflect the turtle its state, you have to use ``resizemode =
   auto``.
 - If you set e.g. ``language = italian`` the docstringdict
@@ -2398,6 +2431,8 @@ The :mod:`turtledemo` package directory contains:
 
 The demo scripts are:
 
+.. currentmodule:: turtle
+
 .. tabularcolumns:: |l|L|L|
 
 +----------------+------------------------------+-----------------------+
@@ -2444,6 +2479,9 @@ The demo scripts are:
 | planet_and_moon| simulation of                | compound shapes,      |
 |                | gravitational system         | :class:`Vec2D`        |
 +----------------+------------------------------+-----------------------+
+| rosette        | a pattern from the wikipedia | :func:`clone`,        |
+|                | article on turtle graphics   | :func:`undo`          |
++----------------+------------------------------+-----------------------+
 | round_dance    | dancing turtles rotating     | compound shapes, clone|
 |                | pairwise in opposite         | shapesize, tilt,      |
 |                | direction                    | get_shapepoly, update |
@@ -2457,9 +2495,6 @@ The demo scripts are:
 | two_canvases   | simple design                | turtles on two        |
 |                |                              | canvases              |
 +----------------+------------------------------+-----------------------+
-| wikipedia      | a pattern from the wikipedia | :func:`clone`,        |
-|                | article on turtle graphics   | :func:`undo`          |
-+----------------+------------------------------+-----------------------+
 | yinyang        | another elementary example   | :func:`circle`        |
 +----------------+------------------------------+-----------------------+
 
@@ -2469,20 +2504,20 @@ Have fun!
 Changes since Python 2.6
 ========================
 
-- The methods :meth:`Turtle.tracer`, :meth:`Turtle.window_width` and
-  :meth:`Turtle.window_height` have been eliminated.
+- The methods :func:`Turtle.tracer <tracer>`, :func:`Turtle.window_width <window_width>` and
+  :func:`Turtle.window_height <window_height>` have been eliminated.
   Methods with these names and functionality are now available only
   as methods of :class:`Screen`. The functions derived from these remain
   available. (In fact already in Python 2.6 these methods were merely
   duplications of the corresponding
-  :class:`TurtleScreen`/:class:`Screen`-methods.)
+  :class:`TurtleScreen`/:class:`Screen` methods.)
 
-- The method :meth:`Turtle.fill` has been eliminated.
-  The behaviour of :meth:`begin_fill` and :meth:`end_fill`
-  have changed slightly: now  every filling-process must be completed with an
+- The method :func:`!Turtle.fill` has been eliminated.
+  The behaviour of :func:`begin_fill` and :func:`end_fill`
+  have changed slightly: now every filling process must be completed with an
   ``end_fill()`` call.
 
-- A method :meth:`Turtle.filling` has been added. It returns a boolean
+- A method :func:`Turtle.filling <filling>` has been added. It returns a boolean
   value: ``True`` if a filling process is under way, ``False`` otherwise.
   This behaviour corresponds to a ``fill()`` call without arguments in
   Python 2.6.
@@ -2490,23 +2525,23 @@ Changes since Python 2.6
 Changes since Python 3.0
 ========================
 
-- The methods :meth:`Turtle.shearfactor`, :meth:`Turtle.shapetransform` and
-  :meth:`Turtle.get_shapepoly` have been added. Thus the full range of
+- The :class:`Turtle` methods :func:`shearfactor`, :func:`shapetransform` and
+  :func:`get_shapepoly` have been added. Thus the full range of
   regular linear transforms is now available for transforming turtle shapes.
-  :meth:`Turtle.tiltangle` has been enhanced in functionality: it now can
-  be used to get or set the tiltangle. :meth:`Turtle.settiltangle` has been
+  :func:`tiltangle` has been enhanced in functionality: it now can
+  be used to get or set the tilt angle. :func:`settiltangle` has been
   deprecated.
 
-- The method :meth:`Screen.onkeypress` has been added as a complement to
-  :meth:`Screen.onkey` which in fact binds actions to the keyrelease event.
-  Accordingly the latter has got an alias: :meth:`Screen.onkeyrelease`.
+- The :class:`Screen` method :func:`onkeypress` has been added as a complement to
+  :func:`onkey`. As the latter binds actions to the key release event,
+  an alias: :func:`onkeyrelease` was also added for it.
 
-- The method  :meth:`Screen.mainloop` has been added. So when working only
-  with Screen and Turtle objects one must not additionally import
-  :func:`mainloop` anymore.
+- The method :func:`Screen.mainloop <mainloop>` has been added,
+  so there is no longer a need to use the standalone :func:`mainloop` function
+  when working with :class:`Screen` and :class:`Turtle` objects.
 
-- Two input methods has been added :meth:`Screen.textinput` and
-  :meth:`Screen.numinput`. These popup input dialogs and return
+- Two input methods have been added: :func:`Screen.textinput <textinput>` and
+  :func:`Screen.numinput <numinput>`. These pop up input dialogs and return
   strings and numbers respectively.
 
 - Two example scripts :file:`tdemo_nim.py` and :file:`tdemo_round_dance.py`

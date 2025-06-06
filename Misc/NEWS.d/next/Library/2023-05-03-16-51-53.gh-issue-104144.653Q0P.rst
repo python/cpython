@@ -1,0 +1,2 @@
+Optimize :class:`asyncio.TaskGroup` when using :func:`asyncio.eager_task_factory`.
+Skip scheduling a done callback if a TaskGroup task completes eagerly.

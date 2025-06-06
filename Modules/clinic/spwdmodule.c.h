@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 #if defined(HAVE_GETSPNAM)
 
 PyDoc_STRVAR(spwd_getspnam__doc__,
@@ -71,4 +77,4 @@ spwd_getspall(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SPWD_GETSPALL_METHODDEF
     #define SPWD_GETSPALL_METHODDEF
 #endif /* !defined(SPWD_GETSPALL_METHODDEF) */
-/*[clinic end generated code: output=eec8d0bedcd312e5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dd61827a7b708e11 input=a9049054013a1b77]*/

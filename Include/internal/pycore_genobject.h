@@ -10,7 +10,7 @@ extern "C" {
 
 extern PyObject *_PyGen_yf(PyGenObject *);
 extern PyObject *_PyCoro_GetAwaitableIter(PyObject *o);
-extern PyObject *_PyAsyncGenValueWrapperNew(PyObject *);
+extern PyObject *_PyAsyncGenValueWrapperNew(PyThreadState *state, PyObject *);
 
 /* runtime lifecycle */
 

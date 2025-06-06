@@ -218,7 +218,7 @@ class BaseHeader(str):
                 self.__class__.__bases__,
                 str(self),
             ),
-            self.__dict__)
+            self.__getstate__())
 
     @classmethod
     def _reconstruct(cls, value):

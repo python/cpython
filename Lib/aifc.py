@@ -140,6 +140,10 @@ import warnings
 
 __all__ = ["Error", "open"]
 
+
+warnings._deprecated(__name__, remove=(3, 13))
+
+
 class Error(Exception):
     pass
 
@@ -251,7 +255,9 @@ def _write_float(f, x):
     _write_ulong(f, himant)
     _write_ulong(f, lomant)
 
-from chunk import Chunk
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", DeprecationWarning)
+    from chunk import Chunk
 from collections import namedtuple
 
 _aifc_params = namedtuple('_aifc_params',
@@ -447,15 +453,21 @@ class Aifc_read:
     #
 
     def _alaw2lin(self, data):
-        import audioop
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', category=DeprecationWarning)
+            import audioop
         return audioop.alaw2lin(data, 2)
 
     def _ulaw2lin(self, data):
-        import audioop
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', category=DeprecationWarning)
+            import audioop
         return audioop.ulaw2lin(data, 2)
 
     def _adpcm2lin(self, data):
-        import audioop
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', category=DeprecationWarning)
+            import audioop
         if not hasattr(self, '_adpcmstate'):
             # first time
             self._adpcmstate = None
@@ -463,7 +475,9 @@ class Aifc_read:
         return data
 
     def _sowt2lin(self, data):
-        import audioop
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', category=DeprecationWarning)
+            import audioop
         return audioop.byteswap(data, 2)
 
     def _read_comm_chunk(self, chunk):
@@ -770,22 +784,30 @@ class Aifc_write:
     #
 
     def _lin2alaw(self, data):
-        import audioop
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', category=DeprecationWarning)
+            import audioop
         return audioop.lin2alaw(data, 2)
 
     def _lin2ulaw(self, data):
-        import audioop
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', category=DeprecationWarning)
+            import audioop
         return audioop.lin2ulaw(data, 2)
 
     def _lin2adpcm(self, data):
-        import audioop
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', category=DeprecationWarning)
+            import audioop
         if not hasattr(self, '_adpcmstate'):
             self._adpcmstate = None
         data, self._adpcmstate = audioop.lin2adpcm(data, 2, self._adpcmstate)
         return data
 
     def _lin2sowt(self, data):
-        import audioop
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', category=DeprecationWarning)
+            import audioop
         return audioop.byteswap(data, 2)
 
     def _ensure_header_written(self, datasize):

@@ -1,0 +1,3 @@
+Added support for :class:`logging.Formatter` ``defaults`` parameter to
+:func:`logging.config.dictConfig` and :func:`logging.config.fileConfig`.
+Patch by Bar Harel.

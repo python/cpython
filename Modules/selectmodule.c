@@ -57,10 +57,17 @@ extern void bzero(void *, int);
 #endif
 
 #ifdef MS_WINDOWS
-#  define WIN32_LEAN_AND_MEAN
-#  include <winsock.h>
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#  include <winsock2.h>
 #else
 #  define SOCKET int
+#endif
+
+// WASI SDK 16 does not have POLLPRIO, define as no-op
+#if defined(__wasi__) && !defined(POLLPRI)
+#  define POLLPRI 0
 #endif
 
 typedef struct {
@@ -1647,8 +1654,7 @@ select_epoll___enter___impl(pyEpoll_Object *self)
     if (self->epfd < 0)
         return pyepoll_err_closed();
 
-    Py_INCREF(self);
-    return (PyObject *)self;
+    return Py_NewRef(self);
 }
 
 /*[clinic input]
@@ -2645,6 +2651,7 @@ _select_exec(PyObject *m)
 
 static PyModuleDef_Slot _select_slots[] = {
     {Py_mod_exec, _select_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

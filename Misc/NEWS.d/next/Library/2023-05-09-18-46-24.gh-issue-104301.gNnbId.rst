@@ -1,0 +1,1 @@
+Allow leading whitespace in disambiguated statements in :mod:`pdb`.

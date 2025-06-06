@@ -25,10 +25,10 @@
     <ClCompile Include="..\Objects\abstract.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Objects\accu.c">
+    <ClCompile Include="..\Python\asdl.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\asdl.c">
+    <ClCompile Include="..\Python\assemble.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\ast.c">
@@ -88,6 +88,9 @@
     <ClCompile Include="..\Objects\codeobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\perf_trampoline.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\compile.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -139,6 +142,9 @@
     <ClCompile Include="..\Objects\floatobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\flowgraph.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\formatter_unicode.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -187,6 +193,9 @@
     <ClCompile Include="..\Python\getversion.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\ceval_gil.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\hamt.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -200,6 +209,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\initconfig.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\intrinsics.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\instrumentation.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\legacy_tracing.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\interpreteridobject.c">
@@ -362,6 +380,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\thread.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\timemodule.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\token.c">

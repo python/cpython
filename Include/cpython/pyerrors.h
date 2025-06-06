@@ -6,7 +6,7 @@
 
 /* PyException_HEAD defines the initial segment of every exception class. */
 #define PyException_HEAD PyObject_HEAD PyObject *dict;\
-             PyObject *args; PyObject *note; PyObject *traceback;\
+             PyObject *args; PyObject *notes; PyObject *traceback;\
              PyObject *context; PyObject *cause;\
              char suppress_context;
 
@@ -37,6 +37,7 @@ typedef struct {
     PyObject *msg;
     PyObject *name;
     PyObject *path;
+    PyObject *name_from;
 } PyImportErrorObject;
 
 typedef struct {
@@ -91,11 +92,14 @@ typedef PyOSErrorObject PyWindowsErrorObject;
 
 PyAPI_FUNC(void) _PyErr_SetKeyError(PyObject *);
 PyAPI_FUNC(_PyErr_StackItem*) _PyErr_GetTopmostException(PyThreadState *tstate);
+PyAPI_FUNC(PyObject*) _PyErr_GetHandledException(PyThreadState *);
+PyAPI_FUNC(void) _PyErr_SetHandledException(PyThreadState *, PyObject *);
 PyAPI_FUNC(void) _PyErr_GetExcInfo(PyThreadState *, PyObject **, PyObject **, PyObject **);
 
 /* Context manipulation (PEP 3134) */
 
-PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
+Py_DEPRECATED(3.12) PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(void) _PyErr_ChainExceptions1(PyObject *);
 
 /* Like PyErr_Format(), but saves current exception as __context__ and
    __cause__.
@@ -108,23 +112,9 @@ PyAPI_FUNC(PyObject *) _PyErr_FormatFromCause(
 
 /* In exceptions.c */
 
-/* Helper that attempts to replace the current exception with one of the
- * same type but with a prefix added to the exception text. The resulting
- * exception description looks like:
- *
- *     prefix (exc_type: original_exc_str)
- *
- * Only some exceptions can be safely replaced. If the function determines
- * it isn't safe to perform the replacement, it will leave the original
- * unmodified exception in place.
- *
- * Returns a borrowed reference to the new exception (if any), NULL if the
- * existing exception was left in place.
- */
-PyAPI_FUNC(PyObject *) _PyErr_TrySetFromCause(
-    const char *prefix_format,   /* ASCII-encoded string  */
-    ...
-    );
+PyAPI_FUNC(int) _PyException_AddNote(
+     PyObject *exc,
+     PyObject *note);
 
 /* In signalmodule.c */
 
@@ -174,4 +164,11 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalErrorFormat(
     const char *format,
     ...);
 
-#define Py_FatalError(message) _Py_FatalErrorFunc(__func__, message)
+extern PyObject *_PyErr_SetImportErrorWithNameFrom(
+        PyObject *,
+        PyObject *,
+        PyObject *,
+        PyObject *);
+
+
+#define Py_FatalError(message) _Py_FatalErrorFunc(__func__, (message))

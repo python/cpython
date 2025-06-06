@@ -1,2 +1,0 @@
-The :mod:`signal` module no longer assumes that :const:`~signal.SIG_IGN` and
-:const:`~signal.SIG_DFL` are small int singletons.

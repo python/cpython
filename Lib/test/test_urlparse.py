@@ -72,20 +72,20 @@ class UrlParseTestCase(unittest.TestCase):
 
     def checkRoundtrips(self, url, parsed, split):
         result = urllib.parse.urlparse(url)
-        self.assertEqual(result, parsed)
+        self.assertSequenceEqual(result, parsed)
         t = (result.scheme, result.netloc, result.path,
              result.params, result.query, result.fragment)
-        self.assertEqual(t, parsed)
+        self.assertSequenceEqual(t, parsed)
         # put it back together and it should be the same
         result2 = urllib.parse.urlunparse(result)
-        self.assertEqual(result2, url)
-        self.assertEqual(result2, result.geturl())
+        self.assertSequenceEqual(result2, url)
+        self.assertSequenceEqual(result2, result.geturl())
 
         # the result of geturl() is a fixpoint; we can always parse it
         # again to get the same result:
         result3 = urllib.parse.urlparse(result.geturl())
         self.assertEqual(result3.geturl(), result.geturl())
-        self.assertEqual(result3,          result)
+        self.assertSequenceEqual(result3, result)
         self.assertEqual(result3.scheme,   result.scheme)
         self.assertEqual(result3.netloc,   result.netloc)
         self.assertEqual(result3.path,     result.path)
@@ -99,18 +99,18 @@ class UrlParseTestCase(unittest.TestCase):
 
         # check the roundtrip using urlsplit() as well
         result = urllib.parse.urlsplit(url)
-        self.assertEqual(result, split)
+        self.assertSequenceEqual(result, split)
         t = (result.scheme, result.netloc, result.path,
              result.query, result.fragment)
-        self.assertEqual(t, split)
+        self.assertSequenceEqual(t, split)
         result2 = urllib.parse.urlunsplit(result)
-        self.assertEqual(result2, url)
-        self.assertEqual(result2, result.geturl())
+        self.assertSequenceEqual(result2, url)
+        self.assertSequenceEqual(result2, result.geturl())
 
         # check the fixpoint property of re-parsing the result of geturl()
         result3 = urllib.parse.urlsplit(result.geturl())
         self.assertEqual(result3.geturl(), result.geturl())
-        self.assertEqual(result3,          result)
+        self.assertSequenceEqual(result3, result)
         self.assertEqual(result3.scheme,   result.scheme)
         self.assertEqual(result3.netloc,   result.netloc)
         self.assertEqual(result3.path,     result.path)
@@ -162,10 +162,15 @@ class UrlParseTestCase(unittest.TestCase):
              ('svn+ssh', 'svn.zope.org', '/repos/main/ZConfig/trunk/',
               '', '')),
             ('git+ssh://git@github.com/user/project.git',
-            ('git+ssh', 'git@github.com','/user/project.git',
-             '','',''),
-            ('git+ssh', 'git@github.com','/user/project.git',
-             '', '')),
+             ('git+ssh', 'git@github.com','/user/project.git',
+              '','',''),
+             ('git+ssh', 'git@github.com','/user/project.git',
+              '', '')),
+            ('itms-services://?action=download-manifest&url=https://example.com/app',
+             ('itms-services', '', '', '',
+              'action=download-manifest&url=https://example.com/app', ''),
+             ('itms-services', '', '',
+              'action=download-manifest&url=https://example.com/app', '')),
             ]
         def _encode(t):
             return (t[0].encode('ascii'),
@@ -653,17 +658,38 @@ class UrlParseTestCase(unittest.TestCase):
         """Check handling of invalid ports."""
         for bytes in (False, True):
             for parse in (urllib.parse.urlsplit, urllib.parse.urlparse):
-                for port in ("foo", "1.5", "-1", "0x10"):
+                for port in ("foo", "1.5", "-1", "0x10", "-0", "1_1", " 1", "1 ", "६"):
                     with self.subTest(bytes=bytes, parse=parse, port=port):
                         netloc = "www.example.net:" + port
                         url = "http://" + netloc
                         if bytes:
-                            netloc = netloc.encode("ascii")
-                            url = url.encode("ascii")
+                            if netloc.isascii() and port.isascii():
+                                netloc = netloc.encode("ascii")
+                                url = url.encode("ascii")
+                            else:
+                                continue
                         p = parse(url)
                         self.assertEqual(p.netloc, netloc)
                         with self.assertRaises(ValueError):
                             p.port
+
+    def test_attributes_bad_scheme(self):
+        """Check handling of invalid schemes."""
+        for bytes in (False, True):
+            for parse in (urllib.parse.urlsplit, urllib.parse.urlparse):
+                for scheme in (".", "+", "-", "0", "http&", "६http"):
+                    with self.subTest(bytes=bytes, parse=parse, scheme=scheme):
+                        url = scheme + "://www.example.net"
+                        if bytes:
+                            if url.isascii():
+                                url = url.encode("ascii")
+                            else:
+                                continue
+                        p = parse(url)
+                        if bytes:
+                            self.assertEqual(p.scheme, b"")
+                        else:
+                            self.assertEqual(p.scheme, "")
 
     def test_attributes_without_netloc(self):
         # This example is straight from RFC 3261.  It looks like it
@@ -985,6 +1011,10 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(result, 'archaeological%20arcana')
         result = urllib.parse.quote_from_bytes(b'')
         self.assertEqual(result, '')
+        result = urllib.parse.quote_from_bytes(b'A'*10_000)
+        self.assertEqual(result, 'A'*10_000)
+        result = urllib.parse.quote_from_bytes(b'z\x01/ '*253_183)
+        self.assertEqual(result, 'z%01/%20'*253_183)
 
     def test_unquote_to_bytes(self):
         result = urllib.parse.unquote_to_bytes('abc%20def')
@@ -1011,6 +1041,32 @@ class UrlParseTestCase(unittest.TestCase):
         p2 = urllib.parse.urlparse('tel:+31641044153')
         self.assertEqual(p2.scheme, 'tel')
         self.assertEqual(p2.path, '+31641044153')
+
+    def test_invalid_bracketed_hosts(self):
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[192.0.2.146]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[important.com:8000]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[v123r.IP]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[v12ae]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[v.IP]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[v123.]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[v]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[0439:23af::2309::fae7:1234]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[0439:23af:2309::fae7:1234:2342:438e:192.0.2.146]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@]v6a.ip[/Path')
+
+    def test_splitting_bracketed_hosts(self):
+        p1 = urllib.parse.urlsplit('scheme://user@[v6a.ip]/path?query')
+        self.assertEqual(p1.hostname, 'v6a.ip')
+        self.assertEqual(p1.username, 'user')
+        self.assertEqual(p1.path, '/path')
+        p2 = urllib.parse.urlsplit('scheme://user@[0439:23af:2309::fae7%test]/path?query')
+        self.assertEqual(p2.hostname, '0439:23af:2309::fae7%test')
+        self.assertEqual(p2.username, 'user')
+        self.assertEqual(p2.path, '/path')
+        p3 = urllib.parse.urlsplit('scheme://user@[0439:23af:2309::fae7:1234:192.0.2.146%test]/path?query')
+        self.assertEqual(p3.hostname, '0439:23af:2309::fae7:1234:192.0.2.146%test')
+        self.assertEqual(p3.username, 'user')
+        self.assertEqual(p3.path, '/path')
 
     def test_port_casting_failure_message(self):
         message = "Port could not be cast to integer value as 'oracle'"
@@ -1195,6 +1251,7 @@ class Utility_Tests(unittest.TestCase):
         self.assertEqual(splitnport('127.0.0.1', 55), ('127.0.0.1', 55))
         self.assertEqual(splitnport('parrot:cheese'), ('parrot', None))
         self.assertEqual(splitnport('parrot:cheese', 55), ('parrot', None))
+        self.assertEqual(splitnport('parrot: +1_0 '), ('parrot', None))
 
     def test_splitquery(self):
         # Normal cases are exercised by other tests; ensure that we also

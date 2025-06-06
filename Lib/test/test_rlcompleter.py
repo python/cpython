@@ -138,6 +138,9 @@ class TestRlcompleter(unittest.TestCase):
         self.assertEqual(completer.complete('el', 0), 'elif ')
         self.assertEqual(completer.complete('el', 1), 'else')
         self.assertEqual(completer.complete('tr', 0), 'try:')
+        self.assertEqual(completer.complete('_', 0), '_')
+        self.assertEqual(completer.complete('match', 0), 'match ')
+        self.assertEqual(completer.complete('case', 0), 'case ')
 
     def test_duplicate_globals(self):
         namespace = {

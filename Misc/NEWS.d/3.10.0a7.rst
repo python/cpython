@@ -574,7 +574,7 @@ raised. Patch by Erlend E. Aasland.
 .. nonce: t9XEkQ
 .. section: Library
 
-Fix a regression introduced in GH-24562, where an empty bytestring was
+Fix a regression introduced in PR 24562, where an empty bytestring was
 fetched as ``None`` instead of ``b''`` in :mod:`sqlite3`. Patch by Mariusz
 Felisiak.
 

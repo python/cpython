@@ -97,9 +97,15 @@ def compile_dir(dir, maxlevels=None, ddir=None, force=False,
     files = _walk_dir(dir, quiet=quiet, maxlevels=maxlevels)
     success = True
     if workers != 1 and ProcessPoolExecutor is not None:
+        import multiprocessing
+        if multiprocessing.get_start_method() == 'fork':
+            mp_context = multiprocessing.get_context('forkserver')
+        else:
+            mp_context = None
         # If workers == 0, let ProcessPoolExecutor choose
         workers = workers or None
-        with ProcessPoolExecutor(max_workers=workers) as executor:
+        with ProcessPoolExecutor(max_workers=workers,
+                                 mp_context=mp_context) as executor:
             results = executor.map(partial(compile_file,
                                            ddir=ddir, force=force,
                                            rx=rx, quiet=quiet,
@@ -154,8 +160,8 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
                           "in combination with stripdir or prependdir"))
 
     success = True
-    if quiet < 2 and isinstance(fullname, os.PathLike):
-        fullname = os.fspath(fullname)
+    fullname = os.fspath(fullname)
+    stripdir = os.fspath(stripdir) if stripdir is not None else None
     name = os.path.basename(fullname)
 
     dfile = None

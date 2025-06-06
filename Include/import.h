@@ -67,7 +67,7 @@ PyAPI_FUNC(PyObject *) PyImport_ImportModuleLevelObject(
 #endif
 
 #define PyImport_ImportModuleEx(n, g, l, f) \
-    PyImport_ImportModuleLevel(n, g, l, f, 0)
+    PyImport_ImportModuleLevel((n), (g), (l), (f), 0)
 
 PyAPI_FUNC(PyObject *) PyImport_GetImporter(PyObject *path);
 PyAPI_FUNC(PyObject *) PyImport_Import(PyObject *name);

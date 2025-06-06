@@ -496,6 +496,7 @@ class BZ2FileTest(BaseTest):
         else:
             self.fail("1/0 didn't raise an exception")
 
+    @threading_helper.requires_working_threading()
     def testThreading(self):
         # Issue #7205: Using a BZ2File from several threads shouldn't deadlock.
         data = b"1" * 2**20
@@ -842,6 +843,10 @@ class BZ2DecompressorTest(BaseTest):
         for i in range(100):
             bzd.__init__()
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
+
+    def test_uninitialized_BZ2Decompressor_crash(self):
+        self.assertEqual(BZ2Decompressor.__new__(BZ2Decompressor).
+                         decompress(bytes()), b'')
 
 
 class CompressDecompressTest(BaseTest):

@@ -1,6 +1,7 @@
 # Ridiculously simple test of the winsound module for Windows.
 
 import functools
+import pathlib
 import time
 import unittest
 
@@ -84,6 +85,13 @@ class MessageBeepTest(unittest.TestCase):
         safe_MessageBeep(type=winsound.MB_OK)
 
 
+# A class for testing winsound when the given path resolves
+# to bytes rather than str.
+class BytesPath(pathlib.WindowsPath):
+    def __fspath__(self):
+        return bytes(super().__fspath__(), 'UTF-8')
+
+
 class PlaySoundTest(unittest.TestCase):
 
     def test_errors(self):
@@ -115,6 +123,20 @@ class PlaySoundTest(unittest.TestCase):
     def test_snd_filename(self):
         fn = support.findfile('pluck-pcm8.wav', subdir='audiodata')
         safe_PlaySound(fn, winsound.SND_FILENAME | winsound.SND_NODEFAULT)
+
+    def test_snd_filepath(self):
+        fn = support.findfile('pluck-pcm8.wav', subdir='audiodata')
+        path = pathlib.Path(fn)
+        safe_PlaySound(path, winsound.SND_FILENAME | winsound.SND_NODEFAULT)
+
+    def test_snd_filepath_as_bytes(self):
+        fn = support.findfile('pluck-pcm8.wav', subdir='audiodata')
+        self.assertRaises(
+            TypeError,
+            winsound.PlaySound,
+            BytesPath(fn),
+            winsound.SND_FILENAME | winsound.SND_NODEFAULT
+        )
 
     def test_aliases(self):
         aliases = [

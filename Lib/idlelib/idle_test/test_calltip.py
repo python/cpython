@@ -77,7 +77,9 @@ class Get_argspecTest(unittest.TestCase):
         tiptest(List.append, '(self, object, /)' + append_doc)
         tiptest([].append, '(object, /)' + append_doc)
 
-        tiptest(types.MethodType, "method(function, instance)")
+        tiptest(types.MethodType,
+              '(function, instance, /)\n'
+              'Create a bound instance method object.')
         tiptest(SB(), default_tip)
 
         p = re.compile('')

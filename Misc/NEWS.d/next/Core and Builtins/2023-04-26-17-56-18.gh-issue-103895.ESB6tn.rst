@@ -1,0 +1,3 @@
+Improve handling of edge cases in showing ``Exception.__notes__``. Ensures
+that the messages always end with a newline and that string/bytes are not
+exploded over multiple lines. Patch by Carey Metcalfe.

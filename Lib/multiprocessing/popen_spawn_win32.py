@@ -54,18 +54,19 @@ class Popen(object):
         wfd = msvcrt.open_osfhandle(whandle, 0)
         cmd = spawn.get_command_line(parent_pid=os.getpid(),
                                      pipe_handle=rhandle)
-        cmd = ' '.join('"%s"' % x for x in cmd)
 
         python_exe = spawn.get_executable()
 
         # bpo-35797: When running in a venv, we bypass the redirect
         # executor and launch our base Python.
         if WINENV and _path_eq(python_exe, sys.executable):
-            python_exe = sys._base_executable
+            cmd[0] = python_exe = sys._base_executable
             env = os.environ.copy()
             env["__PYVENV_LAUNCHER__"] = sys.executable
         else:
             env = None
+
+        cmd = ' '.join('"%s"' % x for x in cmd)
 
         with open(wfd, 'wb', closefd=True) as to_child:
             # start process

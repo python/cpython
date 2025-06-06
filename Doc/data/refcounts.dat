@@ -606,6 +606,9 @@ PyErr_GetExcInfo:PyObject**:ptype:+1:
 PyErr_GetExcInfo:PyObject**:pvalue:+1:
 PyErr_GetExcInfo:PyObject**:ptraceback:+1:
 
+PyErr_GetRaisedException:PyObject*::+1:
+PyErr_SetRaisedException::::
+
 PyErr_GivenExceptionMatches:int:::
 PyErr_GivenExceptionMatches:PyObject*:given:0:
 PyErr_GivenExceptionMatches:PyObject*:exc:0:
@@ -796,9 +799,17 @@ PyEval_SetProfile:void:::
 PyEval_SetProfile:Py_tracefunc:func::
 PyEval_SetProfile:PyObject*:obj:+1:
 
+PyEval_SetProfileAllThreads:void:::
+PyEval_SetProfileAllThreads:Py_tracefunc:func::
+PyEval_SetProfileAllThreads:PyObject*:obj:+1:
+
 PyEval_SetTrace:void:::
 PyEval_SetTrace:Py_tracefunc:func::
 PyEval_SetTrace:PyObject*:obj:+1:
+
+PyEval_SetTraceAllThreads:void:::
+PyEval_SetTraceAllThreads:Py_tracefunc:func::
+PyEval_SetTraceAllThreads:PyObject*:obj:+1:
 
 PyEval_EvalCode:PyObject*::+1:
 PyEval_EvalCode:PyObject*:co:0:
@@ -827,6 +838,8 @@ PyEval_EvalFrameEx:int:throwflag::
 
 PyEval_MergeCompilerFlags:int:::
 PyEval_MergeCompilerFlags:PyCompilerFlags*:cf::
+
+PyException_GetArgs:PyObject*::+1:
 
 PyException_GetCause:PyObject*::+1:
 PyException_GetCause:PyObject*:ex:0:
@@ -1010,10 +1023,10 @@ PyImport_Import:PyObject*::+1:
 PyImport_Import:PyObject*:name:0:
 
 PyImport_ImportFrozenModule:int:::
-PyImport_ImportFrozenModule:const char*:::
+PyImport_ImportFrozenModule:const char*:name::
 
 PyImport_ImportFrozenModuleObject:int:::
-PyImport_ImportFrozenModuleObject:PyObject*::+1:
+PyImport_ImportFrozenModuleObject:PyObject*:name:+1:
 
 PyImport_ImportModule:PyObject*::+1:
 PyImport_ImportModule:const char*:name::

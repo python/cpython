@@ -54,14 +54,10 @@ class StrftimeTest(unittest.TestCase):
         self.now = now
 
     def setUp(self):
-        try:
-            import java
-            java.util.Locale.setDefault(java.util.Locale.US)
-        except ImportError:
-            from locale import setlocale, LC_TIME
-            saved_locale = setlocale(LC_TIME)
-            setlocale(LC_TIME, 'C')
-            self.addCleanup(setlocale, LC_TIME, saved_locale)
+        from locale import setlocale, LC_TIME
+        saved_locale = setlocale(LC_TIME)
+        setlocale(LC_TIME, 'C')
+        self.addCleanup(setlocale, LC_TIME, saved_locale)
 
     def test_strftime(self):
         now = time.time()

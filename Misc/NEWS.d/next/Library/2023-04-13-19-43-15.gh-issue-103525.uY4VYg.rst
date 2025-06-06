@@ -1,0 +1,2 @@
+Fix misleading exception message when mixed ``str`` and ``bytes`` arguments
+are supplied to :class:`pathlib.PurePath` and :class:`~pathlib.Path`.

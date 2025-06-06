@@ -50,6 +50,26 @@ class ConnectionFactoryTests(unittest.TestCase):
                 con = sqlite.connect(":memory:", factory=factory)
                 self.assertIsInstance(con, factory)
 
+    def test_connection_factory_relayed_call(self):
+        # gh-95132: keyword args must not be passed as positional args
+        class Factory(sqlite.Connection):
+            def __init__(self, *args, **kwargs):
+                kwargs["isolation_level"] = None
+                super(Factory, self).__init__(*args, **kwargs)
+
+        con = sqlite.connect(":memory:", factory=Factory)
+        self.assertIsNone(con.isolation_level)
+        self.assertIsInstance(con, Factory)
+
+    def test_connection_factory_as_positional_arg(self):
+        class Factory(sqlite.Connection):
+            def __init__(self, *args, **kwargs):
+                super(Factory, self).__init__(*args, **kwargs)
+
+        con = sqlite.connect(":memory:", 5.0, 0, None, True, Factory)
+        self.assertIsNone(con.isolation_level)
+        self.assertIsInstance(con, Factory)
+
 
 class CursorFactoryTests(unittest.TestCase):
     def setUp(self):
@@ -159,8 +179,14 @@ class RowFactoryTests(unittest.TestCase):
         """Checks if the row object is iterable"""
         self.con.row_factory = sqlite.Row
         row = self.con.execute("select 1 as a, 2 as b").fetchone()
-        for col in row:
-            pass
+
+        # Is iterable in correct order and produces valid results:
+        items = [col for col in row]
+        self.assertEqual(items, [1, 2])
+
+        # Is iterable the second time:
+        items = [col for col in row]
+        self.assertEqual(items, [1, 2])
 
     def test_sqlite_row_as_tuple(self):
         """Checks if the row object can be converted to a tuple"""
@@ -255,18 +281,6 @@ class TextFactoryTests(unittest.TestCase):
         row = self.con.execute("select ?", (austria,)).fetchone()
         self.assertEqual(type(row[0]), str, "type of row[0] must be unicode")
         self.assertTrue(row[0].endswith("reich"), "column must contain original data")
-
-    def test_optimized_unicode(self):
-        # OptimizedUnicode is deprecated as of Python 3.10
-        with self.assertWarns(DeprecationWarning) as cm:
-            self.con.text_factory = sqlite.OptimizedUnicode
-        self.assertIn("factory.py", cm.filename)
-        austria = "Österreich"
-        germany = "Deutchland"
-        a_row = self.con.execute("select ?", (austria,)).fetchone()
-        d_row = self.con.execute("select ?", (germany,)).fetchone()
-        self.assertEqual(type(a_row[0]), str, "type of non-ASCII row must be str")
-        self.assertEqual(type(d_row[0]), str, "type of ASCII-only row must be str")
 
     def tearDown(self):
         self.con.close()

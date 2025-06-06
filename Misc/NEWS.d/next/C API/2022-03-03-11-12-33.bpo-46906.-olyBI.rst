@@ -1,4 +1,0 @@
-Add new functions to pack and unpack C double (serialize and deserialize):
-:c:func:`PyFloat_Pack2`, :c:func:`PyFloat_Pack4`, :c:func:`PyFloat_Pack8`,
-:c:func:`PyFloat_Unpack2`, :c:func:`PyFloat_Unpack4` and
-:c:func:`PyFloat_Unpack8`. Patch by Victor Stinner.

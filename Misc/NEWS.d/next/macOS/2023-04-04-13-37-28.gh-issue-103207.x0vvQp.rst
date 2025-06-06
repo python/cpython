@@ -1,0 +1,2 @@
+Add instructions to the macOS installer welcome display on how to workaround
+the macOS 13 Ventura “The installer encountered an error” failure.

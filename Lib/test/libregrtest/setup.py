@@ -5,6 +5,7 @@ import signal
 import sys
 import unittest
 from test import support
+from test.support.os_helper import TESTFN_UNDECODABLE, FS_NONASCII
 try:
     import gc
 except ImportError:
@@ -104,10 +105,10 @@ def setup_tests(ns):
 
     # Ensure there's a non-ASCII character in env vars at all times to force
     # tests consider this case. See BPO-44647 for details.
-    os.environ.setdefault(
-        UNICODE_GUARD_ENV,
-        "\N{SMILING FACE WITH SUNGLASSES}",
-    )
+    if TESTFN_UNDECODABLE and os.supports_bytes_environ:
+        os.environb.setdefault(UNICODE_GUARD_ENV.encode(), TESTFN_UNDECODABLE)
+    elif FS_NONASCII:
+        os.environ.setdefault(UNICODE_GUARD_ENV, FS_NONASCII)
 
 
 def replace_stdout():
@@ -140,7 +141,7 @@ def _adjust_resource_limits():
     """Adjust the system resource limits (ulimit) if needed."""
     try:
         import resource
-        from resource import RLIMIT_NOFILE, RLIM_INFINITY
+        from resource import RLIMIT_NOFILE
     except ImportError:
         return
     fd_limit, max_fds = resource.getrlimit(RLIMIT_NOFILE)
@@ -156,4 +157,3 @@ def _adjust_resource_limits():
         except (ValueError, OSError) as err:
             print(f"Unable to raise RLIMIT_NOFILE from {fd_limit} to "
                   f"{new_fd_limit}: {err}.")
-

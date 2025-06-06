@@ -4,7 +4,6 @@ import unittest
 import time
 
 import asyncio
-from asyncio import tasks
 
 
 def tearDownModule():
@@ -105,6 +104,30 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
         # 2 sec for slow CI boxes
         self.assertLess(t1-t0, 2)
         self.assertTrue(t0 <= cm.when() <= t1)
+
+    async def test_timeout_zero_sleep_zero(self):
+        loop = asyncio.get_running_loop()
+        t0 = loop.time()
+        with self.assertRaises(TimeoutError):
+            async with asyncio.timeout(0) as cm:
+                await asyncio.sleep(0)
+        t1 = loop.time()
+        self.assertTrue(cm.expired())
+        # 2 sec for slow CI boxes
+        self.assertLess(t1-t0, 2)
+        self.assertTrue(t0 <= cm.when() <= t1)
+
+    async def test_timeout_in_the_past_sleep_zero(self):
+        loop = asyncio.get_running_loop()
+        t0 = loop.time()
+        with self.assertRaises(TimeoutError):
+            async with asyncio.timeout(-11) as cm:
+                await asyncio.sleep(0)
+        t1 = loop.time()
+        self.assertTrue(cm.expired())
+        # 2 sec for slow CI boxes
+        self.assertLess(t1-t0, 2)
+        self.assertTrue(t0 >= cm.when() <= t1)
 
     async def test_foreign_exception_passed(self):
         with self.assertRaises(KeyError):
@@ -223,6 +246,36 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
                     with self.assertRaises(TimeoutError):
                         async with asyncio.timeout(0.01):
                             await asyncio.sleep(10)
+
+    async def test_timeout_after_cancellation(self):
+        try:
+            asyncio.current_task().cancel()
+            await asyncio.sleep(1)  # work which will be cancelled
+        except asyncio.CancelledError:
+            pass
+        finally:
+            with self.assertRaises(TimeoutError):
+                async with asyncio.timeout(0.0):
+                    await asyncio.sleep(1)  # some cleanup
+
+    async def test_cancel_in_timeout_after_cancellation(self):
+        try:
+            asyncio.current_task().cancel()
+            await asyncio.sleep(1)  # work which will be cancelled
+        except asyncio.CancelledError:
+            pass
+        finally:
+            with self.assertRaises(asyncio.CancelledError):
+                async with asyncio.timeout(1.0):
+                    asyncio.current_task().cancel()
+                    await asyncio.sleep(2)  # some cleanup
+
+    async def test_timeout_exception_cause (self):
+        with self.assertRaises(asyncio.TimeoutError) as exc:
+            async with asyncio.timeout(0):
+                await asyncio.sleep(1)
+        cause = exc.exception.__cause__
+        assert isinstance(cause, asyncio.CancelledError)
 
 
 if __name__ == '__main__':

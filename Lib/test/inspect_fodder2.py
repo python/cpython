@@ -259,3 +259,17 @@ def all_markers_with_args_and_kwargs(a, b, /, c, d, *args, e, f, **kwargs):
 #line 259
 def all_markers_with_defaults(a, b=1, /, c=2, d=3, *, e=4, f=5):
     pass
+
+# line 263
+def deco_factory(**kwargs):
+    def deco(f):
+        @wraps(f)
+        def wrapper(*a, **kwd):
+            kwd.update(kwargs)
+            return f(*a, **kwd)
+        return wrapper
+    return deco
+
+@deco_factory(foo=(1 + 2), bar=lambda: 1)
+def complex_decorated(foo=0, bar=lambda: 0):
+    return foo + bar()

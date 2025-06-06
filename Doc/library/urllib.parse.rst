@@ -113,7 +113,8 @@ or on combining URL components into a URL string.
    +------------------+-------+-------------------------+------------------------+
    | :attr:`path`     | 2     | Hierarchical path       | empty string           |
    +------------------+-------+-------------------------+------------------------+
-   | :attr:`params`   | 3     | No longer used          | always an empty string |
+   | :attr:`params`   | 3     | Parameters for last     | empty string           |
+   |                  |       | path element            |                        |
    +------------------+-------+-------------------------+------------------------+
    | :attr:`query`    | 4     | Query component         | empty string           |
    +------------------+-------+-------------------------+------------------------+

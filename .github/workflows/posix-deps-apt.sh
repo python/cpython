@@ -7,6 +7,7 @@ apt-get -yq install \
     ccache \
     gdb \
     lcov \
+    libb2-dev \
     libbz2-dev \
     libffi-dev \
     libgdbm-dev \

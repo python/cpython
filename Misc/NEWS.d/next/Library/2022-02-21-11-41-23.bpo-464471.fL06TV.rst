@@ -1,2 +1,0 @@
-:func:`asyncio.timeout` and :func:`asyncio.timeout_at` context managers
-added. Patch by Tin Tvrtković and Andrew Svetlov.

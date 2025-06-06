@@ -27,11 +27,11 @@ can be used to compare three different expressions:
 
 .. code-block:: shell-session
 
-   $ python3 -m timeit '"-".join(str(n) for n in range(100))'
+   $ python -m timeit '"-".join(str(n) for n in range(100))'
    10000 loops, best of 5: 30.2 usec per loop
-   $ python3 -m timeit '"-".join([str(n) for n in range(100)])'
+   $ python -m timeit '"-".join([str(n) for n in range(100)])'
    10000 loops, best of 5: 27.5 usec per loop
-   $ python3 -m timeit '"-".join(map(str, range(100)))'
+   $ python -m timeit '"-".join(map(str, range(100)))'
    10000 loops, best of 5: 23.2 usec per loop
 
 This can be achieved from the :ref:`python-interface` with::
@@ -206,7 +206,7 @@ Command-Line Interface
 
 When called as a program from the command line, the following form is used::
 
-   python -m timeit [-n N] [-r N] [-u U] [-s S] [-h] [statement ...]
+   python -m timeit [-n N] [-r N] [-u U] [-s S] [-p] [-v] [-h] [statement ...]
 
 Where the following options are understood:
 

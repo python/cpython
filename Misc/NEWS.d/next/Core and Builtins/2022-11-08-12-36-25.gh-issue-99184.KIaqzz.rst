@@ -1,0 +1,2 @@
+Bypass instance attribute access of ``__name__`` in ``repr`` of
+:class:`weakref.ref`.

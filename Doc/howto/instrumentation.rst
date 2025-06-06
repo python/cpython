@@ -123,7 +123,7 @@ Sufficiently modern readelf can print the metadata::
             Arguments: 8@%rbp 8@%r12 -4@%eax
 
 The above metadata contains information for SystemTap describing how it
-can patch strategically-placed machine code instructions to enable the
+can patch strategically placed machine code instructions to enable the
 tracing hooks used by a SystemTap script.
 
 
@@ -410,7 +410,7 @@ needing to directly name the static markers:
 
 
 The following script uses the tapset above to provide a top-like view of all
-running CPython code, showing the top 20 most frequently-entered bytecode
+running CPython code, showing the top 20 most frequently entered bytecode
 frames, each second, across the whole system:
 
 .. code-block:: none

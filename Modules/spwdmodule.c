@@ -224,6 +224,7 @@ spwdmodule_exec(PyObject *module)
 
 static PyModuleDef_Slot spwdmodule_slots[] = {
     {Py_mod_exec, spwdmodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
@@ -256,5 +257,12 @@ static struct PyModuleDef spwdmodule = {
 PyMODINIT_FUNC
 PyInit_spwd(void)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "'spwd' is deprecated and slated for removal in "
+                     "Python 3.13",
+                     7)) {
+        return NULL;
+    }
+
     return PyModuleDef_Init(&spwdmodule);
 }

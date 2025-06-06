@@ -88,7 +88,7 @@ time_stdlib: $(CPYTHON) venv
 		-d $(CPYTHON) \
 		$(TESTFLAGS) \
 		--exclude "*/bad*" \
-		--exclude "*/lib2to3/tests/data/*"
+		--exclude "*/test/test_lib2to3/data/*"
 
 mypy: regen-metaparser
 	$(MYPY)  # For list of files, see mypy.ini

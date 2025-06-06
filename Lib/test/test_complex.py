@@ -306,15 +306,10 @@ class ComplexTest(unittest.TestCase):
         self.assertClose(complex(5.3, 9.8).conjugate(), 5.3-9.8j)
 
     def test_constructor(self):
-        class OS:
+        class NS:
             def __init__(self, value): self.value = value
             def __complex__(self): return self.value
-        class NS(object):
-            def __init__(self, value): self.value = value
-            def __complex__(self): return self.value
-        self.assertEqual(complex(OS(1+10j)), 1+10j)
         self.assertEqual(complex(NS(1+10j)), 1+10j)
-        self.assertRaises(TypeError, complex, OS(None))
         self.assertRaises(TypeError, complex, NS(None))
         self.assertRaises(TypeError, complex, {})
         self.assertRaises(TypeError, complex, NS(1.5))
@@ -534,6 +529,12 @@ class ComplexTest(unittest.TestCase):
                     self.assertFloatsAreIdentical(z.real, x)
                     self.assertFloatsAreIdentical(z.imag, y)
 
+    def test_constructor_negative_nans_from_string(self):
+        self.assertEqual(copysign(1., complex("-nan").real), -1.)
+        self.assertEqual(copysign(1., complex("-nanj").imag), -1.)
+        self.assertEqual(copysign(1., complex("-nan-nanj").real), -1.)
+        self.assertEqual(copysign(1., complex("-nan-nanj").imag), -1.)
+
     def test_underscores(self):
         # check underscores
         for lit in VALID_UNDERSCORE_LITERALS:
@@ -574,6 +575,7 @@ class ComplexTest(unittest.TestCase):
         test(complex(NAN, 1), "(nan+1j)")
         test(complex(1, NAN), "(1+nanj)")
         test(complex(NAN, NAN), "(nan+nanj)")
+        test(complex(-NAN, -NAN), "(nan+nanj)")
 
         test(complex(0, INF), "infj")
         test(complex(0, -INF), "-infj")

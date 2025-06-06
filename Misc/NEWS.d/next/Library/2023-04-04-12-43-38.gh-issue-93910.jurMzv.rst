@@ -1,0 +1,1 @@
+Remove deprecation of enum ``memmber.member`` access.

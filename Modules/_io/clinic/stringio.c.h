@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(_io_StringIO_getvalue__doc__,
 "getvalue($self, /)\n"
 "--\n"
@@ -48,7 +54,7 @@ PyDoc_STRVAR(_io_StringIO_read__doc__,
 "is reached. Return an empty string at EOF.");
 
 #define _IO_STRINGIO_READ_METHODDEF    \
-    {"read", (PyCFunction)(void(*)(void))_io_StringIO_read, METH_FASTCALL, _io_StringIO_read__doc__},
+    {"read", _PyCFunction_CAST(_io_StringIO_read), METH_FASTCALL, _io_StringIO_read__doc__},
 
 static PyObject *
 _io_StringIO_read_impl(stringio *self, Py_ssize_t size);
@@ -84,7 +90,7 @@ PyDoc_STRVAR(_io_StringIO_readline__doc__,
 "Returns an empty string if EOF is hit immediately.");
 
 #define _IO_STRINGIO_READLINE_METHODDEF    \
-    {"readline", (PyCFunction)(void(*)(void))_io_StringIO_readline, METH_FASTCALL, _io_StringIO_readline__doc__},
+    {"readline", _PyCFunction_CAST(_io_StringIO_readline), METH_FASTCALL, _io_StringIO_readline__doc__},
 
 static PyObject *
 _io_StringIO_readline_impl(stringio *self, Py_ssize_t size);
@@ -122,7 +128,7 @@ PyDoc_STRVAR(_io_StringIO_truncate__doc__,
 "Returns the new absolute position.");
 
 #define _IO_STRINGIO_TRUNCATE_METHODDEF    \
-    {"truncate", (PyCFunction)(void(*)(void))_io_StringIO_truncate, METH_FASTCALL, _io_StringIO_truncate__doc__},
+    {"truncate", _PyCFunction_CAST(_io_StringIO_truncate), METH_FASTCALL, _io_StringIO_truncate__doc__},
 
 static PyObject *
 _io_StringIO_truncate_impl(stringio *self, Py_ssize_t size);
@@ -162,7 +168,7 @@ PyDoc_STRVAR(_io_StringIO_seek__doc__,
 "Returns the new absolute position.");
 
 #define _IO_STRINGIO_SEEK_METHODDEF    \
-    {"seek", (PyCFunction)(void(*)(void))_io_StringIO_seek, METH_FASTCALL, _io_StringIO_seek__doc__},
+    {"seek", _PyCFunction_CAST(_io_StringIO_seek), METH_FASTCALL, _io_StringIO_seek__doc__},
 
 static PyObject *
 _io_StringIO_seek_impl(stringio *self, Py_ssize_t pos, int whence);
@@ -255,8 +261,31 @@ static int
 _io_StringIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(initial_value), &_Py_ID(newline), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"initial_value", "newline", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "StringIO", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "StringIO",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -338,4 +367,4 @@ _io_StringIO_seekable(stringio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_StringIO_seekable_impl(self);
 }
-/*[clinic end generated code: output=eea93dcab10d0a97 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=533f20ae9b773126 input=a9049054013a1b77]*/

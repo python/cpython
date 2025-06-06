@@ -28,7 +28,8 @@ not.
 The wrappers ensure that ``str[size-1]`` is always ``'\0'`` upon return. They
 never write more than *size* bytes (including the trailing ``'\0'``) into str.
 Both functions require that ``str != NULL``, ``size > 0``, ``format != NULL``
-and ``size < INT_MAX``.
+and ``size < INT_MAX``. Note that this means there is no equivalent to the C99
+``n = snprintf(NULL, 0, ...)`` which would determine the necessary buffer size.
 
 The return value (*rv*) for these functions should be interpreted as follows:
 
@@ -49,7 +50,7 @@ The following functions provide locale-independent string to number conversions.
 
 .. c:function:: double PyOS_string_to_double(const char *s, char **endptr, PyObject *overflow_exception)
 
-   Convert a string ``s`` to a :c:type:`double`, raising a Python
+   Convert a string ``s`` to a :c:expr:`double`, raising a Python
    exception on failure.  The set of accepted strings corresponds to
    the set of strings accepted by Python's :func:`float` constructor,
    except that ``s`` must not have leading or trailing whitespace.
@@ -83,7 +84,7 @@ The following functions provide locale-independent string to number conversions.
 
 .. c:function:: char* PyOS_double_to_string(double val, char format_code, int precision, int flags, int *ptype)
 
-   Convert a :c:type:`double` *val* to a string using supplied
+   Convert a :c:expr:`double` *val* to a string using supplied
    *format_code*, *precision*, and *flags*.
 
    *format_code* must be one of ``'e'``, ``'E'``, ``'f'``, ``'F'``,

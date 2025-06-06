@@ -1,0 +1,1 @@
+Support ``sys.last_exc`` in :mod:`idlelib`.

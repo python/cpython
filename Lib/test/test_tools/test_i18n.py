@@ -155,6 +155,26 @@ class Test_pygettext(unittest.TestCase):
         '''))
         self.assertFalse([msgid for msgid in msgids if 'doc' in msgid])
 
+    def test_moduledocstring(self):
+        for doc in ('"""doc"""', "r'''doc'''", "R'doc'", 'u"doc"'):
+            with self.subTest(doc):
+                msgids = self.extract_docstrings_from_str(dedent('''\
+                %s
+                ''' % doc))
+                self.assertIn('doc', msgids)
+
+    def test_moduledocstring_bytes(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        b"""doc"""
+        '''))
+        self.assertFalse([msgid for msgid in msgids if 'doc' in msgid])
+
+    def test_moduledocstring_fstring(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"""doc"""
+        '''))
+        self.assertFalse([msgid for msgid in msgids if 'doc' in msgid])
+
     def test_msgid(self):
         msgids = self.extract_docstrings_from_str(
                 '''_("""doc""" r'str' u"ing")''')
