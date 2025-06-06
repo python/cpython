@@ -41,7 +41,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
     """A simple SQLite REPL."""
 
     def __init__(self, connection, use_color=False):
-        from code import InteractiveConsole
+        super().__init__()
         self._con = connection
         self._cur = connection.cursor()
         self._use_color = use_color
