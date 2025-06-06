@@ -75,6 +75,7 @@ def write_header(
 """
     )
 
+
 def emit_to(out: CWriter, tkn_iter: TokenIterator, end: str) -> Token:
     parens = 0
     for tkn in tkn_iter:
