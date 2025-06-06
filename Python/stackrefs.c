@@ -211,7 +211,7 @@ PyStackRef_TaggedIntLessThan(_PyStackRef a, _PyStackRef b)
 {
     assert(PyStackRef_IsTaggedInt(a));
     assert(PyStackRef_IsTaggedInt(b));
-    return a.bits < b.bits;
+    return ((intptr_t)a.index) < ((intptr_t)b.index);
 }
 
 intptr_t
