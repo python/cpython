@@ -86,6 +86,15 @@ _Py_hashlib_data_argument(PyObject **res, PyObject *data, PyObject *string)
     }
     else if (data == NULL && string != NULL) {
         // called as H(string=...)
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "the 'string' keyword parameter is deprecated since "
+                         "Python 3.15 and slated for removal in Python 3.19; "
+                         "use the 'data' keyword parameter or pass the data "
+                         "to hash as a positional argument instead", 1) < 0)
+        {
+            *res = NULL;
+            return -1;
+        }
         *res = string;
         return 1;
     }
