@@ -50,8 +50,8 @@ to keep in mind about using multiple interpreters:
 
 .. XXX Are there other relevant details to list?
 
-In the context of multiple interpreters, "isolated" means each
-interpreter shares no state between them.  In practice, there is some
+In the context of multiple interpreters, "isolated" means that
+different interpreters do not share any state.  In practice, there is some
 process-global data they all share, but that is managed by the runtime.
 
 
