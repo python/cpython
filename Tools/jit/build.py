@@ -40,14 +40,14 @@ if __name__ == "__main__":
         "-v", "--verbose", action="store_true", help="echo commands as they are run"
     )
     parser.add_argument(
-        "--with-cflags", help="additional flags to pass to the compiler", default=""
+        "--cflags", help="additional flags to pass to the compiler", default=""
     )
     args = parser.parse_args()
     for target in args.target:
         target.debug = args.debug
         target.force = args.force
         target.verbose = args.verbose
-        target.cflags = args.with_cflags
+        target.cflags = args.cflags
         target.pyconfig_dir = args.pyconfig_dir
         target.build(
             comment=comment,
