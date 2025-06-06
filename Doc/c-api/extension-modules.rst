@@ -198,11 +198,12 @@ in the following ways:
 
 * Single-phase modules are, or rather *contain*, “singletons”.
 
-  When the module is initialized, Python saves the contents of the module's
-  ``__dict__`` (that is, typically, the module's functions and types).
+  When the module is first initialized, Python saves the contents of
+  the module's ``__dict__`` (that is, typically, the module's functions and
+  types).
 
-  For subsequent initializations in the same interpreter, Python does not call
-  the initialization function again.
+  For subsequent imports, Python does not call the initialization function
+  again.
   Instead, it creates a new module object with a new ``__dict__``, and copies
   the saved contents to it.
   For example, given a single-phase module ``_testsinglephase``
