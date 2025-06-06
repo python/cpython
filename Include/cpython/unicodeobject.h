@@ -49,8 +49,8 @@ static inline Py_UCS4 Py_UNICODE_LOW_SURROGATE(Py_UCS4 ch) {
 
 // Suppress known warning with _Py_ALIGN_AS; see gh-135183
 #if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable: 5274)
+#  pragma warning(push)
+#  pragma warning(disable: 5274)
 #endif
 
 /* ASCII-only strings created through PyUnicode_New use the PyASCIIObject
@@ -170,7 +170,7 @@ typedef struct {
 
 // Restore warning filter
 #ifdef _MSC_VER
-#pragma warning(pop)
+#  pragma warning(pop)
 #endif
 
 /* Non-ASCII strings allocated through PyUnicode_New use the
