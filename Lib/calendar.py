@@ -560,10 +560,12 @@ class HTMLCalendar(Calendar):
         a('</table>')
         return ''.join(v)
 
-    def formatyearpage(self, theyear, width=3, css='calendar.css', encoding='utf-8'):
+    def formatyearpage(self, theyear, width=3, css='calendar.css', encoding=None):
         """
         Return a formatted year as a complete HTML page.
         """
+        if encoding is None:
+            encoding = 'utf-8'
         v = []
         a = v.append
         a('<?xml version="1.0" encoding="%s"?>\n' % encoding)
@@ -843,7 +845,7 @@ def main(args=None):
     )
     parser.add_argument(
         "-e", "--encoding",
-        default="utf-8",
+        default=None,
         help="encoding to use for output (default utf-8)"
     )
     parser.add_argument(
@@ -870,6 +872,10 @@ def main(args=None):
 
     options = parser.parse_args(args)
 
+    if options.locale and not options.encoding:
+        parser.error("if --locale is specified --encoding is required")
+        sys.exit(1)
+
     locale = options.locale, options.encoding
     today = datetime.date.today()
 
@@ -883,6 +889,8 @@ def main(args=None):
             cal = HTMLCalendar()
         cal.setfirstweekday(options.first_weekday)
         encoding = options.encoding
+        if encoding is None:
+            encoding = 'utf-8'
         optdict = dict(encoding=encoding, css=options.css)
         write = sys.stdout.buffer.write
         if options.year is None:

@@ -245,16 +245,13 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       specifies the number of months per row.
 
 
-   .. method:: formatyearpage(theyear, width=3, css='calendar.css', encoding='utf-8')
+   .. method:: formatyearpage(theyear, width=3, css='calendar.css', encoding=None)
 
       Return a year's calendar as a complete HTML page. *width* (defaulting to
       3) specifies the number of months per row. *css* is the name for the
       cascading style sheet to be used. :const:`None` can be passed if no style
       sheet should be used. *encoding* specifies the encoding to be used for the
-      output (defaulting to ``utf-8``).
-
-      .. versionchanged:: next
-         The default value of the *encoding* has been changed to utf-8.
+      output (defaulting to ``'utf-8'``).
 
    .. method:: formatmonthname(theyear, themonth, withyear=True)
 
@@ -653,10 +650,7 @@ The following options are accepted:
 .. option:: --encoding ENCODING, -e ENCODING
 
    The encoding to use for output.
-   Defaults to utf-8.
-
-.. versionchanged:: next
-   The default value has been changed to utf-8.
+   :option:`--encoding` is required if :option:`--locale` is set.
 
 .. option:: --type {text,html}, -t {text,html}
 

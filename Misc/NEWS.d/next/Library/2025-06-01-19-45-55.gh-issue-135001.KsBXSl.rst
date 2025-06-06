@@ -1,2 +1,0 @@
-The default *encoding* parameter value in
-:meth:`calendar.HTMLCalendar.formatyearpage` is now utf-8.

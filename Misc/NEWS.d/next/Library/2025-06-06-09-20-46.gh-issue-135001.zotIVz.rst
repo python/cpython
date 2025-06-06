@@ -1,0 +1,3 @@
+Replace *encoding* parameter value in
+:meth:`calendar.HTMLCalendar.formatyearpage` from
+:func:`sys.getdefaultencoding()` to ``utf-8``.
