@@ -123,7 +123,6 @@ class _Target(typing.Generic[_S, _R]):
     ) -> _stencils.StencilGroup:
         o = tempdir / f"{opname}.o"
         args = [
-            *shlex.split(self.cflags),
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
@@ -158,6 +157,8 @@ class _Target(typing.Generic[_S, _R]):
             "-o",
             f"{o}",
             f"{c}",
+            # Allow user-provided CFLAGS to override any defaults
+            *shlex.split(self.cflags),
             *self.args,
         ]
         await _llvm.run("clang", args, echo=self.verbose)
