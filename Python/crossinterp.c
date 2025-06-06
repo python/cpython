@@ -127,27 +127,52 @@ ensure_isolated_main(PyThreadState *tstate, struct sync_module *main)
         assert(_PyErr_Occurred(tstate));
         return -1;
     }
+    PyObject *loaded = NULL;
 
-    // It wasn't already loaded from file.
-    PyObject *loaded = PyModule_NewObject(&_Py_ID(__main__));
-    if (loaded == NULL) {
-        goto error;
+    // Try the per-interpreter cache for the loaded module.
+    // XXX Store it in sys.modules?
+    PyObject *interpns = PyInterpreterState_GetDict(tstate->interp);
+    assert(interpns != NULL);
+    PyObject *key = PyUnicode_FromString("CACHED_MODULE_NS___main__");
+    if (key == NULL) {
+        // It's probably unrecoverable, so don't bother caching the error.
+        Py_DECREF(mod);
+        return -1;
     }
-    PyObject *ns = _PyModule_GetDict(loaded);
+    else if (PyDict_GetItemRef(interpns, key, &loaded) < 0) {
+        // It's probably unrecoverable, so don't bother caching the error.
+        Py_DECREF(mod);
+        Py_DECREF(key);
+        return -1;
+    }
+    else if (loaded == NULL) {
+        // It wasn't already loaded from file.
+        loaded = PyModule_NewObject(&_Py_ID(__main__));
+        if (loaded == NULL) {
+            goto error;
+        }
+        PyObject *ns = _PyModule_GetDict(loaded);
 
-    // We don't want to trigger "if __name__ == '__main__':",
-    // so we use a bogus module name.
-    PyObject *loaded_ns =
-                runpy_run_path(main->filename, "<fake __main__>");
-    if (loaded_ns == NULL) {
-        goto error;
-    }
-    int res = PyDict_Update(ns, loaded_ns);
-    Py_DECREF(loaded_ns);
-    if (res < 0) {
-        goto error;
+        // We don't want to trigger "if __name__ == '__main__':",
+        // so we use a bogus module name.
+        PyObject *loaded_ns =
+                    runpy_run_path(main->filename, "<fake __main__>");
+        if (loaded_ns == NULL) {
+            goto error;
+        }
+        int res = PyDict_Update(ns, loaded_ns);
+        Py_DECREF(loaded_ns);
+        if (res < 0) {
+            goto error;
+        }
+
+        // Set the per-interpreter cache entry.
+        if (PyDict_SetItem(interpns, key, loaded) < 0) {
+            goto error;
+        }
     }
 
+    Py_DECREF(key);
     main->cached = (struct sync_module_result){
        .module = mod,
        .loaded = loaded,
@@ -158,6 +183,7 @@ error:
     sync_module_capture_exc(tstate, main);
     Py_XDECREF(loaded);
     Py_DECREF(mod);
+    Py_XDECREF(key);
     return -1;
 }
 
