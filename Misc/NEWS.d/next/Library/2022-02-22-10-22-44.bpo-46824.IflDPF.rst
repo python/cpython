@@ -1,0 +1,1 @@
+skip getaddrinfo thread if host is already resolved, using socket.AI_NUMERIC
