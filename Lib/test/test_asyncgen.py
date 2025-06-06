@@ -2021,6 +2021,15 @@ class TestUnawaitedWarnings(unittest.TestCase):
             g.athrow(RuntimeError)
             gc_collect()
 
+    def test_athrow_throws_immediately(self):
+        async def gen():
+            yield 1
+
+        g = gen()
+        msg = "athrow expected at least 1 argument, got 0"
+        with self.assertRaisesRegex(TypeError, msg):
+            g.athrow()
+
     def test_aclose(self):
         async def gen():
             yield 1

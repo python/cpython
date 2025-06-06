@@ -496,7 +496,7 @@ class Storage:
                     f"Expected '{undefined}' to be defined before '{out.name}'"
             else:
                 undefined = out.name
-        while len(self.outputs) > self.peeks and not self.needs_defining(self.outputs[0]):
+        while len(self.outputs) > self.peeks and not self.needs_defining(self.outputs[self.peeks]):
             out = self.outputs.pop(self.peeks)
             self.stack.push(out)
 

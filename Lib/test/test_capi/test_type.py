@@ -179,6 +179,22 @@ class TypeTests(unittest.TestCase):
             _testcapi.pytype_getbasebytoken(
                 'not a type', id(self), True, False)
 
+    def test_get_module_by_def(self):
+        heaptype = _testcapi.create_type_with_token('_testcapi.H', 0)
+        mod = _testcapi.pytype_getmodulebydef(heaptype)
+        self.assertIs(mod, _testcapi)
+
+        class H1(heaptype): pass
+        mod = _testcapi.pytype_getmodulebydef(H1)
+        self.assertIs(mod, _testcapi)
+
+        with self.assertRaises(TypeError):
+            _testcapi.pytype_getmodulebydef(int)
+
+        class H2(int): pass
+        with self.assertRaises(TypeError):
+            _testcapi.pytype_getmodulebydef(H2)
+
     def test_freeze(self):
         # test PyType_Freeze()
         type_freeze = _testcapi.type_freeze
@@ -248,3 +264,13 @@ class TypeTests(unittest.TestCase):
         ManualHeapType = _testcapi.ManualHeapType
         for i in range(100):
             self.assertIsInstance(ManualHeapType(), ManualHeapType)
+
+    def test_extension_managed_dict_type(self):
+        ManagedDictType = _testcapi.ManagedDictType
+        obj = ManagedDictType()
+        obj.foo = 42
+        self.assertEqual(obj.foo, 42)
+        self.assertEqual(obj.__dict__, {'foo': 42})
+        obj.__dict__ = {'bar': 3}
+        self.assertEqual(obj.__dict__, {'bar': 3})
+        self.assertEqual(obj.bar, 3)

@@ -1,0 +1,2 @@
+Fix libc thread safety issues with :mod:`os` by replacing ``getlogin`` with
+``getlogin_r`` re-entrant version.
