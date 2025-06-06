@@ -123,35 +123,96 @@ set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
 
     // Check if there is a # character in the expression
     int hash_detected = 0;
+    int in_string = 0;
+    char string_quote = 0;
     for (Py_ssize_t i = 0; i < tok_mode->last_expr_size - tok_mode->last_expr_end; i++) {
-        if (tok_mode->last_expr_buffer[i] == '#') {
+        char ch = tok_mode->last_expr_buffer[i];
+        if (ch == '\\' && i + 1 < tok_mode->last_expr_size - tok_mode->last_expr_end) {
+            // Skip the next character if it's an escape sequence
+            i++;
+            continue;
+        }
+        if (ch == '"' || ch == '\'') {
+            if (!in_string) {
+                in_string = 1;
+                string_quote = ch;
+            } else if (ch == string_quote) {
+                // Check for triple quotes
+                if (i > 0 && tok_mode->last_expr_buffer[i-1] == ch &&
+                    i > 1 && tok_mode->last_expr_buffer[i-2] == ch) {
+                    // Skip the rest of the triple quote
+                    i += 2;
+                }
+                in_string = 0;
+            }
+        } else if (ch == '#' && !in_string) {
             hash_detected = 1;
             break;
         }
     }
-
+    // If we found a # character in the expression, we need to handle comments
     if (hash_detected) {
+        // Calculate length of input we need to process
         Py_ssize_t input_length = tok_mode->last_expr_size - tok_mode->last_expr_end;
+
+        // Allocate buffer for processed result, with room for null terminator
         char *result = (char *)PyMem_Malloc((input_length + 1) * sizeof(char));
         if (!result) {
             return -1;
         }
 
-        Py_ssize_t i = 0;
-        Py_ssize_t j = 0;
+        // Initialize counters and state
+        Py_ssize_t i = 0;  // Input position
+        Py_ssize_t j = 0;  // Output position
+        in_string = 0;     // Whether we're currently inside a string
+        string_quote = 0;  // The quote character for current string (' or ")
 
+        // Process each character of input
         for (i = 0, j = 0; i < input_length; i++) {
-            if (tok_mode->last_expr_buffer[i] == '#') {
-                // Skip characters until newline or end of string
+            char ch = tok_mode->last_expr_buffer[i];
+
+            // Handle escape sequences - copy both backslash and next char
+            if (ch == '\\' && i + 1 < input_length) {
+                result[j++] = ch;  // Copy backslash
+                result[j++] = tok_mode->last_expr_buffer[++i];  // Copy escaped char
+                continue;
+            }
+
+            // Handle string quotes
+            if (ch == '"' || ch == '\'') {
+                if (!in_string) {
+                    // Start of new string
+                    in_string = 1;
+                    string_quote = ch;
+                } else if (ch == string_quote) {
+                    // Potential end of string - check for triple quotes
+                    if (i > 0 && tok_mode->last_expr_buffer[i-1] == ch &&
+                        i > 1 && tok_mode->last_expr_buffer[i-2] == ch) {
+                        // Found triple quote - copy all three quotes
+                        result[j++] = ch;
+                        result[j++] = ch;
+                        result[j++] = ch;
+                        i += 2;  // Skip the other two quotes
+                        continue;
+                    }
+                    // End of regular string
+                    in_string = 0;
+                }
+                result[j++] = ch;  // Copy the quote character
+            }
+            // Handle comments - skip everything until newline
+            else if (ch == '#' && !in_string) {
                 while (i < input_length && tok_mode->last_expr_buffer[i] != '\0') {
                     if (tok_mode->last_expr_buffer[i] == '\n') {
-                        result[j++] = tok_mode->last_expr_buffer[i];
+                        result[j++] = tok_mode->last_expr_buffer[i];  // Keep newline
                         break;
                     }
-                    i++;
+                    i++;  // Skip comment character
                 }
-            } else {
-                result[j++] = tok_mode->last_expr_buffer[i];
+            }
+            // Copy any other character unchanged
+            else {
+                result[j++] = ch;
             }
         }
 
@@ -164,11 +225,9 @@ set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
             tok_mode->last_expr_size - tok_mode->last_expr_end,
             NULL
         );
-
     }
 
-
-   if (!res) {
+    if (!res) {
         return -1;
     }
     token->metadata = res;
