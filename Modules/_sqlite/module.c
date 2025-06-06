@@ -405,14 +405,14 @@ pysqlite_error_name(int rc)
     return NULL;
 }
 
-#if SQLITE_VERSION_NUMBER < 3024000
 static int
 add_keyword_tuple(PyObject *module)
 {
+#if SQLITE_VERSION_NUMBER >= 3024000
     int count = sqlite3_keyword_count();
     PyObject *keywords = PyTuple_New(count);
     if (keywords == NULL) {
-        goto error;
+        return -1;
     }
     for (int i = 0; i < count; i++) {
         const char *keyword;
@@ -427,17 +427,17 @@ add_keyword_tuple(PyObject *module)
         if (!kwd) {
             goto error;
         }
-        if (PyTuple_SetItem(keywords, i, kwd) < 0) {
-            goto error;
-        }
+        PyTuple_SET_ITEM(keywords, i, kwd);
     }
     return PyModule_Add(module, "SQLITE_KEYWORDS", keywords);
 
 error:
-    Py_XDECREF(keywords);
+    Py_DECREF(keywords);
     return -1;
-}
+#else
+    return 0;
 #endif
+}
 
 static int
 add_integer_constants(PyObject *module) {
@@ -737,11 +737,9 @@ module_exec(PyObject *module)
         goto error;
     }
 
-#if SQLITE_VERSION_NUMBER < 3024000
     if (add_keyword_tuple(module) < 0) {
         goto error;
     }
-#endif
 
     if (PyModule_AddStringConstant(module, "sqlite_version", sqlite3_libversion())) {
         goto error;

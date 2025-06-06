@@ -12,7 +12,7 @@ from code import InteractiveConsole
 from textwrap import dedent
 from _colorize import get_theme, theme_no_color
 
-from ._completer import enable_completer
+from ._completer import completer
 
 
 def execute(c, sql, suppress_errors=True, theme=theme_no_color):
@@ -138,7 +138,7 @@ def main(*args):
             execute(con, args.sql, suppress_errors=False, theme=theme)
         else:
             # No SQL provided; start the REPL.
-            with enable_completer():
+            with completer():
                 console = SqliteInteractiveConsole(con, use_color=True)
                 console.interact(banner, exitmsg="")
     finally:

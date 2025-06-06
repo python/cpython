@@ -1,14 +1,16 @@
 from contextlib import contextmanager
 
+try:
+    from _sqlite3 import SQLITE_KEYWORDS
+except ImportError:
+    SQLITE_KEYWORDS = ()
+
 _completion_matches = []
 
 
 def _complete(text, state):
-    try:
-        from _sqlite3 import SQLITE_KEYWORDS
-    except ImportError:
-        SQLITE_KEYWORDS = ()
     global _completion_matches
+
     if state == 0:
         text_upper = text.upper()
         _completion_matches = [c for c in SQLITE_KEYWORDS if c.startswith(text_upper)]
@@ -19,7 +21,7 @@ def _complete(text, state):
 
 
 @contextmanager
-def enable_completer():
+def completer():
     try:
         import readline
     except ImportError:
