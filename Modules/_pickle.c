@@ -1879,6 +1879,10 @@ _checkmodule(PyObject *module_name, PyObject *module,
             _PyUnicode_EqualToASCIIString(module_name, "__main__")) {
         return -1;
     }
+    if (PyUnicode_Check(module_name) &&
+            _PyUnicode_EqualToASCIIString(module_name, "__mp_main__")) {
+        return -1;
+    }
 
     PyObject *candidate = getattribute(module, dotted_path, 0);
     if (candidate == NULL) {
@@ -1911,7 +1915,7 @@ whichmodule(PickleState *st, PyObject *global, PyObject *global_name, PyObject *
            __module__ can be None. If it is so, then search sys.modules for
            the module of global. */
         Py_CLEAR(module_name);
-        modules = _PySys_GetRequiredAttr(&_Py_ID(modules));
+        modules = PySys_GetAttr(&_Py_ID(modules));
         if (modules == NULL) {
             return NULL;
         }

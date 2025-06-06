@@ -125,6 +125,13 @@ class BaseProcess(object):
         del self._target, self._args, self._kwargs
         _children.add(self)
 
+    def interrupt(self):
+        '''
+        Terminate process; sends SIGINT signal
+        '''
+        self._check_closed()
+        self._popen.interrupt()
+
     def terminate(self):
         '''
         Terminate process; sends SIGTERM signal or uses TerminateProcess()

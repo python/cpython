@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.1
+    rev: v0.11.8
     hooks:
       - id: ruff
         name: Run Ruff (lint) on Doc/
@@ -11,9 +11,9 @@ repos:
         args: [--exit-non-zero-on-fix]
         files: ^Lib/test/
       - id: ruff
-        name: Run Ruff (lint) on Tools/build/check_warnings.py
+        name: Run Ruff (lint) on Tools/build/
         args: [--exit-non-zero-on-fix, --config=Tools/build/.ruff.toml]
-        files: ^Tools/build/check_warnings.py
+        files: ^Tools/build/
       - id: ruff
         name: Run Ruff (lint) on Argument Clinic
         args: [--exit-non-zero-on-fix, --config=Tools/clinic/.ruff.toml]
@@ -22,14 +22,14 @@ repos:
         name: Run Ruff (format) on Doc/
         args: [--check]
         files: ^Doc/
+      - id: ruff-format
+        name: Run Ruff (format) on Tools/build/check_warnings.py
+        args: [--check, --config=Tools/build/.ruff.toml]
+        files: ^Tools/build/check_warnings.py
 
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 24.10.0
+    rev: 25.1.0
     hooks:
-      - id: black
-        name: Run Black on Tools/build/check_warnings.py
-        files: ^Tools/build/check_warnings.py
-        args: [--line-length=79]
       - id: black
         name: Run Black on Tools/jit/
         files: ^Tools/jit/
@@ -43,13 +43,17 @@ repos:
         exclude: ^Lib/test/test_tomllib/
       - id: check-yaml
       - id: end-of-file-fixer
-        types: [python]
+        types_or: [python, yaml]
         exclude: Lib/test/tokenizedata/coding20731.py
+      - id: end-of-file-fixer
+        files: '^\.github/CODEOWNERS$'
       - id: trailing-whitespace
-        types_or: [c, inc, python, rst]
+        types_or: [c, inc, python, rst, yaml]
+      - id: trailing-whitespace
+        files: '^\.github/CODEOWNERS|\.(gram)$'
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.31.0
+    rev: 0.33.0
     hooks:
       - id: check-dependabot
       - id: check-github-workflows
@@ -61,7 +65,7 @@ repos:
       - id: actionlint
 
   - repo: https://github.com/woodruffw/zizmor-pre-commit
-    rev: v1.1.1
+    rev: v1.6.0
     hooks:
       - id: zizmor
 

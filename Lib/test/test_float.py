@@ -9,8 +9,10 @@ import unittest
 
 from test import support
 from test.support.testcase import FloatsAreIdenticalMixin
-from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
-                               INVALID_UNDERSCORE_LITERALS)
+from test.support.numbers import (
+    VALID_UNDERSCORE_LITERALS,
+    INVALID_UNDERSCORE_LITERALS,
+)
 from math import isinf, isnan, copysign, ldexp
 import math
 

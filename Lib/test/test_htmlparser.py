@@ -317,6 +317,16 @@ text
                                 ("endtag", element_lower)],
                             collector=Collector(convert_charrefs=False))
 
+    def test_EOF_in_cdata(self):
+        content = """<!-- not a comment --> &not-an-entity-ref;
+                  <a href="" /> </p><p> <span></span></style>
+                  '</script' + '>'"""
+        s = f'<script>{content}'
+        self._run_check(s, [
+            ("starttag", 'script', []),
+            ("data", content)
+        ])
+
     def test_comments(self):
         html = ("<!-- I'm a valid comment -->"
                 '<!--me too!-->'
@@ -348,18 +358,16 @@ text
         collector = lambda: EventCollectorCharrefs()
         self.assertTrue(collector().convert_charrefs)
         charrefs = ['&quot;', '&#34;', '&#x22;', '&quot', '&#34', '&#x22']
-        # check charrefs in the middle of the text/attributes
-        expected = [('starttag', 'a', [('href', 'foo"zar')]),
-                    ('data', 'a"z'), ('endtag', 'a')]
+        # check charrefs in the middle of the text
+        expected = [('starttag', 'a', []), ('data', 'a"z'), ('endtag', 'a')]
         for charref in charrefs:
-            self._run_check('<a href="foo{0}zar">a{0}z</a>'.format(charref),
+            self._run_check('<a>a{0}z</a>'.format(charref),
                             expected, collector=collector())
-        # check charrefs at the beginning/end of the text/attributes
-        expected = [('data', '"'),
-                    ('starttag', 'a', [('x', '"'), ('y', '"X'), ('z', 'X"')]),
+        # check charrefs at the beginning/end of the text
+        expected = [('data', '"'), ('starttag', 'a', []),
                     ('data', '"'), ('endtag', 'a'), ('data', '"')]
         for charref in charrefs:
-            self._run_check('{0}<a x="{0}" y="{0}X" z="X{0}">'
+            self._run_check('{0}<a>'
                             '{0}</a>{0}'.format(charref),
                             expected, collector=collector())
         # check charrefs in <script>/<style> elements
@@ -381,6 +389,35 @@ text
         # check a string with no charrefs
         self._run_check('no charrefs here', [('data', 'no charrefs here')],
                         collector=collector())
+
+    def test_convert_charrefs_in_attribute_values(self):
+        # default value for convert_charrefs is now True
+        collector = lambda: EventCollectorCharrefs()
+        self.assertTrue(collector().convert_charrefs)
+
+        # always unescape terminated entity refs, numeric and hex char refs:
+        # - regardless whether they are at start, middle, end of attribute
+        # - or followed by alphanumeric, non-alphanumeric, or equals char
+        charrefs = ['&cent;', '&#xa2;', '&#xa2', '&#162;', '&#162']
+        expected = [('starttag', 'a',
+                     [('x', '¢'), ('x', 'z¢'), ('x', '¢z'),
+                      ('x', 'z¢z'), ('x', '¢ z'), ('x', '¢=z')]),
+                    ('endtag', 'a')]
+        for charref in charrefs:
+            self._run_check('<a x="{0}" x="z{0}" x="{0}z" '
+                            '   x="z{0}z" x="{0} z" x="{0}=z"></a>'
+                            .format(charref), expected, collector=collector())
+
+        # only unescape unterminated entity matches if they are not followed by
+        # an alphanumeric or an equals sign
+        charref = '&cent'
+        expected = [('starttag', 'a',
+                     [('x', '¢'), ('x', 'z¢'), ('x', '&centz'),
+                      ('x', 'z&centz'), ('x', '¢ z'), ('x', '&cent=z')]),
+                    ('endtag', 'a')]
+        self._run_check('<a x="{0}" x="z{0}" x="{0}z" '
+                        '   x="z{0}z" x="{0} z" x="{0}=z"></a>'
+                        .format(charref), expected, collector=collector())
 
     # the remaining tests were for the "tolerant" parser (which is now
     # the default), and check various kind of broken markup
@@ -539,12 +576,33 @@ text
         for html, expected in data:
             self._run_check(html, expected)
 
-    def test_broken_comments(self):
+    def test_EOF_in_comments_or_decls(self):
+        data = [
+            ('<!', [('data', '<!')]),
+            ('<!-', [('data', '<!-')]),
+            ('<!--', [('data', '<!--')]),
+            ('<![', [('data', '<![')]),
+            ('<![CDATA[', [('data', '<![CDATA[')]),
+            ('<![CDATA[x', [('data', '<![CDATA[x')]),
+            ('<!DOCTYPE', [('data', '<!DOCTYPE')]),
+            ('<!DOCTYPE HTML', [('data', '<!DOCTYPE HTML')]),
+        ]
+        for html, expected in data:
+            self._run_check(html, expected)
+    def test_bogus_comments(self):
         html = ('<! not really a comment >'
                 '<! not a comment either -->'
                 '<! -- close enough -->'
                 '<!><!<-- this was an empty comment>'
-                '<!!! another bogus comment !!!>')
+                '<!!! another bogus comment !!!>'
+                # see #32876
+                '<![with square brackets]!>'
+                '<![\nmultiline\nbogusness\n]!>'
+                '<![more brackets]-[and a hyphen]!>'
+                '<![cdata[should be uppercase]]>'
+                '<![CDATA [whitespaces are not ignored]]>'
+                '<![CDATA]]>'  # required '[' after CDATA
+        )
         expected = [
             ('comment', ' not really a comment '),
             ('comment', ' not a comment either --'),
@@ -552,39 +610,65 @@ text
             ('comment', ''),
             ('comment', '<-- this was an empty comment'),
             ('comment', '!! another bogus comment !!!'),
+            ('comment', '[with square brackets]!'),
+            ('comment', '[\nmultiline\nbogusness\n]!'),
+            ('comment', '[more brackets]-[and a hyphen]!'),
+            ('comment', '[cdata[should be uppercase]]'),
+            ('comment', '[CDATA [whitespaces are not ignored]]'),
+            ('comment', '[CDATA]]'),
         ]
         self._run_check(html, expected)
 
     def test_broken_condcoms(self):
         # these condcoms are missing the '--' after '<!' and before the '>'
+        # and they are considered bogus comments according to
+        # "8.2.4.42. Markup declaration open state"
         html = ('<![if !(IE)]>broken condcom<![endif]>'
                 '<![if ! IE]><link href="favicon.tiff"/><![endif]>'
                 '<![if !IE 6]><img src="firefox.png" /><![endif]>'
                 '<![if !ie 6]><b>foo</b><![endif]>'
                 '<![if (!IE)|(lt IE 9)]><img src="mammoth.bmp" /><![endif]>')
-        # According to the HTML5 specs sections "8.2.4.44 Bogus comment state"
-        # and "8.2.4.45 Markup declaration open state", comment tokens should
-        # be emitted instead of 'unknown decl', but calling unknown_decl
-        # provides more flexibility.
-        # See also Lib/_markupbase.py:parse_declaration
         expected = [
-            ('unknown decl', 'if !(IE)'),
+            ('comment', '[if !(IE)]'),
             ('data', 'broken condcom'),
-            ('unknown decl', 'endif'),
-            ('unknown decl', 'if ! IE'),
+            ('comment', '[endif]'),
+            ('comment', '[if ! IE]'),
             ('startendtag', 'link', [('href', 'favicon.tiff')]),
-            ('unknown decl', 'endif'),
-            ('unknown decl', 'if !IE 6'),
+            ('comment', '[endif]'),
+            ('comment', '[if !IE 6]'),
             ('startendtag', 'img', [('src', 'firefox.png')]),
-            ('unknown decl', 'endif'),
-            ('unknown decl', 'if !ie 6'),
+            ('comment', '[endif]'),
+            ('comment', '[if !ie 6]'),
             ('starttag', 'b', []),
             ('data', 'foo'),
             ('endtag', 'b'),
-            ('unknown decl', 'endif'),
-            ('unknown decl', 'if (!IE)|(lt IE 9)'),
+            ('comment', '[endif]'),
+            ('comment', '[if (!IE)|(lt IE 9)]'),
             ('startendtag', 'img', [('src', 'mammoth.bmp')]),
-            ('unknown decl', 'endif')
+            ('comment', '[endif]')
+        ]
+        self._run_check(html, expected)
+
+    def test_cdata_declarations(self):
+        # More tests should be added. See also "8.2.4.42. Markup
+        # declaration open state", "8.2.4.69. CDATA section state",
+        # and issue 32876
+        html = ('<![CDATA[just some plain text]]>')
+        expected = [('unknown decl', 'CDATA[just some plain text')]
+        self._run_check(html, expected)
+
+    def test_cdata_declarations_multiline(self):
+        html = ('<code><![CDATA['
+                '    if (a < b && a > b) {'
+                '        printf("[<marquee>How?</marquee>]");'
+                '    }'
+                ']]></code>')
+        expected = [
+            ('starttag', 'code', []),
+            ('unknown decl',
+             'CDATA[    if (a < b && a > b) {        '
+             'printf("[<marquee>How?</marquee>]");    }'),
+            ('endtag', 'code')
         ]
         self._run_check(html, expected)
 

@@ -878,14 +878,7 @@ contextvar_new(PyObject *name, PyObject *def)
         return NULL;
     }
 
-    var->var_hash = contextvar_generate_hash(var, name);
-    if (var->var_hash == -1) {
-        Py_DECREF(var);
-        return NULL;
-    }
-
     var->var_name = Py_NewRef(name);
-
     var->var_default = Py_XNewRef(def);
 
 #ifndef Py_GIL_DISABLED
@@ -893,6 +886,12 @@ contextvar_new(PyObject *name, PyObject *def)
     var->var_cached_tsid = 0;
     var->var_cached_tsver = 0;
 #endif
+
+    var->var_hash = contextvar_generate_hash(var, name);
+    if (var->var_hash == -1) {
+        Py_DECREF(var);
+        return NULL;
+    }
 
     if (_PyObject_GC_MAY_BE_TRACKED(name) ||
             (def != NULL && _PyObject_GC_MAY_BE_TRACKED(def)))
@@ -980,7 +979,7 @@ contextvar_tp_repr(PyObject *op)
         return NULL;
     }
 
-    if (PyUnicodeWriter_WriteUTF8(writer, "<ContextVar name=", 17) < 0) {
+    if (PyUnicodeWriter_WriteASCII(writer, "<ContextVar name=", 17) < 0) {
         goto error;
     }
     if (PyUnicodeWriter_WriteRepr(writer, self->var_name) < 0) {
@@ -988,7 +987,7 @@ contextvar_tp_repr(PyObject *op)
     }
 
     if (self->var_default != NULL) {
-        if (PyUnicodeWriter_WriteUTF8(writer, " default=", 9) < 0) {
+        if (PyUnicodeWriter_WriteASCII(writer, " default=", 9) < 0) {
             goto error;
         }
         if (PyUnicodeWriter_WriteRepr(writer, self->var_default) < 0) {
@@ -1183,15 +1182,15 @@ token_tp_repr(PyObject *op)
     if (writer == NULL) {
         return NULL;
     }
-    if (PyUnicodeWriter_WriteUTF8(writer, "<Token", 6) < 0) {
+    if (PyUnicodeWriter_WriteASCII(writer, "<Token", 6) < 0) {
         goto error;
     }
     if (self->tok_used) {
-        if (PyUnicodeWriter_WriteUTF8(writer, " used", 5) < 0) {
+        if (PyUnicodeWriter_WriteASCII(writer, " used", 5) < 0) {
             goto error;
         }
     }
-    if (PyUnicodeWriter_WriteUTF8(writer, " var=", 5) < 0) {
+    if (PyUnicodeWriter_WriteASCII(writer, " var=", 5) < 0) {
         goto error;
     }
     if (PyUnicodeWriter_WriteRepr(writer, (PyObject *)self->tok_var) < 0) {
