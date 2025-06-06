@@ -666,8 +666,8 @@ def _random_getnode():
     # counting from 1 being the least significant bit, or 1<<40.
     #
     # See https://en.wikipedia.org/w/index.php?title=MAC_address&oldid=1128764812#Universal_vs._local_(U/L_bit)
-    import random
-    return random.getrandbits(48) | (1 << 40)
+    import secrets
+    return secrets.randbits(48) | (1 << 40)
 
 
 # _OS_GETTERS, when known, are targeted for a specific OS or platform.
@@ -746,8 +746,8 @@ def uuid1(node=None, clock_seq=None):
         timestamp = _last_timestamp + 1
     _last_timestamp = timestamp
     if clock_seq is None:
-        import random
-        clock_seq = random.getrandbits(14) # instead of stable storage
+        import secrets
+        clock_seq = secrets.randbits(14) # instead of stable storage
     time_low = timestamp & 0xffffffff
     time_mid = (timestamp >> 32) & 0xffff
     time_hi_version = (timestamp >> 48) & 0x0fff
@@ -809,8 +809,8 @@ def uuid6(node=None, clock_seq=None):
         timestamp = _last_timestamp_v6 + 1
     _last_timestamp_v6 = timestamp
     if clock_seq is None:
-        import random
-        clock_seq = random.getrandbits(14)  # instead of stable storage
+        import secrets
+        clock_seq = secrets.randbits(14)  # instead of stable storage
     time_hi_and_mid = (timestamp >> 12) & 0xffff_ffff_ffff
     time_lo = timestamp & 0x0fff  # keep 12 bits and clear version bits
     clock_s = clock_seq & 0x3fff  # keep 14 bits and clear variant bits
@@ -913,14 +913,14 @@ def uuid8(a=None, b=None, c=None):
     When a value is not specified, a pseudo-random value is generated.
     """
     if a is None:
-        import random
-        a = random.getrandbits(48)
+        import secrets
+        a = secrets.randbits(48)
     if b is None:
-        import random
-        b = random.getrandbits(12)
+        import secrets
+        b = secrets.randbits(48)
     if c is None:
-        import random
-        c = random.getrandbits(62)
+        import secrets
+        c = secrets.randbits(48)
     int_uuid_8 = (a & 0xffff_ffff_ffff) << 80
     int_uuid_8 |= (b & 0xfff) << 64
     int_uuid_8 |= c & 0x3fff_ffff_ffff_ffff
