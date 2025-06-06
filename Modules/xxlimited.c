@@ -427,6 +427,7 @@ xx_clear(PyObject *module)
 static void
 xx_free(void *module)
 {
+    // allow xx_modexec to omit calling xx_clear on error
     (void)xx_clear((PyObject *)module);
 }
 
