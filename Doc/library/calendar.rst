@@ -253,6 +253,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       sheet should be used. *encoding* specifies the encoding to be used for the
       output (defaulting to ``'utf-8'``).
 
+
    .. method:: formatmonthname(theyear, themonth, withyear=True)
 
       Return a month name as an HTML table row. If *withyear* is true the year
@@ -651,6 +652,7 @@ The following options are accepted:
 
    The encoding to use for output.
    :option:`--encoding` is required if :option:`--locale` is set.
+
 
 .. option:: --type {text,html}, -t {text,html}
 
