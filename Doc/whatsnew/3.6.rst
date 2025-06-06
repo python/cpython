@@ -1664,7 +1664,7 @@ The :class:`~unittest.mock.Mock` class has the following improvements:
   (Contributed by Amit Saha in :issue:`26323`.)
 
 * The :meth:`Mock.reset_mock() <unittest.mock.Mock.reset_mock>` method
-  now support two optional keyword arguments: *return_value* and
+  now supports two optional keyword arguments: *return_value* and
   *side_effect*.
   (Contributed by Kushal Das in :issue:`21271`.)
 

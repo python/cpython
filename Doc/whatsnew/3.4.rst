@@ -403,7 +403,7 @@ Some smaller changes made to the core Python language are:
 
 * Unicode database updated to UCD version 6.3.
 
-* :func:`min` and :func:`max` now accept a *default* keyword argument that
+* :func:`min` and :func:`max` now accept a keyword argument *default* that
   can be used to specify the value they return if the iterable they are
   evaluating has no elements.  (Contributed by Julian Berman in
   :issue:`18111`.)
