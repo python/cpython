@@ -371,7 +371,6 @@ class ColNamesTests(unittest.TestCase):
         self.assertIsNone(self.cur.description)
 
 
-@unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3), "CTEs not supported")
 class CommonTableExpressionTests(unittest.TestCase):
 
     def setUp(self):

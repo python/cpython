@@ -1,1 +1,0 @@
-Isolate :mod:`!_socket` (apply :pep:`687`). Patch by Erlend E. Aasland.

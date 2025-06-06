@@ -1,1 +1,0 @@
-Add gcc fallback of mkfifoat/mknodat for macOS. Patch by Dong-hee Na.

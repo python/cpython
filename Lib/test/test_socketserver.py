@@ -32,11 +32,6 @@ requires_unix_sockets = unittest.skipUnless(HAVE_UNIX_SOCKETS,
 HAVE_FORKING = test.support.has_fork_support
 requires_forking = unittest.skipUnless(HAVE_FORKING, 'requires forking')
 
-def signal_alarm(n):
-    """Call signal.alarm when it exists (i.e. not on Windows)."""
-    if hasattr(signal, 'alarm'):
-        signal.alarm(n)
-
 # Remember real select() to avoid interferences with mocking
 _real_select = select.select
 
@@ -68,12 +63,10 @@ class SocketServerTest(unittest.TestCase):
     """Test all socket servers."""
 
     def setUp(self):
-        signal_alarm(60)  # Kill deadlocks after 60 seconds.
         self.port_seed = 0
         self.test_files = []
 
     def tearDown(self):
-        signal_alarm(0)  # Didn't deadlock.
         reap_children()
 
         for fn in self.test_files:

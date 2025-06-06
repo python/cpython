@@ -58,10 +58,10 @@ may have prevented Python-to-Python calls respecting PEP 523.
 .. nonce: -igcjS
 .. section: Core and Builtins
 
-Add a closure keyword-only parameter to exec(). It can only be specified
+Add a closure keyword-only parameter to :func:`exec`. It can only be specified
 when exec-ing a code object that uses free variables. When specified, it
 must be a tuple, with exactly the number of cell variables referenced by the
-code object. closure has a default value of None, and it must be None if the
+code object. closure has a default value of ``None``, and it must be ``None`` if the
 code object doesn't refer to any free variables.
 
 ..
@@ -185,7 +185,7 @@ functions leave the current exception unchanged. Patch by Victor Stinner.
 .. section: Core and Builtins
 
 Fix a minor memory leak at exit: release the memory of the
-:class:`generic_alias_iterator` type. Patch by Dong-hee Na.
+:class:`generic_alias_iterator` type. Patch by Donghee Na.
 
 ..
 
@@ -285,7 +285,7 @@ macros.
 .. nonce: 11YXHQ
 .. section: Core and Builtins
 
-Add a new :c:func:`_PyFrame_IsEntryFrame` API function, to check if a
+Add a new :c:func:`!_PyFrame_IsEntryFrame` API function, to check if a
 :c:type:`PyFrameObject` is an entry frame. Patch by Pablo Galindo.
 
 ..
@@ -403,8 +403,8 @@ so this led to crashes. The problem is now fixed.
 .. nonce: 6S_uoU
 .. section: Core and Builtins
 
-Make opcodes :opcode:`JUMP_IF_TRUE_OR_POP` and
-:opcode:`JUMP_IF_FALSE_OR_POP` relative rather than absolute.
+Make opcodes :opcode:`!JUMP_IF_TRUE_OR_POP` and
+:opcode:`!JUMP_IF_FALSE_OR_POP` relative rather than absolute.
 
 ..
 
@@ -415,7 +415,7 @@ Make opcodes :opcode:`JUMP_IF_TRUE_OR_POP` and
 
 Replace the ``f_lasti`` member of the internal ``_PyInterpreterFrame``
 structure with a ``prev_instr`` pointer, which reduces overhead in the main
-interpreter loop. The ``f_lasti`` attribute of Python-layer frame objects is
+interpreter loop. The ``f_lasti`` attribute of Python-layer frame objects is
 preserved for backward-compatibility.
 
 ..
@@ -437,7 +437,7 @@ cache when applicable.
 .. section: Core and Builtins
 
 Classes and functions that unconditionally declared their docstrings
-ignoring the `--without-doc-strings` compilation flag no longer do so.
+ignoring the ``--without-doc-strings`` compilation flag no longer do so.
 
 The classes affected are :class:`ctypes.UnionType`,
 :class:`pickle.PickleBuffer`, :class:`testcapi.RecursingInfinitelyError`,
@@ -570,13 +570,13 @@ planned). Patch by Alex Waygood.
 
 ..
 
-.. gh: 78157
+.. gh-issue: 78157
 .. date: 2022-05-05-20-40-45
 .. nonce: IA_9na
 .. section: Library
 
 Deprecate nested classes in enum definitions becoming members -- in 3.13
-they will be normal classes; add `member` and `nonmember` functions to allow
+they will be normal classes; add ``member`` and ``nonmember`` functions to allow
 control over results now.
 
 ..
@@ -664,8 +664,9 @@ for :func:`os.fcopyfile` available in macOs.
 .. nonce: l1p7CJ
 .. section: Library
 
-For @dataclass, add weakref_slot. Default is False. If True, and if
-slots=True, add a slot named "__weakref__", which will allow instances to be
+For :func:`@dataclass <dataclasses.dataclass>`, add *weakref_slot*.
+The new parameter defaults to ``False``. If true, and if
+``slots=True``, add a slot named ``"__weakref__"``, which will allow instances to be
 weakref'd. Contributed by Eric V. Smith
 
 ..
@@ -785,7 +786,7 @@ avoid :exc:`BrokenPipeError` at garbage collection and at
 .. nonce: V0YveU
 .. section: Library
 
-Add `datetime.UTC` alias for `datetime.timezone.utc`.
+Add ``datetime.UTC`` alias for ``datetime.timezone.utc``.
 
 Patch by Kabir Kwatra.
 
@@ -796,7 +797,7 @@ Patch by Kabir Kwatra.
 .. nonce: roapI2
 .. section: Library
 
-The :mod:`mailcap` module is now deprecated and will be removed in Python
+The :mod:`!mailcap` module is now deprecated and will be removed in Python
 3.13. See :pep:`594` for the rationale and the :mod:`mimetypes` module for
 an alternative. Patch by Victor Stinner.
 
@@ -817,8 +818,8 @@ it is ever needed and document the existing mechanism for ``posix_spawn()``.
 .. nonce: HFtERN
 .. section: Library
 
-Fix :data:`signal.NSIG` value on FreeBSD to accept signal numbers greater
-than 32, like :data:`signal.SIGRTMIN` and :data:`signal.SIGRTMAX`. Patch by
+Fix :const:`signal.NSIG` value on FreeBSD to accept signal numbers greater
+than 32, like :const:`signal.SIGRTMIN` and :const:`signal.SIGRTMAX`. Patch by
 Victor Stinner.
 
 ..
@@ -1288,7 +1289,7 @@ Deprecate the chunk module.
 
 ..
 
-.. gh: 91498
+.. gh-issue: 91498
 .. date: 2022-04-10-08-39-44
 .. nonce: 8oII92
 .. section: Library
@@ -1657,9 +1658,9 @@ Convert :mod:`csv` to use Argument Clinic for :func:`csv.field_size_limit`,
 .. nonce: z2WhDQ
 .. section: Library
 
-Raise an ArgumentError when the same subparser name is added twice to an
-`argparse.ArgumentParser`.  This is consistent with the (default) behavior
-when the same option string is added twice to an ArgumentParser.
+Raise an ``ArgumentError`` when the same subparser name is added twice to an
+``argparse.ArgumentParser``.  This is consistent with the (default) behavior
+when the same option string is added twice to an ``ArgumentParser``.
 
 ..
 
@@ -1712,7 +1713,7 @@ Aviv Palivoda and Erlend E. Aasland.
 .. nonce: kTjJLx
 .. section: Documentation
 
-Add a new `gh` role to the documentation to link to GitHub issues.
+Add a new ``gh`` role to the documentation to link to GitHub issues.
 
 ..
 
@@ -1799,9 +1800,9 @@ The documentation now lists which members of C structs are part of the
 .. nonce: FIVe9I
 .. section: Documentation
 
-All docstrings in code snippets are now wrapped into :func:`PyDoc_STR` to
-follow the guideline of `PEP 7's Documentation Strings paragraph
-<https://www.python.org/dev/peps/pep-0007/#documentation-strings>`_. Patch
+All docstrings in code snippets are now wrapped into :c:macro:`PyDoc_STR` to
+follow the guideline of :pep:`PEP 7's Documentation Strings paragraph
+<0007#documentation-strings>`. Patch
 by Oleg Iarygin.
 
 ..
@@ -2028,8 +2029,8 @@ https://gitlab.com/warsaw/pynche
 .. nonce: 3mQ54t
 .. section: C API
 
-Deprecate the C functions: :c:func:`PySys_SetArgv`,
-:c:func:`PySys_SetArgvEx`, :c:func:`PySys_SetPath`. Patch by Victor Stinner.
+Deprecate the C functions: :c:func:`!PySys_SetArgv`,
+:c:func:`!PySys_SetArgvEx`, :c:func:`!PySys_SetPath`. Patch by Victor Stinner.
 
 ..
 
@@ -2068,9 +2069,9 @@ casts when the Python C API is used in C++. Patch by Victor Stinner.
 .. nonce: Cx-95G
 .. section: C API
 
-Mark functions as deprecated by :pep:`623`: :c:func:`PyUnicode_AS_DATA`,
-:c:func:`PyUnicode_AS_UNICODE`, :c:func:`PyUnicode_GET_DATA_SIZE`,
-:c:func:`PyUnicode_GET_SIZE`. Patch by Victor Stinner.
+Mark functions as deprecated by :pep:`623`: :c:func:`!PyUnicode_AS_DATA`,
+:c:func:`!PyUnicode_AS_UNICODE`, :c:func:`!PyUnicode_GET_DATA_SIZE`,
+:c:func:`!PyUnicode_GET_SIZE`. Patch by Victor Stinner.
 
 ..
 

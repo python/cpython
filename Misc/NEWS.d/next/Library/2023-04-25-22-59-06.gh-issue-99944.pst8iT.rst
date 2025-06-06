@@ -1,1 +1,0 @@
-Make :mod:`dis` display the value of oparg of :opcode:`KW_NAMES`.

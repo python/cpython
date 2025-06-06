@@ -1,4 +1,0 @@
-Improve performance of :meth:`pathlib.Path.absolute` and
-:meth:`~pathlib.Path.cwd` by joining paths only when necessary. Also improve
-performance of :meth:`pathlib.PurePath.is_absolute` on Posix by skipping path
-parsing and normalization.

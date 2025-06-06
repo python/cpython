@@ -1,1 +1,0 @@
-Fixed a bug where :mod:`pdb` crashes when reading source file with different encoding by replacing :func:`io.open` with :func:`io.open_code`. The new method would also call into the hook set by :func:`PyFile_SetOpenCodeHook`.

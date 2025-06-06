@@ -51,11 +51,12 @@ Future Functions
 
    .. important::
 
-      See also the :func:`create_task` function which is the
-      preferred way for creating new Tasks.
-
       Save a reference to the result of this function, to avoid
       a task disappearing mid-execution.
+
+      See also the :func:`create_task` function which is the
+      preferred way for creating new tasks or use :class:`asyncio.TaskGroup`
+      which keeps reference to the task internally.
 
    .. versionchanged:: 3.5.1
       The function accepts any :term:`awaitable` object.
@@ -120,20 +121,20 @@ Future Object
       a :exc:`CancelledError` exception.
 
       If the Future's result isn't yet available, this method raises
-      a :exc:`InvalidStateError` exception.
+      an :exc:`InvalidStateError` exception.
 
    .. method:: set_result(result)
 
       Mark the Future as *done* and set its result.
 
-      Raises a :exc:`InvalidStateError` error if the Future is
+      Raises an :exc:`InvalidStateError` error if the Future is
       already *done*.
 
    .. method:: set_exception(exception)
 
       Mark the Future as *done* and set an exception.
 
-      Raises a :exc:`InvalidStateError` error if the Future is
+      Raises an :exc:`InvalidStateError` error if the Future is
       already *done*.
 
    .. method:: done()
@@ -276,4 +277,4 @@ the Future has a result::
      :func:`concurrent.futures.as_completed` functions.
 
    - :meth:`asyncio.Future.cancel` accepts an optional ``msg`` argument,
-     but :func:`concurrent.futures.cancel` does not.
+     but :meth:`concurrent.futures.Future.cancel` does not.

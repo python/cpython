@@ -158,7 +158,7 @@ class TestMockOpen(unittest.TestCase):
                 f.read()
 
         expected_calls = [call('foo'), call().__enter__(), call().read(),
-                          call().__exit__(None, None, None)]
+                          call().__exit__(None, None, None), call().close()]
         self.assertEqual(mock.mock_calls, expected_calls)
         self.assertIs(f, handle)
 
@@ -172,9 +172,9 @@ class TestMockOpen(unittest.TestCase):
 
         expected_calls = [
             call('foo'), call().__enter__(), call().read(),
-            call().__exit__(None, None, None),
+            call().__exit__(None, None, None), call().close(),
             call('bar'), call().__enter__(), call().read(),
-            call().__exit__(None, None, None)]
+            call().__exit__(None, None, None), call().close()]
         self.assertEqual(mock.mock_calls, expected_calls)
 
     def test_explicit_mock(self):

@@ -24,6 +24,16 @@ class TestAbstractContextManager(unittest.TestCase):
         manager = DefaultEnter()
         self.assertIs(manager.__enter__(), manager)
 
+    def test_slots(self):
+        class DefaultContextManager(AbstractContextManager):
+            __slots__ = ()
+
+            def __exit__(self, *args):
+                super().__exit__(*args)
+
+        with self.assertRaises(AttributeError):
+            DefaultContextManager().var = 42
+
     def test_exit_is_abstract(self):
         class MissingExit(AbstractContextManager):
             pass
@@ -38,23 +48,23 @@ class TestAbstractContextManager(unittest.TestCase):
             def __exit__(self, exc_type, exc_value, traceback):
                 return None
 
-        self.assertTrue(issubclass(ManagerFromScratch, AbstractContextManager))
+        self.assertIsSubclass(ManagerFromScratch, AbstractContextManager)
 
         class DefaultEnter(AbstractContextManager):
             def __exit__(self, *args):
                 super().__exit__(*args)
 
-        self.assertTrue(issubclass(DefaultEnter, AbstractContextManager))
+        self.assertIsSubclass(DefaultEnter, AbstractContextManager)
 
         class NoEnter(ManagerFromScratch):
             __enter__ = None
 
-        self.assertFalse(issubclass(NoEnter, AbstractContextManager))
+        self.assertNotIsSubclass(NoEnter, AbstractContextManager)
 
         class NoExit(ManagerFromScratch):
             __exit__ = None
 
-        self.assertFalse(issubclass(NoExit, AbstractContextManager))
+        self.assertNotIsSubclass(NoExit, AbstractContextManager)
 
 
 class ContextManagerTestCase(unittest.TestCase):
@@ -157,9 +167,46 @@ class ContextManagerTestCase(unittest.TestCase):
                 yield
         ctx = whoo()
         ctx.__enter__()
-        self.assertRaises(
-            RuntimeError, ctx.__exit__, TypeError, TypeError("foo"), None
-        )
+        with self.assertRaises(RuntimeError):
+            ctx.__exit__(TypeError, TypeError("foo"), None)
+        if support.check_impl_detail(cpython=True):
+            # The "gen" attribute is an implementation detail.
+            self.assertFalse(ctx.gen.gi_suspended)
+
+    def test_contextmanager_trap_no_yield(self):
+        @contextmanager
+        def whoo():
+            if False:
+                yield
+        ctx = whoo()
+        with self.assertRaises(RuntimeError):
+            ctx.__enter__()
+
+    def test_contextmanager_trap_second_yield(self):
+        @contextmanager
+        def whoo():
+            yield
+            yield
+        ctx = whoo()
+        ctx.__enter__()
+        with self.assertRaises(RuntimeError):
+            ctx.__exit__(None, None, None)
+        if support.check_impl_detail(cpython=True):
+            # The "gen" attribute is an implementation detail.
+            self.assertFalse(ctx.gen.gi_suspended)
+
+    def test_contextmanager_non_normalised(self):
+        @contextmanager
+        def whoo():
+            try:
+                yield
+            except RuntimeError:
+                raise SyntaxError
+
+        ctx = whoo()
+        ctx.__enter__()
+        with self.assertRaises(SyntaxError):
+            ctx.__exit__(RuntimeError, None, None)
 
     def test_contextmanager_except(self):
         state = []
@@ -240,6 +287,25 @@ def woohoo():
             self.assertEqual(ex.args[0], 'issue29692:Unchained')
             self.assertIsNone(ex.__cause__)
 
+    def test_contextmanager_wrap_runtimeerror(self):
+        @contextmanager
+        def woohoo():
+            try:
+                yield
+            except Exception as exc:
+                raise RuntimeError(f'caught {exc}') from exc
+
+        with self.assertRaises(RuntimeError):
+            with woohoo():
+                1 / 0
+
+        # If the context manager wrapped StopIteration in a RuntimeError,
+        # we also unwrap it, because we can't tell whether the wrapping was
+        # done by the generator machinery or by the generator itself.
+        with self.assertRaises(StopIteration):
+            with woohoo():
+                raise StopIteration
+
     def _create_contextmanager_attribs(self):
         def attribs(**kw):
             def decorate(func):
@@ -251,6 +317,7 @@ def woohoo():
         @attribs(foo='bar')
         def baz(spam):
             """Whee!"""
+            yield
         return baz
 
     def test_contextmanager_attribs(self):
@@ -307,8 +374,11 @@ def woohoo():
 
     def test_recursive(self):
         depth = 0
+        ncols = 0
         @contextmanager
         def woohoo():
+            nonlocal ncols
+            ncols += 1
             nonlocal depth
             before = depth
             depth += 1
@@ -322,6 +392,7 @@ def woohoo():
                 recursive()
 
         recursive()
+        self.assertEqual(ncols, 10)
         self.assertEqual(depth, 0)
 
 
@@ -373,12 +444,10 @@ class FileContextTestCase(unittest.TestCase):
     def testWithOpen(self):
         tfn = tempfile.mktemp()
         try:
-            f = None
             with open(tfn, "w", encoding="utf-8") as f:
                 self.assertFalse(f.closed)
                 f.write("Booh\n")
             self.assertTrue(f.closed)
-            f = None
             with self.assertRaises(ZeroDivisionError):
                 with open(tfn, "r", encoding="utf-8") as f:
                     self.assertFalse(f.closed)
@@ -1075,7 +1144,7 @@ class TestBaseExitStack:
 class TestExitStack(TestBaseExitStack, unittest.TestCase):
     exit_stack = ExitStack
     callback_error_internal_frames = [
-        ('__exit__', 'raise exc_details[1]'),
+        ('__exit__', 'raise exc'),
         ('__exit__', 'if cb(*exc_details):'),
     ]
 
@@ -1226,6 +1295,24 @@ class TestSuppress(ExceptionIsLikeMixin, unittest.TestCase):
                 [KeyError("ke1"), KeyError("ke2")],
             ),
         )
+        # Check handling of BaseExceptionGroup, using GeneratorExit so that
+        # we don't accidentally discard a ctrl-c with KeyboardInterrupt.
+        with suppress(GeneratorExit):
+            raise BaseExceptionGroup("message", [GeneratorExit()])
+        # If we raise a BaseException group, we can still suppress parts
+        with self.assertRaises(BaseExceptionGroup) as eg1:
+            with suppress(KeyError):
+                raise BaseExceptionGroup("message", [GeneratorExit("g"), KeyError("k")])
+        self.assertExceptionIsLike(
+            eg1.exception, BaseExceptionGroup("message", [GeneratorExit("g")]),
+        )
+        # If we suppress all the leaf BaseExceptions, we get a non-base ExceptionGroup
+        with self.assertRaises(ExceptionGroup) as eg1:
+            with suppress(GeneratorExit):
+                raise BaseExceptionGroup("message", [GeneratorExit("g"), KeyError("k")])
+        self.assertExceptionIsLike(
+            eg1.exception, ExceptionGroup("message", [KeyError("k")]),
+        )
 
 
 class TestChdir(unittest.TestCase):
@@ -1247,7 +1334,7 @@ class TestChdir(unittest.TestCase):
     def test_reentrant(self):
         old_cwd = os.getcwd()
         target1 = self.make_relative_path('data')
-        target2 = self.make_relative_path('ziptestdata')
+        target2 = self.make_relative_path('archivetestdata')
         self.assertNotIn(old_cwd, (target1, target2))
         chdir1, chdir2 = chdir(target1), chdir(target2)
 

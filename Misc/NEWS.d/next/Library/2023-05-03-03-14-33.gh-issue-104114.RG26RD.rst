@@ -1,3 +1,0 @@
-Fix issue where :meth:`pathlib.Path.glob` returns paths using the case of
-non-wildcard segments for corresponding path segments, rather than the real
-filesystem case.

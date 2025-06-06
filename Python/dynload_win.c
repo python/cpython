@@ -3,30 +3,12 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_add_relfile()
+#include "pycore_importdl.h"      // dl_funcptr
+#include "pycore_interp.h"        // _PyInterpreterState_GetConfig()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
-#ifdef HAVE_DIRECT_H
-#include <direct.h>
-#endif
-#include <ctype.h>
-
-#include "importdl.h"
-#include "patchlevel.h"
+#include "patchlevel.h"           // PY_MAJOR_VERSION
 #include <windows.h>
-
-#ifdef _DEBUG
-#define PYD_DEBUG_SUFFIX "_d"
-#else
-#define PYD_DEBUG_SUFFIX ""
-#endif
-
-#ifdef PYD_PLATFORM_TAG
-#define PYD_TAGGED_SUFFIX PYD_DEBUG_SUFFIX ".cp" Py_STRINGIFY(PY_MAJOR_VERSION) Py_STRINGIFY(PY_MINOR_VERSION) "-" PYD_PLATFORM_TAG ".pyd"
-#else
-#define PYD_TAGGED_SUFFIX PYD_DEBUG_SUFFIX ".cp" Py_STRINGIFY(PY_MAJOR_VERSION) Py_STRINGIFY(PY_MINOR_VERSION) ".pyd"
-#endif
-
-#define PYD_UNTAGGED_SUFFIX PYD_DEBUG_SUFFIX ".pyd"
 
 const char *_PyImport_DynLoadFiletab[] = {
     PYD_TAGGED_SUFFIX,
@@ -126,7 +108,7 @@ static char *GetPythonImport (HINSTANCE hModule)
                 char *pch;
 
                 /* Don't claim that python3.dll is a Python DLL. */
-#ifdef _DEBUG
+#ifdef Py_DEBUG
                 if (strcmp(import_name, "python3_d.dll") == 0) {
 #else
                 if (strcmp(import_name, "python3.dll") == 0) {
@@ -138,7 +120,7 @@ static char *GetPythonImport (HINSTANCE hModule)
                 /* Ensure python prefix is followed only
                    by numbers to the end of the basename */
                 pch = import_name + 6;
-#ifdef _DEBUG
+#ifdef Py_DEBUG
                 while (*pch && pch[0] != '_' && pch[1] != 'd' && pch[2] != '.') {
 #else
                 while (*pch && *pch != '.') {
@@ -318,7 +300,7 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
             char buffer[256];
 
             PyOS_snprintf(buffer, sizeof(buffer),
-#ifdef _DEBUG
+#ifdef Py_DEBUG
                           "python%d%d_d.dll",
 #else
                           "python%d%d.dll",

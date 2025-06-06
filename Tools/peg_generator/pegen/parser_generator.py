@@ -1,3 +1,4 @@
+import sys
 import ast
 import contextlib
 import re
@@ -41,7 +42,7 @@ from pegen.grammar import (
 
 
 class RuleCollectorVisitor(GrammarVisitor):
-    """Visitor that invokes a provieded callmaker visitor with just the NamedItem nodes"""
+    """Visitor that invokes a provided callmaker visitor with just the NamedItem nodes"""
 
     def __init__(self, rules: Dict[str, Rule], callmakervisitor: GrammarVisitor) -> None:
         self.rulses = rules
@@ -75,6 +76,16 @@ class RuleCheckingVisitor(GrammarVisitor):
     def __init__(self, rules: Dict[str, Rule], tokens: Set[str]):
         self.rules = rules
         self.tokens = tokens
+        # If python < 3.12 add the virtual fstring tokens
+        if sys.version_info < (3, 12):
+            self.tokens.add("FSTRING_START")
+            self.tokens.add("FSTRING_END")
+            self.tokens.add("FSTRING_MIDDLE")
+        # If python < 3.14 add the virtual tstring tokens
+        if sys.version_info < (3, 14, 0, 'beta', 1):
+            self.tokens.add("TSTRING_START")
+            self.tokens.add("TSTRING_END")
+            self.tokens.add("TSTRING_MIDDLE")
 
     def visit_NameLeaf(self, node: NameLeaf) -> None:
         if node.value not in self.rules and node.value not in self.tokens:
@@ -87,7 +98,6 @@ class RuleCheckingVisitor(GrammarVisitor):
 
 
 class ParserGenerator:
-
     callmakervisitor: GrammarVisitor
 
     def __init__(self, grammar: Grammar, tokens: Set[str], file: Optional[IO[Text]]):
@@ -168,7 +178,7 @@ class ParserGenerator:
         self.keyword_counter += 1
         return self.keyword_counter
 
-    def artifical_rule_from_rhs(self, rhs: Rhs) -> str:
+    def artificial_rule_from_rhs(self, rhs: Rhs) -> str:
         self.counter += 1
         name = f"_tmp_{self.counter}"  # TODO: Pick a nicer name.
         self.all_rules[name] = Rule(name, None, rhs)
@@ -184,9 +194,7 @@ class ParserGenerator:
         self.all_rules[name] = Rule(name, None, Rhs([Alt([NamedItem(None, node)])]))
         return name
 
-    def artifical_rule_from_gather(self, node: Gather) -> str:
-        self.counter += 1
-        name = f"_gather_{self.counter}"
+    def artificial_rule_from_gather(self, node: Gather) -> str:
         self.counter += 1
         extra_function_name = f"_loop0_{self.counter}"
         extra_function_alt = Alt(
@@ -198,6 +206,8 @@ class ParserGenerator:
             None,
             Rhs([extra_function_alt]),
         )
+        self.counter += 1
+        name = f"_gather_{self.counter}"
         alt = Alt(
             [NamedItem("elem", node.node), NamedItem("seq", NameLeaf(extra_function_name))],
         )

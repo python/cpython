@@ -1,3 +1,0 @@
-Change the internal offset distinguishing yield and return target addresses,
-so that the instruction pointer is correct for exception handling and other
-stack unwinding.

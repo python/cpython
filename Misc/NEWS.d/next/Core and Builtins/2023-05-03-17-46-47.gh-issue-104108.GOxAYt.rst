@@ -1,6 +1,0 @@
-Multi-phase init extension modules may now indicate whether or not they
-actually support multiple interpreters.  By default such modules are
-expected to support use in multiple interpreters.  In the uncommon case that
-one does not, it may use the new ``Py_mod_multiple_interpreters`` module def
-slot.  A value of ``0`` means the module does not support them. ``1`` means
-it does.  The default is ``1``.

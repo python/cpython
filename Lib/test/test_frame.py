@@ -1,10 +1,9 @@
-import gc
+import copy
 import operator
 import re
 import sys
 import textwrap
 import threading
-import types
 import unittest
 import weakref
 try:
@@ -12,9 +11,11 @@ try:
 except ImportError:
     _testcapi = None
 
+from collections.abc import Mapping
 from test import support
-from test.support import threading_helper
+from test.support import import_helper, threading_helper
 from test.support.script_helper import assert_python_ok
+from test import mapping_tests
 
 
 class ClearTest(unittest.TestCase):
@@ -55,6 +56,27 @@ class ClearTest(unittest.TestCase):
         # The reference was released by .clear()
         self.assertIs(None, wr())
 
+    def test_clear_locals_after_f_locals_access(self):
+        # see gh-113939
+        class C:
+            pass
+
+        wr = None
+        def inner():
+            nonlocal wr
+            c = C()
+            wr = weakref.ref(c)
+            1/0
+
+        try:
+            inner()
+        except ZeroDivisionError as exc:
+            support.gc_collect()
+            self.assertIsNotNone(wr())
+            exc.__traceback__.tb_next.tb_frame.clear()
+            support.gc_collect()
+            self.assertIsNone(wr())
+
     def test_clear_does_not_clear_specials(self):
         class C:
             pass
@@ -80,9 +102,11 @@ class ClearTest(unittest.TestCase):
         gen = g()
         next(gen)
         self.assertFalse(endly)
-        # Clearing the frame closes the generator
-        gen.gi_frame.clear()
-        self.assertTrue(endly)
+
+        # Cannot clear a suspended frame
+        with self.assertRaisesRegex(RuntimeError, r'suspended frame'):
+            gen.gi_frame.clear()
+        self.assertFalse(endly)
 
     def test_clear_executing(self):
         # Attempting to clear an executing frame is forbidden.
@@ -114,9 +138,10 @@ class ClearTest(unittest.TestCase):
         gen = g()
         f = next(gen)
         self.assertFalse(endly)
-        # Clearing the frame closes the generator
-        f.clear()
-        self.assertTrue(endly)
+        # Cannot clear a suspended frame
+        with self.assertRaisesRegex(RuntimeError, 'suspended frame'):
+            f.clear()
+        self.assertFalse(endly)
 
     def test_lineno_with_tracing(self):
         def record_line():
@@ -174,14 +199,6 @@ class FrameAttrsTest(unittest.TestCase):
                 tb = tb.tb_next
         return frames
 
-    def test_locals(self):
-        f, outer, inner = self.make_frames()
-        outer_locals = outer.f_locals
-        self.assertIsInstance(outer_locals.pop('inner'), types.FunctionType)
-        self.assertEqual(outer_locals, {'x': 5, 'y': 6})
-        inner_locals = inner.f_locals
-        self.assertEqual(inner_locals, {'x': 5, 'z': 7})
-
     def test_clear_locals(self):
         # Test f_locals after clear() (issue #21897)
         f, outer, inner = self.make_frames()
@@ -193,8 +210,8 @@ class FrameAttrsTest(unittest.TestCase):
     def test_locals_clear_locals(self):
         # Test f_locals before and after clear() (to exercise caching)
         f, outer, inner = self.make_frames()
-        outer.f_locals
-        inner.f_locals
+        self.assertNotEqual(outer.f_locals, {})
+        self.assertNotEqual(inner.f_locals, {})
         outer.clear()
         inner.clear()
         self.assertEqual(outer.f_locals, {})
@@ -204,6 +221,56 @@ class FrameAttrsTest(unittest.TestCase):
         f, _, _ = self.make_frames()
         with self.assertRaises(AttributeError):
             del f.f_lineno
+
+    def test_f_generator(self):
+        # Test f_generator in different contexts.
+
+        def t0():
+            def nested():
+                frame = sys._getframe()
+                return frame.f_generator
+
+            def gen():
+                yield nested()
+
+            g = gen()
+            try:
+                return next(g)
+            finally:
+                g.close()
+
+        def t1():
+            frame = sys._getframe()
+            return frame.f_generator
+
+        def t2():
+            frame = sys._getframe()
+            yield frame.f_generator
+
+        async def t3():
+            frame = sys._getframe()
+            return frame.f_generator
+
+        # For regular functions f_generator is None
+        self.assertIsNone(t0())
+        self.assertIsNone(t1())
+
+        # For generators f_generator is equal to self
+        g = t2()
+        try:
+            frame_g = next(g)
+            self.assertIs(g, frame_g)
+        finally:
+            g.close()
+
+        # Ditto for coroutines
+        c = t3()
+        try:
+            c.send(None)
+        except StopIteration as ex:
+            self.assertIs(ex.value, c)
+        else:
+            raise AssertionError('coroutine did not exit')
 
 
 class ReprTest(unittest.TestCase):
@@ -245,6 +312,404 @@ class ReprTest(unittest.TestCase):
                          r"^<frame at 0x[0-9a-fA-F]+, file %s, line %d, code inner>$"
                          % (file_repr, offset + 5))
 
+class TestFrameLocals(unittest.TestCase):
+    def test_scope(self):
+        class A:
+            x = 1
+            sys._getframe().f_locals['x'] = 2
+            sys._getframe().f_locals['y'] = 2
+
+        self.assertEqual(A.x, 2)
+        self.assertEqual(A.y, 2)
+
+        def f():
+            x = 1
+            sys._getframe().f_locals['x'] = 2
+            sys._getframe().f_locals['y'] = 2
+            self.assertEqual(x, 2)
+            self.assertEqual(locals()['y'], 2)
+        f()
+
+    def test_closure(self):
+        x = 1
+        y = 2
+
+        def f():
+            z = x + y
+            d = sys._getframe().f_locals
+            self.assertEqual(d['x'], 1)
+            self.assertEqual(d['y'], 2)
+            d['x'] = 2
+            d['y'] = 3
+
+        f()
+        self.assertEqual(x, 2)
+        self.assertEqual(y, 3)
+
+    def test_closure_with_inline_comprehension(self):
+        lambda: k
+        k = 1
+        lst = [locals() for k in [0]]
+        self.assertEqual(lst[0]['k'], 0)
+
+    def test_as_dict(self):
+        x = 1
+        y = 2
+        d = sys._getframe().f_locals
+        # self, x, y, d
+        self.assertEqual(len(d), 4)
+        self.assertIs(d['d'], d)
+        self.assertEqual(set(d.keys()), set(['x', 'y', 'd', 'self']))
+        self.assertEqual(len(d.values()), 4)
+        self.assertIn(1, d.values())
+        self.assertEqual(len(d.items()), 4)
+        self.assertIn(('x', 1), d.items())
+        self.assertEqual(d.__getitem__('x'), 1)
+        d.__setitem__('x', 2)
+        self.assertEqual(d['x'], 2)
+        self.assertEqual(d.get('x'), 2)
+        self.assertIs(d.get('non_exist', None), None)
+        self.assertEqual(d.__len__(), 4)
+        self.assertEqual(set([key for key in d]), set(['x', 'y', 'd', 'self']))
+        self.assertIn('x', d)
+        self.assertTrue(d.__contains__('x'))
+
+        self.assertEqual(reversed(d), list(reversed(d.keys())))
+
+        d.update({'x': 3, 'z': 4})
+        self.assertEqual(d['x'], 3)
+        self.assertEqual(d['z'], 4)
+
+        with self.assertRaises(TypeError):
+            d.update([1, 2])
+
+        self.assertEqual(d.setdefault('x', 5), 3)
+        self.assertEqual(d.setdefault('new', 5), 5)
+        self.assertEqual(d['new'], 5)
+
+        with self.assertRaises(KeyError):
+            d['non_exist']
+
+    def test_as_number(self):
+        x = 1
+        y = 2
+        d = sys._getframe().f_locals
+        self.assertIn('z', d | {'z': 3})
+        d |= {'z': 3}
+        self.assertEqual(d['z'], 3)
+        d |= {'y': 3}
+        self.assertEqual(d['y'], 3)
+        with self.assertRaises(TypeError):
+            d |= 3
+        with self.assertRaises(TypeError):
+            _ = d | [3]
+
+    def test_non_string_key(self):
+        d = sys._getframe().f_locals
+        d[1] = 2
+        self.assertEqual(d[1], 2)
+
+    def test_write_with_hidden(self):
+        def f():
+            f_locals = [sys._getframe().f_locals for b in [0]][0]
+            f_locals['b'] = 2
+            f_locals['c'] = 3
+            self.assertEqual(b, 2)
+            self.assertEqual(c, 3)
+            b = 0
+            c = 0
+        f()
+
+    def test_local_objects(self):
+        o = object()
+        k = '.'.join(['a', 'b', 'c'])
+        f_locals = sys._getframe().f_locals
+        f_locals['o'] = f_locals['k']
+        self.assertEqual(o, 'a.b.c')
+
+    def test_copy(self):
+        x = 0
+        d = sys._getframe().f_locals
+        d_copy = d.copy()
+        self.assertIsInstance(d_copy, dict)
+        self.assertEqual(d_copy['x'], 0)
+        d_copy['x'] = 1
+        self.assertEqual(x, 0)
+
+    def test_update_with_self(self):
+        def f():
+            f_locals = sys._getframe().f_locals
+            f_locals.update(f_locals)
+            f_locals.update(f_locals)
+            f_locals.update(f_locals)
+        f()
+
+    def test_repr(self):
+        x = 1
+        # Introduce a reference cycle
+        frame = sys._getframe()
+        self.assertEqual(repr(frame.f_locals), repr(dict(frame.f_locals)))
+
+    def test_delete(self):
+        x = 1
+        d = sys._getframe().f_locals
+
+        # This needs to be tested before f_extra_locals is created
+        with self.assertRaisesRegex(KeyError, 'non_exist'):
+            del d['non_exist']
+
+        with self.assertRaises(KeyError):
+            d.pop('non_exist')
+
+        with self.assertRaisesRegex(ValueError, 'local variables'):
+            del d['x']
+
+        with self.assertRaises(AttributeError):
+            d.clear()
+
+        with self.assertRaises(ValueError):
+            d.pop('x')
+
+        with self.assertRaises(ValueError):
+            d.pop('x', None)
+
+        # 'm', 'n' is stored in f_extra_locals
+        d['m'] = 1
+        d['n'] = 1
+
+        with self.assertRaises(KeyError):
+            d.pop('non_exist')
+
+        del d['m']
+        self.assertEqual(d.pop('n'), 1)
+
+        self.assertNotIn('m', d)
+        self.assertNotIn('n', d)
+
+        self.assertEqual(d.pop('n', 2), 2)
+
+    @support.cpython_only
+    def test_sizeof(self):
+        proxy = sys._getframe().f_locals
+        support.check_sizeof(self, proxy, support.calcobjsize("P"))
+
+    def test_unsupport(self):
+        x = 1
+        d = sys._getframe().f_locals
+        with self.assertRaises(TypeError):
+            copy.copy(d)
+
+        with self.assertRaises(TypeError):
+            copy.deepcopy(d)
+
+    def test_is_mapping(self):
+        x = 1
+        d = sys._getframe().f_locals
+        self.assertIsInstance(d, Mapping)
+        match d:
+            case {"x": value}:
+                self.assertEqual(value, 1)
+                kind = "mapping"
+            case _:
+                kind = "other"
+        self.assertEqual(kind, "mapping")
+
+    def _x_stringlikes(self):
+        class StringSubclass(str):
+            pass
+
+        class ImpostorX:
+            def __hash__(self):
+                return hash('x')
+
+            def __eq__(self, other):
+                return other == 'x'
+
+        return StringSubclass('x'), ImpostorX(), 'x'
+
+    def test_proxy_key_stringlikes_overwrite(self):
+        def f(obj):
+            x = 1
+            proxy = sys._getframe().f_locals
+            proxy[obj] = 2
+            return (
+                list(proxy.keys()),
+                dict(proxy),
+                proxy
+            )
+
+        for obj in self._x_stringlikes():
+            with self.subTest(cls=type(obj).__name__):
+
+                keys_snapshot, proxy_snapshot, proxy = f(obj)
+                expected_keys = ['obj', 'x', 'proxy']
+                expected_dict = {'obj': 'x', 'x': 2, 'proxy': proxy}
+                self.assertEqual(proxy.keys(),  expected_keys)
+                self.assertEqual(proxy, expected_dict)
+                self.assertEqual(keys_snapshot,  expected_keys)
+                self.assertEqual(proxy_snapshot, expected_dict)
+
+    def test_proxy_key_stringlikes_ftrst_write(self):
+        def f(obj):
+            proxy = sys._getframe().f_locals
+            proxy[obj] = 2
+            self.assertEqual(x, 2)
+            x = 1
+
+        for obj in self._x_stringlikes():
+            with self.subTest(cls=type(obj).__name__):
+                f(obj)
+
+    def test_proxy_key_unhashables(self):
+        class StringSubclass(str):
+            __hash__ = None
+
+        class ObjectSubclass:
+            __hash__ = None
+
+        proxy = sys._getframe().f_locals
+
+        for obj in StringSubclass('x'), ObjectSubclass():
+            with self.subTest(cls=type(obj).__name__):
+                with self.assertRaises(TypeError):
+                    proxy[obj]
+                with self.assertRaises(TypeError):
+                    proxy[obj] = 0
+
+    def test_constructor(self):
+        FrameLocalsProxy = type([sys._getframe().f_locals
+                                 for x in range(1)][0])
+        self.assertEqual(FrameLocalsProxy.__name__, 'FrameLocalsProxy')
+
+        def make_frame():
+            x = 1
+            y = 2
+            return sys._getframe()
+
+        proxy = FrameLocalsProxy(make_frame())
+        self.assertEqual(proxy, {'x': 1, 'y': 2})
+
+        # constructor expects 1 frame argument
+        with self.assertRaises(TypeError):
+            FrameLocalsProxy()     # no arguments
+        with self.assertRaises(TypeError):
+            FrameLocalsProxy(123)  # wrong type
+        with self.assertRaises(TypeError):
+            FrameLocalsProxy(frame=sys._getframe())  # no keyword arguments
+
+    def test_overwrite_locals(self):
+        # Verify we do not crash if we overwrite a local passed as an argument
+        # from an ancestor in the call stack.
+        def f():
+            xs = [1, 2, 3]
+            ys = [4, 5, 6]
+            return g(xs)
+
+        def g(xs):
+            f = sys._getframe()
+            f.f_back.f_locals["xs"] = None
+            f.f_back.f_locals["ys"] = None
+            return xs[1]
+
+        self.assertEqual(f(), 2)
+
+
+class FrameLocalsProxyMappingTests(mapping_tests.TestHashMappingProtocol):
+    """Test that FrameLocalsProxy behaves like a Mapping (with exceptions)"""
+
+    def _f(*args, **kwargs):
+        def _f():
+            return sys._getframe().f_locals
+        return _f()
+    type2test = _f
+
+    @unittest.skipIf(True, 'Locals proxies for different frames never compare as equal')
+    def test_constructor(self):
+        pass
+
+    @unittest.skipIf(True, 'Unlike a mapping: del proxy[key] fails')
+    def test_write(self):
+        pass
+
+    @unittest.skipIf(True, 'Unlike a mapping: no proxy.popitem')
+    def test_popitem(self):
+        pass
+
+    @unittest.skipIf(True, 'Unlike a mapping: no proxy.pop')
+    def test_pop(self):
+        pass
+
+    @unittest.skipIf(True, 'Unlike a mapping: no proxy.clear')
+    def test_clear(self):
+        pass
+
+    @unittest.skipIf(True, 'Unlike a mapping: no proxy.fromkeys')
+    def test_fromkeys(self):
+        pass
+
+    # no del
+    def test_getitem(self):
+        mapping_tests.BasicTestMappingProtocol.test_getitem(self)
+        d = self._full_mapping({'a': 1, 'b': 2})
+        self.assertEqual(d['a'], 1)
+        self.assertEqual(d['b'], 2)
+        d['c'] = 3
+        d['a'] = 4
+        self.assertEqual(d['c'], 3)
+        self.assertEqual(d['a'], 4)
+
+    @unittest.skipIf(True, 'Unlike a mapping: no proxy.update')
+    def test_update(self):
+        pass
+
+    # proxy.copy returns a regular dict
+    def test_copy(self):
+        d = self._full_mapping({1:1, 2:2, 3:3})
+        self.assertEqual(d.copy(), {1:1, 2:2, 3:3})
+        d = self._empty_mapping()
+        self.assertEqual(d.copy(), d)
+        self.assertRaises(TypeError, d.copy, None)
+
+        self.assertIsInstance(d.copy(), dict)
+
+    @unittest.skipIf(True, 'Locals proxies for different frames never compare as equal')
+    def test_eq(self):
+        pass
+
+
+class TestFrameCApi(unittest.TestCase):
+    def test_basic(self):
+        x = 1
+        ctypes = import_helper.import_module('ctypes')
+        PyEval_GetFrameLocals = ctypes.pythonapi.PyEval_GetFrameLocals
+        PyEval_GetFrameLocals.restype = ctypes.py_object
+        frame_locals = PyEval_GetFrameLocals()
+        self.assertTrue(type(frame_locals), dict)
+        self.assertEqual(frame_locals['x'], 1)
+        frame_locals['x'] = 2
+        self.assertEqual(x, 1)
+
+        PyEval_GetFrameGlobals = ctypes.pythonapi.PyEval_GetFrameGlobals
+        PyEval_GetFrameGlobals.restype = ctypes.py_object
+        frame_globals = PyEval_GetFrameGlobals()
+        self.assertTrue(type(frame_globals), dict)
+        self.assertIs(frame_globals, globals())
+
+        PyEval_GetFrameBuiltins = ctypes.pythonapi.PyEval_GetFrameBuiltins
+        PyEval_GetFrameBuiltins.restype = ctypes.py_object
+        frame_builtins = PyEval_GetFrameBuiltins()
+        self.assertEqual(frame_builtins, __builtins__)
+
+        PyFrame_GetLocals = ctypes.pythonapi.PyFrame_GetLocals
+        PyFrame_GetLocals.argtypes = [ctypes.py_object]
+        PyFrame_GetLocals.restype = ctypes.py_object
+        frame = sys._getframe()
+        f_locals = PyFrame_GetLocals(frame)
+        self.assertTrue(f_locals['x'], 1)
+        f_locals['x'] = 2
+        self.assertEqual(x, 2)
+
+
 class TestIncompleteFrameAreInvisible(unittest.TestCase):
 
     def test_issue95818(self):
@@ -268,69 +733,6 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
             gen()
         """)
         assert_python_ok("-c", code)
-
-    @support.cpython_only
-    def test_sneaky_frame_object(self):
-
-        def trace(frame, event, arg):
-            """
-            Don't actually do anything, just force a frame object to be created.
-            """
-
-        def callback(phase, info):
-            """
-            Yo dawg, I heard you like frames, so I'm allocating a frame while
-            you're allocating a frame, so you can have a frame while you have a
-            frame!
-            """
-            nonlocal sneaky_frame_object
-            sneaky_frame_object = sys._getframe().f_back.f_back
-            # We're done here:
-            gc.callbacks.remove(callback)
-
-        def f():
-            while True:
-                yield
-
-        old_threshold = gc.get_threshold()
-        old_callbacks = gc.callbacks[:]
-        old_enabled = gc.isenabled()
-        old_trace = sys.gettrace()
-        try:
-            # Stop the GC for a second while we set things up:
-            gc.disable()
-            # Create a paused generator:
-            g = f()
-            next(g)
-            # Move all objects to the oldest generation, and tell the GC to run
-            # on the *very next* allocation:
-            gc.collect()
-            gc.set_threshold(1, 0, 0)
-            # Okay, so here's the nightmare scenario:
-            # - We're tracing the resumption of a generator, which creates a new
-            #   frame object.
-            # - The allocation of this frame object triggers a collection
-            #   *before* the frame object is actually created.
-            # - During the collection, we request the exact same frame object.
-            #   This test does it with a GC callback, but in real code it would
-            #   likely be a trace function, weakref callback, or finalizer.
-            # - The collection finishes, and the original frame object is
-            #   created. We now have two frame objects fighting over ownership
-            #   of the same interpreter frame!
-            sys.settrace(trace)
-            gc.callbacks.append(callback)
-            sneaky_frame_object = None
-            gc.enable()
-            next(g)
-            # g.gi_frame should be the the frame object from the callback (the
-            # one that was *requested* second, but *created* first):
-            self.assertIs(g.gi_frame, sneaky_frame_object)
-        finally:
-            gc.set_threshold(*old_threshold)
-            gc.callbacks[:] = old_callbacks
-            sys.settrace(old_trace)
-            if old_enabled:
-                gc.enable()
 
     @support.cpython_only
     @threading_helper.requires_working_threading()
@@ -393,51 +795,6 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
             self.assertIs(catcher.unraisable.exc_type, TypeError)
         self.assertIsNone(weak())
 
-@unittest.skipIf(_testcapi is None, 'need _testcapi')
-class TestCAPI(unittest.TestCase):
-    def getframe(self):
-        return sys._getframe()
-
-    def test_frame_getters(self):
-        frame = self.getframe()
-        self.assertEqual(frame.f_locals, _testcapi.frame_getlocals(frame))
-        self.assertIs(frame.f_globals, _testcapi.frame_getglobals(frame))
-        self.assertIs(frame.f_builtins, _testcapi.frame_getbuiltins(frame))
-        self.assertEqual(frame.f_lasti, _testcapi.frame_getlasti(frame))
-
-    def test_getvar(self):
-        current_frame = sys._getframe()
-        x = 1
-        self.assertEqual(_testcapi.frame_getvar(current_frame, "x"), 1)
-        self.assertEqual(_testcapi.frame_getvarstring(current_frame, b"x"), 1)
-        with self.assertRaises(NameError):
-            _testcapi.frame_getvar(current_frame, "y")
-        with self.assertRaises(NameError):
-            _testcapi.frame_getvarstring(current_frame, b"y")
-
-        # wrong name type
-        with self.assertRaises(TypeError):
-            _testcapi.frame_getvar(current_frame, b'x')
-        with self.assertRaises(TypeError):
-            _testcapi.frame_getvar(current_frame, 123)
-
-    def getgenframe(self):
-        yield sys._getframe()
-
-    def test_frame_get_generator(self):
-        gen = self.getgenframe()
-        frame = next(gen)
-        self.assertIs(gen, _testcapi.frame_getgenerator(frame))
-
-    def test_frame_fback_api(self):
-        """Test that accessing `f_back` does not cause a segmentation fault on
-        a frame created with `PyFrame_New` (GH-99110)."""
-        def dummy():
-            pass
-
-        frame = _testcapi.frame_new(dummy.__code__, globals(), locals())
-        # The following line should not cause a segmentation fault.
-        self.assertIsNone(frame.f_back)
 
 if __name__ == "__main__":
     unittest.main()

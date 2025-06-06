@@ -19,7 +19,6 @@ PGO_TESTS = [
     'test_datetime',
     'test_decimal',
     'test_difflib',
-    'test_embed',
     'test_float',
     'test_fstring',
     'test_functools',
@@ -42,15 +41,15 @@ PGO_TESTS = [
     'test_set',
     'test_sqlite3',
     'test_statistics',
+    'test_str',
     'test_struct',
     'test_tabnanny',
     'test_time',
-    'test_unicode',
     'test_xml_etree',
     'test_xml_etree_c',
 ]
 
-def setup_pgo_tests(ns):
-    if not ns.args and not ns.pgo_extended:
+def setup_pgo_tests(cmdline_args, pgo_extended: bool) -> None:
+    if not cmdline_args and not pgo_extended:
         # run default set of tests for PGO training
-        ns.args = PGO_TESTS[:]
+        cmdline_args[:] = PGO_TESTS[:]

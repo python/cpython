@@ -12,41 +12,17 @@ file or a buffer, but they will not let you interact in a more detailed way with
 the interpreter.
 
 Several of these functions accept a start symbol from the grammar as a
-parameter.  The available start symbols are :const:`Py_eval_input`,
-:const:`Py_file_input`, and :const:`Py_single_input`.  These are described
+parameter.  The available start symbols are :c:data:`Py_eval_input`,
+:c:data:`Py_file_input`, and :c:data:`Py_single_input`.  These are described
 following the functions which accept them as parameters.
 
 Note also that several of these functions take :c:expr:`FILE*` parameters.  One
-particular issue which needs to be handled carefully is that the :c:expr:`FILE`
+particular issue which needs to be handled carefully is that the :c:type:`FILE`
 structure for different C libraries can be different and incompatible.  Under
 Windows (at least), it is possible for dynamically linked extensions to actually
 use different libraries, so care should be taken that :c:expr:`FILE*` parameters
 are only passed to these functions if it is certain that they were created by
 the same library that the Python runtime is using.
-
-
-.. c:function:: int Py_Main(int argc, wchar_t **argv)
-
-   The main program for the standard interpreter.  This is made available for
-   programs which embed Python.  The *argc* and *argv* parameters should be
-   prepared exactly as those which are passed to a C program's :c:func:`main`
-   function (converted to wchar_t according to the user's locale).  It is
-   important to note that the argument list may be modified (but the contents of
-   the strings pointed to by the argument list are not). The return value will
-   be ``0`` if the interpreter exits normally (i.e., without an exception),
-   ``1`` if the interpreter exits due to an exception, or ``2`` if the parameter
-   list does not represent a valid Python command line.
-
-   Note that if an otherwise unhandled :exc:`SystemExit` is raised, this
-   function will not return ``1``, but exit the process, as long as
-   :c:member:`PyConfig.inspect` is zero.
-
-
-.. c:function:: int Py_BytesMain(int argc, char **argv)
-
-   Similar to :c:func:`Py_Main` but *argv* is an array of bytes strings.
-
-   .. versionadded:: 3.8
 
 
 .. c:function:: int PyRun_AnyFile(FILE *fp, const char *filename)
@@ -167,6 +143,10 @@ the same library that the Python runtime is using.
    event loops, as done in the :file:`Modules/_tkinter.c` in the
    Python source code.
 
+   .. versionchanged:: 3.12
+      This function is only called from the
+      :ref:`main interpreter <sub-interpreter-support>`.
+
 
 .. c:var:: char* (*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *)
 
@@ -186,6 +166,10 @@ the same library that the Python runtime is using.
       The result must be allocated by :c:func:`PyMem_RawMalloc` or
       :c:func:`PyMem_RawRealloc`, instead of being allocated by
       :c:func:`PyMem_Malloc` or :c:func:`PyMem_Realloc`.
+
+   .. versionchanged:: 3.12
+      This function is only called from the
+      :ref:`main interpreter <sub-interpreter-support>`.
 
 .. c:function:: PyObject* PyRun_String(const char *str, int start, PyObject *globals, PyObject *locals)
 
@@ -248,8 +232,8 @@ the same library that the Python runtime is using.
 
    Parse and compile the Python source code in *str*, returning the resulting code
    object.  The start token is given by *start*; this can be used to constrain the
-   code which can be compiled and should be :const:`Py_eval_input`,
-   :const:`Py_file_input`, or :const:`Py_single_input`.  The filename specified by
+   code which can be compiled and should be :c:data:`Py_eval_input`,
+   :c:data:`Py_file_input`, or :c:data:`Py_single_input`.  The filename specified by
    *filename* is used to construct the code object and may appear in tracebacks or
    :exc:`SyntaxError` exception messages.  This returns ``NULL`` if the code
    cannot be parsed or compiled.
@@ -314,7 +298,7 @@ the same library that the Python runtime is using.
 
 .. c:var:: int Py_eval_input
 
-   .. index:: single: Py_CompileString()
+   .. index:: single: Py_CompileString (C function)
 
    The start symbol from the Python grammar for isolated expressions; for use with
    :c:func:`Py_CompileString`.
@@ -322,7 +306,7 @@ the same library that the Python runtime is using.
 
 .. c:var:: int Py_file_input
 
-   .. index:: single: Py_CompileString()
+   .. index:: single: Py_CompileString (C function)
 
    The start symbol from the Python grammar for sequences of statements as read
    from a file or other source; for use with :c:func:`Py_CompileString`.  This is
@@ -331,7 +315,7 @@ the same library that the Python runtime is using.
 
 .. c:var:: int Py_single_input
 
-   .. index:: single: Py_CompileString()
+   .. index:: single: Py_CompileString (C function)
 
    The start symbol from the Python grammar for a single statement; for use with
    :c:func:`Py_CompileString`. This is the symbol used for the interactive
@@ -345,7 +329,7 @@ the same library that the Python runtime is using.
    executed, it is passed as ``PyCompilerFlags *flags``.  In this case, ``from
    __future__ import`` can modify *flags*.
 
-   Whenever ``PyCompilerFlags *flags`` is ``NULL``, :attr:`cf_flags` is treated as
+   Whenever ``PyCompilerFlags *flags`` is ``NULL``, :c:member:`~PyCompilerFlags.cf_flags` is treated as
    equal to ``0``, and any modification due to ``from __future__ import`` is
    discarded.
 
@@ -359,13 +343,25 @@ the same library that the Python runtime is using.
       initialized to ``PY_MINOR_VERSION``.
 
       The field is ignored by default, it is used if and only if
-      ``PyCF_ONLY_AST`` flag is set in *cf_flags*.
+      ``PyCF_ONLY_AST`` flag is set in :c:member:`~PyCompilerFlags.cf_flags`.
 
    .. versionchanged:: 3.8
       Added *cf_feature_version* field.
 
+   The available compiler flags are accessible as macros:
 
-.. c:var:: int CO_FUTURE_DIVISION
+   .. c:namespace:: NULL
 
-   This bit can be set in *flags* to cause division operator ``/`` to be
-   interpreted as "true division" according to :pep:`238`.
+   .. c:macro:: PyCF_ALLOW_TOP_LEVEL_AWAIT
+                PyCF_ONLY_AST
+                PyCF_OPTIMIZED_AST
+                PyCF_TYPE_COMMENTS
+
+      See :ref:`compiler flags <ast-compiler-flags>` in documentation of the
+      :py:mod:`!ast` Python module, which exports these constants under
+      the same names.
+
+   .. c:var:: int CO_FUTURE_DIVISION
+
+      This bit can be set in *flags* to cause division operator ``/`` to be
+      interpreted as "true division" according to :pep:`238`.

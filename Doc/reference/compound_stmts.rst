@@ -154,15 +154,15 @@ The :keyword:`for` statement is used to iterate over the elements of a sequence
 (such as a string, tuple or list) or other iterable object:
 
 .. productionlist:: python-grammar
-   for_stmt: "for" `target_list` "in" `starred_list` ":" `suite`
+   for_stmt: "for" `target_list` "in" `starred_expression_list` ":" `suite`
            : ["else" ":" `suite`]
 
-The ``starred_list`` expression is evaluated once; it should yield an
-:term:`iterable` object.  An :term:`iterator` is created for that iterable.
-The first item provided
-by the iterator is then assigned to the target list using the standard
-rules for assignments (see :ref:`assignment`), and the suite is executed.  This
-repeats for each item provided by the iterator.  When the iterator is exhausted,
+The :token:`~python-grammar:starred_expression_list` expression is evaluated
+once; it should yield an :term:`iterable` object. An :term:`iterator` is
+created for that iterable. The first item provided by the iterator is then
+assigned to the target list using the standard rules for assignments
+(see :ref:`assignment`), and the suite is executed. This repeats for each
+item provided by the iterator. When the iterator is exhausted,
 the suite in the :keyword:`!else` clause,
 if present, is executed, and the loop terminates.
 
@@ -232,6 +232,8 @@ Additional information on exceptions can be found in section :ref:`exceptions`,
 and information on using the :keyword:`raise` statement to generate exceptions
 may be found in section :ref:`raise`.
 
+.. versionchanged:: 3.14
+   Support for optionally dropping grouping parentheses when using multiple exception types. See :pep:`758`.
 
 .. _except:
 
@@ -245,13 +247,13 @@ handler is started. This search inspects the :keyword:`!except` clauses in turn
 until one is found that matches the exception.
 An expression-less :keyword:`!except` clause, if present, must be last;
 it matches any exception.
-For an :keyword:`!except` clause with an expression,
-that expression is evaluated, and the clause matches the exception
-if the resulting object is "compatible" with the exception.  An object is
-compatible with an exception if the object is the class or a
-:term:`non-virtual base class <abstract base class>` of the exception object,
-or a tuple containing an item that is the class or a non-virtual base class
-of the exception object.
+
+For an :keyword:`!except` clause with an expression, the
+expression must evaluate to an exception type or a tuple of exception types. Parentheses
+can be dropped if multiple exception types are provided and the ``as`` clause is not used.
+The raised exception matches an :keyword:`!except` clause whose expression evaluates
+to the class or a :term:`non-virtual base class <abstract base class>` of the exception object,
+or to a tuple that contains such a class.
 
 If no :keyword:`!except` clause matches the exception,
 the search for an exception handler
@@ -378,8 +380,10 @@ exception group with an empty message string. ::
    ...
    ExceptionGroup('', (BlockingIOError()))
 
-An :keyword:`!except*` clause must have a matching type,
-and this type cannot be a subclass of :exc:`BaseExceptionGroup`.
+An :keyword:`!except*` clause must have a matching expression; it cannot be ``except*:``.
+Furthermore, this expression cannot contain exception group types, because that would
+have ambiguous semantics.
+
 It is not possible to mix :keyword:`except` and :keyword:`!except*`
 in the same :keyword:`try`.
 :keyword:`break`, :keyword:`continue` and :keyword:`return`
@@ -419,16 +423,16 @@ is executed.  If there is a saved exception it is re-raised at the end of the
 :keyword:`!finally` clause.  If the :keyword:`!finally` clause raises another
 exception, the saved exception is set as the context of the new exception.
 If the :keyword:`!finally` clause executes a :keyword:`return`, :keyword:`break`
-or :keyword:`continue` statement, the saved exception is discarded::
+or :keyword:`continue` statement, the saved exception is discarded. For example,
+this function returns 42.
 
-   >>> def f():
-   ...     try:
-   ...         1/0
-   ...     finally:
-   ...         return 42
-   ...
-   >>> f()
-   42
+.. code-block::
+
+   def f():
+       try:
+           1/0
+       finally:
+           return 42
 
 The exception information is not available to the program during execution of
 the :keyword:`!finally` clause.
@@ -445,20 +449,24 @@ statement, the :keyword:`!finally` clause is also executed 'on the way out.'
 The return value of a function is determined by the last :keyword:`return`
 statement executed.  Since the :keyword:`!finally` clause always executes, a
 :keyword:`!return` statement executed in the :keyword:`!finally` clause will
-always be the last one executed::
+always be the last one executed. The following function returns 'finally'.
 
-   >>> def foo():
-   ...     try:
-   ...         return 'try'
-   ...     finally:
-   ...         return 'finally'
-   ...
-   >>> foo()
-   'finally'
+.. code-block::
+
+   def foo():
+       try:
+           return 'try'
+       finally:
+           return 'finally'
 
 .. versionchanged:: 3.8
    Prior to Python 3.8, a :keyword:`continue` statement was illegal in the
    :keyword:`!finally` clause due to a problem with the implementation.
+
+.. versionchanged:: 3.14
+   The compiler emits a :exc:`SyntaxWarning` when a :keyword:`return`,
+   :keyword:`break` or :keyword:`continue` appears in a :keyword:`!finally`
+   block (see :pep:`765`).
 
 
 .. _with:
@@ -489,37 +497,37 @@ The execution of the :keyword:`with` statement with one "item" proceeds as follo
 #. The context expression (the expression given in the
    :token:`~python-grammar:with_item`) is evaluated to obtain a context manager.
 
-#. The context manager's :meth:`__enter__` is loaded for later use.
+#. The context manager's :meth:`~object.__enter__` is loaded for later use.
 
-#. The context manager's :meth:`__exit__` is loaded for later use.
+#. The context manager's :meth:`~object.__exit__` is loaded for later use.
 
-#. The context manager's :meth:`__enter__` method is invoked.
+#. The context manager's :meth:`~object.__enter__` method is invoked.
 
 #. If a target was included in the :keyword:`with` statement, the return value
-   from :meth:`__enter__` is assigned to it.
+   from :meth:`~object.__enter__` is assigned to it.
 
    .. note::
 
-      The :keyword:`with` statement guarantees that if the :meth:`__enter__`
-      method returns without an error, then :meth:`__exit__` will always be
+      The :keyword:`with` statement guarantees that if the :meth:`~object.__enter__`
+      method returns without an error, then :meth:`~object.__exit__` will always be
       called. Thus, if an error occurs during the assignment to the target list,
       it will be treated the same as an error occurring within the suite would
       be. See step 7 below.
 
 #. The suite is executed.
 
-#. The context manager's :meth:`__exit__` method is invoked.  If an exception
+#. The context manager's :meth:`~object.__exit__` method is invoked.  If an exception
    caused the suite to be exited, its type, value, and traceback are passed as
-   arguments to :meth:`__exit__`. Otherwise, three :const:`None` arguments are
+   arguments to :meth:`~object.__exit__`. Otherwise, three :const:`None` arguments are
    supplied.
 
    If the suite was exited due to an exception, and the return value from the
-   :meth:`__exit__` method was false, the exception is reraised.  If the return
+   :meth:`~object.__exit__` method was false, the exception is reraised.  If the return
    value was true, the exception is suppressed, and execution continues with the
    statement following the :keyword:`with` statement.
 
    If the suite was exited for any reason other than an exception, the return
-   value from :meth:`__exit__` is ignored, and execution proceeds at the normal
+   value from :meth:`~object.__exit__` is ignored, and execution proceeds at the normal
    location for the kind of exit that was taken.
 
 The following code::
@@ -642,14 +650,14 @@ Here's an overview of the logical flow of a match statement:
    specified below.  **Name bindings made during a successful pattern match
    outlive the executed block and can be used after the match statement**.
 
-      .. note::
+   .. note::
 
-         During failed pattern matches, some subpatterns may succeed.  Do not
-         rely on bindings being made for a failed match.  Conversely, do not
-         rely on variables remaining unchanged after a failed match.  The exact
-         behavior is dependent on implementation and may vary.  This is an
-         intentional decision made to allow different implementations to add
-         optimizations.
+      During failed pattern matches, some subpatterns may succeed.  Do not
+      rely on bindings being made for a failed match.  Conversely, do not
+      rely on variables remaining unchanged after a failed match.  The exact
+      behavior is dependent on implementation and may vary.  This is an
+      intentional decision made to allow different implementations to add
+      optimizations.
 
 #. If the pattern succeeds, the corresponding guard (if present) is evaluated. In
    this case all name bindings are guaranteed to have happened.
@@ -840,7 +848,7 @@ A literal pattern corresponds to most
                   : | "None"
                   : | "True"
                   : | "False"
-                  : | `signed_number`: NUMBER | "-" NUMBER
+   signed_number: ["-"] NUMBER
 
 The rule ``strings`` and the token ``NUMBER`` are defined in the
 :doc:`standard Python grammar <./grammar>`.  Triple-quoted strings are
@@ -1058,7 +1066,7 @@ subject value:
 .. note:: Key-value pairs are matched using the two-argument form of the mapping
    subject's ``get()`` method.  Matched key-value pairs must already be present
    in the mapping, and not created on-the-fly via :meth:`__missing__` or
-   :meth:`__getitem__`.
+   :meth:`~object.__getitem__`.
 
 In simple terms ``{KEY1: P1, KEY2: P2, ... }`` matches only if all the following
 happens:
@@ -1170,8 +1178,10 @@ In simple terms ``CLS(P1, attr=P2)`` matches only if the following happens:
 * ``isinstance(<subject>, CLS)``
 * convert ``P1`` to a keyword pattern using ``CLS.__match_args__``
 * For each keyword argument ``attr=P2``:
-   * ``hasattr(<subject>, "attr")``
-   * ``P2`` matches ``<subject>.attr``
+
+  * ``hasattr(<subject>, "attr")``
+  * ``P2`` matches ``<subject>.attr``
+
 * ... and so on for the corresponding keyword argument/pattern pair.
 
 .. seealso::
@@ -1206,7 +1216,7 @@ A function definition defines a user-defined function object (see section
 :ref:`types`):
 
 .. productionlist:: python-grammar
-   funcdef: [`decorators`] "def" `funcname` "(" [`parameter_list`] ")"
+   funcdef: [`decorators`] "def" `funcname` [`type_params`] "(" [`parameter_list`] ")"
           : ["->" `expression`] ":" `suite`
    decorators: `decorator`+
    decorator: "@" `assignment_expression` NEWLINE
@@ -1214,9 +1224,12 @@ A function definition defines a user-defined function object (see section
                  :   | `parameter_list_no_posonly`
    parameter_list_no_posonly: `defparameter` ("," `defparameter`)* ["," [`parameter_list_starargs`]]
                             : | `parameter_list_starargs`
-   parameter_list_starargs: "*" [`parameter`] ("," `defparameter`)* ["," ["**" `parameter` [","]]]
-                          : | "**" `parameter` [","]
+   parameter_list_starargs: "*" [`star_parameter`] ("," `defparameter`)* ["," [`parameter_star_kwargs`]]
+                          : | "*" ("," `defparameter`)+ ["," [`parameter_star_kwargs`]]
+                          : | `parameter_star_kwargs`
+   parameter_star_kwargs: "**" `parameter` [","]
    parameter: `identifier` [":" `expression`]
+   star_parameter: `identifier` [":" ["*"] `expression`]
    defparameter: `parameter` ["=" `expression`]
    funcname: `identifier`
 
@@ -1255,6 +1268,16 @@ except that the original function is not temporarily bound to the name ``func``.
    Functions may be decorated with any valid
    :token:`~python-grammar:assignment_expression`. Previously, the grammar was
    much more restrictive; see :pep:`614` for details.
+
+A list of :ref:`type parameters <type-params>` may be given in square brackets
+between the function's name and the opening parenthesis for its parameter list.
+This indicates to static type checkers that the function is generic. At runtime,
+the type parameters can be retrieved from the function's
+:attr:`~function.__type_params__`
+attribute. See :ref:`generic-functions` for more.
+
+.. versionchanged:: 3.12
+   Type parameter lists are new in Python 3.12.
 
 .. index::
    triple: default; parameter; value
@@ -1313,16 +1336,15 @@ and may only be passed by positional arguments.
 
 Parameters may have an :term:`annotation <function annotation>` of the form "``: expression``"
 following the parameter name.  Any parameter may have an annotation, even those of the form
-``*identifier`` or ``**identifier``.  Functions may have "return" annotation of
+``*identifier`` or ``**identifier``. (As a special case, parameters of the form
+``*identifier`` may have an annotation "``: *expression``".) Functions may have "return" annotation of
 the form "``-> expression``" after the parameter list.  These annotations can be
 any valid Python expression.  The presence of annotations does not change the
-semantics of a function.  The annotation values are available as values of
-a dictionary keyed by the parameters' names in the :attr:`__annotations__`
-attribute of the function object.  If the ``annotations`` import from
-:mod:`__future__` is used, annotations are preserved as strings at runtime which
-enables postponed evaluation.  Otherwise, they are evaluated when the function
-definition is executed.  In this case annotations may be evaluated in
-a different order than they appear in the source code.
+semantics of a function. See :ref:`annotations` for more information on annotations.
+
+.. versionchanged:: 3.11
+   Parameters of the form "``*identifier``" may have an annotation
+   "``: *expression``". See :pep:`646`.
 
 .. index:: pair: lambda; expression
 
@@ -1350,12 +1372,15 @@ access the local variables of the function containing the def.  See section
 
    :pep:`526` - Syntax for Variable Annotations
       Ability to type hint variable declarations, including class
-      variables and instance variables
+      variables and instance variables.
 
    :pep:`563` - Postponed Evaluation of Annotations
       Support for forward references within annotations by preserving
       annotations in a string form at runtime instead of eager evaluation.
 
+   :pep:`318` - Decorators for Functions and Methods
+      Function and method decorators were introduced.
+      Class decorators were introduced in :pep:`3129`.
 
 .. _class:
 
@@ -1378,7 +1403,7 @@ Class definitions
 A class definition defines a class object (see section :ref:`types`):
 
 .. productionlist:: python-grammar
-   classdef: [`decorators`] "class" `classname` [`inheritance`] ":" `suite`
+   classdef: [`decorators`] "class" `classname` [`type_params`] [`inheritance`] ":" `suite`
    inheritance: "(" [`argument_list`] ")"
    classname: `identifier`
 
@@ -1406,7 +1431,7 @@ dictionary.  The class name is bound to this class object in the original local
 namespace.
 
 The order in which attributes are defined in the class body is preserved
-in the new class's ``__dict__``.  Note that this is reliable only right
+in the new class's :attr:`~type.__dict__`.  Note that this is reliable only right
 after the class is created and only for classes that were defined using
 the definition syntax.
 
@@ -1433,6 +1458,15 @@ decorators.  The result is then bound to the class name.
    Classes may be decorated with any valid
    :token:`~python-grammar:assignment_expression`. Previously, the grammar was
    much more restrictive; see :pep:`614` for details.
+
+A list of :ref:`type parameters <type-params>` may be given in square brackets
+immediately after the class's name.
+This indicates to static type checkers that the class is generic. At runtime,
+the type parameters can be retrieved from the class's
+:attr:`~type.__type_params__` attribute. See :ref:`generic-classes` for more.
+
+.. versionchanged:: 3.12
+   Type parameter lists are new in Python 3.12.
 
 **Programmer's note:** Variables defined in the class definition are class
 attributes; they are shared by instances.  Instance attributes can be set in a
@@ -1589,6 +1623,287 @@ body of a coroutine function.
       The proposal that made coroutines a proper standalone concept in Python,
       and added supporting syntax.
 
+.. _type-params:
+
+Type parameter lists
+====================
+
+.. versionadded:: 3.12
+
+.. versionchanged:: 3.13
+   Support for default values was added (see :pep:`696`).
+
+.. index::
+   single: type parameters
+
+.. productionlist:: python-grammar
+   type_params: "[" `type_param` ("," `type_param`)* "]"
+   type_param: `typevar` | `typevartuple` | `paramspec`
+   typevar: `identifier` (":" `expression`)? ("=" `expression`)?
+   typevartuple: "*" `identifier` ("=" `expression`)?
+   paramspec: "**" `identifier` ("=" `expression`)?
+
+:ref:`Functions <def>` (including :ref:`coroutines <async def>`),
+:ref:`classes <class>` and :ref:`type aliases <type>` may
+contain a type parameter list::
+
+   def max[T](args: list[T]) -> T:
+       ...
+
+   async def amax[T](args: list[T]) -> T:
+       ...
+
+   class Bag[T]:
+       def __iter__(self) -> Iterator[T]:
+           ...
+
+       def add(self, arg: T) -> None:
+           ...
+
+   type ListOrSet[T] = list[T] | set[T]
+
+Semantically, this indicates that the function, class, or type alias is
+generic over a type variable. This information is primarily used by static
+type checkers, and at runtime, generic objects behave much like their
+non-generic counterparts.
+
+Type parameters are declared in square brackets (``[]``) immediately
+after the name of the function, class, or type alias. The type parameters
+are accessible within the scope of the generic object, but not elsewhere.
+Thus, after a declaration ``def func[T](): pass``, the name ``T`` is not available in
+the module scope. Below, the semantics of generic objects are described
+with more precision. The scope of type parameters is modeled with a special
+function (technically, an :ref:`annotation scope <annotation-scopes>`) that
+wraps the creation of the generic object.
+
+Generic functions, classes, and type aliases have a
+:attr:`~definition.__type_params__` attribute listing their type parameters.
+
+Type parameters come in three kinds:
+
+* :data:`typing.TypeVar`, introduced by a plain name (e.g., ``T``). Semantically, this
+  represents a single type to a type checker.
+* :data:`typing.TypeVarTuple`, introduced by a name prefixed with a single
+  asterisk (e.g., ``*Ts``). Semantically, this stands for a tuple of any
+  number of types.
+* :data:`typing.ParamSpec`, introduced by a name prefixed with two asterisks
+  (e.g., ``**P``). Semantically, this stands for the parameters of a callable.
+
+:data:`typing.TypeVar` declarations can define *bounds* and *constraints* with
+a colon (``:``) followed by an expression. A single expression after the colon
+indicates a bound (e.g. ``T: int``). Semantically, this means
+that the :data:`!typing.TypeVar` can only represent types that are a subtype of
+this bound. A parenthesized tuple of expressions after the colon indicates a
+set of constraints (e.g. ``T: (str, bytes)``). Each member of the tuple should be a
+type (again, this is not enforced at runtime). Constrained type variables can only
+take on one of the types in the list of constraints.
+
+For :data:`!typing.TypeVar`\ s declared using the type parameter list syntax,
+the bound and constraints are not evaluated when the generic object is created,
+but only when the value is explicitly accessed through the attributes ``__bound__``
+and ``__constraints__``. To accomplish this, the bounds or constraints are
+evaluated in a separate :ref:`annotation scope <annotation-scopes>`.
+
+:data:`typing.TypeVarTuple`\ s and :data:`typing.ParamSpec`\ s cannot have bounds
+or constraints.
+
+All three flavors of type parameters can also have a *default value*, which is used
+when the type parameter is not explicitly provided. This is added by appending
+a single equals sign (``=``) followed by an expression. Like the bounds and
+constraints of type variables, the default value is not evaluated when the
+object is created, but only when the type parameter's ``__default__`` attribute
+is accessed. To this end, the default value is evaluated in a separate
+:ref:`annotation scope <annotation-scopes>`. If no default value is specified
+for a type parameter, the ``__default__`` attribute is set to the special
+sentinel object :data:`typing.NoDefault`.
+
+The following example indicates the full set of allowed type parameter declarations::
+
+   def overly_generic[
+      SimpleTypeVar,
+      TypeVarWithDefault = int,
+      TypeVarWithBound: int,
+      TypeVarWithConstraints: (str, bytes),
+      *SimpleTypeVarTuple = (int, float),
+      **SimpleParamSpec = (str, bytearray),
+   ](
+      a: SimpleTypeVar,
+      b: TypeVarWithDefault,
+      c: TypeVarWithBound,
+      d: Callable[SimpleParamSpec, TypeVarWithConstraints],
+      *e: SimpleTypeVarTuple,
+   ): ...
+
+.. _generic-functions:
+
+Generic functions
+-----------------
+
+Generic functions are declared as follows::
+
+   def func[T](arg: T): ...
+
+This syntax is equivalent to::
+
+   annotation-def TYPE_PARAMS_OF_func():
+       T = typing.TypeVar("T")
+       def func(arg: T): ...
+       func.__type_params__ = (T,)
+       return func
+   func = TYPE_PARAMS_OF_func()
+
+Here ``annotation-def`` indicates an :ref:`annotation scope <annotation-scopes>`,
+which is not actually bound to any name at runtime. (One
+other liberty is taken in the translation: the syntax does not go through
+attribute access on the :mod:`typing` module, but creates an instance of
+:data:`typing.TypeVar` directly.)
+
+The annotations of generic functions are evaluated within the annotation scope
+used for declaring the type parameters, but the function's defaults and
+decorators are not.
+
+The following example illustrates the scoping rules for these cases,
+as well as for additional flavors of type parameters::
+
+   @decorator
+   def func[T: int, *Ts, **P](*args: *Ts, arg: Callable[P, T] = some_default):
+       ...
+
+Except for the :ref:`lazy evaluation <lazy-evaluation>` of the
+:class:`~typing.TypeVar` bound, this is equivalent to::
+
+   DEFAULT_OF_arg = some_default
+
+   annotation-def TYPE_PARAMS_OF_func():
+
+       annotation-def BOUND_OF_T():
+           return int
+       # In reality, BOUND_OF_T() is evaluated only on demand.
+       T = typing.TypeVar("T", bound=BOUND_OF_T())
+
+       Ts = typing.TypeVarTuple("Ts")
+       P = typing.ParamSpec("P")
+
+       def func(*args: *Ts, arg: Callable[P, T] = DEFAULT_OF_arg):
+           ...
+
+       func.__type_params__ = (T, Ts, P)
+       return func
+   func = decorator(TYPE_PARAMS_OF_func())
+
+The capitalized names like ``DEFAULT_OF_arg`` are not actually
+bound at runtime.
+
+.. _generic-classes:
+
+Generic classes
+---------------
+
+Generic classes are declared as follows::
+
+   class Bag[T]: ...
+
+This syntax is equivalent to::
+
+   annotation-def TYPE_PARAMS_OF_Bag():
+       T = typing.TypeVar("T")
+       class Bag(typing.Generic[T]):
+           __type_params__ = (T,)
+           ...
+       return Bag
+   Bag = TYPE_PARAMS_OF_Bag()
+
+Here again ``annotation-def`` (not a real keyword) indicates an
+:ref:`annotation scope <annotation-scopes>`, and the name
+``TYPE_PARAMS_OF_Bag`` is not actually bound at runtime.
+
+Generic classes implicitly inherit from :data:`typing.Generic`.
+The base classes and keyword arguments of generic classes are
+evaluated within the type scope for the type parameters,
+and decorators are evaluated outside that scope. This is illustrated
+by this example::
+
+   @decorator
+   class Bag(Base[T], arg=T): ...
+
+This is equivalent to::
+
+   annotation-def TYPE_PARAMS_OF_Bag():
+       T = typing.TypeVar("T")
+       class Bag(Base[T], typing.Generic[T], arg=T):
+           __type_params__ = (T,)
+           ...
+       return Bag
+   Bag = decorator(TYPE_PARAMS_OF_Bag())
+
+.. _generic-type-aliases:
+
+Generic type aliases
+--------------------
+
+The :keyword:`type` statement can also be used to create a generic type alias::
+
+   type ListOrSet[T] = list[T] | set[T]
+
+Except for the :ref:`lazy evaluation <lazy-evaluation>` of the value,
+this is equivalent to::
+
+   annotation-def TYPE_PARAMS_OF_ListOrSet():
+       T = typing.TypeVar("T")
+
+       annotation-def VALUE_OF_ListOrSet():
+           return list[T] | set[T]
+       # In reality, the value is lazily evaluated
+       return typing.TypeAliasType("ListOrSet", VALUE_OF_ListOrSet(), type_params=(T,))
+   ListOrSet = TYPE_PARAMS_OF_ListOrSet()
+
+Here, ``annotation-def`` (not a real keyword) indicates an
+:ref:`annotation scope <annotation-scopes>`. The capitalized names
+like ``TYPE_PARAMS_OF_ListOrSet`` are not actually bound at runtime.
+
+.. _annotations:
+
+Annotations
+===========
+
+.. versionchanged:: 3.14
+   Annotations are now lazily evaluated by default.
+
+Variables and function parameters may carry :term:`annotations <annotation>`,
+created by adding a colon after the name, followed by an expression::
+
+   x: annotation = 1
+   def f(param: annotation): ...
+
+Functions may also carry a return annotation following an arrow::
+
+   def f() -> annotation: ...
+
+Annotations are conventionally used for :term:`type hints <type hint>`, but this
+is not enforced by the language, and in general annotations may contain arbitrary
+expressions. The presence of annotations does not change the runtime semantics of
+the code, except if some mechanism is used that introspects and uses the annotations
+(such as :mod:`dataclasses` or :func:`functools.singledispatch`).
+
+By default, annotations are lazily evaluated in an :ref:`annotation scope <annotation-scopes>`.
+This means that they are not evaluated when the code containing the annotation is evaluated.
+Instead, the interpreter saves information that can be used to evaluate the annotation later
+if requested. The :mod:`annotationlib` module provides tools for evaluating annotations.
+
+If the :ref:`future statement <future>` ``from __future__ import annotations`` is present,
+all annotations are instead stored as strings::
+
+   >>> from __future__ import annotations
+   >>> def f(param: annotation): ...
+   >>> f.__annotations__
+   {'param': 'annotation'}
+
+This future statement will be deprecated and removed in a future version of Python,
+but not before Python 3.13 reaches its end of life (see :pep:`749`).
+When it is used, introspection tools like
+:func:`annotationlib.get_annotations` and :func:`typing.get_type_hints` are
+less likely to be able to resolve annotations at runtime.
+
 
 .. rubric:: Footnotes
 
@@ -1598,37 +1913,37 @@ body of a coroutine function.
 
 .. [#] In pattern matching, a sequence is defined as one of the following:
 
-      * a class that inherits from :class:`collections.abc.Sequence`
-      * a Python class that has been registered as :class:`collections.abc.Sequence`
-      * a builtin class that has its (CPython) :data:`Py_TPFLAGS_SEQUENCE` bit set
-      * a class that inherits from any of the above
+   * a class that inherits from :class:`collections.abc.Sequence`
+   * a Python class that has been registered as :class:`collections.abc.Sequence`
+   * a builtin class that has its (CPython) :c:macro:`Py_TPFLAGS_SEQUENCE` bit set
+   * a class that inherits from any of the above
 
    The following standard library classes are sequences:
 
-      * :class:`array.array`
-      * :class:`collections.deque`
-      * :class:`list`
-      * :class:`memoryview`
-      * :class:`range`
-      * :class:`tuple`
+   * :class:`array.array`
+   * :class:`collections.deque`
+   * :class:`list`
+   * :class:`memoryview`
+   * :class:`range`
+   * :class:`tuple`
 
    .. note:: Subject values of type ``str``, ``bytes``, and ``bytearray``
       do not match sequence patterns.
 
 .. [#] In pattern matching, a mapping is defined as one of the following:
 
-      * a class that inherits from :class:`collections.abc.Mapping`
-      * a Python class that has been registered as :class:`collections.abc.Mapping`
-      * a builtin class that has its (CPython) :data:`Py_TPFLAGS_MAPPING` bit set
-      * a class that inherits from any of the above
+   * a class that inherits from :class:`collections.abc.Mapping`
+   * a Python class that has been registered as :class:`collections.abc.Mapping`
+   * a builtin class that has its (CPython) :c:macro:`Py_TPFLAGS_MAPPING` bit set
+   * a class that inherits from any of the above
 
    The standard library classes :class:`dict` and :class:`types.MappingProxyType`
    are mappings.
 
 .. [#] A string literal appearing as the first statement in the function body is
-   transformed into the function's ``__doc__`` attribute and therefore the
-   function's :term:`docstring`.
+   transformed into the function's :attr:`~function.__doc__` attribute and
+   therefore the function's :term:`docstring`.
 
 .. [#] A string literal appearing as the first statement in the class body is
-   transformed into the namespace's ``__doc__`` item and therefore the class's
-   :term:`docstring`.
+   transformed into the namespace's :attr:`~type.__doc__` item and therefore
+   the class's :term:`docstring`.

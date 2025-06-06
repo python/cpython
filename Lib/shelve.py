@@ -171,6 +171,11 @@ class Shelf(collections.abc.MutableMapping):
         if hasattr(self.dict, 'sync'):
             self.dict.sync()
 
+    def reorganize(self):
+        self.sync()
+        if hasattr(self.dict, 'reorganize'):
+            self.dict.reorganize()
+
 
 class BsdDbShelf(Shelf):
     """Shelf implementation using the "BSD" db interface.
@@ -225,6 +230,13 @@ class DbfilenameShelf(Shelf):
     def __init__(self, filename, flag='c', protocol=None, writeback=False):
         import dbm
         Shelf.__init__(self, dbm.open(filename, flag), protocol, writeback)
+
+    def clear(self):
+        """Remove all items from the shelf."""
+        # Call through to the clear method on dbm-backed shelves.
+        # see https://github.com/python/cpython/issues/107089
+        self.cache.clear()
+        self.dict.clear()
 
 
 def open(filename, flag='c', protocol=None, writeback=False):

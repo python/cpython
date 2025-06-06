@@ -1,4 +1,0 @@
-The extraction methods in :mod:`tarfile`, and :func:`shutil.unpack_archive`,
-have a new a *filter* argument that allows limiting tar features than may be
-surprising or dangerous, such as creating files outside the destination
-directory. See :ref:`tarfile-extraction-filter` for details.

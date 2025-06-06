@@ -1,1 +1,0 @@
-Fix extension type from documentation for compiling in C++20 mode
