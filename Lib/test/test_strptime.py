@@ -658,7 +658,7 @@ class CalculationTests(unittest.TestCase):
     @skip_if_buggy_ucrt_strfptime
     def test_julian_calculation(self):
         # Make sure that when Julian is missing that it is calculated
-        format_string = "%Y %m %d %H %M %S %w %Z"
+        format_string = "%Y %m %d %H %M %S %w"
         result = _strptime._strptime_time(time.strftime(format_string, self.time_tuple),
                                     format_string)
         self.assertTrue(result.tm_yday == self.time_tuple.tm_yday,
@@ -668,7 +668,7 @@ class CalculationTests(unittest.TestCase):
     @skip_if_buggy_ucrt_strfptime
     def test_gregorian_calculation(self):
         # Test that Gregorian date can be calculated from Julian day
-        format_string = "%Y %H %M %S %w %j %Z"
+        format_string = "%Y %H %M %S %w %j"
         result = _strptime._strptime_time(time.strftime(format_string, self.time_tuple),
                                     format_string)
         self.assertTrue(result.tm_year == self.time_tuple.tm_year and
@@ -683,7 +683,7 @@ class CalculationTests(unittest.TestCase):
     @skip_if_buggy_ucrt_strfptime
     def test_day_of_week_calculation(self):
         # Test that the day of the week is calculated as needed
-        format_string = "%Y %m %d %H %S %j %Z"
+        format_string = "%Y %m %d %H %S %j"
         result = _strptime._strptime_time(time.strftime(format_string, self.time_tuple),
                                     format_string)
         self.assertTrue(result.tm_wday == self.time_tuple.tm_wday,
