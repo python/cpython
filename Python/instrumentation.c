@@ -1236,7 +1236,7 @@ _Py_call_instrumentation_jump(
            event == PY_MONITORING_EVENT_BRANCH_RIGHT ||
            event == PY_MONITORING_EVENT_BRANCH_LEFT);
     Py_ssize_t to = (dest - _PyFrame_GetBytecode(frame));
-    assert(to <= PY_SSIZE_T_MAX / sizeof(_Py_CODEUNIT));
+    assert(to <= PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(_Py_CODEUNIT));
     PyObject *to_obj = PyLong_FromSsize_t(to * sizeof(_Py_CODEUNIT));
     if (to_obj == NULL) {
         return NULL;
