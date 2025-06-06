@@ -7,6 +7,7 @@ the InteractiveConsole class from the 'code' stdlib module.
 import sqlite3
 import sys
 
+from code import InteractiveConsole
 from _colorize import get_theme, theme_no_color
 
 
@@ -36,15 +37,13 @@ def execute(c, sql, suppress_errors=True, theme=theme_no_color):
             sys.exit(1)
 
 
-class SqliteInteractiveConsole:
+class SqliteInteractiveConsole(InteractiveConsole):
     """A simple SQLite REPL."""
 
     def __init__(self, connection, use_color=False):
         from code import InteractiveConsole
         self._con = connection
         self._cur = connection.cursor()
-        self._console = InteractiveConsole()
-        self._console.runsource = self.runsource
         self._use_color = use_color
 
     def runsource(self, source, filename="<input>", symbol="single"):
@@ -76,9 +75,6 @@ class SqliteInteractiveConsole:
                 return True
             execute(self._cur, source, theme=theme)
         return False
-
-    def interact(self, banner, exitmsg=""):
-        self._console.interact(banner, exitmsg=exitmsg)
 
 
 def main(*args):
