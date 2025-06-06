@@ -1,1 +1,1 @@
-Halve the import time of :mod:`sqlite3`.
+Improve the import time of :mod:`sqlite3` by 1.5x faster.

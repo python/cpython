@@ -7,10 +7,6 @@ the InteractiveConsole class from the 'code' stdlib module.
 import sqlite3
 import sys
 
-from argparse import ArgumentParser
-from code import InteractiveConsole
-from textwrap import dedent
-
 
 def execute(c, sql, suppress_errors=True):
     """Helper that wraps execution of SQL code.
@@ -34,13 +30,15 @@ def execute(c, sql, suppress_errors=True):
             sys.exit(1)
 
 
-class SqliteInteractiveConsole(InteractiveConsole):
+class SqliteInteractiveConsole:
     """A simple SQLite REPL."""
 
     def __init__(self, connection):
-        super().__init__()
+        from code import InteractiveConsole
         self._con = connection
         self._cur = connection.cursor()
+        self._console = InteractiveConsole()
+        self._console.runsource = self.runsource
 
     def runsource(self, source, filename="<input>", symbol="single"):
         """Override runsource, the core of the InteractiveConsole REPL.
@@ -61,8 +59,14 @@ class SqliteInteractiveConsole(InteractiveConsole):
                 execute(self._cur, source)
         return False
 
+    def interact(self, banner, exitmsg=""):
+        self._console.interact(banner, exitmsg=exitmsg)
+
 
 def main(*args):
+    from argparse import ArgumentParser
+    from textwrap import dedent
+
     parser = ArgumentParser(
         description="Python sqlite3 CLI",
     )

@@ -20,9 +20,8 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-import time
-import collections.abc
 import datetime
+import collections.abc
 
 from _sqlite3 import *
 
@@ -54,7 +53,10 @@ sqlite_version_info = tuple([int(x) for x in sqlite_version.split(".")])
 Binary = memoryview
 collections.abc.Sequence.register(Row)
 
+# Lazy registe
 def register_adapters_and_converters():
+    global _lazy_register
+    _lazy_register = lambda: None  # Prevent multiple registration  # noqa: E731
     from warnings import warn
 
     msg = ("The default {what} is deprecated as of Python 3.12; "
