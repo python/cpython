@@ -568,9 +568,11 @@
             PyTypeObject *type = sym_get_type(container);
             if (type == &PyUnicode_Type ||
                 type == &PyList_Type ||
-                type == &PyTuple_Type) {
+                type == &PyTuple_Type)
+            {
                 res = sym_new_type(ctx, type);
-            } else {
+            }
+            else {
                 res = sym_new_not_null(ctx);
             }
             stack_pointer[-3] = res;
