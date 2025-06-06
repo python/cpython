@@ -1237,7 +1237,7 @@ _Py_call_instrumentation_jump(
            event == PY_MONITORING_EVENT_BRANCH_LEFT);
     int to = (int)(dest - _PyFrame_GetBytecode(frame));
     if (to <= INT_MAX / (int)sizeof(_Py_CODEUNIT)) {
-        PyErr_SetString(PyExc_OverflowError, "instruction offset is too large for int");
+        PyErr_SetString(PyExc_OverflowError, "instruction offset cannot be converted to an integer");
         return NULL;
     }
     PyObject *to_obj = PyLong_FromLong(to * (int)sizeof(_Py_CODEUNIT));
