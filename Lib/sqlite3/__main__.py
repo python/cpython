@@ -65,7 +65,10 @@ class SqliteInteractiveConsole(InteractiveConsole):
                 case "version":
                     print(f"{sqlite3.sqlite_version}")
                 case "help":
-                    print("Enter SQL code and press enter.")
+                    t = theme.syntax
+                    print(f"Enter SQL code or one of the below commands, and press enter.\n\n"
+                          f"{t.builtin}.version{t.reset}    Print underlying SQLite library version\n"
+                          f"{t.builtin}.quit{t.reset}       Exit the CLI, equivalent to CTRL-D\n")
                 case "quit":
                     sys.exit(0)
                 case "":
