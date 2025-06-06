@@ -26,7 +26,7 @@ def __getattr__(name):
     if name in ('Queue', 'QueueEmpty', 'QueueFull', 'create_queue'):
         global create_queue, Queue, QueueEmpty, QueueFull
         ns = globals()
-        from .queues import (
+        from ._queues import (
             create as create_queue,
             Queue, QueueEmpty, QueueFull,
         )

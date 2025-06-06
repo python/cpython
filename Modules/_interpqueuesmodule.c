@@ -136,7 +136,7 @@ idarg_int64_converter(PyObject *arg, void *ptr)
 static int
 ensure_highlevel_module_loaded(void)
 {
-    PyObject *highlevel = PyImport_ImportModule("interpreters.queues");
+    PyObject *highlevel = PyImport_ImportModule("interpreters._queues");
     if (highlevel == NULL) {
         return -1;
     }

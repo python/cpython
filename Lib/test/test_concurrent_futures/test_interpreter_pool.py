@@ -8,7 +8,7 @@ import unittest
 from concurrent.futures.interpreter import (
     ExecutionFailed, BrokenInterpreterPool,
 )
-from interpreters import queues
+from interpreters import _queues as queues
 import _interpreters
 from test import support
 import test.test_asyncio.utils as testasyncio_utils
