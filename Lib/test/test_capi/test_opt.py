@@ -1183,6 +1183,17 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         self.assertIn("_RETURN_GENERATOR", get_opnames(ex))
 
+    def test_for_iter(self):
+        def testfunc(n):
+            t = 0
+            for i in set(range(n)):
+                t += i
+            return t
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * (TIER2_THRESHOLD - 1) // 2)
+        self.assertIsNotNone(ex)
+        self.assertIn("_FOR_ITER_TIER_TWO", get_opnames(ex))
+
     @unittest.skip("Tracing into generators currently isn't supported.")
     def test_for_iter_gen(self):
         def gen(n):
