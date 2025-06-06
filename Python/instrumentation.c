@@ -1235,12 +1235,9 @@ _Py_call_instrumentation_jump(
     assert(event == PY_MONITORING_EVENT_JUMP ||
            event == PY_MONITORING_EVENT_BRANCH_RIGHT ||
            event == PY_MONITORING_EVENT_BRANCH_LEFT);
-    int to = (int)(dest - _PyFrame_GetBytecode(frame));
-    if (to <= INT_MAX / (int)sizeof(_Py_CODEUNIT)) {
-        PyErr_SetString(PyExc_OverflowError, "instruction offset cannot be converted to a C int");
-        return NULL;
-    }
-    PyObject *to_obj = PyLong_FromLong(to * (int)sizeof(_Py_CODEUNIT));
+    Py_ssize_t to = (dest - _PyFrame_GetBytecode(frame));
+    assert(to <= PY_SSIZE_T_MAX / sizeof(_Py_CODEUNIT));
+    PyObject *to_obj = PyLong_FromSsize_t(to * sizeof(_Py_CODEUNIT));
     if (to_obj == NULL) {
         return NULL;
     }
