@@ -159,13 +159,13 @@ struct atexit_state {
 typedef struct {
     // Tagged pointer to next object in the list.
     // 0 means the object is not tracked
-    uintptr_t _gc_next;
+    _Py_ALIGNED_DEF(1 << _PyObject_ALIGNMENT_SHIFT, uintptr_t) _gc_next;
 
     // Tagged pointer to previous object in the list.
     // Lowest two bits are used for flags documented later.
     // Those bits are made available by the struct's minimum alignment.
     uintptr_t _gc_prev;
-} PyGC_Head Py_ALIGNED(1 << _PyObject_ALIGNMENT_SHIFT);
+} PyGC_Head;
 
 #define _PyGC_Head_UNUSED PyGC_Head
 

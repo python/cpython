@@ -141,13 +141,14 @@ struct _object {
 #else
         Py_ssize_t ob_refcnt;
 #endif
+        _Py_ALIGNED_DEF(1 << _PyObject_ALIGNMENT_SHIFT, char) _aligner;
     };
 #ifdef _MSC_VER
     __pragma(warning(pop))
 #endif
 
     PyTypeObject *ob_type;
-} Py_ALIGNED(1 << _PyObject_ALIGNMENT_SHIFT);
+};
 #else
 // Objects that are not owned by any thread use a thread id (tid) of zero.
 // This includes both immortal objects and objects whose reference count
@@ -158,14 +159,14 @@ struct _object {
     // ob_tid stores the thread id (or zero). It is also used by the GC and the
     // trashcan mechanism as a linked list pointer and by the GC to store the
     // computed "gc_refs" refcount.
-    uintptr_t ob_tid;
+    _Py_ALIGNED_DEF(1 << _PyObject_ALIGNMENT_SHIFT, uintptr_t) ob_tid;
     uint16_t ob_flags;
     PyMutex ob_mutex;           // per-object lock
     uint8_t ob_gc_bits;         // gc-related state
     uint32_t ob_ref_local;      // local reference count
     Py_ssize_t ob_ref_shared;   // shared (atomic) reference count
     PyTypeObject *ob_type;
-} Py_ALIGNED(1 << _PyObject_ALIGNMENT_SHIFT);
+};
 #endif
 
 /* Cast argument to PyObject* type. */
