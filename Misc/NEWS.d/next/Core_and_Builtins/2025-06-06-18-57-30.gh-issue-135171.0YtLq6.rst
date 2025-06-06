@@ -1,0 +1,6 @@
+Reverts the behavior of generator expressions when created with a
+non-iterable to the pre-3.13 behavior of raising a TypeError. It is no
+longer possible to cause a crash in the debugger by altering the generator
+expression's local variables. This is achieved by moving the ``GET_ITER``
+instruction back to the creation of the generator expression and adding an
+additional check to ``FOR_ITER``.
