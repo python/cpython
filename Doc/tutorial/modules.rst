@@ -28,7 +28,7 @@ called :file:`fibo.py` in the current directory with the following contents::
    # Fibonacci numbers module
 
    def fib(n):
-       """write Fibonacci series up to n"""
+       """Write Fibonacci series up to n."""
        a, b = 0, 1
        while a < n:
            print(a, end=' ')
