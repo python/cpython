@@ -348,7 +348,9 @@ MODULE_OBJS=	\
 		Modules/main.o \
 		Modules/gcmodule.o
 
-IO_H=		Modules/_io/_iomodule.h
+IO_H=		\
+		Modules/_io/_iomodule.h \
+		Include/internal/pycore_emscripten_trampoline.h
 
 IO_OBJS=	\
 		Modules/_io/_iomodule.o \
@@ -746,6 +748,8 @@ LIBHACL_BLAKE2_HEADERS= \
 		Modules/_hacl/internal/Hacl_Impl_Blake2_Constants.h \
 		Modules/_hacl/internal/Hacl_Hash_Blake2s_Simd128.h \
 		Modules/_hacl/internal/Hacl_Hash_Blake2b_Simd256.h \
+		Modules/_hacl/lib_memzero0.h \
+		Modules/_hacl/libintvector.h \
 		$(LIBHACL_HEADERS)
 
 LIBHACL_HMAC_HEADERS= \
@@ -1303,6 +1307,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_dict_state.h \
 		$(srcdir)/Include/internal/pycore_dtoa.h \
 		$(srcdir)/Include/internal/pycore_exceptions.h \
+		$(srcdir)/Include/internal/pycore_emscripten_trampoline.h \
 		$(srcdir)/Include/internal/pycore_faulthandler.h \
 		$(srcdir)/Include/internal/pycore_fileutils.h \
 		$(srcdir)/Include/internal/pycore_floatobject.h \
@@ -1896,15 +1901,15 @@ Programs/python.o: $(srcdir)/Programs/python.c
 Programs/_testembed.o: $(srcdir)/Programs/_testembed.c Programs/test_frozenmain.h $(PYTHON_HEADERS)
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/_testembed.c
 
-Modules/_sre/sre.o: $(srcdir)/Modules/_sre/sre.c $(srcdir)/Modules/_sre/sre.h $(srcdir)/Modules/_sre/sre_constants.h $(srcdir)/Modules/_sre/sre_lib.h
+Modules/_sre/sre.o: $(srcdir)/Modules/_sre/sre.c $(srcdir)/Modules/_sre/sre.h $(srcdir)/Modules/_sre/sre_constants.h $(srcdir)/Modules/_sre/sre_lib.h $(srcdir)/Modules/_sre/sre_targets.h
 
-Modules/posixmodule.o: $(srcdir)/Modules/posixmodule.c $(srcdir)/Modules/posixmodule.h
+Modules/posixmodule.o: $(srcdir)/Modules/posixmodule.c $(srcdir)/Modules/posixmodule.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h
 
 Modules/grpmodule.o: $(srcdir)/Modules/grpmodule.c $(srcdir)/Modules/posixmodule.h
 
 Modules/pwdmodule.o: $(srcdir)/Modules/pwdmodule.c $(srcdir)/Modules/posixmodule.h
 
-Modules/signalmodule.o: $(srcdir)/Modules/signalmodule.c $(srcdir)/Modules/posixmodule.h
+Modules/signalmodule.o: $(srcdir)/Modules/signalmodule.c $(srcdir)/Modules/posixmodule.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h
 
 Modules/_interpretersmodule.o: $(srcdir)/Modules/_interpretersmodule.c $(srcdir)/Modules/_interpreters_common.h
 
@@ -1928,7 +1933,7 @@ Python/dynload_hpux.o: $(srcdir)/Python/dynload_hpux.c Makefile
 		-DSHLIB_EXT='"$(EXT_SUFFIX)"' \
 		-o $@ $(srcdir)/Python/dynload_hpux.c
 
-Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile $(srcdir)/Include/pydtrace.h
+Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile $(srcdir)/Include/pydtrace.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h
 	$(CC) -c $(PY_CORE_CFLAGS) \
 		-DABIFLAGS='"$(ABIFLAGS)"' \
 		$(MULTIARCH_CPPFLAGS) \
@@ -2042,6 +2047,7 @@ BYTESTR_DEPS = \
 		$(srcdir)/Objects/stringlib/ctype.h \
 		$(srcdir)/Objects/stringlib/fastsearch.h \
 		$(srcdir)/Objects/stringlib/find.h \
+		$(srcdir)/Objects/stringlib/find_max_char.h \
 		$(srcdir)/Objects/stringlib/join.h \
 		$(srcdir)/Objects/stringlib/partition.h \
 		$(srcdir)/Objects/stringlib/split.h \
@@ -2064,7 +2070,8 @@ UNICODE_DEPS = \
 		$(srcdir)/Objects/stringlib/ucs2lib.h \
 		$(srcdir)/Objects/stringlib/ucs4lib.h \
 		$(srcdir)/Objects/stringlib/undef.h \
-		$(srcdir)/Objects/stringlib/unicode_format.h
+		$(srcdir)/Objects/stringlib/unicode_format.h \
+		$(srcdir)/Objects/stringlib/eq.h
 
 Objects/bytes_methods.o: $(srcdir)/Objects/bytes_methods.c $(BYTESTR_DEPS)
 Objects/bytesobject.o: $(srcdir)/Objects/bytesobject.c $(BYTESTR_DEPS)
@@ -2072,14 +2079,16 @@ Objects/bytearrayobject.o: $(srcdir)/Objects/bytearrayobject.c $(BYTESTR_DEPS)
 
 Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c $(UNICODE_DEPS)
 
-Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h
-Objects/setobject.o: $(srcdir)/Objects/stringlib/eq.h
+Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h
+Objects/setobject.o: $(srcdir)/Objects/stringlib/eq.h 
 
 Objects/obmalloc.o: $(srcdir)/Objects/mimalloc/alloc.c \
 		$(srcdir)/Objects/mimalloc/alloc-aligned.c \
 		$(srcdir)/Objects/mimalloc/alloc-posix.c \
 		$(srcdir)/Objects/mimalloc/arena.c \
+		$(srcdir)/Objects/mimalloc/alloc-override.c \
 		$(srcdir)/Objects/mimalloc/bitmap.c \
+		$(srcdir)/Objects/mimalloc/bitmap.h \
 		$(srcdir)/Objects/mimalloc/heap.c \
 		$(srcdir)/Objects/mimalloc/init.c \
 		$(srcdir)/Objects/mimalloc/options.c \
@@ -2088,11 +2097,13 @@ Objects/obmalloc.o: $(srcdir)/Objects/mimalloc/alloc.c \
 		$(srcdir)/Objects/mimalloc/random.c \
 		$(srcdir)/Objects/mimalloc/segment.c \
 		$(srcdir)/Objects/mimalloc/segment-map.c \
+		$(srcdir)/Objects/mimalloc/static.c \
 		$(srcdir)/Objects/mimalloc/stats.c \
 		$(srcdir)/Objects/mimalloc/prim/prim.c \
 		$(srcdir)/Objects/mimalloc/prim/osx/prim.c \
 		$(srcdir)/Objects/mimalloc/prim/unix/prim.c \
-		$(srcdir)/Objects/mimalloc/prim/wasi/prim.c
+		$(srcdir)/Objects/mimalloc/prim/wasi/prim.c \
+		$(srcdir)/Include/internal/pycore_emscripten_trampoline.h
 
 Objects/mimalloc/page.o: $(srcdir)/Objects/mimalloc/page-queue.c
 
@@ -2170,6 +2181,8 @@ Python/compile.o Python/codegen.o Python/assemble.o Python/flowgraph.o Python/in
                 $(srcdir)/Include/internal/pycore_opcode_utils.h
 
 Python/ceval.o: \
+		$(srcdir)/Include/internal/pycore_emscripten_signal.h \
+		$(srcdir)/Include/internal/pycore_emscripten_trampoline.h \
 		$(srcdir)/Python/ceval_macros.h \
 		$(srcdir)/Python/condvar.h \
 		$(srcdir)/Python/generated_cases.c.h \
@@ -2202,8 +2215,9 @@ Include/pydtrace_probes.h: $(srcdir)/Include/pydtrace.d
 	mv $@.tmp $@
 
 Python/ceval.o: $(srcdir)/Include/pydtrace.h
-Python/gc.o: $(srcdir)/Include/pydtrace.h
-Python/import.o: $(srcdir)/Include/pydtrace.h
+Python/ceval_gil.o: $(srcdir)/Python/condvar.h
+Python/gc.o: $(srcdir)/Include/pydtrace.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h
+Python/import.o: $(srcdir)/Include/pydtrace.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h $(srcdir)/Include/internal/pycore_magic_number.h
 
 Python/pydtrace.o: $(srcdir)/Include/pydtrace.d $(DTRACE_DEPS)
 	CC="$(CC)" CFLAGS="$(CFLAGS)" $(DTRACE) $(DFLAGS) -o $@ -G -s $< $(DTRACE_DEPS)
