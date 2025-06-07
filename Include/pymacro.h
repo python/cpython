@@ -51,7 +51,6 @@
 //     decrease the alignment.
 //   - Takes types or numbers.
 //   - May not be used on a struct definition, unless also defining a variable.
-//   - Can't be used on a whole struct, only on members.
 // - `__declspec(align)`:
 //   - Has no effect if it would decrease alignment.
 //   - Only takes an integer literal.
