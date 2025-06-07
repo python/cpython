@@ -540,12 +540,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
                 else:
                     nondirs.append(name)
             except OSError:
-                try:
-                    # Add dangling symlinks, ignore disappeared files
-                    if entry.is_symlink():
-                        nondirs.append(name)
-                except OSError:
-                    pass
+                nondirs.append(name)
 
         if topdown:
             yield toppath, dirs, nondirs, topfd
