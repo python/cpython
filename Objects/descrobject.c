@@ -190,9 +190,11 @@ getset_get(PyObject *self, PyObject *obj, PyObject *type)
     if (descr_check((PyDescrObject *)descr, obj) < 0) {
         return NULL;
     }
-    if (descr->d_getset->get != NULL)
+    if (descr->d_getset->get != NULL) {
+        void *closure = descr->d_getset->closure == (void *)1 ? NULL : descr->d_getset->closure;
         return descr_get_trampoline_call(
-            descr->d_getset->get, obj, descr->d_getset->closure);
+            descr->d_getset->get, obj, closure);
+    }
     PyErr_Format(PyExc_AttributeError,
                  "attribute '%V' of '%.100s' objects is not readable",
                  descr_name((PyDescrObject *)descr), "?",
@@ -247,9 +249,9 @@ getset_set(PyObject *self, PyObject *obj, PyObject *value)
         return -1;
     }
     if (descr->d_getset->set != NULL) {
+        void *closure = descr->d_getset->closure == (void *)1 ? NULL : descr->d_getset->closure;
         return descr_set_trampoline_call(
-            descr->d_getset->set, obj, value,
-            descr->d_getset->closure);
+            descr->d_getset->set, obj, value, closure);
     }
     PyErr_Format(PyExc_AttributeError,
                  "attribute '%V' of '%.100s' objects is not writable",
@@ -1004,10 +1006,16 @@ PyDescr_NewGetSet(PyTypeObject *type, PyGetSetDef *getset)
 {
     PyGetSetDescrObject *descr;
 
+    bool should_adjust_d_type = (getset->closure == (void *)1);
+
     descr = (PyGetSetDescrObject *)descr_new(&PyGetSetDescr_Type,
                                              type, getset->name);
     if (descr != NULL)
         descr->d_getset = getset;
+
+    if (should_adjust_d_type) {
+        Py_SETREF(descr->d_common.d_type, &PyBaseObject_Type);
+    }
     return (PyObject *)descr;
 }
 
