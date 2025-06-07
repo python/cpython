@@ -5,6 +5,7 @@ import textwrap
 import unittest
 import gc
 import os
+import warnings
 
 import _opcode
 
@@ -2240,7 +2241,9 @@ class TestUopsOptimization(unittest.TestCase):
                 a = True
                 x = ~a + ~a
 
-        testfunc(TIER2_THRESHOLD)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            testfunc(TIER2_THRESHOLD)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
