@@ -131,6 +131,7 @@ Tools/unicode/data/
 /autom4te.cache
 /build/
 /builddir/
+/compile_commands.json
 /config.cache
 /config.log
 /config.status
