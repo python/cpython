@@ -2485,6 +2485,11 @@ These methods accept format codes that can be used to parse and format dates::
    >>> _.strftime('%a %d %b %Y, %I:%M%p')
    'Mon 31 Jan 2022, 11:59PM'
 
+The user has to make sure, though, that the input can be parsed in a unambiguous
+way. The string ``2025112`` can be parsed using the format ``%Y%m%d`` as ``2025-1-12``,
+``2025-11-2``, or even ``20251-1-2``. It is necessary to add appropriate separators to
+reliably get results.
+
 The following is a list of all the format codes that the 1989 C standard
 requires, and these work on all platforms with a standard C implementation.
 
