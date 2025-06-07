@@ -70,7 +70,7 @@ Pending removal in Python 3.15
 
 * :mod:`types`:
 
-  * :class:`types.CodeType`: Accessing :attr:`~codeobject.co_lnotab` was
+  * :class:`types.CodeType`: Accessing :attr:`!codeobject.co_lnotab` was
     deprecated in :pep:`626`
     since 3.10 and was planned to be removed in 3.12,
     but it only got a proper :exc:`DeprecationWarning` in 3.12.
