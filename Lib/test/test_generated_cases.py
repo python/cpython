@@ -56,14 +56,14 @@ class TestEffects(unittest.TestCase):
     def test_effect_sizes(self):
         stack = Stack()
         inputs = [
-            x := StackItem("x", None, "1"),
-            y := StackItem("y", None, "oparg"),
-            z := StackItem("z", None, "oparg*2"),
+            x := StackItem("x", None, "1", []),
+            y := StackItem("y", None, "oparg", []),
+            z := StackItem("z", None, "oparg*2", []),
         ]
         outputs = [
-            StackItem("x", None, "1"),
-            StackItem("b", None, "oparg*4"),
-            StackItem("c", None, "1"),
+            StackItem("x", None, "1", []),
+            StackItem("b", None, "oparg*4", []),
+            StackItem("c", None, "1", []),
         ]
         null = CWriter.null()
         stack.pop(z, null)
@@ -2249,6 +2249,29 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         with self.assertRaisesRegex(SyntaxError,
                                     "Inputs must have equal sizes"):
             self.run_cases_test(input, input2, output)
+
+    def test_uop_type_attribute_input(self):
+        input = """
+        op(OP, (foo -- )) {
+        }
+        """
+        input2 = """
+        op(OP, (type(&PyLong_Type) foo -- )) {
+            (void)foo;
+        }
+        """
+        output = """
+        case OP: {
+            JitOptSymbol *foo;
+            foo = stack_pointer[-1];
+            (void)foo;
+            assert(sym_matches_type(foo, &PyLong_Type));
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
 
 if __name__ == "__main__":
     unittest.main()

@@ -245,14 +245,23 @@ class SimpleStmt(Stmt):
     __hash__ = object.__hash__
 
 @dataclass
+class StackAttribute(Node):
+    ident: str
+    expr: str
+
+    def __repr__(self) -> str:
+        return f"{self.ident}({self.expr})"
+
+@dataclass
 class StackEffect(Node):
     name: str = field(compare=False)  # __eq__ only uses type, cond, size
+    attributes: list[StackAttribute] = field(compare=False)
     type: str = ""  # Optional `:type`
     size: str = ""  # Optional `[size]`
     # Note: size cannot be combined with type or cond
 
     def __repr__(self) -> str:
-        items = [self.name, self.type, self.size]
+        items = [self.attributes, self.name, self.type, self.size]
         while items and items[-1] == "":
             del items[-1]
         return f"StackEffect({', '.join(repr(item) for item in items)})"
@@ -273,6 +282,14 @@ class CacheEffect(Node):
 class OpName(Node):
     name: str
 
+
+TYPE = "type"
+# We have to do this at the parsing stage and not
+# lexing stage as we want to allow this to be used as
+# a normal identifier in C code.
+STACK_ATTRIBUTES = {
+    TYPE,
+}
 
 InputEffect = StackEffect | CacheEffect
 OutputEffect = StackEffect
@@ -458,10 +475,27 @@ class Parser(PLexer):
                     return CacheEffect(tkn.text, size)
         return None
 
+    def stack_attributes(self) -> list[StackAttribute]:
+        # IDENTIFIER '(' expression ')'
+        res = []
+        while tkn := self.expect(lx.IDENTIFIER):
+            if self.expect(lx.LPAREN):
+                if tkn.text not in STACK_ATTRIBUTES:
+                    raise self.make_syntax_error(f"Stack attribute {tkn.text} is not recognized.")
+                expr = self.expression()
+                assert expr is not None
+                self.require(lx.RPAREN)
+                res.append(StackAttribute(tkn.text.strip(), expr.size.strip()))
+            else:
+                self.backup()
+                break
+        return res
+
     @contextual
     def stack_effect(self) -> StackEffect | None:
-        # IDENTIFIER [':' IDENTIFIER [TIMES]] ['if' '(' expression ')']
-        # | IDENTIFIER '[' expression ']'
+        # stack_attributes IDENTIFIER [':' IDENTIFIER [TIMES]] ['if' '(' expression ')']
+        # | stack_attributes IDENTIFIER '[' expression ']'
+        stack_attributes = self.stack_attributes()
         if tkn := self.expect(lx.IDENTIFIER):
             type_text = ""
             if self.expect(lx.COLON):
@@ -476,7 +510,7 @@ class Parser(PLexer):
                     raise self.make_syntax_error("Expected expression")
                 self.require(lx.RBRACKET)
                 size_text = size.text.strip()
-            return StackEffect(tkn.text, type_text, size_text)
+            return StackEffect(tkn.text, stack_attributes, type_text, size_text)
         return None
 
     @contextual

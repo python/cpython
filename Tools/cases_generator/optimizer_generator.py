@@ -24,6 +24,7 @@ from cwriter import CWriter
 from typing import TextIO
 from lexer import Token
 from stack import Local, Stack, StackError, Storage
+from parser import TYPE
 
 DEFAULT_OUTPUT = ROOT / "Python/optimizer_cases.c.h"
 DEFAULT_ABSTRACT_INPUT = (ROOT / "Python/optimizer_bytecodes.c").absolute().as_posix()
@@ -147,6 +148,14 @@ class OptimizerEmitter(Emitter):
         self.out.emit(goto)
         self.out.emit(label)
 
+def get_type(item: StackItem) -> str | None:
+    for attribute in item.attributes:
+        if attribute.ident == TYPE:
+            return attribute.expr
+    return None
+
+
+
 def write_uop(
     override: Uop | None,
     uop: Uop,
@@ -182,7 +191,12 @@ def write_uop(
             for var in storage.inputs:  # type: ignore[possibly-undefined]
                 var.in_local = False
             _, storage = emitter.emit_tokens(override, storage, None, False)
+            # Emit type effects.
             out.start_line()
+            for input_ in override.stack.inputs:
+                typ = get_type(input_)
+                if typ is not None:
+                    emitter.emit(f"assert(sym_matches_type({input_.name}, {typ}));\n")
             storage.flush(out)
         else:
             emit_default(out, uop, stack)
