@@ -247,7 +247,63 @@ module_from_def_slot(PyObject *self, PyObject *spec)
         .m_name = "currently ignored",
         .m_slots = slots,
     };
+    // PyModuleDef is normally static; the real requirement is that it
+    // must outlive its module.
+    // Here, module creation fails, so it's fine on the stack.
+    PyObject *result = PyModule_FromDefAndSpec(&def, spec);
+    assert(result == NULL);
+    return result;
+}
+
+static int
+another_exec(PyObject *module)
+{
+    /* Make sure simple_exec was called */
+    assert(PyObject_HasAttrString(module, "a_number"));
+
+    /* Add or negate a global called 'another_number'  */
+    PyObject *another_number;
+    if (PyObject_GetOptionalAttrString(module, "another_number",
+                                       &another_number) < 0) {
+        return -1;
+    }
+    if (!another_number) {
+        return PyModule_AddIntConstant(module, "another_number", 789);
+    }
+    PyObject *neg_number = PyNumber_Negative(another_number);
+    Py_DECREF(another_number);
+    if (!neg_number) {
+        return -1;
+    }
+    int result = PyObject_SetAttrString(module, "another_number",
+                                        neg_number);
+    Py_DECREF(neg_number);
+    return result;
+}
+
+static PyObject *
+module_from_def_multiple_exec(PyObject *self, PyObject *spec)
+{
+    static PyModuleDef_Slot slots[] = {
+        {Py_mod_exec, simple_exec},
+        {Py_mod_exec, another_exec},
+        {0},
+    };
+    static PyModuleDef def = {
+        PyModuleDef_HEAD_INIT,
+        .m_name = "currently ignored",
+        .m_slots = slots,
+    };
     return PyModule_FromDefAndSpec(&def, spec);
+}
+
+static PyObject *
+pymodule_exec(PyObject *self, PyObject *module)
+{
+    if (PyModule_Exec(module) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef test_methods[] = {
@@ -263,7 +319,9 @@ static PyMethodDef test_methods[] = {
     {"module_from_slots_create", module_from_slots_create, METH_O},
     {"module_from_slots_repeat_slot", module_from_slots_repeat_slot, METH_O},
     {"module_from_slots_null_slot", module_from_slots_null_slot, METH_O},
+    {"module_from_def_multiple_exec", module_from_def_multiple_exec, METH_O},
     {"module_from_def_slot", module_from_def_slot, METH_O},
+    {"pymodule_exec", pymodule_exec, METH_O},
     {NULL},
 };
 

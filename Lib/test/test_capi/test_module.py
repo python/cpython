@@ -123,3 +123,14 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
                     _testcapi.module_from_slots_null_slot(spec)
                 self.assertIn(name, str(cm.exception))
                 self.assertIn("NULL", str(cm.exception))
+
+    def test_def_multiple_exec(self):
+        """PyModule_Exec runs all exec slots of PyModuleDef-defined module"""
+        mod = _testcapi.module_from_def_multiple_exec(FakeSpec())
+        self.assertFalse(hasattr(mod, 'a_number'))
+        _testcapi.pymodule_exec(mod)
+        self.assertEqual(mod.a_number, 456)
+        self.assertEqual(mod.another_number, 789)
+        _testcapi.pymodule_exec(mod)
+        self.assertEqual(mod.a_number, 456)
+        self.assertEqual(mod.another_number, -789)
