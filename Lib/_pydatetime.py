@@ -2515,6 +2515,13 @@ class timezone(tzinfo):
         raise TypeError("tzname() argument must be a datetime instance"
                         " or None")
 
+    @property
+    def name(self):
+        """Return provided name otherwise empty string."""
+        if not self._name:
+            return ''
+        return self._name
+
     def dst(self, dt):
         if isinstance(dt, datetime) or dt is None:
             return None
