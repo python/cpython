@@ -2934,6 +2934,19 @@ class TestAddSubparsers(TestCase):
                 3                   3 help
             """))
 
+    def test_help_sets_default_description(self):
+        parser = argparse.ArgumentParser()
+        subparsers = parser.add_subparsers(dest="command")
+
+        sp1 = subparsers.add_parser("a", help="help a")
+        self.assertEqual(sp1.description, "help a")
+
+        sp2 = subparsers.add_parser("b", help="help b", description="explicit desc")
+        self.assertEqual(sp2.description, "explicit desc")
+
+        sp3 = subparsers.add_parser("c")
+        self.assertIsNone(sp3.description)
+
 # ============
 # Groups tests
 # ============
