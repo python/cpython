@@ -4949,7 +4949,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
 
         with self.assertRaises(TypeError) as cm:
             type(X).__dict__["__doc__"].__delete__(X)
-        self.assertIn("cannot delete '__doc__' attribute of immutable type 'X'", str(cm.exception))
+        self.assertIn("cannot delete '__doc__' attribute of type 'X'", str(cm.exception))
         self.assertEqual(X.__doc__, "banana")
 
     def test_qualname(self):
