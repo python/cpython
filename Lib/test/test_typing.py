@@ -43,7 +43,6 @@ from typing import Self, LiteralString
 from typing import TypeAlias
 from typing import ParamSpec, Concatenate, ParamSpecArgs, ParamSpecKwargs
 from typing import TypeGuard, TypeIs, NoDefault
-from typing import _eval_type
 import abc
 import textwrap
 import typing
