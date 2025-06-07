@@ -24,7 +24,11 @@
 #endif
 
 
-// _Py_ALIGN_AS: this compiler's spelling of `alignas` keyword,
+// _Py_ALIGN_AS: this compiler's spelling of `alignas` keyword.
+//
+// N.B. Applying this to a `struct` member might trigger MSVC warning 5274;
+// see gh-135183 in that case.
+//
 // We currently use alignas for free-threaded builds only; additional compat
 // checking would be great before we add it to the default build.
 // Standards/compiler support:
