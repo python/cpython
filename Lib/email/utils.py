@@ -417,7 +417,8 @@ def decode_params(params):
         for name, continuations in rfc2231_params.items():
             value = []
             extended = False
-            # Sort by number, treating None as 0 if there is no 0, ignore it if there is already a 0.
+            # Sort by number, treating None as 0 if there is no 0,
+            # and ignore it if there is already a 0.
             has_zero = any(x[0] == 0 for x in continuations)
             if has_zero:
                 continuations = [x for x in continuations if x[0] is not None]
