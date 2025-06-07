@@ -56,7 +56,7 @@ class RuleCollectorVisitor(GrammarVisitor):
 
 
 class KeywordCollectorVisitor(GrammarVisitor):
-    """Visitor that collects all the keywods and soft keywords in the Grammar"""
+    """Visitor that collects all the keywords and soft keywords in the Grammar"""
 
     def __init__(self, gen: "ParserGenerator", keywords: Dict[str, int], soft_keywords: Set[str]):
         self.generator = gen
