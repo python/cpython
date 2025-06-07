@@ -56,13 +56,13 @@
 //   - Has no effect if it would decrease alignment.
 //   - Only takes an integer literal.
 //   - May be used on struct or variable definitions.
+//     However, when defining both the struct and the variable at once,
+//     `declspec(aligned)` causes compiler warning 5274 and possible ABI
+//     incompatibility.
 // - ` __attribute__((aligned))`:
 //   - Has no effect if it would decrease alignment.
 //   - Takes types or numbers
 //   - May be used on struct or variable definitions.
-//     However, when defining both the struct and the variable at once,
-//     `declspec(aligned)` causes compiler warning 5274 and possible ABI
-//     incompatibility.
 #ifndef _Py_ALIGNED_DEF
 #    ifdef __cplusplus
 #        if __cplusplus >= 201103L
