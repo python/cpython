@@ -90,8 +90,9 @@ Notation
 
 .. index:: BNF, grammar, syntax, notation
 
-The descriptions of lexical analysis use a grammar notation that is a mixture
-of `EBNF <https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form>`_
+The descriptions of lexical analysis and syntax use a grammar notation that
+is a mixture of
+`EBNF <https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form>`_
 and `PEG <https://en.wikipedia.org/wiki/Parsing_expression_grammar>`_.
 For example:
 
