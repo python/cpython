@@ -8,7 +8,7 @@ __name__ = "datetime"
 
 import time as _time
 import math as _math
-import sys
+import os
 from operator import index as _index
 
 def _cmp(x, y):
@@ -1877,7 +1877,7 @@ class datetime(date):
             # thus we can't perform fold detection for values of time less
             # than the max time fold. See comments in _datetimemodule's
             # version of this method for more details.
-            if t < max_fold_seconds and sys.platform.startswith("win"):
+            if t < max_fold_seconds and os.name == 'nt':
                 return result
 
             y, m, d, hh, mm, ss = converter(t - max_fold_seconds)[:6]
@@ -2050,6 +2050,9 @@ class datetime(date):
     def timestamp(self):
         "Return POSIX timestamp as float"
         if self._tzinfo is None:
+            if self < _NAIVE_EPOCH and os.name == 'nt':
+                # Windows converters throw an OSError for negative values.
+                return (self - _NAIVE_EPOCH).total_seconds()
             s = self._mktime()
             return s + self.microsecond / 1e6
         else:
@@ -2561,6 +2564,7 @@ UTC = timezone.utc = timezone._create(timedelta(0))
 timezone.min = timezone._create(-timedelta(hours=23, minutes=59))
 timezone.max = timezone._create(timedelta(hours=23, minutes=59))
 _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
+_NAIVE_EPOCH = datetime(1970, 1, 1)
 
 # Some time zone algebra.  For a datetime x, let
 #     x.n = x stripped of its timezone -- its naive time.
