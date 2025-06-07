@@ -1690,7 +1690,8 @@ These can be used as types in annotations. They all support subscription using
       # and `year` of type `int`.
       def foo(**kwargs: Unpack[Movie]): ...
 
-   See :pep:`692` for more details on using ``Unpack`` for ``**kwargs`` typing.
+   See :ref:`the typing spec <typing:unpack-kwargs>` for more details on using
+   ``Unpack`` for ``**kwargs`` typing.
 
    .. versionadded:: 3.11
 
@@ -1806,7 +1807,7 @@ without the dedicated syntax, as documented below.
    Manually created type variables may be explicitly marked covariant or contravariant by passing
    ``covariant=True`` or ``contravariant=True``.
    By default, manually created type variables are invariant.
-   See :pep:`484` and :pep:`695` for more details.
+   See :ref:`the typing spec <typing:variance>` for more details.
 
    Bounded type variables and constrained type variables have different
    semantics in several important ways. Using a *bounded* type variable means
@@ -2048,7 +2049,7 @@ without the dedicated syntax, as documented below.
    to ``call_soon`` match the types of the (positional) arguments of
    ``callback``.
 
-   See :pep:`646` for more details on type variable tuples.
+   See :ref:`the typing spec <typing:typevartuple>` for more details on type variable tuples.
 
    .. attribute:: __name__
 
@@ -2208,8 +2209,7 @@ without the dedicated syntax, as documented below.
       be pickled.
 
    .. seealso::
-      * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
-        ``ParamSpec`` and ``Concatenate``)
+      * :ref:`typing:paramspec` -- typing specification for ``ParamSpec``
       * :data:`Concatenate`
       * :ref:`annotating-callables`
 
