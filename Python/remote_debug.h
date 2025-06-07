@@ -116,6 +116,8 @@ typedef struct {
     mach_port_t task;
 #elif defined(MS_WINDOWS)
     HANDLE hProcess;
+#elif defined(__linux__)
+    int memfd;
 #endif
     page_cache_entry_t pages[MAX_PAGES];
     Py_ssize_t page_size;
@@ -162,6 +164,8 @@ _Py_RemoteDebug_InitProcHandle(proc_handle_t *handle, pid_t pid) {
         _set_debug_exception_cause(PyExc_RuntimeError, "Failed to initialize Windows process handle");
         return -1;
     }
+#elif defined(__linux__)
+    handle->memfd = -1;
 #endif
     handle->page_size = get_page_size();
     for (int i = 0; i < MAX_PAGES; i++) {
@@ -178,6 +182,11 @@ _Py_RemoteDebug_CleanupProcHandle(proc_handle_t *handle) {
     if (handle->hProcess != NULL) {
         CloseHandle(handle->hProcess);
         handle->hProcess = NULL;
+    }
+#elif defined(__linux__)
+    if (handle->memfd != -1) {
+        close(handle->memfd);
+        handle->memfd = -1;
     }
 #endif
     handle->pid = 0;
@@ -907,6 +916,61 @@ _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
     return address;
 }
 
+#if defined(__linux__) && HAVE_PROCESS_VM_READV
+
+static int
+open_proc_mem_fd(proc_handle_t *handle)
+{
+    char mem_file_path[64];
+    sprintf(mem_file_path, "/proc/%d/mem", handle->pid);
+
+    handle->memfd = open(mem_file_path, O_RDWR);
+    if (handle->memfd == -1) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        _set_debug_exception_cause(PyExc_OSError,
+            "failed to open file %s: %s", mem_file_path, strerror(errno));
+        return -1;
+    }
+    return 0;
+}
+
+// Why is pwritev not guarded? Except on Android API level 23 (no longer
+// supported), HAVE_PROCESS_VM_READV is sufficient.
+static int
+read_remote_memory_fallback(proc_handle_t *handle, uintptr_t remote_address, size_t len, void* dst)
+{
+    if (handle->memfd == -1) {
+        if (open_proc_mem_fd(handle) < 0) {
+            return -1;
+        }
+    }
+
+    struct iovec local[1];
+    Py_ssize_t result = 0;
+    Py_ssize_t read_bytes = 0;
+
+    do {
+        local[0].iov_base = (char*)dst + result;
+        local[0].iov_len = len - result;
+        off_t offset = remote_address + result;
+
+        read_bytes = preadv(handle->memfd, local, 1, offset);
+        if (read_bytes < 0) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            _set_debug_exception_cause(PyExc_OSError,
+                "preadv failed for PID %d at address 0x%lx "
+                "(size %zu, partial read %zd bytes): %s",
+                handle->pid, remote_address + result, len - result, result, strerror(errno));
+            return -1;
+        }
+
+        result += read_bytes;
+    } while ((size_t)read_bytes != local[0].iov_len);
+    return 0;
+}
+
+#endif // __linux__
+
 // Platform-independent memory read function
 static int
 _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address, size_t len, void* dst)
@@ -928,6 +992,9 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
     } while (result < len);
     return 0;
 #elif defined(__linux__) && HAVE_PROCESS_VM_READV
+    if (handle->memfd != -1) {
+        return read_remote_memory_fallback(handle, remote_address, len, dst);
+    }
     struct iovec local[1];
     struct iovec remote[1];
     Py_ssize_t result = 0;
@@ -941,6 +1008,9 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
 
         read_bytes = process_vm_readv(handle->pid, local, 1, remote, 1, 0);
         if (read_bytes < 0) {
+            if (errno == ENOSYS) {
+                return read_remote_memory_fallback(handle, remote_address, len, dst);
+            }
             PyErr_SetFromErrno(PyExc_OSError);
             _set_debug_exception_cause(PyExc_OSError,
                 "process_vm_readv failed for PID %d at address 0x%lx "
