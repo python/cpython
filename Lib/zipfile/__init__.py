@@ -432,6 +432,7 @@ class ZipInfo:
         'file_size',
         '_raw_time',
         '_end_offset',
+        'extended_mtime',
     )
 
     def __init__(self, filename="NoName", date_time=(1980,1,1,0,0,0)):
@@ -467,6 +468,7 @@ class ZipInfo:
         self.compress_size = 0          # Size of the compressed file
         self.file_size = 0              # Size of the uncompressed file
         self._end_offset = None         # Start of the next local header or central directory
+        self.extended_mtime = None      # Extended modified timestamp
         # Other attributes are set by class ZipFile:
         # header_offset         Byte offset to the file header
         # CRC                   CRC-32 of the uncompressed file
@@ -601,6 +603,15 @@ class ZipInfo:
                 except UnicodeDecodeError as e:
                     raise BadZipFile('Corrupt unicode path extra field (0x7075): invalid utf-8 bytes') from e
 
+            elif tp == 0x5455:
+                if ln == 0:
+                    raise BadZipFile('Empty extended timestamp extra field (0x5455)')
+                flags = extra[4]
+                if flags & 0x1 and ln >= 5:
+                    try:
+                        self.extended_mtime, = unpack("<l", extra[5:9])
+                    except struct.error as e:
+                        raise BadZipFile("Corrupt extended stamp extra field (0x5455)") from e
             extra = extra[ln+4:]
 
     @classmethod
