@@ -21,6 +21,9 @@ msgfmt_py = script_dir / 'msgfmt.py'
 with imports_under_tool("i18n"):
     import msgfmt
 
+with imports_under_tool("i18n"):
+    from msgfmt import _hashpjw
+
 
 def compile_messages(po_file, mo_file):
     assert_python_ok(msgfmt_py, '-o', mo_file, po_file)
@@ -44,6 +47,27 @@ class CompilationTest(unittest.TestCase):
 
                     self.assertDictEqual(actual._catalog, expected._catalog)
 
+    def test_hash_table(self):
+        # Check _hashpjw generates correct hash values
+        self.assertEqual(_hashpjw(b"stan"), 502398)
+        self.assertEqual(_hashpjw(b"foo"), 27999)
+
+        # Check hash table is generated correctly for general.po
+        with temp_cwd():
+            tmp_mo_file = "messages.mo"
+            compile_messages(data_dir / "general.po", tmp_mo_file)
+            with open(tmp_mo_file, "rb") as f:
+                mo_data = f.read()
+
+            header = struct.unpack("=7I", mo_data[:28])
+            hash_table_size, hash_table_offset = header[5:7]
+
+            hash_tab = struct.unpack(f"={hash_table_size}I",
+                                       mo_data[hash_table_offset : hash_table_offset + (hash_table_size * 4)])
+
+            self.assertEqual(hash_tab, (1, 3, 0, 8, 9, 7, 2, 0, 4, 5, 0, 6, 0))
+
+
     def test_binary_header(self):
         with temp_cwd():
             tmp_mo_file = 'messages.mo'
@@ -66,8 +90,8 @@ class CompilationTest(unittest.TestCase):
         self.assertEqual(num_strings, 9)
         self.assertEqual(orig_table_offset, 28)
         self.assertEqual(trans_table_offset, 100)
-        self.assertEqual(hash_table_size, 0)
-        self.assertEqual(hash_table_offset, 0)
+        self.assertEqual(hash_table_size, 13)
+        self.assertEqual(hash_table_offset, 172)
 
     def test_translations(self):
         with open(data_dir / 'general.mo', 'rb') as f:
