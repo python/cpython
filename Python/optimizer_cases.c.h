@@ -288,7 +288,8 @@
             JitOptSymbol *value;
             JitOptSymbol *res;
             value = stack_pointer[-1];
-            if (sym_matches_type(value, &PyLong_Type) || sym_matches_type(value, &PyBool_Type)) {
+            PyTypeObject *type = sym_get_type(value);
+            if (type ==  &PyLong_Type || type == &PyBool_Type) {
                 res = sym_new_type(ctx, &PyLong_Type);
             }
             else {
