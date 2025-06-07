@@ -21,7 +21,6 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 import datetime
-import time
 import collections.abc
 
 from _sqlite3 import *
@@ -37,12 +36,15 @@ Time = datetime.time
 Timestamp = datetime.datetime
 
 def DateFromTicks(ticks):
+    import time  # Lazy, to improve import time
     return Date(*time.localtime(ticks)[:3])
 
 def TimeFromTicks(ticks):
+    import time  # Lazy, to improve import time
     return Time(*time.localtime(ticks)[3:6])
 
 def TimestampFromTicks(ticks):
+    import time  # Lazy, to improve import time
     return Timestamp(*time.localtime(ticks)[:6])
 
 
@@ -52,6 +54,8 @@ Binary = memoryview
 collections.abc.Sequence.register(Row)
 
 def register_adapters_and_converters():
+    global _lazy_register
+    _lazy_register = lambda: None  # Prevent multiple registration  # noqa: E731
     from warnings import warn
 
     msg = ("The default {what} is deprecated as of Python 3.12; "
