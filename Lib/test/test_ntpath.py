@@ -105,6 +105,37 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.splitext("xx\\foo.bar.ext")', ('xx\\foo.bar', '.ext'))
         tester('ntpath.splitext("c:a/b\\c.d")', ('c:a/b\\c', '.d'))
 
+        tester(r'ntpath.splitext("\\server\share.ext")',
+               (r'\\server\share.ext', ''))
+        tester(r'ntpath.splitext("//server/share.ext")',
+               (r'//server/share.ext', ''))
+        tester(r'ntpath.splitext("\\server.ext")',
+               (r'\\server.ext', ''))
+        tester(r'ntpath.splitext("//server.ext")',
+               (r'//server.ext', ''))
+
+        tester(r'ntpath.splitext("\\?\UNC\server\share.ext")',
+               (r'\\?\UNC\server\share.ext', ''))
+        tester(r'ntpath.splitext("//?/UNC/server/share.ext")',
+               (r'//?/UNC/server/share.ext', ''))
+        tester(r'ntpath.splitext("\\?\UNC\server.ext")',
+               (r'\\?\UNC\server.ext', ''))
+        tester(r'ntpath.splitext("//?/UNC/server.ext")',
+               (r'//?/UNC/server.ext', ''))
+
+        tester(r'ntpath.splitext("\\server\share\file.ext")',
+               (r'\\server\share\file', '.ext'))
+        tester(r'ntpath.splitext("//server/share/file.ext")',
+               (r'//server/share/file', '.ext'))
+        tester(r'ntpath.splitext("\\server\share/file.ext")',
+               (r'\\server\share/file', '.ext'))
+        tester(r'ntpath.splitext("//server/share\file.ext")',
+               (r'//server/share\file', '.ext'))
+        tester(r'ntpath.splitext("\\?\UNC\server\share\file.ext")',
+               (r'\\?\UNC\server\share\file', '.ext'))
+        tester(r'ntpath.splitext("//?/UNC/server/share/file.ext")',
+               (r'//?/UNC/server/share/file', '.ext'))
+
     def test_splitdrive(self):
         tester("ntpath.splitdrive('')", ('', ''))
         tester("ntpath.splitdrive('foo')", ('', 'foo'))
