@@ -423,6 +423,8 @@ the :mod:`glob` module.)
    re-raised.
    In particular, :exc:`FileNotFoundError` is raised if *path* does not exist,
    or another :exc:`OSError` if it is otherwise inaccessible.
+   If *strict* is :data:`ALL_BUT_LAST`, the last component of the path
+   might be missing, but other errors are not ignored.
 
    If *strict* is :py:data:`os.path.ALLOW_MISSING`, errors other than
    :exc:`FileNotFoundError` are re-raised (as with ``strict=True``).
@@ -447,14 +449,21 @@ the :mod:`glob` module.)
       The *strict* parameter was added.
 
    .. versionchanged:: next
-      The :py:data:`~os.path.ALLOW_MISSING` value for the *strict* parameter
-      was added.
+      The :data:`ALL_BUT_LAST` and :data:`ALLOW_MISSING` values for
+      the *strict* parameter was added.
+
+.. data:: ALL_BUT_LAST
+
+   Special value used for the *strict* argument in :func:`realpath`.
+
+   .. versionadded:: next
 
 .. data:: ALLOW_MISSING
 
    Special value used for the *strict* argument in :func:`realpath`.
 
    .. versionadded:: next
+
 
 .. function:: relpath(path, start=os.curdir)
 
