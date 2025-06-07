@@ -1,0 +1,4 @@
+For unsigned integer formats in :c:func:`PyArg_ParseTuple`, accepting Python
+integers with value that is larger than the maximal value for the C type or
+less than the minimal value for the corresponding signed integer type
+of the same size is now deprecated.
