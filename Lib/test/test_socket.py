@@ -5806,7 +5806,9 @@ class NetworkConnectionNoServer(unittest.TestCase):
         port = socket_helper.find_unused_port()
         cli = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.addCleanup(cli.close)
-        with self.assertRaises(OSError) as cm:
+        expected_regex = (f"\\[\\w+ \\d+] [a-zA-Z ]+: \\('localhost', "
+                          f"{port}\\)")
+        with self.assertRaisesRegex(OSError, expected_regex) as cm:
             cli.connect((HOST, port))
         self.assertEqual(cm.exception.errno, errno.ECONNREFUSED)
 
