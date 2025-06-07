@@ -1228,7 +1228,7 @@ opcodes = [
 
       The same as INT, except that the literal ends with 'L', and always
       unpickles to a Python long.  There doesn't seem a real purpose to the
-      trailing 'L'.
+      trailing 'L', and it's not required for Python 3.0 or higher.
 
       Note that LONG takes time quadratic in the number of digits when
       unpickling (this is simply due to the nature of decimal->binary
@@ -1271,7 +1271,7 @@ opcodes = [
       The argument is a repr-style string, with bracketing quote characters,
       and perhaps embedded escapes.  The argument extends until the next
       newline character.  These are usually decoded into a str instance
-      using the encoding given to the Unpickler constructor. or the default,
+      using the encoding given to the Unpickler constructor, or the default,
       'ASCII'.  If the encoding given was 'bytes' however, they will be
       decoded as bytes object instead.
       """),
@@ -1288,7 +1288,7 @@ opcodes = [
       signed int giving the number of bytes in the string, and the
       second is that many bytes, which are taken literally as the string
       content.  These are usually decoded into a str instance using the
-      encoding given to the Unpickler constructor. or the default,
+      encoding given to the Unpickler constructor, or the default,
       'ASCII'.  If the encoding given was 'bytes' however, they will be
       decoded as bytes object instead.
       """),
@@ -1305,7 +1305,7 @@ opcodes = [
       the number of bytes in the string, and the second is that many
       bytes, which are taken literally as the string content.  These are
       usually decoded into a str instance using the encoding given to
-      the Unpickler constructor. or the default, 'ASCII'.  If the
+      the Unpickler constructor, or the default, 'ASCII'.  If the
       encoding given was 'bytes' however, they will be decoded as bytes
       object instead.
       """),
@@ -1374,7 +1374,12 @@ opcodes = [
       stack_before=[],
       stack_after=[pybuffer],
       proto=5,
-      doc="Push an out-of-band buffer object."),
+      doc="""Push an out-of-band buffer object.
+
+      An iterable must be passed to the Unpickler's 'buffer' argument, and
+      this opcode takes the next element from that iterable and puts it on
+      the stack.
+      """),
 
     I(name='READONLY_BUFFER',
       code='\x98',
@@ -1382,7 +1387,11 @@ opcodes = [
       stack_before=[pybuffer],
       stack_after=[pybuffer],
       proto=5,
-      doc="Make an out-of-band buffer object read-only."),
+      doc="""Make an out-of-band buffer object read-only.
+
+      The top of the stack should be the out-of-band buffer object from
+      NEXT_BUFFER, and this object is set to read-only.
+      """),
 
     # Ways to spell None.
 
@@ -1540,7 +1549,9 @@ opcodes = [
       Stack before:  ... pylist markobject stackslice
       Stack after:   ... pylist+stackslice
 
-      although pylist is really extended in-place.
+      although pylist is really extended in-place. The .extend() attribute
+      function is attempted first, and if that fails the .append() attribute
+      is ran instead.
       """),
 
     I(name='LIST',
@@ -1668,7 +1679,9 @@ opcodes = [
       Stack before:  ... pydict key value
       Stack after:   ... pydict
 
-      where pydict has been modified via pydict[key] = value.
+      where pydict has been modified via pydict[key] = value. Note that any
+      type that supports item assignment can be modified here, such as a list
+      or bytearray.
       """),
 
     I(name='SETITEMS',
@@ -1690,6 +1703,9 @@ opcodes = [
 
       where pydict has been modified via pydict[key_i] = value_i for i in
       1, 2, ..., n, and in that order.
+
+      Note that any type that supports item assignment can be modified here,
+      such as a list or bytearray.
       """),
 
     # Ways to build sets
@@ -1748,7 +1764,12 @@ opcodes = [
       stack_before=[anyobject],
       stack_after=[],
       proto=0,
-      doc="Discard the top stack item, shrinking the stack by one item."),
+      doc="""Discard the top stack item, shrinking the stack by one item.
+
+      If the stack has no items in it and the metastack is not empty, then
+      this opcode will act like POP_MARK and pop the top of the metastack
+      into the current stack.
+      """),
 
     I(name='DUP',
       code='2',
@@ -1795,9 +1816,9 @@ opcodes = [
       proto=0,
       doc="""Read an object from the memo and push it on the stack.
 
-      The index of the memo object to push is given by the newline-terminated
-      decimal string following.  BINGET and LONG_BINGET are space-optimized
-      versions.
+      The index of the memo object to push is given by the positive
+      newline-terminated decimal string following.  BINGET and LONG_BINGET
+      are space-optimized versions.
       """),
 
     I(name='BINGET',
@@ -1832,9 +1853,9 @@ opcodes = [
       proto=0,
       doc="""Store the stack top into the memo.  The stack is not popped.
 
-      The index of the memo location to write into is given by the newline-
-      terminated decimal string following.  BINPUT and LONG_BINPUT are
-      space-optimized versions.
+      The index of the memo location to write into is given by the positive
+      newline-terminated decimal string following.  BINPUT and LONG_BINPUT
+      are space-optimized versions.
       """),
 
     I(name='BINPUT',
@@ -1894,8 +1915,11 @@ opcodes = [
       code registry ought to be global, although a range of codes may
       be reserved for private use.
 
-      EXT1 has a 1-byte integer argument.  This is used to index into the
-      extension registry, and the object at that index is pushed on the stack.
+      EXT1 has a 1-byte integer argument.  This is used to index into
+      the inverted extension registry, which contains integer to tuple
+      mappings. The tuples have a length of two in the format of
+      '("module", "name")'. This tuple is then passed through find_class,
+      and the result is pushed onto the stack.
       """),
 
     I(name='EXT2',
@@ -1945,6 +1969,9 @@ opcodes = [
       stack_after=[anyobject],
       proto=4,
       doc="""Push a global object (module.attr) on the stack.
+
+      This opcode behaves the same way as GLOBAL except the module and name
+      arguments are two separate strings popped from the top of the stack.
       """),
 
     # Ways to build objects of classes pickle doesn't know about directly
@@ -1972,13 +1999,6 @@ opcodes = [
       argument to be passed to the object's __setstate__, and then the REDUCE
       opcode is followed by code to create setstate's argument, and then a
       BUILD opcode to apply  __setstate__ to that argument.
-
-      If not isinstance(callable, type), REDUCE complains unless the
-      callable has been registered with the copyreg module's
-      safe_constructors dict, or the callable has a magic
-      '__safe_for_unpickling__' attribute with a true value.  I'm not sure
-      why it does this, but I've sure seen this complaint often enough when
-      I didn't want to <wink>.
       """),
 
     I(name='BUILD',
@@ -2156,7 +2176,8 @@ opcodes = [
       doc="""Indicate the beginning of a new frame.
 
       The unpickler may use this opcode to safely prefetch data from its
-      underlying stream.
+      underlying stream and prevents several small I/O reads during unpickling.
+      Frames shouldn't overlap with each other or split opcodes.
       """),
 
     # Ways to deal with persistent IDs.
