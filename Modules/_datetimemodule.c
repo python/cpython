@@ -6772,6 +6772,29 @@ datetime_astimezone(PyObject *op, PyObject *args, PyObject *kw)
         PyObject_CallMethodOneArg(tzinfo, &_Py_ID(fromutc), temp);
     Py_DECREF(temp);
 
+    /* Set fold if there is discrepancy between timestamp and timezone. */
+    if (result != NULL) {
+        offset = call_utcoffset(tzinfo, (PyObject *)result);
+        if (offset == NULL || offset == Py_None || !PyDelta_Check(offset)) {
+            Py_XDECREF(offset);
+            goto naive;
+        }
+
+        PyObject *myoffset = call_utcoffset(tzinfo, (PyObject *)self);
+        if (myoffset == NULL || myoffset == Py_None || !PyDelta_Check(myoffset)) {
+            Py_XDECREF(offset);
+            Py_XDECREF(myoffset);
+            return NULL;
+        }
+
+        if (delta_cmp(offset, myoffset) == 0) {
+            DATE_SET_FOLD(result, 1);
+        }
+
+        Py_XDECREF(myoffset);
+        Py_XDECREF(offset);
+    }
+
     return (PyObject *)result;
 }
 
