@@ -536,7 +536,7 @@ class HelpFormatter(object):
         action_header_no_color = self._decolor(action_header)
 
         # no help; start on same line and add a final newline
-        if not action.help:
+        if action.help is None:
             tup = self._current_indent, '', action_header
             action_header = '%*s%s\n' % tup
 
@@ -562,7 +562,7 @@ class HelpFormatter(object):
         parts = [action_header]
 
         # if there was help for the action, add lines of help text
-        if action.help and action.help.strip():
+        if action.help is not None and action.help.strip():
             help_text = self._expand_help(action)
             if help_text:
                 help_lines = self._split_lines(help_text, help_width)
@@ -739,6 +739,11 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
     Only the name of this class is considered a public API. All the methods
     provided by the class are considered an implementation detail.
     """
+
+    def add_argument(self, *args, **kwargs):
+        if args[0].help is None:
+            args[0].help = 'No description'
+        super().add_argument(*args, **kwargs)
 
     def _get_help_string(self, action):
         help = action.help
