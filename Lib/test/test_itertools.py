@@ -2331,6 +2331,19 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(TypeError, tee, N(s))
             self.assertRaises(ZeroDivisionError, list, tee(E(s))[0])
 
+    def test_serialize(self):
+        for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):
+            for g in (G, I, Ig, S, L, R):
+                seq = list(g(s))
+                expected = seq
+                actual = list(serialize(g(s)))
+                self.assertEqual(actual, expected)
+            self.assertRaises(TypeError, serialize, X(s))
+            self.assertRaises(TypeError, serialize, N(s))
+            self.assertRaises(ZeroDivisionError, list, serialize(E(s)))
+        for arg in [1, True, sys]:
+            self.assertRaises(TypeError, serialize, arg)
+
 class LengthTransparency(unittest.TestCase):
 
     def test_repeat(self):
