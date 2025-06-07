@@ -664,6 +664,8 @@ class HTTPResponse(io.BufferedIOBase):
         result = self.fp.read1(n)
         if not result and n:
             self._close_conn()
+            if self.length:
+                raise IncompleteRead(result)
         elif self.length is not None:
             self.length -= len(result)
             if not self.length:
@@ -690,10 +692,15 @@ class HTTPResponse(io.BufferedIOBase):
         result = self.fp.readline(limit)
         if not result and limit:
             self._close_conn()
+            if self.length:
+                raise IncompleteRead(result)
         elif self.length is not None:
             self.length -= len(result)
             if not self.length:
                 self._close_conn()
+            elif len(result) != limit and not result.endswith(b"\n"):
+                self._close_conn()
+                raise IncompleteRead(result)
         return result
 
     def _read1_chunked(self, n):
