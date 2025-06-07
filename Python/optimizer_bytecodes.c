@@ -1237,6 +1237,20 @@ dummy_func(void) {
         sym_set_const(callable, list_append);
     }
 
+    op(_BINARY_SLICE, (container, start, stop -- res)) {
+        // Slicing a string/list/tuple always returns the same type.
+        PyTypeObject *type = sym_get_type(container);
+        if (type == &PyUnicode_Type ||
+            type == &PyList_Type ||
+            type == &PyTuple_Type)
+        {
+            res = sym_new_type(ctx, type);
+        }
+        else {
+            res = sym_new_not_null(ctx);
+        }
+    }
+
 // END BYTECODES //
 
 }
