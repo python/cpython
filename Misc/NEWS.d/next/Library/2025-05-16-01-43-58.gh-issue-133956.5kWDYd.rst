@@ -1,0 +1,1 @@
+Fix bug where ``ClassVar`` string annotation in :func:`@dataclass <dataclasses.dataclass>` caused incorrect __init__ generation
