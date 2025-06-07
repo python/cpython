@@ -1489,9 +1489,6 @@ PyModule_SetDocString:int:::
 PyModule_SetDocString:PyObject*:module:0:
 PyModule_SetDocString:const char*:docstring::
 
-PyModuleDef_Init:PyObject*::0:
-PyModuleDef_Init:PyModuleDef*:def::
-
 PyNumber_Absolute:PyObject*::+1:
 PyNumber_Absolute:PyObject*:o:0:
 
