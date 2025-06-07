@@ -1715,11 +1715,11 @@ hmacmodule_init_cpu_features(hmacmodule_state *state)
     __cpuid_count(1, 0, eax1, ebx1, ecx1, edx1);
     __cpuid_count(7, 0, eax7, ebx7, ecx7, edx7);
 #elif defined(_M_X64)
-    int info1[4] = { 0 };
+    int info1[4] = {0};
     __cpuidex(info1, 1, 0);
     eax1 = info1[0], ebx1 = info1[1], ecx1 = info1[2], edx1 = info1[3];
 
-    int info7[4] = { 0 };
+    int info7[4] = {0};
     __cpuidex(info7, 7, 0);
     eax7 = info7[0], ebx7 = info7[1], ecx7 = info7[2], edx7 = info7[3];
 #endif
