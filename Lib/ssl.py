@@ -975,6 +975,10 @@ def _sslcopydoc(func):
     return func
 
 
+class _GiveupOnSSLSendfile(Exception):
+    pass
+
+
 class SSLSocket(socket):
     """This class implements a subtype of socket.socket that wraps
     the underlying OS socket in an SSL context when necessary, and
@@ -1266,14 +1270,25 @@ class SSLSocket(socket):
             return super().sendall(data, flags)
 
     def sendfile(self, file, offset=0, count=None):
-        """Send a file, possibly by using os.sendfile() if this is a
-        clear-text socket.  Return the total number of bytes sent.
+        """Send a file, possibly by using an efficient sendfile() call if
+        the system supports it.  Return the total number of bytes sent.
         """
-        if self._sslobj is not None:
-            return self._sendfile_use_send(file, offset, count)
-        else:
-            # os.sendfile() works with plain sockets only
+        if self._sslobj is None:
             return super().sendfile(file, offset, count)
+
+        if not self._sslobj.uses_ktls_for_send():
+            return self._sendfile_use_send(file, offset, count)
+
+        sendfile = getattr(self._sslobj, "sendfile", None)
+        if sendfile is None:
+            return self._sendfile_use_send(file, offset, count)
+
+        try:
+            return self._sendfile_zerocopy(
+                sendfile, _GiveupOnSSLSendfile, file, offset, count,
+            )
+        except _GiveupOnSSLSendfile:
+            return self._sendfile_use_send(file, offset, count)
 
     def recv(self, buflen=1024, flags=0):
         self._checkClosed()
