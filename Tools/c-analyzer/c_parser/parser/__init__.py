@@ -208,7 +208,27 @@ def _iter_source(lines, *, maxtext=11_000, maxlines=200, showtext=False):
             return
     # At this point either the file ended prematurely
     # or there's "too much" text.
-    filename, lno, text = srcinfo.filename, srcinfo._start, srcinfo.text
+    filename, lno_from, lno_to = srcinfo.filename, srcinfo.start, srcinfo.end
+    text = srcinfo.text
     if len(text) > 500:
         text = text[:500] + '...'
-    raise Exception(f'unmatched text ({filename} starting at line {lno}):\n{text}')
+
+    if srcinfo.too_much_text(maxtext):
+        msg = [
+            'too much text, try to increase MAX_SIZES[MAXTEXT] in cpython/_parser.py',
+            f'{filename} starting at line {lno_from} to {lno_to}',
+            f'has code with length {len(text)} greater than {maxtext}:',
+            text
+        ]
+        raise Exception('\n'.join(msg))
+
+    if srcinfo.too_much_lines(maxlines):
+        msg = [
+            'too much lines, try to increase MAX_SIZES[MAXLINES] in cpython/_parser.py',
+            f'{filename} starting at line {lno_from} to {lno_to}',
+            f'has code with number of lines {lno_to - lno_from} greater than {maxlines}:',
+            text
+        ]
+        raise Exception('\n'.join(msg))
+
+    raise Exception(f'unmatched text ({filename} starting at line {lno_from}):\n{text}')
