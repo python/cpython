@@ -1776,6 +1776,13 @@ class PyUnicodeWriterTest(unittest.TestCase):
         self.assertEqual(writer.finish(),
                          "ascii-latin1=\xE9-euro=\u20AC.")
 
+    def test_ascii(self):
+        writer = self.create_writer(0)
+        writer.write_ascii(b"Hello ", -1)
+        writer.write_ascii(b"", 0)
+        writer.write_ascii(b"Python! <truncated>", 6)
+        self.assertEqual(writer.finish(), "Hello Python")
+
     def test_invalid_utf8(self):
         writer = self.create_writer(0)
         with self.assertRaises(UnicodeDecodeError):

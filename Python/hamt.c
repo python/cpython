@@ -1176,7 +1176,7 @@ hamt_node_bitmap_dump(PyHamtNode_Bitmap *node,
         }
 
         if (key_or_null == NULL) {
-            if (PyUnicodeWriter_WriteUTF8(writer, "NULL:\n", -1) < 0) {
+            if (PyUnicodeWriter_WriteASCII(writer, "NULL:\n", 6) < 0) {
                 goto error;
             }
 
@@ -1194,7 +1194,7 @@ hamt_node_bitmap_dump(PyHamtNode_Bitmap *node,
             }
         }
 
-        if (PyUnicodeWriter_WriteUTF8(writer, "\n", 1) < 0) {
+        if (PyUnicodeWriter_WriteASCII(writer, "\n", 1) < 0) {
             goto error;
         }
     }
@@ -1915,7 +1915,7 @@ hamt_node_array_dump(PyHamtNode_Array *node,
             goto error;
         }
 
-        if (PyUnicodeWriter_WriteUTF8(writer, "\n", 1) < 0) {
+        if (PyUnicodeWriter_WriteASCII(writer, "\n", 1) < 0) {
             goto error;
         }
     }
