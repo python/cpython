@@ -1158,7 +1158,6 @@ def buildPython():
     print(" NOTE: --with-mimalloc=no pending resolution of weak linking issues")
     runCommand("%s -C --enable-framework --enable-universalsdk=/ "
                "--with-mimalloc=no "
-               "--with-system-libmpdec "
                "--with-universal-archs=%s "
                "%s "
                "%s "

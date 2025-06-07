@@ -115,7 +115,6 @@ glob	dirname
 *	./Include/internal
 *   ./Include/internal/mimalloc
 
-Modules/_decimal/**/*.c	Modules/_decimal/libmpdec
 Modules/_elementtree.c	Modules/expat
 Modules/_hacl/*.c	Modules/_hacl/include
 Modules/_hacl/*.c	Modules/_hacl/

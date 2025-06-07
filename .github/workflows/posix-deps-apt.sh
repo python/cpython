@@ -1,4 +1,8 @@
 #!/bin/sh
+
+# Workaround missing on ubuntu 24.04 libmpdec-dev
+sudo add-apt-repository ppa:ondrej/php
+
 apt-get update
 
 apt-get -yq install \
@@ -24,4 +28,5 @@ apt-get -yq install \
     tk-dev \
     uuid-dev \
     xvfb \
-    zlib1g-dev
+    zlib1g-dev \
+    libmpdec-dev

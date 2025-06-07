@@ -248,7 +248,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			\$*) ;;
 			*) src='$(srcdir)/'"$srcdir/$src";;
 			esac
-			# custom flags first, PY_STDMODULE_CFLAGS may contain -I with system libmpdec
+			# custom flags first, PY_STDMODULE_CFLAGS may contain -I for system libmpdec
 			case $doconfig in
 			no)
 				cc="$cc $cpps \$(PY_STDMODULE_CFLAGS) \$(CCSHARED)"
