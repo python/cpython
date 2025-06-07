@@ -1562,9 +1562,9 @@ done_tlbc:
 
     Py_INCREF(meta->func_name);
     Py_INCREF(meta->file_name);
-    PyTuple_SET_ITEM(tuple, 0, meta->func_name);
-    PyTuple_SET_ITEM(tuple, 1, meta->file_name);
-    PyTuple_SET_ITEM(tuple, 2, lineno);
+    PyTuple_SET_ITEM(tuple, 0, meta->file_name);
+    PyTuple_SET_ITEM(tuple, 1, lineno);
+    PyTuple_SET_ITEM(tuple, 2, meta->func_name);
 
     *result = tuple;
     return 0;
