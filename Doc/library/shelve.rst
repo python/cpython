@@ -85,6 +85,13 @@ Two additional methods are supported:
 
    .. versionadded:: next
 
+   .. warning::
+
+      During the call to :meth:`!sync`, the *writeback* attribute is set to
+      :const:`False` and other threads will stop updating the cache. As such,
+      this method is **not** thread-safe.
+
+
 .. method:: Shelf.close()
 
    Synchronize and close the persistent *dict* object.  Operations on a closed
