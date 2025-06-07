@@ -1371,15 +1371,20 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_CHECK_FUNCTION_EXACT_ARGS", uops)
 
     def test_method_guards_removed_or_reduced(self):
+        class TestObject:
+            def test(self, *args, **kwargs):
+                return args[0]
+
+        test_object = TestObject()
+        test_bound_method = TestObject.test.__get__(test_object)
 
         def testfunc(n):
+            result = 0
             for i in range(n):
-                test_bound_method(i)
-
-
-        testfunc(TIER2_THRESHOLD)
-
-        ex = get_first_executor(testfunc)
+                result += test_bound_method(i)
+            return result
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, sum(range(TIER2_THRESHOLD)))
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_PUSH_FRAME", uops)
@@ -2235,14 +2240,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_LOAD_ATTR_METHOD_WITH_VALUES", uops)
         self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
         self.assertNotIn("_LOAD_ATTR_METHOD_LAZY_DICT", uops)
-
-class TestObject:
-    def test(self, *args, **kwargs):
-        return args[0]
-
-test_object = TestObject()
-test_bound_method = TestObject.test.__get__(test_object)
-
 
 def global_identity(x):
     return x

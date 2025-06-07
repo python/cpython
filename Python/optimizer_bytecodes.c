@@ -710,8 +710,8 @@ dummy_func(void) {
 
     op(_CHECK_METHOD_VERSION, (func_version/2, callable, null, unused[oparg] -- callable, null, unused[oparg])) {
         if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyMethod_Type)) {
-            assert(PyMethod_Check(sym_get_const(ctx, callable)));
             PyMethodObject *method = (PyMethodObject *)sym_get_const(ctx, callable);
+            assert(PyMethod_Check(method));
             REPLACE_OP(this_instr, _CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
             this_instr->operand1 = (uintptr_t)method->im_func;
         }
