@@ -1,0 +1,2 @@
+Provide C99 Annex G return values for :mod:`cmath`'s functions as the
+``value`` attribute of exception objects.  Patch by Sergey B Kirpichev.
