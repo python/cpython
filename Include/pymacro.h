@@ -25,8 +25,8 @@
 
 
 // _Py_ALIGN_AS: this compiler's spelling of `alignas` keyword,
-// We currently use alignas for free-threaded builds only; additional compat
-// checking would be great before we add it to the default build.
+// additional compat checking would be great since we added it to the default
+// build.
 // Standards/compiler support:
 // - `alignas` is a keyword in C23 and C++11.
 // - `_Alignas` is a keyword in C11
@@ -38,30 +38,28 @@
 // unsupported platforms, we don't redefine _Py_ALIGN_AS if it's already
 // defined. Note that defining it wrong (including defining it to nothing) will
 // cause ABI incompatibilities.
-#ifdef Py_GIL_DISABLED
-#   ifndef _Py_ALIGN_AS
-#       ifdef __cplusplus
-#           if __cplusplus >= 201103L
-#               define _Py_ALIGN_AS(V) alignas(V)
-#           elif defined(__GNUC__) || defined(__clang__)
-#               define _Py_ALIGN_AS(V) __attribute__((aligned(V)))
-#           elif defined(_MSC_VER)
-#               define _Py_ALIGN_AS(V) __declspec(align(V))
-#           else
-#               define _Py_ALIGN_AS(V) alignas(V)
-#           endif
-#       elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
-#           define _Py_ALIGN_AS(V) alignas(V)
-#       elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-#           define _Py_ALIGN_AS(V) _Alignas(V)
-#       elif (defined(__GNUC__) || defined(__clang__))
-#           define _Py_ALIGN_AS(V) __attribute__((aligned(V)))
-#       elif defined(_MSC_VER)
-#           define _Py_ALIGN_AS(V) __declspec(align(V))
-#       else
-#           define _Py_ALIGN_AS(V) _Alignas(V)
-#       endif
-#   endif
+#ifndef _Py_ALIGN_AS
+#    ifdef __cplusplus
+#        if __cplusplus >= 201103L
+#            define _Py_ALIGN_AS(V) alignas(V)
+#        elif defined(__GNUC__) || defined(__clang__)
+#            define _Py_ALIGN_AS(V) __attribute__((aligned(V)))
+#        elif defined(_MSC_VER)
+#            define _Py_ALIGN_AS(V) __declspec(align(V))
+#        else
+#            define _Py_ALIGN_AS(V) alignas(V)
+#        endif
+#    elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#        define _Py_ALIGN_AS(V) alignas(V)
+#    elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#        define _Py_ALIGN_AS(V) _Alignas(V)
+#    elif (defined(__GNUC__) || defined(__clang__))
+#        define _Py_ALIGN_AS(V) __attribute__((aligned(V)))
+#    elif defined(_MSC_VER)
+#        define _Py_ALIGN_AS(V) __declspec(align(V))
+#    else
+#        define _Py_ALIGN_AS(V) _Alignas(V)
+#    endif
 #endif
 
 /* Minimum value between x and y */
