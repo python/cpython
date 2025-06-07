@@ -304,6 +304,15 @@ class Server(events.AbstractServer):
 
     def _wakeup(self):
         waiters = self._waiters
+        if waiters is None:
+            # gh109564: the wakeup method has two possible call-sites, through an
+            # explicit call to the server's close method, or indirectly after the last
+            # client disconnects and the corresponding transport detaches from the
+            # server. These two can be in a race-condition if the server closes between
+            # `BaseSelectorEventLoop._accept_connection` and
+            # `BaseSelectorEventLoop._accept_connection2`; in this scenario we must
+            # check the wakeup call hasn't already set the server waiters to None.
+            return
         self._waiters = None
         for waiter in waiters:
             if not waiter.done():
