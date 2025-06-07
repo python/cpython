@@ -937,6 +937,28 @@ class MiscTestCase(unittest.TestCase):
         ensure_lazy_imports("gettext", {"re", "warnings", "locale"})
 
 
+class DGettextTest(GettextBaseTest):
+
+    def setUp(self):
+        super().setUp()
+        gettext.bindtextdomain('gettext', os.curdir)
+
+    def test_dgettext_translation(self):
+        translation_cases = [
+            ('gettext', 'mullusk', 'bacon'),
+            ('gettext', 'Raymond Luxury Yach-t', 'Throatwobbler Mangrove'),
+            ('gettext', 'nudge nudge', 'wink wink'),
+
+            ('gettext', 'missing message', 'missing message'),
+            ('nonexistent_domain', 'mullusk', 'mullusk'),
+            ('', 'mullusk', gettext.gettext('mullusk')),
+        ]
+        for domain, msgid, expected in translation_cases:
+            with self.subTest(domain=domain, msgid=msgid):
+                result = gettext.dgettext(domain, msgid)
+                self.assertEqual(result, expected)
+
+
 if __name__ == '__main__':
     unittest.main()
 
