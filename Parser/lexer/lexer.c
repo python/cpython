@@ -126,16 +126,16 @@ set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
     int in_string = 0;
     char quote_char = 0;
     char string_quote = 0;
-    
+
     for (Py_ssize_t i = 0; i < tok_mode->last_expr_size - tok_mode->last_expr_end; i++) {
         char ch = tok_mode->last_expr_buffer[i];
-        
+
         // Skip escaped characters
         if (ch == '\\') {
             i++;
             continue;
         }
-        
+
         // Handle quotes
         if (ch == '"' || ch == '\'') {
             if (!in_string) {
@@ -147,7 +147,7 @@ set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
             }
             continue;
         }
-        
+
         // Check for # outside strings
         if (ch == '#' && !in_string) {
             hash_detected = 1;
@@ -183,7 +183,7 @@ set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
             }
             // Skip comments
             else if (ch == '#' && !in_string) {
-                while (i < tok_mode->last_expr_size - tok_mode->last_expr_end && 
+                while (i < tok_mode->last_expr_size - tok_mode->last_expr_end &&
                        tok_mode->last_expr_buffer[i] != '\n') {
                     i++;
                 }
