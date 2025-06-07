@@ -677,16 +677,38 @@ class _BaseNetwork(_IPAddressBase):
     def __str__(self):
         return '%s/%d' % (self.network_address, self.prefixlen)
 
-    def hosts(self):
-        """Generate Iterator over usable hosts in a network.
+    def hosts(self, count=None, *, offset=0, step=None):
+        """Generate Iterator over a subset of usable hosts in a network.
 
-        This is like __iter__ except it doesn't return the network
+        This is similar to __iter__ except it doesn't return the network
         or broadcast addresses.
 
+        Similar to slices, we can start the hosts at a given offset from the
+        first host. An offset of zero represents the first usable host, not the
+        first address of the network. If the step value is None, a step of 1 is
+        used.
+
+        The count represents the limit for how many hosts we want. The number
+        of yielded hosts may be less than this count, if it exceeds the range
+        of usable hosts.
         """
         network = int(self.network_address)
         broadcast = int(self.broadcast_address)
-        for x in range(network + 1, broadcast):
+        start_host = network + offset + 1
+        if isinstance(count, int):
+            if count < 0:
+                raise ValueError("count must be a non-negative integer, not %s" % count)
+            end_host = min(start_host + count*step, broadcast - 1)
+        elif count is None:
+            end_host = broadcast - 1
+        else:
+            raise TypeError("count must be an integer or None, not %s" % type(count))
+
+        # TODO: support negative stepsize
+        if isinstance(step, int) and step < 1:
+            raise ValueError("step must be a non-zero positive integer, not %s" % step)
+
+        for x in range(start_host, end_host, step):
             yield self._address_class(x)
 
     def __iter__(self):
@@ -695,18 +717,33 @@ class _BaseNetwork(_IPAddressBase):
         for x in range(network, broadcast + 1):
             yield self._address_class(x)
 
-    def __getitem__(self, n):
+    def __getitem__(self, index):
+        """Gets an IP address from the network range, including the network
+        address and broadcast address.
+
+        The index may be an integer, returning a single address within the
+        network range, or a slice of addresses from the network.
+        If a slice is requested, the returned generator may be empty, since
+        slices do not respect boundaries.
+        """
         network = int(self.network_address)
         broadcast = int(self.broadcast_address)
-        if n >= 0:
-            if network + n > broadcast:
-                raise IndexError('address out of range')
-            return self._address_class(network + n)
+        if isinstance(index, slice):
+            start, stop, step = index.indices(broadcast - network + 1)
+            for i in range(start, stop, step):
+                yield self._address_class(network+i)
+        elif isinstance(index, int):
+            if index >= 0:
+                if network + index > broadcast:
+                    raise IndexError('address out of range: %s' % (index))
+                return self._address_class(network + index)
+            else:
+                index += 1
+                if broadcast + index < network:
+                    raise IndexError('address out of range')
+                return self._address_class(broadcast + index)
         else:
-            n += 1
-            if broadcast + n < network:
-                raise IndexError('address out of range')
-            return self._address_class(broadcast + n)
+            raise TypeError('index must be an int or a slice: %s, not %s' % (index, type(index)))
 
     def __lt__(self, other):
         if not isinstance(other, _BaseNetwork):
