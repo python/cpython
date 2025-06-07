@@ -1,2 +1,2 @@
-- ArgumentParser: ``add_parser()`` now uses the ``help`` value as the
+ArgumentParser: ``add_parser()`` now uses the ``help`` value as the
   default ``description`` if none is provided. Patch by Swayam.
