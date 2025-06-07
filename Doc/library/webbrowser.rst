@@ -49,6 +49,8 @@ a new tab, with the browser being brought to the foreground. The use of the
 :mod:`webbrowser` module on iOS requires the :mod:`ctypes` module. If
 :mod:`ctypes` isn't available, calls to :func:`.open` will fail.
 
+.. _webbrowser-cli:
+
 .. program:: webbrowser
 
 The script :program:`webbrowser` can be used as a command-line interface for the
