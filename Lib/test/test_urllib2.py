@@ -850,14 +850,16 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(headers["Last-modified"], modified)
             self.assertEqual(respurl, canonurl)
 
+        _, cwd = os.path.splitdrive(os.getcwd())
+        cwd = cwd.replace("\\", "/")
         for url in [
             parsed._replace(netloc='localhost:80').geturl(),
             "file:///file_does_not_exist.txt",
             "file://not-a-local-host.com//dir/file.txt",
             "file://%s:80%s/%s" % (socket.gethostbyname('localhost'),
-                                   os.getcwd(), TESTFN),
+                                   cwd, TESTFN),
             "file://somerandomhost.ontheinternet.com%s/%s" %
-            (os.getcwd(), TESTFN),
+            (cwd, TESTFN),
             ]:
             try:
                 f = open(TESTFN, "wb")
