@@ -4319,11 +4319,10 @@ to be ignored.
    and will have the same process id as the caller.  Errors will be reported as
    :exc:`OSError` exceptions.
 
-   The current process is replaced immediately. Open file objects and
-   descriptors are not flushed, so if there may be data buffered
-   on these open files, you should flush them using
-   :func:`sys.stdout.flush` or :func:`os.fsync` before calling an
-   :func:`exec\* <execl>` function.
+   The current process is replaced immediately. Open file objects are not
+   flushed, so if there may be data buffered on these open files, you should
+   flush them using :meth:`~io.IOBase.flush`, e.g. :meth:`sys.stdout.flush`,
+   before calling an :func:`exec\* <execl>` function.
 
    The "l" and "v" variants of the :func:`exec\* <execl>` functions differ in how
    command-line arguments are passed.  The "l" variants are perhaps the easiest
