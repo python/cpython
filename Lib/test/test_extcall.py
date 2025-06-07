@@ -401,7 +401,7 @@ Call with dict subtype:
     >>> s3(**md)
     Traceback (most recent call last):
       ...
-    TypeError: s3() missing 1 required keyword-only argument: 'n'
+    TypeError: s3() missing 1 required keyword argument: 'n'
 
 Another helper function
 
@@ -487,17 +487,17 @@ Too many arguments:
     >>> f(1, kw=3)
     Traceback (most recent call last):
       ...
-    TypeError: f() takes 0 positional arguments but 1 positional argument (and 1 keyword-only argument) were given
+    TypeError: f() takes 0 positional arguments but 1 positional argument (and 1 keyword argument) were given
     >>> def f(*, kw, b): pass
     >>> f(1, 2, 3, b=3, kw=3)
     Traceback (most recent call last):
       ...
-    TypeError: f() takes 0 positional arguments but 3 positional arguments (and 2 keyword-only arguments) were given
+    TypeError: f() takes 0 positional arguments but 3 positional arguments (and 2 keyword arguments) were given
     >>> def f(a, b=2, *, kw): pass
     >>> f(2, 3, 4, kw=4)
     Traceback (most recent call last):
       ...
-    TypeError: f() takes from 1 to 2 positional arguments but 3 positional arguments (and 1 keyword-only argument) were given
+    TypeError: f() takes from 1 to 2 positional arguments but 3 positional arguments (and 1 keyword argument) were given
 
 Too few and missing arguments:
 
@@ -533,12 +533,12 @@ Same with keyword only args:
     >>> f()
     Traceback (most recent call last):
       ...
-    TypeError: f() missing 1 required keyword-only argument: 'w'
+    TypeError: f() missing 1 required keyword argument: 'w'
     >>> def f(*, a, b, c, d, e): pass
     >>> f()
     Traceback (most recent call last):
       ...
-    TypeError: f() missing 5 required keyword-only arguments: 'a', 'b', 'c', 'd', and 'e'
+    TypeError: f() missing 5 required keyword arguments: 'a', 'b', 'c', 'd', and 'e'
 
 """
 

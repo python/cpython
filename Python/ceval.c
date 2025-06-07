@@ -1318,7 +1318,7 @@ missing_arguments(PyThreadState *tstate, PyCodeObject *co,
     Py_ssize_t i, j = 0;
     Py_ssize_t start, end;
     int positional = (defcount != -1);
-    const char *kind = positional ? "positional" : "keyword-only";
+    const char *kind = positional ? "positional" : "keyword";
     PyObject *missing_names;
 
     /* Compute the names of the arguments that are missing. */
@@ -1380,7 +1380,7 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
     if (sig == NULL)
         return;
     if (kwonly_given) {
-        const char *format = " positional argument%s (and %zd keyword-only argument%s)";
+        const char *format = " positional argument%s (and %zd keyword argument%s)";
         kwonly_sig = PyUnicode_FromFormat(format,
                                           given != 1 ? "s" : "",
                                           kwonly_given,
