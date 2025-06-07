@@ -972,3 +972,9 @@ Helper functions
    or ``None``, runs of whitespace characters are replaced by a single space
    and leading and trailing whitespace are removed, otherwise *sep* is used to
    split and join the words.
+
+
+
+.. toctree::
+
+   string.templatelib.rst
