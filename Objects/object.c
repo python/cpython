@@ -1212,8 +1212,18 @@ PyObject_SetAttrString(PyObject *v, const char *name, PyObject *w)
     PyObject *s;
     int res;
 
-    if (Py_TYPE(v)->tp_setattr != NULL)
+    if (Py_TYPE(v)->tp_setattr != NULL) {
+        if (w == NULL && PyErr_Occurred()) {
+            if (PyErr_WarnFormat(PyExc_DeprecationWarning, 0,
+                    "calling PyObject_SetAttrString() with NULL value "
+                    "and an exception set is deprecated; "
+                    "use PyObject_DelAttrString() instead")) {
+                return -1;
+            }
+        }
+
         return (*Py_TYPE(v)->tp_setattr)(v, (char*)name, w);
+    }
     s = PyUnicode_InternFromString(name);
     if (s == NULL)
         return -1;
@@ -1437,7 +1447,7 @@ int
 PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 {
     PyTypeObject *tp = Py_TYPE(v);
-    int err;
+    int res;
 
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
@@ -1447,25 +1457,37 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
     }
     Py_INCREF(name);
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyUnicode_InternMortal(interp, &name);
-    if (tp->tp_setattro != NULL) {
-        err = (*tp->tp_setattro)(v, name, value);
-        Py_DECREF(name);
-        return err;
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *exc = NULL;
+    if (value == NULL && _PyErr_Occurred(tstate)) {
+        exc = _PyErr_GetRaisedException(tstate);
+        res = PyErr_WarnFormat(PyExc_DeprecationWarning, 0,
+                "calling PyObject_SetAttr() with NULL value "
+                "and an exception set is deprecated; "
+                "use PyObject_DelAttr() instead");
+        if (res) {
+            res = -1;
+            goto done;
+        }
     }
+
+    _PyUnicode_InternMortal(tstate->interp, &name);
+
+    if (tp->tp_setattro != NULL) {
+        res = (*tp->tp_setattro)(v, name, value);
+        goto done;
+    }
+
     if (tp->tp_setattr != NULL) {
         const char *name_str = PyUnicode_AsUTF8(name);
         if (name_str == NULL) {
-            Py_DECREF(name);
-            return -1;
+            res = -1;
+            goto done;
         }
-        err = (*tp->tp_setattr)(v, (char *)name_str, value);
-        Py_DECREF(name);
-        return err;
+        res = (*tp->tp_setattr)(v, (char *)name_str, value);
+        goto done;
     }
-    Py_DECREF(name);
-    _PyObject_ASSERT(name, Py_REFCNT(name) >= 1);
+
     if (tp->tp_getattr == NULL && tp->tp_getattro == NULL)
         PyErr_Format(PyExc_TypeError,
                      "'%.100s' object has no attributes "
@@ -1480,7 +1502,15 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
                      tp->tp_name,
                      value==NULL ? "del" : "assign to",
                      name);
-    return -1;
+    res = -1;
+    goto done;
+
+done:
+    if (exc) {
+        _PyErr_ChainExceptions1Tstate(tstate, exc);
+    }
+    Py_DECREF(name);
+    return res;
 }
 
 int
