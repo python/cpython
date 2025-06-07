@@ -1344,7 +1344,7 @@ Update GitHub CI workflows to use OpenSSL 3.0.13 and multissltests to use
 Fix a bug in Argument Clinic that generated incorrect code for methods with
 no parameters that use the :ref:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS
 <METH_METHOD-METH_FASTCALL-METH_KEYWORDS>` calling convention. Only the
-positional parameter count was checked; any keyword argument passed would be
+positional argument count was checked; any keyword argument passed would be
 silently accepted.
 
 ..

@@ -31,7 +31,7 @@ still needs to be closed when done).
    mapping.
 
 For both the Unix and Windows versions of the constructor, *access* may be
-specified as an optional keyword parameter. *access* accepts one of four
+specified as an optional keyword argument. *access* accepts one of four
 values: :const:`ACCESS_READ`, :const:`ACCESS_WRITE`, or :const:`ACCESS_COPY` to
 specify read-only, write-through or copy-on-write memory respectively, or
 :const:`ACCESS_DEFAULT` to defer to *prot*.  *access* can be used on both Unix
@@ -94,9 +94,9 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    :const:`PROT_READ \| PROT_WRITE`.
 
    *access* may be specified in lieu of *flags* and *prot* as an optional
-   keyword parameter.  It is an error to specify both *flags*, *prot* and
+   keyword argument.  It is an error to specify both *flags*, *prot* and
    *access*.  See the description of *access* above for information on how to
-   use this parameter.
+   use this argument.
 
    *offset* may be specified as a non-negative integer offset. mmap references
    will be relative to the offset from the beginning of the file. *offset*

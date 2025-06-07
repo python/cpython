@@ -121,7 +121,7 @@ Entry points
 .. function:: entry_points(**select_params)
 
    Returns a :class:`EntryPoints` instance describing entry points for the
-   current environment. Any given keyword parameters are passed to the
+   current environment. Any given keyword arguments are passed to the
    :meth:`!select` method for comparison to the attributes of
    the individual entry point definitions.
 

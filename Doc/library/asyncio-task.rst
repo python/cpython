@@ -247,11 +247,11 @@ Creating Tasks
    :class:`Task` constructor (or factory) - all of the keyword arguments to
    this function are passed through to that interface.
 
-   An optional keyword-only *context* argument allows specifying a
+   An optional keyword argument *context* allows specifying a
    custom :class:`contextvars.Context` for the *coro* to run in.
    The current context copy is created when no *context* is provided.
 
-   An optional keyword-only *eager_start* argument allows specifying
+   An optional keyword argument *eager_start* allows specifying
    if the task should execute eagerly during the call to create_task,
    or be scheduled later. If *eager_start* is not passed the mode set
    by :meth:`loop.set_task_factory` will be used.
@@ -1232,12 +1232,12 @@ Task Object
    APIs except :meth:`Future.set_result` and
    :meth:`Future.set_exception`.
 
-   An optional keyword-only *context* argument allows specifying a
+   An optional keyword argument *context* allows specifying a
    custom :class:`contextvars.Context` for the *coro* to run in.
    If no *context* is provided, the Task copies the current context
    and later runs its coroutine in the copied context.
 
-   An optional keyword-only *eager_start* argument allows eagerly starting
+   An optional keyword argument *eager_start* allows eagerly starting
    the execution of the :class:`asyncio.Task` at task creation time.
    If set to ``True`` and the event loop is running, the task will start
    executing the coroutine immediately, until the first time the coroutine

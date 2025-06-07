@@ -507,7 +507,7 @@ has failed.
 .. nonce: jNFYqB
 .. section: Library
 
-``pdb.set_trace()`` now takes an optional keyword-only argument ``header``.
+``pdb.set_trace()`` now takes an optional keyword argument ``header``.
 If given, this is printed to the console just before debugging begins.
 
 ..
@@ -606,7 +606,7 @@ of browsing python files that do not end in .py.
 .. nonce: LxN4Vb
 .. section: IDLE
 
-IDLE - Make _htest, _utest parameters keyword only.
+IDLE - Make _htest, _utest parameters keyword-only.
 
 ..
 

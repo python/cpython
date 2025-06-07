@@ -241,7 +241,7 @@ even if we specify a fallback:
 One more thing to be aware of is that the parser-level :meth:`~ConfigParser.get` method
 provides a custom, more complex interface, maintained for backwards
 compatibility.  When using this method, a fallback value can be provided via
-the ``fallback`` keyword-only argument:
+the ``fallback`` keyword argument:
 
 .. doctest::
 
@@ -1182,9 +1182,9 @@ ConfigParser Objects
       in the same manner as the option.
 
       .. versionchanged:: 3.2
-         Arguments *raw*, *vars* and *fallback* are keyword only to protect
-         users from trying to use the third argument as the *fallback* fallback
-         (especially when using the mapping protocol).
+         Parameters *raw*, *vars* and *fallback* are keyword-only to protect
+         users from trying to use the third positional argument as the
+         *fallback* (especially when using the mapping protocol).
 
 
    .. method:: getint(section, option, *, raw=False, vars=None[, fallback])

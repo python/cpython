@@ -197,14 +197,14 @@ slightly different way:
 
 
    .. versionchanged:: 3.7
-      The keyword-only argument *header*.
+      Added the keyword-only parameter *header*.
 
    .. versionchanged:: 3.13
       :func:`set_trace` will enter the debugger immediately, rather than
       on the next line of code to be executed.
 
-   .. versionadded:: 3.14
-      The *commands* argument.
+   .. versionchanged:: 3.14
+      Added the *commands* parameter.
 
 
 .. awaitablefunction:: set_trace_async(*, header=None, commands=None)

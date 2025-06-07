@@ -1121,7 +1121,7 @@ pathlib
   for low-level path parsing and joining.
   This will be either :mod:`!posixpath` or :mod:`!ntpath`.
 
-* Add *recurse_symlinks* keyword-only argument to
+* Add *recurse_symlinks* keyword-only parameter to
   :meth:`.Path.glob` and :meth:`~pathlib.Path.rglob`.
   (Contributed by Barney Gale in :gh:`77609`.)
 
@@ -1130,7 +1130,7 @@ pathlib
   Previously, only directories were returned.
   (Contributed by Barney Gale in :gh:`70303`.)
 
-* Add the *follow_symlinks* keyword-only argument to
+* Add the *follow_symlinks* keyword-only parameter to
   :meth:`Path.is_file <pathlib.Path.is_file>`,
   :meth:`Path.is_dir <pathlib.Path.is_dir>`,
   :meth:`.Path.owner`, and :meth:`.Path.group`.
@@ -1324,11 +1324,11 @@ tkinter
   (Contributed by Serhiy Storchaka in :gh:`43457`.)
 
 * :meth:`!wm_attributes` can now return attributes as a :class:`dict`,
-  by using the new optional keyword-only parameter *return_python_dict*.
+  by using the new optional keyword argument *return_python_dict*.
   (Contributed by Serhiy Storchaka in :gh:`43457`.)
 
 * :meth:`!Text.count` can now return a simple :class:`int`
-  when the new optional keyword-only parameter *return_ints* is used.
+  when the new optional keyword argument *return_ints* is used.
   Otherwise, the single count is returned as a 1-tuple or ``None``.
   (Contributed by Serhiy Storchaka in :gh:`97928`.)
 

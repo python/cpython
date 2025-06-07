@@ -410,8 +410,8 @@ inside nested parentheses.  They are:
 
 ``$``
    :c:func:`PyArg_ParseTupleAndKeywords` only:
-   Indicates that the remaining arguments in the Python argument list are
-   keyword-only.  Currently, all keyword-only arguments must also be optional
+   Indicates that the remaining arguments in the Python argument list can be
+   supplied only by keyword.  Currently, all such arguments must also be optional
    arguments, so ``|`` must always be specified before ``$`` in the format
    string.
 
@@ -450,7 +450,7 @@ API Functions
 
 .. c:function:: int PyArg_ParseTuple(PyObject *args, const char *format, ...)
 
-   Parse the parameters of a function that takes only positional parameters into
+   Parse the arguments of a function that takes only positional arguments into
    local variables.  Returns true on success; on failure, it returns false and
    raises the appropriate exception.
 
@@ -463,8 +463,8 @@ API Functions
 
 .. c:function:: int PyArg_ParseTupleAndKeywords(PyObject *args, PyObject *kw, const char *format, char * const *keywords, ...)
 
-   Parse the parameters of a function that takes both positional and keyword
-   parameters into local variables.
+   Parse the arguments of a function that takes both positional and keyword
+   arguments into local variables.
    The *keywords* argument is a ``NULL``-terminated array of keyword parameter
    names specified as null-terminated ASCII or UTF-8 encoded C strings.
    Empty names denote
@@ -506,7 +506,7 @@ API Functions
 
 .. c:function:: int PyArg_Parse(PyObject *args, const char *format, ...)
 
-   Parse the parameter of a function that takes a single positional parameter
+   Parse the argument of a function that takes a single positional argument
    into a local variable.  Returns true on success; on failure, it returns
    false and raises the appropriate exception.
 

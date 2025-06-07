@@ -401,8 +401,8 @@ def iscode(object):
     """Return true if the object is a code object.
 
     Code objects provide these attributes:
-        co_argcount         number of arguments (not including *, ** args
-                            or keyword only arguments)
+        co_argcount         number of positional parameters (not including
+                            var-positional parameter)
         co_code             string of raw compiled bytecode
         co_cellvars         tuple of names of cell variables
         co_consts           tuple of constants used in the bytecode
@@ -413,8 +413,9 @@ def iscode(object):
                             | 256=iterable_coroutine | 512=async_generator
                             | 0x4000000=has_docstring
         co_freevars         tuple of names of free variables
-        co_posonlyargcount  number of positional only arguments
-        co_kwonlyargcount   number of keyword only arguments (not including ** arg)
+        co_posonlyargcount  number of positional-only parameters
+        co_kwonlyargcount   number of keyword-only parameters (not including
+                            var-keyword parameter)
         co_lnotab           encoded mapping of line numbers to bytecode indices
         co_name             name with which this code object was defined
         co_names            tuple of names other than arguments and function locals
@@ -1199,9 +1200,10 @@ def getargs(co):
     """Get information about the arguments accepted by a code object.
 
     Three things are returned: (args, varargs, varkw), where
-    'args' is the list of argument names. Keyword-only arguments are
-    appended. 'varargs' and 'varkw' are the names of the * and **
-    arguments or None."""
+    'args' is the list of the names of positional-only,
+    positional-or-keyword and keyword-only parameters. 'varargs' and
+    'varkw' are the names of the var-positional and var-keyword
+    parameters or None."""
     if not iscode(co):
         raise TypeError('{!r} is not a code object'.format(co))
 
@@ -2248,7 +2250,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
         kind = Parameter.VAR_POSITIONAL
         p(f.args.vararg, empty)
 
-    # keyword-only arguments
+    # keyword-only parameters
     kind = Parameter.KEYWORD_ONLY
     for name, default in zip(f.args.kwonlyargs, f.args.kw_defaults):
         p(name, default)
@@ -2938,7 +2940,7 @@ class Signature:
 
     * parameters : OrderedDict
         An ordered mapping of parameters' names to the corresponding
-        Parameter objects (keyword-only arguments are in the same order
+        Parameter objects (keyword-only parameters are in the same order
         as listed in `code.co_varnames`).
     * return_annotation : object
         The annotation for the return type of the function if specified.
@@ -3276,7 +3278,7 @@ class Signature:
 
             if kind == _VAR_POSITIONAL:
                 # OK, we have an '*args'-like parameter, so we won't need
-                # a '*' to separate keyword-only arguments
+                # a '*' to separate keyword-only parameters
                 render_kw_only_separator = False
             elif kind == _KEYWORD_ONLY and render_kw_only_separator:
                 # We have a keyword-only parameter to render and we haven't
