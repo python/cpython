@@ -403,10 +403,18 @@ the :mod:`glob` module.)
 
 .. function:: realpath(path, *, strict=False)
 
-   Return the canonical path of the specified filename, eliminating any symbolic
-   links encountered in the path (if they are supported by the operating
-   system). On Windows, this function will also resolve MS-DOS (also called 8.3)
-   style names such as ``C:\\PROGRA~1`` to ``C:\\Program Files``.
+   Return the canonical path of the specified filename. A canonical path:
+
+   * Is an absolute path (always starts from the root of the filesystem)
+   * Has all symbolic links resolved (if supported by the operating system)
+   * Is normalized (redundant separators, ``.`` and ``..`` components are removed)
+
+   On Windows, this function will also resolve MS-DOS (also called 8.3)
+   style names such as ``C:\\PROGRA~1`` to ``C:\\Program Files`` and
+   will resolve junction points.
+
+   On POSIX systems, this function is roughly equivalent to the system's
+   ``realpath()`` function.
 
    By default, the path is evaluated up to the first component that does not
    exist, is a symlink loop, or whose evaluation raises :exc:`OSError`.
