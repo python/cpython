@@ -1,36 +1,26 @@
 .. _functional-howto:
 
 ********************************
-  Functional Programming HOWTO
+Functional Programming in Python
 ********************************
 
 :Author: A. M. Kuchling
 :Release: 0.32
 
-In this document, we'll take a tour of Python's features suitable for
-implementing programs in a functional style.  After an introduction to the
-concepts of functional programming, we'll look at language features such as
-:term:`iterator`\s and :term:`generator`\s and relevant library modules such as
-:mod:`itertools` and :mod:`functools`.
 
-
-Introduction
-============
-
-This section explains the basic concept of functional programming; if
-you're just interested in learning about Python language features,
-skip to the next section on :ref:`functional-howto-iterators`.
+The basics of functional programming
+====================================
 
 Programming languages support decomposing problems in several different ways:
 
-* Most programming languages are **procedural**: programs are lists of
+* Many programming languages are **procedural**: programs are lists of
   instructions that tell the computer what to do with the program's input.  C,
   Pascal, and even Unix shells are procedural languages.
 
 * In **declarative** languages, you write a specification that describes the
   problem to be solved, and the language implementation figures out how to
-  perform the computation efficiently.  SQL is the declarative language you're
-  most likely to be familiar with; a SQL query describes the data set you want
+  perform the computation efficiently.  SQL is an example of a declarative
+  language; a SQL query describes the data set you want
   to retrieve, and the SQL engine decides whether to scan tables or use indexes,
   which subclauses should be performed first, etc.
 
@@ -59,7 +49,7 @@ functional, for example.
 
 In a functional program, input flows through a set of functions. Each function
 operates on its input and produces some output.  Functional style discourages
-functions with side effects that modify internal state or make other changes
+functions with *side effects* that modify internal state or make other changes
 that aren't visible in the function's return value.  Functions that have no side
 effects at all are called **purely functional**.  Avoiding side effects means
 not using data structures that get updated as a program runs; every function's
@@ -179,7 +169,7 @@ a few functions specialized for the current task.
 Iterators
 =========
 
-I'll start by looking at a Python language feature that's an important
+Let's start by considering a Python language feature that's an important
 foundation for writing functional-style programs: iterators.
 
 An iterator is an object representing a stream of data; this object returns the
@@ -261,7 +251,6 @@ consume all of the iterator's output, and if you need to do something different
 with the same stream, you'll have to create a new iterator.
 
 
-
 Data Types That Support Iterators
 ---------------------------------
 
@@ -326,7 +315,6 @@ elements::
     7
     11
     13
-
 
 
 Generator expressions and list comprehensions
@@ -442,7 +430,7 @@ Generators are a special class of functions that simplify the task of writing
 iterators.  Regular functions compute a value and return it, but generators
 return an iterator that returns a stream of values.
 
-You're doubtless familiar with how regular function calls work in Python or C.
+You may be familiar with how regular function calls work in Python or C.
 When you call a function, it gets a private namespace where its local variables
 are created.  When the function reaches a ``return`` statement, the local
 variables are destroyed and the value is returned to the caller.  A later call
@@ -530,19 +518,16 @@ Passing values into a generator
 -------------------------------
 
 In Python 2.4 and earlier, generators only produced output.  Once a generator's
-code was invoked to create an iterator, there was no way to pass any new
-information into the function when its execution is resumed.  You could hack
-together this ability by making the generator look at a global variable or by
-passing in some mutable object that callers then modify, but these approaches
-are messy.
+code was invoked to create an iterator, there was no elegant way to pass any new
+information into the function when its execution is resumed.
 
-In Python 2.5 there's a simple way to pass values into a generator.
-:keyword:`yield` became an expression, returning a value that can be assigned to
-a variable or otherwise operated on::
+In Python 2.5, :keyword:`yield` became an expression, returning a value that
+can be assigned to a variable or otherwise operated on, providing a simple
+way to pass values into a generator::
 
     val = (yield i)
 
-I recommend that you **always** put parentheses around a ``yield`` expression
+It's recommended that you **always** put parentheses around a ``yield`` expression
 when you're doing something with the returned value, as in the above example.
 The parentheses aren't always necessary, but it's easier to always add them
 instead of having to remember when they're needed.
@@ -610,8 +595,8 @@ generators:
   will also be called by Python's garbage collector when the generator is
   garbage-collected.
 
-  If you need to run cleanup code when a :exc:`GeneratorExit` occurs, I suggest
-  using a ``try: ... finally:`` suite instead of catching :exc:`GeneratorExit`.
+  If you need to run cleanup code when a :exc:`GeneratorExit` occurs, it's recommended
+  to use a ``try: ... finally:`` suite instead of catching :exc:`GeneratorExit`.
 
 The cumulative effect of these changes is to turn generators from one-way
 producers of information into both producers and consumers.
@@ -641,7 +626,7 @@ features of generator expressions:
     >>> [upper(s) for s in ['sentence', 'fragment']]
     ['SENTENCE', 'FRAGMENT']
 
-You can of course achieve the same effect with a list comprehension.
+(You can achieve the same effect with a list comprehension.)
 
 :func:`filter(predicate, iter) <filter>` returns an iterator over all the
 sequence elements that meet a certain condition, and is similarly duplicated by
@@ -1133,20 +1118,21 @@ usual way::
     def print_assign(name, value):
         return name + '=' + str(value)
 
-Which alternative is preferable?  That's a style question; my usual course is to
-avoid using ``lambda``.
+Which alternative is preferable?  That's mostly a question of style.
 
-One reason for my preference is that ``lambda`` is quite limited in the
+You may wish to avoid using ``lambda``, as there are limits to the
 functions it can define.  The result has to be computable as a single
 expression, which means you can't have multiway ``if... elif... else``
 comparisons or ``try... except`` statements.  If you try to do too much in a
 ``lambda`` statement, you'll end up with an overly complicated expression that's
-hard to read.  Quick, what's the following code doing? ::
+hard to read.
+
+Consider::
 
     import functools
     total = functools.reduce(lambda a, b: (0, a[1] + b[1]), items)[1]
 
-You can figure it out, but it takes time to disentangle the expression to figure
+It takes some mental effort to disentangle the expression to figure
 out what's going on.  Using a short nested ``def`` statements makes things a
 little bit better::
 
@@ -1156,7 +1142,7 @@ little bit better::
 
     total = functools.reduce(combine, items)[1]
 
-But it would be best of all if I had simply used a ``for`` loop::
+But best of all would have been to use a ``for`` loop::
 
      total = 0
      for a, b in items:
@@ -1167,19 +1153,6 @@ Or the :func:`sum` built-in and a generator expression::
      total = sum(b for a, b in items)
 
 Many uses of :func:`functools.reduce` are clearer when written as ``for`` loops.
-
-Fredrik Lundh once suggested the following set of rules for refactoring uses of
-``lambda``:
-
-1. Write a lambda function.
-2. Write a comment explaining what the heck that lambda does.
-3. Study the comment for a while, and think of a name that captures the essence
-   of the comment.
-4. Convert the lambda to a def statement, using that name.
-5. Remove the comment.
-
-I really like these rules, but you're free to disagree
-about whether this lambda-free style is better.
 
 
 Revision History and Acknowledgements
