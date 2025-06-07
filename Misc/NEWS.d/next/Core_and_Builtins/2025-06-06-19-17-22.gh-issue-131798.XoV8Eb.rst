@@ -1,1 +1,1 @@
-Optimize ``_UNARY_NEGATIVE``
+Optimize ``_UNARY_NEGATIVE`` in JIT-compiled code.
