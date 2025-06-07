@@ -101,6 +101,9 @@ static inline void _PyObject_XDecRefDelayed(PyObject *obj)
 #endif
 
 #ifdef Py_GIL_DISABLED
+// This is the delayed-free equivalent of Py_XSETREF(), providing the same
+// atomic reference assignment semantics but with deferred cleanup suitable
+// for concurrent access patterns in free-threaded Python.
 PyAPI_FUNC(void) _PyObject_XSetRefDelayed(PyObject **p_obj, PyObject *obj);
 #else
 static inline void _PyObject_XSetRefDelayed(PyObject **p_obj, PyObject *obj)
