@@ -2657,18 +2657,18 @@ static PyMethodDef connection_methods[] = {
 
 static struct PyMemberDef connection_members[] =
 {
-    {"Warning", _Py_T_OBJECT, offsetof(pysqlite_Connection, Warning), Py_READONLY},
-    {"Error", _Py_T_OBJECT, offsetof(pysqlite_Connection, Error), Py_READONLY},
-    {"InterfaceError", _Py_T_OBJECT, offsetof(pysqlite_Connection, InterfaceError), Py_READONLY},
-    {"DatabaseError", _Py_T_OBJECT, offsetof(pysqlite_Connection, DatabaseError), Py_READONLY},
-    {"DataError", _Py_T_OBJECT, offsetof(pysqlite_Connection, DataError), Py_READONLY},
-    {"OperationalError", _Py_T_OBJECT, offsetof(pysqlite_Connection, OperationalError), Py_READONLY},
-    {"IntegrityError", _Py_T_OBJECT, offsetof(pysqlite_Connection, IntegrityError), Py_READONLY},
-    {"InternalError", _Py_T_OBJECT, offsetof(pysqlite_Connection, InternalError), Py_READONLY},
-    {"ProgrammingError", _Py_T_OBJECT, offsetof(pysqlite_Connection, ProgrammingError), Py_READONLY},
-    {"NotSupportedError", _Py_T_OBJECT, offsetof(pysqlite_Connection, NotSupportedError), Py_READONLY},
-    {"row_factory", _Py_T_OBJECT, offsetof(pysqlite_Connection, row_factory)},
-    {"text_factory", _Py_T_OBJECT, offsetof(pysqlite_Connection, text_factory)},
+    {"Warning", Py_T_OBJECT_EX, offsetof(pysqlite_Connection, Warning), Py_READONLY},
+    {"Error", Py_T_OBJECT_EX, offsetof(pysqlite_Connection, Error), Py_READONLY},
+    {"InterfaceError", Py_T_OBJECT_EX, offsetof(pysqlite_Connection, InterfaceError), Py_READONLY},
+    {"DatabaseError", Py_T_OBJECT_EX, offsetof(pysqlite_Connection, DatabaseError), Py_READONLY},
+    {"DataError", Py_T_OBJECT_EX, offsetof(pysqlite_Connection, DataError), Py_READONLY},
+    {"OperationalError", Py_T_OBJECT_EX, offsetof(pysqlite_Connection, OperationalError), Py_READONLY},
+    {"IntegrityError", Py_T_OBJECT_EX, offsetof(pysqlite_Connection, IntegrityError), Py_READONLY},
+    {"InternalError", Py_T_OBJECT_EX, offsetof(pysqlite_Connection, InternalError), Py_READONLY},
+    {"ProgrammingError", Py_T_OBJECT_EX, offsetof(pysqlite_Connection, ProgrammingError), Py_READONLY},
+    {"NotSupportedError", Py_T_OBJECT_EX, offsetof(pysqlite_Connection, NotSupportedError), Py_READONLY},
+    {"row_factory", Py_T_OBJECT_EX, offsetof(pysqlite_Connection, row_factory)},
+    {"text_factory", Py_T_OBJECT_EX, offsetof(pysqlite_Connection, text_factory)},
     {NULL}
 };
 
