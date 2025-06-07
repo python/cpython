@@ -417,7 +417,7 @@ class OutputTestCase(unittest.TestCase):
         self.check_htmlcalendar_encoding('utf-8', 'utf-8')
 
     def test_output_htmlcalendar_encoding_default(self):
-        self.check_htmlcalendar_encoding(None, sys.getdefaultencoding())
+        self.check_htmlcalendar_encoding(None, 'utf-8')
 
     def test_yeardatescalendar(self):
         def shrink(cal):
