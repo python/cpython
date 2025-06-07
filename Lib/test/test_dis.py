@@ -1461,9 +1461,9 @@ else:
 code_info_code_info = f"""\
 Name:              code_info
 Filename:          (.*)
-Argument count:    1
-Positional-only arguments: 0
-Kw-only arguments: 0
+Positional parameters: 1
+Positional-only parameters: 0
+Keyword-only parameters: 0
 Number of locals:  1
 Stack size:        \\d+
 Flags:             OPTIMIZED, NEWLOCALS, HAS_DOCSTRING
@@ -1485,9 +1485,9 @@ def tricky(a, b, /, x, y, z=True, *args, c, d, e=[], **kwds):
 code_info_tricky = """\
 Name:              tricky
 Filename:          (.*)
-Argument count:    5
-Positional-only arguments: 2
-Kw-only arguments: 3
+Positional parameters: 5
+Positional-only parameters: 2
+Keyword-only parameters: 3
 Number of locals:  10
 Stack size:        \\d+
 Flags:             OPTIMIZED, NEWLOCALS, VARARGS, VARKEYWORDS, GENERATOR
@@ -1520,9 +1520,9 @@ co_tricky_nested_f = tricky.__func__.__code__.co_consts[0]
 
 code_info_tricky_nested_f = """\
 Filename:          (.*)
-Argument count:    1
-Positional-only arguments: 0
-Kw-only arguments: 0
+Positional parameters: 1
+Positional-only parameters: 0
+Keyword-only parameters: 0
 Number of locals:  1
 Stack size:        \\d+
 Flags:             OPTIMIZED, NEWLOCALS, NESTED
@@ -1543,9 +1543,9 @@ Free variables:
 code_info_expr_str = """\
 Name:              <module>
 Filename:          <disassembly>
-Argument count:    0
-Positional-only arguments: 0
-Kw-only arguments: 0
+Positional parameters: 0
+Positional-only parameters: 0
+Keyword-only parameters: 0
 Number of locals:  0
 Stack size:        \\d+
 Flags:             0x0
@@ -1557,9 +1557,9 @@ Names:
 code_info_simple_stmt_str = """\
 Name:              <module>
 Filename:          <disassembly>
-Argument count:    0
-Positional-only arguments: 0
-Kw-only arguments: 0
+Positional parameters: 0
+Positional-only parameters: 0
+Keyword-only parameters: 0
 Number of locals:  0
 Stack size:        \\d+
 Flags:             0x0
@@ -1572,9 +1572,9 @@ Names:
 code_info_compound_stmt_str = """\
 Name:              <module>
 Filename:          <disassembly>
-Argument count:    0
-Positional-only arguments: 0
-Kw-only arguments: 0
+Positional parameters: 0
+Positional-only parameters: 0
+Keyword-only parameters: 0
 Number of locals:  0
 Stack size:        \\d+
 Flags:             0x0
@@ -1592,9 +1592,9 @@ async def async_def():
 code_info_async_def = """\
 Name:              async_def
 Filename:          (.*)
-Argument count:    0
-Positional-only arguments: 0
-Kw-only arguments: 0
+Positional parameters: 0
+Positional-only parameters: 0
+Keyword-only parameters: 0
 Number of locals:  2
 Stack size:        \\d+
 Flags:             OPTIMIZED, NEWLOCALS, COROUTINE
