@@ -1607,25 +1607,11 @@ PyNumber_Float(PyObject *o)
             return res;
         }
 
-        if (!PyFloat_Check(res)) {
-            PyErr_Format(PyExc_TypeError,
-                         "%.50s.__float__ returned non-float (type %.50s)",
-                         Py_TYPE(o)->tp_name, Py_TYPE(res)->tp_name);
-            Py_DECREF(res);
-            return NULL;
-        }
-        /* Issue #26983: warn if 'res' not of exact type float. */
-        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "%.50s.__float__ returned non-float (type %.50s).  "
-                "The ability to return an instance of a strict subclass of float "
-                "is deprecated, and may be removed in a future version of Python.",
-                Py_TYPE(o)->tp_name, Py_TYPE(res)->tp_name)) {
-            Py_DECREF(res);
-            return NULL;
-        }
-        double val = PyFloat_AS_DOUBLE(res);
+        PyErr_Format(PyExc_TypeError,
+                     "%T.__float__ returned non-float (type %T)",
+                     o, res);
         Py_DECREF(res);
-        return PyFloat_FromDouble(val);
+        return NULL;
     }
 
     if (m && m->nb_index) {
