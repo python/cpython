@@ -2248,7 +2248,8 @@ class IPv6Interface(IPv6Address):
 
     @property
     def ip(self):
-        return IPv6Address(self._ip)
+        addr_str = self._string_from_ip_int(self._ip) + (f'%{self._scope_id}' if self._scope_id else '')
+        return IPv6Address(addr_str)
 
     @property
     def with_prefixlen(self):
