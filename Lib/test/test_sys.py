@@ -24,7 +24,7 @@ from test.support import import_helper
 from test.support import force_not_colorized
 from test.support import SHORT_TIMEOUT
 try:
-    from test.support import interpreters
+    from concurrent import interpreters
 except ImportError:
     interpreters = None
 import textwrap

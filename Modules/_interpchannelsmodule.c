@@ -220,6 +220,22 @@ wait_for_lock(PyThread_type_lock mutex, PY_TIMEOUT_T timeout)
     return 0;
 }
 
+static int
+ensure_highlevel_module_loaded(void)
+{
+    PyObject *highlevel =
+            PyImport_ImportModule("concurrent.interpreters._channels");
+    if (highlevel == NULL) {
+        PyErr_Clear();
+        highlevel = PyImport_ImportModule("test.support.channels");
+        if (highlevel == NULL) {
+            return -1;
+        }
+    }
+    Py_DECREF(highlevel);
+    return 0;
+}
+
 
 /* module state *************************************************************/
 
@@ -2742,15 +2758,9 @@ _get_current_channelend_type(int end)
     }
     if (cls == NULL) {
         // Force the module to be loaded, to register the type.
-        PyObject *highlevel = PyImport_ImportModule("interpreters.channels");
-        if (highlevel == NULL) {
-            PyErr_Clear();
-            highlevel = PyImport_ImportModule("test.support.interpreters.channels");
-            if (highlevel == NULL) {
-                return NULL;
-            }
+        if (ensure_highlevel_module_loaded() < 0) {
+            return NULL;
         }
-        Py_DECREF(highlevel);
         if (end == CHANNEL_SEND) {
             cls = state->send_channel_type;
         }

@@ -7,8 +7,8 @@ import unittest
 from test.support import import_helper, Py_DEBUG
 # Raise SkipTest if subinterpreters not supported.
 _queues = import_helper.import_module('_interpqueues')
-from test.support import interpreters
-from test.support.interpreters import queues, _crossinterp
+from concurrent import interpreters
+from concurrent.interpreters import _queues as queues, _crossinterp
 from .utils import _run_output, TestBase as _TestBase
 
 
@@ -126,7 +126,7 @@ class QueueTests(TestBase):
 
         interp = interpreters.create()
         interp.exec(dedent(f"""
-            from test.support.interpreters import queues
+            from concurrent.interpreters import _queues as queues
             queue1 = queues.Queue({queue1.id})
             """));
 
@@ -324,7 +324,7 @@ class TestQueueOps(TestBase):
     def test_put_get_same_interpreter(self):
         interp = interpreters.create()
         interp.exec(dedent("""
-            from test.support.interpreters import queues
+            from concurrent.interpreters import _queues as queues
             queue = queues.create()
             """))
         for methname in ('get', 'get_nowait'):
@@ -351,7 +351,7 @@ class TestQueueOps(TestBase):
                 out = _run_output(
                     interp,
                     dedent(f"""
-                        from test.support.interpreters import queues
+                        from concurrent.interpreters import _queues as queues
                         queue1 = queues.Queue({queue1.id})
                         queue2 = queues.Queue({queue2.id})
                         assert queue1.qsize() == 1, 'expected: queue1.qsize() == 1'
@@ -390,7 +390,7 @@ class TestQueueOps(TestBase):
             interp = interpreters.create()
 
             _run_output(interp, dedent(f"""
-                from test.support.interpreters import queues
+                from concurrent.interpreters import _queues as queues
                 queue = queues.Queue({queue.id})
                 obj1 = b'spam'
                 obj2 = b'eggs'
@@ -468,7 +468,7 @@ class TestQueueOps(TestBase):
         queue = queues.create()
         interp = interpreters.create()
         _run_output(interp, dedent(f"""
-            from test.support.interpreters import queues
+            from concurrent.interpreters import _queues as queues
             queue = queues.Queue({queue.id})
             queue.put(1, unbounditems=queues.UNBOUND)
             queue.put(2, unbounditems=queues.UNBOUND_ERROR)
@@ -504,14 +504,14 @@ class TestQueueOps(TestBase):
 
         queue.put(1)
         _run_output(interp1, dedent(f"""
-            from test.support.interpreters import queues
+            from concurrent.interpreters import _queues as queues
             queue = queues.Queue({queue.id})
             obj1 = queue.get()
             queue.put(2, unbounditems=queues.UNBOUND)
             queue.put(obj1, unbounditems=queues.UNBOUND_REMOVE)
             """))
         _run_output(interp2, dedent(f"""
-            from test.support.interpreters import queues
+            from concurrent.interpreters import _queues as queues
             queue = queues.Queue({queue.id})
             obj2 = queue.get()
             obj1 = queue.get()
