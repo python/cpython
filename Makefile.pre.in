@@ -1931,6 +1931,7 @@ Python/dynload_hpux.o: $(srcdir)/Python/dynload_hpux.c Makefile
 Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile $(srcdir)/Include/pydtrace.h
 	$(CC) -c $(PY_CORE_CFLAGS) \
 		-DABIFLAGS='"$(ABIFLAGS)"' \
+		-DGITTAG="\"`LC_ALL=C $(GITTAG)`\"" \
 		$(MULTIARCH_CPPFLAGS) \
 		-o $@ $(srcdir)/Python/sysmodule.c
 
