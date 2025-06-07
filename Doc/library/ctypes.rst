@@ -1371,8 +1371,9 @@ the library to load.
 The exact functionality is system dependent.
 
 On Linux, :func:`~ctypes.util.find_library` tries to run external programs
-(``/sbin/ldconfig``, ``gcc``, ``objdump`` and ``ld``) to find the library file.
-It returns the filename of the library file.
+(``ldconfig``,  ``gcc``, ``objdump`` and ``ld``) to find the library file.
+Note that ``ldconfig`` falls back to using ``/sbin/ldconfig`` if it is not found on ``$PATH``.
+Unlike other distributions it returns only the filename of the library file.
 
 .. versionchanged:: 3.6
    On Linux, the value of the environment variable ``LD_LIBRARY_PATH`` is used
