@@ -422,7 +422,7 @@ def decode_params(params):
             if has_zero:
                 continuations = [x for x in continuations if x[0] is not None]
             else:
-                continuations = [(0 if x[0] is None else x[0], x[1], x[2]) for x in continuations]
+                continuations = [(x[0] or 0, x[1], x[2]) for x in continuations]
             continuations.sort(key=lambda x: x[0])
             # And now append all values in numerical order, converting
             # %-encodings for the encoded segments.  If any of the
