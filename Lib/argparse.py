@@ -2372,6 +2372,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                               errors=_sys.getfilesystemencodeerrors()) as args_file:
                         arg_strings = []
                         for arg_line in args_file.read().splitlines():
+                            if not arg_line.strip():
+                                continue
                             for arg in self.convert_arg_line_to_args(arg_line):
                                 arg_strings.append(arg)
                         arg_strings = self._read_args_from_files(arg_strings)
