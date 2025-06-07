@@ -30,7 +30,7 @@
 #  include <intrin.h>
 #endif
 
-#if defined(__APPLE__) && defined(__arm64__)
+#if (defined(__APPLE__) || defined(__linux__)) && defined(__arm64__)
 #  undef HACL_CAN_COMPILE_SIMD128
 #  undef HACL_CAN_COMPILE_SIMD256
 #endif
