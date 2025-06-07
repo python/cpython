@@ -7,6 +7,7 @@
 
 #include "Python.h"
 #include "posixmodule.h"
+#include "pycore_list.h"          // _PyList_AppendTakeRef()
 
 #include <errno.h>                // ERANGE
 #include <grp.h>                  // getgrgid_r()
@@ -295,8 +296,12 @@ grp_getgrall_impl(PyObject *module)
         // setgrent()/endgrent() are not reentrant / thread-safe. A deadlock
         // is unlikely since mkgrent() should not be able to call arbitrary
         // Python code.
+        // `d` is a local list; append to it without a lock using
+        // _PyList_AppendTakeRef().
         PyObject *v = mkgrent(module, p);
-        if (v == NULL || PyList_Append(d, v) != 0) {
+        if (v == NULL
+            || _PyList_AppendTakeRef((PyListObject *)d, Py_NewRef(v)) != 0)
+        {
             Py_XDECREF(v);
             Py_CLEAR(d);
             goto done;
