@@ -14,6 +14,7 @@ import io
 import itertools
 import math
 import os
+import pathlib
 import pickle
 import platform
 import queue
@@ -6203,6 +6204,28 @@ class TestUnixDomain(unittest.TestCase):
         # Test binding to a bytes pathname.
         path = os.path.abspath(os_helper.TESTFN)
         self.bind(self.sock, self.encoded(path))
+        self.addCleanup(os_helper.unlink, path)
+        self.assertEqual(self.sock.getsockname(), path)
+
+    def testPathLikeAddr(self):
+        # Test binding to a path-like object.
+        path = os.path.abspath(os_helper.TESTFN)
+        self.bind(self.sock, pathlib.Path(path))
+        self.addCleanup(os_helper.unlink, path)
+        self.assertEqual(self.sock.getsockname(), path)
+
+    def testPathLikeAndBytesLikeAddr(self):
+        # Test binding to a path-like object that is also bytes-like.
+        path = os.path.abspath(os_helper.TESTFN)
+
+        class Polyglot:
+            def __fspath__(self):
+                return path
+
+            def __bytes__(self):
+                return "bad_file"
+
+        self.bind(self.sock, Polyglot())
         self.addCleanup(os_helper.unlink, path)
         self.assertEqual(self.sock.getsockname(), path)
 
