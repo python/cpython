@@ -1185,6 +1185,13 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    ``cache_tag`` is set to ``None``, it indicates that module caching should
    be disabled.
 
+   *arch* The build architecture of the current interpreter is determined by the
+   platform for which it was built (which may be different from the current hardware).
+
+   .. versionadded:: 3.14
+
+   .. availability:: Windows.
+
    :data:`sys.implementation` may contain additional attributes specific to
    the Python implementation.  These non-standard attributes must start with
    an underscore, and are not described here.  Regardless of its contents,
