@@ -1666,13 +1666,11 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CONTAINS_OP_DICT", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
 
-
     def test_remove_guard_for_known_type_str(self):
         def f(n):
             for i in range(n):
                 false = i == TIER2_THRESHOLD
                 empty = "X"[:false]
-                empty += ""  # Make JIT realize this is a string.
                 if empty:
                     return 1
             return 0
@@ -2248,6 +2246,34 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_LOAD_ATTR_METHOD_WITH_VALUES", uops)
         self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
         self.assertNotIn("_LOAD_ATTR_METHOD_LAZY_DICT", uops)
+
+    def test_remove_guard_for_slice_list(self):
+        def f(n):
+            for i in range(n):
+                false = i == TIER2_THRESHOLD
+                sliced = [1, 2, 3][:false]
+                if sliced:
+                    return 1
+            return 0
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, 0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_TO_BOOL_LIST", uops)
+        self.assertNotIn("_GUARD_TOS_LIST", uops)
+
+    def test_remove_guard_for_slice_tuple(self):
+        def f(n):
+            for i in range(n):
+                false = i == TIER2_THRESHOLD
+                a, b = (1, 2, 3)[: false + 2]
+
+        _, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_UNPACK_SEQUENCE_TWO_TUPLE", uops)
+        self.assertNotIn("_GUARD_TOS_TUPLE", uops)
 
 
 def global_identity(x):
