@@ -1,0 +1,1 @@
+Expose :class:`importlib.machinery.NamespacePath`.
