@@ -753,23 +753,25 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.__stdout__.encoding, sys.__stderr__.encoding)
 
     def test_intern(self):
-        has_is_interned = (test.support.check_impl_detail(cpython=True)
-                           or hasattr(sys, '_is_interned'))
         self.assertRaises(TypeError, sys.intern)
         self.assertRaises(TypeError, sys.intern, b'abc')
+        has_is_interned = (test.support.check_impl_detail(cpython=True)
+                           or hasattr(sys, '_is_interned'))
         if has_is_interned:
             self.assertRaises(TypeError, sys._is_interned)
             self.assertRaises(TypeError, sys._is_interned, b'abc')
+
+        def _is_interned(obj):
+            tags = sys.get_object_tags(obj)
+            return tags["interned"]
+
         s = "never interned before" + str(random.randrange(0, 10**9))
         self.assertTrue(sys.intern(s) is s)
-        if has_is_interned:
-            self.assertIs(sys._is_interned(s), True)
+        self.assertIs(_is_interned(s), True)
         s2 = s.swapcase().swapcase()
-        if has_is_interned:
-            self.assertIs(sys._is_interned(s2), False)
+        self.assertIs(_is_interned(s2), False)
         self.assertTrue(sys.intern(s2) is s)
-        if has_is_interned:
-            self.assertIs(sys._is_interned(s2), False)
+        self.assertIs(_is_interned(s2), False)
 
         # Subclasses of string can't be interned, because they
         # provide too much opportunity for insane things to happen.
@@ -781,8 +783,28 @@ class SysModuleTest(unittest.TestCase):
                 return 123
 
         self.assertRaises(TypeError, sys.intern, S("abc"))
-        if has_is_interned:
-            self.assertIs(sys._is_interned(S("abc")), False)
+        self.assertIs(_is_interned(S("abc")), False)
+
+    @support.cpython_only
+    def test_get_object_tags(self):
+        keys = ("immortal", "interned", "deferred_refcount")
+        s = "foobar"
+        tags = sys.get_object_tags(s)
+        self.assertEqual(len(tags), len(keys))
+        for k in keys:
+            self.assertIn(k, tags)
+
+    @support.cpython_only
+    def test_set_object_tags(self):
+        keys = ("immortal", "interned", "deferred_refcount")
+        s = "should never interned before" + str(random.randrange(0, 10**9))
+        origin_tags = sys.get_object_tags(s)
+        for k in keys:
+            self.assertFalse(origin_tags[k])
+            sys.set_object_tag(s, k)
+        sys.set_object_tag(s, "unknown")
+        after_tags = sys.get_object_tags(s)
+        self.assertEqual(len(origin_tags), len(after_tags))
 
     @support.cpython_only
     @requires_subinterpreters
@@ -847,7 +869,8 @@ class SysModuleTest(unittest.TestCase):
                     assert id(s) == {id(s)}
                     t = sys.intern(s)
                     '''))
-                self.assertTrue(sys._is_interned(s))
+                tags = sys.get_object_tags(s)
+                self.assertTrue(tags["interned"])
 
     def test_sys_flags(self):
         self.assertTrue(sys.flags)

@@ -405,6 +405,95 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys_get_object_tags__doc__,
+"get_object_tags($module, op, /)\n"
+"--\n"
+"\n"
+"Return the tags of the given object.");
+
+#define SYS_GET_OBJECT_TAGS_METHODDEF    \
+    {"get_object_tags", (PyCFunction)sys_get_object_tags, METH_O, sys_get_object_tags__doc__},
+
+PyDoc_STRVAR(sys_set_object_tag__doc__,
+"set_object_tag($module, /, object, tag, *, options=None)\n"
+"--\n"
+"\n"
+"Set the tags of the given object.");
+
+#define SYS_SET_OBJECT_TAG_METHODDEF    \
+    {"set_object_tag", _PyCFunction_CAST(sys_set_object_tag), METH_FASTCALL|METH_KEYWORDS, sys_set_object_tag__doc__},
+
+static PyObject *
+sys_set_object_tag_impl(PyObject *module, PyObject *object, const char *tag,
+                        PyObject *options);
+
+static PyObject *
+sys_set_object_tag(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(object), &_Py_ID(tag), &_Py_ID(options), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"object", "tag", "options", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_object_tag",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    PyObject *object;
+    const char *tag;
+    PyObject *options = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    object = args[0];
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("set_object_tag", "argument 'tag'", "str", args[1]);
+        goto exit;
+    }
+    Py_ssize_t tag_length;
+    tag = PyUnicode_AsUTF8AndSize(args[1], &tag_length);
+    if (tag == NULL) {
+        goto exit;
+    }
+    if (strlen(tag) != (size_t)tag_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    options = args[2];
+skip_optional_kwonly:
+    return_value = sys_set_object_tag_impl(module, object, tag, options);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys_settrace__doc__,
 "settrace($module, function, /)\n"
 "--\n"
@@ -1948,4 +2037,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=449d16326e69dcf6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cf56a851495bb951 input=a9049054013a1b77]*/
