@@ -467,6 +467,16 @@ dummy_func(void) {
         res = sym_new_truthiness(ctx, value, false);
     }
 
+    op(_UNARY_NEGATIVE, (value -- res)) {
+        PyTypeObject *type = sym_get_type(value);
+        if (type == &PyLong_Type || type == &PyFloat_Type) {
+            res = sym_new_type(ctx, type);
+        }
+        else {
+            res = sym_new_not_null(ctx);
+        }
+    }
+
     op(_COMPARE_OP, (left, right -- res)) {
         if (oparg & 16) {
             res = sym_new_type(ctx, &PyBool_Type);
