@@ -1679,6 +1679,22 @@ class WriteTest(WriteTestBase, unittest.TestCase):
             with self.assertRaises(ValueError):
                 tar.addfile(tarinfo)
 
+    def test_archive_size(self):
+        # Make sure the archive size is a multiple of the configured
+        # record size
+        for blocking_factor, record_size, records in (
+                (None, tarfile.RECORDSIZE, 1), (1, 512, 4), (2, 1024, 2),
+                (20, 10240, 1), (200, 102400, 1)):
+            tar = tarfile.open(tmpname, self.mode, blocking_factor=blocking_factor)
+            self.assertEqual(tar.record_size, record_size)
+            t = tarfile.TarInfo("foo")
+            t.size = tarfile.BLOCKSIZE
+            tar.addfile(t, io.BytesIO(b"a" * t.size))
+            tar.close()
+
+            with self.open(tmpname, "rb") as fobj:
+                self.assertEqual(len(fobj.read()), record_size * records)
+
 
 class GzipWriteTest(GzipTest, WriteTest):
     pass
@@ -2910,6 +2926,29 @@ class CommandLineTest(unittest.TestCase):
                     tar.getmembers()
             finally:
                 os_helper.unlink(tar_name)
+
+    def test_create_command_blocking_factor(self):
+        files = [support.findfile('tokenize_tests.txt',
+                                  subdir='tokenizedata'),
+                 support.findfile('tokenize_tests-no-coding-cookie-'
+                                  'and-utf8-bom-sig-only.txt',
+                                  subdir='tokenizedata')]
+        for opt in '-c', '--create':
+            for blocking_factor, archive_size in (
+                    (1, tarfile.BLOCKSIZE*15),
+                    (20, tarfile.BLOCKSIZE*20),
+                    (100, tarfile.BLOCKSIZE*100)):
+                try:
+                    out = self.tarfilecmd("--blocking-factor", str(blocking_factor),
+                                          opt, tmpname, *files)
+                    self.assertEqual(out, b'')
+                    self.assertEqual(out, b'')
+                    with tarfile.open(tmpname) as tar:
+                        tar.getmembers()
+                    with io.FileIO(tmpname, "rb") as fobj:
+                        self.assertEqual(len(fobj.read()), archive_size)
+                finally:
+                    os_helper.unlink(tmpname)
 
     def test_extract_command(self):
         self.make_simple_tarfile(tmpname)
