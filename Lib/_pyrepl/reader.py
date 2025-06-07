@@ -109,8 +109,8 @@ default_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
     + [(c, "self-insert") for c in map(chr, range(32, 127)) if c != "\\"]
     + [(c, "self-insert") for c in map(chr, range(128, 256)) if c.isalpha()]
     + [
-        (r"\<up>", "up"),
-        (r"\<down>", "down"),
+        (r"\<up>", "history-search-backward"),
+        (r"\<down>", "history-search-forward"),
         (r"\<left>", "left"),
         (r"\C-\<left>", "backward-word"),
         (r"\<right>", "right"),
