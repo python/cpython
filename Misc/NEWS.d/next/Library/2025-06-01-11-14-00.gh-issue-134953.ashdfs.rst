@@ -1,0 +1,2 @@
+Expand ``_colorize`` theme with ``keyword_colorize`` and implement in
+:term:`repl`.
