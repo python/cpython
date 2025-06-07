@@ -18,7 +18,7 @@ from test.support import socket_helper
 
 
 def tearDownModule():
-    asyncio._set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 class StreamTests(test_utils.TestCase):

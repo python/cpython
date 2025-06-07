@@ -18,7 +18,7 @@ from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():
-    asyncio._set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 def close_transport(transport):
