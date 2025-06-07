@@ -327,6 +327,7 @@ def untokenize(iterable):
     """Transform tokens back into Python source code.
     It returns a bytes object, encoded using the ENCODING
     token, which is the first token sequence output by tokenize.
+    If there is no encoding token in the input, it returns a str instead.
 
     Each element returned by the iterable must be a token sequence
     with at least two elements, a token number and token value.  If
