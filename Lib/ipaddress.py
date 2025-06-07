@@ -2198,6 +2198,19 @@ class IPv6Address(_BaseV6, _BaseAddress):
             return None
         return IPv4Address((self._ip >> 80) & 0xFFFFFFFF)
 
+    @property
+    def ipv4_translation(self):
+        """Return the IPv4/IPv6 Translation embedded address.
+
+        Returns:
+            The IPv4/IPv6 Translation embedded address if present or None
+            if the address doesn't appear to contain a translation address.
+
+        """
+        if (self._ip >> 96) != 0x64FF9B:
+            return None
+        return IPv4Address(self._ip & 0xFFFFFFFF)
+
 
 class IPv6Interface(IPv6Address):
 
