@@ -29,7 +29,7 @@ __all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
            'Barrier', 'BrokenBarrierError', 'Timer', 'ThreadError',
            'setprofile', 'settrace', 'local', 'stack_size',
            'excepthook', 'ExceptHookArgs', 'gettrace', 'getprofile',
-           'setprofile_all_threads','settrace_all_threads']
+           'setprofile_all_threads','settrace_all_threads', 'iter_locked']
 
 # Rename some stuff so "from threading import *" is safe
 _start_joinable_thread = _thread.start_joinable_thread
@@ -42,6 +42,7 @@ _ThreadHandle = _thread._ThreadHandle
 get_ident = _thread.get_ident
 _get_main_thread_ident = _thread._get_main_thread_ident
 _is_main_interpreter = _thread._is_main_interpreter
+iter_locked = _thread.iter_locked
 try:
     get_native_id = _thread.get_native_id
     _HAVE_THREAD_NATIVE_ID = True
