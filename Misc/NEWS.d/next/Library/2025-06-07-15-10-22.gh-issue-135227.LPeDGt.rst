@@ -1,2 +1,2 @@
-ArgumentParser: ``add_parser()`` now uses the ``help`` value as the
-  default ``description`` if none is provided. Patch by Swayam.
+:meth:`argparse.ArgumentParser.add_argument` now uses the *help* value as the
+default *description* if none is provided. Patch by Swayam.
