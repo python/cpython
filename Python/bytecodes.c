@@ -3125,99 +3125,48 @@ dummy_func(
         }
 
         replaced op(_FOR_ITER, (iter, null_or_index -- iter, null_or_index, next)) {
-            /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
-            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            if (PyStackRef_IsTaggedInt(null_or_index)) {
-                next = _PyForIter_NextWithIndex(iter_o, null_or_index);
-                if (PyStackRef_IsNull(next)) {
-                    JUMPBY(oparg + 1);
-                    DISPATCH();
+            _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, &null_or_index);
+            if (!PyStackRef_IsValid(item)) {
+                if (PyStackRef_IsError(item)) {
+                    ERROR_NO_POP();
                 }
-                null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
+                // Jump forward by oparg and skip the following END_FOR
+                JUMPBY(oparg + 1);
+                DISPATCH();
             }
-            else {
-                PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
-                if (next_o == NULL) {
-                    if (_PyErr_Occurred(tstate)) {
-                        int matches = _PyErr_ExceptionMatches(tstate, PyExc_StopIteration);
-                        if (!matches) {
-                            ERROR_NO_POP();
-                        }
-                        _PyEval_MonitorRaise(tstate, frame, this_instr);
-                        _PyErr_Clear(tstate);
-                    }
-                    /* iterator ended normally */
-                    assert(next_instr[oparg].op.code == END_FOR ||
-                        next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
-                    /* Jump forward oparg, then skip following END_FOR */
-                    JUMPBY(oparg + 1);
-                    DISPATCH();
-                }
-                next = PyStackRef_FromPyObjectSteal(next_o);
-            }
+            next = item;
         }
 
         op(_FOR_ITER_TIER_TWO, (iter, null_or_index -- iter, null_or_index, next)) {
-            /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
-            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            EXIT_IF(!PyStackRef_IsNull(null_or_index));
-            PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
-            if (next_o == NULL) {
-                if (_PyErr_Occurred(tstate)) {
-                    int matches = _PyErr_ExceptionMatches(tstate, PyExc_StopIteration);
-                    if (!matches) {
-                        ERROR_NO_POP();
-                    }
-                    _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
-                    _PyErr_Clear(tstate);
+            _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, &null_or_index);
+            if (!PyStackRef_IsValid(item)) {
+                if (PyStackRef_IsError(item)) {
+                    ERROR_NO_POP();
                 }
                 /* iterator ended normally */
                 /* The translator sets the deopt target just past the matching END_FOR */
                 EXIT_IF(true);
             }
-            next = PyStackRef_FromPyObjectSteal(next_o);
-            // Common case: no jump, leave it to the code generator
+            next = item;
         }
+
 
         macro(FOR_ITER) = _SPECIALIZE_FOR_ITER + _FOR_ITER;
 
 
         inst(INSTRUMENTED_FOR_ITER, (unused/1, iter, null_or_index -- iter, null_or_index, next)) {
-            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            if (PyStackRef_IsTaggedInt(null_or_index)) {
-                next = _PyForIter_NextWithIndex(iter_o, null_or_index);
-                if (PyStackRef_IsNull(next)) {
-                    JUMPBY(oparg + 1);
-                    DISPATCH();
+            _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, &null_or_index);
+            if (!PyStackRef_IsValid(item)) {
+                if (PyStackRef_IsError(item)) {
+                    ERROR_NO_POP();
                 }
-                null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
-                INSTRUMENTED_JUMP(this_instr, next_instr, PY_MONITORING_EVENT_BRANCH_LEFT);
+                // Jump forward by oparg and skip the following END_FOR
+                JUMPBY(oparg + 1);
+                DISPATCH();
             }
-            else {
-                PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
-                if (next_o != NULL) {
-                    next = PyStackRef_FromPyObjectSteal(next_o);
-                    INSTRUMENTED_JUMP(this_instr, next_instr, PY_MONITORING_EVENT_BRANCH_LEFT);
-                }
-                else {
-                    if (_PyErr_Occurred(tstate)) {
-                        int matches = _PyErr_ExceptionMatches(tstate, PyExc_StopIteration);
-                        if (!matches) {
-                            ERROR_NO_POP();
-                        }
-                        _PyEval_MonitorRaise(tstate, frame, this_instr);
-                        _PyErr_Clear(tstate);
-                    }
-                    /* iterator ended normally */
-                    assert(next_instr[oparg].op.code == END_FOR ||
-                        next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
-                    /* Skip END_FOR */
-                    JUMPBY(oparg + 1);
-                    DISPATCH();
-                }
-            }
+            next = item;
+            INSTRUMENTED_JUMP(this_instr, next_instr, PY_MONITORING_EVENT_BRANCH_LEFT);
         }
-
 
         op(_ITER_CHECK_LIST, (iter, null_or_index -- iter, null_or_index)) {
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
