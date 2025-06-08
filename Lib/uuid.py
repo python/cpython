@@ -917,10 +917,10 @@ def uuid8(a=None, b=None, c=None):
         a = random.getrandbits(48)
     if b is None:
         import random
-        b = random.getrandbits(48)
+        b = random.getrandbits(12)
     if c is None:
         import random
-        c = random.getrandbits(48)
+        c = random.getrandbits(62)
     int_uuid_8 = (a & 0xffff_ffff_ffff) << 80
     int_uuid_8 |= (b & 0xfff) << 64
     int_uuid_8 |= c & 0x3fff_ffff_ffff_ffff
