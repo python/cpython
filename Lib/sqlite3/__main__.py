@@ -70,7 +70,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
                     pass
                 case _ as unknown:
                     t = theme.traceback
-                    self.write(f'{t.type}Error{t.reset}:{t.message} unknown'
+                    self.write(f'{t.type}Error{t.reset}:{t.message} unknown '
                                f'command or invalid arguments:  "{unknown}".\n{t.reset}')
         else:
             if not sqlite3.complete_statement(source):
