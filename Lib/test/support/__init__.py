@@ -2940,21 +2940,6 @@ def force_no_traceback_timestamps_test_class(cls):
 
 
 @contextlib.contextmanager
-def no_color():
-    """Force the terminal to not be colorized."""
-    import _colorize
-    from .os_helper import EnvironmentVarGuard
-
-    with (
-        swap_attr(_colorize, "can_colorize", lambda file=None: False),
-        EnvironmentVarGuard() as env,
-    ):
-        env.unset("FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS")
-        env.set("NO_COLOR", "1")
-        yield
-
-
-@contextlib.contextmanager
 def force_color(color: bool):
     import _colorize
     from .os_helper import EnvironmentVarGuard
