@@ -396,7 +396,7 @@ get_hashentry_by_nid(int nid)
 }
 
 /*
- * Convert the NID to a string via OBJ_nid2_*() functions.
+ * Convert the NID to a string via OBJ_nid2*() functions.
  *
  * If 'nid' cannot be resolved, set an exception and return NULL.
  */
