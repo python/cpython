@@ -1,0 +1,2 @@
+:mod:`hashlib`: improve exception messages when an OpenSSL function failed.
+Patch by Bénédikt Tran.
