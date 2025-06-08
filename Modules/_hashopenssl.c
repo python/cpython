@@ -433,40 +433,8 @@ raise_smart_ssl_error_f(PyObject *exc_type, const char *fallback_format, ...)
 }
 
 /*
-<<<<<<< HEAD
- * Same as raise_ssl_error() but raise a MemoryError
- * if the last error reason is ERR_R_MALLOC_FAILURE.
- */
-static void
-raise_smart_ssl_error(PyObject *exc_type, const char *fallback_format, ...)
-{
-
-    assert(fallback_format != NULL);
-    unsigned long errcode = ERR_peek_last_error();
-    if (errcode) {
-        ERR_clear_error();
-        set_ssl_exception_from_errcode(
-            get_smart_ssl_exception_type(errcode, exc_type),
-            errcode
-        );
-    }
-    else {
-        va_list vargs;
-        va_start(vargs, fallback_format);
-        PyErr_FormatV(exc_type, fallback_format, vargs);
-        va_end(vargs);
-    }
-}
-
-/*
- * Raise an exception with a generic default message after an error occurred.
- *
- * It can also be used without previous calls to SSL built-in functions,
- * in which case a generic error message is provided.
-=======
  * Raise a ValueError with a default message after an error occurred.
  * It can also be used without previous calls to SSL built-in functions.
->>>>>>> feat/hashlib/smart-exceptions-135234
  */
 static inline void
 notify_ssl_error_occurred(const char *message)
@@ -488,16 +456,6 @@ notify_smart_ssl_error_occurred_in(const char *funcname)
 {
     raise_smart_ssl_error_f(PyExc_ValueError,
                             "error in OpenSSL function %s()", funcname);
-}
-
-/*
- * Same as notify_ssl_error_occurred() but raise a MemoryError
- * if the last error reason is ERR_R_MALLOC_FAILURE.
- */
-static inline void
-notify_smart_ssl_error_occurred(void)
-{
-    raise_smart_ssl_error(PyExc_ValueError, "no reason supplied");
 }
 /* LCOV_EXCL_STOP */
 
