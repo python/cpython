@@ -32,7 +32,7 @@ The most common way to create a new :class:`Template` instance is to use the t-s
 
 It is also possible to create a :class:`Template` directly, using its constructor. This takes an arbitrary collection of strings and :class:`Interpolation` instances:
 
-   >>> from string.templatelib import Template, Interpolation
+   >>> from string.templatelib import Interpolation, Template
    >>> name = "World"
    >>> greeting = Template("Hello, ", Interpolation(name), "!")
    >>> print(list(greeting))
@@ -54,7 +54,7 @@ It is also possible to create a :class:`Template` directly, using its constructo
 
    If two or more consecutive interpolations are passed, they will be treated as separate interpolations and an empty string will be inserted between them. For example, the following code creates a template with a single value in the :attr:`~Template.strings` attribute:
 
-   >>> from string.templatelib import Template, Interpolation
+   >>> from string.templatelib import Interpolation, Template
    >>> greeting = Template(Interpolation("World"), Interpolation("!"))
    >>> print(greeting.strings)
    ('',)
