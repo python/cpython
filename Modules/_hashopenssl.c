@@ -82,10 +82,6 @@
 #define Py_HMAC_CTX_TYPE    HMAC_CTX
 #endif
 
-#ifdef Py_HAS_OPENSSL3_SUPPORT
-#else
-#endif
-
 /* hash alias map and fast lookup
  *
  * Map between Python's preferred names and OpenSSL internal names. Maintain
