@@ -311,8 +311,9 @@ class _hashlib.HMAC "HMACobject *" "((_hashlibstate *)PyModule_GetState(module))
 
 /* Set an exception of given type using the given OpenSSL error code. */
 static void
-set_ssl_exception_from_errcode(PyObject *exc, unsigned long errcode)
+set_ssl_exception_from_errcode(PyObject *exc_type, unsigned long errcode)
 {
+    assert(exc_type != NULL);
     assert(errcode != 0);
 
     /* ERR_ERROR_STRING(3) ensures that the messages below are ASCII */
@@ -321,13 +322,29 @@ set_ssl_exception_from_errcode(PyObject *exc, unsigned long errcode)
     const char *reason = ERR_reason_error_string(errcode);
 
     if (lib && func) {
-        PyErr_Format(exc, "[%s: %s] %s", lib, func, reason);
+        PyErr_Format(exc_type, "[%s: %s] %s", lib, func, reason);
     }
     else if (lib) {
-        PyErr_Format(exc, "[%s] %s", lib, reason);
+        PyErr_Format(exc_type, "[%s] %s", lib, reason);
     }
     else {
-        PyErr_SetString(exc, reason);
+        PyErr_SetString(exc_type, reason);
+    }
+}
+
+/*
+ * Get an appropriate exception type for the given OpenSSL error code.
+ *
+ * The exception type depends on the error code reason.
+ */
+static PyObject *
+get_smart_ssl_exception_type(unsigned long errcode, PyObject *default_exc_type)
+{
+    switch (ERR_GET_REASON(errcode)) {
+        case ERR_R_MALLOC_FAILURE:
+            return PyExc_MemoryError;
+        default:
+            return default_exc_type;
     }
 }
 
@@ -335,36 +352,99 @@ set_ssl_exception_from_errcode(PyObject *exc, unsigned long errcode)
  * Set an exception of given type.
  *
  * By default, the exception's message is constructed by using the last SSL
- * error that occurred. If no error occurred, the 'fallback_format' is used
- * to create a C-style formatted fallback message.
+ * error that occurred. If no error occurred, the 'fallback_message' is used
+ * to create an exception message.
  */
 static void
-raise_ssl_error(PyObject *exc, const char *fallback_format, ...)
+raise_ssl_error(PyObject *exc_type, const char *fallback_message)
+{
+    assert(fallback_message != NULL);
+    unsigned long errcode = ERR_peek_last_error();
+    if (errcode) {
+        ERR_clear_error();
+        set_ssl_exception_from_errcode(exc_type, errcode);
+    }
+    else {
+        PyErr_SetString(exc_type, fallback_message);
+    }
+}
+
+/* Same as raise_ssl_error() with smart exception types. */
+static void
+raise_smart_ssl_error(PyObject *exc_type, const char *fallback_message)
+{
+    assert(fallback_message != NULL);
+    unsigned long errcode = ERR_peek_last_error();
+    if (errcode) {
+        ERR_clear_error();
+        exc_type = get_smart_ssl_exception_type(errcode, exc_type);
+        set_ssl_exception_from_errcode(exc_type, errcode);
+    }
+    else {
+        PyErr_SetString(exc_type, fallback_message);
+    }
+}
+
+/* Same as raise_ssl_error() but with a C-style formatted message. */
+static void
+raise_ssl_error_f(PyObject *exc_type, const char *fallback_format, ...)
 {
     assert(fallback_format != NULL);
     unsigned long errcode = ERR_peek_last_error();
     if (errcode) {
         ERR_clear_error();
-        set_ssl_exception_from_errcode(exc, errcode);
+        set_ssl_exception_from_errcode(exc_type, errcode);
     }
     else {
         va_list vargs;
         va_start(vargs, fallback_format);
-        PyErr_FormatV(exc, fallback_format, vargs);
+        PyErr_FormatV(exc_type, fallback_format, vargs);
+        va_end(vargs);
+    }
+}
+
+/* Same as raise_smart_ssl_error() but with a C-style formatted message. */
+static void
+raise_smart_ssl_error_f(PyObject *exc_type, const char *fallback_format, ...)
+{
+    unsigned long errcode = ERR_peek_last_error();
+    if (errcode) {
+        ERR_clear_error();
+        exc_type = get_smart_ssl_exception_type(errcode, exc_type);
+        set_ssl_exception_from_errcode(exc_type, errcode);
+    }
+    else {
+        va_list vargs;
+        va_start(vargs, fallback_format);
+        PyErr_FormatV(exc_type, fallback_format, vargs);
         va_end(vargs);
     }
 }
 
 /*
- * Set an exception with a generic default message after an error occurred.
- *
- * It can also be used without previous calls to SSL built-in functions,
- * in which case a generic error message is provided.
+ * Raise a ValueError with a default message after an error occurred.
+ * It can also be used without previous calls to SSL built-in functions.
  */
 static inline void
-notify_ssl_error_occurred(void)
+notify_ssl_error_occurred(const char *message)
 {
-    raise_ssl_error(PyExc_ValueError, "no reason supplied");
+    raise_ssl_error(PyExc_ValueError, message);
+}
+
+/* Same as notify_ssl_error_occurred() for failed OpenSSL functions. */
+static inline void
+notify_ssl_error_occurred_in(const char *funcname)
+{
+    raise_ssl_error_f(PyExc_ValueError,
+                      "error in OpenSSL function: %s", funcname);
+}
+
+/* Same as notify_smart_ssl_error_occurred() for failed OpenSSL functions. */
+static inline void
+notify_smart_ssl_error_occurred_in(const char *funcname)
+{
+    raise_smart_ssl_error_f(PyExc_ValueError,
+                            "error in OpenSSL function %s", funcname);
 }
 /* LCOV_EXCL_STOP */
 
