@@ -597,6 +597,20 @@ get_openssl_evp_md(PyObject *module, PyObject *digestmod,
     return get_openssl_evp_md_by_utf8name(module, name, py_ht);
 }
 
+// --- OpenSSL HASH wrappers --------------------------------------------------
+
+static EVP_MD_CTX *
+py_EVP_MD_CTX_new(void)
+{
+    EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+    if (ctx == NULL) {
+        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(EVP_MD_CTX_new));
+    }
+    return ctx;
+}
+
+// --- HASH interface ---------------------------------------------------------
+
 static HASHobject *
 new_hash_object(PyTypeObject *type)
 {
@@ -606,10 +620,9 @@ new_hash_object(PyTypeObject *type)
     }
     HASHLIB_INIT_MUTEX(retval);
 
-    retval->ctx = EVP_MD_CTX_new();
+    retval->ctx = py_EVP_MD_CTX_new();
     if (retval->ctx == NULL) {
         Py_DECREF(retval);
-        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(EVP_MD_CTX_new));
         return NULL;
     }
 
@@ -689,9 +702,8 @@ _hashlib_HASH_copy_impl(HASHobject *self)
 static Py_ssize_t
 _hashlib_HASH_digest_compute(HASHobject *self, unsigned char *digest)
 {
-    EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+    EVP_MD_CTX *ctx = py_EVP_MD_CTX_new();
     if (ctx == NULL) {
-        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(EVP_MD_CTX_new));
         return -1;
     }
     if (_hashlib_HASH_copy_locked(self, ctx) < 0) {
@@ -895,10 +907,9 @@ _hashlib_HASHXOF_digest_impl(HASHobject *self, Py_ssize_t length)
         return NULL;
     }
 
-    temp_ctx = EVP_MD_CTX_new();
+    temp_ctx = py_EVP_MD_CTX_new();
     if (temp_ctx == NULL) {
         Py_DECREF(retval);
-        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(EVP_MD_CTX_new));
         return NULL;
     }
 
@@ -944,10 +955,9 @@ _hashlib_HASHXOF_hexdigest_impl(HASHobject *self, Py_ssize_t length)
         return NULL;
     }
 
-    temp_ctx = EVP_MD_CTX_new();
+    temp_ctx = py_EVP_MD_CTX_new();
     if (temp_ctx == NULL) {
         PyMem_Free(digest);
-        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(EVP_MD_CTX_new));
         return NULL;
     }
 
@@ -1645,6 +1655,16 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
 /* OpenSSL-based HMAC implementation
  */
 
+static HMAC_CTX *
+py_HMAC_CTX_new(void)
+{
+    HMAC_CTX *ctx = HMAC_CTX_new();
+    if (ctx == NULL) {
+        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(HMAC_CTX_new));
+    }
+    return ctx;
+}
+
 static int _hmac_update(HMACobject*, PyObject*);
 
 static const EVP_MD *
@@ -1694,10 +1714,9 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
         return NULL;
     }
 
-    ctx = HMAC_CTX_new();
+    ctx = py_HMAC_CTX_new();
     if (ctx == NULL) {
         PY_EVP_MD_free(digest);
-        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(HMAC_CTX_new));
         goto error;
     }
 
@@ -1808,9 +1827,8 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
 {
     HMACobject *retval;
 
-    HMAC_CTX *ctx = HMAC_CTX_new();
+    HMAC_CTX *ctx = py_HMAC_CTX_new();
     if (ctx == NULL) {
-        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(HMAC_CTX_new));
         return NULL;
     }
     if (locked_HMAC_CTX_copy(ctx, self) < 0) {
@@ -1881,9 +1899,8 @@ _hashlib_HMAC_update_impl(HMACobject *self, PyObject *msg)
 static int
 _hmac_digest(HMACobject *self, unsigned char *buf, unsigned int len)
 {
-    HMAC_CTX *temp_ctx = HMAC_CTX_new();
+    HMAC_CTX *temp_ctx = py_HMAC_CTX_new();
     if (temp_ctx == NULL) {
-        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(HMAC_CTX_new));
         return 0;
     }
     if (locked_HMAC_CTX_copy(temp_ctx, self) < 0) {
