@@ -270,7 +270,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04]
-        openssl_ver: [3.0.16, 3.1.8, 3.2.4, 3.3.3, 3.4.1]
+        openssl_ver: [1.1.1w, 3.0.16, 3.1.8, 3.2.4, 3.3.3, 3.4.1]
         # See Tools/ssl/make_ssl_data.py for notes on adding a new version
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
