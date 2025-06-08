@@ -469,9 +469,9 @@ get_hashentry_by_nid(int nid)
 }
 
 /*
- * Convert the NID to a string via OBJ_nid2_*() functions.
+ * Convert the NID to a string via OBJ_nid2*() functions.
  *
- * If 'nid' cannot be resolved or failed, set an exception and return NULL.
+ * If 'nid' cannot be resolved, set an exception and return NULL.
  */
 static const char *
 get_asn1_utf8name_by_nid(int nid)
@@ -479,6 +479,7 @@ get_asn1_utf8name_by_nid(int nid)
     const char *name = OBJ_nid2ln(nid);
     if (name == NULL) {
         // In OpenSSL 3.0 and later, OBJ_nid*() are thread-safe and may raise.
+        assert(ERR_peek_last_error() != 0);
         if (ERR_GET_REASON(ERR_peek_last_error()) != OBJ_R_UNKNOWN_NID) {
             notify_ssl_error_occurred();
             return NULL;
