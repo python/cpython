@@ -6120,9 +6120,9 @@ _parse_format_specifier_regex = re.compile(r"""\A
 (?P<no_neg_0>z)?
 (?P<alt>\#)?
 (?P<zeropad>0)?
-(?P<minimumwidth>(?!0)\d+)?
+(?P<minimumwidth>\d+)?
 (?P<thousands_sep>[,_])?
-(?:\.(?P<precision>0|(?!0)\d+))?
+(?:\.(?P<precision>\d+))?
 (?P<type>[eEfFgGn%])?
 \z
 """, re.VERBOSE|re.DOTALL)

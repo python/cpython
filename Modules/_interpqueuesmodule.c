@@ -1356,10 +1356,10 @@ _queueobj_from_xid(_PyXIData_t *data)
 
     PyObject *mod = _get_current_module();
     if (mod == NULL) {
-        // XXX import it?
-        PyErr_SetString(PyExc_RuntimeError,
-                        MODULE_NAME_STR " module not imported yet");
-        return NULL;
+        mod = PyImport_ImportModule(MODULE_NAME_STR);
+        if (mod == NULL) {
+            return NULL;
+        }
     }
 
     PyTypeObject *cls = get_external_queue_type(mod);
