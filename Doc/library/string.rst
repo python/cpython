@@ -198,8 +198,9 @@ Format String Syntax
 The :meth:`str.format` method and the :class:`Formatter` class share the same
 syntax for format strings (although in the case of :class:`Formatter`,
 subclasses can define their own format string syntax).  The syntax is
-related to that of :ref:`formatted string literals <f-strings>`, but it is
-less sophisticated and, in particular, does not support arbitrary expressions.
+related to that of :ref:`formatted string literals <f-strings>` and
+:ref:`template string literals <t-strings>`, but it is less sophisticated
+and, in particular, does not support arbitrary expressions.
 
 .. index::
    single: {} (curly brackets); in string formatting
@@ -306,7 +307,7 @@ Format Specification Mini-Language
 
 "Format specifications" are used within replacement fields contained within a
 format string to define how individual values are presented (see
-:ref:`formatstrings` and :ref:`f-strings`).
+:ref:`formatstrings`, :ref:`f-strings`, and :ref:`t-strings`).
 They can also be passed directly to the built-in
 :func:`format` function.  Each formattable type may define how the format
 specification is to be interpreted.
