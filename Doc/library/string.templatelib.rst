@@ -34,7 +34,7 @@ It is also possible to create a :class:`Template` directly, using its constructo
 
    >>> from string.templatelib import Interpolation, Template
    >>> name = "World"
-   >>> greeting = Template("Hello, ", Interpolation(name), "!")
+   >>> greeting = Template("Hello, ", Interpolation(name, "name"), "!")
    >>> print(list(greeting))
    ['Hello, ', Interpolation('World'), '!']
 
@@ -55,9 +55,9 @@ It is also possible to create a :class:`Template` directly, using its constructo
    If two or more consecutive interpolations are passed, they will be treated as separate interpolations and an empty string will be inserted between them. For example, the following code creates a template with a single value in the :attr:`~Template.strings` attribute:
 
    >>> from string.templatelib import Interpolation, Template
-   >>> greeting = Template(Interpolation("World"), Interpolation("!"))
+   >>> greeting = Template(Interpolation("World", "name"), Interpolation("!", "punctuation"))
    >>> print(greeting.strings)
-   ('',)
+   ('', '', '')
 
    .. attribute:: strings
 
