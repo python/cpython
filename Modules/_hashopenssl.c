@@ -531,7 +531,7 @@ get_openssl_evp_md_by_utf8name(PyObject *module, const char *name,
     }
     if (digest == NULL) {
         raise_ssl_error_f(state->unsupported_digestmod_error,
-                          "EVP_MD_fetch: cannot fetch from %s", name);
+                          "unsupported digest name: %s", name);
         return NULL;
     }
     return digest;
