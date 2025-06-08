@@ -60,6 +60,7 @@ It is also possible to create a :class:`Template` directly, using its constructo
    ('', '', '')
 
    .. attribute:: strings
+       :type: tuple[str, ...]
 
        A :ref:`tuple <tut-tuples>` of the static strings in the template.
 
@@ -73,7 +74,8 @@ It is also possible to create a :class:`Template` directly, using its constructo
        >>> print(t"Hello {name}{name}!".strings)
        ('Hello ', '', '!')
 
-   .. attribute:: interpolations: tuple[Interpolation, ...]
+   .. attribute:: interpolations
+       :type: tuple[Interpolation, ...]
 
        A tuple of the interpolations in the template.
 
@@ -82,7 +84,8 @@ It is also possible to create a :class:`Template` directly, using its constructo
        (Interpolation('World'),)
 
 
-   .. attribute:: values: tuple[Any, ...]
+   .. attribute:: values
+       :type: tuple[Any, ...]
 
        A tuple of all interpolated values in the template.
 
@@ -90,7 +93,7 @@ It is also possible to create a :class:`Template` directly, using its constructo
        >>> print(t"Hello {name}!".values)
        ('World',)
 
-   .. method:: __iter__() -> typing.Iterator[str | Interpolation]
+   .. method:: __iter__()
 
        Iterate over the template, yielding each string and :class:`Interpolation` in order.
 
@@ -103,6 +106,9 @@ It is also possible to create a :class:`Template` directly, using its constructo
        >>> name = "World"
        >>> print(list(t"Hello {name}{name}"))
        ['Hello ', Interpolation('World'), Interpolation('World')]
+
+       :returns: An iterable of all the parts in the template.
+       :rtype: typing.Iterator[str | Interpolation]
 
 .. class:: Interpolation(*args)
 
@@ -144,6 +150,7 @@ It is also possible to create a :class:`Template` directly, using its constructo
    >> template.interpolations[0].value
    42
 
-   .. property:: __match_args__: (Literal["value"], Literal["expression"], Literal["conversion"], Literal["format_spec"])
+   .. property:: __match_args__
 
-       The allowed positional arguments used by destructuring during structural pattern matching.
+       :returns: A tuple of the attributes to use for structural pattern matching.
+       :rtype: (Literal["value"], Literal["expression"], Literal["conversion"], Literal["format_spec"])
