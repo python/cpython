@@ -16,6 +16,9 @@
 /* For _Py_log1p with workarounds for buggy handling of zeros. */
 #include "_math.h"
 
+/* A little helper to set 'value' attribute on exceptions.
+   Warning: steal a reference to value. */
+
 static void
 set_cmath_error(PyObject *value)
 {
