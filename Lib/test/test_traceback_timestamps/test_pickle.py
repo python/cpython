@@ -10,18 +10,9 @@ from .shared_utils import get_builtin_exception_types, PICKLE_TEST_SCRIPT
 class ExceptionPickleTests(unittest.TestCase):
     """Test that exception types can be pickled and unpickled with timestamps intact."""
 
-    def _get_builtin_exception_types(self):
-        """Get concrete built-in exception types (excluding abstract bases)."""
-        all_types = get_builtin_exception_types()
-        return [
-            exc
-            for exc in all_types
-            if exc not in ["BaseException", "Exception"]
-        ]
-
     def test_builtin_exception_pickle_without_timestamps(self):
         """Test that all built-in exception types can be pickled without timestamps."""
-        exception_types = self._get_builtin_exception_types()
+        exception_types = get_builtin_exception_types()
 
         for exc_name in exception_types:
             with self.subTest(exception_type=exc_name):
@@ -45,7 +36,7 @@ class ExceptionPickleTests(unittest.TestCase):
 
     def test_builtin_exception_pickle_with_timestamps(self):
         """Test that all built-in exception types can be pickled with timestamps."""
-        exception_types = self._get_builtin_exception_types()
+        exception_types = get_builtin_exception_types()
 
         for exc_name in exception_types:
             with self.subTest(exception_type=exc_name):

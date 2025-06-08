@@ -30,6 +30,16 @@ class MyOSError(OSError):
             super().__init__("MyOSError")
         self.custom_data = "os_error_data"
 
+class MyImportError(ImportError):
+    def __init__(self, message="MyImportError"):
+        super().__init__(message)
+        self.custom_data = "import_error_data"
+
+class MyAttributeError(AttributeError):
+    def __init__(self, message="MyAttributeError"):
+        super().__init__(message)
+        self.custom_data = "attribute_error_data"
+
 def test_user_exception(exc_class_name):
     try:
         exc_class = globals()[exc_class_name]
@@ -64,11 +74,13 @@ class UserExceptionTests(unittest.TestCase):
 
     def test_user_derived_exceptions_without_timestamps(self):
         """Test user-derived exception classes without timestamps."""
-        user_exceptions = ["MyBaseException", "MyException", "MyOSError"]
+        user_exceptions = ["MyBaseException", "MyException", "MyOSError", "MyImportError", "MyAttributeError"]
         expected_bases = {
             "MyBaseException": "BaseException",
             "MyException": "Exception",
             "MyOSError": "OSError",
+            "MyImportError": "ImportError",
+            "MyAttributeError": "AttributeError",
         }
 
         for exc_name in user_exceptions:
@@ -96,11 +108,13 @@ class UserExceptionTests(unittest.TestCase):
 
     def test_user_derived_exceptions_with_timestamps(self):
         """Test user-derived exception classes with timestamps."""
-        user_exceptions = ["MyBaseException", "MyException", "MyOSError"]
+        user_exceptions = ["MyBaseException", "MyException", "MyOSError", "MyImportError", "MyAttributeError"]
         expected_bases = {
             "MyBaseException": "BaseException",
             "MyException": "Exception",
             "MyOSError": "OSError",
+            "MyImportError": "ImportError",
+            "MyAttributeError": "AttributeError",
         }
 
         for exc_name in user_exceptions:
