@@ -1,7 +1,4 @@
-import os
-import sys
 import unittest
-import subprocess
 import re
 from traceback import TIMESTAMP_AFTER_EXC_MSG_RE_GROUP
 

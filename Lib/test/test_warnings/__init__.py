@@ -7,7 +7,6 @@ from io import StringIO
 import re
 import sys
 import textwrap
-import traceback
 import types
 from typing import overload, get_overloads
 import unittest
