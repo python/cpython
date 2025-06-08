@@ -260,7 +260,7 @@ static PyModuleDef _hashlibmodule;
 
 typedef struct {
     PyTypeObject *HASH_type;    // based on EVP_MD
-    PyTypeObject *HMACtype;
+    PyTypeObject *HMAC_type;
 #ifdef PY_OPENSSL_HAS_SHAKE
     PyTypeObject *HASHXOF_type; // based on EVP_MD
 #endif
@@ -300,11 +300,11 @@ typedef struct {
 #include "clinic/_hashopenssl.c.h"
 /*[clinic input]
 module _hashlib
-class _hashlib.HASH "HASHobject *" "((_hashlibstate *)PyModule_GetState(module))->EVPtype"
-class _hashlib.HASHXOF "HASHobject *" "((_hashlibstate *)PyModule_GetState(module))->EVPXOFtype"
-class _hashlib.HMAC "HMACobject *" "((_hashlibstate *)PyModule_GetState(module))->HMACtype"
+class _hashlib.HASH "HASHobject *" "((_hashlibstate *)PyModule_GetState(module))->HASH_type"
+class _hashlib.HASHXOF "HASHobject *" "((_hashlibstate *)PyModule_GetState(module))->HASHXOF_type"
+class _hashlib.HMAC "HMACobject *" "((_hashlibstate *)PyModule_GetState(module))->HMAC_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4f6b8873ed13d1ff]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=eb805ce4b90b1b31]*/
 
 
 /* LCOV_EXCL_START */
@@ -1643,7 +1643,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
     }
 
     _hashlibstate *state = get_hashlib_state(module);
-    self = PyObject_New(HMACobject, state->HMACtype);
+    self = PyObject_New(HMACobject, state->HMAC_type);
     if (self == NULL) {
         goto error;
     }
@@ -2204,7 +2204,7 @@ hashlib_traverse(PyObject *m, visitproc visit, void *arg)
 {
     _hashlibstate *state = get_hashlib_state(m);
     Py_VISIT(state->HASH_type);
-    Py_VISIT(state->HMACtype);
+    Py_VISIT(state->HMAC_type);
 #ifdef PY_OPENSSL_HAS_SHAKE
     Py_VISIT(state->HASHXOF_type);
 #endif
@@ -2218,7 +2218,7 @@ hashlib_clear(PyObject *m)
 {
     _hashlibstate *state = get_hashlib_state(m);
     Py_CLEAR(state->HASH_type);
-    Py_CLEAR(state->HMACtype);
+    Py_CLEAR(state->HMAC_type);
 #ifdef PY_OPENSSL_HAS_SHAKE
     Py_CLEAR(state->HASHXOF_type);
 #endif
@@ -2296,11 +2296,11 @@ hashlib_init_hmactype(PyObject *module)
 {
     _hashlibstate *state = get_hashlib_state(module);
 
-    state->HMACtype = (PyTypeObject *)PyType_FromSpec(&HMACtype_spec);
-    if (state->HMACtype == NULL) {
+    state->HMAC_type = (PyTypeObject *)PyType_FromSpec(&HMACtype_spec);
+    if (state->HMAC_type == NULL) {
         return -1;
     }
-    if (PyModule_AddType(module, state->HMACtype) < 0) {
+    if (PyModule_AddType(module, state->HMAC_type) < 0) {
         return -1;
     }
     return 0;
