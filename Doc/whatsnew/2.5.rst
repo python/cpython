@@ -1685,9 +1685,9 @@ provides functions for loading shared libraries and calling functions in them.
 The :mod:`ctypes` package is much fancier.
 
 To load a shared library or DLL, you must create an instance of the
-:class:`CDLL` class and provide the name or path of the shared library or DLL.
+:class:`~ctypes.CDLL` class and provide the name or path of the shared library or DLL.
 Once that's done, you can call arbitrary functions by accessing them as
-attributes of the :class:`CDLL` object.   ::
+attributes of the :class:`!CDLL` object.   ::
 
    import ctypes
 
