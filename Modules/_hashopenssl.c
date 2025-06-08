@@ -1822,11 +1822,25 @@ hashlib_openssl_HMAC_evp_md_borrowed(HMACobject *self)
 }
 #endif
 
+static int
+hashlib_openssl_HMAC_update_once(Py_HMAC_CTX_TYPE *ctx, const Py_buffer *v)
+{
+    int r;
 #ifdef Py_HAS_OPENSSL3_SUPPORT
-#define HASHLIB_OPENSSL_HMAC_UPDATE_ONCE    EVP_MAC_update
+    r = EVP_MAC_update(ctx, (const unsigned char *)v->buf, (size_t)v->len);
 #else
-#define HASHLIB_OPENSSL_HMAC_UPDATE_ONCE    HMAC_Update
+    r = HMAC_Update(ctx, (const unsigned char *)v->buf, (size_t)v->len);
 #endif
+    if (r == 0) {
+#ifdef Py_HAS_OPENSSL3_SUPPORT
+        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(EVP_MAC_update));
+#else
+        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(HMAC_Update));
+#endif
+        return -1;
+    }
+    return 0;
+}
 
 static void
 hashlib_openssl_HMAC_ctx_free(Py_HMAC_CTX_TYPE *ctx)
@@ -1854,30 +1868,21 @@ hashlib_openssl_HMAC_update_with_lock(HMACobject *self, PyObject *data)
     Py_buffer view = {0};
     GET_BUFFER_VIEW_OR_ERROR(data, &view, return -1);
     if (!self->use_mutex && view.len >= HASHLIB_GIL_MINSIZE) {
-        // TODO(picnixz): disable mutex afterwards
+        // TODO(picnixz): see https://github.com/python/cpython/issues/135239.
         self->use_mutex = true;
     }
     if (self->use_mutex) {
         Py_BEGIN_ALLOW_THREADS
         PyMutex_Lock(&self->mutex);
-        r = HASHLIB_OPENSSL_HMAC_UPDATE_ONCE(self->ctx,
-                                             (const unsigned char *)view.buf,
-                                             (size_t)view.len);
+        r = hashlib_openssl_HMAC_update_once(self->ctx, &view);
         PyMutex_Unlock(&self->mutex);
         Py_END_ALLOW_THREADS
     }
     else {
-        r = HASHLIB_OPENSSL_HMAC_UPDATE_ONCE(self->ctx,
-                                             (const unsigned char *)view.buf,
-                                             (size_t)view.len);
+        r = hashlib_openssl_HMAC_update_once(self->ctx, &view);
     }
     PyBuffer_Release(&view);
-    if (r == 0) {
-        const char *funcname = Py_STRINGIFY(HASHLIB_OPENSSL_HMAC_UPDATE_ONCE);
-        notify_ssl_error_occurred_in(funcname);
-        return -1;
-    }
-    return 0;
+    return r;
 }
 
 static Py_HMAC_CTX_TYPE *
@@ -1894,9 +1899,9 @@ hashlib_openssl_HMAC_ctx_copy_with_lock(HMACobject *self)
     }
 #else
     int r;
-    ctx = HMAC_CTX_new();
+    ctx = py_openssl_wrapper_HMAC_CTX_new();
     if (ctx == NULL) {
-        goto error;
+        return NULL;
     }
     ENTER_HASHLIB(self);
     r = HMAC_CTX_copy(ctx, self->ctx);
