@@ -2297,6 +2297,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_UNPACK_SEQUENCE_TWO_TUPLE", uops)
         self.assertNotIn("_GUARD_TOS_TUPLE", uops)
 
+
 def global_identity(x):
     return x
 
