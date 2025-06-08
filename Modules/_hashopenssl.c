@@ -472,16 +472,19 @@ get_asn1_utf8name_by_nid(int nid)
         // In OpenSSL 3.0 and later, OBJ_nid*() are thread-safe and may raise.
         assert(ERR_peek_last_error() != 0);
         if (ERR_GET_REASON(ERR_peek_last_error()) != OBJ_R_UNKNOWN_NID) {
-            notify_ssl_error_occurred();
-            return NULL;
+            goto error;
         }
         // fallback to short name and unconditionally propagate errors
         name = OBJ_nid2sn(nid);
         if (name == NULL) {
-            raise_ssl_error(PyExc_ValueError, "cannot resolve NID %d", nid);
+            goto error;
         }
     }
     return name;
+
+error:
+    raise_ssl_error_f(PyExc_ValueError, "cannot resolve NID %d", nid);
+    return NULL;
 }
 
 /*
