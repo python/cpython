@@ -945,6 +945,31 @@ def check_sizeof(test, o, size):
             % (type(o), result, size)
     test.assertEqual(result, size, msg)
 
+def subTests(arg_names, arg_values, /, *, _do_cleanups=False):
+    """Run multiple subtests with different parameters.
+    """
+    single_param = False
+    if isinstance(arg_names, str):
+        arg_names = arg_names.replace(',',' ').split()
+        if len(arg_names) == 1:
+            single_param = True
+    arg_values = tuple(arg_values)
+    def decorator(func):
+        if isinstance(func, type):
+            raise TypeError('subTests() can only decorate methods, not classes')
+        @functools.wraps(func)
+        def wrapper(self, /, *args, **kwargs):
+            for values in arg_values:
+                if single_param:
+                    values = (values,)
+                subtest_kwargs = dict(zip(arg_names, values))
+                with self.subTest(**subtest_kwargs):
+                    func(self, *args, **kwargs, **subtest_kwargs)
+                if _do_cleanups:
+                    self.doCleanups()
+        return wrapper
+    return decorator
+
 #=======================================================================
 # Decorator/context manager for running a code in a different locale,
 # correctly resetting it afterwards.
@@ -1084,7 +1109,7 @@ def set_memlimit(limit: str) -> None:
     global real_max_memuse
     memlimit = _parse_memlimit(limit)
     if memlimit < _2G - 1:
-        raise ValueError('Memory limit {limit!r} too low to be useful')
+        raise ValueError(f'Memory limit {limit!r} too low to be useful')
 
     real_max_memuse = memlimit
     memlimit = min(memlimit, MAX_Py_ssize_t)
@@ -2358,7 +2383,7 @@ def infinite_recursion(max_depth=None):
         # very deep recursion.
         max_depth = 20_000
     elif max_depth < 3:
-        raise ValueError("max_depth must be at least 3, got {max_depth}")
+        raise ValueError(f"max_depth must be at least 3, got {max_depth}")
     depth = get_recursion_depth()
     depth = max(depth - 1, 1)  # Ignore infinite_recursion() frame.
     limit = depth + max_depth

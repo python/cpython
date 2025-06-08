@@ -260,7 +260,7 @@ static PyModuleDef _hashlibmodule;
 
 typedef struct {
     PyTypeObject *HASH_type;    // based on EVP_MD
-    PyTypeObject *HMACtype;
+    PyTypeObject *HMAC_type;
 #ifdef PY_OPENSSL_HAS_SHAKE
     PyTypeObject *HASHXOF_type; // based on EVP_MD
 #endif
@@ -300,11 +300,11 @@ typedef struct {
 #include "clinic/_hashopenssl.c.h"
 /*[clinic input]
 module _hashlib
-class _hashlib.HASH "HASHobject *" "((_hashlibstate *)PyModule_GetState(module))->EVPtype"
-class _hashlib.HASHXOF "HASHobject *" "((_hashlibstate *)PyModule_GetState(module))->EVPXOFtype"
-class _hashlib.HMAC "HMACobject *" "((_hashlibstate *)PyModule_GetState(module))->HMACtype"
+class _hashlib.HASH "HASHobject *" "((_hashlibstate *)PyModule_GetState(module))->HASH_type"
+class _hashlib.HASHXOF "HASHobject *" "((_hashlibstate *)PyModule_GetState(module))->HASHXOF_type"
+class _hashlib.HMAC "HMACobject *" "((_hashlibstate *)PyModule_GetState(module))->HMAC_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4f6b8873ed13d1ff]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=eb805ce4b90b1b31]*/
 
 
 /* LCOV_EXCL_START */
@@ -368,41 +368,83 @@ notify_ssl_error_occurred(void)
 }
 /* LCOV_EXCL_STOP */
 
-static const char *
-get_openssl_evp_md_utf8name(const EVP_MD *md)
-{
-    assert(md != NULL);
-    int nid = EVP_MD_nid(md);
-    const char *name = NULL;
-    const py_hashentry_t *h;
+/*
+ * OpenSSL provides a way to go from NIDs to digest names for hash functions
+ * but lacks this granularity for MAC objects where it is not possible to get
+ * the underlying digest name (only the block size and digest size are allowed
+ * to be recovered).
+ *
+ * In addition, OpenSSL aliases pollute the list of known digest names
+ * as OpenSSL appears to have its own definition of alias. In particular,
+ * the resulting list still contains duplicate and alternate names for several
+ * algorithms.
+ *
+ * Therefore, digest names, whether they are used by hash functions or HMAC,
+ * are handled through EVP_MD objects or directly by using some NID.
+ */
 
-    for (h = py_hashes; h->py_name != NULL; h++) {
+/* Get a cached entry by OpenSSL NID. */
+static const py_hashentry_t *
+get_hashentry_by_nid(int nid)
+{
+    for (const py_hashentry_t *h = py_hashes; h->py_name != NULL; h++) {
         if (h->ossl_nid == nid) {
-            name = h->py_name;
-            break;
+            return h;
         }
     }
+    return NULL;
+}
+
+/*
+ * Convert the NID to a string via OBJ_nid2*() functions.
+ *
+ * If 'nid' cannot be resolved, set an exception and return NULL.
+ */
+static const char *
+get_asn1_utf8name_by_nid(int nid)
+{
+    const char *name = OBJ_nid2ln(nid);
     if (name == NULL) {
-        /* Ignore aliased names and only use long, lowercase name. The aliases
-         * pollute the list and OpenSSL appears to have its own definition of
-         * alias as the resulting list still contains duplicate and alternate
-         * names for several algorithms.
-         */
-        name = OBJ_nid2ln(nid);
-        if (name == NULL)
-            name = OBJ_nid2sn(nid);
+        // In OpenSSL 3.0 and later, OBJ_nid*() are thread-safe and may raise.
+        assert(ERR_peek_last_error() != 0);
+        if (ERR_GET_REASON(ERR_peek_last_error()) != OBJ_R_UNKNOWN_NID) {
+            notify_ssl_error_occurred();
+            return NULL;
+        }
+        // fallback to short name and unconditionally propagate errors
+        name = OBJ_nid2sn(nid);
+        if (name == NULL) {
+            raise_ssl_error(PyExc_ValueError, "cannot resolve NID %d", nid);
+        }
     }
     return name;
 }
 
-static PyObject *
-get_openssl_evp_md_name(const EVP_MD *md)
+/*
+ * Convert the NID to an OpenSSL digest name.
+ *
+ * On error, set an exception and return NULL.
+ */
+static const char *
+get_hashlib_utf8name_by_nid(int nid)
 {
-    const char *name = get_openssl_evp_md_utf8name(md);
-    return PyUnicode_FromString(name);
+    const py_hashentry_t *e = get_hashentry_by_nid(nid);
+    return e ? e->py_name : get_asn1_utf8name_by_nid(nid);
 }
 
-/* Get EVP_MD by HID and purpose */
+/* Same as get_hashlib_utf8name_by_nid() but using an EVP_MD object. */
+static const char *
+get_hashlib_utf8name_by_evp_md(const EVP_MD *md)
+{
+    assert(md != NULL);
+    return get_hashlib_utf8name_by_nid(EVP_MD_nid(md));
+}
+
+/*
+ * Get a new reference to an EVP_MD object described by name and purpose.
+ *
+ * If 'name' is an OpenSSL indexed name, the return value is cached.
+ */
 static PY_EVP_MD *
 get_openssl_evp_md_by_utf8name(PyObject *module, const char *name,
                                Py_hash_type py_ht)
@@ -471,42 +513,46 @@ get_openssl_evp_md_by_utf8name(PyObject *module, const char *name,
     return digest;
 }
 
-/* Get digest EVP_MD from object
+/*
+ * Raise an exception indicating that 'digestmod' is not supported.
+ */
+static void
+raise_unsupported_digestmod_error(PyObject *module, PyObject *digestmod)
+{
+    _hashlibstate *state = get_hashlib_state(module);
+    PyErr_Format(state->unsupported_digestmod_error,
+                 "Unsupported digestmod %R", digestmod);
+}
+
+/*
+ * Get a new reference to an EVP_MD described by 'digestmod' and purpose.
  *
- * * string
- * * _hashopenssl builtin function
+ * On error, set an exception and return NULL.
  *
- * on error returns NULL with exception set.
+ * Parameters
+ *
+ *      digestmod   A digest name or a _hashopenssl builtin function
+ *      py_ht       The message digest purpose.
  */
 static PY_EVP_MD *
-get_openssl_evp_md(PyObject *module, PyObject *digestmod,
-                   Py_hash_type py_ht)
+get_openssl_evp_md(PyObject *module, PyObject *digestmod, Py_hash_type py_ht)
 {
-    PyObject *name_obj = NULL;
     const char *name;
-
     if (PyUnicode_Check(digestmod)) {
-        name_obj = digestmod;
-    } else {
-        _hashlibstate *state = get_hashlib_state(module);
-        // borrowed ref
-        name_obj = PyDict_GetItemWithError(state->constructs, digestmod);
+        name = PyUnicode_AsUTF8(digestmod);
     }
-    if (name_obj == NULL) {
+    else {
+        PyObject *dict = get_hashlib_state(module)->constructs;
+        assert(dict != NULL);
+        PyObject *borrowed_ref = PyDict_GetItemWithError(dict, digestmod);
+        name = borrowed_ref == NULL ? NULL : PyUnicode_AsUTF8(borrowed_ref);
+    }
+    if (name == NULL) {
         if (!PyErr_Occurred()) {
-            _hashlibstate *state = get_hashlib_state(module);
-            PyErr_Format(
-                state->unsupported_digestmod_error,
-                "Unsupported digestmod %R", digestmod);
+            raise_unsupported_digestmod_error(module, digestmod);
         }
         return NULL;
     }
-
-    name = PyUnicode_AsUTF8(name_obj);
-    if (name == NULL) {
-        return NULL;
-    }
-
     return get_openssl_evp_md_by_utf8name(module, name, py_ht);
 }
 
@@ -745,7 +791,9 @@ _hashlib_HASH_get_name(PyObject *op, void *Py_UNUSED(closure))
         notify_ssl_error_occurred();
         return NULL;
     }
-    return get_openssl_evp_md_name(md);
+    const char *name = get_hashlib_utf8name_by_evp_md(md);
+    assert(name != NULL || PyErr_Occurred());
+    return name == NULL ? NULL : PyUnicode_FromString(name);
 }
 
 static PyGetSetDef HASH_getsets[] = {
@@ -1039,6 +1087,14 @@ exit:
     return (PyObject *)self;
 }
 
+#define CALL_HASHLIB_NEW(MODULE, NAME, DATA, STRING, USEDFORSECURITY)   \
+    do {                                                                \
+        PyObject *data_obj;                                             \
+        if (_Py_hashlib_data_argument(&data_obj, DATA, STRING) < 0) {   \
+            return NULL;                                                \
+        }                                                               \
+        return _hashlib_HASH(MODULE, NAME, data_obj, USEDFORSECURITY);  \
+    } while (0)
 
 /* The module-level function: new() */
 
@@ -1046,9 +1102,10 @@ exit:
 _hashlib.new as _hashlib_HASH_new
 
     name: str
-    string as data_obj: object(c_default="NULL") = b''
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string: object(c_default="NULL") = None
 
 Return a new hash object using the named algorithm.
 
@@ -1059,131 +1116,137 @@ The MD5 and SHA1 algorithms are always supported.
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_HASH_new_impl(PyObject *module, const char *name,
-                       PyObject *data_obj, int usedforsecurity)
-/*[clinic end generated code: output=30c6e7b9a5a4dce3 input=28848db5ccd0a9b5]*/
+_hashlib_HASH_new_impl(PyObject *module, const char *name, PyObject *data,
+                       int usedforsecurity, PyObject *string)
+/*[clinic end generated code: output=b905aaf9840c1bbd input=c34af6c6e696d44e]*/
 {
-    return _hashlib_HASH(module, name, data_obj, usedforsecurity);
+    CALL_HASHLIB_NEW(module, name, data, string, usedforsecurity);
 }
 
 
 /*[clinic input]
 _hashlib.openssl_md5
 
-    string as data_obj: object(py_default="b''") = NULL
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string: object(c_default="NULL") = None
 
 Returns a md5 hash object; optionally initialized with a string
 
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_openssl_md5_impl(PyObject *module, PyObject *data_obj,
-                          int usedforsecurity)
-/*[clinic end generated code: output=87b0186440a44f8c input=990e36d5e689b16e]*/
+_hashlib_openssl_md5_impl(PyObject *module, PyObject *data,
+                          int usedforsecurity, PyObject *string)
+/*[clinic end generated code: output=ca8cf184d90f7432 input=e7c0adbd6a867db1]*/
 {
-    return _hashlib_HASH(module, Py_hash_md5, data_obj, usedforsecurity);
+    CALL_HASHLIB_NEW(module, Py_hash_md5, data, string, usedforsecurity);
 }
 
 
 /*[clinic input]
 _hashlib.openssl_sha1
 
-    string as data_obj: object(py_default="b''") = NULL
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string: object(c_default="NULL") = None
 
 Returns a sha1 hash object; optionally initialized with a string
 
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_openssl_sha1_impl(PyObject *module, PyObject *data_obj,
-                           int usedforsecurity)
-/*[clinic end generated code: output=6813024cf690670d input=948f2f4b6deabc10]*/
+_hashlib_openssl_sha1_impl(PyObject *module, PyObject *data,
+                           int usedforsecurity, PyObject *string)
+/*[clinic end generated code: output=1736fb7b310d64be input=f7e5bb1711e952d8]*/
 {
-    return _hashlib_HASH(module, Py_hash_sha1, data_obj, usedforsecurity);
+    CALL_HASHLIB_NEW(module, Py_hash_sha1, data, string, usedforsecurity);
 }
 
 
 /*[clinic input]
 _hashlib.openssl_sha224
 
-    string as data_obj: object(py_default="b''") = NULL
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string: object(c_default="NULL") = None
 
 Returns a sha224 hash object; optionally initialized with a string
 
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_openssl_sha224_impl(PyObject *module, PyObject *data_obj,
-                             int usedforsecurity)
-/*[clinic end generated code: output=a2dfe7cc4eb14ebb input=f9272821fadca505]*/
+_hashlib_openssl_sha224_impl(PyObject *module, PyObject *data,
+                             int usedforsecurity, PyObject *string)
+/*[clinic end generated code: output=0d6ff57be5e5c140 input=3820fff7ed3a53b8]*/
 {
-    return _hashlib_HASH(module, Py_hash_sha224, data_obj, usedforsecurity);
+    CALL_HASHLIB_NEW(module, Py_hash_sha224, data, string, usedforsecurity);
 }
 
 
 /*[clinic input]
 _hashlib.openssl_sha256
 
-    string as data_obj: object(py_default="b''") = NULL
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string: object(c_default="NULL") = None
 
 Returns a sha256 hash object; optionally initialized with a string
 
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_openssl_sha256_impl(PyObject *module, PyObject *data_obj,
-                             int usedforsecurity)
-/*[clinic end generated code: output=1f874a34870f0a68 input=549fad9d2930d4c5]*/
+_hashlib_openssl_sha256_impl(PyObject *module, PyObject *data,
+                             int usedforsecurity, PyObject *string)
+/*[clinic end generated code: output=412ea7111555b6e7 input=9a2f115cf1f7e0eb]*/
 {
-    return _hashlib_HASH(module, Py_hash_sha256, data_obj, usedforsecurity);
+    CALL_HASHLIB_NEW(module, Py_hash_sha256, data, string, usedforsecurity);
 }
 
 
 /*[clinic input]
 _hashlib.openssl_sha384
 
-    string as data_obj: object(py_default="b''") = NULL
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string: object(c_default="NULL") = None
 
 Returns a sha384 hash object; optionally initialized with a string
 
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_openssl_sha384_impl(PyObject *module, PyObject *data_obj,
-                             int usedforsecurity)
-/*[clinic end generated code: output=58529eff9ca457b2 input=48601a6e3bf14ad7]*/
+_hashlib_openssl_sha384_impl(PyObject *module, PyObject *data,
+                             int usedforsecurity, PyObject *string)
+/*[clinic end generated code: output=2e0dc395b59ed726 input=1ea48f6f01e77cfb]*/
 {
-    return _hashlib_HASH(module, Py_hash_sha384, data_obj, usedforsecurity);
+    CALL_HASHLIB_NEW(module, Py_hash_sha384, data, string, usedforsecurity);
 }
 
 
 /*[clinic input]
 _hashlib.openssl_sha512
 
-    string as data_obj: object(py_default="b''") = NULL
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string: object(c_default="NULL") = None
 
 Returns a sha512 hash object; optionally initialized with a string
 
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_openssl_sha512_impl(PyObject *module, PyObject *data_obj,
-                             int usedforsecurity)
-/*[clinic end generated code: output=2c744c9e4a40d5f6 input=c5c46a2a817aa98f]*/
+_hashlib_openssl_sha512_impl(PyObject *module, PyObject *data,
+                             int usedforsecurity, PyObject *string)
+/*[clinic end generated code: output=4bdd760388dbfc0f input=3cf56903e07d1f5c]*/
 {
-    return _hashlib_HASH(module, Py_hash_sha512, data_obj, usedforsecurity);
+    CALL_HASHLIB_NEW(module, Py_hash_sha512, data, string, usedforsecurity);
 }
 
 
@@ -1192,77 +1255,81 @@ _hashlib_openssl_sha512_impl(PyObject *module, PyObject *data_obj,
 /*[clinic input]
 _hashlib.openssl_sha3_224
 
-    string as data_obj: object(py_default="b''") = NULL
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string: object(c_default="NULL") = None
 
 Returns a sha3-224 hash object; optionally initialized with a string
 
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_openssl_sha3_224_impl(PyObject *module, PyObject *data_obj,
-                               int usedforsecurity)
-/*[clinic end generated code: output=144641c1d144b974 input=e3a01b2888916157]*/
+_hashlib_openssl_sha3_224_impl(PyObject *module, PyObject *data,
+                               int usedforsecurity, PyObject *string)
+/*[clinic end generated code: output=6d8dc2a924f3ba35 input=7f14f16a9f6a3158]*/
 {
-    return _hashlib_HASH(module, Py_hash_sha3_224, data_obj, usedforsecurity);
+    CALL_HASHLIB_NEW(module, Py_hash_sha3_224, data, string, usedforsecurity);
 }
 
 /*[clinic input]
 _hashlib.openssl_sha3_256
 
-    string as data_obj: object(py_default="b''") = NULL
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string: object(c_default="NULL") = None
 
 Returns a sha3-256 hash object; optionally initialized with a string
 
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_openssl_sha3_256_impl(PyObject *module, PyObject *data_obj,
-                               int usedforsecurity)
-/*[clinic end generated code: output=c61f1ab772d06668 input=e2908126c1b6deed]*/
+_hashlib_openssl_sha3_256_impl(PyObject *module, PyObject *data,
+                               int usedforsecurity, PyObject *string)
+/*[clinic end generated code: output=9e520f537b3a4622 input=7987150939d5e352]*/
 {
-    return _hashlib_HASH(module, Py_hash_sha3_256, data_obj, usedforsecurity);
+    CALL_HASHLIB_NEW(module, Py_hash_sha3_256, data, string, usedforsecurity);
 }
 
 /*[clinic input]
 _hashlib.openssl_sha3_384
 
-    string as data_obj: object(py_default="b''") = NULL
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string: object(c_default="NULL") = None
 
 Returns a sha3-384 hash object; optionally initialized with a string
 
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_openssl_sha3_384_impl(PyObject *module, PyObject *data_obj,
-                               int usedforsecurity)
-/*[clinic end generated code: output=f68e4846858cf0ee input=ec0edf5c792f8252]*/
+_hashlib_openssl_sha3_384_impl(PyObject *module, PyObject *data,
+                               int usedforsecurity, PyObject *string)
+/*[clinic end generated code: output=d239ba0463fd6138 input=fc943401f67e3b81]*/
 {
-    return _hashlib_HASH(module, Py_hash_sha3_384, data_obj, usedforsecurity);
+    CALL_HASHLIB_NEW(module, Py_hash_sha3_384, data, string, usedforsecurity);
 }
 
 /*[clinic input]
 _hashlib.openssl_sha3_512
 
-    string as data_obj: object(py_default="b''") = NULL
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string: object(c_default="NULL") = None
 
 Returns a sha3-512 hash object; optionally initialized with a string
 
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_openssl_sha3_512_impl(PyObject *module, PyObject *data_obj,
-                               int usedforsecurity)
-/*[clinic end generated code: output=2eede478c159354a input=64e2cc0c094d56f4]*/
+_hashlib_openssl_sha3_512_impl(PyObject *module, PyObject *data,
+                               int usedforsecurity, PyObject *string)
+/*[clinic end generated code: output=17662f21038c2278 input=6601ddd2c6c1516d]*/
 {
-    return _hashlib_HASH(module, Py_hash_sha3_512, data_obj, usedforsecurity);
+    CALL_HASHLIB_NEW(module, Py_hash_sha3_512, data, string, usedforsecurity);
 }
 #endif /* PY_OPENSSL_HAS_SHA3 */
 
@@ -1270,41 +1337,45 @@ _hashlib_openssl_sha3_512_impl(PyObject *module, PyObject *data_obj,
 /*[clinic input]
 _hashlib.openssl_shake_128
 
-    string as data_obj: object(py_default="b''") = NULL
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string: object(c_default="NULL") = None
 
 Returns a shake-128 variable hash object; optionally initialized with a string
 
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_openssl_shake_128_impl(PyObject *module, PyObject *data_obj,
-                                int usedforsecurity)
-/*[clinic end generated code: output=bc49cdd8ada1fa97 input=6c9d67440eb33ec8]*/
+_hashlib_openssl_shake_128_impl(PyObject *module, PyObject *data,
+                                int usedforsecurity, PyObject *string)
+/*[clinic end generated code: output=4e6afed8d18980ad input=373c3f1c93d87b37]*/
 {
-    return _hashlib_HASH(module, Py_hash_shake_128, data_obj, usedforsecurity);
+    CALL_HASHLIB_NEW(module, Py_hash_shake_128, data, string, usedforsecurity);
 }
 
 /*[clinic input]
 _hashlib.openssl_shake_256
 
-    string as data_obj: object(py_default="b''") = NULL
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string: object(c_default="NULL") = None
 
 Returns a shake-256 variable hash object; optionally initialized with a string
 
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_openssl_shake_256_impl(PyObject *module, PyObject *data_obj,
-                                int usedforsecurity)
-/*[clinic end generated code: output=358d213be8852df7 input=479cbe9fefd4a9f8]*/
+_hashlib_openssl_shake_256_impl(PyObject *module, PyObject *data,
+                                int usedforsecurity, PyObject *string)
+/*[clinic end generated code: output=62481bce4a77d16c input=101c139ea2ddfcbf]*/
 {
-    return _hashlib_HASH(module, Py_hash_shake_256, data_obj, usedforsecurity);
+    CALL_HASHLIB_NEW(module, Py_hash_shake_256, data, string, usedforsecurity);
 }
 #endif /* PY_OPENSSL_HAS_SHAKE */
+
+#undef CALL_HASHLIB_NEW
 
 /*[clinic input]
 _hashlib.pbkdf2_hmac as pbkdf2_hmac
@@ -1620,7 +1691,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
     }
 
     _hashlibstate *state = get_hashlib_state(module);
-    self = PyObject_New(HMACobject, state->HMACtype);
+    self = PyObject_New(HMACobject, state->HMAC_type);
     if (self == NULL) {
         goto error;
     }
@@ -1752,20 +1823,15 @@ _hmac_dealloc(PyObject *op)
 static PyObject *
 _hmac_repr(PyObject *op)
 {
+    const char *digest_name;
     HMACobject *self = HMACobject_CAST(op);
     const EVP_MD *md = _hashlib_hmac_get_md(self);
-    if (md == NULL) {
-        return NULL;
-    }
-    PyObject *digest_name = get_openssl_evp_md_name(md);
+    digest_name = md == NULL ? NULL : get_hashlib_utf8name_by_evp_md(md);
     if (digest_name == NULL) {
+        assert(PyErr_Occurred());
         return NULL;
     }
-    PyObject *repr = PyUnicode_FromFormat(
-        "<%U HMAC object @ %p>", digest_name, self
-    );
-    Py_DECREF(digest_name);
-    return repr;
+    return PyUnicode_FromFormat("<%s HMAC object @ %p>", digest_name, self);
 }
 
 /*[clinic input]
@@ -1877,13 +1943,12 @@ _hashlib_hmac_get_name(PyObject *op, void *Py_UNUSED(closure))
     if (md == NULL) {
         return NULL;
     }
-    PyObject *digest_name = get_openssl_evp_md_name(md);
+    const char *digest_name = get_hashlib_utf8name_by_evp_md(md);
     if (digest_name == NULL) {
+        assert(PyErr_Occurred());
         return NULL;
     }
-    PyObject *name = PyUnicode_FromFormat("hmac-%U", digest_name);
-    Py_DECREF(digest_name);
-    return name;
+    return PyUnicode_FromFormat("hmac-%s", digest_name);
 }
 
 static PyMethodDef HMAC_methods[] = {
@@ -1959,7 +2024,9 @@ _openssl_hash_name_mapper(const EVP_MD *md, const char *from,
         return;
     }
 
-    py_name = get_openssl_evp_md_name(md);
+    const char *name = get_hashlib_utf8name_by_evp_md(md);
+    assert(name != NULL || PyErr_Occurred());
+    py_name = name == NULL ? NULL : PyUnicode_FromString(name);
     if (py_name == NULL) {
         state->error = 1;
     } else {
@@ -2181,7 +2248,7 @@ hashlib_traverse(PyObject *m, visitproc visit, void *arg)
 {
     _hashlibstate *state = get_hashlib_state(m);
     Py_VISIT(state->HASH_type);
-    Py_VISIT(state->HMACtype);
+    Py_VISIT(state->HMAC_type);
 #ifdef PY_OPENSSL_HAS_SHAKE
     Py_VISIT(state->HASHXOF_type);
 #endif
@@ -2195,7 +2262,7 @@ hashlib_clear(PyObject *m)
 {
     _hashlibstate *state = get_hashlib_state(m);
     Py_CLEAR(state->HASH_type);
-    Py_CLEAR(state->HMACtype);
+    Py_CLEAR(state->HMAC_type);
 #ifdef PY_OPENSSL_HAS_SHAKE
     Py_CLEAR(state->HASHXOF_type);
 #endif
@@ -2273,11 +2340,11 @@ hashlib_init_hmactype(PyObject *module)
 {
     _hashlibstate *state = get_hashlib_state(module);
 
-    state->HMACtype = (PyTypeObject *)PyType_FromSpec(&HMACtype_spec);
-    if (state->HMACtype == NULL) {
+    state->HMAC_type = (PyTypeObject *)PyType_FromSpec(&HMACtype_spec);
+    if (state->HMAC_type == NULL) {
         return -1;
     }
-    if (PyModule_AddType(module, state->HMACtype) < 0) {
+    if (PyModule_AddType(module, state->HMAC_type) < 0) {
         return -1;
     }
     return 0;

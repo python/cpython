@@ -15,7 +15,6 @@ class _zstd.ZstdDict "ZstdDict *" "&zstd_dict_type_spec"
 #include "Python.h"
 
 #include "_zstdmodule.h"
-#include "zstddict.h"
 #include "clinic/zstddict.c.h"
 #include "internal/pycore_lock.h" // PyMutex_IsLocked
 

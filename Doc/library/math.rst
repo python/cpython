@@ -10,8 +10,8 @@
 
 --------------
 
-This module provides access to the mathematical functions defined by the C
-standard.
+This module provides access to common mathematical functions and constants,
+including those defined by the C standard.
 
 These functions cannot be used with complex numbers; use the functions of the
 same name from the :mod:`cmath` module if you require support for complex
@@ -53,6 +53,8 @@ noted otherwise, all return values are floats.
 :func:`frexp(x) <frexp>`                              Mantissa and exponent of *x*
 :func:`isclose(a, b, rel_tol, abs_tol) <isclose>`     Check if the values *a* and *b* are close to each other
 :func:`isfinite(x) <isfinite>`                        Check if *x* is neither an infinity nor a NaN
+:func:`isnormal(x) <isnormal>`                        Check if *x* is a normal number
+:func:`issubnormal(x) <issubnormal>`                  Check if *x* is a subnormal number
 :func:`isinf(x) <isinf>`                              Check if *x* is a positive or negative infinity
 :func:`isnan(x) <isnan>`                              Check if *x* is a NaN  (not a number)
 :func:`ldexp(x, i) <ldexp>`                           ``x * (2**i)``, inverse of function :func:`frexp`
@@ -371,6 +373,24 @@ Floating point manipulation functions
    ``False`` otherwise.  (Note that ``0.0`` *is* considered finite.)
 
    .. versionadded:: 3.2
+
+
+.. function:: isnormal(x)
+
+   Return ``True`` if *x* is a normal number, that is a finite
+   nonzero number that is not a subnormal (see :func:`issubnormal`).
+   Return ``False`` otherwise.
+
+   .. versionadded:: next
+
+
+.. function:: issubnormal(x)
+
+   Return ``True`` if *x* is a subnormal number, that is a finite
+   nonzero number with a magnitude smaller than the smallest positive normal
+   number, see :data:`sys.float_info.min`.  Return ``False`` otherwise.
+
+   .. versionadded:: next
 
 
 .. function:: isinf(x)
