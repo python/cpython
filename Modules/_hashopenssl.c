@@ -487,8 +487,7 @@ static PY_EVP_MD *
 get_openssl_evp_md_by_utf8name(PyObject *module, const char *name,
                                Py_hash_type py_ht)
 {
-    PY_EVP_MD *digest = NULL;
-    PY_EVP_MD *other_digest = NULL;
+    PY_EVP_MD *digest = NULL, *other_digest = NULL;
     _hashlibstate *state = get_hashlib_state(module);
     py_hashentry_t *entry = (py_hashentry_t *)_Py_hashtable_get(
         state->hashtable, (const void*)name
@@ -522,15 +521,16 @@ get_openssl_evp_md_by_utf8name(PyObject *module, const char *name,
 #endif
             }
             break;
+        default:
+            goto invalid_hash_type;
         }
         // if another thread same thing at same time make sure we got same ptr
         assert(other_digest == NULL || other_digest == digest);
-        if (digest != NULL) {
-            if (other_digest == NULL) {
-                PY_EVP_MD_up_ref(digest);
-            }
+        if (digest != NULL && other_digest == NULL) {
+            PY_EVP_MD_up_ref(digest);
         }
-    } else {
+    }
+    else {
         // Fall back for looking up an unindexed OpenSSL specific name.
         switch (py_ht) {
         case Py_ht_evp:
@@ -541,14 +541,21 @@ get_openssl_evp_md_by_utf8name(PyObject *module, const char *name,
         case Py_ht_evp_nosecurity:
             digest = PY_EVP_MD_fetch(name, "-fips");
             break;
+        default:
+            goto invalid_hash_type;
         }
     }
     if (digest == NULL) {
-        raise_ssl_error(state->unsupported_digestmod_error,
-                        "unsupported hash type %s", name);
+        raise_ssl_error_f(state->unsupported_digestmod_error,
+                          "EVP_MD_fetch: cannot fetch from %s", name);
         return NULL;
     }
     return digest;
+
+invalid_hash_type:
+    assert(digest == NULL);
+    PyErr_Format(PyExc_SystemError, "unsupported hash type %d", py_ht);
+    return NULL;
 }
 
 /* Get digest EVP_MD from object
