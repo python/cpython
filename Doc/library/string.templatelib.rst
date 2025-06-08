@@ -25,6 +25,8 @@ The most common way to create a new :class:`Template` instance is to use the t-s
 
    >>> name = "World"
    >>> greeting = t"Hello {name}!"
+   >>> type(greeting)
+   <class 'string.templatelib.Template'>
    >>> print(list(greeting))
    ['Hello ', Interpolation('World'), '!']
 
