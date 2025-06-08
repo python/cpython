@@ -369,22 +369,6 @@ raise_ssl_error(PyObject *exc_type, const char *fallback_message)
     }
 }
 
-/* Same as raise_ssl_error() with smart exception types. */
-static void
-raise_smart_ssl_error(PyObject *exc_type, const char *fallback_message)
-{
-    assert(fallback_message != NULL);
-    unsigned long errcode = ERR_peek_last_error();
-    if (errcode) {
-        ERR_clear_error();
-        exc_type = get_smart_ssl_exception_type(errcode, exc_type);
-        set_ssl_exception_from_errcode(exc_type, errcode);
-    }
-    else {
-        PyErr_SetString(exc_type, fallback_message);
-    }
-}
-
 /* Same as raise_ssl_error() but with a C-style formatted message. */
 static void
 raise_ssl_error_f(PyObject *exc_type, const char *fallback_format, ...)
@@ -403,7 +387,7 @@ raise_ssl_error_f(PyObject *exc_type, const char *fallback_format, ...)
     }
 }
 
-/* Same as raise_smart_ssl_error() but with a C-style formatted message. */
+/* Same as raise_ssl_error_f() with smart exception types. */
 static void
 raise_smart_ssl_error_f(PyObject *exc_type, const char *fallback_format, ...)
 {
@@ -439,7 +423,7 @@ notify_ssl_error_occurred_in(const char *funcname)
                       "error in OpenSSL function: %s", funcname);
 }
 
-/* Same as notify_ssl_error_occurred() with smart exception types. */
+/* Same as notify_ssl_error_occurred_in() with smart exception types. */
 static inline void
 notify_smart_ssl_error_occurred_in(const char *funcname)
 {
@@ -669,7 +653,7 @@ _hashlib_HASH_copy_locked(HASHobject *self, EVP_MD_CTX *new_ctx_p)
     result = EVP_MD_CTX_copy(new_ctx_p, self->ctx);
     LEAVE_HASHLIB(self);
     if (result == 0) {
-        notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_MD_CTX_copy));
+        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(EVP_MD_CTX_copy));
         return -1;
     }
     return 0;
@@ -820,7 +804,7 @@ _hashlib_HASH_get_name(PyObject *op, void *Py_UNUSED(closure))
     HASHobject *self = HASHobject_CAST(op);
     const EVP_MD *md = EVP_MD_CTX_md(self->ctx);
     if (md == NULL) {
-        notify_ssl_error_occurred("missing EVP_MD");
+        notify_ssl_error_occurred("missing EVP_MD for HASH context");
         return NULL;
     }
     return get_openssl_evp_md_name(md);
@@ -1567,8 +1551,8 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
     /* let OpenSSL validate the rest */
     retval = EVP_PBE_scrypt(NULL, 0, NULL, 0, n, r, p, maxmem, NULL, 0);
     if (!retval) {
-        raise_ssl_error(PyExc_ValueError,
-                        "Invalid parameter combination for n, r, p, maxmem.");
+        notify_ssl_error_occurred(
+            "Invalid parameter combination for n, r, p, maxmem.");
         return NULL;
    }
 
@@ -1672,7 +1656,7 @@ _hashlib_hmac_get_md(HMACobject *self)
 {
     const EVP_MD *md = HMAC_CTX_get_md(self->ctx);
     if (md == NULL) {
-        raise_ssl_error(PyExc_ValueError, "missing EVP_MD for HMAC context");
+        notify_ssl_error_occurred("missing EVP_MD for HMAC context");
     }
     return md;
 }
@@ -1759,7 +1743,7 @@ locked_HMAC_CTX_copy(HMAC_CTX *new_ctx_p, HMACobject *self)
     result = HMAC_CTX_copy(new_ctx_p, self->ctx);
     LEAVE_HASHLIB(self);
     if (result == 0) {
-        notify_ssl_error_occurred_in(Py_STRINGIFY(HMAC_CTX_copy));
+        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(HMAC_CTX_copy));
         return -1;
     }
     return 0;
@@ -1776,7 +1760,7 @@ _hashlib_hmac_digest_size(HMACobject *self)
     unsigned int digest_size = EVP_MD_size(md);
     assert(digest_size <= EVP_MAX_MD_SIZE);
     if (digest_size == 0) {
-        raise_ssl_error(PyExc_ValueError, "invalid digest size");
+        notify_ssl_error_occurred("invalid digest size");
     }
     return digest_size;
 }
@@ -2135,7 +2119,7 @@ _hashlib_get_fips_mode_impl(PyObject *module)
         // then the function will return 0 with an error code of
         // CRYPTO_R_FIPS_MODE_NOT_SUPPORTED (0x0f06d065)."
         // But 0 is also a valid result value.
-        notify_ssl_error_occurred();
+        notify_ssl_error_occurred_in(Py_STRINGIFY(FIPS_mode));
         return -1;
     }
     return result;
