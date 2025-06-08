@@ -104,8 +104,46 @@ It is also possible to create a :class:`Template` directly, using its constructo
        >>> print(list(t"Hello {name}{name}"))
        ['Hello ', Interpolation('World'), Interpolation('World')]
 
+.. class:: Interpolation(*args)
 
+   Create a new :class:`Interpolation` object.
 
+   :param value: The evaluated, in-scope result of the interpolation.
+   :type value: object
 
+   :param expression: The original *text* of the interpolation's Python :ref:`expressions <expressions>`.
+   :type expression: str
 
+   :param conversion: The optional :ref:`conversion <formatstrings>` to be used, one of r, s, and a,.
+   :type value: Literal["a", "r", "s"] | None
 
+   :param format_spec: An optional, arbitrary string used as the :ref:`format specification <formatspec>` to present the value.
+   :type expression: str = ""
+
+   The :class:`Interpolation` type represents an expression inside a template string. It is shallow immutable -- its attributes cannot be reassigned.
+
+   >>> name = "World"
+   >>> template = t"Hello {name}"
+   >>> template.interpolations[0].value
+   'World'
+   >>> template.interpolations[0].value = "Galaxy"
+   Traceback (most recent call last):
+     File "<input>", line 1, in <module>
+   AttributeError: readonly attribute
+
+   While f-strings and t-strings are largely similar in syntax and expectations, the :attr:`~Interpolation.conversion` and :attr:`~Interpolation.format_spec` behave differently. With f-strings, these are applied to the resulting value automatically. For example, in this ``format_spec``:
+
+   >>> value = 42
+   >>> f"Value: {value:.2f}"
+   'Value: 42.00'
+
+   With a t-string :class:`!Interpolation`, the template function is expected to apply this to the value:
+
+   >>> value = 42
+   >>> template = t"Value: {value:.2f}"
+   >> template.interpolations[0].value
+   42
+
+   .. property:: __match_args__: (Literal["value"], Literal["expression"], Literal["conversion"], Literal["format_spec"])
+
+       The allowed positional arguments used by destructuring during structural pattern matching.
