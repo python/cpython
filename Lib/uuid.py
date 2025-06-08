@@ -656,7 +656,7 @@ def _windll_getnode():
 
 def _random_getnode():
     """Get a random node ID."""
-    # RFC 9562, §6.10 says that
+    # RFC 9562, §6.10-3 says that
     #
     #   Implementations MAY elect to obtain a 48-bit cryptographic-quality
     #   random number as per Section 6.9 to use as the Node ID. [...] [and]
