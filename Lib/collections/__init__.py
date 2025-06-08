@@ -1533,6 +1533,9 @@ class UserString(_collections_abc.Sequence):
     def isupper(self):
         return self.data.isupper()
 
+    def contains_surrogate(self):
+        return self.data.contains_surrogate()
+
     def join(self, seq):
         return self.data.join(seq)
 
