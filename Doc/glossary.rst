@@ -1304,6 +1304,11 @@ Glossary
 
       See also :term:`borrowed reference`.
 
+   t-string
+      String literals prefixed with ``'t'`` or ``'T'`` are commonly called
+      "t-strings" which is short for
+      :ref:`template string literals <t-strings>`.  See also :pep:`750`.
+
    text encoding
       A string in Python is a sequence of Unicode code points (in range
       ``U+0000``--``U+10FFFF``). To store or transfer a string, it needs to be
