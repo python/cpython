@@ -72,8 +72,6 @@
 #define PY_EVP_MD_up_ref(md) EVP_MD_up_ref(md)
 #define PY_EVP_MD_free(md) EVP_MD_free(md)
 
-#define EVP_MAC_INCREF(MAC) (void)EVP_MAC_up_ref(MAC)
-#define EVP_MAC_DECREF(MAC) EVP_MAC_free(MAC)
 #define Py_HMAC_CTX_TYPE    EVP_MAC_CTX
 #else
 #define PY_EVP_MD const EVP_MD
@@ -81,8 +79,6 @@
 #define PY_EVP_MD_up_ref(md) do {} while(0)
 #define PY_EVP_MD_free(md) do {} while(0)
 
-#define EVP_MAC_INCREF(MAC) do {} while (0)
-#define EVP_MAC_DECREF(MAC) do {} while (0)
 #define Py_HMAC_CTX_TYPE    HMAC_CTX
 #endif
 
