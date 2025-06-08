@@ -7,7 +7,7 @@ https://github.com/python/importlib_metadata/wiki/Development-Methodology
 for more detail.
 """
 
-import functools
+import contextlib
 import io
 import itertools
 import pathlib
@@ -17,7 +17,6 @@ import stat
 import sys
 import zipfile
 
-from ._functools import save_method_args
 from .glob import Translator
 
 __all__ = ['Path']
@@ -86,12 +85,13 @@ class InitializedState:
     Mix-in to save the initialization state for pickling.
     """
 
-    @save_method_args
     def __init__(self, *args, **kwargs):
+        self.__args = args
+        self.__kwargs = kwargs
         super().__init__(*args, **kwargs)
 
     def __getstate__(self):
-        return self._saved___init__.args, self._saved___init__.kwargs
+        return self.__args, self.__kwargs
 
     def __setstate__(self, state):
         args, kwargs = state
@@ -180,19 +180,16 @@ class FastLookup(CompleteDirs):
     """
 
     def namelist(self):
-        return self._namelist
-
-    @functools.cached_property
-    def _namelist(self):
-        return super().namelist()
+        with contextlib.suppress(AttributeError):
+            return self.__names
+        self.__names = super().namelist()
+        return self.__names
 
     def _name_set(self):
-        return self._name_set_prop
-
-    @functools.cached_property
-    def _name_set_prop(self):
-        return super()._name_set()
-
+        with contextlib.suppress(AttributeError):
+            return self.__lookup
+        self.__lookup = super()._name_set()
+        return self.__lookup
 
 def _extract_text_encoding(encoding=None, *args, **kwargs):
     # compute stack level so that the caller of the caller sees any warning.
