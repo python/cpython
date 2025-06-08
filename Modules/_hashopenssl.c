@@ -420,7 +420,7 @@ static inline void
 notify_ssl_error_occurred_in(const char *funcname)
 {
     raise_ssl_error_f(PyExc_ValueError,
-                      "error in OpenSSL function: %s", funcname);
+                      "error in OpenSSL function %s()", funcname);
 }
 
 /* Same as notify_ssl_error_occurred_in() with smart exception types. */
@@ -428,7 +428,7 @@ static inline void
 notify_smart_ssl_error_occurred_in(const char *funcname)
 {
     raise_smart_ssl_error_f(PyExc_ValueError,
-                            "error in OpenSSL function %s", funcname);
+                            "error in OpenSSL function %s()", funcname);
 }
 /* LCOV_EXCL_STOP */
 
