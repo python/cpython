@@ -754,6 +754,7 @@ blake2_blake2b_copy_locked(Blake2Object *self, Blake2Object *cpy)
             goto error;                                                     \
         }                                                                   \
     } while (0)
+
     switch (self->impl) {
 #if HACL_CAN_COMPILE_SIMD256
         case Blake2b_256:
