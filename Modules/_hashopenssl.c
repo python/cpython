@@ -506,7 +506,6 @@ get_openssl_evp_md_by_utf8name(PyObject *module, const char *name,
         }
     }
     if (digest == NULL) {
-        // NOTE(picnixz): report hash type value instead of name
         raise_ssl_error(state->unsupported_digestmod_error,
                         "unsupported hash type %s", name);
         return NULL;
