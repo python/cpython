@@ -439,7 +439,7 @@ notify_ssl_error_occurred_in(const char *funcname)
                       "error in OpenSSL function: %s", funcname);
 }
 
-/* Same as notify_smart_ssl_error_occurred() for failed OpenSSL functions. */
+/* Same as notify_ssl_error_occurred() with smart exception types. */
 static inline void
 notify_smart_ssl_error_occurred_in(const char *funcname)
 {
@@ -609,7 +609,7 @@ new_hash_object(PyTypeObject *type)
     retval->ctx = EVP_MD_CTX_new();
     if (retval->ctx == NULL) {
         Py_DECREF(retval);
-        PyErr_NoMemory();
+        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(EVP_MD_CTX_new));
         return NULL;
     }
 
@@ -627,7 +627,7 @@ _hashlib_HASH_hash(HASHobject *self, const void *vp, Py_ssize_t len)
         else
             process = Py_SAFE_DOWNCAST(len, Py_ssize_t, unsigned int);
         if (!EVP_DigestUpdate(self->ctx, (const void*)cp, process)) {
-            notify_ssl_error_occurred();
+            notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_DigestUpdate));
             return -1;
         }
         len -= process;
@@ -681,7 +681,6 @@ _hashlib_HASH_copy_impl(HASHobject *self)
 
     if (_hashlib_HASH_copy_locked(self, newobj->ctx) < 0) {
         Py_DECREF(newobj);
-        notify_ssl_error_occurred();
         return NULL;
     }
     return (PyObject *)newobj;
@@ -692,7 +691,7 @@ _hashlib_HASH_digest_compute(HASHobject *self, unsigned char *digest)
 {
     EVP_MD_CTX *ctx = EVP_MD_CTX_new();
     if (ctx == NULL) {
-        notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_MD_CTX_new));
+        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(EVP_MD_CTX_new));
         return -1;
     }
     if (_hashlib_HASH_copy_locked(self, ctx) < 0) {
@@ -809,7 +808,7 @@ _hashlib_HASH_get_name(PyObject *op, void *Py_UNUSED(closure))
     HASHobject *self = HASHobject_CAST(op);
     const EVP_MD *md = EVP_MD_CTX_md(self->ctx);
     if (md == NULL) {
-        notify_ssl_error_occurred();
+        notify_ssl_error_occurred("missing EVP_MD");
         return NULL;
     }
     return get_openssl_evp_md_name(md);
@@ -899,7 +898,7 @@ _hashlib_HASHXOF_digest_impl(HASHobject *self, Py_ssize_t length)
     temp_ctx = EVP_MD_CTX_new();
     if (temp_ctx == NULL) {
         Py_DECREF(retval);
-        PyErr_NoMemory();
+        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(EVP_MD_CTX_new));
         return NULL;
     }
 
@@ -910,6 +909,7 @@ _hashlib_HASHXOF_digest_impl(HASHobject *self, Py_ssize_t length)
                             (unsigned char*)PyBytes_AS_STRING(retval),
                             length))
     {
+        notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_DigestFinalXOF));
         goto error;
     }
 
@@ -919,7 +919,6 @@ _hashlib_HASHXOF_digest_impl(HASHobject *self, Py_ssize_t length)
 error:
     Py_DECREF(retval);
     EVP_MD_CTX_free(temp_ctx);
-    notify_ssl_error_occurred();
     return NULL;
 }
 
@@ -948,7 +947,7 @@ _hashlib_HASHXOF_hexdigest_impl(HASHobject *self, Py_ssize_t length)
     temp_ctx = EVP_MD_CTX_new();
     if (temp_ctx == NULL) {
         PyMem_Free(digest);
-        PyErr_NoMemory();
+        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(EVP_MD_CTX_new));
         return NULL;
     }
 
@@ -957,6 +956,7 @@ _hashlib_HASHXOF_hexdigest_impl(HASHobject *self, Py_ssize_t length)
         goto error;
     }
     if (!EVP_DigestFinalXOF(temp_ctx, digest, length)) {
+        notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_DigestFinalXOF));
         goto error;
     }
 
@@ -969,7 +969,6 @@ _hashlib_HASHXOF_hexdigest_impl(HASHobject *self, Py_ssize_t length)
 error:
     PyMem_Free(digest);
     EVP_MD_CTX_free(temp_ctx);
-    notify_ssl_error_occurred();
     return NULL;
 }
 
@@ -1073,7 +1072,7 @@ _hashlib_HASH(PyObject *module, const char *digestname, PyObject *data_obj,
 
     int result = EVP_DigestInit_ex(self->ctx, digest, NULL);
     if (!result) {
-        notify_ssl_error_occurred();
+        notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_DigestInit_ex));
         Py_CLEAR(self);
         goto exit;
     }
@@ -1482,7 +1481,7 @@ pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
 
     if (!retval) {
         Py_CLEAR(key_obj);
-        notify_ssl_error_occurred();
+        notify_ssl_error_occurred_in(Py_STRINGIFY(PKCS5_PBKDF2_HMAC));
         goto end;
     }
 
@@ -1580,7 +1579,7 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
 
     if (!retval) {
         Py_CLEAR(key_obj);
-        notify_ssl_error_occurred();
+        notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_PBE_scrypt));
         return NULL;
     }
     return key_obj;
@@ -1637,7 +1636,7 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
     PY_EVP_MD_free(evp);
 
     if (result == NULL) {
-        notify_ssl_error_occurred();
+        notify_ssl_error_occurred_in(Py_STRINGIFY(HMAC));
         return NULL;
     }
     return PyBytes_FromStringAndSize((const char*)md, md_len);
@@ -1698,14 +1697,14 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
     ctx = HMAC_CTX_new();
     if (ctx == NULL) {
         PY_EVP_MD_free(digest);
-        PyErr_NoMemory();
+        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(HMAC_CTX_new));
         goto error;
     }
 
     r = HMAC_Init_ex(ctx, key->buf, (int)key->len, digest, NULL /* impl */);
     PY_EVP_MD_free(digest);
     if (r == 0) {
-        notify_ssl_error_occurred();
+        notify_ssl_error_occurred_in(Py_STRINGIFY(HMAC_Init_ex));
         goto error;
     }
 
@@ -1791,7 +1790,7 @@ _hmac_update(HMACobject *self, PyObject *obj)
     PyBuffer_Release(&view);
 
     if (r == 0) {
-        notify_ssl_error_occurred();
+        notify_ssl_error_occurred_in(Py_STRINGIFY(HMAC_Update));
         return 0;
     }
     return 1;
@@ -1811,7 +1810,8 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
 
     HMAC_CTX *ctx = HMAC_CTX_new();
     if (ctx == NULL) {
-        return PyErr_NoMemory();
+        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(HMAC_CTX_new));
+        return NULL;
     }
     if (locked_HMAC_CTX_copy(ctx, self) < 0) {
         HMAC_CTX_free(ctx);
@@ -1883,7 +1883,7 @@ _hmac_digest(HMACobject *self, unsigned char *buf, unsigned int len)
 {
     HMAC_CTX *temp_ctx = HMAC_CTX_new();
     if (temp_ctx == NULL) {
-        (void)PyErr_NoMemory();
+        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(HMAC_CTX_new));
         return 0;
     }
     if (locked_HMAC_CTX_copy(temp_ctx, self) < 0) {
@@ -1893,7 +1893,7 @@ _hmac_digest(HMACobject *self, unsigned char *buf, unsigned int len)
     int r = HMAC_Final(temp_ctx, buf, &len);
     HMAC_CTX_free(temp_ctx);
     if (r == 0) {
-        notify_ssl_error_occurred();
+        notify_ssl_error_occurred_in(Py_STRINGIFY(HMAC_Final));
         return 0;
     }
     return 1;
@@ -2113,16 +2113,13 @@ _hashlib_get_fips_mode_impl(PyObject *module)
 #else
     ERR_clear_error();
     int result = FIPS_mode();
-    if (result == 0) {
+    if (result == 0 && ERR_peek_last_error()) {
         // "If the library was built without support of the FIPS Object Module,
         // then the function will return 0 with an error code of
         // CRYPTO_R_FIPS_MODE_NOT_SUPPORTED (0x0f06d065)."
         // But 0 is also a valid result value.
-        unsigned long errcode = ERR_peek_last_error();
-        if (errcode) {
-            notify_ssl_error_occurred();
-            return -1;
-        }
+        notify_ssl_error_occurred();
+        return -1;
     }
     return result;
 #endif
