@@ -667,7 +667,7 @@ def _random_getnode():
     #
     # See https://en.wikipedia.org/w/index.php?title=MAC_address&oldid=1128764812#Universal_vs._local_(U/L_bit)
 
-    return (int.from_bytes(__import__('os').urandom(6), 'big')) | (1 << 40)
+    return (int.from_bytes(os.urandom(6), 'big')) | (1 << 40)
 
 
 # _OS_GETTERS, when known, are targeted for a specific OS or platform.
