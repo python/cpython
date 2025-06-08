@@ -22,6 +22,7 @@
 
 #include "Python.h"
 #include "hashlib.h"
+#include "pycore_strhex.h"              // _Py_strhex()
 
 /*[clinic input]
 module _md5
@@ -126,6 +127,14 @@ MD5Type_copy_impl(MD5object *self, PyTypeObject *cls)
     return (PyObject *)newobj;
 }
 
+static void
+md5_digest_compute_cond_lock(MD5object *self, uint8_t *digest)
+{
+    ENTER_HASHLIB(self);
+    Hacl_Hash_MD5_digest(self->hash_state, digest);
+    LEAVE_HASHLIB(self);
+}
+
 /*[clinic input]
 MD5Type.digest
 
@@ -136,10 +145,8 @@ static PyObject *
 MD5Type_digest_impl(MD5object *self)
 /*[clinic end generated code: output=eb691dc4190a07ec input=bc0c4397c2994be6]*/
 {
-    unsigned char digest[MD5_DIGESTSIZE];
-    ENTER_HASHLIB(self);
-    Hacl_Hash_MD5_digest(self->hash_state, digest);
-    LEAVE_HASHLIB(self);
+    uint8_t digest[MD5_DIGESTSIZE];
+    md5_digest_compute_cond_lock(self, digest);
     return PyBytes_FromStringAndSize((const char *)digest, MD5_DIGESTSIZE);
 }
 
@@ -153,20 +160,9 @@ static PyObject *
 MD5Type_hexdigest_impl(MD5object *self)
 /*[clinic end generated code: output=17badced1f3ac932 input=b60b19de644798dd]*/
 {
-    unsigned char digest[MD5_DIGESTSIZE];
-    ENTER_HASHLIB(self);
-    Hacl_Hash_MD5_digest(self->hash_state, digest);
-    LEAVE_HASHLIB(self);
-
-    const char *hexdigits = "0123456789abcdef";
-    char digest_hex[MD5_DIGESTSIZE * 2];
-    char *str = digest_hex;
-    for (size_t i=0; i < MD5_DIGESTSIZE; i++) {
-        unsigned char byte = digest[i];
-        *str++ = hexdigits[byte >> 4];
-        *str++ = hexdigits[byte & 0x0f];
-    }
-    return PyUnicode_FromStringAndSize(digest_hex, sizeof(digest_hex));
+    uint8_t digest[MD5_DIGESTSIZE];
+    md5_digest_compute_cond_lock(self, digest);
+    return _Py_strhex((const char *)digest, MD5_DIGESTSIZE);
 }
 
 static void
