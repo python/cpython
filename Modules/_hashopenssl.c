@@ -531,7 +531,7 @@ raise_unsupported_digestmod_error(PyObject *module, PyObject *digestmod)
  *
  * Parameters
  *
- *      digestmod   A digest name or a _hashlib.openssl_* function
+ *      digestmod   A digest name or a _hashopenssl builtin function
  *      py_ht       The message digest purpose.
  */
 static PY_EVP_MD *
