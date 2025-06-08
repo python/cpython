@@ -655,7 +655,11 @@ _hashlib_HASH_copy_locked(HASHobject *self, EVP_MD_CTX *new_ctx_p)
     ENTER_HASHLIB(self);
     result = EVP_MD_CTX_copy(new_ctx_p, self->ctx);
     LEAVE_HASHLIB(self);
-    return result;
+    if (result == 0) {
+        notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_MD_CTX_copy));
+        return -1;
+    }
+    return 0;
 }
 
 /* External methods for a hash object */
@@ -675,7 +679,7 @@ _hashlib_HASH_copy_impl(HASHobject *self)
     if ((newobj = new_hash_object(Py_TYPE(self))) == NULL)
         return NULL;
 
-    if (!_hashlib_HASH_copy_locked(self, newobj->ctx)) {
+    if (_hashlib_HASH_copy_locked(self, newobj->ctx) < 0) {
         Py_DECREF(newobj);
         notify_ssl_error_occurred();
         return NULL;
@@ -899,7 +903,7 @@ _hashlib_HASHXOF_digest_impl(HASHobject *self, Py_ssize_t length)
         return NULL;
     }
 
-    if (!_hashlib_HASH_copy_locked(self, temp_ctx)) {
+    if (_hashlib_HASH_copy_locked(self, temp_ctx) < 0) {
         goto error;
     }
     if (!EVP_DigestFinalXOF(temp_ctx,
@@ -949,7 +953,7 @@ _hashlib_HASHXOF_hexdigest_impl(HASHobject *self, Py_ssize_t length)
     }
 
     /* Get the raw (binary) digest value */
-    if (!_hashlib_HASH_copy_locked(self, temp_ctx)) {
+    if (_hashlib_HASH_copy_locked(self, temp_ctx) < 0) {
         goto error;
     }
     if (!EVP_DigestFinalXOF(temp_ctx, digest, length)) {
@@ -1736,7 +1740,11 @@ locked_HMAC_CTX_copy(HMAC_CTX *new_ctx_p, HMACobject *self)
     ENTER_HASHLIB(self);
     result = HMAC_CTX_copy(new_ctx_p, self->ctx);
     LEAVE_HASHLIB(self);
-    return result;
+    if (result == 0) {
+        notify_ssl_error_occurred_in(Py_STRINGIFY(HMAC_CTX_copy));
+        return -1;
+    }
+    return 0;
 }
 
 /* returning 0 means that an error occurred and an exception is set */
@@ -1805,9 +1813,8 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
     if (ctx == NULL) {
         return PyErr_NoMemory();
     }
-    if (!locked_HMAC_CTX_copy(ctx, self)) {
+    if (locked_HMAC_CTX_copy(ctx, self) < 0) {
         HMAC_CTX_free(ctx);
-        notify_ssl_error_occurred();
         return NULL;
     }
 
@@ -1879,9 +1886,8 @@ _hmac_digest(HMACobject *self, unsigned char *buf, unsigned int len)
         (void)PyErr_NoMemory();
         return 0;
     }
-    if (!locked_HMAC_CTX_copy(temp_ctx, self)) {
+    if (locked_HMAC_CTX_copy(temp_ctx, self) < 0) {
         HMAC_CTX_free(temp_ctx);
-        notify_ssl_error_occurred();
         return 0;
     }
     int r = HMAC_Final(temp_ctx, buf, &len);
