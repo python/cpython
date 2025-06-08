@@ -583,8 +583,9 @@ get_openssl_evp_md(PyObject *module, PyObject *digestmod,
 
 // --- OpenSSL HASH wrappers --------------------------------------------------
 
+/* Thin wrapper around EVP_MD_CTX_new() which sets an exception on failure. */
 static EVP_MD_CTX *
-py_EVP_MD_CTX_new(void)
+py_wrapper_EVP_MD_CTX_new(void)
 {
     EVP_MD_CTX *ctx = EVP_MD_CTX_new();
     if (ctx == NULL) {
@@ -604,7 +605,7 @@ new_hash_object(PyTypeObject *type)
     }
     HASHLIB_INIT_MUTEX(retval);
 
-    retval->ctx = py_EVP_MD_CTX_new();
+    retval->ctx = py_wrapper_EVP_MD_CTX_new();
     if (retval->ctx == NULL) {
         Py_DECREF(retval);
         return NULL;
@@ -686,7 +687,7 @@ _hashlib_HASH_copy_impl(HASHobject *self)
 static Py_ssize_t
 _hashlib_HASH_digest_compute(HASHobject *self, unsigned char *digest)
 {
-    EVP_MD_CTX *ctx = py_EVP_MD_CTX_new();
+    EVP_MD_CTX *ctx = py_wrapper_EVP_MD_CTX_new();
     if (ctx == NULL) {
         return -1;
     }
@@ -891,7 +892,7 @@ _hashlib_HASHXOF_digest_impl(HASHobject *self, Py_ssize_t length)
         return NULL;
     }
 
-    temp_ctx = py_EVP_MD_CTX_new();
+    temp_ctx = py_wrapper_EVP_MD_CTX_new();
     if (temp_ctx == NULL) {
         Py_DECREF(retval);
         return NULL;
@@ -939,7 +940,7 @@ _hashlib_HASHXOF_hexdigest_impl(HASHobject *self, Py_ssize_t length)
         return NULL;
     }
 
-    temp_ctx = py_EVP_MD_CTX_new();
+    temp_ctx = py_wrapper_EVP_MD_CTX_new();
     if (temp_ctx == NULL) {
         PyMem_Free(digest);
         return NULL;
@@ -1639,8 +1640,9 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
 /* OpenSSL-based HMAC implementation
  */
 
+/* Thin wrapper around HMAC_CTX_new() which sets an exception on failure. */
 static HMAC_CTX *
-py_HMAC_CTX_new(void)
+py_openssl_wrapper_HMAC_CTX_new(void)
 {
     HMAC_CTX *ctx = HMAC_CTX_new();
     if (ctx == NULL) {
@@ -1698,7 +1700,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
         return NULL;
     }
 
-    ctx = py_HMAC_CTX_new();
+    ctx = py_openssl_wrapper_HMAC_CTX_new();
     if (ctx == NULL) {
         PY_EVP_MD_free(digest);
         goto error;
@@ -1811,7 +1813,7 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
 {
     HMACobject *retval;
 
-    HMAC_CTX *ctx = py_HMAC_CTX_new();
+    HMAC_CTX *ctx = py_openssl_wrapper_HMAC_CTX_new();
     if (ctx == NULL) {
         return NULL;
     }
@@ -1883,7 +1885,7 @@ _hashlib_HMAC_update_impl(HMACobject *self, PyObject *msg)
 static int
 _hmac_digest(HMACobject *self, unsigned char *buf, unsigned int len)
 {
-    HMAC_CTX *temp_ctx = py_HMAC_CTX_new();
+    HMAC_CTX *temp_ctx = py_openssl_wrapper_HMAC_CTX_new();
     if (temp_ctx == NULL) {
         return 0;
     }
