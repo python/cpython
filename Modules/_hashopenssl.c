@@ -589,7 +589,8 @@ py_wrapper_EVP_MD_CTX_new(void)
 {
     EVP_MD_CTX *ctx = EVP_MD_CTX_new();
     if (ctx == NULL) {
-        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(EVP_MD_CTX_new));
+        PyErr_NoMemory();
+        return NULL;
     }
     return ctx;
 }
@@ -1646,7 +1647,8 @@ py_openssl_wrapper_HMAC_CTX_new(void)
 {
     HMAC_CTX *ctx = HMAC_CTX_new();
     if (ctx == NULL) {
-        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(HMAC_CTX_new));
+        PyErr_NoMemory();
+        return NULL;
     }
     return ctx;
 }
