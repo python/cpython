@@ -213,8 +213,7 @@ Module-Level Functions
    via the :envvar:`PYTHON_TRACEBACK_TIMESTAMPS` environment variable or the
    :option:`-X traceback_timestamps <-X>` command line option, any timestamp
    after the exception message will be omitted. This is useful for tests or
-   other situations where you need consistent output regardless of when
-   exceptions occur.
+   other situations where you need canonical output.
 
    .. versionchanged:: 3.10
       The *etype* parameter has been renamed to *exc* and is now

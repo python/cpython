@@ -1322,10 +1322,10 @@ conflict.
    * ``iso``: Prints the timestamp formatted by :meth:`~datetime.datetime.isoformat` (also microsecond precision).
    * ``0``: Explicitly disables timestamps.
 
-   The time is not recorded on the :exc:`StopIteration` family of exceptions
-   for performance reasons as those are used for control flow rather than
-   errors. If unset, empty, or set to invalid values, this feature remains disabled
-   when using the environment variable.
+   When unset, timestamps are disabled by default. The time is not recorded on
+   the :exc:`StopIteration` family of exceptions for performance reasons as those
+   are used for control flow rather than errors. If set to empty or invalid values,
+   this feature remains disabled when using the environment variable.
 
    Note that the command line option :option:`-X` ``traceback_timestamps`` takes
    precedence over this environment variable when both are specified.

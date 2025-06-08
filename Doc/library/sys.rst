@@ -607,7 +607,8 @@ always available. Unless explicitly noted otherwise, all variables are read-only
           :envvar:`PYTHON_CONTEXT_AWARE_WARNINGS`
 
       * - .. attribute:: flags.traceback_timestamps
-        - :option:`-X traceback_timestamps <-X>`.  This is a string containing
+        - :option:`-X traceback_timestamps <-X>` and
+          :envvar:`PYTHON_TRACEBACK_TIMESTAMPS`.  This is a string containing
           the selected format (``us``, ``ns``, ``iso``),  or an empty string
           when disabled.
 

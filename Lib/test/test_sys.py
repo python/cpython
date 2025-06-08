@@ -1890,8 +1890,11 @@ class SizeofTest(unittest.TestCase):
         # symtable entry
         # XXX
         # sys.flags
-        # FIXME: The +3 is for the 'gil', 'thread_inherit_context',
-        # 'context_aware_warnings', and 'traceback_timestamps' flags.
+        # FIXME: The non_sequence_fields adjustment is for these flags:
+        # - 'gil'
+        # - 'thread_inherit_context'
+        # - 'context_aware_warnings'
+        # - 'traceback_timestamps'
         # It will not be necessary once GH-122575 is fixed.
         non_sequence_fields = 4
         check(sys.flags, vsize('') + self.P + self.P * (non_sequence_fields + len(sys.flags)))
