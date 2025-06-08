@@ -683,6 +683,30 @@ _hashlib_HASH_copy_impl(HASHobject *self)
     return (PyObject *)newobj;
 }
 
+static Py_ssize_t
+_hashlib_HASH_digest_compute(HASHobject *self, unsigned char *digest)
+{
+    EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+    if (ctx == NULL) {
+        notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_MD_CTX_new));
+        return -1;
+    }
+    if (_hashlib_HASH_copy_locked(self, ctx) < 0) {
+        goto error;
+    }
+    Py_ssize_t digest_size = EVP_MD_CTX_size(ctx);
+    if (!EVP_DigestFinal(ctx, digest, NULL)) {
+        notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_DigestFinal));
+        goto error;
+    }
+    EVP_MD_CTX_free(ctx);
+    return digest_size;
+
+error:
+    EVP_MD_CTX_free(ctx);
+    return -1;
+}
+
 /*[clinic input]
 _hashlib.HASH.digest
 
@@ -694,32 +718,8 @@ _hashlib_HASH_digest_impl(HASHobject *self)
 /*[clinic end generated code: output=3fc6f9671d712850 input=d8d528d6e50af0de]*/
 {
     unsigned char digest[EVP_MAX_MD_SIZE];
-    EVP_MD_CTX *temp_ctx;
-    PyObject *retval;
-    unsigned int digest_size;
-
-    temp_ctx = EVP_MD_CTX_new();
-    if (temp_ctx == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
-    if (!_hashlib_HASH_copy_locked(self, temp_ctx)) {
-        goto error;
-    }
-    digest_size = EVP_MD_CTX_size(temp_ctx);
-    if (!EVP_DigestFinal(temp_ctx, digest, NULL)) {
-        goto error;
-    }
-
-    retval = PyBytes_FromStringAndSize((const char *)digest, digest_size);
-    EVP_MD_CTX_free(temp_ctx);
-    return retval;
-
-error:
-    EVP_MD_CTX_free(temp_ctx);
-    notify_ssl_error_occurred();
-    return NULL;
+    Py_ssize_t n = _hashlib_HASH_digest_compute(self, digest);
+    return n < 0 ? NULL : PyBytes_FromStringAndSize((const char *)digest, n);
 }
 
 /*[clinic input]
@@ -733,32 +733,8 @@ _hashlib_HASH_hexdigest_impl(HASHobject *self)
 /*[clinic end generated code: output=1b8e60d9711e7f4d input=ae7553f78f8372d8]*/
 {
     unsigned char digest[EVP_MAX_MD_SIZE];
-    EVP_MD_CTX *temp_ctx;
-    unsigned int digest_size;
-
-    temp_ctx = EVP_MD_CTX_new();
-    if (temp_ctx == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
-    /* Get the raw (binary) digest value */
-    if (!_hashlib_HASH_copy_locked(self, temp_ctx)) {
-        goto error;
-    }
-    digest_size = EVP_MD_CTX_size(temp_ctx);
-    if (!EVP_DigestFinal(temp_ctx, digest, NULL)) {
-        goto error;
-    }
-
-    EVP_MD_CTX_free(temp_ctx);
-
-    return _Py_strhex((const char *)digest, (Py_ssize_t)digest_size);
-
-error:
-    EVP_MD_CTX_free(temp_ctx);
-    notify_ssl_error_occurred();
-    return NULL;
+    Py_ssize_t n = _hashlib_HASH_digest_compute(self, digest);
+    return n < 0 ? NULL : _Py_strhex((const char *)digest, n);
 }
 
 /*[clinic input]
