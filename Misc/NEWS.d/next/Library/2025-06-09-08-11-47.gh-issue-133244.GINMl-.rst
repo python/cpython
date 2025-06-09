@@ -1,0 +1,1 @@
+TPen.pensize raises TurtleGraphicsError if called with a negative number
