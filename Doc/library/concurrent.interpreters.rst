@@ -1,8 +1,8 @@
-:mod:`!concurrent.interpreters` --- Multiple Interpreters in the Same Process
+:mod:`!concurrent.interpreters` --- Multiple interpreters in the same process
 =============================================================================
 
 .. module:: concurrent.interpreters
-   :synopsis: Multiple Interpreters in the Same Process
+   :synopsis: Multiple interpreters in the same process
 
 .. moduleauthor:: Eric Snow <ericsnowcurrently@gmail.com>
 .. sectionauthor:: Eric Snow <ericsnowcurrently@gmail.com>
@@ -38,7 +38,7 @@ interfaces on top of the lower level :mod:`!_interpreters` module.
 .. include:: ../includes/wasm-notavail.rst
 
 
-Key Details
+Key details
 -----------
 
 Before we dive into examples, there are a small number of details
@@ -162,7 +162,7 @@ Exceptions
 .. XXX Add functions for communicating between interpreters.
 
 
-Basic Usage
+Basic usage
 -----------
 
 Creating an interpreter and running code in it::
