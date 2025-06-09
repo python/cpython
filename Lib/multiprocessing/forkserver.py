@@ -145,12 +145,13 @@ class ForkServer(object):
             cmd = ('from multiprocessing.forkserver import main; ' +
                    'main(%d, %d, %r, **%r)')
 
+            main_kws = {}
             if self._preload_modules:
-                desired_keys = {'main_path', 'sys_path'}
                 data = spawn.get_preparation_data('ignore')
-                main_kws = {x: y for x, y in data.items() if x in desired_keys}
-            else:
-                main_kws = {}
+                if 'sys_path' in data:
+                    main_kws['sys_path'] = data['sys_path']
+                if 'init_main_from_path' in data:
+                    main_kws['main_path'] = data['init_main_from_path']
 
             with socket.socket(socket.AF_UNIX) as listener:
                 address = connection.arbitrary_address('AF_UNIX')
