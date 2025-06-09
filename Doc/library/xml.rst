@@ -63,12 +63,12 @@ the various modules are vulnerable to them.
 =========================  ==================  ==================  ==================  ==================  ==================
 kind                       sax                 etree               minidom             pulldom             xmlrpc
 =========================  ==================  ==================  ==================  ==================  ==================
-billion laughs             **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)
-quadratic blowup           **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)
+billion laughs             Safe (1)            Safe (1)            Safe (1)            Safe (1)            Safe (1)
+quadratic blowup           Safe (1)            Safe (1)            Safe (1)            Safe (1)            Safe (1)
 external entity expansion  Safe (5)            Safe (2)            Safe (3)            Safe (5)            Safe (4)
 `DTD`_ retrieval           Safe (5)            Safe                Safe                Safe (5)            Safe
 decompression bomb         Safe                Safe                Safe                Safe                **Vulnerable**
-large tokens               **Vulnerable** (6)  **Vulnerable** (6)  **Vulnerable** (6)  **Vulnerable** (6)  **Vulnerable** (6)
+large tokens               Safe (6)            Safe (6)            Safe (6)            Safe (6)            Safe (6)
 =========================  ==================  ==================  ==================  ==================  ==================
 
 1. Expat 2.4.1 and newer is not vulnerable to the "billion laughs" and
