@@ -5,7 +5,6 @@ import textwrap
 import unittest
 import gc
 import os
-import warnings
 
 import _opcode
 
@@ -2227,23 +2226,6 @@ class TestUopsOptimization(unittest.TestCase):
                 x = ~a + ~a
 
         testfunc(TIER2_THRESHOLD)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-
-        self.assertNotIn("_GUARD_TOS_INT", uops)
-        self.assertNotIn("_GUARD_NOS_INT", uops)
-
-    def test_unary_invert_bool_type(self):
-        def testfunc(n):
-            for _ in range(n):
-                a = True
-                x = ~a + ~a
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            testfunc(TIER2_THRESHOLD)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)

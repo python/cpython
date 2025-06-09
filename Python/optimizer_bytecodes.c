@@ -468,8 +468,7 @@ dummy_func(void) {
     }
 
     op(_UNARY_INVERT, (value -- res)) {
-        PyTypeObject *type = sym_get_type(value);
-        if (type ==  &PyLong_Type || type == &PyBool_Type) {
+        if (sym_matches_type(value, &PyLong_Type)) {
             res = sym_new_type(ctx, &PyLong_Type);
         }
         else {
