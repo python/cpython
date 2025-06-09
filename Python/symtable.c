@@ -1780,6 +1780,9 @@ symtable_record_directive(struct symtable *st, identifier name, _Py_SourceLocati
 static int
 has_kwonlydefaults(asdl_arg_seq *kwonlyargs, asdl_expr_seq *kw_defaults)
 {
+    if (!kw_defaults) {
+        return 0;
+    }
     for (int i = 0; i < asdl_seq_LEN(kwonlyargs); i++) {
         expr_ty default_ = asdl_seq_GET(kw_defaults, i);
         if (default_) {
