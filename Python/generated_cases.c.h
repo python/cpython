@@ -2791,7 +2791,7 @@
                 if (func == NULL) {
                     _PyErr_Format(tstate, PyExc_TypeError,
                               "'%.100s' object is not an iterator",
-                              Py_TYPE(iter_o)->tp_name);
+                              Py_TYPE(iter)->tp_name);
                     goto error;
                 }
                 next = func(iter);
@@ -3314,10 +3314,10 @@
             if (func == NULL) {
                 _PyErr_Format(tstate, PyExc_TypeError,
                               "'%.100s' object is not an iterator",
-                              Py_TYPE(iter_o)->tp_name);
+                              Py_TYPE(iter)->tp_name);
                 goto error;
             }
-            next = func(iter);
+            PyObject *next = func(iter);
             if (next != NULL) {
                 PUSH(next);
                 target = next_instr;

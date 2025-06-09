@@ -2633,7 +2633,7 @@
             if (func == NULL) {
                 _PyErr_Format(tstate, PyExc_TypeError,
                               "'%.100s' object is not an iterator",
-                              Py_TYPE(iter_o)->tp_name);
+                              Py_TYPE(iter)->tp_name);
                 JUMP_TO_ERROR();
             }
             next = func(iter);
