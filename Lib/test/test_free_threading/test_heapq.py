@@ -214,7 +214,7 @@ class TestHeapq(unittest.TestCase):
         """
         return [randint(-a, b) for _ in range(size)]
 
-    def run_concurrently(self, worker_func, args, nthreads) -> None:
+    def run_concurrently(self, worker_func, args, nthreads):
         """
         Run the worker function concurrently in multiple threads.
         """
