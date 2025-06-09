@@ -1015,7 +1015,7 @@ failed:
 int
 PyCode_Addr2Line(PyCodeObject *co, int addrq)
 {
-    if (addrq < 0) {
+    if (addrq < 0 || _PyCode_NBYTES(co)) {
         return co->co_firstlineno;
     }
     if (co->_co_monitoring && co->_co_monitoring->lines) {
@@ -1232,7 +1232,7 @@ PyCode_Addr2Location(PyCodeObject *co, int addrq,
                      int *start_line, int *start_column,
                      int *end_line, int *end_column)
 {
-    if (addrq < 0) {
+    if (addrq < 0 || _PyCode_NBYTES(co) == 0) {
         *start_line = *end_line = co->co_firstlineno;
         *start_column = *end_column = 0;
         return 1;
