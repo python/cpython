@@ -1975,10 +1975,13 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
         return NULL;
     }
     assert(evp_md_nid != NID_undef);
-    EVP_MAC_up_ref(state->evp_hmac);
+    /* 
+     * OpenSSL is responsible for managing the EVP_MAC object's ref. count
+     * by calling EVP_MAC_up_ref() and EVP_MAC_free() in EVP_MAC_CTX_new()
+     * and EVP_MAC_CTX_free() respectively.
+     */
     ctx = EVP_MAC_CTX_new(state->evp_hmac);
     if (ctx == NULL) {
-        EVP_MAC_free(state->evp_hmac);
         /* EVP_MAC_CTX_new() may also set an ERR_R_EVP_LIB error */
         notify_smart_ssl_error_occurred_in(Py_STRINGIFY(EVP_MAC_CTX_new));
         return NULL;
