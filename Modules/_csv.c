@@ -237,7 +237,7 @@ _set_int(const char *name, int *target, PyObject *src, int dflt)
         int value;
         if (!PyLong_CheckExact(src)) {
             PyErr_Format(PyExc_TypeError,
-                         "\"%s\" must be an integer", name);
+                         "\"%s\" must be an integer, not %T", name, src);
             return -1;
         }
         value = PyLong_AsInt(src);
@@ -255,27 +255,29 @@ _set_char_or_none(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt
     if (src == NULL) {
         *target = dflt;
     }
-    else {
+    else if (src == Py_None) {
         *target = NOT_SET;
-        if (src != Py_None) {
-            if (!PyUnicode_Check(src)) {
-                PyErr_Format(PyExc_TypeError,
-                    "\"%s\" must be string or None, not %.200s", name,
-                    Py_TYPE(src)->tp_name);
-                return -1;
-            }
-            Py_ssize_t len = PyUnicode_GetLength(src);
-            if (len < 0) {
-                return -1;
-            }
-            if (len != 1) {
-                PyErr_Format(PyExc_TypeError,
-                    "\"%s\" must be a 1-character string",
-                    name);
-                return -1;
-            }
-            *target = PyUnicode_READ_CHAR(src, 0);
+    }
+    else {
+        // similar to PyArg_Parse("C?")
+        if (!PyUnicode_Check(src)) {
+            PyErr_Format(PyExc_TypeError,
+                         "\"%s\" must be a unicode character or None, not %T",
+                         name, src);
+            return -1;
         }
+        Py_ssize_t len = PyUnicode_GetLength(src);
+        if (len < 0) {
+            return -1;
+        }
+        if (len != 1) {
+            PyErr_Format(PyExc_TypeError,
+                         "\"%s\" must be a unicode character or None, "
+                         "not a string of length %zd",
+                         name, len);
+            return -1;
+        }
+        *target = PyUnicode_READ_CHAR(src, 0);
     }
     return 0;
 }
@@ -287,11 +289,12 @@ _set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
         *target = dflt;
     }
     else {
+        // similar to PyArg_Parse("C")
         if (!PyUnicode_Check(src)) {
             PyErr_Format(PyExc_TypeError,
-                         "\"%s\" must be string, not %.200s", name,
-                         Py_TYPE(src)->tp_name);
-                return -1;
+                         "\"%s\" must be a unicode character, not %T",
+                         name, src);
+            return -1;
         }
         Py_ssize_t len = PyUnicode_GetLength(src);
         if (len < 0) {
@@ -299,8 +302,9 @@ _set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
         }
         if (len != 1) {
             PyErr_Format(PyExc_TypeError,
-                         "\"%s\" must be a 1-character string",
-                         name);
+                         "\"%s\" must be a unicode character, "
+                         "not a string of length %zd",
+                         name, len);
             return -1;
         }
         *target = PyUnicode_READ_CHAR(src, 0);
@@ -314,16 +318,12 @@ _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
     if (src == NULL)
         *target = PyUnicode_DecodeASCII(dflt, strlen(dflt), NULL);
     else {
-        if (src == Py_None)
-            *target = NULL;
-        else if (!PyUnicode_Check(src)) {
+        if (!PyUnicode_Check(src)) {
             PyErr_Format(PyExc_TypeError,
-                         "\"%s\" must be a string", name);
+                         "\"%s\" must be a string, not %T", name, src);
             return -1;
         }
-        else {
-            Py_XSETREF(*target, Py_NewRef(src));
-        }
+        Py_XSETREF(*target, Py_NewRef(src));
     }
     return 0;
 }
@@ -533,20 +533,11 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     /* validate options */
     if (dialect_check_quoting(self->quoting))
         goto err;
-    if (self->delimiter == NOT_SET) {
-        PyErr_SetString(PyExc_TypeError,
-                        "\"delimiter\" must be a 1-character string");
-        goto err;
-    }
     if (quotechar == Py_None && quoting == NULL)
         self->quoting = QUOTE_NONE;
     if (self->quoting != QUOTE_NONE && self->quotechar == NOT_SET) {
         PyErr_SetString(PyExc_TypeError,
                         "quotechar must be set if quoting enabled");
-        goto err;
-    }
-    if (self->lineterminator == NULL) {
-        PyErr_SetString(PyExc_TypeError, "lineterminator must be set");
         goto err;
     }
     if (dialect_check_char("delimiter", self->delimiter, self, true) ||

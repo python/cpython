@@ -353,6 +353,9 @@ PyAPI_FUNC(_PyStackRef) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyS
 extern int _PyRunRemoteDebugger(PyThreadState *tstate);
 #endif
 
+PyAPI_FUNC(_PyStackRef)
+_PyForIter_VirtualIteratorNext(PyThreadState* tstate, struct _PyInterpreterFrame* frame, _PyStackRef iter, _PyStackRef *index_ptr);
+
 #ifdef __cplusplus
 }
 #endif
