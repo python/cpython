@@ -467,6 +467,15 @@ dummy_func(void) {
         res = sym_new_truthiness(ctx, value, false);
     }
 
+    op(_UNARY_INVERT, (value -- res)) {
+        if (sym_matches_type(value, &PyLong_Type)) {
+            res = sym_new_type(ctx, &PyLong_Type);
+        }
+        else {
+            res = sym_new_not_null(ctx);
+        }
+    }
+
     op(_COMPARE_OP, (left, right -- res)) {
         if (oparg & 16) {
             res = sym_new_type(ctx, &PyBool_Type);
