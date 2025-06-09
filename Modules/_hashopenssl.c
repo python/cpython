@@ -33,16 +33,16 @@
 #  define Py_HAS_OPENSSL3_SUPPORT
 #endif
 
+#include <openssl/err.h>
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
 #include <openssl/crypto.h>                 // FIPS_mode()
 /* We use the object interface to discover what hashes OpenSSL supports. */
 #include <openssl/objects.h>
-#include <openssl/err.h>
 
 #ifdef Py_HAS_OPENSSL3_SUPPORT
-#  include <openssl/core_names.h>           // OSSL_*_PARAM_*
-#  include <openssl/params.h>               // OSSL_PARAM_construct_*()
+#  include <openssl/core_names.h>           // OSSL_MAC_PARAM_DIGEST
+#  include <openssl/params.h>               // OSSL_PARAM_*()
 #else
 #  include <openssl/hmac.h>                 // HMAC()
 #endif
@@ -1710,7 +1710,7 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
 
 #ifdef Py_HAS_OPENSSL3_SUPPORT
 /* EVP_MAC_CTX array of parameters specifying the "digest" */
-#define HASHLIB_HMAC_PARAMS(DIGEST)                \
+#define HASHLIB_HMAC_OSSL_PARAMS(DIGEST)                        \
     (const OSSL_PARAM []) {                                     \
         OSSL_PARAM_utf8_string(OSSL_MAC_PARAM_DIGEST,           \
                                (char *)DIGEST, strlen(DIGEST)), \
@@ -1735,27 +1735,22 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
                               Py_buffer *msg, PyObject *digest)
 /*[clinic end generated code: output=82f19965d12706ac input=0a0790cc3db45c2e]*/
 {
+    const void *r;
     unsigned char md[EVP_MAX_MD_SIZE] = {0};
 #ifdef Py_HAS_OPENSSL3_SUPPORT
     size_t md_len = 0;
-#else
-    unsigned int md_len = 0;
-#endif
-    unsigned char *result;
-#ifdef Py_HAS_OPENSSL3_SUPPORT
     const char *digest_name = NULL;
 #else
-    PY_EVP_MD *evp;
+    unsigned int md_len = 0;
+    PY_EVP_MD *evp = NULL;
 #endif
 
     if (key->len > INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "key is too long.");
+        PyErr_SetString(PyExc_OverflowError, "key is too long.");
         return NULL;
     }
     if (msg->len > INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "msg is too long.");
+        PyErr_SetString(PyExc_OverflowError, "msg is too long.");
         return NULL;
     }
 
@@ -1765,9 +1760,9 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
         return NULL;
     }
     Py_BEGIN_ALLOW_THREADS
-    result = EVP_Q_mac(
+    r = EVP_Q_mac(
         NULL, OSSL_MAC_NAME_HMAC, NULL, NULL,
-        HASHLIB_HMAC_PARAMS(digest_name),
+        HASHLIB_HMAC_OSSL_PARAMS(digest_name),
         (const void *)key->buf, (size_t)key->len,
         (const unsigned char *)msg->buf, (size_t)msg->len,
         md, sizeof(md), &md_len
@@ -1781,7 +1776,7 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
     }
 
     Py_BEGIN_ALLOW_THREADS
-    result = HMAC(
+    r = HMAC(
         evp,
         (const void *)key->buf, (int)key->len,
         (const unsigned char *)msg->buf, (size_t)msg->len,
@@ -1790,9 +1785,12 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
     Py_END_ALLOW_THREADS
     PY_EVP_MD_free(evp);
 #endif
-
-    if (result == NULL) {
+    if (r == NULL) {
+#ifdef Py_HAS_OPENSSL3_SUPPORT
+        notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_Q_mac));
+#else
         notify_ssl_error_occurred_in(Py_STRINGIFY(HMAC));
+#endif
         return NULL;
     }
     return PyBytes_FromStringAndSize((const char*)md, md_len);
@@ -1994,7 +1992,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
         ctx,
         (const unsigned char *)key->buf,
         (size_t)key->len,
-        HASHLIB_HMAC_PARAMS(digest)
+        HASHLIB_HMAC_OSSL_PARAMS(digest)
     );
 #else
     PY_EVP_MD *digest = get_openssl_evp_md(module, digestmod, Py_ht_mac);
