@@ -687,6 +687,8 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_UntagInt",
     "PyStackRef_IncrementTaggedIntNoOverflow",
     "PyStackRef_IsNullOrInt",
+    "PyStackRef_IsError",
+    "PyStackRef_IsValid",
 )
 
 
