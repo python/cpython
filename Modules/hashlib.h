@@ -49,6 +49,14 @@
  */
 
 #include "pythread.h"
+
+#define HASHLIB_OBJECT_HEAD                     \
+    PyObject_HEAD                               \
+    /* prevent undefined behavior via multiple
+     * threads entering the C API */            \
+    bool use_mutex;                             \
+    PyMutex mutex;
+
 #define ENTER_HASHLIB(obj) \
     if ((obj)->use_mutex) { \
         PyMutex_Lock(&(obj)->mutex); \
