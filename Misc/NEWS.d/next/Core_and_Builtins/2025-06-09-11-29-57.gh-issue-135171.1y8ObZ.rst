@@ -1,0 +1,12 @@
+Reverted change made in 3.13.4 where creating a generator from an object
+that was not an iterable did not immediately raise an exception. Code like
+this::
+
+     def is_iterable(x):
+         try:
+             (_ for _ in x)
+             return True
+         except TypeError
+             return False
+
+now works again.

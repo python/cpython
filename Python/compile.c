@@ -5368,7 +5368,7 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
 
     comprehension_ty gen = (comprehension_ty)asdl_seq_GET(generators,
                                                           gen_index);
-
+    int is_outer_genexpr = gen_index == 0 && type == COMP_GENEXP;
     if (!iter_on_stack) {
         if (gen_index == 0) {
             /* Receive outermost iter as an implicit argument */
@@ -5407,7 +5407,9 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
 
     if (IS_LABEL(start)) {
         depth++;
-        ADDOP(c, LOC(gen->iter), GET_ITER);
+        if (!is_outer_genexpr) {
+            ADDOP(c, LOC(gen->iter), GET_ITER);
+        }
         USE_LABEL(c, start);
         ADDOP_JUMP(c, LOC(gen->iter), FOR_ITER, anchor);
     }
@@ -5810,6 +5812,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     location loc = LOC(e);
 
     outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
+    int is_sync_genexpr = type == COMP_GENEXP && !outermost->is_async;
     if (is_inlined) {
         if (compiler_visit_expr(c, outermost->iter) < 0) {
             goto error;
@@ -5898,7 +5901,9 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     Py_CLEAR(co);
 
     VISIT(c, expr, outermost->iter);
-
+    if (is_sync_genexpr) {
+        ADDOP(c, loc, GET_ITER);
+    }
     ADDOP_I(c, loc, CALL, 0);
 
     if (is_async_generator && type != COMP_GENEXP) {

@@ -131,6 +131,14 @@ Verify late binding for the outermost if-expression
     >>> list(g)
     [1, 9, 25, 49, 81]
 
+Verify that the outermost for-expression makes an immediate check
+for iterability
+    >>> (i for i in 6)
+    Traceback (most recent call last):
+      File "<pyshell#4>", line 1, in -toplevel-
+        (i for i in 6)
+    TypeError: 'int' object is not iterable
+
 Verify late binding for the innermost for-expression
 
     >>> g = ((i,j) for i in range(3) for j in range(x))
