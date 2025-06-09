@@ -195,17 +195,38 @@ class OptimizerConstantEmitter(OptimizerEmitter):
         self.out.emit("_stackref ")
         return True
 
+
+def replace_opcode_if_evaluates_pure_identifiers(uop: Uop) -> list[str]:
+    token = None
+    iterator = uop.body.tokens()
+    for token in iterator:
+        if token.kind == "IDENTIFIER" and token.text == "REPLACE_OPCODE_IF_EVALUATES_PURE":
+            break
+    assert token is not None
+    assert token.kind == "IDENTIFIER" and token.text == "REPLACE_OPCODE_IF_EVALUATES_PURE", uop.name
+    assert next(iterator).kind == "LPAREN"
+    idents = []
+    for token in iterator:
+        if token.kind == "RPAREN":
+            break
+        if token.kind == "IDENTIFIER":
+            idents.append(token.text)
+    return idents
+
+
 def write_uop_pure_evaluation_region_header(
     uop: Uop,
+    override: Uop,
     out: CWriter,
     stack: Stack,
 ) -> None:
     emitter = OptimizerConstantEmitter(out, {}, uop)
     emitter.emit("if (\n")
-    assert len(uop.stack.inputs) > 0, "Pure operations must have at least 1 input"
-    for inp in uop.stack.inputs[:-1]:
-        emitter.emit(f"sym_is_safe_const(ctx, {inp.name}) &&\n")
-    emitter.emit(f"sym_is_safe_const(ctx, {uop.stack.inputs[-1].name})\n")
+    input_identifiers = replace_opcode_if_evaluates_pure_identifiers(override)
+    assert len(input_identifiers) > 0, "Pure operations must have at least 1 input"
+    for inp in input_identifiers[:-1]:
+        emitter.emit(f"sym_is_safe_const(ctx, {inp}) &&\n")
+    emitter.emit(f"sym_is_safe_const(ctx, {input_identifiers[-1]})\n")
     emitter.emit(') {\n')
     # Declare variables, before they are shadowed.
     for inp in uop.stack.inputs:
@@ -280,7 +301,7 @@ def write_uop(
                 var.in_local = False
             replace_opcode_if_evaluates_pure = uop_variable_used(override, "REPLACE_OPCODE_IF_EVALUATES_PURE")
             if replace_opcode_if_evaluates_pure:
-                write_uop_pure_evaluation_region_header(uop, out, stack)
+                write_uop_pure_evaluation_region_header(uop, override, out, stack)
             out.start_line()
             emitter = OptimizerEmitter(out, {})
             _, storage = emitter.emit_tokens(override, storage, inst=None, emit_braces=False)
