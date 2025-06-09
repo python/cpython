@@ -401,6 +401,15 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
 
       Use :func:`pickletools.optimize` if you need more compact pickles.
 
+   .. method:: clear_memo()
+
+      Clears the pickler's "memo".
+
+      The memo is the data structure that remembers which objects the
+      pickler has already seen, so that shared or recursive objects
+      are pickled by reference and not by value.  This method is
+      useful when re-using picklers.
+
 
 .. class:: Unpickler(file, *, fix_imports=True, encoding="ASCII", errors="strict", buffers=None)
 
@@ -1199,6 +1208,30 @@ The following example reads the resulting pickled data. ::
 
 .. XXX: Add examples showing how to optimize pickles for size (like using
 .. pickletools.optimize() or the gzip module).
+
+
+.. _pickle-cli:
+
+Command-line interface
+----------------------
+
+The :mod:`pickle` module can be invoked as a script from the command line,
+it will display contents of the pickle files. However, when the pickle file
+that you want to examine comes from an untrusted source, ``-m pickletools``
+is a safer option because it does not execute pickle bytecode, see
+:ref:`pickletools CLI usage <pickletools-cli>`.
+
+.. code-block:: bash
+
+   python -m pickle pickle_file [pickle_file ...]
+
+The following option is accepted:
+
+.. program:: pickle
+
+.. option:: pickle_file
+
+   A pickle file to read, or ``-`` to indicate reading from standard input.
 
 
 .. seealso::

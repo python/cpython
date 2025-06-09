@@ -1038,11 +1038,9 @@ class Differ:
 # remaining is that perhaps it was really the case that " volatile"
 # was inserted after "private".  I can live with that <wink>.
 
-import re
-
-def IS_LINE_JUNK(line, pat=re.compile(r"\s*(?:#\s*)?$").match):
+def IS_LINE_JUNK(line, pat=None):
     r"""
-    Return True for ignorable line: iff `line` is blank or contains a single '#'.
+    Return True for ignorable line: if `line` is blank or contains a single '#'.
 
     Examples:
 
@@ -1054,6 +1052,11 @@ def IS_LINE_JUNK(line, pat=re.compile(r"\s*(?:#\s*)?$").match):
     False
     """
 
+    if pat is None:
+        # Default: match '#' or the empty string
+        return line.strip() in '#'
+   # Previous versions used the undocumented parameter 'pat' as a
+   # match function. Retain this behaviour for compatibility.
     return pat(line) is not None
 
 def IS_CHARACTER_JUNK(ch, ws=" \t"):
@@ -1612,16 +1615,13 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
 
 
 _file_template = """
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html>
-
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta http-equiv="Content-Type"
-          content="text/html; charset=%(charset)s" />
-    <title></title>
-    <style type="text/css">%(styles)s
+    <meta charset="%(charset)s">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Diff comparison</title>
+    <style>%(styles)s
     </style>
 </head>
 
@@ -1633,13 +1633,36 @@ _file_template = """
 
 _styles = """
         :root {color-scheme: light dark}
-        table.diff {font-family:Courier; border:medium;}
-        .diff_header {background-color:#e0e0e0}
-        td.diff_header {text-align:right}
-        .diff_next {background-color:#c0c0c0}
+        table.diff {
+            font-family: Menlo, Consolas, Monaco, Liberation Mono, Lucida Console, monospace;
+            border: medium;
+        }
+        .diff_header {
+            background-color: #e0e0e0;
+            font-weight: bold;
+        }
+        td.diff_header {
+            text-align: right;
+            padding: 0 8px;
+        }
+        .diff_next {
+            background-color: #c0c0c0;
+            padding: 4px 0;
+        }
         .diff_add {background-color:palegreen}
         .diff_chg {background-color:#ffff77}
         .diff_sub {background-color:#ffaaaa}
+        table.diff[summary="Legends"] {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+        }
+        table.diff[summary="Legends"] th {
+            background-color: #e0e0e0;
+            padding: 4px 8px;
+        }
+        table.diff[summary="Legends"] td {
+            padding: 4px 8px;
+        }
 
         @media (prefers-color-scheme: dark) {
             .diff_header {background-color:#666}
@@ -1647,6 +1670,8 @@ _styles = """
             .diff_add {background-color:darkgreen}
             .diff_chg {background-color:#847415}
             .diff_sub {background-color:darkred}
+            table.diff[summary="Legends"] {border-color:#555}
+            table.diff[summary="Legends"] th{background-color:#666}
         }"""
 
 _table_template = """
@@ -1689,7 +1714,7 @@ class HtmlDiff(object):
     make_table -- generates HTML for a single side by side table
     make_file -- generates complete HTML file with a single side by side table
 
-    See tools/scripts/diff.py for an example usage of this class.
+    See Doc/includes/diff.py for an example usage of this class.
     """
 
     _file_template = _file_template
@@ -2027,7 +2052,6 @@ class HtmlDiff(object):
                      replace('\1','</span>'). \
                      replace('\t','&nbsp;')
 
-del re
 
 def restore(delta, which):
     r"""
@@ -2060,10 +2084,3 @@ def restore(delta, which):
     for line in delta:
         if line[:2] in prefixes:
             yield line[2:]
-
-def _test():
-    import doctest, difflib
-    return doctest.testmod(difflib)
-
-if __name__ == "__main__":
-    _test()
