@@ -714,10 +714,16 @@ item in the :attr:`~Structure._fields_` tuples::
    ...                 ("second_16", c_int, 16)]
    ...
    >>> print(Int.first_16)
-   <Field type=c_long, ofs=0:0, bits=16>
+   <ctypes.CField 'first_16' type=c_int, ofs=0, bit_size=16, bit_offset=0>
    >>> print(Int.second_16)
-   <Field type=c_long, ofs=0:16, bits=16>
-   >>>
+   <ctypes.CField 'second_16' type=c_int, ofs=0, bit_size=16, bit_offset=16>
+
+It is important to note that bit field allocation and layout in memory are not
+defined as a C standard; their implementation is compiler-specific.
+By default, Python will attempt to match the behavior of a "native" compiler
+for the current platform.
+See the :attr:`~Structure._layout_` attribute for details on the default
+behavior and how to change it.
 
 
 .. _ctypes-arrays:
