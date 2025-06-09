@@ -184,6 +184,7 @@ dis_bug1333982 = """\
               LOAD_CONST               1 (<code object <genexpr> at 0x..., file "%s", line %d>)
               MAKE_FUNCTION
               LOAD_FAST                0 (x)
+              GET_ITER
               CALL                     0
 
 %3d           LOAD_CONST               2 (1)
@@ -764,6 +765,7 @@ Disassembly of <code object foo at 0x..., file "%s", line %d>:
                MAKE_FUNCTION
                SET_FUNCTION_ATTRIBUTE   8 (closure)
                LOAD_DEREF               1 (y)
+               GET_ITER
                CALL                     0
                CALL                     1
                RETURN_VALUE
@@ -784,7 +786,6 @@ Disassembly of <code object <genexpr> at 0x..., file "%s", line %d>:
                POP_TOP
        L1:     RESUME                   0
                LOAD_FAST                0 (.0)
-               GET_ITER
        L2:     FOR_ITER                10 (to L3)
                STORE_FAST               1 (z)
                LOAD_DEREF               2 (x)
