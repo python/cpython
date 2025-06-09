@@ -1,2 +1,7 @@
 :mod:`hashlib`: improve exception messages when an OpenSSL function failed.
+<<<<<<< HEAD
 Patch by Bénédikt Tran.
+=======
+When memory allocation fails on OpenSSL's side, a :exc:`MemoryError` is
+raised instead of a :exc:`ValueError`. Patch by Bénédikt Tran.
+>>>>>>> main
