@@ -74,6 +74,7 @@
 
 #define Py_HMAC_CTX_TYPE    EVP_MAC_CTX
 #define PY_HMAC_CTX_free    EVP_MAC_CTX_free
+#define PY_HMAC_update      EVP_MAC_update
 #else
 #define PY_EVP_MD const EVP_MD
 #define PY_EVP_MD_fetch(algorithm, properties) EVP_get_digestbyname(algorithm)
@@ -82,6 +83,7 @@
 
 #define Py_HMAC_CTX_TYPE    HMAC_CTX
 #define PY_HMAC_CTX_free    HMAC_CTX_free
+#define PY_HMAC_update      HMAC_Update
 #endif
 
 /* hash alias map and fast lookup
@@ -1825,21 +1827,22 @@ hashlib_openssl_HMAC_evp_md_borrowed(HMACobject *self)
 }
 #endif
 
+static const char *
+hashlib_HMAC_get_hashlib_digest_name(HMACobject *self)
+{
+#ifdef Py_HAS_OPENSSL3_SUPPORT
+    return get_hashlib_utf8name_by_nid(self->evp_md_nid);
+#else
+    const EVP_MD *md = hashlib_openssl_HMAC_evp_md_borrowed(self);
+    return md == NULL ? NULL : get_hashlib_utf8name_by_evp_md(md);
+#endif
+}
+
 static int
 hashlib_openssl_HMAC_update_once(Py_HMAC_CTX_TYPE *ctx, const Py_buffer *v)
 {
-    int r;
-#ifdef Py_HAS_OPENSSL3_SUPPORT
-    r = EVP_MAC_update(ctx, (const unsigned char *)v->buf, (size_t)v->len);
-#else
-    r = HMAC_Update(ctx, (const unsigned char *)v->buf, (size_t)v->len);
-#endif
-    if (r == 0) {
-#ifdef Py_HAS_OPENSSL3_SUPPORT
-        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(EVP_MAC_update));
-#else
-        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(HMAC_Update));
-#endif
+    if (!PY_HMAC_update(ctx, (const unsigned char *)v->buf, (size_t)v->len)) {
+        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(PY_HMAC_update));
         return -1;
     }
     return 0;
@@ -2054,7 +2057,7 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
     }
     retval = PyObject_New(HMACobject, Py_TYPE(self));
     if (retval == NULL) {
-        hashlib_openssl_HMAC_CTX_free(ctx);
+        PY_HMAC_CTX_free(ctx);
         return NULL;
     }
     retval->ctx = ctx;
@@ -2078,14 +2081,8 @@ _hashlib_HMAC_dealloc(PyObject *op)
 static PyObject *
 _hashlib_HMAC_repr(PyObject *op)
 {
-    const char *digest_name;
     HMACobject *self = HMACobject_CAST(op);
-#ifdef Py_HAS_OPENSSL3_SUPPORT
-    digest_name = get_hashlib_utf8name_by_nid(self->evp_md_nid);
-#else
-    const EVP_MD *md = hashlib_openssl_HMAC_evp_md_borrowed(self);
-    digest_name = md == NULL ? NULL : get_hashlib_utf8name_by_evp_md(md);
-#endif
+    const char *digest_name = hashlib_HMAC_get_hashlib_digest_name(self);
     if (digest_name == NULL) {
         assert(PyErr_Occurred());
         return NULL;
@@ -2238,13 +2235,7 @@ static PyObject *
 _hashlib_HMAC_get_name(PyObject *op, void *Py_UNUSED(closure))
 {
     HMACobject *self = HMACobject_CAST(op);
-    const char *digest_name = NULL;
-#ifdef Py_HAS_OPENSSL3_SUPPORT
-    digest_name = get_hashlib_utf8name_by_nid(self->evp_md_nid);
-#else
-    const EVP_MD *md = hashlib_openssl_HMAC_evp_md_borrowed(self);
-    digest_name = md == NULL ? NULL : get_hashlib_utf8name_by_evp_md(md);
-#endif
+    const char *digest_name = hashlib_HMAC_get_hashlib_digest_name(self);
     if (digest_name == NULL) {
         assert(PyErr_Occurred());
         return NULL;
