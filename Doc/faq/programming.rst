@@ -986,8 +986,8 @@ There are various techniques.
      f()
 
 
-Is there an equivalent to Perl's chomp() for removing trailing newlines from strings?
--------------------------------------------------------------------------------------
+Is there an equivalent to Perl's ``chomp()`` for removing trailing newlines from strings?
+-----------------------------------------------------------------------------------------
 
 You can use ``S.rstrip("\r\n")`` to remove all occurrences of any line
 terminator from the end of the string ``S`` without removing other trailing
@@ -1005,8 +1005,8 @@ Since this is typically only desired when reading text one line at a time, using
 ``S.rstrip()`` this way works well.
 
 
-Is there a scanf() or sscanf() equivalent?
-------------------------------------------
+Is there a ``scanf()`` or ``sscanf()`` equivalent?
+--------------------------------------------------
 
 Not as such.
 
@@ -1020,8 +1020,8 @@ For more complicated input parsing, regular expressions are more powerful
 than C's ``sscanf`` and better suited for the task.
 
 
-What does 'UnicodeDecodeError' or 'UnicodeEncodeError' error  mean?
--------------------------------------------------------------------
+What does ``UnicodeDecodeError`` or ``UnicodeEncodeError`` error mean?
+----------------------------------------------------------------------
 
 See the :ref:`unicode-howto`.
 
@@ -1036,7 +1036,7 @@ A raw string ending with an odd number of backslashes will escape the string's q
    >>> r'C:\this\will\not\work\'
      File "<stdin>", line 1
        r'C:\this\will\not\work\'
-            ^
+       ^
    SyntaxError: unterminated string literal (detected at line 1)
 
 There are several workarounds for this. One is to use regular strings and double
@@ -1868,15 +1868,15 @@ object identity is assured.  Generally, there are three circumstances where
 identity is guaranteed:
 
 1) Assignments create new names but do not change object identity.  After the
-assignment ``new = old``, it is guaranteed that ``new is old``.
+   assignment ``new = old``, it is guaranteed that ``new is old``.
 
 2) Putting an object in a container that stores object references does not
-change object identity.  After the list assignment ``s[0] = x``, it is
-guaranteed that ``s[0] is x``.
+   change object identity.  After the list assignment ``s[0] = x``, it is
+   guaranteed that ``s[0] is x``.
 
 3) If an object is a singleton, it means that only one instance of that object
-can exist.  After the assignments ``a = None`` and ``b = None``, it is
-guaranteed that ``a is b`` because ``None`` is a singleton.
+   can exist.  After the assignments ``a = None`` and ``b = None``, it is
+   guaranteed that ``a is b`` because ``None`` is a singleton.
 
 In most other circumstances, identity tests are inadvisable and equality tests
 are preferred.  In particular, identity tests should not be used to check

@@ -1200,7 +1200,7 @@ call_instrumentation_vector(
     return err;
 }
 
-int
+Py_NO_INLINE int
 _Py_call_instrumentation(
     PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr)
@@ -1209,7 +1209,7 @@ _Py_call_instrumentation(
     return call_instrumentation_vector(instr, tstate, event, frame, instr, 2, args);
 }
 
-int
+Py_NO_INLINE int
 _Py_call_instrumentation_arg(
     PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg)
@@ -1218,7 +1218,7 @@ _Py_call_instrumentation_arg(
     return call_instrumentation_vector(instr, tstate, event, frame, instr, 3, args);
 }
 
-int
+Py_NO_INLINE int
 _Py_call_instrumentation_2args(
     PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1)
@@ -1227,7 +1227,7 @@ _Py_call_instrumentation_2args(
     return call_instrumentation_vector(instr, tstate, event, frame, instr, 4, args);
 }
 
-_Py_CODEUNIT *
+Py_NO_INLINE _Py_CODEUNIT *
 _Py_call_instrumentation_jump(
     _Py_CODEUNIT *instr, PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest)
@@ -1271,7 +1271,7 @@ call_instrumentation_vector_protected(
     assert(_PyErr_Occurred(tstate));
 }
 
-void
+Py_NO_INLINE void
 _Py_call_instrumentation_exc2(
     PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1)
@@ -1294,7 +1294,7 @@ _Py_Instrumentation_GetLine(PyCodeObject *code, int index)
     return line;
 }
 
-int
+Py_NO_INLINE int
 _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *prev)
 {
     PyCodeObject *code = _PyFrame_GetCode(frame);
@@ -1396,7 +1396,7 @@ done:
     return original_opcode;
 }
 
-int
+Py_NO_INLINE int
 _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr)
 {
     PyCodeObject *code = _PyFrame_GetCode(frame);
