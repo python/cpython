@@ -686,6 +686,26 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    instance, and call the type's :c:member:`~PyTypeObject.tp_free` function to
    free the object itself.
 
+   If you may call functions that may set the error indicator, you must use
+   :c:func:`PyErr_GetRaisedException` and :c:func:`PyErr_SetRaisedException`
+   to ensure you don't clobber a preexisting error indicator (the deallocation
+   could have occurred while processing a different error):
+
+   .. code-block:: c
+
+     static void
+     foo_dealloc(foo_object *self)
+     {
+         PyObject *et, *ev, *etb;
+         PyObject *exc = PyErr_GetRaisedException();
+         ...
+         PyErr_SetRaisedException(exc);
+     }
+
+   The dealloc handler itself must not raise an exception; if it hits an error
+   case it should call :c:func:`PyErr_FormatUnraisable` to log (and clear) an
+   unraisable exception.
+
    No guarantees are made about when an object is destroyed, except:
 
    * Python will destroy an object immediately or some time after the final
