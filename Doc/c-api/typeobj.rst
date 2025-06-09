@@ -693,7 +693,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    .. code-block:: c
 
-     static void foo_dealloc(foo_object *self) {
+     static void
+     foo_dealloc(foo_object *self)
+     {
          PyObject *et, *ev, *etb;
          PyObject *exc = PyErr_GetRaisedException();
          ...
