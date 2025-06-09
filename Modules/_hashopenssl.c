@@ -1975,7 +1975,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
         return NULL;
     }
     assert(evp_md_nid != NID_undef);
-    /* 
+    /*
      * OpenSSL is responsible for managing the EVP_MAC object's ref. count
      * by calling EVP_MAC_up_ref() and EVP_MAC_free() in EVP_MAC_CTX_new()
      * and EVP_MAC_CTX_free() respectively.
