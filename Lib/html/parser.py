@@ -98,8 +98,8 @@ class HTMLParser(_markupbase.ParserBase):
     containing respectively the named or numeric reference as the
     argument.
     """
-
-    CDATA_CONTENT_ELEMENTS = ("script", "style")
+    # For escapable raw text elements (textarea and title), CDATA mode is reused
+    CDATA_CONTENT_ELEMENTS = ("script", "style", "textarea", "title")
 
     def __init__(self, *, convert_charrefs=True):
         """Initialize and reset this instance.
@@ -117,6 +117,7 @@ class HTMLParser(_markupbase.ParserBase):
         self.lasttag = '???'
         self.interesting = interesting_normal
         self.cdata_elem = None
+        self._raw_escapable = False
         super().reset()
 
     def feed(self, data):
@@ -140,11 +141,16 @@ class HTMLParser(_markupbase.ParserBase):
 
     def set_cdata_mode(self, elem):
         self.cdata_elem = elem.lower()
-        self.interesting = re.compile(r'</\s*%s\s*>' % self.cdata_elem, re.I)
+        if self.cdata_elem in ["textarea", "title"]:
+            self._raw_escapable = True
+            self.interesting = re.compile('[&]')
+        else:
+            self.interesting = re.compile(r'</\s*%s\s*>' % self.cdata_elem, re.I)
 
     def clear_cdata_mode(self):
         self.interesting = interesting_normal
         self.cdata_elem = None
+        self._raw_escapable = False
 
     # Internal -- handle data as far as reasonable.  May leave state
     # and data to be processed by a subsequent call.  If 'end' is
@@ -154,7 +160,7 @@ class HTMLParser(_markupbase.ParserBase):
         i = 0
         n = len(rawdata)
         while i < n:
-            if self.convert_charrefs and not self.cdata_elem:
+            if self.convert_charrefs and (not self.cdata_elem or self._raw_escapable):
                 j = rawdata.find('<', i)
                 if j < 0:
                     # if we can't find the next <, either we are at the end
@@ -177,7 +183,7 @@ class HTMLParser(_markupbase.ParserBase):
                         break
                     j = n
             if i < j:
-                if self.convert_charrefs and not self.cdata_elem:
+                if self.convert_charrefs and (not self.cdata_elem or self._raw_escapable):
                     self.handle_data(unescape(rawdata[i:j]))
                 else:
                     self.handle_data(rawdata[i:j])
@@ -210,7 +216,7 @@ class HTMLParser(_markupbase.ParserBase):
                             k = i + 1
                     else:
                         k += 1
-                    if self.convert_charrefs and not self.cdata_elem:
+                    if self.convert_charrefs and (not self.cdata_elem or self._raw_escapable):
                         self.handle_data(unescape(rawdata[i:k]))
                     else:
                         self.handle_data(rawdata[i:k])
@@ -261,7 +267,7 @@ class HTMLParser(_markupbase.ParserBase):
                 assert 0, "interesting.search() lied"
         # end while
         if end and i < n:
-            if self.convert_charrefs and not self.cdata_elem:
+            if self.convert_charrefs and (not self.cdata_elem or self._raw_escapable):
                 self.handle_data(unescape(rawdata[i:n]))
             else:
                 self.handle_data(rawdata[i:n])
