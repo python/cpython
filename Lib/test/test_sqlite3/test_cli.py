@@ -3,6 +3,7 @@ import sqlite3
 import sys
 import textwrap
 import unittest
+import os
 
 from sqlite3.__main__ import main as cli
 from test.support.import_helper import import_module
@@ -253,7 +254,7 @@ class Completion(unittest.TestCase):
     def test_complete_no_match(self):
         input_ = b"xyzzy\t\t\b\b\b\b\b\b\b.quit\n"
         # Set NO_COLOR to disable coloring for self.PS1.
-        output = self.write_input(input_, env={"NO_COLOR": "1"})
+        output = self.write_input(input_, env={**os.environ, "NO_COLOR": "1"})
         lines = output.decode().splitlines()
         indices = (
             i for i, line in enumerate(lines, 1)
@@ -286,7 +287,7 @@ class Completion(unittest.TestCase):
             main()
         """)
         input_ = b"\t\t.quit\n"
-        output = run_pty(script, input_, env={"NO_COLOR": "1"})
+        output = run_pty(script, input_, env={**os.environ, "NO_COLOR": "1"})
         lines = output.decode().splitlines()
         indices = [
             i for i, line in enumerate(lines)
