@@ -13,6 +13,16 @@ If you need to add a new function ensure that is declared 'static'.
 extern "C" {
 #endif
 
+#ifdef __clang__
+    #define UNUSED __attribute__((unused))
+#elif defined(__GNUC__)
+    #define UNUSED __attribute__((unused))
+#elif defined(_MSC_VER)
+    #define UNUSED __pragma(warning(suppress: 4505))
+#else
+    #define UNUSED
+#endif
+
 #if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_MODULE define"
 #endif
@@ -131,7 +141,7 @@ _Py_RemoteDebug_FreePageCache(proc_handle_t *handle)
     }
 }
 
-static void
+UNUSED static void
 _Py_RemoteDebug_ClearCache(proc_handle_t *handle)
 {
     for (int i = 0; i < MAX_PAGES; i++) {
@@ -989,7 +999,7 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
 #endif
 }
 
-static int
+UNUSED static int
 _Py_RemoteDebug_PagedReadRemoteMemory(proc_handle_t *handle,
                                       uintptr_t addr,
                                       size_t size,
