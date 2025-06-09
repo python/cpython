@@ -139,6 +139,19 @@
 #endif
 
 
+static void
+check_invalid_reentrancy(void)
+{
+#if defined(Py_DEBUG) && defined(Py_GIL_DISABLED)
+    // In the free-threaded build, the interpreter must not be re-entered if
+    // the world-is-stopped.  If so, that's a bug somewhere (quite likely in
+    // the painfully complex typeobject code).
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(!interp->stoptheworld.world_stopped);
+#endif
+}
+
+
 #ifdef Py_DEBUG
 static void
 dump_item(_PyStackRef item)
@@ -996,6 +1009,7 @@ PyObject* _Py_HOT_FUNCTION DONT_SLP_VECTORIZE
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
+    check_invalid_reentrancy();
     CALL_STAT_INC(pyeval_calls);
 
 #if USE_COMPUTED_GOTOS && !Py_TAIL_CALL_INTERP
@@ -2965,7 +2979,7 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     int is_possibly_shadowing_stdlib = 0;
     if (is_possibly_shadowing) {
         PyObject *stdlib_modules;
-        if (_PySys_GetOptionalAttrString("stdlib_module_names", &stdlib_modules) < 0) {
+        if (PySys_GetOptionalAttrString("stdlib_module_names", &stdlib_modules) < 0) {
             goto done;
         }
         if (stdlib_modules && PyAnySet_Check(stdlib_modules)) {
@@ -3176,7 +3190,7 @@ _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwarg
     else if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
         PyObject *exc = _PyErr_GetRaisedException(tstate);
         PyObject *args = PyException_GetArgs(exc);
-        if (exc && PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1) {
+        if (PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1) {
             _PyErr_Clear(tstate);
             PyObject *funcstr = _PyObject_FunctionStr(func);
             if (funcstr != NULL) {
@@ -3425,8 +3439,8 @@ _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *na
     return value;
 }
 
-_PyStackRef
-_PyForIter_NextWithIndex(PyObject *seq, _PyStackRef index)
+static _PyStackRef
+foriter_next(PyObject *seq, _PyStackRef index)
 {
     assert(PyStackRef_IsTaggedInt(index));
     assert(PyTuple_CheckExact(seq) || PyList_CheckExact(seq));
@@ -3443,6 +3457,30 @@ _PyForIter_NextWithIndex(PyObject *seq, _PyStackRef index)
         return PyStackRef_NULL;
     }
     return PyStackRef_FromPyObjectSteal(item);
+}
+
+_PyStackRef _PyForIter_VirtualIteratorNext(PyThreadState* tstate, _PyInterpreterFrame* frame, _PyStackRef iter, _PyStackRef* index_ptr)
+{
+    PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+    _PyStackRef index = *index_ptr;
+    if (PyStackRef_IsTaggedInt(index)) {
+        *index_ptr = PyStackRef_IncrementTaggedIntNoOverflow(index);
+        return foriter_next(iter_o, index);
+    }
+    PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
+    if (next_o == NULL) {
+        if (_PyErr_Occurred(tstate)) {
+            if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+                _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
+                _PyErr_Clear(tstate);
+            }
+            else {
+                return PyStackRef_ERROR;
+            }
+        }
+        return PyStackRef_NULL;
+    }
+    return PyStackRef_FromPyObjectSteal(next_o);
 }
 
 /* Check if a 'cls' provides the given special method. */

@@ -1183,6 +1183,17 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         self.assertIn("_RETURN_GENERATOR", get_opnames(ex))
 
+    def test_for_iter(self):
+        def testfunc(n):
+            t = 0
+            for i in set(range(n)):
+                t += i
+            return t
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * (TIER2_THRESHOLD - 1) // 2)
+        self.assertIsNotNone(ex)
+        self.assertIn("_FOR_ITER_TIER_TWO", get_opnames(ex))
+
     @unittest.skip("Tracing into generators currently isn't supported.")
     def test_for_iter_gen(self):
         def gen(n):
@@ -1655,13 +1666,11 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CONTAINS_OP_DICT", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
 
-
     def test_remove_guard_for_known_type_str(self):
         def f(n):
             for i in range(n):
                 false = i == TIER2_THRESHOLD
                 empty = "X"[:false]
-                empty += ""  # Make JIT realize this is a string.
                 if empty:
                     return 1
             return 0
@@ -1767,7 +1776,23 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_UNICODE", uops)
         self.assertIn("_BINARY_OP_ADD_UNICODE", uops)
 
-    def test_call_type_1(self):
+    def test_call_type_1_guards_removed(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                foo = eval('42')
+                x += type(foo) is int
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_TYPE_1", uops)
+        self.assertNotIn("_GUARD_NOS_NULL", uops)
+        self.assertNotIn("_GUARD_CALLABLE_TYPE_1", uops)
+
+    def test_call_type_1_known_type(self):
         def testfunc(n):
             x = 0
             for _ in range(n):
@@ -1778,9 +1803,13 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_CALL_TYPE_1", uops)
-        self.assertNotIn("_GUARD_NOS_NULL", uops)
-        self.assertNotIn("_GUARD_CALLABLE_TYPE_1", uops)
+        # When the result of type(...) is known, _CALL_TYPE_1 is replaced with
+        # _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW which is optimized away in
+        # remove_unneeded_uops.
+        self.assertNotIn("_CALL_TYPE_1", uops)
+        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_type_1_result_is_const(self):
         def testfunc(n):
@@ -1795,7 +1824,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_CALL_TYPE_1", uops)
         self.assertNotIn("_GUARD_IS_NOT_NONE_POP", uops)
 
     def test_call_str_1(self):
@@ -2218,6 +2246,34 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_LOAD_ATTR_METHOD_WITH_VALUES", uops)
         self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
         self.assertNotIn("_LOAD_ATTR_METHOD_LAZY_DICT", uops)
+
+    def test_remove_guard_for_slice_list(self):
+        def f(n):
+            for i in range(n):
+                false = i == TIER2_THRESHOLD
+                sliced = [1, 2, 3][:false]
+                if sliced:
+                    return 1
+            return 0
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, 0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_TO_BOOL_LIST", uops)
+        self.assertNotIn("_GUARD_TOS_LIST", uops)
+
+    def test_remove_guard_for_slice_tuple(self):
+        def f(n):
+            for i in range(n):
+                false = i == TIER2_THRESHOLD
+                a, b = (1, 2, 3)[: false + 2]
+
+        _, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_UNPACK_SEQUENCE_TWO_TUPLE", uops)
+        self.assertNotIn("_GUARD_TOS_TUPLE", uops)
 
     def test_unary_negative_long_float_type(self):
         def testfunc(n):

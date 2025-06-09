@@ -1018,7 +1018,7 @@ operations have the same priority as the corresponding numeric operations. [3]_
 | ``s * n`` or             | equivalent to adding *s* to    | (2)(7)   |
 | ``n * s``                | itself *n* times               |          |
 +--------------------------+--------------------------------+----------+
-| ``s[i]``                 | *i*\ th item of *s*, origin 0  | \(3)     |
+| ``s[i]``                 | *i*\ th item of *s*, origin 0  | (3)(9)   |
 +--------------------------+--------------------------------+----------+
 | ``s[i:j]``               | slice of *s* from *i* to *j*   | (3)(4)   |
 +--------------------------+--------------------------------+----------+
@@ -1150,6 +1150,9 @@ Notes:
    without copying any data and with the returned index being relative to
    the start of the sequence rather than the start of the slice.
 
+(9)
+   An :exc:`IndexError` is raised if *i* is outside the sequence range.
+
 
 .. _typesseq-immutable:
 
@@ -1213,6 +1216,8 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 +==============================+================================+=====================+
 | ``s[i] = x``                 | item *i* of *s* is replaced by |                     |
 |                              | *x*                            |                     |
++------------------------------+--------------------------------+---------------------+
+| ``del s[i]``                 | removes item *i* of *s*        |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s[i:j] = t``               | slice of *s* from *i* to *j*   |                     |
 |                              | is replaced by the contents of |                     |

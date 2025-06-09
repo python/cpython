@@ -114,17 +114,17 @@ class TestGetStackTrace(unittest.TestCase):
                 p.wait(timeout=SHORT_TIMEOUT)
 
             thread_expected_stack_trace = [
-                ("foo", script_name, 15),
-                ("baz", script_name, 12),
-                ("bar", script_name, 9),
-                ('Thread.run', threading.__file__, ANY)
+                (script_name, 15, "foo"),
+                (script_name, 12, "baz"),
+                (script_name, 9, "bar"),
+                (threading.__file__, ANY, 'Thread.run')
             ]
             # Is possible that there are more threads, so we check that the
             # expected stack traces are in the result (looking at you Windows!)
             self.assertIn((ANY, thread_expected_stack_trace), stack_trace)
 
             # Check that the main thread stack trace is in the result
-            frame = ("<module>", script_name, 19)
+            frame = (script_name, 19, "<module>")
             for _, stack in stack_trace:
                 if frame in stack:
                     break
@@ -222,47 +222,47 @@ class TestGetStackTrace(unittest.TestCase):
                 root_task = "Task-1"
                 expected_stack_trace = [
                     [
-                        ("c5", script_name, 10),
-                        ("c4", script_name, 14),
-                        ("c3", script_name, 17),
-                        ("c2", script_name, 20),
+                        (script_name, 10, "c5"),
+                        (script_name, 14, "c4"),
+                        (script_name, 17, "c3"),
+                        (script_name, 20, "c2"),
                     ],
                     "c2_root",
                     [
                         [
                             [
                                 (
-                                    "TaskGroup._aexit",
                                     taskgroups.__file__,
                                     ANY,
+                                    "TaskGroup._aexit"
                                 ),
                                 (
-                                    "TaskGroup.__aexit__",
                                     taskgroups.__file__,
                                     ANY,
+                                    "TaskGroup.__aexit__"
                                 ),
-                                ("main", script_name, 26),
+                                (script_name, 26, "main"),
                             ],
                             "Task-1",
                             [],
                         ],
                         [
-                            [("c1", script_name, 23)],
+                            [(script_name, 23, "c1")],
                             "sub_main_1",
                             [
                                 [
                                     [
                                         (
-                                            "TaskGroup._aexit",
                                             taskgroups.__file__,
                                             ANY,
+                                            "TaskGroup._aexit"
                                         ),
                                         (
-                                            "TaskGroup.__aexit__",
                                             taskgroups.__file__,
                                             ANY,
+                                            "TaskGroup.__aexit__"
                                         ),
-                                        ("main", script_name, 26),
+                                        (script_name, 26, "main"),
                                     ],
                                     "Task-1",
                                     [],
@@ -270,22 +270,22 @@ class TestGetStackTrace(unittest.TestCase):
                             ],
                         ],
                         [
-                            [("c1", script_name, 23)],
+                            [(script_name, 23, "c1")],
                             "sub_main_2",
                             [
                                 [
                                     [
                                         (
-                                            "TaskGroup._aexit",
                                             taskgroups.__file__,
                                             ANY,
+                                            "TaskGroup._aexit"
                                         ),
                                         (
-                                            "TaskGroup.__aexit__",
                                             taskgroups.__file__,
                                             ANY,
+                                            "TaskGroup.__aexit__"
                                         ),
-                                        ("main", script_name, 26),
+                                        (script_name, 26, "main"),
                                     ],
                                     "Task-1",
                                     [],
@@ -363,9 +363,9 @@ class TestGetStackTrace(unittest.TestCase):
 
             expected_stack_trace = [
                 [
-                    ("gen_nested_call", script_name, 10),
-                    ("gen", script_name, 16),
-                    ("main", script_name, 19),
+                    (script_name, 10, "gen_nested_call"),
+                    (script_name, 16, "gen"),
+                    (script_name, 19, "main"),
                 ],
                 "Task-1",
                 [],
@@ -439,9 +439,9 @@ class TestGetStackTrace(unittest.TestCase):
             stack_trace[2].sort(key=lambda x: x[1])
 
             expected_stack_trace = [
-                [("deep", script_name, 11), ("c1", script_name, 15)],
+                [(script_name, 11, "deep"), (script_name, 15, "c1")],
                 "Task-2",
-                [[[("main", script_name, 21)], "Task-1", []]],
+                [[[(script_name, 21, "main")], "Task-1", []]],
             ]
             self.assertEqual(stack_trace, expected_stack_trace)
 
@@ -515,16 +515,16 @@ class TestGetStackTrace(unittest.TestCase):
             stack_trace[2].sort(key=lambda x: x[1])
             expected_stack_trace = [
                 [
-                    ("deep", script_name, 11),
-                    ("c1", script_name, 15),
-                    ("staggered_race.<locals>.run_one_coro", staggered.__file__, ANY),
+                    (script_name, 11, "deep"),
+                    (script_name, 15, "c1"),
+                    (staggered.__file__, ANY, "staggered_race.<locals>.run_one_coro"),
                 ],
                 "Task-2",
                 [
                     [
                         [
-                            ("staggered_race", staggered.__file__, ANY),
-                            ("main", script_name, 21),
+                            (staggered.__file__, ANY, "staggered_race"),
+                            (script_name, 21, "main"),
                         ],
                         "Task-1",
                         [],
@@ -662,16 +662,16 @@ class TestGetStackTrace(unittest.TestCase):
                 self.assertIn((ANY, "Task-1", []), entries)
                 main_stack = [
                     (
-                        "TaskGroup._aexit",
                         taskgroups.__file__,
                         ANY,
+                        "TaskGroup._aexit",
                     ),
                     (
-                        "TaskGroup.__aexit__",
                         taskgroups.__file__,
                         ANY,
+                        "TaskGroup.__aexit__",
                     ),
-                    ("main", script_name, 60),
+                    (script_name, 60, "main"),
                 ]
                 self.assertIn(
                     (ANY, "server task", [[main_stack, ANY]]),
@@ -686,16 +686,16 @@ class TestGetStackTrace(unittest.TestCase):
                     [
                         [
                             (
-                                "TaskGroup._aexit",
                                 taskgroups.__file__,
                                 ANY,
+                                "TaskGroup._aexit",
                             ),
                             (
-                                "TaskGroup.__aexit__",
                                 taskgroups.__file__,
                                 ANY,
+                                "TaskGroup.__aexit__",
                             ),
-                            ("echo_client_spam", script_name, 41),
+                            (script_name, 41, "echo_client_spam"),
                         ],
                         ANY,
                     ]
@@ -741,14 +741,14 @@ class TestGetStackTrace(unittest.TestCase):
             stack[:2],
             [
                 (
-                    "get_stack_trace",
                     __file__,
                     get_stack_trace.__code__.co_firstlineno + 2,
+                    "get_stack_trace",
                 ),
                 (
-                    "TestGetStackTrace.test_self_trace",
                     __file__,
                     self.test_self_trace.__code__.co_firstlineno + 6,
+                    "TestGetStackTrace.test_self_trace",
                 ),
             ]
         )

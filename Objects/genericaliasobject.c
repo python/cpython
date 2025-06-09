@@ -65,7 +65,7 @@ ga_repr_items_list(PyUnicodeWriter *writer, PyObject *p)
 
     for (Py_ssize_t i = 0; i < len; i++) {
         if (i > 0) {
-            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
                 return -1;
             }
         }
@@ -109,7 +109,7 @@ ga_repr(PyObject *self)
     }
     for (Py_ssize_t i = 0; i < len; i++) {
         if (i > 0) {
-            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
                 goto error;
             }
         }
@@ -126,7 +126,7 @@ ga_repr(PyObject *self)
     }
     if (len == 0) {
         // for something like tuple[()] we should print a "()"
-        if (PyUnicodeWriter_WriteUTF8(writer, "()", 2) < 0) {
+        if (PyUnicodeWriter_WriteASCII(writer, "()", 2) < 0) {
             goto error;
         }
     }
