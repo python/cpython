@@ -5724,8 +5724,17 @@
             // _FOR_ITER
             {
                 PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+                iternextfunc func = Py_TYPE(iter_o)->tp_iternext;
+                if (func == NULL) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                              "'%.100s' object is not an iterator",
+                              Py_TYPE(iter_o)->tp_name);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    JUMP_TO_LABEL(error);
+                }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
+                PyObject *next_o = func(iter_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (next_o == NULL) {
                     if (_PyErr_Occurred(tstate)) {
@@ -7037,8 +7046,17 @@
             /* Skip 1 cache entry */
             iter = stack_pointer[-1];
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            iternextfunc func = Py_TYPE(iter_o)->tp_iternext;
+            if (func == NULL) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "'%.100s' object is not an iterator",
+                              Py_TYPE(iter_o)->tp_name);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                JUMP_TO_LABEL(error);
+            }
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
+            PyObject *next_o = func(iter_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (next_o != NULL) {
                 next = PyStackRef_FromPyObjectSteal(next_o);
