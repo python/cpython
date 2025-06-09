@@ -1,0 +1,2 @@
+Fix reported resolution of :func:`time.process_time` and
+:func:`time.thread_time` on Windows. Patch by Chris Eibl.
