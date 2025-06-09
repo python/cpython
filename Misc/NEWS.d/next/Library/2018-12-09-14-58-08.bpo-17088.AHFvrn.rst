@@ -1,0 +1,5 @@
+ElementTree's serialization of attribute names when a default namespace is
+passed was corrected. Previously, unqualified attribute names would be
+rejected unnecessarily, while attributes in the default namespace would have
+their prefix stripped, which goes against the rules for namespace defaulting
+and uniqueness of attributes as specified in the XML namespaces spec.
