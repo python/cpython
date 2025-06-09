@@ -2142,7 +2142,8 @@ class TPen(object):
         if width is None:
             return self._pensize
         elif width < 0:
-            raise TurtleGraphicsError(f"width argument must be a positive number. It was {width}.")
+            msg = f"width argument must be a positive number, but got {width}."
+            raise TurtleGraphicsError(msg)
         else:
             self.pen(pensize=width)
 

@@ -493,7 +493,7 @@ class TestTPen(unittest.TestCase):
         self.assertEqual(0, tpen.pensize())
 
         width = -1
-        msg = f"width argument must be a positive number. It was {width}."
+        msg = f"width argument must be a positive number, but got {width}."
         with self.assertRaisesRegex(turtle.TurtleGraphicsError, re.escape(msg)):
             tpen.pensize(width)
 
