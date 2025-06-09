@@ -15,13 +15,6 @@ XML Processing Modules
 
 Python's interfaces for processing XML are grouped in the ``xml`` package.
 
-.. warning::
-
-   The XML modules are not secure against erroneous or maliciously
-   constructed data.  If you need to parse untrusted or
-   unauthenticated data see the :ref:`xml-vulnerabilities` and
-   :ref:`defusedxml-package` sections.
-
 It is important to note that modules in the :mod:`xml` package require that
 there be at least one SAX-compliant XML parser available. The Expat parser is
 included with Python, so the :mod:`xml.parsers.expat` module will always be
@@ -125,21 +118,6 @@ large tokens
   introduced in Expat 2.6.0, this can lead to quadratic runtime that can
   be used to cause denial of service in the application parsing XML.
   The issue is known as :cve:`2023-52425`.
-
-The documentation for :pypi:`defusedxml` on PyPI has further information about
-all known attack vectors with examples and references.
-
-.. _defusedxml-package:
-
-The :mod:`!defusedxml` Package
-------------------------------
-
-:pypi:`defusedxml` is a pure Python package with modified subclasses of all stdlib
-XML parsers that prevent any potentially malicious operation. Use of this
-package is recommended for any server code that parses untrusted XML data. The
-package also ships with example exploits and extended documentation on more
-XML exploits such as XPath injection.
-
 
 .. _Billion Laughs: https://en.wikipedia.org/wiki/Billion_laughs
 .. _ZIP bomb: https://en.wikipedia.org/wiki/Zip_bomb
