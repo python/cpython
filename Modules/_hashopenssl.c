@@ -2166,7 +2166,7 @@ hashlib_openssl_HMAC_digest_compute(HMACobject *self, unsigned char *buf)
 #else
     int r = HMAC_Final(ctx, buf, NULL);
 #endif
-    hashlib_openssl_HMAC_CTX_free(ctx);
+    PY_HMAC_CTX_free(ctx);
     if (r == 0) {
 #ifdef Py_HAS_OPENSSL3_SUPPORT
         notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_MAC_final));
@@ -2325,8 +2325,7 @@ _openssl_hash_name_mapper(const EVP_MD *md, const char *from,
     py_name = name == NULL ? NULL : PyUnicode_FromString(name);
     if (py_name == NULL) {
         state->error = 1;
-    }
-    else {
+    } else {
         if (PySet_Add(state->set, py_name) != 0) {
             state->error = 1;
         }
