@@ -73,6 +73,7 @@
 #define PY_EVP_MD_free(md) EVP_MD_free(md)
 
 #define Py_HMAC_CTX_TYPE    EVP_MAC_CTX
+#define PY_HMAC_CTX_free    EVP_MAC_CTX_free
 #else
 #define PY_EVP_MD const EVP_MD
 #define PY_EVP_MD_fetch(algorithm, properties) EVP_get_digestbyname(algorithm)
@@ -80,6 +81,7 @@
 #define PY_EVP_MD_free(md) do {} while(0)
 
 #define Py_HMAC_CTX_TYPE    HMAC_CTX
+#define PY_HMAC_CTX_free    HMAC_CTX_free
 #endif
 
 /* hash alias map and fast lookup
@@ -1843,24 +1845,15 @@ hashlib_openssl_HMAC_update_once(Py_HMAC_CTX_TYPE *ctx, const Py_buffer *v)
     return 0;
 }
 
-static void
-hashlib_openssl_HMAC_ctx_free(Py_HMAC_CTX_TYPE *ctx)
+/* Thin wrapper around PY_HMAC_CTX_free that allows to pass a NULL 'ctx'. */
+static inline void
+hashlib_openssl_HMAC_CTX_free(Py_HMAC_CTX_TYPE *ctx)
 {
     /* The NULL check was not present in every OpenSSL versions. */
     if (ctx) {
-#ifdef Py_HAS_OPENSSL3_SUPPORT
-        EVP_MAC_CTX_free(ctx);
-#else
-        HMAC_CTX_free(ctx);
-#endif
+        PY_HMAC_CTX_free(ctx);
     }
 }
-
-#define hashlib_openssl_HMAC_ctx_clear(CTX) \
-    do {                                    \
-        hashlib_openssl_HMAC_ctx_free(CTX); \
-        CTX = NULL;                         \
-    } while (0)
 
 static int
 hashlib_openssl_HMAC_update_with_lock(HMACobject *self, PyObject *data)
@@ -1915,7 +1908,7 @@ hashlib_openssl_HMAC_ctx_copy_with_lock(HMACobject *self)
     return ctx;
 
 error:
-    hashlib_openssl_HMAC_ctx_free(ctx);
+    hashlib_openssl_HMAC_CTX_free(ctx);
     return NULL;
 }
 
@@ -2039,7 +2032,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
     return (PyObject *)self;
 
 error:
-    hashlib_openssl_HMAC_ctx_free(ctx);
+    hashlib_openssl_HMAC_CTX_free(ctx);
     Py_XDECREF(self);
     return NULL;
 }
@@ -2061,7 +2054,7 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
     }
     retval = PyObject_New(HMACobject, Py_TYPE(self));
     if (retval == NULL) {
-        hashlib_openssl_HMAC_ctx_free(ctx);
+        hashlib_openssl_HMAC_CTX_free(ctx);
         return NULL;
     }
     retval->ctx = ctx;
@@ -2074,7 +2067,10 @@ _hashlib_HMAC_dealloc(PyObject *op)
 {
     HMACobject *self = HMACobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
-    hashlib_openssl_HMAC_ctx_clear(self->ctx);
+    if (self->ctx != NULL) {
+        PY_HMAC_CTX_free(self->ctx);
+        self->ctx = NULL;
+    }
     PyObject_Free(self);
     Py_DECREF(tp);
 }
@@ -2173,7 +2169,7 @@ hashlib_openssl_HMAC_digest_compute(HMACobject *self, unsigned char *buf)
 #else
     int r = HMAC_Final(ctx, buf, NULL);
 #endif
-    hashlib_openssl_HMAC_ctx_free(ctx);
+    hashlib_openssl_HMAC_CTX_free(ctx);
     if (r == 0) {
 #ifdef Py_HAS_OPENSSL3_SUPPORT
         notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_MAC_final));
