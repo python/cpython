@@ -3,6 +3,7 @@ import sqlite3
 import sys
 import textwrap
 import unittest
+import unittest.mock
 import os
 
 from sqlite3.__main__ import main as cli
