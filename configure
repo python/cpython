@@ -906,7 +906,6 @@ DSYMUTIL_PATH
 DSYMUTIL
 JIT_STENCILS_H
 REGEN_JIT_COMMAND
-CFLAGS_JIT
 UNIVERSAL_ARCH_FLAGS
 WASM_STDLIB
 WASM_ASSETS_DIR
@@ -10833,7 +10832,6 @@ esac
 fi
 
 # Check for --enable-experimental-jit:
-
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-experimental-jit" >&5
 printf %s "checking for --enable-experimental-jit... " >&6; }
 # Check whether --enable-experimental-jit was given.
@@ -10865,7 +10863,7 @@ then :
 
 else case e in #(
   e) as_fn_append CFLAGS_NODIST " $jit_flags"
-           REGEN_JIT_COMMAND="\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir . --cflags=\"\$(CFLAGS_JIT)\""
+           REGEN_JIT_COMMAND="\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir . --cflags=\"$CFLAGS_JIT\""
            JIT_STENCILS_H="jit_stencils.h"
            if test "x$Py_DEBUG" = xtrue
 then :
