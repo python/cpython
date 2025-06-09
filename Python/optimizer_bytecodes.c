@@ -849,6 +849,17 @@ dummy_func(void) {
         value = sym_new_unknown(ctx);
     }
 
+    op(_GET_ITER, (iterable -- iter, index_or_null)) {
+        if (sym_matches_type(iterable, &PyTuple_Type) || sym_matches_type(iterable, &PyList_Type)) {
+            iter = iterable;
+            index_or_null = sym_new_not_null(ctx);
+        }
+        else {
+            iter = sym_new_not_null(ctx);
+            index_or_null = sym_new_unknown(ctx);
+        }
+    }
+
     op(_FOR_ITER_GEN_FRAME, (unused, unused -- unused, unused, gen_frame: _Py_UOpsAbstractFrame*)) {
         gen_frame = NULL;
         /* We are about to hit the end of the trace */
@@ -923,13 +934,23 @@ dummy_func(void) {
         }
     }
 
+    op(_ITER_CHECK_TUPLE, (iter, null_or_index -- iter, null_or_index)) {
+        if (sym_matches_type(iter, &PyTuple_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_type(iter, &PyTuple_Type);
+    }
+
     op(_ITER_NEXT_RANGE, (iter, null_or_index -- iter, null_or_index, next)) {
        next = sym_new_type(ctx, &PyLong_Type);
     }
 
     op(_CALL_TYPE_1, (unused, unused, arg -- res)) {
-        if (sym_has_type(arg)) {
-            res = sym_new_const(ctx, (PyObject *)sym_get_type(arg));
+        PyObject* type = (PyObject *)sym_get_type(arg);
+        if (type) {
+            res = sym_new_const(ctx, type);
+            REPLACE_OP(this_instr, _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW, 0,
+                       (uintptr_t)type);
         }
         else {
             res = sym_new_not_null(ctx);
@@ -1223,6 +1244,20 @@ dummy_func(void) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
         sym_set_const(callable, list_append);
+    }
+
+    op(_BINARY_SLICE, (container, start, stop -- res)) {
+        // Slicing a string/list/tuple always returns the same type.
+        PyTypeObject *type = sym_get_type(container);
+        if (type == &PyUnicode_Type ||
+            type == &PyList_Type ||
+            type == &PyTuple_Type)
+        {
+            res = sym_new_type(ctx, type);
+        }
+        else {
+            res = sym_new_not_null(ctx);
+        }
     }
 
 // END BYTECODES //
