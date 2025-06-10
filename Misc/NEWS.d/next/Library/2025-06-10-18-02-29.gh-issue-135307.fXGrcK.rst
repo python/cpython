@@ -1,2 +1,2 @@
-:mod:`email`: Ensure policy accepts unlimited line lengths by 
+:mod:`email`: Ensure policy accepts unlimited line lengths by
 treating 0 or :const:`None` as :data:`sys.maxsize`
