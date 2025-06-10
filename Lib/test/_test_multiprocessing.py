@@ -6824,8 +6824,8 @@ class _TestSpawnedSysPath(BaseTestCase):
 
         # We want to see all the output if it isn't as expected
         self.maxDiff = None
-        self.assertEqual(out.decode().rstrip(), 'stdout')
         self.assertEqual(err.decode().rstrip(), 'stderr')
+        self.assertEqual(out.decode().rstrip(), 'stdout')
 
 
 class MiscTestCase(unittest.TestCase):
