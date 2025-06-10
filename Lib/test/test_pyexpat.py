@@ -9,11 +9,10 @@ import traceback
 from io import BytesIO
 from test import support
 from test.support import os_helper
-
+from test.support import sortdict
+from unittest import mock
 from xml.parsers import expat
 from xml.parsers.expat import errors
-
-from test.support import sortdict
 
 
 class SetAttributeTest(unittest.TestCase):
@@ -436,6 +435,19 @@ class BufferTextTest(unittest.TestCase):
                           "<!--abc-->", "4", "<!--def-->", "5", "</a>"],
                          "buffered text not properly split")
 
+    def test_change_character_data_handler_in_callback(self):
+        # Test that xmlparse_handler_setter() properly handles
+        # the special case "parser.CharacterDataHandler = None".
+        def handler(*args):
+            parser.CharacterDataHandler = None
+
+        handler_wrapper = mock.Mock(wraps=handler)
+        parser = expat.ParserCreate()
+        parser.CharacterDataHandler = handler_wrapper
+        parser.Parse(b"<a>1<b/>2<c></c>3<!--abc-->4<!--def-->5</a> ", True)
+        handler_wrapper.assert_called_once()
+        self.assertIsNone(parser.CharacterDataHandler)
+
 
 # Test handling of exception from callback:
 class HandlerExceptionTest(unittest.TestCase):
@@ -595,7 +607,7 @@ class ChardataBufferTest(unittest.TestCase):
     def test_disabling_buffer(self):
         xml1 = b"<?xml version='1.0' encoding='iso8859'?><a>" + b'a' * 512
         xml2 = b'b' * 1024
-        xml3 = b'c' * 1024 + b'</a>';
+        xml3 = b'c' * 1024 + b'</a>'
         parser = expat.ParserCreate()
         parser.CharacterDataHandler = self.counting_handler
         parser.buffer_text = 1
