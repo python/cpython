@@ -4544,9 +4544,9 @@ codegen_async_comprehension_generator(compiler *c, location loc,
         else {
             /* Sub-iter - calculate on the fly */
             VISIT(c, expr, gen->iter);
+            ADDOP(c, LOC(gen->iter), GET_AITER);
         }
     }
-    ADDOP(c, LOC(gen->iter), GET_AITER);
 
     USE_LABEL(c, start);
     /* Runtime will push a block here, so we need to account for that */
@@ -4776,7 +4776,6 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     location loc = LOC(e);
 
     outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
-    int is_sync_genexpr = type == COMP_GENEXP && !outermost->is_async;
     if (is_inlined) {
         VISIT(c, expr, outermost->iter);
         if (push_inlined_comprehension_state(c, loc, entry, &inline_state)) {
@@ -4853,8 +4852,13 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     Py_CLEAR(co);
 
     VISIT(c, expr, outermost->iter);
-    if (is_sync_genexpr) {
-        ADDOP(c, loc, GET_ITER);
+    if (type == COMP_GENEXP) {
+        if (outermost->is_async) {
+            ADDOP(c, loc, GET_AITER);
+        }
+        else {
+            ADDOP(c, loc, GET_ITER);
+        }
     }
     ADDOP_I(c, loc, CALL, 0);
 
