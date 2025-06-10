@@ -303,10 +303,10 @@ typedef struct _excinfo {
     const char *errdisplay;
 } _PyXI_excinfo;
 
-PyAPI_FUNC(int) _PyXI_InitExcInfo(_PyXI_excinfo *info, PyObject *exc);
+PyAPI_FUNC(_PyXI_excinfo *) _PyXI_NewExcInfo(PyObject *exc);
+PyAPI_FUNC(void) _PyXI_FreeExcInfo(_PyXI_excinfo *info);
 PyAPI_FUNC(PyObject *) _PyXI_FormatExcInfo(_PyXI_excinfo *info);
 PyAPI_FUNC(PyObject *) _PyXI_ExcInfoAsObject(_PyXI_excinfo *info);
-PyAPI_FUNC(void) _PyXI_ClearExcInfo(_PyXI_excinfo *info);
 
 
 typedef enum error_code {
@@ -322,19 +322,23 @@ typedef enum error_code {
     _PyXI_ERR_NOT_SHAREABLE = -9,
 } _PyXI_errcode;
 
+typedef struct error_override _PyXI_error_override;
 
-typedef struct _sharedexception {
-    // The originating interpreter.
-    PyInterpreterState *interp;
-    // The kind of error to propagate.
-    _PyXI_errcode code;
-    // The exception information to propagate, if applicable.
-    // This is populated only for some error codes,
-    // but always for _PyXI_ERR_UNCAUGHT_EXCEPTION.
-    _PyXI_excinfo uncaught;
-} _PyXI_error;
+PyAPI_FUNC(_PyXI_error_override *) _PyXI_NewErrorOverride(void);
+PyAPI_FUNC(void) _PyXI_FreeErrorOverride(_PyXI_error_override *);
+PyAPI_FUNC(_PyXI_errcode) _PyXI_GetErrorOverrideCode(_PyXI_error_override *);
+PyAPI_FUNC(int) _PyXI_SetErrorOverride(
+    _PyXI_error_override *,
+    _PyXI_errcode,
+    PyObject *);
+PyAPI_FUNC(void) _PyXI_SetErrorOverrideUTF8(
+    _PyXI_error_override *,
+    _PyXI_errcode,
+    const char *);
 
-PyAPI_FUNC(PyObject *) _PyXI_ApplyError(_PyXI_error *err);
+PyAPI_FUNC(int) _PyXI_UnwrapNotShareableError(
+    PyThreadState *,
+    _PyXI_error_override *);
 
 
 // A cross-interpreter session involves entering an interpreter
@@ -366,18 +370,18 @@ PyAPI_FUNC(int) _PyXI_Enter(
     _PyXI_session_result *);
 PyAPI_FUNC(int) _PyXI_Exit(
     _PyXI_session *,
-    _PyXI_errcode,
+    _PyXI_error_override *,
     _PyXI_session_result *);
 
 PyAPI_FUNC(PyObject *) _PyXI_GetMainNamespace(
     _PyXI_session *,
-    _PyXI_errcode *);
+    _PyXI_error_override *);
 
 PyAPI_FUNC(int) _PyXI_Preserve(
     _PyXI_session *,
     const char *,
     PyObject *,
-    _PyXI_errcode *);
+    _PyXI_error_override *);
 PyAPI_FUNC(PyObject *) _PyXI_GetPreserved(_PyXI_session_result *, const char *);
 
 

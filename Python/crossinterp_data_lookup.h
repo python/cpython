@@ -88,6 +88,34 @@ _PyXIData_FormatNotShareableError(PyThreadState *tstate,
     va_end(vargs);
 }
 
+int
+_PyXI_UnwrapNotShareableError(PyThreadState * tstate,
+                              _PyXI_error_override *override)
+{
+    PyObject *exctype = get_notshareableerror_type(tstate);
+    assert(exctype != NULL);
+    if (!_PyErr_ExceptionMatches(tstate, exctype)) {
+        return -1;
+    }
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
+    if (override != NULL) {
+        _PyXI_errcode code = _PyXI_ERR_NOT_SHAREABLE;
+        if (_PyXI_SetErrorOverride(override, code, exc) < 0) {
+            return -1;
+        }
+    }
+    PyObject *cause = PyException_GetCause(exc);
+    if (cause != NULL) {
+        Py_DECREF(exc);
+        exc = cause;
+    }
+    else {
+        assert(PyException_GetContext(exc) == NULL);
+    }
+    _PyErr_SetRaisedException(tstate, exc);
+    return 0;
+}
+
 
 _PyXIData_getdata_t
 _PyXIData_Lookup(PyThreadState *tstate, PyObject *obj)
