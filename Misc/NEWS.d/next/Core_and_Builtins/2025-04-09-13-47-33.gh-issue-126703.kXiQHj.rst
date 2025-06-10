@@ -1,1 +1,0 @@
-Fix possible use after free in cases where a method's definition has the same lifetime as its ``self``.

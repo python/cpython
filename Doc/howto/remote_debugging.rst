@@ -110,7 +110,7 @@ file format structures from the binary file on disk. The ELF header contains a
 pointer to the section header table. Each section header contains metadata about
 a section including its name (stored in a separate string table), offset, and
 size. To find a specific section like .PyRuntime, you need to walk through these
-headers and match the section name. The section header then provdes the offset
+headers and match the section name. The section header then provides the offset
 where that section exists in the file, which can be used to calculate its
 runtime address when the binary is loaded into memory.
 

@@ -290,7 +290,7 @@ union_repr(PyObject *self)
     }
 
     for (Py_ssize_t i = 0; i < len; i++) {
-        if (i > 0 && PyUnicodeWriter_WriteUTF8(writer, " | ", 3) < 0) {
+        if (i > 0 && PyUnicodeWriter_WriteASCII(writer, " | ", 3) < 0) {
             goto error;
         }
         PyObject *p = PyTuple_GET_ITEM(alias->args, i);
@@ -300,12 +300,12 @@ union_repr(PyObject *self)
     }
 
 #if 0
-    PyUnicodeWriter_WriteUTF8(writer, "|args=", 6);
+    PyUnicodeWriter_WriteASCII(writer, "|args=", 6);
     PyUnicodeWriter_WriteRepr(writer, alias->args);
-    PyUnicodeWriter_WriteUTF8(writer, "|h=", 3);
+    PyUnicodeWriter_WriteASCII(writer, "|h=", 3);
     PyUnicodeWriter_WriteRepr(writer, alias->hashable_args);
     if (alias->unhashable_args) {
-        PyUnicodeWriter_WriteUTF8(writer, "|u=", 3);
+        PyUnicodeWriter_WriteASCII(writer, "|u=", 3);
         PyUnicodeWriter_WriteRepr(writer, alias->unhashable_args);
     }
 #endif
@@ -322,16 +322,28 @@ static PyMemberDef union_members[] = {
         {0}
 };
 
+// Populate __parameters__ if needed.
+static int
+union_init_parameters(unionobject *alias)
+{
+    int result = 0;
+    Py_BEGIN_CRITICAL_SECTION(alias);
+    if (alias->parameters == NULL) {
+        alias->parameters = _Py_make_parameters(alias->args);
+        if (alias->parameters == NULL) {
+            result = -1;
+        }
+    }
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 static PyObject *
 union_getitem(PyObject *self, PyObject *item)
 {
     unionobject *alias = (unionobject *)self;
-    // Populate __parameters__ if needed.
-    if (alias->parameters == NULL) {
-        alias->parameters = _Py_make_parameters(alias->args);
-        if (alias->parameters == NULL) {
-            return NULL;
-        }
+    if (union_init_parameters(alias) < 0) {
+        return NULL;
     }
 
     PyObject *newargs = _Py_subs_parameters(self, alias->args, alias->parameters, item);
@@ -352,11 +364,8 @@ static PyObject *
 union_parameters(PyObject *self, void *Py_UNUSED(unused))
 {
     unionobject *alias = (unionobject *)self;
-    if (alias->parameters == NULL) {
-        alias->parameters = _Py_make_parameters(alias->args);
-        if (alias->parameters == NULL) {
-            return NULL;
-        }
+    if (union_init_parameters(alias) < 0) {
+        return NULL;
     }
     return Py_NewRef(alias->parameters);
 }
