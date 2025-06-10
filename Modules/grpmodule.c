@@ -8,6 +8,7 @@
 #include "Python.h"
 #include "posixmodule.h"
 #include "pycore_list.h"          // _PyList_AppendTakeRef()
+#include "pycore_object.h"        // _PyObject_IsUniquelyReferenced()
 
 #include <errno.h>                // ERANGE
 #include <grp.h>                  // getgrgid_r()
@@ -291,13 +292,14 @@ grp_getgrall_impl(PyObject *module)
     setgrent();
 
     struct group *p;
+    // `d` is a local list; append items without a lock using
+    // _PyList_AppendTakeRef() within the loop.
+    assert(_PyObject_IsUniquelyReferenced(d));
     while ((p = getgrent()) != NULL) {
         // gh-126316: Don't release the mutex around mkgrent() since
         // setgrent()/endgrent() are not reentrant / thread-safe. A deadlock
         // is unlikely since mkgrent() should not be able to call arbitrary
         // Python code.
-        // `d` is a local list; append to it without a lock using
-        // _PyList_AppendTakeRef().
         PyObject *v = mkgrent(module, p);
         if (v == NULL
             || _PyList_AppendTakeRef((PyListObject *)d, Py_NewRef(v)) != 0)
