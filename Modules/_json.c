@@ -1805,7 +1805,7 @@ encoder_encode_key_value(PyEncoderObject *s, PyUnicodeWriter *writer, bool *firs
     Py_DECREF(keystr);
 
     if (rv < 0) {
-        return rv;
+        return -1;
     }
     if (PyUnicodeWriter_WriteStr(writer, s->key_separator) < 0) {
         return -1;
