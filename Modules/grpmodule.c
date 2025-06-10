@@ -301,14 +301,10 @@ grp_getgrall_impl(PyObject *module)
         // is unlikely since mkgrent() should not be able to call arbitrary
         // Python code.
         PyObject *v = mkgrent(module, p);
-        if (v == NULL
-            || _PyList_AppendTakeRef((PyListObject *)d, Py_NewRef(v)) != 0)
-        {
-            Py_XDECREF(v);
+        if (v == NULL || _PyList_AppendTakeRef((PyListObject *)d, v) != 0) {
             Py_CLEAR(d);
             goto done;
         }
-        Py_DECREF(v);
     }
 
 done:
