@@ -5549,7 +5549,7 @@ load_counted_binstring(PickleState *st, UnpicklerObject *self, int nbytes)
     if (_Unpickler_Read(self, st, &s, nbytes) < 0)
         return -1;
 
-    size = calc_binsize(s, nbytes);
+    size = calc_binint(s, nbytes);
     if (size < 0) {
         PyErr_SetString(st->UnpicklingError,
                      "BINSTRING pickle has negative byte count");
