@@ -6818,9 +6818,12 @@ class _TestSpawnedSysPath(BaseTestCase):
                     print('stderr', file=sys.stderr)''')
 
         name = os.path.join(os.path.dirname(__file__), 'mp_preload_flush.py')
-        env = {'PYTHONPATH': ":".join(sys.path)}
+        env = {'PYTHONPATH': self._temp_dir}
         rc, out, err = test.support.script_helper.assert_python_ok(name, **env)
         self.assertEqual(rc, 0)
+
+        # We want to see all the output if it isn't as expected
+        self.maxDiff = None
         self.assertEqual(out.decode().rstrip(), 'stdout')
         self.assertEqual(err.decode().rstrip(), 'stderr')
 
