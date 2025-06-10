@@ -333,7 +333,7 @@ def woohoo():
             with ctx(reraise=True):
                 1/0
 
-    def test_contextmanager_while_handling(self):
+    def test_contextmanager_preserves_handled_exception(self):
         # test that any exceptions currently being handled are preserved
         # through the context manager
 
