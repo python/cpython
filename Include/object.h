@@ -620,6 +620,12 @@ given type object has a specified feature.
 #define Py_TPFLAGS_HAVE_FINALIZE (1UL << 0)
 #define Py_TPFLAGS_HAVE_VERSION_TAG   (1UL << 18)
 
+// Flag values for ob_flags (16 bits available, if SIZEOF_VOID_P > 4).
+#define _Py_IMMORTAL_FLAGS (1 << 0)
+#define _Py_STATICALLY_ALLOCATED_FLAG (1 << 2)
+#if defined(Py_GIL_DISABLED) && defined(Py_DEBUG)
+#define _Py_TYPE_REVEALED_FLAG (1 << 3)
+#endif
 
 #define Py_CONSTANT_NONE 0
 #define Py_CONSTANT_FALSE 1
@@ -654,8 +660,13 @@ PyAPI_DATA(PyObject) _Py_NoneStruct; /* Don't use this directly */
 PyAPI_FUNC(int) Py_IsNone(PyObject *x);
 #define Py_IsNone(x) Py_Is((x), Py_None)
 
-/* Macro for returning Py_None from a function */
-#define Py_RETURN_NONE return Py_None
+/* Macro for returning Py_None from a function.
+ * Only treat Py_None as immortal in the limited C API 3.12 and newer. */
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030c0000
+#  define Py_RETURN_NONE return Py_NewRef(Py_None)
+#else
+#  define Py_RETURN_NONE return Py_None
+#endif
 
 /*
 Py_NotImplemented is a singleton used to signal that an operation is
@@ -776,11 +787,7 @@ PyType_HasFeature(PyTypeObject *type, unsigned long feature)
     // PyTypeObject is opaque in the limited C API
     flags = PyType_GetFlags(type);
 #else
-#   ifdef Py_GIL_DISABLED
-        flags = _Py_atomic_load_ulong_relaxed(&type->tp_flags);
-#   else
-        flags = type->tp_flags;
-#   endif
+    flags = type->tp_flags;
 #endif
     return ((flags & feature) != 0);
 }

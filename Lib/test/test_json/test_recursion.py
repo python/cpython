@@ -86,6 +86,7 @@ class TestRecursion:
 
     @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
+    @support.requires_resource('cpu')
     def test_highly_nested_objects_encoding(self):
         # See #12051
         l, d = [], {}

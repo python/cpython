@@ -126,6 +126,12 @@
             break;
         }
 
+        case _POP_ITER: {
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _END_SEND: {
             JitOptSymbol *val;
             val = sym_new_not_null(ctx);
@@ -279,8 +285,15 @@
         }
 
         case _UNARY_INVERT: {
+            JitOptSymbol *value;
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            value = stack_pointer[-1];
+            if (sym_matches_type(value, &PyLong_Type)) {
+                res = sym_new_type(ctx, &PyLong_Type);
+            }
+            else {
+                res = sym_new_not_null(ctx);
+            }
             stack_pointer[-1] = res;
             break;
         }
@@ -562,8 +575,19 @@
         }
 
         case _BINARY_SLICE: {
+            JitOptSymbol *container;
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            container = stack_pointer[-3];
+            PyTypeObject *type = sym_get_type(container);
+            if (type == &PyUnicode_Type ||
+                type == &PyList_Type ||
+                type == &PyTuple_Type)
+            {
+                res = sym_new_type(ctx, type);
+            }
+            else {
+                res = sym_new_not_null(ctx);
+            }
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
@@ -1556,9 +1580,22 @@
         }
 
         case _GET_ITER: {
+            JitOptSymbol *iterable;
             JitOptSymbol *iter;
-            iter = sym_new_not_null(ctx);
+            JitOptSymbol *index_or_null;
+            iterable = stack_pointer[-1];
+            if (sym_matches_type(iterable, &PyTuple_Type) || sym_matches_type(iterable, &PyList_Type)) {
+                iter = iterable;
+                index_or_null = sym_new_not_null(ctx);
+            }
+            else {
+                iter = sym_new_not_null(ctx);
+                index_or_null = sym_new_unknown(ctx);
+            }
             stack_pointer[-1] = iter;
+            stack_pointer[0] = index_or_null;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -1604,6 +1641,12 @@
         }
 
         case _ITER_CHECK_TUPLE: {
+            JitOptSymbol *iter;
+            iter = stack_pointer[-2];
+            if (sym_matches_type(iter, &PyTuple_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_type(iter, &PyTuple_Type);
             break;
         }
 
@@ -2031,8 +2074,11 @@
             JitOptSymbol *arg;
             JitOptSymbol *res;
             arg = stack_pointer[-1];
-            if (sym_has_type(arg)) {
-                res = sym_new_const(ctx, (PyObject *)sym_get_type(arg));
+            PyObject* type = (PyObject *)sym_get_type(arg);
+            if (type) {
+                res = sym_new_const(ctx, type);
+                REPLACE_OP(this_instr, _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW, 0,
+                       (uintptr_t)type);
             }
             else {
                 res = sym_new_not_null(ctx);

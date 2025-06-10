@@ -553,7 +553,7 @@ class PydocDocTest(unittest.TestCase):
             # of the known subclasses of object. (doc.docclass() used to
             # fail if HeapType was imported before running this test, like
             # when running tests sequentially.)
-            from _testcapi import HeapType
+            from _testcapi import HeapType  # noqa: F401
         except ImportError:
             pass
         text = doc.docclass(object)
