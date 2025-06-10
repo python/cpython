@@ -1009,7 +1009,7 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         subj = "S" * 100
         msg = EmailMessage(policy=pol)
         msg["From"] = "a@ex.com"
-        msg["To"]   = "b@ex.com"
+        msg["To"] = "b@ex.com"
         msg["Subject"] = subj
 
         raw = msg.as_bytes()
@@ -1024,7 +1024,7 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         body = "B" * 100
         msg = EmailMessage(policy=pol)
         msg["From"] = "a@ex.com"
-        msg["To"]   = "b@ex.com"
+        msg["To"] = "b@ex.com"
         msg["Subject"] = subj
         msg.set_content(body)
 
