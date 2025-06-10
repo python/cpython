@@ -853,7 +853,8 @@ Libraries options
 
 .. option:: --with-libmpdec
 
-   Whether to build the ``_decimal`` extension module.
+   Whether to build the ``_decimal`` extension module (default is yes).
+   See also the :option:`--with-system-libmpdec` option.
 
    .. versionadded:: next
 
