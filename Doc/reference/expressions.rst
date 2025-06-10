@@ -408,7 +408,7 @@ Variables used in the generator expression are evaluated lazily when the
 fashion as normal generators).  However, the iterable expression in the
 leftmost :keyword:`!for` clause is immediately evaluated, and the
 :term:`iterator` is immediately created for that iterable, so that an error
-produced by it will be emitted at the point where the generator expression
+produced while creating the iterator will be emitted at the point where the generator expression
 is defined, rather than at the point where the first value is retrieved.
 Subsequent :keyword:`!for` clauses and any filter condition in the leftmost
 :keyword:`!for` clause cannot be evaluated in the enclosing scope as they may
