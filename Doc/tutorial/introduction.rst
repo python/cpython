@@ -13,10 +13,9 @@ end a multi-line command.
 
 .. only:: html
 
-   You can toggle the display of prompts and output by clicking on ``>>>``
-   in the upper-right corner of an example box.  If you hide the prompts
-   and output for an example, then you can easily copy and paste the input
-   lines into your interpreter.
+   You can use the "Copy" button (it appears in the upper-right corner
+   when hovering over or tapping a code example), which strips prompts
+   and omits output, to copy and paste the input lines into your interpreter.
 
 .. index:: single: # (hash); comment
 
@@ -146,6 +145,8 @@ Python can manipulate text (represented by type :class:`str`, so-called
 "``rabbit``", names "``Paris``", sentences "``Got your back.``", etc.
 "``Yay! :)``". They can be enclosed in single quotes (``'...'``) or double
 quotes (``"..."``) with the same result [#]_.
+
+.. code-block:: pycon
 
    >>> 'spam eggs'  # single quotes
    'spam eggs'

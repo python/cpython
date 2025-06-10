@@ -1,0 +1,2 @@
+:c:func:`PyGILState_Ensure` no longer crashes when called after interpreter
+finalization.
