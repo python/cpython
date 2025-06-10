@@ -4268,33 +4268,20 @@
             _PyStackRef next;
             null_or_index = stack_pointer[-1];
             iter = stack_pointer[-2];
-            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            if (!PyStackRef_IsNull(null_or_index)) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
+            _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, &null_or_index);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (next_o == NULL) {
-                if (_PyErr_Occurred(tstate)) {
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
-                    int matches = _PyErr_ExceptionMatches(tstate, PyExc_StopIteration);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (!matches) {
-                        JUMP_TO_ERROR();
-                    }
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
-                    _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
-                    _PyErr_Clear(tstate);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (!PyStackRef_IsValid(item)) {
+                if (PyStackRef_IsError(item)) {
+                    JUMP_TO_ERROR();
                 }
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     JUMP_TO_JUMP_TARGET();
                 }
             }
-            next = PyStackRef_FromPyObjectSteal(next_o);
+            next = item;
+            stack_pointer[-1] = null_or_index;
             stack_pointer[0] = next;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());

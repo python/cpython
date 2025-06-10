@@ -300,6 +300,17 @@ static inline Py_ssize_t PyUnicode_GET_LENGTH(PyObject *op) {
 }
 #define PyUnicode_GET_LENGTH(op) PyUnicode_GET_LENGTH(_PyObject_CAST(op))
 
+/* Returns the cached hash, or -1 if not cached yet. */
+static inline Py_hash_t
+PyUnstable_Unicode_GET_CACHED_HASH(PyObject *op) {
+    assert(PyUnicode_Check(op));
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_ssize_relaxed(&_PyASCIIObject_CAST(op)->hash);
+#else
+    return _PyASCIIObject_CAST(op)->hash;
+#endif
+}
+
 /* Write into the canonical representation, this function does not do any sanity
    checks and is intended for usage in loops.  The caller should cache the
    kind and data pointers obtained from other function calls.

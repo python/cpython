@@ -23,6 +23,7 @@ apt-get -yq install \
     libreadline6-dev \
     libsqlite3-dev \
     libssl-dev \
+    libzstd-dev \
     lzma \
     lzma-dev \
     strace \
