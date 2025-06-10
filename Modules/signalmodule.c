@@ -1759,6 +1759,19 @@ _PySignal_Fini(void)
     Py_CLEAR(state->ignore_handler);
 }
 
+/* used by PyErr_CheckSignalsDetached and _PyErr_CheckSignalsTstate */
+static int process_signals(PyThreadState *tstate);
+
+/* Declared in pyerrors.h */
+int
+PyErr_AreSignalsPending(PyThreadState *tstate)
+{
+    if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
+        return 0;
+    }
+    _Py_CHECK_EMSCRIPTEN_SIGNALS();
+    return _Py_atomic_load_int(&is_tripped);
+}
 
 /* Declared in pyerrors.h */
 int
@@ -1781,23 +1794,60 @@ PyErr_CheckSignals(void)
     _PyRunRemoteDebugger(tstate);
 #endif
 
-    if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
-        return 0;
-    }
-
     return _PyErr_CheckSignalsTstate(tstate);
 }
 
+/* Declared in pyerrors.h */
+int
+PyErr_CheckSignalsDetached(PyThreadState *tstate)
+{
+    int status = 0;
+
+    /* Unlike PyErr_CheckSignals, we do not check whether the GC is
+       scheduled to run.  This function can only be called from
+       contexts without an attached thread state, and contexts that
+       don't have an attached thread state cannot generate garbage.  */
+
+#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
+    _PyRunRemoteDebugger(tstate);
+#endif
+
+    if (PyErr_AreSignalsPending(tstate)) {
+        PyEval_AcquireThread(tstate);
+        /* It is necessary to re-check whether any signals are pending
+           after re-attaching the thread state, because, while we were
+           waiting to acquire an attached thread state, the situation
+           might have changed.  */
+        if (PyErr_AreSignalsPending(tstate)) {
+            status = process_signals(tstate);
+        }
+        PyEval_ReleaseThread(tstate);
+    }
+    return status;
+}
+
+/* Declared in cpython/pyerrors.h */
+int
+_PyErr_CheckSignals(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyErr_CheckSignalsTstate(tstate);
+}
 
 /* Declared in cpython/pyerrors.h */
 int
 _PyErr_CheckSignalsTstate(PyThreadState *tstate)
 {
-    _Py_CHECK_EMSCRIPTEN_SIGNALS();
-    if (!_Py_atomic_load_int(&is_tripped)) {
+    if (!PyErr_AreSignalsPending(tstate)) {
         return 0;
     }
 
+    return process_signals(tstate);
+}
+
+static int
+process_signals(PyThreadState *tstate)
+{
     /*
      * The is_tripped variable is meant to speed up the calls to
      * PyErr_CheckSignals (both directly or via pending calls) when no
@@ -1875,15 +1925,6 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
     }
 
     return 0;
-}
-
-
-
-int
-_PyErr_CheckSignals(void)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    return _PyErr_CheckSignalsTstate(tstate);
 }
 
 

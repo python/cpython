@@ -1,0 +1,4 @@
+New functions :c:func:`PyErr_CheckSignalsDetached` and
+:c:func:`PyErr_AreSignalsPending` for responding to signals
+from within C extension modules that detach the thread state.
+Patch by Zack Weinberg.
