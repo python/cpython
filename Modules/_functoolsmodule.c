@@ -489,6 +489,12 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
 
         /* Create total kwnames */
         tot_kwnames = PyTuple_New(tot_nkwds - n_merges);
+        if (tot_kwnames == NULL) {
+            if (stack != small_stack) {
+                PyMem_Free(stack);
+            }
+            return NULL;
+        }
         for (Py_ssize_t i = 0; i < n_tail; ++i) {
             key = Py_NewRef(stack[tot_nargskw + i]);
             PyTuple_SET_ITEM(tot_kwnames, pto_nkwds + i, key);
