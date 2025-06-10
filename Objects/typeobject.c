@@ -5930,6 +5930,10 @@ find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
         }
     }
 
+    if (!_Py_IsOwnedByCurrentThread(mro)) {
+        PyUnstable_Object_EnableDeferredRefcount(mro);
+    }
+
     PyObject *res = NULL;
     Py_ssize_t n = PyTuple_GET_SIZE(mro);
     for (Py_ssize_t i = 0; i < n; i++) {
