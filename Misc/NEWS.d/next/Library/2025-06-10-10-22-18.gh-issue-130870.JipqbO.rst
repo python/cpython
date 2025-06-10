@@ -1,0 +1,2 @@
+Preserve :class:`types.GenericAlias` subclasses in
+:func:`typing.get_type_hints`
