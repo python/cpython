@@ -436,6 +436,8 @@ class BufferTextTest(unittest.TestCase):
                          "buffered text not properly split")
 
     def test_change_character_data_handler_in_callback(self):
+        # Test that xmlparse_handler_setter() properly handles
+        # the special case "parser.CharacterDataHandler = None".
         def handler(*args):
             parser.CharacterDataHandler = None
 
