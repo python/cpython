@@ -1605,7 +1605,10 @@ class TypeVarTupleTests(BaseTestCase):
         self.assertEqual(gth(func1), {'args': Unpack[Ts]})
 
         def func2(*args: *tuple[int, str]): pass
-        self.assertEqual(gth(func2), {'args': Unpack[tuple[int, str]]})
+        hint = gth(func2)['args']
+        self.assertIsInstance(hint, types.GenericAlias)
+        self.assertEqual(hint.__args__[0], int)
+        self.assertIs(hint.__unpacked__, True)
 
         class CustomVariadic(Generic[*Ts]): pass
 
@@ -1620,7 +1623,10 @@ class TypeVarTupleTests(BaseTestCase):
                         {'args': Unpack[Ts]})
 
         def func2(*args: '*tuple[int, str]'): pass
-        self.assertEqual(gth(func2), {'args': Unpack[tuple[int, str]]})
+        hint = gth(func2)['args']
+        self.assertIsInstance(hint, types.GenericAlias)
+        self.assertEqual(hint.__args__[0], int)
+        self.assertIs(hint.__unpacked__, True)
 
         class CustomVariadic(Generic[*Ts]): pass
 
