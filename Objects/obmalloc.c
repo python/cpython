@@ -1243,9 +1243,6 @@ _PyObject_XSetRefDelayed(PyObject **ptr, PyObject *value)
     if (!_Py_IsImmortal(old)) {
          _PyObject_XDecRefDelayed(old);
     }
-    else {
-         Py_DECREF(old);
-    }
 }
 #endif
 
