@@ -5543,7 +5543,7 @@ static int
 load_counted_binstring(PickleState *st, UnpicklerObject *self, int nbytes)
 {
     PyObject *obj;
-    int size;
+    long size;
     char *s;
 
     if (_Unpickler_Read(self, st, &s, nbytes) < 0)
