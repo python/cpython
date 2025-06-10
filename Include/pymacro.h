@@ -26,7 +26,7 @@
 
 // _Py_ALIGNED_DEF(N, T): Define a variable/member with increased alignment
 //
-// `N`: the desired minimum alignment, an integer literal
+// `N`: the desired minimum alignment, an integer literal, number of bytes
 // `T`: the type of the defined variable
 //      (or a type with at least the defined variable's alignment)
 //

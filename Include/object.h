@@ -103,7 +103,7 @@ whose size is determined when the object is allocated.
 
 /* PyObjects are given a minimum alignment so that the least significant bits
  * of an object pointer become available for other purposes.
- * This must be an integer literal with the value (1 << _PyGC_PREV_SHIFT)
+ * This must be an integer literal with the value (1 << _PyGC_PREV_SHIFT), number of bytes.
  */
 #define _PyObject_MIN_ALIGNMENT 4
 
