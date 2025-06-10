@@ -148,7 +148,7 @@ ascii_escape_unichar(Py_UCS4 c, unsigned char *output, Py_ssize_t chars)
     return chars;
 }
 
-static int
+static Py_ssize_t
 ascii_escape_size(PyObject *pystr)
 {
     Py_ssize_t i;
@@ -264,7 +264,7 @@ write_escaped_ascii(PyUnicodeWriter *writer, PyObject *pystr)
     return _steal_accumulate(writer, rval);
 }
 
-static int
+static Py_ssize_t
 escape_size(PyObject *pystr)
 {
     Py_ssize_t i;
