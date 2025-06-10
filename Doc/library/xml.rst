@@ -15,6 +15,11 @@ XML Processing Modules
 
 Python's interfaces for processing XML are grouped in the ``xml`` package.
 
+.. note::
+
+   If you need to parse untrusted or unauthenticated data, see
+   :ref:`xml-security`.
+
 It is important to note that modules in the :mod:`xml` package require that
 there be at least one SAX-compliant XML parser available. The Expat parser is
 included with Python, so the :mod:`xml.parsers.expat` module will always be
