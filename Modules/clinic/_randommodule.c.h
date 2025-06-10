@@ -3,7 +3,6 @@ preserve
 [clinic start generated code]*/
 
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
-#include "pycore_long.h"          // _PyLong_UnsignedLongLong_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_random_Random_random__doc__,
@@ -125,15 +124,16 @@ PyDoc_STRVAR(_random_Random_getrandbits__doc__,
     {"getrandbits", (PyCFunction)_random_Random_getrandbits, METH_O, _random_Random_getrandbits__doc__},
 
 static PyObject *
-_random_Random_getrandbits_impl(RandomObject *self, unsigned long long k);
+_random_Random_getrandbits_impl(RandomObject *self, long long k);
 
 static PyObject *
 _random_Random_getrandbits(RandomObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    unsigned long long k;
+    long long k;
 
-    if (!_PyLong_UnsignedLongLong_Converter(arg, &k)) {
+    k = PyLong_AsLongLong(arg);
+    if (k == -1 && PyErr_Occurred()) {
         goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
@@ -143,4 +143,4 @@ _random_Random_getrandbits(RandomObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e9a5c68295678cff input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d3a199bc869e5c63 input=a9049054013a1b77]*/
