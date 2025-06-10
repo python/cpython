@@ -1892,7 +1892,8 @@ eval_const_unaryop(PyObject *operand, int opcode, int oparg)
             result = PyNumber_Negative(operand);
             break;
         case UNARY_INVERT:
-            if (PyBool_Check(operand)) {  // ~bool is deprecated
+            // XXX: This should be removed once the ~bool depreciation expires.
+            if (PyBool_Check(operand)) {
                 return NULL;
             }
             result = PyNumber_Invert(operand);
