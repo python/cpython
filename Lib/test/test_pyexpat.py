@@ -441,7 +441,7 @@ class BufferTextTest(unittest.TestCase):
         def handler(*args):
             parser.CharacterDataHandler = None
 
-        handler_wrapper = unittest.mock.Mock(wraps=handler)
+        handler_wrapper = mock.Mock(wraps=handler)
         parser = expat.ParserCreate()
         parser.CharacterDataHandler = handler_wrapper
         parser.Parse(b"<a>1<b/>2<c></c>3<!--abc-->4<!--def-->5</a> ", True)
