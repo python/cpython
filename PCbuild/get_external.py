@@ -5,6 +5,7 @@ import os
 import pathlib
 import sys
 import time
+import urllib.error
 import zipfile
 from urllib.request import urlretrieve
 
@@ -19,7 +20,7 @@ def retrieve_with_retries(download_location, output_path, reporthook,
                 output_path,
                 reporthook=reporthook,
             )
-        except ConnectionError as ex:
+        except (urllib.error.URLError, ConnectionError) as ex:
             if attempt == max_retries:
                 msg = f"Download from {download_location} failed."
                 raise OSError(msg) from ex
