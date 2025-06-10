@@ -4758,6 +4758,19 @@ pop_inlined_comprehension_state(compiler *c, location loc,
     return SUCCESS;
 }
 
+static inline int
+codegen_comprehension_iter(compiler *c, comprehension_ty comp)
+{
+    VISIT(c, expr, comp->iter);
+    if (comp->is_async) {
+        ADDOP(c, LOC(comp->iter), GET_AITER);
+    }
+    else {
+        ADDOP(c, LOC(comp->iter), GET_ITER);
+    }
+    return SUCCESS;
+}
+
 static int
 codegen_comprehension(compiler *c, expr_ty e, int type,
                       identifier name, asdl_comprehension_seq *generators, expr_ty elt,
@@ -4777,7 +4790,9 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
 
     outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
     if (is_inlined) {
-        VISIT(c, expr, outermost->iter);
+        if (codegen_comprehension_iter(c, outermost)) {
+            goto error;
+        }
         if (push_inlined_comprehension_state(c, loc, entry, &inline_state)) {
             goto error;
         }
@@ -4851,15 +4866,10 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     }
     Py_CLEAR(co);
 
-    VISIT(c, expr, outermost->iter);
-    if (type == COMP_GENEXP) {
-        if (outermost->is_async) {
-            ADDOP(c, loc, GET_AITER);
-        }
-        else {
-            ADDOP(c, loc, GET_ITER);
-        }
+    if (codegen_comprehension_iter(c, outermost)) {
+        goto error;
     }
+
     ADDOP_I(c, loc, CALL, 0);
 
     if (is_async_comprehension && type != COMP_GENEXP) {
