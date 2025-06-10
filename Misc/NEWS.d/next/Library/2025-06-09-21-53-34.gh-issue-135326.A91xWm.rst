@@ -1,0 +1,6 @@
+Reverted the 3.13.4 changes to :func:`random.getrandbits` and
+:func:`random.randbytes` for :gh:`133489` as they caused a behavior
+regression vs 3.13.3 and earlier due to a 3.13 specific internal
+implementation detail: ``int``-like objects with a ``__index__`` method were
+no longer accepted as parameters. Some code depends on this. (ex: passing in
+a ``numpy.int64``).
