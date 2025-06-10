@@ -16,6 +16,7 @@ from test.support import (
     captured_stdin,
     force_not_colorized_test_class,
     requires_subprocess,
+    verbose,
 )
 
 
@@ -289,15 +290,23 @@ class Completion(unittest.TestCase):
         """)
         input_ = b"\t\t.quit\n"
         output = run_pty(script, input_, env={**os.environ, "NO_COLOR": "1"})
-        lines = output.decode().splitlines()
-        indices = [
-            i for i, line in enumerate(lines)
-            if line.startswith(self.PS1)
-        ]
-        self.assertEqual(len(indices), 2)
-        start, end = indices
-        candidates = [l.strip() for l in lines[start+1:end]]
-        self.assertEqual(candidates, sorted(SQLITE_KEYWORDS))
+        try:
+            lines = output.decode().splitlines()
+            indices = [
+                i for i, line in enumerate(lines)
+                if line.startswith(self.PS1)
+            ]
+            self.assertEqual(len(indices), 3)
+            start, end = indices
+            candidates = [l.strip() for l in lines[start+1:end]]
+            self.assertEqual(candidates, sorted(SQLITE_KEYWORDS))
+        except:
+            if verbose:
+                print(' PTY output: '.center(30, '-'))
+                print(output.decode(errors='replace'))
+                print(' end PTY output '.center(30, '-'))
+            raise
+
 
 
 if __name__ == "__main__":
