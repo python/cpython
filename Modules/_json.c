@@ -1603,6 +1603,12 @@ encoder_encode_key_value(PyEncoderObject *s, PyUnicodeWriter *writer, bool *firs
 
     if (*first) {
         *first = false;
+        if (s->indent != Py_None) {
+            if (write_newline_indent(writer, indent_level, indent_cache) < 0) {
+                Py_DECREF(keystr);
+                return -1;
+            }
+        }
     }
     else {
         if (PyUnicodeWriter_WriteStr(writer, item_separator) < 0) {
@@ -1670,11 +1676,8 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
     if (s->indent != Py_None) {
         indent_level++;
         separator = get_item_separator(s, indent_level, indent_cache);
-        if (separator == NULL ||
-            write_newline_indent(writer, indent_level, indent_cache) < 0)
-        {
+        if (separator == NULL)
             goto bail;
-        }
     }
 
     if (s->sort_keys || !PyDict_CheckExact(dct)) {
@@ -1714,7 +1717,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
             goto bail;
         Py_CLEAR(ident);
     }
-    if (s->indent != Py_None) {
+    if (s->indent != Py_None && !first) {
         indent_level--;
         if (write_newline_indent(writer, indent_level, indent_cache) < 0) {
             goto bail;

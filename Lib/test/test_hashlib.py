@@ -98,6 +98,14 @@ def read_vectors(hash_name):
             yield parts
 
 
+DEPRECATED_STRING_PARAMETER = re.escape(
+    "the 'string' keyword parameter is deprecated since "
+    "Python 3.15 and slated for removal in Python 3.19; "
+    "use the 'data' keyword parameter or pass the data "
+    "to hash as a positional argument instead"
+)
+
+
 class HashLibTestCase(unittest.TestCase):
     supported_hash_names = ( 'md5', 'MD5', 'sha1', 'SHA1',
                              'sha224', 'SHA224', 'sha256', 'SHA256',
@@ -255,17 +263,23 @@ class HashLibTestCase(unittest.TestCase):
             with self.subTest(constructor.__name__):
                 constructor(b'')
                 constructor(data=b'')
-                constructor(string=b'')  # should be deprecated in the future
+                with self.assertWarnsRegex(DeprecationWarning,
+                                           DEPRECATED_STRING_PARAMETER):
+                    constructor(string=b'')
 
             digest_name = constructor(b'').name
             with self.subTest(digest_name):
                 hashlib.new(digest_name, b'')
                 hashlib.new(digest_name, data=b'')
-                hashlib.new(digest_name, string=b'')
+                with self.assertWarnsRegex(DeprecationWarning,
+                                           DEPRECATED_STRING_PARAMETER):
+                    hashlib.new(digest_name, string=b'')
                 if self._hashlib:
                     self._hashlib.new(digest_name, b'')
                     self._hashlib.new(digest_name, data=b'')
-                    self._hashlib.new(digest_name, string=b'')
+                    with self.assertWarnsRegex(DeprecationWarning,
+                                               DEPRECATED_STRING_PARAMETER):
+                        self._hashlib.new(digest_name, string=b'')
 
     @unittest.skipIf(get_fips_mode(), "skip in FIPS mode")
     def test_clinic_signature_errors(self):
