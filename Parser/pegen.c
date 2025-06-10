@@ -376,41 +376,34 @@ _PyPegen_is_memoized(Parser *p, int type, void *pres)
     return 0;
 }
 
-int
-_PyPegen_lookahead_with_name(int positive, expr_ty (func)(Parser *), Parser *p)
-{
-    int mark = p->mark;
-    void *res = func(p);
-    p->mark = mark;
-    return (res != NULL) == positive;
-}
+#define LOOKAHEAD1(NAME, RES_TYPE)                                  \
+    int                                                             \
+    NAME (int positive, RES_TYPE (func)(Parser *), Parser *p)       \
+    {                                                               \
+        int mark = p->mark;                                         \
+        void *res = func(p);                                        \
+        p->mark = mark;                                             \
+        return (res != NULL) == positive;                           \
+    }
 
-int
-_PyPegen_lookahead_with_string(int positive, expr_ty (func)(Parser *, const char*), Parser *p, const char* arg)
-{
-    int mark = p->mark;
-    void *res = func(p, arg);
-    p->mark = mark;
-    return (res != NULL) == positive;
-}
+LOOKAHEAD1(_PyPegen_lookahead, void *)
+LOOKAHEAD1(_PyPegen_lookahead_for_expr, expr_ty)
+LOOKAHEAD1(_PyPegen_lookahead_for_stmt, stmt_ty)
+#undef LOOKAHEAD1
 
-int
-_PyPegen_lookahead_with_int(int positive, Token *(func)(Parser *, int), Parser *p, int arg)
-{
-    int mark = p->mark;
-    void *res = func(p, arg);
-    p->mark = mark;
-    return (res != NULL) == positive;
-}
+#define LOOKAHEAD2(NAME, RES_TYPE, T)                                   \
+    int                                                                 \
+    NAME (int positive, RES_TYPE (func)(Parser *, T), Parser *p, T arg) \
+    {                                                                   \
+        int mark = p->mark;                                             \
+        void *res = func(p, arg);                                       \
+        p->mark = mark;                                                 \
+        return (res != NULL) == positive;                               \
+    }
 
-int
-_PyPegen_lookahead(int positive, void *(func)(Parser *), Parser *p)
-{
-    int mark = p->mark;
-    void *res = (void*)func(p);
-    p->mark = mark;
-    return (res != NULL) == positive;
-}
+LOOKAHEAD2(_PyPegen_lookahead_with_int, Token *, int)
+LOOKAHEAD2(_PyPegen_lookahead_with_string, expr_ty, const char *)
+#undef LOOKAHEAD2
 
 Token *
 _PyPegen_expect_token(Parser *p, int type)
