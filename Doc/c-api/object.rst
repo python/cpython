@@ -597,7 +597,7 @@ Object Protocol
    this allows the interpreter to avoid reference count adjustments to *obj*,
    which may improve multi-threaded performance.  The tradeoff is
    that *obj* will only be deallocated by the tracing garbage collector, and
-   not when the object's :term:`reference count` reaches zero.
+   not when the interpreter no longer has any references to it.
 
    This function returns ``1`` if deferred reference counting is enabled on *obj*,
    and ``0`` if deferred reference counting is not supported or if the hint was
