@@ -4411,7 +4411,6 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
 
     comprehension_ty gen = (comprehension_ty)asdl_seq_GET(generators,
                                                           gen_index);
-    int is_outer_genexpr = gen_index == 0 && type == COMP_GENEXP;
     if (!iter_on_stack) {
         if (gen_index == 0) {
             assert(METADATA(c)->u_argcount == 1);
@@ -4442,15 +4441,13 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
             }
             if (IS_JUMP_TARGET_LABEL(start)) {
                 VISIT(c, expr, gen->iter);
+                ADDOP(c, LOC(gen->iter), GET_ITER);
             }
         }
     }
 
     if (IS_JUMP_TARGET_LABEL(start)) {
         depth++;
-        if (!is_outer_genexpr) {
-            ADDOP(c, LOC(gen->iter), GET_ITER);
-        }
         USE_LABEL(c, start);
         ADDOP_JUMP(c, LOC(gen->iter), FOR_ITER, anchor);
     }
