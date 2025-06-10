@@ -1,0 +1,2 @@
+Flush ``stdout`` and ``stderr`` after preloading modules in the
+:mod:`multiprocessing` ``forkserver``.

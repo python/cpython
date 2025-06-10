@@ -6801,6 +6801,29 @@ class _TestSpawnedSysPath(BaseTestCase):
         self.assertEqual(child_sys_path[1:], sys.path[1:])
         self.assertIsNone(import_error, msg=f"child could not import {self._mod_name}")
 
+    def test_std_streams_flushed_after_preload(self):
+        # gh-135335: Check fork server flushes standard streams after
+        # preloading modules
+        if multiprocessing.get_start_method() != "forkserver":
+            self.skipTest("forkserver specific test")
+
+        # Create a test module in the temporary directory on the child's path
+        # TODO: This can all be simplified once gh-126631 is fixed and we can
+        #       use __main__ instead of a module.
+        os.mkdir(os.path.join(self._temp_dir, 'a'))
+        with open(os.path.join(self._temp_dir, 'a', '__init__.py'), "w") as f:
+            f.write('''if 1:
+                    import sys
+                    print('stdout', file=sys.stdout)
+                    print('stderr', file=sys.stderr)''')
+
+        name = os.path.join(os.path.dirname(__file__), 'mp_preload_flush.py')
+        env = {'PYTHONPATH': ":".join(sys.path)}
+        rc, out, err = test.support.script_helper.assert_python_ok(name, **env)
+        self.assertEqual(rc, 0)
+        self.assertEqual(out.decode().rstrip(), 'stdout')
+        self.assertEqual(err.decode().rstrip(), 'stderr')
+
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
