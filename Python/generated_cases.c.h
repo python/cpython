@@ -6002,14 +6002,10 @@
             }
             // _ITER_JUMP_TUPLE
             {
-                PyObject *tuple_o = PyStackRef_AsPyObjectBorrow(iter);
-                (void)tuple_o;
-                assert(Py_TYPE(tuple_o) == &PyTuple_Type);
+                assert(PyStackRef_TYPE(iter) == &PyTuple_Type);
                 STAT_INC(FOR_ITER, hit);
                 if ((size_t)PyStackRef_UntagInt(null_or_index) >= (size_t)PyTuple_GET_SIZE(tuple_o)) {
-                    null_or_index = PyStackRef_TagInt(-1);
                     JUMPBY(oparg + 1);
-                    stack_pointer[-1] = null_or_index;
                     DISPATCH();
                 }
             }

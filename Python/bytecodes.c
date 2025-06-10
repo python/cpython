@@ -3314,12 +3314,9 @@ dummy_func(
         }
 
         replaced op(_ITER_JUMP_TUPLE, (iter, null_or_index -- iter, null_or_index)) {
-            PyObject *tuple_o = PyStackRef_AsPyObjectBorrow(iter);
-            (void)tuple_o;
-            assert(Py_TYPE(tuple_o) == &PyTuple_Type);
+            assert(PyStackRef_TYPE(iter) == &PyTuple_Type);
             STAT_INC(FOR_ITER, hit);
             if ((size_t)PyStackRef_UntagInt(null_or_index) >= (size_t)PyTuple_GET_SIZE(tuple_o)) {
-                null_or_index = PyStackRef_TagInt(-1);
                 /* Jump forward oparg, then skip following END_FOR instruction */
                 JUMPBY(oparg + 1);
                 DISPATCH();
