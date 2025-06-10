@@ -1237,7 +1237,7 @@ _PyObject_XSetRefDelayed(PyObject **ptr, PyObject *value)
 {
     PyObject *old = *ptr;
     FT_ATOMIC_STORE_PTR_RELEASE(*ptr, value);
-    if (old == _Py_NULL) {
+    if (old == NULL) {
         return;
     }
     if (!_Py_IsImmortal(old)) {
