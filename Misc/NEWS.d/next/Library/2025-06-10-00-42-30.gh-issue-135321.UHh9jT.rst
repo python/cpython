@@ -1,0 +1,1 @@
+The ``BINSTRING`` opcode of the C accelerator implementation of :mod:`pickle` was modified to have a signed 32-bit data type instead of 64-bit, keeping in line with the Python implementation of :mod:`pickle` and :mod:`pickletools`.
