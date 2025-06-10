@@ -102,7 +102,7 @@ static inline void _PyObject_XDecRefDelayed(PyObject *obj)
 
 #ifdef Py_GIL_DISABLED
 // Same as `Py_XSETREF` but in free-threading, it stores the object atomically
-// and queues the old object to be decrefed at a safe point using QSBR
+// and queues the old object to be decrefed at a safe point using QSBR.
 PyAPI_FUNC(void) _PyObject_XSetRefDelayed(PyObject **p_obj, PyObject *obj);
 #else
 static inline void _PyObject_XSetRefDelayed(PyObject **p_obj, PyObject *obj)
