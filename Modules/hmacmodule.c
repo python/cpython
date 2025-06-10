@@ -44,9 +44,10 @@
 #include "_hacl/Hacl_Streaming_HMAC.h"  // Hacl_Agile_Hash_* identifiers
 #include "_hacl/Hacl_Streaming_Types.h" // Hacl_Streaming_Types_error_code
 
-#include <stdbool.h>
+#include "_hashlib/hashlib_buffer.h"
+#include "_hashlib/hashlib_mutex.h"
 
-#include "hashlib.h"
+#include <stdbool.h>
 
 // --- Reusable error messages ------------------------------------------------
 

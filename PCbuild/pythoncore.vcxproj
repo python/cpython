@@ -443,6 +443,10 @@
       <PreprocessorDefinitions>HACL_CAN_COMPILE_VEC128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/arch:AVX %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
+    <ClCompile Include="..\Modules\_hashlib\hashlib_buffer.c" />
+    <ClInclude Include="..\Modules\_hashlib\hashlib_buffer.h" />
+    <ClInclude Include="..\Modules\_hashlib\hashlib_fetch.h" />
+    <ClInclude Include="..\Modules\_hashlib\hashlib_mutex.h" />
     <ClCompile Include="..\Modules\_heapqmodule.c" />
     <ClCompile Include="..\Modules\_json.c" />
     <ClCompile Include="..\Modules\_localemodule.c" />

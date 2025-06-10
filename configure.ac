@@ -7199,6 +7199,7 @@ SRCDIRS="\
   Modules/_decimal \
   Modules/_decimal/libmpdec \
   Modules/_hacl \
+  Modules/_hashlib \
   Modules/_io \
   Modules/_multiprocessing \
   Modules/_sqlite \
@@ -7972,6 +7973,12 @@ PY_STDLIB_MOD_SIMPLE([_multibytecodec])
 PY_STDLIB_MOD_SIMPLE([unicodedata])
 
 ###############################################################################
+# Cryptographic primitives
+LIBHASHLIB_INCL='-I$(srcdir)/Modules/_hashlib'
+LIBHASHLIB_LIBS='Modules/_hashlib/hashlib_buffer.o Modules/_hashlib/hashlib_fetch.o'
+
+
+###############################################################################
 # HACL* compilation and linking configuration (contact: @picnixz)
 #
 # Used by the HACL*-based implementations of cryptographic primitives.
@@ -8105,7 +8112,9 @@ dnl The EXTNAME is the name of the extension module being built.
 AC_DEFUN([PY_HACL_CREATE_MODULE], [
   AS_VAR_PUSHDEF([v], [[LIBHACL_][$1][_LDFLAGS]])
   AS_VAR_SET([v], [[LIBHACL_][$1][_LIB_${LIBHACL_LDEPS_LIBTYPE}]])
-  PY_STDLIB_MOD([$2], [$3], [], [$LIBHACL_CFLAGS], [\$($v)])
+  PY_STDLIB_MOD([$2], [$3], [],
+    [$LIBHACL_CFLAGS $LIBHASHLIB_INCL],
+    [\$($v) $LIBHASHLIB_LIBS])
   AS_VAR_POPDEF([v])
 ])
 
@@ -8176,7 +8185,8 @@ dnl OpenSSL bindings
 PY_STDLIB_MOD([_ssl], [], [test "$ac_cv_working_openssl_ssl" = yes],
   [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $OPENSSL_LIBS])
 PY_STDLIB_MOD([_hashlib], [], [test "$ac_cv_working_openssl_hashlib" = yes],
-  [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS])
+  [$OPENSSL_INCLUDES $LIBHASHLIB_INCL],
+  [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS $LIBHASHLIB_LIBS])
 
 dnl test modules
 PY_STDLIB_MOD([_testcapi],

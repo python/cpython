@@ -26,7 +26,8 @@
 #include "pycore_hashtable.h"
 #include "pycore_strhex.h"               // _Py_strhex()
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_RELAXED
-#include "hashlib.h"
+#include "_hashlib/hashlib_buffer.h"
+#include "_hashlib/hashlib_mutex.h"
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
@@ -279,20 +280,16 @@ get_hashlib_state(PyObject *module)
 
 typedef struct {
     PyObject_HEAD
+    HASHLIB_LOCK_HEAD
     EVP_MD_CTX *ctx;    /* OpenSSL message digest context */
-    // Prevents undefined behavior via multiple threads entering the C API.
-    bool use_mutex;
-    PyMutex mutex;      /* OpenSSL context lock */
 } HASHobject;
 
 #define HASHobject_CAST(op) ((HASHobject *)(op))
 
 typedef struct {
     PyObject_HEAD
+    HASHLIB_LOCK_HEAD
     HMAC_CTX *ctx;            /* OpenSSL hmac context */
-    // Prevents undefined behavior via multiple threads entering the C API.
-    bool use_mutex;
-    PyMutex mutex;  /* HMAC context lock */
 } HMACobject;
 
 #define HMACobject_CAST(op) ((HMACobject *)(op))
@@ -1126,7 +1123,7 @@ _hashlib_HASH(PyObject *module, const char *digestname, PyObject *data_obj,
 
     if (view.buf && view.len) {
         if (view.len >= HASHLIB_GIL_MINSIZE) {
-            /* We do not initialize self->lock here as this is the constructor
+            /* Do not initialize self->mutex here as this is the constructor
              * where it is not yet possible to have concurrent access. */
             Py_BEGIN_ALLOW_THREADS
             result = _hashlib_HASH_hash(self, view.buf, view.len);

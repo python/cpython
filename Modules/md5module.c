@@ -8,6 +8,7 @@
    Andrew Kuchling (amk@amk.ca)
    Greg Stein (gstein@lyra.org)
    Trevor Perrin (trevp@trevp.net)
+   Bénédikt Tran (10796600+picnixz@users.noreply.github.com)
 
    Copyright (C) 2005-2007   Gregory P. Smith (greg@krypto.org)
    Licensed to PSF under a Contributor Agreement.
@@ -21,7 +22,8 @@
 #endif
 
 #include "Python.h"
-#include "hashlib.h"
+#include "_hashlib/hashlib_buffer.h"
+#include "_hashlib/hashlib_mutex.h"
 
 /*[clinic input]
 module _md5
@@ -36,12 +38,9 @@ class MD5Type "MD5object *" "&PyType_Type"
 
 #include "_hacl/Hacl_Hash_MD5.h"
 
-
 typedef struct {
     PyObject_HEAD
-    // Prevents undefined behavior via multiple threads entering the C API.
-    bool use_mutex;
-    PyMutex mutex;
+    HASHLIB_LOCK_HEAD
     Hacl_Hash_MD5_state_t *hash_state;
 } MD5object;
 
@@ -320,7 +319,7 @@ _md5_md5_impl(PyObject *module, PyObject *data, int usedforsecurity,
 
     if (string) {
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
-            /* We do not initialize self->lock here as this is the constructor
+            /* Do not initialize self->mutex here as this is the constructor
              * where it is not yet possible to have concurrent access. */
             Py_BEGIN_ALLOW_THREADS
             update(new->hash_state, buf.buf, buf.len);
