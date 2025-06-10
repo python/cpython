@@ -40,12 +40,11 @@ The XML handling submodules are:
 * :mod:`xml.parsers.expat`: the Expat parser binding
 
 
-.. _xml-vulnerabilities:
+.. _xml-security:
 
-XML vulnerabilities
--------------------
+XML security
+------------
 
-The XML processing modules are not secure against maliciously constructed data.
 An attacker can abuse XML features to carry out denial of service attacks,
 access local files, generate network connections to other machines, or
 circumvent firewalls.

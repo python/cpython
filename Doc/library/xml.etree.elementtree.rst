@@ -20,11 +20,10 @@ for parsing and creating XML data.
    The :mod:`!xml.etree.cElementTree` module is deprecated.
 
 
-.. warning::
+.. note::
 
-   The :mod:`xml.etree.ElementTree` module is not secure against
-   maliciously constructed data.  If you need to parse untrusted or
-   unauthenticated data see :ref:`xml-vulnerabilities`.
+   If you need to parse untrusted or unauthenticated data, see
+   :ref:`xml-security`.
 
 Tutorial
 --------

@@ -24,8 +24,8 @@ between conformable Python objects and XML on the wire.
 .. warning::
 
    The :mod:`xmlrpc.client` module is not secure against maliciously
-   constructed data.  If you need to parse untrusted or unauthenticated data see
-   :ref:`xml-vulnerabilities`.
+   constructed data.  If you need to parse untrusted or unauthenticated data,
+   see :ref:`xml-security`.
 
 .. versionchanged:: 3.5
 
