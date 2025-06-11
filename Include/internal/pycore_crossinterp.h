@@ -322,23 +322,20 @@ typedef enum error_code {
     _PyXI_ERR_NOT_SHAREABLE = -9,
 } _PyXI_errcode;
 
-typedef struct error_override _PyXI_error_override;
+typedef struct xi_failure _PyXI_failure;
 
-PyAPI_FUNC(_PyXI_error_override *) _PyXI_NewErrorOverride(void);
-PyAPI_FUNC(void) _PyXI_FreeErrorOverride(_PyXI_error_override *);
-PyAPI_FUNC(_PyXI_errcode) _PyXI_GetErrorOverrideCode(_PyXI_error_override *);
-PyAPI_FUNC(int) _PyXI_SetErrorOverride(
-    _PyXI_error_override *,
-    _PyXI_errcode,
-    PyObject *);
-PyAPI_FUNC(void) _PyXI_SetErrorOverrideUTF8(
-    _PyXI_error_override *,
+PyAPI_FUNC(_PyXI_failure *) _PyXI_NewFailure(void);
+PyAPI_FUNC(void) _PyXI_FreeFailure(_PyXI_failure *);
+PyAPI_FUNC(_PyXI_errcode) _PyXI_GetFailureCode(_PyXI_failure *);
+PyAPI_FUNC(int) _PyXI_InitFailure(_PyXI_failure *, _PyXI_errcode, PyObject *);
+PyAPI_FUNC(void) _PyXI_InitFailureUTF8(
+    _PyXI_failure *,
     _PyXI_errcode,
     const char *);
 
 PyAPI_FUNC(int) _PyXI_UnwrapNotShareableError(
     PyThreadState *,
-    _PyXI_error_override *);
+    _PyXI_failure *);
 
 
 // A cross-interpreter session involves entering an interpreter
@@ -370,19 +367,21 @@ PyAPI_FUNC(int) _PyXI_Enter(
     _PyXI_session_result *);
 PyAPI_FUNC(int) _PyXI_Exit(
     _PyXI_session *,
-    _PyXI_error_override *,
+    _PyXI_failure *,
     _PyXI_session_result *);
 
 PyAPI_FUNC(PyObject *) _PyXI_GetMainNamespace(
     _PyXI_session *,
-    _PyXI_error_override *);
+    _PyXI_failure *);
 
 PyAPI_FUNC(int) _PyXI_Preserve(
     _PyXI_session *,
     const char *,
     PyObject *,
-    _PyXI_error_override *);
-PyAPI_FUNC(PyObject *) _PyXI_GetPreserved(_PyXI_session_result *, const char *);
+    _PyXI_failure *);
+PyAPI_FUNC(PyObject *) _PyXI_GetPreserved(
+    _PyXI_session_result *,
+    const char *);
 
 
 /*************/

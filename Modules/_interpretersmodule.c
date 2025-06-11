@@ -80,9 +80,9 @@ is_notshareable_raised(PyThreadState *tstate)
 }
 
 static void
-unwrap_not_shareable(PyThreadState *tstate, _PyXI_error_override *err)
+unwrap_not_shareable(PyThreadState *tstate, _PyXI_failure *failure)
 {
-    if (_PyXI_UnwrapNotShareableError(tstate, err) < 0) {
+    if (_PyXI_UnwrapNotShareableError(tstate, failure) < 0) {
         _PyErr_Clear(tstate);
     }
 }
@@ -586,7 +586,7 @@ _interp_call_unpack(struct interp_call *call,
 
 static int
 _make_call(struct interp_call *call,
-           PyObject **p_result, _PyXI_error_override *err)
+           PyObject **p_result, _PyXI_failure *failure)
 {
     assert(call != NULL && call->func != NULL);
     PyThreadState *tstate = _PyThreadState_GET();
@@ -597,8 +597,8 @@ _make_call(struct interp_call *call,
         assert(func == NULL);
         assert(args == NULL);
         assert(kwargs == NULL);
-        _PyXI_SetErrorOverride(err, _PyXI_ERR_OTHER, NULL);
-        unwrap_not_shareable(tstate, err);
+        _PyXI_InitFailure(failure, _PyXI_ERR_OTHER, NULL);
+        unwrap_not_shareable(tstate, failure);
         return -1;
     }
 
@@ -615,17 +615,17 @@ _make_call(struct interp_call *call,
 }
 
 static int
-_run_script(_PyXIData_t *script, PyObject *ns, _PyXI_error_override *err)
+_run_script(_PyXIData_t *script, PyObject *ns, _PyXI_failure *failure)
 {
     PyObject *code = _PyXIData_NewObject(script);
     if (code == NULL) {
-        _PyXI_SetErrorOverride(err, _PyXI_ERR_NOT_SHAREABLE, NULL);
+        _PyXI_InitFailure(failure, _PyXI_ERR_NOT_SHAREABLE, NULL);
         return -1;
     }
     PyObject *result = PyEval_EvalCode(code, ns, ns);
     Py_DECREF(code);
     if (result == NULL) {
-        _PyXI_SetErrorOverride(err, _PyXI_ERR_UNCAUGHT_EXCEPTION, NULL);
+        _PyXI_InitFailure(failure, _PyXI_ERR_UNCAUGHT_EXCEPTION, NULL);
         return -1;
     }
     assert(result == Py_None);
@@ -652,13 +652,13 @@ _run_in_interpreter(PyThreadState *tstate, PyInterpreterState *interp,
 {
     assert(!_PyErr_Occurred(tstate));
     int res = -1;
-    _PyXI_error_override *override = _PyXI_NewErrorOverride();
-    if (override == NULL) {
+    _PyXI_failure *failure = _PyXI_NewFailure();
+    if (failure == NULL) {
         return -1;
     }
     _PyXI_session *session = _PyXI_NewSession();
     if (session == NULL) {
-        _PyXI_FreeErrorOverride(override);
+        _PyXI_FreeFailure(failure);
         return -1;
     }
     _PyXI_session_result result = {0};
@@ -668,7 +668,7 @@ _run_in_interpreter(PyThreadState *tstate, PyInterpreterState *interp,
         // If an error occured at this step, it means that interp
         // was not prepared and switched.
         _PyXI_FreeSession(session);
-        _PyXI_FreeErrorOverride(override);
+        _PyXI_FreeFailure(failure);
         assert(result.excinfo == NULL);
         return -1;
     }
@@ -676,18 +676,18 @@ _run_in_interpreter(PyThreadState *tstate, PyInterpreterState *interp,
     // Run in the interpreter.
     if (script != NULL) {
         assert(call == NULL);
-        PyObject *mainns = _PyXI_GetMainNamespace(session, override);
+        PyObject *mainns = _PyXI_GetMainNamespace(session, failure);
         if (mainns == NULL) {
             goto finally;
         }
-        res = _run_script(script, mainns, override);
+        res = _run_script(script, mainns, failure);
     }
     else {
         assert(call != NULL);
         PyObject *resobj;
-        res = _make_call(call, &resobj, override);
+        res = _make_call(call, &resobj, failure);
         if (res == 0) {
-            res = _PyXI_Preserve(session, "resobj", resobj, override);
+            res = _PyXI_Preserve(session, "resobj", resobj, failure);
             Py_DECREF(resobj);
             if (res < 0) {
                 goto finally;
@@ -698,10 +698,10 @@ _run_in_interpreter(PyThreadState *tstate, PyInterpreterState *interp,
 finally:
     // Clean up and switch back.
     (void)res;
-    int exitres = _PyXI_Exit(session, override, &result);
+    int exitres = _PyXI_Exit(session, failure, &result);
     assert(res == 0 || exitres != 0);
     _PyXI_FreeSession(session);
-    _PyXI_FreeErrorOverride(override);
+    _PyXI_FreeFailure(failure);
 
     res = exitres;
     if (_PyErr_Occurred(tstate)) {

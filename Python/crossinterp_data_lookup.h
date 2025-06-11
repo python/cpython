@@ -89,8 +89,7 @@ _PyXIData_FormatNotShareableError(PyThreadState *tstate,
 }
 
 int
-_PyXI_UnwrapNotShareableError(PyThreadState * tstate,
-                              _PyXI_error_override *override)
+_PyXI_UnwrapNotShareableError(PyThreadState * tstate, _PyXI_failure *failure)
 {
     PyObject *exctype = get_notshareableerror_type(tstate);
     assert(exctype != NULL);
@@ -98,9 +97,9 @@ _PyXI_UnwrapNotShareableError(PyThreadState * tstate,
         return -1;
     }
     PyObject *exc = _PyErr_GetRaisedException(tstate);
-    if (override != NULL) {
+    if (failure != NULL) {
         _PyXI_errcode code = _PyXI_ERR_NOT_SHAREABLE;
-        if (_PyXI_SetErrorOverride(override, code, exc) < 0) {
+        if (_PyXI_InitFailure(failure, code, exc) < 0) {
             return -1;
         }
     }
