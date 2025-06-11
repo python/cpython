@@ -1,0 +1,1 @@
+Added :func:`pathlib.PurePath.erase_parents`, which will remove path components referring to parent directories ('..') without any attempt to verify the existence or structure of any path components.
