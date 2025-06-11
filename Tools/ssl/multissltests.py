@@ -3,7 +3,7 @@
 
 The script
 
-  (1) downloads OpenSSL / LibreSSL / AWS-LC tar bundle
+  (1) downloads the tar bundle
   (2) extracts it to ./src
   (3) compiles OpenSSL / LibreSSL / AWS-LC
   (4) installs the crypto library into ../multissl/$LIB/$VERSION/
