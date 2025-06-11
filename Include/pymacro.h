@@ -24,41 +24,65 @@
 #endif
 
 
-// _Py_ALIGN_AS: this compiler's spelling of `alignas` keyword,
-// additional compat checking would be great since we added it to the default
-// build.
-// Standards/compiler support:
+// _Py_ALIGNED_DEF(N, T): Define a variable/member with increased alignment
+//
+// `N`: the desired minimum alignment, an integer literal, number of bytes
+// `T`: the type of the defined variable
+//      (or a type with at least the defined variable's alignment)
+//
+// May not be used on a struct definition.
+//
+// Standards/compiler support for `alignas` alternatives:
 // - `alignas` is a keyword in C23 and C++11.
 // - `_Alignas` is a keyword in C11
 // - GCC & clang has __attribute__((aligned))
 //   (use that for older standards in pedantic mode)
 // - MSVC has __declspec(align)
 // - `_Alignas` is common C compiler extension
-// Older compilers may name it differently; to allow compilation on such
-// unsupported platforms, we don't redefine _Py_ALIGN_AS if it's already
+// Older compilers may name `alignas` differently; to allow compilation on such
+// unsupported platforms, we don't redefine _Py_ALIGNED_DEF if it's already
 // defined. Note that defining it wrong (including defining it to nothing) will
 // cause ABI incompatibilities.
-#ifndef _Py_ALIGN_AS
+//
+// Behavior of `alignas` alternatives:
+// - `alignas` & `_Alignas`:
+//   - Can be used multiple times; the greatest alignment applies.
+//   - It is an *error* if the combined effect of all `alignas` modifiers would
+//     decrease the alignment.
+//   - Takes types or numbers.
+//   - May not be used on a struct definition, unless also defining a variable.
+// - `__declspec(align)`:
+//   - Has no effect if it would decrease alignment.
+//   - Only takes an integer literal.
+//   - May be used on struct or variable definitions.
+//     However, when defining both the struct and the variable at once,
+//     `declspec(aligned)` causes compiler warning 5274 and possible ABI
+//     incompatibility.
+// - ` __attribute__((aligned))`:
+//   - Has no effect if it would decrease alignment.
+//   - Takes types or numbers
+//   - May be used on struct or variable definitions.
+#ifndef _Py_ALIGNED_DEF
 #    ifdef __cplusplus
 #        if __cplusplus >= 201103L
-#            define _Py_ALIGN_AS(V) alignas(V)
+#            define _Py_ALIGNED_DEF(N, T) alignas(N) alignas(T) T
 #        elif defined(__GNUC__) || defined(__clang__)
-#            define _Py_ALIGN_AS(V) __attribute__((aligned(V)))
+#            define _Py_ALIGNED_DEF(N, T) __attribute__((aligned(N))) T
 #        elif defined(_MSC_VER)
-#            define _Py_ALIGN_AS(V) __declspec(align(V))
+#            define _Py_ALIGNED_DEF(N, T) __declspec(align(N)) T
 #        else
-#            define _Py_ALIGN_AS(V) alignas(V)
+#            define _Py_ALIGNED_DEF(N, T) alignas(N) alignas(T) T
 #        endif
 #    elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
-#        define _Py_ALIGN_AS(V) alignas(V)
+#        define _Py_ALIGNED_DEF(N, T) alignas(N) alignas(T) T
 #    elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-#        define _Py_ALIGN_AS(V) _Alignas(V)
+#        define _Py_ALIGNED_DEF(N, T)  _Alignas(N) _Alignas(T) T
 #    elif (defined(__GNUC__) || defined(__clang__))
-#        define _Py_ALIGN_AS(V) __attribute__((aligned(V)))
+#        define _Py_ALIGNED_DEF(N, T) __attribute__((aligned(N))) T
 #    elif defined(_MSC_VER)
-#        define _Py_ALIGN_AS(V) __declspec(align(V))
+#        define _Py_ALIGNED_DEF(N, T) __declspec(align(N)) T
 #    else
-#        define _Py_ALIGN_AS(V) _Alignas(V)
+#        define _Py_ALIGNED_DEF(N, T) _Alignas(N) _Alignas(T) T
 #    endif
 #endif
 

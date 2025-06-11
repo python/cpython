@@ -45,8 +45,7 @@ struct arraydescr {
 
 typedef struct {
     Py_ssize_t allocated;
-    _Py_ALIGN_AS(8)
-    char items[];
+    _Py_ALIGNED_DEF(8, char) items[];
 } arraydata;
 
 typedef struct arrayobject {
