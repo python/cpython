@@ -486,6 +486,7 @@ class BuildAWSLC(AbstractBuilder):
             "-DCMAKE_PREFIX_PATH={}".format(self.install_dir),
             "-DCMAKE_INSTALL_PREFIX={}".format(self.install_dir),
             "-DBUILD_SHARED_LIBS=ON",
+            "-DBUILD_TESTING=OFF",
             "-DFIPS=OFF",
         ]
         self._subprocess_call(cmd, cwd=cwd, env=env)
