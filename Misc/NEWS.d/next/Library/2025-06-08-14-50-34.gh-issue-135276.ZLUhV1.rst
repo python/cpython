@@ -1,3 +1,0 @@
-Backported bugfixes in zipfile.Path from zipp 3.23. Fixed
-``.name``, ``.stem`` and other basename-based properties on Windows when
-working with a zipfile on disk.

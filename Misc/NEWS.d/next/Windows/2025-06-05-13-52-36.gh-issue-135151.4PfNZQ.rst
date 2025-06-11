@@ -1,3 +1,0 @@
-Avoid distributing modified :file:`pyconfig.h` in the traditional installer.
-Extension module builds must always specify ``Py_GIL_DISABLED`` when
-targeting the free-threaded runtime.

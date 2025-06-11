@@ -1,0 +1,129 @@
+.. date: 2025-06-05-13-52-36
+.. gh-issue: 135151
+.. nonce: 4PfNZQ
+.. release date: 2025-06-11
+.. section: Windows
+
+Avoid distributing modified :file:`pyconfig.h` in the traditional installer.
+Extension module builds must always specify ``Py_GIL_DISABLED`` when
+targeting the free-threaded runtime.
+
+..
+
+.. date: 2025-06-04-13-07-44
+.. gh-issue: 135120
+.. nonce: NapnZT
+.. section: Tests
+
+Add :func:`!test.support.subTests`.
+
+..
+
+.. date: 2025-06-10-16-11-00
+.. gh-issue: 133967
+.. nonce: P0c24q
+.. section: Library
+
+Do not normalize :mod:`locale` name 'C.UTF-8' to 'en_US.UTF-8'.
+
+..
+
+.. date: 2025-06-10-10-00-17
+.. gh-issue: 135326
+.. nonce: sOHe_p
+.. section: Library
+
+Restore support of integer-like objects with :meth:`!__index__` in
+:func:`random.getrandbits`.
+
+..
+
+.. date: 2025-06-10-00-42-30
+.. gh-issue: 135321
+.. nonce: UHh9jT
+.. section: Library
+
+Raise a correct exception for values greater than 0x7fffffff for the
+``BINSTRING`` opcode in the C implementation of :mod:`pickle`.
+
+..
+
+.. date: 2025-06-08-14-50-34
+.. gh-issue: 135276
+.. nonce: ZLUhV1
+.. section: Library
+
+Backported bugfixes in zipfile.Path from zipp 3.23. Fixed ``.name``,
+``.stem`` and other basename-based properties on Windows when working with a
+zipfile on disk.
+
+..
+
+.. date: 2025-05-25-23-23-05
+.. gh-issue: 134151
+.. nonce: 13Wwsb
+.. section: Library
+
+:mod:`email`: Fix :exc:`TypeError` in :func:`email.utils.decode_params` when
+sorting :rfc:`2231` continuations that contain an unnumbered section.
+
+..
+
+.. date: 2025-05-18-23-46-21
+.. gh-issue: 134152
+.. nonce: 30HwbX
+.. section: Library
+
+:mod:`email`: Fix parsing of email message ID with invalid domain.
+
+..
+
+.. date: 2025-04-21-01-03-15
+.. gh-issue: 127081
+.. nonce: WXRliX
+.. section: Library
+
+Fix libc thread safety issues with :mod:`os` by replacing ``getlogin`` with
+``getlogin_r`` re-entrant version.
+
+..
+
+.. date: 2025-04-07-06-41-54
+.. gh-issue: 131884
+.. nonce: ym9BJN
+.. section: Library
+
+Fix formatting issues in :func:`json.dump` when both *indent* and *skipkeys*
+are used.
+
+..
+
+.. date: 2025-06-11-14-09-12
+.. gh-issue: 135171
+.. nonce: VUdivl
+.. section: Core and Builtins
+
+Roll back changes to generator and list comprehensions that went into 3.13.4
+to fix GH-127682, but which involved semantic and bytecode changes not
+appropriate for a bugfix release.
+
+..
+
+.. date: 2025-06-05-11-06-07
+.. gh-issue: 134989
+.. nonce: 74p4ud
+.. section: C API
+
+Fix ``Py_RETURN_NONE``, ``Py_RETURN_TRUE`` and ``Py_RETURN_FALSE`` macros in
+the limited C API 3.11 and older: don't treat ``Py_None``, ``Py_True`` and
+``Py_False`` as immortal. Patch by Victor Stinner.
+
+..
+
+.. date: 2025-06-02-13-19-22
+.. gh-issue: 134989
+.. nonce: sDDyBN
+.. section: C API
+
+Implement :c:func:`PyObject_DelAttr` and :c:func:`PyObject_DelAttrString` as
+macros in the limited C API 3.12 and older. Patch by Victor Stinner.
