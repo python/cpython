@@ -1,0 +1,2 @@
+Fixed a memory regression for classes that have both ``__slots__`` and
+``__dict__``.
