@@ -380,8 +380,8 @@ class TestBasicOps:
             self.assertEqual(x1, x2)
             self.assertEqual(y1, y2)
 
+    @support.requires_IEEE_754
     def test_53_bits_per_float(self):
-        # This should pass whenever a C double has 53 bit precision.
         span = 2 ** 53
         cum = 0
         for i in range(100):
