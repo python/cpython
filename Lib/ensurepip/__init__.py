@@ -11,7 +11,7 @@ from . import _bundled
 
 
 __all__ = ["version", "bootstrap"]
-_SETUPTOOLS_VERSION = "58.1.0"
+_SETUPTOOLS_VERSION = "79.0.1"
 _PIP_VERSION = "23.0.1"
 _PROJECTS = [
     ("setuptools", _SETUPTOOLS_VERSION, "py3"),
