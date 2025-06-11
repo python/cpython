@@ -5,8 +5,8 @@ The script
 
   (1) downloads the tar bundle
   (2) extracts it to ./src
-  (3) compiles OpenSSL / LibreSSL / AWS-LC
-  (4) installs the crypto library into ../multissl/$LIB/$VERSION/
+  (3) compiles the relevant library
+  (4) installs that library into ../multissl/$LIB/$VERSION/
   (5) forces a recompilation of Python modules using the
       header and library files from ../multissl/$LIB/$VERSION/
   (6) runs Python's test suite
