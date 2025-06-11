@@ -139,7 +139,10 @@ _PyMem_mi_page_maybe_free(mi_page_t *page, mi_page_queue_t *pq, bool force)
 
         _PyMem_mi_page_clear_qsbr(page);
         page->retire_expire = 0;
-        page->qsbr_goal = _Py_qsbr_deferred_advance(tstate->qsbr);
+
+        size_t bsize = mi_page_block_size(page);
+        page->qsbr_goal = _Py_qsbr_advance_with_size(tstate->qsbr, page->capacity*bsize);
+
         llist_insert_tail(&tstate->mimalloc.page_list, &page->qsbr_node);
         return false;
     }
@@ -1141,27 +1144,6 @@ free_work_item(uintptr_t ptr, delayed_dealloc_cb cb, void *state)
     }
 }
 
-#ifdef Py_GIL_DISABLED
-static int
-should_advance_qsbr(_PyThreadStateImpl *tstate, size_t size)
-{
-    // If the deferred memory exceeds 1 MiB, we force an advance in the
-    // shared QSBR sequence number to limit excess memory usage.
-    static const size_t QSBR_DEFERRED_LIMIT = 1024 * 1024;
-    if (size > QSBR_DEFERRED_LIMIT) {
-        tstate->qsbr->memory_deferred = 0;
-        return 1;
-    }
-
-    tstate->qsbr->memory_deferred += size;
-    if (tstate->qsbr->memory_deferred > QSBR_DEFERRED_LIMIT) {
-        tstate->qsbr->memory_deferred = 0;
-        return 1;
-    }
-    return 0;
-}
-#endif
-
 static void
 free_delayed(uintptr_t ptr, size_t size)
 {
@@ -1221,20 +1203,12 @@ free_delayed(uintptr_t ptr, size_t size)
     }
 
     assert(buf != NULL && buf->wr_idx < WORK_ITEMS_PER_CHUNK);
-    uint64_t seq;
-    int force_advance = should_advance_qsbr(tstate, size);
-    if (force_advance) {
-        seq = _Py_qsbr_advance(tstate->qsbr->shared);
-    }
-    else {
-        seq = _Py_qsbr_deferred_advance(tstate->qsbr);
-    }
+    uint64_t seq = _Py_qsbr_advance_with_size(tstate->qsbr, size);
     buf->array[buf->wr_idx].ptr = ptr;
     buf->array[buf->wr_idx].qsbr_goal = seq;
     buf->wr_idx++;
-    if (buf->wr_idx == WORK_ITEMS_PER_CHUNK || force_advance) {
-        _PyMem_ProcessDelayed((PyThreadState *)tstate);
-    }
+
+    _PyMem_ProcessDelayed((PyThreadState *)tstate);
 #endif
 }
 
@@ -1326,8 +1300,11 @@ maybe_process_interp_queue(struct _Py_mem_interp_free_queue *queue,
 void
 _PyMem_ProcessDelayed(PyThreadState *tstate)
 {
-    PyInterpreterState *interp = tstate->interp;
     _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    if (!_Py_qsbr_should_process(tstate_impl->qsbr)) {
+        return;
+    }
+    PyInterpreterState *interp = tstate->interp;
 
     // Process thread-local work
     process_queue(&tstate_impl->mem_free_queue, tstate_impl, true, NULL, NULL);
