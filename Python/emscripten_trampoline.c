@@ -71,7 +71,13 @@ EM_JS(CountArgsFunc, _PyEM_GetCountArgsPtr, (), {
 // )
 
 function getPyEMCountArgsPtr() {
-    let isIOS = globalThis.navigator && /iPad|iPhone|iPod/.test(navigator.platform);
+    let isIOS = globalThis.navigator && (
+        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        // Starting with iPadOS 13, iPads might send a platform string that looks like a desktop Mac.
+        // To differentiate, we check if the platform is 'MacIntel' (common for Macs and newer iPads)
+        // AND if the device has multi-touch capabilities (navigator.maxTouchPoints > 1)
+        (navigator.platform === 'MacIntel' && typeof navigator.maxTouchPoints !== 'undefined' && navigator.maxTouchPoints > 1)
+    )
     if (isIOS) {
         return 0;
     }
