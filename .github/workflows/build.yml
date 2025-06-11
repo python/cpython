@@ -697,7 +697,8 @@ jobs:
     - build-windows-msi
     - build-macos
     - build-ubuntu
-    - build-ubuntu-ssltests
+    - build-ubuntu-ssltests-awslc
+    - build-ubuntu-ssltests-openssl
     - build-wasi
     - test-hypothesis
     - build-asan
@@ -712,7 +713,8 @@ jobs:
       with:
         allowed-failures: >-
           build-windows-msi,
-          build-ubuntu-ssltests,
+          build-ubuntu-ssltests-awslc
+          build-ubuntu-ssltests-openssl
           test-hypothesis,
           cifuzz,
         allowed-skips: >-
@@ -730,7 +732,8 @@ jobs:
             check-generated-files,
             build-macos,
             build-ubuntu,
-            build-ubuntu-ssltests,
+            build-ubuntu-ssltests-awslc,
+            build-ubuntu-ssltests-openssl,
             build-wasi,
             test-hypothesis,
             build-asan,
