@@ -2599,7 +2599,14 @@ dummy_func(
 
         replaced op(_FOR_ITER, (iter -- iter, next)) {
             /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
-            next = (*Py_TYPE(iter)->tp_iternext)(iter);
+            iternextfunc func = Py_TYPE(iter)->tp_iternext;
+            if (func == NULL) {
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "'%.100s' object is not an iterator",
+                              Py_TYPE(iter)->tp_name);
+                ERROR_NO_POP();
+            }
+            next = func(iter);
             if (next == NULL) {
                 if (_PyErr_Occurred(tstate)) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
@@ -2622,7 +2629,14 @@ dummy_func(
 
         op(_FOR_ITER_TIER_TWO, (iter -- iter, next)) {
             /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
-            next = (*Py_TYPE(iter)->tp_iternext)(iter);
+            iternextfunc func = Py_TYPE(iter)->tp_iternext;
+            if (func == NULL) {
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "'%.100s' object is not an iterator",
+                              Py_TYPE(iter)->tp_name);
+                ERROR_NO_POP();
+            }
+            next = func(iter);
             if (next == NULL) {
                 if (_PyErr_Occurred(tstate)) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
@@ -2643,7 +2657,14 @@ dummy_func(
         inst(INSTRUMENTED_FOR_ITER, (unused/1 -- )) {
             _Py_CODEUNIT *target;
             PyObject *iter = TOP();
-            PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
+            iternextfunc func = Py_TYPE(iter)->tp_iternext;
+            if (func == NULL) {
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "'%.100s' object is not an iterator",
+                              Py_TYPE(iter)->tp_name);
+                ERROR_NO_POP();
+            }
+            PyObject *next = func(iter);
             if (next != NULL) {
                 PUSH(next);
                 target = next_instr;

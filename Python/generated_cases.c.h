@@ -2787,7 +2787,14 @@
             // _FOR_ITER
             {
                 /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
-                next = (*Py_TYPE(iter)->tp_iternext)(iter);
+                iternextfunc func = Py_TYPE(iter)->tp_iternext;
+                if (func == NULL) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                              "'%.100s' object is not an iterator",
+                              Py_TYPE(iter)->tp_name);
+                    goto error;
+                }
+                next = func(iter);
                 if (next == NULL) {
                     if (_PyErr_Occurred(tstate)) {
                         if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
@@ -3303,7 +3310,14 @@
             /* Skip 1 cache entry */
             _Py_CODEUNIT *target;
             PyObject *iter = TOP();
-            PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
+            iternextfunc func = Py_TYPE(iter)->tp_iternext;
+            if (func == NULL) {
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "'%.100s' object is not an iterator",
+                              Py_TYPE(iter)->tp_name);
+                goto error;
+            }
+            PyObject *next = func(iter);
             if (next != NULL) {
                 PUSH(next);
                 target = next_instr;
