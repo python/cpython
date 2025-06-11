@@ -368,11 +368,11 @@ jobs:
     # TODO [childw] can we use env.* instead of env vars here?
     - name: Install AWS-LC
       if: steps.cache-aws-lc.outputs.cache-hit != 'true'
-      run: >
-        python3 Tools/ssl/multissltests.py
-          --steps=library
-          --base-directory "$MULTISSL_DIR"
-          --awslc ${{ matrix.awslc_ver }}
+      run: |
+        python3 Tools/ssl/multissltests.py \
+          --steps=library \
+          --base-directory "$MULTISSL_DIR" \
+          --awslc ${{ matrix.awslc_ver }} \
           --system Linux
     - name: Add ccache to PATH
       run: |
@@ -382,13 +382,13 @@ jobs:
       with:
         save: false
     - name: Configure CPython
-      run: >
-        ./configure CFLAGS="-fdiagnostics-format=json"
-          --config-cache
-          --enable-slower-safety
-          --with-pydebug
-          --with-openssl="$OPENSSL_DIR"
-          --with-builtin-hashlib-hashes=blake2
+      run: |
+        ./configure CFLAGS="-fdiagnostics-format=json" \
+          --config-cache \
+          --enable-slower-safety \
+          --with-pydebug \
+          --with-openssl="$OPENSSL_DIR" \
+          --with-builtin-hashlib-hashes=blake2 \
           --with-ssl-default-suites=openssl
     - name: Build CPython
       run: make -j
