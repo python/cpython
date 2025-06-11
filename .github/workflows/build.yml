@@ -357,8 +357,8 @@ jobs:
       # TODO [childw] do we need to re-specify the env vars here after L330's configuration?
       run: |
         echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
-        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/awslc/${AWSLC_VER}" >> "$GITHUB_ENV"
-        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/awslc/${AWSLC_VER}/lib" >> "$GITHUB_ENV"
+        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/aws-lc/${AWSLC_VER}" >> "$GITHUB_ENV"
+        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/aws-lc/${AWSLC_VER}/lib" >> "$GITHUB_ENV"
     - name: 'Restore AWS-LC build'
       id: cache-aws-lc
       uses: actions/cache@v4
