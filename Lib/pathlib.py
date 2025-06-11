@@ -383,6 +383,27 @@ class PurePath(object):
         are created from methods like `iterdir()`.
         """
         return type(self)(*pathsegments)
+        
+    def erase_parents(self):
+        r"""
+        Remove path components referring to parent directories ('..'),
+        without any attempt to verify the existence or structure of any
+        path components.
+    
+        If this is a relative path, there may be leftover '..' segments
+        after erasing parent segments. For example:
+    
+        - Path('spam/../../eggs').erase_parents() == Path('../eggs')
+    
+        If this is an absolute path, and it reaches the root filesystem
+        (or the root of a drive or UNC share for Windows paths),
+        further '..' components will be ignored. For example:
+    
+        - Path('/spam/../../../eggs').erase_parents() == Path('/eggs')
+        - PureWindowsPath(r'c:\spam\..\..\eggs').erase_parents() == PureWindowsPath(r'c:\eggs')
+        - PureWindowsPath(r'\\server\share\foo\..\..\eggs').erase_parents() == PureWindowsPath(r'\\server\share\eggs')
+        """
+        return type(self)(self._flavour.normpath(self))
 
     @classmethod
     def _parse_path(cls, path):
@@ -479,7 +500,7 @@ class PurePath(object):
             # It's a posix path => 'file:///etc/hosts'
             prefix = 'file://'
             path = str(self)
-        return prefix + urlquote_from_bytes(os.fsencode(path))
+        return prefix + urlquote_from_bytes(os.fsencode(path)) 
 
     @property
     def _str_normcase(self):
