@@ -288,7 +288,7 @@ class GeneratorTest(unittest.TestCase):
             def __iter__(self):
                 return Iterator()
 
-        self.assertEqual([1,2], list(i for i in C()))
+        self.assertEqual([1, 2], list(i for i in C()))
 
 
 class ModifyUnderlyingIterableTest(unittest.TestCase):
