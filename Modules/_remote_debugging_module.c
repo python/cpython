@@ -164,16 +164,14 @@ static int
 parse_tasks_in_set(
     RemoteUnwinderObject *unwinder,
     uintptr_t set_addr,
-    PyObject *awaited_by,
-    int recurse_task
+    PyObject *awaited_by
 );
 
 static int
 parse_task(
     RemoteUnwinderObject *unwinder,
     uintptr_t task_address,
-    PyObject *render_to,
-    int recurse_task
+    PyObject *render_to
 );
 
 static int
@@ -685,8 +683,7 @@ parse_task_name(
 static int parse_task_awaited_by(
     RemoteUnwinderObject *unwinder,
     uintptr_t task_address,
-    PyObject *awaited_by,
-    int recurse_task
+    PyObject *awaited_by
 ) {
     // Read the entire TaskObj at once
     char task_obj[SIZEOF_TASK_OBJ];
@@ -707,12 +704,12 @@ static int parse_task_awaited_by(
     char awaited_by_is_a_set = GET_MEMBER(char, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_awaited_by_is_set);
 
     if (awaited_by_is_a_set) {
-        if (parse_tasks_in_set(unwinder, task_ab_addr, awaited_by, recurse_task)) {
+        if (parse_tasks_in_set(unwinder, task_ab_addr, awaited_by)) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse tasks in awaited_by set");
             return -1;
         }
     } else {
-        if (parse_task(unwinder, task_ab_addr, awaited_by, recurse_task)) {
+        if (parse_task(unwinder, task_ab_addr, awaited_by)) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse single awaited_by task");
             return -1;
         }
@@ -845,8 +842,7 @@ parse_coro_chain(
 static PyObject*
 create_task_result(
     RemoteUnwinderObject *unwinder,
-    uintptr_t task_address,
-    int recurse_task
+    uintptr_t task_address
 ) {
     PyObject* result = NULL;
     PyObject *call_stack = NULL;
@@ -872,11 +868,7 @@ create_task_result(
     }
     Py_CLEAR(call_stack);
 
-    if (recurse_task) {
-        tn = parse_task_name(unwinder, task_address);
-    } else {
-        tn = PyLong_FromUnsignedLongLong(task_address);
-    }
+    tn = parse_task_name(unwinder, task_address);
     if (tn == NULL) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create task name/address");
         goto error;
@@ -938,8 +930,7 @@ static int
 parse_task(
     RemoteUnwinderObject *unwinder,
     uintptr_t task_address,
-    PyObject *render_to,
-    int recurse_task
+    PyObject *render_to
 ) {
     char is_task;
     PyObject* result = NULL;
@@ -956,7 +947,7 @@ parse_task(
     }
 
     if (is_task) {
-        result = create_task_result(unwinder, task_address, recurse_task);
+        result = create_task_result(unwinder, task_address);
         if (!result) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create task result");
             goto error;
@@ -974,28 +965,26 @@ parse_task(
         goto error;
     }
 
-    if (recurse_task) {
-        awaited_by = PyList_New(0);
-        if (awaited_by == NULL) {
-            set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create awaited_by list");
-            goto error;
-        }
+    awaited_by = PyList_New(0);
+    if (awaited_by == NULL) {
+        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create awaited_by list");
+        goto error;
+    }
 
-        if (PyList_Append(result, awaited_by)) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append awaited_by to result");
-            goto error;
-        }
-        Py_DECREF(awaited_by);
+    if (PyList_Append(result, awaited_by)) {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append awaited_by to result");
+        goto error;
+    }
+    Py_DECREF(awaited_by);
 
-        /* awaited_by is borrowed from 'result' to simplify cleanup */
-        if (parse_task_awaited_by(unwinder, task_address, awaited_by, 1) < 0) {
-            // Clear the pointer so the cleanup doesn't try to decref it since
-            // it's borrowed from 'result' and will be decrefed when result is
-            // deleted.
-            awaited_by = NULL;
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse task awaited_by relationships");
-            goto error;
-        }
+    /* awaited_by is borrowed from 'result' to simplify cleanup */
+    if (parse_task_awaited_by(unwinder, task_address, awaited_by) < 0) {
+        // Clear the pointer so the cleanup doesn't try to decref it since
+        // it's borrowed from 'result' and will be decrefed when result is
+        // deleted.
+        awaited_by = NULL;
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse task awaited_by relationships");
+        goto error;
     }
     Py_DECREF(result);
 
@@ -1011,8 +1000,7 @@ static int
 process_set_entry(
     RemoteUnwinderObject *unwinder,
     uintptr_t table_ptr,
-    PyObject *awaited_by,
-    int recurse_task
+    PyObject *awaited_by
 ) {
     uintptr_t key_addr;
     if (read_py_ptr(unwinder, table_ptr, &key_addr)) {
@@ -1029,7 +1017,7 @@ process_set_entry(
 
         if (ref_cnt) {
             // if 'ref_cnt=0' it's a set dummy marker
-            if (parse_task(unwinder, key_addr, awaited_by, recurse_task)) {
+            if (parse_task(unwinder, key_addr, awaited_by)) {
                 set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse task in set entry");
                 return -1;
             }
@@ -1043,8 +1031,7 @@ static int
 parse_tasks_in_set(
     RemoteUnwinderObject *unwinder,
     uintptr_t set_addr,
-    PyObject *awaited_by,
-    int recurse_task
+    PyObject *awaited_by
 ) {
     char set_object[SIZEOF_SET_OBJ];
     int err = _Py_RemoteDebug_PagedReadRemoteMemory(
@@ -1064,7 +1051,7 @@ parse_tasks_in_set(
     Py_ssize_t i = 0;
     Py_ssize_t els = 0;
     while (i < set_len && els < num_els) {
-        int result = process_set_entry(unwinder, table_ptr, awaited_by, recurse_task);
+        int result = process_set_entry(unwinder, table_ptr, awaited_by);
 
         if (result < 0) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to process set entry");
@@ -1142,14 +1129,91 @@ add_task_info_to_result(
     }
     Py_DECREF(awaited_by);
 
-    if (parse_task_awaited_by(
-        unwinder, running_task_addr, awaited_by, 1) < 0) {
+    if (parse_task_awaited_by(unwinder, running_task_addr, awaited_by) < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse awaited_by for result");
         return -1;
     }
 
     return 0;
 }
+
+static int
+parse_current_task_with_awaiter(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t task_address,
+    PyObject *awaited_by_list
+) {
+    // Get the CURRENT task's call stack (like parse_task does)
+    PyObject *call_stack = PyList_New(0);
+    if (call_stack == NULL) {
+        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create current task call stack");
+        return -1;
+    }
+
+    // Read the current task object
+    char task_obj[SIZEOF_TASK_OBJ];
+    if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, task_address,
+                                              unwinder->async_debug_offsets.asyncio_task_object.size,
+                                              task_obj) < 0) {
+        Py_DECREF(call_stack);
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read current task object");
+        return -1;
+    }
+
+    // Get the current task's coroutine chain
+    uintptr_t coro_addr = GET_MEMBER(uintptr_t, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_coro);
+    coro_addr &= ~Py_TAG_BITS;
+
+    if ((void*)coro_addr != NULL) {
+        if (parse_coro_chain(unwinder, coro_addr, call_stack) < 0) {
+            Py_DECREF(call_stack);
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse current task coro chain");
+            return -1;
+        }
+
+        if (PyList_Reverse(call_stack)) {
+            Py_DECREF(call_stack);
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to reverse current task call stack");
+            return -1;
+        }
+    }
+
+    // Get who is awaiting this current task (like parse_task_awaited_by does)
+    uintptr_t awaiter_addr = GET_MEMBER(uintptr_t, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_awaited_by);
+    awaiter_addr &= ~Py_TAG_BITS;
+
+    // Create the awaited_by entry: [current_task_call_stack, awaiter_task_id]
+    PyObject *awaited_by_entry = PyList_New(2);
+    if (awaited_by_entry == NULL) {
+        Py_DECREF(call_stack);
+        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create awaited_by entry");
+        return -1;
+    }
+
+    PyObject *awaiter_id = PyLong_FromUnsignedLongLong(awaiter_addr);
+    if (awaiter_id == NULL) {
+        Py_DECREF(call_stack);
+        Py_DECREF(awaited_by_entry);
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create awaiter task ID");
+        return -1;
+    }
+
+    PyList_SET_ITEM(awaited_by_entry, 0, call_stack);    // steals ref
+    PyList_SET_ITEM(awaited_by_entry, 1, awaiter_id);    // steals ref
+
+    if (PyList_Append(awaited_by_list, awaited_by_entry)) {
+        Py_DECREF(awaited_by_entry);
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append awaited_by entry");
+        return -1;
+    }
+    Py_DECREF(awaited_by_entry);
+
+    return 0;
+}
+
+/* ============================================================================
+ * UPDATED process_single_task_node FUNCTION
+ * ============================================================================ */
 
 static int
 process_single_task_node(
@@ -1200,15 +1264,18 @@ process_single_task_node(
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append result item in single task node");
         return -1;
     }
-    Py_DECREF(result_item);
 
-    // Get back current_awaited_by reference for parse_task_awaited_by
+    // Get back current_awaited_by reference 
     current_awaited_by = PyTuple_GET_ITEM(result_item, 2);
-    if (parse_task_awaited_by(unwinder, task_addr, current_awaited_by, 0) < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse awaited_by in single task node");
+    
+    // Parse current task's call stack with correct awaiter ID
+    if (parse_current_task_with_awaiter(unwinder, task_addr, current_awaited_by) < 0) {
+        Py_DECREF(result_item);
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse current task with awaiter");
         return -1;
     }
 
+    Py_DECREF(result_item);
     return 0;
 
 error:

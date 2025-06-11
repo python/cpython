@@ -28,7 +28,7 @@ class CycleFoundException(Exception):
 # ─── indexing helpers ───────────────────────────────────────────
 def _format_stack_entry(elem: tuple[str, str, int] | str) -> str:
     if isinstance(elem, tuple):
-        fqname, path, line_no = elem
+        path, line_no, fqname = elem
         return f"{fqname} {path}:{line_no}"
 
     return elem
@@ -43,7 +43,6 @@ def _index(result):
                 stack = [_format_stack_entry(elem) for elem in stack]
                 awaits.append((parent_id, stack, tid))
     return id2name, awaits
-
 
 def _build_tree(id2name, awaits):
     id2label = {(NodeType.TASK, tid): name for tid, name in id2name.items()}
@@ -62,16 +61,24 @@ def _build_tree(id2name, awaits):
         bucket[frame_name] = node_key
         return node_key
 
-    # lay down parent ➜ …frames… ➜ child paths
+    # First pass: build parent -> child relationships
     for parent_id, stack, child_id in awaits:
-        cur = (NodeType.TASK, parent_id)
+        if parent_id != 0:  # Skip root tasks (no parent)
+            parent_key = (NodeType.TASK, parent_id)
+            child_key = (NodeType.TASK, child_id)
+            if child_key not in children[parent_key]:
+                children[parent_key].append(child_key)
+
+    # Second pass: add call stacks under each child task
+    for parent_id, stack, child_id in awaits:
+        # Add the call stack as coroutine nodes under the child task
+        child_key = (NodeType.TASK, child_id)
+        cur = child_key
         for frame in reversed(stack):  # outer-most → inner-most
             cur = _cor_node(cur, frame)
-        child_key = (NodeType.TASK, child_id)
-        if child_key not in children[cur]:
-            children[cur].append(child_key)
 
     return id2label, children
+
 
 
 def _roots(id2label, children):
@@ -170,7 +177,7 @@ def build_task_table(result):
                     ]
                 )
             for stack, awaiter_id in awaited:
-                stack = [elem[0] if isinstance(elem, tuple) else elem for elem in stack]
+                stack = [elem[-1] if isinstance(elem, tuple) else elem for elem in stack]
                 coroutine_chain = " -> ".join(stack)
                 awaiter_name = id2name.get(awaiter_id, "Unknown")
                 table.append(

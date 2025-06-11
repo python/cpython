@@ -659,7 +659,17 @@ class TestGetStackTrace(unittest.TestCase):
                 # expected: at least 1000 pending tasks
                 self.assertGreaterEqual(len(entries), 1000)
                 # the first three tasks stem from the code structure
-                self.assertIn((ANY, "Task-1", []), entries)
+                # expected: a list of two elements: 1 thread, 1 interp
+                self.assertEqual(len(all_awaited_by), 2)
+                # expected: a tuple with the thread ID and the awaited_by list
+                self.assertEqual(len(all_awaited_by[0]), 2)
+                # expected: no tasks in the fallback per-interp task list
+                self.assertEqual(all_awaited_by[1], (0, []))
+                entries = all_awaited_by[0][1]
+                # expected: at least 1000 pending tasks
+                self.assertGreaterEqual(len(entries), 1000)
+                
+                # Task-1 now has its own call stack with awaiter_id = 0 (no awaiter)
                 main_stack = [
                     (
                         taskgroups.__file__,
@@ -673,46 +683,208 @@ class TestGetStackTrace(unittest.TestCase):
                     ),
                     (script_name, 60, "main"),
                 ]
+                self.assertIn((ANY, "Task-1", [[main_stack, 0]]), entries)
+                
+                # server task shows its own call stack and is awaited by Task-1
+                server_stack = [
+                    (
+                        ANY,  # base_events.py path may vary
+                        ANY,  # line number may vary
+                        "Server.serve_forever",
+                    )
+                ]
                 self.assertIn(
-                    (ANY, "server task", [[main_stack, ANY]]),
+                    (ANY, "server task", [[server_stack, ANY]]),
                     entries,
                 )
+                
+                # echo client spam shows its own call stack and is awaited by Task-1
+                spam_stack = [
+                    (
+                        taskgroups.__file__,
+                        ANY,
+                        "TaskGroup._aexit",
+                    ),
+                    (
+                        taskgroups.__file__,
+                        ANY,
+                        "TaskGroup.__aexit__",
+                    ),
+                    (script_name, 41, "echo_client_spam"),
+                ]
                 self.assertIn(
-                    (ANY, "echo client spam", [[main_stack, ANY]]),
+                    (ANY, "echo client spam", [[spam_stack, ANY]]),
                     entries,
                 )
 
-                expected_stack = [
-                    [
-                        [
-                            (
-                                taskgroups.__file__,
-                                ANY,
-                                "TaskGroup._aexit",
-                            ),
-                            (
-                                taskgroups.__file__,
-                                ANY,
-                                "TaskGroup.__aexit__",
-                            ),
-                            (script_name, 41, "echo_client_spam"),
-                        ],
-                        ANY,
-                    ]
-                ]
-                tasks_with_stack = [
-                    task for task in entries if task[2] == expected_stack
-                ]
+                # Check for tasks that have sleep -> echo_client call stack pattern
+                tasks_with_stack = []
+                for task in entries:
+                    if (len(task[2]) > 0 and len(task[2][0]) > 0 and 
+                        len(task[2][0][0]) >= 2):
+                        call_stack = task[2][0][0]
+                        if (len(call_stack) >= 2 and 
+                            call_stack[0][2] == "sleep" and 
+                            call_stack[1][2] == "echo_client"):
+                            tasks_with_stack.append(task)
+                
                 self.assertGreaterEqual(len(tasks_with_stack), 1000)
 
                 # the final task will have some random number, but it should for
                 # sure be one of the echo client spam horde (In windows this is not true
                 # for some reason)
                 if sys.platform != "win32":
-                    self.assertEqual(
-                        expected_stack,
-                        entries[-1][2],
-                    )
+                    final_task = entries[-1]
+                    if (len(final_task[2]) > 0 and len(final_task[2][0]) > 0 and 
+                        len(final_task[2][0][0]) >= 2):
+                        final_call_stack = final_task[2][0][0]
+                        self.assertEqual(final_call_stack[0][2], "sleep")
+                        self.assertEqual(final_call_stack[1][2], "echo_client")
+            
+            except PermissionError:
+                self.skipTest("Insufficient permissions to read the stack trace")
+            finally:
+                if client_socket is not None:
+                    client_socket.close()
+                p.kill()
+                p.terminate()
+                p.wait(timeout=SHORT_TIMEOUT)
+
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_taskgroup_awaited_by(self):
+        # Spawn a process with TaskGroup and multiple named tasks
+        port = find_unused_port()
+        script = textwrap.dedent(
+            f"""\
+            import asyncio
+            import socket
+            import time
+            from asyncio import taskgroups
+
+            # Connect to the test process
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', {port}))
+
+            async def foo1():
+                await foo11()
+
+            async def foo11():
+                await foo12()
+
+            async def foo12():
+                sock.sendall(b"ready")
+                await asyncio.sleep(1000)
+
+            async def foo2():
+                sock.sendall(b"ready")
+                await asyncio.sleep(500)
+
+            async def runner():
+                async with taskgroups.TaskGroup() as g:
+                    g.create_task(foo1(), name="foo1.0")
+                    g.create_task(foo1(), name="foo1.1") 
+                    g.create_task(foo1(), name="foo1.2")
+                    g.create_task(foo2(), name="foo2")
+                    sock.sendall(b"ready")
+                    await asyncio.sleep(1000)
+
+            asyncio.run(runner())
+            """
+        )
+        with os_helper.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+            
+            # Create a socket server to communicate with the target process
+            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server_socket.bind(("localhost", port))
+            server_socket.settimeout(SHORT_TIMEOUT)
+            server_socket.listen(1)
+            
+            script_name = _make_test_script(script_dir, "script", script)
+            client_socket = None
+            try:
+                p = subprocess.Popen([sys.executable, script_name])
+                client_socket, _ = server_socket.accept()
+                server_socket.close()
+                
+                # Wait for all tasks to reach their sleep point
+                for i in range(5):
+                    expected_response = b"ready"
+                    response = client_socket.recv(len(expected_response))
+                    self.assertEqual(response, expected_response, f"Expected ready signal {i+1}/3")
+                
+                all_awaited_by = get_all_awaited_by(p.pid)
+                
+                # expected: a list of two elements: 1 thread, 1 interp
+                self.assertEqual(len(all_awaited_by), 2)
+                # expected: a tuple with the thread ID and the awaited_by list
+                self.assertEqual(len(all_awaited_by[0]), 2)
+                # expected: no tasks in the fallback per-interp task list
+                self.assertEqual(all_awaited_by[1], (0, []))
+                entries = all_awaited_by[0][1]
+                
+                # Should have at least 5 tasks: Task-1, foo1.0, foo1.1, foo1.2, foo2
+                self.assertGreaterEqual(len(entries), 5)
+                
+                # Task-1 should be the root task (no awaiter)
+                task_1_found = False
+                for task_id, task_name, awaited_by_list in entries:
+                    if task_name == "Task-1":
+                        self.assertEqual(len(awaited_by_list), 1)
+                        call_stack, awaiter_id = awaited_by_list[0]
+                        self.assertEqual(awaiter_id, 0)  # No awaiter
+                        # Should contain runner function
+                        self.assertTrue(any("runner" in str(frame) for frame in call_stack))
+                        task_1_found = True
+                        break
+                self.assertTrue(task_1_found, "Task-1 not found")
+                
+                # Find foo1.x tasks - should have foo1 -> foo11 -> foo12 -> sleep call stack
+                foo1_tasks = []
+                for task_id, task_name, awaited_by_list in entries:
+                    if task_name in ["foo1.0", "foo1.1", "foo1.2"]:
+                        foo1_tasks.append((task_id, task_name, awaited_by_list))
+                
+                self.assertEqual(len(foo1_tasks), 3, "Should have exactly 3 foo1.x tasks")
+                
+                # Verify foo1 tasks have the expected call stack pattern
+                for task_id, task_name, awaited_by_list in foo1_tasks:
+                    self.assertEqual(len(awaited_by_list), 1)
+                    call_stack, awaiter_id = awaited_by_list[0]
+                    self.assertNotEqual(awaiter_id, 0)  # Should be awaited by Task-1
+                    
+                    # Verify call stack: sleep -> foo12 -> foo11 -> foo1
+                    function_names = [frame[2] for frame in call_stack]
+                    self.assertIn("sleep", function_names)
+                    self.assertIn("foo12", function_names)
+                    self.assertIn("foo11", function_names)
+                    self.assertIn("foo1", function_names)
+                
+                # Find foo2 task - should have foo2 -> sleep call stack
+                foo2_task = None
+                for task_id, task_name, awaited_by_list in entries:
+                    if task_name == "foo2":
+                        foo2_task = (task_id, task_name, awaited_by_list)
+                        break
+                
+                self.assertIsNotNone(foo2_task, "foo2 task not found")
+                task_id, task_name, awaited_by_list = foo2_task
+                self.assertEqual(len(awaited_by_list), 1)
+                call_stack, awaiter_id = awaited_by_list[0]
+                self.assertNotEqual(awaiter_id, 0)  # Should be awaited by Task-1
+                
+                # Verify foo2 call stack: sleep -> foo2
+                function_names = [frame[2] for frame in call_stack]
+                self.assertIn("sleep", function_names)
+                self.assertIn("foo2", function_names)
+                
             except PermissionError:
                 self.skipTest("Insufficient permissions to read the stack trace")
             finally:
