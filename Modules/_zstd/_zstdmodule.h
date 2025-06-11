@@ -27,6 +27,7 @@ typedef struct {
 typedef enum {
     ERR_DECOMPRESS,
     ERR_COMPRESS,
+    ERR_SET_PLEDGED_INPUT_SIZE,
 
     ERR_LOAD_D_DICT,
     ERR_LOAD_C_DICT,

@@ -62,19 +62,33 @@ PyAPI_FUNC(void) _Py_stackref_record_borrow(_PyStackRef ref, const char *filenam
 extern void _Py_stackref_associate(PyInterpreterState *interp, PyObject *obj, _PyStackRef ref);
 
 static const _PyStackRef PyStackRef_NULL = { .index = 0 };
+static const _PyStackRef PyStackRef_ERROR = { .index = 2 };
 
 // Use the first 3 even numbers for None, True and False.
 // Odd numbers are reserved for (tagged) integers
-#define PyStackRef_None ((_PyStackRef){ .index = 2 } )
-#define PyStackRef_False ((_PyStackRef){ .index = 4 })
-#define PyStackRef_True ((_PyStackRef){ .index = 6 })
+#define PyStackRef_None ((_PyStackRef){ .index = 4 } )
+#define PyStackRef_False ((_PyStackRef){ .index = 6 })
+#define PyStackRef_True ((_PyStackRef){ .index = 8 })
 
-#define INITIAL_STACKREF_INDEX 8
+#define INITIAL_STACKREF_INDEX 10
 
 static inline int
 PyStackRef_IsNull(_PyStackRef ref)
 {
     return ref.index == 0;
+}
+
+static inline bool
+PyStackRef_IsError(_PyStackRef ref)
+{
+    return ref.index == 2;
+}
+
+static inline bool
+PyStackRef_IsValid(_PyStackRef ref)
+{
+    /* Invalid values are ERROR and NULL */
+    return !PyStackRef_IsError(ref) && !PyStackRef_IsNull(ref);
 }
 
 static inline int
@@ -104,6 +118,7 @@ PyStackRef_IsTaggedInt(_PyStackRef ref)
 static inline PyObject *
 _PyStackRef_AsPyObjectBorrow(_PyStackRef ref, const char *filename, int linenumber)
 {
+    assert(!PyStackRef_IsError(ref));
     assert(!PyStackRef_IsTaggedInt(ref));
     _Py_stackref_record_borrow(ref, filename, linenumber);
     return _Py_stackref_get_object(ref);
@@ -155,6 +170,7 @@ _PyStackRef_CLOSE(_PyStackRef ref, const char *filename, int linenumber)
 static inline void
 _PyStackRef_XCLOSE(_PyStackRef ref, const char *filename, int linenumber)
 {
+    assert(!PyStackRef_IsError(ref));
     if (PyStackRef_IsNull(ref)) {
         return;
     }
@@ -165,6 +181,7 @@ _PyStackRef_XCLOSE(_PyStackRef ref, const char *filename, int linenumber)
 static inline _PyStackRef
 _PyStackRef_DUP(_PyStackRef ref, const char *filename, int linenumber)
 {
+    assert(!PyStackRef_IsError(ref));
     if (PyStackRef_IsTaggedInt(ref)) {
         return ref;
     }
@@ -241,8 +258,24 @@ PyStackRef_IsNullOrInt(_PyStackRef ref);
 #else
 
 #define Py_INT_TAG 3
+#define Py_TAG_INVALID 2
 #define Py_TAG_REFCNT 1
 #define Py_TAG_BITS 3
+
+static const _PyStackRef PyStackRef_ERROR = { .bits = Py_TAG_INVALID };
+
+static inline bool
+PyStackRef_IsError(_PyStackRef ref)
+{
+    return ref.bits == Py_TAG_INVALID;
+}
+
+static inline bool
+PyStackRef_IsValid(_PyStackRef ref)
+{
+    /* Invalid values are ERROR and NULL */
+    return ref.bits >= Py_INT_TAG;
+}
 
 static inline bool
 PyStackRef_IsTaggedInt(_PyStackRef i)
@@ -284,6 +317,7 @@ PyStackRef_IncrementTaggedIntNoOverflow(_PyStackRef ref)
 
 
 static const _PyStackRef PyStackRef_NULL = { .bits = Py_TAG_DEFERRED};
+
 #define PyStackRef_IsNull(stackref) ((stackref).bits == PyStackRef_NULL.bits)
 #define PyStackRef_True ((_PyStackRef){.bits = ((uintptr_t)&_Py_TrueStruct) | Py_TAG_DEFERRED })
 #define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) | Py_TAG_DEFERRED })
