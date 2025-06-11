@@ -1101,7 +1101,7 @@ class AbstractUnpickleTests:
                                     dumped)
 
     def test_large_binstring(self):
-        errmsg = 'UnpicklingError: BINSTRING pickle has negative byte count'
+        errmsg = 'BINSTRING pickle has negative byte count'
         with self.assertRaisesRegex(pickle.UnpicklingError, errmsg):
             self.loads(b'T\0\0\0\x80')
 
