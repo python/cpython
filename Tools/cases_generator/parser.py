@@ -18,6 +18,8 @@ from parsing import (  # noqa: F401
     WhileStmt,
     BlockStmt,
     MacroIfStmt,
+    StackAttribute,
+    TYPE,
 )
 
 import pprint
