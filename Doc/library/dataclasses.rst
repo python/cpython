@@ -122,7 +122,7 @@ Module contents
      :exc:`TypeError` is raised.
 
    - *unsafe_hash*: If true, force ``dataclasses`` to create a
-     :meth:`~object.__hash__` method, even when it may not be safe to do so.
+     :meth:`~object.__hash__` method, even though it may not be safe to do so.
      Otherwise, generate a :meth:`~object.__hash__` method according to how
      *eq* and *frozen* are set. The default value is ``False``.
 
