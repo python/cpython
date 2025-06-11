@@ -265,8 +265,9 @@ PyStackRef_IsNullOrInt(_PyStackRef ref);
 static const _PyStackRef PyStackRef_ERROR = { .bits = Py_TAG_INVALID };
 
 /* Wrap a pointer in a stack ref.
- * The result stack reference is not safe and should only be used in uops to
- * pass values from one uop to another */
+ * The resulting stack reference is not safe and should only be used
+ * in the interpreter to pass values from one uop to another.
+ * The GC should never see one of these stack refs. */
 static inline _PyStackRef
 PyStackRef_Wrap(void *ptr)
 {

@@ -3892,8 +3892,6 @@ dummy_func(
         }
 
         op(_PUSH_FRAME, (new_frame -- )) {
-            // Write it out explicitly because it's subtly different.
-            // Eventually this should be the only occurrence of this code.
             assert(tstate->interp->eval_frame == NULL);
             _PyInterpreterFrame *temp = PyStackRef_Unwrap(new_frame);
             DEAD(new_frame);
