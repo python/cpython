@@ -79,7 +79,6 @@ static int _io_StringIO___init__(PyObject *self, PyObject *args, PyObject *kwarg
 static int
 resize_buffer(stringio *self, size_t size)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     /* Here, unsigned types are used to avoid dealing with signed integer
        overflow, which is undefined in C. */
     size_t alloc = self->buf_size;
@@ -132,7 +131,6 @@ resize_buffer(stringio *self, size_t size)
 static PyObject *
 make_intermediate(stringio *self)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     PyObject *intermediate = PyUnicodeWriter_Finish(self->writer);
     self->writer = NULL;
     self->state = STATE_REALIZED;
@@ -155,7 +153,6 @@ make_intermediate(stringio *self)
 static int
 realize(stringio *self)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     Py_ssize_t len;
     PyObject *intermediate;
 
@@ -191,7 +188,6 @@ realize(stringio *self)
 static Py_ssize_t
 write_str(stringio *self, PyObject *obj)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     Py_ssize_t len;
     PyObject *decoded = NULL;
 
@@ -359,7 +355,6 @@ _io_StringIO_read_impl(stringio *self, Py_ssize_t size)
 static PyObject *
 _stringio_readline(stringio *self, Py_ssize_t limit)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     Py_UCS4 *start, *end, old_char;
     Py_ssize_t len, consumed;
 
@@ -411,7 +406,6 @@ _io_StringIO_readline_impl(stringio *self, Py_ssize_t size)
 static PyObject *
 stringio_iternext_lock_held(PyObject *op)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     PyObject *line;
     stringio *self = stringio_CAST(op);
 
