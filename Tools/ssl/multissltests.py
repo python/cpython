@@ -62,7 +62,7 @@ LIBRESSL_RECENT_VERSIONS = [
 ]
 
 AWSLC_RECENT_VERSIONS = [
-    "1.52.2",
+    "1.52.1",
 ]
 
 # store files in ../multissl
@@ -470,8 +470,8 @@ class BuildAWSLC(AbstractBuilder):
     url_templates = (
         "https://github.com/aws/aws-lc/archive/refs/tags/v{v}.tar.gz",
     )
-    src_template = "awslc-{}.tar.gz"
-    build_template = "awslc-{}"
+    src_template = "aws-lc-{}.tar.gz"
+    build_template = "aws-lc-{}"
 
     def _build_src(self, config_args=()):
         cwd = self.build_dir
@@ -487,7 +487,6 @@ class BuildAWSLC(AbstractBuilder):
             "-DCMAKE_INSTALL_PREFIX={}".format(self.install_dir),
             "-DBUILD_SHARED_LIBS=ON",
             "-DFIPS=OFF",
-            self.src_dir,
         ]
         self._subprocess_call(cmd, cwd=cwd, env=env)
         self._subprocess_call(["make", f"-j{self.jobs}"], cwd=cwd, env=env)
@@ -555,7 +554,7 @@ def main():
         builds.append(build)
 
     for version in args.awslc:
-        biuld = BuildAWSLC(
+        build = BuildAWSLC(
             version,
             args
         )

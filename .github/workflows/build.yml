@@ -332,12 +332,12 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04]
-        awslc_ver: [1.52.2]
+        awslc_ver: [1.52.1]
     env:
       AWSLC_VER: ${{ matrix.awslc_ver}}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
-      OPENSSL_DIR: ${{ github.workspace }}/multissl/awslc/${{ matrix.awslc_ver }}
-      LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/awslc/${{ matrix.awslc_ver }}/lib
+      OPENSSL_DIR: ${{ github.workspace }}/multissl/aws-lc/${{ matrix.awslc_ver }}
+      LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/aws-lc/${{ matrix.awslc_ver }}/lib
     steps:
     - uses: actions/checkout@v4
       with:
@@ -360,14 +360,14 @@ jobs:
         echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/awslc/${AWSLC_VER}" >> "$GITHUB_ENV"
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/awslc/${AWSLC_VER}/lib" >> "$GITHUB_ENV"
     - name: 'Restore AWS-LC build'
-      id: cache-awslc
+      id: cache-aws-lc
       uses: actions/cache@v4
       with:
-        path: ./multissl/awslc/${{ matrix.awslc_ver }}
-        key: ${{ matrix.os }}-multissl-awslc-${{ matrix.awslc_ver }}
+        path: ./multissl/aws-lc/${{ matrix.awslc_ver }}
+        key: ${{ matrix.os }}-multissl-aws-lc-${{ matrix.awslc_ver }}
     # TODO [childw] can we use env.* instead of env vars here?
     - name: Install AWS-LC
-      if: steps.cache-awslc.outputs.cache-hit != 'true'
+      if: steps.cache-aws-lc.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --awslc ${{ matrix.awslc_ver }} --system Linux
     - name: Add ccache to PATH
       run: |
