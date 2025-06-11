@@ -285,6 +285,8 @@ class Completion(unittest.TestCase):
             readline.parse_and_bind("set completion-query-items 0")
             readline.parse_and_bind("set page-completions off")
             readline.parse_and_bind("set completion-display-width 0")
+            readline.parse_and_bind("set show-all-if-ambiguous off")
+            readline.parse_and_bind("set show-all-if-unmodified off")
 
             main()
         """)
@@ -296,7 +298,7 @@ class Completion(unittest.TestCase):
                 i for i, line in enumerate(lines)
                 if line.startswith(self.PS1)
             ]
-            self.assertEqual(len(indices), 3)
+            self.assertEqual(len(indices), 2)
             start, end = indices
             candidates = [l.strip() for l in lines[start+1:end]]
             self.assertEqual(candidates, sorted(SQLITE_KEYWORDS))
