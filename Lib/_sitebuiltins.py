@@ -5,7 +5,7 @@ The objects used by the site module to add custom builtins.
 # Those objects are almost immortal and they keep a reference to their module
 # globals.  Defining them in the site module would keep too many references
 # alive.
-# Note this means this module should also avoid keep things alive in its
+# Note this means this module should also avoid keeping things alive in its
 # globals.
 
 import sys
