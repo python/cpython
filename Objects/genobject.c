@@ -705,7 +705,8 @@ static PyObject *
 gen_get_name(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyGenObject *op = _PyGen_CAST(self);
-    return Py_NewRef(op->gi_name);
+    PyObject *name = FT_ATOMIC_LOAD_PTR_RELAXED(op->gi_name);
+    return Py_NewRef(name);
 }
 
 static int
@@ -729,7 +730,8 @@ static PyObject *
 gen_get_qualname(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyGenObject *op = _PyGen_CAST(self);
-    return Py_NewRef(op->gi_qualname);
+    PyObject *qualname = FT_ATOMIC_LOAD_PTR_RELAXED(op->gi_qualname);
+    return Py_NewRef(qualname);
 }
 
 static int
