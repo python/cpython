@@ -522,6 +522,30 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             self.assertEqual(A.__abstractmethods__, set())
             A()
 
+        def test_init_subclass_exception(self):
+            class Animal(metaclass=abc_ABCMeta):
+                pass
+
+            class Plant(metaclass=abc_ABCMeta):
+                def __init_subclass__(cls):
+                    super().__init_subclass__()
+                    assert not issubclass(cls, Animal), "Plants cannot be Animals"
+
+            class Dog(Animal):
+                pass
+
+            try:
+                class Triffid(Animal, Plant):
+                    pass
+            except Exception:
+                pass
+
+            d  = Dog()
+            self.assertTrue(issubclass(Dog, Animal))
+            self.assertFalse(issubclass(Dog, Plant))
+            self.assertTrue(isinstance(d, Animal))
+            self.assertFalse(isinstance(d, Plant))
+
 
         def test_update_new_abstractmethods(self):
             class A(metaclass=abc_ABCMeta):
