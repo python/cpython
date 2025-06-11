@@ -388,7 +388,6 @@ jobs:
           --enable-slower-safety \
           --with-pydebug \
           --with-openssl="$OPENSSL_DIR" \
-          --with-openssl-rpath="$OPENSSL_DIR"/lib \
           --with-builtin-hashlib-hashes=blake2 \
           --with-ssl-default-suites=openssl
     - name: Build CPython
