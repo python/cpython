@@ -153,10 +153,14 @@ enum machine_format_code {
 static arraydata *
 arraydata_alloc(Py_ssize_t size, int itemsize)
 {
-    arraydata *data = (arraydata *)PyMem_Malloc(sizeof(arraydata) + size * itemsize);
+    size_t bufsize = sizeof(arraydata) + size * itemsize;
+    arraydata *data = (arraydata *)PyMem_Malloc(bufsize);
     if (data == NULL) {
         return NULL;
     }
+#ifdef Py_DEBUG
+    memset(data, 0, bufsize);
+#endif
     data->allocated = size;
     return data;
 }
@@ -191,7 +195,7 @@ arraydata_realloc(arraydata *data, Py_ssize_t size, int itemsize)
 
 #endif
 
-static char *
+static inline char *
 array_items_ptr(arrayobject *self)
 {
     return self->data == NULL ? NULL : self->data->items;
@@ -316,9 +320,8 @@ b_setitem(char *items, Py_ssize_t i, PyObject *v)
     /* PyArg_Parse's 'b' formatter is for an unsigned char, therefore
        must use the next size up that is signed ('h') and manually do
        the overflow checking */
-    if (!PyArg_Parse(v, "h;array item must be integer", &x)) {
+    if (!PyArg_Parse(v, "h;array item must be integer", &x))
         return -1;
-    }
     else if (x < -128) {
         PyErr_SetString(PyExc_OverflowError,
             "signed char is less than minimum");
@@ -329,9 +332,8 @@ b_setitem(char *items, Py_ssize_t i, PyObject *v)
             "signed char is greater than maximum");
         return -1;
     }
-    if (i >= 0) {
+    if (i >= 0)
         ((char *)items)[i] = (char)x;
-    }
     return 0;
 }
 
@@ -347,12 +349,10 @@ BB_setitem(char *items, Py_ssize_t i, PyObject *v)
 {
     unsigned char x;
     /* 'B' == unsigned char, maps to PyArg_Parse's 'b' formatter */
-    if (!PyArg_Parse(v, "b;array item must be integer", &x)) {
+    if (!PyArg_Parse(v, "b;array item must be integer", &x))
         return -1;
-    }
-    if (i >= 0) {
+    if (i >= 0)
         ((unsigned char *)items)[i] = x;
-    }
     return 0;
 }
 
@@ -441,12 +441,10 @@ h_setitem(char *items, Py_ssize_t i, PyObject *v)
 {
     short x;
     /* 'h' == signed short, maps to PyArg_Parse's 'h' formatter */
-    if (!PyArg_Parse(v, "h;array item must be integer", &x)) {
+    if (!PyArg_Parse(v, "h;array item must be integer", &x))
         return -1;
-    }
-    if (i >= 0) {
+    if (i >= 0)
         ((short *)items)[i] = x;
-    }
     return 0;
 }
 
@@ -462,9 +460,8 @@ HH_setitem(char *items, Py_ssize_t i, PyObject *v)
     int x;
     /* PyArg_Parse's 'h' formatter is for a signed short, therefore
        must use the next size up and manually do the overflow checking */
-    if (!PyArg_Parse(v, "i;array item must be integer", &x)) {
+    if (!PyArg_Parse(v, "i;array item must be integer", &x))
         return -1;
-    }
     else if (x < 0) {
         PyErr_SetString(PyExc_OverflowError,
             "unsigned short is less than minimum");
@@ -475,9 +472,8 @@ HH_setitem(char *items, Py_ssize_t i, PyObject *v)
             "unsigned short is greater than maximum");
         return -1;
     }
-    if (i >= 0) {
+    if (i >= 0)
         ((short *)items)[i] = (short)x;
-    }
     return 0;
 }
 
@@ -492,12 +488,10 @@ i_setitem(char *items, Py_ssize_t i, PyObject *v)
 {
     int x;
     /* 'i' == signed int, maps to PyArg_Parse's 'i' formatter */
-    if (!PyArg_Parse(v, "i;array item must be integer", &x)) {
+    if (!PyArg_Parse(v, "i;array item must be integer", &x))
         return -1;
-    }
-    if (i >= 0) {
+    if (i >= 0)
         ((int *)items)[i] = x;
-    }
     return 0;
 }
 
@@ -536,9 +530,8 @@ II_setitem(char *items, Py_ssize_t i, PyObject *v)
         }
         return -1;
     }
-    if (i >= 0) {
+    if (i >= 0)
         ((unsigned int *)items)[i] = (unsigned int)x;
-    }
 
     if (do_decref) {
         Py_DECREF(v);
@@ -556,12 +549,10 @@ static int
 l_setitem(char *items, Py_ssize_t i, PyObject *v)
 {
     long x;
-    if (!PyArg_Parse(v, "l;array item must be integer", &x)) {
+    if (!PyArg_Parse(v, "l;array item must be integer", &x))
         return -1;
-    }
-    if (i >= 0) {
+    if (i >= 0)
         ((long *)items)[i] = x;
-    }
     return 0;
 }
 
@@ -591,9 +582,8 @@ LL_setitem(char *items, Py_ssize_t i, PyObject *v)
         }
         return -1;
     }
-    if (i >= 0) {
+    if (i >= 0)
         ((unsigned long *)items)[i] = x;
-    }
 
     if (do_decref) {
         Py_DECREF(v);
@@ -611,12 +601,10 @@ static int
 q_setitem(char *items, Py_ssize_t i, PyObject *v)
 {
     long long x;
-    if (!PyArg_Parse(v, "L;array item must be integer", &x)) {
+    if (!PyArg_Parse(v, "L;array item must be integer", &x))
         return -1;
-    }
-    if (i >= 0) {
+    if (i >= 0)
         ((long long *)items)[i] = x;
-    }
     return 0;
 }
 
@@ -647,9 +635,8 @@ QQ_setitem(char *items, Py_ssize_t i, PyObject *v)
         }
         return -1;
     }
-    if (i >= 0) {
+    if (i >= 0)
         ((unsigned long long *)items)[i] = x;
-    }
 
     if (do_decref) {
         Py_DECREF(v);
@@ -667,12 +654,10 @@ static int
 f_setitem(char *items, Py_ssize_t i, PyObject *v)
 {
     float x;
-    if (!PyArg_Parse(v, "f;array item must be float", &x)) {
+    if (!PyArg_Parse(v, "f;array item must be float", &x))
         return -1;
-    }
-    if (i >= 0) {
+    if (i >= 0)
         ((float *)items)[i] = x;
-    }
     return 0;
 }
 
@@ -686,12 +671,10 @@ static int
 d_setitem(char *items, Py_ssize_t i, PyObject *v)
 {
     double x;
-    if (!PyArg_Parse(v, "d;array item must be float", &x)) {
+    if (!PyArg_Parse(v, "d;array item must be float", &x))
         return -1;
-    }
-    if (i >= 0) {
+    if (i >= 0)
         ((double *)items)[i] = x;
-    }
     return 0;
 }
 
@@ -700,11 +683,9 @@ d_setitem(char *items, Py_ssize_t i, PyObject *v)
     code##_compareitems(const void *lhs, const void *rhs, Py_ssize_t length) \
     { \
         const type *a = lhs, *b = rhs; \
-        for (Py_ssize_t i = 0; i < length; ++i) { \
-            if (a[i] != b[i]) { \
+        for (Py_ssize_t i = 0; i < length; ++i) \
+            if (a[i] != b[i]) \
                 return a[i] < b[i] ? -1 : 1; \
-            } \
-        } \
         return 0; \
     }
 
@@ -984,9 +965,7 @@ array_dealloc(PyObject *op)
 
     arrayobject *self = arrayobject_CAST(op);
     if (self->ob_exports > 0) {
-        PyErr_SetString(PyExc_SystemError,
-                        "deallocated array object has exported buffers");
-        PyErr_WriteUnraisable(NULL);
+        PyErr_FormatUnraisable("deallocated array object has exported buffers");
     }
     if (self->weakreflist != NULL) {
         PyObject_ClearWeakRefs(op);
