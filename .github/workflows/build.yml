@@ -354,7 +354,6 @@ jobs:
     - name: Install dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Configure SSL lib env vars
-      # TODO [childw] do we need to re-specify the env vars here after L330's configuration?
       run: |
         echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
         echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/aws-lc/${AWSLC_VER}" >> "$GITHUB_ENV"
@@ -365,7 +364,6 @@ jobs:
       with:
         path: ./multissl/aws-lc/${{ matrix.awslc_ver }}
         key: ${{ matrix.os }}-multissl-aws-lc-${{ matrix.awslc_ver }}
-    # TODO [childw] can we use env.* instead of env vars here?
     - name: Install AWS-LC
       if: steps.cache-aws-lc.outputs.cache-hit != 'true'
       run: |
@@ -697,7 +695,6 @@ jobs:
     - build-windows-msi
     - build-macos
     - build-ubuntu
-    - build-ubuntu-ssltests-awslc
     - build-ubuntu-ssltests-openssl
     - build-wasi
     - test-hypothesis
@@ -713,7 +710,6 @@ jobs:
       with:
         allowed-failures: >-
           build-windows-msi,
-          build-ubuntu-ssltests-awslc
           build-ubuntu-ssltests-openssl
           test-hypothesis,
           cifuzz,
@@ -732,7 +728,6 @@ jobs:
             check-generated-files,
             build-macos,
             build-ubuntu,
-            build-ubuntu-ssltests-awslc,
             build-ubuntu-ssltests-openssl,
             build-wasi,
             test-hypothesis,
