@@ -1112,9 +1112,9 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
     For inputs that do not have trailing newlines, set the lineterm
     argument to "" so that the output will be uniformly newline free.
 
-   Set *color* to ``True`` to enable output in color, similar to
-   :program:`git diff --color`. Even if enabled, it can be
-   :ref:`controlled using environment variables <using-on-controlling-color>`.
+    Set 'color' to True to enable output in color, similar to
+    'git diff --color'. Even if enabled, it can be
+    controlled using environment variables such as 'NO_COLOR'.
 
     The unidiff format normally has a header for filenames and modification
     times.  Any or all of these may be specified using strings for
