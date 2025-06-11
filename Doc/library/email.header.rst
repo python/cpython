@@ -204,6 +204,11 @@ The :mod:`email.header` module also provides the following convenient functions.
       >>> decode_header('bar =?utf-8?B?ZsOzbw==?=')
       [(b'bar ', None), (b'f\xc3\xb3o', 'utf-8')]
 
+   .. note::
+
+       This function exists for for backwards compatibility only. For
+       new code, we recommend using :class:`email.headerregistry.HeaderRegistry`.
+
 
 .. function:: make_header(decoded_seq, maxlinelen=None, header_name=None, continuation_ws=' ')
 
@@ -217,3 +222,8 @@ The :mod:`email.header` module also provides the following convenient functions.
    This function takes one of those sequence of pairs and returns a
    :class:`Header` instance.  Optional *maxlinelen*, *header_name*, and
    *continuation_ws* are as in the :class:`Header` constructor.
+
+   .. note::
+
+       This function exists for for backwards compatibility only, and is
+       not recommended for use in new code.

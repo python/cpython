@@ -1,1 +1,4 @@
-The inconsistent return types of :func:`email.header.decode_header` are now documented.
+The inconsistent return types of :func:`email.header.decode_header` are now documented,
+and the use of :func:`email.header.decode_header` and :func:`email.header.make_header`
+are discouraged, with :class:`email.headerregistry.HeaderRegistry` recommended as a
+replacement.

@@ -72,6 +72,9 @@ def decode_header(header):
 
     An email.errors.HeaderParseError may be raised when certain decoding error
     occurs (e.g. a base64 decoding exception).
+
+    This function exists for backwards compatibility only. For new code, we
+    recommend using email.headerregistry.HeaderRegistry instead.
     """
     # If it is a Header object, we can just return the encoded chunks.
     if hasattr(header, '_chunks'):
@@ -164,6 +167,9 @@ def make_header(decoded_seq, maxlinelen=None, header_name=None,
     This function takes one of those sequence of pairs and returns a Header
     instance.  Optional maxlinelen, header_name, and continuation_ws are as in
     the Header constructor.
+
+    This function exists for backwards compatibility only, and is not
+    recommended for use in new code.
     """
     h = Header(maxlinelen=maxlinelen, header_name=header_name,
                continuation_ws=continuation_ws)
