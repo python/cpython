@@ -260,7 +260,7 @@ jobs:
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
 
-  build-ubuntu-ssltests:
+  build-ubuntu-ssltests-openssl:
     name: 'Ubuntu SSL tests with OpenSSL'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -317,6 +317,76 @@ jobs:
       run: ./configure CFLAGS="-fdiagnostics-format=json" --config-cache --enable-slower-safety --with-pydebug --with-openssl="$OPENSSL_DIR"
     - name: Build CPython
       run: make -j4
+    - name: Display build info
+      run: make pythoninfo
+    - name: SSL tests
+      run: ./python Lib/test/ssltests.py
+
+  build-ubuntu-ssltests-awslc:
+    name: 'Ubuntu SSL tests with AWS-LC'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    needs: build-context
+    if: needs.build-context.outputs.run-tests == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04]
+        awslc_ver: [1.52.2]
+    env:
+      AWSLC_VER: ${{ matrix.awslc_ver}}
+      MULTISSL_DIR: ${{ github.workspace }}/multissl
+      OPENSSL_DIR: ${{ github.workspace }}/multissl/awslc/${{ matrix.awslc_ver }}
+      LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/awslc/${{ matrix.awslc_ver }}/lib
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+    - name: Runner image version
+      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
+    - name: Restore config.cache
+      uses: actions/cache@v4
+      with:
+        path: config.cache
+        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.build-context.outputs.config-hash }}
+    - name: Register gcc problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/gcc.json"
+    - name: Install dependencies
+      run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Configure SSL lib env vars
+      # TODO [childw] do we need to re-specify the env vars here after L330's configuration?
+      run: |
+        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
+        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/awslc/${AWSLC_VER}" >> "$GITHUB_ENV"
+        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/awslc/${AWSLC_VER}/lib" >> "$GITHUB_ENV"
+    - name: 'Restore AWS-LC build'
+      id: cache-awslc
+      uses: actions/cache@v4
+      with:
+        path: ./multissl/awslc/${{ matrix.awslc_ver }}
+        key: ${{ matrix.os }}-multissl-awslc-${{ matrix.awslc_ver }}
+    # TODO [childw] can we use env.* instead of env vars here?
+    - name: Install AWS-LC
+      if: steps.cache-awslc.outputs.cache-hit != 'true'
+      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --awslc ${{ matrix.awslc_ver }} --system Linux
+    - name: Add ccache to PATH
+      run: |
+        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
+    - name: Configure ccache action
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        save: false
+    - name: Configure CPython
+      run: |
+        ./configure CFLAGS="-fdiagnostics-format=json"
+          --config-cache
+          --enable-slower-safety
+          --with-pydebug
+          --with-openssl="$OPENSSL_DIR"
+          --with-builtin-hashlib-hashes=blake2
+          --with-ssl-default-suites=openssl
+    - name: Build CPython
+      run: make -j
     - name: Display build info
       run: make pythoninfo
     - name: SSL tests

@@ -1,12 +1,12 @@
 #!./python
-"""Run Python tests against multiple installations of OpenSSL and LibreSSL
+"""Run Python tests against multiple installations of crypto libraries
 
 The script
 
-  (1) downloads OpenSSL / LibreSSL tar bundle
+  (1) downloads OpenSSL / LibreSSL / AWS-LC tar bundle
   (2) extracts it to ./src
-  (3) compiles OpenSSL / LibreSSL
-  (4) installs OpenSSL / LibreSSL into ../multissl/$LIB/$VERSION/
+  (3) compiles OpenSSL / LibreSSL / AWS-LC
+  (4) installs the crypto library into ../multissl/$LIB/$VERSION/
   (5) forces a recompilation of Python modules using the
       header and library files from ../multissl/$LIB/$VERSION/
   (6) runs Python's test suite
@@ -61,6 +61,10 @@ LIBRESSL_OLD_VERSIONS = [
 LIBRESSL_RECENT_VERSIONS = [
 ]
 
+AWSLC_RECENT_VERSIONS = [
+    "1.52.2",
+]
+
 # store files in ../multissl
 HERE = os.path.dirname(os.path.abspath(__file__))
 PYTHONROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
@@ -70,7 +74,7 @@ MULTISSL_DIR = os.path.abspath(os.path.join(PYTHONROOT, '..', 'multissl'))
 parser = argparse.ArgumentParser(
     prog='multissl',
     description=(
-        "Run CPython tests with multiple OpenSSL and LibreSSL "
+        "Run CPython tests with multiple crypto libraries"
         "versions."
     )
 )
@@ -103,6 +107,14 @@ parser.add_argument(
     ).format(LIBRESSL_RECENT_VERSIONS, LIBRESSL_OLD_VERSIONS)
 )
 parser.add_argument(
+    '--awslc',
+    nargs='+',
+    default=(),
+    help=(
+        "AWS-LC versions, defaults to '{}'."
+    ).format(AWSLC_RECENT_VERSIONS)
+)
+parser.add_argument(
     '--tests',
     nargs='*',
     default=(),
@@ -111,7 +123,7 @@ parser.add_argument(
 parser.add_argument(
     '--base-directory',
     default=MULTISSL_DIR,
-    help="Base directory for OpenSSL / LibreSSL sources and builds."
+    help="Base directory for crypto library sources and builds."
 )
 parser.add_argument(
     '--no-network',
@@ -124,8 +136,8 @@ parser.add_argument(
     choices=['library', 'modules', 'tests'],
     default='tests',
     help=(
-        "Which steps to perform. 'library' downloads and compiles OpenSSL "
-        "or LibreSSL. 'module' also compiles Python modules. 'tests' builds "
+        "Which steps to perform. 'library' downloads and compiles  a crypto"
+        "library. 'module' also compiles Python modules. 'tests' builds "
         "all and runs the test suite."
     )
 )
@@ -453,6 +465,34 @@ class BuildLibreSSL(AbstractBuilder):
     build_template = "libressl-{}"
 
 
+class BuildAWSLC(AbstractBuilder):
+    library = "AWS-LC"
+    url_templates = (
+        "https://github.com/aws/aws-lc/archive/refs/tags/v{v}.tar.gz",
+    )
+    src_template = "awslc-{}.tar.gz"
+    build_template = "awslc-{}"
+
+    def _build_src(self, config_args=()):
+        cwd = self.build_dir
+        log.info("Running build in {}".format(cwd))
+        env = os.environ.copy()
+        env["LD_RUN_PATH"] = self.lib_dir # set rpath
+        if self.system:
+            env['SYSTEM'] = self.system
+        cmd = [
+            "cmake",
+            "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
+            "-DCMAKE_PREFIX_PATH={}".format(self.install_dir),
+            "-DCMAKE_INSTALL_PREFIX={}".format(self.install_dir),
+            "-DBUILD_SHARED_LIBS=ON",
+            "-DFIPS=OFF",
+            self.src_dir,
+        ]
+        self._subprocess_call(cmd, cwd=cwd, env=env)
+        self._subprocess_call(["make", f"-j{self.jobs}"], cwd=cwd, env=env)
+
+
 def configure_make():
     if not os.path.isfile('Makefile'):
         log.info('Running ./configure')
@@ -467,9 +507,10 @@ def configure_make():
 
 def main():
     args = parser.parse_args()
-    if not args.openssl and not args.libressl:
+    if not args.openssl and not args.libressl and not args.awslc:
         args.openssl = list(OPENSSL_RECENT_VERSIONS)
         args.libressl = list(LIBRESSL_RECENT_VERSIONS)
+        args.awslc = list(AWSLC_RECENT_VERSIONS)
         if not args.disable_ancient:
             args.openssl.extend(OPENSSL_OLD_VERSIONS)
             args.libressl.extend(LIBRESSL_OLD_VERSIONS)
@@ -513,6 +554,14 @@ def main():
         build.install()
         builds.append(build)
 
+    for version in args.awslc:
+        biuld = BuildAWSLC(
+            version,
+            args
+        )
+        build.install()
+        builds.append(build)
+
     if args.steps in {'modules', 'tests'}:
         for build in builds:
             try:
@@ -539,7 +588,7 @@ def main():
         else:
             print('Executed all SSL tests.')
 
-    print('OpenSSL / LibreSSL versions:')
+    print('OpenSSL / LibreSSL / AWS-LC versions:')
     for build in builds:
         print("    * {0.library} {0.version}".format(build))
 
