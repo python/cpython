@@ -18,18 +18,22 @@ TEST_INPUTS_TREE = [
                         3,
                         "timer",
                         [
-                            [[("awaiter3", "/path/to/app.py", 130),
-                              ("awaiter2", "/path/to/app.py", 120),
-                              ("awaiter", "/path/to/app.py", 110)], 4],
-                            [[("awaiterB3", "/path/to/app.py", 190),
-                              ("awaiterB2", "/path/to/app.py", 180),
-                              ("awaiterB", "/path/to/app.py", 170)], 5],
-                            [[("awaiterB3", "/path/to/app.py", 190),
-                              ("awaiterB2", "/path/to/app.py", 180),
-                              ("awaiterB", "/path/to/app.py", 170)], 6],
-                            [[("awaiter3", "/path/to/app.py", 130),
-                              ("awaiter2", "/path/to/app.py", 120),
-                              ("awaiter", "/path/to/app.py", 110)], 7],
+                            [
+                                [
+                                    ("awaiter3", "/path/to/app.py", 130),
+                                    ("awaiter2", "/path/to/app.py", 120),
+                                    ("awaiter", "/path/to/app.py", 110),
+                                ],
+                                2,
+                            ],  # Make timer child of Task-1
+                            [
+                                [
+                                    ("awaiterB3", "/path/to/app.py", 190),
+                                    ("awaiterB2", "/path/to/app.py", 180),
+                                    ("awaiterB", "/path/to/app.py", 170),
+                                ],
+                                2,
+                            ],  # Make timer child of Task-1
                         ],
                     ),
                     (
@@ -47,40 +51,60 @@ TEST_INPUTS_TREE = [
                         "child1_1",
                         [
                             [
-                                ["_aexit", "__aexit__", "blocho_caller", "bloch"],
+                                [
+                                    "_aexit",
+                                    "__aexit__",
+                                    "blocho_caller",
+                                    "bloch",
+                                ],
                                 8,
                             ]
-                        ],
+                        ],  # child of root1
                     ),
                     (
                         6,
                         "child2_1",
                         [
                             [
-                                ["_aexit", "__aexit__", "blocho_caller", "bloch"],
+                                [
+                                    "_aexit",
+                                    "__aexit__",
+                                    "blocho_caller",
+                                    "bloch",
+                                ],
                                 8,
                             ]
-                        ],
+                        ],  # child of root1
                     ),
                     (
                         7,
                         "child1_2",
                         [
                             [
-                                ["_aexit", "__aexit__", "blocho_caller", "bloch"],
+                                [
+                                    "_aexit",
+                                    "__aexit__",
+                                    "blocho_caller",
+                                    "bloch",
+                                ],
                                 9,
                             ]
-                        ],
+                        ],  # child of root2
                     ),
                     (
                         5,
                         "child2_2",
                         [
                             [
-                                ["_aexit", "__aexit__", "blocho_caller", "bloch"],
+                                [
+                                    "_aexit",
+                                    "__aexit__",
+                                    "blocho_caller",
+                                    "bloch",
+                                ],
                                 9,
                             ]
-                        ],
+                        ],  # child of root2
                     ),
                 ],
             ),
@@ -90,62 +114,41 @@ TEST_INPUTS_TREE = [
             [
                 [
                     "└── (T) Task-1",
+                    "    ├── (T) timer",
+                    "    │   ├──  110 awaiter:/path/to/app.py",
+                    "    │   │   └──  120 awaiter2:/path/to/app.py",
+                    "    │   │       └──  130 awaiter3:/path/to/app.py",
+                    "    │   └──  170 awaiterB:/path/to/app.py",
+                    "    │       └──  180 awaiterB2:/path/to/app.py",
+                    "    │           └──  190 awaiterB3:/path/to/app.py",
                     "    ├── (T) root1",
                     "    │   ├──  main",
                     "    │   │   └──  __aexit__",
                     "    │   │       └──  _aexit",
                     "    │   ├── (T) child1_1",
-                    "    │   │   ├──  bloch",
-                    "    │   │   │   └──  blocho_caller",
-                    "    │   │   │       └──  __aexit__",
-                    "    │   │   │           └──  _aexit",
-                    "    │   │   └── (T) timer",
-                    "    │   │       ├──  110 awaiter:/path/to/app.py",
-                    "    │   │       │   └──  120 awaiter2:/path/to/app.py",
-                    "    │   │       │       └──  130 awaiter3:/path/to/app.py",
-                    "    │   │       └──  170 awaiterB:/path/to/app.py",
-                    "    │   │           └──  180 awaiterB2:/path/to/app.py",
-                    "    │   │               └──  190 awaiterB3:/path/to/app.py",
+                    "    │   │   └──  bloch",
+                    "    │   │       └──  blocho_caller",
+                    "    │   │           └──  __aexit__",
+                    "    │   │               └──  _aexit",
                     "    │   └── (T) child2_1",
-                    "    │       ├──  bloch",
-                    "    │       │   └──  blocho_caller",
-                    "    │       │       └──  __aexit__",
-                    "    │       │           └──  _aexit",
-                    "    │       └── (T) timer",
-                    "    │           ├──  110 awaiter:/path/to/app.py",
-                    "    │           │   └──  120 awaiter2:/path/to/app.py",
-                    "    │           │       └──  130 awaiter3:/path/to/app.py",
-                    "    │           └──  170 awaiterB:/path/to/app.py",
-                    "    │               └──  180 awaiterB2:/path/to/app.py",
-                    "    │                   └──  190 awaiterB3:/path/to/app.py",
+                    "    │       └──  bloch",
+                    "    │           └──  blocho_caller",
+                    "    │               └──  __aexit__",
+                    "    │                   └──  _aexit",
                     "    └── (T) root2",
                     "        ├──  main",
                     "        │   └──  __aexit__",
                     "        │       └──  _aexit",
                     "        ├── (T) child1_2",
-                    "        │   ├──  bloch",
-                    "        │   │   └──  blocho_caller",
-                    "        │   │       └──  __aexit__",
-                    "        │   │           └──  _aexit",
-                    "        │   └── (T) timer",
-                    "        │       ├──  110 awaiter:/path/to/app.py",
-                    "        │       │   └──  120 awaiter2:/path/to/app.py",
-                    "        │       │       └──  130 awaiter3:/path/to/app.py",
-                    "        │       └──  170 awaiterB:/path/to/app.py",
-                    "        │           └──  180 awaiterB2:/path/to/app.py",
-                    "        │               └──  190 awaiterB3:/path/to/app.py",
+                    "        │   └──  bloch",
+                    "        │       └──  blocho_caller",
+                    "        │           └──  __aexit__",
+                    "        │               └──  _aexit",
                     "        └── (T) child2_2",
-                    "            ├──  bloch",
-                    "            │   └──  blocho_caller",
-                    "            │       └──  __aexit__",
-                    "            │           └──  _aexit",
-                    "            └── (T) timer",
-                    "                ├──  110 awaiter:/path/to/app.py",
-                    "                │   └──  120 awaiter2:/path/to/app.py",
-                    "                │       └──  130 awaiter3:/path/to/app.py",
-                    "                └──  170 awaiterB:/path/to/app.py",
-                    "                    └──  180 awaiterB2:/path/to/app.py",
-                    "                        └──  190 awaiterB3:/path/to/app.py",
+                    "            └──  bloch",
+                    "                └──  blocho_caller",
+                    "                    └──  __aexit__",
+                    "                        └──  _aexit",
                 ]
             ]
         ),
@@ -325,7 +328,12 @@ TEST_INPUTS_TABLE = [
                         "child1_1",
                         [
                             [
-                                ["_aexit", "__aexit__", "blocho_caller", "bloch"],
+                                [
+                                    "_aexit",
+                                    "__aexit__",
+                                    "blocho_caller",
+                                    "bloch",
+                                ],
                                 8,
                             ]
                         ],
@@ -335,7 +343,12 @@ TEST_INPUTS_TABLE = [
                         "child2_1",
                         [
                             [
-                                ["_aexit", "__aexit__", "blocho_caller", "bloch"],
+                                [
+                                    "_aexit",
+                                    "__aexit__",
+                                    "blocho_caller",
+                                    "bloch",
+                                ],
                                 8,
                             ]
                         ],
@@ -345,7 +358,12 @@ TEST_INPUTS_TABLE = [
                         "child1_2",
                         [
                             [
-                                ["_aexit", "__aexit__", "blocho_caller", "bloch"],
+                                [
+                                    "_aexit",
+                                    "__aexit__",
+                                    "blocho_caller",
+                                    "bloch",
+                                ],
                                 9,
                             ]
                         ],
@@ -355,7 +373,12 @@ TEST_INPUTS_TABLE = [
                         "child2_2",
                         [
                             [
-                                ["_aexit", "__aexit__", "blocho_caller", "bloch"],
+                                [
+                                    "_aexit",
+                                    "__aexit__",
+                                    "blocho_caller",
+                                    "bloch",
+                                ],
                                 9,
                             ]
                         ],
@@ -670,7 +693,10 @@ class TestAsyncioToolsBasic(unittest.TestCase):
         input_ = [(1, [(10, "taskA", []), (11, "taskB", [])])]
         self.assertEqual(
             tools.build_task_table(input_),
-            [[1, "0xa", "taskA", "", "", "0x0"], [1, "0xb", "taskB", "", "", "0x0"]],
+            [
+                [1, "0xa", "taskA", "", "", "0x0"],
+                [1, "0xb", "taskB", "", "", "0x0"],
+            ],
         )
 
     def test_single_task_tree(self):
@@ -726,17 +752,21 @@ class TestAsyncioToolsBasic(unittest.TestCase):
                 [
                     (2, "Task-1", []),
                     (3, "Task-2", [[["main"], 2]]),
-                    (4, "Task-3", [[["main"], 3]]),
+                    (
+                        4,
+                        "Task-3",
+                        [[["main"], 2]],
+                    ),  # Both Task-2 and Task-3 children of Task-1
                 ],
             )
         ]
         expected_output = [
             [
                 "└── (T) Task-1",
-                "    └── (T) Task-2",
+                "    ├── (T) Task-2",
+                "    │   └──  main",
+                "    └── (T) Task-3",
                 "        └──  main",
-                "            └── (T) Task-3",
-                "                └──  main",
             ]
         ]
         self.assertEqual(tools.build_async_tree(result), expected_output)
@@ -818,7 +848,6 @@ class TestAsyncioToolsBasic(unittest.TestCase):
 
 
 class TestAsyncioToolsEdgeCases(unittest.TestCase):
-
     def test_task_awaits_self(self):
         """A task directly awaits itself - should raise a cycle."""
         input_ = [(1, [(1, "Self-Awaiter", [[["loopback"], 1]])])]
@@ -848,7 +877,7 @@ class TestAsyncioToolsEdgeCases(unittest.TestCase):
         tree = tools.build_async_tree(input_)
         # Should create separate trees for each child
         self.assertEqual(len(tree), 2)
-        
+
         flat = "\n".join(tree[0])
         self.assertIn("frameA", flat)
         self.assertIn("Task-2", flat)
@@ -868,7 +897,9 @@ class TestAsyncioToolsEdgeCases(unittest.TestCase):
 
     def test_tree_rendering_with_custom_emojis(self):
         """Pass custom emojis to the tree renderer."""
-        input_ = [(1, [(1, "MainTask", [[["f1", "f2"], 2]]), (2, "SubTask", [])])]
+        input_ = [
+            (1, [(1, "MainTask", [[["f1", "f2"], 2]]), (2, "SubTask", [])])
+        ]
         tree = tools.build_async_tree(input_, task_emoji="🧵", cor_emoji="🔁")
         flat = "\n".join(tree[0])
         self.assertIn("🧵 MainTask", flat)
