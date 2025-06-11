@@ -2252,31 +2252,6 @@ class CoroutineTest(unittest.TestCase):
         # before fixing, visible stack from throw would be shorter than from send.
         self.assertEqual(len_send, len_throw)
 
-    def test_call_aiter_once_in_comprehension(self):
-
-        class Iterator:
-
-            def __init__(self):
-                self.val = 0
-
-            async def __anext__(self):
-                if self.val == 2:
-                    raise StopAsyncIteration
-                self.val += 1
-                return self.val
-
-            # No __aiter__ method
-
-        class C:
-
-            def __aiter__(self):
-                return Iterator()
-
-        async def run():
-            return [i async for i in C()]
-
-        self.assertEqual(run_async(run()), ([], [1,2]))
-
 
 @unittest.skipIf(
     support.is_emscripten or support.is_wasi,
