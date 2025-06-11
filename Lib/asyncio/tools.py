@@ -49,6 +49,7 @@ def _build_tree(id2name, awaits):
     children = defaultdict(list)
     cor_names = defaultdict(dict)  # (parent) -> {frame: node}
     cor_id_seq = count(1)
+    task_innermost = {}  # task_key -> innermost coroutine node
 
     def _cor_node(parent_key, frame_name):
         """Return an existing or new (NodeType.COROUTINE, …) node under *parent_key*."""
@@ -61,21 +62,33 @@ def _build_tree(id2name, awaits):
         bucket[frame_name] = node_key
         return node_key
 
-    # First pass: build parent -> child relationships
+    # First pass: build coroutine stacks under each task and track innermost frames
     for parent_id, stack, child_id in awaits:
-        if parent_id != 0:  # Skip root tasks (no parent)
-            parent_key = (NodeType.TASK, parent_id)
-            child_key = (NodeType.TASK, child_id)
-            if child_key not in children[parent_key]:
-                children[parent_key].append(child_key)
-
-    # Second pass: add call stacks under each child task
-    for parent_id, stack, child_id in awaits:
-        # Add the call stack as coroutine nodes under the child task
         child_key = (NodeType.TASK, child_id)
         cur = child_key
         for frame in reversed(stack):  # outer-most → inner-most
             cur = _cor_node(cur, frame)
+        # Track the innermost coroutine frame for this task
+        if stack:  # Only if there's a stack
+            task_innermost[child_key] = cur
+
+    # Second pass: build parent -> child task relationships  
+    for parent_id, stack, child_id in awaits:
+        if parent_id != 0:  # Skip root tasks (no parent)
+            parent_key = (NodeType.TASK, parent_id)
+            child_key = (NodeType.TASK, child_id)
+            
+            # Check if this is a task created from within a coroutine call
+            # by looking at the stack length - single frame suggests deep nesting
+            if len(stack) == 1 and parent_key in task_innermost:
+                # Single frame stack: child created from within innermost coroutine  
+                innermost_parent = task_innermost[parent_key]
+                if child_key not in children[innermost_parent]:
+                    children[innermost_parent].append(child_key)
+            else:
+                # Multi-frame stack: direct task-to-task relationship
+                if child_key not in children[parent_key]:
+                    children[parent_key].append(child_key)
 
     return id2label, children
 
