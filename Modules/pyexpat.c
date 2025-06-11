@@ -99,7 +99,7 @@ typedef struct {
 #define CHARACTER_DATA_BUFFER_SIZE 8192
 
 // A generic function type for storage.
-// To avoid undefined behavior, a handler needs to be cast to the correct
+// To avoid undefined behaviors, a handler must be cast to the correct
 // function type before it's called; see SETTER_WRAPPER below.
 typedef void (*xmlhandler)(void);
 
@@ -2224,10 +2224,10 @@ clear_handlers(xmlparseobject *self, int initial)
     }
 }
 
-/* To avoid undefined behavior, a function needs to be *called* via a function
+/* To avoid undefined behaviors, a function must be *called* via a function
  * pointer of the correct type.
- * So, for each `XML_Set*` function, we define a wrapper that calls the
- * `XML_Set*` with its argument cast to the appropriate type.
+ * So, for each `XML_Set*` function, we define a wrapper that calls `XML_Set*`
+ * with its argument cast to the appropriate type.
  */
 
 typedef void (*parser_only)(void *);
@@ -2293,6 +2293,7 @@ SETTER_WRAPPER(AttlistDeclHandler, attlist_decl)
 #if XML_COMBINED_VERSION >= 19504
 SETTER_WRAPPER(SkippedEntityHandler, parser_and_data_and_int)
 #endif
+#undef SETTER_WRAPPER
 
 static struct HandlerInfo handler_info[] = {
 
