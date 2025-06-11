@@ -389,6 +389,9 @@ jobs:
       run: make -j
     - name: Display build info
       run: make pythoninfo
+    - name: Verify python is linked to AWS-LC
+      run: |
+        ./python -c 'import ssl; print(ssl.OPENSSL_VERSION)' | grep AWS-LC
     - name: SSL tests
       run: ./python Lib/test/ssltests.py
 
