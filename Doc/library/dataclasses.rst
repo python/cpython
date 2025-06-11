@@ -124,7 +124,8 @@ Module contents
    - *unsafe_hash*: If true, force ``dataclasses`` to create a
      :meth:`~object.__hash__` method, even though it may not be safe to do so.
      Otherwise, generate a :meth:`~object.__hash__` method according to how
-     *eq* and *frozen* are set. The default value is ``False``.
+     *eq* and *frozen* are set.
+     The default value is ``False``.
 
      :meth:`!__hash__` is used by built-in :meth:`hash`, and when objects are
      added to hashed collections such as dictionaries and sets.  Having a
