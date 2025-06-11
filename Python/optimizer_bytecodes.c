@@ -467,6 +467,15 @@ dummy_func(void) {
         res = sym_new_truthiness(ctx, value, false);
     }
 
+    op(_UNARY_INVERT, (value -- res)) {
+        if (sym_matches_type(value, &PyLong_Type)) {
+            res = sym_new_type(ctx, &PyLong_Type);
+        }
+        else {
+            res = sym_new_not_null(ctx);
+        }
+    }
+
     op(_COMPARE_OP, (left, right -- res)) {
         if (oparg & 16) {
             res = sym_new_type(ctx, &PyBool_Type);
@@ -1235,6 +1244,20 @@ dummy_func(void) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
         sym_set_const(callable, list_append);
+    }
+
+    op(_BINARY_SLICE, (container, start, stop -- res)) {
+        // Slicing a string/list/tuple always returns the same type.
+        PyTypeObject *type = sym_get_type(container);
+        if (type == &PyUnicode_Type ||
+            type == &PyList_Type ||
+            type == &PyTuple_Type)
+        {
+            res = sym_new_type(ctx, type);
+        }
+        else {
+            res = sym_new_not_null(ctx);
+        }
     }
 
 // END BYTECODES //

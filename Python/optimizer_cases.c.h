@@ -285,8 +285,15 @@
         }
 
         case _UNARY_INVERT: {
+            JitOptSymbol *value;
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            value = stack_pointer[-1];
+            if (sym_matches_type(value, &PyLong_Type)) {
+                res = sym_new_type(ctx, &PyLong_Type);
+            }
+            else {
+                res = sym_new_not_null(ctx);
+            }
             stack_pointer[-1] = res;
             break;
         }
@@ -568,8 +575,19 @@
         }
 
         case _BINARY_SLICE: {
+            JitOptSymbol *container;
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            container = stack_pointer[-3];
+            PyTypeObject *type = sym_get_type(container);
+            if (type == &PyUnicode_Type ||
+                type == &PyList_Type ||
+                type == &PyTuple_Type)
+            {
+                res = sym_new_type(ctx, type);
+            }
+            else {
+                res = sym_new_not_null(ctx);
+            }
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
