@@ -496,7 +496,11 @@ String and Bytes literals
 String literals are text enclosed in single quotes (``'``) or double
 quotes (``"``). For example:
 
-.. code-block:: plain
+.. This is Python code, but we turn off highlighting because as of this
+   writing, highlighted strings don't look good when there's no code
+   surrounding them.
+
+.. code-block:: text
 
    "spam"
    'eggs'
@@ -505,7 +509,7 @@ The quote used to start the literal also terminates it, so a string literal
 can only contain the other quote (except with escape sequences, see below).
 For example:
 
-.. code-block:: plain
+.. code-block:: text
 
    'Say "Hello", please.'
    "Don't do that!"
@@ -531,7 +535,7 @@ either ``'`` or ``"``.)
 
 For example:
 
-.. code-block:: plain
+.. code-block:: text
 
    """This is a triple-quoted string with "quotes" inside."""
 
@@ -560,7 +564,7 @@ String prefixes
 String literals can have an optional :dfn:`prefix` that influences how the literal
 is parsed, for example:
 
-.. code-block:: plain
+.. code-block:: python
 
    b"data"
    f'{result=}'
