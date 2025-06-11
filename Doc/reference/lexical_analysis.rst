@@ -39,7 +39,8 @@ The end of a logical line is represented by the token :data:`~token.NEWLINE`.
 Statements cannot cross logical line boundaries except where :data:`!NEWLINE`
 is allowed by the syntax (e.g., between statements in compound statements).
 A logical line is constructed from one or more *physical lines* by following
-the explicit or implicit *line joining* rules.
+the :ref:`explicit <explicit-joining>` or :ref:`implicit <implicit-joining>`
+*line joining* rules.
 
 
 .. _physical-lines:
@@ -47,17 +48,28 @@ the explicit or implicit *line joining* rules.
 Physical lines
 --------------
 
-A physical line is a sequence of characters terminated by an end-of-line
-sequence.  In source files and strings, any of the standard platform line
-termination sequences can be used - the Unix form using ASCII LF (linefeed),
-the Windows form using the ASCII sequence CR LF (return followed by linefeed),
-or the old Macintosh form using the ASCII CR (return) character.  All of these
-forms can be used equally, regardless of platform. The end of input also serves
-as an implicit terminator for the final physical line.
+A physical line is a sequence of characters terminated by one the following
+end-of-line sequences:
 
-When embedding Python, source code strings should be passed to Python APIs using
-the standard C conventions for newline characters (the ``\n`` character,
-representing ASCII LF, is the line terminator).
+* the Unix form using ASCII LF (linefeed),
+* the Windows form using the ASCII sequence CR LF (return followed by linefeed),
+* the old Macintosh form using the ASCII CR (return) character.
+
+Regardless of platform, each of these sequences is replaced by a single
+ASCII LF (linefeed) character.
+(This is done even inside :ref:`string literals <strings>`.)
+Each line can use any of the sequences; they do not need to be consistent
+within a file.
+
+The end of input also serves as an implicit terminator for the final
+physical line.
+
+Formally:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   newline: <ASCII LF> | <ASCII CR> <ASCII LF> | <ASCII CR>
 
 
 .. _comments:
@@ -484,6 +496,13 @@ Literals
 
 Literals are notations for constant values of some built-in types.
 
+In terms of lexical analysis, Python has :ref:`string, bytes <strings>`
+and :ref:`numeric <numbers>` literals.
+
+Other “literals” are lexically denoted using :ref:`keywords <keywords>`
+(``None``, ``True``, ``False``) and the special
+:ref:`ellipsis token <lexical-ellipsis>` (``...``):
+
 
 .. index:: string literal, bytes literal, ASCII
    single: ' (single quote); string literal
@@ -491,7 +510,7 @@ Literals are notations for constant values of some built-in types.
 .. _strings:
 
 String and Bytes literals
--------------------------
+=========================
 
 String literals are text enclosed in single quotes (``'``) or double
 quotes (``"``). For example:
@@ -635,40 +654,25 @@ They may not be combined with ``'b'``, ``'u'``, or each other.
 
 
 String literals, except "F-strings" and "T-strings", are described by the
-following lexical definitions:
+following lexical definitions.
+
+These definitions use :ref:`negative lookaheads <lexical-lookaheads>` (``!``)
+to indicate that an ending quote ends the literal.
 
 .. grammar-snippet::
    :group: python-grammar
 
-   STRING: stringliteral | bytesliteral | fstring | tstring
-
-   stringliteral:   [`stringprefix`](`stringcontent`)
-   stringprefix:    <("r" | "u"), case-insensitive>
-   stringcontent:   `quote` `stringitem`* <matching `quote`>
-   quote:           "'" | '"' |  "'''"  | '"""'
+   STRING:          [`stringprefix`] (`stringcontent`)
+   stringprefix:    <("r" | "u" | "b" | "br" | "rb"), case-insensitive>
+   stringcontent:
+      | "'" ( !"'" `stringitem`)* "'"
+      | '"' ( !'"' `stringitem`)* '"'
+      | "'''" ( !"'''" `longstringitem`)* "'''"
+      | '"""' ( !'"""' `longstringitem`)* '"""'
    stringitem:      `stringchar` | `stringescapeseq`
-   stringchar:      <any `source_character`, except as listed below>
+   stringchar:      <any `source_character`, except backslash and newline>
+   longstringitem:  `stringitem` | newline
    stringescapeseq: "\" <any `source_character`>
-
-``stringchar`` can not include:
-
-- the backslash, ``\``;
-- in triple-quoted strings (quoted by ``'''`` or ``"""``), the newline;
-- the quote character.
-
-
-.. grammar-snippet::
-   :group: python-grammar
-
-   bytesliteral: `bytesprefix`(`shortbytes` | `longbytes`)
-   bytesprefix: <("b" | "br" | "rb" ), case-insensitive>
-   shortbytes: "'" `shortbytesitem`* "'" | '"' `shortbytesitem`* '"'
-   longbytes: "'''" `longbytesitem`* "'''" | '"""' `longbytesitem`* '"""'
-   shortbytesitem: `shortbyteschar` | `bytesescapeseq`
-   longbytesitem: `longbyteschar` | `bytesescapeseq`
-   shortbyteschar: <any ASCII `source_character` except "\" or newline or the quote>
-   longbyteschar: <any ASCII `source_character` except "\">
-   bytesescapeseq: "\" <any ASCII `source_character`>
 
 Note that as in all lexical definitions, whitespace is significant.
 The prefix, if any, must be followed immediately by the quoted string content.
@@ -692,7 +696,7 @@ The prefix, if any, must be followed immediately by the quoted string content.
 .. _escape-sequences:
 
 Escape sequences
-^^^^^^^^^^^^^^^^
+----------------
 
 Unless an ``'r'`` or ``'R'`` prefix is present, escape sequences in string and
 bytes literals are interpreted according to rules similar to those used by
@@ -985,7 +989,7 @@ and :meth:`str.format`, which uses a related format string mechanism.
 .. _numbers:
 
 Numeric literals
-----------------
+================
 
 .. index:: number, numeric literal, integer literal
    floating-point literal, hexadecimal literal
@@ -1241,13 +1245,25 @@ The following tokens serve as delimiters in the grammar:
 
    (       )       [       ]       {       }
    ,       :       !       .       ;       @       =
+
+The period can also occur in floating-point and imaginary literals.
+
+.. _lexical-ellipsis:
+
+A sequence of three periods has a special meaning as an
+:py:data:`Ellipsis` literal:
+
+.. code-block:: none
+
+   ...
+
+The following *augmented assignment operators* serve
+lexically as delimiters, but also perform an operation:
+
+.. code-block:: none
+
    ->      +=      -=      *=      /=      //=     %=
    @=      &=      |=      ^=      >>=     <<=     **=
-
-The period can also occur in floating-point and imaginary literals.  A sequence
-of three periods has a special meaning as an ellipsis literal. The second half
-of the list, the augmented assignment operators, serve lexically as delimiters,
-but also perform an operation.
 
 The following printing ASCII characters have special meaning as part of other
 tokens or are otherwise significant to the lexical analyzer:
