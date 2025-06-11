@@ -28,7 +28,7 @@ class CycleFoundException(Exception):
 # ─── indexing helpers ───────────────────────────────────────────
 def _format_stack_entry(elem: tuple[str, str, int] | str) -> str:
     if isinstance(elem, tuple):
-        path, line_no, fqname = elem
+        fqname, path, line_no = elem
         return f"{fqname} {path}:{line_no}"
 
     return elem
