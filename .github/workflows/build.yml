@@ -376,15 +376,14 @@ jobs:
       uses: hendrikmuhs/ccache-action@v1.2
       with:
         save: false
-    - name: Configure CPython
-      run: |
-        ./configure CFLAGS="-fdiagnostics-format=json"
-          --config-cache
-          --enable-slower-safety
-          --with-pydebug
-          --with-openssl="$OPENSSL_DIR"
-          --with-builtin-hashlib-hashes=blake2
-          --with-ssl-default-suites=openssl
+    - name: Configure CPython build
+      run: ./configure CFLAGS="-fdiagnostics-format=json"
+             --config-cache
+             --enable-slower-safety
+             --with-pydebug
+             --with-openssl="$OPENSSL_DIR"
+             --with-builtin-hashlib-hashes=blake2
+             --with-ssl-default-suites=openssl
     - name: Build CPython
       run: make -j
     - name: Display build info
