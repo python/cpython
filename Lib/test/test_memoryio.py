@@ -725,22 +725,6 @@ class TextIOTestMixin:
         for newline in (None, "", "\n", "\r", "\r\n"):
             self.ioclass(newline=newline)
 
-    @unittest.skipUnless(support.Py_GIL_DISABLED, "only meaningful under free-threading")
-    @threading_helper.requires_working_threading()
-    def test_concurrent_use(self):
-        memio = self.ioclass("")
-
-        def use():
-            memio.write("x" * 10)
-            memio.readlines()
-
-        threads = [threading.Thread(target=use) for _ in range(8)]
-        with threading_helper.catch_threading_exception() as cm:
-            with threading_helper.start_threads(threads):
-                pass
-
-            self.assertIsNone(cm.exc_value)
-
 
 class PyStringIOTest(MemoryTestMixin, MemorySeekTestMixin,
                      TextIOTestMixin, unittest.TestCase):
@@ -906,6 +890,24 @@ class CStringIOTest(PyStringIOTest):
         self.assertRaises(TypeError, memio.__setstate__, 0)
         memio.close()
         self.assertRaises(ValueError, memio.__setstate__, ("closed", "", 0, None))
+
+    @unittest.skipUnless(support.Py_GIL_DISABLED, "only meaningful under free-threading")
+    @threading_helper.requires_working_threading()
+    def test_concurrent_use(self):
+        memio = self.ioclass("")
+
+        def use():
+            memio.write("x" * 10)
+            memio.readlines()
+
+        threads = [threading.Thread(target=use) for _ in range(8)]
+        with threading_helper.catch_threading_exception() as cm:
+            with threading_helper.start_threads(threads):
+                pass
+
+            if cm.exc_value is not None:
+                raise cm.exc_value
+
 
 
 
