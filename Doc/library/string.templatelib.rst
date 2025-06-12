@@ -28,7 +28,7 @@ The most common way to create a new :class:`Template` instance is to use the t-s
    >>> type(greeting)
    <class 'string.templatelib.Template'>
    >>> print(list(greeting))
-   ['Hello ', Interpolation('World'), '!']
+   ['Hello ', Interpolation('World', 'name', None, ''), '!']
 
 It is also possible to create a :class:`Template` directly, using its constructor. This takes an arbitrary collection of strings and :class:`Interpolation` instances:
 
@@ -36,7 +36,7 @@ It is also possible to create a :class:`Template` directly, using its constructo
    >>> name = "World"
    >>> greeting = Template("Hello, ", Interpolation(name, "name"), "!")
    >>> print(list(greeting))
-   ['Hello, ', Interpolation('World'), '!']
+   ['Hello, ', Interpolation('World', 'name', None, ''), '!']
 
 .. class:: Template(*args)
 
@@ -81,7 +81,7 @@ It is also possible to create a :class:`Template` directly, using its constructo
 
        >>> name = "World"
        >>> print(t"Hello {name}!".interpolations)
-       (Interpolation('World'),)
+       (Interpolation('World', 'name', None, ''),)
 
 
    .. attribute:: values
@@ -99,13 +99,13 @@ It is also possible to create a :class:`Template` directly, using its constructo
 
        >>> name = "World"
        >>> print(list(t"Hello {name}!"))
-       ['Hello ', Interpolation('World'), '!']
+       ['Hello ', Interpolation('World', 'name', None, ''), '!']
 
        Empty strings are *not* included in the iteration:
 
        >>> name = "World"
        >>> print(list(t"Hello {name}{name}"))
-       ['Hello ', Interpolation('World'), Interpolation('World')]
+       ['Hello ', Interpolation('World', 'name', None, ''), Interpolation('World', 'name', None, '')]
 
        :returns: An iterable of all the parts in the template.
        :rtype: typing.Iterator[str | Interpolation]
@@ -147,7 +147,7 @@ It is also possible to create a :class:`Template` directly, using its constructo
 
    >>> value = 42
    >>> template = t"Value: {value:.2f}"
-   >> template.interpolations[0].value
+   >>> template.interpolations[0].value
    42
 
    .. property:: __match_args__
