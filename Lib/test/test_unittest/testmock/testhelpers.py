@@ -1125,6 +1125,8 @@ class SpecSignatureTest(unittest.TestCase):
                 self.assertIs(mock.__class__, Description)
                 self.assertIsInstance(mock.__dataclass_fields__, MagicMock)
                 self.assertIsInstance(mock.__dataclass_params__, MagicMock)
+                self.assertIsInstance(mock.__match_args__, MagicMock)
+                self.assertIsInstance(mock.__hash__, MagicMock)
 
 class TestCallList(unittest.TestCase):
 
