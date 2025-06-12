@@ -2,7 +2,7 @@
 
 .. _extension-modules:
 
-Defining Extension Modules
+Defining extension modules
 --------------------------
 
 A C extension for CPython is a shared library (for example, a ``.so`` file
@@ -20,7 +20,7 @@ and must be named after the module name plus an extension listed in
 
    Building, packaging and distributing extension modules is best done with
    third-party tools, and is out of scope of this document.
-   One suitable tool is ``setuptools``, whose documentation can be found at
+   One suitable tool is Setuptools, whose documentation can be found at
    https://setuptools.pypa.io/en/latest/setuptools.html.
 
 Normally, the initialization function returns a module definition initialized
@@ -141,7 +141,8 @@ It is possible to export multiple modules from a single shared library by
 defining multiple initialization functions. However, importing them requires
 using symbolic links or a custom importer, because by default only the
 function corresponding to the filename is found.
-See the *"Multiple modules in one library"* section in :pep:`489` for details.
+See the `Multiple modules in one library <https://peps.python.org/pep-0489/#multiple-modules-in-one-library>`__
+section in :pep:`489` for details.
 
 The initialization function is typically the only non-\ ``static``
 item defined in the module's C source.

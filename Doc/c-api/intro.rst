@@ -111,7 +111,7 @@ Useful macros
 =============
 
 Several useful macros are defined in the Python header files.  Many are
-defined closer to where they are useful (e.g. :c:macro:`Py_RETURN_NONE`,
+defined closer to where they are useful (for example, :c:macro:`Py_RETURN_NONE`,
 :c:macro:`PyMODINIT_FUNC`).
 Others of a more general utility are defined here.  This is not necessarily a
 complete listing.
