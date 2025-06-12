@@ -64,7 +64,7 @@ extern "C" {
 
 # define _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op)                           \
     if (Py_REFCNT(op) != 1) {                                                    \
-        _PyCriticalSection_AssertHeldObj((PyObject *) op); \
+        _PyCriticalSection_AssertHeldObj(_PyObject_CAST(op)); \
     }
 
 #else   /* Py_DEBUG */
@@ -253,7 +253,7 @@ _PyCriticalSection_AssertHeldObj(PyObject *op)
             "Critical section of object is not held");
     }
     else {
-        PyCriticalSection *cs = (PyCriticalSection *)(tstate->critical_section & ~_Py_CRITICAL_SECTION_MASK);
+        PyCriticalSection *cs = (PyCriticalSection *)(prev & ~_Py_CRITICAL_SECTION_MASK);
         _PyObject_ASSERT_WITH_MSG(op,
             (cs != NULL && cs->_cs_mutex == mutex),
             "Critical section of object is not held");
