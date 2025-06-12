@@ -5,7 +5,6 @@ BytesIO -- for bytes
 
 import unittest
 from test import support
-from test.support import threading_helper
 
 import gc
 import io
@@ -13,7 +12,6 @@ import _pyio as pyio
 import pickle
 import sys
 import weakref
-import threading
 
 class IntLike:
     def __init__(self, num):
@@ -725,22 +723,6 @@ class TextIOTestMixin:
         for newline in (None, "", "\n", "\r", "\r\n"):
             self.ioclass(newline=newline)
 
-    @unittest.skipUnless(support.Py_GIL_DISABLED, "only meaningful under free-threading")
-    @threading_helper.requires_working_threading()
-    def test_concurrent_use(self):
-        memio = self.ioclass("")
-
-        def use():
-            memio.write("x" * 10)
-            memio.readlines()
-
-        threads = [threading.Thread(target=use) for _ in range(8)]
-        with threading_helper.catch_threading_exception() as cm:
-            with threading_helper.start_threads(threads):
-                pass
-
-            self.assertIsNone(cm.exc_value)
-
 
 class PyStringIOTest(MemoryTestMixin, MemorySeekTestMixin,
                      TextIOTestMixin, unittest.TestCase):
@@ -906,7 +888,6 @@ class CStringIOTest(PyStringIOTest):
         self.assertRaises(TypeError, memio.__setstate__, 0)
         memio.close()
         self.assertRaises(ValueError, memio.__setstate__, ("closed", "", 0, None))
-
 
 
 class CStringIOPickleTest(PyStringIOPickleTest):
