@@ -2,14 +2,14 @@
 
 import time
 import _interpchannels as _channels
-from . import _crossinterp
+from concurrent.interpreters import _crossinterp
 
 # aliases:
 from _interpchannels import (
     ChannelError, ChannelNotFoundError, ChannelClosedError,
     ChannelEmptyError, ChannelNotEmptyError,
 )
-from ._crossinterp import (
+from concurrent.interpreters._crossinterp import (
     UNBOUND_ERROR, UNBOUND_REMOVE,
 )
 
