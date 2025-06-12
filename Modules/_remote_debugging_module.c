@@ -1004,10 +1004,9 @@ create_task_result(
         goto error;
     }
 
+    // PyStructSequence_SetItem steals references, so we don't need to DECREF on success
     PyStructSequence_SetItem(result, 0, call_stack);  // This steals the reference
     PyStructSequence_SetItem(result, 1, tn);  // This steals the reference
-    call_stack = NULL;  // Avoid decref since reference was stolen
-    tn = NULL;  // Avoid decref since reference was stolen
 
     return result;
 
@@ -1054,14 +1053,12 @@ parse_task(
         }
         PyObject *empty_list = PyList_New(0);
         if (empty_list == NULL) {
-            Py_DECREF(result);
             set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create empty list");
             goto error;
         }
         PyObject *task_name = PyLong_FromUnsignedLongLong(task_address);
         if (task_name == NULL) {
             Py_DECREF(empty_list);
-            Py_DECREF(result);
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create task name");
             goto error;
         }
@@ -1296,6 +1293,8 @@ process_single_task_node(
     current_awaited_by = PyStructSequence_GetItem(result_item, 3);
     if (parse_task_awaited_by(unwinder, task_addr, current_awaited_by, 0) < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse awaited_by in single task node");
+        // No cleanup needed here since all references were transferred to result_item
+        // and result_item was already added to result list and decreffed
         return -1;
     }
 

@@ -18,7 +18,7 @@ PROCESS_VM_READV_SUPPORTED = False
 try:
     from _remote_debugging import PROCESS_VM_READV_SUPPORTED
     from _remote_debugging import RemoteUnwinder
-    from _remote_debugging import FrameInfo, CoroInfo, TaskInfo, AwaitedInfo
+    from _remote_debugging import FrameInfo, CoroInfo, TaskInfo
 except ImportError:
     raise unittest.SkipTest(
         "Test only runs when _remote_debugging is available"
