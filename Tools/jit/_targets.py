@@ -3,6 +3,7 @@
 import asyncio
 import dataclasses
 import hashlib
+import itertools
 import json
 import os
 import pathlib
@@ -33,6 +34,223 @@ _S = typing.TypeVar("_S", _schema.COFFSection, _schema.ELFSection, _schema.MachO
 _R = typing.TypeVar(
     "_R", _schema.COFFRelocation, _schema.ELFRelocation, _schema.MachORelocation
 )
+
+inverted_branches = {}
+for op, nop in [
+    ("ja", "jna"),
+    ("jae", "jnae"),
+    ("jb", "jnb"),
+    ("jbe", "jnbe"),
+    ("jc", "jnc"),
+    ("je", "jne"),
+    ("jg", "jng"),
+    ("jge", "jnge"),
+    ("jl", "jnl"),
+    ("jle", "jnle"),
+    ("jo", "jno"),
+    ("jp", "jnp"),
+    ("js", "jns"),
+    ("jz", "jnz"),
+    ("jpe", "jpo"),
+    ("jcxz", None),
+    ("jecxz", None),
+    ("jrxz", None),
+    ("loop", None),
+    ("loope", None),
+    ("loopne", None),
+    ("loopnz", None),
+    ("loopz", None),
+]:
+    inverted_branches[op] = nop
+    if nop is not None:
+        inverted_branches[nop] = op
+
+
+@dataclasses.dataclass
+class _Line:
+    text: str
+    hot: bool = dataclasses.field(init=False, default=False)
+    predecessors: list["_Line"] = dataclasses.field(
+        init=False, repr=False, default_factory=list
+    )
+
+
+@dataclasses.dataclass
+class _Label(_Line):
+    label: str
+
+
+@dataclasses.dataclass
+class _Jump(_Line):
+    target: _Label | None
+
+    def remove(self) -> None:
+        self.text = ""
+        if self.target is not None:
+            self.target.predecessors.remove(self)
+            if not self.target.predecessors:
+                self.target.text = ""
+            self.target = None
+
+    def update(self, target: _Label) -> None:
+        assert self.target is not None
+        self.target.predecessors.remove(self)
+        assert self.target.label in self.text
+        self.text = self.text.replace(self.target.label, target.label)
+        self.target = target
+        self.target.predecessors.append(self)
+
+
+@dataclasses.dataclass
+class _Branch(_Line):
+    op: str
+    target: _Label
+    fallthrough: _Line | None = None
+
+    def update(self, target: _Label) -> None:
+        assert self.target is not None
+        self.target.predecessors.remove(self)
+        assert self.target.label in self.text
+        self.text = self.text.replace(self.target.label, target.label)
+        self.target = target
+        self.target.predecessors.append(self)
+
+    def invert(self, jump: _Jump) -> bool:
+        inverted = inverted_branches[self.op]
+        if inverted is None or jump.target is None:
+            return False
+        assert self.op in self.text
+        self.text = self.text.replace(self.op, inverted)
+        old_target = self.target
+        self.update(jump.target)
+        jump.update(old_target)
+        return True
+
+
+@dataclasses.dataclass
+class _Return(_Line):
+    pass
+
+
+@dataclasses.dataclass
+class _Noise(_Line):
+    pass
+
+
+def _branch(
+    line: str, use_label: typing.Callable[[str], _Label]
+) -> tuple[str, _Label] | None:
+    branch = re.match(rf"\s*({'|'.join(inverted_branches)})\s+([\w\.]+)", line)
+    return branch and (branch.group(1), use_label(branch.group(2)))
+
+
+def _jump(line: str, use_label: typing.Callable[[str], _Label]) -> _Label | None:
+    if jump := re.match(r"\s*jmp\s+([\w\.]+)", line):
+        return use_label(jump.group(1))
+    return None
+
+
+def _label(line: str, use_label: typing.Callable[[str], _Label]) -> _Label | None:
+    label = re.match(r"\s*([\w\.]+):", line)
+    return label and use_label(label.group(1))
+
+
+def _return(line: str) -> bool:
+    return re.match(r"\s*ret\s+", line) is not None
+
+
+def _noise(line: str) -> bool:
+    return re.match(r"\s*[#\.]|\s*$", line) is not None
+
+
+def _apply_asm_transformations(path: pathlib.Path) -> None:
+    labels = {}
+
+    def use_label(label: str) -> _Label:
+        if label not in labels:
+            labels[label] = _Label("", label)
+        return labels[label]
+
+    def new_line(text: str) -> _Line:
+        if branch := _branch(text, use_label):
+            op, label = branch
+            line = _Branch(text, op, label)
+            label.predecessors.append(line)
+            return line
+        if label := _jump(text, use_label):
+            line = _Jump(text, label)
+            label.predecessors.append(line)
+            return line
+        if line := _label(text, use_label):
+            assert line.text == ""
+            line.text = text
+            return line
+        if _return(text):
+            return _Return(text)
+        if _noise(text):
+            return _Noise(text)
+        return _Line(text)
+
+    # Build graph:
+    lines = []
+    line = _Noise("")  # Dummy.
+    with path.open() as file:
+        for i, text in enumerate(file):
+            new = new_line(text)
+            if not isinstance(line, (_Jump, _Return)):
+                new.predecessors.append(line)
+            lines.append(new)
+            line = new
+    for i, line in enumerate(reversed(lines)):
+        if not isinstance(line, (_Label, _Noise)):
+            break
+    new = new_line("_JIT_CONTINUE:\n")
+    lines.insert(len(lines) - i, new)
+    line = new
+    # Mark hot lines:
+    todo = labels["_JIT_CONTINUE"].predecessors.copy()
+    while todo:
+        line = todo.pop()
+        line.hot = True
+        for predecessor in line.predecessors:
+            if not predecessor.hot:
+                todo.append(predecessor)
+    for pair in itertools.pairwise(
+        filter(lambda line: line.text and not isinstance(line, _Noise), lines)
+    ):
+        match pair:
+            case (_Branch(hot=True) as branch, _Jump(hot=False) as jump):
+                branch.invert(jump)
+                jump.hot = True
+    for pair in itertools.pairwise(lines):
+        match pair:
+            case (_Jump() | _Return(), _):
+                pass
+            case (_Line(hot=True), _Line(hot=False) as cold):
+                cold.hot = True
+    # Reorder blocks:
+    hot = []
+    cold = []
+    for line in lines:
+        if line.hot:
+            hot.append(line)
+        else:
+            cold.append(line)
+    lines = hot + cold
+    # Remove zero-length jumps:
+    again = True
+    while again:
+        again = False
+        for pair in itertools.pairwise(
+            filter(lambda line: line.text and not isinstance(line, _Noise), lines)
+        ):
+            match pair:
+                case (_Jump(target=target) as jump, label) if target is label:
+                    jump.remove()
+                    again = True
+    # Write new assembly:
+    with path.open("w") as file:
+        file.writelines(line.text for line in lines)
 
 
 @dataclasses.dataclass
@@ -118,8 +336,9 @@ class _Target(typing.Generic[_S, _R]):
     async def _compile(
         self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
     ) -> _stencils.StencilGroup:
+        s = tempdir / f"{opname}.s"
         o = tempdir / f"{opname}.o"
-        args = [
+        args_s = [
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
@@ -133,7 +352,8 @@ class _Target(typing.Generic[_S, _R]):
             f"-I{CPYTHON / 'Python'}",
             f"-I{CPYTHON / 'Tools' / 'jit'}",
             "-O3",
-            "-c",
+            "-S",
+            # "-c",
             # Shorten full absolute file paths in the generated code (like the
             # __FILE__ macro and assert failure messages) for reproducibility:
             f"-ffile-prefix-map={CPYTHON}=.",
@@ -152,11 +372,20 @@ class _Target(typing.Generic[_S, _R]):
             "-fno-stack-protector",
             "-std=c11",
             "-o",
-            f"{o}",
+            f"{s}",
             f"{c}",
             *self.args,
         ]
-        await _llvm.run("clang", args, echo=self.verbose)
+        await _llvm.run("clang", args_s, echo=self.verbose)
+        _apply_asm_transformations(s)
+        args_o = [
+            f"--target={self.triple}",
+            "-c",
+            "-o",
+            f"{o}",
+            f"{s}",
+        ]
+        await _llvm.run("clang", args_o, echo=self.verbose)
         return await self._parse(o)
 
     async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
