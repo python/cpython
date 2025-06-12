@@ -201,15 +201,16 @@ def _aliases(line: _Line | None) -> list[_Line]:
 
 @dataclasses.dataclass
 class _AssemblyTransformer:
-    _path: pathlib.Path
-    _alignment: int = 1
+    path: pathlib.Path
+    alignment: int = 1
+    prefix: str = ""
     _lines: _Line = dataclasses.field(init=False)
     _labels: dict[str, _Label] = dataclasses.field(init=False, default_factory=dict)
     _ran: bool = dataclasses.field(init=False, default=False)
 
     def __post_init__(self) -> None:
         dummy = current = _Noise("")
-        for line in self._path.read_text().splitlines(True):
+        for line in self.path.read_text().splitlines(True):
             new = self._new_line(line)
             if current.fallthrough:
                 new.predecessors.append(current)
@@ -253,7 +254,7 @@ class _AssemblyTransformer:
         return "".join(line.text for line in self)
 
     def _break_on(self, name: str) -> None:
-        if self._path.stem == name:
+        if self.path.stem == name:
             print(self._dump())
             breakpoint()
 
@@ -265,23 +266,23 @@ class _AssemblyTransformer:
             if not isinstance(line, (_Label, _Noise)):
                 last_line = line
         assert last_line is not None
-        new = self._new_line(f".balign {self._alignment}\n")
+        new = self._new_line(f".balign {self.alignment}\n")
         new.link = last_line.link
         last_line.link = new
-        new = self._new_line("_JIT_CONTINUE:\n")
+        new = self._new_line(f"{self.prefix}_JIT_CONTINUE:\n")
         new.link = last_line.link
         last_line.link = new
         # Mark hot lines and optimize:
         recursion_limit = sys.getrecursionlimit()
         sys.setrecursionlimit(10_000)
         try:
-            self._labels["_JIT_CONTINUE"].heat()
+            self._labels[f"{self.prefix}_JIT_CONTINUE"].heat()
             # self._break_on("_BUILD_TUPLE")
             self._lines.optimize()
         finally:
             sys.setrecursionlimit(recursion_limit)
         # Write new assembly:
-        self._path.write_text(self._dump())
+        self.path.write_text(self._dump())
 
 
 @dataclasses.dataclass
@@ -408,7 +409,7 @@ class _Target(typing.Generic[_S, _R]):
             *self.args,
         ]
         await _llvm.run("clang", args_s, echo=self.verbose)
-        _AssemblyTransformer(s, self.alignment).run()
+        _AssemblyTransformer(s, alignment=self.alignment, prefix=self.prefix).run()
         args_o = [
             f"--target={self.triple}",
             "-c",
