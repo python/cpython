@@ -132,7 +132,7 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
     if (!_Py_Gid_Converter(id, &gid)) {
         return NULL;
     }
-#ifdef HAVE_GETGRGID_R
+#if defined(HAVE_GETGRGID_R)
     int status;
     Py_ssize_t bufsize;
     /* Note: 'grp' will be used via pointer 'p' on getgrgid_r success. */
@@ -167,6 +167,17 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
     }
 
     Py_END_ALLOW_THREADS
+#elif defined(Py_GIL_DISABLED)
+    static PyMutex getgrgid_mutex = {0};
+    PyMutex_Lock(&getgrgid_mutex);
+    // The getgrgid() function need not be thread-safe.
+    // https://pubs.opengroup.org/onlinepubs/9699919799/functions/getgrgid.html
+    p = getgrgid(gid);
+    if (p == NULL) {
+        // Unlock the mutex on error. The following error handling block will
+        // handle the rest.
+        PyMutex_Unlock(&getgrgid_mutex);
+    }
 #else
     p = getgrgid(gid);
 #endif
@@ -183,8 +194,10 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
         return NULL;
     }
     retval = mkgrent(module, p);
-#ifdef HAVE_GETGRGID_R
+#if defined(HAVE_GETGRGID_R)
     PyMem_RawFree(buf);
+#elif defined(Py_GIL_DISABLED)
+    PyMutex_Unlock(&getgrgid_mutex);
 #endif
     return retval;
 }
@@ -213,7 +226,7 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
     /* check for embedded null bytes */
     if (PyBytes_AsStringAndSize(bytes, &name_chars, NULL) == -1)
         goto out;
-#ifdef HAVE_GETGRNAM_R
+#if defined(HAVE_GETGRNAM_R)
     int status;
     Py_ssize_t bufsize;
     /* Note: 'grp' will be used via pointer 'p' on getgrnam_r success. */
@@ -248,6 +261,17 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
     }
 
     Py_END_ALLOW_THREADS
+#elif defined(Py_GIL_DISABLED)
+    static PyMutex getgrnam_mutex = {0};
+    PyMutex_Lock(&getgrnam_mutex);
+    // The getgrnam() function need not be thread-safe.
+    // https://pubs.opengroup.org/onlinepubs/9699919799/functions/getgrnam.html
+    p = getgrnam(name_chars);
+    if (p == NULL) {
+        // Unlock the mutex on error. The following error handling block will
+        // handle the rest.
+        PyMutex_Unlock(&getgrnam_mutex);
+    }
 #else
     p = getgrnam(name_chars);
 #endif
@@ -261,6 +285,9 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
         goto out;
     }
     retval = mkgrent(module, p);
+#if !defined(HAVE_GETGRNAM_R) && defined(Py_GIL_DISABLED)
+    PyMutex_Unlock(&getgrnam_mutex);
+#endif
 out:
     PyMem_RawFree(buf);
     Py_DECREF(bytes);
