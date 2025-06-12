@@ -6820,6 +6820,9 @@ class _TestSpawnedSysPath(BaseTestCase):
         name = os.path.join(os.path.dirname(__file__), 'mp_preload_flush.py')
         env = {'PYTHONPATH': self._temp_dir}
         rc, out, err = test.support.script_helper.assert_python_ok(name, **env)
+        if rc:
+            support.print_warning("preload flush test failed with stderr:")
+            support.print_warning(err.decode())
         self.assertEqual(rc, 0)
 
         # We want to see all the output if it isn't as expected
