@@ -24,7 +24,7 @@ from test.support import import_helper
 from test.support import force_not_colorized
 from test.support import SHORT_TIMEOUT
 try:
-    from test.support import interpreters
+    from concurrent import interpreters
 except ImportError:
     interpreters = None
 import textwrap
@@ -729,7 +729,7 @@ class SysModuleTest(unittest.TestCase):
         info = sys.thread_info
         self.assertEqual(len(info), 3)
         self.assertIn(info.name, ('nt', 'pthread', 'pthread-stubs', 'solaris', None))
-        self.assertIn(info.lock, ('semaphore', 'mutex+cond', None))
+        self.assertIn(info.lock, ('pymutex', None))
         if sys.platform.startswith(("linux", "android", "freebsd")):
             self.assertEqual(info.name, "pthread")
         elif sys.platform == "win32":
@@ -1135,23 +1135,12 @@ class SysModuleTest(unittest.TestCase):
         b = sys.getallocatedblocks()
         self.assertLessEqual(b, a)
         try:
-            # While we could imagine a Python session where the number of
-            # multiple buffer objects would exceed the sharing of references,
-            # it is unlikely to happen in a normal test run.
-            #
-            # In free-threaded builds each code object owns an array of
-            # pointers to copies of the bytecode. When the number of
-            # code objects is a large fraction of the total number of
-            # references, this can cause the total number of allocated
-            # blocks to exceed the total number of references.
-            #
-            # For some reason, iOS seems to trigger the "unlikely to happen"
-            # case reliably under CI conditions. It's not clear why; but as
-            # this test is checking the behavior of getallocatedblock()
-            # under garbage collection, we can skip this pre-condition check
-            # for now. See GH-130384.
-            if not support.Py_GIL_DISABLED and not support.is_apple_mobile:
-                self.assertLess(a, sys.gettotalrefcount())
+            # The reported blocks will include immortalized strings, but the
+            # total ref count will not. This will sanity check that among all
+            # other objects (those eligible for garbage collection) there
+            # are more references being tracked than allocated blocks.
+            interned_immortal = sys.getunicodeinternedsize(_only_immortal=True)
+            self.assertLess(a - interned_immortal, sys.gettotalrefcount())
         except AttributeError:
             # gettotalrefcount() not available
             pass
@@ -1299,6 +1288,7 @@ class SysModuleTest(unittest.TestCase):
         for name in sys.stdlib_module_names:
             self.assertIsInstance(name, str)
 
+    @unittest.skipUnless(hasattr(sys, '_stdlib_dir'), 'need sys._stdlib_dir')
     def test_stdlib_dir(self):
         os = import_helper.import_fresh_module('os')
         marker = getattr(os, '__file__', None)
