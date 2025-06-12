@@ -909,8 +909,6 @@ class CStringIOTest(PyStringIOTest):
                 raise cm.exc_value
 
 
-
-
 class CStringIOPickleTest(PyStringIOPickleTest):
     UnsupportedOperation = io.UnsupportedOperation
 
