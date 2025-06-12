@@ -41,14 +41,14 @@ def _index(result):
             task_id = task_info.task_id
             task_name = task_info.task_name
             id2name[task_id] = task_name
-            
+
             # Store the internal coroutine stack for this task
             if task_info.coroutine_stack:
                 for coro_info in task_info.coroutine_stack:
                     call_stack = coro_info.call_stack
                     internal_stack = [_format_stack_entry(frame) for frame in call_stack]
                     task_stacks[task_id] = internal_stack
-                    
+
             # Add the awaited_by relationships (external dependencies)
             if task_info.awaited_by:
                 for coro_info in task_info.awaited_by:
@@ -69,7 +69,7 @@ def _build_tree(id2name, awaits, task_stacks):
         """Get existing coroutine node or create new one under parent"""
         if frame in cor_nodes[parent]:
             return cor_nodes[parent][frame]
-            
+
         node_key = (NodeType.COROUTINE, f"c{next(next_cor_id)}")
         id2label[node_key] = frame
         children[parent].append(node_key)
@@ -81,7 +81,7 @@ def _build_tree(id2name, awaits, task_stacks):
         cur = (NodeType.TASK, parent_id)
         for frame in reversed(stack):
             cur = get_or_create_cor_node(cur, frame)
-        
+
         child_key = (NodeType.TASK, child_id)
         if child_key not in children[cur]:
             children[cur].append(child_key)
@@ -179,39 +179,39 @@ def build_async_tree(result, task_emoji="(T)", cor_emoji=""):
 def build_task_table(result):
     id2name, _, _ = _index(result)
     table = []
-    
+
     for awaited_info in result:
         thread_id = awaited_info.thread_id
         for task_info in awaited_info.awaited_by:
             # Get task info
             task_id = task_info.task_id
             task_name = task_info.task_name
-            
+
             # Build coroutine stack string
-            frames = [frame for coro in task_info.coroutine_stack 
+            frames = [frame for coro in task_info.coroutine_stack
                      for frame in coro.call_stack]
-            coro_stack = " -> ".join(_format_stack_entry(x).split(" ")[0] 
+            coro_stack = " -> ".join(_format_stack_entry(x).split(" ")[0]
                                    for x in frames)
-            
+
             # Handle tasks with no awaiters
             if not task_info.awaited_by:
                 table.append([thread_id, hex(task_id), task_name, coro_stack,
                             "", "", "0x0"])
                 continue
-                
+
             # Handle tasks with awaiters
             for coro_info in task_info.awaited_by:
                 parent_id = coro_info.task_name
-                awaiter_frames = [_format_stack_entry(x).split(" ")[0] 
+                awaiter_frames = [_format_stack_entry(x).split(" ")[0]
                                 for x in coro_info.call_stack]
                 awaiter_chain = " -> ".join(awaiter_frames)
                 awaiter_name = id2name.get(parent_id, "Unknown")
-                parent_id_str = (hex(parent_id) if isinstance(parent_id, int) 
+                parent_id_str = (hex(parent_id) if isinstance(parent_id, int)
                                else str(parent_id))
-                
+
                 table.append([thread_id, hex(task_id), task_name, coro_stack,
                             awaiter_chain, awaiter_name, parent_id_str])
-                
+
     return table
 
 def _print_cycle_exception(exception: CycleFoundException):
