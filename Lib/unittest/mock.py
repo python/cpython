@@ -2771,9 +2771,13 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
     if is_type and instance and is_dataclass(spec):
         dataclass_fields = fields(spec)
         entries.extend((f.name, f.type) for f in dataclass_fields)
-        _kwargs = {'spec': [f.name for f in dataclass_fields]}
+        spec_list = [f.name for f in dataclass_fields]
+        spec_list.extend(['__dataclass_fields__', '__dataclass_params__'])
+        _kwargs = {'spec': spec_list}  # we set `__class__` further
+        is_dataclass_spec = True
     else:
         _kwargs = {'spec': spec}
+        is_dataclass_spec = False
 
     if spec_set:
         _kwargs = {'spec_set': spec}
@@ -2810,6 +2814,8 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
 
     mock = Klass(parent=_parent, _new_parent=_parent, _new_name=_new_name,
                  name=_name, **_kwargs)
+    if is_dataclass_spec:
+        mock.__class__ = spec  # we need this for `isinstance` to work
 
     if isinstance(spec, FunctionTypes):
         # should only happen at the top level because we don't
