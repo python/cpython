@@ -1,0 +1,2 @@
+Fix quadratic complexity in processing specially crafted input in
+:class:`html.parser.HTMLParser`.
