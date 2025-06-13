@@ -327,7 +327,7 @@
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyLong_CheckExact(sym_get_const(ctx, left)));
                 assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-                PyObject *temp = _PyLong_Multiply((PyLongObject *)sym_get_const(ctx, left),
+                PyObject *temp = _PyCompactLong_Multiply((PyLongObject *)sym_get_const(ctx, left),
                     (PyLongObject *)sym_get_const(ctx, right));
                 if (temp == NULL) {
                     goto error;
@@ -355,7 +355,7 @@
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyLong_CheckExact(sym_get_const(ctx, left)));
                 assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-                PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(ctx, left),
+                PyObject *temp = _PyCompactLong_Add((PyLongObject *)sym_get_const(ctx, left),
                     (PyLongObject *)sym_get_const(ctx, right));
                 if (temp == NULL) {
                     goto error;
@@ -383,7 +383,7 @@
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyLong_CheckExact(sym_get_const(ctx, left)));
                 assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-                PyObject *temp = _PyLong_Subtract((PyLongObject *)sym_get_const(ctx, left),
+                PyObject *temp = _PyCompactLong_Subtract((PyLongObject *)sym_get_const(ctx, left),
                     (PyLongObject *)sym_get_const(ctx, right));
                 if (temp == NULL) {
                     goto error;
