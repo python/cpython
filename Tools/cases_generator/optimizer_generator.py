@@ -77,8 +77,6 @@ def validate_uop(override: Uop, uop: Uop) -> None:
 def type_name(var: StackItem) -> str:
     if var.is_array():
         return "JitOptSymbol **"
-    if var.type:
-        return var.type
     return "JitOptSymbol *"
 
 def stackref_type_name(var: StackItem) -> str:
@@ -339,7 +337,7 @@ def generate_abstract_interpreter(
             declare_variables(override, out, skip_inputs=False)
         else:
             declare_variables(uop, out, skip_inputs=True)
-        write_uop(override, uop, out, debug)
+        write_uop(override, uop, out, stack, debug, skip_inputs=(override is None))
         out.start_line()
         out.emit("break;\n")
         out.emit("}")
