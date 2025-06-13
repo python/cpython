@@ -857,7 +857,7 @@ setarrayitem(arrayobject *ap, Py_ssize_t i, PyObject *v, arraydata *data)
 #endif
     }
 #endif
-    return (*ap->ob_descr->setitem)(data->items, i, v);
+    return (*ap->ob_descr->setitem)(data == NULL ? NULL : data->items, i, v);
 }
 
 static int
