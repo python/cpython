@@ -89,7 +89,7 @@ flowchart TD
     end
     subgraph two["Thread deallocating"]
         A1{"check thread's task list is empty <br> llist_empty(tstate->asyncio_tasks_head)"}
-        A1 --> |true| B1["deallocate thread<br>free_theadstate(tstate)"]
+        A1 --> |true| B1["deallocate thread<br>free_threadstate(tstate)"]
         A1 --> |false| C1["add tasks to interpreter's task list<br> llist_concat(&tstate->interp->asyncio_tasks_head,tstate->asyncio_tasks_head)"]
         C1 --> B1
     end
