@@ -35,7 +35,7 @@ This increases the work done by the garbage collector and in applications with a
 
 To address these issues, Python 3.14 implements several changes to improve the performance and thread safety of tasks management.
 
-- **Per-thread double linked list for tasks**: Python 3.14 introduces a per-thread circular double linked list implementation for storing tasks. This allows each thread to maintain its own list of tasks and allows for lock free addition and removal of tasks. This is designed to be efficient, and thread-safe and scales well with the number of threads in free-threading. This was implemented as part of [Audit asyncio thread safety](https://github.com/python/cpython/issues/128002).
+- **Per-thread double linked list for tasks**: Python 3.14 introduces a per-thread circular double linked list implementation for storing tasks. This allows each thread to maintain its own list of tasks and allows for lock free addition and removal of tasks. This is designed to be efficient, and thread-safe and scales well with the number of threads in free-threading. This also allows external introspection tools such as `python -m asyncio pstree` to inspect tasks running in all threads and was implemented as part of [Audit asyncio thread safety](https://github.com/python/cpython/issues/128002).
 
 - **Per-thread current task**: Python 3.14 stores the current task on the current thread state instead of a global dictionary. This allows for faster access to the current task without the need for a dictionary lookup. Each thread maintains its own current task, which is stored in the `PyThreadState` structure. This was implemented in https://github.com/python/cpython/issues/129898.
 
