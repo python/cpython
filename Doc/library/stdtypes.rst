@@ -1817,13 +1817,15 @@ expression support in the :mod:`re` module).
    See :ref:`error-handlers` for details.
 
    For performance reasons, the value of *errors* is not checked for validity
-   unless an encoding error actually occurs, :ref:`devmode` is enabled or a :ref:`debug build <debug-build>` is used.
+   unless an encoding error actually occurs,
+   :ref:`devmode` is enabled
+   or a :ref:`debug build <debug-build>` is used.
    For example::
 
-      >>> encoded_str_to_byte = 'Python'.encode()
-      >>> type(encoded_str_to_byte)
+      >>> encoded_str_to_bytes = 'Python'.encode()
+      >>> type(encoded_str_to_bytes)
       <class 'bytes'>
-      >>> encoded_str_to_byte
+      >>> encoded_str_to_bytes
       b'Python'
 
 
