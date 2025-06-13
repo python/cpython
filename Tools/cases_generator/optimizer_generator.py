@@ -285,11 +285,11 @@ def write_uop(
                         cast = f"uint{cache.size*16}_t"
                     out.emit(f"{type}{cache.name} = ({cast})this_instr->operand0;\n")
         if override:
+            emitter = OptimizerEmitter(out, {}, uop, copy.deepcopy(stack))
             # No reference management of inputs needed.
             for var in storage.inputs:  # type: ignore[possibly-undefined]
                 var.in_local = False
             out.start_line()
-            emitter = OptimizerEmitter(out, {}, uop, copy.deepcopy(stack))
             _, storage = emitter.emit_tokens(override, storage, inst=None, emit_braces=False)
             storage.flush(out)
             out.start_line()
