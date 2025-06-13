@@ -1551,15 +1551,16 @@
             _PyStackRef getitem;
             _PyStackRef sub;
             _PyStackRef container;
-            _PyInterpreterFrame *new_frame;
+            _PyStackRef new_frame;
             getitem = stack_pointer[-1];
             sub = stack_pointer[-2];
             container = stack_pointer[-3];
-            new_frame = _PyFrame_PushUnchecked(tstate, getitem, 2, frame);
-            new_frame->localsplus[0] = container;
-            new_frame->localsplus[1] = sub;
+            _PyInterpreterFrame* pushed_frame = _PyFrame_PushUnchecked(tstate, getitem, 2, frame);
+            pushed_frame->localsplus[0] = container;
+            pushed_frame->localsplus[1] = sub;
             frame->return_offset = 6 ;
-            stack_pointer[-3].bits = (uintptr_t)new_frame;
+            new_frame = PyStackRef_Wrap(pushed_frame);
+            stack_pointer[-3] = new_frame;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -1907,7 +1908,7 @@
         case _SEND_GEN_FRAME: {
             _PyStackRef v;
             _PyStackRef receiver;
-            _PyInterpreterFrame *gen_frame;
+            _PyStackRef gen_frame;
             oparg = CURRENT_OPARG();
             v = stack_pointer[-1];
             receiver = stack_pointer[-2];
@@ -1921,15 +1922,16 @@
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(SEND, hit);
-            gen_frame = &gen->gi_iframe;
-            _PyFrame_StackPush(gen_frame, PyStackRef_MakeHeapSafe(v));
+            _PyInterpreterFrame *pushed_frame = &gen->gi_iframe;
+            _PyFrame_StackPush(pushed_frame, PyStackRef_MakeHeapSafe(v));
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
             assert( 2 + oparg <= UINT16_MAX);
             frame->return_offset = (uint16_t)( 2 + oparg);
-            gen_frame->previous = frame;
-            stack_pointer[-1].bits = (uintptr_t)gen_frame;
+            pushed_frame->previous = frame;
+            gen_frame = PyStackRef_Wrap(pushed_frame);
+            stack_pointer[-1] = gen_frame;
             break;
         }
 
@@ -3471,7 +3473,7 @@
 
         case _LOAD_ATTR_PROPERTY_FRAME: {
             _PyStackRef owner;
-            _PyInterpreterFrame *new_frame;
+            _PyStackRef new_frame;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
             PyObject *fget = (PyObject *)CURRENT_OPERAND0();
@@ -3496,9 +3498,10 @@
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(LOAD_ATTR, hit);
-            new_frame = _PyFrame_PushUnchecked(tstate, PyStackRef_FromPyObjectNew(fget), 1, frame);
-            new_frame->localsplus[0] = owner;
-            stack_pointer[-1].bits = (uintptr_t)new_frame;
+            _PyInterpreterFrame *pushed_frame = _PyFrame_PushUnchecked(tstate, PyStackRef_FromPyObjectNew(fget), 1, frame);
+            pushed_frame->localsplus[0] = owner;
+            new_frame = PyStackRef_Wrap(pushed_frame);
+            stack_pointer[-1] = new_frame;
             break;
         }
 
@@ -4530,7 +4533,7 @@
 
         case _FOR_ITER_GEN_FRAME: {
             _PyStackRef iter;
-            _PyInterpreterFrame *gen_frame;
+            _PyStackRef gen_frame;
             oparg = CURRENT_OPARG();
             iter = stack_pointer[-2];
             if (PyStackRef_TYPE(iter) != &PyGen_Type) {
@@ -4550,14 +4553,15 @@
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(FOR_ITER, hit);
-            gen_frame = &gen->gi_iframe;
-            _PyFrame_StackPush(gen_frame, PyStackRef_None);
+            _PyInterpreterFrame *pushed_frame = &gen->gi_iframe;
+            _PyFrame_StackPush(pushed_frame, PyStackRef_None);
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
-            gen_frame->previous = frame;
+            pushed_frame->previous = frame;
             frame->return_offset = (uint16_t)( 2 + oparg);
-            stack_pointer[0].bits = (uintptr_t)gen_frame;
+            gen_frame = PyStackRef_Wrap(pushed_frame);
+            stack_pointer[0] = gen_frame;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -4838,7 +4842,7 @@
             _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef callable;
-            _PyInterpreterFrame *new_frame;
+            _PyStackRef new_frame;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
@@ -4863,8 +4867,8 @@
             if (temp == NULL) {
                 JUMP_TO_ERROR();
             }
-            new_frame = temp;
-            stack_pointer[0].bits = (uintptr_t)new_frame;
+            new_frame = PyStackRef_Wrap(temp);
+            stack_pointer[0] = new_frame;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -5130,7 +5134,7 @@
             _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef callable;
-            _PyInterpreterFrame *new_frame;
+            _PyStackRef new_frame;
             oparg = 0;
             assert(oparg == CURRENT_OPARG());
             args = &stack_pointer[-oparg];
@@ -5138,13 +5142,14 @@
             callable = stack_pointer[-2 - oparg];
             int has_self = !PyStackRef_IsNull(self_or_null);
             STAT_INC(CALL, hit);
-            new_frame = _PyFrame_PushUnchecked(tstate, callable, oparg + has_self, frame);
-            _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
-            new_frame->localsplus[0] = self_or_null;
+            _PyInterpreterFrame *pushed_frame = _PyFrame_PushUnchecked(tstate, callable, oparg + has_self, frame);
+            _PyStackRef *first_non_self_local = pushed_frame->localsplus + has_self;
+            pushed_frame->localsplus[0] = self_or_null;
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
-            stack_pointer[-2 - oparg].bits = (uintptr_t)new_frame;
+            new_frame = PyStackRef_Wrap(pushed_frame);
+            stack_pointer[-2 - oparg] = new_frame;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -5154,7 +5159,7 @@
             _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef callable;
-            _PyInterpreterFrame *new_frame;
+            _PyStackRef new_frame;
             oparg = 1;
             assert(oparg == CURRENT_OPARG());
             args = &stack_pointer[-oparg];
@@ -5162,13 +5167,14 @@
             callable = stack_pointer[-2 - oparg];
             int has_self = !PyStackRef_IsNull(self_or_null);
             STAT_INC(CALL, hit);
-            new_frame = _PyFrame_PushUnchecked(tstate, callable, oparg + has_self, frame);
-            _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
-            new_frame->localsplus[0] = self_or_null;
+            _PyInterpreterFrame *pushed_frame = _PyFrame_PushUnchecked(tstate, callable, oparg + has_self, frame);
+            _PyStackRef *first_non_self_local = pushed_frame->localsplus + has_self;
+            pushed_frame->localsplus[0] = self_or_null;
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
-            stack_pointer[-2 - oparg].bits = (uintptr_t)new_frame;
+            new_frame = PyStackRef_Wrap(pushed_frame);
+            stack_pointer[-2 - oparg] = new_frame;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -5178,7 +5184,7 @@
             _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef callable;
-            _PyInterpreterFrame *new_frame;
+            _PyStackRef new_frame;
             oparg = 2;
             assert(oparg == CURRENT_OPARG());
             args = &stack_pointer[-oparg];
@@ -5186,13 +5192,14 @@
             callable = stack_pointer[-2 - oparg];
             int has_self = !PyStackRef_IsNull(self_or_null);
             STAT_INC(CALL, hit);
-            new_frame = _PyFrame_PushUnchecked(tstate, callable, oparg + has_self, frame);
-            _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
-            new_frame->localsplus[0] = self_or_null;
+            _PyInterpreterFrame *pushed_frame = _PyFrame_PushUnchecked(tstate, callable, oparg + has_self, frame);
+            _PyStackRef *first_non_self_local = pushed_frame->localsplus + has_self;
+            pushed_frame->localsplus[0] = self_or_null;
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
-            stack_pointer[-2 - oparg].bits = (uintptr_t)new_frame;
+            new_frame = PyStackRef_Wrap(pushed_frame);
+            stack_pointer[-2 - oparg] = new_frame;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -5202,7 +5209,7 @@
             _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef callable;
-            _PyInterpreterFrame *new_frame;
+            _PyStackRef new_frame;
             oparg = 3;
             assert(oparg == CURRENT_OPARG());
             args = &stack_pointer[-oparg];
@@ -5210,13 +5217,14 @@
             callable = stack_pointer[-2 - oparg];
             int has_self = !PyStackRef_IsNull(self_or_null);
             STAT_INC(CALL, hit);
-            new_frame = _PyFrame_PushUnchecked(tstate, callable, oparg + has_self, frame);
-            _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
-            new_frame->localsplus[0] = self_or_null;
+            _PyInterpreterFrame *pushed_frame = _PyFrame_PushUnchecked(tstate, callable, oparg + has_self, frame);
+            _PyStackRef *first_non_self_local = pushed_frame->localsplus + has_self;
+            pushed_frame->localsplus[0] = self_or_null;
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
-            stack_pointer[-2 - oparg].bits = (uintptr_t)new_frame;
+            new_frame = PyStackRef_Wrap(pushed_frame);
+            stack_pointer[-2 - oparg] = new_frame;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -5226,7 +5234,7 @@
             _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef callable;
-            _PyInterpreterFrame *new_frame;
+            _PyStackRef new_frame;
             oparg = 4;
             assert(oparg == CURRENT_OPARG());
             args = &stack_pointer[-oparg];
@@ -5234,13 +5242,14 @@
             callable = stack_pointer[-2 - oparg];
             int has_self = !PyStackRef_IsNull(self_or_null);
             STAT_INC(CALL, hit);
-            new_frame = _PyFrame_PushUnchecked(tstate, callable, oparg + has_self, frame);
-            _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
-            new_frame->localsplus[0] = self_or_null;
+            _PyInterpreterFrame *pushed_frame = _PyFrame_PushUnchecked(tstate, callable, oparg + has_self, frame);
+            _PyStackRef *first_non_self_local = pushed_frame->localsplus + has_self;
+            pushed_frame->localsplus[0] = self_or_null;
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
-            stack_pointer[-2 - oparg].bits = (uintptr_t)new_frame;
+            new_frame = PyStackRef_Wrap(pushed_frame);
+            stack_pointer[-2 - oparg] = new_frame;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -5250,34 +5259,35 @@
             _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef callable;
-            _PyInterpreterFrame *new_frame;
+            _PyStackRef new_frame;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             int has_self = !PyStackRef_IsNull(self_or_null);
             STAT_INC(CALL, hit);
-            new_frame = _PyFrame_PushUnchecked(tstate, callable, oparg + has_self, frame);
-            _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
-            new_frame->localsplus[0] = self_or_null;
+            _PyInterpreterFrame *pushed_frame = _PyFrame_PushUnchecked(tstate, callable, oparg + has_self, frame);
+            _PyStackRef *first_non_self_local = pushed_frame->localsplus + has_self;
+            pushed_frame->localsplus[0] = self_or_null;
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
-            stack_pointer[-2 - oparg].bits = (uintptr_t)new_frame;
+            new_frame = PyStackRef_Wrap(pushed_frame);
+            stack_pointer[-2 - oparg] = new_frame;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _PUSH_FRAME: {
-            _PyInterpreterFrame *new_frame;
-            new_frame = (_PyInterpreterFrame *)stack_pointer[-1].bits;
+            _PyStackRef new_frame;
+            new_frame = stack_pointer[-1];
             assert(tstate->interp->eval_frame == NULL);
-            _PyInterpreterFrame *temp = new_frame;
+            _PyInterpreterFrame *temp = PyStackRef_Unwrap(new_frame);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            assert(new_frame->previous == frame || new_frame->previous->previous == frame);
+            assert(temp->previous == frame || temp->previous->previous == frame);
             CALL_STAT_INC(inlined_py_calls);
             frame = tstate->current_frame = temp;
             tstate->py_recursion_remaining--;
@@ -5492,7 +5502,7 @@
             _PyStackRef *args;
             _PyStackRef self;
             _PyStackRef init;
-            _PyInterpreterFrame *init_frame;
+            _PyStackRef init_frame;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self = stack_pointer[-1 - oparg];
@@ -5516,10 +5526,10 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 JUMP_TO_ERROR();
             }
-            init_frame = temp;
             frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
             tstate->py_recursion_remaining--;
-            stack_pointer[0].bits = (uintptr_t)init_frame;
+            init_frame = PyStackRef_Wrap(temp);
+            stack_pointer[0] = init_frame;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -6372,7 +6382,7 @@
             _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef callable;
-            _PyInterpreterFrame *new_frame;
+            _PyStackRef new_frame;
             oparg = CURRENT_OPARG();
             kwnames = stack_pointer[-1];
             args = &stack_pointer[-1 - oparg];
@@ -6406,8 +6416,8 @@
             if (temp == NULL) {
                 JUMP_TO_ERROR();
             }
-            new_frame = temp;
-            stack_pointer[0].bits = (uintptr_t)new_frame;
+            new_frame = PyStackRef_Wrap(temp);
+            stack_pointer[0] = new_frame;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
