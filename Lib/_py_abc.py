@@ -32,7 +32,6 @@ class ABCMeta(type):
     # Note: this counter is private. Use `abc.get_cache_token()` for
     #       external code.
     _abc_invalidation_counter = 0
-    _abc_issubclass_context = WeakKeyDictionary()
 
     def __new__(mcls, name, bases, namespace, /, **kwargs):
         cls = super().__new__(mcls, name, bases, namespace, **kwargs)
@@ -51,6 +50,7 @@ class ABCMeta(type):
         cls._abc_cache = WeakSet()
         cls._abc_negative_cache = WeakSet()
         cls._abc_negative_cache_version = ABCMeta._abc_invalidation_counter
+        cls._abc_issubclasscheck_recursive = False
         return cls
 
     def register(cls, subclass):
@@ -148,18 +148,21 @@ class ABCMeta(type):
             # Unfortunately, issubclass/__subclasscheck__ don't accept third argument with context,
             # so using global context within ABCMeta.
             # This is done only on first method call, others will use cached result.
-            scls_context = ABCMeta._abc_issubclass_context.setdefault(scls, WeakSet())
+            scls_is_abc = hasattr(scls, "_abc_issubclasscheck_recursive")
+            if scls_is_abc:
+                scls._abc_issubclasscheck_recursive = True
+
             try:
-                scls_context.add(cls)
                 result = issubclass(subclass, scls)
             finally:
-                scls_context.remove(cls)
+                if scls_is_abc:
+                    scls._abc_issubclasscheck_recursive = False
 
             if result:
-                if not ABCMeta._abc_issubclass_context.get(cls, None):
+                if not cls._abc_issubclasscheck_recursive:
                     cls._abc_cache.add(subclass)
                 return True
 
-        if not ABCMeta._abc_issubclass_context.get(cls, None):
+        if not cls._abc_issubclasscheck_recursive:
             cls._abc_negative_cache.add(subclass)
         return False
