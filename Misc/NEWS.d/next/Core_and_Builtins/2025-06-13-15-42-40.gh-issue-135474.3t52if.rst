@@ -1,0 +1,1 @@
+The garbage collector no longer runs in the middle of a long-running int addition/subtraction/multiplication. This should have little real effect on real-world code, while simplifying CPython's internal invariants. This may also speed up long-running int operations.
