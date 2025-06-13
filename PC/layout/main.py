@@ -671,7 +671,7 @@ def main():
 
     expect = f"{VER_MAJOR}.{VER_MINOR}.{VER_MICRO}{VER_SUFFIX}"
     actual = check_patchlevel_version(ns.source)
-    if actual:
+    if actual and actual != expect:
         log_error(f"Inferred version {expect} does not match {actual} from patchlevel.h. "
                    "You should set %PYTHONINCLUDE% or %PYTHON_HEXVERSION% before launching.")
         return 5
