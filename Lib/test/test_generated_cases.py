@@ -2226,10 +2226,10 @@ class TestGeneratedAbstractCases(unittest.TestCase):
 
     def test_pure_uop_body_copied_in(self):
         # Note: any non-escaping call works.
-        # In this case, we use _PyLong_Add.
+        # In this case, we use PyStackRef_IsNone.
         input = """
         pure op(OP, (foo -- res)) {
-            res = _PyLong_Add(foo);
+            res = PyStackRef_IsNone(foo);
         }
         """
         input2 = """
@@ -2250,7 +2250,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
                 _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
                 _PyStackRef res_stackref;
                 /* Start of uop copied from bytecodes for constant evaluation */
-                res_stackref = _PyLong_Add(foo);
+                res_stackref = PyStackRef_IsNone(foo);
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 stack_pointer[-1] = res;
@@ -2267,7 +2267,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         input = """
         pure op(OP, (foo -- res)) {
             if (foo) {
-                res = _PyLong_Add(foo);
+                res = PyStackRef_IsNone(foo);
             }
             else {
                 res = 1;
@@ -2293,7 +2293,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
                 _PyStackRef res_stackref;
                 /* Start of uop copied from bytecodes for constant evaluation */
                 if (foo) {
-                    res_stackref = _PyLong_Add(foo);
+                    res_stackref = PyStackRef_IsNone(foo);
                 }
                 else {
                     res_stackref = 1;
@@ -2314,7 +2314,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         input = """
         pure op(OP, (foo[2] -- res)) {
             if (foo) {
-                res = body(foo);
+                res = PyStackRef_IsNone(foo);
             }
             else {
                 res = 1;
