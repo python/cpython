@@ -6,8 +6,8 @@ import pathlib
 import sys
 import time
 import urllib.error
+import urllib.request
 import zipfile
-from urllib.request import urlretrieve
 
 
 def retrieve_with_retries(download_location, output_path, reporthook,
@@ -15,7 +15,7 @@ def retrieve_with_retries(download_location, output_path, reporthook,
     """Download a file with exponential backoff retry and save to disk."""
     for attempt in range(max_retries + 1):
         try:
-            resp = urlretrieve(
+            resp = urllib.request.urlretrieve(
                 download_location,
                 output_path,
                 reporthook=reporthook,
