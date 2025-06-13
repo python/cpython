@@ -1834,7 +1834,7 @@ expression support in the :mod:`re` module).
    Return ``True`` if the string ends with the specified *suffix*, otherwise return
    ``False``.  *suffix* can also be a tuple of suffixes to look for.  With optional
    *start*, test beginning at that position.  With optional *end*, stop comparing
-   at that position. Use the *start* and *end* is equivalent to
+   at that position. Using *start* and *end* is equivalent to
    ``str[start:end].endswith(suffix)``. For example::
 
       >>> 'Python'.endswith('on')
