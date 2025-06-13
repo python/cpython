@@ -2763,6 +2763,22 @@ PyEval_GetGlobals(void)
     return _PyEval_GetGlobals(tstate);
 }
 
+PyObject *
+_PyEval_GetGlobalsFromRunningMain(PyThreadState *tstate)
+{
+    if (!_PyInterpreterState_IsRunningMain(tstate->interp)) {
+        return NULL;
+    }
+    PyObject *mod = _Py_GetMainModule(tstate);
+    if (_Py_CheckMainModule(mod) < 0) {
+        Py_XDECREF(mod);
+        return NULL;
+    }
+    PyObject *globals = PyModule_GetDict(mod);  // borrowed
+    Py_DECREF(mod);
+    return globals;
+}
+
 int
 _PyEval_EnsureBuiltins(PyThreadState *tstate, PyObject *globals, int usemod,
                        PyObject **p_builtins)

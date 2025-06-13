@@ -239,6 +239,7 @@ static inline void _Py_LeaveRecursiveCall(void)  {
 
 extern _PyInterpreterFrame* _PyEval_GetFrame(void);
 
+extern PyObject * _PyEval_GetGlobalsFromRunningMain(PyThreadState *);
 extern int _PyEval_EnsureBuiltins(
     PyThreadState *,
     PyObject *,

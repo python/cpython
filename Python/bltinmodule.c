@@ -983,10 +983,16 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
         Py_INCREF(globals);
     }
     else {
-        PyErr_SetString(PyExc_TypeError,
-            "eval must be given globals and locals "
-            "when called without a frame");
-        return NULL;
+        globals = _PyEval_GetGlobalsFromRunningMain(tstate);
+        if (globals == NULL) {
+            if (!_PyErr_Occurred(tstate)) {
+                PyErr_SetString(PyExc_TypeError,
+                    "eval must be given globals and locals "
+                    "when called without a frame");
+            }
+            return NULL;
+        }
+        Py_INCREF(globals);
     }
 
     if (locals != Py_None) {
@@ -1090,9 +1096,15 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         Py_INCREF(globals);
     }
     else {
-        PyErr_SetString(PyExc_SystemError,
-                        "globals and locals cannot be NULL");
-        goto error;
+        globals = _PyEval_GetGlobalsFromRunningMain(tstate);
+        if (globals == NULL) {
+            if (!_PyErr_Occurred(tstate)) {
+                PyErr_SetString(PyExc_SystemError,
+                                "globals and locals cannot be NULL");
+            }
+            goto error;
+        }
+        Py_INCREF(globals);
     }
 
     if (locals != Py_None) {
@@ -1255,12 +1267,21 @@ static PyObject *
 builtin_globals_impl(PyObject *module)
 /*[clinic end generated code: output=e5dd1527067b94d2 input=9327576f92bb48ba]*/
 {
+    PyObject *globals;
     if (_PyEval_GetFrame() != NULL) {
-        PyObject *globals = PyEval_GetGlobals();
+        globals = PyEval_GetGlobals();
         assert(globals != NULL);
         return Py_NewRef(globals);
     }
-    Py_RETURN_NONE;
+    PyThreadState *tstate = _PyThreadState_GET();
+    globals = _PyEval_GetGlobalsFromRunningMain(tstate);
+    if (globals == NULL) {
+        if (_PyErr_Occurred(tstate)) {
+            return NULL;
+        }
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(globals);
 }
 
 
@@ -1910,7 +1931,15 @@ builtin_locals_impl(PyObject *module)
         assert(locals != NULL || PyErr_Occurred());
         return locals;
     }
-    Py_RETURN_NONE;
+    PyThreadState *tstate = _PyThreadState_GET();
+    locals = _PyEval_GetGlobalsFromRunningMain(tstate);
+    if (locals == NULL) {
+        if (_PyErr_Occurred(tstate)) {
+            return NULL;
+        }
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(locals);
 }
 
 
@@ -2646,7 +2675,20 @@ builtin_vars(PyObject *self, PyObject *args)
     if (!PyArg_UnpackTuple(args, "vars", 0, 1, &v))
         return NULL;
     if (v == NULL) {
-        d = _PyEval_GetFrameLocals();
+        if (_PyEval_GetFrame() != NULL) {
+            d = _PyEval_GetFrameLocals();
+        }
+        PyThreadState *tstate = _PyThreadState_GET();
+        d = _PyEval_GetGlobalsFromRunningMain(tstate);
+        if (d == NULL) {
+            if (!_PyErr_Occurred(tstate)) {
+                d = _PyEval_GetFrameLocals();
+                assert(_PyErr_Occurred(tstate));
+            }
+        }
+        else {
+            Py_INCREF(d);
+        }
     }
     else {
         if (PyObject_GetOptionalAttr(v, &_Py_ID(__dict__), &d) == 0) {
