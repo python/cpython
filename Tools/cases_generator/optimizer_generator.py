@@ -176,6 +176,7 @@ class OptimizerEmitter(Emitter):
             )
         emitter = OptimizerConstantEmitter(self.out, {}, self.original_uop, copy.deepcopy(self.stack))
         emitter.emit("if (\n")
+        assert isinstance(uop, Uop)
         input_identifiers = replace_opcode_if_evaluates_pure_identifiers(uop)
         assert len(input_identifiers) > 0, "Pure operations must have at least 1 input"
         for inp in input_identifiers[:-1]:
