@@ -646,6 +646,26 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 
    .. versionadded:: 3.11
 
+.. opcode:: BUILD_INTERPOLATION
+
+   Push a new interpolated string constructed from format components on the stack.
+
+   .. versionadded:: 3.14
+
+
+.. opcode:: LOAD_SMALL_INT (i)
+
+   Push a small integer literal (−128 <= i <= 127) directly onto the stack.
+
+   .. versionadded:: 3.14
+
+
+.. opcode:: NOT_TAKEN
+
+   No-op; a hint to the interpreter that a branch was predicted as not taken.
+
+   .. versionadded:: 3.14
+
 
 **Unary operations**
 
@@ -1576,16 +1596,23 @@ iterations of the loop.
 .. opcode:: CALL_FUNCTION_EX (flags)
 
    Calls a callable object with variable set of positional and keyword
-   arguments.  If the lowest bit of *flags* is set, the top of the stack
+   arguments. If the lowest bit of *flags* is set, the top of the stack
    contains a mapping object containing additional keyword arguments.
    Before the callable is called, the mapping object and iterable object
    are each "unpacked" and their contents passed in as keyword and
    positional arguments respectively.
+
+   If the second bit of *flags* is set (new in 3.14), the call is made
+   in a specialized way to handle certain internal optimizations.
+
    ``CALL_FUNCTION_EX`` pops all arguments and the callable object off the stack,
-   calls the callable object with those arguments, and pushes the return value
+   calls the callable with those arguments, and pushes the return value
    returned by the callable object.
 
    .. versionadded:: 3.6
+   .. versionchanged:: 3.14
+      The second bit of *flags* may now be set to enable specialized calls.
+
 
 
 .. opcode:: PUSH_NULL
