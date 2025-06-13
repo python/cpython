@@ -7,6 +7,7 @@ import sys
 import unittest
 import warnings
 from ntpath import ALLOW_MISSING
+from test import support
 from test.support import TestFailed, cpython_only, os_helper
 from test.support.os_helper import FakePath
 from test import test_genericpath
@@ -78,24 +79,7 @@ def tester(fn, wantResult):
 
 
 def _parameterize(*parameters):
-    """Simplistic decorator to parametrize a test
-
-    Runs the decorated test multiple times in subTest, with a value from
-    'parameters' passed as an extra positional argument.
-    Calls doCleanups() after each run.
-
-    Not for general use. Intended to avoid indenting for easier backports.
-
-    See https://discuss.python.org/t/91827 for discussing generalizations.
-    """
-    def _parametrize_decorator(func):
-        def _parameterized(self, *args, **kwargs):
-            for parameter in parameters:
-                with self.subTest(parameter):
-                    func(self, *args, parameter, **kwargs)
-                self.doCleanups()
-        return _parameterized
-    return _parametrize_decorator
+    return support.subTests('kwargs', parameters, _do_cleanups=True)
 
 
 class NtpathTestCase(unittest.TestCase):
