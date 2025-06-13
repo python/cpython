@@ -207,6 +207,9 @@ extern int _PyUnicodeError_GetParams(
     Py_ssize_t *slen,
     int as_bytes);
 
+
+int _PyErr_CheckSignalsWithoutGC(void);
+
 #ifdef __cplusplus
 }
 #endif

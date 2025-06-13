@@ -113,7 +113,7 @@ maybe_small_long(PyLongObject *v)
 
 #define SIGCHECK(PyTryBlock)                    \
     do {                                        \
-        if (PyErr_CheckSignals()) PyTryBlock    \
+        if (_PyErr_CheckSignalsWithoutGC()) PyTryBlock    \
     } while(0)
 
 /* Normalize (remove leading zeros from) an int object.

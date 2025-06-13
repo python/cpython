@@ -183,9 +183,7 @@
                 assert(PyLong_CheckExact(left_o));
                 assert(PyLong_CheckExact(right_o));
                 STAT_INC(BINARY_OP, hit);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = _PyLong_Add((PyLongObject *)left_o, (PyLongObject *)right_o);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
                 PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
                 if (res_o == NULL) {
@@ -508,9 +506,7 @@
                 assert(PyLong_CheckExact(left_o));
                 assert(PyLong_CheckExact(right_o));
                 STAT_INC(BINARY_OP, hit);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = _PyLong_Multiply((PyLongObject *)left_o, (PyLongObject *)right_o);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
                 PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
                 if (res_o == NULL) {
@@ -1089,9 +1085,7 @@
                 assert(PyLong_CheckExact(left_o));
                 assert(PyLong_CheckExact(right_o));
                 STAT_INC(BINARY_OP, hit);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = _PyLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
                 PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
                 if (res_o == NULL) {

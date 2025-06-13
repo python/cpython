@@ -1788,6 +1788,26 @@ PyErr_CheckSignals(void)
     return _PyErr_CheckSignalsTstate(tstate);
 }
 
+/* Same as PyErr_CheckSignals but does not run the GC.
+   This can be safely used if you are certain that no allocation
+   is done inside the long-running C code.
+ */
+int
+_PyErr_CheckSignalsWithoutGC(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+
+#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
+    _PyRunRemoteDebugger(tstate);
+#endif
+
+    if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
+        return 0;
+    }
+
+    return _PyErr_CheckSignalsTstate(tstate);
+}
+
 
 /* Declared in cpython/pyerrors.h */
 int
