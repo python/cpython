@@ -73,6 +73,7 @@ When a task is created, it is added to the current thread's list of tasks by the
 created the task is stored in `task_tid` field of the `TaskObj`. This is used to check if the task is being removed from the correct thread's task list. If the current thread is same as the thread which created it then no locking is required, otherwise in free-threading, the `stop-the-world` pause is used to pause all other threads and then safely remove the task from the tasks list.
 
 ```mermaid
+
 flowchart TD
     subgraph one["Executing Thread"]
         A["task = asyncio.create_task(coro())"] -->B("register_task(task)")
@@ -89,7 +90,7 @@ flowchart TD
         I --> H["unregister_task_safe(task)"]
     end
     subgraph two["Thread deallocating"]
-        A1{"thread's task list empty? <br> llist_empty(tstate->asyncio_tasks_head)"}```
+        A1{"thread's task list empty? <br> llist_empty(tstate->asyncio_tasks_head)"}
         A1 --> |true| B1["deallocate thread<br>free_threadstate(tstate)"]
         A1 --> |false| C1["add tasks to interpreter's task list<br> llist_concat(&tstate->interp->asyncio_tasks_head,tstate->asyncio_tasks_head)"]
         C1 --> B1
