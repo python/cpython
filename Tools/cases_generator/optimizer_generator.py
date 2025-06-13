@@ -15,7 +15,6 @@ from analyzer import (
     analysis_error,
     CodeSection,
     Label,
-    uop_variable_used,
 )
 from generators_common import (
     DEFAULT_INPUT,
@@ -148,10 +147,12 @@ def emit_default(out: CWriter, uop: Uop, stack: Stack) -> None:
 
 class OptimizerEmitter(Emitter):
 
-    def __init__(self, out: CWriter, labels: dict[str, Label]):
+    def __init__(self, out: CWriter, labels: dict[str, Label], original_uop: Uop, stack: Stack):
         super().__init__(out, labels)
         self._replacers["REPLACE_OPCODE_IF_EVALUATES_PURE"] = self.replace_opcode_if_evaluates_pure
         self.is_abstract = True
+        self.original_uop = original_uop
+        self.stack = stack
 
     def emit_save(self, storage: Storage) -> None:
         storage.flush(self.out)
@@ -172,14 +173,55 @@ class OptimizerEmitter(Emitter):
         inst: Instruction | None,
     ) -> bool:
         skip_to(tkn_iter, "SEMI")
+        emitter = OptimizerConstantEmitter(self.out, {}, self.original_uop, copy.deepcopy(self.stack))
+        emitter.emit("if (\n")
+        input_identifiers = replace_opcode_if_evaluates_pure_identifiers(uop)
+        assert len(input_identifiers) > 0, "Pure operations must have at least 1 input"
+        for inp in input_identifiers[:-1]:
+            emitter.emit(f"sym_is_safe_const(ctx, {inp}) &&\n")
+        emitter.emit(f"sym_is_safe_const(ctx, {input_identifiers[-1]})\n")
+        emitter.emit(') {\n')
+        # Declare variables, before they are shadowed.
+        for inp in self.original_uop.stack.inputs:
+            if inp.used:
+                emitter.emit(f"{type_name(inp)}{inp.name}_sym = {inp.name};\n")
+        # Shadow the symbolic variables with stackrefs.
+        for inp in self.original_uop.stack.inputs:
+            if inp.used:
+                emitter.emit(f"{stackref_type_name(inp)}{inp.name} = sym_get_const_as_stackref(ctx, {inp.name}_sym);\n")
+        # Rename all output variables to stackref variant.
+        for outp in self.original_uop.stack.outputs:
+            assert not outp.is_array(), "Array output StackRefs not supported for pure ops."
+            emitter.emit(f"_PyStackRef {outp.name}_stackref;\n")
+
+
+        storage = Storage.for_uop(self.stack, self.original_uop, CWriter.null(), check_liveness=False)
+        # No reference management of outputs needed.
+        for var in storage.outputs:
+            var.in_local = True
+        emitter.emit("/* Start of uop copied from bytecodes for constant evaluation */\n")
+        emitter.emit_tokens(self.original_uop, storage, inst=None, emit_braces=False)
+        self.out.start_line()
+        emitter.emit("/* End of uop copied from bytecodes for constant evaluation */\n")
+        # Finally, assign back the output stackrefs to symbolics.
+        for outp in self.original_uop.stack.outputs:
+            # All new stackrefs are created from new references.
+            # That's how the stackref contract works.
+            if not outp.peek:
+                emitter.emit(f"{outp.name} = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal({outp.name}_stackref));\n")
+            else:
+                emitter.emit(f"{outp.name} = sym_new_const(ctx, PyStackRef_AsPyObjectBorrow({outp.name}_stackref));\n")
+        storage.flush(self.out)
+        emitter.emit("break;\n")
+        emitter.emit("}\n")
         return True
 
 class OptimizerConstantEmitter(OptimizerEmitter):
-    def __init__(self, out: CWriter, labels: dict[str, Label], uop: Uop):
-        super().__init__(out, labels)
+    def __init__(self, out: CWriter, labels: dict[str, Label], original_uop: Uop, stack: Stack):
+        super().__init__(out, labels, original_uop, stack)
         # Replace all outputs to point to their stackref versions.
         overrides = {
-            outp.name: self.emit_stackref_override for outp in uop.stack.outputs
+            outp.name: self.emit_stackref_override for outp in self.original_uop.stack.outputs
         }
         self._replacers = {**self._replacers, **overrides}
 
@@ -214,59 +256,6 @@ def replace_opcode_if_evaluates_pure_identifiers(uop: Uop) -> list[str]:
     return idents
 
 
-def write_uop_pure_evaluation_region_header(
-    uop: Uop,
-    override: Uop,
-    out: CWriter,
-    stack: Stack,
-) -> None:
-    emitter = OptimizerConstantEmitter(out, {}, uop)
-    emitter.emit("if (\n")
-    input_identifiers = replace_opcode_if_evaluates_pure_identifiers(override)
-    assert len(input_identifiers) > 0, "Pure operations must have at least 1 input"
-    for inp in input_identifiers[:-1]:
-        emitter.emit(f"sym_is_safe_const(ctx, {inp}) &&\n")
-    emitter.emit(f"sym_is_safe_const(ctx, {input_identifiers[-1]})\n")
-    emitter.emit(') {\n')
-    # Declare variables, before they are shadowed.
-    for inp in uop.stack.inputs:
-        if inp.used:
-            emitter.emit(f"{type_name(inp)}{inp.name}_sym = {inp.name};\n")
-    # Shadow the symbolic variables with stackrefs.
-    for inp in uop.stack.inputs:
-        if inp.used:
-            emitter.emit(f"{stackref_type_name(inp)}{inp.name} = sym_get_const_as_stackref(ctx, {inp.name}_sym);\n")
-    # Rename all output variables to stackref variant.
-    for outp in uop.stack.outputs:
-        assert not outp.is_array(), "Array output StackRefs not supported for pure ops."
-        emitter.emit(f"_PyStackRef {outp.name}_stackref;\n")
-    stack = copy.deepcopy(stack)
-
-    storage = Storage.for_uop(stack, uop, CWriter.null(), check_liveness=False)
-    # No reference management of outputs needed.
-    for var in storage.outputs:
-        var.in_local = True
-    emitter.emit("/* Start of uop copied from bytecodes for constant evaluation */\n")
-    emitter.emit_tokens(uop, storage, inst=None, emit_braces=False)
-    out.start_line()
-    emitter.emit("/* End of uop copied from bytecodes for constant evaluation */\n")
-    # Finally, assign back the output stackrefs to symbolics.
-    for outp in uop.stack.outputs:
-        # All new stackrefs are created from new references.
-        # That's how the stackref contract works.
-        if not outp.peek:
-            emitter.emit(f"{outp.name} = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal({outp.name}_stackref));\n")
-        else:
-            emitter.emit(f"{outp.name} = sym_new_const(ctx, PyStackRef_AsPyObjectBorrow({outp.name}_stackref));\n")
-    storage.flush(out)
-    emitter.emit("}\n")
-    emitter.emit("else {\n")
-
-def write_uop_pure_evaluation_region_footer(
-    out: CWriter,
-) -> None:
-    out.emit("}\n")
-
 def write_uop(
     override: Uop | None,
     uop: Uop,
@@ -299,16 +288,11 @@ def write_uop(
             # No reference management of inputs needed.
             for var in storage.inputs:  # type: ignore[possibly-undefined]
                 var.in_local = False
-            replace_opcode_if_evaluates_pure = uop_variable_used(override, "REPLACE_OPCODE_IF_EVALUATES_PURE")
-            if replace_opcode_if_evaluates_pure:
-                write_uop_pure_evaluation_region_header(uop, override, out, stack)
             out.start_line()
-            emitter = OptimizerEmitter(out, {})
+            emitter = OptimizerEmitter(out, {}, uop, copy.deepcopy(stack))
             _, storage = emitter.emit_tokens(override, storage, inst=None, emit_braces=False)
             storage.flush(out)
             out.start_line()
-            if replace_opcode_if_evaluates_pure:
-                write_uop_pure_evaluation_region_footer(out)
         else:
             emit_default(out, uop, stack)
             out.start_line()

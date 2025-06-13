@@ -165,12 +165,11 @@
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 stack_pointer[-1] = res;
+                break;
             }
-            else {
-                sym_set_type(value, &PyBool_Type);
-                res = sym_new_truthiness(ctx, value, false);
-                stack_pointer[-1] = res;
-            }
+            sym_set_type(value, &PyBool_Type);
+            res = sym_new_truthiness(ctx, value, false);
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -367,13 +366,12 @@
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
+                break;
             }
-            else {
-                res = sym_new_type(ctx, &PyLong_Type);
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-            }
+            res = sym_new_type(ctx, &PyLong_Type);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -410,13 +408,12 @@
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
+                break;
             }
-            else {
-                res = sym_new_type(ctx, &PyLong_Type);
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-            }
+            res = sym_new_type(ctx, &PyLong_Type);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -453,13 +450,12 @@
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
+                break;
             }
-            else {
-                res = sym_new_type(ctx, &PyLong_Type);
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-            }
+            res = sym_new_type(ctx, &PyLong_Type);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -516,13 +512,12 @@
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
+                break;
             }
-            else {
-                res = sym_new_type(ctx, &PyFloat_Type);
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-            }
+            res = sym_new_type(ctx, &PyFloat_Type);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -559,13 +554,12 @@
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
+                break;
             }
-            else {
-                res = sym_new_type(ctx, &PyFloat_Type);
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-            }
+            res = sym_new_type(ctx, &PyFloat_Type);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -602,13 +596,12 @@
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
+                break;
             }
-            else {
-                res = sym_new_type(ctx, &PyFloat_Type);
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-            }
+            res = sym_new_type(ctx, &PyFloat_Type);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -645,13 +638,12 @@
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
+                break;
             }
-            else {
-                res = sym_new_type(ctx, &PyUnicode_Type);
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-            }
+            res = sym_new_type(ctx, &PyUnicode_Type);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 

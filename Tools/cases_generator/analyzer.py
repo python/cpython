@@ -520,12 +520,6 @@ def variable_used(node: parser.CodeDef, name: str) -> bool:
     )
 
 
-def uop_variable_used(uop: Uop, text: str) -> bool:
-    return any(
-        token.kind == "IDENTIFIER" and token.text == text for token in uop.body.tokens()
-    )
-
-
 def oparg_used(node: parser.CodeDef) -> bool:
     """Determine whether `oparg` is used in a node."""
     return any(
