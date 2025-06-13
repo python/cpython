@@ -1,0 +1,26 @@
+name: weekly-summary
+
+on: 
+  schedule:
+   - cron: "15 19 * * FRI"
+
+jobs:
+  roundup-summary:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: read
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v2
+      - name: setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.10.1
+      - name: install deps
+        run: pip install requests
+      - name: execute script
+        run: |
+          python -u ./.github/actions/roundup_summary.py
+        env:
+          github_api_token: ${{ secrets.GITHUB_TOKEN }}
+          mailgun_api_key: ${{ secrets.PSF_MAILGUN_KEY }}
