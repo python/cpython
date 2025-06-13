@@ -239,6 +239,12 @@ static inline void _Py_LeaveRecursiveCall(void)  {
 
 extern _PyInterpreterFrame* _PyEval_GetFrame(void);
 
+extern int _PyEval_EnsureBuiltins(
+    PyThreadState *,
+    PyObject *,
+    int usemod,
+    PyObject **p_builtins);
+
 PyAPI_FUNC(PyObject *)_Py_MakeCoro(PyFunctionObject *func);
 
 /* Handle signals, pending calls, GIL drop request
