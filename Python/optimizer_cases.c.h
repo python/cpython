@@ -339,39 +339,26 @@
             JitOptSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (
-                sym_is_safe_const(ctx, left) &&
-                sym_is_safe_const(ctx, right)
-            ) {
-                JitOptSymbol *left_sym = left;
-                JitOptSymbol *right_sym = right;
-                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
-                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
-                _PyStackRef res_stackref;
-                /* Start of uop copied from bytecodes for constant evaluation */
-                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-                assert(PyLong_CheckExact(left_o));
-                assert(PyLong_CheckExact(right_o));
-                STAT_INC(BINARY_OP, hit);
-                PyObject *res_o = _PyLong_Multiply((PyLongObject *)left_o, (PyLongObject *)right_o);
-                PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
-                PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
-                if (res_o == NULL) {
-                    JUMP_TO_LABEL(pop_2_error);
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
+                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
+                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
+                PyObject *temp = _PyLong_Multiply((PyLongObject *)sym_get_const(ctx, left),
+                    (PyLongObject *)sym_get_const(ctx, right));
+                if (temp == NULL) {
+                    goto error;
                 }
-                res_stackref = PyStackRef_FromPyObjectSteal(res_o);
-                /* End of uop copied from bytecodes for constant evaluation */
-                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                res = sym_new_const(ctx, temp);
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
-                break;
+                Py_DECREF(temp);
+            }
+            else {
+                res = sym_new_type(ctx, &PyLong_Type);
+                stack_pointer += -1;
             }
             res = sym_new_type(ctx, &PyLong_Type);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -381,39 +368,25 @@
             JitOptSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (
-                sym_is_safe_const(ctx, left) &&
-                sym_is_safe_const(ctx, right)
-            ) {
-                JitOptSymbol *left_sym = left;
-                JitOptSymbol *right_sym = right;
-                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
-                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
-                _PyStackRef res_stackref;
-                /* Start of uop copied from bytecodes for constant evaluation */
-                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-                assert(PyLong_CheckExact(left_o));
-                assert(PyLong_CheckExact(right_o));
-                STAT_INC(BINARY_OP, hit);
-                PyObject *res_o = _PyLong_Add((PyLongObject *)left_o, (PyLongObject *)right_o);
-                PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
-                PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
-                if (res_o == NULL) {
-                    JUMP_TO_LABEL(pop_2_error);
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
+                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
+                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
+                PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(ctx, left),
+                    (PyLongObject *)sym_get_const(ctx, right));
+                if (temp == NULL) {
+                    goto error;
                 }
-                res_stackref = PyStackRef_FromPyObjectSteal(res_o);
-                /* End of uop copied from bytecodes for constant evaluation */
-                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                res = sym_new_const(ctx, temp);
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
-                break;
+                Py_DECREF(temp);
             }
-            res = sym_new_type(ctx, &PyLong_Type);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            else {
+                res = sym_new_type(ctx, &PyLong_Type);
+                stack_pointer += -1;
+            }
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -423,39 +396,26 @@
             JitOptSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (
-                sym_is_safe_const(ctx, left) &&
-                sym_is_safe_const(ctx, right)
-            ) {
-                JitOptSymbol *left_sym = left;
-                JitOptSymbol *right_sym = right;
-                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
-                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
-                _PyStackRef res_stackref;
-                /* Start of uop copied from bytecodes for constant evaluation */
-                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-                assert(PyLong_CheckExact(left_o));
-                assert(PyLong_CheckExact(right_o));
-                STAT_INC(BINARY_OP, hit);
-                PyObject *res_o = _PyLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
-                PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
-                PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
-                if (res_o == NULL) {
-                    JUMP_TO_LABEL(pop_2_error);
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
+                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
+                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
+                PyObject *temp = _PyLong_Subtract((PyLongObject *)sym_get_const(ctx, left),
+                    (PyLongObject *)sym_get_const(ctx, right));
+                if (temp == NULL) {
+                    goto error;
                 }
-                res_stackref = PyStackRef_FromPyObjectSteal(res_o);
-                /* End of uop copied from bytecodes for constant evaluation */
-                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                res = sym_new_const(ctx, temp);
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
-                break;
+                Py_DECREF(temp);
+            }
+            else {
+                res = sym_new_type(ctx, &PyLong_Type);
+                stack_pointer += -1;
             }
             res = sym_new_type(ctx, &PyLong_Type);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-1] = res;
             break;
         }
 
