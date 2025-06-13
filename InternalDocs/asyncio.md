@@ -58,12 +58,12 @@ typedef struct PyThreadState {
     ...
     struct llist_node asyncio_tasks_head;
 } PyThreadState;
+
 typedef struct PyInterpreterState {
     ...
     struct llist_node asyncio_tasks_head;
     PyMutex asyncio_tasks_lock;
 } PyInterpreterState;
-
 ```
 
 When a task is created, it is added to the current thread's list of tasks by the `register_task` function. When the task is done, it is removed from the list by the `unregister_task` function. In free-threading, the thread id of thread which
