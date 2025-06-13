@@ -373,7 +373,7 @@ dummy_func(void) {
         GETLOCAL(this_instr->operand0) = res;
     }
 
-    op(_BINARY_OP_SUBSCR_INIT_CALL, (container, sub, getitem  -- new_frame: _Py_UOpsAbstractFrame *)) {
+    op(_BINARY_OP_SUBSCR_INIT_CALL, (container, sub, getitem  -- new_frame)) {
         new_frame = NULL;
         ctx->done = true;
     }
@@ -697,7 +697,7 @@ dummy_func(void) {
         self = owner;
     }
 
-    op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame: _Py_UOpsAbstractFrame *)) {
+    op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame)) {
         (void)fget;
         new_frame = NULL;
         ctx->done = true;
@@ -735,7 +735,7 @@ dummy_func(void) {
         sym_set_type(callable, &PyMethod_Type);
     }
 
-    op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
+    op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame)) {
         int argcount = oparg;
 
         PyCodeObject *co = NULL;
@@ -756,10 +756,9 @@ dummy_func(void) {
         }
 
         if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
-            new_frame = frame_new(ctx, co, 0, args, argcount);
+            new_frame = (JitOptSymbol *)frame_new(ctx, co, 0, args, argcount);
         } else {
-            new_frame = frame_new(ctx, co, 0, NULL, 0);
-
+            new_frame = (JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0);
         }
     }
 
@@ -769,7 +768,7 @@ dummy_func(void) {
         self_or_null = sym_new_not_null(ctx);
     }
 
-    op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
+    op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame)) {
         PyCodeObject *co = NULL;
         assert((this_instr + 2)->opcode == _PUSH_FRAME);
         co = get_code_with_logging((this_instr + 2));
@@ -778,10 +777,10 @@ dummy_func(void) {
             break;
         }
 
-        new_frame = frame_new(ctx, co, 0, NULL, 0);
+        new_frame = (JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0);
     }
 
-    op(_PY_FRAME_KW, (callable, self_or_null, args[oparg], kwnames -- new_frame: _Py_UOpsAbstractFrame *)) {
+    op(_PY_FRAME_KW, (callable, self_or_null, args[oparg], kwnames -- new_frame)) {
         new_frame = NULL;
         ctx->done = true;
     }
@@ -793,7 +792,7 @@ dummy_func(void) {
         self_or_null = sym_new_not_null(ctx);
     }
 
-    op(_CREATE_INIT_FRAME, (init, self, args[oparg] -- init_frame: _Py_UOpsAbstractFrame *)) {
+    op(_CREATE_INIT_FRAME, (init, self, args[oparg] -- init_frame)) {
         init_frame = NULL;
         ctx->done = true;
     }
@@ -860,13 +859,13 @@ dummy_func(void) {
         }
     }
 
-    op(_FOR_ITER_GEN_FRAME, (unused, unused -- unused, unused, gen_frame: _Py_UOpsAbstractFrame*)) {
+    op(_FOR_ITER_GEN_FRAME, (unused, unused -- unused, unused, gen_frame)) {
         gen_frame = NULL;
         /* We are about to hit the end of the trace */
         ctx->done = true;
     }
 
-    op(_SEND_GEN_FRAME, (unused, unused -- unused, gen_frame: _Py_UOpsAbstractFrame *)) {
+    op(_SEND_GEN_FRAME, (unused, unused -- unused, gen_frame)) {
         gen_frame = NULL;
         // We are about to hit the end of the trace:
         ctx->done = true;
@@ -884,12 +883,12 @@ dummy_func(void) {
         Py_UNREACHABLE();
     }
 
-    op(_PUSH_FRAME, (new_frame: _Py_UOpsAbstractFrame * -- )) {
+    op(_PUSH_FRAME, (new_frame -- )) {
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
-        ctx->frame = new_frame;
+        ctx->frame = (_Py_UOpsAbstractFrame *)new_frame;
         ctx->curr_frame_depth++;
-        stack_pointer = new_frame->stack_pointer;
+        stack_pointer = ctx->frame->stack_pointer;
         co = get_code(this_instr);
         if (co == NULL) {
             // should be about to _EXIT_TRACE anyway

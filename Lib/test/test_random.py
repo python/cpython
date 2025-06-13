@@ -14,6 +14,15 @@ from test import support
 from fractions import Fraction
 from collections import abc, Counter
 
+
+class MyIndex:
+    def __init__(self, value):
+        self.value = value
+
+    def __index__(self):
+        return self.value
+
+
 class TestBasicOps:
     # Superclass with tests common to all generators.
     # Subclasses must arrange for self.gen to retrieve the Random instance
@@ -808,6 +817,9 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         # Verify cross-platform repeatability
         self.gen.seed(1234567)
         self.assertEqual(self.gen.getrandbits(100),
+                         97904845777343510404718956115)
+        self.gen.seed(1234567)
+        self.assertEqual(self.gen.getrandbits(MyIndex(100)),
                          97904845777343510404718956115)
 
     def test_getrandbits_2G_bits(self):
