@@ -204,12 +204,12 @@ class HTMLParser(_markupbase.ParserBase):
                 if k < 0:
                     if not end:
                         break
-                    if starttagopen.match(rawdata, i): # < + letter
+                    if starttagopen.match(rawdata, i):  # < + letter
                         pass
                     elif startswith("</", i):
                         if i + 2 == n:
                             self.handle_data("</")
-                        elif endtagopen.match(rawdata, i): # </ + letter
+                        elif endtagopen.match(rawdata, i):  # </ + letter
                             pass
                         else:
                             # bogus comment
