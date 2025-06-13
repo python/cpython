@@ -7267,7 +7267,6 @@ AS_CASE([$ac_sys_system],
   [Nanvix*], [
     PY_STDLIB_MOD_SET_NA(
       [_asyncio],
-      [_contextvars],
       [_lsprof],
       [_multiprocessing],
       [_socket],
