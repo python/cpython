@@ -95,7 +95,6 @@ flowchart TD
     end
 
     one --> two
-
 ```
 
 `asyncio.all_tasks` now iterates over the per-thread task lists of all threads and the interpreter's task list to get all the tasks. In free-threading this is done by pausing all the threads using the `stop-the-world` pause to ensure that no tasks are being added or removed while iterating over the lists. This allows for a consistent view of all task lists across all threads and is thread safe.
@@ -113,8 +112,9 @@ typedef struct PyThreadState {
 } PyThreadState;
 ```
 
-When a task is entered or left, the current task is updated in the thread state using `enter_task` and `leave_task` functions. When `current_task(loop)` is called where `loop` is the current running event loop of the current thread, no locking is required as the current task is stored in the thread state and is returned directly. Otherwise, if the `loop` is not current running event loop, the `stop-the-world` pause is used to pause all threads in free-threading and then by iterating over all the thread states and checking if the `loop` matches with `tstate->asyncio_current_loop`, the current task is found and returned. If no matching thread state is found, `None` is returned.
+When a task is entered or left, the current task is updated in the thread state using `enter_task` and `leave_task` functions. When `current_task(loop)` is called where `loop` is the current running event loop of the current thread, no locking is required as the current task is stored in the thread state and is returned directly (general case). Otherwise, if the `loop` is not current running event loop, the `stop-the-world` pause is used to pause all threads in free-threading and then by iterating over all the thread states and checking if the `loop` matches with `tstate->asyncio_current_loop`, the current task is found and returned. If no matching thread state is found, `None` is returned.
 
+In free-threading, it avoids contention on a global dictionary as threads can access the current task of thier running loop without any locking.
 
 
 [^1]: https://github.com/python/cpython/issues/123089
