@@ -140,8 +140,6 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
             "to install pip."
         ) from None
 
-    if root is not None and prefix is not None:
-        raise ValueError("Cannot use 'root' and 'prefix' together")
     if altinstall and default_pip:
         raise ValueError("Cannot use altinstall and default_pip together")
 
@@ -172,18 +170,39 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
 
         # Construct the arguments to be passed to the pip command
         args = ["install", "--no-cache-dir", "--no-index", "--find-links", tmpdir]
-        if root:
-            args += ["--root", root]
-        if prefix:
-            args += ["--prefix", prefix]
         if upgrade:
             args += ["--upgrade"]
-        if user:
-            args += ["--user"]
         if verbosity:
             args += ["-" + "v" * verbosity]
         if sys.implementation.cache_tag is None:
             args += ["--no-compile"]
+
+        if user:
+            # --user is mutually exclusive with --root/--prefix,
+            # pip will enforce this.
+            args += ["--user"]
+        else:
+            # Handle installation paths.
+            # If --root is given but not --prefix, we default to a prefix of "/"
+            # so that the install happens at the root of the --root directory.
+            # Otherwise, pip would use the configured sys.prefix, e.g.
+            # /usr/local, and install into ${root}/usr/local/.
+            effective_prefix = prefix
+            if root and not prefix:
+                effective_prefix = "/"
+
+            if root:
+                args += ["--root", root]
+
+            if effective_prefix:
+                args += ["--prefix", effective_prefix]
+
+                # Force the script shebang to point to the correct, final
+                # executable path. This is necessary when --root is used.
+                executable_path = (
+                    Path(effective_prefix) / "bin" / Path(sys.executable).name
+                )
+                args += ["--executable", os.fsdecode(executable_path)]
 
         return _run_pip([*args, "pip"], [os.fsdecode(tmp_wheel_path)])
 
