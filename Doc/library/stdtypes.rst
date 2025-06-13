@@ -1705,6 +1705,14 @@ expression support in the :mod:`re` module).
    unless an encoding error actually occurs,
    :ref:`devmode` is enabled
    or a :ref:`debug build <debug-build>` is used.
+   For example::
+
+      >>> encoded_str_to_bytes = 'Python'.encode()
+      >>> type(encoded_str_to_bytes)
+      <class 'bytes'>
+      >>> encoded_str_to_bytes
+      b'Python'
+
 
    .. versionchanged:: 3.1
       Added support for keyword arguments.
