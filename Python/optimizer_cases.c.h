@@ -1367,6 +1367,7 @@
                 PyModuleObject *mod = (PyModuleObject *)sym_get_const(ctx, owner);
                 if (PyModule_CheckExact(mod)) {
                     PyObject *dict = mod->md_dict;
+                    stack_pointer[-1] = attr;
                     uint64_t watched_mutations = get_mutations(dict);
                     if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
                         PyDict_Watch(GLOBALS_WATCHER_ID, dict);
@@ -1508,14 +1509,16 @@
                 assert(_Py_IsImmortal(tmp));
                 REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)tmp);
                 res = sym_new_const(ctx, tmp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(tmp);
             }
             else {
                 res = sym_new_type(ctx, &PyBool_Type);
+                stack_pointer += -1;
             }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -1639,7 +1642,11 @@
                     REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
                 }
                 len = sym_new_const(ctx, temp);
+                stack_pointer[0] = len;
+                stack_pointer += 1;
+                assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
+                stack_pointer += -1;
             }
             stack_pointer[0] = len;
             stack_pointer += 1;
@@ -2498,13 +2505,13 @@
             assert(framesize > 0);
             assert(framesize <= curr_space);
             curr_space -= framesize;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             co = get_code(this_instr);
             if (co == NULL) {
                 ctx->done = true;
             }
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 

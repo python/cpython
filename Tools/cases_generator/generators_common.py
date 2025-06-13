@@ -138,7 +138,6 @@ class Emitter:
         }
         self.out = out
         self.labels = labels
-        self.is_abstract = False
 
     def emit_to_with_replacement(
         self,
@@ -512,7 +511,7 @@ class Emitter:
         reachable = True
         tkn = stmt.contents[-1]
         try:
-            if stmt in uop.properties.escaping_calls and not self.is_abstract:
+            if stmt in uop.properties.escaping_calls:
                 escape = uop.properties.escaping_calls[stmt]
                 if escape.kills is not None:
                     self.stackref_kill(escape.kills, storage, True)
@@ -549,7 +548,7 @@ class Emitter:
                         self.out.emit(tkn)
                 else:
                     self.out.emit(tkn)
-            if stmt in uop.properties.escaping_calls and not self.is_abstract:
+            if stmt in uop.properties.escaping_calls:
                 self.emit_reload(storage)
             return reachable, None, storage
         except StackError as ex:

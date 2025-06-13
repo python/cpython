@@ -146,7 +146,6 @@ class OptimizerEmitter(Emitter):
     def __init__(self, out: CWriter, labels: dict[str, Label], original_uop: Uop, stack: Stack):
         super().__init__(out, labels)
         self._replacers["REPLACE_OPCODE_IF_EVALUATES_PURE"] = self.replace_opcode_if_evaluates_pure
-        self.is_abstract = True
         self.original_uop = original_uop
         self.stack = stack
 
@@ -169,6 +168,12 @@ class OptimizerEmitter(Emitter):
         inst: Instruction | None,
     ) -> bool:
         skip_to(tkn_iter, "SEMI")
+
+        if self.original_uop.properties.escapes:
+            raise analysis_error(
+                f"REPLACE_OPCODE_IF_EVALUATES_PURE cannot be used with an escaping uop {self.original_uop.properties.escaping_calls}",
+                self.original_uop.body.open
+            )
         emitter = OptimizerConstantEmitter(self.out, {}, self.original_uop, copy.deepcopy(self.stack))
         emitter.emit("if (\n")
         input_identifiers = replace_opcode_if_evaluates_pure_identifiers(uop)
@@ -256,11 +261,12 @@ def write_uop(
     override: Uop | None,
     uop: Uop,
     out: CWriter,
+    stack: Stack,
     debug: bool,
+    skip_inputs: bool,
 ) -> None:
     locals: dict[str, Local] = {}
     prototype = override if override else uop
-    stack = Stack()
     try:
         out.start_line()
         if override:
@@ -285,8 +291,8 @@ def write_uop(
             # No reference management of inputs needed.
             for var in storage.inputs:  # type: ignore[possibly-undefined]
                 var.in_local = False
+            _, storage = emitter.emit_tokens(override, storage, None, False)
             out.start_line()
-            _, storage = emitter.emit_tokens(override, storage, inst=None, emit_braces=False)
             storage.flush(out)
             out.start_line()
         else:
@@ -335,7 +341,8 @@ def generate_abstract_interpreter(
             declare_variables(override, out, skip_inputs=False)
         else:
             declare_variables(uop, out, skip_inputs=True)
-        write_uop(override, uop, out, debug)
+        stack = Stack()
+        write_uop(override, uop, out, stack, debug, skip_inputs=(override is None))
         out.start_line()
         out.emit("break;\n")
         out.emit("}")

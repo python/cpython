@@ -2225,9 +2225,11 @@ class TestGeneratedAbstractCases(unittest.TestCase):
             self.run_cases_test(input, input2, output)
 
     def test_pure_uop_body_copied_in(self):
+        # Note: any non-escaping call works.
+        # In this case, we use _PyLong_Add.
         input = """
         pure op(OP, (foo -- res)) {
-            res = body(foo);
+            res = _PyLong_Add(foo);
         }
         """
         input2 = """
@@ -2248,15 +2250,14 @@ class TestGeneratedAbstractCases(unittest.TestCase):
                 _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
                 _PyStackRef res_stackref;
                 /* Start of uop copied from bytecodes for constant evaluation */
-                res_stackref = body(foo);
+                res_stackref = _PyLong_Add(foo);
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 stack_pointer[-1] = res;
+                break;
             }
-            else {
-                res = sym_new_known(ctx, foo);
-                stack_pointer[-1] = res;
-            }
+            res = sym_new_known(ctx, foo);
+            stack_pointer[-1] = res;
             break;
         }
         """
@@ -2266,7 +2267,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         input = """
         pure op(OP, (foo -- res)) {
             if (foo) {
-                res = body(foo);
+                res = _PyLong_Add(foo);
             }
             else {
                 res = 1;
@@ -2292,7 +2293,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
                 _PyStackRef res_stackref;
                 /* Start of uop copied from bytecodes for constant evaluation */
                 if (foo) {
-                    res_stackref = body(foo);
+                    res_stackref = _PyLong_Add(foo);
                 }
                 else {
                     res_stackref = 1;
@@ -2300,11 +2301,10 @@ class TestGeneratedAbstractCases(unittest.TestCase):
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 stack_pointer[-1] = res;
+                break;
             }
-            else {
-                res = sym_new_known(ctx, foo);
-                stack_pointer[-1] = res;
-            }
+            res = sym_new_known(ctx, foo);
+            stack_pointer[-1] = res;
             break;
         }
         """
