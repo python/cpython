@@ -39,7 +39,7 @@ mechanism to determine when it is safe to free the list's old backing array.
 
 Specific use cases for QSBR include:
 
-* Dictionary keys (PyDictKeysObject) and list arrays (ob_item): When a
+* Dictionary keys (PyDictKeysObject) and list arrays (_PyListArray): When a
 dictionary or list that may be shared between threads is resized, we use QSBR
 to delay freeing the old keys or array until it's safe. For dicts and lists
 that are not shared, their storage can be freed immediately upon resize.
