@@ -82,8 +82,6 @@ def type_name(var: StackItem) -> str:
 def stackref_type_name(var: StackItem) -> str:
     if var.is_array():
         assert False, "Unsafe to convert a symbol to an array-like StackRef."
-    if var.type:
-        return var.type
     return "_PyStackRef "
 
 def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
@@ -262,7 +260,7 @@ def write_uop(
 ) -> None:
     locals: dict[str, Local] = {}
     prototype = override if override else uop
-    stack = Stack(extract_bits=False, cast_type="JitOptSymbol *")
+    stack = Stack()
     try:
         out.start_line()
         if override:
@@ -337,7 +335,7 @@ def generate_abstract_interpreter(
             declare_variables(override, out, skip_inputs=False)
         else:
             declare_variables(uop, out, skip_inputs=True)
-        write_uop(override, uop, out, stack, debug, skip_inputs=(override is None))
+        write_uop(override, uop, out, debug)
         out.start_line()
         out.emit("break;\n")
         out.emit("}")
