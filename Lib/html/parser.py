@@ -36,29 +36,33 @@ commentclose = re.compile(r'--\s*>')
 #     explode, so don't do it.
 # see http://www.w3.org/TR/html5/tokenization.html#tag-open-state
 # and http://www.w3.org/TR/html5/tokenization.html#tag-name-state
-tagfind_tolerant = re.compile(r'([a-zA-Z][^\t\n\r\f />\x00]*)(?:\s|/(?!>))*')
-attrfind_tolerant = re.compile(
-    r'((?<=[\'"\s/])[^\s/>][^\s/=>]*)(\s*=+\s*'
-    r'(\'[^\']*\'|"[^"]*"|(?![\'"])[^>\s]*))?(?:\s|/(?!>))*')
-locatestarttagend_tolerant = re.compile(r"""
-  <[a-zA-Z][^\t\n\r\f />\x00]*       # tag name
-  (?:[\s/]*                          # optional whitespace before attribute name
-    (?:(?<=['"\s/])[^\s/>][^\s/=>]*  # attribute name
-      (?:\s*=+\s*                    # value indicator
-        (?:'[^']*'                   # LITA-enclosed value
-          |"[^"]*"                   # LIT-enclosed value
-          |(?!['"])[^>\s]*           # bare value
-         )
-        \s*                          # possibly followed by a space
-       )?(?:\s|/(?!>))*
-     )*
+tagfind_tolerant = re.compile(r'([a-zA-Z][^\t\n\r\f />]*)(?:[\t\n\r\f ]|/(?!>))*')
+attrfind_tolerant = re.compile(r"""
+  (
+    (?<=['"\t\n\r\f /])[^\t\n\r\f />][^\t\n\r\f /=>]*  # attribute name
+   )
+  (=                                # value indicator
+    ('[^']*'                        # LITA-enclosed value
+    |"[^"]*"                        # LIT-enclosed value
+    |(?!['"])[^>\t\n\r\f ]*         # bare value
+    )
    )?
-  \s*                                # trailing whitespace
+  (?:[\t\n\r\f ]|/(?!>))*           # possibly followed by a space
 """, re.VERBOSE)
-endendtag = re.compile('>')
-# the HTML 5 spec, section 8.1.2.2, doesn't allow spaces between
-# </ and the tag name, so maybe this should be fixed
-endtagfind = re.compile(r'</\s*([a-zA-Z][-.a-zA-Z0-9:_]*)\s*>')
+locatetagend_tolerant = re.compile(r"""
+  [a-zA-Z][^\t\n\r\f />]*           # tag name
+  [\t\n\r\f /]*                     # optional whitespace before attribute name
+  (?:(?<=['"\t\n\r\f /])[^\t\n\r\f />][^\t\n\r\f /=>]*  # attribute name
+    (?:=                            # value indicator
+      (?:'[^']*'                    # LITA-enclosed value
+        |"[^"]*"                    # LIT-enclosed value
+        |(?!['"])[^>\t\n\r\f ]*     # bare value
+       )
+     )?
+    [\t\n\r\f /]*                   # possibly followed by a space
+   )*
+   >?
+""", re.VERBOSE)
 
 # Character reference processing logic specific to attribute values
 # See: https://html.spec.whatwg.org/multipage/parsing.html#named-character-reference-state
@@ -141,7 +145,8 @@ class HTMLParser(_markupbase.ParserBase):
 
     def set_cdata_mode(self, elem):
         self.cdata_elem = elem.lower()
-        self.interesting = re.compile(r'</\s*%s\s*>' % self.cdata_elem, re.I)
+        self.interesting = re.compile(r'</%s(?=[\t\n\r\f />])' % self.cdata_elem,
+                                      re.IGNORECASE|re.ASCII)
 
     def clear_cdata_mode(self):
         self.interesting = interesting_normal
@@ -166,7 +171,7 @@ class HTMLParser(_markupbase.ParserBase):
                     # & near the end and see if it's followed by a space or ;.
                     amppos = rawdata.rfind('&', max(i, n-34))
                     if (amppos >= 0 and
-                        not re.compile(r'[\s;]').search(rawdata, amppos)):
+                        not re.compile(r'[\t\n\r\f ;]').search(rawdata, amppos)):
                         break  # wait till we get all the text
                     j = n
             else:
@@ -381,76 +386,39 @@ class HTMLParser(_markupbase.ParserBase):
     # or -1 if incomplete.
     def check_for_whole_start_tag(self, i):
         rawdata = self.rawdata
-        m = locatestarttagend_tolerant.match(rawdata, i)
-        if m:
-            j = m.end()
-            next = rawdata[j:j+1]
-            if next == ">":
-                return j + 1
-            if next == "/":
-                if rawdata.startswith("/>", j):
-                    return j + 2
-                if rawdata.startswith("/", j):
-                    # buffer boundary
-                    return -1
-                # else bogus input
-                if j > i:
-                    return j
-                else:
-                    return i + 1
-            if next == "":
-                # end of input
-                return -1
-            if next in ("abcdefghijklmnopqrstuvwxyz=/"
-                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
-                # end of input in or before attribute value, or we have the
-                # '/' from a '/>' ending
-                return -1
-            if j > i:
-                return j
-            else:
-                return i + 1
-        raise AssertionError("we should not get here!")
+        match = locatetagend_tolerant.match(rawdata, i+1)
+        assert match
+        j = match.end()
+        if rawdata[j-1] != ">":
+            return -1
+        return j
 
     # Internal -- parse endtag, return end or -1 if incomplete
     def parse_endtag(self, i):
         rawdata = self.rawdata
         assert rawdata[i:i+2] == "</", "unexpected call to parse_endtag"
-        match = endendtag.search(rawdata, i+1) # >
-        if not match:
+        if rawdata.find('>', i+2) < 0:
             return -1
-        gtpos = match.end()
-        match = endtagfind.match(rawdata, i) # </ + tag + >
-        if not match:
-            if self.cdata_elem is not None:
-                self.handle_data(rawdata[i:gtpos])
-                return gtpos
-            # find the name: w3.org/TR/html5/tokenization.html#tag-name-state
-            namematch = tagfind_tolerant.match(rawdata, i+2)
-            if not namematch:
-                # w3.org/TR/html5/tokenization.html#end-tag-open-state
-                if rawdata[i:i+3] == '</>':
-                    return i+3
-                else:
-                    return self.parse_bogus_comment(i)
-            tagname = namematch.group(1).lower()
-            # consume and ignore other stuff between the name and the >
-            # Note: this is not 100% correct, since we might have things like
-            # </tag attr=">">, but looking for > after the name should cover
-            # most of the cases and is much simpler
-            gtpos = rawdata.find('>', namematch.end())
-            self.handle_endtag(tagname)
-            return gtpos+1
+        if not endtagopen.match(rawdata, i):  # </ + letter
+            # w3.org/TR/html5/tokenization.html#end-tag-open-state
+            if rawdata[i+2:i+3] == '>':
+                return i+3
+            else:
+                return self.parse_bogus_comment(i)
 
-        elem = match.group(1).lower() # script or style
-        if self.cdata_elem is not None:
-            if elem != self.cdata_elem:
-                self.handle_data(rawdata[i:gtpos])
-                return gtpos
+        match = locatetagend_tolerant.match(rawdata, i+2)
+        assert match
+        j = match.end()
+        if rawdata[j-1] != ">":
+            return -1
 
-        self.handle_endtag(elem)
+        # find the name: w3.org/TR/html5/tokenization.html#tag-name-state
+        match = tagfind_tolerant.match(rawdata, i+2)
+        assert match
+        tag = match.group(1).lower()
+        self.handle_endtag(tag)
         self.clear_cdata_mode()
-        return gtpos
+        return j
 
     # Overridable -- finish processing of start+end tag: <tag.../>
     def handle_startendtag(self, tag, attrs):
