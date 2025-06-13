@@ -5930,9 +5930,11 @@ find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
         }
     }
 
+#ifdef Py_GIL_DISABLED
     if (!_Py_IsOwnedByCurrentThread(mro)) {
         PyUnstable_Object_EnableDeferredRefcount(mro);
     }
+#endif
 
     PyObject *res = NULL;
     Py_ssize_t n = PyTuple_GET_SIZE(mro);
