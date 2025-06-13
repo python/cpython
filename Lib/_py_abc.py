@@ -1,5 +1,4 @@
 from _weakrefset import WeakSet
-from weakref import WeakKeyDictionary
 
 
 def get_cache_token():
