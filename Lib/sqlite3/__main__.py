@@ -59,7 +59,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
         if not source or source.isspace():
             return False
         if source[0] == ".":
-            match source[1:].strip():
+            match source[1:].rstrip():
                 case "version":
                     print(sqlite3.sqlite_version)
                 case "help":
