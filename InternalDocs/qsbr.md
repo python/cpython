@@ -10,7 +10,7 @@ consumption.
 
 Safe memory reclamation (SMR) schemes address this by delaying the free
 operation until all concurrent read accesses are guaranteed to have completed.
-Quiescent-State Based Reclamation (QSBR) is an SMR scheme used in Python's
+Quiescent-State Based Reclamation (QSBR) is a SMR scheme used in Python's
 free-threaded build to manage the lifecycle of shared memory.
 
 QSBR requires threads to periodically report that they are in a quiescent
