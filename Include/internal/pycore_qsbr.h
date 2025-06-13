@@ -48,11 +48,11 @@ struct _qsbr_thread_state {
     // Thread state (or NULL)
     PyThreadState *tstate;
 
-    // Number of held items added by this thread since last process
+    // Number of held items added by this thread since write sequence advance
     int deferred_count;
 
     // Estimate for the amount of memory that is held by this thread since
-    // the last process
+    // the last write sequence advance
     size_t deferred_memory;
 
     // Sequence number at time of last "should process" check.
