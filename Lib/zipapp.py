@@ -187,7 +187,7 @@ def main(args=None):
     """
     import argparse
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     parser.add_argument('--output', '-o', default=None,
             help="The name of the output archive. "
                  "Required if SOURCE is an archive.")
