@@ -10,9 +10,9 @@ This document describes the working and implementation details of C implementati
 
 ## Pre-Python 3.14 implementation
 
-Until Python 3.13, the C implementation of `asyncio` used a [`WeakSet`](https://docs.python.org/3/library/weakref.html#weakref.WeakSet) to store all the tasks created by the event loop [^1]. `WeakSet` was used so that the event loop
+Until Python 3.13, the C implementation of `asyncio` used a [`WeakSet`](https://docs.python.org/3/library/weakref.html#weakref.WeakSet) to store all the tasks created by the event loop. `WeakSet` was used so that the event loop
 doesn't hold strong references to the tasks, allowing them to be garbage collected when they are no longer needed.
-The current task of the event loop was stored in dict mapping the event loop to the current task [^2].
+The current task of the event loop was stored in dict mapping the event loop to the current task.
 
 ```c
     /* Dictionary containing tasks that are currently active in
@@ -27,7 +27,7 @@ This implementation had a few drawbacks:
 1. **Performance**: Using a `WeakSet` for storing tasks is inefficient as it requires maintaining a full set of weak references to tasks along with corresponding weakref callback to cleanup the tasks when they are garbage collected.
 This increases the work done by the garbage collector and in applications with a large number of tasks,  this becomes a bottle neck, with increased memory usage and lower performance. Looking up the current task was slow as it required a dictionary lookup on the `current_tasks` dict.
 
-2. **Thread safety**: Until Python 3.14, concurrent iterations over `WeakSet` was not thread safe[^3]. This meant calling APIs like `asyncio.all_tasks()` could lead to inconsistent results or even `RuntimeError` if used in multiple threads[^4].
+2. **Thread safety**: Until Python 3.14, concurrent iterations over `WeakSet` was not thread safe[^1]. This meant calling APIs like `asyncio.all_tasks()` could lead to inconsistent results or even `RuntimeError` if used in multiple threads[^2].
 
 3. **Poor scaling in free-threading**: Using global `WeakSet` for storing all tasks across all threads lead to contention when adding and removing tasks from the set which is a frequent operation. As such it performed poorly in free-threading and did not scale well with the number of threads. Similarly accessing the current task in multiple threads did not scale due to contention on the global `current_tasks` dictionary.
 
@@ -117,7 +117,5 @@ When a task is entered or left, the current task is updated in the thread state 
 
 
 
-[^1]: https://github.com/python/cpython/blob/9a10b734f164ca5a253ae3a05f4960e3fcbeef2b/Modules/_asynciomodule.c#L42
-[^2]: https://github.com/python/cpython/blob/9a10b734f164ca5a253ae3a05f4960e3fcbeef2b/Modules/_asynciomodule.c#L39
-[^3]: https://github.com/python/cpython/issues/123089
-[^4]: https://github.com/python/cpython/issues/80788
+[^1]: https://github.com/python/cpython/issues/123089
+[^2]: https://github.com/python/cpython/issues/80788
