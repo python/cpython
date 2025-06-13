@@ -1214,6 +1214,12 @@ class MathTests(unittest.TestCase):
             self.assertEqual(math.ldexp(NINF, n), NINF)
             self.assertTrue(math.isnan(math.ldexp(NAN, n)))
 
+    @requires_IEEE_754
+    def testLdexp_denormal(self):
+        # Denormal output incorrectly rounded (truncated)
+        # on some Windows.
+        self.assertEqual(math.ldexp(6993274598585239, -1126), 1e-323)
+
     def testLog(self):
         self.assertRaises(TypeError, math.log)
         self.assertRaises(TypeError, math.log, 1, 2, 3)
@@ -1967,6 +1973,28 @@ class MathTests(unittest.TestCase):
         self.assertFalse(math.isfinite(float("inf")))
         self.assertFalse(math.isfinite(float("-inf")))
 
+    def testIsnormal(self):
+        self.assertTrue(math.isnormal(1.25))
+        self.assertTrue(math.isnormal(-1.0))
+        self.assertFalse(math.isnormal(0.0))
+        self.assertFalse(math.isnormal(-0.0))
+        self.assertFalse(math.isnormal(INF))
+        self.assertFalse(math.isnormal(NINF))
+        self.assertFalse(math.isnormal(NAN))
+        self.assertFalse(math.isnormal(FLOAT_MIN/2))
+        self.assertFalse(math.isnormal(-FLOAT_MIN/2))
+
+    def testIssubnormal(self):
+        self.assertFalse(math.issubnormal(1.25))
+        self.assertFalse(math.issubnormal(-1.0))
+        self.assertFalse(math.issubnormal(0.0))
+        self.assertFalse(math.issubnormal(-0.0))
+        self.assertFalse(math.issubnormal(INF))
+        self.assertFalse(math.issubnormal(NINF))
+        self.assertFalse(math.issubnormal(NAN))
+        self.assertTrue(math.issubnormal(FLOAT_MIN/2))
+        self.assertTrue(math.issubnormal(-FLOAT_MIN/2))
+
     def testIsnan(self):
         self.assertTrue(math.isnan(float("nan")))
         self.assertTrue(math.isnan(float("-nan")))
@@ -2539,7 +2567,7 @@ class MathTests(unittest.TestCase):
                                     "expected a positive input$"):
             math.log(x)
         with self.assertRaisesRegex(ValueError,
-                                    f"expected a float or nonnegative integer, got {x}"):
+                                    f"expected a noninteger or positive integer, got {x}"):
             math.gamma(x)
         x = 1.0
         with self.assertRaisesRegex(ValueError,

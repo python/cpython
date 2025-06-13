@@ -731,14 +731,16 @@ class EnumType(type):
         """
         if isinstance(value, cls):
             return True
-        try:
-            cls(value)
-            return True
-        except ValueError:
-            return (
-                    value in cls._unhashable_values_    # both structures are lists
-                    or value in cls._hashable_values_
-                    )
+        if issubclass(cls, Flag):
+            try:
+                result = cls._missing_(value)
+                return isinstance(result, cls)
+            except ValueError:
+                pass
+        return (
+                value in cls._unhashable_values_    # both structures are lists
+                or value in cls._hashable_values_
+                )
 
     def __delattr__(cls, attr):
         # nicer error message when someone tries to delete an attribute
