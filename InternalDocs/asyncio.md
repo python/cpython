@@ -1,8 +1,6 @@
 asyncio
 =======
 
-Author: Kumar Aditya
-
 
 This document describes the working and implementation details of C implementation of the
 [`asyncio`](https://docs.python.org/3/library/asyncio.html) module.
