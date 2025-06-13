@@ -725,7 +725,7 @@ class TestInterpreterClose(TestBase):
                 time.sleep(1)
                 os.write({w_interp}, {FINISHED!r})
 
-            threads = [threading.Thread(target=task) for _ in range(3)]
+            threads = (threading.Thread(target=task) for _ in range(3))
             for t in threads:
                 t.start()
             """)
@@ -759,7 +759,7 @@ class TestInterpreterClose(TestBase):
             def task():
                 time.sleep(3)
 
-            threads = [threading.Thread(target=task, daemon=True) for _ in range(3)]
+            threads = (threading.Thread(target=task, daemon=True) for _ in range(3))
             for t in threads:
                 t.start()
             """)
