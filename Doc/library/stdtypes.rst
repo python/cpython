@@ -1841,6 +1841,14 @@ expression support in the :mod:`re` module).
    unless an encoding error actually occurs,
    :ref:`devmode` is enabled
    or a :ref:`debug build <debug-build>` is used.
+   For example::
+
+      >>> encoded_str_to_bytes = 'Python'.encode()
+      >>> type(encoded_str_to_bytes)
+      <class 'bytes'>
+      >>> encoded_str_to_bytes
+      b'Python'
+
 
    .. versionchanged:: 3.1
       Added support for keyword arguments.
@@ -1855,7 +1863,19 @@ expression support in the :mod:`re` module).
    Return ``True`` if the string ends with the specified *suffix*, otherwise return
    ``False``.  *suffix* can also be a tuple of suffixes to look for.  With optional
    *start*, test beginning at that position.  With optional *end*, stop comparing
-   at that position.
+   at that position. Using *start* and *end* is equivalent to
+   ``str[start:end].endswith(suffix)``. For example::
+
+      >>> 'Python'.endswith('on')
+      True
+      >>> 'a tuple of suffixes'.endswith(('at', 'in'))
+      False
+      >>> 'a tuple of suffixes'.endswith(('at', 'es'))
+      True
+      >>> 'Python is amazing'.endswith('is', 0, 9)
+      True
+
+   See also :meth:`startswith` and :meth:`removesuffix`.
 
 
 .. method:: str.expandtabs(tabsize=8)
