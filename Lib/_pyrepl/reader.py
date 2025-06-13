@@ -479,7 +479,7 @@ class Reader:
         """
         Convert prompt object to string.
 
-        If prompt raise BaseException, MemoryError and SystemError then stop
+        If str(prompt) raises BaseException, MemoryError or SystemError then stop
         the REPL. For other exceptions return default_prompt.
         """
         try:
