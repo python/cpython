@@ -10,7 +10,7 @@ This document describes the working and implementation details of C implementati
 
 Until Python 3.13, the C implementation of `asyncio` used a [`WeakSet`](https://docs.python.org/3/library/weakref.html#weakref.WeakSet) to store all the tasks created by the event loop. `WeakSet` was used so that the event loop
 doesn't hold strong references to the tasks, allowing them to be garbage collected when they are no longer needed.
-The current task of the event loop was stored in dict mapping the event loop to the current task.
+The current task of the event loop was stored in a dict mapping the event loop to the current task.
 
 ```c
     /* Dictionary containing tasks that are currently active in
@@ -44,7 +44,7 @@ This implementation uses a circular doubly linked list to store tasks on the thr
 
 The `PyThreadState` structure gained a new field `asyncio_tasks_head`, which serves as the head of the circular linked list of tasks. This allows for lock free addition and removal of tasks from the list.
 
- It is possible that when a thread state is deallocated, there are lingering tasks in it's list, this can happen if another thread has references to the tasks of this thread as such the `PyInterpreterState` structure also gains a new `asyncio_tasks_head` field to store any lingering tasks. When a thread state is deallocated, any remaining lingering tasks are moved to the interpreter state tasks list, and the thread state tasks list is cleared.
+ It is possible that when a thread state is deallocated, there are lingering tasks in its list; this can happen if another thread has references to the tasks of this thread. Therefore, the `PyInterpreterState` structure also gains a new `asyncio_tasks_head` field to store any lingering tasks. When a thread state is deallocated, any remaining lingering tasks are moved to the interpreter state tasks list, and the thread state tasks list is cleared.
 The `asyncio_tasks_lock` is used protect the interpreter's tasks list from concurrent modifications.
 
 
@@ -66,27 +66,27 @@ typedef struct PyInterpreterState {
 
 ```
 
-When a task is created, it is added to the current thread's list of tasks by the `register_task` function. When the task is done, it is removed from the list by the `unregister_task` function. In free-threading, the thread id of thread which
+When a task is created, it is added to the current thread's list of tasks by the `register_task` function. When the task is done, it is removed from the list by the `unregister_task` function. In free-threading, the thread id of the thread which
 created the task is stored in `task_tid` field of the `TaskObj`. This is used to check if the task is being removed from the correct thread's task list. If the current thread is same as the thread which created it then no locking is required, otherwise in free-threading, the `stop-the-world` pause is used to pause all other threads and then safely remove the task from the tasks list.
 
 ```mermaid
 flowchart TD
     subgraph one["Executing Thread"]
         A["task = asyncio.create_task(coro())"] -->B("register_task(task)")
-        B --> C{"task->task_state"}
+        B --> C{"task->task_state?"}
         C -->|pending| D["task_step(task)"]
         C -->|done| F["unregister_task(task)"]
         C -->|cancelled| F["unregister_task(task)"]
         D --> C
-        F --> G{"free-threading"}
+        F --> G{"free-threading?"}
         G --> |false| H["unregister_task_safe(task)"]
-        G --> |true| J{"check correct thread <br>task->task_tid == _Py_ThreadId()"}
+        G --> |true| J{"correct thread? <br>task->task_tid == _Py_ThreadId()"}
         J --> |true| H
         J --> |false| I["stop the world <br> pause all threads"]
         I --> H["unregister_task_safe(task)"]
     end
     subgraph two["Thread deallocating"]
-        A1{"check thread's task list is empty <br> llist_empty(tstate->asyncio_tasks_head)"}
+        A1{"thread's task list empty? <br> llist_empty(tstate->asyncio_tasks_head)"}```
         A1 --> |true| B1["deallocate thread<br>free_threadstate(tstate)"]
         A1 --> |false| C1["add tasks to interpreter's task list<br> llist_concat(&tstate->interp->asyncio_tasks_head,tstate->asyncio_tasks_head)"]
         C1 --> B1
