@@ -37,6 +37,9 @@ To address these issues, Python 3.14 implements several changes to improve the p
 
 - **Per-thread current task**: Python 3.14 stores the current task on the current thread state instead of a global dictionary. This allows for faster access to the current task without the need for a dictionary lookup. Each thread maintains its own current task, which is stored in the `PyThreadState` structure. This was implemented in https://github.com/python/cpython/issues/129898.
 
+Storing the current task and list of all tasks per-thread instead of storing it per-loop was chosen primarily to support external introspection tools such as `python -m asyncio pstree` as looking up arbitrary attributes on the loop object
+is not possible externally. Storing data per-thread also makes it easy to support third party event loop implementations such as `uvloop` and is more efficient for single threaded asyncio use-case as it avoids the overhead of attribute lookups on the loop object and several other calls on the performance critical path of adding and removing tasks from the per-loop task list.
+
 
 ## Per-thread double linked list for tasks
 
