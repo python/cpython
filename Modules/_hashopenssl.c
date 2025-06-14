@@ -2652,7 +2652,7 @@ hashlib_init_hmactype(PyObject *module)
 #ifdef Py_HAS_OPENSSL3_SUPPORT
     state->evp_hmac = EVP_MAC_fetch(NULL, "HMAC", NULL);
     if (state->evp_hmac == NULL) {
-        raise_ssl_error(PyExc_RuntimeError, "cannot initialize EVP_MAC HMAC");
+        raise_ssl_error(PyExc_ImportError, "cannot initialize EVP_MAC HMAC");
         return -1;
     }
 #endif
