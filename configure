@@ -9368,6 +9368,54 @@ printf "%s\n" "\"Found merge-fdata\"" >&6; }
   else
     as_fn_error $? "merge-fdata is required for a --enable-bolt build but could not be found." "$LINENO" 5
   fi
+
+  py_bolt_icf_flag="-icf=safe"
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether ${LLVM_BOLT} supports safe identical code folding" >&5
+printf %s "checking whether ${LLVM_BOLT} supports safe identical code folding... " >&6; }
+if test ${py_cv_bolt_icf_safe+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+      saved_cflags="$CFLAGS"
+      saved_ldflags="$LDFLAGS"
+      CFLAGS="$CFLAGS_NODIST"
+      LDFLAGS="$LDFLAGS_NODIST"
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  py_cv_bolt_icf_safe=no
+         ${LLVM_BOLT} -icf=safe -o conftest.bolt conftest$EXEEXT >&5 2>&1          && py_cv_bolt_icf_safe=yes
+else case e in #(
+  e) { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
+as_fn_error $? "could not compile empty test program
+See 'config.log' for more details" "$LINENO" 5; } ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+      CFLAGS="$saved_cflags"
+      LDFLAGS="$saved_ldflags"
+
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_bolt_icf_safe" >&5
+printf "%s\n" "$py_cv_bolt_icf_safe" >&6; }
+  if test "$py_cv_bolt_icf_safe" = no; then
+    py_bolt_icf_flag=""
+  fi
 fi
 
 
@@ -9404,7 +9452,7 @@ printf "%s\n" "$BOLT_INSTRUMENT_FLAGS" >&6; }
 printf %s "checking BOLT_APPLY_FLAGS... " >&6; }
 if test -z "${BOLT_APPLY_FLAGS}"
 then
-  BOLT_APPLY_FLAGS=" ${BOLT_COMMON_FLAGS} -reorder-blocks=ext-tsp -reorder-functions=cdsort -split-functions -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot "
+  BOLT_APPLY_FLAGS=" ${BOLT_COMMON_FLAGS} -reorder-blocks=ext-tsp -reorder-functions=cdsort -split-functions ${py_bolt_icf_flag} -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot "
 
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $BOLT_APPLY_FLAGS" >&5
