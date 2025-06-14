@@ -68,6 +68,9 @@ _cache_format = {
     "FOR_ITER": {
         "counter": 1,
     },
+    "GET_ITER": {
+        "counter": 1,
+    },
     "LOAD_SUPER_ATTR": {
         "counter": 1,
     },
