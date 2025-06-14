@@ -1323,6 +1323,13 @@ setup_readline(readlinestate *mod_state)
     /* The name must be defined before initialization */
     rl_readline_name = "python";
 
+#if !defined(__APPLE__)
+    /* Prevent readline from changing environment variables such as LINES and
+     * COLUMNS.
+     */
+    rl_change_environment = 0;
+#endif
+
     /* the libedit readline emulation resets key bindings etc
      * when calling rl_initialize.  So call it upfront
      */
