@@ -319,86 +319,29 @@
         }
 
         case _BINARY_OP_MULTIPLY_INT: {
-            JitOptSymbol *right;
-            JitOptSymbol *left;
             JitOptSymbol *res;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-                PyObject *temp = _PyLong_Multiply((PyLongObject *)sym_get_const(ctx, left),
-                    (PyLongObject *)sym_get_const(ctx, right));
-                if (temp == NULL) {
-                    goto error;
-                }
-                res = sym_new_const(ctx, temp);
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-                Py_DECREF(temp);
-            }
-            else {
-                res = sym_new_type(ctx, &PyLong_Type);
-                stack_pointer += -1;
-            }
-            stack_pointer[-1] = res;
+            res = sym_new_type(ctx, &PyLong_Type);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _BINARY_OP_ADD_INT: {
-            JitOptSymbol *right;
-            JitOptSymbol *left;
             JitOptSymbol *res;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-                PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(ctx, left),
-                    (PyLongObject *)sym_get_const(ctx, right));
-                if (temp == NULL) {
-                    goto error;
-                }
-                res = sym_new_const(ctx, temp);
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-                Py_DECREF(temp);
-            }
-            else {
-                res = sym_new_type(ctx, &PyLong_Type);
-                stack_pointer += -1;
-            }
-            stack_pointer[-1] = res;
+            res = sym_new_type(ctx, &PyLong_Type);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _BINARY_OP_SUBTRACT_INT: {
-            JitOptSymbol *right;
-            JitOptSymbol *left;
             JitOptSymbol *res;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-                PyObject *temp = _PyLong_Subtract((PyLongObject *)sym_get_const(ctx, left),
-                    (PyLongObject *)sym_get_const(ctx, right));
-                if (temp == NULL) {
-                    goto error;
-                }
-                res = sym_new_const(ctx, temp);
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-                Py_DECREF(temp);
-            }
-            else {
-                res = sym_new_type(ctx, &PyLong_Type);
-                stack_pointer += -1;
-            }
-            stack_pointer[-1] = res;
+            res = sym_new_type(ctx, &PyLong_Type);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
