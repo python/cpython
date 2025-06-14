@@ -963,6 +963,8 @@ struct _is {
 
     Py_ssize_t _interactive_src_count;
 
+    void *datetime_module_state;
+
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
     uint64_t next_stackref;
     _Py_hashtable_t *open_stackrefs_table;
