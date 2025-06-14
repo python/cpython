@@ -7551,6 +7551,29 @@ WITH_SAVE_ENV([
   ])
 ])
 
+WITH_SAVE_ENV([
+  LIBS="$LIBS $OPENSSL_LIBS"
+  CFLAGS="$CFLAGS $OPENSSL_INCLUDES"
+  LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH"
+
+AC_CHECK_HEADERS([openssl/ech.h], [have_openssl_ech_h=yes], [have_openssl_ech_h=no])
+if test "$have_openssl_ech_h" = "yes"; then
+    AC_MSG_CHECKING([for OpenSSL ECH support])
+    AC_CHECK_DECLS([SSL_ECH_STATUS_GREASE_ECH],
+                   [AC_DEFINE([OPENSSL_ECH], [1],
+                              [Define if OpenSSL has ECH support])],
+                   [AC_DEFINE([OPENSSL_NO_ECH], [1],
+                              [Define if OpenSSL does not have ECH support])],
+                   [
+		     #include <openssl/ech.h>
+		     ])
+    AC_MSG_RESULT([$ac_cv_have_decl_SSL_ECH_STATUS_GREASE_ECH])
+else
+    AC_DEFINE([OPENSSL_NO_ECH], [1],
+              [Define if OpenSSL does not have ECH support])
+fi
+])
+
 # ssl module default cipher suite string
 AH_TEMPLATE([PY_SSL_DEFAULT_CIPHERS],
   [Default cipher suites list for ssl module.
