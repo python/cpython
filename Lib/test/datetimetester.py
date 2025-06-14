@@ -3141,6 +3141,18 @@ class TestDateTime(TestDate):
         with self.assertRaises(TypeError):
             dt_broken.astimezone()
 
+        dt_big = self.theclass(9999, 12, 31, 23, 59, 59)
+        dt_big_utc = dt_big.replace(hour=19,
+                                    tzinfo=timezone(timedelta(hours=-4), 'EDT'))
+        self.assertEqual(dt_big_utc,
+                         dt_big.replace(tzinfo=timezone.utc).astimezone())
+
+        other_tz = timezone(timedelta(hours=+4), '+04')
+        dt_other_tz = dt_big.replace(tzinfo=other_tz)
+        dt_utc_tz = dt_big.replace(tzinfo=timezone.utc)
+        self.assertEqual(dt_other_tz, dt_other_tz.astimezone(tz=other_tz))
+        self.assertEqual(dt_utc_tz, dt_utc_tz.astimezone(tz=timezone.utc))
+
     def test_subclass_datetime(self):
 
         class C(self.theclass):
