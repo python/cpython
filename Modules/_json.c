@@ -32,11 +32,11 @@ typedef struct _PyScannerObject {
 
 static PyMemberDef scanner_members[] = {
     {"strict", Py_T_BOOL, offsetof(PyScannerObject, strict), Py_READONLY, "strict"},
-    {"object_hook", _Py_T_OBJECT, offsetof(PyScannerObject, object_hook), Py_READONLY, "object_hook"},
-    {"object_pairs_hook", _Py_T_OBJECT, offsetof(PyScannerObject, object_pairs_hook), Py_READONLY},
-    {"parse_float", _Py_T_OBJECT, offsetof(PyScannerObject, parse_float), Py_READONLY, "parse_float"},
-    {"parse_int", _Py_T_OBJECT, offsetof(PyScannerObject, parse_int), Py_READONLY, "parse_int"},
-    {"parse_constant", _Py_T_OBJECT, offsetof(PyScannerObject, parse_constant), Py_READONLY, "parse_constant"},
+    {"object_hook", Py_T_OBJECT_EX, offsetof(PyScannerObject, object_hook), Py_READONLY, "object_hook"},
+    {"object_pairs_hook", Py_T_OBJECT_EX, offsetof(PyScannerObject, object_pairs_hook), Py_READONLY},
+    {"parse_float", Py_T_OBJECT_EX, offsetof(PyScannerObject, parse_float), Py_READONLY, "parse_float"},
+    {"parse_int", Py_T_OBJECT_EX, offsetof(PyScannerObject, parse_int), Py_READONLY, "parse_int"},
+    {"parse_constant", Py_T_OBJECT_EX, offsetof(PyScannerObject, parse_constant), Py_READONLY, "parse_constant"},
     {NULL}
 };
 
@@ -57,12 +57,12 @@ typedef struct _PyEncoderObject {
 #define PyEncoderObject_CAST(op)    ((PyEncoderObject *)(op))
 
 static PyMemberDef encoder_members[] = {
-    {"markers", _Py_T_OBJECT, offsetof(PyEncoderObject, markers), Py_READONLY, "markers"},
-    {"default", _Py_T_OBJECT, offsetof(PyEncoderObject, defaultfn), Py_READONLY, "default"},
-    {"encoder", _Py_T_OBJECT, offsetof(PyEncoderObject, encoder), Py_READONLY, "encoder"},
-    {"indent", _Py_T_OBJECT, offsetof(PyEncoderObject, indent), Py_READONLY, "indent"},
-    {"key_separator", _Py_T_OBJECT, offsetof(PyEncoderObject, key_separator), Py_READONLY, "key_separator"},
-    {"item_separator", _Py_T_OBJECT, offsetof(PyEncoderObject, item_separator), Py_READONLY, "item_separator"},
+    {"markers", Py_T_OBJECT_EX, offsetof(PyEncoderObject, markers), Py_READONLY, "markers"},
+    {"default", Py_T_OBJECT_EX, offsetof(PyEncoderObject, defaultfn), Py_READONLY, "default"},
+    {"encoder", Py_T_OBJECT_EX, offsetof(PyEncoderObject, encoder), Py_READONLY, "encoder"},
+    {"indent", Py_T_OBJECT_EX, offsetof(PyEncoderObject, indent), Py_READONLY, "indent"},
+    {"key_separator", Py_T_OBJECT_EX, offsetof(PyEncoderObject, key_separator), Py_READONLY, "key_separator"},
+    {"item_separator", Py_T_OBJECT_EX, offsetof(PyEncoderObject, item_separator), Py_READONLY, "item_separator"},
     {"sort_keys", Py_T_BOOL, offsetof(PyEncoderObject, sort_keys), Py_READONLY, "sort_keys"},
     {"skipkeys", Py_T_BOOL, offsetof(PyEncoderObject, skipkeys), Py_READONLY, "skipkeys"},
     {NULL}
