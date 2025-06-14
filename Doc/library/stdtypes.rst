@@ -1891,12 +1891,15 @@ expression support in the :mod:`re` module).
    (``\n``) or return (``\r``), it is copied and the current column is reset to
    zero.  Any other character is copied unchanged and the current column is
    incremented by one regardless of how the character is represented when
-   printed.
+   printed. For example::
 
       >>> '01\t012\t0123\t01234'.expandtabs()
       '01      012     0123    01234'
       >>> '01\t012\t0123\t01234'.expandtabs(4)
       '01  012 0123    01234'
+      >>> print('01\t012\n0123\t01234'.expandtabs(4))
+      01  012
+      0123    01234
 
 
 .. method:: str.find(sub[, start[, end]])
