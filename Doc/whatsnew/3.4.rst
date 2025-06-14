@@ -403,7 +403,7 @@ Some smaller changes made to the core Python language are:
 
 * Unicode database updated to UCD version 6.3.
 
-* :func:`min` and :func:`max` now accept a *default* keyword-only argument that
+* :func:`min` and :func:`max` now accept a keyword argument *default* that
   can be used to specify the value they return if the iterable they are
   evaluating has no elements.  (Contributed by Julian Berman in
   :issue:`18111`.)
@@ -712,7 +712,7 @@ dis
 ---
 
 Functions :func:`~dis.show_code`, :func:`~dis.dis`, :func:`~dis.distb`, and
-:func:`~dis.disassemble` now accept a keyword-only *file* argument that
+:func:`~dis.disassemble` now accept a keyword argument *file* that
 controls where they write their output.
 
 The :mod:`dis` module is now built around an :class:`~dis.Instruction` class
@@ -1221,8 +1221,8 @@ pickle
 :mod:`pickle` now supports (but does not use by default) a new pickle protocol,
 protocol 4.  This new protocol addresses a number of issues that were present
 in previous protocols, such as the serialization of nested classes, very large
-strings and containers, and classes whose :meth:`__new__` method takes
-keyword-only arguments.  It also provides some efficiency improvements.
+strings and containers, and classes whose :meth:`__new__` method has
+keyword-only parameters.  It also provides some efficiency improvements.
 
 .. seealso::
 
@@ -2395,8 +2395,8 @@ Changes in the Python API
   values for the *base* parameter.  It is unlikely anyone was doing this, but
   if so, it will now raise a :exc:`TypeError` (:issue:`16772`).
 
-* Defaults for keyword-only arguments are now evaluated *after* defaults for
-  regular keyword arguments, instead of before.  Hopefully no one wrote any
+* Defaults for keyword-only parameters are now evaluated *after* defaults for
+  regular keyword-or-positional parameters, instead of before.  Hopefully no one wrote any
   code that depends on the previous buggy behavior (:issue:`16967`).
 
 * Stale thread states are now cleared after :func:`~os.fork`.  This may cause

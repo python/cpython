@@ -2620,7 +2620,7 @@ Faster ``json.dumps()`` when sorting of keys is not requested (default).
 .. section: Library
 
 Improve :meth:`Signature.bind <inspect.Signature.bind>` error message for
-missing keyword-only arguments.
+missing arguments for keyword-only parameters.
 
 ..
 

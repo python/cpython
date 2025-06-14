@@ -390,8 +390,8 @@ You could use a global variable containing a dictionary instead of the default
 value; it's a matter of taste.
 
 
-How can I pass optional or keyword parameters from one function to another?
----------------------------------------------------------------------------
+How can I pass optional positional or keyword arguments from one function to another?
+-------------------------------------------------------------------------------------
 
 Collect the arguments using the ``*`` and ``**`` specifiers in the function's
 parameter list; this gives you the positional arguments as a tuple and the
