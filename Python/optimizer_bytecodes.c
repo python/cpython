@@ -219,6 +219,20 @@ dummy_func(void) {
         else {
             res = sym_new_type(ctx, &PyFloat_Type);
         }
+
+        if (sym_is_const(ctx, lhs) && sym_is_const(ctx, rhs)) {
+            PyObject *temp = PyObject_RichCompare(sym_get_const(ctx, lhs),
+                                                 sym_get_const(ctx, rhs),
+                                                 oparg >> 5);
+            if (temp == NULL) {
+                goto error;
+            }
+            assert(PyBool_Check(temp));
+            assert(_Py_IsImmortal(temp));
+            REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
+            res = sym_new_const(ctx, temp);
+            Py_DECREF(temp);
+        }
     }
 
     op(_BINARY_OP_ADD_INT, (left, right -- res)) {
@@ -462,11 +476,43 @@ dummy_func(void) {
     }
 
     op(_COMPARE_OP_FLOAT, (left, right -- res)) {
-        res = sym_new_type(ctx, &PyBool_Type);
+        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
+            assert(PyLong_CheckExact(sym_get_const(ctx, left)));
+            assert(PyLong_CheckExact(sym_get_const(ctx, right)));
+            PyObject *tmp = PyObject_RichCompare(sym_get_const(ctx, left),
+                                                 sym_get_const(ctx, right),
+                                                 oparg >> 5);
+            if (tmp == NULL) {
+                goto error;
+            }
+            assert(PyBool_Check(tmp));
+            REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)tmp);
+            res = sym_new_const(ctx, tmp);
+            Py_DECREF(tmp);
+        }
+        else {
+            res = sym_new_type(ctx, &PyBool_Type);
+        }
     }
 
     op(_COMPARE_OP_STR, (left, right -- res)) {
-        res = sym_new_type(ctx, &PyBool_Type);
+        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
+            assert(PyLong_CheckExact(sym_get_const(ctx, left)));
+            assert(PyLong_CheckExact(sym_get_const(ctx, right)));
+            PyObject *tmp = PyObject_RichCompare(sym_get_const(ctx, left),
+                                                 sym_get_const(ctx, right),
+                                                 oparg >> 5);
+            if (tmp == NULL) {
+                goto error;
+            }
+            assert(PyBool_Check(tmp));
+            REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)tmp);
+            res = sym_new_const(ctx, tmp);
+            Py_DECREF(tmp);
+        }
+        else {
+            res = sym_new_type(ctx, &PyBool_Type);
+        }
     }
 
     op(_IS_OP, (left, right -- b)) {
