@@ -1,1 +1,1 @@
-:mod:`http.cookiejar`: use `ipaddress.ip_address()` instead of regex to check if a string is a HDN or a ipaddress.
+:mod:`http.cookiejar`: use :func:`~ipaddress.ip_address` instead of regex to check if a string is a HDN or a ipaddress.
