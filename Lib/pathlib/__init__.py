@@ -1106,7 +1106,7 @@ class Path(PurePath):
         if not hasattr(target, 'with_segments'):
             target = self.with_segments(target)
         ensure_distinct_paths(self, target)
-        target._copy_from(self, **kwargs)
+        list(target._copy_from(self, **kwargs))  # Consume generator.
         return target.joinpath()  # Empty join to ensure fresh metadata.
 
     def copy_into(self, target_dir, **kwargs):
@@ -1124,26 +1124,30 @@ class Path(PurePath):
 
     def _copy_from(self, source, follow_symlinks=True, preserve_metadata=False):
         """
-        Recursively copy the given path to this path.
+        Recursively copy the given path to this path. This a generator
+        function that yields (target, source, sent) tuples as the copying
+        operation progresses.
         """
+        yield self, source, 0
         if not follow_symlinks and source.info.is_symlink():
             self._copy_from_symlink(source, preserve_metadata)
         elif source.info.is_dir():
             children = source.iterdir()
             os.mkdir(self)
             for child in children:
-                self.joinpath(child.name)._copy_from(
+                yield from self.joinpath(child.name)._copy_from(
                     child, follow_symlinks, preserve_metadata)
             if preserve_metadata:
                 copy_info(source.info, self)
         else:
-            self._copy_from_file(source, preserve_metadata)
+            for sent in self._copy_from_file(source, preserve_metadata):
+                yield self, source, sent
 
     def _copy_from_file(self, source, preserve_metadata=False):
         ensure_different_files(source, self)
         with magic_open(source, 'rb') as source_f:
             with open(self, 'wb') as target_f:
-                copyfileobj(source_f, target_f)
+                yield from copyfileobj(source_f, target_f)
         if preserve_metadata:
             copy_info(source.info, self)
 
@@ -1158,7 +1162,7 @@ class Path(PurePath):
             else:
                 copyfile2(source, str(self))
                 return
-            self._copy_from_file_fallback(source, preserve_metadata)
+            yield from self._copy_from_file_fallback(source, preserve_metadata)
 
     if os.name == 'nt':
         # If a directory-symlink is copied *before* its target, then
