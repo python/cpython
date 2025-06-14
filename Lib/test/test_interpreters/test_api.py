@@ -1414,6 +1414,41 @@ class TestInterpreterCall(TestBase):
             with self.assertRaises(interpreters.NotShareableError):
                 interp.call(func, op, 'eggs!')
 
+    def test_callable_requires_frame(self):
+        # There are various functions tha require a current frame.
+        interp = interpreters.create()
+        for call, expected in [
+            ((eval, '[1, 2, 3]'),
+                [1, 2, 3]),
+            ((eval, 'sum([1, 2, 3])'),
+                6),
+            ((exec, '...'),
+                None),
+        ]:
+            with self.subTest(str(call)):
+                res = interp.call(*call)
+                self.assertEqual(res, expected)
+
+        notshareable = [
+            globals,
+            locals,
+            vars,
+        ]
+        for func, expectedtype in {
+            globals: dict,
+            locals: dict,
+            vars: dict,
+            dir: list,
+        }.items():
+            with self.subTest(str(func)):
+                if func in notshareable:
+                    with self.assertRaises(interpreters.NotShareableError):
+                        interp.call(func)
+                else:
+                    res = interp.call(func)
+                    self.assertIsInstance(res, expectedtype)
+                    self.assertIn('__builtins__', res)
+
     def test_call_in_thread(self):
         interp = interpreters.create()
 
