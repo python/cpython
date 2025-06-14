@@ -2619,8 +2619,6 @@ _PyXI_Enter(_PyXI_session *session,
             PyInterpreterState *interp, PyObject *nsupdates,
             _PyXI_session_result *result)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-
     // Convert the attrs for cross-interpreter use.
     _PyXI_namespace *sharedns = NULL;
     if (nsupdates != NULL) {
@@ -2643,7 +2641,7 @@ _PyXI_Enter(_PyXI_session *session,
             xidata_fallback_t fallback = _PyXIDATA_XIDATA_ONLY;
             _PyXI_failure _err = XI_FAILURE_INIT;
             if (_fill_sharedns(sharedns, nsupdates, fallback, &_err) < 0) {
-                assert(_PyErr_Occurred(tstate));
+                assert(_PyErr_Occurred(_PyThreadState_GET()));
                 if (_err.code == _PyXI_ERR_NO_ERROR) {
                     _err.code = _PyXI_ERR_UNCAUGHT_EXCEPTION;
                 }
@@ -2661,7 +2659,6 @@ _PyXI_Enter(_PyXI_session *session,
     _enter_session(session, interp);
     _PyXI_failure override = XI_FAILURE_INIT;
     override.code = _PyXI_ERR_UNCAUGHT_EXCEPTION;
-    tstate = _PyThreadState_GET();
 
     // Ensure this thread owns __main__.
     if (_PyInterpreterState_SetRunningMain(interp) < 0) {
@@ -2686,7 +2683,7 @@ _PyXI_Enter(_PyXI_session *session,
     }
 
     override.code = _PyXI_ERR_NO_ERROR;
-    assert(!_PyErr_Occurred(tstate));
+    assert(!_PyErr_Occurred(_PyThreadState_GET()));
     return 0;
 
 error:
@@ -2697,7 +2694,6 @@ error:
 
     // Exit the session.
     _exit_session(session);
-    tstate = _PyThreadState_GET();
 
     if (sharedns != NULL) {
         _destroy_sharedns(sharedns);
@@ -2717,7 +2713,7 @@ error:
             Py_DECREF(excinfo);
         }
     }
-    assert(_PyErr_Occurred(tstate));
+    assert(_PyErr_Occurred(_PyThreadState_GET()));
 
     return -1;
 }
