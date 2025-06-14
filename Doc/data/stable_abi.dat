@@ -828,7 +828,6 @@ member,PyVarObject.ob_size,3.2,,
 func,PyVectorcall_Call,3.12,,
 func,PyVectorcall_NARGS,3.12,,
 type,PyWeakReference,3.2,,opaque
-func,PyWeakref_GetObject,3.2,,
 func,PyWeakref_GetRef,3.13,,
 func,PyWeakref_NewProxy,3.2,,
 func,PyWeakref_NewRef,3.2,,
