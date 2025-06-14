@@ -1379,9 +1379,18 @@ def struct_pack_no_dd_sig(fmt, *values):
 
 class RepackHelperMixin:
     """Common helpers for remove and repack."""
-    def _prepare_zip_from_test_files(self, zfname, test_files, force_zip64=False):
+    @classmethod
+    def _prepare_test_files(cls):
+        return [
+            ('file0.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
+            ('file1.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
+            ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
+        ]
+
+    @classmethod
+    def _prepare_zip_from_test_files(cls, zfname, test_files, force_zip64=False):
         zinfos = []
-        with zipfile.ZipFile(zfname, 'w', self.compression) as zh:
+        with zipfile.ZipFile(zfname, 'w', cls.compression) as zh:
             for file, data in test_files:
                 with zh.open(file, 'w', force_zip64=force_zip64) as fh:
                     fh.write(data)
@@ -1392,11 +1401,7 @@ class RepackHelperMixin:
 class AbstractRemoveTests(RepackHelperMixin):
     @classmethod
     def setUpClass(cls):
-        cls.test_files = [
-            ('file0.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
-            ('file1.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
-            ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
-        ]
+        cls.test_files = cls._prepare_test_files()
 
     def tearDown(self):
         unlink(TESTFN)
@@ -1683,11 +1688,7 @@ class ZstdRemoveTests(AbstractRemoveTests, unittest.TestCase):
 class AbstractRepackTests(RepackHelperMixin):
     @classmethod
     def setUpClass(cls):
-        cls.test_files = [
-            ('file0.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
-            ('file1.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
-            ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
-        ]
+        cls.test_files = cls._prepare_test_files()
 
     def tearDown(self):
         unlink(TESTFN)
