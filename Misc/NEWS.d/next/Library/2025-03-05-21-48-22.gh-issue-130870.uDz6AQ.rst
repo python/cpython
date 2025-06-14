@@ -1,0 +1,1 @@
+Ensure that typing.Callable retains its subclass (_CallableGenericAlias) instead of being incorrectly converted to GenericAlias.
