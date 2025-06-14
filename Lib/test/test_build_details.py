@@ -123,6 +123,13 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
 
         self.assertEqual(os.path.realpath(value), os.path.realpath(sys.executable))
 
+    @needs_installed_python
+    def test_c_api(self):
+        value = self.key('c_api')
+        self.assertTrue(os.path.exists(os.path.join(value['headers'], 'Python.h')))
+        version = sysconfig.get_config_var('VERSION')
+        self.assertTrue(os.path.exists(os.path.join(value['pkgconfig_path'], f'python-{version}.pc')))
+
 
 if __name__ == '__main__':
     unittest.main()
