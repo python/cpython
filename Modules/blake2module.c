@@ -2,6 +2,7 @@
  * Written in 2013 by Dmitry Chestnykh <dmitry@codingrobots.com>
  * Modified for CPython by Christian Heimes <christian@python.org>
  * Updated to use HACL* by Jonathan Protzenko <jonathan@protzenko.fr>
+ * Refactored by Bénédikt Tran <10796600+picnixz@users.noreply.github.com>
  *
  * To the extent possible under law, the author have dedicated all
  * copyright and related and neighboring rights to this software to
@@ -14,10 +15,11 @@
 #endif
 
 #include "Python.h"
-#include "hashlib.h"
+#include "pycore_moduleobject.h"
 #include "pycore_strhex.h"       // _Py_strhex()
 #include "pycore_typeobject.h"
-#include "pycore_moduleobject.h"
+#include "_hashlib/hashlib_buffer.h"
+#include "_hashlib/hashlib_mutex.h"
 
 // QUICK CPU AUTODETECTION
 //
@@ -353,6 +355,7 @@ type_to_impl(PyTypeObject *type)
 
 typedef struct {
     PyObject_HEAD
+    HASHLIB_LOCK_HEAD
     union {
         Hacl_Hash_Blake2s_state_t *blake2s_state;
         Hacl_Hash_Blake2b_state_t *blake2b_state;
@@ -364,8 +367,6 @@ typedef struct {
 #endif
     };
     blake2_impl impl;
-    bool use_mutex;
-    PyMutex mutex;
 } Blake2Object;
 
 #define _Blake2Object_CAST(op)  ((Blake2Object *)(op))
@@ -647,6 +648,8 @@ py_blake2_new(PyTypeObject *type, PyObject *data, int digest_size,
         Py_buffer buf;
         GET_BUFFER_VIEW_OR_ERROR(data, &buf, goto error);
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
+            /* Do not initialize self->mutex here as this is the constructor
+             * where it is not yet possible to have concurrent access. */
             Py_BEGIN_ALLOW_THREADS
             update(self, buf.buf, buf.len);
             Py_END_ALLOW_THREADS

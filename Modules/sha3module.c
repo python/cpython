@@ -9,6 +9,7 @@
  *  Greg Stein (gstein@lyra.org)
  *  Trevor Perrin (trevp@trevp.net)
  *  Gregory P. Smith (greg@krypto.org)
+ *  Bénédikt Tran (10796600+picnixz@users.noreply.github.com)
  *
  * Copyright (C) 2012-2022  Christian Heimes (christian@python.org)
  * Licensed to PSF under a Contributor Agreement.
@@ -22,7 +23,8 @@
 #include "Python.h"
 #include "pycore_strhex.h"        // _Py_strhex()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
-#include "hashlib.h"
+#include "_hashlib/hashlib_buffer.h"
+#include "_hashlib/hashlib_mutex.h"
 
 #define SHA3_MAX_DIGESTSIZE 64 /* 64 Bytes (512 Bits) for 224 to 512 */
 
@@ -60,9 +62,7 @@ class _sha3.shake_256 "SHA3object *" "&SHAKE256type"
 
 typedef struct {
     PyObject_HEAD
-    // Prevents undefined behavior via multiple threads entering the C API.
-    bool use_mutex;
-    PyMutex mutex;
+    HASHLIB_LOCK_HEAD
     Hacl_Hash_SHA3_state_t *hash_state;
 } SHA3object;
 
@@ -164,7 +164,7 @@ py_sha3_new_impl(PyTypeObject *type, PyObject *data_obj, int usedforsecurity,
     if (data) {
         GET_BUFFER_VIEW_OR_ERROR(data, &buf, goto error);
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
-            /* We do not initialize self->lock here as this is the constructor
+            /* Do not initialize self->mutex here as this is the constructor
              * where it is not yet possible to have concurrent access. */
             Py_BEGIN_ALLOW_THREADS
             sha3_update(self->hash_state, buf.buf, buf.len);

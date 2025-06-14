@@ -236,6 +236,7 @@ Modules/_decimal/_decimal.c	-	signal_map_template	-
 Modules/_decimal/_decimal.c	-	ssize_constants	-
 Modules/_decimal/_decimal.c	-	INVALID_SIGNALDICT_ERROR_MSG	-
 Modules/_elementtree.c	-	ExpatMemoryHandler	-
+Modules/_hashlib/hashlib_fetch.h	-	Py_hashlib_message_digest_NAMES	-
 Modules/_hashopenssl.c	-	py_hashes	-
 Modules/_hacl/Hacl_Hash_SHA1.c	-	_h0	-
 Modules/_hacl/Hacl_Hash_MD5.c	-	_h0	-

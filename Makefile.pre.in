@@ -1482,6 +1482,12 @@ $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 	$(AR) $(ARFLAGS) $@ $(LIBEXPAT_OBJS)
 
 ##########################################################################
+# '_hashlib', '_hmac' and HACL*-based modules helpers
+
+Modules/_hashlib/hashlib_buffer.o: $(srcdir)/Modules/_hashlib/hashlib_buffer.c $(srcdir)/Modules/_hashlib/hashlib_buffer.h $(PYTHON_HEADERS)
+	$(CC) -I$(srcdir)/Modules/_hashlib -c $(PY_STDMODULE_CFLAGS) $(CCSHARED) -o $@ $(srcdir)/Modules/_hashlib/hashlib_buffer.c
+
+##########################################################################
 # HACL* library build
 #
 # The HACL* modules are dynamically compiled and linked with the
@@ -3322,22 +3328,31 @@ MODULE__CTYPES_TEST_DEPS=$(srcdir)/Modules/_ctypes/_ctypes_test_generated.c.h
 MODULE__CTYPES_MALLOC_CLOSURE=@MODULE__CTYPES_MALLOC_CLOSURE@
 MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h @LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c @LIBEXPAT_INTERNAL@
-MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
 
+MODULE__HASHLIB_DEPS=	\
+	$(srcdir)/Modules/_hashlib/hashlib_buffer.h \
+	$(srcdir)/Modules/_hashlib/hashlib_fetch.h \
+	$(srcdir)/Modules/_hashlib/hashlib_mutex.h
+
+MODULE__HASHLIB_LDEPS=	\
+	Modules/_hashlib/hashlib_buffer.o \
+	Modules/_hashlib/hashlib_fetch.o
+
 # HACL*-based cryptographic primitives
-MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_MD5_HEADERS) $(LIBHACL_MD5_LIB_@LIBHACL_LDEPS_LIBTYPE@)
-MODULE__MD5_LDEPS=$(LIBHACL_MD5_LIB_@LIBHACL_LDEPS_LIBTYPE@)
-MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA1_HEADERS) $(LIBHACL_SHA1_LIB_@LIBHACL_LDEPS_LIBTYPE@)
-MODULE__SHA1_LDEPS=$(LIBHACL_SHA1_LIB_@LIBHACL_LDEPS_LIBTYPE@)
-MODULE__SHA2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA2_HEADERS) $(LIBHACL_SHA2_LIB_@LIBHACL_LDEPS_LIBTYPE@)
-MODULE__SHA2_LDEPS=$(LIBHACL_SHA2_LIB_@LIBHACL_LDEPS_LIBTYPE@)
-MODULE__SHA3_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA3_HEADERS) $(LIBHACL_SHA3_LIB_@LIBHACL_LDEPS_LIBTYPE@)
-MODULE__SHA3_LDEPS=$(LIBHACL_SHA3_LIB_@LIBHACL_LDEPS_LIBTYPE@)
-MODULE__BLAKE2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_BLAKE2_HEADERS) $(LIBHACL_BLAKE2_LIB_@LIBHACL_LDEPS_LIBTYPE@)
-MODULE__BLAKE2_LDEPS=$(LIBHACL_BLAKE2_LIB_@LIBHACL_LDEPS_LIBTYPE@)
-MODULE__HMAC_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HMAC_HEADERS) $(LIBHACL_HMAC_LIB_@LIBHACL_LDEPS_LIBTYPE@)
-MODULE__HMAC_LDEPS=$(LIBHACL_HMAC_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__MD5_DEPS=$(MODULE__HASHLIB_DEPS) $(LIBHACL_MD5_HEADERS) $(LIBHACL_MD5_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__MD5_LDEPS=$(MODULE__HASHLIB_LDEPS) $(LIBHACL_MD5_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__SHA1_DEPS=$(MODULE__HASHLIB_DEPS) $(LIBHACL_SHA1_HEADERS) $(LIBHACL_SHA1_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__SHA1_LDEPS=$(MODULE__HASHLIB_LDEPS) $(LIBHACL_SHA1_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__SHA2_DEPS=$(MODULE__HASHLIB_DEPS) $(LIBHACL_SHA2_HEADERS) $(LIBHACL_SHA2_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__SHA2_LDEPS=$(MODULE__HASHLIB_LDEPS) $(LIBHACL_SHA2_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__SHA3_DEPS=$(MODULE__HASHLIB_DEPS) $(LIBHACL_SHA3_HEADERS) $(LIBHACL_SHA3_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__SHA3_LDEPS=$(MODULE__HASHLIB_LDEPS) $(LIBHACL_SHA3_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__BLAKE2_DEPS=$(MODULE__HASHLIB_DEPS) $(LIBHACL_BLAKE2_HEADERS) $(LIBHACL_BLAKE2_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__BLAKE2_LDEPS=$(MODULE__HASHLIB_LDEPS) $(LIBHACL_BLAKE2_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+
+MODULE__HMAC_DEPS=$(MODULE__HASHLIB_DEPS) $(LIBHACL_HMAC_HEADERS) $(LIBHACL_HMAC_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__HMAC_LDEPS=$(MODULE__HASHLIB_LDEPS) $(LIBHACL_HMAC_LIB_@LIBHACL_LDEPS_LIBTYPE@)
 
 MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.h $(srcdir)/Modules/getaddrinfo.c $(srcdir)/Modules/getnameinfo.c
 MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
