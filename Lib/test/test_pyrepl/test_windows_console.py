@@ -5,6 +5,9 @@ if sys.platform != "win32":
     raise unittest.SkipTest("test only relevant on win32")
 
 
+import subprocess
+from tempfile import TemporaryDirectory
+import os
 import itertools
 from functools import partial
 from test.support import force_not_colorized_test_class
@@ -575,6 +578,35 @@ class WindowsConsoleGetEventTests(TestCase):
         self.assertEqual(self.get_event(irs, vt_support=True),
                          Event(evt='key', data='up', raw=bytearray(b'\x1b[A')))
         self.assertEqual(self.mock.call_count, 3)
+
+
+class WindowsCommandLineTests(unittest.TestCase):
+    def test_for_crash_traceback_with_redirected_stdout(self):
+        """python.bat -i -c "print('hlwd')" > file.txt"""
+        script_command = "print('script has run')"
+        with TemporaryDirectory() as tmp_dir:
+            stdout_path = os.path.join(tmp_dir, "WinCMDLineTests.txt")
+            with open(stdout_path, "w") as stdout_file, \
+                subprocess.Popen(
+                    [sys.executable, '-i', '-c', script_command],
+                    stdin=None,
+                    stdout=stdout_file,
+                    stderr=subprocess.PIPE,
+                    text=True, errors='replace'
+                ) as process:
+                stderr_output = ""
+                try:
+                    process.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    _, stderr_output = process.communicate()
+                has_crash_traceback = (
+                    "OSError" in stderr_output and
+                    len(stderr_output) > 1200
+                )
+                if has_crash_traceback:
+                    self.fail("Detected endless OSError traceback."
+                          f"\n--- stderr ---\n{stderr_output[:1200]}")
 
 
 if __name__ == "__main__":
