@@ -1444,13 +1444,13 @@ class AbstractRemoveTests(RepackHelperMixin):
                     self.assertIsNone(zh.testzip())
 
     def test_remove_by_name_nonexist(self):
-        zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files)
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
         with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
             with self.assertRaises(KeyError):
                 zh.remove('nonexist.txt')
 
     def test_remove_by_zinfo_nonexist(self):
-        zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files)
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
         with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
             with self.assertRaises(KeyError):
                 zh.remove(zipfile.ZipInfo('nonexist.txt'))
@@ -1607,7 +1607,7 @@ class AbstractRemoveTests(RepackHelperMixin):
     def test_remove_writing(self):
         self._prepare_zip_from_test_files(TESTFN, self.test_files)
         with zipfile.ZipFile(TESTFN, 'a') as zh:
-            with zh.open('newfile.txt', 'w') as fh:
+            with zh.open('newfile.txt', 'w'):
                 with self.assertRaises(ValueError):
                     zh.remove(self.test_files[0][0])
 
@@ -1704,7 +1704,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
-                zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files)
+                self._prepare_zip_from_test_files(TESTFN, self.test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     for i in ii:
                         zh.remove(self.test_files[i][0])
@@ -1737,7 +1737,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 # do the removal and check the result
                 with open(TESTFN, 'wb') as fh:
                     fh.write(b'dummy ')
-                    zinfos = self._prepare_zip_from_test_files(fh, self.test_files)
+                    self._prepare_zip_from_test_files(fh, self.test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     for i in ii:
                         zh.remove(self.test_files[i][0])
@@ -1771,7 +1771,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 # do the removal and check the result
                 with open(TESTFN, 'wb') as fh:
                     fh.write(b'PK\003\004 ')
-                    zinfos = self._prepare_zip_from_test_files(fh, self.test_files)
+                    self._prepare_zip_from_test_files(fh, self.test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     for i in ii:
                         zh.remove(self.test_files[i][0])
@@ -1817,7 +1817,7 @@ class AbstractRepackTests(RepackHelperMixin):
                         zh.writestr('file2.txt', b'dummy')
                         zh.writestr('file3.txt', b'dummy')
                     fh.write(b' ')
-                    zinfos = self._prepare_zip_from_test_files(fh, self.test_files)
+                    self._prepare_zip_from_test_files(fh, self.test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     for i in ii:
                         zh.remove(self.test_files[i][0])
@@ -1970,7 +1970,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
-                zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files, force_zip64=True)
+                self._prepare_zip_from_test_files(TESTFN, self.test_files, force_zip64=True)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     for i in ii:
                         zh.remove(self.test_files[i][0])
@@ -2001,7 +2001,7 @@ class AbstractRepackTests(RepackHelperMixin):
 
                 # do the removal and check the result
                 with open(TESTFN, 'wb') as fh:
-                    zinfos = self._prepare_zip_from_test_files(Unseekable(fh), self.test_files)
+                    self._prepare_zip_from_test_files(Unseekable(fh), self.test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     # make sure data descriptor bit is really set (by making zipfile unseekable)
                     for zi in zh.infolist():
@@ -2036,7 +2036,7 @@ class AbstractRepackTests(RepackHelperMixin):
 
                 # do the removal and check the result
                 with open(TESTFN, 'wb') as fh:
-                    zinfos = self._prepare_zip_from_test_files(Unseekable(fh), self.test_files, force_zip64=True)
+                    self._prepare_zip_from_test_files(Unseekable(fh), self.test_files, force_zip64=True)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     # make sure data descriptor bit is really set (by making zipfile unseekable)
                     for zi in zh.infolist():
@@ -2073,7 +2073,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 # do the removal and check the result
                 with open(TESTFN, 'wb') as fh:
                     with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig):
-                        zinfos = self._prepare_zip_from_test_files(Unseekable(fh), self.test_files)
+                        self._prepare_zip_from_test_files(Unseekable(fh), self.test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     # make sure data descriptor bit is really set (by making zipfile unseekable)
                     for zi in zh.infolist():
@@ -2116,7 +2116,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 # do the removal and check the result
                 with open(TESTFN, 'wb') as fh:
                     with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig):
-                        zinfos = self._prepare_zip_from_test_files(Unseekable(fh), self.test_files)
+                        self._prepare_zip_from_test_files(Unseekable(fh), self.test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     # make sure data descriptor bit is really set (by making zipfile unseekable)
                     for zi in zh.infolist():
@@ -2157,7 +2157,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 # do the removal and check the result
                 with open(TESTFN, 'wb') as fh:
                     with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig):
-                        zinfos = self._prepare_zip_from_test_files(Unseekable(fh), self.test_files)
+                        self._prepare_zip_from_test_files(Unseekable(fh), self.test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     # make sure data descriptor bit is really set (by making zipfile unseekable)
                     for zi in zh.infolist():
@@ -2194,7 +2194,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 # do the removal and check the result
                 with open(TESTFN, 'wb') as fh:
                     with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig):
-                        zinfos = self._prepare_zip_from_test_files(Unseekable(fh), self.test_files, force_zip64=True)
+                        self._prepare_zip_from_test_files(Unseekable(fh), self.test_files, force_zip64=True)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     # make sure data descriptor bit is really set (by making zipfile unseekable)
                     for zi in zh.infolist():
@@ -2270,7 +2270,7 @@ class AbstractRepackTests(RepackHelperMixin):
             with self.subTest(removed=ii):
                 # calculate the expected results
                 test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
-                expected_zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
+                self._prepare_zip_from_test_files(TESTFN, test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     for zi in zh.infolist().copy():
                         zh.remove(zi)
@@ -2314,7 +2314,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 # do the removal and check the result
                 with open(TESTFN, 'wb') as fh:
                     with zipfile.ZipFile(fh, 'w', self.compression) as zh:
-                        for i, (file, data) in enumerate(self.test_files):
+                        for file, data in self.test_files:
                             zh.writestr(file, data)
                             fh.write(b' dummy bytes ')
                             zh.start_dir = fh.tell()
@@ -2358,7 +2358,7 @@ class AbstractRepackTests(RepackHelperMixin):
     def test_repack_writing(self, m_repack):
         self._prepare_zip_from_test_files(TESTFN, self.test_files)
         with zipfile.ZipFile(TESTFN, 'a') as zh:
-            with zh.open('newfile.txt', 'w') as fh:
+            with zh.open('newfile.txt', 'w'):
                 with self.assertRaises(ValueError):
                     zh.repack()
         m_repack.assert_not_called()
