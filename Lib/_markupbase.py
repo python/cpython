@@ -9,7 +9,7 @@ import re
 
 _declname_match = re.compile(r'[a-zA-Z][-_.a-zA-Z0-9]*\s*').match
 _declstringlit_match = re.compile(r'(\'[^\']*\'|"[^"]*")\s*').match
-_commentclose = re.compile(r'--\s*>')
+_commentclose = re.compile(r'--!?>')
 _markedsectionclose = re.compile(r']\s*]\s*>')
 
 # An analysis of the MS-Word extensions is available at
@@ -81,7 +81,7 @@ class ParserBase:
         # A simple, practical version could look like: ((name|stringlit) S*) + '>'
         n = len(rawdata)
         if rawdata[j:j+2] == '--': #comment
-            # Locate --.*-- as the body of the comment
+            # Locate the body of the comment.
             return self.parse_comment(i)
         elif rawdata[j] == '[': #marked section
             # Locate [statusWord [...arbitrary SGML...]] as the body of the marked section
@@ -161,13 +161,19 @@ class ParserBase:
             self.unknown_decl(rawdata[i+3: j])
         return match.end(0)
 
-    # Internal -- parse comment, return length or -1 if not terminated
-    def parse_comment(self, i, report=1):
+    # Internal -- parse comment
+    # if end is True, returns EOF location if no close tag is found, otherwise
+    # return length or -1 if not terminated
+    def parse_comment(self, i, report=1, end=False):
         rawdata = self.rawdata
         if rawdata[i:i+4] != '<!--':
             raise AssertionError('unexpected call to parse_comment()')
-        match = _commentclose.search(rawdata, i+4)
+        match = _commentclose.search(rawdata, i+2)
         if not match:
+            if end:
+                if report:
+                    self.handle_comment(rawdata[i+4:])
+                return len(rawdata)
             return -1
         if report:
             j = match.start(0)
