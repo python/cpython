@@ -5542,7 +5542,7 @@ AC_CHECK_DECL([MAXLOGNAME],
               [AC_DEFINE([HAVE_MAXLOGNAME], [1],
                          [Define if you have the 'MAXLOGNAME' constant.])],
               [],
-              [@%:@include <sys/params.h>])
+              [@%:@include <sys/param.h>])
 
 AC_CHECK_DECLS([UT_NAMESIZE],
               [AC_DEFINE([HAVE_UT_NAMESIZE], [1],

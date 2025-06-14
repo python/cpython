@@ -1,0 +1,1 @@
+Fix the detection of ``MAXLOGNAME`` in the ``configure.ac`` script.
