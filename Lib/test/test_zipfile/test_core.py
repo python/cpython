@@ -2066,13 +2066,13 @@ class AbstractRepackTests(RepackHelperMixin):
                 # calculate the expected results
                 test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
                 with open(TESTFN, 'wb') as fh:
-                    with mock.patch('zipfile.struct.pack', side_effect=struct_pack_no_dd_sig):
+                    with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig):
                         expected_zinfos = self._prepare_zip_from_test_files(Unseekable(fh), test_files)
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
                 with open(TESTFN, 'wb') as fh:
-                    with mock.patch('zipfile.struct.pack', side_effect=struct_pack_no_dd_sig):
+                    with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig):
                         zinfos = self._prepare_zip_from_test_files(Unseekable(fh), self.test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     # make sure data descriptor bit is really set (by making zipfile unseekable)
@@ -2105,7 +2105,7 @@ class AbstractRepackTests(RepackHelperMixin):
             with self.subTest(remove=ii):
                 # calculate the expected results
                 with open(TESTFN, 'wb') as fh:
-                    with mock.patch('zipfile.struct.pack', side_effect=struct_pack_no_dd_sig):
+                    with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig):
                         self._prepare_zip_from_test_files(Unseekable(fh), self.test_files)
                 with zipfile.ZipFile(TESTFN, 'a') as zh:
                     for i in ii:
@@ -2115,7 +2115,7 @@ class AbstractRepackTests(RepackHelperMixin):
 
                 # do the removal and check the result
                 with open(TESTFN, 'wb') as fh:
-                    with mock.patch('zipfile.struct.pack', side_effect=struct_pack_no_dd_sig):
+                    with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig):
                         zinfos = self._prepare_zip_from_test_files(Unseekable(fh), self.test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     # make sure data descriptor bit is really set (by making zipfile unseekable)
@@ -2150,13 +2150,13 @@ class AbstractRepackTests(RepackHelperMixin):
                 # calculate the expected results
                 test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
                 with open(TESTFN, 'wb') as fh:
-                    with mock.patch('zipfile.struct.pack', side_effect=struct_pack_no_dd_sig):
+                    with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig):
                         expected_zinfos = self._prepare_zip_from_test_files(Unseekable(fh), test_files)
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
                 with open(TESTFN, 'wb') as fh:
-                    with mock.patch('zipfile.struct.pack', side_effect=struct_pack_no_dd_sig):
+                    with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig):
                         zinfos = self._prepare_zip_from_test_files(Unseekable(fh), self.test_files)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     # make sure data descriptor bit is really set (by making zipfile unseekable)
@@ -2187,13 +2187,13 @@ class AbstractRepackTests(RepackHelperMixin):
                 # calculate the expected results
                 test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
                 with open(TESTFN, 'wb') as fh:
-                    with mock.patch('zipfile.struct.pack', side_effect=struct_pack_no_dd_sig):
+                    with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig):
                         expected_zinfos = self._prepare_zip_from_test_files(Unseekable(fh), test_files, force_zip64=True)
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
                 with open(TESTFN, 'wb') as fh:
-                    with mock.patch('zipfile.struct.pack', side_effect=struct_pack_no_dd_sig):
+                    with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig):
                         zinfos = self._prepare_zip_from_test_files(Unseekable(fh), self.test_files, force_zip64=True)
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
                     # make sure data descriptor bit is really set (by making zipfile unseekable)
@@ -2345,7 +2345,7 @@ class AbstractRepackTests(RepackHelperMixin):
                     with self.assertRaises(zipfile.BadZipFile):
                         zh.repack(zinfos)
 
-    @mock.patch('zipfile._ZipRepacker')
+    @mock.patch.object(zipfile, '_ZipRepacker')
     def test_repack_closed(self, m_repack):
         self._prepare_zip_from_test_files(TESTFN, self.test_files)
         with zipfile.ZipFile(TESTFN, 'a') as zh:
@@ -2354,7 +2354,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 zh.repack()
         m_repack.assert_not_called()
 
-    @mock.patch('zipfile._ZipRepacker')
+    @mock.patch.object(zipfile, '_ZipRepacker')
     def test_repack_writing(self, m_repack):
         self._prepare_zip_from_test_files(TESTFN, self.test_files)
         with zipfile.ZipFile(TESTFN, 'a') as zh:
@@ -2363,7 +2363,7 @@ class AbstractRepackTests(RepackHelperMixin):
                     zh.repack()
         m_repack.assert_not_called()
 
-    @mock.patch('zipfile._ZipRepacker')
+    @mock.patch.object(zipfile, '_ZipRepacker')
     def test_repack_mode_r(self, m_repack):
         self._prepare_zip_from_test_files(TESTFN, self.test_files)
         with zipfile.ZipFile(TESTFN, 'r') as zh:
@@ -2371,14 +2371,14 @@ class AbstractRepackTests(RepackHelperMixin):
                 zh.repack()
         m_repack.assert_not_called()
 
-    @mock.patch('zipfile._ZipRepacker')
+    @mock.patch.object(zipfile, '_ZipRepacker')
     def test_repack_mode_w(self, m_repack):
         with zipfile.ZipFile(TESTFN, 'w') as zh:
             with self.assertRaises(ValueError):
                 zh.repack()
         m_repack.assert_not_called()
 
-    @mock.patch('zipfile._ZipRepacker')
+    @mock.patch.object(zipfile, '_ZipRepacker')
     def test_repack_mode_x(self, m_repack):
         with zipfile.ZipFile(TESTFN, 'x') as zh:
             with self.assertRaises(ValueError):
