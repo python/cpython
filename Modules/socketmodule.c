@@ -3373,6 +3373,9 @@ sock_setsockopt(PyObject *self, PyObject *args)
                          (char*)&flag, sizeof flag);
         goto done;
     }
+    if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
+        return NULL;
+    }
 
     PyErr_Clear();
     /* setsockopt(level, opt, None, flag) */
@@ -3382,6 +3385,9 @@ sock_setsockopt(PyObject *self, PyObject *args)
         res = setsockopt(get_sock_fd(s), level, optname,
                          NULL, (socklen_t)optlen);
         goto done;
+    }
+    if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
+        return NULL;
     }
 
     PyErr_Clear();
