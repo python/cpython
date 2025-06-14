@@ -1741,7 +1741,7 @@ class _ZipRepacker:
     def _scan_data_descriptor_no_sig_by_decompression(self, fp, offset, end_offset, zip64, method):
         try:
             decompressor = _get_decompressor(method)
-        except (NotImplementedError, RuntimeError):
+        except RuntimeError:
             return False
 
         if decompressor is None:
