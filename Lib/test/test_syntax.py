@@ -528,6 +528,16 @@ SyntaxError: * may appear only once
 Traceback (most recent call last):
 SyntaxError: expected comma between / and *
 
+>>> def foo(a b):
+...    pass
+Traceback (most recent call last):
+SyntaxError: expected comma between parameters
+
+>>> def foo(a d=1):
+...    pass
+Traceback (most recent call last):
+SyntaxError: expected comma between parameters
+
 >>> def foo(a=1,d=,c):
 ...    pass
 Traceback (most recent call last):
@@ -574,6 +584,10 @@ SyntaxError: / must be ahead of *
 >>> lambda a=1,/*,b,c: None
 Traceback (most recent call last):
 SyntaxError: expected comma between / and *
+
+>>> lambda a b: None
+Traceback (most recent call last):
+SyntaxError: expected comma between parameters
 
 >>> lambda a,*b=3,c: None
 Traceback (most recent call last):
