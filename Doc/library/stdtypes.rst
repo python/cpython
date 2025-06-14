@@ -1764,7 +1764,14 @@ expression support in the :mod:`re` module).
 .. method:: str.capitalize()
 
    Return a copy of the string with its first character capitalized and the
-   rest lowercased.
+   rest lowercased. For example::
+
+      >>> 'PYTHON IS AMAZING'.capitalize()
+      'Python is amazing'
+      >>> 'Ǉjubljana starts With a non-english digraph'.capitalize()
+      'ǈjubljana starts with a non-english digraph'
+
+   See also :meth:`title`.
 
    .. versionchanged:: 3.8
       The first character is now put into titlecase rather than uppercase.
