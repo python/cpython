@@ -1363,6 +1363,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 }
                 case SEND:
                     j = oparg + i + INLINE_CACHE_ENTRIES_SEND + 1;
+                    assert(j >= 0);
                     assert(j < len);
                     assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
                     stacks[j] = next_stack;
