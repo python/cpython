@@ -2198,6 +2198,28 @@ class TestCase(unittest.TestCase):
                     self.assertEqual(new_sample.x, another_new_sample.x)
                     self.assertEqual(sample.y, another_new_sample.y)
 
+    def test_dataclasses_hash_pickleable(self):
+        global P, Q
+        class Q:
+            def __init__(self):
+                self.p = set()
+
+        @dataclass(frozen=True)
+        class P:
+            q: Q
+
+        q = Q()
+        q.p = P(q)
+        q.p.add(q)
+        new_q = pickle.loads(pickle.dumps(q))
+
+        self.assertEqual(q, new_q)
+        self.assertIsNot(q, new_q)
+
+        self.assertEqual(q.p, new_q.p)
+        self.assertIsNot(q.p, new_q.p)
+
+
     def test_dataclasses_qualnames(self):
         @dataclass(order=True, unsafe_hash=True, frozen=True)
         class A:
