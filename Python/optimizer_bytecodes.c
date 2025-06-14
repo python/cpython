@@ -245,7 +245,7 @@ dummy_func(void) {
             assert(PyLong_CheckExact(sym_get_const(ctx, left)));
             assert(PyLong_CheckExact(sym_get_const(ctx, right)));
             PyObject *temp = _PyLong_Subtract((PyLongObject *)sym_get_const(ctx, left),
-                                              (PyLongObject *)sym_get_const(ctx, right));
+                                         (PyLongObject *)sym_get_const(ctx, right));
             if (temp == NULL) {
                 goto error;
             }
@@ -257,6 +257,7 @@ dummy_func(void) {
         else {
             res = sym_new_type(ctx, &PyLong_Type);
         }
+        res = sym_new_type(ctx, &PyLong_Type);
     }
 
     op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
@@ -264,7 +265,7 @@ dummy_func(void) {
             assert(PyLong_CheckExact(sym_get_const(ctx, left)));
             assert(PyLong_CheckExact(sym_get_const(ctx, right)));
             PyObject *temp = _PyLong_Multiply((PyLongObject *)sym_get_const(ctx, left),
-                                              (PyLongObject *)sym_get_const(ctx, right));
+                                         (PyLongObject *)sym_get_const(ctx, right));
             if (temp == NULL) {
                 goto error;
             }
@@ -276,82 +277,27 @@ dummy_func(void) {
         else {
             res = sym_new_type(ctx, &PyLong_Type);
         }
+        res = sym_new_type(ctx, &PyLong_Type);
     }
 
     op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
-            assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
-            PyObject *temp = PyFloat_FromDouble(
-                PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) +
-                PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
-            if (temp == NULL) {
-                goto error;
-            }
-            res = sym_new_const(ctx, temp);
-            Py_DECREF(temp);
-            // TODO gh-115506:
-            // replace opcode with constant propagated one and update tests!
-        }
-        else {
-            res = sym_new_type(ctx, &PyFloat_Type);
-        }
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
+        res = sym_new_type(ctx, &PyFloat_Type);
     }
 
     op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
-            assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
-            PyObject *temp = PyFloat_FromDouble(
-                PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) -
-                PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
-            if (temp == NULL) {
-                goto error;
-            }
-            res = sym_new_const(ctx, temp);
-            Py_DECREF(temp);
-            // TODO gh-115506:
-            // replace opcode with constant propagated one and update tests!
-        }
-        else {
-            res = sym_new_type(ctx, &PyFloat_Type);
-        }
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
+        res = sym_new_type(ctx, &PyFloat_Type);
     }
 
     op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
-            assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
-            PyObject *temp = PyFloat_FromDouble(
-                PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) *
-                PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
-            if (temp == NULL) {
-                goto error;
-            }
-            res = sym_new_const(ctx, temp);
-            Py_DECREF(temp);
-            // TODO gh-115506:
-            // replace opcode with constant propagated one and update tests!
-        }
-        else {
-            res = sym_new_type(ctx, &PyFloat_Type);
-        }
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
+        res = sym_new_type(ctx, &PyFloat_Type);
     }
 
     op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            assert(PyUnicode_CheckExact(sym_get_const(ctx, left)));
-            assert(PyUnicode_CheckExact(sym_get_const(ctx, right)));
-            PyObject *temp = PyUnicode_Concat(sym_get_const(ctx, left), sym_get_const(ctx, right));
-            if (temp == NULL) {
-                goto error;
-            }
-            res = sym_new_const(ctx, temp);
-            Py_DECREF(temp);
-        }
-        else {
-            res = sym_new_type(ctx, &PyUnicode_Type);
-        }
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
+        res = sym_new_type(ctx, &PyUnicode_Type);
     }
 
     op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right -- )) {
@@ -463,6 +409,7 @@ dummy_func(void) {
     }
 
     op(_UNARY_NOT, (value -- res)) {
+        REPLACE_OPCODE_IF_EVALUATES_PURE(value);
         sym_set_type(value, &PyBool_Type);
         res = sym_new_truthiness(ctx, value, false);
     }
