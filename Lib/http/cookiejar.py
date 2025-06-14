@@ -585,8 +585,6 @@ def domain_match(A, B):
     if not is_HDN(A):
         return False
     i = A.rfind(B)
-    # B = .baidu.com
-    # A = lamentxu.top@www.baidu.com
     if i == -1 or i == 0:
         # A does not have form NB, or N is the empty string
         return False
