@@ -138,7 +138,7 @@ class InteractiveSession(unittest.TestCase):
         self.assertEndsWith(out, self.PS1)
         self.assertEqual(out.count(self.PS1), 2)
         self.assertEqual(out.count(self.PS2), 0)
-        self.assertIn("Error", err)
+        self.assertIn('Error: unknown command: "', err)
         # test "unknown_command" is pointed out in the error message
         self.assertIn("unknown_command", err)
 
