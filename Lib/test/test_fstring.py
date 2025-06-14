@@ -1651,6 +1651,18 @@ x = (
         self.assertEqual(f"{1+2 = # my comment
   }", '1+2 = \n  3')
 
+        self.assertEqual(f'{""" # booo
+  """=}', '""" # booo\n  """=\' # booo\\n  \'')
+
+        self.assertEqual(f'{" # nooo "=}', '" # nooo "=\' # nooo \'')
+        self.assertEqual(f'{" \" # nooo \" "=}', '" \\" # nooo \\" "=\' " # nooo " \'')
+
+        self.assertEqual(f'{ # some comment goes here
+  """hello"""=}',  ' \n  """hello"""=\'hello\'')
+        self.assertEqual(f'{"""# this is not a comment
+        a""" # this is a comment
+        }', '# this is not a comment\n        a')
+
         # These next lines contains tabs.  Backslash escapes don't
         # work in f-strings.
         # patchcheck doesn't like these tabs.  So the only way to test
