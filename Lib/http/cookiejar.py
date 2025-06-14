@@ -37,7 +37,7 @@ import urllib.parse, urllib.request
 import threading as _threading
 import http.client  # only for the default HTTP port
 from calendar import timegm
-
+from ipaddress import ip_address
 debug = False   # set to True to enable debugging via the logging module
 logger = None
 
@@ -532,15 +532,21 @@ def parse_ns_headers(ns_headers):
     return result
 
 
-IPV4_RE = re.compile(r"\.\d+$", re.ASCII)
+def is_ip(text):
+    """Return True if text is a valid IP address."""
+    # This function is a replacement of regex `IPV4_RE` in previous versions.
+    try:
+        ip_address(text)
+        return True
+    except ValueError:
+        return False
 def is_HDN(text):
     """Return True if text is a host domain name."""
     # XXX
     # This may well be wrong.  Which RFC is HDN defined in, if any (for
     #  the purposes of RFC 2965)?
-    # For the current implementation, what about IPv6?  Remember to look
-    #  at other uses of IPV4_RE also, if change this.
-    if IPV4_RE.search(text):
+    # Now we support both IPv4 and IPv6.
+    if is_ip(text):
         return False
     if text == "":
         return False
@@ -578,6 +584,8 @@ def domain_match(A, B):
     if not is_HDN(A):
         return False
     i = A.rfind(B)
+    # B = .baidu.com
+    # A = lamentxu.top@www.baidu.com
     if i == -1 or i == 0:
         # A does not have form NB, or N is the empty string
         return False
@@ -593,7 +601,7 @@ def liberal_is_HDN(text):
     For accepting/blocking domains.
 
     """
-    if IPV4_RE.search(text):
+    if is_ip(text):
         return False
     return True
 
@@ -1067,7 +1075,7 @@ class DefaultCookiePolicy(CookiePolicy):
                 (self.strict_ns_domain & self.DomainStrictNoDots)):
                 host_prefix = req_host[:-len(domain)]
                 if (host_prefix.find(".") >= 0 and
-                    not IPV4_RE.search(req_host)):
+                    not is_ip(req_host)):
                     _debug("   host prefix %s for domain %s contains a dot",
                            host_prefix, domain)
                     return False
