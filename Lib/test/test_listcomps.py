@@ -770,7 +770,7 @@ class ListComprehensionTest(unittest.TestCase):
             def __iter__(self):
                 return Iterator()
 
-        self.assertEqual([1,2], [i for i in C()])
+        self.assertEqual([1, 2], [i for i in C()])
 
 __test__ = {'doctests' : doctests}
 
