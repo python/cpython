@@ -8,6 +8,7 @@ import argparse
 from analyzer import (
     Analysis,
     analyze_files,
+    get_uop_cache_depths,
 )
 from generators_common import (
     DEFAULT_INPUT,
@@ -38,17 +39,21 @@ def generate_uop_ids(
         uops = [(uop.name, uop) for uop in analysis.uops.values()]
         # Sort so that _BASE comes immediately before _BASE_0, etc.
         for name, uop in sorted(uops):
-            if name in PRE_DEFINED:
-                continue
-            if uop.properties.tier == 1:
+            if name in PRE_DEFINED or uop.is_super() or uop.properties.tier == 1:
                 continue
             if uop.implicitly_created and not distinct_namespace and not uop.replicated:
                 out.emit(f"#define {name} {name[1:]}\n")
             else:
                 out.emit(f"#define {name} {next_id}\n")
                 next_id += 1
-
         out.emit(f"#define MAX_UOP_ID {next_id-1}\n")
+        for name, uop in sorted(uops):
+            if uop.properties.tier == 1:
+                continue
+            for inputs, outputs in sorted(get_uop_cache_depths(uop)):
+                out.emit(f"#define {name}_r{inputs}{outputs} {next_id}\n")
+                next_id += 1
+        out.emit(f"#define MAX_UOP_REGS_ID {next_id-1}\n")
 
 
 arg_parser = argparse.ArgumentParser(

@@ -3,7 +3,7 @@ import itertools
 import lexer
 import parser
 import re
-from typing import Optional, Callable
+from typing import Optional, Callable, Iterator
 
 from parser import Stmt, SimpleStmt, BlockStmt, IfStmt, WhileStmt
 
@@ -635,6 +635,9 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyLong_IsNegative",
     "_PyLong_IsNonNegativeCompact",
     "_PyLong_IsZero",
+    "_PyLong_Add",
+    "_PyLong_Subtract",
+    "_PyLong_Multiply",
     "_PyManagedDictPointer_IsValues",
     "_PyObject_GC_IS_SHARED",
     "_PyObject_GC_IS_TRACKED",
@@ -1183,6 +1186,73 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
     )
 
 
+def get_uop_cache_depths(uop: Uop) -> Iterator[tuple[int, int]]:
+    if uop.name == "_SPILL_OR_RELOAD":
+        for inputs in range(4):
+            for outputs in range(4):
+                if inputs != outputs:
+                    yield inputs, outputs
+        return
+    if uop.name == "_EXIT_TRACE":
+        for i in range(4):
+            yield i, 0
+        return
+    if uop.name in ("_START_EXECUTOR", "_JUMP_TO_TOP", "_DEOPT", "_ERROR_POP_N"):
+        yield 0, 0
+        return
+    non_decref_escape = False
+    for call in uop.properties.escaping_calls.values():
+        if "DECREF" in call.call.text or "CLOSE" in call.call.text:
+            continue
+        non_decref_escape = True
+    has_exit = uop.properties.deopts or uop.properties.side_exit
+    ideal_inputs = 0
+    has_array = False
+    for item in reversed(uop.stack.inputs):
+        if item.size:
+            has_array = True
+            break
+        if item.peek and uop.properties.escapes:
+            break
+        ideal_inputs += 1
+    ideal_outputs = 0
+    for item in reversed(uop.stack.outputs):
+        if item.size:
+            has_array = True
+            break
+        if item.peek and uop.properties.escapes:
+            break
+        ideal_outputs += 1
+    if ideal_inputs > 3:
+        ideal_inputs = 3
+    if ideal_outputs > 3:
+        ideal_outputs = 3
+    if non_decref_escape:
+        yield 0, ideal_outputs
+        return
+    # If a uop has an exit, we can get in a mess if the stack caching
+    # changes during execution.
+    if has_exit and ideal_inputs != ideal_outputs:
+        n = min(ideal_inputs, ideal_outputs)
+        yield n, n
+        return
+    yield ideal_inputs, ideal_outputs
+    if uop.properties.escapes or uop.properties.stores_sp or has_array:
+        return
+    if ideal_inputs >= 3 or ideal_outputs >= 3:
+        return
+    inputs, outputs = ideal_inputs, ideal_outputs
+    if inputs < outputs:
+        inputs, outputs = 0, outputs-inputs
+    else:
+        inputs, outputs = inputs-outputs, 0
+    while inputs <= 3 and outputs <= 3:
+        if inputs != ideal_inputs:
+            yield inputs,  outputs
+        inputs += 1
+        outputs += 1
+
+
 def analyze_files(filenames: list[str]) -> Analysis:
     return analyze_forest(parser.parse_files(filenames))
 
@@ -1200,6 +1270,7 @@ def dump_analysis(analysis: Analysis) -> None:
     print("Pseudos:")
     for p in analysis.pseudos.values():
         p.dump("    ")
+
 
 
 if __name__ == "__main__":

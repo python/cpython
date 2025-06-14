@@ -29,7 +29,7 @@
 #  error "this header file must not be included directly"
 #endif
 
-#define PYSTATS_MAX_UOP_ID 1024
+#define PYSTATS_MAX_UOP_ID 1500
 
 #define SPECIALIZATION_FAILURE_KINDS 60
 

@@ -24,7 +24,7 @@ def _dump_footer(
     yield ""
     yield f"static const StencilGroup shim = {groups['shim'].as_c('shim')};"
     yield ""
-    yield "static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {"
+    yield "static const StencilGroup stencil_groups[MAX_UOP_REGS_ID + 1] = {"
     for opname, group in sorted(groups.items()):
         if opname == "shim":
             continue

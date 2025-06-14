@@ -118,7 +118,7 @@ PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
 #define JIT_CLEANUP_THRESHOLD 100000
 
 // This is the length of the trace we project initially.
-#define UOP_MAX_TRACE_LENGTH 800
+#define UOP_MAX_TRACE_LENGTH 1600
 
 #define TRACE_STACK_SIZE 5
 
