@@ -2290,6 +2290,24 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_INT", uops)
         self.assertNotIn("_GUARD_NOS_INT", uops)
 
+    def test_unary_negative_long_float_type(self):
+        def testfunc(n):
+            for _ in range(n):
+                a = 9397
+                f = 9397.0
+                x = -a + -a
+                y = -f + -f
+
+        testfunc(TIER2_THRESHOLD)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertNotIn("_GUARD_TOS_INT", uops)
+        self.assertNotIn("_GUARD_NOS_INT", uops)
+        self.assertNotIn("_GUARD_TOS_FLOAT", uops)
+        self.assertNotIn("_GUARD_NOS_FLOAT", uops)
 
 def global_identity(x):
     return x
