@@ -701,6 +701,7 @@ class CodeTest(unittest.TestCase):
                 'checks': CO_FAST_LOCAL,
                 'res': CO_FAST_LOCAL,
             },
+            defs.spam_with_global_and_attr_same_name: {},
             defs.spam_full_args: {
                 'a': POSONLY,
                 'b': POSONLY,
@@ -954,6 +955,10 @@ class CodeTest(unittest.TestCase):
             defs.spam_with_globals_and_builtins: new_var_counts(
                 purelocals=5,
                 globalvars=6,
+            ),
+            defs.spam_with_global_and_attr_same_name: new_var_counts(
+                globalvars=2,
+                attrs=1,
             ),
             defs.spam_full_args: new_var_counts(
                 posonly=2,
