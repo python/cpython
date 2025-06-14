@@ -8,6 +8,7 @@ import socket
 import subprocess
 import sys
 import textwrap
+import traceback
 import unittest
 import unittest.mock
 from contextlib import closing, contextmanager, redirect_stdout, redirect_stderr, ExitStack
@@ -203,9 +204,9 @@ class PdbClientTestCase(unittest.TestCase):
         self.assertEqual(actual_outgoing, expected_outgoing)
         self.assertEqual(completions, expected_completions)
         if expected_stdout_substring and not expected_stdout:
-            self.assertIn(expected_stdout_substring, stdout.getvalue())
+            self.assertIn(expected_stdout_substring, traceback.strip_exc_timestamps(stdout.getvalue()))
         else:
-            self.assertEqual(stdout.getvalue(), expected_stdout)
+            self.assertEqual(traceback.strip_exc_timestamps(stdout.getvalue()), expected_stdout)
         input_mock.assert_has_calls([unittest.mock.call(p) for p in prompts])
         actual_state = {k: getattr(client, k) for k in expected_state}
         self.assertEqual(actual_state, expected_state)

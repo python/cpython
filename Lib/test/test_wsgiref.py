@@ -18,6 +18,7 @@ from platform import python_implementation
 import os
 import re
 import signal
+import traceback
 import sys
 import threading
 import unittest
@@ -153,7 +154,7 @@ class IntegrationTests(TestCase):
             b"A server error occurred.  Please contact the administrator."
         )
         self.assertEqual(
-            err.splitlines()[-2],
+            traceback.strip_exc_timestamps(err).splitlines()[-2],
             "AssertionError: Headers (('Content-Type', 'text/plain')) must"
             " be of type list: <class 'tuple'>"
         )
@@ -177,7 +178,7 @@ class IntegrationTests(TestCase):
                 self.assertEndsWith(out,
                     b"A server error occurred.  Please contact the administrator."
                 )
-                self.assertEqual(err.splitlines()[-2], exc_message)
+                self.assertEqual(traceback.strip_exc_timestamps(err).splitlines()[-2], exc_message)
 
     def test_wsgi_input(self):
         def bad_app(e,s):
@@ -189,7 +190,7 @@ class IntegrationTests(TestCase):
             b"A server error occurred.  Please contact the administrator."
         )
         self.assertEqual(
-            err.splitlines()[-2], "AssertionError"
+            traceback.strip_exc_timestamps(err).splitlines()[-2], "AssertionError"
         )
 
     def test_bytes_validation(self):

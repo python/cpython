@@ -159,6 +159,36 @@ The following exceptions are used mostly as base classes for other exceptions.
 
       .. versionadded:: 3.11
 
+   .. attribute:: __timestamp_ns__
+
+      The absolute time in nanoseconds at which this exception was instantiated
+      (usually: when it was raised); the same accuracy as :func:`time.time_ns`.
+      Display of these timestamps after the exception message in tracebacks is
+      off by default but can be configured using the
+      :envvar:`PYTHON_TRACEBACK_TIMESTAMPS` environment variable or the
+      :option:`-X traceback_timestamps <-X>` command line option.  In
+      applications with complicated exception chains and exception groups it
+      may be useful to help understand what happened when.  The value will be
+      ``0`` if a timestamp was not recorded.  :exc:`StopIteration` and
+      :exc:`StopAsyncIteration` never record timestamps as those are primarily
+      for control flow.
+
+      With ``PYTHON_TRACEBACK_TIMESTAMPS=iso`` in the environment ::
+
+         Traceback (most recent call last):
+           File "<python-input-0>", line 1, in <module>
+             raise RuntimeError("example")
+         RuntimeError: example <@2025-02-08T01:21:28.675309Z>
+
+      With ``PYTHON_TRACEBACK_TIMESTAMPS=ns`` in the environment ::
+
+         Traceback (most recent call last):
+           File "<python-input-0>", line 1, in <module>
+             raise RuntimeError("example")
+         RuntimeError: example <@1739172733527638530ns>
+
+      .. versionadded:: next
+
 
 .. exception:: Exception
 

@@ -25,6 +25,7 @@ jobs:
     timeout-minutes: 60
     env:
       ARCH: ${{ inputs.arch }}
+      PYTHON_TRACEBACK_TIMESTAMPS: 'ns'
     steps:
     - uses: actions/checkout@v4
       with:
