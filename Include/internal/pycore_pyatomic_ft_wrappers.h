@@ -112,6 +112,12 @@ extern "C" {
 #define FT_ATOMIC_ADD_SSIZE(value, new_value) \
     (void)_Py_atomic_add_ssize(&value, new_value)
 
+#define FT_ATOMIC_MEMCPY_PTR_STORE_RELAXED(dest, src, n) \
+    _Py_atomic_memcpy_ptr_store_relaxed(dest, src, (Py_ssize_t)(n))
+#define FT_ATOMIC_MEMMOVE_PTR_STORE_RELAXED(dest, src, n) \
+    _Py_atomic_memmove_ptr_store_relaxed(dest, src, (Py_ssize_t)(n))
+
+
 #else
 #define FT_ATOMIC_LOAD_PTR(value) value
 #define FT_ATOMIC_STORE_PTR(value, new_value) value = new_value
@@ -159,6 +165,9 @@ extern "C" {
 #define FT_ATOMIC_LOAD_ULLONG_RELAXED(value) value
 #define FT_ATOMIC_STORE_ULLONG_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_ADD_SSIZE(value, new_value) (void)(value += new_value)
+
+#define FT_ATOMIC_MEMCPY_PTR_STORE_RELAXED(dest, src, n) memcpy(dest, src, n)
+#define FT_ATOMIC_MEMMOVE_PTR_STORE_RELAXED(dest, src, n) memmove(dest, src, n)
 
 #endif
 
