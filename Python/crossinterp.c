@@ -2659,7 +2659,6 @@ _PyXI_Enter(_PyXI_session *session,
     _enter_session(session, interp);
     _PyXI_failure override = XI_FAILURE_INIT;
     override.code = _PyXI_ERR_UNCAUGHT_EXCEPTION;
-    tstate = _PyThreadState_GET();
 
     // Ensure this thread owns __main__.
     if (_PyInterpreterState_SetRunningMain(interp) < 0) {
@@ -2684,7 +2683,7 @@ _PyXI_Enter(_PyXI_session *session,
     }
 
     override.code = _PyXI_ERR_NO_ERROR;
-    assert(!_PyErr_Occurred(tstate));
+    assert(!_PyErr_Occurred(_PyThreadState_GET()));
     return 0;
 
 error:
@@ -2695,7 +2694,6 @@ error:
 
     // Exit the session.
     _exit_session(session);
-    tstate = _PyThreadState_GET();
 
     if (sharedns != NULL) {
         _destroy_sharedns(sharedns);
@@ -2715,7 +2713,7 @@ error:
             Py_DECREF(excinfo);
         }
     }
-    assert(_PyErr_Occurred(tstate));
+    assert(_PyErr_Occurred(_PyThreadState_GET()));
 
     return -1;
 }
