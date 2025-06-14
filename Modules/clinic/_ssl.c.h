@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_long.h"          // _PyLong_Size_t_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_ssl__SSLSocket_do_handshake__doc__,
@@ -441,6 +442,115 @@ _ssl__SSLSocket_owner_set(PyObject *self, PyObject *value, void *Py_UNUSED(conte
 
     return return_value;
 }
+
+PyDoc_STRVAR(_ssl__SSLSocket_uses_ktls_for_send__doc__,
+"uses_ktls_for_send($self, /)\n"
+"--\n"
+"\n"
+"Check if the Kernel TLS data-path is used for sending.");
+
+#define _SSL__SSLSOCKET_USES_KTLS_FOR_SEND_METHODDEF    \
+    {"uses_ktls_for_send", (PyCFunction)_ssl__SSLSocket_uses_ktls_for_send, METH_NOARGS, _ssl__SSLSocket_uses_ktls_for_send__doc__},
+
+static PyObject *
+_ssl__SSLSocket_uses_ktls_for_send_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_uses_ktls_for_send(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_uses_ktls_for_send_impl((PySSLSocket *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_ssl__SSLSocket_uses_ktls_for_recv__doc__,
+"uses_ktls_for_recv($self, /)\n"
+"--\n"
+"\n"
+"Check if the Kernel TLS data-path is used for receiving.");
+
+#define _SSL__SSLSOCKET_USES_KTLS_FOR_RECV_METHODDEF    \
+    {"uses_ktls_for_recv", (PyCFunction)_ssl__SSLSocket_uses_ktls_for_recv, METH_NOARGS, _ssl__SSLSocket_uses_ktls_for_recv__doc__},
+
+static PyObject *
+_ssl__SSLSocket_uses_ktls_for_recv_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_uses_ktls_for_recv(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_uses_ktls_for_recv_impl((PySSLSocket *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(BIO_get_ktls_send)
+
+PyDoc_STRVAR(_ssl__SSLSocket_sendfile__doc__,
+"sendfile($self, fd, offset, size, flags=0, /)\n"
+"--\n"
+"\n"
+"Write size bytes from offset in the file descriptor fd to the SSL connection.\n"
+"\n"
+"This method uses the zero-copy technique and returns the number of bytes\n"
+"written. It should be called only when Kernel TLS is used for sending data in\n"
+"the connection.\n"
+"\n"
+"The meaning of flags is platform dependent.");
+
+#define _SSL__SSLSOCKET_SENDFILE_METHODDEF    \
+    {"sendfile", _PyCFunction_CAST(_ssl__SSLSocket_sendfile), METH_FASTCALL, _ssl__SSLSocket_sendfile__doc__},
+
+static PyObject *
+_ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
+                              size_t size, int flags);
+
+static PyObject *
+_ssl__SSLSocket_sendfile(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    Py_off_t offset;
+    size_t size;
+    int flags = 0;
+
+    if (!_PyArg_CheckPositional("sendfile", nargs, 3, 4)) {
+        goto exit;
+    }
+    fd = PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[1], &offset)) {
+        goto exit;
+    }
+    if (!_PyLong_Size_t_Converter(args[2], &size)) {
+        goto exit;
+    }
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    flags = PyLong_AsInt(args[3]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_sendfile_impl((PySSLSocket *)self, fd, offset, size, flags);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(BIO_get_ktls_send) */
 
 PyDoc_STRVAR(_ssl__SSLSocket_write__doc__,
 "write($self, b, /)\n"
@@ -2893,6 +3003,10 @@ exit:
 
 #endif /* defined(_MSC_VER) */
 
+#ifndef _SSL__SSLSOCKET_SENDFILE_METHODDEF
+    #define _SSL__SSLSOCKET_SENDFILE_METHODDEF
+#endif /* !defined(_SSL__SSLSOCKET_SENDFILE_METHODDEF) */
+
 #ifndef _SSL_ENUM_CERTIFICATES_METHODDEF
     #define _SSL_ENUM_CERTIFICATES_METHODDEF
 #endif /* !defined(_SSL_ENUM_CERTIFICATES_METHODDEF) */
@@ -2900,4 +3014,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=748650909fec8906 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1adc3780d8ca682a input=a9049054013a1b77]*/
