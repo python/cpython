@@ -955,7 +955,7 @@ _PyPegen_check_fstring_conversion(Parser *p, Token* conv_token, expr_ty conv)
     if (conv_token->lineno != conv->lineno || conv_token->end_col_offset != conv->col_offset) {
         return RAISE_SYNTAX_ERROR_KNOWN_RANGE(
             conv_token, conv,
-            "f-string: conversion type must come right after the exclamanation mark"
+            "f-string: conversion type must come right after the exclamation mark"
         );
     }
     return result_token_with_metadata(p, conv, conv_token->metadata);
