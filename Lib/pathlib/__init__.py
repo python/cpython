@@ -1060,9 +1060,9 @@ class Path(PurePath):
         """
         Delete this file or directory (including all sub-directories).
         """
-        if self.is_symlink() or self.is_junction():
+        if self.info.is_symlink() or self.info.is_junction():
             self.unlink()
-        elif self.is_dir():
+        elif self.info.is_dir():
             # Lazy import to improve module import time
             import shutil
             shutil.rmtree(self)
