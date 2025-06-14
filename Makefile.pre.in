@@ -2612,6 +2612,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/namespace_pkgs \
 		test/test_importlib/namespace_pkgs/both_portions \
 		test/test_importlib/namespace_pkgs/both_portions/foo \
+		test/test_importlib/namespace_pkgs/foo \
 		test/test_importlib/namespace_pkgs/module_and_namespace_package \
 		test/test_importlib/namespace_pkgs/module_and_namespace_package/a_test \
 		test/test_importlib/namespace_pkgs/not_a_namespace_pkg \
