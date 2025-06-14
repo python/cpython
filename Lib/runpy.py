@@ -101,8 +101,8 @@ def _run_module_code(code, init_globals=None,
     # may be cleared when the temporary module goes away
     return mod_globals.copy()
 
-# Helper to get the full name, spec and code for a module
 def _get_module_details(mod_name, error=ImportError):
+    """Helper to get the full name, spec and code for a module"""
     if mod_name.startswith("."):
         raise error("Relative module names not supported")
     pkg_name, _, _ = mod_name.rpartition(".")
@@ -229,10 +229,12 @@ def run_module(mod_name, init_globals=None,
         return _run_code(code, {}, init_globals, run_name, mod_spec)
 
 def _get_main_module_details(error=ImportError):
-    # Helper that gives a nicer error message when attempting to
-    # execute a zipfile or directory by invoking __main__.py
-    # Also moves the standard __main__ out of the way so that the
-    # preexisting __loader__ entry doesn't cause issues
+    """Helper that gives a nicer error message when attempting to
+       execute a zipfile or directory by invoking __main__.py
+
+       Also moves the standard __main__ out of the way so that the
+       preexisting __loader__ entry doesn't cause issues.
+    """
     main_name = "__main__"
     saved_main = sys.modules[main_name]
     del sys.modules[main_name]
