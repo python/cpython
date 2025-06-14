@@ -74,6 +74,7 @@ The debugger's prompt is ``(Pdb)``, which is the indicator that you are in debug
    command arguments, e.g. the current global and local names are offered as
    arguments of the ``p`` command.
 
+.. _pdb-cli:
 
 .. program:: pdb
 
