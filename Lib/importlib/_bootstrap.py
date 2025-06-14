@@ -26,6 +26,13 @@ def _object_name(obj):
     except AttributeError:
         return type(obj).__qualname__
 
+def _normalize(name):
+    """Normalize 'name' to NKFC form."""
+    global _unicodedata_normalize
+    if _unicodedata_normalize is None:
+        from unicodedata import normalize as _unicodedata_normalize
+    return _unicodedata_normalize('NFKC', name)
+
 # Bootstrap-related code ######################################################
 
 # Modules injected manually by _setup()
@@ -36,6 +43,8 @@ _weakref = None
 # Import done by _install_external_importers()
 _bootstrap_external = None
 
+# Import done lazily as needed by _normalize as unicodedata is not built-in.
+_unicodedata_normalize = None
 
 def _wrap(new, old):
     """Simple substitute for functools.update_wrapper."""
@@ -1392,7 +1401,15 @@ def _gcd_import(name, package=None, level=0):
     the loader did not.
 
     """
+    global _unicodedata
     _sanity_check(name, package, level)
+
+    if not name.isascii():
+        name = _normalize(name)
+
+    if package is not None and not package.isascii():
+        package = _normalize(package)
+
     if level > 0:
         name = _resolve_name(name, package, level)
     return _find_and_load(name, _gcd_import)
