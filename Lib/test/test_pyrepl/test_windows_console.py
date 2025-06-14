@@ -589,32 +589,35 @@ class WindowsCommandLineTests(unittest.TestCase):
         with TemporaryDirectory() as tmp_dir:
             stdout_path = os.path.join(tmp_dir, "WinCMDLineTests.txt")
 
-            with open(stdout_path, "w", encoding="utf-8") as stdout_file, \
-                 subprocess.Popen(
+            with open(stdout_path, "w") as stdout_file, \
+                subprocess.Popen(
                     [sys.executable, '-i', '-c', script_command],
                     stdin=None,
                     stdout=stdout_file,
                     stderr=subprocess.PIPE,
-                    text=True, encoding='utf-8', errors='replace'
-                 ) as process:
+                    text=True, errors='replace'
+                ) as process:
+                
+                stderr_output = ""
 
-                time.sleep(3)
-
-                if process.poll() is None:
+                try:
+                    process.wait(timeout=3)
+                    self.fail(
+                        "Process exited unexpectedly within the timeout."
+                        )
+                except subprocess.TimeoutExpired:
                     process.kill()
+                    _, stderr_output = process.communicate()
 
-                stderr_output = process.stderr.read()
+                has_crash_traceback = (
+                    "OSError" in stderr_output and
+                    len(stderr_output) > 1200
+                )
+            
+                if has_crash_traceback:
+                    self.fail("Detected endless OSError traceback."
+                          f"\n--- stderr ---\n{stderr_output[:1200]}")
 
-        has_crash_traceback = (
-            "OSError" in stderr_output
-            and len(stderr_output) > 1200
-        )
-
-        if has_crash_traceback:
-            self.fail(
-                "Detected the endless OSError traceback.\n"
-                f"Stderr was:\n{stderr_output[:1200]}"
-            )
 
 if __name__ == "__main__":
     unittest.main()
