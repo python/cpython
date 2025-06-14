@@ -1,0 +1,2 @@
+Fix :exc:`TypeError` when using :func:`functools.singledispatchmethod` with
+a :class:`typing.Self` annotation.
