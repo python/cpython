@@ -1,3 +1,4 @@
+import cmath
 import unittest
 import sys
 from test import support
@@ -9,7 +10,9 @@ from test.support.numbers import (
 
 from random import random
 from math import isnan, copysign
+from itertools import combinations_with_replacement
 import operator
+import _testcapi
 
 INF = float("inf")
 NAN = float("nan")
@@ -446,6 +449,36 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                         complex_pow = "overflow"
                     self.assertEqual(str(float_pow), str(int_pow))
                     self.assertEqual(str(complex_pow), str(int_pow))
+
+
+        # Check that complex numbers with special components
+        # are correctly handled.
+        values = [complex(*_)
+                  for _ in combinations_with_replacement([1, -1, 0.0, 0, -0.0, 2,
+                                                          -3, INF, -INF, NAN], 2)]
+        exponents = [0, 1, 2, 3, 4, 5, 6, 19]
+        for z in values:
+            for e in exponents:
+                with self.subTest(value=z, exponent=e):
+                    if cmath.isfinite(z) and z.real and z.imag:
+                        continue
+                    try:
+                        r_pow = z**e
+                    except OverflowError:
+                        continue
+                    # Use the generic complex power algorithm.
+                    r_pro, r_pro_errno = _testcapi._py_c_pow(z, e)
+                    self.assertEqual(r_pro_errno, 0)
+                    if isnan(r_pow.real):
+                        self.assertTrue(isnan(r_pro.real))
+                    else:
+                        self.assertEqual(copysign(1, r_pow.real),
+                                         copysign(1, r_pro.real))
+                    if isnan(r_pow.imag):
+                        self.assertTrue(isnan(r_pro.imag))
+                    else:
+                        self.assertEqual(copysign(1, r_pow.imag),
+                                         copysign(1, r_pro.imag))
 
     def test_boolcontext(self):
         for i in range(100):
