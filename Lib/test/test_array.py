@@ -3,16 +3,21 @@
 """
 
 import collections.abc
+import io
+import os
 import unittest
 from test import support
 from test.support import import_helper
 from test.support import os_helper
+from test.support import threading_helper
 from test.support import _2G
 import weakref
 import pickle
 import operator
+import random
 import struct
 import sys
+import threading
 import warnings
 
 import array
@@ -468,54 +473,59 @@ class BaseTest:
     def test_tofromfile(self):
         a = array.array(self.typecode, 2*self.example)
         self.assertRaises(TypeError, a.tofile)
-        os_helper.unlink(os_helper.TESTFN)
-        f = open(os_helper.TESTFN, 'wb')
-        try:
-            a.tofile(f)
-            f.close()
-            b = array.array(self.typecode)
-            f = open(os_helper.TESTFN, 'rb')
-            self.assertRaises(TypeError, b.fromfile)
-            b.fromfile(f, len(self.example))
-            self.assertEqual(b, array.array(self.typecode, self.example))
-            self.assertNotEqual(a, b)
-            self.assertRaises(EOFError, b.fromfile, f, len(self.example)+1)
-            self.assertEqual(a, b)
-            f.close()
-        finally:
-            if not f.closed:
+        with os_helper.temp_dir() as temp_dir:
+            temp_path = os.path.join(temp_dir, os_helper.TESTFN)
+            f = open(temp_path, 'wb')
+            try:
+                a.tofile(f)
                 f.close()
-            os_helper.unlink(os_helper.TESTFN)
+                b = array.array(self.typecode)
+                f = open(temp_path, 'rb')
+                self.assertRaises(TypeError, b.fromfile)
+                b.fromfile(f, len(self.example))
+                self.assertEqual(b, array.array(self.typecode, self.example))
+                self.assertNotEqual(a, b)
+                self.assertRaises(EOFError, b.fromfile, f, len(self.example)+1)
+                self.assertEqual(a, b)
+                f.close()
+            finally:
+                if not f.closed:
+                    f.close()
+                os_helper.unlink(temp_path)
 
     def test_fromfile_ioerror(self):
         # Issue #5395: Check if fromfile raises a proper OSError
         # instead of EOFError.
         a = array.array(self.typecode)
-        f = open(os_helper.TESTFN, 'wb')
-        try:
-            self.assertRaises(OSError, a.fromfile, f, len(self.example))
-        finally:
-            f.close()
-            os_helper.unlink(os_helper.TESTFN)
+        with os_helper.temp_dir() as temp_dir:
+            temp_path = os.path.join(temp_dir, os_helper.TESTFN)
+            f = open(temp_path, 'wb')
+            try:
+                self.assertRaises(OSError, a.fromfile, f, len(self.example))
+            finally:
+                f.close()
+                os_helper.unlink(temp_path)
 
     def test_filewrite(self):
         a = array.array(self.typecode, 2*self.example)
-        f = open(os_helper.TESTFN, 'wb')
-        try:
-            f.write(a)
-            f.close()
-            b = array.array(self.typecode)
-            f = open(os_helper.TESTFN, 'rb')
-            b.fromfile(f, len(self.example))
-            self.assertEqual(b, array.array(self.typecode, self.example))
-            self.assertNotEqual(a, b)
-            b.fromfile(f, len(self.example))
-            self.assertEqual(a, b)
-            f.close()
-        finally:
-            if not f.closed:
+        with os_helper.temp_dir() as temp_dir:
+            temp_path = os.path.join(temp_dir, os_helper.TESTFN)
+            f = open(temp_path, 'wb')
+            try:
+                f.write(a)
                 f.close()
-            os_helper.unlink(os_helper.TESTFN)
+                b = array.array(self.typecode)
+                f = open(temp_path, 'rb')
+                b.fromfile(f, len(self.example))
+                self.assertEqual(b, array.array(self.typecode, self.example))
+                self.assertNotEqual(a, b)
+                b.fromfile(f, len(self.example))
+                self.assertEqual(a, b)
+                f.close()
+            finally:
+                if not f.closed:
+                    f.close()
+                os_helper.unlink(temp_path)
 
     def test_tofromlist(self):
         a = array.array(self.typecode, 2*self.example)
@@ -1168,14 +1178,14 @@ class BaseTest:
     @support.cpython_only
     def test_sizeof_with_buffer(self):
         a = array.array(self.typecode, self.example)
-        basesize = support.calcvobjsize('Pn2Pi')
+        basesize = support.calcvobjsize('PnPi')
         buffer_size = a.buffer_info()[1] * a.itemsize
         support.check_sizeof(self, a, basesize + buffer_size)
 
     @support.cpython_only
     def test_sizeof_without_buffer(self):
         a = array.array(self.typecode)
-        basesize = support.calcvobjsize('Pn2Pi')
+        basesize = support.calcvobjsize('PnPi')
         support.check_sizeof(self, a, basesize)
 
     def test_initialize_with_unicode(self):
@@ -1197,6 +1207,7 @@ class BaseTest:
         a = array.array('B', b"")
         self.assertRaises(BufferError, _testcapi.getbuffer_with_null_view, a)
 
+    @unittest.skipIf(support.Py_GIL_DISABLED, 'not freed if GIL disabled')
     def test_free_after_iterating(self):
         support.check_free_after_iterating(self, iter, array.array,
                                            (self.typecode,))
@@ -1251,6 +1262,7 @@ class UnicodeTest(StringTest, unittest.TestCase):
         self.assertRaises(ValueError, a.tounicode)
         self.assertRaises(ValueError, str, a)
 
+    @unittest.skipIf(support.Py_GIL_DISABLED, 'warning stuff is not free-thread safe yet')
     def test_typecode_u_deprecation(self):
         with self.assertWarns(DeprecationWarning):
             array.array("u")
@@ -1671,6 +1683,275 @@ class LargeArrayTest(unittest.TestCase):
         list(it)
         it.__setstate__(0)
         self.assertRaises(StopIteration, next, it)
+
+
+class FreeThreadingTest(unittest.TestCase):
+    # Test pretty much everything that can break under free-threading.
+    # Non-deterministic, but at least one of these things will fail if
+    # array module is not free-thread safe.
+
+    def setUp(self):
+        self.enterContext(warnings.catch_warnings())
+        warnings.filterwarnings(
+            "ignore",
+            message="The 'u' type code is deprecated and "
+                    "will be removed in Python 3.16",
+            category=DeprecationWarning)
+
+    def check(self, funcs, a=None, *args):
+        if a is None:
+            a = array.array('i', [1])
+
+        barrier = threading.Barrier(len(funcs))
+        threads = []
+
+        for func in funcs:
+            thread = threading.Thread(target=func, args=(barrier, a, *args))
+
+            threads.append(thread)
+
+        with threading_helper.start_threads(threads):
+            pass
+
+    @unittest.skipUnless(support.Py_GIL_DISABLED, 'this test can only possibly fail with GIL disabled')
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_free_threading(self):
+        def pop1(b, a):  # MODIFIES!
+            b.wait()
+            try: a.pop()
+            except IndexError: pass
+
+        def append1(b, a):  # MODIFIES!
+            b.wait()
+            a.append(2)
+
+        def insert1(b, a):  # MODIFIES!
+            b.wait()
+            a.insert(0, 2)
+
+        def extend(b, a):  # MODIFIES!
+            c = array.array('i', [2])
+            b.wait()
+            a.extend(c)
+
+        def extend2(b, a, c):  # MODIFIES!
+            b.wait()
+            a.extend(c)
+
+        def inplace_concat(b, a):  # MODIFIES!
+            c = array.array('i', [2])
+            b.wait()
+            a += c
+
+        def inplace_concat2(b, a, c):  # MODIFIES!
+            b.wait()
+            a += c
+
+        def inplace_repeat2(b, a):  # MODIFIES!
+            b.wait()
+            a *= 2
+
+        def clear(b, a, *args):  # MODIFIES!
+            b.wait()
+            a.clear()
+
+        def clear2(b, a, c):  # MODIFIES c!
+            b.wait()
+            try: c.clear()
+            except BufferError: pass
+
+        def remove1(b, a):  # MODIFIES!
+            b.wait()
+            try: a.remove(1)
+            except ValueError: pass
+
+        def fromunicode(b, a):  # MODIFIES!
+            b.wait()
+            a.fromunicode('test')
+
+        def frombytes(b, a):  # MODIFIES!
+            b.wait()
+            a.frombytes(b'0000')
+
+        def frombytes2(b, a, c):  # MODIFIES!
+            b.wait()
+            a.frombytes(c)
+
+        def fromlist(b, a):  # MODIFIES!
+            n = random.randint(0, 100)
+            b.wait()
+            a.fromlist([2] * n)
+
+        def ass_subscr2(b, a, c):  # MODIFIES!
+            b.wait()
+            a[:] = c
+
+        def ass0(b, a):  # modifies inplace
+            b.wait()
+            try: a[0] = 0
+            except IndexError: pass
+
+        def byteswap(b, a):  # modifies inplace
+            b.wait()
+            a.byteswap()
+
+        def tounicode(b, a):
+            b.wait()
+            a.tounicode()
+
+        def tobytes(b, a):
+            b.wait()
+            a.tobytes()
+
+        def tolist(b, a):
+            b.wait()
+            a.tolist()
+
+        def tofile(b, a):
+            f = io.BytesIO()
+            b.wait()
+            a.tofile(f)
+
+        def reduce_ex2(b, a):
+            b.wait()
+            a.__reduce_ex__(2)
+
+        def reduce_ex3(b, a):
+            b.wait()
+            c = a.__reduce_ex__(3)
+            assert not c[1] or 0xdd not in c[1][3]
+
+        def copy(b, a):
+            b.wait()
+            c = a.__copy__()
+            assert not c or 0xdd not in c
+
+        def repr1(b, a):
+            b.wait()
+            repr(a)
+
+        def repeat2(b, a):
+            b.wait()
+            a * 2
+
+        def count1(b, a):
+            b.wait()
+            a.count(1)
+
+        def index1(b, a):
+            b.wait()
+            try: a.index(1)
+            except ValueError: pass
+
+        def contains1(b, a):
+            b.wait()
+            try: 1 in a
+            except ValueError: pass
+
+        def subscr0(b, a):
+            b.wait()
+            try: a[0]
+            except IndexError: pass
+
+        def concat(b, a):
+            b.wait()
+            a + a
+
+        def concat2(b, a, c):
+            b.wait()
+            a + c
+
+        def richcmplhs(b, a):
+            c = a[:]
+            b.wait()
+            a == c
+
+        def richcmprhs(b, a):
+            c = a[:]
+            b.wait()
+            c == a
+
+        def new(b, a):
+            tc = a.typecode
+            b.wait()
+            array.array(tc, a)
+
+        def repr_(b, a):
+            b.wait()
+            repr(a)
+
+        def irepeat(b, a):  # MODIFIES!
+            b.wait()
+            a *= 2
+
+        def newi(b, l):
+            b.wait()
+            array.array('i', l)
+
+        def fromlistl(b, a, l):  # MODIFIES!
+            b.wait()
+            a.fromlist(l)
+
+        def fromlistlclear(b, a, l):  # MODIFIES LIST!
+            b.wait()
+            l.clear()
+
+        def iter_next(b, a, it):  # MODIFIES ITERATOR!
+            b.wait()
+            list(it)
+
+        def iter_reduce(b, a, it):
+            b.wait()
+            c = it.__reduce__()
+            assert not c[1] or 0xdd not in c[1][0]
+
+        self.check([pop1] * 10)
+        self.check([pop1] + [subscr0] * 10)
+        self.check([append1] * 10)
+        self.check([insert1] * 10)
+        self.check([pop1] + [index1] * 10)
+        self.check([pop1] + [contains1] * 10)
+        self.check([insert1] + [repeat2] * 10)
+        self.check([pop1] + [repr1] * 10)
+        self.check([inplace_repeat2] * 10)
+        self.check([byteswap] * 10)
+        self.check([insert1] + [clear] * 10)
+        self.check([pop1] + [count1] * 10)
+        self.check([remove1] * 10)
+        self.check([clear] + [copy] * 10, array.array('B', b'0' * 0x400000))
+        self.check([pop1] + [reduce_ex2] * 10)
+        self.check([clear] + [reduce_ex3] * 10, array.array('B', b'0' * 0x400000))
+        self.check([pop1] + [tobytes] * 10)
+        self.check([pop1] + [tolist] * 10)
+        self.check([clear, tounicode] * 10, array.array('w', 'a'*10000))
+        self.check([clear, tofile] * 10, array.array('w', 'a'*10000))
+        self.check([clear] + [extend] * 10)
+        self.check([clear] + [inplace_concat] * 10)
+        self.check([clear] + [concat] * 10, array.array('w', 'a'*10000))
+        self.check([fromunicode] * 10, array.array('w', 'a'))
+        self.check([frombytes] * 10)
+        self.check([fromlist] * 10)
+        self.check([clear] + [richcmplhs] * 10, array.array('i', [1]*10000))
+        self.check([clear] + [richcmprhs] * 10, array.array('i', [1]*10000))
+        self.check([clear, ass0] * 10, array.array('i', [1]*10000))  # to test array_ass_item must disable Py_mp_ass_subscript
+        self.check([clear] + [new] * 10, array.array('w', 'a'*10000))
+        self.check([clear] + [repr_] * 10, array.array('B', b'0' * 0x40000))
+        self.check([clear] + [repr_] * 10, array.array('B', b'0' * 0x40000))
+        self.check([clear] + [irepeat] * 10, array.array('B', b'0' * 0x40000))
+        self.check([clear] + [iter_reduce] * 10, a := array.array('B', b'0' * 0x400), iter(a))
+
+        # make sure we handle non-self objects correctly
+        self.check([clear] + [newi] * 10, [2] * random.randint(0, 100))
+        self.check([fromlistlclear] + [fromlistl] * 10, array.array('i', [1]), [2] * random.randint(0, 100))
+        self.check([clear2] + [concat2] * 10, array.array('w', 'a'*10000), array.array('w', 'a'*10000))
+        self.check([clear2] + [inplace_concat2] * 10, array.array('w', 'a'*10000), array.array('w', 'a'*10000))
+        self.check([clear2] + [extend2] * 10, array.array('w', 'a'*10000), array.array('w', 'a'*10000))
+        self.check([clear2] + [ass_subscr2] * 10, array.array('w', 'a'*10000), array.array('w', 'a'*10000))
+        self.check([clear2] + [frombytes2] * 10, array.array('w', 'a'*10000), array.array('B', b'a'*10000))
+
+        # iterator stuff
+        self.check([clear] + [iter_next] * 10, a := array.array('i', [1] * 10), iter(a))
 
 
 if __name__ == "__main__":
