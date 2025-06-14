@@ -7107,8 +7107,12 @@ class TestColorized(TestCase):
     def setUp(self):
         super().setUp()
         # Ensure color even if ran with NO_COLOR=1
+        self.original_can_colorize = _colorize.can_colorize
         _colorize.can_colorize = lambda *args, **kwargs: True
         self.theme = _colorize.get_theme(force_color=True).argparse
+
+    def tearDown(self):
+        _colorize.can_colorize = self.original_can_colorize
 
     def test_argparse_color(self):
         # Arrange: create a parser with a bit of everything
