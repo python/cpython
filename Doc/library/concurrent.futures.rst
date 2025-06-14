@@ -114,7 +114,7 @@ Executor Objects
              e.submit(shutil.copy, 'src4.txt', 'dest4.txt')
 
       .. versionchanged:: 3.9
-         Added *cancel_futures*.
+         Added the *cancel_futures* parameter.
 
 
 ThreadPoolExecutor
@@ -154,7 +154,8 @@ And::
    executor.submit(wait_on_future)
 
 
-.. class:: ThreadPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=())
+.. class:: ThreadPoolExecutor(max_workers=None, thread_name_prefix='', \
+                              initializer=None, initargs=(), **ctxkwargs)
 
    An :class:`Executor` subclass that uses a pool of at most *max_workers*
    threads to execute calls asynchronously.
@@ -200,6 +201,15 @@ And::
    .. versionchanged:: 3.13
       Default value of *max_workers* is changed to
       ``min(32, (os.process_cpu_count() or 1) + 4)``.
+
+   .. versionchanged:: 3.14
+      Added *ctxkwargs* to pass additional arguments to ``cls.prepare_context``
+      class method.
+
+   .. classmethod:: prepare_context(initializer, initargs)
+      Setting up the necessary context for creating worker instances in a pool-based executor (e.g., in a concurrent environment like threads or interpreters).
+
+      .. versionadded:: 3.14
 
 
 .. _threadpoolexecutor-example:
@@ -287,7 +297,8 @@ efficient alternative is to serialize with :mod:`pickle` and then send
 the bytes over a shared :mod:`socket <socket>` or
 :func:`pipe <os.pipe>`.
 
-.. class:: InterpreterPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=(), shared=None)
+.. class:: InterpreterPoolExecutor(max_workers=None, thread_name_prefix='', \
+                                   initializer=None, initargs=(), shared=None)
 
    A :class:`ThreadPoolExecutor` subclass that executes calls asynchronously
    using a pool of at most *max_workers* threads.  Each thread runs
@@ -357,7 +368,9 @@ that :class:`ProcessPoolExecutor` will not work in the interactive interpreter.
 Calling :class:`Executor` or :class:`Future` methods from a callable submitted
 to a :class:`ProcessPoolExecutor` will result in deadlock.
 
-.. class:: ProcessPoolExecutor(max_workers=None, mp_context=None, initializer=None, initargs=(), max_tasks_per_child=None)
+.. class:: ProcessPoolExecutor(max_workers=None, mp_context=None, \
+                               initializer=None, initargs=(), \
+                               max_tasks_per_child=None)
 
    An :class:`Executor` subclass that executes calls asynchronously using a pool
    of at most *max_workers* processes.  If *max_workers* is ``None`` or not
