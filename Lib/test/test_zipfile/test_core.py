@@ -2584,180 +2584,193 @@ class ZipRepackerTests(unittest.TestCase):
             (0x4ff4f23f, 5, 5, 12),
         )
 
-    @requires_zlib()
-    @requires_bz2()
-    @requires_zstd()
-    def test_scan_data_descriptor_no_sig_by_decompression(self):
-        repacker = zipfile._ZipRepacker()
-
-        for method in (
-            zipfile.ZIP_DEFLATED,
-            zipfile.ZIP_BZIP2,
-            zipfile.ZIP_ZSTANDARD,
-        ):
-            compressor = zipfile._get_compressor(method)
-            with self.subTest(method=method, compressor=compressor):
-                comp_bytes = compressor.compress(b'dummy')
-                comp_bytes += compressor.flush()
-                comp_len = len(comp_bytes)
-
-                # basic
-                bytes_ = comp_bytes + b'\x3f\xf2\xf4\x4f' + struct.pack('<L', comp_len) + b'\x05\x00\x00\x00'
-                self.assertEqual(
-                    repacker._scan_data_descriptor_no_sig_by_decompression(
-                        io.BytesIO(bytes_), 0, len(bytes_), False, method),
-                    (0x4ff4f23f, comp_len, 5, 12),
-                )
-
-                # return None if insufficient data length
-                bytes_ = b'\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00\x00'
-                self.assertEqual(
-                    repacker._scan_data_descriptor_no_sig_by_decompression(
-                        io.BytesIO(bytes_), 0, len(bytes_) - 1, False, method),
-                    None,
-                )
-
-                bytes_ = b'\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00'
-                self.assertEqual(
-                    repacker._scan_data_descriptor_no_sig_by_decompression(
-                        io.BytesIO(bytes_), 0, len(bytes_) + 1, False, method),
-                    None,
-                )
-
-                # return None if compressed size not match
-                bytes_ = comp_bytes + b'\x3f\xf2\xf4\x4f' + struct.pack('<L', comp_len - 1) + b'\x05\x00\x00\x00'
-                self.assertEqual(
-                    repacker._scan_data_descriptor_no_sig_by_decompression(
-                        io.BytesIO(bytes_), 0, len(bytes_), False, method),
-                    None,
-                )
-
-                # zip64
-                bytes_ = comp_bytes + b'\x3f\xf2\xf4\x4f' + struct.pack('<Q', comp_len) + b'\x05\x00\x00\x00\x00\x00\x00\x00'
-                self.assertEqual(
-                    repacker._scan_data_descriptor_no_sig_by_decompression(
-                        io.BytesIO(bytes_), 0, len(bytes_), True, method),
-                    (0x4ff4f23f, comp_len, 5, 20),
-                )
-
-                # offset
-                bytes_ = comp_bytes + b'\x3f\xf2\xf4\x4f' + struct.pack('<L', comp_len) + b'\x05\x00\x00\x00'
-                self.assertEqual(
-                    repacker._scan_data_descriptor_no_sig_by_decompression(
-                        io.BytesIO(bytes_), 1, len(bytes_), False, method),
-                    None,
-                )
-
-                bytes_ = b'123' + comp_bytes + b'\x3f\xf2\xf4\x4f' + struct.pack('<L', comp_len) + b'\x05\x00\x00\x00'
-                self.assertEqual(
-                    repacker._scan_data_descriptor_no_sig_by_decompression(
-                        io.BytesIO(bytes_), 3, len(bytes_), False, method),
-                    (0x4ff4f23f, comp_len, 5, 12),
-                )
-
-                # end_offset
-                bytes_ = comp_bytes + b'\x3f\xf2\xf4\x4f' + struct.pack('<L', comp_len) + b'\x05\x00\x00\x00'
-                self.assertEqual(
-                    repacker._scan_data_descriptor_no_sig_by_decompression(
-                        io.BytesIO(bytes_), 0, len(bytes_) - 2, False, method),
-                    None,
-                )
-
-                bytes_ = comp_bytes + b'\x3f\xf2\xf4\x4f' + struct.pack('<L', comp_len) + b'\x05\x00\x00\x00123'
-                self.assertEqual(
-                    repacker._scan_data_descriptor_no_sig_by_decompression(
-                        io.BytesIO(bytes_), 0, len(bytes_) - 2, False, method),
-                    (0x4ff4f23f, comp_len, 5, 12),
-                )
-
-    def test_scan_data_descriptor_no_sig_by_decompression_invalid(self):
-        repacker = zipfile._ZipRepacker()
-
-        for method in (
-            zipfile.ZIP_STORED,
-            zipfile.ZIP_LZMA,
-            1024,  # simulate an unknown method
-        ):
-            with self.subTest(method=method):
-                bytes_ = b'dummy'
-                self.assertEqual(
-                    repacker._scan_data_descriptor_no_sig_by_decompression(
-                        io.BytesIO(bytes_), 0, len(bytes_), False, method),
-                    False,
-                )
+    def test_scan_data_descriptor_no_sig_by_decompression_stored(self):
+        self._test_scan_data_descriptor_no_sig_by_decompression_invalid(zipfile.ZIP_STORED)
 
     @requires_zlib()
+    def test_scan_data_descriptor_no_sig_by_decompression_zlib(self):
+        self._test_scan_data_descriptor_no_sig_by_decompression(zipfile.ZIP_DEFLATED)
+
     @requires_bz2()
+    def test_scan_data_descriptor_no_sig_by_decompression_bz2(self):
+        self._test_scan_data_descriptor_no_sig_by_decompression(zipfile.ZIP_BZIP2)
+
+    @requires_lzma()
+    def test_scan_data_descriptor_no_sig_by_decompression_lzma(self):
+        self._test_scan_data_descriptor_no_sig_by_decompression_invalid(zipfile.ZIP_LZMA)
+
     @requires_zstd()
-    def test_trace_compressed_block_end(self):
+    def test_scan_data_descriptor_no_sig_by_decompression_zstd(self):
+        self._test_scan_data_descriptor_no_sig_by_decompression(zipfile.ZIP_ZSTANDARD)
+
+    def test_scan_data_descriptor_no_sig_by_decompression_unknown(self):
+        method = 1024  # simulate an unknown method
+        self._test_scan_data_descriptor_no_sig_by_decompression_invalid(method)
+
+    def _test_scan_data_descriptor_no_sig_by_decompression(self, method):
+        repacker = zipfile._ZipRepacker()
+
+        compressor = zipfile._get_compressor(method)
+
+        comp_bytes = compressor.compress(b'dummy')
+        comp_bytes += compressor.flush()
+        comp_len = len(comp_bytes)
+
+        # basic
+        bytes_ = comp_bytes + b'\x3f\xf2\xf4\x4f' + struct.pack('<L', comp_len) + b'\x05\x00\x00\x00'
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 0, len(bytes_), False, method),
+            (0x4ff4f23f, comp_len, 5, 12),
+        )
+
+        # return None if insufficient data length
+        bytes_ = b'\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00\x00'
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 0, len(bytes_) - 1, False, method),
+            None,
+        )
+
+        bytes_ = b'\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00'
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 0, len(bytes_) + 1, False, method),
+            None,
+        )
+
+        # return None if compressed size not match
+        bytes_ = comp_bytes + b'\x3f\xf2\xf4\x4f' + struct.pack('<L', comp_len - 1) + b'\x05\x00\x00\x00'
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 0, len(bytes_), False, method),
+            None,
+        )
+
+        # zip64
+        bytes_ = comp_bytes + b'\x3f\xf2\xf4\x4f' + struct.pack('<Q', comp_len) + b'\x05\x00\x00\x00\x00\x00\x00\x00'
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 0, len(bytes_), True, method),
+            (0x4ff4f23f, comp_len, 5, 20),
+        )
+
+        # offset
+        bytes_ = comp_bytes + b'\x3f\xf2\xf4\x4f' + struct.pack('<L', comp_len) + b'\x05\x00\x00\x00'
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 1, len(bytes_), False, method),
+            None,
+        )
+
+        bytes_ = b'123' + comp_bytes + b'\x3f\xf2\xf4\x4f' + struct.pack('<L', comp_len) + b'\x05\x00\x00\x00'
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 3, len(bytes_), False, method),
+            (0x4ff4f23f, comp_len, 5, 12),
+        )
+
+        # end_offset
+        bytes_ = comp_bytes + b'\x3f\xf2\xf4\x4f' + struct.pack('<L', comp_len) + b'\x05\x00\x00\x00'
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 0, len(bytes_) - 2, False, method),
+            None,
+        )
+
+        bytes_ = comp_bytes + b'\x3f\xf2\xf4\x4f' + struct.pack('<L', comp_len) + b'\x05\x00\x00\x00123'
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 0, len(bytes_) - 2, False, method),
+            (0x4ff4f23f, comp_len, 5, 12),
+        )
+
+    def _test_scan_data_descriptor_no_sig_by_decompression_invalid(self, method):
+        repacker = zipfile._ZipRepacker()
+
+        bytes_ = b'dummy'
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 0, len(bytes_), False, method),
+            False,
+        )
+
+    @requires_zlib()
+    def test_trace_compressed_block_end_zlib(self):
         import zlib
+        self._test_trace_compressed_block_end(zipfile.ZIP_DEFLATED, zlib.error)
+
+    @requires_bz2()
+    def test_trace_compressed_block_end_bz2(self):
+        self._test_trace_compressed_block_end(zipfile.ZIP_BZIP2, OSError)
+
+    @requires_zstd()
+    def test_trace_compressed_block_end_zstd(self):
         import compression.zstd
+        self._test_trace_compressed_block_end(zipfile.ZIP_ZSTANDARD, compression.zstd.ZstdError)
+
+    def _test_trace_compressed_block_end(self, method, exc_cls):
         repacker = zipfile._ZipRepacker()
 
-        for method, exc_cls in (
-            (zipfile.ZIP_DEFLATED, zlib.error),
-            (zipfile.ZIP_BZIP2, OSError),
-            (zipfile.ZIP_ZSTANDARD, compression.zstd.ZstdError),
-        ):
-            compressor = zipfile._get_compressor(method)
-            with self.subTest(method=method, compressor=compressor):
-                comp_bytes = compressor.compress(b'dummy')
-                comp_bytes += compressor.flush()
-                comp_len = len(comp_bytes)
+        compressor = zipfile._get_compressor(method)
 
-                # basic
-                decompressor = zipfile._get_decompressor(method)
-                bytes_ = comp_bytes
-                self.assertEqual(
-                    repacker._trace_compressed_block_end(io.BytesIO(bytes_), 0, len(bytes_), decompressor),
-                    comp_len,
-                )
+        comp_bytes = compressor.compress(b'dummy')
+        comp_bytes += compressor.flush()
+        comp_len = len(comp_bytes)
 
-                # offset
-                decompressor = zipfile._get_decompressor(method)
-                bytes_ = comp_bytes
-                with self.assertRaises(exc_cls):
-                    repacker._trace_compressed_block_end(io.BytesIO(bytes_), 1, len(bytes_), decompressor)
+        # basic
+        decompressor = zipfile._get_decompressor(method)
+        bytes_ = comp_bytes
+        self.assertEqual(
+            repacker._trace_compressed_block_end(io.BytesIO(bytes_), 0, len(bytes_), decompressor),
+            comp_len,
+        )
 
-                decompressor = zipfile._get_decompressor(method)
-                bytes_ = b'123' + comp_bytes
-                with self.assertRaises(exc_cls):
-                    repacker._trace_compressed_block_end(io.BytesIO(bytes_), 0, len(bytes_), decompressor)
+        # offset
+        decompressor = zipfile._get_decompressor(method)
+        bytes_ = comp_bytes
+        with self.assertRaises(exc_cls):
+            repacker._trace_compressed_block_end(io.BytesIO(bytes_), 1, len(bytes_), decompressor)
 
-                decompressor = zipfile._get_decompressor(method)
-                bytes_ = b'123' + comp_bytes
-                self.assertEqual(
-                    repacker._trace_compressed_block_end(io.BytesIO(bytes_), 3, len(bytes_), decompressor),
-                    comp_len + 3,
-                )
+        decompressor = zipfile._get_decompressor(method)
+        bytes_ = b'123' + comp_bytes
+        with self.assertRaises(exc_cls):
+            repacker._trace_compressed_block_end(io.BytesIO(bytes_), 0, len(bytes_), decompressor)
 
-                # end_offset
-                decompressor = zipfile._get_decompressor(method)
-                bytes_ = comp_bytes
-                with self.assertRaises(EOFError):
-                    repacker._trace_compressed_block_end(io.BytesIO(bytes_), 0, len(bytes_) - 1, decompressor)
+        decompressor = zipfile._get_decompressor(method)
+        bytes_ = b'123' + comp_bytes
+        self.assertEqual(
+            repacker._trace_compressed_block_end(io.BytesIO(bytes_), 3, len(bytes_), decompressor),
+            comp_len + 3,
+        )
 
-                decompressor = zipfile._get_decompressor(method)
-                bytes_ = comp_bytes + b'123'
-                self.assertEqual(
-                    repacker._trace_compressed_block_end(io.BytesIO(bytes_), 0, len(bytes_) - 3, decompressor),
-                    comp_len,
-                )
+        # end_offset
+        decompressor = zipfile._get_decompressor(method)
+        bytes_ = comp_bytes
+        with self.assertRaises(EOFError):
+            repacker._trace_compressed_block_end(io.BytesIO(bytes_), 0, len(bytes_) - 1, decompressor)
 
-                # chunk_size
-                decompressor = zipfile._get_decompressor(method)
-                bytes_ = comp_bytes
-                self.assertEqual(
-                    repacker._trace_compressed_block_end(io.BytesIO(bytes_), 0, len(bytes_), decompressor, 16),
-                    comp_len,
-                )
+        decompressor = zipfile._get_decompressor(method)
+        bytes_ = comp_bytes + b'123'
+        self.assertEqual(
+            repacker._trace_compressed_block_end(io.BytesIO(bytes_), 0, len(bytes_) - 3, decompressor),
+            comp_len,
+        )
 
-                decompressor = zipfile._get_decompressor(method)
-                bytes_ = comp_bytes
-                self.assertEqual(
-                    repacker._trace_compressed_block_end(io.BytesIO(bytes_), 0, len(bytes_), decompressor, 1),
-                    comp_len,
-                )
+        # chunk_size
+        decompressor = zipfile._get_decompressor(method)
+        bytes_ = comp_bytes
+        self.assertEqual(
+            repacker._trace_compressed_block_end(io.BytesIO(bytes_), 0, len(bytes_), decompressor, 16),
+            comp_len,
+        )
+
+        decompressor = zipfile._get_decompressor(method)
+        bytes_ = comp_bytes
+        self.assertEqual(
+            repacker._trace_compressed_block_end(io.BytesIO(bytes_), 0, len(bytes_), decompressor, 1),
+            comp_len,
+        )
 
     def test_copy_bytes(self):
         repacker = zipfile._ZipRepacker()
