@@ -1,1 +1,1 @@
-Fix typo in the f-string conversion type error ("exclamanation" -> "exclamation")
+Fix typo in the f-string conversion type error ("exclamanation" -> "exclamation").
