@@ -188,17 +188,20 @@ Here is an example that imports a module from a ZIP archive - note that the
 
 .. code-block:: shell-session
 
-   $ unzip -l example.zip
-   Archive:  example.zip
+   $ unzip -l example_archive.zip
+   Archive:  example_archive.zip
      Length     Date   Time    Name
     --------    ----   ----    ----
-        8467  11-26-02 22:30   jwzthreading.py
+        8467  05-11-25 12:29   example.py
     --------                   -------
         8467                   1 file
-   $ ./python
-   Python 2.3 (#1, Aug 1 2003, 19:54:32)
+
+.. code-block:: pycon
+
    >>> import sys
-   >>> sys.path.insert(0, 'example.zip')  # Add .zip file to front of path
-   >>> import jwzthreading
-   >>> jwzthreading.__file__
-   'example.zip/jwzthreading.py'
+   >>> # Add the archive to the front of the module search path
+   >>> sys.path.insert(0, 'example_archive.zip')
+   >>> import example
+   >>> example.__file__
+   'example_archive.zip/example.py'
+
