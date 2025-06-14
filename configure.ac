@@ -4171,16 +4171,6 @@ if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
               [Defined if _Complex C type can be used with libffi.])
 fi
 
-# Check for use of the libmpdec library
-AC_MSG_CHECKING([for --with-libmpdec])
-AC_ARG_WITH(
-  [libmpdec],
-  [AS_HELP_STRING(
-    [--with-libmpdec],
-    [build _decimal module (default is yes)]
-  )])
-AC_MSG_RESULT([$with_libmpdec])
-
 # Check for use of the system libmpdec library
 AC_MSG_CHECKING([for --with-system-libmpdec])
 AC_DEFUN([USE_BUNDLED_LIBMPDEC],
@@ -4195,7 +4185,7 @@ AC_ARG_WITH(
     [--with-system-libmpdec],
     [build _decimal module using an installed mpdecimal library, see Doc/library/decimal.rst (default is yes)]
   )],
-  [AS_IF([test "x$with_system_libmpdec" = xno && test "x$with_libmpdec" = xyes],
+  [AS_IF([test "x$with_system_libmpdec" = xno],
          [USE_BUNDLED_LIBMPDEC()])],
   [with_system_libmpdec="yes"])
 AC_MSG_RESULT([$with_system_libmpdec])
@@ -4223,16 +4213,15 @@ AS_VAR_IF([with_system_libmpdec], [yes],
       [have_mpdec=yes],
       [have_mpdec=no])
   ])])
-AS_IF([test "$with_system_libmpdec" = "no" && test "$with_libmpdec" = "yes"],
+AS_VAR_IF([with_system_libmpdec], [no],
           [AC_MSG_WARN([m4_normalize([
-     the bundled copy of libmpdec is scheduled for removal in Python 3.16;
+     the bundled copy of libmpdecimal is scheduled for removal in Python 3.16;
      consider using a system installed mpdecimal library.])])])
 
-AS_IF([test "$with_libmpdec" = "yes" && test "$have_mpdec" = "no"],
-      [AC_MSG_ERROR([m4_normalize([
-         no system libmpdec found; use --without-libmpdec to build Python with only pure-Python version for the decimal module])])])
-AS_VAR_IF([with_libmpdec], [no],
-       [AS_VAR_SET([py_cv_module_]_decimal, [n/a])])
+AS_IF([test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"],
+      [AC_MSG_WARN([m4_normalize([
+         no system libmpdecimal found; falling back to pure-Python version
+         for the decimal module])])])
 
 # Disable forced inlining in debug builds, see GH-94847
 AS_VAR_IF(
