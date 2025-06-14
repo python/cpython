@@ -2413,7 +2413,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             VISIT_SEQ(st, expr, e->v.Lambda.args->defaults);
         if (e->v.Lambda.args->kw_defaults)
             VISIT_SEQ_WITH_NULL(st, expr, e->v.Lambda.args->kw_defaults);
-        if (!symtable_enter_block(st, &_Py_ID(lambda),
+        if (!symtable_enter_block(st, &_Py_STR(anon_lambda),
                                   FunctionBlock, (void *)e, LOCATION(e))) {
             return 0;
         }
@@ -3055,7 +3055,7 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
 static int
 symtable_visit_genexp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, &_Py_ID(genexpr),
+    return symtable_handle_comprehension(st, e, &_Py_STR(anon_genexpr),
                                          e->v.GeneratorExp.generators,
                                          e->v.GeneratorExp.elt, NULL);
 }
@@ -3063,7 +3063,7 @@ symtable_visit_genexp(struct symtable *st, expr_ty e)
 static int
 symtable_visit_listcomp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, &_Py_ID(listcomp),
+    return symtable_handle_comprehension(st, e, &_Py_STR(anon_listcomp),
                                          e->v.ListComp.generators,
                                          e->v.ListComp.elt, NULL);
 }
@@ -3071,7 +3071,7 @@ symtable_visit_listcomp(struct symtable *st, expr_ty e)
 static int
 symtable_visit_setcomp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, &_Py_ID(setcomp),
+    return symtable_handle_comprehension(st, e, &_Py_STR(anon_setcomp),
                                          e->v.SetComp.generators,
                                          e->v.SetComp.elt, NULL);
 }
@@ -3079,7 +3079,7 @@ symtable_visit_setcomp(struct symtable *st, expr_ty e)
 static int
 symtable_visit_dictcomp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, &_Py_ID(dictcomp),
+    return symtable_handle_comprehension(st, e, &_Py_STR(anon_dictcomp),
                                          e->v.DictComp.generators,
                                          e->v.DictComp.key,
                                          e->v.DictComp.value);
