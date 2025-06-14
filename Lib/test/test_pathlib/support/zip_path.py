@@ -334,4 +334,4 @@ class WritableZipPath(_WritablePath):
         zinfo.external_attr = stat.S_IFLNK << 16
         if target_is_directory:
             zinfo.external_attr |= 0x10
-        self.zip_file.writestr(zinfo, vfspath(target))
+        self.zip_file.writestr(zinfo, target)
