@@ -1,0 +1,1 @@
+Fix :func:`os.getlogin` failing for longer usernames on BSD-based platforms.
