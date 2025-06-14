@@ -165,8 +165,7 @@ class LongTests(unittest.TestCase):
 
     def check_long_asint(self, func, min_val, max_val, *,
                          use_index=True,
-                         mask=False,
-                         negative_value_error=OverflowError):
+                         mask=False):
         # round trip (object -> C integer -> object)
         values = (0, 1, 512, 1234, max_val)
         if min_val < 0:
@@ -190,6 +189,7 @@ class LongTests(unittest.TestCase):
             self.assertEqual(func(-1 << 1000), 0)
             self.assertEqual(func(1 << 1000), 0)
         else:
+            negative_value_error = ValueError if min_val == 0 else OverflowError
             self.assertRaises(negative_value_error, func, min_val - 1)
             self.assertRaises(negative_value_error, func, -1 << 1000)
             self.assertRaises(OverflowError, func, max_val + 1)
@@ -236,8 +236,7 @@ class LongTests(unittest.TestCase):
         # Test PyLong_AsUnsignedLong() and PyLong_FromUnsignedLong()
         asunsignedlong = _testlimitedcapi.pylong_asunsignedlong
         from _testcapi import ULONG_MAX
-        self.check_long_asint(asunsignedlong, 0, ULONG_MAX,
-                                      use_index=False)
+        self.check_long_asint(asunsignedlong, 0, ULONG_MAX, use_index=False)
 
     def test_long_asunsignedlongmask(self):
         # Test PyLong_AsUnsignedLongMask()
@@ -704,15 +703,13 @@ class LongTests(unittest.TestCase):
         # Test PyLong_AsUInt32() and PyLong_FromUInt32()
         as_uint32 = _testlimitedcapi.pylong_asuint32
         from _testcapi import UINT32_MAX
-        self.check_long_asint(as_uint32, 0, UINT32_MAX,
-                              negative_value_error=ValueError)
+        self.check_long_asint(as_uint32, 0, UINT32_MAX)
 
     def test_long_asuint64(self):
         # Test PyLong_AsUInt64() and PyLong_FromUInt64()
         as_uint64 = _testlimitedcapi.pylong_asuint64
         from _testcapi import UINT64_MAX
-        self.check_long_asint(as_uint64, 0, UINT64_MAX,
-                              negative_value_error=ValueError)
+        self.check_long_asint(as_uint64, 0, UINT64_MAX)
 
     def test_long_layout(self):
         # Test PyLong_GetNativeLayout()
