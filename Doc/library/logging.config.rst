@@ -558,7 +558,7 @@ following configuration::
       'bar' : 'baz',
       'spam' : 99.9,
       'answer' : 42,
-      '.' {
+      '.' : {
         'foo': 'bar',
         'baz': 'bozz'
       }

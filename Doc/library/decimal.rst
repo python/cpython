@@ -1933,7 +1933,7 @@ between threads calling :func:`getcontext`. For example::
    t1.start()
    t2.start()
    t3.start()
-    . . .
+   ...
 
 .. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -2195,7 +2195,7 @@ applied to the *result* of the computation::
    Decimal('3.1416')
    >>> pi - Decimal('0.00005')        # Subtract unrounded numbers, then round
    Decimal('3.1415')
-   >>> pi + 0 - Decimal('0.00005').   # Intermediate values are rounded
+   >>> pi + 0 - Decimal('0.00005')    # Intermediate values are rounded
    Decimal('3.1416')
 
 Q. Some decimal values always print with exponential notation.  Is there a way
