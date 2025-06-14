@@ -15,12 +15,10 @@ XML Processing Modules
 
 Python's interfaces for processing XML are grouped in the ``xml`` package.
 
-.. warning::
+.. note::
 
-   The XML modules are not secure against erroneous or maliciously
-   constructed data.  If you need to parse untrusted or
-   unauthenticated data see the :ref:`xml-vulnerabilities` and
-   :ref:`defusedxml-package` sections.
+   If you need to parse untrusted or unauthenticated data, see
+   :ref:`xml-security`.
 
 It is important to note that modules in the :mod:`xml` package require that
 there be at least one SAX-compliant XML parser available. The Expat parser is
@@ -47,12 +45,11 @@ The XML handling submodules are:
 * :mod:`xml.parsers.expat`: the Expat parser binding
 
 
-.. _xml-vulnerabilities:
+.. _xml-security:
 
-XML vulnerabilities
--------------------
+XML security
+------------
 
-The XML processing modules are not secure against maliciously constructed data.
 An attacker can abuse XML features to carry out denial of service attacks,
 access local files, generate network connections to other machines, or
 circumvent firewalls.
@@ -63,12 +60,12 @@ the various modules are vulnerable to them.
 =========================  ==================  ==================  ==================  ==================  ==================
 kind                       sax                 etree               minidom             pulldom             xmlrpc
 =========================  ==================  ==================  ==================  ==================  ==================
-billion laughs             **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)
-quadratic blowup           **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)
+billion laughs             Safe (1)            Safe (1)            Safe (1)            Safe (1)            Safe (1)
+quadratic blowup           Safe (1)            Safe (1)            Safe (1)            Safe (1)            Safe (1)
 external entity expansion  Safe (5)            Safe (2)            Safe (3)            Safe (5)            Safe (4)
 `DTD`_ retrieval           Safe (5)            Safe                Safe                Safe (5)            Safe
 decompression bomb         Safe                Safe                Safe                Safe                **Vulnerable**
-large tokens               **Vulnerable** (6)  **Vulnerable** (6)  **Vulnerable** (6)  **Vulnerable** (6)  **Vulnerable** (6)
+large tokens               Safe (6)            Safe (6)            Safe (6)            Safe (6)            Safe (6)
 =========================  ==================  ==================  ==================  ==================  ==================
 
 1. Expat 2.4.1 and newer is not vulnerable to the "billion laughs" and
@@ -125,21 +122,6 @@ large tokens
   introduced in Expat 2.6.0, this can lead to quadratic runtime that can
   be used to cause denial of service in the application parsing XML.
   The issue is known as :cve:`2023-52425`.
-
-The documentation for :pypi:`defusedxml` on PyPI has further information about
-all known attack vectors with examples and references.
-
-.. _defusedxml-package:
-
-The :mod:`!defusedxml` Package
-------------------------------
-
-:pypi:`defusedxml` is a pure Python package with modified subclasses of all stdlib
-XML parsers that prevent any potentially malicious operation. Use of this
-package is recommended for any server code that parses untrusted XML data. The
-package also ships with example exploits and extended documentation on more
-XML exploits such as XPath injection.
-
 
 .. _Billion Laughs: https://en.wikipedia.org/wiki/Billion_laughs
 .. _ZIP bomb: https://en.wikipedia.org/wiki/Zip_bomb
