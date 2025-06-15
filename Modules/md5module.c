@@ -312,20 +312,30 @@ _md5_md5_impl(PyObject *module, PyObject *data, int usedforsecurity,
     }
 
     MD5object *new;
+    Py_buffer buf;
+
+    if (string) {
+        GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
+    }
+
     MD5State *st = md5_get_state(module);
     if ((new = newMD5object(st)) == NULL) {
+        if (string) {
+            PyBuffer_Release(&buf);
+        }
         return NULL;
     }
 
     new->hash_state = Hacl_Hash_MD5_malloc();
     if (new->hash_state == NULL) {
         Py_DECREF(new);
+        if (string) {
+            PyBuffer_Release(&buf);
+        }
         return PyErr_NoMemory();
     }
 
     if (string) {
-        Py_buffer buf;
-        GET_BUFFER_VIEW_OR_ERROR(string, &buf, goto error);
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
             /* Do not use self->mutex here as this is the constructor
              * where it is not yet possible to have concurrent access. */
@@ -340,10 +350,6 @@ _md5_md5_impl(PyObject *module, PyObject *data, int usedforsecurity,
     }
 
     return (PyObject *)new;
-
-error:
-    Py_XDECREF(new);
-    return NULL;
 }
 
 
