@@ -851,7 +851,8 @@ static inline size_t mi_ctz32(uint32_t x) {
     31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9
   };
   if (x==0) return 32;
-  return debruijn[((x & -(int32_t)x) * 0x077CB531UL) >> 27];
+  return debruijn[(uint32_t)(((x & -(int32_t)x) * 0x077CB531UL) >> 27) & 31];
+
 }
 static inline size_t mi_clz32(uint32_t x) {
   // de Bruijn multiplication, see <http://supertech.csail.mit.edu/papers/debruijn.pdf>
@@ -865,7 +866,8 @@ static inline size_t mi_clz32(uint32_t x) {
   x |= x >> 4;
   x |= x >> 8;
   x |= x >> 16;
-  return debruijn[(uint32_t)(x * 0x07C4ACDDUL) >> 27];
+  return debruijn[(uint32_t)(x * 0x07C4ACDDUL >> 27) & 31];
+
 }
 
 static inline size_t mi_clz(uintptr_t x) {
