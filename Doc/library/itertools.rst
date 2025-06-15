@@ -93,12 +93,12 @@ streams of infinite length, so they should only be accessed by functions or
 loops that truncate the stream.
 
 
-.. function:: accumulate(iterable[, function, *, initial=None])
+.. function:: accumulate(iterable, func=None, *, initial=None)
 
     Make an iterator that returns accumulated sums or accumulated
     results from other binary functions.
 
-    The *function* defaults to addition.  The *function* should accept
+    The *func* defaults to addition.  The *func* should accept
     two arguments, an accumulated total and a value from the *iterable*.
 
     If an *initial* value is provided, the accumulation will start with
@@ -107,7 +107,7 @@ loops that truncate the stream.
 
     Roughly equivalent to::
 
-        def accumulate(iterable, function=operator.add, *, initial=None):
+        def accumulate(iterable, func=operator.add, *, initial=None):
             'Return running totals'
             # accumulate([1,2,3,4,5]) → 1 3 6 10 15
             # accumulate([1,2,3,4,5], initial=100) → 100 101 103 106 110 115
@@ -123,12 +123,12 @@ loops that truncate the stream.
 
             yield total
             for element in iterator:
-                total = function(total, element)
+                total = func(total, element)
                 yield total
 
-    To compute a running minimum, set *function* to :func:`min`.
-    For a running maximum, set *function* to :func:`max`.
-    Or for a running product, set *function* to :func:`operator.mul`.
+    To compute a running minimum, set *func* to :func:`min`.
+    For a running maximum, set *func* to :func:`max`.
+    Or for a running product, set *func* to :func:`operator.mul`.
     To build an `amortization table
     <https://www.ramseysolutions.com/real-estate/amortization-schedule>`_,
     accumulate the interest and apply payments:
@@ -152,7 +152,7 @@ loops that truncate the stream.
     .. versionadded:: 3.2
 
     .. versionchanged:: 3.3
-       Added the optional *function* parameter.
+       Added the optional *func* parameter.
 
     .. versionchanged:: 3.8
        Added the optional *initial* parameter.
