@@ -73,6 +73,59 @@ _posixshmem_shm_open_impl(PyObject *module, PyObject *path, int flags,
 }
 #endif /* HAVE_SHM_OPEN */
 
+#ifdef HAVE_SHM_RENAME
+/*[clinic input]
+_posixshmem.shm_rename -> int
+    path_from: unicode
+    path_to: unicode
+    flags: int
+    /
+
+Rename a shared memory object.
+
+Remove a shared memory object and relink to another path.
+By default, if the destination path already exist, it will be unlinked.
+With the SHM_RENAME_EXCHANGE flag, source and destination paths
+will be exchanged.
+With the SHM_RENAME_NOREPLACE flag, an error will be triggered
+if the destination alredady exists.
+
+[clinic start generated code]*/
+
+static int
+_posixshmem_shm_rename_impl(PyObject *module, PyObject *path_from,
+                            PyObject *path_to, int flags)
+/*[clinic end generated code: output=d9a710c512166e18 input=5fb42d1ce077caec]*/
+{
+    int rv;
+    int async_err = 0;
+    Py_ssize_t from_size;
+    Py_ssize_t to_size;
+    const char *from = PyUnicode_AsUTF8AndSize(path_from, &from_size);
+    const char *to = PyUnicode_AsUTF8AndSize(path_to, &to_size);
+    if (from == NULL || to == NULL) {
+        return -1;
+    }
+    if (strlen(from) != (size_t)from_size || strlen(to) != (size_t)to_size) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        return -1;
+    }
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        rv = shm_rename(from, to, flags);
+        Py_END_ALLOW_THREADS
+    } while (rv < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+
+    if (rv < 0) {
+        if (!async_err)
+            PyErr_SetFromErrnoWithFilenameObjects(PyExc_OSError, path_from, path_to);
+        return -1;
+    }
+
+    return rv;
+}
+#endif /* HAVE_SHM_RENAME */
+
 #ifdef HAVE_SHM_UNLINK
 /*[clinic input]
 _posixshmem.shm_unlink
@@ -122,12 +175,29 @@ _posixshmem_shm_unlink_impl(PyObject *module, PyObject *path)
 
 static PyMethodDef module_methods[ ] = {
     _POSIXSHMEM_SHM_OPEN_METHODDEF
+#if defined(HAVE_SHM_RENAME)
+    _POSIXSHMEM_SHM_RENAME_METHODDEF
+#endif
     _POSIXSHMEM_SHM_UNLINK_METHODDEF
     {NULL} /* Sentinel */
 };
 
+static int
+posixshmem_exec(PyObject *m)
+{
+#ifdef HAVE_SHM_RENAME
+#ifdef SHM_RENAME_EXCHANGE
+    if (PyModule_AddIntMacro(m, SHM_RENAME_EXCHANGE)) return -1;
+#endif
+#ifdef SHM_RENAME_NOREPLACE
+    if (PyModule_AddIntMacro(m, SHM_RENAME_NOREPLACE)) return -1;
+#endif
+#endif /* HAVE_SHM_RENAME */
+    return 0;
+}
 
 static PyModuleDef_Slot module_slots[] = {
+    {Py_mod_exec, posixshmem_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
