@@ -33,8 +33,14 @@ Python:
 
 .. c:var:: PyTypeObject PyUnicode_Type
 
-   This instance of :c:type:`PyTypeObject` represents the Python Unicode type.  It
-   is exposed to Python code as :py:class:`str`.
+   This instance of :c:type:`PyTypeObject` represents the Python Unicode type.
+   It is exposed to Python code as :py:class:`str`.
+
+
+.. c:var:: PyTypeObject PyUnicodeIter_Type
+
+   This instance of :c:type:`PyTypeObject` represents the Python Unicode
+   iterator type. It is used to iterate over Unicode string objects.
 
 
 .. c:type:: Py_UCS4
@@ -183,6 +189,22 @@ access to internal read-only data of Unicode objects:
    Equivalent to :py:meth:`str.isascii`.
 
    .. versionadded:: 3.2
+
+
+.. c:function:: Py_hash_t PyUnstable_Unicode_GET_CACHED_HASH(PyObject *str)
+
+   If the hash of *str*, as returned by :c:func:`PyObject_Hash`, has been
+   cached and is immediately available, return it.
+   Otherwise, return ``-1`` *without* setting an exception.
+
+   If *str* is not a string (that is, if ``PyUnicode_Check(obj)``
+   is false), the behavior is undefined.
+
+   This function never fails with an exception.
+
+   Note that there are no guarantees on when an object's hash is cached,
+   and the (non-)existence of a cached hash does not imply that the string has
+   any other properties.
 
 
 Unicode Character Properties
@@ -637,6 +659,17 @@ APIs:
 
    The function is similar to :c:func:`PyUnicode_Append`, with the only
    difference being that it decrements the reference count of *right* by one.
+
+
+.. c:function:: PyObject* PyUnicode_BuildEncodingMap(PyObject* string)
+
+   Return a mapping suitable for decoding a custom single-byte encoding.
+   Given a Unicode string *string* of up to 256 characters representing an encoding
+   table, returns either a compact internal mapping object or a dictionary
+   mapping character ordinals to byte values. Raises a :exc:`TypeError` and
+   return ``NULL`` on invalid input.
+
+   .. versionadded:: 3.2
 
 
 .. c:function:: const char* PyUnicode_GetDefaultEncoding(void)
@@ -1444,10 +1477,6 @@ the user settings on the machine running the codec.
    .. versionadded:: 3.3
 
 
-Methods & Slots
-"""""""""""""""
-
-
 .. _unicodemethodsandslots:
 
 Methods and Slot Functions
@@ -1709,10 +1738,6 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    from user input, prefer calling :c:func:`PyUnicode_FromString` and
    :c:func:`PyUnicode_InternInPlace` directly.
 
-   .. impl-detail::
-
-      Strings interned this way are made :term:`immortal`.
-
 
 .. c:function:: unsigned int PyUnicode_CHECK_INTERNED(PyObject *str)
 
@@ -1789,9 +1814,24 @@ object.
 
    See also :c:func:`PyUnicodeWriter_DecodeUTF8Stateful`.
 
+.. c:function:: int PyUnicodeWriter_WriteASCII(PyUnicodeWriter *writer, const char *str, Py_ssize_t size)
+
+   Write the ASCII string *str* into *writer*.
+
+   *size* is the string length in bytes. If *size* is equal to ``-1``, call
+   ``strlen(str)`` to get the string length.
+
+   *str* must only contain ASCII characters. The behavior is undefined if
+   *str* contains non-ASCII characters.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+   .. versionadded:: 3.14
+
 .. c:function:: int PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *writer, const wchar_t *str, Py_ssize_t size)
 
-   Writer the wide string *str* into *writer*.
+   Write the wide string *str* into *writer*.
 
    *size* is a number of wide characters. If *size* is equal to ``-1``, call
    ``wcslen(str)`` to get the string length.

@@ -5,7 +5,7 @@ Tests for the threading module.
 import test.support
 from test.support import threading_helper, requires_subprocess, requires_gil_enabled
 from test.support import verbose, cpython_only, os_helper
-from test.support.import_helper import import_module
+from test.support.import_helper import ensure_lazy_imports, import_module
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import force_not_colorized
 
@@ -28,7 +28,7 @@ from test import lock_tests
 from test import support
 
 try:
-    from test.support import interpreters
+    from concurrent import interpreters
 except ImportError:
     interpreters = None
 
@@ -119,6 +119,10 @@ class BaseTestCase(unittest.TestCase):
 
 class ThreadTests(BaseTestCase):
     maxDiff = 9999
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("threading", {"functools", "warnings"})
 
     @cpython_only
     def test_name(self):
@@ -526,7 +530,8 @@ class ThreadTests(BaseTestCase):
         finally:
             sys.setswitchinterval(old_interval)
 
-    def test_join_from_multiple_threads(self):
+    @support.bigmemtest(size=20, memuse=72*2**20, dry_run=False)
+    def test_join_from_multiple_threads(self, size):
         # Thread.join() should be thread-safe
         errors = []
 
@@ -1219,18 +1224,18 @@ class ThreadTests(BaseTestCase):
             import threading
             done = threading.Event()
 
-            def loop():
+            def set_event():
                 done.set()
-
 
             class Cycle:
                 def __init__(self):
                     self.self_ref = self
-                    self.thr = threading.Thread(target=loop, daemon=True)
+                    self.thr = threading.Thread(target=set_event, daemon=True)
                     self.thr.start()
-                    done.wait()
+                    self.thr.join()
 
                 def __del__(self):
+                    assert done.is_set()
                     assert not self.thr.is_alive()
                     self.thr.join()
                     assert not self.thr.is_alive()
@@ -1248,7 +1253,7 @@ class ThreadTests(BaseTestCase):
         # its state should be removed from interpreter' thread states list
         # to avoid its double cleanup
         try:
-            from resource import setrlimit, RLIMIT_NPROC
+            from resource import setrlimit, RLIMIT_NPROC  # noqa: F401
         except ImportError as err:
             self.skipTest(err)  # RLIMIT_NPROC is specific to Linux and BSD
         code = """if 1:
@@ -1347,6 +1352,35 @@ class ThreadTests(BaseTestCase):
         ''')
         assert_python_ok("-c", script)
 
+    @skip_unless_reliable_fork
+    @unittest.skipUnless(hasattr(threading, 'get_native_id'), "test needs threading.get_native_id()")
+    def test_native_id_after_fork(self):
+        script = """if True:
+            import threading
+            import os
+            from test import support
+
+            parent_thread_native_id = threading.current_thread().native_id
+            print(parent_thread_native_id, flush=True)
+            assert parent_thread_native_id == threading.get_native_id()
+            childpid = os.fork()
+            if childpid == 0:
+                print(threading.current_thread().native_id, flush=True)
+                assert threading.current_thread().native_id == threading.get_native_id()
+            else:
+                try:
+                    assert parent_thread_native_id == threading.current_thread().native_id
+                    assert parent_thread_native_id == threading.get_native_id()
+                finally:
+                    support.wait_process(childpid, exitcode=0)
+            """
+        rc, out, err = assert_python_ok('-c', script)
+        self.assertEqual(rc, 0)
+        self.assertEqual(err, b"")
+        native_ids = out.strip().splitlines()
+        self.assertEqual(len(native_ids), 2)
+        self.assertNotEqual(native_ids[0], native_ids[1])
+
 class ThreadJoinOnShutdown(BaseTestCase):
 
     def _run_and_join(self, script):
@@ -1427,7 +1461,8 @@ class ThreadJoinOnShutdown(BaseTestCase):
         self._run_and_join(script)
 
     @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
-    def test_4_daemon_threads(self):
+    @support.bigmemtest(size=40, memuse=70*2**20, dry_run=False)
+    def test_4_daemon_threads(self, size):
         # Check that a daemon thread cannot crash the interpreter on shutdown
         # by manipulating internal structures that are being disposed of in
         # the main thread.
@@ -2131,8 +2166,7 @@ class CRLockTests(lock_tests.RLockTests):
         ]
         for args, kwargs in arg_types:
             with self.subTest(args=args, kwargs=kwargs):
-                with self.assertWarns(DeprecationWarning):
-                    threading.RLock(*args, **kwargs)
+                self.assertRaises(TypeError, threading.RLock, *args, **kwargs)
 
         # Subtypes with custom `__init__` are allowed (but, not recommended):
         class CustomRLock(self.locktype):
@@ -2149,6 +2183,9 @@ class EventTests(lock_tests.EventTests):
 class ConditionAsRLockTests(lock_tests.RLockTests):
     # Condition uses an RLock by default and exports its API.
     locktype = staticmethod(threading.Condition)
+
+    def test_constructor_noargs(self):
+        self.skipTest("Condition allows positional arguments")
 
     def test_recursion_count(self):
         self.skipTest("Condition does not expose _recursion_count()")

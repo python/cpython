@@ -1018,7 +1018,7 @@ operations have the same priority as the corresponding numeric operations. [3]_
 | ``s * n`` or             | equivalent to adding *s* to    | (2)(7)   |
 | ``n * s``                | itself *n* times               |          |
 +--------------------------+--------------------------------+----------+
-| ``s[i]``                 | *i*\ th item of *s*, origin 0  | \(3)     |
+| ``s[i]``                 | *i*\ th item of *s*, origin 0  | (3)(9)   |
 +--------------------------+--------------------------------+----------+
 | ``s[i:j]``               | slice of *s* from *i* to *j*   | (3)(4)   |
 +--------------------------+--------------------------------+----------+
@@ -1150,6 +1150,9 @@ Notes:
    without copying any data and with the returned index being relative to
    the start of the sequence rather than the start of the slice.
 
+(9)
+   An :exc:`IndexError` is raised if *i* is outside the sequence range.
+
 
 .. _typesseq-immutable:
 
@@ -1213,6 +1216,8 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 +==============================+================================+=====================+
 | ``s[i] = x``                 | item *i* of *s* is replaced by |                     |
 |                              | *x*                            |                     |
++------------------------------+--------------------------------+---------------------+
+| ``del s[i]``                 | removes item *i* of *s*        |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s[i:j] = t``               | slice of *s* from *i* to *j*   |                     |
 |                              | is replaced by the contents of |                     |
@@ -1788,8 +1793,14 @@ expression support in the :mod:`re` module).
 
    Return centered in a string of length *width*. Padding is done using the
    specified *fillchar* (default is an ASCII space). The original string is
-   returned if *width* is less than or equal to ``len(s)``.
+   returned if *width* is less than or equal to ``len(s)``.  For example::
 
+      >>> 'Python'.center(10)
+      '  Python  '
+      >>> 'Python'.center(10, '-')
+      '--Python--'
+      >>> 'Python'.center(4)
+      'Python'
 
 
 .. method:: str.count(sub[, start[, end]])
@@ -1799,8 +1810,18 @@ expression support in the :mod:`re` module).
    interpreted as in slice notation.
 
    If *sub* is empty, returns the number of empty strings between characters
-   which is the length of the string plus one.
+   which is the length of the string plus one. For example::
 
+      >>> 'spam, spam, spam'.count('spam')
+      3
+      >>> 'spam, spam, spam'.count('spam', 5)
+      2
+      >>> 'spam, spam, spam'.count('spam', 5, 10)
+      1
+      >>> 'spam, spam, spam'.count('eggs')
+      0
+      >>> 'spam, spam, spam'.count('')
+      17
 
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
@@ -1820,6 +1841,14 @@ expression support in the :mod:`re` module).
    unless an encoding error actually occurs,
    :ref:`devmode` is enabled
    or a :ref:`debug build <debug-build>` is used.
+   For example::
+
+      >>> encoded_str_to_bytes = 'Python'.encode()
+      >>> type(encoded_str_to_bytes)
+      <class 'bytes'>
+      >>> encoded_str_to_bytes
+      b'Python'
+
 
    .. versionchanged:: 3.1
       Added support for keyword arguments.
@@ -1834,7 +1863,19 @@ expression support in the :mod:`re` module).
    Return ``True`` if the string ends with the specified *suffix*, otherwise return
    ``False``.  *suffix* can also be a tuple of suffixes to look for.  With optional
    *start*, test beginning at that position.  With optional *end*, stop comparing
-   at that position.
+   at that position. Using *start* and *end* is equivalent to
+   ``str[start:end].endswith(suffix)``. For example::
+
+      >>> 'Python'.endswith('on')
+      True
+      >>> 'a tuple of suffixes'.endswith(('at', 'in'))
+      False
+      >>> 'a tuple of suffixes'.endswith(('at', 'es'))
+      True
+      >>> 'Python is amazing'.endswith('is', 0, 9)
+      True
+
+   See also :meth:`startswith` and :meth:`removesuffix`.
 
 
 .. method:: str.expandtabs(tabsize=8)
@@ -1850,12 +1891,15 @@ expression support in the :mod:`re` module).
    (``\n``) or return (``\r``), it is copied and the current column is reset to
    zero.  Any other character is copied unchanged and the current column is
    incremented by one regardless of how the character is represented when
-   printed.
+   printed. For example::
 
       >>> '01\t012\t0123\t01234'.expandtabs()
       '01      012     0123    01234'
       >>> '01\t012\t0123\t01234'.expandtabs(4)
       '01  012 0123    01234'
+      >>> print('01\t012\n0123\t01234'.expandtabs(4))
+      01  012
+      0123    01234
 
 
 .. method:: str.find(sub[, start[, end]])
@@ -2012,7 +2056,7 @@ expression support in the :mod:`re` module).
 
 .. method:: str.isprintable()
 
-   Return true if all characters in the string are printable, false if it
+   Return ``True`` if all characters in the string are printable, ``False`` if it
    contains at least one non-printable character.
 
    Here "printable" means the character is suitable for :func:`repr` to use in
@@ -2268,6 +2312,18 @@ expression support in the :mod:`re` module).
       ['1', '2 3']
       >>> '   1   2   3   '.split()
       ['1', '2', '3']
+
+   If *sep* is not specified or is ``None`` and  *maxsplit* is ``0``, only
+   leading runs of consecutive whitespace are considered.
+
+   For example::
+
+      >>> "".split(None, 0)
+      []
+      >>> "   ".split(None, 0)
+      []
+      >>> "   foo   ".split(maxsplit=0)
+      ['foo   ']
 
 
 .. index::
@@ -4823,7 +4879,13 @@ can be used interchangeably to index the same dictionary entry.
    being added is already present, the value from the keyword argument
    replaces the value from the positional argument.
 
-   To illustrate, the following examples all return a dictionary equal to
+   Providing keyword arguments as in the first example only works for keys that
+   are valid Python identifiers.  Otherwise, any valid keys can be used.
+
+   Dictionaries compare equal if and only if they have the same ``(key,
+   value)`` pairs (regardless of ordering). Order comparisons ('<', '<=', '>=', '>') raise
+   :exc:`TypeError`.  To illustrate dictionary creation and equality,
+   the following examples all return a dictionary equal to
    ``{"one": 1, "two": 2, "three": 3}``::
 
       >>> a = dict(one=1, two=2, three=3)
@@ -4838,6 +4900,27 @@ can be used interchangeably to index the same dictionary entry.
    Providing keyword arguments as in the first example only works for keys that
    are valid Python identifiers.  Otherwise, any valid keys can be used.
 
+   Dictionaries preserve insertion order.  Note that updating a key does not
+   affect the order.  Keys added after deletion are inserted at the end. ::
+
+      >>> d = {"one": 1, "two": 2, "three": 3, "four": 4}
+      >>> d
+      {'one': 1, 'two': 2, 'three': 3, 'four': 4}
+      >>> list(d)
+      ['one', 'two', 'three', 'four']
+      >>> list(d.values())
+      [1, 2, 3, 4]
+      >>> d["one"] = 42
+      >>> d
+      {'one': 42, 'two': 2, 'three': 3, 'four': 4}
+      >>> del d["two"]
+      >>> d["two"] = None
+      >>> d
+      {'one': 42, 'three': 3, 'four': 4, 'two': None}
+
+   .. versionchanged:: 3.7
+      Dictionary order is guaranteed to be insertion order.  This behavior was
+      an implementation detail of CPython from 3.6.
 
    These are the operations that dictionaries support (and therefore, custom
    mapping types should support too):
@@ -5007,32 +5090,6 @@ can be used interchangeably to index the same dictionary entry.
       values of *other* take priority when *d* and *other* share keys.
 
       .. versionadded:: 3.9
-
-   Dictionaries compare equal if and only if they have the same ``(key,
-   value)`` pairs (regardless of ordering). Order comparisons ('<', '<=', '>=', '>') raise
-   :exc:`TypeError`.
-
-   Dictionaries preserve insertion order.  Note that updating a key does not
-   affect the order.  Keys added after deletion are inserted at the end. ::
-
-      >>> d = {"one": 1, "two": 2, "three": 3, "four": 4}
-      >>> d
-      {'one': 1, 'two': 2, 'three': 3, 'four': 4}
-      >>> list(d)
-      ['one', 'two', 'three', 'four']
-      >>> list(d.values())
-      [1, 2, 3, 4]
-      >>> d["one"] = 42
-      >>> d
-      {'one': 42, 'two': 2, 'three': 3, 'four': 4}
-      >>> del d["two"]
-      >>> d["two"] = None
-      >>> d
-      {'one': 42, 'three': 3, 'four': 4, 'two': None}
-
-   .. versionchanged:: 3.7
-      Dictionary order is guaranteed to be insertion order.  This behavior was
-      an implementation detail of CPython from 3.6.
 
    Dictionaries and dictionary views are reversible. ::
 

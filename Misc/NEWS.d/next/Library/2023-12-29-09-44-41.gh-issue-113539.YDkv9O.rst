@@ -1,6 +1,0 @@
-:mod:`webbrowser`: Names in the :envvar:`BROWSER` environment variable can now
-refer to already registered web browsers, instead of always generating a new
-browser command.
-
-This makes it possible to set :envvar:`BROWSER` to the value of one of the
-supported browsers on macOS.

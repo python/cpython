@@ -1,0 +1,3 @@
+Set the ``allow_reuse_port`` class variable to ``False`` on the XMLRPC,
+logging, and HTTP servers. This matches the behavior in prior Python
+releases, which is to not allow port reuse.

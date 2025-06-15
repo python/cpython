@@ -13,8 +13,6 @@ although there is currently no date scheduled for their removal.
     deprecated.
   * The :class:`argparse.FileType` type converter is deprecated.
 
-* :mod:`array`'s ``'u'`` format code (:gh:`57281`)
-
 * :mod:`builtins`:
 
   * ``bool(NotImplemented)``.
@@ -48,6 +46,8 @@ although there is currently no date scheduled for their removal.
   deprecated and replaced by :data:`calendar.JANUARY` and
   :data:`calendar.FEBRUARY`.
   (Contributed by Prince Roshan in :gh:`103636`.)
+
+* :mod:`codecs`: use :func:`open` instead of :func:`codecs.open`. (:gh:`133038`)
 
 * :attr:`codeobject.co_lnotab`: use the :meth:`codeobject.co_lines` method
   instead.

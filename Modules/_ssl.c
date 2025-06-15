@@ -27,6 +27,7 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"     // _PyIsSelectable_fd()
+#include "pycore_long.h"          // _PyLong_UnsignedLongLong_Converter()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_time.h"          // _PyDeadline_Init()
 
@@ -562,7 +563,7 @@ fill_and_set_sslerror(_sslmodulestate *state,
                 goto fail;
             }
         }
-        if (PyUnicodeWriter_WriteUTF8(writer, "] ", 2) < 0) {
+        if (PyUnicodeWriter_WriteASCII(writer, "] ", 2) < 0) {
             goto fail;
         }
     }
@@ -3812,7 +3813,6 @@ static int
 _ssl__SSLContext_options_set_impl(PySSLContext *self, PyObject *value)
 /*[clinic end generated code: output=92ca34731ece5dbb input=2b94bf789e9ae5dd]*/
 {
-    PyObject *new_opts_obj;
     unsigned long long new_opts_arg;
     uint64_t new_opts, opts, clear, set;
     uint64_t opt_no = (
@@ -3820,11 +3820,7 @@ _ssl__SSLContext_options_set_impl(PySSLContext *self, PyObject *value)
         SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_3
     );
 
-    if (!PyArg_Parse(value, "O!", &PyLong_Type, &new_opts_obj)) {
-        return -1;
-    }
-    new_opts_arg = PyLong_AsUnsignedLongLong(new_opts_obj);
-    if (new_opts_arg == (unsigned long long)-1 && PyErr_Occurred()) {
+    if (!PyArg_Parse(value, "O&", _PyLong_UnsignedLongLong_Converter, &new_opts_arg)) {
         return -1;
     }
     Py_BUILD_ASSERT(sizeof(new_opts) >= sizeof(new_opts_arg));
@@ -4431,7 +4427,7 @@ _ssl__SSLContext_load_dh_params_impl(PySSLContext *self, PyObject *filepath)
     FILE *f;
     DH *dh;
 
-#if defined(MS_WINDOWS) && defined(_DEBUG)
+#if defined(MS_WINDOWS) && defined(Py_DEBUG)
     PyErr_SetString(PyExc_NotImplementedError,
                     "load_dh_params: unavailable on Windows debug build");
     return NULL;
@@ -6628,6 +6624,12 @@ sslmodule_init_constants(PyObject *m)
     addbool(m, "HAS_PSK", 0);
 #else
     addbool(m, "HAS_PSK", 1);
+#endif
+
+#ifdef OPENSSL_NO_EXTERNAL_PSK_TLS13
+    addbool(m, "HAS_PSK_TLS13", 0);
+#else
+    addbool(m, "HAS_PSK_TLS13", 1);
 #endif
 
 #ifdef SSL_VERIFY_POST_HANDSHAKE

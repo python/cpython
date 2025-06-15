@@ -170,7 +170,7 @@ created.  Socket addresses are represented as follows:
     .. versionchanged:: 3.13.3
        FreeBSD support added.
 
-    .. versionchanged:: next
+    .. versionchanged:: 3.14
        Added ``channel`` field.
        ``device_id`` not packed in a tuple is now accepted.
 
@@ -178,7 +178,7 @@ created.  Socket addresses are represented as follows:
     the Bluetooth address as a string or a :class:`bytes` object.
     (ex. ``'12:23:34:45:56:67'`` or ``b'12:23:34:45:56:67'``)
 
-    .. versionchanged:: next
+    .. versionchanged:: 3.14
        FreeBSD support added.
 
 - :const:`AF_ALG` is a Linux-only socket based interface to Kernel
@@ -362,10 +362,10 @@ Exceptions
 Constants
 ^^^^^^^^^
 
-   The AF_* and SOCK_* constants are now :class:`AddressFamily` and
-   :class:`SocketKind` :class:`.IntEnum` collections.
+The AF_* and SOCK_* constants are now :class:`AddressFamily` and
+:class:`SocketKind` :class:`.IntEnum` collections.
 
-   .. versionadded:: 3.4
+.. versionadded:: 3.4
 
 .. data:: AF_UNIX
           AF_INET
@@ -780,7 +780,7 @@ Socket Option            Linux        FreeBSD      Windows
    .. versionchanged:: 3.11
       NetBSD support was added.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Restored missing ``CAN_RAW_ERR_FILTER`` on Linux.
 
 .. data:: CAN_BCM
@@ -991,7 +991,7 @@ Socket Option            Linux        FreeBSD      Windows
    :const:`!SO_BTH_*` are only available on Windows.
    Other constants may be available on Linux and various BSD platforms.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. data:: HCI_FILTER
           HCI_TIME_STAMP
@@ -1002,7 +1002,7 @@ Socket Option            Linux        FreeBSD      Windows
    Option names for use with :const:`BTPROTO_HCI`.
    Availability and format of the option values depend on platform.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Added :const:`!SO_HCI_EVT_FILTER` and :const:`!SO_HCI_PKT_FILTER`
       on NetBSD and DragonFly BSD.
       Added :const:`!HCI_DATA_DIR` on FreeBSD, NetBSD and DragonFly BSD.
@@ -1014,7 +1014,7 @@ Socket Option            Linux        FreeBSD      Windows
 
    .. availability:: Linux
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. data:: HCI_CHANNEL_RAW
           HCI_CHANNEL_USER
@@ -1026,7 +1026,7 @@ Socket Option            Linux        FreeBSD      Windows
 
    .. availability:: Linux
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. data:: AF_QIPCRTR
 
@@ -1055,9 +1055,9 @@ Socket Option            Linux        FreeBSD      Windows
    Constant to optimize CPU locality, to be used in conjunction with
    :data:`SO_REUSEPORT`.
 
-  .. versionadded:: 3.11
+   .. versionadded:: 3.11
 
-  .. availability:: Linux >= 3.9
+   .. availability:: Linux >= 3.9
 
 .. data:: SO_REUSEPORT_LB
 
@@ -1774,7 +1774,7 @@ The :mod:`socket` module also offers various network-related services:
    The *fds* parameter is a sequence of file descriptors.
    Consult :meth:`~socket.sendmsg` for the documentation of these parameters.
 
-   .. availability:: Unix, Windows, not WASI.
+   .. availability:: Unix, not WASI.
 
       Unix platforms supporting :meth:`~socket.sendmsg`
       and :const:`SCM_RIGHTS` mechanism.
@@ -1788,9 +1788,9 @@ The :mod:`socket` module also offers various network-related services:
    Return ``(msg, list(fds), flags, addr)``.
    Consult :meth:`~socket.recvmsg` for the documentation of these parameters.
 
-   .. availability:: Unix, Windows, not WASI.
+   .. availability:: Unix, not WASI.
 
-      Unix platforms supporting :meth:`~socket.sendmsg`
+      Unix platforms supporting :meth:`~socket.recvmsg`
       and :const:`SCM_RIGHTS` mechanism.
 
    .. versionadded:: 3.9

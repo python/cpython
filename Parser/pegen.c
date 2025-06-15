@@ -379,44 +379,34 @@ _PyPegen_is_memoized(Parser *p, int type, void *pres)
     return 0;
 }
 
-int
-_PyPegen_lookahead_with_name(int positive, expr_ty (func)(Parser *), Parser *p)
-{
-    int mark = p->mark;
-    void *res = func(p);
-    p->mark = mark;
-    return (res != NULL) == positive;
-}
+#define LOOKAHEAD1(NAME, RES_TYPE)                                  \
+    int                                                             \
+    NAME (int positive, RES_TYPE (func)(Parser *), Parser *p)       \
+    {                                                               \
+        int mark = p->mark;                                         \
+        void *res = func(p);                                        \
+        p->mark = mark;                                             \
+        return (res != NULL) == positive;                           \
+    }
 
-int
-_PyPegen_lookahead_with_string(int positive, expr_ty (func)(Parser *, const char*), Parser *p, const char* arg)
-{
-    int mark = p->mark;
-    void *res = func(p, arg);
-    p->mark = mark;
-    return (res != NULL) == positive;
-}
+LOOKAHEAD1(_PyPegen_lookahead, void *)
+LOOKAHEAD1(_PyPegen_lookahead_for_expr, expr_ty)
+LOOKAHEAD1(_PyPegen_lookahead_for_stmt, stmt_ty)
+#undef LOOKAHEAD1
 
-int
-_PyPegen_lookahead_with_int(int positive, Token *(func)(Parser *, int), Parser *p, int arg)
-{
-    int mark = p->mark;
-    void *res = func(p, arg);
-    p->mark = mark;
-    return (res != NULL) == positive;
-}
+#define LOOKAHEAD2(NAME, RES_TYPE, T)                                   \
+    int                                                                 \
+    NAME (int positive, RES_TYPE (func)(Parser *, T), Parser *p, T arg) \
+    {                                                                   \
+        int mark = p->mark;                                             \
+        void *res = func(p, arg);                                       \
+        p->mark = mark;                                                 \
+        return (res != NULL) == positive;                               \
+    }
 
-// gh-111178: Use _Py_NO_SANITIZE_UNDEFINED to disable sanitizer checks on
-// undefined behavior (UBsan) in this function, rather than changing 'func'
-// callback API.
-int _Py_NO_SANITIZE_UNDEFINED
-_PyPegen_lookahead(int positive, void *(func)(Parser *), Parser *p)
-{
-    int mark = p->mark;
-    void *res = func(p);
-    p->mark = mark;
-    return (res != NULL) == positive;
-}
+LOOKAHEAD2(_PyPegen_lookahead_with_int, Token *, int)
+LOOKAHEAD2(_PyPegen_lookahead_with_string, expr_ty, const char *)
+#undef LOOKAHEAD2
 
 Token *
 _PyPegen_expect_token(Parser *p, int type)
@@ -549,6 +539,21 @@ _PyPegen_new_identifier(Parser *p, const char *n)
         }
         id = id2;
     }
+    static const char * const forbidden[] = {
+        "None",
+        "True",
+        "False",
+        NULL
+    };
+    for (int i = 0; forbidden[i] != NULL; i++) {
+        if (_PyUnicode_EqualToASCIIString(id, forbidden[i])) {
+            PyErr_Format(PyExc_ValueError,
+                         "identifier field can't represent '%s' constant",
+                         forbidden[i]);
+            Py_DECREF(id);
+            goto error;
+        }
+    }
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyUnicode_InternImmortal(interp, &id);
     if (_PyArena_AddPyObject(p->arena, id) < 0)
@@ -605,7 +610,8 @@ expr_ty _PyPegen_soft_keyword_token(Parser *p) {
     Py_ssize_t size;
     PyBytes_AsStringAndSize(t->bytes, &the_token, &size);
     for (char **keyword = p->soft_keywords; *keyword != NULL; keyword++) {
-        if (strncmp(*keyword, the_token, (size_t)size) == 0) {
+        if (strlen(*keyword) == (size_t)size &&
+            strncmp(*keyword, the_token, (size_t)size) == 0) {
             return _PyPegen_name_from_token(p, t);
         }
     }

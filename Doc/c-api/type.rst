@@ -151,14 +151,29 @@ Type Objects
 
 .. c:function:: PyObject* PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
 
-   Generic handler for the :c:member:`~PyTypeObject.tp_alloc` slot of a type object.  Use
-   Python's default memory allocation mechanism to allocate a new instance and
-   initialize all its contents to ``NULL``.
+   Generic handler for the :c:member:`~PyTypeObject.tp_alloc` slot of a type
+   object.  Uses Python's default memory allocation mechanism to allocate memory
+   for a new instance, zeros the memory, then initializes the memory as if by
+   calling :c:func:`PyObject_Init` or :c:func:`PyObject_InitVar`.
+
+   Do not call this directly to allocate memory for an object; call the type's
+   :c:member:`~PyTypeObject.tp_alloc` slot instead.
+
+   For types that support garbage collection (i.e., the
+   :c:macro:`Py_TPFLAGS_HAVE_GC` flag is set), this function behaves like
+   :c:macro:`PyObject_GC_New` or :c:macro:`PyObject_GC_NewVar` (except the
+   memory is guaranteed to be zeroed before initialization), and should be
+   paired with :c:func:`PyObject_GC_Del` in :c:member:`~PyTypeObject.tp_free`.
+   Otherwise, it behaves like :c:macro:`PyObject_New` or
+   :c:macro:`PyObject_NewVar` (except the memory is guaranteed to be zeroed
+   before initialization) and should be paired with :c:func:`PyObject_Free` in
+   :c:member:`~PyTypeObject.tp_free`.
 
 .. c:function:: PyObject* PyType_GenericNew(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
-   Generic handler for the :c:member:`~PyTypeObject.tp_new` slot of a type object.  Create a
-   new instance using the type's :c:member:`~PyTypeObject.tp_alloc` slot.
+   Generic handler for the :c:member:`~PyTypeObject.tp_new` slot of a type
+   object.  Creates a new instance using the type's
+   :c:member:`~PyTypeObject.tp_alloc` slot and returns the resulting object.
 
 .. c:function:: int PyType_Ready(PyTypeObject *type)
 

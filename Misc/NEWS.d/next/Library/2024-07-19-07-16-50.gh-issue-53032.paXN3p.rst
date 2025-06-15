@@ -1,3 +1,0 @@
-Expose :func:`decimal.IEEEContext` to support creation of contexts
-corresponding to the IEEE 754 (2008) decimal interchange formats.
-Patch by Sergey B Kirpichev.
