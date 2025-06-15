@@ -43,10 +43,11 @@ from ._module_completer import ModuleCompleter, make_default_module_completer
 
 Console: type[ConsoleType]
 _error: tuple[type[Exception], ...] | type[Exception]
-try:
-    from .unix_console import UnixConsole as Console, _error
-except ImportError:
+
+if os.name == "nt":
     from .windows_console import WindowsConsole as Console, _error
+else:
+    from .unix_console import UnixConsole as Console, _error
 
 ENCODING = sys.getdefaultencoding() or "latin1"
 
