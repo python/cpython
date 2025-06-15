@@ -39,6 +39,8 @@
  * ============================================================================ */
 
 #define GET_MEMBER(type, obj, offset) (*(type*)((char*)(obj) + (offset)))
+#define CLEAR_PTR_TAG(ptr) (((uintptr_t)(ptr) & ~Py_TAG_BITS))
+#define GET_MEMBER_NO_TAG(type, obj, offset) (type)(CLEAR_PTR_TAG(*(type*)((char*)(obj) + (offset))))
 
 /* Size macros for opaque buffers */
 #define SIZEOF_BYTES_OBJ sizeof(PyBytesObject)
@@ -212,6 +214,8 @@ typedef struct {
 #endif
 } RemoteUnwinderObject;
 
+#define RemoteUnwinder_CAST(op) ((RemoteUnwinderObject *)(op))
+
 typedef struct
 {
     int lineno;
@@ -242,6 +246,13 @@ module _remote_debugging
 /* ============================================================================
  * FORWARD DECLARATIONS
  * ============================================================================ */
+
+static inline int
+is_frame_valid(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t frame_addr,
+    uintptr_t code_object_addr
+);
 
 static int
 parse_tasks_in_set(
@@ -734,8 +745,7 @@ parse_task_name(
         return NULL;
     }
 
-    uintptr_t task_name_addr = GET_MEMBER(uintptr_t, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_name);
-    task_name_addr &= ~Py_TAG_BITS;
+    uintptr_t task_name_addr = GET_MEMBER_NO_TAG(uintptr_t, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_name);
 
     // The task name can be a long or a string so we need to check the type
     char task_name_obj[SIZEOF_PYOBJECT];
@@ -798,8 +808,7 @@ static int parse_task_awaited_by(
         return -1;
     }
 
-    uintptr_t task_ab_addr = GET_MEMBER(uintptr_t, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_awaited_by);
-    task_ab_addr &= ~Py_TAG_BITS;
+    uintptr_t task_ab_addr = GET_MEMBER_NO_TAG(uintptr_t, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_awaited_by);
 
     if ((void*)task_ab_addr == NULL) {
         return 0;
@@ -849,8 +858,7 @@ handle_yield_from_frame(
         return -1;
     }
 
-    uintptr_t stackpointer_addr = GET_MEMBER(uintptr_t, iframe, unwinder->debug_offsets.interpreter_frame.stackpointer);
-    stackpointer_addr &= ~Py_TAG_BITS;
+    uintptr_t stackpointer_addr = GET_MEMBER_NO_TAG(uintptr_t, iframe, unwinder->debug_offsets.interpreter_frame.stackpointer);
 
     if ((void*)stackpointer_addr != NULL) {
         uintptr_t gi_await_addr;
@@ -917,6 +925,11 @@ parse_coro_chain(
         return -1;
     }
 
+    int8_t frame_state = GET_MEMBER(int8_t, gen_object, unwinder->debug_offsets.gen_object.gi_frame_state);
+    if (frame_state == FRAME_CLEARED) {
+        return 0;
+    }
+
     uintptr_t gen_type_addr = GET_MEMBER(uintptr_t, gen_object, unwinder->debug_offsets.pyobject.ob_type);
 
     PyObject* name = NULL;
@@ -936,7 +949,7 @@ parse_coro_chain(
     }
     Py_DECREF(name);
 
-    if (GET_MEMBER(int8_t, gen_object, unwinder->debug_offsets.gen_object.gi_frame_state) == FRAME_SUSPENDED_YIELD_FROM) {
+    if (frame_state == FRAME_SUSPENDED_YIELD_FROM) {
         return handle_yield_from_frame(unwinder, gi_iframe_addr, gen_type_addr, render_to);
     }
 
@@ -981,8 +994,7 @@ create_task_result(
         goto error;
     }
 
-    coro_addr = GET_MEMBER(uintptr_t, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_coro);
-    coro_addr &= ~Py_TAG_BITS;
+    coro_addr = GET_MEMBER_NO_TAG(uintptr_t, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_coro);
 
     if ((void*)coro_addr != NULL) {
         if (parse_coro_chain(unwinder, coro_addr, call_stack) < 0) {
@@ -1816,10 +1828,10 @@ parse_frame_from_chunks(
 
     char *frame = (char *)frame_ptr;
     *previous_frame = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.previous);
-
-    if (GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) >= FRAME_OWNED_BY_INTERPRETER ||
-        !GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.executable)) {
-        return 0;
+    uintptr_t code_object = GET_MEMBER_NO_TAG(uintptr_t, frame_ptr, unwinder->debug_offsets.interpreter_frame.executable);
+    int frame_valid = is_frame_valid(unwinder, (uintptr_t)frame, code_object);
+    if (frame_valid != 1) {
+        return frame_valid;
     }
 
     uintptr_t instruction_pointer = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.instr_ptr);
@@ -1832,9 +1844,7 @@ parse_frame_from_chunks(
     }
 #endif
 
-    return parse_code_object(
-        unwinder, result, GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.executable),
-        instruction_pointer, previous_frame, tlbc_index);
+    return parse_code_object(unwinder, result, code_object, instruction_pointer, previous_frame, tlbc_index);
 }
 
 /* ============================================================================
@@ -2077,6 +2087,33 @@ find_running_task_and_coro(
  * FRAME PARSING FUNCTIONS
  * ============================================================================ */
 
+static inline int
+is_frame_valid(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t frame_addr,
+    uintptr_t code_object_addr
+) {
+    if ((void*)code_object_addr == NULL) {
+        return 0;
+    }
+
+    void* frame = (void*)frame_addr;
+
+    if (GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) == FRAME_OWNED_BY_CSTACK ||
+        GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) == FRAME_OWNED_BY_INTERPRETER) {
+        return 0;  // C frame
+    }
+
+    if (GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) != FRAME_OWNED_BY_GENERATOR
+        && GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) != FRAME_OWNED_BY_THREAD) {
+        PyErr_Format(PyExc_RuntimeError, "Unhandled frame owner %d.\n",
+                    GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner));
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Unhandled frame owner type in async frame");
+        return -1;
+    }
+    return 1;
+}
+
 static int
 parse_frame_object(
     RemoteUnwinderObject *unwinder,
@@ -2098,13 +2135,10 @@ parse_frame_object(
     }
 
     *previous_frame = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.previous);
-
-    if (GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) >= FRAME_OWNED_BY_INTERPRETER) {
-        return 0;
-    }
-
-    if ((void*)GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.executable) == NULL) {
-        return 0;
+    uintptr_t code_object = GET_MEMBER_NO_TAG(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.executable);
+    int frame_valid = is_frame_valid(unwinder, (uintptr_t)frame, code_object);
+    if (frame_valid != 1) {
+        return frame_valid;
     }
 
     uintptr_t instruction_pointer = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.instr_ptr);
@@ -2117,9 +2151,7 @@ parse_frame_object(
     }
 #endif
 
-    return parse_code_object(
-        unwinder, result, GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.executable),
-        instruction_pointer, previous_frame, tlbc_index);
+    return parse_code_object(unwinder, result, code_object,instruction_pointer, previous_frame, tlbc_index);
 }
 
 static int
@@ -2144,26 +2176,10 @@ parse_async_frame_object(
     }
 
     *previous_frame = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.previous);
-
-    *code_object = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.executable);
-    // Strip tag bits for consistent comparison
-    *code_object &= ~Py_TAG_BITS;
-    assert(code_object != NULL);
-    if ((void*)*code_object == NULL) {
-        return 0;
-    }
-
-    if (GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) == FRAME_OWNED_BY_CSTACK ||
-        GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) == FRAME_OWNED_BY_INTERPRETER) {
-        return 0;  // C frame
-    }
-
-    if (GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) != FRAME_OWNED_BY_GENERATOR
-        && GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) != FRAME_OWNED_BY_THREAD) {
-        PyErr_Format(PyExc_RuntimeError, "Unhandled frame owner %d.\n",
-                    GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner));
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Unhandled frame owner type in async frame");
-        return -1;
+    *code_object = GET_MEMBER_NO_TAG(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.executable);
+    int frame_valid = is_frame_valid(unwinder, (uintptr_t)frame, *code_object);
+    if (frame_valid != 1) {
+        return frame_valid;
     }
 
     uintptr_t instruction_pointer = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.instr_ptr);
@@ -2899,8 +2915,9 @@ static PyMethodDef RemoteUnwinder_methods[] = {
 };
 
 static void
-RemoteUnwinder_dealloc(RemoteUnwinderObject *self)
+RemoteUnwinder_dealloc(PyObject *op)
 {
+    RemoteUnwinderObject *self = RemoteUnwinder_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     if (self->code_object_cache) {
         _Py_hashtable_destroy(self->code_object_cache);
