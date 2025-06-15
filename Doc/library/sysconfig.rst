@@ -394,6 +394,7 @@ Other functions
 
    macOS can return:
 
+   - macosx-11.0-arm64
    - macosx-10.6-ppc
    - macosx-10.4-ppc64
    - macosx-10.3-i386

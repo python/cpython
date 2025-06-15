@@ -648,6 +648,14 @@ def get_platform():
        win-arm64 (64-bit Windows on ARM64 (aka AArch64)
        win32 (all others - specifically, sys.platform is returned)
 
+    macOS can return:
+       macosx-11.0-arm64
+       macosx-10.6-ppc
+       macosx-10.4-ppc64
+       macosx-10.3-i386
+       macosx-10.4-fat
+
+
     For other non-POSIX platforms, currently just returns 'sys.platform'.
 
     """
