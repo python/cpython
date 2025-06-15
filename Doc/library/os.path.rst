@@ -54,24 +54,134 @@ the :mod:`glob` module.)
    unrepresentable at the OS level.
 
 
-.. function:: abspath(path)
+The module provides these functions for path manipulation:
 
-   Return a normalized absolutized version of the pathname *path*. On most
-   platforms, this is equivalent to calling the function :func:`normpath` as
-   follows: ``normpath(join(os.getcwd(), path))``.
+.. function:: join(path, *paths)
+
+   Join one or more path segments intelligently.  The return value is the
+   concatenation of *path* and all members of *\*paths*, with exactly one
+   directory separator following each non-empty part, except the last. That is,
+   the result will only end in a separator if the last part is either empty or
+   ends in a separator. If a segment is an absolute path (which on Windows
+   requires both a drive and a root), then all previous segments are ignored and
+   joining continues from the absolute path segment.
+
+   On Windows, the drive is not reset when a rooted path segment (e.g.,
+   ``r'\foo'``) is encountered. If a segment is on a different drive or is an
+   absolute path, all previous segments are ignored and the drive is reset. Note
+   that since there is a current directory for each drive,
+   ``os.path.join("c:", "foo")`` represents a path relative to the current
+   directory on drive :file:`C:` (:file:`c:foo`), not :file:`c:\\foo`.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object` for *path* and *paths*.
+
+
+.. function:: normcase(path)
+
+   Normalize the case of a pathname.  On Windows, convert all characters in the
+   pathname to lowercase, and also convert forward slashes to backward slashes.
+   On other operating systems, return the path unchanged.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
 
-.. function:: basename(path)
+.. function:: normpath(path)
 
-   Return the base name of pathname *path*.  This is the second element of the
-   pair returned by passing *path* to the function :func:`split`.  Note that
-   the result of this function is different
-   from the Unix :program:`basename` program; where :program:`basename` for
-   ``'/foo/bar/'`` returns ``'bar'``, the :func:`basename` function returns an
-   empty string (``''``).
+   Normalize a pathname by collapsing redundant separators and up-level
+   references so that ``A//B``, ``A/B/``, ``A/./B`` and ``A/foo/../B`` all
+   become ``A/B``.  This string manipulation may change the meaning of a path
+   that contains symbolic links.  On Windows, it converts forward slashes to
+   backward slashes. To normalize case, use :func:`normcase`.
+
+   .. note::
+      On POSIX systems, in accordance with `IEEE Std 1003.1 2013 Edition; 4.13
+      Pathname Resolution <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13>`_,
+      if a pathname begins with exactly two slashes, the first component
+      following the leading characters may be interpreted in an implementation-defined
+      manner, although more than two leading characters shall be treated as a
+      single character.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
+
+.. function:: split(path)
+
+   Split the pathname *path* into a pair, ``(head, tail)`` where *tail* is the
+   last pathname component and *head* is everything leading up to that.  The
+   *tail* part will never contain a slash; if *path* ends in a slash, *tail*
+   will be empty.  If there is no slash in *path*, *head* will be empty.  If
+   *path* is empty, both *head* and *tail* are empty.  Trailing slashes are
+   stripped from *head* unless it is the root (one or more slashes only).  In
+   all cases, ``join(head, tail)`` returns a path to the same location as *path*
+   (but the strings may differ).  Also see the functions :func:`dirname` and
+   :func:`basename`.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
+
+.. function:: splitroot(path)
+
+   Split the pathname *path* into a 3-item tuple ``(drive, root, tail)`` where
+   *drive* is a device name or mount point, *root* is a string of separators
+   after the drive, and *tail* is everything after the root. Any of these
+   items may be the empty string. In all cases, ``drive + root + tail`` will
+   be the same as *path*.
+
+   On POSIX systems, *drive* is always empty. The *root* may be empty (if *path* is
+   relative), a single forward slash (if *path* is absolute), or two forward slashes
+   (implementation-defined per `IEEE Std 1003.1-2017; 4.13 Pathname Resolution
+   <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13>`_.)
+   For example::
+
+      >>> splitroot('/home/sam')
+      ('', '/', 'home/sam')
+      >>> splitroot('//home/sam')
+      ('', '//', 'home/sam')
+      >>> splitroot('///home/sam')
+      ('', '/', '//home/sam')
+
+   On Windows, *drive* may be empty, a drive-letter name, a UNC share, or a device
+   name. The *root* may be empty, a forward slash, or a backward slash. For
+   example::
+
+      >>> splitroot('C:/Users/Sam')
+      ('C:', '/', 'Users/Sam')
+      >>> splitroot('//Server/Share/Users/Sam')
+      ('//Server/Share', '/', 'Users/Sam')
+
+   .. versionadded:: 3.12
+
+
+.. function:: splitext(path)
+
+   Split the pathname *path* into a pair ``(root, ext)``  such that ``root + ext ==
+   path``, and the extension, *ext*, is empty or begins with a period and contains at
+   most one period.
+
+   If the path contains no extension, *ext* will be ``''``::
+
+      >>> splitext('bar')
+      ('bar', '')
+
+   If the path contains an extension, then *ext* will be set to this extension,
+   including the leading period. Note that previous periods will be ignored::
+
+      >>> splitext('foo.bar.exe')
+      ('foo.bar', '.exe')
+      >>> splitext('/foo/bar.exe')
+      ('/foo/bar', '.exe')
+
+   Leading periods of the last component of the path are considered to
+   be part of the root::
+
+      >>> splitext('.cshrc')
+      ('.cshrc', '')
+      >>> splitext('/foo/....jpg')
+      ('/foo/....jpg', '')
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -118,10 +228,50 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
+.. function:: basename(path)
+
+   Return the base name of pathname *path*.  This is the second element of the
+   pair returned by passing *path* to the function :func:`split`.  Note that
+   the result of this function is different
+   from the Unix :program:`basename` program; where :program:`basename` for
+   ``'/foo/bar/'`` returns ``'bar'``, the :func:`basename` function returns an
+   empty string (``''``).
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
+
 .. function:: dirname(path)
 
    Return the directory name of pathname *path*.  This is the first element of
    the pair returned by passing *path* to the function :func:`split`.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
+
+.. function:: isabs(path)
+
+   Return ``True`` if *path* is an absolute pathname.  On Unix, that means it
+   begins with a slash, on Windows that it begins with two (back)slashes, or a
+   drive letter, colon, and (back)slash together.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.13
+      On Windows, returns ``False`` if the given path starts with exactly one
+      (back)slash.
+
+
+The module provides these I/O functions:
+
+
+.. function:: abspath(path)
+
+   Return a normalized absolutized version of the pathname *path*. On most
+   platforms, this is equivalent to calling the function :func:`normpath` as
+   follows: ``normpath(join(os.getcwd(), path))``.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -237,20 +387,6 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
-.. function:: isabs(path)
-
-   Return ``True`` if *path* is an absolute pathname.  On Unix, that means it
-   begins with a slash, on Windows that it begins with two (back)slashes, or a
-   drive letter, colon, and (back)slash together.
-
-   .. versionchanged:: 3.6
-      Accepts a :term:`path-like object`.
-
-   .. versionchanged:: 3.13
-      On Windows, returns ``False`` if the given path starts with exactly one
-      (back)slash.
-
-
 .. function:: isfile(path)
 
    Return ``True`` if *path* is an :func:`existing <exists>` regular file.
@@ -348,57 +484,6 @@ the :mod:`glob` module.)
    .. availability:: Windows.
 
    .. versionadded:: 3.13
-
-
-.. function:: join(path, *paths)
-
-   Join one or more path segments intelligently.  The return value is the
-   concatenation of *path* and all members of *\*paths*, with exactly one
-   directory separator following each non-empty part, except the last. That is,
-   the result will only end in a separator if the last part is either empty or
-   ends in a separator. If a segment is an absolute path (which on Windows
-   requires both a drive and a root), then all previous segments are ignored and
-   joining continues from the absolute path segment.
-
-   On Windows, the drive is not reset when a rooted path segment (e.g.,
-   ``r'\foo'``) is encountered. If a segment is on a different drive or is an
-   absolute path, all previous segments are ignored and the drive is reset. Note
-   that since there is a current directory for each drive,
-   ``os.path.join("c:", "foo")`` represents a path relative to the current
-   directory on drive :file:`C:` (:file:`c:foo`), not :file:`c:\\foo`.
-
-   .. versionchanged:: 3.6
-      Accepts a :term:`path-like object` for *path* and *paths*.
-
-
-.. function:: normcase(path)
-
-   Normalize the case of a pathname.  On Windows, convert all characters in the
-   pathname to lowercase, and also convert forward slashes to backward slashes.
-   On other operating systems, return the path unchanged.
-
-   .. versionchanged:: 3.6
-      Accepts a :term:`path-like object`.
-
-
-.. function:: normpath(path)
-
-   Normalize a pathname by collapsing redundant separators and up-level
-   references so that ``A//B``, ``A/B/``, ``A/./B`` and ``A/foo/../B`` all
-   become ``A/B``.  This string manipulation may change the meaning of a path
-   that contains symbolic links.  On Windows, it converts forward slashes to
-   backward slashes. To normalize case, use :func:`normcase`.
-
-   .. note::
-      On POSIX systems, in accordance with `IEEE Std 1003.1 2013 Edition; 4.13
-      Pathname Resolution <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13>`_,
-      if a pathname begins with exactly two slashes, the first component
-      following the leading characters may be interpreted in an implementation-defined
-      manner, although more than two leading characters shall be treated as a
-      single character.
-
-   .. versionchanged:: 3.6
-      Accepts a :term:`path-like object`.
 
 
 .. function:: realpath(path, *, strict=False)
@@ -511,22 +596,6 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
-.. function:: split(path)
-
-   Split the pathname *path* into a pair, ``(head, tail)`` where *tail* is the
-   last pathname component and *head* is everything leading up to that.  The
-   *tail* part will never contain a slash; if *path* ends in a slash, *tail*
-   will be empty.  If there is no slash in *path*, *head* will be empty.  If
-   *path* is empty, both *head* and *tail* are empty.  Trailing slashes are
-   stripped from *head* unless it is the root (one or more slashes only).  In
-   all cases, ``join(head, tail)`` returns a path to the same location as *path*
-   (but the strings may differ).  Also see the functions :func:`dirname` and
-   :func:`basename`.
-
-   .. versionchanged:: 3.6
-      Accepts a :term:`path-like object`.
-
-
 .. function:: splitdrive(path)
 
    Split the pathname *path* into a pair ``(drive, tail)`` where *drive* is either
@@ -547,70 +616,6 @@ the :mod:`glob` module.)
 
       >>> splitdrive("//host/computer/dir")
       ("//host/computer", "/dir")
-
-   .. versionchanged:: 3.6
-      Accepts a :term:`path-like object`.
-
-
-.. function:: splitroot(path)
-
-   Split the pathname *path* into a 3-item tuple ``(drive, root, tail)`` where
-   *drive* is a device name or mount point, *root* is a string of separators
-   after the drive, and *tail* is everything after the root. Any of these
-   items may be the empty string. In all cases, ``drive + root + tail`` will
-   be the same as *path*.
-
-   On POSIX systems, *drive* is always empty. The *root* may be empty (if *path* is
-   relative), a single forward slash (if *path* is absolute), or two forward slashes
-   (implementation-defined per `IEEE Std 1003.1-2017; 4.13 Pathname Resolution
-   <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13>`_.)
-   For example::
-
-      >>> splitroot('/home/sam')
-      ('', '/', 'home/sam')
-      >>> splitroot('//home/sam')
-      ('', '//', 'home/sam')
-      >>> splitroot('///home/sam')
-      ('', '/', '//home/sam')
-
-   On Windows, *drive* may be empty, a drive-letter name, a UNC share, or a device
-   name. The *root* may be empty, a forward slash, or a backward slash. For
-   example::
-
-      >>> splitroot('C:/Users/Sam')
-      ('C:', '/', 'Users/Sam')
-      >>> splitroot('//Server/Share/Users/Sam')
-      ('//Server/Share', '/', 'Users/Sam')
-
-   .. versionadded:: 3.12
-
-
-.. function:: splitext(path)
-
-   Split the pathname *path* into a pair ``(root, ext)``  such that ``root + ext ==
-   path``, and the extension, *ext*, is empty or begins with a period and contains at
-   most one period.
-
-   If the path contains no extension, *ext* will be ``''``::
-
-      >>> splitext('bar')
-      ('bar', '')
-
-   If the path contains an extension, then *ext* will be set to this extension,
-   including the leading period. Note that previous periods will be ignored::
-
-      >>> splitext('foo.bar.exe')
-      ('foo.bar', '.exe')
-      >>> splitext('/foo/bar.exe')
-      ('/foo/bar', '.exe')
-
-   Leading periods of the last component of the path are considered to
-   be part of the root::
-
-      >>> splitext('.cshrc')
-      ('.cshrc', '')
-      >>> splitext('/foo/....jpg')
-      ('/foo/....jpg', '')
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
