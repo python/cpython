@@ -1,0 +1,3 @@
+Adjust default compression level to 6 (down from 9) in gzip and tarfile.
+It is the default level used by most compression tools and a better
+tradeoff between speed and performance.
