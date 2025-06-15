@@ -50,8 +50,8 @@ additional methods of invocation:
 * When called with ``-c command``, it executes the Python statement(s) given as
   *command*.  Here *command* may contain multiple statements separated by
   newlines. Leading whitespace is significant in Python statements!
-* When called with ``-m module-name``, the given module is located on the
-  Python module path and executed as a script.
+* When called with ``-m module-name``, the given module is located using the standard
+  import mechanism and executed as a script.
 
 In non-interactive mode, the entire input is parsed before it is executed.
 
@@ -78,8 +78,8 @@ source.
 
 .. option:: -m <module-name>
 
-   Search :data:`sys.path` for the named module and execute its contents as
-   the :mod:`__main__` module.
+   Locate the module using the standard import mechanism and execute its contents
+   as the :mod:`__main__` module.
 
    Since the argument is a *module* name, you must not give a file extension
    (``.py``).  The module name should be a valid absolute Python module name, but
