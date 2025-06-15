@@ -1698,7 +1698,7 @@ def _shadowed_dict_from_weakref_mro_tuple(*weakref_mro):
             class_dict = dunder_dict['__dict__']
             if not (type(class_dict) is types.GetSetDescriptorType and
                     class_dict.__name__ == "__dict__" and
-                    class_dict.__objclass__ is entry):
+                    (class_dict.__objclass__ is entry or class_dict.__objclass__ is object)):
                 return class_dict
     return _sentinel
 
