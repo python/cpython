@@ -1,2 +1,0 @@
-Workaround NaN's "canonicalization" in :c:func:`PyFloat_Pack4`
-and :c:func:`PyFloat_Unpack4` on RISC-V.

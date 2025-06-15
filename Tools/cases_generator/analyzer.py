@@ -135,15 +135,13 @@ class Flush:
 @dataclass
 class StackItem:
     name: str
-    type: str | None
     size: str
     peek: bool = False
     used: bool = False
 
     def __str__(self) -> str:
         size = f"[{self.size}]" if self.size else ""
-        type = "" if self.type is None else f"{self.type} "
-        return f"{type}{self.name}{size} {self.peek}"
+        return f"{self.name}{size} {self.peek}"
 
     def is_array(self) -> bool:
         return self.size != ""
@@ -345,7 +343,7 @@ def override_error(
 def convert_stack_item(
     item: parser.StackEffect, replace_op_arg_1: str | None
 ) -> StackItem:
-    return StackItem(item.name, item.type, item.size)
+    return StackItem(item.name, item.size)
 
 def check_unused(stack: list[StackItem], input_names: dict[str, lexer.Token]) -> None:
     "Unused items cannot be on the stack above used, non-peek items"
@@ -585,7 +583,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_CLOSE_SPECIALIZED",
     "PyStackRef_DUP",
     "PyStackRef_False",
-    "PyStackRef_FromPyObjectImmortal",
+    "PyStackRef_FromPyObjectBorrow",
     "PyStackRef_FromPyObjectNew",
     "PyStackRef_FromPyObjectSteal",
     "PyStackRef_IsExactly",
@@ -637,6 +635,10 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyLong_IsNegative",
     "_PyLong_IsNonNegativeCompact",
     "_PyLong_IsZero",
+    "_PyLong_BothAreCompact",
+    "_PyCompactLong_Add",
+    "_PyCompactLong_Multiply",
+    "_PyCompactLong_Subtract",
     "_PyManagedDictPointer_IsValues",
     "_PyObject_GC_IS_SHARED",
     "_PyObject_GC_IS_TRACKED",
@@ -679,7 +681,14 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_IsTaggedInt",
     "PyStackRef_TagInt",
     "PyStackRef_UntagInt",
+    "PyStackRef_IncrementTaggedIntNoOverflow",
+    "PyStackRef_IsNullOrInt",
+    "PyStackRef_IsError",
+    "PyStackRef_IsValid",
+    "PyStackRef_Wrap",
+    "PyStackRef_Unwrap",
 )
+
 
 def check_escaping_calls(instr: parser.CodeDef, escapes: dict[SimpleStmt, EscapingCall]) -> None:
     error: lexer.Token | None = None
@@ -806,7 +815,7 @@ def stack_effect_only_peeks(instr: parser.InstDef) -> bool:
     if len(stack_inputs) == 0:
         return False
     return all(
-        (s.name == other.name and s.type == other.type and s.size == other.size)
+        (s.name == other.name and s.size == other.size)
         for s, other in zip(stack_inputs, instr.outputs)
     )
 
@@ -832,7 +841,7 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         )
     error_with_pop = has_error_with_pop(op)
     error_without_pop = has_error_without_pop(op)
-    escapes = bool(escaping_calls)
+    escapes = bool(escaping_calls) or variable_used(op, "DECREF_INPUTS")
     pure = False if isinstance(op, parser.LabelDef) else "pure" in op.annotations
     no_save_ip = False if isinstance(op, parser.LabelDef) else "no_save_ip" in op.annotations
     return Properties(

@@ -370,6 +370,13 @@ class self_insert(EditCommand):
         r = self.reader
         text = self.event * r.get_arg()
         r.insert(text)
+        if r.paste_mode:
+            data = ""
+            ev = r.console.getpending()
+            data += ev.data
+            if data:
+                r.insert(data)
+                r.last_refresh_cache.invalidated = True
 
 
 class insert_nl(EditCommand):
@@ -439,7 +446,7 @@ class help(Command):
         import _sitebuiltins
 
         with self.reader.suspend():
-            self.reader.msg = _sitebuiltins._Helper()()  # type: ignore[assignment, call-arg]
+            self.reader.msg = _sitebuiltins._Helper()()  # type: ignore[assignment]
 
 
 class invalid_key(Command):
@@ -484,7 +491,6 @@ class perform_bracketed_paste(Command):
         data = ""
         start = time.time()
         while done not in data:
-            self.reader.console.wait(100)
             ev = self.reader.console.getpending()
             data += ev.data
         trace(

@@ -1,2 +1,0 @@
-iOS compiler shims now include ``IPHONEOS_DEPLOYMENT_TARGET`` in target
-triples, ensuring that SDK version minimums are honored.
