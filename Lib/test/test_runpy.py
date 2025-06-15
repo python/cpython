@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import textwrap
+import traceback
 import unittest
 import warnings
 from test.support import (
@@ -796,7 +797,8 @@ class TestExit(unittest.TestCase):
         # Use -E to ignore PYTHONSAFEPATH
         cmd = [sys.executable, '-E', *cmd]
         proc = subprocess.run(cmd, *args, **kwargs, text=True, stderr=subprocess.PIPE)
-        self.assertEndsWith(proc.stderr, "\nKeyboardInterrupt\n")
+        stderr = traceback.strip_exc_timestamps(proc.stderr)
+        self.assertEndsWith(stderr, "\nKeyboardInterrupt\n")
         self.assertEqual(proc.returncode, self.EXPECTED_CODE)
 
     def test_pymain_run_file(self):

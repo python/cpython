@@ -10,6 +10,7 @@ import sys
 import tempfile
 from textwrap import dedent
 import threading
+import traceback
 import types
 import unittest
 
@@ -457,8 +458,10 @@ class TestBase(unittest.TestCase):
 
     @support.requires_subprocess()
     def run_python(self, *argv):
+        # Make assertions of specific traceback output simpler.
+        arguments = ["-X", "traceback_timestamps=0", *argv]
         proc = subprocess.run(
-            [sys.executable, *argv],
+            [sys.executable, *arguments],
             capture_output=True,
             text=True,
         )
@@ -472,6 +475,7 @@ class TestBase(unittest.TestCase):
     def assert_python_failure(self, *argv):
         exitcode, stdout, stderr = self.run_python(*argv)
         self.assertNotEqual(exitcode, 0)
+        stderr = traceback.strip_exc_timestamps(stderr)
         return stdout, stderr
 
     def assert_ns_equal(self, ns1, ns2, msg=None):

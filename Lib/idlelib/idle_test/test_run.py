@@ -9,6 +9,7 @@ from unittest import mock
 import idlelib
 from idlelib.idle_test.mock_idle import Func
 from test.support import force_not_colorized
+import traceback
 
 idlelib.testing = True  # Use {} for executing test user code.
 
@@ -56,6 +57,7 @@ class ExceptionTest(unittest.TestCase):
                 except exc:
                     typ, val, tb = sys.exc_info()
                     actual = run.get_message_lines(typ, val, tb)[0]
+                    actual = traceback.strip_exc_timestamps(actual)
                     expect = f'{exc.__name__}: {msg}'
                     self.assertEqual(actual, expect)
 
@@ -77,6 +79,7 @@ class ExceptionTest(unittest.TestCase):
                         with captured_stderr() as output:
                             run.print_exception()
                         actual = output.getvalue()
+                        actual = traceback.strip_exc_timestamps(actual)
                         self.assertIn(msg1, actual)
                         self.assertIn(msg2, actual)
                         subtests += 1

@@ -56,6 +56,7 @@ __all__ = [
     'ELLIPSIS',
     'SKIP',
     'IGNORE_EXCEPTION_DETAIL',
+    'IGNORE_EXCEPTION_TIMESTAMPS',
     'COMPARISON_FLAGS',
     'REPORT_UDIFF',
     'REPORT_CDIFF',
@@ -158,13 +159,15 @@ NORMALIZE_WHITESPACE = register_optionflag('NORMALIZE_WHITESPACE')
 ELLIPSIS = register_optionflag('ELLIPSIS')
 SKIP = register_optionflag('SKIP')
 IGNORE_EXCEPTION_DETAIL = register_optionflag('IGNORE_EXCEPTION_DETAIL')
+IGNORE_EXCEPTION_TIMESTAMPS = register_optionflag('IGNORE_EXCEPTION_TIMESTAMPS')
 
 COMPARISON_FLAGS = (DONT_ACCEPT_TRUE_FOR_1 |
                     DONT_ACCEPT_BLANKLINE |
                     NORMALIZE_WHITESPACE |
                     ELLIPSIS |
                     SKIP |
-                    IGNORE_EXCEPTION_DETAIL)
+                    IGNORE_EXCEPTION_DETAIL |
+                    IGNORE_EXCEPTION_TIMESTAMPS)
 
 REPORT_UDIFF = register_optionflag('REPORT_UDIFF')
 REPORT_CDIFF = register_optionflag('REPORT_CDIFF')
@@ -274,7 +277,7 @@ def _exception_traceback(exc_info):
     # Get a traceback message.
     excout = StringIO()
     exc_type, exc_val, exc_tb = exc_info
-    traceback.print_exception(exc_type, exc_val, exc_tb, file=excout)
+    traceback.print_exception(exc_type, exc_val, exc_tb, file=excout, no_timestamp=True)
     return excout.getvalue()
 
 # Override some StringIO methods.
@@ -1422,7 +1425,7 @@ class DocTestRunner:
 
             # The example raised an exception:  check if it was expected.
             else:
-                formatted_ex = traceback.format_exception_only(*exc_info[:2])
+                formatted_ex = traceback.format_exception_only(*exc_info[:2], no_timestamp=True)
                 if issubclass(exc_info[0], SyntaxError):
                     # SyntaxError / IndentationError is special:
                     # we don't care about the carets / suggestions / etc
@@ -1754,6 +1757,15 @@ class OutputChecker:
         if optionflags & NORMALIZE_WHITESPACE:
             got = ' '.join(got.split())
             want = ' '.join(want.split())
+            if got == want:
+                return True
+
+        # This flag removes everything that looks like a timestamp as can
+        # be configured to display after exception messages in tracebacks.
+        # We're assuming nobody will ever write these in their 'want' docs
+        # as the feature is off by default, intended for production use.
+        if optionflags & IGNORE_EXCEPTION_TIMESTAMPS:
+            got = traceback.strip_exc_timestamps(got)
             if got == want:
                 return True
 

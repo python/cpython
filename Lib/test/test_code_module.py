@@ -157,7 +157,9 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         self.assertIs(type(self.sysmod.last_value), ValueError)
         self.assertIs(self.sysmod.last_traceback, self.sysmod.last_value.__traceback__)
         self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)
-        self.assertEqual(traceback.format_exception(self.sysmod.last_exc), [
+        self.assertEqual(
+            traceback.format_exception(self.sysmod.last_exc, no_timestamp=True),
+            [
             'Traceback (most recent call last):\n',
             '  File "<console>", line 1, in <module>\n',
             '  File "<console>", line 2, in f\n',
@@ -180,7 +182,9 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         self.assertIsNone(self.sysmod.last_traceback)
         self.assertIsNone(self.sysmod.last_value.__traceback__)
         self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)
-        self.assertEqual(traceback.format_exception(self.sysmod.last_exc), [
+        self.assertEqual(
+            traceback.format_exception(self.sysmod.last_exc, no_timestamp=True),
+            [
             '  File "<console>", line 2\n',
             '    x = ?\n',
             '        ^\n',
@@ -200,7 +204,9 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         self.assertIsNone(self.sysmod.last_traceback)
         self.assertIsNone(self.sysmod.last_value.__traceback__)
         self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)
-        self.assertEqual(traceback.format_exception(self.sysmod.last_exc), [
+        self.assertEqual(
+            traceback.format_exception(self.sysmod.last_exc, no_timestamp=True),
+            [
             '  File "<console>", line 1\n',
             '    1\n',
             'IndentationError: unexpected indent\n'])
@@ -285,6 +291,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
                                     EOFError('Finished')]
         self.console.interact()
         output = ''.join(''.join(call[1]) for call in self.stderr.method_calls)
+        output = traceback.strip_exc_timestamps(output)
         expected = dedent("""
         AttributeError
 
@@ -306,6 +313,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
                                     EOFError('Finished')]
         self.console.interact()
         output = ''.join(''.join(call[1]) for call in self.stderr.method_calls)
+        output = traceback.strip_exc_timestamps(output)
         expected = dedent("""
         Traceback (most recent call last):
           File "<console>", line 1, in <module>
