@@ -4976,7 +4976,7 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Windows.
 
 
-.. function:: startfile(path, [operation], [arguments], [cwd], [show_cmd])
+.. function:: startfile(filepath, [operation], [arguments], [cwd], [show_cmd])
 
    Start a file with its associated application.
 
@@ -4995,7 +4995,7 @@ written in Python, such as a mail server's external command delivery program.
    document.
 
    The default working directory is inherited, but may be overridden by the *cwd*
-   argument. This should be an absolute path. A relative *path* will be resolved
+   argument. This should be an absolute path. A relative *filepath* will be resolved
    against this argument.
 
    Use *show_cmd* to override the default window style. Whether this has any
@@ -5004,7 +5004,7 @@ written in Python, such as a mail server's external command delivery program.
 
    :func:`startfile` returns as soon as the associated application is launched.
    There is no option to wait for the application to close, and no way to retrieve
-   the application's exit status.  The *path* parameter is relative to the current
+   the application's exit status.  The *filepath* parameter is relative to the current
    directory or *cwd*.  If you want to use an absolute path, make sure the first
    character is not a slash (``'/'``)  Use :mod:`pathlib` or the
    :func:`os.path.normpath` function to ensure that paths are properly encoded for
@@ -5014,9 +5014,9 @@ written in Python, such as a mail server's external command delivery program.
    function is not resolved until this function is first called.  If the function
    cannot be resolved, :exc:`NotImplementedError` will be raised.
 
-   .. audit-event:: os.startfile path,operation os.startfile
+   .. audit-event:: os.startfile filepath,operation os.startfile
 
-   .. audit-event:: os.startfile/2 path,operation,arguments,cwd,show_cmd os.startfile
+   .. audit-event:: os.startfile/2 filepath,operation,arguments,cwd,show_cmd os.startfile
 
    .. availability:: Windows.
 
