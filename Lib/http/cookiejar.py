@@ -1035,7 +1035,7 @@ class DefaultCookiePolicy(CookiePolicy):
                     if sld.lower() in ("co", "ac", "com", "edu", "org", "net",
                        "gov", "mil", "int", "aero", "biz", "cat", "coop",
                        "info", "jobs", "mobi", "museum", "name", "pro",
-                       "travel", "eu") and len(tld) == 2:
+                       "travel", "eu", "tv", "or", "nom", "sch", "web") and len(tld) == 2:
                         # domain like .co.uk
                         _debug("   country-code second level domain %s", domain)
                         return False
