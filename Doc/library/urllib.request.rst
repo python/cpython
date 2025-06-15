@@ -1413,7 +1413,7 @@ environment settings::
 The following example uses no proxies at all, overriding environment settings::
 
    >>> import urllib.request
-   >>> opener = urllib.request.build_opener(urllib.request.ProxyHandler({}}))
+   >>> opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
    >>> with opener.open("http://www.python.org/") as f:
    ...     f.read().decode('utf-8')
    ...
