@@ -13,7 +13,7 @@ module.  See also the BaseHTTPServer module docs for other API information.
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import sys
 import urllib.parse
-from wsgiref.handlers import SimpleHandler
+from wsgiref.handlers import BaseHandler, SimpleHandler
 from platform import python_implementation
 
 __version__ = "0.2"
@@ -71,6 +71,12 @@ class WSGIServer(HTTPServer):
 class WSGIRequestHandler(BaseHTTPRequestHandler):
 
     server_version = "WSGIServer/" + __version__
+    server_handler = ServerHandler
+
+    def __init__(self, *args, **kwargs):
+        if not issubclass(self.server_handler, BaseHandler):
+            raise ValueError("the server_handler should be the subclass of BaseHandler")
+        super().__init__(*args, **kwargs)
 
     def get_environ(self):
         env = self.server.base_environ.copy()
@@ -122,7 +128,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         if not self.parse_request(): # An error code has been sent, just exit
             return
 
-        handler = ServerHandler(
+        handler = self.server_handler(
             self.rfile, self.wfile, self.get_stderr(), self.get_environ(),
             multithread=False,
         )
