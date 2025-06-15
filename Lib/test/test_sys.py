@@ -2114,12 +2114,18 @@ sys.addaudithook(audit_hook)
         script = '''
 print("Remote script executed successfully!")
 '''
+        remote_exec_event_triggered = False
+        def audit_hook(event, arg):
+            if event == "remote_exec":
+                nonlocal remote_exec_event_triggered
+                remote_exec_event_triggered = True
+        sys.addaudithook(audit_hook)
         returncode, stdout, stderr = self._run_remote_exec_test(script, prologue=prologue)
         self.assertEqual(returncode, 0)
         self.assertIn(b"Remote script executed successfully!", stdout)
         self.assertIn(b"Audit event: remote_debugger_script, arg: ", stdout)
-        self.assertIn(b"Audit event: remote_exec, arg: ", stdout)
         self.assertEqual(stderr, b"")
+        self.assertTrue(remote_exec_event_triggered)
 
     def test_remote_exec_with_exception(self):
         """Test remote exec with an exception raised in the target process
