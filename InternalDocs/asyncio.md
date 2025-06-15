@@ -8,7 +8,7 @@ This document describes the working and implementation details of C implementati
 
 ## Pre-Python 3.14 implementation
 
-Until Python 3.13, the C implementation of `asyncio` used a [`WeakSet`](https://docs.python.org/3/library/weakref.html#weakref.WeakSet) to store all the tasks created by the event loop. `WeakSet` was used so that the event loop
+Before Python 3.14, the C implementation of `asyncio` used a [`WeakSet`](https://docs.python.org/3/library/weakref.html#weakref.WeakSet) to store all the tasks created by the event loop. `WeakSet` was used so that the event loop
 doesn't hold strong references to the tasks, allowing them to be garbage collected when they are no longer needed.
 The current task of the event loop was stored in a dict mapping the event loop to the current task.
 
@@ -22,10 +22,10 @@ The current task of the event loop was stored in a dict mapping the event loop t
 ```
 
 This implementation had a few drawbacks:
-1. **Performance**: Using a `WeakSet` for storing tasks is inefficient as it requires maintaining a full set of weak references to tasks along with corresponding weakref callback to cleanup the tasks when they are garbage collected.
-This increases the work done by the garbage collector and in applications with a large number of tasks,  this becomes a bottle neck, with increased memory usage and lower performance. Looking up the current task was slow as it required a dictionary lookup on the `current_tasks` dict.
+1. **Performance**: Using a `WeakSet` for storing tasks is inefficient, as it requires maintaining a full set of weak references to tasks along with corresponding weakref callback to cleanup the tasks when they are garbage collected.
+This increases the work done by the garbage collector, and in applications with a large number of tasks, this becomes a bottle neck, with increased memory usage and lower performance. Looking up the current task was slow as it required a dictionary lookup on the `current_tasks` dict.
 
-2. **Thread safety**: Until Python 3.14, concurrent iterations over `WeakSet` was not thread safe[^1]. This meant calling APIs like `asyncio.all_tasks()` could lead to inconsistent results or even `RuntimeError` if used in multiple threads[^2].
+2. **Thread safety**: Before Python 3.14, concurrent iterations over `WeakSet` was not thread safe[^1]. This meant calling APIs like `asyncio.all_tasks()` could lead to inconsistent results or even `RuntimeError` if used in multiple threads[^2].
 
 3. **Poor scaling in free-threading**: Using global `WeakSet` for storing all tasks across all threads lead to contention when adding and removing tasks from the set which is a frequent operation. As such it performed poorly in free-threading and did not scale well with the number of threads. Similarly accessing the current task in multiple threads did not scale due to contention on the global `current_tasks` dictionary.
 
@@ -38,7 +38,7 @@ To address these issues, Python 3.14 implements several changes to improve the p
 - **Per-thread current task**: Python 3.14 stores the current task on the current thread state instead of a global dictionary. This allows for faster access to the current task without the need for a dictionary lookup. Each thread maintains its own current task, which is stored in the `PyThreadState` structure. This was implemented in https://github.com/python/cpython/issues/129898.
 
 Storing the current task and list of all tasks per-thread instead of storing it per-loop was chosen primarily to support external introspection tools such as `python -m asyncio pstree` as looking up arbitrary attributes on the loop object
-is not possible externally. Storing data per-thread also makes it easy to support third party event loop implementations such as `uvloop` and is more efficient for single threaded asyncio use-case as it avoids the overhead of attribute lookups on the loop object and several other calls on the performance critical path of adding and removing tasks from the per-loop task list.
+is not possible externally. Storing data per-thread also makes it easy to support third party event loop implementations such as `uvloop`, and is more efficient for single threaded asyncio use-case as it avoids the overhead of attribute lookups on the loop object and several other calls on the performance critical path of adding and removing tasks from the per-loop task list.
 
 
 ## Per-thread double linked list for tasks
@@ -47,7 +47,7 @@ This implementation uses a circular doubly linked list to store tasks on the thr
 
 The `PyThreadState` structure gained a new field `asyncio_tasks_head`, which serves as the head of the circular linked list of tasks. This allows for lock free addition and removal of tasks from the list.
 
- It is possible that when a thread state is deallocated, there are lingering tasks in its list; this can happen if another thread has references to the tasks of this thread. Therefore, the `PyInterpreterState` structure also gains a new `asyncio_tasks_head` field to store any lingering tasks. When a thread state is deallocated, any remaining lingering tasks are moved to the interpreter state tasks list, and the thread state tasks list is cleared.
+It is possible that when a thread state is deallocated, there are lingering tasks in its list; this can happen if another thread has references to the tasks of this thread. Therefore, the `PyInterpreterState` structure also gains a new `asyncio_tasks_head` field to store any lingering tasks. When a thread state is deallocated, any remaining lingering tasks are moved to the interpreter state tasks list, and the thread state tasks list is cleared.
 The `asyncio_tasks_lock` is used protect the interpreter's tasks list from concurrent modifications.
 
 
@@ -69,8 +69,7 @@ typedef struct PyInterpreterState {
 } PyInterpreterState;
 ```
 
-When a task is created, it is added to the current thread's list of tasks by the `register_task` function. When the task is done, it is removed from the list by the `unregister_task` function. In free-threading, the thread id of the thread which
-created the task is stored in `task_tid` field of the `TaskObj`. This is used to check if the task is being removed from the correct thread's task list. If the current thread is same as the thread which created it then no locking is required, otherwise in free-threading, the `stop-the-world` pause is used to pause all other threads and then safely remove the task from the tasks list.
+When a task is created, it is added to the current thread's list of tasks by the `register_task` function. When the task is done, it is removed from the list by the `unregister_task` function. In free-threading, the thread id of the thread which created the task is stored in `task_tid` field of the `TaskObj`. This is used to check if the task is being removed from the correct thread's task list. If the current thread is same as the thread which created it then no locking is required, otherwise in free-threading, the `stop-the-world` pause is used to pause all other threads and then safely remove the task from the tasks list.
 
 ```mermaid
 
@@ -99,7 +98,7 @@ flowchart TD
     one --> two
 ```
 
-`asyncio.all_tasks` now iterates over the per-thread task lists of all threads and the interpreter's task list to get all the tasks. In free-threading this is done by pausing all the threads using the `stop-the-world` pause to ensure that no tasks are being added or removed while iterating over the lists. This allows for a consistent view of all task lists across all threads and is thread safe.
+`asyncio.all_tasks` now iterates over the per-thread task lists of all threads and the interpreter's task list to get all the tasks. In free-threading, this is done by pausing all the threads using the `stop-the-world` pause to ensure that no tasks are being added or removed while iterating over the lists. This allows for a consistent view of all task lists across all threads and is thread safe.
 
 This design allows for lock free execution and scales well in free-threading with multiple event loops running in different threads.
 
