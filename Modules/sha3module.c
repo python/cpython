@@ -9,6 +9,7 @@
  *  Greg Stein (gstein@lyra.org)
  *  Trevor Perrin (trevp@trevp.net)
  *  Gregory P. Smith (greg@krypto.org)
+ *  Bénédikt Tran (10796600+picnixz@users.noreply.github.com)
  *
  * Copyright (C) 2012-2022  Christian Heimes (christian@python.org)
  * Licensed to PSF under a Contributor Agreement.
@@ -24,7 +25,11 @@
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 #include "hashlib.h"
 
+#include "_hacl/Hacl_Hash_SHA3.h"
+
 #define SHA3_MAX_DIGESTSIZE 64 /* 64 Bytes (512 Bits) for 224 to 512 */
+
+// --- SHA-3 module state -----------------------------------------------------
 
 typedef struct {
     PyTypeObject *sha3_224_type;
@@ -44,20 +49,15 @@ get_sha3module_state(PyObject *module)
     return (sha3module_state *)state;
 }
 
-/*[clinic input]
-module _sha3
-class _sha3.sha3_224 "SHA3object *" "&SHA3_224typ"
-class _sha3.sha3_256 "SHA3object *" "&SHA3_256typ"
-class _sha3.sha3_384 "SHA3object *" "&SHA3_384typ"
-class _sha3.sha3_512 "SHA3object *" "&SHA3_512typ"
-class _sha3.shake_128 "SHA3object *" "&SHAKE128type"
-class _sha3.shake_256 "SHA3object *" "&SHAKE256type"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b8a53680f370285a]*/
+static inline sha3module_state *
+get_sha3module_state_by_cls(PyTypeObject *cls)
+{
+    void *state = PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return (sha3module_state *)state;
+}
 
-/* The structure for storing SHA3 info */
-
-#include "_hacl/Hacl_Hash_SHA3.h"
+// --- SHA-3 object -----------------------------------------------------------
 
 typedef struct {
     PyObject_HEAD
@@ -67,7 +67,22 @@ typedef struct {
 
 #define _SHA3object_CAST(op)    ((SHA3object *)(op))
 
+// --- SHA-3 module clinic configuration --------------------------------------
+
+/*[clinic input]
+module _sha3
+class _sha3.sha3_224 "SHA3object *" "clinic_state()->sha3_224_type"
+class _sha3.sha3_256 "SHA3object *" "clinic_state()->sha3_256_type"
+class _sha3.sha3_384 "SHA3object *" "clinic_state()->sha3_384_type"
+class _sha3.sha3_512 "SHA3object *" "clinic_state()->sha3_512_type"
+class _sha3.shake_128 "SHA3object *" "clinic_state()->shake_128_type"
+class _sha3.shake_256 "SHA3object *" "clinic_state()->shake_256_type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=83376ec869f33016]*/
+
+#define clinic_state()  (get_sha3module_state_by_cls(Py_TYPE(self)))
 #include "clinic/sha3module.c.h"
+#undef clinic_state
 
 static SHA3object *
 newSHA3object(PyTypeObject *type)
@@ -346,8 +361,7 @@ SHA3_get_name(PyObject *self, void *Py_UNUSED(closure))
 {
     PyTypeObject *type = Py_TYPE(self);
 
-    sha3module_state *state = _PyType_GetModuleState(type);
-    assert(state != NULL);
+    sha3module_state *state = get_sha3module_state_by_cls(type);
 
     if (type == state->sha3_224_type) {
         return PyUnicode_FromString("sha3_224");

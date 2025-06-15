@@ -9,6 +9,7 @@
    Greg Stein (gstein@lyra.org)
    Trevor Perrin (trevp@trevp.net)
    Jonathan Protzenko (jonathan@protzenko.fr)
+   Bénédikt Tran (10796600+picnixz@users.noreply.github.com)
 
    Copyright (C) 2005-2007   Gregory P. Smith (greg@krypto.org)
    Licensed to PSF under a Contributor Agreement.
@@ -28,14 +29,9 @@
 
 #include "hashlib.h"
 
-/*[clinic input]
-module _sha2
-class SHA256Type "SHA256object *" "&PyType_Type"
-class SHA512Type "SHA512object *" "&PyType_Type"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b5315a7b611c9afc]*/
+#include "_hacl/Hacl_Hash_SHA2.h"
 
-
+// TODO: Get rid of int digestsize in favor of Hacl state info?
 /* The SHA block sizes and maximum message digest sizes, in bytes */
 
 #define SHA256_BLOCKSIZE   64
@@ -43,11 +39,34 @@ class SHA512Type "SHA512object *" "&PyType_Type"
 #define SHA512_BLOCKSIZE   128
 #define SHA512_DIGESTSIZE  64
 
-/* Our SHA2 implementations defer to the HACL* verified library. */
+// --- SHA-2 module state -----------------------------------------------------
 
-#include "_hacl/Hacl_Hash_SHA2.h"
+/* We shall use run-time type information in the remainder of this module to
+ * tell apart SHA2-224 and SHA2-256 */
+typedef struct {
+    PyTypeObject *sha224_type;
+    PyTypeObject *sha256_type;
+    PyTypeObject *sha384_type;
+    PyTypeObject *sha512_type;
+} sha2module_state;
 
-// TODO: Get rid of int digestsize in favor of Hacl state info?
+static inline sha2module_state *
+get_sha2module_state(PyObject *module)
+{
+    void *state = _PyModule_GetState(module);
+    assert(state != NULL);
+    return (sha2module_state *)state;
+}
+
+static inline sha2module_state *
+get_sha2module_state_by_cls(PyTypeObject *cls)
+{
+    void *state = PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return (sha2module_state *)state;
+}
+
+// --- SHA-2 object -----------------------------------------------------------
 
 typedef struct {
     PyObject_HEAD
@@ -66,24 +85,18 @@ typedef struct {
 #define _SHA256object_CAST(op)  ((SHA256object *)(op))
 #define _SHA512object_CAST(op)  ((SHA512object *)(op))
 
+// --- SHA-2 module clinic configuration --------------------------------------
+
+/*[clinic input]
+module _sha2
+class SHA256Type "SHA256object *" "clinic_state()->sha256_type"
+class SHA512Type "SHA512object *" "clinic_state()->sha512_type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e758ed2b54d457ea]*/
+
+#define clinic_state()  (get_sha2module_state_by_cls(Py_TYPE(self)))
 #include "clinic/sha2module.c.h"
-
-/* We shall use run-time type information in the remainder of this module to
- * tell apart SHA2-224 and SHA2-256 */
-typedef struct {
-    PyTypeObject *sha224_type;
-    PyTypeObject *sha256_type;
-    PyTypeObject *sha384_type;
-    PyTypeObject *sha512_type;
-} sha2module_state;
-
-static inline sha2module_state *
-get_sha2module_state(PyObject *module)
-{
-    void *state = _PyModule_GetState(module);
-    assert(state != NULL);
-    return (sha2module_state *)state;
-}
+#undef clinic_state
 
 static int
 SHA256copy(SHA256object *src, SHA256object *dest)
@@ -256,7 +269,7 @@ SHA256Type_copy_impl(SHA256object *self, PyTypeObject *cls)
 {
     int rc;
     SHA256object *newobj;
-    sha2module_state *state = _PyType_GetModuleState(cls);
+    sha2module_state *state = get_sha2module_state_by_cls(cls);
     if (Py_IS_TYPE(self, state->sha256_type)) {
         if ((newobj = newSHA256object(state)) == NULL) {
             return NULL;

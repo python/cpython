@@ -8,6 +8,7 @@
    Andrew Kuchling (amk@amk.ca)
    Greg Stein (gstein@lyra.org)
    Trevor Perrin (trevp@trevp.net)
+   Bénédikt Tran (10796600+picnixz@users.noreply.github.com)
 
    Copyright (C) 2005-2007   Gregory P. Smith (greg@krypto.org)
    Licensed to PSF under a Contributor Agreement.
@@ -24,12 +25,6 @@
 #include "pycore_strhex.h"        // _Py_strhex()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 
-/*[clinic input]
-module _sha1
-class SHA1Type "SHA1object *" "&PyType_Type"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3dc9a20d1becb759]*/
-
 /* The SHA1 block size and message digest sizes, in bytes */
 
 #define SHA1_BLOCKSIZE    64
@@ -37,16 +32,7 @@ class SHA1Type "SHA1object *" "&PyType_Type"
 
 #include "_hacl/Hacl_Hash_SHA1.h"
 
-typedef struct {
-    PyObject_HEAD
-    HASHLIB_MUTEX_API
-    Hacl_Hash_SHA1_state_t *state;
-} SHA1object;
-
-#define _SHA1object_CAST(op)    ((SHA1object *)(op))
-
-#include "clinic/sha1module.c.h"
-
+// --- SHA-1 module state -----------------------------------------------------
 
 typedef struct {
     PyTypeObject *sha1_type;
@@ -59,6 +45,36 @@ get_sha1module_state(PyObject *module)
     assert(state != NULL);
     return (sha1module_state *)state;
 }
+
+static inline sha1module_state *
+get_sha1module_state_by_cls(PyTypeObject *cls)
+{
+    void *state = PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return (sha1module_state *)state;
+}
+
+// --- SHA-1 object -----------------------------------------------------------
+
+typedef struct {
+    PyObject_HEAD
+    HASHLIB_MUTEX_API
+    Hacl_Hash_SHA1_state_t *state;
+} SHA1object;
+
+#define _SHA1object_CAST(op)    ((SHA1object *)(op))
+
+// --- SHA-1 module clinic configuration --------------------------------------
+
+/*[clinic input]
+module _sha1
+class SHA1Type "SHA1object *" "clinic_state()->sha1_type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=afc62adaf06c713f]*/
+
+#define clinic_state()  (get_sha1module_state_by_cls(Py_TYPE(self)))
+#include "clinic/sha1module.c.h"
+#undef clinic_state
 
 static SHA1object *
 newSHA1object(sha1module_state *state)
@@ -111,7 +127,7 @@ static PyObject *
 SHA1Type_copy_impl(SHA1object *self, PyTypeObject *cls)
 /*[clinic end generated code: output=b32d4461ce8bc7a7 input=6c22e66fcc34c58e]*/
 {
-    sha1module_state *state = _PyType_GetModuleState(cls);
+    sha1module_state *state = get_sha1module_state_by_cls(cls);
 
     SHA1object *newobj;
     if ((newobj = newSHA1object(state)) == NULL) {

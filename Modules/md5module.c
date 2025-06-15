@@ -8,6 +8,7 @@
    Andrew Kuchling (amk@amk.ca)
    Greg Stein (gstein@lyra.org)
    Trevor Perrin (trevp@trevp.net)
+   Bénédikt Tran (10796600+picnixz@users.noreply.github.com)
 
    Copyright (C) 2005-2007   Gregory P. Smith (greg@krypto.org)
    Licensed to PSF under a Contributor Agreement.
@@ -23,30 +24,14 @@
 #include "Python.h"
 #include "hashlib.h"
 
-/*[clinic input]
-module _md5
-class MD5Type "MD5object *" "&PyType_Type"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6e5261719957a912]*/
+#include "_hacl/Hacl_Hash_MD5.h"
 
 /* The MD5 block size and message digest sizes, in bytes */
 
 #define MD5_BLOCKSIZE    64
 #define MD5_DIGESTSIZE   16
 
-#include "_hacl/Hacl_Hash_MD5.h"
-
-
-typedef struct {
-    PyObject_HEAD
-    HASHLIB_MUTEX_API
-    Hacl_Hash_MD5_state_t *state;
-} MD5object;
-
-#define _MD5object_CAST(op)     ((MD5object *)(op))
-
-#include "clinic/md5module.c.h"
-
+// --- MD5 module state -------------------------------------------------------
 
 typedef struct {
     PyTypeObject *md5_type;
@@ -59,6 +44,36 @@ get_md5module_state(PyObject *module)
     assert(state != NULL);
     return (md5module_state *)state;
 }
+
+static inline md5module_state *
+get_md5module_state_by_cls(PyTypeObject *cls)
+{
+    void *state = PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return (md5module_state *)state;
+}
+
+// --- MD5 object -------------------------------------------------------------
+
+typedef struct {
+    PyObject_HEAD
+    HASHLIB_MUTEX_API
+    Hacl_Hash_MD5_state_t *state;
+} MD5object;
+
+#define _MD5object_CAST(op)     ((MD5object *)(op))
+
+// --- MD5 module clinic configuration ----------------------------------------
+
+/*[clinic input]
+module _md5
+class MD5Type "MD5object *" "clinic_state()->md5_type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b5451859a6c7e20d]*/
+
+#define clinic_state()  (get_md5module_state_by_cls(Py_TYPE(self)))
+#include "clinic/md5module.c.h"
+#undef clinic_state
 
 static MD5object *
 newMD5object(md5module_state *state)
@@ -107,7 +122,7 @@ static PyObject *
 MD5Type_copy_impl(MD5object *self, PyTypeObject *cls)
 /*[clinic end generated code: output=bf055e08244bf5ee input=d89087dcfb2a8620]*/
 {
-    md5module_state *state = PyType_GetModuleState(cls);
+    md5module_state *state = get_md5module_state_by_cls(cls);
 
     MD5object *newobj;
     if ((newobj = newMD5object(state)) == NULL) {
