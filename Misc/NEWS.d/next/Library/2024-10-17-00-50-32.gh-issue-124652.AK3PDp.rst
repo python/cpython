@@ -1,0 +1,1 @@
+:func:`functools.partialmethod` is simplified by making use of new :func:`functools.partial` placeholder functionality.
