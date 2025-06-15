@@ -3967,6 +3967,7 @@ _PyObject_SetDict(PyObject *obj, PyObject *value)
         return -1;
     }
     Py_BEGIN_CRITICAL_SECTION(obj);
+    // To prevent use-after-free from other threads that reference the __dict__
     _PyObject_XSetRefDelayed(dictptr, Py_NewRef(value));
     Py_END_CRITICAL_SECTION();
     return 0;
