@@ -11,7 +11,7 @@ available processing power by running threads in parallel on available CPU cores
 While not all software will benefit from this automatically, programs
 designed with threading in mind will run faster on multi-core hardware.
 
-The free-threaded mode is working and continues to be improved:
+The free-threaded mode is working and continues to be improved, but
 expect some bugs and a substantial performance hit in single-threaded workloads.
 
 This document describes the implications of free threading
