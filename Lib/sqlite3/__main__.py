@@ -7,9 +7,7 @@ the InteractiveConsole class from the 'code' stdlib module.
 import sqlite3
 import sys
 
-from argparse import ArgumentParser
 from code import InteractiveConsole
-from textwrap import dedent
 from _colorize import get_theme, theme_no_color
 
 from ._completer import completer
@@ -82,6 +80,9 @@ class SqliteInteractiveConsole(InteractiveConsole):
 
 
 def main(*args):
+    from argparse import ArgumentParser
+    from textwrap import dedent
+
     parser = ArgumentParser(
         description="Python sqlite3 CLI",
         color=True,
