@@ -1,0 +1,2 @@
+Expose the :ref:`dictionary view types <dict-views>` in the :mod:`types` module.
+Patch by Adam Turner.
