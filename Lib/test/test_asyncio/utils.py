@@ -601,3 +601,9 @@ async def await_without_task(coro):
     await asyncio.sleep(0)
     if exc is not None:
         raise exc
+
+
+if sys.platform == 'win32':
+    DefaultEventLoopPolicy = asyncio.windows_events._DefaultEventLoopPolicy
+else:
+    DefaultEventLoopPolicy = asyncio.unix_events._DefaultEventLoopPolicy

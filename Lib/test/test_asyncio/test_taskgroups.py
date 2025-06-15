@@ -15,7 +15,7 @@ from test.test_asyncio.utils import await_without_task
 
 # To prevent a warning "test altered the execution environment"
 def tearDownModule():
-    asyncio._set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 class MyExc(Exception):
