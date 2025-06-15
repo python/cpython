@@ -587,7 +587,7 @@ SHA3_TYPE_SPEC(SHAKE256_spec, "shake_256", SHAKE256slots);
 
 
 static int
-_sha3_traverse(PyObject *module, visitproc visit, void *arg)
+sha3module_traverse(PyObject *module, visitproc visit, void *arg)
 {
     sha3module_state *state = get_sha3module_state(module);
     Py_VISIT(state->sha3_224_type);
@@ -600,7 +600,7 @@ _sha3_traverse(PyObject *module, visitproc visit, void *arg)
 }
 
 static int
-_sha3_clear(PyObject *module)
+sha3module_clear(PyObject *module)
 {
     sha3module_state *state = get_sha3module_state(module);
     Py_CLEAR(state->sha3_224_type);
@@ -613,13 +613,13 @@ _sha3_clear(PyObject *module)
 }
 
 static void
-_sha3_free(void *module)
+sha3module_free(void *module)
 {
-    (void)_sha3_clear((PyObject *)module);
+    (void)sha3module_clear((PyObject *)module);
 }
 
 static int
-_sha3_exec(PyObject *m)
+sha3module_exec(PyObject *m)
 {
     sha3module_state *state = get_sha3module_state(m);
 
@@ -654,7 +654,7 @@ _sha3_exec(PyObject *m)
 }
 
 static PyModuleDef_Slot _sha3_slots[] = {
-    {Py_mod_exec, _sha3_exec},
+    {Py_mod_exec, sha3module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
@@ -666,9 +666,9 @@ static struct PyModuleDef _sha3module = {
     .m_name = "_sha3",
     .m_size = sizeof(sha3module_state),
     .m_slots = _sha3_slots,
-    .m_traverse = _sha3_traverse,
-    .m_clear = _sha3_clear,
-    .m_free = _sha3_free,
+    .m_traverse = sha3module_traverse,
+    .m_clear = sha3module_clear,
+    .m_free = sha3module_free,
 };
 
 

@@ -102,7 +102,7 @@ static struct PyMethodDef blake2mod_functions[] = {
 };
 
 static int
-_blake2_traverse(PyObject *module, visitproc visit, void *arg)
+blake2module_traverse(PyObject *module, visitproc visit, void *arg)
 {
     blake2module_state *state = get_blake2module_state(module);
     Py_VISIT(state->blake2b_type);
@@ -111,7 +111,7 @@ _blake2_traverse(PyObject *module, visitproc visit, void *arg)
 }
 
 static int
-_blake2_clear(PyObject *module)
+blake2module_clear(PyObject *module)
 {
     blake2module_state *state = get_blake2module_state(module);
     Py_CLEAR(state->blake2b_type);
@@ -120,9 +120,9 @@ _blake2_clear(PyObject *module)
 }
 
 static void
-_blake2_free(void *module)
+blake2module_free(void *module)
 {
-    (void)_blake2_clear((PyObject *)module);
+    (void)blake2module_clear((PyObject *)module);
 }
 
 static void
@@ -202,7 +202,7 @@ blake2module_init_cpu_features(blake2module_state *state)
 }
 
 static int
-blake2_exec(PyObject *m)
+blake2module_exec(PyObject *m)
 {
     blake2module_state *state = get_blake2module_state(m);
     blake2module_init_cpu_features(state);
@@ -278,7 +278,7 @@ blake2_exec(PyObject *m)
 }
 
 static PyModuleDef_Slot _blake2_slots[] = {
-    {Py_mod_exec, blake2_exec},
+    {Py_mod_exec, blake2module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
@@ -291,9 +291,9 @@ static struct PyModuleDef blake2_module = {
     .m_size = sizeof(blake2module_state),
     .m_methods = blake2mod_functions,
     .m_slots = _blake2_slots,
-    .m_traverse = _blake2_traverse,
-    .m_clear = _blake2_clear,
-    .m_free = _blake2_free,
+    .m_traverse = blake2module_traverse,
+    .m_clear = blake2module_clear,
+    .m_free = blake2module_free,
 };
 
 PyMODINIT_FUNC

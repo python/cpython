@@ -342,7 +342,7 @@ static struct PyMethodDef MD5_functions[] = {
 };
 
 static int
-_md5_traverse(PyObject *module, visitproc visit, void *arg)
+md5module_traverse(PyObject *module, visitproc visit, void *arg)
 {
     md5module_state *state = get_md5module_state(module);
     Py_VISIT(state->md5_type);
@@ -350,7 +350,7 @@ _md5_traverse(PyObject *module, visitproc visit, void *arg)
 }
 
 static int
-_md5_clear(PyObject *module)
+md5module_clear(PyObject *module)
 {
     md5module_state *state = get_md5module_state(module);
     Py_CLEAR(state->md5_type);
@@ -358,14 +358,14 @@ _md5_clear(PyObject *module)
 }
 
 static void
-_md5_free(void *module)
+md5module_free(void *module)
 {
-    _md5_clear((PyObject *)module);
+    (void)md5module_clear((PyObject *)module);
 }
 
 /* Initialize this module. */
 static int
-md5_exec(PyObject *m)
+md5module_exec(PyObject *m)
 {
     md5module_state *state = get_md5module_state(m);
 
@@ -383,7 +383,7 @@ md5_exec(PyObject *m)
 }
 
 static PyModuleDef_Slot _md5_slots[] = {
-    {Py_mod_exec, md5_exec},
+    {Py_mod_exec, md5module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
@@ -396,9 +396,9 @@ static struct PyModuleDef _md5module = {
     .m_size = sizeof(md5module_state),
     .m_methods = MD5_functions,
     .m_slots = _md5_slots,
-    .m_traverse = _md5_traverse,
-    .m_clear = _md5_clear,
-    .m_free = _md5_free,
+    .m_traverse = md5module_traverse,
+    .m_clear = md5module_clear,
+    .m_free = md5module_free,
 };
 
 PyMODINIT_FUNC

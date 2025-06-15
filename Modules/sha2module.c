@@ -849,7 +849,7 @@ static struct PyMethodDef SHA2_functions[] = {
 };
 
 static int
-_sha2_traverse(PyObject *module, visitproc visit, void *arg)
+sha2module_traverse(PyObject *module, visitproc visit, void *arg)
 {
     sha2module_state *state = get_sha2module_state(module);
     Py_VISIT(state->sha224_type);
@@ -860,7 +860,7 @@ _sha2_traverse(PyObject *module, visitproc visit, void *arg)
 }
 
 static int
-_sha2_clear(PyObject *module)
+sha2module_clear(PyObject *module)
 {
     sha2module_state *state = get_sha2module_state(module);
     Py_CLEAR(state->sha224_type);
@@ -871,13 +871,14 @@ _sha2_clear(PyObject *module)
 }
 
 static void
-_sha2_free(void *module)
+sha2module_free(void *module)
 {
-    (void)_sha2_clear((PyObject *)module);
+    (void)sha2module_clear((PyObject *)module);
 }
 
 /* Initialize this module. */
-static int sha2_exec(PyObject *module)
+static int
+sha2module_exec(PyObject *module)
 {
     sha2module_state *state = get_sha2module_state(module);
 
@@ -926,7 +927,7 @@ static int sha2_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot _sha2_slots[] = {
-    {Py_mod_exec, sha2_exec},
+    {Py_mod_exec, sha2module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
@@ -938,9 +939,9 @@ static struct PyModuleDef _sha2module = {
     .m_size = sizeof(sha2module_state),
     .m_methods = SHA2_functions,
     .m_slots = _sha2_slots,
-    .m_traverse = _sha2_traverse,
-    .m_clear = _sha2_clear,
-    .m_free = _sha2_free
+    .m_traverse = sha2module_traverse,
+    .m_clear = sha2module_clear,
+    .m_free = sha2module_free
 };
 
 PyMODINIT_FUNC
