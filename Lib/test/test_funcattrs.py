@@ -459,6 +459,29 @@ class BuiltinFunctionPropertiesTest(unittest.TestCase):
     # XXX Not sure where this should really go since I can't find a
     # test module specifically for builtin_function_or_method.
 
+    def test_builtin__module__(self):
+        import decimal
+        import math
+
+        # builtin function:
+        self.assertEqual(len.__module__, 'builtins')
+        self.assertEqual(math.sin.__module__, 'math')
+
+        # instance method:
+        self.assertRaises(AttributeError, getattr, int.to_bytes, '__module__')
+        self.assertRaises(AttributeError, getattr, decimal.Decimal.exp, '__module__')
+        self.assertEqual(int.to_bytes.__objclass__.__module__, 'builtins')
+        self.assertEqual(decimal.Decimal.exp.__objclass__.__module__, 'decimal')
+
+        # builtin classmethod:
+        self.assertEqual(int.from_bytes.__module__, 'builtins')
+        self.assertEqual(int.from_bytes.__self__.__module__, 'builtins')
+        self.assertEqual(decimal.Decimal.from_float.__module__, 'decimal')
+        self.assertEqual(decimal.Decimal.from_float.__self__.__module__, 'decimal')
+
+        # builtin staticmethod:
+        self.assertEqual(bytes.maketrans.__module__, 'builtins')
+
     def test_builtin__qualname__(self):
         import time
 
