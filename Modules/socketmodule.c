@@ -3665,7 +3665,8 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
         wait_connect = (s->sock_timeout != 0 && IS_SELECTABLE(s));
     }
     else {
-        wait_connect = (s->sock_timeout > 0 && err == SOCK_INPROGRESS_ERR
+        wait_connect = (s->sock_timeout > 0
+                        && (err == EAGAIN || err == SOCK_INPROGRESS_ERR)
                         && IS_SELECTABLE(s));
     }
 
