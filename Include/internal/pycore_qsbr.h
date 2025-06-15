@@ -51,6 +51,10 @@ struct _qsbr_thread_state {
     // Used to defer advancing write sequence a fixed number of times
     int deferrals;
 
+    // Estimate for the amount of memory that is held by this thread since
+    // the last non-deferred advance.
+    size_t memory_deferred;
+
     // Is this thread state allocated?
     bool allocated;
     struct _qsbr_thread_state *freelist_next;
