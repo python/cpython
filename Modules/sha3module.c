@@ -31,16 +31,17 @@ typedef struct {
     PyTypeObject *sha3_256_type;
     PyTypeObject *sha3_384_type;
     PyTypeObject *sha3_512_type;
+
     PyTypeObject *shake_128_type;
     PyTypeObject *shake_256_type;
-} SHA3State;
+} sha3module_state;
 
-static inline SHA3State*
-sha3_get_state(PyObject *module)
+static inline sha3module_state *
+get_sha3module_state(PyObject *module)
 {
     void *state = PyModule_GetState(module);
     assert(state != NULL);
-    return (SHA3State *)state;
+    return (sha3module_state *)state;
 }
 
 /*[clinic input]
@@ -123,7 +124,7 @@ py_sha3_new_impl(PyTypeObject *type, PyObject *data_obj, int usedforsecurity,
     }
 
     Py_buffer buf = {NULL, NULL};
-    SHA3State *state = _PyType_GetModuleState(type);
+    sha3module_state *state = _PyType_GetModuleState(type);
     SHA3object *self = newSHA3object(type);
     if (self == NULL) {
         goto error;
@@ -345,7 +346,7 @@ SHA3_get_name(PyObject *self, void *Py_UNUSED(closure))
 {
     PyTypeObject *type = Py_TYPE(self);
 
-    SHA3State *state = _PyType_GetModuleState(type);
+    sha3module_state *state = _PyType_GetModuleState(type);
     assert(state != NULL);
 
     if (type == state->sha3_224_type) {
@@ -588,7 +589,7 @@ SHA3_TYPE_SPEC(SHAKE256_spec, "shake_256", SHAKE256slots);
 static int
 _sha3_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    SHA3State *state = sha3_get_state(module);
+    sha3module_state *state = get_sha3module_state(module);
     Py_VISIT(state->sha3_224_type);
     Py_VISIT(state->sha3_256_type);
     Py_VISIT(state->sha3_384_type);
@@ -601,7 +602,7 @@ _sha3_traverse(PyObject *module, visitproc visit, void *arg)
 static int
 _sha3_clear(PyObject *module)
 {
-    SHA3State *state = sha3_get_state(module);
+    sha3module_state *state = get_sha3module_state(module);
     Py_CLEAR(state->sha3_224_type);
     Py_CLEAR(state->sha3_256_type);
     Py_CLEAR(state->sha3_384_type);
@@ -620,16 +621,16 @@ _sha3_free(void *module)
 static int
 _sha3_exec(PyObject *m)
 {
-    SHA3State *st = sha3_get_state(m);
+    sha3module_state *state = get_sha3module_state(m);
 
 #define init_sha3type(type, typespec)                           \
     do {                                                        \
-        st->type = (PyTypeObject *)PyType_FromModuleAndSpec(    \
+        state->type = (PyTypeObject *)PyType_FromModuleAndSpec( \
             m, &typespec, NULL);                                \
-        if (st->type == NULL) {                                 \
+        if (state->type == NULL) {                              \
             return -1;                                          \
         }                                                       \
-        if (PyModule_AddType(m, st->type) < 0) {                \
+        if (PyModule_AddType(m, state->type) < 0) {             \
             return -1;                                          \
         }                                                       \
     } while(0)
@@ -663,7 +664,7 @@ static PyModuleDef_Slot _sha3_slots[] = {
 static struct PyModuleDef _sha3module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_sha3",
-    .m_size = sizeof(SHA3State),
+    .m_size = sizeof(sha3module_state),
     .m_slots = _sha3_slots,
     .m_traverse = _sha3_traverse,
     .m_clear = _sha3_clear,

@@ -77,23 +77,23 @@ typedef struct {
     PyTypeObject *blake2s_type;
     bool can_run_simd128;
     bool can_run_simd256;
-} Blake2State;
+} blake2module_state;
 
-static inline Blake2State *
-blake2_get_state(PyObject *module)
+static inline blake2module_state *
+get_blake2module_state(PyObject *module)
 {
     void *state = _PyModule_GetState(module);
     assert(state != NULL);
-    return (Blake2State *)state;
+    return (blake2module_state *)state;
 }
 
 #if defined(HACL_CAN_COMPILE_SIMD128) || defined(HACL_CAN_COMPILE_SIMD256)
-static inline Blake2State *
+static inline blake2module_state *
 blake2_get_state_from_type(PyTypeObject *module)
 {
     void *state = _PyType_GetModuleState(module);
     assert(state != NULL);
-    return (Blake2State *)state;
+    return (blake2module_state *)state;
 }
 #endif
 
@@ -104,7 +104,7 @@ static struct PyMethodDef blake2mod_functions[] = {
 static int
 _blake2_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    Blake2State *state = blake2_get_state(module);
+    blake2module_state *state = get_blake2module_state(module);
     Py_VISIT(state->blake2b_type);
     Py_VISIT(state->blake2s_type);
     return 0;
@@ -113,7 +113,7 @@ _blake2_traverse(PyObject *module, visitproc visit, void *arg)
 static int
 _blake2_clear(PyObject *module)
 {
-    Blake2State *state = blake2_get_state(module);
+    blake2module_state *state = get_blake2module_state(module);
     Py_CLEAR(state->blake2b_type);
     Py_CLEAR(state->blake2s_type);
     return 0;
@@ -126,7 +126,7 @@ _blake2_free(void *module)
 }
 
 static void
-blake2module_init_cpu_features(Blake2State *state)
+blake2module_init_cpu_features(blake2module_state *state)
 {
     /* This must be kept in sync with hmacmodule_init_cpu_features()
      * in hmacmodule.c */
@@ -204,8 +204,8 @@ blake2module_init_cpu_features(Blake2State *state)
 static int
 blake2_exec(PyObject *m)
 {
-    Blake2State *st = blake2_get_state(m);
-    blake2module_init_cpu_features(st);
+    blake2module_state *state = get_blake2module_state(m);
+    blake2module_init_cpu_features(state);
 
 #define ADD_INT(DICT, NAME, VALUE)                      \
     do {                                                \
@@ -229,17 +229,17 @@ blake2_exec(PyObject *m)
 
     ADD_INT_CONST("_GIL_MINSIZE", HASHLIB_GIL_MINSIZE);
 
-    st->blake2b_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+    state->blake2b_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         m, &blake2b_type_spec, NULL);
 
-    if (st->blake2b_type == NULL) {
+    if (state->blake2b_type == NULL) {
         return -1;
     }
-    if (PyModule_AddType(m, st->blake2b_type) < 0) {
+    if (PyModule_AddType(m, state->blake2b_type) < 0) {
         return -1;
     }
 
-    PyObject *d = st->blake2b_type->tp_dict;
+    PyObject *d = state->blake2b_type->tp_dict;
     ADD_INT(d, "SALT_SIZE", HACL_HASH_BLAKE2B_SALT_BYTES);
     ADD_INT(d, "PERSON_SIZE", HACL_HASH_BLAKE2B_PERSONAL_BYTES);
     ADD_INT(d, "MAX_KEY_SIZE", HACL_HASH_BLAKE2B_KEY_BYTES);
@@ -251,17 +251,17 @@ blake2_exec(PyObject *m)
     ADD_INT_CONST("BLAKE2B_MAX_DIGEST_SIZE", HACL_HASH_BLAKE2B_OUT_BYTES);
 
     /* BLAKE2s */
-    st->blake2s_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+    state->blake2s_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         m, &blake2s_type_spec, NULL);
 
-    if (st->blake2s_type == NULL) {
+    if (state->blake2s_type == NULL) {
         return -1;
     }
-    if (PyModule_AddType(m, st->blake2s_type) < 0) {
+    if (PyModule_AddType(m, state->blake2s_type) < 0) {
         return -1;
     }
 
-    d = st->blake2s_type->tp_dict;
+    d = state->blake2s_type->tp_dict;
     ADD_INT(d, "SALT_SIZE", HACL_HASH_BLAKE2S_SALT_BYTES);
     ADD_INT(d, "PERSON_SIZE", HACL_HASH_BLAKE2S_PERSONAL_BYTES);
     ADD_INT(d, "MAX_KEY_SIZE", HACL_HASH_BLAKE2S_KEY_BYTES);
@@ -288,7 +288,7 @@ static struct PyModuleDef blake2_module = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_blake2",
     .m_doc = blake2mod__doc__,
-    .m_size = sizeof(Blake2State),
+    .m_size = sizeof(blake2module_state),
     .m_methods = blake2mod_functions,
     .m_slots = _blake2_slots,
     .m_traverse = _blake2_traverse,
@@ -332,18 +332,18 @@ static inline blake2_impl
 type_to_impl(PyTypeObject *type)
 {
 #if defined(HACL_CAN_COMPILE_SIMD128) || defined(HACL_CAN_COMPILE_SIMD256)
-    Blake2State *st = blake2_get_state_from_type(type);
+    blake2module_state *state = blake2_get_state_from_type(type);
 #endif
     if (!strcmp(type->tp_name, blake2b_type_spec.name)) {
 #if HACL_CAN_COMPILE_SIMD256
-        return st->can_run_simd256 ? Blake2b_256 : Blake2b;
+        return state->can_run_simd256 ? Blake2b_256 : Blake2b;
 #else
         return Blake2b;
 #endif
     }
     else if (!strcmp(type->tp_name, blake2s_type_spec.name)) {
 #if HACL_CAN_COMPILE_SIMD128
-        return st->can_run_simd128 ? Blake2s_128 : Blake2s;
+        return state->can_run_simd128 ? Blake2s_128 : Blake2s;
 #else
         return Blake2s;
 #endif
