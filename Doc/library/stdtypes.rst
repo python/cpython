@@ -5403,6 +5403,15 @@ creation::
    >>> type(l)
    <class 'list'>
 
+
+Additionally, instances of ``GenericAlias`` are not classes at runtime, even though they behave like classes (e.g. they can be instantiated)::
+
+   >>> import inspect
+   >>> inspect.isclass(list[int])
+   False
+
+This is true for :ref:`user-defined generics <user-defined-generics>` also.
+
 Calling :func:`repr` or :func:`str` on a generic shows the parameterized type::
 
    >>> repr(list[int])
