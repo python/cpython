@@ -857,13 +857,14 @@ class ProcessTestCase(BaseTestCase):
                                'sys.stdout.write("fruit="+os.getenv("fruit"))']
         if sys.platform == "win32":
             cmd = ["CMD", "/c", "SET", "fruit"]
-        with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=newenv) as p:
-            stdout, stderr = p.communicate()
-            if p.returncode and support.verbose:
-                print("STDOUT:", stdout.decode("ascii", "replace"))
-                print("STDERR:", stderr.decode("ascii", "replace"))
-            self.assertEqual(p.returncode, 0)
-            self.assertEqual(stdout.strip(), b"fruit=orange")
+        with warnings_helper.check_warnings(('env.*SystemRoot', RuntimeWarning), quiet=True):
+            with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=newenv) as p:
+                stdout, stderr = p.communicate()
+                if p.returncode and support.verbose:
+                    print("STDOUT:", stdout.decode("ascii", "replace"))
+                    print("STDERR:", stderr.decode("ascii", "replace"))
+                self.assertEqual(p.returncode, 0)
+                self.assertEqual(stdout.strip(), b"fruit=orange")
 
     def test_invalid_cmd(self):
         # null character in the command name
@@ -1764,7 +1765,8 @@ class RunFuncTestCase(BaseTestCase):
         args = [sys.executable, "-c", 'pass']
         # Ignore subprocess errors - we only care that the API doesn't
         # raise an OSError
-        subprocess.run(args, env={})
+        with warnings_helper.check_warnings(('env.*SystemRoot', RuntimeWarning), quiet=True):
+            subprocess.run(args, env={})
 
     def test_capture_output(self):
         cp = self.run_python(("import sys;"
@@ -3567,7 +3569,8 @@ class Win32ProcessTestCase(BaseTestCase):
         class BadEnv(dict):
             keys = None
         with self.assertRaises(TypeError):
-            subprocess.Popen(ZERO_RETURN_CMD, env=BadEnv())
+            with warnings_helper.check_warnings(('env.*SystemRoot', RuntimeWarning), quiet=True):
+                subprocess.Popen(ZERO_RETURN_CMD, env=BadEnv())
 
     def test_close_fds(self):
         # close file descriptors
