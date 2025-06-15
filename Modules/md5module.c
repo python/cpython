@@ -32,7 +32,8 @@
 #include "_hacl/Hacl_Hash_MD5.h"
 
 typedef struct {
-    HASHLIB_OBJECT_HEAD
+    PyObject_HEAD
+    HASHLIB_LOCK_HEAD
     Hacl_Hash_MD5_state_t *state;
 } MD5object;
 
@@ -181,7 +182,7 @@ static void
 md5_update_state_with_lock(MD5object *self, uint8_t *buf, Py_ssize_t len)
 {
     Py_BEGIN_ALLOW_THREADS
-    PyMutex_Lock(&self->mutex);   // unconditionally acquire a lock
+    PyMutex_Lock(&self->mutex); // unconditionally acquire a lock
     _hacl_md5_update(self->state, buf, len);
     PyMutex_Unlock(&self->mutex);
     Py_END_ALLOW_THREADS
@@ -190,7 +191,7 @@ md5_update_state_with_lock(MD5object *self, uint8_t *buf, Py_ssize_t len)
 static void
 md5_update_state_cond_lock(MD5object *self, uint8_t *buf, Py_ssize_t len)
 {
-    ENTER_HASHLIB(self);  // conditionally acquire a lock
+    ENTER_HASHLIB(self); // conditionally acquire a lock
     _hacl_md5_update(self->state, buf, len);
     LEAVE_HASHLIB(self);
 }
@@ -200,10 +201,16 @@ md5_update_state(MD5object *self, uint8_t *buf, Py_ssize_t len)
 {
     assert(buf != 0);
     assert(len >= 0);
-    if (len != 0) {
-        len < HASHLIB_GIL_MINSIZE
-            ? md5_update_state_cond_lock(self, buf, len)
-            : md5_update_state_with_lock(self, buf, len);
+    if (len == 0) {
+        return;
+    }
+    if (len < HASHLIB_GIL_MINSIZE) {
+        md5_update_state_cond_lock(self, buf, len);
+    }
+    else {
+        HASHLIB_SET_MUTEX_POLICY(self, 1);
+        md5_update_state_with_lock(self, buf, len);
+        HASHLIB_SET_MUTEX_POLICY(self, 0);
     }
 }
 
@@ -316,7 +323,7 @@ _md5_md5_impl(PyObject *module, PyObject *data, int usedforsecurity,
         Py_buffer buf;
         GET_BUFFER_VIEW_OR_ERROR(string, &buf, goto error);
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
-            /* We do not initialize self->lock here as this is the constructor
+            /* Do not use self->mutex here as this is the constructor
              * where it is not yet possible to have concurrent access. */
             Py_BEGIN_ALLOW_THREADS
             _hacl_md5_update(self->state, buf.buf, buf.len);

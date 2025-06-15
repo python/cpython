@@ -50,33 +50,42 @@
 
 #include "pythread.h"
 
-#define HASHLIB_OBJECT_HEAD                     \
-    PyObject_HEAD                               \
-    /* prevent undefined behavior via multiple
-     * threads entering the C API */            \
-    bool use_mutex;                             \
+#define HASHLIB_LOCK_HEAD                           \
+    /*
+     * Attributes to prevent undefined behaviors
+     * via multiple threads entering the C API.
+     */                                             \
+    bool use_mutex;                                 \
     PyMutex mutex;
 
-#define ENTER_HASHLIB(obj) \
-    if ((obj)->use_mutex) { \
-        PyMutex_Lock(&(obj)->mutex); \
-    }
-#define LEAVE_HASHLIB(obj) \
-    if ((obj)->use_mutex) { \
-        PyMutex_Unlock(&(obj)->mutex); \
-    }
+#define HASHLIB_SET_MUTEX_POLICY(OBJ, VALUE)                                \
+    _Py_atomic_store_int_relaxed((int *)&(OBJ)->use_mutex, (int)(VALUE))
+
+#define ENTER_HASHLIB(OBJ)                                                  \
+    do {                                                                    \
+        if (_Py_atomic_load_int_relaxed((const int *)&(OBJ)->use_mutex)) {  \
+            PyMutex_Lock(&(OBJ)->mutex);                                    \
+        }                                                                   \
+    } while (0)
+
+#define LEAVE_HASHLIB(OBJ)                                                  \
+    do {                                                                    \
+        if (_Py_atomic_load_int_relaxed((const int *)&(OBJ)->use_mutex)) {  \
+            PyMutex_Unlock(&(OBJ)->mutex);                                  \
+        }                                                                   \
+    } while (0)
 
 #ifdef Py_GIL_DISABLED
-#define HASHLIB_INIT_MUTEX(obj) \
-    do { \
-        (obj)->mutex = (PyMutex){0}; \
-        (obj)->use_mutex = true; \
+#define HASHLIB_INIT_MUTEX(OBJ)         \
+    do {                                \
+        (OBJ)->mutex = (PyMutex){0};    \
+        (OBJ)->use_mutex = true;        \
     } while (0)
 #else
-#define HASHLIB_INIT_MUTEX(obj) \
-    do { \
-        (obj)->mutex = (PyMutex){0}; \
-        (obj)->use_mutex = false; \
+#define HASHLIB_INIT_MUTEX(OBJ)         \
+    do {                                \
+        (OBJ)->mutex = (PyMutex){0};    \
+        (OBJ)->use_mutex = false;       \
     } while (0)
 #endif
 
