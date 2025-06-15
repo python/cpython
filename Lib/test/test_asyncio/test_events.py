@@ -1,6 +1,7 @@
 """Tests for events.py."""
 
 import concurrent.futures
+import contextlib
 import functools
 import io
 import multiprocessing
@@ -55,9 +56,9 @@ def _test_get_event_loop_new_process__sub_proc():
     async def doit():
         return 'hello'
 
-    loop = asyncio.new_event_loop()
-    asyncio._set_event_loop(loop)
-    return loop.run_until_complete(doit())
+    with contextlib.closing(asyncio.new_event_loop()) as loop:
+        asyncio.set_event_loop(loop)
+        return loop.run_until_complete(doit())
 
 
 class CoroLike:
@@ -2651,33 +2652,46 @@ class TimerTests(unittest.TestCase):
 
         h1 = asyncio.TimerHandle(when, callback, (), self.loop)
         h2 = asyncio.TimerHandle(when, callback, (), self.loop)
-        # TODO: Use assertLess etc.
-        self.assertFalse(h1 < h2)
-        self.assertFalse(h2 < h1)
-        self.assertTrue(h1 <= h2)
-        self.assertTrue(h2 <= h1)
-        self.assertFalse(h1 > h2)
-        self.assertFalse(h2 > h1)
-        self.assertTrue(h1 >= h2)
-        self.assertTrue(h2 >= h1)
-        self.assertTrue(h1 == h2)
-        self.assertFalse(h1 != h2)
+        with self.assertRaises(AssertionError):
+            self.assertLess(h1, h2)
+        with self.assertRaises(AssertionError):
+            self.assertLess(h2, h1)
+        with self.assertRaises(AssertionError):
+            self.assertGreater(h1, h2)
+        with self.assertRaises(AssertionError):
+            self.assertGreater(h2, h1)
+        with self.assertRaises(AssertionError):
+            self.assertNotEqual(h1, h2)
+
+        self.assertLessEqual(h1, h2)
+        self.assertLessEqual(h2, h1)
+        self.assertGreaterEqual(h1, h2)
+        self.assertGreaterEqual(h2, h1)
+        self.assertEqual(h1, h2)
 
         h2.cancel()
-        self.assertFalse(h1 == h2)
+        with self.assertRaises(AssertionError):
+            self.assertEqual(h1, h2)
+        self.assertNotEqual(h1, h2)
 
         h1 = asyncio.TimerHandle(when, callback, (), self.loop)
         h2 = asyncio.TimerHandle(when + 10.0, callback, (), self.loop)
-        self.assertTrue(h1 < h2)
-        self.assertFalse(h2 < h1)
-        self.assertTrue(h1 <= h2)
-        self.assertFalse(h2 <= h1)
-        self.assertFalse(h1 > h2)
-        self.assertTrue(h2 > h1)
-        self.assertFalse(h1 >= h2)
-        self.assertTrue(h2 >= h1)
-        self.assertFalse(h1 == h2)
-        self.assertTrue(h1 != h2)
+        with self.assertRaises(AssertionError):
+            self.assertLess(h2, h1)
+        with self.assertRaises(AssertionError):
+            self.assertLessEqual(h2, h1)
+        with self.assertRaises(AssertionError):
+            self.assertGreater(h1, h2)
+        with self.assertRaises(AssertionError):
+            self.assertGreaterEqual(h1, h2)
+        with self.assertRaises(AssertionError):
+            self.assertEqual(h1, h2)
+
+        self.assertLess(h1, h2)
+        self.assertGreater(h2, h1)
+        self.assertLessEqual(h1, h2)
+        self.assertGreaterEqual(h2, h1)
+        self.assertNotEqual(h1, h2)
 
         h3 = asyncio.Handle(callback, (), self.loop)
         self.assertIs(NotImplemented, h1.__eq__(h3))
@@ -2691,19 +2705,25 @@ class TimerTests(unittest.TestCase):
             h1 <= ()
         with self.assertRaises(TypeError):
             h1 >= ()
-        self.assertFalse(h1 == ())
-        self.assertTrue(h1 != ())
+        with self.assertRaises(AssertionError):
+            self.assertEqual(h1, ())
+        with self.assertRaises(AssertionError):
+            self.assertNotEqual(h1, ALWAYS_EQ)
+        with self.assertRaises(AssertionError):
+            self.assertGreater(h1, LARGEST)
+        with self.assertRaises(AssertionError):
+            self.assertGreaterEqual(h1, LARGEST)
+        with self.assertRaises(AssertionError):
+            self.assertLess(h1, SMALLEST)
+        with self.assertRaises(AssertionError):
+            self.assertLessEqual(h1, SMALLEST)
 
-        self.assertTrue(h1 == ALWAYS_EQ)
-        self.assertFalse(h1 != ALWAYS_EQ)
-        self.assertTrue(h1 < LARGEST)
-        self.assertFalse(h1 > LARGEST)
-        self.assertTrue(h1 <= LARGEST)
-        self.assertFalse(h1 >= LARGEST)
-        self.assertFalse(h1 < SMALLEST)
-        self.assertTrue(h1 > SMALLEST)
-        self.assertFalse(h1 <= SMALLEST)
-        self.assertTrue(h1 >= SMALLEST)
+        self.assertNotEqual(h1, ())
+        self.assertEqual(h1, ALWAYS_EQ)
+        self.assertLess(h1, LARGEST)
+        self.assertLessEqual(h1, LARGEST)
+        self.assertGreaterEqual(h1, SMALLEST)
+        self.assertGreater(h1, SMALLEST)
 
 
 class AbstractEventLoopTests(unittest.TestCase):
@@ -2809,14 +2829,6 @@ class AbstractEventLoopTests(unittest.TestCase):
 
 
 class PolicyTests(unittest.TestCase):
-
-    def test_asyncio_set_event_loop_deprecation(self):
-        with self.assertWarnsRegex(
-                DeprecationWarning, "'asyncio.set_event_loop' is deprecated"):
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            self.assertIs(loop, asyncio.get_event_loop())
-            loop.close()
 
     def test_abstract_event_loop_policy_deprecation(self):
         with self.assertWarnsRegex(
@@ -2954,14 +2966,14 @@ class GetEventLoopTestsMixin:
         super().setUp()
 
         self.loop = asyncio.new_event_loop()
-        asyncio._set_event_loop(self.loop)
+        asyncio.set_event_loop(self.loop)
 
     def tearDown(self):
         try:
             super().tearDown()
         finally:
             self.loop.close()
-            asyncio._set_event_loop(None)
+            asyncio.set_event_loop(None)
 
             events._get_running_loop = self._get_running_loop_saved
             events._set_running_loop = self._set_running_loop_saved
@@ -3005,13 +3017,13 @@ class GetEventLoopTestsMixin:
     def test_get_running_loop_already_running(self):
         async def main():
             running_loop = asyncio.get_running_loop()
-            loop = asyncio.new_event_loop()
-            try:
-                loop.run_forever()
-            except RuntimeError:
-                pass
-            else:
-                self.fail("RuntimeError not raised")
+            with contextlib.closing(asyncio.new_event_loop()) as loop:
+                try:
+                    loop.run_forever()
+                except RuntimeError:
+                    pass
+                else:
+                    self.fail("RuntimeError not raised")
 
             self.assertIs(asyncio.get_running_loop(), running_loop)
 
@@ -3033,7 +3045,7 @@ class GetEventLoopTestsMixin:
 
             with self.assertRaises(TestError):
                 asyncio.get_event_loop()
-            asyncio._set_event_loop(None)
+            asyncio.set_event_loop(None)
             with self.assertRaises(TestError):
                 asyncio.get_event_loop()
 
@@ -3048,10 +3060,10 @@ class GetEventLoopTestsMixin:
 
             loop.run_until_complete(func())
 
-            asyncio._set_event_loop(loop)
+            asyncio.set_event_loop(loop)
             with self.assertRaises(TestError):
                 asyncio.get_event_loop()
-            asyncio._set_event_loop(None)
+            asyncio.set_event_loop(None)
             with self.assertRaises(TestError):
                 asyncio.get_event_loop()
 
@@ -3075,7 +3087,7 @@ class GetEventLoopTestsMixin:
             with self.assertRaisesRegex(RuntimeError, 'no current'):
                 asyncio.get_event_loop()
 
-            asyncio._set_event_loop(None)
+            asyncio.set_event_loop(None)
             with self.assertRaisesRegex(RuntimeError, 'no current'):
                 asyncio.get_event_loop()
 
@@ -3086,10 +3098,10 @@ class GetEventLoopTestsMixin:
 
             loop.run_until_complete(func())
 
-            asyncio._set_event_loop(loop)
+            asyncio.set_event_loop(loop)
             self.assertIs(asyncio.get_event_loop(), loop)
 
-            asyncio._set_event_loop(None)
+            asyncio.set_event_loop(None)
             with self.assertRaisesRegex(RuntimeError, 'no current'):
                 asyncio.get_event_loop()
 

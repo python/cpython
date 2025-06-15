@@ -64,6 +64,7 @@ struct _fileutils_state {
     int force_ascii;
 };
 
+#include "pycore_interpframe_structs.h" // _PyInterpreterFrame
 #include "pycore_debug_offsets.h" // _Py_DebugOffsets
 #include "pycore_signal.h"        // struct _signals_runtime_state
 #include "pycore_faulthandler.h"  // struct _faulthandler_runtime_state
@@ -221,9 +222,6 @@ struct pyruntimestate {
     struct pyhash_runtime_state pyhash_state;
     struct _pythread_runtime_state threads;
     struct _signals_runtime_state signals;
-
-    /* Used for the thread state bound to the current thread. */
-    Py_tss_t autoTSSkey;
 
     /* Used instead of PyThreadState.trash when there is not current tstate. */
     Py_tss_t trashTSSkey;

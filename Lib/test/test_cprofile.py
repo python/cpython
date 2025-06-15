@@ -5,8 +5,10 @@ import unittest
 
 # rip off all interesting stuff from test_profile
 import cProfile
+import tempfile
+import textwrap
 from test.test_profile import ProfileTest, regenerate_expected_output
-from test.support.script_helper import assert_python_failure
+from test.support.script_helper import assert_python_failure, assert_python_ok
 from test import support
 
 
@@ -123,21 +125,30 @@ class CProfileTest(ProfileTest):
         """
         gh-106152
         generator.throw() should trigger a call in cProfile
-        In the any() call below, there should be two entries for the generator:
-            * one for the call to __next__ which gets a True and terminates any
-            * one when the generator is garbage collected which will effectively
-              do a throw.
         """
+
+        def gen():
+            yield
+
         pr = self.profilerclass()
         pr.enable()
-        any(a == 1 for a in (1, 2))
+        g = gen()
+        try:
+            g.throw(SyntaxError)
+        except SyntaxError:
+            pass
         pr.disable()
         pr.create_stats()
 
-        for func, (cc, nc, _, _, _) in pr.stats.items():
-            if func[2] == "<genexpr>":
-                self.assertEqual(cc, 1)
-                self.assertEqual(nc, 1)
+        self.assertTrue(any("throw" in func[2] for func in pr.stats.keys())),
+
+    def test_bad_descriptor(self):
+        # gh-132250
+        # cProfile should not crash when the profiler callback fails to locate
+        # the actual function of a method.
+        with self.profilerclass() as prof:
+            with self.assertRaises(TypeError):
+                bytes.find(str())
 
 
 class TestCommandLine(unittest.TestCase):
@@ -145,6 +156,19 @@ class TestCommandLine(unittest.TestCase):
         rc, out, err = assert_python_failure('-m', 'cProfile', '-s', 'demo')
         self.assertGreater(rc, 0)
         self.assertIn(b"option -s: invalid choice: 'demo'", err)
+
+    def test_profile_script_importing_main(self):
+        """Check that scripts that reference __main__ see their own namespace
+        when being profiled."""
+        with tempfile.NamedTemporaryFile("w+", delete_on_close=False) as f:
+            f.write(textwrap.dedent("""\
+                class Foo:
+                    pass
+                import __main__
+                assert Foo == __main__.Foo
+                """))
+            f.close()
+            assert_python_ok('-m', "cProfile", f.name)
 
 
 def main():

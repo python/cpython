@@ -48,10 +48,7 @@ typedef struct tracemalloc_traceback traceback_t;
 #define TRACEBACK_SIZE(NFRAME) \
         (sizeof(traceback_t) + sizeof(frame_t) * (NFRAME - 1))
 
-/* The maximum number of frames is either:
- - The maximum number of frames we can store in `traceback_t.nframe`
- - The maximum memory size_t we can allocate */
-static const unsigned long MAX_NFRAME = Py_MIN(UINT16_MAX, ((SIZE_MAX - sizeof(traceback_t)) / sizeof(frame_t) + 1));
+static const int MAX_NFRAME = UINT16_MAX;
 
 
 #define tracemalloc_empty_traceback _PyRuntime.tracemalloc.empty_traceback
@@ -791,9 +788,9 @@ tracemalloc_deinit(void)
 int
 _PyTraceMalloc_Start(int max_nframe)
 {
-    if (max_nframe < 1 || (unsigned long) max_nframe > MAX_NFRAME) {
+    if (max_nframe < 1 || max_nframe > MAX_NFRAME) {
         PyErr_Format(PyExc_ValueError,
-                     "the number of frames must be in range [1; %lu]",
+                     "the number of frames must be in range [1; %i]",
                      MAX_NFRAME);
         return -1;
     }

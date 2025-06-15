@@ -1,4 +1,4 @@
-/* 7d6840a33c250b74adb0ba295d6ec818dccebebaffc8c3ed27d0b29c28adbeb3 (2.7.0+)
+/* d19ae032c224863c1527ba44d228cc34b99192c3a4c5a27af1f4e054d45ee031 (2.7.1+)
                             __  __            _
                          ___\ \/ /_ __   __ _| |_
                         / _ \\  /| '_ \ / _` | __|
@@ -3402,12 +3402,13 @@ doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
       break;
       /* LCOV_EXCL_STOP */
     }
-    *eventPP = s = next;
     switch (parser->m_parsingStatus.parsing) {
     case XML_SUSPENDED:
+      *eventPP = next;
       *nextPtr = next;
       return XML_ERROR_NONE;
     case XML_FINISHED:
+      *eventPP = next;
       return XML_ERROR_ABORTED;
     case XML_PARSING:
       if (parser->m_reenter) {
@@ -3416,6 +3417,7 @@ doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
       }
       /* Fall through */
     default:;
+      *eventPP = s = next;
     }
   }
   /* not reached */
@@ -4332,12 +4334,13 @@ doCdataSection(XML_Parser parser, const ENCODING *enc, const char **startPtr,
       /* LCOV_EXCL_STOP */
     }
 
-    *eventPP = s = next;
     switch (parser->m_parsingStatus.parsing) {
     case XML_SUSPENDED:
+      *eventPP = next;
       *nextPtr = next;
       return XML_ERROR_NONE;
     case XML_FINISHED:
+      *eventPP = next;
       return XML_ERROR_ABORTED;
     case XML_PARSING:
       if (parser->m_reenter) {
@@ -4345,6 +4348,7 @@ doCdataSection(XML_Parser parser, const ENCODING *enc, const char **startPtr,
       }
       /* Fall through */
     default:;
+      *eventPP = s = next;
     }
   }
   /* not reached */
@@ -5951,12 +5955,13 @@ epilogProcessor(XML_Parser parser, const char *s, const char *end,
     default:
       return XML_ERROR_JUNK_AFTER_DOC_ELEMENT;
     }
-    parser->m_eventPtr = s = next;
     switch (parser->m_parsingStatus.parsing) {
     case XML_SUSPENDED:
+      parser->m_eventPtr = next;
       *nextPtr = next;
       return XML_ERROR_NONE;
     case XML_FINISHED:
+      parser->m_eventPtr = next;
       return XML_ERROR_ABORTED;
     case XML_PARSING:
       if (parser->m_reenter) {
@@ -5964,6 +5969,7 @@ epilogProcessor(XML_Parser parser, const char *s, const char *end,
       }
     /* Fall through */
     default:;
+      parser->m_eventPtr = s = next;
     }
   }
 }
@@ -8245,7 +8251,7 @@ entityTrackingReportStats(XML_Parser rootParser, ENTITY *entity,
       (void *)rootParser, rootParser->m_entity_stats.countEverOpened,
       rootParser->m_entity_stats.currentDepth,
       rootParser->m_entity_stats.maximumDepthSeen,
-      (rootParser->m_entity_stats.currentDepth - 1) * 2, "",
+      ((int)rootParser->m_entity_stats.currentDepth - 1) * 2, "",
       entity->is_param ? "%" : "&", entityName, action, entity->textLen,
       sourceLine);
 }

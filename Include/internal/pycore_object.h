@@ -8,14 +8,16 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include <stdbool.h>
 #include "pycore_emscripten_trampoline.h" // _PyCFunction_TrampolineCall()
-#include "pycore_object_deferred.h" // _PyObject_HasDeferredRefcount
-#include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_STORE_PTR_RELAXED
+#include "pycore_gc.h"            // _PyObject_GC_TRACK()
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_ACQUIRE()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_typeobject.h"    // _PyStaticType_GetState()
 #include "pycore_uniqueid.h"      // _PyObject_ThreadIncrefSlow()
+
+#include <stdbool.h>              // bool
+
 
 // This value is added to `ob_ref_shared` for objects that use deferred
 // reference counting so that they are not immediately deallocated when the
@@ -311,7 +313,7 @@ extern int _PyDict_CheckConsistency(PyObject *mp, int check_content);
 // Fast inlined version of PyType_HasFeature()
 static inline int
 _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
-    return ((FT_ATOMIC_LOAD_ULONG_RELAXED(type->tp_flags) & feature) != 0);
+    return ((type->tp_flags) & feature) != 0;
 }
 
 extern void _PyType_InitCache(PyInterpreterState *interp);
@@ -889,6 +891,15 @@ extern bool _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name,
 extern PyObject *_PyType_LookupRefAndVersion(PyTypeObject *, PyObject *,
                                              unsigned int *);
 
+// Internal API to look for a name through the MRO.
+// This stores a stack reference in out and returns the value of
+// type->tp_version or zero if name is missing. It doesn't set an exception!
+extern unsigned int
+_PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef *out);
+
+extern int _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
+                                       PyObject *name, _PyStackRef *method);
+
 // Cache the provided init method in the specialization cache of type if the
 // provided type version matches the current version of the type.
 //
@@ -942,7 +953,15 @@ extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 
 // Export for 'math' shared extension
 PyAPI_FUNC(PyObject*) _PyObject_LookupSpecial(PyObject *, PyObject *);
-PyAPI_FUNC(PyObject*) _PyObject_LookupSpecialMethod(PyObject *self, PyObject *attr, PyObject **self_or_null);
+PyAPI_FUNC(int) _PyObject_LookupSpecialMethod(PyObject *attr, _PyStackRef *method_and_self);
+
+// Calls the method named `attr` on `self`, but does not set an exception if
+// the attribute does not exist.
+PyAPI_FUNC(PyObject *)
+_PyObject_MaybeCallSpecialNoArgs(PyObject *self, PyObject *attr);
+
+PyAPI_FUNC(PyObject *)
+_PyObject_MaybeCallSpecialOneArg(PyObject *self, PyObject *attr, PyObject *arg);
 
 extern int _PyObject_IsAbstract(PyObject *);
 
@@ -990,6 +1009,8 @@ enum _PyAnnotateFormat {
     _Py_ANNOTATE_FORMAT_FORWARDREF = 3,
     _Py_ANNOTATE_FORMAT_STRING = 4,
 };
+
+int _PyObject_SetDict(PyObject *obj, PyObject *value);
 
 #ifdef __cplusplus
 }

@@ -27,9 +27,8 @@ details.
 Adding Python to an Android app
 -------------------------------
 
-These instructions are only needed if you're planning to compile Python for
-Android yourself. Most users should *not* need to do this. Instead, use one of
-the following tools, which will provide a much easier experience:
+Most app developers should use one of the following tools, which will provide a
+much easier experience:
 
 * `Briefcase <https://briefcase.readthedocs.io>`__, from the BeeWare project
 * `Buildozer <https://buildozer.readthedocs.io>`__, from the Kivy project
@@ -42,10 +41,11 @@ If you're sure you want to do all of this manually, read on. You can use the
 link to the relevant file.
 
 * Build Python by following the instructions in :source:`Android/README.md`.
+  This will create the directory ``cross-build/HOST/prefix``.
 
 * Add code to your :source:`build.gradle <Android/testbed/app/build.gradle.kts>`
   file to copy the following items into your project. All except your own Python
-  code can be copied from ``cross-build/HOST/prefix/lib``:
+  code can be copied from ``prefix/lib``:
 
   * In your JNI libraries:
 
@@ -63,3 +63,12 @@ link to the relevant file.
 * Add code to your app to :source:`start Python in embedded mode
   <Android/testbed/app/src/main/c/main_activity.c>`. This will need to be C code
   called via JNI.
+
+Building a Python package for Android
+-------------------------------------
+
+Python packages can be built for Android as wheels and released on PyPI. The
+recommended tool for doing this is `cibuildwheel
+<https://cibuildwheel.pypa.io/en/stable/platforms/#android>`__, which automates
+all the details of setting up a cross-compilation environment, building the
+wheel, and testing it on an emulator.
