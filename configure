@@ -8480,7 +8480,7 @@ fi
 printf %s "checking PROFILE_TASK... " >&6; }
 if test -z "$PROFILE_TASK"
 then
-	PROFILE_TASK='-m test --pgo --timeout=$(TESTTIMEOUT)'
+	PROFILE_TASK='-m test.pgo_task'
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $PROFILE_TASK" >&5
 printf "%s\n" "$PROFILE_TASK" >&6; }
