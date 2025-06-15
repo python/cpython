@@ -1,1 +1,2 @@
-:mod:`http.cookiejar`: supporting more Country-code second-level domains
+:mod:`http.cookiejar`: add "tv", "or", "nom", "sch", and "web"
+to the list of supported country code second-level domains.
