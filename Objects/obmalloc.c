@@ -139,7 +139,10 @@ _PyMem_mi_page_maybe_free(mi_page_t *page, mi_page_queue_t *pq, bool force)
 
         _PyMem_mi_page_clear_qsbr(page);
         page->retire_expire = 0;
-        page->qsbr_goal = _Py_qsbr_deferred_advance(tstate->qsbr);
+
+        size_t bsize = mi_page_block_size(page);
+        page->qsbr_goal = _Py_qsbr_advance_with_size(tstate->qsbr, page->capacity*bsize);
+
         llist_insert_tail(&tstate->mimalloc.page_list, &page->qsbr_node);
         return false;
     }
@@ -1142,7 +1145,7 @@ free_work_item(uintptr_t ptr, delayed_dealloc_cb cb, void *state)
 }
 
 static void
-free_delayed(uintptr_t ptr)
+free_delayed(uintptr_t ptr, size_t size)
 {
 #ifndef Py_GIL_DISABLED
     free_work_item(ptr, NULL, NULL);
@@ -1200,23 +1203,21 @@ free_delayed(uintptr_t ptr)
     }
 
     assert(buf != NULL && buf->wr_idx < WORK_ITEMS_PER_CHUNK);
-    uint64_t seq = _Py_qsbr_deferred_advance(tstate->qsbr);
+    uint64_t seq = _Py_qsbr_advance_with_size(tstate->qsbr, size);
     buf->array[buf->wr_idx].ptr = ptr;
     buf->array[buf->wr_idx].qsbr_goal = seq;
     buf->wr_idx++;
 
-    if (buf->wr_idx == WORK_ITEMS_PER_CHUNK) {
-        _PyMem_ProcessDelayed((PyThreadState *)tstate);
-    }
+    _PyMem_ProcessDelayed((PyThreadState *)tstate);
 #endif
 }
 
 void
-_PyMem_FreeDelayed(void *ptr)
+_PyMem_FreeDelayed(void *ptr, size_t size)
 {
     assert(!((uintptr_t)ptr & 0x01));
     if (ptr != NULL) {
-        free_delayed((uintptr_t)ptr);
+        free_delayed((uintptr_t)ptr, size);
     }
 }
 
@@ -1226,7 +1227,7 @@ _PyObject_XDecRefDelayed(PyObject *ptr)
 {
     assert(!((uintptr_t)ptr & 0x01));
     if (ptr != NULL) {
-        free_delayed(((uintptr_t)ptr)|0x01);
+        free_delayed(((uintptr_t)ptr)|0x01, 64);
     }
 }
 #endif
@@ -1299,8 +1300,11 @@ maybe_process_interp_queue(struct _Py_mem_interp_free_queue *queue,
 void
 _PyMem_ProcessDelayed(PyThreadState *tstate)
 {
-    PyInterpreterState *interp = tstate->interp;
     _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    if (!_Py_qsbr_should_process(tstate_impl->qsbr)) {
+        return;
+    }
+    PyInterpreterState *interp = tstate->interp;
 
     // Process thread-local work
     process_queue(&tstate_impl->mem_free_queue, tstate_impl, true, NULL, NULL);
