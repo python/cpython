@@ -1,1 +1,1 @@
-Speed up math lcm
+Optimize :func:`math.lcm` by swapping arguments (smaller by absolute value --- first).
