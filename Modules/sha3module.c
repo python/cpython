@@ -61,7 +61,7 @@ class _sha3.shake_256 "SHA3object *" "&SHAKE256type"
 typedef struct {
     PyObject_HEAD
     HASHLIB_MUTEX_API
-    Hacl_Hash_SHA3_state_t *hash_state;
+    Hacl_Hash_SHA3_state_t *state;
 } SHA3object;
 
 #define _SHA3object_CAST(op)    ((SHA3object *)(op))
@@ -132,29 +132,29 @@ py_sha3_new_impl(PyTypeObject *type, PyObject *data_obj, int usedforsecurity,
     assert(state != NULL);
 
     if (type == state->sha3_224_type) {
-        self->hash_state = Hacl_Hash_SHA3_malloc(Spec_Hash_Definitions_SHA3_224);
+        self->state = Hacl_Hash_SHA3_malloc(Spec_Hash_Definitions_SHA3_224);
     }
     else if (type == state->sha3_256_type) {
-        self->hash_state = Hacl_Hash_SHA3_malloc(Spec_Hash_Definitions_SHA3_256);
+        self->state = Hacl_Hash_SHA3_malloc(Spec_Hash_Definitions_SHA3_256);
     }
     else if (type == state->sha3_384_type) {
-        self->hash_state = Hacl_Hash_SHA3_malloc(Spec_Hash_Definitions_SHA3_384);
+        self->state = Hacl_Hash_SHA3_malloc(Spec_Hash_Definitions_SHA3_384);
     }
     else if (type == state->sha3_512_type) {
-        self->hash_state = Hacl_Hash_SHA3_malloc(Spec_Hash_Definitions_SHA3_512);
+        self->state = Hacl_Hash_SHA3_malloc(Spec_Hash_Definitions_SHA3_512);
     }
     else if (type == state->shake_128_type) {
-        self->hash_state = Hacl_Hash_SHA3_malloc(Spec_Hash_Definitions_Shake128);
+        self->state = Hacl_Hash_SHA3_malloc(Spec_Hash_Definitions_Shake128);
     }
     else if (type == state->shake_256_type) {
-        self->hash_state = Hacl_Hash_SHA3_malloc(Spec_Hash_Definitions_Shake256);
+        self->state = Hacl_Hash_SHA3_malloc(Spec_Hash_Definitions_Shake256);
     }
     else {
         PyErr_BadInternalCall();
         goto error;
     }
 
-    if (self->hash_state == NULL) {
+    if (self->state == NULL) {
         (void)PyErr_NoMemory();
         goto error;
     }
@@ -165,11 +165,11 @@ py_sha3_new_impl(PyTypeObject *type, PyObject *data_obj, int usedforsecurity,
             /* We do not initialize self->lock here as this is the constructor
              * where it is not yet possible to have concurrent access. */
             Py_BEGIN_ALLOW_THREADS
-            sha3_update(self->hash_state, buf.buf, buf.len);
+            sha3_update(self->state, buf.buf, buf.len);
             Py_END_ALLOW_THREADS
         }
         else {
-            sha3_update(self->hash_state, buf.buf, buf.len);
+            sha3_update(self->state, buf.buf, buf.len);
         }
     }
 
@@ -194,9 +194,9 @@ static int
 SHA3_clear(PyObject *op)
 {
     SHA3object *self = _SHA3object_CAST(op);
-    if (self->hash_state != NULL) {
-        Hacl_Hash_SHA3_free(self->hash_state);
-        self->hash_state = NULL;
+    if (self->state != NULL) {
+        Hacl_Hash_SHA3_free(self->state);
+        self->state = NULL;
     }
     return 0;
 }
@@ -237,9 +237,9 @@ _sha3_sha3_224_copy_impl(SHA3object *self)
         return NULL;
     }
     ENTER_HASHLIB(self);
-    newobj->hash_state = Hacl_Hash_SHA3_copy(self->hash_state);
+    newobj->state = Hacl_Hash_SHA3_copy(self->state);
     LEAVE_HASHLIB(self);
-    if (newobj->hash_state == NULL) {
+    if (newobj->state == NULL) {
         Py_DECREF(newobj);
         return PyErr_NoMemory();
     }
@@ -261,10 +261,10 @@ _sha3_sha3_224_digest_impl(SHA3object *self)
     // This function errors out if the algorithm is SHAKE. Here, we know this
     // not to be the case, and therefore do not perform error checking.
     ENTER_HASHLIB(self);
-    (void)Hacl_Hash_SHA3_digest(self->hash_state, digest);
+    (void)Hacl_Hash_SHA3_digest(self->state, digest);
     LEAVE_HASHLIB(self);
     return PyBytes_FromStringAndSize((const char *)digest,
-        Hacl_Hash_SHA3_hash_len(self->hash_state));
+        Hacl_Hash_SHA3_hash_len(self->state));
 }
 
 
@@ -280,10 +280,10 @@ _sha3_sha3_224_hexdigest_impl(SHA3object *self)
 {
     unsigned char digest[SHA3_MAX_DIGESTSIZE];
     ENTER_HASHLIB(self);
-    (void)Hacl_Hash_SHA3_digest(self->hash_state, digest);
+    (void)Hacl_Hash_SHA3_digest(self->state, digest);
     LEAVE_HASHLIB(self);
     return _Py_strhex((const char *)digest,
-        Hacl_Hash_SHA3_hash_len(self->hash_state));
+        Hacl_Hash_SHA3_hash_len(self->state));
 }
 
 
@@ -310,11 +310,11 @@ _sha3_sha3_224_update_impl(SHA3object *self, PyObject *data)
     if (self->use_mutex) {
         Py_BEGIN_ALLOW_THREADS
         PyMutex_Lock(&self->mutex);
-        sha3_update(self->hash_state, buf.buf, buf.len);
+        sha3_update(self->state, buf.buf, buf.len);
         PyMutex_Unlock(&self->mutex);
         Py_END_ALLOW_THREADS
     } else {
-        sha3_update(self->hash_state, buf.buf, buf.len);
+        sha3_update(self->state, buf.buf, buf.len);
     }
 
     PyBuffer_Release(&buf);
@@ -335,7 +335,7 @@ static PyObject *
 SHA3_get_block_size(PyObject *op, void *Py_UNUSED(closure))
 {
     SHA3object *self = _SHA3object_CAST(op);
-    uint32_t rate = Hacl_Hash_SHA3_block_len(self->hash_state);
+    uint32_t rate = Hacl_Hash_SHA3_block_len(self->state);
     return PyLong_FromLong(rate);
 }
 
@@ -372,10 +372,10 @@ SHA3_get_digest_size(PyObject *op, void *Py_UNUSED(closure))
 {
     // Preserving previous behavior: variable-length algorithms return 0
     SHA3object *self = _SHA3object_CAST(op);
-    if (Hacl_Hash_SHA3_is_shake(self->hash_state))
+    if (Hacl_Hash_SHA3_is_shake(self->state))
       return PyLong_FromLong(0);
     else
-      return PyLong_FromLong(Hacl_Hash_SHA3_hash_len(self->hash_state));
+      return PyLong_FromLong(Hacl_Hash_SHA3_hash_len(self->state));
 }
 
 
@@ -383,7 +383,7 @@ static PyObject *
 SHA3_get_capacity_bits(PyObject *op, void *Py_UNUSED(closure))
 {
     SHA3object *self = _SHA3object_CAST(op);
-    uint32_t rate = Hacl_Hash_SHA3_block_len(self->hash_state) * 8;
+    uint32_t rate = Hacl_Hash_SHA3_block_len(self->state) * 8;
     assert(rate <= 1600);
     int capacity = 1600 - rate;
     return PyLong_FromLong(capacity);
@@ -394,7 +394,7 @@ static PyObject *
 SHA3_get_rate_bits(PyObject *op, void *Py_UNUSED(closure))
 {
     SHA3object *self = _SHA3object_CAST(op);
-    uint32_t rate = Hacl_Hash_SHA3_block_len(self->hash_state) * 8;
+    uint32_t rate = Hacl_Hash_SHA3_block_len(self->state) * 8;
     return PyLong_FromLong(rate);
 }
 
@@ -491,7 +491,7 @@ _SHAKE_digest(PyObject *op, unsigned long digestlen, int hex)
      * - the output length is zero -- we follow the existing behavior and return
      *   an empty digest, without raising an error */
     if (digestlen > 0) {
-        (void)Hacl_Hash_SHA3_squeeze(self->hash_state, digest, digestlen);
+        (void)Hacl_Hash_SHA3_squeeze(self->state, digest, digestlen);
     }
     if (hex) {
         result = _Py_strhex((const char *)digest, digestlen);

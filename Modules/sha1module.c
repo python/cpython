@@ -40,7 +40,7 @@ class SHA1Type "SHA1object *" "&PyType_Type"
 typedef struct {
     PyObject_HEAD
     HASHLIB_MUTEX_API
-    Hacl_Hash_SHA1_state_t *hash_state;
+    Hacl_Hash_SHA1_state_t *state;
 } SHA1object;
 
 #define _SHA1object_CAST(op)    ((SHA1object *)(op))
@@ -86,9 +86,9 @@ static void
 SHA1_dealloc(PyObject *op)
 {
     SHA1object *ptr = _SHA1object_CAST(op);
-    if (ptr->hash_state != NULL) {
-        Hacl_Hash_SHA1_free(ptr->hash_state);
-        ptr->hash_state = NULL;
+    if (ptr->state != NULL) {
+        Hacl_Hash_SHA1_free(ptr->state);
+        ptr->state = NULL;
     }
     PyTypeObject *tp = Py_TYPE(ptr);
     PyObject_GC_UnTrack(ptr);
@@ -119,9 +119,9 @@ SHA1Type_copy_impl(SHA1object *self, PyTypeObject *cls)
     }
 
     ENTER_HASHLIB(self);
-    newobj->hash_state = Hacl_Hash_SHA1_copy(self->hash_state);
+    newobj->state = Hacl_Hash_SHA1_copy(self->state);
     LEAVE_HASHLIB(self);
-    if (newobj->hash_state == NULL) {
+    if (newobj->state == NULL) {
         Py_DECREF(newobj);
         return PyErr_NoMemory();
     }
@@ -140,7 +140,7 @@ SHA1Type_digest_impl(SHA1object *self)
 {
     unsigned char digest[SHA1_DIGESTSIZE];
     ENTER_HASHLIB(self);
-    Hacl_Hash_SHA1_digest(self->hash_state, digest);
+    Hacl_Hash_SHA1_digest(self->state, digest);
     LEAVE_HASHLIB(self);
     return PyBytes_FromStringAndSize((const char *)digest, SHA1_DIGESTSIZE);
 }
@@ -157,7 +157,7 @@ SHA1Type_hexdigest_impl(SHA1object *self)
 {
     unsigned char digest[SHA1_DIGESTSIZE];
     ENTER_HASHLIB(self);
-    Hacl_Hash_SHA1_digest(self->hash_state, digest);
+    Hacl_Hash_SHA1_digest(self->state, digest);
     LEAVE_HASHLIB(self);
     return _Py_strhex((const char *)digest, SHA1_DIGESTSIZE);
 }
@@ -204,11 +204,11 @@ SHA1Type_update_impl(SHA1object *self, PyObject *obj)
     if (self->use_mutex) {
         Py_BEGIN_ALLOW_THREADS
         PyMutex_Lock(&self->mutex);
-        update(self->hash_state, buf.buf, buf.len);
+        update(self->state, buf.buf, buf.len);
         PyMutex_Unlock(&self->mutex);
         Py_END_ALLOW_THREADS
     } else {
-        update(self->hash_state, buf.buf, buf.len);
+        update(self->state, buf.buf, buf.len);
     }
 
     PyBuffer_Release(&buf);
@@ -301,9 +301,9 @@ _sha1_sha1_impl(PyObject *module, PyObject *data, int usedforsecurity,
         return NULL;
     }
 
-    new->hash_state = Hacl_Hash_SHA1_malloc();
+    new->state = Hacl_Hash_SHA1_malloc();
 
-    if (new->hash_state == NULL) {
+    if (new->state == NULL) {
         Py_DECREF(new);
         if (string) {
             PyBuffer_Release(&buf);
@@ -315,11 +315,11 @@ _sha1_sha1_impl(PyObject *module, PyObject *data, int usedforsecurity,
             /* We do not initialize self->lock here as this is the constructor
              * where it is not yet possible to have concurrent access. */
             Py_BEGIN_ALLOW_THREADS
-            update(new->hash_state, buf.buf, buf.len);
+            update(new->state, buf.buf, buf.len);
             Py_END_ALLOW_THREADS
         }
         else {
-            update(new->hash_state, buf.buf, buf.len);
+            update(new->state, buf.buf, buf.len);
         }
         PyBuffer_Release(&buf);
     }

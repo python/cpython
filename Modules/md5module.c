@@ -40,7 +40,7 @@ class MD5Type "MD5object *" "&PyType_Type"
 typedef struct {
     PyObject_HEAD
     HASHLIB_MUTEX_API
-    Hacl_Hash_MD5_state_t *hash_state;
+    Hacl_Hash_MD5_state_t *state;
 } MD5object;
 
 #define _MD5object_CAST(op)     ((MD5object *)(op))
@@ -85,7 +85,7 @@ static void
 MD5_dealloc(PyObject *op)
 {
     MD5object *ptr = _MD5object_CAST(op);
-    Hacl_Hash_MD5_free(ptr->hash_state);
+    Hacl_Hash_MD5_free(ptr->state);
     PyTypeObject *tp = Py_TYPE(op);
     PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
@@ -115,9 +115,9 @@ MD5Type_copy_impl(MD5object *self, PyTypeObject *cls)
     }
 
     ENTER_HASHLIB(self);
-    newobj->hash_state = Hacl_Hash_MD5_copy(self->hash_state);
+    newobj->state = Hacl_Hash_MD5_copy(self->state);
     LEAVE_HASHLIB(self);
-    if (newobj->hash_state == NULL) {
+    if (newobj->state == NULL) {
         Py_DECREF(newobj);
         return PyErr_NoMemory();
     }
@@ -136,7 +136,7 @@ MD5Type_digest_impl(MD5object *self)
 {
     unsigned char digest[MD5_DIGESTSIZE];
     ENTER_HASHLIB(self);
-    Hacl_Hash_MD5_digest(self->hash_state, digest);
+    Hacl_Hash_MD5_digest(self->state, digest);
     LEAVE_HASHLIB(self);
     return PyBytes_FromStringAndSize((const char *)digest, MD5_DIGESTSIZE);
 }
@@ -153,7 +153,7 @@ MD5Type_hexdigest_impl(MD5object *self)
 {
     unsigned char digest[MD5_DIGESTSIZE];
     ENTER_HASHLIB(self);
-    Hacl_Hash_MD5_digest(self->hash_state, digest);
+    Hacl_Hash_MD5_digest(self->state, digest);
     LEAVE_HASHLIB(self);
 
     const char *hexdigits = "0123456789abcdef";
@@ -209,11 +209,11 @@ MD5Type_update_impl(MD5object *self, PyObject *obj)
     if (self->use_mutex) {
         Py_BEGIN_ALLOW_THREADS
         PyMutex_Lock(&self->mutex);
-        update(self->hash_state, buf.buf, buf.len);
+        update(self->state, buf.buf, buf.len);
         PyMutex_Unlock(&self->mutex);
         Py_END_ALLOW_THREADS
     } else {
-        update(self->hash_state, buf.buf, buf.len);
+        update(self->state, buf.buf, buf.len);
     }
 
     PyBuffer_Release(&buf);
@@ -307,8 +307,8 @@ _md5_md5_impl(PyObject *module, PyObject *data, int usedforsecurity,
         return NULL;
     }
 
-    new->hash_state = Hacl_Hash_MD5_malloc();
-    if (new->hash_state == NULL) {
+    new->state = Hacl_Hash_MD5_malloc();
+    if (new->state == NULL) {
         Py_DECREF(new);
         if (string) {
             PyBuffer_Release(&buf);
@@ -321,11 +321,11 @@ _md5_md5_impl(PyObject *module, PyObject *data, int usedforsecurity,
             /* We do not initialize self->lock here as this is the constructor
              * where it is not yet possible to have concurrent access. */
             Py_BEGIN_ALLOW_THREADS
-            update(new->hash_state, buf.buf, buf.len);
+            update(new->state, buf.buf, buf.len);
             Py_END_ALLOW_THREADS
         }
         else {
-            update(new->hash_state, buf.buf, buf.len);
+            update(new->state, buf.buf, buf.len);
         }
         PyBuffer_Release(&buf);
     }
