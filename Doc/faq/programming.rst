@@ -825,23 +825,23 @@ or uppercase.  For example, in the Python interpreter::
    178
 
 
-Why does -22 // 10 return -3?
------------------------------
+Why does -22 // 10 return -3 instead of -2?
+-------------------------------------------
 
-It's primarily driven by the desire that ``i % j`` have the same sign as ``j``.
-If you want that, and also want::
+A non-integral float, such as ``x = -22 / 10``, can be converted to an int
+with either :meth:`math.trunc` or :meth:`math.floor`, giving -2 or -3.
+Maintaining the desired invariant ``i == (i // j) * j + (i % j)`` requires
+that the choice for integer division (``//``) match the choice for which of
+``i`` or ``j`` determines the sign of ``i % j``.  For -22 and 10, ``-2*10 + (-2) ==
+-3*10 + 8 == -22``.  Some languages choose truncation for int division
+and hence modulo sign determination by ``i``.
 
-    i == (i // j) * j + (i % j)
-
-then integer division has to return the floor.  C also requires that identity to
-hold, and then compilers that truncate ``i // j`` need to make ``i % j`` have
-the same sign as ``i``.
-
-There are few real use cases for ``i % j`` when ``j`` is negative.  When ``j``
-is positive, there are many, and in virtually all of them it's more useful for
-``i % j`` to be ``>= 0``.  If the clock says 10 now, what did it say 200 hours
-ago?  ``-190 % 12 == 2`` is useful; ``-190 % 12 == -10`` is a bug waiting to
-bite.
+Python chose floor division primarily to make ``i % j`` have the same sign
+as ``j``.  There are few real use cases for ``i % j`` when ``j`` is negative,
+but many for positive ``j``, and in nearly all of them it is
+more useful for ``i % j`` to be ``>= 0``.  If a clock says 10 now, what did it
+say 200 hours ago?  ``-190 % 12 == 2`` is useful.  Making ``-190 % 12`` be ``-10``
+would have often been a bug waiting to happen.
 
 
 How do I get int literal attribute instead of SyntaxError?
