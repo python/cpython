@@ -23849,7 +23849,7 @@ fi
 
 
 
-ac_fn_check_decl "$LINENO" "MAXLOGNAME" "ac_cv_have_decl_MAXLOGNAME" "#include <sys/params.h>
+ac_fn_check_decl "$LINENO" "MAXLOGNAME" "ac_cv_have_decl_MAXLOGNAME" "#include <sys/param.h>
 " "$ac_c_undeclared_builtin_options" "CFLAGS"
 if test "x$ac_cv_have_decl_MAXLOGNAME" = xyes
 then :
