@@ -1253,29 +1253,14 @@ class TestUUIDWithExtModule(BaseTestUUID, unittest.TestCase):
 class BaseTestInternals:
     _uuid = py_uuid
 
-    def check_parse_mac(self, aix):
-        if not aix:
-            patch = mock.patch.multiple(self.uuid,
-                                        _MAC_DELIM=b':',
-                                        _MAC_OMITS_LEADING_ZEROES=False)
-        else:
-            patch = mock.patch.multiple(self.uuid,
-                                        _MAC_DELIM=b'.',
-                                        _MAC_OMITS_LEADING_ZEROES=True)
+    def check_parse_mac(self, valid_macs, delim=b':', omits_leading_zeros=False):
+        patch = mock.patch.multiple(self.uuid,
+                                    _MAC_DELIM=delim,
+                                    _MAC_OMITS_LEADING_ZEROES=omits_leading_zeros)
 
         with patch:
             # Valid MAC addresses
-            if not aix:
-                tests = (
-                    (b'52:54:00:9d:0e:67', 0x5254009d0e67),
-                    (b'12:34:56:78:90:ab', 0x1234567890ab),
-                )
-            else:
-                # AIX format
-                tests = (
-                    (b'fe.ad.c.1.23.4', 0xfead0c012304),
-                )
-            for mac, expected in tests:
+            for mac, expected in valid_macs:
                 self.assertEqual(self.uuid._parse_mac(mac), expected)
 
             # Invalid MAC addresses
@@ -1294,16 +1279,38 @@ class BaseTestInternals:
                 # dash separator
                 b'52-54-00-9d-0e-67',
             ):
-                if aix:
-                    mac = mac.replace(b':', b'.')
+                if delim != b':':
+                    mac = mac.replace(b':', delim)
                 with self.subTest(mac=mac):
                     self.assertIsNone(self.uuid._parse_mac(mac))
 
     def test_parse_mac(self):
-        self.check_parse_mac(False)
+        self.check_parse_mac(
+            valid_macs=(
+                (b'52:54:00:9d:0e:67', 0x5254009d0e67),
+                (b'12:34:56:78:90:ab', 0x1234567890ab),
+            ),
+            delim=b':',
+            omits_leading_zeros=False,
+        )
 
     def test_parse_mac_aix(self):
-        self.check_parse_mac(True)
+        self.check_parse_mac(
+            valid_macs=(
+                (b'fe.ad.c.1.23.4', 0xfead0c012304),
+            ),
+            delim=b'.',
+            omits_leading_zeros=True,
+        )
+
+    def test_parse_mac_macos(self):
+        self.check_parse_mac(
+            valid_macs=(
+                (b'1:0:5e:0:c:fb', 0x01005e000cfb),
+            ),
+            delim=b':',
+            omits_leading_zeros=True,
+        )
 
     def test_find_under_heading(self):
         data = '''\
@@ -1388,6 +1395,25 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
             )
 
         self.assertEqual(mac, 0x1234567890ab)
+
+    def test_find_mac_near_keyword_macos(self):
+        data = '''
+? (224.0.0.251) at 1:0:5e:0:0:fb on en0 ifscope permanent [ethernet]
+'''
+
+        with mock.patch.multiple(self.uuid,
+                                 _MAC_DELIM=b':',
+                                 _MAC_OMITS_LEADING_ZEROES=True,
+                                 _get_command_stdout=mock_get_command_stdout(data)):
+
+            mac = self.uuid._find_mac_near_keyword(
+                command='arp',
+                args='-an',
+                keywords=[os.fsencode('(%s)' % '224.0.0.251')],
+                get_word_index=lambda x: x + 2,
+            )
+
+        self.assertEqual(mac, 0x01005e0000fb)
 
     def check_node(self, node, requires=None):
         if requires and node is None:
