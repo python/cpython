@@ -344,7 +344,9 @@ class Reader:
             pos -= line_len + 1
             prompt, prompt_len = self.process_prompt(prompt)
             chars, char_widths = disp_str(line, colors, offset)
-            wrapcount = (sum(char_widths) + prompt_len) // self.console.width
+            wrapcount = (sum(char_widths) + prompt_len) // (self.console.width - 1) # 1 for line continuations
+            if (sum(char_widths) + prompt_len) % (self.console.width - 1) == 0:
+                wrapcount -= 1
             if wrapcount == 0 or not char_widths:
                 offset += line_len + 1  # Takes all of the line plus the newline
                 last_refresh_line_end_offsets.append(offset)
@@ -639,6 +641,17 @@ class Reader:
         self.console.refresh(self.screen, self.cxy)
         self.dirty = False
 
+    def handle_resize(self) -> None:
+        """Handle a resize event."""
+        self.console.height, self.console.width = self.console.getheightwidth()
+        self.console.reset_cursor()
+        ns = len(self.console.screen) * ["\000" * self.console.width]
+        self.console.screen = ns
+
+        self.screen = self.calc_screen()
+        self.console.refresh(self.screen, self.cxy, clear_to_end=True)
+        self.dirty = True
+
     def do_cmd(self, cmd: tuple[str, list[str]]) -> None:
         """`cmd` is a tuple of "event_name" and "event", which in the current
         implementation is always just the "buffer" which happens to be a list
@@ -714,7 +727,7 @@ class Reader:
             elif event.evt == "scroll":
                 self.refresh()
             elif event.evt == "resize":
-                self.refresh()
+                self.handle_resize()
             else:
                 translate = False
 
