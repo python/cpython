@@ -1039,7 +1039,7 @@ of browsing python files that do not end in .py.
 .. nonce: LxN4Vb
 .. section: IDLE
 
-IDLE - Make _htest, _utest parameters keyword only.
+IDLE - Make _htest, _utest parameters keyword-only.
 
 ..
 

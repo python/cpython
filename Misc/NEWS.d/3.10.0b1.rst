@@ -924,7 +924,7 @@ Implement :pep:`647` in the :mod:`typing` module by adding
 .. nonce: b33fa0
 .. section: Library
 
-:func:`os.path.realpath` now accepts a *strict* keyword-only argument. When
+:func:`os.path.realpath` now accepts a *strict* keyword argument. When
 set to ``True``, :exc:`OSError` is raised if a path doesn't exist or a
 symlink loop is encountered.
 
@@ -1069,7 +1069,7 @@ window working on behalf of the canvas window.
 .. section: Library
 
 Add the ability to specify keyword-only fields to dataclasses.  These fields
-will become keyword-only arguments to the generated __init__.
+will become keyword-only parameters of the generated __init__.
 
 ..
 
@@ -1300,7 +1300,7 @@ of ``1`` or ``0``.
 .. section: Library
 
 :meth:`pathlib.Path.stat` and :meth:`~pathlib.Path.chmod` now accept a
-*follow_symlinks* keyword-only argument for consistency with corresponding
+*follow_symlinks* keyword argument for consistency with corresponding
 functions in the :mod:`os` module.
 
 ..

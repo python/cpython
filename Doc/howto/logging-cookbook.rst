@@ -1634,7 +1634,7 @@ method. Since then, Python has gained two new formatting approaches:
 
 Logging (as of 3.2) provides improved support for these two additional
 formatting styles. The :class:`Formatter` class been enhanced to take an
-additional, optional keyword parameter named ``style``. This defaults to
+additional, optional keyword argument named ``style``. This defaults to
 ``'%'``, but other possible values are ``'{'`` and ``'$'``, which correspond
 to the other two formatting styles. Backwards compatibility is maintained by
 default (as you would expect), but by explicitly specifying a style parameter,
@@ -1675,10 +1675,10 @@ That can still use %-formatting, as shown here::
     >>>
 
 Logging calls (``logger.debug()``, ``logger.info()`` etc.) only take
-positional parameters for the actual logging message itself, with keyword
-parameters used only for determining options for how to handle the actual
-logging call (e.g. the ``exc_info`` keyword parameter to indicate that
-traceback information should be logged, or the ``extra`` keyword parameter
+positional arguments for the logging message itself, with keyword
+arguments used only for determining options for how to handle the actual
+logging call (e.g. the ``exc_info`` keyword argument to indicate that
+traceback information should be logged, or the ``extra`` keyword argument
 to indicate additional contextual information to be added to the log). So
 you cannot directly make logging calls using :meth:`str.format` or
 :class:`string.Template` syntax, because internally the logging package
@@ -2732,10 +2732,10 @@ governs the formatting of logging messages for final output to logs, and is
 completely orthogonal to how an individual logging message is constructed.
 
 Logging calls (:meth:`~Logger.debug`, :meth:`~Logger.info` etc.) only take
-positional parameters for the actual logging message itself, with keyword
-parameters used only for determining options for how to handle the logging call
-(e.g. the ``exc_info`` keyword parameter to indicate that traceback information
-should be logged, or the ``extra`` keyword parameter to indicate additional
+positional arguments for the logging message itself, with keyword
+arguments used only for determining options for how to handle the logging call
+(e.g. the ``exc_info`` keyword argument to indicate that traceback information
+should be logged, or the ``extra`` keyword argument to indicate additional
 contextual information to be added to the log). So you cannot directly make
 logging calls using :meth:`str.format` or :class:`string.Template` syntax,
 because internally the logging package uses %-formatting to merge the format

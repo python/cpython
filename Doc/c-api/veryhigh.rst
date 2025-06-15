@@ -267,7 +267,7 @@ the same library that the Python runtime is using.
    evaluation.  This environment consists of a dictionary of global variables,
    a mapping object of local variables, arrays of arguments, keywords and
    defaults, a dictionary of default values for :ref:`keyword-only
-   <keyword-only_parameter>` arguments and a closure tuple of cells.
+   <keyword-only_parameter>` parameters, and a closure tuple of cells.
 
 
 .. c:function:: PyObject* PyEval_EvalFrame(PyFrameObject *f)

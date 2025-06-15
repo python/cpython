@@ -1664,7 +1664,7 @@ The :class:`~unittest.mock.Mock` class has the following improvements:
   (Contributed by Amit Saha in :issue:`26323`.)
 
 * The :meth:`Mock.reset_mock() <unittest.mock.Mock.reset_mock>` method
-  now has two optional keyword only arguments: *return_value* and
+  now supports two optional keyword arguments: *return_value* and
   *side_effect*.
   (Contributed by Kushal Das in :issue:`21271`.)
 
@@ -2243,8 +2243,8 @@ Changes in the Python API
 * All optional arguments of the :func:`~json.dump`, :func:`~json.dumps`,
   :func:`~json.load` and :func:`~json.loads` functions and
   :class:`~json.JSONEncoder` and :class:`~json.JSONDecoder` class
-  constructors in the :mod:`json` module are now :ref:`keyword-only
-  <keyword-only_parameter>`.
+  constructors in the :mod:`json` module can now be supplied
+  :ref:`only by keyword <keyword-only_parameter>`.
   (Contributed by Serhiy Storchaka in :issue:`18726`.)
 
 * Subclasses of :class:`type` which don't override ``type.__new__`` may no

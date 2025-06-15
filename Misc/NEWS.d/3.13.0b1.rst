@@ -406,7 +406,7 @@ calling convention:
 .. nonce: -_1YL0
 .. section: Core and Builtins
 
-Speed up calls to :func:`str` with positional-only argument, by using the
+Speed up calls to :func:`str` with only positional argument, by using the
 :pep:`590` ``vectorcall`` calling convention. Patch by Erlend Aasland.
 
 ..

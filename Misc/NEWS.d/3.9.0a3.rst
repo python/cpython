@@ -128,7 +128,7 @@ Port _json extension module to multiphase initialization (:pep:`489`).
 .. nonce: 74jLh9
 .. section: Core and Builtins
 
-Fix constant folding optimization for positional only arguments - by Anthony
+Fix constant folding optimization for positional-only parameters - by Anthony
 Sottile.
 
 ..

@@ -109,10 +109,10 @@ def capture_call_graph(
     returns None.
 
     If "capture_call_graph()" is introspecting *the current task*, the
-    optional keyword-only 'depth' argument can be used to skip the specified
+    optional keyword argument 'depth' can be used to skip the specified
     number of frames from top of the stack.
 
-    If the optional keyword-only 'limit' argument is provided, each call stack
+    If the optional keyword argument 'limit' is provided, each call stack
     in the resulting graph is truncated to include at most ``abs(limit)``
     entries. If 'limit' is positive, the entries left are the closest to
     the invocation point. If 'limit' is negative, the topmost entries are

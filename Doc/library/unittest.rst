@@ -1879,7 +1879,7 @@ Loading and running tests
          Support for ``load_tests`` added.
 
       .. versionchanged:: 3.5
-         Support for a keyword-only argument *pattern* has been added.
+         Keyword-only parameter *pattern* has been added.
 
       .. versionchanged:: 3.12
          The undocumented and unofficial *use_load_tests* parameter has been

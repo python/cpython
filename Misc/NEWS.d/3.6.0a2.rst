@@ -484,7 +484,7 @@ lot of small objects.
 .. nonce: bHIfFA
 .. section: Library
 
-New keyword only parameters in reset_mock call.
+New keyword-only parameters in :meth:`!reset_mock` call.
 
 ..
 

@@ -1358,8 +1358,8 @@ complete list of changes, or look through the SVN logs for all the details.
   :func:`gc.collect` function now takes an optional *generation* argument of 0, 1,
   or 2 to specify which generation to collect. (Contributed by Barry Warsaw.)
 
-* The :func:`nsmallest` and  :func:`nlargest` functions in the :mod:`heapq`
-  module  now support a ``key`` keyword parameter similar to the one provided by
+* The :func:`~heapq.nsmallest` and  :func:`~heapq.nlargest` functions in the :mod:`heapq`
+  module now support a ``key`` keyword argument similar to the one provided by
   the :func:`min`/:func:`max` functions and the :meth:`sort` methods.  For
   example::
 
@@ -1685,9 +1685,9 @@ provides functions for loading shared libraries and calling functions in them.
 The :mod:`ctypes` package is much fancier.
 
 To load a shared library or DLL, you must create an instance of the
-:class:`CDLL` class and provide the name or path of the shared library or DLL.
+:class:`~ctypes.CDLL` class and provide the name or path of the shared library or DLL.
 Once that's done, you can call arbitrary functions by accessing them as
-attributes of the :class:`CDLL` object.   ::
+attributes of the :class:`!CDLL` object.   ::
 
    import ctypes
 
@@ -2256,7 +2256,7 @@ code:
 * Library: The :mod:`pickle` and :mod:`!cPickle` modules no longer accept a
   return value of ``None`` from the :meth:`~object.__reduce__` method; the method must
   return a tuple of arguments instead.  The modules also no longer accept the
-  deprecated *bin* keyword parameter.
+  deprecated *bin* keyword argument.
 
 * Library: The :mod:`SimpleXMLRPCServer <xmlrpc.server>` and :mod:`DocXMLRPCServer <xmlrpc.server>`  classes now
   have a :attr:`rpc_paths` attribute that constrains XML-RPC operations to a
