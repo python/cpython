@@ -9,6 +9,7 @@
    Greg Stein (gstein@lyra.org)
    Trevor Perrin (trevp@trevp.net)
    Jonathan Protzenko (jonathan@protzenko.fr)
+   Bénédikt Tran (10796600+picnixz@users.noreply.github.com)
 
    Copyright (C) 2005-2007   Gregory P. Smith (greg@krypto.org)
    Licensed to PSF under a Contributor Agreement.
@@ -23,10 +24,10 @@
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "pycore_typeobject.h"    // _PyType_GetModuleState()
 #include "pycore_strhex.h"        // _Py_strhex()
-
-#include "hashlib.h"
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
+#include "_hashlib/hashlib_buffer.h"
+#include "_hashlib/hashlib_mutex.h"
 
 /*[clinic input]
 module _sha2
@@ -51,10 +52,8 @@ class SHA512Type "SHA512object *" "&PyType_Type"
 
 typedef struct {
     PyObject_HEAD
+    HASHLIB_LOCK_HEAD
     int digestsize;
-    // Prevents undefined behavior via multiple threads entering the C API.
-    bool use_mutex;
-    PyMutex mutex;
     Hacl_Hash_SHA2_state_t_256 *state;
 } SHA256object;
 
@@ -639,7 +638,7 @@ _sha2_sha256_impl(PyObject *module, PyObject *data, int usedforsecurity,
     }
     if (string) {
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
-            /* We do not initialize self->lock here as this is the constructor
+            /* Do not initialize self->mutex here as this is the constructor
              * where it is not yet possible to have concurrent access. */
             Py_BEGIN_ALLOW_THREADS
             update_256(new->state, buf.buf, buf.len);

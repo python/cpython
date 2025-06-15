@@ -29970,6 +29970,7 @@ SRCDIRS="\
   Modules/_decimal \
   Modules/_decimal/libmpdec \
   Modules/_hacl \
+  Modules/_hashlib \
   Modules/_io \
   Modules/_multiprocessing \
   Modules/_sqlite \
@@ -32549,6 +32550,12 @@ fi
 
 
 ###############################################################################
+# Cryptographic primitives
+LIBHASHLIB_INCL='-I$(srcdir)/Modules/_hashlib'
+LIBHASHLIB_LIBS='Modules/_hashlib/hashlib_buffer.o Modules/_hashlib/hashlib_fetch.o'
+
+
+###############################################################################
 # HACL* compilation and linking configuration (contact: @picnixz)
 #
 # Used by the HACL*-based implementations of cryptographic primitives.
@@ -32796,8 +32803,8 @@ fi
   if test "x$py_cv_module__md5" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__MD5_CFLAGS=$LIBHACL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__MD5_LDFLAGS=\$($LIBHACL_MD5_LDFLAGS)$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__MD5_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INCL$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__MD5_LDFLAGS=\$($LIBHACL_MD5_LDFLAGS) $LIBHASHLIB_LIBS$as_nl"
 
 fi
    if test "$py_cv_module__md5" = yes; then
@@ -32841,8 +32848,8 @@ fi
   if test "x$py_cv_module__sha1" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__SHA1_CFLAGS=$LIBHACL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SHA1_LDFLAGS=\$($LIBHACL_SHA1_LDFLAGS)$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA1_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INCL$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA1_LDFLAGS=\$($LIBHACL_SHA1_LDFLAGS) $LIBHASHLIB_LIBS$as_nl"
 
 fi
    if test "$py_cv_module__sha1" = yes; then
@@ -32886,8 +32893,8 @@ fi
   if test "x$py_cv_module__sha2" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__SHA2_CFLAGS=$LIBHACL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SHA2_LDFLAGS=\$($LIBHACL_SHA2_LDFLAGS)$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA2_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INCL$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA2_LDFLAGS=\$($LIBHACL_SHA2_LDFLAGS) $LIBHASHLIB_LIBS$as_nl"
 
 fi
    if test "$py_cv_module__sha2" = yes; then
@@ -32931,8 +32938,8 @@ fi
   if test "x$py_cv_module__sha3" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__SHA3_CFLAGS=$LIBHACL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SHA3_LDFLAGS=\$($LIBHACL_SHA3_LDFLAGS)$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA3_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INCL$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA3_LDFLAGS=\$($LIBHACL_SHA3_LDFLAGS) $LIBHASHLIB_LIBS$as_nl"
 
 fi
    if test "$py_cv_module__sha3" = yes; then
@@ -32976,8 +32983,8 @@ fi
   if test "x$py_cv_module__blake2" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_CFLAGS=$LIBHACL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_LDFLAGS=\$($LIBHACL_BLAKE2_LDFLAGS)$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INCL$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_LDFLAGS=\$($LIBHACL_BLAKE2_LDFLAGS) $LIBHASHLIB_LIBS$as_nl"
 
 fi
    if test "$py_cv_module__blake2" = yes; then
@@ -33022,8 +33029,8 @@ fi
   if test "x$py_cv_module__hmac" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__HMAC_CFLAGS=$LIBHACL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__HMAC_LDFLAGS=\$($LIBHACL_HMAC_LDFLAGS)$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HMAC_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INCL$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HMAC_LDFLAGS=\$($LIBHACL_HMAC_LDFLAGS) $LIBHASHLIB_LIBS$as_nl"
 
 fi
    if test "$py_cv_module__hmac" = yes; then
@@ -33692,8 +33699,8 @@ fi
   if test "x$py_cv_module__hashlib" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__HASHLIB_CFLAGS=$OPENSSL_INCLUDES$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__HASHLIB_LDFLAGS=$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HASHLIB_CFLAGS=$OPENSSL_INCLUDES $LIBHASHLIB_INCL$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HASHLIB_LDFLAGS=$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS $LIBHASHLIB_LIBS$as_nl"
 
 fi
    if test "$py_cv_module__hashlib" = yes; then

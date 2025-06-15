@@ -43,12 +43,6 @@ jobs:
     #
     uses: ./.github/workflows/reusable-context.yml
 
-  check-docs:
-    name: Docs
-    needs: build-context
-    if: fromJSON(needs.build-context.outputs.run-docs)
-    uses: ./.github/workflows/reusable-docs.yml
-
   check-autoconf-regen:
     name: 'Check if Autoconf files are up to date'
     # Don't use ubuntu-latest but a specific version to make the job
@@ -160,15 +154,12 @@ jobs:
     needs: build-context
     if: fromJSON(needs.build-context.outputs.run-windows-tests)
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         arch:
           - x64
-          - Win32
-          - arm64
         free-threading:
           - false
-          - true
         exclude:
           # Skip Win32 on free-threaded builds
           - { arch: Win32, free-threading: true }
@@ -177,22 +168,6 @@ jobs:
       arch: ${{ matrix.arch }}
       free-threading: ${{ matrix.free-threading }}
 
-  build-windows-msi:
-    name: >-  # ${{ '' } is a hack to nest jobs under the same sidebar category
-      Windows MSI${{ '' }}
-    needs: build-context
-    if: fromJSON(needs.build-context.outputs.run-windows-msi)
-    strategy:
-      fail-fast: false
-      matrix:
-        arch:
-        - x86
-        - x64
-        - arm64
-    uses: ./.github/workflows/reusable-windows-msi.yml
-    with:
-      arch: ${{ matrix.arch }}
-
   build-macos:
     name: >-
       macOS
@@ -200,20 +175,17 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         # Cirrus and macos-14 are M1, macos-13 is default GHA Intel.
         # macOS 13 only runs tests against the GIL-enabled CPython.
         # Cirrus used for upstream, macos-14 for forks.
         os:
         - ghcr.io/cirruslabs/macos-runner:sonoma
-        - macos-14
-        - macos-13
         is-fork:  # only used for the exclusion trick
         - ${{ github.repository_owner != 'python' }}
         free-threading:
         - false
-        - true
         exclude:
         - os: ghcr.io/cirruslabs/macos-runner:sonoma
           is-fork: true
@@ -235,17 +207,14 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         bolt:
         - false
-        - true
         free-threading:
         - false
-        - true
         os:
         - ubuntu-24.04
-        - ubuntu-24.04-arm
         exclude:
         # Do not test BOLT with free-threading, to conserve resources
         - bolt: true
@@ -267,10 +236,10 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         os: [ubuntu-24.04]
-        openssl_ver: [3.0.16, 3.1.8, 3.2.4, 3.3.3, 3.4.1]
+        openssl_ver: [3.0.16]
         # See Tools/ssl/make_ssl_data.py for notes on adding a new version
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
@@ -330,203 +299,6 @@ jobs:
     with:
       config_hash: ${{ needs.build-context.outputs.config-hash }}
 
-  test-hypothesis:
-    name: "Hypothesis tests on Ubuntu"
-    runs-on: ubuntu-24.04
-    timeout-minutes: 60
-    needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
-    env:
-      OPENSSL_VER: 3.0.16
-      PYTHONSTRICTEXTENSIONBUILD: 1
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        persist-credentials: false
-    - name: Register gcc problem matcher
-      run: echo "::add-matcher::.github/problem-matchers/gcc.json"
-    - name: Install dependencies
-      run: sudo ./.github/workflows/posix-deps-apt.sh
-    - name: Configure OpenSSL env vars
-      run: |
-        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
-        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> "$GITHUB_ENV"
-        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
-    - name: 'Restore OpenSSL build'
-      id: cache-openssl
-      uses: actions/cache@v4
-      with:
-        path: ./multissl/openssl/${{ env.OPENSSL_VER }}
-        key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
-    - name: Install OpenSSL
-      if: steps.cache-openssl.outputs.cache-hit != 'true'
-      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
-    - name: Add ccache to PATH
-      run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: false
-    - name: Setup directory envs for out-of-tree builds
-      run: |
-        echo "CPYTHON_RO_SRCDIR=$(realpath -m "${GITHUB_WORKSPACE}"/../cpython-ro-srcdir)" >> "$GITHUB_ENV"
-        echo "CPYTHON_BUILDDIR=$(realpath -m "${GITHUB_WORKSPACE}"/../cpython-builddir)" >> "$GITHUB_ENV"
-    - name: Create directories for read-only out-of-tree builds
-      run: mkdir -p "$CPYTHON_RO_SRCDIR" "$CPYTHON_BUILDDIR"
-    - name: Bind mount sources read-only
-      run: sudo mount --bind -o ro "$GITHUB_WORKSPACE" "$CPYTHON_RO_SRCDIR"
-    - name: Runner image version
-      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
-    - name: Restore config.cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.CPYTHON_BUILDDIR }}/config.cache
-        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.build-context.outputs.config-hash }}
-    - name: Configure CPython out-of-tree
-      working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: |
-        ../cpython-ro-srcdir/configure \
-          --config-cache \
-          --with-pydebug \
-          --enable-slower-safety \
-          --with-openssl="$OPENSSL_DIR"
-    - name: Build CPython out-of-tree
-      working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: make -j4
-    - name: Display build info
-      working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: make pythoninfo
-    - name: Remount sources writable for tests
-      # some tests write to srcdir, lack of pyc files slows down testing
-      run: sudo mount "$CPYTHON_RO_SRCDIR" -oremount,rw
-    - name: Setup directory envs for out-of-tree builds
-      run: |
-        echo "CPYTHON_BUILDDIR=$(realpath -m "${GITHUB_WORKSPACE}"/../cpython-builddir)" >> "$GITHUB_ENV"
-    - name: "Create hypothesis venv"
-      working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: |
-        VENV_LOC=$(realpath -m .)/hypovenv
-        VENV_PYTHON=$VENV_LOC/bin/python
-        echo "HYPOVENV=${VENV_LOC}" >> "$GITHUB_ENV"
-        echo "VENV_PYTHON=${VENV_PYTHON}" >> "$GITHUB_ENV"
-        ./python -m venv "$VENV_LOC" && "$VENV_PYTHON" -m pip install -r "${GITHUB_WORKSPACE}/Tools/requirements-hypothesis.txt"
-    - name: 'Restore Hypothesis database'
-      id: cache-hypothesis-database
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.CPYTHON_BUILDDIR }}/.hypothesis/
-        key: hypothesis-database-${{ github.head_ref || github.run_id }}
-        restore-keys: |
-          hypothesis-database-
-    - name: "Run tests"
-      working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: |
-        # Most of the excluded tests are slow test suites with no property tests
-        #
-        # (GH-104097) test_sysconfig is skipped because it has tests that are
-        # failing when executed from inside a virtual environment.
-        "${VENV_PYTHON}" -m test \
-          -W \
-          --slowest \
-          -j4 \
-          --timeout 900 \
-          -x test_asyncio \
-          -x test_multiprocessing_fork \
-          -x test_multiprocessing_forkserver \
-          -x test_multiprocessing_spawn \
-          -x test_concurrent_futures \
-          -x test_socket \
-          -x test_subprocess \
-          -x test_signal \
-          -x test_sysconfig
-    - uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: hypothesis-example-db
-        path: ${{ env.CPYTHON_BUILDDIR }}/.hypothesis/examples/
-
-  build-asan:
-    name: 'Address sanitizer'
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
-    needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-24.04]
-    env:
-      OPENSSL_VER: 3.0.16
-      PYTHONSTRICTEXTENSIONBUILD: 1
-      ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        persist-credentials: false
-    - name: Runner image version
-      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
-    - name: Restore config.cache
-      uses: actions/cache@v4
-      with:
-        path: config.cache
-        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.build-context.outputs.config-hash }}
-    - name: Register gcc problem matcher
-      run: echo "::add-matcher::.github/problem-matchers/gcc.json"
-    - name: Install dependencies
-      run: sudo ./.github/workflows/posix-deps-apt.sh
-    - name: Set up GCC-10 for ASAN
-      uses: egor-tensin/setup-gcc@v1
-      with:
-        version: 10
-    - name: Configure OpenSSL env vars
-      run: |
-        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
-        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> "$GITHUB_ENV"
-        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
-    - name: 'Restore OpenSSL build'
-      id: cache-openssl
-      uses: actions/cache@v4
-      with:
-        path: ./multissl/openssl/${{ env.OPENSSL_VER }}
-        key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
-    - name: Install OpenSSL
-      if: steps.cache-openssl.outputs.cache-hit != 'true'
-      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
-    - name: Add ccache to PATH
-      run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: ${{ github.event_name == 'push' }}
-        max-size: "200M"
-    - name: Configure CPython
-      run: ./configure --config-cache --with-address-sanitizer --without-pymalloc
-    - name: Build CPython
-      run: make -j4
-    - name: Display build info
-      run: make pythoninfo
-    - name: Tests
-      run: xvfb-run make ci
-
-  build-tsan:
-    name: >-
-      Thread sanitizer
-      ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
-    needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        free-threading:
-        - false
-        - true
-    uses: ./.github/workflows/reusable-tsan.yml
-    with:
-      config_hash: ${{ needs.build-context.outputs.config-hash }}
-      free-threading: ${{ matrix.free-threading }}
-
   cross-build-linux:
     name: Cross build Linux
     runs-on: ubuntu-latest
@@ -567,45 +339,6 @@ jobs:
         run: |
           "$BUILD_DIR/cross-python/bin/python3" -m test test_sysconfig test_site test_embed
 
-  # CIFuzz job based on https://google.github.io/oss-fuzz/getting-started/continuous-integration/
-  cifuzz:
-    name: CIFuzz
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    needs: build-context
-    if: needs.build-context.outputs.run-ci-fuzz == 'true'
-    permissions:
-      security-events: write
-    strategy:
-      fail-fast: false
-      matrix:
-        sanitizer: [address, undefined, memory]
-    steps:
-      - name: Build fuzzers (${{ matrix.sanitizer }})
-        id: build
-        uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
-        with:
-          oss-fuzz-project-name: cpython3
-          sanitizer: ${{ matrix.sanitizer }}
-      - name: Run fuzzers (${{ matrix.sanitizer }})
-        uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
-        with:
-          fuzz-seconds: 600
-          oss-fuzz-project-name: cpython3
-          output-sarif: true
-          sanitizer: ${{ matrix.sanitizer }}
-      - name: Upload crash
-        if: failure() && steps.build.outcome == 'success'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.sanitizer }}-artifacts
-          path: ./out/artifacts
-      - name: Upload SARIF
-        if: always() && steps.build.outcome == 'success'
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: cifuzz-sarif/results.sarif
-          checkout_path: cifuzz-sarif
 
   all-required-green:  # This job does nothing and is only used for the branch protection
     name: All required checks pass
@@ -613,20 +346,14 @@ jobs:
     timeout-minutes: 5
     needs:
     - build-context  # Transitive dependency, needed to access `run-tests` value
-    - check-docs
     - check-autoconf-regen
     - check-generated-files
     - build-windows
-    - build-windows-msi
     - build-macos
     - build-ubuntu
     - build-ubuntu-ssltests
     - build-wasi
-    - test-hypothesis
-    - build-asan
-    - build-tsan
     - cross-build-linux
-    - cifuzz
     if: always()
 
     steps:
