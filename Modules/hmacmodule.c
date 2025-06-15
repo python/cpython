@@ -1839,7 +1839,7 @@ static struct PyModuleDef_Slot hmacmodule_slots[] = {
     {0, NULL} /* sentinel */
 };
 
-static struct PyModuleDef _hmacmodule = {
+static struct PyModuleDef hmacmodule_def = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_hmac",
     .m_size = sizeof(hmacmodule_state),
@@ -1853,5 +1853,5 @@ static struct PyModuleDef _hmacmodule = {
 PyMODINIT_FUNC
 PyInit__hmac(void)
 {
-    return PyModuleDef_Init(&_hmacmodule);
+    return PyModuleDef_Init(&hmacmodule_def);
 }

@@ -69,7 +69,7 @@
 static PyType_Spec blake2b_type_spec;
 static PyType_Spec blake2s_type_spec;
 
-PyDoc_STRVAR(blake2mod__doc__,
+PyDoc_STRVAR(blake2module__doc__,
              "_blake2 provides BLAKE2b and BLAKE2s for hashlib\n");
 
 typedef struct {
@@ -96,10 +96,6 @@ blake2_get_state_from_type(PyTypeObject *module)
     return (blake2module_state *)state;
 }
 #endif
-
-static struct PyMethodDef blake2mod_functions[] = {
-    {NULL, NULL}
-};
 
 static int
 blake2module_traverse(PyObject *module, visitproc visit, void *arg)
@@ -277,20 +273,19 @@ blake2module_exec(PyObject *m)
     return 0;
 }
 
-static PyModuleDef_Slot _blake2_slots[] = {
+static PyModuleDef_Slot blake2module_slots[] = {
     {Py_mod_exec, blake2module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 
-static struct PyModuleDef blake2_module = {
-    .m_base = PyModuleDef_HEAD_INIT,
+static struct PyModuleDef blake2module_def = {
+    PyModuleDef_HEAD_INIT,
     .m_name = "_blake2",
-    .m_doc = blake2mod__doc__,
+    .m_doc = blake2module__doc__,
     .m_size = sizeof(blake2module_state),
-    .m_methods = blake2mod_functions,
-    .m_slots = _blake2_slots,
+    .m_slots = blake2module_slots,
     .m_traverse = blake2module_traverse,
     .m_clear = blake2module_clear,
     .m_free = blake2module_free,
@@ -299,7 +294,7 @@ static struct PyModuleDef blake2_module = {
 PyMODINIT_FUNC
 PyInit__blake2(void)
 {
-    return PyModuleDef_Init(&blake2_module);
+    return PyModuleDef_Init(&blake2module_def);
 }
 
 // IMPLEMENTATION OF METHODS

@@ -653,7 +653,7 @@ sha3module_exec(PyObject *m)
     return 0;
 }
 
-static PyModuleDef_Slot _sha3_slots[] = {
+static PyModuleDef_Slot sha3module_slots[] = {
     {Py_mod_exec, sha3module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -661,11 +661,11 @@ static PyModuleDef_Slot _sha3_slots[] = {
 };
 
 /* Initialize this module. */
-static struct PyModuleDef _sha3module = {
+static struct PyModuleDef sha3module_def = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_sha3",
     .m_size = sizeof(sha3module_state),
-    .m_slots = _sha3_slots,
+    .m_slots = sha3module_slots,
     .m_traverse = sha3module_traverse,
     .m_clear = sha3module_clear,
     .m_free = sha3module_free,
@@ -675,5 +675,5 @@ static struct PyModuleDef _sha3module = {
 PyMODINIT_FUNC
 PyInit__sha3(void)
 {
-    return PyModuleDef_Init(&_sha3module);
+    return PyModuleDef_Init(&sha3module_def);
 }

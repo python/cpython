@@ -330,7 +330,7 @@ _sha1_sha1_impl(PyObject *module, PyObject *data, int usedforsecurity,
 
 /* List of functions exported by this module */
 
-static struct PyMethodDef SHA1_functions[] = {
+static struct PyMethodDef sha1module_methods[] = {
     _SHA1_SHA1_METHODDEF
     {NULL,      NULL}            /* Sentinel */
 };
@@ -383,19 +383,19 @@ sha1module_exec(PyObject *module)
 
 /* Initialize this module. */
 
-static PyModuleDef_Slot _sha1_slots[] = {
+static PyModuleDef_Slot sha1module_slots[] = {
     {Py_mod_exec, sha1module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 
-static struct PyModuleDef _sha1module = {
+static struct PyModuleDef sha1module_def = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_sha1",
     .m_size = sizeof(sha1module_state),
-    .m_methods = SHA1_functions,
-    .m_slots = _sha1_slots,
+    .m_methods = sha1module_methods,
+    .m_slots = sha1module_slots,
     .m_traverse = sha1module_traverse,
     .m_clear = sha1module_clear,
     .m_free = sha1module_free
@@ -404,5 +404,5 @@ static struct PyModuleDef _sha1module = {
 PyMODINIT_FUNC
 PyInit__sha1(void)
 {
-    return PyModuleDef_Init(&_sha1module);
+    return PyModuleDef_Init(&sha1module_def);
 }

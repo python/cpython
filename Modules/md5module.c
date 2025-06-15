@@ -336,7 +336,7 @@ _md5_md5_impl(PyObject *module, PyObject *data, int usedforsecurity,
 
 /* List of functions exported by this module */
 
-static struct PyMethodDef MD5_functions[] = {
+static struct PyMethodDef md5module_methods[] = {
     _MD5_MD5_METHODDEF
     {NULL,      NULL}            /* Sentinel */
 };
@@ -382,7 +382,7 @@ md5module_exec(PyObject *m)
     return 0;
 }
 
-static PyModuleDef_Slot _md5_slots[] = {
+static PyModuleDef_Slot md5module_slots[] = {
     {Py_mod_exec, md5module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -390,12 +390,12 @@ static PyModuleDef_Slot _md5_slots[] = {
 };
 
 
-static struct PyModuleDef _md5module = {
+static struct PyModuleDef md5module_def = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_md5",
     .m_size = sizeof(md5module_state),
-    .m_methods = MD5_functions,
-    .m_slots = _md5_slots,
+    .m_methods = md5module_methods,
+    .m_slots = md5module_slots,
     .m_traverse = md5module_traverse,
     .m_clear = md5module_clear,
     .m_free = md5module_free,
@@ -404,5 +404,5 @@ static struct PyModuleDef _md5module = {
 PyMODINIT_FUNC
 PyInit__md5(void)
 {
-    return PyModuleDef_Init(&_md5module);
+    return PyModuleDef_Init(&md5module_def);
 }

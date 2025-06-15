@@ -840,7 +840,7 @@ _sha2_sha384_impl(PyObject *module, PyObject *data, int usedforsecurity,
 
 /* List of functions exported by this module */
 
-static struct PyMethodDef SHA2_functions[] = {
+static struct PyMethodDef sha2module_methods[] = {
     _SHA2_SHA256_METHODDEF
     _SHA2_SHA224_METHODDEF
     _SHA2_SHA512_METHODDEF
@@ -926,19 +926,19 @@ sha2module_exec(PyObject *module)
     return 0;
 }
 
-static PyModuleDef_Slot _sha2_slots[] = {
+static PyModuleDef_Slot sha2module_slots[] = {
     {Py_mod_exec, sha2module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 
-static struct PyModuleDef _sha2module = {
+static struct PyModuleDef sha2module_def = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_sha2",
     .m_size = sizeof(sha2module_state),
-    .m_methods = SHA2_functions,
-    .m_slots = _sha2_slots,
+    .m_methods = sha2module_methods,
+    .m_slots = sha2module_slots,
     .m_traverse = sha2module_traverse,
     .m_clear = sha2module_clear,
     .m_free = sha2module_free
@@ -947,5 +947,5 @@ static struct PyModuleDef _sha2module = {
 PyMODINIT_FUNC
 PyInit__sha2(void)
 {
-    return PyModuleDef_Init(&_sha2module);
+    return PyModuleDef_Init(&sha2module_def);
 }
