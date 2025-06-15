@@ -1936,7 +1936,8 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. audit-event:: remote_debugger_script script_path
 
       When the script is executed in the remote process, an
-      :ref:`auditing event <auditing>```remote_debugger_script`` is raised
+      :ref:`auditing event <auditing>`
+      ``sys.remote_debugger_script`` is raised
       with the path in the remote process.
 
    .. availability:: Unix, Windows.
