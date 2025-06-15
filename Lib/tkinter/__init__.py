@@ -2510,6 +2510,26 @@ class Tk(Misc, Wm):
             _default_root = self
         self.protocol("WM_DELETE_WINDOW", self.destroy)
 
+        # Fix for HiDPI screens on Windows
+        # CALL BEFORE ANY TK OPERATIONS!
+        # URL for arguments for the ...Awareness call below.
+        # https://msdn.microsoft.com/en-us/library/windows/desktop/dn280512(v=vs.85).aspx
+        if sys.platform == 'win32':
+            import ctypes
+            try:
+                ctypes.windll.user32.SetProcessDPIAware()
+                # >= win 8.1 required
+                # Ensures that the window size is not reduced due to DPI adjustments,
+                # maintaining the original size
+                ScaleFactor = ctypes.windll.shcore.GetScaleFactorForDevice(0)
+                self.tk.call('tk', 'scaling', ScaleFactor / 75)
+            except (ImportError, AttributeError, OSError):
+                # <= win 8
+                try:
+                    ctypes.windll.user32.SetProcessDPIAware()
+                except (ImportError, AttributeError, OSError):
+                    pass
+
     def destroy(self):
         """Destroy this and all descendants widgets. This will
         end the application of this Tcl interpreter."""
