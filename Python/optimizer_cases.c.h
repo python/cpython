@@ -1833,6 +1833,16 @@
         }
 
         case _CHECK_METHOD_VERSION: {
+            JitOptSymbol *callable;
+            callable = stack_pointer[-2 - oparg];
+            uint32_t func_version = (uint32_t)this_instr->operand0;
+            if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyMethod_Type)) {
+                PyMethodObject *method = (PyMethodObject *)sym_get_const(ctx, callable);
+                assert(PyMethod_Check(method));
+                REPLACE_OP(this_instr, _CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
+                this_instr->operand1 = (uintptr_t)method->im_func;
+            }
+            sym_set_type(callable, &PyMethod_Type);
             break;
         }
 
