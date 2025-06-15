@@ -39,10 +39,7 @@ class SHA1Type "SHA1object *" "&PyType_Type"
 
 typedef struct {
     PyObject_HEAD
-    // Prevents undefined behavior via multiple threads entering the C API.
-    bool use_mutex;
-    PyMutex mutex;
-    PyThread_type_lock lock;
+    HASHLIB_MUTEX_API
     Hacl_Hash_SHA1_state_t *hash_state;
 } SHA1object;
 

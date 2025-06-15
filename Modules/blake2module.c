@@ -353,6 +353,7 @@ type_to_impl(PyTypeObject *type)
 
 typedef struct {
     PyObject_HEAD
+    HASHLIB_MUTEX_API
     union {
         Hacl_Hash_Blake2s_state_t *blake2s_state;
         Hacl_Hash_Blake2b_state_t *blake2b_state;
@@ -364,8 +365,6 @@ typedef struct {
 #endif
     };
     blake2_impl impl;
-    bool use_mutex;
-    PyMutex mutex;
 } Blake2Object;
 
 #define _Blake2Object_CAST(op)  ((Blake2Object *)(op))

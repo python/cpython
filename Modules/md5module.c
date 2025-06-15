@@ -39,9 +39,7 @@ class MD5Type "MD5object *" "&PyType_Type"
 
 typedef struct {
     PyObject_HEAD
-    // Prevents undefined behavior via multiple threads entering the C API.
-    bool use_mutex;
-    PyMutex mutex;
+    HASHLIB_MUTEX_API
     Hacl_Hash_MD5_state_t *hash_state;
 } MD5object;
 

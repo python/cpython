@@ -60,9 +60,7 @@ class _sha3.shake_256 "SHA3object *" "&SHAKE256type"
 
 typedef struct {
     PyObject_HEAD
-    // Prevents undefined behavior via multiple threads entering the C API.
-    bool use_mutex;
-    PyMutex mutex;
+    HASHLIB_MUTEX_API
     Hacl_Hash_SHA3_state_t *hash_state;
 } SHA3object;
 

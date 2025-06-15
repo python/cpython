@@ -383,9 +383,7 @@ typedef Hacl_Streaming_HMAC_agile_state HACL_HMAC_state;
 
 typedef struct HMACObject {
     PyObject_HEAD
-
-    bool use_mutex;
-    PyMutex mutex;
+    HASHLIB_MUTEX_API
 
     // Hash function information
     PyObject *name;         // rendered name (exact unicode object)
