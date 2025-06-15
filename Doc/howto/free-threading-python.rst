@@ -1,8 +1,8 @@
 .. _freethreading-python-howto:
 
-**********************************************
+*********************************
 Python support for free threading
-**********************************************
+*********************************
 
 Starting with the 3.13 release, CPython has support for a build of
 Python called :term:`free threading` where the :term:`global interpreter lock`
