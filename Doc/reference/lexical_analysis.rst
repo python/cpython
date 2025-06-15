@@ -922,11 +922,20 @@ Numeric literals
    floating-point literal, hexadecimal literal
    octal literal, binary literal, decimal literal, imaginary literal, complex literal
 
-There are three types of numeric literals: integers, floating-point numbers, and
-imaginary numbers.  There are no complex literals (complex numbers can be formed
-by adding a real number and an imaginary number).
+:data:`~token.NUMBER` tokens represent numeric literals, of which there are
+three types: integers, floating-point numbers, and imaginary numbers.
 
-Note that numeric literals do not include a sign; a phrase like ``-1`` is
+.. grammar-snippet::
+   :group: python-grammar
+
+   NUMBER: `integer` | `floatnumber` | `imagnumber`
+
+The numeric value of a numeric literal is the same as if it were passed as a
+string to the :class:`int`, :class:`float` or :class:`complex` class
+constructor, respectively.
+Note that not all valid inputs for those constructors are also valid literals.
+
+Numeric literals do not include a sign; a phrase like ``-1`` is
 actually an expression composed of the unary operator '``-``' and the literal
 ``1``.
 
@@ -940,38 +949,67 @@ actually an expression composed of the unary operator '``-``' and the literal
 .. _integers:
 
 Integer literals
-----------------
+^^^^^^^^^^^^^^^^
 
-Integer literals are described by the following lexical definitions:
+Integer literals denote whole numbers. For example::
 
-.. productionlist:: python-grammar
-   integer: `decinteger` | `bininteger` | `octinteger` | `hexinteger`
-   decinteger: `nonzerodigit` (["_"] `digit`)* | "0"+ (["_"] "0")*
-   bininteger: "0" ("b" | "B") (["_"] `bindigit`)+
-   octinteger: "0" ("o" | "O") (["_"] `octdigit`)+
-   hexinteger: "0" ("x" | "X") (["_"] `hexdigit`)+
-   nonzerodigit: "1"..."9"
-   digit: "0"..."9"
-   bindigit: "0" | "1"
-   octdigit: "0"..."7"
-   hexdigit: `digit` | "a"..."f" | "A"..."F"
+   7
+   3
+   2147483647
 
 There is no limit for the length of integer literals apart from what can be
-stored in available memory.
+stored in available memory::
 
-Underscores are ignored for determining the numeric value of the literal.  They
-can be used to group digits for enhanced readability.  One underscore can occur
-between digits, and after base specifiers like ``0x``.
+   7922816251426433759354395033679228162514264337593543950336
 
-Note that leading zeros in a non-zero decimal number are not allowed. This is
-for disambiguation with C-style octal literals, which Python used before version
-3.0.
+Underscores can be used to group digits for enhanced readability,
+and are ignored for determining the numeric value of the literal.
+For example, the following literals are equivalent::
 
-Some examples of integer literals::
+   100_000_000_000
+   100000000000
+   1_00_00_00_00_000
 
-   7     2147483647                        0o177    0b100110111
-   3     79228162514264337593543950336     0o377    0xdeadbeef
-         100_000_000_000                   0b_1110_0101
+Underscores can only occur between digits.
+For example, ``_123``, ``321_``, and ``123__321`` are *not* valid literals.
+
+Integers can be specified in binary (base 2), octal (base 8), or hexadecimal
+(base 16) using the prefixes ``0b``, ``0o`` and ``0x``, respectively.
+Hexadecimal digits 10 through 15 are represented by letters ``A``-``F``,
+case-insensitive.  For example::
+
+   0b100110111
+   0b_1110_0101
+   0o177
+   0o377
+   0xdeadbeef
+   0xDead_Beef
+
+An underscore can follow the base specifier.
+For example, ``0x_1f`` is a valid literal, but ``0_x1f`` and ``0x__1f`` are
+not.
+
+Leading zeros in a non-zero decimal number are not allowed.
+For example, ``0123`` is not a valid literal.
+This is for disambiguation with C-style octal literals, which Python used
+before version 3.0.
+
+Formally, integer literals are described by the following lexical definitions:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   integer:      `decinteger` | `bininteger` | `octinteger` | `hexinteger` | `zerointeger`
+   decinteger:   `nonzerodigit` (["_"] `digit`)*
+   bininteger:   "0" ("b" | "B") (["_"] `bindigit`)+
+   octinteger:   "0" ("o" | "O") (["_"] `octdigit`)+
+   hexinteger:   "0" ("x" | "X") (["_"] `hexdigit`)+
+   zerointeger:  "0"+ (["_"] "0")*
+   nonzerodigit: "1"..."9"
+   digit:        "0"..."9"
+   bindigit:     "0" | "1"
+   octdigit:     "0"..."7"
+   hexdigit:     `digit` | "a"..."f" | "A"..."F"
 
 .. versionchanged:: 3.6
    Underscores are now allowed for grouping purposes in literals.
@@ -984,26 +1022,58 @@ Some examples of integer literals::
 .. _floating:
 
 Floating-point literals
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 
-Floating-point literals are described by the following lexical definitions:
+Floating-point (float) literals, such as ``3.14`` or ``1.5``, denote
+:ref:`approximations of real numbers <datamodel-float>`.
 
-.. productionlist:: python-grammar
-   floatnumber: `pointfloat` | `exponentfloat`
-   pointfloat: [`digitpart`] `fraction` | `digitpart` "."
-   exponentfloat: (`digitpart` | `pointfloat`) `exponent`
+They consist of *integer* and *fraction* parts, each composed of decimal digits.
+The parts are separated by a decimal point, ``.``::
+
+   2.71828
+   4.0
+
+Unlike in integer literals, leading zeros are allowed in the numeric parts.
+For example, ``077.010`` is legal, and denotes the same number as ``77.10``.
+
+As in integer literals, single underscores may occur between digits to help
+readability::
+
+   96_485.332_123
+   3.14_15_93
+
+Either of these parts, but not both, can be empty. For example::
+
+   10.  # (equivalent to 10.0)
+   .001  # (equivalent to 0.001)
+
+Optionally, the integer and fraction may be followed by an *exponent*:
+the letter ``e`` or ``E``, followed by an optional sign, ``+`` or ``-``,
+and a number in the same format as the integer and fraction parts.
+The ``e`` or ``E`` represents "times ten raised to the power of"::
+
+   1.0e3  # (represents 1.0×10³, or 1000.0)
+   1.166e-5  # (represents 1.166×10⁻⁵, or 0.00001166)
+   6.02214076e+23  # (represents 6.02214076×10²³, or 602214076000000000000000.)
+
+In floats with only integer and exponent parts, the decimal point may be
+omitted::
+
+   1e3  # (equivalent to 1.e3 and 1.0e3)
+   0e0  # (equivalent to 0.)
+
+Formally, floating-point literals are described by the following
+lexical definitions:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   floatnumber:
+      | `digitpart` "." [`digitpart`] [`exponent`]
+      | "." `digitpart` [`exponent`]
+      | `digitpart` `exponent`
    digitpart: `digit` (["_"] `digit`)*
-   fraction: "." `digitpart`
-   exponent: ("e" | "E") ["+" | "-"] `digitpart`
-
-Note that the integer and exponent parts are always interpreted using radix 10.
-For example, ``077e010`` is legal, and denotes the same number as ``77e10``. The
-allowed range of floating-point literals is implementation-dependent.  As in
-integer literals, underscores are supported for digit grouping.
-
-Some examples of floating-point literals::
-
-   3.14    10.    .001    1e100    3.14e-10    0e0    3.14_15_93
+   exponent:  ("e" | "E") ["+" | "-"] `digitpart`
 
 .. versionchanged:: 3.6
    Underscores are now allowed for grouping purposes in literals.
@@ -1014,20 +1084,62 @@ Some examples of floating-point literals::
 .. _imaginary:
 
 Imaginary literals
-------------------
+^^^^^^^^^^^^^^^^^^
 
-Imaginary literals are described by the following lexical definitions:
+Python has :ref:`complex number <typesnumeric>` objects, but no complex
+literals.
+Instead, *imaginary literals* denote complex numbers with a zero
+real part.
 
-.. productionlist:: python-grammar
+For example, in math, the complex number 3+4.2\ *i* is written
+as the real number 3 added to the imaginary number 4.2\ *i*.
+Python uses a similar syntax, except the imaginary unit is written as ``j``
+rather than *i*::
+
+   3+4.2j
+
+This is an expression composed
+of the :ref:`integer literal <integers>` ``3``,
+the :ref:`operator <operators>` '``+``',
+and the :ref:`imaginary literal <imaginary>` ``4.2j``.
+Since these are three separate tokens, whitespace is allowed between them::
+
+   3 + 4.2j
+
+No whitespace is allowed *within* each token.
+In particular, the ``j`` suffix, may not be separated from the number
+before it.
+
+The number before the ``j`` has the same syntax as a floating-point literal.
+Thus, the following are valid imaginary literals::
+
+   4.2j
+   3.14j
+   10.j
+   .001j
+   1e100j
+   3.14e-10j
+   3.14_15_93j
+
+Unlike in a floating-point literal the decimal point can be omitted if the
+imaginary number only has an integer part.
+The number is still evaluated as a floating-point number, not an integer::
+
+   10j
+   0j
+   1000000000000000000000000j   # equivalent to 1e+24j
+
+The ``j`` suffix is case-insensitive.
+That means you can use ``J`` instead::
+
+   3.14J   # equivalent to 3.14j
+
+Formally, imaginary literals are described by the following lexical definition:
+
+.. grammar-snippet::
+   :group: python-grammar
+
    imagnumber: (`floatnumber` | `digitpart`) ("j" | "J")
-
-An imaginary literal yields a complex number with a real part of 0.0.  Complex
-numbers are represented as a pair of floating-point numbers and have the same
-restrictions on their range.  To create a complex number with a nonzero real
-part, add a floating-point number to it, e.g., ``(3+4j)``.  Some examples of
-imaginary literals::
-
-   3.14j   10.j    10j     .001j   1e100j   3.14e-10j   3.14_15_93j
 
 
 .. _operators:
