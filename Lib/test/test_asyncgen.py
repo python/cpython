@@ -624,7 +624,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()
-        asyncio._set_event_loop(None)
+        asyncio.set_event_loop(None)
 
     def tearDown(self):
         self.loop.close()
@@ -2020,6 +2020,15 @@ class TestUnawaitedWarnings(unittest.TestCase):
             g = gen()
             g.athrow(RuntimeError)
             gc_collect()
+
+    def test_athrow_throws_immediately(self):
+        async def gen():
+            yield 1
+
+        g = gen()
+        msg = "athrow expected at least 1 argument, got 0"
+        with self.assertRaisesRegex(TypeError, msg):
+            g.athrow()
 
     def test_aclose(self):
         async def gen():

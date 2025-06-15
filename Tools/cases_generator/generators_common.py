@@ -13,9 +13,8 @@ from typing import Callable, TextIO, Iterator, Iterable
 from lexer import Token
 from stack import Storage, StackError
 from parser import Stmt, SimpleStmt, BlockStmt, IfStmt, ForStmt, WhileStmt, MacroIfStmt
-
-# Set this to true for voluminous output showing state of stack and locals
-PRINT_STACKS = False
+from stack import PRINT_STACKS
+DEBUG = False
 
 class TokenIterator:
 
@@ -57,9 +56,7 @@ def root_relative_path(filename: str) -> str:
 
 
 def type_and_null(var: StackItem) -> tuple[str, str]:
-    if var.type:
-        return var.type, "NULL"
-    elif var.is_array():
+    if var.is_array():
         return "_PyStackRef *", "NULL"
     else:
         return "_PyStackRef", "PyStackRef_NULL"
@@ -141,6 +138,7 @@ class Emitter:
     ) -> bool:
         if storage.spilled:
             raise analysis_error("stack_pointer needs reloading before dispatch", tkn)
+        storage.stack.flush(self.out)
         self.emit(tkn)
         return False
 
@@ -161,7 +159,7 @@ class Emitter:
         self.emit(") {\n")
         next(tkn_iter)  # Semi colon
         assert inst is not None
-        assert inst.family is not None, inst
+        assert inst.family is not None
         family_name = inst.family.name
         self.emit(f"UPDATE_MISS_STATS({family_name});\n")
         self.emit(f"assert(_PyOpcode_Deopt[opcode] == ({family_name}));\n")
@@ -171,12 +169,12 @@ class Emitter:
 
     exit_if = deopt_if
 
-    def goto_error(self, offset: int, label: str, storage: Storage) -> str:
+    def goto_error(self, offset: int, storage: Storage) -> str:
         if offset > 0:
-            return f"JUMP_TO_LABEL(pop_{offset}_{label});"
+            return f"JUMP_TO_LABEL(pop_{offset}_error);"
         if offset < 0:
             storage.copy().flush(self.out)
-        return f"JUMP_TO_LABEL({label});"
+        return f"JUMP_TO_LABEL(error);"
 
     def error_if(
         self,
@@ -192,17 +190,13 @@ class Emitter:
         unconditional = always_true(first_tkn)
         if unconditional:
             next(tkn_iter)
-            comma = next(tkn_iter)
-            if comma.kind != "COMMA":
-                raise analysis_error(f"Expected comma, got '{comma.text}'", comma)
+            next(tkn_iter)  # RPAREN
             self.out.start_line()
         else:
             self.out.emit_at("if ", tkn)
             self.emit(lparen)
-            emit_to(self.out, tkn_iter, "COMMA")
+            emit_to(self.out, tkn_iter, "RPAREN")
             self.out.emit(") {\n")
-        label = next(tkn_iter).text
-        next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
         storage.clear_inputs("at ERROR_IF")
 
@@ -211,7 +205,7 @@ class Emitter:
             offset = int(c_offset)
         except ValueError:
             offset = -1
-        self.out.emit(self.goto_error(offset, label, storage))
+        self.out.emit(self.goto_error(offset, storage))
         self.out.emit("\n")
         if not unconditional:
             self.out.emit("}\n")
@@ -228,7 +222,7 @@ class Emitter:
         next(tkn_iter)  # LPAREN
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
-        self.out.emit_at(self.goto_error(0, "error", storage), tkn)
+        self.out.emit_at(self.goto_error(0, storage), tkn)
         return False
 
     def decref_inputs(
@@ -242,6 +236,7 @@ class Emitter:
         next(tkn_iter)
         next(tkn_iter)
         next(tkn_iter)
+        self._print_storage("DECREF_INPUTS", storage)
         try:
             storage.close_inputs(self.out)
         except StackError as ex:
@@ -249,7 +244,6 @@ class Emitter:
         except Exception as ex:
             ex.args = (ex.args[0] + str(tkn),)
             raise
-        self._print_storage(storage)
         return True
 
     def kill_inputs(
@@ -372,7 +366,7 @@ class Emitter:
         next(tkn_iter)
         storage.clear_inputs("when syncing stack")
         storage.flush(self.out)
-        self._print_storage(storage)
+        storage.stack.clear(self.out)
         return True
 
     def stack_pointer(
@@ -406,7 +400,6 @@ class Emitter:
     def emit_save(self, storage: Storage) -> None:
         storage.flush(self.out)
         storage.save(self.out)
-        self._print_storage(storage)
 
     def save_stack(
         self,
@@ -424,7 +417,6 @@ class Emitter:
 
     def emit_reload(self, storage: Storage) -> None:
         storage.reload(self.out)
-        self._print_storage(storage)
 
     def reload_stack(
         self,
@@ -453,9 +445,10 @@ class Emitter:
         self.out.emit(f" {uop.instruction_size} ")
         return True
 
-    def _print_storage(self, storage: Storage) -> None:
-        if PRINT_STACKS:
+    def _print_storage(self, reason:str, storage: Storage) -> None:
+        if DEBUG:
             self.out.start_line()
+            self.emit(f"/* {reason} */\n")
             self.emit(storage.as_comment())
             self.out.start_line()
 
@@ -494,6 +487,11 @@ class Emitter:
                     label_tkn = next(tkn_iter)
                     self.goto_label(tkn, label_tkn, storage)
                     reachable = False
+                elif tkn.kind == "RETURN":
+                    self.emit(tkn)
+                    semicolon = emit_to(self.out, tkn_iter, "SEMI")
+                    self.emit(semicolon)
+                    reachable = False
                 elif tkn.kind == "IDENTIFIER":
                     if tkn.text in self._replacers:
                         if not self._replacers[tkn.text](tkn, tkn_iter, uop, storage, inst):
@@ -502,9 +500,6 @@ class Emitter:
                         if tkn in local_stores:
                             for var in storage.inputs:
                                 if var.name == tkn.text:
-                                    if var.in_local or var.in_memory():
-                                        msg = f"Cannot assign to already defined input variable '{tkn.text}'"
-                                        raise analysis_error(msg, tkn)
                                     var.in_local = True
                                     var.memory_offset = None
                                     break
@@ -514,7 +509,6 @@ class Emitter:
                                     var.memory_offset = None
                                     break
                         if tkn.text.startswith("DISPATCH"):
-                            self._print_storage(storage)
                             reachable = False
                         self.out.emit(tkn)
                 else:
@@ -536,6 +530,8 @@ class Emitter:
         self.out.emit(stmt.condition)
         branch = stmt.else_ is not None
         reachable = True
+        if branch:
+            else_storage = storage.copy()
         for s in stmt.body:
             r, tkn, storage = self._emit_stmt(s, uop, storage, inst)
             if tkn is not None:
@@ -543,7 +539,6 @@ class Emitter:
             if not r:
                 reachable = False
         if branch:
-            else_storage = storage.copy()
             assert stmt.else_ is not None
             self.out.emit(stmt.else_)
             assert stmt.else_body is not None
@@ -553,7 +548,8 @@ class Emitter:
                     self.out.emit(tkn)
                 if not r:
                     reachable = False
-            storage.merge(else_storage, self.out)
+            else_storage.merge(storage, self.out)  # type: ignore[possibly-undefined]
+            storage = else_storage
         self.out.emit(stmt.endif)
         return reachable, None, storage
 
@@ -596,7 +592,6 @@ class Emitter:
                     reachable = True
             return reachable, rbrace, storage
         except StackError as ex:
-            self._print_storage(if_storage)
             assert rbrace is not None
             raise analysis_error(ex.args[0], rbrace) from None
 
@@ -659,20 +654,18 @@ class Emitter:
         storage: Storage,
         inst: Instruction | None,
         emit_braces: bool = True
-    ) -> Storage:
+    ) -> tuple[bool, Storage]:
         self.out.start_line()
         reachable, tkn, storage = self.emit_BlockStmt(code.body, code, storage, inst, emit_braces)
         assert tkn is not None
         try:
             if reachable:
-                self._print_storage(storage)
                 storage.push_outputs()
-                self._print_storage(storage)
             if emit_braces:
                 self.out.emit(tkn)
         except StackError as ex:
             raise analysis_error(ex.args[0], tkn) from None
-        return storage
+        return reachable, storage
 
     def emit(self, txt: str | Token) -> None:
         self.out.emit(txt)

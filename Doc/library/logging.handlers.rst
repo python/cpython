@@ -352,6 +352,10 @@ module, supports rotation of disk log files.
       Outputs the record to the file, catering for rollover as described
       previously.
 
+   .. method:: shouldRollover(record)
+
+      See if the supplied record would cause the file to exceed the configured size limit.
+
 .. _timed-rotating-file-handler:
 
 TimedRotatingFileHandler
@@ -459,7 +463,11 @@ timed intervals.
    .. method:: getFilesToDelete()
 
       Returns a list of filenames which should be deleted as part of rollover. These
-      are the absolute paths of the oldest backup log files written by the handler.
+
+   .. method:: shouldRollover(record)
+
+      See if enough time has passed for a rollover to occur and if it has, compute
+      the next rollover time.
 
 .. _socket-handler:
 
@@ -1148,6 +1156,13 @@ possible, while any potentially slow operations (such as sending an email via
    .. versionchanged:: 3.5
       The ``respect_handler_level`` argument was added.
 
+   .. versionchanged:: 3.14
+      :class:`QueueListener` can now be used as a context manager via
+      :keyword:`with`. When entering the context, the listener is started. When
+      exiting the context, the listener is stopped.
+      :meth:`~contextmanager.__enter__` returns the
+      :class:`QueueListener` object.
+
    .. method:: dequeue(block)
 
       Dequeues a record and return it, optionally blocking.
@@ -1178,6 +1193,10 @@ possible, while any potentially slow operations (such as sending an email via
 
       This starts up a background thread to monitor the queue for
       LogRecords to process.
+
+      .. versionchanged:: 3.14
+         Raises :exc:`RuntimeError` if called and the listener is already
+         running.
 
    .. method:: stop()
 

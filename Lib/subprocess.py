@@ -715,6 +715,9 @@ def _use_posix_spawn():
         # os.posix_spawn() is not available
         return False
 
+    if ((_env := os.environ.get('_PYTHON_SUBPROCESS_USE_POSIX_SPAWN')) in ('0', '1')):
+        return bool(int(_env))
+
     if sys.platform in ('darwin', 'sunos5'):
         # posix_spawn() is a syscall on both macOS and Solaris,
         # and properly reports errors
@@ -1232,8 +1235,11 @@ class Popen:
 
             finally:
                 self._communication_started = True
-
-            sts = self.wait(timeout=self._remaining_time(endtime))
+            try:
+                sts = self.wait(timeout=self._remaining_time(endtime))
+            except TimeoutExpired as exc:
+                exc.timeout = timeout
+                raise
 
         return (stdout, stderr)
 
@@ -2142,8 +2148,11 @@ class Popen:
                                 selector.unregister(key.fileobj)
                                 key.fileobj.close()
                             self._fileobj2output[key.fileobj].append(data)
-
-            self.wait(timeout=self._remaining_time(endtime))
+            try:
+                self.wait(timeout=self._remaining_time(endtime))
+            except TimeoutExpired as exc:
+                exc.timeout = orig_timeout
+                raise
 
             # All data exchanged.  Translate lists into strings.
             if stdout is not None:

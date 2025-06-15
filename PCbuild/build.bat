@@ -111,6 +111,7 @@ if "%IncludeExternals%"=="" set IncludeExternals=true
 if "%IncludeCTypes%"=="" set IncludeCTypes=true
 if "%IncludeSSL%"=="" set IncludeSSL=true
 if "%IncludeTkinter%"=="" set IncludeTkinter=true
+if "%UseJIT%" NEQ "true" set IncludeLLVM=false
 
 if "%IncludeExternals%"=="true" call "%dir%get_externals.bat"
 
@@ -121,6 +122,13 @@ if "%do_pgo%" EQU "true" if "%platf%" EQU "x64" (
         echo.       and PROCESSOR_ARCHITEW6432 environment variables are correct.
         exit /b 1 
     )
+)
+
+if "%UseDisableGil%" EQU "true" if "%UseTIER2%" NEQ "" (
+    rem GH-133171: This configuration builds the JIT but never actually uses it,
+    rem which is surprising (and strictly worse than not building it at all):
+    echo.ERROR: --experimental-jit cannot be used with --disable-gil.
+    exit /b 1
 )
 
 if not exist "%GIT%" where git > "%TEMP%\git.loc" 2> nul && set /P GIT= < "%TEMP%\git.loc" & del "%TEMP%\git.loc"

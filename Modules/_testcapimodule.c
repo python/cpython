@@ -3175,6 +3175,48 @@ create_manual_heap_type(void)
     return (PyObject *)type;
 }
 
+typedef struct {
+    PyObject_VAR_HEAD
+} ManagedDictObject;
+
+int ManagedDict_traverse(PyObject *self, visitproc visit, void *arg) {
+    PyObject_VisitManagedDict(self, visit, arg);
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
+int ManagedDict_clear(PyObject *self) {
+    PyObject_ClearManagedDict(self);
+    return 0;
+}
+
+static PyGetSetDef ManagedDict_getset[] = {
+    {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict, NULL, NULL},
+    {NULL, NULL, NULL, NULL, NULL},
+};
+
+static PyType_Slot ManagedDict_slots[] = {
+    {Py_tp_new, (void *)PyType_GenericNew},
+    {Py_tp_getset, (void *)ManagedDict_getset},
+    {Py_tp_traverse, (void *)ManagedDict_traverse},
+    {Py_tp_clear, (void *)ManagedDict_clear},
+    {0}
+};
+
+static PyType_Spec ManagedDict_spec = {
+    "_testcapi.ManagedDictType",
+    sizeof(ManagedDictObject),
+    0, // itemsize
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_MANAGED_DICT | Py_TPFLAGS_HEAPTYPE | Py_TPFLAGS_HAVE_GC,
+    ManagedDict_slots
+};
+
+static PyObject *
+create_managed_dict_type(void)
+{
+   return PyType_FromSpec(&ManagedDict_spec);
+}
+
 static struct PyModuleDef _testcapimodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_testcapi",
@@ -3315,6 +3357,13 @@ PyInit__testcapi(void)
         return NULL;
     }
 
+    PyObject *managed_dict_type = create_managed_dict_type();
+    if (managed_dict_type == NULL) {
+        return NULL;
+    }
+    if (PyModule_Add(m, "ManagedDictType", managed_dict_type) < 0) {
+        return NULL;
+    }
 
     /* Include tests from the _testcapi/ directory */
     if (_PyTestCapi_Init_Vectorcall(m) < 0) {

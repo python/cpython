@@ -548,7 +548,7 @@ mnemonic that the corresponding value is a callable.
    The ``filters`` member of ``handlers`` and ``loggers`` can take
    filter instances in addition to ids.
 
-You can also specify a special key ``'.'`` whose value is a dictionary is a
+You can also specify a special key ``'.'`` whose value is a
 mapping of attribute names to values. If found, the specified attributes will
 be set on the user-defined object before it is returned. Thus, with the
 following configuration::
