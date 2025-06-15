@@ -1183,11 +1183,15 @@ def func1[X](x: X) -> X: ...
 def func2[X, Y](x: X | Y) -> X | Y: ...
 def func3[X, *Y, **Z](x: X, y: tuple[*Y], z: Z) -> X: ...
 def func4[X: int, Y: (bytes, str)](x: X, y: Y) -> X | Y: ...
+def func3b[X, *Y, **Z]() -> X: return Class3[X, Y, Z]()
+def func5[Baz](): return Class1[Baz]()
 
 class Class1[X]: ...
 class Class2[X, Y]: ...
 class Class3[X, *Y, **Z]: ...
 class Class4[X: int, Y: (bytes, str)]: ...
+class Class5:
+    def meth[Baz](): return Class1[Baz]()
 
 
 class TypeParamsPickleTest(unittest.TestCase):
@@ -1239,6 +1243,39 @@ class TypeParamsPickleTest(unittest.TestCase):
                     # These instances are not equal,
                     # but class check is good enough:
                     self.assertIsInstance(pickle.loads(pickled), real_class)
+
+    def test_pickling_anonymous_typeparams(self):
+        # see gh-129250
+        thing = func5()
+        pickled = pickle.dumps(thing)
+        unpickled = pickle.loads(pickled)
+        self.assertIs(unpickled.__orig_class__, thing.__orig_class__)
+        self.assertIs(unpickled.__orig_class__.__args__[0],
+                      func5.__type_params__[0])
+
+        thing = func3b()
+        pickled = pickle.dumps(thing)
+        unpickled = pickle.loads(pickled)
+        self.assertIs(unpickled.__orig_class__, thing.__orig_class__)
+        self.assertIs(unpickled.__orig_class__.__args__[0],
+                      func3b.__type_params__[0])
+        self.assertIs(unpickled.__orig_class__.__args__[1],
+                      func3b.__type_params__[1])
+        self.assertIs(unpickled.__orig_class__.__args__[2],
+                      func3b.__type_params__[2])
+
+        for i in range(3):
+            thing = Class3.__type_params__[i]
+            pickled = pickle.dumps(thing)
+            unpickled = pickle.loads(pickled)
+            self.assertIs(unpickled, thing)
+
+        thing = Class5.meth()
+        pickled = pickle.dumps(thing)
+        unpickled = pickle.loads(pickled)
+        self.assertIs(unpickled.__orig_class__, thing.__orig_class__)
+        self.assertIs(unpickled.__orig_class__.__args__[0],
+                      Class5.meth.__type_params__[0])
 
 
 class TypeParamsWeakRefTest(unittest.TestCase):
