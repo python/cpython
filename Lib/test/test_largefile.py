@@ -198,7 +198,7 @@ class TestCopyfile(LargeFileTest, unittest.TestCase):
         size = os.path.getsize(TESTFN)
         shutil.copyfile(TESTFN, TESTFN2)
         self.assertEqual(os.path.getsize(TESTFN2), size)
-        with open(TESTFN2, 'rb') as f:
+        with self.open(TESTFN2, 'rb') as f:
             self.assertEqual(f.read(5), b'z\x00\x00\x00\x00')
             f.seek(size - 5)
             self.assertEqual(f.read(), b'\x00\x00\x00\x00a')
@@ -224,7 +224,7 @@ class TestSocketSendfile(LargeFileTest, unittest.TestCase):
             with sock:
                 conn, _ = sock.accept()
                 conn.settimeout(self.timeout)
-                with conn, open(TESTFN2, 'wb') as f:
+                with conn, self.open(TESTFN2, 'wb') as f:
                     event.wait(self.timeout)
                     while True:
                         chunk = conn.recv(65536)
