@@ -455,6 +455,9 @@ Encoders and Decoders
       This can be used to decode a JSON document from a string that may have
       extraneous data at the end.
 
+   .. versionchanged:: 3.14
+      Now ignores any leading whitespace instead of returning an error
+
 
 .. class:: JSONEncoder(*, skipkeys=False, ensure_ascii=True, check_circular=True, allow_nan=True, sort_keys=False, indent=None, separators=None, default=None)
 
