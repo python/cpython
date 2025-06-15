@@ -4316,19 +4316,30 @@ class ThreadedTests(unittest.TestCase):
             self.assertRaises(ValueError, s.write, b'hello')
 
     def test_sendfile(self):
+        """Try to send a file using kTLS if possible."""
         TEST_DATA = b"x" * 512
         with open(os_helper.TESTFN, 'wb') as f:
             f.write(TEST_DATA)
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         client_context, server_context, hostname = testing_context()
+        client_context.options |= getattr(ssl, 'OP_ENABLE_KTLS', 0)
         server = ThreadedEchoServer(context=server_context, chatty=False)
-        with server:
-            with client_context.wrap_socket(socket.socket(),
-                                            server_hostname=hostname) as s:
-                s.connect((HOST, server.port))
+        # kTLS seems to work only with a connection created before
+        # wrapping `sock` by the SSL context in contrast to calling
+        # `sock.connect()` after the wrapping.
+        with server, socket.create_connection((HOST, server.port)) as sock:
+            with client_context.wrap_socket(
+                sock, server_hostname=hostname
+            ) as ssock:
+                if support.verbose:
+                    ktls_used = ssock._sslobj.uses_ktls_for_send()
+                    print(
+                        'kTLS is',
+                        'available' if ktls_used else 'unavailable',
+                    )
                 with open(os_helper.TESTFN, 'rb') as file:
-                    s.sendfile(file)
-                    self.assertEqual(s.recv(1024), TEST_DATA)
+                    ssock.sendfile(file)
+                self.assertEqual(ssock.recv(1024), TEST_DATA)
 
     def test_session(self):
         client_context, server_context, hostname = testing_context()
