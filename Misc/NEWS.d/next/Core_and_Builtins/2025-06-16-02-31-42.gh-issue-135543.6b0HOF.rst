@@ -1,0 +1,2 @@
+emit ``sys.remote_exec`` audit event when ``sys.remote_exec`` has been
+called
