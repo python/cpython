@@ -48,8 +48,8 @@ except ImportError:
 LARGE = 0x7FFFFFFF
 VERY_LARGE = 0xFF0000121212121212121242
 
-from _testcapi import UCHAR_MAX, USHRT_MAX, UINT_MAX, ULONG_MAX, INT_MAX, \
-     INT_MIN, LONG_MIN, LONG_MAX, PY_SSIZE_T_MIN, PY_SSIZE_T_MAX, \
+from _testcapi import UCHAR_MAX, USHRT_MAX, UINT_MAX, ULONG_MAX, ULLONG_MAX, INT_MAX, \
+     INT_MIN, LONG_MIN, LONG_MAX, LLONG_MIN, LLONG_MAX, PY_SSIZE_T_MIN, PY_SSIZE_T_MAX, \
      SHRT_MIN, SHRT_MAX, FLT_MIN, FLT_MAX, DBL_MIN, DBL_MAX
 
 DBL_MAX_EXP = sys.float_info.max_exp
@@ -57,9 +57,8 @@ INF = float('inf')
 NAN = float('nan')
 
 # fake, they are not defined in Python's header files
-LLONG_MAX = 2**63-1
-LLONG_MIN = -2**63
-ULLONG_MAX = 2**64-1
+SCHAR_MAX = UCHAR_MAX // 2
+SCHAR_MIN = SCHAR_MAX - UCHAR_MAX
 
 NULL = None
 
@@ -209,10 +208,23 @@ class Unsigned_TestCase(unittest.TestCase):
         self.assertEqual(UCHAR_MAX, getargs_B(-1))
         self.assertEqual(0, getargs_B(0))
         self.assertEqual(UCHAR_MAX, getargs_B(UCHAR_MAX))
-        self.assertEqual(0, getargs_B(UCHAR_MAX+1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(0, getargs_B(UCHAR_MAX+1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_B(-UCHAR_MAX))
+        self.assertEqual(SCHAR_MAX+1, getargs_B(SCHAR_MIN))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(SCHAR_MAX, getargs_B(SCHAR_MIN-1))
+
+        self.assertEqual(128, getargs_B(-2**7))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(127, getargs_B(-2**7-1))
 
         self.assertEqual(42, getargs_B(42))
-        self.assertEqual(UCHAR_MAX & VERY_LARGE, getargs_B(VERY_LARGE))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(UCHAR_MAX & VERY_LARGE, getargs_B(VERY_LARGE))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(UCHAR_MAX & -VERY_LARGE, getargs_B(-VERY_LARGE))
 
     def test_H(self):
         from _testcapi import getargs_H
@@ -233,11 +245,18 @@ class Unsigned_TestCase(unittest.TestCase):
         self.assertEqual(USHRT_MAX, getargs_H(-1))
         self.assertEqual(0, getargs_H(0))
         self.assertEqual(USHRT_MAX, getargs_H(USHRT_MAX))
-        self.assertEqual(0, getargs_H(USHRT_MAX+1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(0, getargs_H(USHRT_MAX+1))
+        self.assertEqual(SHRT_MAX+1, getargs_H(SHRT_MIN))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(SHRT_MAX, getargs_H(SHRT_MIN-1))
 
         self.assertEqual(42, getargs_H(42))
 
-        self.assertEqual(VERY_LARGE & USHRT_MAX, getargs_H(VERY_LARGE))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(USHRT_MAX & VERY_LARGE, getargs_H(VERY_LARGE))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(USHRT_MAX & -VERY_LARGE, getargs_H(-VERY_LARGE))
 
     def test_I(self):
         from _testcapi import getargs_I
@@ -258,11 +277,18 @@ class Unsigned_TestCase(unittest.TestCase):
         self.assertEqual(UINT_MAX, getargs_I(-1))
         self.assertEqual(0, getargs_I(0))
         self.assertEqual(UINT_MAX, getargs_I(UINT_MAX))
-        self.assertEqual(0, getargs_I(UINT_MAX+1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(0, getargs_I(UINT_MAX+1))
+        self.assertEqual(INT_MAX+1, getargs_I(INT_MIN))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(INT_MAX, getargs_I(INT_MIN-1))
 
         self.assertEqual(42, getargs_I(42))
 
-        self.assertEqual(VERY_LARGE & UINT_MAX, getargs_I(VERY_LARGE))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(UINT_MAX & VERY_LARGE, getargs_I(VERY_LARGE))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(UINT_MAX & -VERY_LARGE, getargs_I(-VERY_LARGE))
 
     def test_k(self):
         from _testcapi import getargs_k
@@ -283,11 +309,18 @@ class Unsigned_TestCase(unittest.TestCase):
         self.assertEqual(ULONG_MAX, getargs_k(-1))
         self.assertEqual(0, getargs_k(0))
         self.assertEqual(ULONG_MAX, getargs_k(ULONG_MAX))
-        self.assertEqual(0, getargs_k(ULONG_MAX+1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(0, getargs_k(ULONG_MAX+1))
+        self.assertEqual(LONG_MAX+1, getargs_k(LONG_MIN))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(LONG_MAX, getargs_k(LONG_MIN-1))
 
         self.assertEqual(42, getargs_k(42))
 
-        self.assertEqual(VERY_LARGE & ULONG_MAX, getargs_k(VERY_LARGE))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ULONG_MAX & VERY_LARGE, getargs_k(VERY_LARGE))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ULONG_MAX & -VERY_LARGE, getargs_k(-VERY_LARGE))
 
 class Signed_TestCase(unittest.TestCase):
     def test_h(self):
@@ -434,11 +467,18 @@ class LongLong_TestCase(unittest.TestCase):
         self.assertEqual(ULLONG_MAX, getargs_K(ULLONG_MAX))
         self.assertEqual(0, getargs_K(0))
         self.assertEqual(ULLONG_MAX, getargs_K(ULLONG_MAX))
-        self.assertEqual(0, getargs_K(ULLONG_MAX+1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(0, getargs_K(ULLONG_MAX+1))
+        self.assertEqual(LLONG_MAX+1, getargs_K(LLONG_MIN))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(LLONG_MAX, getargs_K(LLONG_MIN-1))
 
         self.assertEqual(42, getargs_K(42))
 
-        self.assertEqual(VERY_LARGE & ULLONG_MAX, getargs_K(VERY_LARGE))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ULLONG_MAX & VERY_LARGE, getargs_K(VERY_LARGE))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ULLONG_MAX & -VERY_LARGE, getargs_K(-VERY_LARGE))
 
 
 class Float_TestCase(unittest.TestCase, FloatsAreIdenticalMixin):

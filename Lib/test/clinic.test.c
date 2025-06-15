@@ -1020,12 +1020,19 @@ test_unsigned_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t
         goto skip_optional;
     }
     {
-        unsigned long ival = PyLong_AsUnsignedLongMask(args[2]);
-        if (ival == (unsigned long)-1 && PyErr_Occurred()) {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[2], &c, sizeof(unsigned char),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
             goto exit;
         }
-        else {
-            c = (unsigned char) ival;
+        if ((size_t)_bytes > sizeof(unsigned char)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
         }
     }
 skip_optional:
@@ -1038,7 +1045,7 @@ exit:
 static PyObject *
 test_unsigned_char_converter_impl(PyObject *module, unsigned char a,
                                   unsigned char b, unsigned char c)
-/*[clinic end generated code: output=45920dbedc22eb55 input=021414060993e289]*/
+/*[clinic end generated code: output=49eda9faaf53372a input=021414060993e289]*/
 
 
 /*[clinic input]
@@ -1151,9 +1158,21 @@ test_unsigned_short_converter(PyObject *module, PyObject *const *args, Py_ssize_
     if (nargs < 3) {
         goto skip_optional;
     }
-    c = (unsigned short)PyLong_AsUnsignedLongMask(args[2]);
-    if (c == (unsigned short)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[2], &c, sizeof(unsigned short),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned short)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional:
     return_value = test_unsigned_short_converter_impl(module, a, b, c);
@@ -1165,7 +1184,7 @@ exit:
 static PyObject *
 test_unsigned_short_converter_impl(PyObject *module, unsigned short a,
                                    unsigned short b, unsigned short c)
-/*[clinic end generated code: output=e6e990df729114fc input=cdfd8eff3d9176b4]*/
+/*[clinic end generated code: output=f591c7797e150f49 input=cdfd8eff3d9176b4]*/
 
 
 /*[clinic input]
@@ -1298,9 +1317,21 @@ test_unsigned_int_converter(PyObject *module, PyObject *const *args, Py_ssize_t 
     if (nargs < 3) {
         goto skip_optional;
     }
-    c = (unsigned int)PyLong_AsUnsignedLongMask(args[2]);
-    if (c == (unsigned int)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[2], &c, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional:
     return_value = test_unsigned_int_converter_impl(module, a, b, c);
@@ -1312,7 +1343,7 @@ exit:
 static PyObject *
 test_unsigned_int_converter_impl(PyObject *module, unsigned int a,
                                  unsigned int b, unsigned int c)
-/*[clinic end generated code: output=f9cdbe410ccc98a3 input=5533534828b62fc0]*/
+/*[clinic end generated code: output=50a413f1cc82dc11 input=5533534828b62fc0]*/
 
 
 /*[clinic input]
@@ -1414,7 +1445,22 @@ test_unsigned_long_converter(PyObject *module, PyObject *const *args, Py_ssize_t
         _PyArg_BadArgument("test_unsigned_long_converter", "argument 3", "int", args[2]);
         goto exit;
     }
-    c = PyLong_AsUnsignedLongMask(args[2]);
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[2], &c, sizeof(unsigned long),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned long)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
 skip_optional:
     return_value = test_unsigned_long_converter_impl(module, a, b, c);
 
@@ -1425,7 +1471,7 @@ exit:
 static PyObject *
 test_unsigned_long_converter_impl(PyObject *module, unsigned long a,
                                   unsigned long b, unsigned long c)
-/*[clinic end generated code: output=d74eed227d77a31b input=f450d94cae1ef73b]*/
+/*[clinic end generated code: output=1bbf5620093cc914 input=f450d94cae1ef73b]*/
 
 
 /*[clinic input]
@@ -1529,7 +1575,22 @@ test_unsigned_long_long_converter(PyObject *module, PyObject *const *args, Py_ss
         _PyArg_BadArgument("test_unsigned_long_long_converter", "argument 3", "int", args[2]);
         goto exit;
     }
-    c = PyLong_AsUnsignedLongLongMask(args[2]);
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[2], &c, sizeof(unsigned long long),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned long long)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
 skip_optional:
     return_value = test_unsigned_long_long_converter_impl(module, a, b, c);
 
@@ -1542,7 +1603,7 @@ test_unsigned_long_long_converter_impl(PyObject *module,
                                        unsigned long long a,
                                        unsigned long long b,
                                        unsigned long long c)
-/*[clinic end generated code: output=5ca4e4dfb3db644b input=a15115dc41866ff4]*/
+/*[clinic end generated code: output=582a6623dc845824 input=a15115dc41866ff4]*/
 
 
 /*[clinic input]
