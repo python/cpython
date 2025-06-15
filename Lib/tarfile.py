@@ -2105,6 +2105,7 @@ class TarFile(object):
                 blocks, remainder = divmod(self.offset, RECORDSIZE)
                 if remainder > 0:
                     self.fileobj.write(NUL * (RECORDSIZE - remainder))
+                    self.offset += (RECORDSIZE - remainder)
         finally:
             if not self._extfileobj:
                 self.fileobj.close()
