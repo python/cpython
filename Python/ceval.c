@@ -3459,14 +3459,27 @@ foriter_next(PyObject *seq, _PyStackRef index)
     return PyStackRef_FromPyObjectSteal(item);
 }
 
-_PyStackRef _PyForIter_VirtualIteratorNext(PyThreadState* tstate, _PyInterpreterFrame* frame, _PyStackRef iter, _PyStackRef* index_ptr)
-{
-    PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+_PyStackRef
+_PyForIter_VirtualIteratorNext(
+    PyThreadState* tstate, _PyInterpreterFrame* frame,
+    _PyStackRef iter, _PyStackRef* index_ptr
+) {
     _PyStackRef index = *index_ptr;
     if (PyStackRef_IsTaggedInt(index)) {
-        *index_ptr = PyStackRef_IncrementTaggedIntNoOverflow(index);
-        return foriter_next(iter_o, index);
+        if (PyStackRef_IsTaggedInt(iter)) {
+            if (!PyStackRef_TaggedIntLessThan(index, iter)) {
+                return PyStackRef_NULL;
+            }
+            *index_ptr = PyStackRef_IncrementTaggedIntNoOverflow(index);
+            return PyStackRef_BoxInt(index);
+        }
+        else {
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            *index_ptr = PyStackRef_IncrementTaggedIntNoOverflow(index);
+            return foriter_next(iter_o, index);
+        }
     }
+    PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
     PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
     if (next_o == NULL) {
         if (_PyErr_Occurred(tstate)) {

@@ -687,6 +687,11 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_IsValid",
     "PyStackRef_Wrap",
     "PyStackRef_Unwrap",
+    "_PyRange_IsSimpleCompact",
+    "_PyRange_GetStopIfCompact",
+    "PyStackRef_BoxInt",
+    "PyStackRef_TYPE",
+    "PyStackRef_TaggedIntLessThan",
 )
 
 
