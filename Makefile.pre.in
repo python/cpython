@@ -225,7 +225,6 @@ RUNSHARED=       @RUNSHARED@
 ENSUREPIP=      @ENSUREPIP@
 
 # Internal static libraries
-LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
 LIBEXPAT_A= Modules/expat/libexpat.a
 
 # HACL* build configuration
@@ -590,45 +589,6 @@ DTRACE_DEPS = \
 	Python/ceval.o Python/gc.o Python/import.o Python/sysmodule.o
 
 ##########################################################################
-# decimal's libmpdec
-
-LIBMPDEC_OBJS= \
-		Modules/_decimal/libmpdec/basearith.o \
-		Modules/_decimal/libmpdec/constants.o \
-		Modules/_decimal/libmpdec/context.o \
-		Modules/_decimal/libmpdec/convolute.o \
-		Modules/_decimal/libmpdec/crt.o \
-		Modules/_decimal/libmpdec/difradix2.o \
-		Modules/_decimal/libmpdec/fnt.o \
-		Modules/_decimal/libmpdec/fourstep.o \
-		Modules/_decimal/libmpdec/io.o \
-		Modules/_decimal/libmpdec/mpalloc.o \
-		Modules/_decimal/libmpdec/mpdecimal.o \
-		Modules/_decimal/libmpdec/numbertheory.o \
-		Modules/_decimal/libmpdec/sixstep.o \
-		Modules/_decimal/libmpdec/transpose.o
-		# _decimal does not use signaling API
-		# Modules/_decimal/libmpdec/mpsignal.o
-
-LIBMPDEC_HEADERS= \
-		$(srcdir)/Modules/_decimal/libmpdec/basearith.h \
-		$(srcdir)/Modules/_decimal/libmpdec/bits.h \
-		$(srcdir)/Modules/_decimal/libmpdec/constants.h \
-		$(srcdir)/Modules/_decimal/libmpdec/convolute.h \
-		$(srcdir)/Modules/_decimal/libmpdec/crt.h \
-		$(srcdir)/Modules/_decimal/libmpdec/difradix2.h \
-		$(srcdir)/Modules/_decimal/libmpdec/fnt.h \
-		$(srcdir)/Modules/_decimal/libmpdec/fourstep.h \
-		$(srcdir)/Modules/_decimal/libmpdec/io.h \
-		$(srcdir)/Modules/_decimal/libmpdec/mpalloc.h \
-		$(srcdir)/Modules/_decimal/libmpdec/mpdecimal.h \
-		$(srcdir)/Modules/_decimal/libmpdec/numbertheory.h \
-		$(srcdir)/Modules/_decimal/libmpdec/sixstep.h \
-		$(srcdir)/Modules/_decimal/libmpdec/transpose.h \
-		$(srcdir)/Modules/_decimal/libmpdec/typearith.h \
-		$(srcdir)/Modules/_decimal/libmpdec/umodarith.h
-
-##########################################################################
 # pyexpat's expat library
 
 LIBEXPAT_OBJS= \
@@ -945,7 +905,6 @@ coverage-lcov:
 	@lcov $(COVERAGE_LCOV_OPTIONS) --remove $(COVERAGE_INFO) \
 	    '*/Modules/_hacl/*' \
 	    '*/Modules/_ctypes/libffi*/*' \
-	    '*/Modules/_decimal/libmpdec/*' \
 	    '*/Modules/expat/*' \
 	    '*/Modules/xx*.c' \
 	    '*/Python/pyfpe.c' \
@@ -1409,60 +1368,6 @@ PYTHON_HEADERS= \
 		@PLATFORM_HEADERS@ \
 		\
 		$(srcdir)/Python/stdlib_module_names.h
-
-##########################################################################
-# Build static libmpdec.a
-LIBMPDEC_CFLAGS=@LIBMPDEC_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
-
-# "%.o: %c" is not portable
-Modules/_decimal/libmpdec/basearith.o: $(srcdir)/Modules/_decimal/libmpdec/basearith.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/basearith.c
-
-Modules/_decimal/libmpdec/constants.o: $(srcdir)/Modules/_decimal/libmpdec/constants.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/constants.c
-
-Modules/_decimal/libmpdec/context.o: $(srcdir)/Modules/_decimal/libmpdec/context.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/context.c
-
-Modules/_decimal/libmpdec/convolute.o: $(srcdir)/Modules/_decimal/libmpdec/convolute.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/convolute.c
-
-Modules/_decimal/libmpdec/crt.o: $(srcdir)/Modules/_decimal/libmpdec/crt.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/crt.c
-
-Modules/_decimal/libmpdec/difradix2.o: $(srcdir)/Modules/_decimal/libmpdec/difradix2.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/difradix2.c
-
-Modules/_decimal/libmpdec/fnt.o: $(srcdir)/Modules/_decimal/libmpdec/fnt.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/fnt.c
-
-Modules/_decimal/libmpdec/fourstep.o: $(srcdir)/Modules/_decimal/libmpdec/fourstep.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/fourstep.c
-
-Modules/_decimal/libmpdec/io.o: $(srcdir)/Modules/_decimal/libmpdec/io.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/io.c
-
-Modules/_decimal/libmpdec/mpalloc.o: $(srcdir)/Modules/_decimal/libmpdec/mpalloc.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpalloc.c
-
-Modules/_decimal/libmpdec/mpdecimal.o: $(srcdir)/Modules/_decimal/libmpdec/mpdecimal.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpdecimal.c
-
-Modules/_decimal/libmpdec/mpsignal.o: $(srcdir)/Modules/_decimal/libmpdec/mpsignal.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpsignal.c
-
-Modules/_decimal/libmpdec/numbertheory.o: $(srcdir)/Modules/_decimal/libmpdec/numbertheory.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/numbertheory.c
-
-Modules/_decimal/libmpdec/sixstep.o: $(srcdir)/Modules/_decimal/libmpdec/sixstep.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/sixstep.c
-
-Modules/_decimal/libmpdec/transpose.o: $(srcdir)/Modules/_decimal/libmpdec/transpose.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/transpose.c
-
-$(LIBMPDEC_A): $(LIBMPDEC_OBJS)
-	-rm -f $@
-	$(AR) $(ARFLAGS) $@ $(LIBMPDEC_OBJS)
 
 ##########################################################################
 # Build static libexpat.a
@@ -3320,7 +3225,7 @@ MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/uni
 MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h
 MODULE__CTYPES_TEST_DEPS=$(srcdir)/Modules/_ctypes/_ctypes_test_generated.c.h
 MODULE__CTYPES_MALLOC_CLOSURE=@MODULE__CTYPES_MALLOC_CLOSURE@
-MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h @LIBMPDEC_INTERNAL@
+MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c @LIBEXPAT_INTERNAL@
 MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h

@@ -41,6 +41,3 @@ NOTE
 decimal.so is not built from a static libmpdec.a since doing so led to
 failures on AIX (user report) and Windows (mixing static and dynamic CRTs
 causes locale problems and more).
-
-
-
