@@ -10863,7 +10863,7 @@ then :
 
 else case e in #(
   e) as_fn_append CFLAGS_NODIST " $jit_flags"
-           REGEN_JIT_COMMAND="\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir ."
+           REGEN_JIT_COMMAND="\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir . --cflags=\"$CFLAGS_JIT\""
            JIT_STENCILS_H="jit_stencils.h"
            if test "x$Py_DEBUG" = xtrue
 then :
@@ -23849,7 +23849,7 @@ fi
 
 
 
-ac_fn_check_decl "$LINENO" "MAXLOGNAME" "ac_cv_have_decl_MAXLOGNAME" "#include <sys/params.h>
+ac_fn_check_decl "$LINENO" "MAXLOGNAME" "ac_cv_have_decl_MAXLOGNAME" "#include <sys/param.h>
 " "$ac_c_undeclared_builtin_options" "CFLAGS"
 if test "x$ac_cv_have_decl_MAXLOGNAME" = xyes
 then :

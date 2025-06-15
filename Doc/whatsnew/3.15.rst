@@ -134,6 +134,13 @@ shelve
   (Contributed by Andrea Oliveri in :gh:`134004`.)
 
 
+sqlite3
+-------
+
+* Support SQL keyword completion in the :mod:`sqlite3` command-line interface.
+  (Contributed by Long Tan in :gh:`133393`.)
+
+
 ssl
 ---
 
