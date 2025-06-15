@@ -243,9 +243,15 @@ def split(p):
 def splitext(p):
     p = os.fspath(p)
     if isinstance(p, bytes):
-        return genericpath._splitext(p, b'\\', b'/', b'.')
+        prefixes = (b'\\\\', b'//', b'\\/', b'/\\')
+        root, ext = genericpath._splitext(p, b'\\', b'/', b'.')
     else:
-        return genericpath._splitext(p, '\\', '/', '.')
+        prefixes = ('\\\\', '//', '\\/', '/\\')
+        root, ext = genericpath._splitext(p, '\\', '/', '.')
+    if ext and root.startswith(prefixes) and not splitroot(root)[2]:
+        # \\server.ext or \\server\share.ext, but not \\server\share\path.ext
+        return p, p[:0]
+    return root, ext
 splitext.__doc__ = genericpath._splitext.__doc__
 
 
