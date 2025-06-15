@@ -710,6 +710,46 @@ class TestPyReplOutput(ScreenEqualMixin, TestCase):
         self.assertEqual(output, "1+1")
         self.assert_screen_equal(reader, "1+1", clean=True)
 
+    def test_history_navigation_with_up_arrow_and_partial_text(self):
+        events = itertools.chain(
+            code_to_events("spam = 1\nham = 2\neggs = 3\nsp"),
+            [
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ],
+        )
+
+        reader = self.prepare_reader(events)
+
+        output = multiline_input(reader)
+        self.assertEqual(output, "spam = 1")
+
+    def test_history_navigation_with_up_arrow_and_partial_text_with_similar_entries(self):
+        events = itertools.chain(
+            code_to_events("a=111\na=11\na=1\na="),
+            [
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ],
+        )
+
+        reader = self.prepare_reader(events)
+        print()
+        output = multiline_input(reader)
+        self.assertEqual(output, "a=111")
+        self.assertEqual(clean_screen(reader.screen), "a=111")
+        output = multiline_input(reader)
+        self.assertEqual(output, "a=11")
+        self.assertEqual(clean_screen(reader.screen), "a=11")
+        output = multiline_input(reader)
+        self.assertEqual(output, "a=1")
+        self.assertEqual(clean_screen(reader.screen), "a=1")
+        output = multiline_input(reader)
+        self.assertEqual(output, "a=111")
+        self.assertEqual(clean_screen(reader.screen), "a=111")
+
     def test_history_with_multiline_entries(self):
         code = "def foo():\nx = 1\ny = 2\nz = 3\n\ndef bar():\nreturn 42\n\n"
         events = list(itertools.chain(
