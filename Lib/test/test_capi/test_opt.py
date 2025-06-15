@@ -1382,13 +1382,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_CHECK_FUNCTION_EXACT_ARGS", uops)
 
     def test_method_guards_removed_or_reduced(self):
-        class TestObject:
-            def test(self, *args, **kwargs):
-                return args[0]
-
-        test_object = TestObject()
-        test_bound_method = TestObject.test.__get__(test_object)
-
         def testfunc(n):
             result = 0
             for i in range(n):
@@ -2300,6 +2293,13 @@ class TestUopsOptimization(unittest.TestCase):
 
 def global_identity(x):
     return x
+
+class TestObject:
+    def test(self, *args, **kwargs):
+        return args[0]
+
+test_object = TestObject()
+test_bound_method = TestObject.test.__get__(test_object)
 
 if __name__ == "__main__":
     unittest.main()
