@@ -1908,6 +1908,30 @@ class GNUWriteTest(unittest.TestCase):
         self._test(("longnam/" * 127) + "longname_",
                    ("longlnk/" * 127) + "longlink_")
 
+    def test_hidden_header_for_gnulong(self):
+        # Regression test for gh-130819.
+        memory_file = io.BytesIO()
+        with tarfile.open(mode="w", fileobj=memory_file, format=tarfile.GNU_FORMAT) as tar:
+            tar_info = tarfile.TarInfo("abcdef" * 20)
+            tar_info.type = tarfile.DIRTYPE
+            tar.addfile(tar_info, None)
+            tar.close()
+
+        class RawTabInfo(tarfile.TarInfo):
+
+            def _proc_member(self, tar_file):
+                if self.type in (tarfile.GNUTYPE_LONGNAME, tarfile.GNUTYPE_LONGLINK):
+                    tester.assertEqual(self.mode, 0o644)
+                    tester.assertEqual(self.uname, RawTabInfo._name_uid0)
+                    tester.assertEqual(self.gname, RawTabInfo._name_gid0)
+                return super()._proc_member(tar_file)
+
+        tester = self
+        memory_file.seek(0)
+        with tarfile.open(fileobj=memory_file, mode="r", tarinfo=RawTabInfo) as tar:
+            members = tar.getmembers()
+            self.assertEqual(len(members), 1)
+
 
 class DeviceHeaderTest(WriteTestBase, unittest.TestCase):
 
