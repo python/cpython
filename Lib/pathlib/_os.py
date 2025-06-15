@@ -414,7 +414,7 @@ class _PathInfoBase:
 class _WindowsPathInfo(_PathInfoBase):
     """Implementation of pathlib.types.PathInfo that provides status
     information for Windows paths. Don't try to construct it yourself."""
-    __slots__ = ('_exists', '_is_dir', '_is_file', '_is_symlink')
+    __slots__ = ('_exists', '_is_dir', '_is_file', '_is_symlink', '_is_junction')
 
     def exists(self, *, follow_symlinks=True):
         """Whether this path exists."""
@@ -466,6 +466,14 @@ class _WindowsPathInfo(_PathInfoBase):
             self._is_symlink = os.path.islink(self._path)
             return self._is_symlink
 
+    def is_junction(self):
+        """Whether this path is a junction."""
+        try:
+            return self._is_junction
+        except AttributeError:
+            self._is_junction = os.path.isjunction(self._path)
+            return self._is_junction
+
 
 class _PosixPathInfo(_PathInfoBase):
     """Implementation of pathlib.types.PathInfo that provides status
@@ -499,6 +507,10 @@ class _PosixPathInfo(_PathInfoBase):
         if st is None:
             return False
         return S_ISLNK(st.st_mode)
+
+    def is_junction(self):
+        """Whether this path is a junction."""
+        return False
 
 
 PathInfo = _WindowsPathInfo if os.name == 'nt' else _PosixPathInfo
@@ -546,5 +558,12 @@ class DirEntryInfo(_PathInfoBase):
         """Whether this path is a symbolic link."""
         try:
             return self._entry.is_symlink()
+        except OSError:
+            return False
+
+    def is_junction(self):
+        """Whether this path is a junction."""
+        try:
+            return self._entry.is_junction()
         except OSError:
             return False
