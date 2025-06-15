@@ -1342,6 +1342,18 @@ def get_atom(value):
     atom.append(token)
     if value and value[0] in CFWS_LEADER:
         token, value = get_cfws(value)
+        # Peek ahead to ignore linear-white-space between adjacent encoded-words.
+        if (
+            atom[-1].token_type == 'encoded-word'
+            and value.startswith('=?')
+            and all(ws.token_type == 'fws' for ws in token)  # not comments
+        ):
+            try:
+                get_encoded_word(value)
+            except errors.HeaderParseError:
+                pass
+            else:
+                token = EWWhiteSpaceTerminal(token, 'fws')
         atom.append(token)
     return atom, value
 
