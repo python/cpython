@@ -1518,6 +1518,45 @@ class PythonFinalizationTests(unittest.TestCase):
         assert_python_ok("-c", code)
 
 
+@requires_gil_enabled("This test hangs and occasionally segfaults on the Free-threading build")
+class MutationInsideCycleGCTests(unittest.TestCase):
+    def setUp(self):
+        # This test requires the gc to be enabled.
+        gc.enable()
+        self.addCleanup(gc.disable)
+
+    def test_does_not_crash(self):
+        # Moved from Lib/test/crashers as it does not crash anymore.
+        # This test ensures that the code does not start crashing again.
+        # Original comment:
+
+        # The cycle GC collector can be executed when any GC-tracked object is
+        # allocated, e.g. during a call to PyList_New(), PyDict_New(), ...
+        # Moreover, it can invoke arbitrary Python code via a weakref callback.
+        # This means that there are many places in the source where an arbitrary
+        # mutation could unexpectedly occur.
+
+        # The example below shows list_slice() not expecting the call to
+        # PyList_New to mutate the input list.  (Of course there are many
+        # more examples like this one.)
+        class A(object):
+            pass
+
+        def callback(x):
+            del lst[:]
+
+        keepalive = []
+
+        for i in range(100):
+            lst = [str(i)]
+            a = A()
+            a.cycle = a
+            keepalive.append(weakref.ref(a, callback))
+            del a
+            while lst:
+                keepalive.append(lst[:])
+
+
 def setUpModule():
     global enabled, debug
     enabled = gc.isenabled()
