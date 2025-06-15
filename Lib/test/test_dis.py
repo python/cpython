@@ -2553,7 +2553,7 @@ class TestDisCLI(unittest.TestCase):
             1           LOAD_NAME                0 (print)
                         PUSH_NULL
                         CALL                     0
-                        CACHE                    0 (counter: 0)
+                        CACHE                    0 (counter: 0 (value: 0, backoff: 0))
                         CACHE                    0 (func_version: 0)
                         CACHE                    0
                         POP_TOP
