@@ -1933,6 +1933,11 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    interpreter is pre-release (alpha, beta, or release candidate) then the
    local and remote interpreters must be the same exact version.
 
+   .. audit-event:: remove_exec pid script_path
+
+      When the code is executed in the remote process, an :ref:`auditing event <auditing>`
+      ``remove_exec`` is raised with the *pid* and the path to the script file.
+
    .. availability:: Unix, Windows.
    .. versionadded:: 3.14
 

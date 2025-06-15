@@ -2485,6 +2485,10 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
     PyObject *path;
     const char *debugger_script_path;
 
+    if (PySys_Audit("remote_exec", "iO", pid, script) < 0) {
+        return NULL;
+    }
+
     if (PyUnicode_FSConverter(script, &path) == 0) {
         return NULL;
     }
