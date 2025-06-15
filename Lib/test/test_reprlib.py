@@ -179,7 +179,7 @@ class ReprTests(unittest.TestCase):
                 self.assertRegex(r(n), re_msg(n, k + 1))
             with self.subTest(f'10 ** {k} - 1', k=k):
                 n = 10 ** k - 1
-                # For k >> 1, since math.log10(n) == math.log10(n-1),
+                # Here, since math.log10(n) == math.log10(n-1),
                 # the number of digits of n - 1 is overestimated.
                 self.assertRaises(ValueError, repr, n)
                 self.assertRegex(r(n), re_msg(n, k + 1))

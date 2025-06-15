@@ -192,9 +192,8 @@ class Repr:
             # are rendered differently as their repr() raises a ValueError.
             # See https://github.com/python/cpython/issues/135487.
             k = 1 + int(math.log10(abs(x)))
-            # When math.log10(abs(x)) is overestimated or underestimated,
-            # the number of digits should be k - 1 or k + 1 respectively.
-            # For simplicity, we do not compute the exact number of digits.
+            # Note: math.log10(abs(x)) may be overestimated or underestimated,
+            # but for simplicity, we do not compute the exact number of digits.
             max_digits = sys.get_int_max_str_digits()
             return (f'<{x.__class__.__name__} instance with roughly {k} '
                     f'digits (limit at {max_digits}) at 0x{id(x):x}>')
