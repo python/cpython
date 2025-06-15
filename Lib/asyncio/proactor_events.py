@@ -526,7 +526,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
                 return
 
             data, addr = self._buffer.popleft()
-            self._buffer_size -= len(data)
+            self._buffer_size -= len(data) + 8 # include header bytes
             if self._address is not None:
                 self._write_fut = self._loop._proactor.send(self._sock,
                                                             data)
