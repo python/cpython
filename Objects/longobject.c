@@ -513,7 +513,7 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
 {
     /* This version originally by Tim Peters */
     PyLongObject *v;
-    unsigned long x, prev;
+    unsigned long x;
     long res;
     Py_ssize_t i;
     int sign;
@@ -556,37 +556,22 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
         res = -1;
         i = _PyLong_DigitCount(v);
         sign = _PyLong_NonCompactSign(v);
-        x = 0;
-        while (--i >= 0) {
-            prev = x;
-            x = (x << PyLong_SHIFT) | v->long_value.ob_digit[i];
-            if ((x >> PyLong_SHIFT) != prev) {
-                *overflow = sign;
-                goto exit;
-            }
-        }
 
-/*
         digit *digits = v->long_value.ob_digit;
-
         assert(i >= 2);
-        #if ((ULONG_MAX >> PyLong_SHIFT)) >= ((1UL << PyLong_SHIFT) - 1)
-        /* use 2 digits *
+        /* unroll 1 digit */
         --i;
+        assert(ULONG_MAX >= ((1UL << PyLong_SHIFT) - 1));
         x = digits[i];
+
+        #if ((ULONG_MAX >> PyLong_SHIFT)) >= ((1UL << PyLong_SHIFT) - 1)
+        /* unroll another digit */
         x <<= PyLong_SHIFT;
         --i;
         x |= digits[i];
-        #else
-        /* use 1 digit *
-        //--i;
-        assert(ULONG_MAX >= ((1UL << PyLong_SHIFT) - 1));
-        //x = digits[i];
-        x=0;
         #endif
-*/
 
-/*
+
         while (--i >= 0) {
             if (x > SIZE_MAX >> PyLong_SHIFT) {
                 *overflow = sign;
@@ -594,7 +579,6 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
             }
             x = (x << PyLong_SHIFT) | v->long_value.ob_digit[i];
         }
-*/
         /* Haven't lost any bits, but casting to long requires extra
         * care (see comment above).
         */
@@ -657,7 +641,7 @@ PyLong_AsInt(PyObject *obj)
 Py_ssize_t
 PyLong_AsSsize_t(PyObject *vv) {
     PyLongObject *v;
-    size_t x, prev;
+    size_t x;
     Py_ssize_t i;
     int sign;
 
@@ -676,12 +660,19 @@ PyLong_AsSsize_t(PyObject *vv) {
     }
     i = _PyLong_DigitCount(v);
     sign = _PyLong_NonCompactSign(v);
-    x = 0;
+
+    digit *digits = v->long_value.ob_digit;
+    assert(i >= 2);
+    /* unroll 1 digit */
+    --i;
+    assert(ULONG_MAX >= ((1UL << PyLong_SHIFT) - 1));
+    x = digits[i];
+
     while (--i >= 0) {
-        prev = x;
-        x = (x << PyLong_SHIFT) | v->long_value.ob_digit[i];
-        if ((x >> PyLong_SHIFT) != prev)
+        if (x > SIZE_MAX >> PyLong_SHIFT) {
             goto overflow;
+        }
+        x = (x << PyLong_SHIFT) | digits[i];
     }
     /* Haven't lost any bits, but casting to a signed type requires
      * extra care (see comment above).
@@ -707,7 +698,7 @@ unsigned long
 PyLong_AsUnsignedLong(PyObject *vv)
 {
     PyLongObject *v;
-    unsigned long x, prev;
+    unsigned long x;
     Py_ssize_t i;
 
     if (vv == NULL) {
@@ -738,13 +729,19 @@ PyLong_AsUnsignedLong(PyObject *vv)
         return (unsigned long) -1;
     }
     i = _PyLong_DigitCount(v);
-    x = 0;
+
+    digit *digits = v->long_value.ob_digit;
+    assert(i >= 2);
+    /* unroll 1 digit */
+    --i;
+    assert(ULONG_MAX >= ((1UL << PyLong_SHIFT) - 1));
+    x = digits[i];
+
     while (--i >= 0) {
-        prev = x;
-        x = (x << PyLong_SHIFT) | v->long_value.ob_digit[i];
-        if ((x >> PyLong_SHIFT) != prev) {
+        if (x > SIZE_MAX >> PyLong_SHIFT) {
             goto overflow;
         }
+        x = (x << PyLong_SHIFT) | digits[i];
     }
     return x;
 overflow:
@@ -761,7 +758,7 @@ size_t
 PyLong_AsSize_t(PyObject *vv)
 {
     PyLongObject *v;
-    size_t x, prev;
+    size_t x;
     Py_ssize_t i;
 
     if (vv == NULL) {
@@ -783,16 +780,22 @@ PyLong_AsSize_t(PyObject *vv)
         return (size_t) -1;
     }
     i = _PyLong_DigitCount(v);
-    x = 0;
+
+    digit *digits = v->long_value.ob_digit;
+    assert(i >= 2);
+    /* unroll 1 digit */
+    --i;
+    assert(ULONG_MAX >= ((1UL << PyLong_SHIFT) - 1));
+    x = digits[i];
+
     while (--i >= 0) {
-        prev = x;
-        x = (x << PyLong_SHIFT) | v->long_value.ob_digit[i];
-        if ((x >> PyLong_SHIFT) != prev) {
-            PyErr_SetString(PyExc_OverflowError,
-                "Python int too large to convert to C size_t");
-            return (size_t) -1;
+            if (x > SIZE_MAX >> PyLong_SHIFT) {
+                PyErr_SetString(PyExc_OverflowError,
+                    "Python int too large to convert to C size_t");
+                return (size_t) -1;
+            }
+            x = (x << PyLong_SHIFT) | digits[i];
         }
-    }
     return x;
 }
 
