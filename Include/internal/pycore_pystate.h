@@ -328,9 +328,9 @@ _Py_RecursionLimit_GetMargin(PyThreadState *tstate)
 
     // splitmix64 from https://prng.di.unimi.it/splitmix64.c
     uint64_t z = (tstate->prng += 0x9e3779b97f4a7c15);
-	z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9;
-	z = (z ^ (z >> 27)) * 0x94d049bb133111eb;
-	uint64_t r = z ^ (z >> 31);
+    z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9;
+    z = (z ^ (z >> 27)) * 0x94d049bb133111eb;
+    uint64_t r = z ^ (z >> 31);
     if ((r & 0xFF) < 2) { // 2/256 chance = ~ 0.8% chance
         return 1;
     }
