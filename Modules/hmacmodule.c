@@ -494,7 +494,7 @@ _hacl_hmac_state_update(HACL_HMAC_state *state, uint8_t *buf, Py_ssize_t len)
         len -= UINT32_MAX;
     }
 #endif
-    assert(Py_CHECK_HACL_UINT32_T_LENGTH(len));
+    Py_CHECK_HACL_UINT32_T_LENGTH(len);
     return _hacl_hmac_state_update_once(state, buf, (uint32_t)len);
 }
 
