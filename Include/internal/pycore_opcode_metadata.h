@@ -224,7 +224,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 1;
         case GET_ITER:
             return 1;
-        case GET_ITER_LIST_OR_TUPLE:
+        case GET_ITER_INDEX:
             return 1;
         case GET_ITER_RANGE:
             return 1;
@@ -715,7 +715,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 1;
         case GET_ITER:
             return 2;
-        case GET_ITER_LIST_OR_TUPLE:
+        case GET_ITER_INDEX:
             return 2;
         case GET_ITER_RANGE:
             return 2;
@@ -1179,7 +1179,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [GET_ANEXT] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [GET_AWAITABLE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [GET_ITER] = { true, INSTR_FMT_IXC, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [GET_ITER_LIST_OR_TUPLE] = { true, INSTR_FMT_IXC, HAS_DEOPT_FLAG },
+    [GET_ITER_INDEX] = { true, INSTR_FMT_IXC, HAS_DEOPT_FLAG },
     [GET_ITER_RANGE] = { true, INSTR_FMT_IXC, HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG },
     [GET_ITER_SELF] = { true, INSTR_FMT_IXC, HAS_DEOPT_FLAG },
     [GET_LEN] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
@@ -1424,7 +1424,7 @@ _PyOpcode_macro_expansion[256] = {
     [GET_ANEXT] = { .nuops = 1, .uops = { { _GET_ANEXT, OPARG_SIMPLE, 0 } } },
     [GET_AWAITABLE] = { .nuops = 1, .uops = { { _GET_AWAITABLE, OPARG_SIMPLE, 0 } } },
     [GET_ITER] = { .nuops = 1, .uops = { { _GET_ITER, OPARG_SIMPLE, 0 } } },
-    [GET_ITER_LIST_OR_TUPLE] = { .nuops = 1, .uops = { { _GET_ITER_LIST_OR_TUPLE, OPARG_SIMPLE, 1 } } },
+    [GET_ITER_INDEX] = { .nuops = 1, .uops = { { _GET_ITER_INDEX, OPARG_SIMPLE, 1 } } },
     [GET_ITER_RANGE] = { .nuops = 1, .uops = { { _GET_ITER_RANGE, OPARG_SIMPLE, 1 } } },
     [GET_ITER_SELF] = { .nuops = 1, .uops = { { _GET_ITER_SELF, OPARG_SIMPLE, 1 } } },
     [GET_LEN] = { .nuops = 1, .uops = { { _GET_LEN, OPARG_SIMPLE, 0 } } },
@@ -1625,7 +1625,7 @@ const char *_PyOpcode_OpName[267] = {
     [GET_ANEXT] = "GET_ANEXT",
     [GET_AWAITABLE] = "GET_AWAITABLE",
     [GET_ITER] = "GET_ITER",
-    [GET_ITER_LIST_OR_TUPLE] = "GET_ITER_LIST_OR_TUPLE",
+    [GET_ITER_INDEX] = "GET_ITER_INDEX",
     [GET_ITER_RANGE] = "GET_ITER_RANGE",
     [GET_ITER_SELF] = "GET_ITER_SELF",
     [GET_LEN] = "GET_LEN",
@@ -1923,7 +1923,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [GET_ANEXT] = GET_ANEXT,
     [GET_AWAITABLE] = GET_AWAITABLE,
     [GET_ITER] = GET_ITER,
-    [GET_ITER_LIST_OR_TUPLE] = GET_ITER,
+    [GET_ITER_INDEX] = GET_ITER,
     [GET_ITER_RANGE] = GET_ITER,
     [GET_ITER_SELF] = GET_ITER,
     [GET_LEN] = GET_LEN,

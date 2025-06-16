@@ -179,7 +179,7 @@ extern "C" {
 #define FOR_ITER_LIST                          173
 #define FOR_ITER_RANGE                         174
 #define FOR_ITER_TUPLE                         175
-#define GET_ITER_LIST_OR_TUPLE                 176
+#define GET_ITER_INDEX                         176
 #define GET_ITER_RANGE                         177
 #define GET_ITER_SELF                          178
 #define JUMP_BACKWARD_JIT                      179

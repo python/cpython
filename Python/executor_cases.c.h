@@ -4257,16 +4257,14 @@
             break;
         }
 
-        case _GET_ITER_LIST_OR_TUPLE: {
+        case _GET_ITER_INDEX: {
             _PyStackRef iter;
             _PyStackRef index0;
             iter = stack_pointer[-1];
             PyTypeObject *tp = PyStackRef_TYPE(iter);
-            if (tp != &PyList_Type) {
-                if (tp != &PyTuple_Type) {
-                    UOP_STAT_INC(uopcode, miss);
-                    JUMP_TO_JUMP_TARGET();
-                }
+            if (tp->tp_iterindex == NULL) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
             }
             index0 = PyStackRef_TagInt(0);
             stack_pointer[0] = index0;
@@ -4387,13 +4385,13 @@
         }
 
         case _FOR_ITER_TIER_TWO: {
-            _PyStackRef null_or_index;
+            _PyStackRef *null_or_index;
             _PyStackRef iter;
             _PyStackRef next;
-            null_or_index = stack_pointer[-1];
+            null_or_index = &stack_pointer[-1];
             iter = stack_pointer[-2];
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, &null_or_index);
+            _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, null_or_index);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (!PyStackRef_IsValid(item)) {
                 if (PyStackRef_IsError(item)) {
@@ -4405,7 +4403,6 @@
                 }
             }
             next = item;
-            stack_pointer[-1] = null_or_index;
             stack_pointer[0] = next;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());

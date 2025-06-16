@@ -3053,7 +3053,7 @@ dummy_func(
 
 
         family(GET_ITER, 1) = {
-            GET_ITER_LIST_OR_TUPLE,
+            GET_ITER_INDEX,
             GET_ITER_SELF,
             GET_ITER_RANGE,
         };
@@ -3108,11 +3108,9 @@ dummy_func(
             null = PyStackRef_NULL;
         }
 
-        inst(GET_ITER_LIST_OR_TUPLE, (unused/1, iter -- iter, index0)) {
+        inst(GET_ITER_INDEX, (unused/1, iter -- iter, index0)) {
             PyTypeObject *tp = PyStackRef_TYPE(iter);
-            if (tp != &PyList_Type) {
-                DEOPT_IF(tp != &PyTuple_Type);
-            }
+            DEOPT_IF(tp->tp_iterindex == NULL);
             index0 = PyStackRef_TagInt(0);
         }
 
@@ -3171,11 +3169,11 @@ dummy_func(
             FOR_ITER_INDEX,
         };
 
-        specializing op(_SPECIALIZE_FOR_ITER, (counter/1, iter, null_or_index -- iter, null_or_index)) {
+        specializing op(_SPECIALIZE_FOR_ITER, (counter/1, iter, maybe_index -- iter, maybe_index)) {
             #if ENABLE_SPECIALIZATION_FT
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
-                _Py_Specialize_ForIter(iter, null_or_index, next_instr, oparg);
+                _Py_Specialize_ForIter(iter, maybe_index, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
             OPCODE_DEFERRED_INC(FOR_ITER);
@@ -3183,8 +3181,8 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
-        replaced op(_FOR_ITER, (iter, null_or_index -- iter, null_or_index, next)) {
-            _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, &null_or_index);
+        replaced op(_FOR_ITER, (iter, null_or_index[1] -- iter, null_or_index[1], next)) {
+            _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, null_or_index);
             if (!PyStackRef_IsValid(item)) {
                 if (PyStackRef_IsError(item)) {
                     ERROR_NO_POP();
@@ -3230,8 +3228,8 @@ dummy_func(
             _ITER_CHECK_INDEX +
             _FOR_ITER_INDEX;
 
-        op(_FOR_ITER_TIER_TWO, (iter, null_or_index -- iter, null_or_index, next)) {
-            _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, &null_or_index);
+        op(_FOR_ITER_TIER_TWO, (iter, null_or_index[1] -- iter, null_or_index[1], next)) {
+            _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, null_or_index);
             if (!PyStackRef_IsValid(item)) {
                 if (PyStackRef_IsError(item)) {
                     ERROR_NO_POP();
@@ -3246,8 +3244,8 @@ dummy_func(
         macro(FOR_ITER) = _SPECIALIZE_FOR_ITER + _FOR_ITER;
 
 
-        inst(INSTRUMENTED_FOR_ITER, (unused/1, iter, null_or_index -- iter, null_or_index, next)) {
-            _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, &null_or_index);
+        inst(INSTRUMENTED_FOR_ITER, (unused/1, iter, null_or_index[1] -- iter, null_or_index[1], next)) {
+            _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, null_or_index);
             if (!PyStackRef_IsValid(item)) {
                 if (PyStackRef_IsError(item)) {
                     ERROR_NO_POP();

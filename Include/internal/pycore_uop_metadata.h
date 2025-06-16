@@ -203,7 +203,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_MATCH_KEYS] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GET_ITER] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GET_ITER_SELF] = HAS_DEOPT_FLAG,
-    [_GET_ITER_LIST_OR_TUPLE] = HAS_DEOPT_FLAG,
+    [_GET_ITER_INDEX] = HAS_DEOPT_FLAG,
     [_GET_ITER_RANGE] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_GET_YIELD_FROM_ITER] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_ITER_CHECK_INDEX] = HAS_DEOPT_FLAG,
@@ -441,7 +441,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_GET_ANEXT] = "_GET_ANEXT",
     [_GET_AWAITABLE] = "_GET_AWAITABLE",
     [_GET_ITER] = "_GET_ITER",
-    [_GET_ITER_LIST_OR_TUPLE] = "_GET_ITER_LIST_OR_TUPLE",
+    [_GET_ITER_INDEX] = "_GET_ITER_INDEX",
     [_GET_ITER_RANGE] = "_GET_ITER_RANGE",
     [_GET_ITER_SELF] = "_GET_ITER_SELF",
     [_GET_LEN] = "_GET_LEN",
@@ -1016,7 +1016,7 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _GET_ITER_SELF:
             return 0;
-        case _GET_ITER_LIST_OR_TUPLE:
+        case _GET_ITER_INDEX:
             return 0;
         case _GET_ITER_RANGE:
             return 1;

@@ -3180,12 +3180,12 @@ Py_NO_INLINE void
 _Py_Specialize_GetIter(_PyStackRef iterable, _Py_CODEUNIT *instr)
 {
     PyTypeObject *tp = PyStackRef_TYPE(iterable);
-    if (tp->tp_iter == PyObject_SelfIter) {
-        specialize(instr, GET_ITER_SELF);
+    if (tp->tp_iterindex != NULL) {
+        specialize(instr, GET_ITER_INDEX);
         return;
     }
-    if (tp == &PyList_Type || tp == &PyTuple_Type) {
-        specialize(instr, GET_ITER_LIST_OR_TUPLE);
+    if (tp->tp_iter == PyObject_SelfIter) {
+        specialize(instr, GET_ITER_SELF);
         return;
     }
     if (tp == &PyRange_Type) {

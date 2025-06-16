@@ -906,7 +906,7 @@ dis_loop_test_quickened_code = """\
               LIST_EXTEND              1
               LOAD_SMALL_INT           3
               BINARY_OP                5 (*)
-              GET_ITER_LIST_OR_TUPLE
+              GET_ITER_INDEX
       L1:     FOR_ITER_LIST           14 (to L2)
               STORE_FAST               0 (i)
 

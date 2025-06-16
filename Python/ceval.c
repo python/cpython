@@ -3439,13 +3439,44 @@ _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *na
     return value;
 }
 
+static _PyStackRef
+not_iterator(PyObject *obj)
+{
+    PyErr_Format(PyExc_TypeError,
+        "'%.200s' object is not an async iterator",
+        Py_TYPE(obj)->tp_name);
+    return PyStackRef_ERROR;
+}
+
 _PyStackRef
 _PyForIter_VirtualIteratorNext(
     PyThreadState* tstate, _PyInterpreterFrame* frame,
     _PyStackRef iter, _PyStackRef* index_ptr
 ) {
     _PyStackRef index = *index_ptr;
-    if (PyStackRef_IsTaggedInt(index)) {
+    if (PyStackRef_IsNull(index)) {
+        PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+        iternextfunc func = Py_TYPE(iter_o)->tp_iternext;
+        if (func == NULL) {
+            return not_iterator(iter_o);
+        }
+        PyObject *next_o = func(iter_o);
+        if (next_o == NULL) {
+            if (_PyErr_Occurred(tstate)) {
+                if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+                    _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
+                    _PyErr_Clear(tstate);
+                }
+                else {
+                    return PyStackRef_ERROR;
+                }
+            }
+            return PyStackRef_NULL;
+        }
+        return PyStackRef_FromPyObjectSteal(next_o);
+    }
+    else {
+        assert(PyStackRef_IsTaggedInt(index));
         if (PyStackRef_IsTaggedInt(iter)) {
             if (!PyStackRef_TaggedIntLessThan(index, iter)) {
                 return PyStackRef_NULL;
@@ -3465,21 +3496,6 @@ _PyForIter_VirtualIteratorNext(
             return PyStackRef_FromPyObjectSteal(item);
         }
     }
-    PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-    PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
-    if (next_o == NULL) {
-        if (_PyErr_Occurred(tstate)) {
-            if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
-                _PyErr_Clear(tstate);
-            }
-            else {
-                return PyStackRef_ERROR;
-            }
-        }
-        return PyStackRef_NULL;
-    }
-    return PyStackRef_FromPyObjectSteal(next_o);
 }
 
 /* Check if a 'cls' provides the given special method. */

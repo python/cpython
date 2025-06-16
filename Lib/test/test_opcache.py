@@ -1891,7 +1891,7 @@ class TestSpecializer(TestBase):
                     self.assertIn(i, L)
 
         for_iter_list()
-        self.assert_specialized(for_iter_list, "GET_ITER_LIST_OR_TUPLE")
+        self.assert_specialized(for_iter_list, "GET_ITER_INDEX")
         self.assert_no_opcode(for_iter_list, "GET_ITER")
 
         t = tuple(range(2))
@@ -1903,8 +1903,20 @@ class TestSpecializer(TestBase):
                     self.assertIn(i, t)
 
         for_iter_tuple()
-        self.assert_specialized(for_iter_tuple, "GET_ITER_LIST_OR_TUPLE")
+        self.assert_specialized(for_iter_tuple, "GET_ITER_INDEX")
         self.assert_no_opcode(for_iter_tuple, "GET_ITER")
+
+        s = "hello"
+        def for_iter_str():
+            n = 0
+            while n < _testinternalcapi.SPECIALIZATION_THRESHOLD:
+                n += 1
+                for c in s:
+                    self.assertIn(c, s)
+
+        for_iter_str()
+        self.assert_specialized(for_iter_str, "GET_ITER_INDEX")
+        self.assert_no_opcode(for_iter_str, "GET_ITER")
 
         def for_iter_generator():
             n = 0

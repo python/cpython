@@ -85,7 +85,7 @@ _specializations = {
         "JUMP_BACKWARD_JIT",
     ],
     "GET_ITER": [
-        "GET_ITER_LIST_OR_TUPLE",
+        "GET_ITER_INDEX",
         "GET_ITER_SELF",
         "GET_ITER_RANGE",
     ],
@@ -174,7 +174,7 @@ _specialized_opmap = {
     'FOR_ITER_LIST': 173,
     'FOR_ITER_RANGE': 174,
     'FOR_ITER_TUPLE': 175,
-    'GET_ITER_LIST_OR_TUPLE': 176,
+    'GET_ITER_INDEX': 176,
     'GET_ITER_RANGE': 177,
     'GET_ITER_SELF': 178,
     'JUMP_BACKWARD_JIT': 179,

@@ -1608,7 +1608,7 @@
             break;
         }
 
-        case _GET_ITER_LIST_OR_TUPLE: {
+        case _GET_ITER_INDEX: {
             JitOptSymbol *index0;
             index0 = sym_new_not_null(ctx);
             stack_pointer[0] = index0;
