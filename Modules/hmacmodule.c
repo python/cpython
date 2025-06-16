@@ -776,9 +776,10 @@ _hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
         GET_BUFFER_VIEW_OR_ERROR(msgobj, &msg, goto error);
         /* Do not use self->mutex here as this is the constructor
          * where it is not yet possible to have concurrent access. */
-        Py_BEGIN_ALLOW_THREADS
-            rc = _hacl_hmac_state_update(self->state, msg.buf, msg.len);
-        Py_END_ALLOW_THREADS
+        HASHLIB_EXTERNAL_INSTRUCTIONS(
+            msg.len,
+            _hacl_hmac_state_update(self->state, msg.buf, msg.len)
+        );
         PyBuffer_Release(&msg);
 #ifndef NDEBUG
         if (rc < 0) {
@@ -887,11 +888,10 @@ _hmac_HMAC_update_impl(HMACObject *self, PyObject *msgobj)
     int rc = 0;
     Py_buffer msg;
     GET_BUFFER_VIEW_OR_ERROUT(msgobj, &msg);
-    Py_BEGIN_ALLOW_THREADS
-        HASHLIB_ACQUIRE_LOCK(self);
-        rc = _hacl_hmac_state_update(self->state, msg.buf, msg.len);
-        HASHLIB_RELEASE_LOCK(self);
-    Py_END_ALLOW_THREADS
+    HASHLIB_EXTERNAL_INSTRUCTIONS_WITH_MUTEX(
+        self, msg.len,
+        rc = _hacl_hmac_state_update(self->state, msg.buf, msg.len)
+    )
     PyBuffer_Release(&msg);
     return rc < 0 ? NULL : Py_None;
 }
