@@ -36,7 +36,7 @@ jobs:
     - name: UBSAN option setup
       run: |
         echo "UBSAN_OPTIONS=log_path=${GITHUB_WORKSPACE}/ubsan_log" >> "$GITHUB_ENV"
-        echo "CC=clang" >> "$GITHUB_ENV"
+        echo "CC=clang -fno-sanitize-recover=all" >> "$GITHUB_ENV"
         echo "CXX=clang++" >> "$GITHUB_ENV"
     - name: Add ccache to PATH
       run: |
