@@ -1415,7 +1415,7 @@ class TestInterpreterCall(TestBase):
                 interp.call(func, op, 'eggs!')
 
     def test_callable_requires_frame(self):
-        # There are various functions tha require a current frame.
+        # There are various functions that require a current frame.
         interp = interpreters.create()
         for call, expected in [
             ((eval, '[1, 2, 3]'),
