@@ -894,7 +894,7 @@ class DefaultCookiePolicy(CookiePolicy):
                  strict_ns_set_initial_dollar=False,
                  strict_ns_set_path=False,
                  secure_protocols=("https", "wss"),
-                 additional_country_code_slds=None,
+                 additional_country_code_slds={},
                  ):
         """Constructor arguments should be passed as keyword arguments only."""
         self.netscape = netscape
@@ -914,7 +914,7 @@ class DefaultCookiePolicy(CookiePolicy):
                         "gov", "mil", "int", "aero", "biz", "cat", "coop",
                         "info", "jobs", "mobi", "museum", "name", "pro",
                         "travel", "eu", "tv", "or", "nom", "sch", "web"}
-        if isinstance(additional_country_code_slds, set):
+        if isinstance(additional_country_code_slds, dict):
             self.slds = well_known_slds.union(additional_country_code_slds)
             _debug(f"The set of country code slds is {self.slds}")
         else:
