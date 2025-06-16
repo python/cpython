@@ -12,11 +12,7 @@ env:
 
 jobs:
   build-ubsan-reusable:
-<<<<<<< HEAD
     name: 'Undefined behavior sanitizer'
-=======
-    name: 'Undefined Behavior sanitizer'
->>>>>>> 27d31f33cda (Add UBSan to GHA build)
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -40,7 +36,7 @@ jobs:
     - name: UBSAN option setup
       run: |
         echo "UBSAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_summary=1:print_stacktrace=1" >> "$GITHUB_ENV"
-        echo "CC=clang" >> "$GITHUB_ENV"
+        echo "CC=clang -fno-sanitize-recover=all" >> "$GITHUB_ENV"
         echo "CXX=clang++" >> "$GITHUB_ENV"
     - name: Add ccache to PATH
       run: |
