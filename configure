@@ -1826,8 +1826,8 @@ Optional Features:
                           no)
   --enable-profiling      enable C-level code profiling with gprof (default is
                           no)
-  --disable-gil           enable experimental support for running without the
-                          GIL (default is no)
+  --disable-gil           enable support for running without the GIL (default
+                          is no)
   --enable-pystats        enable internal statistics gathering (default is no)
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
