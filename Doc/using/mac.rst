@@ -76,7 +76,7 @@ display. For most uses, the standard set of installation operations is appropria
 By pressing the **Customize** button, you can choose to omit or select certain package
 components of the installer. Click on each package name to see a description of
 what it installs.
-To also install support for the optional experimental free-threaded feature,
+To also install support for the optional free-threaded feature,
 see :ref:`install-freethreaded-macos`.
 
 .. image:: mac_installer_05_custom_install.png
@@ -252,20 +252,20 @@ Advanced Topics
 Installing Free-threaded Binaries
 ---------------------------------
 
-.. versionadded:: 3.13 (Experimental)
-
-.. note::
-
-   Everything described in this section is considered experimental,
-   and should be expected to change in future releases.
+.. versionadded:: 3.13
 
 The ``python.org`` :ref:`Python for macOS <getting-and-installing-macpython>`
 installer package can optionally install an additional build of
-Python |version| that supports :pep:`703`, the experimental free-threading feature
+Python |version| that supports :pep:`703`, the free-threading feature
 (running with the :term:`global interpreter lock` disabled).
 Check the release page on ``python.org`` for possible updated information.
 
-Because this feature is still considered experimental, the support for it
+The free-threaded mode is working and continues to be improved, but
+there is some additional overhead in single-threaded workloads compared
+to the regular build. Additionally, third-party packages, in particular ones
+with an :term:`extension module`, may not be ready for use in a
+free-threaded build, and will re-enable the :term:`GIL`.
+Therefore, the support for free-threading
 is not installed by default. It is packaged as a separate install option,
 available by clicking the **Customize** button on the **Installation Type**
 step of the installer as described above.
@@ -277,8 +277,8 @@ a separate :file:`PythonT.framework` will also be installed
 alongside the normal :file:`Python.framework` in :file:`/Library/Frameworks`.
 This configuration allows a free-threaded Python |version| build to co-exist
 on your system with a traditional (GIL only) Python |version| build with
-minimal risk while installing or testing. This installation layout is itself
-experimental and is subject to change in future releases.
+minimal risk while installing or testing. This installation layout may
+change in future releases.
 
 Known cautions and limitations:
 
@@ -409,13 +409,13 @@ You can then test that both installer builds are now available with something li
 
     $ # test that the free-threaded interpreter was installed if the Unix Command Tools package was enabled
     $ /usr/local/bin/python\ |version|\ t -VV
-    Python \ |version|\ .0b2 experimental free-threading build (v\ |version|\ .0b2:3a83b172af, Jun  5 2024, 12:57:31) [Clang 15.0.0 (clang-1500.3.9.4)]
+    Python \ |version|\ .0b2 free-threading build (v\ |version|\ .0b2:3a83b172af, Jun  5 2024, 12:57:31) [Clang 15.0.0 (clang-1500.3.9.4)]
     $ #    and the traditional interpreter
     $ /usr/local/bin/python\ |version|\  -VV
     Python \ |version|\ .0b2 (v\ |version|\ .0b2:3a83b172af, Jun  5 2024, 12:50:24) [Clang 15.0.0 (clang-1500.3.9.4)]
     $ # test that they are also available without the prefix if /usr/local/bin is on $PATH
     $ python\ |version|\ t -VV
-    Python \ |version|\ .0b2 experimental free-threading build (v\ |version|\ .0b2:3a83b172af, Jun  5 2024, 12:57:31) [Clang 15.0.0 (clang-1500.3.9.4)]
+    Python \ |version|\ .0b2 free-threading build (v\ |version|\ .0b2:3a83b172af, Jun  5 2024, 12:57:31) [Clang 15.0.0 (clang-1500.3.9.4)]
     $ python\ |version|\  -VV
     Python \ |version|\ .0b2 (v\ |version|\ .0b2:3a83b172af, Jun  5 2024, 12:50:24) [Clang 15.0.0 (clang-1500.3.9.4)]
 
