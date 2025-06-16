@@ -23,6 +23,7 @@ from generators_common import (
     Emitter,
     TokenIterator,
     skip_to,
+    always_true,
 )
 from cwriter import CWriter
 from typing import TextIO
@@ -227,6 +228,29 @@ class OptimizerConstantEmitter(OptimizerEmitter):
         }
         self._replacers = {**self._replacers, **overrides}
 
+    def emit_to_with_replacement(
+        self,
+        out: CWriter,
+        tkn_iter: TokenIterator,
+        end: str,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None
+    ) -> Token:
+        parens = 0
+        for tkn in tkn_iter:
+            if tkn.kind == end and parens == 0:
+                return tkn
+            if tkn.kind == "LPAREN":
+                parens += 1
+            if tkn.kind == "RPAREN":
+                parens -= 1
+            if tkn.text in self._replacers:
+                self._replacers[tkn.text](tkn, tkn_iter, uop, storage, inst)
+            else:
+                out.emit(tkn)
+        raise analysis_error(f"Expecting {end}. Reached end of file", tkn)
+
     def emit_stackref_override(
         self,
         tkn: Token,
@@ -238,6 +262,60 @@ class OptimizerConstantEmitter(OptimizerEmitter):
         self.out.emit(tkn)
         self.out.emit("_stackref ")
         return True
+
+    def deopt_if(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.out.start_line()
+        self.out.emit("if (")
+        lparen = next(tkn_iter)
+        assert lparen.kind == "LPAREN"
+        first_tkn = tkn_iter.peek()
+        self.emit_to_with_replacement(self.out, tkn_iter, "RPAREN", uop, storage, inst)
+        self.emit(") {\n")
+        next(tkn_iter)  # Semi colon
+        # We guarantee this will deopt in real-world code
+        # via constants analysis. So just bail.
+        self.emit("ctx->done = true;\n")
+        self.emit("break;\n")
+        self.emit("}\n")
+        return not always_true(first_tkn)
+
+    exit_if = deopt_if
+
+    def error_if(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        lparen = next(tkn_iter)
+        assert lparen.kind == "LPAREN"
+        first_tkn = tkn_iter.peek()
+        unconditional = always_true(first_tkn)
+        if unconditional:
+            next(tkn_iter)
+            next(tkn_iter)  # RPAREN
+            self.out.start_line()
+        else:
+            self.out.emit_at("if ", tkn)
+            self.emit(lparen)
+            self.emit_to_with_replacement(self.out, tkn_iter, "RPAREN", uop, storage, inst)
+            self.out.emit(") {\n")
+        next(tkn_iter)  # Semi colon
+        storage.clear_inputs("at ERROR_IF")
+
+        self.out.emit("goto error;\n")
+        if not unconditional:
+            self.out.emit("}\n")
+        return not unconditional
 
 
 def replace_opcode_if_evaluates_pure_identifiers(uop: Uop) -> list[str]:

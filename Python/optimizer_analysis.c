@@ -536,7 +536,6 @@ optimize_uops(
     }
     return trace_len;
 
-pop_2_error:
 error:
     DPRINTF(3, "\n");
     DPRINTF(1, "Encountered error in abstract interpreter\n");

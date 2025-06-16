@@ -334,7 +334,44 @@
         }
 
         case _BINARY_OP_MULTIPLY_INT: {
+            JitOptSymbol *right;
+            JitOptSymbol *left;
             JitOptSymbol *res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
+            ) {
+                JitOptSymbol *left_sym = left;
+                JitOptSymbol *right_sym = right;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                assert(PyLong_CheckExact(left_o));
+                assert(PyLong_CheckExact(right_o));
+                if (!_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o)) {
+                    ctx->done = true;
+                    break;
+                }
+                STAT_INC(BINARY_OP, hit);
+                PyObject *res_o = _PyCompactLong_Multiply((PyLongObject *)left_o, (PyLongObject *)right_o);
+                PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
+                PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
+                if (res_o == NULL) {
+                    goto error;
+                }
+                res_stackref = PyStackRef_FromPyObjectSteal(res_o);
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                break;
+            }
             res = sym_new_type(ctx, &PyLong_Type);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -343,7 +380,44 @@
         }
 
         case _BINARY_OP_ADD_INT: {
+            JitOptSymbol *right;
+            JitOptSymbol *left;
             JitOptSymbol *res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
+            ) {
+                JitOptSymbol *left_sym = left;
+                JitOptSymbol *right_sym = right;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                assert(PyLong_CheckExact(left_o));
+                assert(PyLong_CheckExact(right_o));
+                if (!_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o)) {
+                    ctx->done = true;
+                    break;
+                }
+                STAT_INC(BINARY_OP, hit);
+                PyObject *res_o = _PyCompactLong_Add((PyLongObject *)left_o, (PyLongObject *)right_o);
+                PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
+                PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
+                if (res_o == NULL) {
+                    goto error;
+                }
+                res_stackref = PyStackRef_FromPyObjectSteal(res_o);
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                break;
+            }
             res = sym_new_type(ctx, &PyLong_Type);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -352,7 +426,44 @@
         }
 
         case _BINARY_OP_SUBTRACT_INT: {
+            JitOptSymbol *right;
+            JitOptSymbol *left;
             JitOptSymbol *res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
+            ) {
+                JitOptSymbol *left_sym = left;
+                JitOptSymbol *right_sym = right;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                assert(PyLong_CheckExact(left_o));
+                assert(PyLong_CheckExact(right_o));
+                if (!_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o)) {
+                    ctx->done = true;
+                    break;
+                }
+                STAT_INC(BINARY_OP, hit);
+                PyObject *res_o = _PyCompactLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
+                PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
+                PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
+                if (res_o == NULL) {
+                    goto error;
+                }
+                res_stackref = PyStackRef_FromPyObjectSteal(res_o);
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                break;
+            }
             res = sym_new_type(ctx, &PyLong_Type);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -406,7 +517,7 @@
                 ((PyFloatObject *)right_o)->ob_fval;
                 res_stackref = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
                 if (PyStackRef_IsNull(res_stackref )) {
-                    JUMP_TO_LABEL(pop_2_error);
+                    goto error;
                 }
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
@@ -448,7 +559,7 @@
                 ((PyFloatObject *)right_o)->ob_fval;
                 res_stackref = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
                 if (PyStackRef_IsNull(res_stackref )) {
-                    JUMP_TO_LABEL(pop_2_error);
+                    goto error;
                 }
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
@@ -490,7 +601,7 @@
                 ((PyFloatObject *)right_o)->ob_fval;
                 res_stackref = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
                 if (PyStackRef_IsNull(res_stackref )) {
-                    JUMP_TO_LABEL(pop_2_error);
+                    goto error;
                 }
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
@@ -531,7 +642,7 @@
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
                 PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(pop_2_error);
+                    goto error;
                 }
                 res_stackref = PyStackRef_FromPyObjectSteal(res_o);
                 /* End of uop copied from bytecodes for constant evaluation */

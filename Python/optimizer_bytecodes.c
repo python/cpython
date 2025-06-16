@@ -222,14 +222,17 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_ADD_INT, (left, right -- res)) {
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
         res = sym_new_type(ctx, &PyLong_Type);
     }
 
     op(_BINARY_OP_SUBTRACT_INT, (left, right -- res)) {
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
         res = sym_new_type(ctx, &PyLong_Type);
     }
 
     op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
         res = sym_new_type(ctx, &PyLong_Type);
     }
 

@@ -2263,7 +2263,95 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         self.run_cases_test(input, input2, output)
 
-    def test_pure_uop_body_copied_in_complex(self):
+    def test_pure_uop_body_copied_in_deopt(self):
+        # Note: any non-escaping call works.
+        # In this case, we use PyStackRef_IsNone.
+        input = """
+        pure op(OP, (foo -- res)) {
+            DEOPT_IF(PyStackRef_IsNull(foo));
+            res = foo;
+        }
+        """
+        input2 = """
+        op(OP, (foo -- res)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            res = foo;
+        }
+        """
+        output = """
+        case OP: {
+            JitOptSymbol *foo;
+            JitOptSymbol *res;
+            foo = stack_pointer[-1];
+            if (
+                sym_is_safe_const(ctx, foo)
+            ) {
+                JitOptSymbol *foo_sym = foo;
+                _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                if (PyStackRef_IsNull(foo)) {
+                    ctx->done = true;
+                    break;
+                }
+                res_stackref = foo;
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                stack_pointer[-1] = res;
+                break;
+            }
+            res = foo;
+            stack_pointer[-1] = res;
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_pure_uop_body_copied_in_error_if(self):
+        # Note: any non-escaping call works.
+        # In this case, we use PyStackRef_IsNone.
+        input = """
+        pure op(OP, (foo -- res)) {
+            ERROR_IF(PyStackRef_IsNull(foo));
+            res = foo;
+        }
+        """
+        input2 = """
+        op(OP, (foo -- res)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            res = foo;
+        }
+        """
+        output = """
+        case OP: {
+            JitOptSymbol *foo;
+            JitOptSymbol *res;
+            foo = stack_pointer[-1];
+            if (
+                sym_is_safe_const(ctx, foo)
+            ) {
+                JitOptSymbol *foo_sym = foo;
+                _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                if (PyStackRef_IsNull(foo)) {
+                    goto error;
+                }
+                res_stackref = foo;
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                stack_pointer[-1] = res;
+                break;
+            }
+            res = foo;
+            stack_pointer[-1] = res;
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+
+    def test_replace_opcode_uop_body_copied_in_complex(self):
         input = """
         pure op(OP, (foo -- res)) {
             if (foo) {
@@ -2310,7 +2398,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         self.run_cases_test(input, input2, output)
 
-    def test_pure_uop_reject_array_effects(self):
+    def test_replace_opocode_uop_reject_array_effects(self):
         input = """
         pure op(OP, (foo[2] -- res)) {
             if (foo) {
