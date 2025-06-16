@@ -728,29 +728,6 @@ hmac_new_initial_state(HMACObject *self, uint8_t *key, Py_ssize_t len)
     return self->state == NULL ? -1 : 0;
 }
 
-/*
- * Feed initial data.
- *
- * This function MUST only be called by the HMAC object constructor
- * and after hmac_set_hinfo() and hmac_new_initial_state() have been
- * called, lest the behaviour is undefined.
- *
- * Return 0 on success; otherwise, set an exception and return -1 on failure.
- */
-static int
-hmac_feed_initial_data(HMACObject *self, uint8_t *msg, Py_ssize_t len)
-{
-    assert(self->name != NULL);
-    assert(self->state != NULL);
-    int rc = 0;
-    /* Do not use self->mutex here as this is the constructor
-     * where it is not yet possible to have concurrent access. */
-    Py_BEGIN_ALLOW_THREADS
-        rc = _hacl_hmac_state_update(self->state, msg, len);
-    Py_END_ALLOW_THREADS
-    return rc;
-}
-
 /*[clinic input]
 _hmac.new
 
@@ -797,7 +774,11 @@ _hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
     if (msgobj != NULL && msgobj != Py_None) {
         Py_buffer msg;
         GET_BUFFER_VIEW_OR_ERROR(msgobj, &msg, goto error);
-        rc = hmac_feed_initial_data(self, msg.buf, msg.len);
+        /* Do not use self->mutex here as this is the constructor
+         * where it is not yet possible to have concurrent access. */
+        Py_BEGIN_ALLOW_THREADS
+            rc = _hacl_hmac_state_update(self->state, msg.buf, msg.len);
+        Py_END_ALLOW_THREADS
         PyBuffer_Release(&msg);
 #ifndef NDEBUG
         if (rc < 0) {
