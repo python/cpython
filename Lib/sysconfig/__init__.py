@@ -640,29 +640,25 @@ def get_platform():
 
     Returned values:
 
-    Linux platforms:
+    Examples of Linux returned values:
+
     - linux-i586
     - linux-i686
     - linux-alpha (?)
     - solaris-2.6-sun4u
 
     Windows platforms:
+
     - win32 (32-bit Windows)
     - win-amd64 (64-bit Windows on AMD64, aka x86_64, Intel64, and EM64T)
     - win-arm64 (64-bit Windows on ARM64, aka AArch64)
     - win-arm32 (32-bit Windows on ARM)
 
-    macOS platforms:
-    - macosx-{11.*-15.*}-arm64 (Apple Silicon)
-    - macosx-10.{3,4}-ppc (PowerPC)
-    - macosx-10.{3,4}-ppc64 (64-bit PowerPC)
-    - macosx-10.{3,4}-i386 (32-bit Intel)
-    - macosx-10.{3,4}-x86_64 (64-bit Intel)
-    - macosx-10.4-fat (Universal binary with PPC and i386)
-    - macosx-10.4-fat3 (Universal binary with x86_64, PPC, and i386)
-    - macosx-10.4-fat64 (Universal binary with x86_64 and ppc64)
-    - macosx-10.4-universal (Universal binary with ppc64, x86_64, ppc, and i386)
-    - macosx-10.4-intel (Intel binary with x86_64 and i386)
+    Examples of macOS returned values:
+
+    - macosx-10.13-x86_64
+    - macosx-11-universal2
+    - macosx-15.5-arm64
 
 
    For other non-POSIX platforms, currently just returns :data:`sys.platform`.
