@@ -721,7 +721,8 @@ gen_set_name(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
-    // To prevent use-after-free from other threads that reference the gi_name.
+    // gh-133931: To prevent use-after-free from other threads that reference
+    // the gi_name.
     _PyObject_XSetRefDelayed(&op->gi_name, Py_NewRef(value));
     Py_END_CRITICAL_SECTION();
     return 0;
@@ -747,7 +748,8 @@ gen_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
-    // To prevent use-after-free from other threads that reference the gi_qualname.
+    // gh-133931: To prevent use-after-free from other threads that reference
+    // the gi_qualname.
     _PyObject_XSetRefDelayed(&op->gi_qualname, Py_NewRef(value));
     Py_END_CRITICAL_SECTION();
     return 0;
