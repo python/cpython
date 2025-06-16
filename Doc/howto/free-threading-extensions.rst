@@ -6,8 +6,8 @@
 C API Extension Support for Free Threading
 ******************************************
 
-Starting with the 3.13 release, CPython has experimental support for running
-with the :term:`global interpreter lock` (GIL) disabled in a configuration
+Starting with the 3.13 release, CPython has support for running with
+the :term:`global interpreter lock` (GIL) disabled in a configuration
 called :term:`free threading`.  This document describes how to adapt C API
 extensions to support free threading.
 
