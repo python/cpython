@@ -8,6 +8,7 @@ import unittest
 from concurrent.futures.interpreter import (
     ExecutionFailed, BrokenInterpreterPool,
 )
+from concurrent import interpreters
 from concurrent.interpreters import _queues as queues
 import _interpreters
 from test import support
@@ -391,9 +392,10 @@ class InterpreterPoolExecutorTest(
         # GH-125864: Pickle errors happen before the script tries to execute,
         # so the queue used to wait infinitely.
         fut = self.executor.submit(PickleShenanigans(0))
-        expected = _interpreters.NotShareableError
-        with self.assertRaisesRegex(expected, 'unpickled'):
+        expected = interpreters.NotShareableError
+        with self.assertRaisesRegex(expected, 'args not shareable') as cm:
             fut.result()
+        self.assertRegex(str(cm.exception.__cause__), 'unpickled')
 
     def test_no_stale_references(self):
         # Weak references don't cross between interpreters.
