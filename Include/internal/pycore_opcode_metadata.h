@@ -208,6 +208,8 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 2;
         case FOR_ITER_GEN:
             return 2;
+        case FOR_ITER_INDEX:
+            return 2;
         case FOR_ITER_LIST:
             return 2;
         case FOR_ITER_RANGE:
@@ -697,6 +699,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 3;
         case FOR_ITER_GEN:
             return 2;
+        case FOR_ITER_INDEX:
+            return 3;
         case FOR_ITER_LIST:
             return 3;
         case FOR_ITER_RANGE:
@@ -1167,6 +1171,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [FORMAT_WITH_SPEC] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [FOR_ITER] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [FOR_ITER_GEN] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_DEOPT_FLAG },
+    [FOR_ITER_INDEX] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG },
     [FOR_ITER_LIST] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_DEOPT_FLAG | HAS_EXIT_FLAG | HAS_ESCAPES_FLAG },
     [FOR_ITER_RANGE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG },
     [FOR_ITER_TUPLE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_EXIT_FLAG },
@@ -1411,6 +1416,7 @@ _PyOpcode_macro_expansion[256] = {
     [FORMAT_WITH_SPEC] = { .nuops = 1, .uops = { { _FORMAT_WITH_SPEC, OPARG_SIMPLE, 0 } } },
     [FOR_ITER] = { .nuops = 1, .uops = { { _FOR_ITER, OPARG_REPLACED, 0 } } },
     [FOR_ITER_GEN] = { .nuops = 3, .uops = { { _CHECK_PEP_523, OPARG_SIMPLE, 1 }, { _FOR_ITER_GEN_FRAME, OPARG_SIMPLE, 1 }, { _PUSH_FRAME, OPARG_SIMPLE, 1 } } },
+    [FOR_ITER_INDEX] = { .nuops = 2, .uops = { { _ITER_CHECK_INDEX, OPARG_SIMPLE, 1 }, { _FOR_ITER_INDEX, OPARG_REPLACED, 1 } } },
     [FOR_ITER_LIST] = { .nuops = 3, .uops = { { _ITER_CHECK_LIST, OPARG_SIMPLE, 1 }, { _ITER_JUMP_LIST, OPARG_REPLACED, 1 }, { _ITER_NEXT_LIST, OPARG_REPLACED, 1 } } },
     [FOR_ITER_RANGE] = { .nuops = 3, .uops = { { _ITER_CHECK_RANGE, OPARG_SIMPLE, 1 }, { _ITER_JUMP_RANGE, OPARG_REPLACED, 1 }, { _ITER_NEXT_RANGE, OPARG_SIMPLE, 1 } } },
     [FOR_ITER_TUPLE] = { .nuops = 3, .uops = { { _ITER_CHECK_TUPLE, OPARG_SIMPLE, 1 }, { _ITER_JUMP_TUPLE, OPARG_REPLACED, 1 }, { _ITER_NEXT_TUPLE, OPARG_SIMPLE, 1 } } },
@@ -1611,6 +1617,7 @@ const char *_PyOpcode_OpName[267] = {
     [FORMAT_WITH_SPEC] = "FORMAT_WITH_SPEC",
     [FOR_ITER] = "FOR_ITER",
     [FOR_ITER_GEN] = "FOR_ITER_GEN",
+    [FOR_ITER_INDEX] = "FOR_ITER_INDEX",
     [FOR_ITER_LIST] = "FOR_ITER_LIST",
     [FOR_ITER_RANGE] = "FOR_ITER_RANGE",
     [FOR_ITER_TUPLE] = "FOR_ITER_TUPLE",
@@ -1803,7 +1810,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [125] = 125,
     [126] = 126,
     [127] = 127,
-    [213] = 213,
     [214] = 214,
     [215] = 215,
     [216] = 216,
@@ -1909,6 +1915,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [FORMAT_WITH_SPEC] = FORMAT_WITH_SPEC,
     [FOR_ITER] = FOR_ITER,
     [FOR_ITER_GEN] = FOR_ITER,
+    [FOR_ITER_INDEX] = FOR_ITER,
     [FOR_ITER_LIST] = FOR_ITER,
     [FOR_ITER_RANGE] = FOR_ITER,
     [FOR_ITER_TUPLE] = FOR_ITER,
@@ -2064,7 +2071,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     case 125: \
     case 126: \
     case 127: \
-    case 213: \
     case 214: \
     case 215: \
     case 216: \

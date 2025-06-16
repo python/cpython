@@ -3439,26 +3439,6 @@ _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *na
     return value;
 }
 
-static _PyStackRef
-foriter_next(PyObject *seq, _PyStackRef index)
-{
-    assert(PyStackRef_IsTaggedInt(index));
-    assert(PyTuple_CheckExact(seq) || PyList_CheckExact(seq));
-    intptr_t i = PyStackRef_UntagInt(index);
-    if (PyTuple_CheckExact(seq)) {
-        size_t size = PyTuple_GET_SIZE(seq);
-        if ((size_t)i >= size) {
-            return PyStackRef_NULL;
-        }
-        return PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq, i));
-    }
-    PyObject *item = _PyList_GetItemRef((PyListObject *)seq, i);
-    if (item == NULL) {
-        return PyStackRef_NULL;
-    }
-    return PyStackRef_FromPyObjectSteal(item);
-}
-
 _PyStackRef
 _PyForIter_VirtualIteratorNext(
     PyThreadState* tstate, _PyInterpreterFrame* frame,
@@ -3475,8 +3455,14 @@ _PyForIter_VirtualIteratorNext(
         }
         else {
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            assert(Py_TYPE(iter_o)->tp_iterindex != NULL);
+            PyObject *item = Py_TYPE(iter_o)->tp_iterindex(iter_o, PyStackRef_UntagInt(index));
             *index_ptr = PyStackRef_IncrementTaggedIntNoOverflow(index);
-            return foriter_next(iter_o, index);
+            if (item == NULL) {
+                assert(!_PyErr_Occurred(tstate));
+                return PyStackRef_NULL;
+            }
+            return PyStackRef_FromPyObjectSteal(item);
         }
     }
     PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);

@@ -5847,6 +5847,56 @@
             DISPATCH();
         }
 
+        TARGET(FOR_ITER_INDEX) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = FOR_ITER_INDEX;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 2;
+            INSTRUCTION_STATS(FOR_ITER_INDEX);
+            static_assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1, "incorrect cache size");
+            _PyStackRef iter;
+            _PyStackRef null_or_index;
+            _PyStackRef next;
+            /* Skip 1 cache entry */
+            // _ITER_CHECK_INDEX
+            {
+                null_or_index = stack_pointer[-1];
+                iter = stack_pointer[-2];
+                if (PyStackRef_IsNull(null_or_index)) {
+                    UPDATE_MISS_STATS(FOR_ITER);
+                    assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
+                    JUMP_TO_PREDICTED(FOR_ITER);
+                }
+                if (PyStackRef_IsTaggedInt(iter)) {
+                    UPDATE_MISS_STATS(FOR_ITER);
+                    assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
+                    JUMP_TO_PREDICTED(FOR_ITER);
+                }
+            }
+            // _FOR_ITER_INDEX
+            {
+                PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+                assert(Py_TYPE(iter_o)->tp_iterindex != NULL);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyObject *item = Py_TYPE(iter_o)->tp_iterindex(iter_o, PyStackRef_UntagInt(null_or_index));
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (item == NULL) {
+                    assert(!_PyErr_Occurred(tstate));
+                    JUMPBY(oparg + 1);
+                    DISPATCH();
+                }
+                next = PyStackRef_FromPyObjectSteal(item);
+            }
+            stack_pointer[0] = next;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+
         TARGET(FOR_ITER_LIST) {
             #if Py_TAIL_CALL_INTERP
             int opcode = FOR_ITER_LIST;
@@ -6185,7 +6235,7 @@
                 #endif
 
                 PyTypeObject *tp = PyStackRef_TYPE(iterable);
-                if (tp == &PyTuple_Type || tp == &PyList_Type) {
+                if (tp->tp_iterindex != NULL) {
                     iter = iterable;
                     index_or_null = PyStackRef_TagInt(0);
                 }

@@ -4198,7 +4198,7 @@
             #endif
 
             PyTypeObject *tp = PyStackRef_TYPE(iterable);
-            if (tp == &PyTuple_Type || tp == &PyList_Type) {
+            if (tp->tp_iterindex != NULL) {
                 iter = iterable;
                 index_or_null = PyStackRef_TagInt(0);
             }
@@ -4343,6 +4343,48 @@
         }
 
         /* _FOR_ITER is not a viable micro-op for tier 2 because it is replaced */
+
+        case _ITER_CHECK_INDEX: {
+            _PyStackRef null_or_index;
+            _PyStackRef iter;
+            null_or_index = stack_pointer[-1];
+            iter = stack_pointer[-2];
+            if (PyStackRef_IsNull(null_or_index)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (PyStackRef_IsTaggedInt(iter)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
+        /* _FOR_ITER_INDEX is not a viable micro-op for tier 2 because it is replaced */
+
+        case _FOR_ITER_INDEX_TIER_TWO: {
+            _PyStackRef null_or_index;
+            _PyStackRef iter;
+            _PyStackRef next;
+            null_or_index = stack_pointer[-1];
+            iter = stack_pointer[-2];
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            assert(Py_TYPE(iter_o)->tp_iterindex != NULL);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyObject *item = Py_TYPE(iter_o)->tp_iterindex(iter_o, PyStackRef_UntagInt(null_or_index));
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (item == NULL) {
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    JUMP_TO_JUMP_TARGET();
+                }
+            }
+            next = PyStackRef_FromPyObjectSteal(item);
+            stack_pointer[0] = next;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         case _FOR_ITER_TIER_TWO: {
             _PyStackRef null_or_index;

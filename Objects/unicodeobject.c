@@ -15735,6 +15735,18 @@ errors defaults to 'strict'.");
 
 static PyObject *unicode_iter(PyObject *seq);
 
+static PyObject *
+unicode_iterindex(PyObject *self, Py_ssize_t index)
+{
+    if (index < 0 || index >= PyUnicode_GET_LENGTH(self)) {
+        return NULL;
+    }
+    int kind = PyUnicode_KIND(self);
+    const void *data = PyUnicode_DATA(self);
+    Py_UCS4 chr = PyUnicode_READ(kind, data, index);
+    return unicode_char(chr);
+}
+
 PyTypeObject PyUnicode_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "str",                        /* tp_name */
@@ -15779,6 +15791,7 @@ PyTypeObject PyUnicode_Type = {
     unicode_new,                  /* tp_new */
     PyObject_Free,                /* tp_free */
     .tp_vectorcall = unicode_vectorcall,
+    .tp_iterindex = unicode_iterindex,
 };
 
 /* Initialize the Unicode implementation */

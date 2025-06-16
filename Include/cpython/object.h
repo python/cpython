@@ -239,6 +239,9 @@ struct _typeobject {
      * Otherwise, limited to MAX_VERSIONS_PER_CLASS (defined elsewhere).
      */
     uint16_t tp_versions_used;
+    /* Returns the object at the index given, or NULL if out-of-bounds
+     * Never raises an exception. */
+    iterindexfunc tp_iterindex;
 };
 
 #define _Py_ATTR_CACHE_UNUSED (30000)  // (see tp_versions_used)

@@ -3091,6 +3091,17 @@ Construct an immutable array of bytes from:\n\
 
 static PyObject *bytes_iter(PyObject *seq);
 
+static PyObject *
+bytes_iterindex(PyObject *self, Py_ssize_t index)
+{
+    assert(PyBytes_Check(self));
+
+    if (index < 0 || index >= PyBytes_GET_SIZE(self)) {
+        return NULL;
+    }
+    return _PyLong_FromUnsignedChar((unsigned char)((PyBytesObject*)self)->ob_sval[index]);
+}
+
 PyTypeObject PyBytes_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "bytes",
@@ -3134,6 +3145,7 @@ PyTypeObject PyBytes_Type = {
     bytes_new,                                  /* tp_new */
     PyObject_Free,                              /* tp_free */
     .tp_version_tag = _Py_TYPE_VERSION_BYTES,
+    .tp_iterindex = bytes_iterindex,
 };
 
 void

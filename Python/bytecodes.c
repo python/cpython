@@ -3076,7 +3076,7 @@ dummy_func(
             #endif
             /* before: [obj]; after [getiter(obj)] */
             PyTypeObject *tp = PyStackRef_TYPE(iterable);
-            if (tp == &PyTuple_Type || tp == &PyList_Type) {
+            if (tp->tp_iterindex != NULL) {
                 iter = iterable;
                 DEAD(iterable);
                 index_or_null = PyStackRef_TagInt(0);
@@ -3168,6 +3168,7 @@ dummy_func(
             FOR_ITER_TUPLE,
             FOR_ITER_RANGE,
             FOR_ITER_GEN,
+            FOR_ITER_INDEX,
         };
 
         specializing op(_SPECIALIZE_FOR_ITER, (counter/1, iter, null_or_index -- iter, null_or_index)) {
@@ -3195,6 +3196,40 @@ dummy_func(
             next = item;
         }
 
+        op(_ITER_CHECK_INDEX, (iter, null_or_index -- iter, null_or_index)) {
+            DEOPT_IF(PyStackRef_IsNull(null_or_index));
+            DEOPT_IF(PyStackRef_IsTaggedInt(iter));
+        }
+
+        replaced op(_FOR_ITER_INDEX, (iter, null_or_index -- iter, null_or_index, next)) {
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            assert(Py_TYPE(iter_o)->tp_iterindex != NULL);
+            PyObject *item = Py_TYPE(iter_o)->tp_iterindex(iter_o, PyStackRef_UntagInt(null_or_index));
+            if (item == NULL) {
+                assert(!_PyErr_Occurred(tstate));
+                // Jump forward by oparg and skip the following END_FOR
+                JUMPBY(oparg + 1);
+                DISPATCH();
+            }
+            next = PyStackRef_FromPyObjectSteal(item);
+        }
+
+        op(_FOR_ITER_INDEX_TIER_TWO, (iter, null_or_index -- iter, null_or_index, next)) {
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            assert(Py_TYPE(iter_o)->tp_iterindex != NULL);
+            PyObject *item = Py_TYPE(iter_o)->tp_iterindex(iter_o, PyStackRef_UntagInt(null_or_index));
+            if (item == NULL) {
+                /* The translator sets the deopt target just past the matching END_FOR */
+                EXIT_IF(true);
+            }
+            next = PyStackRef_FromPyObjectSteal(item);
+        }
+
+        macro(FOR_ITER_INDEX) =
+            unused/1 +
+            _ITER_CHECK_INDEX +
+            _FOR_ITER_INDEX;
+
         op(_FOR_ITER_TIER_TWO, (iter, null_or_index -- iter, null_or_index, next)) {
             _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, &null_or_index);
             if (!PyStackRef_IsValid(item)) {
@@ -3207,7 +3242,6 @@ dummy_func(
             }
             next = item;
         }
-
 
         macro(FOR_ITER) = _SPECIALIZE_FOR_ITER + _FOR_ITER;
 

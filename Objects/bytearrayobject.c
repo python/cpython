@@ -2795,6 +2795,27 @@ Construct a mutable bytearray object from:\n\
 
 static PyObject *bytearray_iter(PyObject *seq);
 
+
+static PyObject *
+bytearray_iterindex(PyObject *self, Py_ssize_t index)
+{
+
+    assert(PyByteArray_Check(self));
+    int val;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    if (index < 0 || index >= Py_SIZE(self)) {
+        val = -1;
+    }
+    else {
+        val = (unsigned char)PyByteArray_AS_STRING(self)[index];
+    }
+    Py_END_CRITICAL_SECTION();
+    if (val < 0) {
+        return NULL;
+    }
+    return _PyLong_FromUnsignedChar((unsigned char)val);
+}
+
 PyTypeObject PyByteArray_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "bytearray",
@@ -2837,6 +2858,7 @@ PyTypeObject PyByteArray_Type = {
     PyType_GenericNew,                  /* tp_new */
     PyObject_Free,                      /* tp_free */
     .tp_version_tag = _Py_TYPE_VERSION_BYTEARRAY,
+    .tp_iterindex = bytearray_iterindex,
 };
 
 /*********************** Bytearray Iterator ****************************/
