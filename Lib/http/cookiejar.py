@@ -908,7 +908,6 @@ class DefaultCookiePolicy(CookiePolicy):
         self.strict_ns_set_initial_dollar = strict_ns_set_initial_dollar
         self.strict_ns_set_path = strict_ns_set_path
         self.secure_protocols = secure_protocols
-        
         # source: https://en.wikipedia.org/wiki/Second-level_domain
         well_known_slds = set(["co", "ac", "com", "edu", "org", "net",
                         "gov", "mil", "int", "aero", "biz", "cat", "coop",
