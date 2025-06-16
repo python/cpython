@@ -586,9 +586,9 @@ class WindowsCommandLineTests(unittest.TestCase):
         script_command = "print('script has run')"
         with TemporaryDirectory() as tmp_dir:
             stdout_path = os.path.join(tmp_dir, "WinCMDLineTests.txt")
-            with open(stdout_path, "w") as stdout_file, \
+            with open(stdout_path, "w+") as stdout_file, \
                 subprocess.Popen(
-                    [sys.executable, '-i', '-c', script_command],
+                    [sys.executable, '-i', '-u', '-c', script_command],
                     stdin=None,
                     stdout=stdout_file,
                     stderr=subprocess.PIPE,
@@ -596,17 +596,19 @@ class WindowsCommandLineTests(unittest.TestCase):
                 ) as process:
                 stderr_output = ""
                 try:
-                    process.wait(timeout=3)
+                    process.wait(timeout=5)
                 except subprocess.TimeoutExpired:
                     process.kill()
                     _, stderr_output = process.communicate()
-                has_crash_traceback = (
-                    "OSError" in stderr_output and
-                    len(stderr_output) > 1200
+                isOK = (
+                    ">>>" in stderr_output and
+                    len(stderr_output) < 1200
                 )
-                if has_crash_traceback:
-                    self.fail("Detected endless OSError traceback."
-                          f"\n--- stderr ---\n{stderr_output[:1200]}")
+                stdout_file.seek(0)
+                stdout_from_file = stdout_file.read()
+                stdout_file.close()
+                self.assertEqual(isOK, True)
+                self.assertIn("script has run", stdout_from_file)
 
 
 if __name__ == "__main__":
