@@ -1,0 +1,1 @@
+Adds a check in the ``ADDITEMS`` and ``APPENDS`` opcodes of the Python implementation of :mod:`pickle` to return early if there's no items to add.
