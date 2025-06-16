@@ -611,9 +611,9 @@ static int
 _hashlib_HASH_copy_locked(HASHobject *self, EVP_MD_CTX *new_ctx_p)
 {
     int result;
-    ENTER_HASHLIB(self);
+    HASHLIB_ACQUIRE_LOCK(self);
     result = EVP_MD_CTX_copy(new_ctx_p, self->ctx);
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
     return result;
 }
 
@@ -733,29 +733,16 @@ static PyObject *
 _hashlib_HASH_update_impl(HASHobject *self, PyObject *obj)
 /*[clinic end generated code: output=62ad989754946b86 input=aa1ce20e3f92ceb6]*/
 {
-    int result;
+    int rc;
     Py_buffer view;
-
     GET_BUFFER_VIEW_OR_ERROUT(obj, &view);
-
-    if (!self->use_mutex && view.len >= HASHLIB_GIL_MINSIZE) {
-        self->use_mutex = true;
-    }
-    if (self->use_mutex) {
-        Py_BEGIN_ALLOW_THREADS
-        PyMutex_Lock(&self->mutex);
-        result = _hashlib_HASH_hash(self, view.buf, view.len);
-        PyMutex_Unlock(&self->mutex);
-        Py_END_ALLOW_THREADS
-    } else {
-        result = _hashlib_HASH_hash(self, view.buf, view.len);
-    }
-
+    Py_BEGIN_ALLOW_THREADS
+        HASHLIB_ACQUIRE_LOCK(self);
+        rc = _hashlib_HASH_hash(self, view.buf, view.len);
+        HASHLIB_RELEASE_LOCK(self);
+    Py_END_ALLOW_THREADS
     PyBuffer_Release(&view);
-
-    if (result == -1)
-        return NULL;
-    Py_RETURN_NONE;
+    return rc < 0 ? NULL : Py_None;
 }
 
 static PyMethodDef HASH_methods[] = {
@@ -1060,15 +1047,11 @@ _hashlib_HASH(PyObject *module, const char *digestname, PyObject *data_obj,
     }
 
     if (view.buf && view.len) {
-        if (view.len >= HASHLIB_GIL_MINSIZE) {
-            /* We do not initialize self->lock here as this is the constructor
-             * where it is not yet possible to have concurrent access. */
-            Py_BEGIN_ALLOW_THREADS
+        /* Do not use self->mutex here as this is the constructor
+         * where it is not yet possible to have concurrent access. */
+        Py_BEGIN_ALLOW_THREADS
             result = _hashlib_HASH_hash(self, view.buf, view.len);
-            Py_END_ALLOW_THREADS
-        } else {
-            result = _hashlib_HASH_hash(self, view.buf, view.len);
-        }
+        Py_END_ALLOW_THREADS
         if (result == -1) {
             assert(PyErr_Occurred());
             Py_CLEAR(self);
@@ -1701,7 +1684,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
     HASHLIB_INIT_MUTEX(self);
 
     if ((msg_obj != NULL) && (msg_obj != Py_None)) {
-        if (!_hmac_update(self, msg_obj)) {
+        if (_hmac_update(self, msg_obj) < 0) {
             goto error;
         }
     }
@@ -1718,9 +1701,9 @@ static int
 locked_HMAC_CTX_copy(HMAC_CTX *new_ctx_p, HMACobject *self)
 {
     int result;
-    ENTER_HASHLIB(self);
+    HASHLIB_ACQUIRE_LOCK(self);
     result = HMAC_CTX_copy(new_ctx_p, self->ctx);
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
     return result;
 }
 
@@ -1743,35 +1726,26 @@ _hashlib_hmac_digest_size(HMACobject *self)
 static int
 _hmac_update(HMACobject *self, PyObject *obj)
 {
-    int r;
+    int r = 1;
     Py_buffer view = {0};
 
-    GET_BUFFER_VIEW_OR_ERROR(obj, &view, return 0);
-
-    if (!self->use_mutex && view.len >= HASHLIB_GIL_MINSIZE) {
-        self->use_mutex = true;
-    }
-    if (self->use_mutex) {
+    GET_BUFFER_VIEW_OR_ERROR(obj, &view, return -1);
+    if (view.len > 0) {
         Py_BEGIN_ALLOW_THREADS
-        PyMutex_Lock(&self->mutex);
-        r = HMAC_Update(self->ctx,
-                        (const unsigned char *)view.buf,
-                        (size_t)view.len);
-        PyMutex_Unlock(&self->mutex);
+            HASHLIB_ACQUIRE_LOCK(self);
+            r = HMAC_Update(self->ctx,
+                            (const unsigned char *)view.buf,
+                            (size_t)view.len);
+            HASHLIB_RELEASE_LOCK(self);
         Py_END_ALLOW_THREADS
-    } else {
-        r = HMAC_Update(self->ctx,
-                        (const unsigned char *)view.buf,
-                        (size_t)view.len);
     }
-
     PyBuffer_Release(&view);
 
     if (r == 0) {
         notify_ssl_error_occurred();
-        return 0;
+        return -1;
     }
-    return 1;
+    return 0;
 }
 
 /*[clinic input]
@@ -1845,7 +1819,7 @@ static PyObject *
 _hashlib_HMAC_update_impl(HMACobject *self, PyObject *msg)
 /*[clinic end generated code: output=f31f0ace8c625b00 input=1829173bb3cfd4e6]*/
 {
-    if (!_hmac_update(self, msg)) {
+    if (_hmac_update(self, msg) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -2412,17 +2386,6 @@ hashlib_exception(PyObject *module)
     return 0;
 }
 
-static int
-hashlib_constants(PyObject *module)
-{
-    if (PyModule_AddIntConstant(module, "_GIL_MINSIZE",
-                                HASHLIB_GIL_MINSIZE) < 0)
-    {
-        return -1;
-    }
-    return 0;
-}
-
 static PyModuleDef_Slot hashlib_slots[] = {
     {Py_mod_exec, hashlib_init_hashtable},
     {Py_mod_exec, hashlib_init_HASH_type},
@@ -2431,7 +2394,6 @@ static PyModuleDef_Slot hashlib_slots[] = {
     {Py_mod_exec, hashlib_md_meth_names},
     {Py_mod_exec, hashlib_init_constructors},
     {Py_mod_exec, hashlib_exception},
-    {Py_mod_exec, hashlib_constants},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}

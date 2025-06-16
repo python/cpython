@@ -121,9 +121,9 @@ SHA1Type_copy_impl(SHA1object *self, PyTypeObject *cls)
         return NULL;
     }
 
-    ENTER_HASHLIB(self);
+    HASHLIB_ACQUIRE_LOCK(self);
     newobj->hash_state = Hacl_Hash_SHA1_copy(self->hash_state);
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
     if (newobj->hash_state == NULL) {
         Py_DECREF(newobj);
         return PyErr_NoMemory();
@@ -142,9 +142,9 @@ SHA1Type_digest_impl(SHA1object *self)
 /*[clinic end generated code: output=2f05302a7aa2b5cb input=13824b35407444bd]*/
 {
     unsigned char digest[SHA1_DIGESTSIZE];
-    ENTER_HASHLIB(self);
+    HASHLIB_ACQUIRE_LOCK(self);
     Hacl_Hash_SHA1_digest(self->hash_state, digest);
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
     return PyBytes_FromStringAndSize((const char *)digest, SHA1_DIGESTSIZE);
 }
 
@@ -159,14 +159,15 @@ SHA1Type_hexdigest_impl(SHA1object *self)
 /*[clinic end generated code: output=4161fd71e68c6659 input=97691055c0c74ab0]*/
 {
     unsigned char digest[SHA1_DIGESTSIZE];
-    ENTER_HASHLIB(self);
+    HASHLIB_ACQUIRE_LOCK(self);
     Hacl_Hash_SHA1_digest(self->hash_state, digest);
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
     return _Py_strhex((const char *)digest, SHA1_DIGESTSIZE);
 }
 
 static void
-update(Hacl_Hash_SHA1_state_t *state, uint8_t *buf, Py_ssize_t len)
+_hacl_sha1_state_update(Hacl_Hash_SHA1_state_t *state,
+                        uint8_t *buf, Py_ssize_t len)
 {
     /*
      * Note: we explicitly ignore the error code on the basis that it would
@@ -198,22 +199,14 @@ SHA1Type_update_impl(SHA1object *self, PyObject *obj)
 /*[clinic end generated code: output=cdc8e0e106dbec5f input=aad8e07812edbba3]*/
 {
     Py_buffer buf;
-
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
-
-    if (!self->use_mutex && buf.len >= HASHLIB_GIL_MINSIZE) {
-        self->use_mutex = true;
-    }
-    if (self->use_mutex) {
+    if (buf.len > 0) {
         Py_BEGIN_ALLOW_THREADS
-        PyMutex_Lock(&self->mutex);
-        update(self->hash_state, buf.buf, buf.len);
-        PyMutex_Unlock(&self->mutex);
+            HASHLIB_ACQUIRE_LOCK(self);
+            _hacl_sha1_state_update(self->hash_state, buf.buf, buf.len);
+            HASHLIB_RELEASE_LOCK(self);
         Py_END_ALLOW_THREADS
-    } else {
-        update(self->hash_state, buf.buf, buf.len);
     }
-
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
 }
@@ -314,16 +307,11 @@ _sha1_sha1_impl(PyObject *module, PyObject *data, int usedforsecurity,
         return PyErr_NoMemory();
     }
     if (string) {
-        if (buf.len >= HASHLIB_GIL_MINSIZE) {
-            /* We do not initialize self->lock here as this is the constructor
-             * where it is not yet possible to have concurrent access. */
-            Py_BEGIN_ALLOW_THREADS
-            update(new->hash_state, buf.buf, buf.len);
-            Py_END_ALLOW_THREADS
-        }
-        else {
-            update(new->hash_state, buf.buf, buf.len);
-        }
+        /* Do not use self->mutex here as this is the constructor
+         * where it is not yet possible to have concurrent access. */
+        Py_BEGIN_ALLOW_THREADS
+            _hacl_sha1_state_update(new->hash_state, buf.buf, buf.len);
+        Py_END_ALLOW_THREADS
         PyBuffer_Release(&buf);
     }
 
@@ -370,12 +358,6 @@ _sha1_exec(PyObject *module)
     if (PyModule_AddObjectRef(module,
                               "SHA1Type",
                               (PyObject *)st->sha1_type) < 0)
-    {
-        return -1;
-    }
-    if (PyModule_AddIntConstant(module,
-                                "_GIL_MINSIZE",
-                                HASHLIB_GIL_MINSIZE) < 0)
     {
         return -1;
     }

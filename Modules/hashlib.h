@@ -50,48 +50,17 @@
 
 #include "pythread.h"
 
-#define HASHLIB_LOCK_HEAD                           \
-    /*
-     * Attributes to prevent undefined behaviors
-     * via multiple threads entering the C API.
-     */                                             \
-    bool use_mutex;                                 \
+#define HASHLIB_LOCK_HEAD                                               \
+    /* Guard against race conditions during incremental update(). */    \
     PyMutex mutex;
 
-#define HASHLIB_SET_MUTEX_POLICY(OBJ, VALUE)                                \
-    _Py_atomic_store_int_relaxed((int *)&(OBJ)->use_mutex, (int)(VALUE))
+#define HASHLIB_ACQUIRE_LOCK(OBJ)   PyMutex_Lock(&(OBJ)->mutex)
+#define HASHLIB_RELEASE_LOCK(OBJ)   PyMutex_Unlock(&(OBJ)->mutex)
 
-#define ENTER_HASHLIB(OBJ)                                                  \
-    do {                                                                    \
-        if (_Py_atomic_load_int_relaxed((const int *)&(OBJ)->use_mutex)) {  \
-            PyMutex_Lock(&(OBJ)->mutex);                                    \
-        }                                                                   \
-    } while (0)
-
-#define LEAVE_HASHLIB(OBJ)                                                  \
-    do {                                                                    \
-        if (_Py_atomic_load_int_relaxed((const int *)&(OBJ)->use_mutex)) {  \
-            PyMutex_Unlock(&(OBJ)->mutex);                                  \
-        }                                                                   \
-    } while (0)
-
-#ifdef Py_GIL_DISABLED
 #define HASHLIB_INIT_MUTEX(OBJ)         \
     do {                                \
         (OBJ)->mutex = (PyMutex){0};    \
-        (OBJ)->use_mutex = true;        \
     } while (0)
-#else
-#define HASHLIB_INIT_MUTEX(OBJ)         \
-    do {                                \
-        (OBJ)->mutex = (PyMutex){0};    \
-        (OBJ)->use_mutex = false;       \
-    } while (0)
-#endif
-
-/* TODO(gpshead): We should make this a module or class attribute
- * to allow the user to optimize based on the platform they're using. */
-#define HASHLIB_GIL_MINSIZE 2048
 
 static inline int
 _Py_hashlib_data_argument(PyObject **res, PyObject *data, PyObject *string)

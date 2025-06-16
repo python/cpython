@@ -229,8 +229,6 @@ blake2_exec(PyObject *m)
     // good a place as any to probe the CPU flags.
     detect_cpu_features(&st->flags);
 
-    ADD_INT_CONST("_GIL_MINSIZE", HASHLIB_GIL_MINSIZE);
-
     st->blake2b_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         m, &blake2b_type_spec, NULL);
 
@@ -422,7 +420,7 @@ new_Blake2Object(PyTypeObject *type)
     } while (0)
 
 static void
-update(Blake2Object *self, uint8_t *buf, Py_ssize_t len)
+blake2_update_state_unlocked(Blake2Object *self, uint8_t *buf, Py_ssize_t len)
 {
     switch (self->impl) {
       // These need to be ifdef'd out otherwise it's an unresolved symbol at
@@ -634,14 +632,10 @@ py_blake2b_or_s_new(PyTypeObject *type, PyObject *data, int digest_size,
     /* Process initial data if any. */
     if (data != NULL) {
         GET_BUFFER_VIEW_OR_ERROR(data, &buf, goto error);
-
-        if (buf.len >= HASHLIB_GIL_MINSIZE) {
+        if (buf.len > 0) {
             Py_BEGIN_ALLOW_THREADS
-            update(self, buf.buf, buf.len);
+                blake2_update_state_unlocked(self, buf.buf, buf.len);
             Py_END_ALLOW_THREADS
-        }
-        else {
-            update(self, buf.buf, buf.len);
         }
         PyBuffer_Release(&buf);
     }
@@ -793,9 +787,9 @@ _blake2_blake2b_copy_impl(Blake2Object *self)
         return NULL;
     }
 
-    ENTER_HASHLIB(self);
+    HASHLIB_ACQUIRE_LOCK(self);
     rc = blake2_blake2b_copy_locked(self, cpy);
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
     if (rc < 0) {
         Py_DECREF(cpy);
         return NULL;
@@ -817,24 +811,15 @@ _blake2_blake2b_update_impl(Blake2Object *self, PyObject *data)
 /*[clinic end generated code: output=99330230068e8c99 input=ffc4aa6a6a225d31]*/
 {
     Py_buffer buf;
-
     GET_BUFFER_VIEW_OR_ERROUT(data, &buf);
-
-    if (!self->use_mutex && buf.len >= HASHLIB_GIL_MINSIZE) {
-        self->use_mutex = true;
-    }
-    if (self->use_mutex) {
+    if (buf.len > 0) {
         Py_BEGIN_ALLOW_THREADS
-        PyMutex_Lock(&self->mutex);
-        update(self, buf.buf, buf.len);
-        PyMutex_Unlock(&self->mutex);
+            HASHLIB_ACQUIRE_LOCK(self);
+            blake2_update_state_unlocked(self, buf.buf, buf.len);
+            HASHLIB_RELEASE_LOCK(self);
         Py_END_ALLOW_THREADS
-    } else {
-        update(self, buf.buf, buf.len);
     }
-
     PyBuffer_Release(&buf);
-
     Py_RETURN_NONE;
 }
 
@@ -849,9 +834,9 @@ _blake2_blake2b_digest_impl(Blake2Object *self)
 /*[clinic end generated code: output=31ab8ad477f4a2f7 input=7d21659e9c5fff02]*/
 {
     uint8_t digest[HACL_HASH_BLAKE2B_OUT_BYTES];
-
-    ENTER_HASHLIB(self);
     uint8_t digest_length = 0;
+
+    HASHLIB_ACQUIRE_LOCK(self);
     switch (self->impl) {
 #if HACL_CAN_COMPILE_SIMD256
         case Blake2b_256:
@@ -870,9 +855,10 @@ _blake2_blake2b_digest_impl(Blake2Object *self)
             digest_length = Hacl_Hash_Blake2s_digest(self->blake2s_state, digest);
             break;
         default:
+            HASHLIB_RELEASE_LOCK(self);
             Py_UNREACHABLE();
     }
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
     return PyBytes_FromStringAndSize((const char *)digest, digest_length);
 }
 
@@ -887,9 +873,9 @@ _blake2_blake2b_hexdigest_impl(Blake2Object *self)
 /*[clinic end generated code: output=5ef54b138db6610a input=76930f6946351f56]*/
 {
     uint8_t digest[HACL_HASH_BLAKE2B_OUT_BYTES];
-
-    ENTER_HASHLIB(self);
     uint8_t digest_length = 0;
+
+    HASHLIB_ACQUIRE_LOCK(self);
     switch (self->impl) {
 #if HACL_CAN_COMPILE_SIMD256
         case Blake2b_256:
@@ -908,9 +894,10 @@ _blake2_blake2b_hexdigest_impl(Blake2Object *self)
             digest_length = Hacl_Hash_Blake2s_digest(self->blake2s_state, digest);
             break;
         default:
+            HASHLIB_RELEASE_LOCK(self);
             Py_UNREACHABLE();
     }
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
     return _Py_strhex((const char *)digest, digest_length);
 }
 
