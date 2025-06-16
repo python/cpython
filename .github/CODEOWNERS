@@ -35,6 +35,7 @@ Objects/type*                 @markshannon
 Objects/codeobject.c          @markshannon
 Objects/frameobject.c         @markshannon
 Objects/call.c                @markshannon
+Objects/object.c              @ZeroIntensity
 Python/ceval*.c               @markshannon
 Python/ceval*.h               @markshannon
 Python/codegen.c              @markshannon @iritkatriel
@@ -66,8 +67,8 @@ Doc/_static/**                @AA-Turner @hugovk
 Doc/tools/**                  @AA-Turner @hugovk
 
 # runtime state/lifecycle
-**/*pylifecycle*              @ericsnowcurrently
-**/*pystate*                  @ericsnowcurrently
+**/*pylifecycle*              @ericsnowcurrently @ZeroIntensity
+**/*pystate*                  @ericsnowcurrently @ZeroIntensity
 **/*preconfig*                @ericsnowcurrently
 **/*initconfig*               @ericsnowcurrently
 **/*pathconfig*               @ericsnowcurrently
