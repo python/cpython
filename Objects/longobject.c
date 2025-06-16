@@ -511,7 +511,7 @@ PyLong_FromDouble(double dval)
 long
 PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
 {
-    /* This version by Tim Peters */
+    /* This version originally by Tim Peters */
     PyLongObject *v;
     unsigned long x, prev;
     long res;
@@ -565,6 +565,36 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
                 goto exit;
             }
         }
+
+/*
+        digit *digits = v->long_value.ob_digit;
+
+        assert(i >= 2);
+        #if ((ULONG_MAX >> PyLong_SHIFT)) >= ((1UL << PyLong_SHIFT) - 1)
+        /* use 2 digits *
+        --i;
+        x = digits[i];
+        x <<= PyLong_SHIFT;
+        --i;
+        x |= digits[i];
+        #else
+        /* use 1 digit *
+        //--i;
+        assert(ULONG_MAX >= ((1UL << PyLong_SHIFT) - 1));
+        //x = digits[i];
+        x=0;
+        #endif
+*/
+
+/*
+        while (--i >= 0) {
+            if (x > SIZE_MAX >> PyLong_SHIFT) {
+                *overflow = sign;
+                goto exit;
+            }
+            x = (x << PyLong_SHIFT) | v->long_value.ob_digit[i];
+        }
+*/
         /* Haven't lost any bits, but casting to long requires extra
         * care (see comment above).
         */
