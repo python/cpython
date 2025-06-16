@@ -1747,7 +1747,7 @@ struct s_MergeState {
     int (*tuple_elem_compare)(PyObject *, PyObject *, MergeState *);
 
     /* Varisbles used for minrun computation. The "ideal" minrun length is
-     * the infinite precision listlen / 2**e. See listlen.txt.
+     * the infinite precision listlen / 2**e. See listsort.txt.
      */
      Py_ssize_t mr_current, mr_e, mr_mask;
 };
