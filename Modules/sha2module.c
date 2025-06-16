@@ -406,13 +406,11 @@ SHA256Type_update_impl(SHA256object *self, PyObject *obj)
 {
     Py_buffer buf;
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
-    if (buf.len > 0) {
-        Py_BEGIN_ALLOW_THREADS
-            HASHLIB_ACQUIRE_LOCK(self);
-            _hacl_sha2_state_update_256(self->state, buf.buf, buf.len);
-            HASHLIB_RELEASE_LOCK(self);
-        Py_END_ALLOW_THREADS
-    }
+    Py_BEGIN_ALLOW_THREADS
+        HASHLIB_ACQUIRE_LOCK(self);
+        _hacl_sha2_state_update_256(self->state, buf.buf, buf.len);
+        HASHLIB_RELEASE_LOCK(self);
+    Py_END_ALLOW_THREADS
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
 }
@@ -432,13 +430,11 @@ SHA512Type_update_impl(SHA512object *self, PyObject *obj)
 {
     Py_buffer buf;
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
-    if (buf.len > 0) {
-        Py_BEGIN_ALLOW_THREADS
-            HASHLIB_ACQUIRE_LOCK(self);
-            _hacl_sha2_state_update_512(self->state, buf.buf, buf.len);
-            HASHLIB_RELEASE_LOCK(self);
-        Py_END_ALLOW_THREADS
-    }
+    Py_BEGIN_ALLOW_THREADS
+        HASHLIB_ACQUIRE_LOCK(self);
+        _hacl_sha2_state_update_512(self->state, buf.buf, buf.len);
+        HASHLIB_RELEASE_LOCK(self);
+    Py_END_ALLOW_THREADS
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
 }
@@ -793,11 +789,9 @@ _sha2_sha384_impl(PyObject *module, PyObject *data, int usedforsecurity,
     if (string) {
         /* Do not use self->mutex here as this is the constructor
          * where it is not yet possible to have concurrent access. */
-        if (buf.len > 0) {
-            Py_BEGIN_ALLOW_THREADS
-                _hacl_sha2_state_update_512(new->state, buf.buf, buf.len);
-            Py_END_ALLOW_THREADS
-        }
+        Py_BEGIN_ALLOW_THREADS
+            _hacl_sha2_state_update_512(new->state, buf.buf, buf.len);
+        Py_END_ALLOW_THREADS
         PyBuffer_Release(&buf);
     }
 

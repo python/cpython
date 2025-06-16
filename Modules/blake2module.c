@@ -642,11 +642,9 @@ py_blake2_new(PyTypeObject *type, PyObject *data, int digest_size,
     if (data != NULL) {
         Py_buffer buf;
         GET_BUFFER_VIEW_OR_ERROR(data, &buf, goto error);
-        if (buf.len > 0) {
-            Py_BEGIN_ALLOW_THREADS
-                blake2_update_state_unlocked(self, buf.buf, buf.len);
-            Py_END_ALLOW_THREADS
-        }
+        Py_BEGIN_ALLOW_THREADS
+            blake2_update_state_unlocked(self, buf.buf, buf.len);
+        Py_END_ALLOW_THREADS
         PyBuffer_Release(&buf);
     }
 
@@ -819,13 +817,11 @@ _blake2_blake2b_update_impl(Blake2Object *self, PyObject *data)
 {
     Py_buffer buf;
     GET_BUFFER_VIEW_OR_ERROUT(data, &buf);
-    if (buf.len > 0) {
-        Py_BEGIN_ALLOW_THREADS
-            HASHLIB_ACQUIRE_LOCK(self);
-            blake2_update_state_unlocked(self, buf.buf, buf.len);
-            HASHLIB_RELEASE_LOCK(self);
-        Py_END_ALLOW_THREADS
-    }
+    Py_BEGIN_ALLOW_THREADS
+        HASHLIB_ACQUIRE_LOCK(self);
+        blake2_update_state_unlocked(self, buf.buf, buf.len);
+        HASHLIB_RELEASE_LOCK(self);
+    Py_END_ALLOW_THREADS
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
 }

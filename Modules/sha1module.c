@@ -196,13 +196,11 @@ SHA1Type_update_impl(SHA1object *self, PyObject *obj)
 {
     Py_buffer buf;
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
-    if (buf.len > 0) {
-        Py_BEGIN_ALLOW_THREADS
-            HASHLIB_ACQUIRE_LOCK(self);
-            _hacl_sha1_state_update(self->hash_state, buf.buf, buf.len);
-            HASHLIB_RELEASE_LOCK(self);
-        Py_END_ALLOW_THREADS
-    }
+    Py_BEGIN_ALLOW_THREADS
+        HASHLIB_ACQUIRE_LOCK(self);
+        _hacl_sha1_state_update(self->hash_state, buf.buf, buf.len);
+        HASHLIB_RELEASE_LOCK(self);
+    Py_END_ALLOW_THREADS
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
 }

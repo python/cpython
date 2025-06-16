@@ -162,11 +162,9 @@ py_sha3_new_impl(PyTypeObject *type, PyObject *data_obj, int usedforsecurity,
         GET_BUFFER_VIEW_OR_ERROR(data, &buf, goto error);
         /* Do not use self->mutex here as this is the constructor
          * where it is not yet possible to have concurrent access. */
-        if (buf.len > 0) {
-            Py_BEGIN_ALLOW_THREADS
-                sha3_update(self->hash_state, buf.buf, buf.len);
-            Py_END_ALLOW_THREADS
-        }
+        Py_BEGIN_ALLOW_THREADS
+            sha3_update(self->hash_state, buf.buf, buf.len);
+        Py_END_ALLOW_THREADS
     }
 
     PyBuffer_Release(&buf);
@@ -298,13 +296,11 @@ _sha3_sha3_224_update_impl(SHA3object *self, PyObject *data)
 {
     Py_buffer buf;
     GET_BUFFER_VIEW_OR_ERROUT(data, &buf);
-    if (buf.len > 0) {
-        Py_BEGIN_ALLOW_THREADS
-            HASHLIB_ACQUIRE_LOCK(self);
-            sha3_update(self->hash_state, buf.buf, buf.len);
-            HASHLIB_RELEASE_LOCK(self);
-        Py_END_ALLOW_THREADS
-    }
+    Py_BEGIN_ALLOW_THREADS
+        HASHLIB_ACQUIRE_LOCK(self);
+        sha3_update(self->hash_state, buf.buf, buf.len);
+        HASHLIB_RELEASE_LOCK(self);
+    Py_END_ALLOW_THREADS
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
 }

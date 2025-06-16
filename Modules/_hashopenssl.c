@@ -800,16 +800,16 @@ static PyObject *
 _hashlib_HASH_update_impl(HASHobject *self, PyObject *obj)
 /*[clinic end generated code: output=62ad989754946b86 input=aa1ce20e3f92ceb6]*/
 {
-    int rc;
+    int result;
     Py_buffer view;
     GET_BUFFER_VIEW_OR_ERROUT(obj, &view);
     Py_BEGIN_ALLOW_THREADS
         HASHLIB_ACQUIRE_LOCK(self);
-        rc = _hashlib_HASH_hash(self, view.buf, view.len);
+        result = _hashlib_HASH_hash(self, view.buf, view.len);
         HASHLIB_RELEASE_LOCK(self);
     Py_END_ALLOW_THREADS
     PyBuffer_Release(&view);
-    return rc < 0 ? NULL : Py_None;
+    return result < 0 ? NULL : Py_None;
 }
 
 static PyMethodDef HASH_methods[] = {
@@ -1806,19 +1806,17 @@ _hashlib_hmac_digest_size(HMACobject *self)
 static int
 _hmac_update(HMACobject *self, PyObject *obj)
 {
-    int r = 1;
+    int r;
     Py_buffer view = {0};
 
     GET_BUFFER_VIEW_OR_ERROR(obj, &view, return 0);
-    if (view.len > 0) {
-        Py_BEGIN_ALLOW_THREADS
-            HASHLIB_ACQUIRE_LOCK(self);
-            r = HMAC_Update(self->ctx,
-                            (const unsigned char *)view.buf,
-                            (size_t)view.len);
-            HASHLIB_RELEASE_LOCK(self);
-        Py_END_ALLOW_THREADS
-    }
+    Py_BEGIN_ALLOW_THREADS
+        HASHLIB_ACQUIRE_LOCK(self);
+        r = HMAC_Update(self->ctx,
+                        (const unsigned char *)view.buf,
+                        (size_t)view.len);
+        HASHLIB_RELEASE_LOCK(self);
+    Py_END_ALLOW_THREADS
     PyBuffer_Release(&view);
 
     if (r == 0) {

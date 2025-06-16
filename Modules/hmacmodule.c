@@ -739,15 +739,12 @@ hmac_feed_initial_data(HMACObject *self, uint8_t *msg, Py_ssize_t len)
 {
     assert(self->name != NULL);
     assert(self->state != NULL);
-    assert(len >= 0);
     int rc = 0;
-    if (len > 0) {
-        /* Do not use self->mutex here as this is the constructor
-         * where it is not yet possible to have concurrent access. */
-        Py_BEGIN_ALLOW_THREADS
-            rc = _hacl_hmac_state_update(self->state, msg, len);
-        Py_END_ALLOW_THREADS
-    }
+    /* Do not use self->mutex here as this is the constructor
+     * where it is not yet possible to have concurrent access. */
+    Py_BEGIN_ALLOW_THREADS
+        rc = _hacl_hmac_state_update(self->state, msg, len);
+    Py_END_ALLOW_THREADS
     return rc;
 }
 
@@ -906,13 +903,11 @@ _hmac_HMAC_update_impl(HMACObject *self, PyObject *msgobj)
     int rc = 0;
     Py_buffer msg;
     GET_BUFFER_VIEW_OR_ERROUT(msgobj, &msg);
-    if (msg.len > 0) {
-        Py_BEGIN_ALLOW_THREADS
-            HASHLIB_ACQUIRE_LOCK(self);
-            rc = _hacl_hmac_state_update(self->state, msg.buf, msg.len);
-            HASHLIB_RELEASE_LOCK(self);
-        Py_END_ALLOW_THREADS
-    }
+    Py_BEGIN_ALLOW_THREADS
+        HASHLIB_ACQUIRE_LOCK(self);
+        rc = _hacl_hmac_state_update(self->state, msg.buf, msg.len);
+        HASHLIB_RELEASE_LOCK(self);
+    Py_END_ALLOW_THREADS
     PyBuffer_Release(&msg);
     return rc < 0 ? NULL : Py_None;
 }

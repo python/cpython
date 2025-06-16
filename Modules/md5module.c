@@ -123,14 +123,6 @@ MD5Type_copy_impl(MD5object *self, PyTypeObject *cls)
     return (PyObject *)newobj;
 }
 
-static void
-md5_digest_compute_with_lock(MD5object *self, uint8_t *digest)
-{
-    HASHLIB_ACQUIRE_LOCK(self);
-    Hacl_Hash_MD5_digest(self->hash_state, digest);
-    HASHLIB_RELEASE_LOCK(self);
-}
-
 /*[clinic input]
 MD5Type.digest
 
@@ -142,7 +134,9 @@ MD5Type_digest_impl(MD5object *self)
 /*[clinic end generated code: output=eb691dc4190a07ec input=bc0c4397c2994be6]*/
 {
     uint8_t digest[MD5_DIGESTSIZE];
-    md5_digest_compute_with_lock(self, digest);
+    HASHLIB_ACQUIRE_LOCK(self);
+    Hacl_Hash_MD5_digest(self->hash_state, digest);
+    HASHLIB_RELEASE_LOCK(self);
     return PyBytes_FromStringAndSize((const char *)digest, MD5_DIGESTSIZE);
 }
 
@@ -157,7 +151,9 @@ MD5Type_hexdigest_impl(MD5object *self)
 /*[clinic end generated code: output=17badced1f3ac932 input=b60b19de644798dd]*/
 {
     uint8_t digest[MD5_DIGESTSIZE];
-    md5_digest_compute_with_lock(self, digest);
+    HASHLIB_ACQUIRE_LOCK(self);
+    Hacl_Hash_MD5_digest(self->hash_state, digest);
+    HASHLIB_RELEASE_LOCK(self);
     return _Py_strhex((const char *)digest, MD5_DIGESTSIZE);
 }
 
@@ -197,13 +193,11 @@ MD5Type_update_impl(MD5object *self, PyObject *obj)
 {
     Py_buffer buf;
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
-    if (buf.len > 0) {
-        Py_BEGIN_ALLOW_THREADS
-            HASHLIB_ACQUIRE_LOCK(self);
-            _hacl_md5_state_update(self->hash_state, buf.buf, buf.len);
-            HASHLIB_RELEASE_LOCK(self);
-        Py_END_ALLOW_THREADS
-    }
+    Py_BEGIN_ALLOW_THREADS
+        HASHLIB_ACQUIRE_LOCK(self);
+        _hacl_md5_state_update(self->hash_state, buf.buf, buf.len);
+        HASHLIB_RELEASE_LOCK(self);
+    Py_END_ALLOW_THREADS
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
 }
