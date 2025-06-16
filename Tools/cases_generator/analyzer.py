@@ -869,7 +869,7 @@ def compute_properties(op: parser.CodeDef) -> Properties:
     )
 
 def expand(items: list[StackItem], oparg: int) -> list[StackItem]:
-    # Only replace array item with scalar if no more than item is an array
+    # Only replace array item with scalar if no more than one item is an array
     index = -1
     for i, item in enumerate(items):
         if "oparg" in item.size:
