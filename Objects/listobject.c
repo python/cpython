@@ -1684,10 +1684,7 @@ sortslice_advance(sortslice *slice, Py_ssize_t n)
 /* Avoid malloc for small temp arrays. */
 #define MERGESTATE_TEMP_SIZE 256
 
-/* The largest value of minrun. This must be a power of 2, and >= 1, so that
- * the compute_minrun() algorithm guarantees to return a result no larger than
- * this,
- */
+/* The largest value of minrun. This must be a power of 2, and >= 1 */
 #define MAX_MINRUN 64
 #if ((MAX_MINRUN) < 1) || ((MAX_MINRUN) & ((MAX_MINRUN) - 1))
 #error "MAX_MINRUN must be a power of 2, and >= 1"
@@ -1748,6 +1745,12 @@ struct s_MergeState {
      * of tuples. It may be set to safe_object_compare, but the idea is that hopefully
      * we can assume more, and use one of the special-case compares. */
     int (*tuple_elem_compare)(PyObject *, PyObject *, MergeState *);
+
+    /* Varisbles used for minrun computation. The "ideal" minrun length is
+     * the infinite precision listlen / 2**e, which is represented as the
+     * marhematical value of mr_int + mr_frac / 2**e.
+     */
+     Py_ssize_t mr_int, mr_frac, mr_current_frac, mr_e, mr_mask;
 };
 
 /* binarysort is the best method for sorting small arrays: it does few
@@ -2209,6 +2212,16 @@ merge_init(MergeState *ms, Py_ssize_t list_size, int has_keyfunc,
     ms->min_gallop = MIN_GALLOP;
     ms->listlen = list_size;
     ms->basekeys = lo->keys;
+
+    ms->mr_int = list_size;
+    ms->mr_e = 0;
+    while (ms->mr_int >= MAX_MINRUN) {
+        ms->mr_int >>= 1;
+        ++ms->mr_e;
+    }
+    ms->mr_mask = (1 << ms->mr_e) - 1;
+    ms->mr_frac = list_size & ms->mr_mask;
+    ms->mr_current_frac = 0;
 }
 
 /* Free all the temp memory owned by the MergeState.  This must be called
@@ -2686,27 +2699,15 @@ merge_force_collapse(MergeState *ms)
     return 0;
 }
 
-/* Compute a good value for the minimum run length; natural runs shorter
- * than this are boosted artificially via binary insertion.
- *
- * If n < MAX_MINRUN return n (it's too small to bother with fancy stuff).
- * Else if n is an exact power of 2, return MAX_MINRUN / 2.
- * Else return an int k, MAX_MINRUN / 2 <= k <= MAX_MINRUN, such that n/k is
- * close to, but strictly less than, an exact power of 2.
- *
- * See listsort.txt for more info.
- */
-static Py_ssize_t
-merge_compute_minrun(Py_ssize_t n)
+/* Return the next minrun value to use. See listsort.txt. */
+static inline Py_ssize_t
+minrun_next(MergeState *ms)
 {
-    Py_ssize_t r = 0;           /* becomes 1 if any 1 bits are shifted off */
-
-    assert(n >= 0);
-    while (n >= MAX_MINRUN) {
-        r |= n & 1;
-        n >>= 1;
-    }
-    return n + r;
+    ms->mr_current_frac += ms->mr_frac;
+    assert(ms->mr_current_frac >> ms->mr_e <= 1);
+    Py_ssize_t result = ms->mr_int + (ms->mr_current_frac >> ms->mr_e);
+    ms->mr_current_frac &= ms->mr_mask;
+    return result;
 }
 
 /* Here we define custom comparison functions to optimize for the cases one commonly
@@ -3074,7 +3075,6 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
     /* March over the array once, left to right, finding natural runs,
      * and extending short natural runs to minrun elements.
      */
-    minrun = merge_compute_minrun(nremaining);
     do {
         Py_ssize_t n;
 
@@ -3083,6 +3083,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         if (n < 0)
             goto fail;
         /* If short, extend to min(minrun, nremaining). */
+        minrun = minrun_next(&ms);
         if (n < minrun) {
             const Py_ssize_t force = nremaining <= minrun ?
                               nremaining : minrun;
