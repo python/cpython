@@ -778,7 +778,7 @@ _hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
          * where it is not yet possible to have concurrent access. */
         HASHLIB_EXTERNAL_INSTRUCTIONS_UNLOCKED(
             msg.len,
-            _hacl_hmac_state_update(self->state, msg.buf, msg.len)
+            rc = _hacl_hmac_state_update(self->state, msg.buf, msg.len)
         );
         PyBuffer_Release(&msg);
 #ifndef NDEBUG
