@@ -1,5 +1,6 @@
 import functools
 import hashlib
+import importlib
 import unittest
 from test.support.import_helper import import_module
 
@@ -307,3 +308,22 @@ class BuiltinHashFunctionsTrait(HashFunctionsTrait):
     @property
     def sha3_512(self):
         return self._find_constructor_in("_sha3","sha3_512")
+
+
+def find_gil_minsize(modules_names, default=2048):
+    """Get the largest GIL_MINSIZE value for the given cryptographic modules.
+
+    The valid module names are the following:
+
+    - _hashlib
+    - _md5, _sha1, _sha2, _sha3, _blake2
+    - _hmac
+    """
+    sizes = []
+    for module_name in modules_names:
+        try:
+            module = importlib.import_module(module_name)
+        except ImportError:
+            continue
+        sizes.append(getattr(module, '_GIL_MINSIZE', default))
+    return max(sizes, default=default)

@@ -1534,6 +1534,20 @@ hmacmodule_init_strings(hmacmodule_state *state)
     return 0;
 }
 
+static int
+hmacmodule_init_globals(PyObject *module, hmacmodule_state *state)
+{
+#define ADD_INT_CONST(NAME, VALUE)                                  \
+    do {                                                            \
+        if (PyModule_AddIntConstant(module, (NAME), (VALUE)) < 0) { \
+            return -1;                                              \
+        }                                                           \
+    } while (0)
+    ADD_INT_CONST("_GIL_MINSIZE", HASHLIB_GIL_MINSIZE);
+#undef ADD_INT_CONST
+    return 0;
+}
+
 static void
 hmacmodule_init_cpu_features(hmacmodule_state *state)
 {
@@ -1622,6 +1636,9 @@ hmacmodule_exec(PyObject *module)
         return -1;
     }
     if (hmacmodule_init_strings(state) < 0) {
+        return -1;
+    }
+    if (hmacmodule_init_globals(module, state) < 0) {
         return -1;
     }
     hmacmodule_init_cpu_features(state);

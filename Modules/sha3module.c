@@ -630,6 +630,9 @@ _sha3_exec(PyObject *m)
     if (PyModule_AddStringConstant(m, "implementation", "HACL") < 0) {
         return -1;
     }
+    if (PyModule_AddIntConstant(m, "_GIL_MINSIZE", HASHLIB_GIL_MINSIZE) < 0) {
+        return -1;
+    }
 
     return 0;
 }

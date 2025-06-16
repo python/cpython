@@ -227,6 +227,8 @@ blake2_exec(PyObject *m)
         }                                                   \
     } while (0)
 
+    ADD_INT_CONST("_GIL_MINSIZE", HASHLIB_GIL_MINSIZE);
+
     st->blake2b_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         m, &blake2b_type_spec, NULL);
 

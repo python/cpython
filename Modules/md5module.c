@@ -352,6 +352,9 @@ md5_exec(PyObject *m)
     if (PyModule_AddObjectRef(m, "MD5Type", (PyObject *)st->md5_type) < 0) {
         return -1;
     }
+    if (PyModule_AddIntConstant(m, "_GIL_MINSIZE", HASHLIB_GIL_MINSIZE) < 0) {
+        return -1;
+    }
 
     return 0;
 }
