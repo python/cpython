@@ -916,6 +916,9 @@ class DefaultCookiePolicy(CookiePolicy):
                         "travel", "eu", "tv", "or", "nom", "sch", "web"}
         if isinstance(additional_country_code_slds, set):
             self.slds = well_known_slds.union(additional_country_code_slds)
+            _debug(f"The set of country code slds is {self.slds}")
+        else:
+            raise TypeError("attribute 'additional_country_code_slds' should be a 'set' type")
 
         if blocked_domains is not None:
             self._blocked_domains = tuple(blocked_domains)
