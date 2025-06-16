@@ -82,6 +82,7 @@ and improvements in user-friendliness and correctness.
 
 .. PEP-sized items next.
 
+* :ref:`PEP 779: Free-threaded Python is officially supported <whatsnew314-pep779>`
 * :ref:`PEP 649 and 749: deferred evaluation of annotations <whatsnew314-pep649>`
 * :ref:`PEP 734: Multiple interpreters in the stdlib <whatsnew314-pep734>`
 * :ref:`PEP 741: Python configuration C API <whatsnew314-pep741>`
@@ -123,6 +124,32 @@ of Python.  See :ref:`below <whatsnew314-refcount>` for details.
 
 New features
 ============
+
+.. _whatsnew314-pep779:
+
+PEP 779: Free-threaded Python is officially supported
+-----------------------------------------------------
+
+The free-threaded build of Python is now supported and no longer experimental.
+This is the start of phase II where free-threaded Python is officially supported
+but still optional.
+
+We are confident that the project is on the right path, and we appreciate the
+continued dedication from everyone working to make free-threading ready for
+broader adoption across the Python community.
+
+With these recommendations and the acceptance of this PEP, we as the Python
+developer community should broadly advertise that free-threading is a supported
+Python build option now and into the future, and that it will not be removed
+without a proper deprecation schedule.
+
+Any decision to transition to phase III, with free-threading as the default or
+sole build of Python is still undecided, and dependent on many factors both
+within CPython itself and the community. This decision is for the future.
+
+.. seealso::
+   :pep:`779` and its `acceptance
+   <https://discuss.python.org/t/pep-779-criteria-for-supported-status-for-free-threaded-python/84319/123>`__.
 
 .. _whatsnew314-pep734:
 
