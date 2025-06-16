@@ -1827,7 +1827,7 @@ object.
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. c:function:: int PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *writer, const wchar_t *str, Py_ssize_t size)
 

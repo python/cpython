@@ -119,7 +119,7 @@ MD5Type_copy_impl(MD5object *self, PyTypeObject *cls)
     newobj->hash_state = Hacl_Hash_MD5_copy(self->hash_state);
     HASHLIB_RELEASE_LOCK(self);
     if (newobj->hash_state == NULL) {
-        Py_DECREF(self);
+        Py_DECREF(newobj);
         return PyErr_NoMemory();
     }
     return (PyObject *)newobj;

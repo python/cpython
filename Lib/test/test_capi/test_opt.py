@@ -1381,6 +1381,21 @@ class TestUopsOptimization(unittest.TestCase):
         # Removed guard
         self.assertNotIn("_CHECK_FUNCTION_EXACT_ARGS", uops)
 
+    def test_method_guards_removed_or_reduced(self):
+        def testfunc(n):
+            result = 0
+            for i in range(n):
+                result += test_bound_method(i)
+            return result
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, sum(range(TIER2_THRESHOLD)))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_FRAME", uops)
+        # Strength reduced version
+        self.assertIn("_CHECK_FUNCTION_VERSION_INLINE", uops)
+        self.assertNotIn("_CHECK_METHOD_VERSION", uops)
+
     def test_jit_error_pops(self):
         """
         Tests that the correct number of pops are inserted into the
@@ -2275,9 +2290,31 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_UNPACK_SEQUENCE_TWO_TUPLE", uops)
         self.assertNotIn("_GUARD_TOS_TUPLE", uops)
 
+    def test_unary_invert_long_type(self):
+        def testfunc(n):
+            for _ in range(n):
+                a = 9397
+                x = ~a + ~a
+
+        testfunc(TIER2_THRESHOLD)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertNotIn("_GUARD_TOS_INT", uops)
+        self.assertNotIn("_GUARD_NOS_INT", uops)
+
 
 def global_identity(x):
     return x
+
+class TestObject:
+    def test(self, *args, **kwargs):
+        return args[0]
+
+test_object = TestObject()
+test_bound_method = TestObject.test.__get__(test_object)
 
 if __name__ == "__main__":
     unittest.main()

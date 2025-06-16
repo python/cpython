@@ -281,9 +281,13 @@ Doc/howto/clinic.rst          @erlend-aasland
 # Subinterpreters
 **/*interpreteridobject.*     @ericsnowcurrently
 **/*crossinterp*              @ericsnowcurrently
-Lib/test/support/interpreters/  @ericsnowcurrently
 Modules/_interp*module.c      @ericsnowcurrently
+Lib/test/test__interp*.py     @ericsnowcurrently
+Lib/concurrent/interpreters/  @ericsnowcurrently
+Lib/test/support/channels.py  @ericsnowcurrently
+Doc/library/concurrent.interpreters.rst  @ericsnowcurrently
 Lib/test/test_interpreters/   @ericsnowcurrently
+Lib/concurrent/futures/interpreter.py  @ericsnowcurrently
 
 # Android
 **/*Android*                  @mhsmith @freakboy3742
