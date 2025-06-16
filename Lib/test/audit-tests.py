@@ -648,6 +648,7 @@ def test_sys_remote_exec():
     import sys
     pid = os.getpid()
     event_pid = -1
+    event_script_path = ""
     remote_exec_trigger = False
     def hook(event, args):
         if event == "remote_exec":
@@ -655,13 +656,17 @@ def test_sys_remote_exec():
             remote_exec_trigger = True
             nonlocal event_pid
             event_pid = args[0]
+            nonlocal event_script_path
+            event_script_path = args[1]
+
     sys.addaudithook(hook)
     with tempfile.NamedTemporaryFile(mode='w+', delete=True) as tmp_file:
         tmp_file.write("print('Hello from remote_exec!')\n")
         tmp_file.flush()
         sys.remote_exec(pid, tmp_file.name)
-    assert remote_exec_trigger
-    assert event_pid == pid
+        assert remote_exec_trigger
+        assert event_pid == pid
+        assert event_script_path == tmp_file.name
 
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts
