@@ -2678,16 +2678,18 @@ builtin_vars(PyObject *self, PyObject *args)
         if (_PyEval_GetFrame() != NULL) {
             d = _PyEval_GetFrameLocals();
         }
-        PyThreadState *tstate = _PyThreadState_GET();
-        d = _PyEval_GetGlobalsFromRunningMain(tstate);
-        if (d == NULL) {
-            if (!_PyErr_Occurred(tstate)) {
-                d = _PyEval_GetFrameLocals();
-                assert(_PyErr_Occurred(tstate));
-            }
-        }
         else {
-            Py_INCREF(d);
+            PyThreadState *tstate = _PyThreadState_GET();
+            d = _PyEval_GetGlobalsFromRunningMain(tstate);
+            if (d == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    d = _PyEval_GetFrameLocals();
+                    assert(_PyErr_Occurred(tstate));
+                }
+            }
+            else {
+                Py_INCREF(d);
+            }
         }
     }
     else {

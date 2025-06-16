@@ -2086,16 +2086,18 @@ _dir_locals(void)
     if (_PyEval_GetFrame() != NULL) {
         locals = _PyEval_GetFrameLocals();
     }
-    PyThreadState *tstate = _PyThreadState_GET();
-    locals = _PyEval_GetGlobalsFromRunningMain(tstate);
-    if (locals == NULL) {
-        if (!_PyErr_Occurred(tstate)) {
-            locals = _PyEval_GetFrameLocals();
-            assert(_PyErr_Occurred(tstate));
-        }
-    }
     else {
-        Py_INCREF(locals);
+        PyThreadState *tstate = _PyThreadState_GET();
+        locals = _PyEval_GetGlobalsFromRunningMain(tstate);
+        if (locals == NULL) {
+            if (!_PyErr_Occurred(tstate)) {
+                locals = _PyEval_GetFrameLocals();
+                assert(_PyErr_Occurred(tstate));
+            }
+        }
+        else {
+            Py_INCREF(locals);
+        }
     }
     if (locals == NULL) {
         return NULL;
