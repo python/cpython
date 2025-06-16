@@ -418,7 +418,7 @@ new_Blake2Object(PyTypeObject *type)
     } while (0)
 
 static void
-blake2_update_state_unlocked(Blake2Object *self, uint8_t *buf, Py_ssize_t len)
+blake2_update_unlocked(Blake2Object *self, uint8_t *buf, Py_ssize_t len)
 {
     switch (self->impl) {
         // blake2b_256_state and blake2s_128_state must be if'd since
@@ -642,8 +642,10 @@ py_blake2_new(PyTypeObject *type, PyObject *data, int digest_size,
     if (data != NULL) {
         Py_buffer buf;
         GET_BUFFER_VIEW_OR_ERROR(data, &buf, goto error);
+        /* Do not use self->mutex here as this is the constructor
+         * where it is not yet possible to have concurrent access. */
         Py_BEGIN_ALLOW_THREADS
-            blake2_update_state_unlocked(self, buf.buf, buf.len);
+            blake2_update_unlocked(self, buf.buf, buf.len);
         Py_END_ALLOW_THREADS
         PyBuffer_Release(&buf);
     }
@@ -819,7 +821,7 @@ _blake2_blake2b_update_impl(Blake2Object *self, PyObject *data)
     GET_BUFFER_VIEW_OR_ERROUT(data, &buf);
     Py_BEGIN_ALLOW_THREADS
         HASHLIB_ACQUIRE_LOCK(self);
-        blake2_update_state_unlocked(self, buf.buf, buf.len);
+        blake2_update_unlocked(self, buf.buf, buf.len);
         HASHLIB_RELEASE_LOCK(self);
     Py_END_ALLOW_THREADS
     PyBuffer_Release(&buf);
