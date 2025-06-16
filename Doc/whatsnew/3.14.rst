@@ -816,43 +816,58 @@ Executing the new tool on the running process will yield a table like this:
 
   python -m asyncio ps 12345
 
-  tid        task id              task name            coroutine chain                                    awaiter name         awaiter id
-  ---------------------------------------------------------------------------------------------------------------------------------------
-  8138752    0x564bd3d0210        Task-1                                                                                       0x0
-  8138752    0x564bd3d0410        Sundowning           _aexit -> __aexit__ -> main                        Task-1               0x564bd3d0210
-  8138752    0x564bd3d0610        TMBTE                _aexit -> __aexit__ -> main                        Task-1               0x564bd3d0210
-  8138752    0x564bd3d0810        TNDNBTG              _aexit -> __aexit__ -> album                       Sundowning           0x564bd3d0410
-  8138752    0x564bd3d0a10        Levitate             _aexit -> __aexit__ -> album                       Sundowning           0x564bd3d0410
-  8138752    0x564bd3e0550        DYWTYLM              _aexit -> __aexit__ -> album                       TMBTE                 0x564bd3d0610
-  8138752    0x564bd3e0710        Aqua Regia           _aexit -> __aexit__ -> album                       TMBTE                 0x564bd3d0610
+  tid        task id              task name            coroutine stack                                    awaiter chain                                      awaiter name    awaiter id
+  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  1935500    0x7fc930c18050       Task-1               TaskGroup._aexit -> TaskGroup.__aexit__ -> main                                                                       0x0
+  1935500    0x7fc930c18230       Sundowning           TaskGroup._aexit -> TaskGroup.__aexit__ -> album   TaskGroup._aexit -> TaskGroup.__aexit__ -> main    Task-1          0x7fc930c18050
+  1935500    0x7fc93173fa50       TMBTE                TaskGroup._aexit -> TaskGroup.__aexit__ -> album   TaskGroup._aexit -> TaskGroup.__aexit__ -> main    Task-1          0x7fc930c18050
+  1935500    0x7fc93173fdf0       TNDNBTG              sleep -> play                                      TaskGroup._aexit -> TaskGroup.__aexit__ -> album   Sundowning      0x7fc930c18230
+  1935500    0x7fc930d32510       Levitate             sleep -> play                                      TaskGroup._aexit -> TaskGroup.__aexit__ -> album   Sundowning      0x7fc930c18230
+  1935500    0x7fc930d32890       DYWTYLM              sleep -> play                                      TaskGroup._aexit -> TaskGroup.__aexit__ -> album   TMBTE           0x7fc93173fa50
+  1935500    0x7fc93161ec30       Aqua Regia           sleep -> play                                      TaskGroup._aexit -> TaskGroup.__aexit__ -> album   TMBTE           0x7fc93173fa50
 
-
-or:
+or a tree like this:
 
 .. code-block:: bash
 
   python -m asyncio pstree 12345
 
   └── (T) Task-1
-      └──  main
-          └──  __aexit__
-              └──  _aexit
+      └──  main example.py:13
+          └──  TaskGroup.__aexit__ Lib/asyncio/taskgroups.py:72
+              └──  TaskGroup._aexit Lib/asyncio/taskgroups.py:121
                   ├── (T) Sundowning
-                  │   └──  album
-                  │       └──  __aexit__
-                  │           └──  _aexit
+                  │   └──  album example.py:8
+                  │       └──  TaskGroup.__aexit__ Lib/asyncio/taskgroups.py:72
+                  │           └──  TaskGroup._aexit Lib/asyncio/taskgroups.py:121
                   │               ├── (T) TNDNBTG
+                  │               │   └──  play example.py:4
+                  │               │       └──  sleep Lib/asyncio/tasks.py:702
                   │               └── (T) Levitate
+                  │                   └──  play example.py:4
+                  │                       └──  sleep Lib/asyncio/tasks.py:702
                   └── (T) TMBTE
-                      └──  album
-                          └──  __aexit__
-                              └──  _aexit
+                      └──  album example.py:8
+                          └──  TaskGroup.__aexit__ Lib/asyncio/taskgroups.py:72
+                              └──  TaskGroup._aexit Lib/asyncio/taskgroups.py:121
                                   ├── (T) DYWTYLM
+                                  │   └──  play example.py:4
+                                  │       └──  sleep Lib/asyncio/tasks.py:702
                                   └── (T) Aqua Regia
+                                      └──  play example.py:4
+                                          └──  sleep Lib/asyncio/tasks.py:702
 
 If a cycle is detected in the async await graph (which could indicate a
 programming issue), the tool raises an error and lists the cycle paths that
-prevent tree construction.
+prevent tree construction:
+
+.. code-block:: bash
+
+  python -m asyncio pstree 12345
+
+  ERROR: await-graph contains cycles - cannot print a tree!
+
+  cycle: Task-2 → Task-3 → Task-2
 
 (Contributed by Pablo Galindo, Łukasz Langa, Yury Selivanov, and Marta
 Gomez Macias in :gh:`91048`.)
@@ -1244,6 +1259,14 @@ concurrent.futures
   buffer.
   (Contributed by Enzo Bonnal and Josh Rosenberg in :gh:`74028`.)
 
+configparser
+------------
+
+* Security fix: will no longer write config files it cannot read. Attempting
+  to :meth:`configparser.ConfigParser.write` keys containing delimiters or
+  beginning with the section header pattern will raise a
+  :class:`configparser.InvalidWriteError`.
+  (Contributed by Jacob Lincoln in :gh:`129270`)
 
 contextvars
 -----------
