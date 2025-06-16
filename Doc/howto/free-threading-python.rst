@@ -12,7 +12,10 @@ While not all software will benefit from this automatically, programs
 designed with threading in mind will run faster on multi-core hardware.
 
 The free-threaded mode is working and continues to be improved, but
-expect some bugs and a substantial performance hit in single-threaded workloads.
+there is some additional overhead in single-threaded workloads compared
+to the regular build. Additionally, third-party packages, in particular ones
+with an :term:`extension module`, may not be ready for use in a
+free-threaded build, and will re-enable the :term:`GIL`.
 
 This document describes the implications of free threading
 for Python code.  See :ref:`freethreading-extensions-howto` for information on
