@@ -1100,6 +1100,11 @@ class AbstractUnpickleTests:
         self.check_unpickling_error((pickle.UnpicklingError, OverflowError),
                                     dumped)
 
+    def test_large_binstring(self):
+        errmsg = 'BINSTRING pickle has negative byte count'
+        with self.assertRaisesRegex(pickle.UnpicklingError, errmsg):
+            self.loads(b'T\0\0\0\x80')
+
     def test_get(self):
         pickled = b'((lp100000\ng100000\nt.'
         unpickled = self.loads(pickled)
@@ -3068,7 +3073,7 @@ class AbstractPickleTests:
             pickled = self.dumps(None, proto)
             if proto >= 2:
                 proto_header = pickle.PROTO + bytes([proto])
-                self.assertTrue(pickled.startswith(proto_header))
+                self.assertStartsWith(pickled, proto_header)
             else:
                 self.assertEqual(count_opcode(pickle.PROTO, pickled), 0)
 
@@ -5007,7 +5012,7 @@ class AbstractDispatchTableTests:
         p = self.pickler_class(f, 0)
         with self.assertRaises(AttributeError):
             p.dispatch_table
-        self.assertFalse(hasattr(p, 'dispatch_table'))
+        self.assertNotHasAttr(p, 'dispatch_table')
 
     def test_class_dispatch_table(self):
         # A dispatch_table attribute can be specified class-wide

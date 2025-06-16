@@ -498,6 +498,28 @@ class DeferredEvaluationTests(unittest.TestCase):
         self.assertEqual(f.__annotate__(annotationlib.Format.VALUE), annos)
         self.assertEqual(f.__annotations__, annos)
 
+    def test_set_annotations(self):
+        function_code = textwrap.dedent("""
+        def f(x: int):
+            pass
+        """)
+        class_code = textwrap.dedent("""
+        class f:
+            x: int
+        """)
+        for future in (False, True):
+            for label, code in (("function", function_code), ("class", class_code)):
+                with self.subTest(future=future, label=label):
+                    if future:
+                        code = "from __future__ import annotations\n" + code
+                    ns = run_code(code)
+                    f = ns["f"]
+                    anno = "int" if future else int
+                    self.assertEqual(f.__annotations__, {"x": anno})
+
+                    f.__annotations__ = {"x": str}
+                    self.assertEqual(f.__annotations__, {"x": str})
+
     def test_name_clash_with_format(self):
         # this test would fail if __annotate__'s parameter was called "format"
         # during symbol table construction

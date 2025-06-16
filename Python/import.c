@@ -3369,11 +3369,11 @@ PyObject *
 PyImport_GetImporter(PyObject *path)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *path_importer_cache = _PySys_GetRequiredAttrString("path_importer_cache");
+    PyObject *path_importer_cache = PySys_GetAttrString("path_importer_cache");
     if (path_importer_cache == NULL) {
         return NULL;
     }
-    PyObject *path_hooks = _PySys_GetRequiredAttrString("path_hooks");
+    PyObject *path_hooks = PySys_GetAttrString("path_hooks");
     if (path_hooks == NULL) {
         Py_DECREF(path_importer_cache);
         return NULL;
@@ -3682,14 +3682,14 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
     PyTime_t t1 = 0, accumulated_copy = accumulated;
 
     PyObject *sys_path, *sys_meta_path, *sys_path_hooks;
-    if (_PySys_GetOptionalAttrString("path", &sys_path) < 0) {
+    if (PySys_GetOptionalAttrString("path", &sys_path) < 0) {
         return NULL;
     }
-    if (_PySys_GetOptionalAttrString("meta_path", &sys_meta_path) < 0) {
+    if (PySys_GetOptionalAttrString("meta_path", &sys_meta_path) < 0) {
         Py_XDECREF(sys_path);
         return NULL;
     }
-    if (_PySys_GetOptionalAttrString("path_hooks", &sys_path_hooks) < 0) {
+    if (PySys_GetOptionalAttrString("path_hooks", &sys_path_hooks) < 0) {
         Py_XDECREF(sys_meta_path);
         Py_XDECREF(sys_path);
         return NULL;
@@ -3854,15 +3854,17 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                 }
 
                 final_mod = import_get_module(tstate, to_return);
-                Py_DECREF(to_return);
                 if (final_mod == NULL) {
                     if (!_PyErr_Occurred(tstate)) {
                         _PyErr_Format(tstate, PyExc_KeyError,
                                       "%R not in sys.modules as expected",
                                       to_return);
                     }
+                    Py_DECREF(to_return);
                     goto error;
                 }
+
+                Py_DECREF(to_return);
             }
         }
         else {
@@ -3962,8 +3964,10 @@ PyImport_Import(PyObject *module_name)
     if (globals != NULL) {
         Py_INCREF(globals);
         builtins = PyObject_GetItem(globals, &_Py_ID(__builtins__));
-        if (builtins == NULL)
+        if (builtins == NULL) {
+            // XXX Fall back to interp->builtins or sys.modules['builtins']?
             goto err;
+        }
     }
     else {
         /* No globals -- use standard builtins, and fake globals */
@@ -4125,7 +4129,7 @@ _PyImport_FiniCore(PyInterpreterState *interp)
 static int
 init_zipimport(PyThreadState *tstate, int verbose)
 {
-    PyObject *path_hooks = _PySys_GetRequiredAttrString("path_hooks");
+    PyObject *path_hooks = PySys_GetAttrString("path_hooks");
     if (path_hooks == NULL) {
         return -1;
     }

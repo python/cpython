@@ -387,6 +387,10 @@ class NormalizeTest(unittest.TestCase):
         self.check('c', 'C')
         self.check('posix', 'C')
 
+    def test_c_utf8(self):
+        self.check('c.utf8', 'C.UTF-8')
+        self.check('C.UTF-8', 'C.UTF-8')
+
     def test_english(self):
         self.check('en', 'en_US.ISO8859-1')
         self.check('EN', 'en_US.ISO8859-1')
