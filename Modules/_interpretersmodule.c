@@ -80,21 +80,11 @@ is_notshareable_raised(PyThreadState *tstate)
 }
 
 static void
-unwrap_not_shareable(PyThreadState *tstate)
+unwrap_not_shareable(PyThreadState *tstate, _PyXI_failure *failure)
 {
-    if (!is_notshareable_raised(tstate)) {
-        return;
+    if (_PyXI_UnwrapNotShareableError(tstate, failure) < 0) {
+        _PyErr_Clear(tstate);
     }
-    PyObject *exc = _PyErr_GetRaisedException(tstate);
-    PyObject *cause = PyException_GetCause(exc);
-    if (cause != NULL) {
-        Py_DECREF(exc);
-        exc = cause;
-    }
-    else {
-        assert(PyException_GetContext(exc) == NULL);
-    }
-    _PyErr_SetRaisedException(tstate, exc);
 }
 
 
@@ -532,13 +522,30 @@ _interp_call_pack(PyThreadState *tstate, struct interp_call *call,
     return 0;
 }
 
+static void
+wrap_notshareable(PyThreadState *tstate, const char *label)
+{
+    if (!is_notshareable_raised(tstate)) {
+        return;
+    }
+    assert(label != NULL && strlen(label) > 0);
+    PyObject *cause = _PyErr_GetRaisedException(tstate);
+    _PyXIData_FormatNotShareableError(tstate, "%s not shareable", label);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
+    PyException_SetCause(exc, cause);
+    _PyErr_SetRaisedException(tstate, exc);
+}
+
 static int
 _interp_call_unpack(struct interp_call *call,
                     PyObject **p_func, PyObject **p_args, PyObject **p_kwargs)
 {
+    PyThreadState *tstate = PyThreadState_Get();
+
     // Unpack the func.
     PyObject *func = _PyXIData_NewObject(call->func);
     if (func == NULL) {
+        wrap_notshareable(tstate, "func");
         return -1;
     }
     // Unpack the args.
@@ -553,6 +560,7 @@ _interp_call_unpack(struct interp_call *call,
     else {
         args = _PyXIData_NewObject(call->args);
         if (args == NULL) {
+            wrap_notshareable(tstate, "args");
             Py_DECREF(func);
             return -1;
         }
@@ -563,6 +571,7 @@ _interp_call_unpack(struct interp_call *call,
     if (call->kwargs != NULL) {
         kwargs = _PyXIData_NewObject(call->kwargs);
         if (kwargs == NULL) {
+            wrap_notshareable(tstate, "kwargs");
             Py_DECREF(func);
             Py_DECREF(args);
             return -1;
@@ -577,7 +586,7 @@ _interp_call_unpack(struct interp_call *call,
 
 static int
 _make_call(struct interp_call *call,
-           PyObject **p_result, _PyXI_errcode *p_errcode)
+           PyObject **p_result, _PyXI_failure *failure)
 {
     assert(call != NULL && call->func != NULL);
     PyThreadState *tstate = _PyThreadState_GET();
@@ -588,12 +597,10 @@ _make_call(struct interp_call *call,
         assert(func == NULL);
         assert(args == NULL);
         assert(kwargs == NULL);
-        *p_errcode = is_notshareable_raised(tstate)
-            ? _PyXI_ERR_NOT_SHAREABLE
-            : _PyXI_ERR_OTHER;
+        _PyXI_InitFailure(failure, _PyXI_ERR_OTHER, NULL);
+        unwrap_not_shareable(tstate, failure);
         return -1;
     }
-    *p_errcode = _PyXI_ERR_NO_ERROR;
 
     // Make the call.
     PyObject *resobj = PyObject_Call(func, args, kwargs);
@@ -608,17 +615,17 @@ _make_call(struct interp_call *call,
 }
 
 static int
-_run_script(_PyXIData_t *script, PyObject *ns, _PyXI_errcode *p_errcode)
+_run_script(_PyXIData_t *script, PyObject *ns, _PyXI_failure *failure)
 {
     PyObject *code = _PyXIData_NewObject(script);
     if (code == NULL) {
-        *p_errcode = _PyXI_ERR_NOT_SHAREABLE;
+        _PyXI_InitFailure(failure, _PyXI_ERR_NOT_SHAREABLE, NULL);
         return -1;
     }
     PyObject *result = PyEval_EvalCode(code, ns, ns);
     Py_DECREF(code);
     if (result == NULL) {
-        *p_errcode = _PyXI_ERR_UNCAUGHT_EXCEPTION;
+        _PyXI_InitFailure(failure, _PyXI_ERR_UNCAUGHT_EXCEPTION, NULL);
         return -1;
     }
     assert(result == Py_None);
@@ -644,8 +651,14 @@ _run_in_interpreter(PyThreadState *tstate, PyInterpreterState *interp,
                      PyObject *shareables, struct run_result *runres)
 {
     assert(!_PyErr_Occurred(tstate));
+    int res = -1;
+    _PyXI_failure *failure = _PyXI_NewFailure();
+    if (failure == NULL) {
+        return -1;
+    }
     _PyXI_session *session = _PyXI_NewSession();
     if (session == NULL) {
+        _PyXI_FreeFailure(failure);
         return -1;
     }
     _PyXI_session_result result = {0};
@@ -655,43 +668,44 @@ _run_in_interpreter(PyThreadState *tstate, PyInterpreterState *interp,
         // If an error occured at this step, it means that interp
         // was not prepared and switched.
         _PyXI_FreeSession(session);
+        _PyXI_FreeFailure(failure);
         assert(result.excinfo == NULL);
         return -1;
     }
 
     // Run in the interpreter.
-    int res = -1;
-    _PyXI_errcode errcode = _PyXI_ERR_NO_ERROR;
     if (script != NULL) {
         assert(call == NULL);
-        PyObject *mainns = _PyXI_GetMainNamespace(session, &errcode);
+        PyObject *mainns = _PyXI_GetMainNamespace(session, failure);
         if (mainns == NULL) {
             goto finally;
         }
-        res = _run_script(script, mainns, &errcode);
+        res = _run_script(script, mainns, failure);
     }
     else {
         assert(call != NULL);
         PyObject *resobj;
-        res = _make_call(call, &resobj, &errcode);
+        res = _make_call(call, &resobj, failure);
         if (res == 0) {
-            res = _PyXI_Preserve(session, "resobj", resobj, &errcode);
+            res = _PyXI_Preserve(session, "resobj", resobj, failure);
             Py_DECREF(resobj);
             if (res < 0) {
                 goto finally;
             }
         }
     }
-    int exitres;
 
 finally:
     // Clean up and switch back.
-    exitres = _PyXI_Exit(session, errcode, &result);
+    (void)res;
+    int exitres = _PyXI_Exit(session, failure, &result);
     assert(res == 0 || exitres != 0);
     _PyXI_FreeSession(session);
+    _PyXI_FreeFailure(failure);
 
     res = exitres;
     if (_PyErr_Occurred(tstate)) {
+        // It's a directly propagated exception.
         assert(res < 0);
     }
     else if (res < 0) {
@@ -1064,7 +1078,7 @@ interp_set___main___attrs(PyObject *self, PyObject *args, PyObject *kwargs)
 
     // Clean up and switch back.
     assert(!PyErr_Occurred());
-    int res = _PyXI_Exit(session, _PyXI_ERR_NO_ERROR, NULL);
+    int res = _PyXI_Exit(session, NULL, NULL);
     _PyXI_FreeSession(session);
     assert(res == 0);
     if (res < 0) {
@@ -1124,7 +1138,7 @@ interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
     // global variables.  They will be resolved against __main__.
     _PyXIData_t xidata = {0};
     if (_PyCode_GetScriptXIData(tstate, code, &xidata) < 0) {
-        unwrap_not_shareable(tstate);
+        unwrap_not_shareable(tstate, NULL);
         return NULL;
     }
 
@@ -1188,7 +1202,7 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
 
     _PyXIData_t xidata = {0};
     if (_PyCode_GetScriptXIData(tstate, script, &xidata) < 0) {
-        unwrap_not_shareable(tstate);
+        unwrap_not_shareable(tstate, NULL);
         return NULL;
     }
 
@@ -1251,7 +1265,7 @@ interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
 
     _PyXIData_t xidata = {0};
     if (_PyCode_GetScriptXIData(tstate, code, &xidata) < 0) {
-        unwrap_not_shareable(tstate);
+        unwrap_not_shareable(tstate, NULL);
         return NULL;
     }
 
@@ -1542,16 +1556,16 @@ capture_exception(PyObject *self, PyObject *args, PyObject *kwds)
     }
     PyObject *captured = NULL;
 
-    _PyXI_excinfo info = {0};
-    if (_PyXI_InitExcInfo(&info, exc) < 0) {
+    _PyXI_excinfo *info = _PyXI_NewExcInfo(exc);
+    if (info == NULL) {
         goto finally;
     }
-    captured = _PyXI_ExcInfoAsObject(&info);
+    captured = _PyXI_ExcInfoAsObject(info);
     if (captured == NULL) {
         goto finally;
     }
 
-    PyObject *formatted = _PyXI_FormatExcInfo(&info);
+    PyObject *formatted = _PyXI_FormatExcInfo(info);
     if (formatted == NULL) {
         Py_CLEAR(captured);
         goto finally;
@@ -1564,7 +1578,7 @@ capture_exception(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
 finally:
-    _PyXI_ClearExcInfo(&info);
+    _PyXI_FreeExcInfo(info);
     if (exc != exc_arg) {
         if (PyErr_Occurred()) {
             PyErr_SetRaisedException(exc);
