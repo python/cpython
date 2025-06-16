@@ -2267,7 +2267,7 @@ class CoroutineTest(unittest.TestCase):
 
     def test_call_aiter_once_in_comprehension(self):
 
-        class Iterator:
+        class AsyncIterator:
 
             def __init__(self):
                 self.val = 0
@@ -2283,12 +2283,17 @@ class CoroutineTest(unittest.TestCase):
         class C:
 
             def __aiter__(self):
-                return Iterator()
+                return AsyncIterator()
 
-        async def run():
+        async def run_listcomp():
             return [i async for i in C()]
 
-        self.assertEqual(run_async(run()), ([], [1,2]))
+        async def run_asyncgen():
+            ag = (i async for i in C())
+            return [i async for i in ag]
+
+        self.assertEqual(run_async(run_listcomp()), ([], [1, 2]))
+        self.assertEqual(run_async(run_asyncgen()), ([], [1, 2]))
 
 
 @unittest.skipIf(
