@@ -1010,7 +1010,7 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
         locals = Py_NewRef(globals);
     }
 
-    if (_PyEval_EnsureBuiltins(tstate, globals, 0, NULL) < 0) {
+    if (_PyEval_EnsureBuiltins(tstate, globals, NULL) < 0) {
         goto error;
     }
 
@@ -1134,7 +1134,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         goto error;
     }
 
-    if (_PyEval_EnsureBuiltins(tstate, globals, 0, NULL) < 0) {
+    if (_PyEval_EnsureBuiltins(tstate, globals, NULL) < 0) {
         goto error;
     }
 

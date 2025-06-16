@@ -2779,50 +2779,86 @@ _PyEval_GetGlobalsFromRunningMain(PyThreadState *tstate)
     return globals;
 }
 
-int
-_PyEval_EnsureBuiltins(PyThreadState *tstate, PyObject *globals, int usemod,
-                       PyObject **p_builtins)
+static PyObject *
+get_globals_builtins(PyObject *globals)
 {
     PyObject *builtins = NULL;
     if (PyDict_Check(globals)) {
         if (PyDict_GetItemRef(globals, &_Py_ID(__builtins__), &builtins) < 0) {
-            return -1;
+            return NULL;
         }
     }
     else {
         if (PyMapping_GetOptionalItem(
                         globals, &_Py_ID(__builtins__), &builtins) < 0)
         {
+            return NULL;
+        }
+    }
+    return builtins;
+}
+
+static int
+set_globals_builtins(PyObject *globals, PyObject *builtins)
+{
+    if (PyDict_Check(globals)) {
+        if (PyDict_SetItem(globals, &_Py_ID(__builtins__), builtins) < 0) {
             return -1;
         }
     }
+    else {
+        if (PyObject_SetItem(globals, &_Py_ID(__builtins__), builtins) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+int
+_PyEval_EnsureBuiltins(PyThreadState *tstate, PyObject *globals,
+                       PyObject **p_builtins)
+{
+    PyObject *builtins = get_globals_builtins(globals);
     if (builtins == NULL) {
-        if (usemod) {
-            builtins =
-                PyImport_ImportModuleLevel("builtins", NULL, NULL, NULL, 0);
-            if (builtins == NULL) {
-                return -1;
-            }
+        if (_PyErr_Occurred(tstate)) {
+            return -1;
         }
-        else {
-            builtins = PyEval_GetBuiltins();
-            if (builtins == NULL) {
-                assert(_PyErr_Occurred(tstate));
-                return -1;
-            }
-            Py_INCREF(builtins);
+        builtins = PyEval_GetBuiltins();  // borrowed
+        if (builtins == NULL) {
+            assert(_PyErr_Occurred(tstate));
+            return -1;
         }
-        if (PyDict_Check(globals)) {
-            if (PyDict_SetItem(globals, &_Py_ID(__builtins__), builtins) < 0) {
-                Py_DECREF(builtins);
-                return -1;
-            }
+        Py_INCREF(builtins);
+        if (set_globals_builtins(globals, builtins) < 0) {
+            Py_DECREF(builtins);
+            return -1;
         }
-        else {
-            if (PyObject_SetItem(globals, &_Py_ID(__builtins__), builtins) < 0) {
-                Py_DECREF(builtins);
-                return -1;
-            }
+    }
+    if (p_builtins != NULL) {
+        *p_builtins = builtins;
+    }
+    else {
+        Py_DECREF(builtins);
+    }
+    return 0;
+}
+
+int
+_PyEval_EnsureBuiltinsWithModule(PyThreadState *tstate, PyObject *globals,
+                                 PyObject **p_builtins)
+{
+    PyObject *builtins = get_globals_builtins(globals);
+    if (builtins == NULL) {
+        if (_PyErr_Occurred(tstate)) {
+            return -1;
+        }
+        builtins = PyImport_ImportModuleLevel("builtins", NULL, NULL, NULL, 0);
+        if (builtins == NULL) {
+            return -1;
+        }
+        if (set_globals_builtins(globals, builtins) < 0) {
+            Py_DECREF(builtins);
+            return -1;
         }
     }
     if (p_builtins != NULL) {

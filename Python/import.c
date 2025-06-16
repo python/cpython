@@ -3979,7 +3979,7 @@ PyImport_Import(PyObject *module_name)
         if (globals == NULL) {
             goto err;
         }
-        if (_PyEval_EnsureBuiltins(tstate, globals, 1, &builtins) < 0) {
+        if (_PyEval_EnsureBuiltinsWithModule(tstate, globals, &builtins) < 0) {
             goto err;
         }
     }

@@ -243,7 +243,10 @@ extern PyObject * _PyEval_GetGlobalsFromRunningMain(PyThreadState *);
 extern int _PyEval_EnsureBuiltins(
     PyThreadState *,
     PyObject *,
-    int usemod,
+    PyObject **p_builtins);
+extern int _PyEval_EnsureBuiltinsWithModule(
+    PyThreadState *,
+    PyObject *,
     PyObject **p_builtins);
 
 PyAPI_FUNC(PyObject *)_Py_MakeCoro(PyFunctionObject *func);
