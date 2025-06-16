@@ -3960,25 +3960,28 @@ PyImport_Import(PyObject *module_name)
     }
 
     /* Get the builtins from current globals */
-    globals = PyEval_GetGlobals();
+    globals = PyEval_GetGlobals();  // borrowed
     if (globals != NULL) {
         Py_INCREF(globals);
+        // XXX Use _PyEval_EnsureBuiltins()?
         builtins = PyObject_GetItem(globals, &_Py_ID(__builtins__));
         if (builtins == NULL) {
             // XXX Fall back to interp->builtins or sys.modules['builtins']?
             goto err;
         }
     }
+    else if (_PyErr_Occurred(tstate)) {
+        goto err;
+    }
     else {
         /* No globals -- use standard builtins, and fake globals */
-        builtins = PyImport_ImportModuleLevel("builtins",
-                                              NULL, NULL, NULL, 0);
-        if (builtins == NULL) {
+        globals = PyDict_New();
+        if (globals == NULL) {
             goto err;
         }
-        globals = Py_BuildValue("{OO}", &_Py_ID(__builtins__), builtins);
-        if (globals == NULL)
+        if (_PyEval_EnsureBuiltinsWithModule(tstate, globals, &builtins) < 0) {
             goto err;
+        }
     }
 
     /* Get the __import__ function from the builtins */
