@@ -69,6 +69,7 @@ typedef struct {
 #include "clinic/_dbmmodule.c.h"
 
 #define check_dbmobject_open(v, err)                                \
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED((v))                  \
     if ((v)->di_dbm == NULL) {                                      \
         PyErr_SetString(err, "DBM object has already been closed"); \
         return NULL;                                                \
@@ -116,7 +117,7 @@ dbm_dealloc(PyObject *self)
 }
 
 static Py_ssize_t
-dbm_length(PyObject *self)
+dbm_length_lock_held(PyObject *self)
 {
     dbmobject *dp = dbmobject_CAST(self);
     _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
@@ -138,8 +139,18 @@ dbm_length(PyObject *self)
     return dp->di_size;
 }
 
+static Py_ssize_t
+dbm_length(PyObject *self)
+{
+    Py_ssize_t result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = dbm_length_lock_held(self);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 static int
-dbm_bool(PyObject *self)
+dbm_bool_lock_held(PyObject *self)
 {
     dbmobject *dp = dbmobject_CAST(self);
     _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
@@ -170,8 +181,18 @@ dbm_bool(PyObject *self)
     return 1;
 }
 
+static int
+dbm_bool(PyObject *self)
+{
+    int result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = dbm_bool_lock_held(self);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 static PyObject *
-dbm_subscript(PyObject *self, PyObject *key)
+dbm_subscript_lock_held(PyObject *self, PyObject *key)
 {
     datum drec, krec;
     Py_ssize_t tmp_size;
@@ -197,8 +218,18 @@ dbm_subscript(PyObject *self, PyObject *key)
     return PyBytes_FromStringAndSize(drec.dptr, drec.dsize);
 }
 
+static PyObject *
+dbm_subscript(PyObject *self, PyObject *key)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = dbm_subscript_lock_held(self, key);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 static int
-dbm_ass_sub(PyObject *self, PyObject *v, PyObject *w)
+dbm_ass_sub_lock_held(PyObject *self, PyObject *v, PyObject *w)
 {
     datum krec, drec;
     Py_ssize_t tmp_size;
@@ -252,7 +283,18 @@ dbm_ass_sub(PyObject *self, PyObject *v, PyObject *w)
     return 0;
 }
 
+static int
+dbm_ass_sub(PyObject *self, PyObject *v, PyObject *w)
+{
+    int result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = dbm_ass_sub_lock_held(self, v, w);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 /*[clinic input]
+@critical_section
 _dbm.dbm.close
 
 Close the database.
@@ -260,7 +302,7 @@ Close the database.
 
 static PyObject *
 _dbm_dbm_close_impl(dbmobject *self)
-/*[clinic end generated code: output=c8dc5b6709600b86 input=046db72377d51be8]*/
+/*[clinic end generated code: output=c8dc5b6709600b86 input=4a94f79facbc28ca]*/
 {
     if (self->di_dbm) {
         dbm_close(self->di_dbm);
@@ -270,6 +312,7 @@ _dbm_dbm_close_impl(dbmobject *self)
 }
 
 /*[clinic input]
+@critical_section
 _dbm.dbm.keys
 
     cls: defining_class
@@ -279,7 +322,7 @@ Return a list of all keys in the database.
 
 static PyObject *
 _dbm_dbm_keys_impl(dbmobject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=f2a593b3038e5996 input=d3706a28fc051097]*/
+/*[clinic end generated code: output=f2a593b3038e5996 input=6ddefeadf2a80156]*/
 {
     PyObject *v, *item;
     datum key;
@@ -310,7 +353,7 @@ _dbm_dbm_keys_impl(dbmobject *self, PyTypeObject *cls)
 }
 
 static int
-dbm_contains(PyObject *self, PyObject *arg)
+dbm_contains_lock_held(PyObject *self, PyObject *arg)
 {
     dbmobject *dp = dbmobject_CAST(self);
     datum key, val;
@@ -343,7 +386,18 @@ dbm_contains(PyObject *self, PyObject *arg)
     return val.dptr != NULL;
 }
 
+static int
+dbm_contains(PyObject *self, PyObject *arg)
+{
+    int result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = dbm_contains_lock_held(self, arg);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 /*[clinic input]
+@critical_section
 _dbm.dbm.get
     cls: defining_class
     key: str(accept={str, robuffer}, zeroes=True)
@@ -356,7 +410,7 @@ Return the value for key if present, otherwise default.
 static PyObject *
 _dbm_dbm_get_impl(dbmobject *self, PyTypeObject *cls, const char *key,
                   Py_ssize_t key_length, PyObject *default_value)
-/*[clinic end generated code: output=b4e55f8b6d482bc4 input=66b993b8349fa8c1]*/
+/*[clinic end generated code: output=b4e55f8b6d482bc4 input=1d88a22bb5e55202]*/
 {
     datum dbm_key, val;
     _dbm_state *state = PyType_GetModuleState(cls);
@@ -373,6 +427,7 @@ _dbm_dbm_get_impl(dbmobject *self, PyTypeObject *cls, const char *key,
 }
 
 /*[clinic input]
+@critical_section
 _dbm.dbm.setdefault
     cls: defining_class
     key: str(accept={str, robuffer}, zeroes=True)
@@ -387,7 +442,7 @@ If key is not in the database, it is inserted with default as the value.
 static PyObject *
 _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
                          Py_ssize_t key_length, PyObject *default_value)
-/*[clinic end generated code: output=9c2f6ea6d0fb576c input=126a3ff15c5f8232]*/
+/*[clinic end generated code: output=9c2f6ea6d0fb576c input=c01510ef7571e13b]*/
 {
     datum dbm_key, val;
     Py_ssize_t tmp_size;
@@ -427,6 +482,7 @@ _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
 }
 
 /*[clinic input]
+@critical_section
 _dbm.dbm.clear
     cls: defining_class
     /
@@ -436,7 +492,7 @@ Remove all items from the database.
 
 static PyObject *
 _dbm_dbm_clear_impl(dbmobject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=8d126b9e1d01a434 input=43aa6ca1acb7f5f5]*/
+/*[clinic end generated code: output=8d126b9e1d01a434 input=a1aa5d99adfb9656]*/
 {
     _dbm_state *state = PyType_GetModuleState(cls);
     assert(state != NULL);

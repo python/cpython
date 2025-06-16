@@ -801,6 +801,9 @@ class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
             data.extend(self.init._pack_uint32(0))
             data.extend(self.init._pack_uint32(self.loader.source_mtime))
             data.extend(self.init._pack_uint32(self.loader.source_size))
+            # Make sure there's > 1 reference to code_object so that the
+            # marshaled representation below matches the cached representation
+            l = [code_object]
             data.extend(marshal.dumps(code_object))
             self.assertEqual(self.loader.written[self.cached], bytes(data))
 

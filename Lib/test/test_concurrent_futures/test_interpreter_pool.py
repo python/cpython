@@ -3,16 +3,15 @@ import contextlib
 import io
 import os
 import pickle
-import sys
 import time
 import unittest
 from concurrent.futures.interpreter import (
     ExecutionFailed, BrokenInterpreterPool,
 )
+from concurrent.interpreters import _queues as queues
 import _interpreters
 from test import support
 import test.test_asyncio.utils as testasyncio_utils
-from test.support.interpreters import queues
 
 from .executor import ExecutorTest, mul
 from .util import BaseTestCase, InterpreterPoolMixin, setup_module

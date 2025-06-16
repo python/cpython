@@ -1,12 +1,17 @@
 from decimal import Decimal
-from test.support import verbose, is_android, is_emscripten, is_wasi, os_helper
+from test.support import cpython_only, verbose, is_android, linked_to_musl, os_helper
 from test.support.warnings_helper import check_warnings
-from test.support.import_helper import import_fresh_module
+from test.support.import_helper import ensure_lazy_imports, import_fresh_module
 from unittest import mock
 import unittest
 import locale
 import sys
 import codecs
+
+class LazyImportTest(unittest.TestCase):
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("locale", {"re", "warnings"})
 
 
 class BaseLocalizedTest(unittest.TestCase):
@@ -351,10 +356,7 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
 
     @unittest.skipIf(sys.platform.startswith('aix'),
                      'bpo-29972: broken test on AIX')
-    @unittest.skipIf(
-        is_emscripten or is_wasi,
-        "musl libc issue on Emscripten/WASI, bpo-46390"
-    )
+    @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
     @unittest.skipIf(sys.platform.startswith("netbsd"),
                      "gh-124108: NetBSD doesn't support UTF-8 for LC_COLLATE")
     def test_strcoll_with_diacritic(self):
@@ -362,10 +364,7 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
 
     @unittest.skipIf(sys.platform.startswith('aix'),
                      'bpo-29972: broken test on AIX')
-    @unittest.skipIf(
-        is_emscripten or is_wasi,
-        "musl libc issue on Emscripten/WASI, bpo-46390"
-    )
+    @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
     @unittest.skipIf(sys.platform.startswith("netbsd"),
                      "gh-124108: NetBSD doesn't support UTF-8 for LC_COLLATE")
     def test_strxfrm_with_diacritic(self):
@@ -387,6 +386,10 @@ class NormalizeTest(unittest.TestCase):
     def test_c(self):
         self.check('c', 'C')
         self.check('posix', 'C')
+
+    def test_c_utf8(self):
+        self.check('c.utf8', 'C.UTF-8')
+        self.check('C.UTF-8', 'C.UTF-8')
 
     def test_english(self):
         self.check('en', 'en_US.ISO8859-1')
@@ -489,7 +492,6 @@ class TestMiscellaneous(unittest.TestCase):
         # valid. Furthermore LC_CTYPE=UTF is used by the UTF-8 locale coercing
         # during interpreter startup (on macOS).
         import _locale
-        import os
 
         self.assertEqual(locale._parse_localename('UTF-8'), (None, 'UTF-8'))
 
@@ -501,9 +503,7 @@ class TestMiscellaneous(unittest.TestCase):
 
         try:
             with os_helper.EnvironmentVarGuard() as env:
-                for key in ('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE'):
-                    env.unset(key)
-
+                env.unset('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')
                 env.set('LC_CTYPE', 'UTF-8')
 
                 with check_warnings(('', DeprecationWarning)):

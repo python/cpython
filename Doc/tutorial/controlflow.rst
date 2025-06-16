@@ -289,7 +289,8 @@ similar to a switch statement in C, Java or JavaScript (and many
 other languages), but it's more similar to pattern matching in
 languages like Rust or Haskell. Only the first pattern that matches
 gets executed and it can also extract components (sequence elements
-or object attributes) from the value into variables.
+or object attributes) from the value into variables. If no case matches,
+none of the branches is executed.
 
 The simplest form compares a subject value against one or more literals::
 
@@ -305,7 +306,7 @@ The simplest form compares a subject value against one or more literals::
                 return "Something's wrong with the internet"
 
 Note the last block: the "variable name" ``_`` acts as a *wildcard* and
-never fails to match. If no case matches, none of the branches is executed.
+never fails to match.
 
 You can combine several literals in a single pattern using ``|`` ("or")::
 
@@ -998,7 +999,8 @@ scope::
    43
 
 The above example uses a lambda expression to return a function.  Another use
-is to pass a small function as an argument::
+is to pass a small function as an argument.  For instance, :meth:`list.sort`
+takes a sorting key function *key* which can be a lambda function::
 
    >>> pairs = [(1, 'one'), (2, 'two'), (3, 'three'), (4, 'four')]
    >>> pairs.sort(key=lambda pair: pair[1])
@@ -1054,7 +1056,7 @@ Here is an example of a multi-line docstring::
    >>> print(my_function.__doc__)
    Do nothing, but document it.
 
-       No, really, it doesn't do anything.
+   No, really, it doesn't do anything.
 
 
 .. _tut-annotations:

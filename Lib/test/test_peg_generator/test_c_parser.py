@@ -99,7 +99,7 @@ class TestCParser(unittest.TestCase):
         cls.addClassCleanup(shutil.rmtree, cls.library_dir)
 
         with contextlib.ExitStack() as stack:
-            python_exe = stack.enter_context(support.setup_venv_with_pip_setuptools_wheel("venv"))
+            python_exe = stack.enter_context(support.setup_venv_with_pip_setuptools("venv"))
             sitepackages = subprocess.check_output(
                 [python_exe, "-c", "import sysconfig; print(sysconfig.get_path('platlib'))"],
                 text=True,
@@ -387,10 +387,10 @@ class TestCParser(unittest.TestCase):
         test_source = """
         stmt = "with (\\n    a as b,\\n    c as d\\n): pass"
         the_ast = parse.parse_string(stmt, mode=1)
-        self.assertTrue(ast_dump(the_ast).startswith(
+        self.assertStartsWith(ast_dump(the_ast),
             "Module(body=[With(items=[withitem(context_expr=Name(id='a', ctx=Load()), optional_vars=Name(id='b', ctx=Store())), "
             "withitem(context_expr=Name(id='c', ctx=Load()), optional_vars=Name(id='d', ctx=Store()))]"
-        ))
+        )
         """
         self.run_test(grammar_source, test_source)
 

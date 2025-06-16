@@ -1,2 +1,0 @@
-Support context manager protocol by :class:`contextvars.Token`. Patch by
-Andrew Svetlov.

@@ -191,12 +191,12 @@ batched_next(PyObject *op)
 {
     batchedobject *bo = batchedobject_CAST(op);
     Py_ssize_t i;
-    Py_ssize_t n = bo->batch_size;
+    Py_ssize_t n = FT_ATOMIC_LOAD_SSIZE_RELAXED(bo->batch_size);
     PyObject *it = bo->it;
     PyObject *item;
     PyObject *result;
 
-    if (it == NULL) {
+    if (n < 0) {
         return NULL;
     }
     result = PyTuple_New(n);
@@ -218,19 +218,28 @@ batched_next(PyObject *op)
     if (PyErr_Occurred()) {
         if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
             /* Input raised an exception other than StopIteration */
+            FT_ATOMIC_STORE_SSIZE_RELAXED(bo->batch_size, -1);
+#ifndef Py_GIL_DISABLED
             Py_CLEAR(bo->it);
+#endif
             Py_DECREF(result);
             return NULL;
         }
         PyErr_Clear();
     }
     if (i == 0) {
+        FT_ATOMIC_STORE_SSIZE_RELAXED(bo->batch_size, -1);
+#ifndef Py_GIL_DISABLED
         Py_CLEAR(bo->it);
+#endif
         Py_DECREF(result);
         return NULL;
     }
     if (bo->strict) {
+        FT_ATOMIC_STORE_SSIZE_RELAXED(bo->batch_size, -1);
+#ifndef Py_GIL_DISABLED
         Py_CLEAR(bo->it);
+#endif
         Py_DECREF(result);
         PyErr_SetString(PyExc_ValueError, "batched(): incomplete batch");
         return NULL;
@@ -377,9 +386,7 @@ pairwise_next(PyObject *op)
         Py_DECREF(last_new);
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
-        }
+        _PyTuple_Recycle(result);
     }
     else {
         result = PyTuple_New(2);
@@ -1117,7 +1124,6 @@ typedef struct {
     PyObject *it;
     PyObject *saved;
     Py_ssize_t index;
-    int firstpass;
 } cycleobject;
 
 #define cycleobject_CAST(op)    ((cycleobject *)(op))
@@ -1158,8 +1164,7 @@ itertools_cycle_impl(PyTypeObject *type, PyObject *iterable)
     }
     lz->it = it;
     lz->saved = saved;
-    lz->index = 0;
-    lz->firstpass = 0;
+    lz->index = -1;
 
     return (PyObject *)lz;
 }
@@ -1192,11 +1197,11 @@ cycle_next(PyObject *op)
     cycleobject *lz = cycleobject_CAST(op);
     PyObject *item;
 
-    if (lz->it != NULL) {
+    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(lz->index);
+
+    if (index < 0) {
         item = PyIter_Next(lz->it);
         if (item != NULL) {
-            if (lz->firstpass)
-                return item;
             if (PyList_Append(lz->saved, item)) {
                 Py_DECREF(item);
                 return NULL;
@@ -1206,15 +1211,22 @@ cycle_next(PyObject *op)
         /* Note:  StopIteration is already cleared by PyIter_Next() */
         if (PyErr_Occurred())
             return NULL;
+        index = 0;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(lz->index, 0);
+#ifndef Py_GIL_DISABLED
         Py_CLEAR(lz->it);
+#endif
     }
     if (PyList_GET_SIZE(lz->saved) == 0)
         return NULL;
-    item = PyList_GET_ITEM(lz->saved, lz->index);
-    lz->index++;
-    if (lz->index >= PyList_GET_SIZE(lz->saved))
-        lz->index = 0;
-    return Py_NewRef(item);
+    item = PyList_GetItemRef(lz->saved, index);
+    assert(item);
+    index++;
+    if (index >= PyList_GET_SIZE(lz->saved)) {
+        index = 0;
+    }
+    FT_ATOMIC_STORE_SSIZE_RELAXED(lz->index, index);
+    return item;
 }
 
 static PyType_Slot cycle_slots[] = {
@@ -1834,8 +1846,8 @@ Alternative chain() constructor taking a single iterable argument that evaluates
 [clinic start generated code]*/
 
 static PyObject *
-itertools_chain_from_iterable(PyTypeObject *type, PyObject *arg)
-/*[clinic end generated code: output=667ae7a7f7b68654 input=72c39e3a2ca3be85]*/
+itertools_chain_from_iterable_impl(PyTypeObject *type, PyObject *arg)
+/*[clinic end generated code: output=3d7ea7d46b9e43f5 input=72c39e3a2ca3be85]*/
 {
     PyObject *source;
 
@@ -2117,8 +2129,8 @@ product_next(PyObject *op)
         }
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        else if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
+        else {
+            _PyTuple_Recycle(result);
         }
         /* Now, we've got the only copy so we can update it in-place */
         assert (npools==0 || Py_REFCNT(result) == 1);
@@ -2346,8 +2358,8 @@ combinations_next(PyObject *op)
         }
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        else if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
+        else {
+            _PyTuple_Recycle(result);
         }
         /* Now, we've got the only copy so we can update it in-place
          * CPython's empty tuple is a singleton and cached in
@@ -2592,8 +2604,8 @@ cwr_next(PyObject *op)
         }
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        else if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
+        else {
+            _PyTuple_Recycle(result);
         }
         /* Now, we've got the only copy so we can update it in-place CPython's
            empty tuple is a singleton and cached in PyTuple's freelist. */
@@ -2853,8 +2865,8 @@ permutations_next(PyObject *op)
         }
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        else if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
+        else {
+            _PyTuple_Recycle(result);
         }
         /* Now, we've got the only copy so we can update it in-place */
         assert(r == 0 || Py_REFCNT(result) == 1);
@@ -3621,10 +3633,14 @@ static PyObject *
 repeat_next(PyObject *op)
 {
     repeatobject *ro = repeatobject_CAST(op);
-    if (ro->cnt == 0)
+    Py_ssize_t cnt = FT_ATOMIC_LOAD_SSIZE_RELAXED(ro->cnt);
+    if (cnt == 0) {
         return NULL;
-    if (ro->cnt > 0)
-        ro->cnt--;
+    }
+    if (cnt > 0) {
+        cnt--;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(ro->cnt, cnt);
+    }
     return Py_NewRef(ro->element);
 }
 
@@ -3834,9 +3850,7 @@ zip_longest_next(PyObject *op)
         }
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
-        }
+        _PyTuple_Recycle(result);
     } else {
         result = PyTuple_New(tuplesize);
         if (result == NULL)

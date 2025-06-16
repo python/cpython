@@ -5,6 +5,7 @@
 from dataclasses import *
 
 import abc
+import annotationlib
 import io
 import pickle
 import inspect
@@ -12,6 +13,8 @@ import builtins
 import types
 import weakref
 import traceback
+import sys
+import textwrap
 import unittest
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
@@ -24,6 +27,7 @@ import typing       # Needed for the string "typing.ClassVar[int]" to work as an
 import dataclasses  # Needed for the string "dataclasses.InitVar[int]" to work as an annotation.
 
 from test import support
+from test.support import import_helper
 
 # Just any custom exception we can catch.
 class CustomError(Exception): pass
@@ -116,7 +120,7 @@ class TestCase(unittest.TestCase):
         for param in inspect.signature(dataclass).parameters:
             if param == 'cls':
                 continue
-            self.assertTrue(hasattr(Some.__dataclass_params__, param), msg=param)
+            self.assertHasAttr(Some.__dataclass_params__, param)
 
     def test_named_init_params(self):
         @dataclass
@@ -667,7 +671,7 @@ class TestCase(unittest.TestCase):
 
         self.assertEqual(the_fields[0].name, 'x')
         self.assertEqual(the_fields[0].type, int)
-        self.assertFalse(hasattr(C, 'x'))
+        self.assertNotHasAttr(C, 'x')
         self.assertTrue (the_fields[0].init)
         self.assertTrue (the_fields[0].repr)
         self.assertEqual(the_fields[1].name, 'y')
@@ -677,7 +681,7 @@ class TestCase(unittest.TestCase):
         self.assertTrue (the_fields[1].repr)
         self.assertEqual(the_fields[2].name, 'z')
         self.assertEqual(the_fields[2].type, str)
-        self.assertFalse(hasattr(C, 'z'))
+        self.assertNotHasAttr(C, 'z')
         self.assertTrue (the_fields[2].init)
         self.assertFalse(the_fields[2].repr)
 
@@ -728,8 +732,8 @@ class TestCase(unittest.TestCase):
             z: object = default
             t: int = field(default=100)
 
-        self.assertFalse(hasattr(C, 'x'))
-        self.assertFalse(hasattr(C, 'y'))
+        self.assertNotHasAttr(C, 'x')
+        self.assertNotHasAttr(C, 'y')
         self.assertIs   (C.z, default)
         self.assertEqual(C.t, 100)
 
@@ -770,12 +774,12 @@ class TestCase(unittest.TestCase):
 
                 # Because this is a ClassVar, it can be mutable.
                 @dataclass
-                class C:
+                class UsesMutableClassVar:
                     z: ClassVar[typ] = typ()
 
                 # Because this is a ClassVar, it can be mutable.
                 @dataclass
-                class C:
+                class UsesMutableClassVarWithSubType:
                     x: ClassVar[typ] = Subclass()
 
     def test_deliberately_mutable_defaults(self):
@@ -2313,7 +2317,7 @@ class TestDocString(unittest.TestCase):
         class C:
             x: Union[int, type(None)] = None
 
-        self.assertDocStrEqual(C.__doc__, "C(x:Optional[int]=None)")
+        self.assertDocStrEqual(C.__doc__, "C(x:int|None=None)")
 
     def test_docstring_list_field(self):
         @dataclass
@@ -2342,6 +2346,31 @@ class TestDocString(unittest.TestCase):
             x: deque = field(default_factory=deque)
 
         self.assertDocStrEqual(C.__doc__, "C(x:collections.deque=<factory>)")
+
+    def test_docstring_undefined_name(self):
+        @dataclass
+        class C:
+            x: undef
+
+        self.assertDocStrEqual(C.__doc__, "C(x:undef)")
+
+    def test_docstring_with_unsolvable_forward_ref_in_init(self):
+        # See: https://github.com/python/cpython/issues/128184
+        ns = {}
+        exec(
+            textwrap.dedent(
+                """
+                from dataclasses import dataclass
+
+                @dataclass
+                class C:
+                    def __init__(self, x: X, num: int) -> None: ...
+                """,
+            ),
+            ns,
+        )
+
+        self.assertDocStrEqual(ns['C'].__doc__, "C(x:X,num:int)")
 
     def test_docstring_with_no_signature(self):
         # See https://github.com/python/cpython/issues/103449
@@ -2883,10 +2912,10 @@ class TestFrozen(unittest.TestCase):
             pass
 
         c = C()
-        self.assertFalse(hasattr(c, 'i'))
+        self.assertNotHasAttr(c, 'i')
         with self.assertRaises(FrozenInstanceError):
             c.i = 5
-        self.assertFalse(hasattr(c, 'i'))
+        self.assertNotHasAttr(c, 'i')
         with self.assertRaises(FrozenInstanceError):
             del c.i
 
@@ -3115,7 +3144,7 @@ class TestFrozen(unittest.TestCase):
             del s.y
         self.assertEqual(s.y, 10)
         del s.cached
-        self.assertFalse(hasattr(s, 'cached'))
+        self.assertNotHasAttr(s, 'cached')
         with self.assertRaises(AttributeError) as cm:
             del s.cached
         self.assertNotIsInstance(cm.exception, FrozenInstanceError)
@@ -3129,12 +3158,12 @@ class TestFrozen(unittest.TestCase):
             pass
 
         s = S()
-        self.assertFalse(hasattr(s, 'x'))
+        self.assertNotHasAttr(s, 'x')
         s.x = 5
         self.assertEqual(s.x, 5)
 
         del s.x
-        self.assertFalse(hasattr(s, 'x'))
+        self.assertNotHasAttr(s, 'x')
         with self.assertRaises(AttributeError) as cm:
             del s.x
         self.assertNotIsInstance(cm.exception, FrozenInstanceError)
@@ -3364,8 +3393,8 @@ class TestSlots(unittest.TestCase):
         B = dataclass(A, slots=True)
         self.assertIsNot(A, B)
 
-        self.assertFalse(hasattr(A, "__slots__"))
-        self.assertTrue(hasattr(B, "__slots__"))
+        self.assertNotHasAttr(A, "__slots__")
+        self.assertHasAttr(B, "__slots__")
 
     # Can't be local to test_frozen_pickle.
     @dataclass(frozen=True, slots=True)
@@ -3609,7 +3638,6 @@ class TestSlots(unittest.TestCase):
         a_ref = weakref.ref(a)
         self.assertIs(a.__weakref__, a_ref)
 
-
     def test_dataclass_derived_weakref_slot(self):
         class A:
             pass
@@ -3689,7 +3717,7 @@ class TestSlots(unittest.TestCase):
         self.assertTrue(F.__weakref__)
         F()
 
-    def test_dataclass_derived_generic_from_slotted_base(self):
+    def test_dataclass_derived_generic_from_slotted_base_with_weakref(self):
         T = typing.TypeVar('T')
 
         class WithWeakrefSlot:
@@ -3729,7 +3757,6 @@ class TestSlots(unittest.TestCase):
     @support.cpython_only
     def test_dataclass_slot_dict_ctype(self):
         # https://github.com/python/cpython/issues/123935
-        from test.support import import_helper
         # Skips test if `_testcapi` is not present:
         _testcapi = import_helper.import_module('_testcapi')
 
@@ -4221,16 +4248,56 @@ class TestMakeDataclass(unittest.TestCase):
         C = make_dataclass('Point', ['x', 'y', 'z'])
         c = C(1, 2, 3)
         self.assertEqual(vars(c), {'x': 1, 'y': 2, 'z': 3})
-        self.assertEqual(C.__annotations__, {'x': 'typing.Any',
-                                             'y': 'typing.Any',
-                                             'z': 'typing.Any'})
+        self.assertEqual(C.__annotations__, {'x': typing.Any,
+                                             'y': typing.Any,
+                                             'z': typing.Any})
 
         C = make_dataclass('Point', ['x', ('y', int), 'z'])
         c = C(1, 2, 3)
         self.assertEqual(vars(c), {'x': 1, 'y': 2, 'z': 3})
-        self.assertEqual(C.__annotations__, {'x': 'typing.Any',
+        self.assertEqual(C.__annotations__, {'x': typing.Any,
                                              'y': int,
-                                             'z': 'typing.Any'})
+                                             'z': typing.Any})
+
+    def test_no_types_get_annotations(self):
+        C = make_dataclass('C', ['x', ('y', int), 'z'])
+
+        self.assertEqual(
+            annotationlib.get_annotations(C, format=annotationlib.Format.VALUE),
+            {'x': typing.Any, 'y': int, 'z': typing.Any},
+        )
+        self.assertEqual(
+            annotationlib.get_annotations(
+                C, format=annotationlib.Format.FORWARDREF),
+            {'x': typing.Any, 'y': int, 'z': typing.Any},
+        )
+        self.assertEqual(
+            annotationlib.get_annotations(
+                C, format=annotationlib.Format.STRING),
+            {'x': 'typing.Any', 'y': 'int', 'z': 'typing.Any'},
+        )
+
+    def test_no_types_no_typing_import(self):
+        with import_helper.CleanImport('typing'):
+            self.assertNotIn('typing', sys.modules)
+            C = make_dataclass('C', ['x', ('y', int)])
+
+            self.assertNotIn('typing', sys.modules)
+            self.assertEqual(
+                C.__annotate__(annotationlib.Format.FORWARDREF),
+                {
+                    'x': annotationlib.ForwardRef('Any', module='typing'),
+                    'y': int,
+                },
+            )
+            self.assertNotIn('typing', sys.modules)
+
+            for field in fields(C):
+                if field.name == "x":
+                    self.assertEqual(field.type, annotationlib.ForwardRef('Any', module='typing'))
+                else:
+                    self.assertEqual(field.name, "y")
+                    self.assertIs(field.type, int)
 
     def test_module_attr(self):
         self.assertEqual(ByMakeDataClass.__module__, __name__)
@@ -4839,7 +4906,7 @@ class TestKeywordArgs(unittest.TestCase):
 
         # But this usage is okay, since it's not using KW_ONLY.
         @dataclass
-        class A:
+        class NoDuplicateKwOnlyAnnotation:
             a: int
             _: KW_ONLY
             b: int
@@ -4847,13 +4914,13 @@ class TestKeywordArgs(unittest.TestCase):
 
         # And if inheriting, it's okay.
         @dataclass
-        class A:
+        class BaseUsesKwOnly:
             a: int
             _: KW_ONLY
             b: int
             c: int
         @dataclass
-        class B(A):
+        class SubclassUsesKwOnly(BaseUsesKwOnly):
             _: KW_ONLY
             d: int
 

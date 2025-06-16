@@ -1,7 +1,7 @@
 import concurrent.futures
 import unittest
 import inspect
-from threading import Thread, Barrier
+from threading import Barrier
 from unittest import TestCase
 
 from test.support import threading_helper, Py_GIL_DISABLED
@@ -27,13 +27,13 @@ def set_func_annotation(f, b):
 
 @unittest.skipUnless(Py_GIL_DISABLED, "Enable only in FT build")
 class TestFTFuncAnnotations(TestCase):
-    NUM_THREADS = 8
+    NUM_THREADS = 4
 
     def test_concurrent_read(self):
         def f(x: int) -> int:
             return x + 1
 
-        for _ in range(100):
+        for _ in range(10):
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.NUM_THREADS) as executor:
                 b = Barrier(self.NUM_THREADS)
                 futures = {executor.submit(get_func_annotation, f, b): i for i in range(self.NUM_THREADS)}
@@ -54,7 +54,7 @@ class TestFTFuncAnnotations(TestCase):
         def bar(x: int, y: float) -> float:
             return y ** x
 
-        for _ in range(100):
+        for _ in range(10):
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.NUM_THREADS) as executor:
                 b = Barrier(self.NUM_THREADS)
                 futures = {executor.submit(set_func_annotation, bar, b): i for i in range(self.NUM_THREADS)}

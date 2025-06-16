@@ -15,7 +15,7 @@ from .cmdline import _parse_args, Namespace
 from .findtests import findtests, split_test_packages, list_cases
 from .logger import Logger
 from .pgo import setup_pgo_tests
-from .result import State, TestResult
+from .result import TestResult
 from .results import TestResults, EXITCODE_INTERRUPTED
 from .runtests import RunTests, HuntRefleak
 from .setup import setup_process, setup_test_dir
@@ -142,6 +142,7 @@ class Regrtest:
             self.random_seed = random.getrandbits(32)
         else:
             self.random_seed = ns.random_seed
+        self.prioritize_tests: tuple[str, ...] = tuple(ns.prioritize)
 
         self.parallel_threads = ns.parallel_threads
 
@@ -236,6 +237,16 @@ class Regrtest:
         random.seed(self.random_seed)
         if self.randomize:
             random.shuffle(selected)
+
+        for priority_test in reversed(self.prioritize_tests):
+            try:
+                selected.remove(priority_test)
+            except ValueError:
+                print(f"warning: --prioritize={priority_test} used"
+                        f" but test not actually selected")
+                continue
+            else:
+                selected.insert(0, priority_test)
 
         return (tuple(selected), tests)
 
@@ -399,15 +410,11 @@ class Regrtest:
             msg += " (timeout: %s)" % format_duration(runtests.timeout)
         self.log(msg)
 
-        previous_test = None
         tests_iter = runtests.iter_tests()
         for test_index, test_name in enumerate(tests_iter, 1):
             start_time = time.perf_counter()
 
-            text = test_name
-            if previous_test:
-                text = '%s -- %s' % (text, previous_test)
-            self.logger.display_progress(test_index, text)
+            self.logger.display_progress(test_index, test_name)
 
             result = self.run_test(test_name, runtests, tracer)
 
@@ -424,19 +431,14 @@ class Regrtest:
                 except (KeyError, AttributeError):
                     pass
 
-            if result.must_stop(self.fail_fast, self.fail_env_changed):
-                break
-
-            previous_test = str(result)
+            text = str(result)
             test_time = time.perf_counter() - start_time
             if test_time >= PROGRESS_MIN_TIME:
-                previous_test = "%s in %s" % (previous_test, format_duration(test_time))
-            elif result.state == State.PASSED:
-                # be quiet: say nothing if the test passed shortly
-                previous_test = None
+                text = f"{text} in {format_duration(test_time)}"
+            self.logger.display_progress(test_index, text)
 
-        if previous_test:
-            print(previous_test)
+            if result.must_stop(self.fail_fast, self.fail_env_changed):
+                break
 
     def get_state(self) -> str:
         state = self.results.get_state(self.fail_env_changed)
@@ -540,8 +542,6 @@ class Regrtest:
         runtests = self.create_run_tests(selected)
         self.first_runtests = runtests
         self.logger.set_tests(runtests)
-
-        setup_process()
 
         if (runtests.hunt_refleak is not None) and (not self.num_workers):
             # gh-109739: WindowsLoadTracker thread interferes with refleak check
@@ -649,9 +649,9 @@ class Regrtest:
         if not sys.stdout.write_through:
             python_opts.append('-u')
 
-        # Add warnings filter 'default'
+        # Add warnings filter 'error'
         if 'default' not in sys.warnoptions:
-            python_opts.extend(('-W', 'default'))
+            python_opts.extend(('-W', 'error'))
 
         # Error on bytes/str comparison
         if sys.flags.bytes_warning < 2:
@@ -719,10 +719,7 @@ class Regrtest:
         self._execute_python(cmd, environ)
 
     def _init(self):
-        # Set sys.stdout encoder error handler to backslashreplace,
-        # similar to sys.stderr error handler, to avoid UnicodeEncodeError
-        # when printing a traceback or any other non-encodable character.
-        sys.stdout.reconfigure(errors="backslashreplace")
+        setup_process()
 
         if self.junit_filename and not os.path.isabs(self.junit_filename):
             self.junit_filename = os.path.abspath(self.junit_filename)

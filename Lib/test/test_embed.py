@@ -1,12 +1,10 @@
 # Run the tests in Programs/_testembed.c (tests for the CPython embedding APIs)
 from test import support
-from test.libregrtest.utils import get_build_info
 from test.support import import_helper, os_helper, threading_helper, MS_WINDOWS
 import unittest
 
 from collections import namedtuple
 import contextlib
-import io
 import json
 import os
 import os.path
@@ -50,7 +48,7 @@ API_ISOLATED = 3
 INIT_LOOPS = 4
 MAX_HASH_SEED = 4294967295
 
-ABI_THREAD = 't' if sysconfig.get_config_var('Py_GIL_DISABLED') else ''
+ABI_THREAD = 't' if support.Py_GIL_DISABLED else ''
 # PLATSTDLIB_LANDMARK copied from Modules/getpath.py
 if os.name == 'nt':
     PLATSTDLIB_LANDMARK = f'{sys.platlibdir}'
@@ -60,6 +58,8 @@ else:
     PLATSTDLIB_LANDMARK = (f'{sys.platlibdir}/python{VERSION_MAJOR}.'
                            f'{VERSION_MINOR}{ABI_THREAD}/lib-dynload')
 
+DEFAULT_THREAD_INHERIT_CONTEXT = 1 if support.Py_GIL_DISABLED else 0
+DEFAULT_CONTEXT_AWARE_WARNINGS = 1 if support.Py_GIL_DISABLED else 0
 
 # If we are running from a build dir, but the stdlib has been installed,
 # some tests need to expect different results.
@@ -296,7 +296,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         if MS_WINDOWS:
             expected_path = self.test_exe
         else:
-            expected_path = os.path.join(os.getcwd(), "spam")
+            expected_path = os.path.join(os.getcwd(), "_testembed")
         expected_output = f"sys.executable: {expected_path}\n"
         self.assertIn(expected_output, out)
         self.assertEqual(err, '')
@@ -585,7 +585,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'faulthandler': False,
         'tracemalloc': 0,
         'perf_profiling': 0,
-        'import_time': False,
+        'import_time': 0,
+        'thread_inherit_context': DEFAULT_THREAD_INHERIT_CONTEXT,
+        'context_aware_warnings': DEFAULT_CONTEXT_AWARE_WARNINGS,
         'code_debug_ranges': True,
         'show_ref_count': False,
         'dump_refs': False,
@@ -628,6 +630,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'write_bytecode': True,
         'verbose': 0,
         'quiet': False,
+        'remote_debug': True,
         'user_site_directory': True,
         'configure_c_stdio': False,
         'buffered_stdio': True,
@@ -966,7 +969,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'utf8_mode': True,
         }
         config = {
-            'program_name': './globalvar',
             'site_import': False,
             'bytes_warning': True,
             'warnoptions': ['default::BytesWarning'],
@@ -977,7 +979,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'verbose': True,
             'quiet': True,
             'buffered_stdio': False,
-
+            'remote_debug': True,
             'user_site_directory': False,
             'pathconfig_warnings': False,
         }
@@ -995,7 +997,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'hash_seed': 123,
             'tracemalloc': 2,
             'perf_profiling': 0,
-            'import_time': True,
+            'import_time': 2,
             'code_debug_ranges': False,
             'show_ref_count': True,
             'malloc_stats': True,
@@ -1033,6 +1035,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'write_bytecode': False,
             'verbose': 1,
             'quiet': True,
+            'remote_debug': True,
             'configure_c_stdio': True,
             'buffered_stdio': False,
             'user_site_directory': False,
@@ -1060,7 +1063,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'use_hash_seed': True,
             'hash_seed': 42,
             'tracemalloc': 2,
-            'import_time': True,
+            'import_time': 1,
             'code_debug_ranges': False,
             'malloc_stats': True,
             'inspect': True,
@@ -1096,7 +1099,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'use_hash_seed': True,
             'hash_seed': 42,
             'tracemalloc': 2,
-            'import_time': True,
+            'import_time': 1,
             'code_debug_ranges': False,
             'malloc_stats': True,
             'inspect': True,
@@ -1910,6 +1913,10 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_get_incomplete_frame(self):
         self.run_embedded_interpreter("test_get_incomplete_frame")
+
+
+    def test_gilstate_after_finalization(self):
+        self.run_embedded_interpreter("test_gilstate_after_finalization")
 
 
 class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
