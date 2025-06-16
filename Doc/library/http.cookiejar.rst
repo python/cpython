@@ -84,7 +84,7 @@ The following classes are provided:
    from / returned to the server.
 
 
-.. class:: DefaultCookiePolicy( blocked_domains=None, allowed_domains=None, netscape=True, rfc2965=False, rfc2109_as_netscape=None, hide_cookie2=False, strict_domain=False, strict_rfc2965_unverifiable=True, strict_ns_unverifiable=False, strict_ns_domain=DefaultCookiePolicy.DomainLiberal, strict_ns_set_initial_dollar=False, strict_ns_set_path=False, secure_protocols=("https", "wss") )
+.. class:: DefaultCookiePolicy( blocked_domains=None, allowed_domains=None, netscape=True, rfc2965=False, rfc2109_as_netscape=None, hide_cookie2=False, strict_domain=False, strict_rfc2965_unverifiable=True, strict_ns_unverifiable=False, strict_ns_domain=DefaultCookiePolicy.DomainLiberal, strict_ns_set_initial_dollar=False, strict_ns_set_path=False, secure_protocols=("https", "wss"), additional_country_code_slds={} )
 
    Constructor arguments should be passed as keyword arguments only.
    *blocked_domains* is a sequence of domain names that we never accept cookies
@@ -92,8 +92,9 @@ The following classes are provided:
    sequence of the only domains for which we accept and return cookies.
    *secure_protocols* is a sequence of protocols for which secure cookies can be
    added to. By default *https* and *wss* (secure websocket) are considered
-   secure protocols. For all other arguments, see the documentation for
-   :class:`CookiePolicy` and :class:`DefaultCookiePolicy` objects.
+   secure protocols. *additional_country_code_slds* is a set of user-customized
+   additional country code second-level domains. For all other arguments, see the
+   documentation for :class:`CookiePolicy` and :class:`DefaultCookiePolicy` objects. 
 
    :class:`DefaultCookiePolicy` implements the standard accept / reject rules for
    Netscape and :rfc:`2965` cookies.  By default, :rfc:`2109` cookies (ie. cookies
