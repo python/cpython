@@ -1,2 +1,1 @@
-emit ``sys.remote_exec`` audit event when ``sys.remote_exec`` has been
-called
+Emit ``remote_exec`` audit event when :func:`sys.remote_exec` is called.
