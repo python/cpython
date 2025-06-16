@@ -1429,7 +1429,7 @@ class TestInterpreterCall(TestBase):
                 res = interp.call(*call)
                 self.assertEqual(res, expected)
 
-        notshareable = [
+        result_not_pickleable = [
             globals,
             locals,
             vars,
@@ -1441,7 +1441,7 @@ class TestInterpreterCall(TestBase):
             dir: list,
         }.items():
             with self.subTest(str(func)):
-                if func in notshareable:
+                if func in result_not_pickleable:
                     with self.assertRaises(interpreters.NotShareableError):
                         interp.call(func)
                 else:
