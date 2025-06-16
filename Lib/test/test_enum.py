@@ -1120,6 +1120,13 @@ class TestStrEnumFunction(_EnumTests, _MinimalOutputTests, unittest.TestCase):
 class TestIntFlagClass(_EnumTests, _MinimalOutputTests, _FlagTests, unittest.TestCase):
     enum_type = IntFlag
 
+def test_dir_includes_named_aliases():
+    class MyFlags(IntFlag):
+        READ = 1
+        WRITE = 2
+        READ_WRITE = READ | WRITE
+
+    assert 'READ_WRITE' in dir(MyFlags.READ_WRITE)
 
 class TestIntFlagFunction(_EnumTests, _MinimalOutputTests, _FlagTests, unittest.TestCase):
     enum_type = IntFlag
