@@ -2,12 +2,14 @@
 
 import asyncio
 import argparse
+from argparse import Namespace
 import os
 import re
 import shlex
 import shutil
 import signal
 import subprocess
+from subprocess import CalledProcessError
 import sys
 import sysconfig
 from asyncio import wait_for
@@ -18,6 +20,7 @@ from os.path import abspath, basename, relpath
 from pathlib import Path
 from subprocess import CalledProcessError
 from tempfile import TemporaryDirectory
+from typing import List, Dict, Optional, Union, AsyncIterator, Any, Set
 
 
 SCRIPT_NAME = Path(__file__).name
@@ -53,7 +56,7 @@ gradlew = Path(
 logcat_started = False
 
 
-def delete_glob(pattern):
+def delete_glob(pattern: Union[str, Path]) -> None:
     # Path.glob doesn't accept non-relative patterns.
     for path in glob(str(pattern)):
         path = Path(path)
@@ -64,7 +67,7 @@ def delete_glob(pattern):
             path.unlink()
 
 
-def subdir(*parts, create=False):
+def subdir(*parts: str, create: bool = False) -> Path:
     path = CROSS_BUILD_DIR.joinpath(*parts)
     if not path.exists():
         if not create:
@@ -76,24 +79,30 @@ def subdir(*parts, create=False):
     return path
 
 
-def run(command, *, host=None, env=None, log=True, **kwargs):
-    kwargs.setdefault("check", True)
-    if env is None:
-        env = os.environ.copy()
+def run(command: Union[str, List[str]], *, host: Optional[str] = None, 
+        env: Optional[Dict[str, str]] = None, log: bool = True, 
+        **kwargs: Any) -> subprocess.CompletedProcess:
+    try:
+        kwargs.setdefault("check", True)
+        if env is None:
+            env = os.environ.copy()
 
-    if host:
-        host_env = android_env(host)
-        print_env(host_env)
-        env.update(host_env)
+        if host:
+            host_env = android_env(host)
+            print_env(host_env)
+            env.update(host_env)
 
-    if log:
-        print(">", join_command(command))
-    return subprocess.run(command, env=env, **kwargs)
+        if log:
+            print(">", join_command(command))
+        return subprocess.run(command, env=env, **kwargs)
+    except subprocess.SubprocessError as e:
+        print(f"Error running command: {join_command(command)}")
+        raise
 
 
 # Format a command so it can be copied into a shell. Like shlex.join, but also
 # accepts arguments which are Paths, or a single string/Path outside of a list.
-def join_command(args):
+def join_command(args: Union[str, Path, List[Union[str, Path]]]) -> str:
     if isinstance(args, (str, Path)):
         return str(args)
     else:
@@ -101,31 +110,42 @@ def join_command(args):
 
 
 # Format the environment so it can be pasted into a shell.
-def print_env(env):
+def print_env(env: Dict[str, str]) -> None:
     for key, value in sorted(env.items()):
         print(f"export {key}={shlex.quote(value)}")
 
 
-def android_env(host):
+def android_env(host: Optional[str]) -> Dict[str, str]:
     if host:
         prefix = subdir(host) / "prefix"
     else:
         prefix = ANDROID_DIR / "prefix"
-        sysconfig_files = prefix.glob("lib/python*/_sysconfigdata__android_*.py")
-        sysconfig_filename = next(sysconfig_files).name
-        host = re.fullmatch(r"_sysconfigdata__android_(.+).py", sysconfig_filename)[1]
+        try:
+            sysconfig_files = list(prefix.glob("lib/python*/_sysconfigdata__android_*.py"))
+            if not sysconfig_files:
+                raise FileNotFoundError("No sysconfig files found")
+            sysconfig_filename = sysconfig_files[0].name
+            host_match = re.fullmatch(r"_sysconfigdata__android_(.+).py", sysconfig_filename)
+            if not host_match:
+                raise ValueError(f"Invalid sysconfig filename format: {sysconfig_filename}")
+            host = host_match[1]
+        except Exception as e:
+            sys.exit(f"Failed to determine host from sysconfig files: {e}")
 
     env_script = ANDROID_DIR / "android-env.sh"
-    env_output = subprocess.run(
-        f"set -eu; "
-        f"export HOST={host}; "
-        f"PREFIX={prefix}; "
-        f". {env_script}; "
-        f"export",
-        check=True, shell=True, capture_output=True, encoding='utf-8',
-    ).stdout
+    try:
+        env_output = subprocess.run(
+            f"set -eu; "
+            f"export HOST={host}; "
+            f"PREFIX={prefix}; "
+            f". {env_script}; "
+            f"export",
+            check=True, shell=True, capture_output=True, encoding='utf-8',
+        ).stdout
+    except subprocess.SubprocessError as e:
+        sys.exit(f"Failed to source {env_script}: {e}")
 
-    env = {}
+    env: Dict[str, str] = {}
     for line in env_output.splitlines():
         # We don't require every line to match, as there may be some other
         # output from installing the NDK.
@@ -326,7 +346,7 @@ class MySystemExit(Exception):
 # that no matter what happens, they can always be cancelled from another task,
 # and they will always be cleaned up on exit.
 @asynccontextmanager
-async def async_process(*args, **kwargs):
+async def async_process(*args: str, **kwargs: Any) -> AsyncIterator[asyncio.subprocess.Process]:
     process = await asyncio.create_subprocess_exec(*args, **kwargs)
     try:
         yield process
@@ -345,65 +365,79 @@ async def async_process(*args, **kwargs):
                 )
                 process.kill()
 
-                # Even after killing the process we must still wait for it,
-                # otherwise we'll get the warning "Exception ignored in __del__".
-                await wait_for(process.wait(), timeout=1)
+                try:
+                    # Even after killing the process we must still wait for it,
+                    # otherwise we'll get the warning "Exception ignored in __del__".
+                    await wait_for(process.wait(), timeout=1)
+                except TimeoutError:
+                    print(f"Warning: Process {args} could not be killed")
 
 
-async def async_check_output(*args, **kwargs):
-    async with async_process(
-        *args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs
-    ) as process:
-        stdout, stderr = await process.communicate()
-        if process.returncode == 0:
-            return stdout.decode(*DECODE_ARGS)
-        else:
-            raise CalledProcessError(
-                process.returncode, args,
-                stdout.decode(*DECODE_ARGS), stderr.decode(*DECODE_ARGS)
-            )
+async def async_check_output(*args: str, **kwargs: Any) -> str:
+    try:
+        async with async_process(
+            *args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs
+        ) as process:
+            stdout, stderr = await process.communicate()
+            if process.returncode == 0:
+                return stdout.decode(*DECODE_ARGS)
+            else:
+                raise CalledProcessError(
+                    process.returncode, args,
+                    stdout.decode(*DECODE_ARGS), stderr.decode(*DECODE_ARGS)
+                )
+    except asyncio.TimeoutError as e:
+        raise RuntimeError(f"Command timed out: {args}") from e
 
 
 # Return a list of the serial numbers of connected devices. Emulators will have
 # serials of the form "emulator-5678".
-async def list_devices():
-    serials = []
-    header_found = False
+async def list_devices() -> List[str]:
+    try:
+        serials: List[str] = []
+        header_found = False
 
-    lines = (await async_check_output(adb, "devices")).splitlines()
-    for line in lines:
-        # Ignore blank lines, and all lines before the header.
-        line = line.strip()
-        if line == "List of devices attached":
-            header_found = True
-        elif header_found and line:
-            try:
-                serial, status = line.split()
-            except ValueError:
-                raise ValueError(f"failed to parse {line!r}")
-            if status == "device":
-                serials.append(serial)
+        lines = (await async_check_output(adb, "devices")).splitlines()
+        for line in lines:
+            # Ignore blank lines, and all lines before the header.
+            line = line.strip()
+            if line == "List of devices attached":
+                header_found = True
+            elif header_found and line:
+                try:
+                    serial, status = line.split()
+                    if status == "device":
+                        serials.append(serial)
+                except ValueError:
+                    print(f"Warning: Failed to parse device line: {line!r}")
 
-    if not header_found:
-        raise ValueError(f"failed to parse {lines}")
-    return serials
+        if not header_found:
+            raise ValueError(f"Failed to parse adb output: {lines}")
+        return serials
+    except Exception as e:
+        raise RuntimeError(f"Failed to list devices: {e}") from e
 
 
-async def find_device(context, initial_devices):
-    if context.managed:
-        print("Waiting for managed device - this may take several minutes")
-        while True:
-            new_devices = set(await list_devices()).difference(initial_devices)
-            if len(new_devices) == 0:
-                await asyncio.sleep(1)
-            elif len(new_devices) == 1:
-                serial = new_devices.pop()
-                print(f"Serial: {serial}")
-                return serial
-            else:
-                exit(f"Found more than one new device: {new_devices}")
-    else:
-        return context.connected
+async def find_device(context: Namespace, initial_devices: Optional[Set[str]]) -> str:
+    try:
+        if context.managed:
+            print("Waiting for managed device - this may take several minutes")
+            while True:
+                new_devices = set(await list_devices()).difference(initial_devices or set())
+                if len(new_devices) == 0:
+                    await asyncio.sleep(1)
+                elif len(new_devices) == 1:
+                    serial = new_devices.pop()
+                    print(f"Serial: {serial}")
+                    return serial
+                else:
+                    raise RuntimeError(f"Found more than one new device: {new_devices}")
+        else:
+            if not context.connected:
+                raise ValueError("No device serial provided for connected mode")
+            return context.connected
+    except Exception as e:
+        raise RuntimeError(f"Failed to find device: {e}") from e
 
 
 # An older version of this script in #121595 filtered the logs by UID instead.
@@ -684,8 +718,11 @@ def install_signal_handler():
     signal.signal(signal.SIGTERM, signal_handler)
 
 
-def parse_args():
-    parser = argparse.ArgumentParser()
+def parse_args() -> Namespace:
+    parser = argparse.ArgumentParser(
+        description="Android build and test tool for CPython",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     subcommands = parser.add_subparsers(dest="subcommand", required=True)
 
     # Subcommands
@@ -708,7 +745,7 @@ def parse_args():
     env = subcommands.add_parser("env", help="Print environment variables")
 
     # Common arguments
-    for subcommand in build, configure_build, configure_host:
+    for subcommand in (build, configure_build, configure_host):
         subcommand.add_argument(
             "--clean", action="store_true", default=False, dest="clean",
             help="Delete the relevant build directories first")
@@ -719,13 +756,13 @@ def parse_args():
     for subcommand in host_commands:
         subcommand.add_argument(
             "host", metavar="HOST", choices=HOSTS,
-            help="Host triplet: choices=[%(choices)s]")
+            help=f"Host triplet: choices={HOSTS}")
 
-    for subcommand in build, configure_build, configure_host:
+    for subcommand in (build, configure_build, configure_host):
         subcommand.add_argument("args", nargs="*",
-                                help="Extra arguments to pass to `configure`")
+                               help="Extra arguments to pass to `configure`")
 
-    # Test arguments
+    # Test arguments with validation
     test.add_argument(
         "-v", "--verbose", action="count", default=0,
         help="Show Gradle output, and non-Python logcat messages. "
@@ -740,10 +777,10 @@ def parse_args():
         "These are defined in `managedDevices` in testbed/app/build.gradle.kts.")
 
     test.add_argument(
-        "--site-packages", metavar="DIR", type=abspath,
+        "--site-packages", metavar="DIR", type=Path,
         help="Directory to copy as the app's site-packages.")
     test.add_argument(
-        "--cwd", metavar="DIR", type=abspath,
+        "--cwd", metavar="DIR", type=Path,
         help="Directory to copy as the app's working directory.")
 
     mode_group = test.add_mutually_exclusive_group()
@@ -758,42 +795,70 @@ def parse_args():
         "args", nargs="*", help=f"Arguments to add to sys.argv. "
         f"Separate them from {SCRIPT_NAME}'s own arguments with `--`.")
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    # Validate paths
+    if hasattr(args, 'site_packages') and args.site_packages:
+        if not args.site_packages.exists():
+            parser.error(f"Site-packages directory does not exist: {args.site_packages}")
+        if not args.site_packages.is_dir():
+            parser.error(f"Site-packages path is not a directory: {args.site_packages}")
+
+    if hasattr(args, 'cwd') and args.cwd:
+        if not args.cwd.exists():
+            parser.error(f"Working directory does not exist: {args.cwd}")
+        if not args.cwd.is_dir():
+            parser.error(f"Working directory path is not a directory: {args.cwd}")
+
+    return args
 
 
-def main():
-    install_signal_handler()
-
-    # Under the buildbot, stdout is not a TTY, but we must still flush after
-    # every line to make sure our output appears in the correct order relative
-    # to the output of our subprocesses.
-    for stream in [sys.stdout, sys.stderr]:
-        stream.reconfigure(line_buffering=True)
-
-    context = parse_args()
-    dispatch = {
-        "configure-build": configure_build_python,
-        "make-build": make_build_python,
-        "configure-host": configure_host_python,
-        "make-host": make_host_python,
-        "build": build_all,
-        "clean": clean_all,
-        "build-testbed": build_testbed,
-        "test": run_testbed,
-        "package": package,
-        "env": env,
-    }
-
+def main() -> None:
     try:
+        install_signal_handler()
+
+        # Under the buildbot, stdout is not a TTY, but we must still flush after
+        # every line to make sure our output appears in the correct order relative
+        # to the output of our subprocesses.
+        for stream in [sys.stdout, sys.stderr]:
+            stream.reconfigure(line_buffering=True)
+
+        context = parse_args()
+        dispatch: Dict[str, Any] = {
+            "configure-build": configure_build_python,
+            "make-build": make_build_python,
+            "configure-host": configure_host_python,
+            "make-host": make_host_python,
+            "build": build_all,
+            "clean": clean_all,
+            "build-testbed": build_testbed,
+            "test": run_testbed,
+            "package": package,
+            "env": env,
+        }
+
+        if context.subcommand not in dispatch:
+            raise ValueError(f"Unknown subcommand: {context.subcommand}")
+
         result = dispatch[context.subcommand](context)
         if asyncio.iscoroutine(result):
             asyncio.run(result)
+
+    except KeyboardInterrupt:
+        print("\nOperation cancelled by user")
+        sys.exit(1)
     except CalledProcessError as e:
         print_called_process_error(e)
         sys.exit(1)
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        if os.environ.get("PYTHON_VERBOSE"):
+            import traceback
+            traceback.print_exc()
+        sys.exit(1)
 
 
-def print_called_process_error(e):
+def print_called_process_error(e: CalledProcessError) -> None:
     for stream_name in ["stdout", "stderr"]:
         content = getattr(e, stream_name)
         stream = getattr(sys, stream_name)
