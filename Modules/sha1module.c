@@ -196,10 +196,10 @@ SHA1Type_update_impl(SHA1object *self, PyObject *obj)
 {
     Py_buffer buf;
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
-    HASHLIB_EXTERNAL_INSTRUCTIONS_WITH_MUTEX(
+    HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
         self, buf.len,
         _hacl_sha1_state_update(self->hash_state, buf.buf, buf.len)
-    )
+    );
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
 }
@@ -302,10 +302,10 @@ _sha1_sha1_impl(PyObject *module, PyObject *data, int usedforsecurity,
     if (string) {
         /* Do not use self->mutex here as this is the constructor
          * where it is not yet possible to have concurrent access. */
-        HASHLIB_EXTERNAL_INSTRUCTIONS(
+        HASHLIB_EXTERNAL_INSTRUCTIONS_UNLOCKED(
             buf.len,
             _hacl_sha1_state_update(new->hash_state, buf.buf, buf.len)
-        )
+        );
         PyBuffer_Release(&buf);
     }
 

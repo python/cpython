@@ -278,21 +278,15 @@ get_hashlib_state(PyObject *module)
 }
 
 typedef struct {
-    PyObject_HEAD
+    PyObject_HASHLIB_HEAD
     EVP_MD_CTX *ctx;    /* OpenSSL message digest context */
-    // Prevents undefined behavior via multiple threads entering the C API.
-    bool use_mutex;
-    PyMutex mutex;      /* OpenSSL context lock */
 } HASHobject;
 
 #define HASHobject_CAST(op) ((HASHobject *)(op))
 
 typedef struct {
-    PyObject_HEAD
+    PyObject_HASHLIB_HEAD
     HMAC_CTX *ctx;            /* OpenSSL hmac context */
-    // Prevents undefined behavior via multiple threads entering the C API.
-    bool use_mutex;
-    PyMutex mutex;  /* HMAC context lock */
 } HMACobject;
 
 #define HMACobject_CAST(op) ((HMACobject *)(op))
@@ -803,11 +797,10 @@ _hashlib_HASH_update_impl(HASHobject *self, PyObject *obj)
     int result;
     Py_buffer view;
     GET_BUFFER_VIEW_OR_ERROUT(obj, &view);
-    Py_BEGIN_ALLOW_THREADS
-        HASHLIB_ACQUIRE_LOCK(self);
-        result = _hashlib_HASH_hash(self, view.buf, view.len);
-        HASHLIB_RELEASE_LOCK(self);
-    Py_END_ALLOW_THREADS
+    HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
+        self, HASHLIB_GIL_MINSIZE,
+        result = _hashlib_HASH_hash(self, view.buf, view.len)
+    );
     PyBuffer_Release(&view);
     return result < 0 ? NULL : Py_None;
 }
@@ -1114,9 +1107,10 @@ _hashlib_HASH(PyObject *module, const char *digestname, PyObject *data_obj,
     if (view.buf && view.len) {
         /* Do not use self->mutex here as this is the constructor
          * where it is not yet possible to have concurrent access. */
-        Py_BEGIN_ALLOW_THREADS
-            result = _hashlib_HASH_hash(self, view.buf, view.len);
-        Py_END_ALLOW_THREADS
+        HASHLIB_EXTERNAL_INSTRUCTIONS_UNLOCKED(
+            view.len,
+            result = _hashlib_HASH_hash(self, view.buf, view.len)
+        );
         if (result == -1) {
             assert(PyErr_Occurred());
             Py_CLEAR(self);
@@ -1810,13 +1804,12 @@ _hmac_update(HMACobject *self, PyObject *obj)
     Py_buffer view = {0};
 
     GET_BUFFER_VIEW_OR_ERROR(obj, &view, return 0);
-    Py_BEGIN_ALLOW_THREADS
-        HASHLIB_ACQUIRE_LOCK(self);
-        r = HMAC_Update(self->ctx,
-                        (const unsigned char *)view.buf,
-                        (size_t)view.len);
-        HASHLIB_RELEASE_LOCK(self);
-    Py_END_ALLOW_THREADS
+    HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
+        self, view.len,
+        r = HMAC_Update(
+            self->ctx, (const unsigned char *)view.buf, (size_t)view.len
+        )
+    );
     PyBuffer_Release(&view);
 
     if (r == 0) {

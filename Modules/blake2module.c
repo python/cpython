@@ -646,10 +646,10 @@ py_blake2_new(PyTypeObject *type, PyObject *data, int digest_size,
         GET_BUFFER_VIEW_OR_ERROR(data, &buf, goto error);
         /* Do not use self->mutex here as this is the constructor
          * where it is not yet possible to have concurrent access. */
-        HASHLIB_EXTERNAL_INSTRUCTIONS(
+        HASHLIB_EXTERNAL_INSTRUCTIONS_UNLOCKED(
             buf.len,
             blake2_update_unlocked(self, buf.buf, buf.len)
-        )
+        );
         PyBuffer_Release(&buf);
     }
 
@@ -822,10 +822,10 @@ _blake2_blake2b_update_impl(Blake2Object *self, PyObject *data)
 {
     Py_buffer buf;
     GET_BUFFER_VIEW_OR_ERROUT(data, &buf);
-    HASHLIB_EXTERNAL_INSTRUCTIONS_WITH_MUTEX(
+    HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
         self, buf.len,
         blake2_update_unlocked(self, buf.buf, buf.len)
-    )
+    );
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
 }

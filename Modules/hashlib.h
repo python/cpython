@@ -64,27 +64,33 @@
     } while (0)
 
 #define HASHLIB_GIL_MINSIZE         2048
-#define HASHLIB_EXTERNAL_INSTRUCTIONS(SIZE, STATEMENTS) \
-    if ((SIZE) > HASHLIB_GIL_MINSIZE) {                 \
-        Py_BEGIN_ALLOW_THREADS                          \
-        STATEMENTS;                                     \
-        Py_END_ALLOW_THREADS                            \
-    }                                                   \
-    else {                                              \
-        STATEMENTS;                                     \
-    }
+#define HASHLIB_EXTERNAL_INSTRUCTIONS_UNLOCKED(SIZE, STATEMENTS)    \
+    do {                                                            \
+        if ((SIZE) > HASHLIB_GIL_MINSIZE) {                         \
+            Py_BEGIN_ALLOW_THREADS                                  \
+            STATEMENTS;                                             \
+            Py_END_ALLOW_THREADS                                    \
+        }                                                           \
+        else {                                                      \
+            STATEMENTS;                                             \
+        }                                                           \
+    } while (0)
 
-#define HASHLIB_EXTERNAL_INSTRUCTIONS_WITH_MUTEX(OBJ, SIZE, STATEMENTS) \
-    if ((SIZE) > HASHLIB_GIL_MINSIZE) {                                 \
-        Py_BEGIN_ALLOW_THREADS                                          \
-        HASHLIB_ACQUIRE_LOCK(OBJ);                                      \
-        STATEMENTS;                                                     \
-        HASHLIB_RELEASE_LOCK(OBJ);                                      \
-        Py_END_ALLOW_THREADS                                            \
-    }                                                                   \
-    else {                                                              \
-        STATEMENTS;                                                     \
-    }
+#define HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(OBJ, SIZE, STATEMENTS) \
+    do {                                                            \
+        if ((SIZE) > HASHLIB_GIL_MINSIZE) {                         \
+            Py_BEGIN_ALLOW_THREADS                                  \
+            HASHLIB_ACQUIRE_LOCK(OBJ);                              \
+            STATEMENTS;                                             \
+            HASHLIB_RELEASE_LOCK(OBJ);                              \
+            Py_END_ALLOW_THREADS                                    \
+        }                                                           \
+        else {                                                      \
+            HASHLIB_ACQUIRE_LOCK(OBJ);                              \
+            STATEMENTS;                                             \
+            HASHLIB_RELEASE_LOCK(OBJ);                              \
+        }                                                           \
+    } while (0)
 
 static inline int
 _Py_hashlib_data_argument(PyObject **res, PyObject *data, PyObject *string)

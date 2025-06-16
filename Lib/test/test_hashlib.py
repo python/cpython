@@ -1027,17 +1027,23 @@ class HashLibTestCase(unittest.TestCase):
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     def test_threaded_hashing(self):
+        for constructor in self.hash_constructors:
+            if constructor().name not in self.shakes:
+                with self.subTest(constructor=constructor):
+                    self.do_test_threaded_hashing(constructor)
+
+    def do_test_threaded_hashing(self, constructor):
         # Updating the same hash object from several threads at once
         # using data chunk sizes containing the same byte sequences.
         #
         # If the internal locks are working to prevent multiple
         # updates on the same object from running at once, the resulting
         # hash will be the same as doing it single threaded upfront.
-        hasher = hashlib.sha1()
+        hasher = constructor()
         num_threads = 5
         smallest_data = b'swineflu'
         data = smallest_data * 200000
-        expected_hash = hashlib.sha1(data*num_threads).hexdigest()
+        expected_hash = constructor(data*num_threads).hexdigest()
 
         def hash_in_chunks(chunk_size):
             index = 0
