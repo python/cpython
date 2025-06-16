@@ -55,8 +55,14 @@ struct _qsbr_thread_state {
     // the last write sequence advance
     size_t deferred_memory;
 
-    // Sequence number at time of last "should process" check.
-    uint64_t seq_last_check;
+    // Amount of memory in mimalloc pages deferred from collection.  When
+    // deferred, they are prevented from being used for a different size class
+    // and in a different thread.
+    size_t deferred_page_memory;
+
+    // If non-zero, processing if deferred memory should be performed if the
+    // read sequence has reached this value.
+    uint64_t process_seq;
 
     // Is this thread state allocated?
     bool allocated;
@@ -66,7 +72,7 @@ struct _qsbr_thread_state {
 // Padding to avoid false sharing
 struct _qsbr_pad {
     struct _qsbr_thread_state qsbr;
-    char __padding[64 - sizeof(struct _qsbr_thread_state)];
+    char __padding[128 - sizeof(struct _qsbr_thread_state)];
 };
 
 // Per-interpreter state
@@ -117,14 +123,19 @@ extern uint64_t
 _Py_qsbr_advance(struct _qsbr_shared *shared);
 
 // Advance the write sequence as required and return the sequence goal to use
-// for memory to be freed.  If the sequence is advanced, this goal is the new
-// sequence value, otherwise it is the next sequence value.  In either case,
-// the goal is higher that any write sequence value already observed by readers.
-//
-// The 'size' argument is the size in bytes of the memory scheduled to be
-// freed.  If that size is not available, pass zero as the value.
+// for memory to be freed.  The 'free_size' argument is the size in bytes of
+// the memory scheduled to be freed.  If that size is not available, pass zero
+// as the value.
 extern uint64_t
-_Py_qsbr_advance_with_size(struct _qsbr_thread_state *qsbr, size_t size);
+_Py_qsbr_deferred_advance_for_free(struct _qsbr_thread_state *qsbr,
+                                   size_t free_size);
+
+// Advance the write sequence as required and return the sequence goal to use
+// for a mimalloc page to be collected.  The 'page_size' argument is the size
+// of the mimalloc page being deferred from collection.
+extern uint64_t
+_Py_qsbr_deferred_advance_for_page(struct _qsbr_thread_state *qsbr,
+                                   size_t page_size);
 
 // Return true if memory held by QSBR should be processed to determine if it
 // can be safely freed.

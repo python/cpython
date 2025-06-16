@@ -141,7 +141,7 @@ _PyMem_mi_page_maybe_free(mi_page_t *page, mi_page_queue_t *pq, bool force)
         page->retire_expire = 0;
 
         size_t bsize = mi_page_block_size(page);
-        page->qsbr_goal = _Py_qsbr_advance_with_size(tstate->qsbr, page->capacity*bsize);
+        page->qsbr_goal = _Py_qsbr_deferred_advance_for_page(tstate->qsbr, page->capacity*bsize);
 
         llist_insert_tail(&tstate->mimalloc.page_list, &page->qsbr_node);
         return false;
@@ -1203,12 +1203,14 @@ free_delayed(uintptr_t ptr, size_t size)
     }
 
     assert(buf != NULL && buf->wr_idx < WORK_ITEMS_PER_CHUNK);
-    uint64_t seq = _Py_qsbr_advance_with_size(tstate->qsbr, size);
+    uint64_t seq = _Py_qsbr_deferred_advance_for_free(tstate->qsbr, size);
     buf->array[buf->wr_idx].ptr = ptr;
     buf->array[buf->wr_idx].qsbr_goal = seq;
     buf->wr_idx++;
 
-    _PyMem_ProcessDelayed((PyThreadState *)tstate);
+    if (_Py_qsbr_should_process(tstate->qsbr)) {
+        _PyMem_ProcessDelayed((PyThreadState *)tstate);
+    }
 #endif
 }
 
@@ -1227,7 +1229,10 @@ _PyObject_XDecRefDelayed(PyObject *ptr)
 {
     assert(!((uintptr_t)ptr & 0x01));
     if (ptr != NULL) {
-        free_delayed(((uintptr_t)ptr)|0x01, 64);
+        // We use 0 as the size since we don't have an easy way to know the
+        // actual size.  If we are freeing many objects, the write sequence
+        // will be advanced due to QSBR_DEFERRED_LIMIT.
+        free_delayed(((uintptr_t)ptr)|0x01, 0);
     }
 }
 #endif
@@ -1300,11 +1305,8 @@ maybe_process_interp_queue(struct _Py_mem_interp_free_queue *queue,
 void
 _PyMem_ProcessDelayed(PyThreadState *tstate)
 {
-    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
-    if (!_Py_qsbr_should_process(tstate_impl->qsbr)) {
-        return;
-    }
     PyInterpreterState *interp = tstate->interp;
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
 
     // Process thread-local work
     process_queue(&tstate_impl->mem_free_queue, tstate_impl, true, NULL, NULL);

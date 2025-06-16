@@ -41,14 +41,19 @@
 // Starting size of the array of qsbr thread states
 #define MIN_ARRAY_SIZE 8
 
-// For should_advance_qsbr(): the number of deferred items before advancing
+// For deferred advance on free: the number of deferred items before advancing
 // the write sequence.  This is based on WORK_ITEMS_PER_CHUNK.  We ideally
 // want to process a chunk before it overflows.
 #define QSBR_DEFERRED_LIMIT 127
 
 // If the deferred memory exceeds 1 MiB, we force an advance in the
 // shared QSBR sequence number to limit excess memory usage.
-#define QSBR_MEM_LIMIT 1024*1024
+#define QSBR_FREE_MEM_LIMIT 1024*1024
+
+// If we are deferring collection of more than this amount of memory for
+// mimalloc pages, advance the write sequence.  Advancing allows these
+// pages to be re-used in a different thread or for a different size class.
+#define QSBR_PAGE_MEM_LIMIT 4096*10
 
 // Allocate a QSBR thread state from the freelist
 static struct _qsbr_thread_state *
@@ -121,43 +126,50 @@ _Py_qsbr_advance(struct _qsbr_shared *shared)
     return _Py_atomic_add_uint64(&shared->wr_seq, QSBR_INCR);
 }
 
-static int
-should_advance_qsbr(struct _qsbr_thread_state *qsbr, size_t size)
-{
-    qsbr->deferred_count++;
-    qsbr->deferred_memory += size;
-    if (qsbr->deferred_count >= QSBR_DEFERRED_LIMIT ||
-            qsbr->deferred_memory > QSBR_MEM_LIMIT) {
-        qsbr->deferred_count = 0;
-        qsbr->deferred_memory = 0;
-        return 1;
-    }
-    return 0;
-}
-
 uint64_t
-_Py_qsbr_advance_with_size(struct _qsbr_thread_state *qsbr, size_t size)
+_Py_qsbr_deferred_advance_for_page(struct _qsbr_thread_state *qsbr, size_t page_size)
 {
-    if (should_advance_qsbr(qsbr, size)) {
+    qsbr->deferred_page_memory += page_size;
+    if (qsbr->deferred_page_memory > QSBR_PAGE_MEM_LIMIT) {
+        qsbr->deferred_page_memory = 0;
         // Advance the write sequence and return the updated value as the goal.
         return _Py_qsbr_advance(qsbr->shared);
     }
-    else {
-        // Don't advance, return the next sequence value as the goal.
-        return _Py_qsbr_shared_current(qsbr->shared) + QSBR_INCR;
+    // Don't advance, return the next sequence value as the goal.
+    return _Py_qsbr_shared_current(qsbr->shared) + QSBR_INCR;
+}
+
+uint64_t
+_Py_qsbr_deferred_advance_for_free(struct _qsbr_thread_state *qsbr, size_t free_size)
+{
+    qsbr->deferred_count++;
+    qsbr->deferred_memory += free_size;
+    if (qsbr->deferred_count >= QSBR_DEFERRED_LIMIT ||
+            qsbr->deferred_memory > QSBR_FREE_MEM_LIMIT) {
+        qsbr->deferred_count = 0;
+        qsbr->deferred_memory = 0;
+        // Advance the write sequence
+        uint64_t seq = _Py_qsbr_advance(qsbr->shared);
+        if (qsbr->process_seq == 0) {
+            // Process the queue of deferred frees when the read sequence
+            // reaches this value.  We don't process immediately because
+            // we want to give readers a chance to advance their sequence.
+            qsbr->process_seq = seq;
+        }
+        // Return current (just advanced) sequence as the goal.
+        return seq;
     }
+    // Don't advance, return the next sequence value as the goal.
+    return _Py_qsbr_shared_current(qsbr->shared) + QSBR_INCR;
 }
 
 bool
 _Py_qsbr_should_process(struct _qsbr_thread_state *qsbr)
 {
-    if (qsbr->seq_last_check == qsbr->seq) {
-        // If 'seq' for this thread hasn't advanced, it is unlikely that any
-        // deferred memory is ready to be freed.  Wait longer before trying
-        // to process.
+    if (qsbr->process_seq == 0 || qsbr->seq < qsbr->process_seq) {
         return false;
     }
-    qsbr->seq_last_check = qsbr->seq;
+    qsbr->process_seq = 0;
     return true;
 }
 
