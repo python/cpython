@@ -491,7 +491,10 @@ _hacl_hmac_state_update(HACL_HMAC_state *state, uint8_t *buf, Py_ssize_t len)
         len -= UINT32_MAX;
     }
 #endif
-    assert(len <= UINT32_MAX_AS_SSIZE_T);
+    if (len > UINT32_MAX_AS_SSIZE_T) {
+        PyErr_Format(PyExc_ValueError, "invalid length: %zd (max: %ju)", len, UINT32_MAX);
+        return -1;
+    }
     return _hacl_hmac_state_update_once(state, buf, len);
 }
 
