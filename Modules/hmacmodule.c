@@ -494,14 +494,8 @@ _hacl_hmac_state_update(HACL_HMAC_state *state, uint8_t *buf, Py_ssize_t len)
         len -= UINT32_MAX;
     }
 #endif
-    if (len > UINT32_MAX_AS_SSIZE_T) {
-        PyGILState_STATE gstate = PyGILState_Ensure();
-        PyErr_Format(PyExc_ValueError, "invalid length: %zd (max: %u)",
-                     len, UINT32_MAX);
-        PyGILState_Release(gstate);
-        return -1;
-    }
-    return _hacl_hmac_state_update_once(state, buf, len);
+    assert(Py_CHECK_HACL_UINT32_T_LENGTH(len));
+    return _hacl_hmac_state_update_once(state, buf, (uint32_t)len);
 }
 
 /* Static information used to construct the hash table. */
@@ -787,9 +781,13 @@ _hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
             rc = _hacl_hmac_state_update(self->state, msg.buf, msg.len)
         );
         PyBuffer_Release(&msg);
+#ifndef NDEBUG
         if (rc < 0) {
             goto error;
         }
+#else
+        (void)rc;
+#endif
     }
     assert(rc == 0);
     PyObject_GC_Track(self);
