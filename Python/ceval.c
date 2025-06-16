@@ -2784,8 +2784,17 @@ _PyEval_EnsureBuiltins(PyThreadState *tstate, PyObject *globals, int usemod,
                        PyObject **p_builtins)
 {
     PyObject *builtins = NULL;
-    if (PyMapping_GetOptionalItem(globals, &_Py_ID(__builtins__), &builtins) < 0) {
-        return -1;
+    if (PyDict_Check(globals)) {
+        if (PyDict_GetItemRef(globals, &_Py_ID(__builtins__), &builtins) < 0) {
+            return -1;
+        }
+    }
+    else {
+        if (PyMapping_GetOptionalItem(
+                        globals, &_Py_ID(__builtins__), &builtins) < 0)
+        {
+            return -1;
+        }
     }
     if (builtins == NULL) {
         if (usemod) {
@@ -2803,9 +2812,17 @@ _PyEval_EnsureBuiltins(PyThreadState *tstate, PyObject *globals, int usemod,
             }
             Py_INCREF(builtins);
         }
-        if (PyDict_SetItem(globals, &_Py_ID(__builtins__), builtins) < 0) {
-            Py_DECREF(builtins);
-            return -1;
+        if (PyDict_Check(globals)) {
+            if (PyDict_SetItem(globals, &_Py_ID(__builtins__), builtins) < 0) {
+                Py_DECREF(builtins);
+                return -1;
+            }
+        }
+        else {
+            if (PyObject_SetItem(globals, &_Py_ID(__builtins__), builtins) < 0) {
+                Py_DECREF(builtins);
+                return -1;
+            }
         }
     }
     if (p_builtins != NULL) {
