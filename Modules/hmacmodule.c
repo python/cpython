@@ -493,46 +493,40 @@ narrow_hmac_hash_kind(hmacmodule_state *state, HMAC_Hash_Kind kind)
 static int
 _hacl_convert_errno(hacl_errno_t code, PyObject *algorithm)
 {
+    assert(PyGILState_GetThisThreadState() != NULL);
+    if (code == Hacl_Streaming_Types_Success) {
+        return 0;
+    }
+    PyGILState_STATE gstate = PyGILState_Ensure();
     switch (code) {
-        case Hacl_Streaming_Types_Success: {
-            return 0;
-        }
         case Hacl_Streaming_Types_InvalidAlgorithm: {
-            PyGILState_STATE gstate = PyGILState_Ensure();
             // only makes sense if an algorithm is known at call time
             assert(algorithm != NULL);
             assert(PyUnicode_CheckExact(algorithm));
             PyErr_Format(PyExc_ValueError, "invalid algorithm: %U", algorithm);
-            PyGILState_Release(gstate);
-            return -1;
+            break;
         }
         case Hacl_Streaming_Types_InvalidLength: {
-            PyGILState_STATE gstate = PyGILState_Ensure();
             PyErr_SetString(PyExc_ValueError, "invalid length");
-            PyGILState_Release(gstate);
-            return -1;
+            break;
         }
         case Hacl_Streaming_Types_MaximumLengthExceeded: {
-            PyGILState_STATE gstate = PyGILState_Ensure();
             PyErr_SetString(PyExc_OverflowError, "maximum length exceeded");
-            PyGILState_Release(gstate);
-            return -1;
+            break;
         }
         case Hacl_Streaming_Types_OutOfMemory: {
-            PyGILState_STATE gstate = PyGILState_Ensure();
             PyErr_NoMemory();
-            PyGILState_Release(gstate);
-            return -1;
+            break;
         }
         default: {
-            PyGILState_STATE gstate = PyGILState_Ensure();
             PyErr_Format(PyExc_RuntimeError,
                          "HACL* internal routine failed with error code: %d",
                          code);
-            PyGILState_Release(gstate);
-            return -1;
+            break;
         }
     }
+    PyGILState_Release(gstate);
+    return -1;
 }
 
 /*
