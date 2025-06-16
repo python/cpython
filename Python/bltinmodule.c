@@ -14,7 +14,6 @@
 #include "pycore_pyerrors.h"      // _PyErr_NoMemory()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pythonrun.h"     // _Py_SourceAsString()
-#include "pycore_sysmodule.h"     // _PySys_GetRequiredAttr()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_cell.h"          // PyCell_GetRef()
 
@@ -465,7 +464,7 @@ builtin_callable(PyObject *module, PyObject *obj)
 static PyObject *
 builtin_breakpoint(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *keywords)
 {
-    PyObject *hook = _PySys_GetRequiredAttrString("breakpointhook");
+    PyObject *hook = PySys_GetAttrString("breakpointhook");
     if (hook == NULL) {
         return NULL;
     }
@@ -566,11 +565,9 @@ filter_dealloc(PyObject *self)
 {
     filterobject *lz = _filterobject_CAST(self);
     PyObject_GC_UnTrack(lz);
-    Py_TRASHCAN_BEGIN(lz, filter_dealloc)
     Py_XDECREF(lz->func);
     Py_XDECREF(lz->it);
     Py_TYPE(lz)->tp_free(lz);
-    Py_TRASHCAN_END
 }
 
 static int
@@ -847,7 +844,7 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                 goto error;
             }
             int syntax_check_only = ((flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST); /* unoptiomized AST */
-            if (_PyCompile_AstOptimize(mod, filename, &cf, optimize,
+            if (_PyCompile_AstPreprocess(mod, filename, &cf, optimize,
                                            arena, syntax_check_only) < 0) {
                 _PyArena_Free(arena);
                 goto error;
@@ -2166,7 +2163,7 @@ builtin_print_impl(PyObject *module, PyObject * const *args,
     int i, err;
 
     if (file == Py_None) {
-        file = _PySys_GetRequiredAttr(&_Py_ID(stdout));
+        file = PySys_GetAttr(&_Py_ID(stdout));
         if (file == NULL) {
             return NULL;
         }
@@ -2272,7 +2269,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
     int tty;
 
     /* Check that stdin/out/err are intact */
-    fin = _PySys_GetRequiredAttr(&_Py_ID(stdin));
+    fin = PySys_GetAttr(&_Py_ID(stdin));
     if (fin == NULL) {
         goto error;
     }
@@ -2280,7 +2277,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         PyErr_SetString(PyExc_RuntimeError, "lost sys.stdin");
         goto error;
     }
-    fout = _PySys_GetRequiredAttr(&_Py_ID(stdout));
+    fout = PySys_GetAttr(&_Py_ID(stdout));
     if (fout == NULL) {
         goto error;
     }
@@ -2288,7 +2285,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
         goto error;
     }
-    ferr = _PySys_GetRequiredAttr(&_Py_ID(stderr));
+    ferr = PySys_GetAttr(&_Py_ID(stderr));
     if (ferr == NULL) {
         goto error;
     }

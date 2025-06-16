@@ -2294,7 +2294,7 @@ superclass. Patch by James Hilton-Balfe
 .. nonce: VksX1D
 .. section: Library
 
-:class:`http.server.CGIHTTPRequestHandler` has been deprecated for removal
+:class:`!http.server.CGIHTTPRequestHandler` has been deprecated for removal
 in 3.15.  Its design is old and the web world has long since moved beyond
 CGI.
 
@@ -6538,7 +6538,7 @@ to hide implementation details. Patch by Victor Stinner.
 .. nonce: FQJG5B
 .. section: C API
 
-Deprecate the :c:func:`PyImport_ImportModuleNoBlock` function which is just
+Deprecate the :c:func:`!PyImport_ImportModuleNoBlock` function which is just
 an alias to :c:func:`PyImport_ImportModule` since Python 3.3. Patch by
 Victor Stinner.
 
@@ -6593,12 +6593,12 @@ functions, deprecated in Python 3.9. Patch by Victor Stinner.
 Deprecate old Python initialization functions:
 
 * :c:func:`PySys_ResetWarnOptions`
-* :c:func:`Py_GetExecPrefix`
-* :c:func:`Py_GetPath`
-* :c:func:`Py_GetPrefix`
-* :c:func:`Py_GetProgramFullPath`
-* :c:func:`Py_GetProgramName`
-* :c:func:`Py_GetPythonHome`
+* :c:func:`!Py_GetExecPrefix`
+* :c:func:`!Py_GetPath`
+* :c:func:`!Py_GetPrefix`
+* :c:func:`!Py_GetProgramFullPath`
+* :c:func:`!Py_GetProgramName`
+* :c:func:`!Py_GetPythonHome`
 
 Patch by Victor Stinner.
 
