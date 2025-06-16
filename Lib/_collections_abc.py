@@ -967,8 +967,8 @@ class MutableMapping(Mapping):
             In either case, this is followed by: for k, v in F.items(): D[k] = v
         '''
         if isinstance(other, Mapping):
-            for key in other:
-                self[key] = other[key]
+            for key, value in other.items():
+                self[key] = value
         elif hasattr(other, "keys"):
             for key in other.keys():
                 self[key] = other[key]
