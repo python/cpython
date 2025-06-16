@@ -392,7 +392,7 @@ As can be seen, the API is similar to the APIs of the :mod:`!lzma` and
 :mod:`!bz2` modules.
 
 (Contributed by Emma Harper Smith, Adam Turner, Gregory P. Smith, Tomas Roun,
-Victor Stinner, and Rogdham in :gh:`132983`)
+Victor Stinner, and Rogdham in :gh:`132983`.)
 
 .. seealso::
    :pep:`784`.
@@ -1266,7 +1266,7 @@ configparser
   to :meth:`configparser.ConfigParser.write` keys containing delimiters or
   beginning with the section header pattern will raise a
   :class:`configparser.InvalidWriteError`.
-  (Contributed by Jacob Lincoln in :gh:`129270`)
+  (Contributed by Jacob Lincoln in :gh:`129270`.)
 
 contextvars
 -----------
@@ -2755,8 +2755,8 @@ New features
 
 * Add :c:func:`PyType_GetBaseByToken` and :c:data:`Py_tp_token` slot for easier
   superclass identification, which attempts to resolve the `type checking issue
-  <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`
-  (:gh:`124153`).
+  <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`.
+  (Contributed in :gh:`124153`.)
 
 * Add :c:func:`PyUnicode_Equal` function to the limited C API:
   test if two strings are equal.
