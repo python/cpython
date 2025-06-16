@@ -283,11 +283,7 @@ get_hmacmodule_state_by_cls(PyTypeObject *cls)
 typedef Hacl_Streaming_HMAC_agile_state HACL_HMAC_state;
 
 typedef struct HMACObject {
-    PyObject_HEAD
-
-    bool use_mutex;
-    PyMutex mutex;
-
+    PyObject_HASHLIB_HEAD
     // Hash function information
     PyObject *name;         // rendered name (exact unicode object)
     HMAC_Hash_Kind kind;    // can be used for runtime dispatch (must be known)
@@ -878,12 +874,11 @@ _hmac_HMAC_copy_impl(HMACObject *self, PyTypeObject *cls)
         return NULL;
     }
 
-    int rc = 0;
     HASHLIB_ACQUIRE_LOCK(self);
     /* copy hash information */
     hmac_copy_hinfo(copy, self);
     /* copy internal state */
-    rc = hmac_copy_state(copy, self);
+    int rc = hmac_copy_state(copy, self);
     HASHLIB_RELEASE_LOCK(self);
 
     if (rc < 0) {

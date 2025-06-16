@@ -37,10 +37,8 @@ class MD5Type "MD5object *" "&PyType_Type"
 
 #include "_hacl/Hacl_Hash_MD5.h"
 
-
 typedef struct {
-    PyObject_HEAD
-    HASHLIB_LOCK_HEAD
+    PyObject_HASHLIB_HEAD
     Hacl_Hash_MD5_state_t *hash_state;
 } MD5object;
 

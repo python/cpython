@@ -50,20 +50,14 @@ class SHA512Type "SHA512object *" "&PyType_Type"
 // TODO: Get rid of int digestsize in favor of Hacl state info?
 
 typedef struct {
-    PyObject_HEAD
+    PyObject_HASHLIB_HEAD
     int digestsize;
-    // Prevents undefined behavior via multiple threads entering the C API.
-    bool use_mutex;
-    PyMutex mutex;
     Hacl_Hash_SHA2_state_t_256 *state;
 } SHA256object;
 
 typedef struct {
-    PyObject_HEAD
+    PyObject_HASHLIB_HEAD
     int digestsize;
-    // Prevents undefined behavior via multiple threads entering the C API.
-    bool use_mutex;
-    PyMutex mutex;
     Hacl_Hash_SHA2_state_t_512 *state;
 } SHA512object;
 

@@ -50,7 +50,8 @@
 
 #include "pythread.h"
 
-#define HASHLIB_LOCK_HEAD                                               \
+#define PyObject_HASHLIB_HEAD                                           \
+    PyObject_HEAD                                                       \
     /* Guard against race conditions during incremental update(). */    \
     PyMutex mutex;
 
