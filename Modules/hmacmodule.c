@@ -923,7 +923,7 @@ _hmac_HMAC_update_impl(HMACObject *self, PyObject *msgobj)
  * Note: this function may raise a MemoryError.
  */
 static int
-hmac_digest_compute_cond_lock(HMACObject *self, uint8_t *digest)
+hmac_digest_compute_locked(HMACObject *self, uint8_t *digest)
 {
     assert(digest != NULL);
     hacl_errno_t rc;
@@ -951,7 +951,7 @@ _hmac_HMAC_digest_impl(HMACObject *self)
 {
     assert(self->digest_size <= Py_hmac_hash_max_digest_size);
     uint8_t digest[Py_hmac_hash_max_digest_size];
-    if (hmac_digest_compute_cond_lock(self, digest) < 0) {
+    if (hmac_digest_compute_locked(self, digest) < 0) {
         return NULL;
     }
     return PyBytes_FromStringAndSize((const char *)digest, self->digest_size);
@@ -974,7 +974,7 @@ _hmac_HMAC_hexdigest_impl(HMACObject *self)
 {
     assert(self->digest_size <= Py_hmac_hash_max_digest_size);
     uint8_t digest[Py_hmac_hash_max_digest_size];
-    if (hmac_digest_compute_cond_lock(self, digest) < 0) {
+    if (hmac_digest_compute_locked(self, digest) < 0) {
         return NULL;
     }
     return _Py_strhex((const char *)digest, self->digest_size);

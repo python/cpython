@@ -737,7 +737,7 @@ py_blake2s_new_impl(PyTypeObject *type, PyObject *data_obj, int digest_size,
 }
 
 static int
-blake2_blake2b_copy_locked(Blake2Object *self, Blake2Object *cpy)
+blake2_blake2b_copy_unlocked(Blake2Object *self, Blake2Object *cpy)
 {
     assert(cpy != NULL);
 #define BLAKE2_COPY(TYPE, STATE_ATTR)                                       \
@@ -795,7 +795,7 @@ _blake2_blake2b_copy_impl(Blake2Object *self)
     }
 
     HASHLIB_ACQUIRE_LOCK(self);
-    rc = blake2_blake2b_copy_locked(self, cpy);
+    rc = blake2_blake2b_copy_unlocked(self, cpy);
     HASHLIB_RELEASE_LOCK(self);
     if (rc < 0) {
         Py_DECREF(cpy);
