@@ -1936,7 +1936,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. audit-event:: remove_exec pid script_path
 
       When the code is executed in the remote process, an :ref:`auditing event <auditing>`
-      ``remove_exec`` is raised with the *pid* and the path to the script file.
+      ``remote_exec`` is raised with the *pid* and the path to the script file.
 
    .. audit-event:: remote_debugger_script script_path
 
