@@ -1,39 +1,26 @@
 """Implements InterpreterPoolExecutor."""
 
-import contextlib
-import pickle
+from concurrent import interpreters
+import sys
 import textwrap
 from . import thread as _thread
-import _interpreters
-import _interpqueues
+import traceback
 
 
-class ExecutionFailed(_interpreters.InterpreterError):
-    """An unhandled exception happened during execution."""
-
-    def __init__(self, excinfo):
-        msg = excinfo.formatted
-        if not msg:
-            if excinfo.type and excinfo.msg:
-                msg = f'{excinfo.type.__name__}: {excinfo.msg}'
-            else:
-                msg = excinfo.type.__name__ or excinfo.msg
-        super().__init__(msg)
-        self.excinfo = excinfo
-
-    def __str__(self):
+def do_call(results, func, args, kwargs):
+    try:
+        return func(*args, **kwargs)
+    except BaseException as exc:
+        # Send the captured exception out on the results queue,
+        # but still leave it unhandled for the interpreter to handle.
         try:
-            formatted = self.excinfo.errdisplay
-        except Exception:
-            return super().__str__()
-        else:
-            return textwrap.dedent(f"""
-{super().__str__()}
-
-Uncaught in the interpreter:
-
-{formatted}
-                """.strip())
+            results.put(exc)
+        except interpreters.NotShareableError:
+            # The exception is not shareable.
+            print('exception is not shareable:', file=sys.stderr)
+            traceback.print_exception(exc)
+            results.put(None)
+        raise  # re-raise
 
 
 class WorkerContext(_thread.WorkerContext):
@@ -63,72 +50,19 @@ class WorkerContext(_thread.WorkerContext):
 
     def __init__(self, initdata):
         self.initdata = initdata
-        self.interpid = None
-        self.resultsid = None
+        self.interp = None
+        self.results = None
 
     def __del__(self):
-        if self.interpid is not None:
+        if self.interp is not None:
             self.finalize()
 
-    def _call(self, fn, args, kwargs):
-        def do_call(resultsid, func, *args, **kwargs):
-            try:
-                return func(*args, **kwargs)
-            except BaseException as exc:
-                # Avoid relying on globals.
-                import _interpreters
-                import _interpqueues
-                # Send the captured exception out on the results queue,
-                # but still leave it unhandled for the interpreter to handle.
-                try:
-                    _interpqueues.put(resultsid, exc)
-                except _interpreters.NotShareableError:
-                    # The exception is not shareable.
-                    import sys
-                    import traceback
-                    print('exception is not shareable:', file=sys.stderr)
-                    traceback.print_exception(exc)
-                    _interpqueues.put(resultsid, None)
-                raise  # re-raise
-
-        args = (self.resultsid, fn, *args)
-        res, excinfo = _interpreters.call(self.interpid, do_call, args, kwargs)
-        if excinfo is not None:
-            raise ExecutionFailed(excinfo)
-        return res
-
-    def _get_exception(self):
-        # Wait for the exception data to show up.
-        while True:
-            try:
-                excdata = _interpqueues.get(self.resultsid)
-            except _interpqueues.QueueNotFoundError:
-                raise  # re-raise
-            except _interpqueues.QueueError as exc:
-                if exc.__cause__ is not None or exc.__context__ is not None:
-                    raise  # re-raise
-                if str(exc).endswith(' is empty'):
-                    continue
-                else:
-                    raise  # re-raise
-            except ModuleNotFoundError:
-                # interpreters.queues doesn't exist, which means
-                # QueueEmpty doesn't.  Act as though it does.
-                continue
-            else:
-                break
-        exc, unboundop = excdata
-        assert unboundop is None, unboundop
-        return exc
-
     def initialize(self):
-        assert self.interpid is None, self.interpid
-        self.interpid = _interpreters.create(reqrefs=True)
+        assert self.interp is None, self.interp
+        self.interp = interpreters.create()
         try:
-            _interpreters.incref(self.interpid)
-
             maxsize = 0
-            self.resultsid = _interpqueues.create(maxsize)
+            self.results = interpreters.create_queue(maxsize)
 
             if self.initdata:
                 self.run(self.initdata)
@@ -137,27 +71,21 @@ class WorkerContext(_thread.WorkerContext):
             raise  # re-raise
 
     def finalize(self):
-        interpid = self.interpid
-        resultsid = self.resultsid
-        self.resultsid = None
-        self.interpid = None
-        if resultsid is not None:
-            try:
-                _interpqueues.destroy(resultsid)
-            except _interpqueues.QueueNotFoundError:
-                pass
-        if interpid is not None:
-            try:
-                _interpreters.decref(interpid)
-            except _interpreters.InterpreterNotFoundError:
-                pass
+        interp = self.interp
+        results = self.results
+        self.results = None
+        self.interp = None
+        if results is not None:
+            del results
+        if interp is not None:
+            interp.close()
 
     def run(self, task):
-        fn, args, kwargs = task
         try:
-            return self._call(fn, args, kwargs)
-        except ExecutionFailed as wrapper:
-            exc = self._get_exception()
+            return self.interp.call(do_call, self.results, *task)
+        except interpreters.ExecutionFailed as wrapper:
+            # Wait for the exception data to show up.
+            exc = self.results.get()
             if exc is None:
                 # The exception must have been not shareable.
                 raise  # re-raise

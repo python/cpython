@@ -5,9 +5,7 @@ import os
 import sys
 import time
 import unittest
-from concurrent.futures.interpreter import (
-    ExecutionFailed, BrokenInterpreterPool,
-)
+from concurrent.futures.interpreter import BrokenInterpreterPool
 from concurrent import interpreters
 from concurrent.interpreters import _queues as queues
 import _interpreters
@@ -325,7 +323,7 @@ class InterpreterPoolExecutorTest(
         self.assertIs(type(captured.exception), Exception)
         self.assertEqual(str(captured.exception), 'spam')
         cause = captured.exception.__cause__
-        self.assertIs(type(cause), ExecutionFailed)
+        self.assertIs(type(cause), interpreters.ExecutionFailed)
         for attr in ('__name__', '__qualname__', '__module__'):
             self.assertEqual(getattr(cause.excinfo.type, attr),
                              getattr(Exception, attr))
@@ -338,7 +336,7 @@ class InterpreterPoolExecutorTest(
         self.assertIs(type(captured.exception), Exception)
         self.assertEqual(str(captured.exception), 'spam')
         cause = captured.exception.__cause__
-        self.assertIs(type(cause), ExecutionFailed)
+        self.assertIs(type(cause), interpreters.ExecutionFailed)
         for attr in ('__name__', '__qualname__', '__module__'):
             self.assertEqual(getattr(cause.excinfo.type, attr),
                              getattr(Exception, attr))
