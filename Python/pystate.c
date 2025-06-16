@@ -1486,6 +1486,10 @@ init_threadstate(_PyThreadStateImpl *_tstate,
         tstate->state = _Py_THREAD_SUSPENDED;
     }
 
+    PyTime_t now;
+    PyTime_MonotonicRaw(&now);
+    tstate->prng = (uint64_t)now;
+
     tstate->_status.initialized = 1;
 }
 
