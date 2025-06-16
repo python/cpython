@@ -2619,7 +2619,9 @@ _PyXI_Enter(_PyXI_session *session,
             PyInterpreterState *interp, PyObject *nsupdates,
             _PyXI_session_result *result)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
+#ifndef NDEBUG
+    PyThreadState *tstate = _PyThreadState_GET();  // Only used for asserts
+#endif
 
     // Convert the attrs for cross-interpreter use.
     _PyXI_namespace *sharedns = NULL;
@@ -2661,7 +2663,9 @@ _PyXI_Enter(_PyXI_session *session,
     _enter_session(session, interp);
     _PyXI_failure override = XI_FAILURE_INIT;
     override.code = _PyXI_ERR_UNCAUGHT_EXCEPTION;
+#ifndef NDEBUG
     tstate = _PyThreadState_GET();
+#endif
 
     // Ensure this thread owns __main__.
     if (_PyInterpreterState_SetRunningMain(interp) < 0) {
@@ -2697,7 +2701,9 @@ error:
 
     // Exit the session.
     _exit_session(session);
+#ifndef NDEBUG
     tstate = _PyThreadState_GET();
+#endif
 
     if (sharedns != NULL) {
         _destroy_sharedns(sharedns);
