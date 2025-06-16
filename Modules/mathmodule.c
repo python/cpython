@@ -788,6 +788,39 @@ long_lcm(PyObject *a, PyObject *b)
     return ab;
 }
 
+static PyObject *
+long_array_lcm(PyObject * const *args, Py_ssize_t args_length)
+{
+    if (args_length == 1) {
+        return PyNumber_Index(args[0]);
+    }
+
+    PyObject *left, *right;
+    if (args_length == 2) {
+        left = PyNumber_Index(args[0]);
+        if (left == NULL) {
+            return NULL;
+        }
+        right = PyNumber_Index(args[1]);
+    }
+    else {
+        Py_ssize_t half = args_length / 2;
+        left = long_array_lcm(args, half);
+        if (left == NULL) {
+            return NULL;
+        }
+        right = long_array_lcm(args + half, args_length - half);
+    }
+    if (right == NULL) {
+        Py_DECREF(left);
+        return NULL;
+    }
+    PyObject *res = long_lcm(left, right);
+    Py_DECREF(left);
+    Py_DECREF(right);
+    return res;
+}
+
 
 /*[clinic input]
 math.lcm
@@ -802,41 +835,18 @@ math_lcm_impl(PyObject *module, PyObject * const *args,
               Py_ssize_t args_length)
 /*[clinic end generated code: output=c8a59a5c2e55c816 input=3e4f4b7cdf948a98]*/
 {
-    PyObject *res, *x;
-    Py_ssize_t i;
-
     if (args_length == 0) {
         return PyLong_FromLong(1);
     }
-    res = PyNumber_Index(args[0]);
-    if (res == NULL) {
-        return NULL;
-    }
     if (args_length == 1) {
-        Py_SETREF(res, PyNumber_Absolute(res));
-        return res;
-    }
-
-    PyObject *zero = _PyLong_GetZero();  // borrowed ref
-    for (i = 1; i < args_length; i++) {
-        x = PyNumber_Index(args[i]);
-        if (x == NULL) {
-            Py_DECREF(res);
-            return NULL;
-        }
-        if (res == zero) {
-            /* Fast path: just check arguments.
-               It is okay to use identity comparison here. */
-            Py_DECREF(x);
-            continue;
-        }
-        Py_SETREF(res, long_lcm(res, x));
-        Py_DECREF(x);
+        PyObject *res = PyNumber_Index(args[0]);
         if (res == NULL) {
             return NULL;
         }
+        Py_SETREF(res, PyNumber_Absolute(res));
+        return res;
     }
-    return res;
+    return long_array_lcm(args, args_length);
 }
 
 
