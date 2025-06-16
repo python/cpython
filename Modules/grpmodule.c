@@ -265,7 +265,7 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
     p = getgrnam(name_chars);
 #endif
     if (p == NULL) {
-#ifndef HAVE_GETGRGID_R
+#ifndef HAVE_GETGRNAM_R
         PyMutex_Unlock(&getgrnam_mutex);
 #endif
         if (nomem == 1) {
