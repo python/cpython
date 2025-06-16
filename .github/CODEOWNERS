@@ -27,6 +27,7 @@ Modules/Setup*                @erlend-aasland
 **/*genobject*                @markshannon
 **/*hamt*                     @1st1
 **/*jit*                      @brandtbucher @savannahostrowski
+Objects/object.c              @ZeroIntensity
 Objects/set*                  @rhettinger
 Objects/dict*                 @methane @markshannon
 Objects/typevarobject.c       @JelleZijlstra
@@ -66,8 +67,8 @@ Doc/_static/**                @AA-Turner @hugovk
 Doc/tools/**                  @AA-Turner @hugovk
 
 # runtime state/lifecycle
-**/*pylifecycle*              @ericsnowcurrently
-**/*pystate*                  @ericsnowcurrently
+**/*pylifecycle*              @ericsnowcurrently @ZeroIntensity
+**/*pystate*                  @ericsnowcurrently @ZeroIntensity
 **/*preconfig*                @ericsnowcurrently
 **/*initconfig*               @ericsnowcurrently
 **/*pathconfig*               @ericsnowcurrently
