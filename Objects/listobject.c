@@ -1747,10 +1747,9 @@ struct s_MergeState {
     int (*tuple_elem_compare)(PyObject *, PyObject *, MergeState *);
 
     /* Varisbles used for minrun computation. The "ideal" minrun length is
-     * the infinite precision listlen / 2**e, which is represented as the
-     * marhematical value of mr_int + mr_frac / 2**e.
+     * the infinite precision listlen / 2**e. See listlen.txt.
      */
-     Py_ssize_t mr_int, mr_frac, mr_current_frac, mr_e, mr_mask;
+     Py_ssize_t mr_current, mr_e, mr_mask;
 };
 
 /* binarysort is the best method for sorting small arrays: it does few
@@ -2213,15 +2212,13 @@ merge_init(MergeState *ms, Py_ssize_t list_size, int has_keyfunc,
     ms->listlen = list_size;
     ms->basekeys = lo->keys;
 
-    ms->mr_int = list_size;
+    /* State for generating minrun values. See listsort.txt. */
     ms->mr_e = 0;
-    while (ms->mr_int >= MAX_MINRUN) {
-        ms->mr_int >>= 1;
+    while (list_size >> ms->mr_e >= MAX_MINRUN) {
         ++ms->mr_e;
     }
     ms->mr_mask = (1 << ms->mr_e) - 1;
-    ms->mr_frac = list_size & ms->mr_mask;
-    ms->mr_current_frac = 0;
+    ms->mr_current = 0;
 }
 
 /* Free all the temp memory owned by the MergeState.  This must be called
@@ -2700,13 +2697,13 @@ merge_force_collapse(MergeState *ms)
 }
 
 /* Return the next minrun value to use. See listsort.txt. */
-static inline Py_ssize_t
+Py_LOCAL_INLINE(Py_ssize_t)
 minrun_next(MergeState *ms)
 {
-    ms->mr_current_frac += ms->mr_frac;
-    assert(ms->mr_current_frac >> ms->mr_e <= 1);
-    Py_ssize_t result = ms->mr_int + (ms->mr_current_frac >> ms->mr_e);
-    ms->mr_current_frac &= ms->mr_mask;
+    ms->mr_current += ms->listlen;
+    assert(ms->mr_current >= 0); /* no overflow */
+    Py_ssize_t result = ms->mr_current >> ms->mr_e;
+    ms->mr_current &= ms->mr_mask;
     return result;
 }
 
