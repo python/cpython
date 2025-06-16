@@ -537,30 +537,15 @@ def main():
 
     # download and register builder
     builds = []
-
-    for version in args.openssl:
-        build = BuildOpenSSL(
-            version,
-            args
-        )
-        build.install()
-        builds.append(build)
-
-    for version in args.libressl:
-        build = BuildLibreSSL(
-            version,
-            args
-        )
-        build.install()
-        builds.append(build)
-
-    for version in args.awslc:
-        build = BuildAWSLC(
-            version,
-            args
-        )
-        build.install()
-        builds.append(build)
+    for build_class, versions in [
+        (BuildOpenSSL, args.openssl),
+        (BuildLibreSSL, args.libressl),
+        (BuildAWSLC, args.awslc),
+    ]:
+        for version in versions:
+            build = build_class(version, args)
+            build.install()
+            builds.append(build)
 
     if args.steps in {'modules', 'tests'}:
         for build in builds:
