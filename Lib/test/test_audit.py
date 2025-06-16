@@ -14,6 +14,15 @@ if not hasattr(sys, "addaudithook") or not hasattr(sys, "audit"):
 
 AUDIT_TESTS_PY = support.findfile("audit-tests.py")
 
+def _supports_remote_attaching():
+    PROCESS_VM_READV_SUPPORTED = False
+
+    try:
+        from _remote_debugging import PROCESS_VM_READV_SUPPORTED
+    except ImportError:
+        pass
+
+    return PROCESS_VM_READV_SUPPORTED
 
 class AuditTest(unittest.TestCase):
     maxDiff = None
@@ -322,6 +331,16 @@ class AuditTest(unittest.TestCase):
         if returncode:
             self.fail(stderr)
 
+    @unittest.skipIf(not sys.is_remote_debug_enabled(), "Remote debugging is not enabled")
+    @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux" and sys.platform != "win32",
+                        "Test only runs on Linux, Windows and MacOS")
+    @unittest.skipIf(sys.platform == "linux" and not _supports_remote_attaching(),
+                        "Test only runs on Linux with process_vm_readv support")
+    @support.cpython_only
+    def test_sys_remote_exec(self):
+        returncode, stdout, stderr = self.run_python("test_sys_remote_exec")
+        if returncode:
+            self.fail(stderr)
 
 if __name__ == "__main__":
     unittest.main()

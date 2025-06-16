@@ -8,6 +8,7 @@ module with arguments identifying each test.
 import contextlib
 import os
 import sys
+import tempfile
 
 
 class TestHook:
@@ -643,6 +644,24 @@ def test_assert_unicode():
     else:
         raise RuntimeError("Expected sys.audit(9) to fail.")
 
+def test_sys_remote_exec():
+    import sys
+    pid = os.getpid()
+    event_pid = -1
+    remote_exec_trigger = False
+    def hook(event, args):
+        if event == "remote_exec":
+            nonlocal remote_exec_trigger
+            remote_exec_trigger = True
+            nonlocal event_pid
+            event_pid = args[0]
+    sys.addaudithook(hook)
+    with tempfile.NamedTemporaryFile(mode='w+', delete=True) as tmp_file:
+        tmp_file.write("print('Hello from remote_exec!')\n")
+        tmp_file.flush()
+        sys.remote_exec(pid, tmp_file.name)
+    assert remote_exec_trigger
+    assert event_pid == pid
 
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts
