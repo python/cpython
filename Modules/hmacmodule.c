@@ -390,33 +390,39 @@ narrow_hmac_hash_kind(hmacmodule_state *state, HMAC_Hash_Kind kind)
 static int
 _hacl_convert_errno(hacl_errno_t code)
 {
+    int res = -1;
+    PyGILState_STATE gstate = PyGILState_Ensure();
     switch (code) {
         case Hacl_Streaming_Types_Success: {
-            return 0;
+            res = 0;
+            goto finally;
         }
         case Hacl_Streaming_Types_InvalidAlgorithm: {
-            PyErr_Format(PyExc_ValueError, "invalid HACL* algorithm");
-            return -1;
+            PyErr_SetString(PyExc_ValueError, "invalid HACL* algorithm");
+            goto finally;
         }
         case Hacl_Streaming_Types_InvalidLength: {
             PyErr_SetString(PyExc_ValueError, "invalid length");
-            return -1;
+            goto finally;
         }
         case Hacl_Streaming_Types_MaximumLengthExceeded: {
             PyErr_SetString(PyExc_OverflowError, "maximum length exceeded");
-            return -1;
+            goto finally;
         }
         case Hacl_Streaming_Types_OutOfMemory: {
             PyErr_NoMemory();
-            return -1;
+            goto finally;
         }
         default: {
             PyErr_Format(PyExc_RuntimeError,
                          "HACL* internal routine failed with error code: %d",
                          code);
-            return -1;
+            goto finally;
         }
     }
+finally:
+    PyGILState_Release(gstate);
+    return res;
 }
 
 /*
@@ -483,7 +489,7 @@ _hacl_hmac_state_update(HACL_HMAC_state *state, uint8_t *buf, Py_ssize_t len)
     assert(len >= 0);
 #ifdef Py_HMAC_SSIZE_LARGER_THAN_UINT32
     while (len > UINT32_MAX_AS_SSIZE_T) {
-        if (_hacl_hmac_state_update_once(state, buf, UINT32_MAX)) {
+        if (_hacl_hmac_state_update_once(state, buf, UINT32_MAX) < 0) {
             assert(PyErr_Occurred());
             return -1;
         }
@@ -492,7 +498,9 @@ _hacl_hmac_state_update(HACL_HMAC_state *state, uint8_t *buf, Py_ssize_t len)
     }
 #endif
     if (len > UINT32_MAX_AS_SSIZE_T) {
+        PyGILState_STATE gstate = PyGILState_Ensure();
         PyErr_Format(PyExc_ValueError, "invalid length: %zd (max: %ju)", len, UINT32_MAX);
+        PyGILState_Release(gstate);
         return -1;
     }
     return _hacl_hmac_state_update_once(state, buf, len);
@@ -781,13 +789,9 @@ _hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
             rc = _hacl_hmac_state_update(self->state, msg.buf, msg.len)
         );
         PyBuffer_Release(&msg);
-#ifndef NDEBUG
         if (rc < 0) {
             goto error;
         }
-#else
-        (void)rc;
-#endif
     }
     assert(rc == 0);
     PyObject_GC_Track(self);
