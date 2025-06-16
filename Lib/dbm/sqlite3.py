@@ -69,6 +69,7 @@ class _Database(MutableMapping):
             self._cx = sqlite3.connect(uri, autocommit=True, uri=True)
         except sqlite3.Error as exc:
             raise error(str(exc))
+
         self._readonly = (flag == "ro")
         # This is an optimization only; it's ok if it fails.
         if not self._readonly:
