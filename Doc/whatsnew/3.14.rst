@@ -83,8 +83,8 @@ and improvements in user-friendliness and correctness.
 .. PEP-sized items next.
 
 * :ref:`PEP 649 and 749: deferred evaluation of annotations <whatsnew314-pep649>`
-* :ref:`PEP 734: Multiple Interpreters in the Stdlib <whatsnew314-pep734>`
-* :ref:`PEP 741: Python Configuration C API <whatsnew314-pep741>`
+* :ref:`PEP 734: Multiple interpreters in the stdlib <whatsnew314-pep734>`
+* :ref:`PEP 741: Python configuration C API <whatsnew314-pep741>`
 * :ref:`PEP 750: Template strings <whatsnew314-pep750>`
 * :ref:`PEP 758: Allow except and except* expressions without parentheses <whatsnew314-pep758>`
 * :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
@@ -126,7 +126,7 @@ New features
 
 .. _whatsnew314-pep734:
 
-PEP 734: Multiple Interpreters in the Stdlib
+PEP 734: Multiple interpreters in the stdlib
 --------------------------------------------
 
 The CPython runtime supports running multiple copies of Python in the
@@ -727,7 +727,7 @@ Improved error messages
 
 .. _whatsnew314-pep741:
 
-PEP 741: Python Configuration C API
+PEP 741: Python configuration C API
 -----------------------------------
 
 Add a :ref:`PyInitConfig C API <pyinitconfig_api>` to configure the Python
