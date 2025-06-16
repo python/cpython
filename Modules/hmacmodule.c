@@ -463,8 +463,8 @@ _hacl_hmac_state_update_once(HACL_HMAC_state *state,
                              uint8_t *buf, Py_ssize_t len)
 {
     assert(len >= 0);
-#ifndef NDEBUG
     Py_CHECK_HACL_UINT32_T_LENGTH(len);
+#ifndef NDEBUG
     hacl_errno_t code = Hacl_Streaming_HMAC_update(state, buf, (uint32_t)len);
     return _hacl_convert_errno(code);
 #else
