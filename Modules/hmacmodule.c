@@ -496,7 +496,8 @@ _hacl_hmac_state_update(HACL_HMAC_state *state, uint8_t *buf, Py_ssize_t len)
 #endif
     if (len > UINT32_MAX_AS_SSIZE_T) {
         PyGILState_STATE gstate = PyGILState_Ensure();
-        PyErr_Format(PyExc_ValueError, "invalid length: %zd (max: %ju)", len, UINT32_MAX);
+        PyErr_Format(PyExc_ValueError, "invalid length: %zd (max: %u)",
+                     len, UINT32_MAX);
         PyGILState_Release(gstate);
         return -1;
     }
