@@ -436,7 +436,10 @@ class RequestHandlerLoggingTestCase(BaseTestCase):
         default_request_version = 'HTTP/1.1'
 
         def do_GET(self):
+            # gh-69282: Tell the client we're not sending any content along
+            # with the response code.
             self.send_response(HTTPStatus.OK)
+            self.send_header('Content-Length', 0)
             self.end_headers()
 
         def do_ERROR(self):
@@ -447,8 +450,15 @@ class RequestHandlerLoggingTestCase(BaseTestCase):
         self.con.connect()
 
         with support.captured_stderr() as err:
-            self.con.request('GET', '/')
+            # gh-69282: HTTP/1.1 specifies that the socket connection is to
+            # remain open, this, on certain systems, causes Python to deadlock
+            # waiting for the socket to close.
+            # To combat this, we send the test server the "Connection" header
+            # with "close" for the value forcing the server and client to
+            # terminate the socket allowing the test to resume.
+            self.con.request('GET', '/', headers={'Connection': 'close'})
             self.con.getresponse()
+            self.con.close()
 
         self.assertEndsWith(err.getvalue(), '"GET / HTTP/1.1" 200 -\n')
 
