@@ -1027,28 +1027,30 @@ class HashLibTestCase(unittest.TestCase):
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     def test_threaded_hashing(self):
-        for constructor in self.hash_constructors:
-            if constructor().name not in self.shakes:
-                with self.subTest(constructor=constructor):
-                    self.do_test_threaded_hashing(constructor)
+        for algorithm, constructors in self.constructors_to_test.items():
+            is_shake = algorithm in self.shakes
+            for constructor in constructors:
+                with self.subTest(constructor=constructor, is_shake=is_shake):
+                    self.do_test_threaded_hashing(constructor, is_shake)
 
-    def do_test_threaded_hashing(self, constructor):
+    def do_test_threaded_hashing(self, constructor, is_shake):
         # Updating the same hash object from several threads at once
         # using data chunk sizes containing the same byte sequences.
         #
         # If the internal locks are working to prevent multiple
         # updates on the same object from running at once, the resulting
         # hash will be the same as doing it single threaded upfront.
-        hasher = constructor()
         num_threads = 5
-        smallest_data = b'swineflu'
+        smallest_data = os.urandom(16)
         data = smallest_data * 200000
-        expected_hash = constructor(data*num_threads).hexdigest()
+
+        h1 = constructor()
+        h2 = constructor(data * num_threads)
 
         def hash_in_chunks(chunk_size):
             index = 0
             while index < len(data):
-                hasher.update(data[index:index + chunk_size])
+                h1.update(data[index:index + chunk_size])
                 index += chunk_size
 
         threads = []
@@ -1065,7 +1067,10 @@ class HashLibTestCase(unittest.TestCase):
         for thread in threads:
             thread.join()
 
-        self.assertEqual(expected_hash, hasher.hexdigest())
+        if is_shake:
+            self.assertEqual(h1.hexdigest(16), h2.hexdigest(16))
+        else:
+            self.assertEqual(h1.hexdigest(), h2.hexdigest())
 
     def test_get_fips_mode(self):
         fips_mode = self.is_fips_mode
