@@ -2264,7 +2264,7 @@ typedef int (*external_entity_ref)(
 
 #define SETTER_WRAPPER(NAME, TYPE)                                      \
     static inline void                                                  \
-    my_Set ## NAME (XML_Parser parser, xmlhandler handler)              \
+    pyexpat_Set ## NAME (XML_Parser parser, xmlhandler handler)         \
     {                                                                   \
         (void)XML_Set ## NAME (parser, (TYPE)handler);                  \
     }
@@ -2301,7 +2301,7 @@ static struct HandlerInfo handler_info[] = {
     // handler functions is not compatible with `xmlhandlersetter` since
     // their second parameter is narrower than a `const void *`.
 #define HANDLER_INFO(name) \
-    {#name, (xmlhandlersetter)my_Set##name, (xmlhandler)my_##name},
+    {#name, (xmlhandlersetter)pyexpat_Set##name, (xmlhandler)my_##name},
 
     HANDLER_INFO(StartElementHandler)
     HANDLER_INFO(EndElementHandler)
