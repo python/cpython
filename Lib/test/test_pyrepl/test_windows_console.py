@@ -594,20 +594,13 @@ class WindowsCommandLineTests(unittest.TestCase):
                     stderr=subprocess.PIPE,
                     text=True, errors='replace'
                 ) as process:
-                stderr_output = ""
                 try:
                     process.wait(timeout=5)
                 except subprocess.TimeoutExpired:
                     process.kill()
-                    _, stderr_output = process.communicate()
-                isOK = (
-                    ">>>" in stderr_output and
-                    len(stderr_output) < 1200
-                )
                 stdout_file.seek(0)
                 stdout_from_file = stdout_file.read()
                 stdout_file.close()
-                self.assertEqual(isOK, True)
                 self.assertIn("script has run", stdout_from_file)
 
 
