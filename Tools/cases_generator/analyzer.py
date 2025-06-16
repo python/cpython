@@ -869,6 +869,7 @@ def compute_properties(op: parser.CodeDef) -> Properties:
     )
 
 def expand(items: list[StackItem], oparg: int) -> list[StackItem]:
+    # Only replace array item with scalar if no more than item is an array
     index = -1
     for i, item in enumerate(items):
         if "oparg" in item.size:
@@ -886,7 +887,6 @@ def expand(items: list[StackItem], oparg: int) -> list[StackItem]:
         ] + items[index+1:]
 
 def scalarize_stack(stack: StackEffect, oparg: int) -> StackEffect:
-    # Only scalarize if no more than one input or output is array
     stack.inputs = expand(stack.inputs, oparg)
     stack.outputs = expand(stack.outputs, oparg)
     return stack
