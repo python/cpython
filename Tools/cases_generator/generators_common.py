@@ -116,7 +116,6 @@ class Emitter:
     out: CWriter
     labels: dict[str, Label]
     _replacers: dict[str, ReplacementFunctionType]
-    is_abstract: bool
 
     def __init__(self, out: CWriter, labels: dict[str, Label]):
         self._replacers = {
