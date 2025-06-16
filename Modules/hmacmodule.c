@@ -390,39 +390,36 @@ narrow_hmac_hash_kind(hmacmodule_state *state, HMAC_Hash_Kind kind)
 static int
 _hacl_convert_errno(hacl_errno_t code)
 {
-    int res = -1;
+    if (code == Hacl_Streaming_Types_Success) {
+        return 0;
+    }
     PyGILState_STATE gstate = PyGILState_Ensure();
     switch (code) {
-        case Hacl_Streaming_Types_Success: {
-            res = 0;
-            goto finally;
-        }
         case Hacl_Streaming_Types_InvalidAlgorithm: {
             PyErr_SetString(PyExc_ValueError, "invalid HACL* algorithm");
-            goto finally;
+            break;
         }
         case Hacl_Streaming_Types_InvalidLength: {
             PyErr_SetString(PyExc_ValueError, "invalid length");
-            goto finally;
+            break;
         }
         case Hacl_Streaming_Types_MaximumLengthExceeded: {
             PyErr_SetString(PyExc_OverflowError, "maximum length exceeded");
-            goto finally;
+            break;
         }
         case Hacl_Streaming_Types_OutOfMemory: {
             PyErr_NoMemory();
-            goto finally;
+            break;
         }
         default: {
             PyErr_Format(PyExc_RuntimeError,
                          "HACL* internal routine failed with error code: %d",
                          code);
-            goto finally;
+            break;
         }
     }
-finally:
     PyGILState_Release(gstate);
-    return res;
+    return -1;
 }
 
 /*
