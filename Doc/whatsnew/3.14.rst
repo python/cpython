@@ -1757,6 +1757,16 @@ os
   (Contributed by Cody Maloney in :gh:`129205`.)
 
 
+os.path
+-------
+
+* The *strict* parameter to :func:`os.path.realpath` accepts a new value,
+  :data:`os.path.ALLOW_MISSING`.
+  If used, errors other than :exc:`FileNotFoundError` will be re-raised;
+  the resulting path can be missing but it will be free of symlinks.
+  (Contributed by Petr Viktorin for :cve:`2025-4517`.)
+
+
 pathlib
 -------
 
@@ -1943,6 +1953,28 @@ sysconfig
 
 * Add ``ABIFLAGS`` key to :func:`sysconfig.get_config_vars` on Windows.
   (Contributed by Xuehai Pan in :gh:`131799`.)
+
+
+tarfile
+-------
+
+* :func:`~tarfile.data_filter` now normalizes symbolic link targets in order to
+  avoid path traversal attacks.
+  (Contributed by Petr Viktorin in :gh:`127987` and :cve:`2025-4138`.)
+* :func:`~tarfile.TarFile.extractall` now skips fixing up directory attributes
+  when a directory was removed or replaced by another kind of file.
+  (Contributed by Petr Viktorin in :gh:`127987` and :cve:`2024-12718`.)
+* :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
+  now (re-)apply the extraction filter when substituting a link (hard or
+  symbolic) with a copy of another archive member, and when fixing up
+  directory attributes.
+  The former raises a new exception, :exc:`~tarfile.LinkFallbackError`.
+  (Contributed by Petr Viktorin for :cve:`2025-4330` and :cve:`2024-12718`.)
+* :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
+  no longer extract rejected members when
+  :func:`~tarfile.TarFile.errorlevel` is zero.
+  (Contributed by Matt Prodani and Petr Viktorin in :gh:`112887`
+  and :cve:`2025-4435`.)
 
 
 threading
@@ -2700,6 +2732,7 @@ New features
   * :c:func:`PyUnicodeWriter_Discard`
   * :c:func:`PyUnicodeWriter_Finish`
   * :c:func:`PyUnicodeWriter_Format`
+  * :c:func:`PyUnicodeWriter_WriteASCII`
   * :c:func:`PyUnicodeWriter_WriteChar`
   * :c:func:`PyUnicodeWriter_WriteRepr`
   * :c:func:`PyUnicodeWriter_WriteStr`
@@ -2976,7 +3009,7 @@ Deprecated
     :c:func:`PyUnicodeWriter_WriteSubstring(writer, str, start, end) <PyUnicodeWriter_WriteSubstring>`.
   * :c:func:`!_PyUnicodeWriter_WriteASCIIString`:
     replace ``_PyUnicodeWriter_WriteASCIIString(&writer, str)`` with
-    :c:func:`PyUnicodeWriter_WriteUTF8(writer, str) <PyUnicodeWriter_WriteUTF8>`.
+    :c:func:`PyUnicodeWriter_WriteASCII(writer, str) <PyUnicodeWriter_WriteASCII>`.
   * :c:func:`!_PyUnicodeWriter_WriteLatin1String`:
     replace ``_PyUnicodeWriter_WriteLatin1String(&writer, str)`` with
     :c:func:`PyUnicodeWriter_WriteUTF8(writer, str) <PyUnicodeWriter_WriteUTF8>`.
