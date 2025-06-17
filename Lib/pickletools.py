@@ -1763,12 +1763,7 @@ opcodes = [
       stack_before=[anyobject],
       stack_after=[],
       proto=0,
-      doc="""Discard the top stack item, shrinking the stack by one item.
-
-      If the stack has no items in it and the metastack is not empty, then
-      this opcode will act like POP_MARK and pop the top of the metastack
-      into the current stack.
-      """),
+      doc="Discard the top stack item, shrinking the stack by one item."),
 
     I(name='DUP',
       code='2',
@@ -1915,10 +1910,9 @@ opcodes = [
       be reserved for private use.
 
       EXT1 has a 1-byte integer argument.  This is used to index into
-      the inverted extension registry, which contains integer to tuple
-      mappings. The tuples have a length of two in the format of
-      '("module", "name")'. This tuple is then passed through find_class,
-      and the result is pushed onto the stack.
+      the inverted extension registry, which is populated through
+      copyreg.add_extension(). The result is then passed through
+      find_class() and the callable is pushed onto the stack.
       """),
 
     I(name='EXT2',
