@@ -7202,20 +7202,26 @@
             _PyStackRef *null_or_index;
             _PyStackRef next;
             /* Skip 1 cache entry */
-            null_or_index = &stack_pointer[-1];
-            iter = stack_pointer[-2];
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, null_or_index);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (!PyStackRef_IsValid(item)) {
-                if (PyStackRef_IsError(item)) {
-                    JUMP_TO_LABEL(error);
+            // _FOR_ITER
+            {
+                null_or_index = &stack_pointer[-1];
+                iter = stack_pointer[-2];
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, null_or_index);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (!PyStackRef_IsValid(item)) {
+                    if (PyStackRef_IsError(item)) {
+                        JUMP_TO_LABEL(error);
+                    }
+                    JUMPBY(oparg + 1);
+                    DISPATCH();
                 }
-                JUMPBY(oparg + 1);
-                DISPATCH();
+                next = item;
             }
-            next = item;
-            INSTRUMENTED_JUMP(this_instr, next_instr, PY_MONITORING_EVENT_BRANCH_LEFT);
+            // _MONITOR_FOR_ITER
+            {
+                INSTRUMENTED_JUMP(this_instr, next_instr, PY_MONITORING_EVENT_BRANCH_LEFT);
+            }
             stack_pointer[0] = next;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());

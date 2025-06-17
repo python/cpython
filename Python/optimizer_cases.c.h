@@ -1662,7 +1662,7 @@
             break;
         }
 
-        /* _INSTRUMENTED_FOR_ITER is not a viable micro-op for tier 2 */
+        /* _MONITOR_FOR_ITER is not a viable micro-op for tier 2 */
 
         case _ITER_CHECK_LIST: {
             break;

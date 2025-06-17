@@ -3243,20 +3243,11 @@ dummy_func(
 
         macro(FOR_ITER) = _SPECIALIZE_FOR_ITER + _FOR_ITER;
 
-
-        inst(INSTRUMENTED_FOR_ITER, (unused/1, iter, null_or_index[1] -- iter, null_or_index[1], next)) {
-            _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, null_or_index);
-            if (!PyStackRef_IsValid(item)) {
-                if (PyStackRef_IsError(item)) {
-                    ERROR_NO_POP();
-                }
-                // Jump forward by oparg and skip the following END_FOR
-                JUMPBY(oparg + 1);
-                DISPATCH();
-            }
-            next = item;
+        op(_MONITOR_FOR_ITER, ( -- )) {
             INSTRUMENTED_JUMP(this_instr, next_instr, PY_MONITORING_EVENT_BRANCH_LEFT);
         }
+
+        macro(INSTRUMENTED_FOR_ITER) = unused/1 + _FOR_ITER + _MONITOR_FOR_ITER;
 
         op(_ITER_CHECK_LIST, (iter, null_or_index -- iter, null_or_index)) {
             EXIT_IF(PyStackRef_TYPE(iter) != &PyList_Type);

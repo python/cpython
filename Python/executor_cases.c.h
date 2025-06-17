@@ -4409,7 +4409,7 @@
             break;
         }
 
-        /* _INSTRUMENTED_FOR_ITER is not a viable micro-op for tier 2 because it is instrumented */
+        /* _MONITOR_FOR_ITER is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _ITER_CHECK_LIST: {
             _PyStackRef null_or_index;
