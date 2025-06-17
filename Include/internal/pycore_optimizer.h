@@ -178,6 +178,7 @@ typedef enum _JitSymType {
     JIT_SYM_KNOWN_VALUE_TAG = 7,
     JIT_SYM_TUPLE_TAG = 8,
     JIT_SYM_TRUTHINESS_TAG = 9,
+    JIT_SYM_COMPACT_INT = 10,
 } JitSymType;
 
 typedef struct _jit_opt_known_class {
@@ -210,6 +211,10 @@ typedef struct {
     uint16_t value;
 } JitOptTruthiness;
 
+typedef struct {
+    uint8_t tag;
+} JitOptCompactInt;
+
 typedef union _jit_opt_symbol {
     uint8_t tag;
     JitOptKnownClass cls;
@@ -217,6 +222,7 @@ typedef union _jit_opt_symbol {
     JitOptKnownVersion version;
     JitOptTuple tuple;
     JitOptTruthiness truthiness;
+    JitOptCompactInt compact;
 } JitOptSymbol;
 
 
@@ -282,6 +288,10 @@ extern JitOptSymbol *_Py_uop_sym_new_tuple(JitOptContext *ctx, int size, JitOptS
 extern JitOptSymbol *_Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptSymbol *sym, int item);
 extern int _Py_uop_sym_tuple_length(JitOptSymbol *sym);
 extern JitOptSymbol *_Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptSymbol *value, bool truthy);
+extern bool _Py_uop_sym_is_compact_int(JitOptSymbol *sym);
+extern JitOptSymbol *_Py_uop_sym_new_compact_int(JitOptContext *ctx);
+extern void _Py_uop_sym_set_compact_int(JitOptContext *ctx,  JitOptSymbol *value);
+
 
 extern void _Py_uop_abstractcontext_init(JitOptContext *ctx);
 extern void _Py_uop_abstractcontext_fini(JitOptContext *ctx);
