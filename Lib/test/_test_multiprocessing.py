@@ -6816,8 +6816,8 @@ class _TestSpawnedSysPath(BaseTestCase):
         with open(os.path.join(init_name), "w") as f:
             cmd = '''if 1:
                 import sys
-                print('stdout', file=sys.stdout)
                 print('stderr', file=sys.stderr)
+                print('stdout', file=sys.stdout)
             '''
             f.write(cmd)
 
@@ -6829,7 +6829,9 @@ class _TestSpawnedSysPath(BaseTestCase):
             support.print_warning(err.decode())
         self.assertEqual(rc, 0)
 
-        # We want to see all the output if it isn't as expected
+        # We want to see all the output if it isn't as expected.
+        # Check stderr first, as it is more likely to be useful to see in the
+        # event of a failure.
         self.maxDiff = None
         self.assertEqual(err.decode().rstrip(), 'stderr')
         self.assertEqual(out.decode().rstrip(), 'stdout')
