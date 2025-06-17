@@ -10,5 +10,5 @@ if __name__ == '__main__':
         p = multiprocessing.Process()
         p.start()
         p.join()
-else:
-    assert modname in sys.modules
+elif modname not in sys.modules:
+    raise AssertionError(f'{modname!r} is not in sys.modules')
