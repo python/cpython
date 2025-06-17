@@ -6810,12 +6810,15 @@ class _TestSpawnedSysPath(BaseTestCase):
         # Create a test module in the temporary directory on the child's path
         # TODO: This can all be simplified once gh-126631 is fixed and we can
         #       use __main__ instead of a module.
-        os.mkdir(os.path.join(self._temp_dir, 'a'))
-        with open(os.path.join(self._temp_dir, 'a', '__init__.py'), "w") as f:
-            f.write('''if 1:
-                    import sys
-                    print('stdout', file=sys.stdout)
-                    print('stderr', file=sys.stderr)\n''')
+        dirname = os.path.join(self._temp_dir, 'preloaded_module')
+        init_name = os.path.join(dirname, '__init__.py')
+        os.mkdir(dirname)
+        with open(os.path.join(init_name), "w") as f:
+            cmd = '''if 1:
+                import sys
+                print('stdout', file=sys.stdout)
+                print('stderr', file=sys.stderr)\n'''
+            f.write(cmd)
 
         name = os.path.join(os.path.dirname(__file__), 'mp_preload_flush.py')
         env = {'PYTHONPATH': self._temp_dir}
