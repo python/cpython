@@ -1,7 +1,7 @@
 import unittest
 
 from test.support import import_helper, threading_helper
-from test.test_free_threading.test_ft import run_concurrently
+from test.support.threading_helper import run_concurrently
 
 grp = import_helper.import_module("grp")
 

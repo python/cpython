@@ -7,7 +7,7 @@ from threading import Barrier, Lock
 from random import shuffle, randint
 
 from test.support import threading_helper
-from test.test_free_threading.test_ft import run_concurrently
+from test.support.threading_helper import run_concurrently
 from test import test_heapq
 
 
