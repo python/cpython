@@ -1,2 +1,1 @@
-Add support for ``-nolinestop``, ``-all``, ``-overlap``, and ``-strictlimits`` options to :meth:`tkinter.Text.search`
-
+Add support for ``-nolinestop``, ``-all``, ``-overlap``, and ``-strictlimits`` options to :meth:`!tkinter.Text.search`
