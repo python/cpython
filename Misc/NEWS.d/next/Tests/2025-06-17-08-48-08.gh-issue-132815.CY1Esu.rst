@@ -1,1 +1,1 @@
-Add  JUMP_BACKWARD to specialization stats
+Fix test__opcode: add ``JUMP_BACKWARD`` to specialization stats.
