@@ -52,8 +52,7 @@ The :mod:`http` module also defines the following enums that help you work with 
 HTTP status codes
 -----------------
 
-Supported,
-`IANA-registered status codes <https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml>`_
+Supported HTTP status codes
 available in :class:`http.HTTPStatus` are:
 
 ======= =================================== ==================================================================
