@@ -2305,6 +2305,40 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_INT", uops)
         self.assertNotIn("_GUARD_NOS_INT", uops)
 
+    def test_attr_promotion_failure(self):
+        # We're not testing for any specific uops here, just
+        # testing it doesn't crash.
+        result = script_helper.run_python_until_end('-c', textwrap.dedent("""
+        import _testinternalcapi
+        import opcode
+        import _opcode
+
+        def get_first_executor(func):
+            code = func.__code__
+            co_code = code.co_code
+            for i in range(0, len(co_code), 2):
+                try:
+                    return _opcode.get_executor(code, i)
+                except ValueError:
+                    pass
+            return None
+
+        def get_opnames(ex):
+            return {item[0] for item in ex}
+
+        import email
+        
+        def testfunc(n):
+            for _ in range(n):
+                email.jit_testing = None
+                prompt = email.jit_testing
+                del email.jit_testing
+
+
+        testfunc(_testinternalcapi.TIER2_THRESHOLD)
+        """), PYTHON_JIT="1")
+        self.assertEqual(result[0].rc, 0, result)
+
 
 def global_identity(x):
     return x
