@@ -415,7 +415,7 @@ _hacl_convert_errno(hacl_errno_t code)
         }
         default: {
             PyErr_Format(PyExc_RuntimeError,
-                         "HACL* internal routine failed with error code: %d",
+                         "HACL* internal routine failed with error code: %u",
                          code);
             break;
         }
