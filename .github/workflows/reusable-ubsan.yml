@@ -35,7 +35,7 @@ jobs:
         sudo ./llvm.sh 20
     - name: UBSAN option setup
       run: |
-        echo "UBSAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_summary=1:print_stacktrace=1:log_path=${GITHUB_WORKSPACE}/ubsan_log" >> "$GITHUB_ENV"
+        echo "UBSAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_summary=1:print_stacktrace=1" >> "$GITHUB_ENV"
         echo "CC=clang" >> "$GITHUB_ENV"
         echo "CXX=clang++" >> "$GITHUB_ENV"
     - name: Add ccache to PATH
@@ -52,6 +52,9 @@ jobs:
         --config-cache
         --with-undefined-behavior-sanitizer
         --with-pydebug
+    - name: Set up UBSAN log after configuration
+      run: |
+        echo "UBSAN_OPTIONS=${UBSAN_OPTIONS}:log_path=${GITHUB_WORKSPACE}/ubsan_log" >> "$GITHUB_ENV"
     - name: Build CPython
       run: make -j4
     - name: Display build info
