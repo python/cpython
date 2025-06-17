@@ -331,11 +331,7 @@ class AuditTest(unittest.TestCase):
         if returncode:
             self.fail(stderr)
 
-    @unittest.skipIf(not sys.is_remote_debug_enabled(), "Remote debugging is not enabled")
-    @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux" and sys.platform != "win32",
-                        "Test only runs on Linux, Windows and MacOS")
-    @unittest.skipIf(sys.platform == "linux" and not _supports_remote_attaching(),
-                        "Test only runs on Linux with process_vm_readv support")
+    @support.support_remote_exec_only
     @support.cpython_only
     def test_sys_remote_exec(self):
         returncode, stdout, stderr = self.run_python("test_sys_remote_exec")

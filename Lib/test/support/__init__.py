@@ -46,6 +46,7 @@ __all__ = [
     # sys
     "MS_WINDOWS", "is_jython", "is_android", "is_emscripten", "is_wasi",
     "is_apple_mobile", "check_impl_detail", "unix_shell", "setswitchinterval",
+    "support_remote_exec_only",
     # os
     "get_pagesize",
     # network
@@ -3069,6 +3070,24 @@ def is_libssl_fips_mode():
         return False  # more of a maybe, unless we add this to the _ssl module.
     return get_fips_mode() != 0
 
+def _supports_remote_attaching():
+    PROCESS_VM_READV_SUPPORTED = False
+
+    try:
+        from _remote_debugging import PROCESS_VM_READV_SUPPORTED
+    except ImportError:
+        pass
+
+    return PROCESS_VM_READV_SUPPORTED
+
+def support_remote_exec_only(test):
+    if not sys.is_remote_debug_enabled():
+        return unittest.skip("Remote debugging is not enabled")
+    if sys.platform != "darwin" and sys.platform != "linux" and sys.platform != "win32":
+        return unittest.skip("Test only runs on Linux, Windows and MacOS")
+    if sys.platform == "linux" and not _supports_remote_attaching():
+        return unittest.skip("Test only runs on Linux with process_vm_readv support")
+    return _id(test)
 
 class EqualToForwardRef:
     """Helper to ease use of annotationlib.ForwardRef in tests.
