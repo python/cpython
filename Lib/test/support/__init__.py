@@ -3084,7 +3084,7 @@ def support_remote_exec_only(test):
     if not sys.is_remote_debug_enabled():
         return unittest.skip("Remote debugging is not enabled")(test)
     if sys.platform != "darwin" and sys.platform != "linux" and sys.platform != "win32":
-        return unittest.skip("Test only runs on Linux, Windows and MacOS")(test)
+        return unittest.skip("Test only runs on Linux, Windows and macOS")(test)
     if sys.platform == "linux" and not _supports_remote_attaching():
         return unittest.skip("Test only runs on Linux with process_vm_readv support")(test)
     return _id(test)
