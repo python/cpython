@@ -1894,8 +1894,7 @@ class OtherTests(unittest.TestCase):
             tag_for_unicode_path = b'\x75\x70'
             version_of_unicode_path = b'\x01'
 
-            import zlib
-            filename_crc = struct.pack('<L', zlib.crc32(filename_encoded))
+            filename_crc = struct.pack('<L', zipfile.crc32(filename_encoded))
 
             extra_data = version_of_unicode_path + filename_crc + extra_data_name
             tsize = len(extra_data).to_bytes(2, 'little')
@@ -1905,19 +1904,16 @@ class OtherTests(unittest.TestCase):
             # add the file to the ZIP archive
             zf.writestr(zip_info, b'Hello World!')
 
-    @requires_zlib()
     def test_read_zipfile_containing_unicode_path_extra_field(self):
         self.create_zipfile_with_extra_data("이름.txt", "이름.txt".encode("utf-8"))
         with zipfile.ZipFile(TESTFN, "r") as zf:
             self.assertEqual(zf.filelist[0].filename, "이름.txt")
 
-    @requires_zlib()
     def test_read_zipfile_warning(self):
         self.create_zipfile_with_extra_data("이름.txt", b"")
         with self.assertWarns(UserWarning):
             zipfile.ZipFile(TESTFN, "r").close()
 
-    @requires_zlib()
     def test_read_zipfile_error(self):
         self.create_zipfile_with_extra_data("이름.txt", b"\xff")
         with self.assertRaises(zipfile.BadZipfile):
