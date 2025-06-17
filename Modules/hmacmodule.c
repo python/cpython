@@ -390,9 +390,11 @@ narrow_hmac_hash_kind(hmacmodule_state *state, HMAC_Hash_Kind kind)
 static int
 _hacl_convert_errno(hacl_errno_t code)
 {
+    assert(PyGILState_GetThisThreadState() != NULL);
     if (code == Hacl_Streaming_Types_Success) {
         return 0;
     }
+
     PyGILState_STATE gstate = PyGILState_Ensure();
     switch (code) {
         case Hacl_Streaming_Types_InvalidAlgorithm: {
