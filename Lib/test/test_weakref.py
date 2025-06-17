@@ -9,6 +9,7 @@ import contextlib
 import copy
 import threading
 import time
+import types
 import random
 import textwrap
 
@@ -2251,6 +2252,13 @@ class ModuleTestCase(unittest.TestCase):
                 self.assertEqual(obj.__module__, 'weakref')
             self.assertEqual(obj.__name__, name)
             self.assertEqual(obj.__qualname__, name)
+
+    def test_module_dealloc(self):
+        mod = types.ModuleType("temp_mod")
+        r = weakref.ref(mod)
+        self.assertIsNotNone(r, "weak ref to a module should not be None")
+
+        del mod
 
 
 libreftest = """ Doctest for examples in the library reference: weakref.rst
