@@ -14,16 +14,6 @@ if not hasattr(sys, "addaudithook") or not hasattr(sys, "audit"):
 
 AUDIT_TESTS_PY = support.findfile("audit-tests.py")
 
-def _supports_remote_attaching():
-    PROCESS_VM_READV_SUPPORTED = False
-
-    try:
-        from _remote_debugging import PROCESS_VM_READV_SUPPORTED
-    except ImportError:
-        pass
-
-    return PROCESS_VM_READV_SUPPORTED
-
 class AuditTest(unittest.TestCase):
     maxDiff = None
 
