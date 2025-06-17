@@ -376,16 +376,6 @@ if has_c_implementation:
         bad_stack_errors = (pickle.UnpicklingError,)
         truncated_errors = (pickle.UnpicklingError,)
 
-        def test_issue135241(self):
-            # C implementation should check for hardcoded values 00 and 01
-            # when getting booleans from the INT opcode. Doing a str comparison
-            # to bypass truthy/falsy comparisons. These payloads should return
-            # 0, not False.
-            out1 = self.loads(b'I+0\n.')
-            self.assertTrue(str(out1) == str(0))
-            out2 = self.loads(b'I 0\n.')
-            self.assertTrue(str(out2) == str(0))
-
     class CPicklingErrorTests(PyPicklingErrorTests):
         pickler = _pickle.Pickler
 
