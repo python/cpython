@@ -3155,6 +3155,16 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
     Py_FatalError("_PyObject_AssertFailed");
 }
 
+static int
+should_randomly_deposit_object(PyThreadState *tstate)
+{
+    // splitmix64 from https://prng.di.unimi.it/splitmix64.c
+    uint64_t z = (tstate->prng += 0x9e3779b97f4a7c15);
+    z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9;
+    z = (z ^ (z >> 27)) * 0x94d049bb133111eb;
+    uint64_t r = z ^ (z >> 31);
+    return (r & 0xFF) < 2;
+}
 
 /*
 When deallocating a container object, it's possible to trigger an unbounded
@@ -3170,7 +3180,7 @@ _Py_Dealloc(PyObject *op)
     destructor dealloc = type->tp_dealloc;
     PyThreadState *tstate = _PyThreadState_GET();
     intptr_t margin = _Py_RecursionLimit_GetMargin(tstate);
-    if (margin < 2) {
+    if (margin < 2 || (tstate->ob_dealloc_depth > 0 && should_randomly_deposit_object(tstate))) {
         _PyTrash_thread_deposit_object(tstate, (PyObject *)op);
         return;
     }
@@ -3192,7 +3202,9 @@ _Py_Dealloc(PyObject *op)
     _Py_ForgetReference(op);
 #endif
     _PyReftracerTrack(op, PyRefTracer_DESTROY);
+    tstate->ob_dealloc_depth++;
     (*dealloc)(op);
+    tstate->ob_dealloc_depth--;
 
 #ifdef Py_DEBUG
     // gh-89373: The tp_dealloc function must leave the current exception
