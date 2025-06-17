@@ -187,6 +187,16 @@ error:
     return -1;
 }
 
+#ifndef NDEBUG
+static int
+main_mod_matches(PyObject *expected)
+{
+    PyObject *mod = PyImport_GetModule(&_Py_ID(__main__));
+    Py_XDECREF(mod);
+    return mod == expected;
+}
+#endif
+
 static int
 apply_isolated_main(PyThreadState *tstate, struct sync_module *main)
 {
@@ -199,7 +209,7 @@ apply_isolated_main(PyThreadState *tstate, struct sync_module *main)
     }
     assert(main->cached.loaded != NULL);
 
-    assert(PyImport_GetModule(&_Py_ID(__main__)) == main->cached.module);
+    assert(main_mod_matches(main->cached.module));
     if (_PyImport_SetModule(&_Py_ID(__main__), main->cached.loaded) < 0) {
         sync_module_capture_exc(tstate, main);
         return -1;
@@ -214,7 +224,7 @@ restore_main(PyThreadState *tstate, struct sync_module *main)
     assert(main->cached.module != NULL);
     assert(main->cached.loaded != NULL);
     PyObject *exc = _PyErr_GetRaisedException(tstate);
-    assert(PyImport_GetModule(&_Py_ID(__main__)) == main->cached.loaded);
+    assert(main_mod_matches(main->cached.loaded));
     int res = _PyImport_SetModule(&_Py_ID(__main__), main->cached.module);
     assert(res == 0);
     if (res < 0) {
