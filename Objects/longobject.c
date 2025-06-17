@@ -499,7 +499,7 @@ PyLong_FromDouble(double dval)
 #define PY_ABS_SSIZE_T_MIN      (0-(size_t)PY_SSIZE_T_MIN)
 
 static inline unsigned long
-_unroll_digits(PyLongObject *v, Py_ssize_t *i)
+unroll_digits_ulong(PyLongObject *v, Py_ssize_t *i)
 {
     digit *digits = v->long_value.ob_digit;
     assert(*i >= 2);
@@ -509,6 +509,26 @@ _unroll_digits(PyLongObject *v, Py_ssize_t *i)
     unsigned long x = digits[*i];
 
     #if ((ULONG_MAX >> PyLong_SHIFT)) >= ((1UL << PyLong_SHIFT) - 1)
+    /* unroll another digit */
+    x <<= PyLong_SHIFT;
+    --(*i);
+    x |= digits[*i];
+    #endif
+
+    return x;
+}
+
+static inline size_t
+unroll_digits_size_t(PyLongObject *v, Py_ssize_t *i)
+{
+    digit *digits = v->long_value.ob_digit;
+    assert(*i >= 2);
+    /* unroll 1 digit */
+    --(*i);
+    assert(SIZE_MAX >= ((1UL << PyLong_SHIFT) - 1));
+    size_t x = digits[*i];
+
+    #if ( (SIZE_MAX >> PyLong_SHIFT) >= ( ( 1 << PyLong_SHIFT) - 1) )
     /* unroll another digit */
     x <<= PyLong_SHIFT;
     --(*i);
@@ -532,7 +552,6 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
 {
     /* This version originally by Tim Peters */
     PyLongObject *v;
-    unsigned long x;
     long res;
     Py_ssize_t i;
     int sign;
@@ -576,7 +595,7 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
         i = _PyLong_DigitCount(v);
         sign = _PyLong_NonCompactSign(v);
 
-        x = _unroll_digits(v, &i);
+        unsigned long x = unroll_digits_ulong(v, &i);
         while (--i >= 0) {
             if (x > (ULONG_MAX >> PyLong_SHIFT)) {
                 *overflow = sign;
@@ -646,7 +665,6 @@ PyLong_AsInt(PyObject *obj)
 Py_ssize_t
 PyLong_AsSsize_t(PyObject *vv) {
     PyLongObject *v;
-    size_t x;
     Py_ssize_t i;
     int sign;
 
@@ -666,7 +684,7 @@ PyLong_AsSsize_t(PyObject *vv) {
     i = _PyLong_DigitCount(v);
     sign = _PyLong_NonCompactSign(v);
 
-    x = _unroll_digits(v, &i);
+    size_t x = unroll_digits_size_t(v, &i);
     while (--i >= 0) {
         if (x > SIZE_MAX >> PyLong_SHIFT) {
             goto overflow;
@@ -697,7 +715,6 @@ unsigned long
 PyLong_AsUnsignedLong(PyObject *vv)
 {
     PyLongObject *v;
-    unsigned long x;
     Py_ssize_t i;
 
     if (vv == NULL) {
@@ -729,9 +746,9 @@ PyLong_AsUnsignedLong(PyObject *vv)
     }
     i = _PyLong_DigitCount(v);
 
-    x = _unroll_digits(v, &i);
+    unsigned long x = unroll_digits_ulong(v, &i);
     while (--i >= 0) {
-        if (x > SIZE_MAX >> PyLong_SHIFT) {
+        if (x > ULONG_MAX >> PyLong_SHIFT) {
             goto overflow;
         }
         x = (x << PyLong_SHIFT) | v->long_value.ob_digit[i];
@@ -751,7 +768,6 @@ size_t
 PyLong_AsSize_t(PyObject *vv)
 {
     PyLongObject *v;
-    size_t x;
     Py_ssize_t i;
 
     if (vv == NULL) {
@@ -774,7 +790,7 @@ PyLong_AsSize_t(PyObject *vv)
     }
     i = _PyLong_DigitCount(v);
 
-    x = _unroll_digits(v, &i);
+    size_t x = unroll_digits_size_t(v, &i);
     while (--i >= 0) {
             if (x > SIZE_MAX >> PyLong_SHIFT) {
                 PyErr_SetString(PyExc_OverflowError,
@@ -793,7 +809,6 @@ static unsigned long
 _PyLong_AsUnsignedLongMask(PyObject *vv)
 {
     PyLongObject *v;
-    unsigned long x;
     Py_ssize_t i;
 
     if (vv == NULL || !PyLong_Check(vv)) {
@@ -810,7 +825,7 @@ _PyLong_AsUnsignedLongMask(PyObject *vv)
     }
     i = _PyLong_DigitCount(v);
     int sign = _PyLong_NonCompactSign(v);
-    x = _unroll_digits(v, &i);
+    unsigned long x = unroll_digits_ulong(v, &i);
     while (--i >= 0) {
         x = (x << PyLong_SHIFT) | v->long_value.ob_digit[i];
     }
@@ -1611,7 +1626,6 @@ static unsigned long long
 _PyLong_AsUnsignedLongLongMask(PyObject *vv)
 {
     PyLongObject *v;
-    unsigned long long x;
     Py_ssize_t i;
     int sign;
 
@@ -1629,7 +1643,7 @@ _PyLong_AsUnsignedLongLongMask(PyObject *vv)
     }
     i = _PyLong_DigitCount(v);
     sign = _PyLong_NonCompactSign(v);
-    x = _unroll_digits(v, &i);
+    unsigned long long x = unroll_digits_ulong(v, &i);
     while (--i >= 0) {
         x = (x << PyLong_SHIFT) | v->long_value.ob_digit[i];
     }
@@ -1675,7 +1689,6 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
 {
     /* This version by Tim Peters */
     PyLongObject *v;
-    unsigned long long x, prev;
     long long res;
     Py_ssize_t i;
     int sign;
@@ -1717,15 +1730,14 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
     else {
         i = _PyLong_DigitCount(v);
         sign = _PyLong_NonCompactSign(v);
-        x = 0;
+        unsigned long long x = unroll_digits_ulong(v, &i);
         while (--i >= 0) {
-            prev = x;
-            x = (x << PyLong_SHIFT) + v->long_value.ob_digit[i];
-            if ((x >> PyLong_SHIFT) != prev) {
+            if (x > ULLONG_MAX >> PyLong_SHIFT) {
                 *overflow = sign;
                 res = -1;
                 goto exit;
             }
+            x = (x << PyLong_SHIFT) + v->long_value.ob_digit[i];
         }
         /* Haven't lost any bits, but casting to long requires extra
          * care (see comment above).
