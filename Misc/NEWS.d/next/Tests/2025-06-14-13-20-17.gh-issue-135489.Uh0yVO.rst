@@ -1,1 +1,1 @@
-Allow verbose output for PGO runs in _runtest function
+Show verbose output for failing tests during PGO profiling step with --enable-optimizations.
