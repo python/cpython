@@ -6813,7 +6813,7 @@ class _TestSpawnedSysPath(BaseTestCase):
         dirname = os.path.join(self._temp_dir, 'preloaded_module')
         init_name = os.path.join(dirname, '__init__.py')
         os.mkdir(dirname)
-        with open(os.path.join(init_name), "w") as f:
+        with open(init_name, "w") as f:
             cmd = '''if 1:
                 import sys
                 print('stderr', file=sys.stderr)
