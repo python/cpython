@@ -12,6 +12,7 @@ annotated by François Pinard, and converted to C by Raymond Hettinger.
 
 #include "Python.h"
 #include "pycore_list.h"          // _PyList_ITEMS(), _PyList_AppendTakeRef()
+#include "pycore_pyatomic_ft_wrappers.h"
 
 #include "clinic/_heapqmodule.c.h"
 
