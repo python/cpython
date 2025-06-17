@@ -9,7 +9,6 @@ import importlib.util
 from importlib import _bootstrap_external
 import os
 import pathlib
-import re
 import string
 import sys
 from test import support
@@ -321,7 +320,7 @@ class MagicNumberTests:
 
     def test_incorporates_rn(self):
         # The magic number uses \r\n to come out wrong when splitting on lines.
-        self.assertTrue(self.util.MAGIC_NUMBER.endswith(b'\r\n'))
+        self.assertEndsWith(self.util.MAGIC_NUMBER, b'\r\n')
 
 
 (Frozen_MagicNumberTests,

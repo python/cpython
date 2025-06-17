@@ -111,8 +111,17 @@ def _enter_context(cm, addcleanup):
         enter = cls.__enter__
         exit = cls.__exit__
     except AttributeError:
-        raise TypeError(f"'{cls.__module__}.{cls.__qualname__}' object does "
-                        f"not support the context manager protocol") from None
+        msg = (f"'{cls.__module__}.{cls.__qualname__}' object does "
+               "not support the context manager protocol")
+        try:
+            cls.__aenter__
+            cls.__aexit__
+        except AttributeError:
+            pass
+        else:
+            msg += (" but it supports the asynchronous context manager "
+                    "protocol. Did you mean to use enterAsyncContext()?")
+        raise TypeError(msg) from None
     result = enter(cm)
     addcleanup(exit, cm, None, None, None)
     return result
@@ -140,9 +149,7 @@ def doModuleCleanups():
         except Exception as exc:
             exceptions.append(exc)
     if exceptions:
-        # Swallows all but first exception. If a multi-exception handler
-        # gets written we should use that here instead.
-        raise exceptions[0]
+        raise ExceptionGroup('module cleanup failed', exceptions)
 
 
 def skip(reason):
@@ -1372,16 +1379,20 @@ class TestCase(object):
         if not hasattr(obj, name):
             if isinstance(obj, types.ModuleType):
                 standardMsg = f'module {obj.__name__!r} has no attribute {name!r}'
+            elif isinstance(obj, type):
+                standardMsg = f'type object {obj.__name__!r} has no attribute {name!r}'
             else:
-                standardMsg = f'{type(obj).__name__} instance has no attribute {name!r}'
+                standardMsg = f'{type(obj).__name__!r} object has no attribute {name!r}'
             self.fail(self._formatMessage(msg, standardMsg))
 
     def assertNotHasAttr(self, obj, name, msg=None):
         if hasattr(obj, name):
             if isinstance(obj, types.ModuleType):
                 standardMsg = f'module {obj.__name__!r} has unexpected attribute {name!r}'
+            elif isinstance(obj, type):
+                standardMsg = f'type object {obj.__name__!r} has unexpected attribute {name!r}'
             else:
-                standardMsg = f'{type(obj).__name__} instance has unexpected attribute {name!r}'
+                standardMsg = f'{type(obj).__name__!r} object has unexpected attribute {name!r}'
             self.fail(self._formatMessage(msg, standardMsg))
 
     def assertRaisesRegex(self, expected_exception, expected_regex,
