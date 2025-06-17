@@ -59,8 +59,8 @@ siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
         arr = _PyList_ITEMS(heap);
         parent = arr[parentpos];
         newitem = arr[pos];
-        _Py_atomic_store_ptr(&arr[parentpos], newitem);
-        _Py_atomic_store_ptr(&arr[pos], parent);
+        FT_ATOMIC_STORE_PTR_RELEASE(arr[parentpos], newitem);
+        FT_ATOMIC_STORE_PTR_RELEASE(arr[pos], parent);
         pos = parentpos;
     }
     return 0;
@@ -108,8 +108,8 @@ siftup(PyListObject *heap, Py_ssize_t pos)
         /* Move the smaller child up. */
         tmp1 = arr[childpos];
         tmp2 = arr[pos];
-        _Py_atomic_store_ptr(&arr[childpos], tmp2);
-        _Py_atomic_store_ptr(&arr[pos], tmp1);
+        FT_ATOMIC_STORE_PTR_RELEASE(arr[childpos], tmp2);
+        FT_ATOMIC_STORE_PTR_RELEASE(arr[pos], tmp1);
         pos = childpos;
     }
     /* Bubble it up to its final resting place (by sifting its parents down). */
@@ -174,7 +174,7 @@ heappop_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
     returnitem = PyList_GET_ITEM(heap, 0);
     // We're in the critical section now
     PyListObject *list = _PyList_CAST(heap);
-    _Py_atomic_store_ptr(&list->ob_item[0], lastelt);
+    FT_ATOMIC_STORE_PTR_RELEASE(list->ob_item[0], lastelt);
     if (siftup_func(list, 0)) {
         Py_DECREF(returnitem);
         return NULL;
