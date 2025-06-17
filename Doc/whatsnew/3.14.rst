@@ -1259,6 +1259,14 @@ concurrent.futures
   buffer.
   (Contributed by Enzo Bonnal and Josh Rosenberg in :gh:`74028`.)
 
+configparser
+------------
+
+* Security fix: will no longer write config files it cannot read. Attempting
+  to :meth:`configparser.ConfigParser.write` keys containing delimiters or
+  beginning with the section header pattern will raise a
+  :class:`configparser.InvalidWriteError`.
+  (Contributed by Jacob Lincoln in :gh:`129270`)
 
 contextvars
 -----------
