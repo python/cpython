@@ -661,8 +661,8 @@ def test_sys_remote_exec():
         tmp_file.write("print('Hello from remote_exec!')\n")
         tmp_file.flush()
         sys.remote_exec(pid, tmp_file.name)
-        assertEqual(pid, event_pid)
-        assertEqual(tmp_file.name, event_script_path)
+        assertEqual(event_pid, pid)
+        assertEqual(event_script_path, tmp_file.name)
 
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts
