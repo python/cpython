@@ -71,14 +71,14 @@ typedef struct {
 
 /*[clinic input]
 module _sha3
-class _sha3.sha3_224 "SHA3object *" "clinic_state()->sha3_224_type"
-class _sha3.sha3_256 "SHA3object *" "clinic_state()->sha3_256_type"
-class _sha3.sha3_384 "SHA3object *" "clinic_state()->sha3_384_type"
-class _sha3.sha3_512 "SHA3object *" "clinic_state()->sha3_512_type"
-class _sha3.shake_128 "SHA3object *" "clinic_state()->shake_128_type"
-class _sha3.shake_256 "SHA3object *" "clinic_state()->shake_256_type"
+class _sha3.sha3_224    "SHA3object *"  "clinic_state()->sha3_224_type"
+class _sha3.sha3_256    "SHA3object *"  "clinic_state()->sha3_256_type"
+class _sha3.sha3_384    "SHA3object *"  "clinic_state()->sha3_384_type"
+class _sha3.sha3_512    "SHA3object *"  "clinic_state()->sha3_512_type"
+class _sha3.shake_128   "SHA3object *"  "clinic_state()->shake_128_type"
+class _sha3.shake_256   "SHA3object *"  "clinic_state()->shake_256_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=83376ec869f33016]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=91cc5a9fb4be1976]*/
 
 #define clinic_state()  (get_sha3module_state_by_cls(Py_TYPE(self)))
 #include "clinic/sha3module.c.h"
