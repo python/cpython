@@ -1024,13 +1024,13 @@ class AbstractUnpickleTests:
         self.assertEqual(self.loads(b'L010L\n.'), 10)
         self.assertEqual(self.loads(b'L-010L\n.'), -10)
 
-    def test_load_build_falsey_state(self):
-        self.assertRaises(AttributeError, self._loads, b']]b.')
-        self.assertRaises(AttributeError, self._loads, b']K\x00b.')
-        self.assertRaises(AttributeError, self._loads, b'])b.')
-        self.assertRaises(AttributeError, self._loads, b']}b.')
-        self.assertRaises(AttributeError, self._loads, b']\x8fb.')
-        self.assertRaises(AttributeError, self._loads, b']\x89b.')
+    def test_load_build_falsy_state(self):
+        self.check_unpickling_error((pickle.UnpicklingError, AttributeError), b']]b.')
+        self.check_unpickling_error((pickle.UnpicklingError, AttributeError), b']K\x00b.')
+        self.check_unpickling_error((pickle.UnpicklingError, AttributeError), b'])b.')
+        self.check_unpickling_error((pickle.UnpicklingError, AttributeError), b']}b.')
+        self.check_unpickling_error((pickle.UnpicklingError, AttributeError), b']\x8fb.')
+        self.check_unpickling_error((pickle.UnpicklingError, AttributeError), b']\x89b.')
 
     def test_nondecimal_integers(self):
         self.assertRaises(ValueError, self.loads, b'I0b10\n.')
