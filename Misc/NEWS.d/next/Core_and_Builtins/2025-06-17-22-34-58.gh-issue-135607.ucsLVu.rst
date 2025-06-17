@@ -1,0 +1,2 @@
+Do not check ``md_weaklist`` in :func:`module_dealloc` and always call
+:func:`PyObject_ClearWeakRefs` unconditionally.
