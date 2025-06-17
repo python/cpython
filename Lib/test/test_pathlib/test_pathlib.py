@@ -2956,6 +2956,7 @@ class PathTest(PurePathTest):
             self.assertEqual(set(p.glob("xyzzy/..")), { P(self.base, "xyzzy", "..") })
         if sys.platform == "emscripten":
             # Emscripten will return ELOOP if there are 49 or more ..'s.
+            # Can remove when https://github.com/emscripten-core/emscripten/pull/24591 is merged.
             NDOTDOTS = 48
         else:
             NDOTDOTS = 50
