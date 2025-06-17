@@ -247,6 +247,13 @@ class ElementTreeTest(unittest.TestCase):
         self.assertRegex(repr(element), r"^<Element 't\xe4g' at 0x.*>$")
         element = ET.Element("tag", key="value")
 
+        # Verify type checking for ElementTree constructor
+
+        with self.assertRaises(TypeError):
+            tree = ET.ElementTree("")
+        with self.assertRaises(TypeError):
+            tree = ET.ElementTree(ET.ElementTree())
+
         # Make sure all standard element methods exist.
 
         def check_method(method):
