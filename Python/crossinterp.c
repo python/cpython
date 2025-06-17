@@ -25,6 +25,7 @@ _Py_GetMainfile(char *buffer, size_t maxlen)
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *module = _Py_GetMainModule(tstate);
     if (_Py_CheckMainModule(module) < 0) {
+        Py_XDECREF(module);
         return -1;
     }
     Py_ssize_t size = _PyModule_GetFilenameUTF8(module, buffer, maxlen);
@@ -130,6 +131,7 @@ ensure_isolated_main(PyThreadState *tstate, struct sync_module *main)
     if (_Py_CheckMainModule(mod) < 0) {
         // This is probably unrecoverable, so don't bother caching the error.
         assert(_PyErr_Occurred(tstate));
+        Py_XDECREF(mod);
         return -1;
     }
     PyObject *loaded = NULL;
@@ -2876,6 +2878,7 @@ _ensure_main_ns(_PyXI_session *session, _PyXI_failure *failure)
     // Cache __main__.__dict__.
     PyObject *main_mod = _Py_GetMainModule(tstate);
     if (_Py_CheckMainModule(main_mod) < 0) {
+        Py_XDECREF(main_mod);
         if (failure != NULL) {
             *failure = (_PyXI_failure){
                 .code = _PyXI_ERR_MAIN_NS_FAILURE,
