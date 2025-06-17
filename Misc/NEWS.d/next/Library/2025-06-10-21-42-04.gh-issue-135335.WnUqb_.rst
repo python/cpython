@@ -1,2 +1,2 @@
-Flush ``stdout`` and ``stderr`` after preloading modules in the
-:mod:`multiprocessing` ``forkserver``.
+:mod:`multiprocessing`: Flush ``stdout`` and ``stderr`` after preloading
+modules in the ``forkserver``.
