@@ -1235,7 +1235,7 @@ _PyObject_XDecRefDelayed(PyObject *ptr)
 void
 _PyObject_XSetRefDelayed(PyObject **ptr, PyObject *value)
 {
-    PyObject *old = FT_ATOMIC_LOAD_PTR_ACQUIRE(*ptr);
+    PyObject *old = *ptr;
     FT_ATOMIC_STORE_PTR_RELEASE(*ptr, value);
     if (old == NULL) {
         return;

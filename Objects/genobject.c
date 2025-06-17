@@ -705,7 +705,7 @@ static PyObject *
 gen_get_name(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyGenObject *op = _PyGen_CAST(self);
-    PyObject *name = FT_ATOMIC_LOAD_PTR_RELAXED(op->gi_name);
+    PyObject *name = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->gi_name);
     return Py_NewRef(name);
 }
 
@@ -721,7 +721,7 @@ gen_set_name(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
-    // gh-133931: To prevent use-after-free from other threads that reference
+    // gh-133980: To prevent use-after-free from other threads that reference
     // the gi_name.
     _PyObject_XSetRefDelayed(&op->gi_name, Py_NewRef(value));
     Py_END_CRITICAL_SECTION();
@@ -732,7 +732,7 @@ static PyObject *
 gen_get_qualname(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyGenObject *op = _PyGen_CAST(self);
-    PyObject *qualname = FT_ATOMIC_LOAD_PTR_RELAXED(op->gi_qualname);
+    PyObject *qualname = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->gi_qualname);
     return Py_NewRef(qualname);
 }
 
@@ -748,7 +748,7 @@ gen_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
-    // gh-133931: To prevent use-after-free from other threads that reference
+    // gh-133980: To prevent use-after-free from other threads that reference
     // the gi_qualname.
     _PyObject_XSetRefDelayed(&op->gi_qualname, Py_NewRef(value));
     Py_END_CRITICAL_SECTION();
