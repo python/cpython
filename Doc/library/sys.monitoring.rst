@@ -137,7 +137,8 @@ The following events are supported:
 
 .. monitoring-event:: PY_UNWIND
 
-   Exit from a Python function during exception unwinding.
+   Exit from a Python function during exception unwinding. This includes exceptions raised directly within the
+   function and that are allowed to continue to propagate.
 
 .. monitoring-event:: PY_YIELD
 
