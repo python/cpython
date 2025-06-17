@@ -2312,6 +2312,7 @@ class TestUopsOptimization(unittest.TestCase):
         import _testinternalcapi
         import opcode
         import _opcode
+        import email
 
         def get_first_executor(func):
             code = func.__code__
@@ -2325,8 +2326,6 @@ class TestUopsOptimization(unittest.TestCase):
 
         def get_opnames(ex):
             return {item[0] for item in ex}
-
-        import email
 
         def testfunc(n):
             for _ in range(n):
