@@ -4213,10 +4213,6 @@ AS_VAR_IF([with_system_libmpdec], [yes],
       [have_mpdec=yes],
       [have_mpdec=no])
   ])])
-AS_VAR_IF([with_system_libmpdec], [no],
-          [AC_MSG_WARN([m4_normalize([
-     the bundled copy of libmpdecimal is scheduled for removal in Python 3.16;
-     consider using a system installed mpdecimal library.])])])
 
 # Disable forced inlining in debug builds, see GH-94847
 AS_VAR_IF(
@@ -8135,6 +8131,10 @@ PY_STDLIB_MOD([_decimal],
   [], [test "$have_mpdec" = "yes"],
   [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LIBS])
 
+AS_VAR_IF([with_system_libmpdec], [no],
+          [AC_MSG_WARN([m4_normalize([
+     the bundled copy of libmpdecimal is scheduled for removal in Python 3.16;
+     consider using a system installed mpdecimal library.])])])
 AS_IF([test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"],
       [AC_MSG_WARN([m4_normalize([
          no system libmpdecimal found; falling back to pure-Python version
