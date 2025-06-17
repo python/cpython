@@ -11,7 +11,7 @@
 
 .. seealso::
 
-   :ref:`f-strings` -- Format strings (f-strings)
+   :ref:`Format strings <f-strings>`
 
 
 .. _templatelib-template:
@@ -124,7 +124,6 @@ It is also possible to create a :class:`!Template` directly, using its construct
    :type value: Literal["a", "r", "s"] | None
 
    :param format_spec: An optional, arbitrary string used as the :ref:`format specification <formatspec>` to present the value.
-   :type expression: str = ""
 
    The :class:`!Interpolation` type represents an expression inside a template string. It is shallow immutable -- its attributes cannot be reassigned.
 
@@ -154,3 +153,32 @@ It is also possible to create a :class:`!Template` directly, using its construct
 
        :returns: A tuple of the attributes to use for structural pattern matching.
        :rtype: (Literal["value"], Literal["expression"], Literal["conversion"], Literal["format_spec"])
+
+
+   .. property:: value
+
+       :returns: The evaluated value of the interpolation.
+       :rtype: object
+
+   .. property:: expression
+
+       :returns: The original text of the interpolation's Python expression if the interpolation was created from a t-string literal
+       :rtype: str
+
+       The :attr:`~Interpolation.expression` is the original text of the interpolation's Python expression, if the interpolation was created from a t-string literal. Developers creating
+       interpolations manually should either set this to an empty
+       string or choose a suitable valid python expression.
+
+   .. property:: conversion
+
+      :returns: The conversion to apply to the value, one of "a", "r", or "s", or None.
+      :rtype: Literal["a", "r", "s"] | None
+
+      The :attr:`~Interpolation.conversion` is the optional conversion to apply to the value. This is one of "a", "r", or "s", or None if no conversion is specified.
+
+   .. property:: format_spec
+
+      :returns: The format specification to apply to the value.
+      :rtype: str
+
+      The :attr:`~Interpolation.format_spec` is an optional, arbitrary string used as the format specification to present the value. This is similar to the format specification used in :ref:`format strings <formatstrings>`, but it is not limited to a specific set of formats.
