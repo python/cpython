@@ -3948,10 +3948,39 @@ subtype_dict(PyObject *obj, void *context)
     return PyObject_GenericGetDict(obj, context);
 }
 
+int
+_PyObject_SetDict(PyObject *obj, PyObject *value)
+{
+    if (value != NULL && !PyDict_Check(value)) {
+        PyErr_Format(PyExc_TypeError,
+                     "__dict__ must be set to a dictionary, "
+                     "not a '%.200s'", Py_TYPE(value)->tp_name);
+        return -1;
+    }
+    if (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+        return _PyObject_SetManagedDict(obj, value);
+    }
+    PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
+    if (dictptr == NULL) {
+        PyErr_SetString(PyExc_AttributeError,
+                        "This object has no __dict__");
+        return -1;
+    }
+    Py_BEGIN_CRITICAL_SECTION(obj);
+    PyObject *olddict = *dictptr;
+    FT_ATOMIC_STORE_PTR_RELEASE(*dictptr, Py_NewRef(value));
+#ifdef Py_GIL_DISABLED
+    _PyObject_XDecRefDelayed(olddict);
+#else
+    Py_XDECREF(olddict);
+#endif
+    Py_END_CRITICAL_SECTION();
+    return 0;
+}
+
 static int
 subtype_setdict(PyObject *obj, PyObject *value, void *context)
 {
-    PyObject **dictptr;
     PyTypeObject *base;
 
     base = get_builtin_base_with_dict(Py_TYPE(obj));
@@ -3969,28 +3998,7 @@ subtype_setdict(PyObject *obj, PyObject *value, void *context)
         }
         return func(descr, obj, value);
     }
-    /* Almost like PyObject_GenericSetDict, but allow __dict__ to be deleted. */
-    if (value != NULL && !PyDict_Check(value)) {
-        PyErr_Format(PyExc_TypeError,
-                     "__dict__ must be set to a dictionary, "
-                     "not a '%.200s'", Py_TYPE(value)->tp_name);
-        return -1;
-    }
-
-    if (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        return _PyObject_SetManagedDict(obj, value);
-    }
-    else {
-        dictptr = _PyObject_ComputedDictPointer(obj);
-        if (dictptr == NULL) {
-            PyErr_SetString(PyExc_AttributeError,
-                            "This object has no __dict__");
-            return -1;
-        }
-        Py_CLEAR(*dictptr);
-        *dictptr = Py_XNewRef(value);
-    }
-    return 0;
+    return _PyObject_SetDict(obj, value);
 }
 
 static PyObject *

@@ -61,7 +61,7 @@ class UnboundItem:
 
     def __repr__(self):
         return f'{self._MODULE}.{self._NAME}'
-#        return f'interpreters.queues.UNBOUND'
+#        return f'interpreters._queues.UNBOUND'
 
 
 UNBOUND = object.__new__(UnboundItem)

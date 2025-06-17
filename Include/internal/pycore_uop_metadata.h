@@ -12,7 +12,8 @@ extern "C" {
 #include <stdint.h>
 #include "pycore_uop_ids.h"
 extern const uint16_t _PyUop_Flags[MAX_UOP_ID+1];
-extern const uint8_t _PyUop_Replication[MAX_UOP_ID+1];
+typedef struct _rep_range { uint8_t start; uint8_t stop; } ReplicationRange;
+extern const ReplicationRange _PyUop_Replication[MAX_UOP_ID+1];
 extern const char * const _PyOpcode_uop_name[MAX_UOP_ID+1];
 
 extern int _PyUop_num_popped(int opcode, int oparg);
@@ -85,9 +86,9 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_UNARY_INVERT] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_NOS_INT] = HAS_EXIT_FLAG,
     [_GUARD_TOS_INT] = HAS_EXIT_FLAG,
-    [_BINARY_OP_MULTIPLY_INT] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
-    [_BINARY_OP_ADD_INT] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
-    [_BINARY_OP_SUBTRACT_INT] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
+    [_BINARY_OP_MULTIPLY_INT] = HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_PURE_FLAG,
+    [_BINARY_OP_ADD_INT] = HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_PURE_FLAG,
+    [_BINARY_OP_SUBTRACT_INT] = HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_PURE_FLAG,
     [_GUARD_NOS_FLOAT] = HAS_EXIT_FLAG,
     [_GUARD_TOS_FLOAT] = HAS_EXIT_FLAG,
     [_BINARY_OP_MULTIPLY_FLOAT] = HAS_ERROR_FLAG | HAS_PURE_FLAG,
@@ -291,8 +292,13 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CONVERT_VALUE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_FORMAT_SIMPLE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_FORMAT_WITH_SPEC] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_COPY_1] = HAS_PURE_FLAG,
+    [_COPY_2] = HAS_PURE_FLAG,
+    [_COPY_3] = HAS_PURE_FLAG,
     [_COPY] = HAS_ARG_FLAG | HAS_PURE_FLAG,
     [_BINARY_OP] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_SWAP_2] = HAS_PURE_FLAG,
+    [_SWAP_3] = HAS_PURE_FLAG,
     [_SWAP] = HAS_ARG_FLAG | HAS_PURE_FLAG,
     [_GUARD_IS_TRUE_POP] = HAS_EXIT_FLAG,
     [_GUARD_IS_FALSE_POP] = HAS_EXIT_FLAG,
@@ -326,12 +332,14 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_TIER2_RESUME_CHECK] = HAS_DEOPT_FLAG,
 };
 
-const uint8_t _PyUop_Replication[MAX_UOP_ID+1] = {
-    [_LOAD_FAST] = 8,
-    [_LOAD_FAST_BORROW] = 8,
-    [_LOAD_SMALL_INT] = 4,
-    [_STORE_FAST] = 8,
-    [_INIT_CALL_PY_EXACT_ARGS] = 5,
+const ReplicationRange _PyUop_Replication[MAX_UOP_ID+1] = {
+    [_LOAD_FAST] = { 0, 8 },
+    [_LOAD_FAST_BORROW] = { 0, 8 },
+    [_LOAD_SMALL_INT] = { 0, 4 },
+    [_STORE_FAST] = { 0, 8 },
+    [_INIT_CALL_PY_EXACT_ARGS] = { 0, 5 },
+    [_COPY] = { 1, 4 },
+    [_SWAP] = { 2, 4 },
 };
 
 const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
@@ -414,6 +422,9 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_CONTAINS_OP_SET] = "_CONTAINS_OP_SET",
     [_CONVERT_VALUE] = "_CONVERT_VALUE",
     [_COPY] = "_COPY",
+    [_COPY_1] = "_COPY_1",
+    [_COPY_2] = "_COPY_2",
+    [_COPY_3] = "_COPY_3",
     [_COPY_FREE_VARS] = "_COPY_FREE_VARS",
     [_CREATE_INIT_FRAME] = "_CREATE_INIT_FRAME",
     [_DELETE_ATTR] = "_DELETE_ATTR",
@@ -623,6 +634,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_STORE_SUBSCR_DICT] = "_STORE_SUBSCR_DICT",
     [_STORE_SUBSCR_LIST_INT] = "_STORE_SUBSCR_LIST_INT",
     [_SWAP] = "_SWAP",
+    [_SWAP_2] = "_SWAP_2",
+    [_SWAP_3] = "_SWAP_3",
     [_TIER2_RESUME_CHECK] = "_TIER2_RESUME_CHECK",
     [_TO_BOOL] = "_TO_BOOL",
     [_TO_BOOL_BOOL] = "_TO_BOOL_BOOL",
@@ -1188,10 +1201,20 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _FORMAT_WITH_SPEC:
             return 2;
+        case _COPY_1:
+            return 0;
+        case _COPY_2:
+            return 0;
+        case _COPY_3:
+            return 0;
         case _COPY:
             return 0;
         case _BINARY_OP:
             return 2;
+        case _SWAP_2:
+            return 0;
+        case _SWAP_3:
+            return 0;
         case _SWAP:
             return 0;
         case _GUARD_IS_TRUE_POP:

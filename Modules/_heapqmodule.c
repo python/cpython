@@ -11,7 +11,7 @@ annotated by François Pinard, and converted to C by Raymond Hettinger.
 #endif
 
 #include "Python.h"
-#include "pycore_list.h"          // _PyList_ITEMS()
+#include "pycore_list.h"          // _PyList_ITEMS(), _PyList_AppendTakeRef()
 
 #include "clinic/_heapqmodule.c.h"
 
@@ -117,6 +117,7 @@ siftup(PyListObject *heap, Py_ssize_t pos)
 }
 
 /*[clinic input]
+@critical_section heap
 _heapq.heappush
 
     heap: object(subclass_of='&PyList_Type')
@@ -128,13 +129,22 @@ Push item onto heap, maintaining the heap invariant.
 
 static PyObject *
 _heapq_heappush_impl(PyObject *module, PyObject *heap, PyObject *item)
-/*[clinic end generated code: output=912c094f47663935 input=7c69611f3698aceb]*/
+/*[clinic end generated code: output=912c094f47663935 input=f7a4f03ef8d52e67]*/
 {
-    if (PyList_Append(heap, item))
+    if (item == NULL) {
+        PyErr_BadInternalCall();
         return NULL;
+    }
 
-    if (siftdown((PyListObject *)heap, 0, PyList_GET_SIZE(heap)-1))
+    // In a free-threaded build, the heap is locked at this point.
+    // Therefore, calling _PyList_AppendTakeRef() is safe and no overhead.
+    if (_PyList_AppendTakeRef((PyListObject *)heap, Py_NewRef(item))) {
         return NULL;
+    }
+
+    if (siftdown((PyListObject *)heap, 0, PyList_GET_SIZE(heap)-1)) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -171,6 +181,7 @@ heappop_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
 }
 
 /*[clinic input]
+@critical_section heap
 _heapq.heappop
 
     heap: object(subclass_of='&PyList_Type')
@@ -181,7 +192,7 @@ Pop the smallest item off the heap, maintaining the heap invariant.
 
 static PyObject *
 _heapq_heappop_impl(PyObject *module, PyObject *heap)
-/*[clinic end generated code: output=96dfe82d37d9af76 input=91487987a583c856]*/
+/*[clinic end generated code: output=96dfe82d37d9af76 input=ed396461b153dd51]*/
 {
     return heappop_internal(heap, siftup);
 }
@@ -207,6 +218,7 @@ heapreplace_internal(PyObject *heap, PyObject *item, int siftup_func(PyListObjec
 
 
 /*[clinic input]
+@critical_section heap
 _heapq.heapreplace
 
     heap: object(subclass_of='&PyList_Type')
@@ -226,12 +238,13 @@ this routine unless written as part of a conditional replacement:
 
 static PyObject *
 _heapq_heapreplace_impl(PyObject *module, PyObject *heap, PyObject *item)
-/*[clinic end generated code: output=82ea55be8fbe24b4 input=719202ac02ba10c8]*/
+/*[clinic end generated code: output=82ea55be8fbe24b4 input=9be1678b817ef1a9]*/
 {
     return heapreplace_internal(heap, item, siftup);
 }
 
 /*[clinic input]
+@critical_section heap
 _heapq.heappushpop
 
     heap: object(subclass_of='&PyList_Type')
@@ -246,7 +259,7 @@ a separate call to heappop().
 
 static PyObject *
 _heapq_heappushpop_impl(PyObject *module, PyObject *heap, PyObject *item)
-/*[clinic end generated code: output=67231dc98ed5774f input=5dc701f1eb4a4aa7]*/
+/*[clinic end generated code: output=67231dc98ed5774f input=db05c81b1dd92c44]*/
 {
     PyObject *returnitem;
     int cmp;
@@ -371,6 +384,7 @@ heapify_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
 }
 
 /*[clinic input]
+@critical_section heap
 _heapq.heapify
 
     heap: object(subclass_of='&PyList_Type')
@@ -381,7 +395,7 @@ Transform list into a heap, in-place, in O(len(heap)) time.
 
 static PyObject *
 _heapq_heapify_impl(PyObject *module, PyObject *heap)
-/*[clinic end generated code: output=e63a636fcf83d6d0 input=53bb7a2166febb73]*/
+/*[clinic end generated code: output=e63a636fcf83d6d0 input=aaaaa028b9b6af08]*/
 {
     return heapify_internal(heap, siftup);
 }
@@ -481,6 +495,7 @@ siftup_max(PyListObject *heap, Py_ssize_t pos)
 }
 
 /*[clinic input]
+@critical_section heap
 _heapq.heappush_max
 
     heap: object(subclass_of='&PyList_Type')
@@ -492,9 +507,16 @@ Push item onto max heap, maintaining the heap invariant.
 
 static PyObject *
 _heapq_heappush_max_impl(PyObject *module, PyObject *heap, PyObject *item)
-/*[clinic end generated code: output=c869d5f9deb08277 input=4743d7db137b6e2b]*/
+/*[clinic end generated code: output=c869d5f9deb08277 input=c437e3d1ff8dcb70]*/
 {
-    if (PyList_Append(heap, item)) {
+    if (item == NULL) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    // In a free-threaded build, the heap is locked at this point.
+    // Therefore, calling _PyList_AppendTakeRef() is safe and no overhead.
+    if (_PyList_AppendTakeRef((PyListObject *)heap, Py_NewRef(item))) {
         return NULL;
     }
 
@@ -506,6 +528,7 @@ _heapq_heappush_max_impl(PyObject *module, PyObject *heap, PyObject *item)
 }
 
 /*[clinic input]
+@critical_section heap
 _heapq.heappop_max
 
     heap: object(subclass_of='&PyList_Type')
@@ -516,12 +539,13 @@ Maxheap variant of heappop.
 
 static PyObject *
 _heapq_heappop_max_impl(PyObject *module, PyObject *heap)
-/*[clinic end generated code: output=2f051195ab404b77 input=e62b14016a5a26de]*/
+/*[clinic end generated code: output=2f051195ab404b77 input=5d70c997798aec64]*/
 {
     return heappop_internal(heap, siftup_max);
 }
 
 /*[clinic input]
+@critical_section heap
 _heapq.heapreplace_max
 
     heap: object(subclass_of='&PyList_Type')
@@ -533,12 +557,13 @@ Maxheap variant of heapreplace.
 
 static PyObject *
 _heapq_heapreplace_max_impl(PyObject *module, PyObject *heap, PyObject *item)
-/*[clinic end generated code: output=8770778b5a9cbe9b input=21a3d28d757c881c]*/
+/*[clinic end generated code: output=8770778b5a9cbe9b input=fe70175356e4a649]*/
 {
     return heapreplace_internal(heap, item, siftup_max);
 }
 
 /*[clinic input]
+@critical_section heap
 _heapq.heapify_max
 
     heap: object(subclass_of='&PyList_Type')
@@ -549,12 +574,13 @@ Maxheap variant of heapify.
 
 static PyObject *
 _heapq_heapify_max_impl(PyObject *module, PyObject *heap)
-/*[clinic end generated code: output=8401af3856529807 input=edda4255728c431e]*/
+/*[clinic end generated code: output=8401af3856529807 input=4eee63231e7d1573]*/
 {
     return heapify_internal(heap, siftup_max);
 }
 
 /*[clinic input]
+@critical_section heap
 _heapq.heappushpop_max
 
     heap: object(subclass_of='&PyList_Type')
@@ -569,7 +595,7 @@ a separate call to heappop_max().
 
 static PyObject *
 _heapq_heappushpop_max_impl(PyObject *module, PyObject *heap, PyObject *item)
-/*[clinic end generated code: output=ff0019f0941aca0d input=525a843013cbd6c0]*/
+/*[clinic end generated code: output=ff0019f0941aca0d input=24d0defa6fd6df4a]*/
 {
     PyObject *returnitem;
     int cmp;

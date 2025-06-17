@@ -971,16 +971,9 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
             ++numsignificantbytes;
     }
 
-    /* How many Python int digits do we need?  We have
-       8*numsignificantbytes bits, and each Python int digit has
-       PyLong_SHIFT bits, so it's the ceiling of the quotient. */
-    /* catch overflow before it happens */
-    if (numsignificantbytes > (PY_SSIZE_T_MAX - PyLong_SHIFT) / 8) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "byte array too long to convert to int");
-        return NULL;
-    }
-    ndigits = (numsignificantbytes * 8 + PyLong_SHIFT - 1) / PyLong_SHIFT;
+    /* avoid integer overflow */
+    ndigits = numsignificantbytes / PyLong_SHIFT * 8
+        + (numsignificantbytes % PyLong_SHIFT * 8 + PyLong_SHIFT - 1) / PyLong_SHIFT;
     v = long_alloc(ndigits);
     if (v == NULL)
         return NULL;
@@ -3779,9 +3772,11 @@ long_add(PyLongObject *a, PyLongObject *b)
 }
 
 PyObject *
-_PyLong_Add(PyLongObject *a, PyLongObject *b)
+_PyCompactLong_Add(PyLongObject *a, PyLongObject *b)
 {
-    return (PyObject*)long_add(a, b);
+    assert(_PyLong_BothAreCompact(a, b));
+    stwodigits z = medium_value(a) + medium_value(b);
+    return (PyObject *)_PyLong_FromSTwoDigits(z);
 }
 
 static PyObject *
@@ -3822,9 +3817,10 @@ long_sub(PyLongObject *a, PyLongObject *b)
 }
 
 PyObject *
-_PyLong_Subtract(PyLongObject *a, PyLongObject *b)
+_PyCompactLong_Subtract(PyLongObject *a, PyLongObject *b)
 {
-    return (PyObject*)long_sub(a, b);
+    assert(_PyLong_BothAreCompact(a, b));
+    return (PyObject *)_PyLong_FromSTwoDigits(medium_value(a) - medium_value(b));
 }
 
 static PyObject *
@@ -4269,9 +4265,11 @@ long_mul(PyLongObject *a, PyLongObject *b)
 }
 
 PyObject *
-_PyLong_Multiply(PyLongObject *a, PyLongObject *b)
+_PyCompactLong_Multiply(PyLongObject *a, PyLongObject *b)
 {
-    return (PyObject*)long_mul(a, b);
+    assert(_PyLong_BothAreCompact(a, b));
+    stwodigits v = medium_value(a) * medium_value(b);
+    return (PyObject *)_PyLong_FromSTwoDigits(v);
 }
 
 static PyObject *
