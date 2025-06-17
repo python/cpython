@@ -546,7 +546,8 @@ class ElementTree:
 
         """
         if not iselement(element):
-            raise TypeError
+            raise TypeError(f"element must be etree.Element, "
+                            f"not {type(element).__name__}")
         self._root = element
 
     def parse(self, source, parser=None):
