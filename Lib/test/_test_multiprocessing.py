@@ -6817,7 +6817,8 @@ class _TestSpawnedSysPath(BaseTestCase):
             cmd = '''if 1:
                 import sys
                 print('stdout', file=sys.stdout)
-                print('stderr', file=sys.stderr)\n'''
+                print('stderr', file=sys.stderr)
+            '''
             f.write(cmd)
 
         name = os.path.join(os.path.dirname(__file__), 'mp_preload_flush.py')
