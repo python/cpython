@@ -292,10 +292,9 @@ in Python (see :ref:`c-api-monitoring`).
    Activates all the local events for *code* which are set in *event_set*.
    Raises a :exc:`ValueError` if *tool_id* is not in use.
 
-Local events add to global events. In other words, all global events
-will trigger for a code object, regardless of the local events. Events
-will also only trigger once regardless of whether the same event is
-registered both globally and locally for a code object.
+Events will only trigger once, regardless of whether the same event is
+activated globally as well as locally for a code object. Local activation
+also doesn't impact a global registration for the same event and vice-versa.
 
 
 Disabling events
