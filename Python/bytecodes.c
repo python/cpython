@@ -4946,8 +4946,7 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
-        pure inst(COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
-            assert(oparg > 0);
+        pure replicate(1:4) inst(COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
             top = PyStackRef_DUP(bottom);
         }
 
@@ -4980,12 +4979,11 @@ dummy_func(
 
         macro(BINARY_OP) = _SPECIALIZE_BINARY_OP + unused/4 + _BINARY_OP;
 
-        pure inst(SWAP, (bottom, unused[oparg-2], top --
+        pure replicate(2:4) inst(SWAP, (bottom, unused[oparg-2], top --
                     bottom, unused[oparg-2], top)) {
             _PyStackRef temp = bottom;
             bottom = top;
             top = temp;
-            assert(oparg >= 2);
         }
 
         inst(INSTRUMENTED_LINE, ( -- )) {
