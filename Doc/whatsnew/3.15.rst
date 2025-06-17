@@ -171,6 +171,15 @@ tarfile
   and :cve:`2025-4435`.)
 
 
+traceback
+----------
+
+* The keyword only argument ``show_lines=True`` is added to all functions and
+  methods formatting or printing traceback. You can suppress the display of
+  source code lines in the traceback by passing ``show_lines=False``.
+  (Contributed by Inada Naoki in TBD).
+
+
 zlib
 ----
 
