@@ -90,6 +90,7 @@ class ReadOnly(_SQLiteDbmTests):
     def test_readonly_iter(self):
         self.assertEqual([k for k in self.db], [b"key1", b"key2"])
 
+    @unittest.skipIf(sys.platform.startswith("win"), "incompatible with Windows file locking")
     def test_readonly_open_without_wal_shm(self):
         wal_path = self.filename + "-wal"
         shm_path = self.filename + "-shm"
