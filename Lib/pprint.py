@@ -653,6 +653,40 @@ class PrettyPrinter:
             del context[objid]
             return "{%s}" % ", ".join(components), readable, recursive
 
+        if (issubclass(typ, list) and r is list.__repr__) or \
+           (issubclass(typ, tuple) and r is tuple.__repr__):
+            if issubclass(typ, list):
+                if not object:
+                    return "[]", True, False
+                format = "[%s]"
+            elif len(object) == 1:
+                format = "(%s,)"
+            else:
+                if not object:
+                    return "()", True, False
+                format = "(%s)"
+            objid = id(object)
+            if maxlevels and level >= maxlevels:
+                return format % "...", False, objid in context
+            if objid in context:
+                return _recursion(object), False, True
+            context[objid] = 1
+            readable = True
+            recursive = False
+            components = []
+            append = components.append
+            level += 1
+            for o in object:
+                orepr, oreadable, orecur = self.format(
+                    o, context, maxlevels, level)
+                append(orepr)
+                if not oreadable:
+                    readable = False
+                if orecur:
+                    recursive = True
+            del context[objid]
+            return format % ", ".join(components), readable, recursive
+
         if issubclass(typ, _collections.abc.MappingView) and r in self._view_reprs:
             objid = id(object)
             if maxlevels and level >= maxlevels:
@@ -688,40 +722,6 @@ class PrettyPrinter:
                     recursive = True
             del context[objid]
             return typ.__name__ + '([%s])' % ", ".join(components), readable, recursive
-
-        if (issubclass(typ, list) and r is list.__repr__) or \
-           (issubclass(typ, tuple) and r is tuple.__repr__):
-            if issubclass(typ, list):
-                if not object:
-                    return "[]", True, False
-                format = "[%s]"
-            elif len(object) == 1:
-                format = "(%s,)"
-            else:
-                if not object:
-                    return "()", True, False
-                format = "(%s)"
-            objid = id(object)
-            if maxlevels and level >= maxlevels:
-                return format % "...", False, objid in context
-            if objid in context:
-                return _recursion(object), False, True
-            context[objid] = 1
-            readable = True
-            recursive = False
-            components = []
-            append = components.append
-            level += 1
-            for o in object:
-                orepr, oreadable, orecur = self.format(
-                    o, context, maxlevels, level)
-                append(orepr)
-                if not oreadable:
-                    readable = False
-                if orecur:
-                    recursive = True
-            del context[objid]
-            return format % ", ".join(components), readable, recursive
 
         rep = repr(object)
         return rep, (rep and not rep.startswith('<')), False
