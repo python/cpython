@@ -357,36 +357,45 @@ class InterpreterPoolExecutorTest(
         ready = queues.create()
         blocker = queues.create()
 
-        def run(ready, blocker):
-            raise Exception((ready.id, blocker.id))
-            ready.put(None)
-            blocker.get()  # blocking
+        def run(taskid, ready, blocker):
+            ready.put_nowait(taskid)
+            raise Exception(taskid)
+            blocker.get(timeout=10)  # blocking
 
         numtasks = 10
         futures = []
         executor = self.executor_type()
         try:
             for i in range(numtasks):
-                fut = executor.submit(run, ready, blocker)
+                fut = executor.submit(run, i, ready, blocker)
                 futures.append(fut)
 #            assert len(executor._threads) == numtasks, len(executor._threads)
-            ctx = None
+            exceptions1 = []
             for i, fut in enumerate(futures, 1):
                 try:
                     fut.result(timeout=10)
                 except Exception as exc:
-                    exc.__cause__ = ctx
-                    ctx = exc
-                    if i == numtasks:
-                        raise Exception((ready.id, blocker.id))
-#            try:
-#                # Wait for them all to be ready.
-#                for i in range(numtasks):
-#                    ready.get()  # blocking
-#            finally:
-#                # Unblock the workers.
-#                for i in range(numtasks):
-#                    blocker.put_nowait(None)
+                    exceptions1.append(exc)
+            exceptions2 = []
+            try:
+                # Wait for them all to be ready.
+                for i in range(numtasks):
+                    try:
+                        ready.get(timeout=10)  # blocking
+                    except interpreters.QueueEmpty as exc:
+                        exceptions2.append(exc)
+            finally:
+                # Unblock the workers.
+                for i in range(numtasks):
+                    blocker.put_nowait(None)
+            group1 = ExceptionGroup('futures', exceptions1) if exceptions1 else None
+            group2 = ExceptionGroup('ready', exceptions2) if exceptions2 else None
+            if group2:
+                group2.__cause__ = group1
+                raise group2
+            elif group1:
+                raise group1
+            raise group
         finally:
             executor.shutdown(wait=True)
 
