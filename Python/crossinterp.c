@@ -92,8 +92,13 @@ static void
 sync_module_capture_exc(PyThreadState *tstate, struct sync_module *data)
 {
     assert(_PyErr_Occurred(tstate));
-    data->cached.failed = _PyErr_GetRaisedException(tstate);
-    _PyErr_SetRaisedException(tstate, Py_NewRef(data->cached.failed));
+    PyObject *context = data->cached.failed;
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
+    _PyErr_SetRaisedException(tstate, Py_NewRef(exc));
+    if (context != NULL) {
+        PyException_SetContext(exc, context);
+    }
+    data->cached.failed = exc;
 }
 
 
@@ -667,7 +672,7 @@ _PyPickle_Loads(struct _unpickle_context *ctx, PyObject *pickled)
 
 finally:
     if (exc != NULL) {
-        ctx->main.cached.failed = _PyErr_GetRaisedException(tstate);
+        sync_module_capture_exc(tstate, &ctx->main);
         // We restore the original exception.
         // It might make sense to chain it (__context__).
         _PyErr_SetRaisedException(tstate, exc);
