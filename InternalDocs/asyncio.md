@@ -23,11 +23,11 @@ The current task of the event loop was stored in a dict mapping the event loop t
 
 This implementation had a few drawbacks:
 1. **Performance**: Using a `WeakSet` for storing tasks is inefficient, as it requires maintaining a full set of weak references to tasks along with corresponding weakref callback to cleanup the tasks when they are garbage collected.
-This increases the work done by the garbage collector, and in applications with a large number of tasks, this becomes a bottle neck, with increased memory usage and lower performance. Looking up the current task was slow as it required a dictionary lookup on the `current_tasks` dict.
+This increases the work done by the garbage collector, and in applications with a large number of tasks, this becomes a bottleneck, with increased memory usage and lower performance. Looking up the current task was slow as it required a dictionary lookup on the `current_tasks` dict.
 
 2. **Thread safety**: Before Python 3.14, concurrent iterations over `WeakSet` was not thread safe[^1]. This meant calling APIs like `asyncio.all_tasks()` could lead to inconsistent results or even `RuntimeError` if used in multiple threads[^2].
 
-3. **Poor scaling in free-threading**: Using global `WeakSet` for storing all tasks across all threads lead to contention when adding and removing tasks from the set which is a frequent operation. As such it performed poorly in free-threading and did not scale well with the number of threads. Similarly accessing the current task in multiple threads did not scale due to contention on the global `current_tasks` dictionary.
+3. **Poor scaling in free-threading**: Using global `WeakSet` for storing all tasks across all threads lead to contention when adding and removing tasks from the set which is a frequent operation. As such it performed poorly in free-threading and did not scale well with the number of threads. Similarly, accessing the current task in multiple threads did not scale due to contention on the global `current_tasks` dictionary.
 
 ## Python 3.14 implementation
 
@@ -38,7 +38,7 @@ To address these issues, Python 3.14 implements several changes to improve the p
 - **Per-thread current task**: Python 3.14 stores the current task on the current thread state instead of a global dictionary. This allows for faster access to the current task without the need for a dictionary lookup. Each thread maintains its own current task, which is stored in the `PyThreadState` structure. This was implemented in https://github.com/python/cpython/issues/129898.
 
 Storing the current task and list of all tasks per-thread instead of storing it per-loop was chosen primarily to support external introspection tools such as `python -m asyncio pstree` as looking up arbitrary attributes on the loop object
-is not possible externally. Storing data per-thread also makes it easy to support third party event loop implementations such as `uvloop`, and is more efficient for single threaded asyncio use-case as it avoids the overhead of attribute lookups on the loop object and several other calls on the performance critical path of adding and removing tasks from the per-loop task list.
+is not possible externally. Storing data per-thread also makes it easy to support third party event loop implementations such as `uvloop`, and is more efficient for the single threaded asyncio use-case as it avoids the overhead of attribute lookups on the loop object and several other calls on the performance critical path of adding and removing tasks from the per-loop task list.
 
 
 ## Per-thread double linked list for tasks
