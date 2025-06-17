@@ -578,7 +578,7 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
 
         x = _unroll_digits(v, &i);
         while (--i >= 0) {
-            if (x > SIZE_MAX >> PyLong_SHIFT) {
+            if (x > (ULONG_MAX >> PyLong_SHIFT)) {
                 *overflow = sign;
                 goto exit;
             }
