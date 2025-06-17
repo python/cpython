@@ -341,7 +341,7 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_SUBSCR_INIT_CALL, (container, sub, getitem  -- new_frame)) {
-        new_frame = NULL;
+        new_frame = PyJitRef_NULL;
         ctx->done = true;
     }
 
@@ -666,7 +666,7 @@ dummy_func(void) {
 
     op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame)) {
         (void)fget;
-        new_frame = NULL;
+        new_frame = PyJitRef_NULL;
         ctx->done = true;
     }
 
@@ -733,9 +733,9 @@ dummy_func(void) {
         }
 
         if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
-            new_frame = (JitOptSymbol *)frame_new(ctx, co, 0, args, argcount);
+            new_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, args, argcount));
         } else {
-            new_frame = (JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0);
+            new_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0));
         }
     }
 
@@ -754,11 +754,11 @@ dummy_func(void) {
             break;
         }
 
-        new_frame = (JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0);
+        new_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0));
     }
 
     op(_PY_FRAME_KW, (callable, self_or_null, args[oparg], kwnames -- new_frame)) {
-        new_frame = NULL;
+        new_frame = PyJitRef_NULL;
         ctx->done = true;
     }
 
@@ -770,7 +770,7 @@ dummy_func(void) {
     }
 
     op(_CREATE_INIT_FRAME, (init, self, args[oparg] -- init_frame)) {
-        init_frame = NULL;
+        init_frame = PyJitRef_NULL;
         ctx->done = true;
     }
 
@@ -837,13 +837,13 @@ dummy_func(void) {
     }
 
     op(_FOR_ITER_GEN_FRAME, (unused, unused -- unused, unused, gen_frame)) {
-        gen_frame = NULL;
+        gen_frame = PyJitRef_NULL;
         /* We are about to hit the end of the trace */
         ctx->done = true;
     }
 
     op(_SEND_GEN_FRAME, (unused, unused -- unused, gen_frame)) {
-        gen_frame = NULL;
+        gen_frame = PyJitRef_NULL;
         // We are about to hit the end of the trace:
         ctx->done = true;
     }
@@ -863,7 +863,7 @@ dummy_func(void) {
     op(_PUSH_FRAME, (new_frame -- )) {
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
-        ctx->frame = (_Py_UOpsAbstractFrame *)new_frame;
+        ctx->frame = (_Py_UOpsAbstractFrame *)PyJitRef_Unwrap(new_frame);
         ctx->curr_frame_depth++;
         stack_pointer = ctx->frame->stack_pointer;
         co = get_code(this_instr);

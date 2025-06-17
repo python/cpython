@@ -695,7 +695,7 @@
 
         case _BINARY_OP_SUBSCR_INIT_CALL: {
             JitOptRef new_frame;
-            new_frame = NULL;
+            new_frame = PyJitRef_NULL;
             ctx->done = true;
             stack_pointer[-3] = new_frame;
             stack_pointer += -2;
@@ -809,7 +809,7 @@
 
         case _SEND_GEN_FRAME: {
             JitOptRef gen_frame;
-            gen_frame = NULL;
+            gen_frame = PyJitRef_NULL;
             ctx->done = true;
             stack_pointer[-1] = gen_frame;
             break;
@@ -1305,7 +1305,7 @@
             JitOptRef new_frame;
             PyObject *fget = (PyObject *)this_instr->operand0;
             (void)fget;
-            new_frame = NULL;
+            new_frame = PyJitRef_NULL;
             ctx->done = true;
             stack_pointer[-1] = new_frame;
             break;
@@ -1665,7 +1665,7 @@
 
         case _FOR_ITER_GEN_FRAME: {
             JitOptRef gen_frame;
-            gen_frame = NULL;
+            gen_frame = PyJitRef_NULL;
             ctx->done = true;
             stack_pointer[0] = gen_frame;
             stack_pointer += 1;
@@ -1844,7 +1844,7 @@
                 ctx->done = true;
                 break;
             }
-            new_frame = (JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0);
+            new_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0));
             stack_pointer[-2 - oparg] = new_frame;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1977,9 +1977,9 @@
                 argcount++;
             }
             if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
-                new_frame = (JitOptSymbol *)frame_new(ctx, co, 0, args, argcount);
+                new_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, args, argcount));
             } else {
-                new_frame = (JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0);
+                new_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0));
             }
             stack_pointer[-2 - oparg] = new_frame;
             stack_pointer += -1 - oparg;
@@ -1993,7 +1993,7 @@
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             ctx->frame->stack_pointer = stack_pointer;
-            ctx->frame = (_Py_UOpsAbstractFrame *)new_frame;
+            ctx->frame = (_Py_UOpsAbstractFrame *)PyJitRef_Unwrap(new_frame);
             ctx->curr_frame_depth++;
             stack_pointer = ctx->frame->stack_pointer;
             co = get_code(this_instr);
@@ -2149,7 +2149,7 @@
 
         case _CREATE_INIT_FRAME: {
             JitOptRef init_frame;
-            init_frame = NULL;
+            init_frame = PyJitRef_NULL;
             ctx->done = true;
             stack_pointer[-2 - oparg] = init_frame;
             stack_pointer += -1 - oparg;
@@ -2316,7 +2316,7 @@
 
         case _PY_FRAME_KW: {
             JitOptRef new_frame;
-            new_frame = NULL;
+            new_frame = PyJitRef_NULL;
             ctx->done = true;
             stack_pointer[-3 - oparg] = new_frame;
             stack_pointer += -2 - oparg;

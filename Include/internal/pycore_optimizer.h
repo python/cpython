@@ -242,9 +242,6 @@ bool _Py_uop_symbol_is_immortal(JitOptSymbol *sym);
 static inline JitOptRef
 PyJitRef_Wrap(JitOptSymbol *sym)
 {
-    if (sym == NULL || _Py_uop_symbol_is_immortal(sym)) {
-        return (JitOptRef){.bits=(uintptr_t)sym | REF_IS_BORROWED};
-    }
     return (JitOptRef){.bits=(uintptr_t)sym};
 }
 
