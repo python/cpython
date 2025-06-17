@@ -290,8 +290,8 @@ General Options
 
 .. option:: --disable-gil
 
-   Enables **experimental** support for running Python without the
-   :term:`global interpreter lock` (GIL): free threading build.
+   Enables support for running Python without the :term:`global interpreter
+   lock` (GIL): free threading build.
 
    Defines the ``Py_GIL_DISABLED`` macro and adds ``"t"`` to
    :data:`sys.abiflags`.
@@ -444,6 +444,14 @@ Options for third-party dependencies
 
    C compiler and linker flags for ``libuuid``, used by :mod:`uuid` module,
    overriding ``pkg-config``.
+
+.. option:: LIBZSTD_CFLAGS
+.. option:: LIBZSTD_LIBS
+
+   C compiler and linker flags for ``libzstd``, used by :mod:`compression.zstd` module,
+   overriding ``pkg-config``.
+
+   .. versionadded:: 3.14
 
 .. option:: PANEL_CFLAGS
 .. option:: PANEL_LIBS

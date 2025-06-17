@@ -1414,6 +1414,113 @@ class TestInterpreterCall(TestBase):
             with self.assertRaises(interpreters.NotShareableError):
                 interp.call(func, op, 'eggs!')
 
+    def test_callable_requires_frame(self):
+        # There are various functions that require a current frame.
+        interp = interpreters.create()
+        for call, expected in [
+            ((eval, '[1, 2, 3]'),
+                [1, 2, 3]),
+            ((eval, 'sum([1, 2, 3])'),
+                6),
+            ((exec, '...'),
+                None),
+        ]:
+            with self.subTest(str(call)):
+                res = interp.call(*call)
+                self.assertEqual(res, expected)
+
+        result_not_pickleable = [
+            globals,
+            locals,
+            vars,
+        ]
+        for func, expectedtype in {
+            globals: dict,
+            locals: dict,
+            vars: dict,
+            dir: list,
+        }.items():
+            with self.subTest(str(func)):
+                if func in result_not_pickleable:
+                    with self.assertRaises(interpreters.NotShareableError):
+                        interp.call(func)
+                else:
+                    res = interp.call(func)
+                    self.assertIsInstance(res, expectedtype)
+                    self.assertIn('__builtins__', res)
+
+    def test_globals_from_builtins(self):
+        # The builtins  exec(), eval(), globals(), locals(), vars(),
+        # and dir() each runs relative to the target interpreter's
+        # __main__ module, when called directly.  However,
+        # globals(), locals(), and vars() don't work when called
+        # directly so we don't check them.
+        from _frozen_importlib import BuiltinImporter
+        interp = interpreters.create()
+
+        names = interp.call(dir)
+        self.assertEqual(names, [
+            '__builtins__',
+            '__doc__',
+            '__loader__',
+            '__name__',
+            '__package__',
+            '__spec__',
+        ])
+
+        values = {name: interp.call(eval, name)
+                  for name in names if name != '__builtins__'}
+        self.assertEqual(values, {
+            '__name__': '__main__',
+            '__doc__': None,
+            '__spec__': None,  # It wasn't imported, so no module spec?
+            '__package__': None,
+            '__loader__': BuiltinImporter,
+        })
+        with self.assertRaises(ExecutionFailed):
+            interp.call(eval, 'spam'),
+
+        interp.call(exec, f'assert dir() == {names}')
+
+        # Update the interpreter's __main__.
+        interp.prepare_main(spam=42)
+        expected = names + ['spam']
+
+        names = interp.call(dir)
+        self.assertEqual(names, expected)
+
+        value = interp.call(eval, 'spam')
+        self.assertEqual(value, 42)
+
+        interp.call(exec, f'assert dir() == {expected}, dir()')
+
+    def test_globals_from_stateless_func(self):
+        # A stateless func, which doesn't depend on any globals,
+        # doesn't go through pickle, so it runs in __main__.
+        def set_global(name, value):
+            globals()[name] = value
+
+        def get_global(name):
+            return globals().get(name)
+
+        interp = interpreters.create()
+
+        modname = interp.call(get_global, '__name__')
+        self.assertEqual(modname, '__main__')
+
+        res = interp.call(get_global, 'spam')
+        self.assertIsNone(res)
+
+        interp.exec('spam = True')
+        res = interp.call(get_global, 'spam')
+        self.assertTrue(res)
+
+        interp.call(set_global, 'spam', 42)
+        res = interp.call(get_global, 'spam')
+        self.assertEqual(res, 42)
+
+        interp.exec('assert spam == 42, repr(spam)')
+
     def test_call_in_thread(self):
         interp = interpreters.create()
 
