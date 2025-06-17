@@ -597,8 +597,9 @@ jobs:
         free-threading:
         - false
         - true
-    uses: ./.github/workflows/reusable-tsan.yml
+    uses: ./.github/workflows/reusable-san.yml
     with:
+      sanitizer: TSan
       config_hash: ${{ needs.build-context.outputs.config-hash }}
       free-threading: ${{ matrix.free-threading }}
 
@@ -606,8 +607,9 @@ jobs:
     name: Undefined behavior sanitizer
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
-    uses: ./.github/workflows/reusable-ubsan.yml
+    uses: ./.github/workflows/reusable-san.yml
     with:
+      sanitizer: UBSan
       config_hash: ${{ needs.build-context.outputs.config-hash }}
 
   cross-build-linux:
