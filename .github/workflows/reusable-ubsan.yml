@@ -58,14 +58,14 @@ jobs:
       run: make pythoninfo
     - name: Tests
       run: ./python -m test -j4
-    - name: Display TSAN logs
+    - name: Display UBSAN logs
       if: always()
       run: find "${GITHUB_WORKSPACE}" -name 'ubsan_log.*' | xargs head -n 1000
-    - name: Archive TSAN logs
+    - name: Archive UBSAN logs
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: >-
-          tsan-logs
-        path: tsan_log.*
+          ubsan-logs
+        path: ubsan_log.*
         if-no-files-found: ignore
