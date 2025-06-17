@@ -59,7 +59,7 @@ class _sha3.shake_256 "SHA3object *" "&SHAKE256type"
 #include "_hacl/Hacl_Hash_SHA3.h"
 
 typedef struct {
-    PyObject_HASHLIB_HEAD
+    HASHLIB_OBJECT_HEAD
     Hacl_Hash_SHA3_state_t *hash_state;
 } SHA3object;
 

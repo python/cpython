@@ -3,9 +3,9 @@
 #include "pycore_lock.h"        // PyMutex
 
 /*
- * Given a PyObject* obj, fill in the Py_buffer* viewp with the result
- * of PyObject_GetBuffer.  Sets an exception and issues the erraction
- * on any errors, e.g. 'return NULL' or 'goto error'.
+ * Given a PyObject* 'obj', fill in the Py_buffer* 'viewp' with the result
+ * of PyObject_GetBuffer.  Sets an exception and issues the 'erraction'
+ * on any errors, e.g., 'return NULL' or 'goto error'.
  */
 #define GET_BUFFER_VIEW_OR_ERROR(obj, viewp, erraction) do { \
         if (PyUnicode_Check((obj))) { \
@@ -34,36 +34,46 @@
 
 /*
  * Helper code to synchronize access to the hash object when the GIL is
- * released around a CPU consuming hashlib operation. All code paths that
- * access a mutable part of obj must be enclosed in an ENTER_HASHLIB /
- * LEAVE_HASHLIB block or explicitly acquire and release the lock inside
- * a PY_BEGIN / END_ALLOW_THREADS block if they wish to release the GIL for
- * an operation.
+ * released around a CPU consuming hashlib operation.
  *
- * These only drop the GIL if the lock acquisition itself is likely to
- * block. Thus the non-blocking acquire gating the GIL release for a
- * blocking lock acquisition. The intent of these macros is to surround
- * the assumed always "fast" operations that you aren't releasing the
- * GIL around.  Otherwise use code similar to what you see in hash
- * function update() methods.
+ * Code accessing a mutable part of the hash object must be enclosed in
+ * an HASHLIB_{ACQUIRE,RELEASE}_LOCK block or explicitly acquire and release
+ * the mutex inside a Py_BEGIN_ALLOW_THREADS -- Py_END_ALLOW_THREADS block if
+ * they wish to release the GIL for an operation.
  */
 
-#include "pythread.h"
-
-#define PyObject_HASHLIB_HEAD                                           \
+#define HASHLIB_OBJECT_HEAD                                             \
     PyObject_HEAD                                                       \
     /* Guard against race conditions during incremental update(). */    \
     PyMutex mutex;
-
-#define HASHLIB_ACQUIRE_LOCK(OBJ)   PyMutex_Lock(&(OBJ)->mutex)
-#define HASHLIB_RELEASE_LOCK(OBJ)   PyMutex_Unlock(&(OBJ)->mutex)
 
 #define HASHLIB_INIT_MUTEX(OBJ)         \
     do {                                \
         (OBJ)->mutex = (PyMutex){0};    \
     } while (0)
 
+#define HASHLIB_ACQUIRE_LOCK(OBJ)   PyMutex_Lock(&(OBJ)->mutex)
+#define HASHLIB_RELEASE_LOCK(OBJ)   PyMutex_Unlock(&(OBJ)->mutex)
+
+/*
+ * Message length above which the GIL is to be released
+ * when performing hashing operations.
+ */
 #define HASHLIB_GIL_MINSIZE         2048
+
+// Macros for executing code while conditionally holding the GIL.
+//
+// These only drop the GIL if the lock acquisition itself is likely to
+// block. Thus the non-blocking acquire gating the GIL release for a
+// blocking lock acquisition. The intent of these macros is to surround
+// the assumed always "fast" operations that you aren't releasing the
+// GIL around.
+
+/*
+ * Execute a suite of C statements 'STATEMENTS'.
+ *
+ * The GIL is held if 'SIZE' is below the HASHLIB_GIL_MINSIZE threshold.
+ */
 #define HASHLIB_EXTERNAL_INSTRUCTIONS_UNLOCKED(SIZE, STATEMENTS)    \
     do {                                                            \
         if ((SIZE) > HASHLIB_GIL_MINSIZE) {                         \
@@ -76,6 +86,11 @@
         }                                                           \
     } while (0)
 
+/*
+ * Lock 'OBJ' and execute a suite of C statements 'STATEMENTS'.
+ *
+ * The GIL is held if 'SIZE' is below the HASHLIB_GIL_MINSIZE threshold.
+ */
 #define HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(OBJ, SIZE, STATEMENTS) \
     do {                                                            \
         if ((SIZE) > HASHLIB_GIL_MINSIZE) {                         \

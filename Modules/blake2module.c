@@ -352,7 +352,7 @@ type_to_impl(PyTypeObject *type)
 }
 
 typedef struct {
-    PyObject_HASHLIB_HEAD
+    HASHLIB_OBJECT_HEAD
     union {
         Hacl_Hash_Blake2s_state_t *blake2s_state;
         Hacl_Hash_Blake2b_state_t *blake2b_state;

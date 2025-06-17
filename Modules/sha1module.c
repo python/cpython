@@ -38,7 +38,7 @@ class SHA1Type "SHA1object *" "&PyType_Type"
 #include "_hacl/Hacl_Hash_SHA1.h"
 
 typedef struct {
-    PyObject_HASHLIB_HEAD
+    HASHLIB_OBJECT_HEAD
     Hacl_Hash_SHA1_state_t *hash_state;
 } SHA1object;
 

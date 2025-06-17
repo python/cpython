@@ -278,14 +278,14 @@ get_hashlib_state(PyObject *module)
 }
 
 typedef struct {
-    PyObject_HASHLIB_HEAD
+    HASHLIB_OBJECT_HEAD
     EVP_MD_CTX *ctx;    /* OpenSSL message digest context */
 } HASHobject;
 
 #define HASHobject_CAST(op) ((HASHobject *)(op))
 
 typedef struct {
-    PyObject_HASHLIB_HEAD
+    HASHLIB_OBJECT_HEAD
     HMAC_CTX *ctx;            /* OpenSSL hmac context */
 } HMACobject;
 

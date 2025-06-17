@@ -50,13 +50,13 @@ class SHA512Type "SHA512object *" "&PyType_Type"
 // TODO: Get rid of int digestsize in favor of Hacl state info?
 
 typedef struct {
-    PyObject_HASHLIB_HEAD
+    HASHLIB_OBJECT_HEAD
     int digestsize;
     Hacl_Hash_SHA2_state_t_256 *state;
 } SHA256object;
 
 typedef struct {
-    PyObject_HASHLIB_HEAD
+    HASHLIB_OBJECT_HEAD
     int digestsize;
     Hacl_Hash_SHA2_state_t_512 *state;
 } SHA512object;
