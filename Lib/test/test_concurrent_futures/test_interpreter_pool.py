@@ -358,6 +358,7 @@ class InterpreterPoolExecutorTest(
         blocker = queues.create()
 
         def run(ready, blocker):
+            raise Exception((ready.id, blocker.id))
             ready.put(None)
             blocker.get()  # blocking
 
@@ -368,12 +369,24 @@ class InterpreterPoolExecutorTest(
             for i in range(numtasks):
                 fut = executor.submit(run, ready, blocker)
                 futures.append(fut)
-            # Wait for them all to be ready.
-            for i in range(numtasks):
-                ready.get()  # blocking
-            # Unblock the workers.
-            for i in range(numtasks):
-                blocker.put_nowait(None)
+#            assert len(executor._threads) == numtasks, len(executor._threads)
+            ctx = None
+            for i, fut in enumerate(futures, 1):
+                try:
+                    fut.result(timeout=10)
+                except Exception as exc:
+                    exc.__cause__ = ctx
+                    ctx = exc
+                    if i == numtasks:
+                        raise Exception((ready.id, blocker.id))
+#            try:
+#                # Wait for them all to be ready.
+#                for i in range(numtasks):
+#                    ready.get()  # blocking
+#            finally:
+#                # Unblock the workers.
+#                for i in range(numtasks):
+#                    blocker.put_nowait(None)
         finally:
             executor.shutdown(wait=True)
 
