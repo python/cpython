@@ -5,8 +5,9 @@ import unittest
 import doctest
 
 from test.support import import_helper
-from unittest import TestCase, skipUnless
+from unittest import TestCase, skipUnless, skipIf
 from operator import itemgetter
+
 
 py_heapq = import_helper.import_fresh_module('heapq', blocked=['_heapq'])
 c_heapq = import_helper.import_fresh_module('heapq', fresh=['_heapq'])
@@ -401,6 +402,36 @@ class TestHeap:
         target = sorted(data, reverse=True)
         self.assertEqual(hsort(data, LT), target)
         self.assertRaises(TypeError, data, LE)
+
+    @skipIf(py_heapq, 'only used to test c_heapq')
+    def test_lock_free_list_read(self):
+        n = 1_000_000
+        l = []
+        def writer():
+            for i in range(n):
+                self.module.heappush(l, 1)
+                self.module.heappop(l)
+
+        def reader():
+            for i in range(n):
+                try:
+                    l[0]
+                except IndexError:
+                    pass
+
+        import threading
+        threads = []
+        for _ in range(10):
+            t1 = threading.Thread(target=writer)
+            t2 = threading.Thread(target=reader)
+            threads.append(t1)
+            threads.append(t2)
+            t1.start()
+            t2.start()
+
+        for t in threads:
+            t.join()
+
 
 
 class TestHeapPython(TestHeap, TestCase):
