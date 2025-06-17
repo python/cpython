@@ -123,7 +123,7 @@ _Py_qsbr_advance(struct _qsbr_shared *shared)
     // NOTE: with 64-bit sequence numbers, we don't have to worry too much
     // about the wr_seq getting too far ahead of rd_seq, but if we ever use
     // 32-bit sequence numbers, we'll need to be more careful.
-    return _Py_atomic_add_uint64(&shared->wr_seq, QSBR_INCR);
+    return _Py_atomic_add_uint64(&shared->wr_seq, QSBR_INCR) + QSBR_INCR;
 }
 
 uint64_t
