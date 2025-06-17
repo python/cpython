@@ -4,6 +4,7 @@ import io
 import os
 import sys
 import time
+from threading import Thread
 import unittest
 from concurrent.futures.interpreter import BrokenInterpreterPool
 from concurrent import interpreters
@@ -359,45 +360,85 @@ class InterpreterPoolExecutorTest(
 
         def run(taskid, ready, blocker):
             ready.put_nowait(taskid)
-            raise Exception(taskid)
             blocker.get(timeout=10)  # blocking
+#            blocker.get()  # blocking
 
         numtasks = 10
         futures = []
         executor = self.executor_type()
         try:
+            # Request the jobs.
             for i in range(numtasks):
                 fut = executor.submit(run, i, ready, blocker)
                 futures.append(fut)
 #            assert len(executor._threads) == numtasks, len(executor._threads)
-            exceptions1 = []
-            for i, fut in enumerate(futures, 1):
-                try:
-                    fut.result(timeout=10)
-                except Exception as exc:
-                    exceptions1.append(exc)
-            exceptions2 = []
+
             try:
                 # Wait for them all to be ready.
-                for i in range(numtasks):
+                pending = numtasks
+                def wait_for_ready():
+                    nonlocal pending
                     try:
                         ready.get(timeout=10)  # blocking
-                    except interpreters.QueueEmpty as exc:
-                        exceptions2.append(exc)
+                    except interpreters.QueueEmpty:
+                        pass
+                    else:
+                        pending -= 1
+                threads = [Thread(target=wait_for_ready)
+                           for _ in range(pending)]
+                for t in threads:
+                    t.start()
+                for t in threads:
+                    t.join()
+                if pending:
+                    if pending < numtasks:
+                        # At least one was ready, so wait longer.
+                        for _ in range(pending):
+                            ready.get()  # blocking
+                    else:
+                        # Something is probably wrong.  Bail out.
+                        group = []
+                        for fut in futures:
+                            try:
+                                fut.result(timeout=0)
+                            except TimeoutError:
+                                # Still running.
+                                try:
+                                    ready.get_nowait()
+                                except interpreters.QueueEmpty as exc:
+                                    # It's hung.
+                                    group.append(exc)
+                                else:
+                                    pending -= 1
+                            except Exception as exc:
+                                group.append(exc)
+                        if group:
+                            raise ExceptionGroup('futures', group)
+                        assert not pending, pending
+#                for _ in range(numtasks):
+#                    ready.get()  # blocking
             finally:
                 # Unblock the workers.
                 for i in range(numtasks):
                     blocker.put_nowait(None)
-            group1 = ExceptionGroup('futures', exceptions1) if exceptions1 else None
-            group2 = ExceptionGroup('ready', exceptions2) if exceptions2 else None
-            if group2:
-                group2.__cause__ = group1
-                raise group2
-            elif group1:
-                raise group1
-            raise group
+
+            # Make sure they finished.
+            group = []
+            def wait_for_done(fut):
+                try:
+                    fut.result(timeout=10)
+                except Exception as exc:
+                    group.append(exc)
+            threads = [Thread(target=wait_for_done, args=(fut,))
+                       for fut in futures]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+            if group:
+                raise ExceptionGroup('futures', group)
         finally:
-            executor.shutdown(wait=True)
+            executor.shutdown(wait=False)
 
     @support.requires_gil_enabled("gh-117344: test is flaky without the GIL")
     def test_idle_thread_reuse(self):
