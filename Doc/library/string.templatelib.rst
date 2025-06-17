@@ -19,9 +19,9 @@
 Template
 --------
 
-The :class:`Template` class describes the contents of a template string.
+The :class:`!Template` class describes the contents of a template string.
 
-The most common way to create a new :class:`Template` instance is to use the t-string literal syntax. This syntax is identical to that of :ref:`f-strings`, except that the string is prefixed with a ``t`` instead of an ``f``. For example, the following code creates a :class:`Template` that can be used to format strings:
+The most common way to create a new :class:`!Template` instance is to use the t-string literal syntax. This syntax is identical to that of :ref:`f-strings`, except that the string is prefixed with a ``t`` instead of an ``f``. For example, the following code creates a :class:`Template` that can be used to format strings:
 
    >>> name = "World"
    >>> greeting = t"Hello {name}!"
@@ -30,7 +30,7 @@ The most common way to create a new :class:`Template` instance is to use the t-s
    >>> print(list(greeting))
    ['Hello ', Interpolation('World', 'name', None, ''), '!']
 
-It is also possible to create a :class:`Template` directly, using its constructor. This takes an arbitrary collection of strings and :class:`Interpolation` instances:
+It is also possible to create a :class:`!Template` directly, using its constructor. This takes an arbitrary collection of strings and :class:`Interpolation` instances:
 
    >>> from string.templatelib import Interpolation, Template
    >>> name = "World"
@@ -40,7 +40,7 @@ It is also possible to create a :class:`Template` directly, using its constructo
 
 .. class:: Template(*args)
 
-   Create a new :class:`Template` object.
+   Create a new :class:`!Template` object.
 
    :param args: A mix of strings and :class:`Interpolation` instances in any order.
    :type args: str | Interpolation
@@ -112,7 +112,7 @@ It is also possible to create a :class:`Template` directly, using its constructo
 
 .. class:: Interpolation(*args)
 
-   Create a new :class:`Interpolation` object.
+   Create a new :class:`!Interpolation` object.
 
    :param value: The evaluated, in-scope result of the interpolation.
    :type value: object
@@ -126,7 +126,7 @@ It is also possible to create a :class:`Template` directly, using its constructo
    :param format_spec: An optional, arbitrary string used as the :ref:`format specification <formatspec>` to present the value.
    :type expression: str = ""
 
-   The :class:`Interpolation` type represents an expression inside a template string. It is shallow immutable -- its attributes cannot be reassigned.
+   The :class:`!Interpolation` type represents an expression inside a template string. It is shallow immutable -- its attributes cannot be reassigned.
 
    >>> name = "World"
    >>> template = t"Hello {name}"

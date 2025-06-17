@@ -926,15 +926,16 @@ that is prefixed with ``'t'`` or ``'T'``.  These strings follow the same
 syntax and evaluation rules as `formatted string literals <f-strings>`_, with
 the following differences:
 
-- Rather than evaluating to a `str` object, t-strings evaluate to a
-  `Template` object from the :mod:`string.templatelib` module.
+- Rather than evaluating to a ``str`` object, t-strings evaluate to a
+  :class:`~string.templatelib.Template` object from the
+  :mod:`string.templatelib` module.
 
 - Evaluated expressions are *not* formatted using the
   :func:`format` protocol; :meth:`~object.__format__` is *not* invoked. Instead,
-  the expressions are evaluated and a new `Interpolation` object (also from the
-  :mod:`string.templatelib` module) is created, which contains the evaluated
-  value of the expression. That `Interpolation` object is found in the containing
-  `Template`.
+  the expressions are evaluated and a new :class:`~string.templatelib.Interpolation``
+  object (also from the :mod:`string.templatelib` module) is created, which
+  contains the evaluated value of the expression. That ``Interpolation`` object
+  is found in the containing ``Template``.
 
 
 
