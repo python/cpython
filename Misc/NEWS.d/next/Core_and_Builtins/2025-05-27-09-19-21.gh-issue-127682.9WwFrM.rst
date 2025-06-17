@@ -1,2 +1,0 @@
-No longer call ``__iter__`` twice in list comprehensions. This brings the
-behavior of list comprehensions in line with other forms of iteration

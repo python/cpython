@@ -1,4 +1,0 @@
-:mod:`uuid`: when the MAC address cannot be determined, the 48-bit node
-ID is now generated with a cryptographically-secure pseudo-random number
-generator (CSPRNG) as per :rfc:`RFC 9562, §6.10.3 <9562#section-6.10-3>`.
-This affects :func:`~uuid.uuid1` and :func:`~uuid.uuid6`.

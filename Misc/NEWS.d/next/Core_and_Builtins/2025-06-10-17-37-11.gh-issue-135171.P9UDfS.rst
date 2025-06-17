@@ -1,2 +1,0 @@
-Reverts the behavior of async generator expressions when created with object
-w/o __aiter__ method to the pre-3.13 behavior of raising a TypeError.

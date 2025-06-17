@@ -1,1 +1,0 @@
-Do not normalize :mod:`locale` name 'C.UTF-8' to 'en_US.UTF-8'.
