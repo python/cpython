@@ -793,7 +793,7 @@ PyModule_GetSize(PyObject *m, Py_ssize_t *size_p)
 {
     *size_p = -1;
     if (!PyModule_Check(m)) {
-        PyErr_BadInternalCall();
+        PyErr_Format(PyExc_TypeError, "expected module, got %T", m);
         return -1;
     }
     PyModuleObject *mod = (PyModuleObject *)m;
@@ -806,7 +806,7 @@ PyModule_GetToken(PyObject *m, void **token_p)
 {
     *token_p = NULL;
     if (!PyModule_Check(m)) {
-        PyErr_BadInternalCall();
+        PyErr_Format(PyExc_TypeError, "expected module, got %T", m);
         return -1;
     }
     PyModuleObject *mod = (PyModuleObject *)m;

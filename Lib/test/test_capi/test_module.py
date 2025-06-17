@@ -18,10 +18,17 @@ DEF_SLOTS = (
 # The C functions used by this module are in:
 #   Modules/_testcapi/module.c
 
+def def_and_token(mod):
+    return (
+        _testcapi.pymodule_get_def(mod),
+        _testcapi.pymodule_get_token(mod),
+    )
+
 class TestModFromSlotsAndSpec(unittest.TestCase):
     def test_empty(self):
         mod = _testcapi.module_from_slots_empty(FakeSpec())
         self.assertIsInstance(mod, types.ModuleType)
+        self.assertEqual(def_and_token(mod), (0, 0))
         self.assertEqual(mod.__name__, 'testmod')
 
     def test_null_slots(self):
@@ -41,18 +48,21 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
         # We still test that it's accepted.
         mod = _testcapi.module_from_slots_name(FakeSpec())
         self.assertIsInstance(mod, types.ModuleType)
+        self.assertEqual(def_and_token(mod), (0, 0))
         self.assertEqual(mod.__name__, 'testmod')
         self.assertEqual(mod.__doc__, None)
 
     def test_doc(self):
         mod = _testcapi.module_from_slots_doc(FakeSpec())
         self.assertIsInstance(mod, types.ModuleType)
+        self.assertEqual(def_and_token(mod), (0, 0))
         self.assertEqual(mod.__name__, 'testmod')
         self.assertEqual(mod.__doc__, 'the docstring')
 
     def test_size(self):
         mod = _testcapi.module_from_slots_size(FakeSpec())
         self.assertIsInstance(mod, types.ModuleType)
+        self.assertEqual(def_and_token(mod), (0, 0))
         self.assertEqual(mod.__name__, 'testmod')
         self.assertEqual(mod.__doc__, None)
         self.assertEqual(mod.size, 123)
@@ -60,6 +70,7 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
     def test_methods(self):
         mod = _testcapi.module_from_slots_methods(FakeSpec())
         self.assertIsInstance(mod, types.ModuleType)
+        self.assertEqual(def_and_token(mod), (0, 0))
         self.assertEqual(mod.__name__, 'testmod')
         self.assertEqual(mod.__doc__, None)
         self.assertEqual(mod.a_method(456), (mod, 456))
@@ -67,18 +78,21 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
     def test_gc(self):
         mod = _testcapi.module_from_slots_gc(FakeSpec())
         self.assertIsInstance(mod, types.ModuleType)
+        self.assertEqual(def_and_token(mod), (0, 0))
         self.assertEqual(mod.__name__, 'testmod')
         self.assertEqual(mod.__doc__, None)
 
     def test_token(self):
         mod = _testcapi.module_from_slots_token(FakeSpec())
         self.assertIsInstance(mod, types.ModuleType)
+        self.assertEqual(def_and_token(mod), (0, _testcapi.module_test_token))
         self.assertEqual(mod.__name__, 'testmod')
         self.assertEqual(mod.__doc__, None)
 
     def test_exec(self):
         mod = _testcapi.module_from_slots_exec(FakeSpec())
         self.assertIsInstance(mod, types.ModuleType)
+        self.assertEqual(def_and_token(mod), (0, 0))
         self.assertEqual(mod.__name__, 'testmod')
         self.assertEqual(mod.__doc__, None)
         self.assertEqual(mod.a_number, 456)
@@ -89,6 +103,10 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
         mod = _testcapi.module_from_slots_create(spec)
         self.assertIsInstance(mod, str)
         self.assertEqual(mod, "not a module object")
+        with self.assertRaises(TypeError):
+            _testcapi.pymodule_get_def(mod),
+        with self.assertRaises(TypeError):
+            _testcapi.pymodule_get_token(mod)
 
     def test_def_slot(self):
         """Slots that replace PyModuleDef fields can't be used with PyModuleDef
@@ -134,3 +152,12 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
         _testcapi.pymodule_exec(mod)
         self.assertEqual(mod.a_number, 456)
         self.assertEqual(mod.another_number, -789)
+        def_ptr, token = def_and_token(mod)
+        self.assertEqual(def_ptr, token)
+
+    def test_def_token(self):
+        """In PyModuleDef-defined modules, the def is the token"""
+        mod = _testcapi.module_from_def_multiple_exec(FakeSpec())
+        def_ptr, token = def_and_token(mod)
+        self.assertEqual(def_ptr, token)
+        self.assertGreater(def_ptr, 0)

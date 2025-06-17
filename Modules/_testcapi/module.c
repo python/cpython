@@ -306,6 +306,26 @@ pymodule_exec(PyObject *self, PyObject *module)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+pymodule_get_token(PyObject *self, PyObject *module)
+{
+    void *token;
+    if (PyModule_GetToken(module, &token) < 0) {
+        return NULL;
+    }
+    return PyLong_FromVoidPtr(token);
+}
+
+static PyObject *
+pymodule_get_def(PyObject *self, PyObject *module)
+{
+    PyModuleDef *def = PyModule_GetDef(module);
+    if (!def && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromVoidPtr(def);
+}
+
 static PyMethodDef test_methods[] = {
     {"module_from_slots_empty", module_from_slots_empty, METH_O},
     {"module_from_slots_null", module_from_slots_null, METH_O},
@@ -321,6 +341,8 @@ static PyMethodDef test_methods[] = {
     {"module_from_slots_null_slot", module_from_slots_null_slot, METH_O},
     {"module_from_def_multiple_exec", module_from_def_multiple_exec, METH_O},
     {"module_from_def_slot", module_from_def_slot, METH_O},
+    {"pymodule_get_token", pymodule_get_token, METH_O},
+    {"pymodule_get_def", pymodule_get_def, METH_O},
     {"pymodule_exec", pymodule_exec, METH_O},
     {NULL},
 };
@@ -342,5 +364,10 @@ _PyTestCapi_Init_Module(PyObject *m)
     ADD_INT_MACRO(Py_mod_state_free);
     ADD_INT_MACRO(Py_mod_token);
 #undef ADD_INT_MACRO
+    if (PyModule_Add(m, "module_test_token",
+                     PyLong_FromVoidPtr(&test_token)) < 0)
+    {
+        return -1;
+    }
     return PyModule_AddFunctions(m, test_methods);
 }

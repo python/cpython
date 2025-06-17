@@ -1085,6 +1085,16 @@ PyModExport__test_from_modexport_create_nonmodule(PyObject *spec)
     return slots;
 }
 
+static PyModuleDef_Slot modexport_empty_slots[] = {
+    {0},
+};
+
+PyMODEXPORT_FUNC
+PyModExport__test_from_modexport_empty_slots(PyObject *spec)
+{
+    return modexport_empty_slots;
+}
+
 static int
 modexport_smoke_exec(PyObject *mod)
 {
@@ -1111,6 +1121,24 @@ modexport_smoke_get_state_int(PyObject *mod, PyObject *arg)
     return PyLong_FromLong(*state);
 }
 
+static char modexport_smoke_test_token;
+
+static PyObject *
+modexport_smoke_get_test_token(PyObject *mod, PyObject *arg)
+{
+    return PyLong_FromVoidPtr(&modexport_smoke_test_token);
+}
+
+static PyObject *
+modexport_get_empty_slots(PyObject *mod, PyObject *arg)
+{
+    /* Get the address of modexport_empty_slots.
+     * This method would be in the `_test_from_modexport_empty_slots` module,
+     * if it had a methods slot.
+     */
+    return PyLong_FromVoidPtr(&modexport_empty_slots);
+}
+
 static void
 modexport_smoke_free(PyObject *mod)
 {
@@ -1127,6 +1155,8 @@ PyModExport__test_from_modexport_smoke(PyObject *spec)
 {
     static PyMethodDef methods[] = {
         {"get_state_int", modexport_smoke_get_state_int, METH_NOARGS},
+        {"get_test_token", modexport_smoke_get_test_token, METH_NOARGS},
+        {"get_modexport_empty_slots", modexport_get_empty_slots, METH_NOARGS},
         {0},
     };
     static PyModuleDef_Slot slots[] = {
@@ -1136,6 +1166,7 @@ PyModExport__test_from_modexport_smoke(PyObject *spec)
         {Py_mod_state_size, (void*)sizeof(int)},
         {Py_mod_methods, methods},
         {Py_mod_state_free, modexport_smoke_free},
+        {Py_mod_token, (void*)&modexport_smoke_test_token},
         {0},
     };
     return slots;

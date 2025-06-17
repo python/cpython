@@ -2518,7 +2518,7 @@ class SubinterpImportTests(unittest.TestCase):
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_from_modexport_smoke(self):
         # General positive test for sundry features
-        # (PyModule_FromSlotsAndSpec tests exercise test these more carefully)
+        # (PyModule_FromSlotsAndSpec tests exercise these more carefully)
         modname = '_test_from_modexport_smoke'
         filename = _testmultiphase.__file__
         module = import_extension_from_file(modname, filename,
@@ -2526,6 +2526,37 @@ class SubinterpImportTests(unittest.TestCase):
         self.assertEqual(module.__doc__, "the expected docstring")
         self.assertEqual(module.number, 147)
         self.assertEqual(module.get_state_int(), 258)
+        self.assertGreater(module.get_test_token(), 0)
+
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    def test_from_modexport_smoke_token(self):
+        _testcapi = import_module("_testcapi")
+
+        modname = '_test_from_modexport_smoke'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(modname, filename,
+                                            put_in_sys_modules=False)
+        self.assertEqual(_testcapi.pymodule_get_token(module),
+                         module.get_test_token())
+
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    def test_from_modexport_empty_slots(self):
+        # Module to test that:
+        # - no slots are mandatory for PyModExport
+        # - the slots array is used as the default token
+        modname = '_test_from_modexport_empty_slots'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(
+            modname, filename, put_in_sys_modules=False)
+
+        self.assertEqual(module.__name__, modname)
+        self.assertEqual(module.__doc__, None)
+
+        _testcapi = import_module("_testcapi")
+        smoke_mod = import_extension_from_file(
+            '_test_from_modexport_smoke', filename, put_in_sys_modules=False)
+        self.assertEqual(_testcapi.pymodule_get_token(module),
+                         smoke_mod.get_modexport_empty_slots())
 
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     def test_python_compat(self):
