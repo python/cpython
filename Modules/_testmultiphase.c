@@ -1107,11 +1107,11 @@ modexport_smoke_exec(PyObject *mod)
         return -1;
     }
     *state = 258;
-    Py_INCREF(mod); // do be cleared in modexport_smoke_free
 
-    PyModule_AddObjectRef(
-        mod, "Example",
-        PyType_FromModuleAndSpec(mod, &StateAccessType_spec, NULL));
+    PyObject *tp = PyType_FromModuleAndSpec(mod, &StateAccessType_spec, NULL);
+    if (PyModule_Add(mod, "Example", tp) < 0) {
+        return -1;
+    }
 
     return 0;
 }
@@ -1152,7 +1152,6 @@ modexport_smoke_free(PyObject *mod)
         PyErr_WriteUnraisable(mod);
     }
     assert(*state == 258);
-    Py_DECREF(mod);
 }
 
 PyMODEXPORT_FUNC
