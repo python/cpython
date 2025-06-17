@@ -502,7 +502,7 @@ static inline unsigned long
 _unroll_digits(PyLongObject *v, Py_ssize_t *i)
 {
     digit *digits = v->long_value.ob_digit;
-    assert(*digit_count >= 2);
+    assert(*i >= 2);
     /* unroll 1 digit */
     --(*i);
     assert(ULONG_MAX >= ((1UL << PyLong_SHIFT) - 1));
