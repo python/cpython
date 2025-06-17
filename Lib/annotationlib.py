@@ -939,48 +939,49 @@ def get_annotations(
     if not eval_str:
         return dict(ann)
 
-    if isinstance(obj, type):
-        # class
-        obj_globals = None
-        module_name = getattr(obj, "__module__", None)
-        if module_name:
-            module = sys.modules.get(module_name, None)
-            if module:
-                obj_globals = getattr(module, "__dict__", None)
-        obj_locals = dict(vars(obj))
-        unwrap = obj
-    elif isinstance(obj, types.ModuleType):
-        # module
-        obj_globals = getattr(obj, "__dict__")
-        obj_locals = None
-        unwrap = None
-    elif callable(obj):
-        # this includes types.Function, types.BuiltinFunctionType,
-        # types.BuiltinMethodType, functools.partial, functools.singledispatch,
-        # "class funclike" from Lib/test/test_inspect... on and on it goes.
-        obj_globals = getattr(obj, "__globals__", None)
-        obj_locals = None
-        unwrap = obj
-    else:
-        obj_globals = obj_locals = unwrap = None
+    if globals is None or locals is None:
+        if isinstance(obj, type):
+            # class
+            obj_globals = None
+            module_name = getattr(obj, "__module__", None)
+            if module_name:
+                module = sys.modules.get(module_name, None)
+                if module:
+                    obj_globals = getattr(module, "__dict__", None)
+            obj_locals = dict(vars(obj))
+            unwrap = obj
+        elif isinstance(obj, types.ModuleType):
+            # module
+            obj_globals = getattr(obj, "__dict__")
+            obj_locals = None
+            unwrap = None
+        elif callable(obj):
+            # this includes types.Function, types.BuiltinFunctionType,
+            # types.BuiltinMethodType, functools.partial, functools.singledispatch,
+            # "class funclike" from Lib/test/test_inspect... on and on it goes.
+            obj_globals = getattr(obj, "__globals__", None)
+            obj_locals = None
+            unwrap = obj
+        else:
+            obj_globals = obj_locals = unwrap = None
 
-    if unwrap is not None:
-        while True:
-            if hasattr(unwrap, "__wrapped__"):
-                unwrap = unwrap.__wrapped__
-                continue
-            if functools := sys.modules.get("functools"):
-                if isinstance(unwrap, functools.partial):
-                    unwrap = unwrap.func
+        if unwrap is not None:
+            while True:
+                if hasattr(unwrap, "__wrapped__"):
+                    unwrap = unwrap.__wrapped__
                     continue
-            break
-        if hasattr(unwrap, "__globals__"):
-            obj_globals = unwrap.__globals__
+                if functools := sys.modules.get("functools"):
+                    if isinstance(unwrap, functools.partial):
+                        unwrap = unwrap.func
+                        continue
+                break
+            if hasattr(unwrap, "__globals__"):
+                obj_globals = unwrap.__globals__
 
-    if globals is None:
-        globals = obj_globals
-    if locals is None:
-        locals = obj_locals
+        if globals is None:
+            globals = obj_globals
+        if locals is None:
+            locals = obj_locals
 
     # "Inject" type parameters into the local namespace
     # (unless they are shadowed by assignments *in* the local namespace),
