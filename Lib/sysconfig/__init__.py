@@ -638,23 +638,21 @@ def get_platform():
     exact information included depends on the OS; on Linux, the kernel version
     isn't particularly important.
 
-    Returned values:
+    Examples of returned values:
 
-    Examples of Linux returned values:
+    Linux
 
     - linux-i586
     - linux-i686
     - linux-alpha (?)
     - solaris-2.6-sun4u
 
-    Windows platforms:
+    Windows
 
-    - win32 (32-bit Windows)
     - win-amd64 (64-bit Windows on AMD64, aka x86_64, Intel64, and EM64T)
     - win-arm64 (64-bit Windows on ARM64, aka AArch64)
-    - win-arm32 (32-bit Windows on ARM)
 
-    Examples of macOS returned values:
+    macOS
 
     - macosx-10.13-x86_64
     - macosx-11-universal2
