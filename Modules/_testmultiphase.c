@@ -1108,6 +1108,11 @@ modexport_smoke_exec(PyObject *mod)
     }
     *state = 258;
     Py_INCREF(mod); // do be cleared in modexport_smoke_free
+
+    PyModule_AddObjectRef(
+        mod, "Example",
+        PyType_FromModuleAndSpec(mod, &StateAccessType_spec, NULL));
+
     return 0;
 }
 

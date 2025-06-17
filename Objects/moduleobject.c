@@ -344,6 +344,7 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
         }
     }
     m->md_def_or_null = module;
+    m->md_token = module;
     module_copy_members_from_deflike(m, module);
 #ifdef Py_GIL_DISABLED
     m->md_gil = Py_MOD_GIL_USED;
@@ -809,8 +810,7 @@ PyModule_GetToken(PyObject *m, void **token_p)
         PyErr_Format(PyExc_TypeError, "expected module, got %T", m);
         return -1;
     }
-    PyModuleObject *mod = (PyModuleObject *)m;
-    *token_p = mod->md_token;
+    *token_p = _PyModule_GetToken(m);
     return 0;
 }
 

@@ -2536,8 +2536,14 @@ class SubinterpImportTests(unittest.TestCase):
         filename = _testmultiphase.__file__
         module = import_extension_from_file(modname, filename,
                                             put_in_sys_modules=False)
-        self.assertEqual(_testcapi.pymodule_get_token(module),
-                         module.get_test_token())
+        token = module.get_test_token()
+        self.assertEqual(_testcapi.pymodule_get_token(module), token)
+
+        tp = module.Example
+        self.assertEqual(_testcapi.pytype_getmodulebytoken(tp, token), module)
+        class Sub(tp):
+            pass
+        self.assertEqual(_testcapi.pytype_getmodulebytoken(Sub, token), module)
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_from_modexport_empty_slots(self):

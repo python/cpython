@@ -44,6 +44,15 @@ static inline PyModuleDef* _PyModule_GetDefOrNull(PyObject *mod) {
     return ((PyModuleObject *)mod)->md_def_or_null;
 }
 
+static inline PyModuleDef* _PyModule_GetToken(PyObject *arg) {
+    assert(PyModule_Check(arg));
+    PyModuleObject *mod = (PyModuleObject *)arg;
+    if (mod->md_def_or_null) {
+        assert(mod->md_def_or_null == mod->md_token);
+    }
+    return mod->md_token;
+}
+
 static inline void* _PyModule_GetState(PyObject* mod) {
     assert(PyModule_Check(mod));
     return ((PyModuleObject *)mod)->md_state;
