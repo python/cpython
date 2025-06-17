@@ -6829,10 +6829,8 @@ class _TestSpawnedSysPath(BaseTestCase):
             support.print_warning(err.decode())
         self.assertEqual(rc, 0)
 
-        # We want to see all the output if it isn't as expected.
         # Check stderr first, as it is more likely to be useful to see in the
         # event of a failure.
-        self.maxDiff = None
         self.assertEqual(err.decode().rstrip(), 'stderr')
         self.assertEqual(out.decode().rstrip(), 'stdout')
 
