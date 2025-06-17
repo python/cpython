@@ -1,5 +1,5 @@
 #!./python
-"""Run Python tests against multiple installations of crypto libraries
+"""Run Python tests against multiple installations of cryptography libraries
 
 The script
 
@@ -74,7 +74,7 @@ MULTISSL_DIR = os.path.abspath(os.path.join(PYTHONROOT, '..', 'multissl'))
 parser = argparse.ArgumentParser(
     prog='multissl',
     description=(
-        "Run CPython tests with multiple crypto libraries"
+        "Run CPython tests with multiple cryptography libraries"
         "versions."
     )
 )
