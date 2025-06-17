@@ -243,20 +243,23 @@ raise an exception unless it would be visible to other code.
 
 To allow tools to monitor for real exceptions without slowing down generators
 and coroutines, the :monitoring-event:`STOP_ITERATION` event is provided.
-:monitoring-event:`STOP_ITERATION` can be locally disabled, unlike :monitoring-event:`RAISE`.
+:monitoring-event:`STOP_ITERATION` can be locally disabled, unlike
+:monitoring-event:`RAISE`.
 
-Note that the :monitoring-event:`STOP_ITERATION` event and the :monitoring-event:`RAISE`
-event for a :exc:`StopIteration` exception are equivalent, and are treated as interchangeable
-when generating events. Implementations will favor :monitoring-event:`STOP_ITERATION` for
-performance reasons, but may generate a :monitoring-event:`RAISE` event with a :exc:`StopIteration`.
+Note that the :monitoring-event:`STOP_ITERATION` event and the
+:monitoring-event:`RAISE` event for a :exc:`StopIteration` exception are
+equivalent, and are treated as interchangeable when generating events.
+Implementations will favor :monitoring-event:`STOP_ITERATION` for performance
+reasons, but may generate a :monitoring-event:`RAISE` event with a
+:exc:`StopIteration`.
 
 Turning events on and off
 -------------------------
 
 In order to monitor an event, it must be turned on and a corresponding callback
-must be registered.
-Events can be turned on or off by setting the events either globally or
-for a particular code object.
+must be registered. Events can be turned on or off by setting the events either
+globally and/or for a particular code object. An event will trigger only once,
+even if it is turned on both globally and locally.
 
 
 Setting events globally
@@ -291,10 +294,6 @@ in Python (see :ref:`c-api-monitoring`).
 
    Activates all the local events for *code* which are set in *event_set*.
    Raises a :exc:`ValueError` if *tool_id* is not in use.
-
-Events will only trigger once, regardless of whether the same event is
-activated globally as well as locally for a code object. Local activation
-also doesn't impact a global registration for the same event and vice-versa.
 
 
 Disabling events
@@ -333,11 +332,15 @@ Registering callback functions
    it is unregistered and returned.
    Otherwise :func:`register_callback` returns ``None``.
 
-
 Functions can be unregistered by calling
 ``sys.monitoring.register_callback(tool_id, event, None)``.
 
 Callback functions can be registered and unregistered at any time.
+
+Callbacks are called only once regardless if the event is turned on both
+globally and locally. As such, if an event could be turned on for both global
+and local events by your code then the callback needs to be written to handle
+either trigger.
 
 Registering or unregistering a callback function will generate a :func:`sys.audit` event.
 
