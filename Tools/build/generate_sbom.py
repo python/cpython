@@ -169,10 +169,10 @@ def download_with_retries(download_location: str,
                           base_delay: float = 2.25,
                           max_jitter: float = 1.0) -> typing.Any:
     """Download a file with exponential backoff retry."""
-    for attempt in range(max_retries):
+    for attempt in range(max_retries + 1):
         try:
             resp = urllib.request.urlopen(download_location)
-        except urllib.error.URLError as ex:
+        except (urllib.error.URLError, ConnectionError) as ex:
             if attempt == max_retries:
                 msg = f"Download from {download_location} failed."
                 raise OSError(msg) from ex

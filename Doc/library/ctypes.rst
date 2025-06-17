@@ -714,10 +714,16 @@ item in the :attr:`~Structure._fields_` tuples::
    ...                 ("second_16", c_int, 16)]
    ...
    >>> print(Int.first_16)
-   <Field type=c_long, ofs=0:0, bits=16>
+   <ctypes.CField 'first_16' type=c_int, ofs=0, bit_size=16, bit_offset=0>
    >>> print(Int.second_16)
-   <Field type=c_long, ofs=0:16, bits=16>
-   >>>
+   <ctypes.CField 'second_16' type=c_int, ofs=0, bit_size=16, bit_offset=16>
+
+It is important to note that bit field allocation and layout in memory are not
+defined as a C standard; their implementation is compiler-specific.
+By default, Python will attempt to match the behavior of a "native" compiler
+for the current platform.
+See the :attr:`~Structure._layout_` attribute for details on the default
+behavior and how to change it.
 
 
 .. _ctypes-arrays:
@@ -876,7 +882,7 @@ invalid non-\ ``NULL`` pointers would crash Python)::
 Thread safety without the GIL
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In Python 3.13, the :term:`GIL` may be disabled on :term:`experimental free threaded <free threading>` builds.
+From Python 3.13 onward, the :term:`GIL` can be disabled on :term:`free threaded <free threading>` builds.
 In ctypes, reads and writes to a single object concurrently is safe, but not across multiple objects:
 
    .. code-block:: pycon
@@ -2031,35 +2037,55 @@ Utility functions
    pointer.
 
 
-.. function:: create_string_buffer(init_or_size, size=None)
+.. function:: create_string_buffer(init, size=None)
+              create_string_buffer(size)
 
    This function creates a mutable character buffer. The returned object is a
    ctypes array of :class:`c_char`.
 
-   *init_or_size* must be an integer which specifies the size of the array, or a
-   bytes object which will be used to initialize the array items.
+   If *size* is given (and not ``None``), it must be an :class:`int`.
+   It specifies the size of the returned array.
 
-   If a bytes object is specified as first argument, the buffer is made one item
-   larger than its length so that the last element in the array is a NUL
-   termination character. An integer can be passed as second argument which allows
-   specifying the size of the array if the length of the bytes should not be used.
+   If the *init* argument is given, it must be :class:`bytes`. It is used
+   to initialize the array items. Bytes not initialized this way are
+   set to zero (NUL).
+
+   If *size* is not given (or if it is ``None``), the buffer is made one element
+   larger than *init*, effectively adding a NUL terminator.
+
+   If both arguments are given, *size* must not be less than ``len(init)``.
+
+   .. warning::
+
+      If *size* is equal to ``len(init)``, a NUL terminator is
+      not added. Do not treat such a buffer as a C string.
+
+   For example::
+
+      >>> bytes(create_string_buffer(2))
+      b'\x00\x00'
+      >>> bytes(create_string_buffer(b'ab'))
+      b'ab\x00'
+      >>> bytes(create_string_buffer(b'ab', 2))
+      b'ab'
+      >>> bytes(create_string_buffer(b'ab', 4))
+      b'ab\x00\x00'
+      >>> bytes(create_string_buffer(b'abcdef', 2))
+      Traceback (most recent call last):
+         ...
+      ValueError: byte string too long
 
    .. audit-event:: ctypes.create_string_buffer init,size ctypes.create_string_buffer
 
 
-.. function:: create_unicode_buffer(init_or_size, size=None)
+.. function:: create_unicode_buffer(init, size=None)
+              create_unicode_buffer(size)
 
    This function creates a mutable unicode character buffer. The returned object is
    a ctypes array of :class:`c_wchar`.
 
-   *init_or_size* must be an integer which specifies the size of the array, or a
-   string which will be used to initialize the array items.
-
-   If a string is specified as first argument, the buffer is made one item
-   larger than the length of the string so that the last element in the array is a
-   NUL termination character. An integer can be passed as second argument which
-   allows specifying the size of the array if the length of the string should not
-   be used.
+   The function takes the same arguments as :func:`~create_string_buffer` except
+   *init* must be a string and *size* counts :class:`c_wchar`.
 
    .. audit-event:: ctypes.create_unicode_buffer init,size ctypes.create_unicode_buffer
 
