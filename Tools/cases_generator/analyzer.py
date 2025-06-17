@@ -741,7 +741,7 @@ def find_escaping_api_calls(instr: parser.CodeDef) -> dict[SimpleStmt, EscapingC
                     continue
                 #if not tkn.text.startswith(("Py", "_Py", "monitor")):
                 #    continue
-                if tkn.text.startswith(("sym_", "optimize_")):
+                if tkn.text.startswith(("sym_", "optimize_", "PyJitRef")):
                     # Optimize functions
                     continue
                 if tkn.text.endswith("Check"):

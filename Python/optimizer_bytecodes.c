@@ -87,12 +87,12 @@ dummy_func(void) {
     }
 
     op(_LOAD_FAST_BORROW, (-- value)) {
-        value = GETLOCAL(oparg);
+        value = PyJitRef_Borrow(GETLOCAL(oparg));
     }
 
     op(_LOAD_FAST_AND_CLEAR, (-- value)) {
         value = GETLOCAL(oparg);
-        JitOptSymbol *temp = sym_new_null(ctx);
+        JitOptRef temp = sym_new_null(ctx);
         GETLOCAL(oparg) = temp;
     }
 
@@ -251,6 +251,10 @@ dummy_func(void) {
         else {
             res = sym_new_type(ctx, &PyFloat_Type);
         }
+        // TODO (gh-134584): Refactor this to use another uop
+        if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
+            REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
+        }
     }
 
     op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
@@ -270,6 +274,10 @@ dummy_func(void) {
         }
         else {
             res = sym_new_type(ctx, &PyFloat_Type);
+        }
+        // TODO (gh-134584): Refactor this to use another uop
+        if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
+            REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
         }
     }
 
@@ -291,6 +299,10 @@ dummy_func(void) {
         else {
             res = sym_new_type(ctx, &PyFloat_Type);
         }
+        // TODO (gh-134584): Refactor this to use another uop
+        if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
+            REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
+        }
     }
 
     op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {
@@ -310,7 +322,7 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right -- )) {
-        JitOptSymbol *res;
+        JitOptRef res;
         if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
             assert(PyUnicode_CheckExact(sym_get_const(ctx, left)));
             assert(PyUnicode_CheckExact(sym_get_const(ctx, right)));
@@ -329,7 +341,7 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_SUBSCR_INIT_CALL, (container, sub, getitem  -- new_frame)) {
-        new_frame = NULL;
+        new_frame = PyJitRef_NULL;
         ctx->done = true;
     }
 
@@ -488,7 +500,7 @@ dummy_func(void) {
     op(_LOAD_CONST, (-- value)) {
         PyObject *val = PyTuple_GET_ITEM(co->co_consts, oparg);
         REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
-        value = sym_new_const(ctx, val);
+        value = PyJitRef_Borrow(sym_new_const(ctx, val));
     }
 
     op(_LOAD_SMALL_INT, (-- value)) {
@@ -496,35 +508,35 @@ dummy_func(void) {
         assert(val);
         assert(_Py_IsImmortal(val));
         REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
-        value = sym_new_const(ctx, val);
+        value = PyJitRef_Borrow(sym_new_const(ctx, val));
     }
 
     op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
-        value = sym_new_const(ctx, ptr);
+        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
     }
 
     op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
-        value = sym_new_const(ctx, ptr);
+        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
     }
 
     op(_POP_TOP_LOAD_CONST_INLINE, (ptr/4, pop -- value)) {
-        value = sym_new_const(ctx, ptr);
+        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
     }
 
     op(_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
-        value = sym_new_const(ctx, ptr);
+        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
     }
 
     op(_POP_CALL_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused -- value)) {
-        value = sym_new_const(ctx, ptr);
+        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
     }
 
     op(_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused, unused -- value)) {
-        value = sym_new_const(ctx, ptr);
+        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
     }
 
     op(_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused, unused, unused -- value)) {
-        value = sym_new_const(ctx, ptr);
+        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
     }
 
     op(_COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
@@ -533,7 +545,7 @@ dummy_func(void) {
     }
 
     op(_SWAP, (bottom, unused[oparg-2], top -- bottom, unused[oparg-2], top)) {
-        JitOptSymbol *temp = bottom;
+        JitOptRef temp = bottom;
         bottom = top;
         top = temp;
         assert(oparg >= 2);
@@ -547,7 +559,7 @@ dummy_func(void) {
     op(_LOAD_ATTR_MODULE, (dict_version/2, index/1, owner -- attr)) {
         (void)dict_version;
         (void)index;
-        attr = NULL;
+        attr = PyJitRef_NULL;
         if (sym_is_const(ctx, owner)) {
             PyModuleObject *mod = (PyModuleObject *)sym_get_const(ctx, owner);
             if (PyModule_CheckExact(mod)) {
@@ -561,7 +573,7 @@ dummy_func(void) {
                 }
             }
         }
-        if (attr == NULL) {
+        if (PyJitRef_IsNull(attr)) {
             /* No conversion made. We don't know what `attr` is. */
             attr = sym_new_not_null(ctx);
         }
@@ -654,7 +666,7 @@ dummy_func(void) {
 
     op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame)) {
         (void)fget;
-        new_frame = NULL;
+        new_frame = PyJitRef_NULL;
         ctx->done = true;
     }
 
@@ -712,7 +724,7 @@ dummy_func(void) {
         }
 
 
-        assert(self_or_null != NULL);
+        assert(!PyJitRef_IsNull(self_or_null));
         assert(args != NULL);
         if (sym_is_not_null(self_or_null)) {
             // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in VM
@@ -721,9 +733,9 @@ dummy_func(void) {
         }
 
         if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
-            new_frame = (JitOptSymbol *)frame_new(ctx, co, 0, args, argcount);
+            new_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, args, argcount));
         } else {
-            new_frame = (JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0);
+            new_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0));
         }
     }
 
@@ -742,11 +754,11 @@ dummy_func(void) {
             break;
         }
 
-        new_frame = (JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0);
+        new_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0));
     }
 
     op(_PY_FRAME_KW, (callable, self_or_null, args[oparg], kwnames -- new_frame)) {
-        new_frame = NULL;
+        new_frame = PyJitRef_NULL;
         ctx->done = true;
     }
 
@@ -758,12 +770,12 @@ dummy_func(void) {
     }
 
     op(_CREATE_INIT_FRAME, (init, self, args[oparg] -- init_frame)) {
-        init_frame = NULL;
+        init_frame = PyJitRef_NULL;
         ctx->done = true;
     }
 
     op(_RETURN_VALUE, (retval -- res)) {
-        JitOptSymbol *temp = retval;
+        JitOptRef temp = retval;
         DEAD(retval);
         SAVE_STACK();
         ctx->frame->stack_pointer = stack_pointer;
@@ -825,13 +837,13 @@ dummy_func(void) {
     }
 
     op(_FOR_ITER_GEN_FRAME, (unused, unused -- unused, unused, gen_frame)) {
-        gen_frame = NULL;
+        gen_frame = PyJitRef_NULL;
         /* We are about to hit the end of the trace */
         ctx->done = true;
     }
 
     op(_SEND_GEN_FRAME, (unused, unused -- unused, gen_frame)) {
-        gen_frame = NULL;
+        gen_frame = PyJitRef_NULL;
         // We are about to hit the end of the trace:
         ctx->done = true;
     }
@@ -851,7 +863,7 @@ dummy_func(void) {
     op(_PUSH_FRAME, (new_frame -- )) {
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
-        ctx->frame = (_Py_UOpsAbstractFrame *)new_frame;
+        ctx->frame = (_Py_UOpsAbstractFrame *)PyJitRef_Unwrap(new_frame);
         ctx->curr_frame_depth++;
         stack_pointer = ctx->frame->stack_pointer;
         co = get_code(this_instr);
