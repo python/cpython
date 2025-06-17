@@ -1,11 +1,9 @@
 import contextlib
 import os
-import re
 import sys
 import tempfile
 import unittest
 
-from io import StringIO
 from test import support
 from test import test_tools
 
@@ -31,12 +29,11 @@ skip_if_different_mount_drives()
 
 test_tools.skip_if_missing("cases_generator")
 with test_tools.imports_under_tool("cases_generator"):
-    from analyzer import analyze_forest, StackItem
+    from analyzer import StackItem
     from cwriter import CWriter
     import parser
     from stack import Local, Stack
     import tier1_generator
-    import opcode_metadata_generator
     import optimizer_generator
 
 
@@ -59,14 +56,14 @@ class TestEffects(unittest.TestCase):
     def test_effect_sizes(self):
         stack = Stack()
         inputs = [
-            x := StackItem("x", None, "1"),
-            y := StackItem("y", None, "oparg"),
-            z := StackItem("z", None, "oparg*2"),
+            x := StackItem("x", "1"),
+            y := StackItem("y", "oparg"),
+            z := StackItem("z", "oparg*2"),
         ]
         outputs = [
-            StackItem("x", None, "1"),
-            StackItem("b", None, "oparg*4"),
-            StackItem("c", None, "1"),
+            StackItem("x", "1"),
+            StackItem("b", "oparg*4"),
+            StackItem("c", "1"),
         ]
         null = CWriter.null()
         stack.pop(z, null)
@@ -1101,32 +1098,6 @@ class TestGeneratedCases(unittest.TestCase):
             arg = &stack_pointer[-1];
             out = &stack_pointer[-1];
             out[0] = arg[0];
-            DISPATCH();
-        }
-        """
-        self.run_cases_test(input, output)
-
-    def test_pointer_to_stackref(self):
-        input = """
-        inst(OP, (arg: _PyStackRef * -- out)) {
-            out = *arg;
-            DEAD(arg);
-        }
-        """
-        output = """
-        TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
-            int opcode = OP;
-            (void)(opcode);
-            #endif
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(OP);
-            _PyStackRef *arg;
-            _PyStackRef out;
-            arg = (_PyStackRef *)stack_pointer[-1].bits;
-            out = *arg;
-            stack_pointer[-1] = out;
             DISPATCH();
         }
         """

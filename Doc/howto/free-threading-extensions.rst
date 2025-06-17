@@ -6,8 +6,8 @@
 C API Extension Support for Free Threading
 ******************************************
 
-Starting with the 3.13 release, CPython has experimental support for running
-with the :term:`global interpreter lock` (GIL) disabled in a configuration
+Starting with the 3.13 release, CPython has support for running with
+the :term:`global interpreter lock` (GIL) disabled in a configuration
 called :term:`free threading`.  This document describes how to adapt C API
 extensions to support free threading.
 
@@ -22,6 +22,14 @@ You can use it to enable code that only runs under the free-threaded build::
     #ifdef Py_GIL_DISABLED
     /* code that only runs in the free-threaded build */
     #endif
+
+.. note::
+
+   On Windows, this macro is not defined automatically, but must be specified
+   to the compiler when building. The :func:`sysconfig.get_config_var` function
+   can be used to determine whether the current running interpreter had the
+   macro defined.
+
 
 Module Initialization
 =====================
@@ -388,7 +396,7 @@ The wheels, shared libraries, and binaries are indicated by a ``t`` suffix.
   free-threaded build, with the ``t`` suffix, such as ``python3.13t``.
 * `pypa/cibuildwheel <https://github.com/pypa/cibuildwheel>`_ supports the
   free-threaded build if you set
-  `CIBW_FREE_THREADED_SUPPORT <https://cibuildwheel.pypa.io/en/stable/options/#free-threaded-support>`_.
+  `CIBW_ENABLE to cpython-freethreading <https://cibuildwheel.pypa.io/en/stable/options/#enable>`_.
 
 Limited C API and Stable ABI
 ............................

@@ -793,6 +793,7 @@ extern "C" {
     INIT_ID(alias), \
     INIT_ID(align), \
     INIT_ID(all), \
+    INIT_ID(all_threads), \
     INIT_ID(allow_code), \
     INIT_ID(any), \
     INIT_ID(append), \
@@ -889,6 +890,7 @@ extern "C" {
     INIT_ID(data), \
     INIT_ID(database), \
     INIT_ID(day), \
+    INIT_ID(debug), \
     INIT_ID(decode), \
     INIT_ID(decoder), \
     INIT_ID(default), \
@@ -900,7 +902,6 @@ extern "C" {
     INIT_ID(deterministic), \
     INIT_ID(device), \
     INIT_ID(dict), \
-    INIT_ID(dict_content), \
     INIT_ID(dictcomp), \
     INIT_ID(difference_update), \
     INIT_ID(digest), \

@@ -982,6 +982,7 @@ the variables:
 
 .. index::
    single: PyExc_BaseException (C var)
+   single: PyExc_BaseExceptionGroup (C var)
    single: PyExc_Exception (C var)
    single: PyExc_ArithmeticError (C var)
    single: PyExc_AssertionError (C var)
@@ -1040,6 +1041,8 @@ the variables:
 | C Name                                  | Python Name                     | Notes    |
 +=========================================+=================================+==========+
 | :c:data:`PyExc_BaseException`           | :exc:`BaseException`            | [1]_     |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_BaseExceptionGroup`      | :exc:`BaseExceptionGroup`       | [1]_     |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_Exception`               | :exc:`Exception`                | [1]_     |
 +-----------------------------------------+---------------------------------+----------+
@@ -1164,6 +1167,9 @@ the variables:
 .. versionadded:: 3.6
    :c:data:`PyExc_ModuleNotFoundError`.
 
+.. versionadded:: 3.11
+   :c:data:`PyExc_BaseExceptionGroup`.
+
 These are compatibility aliases to :c:data:`PyExc_OSError`:
 
 .. index::
@@ -1207,6 +1213,7 @@ the variables:
    single: PyExc_Warning (C var)
    single: PyExc_BytesWarning (C var)
    single: PyExc_DeprecationWarning (C var)
+   single: PyExc_EncodingWarning (C var)
    single: PyExc_FutureWarning (C var)
    single: PyExc_ImportWarning (C var)
    single: PyExc_PendingDeprecationWarning (C var)
@@ -1224,6 +1231,8 @@ the variables:
 | :c:data:`PyExc_BytesWarning`             | :exc:`BytesWarning`             |          |
 +------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_DeprecationWarning`       | :exc:`DeprecationWarning`       |          |
++------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_EncodingWarning`          | :exc:`EncodingWarning`          |          |
 +------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_FutureWarning`            | :exc:`FutureWarning`            |          |
 +------------------------------------------+---------------------------------+----------+
@@ -1244,6 +1253,9 @@ the variables:
 
 .. versionadded:: 3.2
    :c:data:`PyExc_ResourceWarning`.
+
+.. versionadded:: 3.10
+   :c:data:`PyExc_EncodingWarning`.
 
 Notes:
 
