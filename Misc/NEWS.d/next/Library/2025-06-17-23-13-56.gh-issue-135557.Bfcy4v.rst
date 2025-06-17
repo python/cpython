@@ -1,0 +1,2 @@
+Fix races on ``heapq`` updates and lock-free list reads in free-threaded
+build.
