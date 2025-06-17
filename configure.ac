@@ -3172,10 +3172,6 @@ if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 else
   have_largefile_support="no"
 fi
-dnl LFS does not work with Emscripten 3.1
-AS_CASE([$ac_sys_system],
-  [Emscripten], [have_largefile_support="no"]
-)
 AS_VAR_IF([have_largefile_support], [yes], [
   AC_DEFINE([HAVE_LARGEFILE_SUPPORT], [1],
   [Defined to enable large file support when an off_t is bigger than a long
