@@ -2327,7 +2327,7 @@ class TestUopsOptimization(unittest.TestCase):
             return {item[0] for item in ex}
 
         import email
-        
+
         def testfunc(n):
             for _ in range(n):
                 email.jit_testing = None
