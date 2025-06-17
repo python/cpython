@@ -1549,9 +1549,8 @@ opcodes = [
       Stack before:  ... pylist markobject stackslice
       Stack after:   ... pylist+stackslice
 
-      although pylist is really extended in-place. The .extend() attribute
-      function is attempted first, and if that fails the .append() attribute
-      is ran instead.
+      although pylist is really extended in-place. The extend() method is
+      used if it exists, otherwise the append() method is used.
       """),
 
     I(name='LIST',
